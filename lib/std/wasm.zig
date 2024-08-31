@@ -243,7 +243,7 @@ pub const MiscOpcode = enum(u32) {
 
 /// Returns the integer value of an `MiscOpcode`. Used by the Zig compiler
 /// to write instructions to the wasm binary file
-pub fn miscOpcode(op: MiscOpcode) u32 {
+pub fn misc_opcode(op: MiscOpcode) u32 {
     return @intFromEnum(op);
 }
 
@@ -514,7 +514,7 @@ pub const SimdOpcode = enum(u32) {
 
 /// Returns the integer value of an `SimdOpcode`. Used by the Zig compiler
 /// to write instructions to the wasm binary file
-pub fn simdOpcode(op: SimdOpcode) u32 {
+pub fn simd_opcode(op: SimdOpcode) u32 {
     return @intFromEnum(op);
 }
 
@@ -594,7 +594,7 @@ pub const AtomicsOpcode = enum(u32) {
 
 /// Returns the integer value of an `AtomicsOpcode`. Used by the Zig compiler
 /// to write instructions to the wasm binary file
-pub fn atomicsOpcode(op: AtomicsOpcode) u32 {
+pub fn atomics_opcode(op: AtomicsOpcode) u32 {
     return @intFromEnum(op);
 }
 
@@ -648,11 +648,11 @@ pub const Limits = struct {
         WASM_LIMITS_FLAG_IS_SHARED = 0x2,
     };
 
-    pub fn hasFlag(limits: Limits, flag: Flags) bool {
+    pub fn has_flag(limits: Limits, flag: Flags) bool {
         return limits.flags & @intFromEnum(flag) != 0;
     }
 
-    pub fn setFlag(limits: *Limits, flag: Flags) void {
+    pub fn set_flag(limits: *Limits, flag: Flags) void {
         limits.flags |= @intFromEnum(flag);
     }
 };
@@ -803,7 +803,7 @@ pub const ExternalKind = enum(u8) {
 };
 
 /// Returns the integer value of a given `ExternalKind`
-pub fn externalKind(val: ExternalKind) u8 {
+pub fn external_kind(val: ExternalKind) u8 {
     return @intFromEnum(val);
 }
 

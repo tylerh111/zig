@@ -16,7 +16,7 @@
 /// into this value.
 ///
 /// Returns `null` if the operation must be performed at runtime.
-pub fn bitCast(
+pub fn bit_cast(
     sema: *Sema,
     val: Value,
     dest_ty: Type,
@@ -43,7 +43,7 @@ pub fn bitCast(
 /// a non-packed value consisting of `host_bits` bits. The value
 /// `splice_val` will be placed at a packed offset of `bit_offset`
 /// into this value.
-pub fn bitCastSplice(
+pub fn bit_cast_splice(
     sema: *Sema,
     val: Value,
     splice_val: Value,
@@ -61,7 +61,7 @@ pub fn bitCastSplice(
 
 const BitCastError = CompileError || error{ ReinterpretDeclRef, IllDefinedMemoryLayout, Unimplemented };
 
-fn bitCastInner(
+fn bit_cast_inner(
     sema: *Sema,
     val: Value,
     dest_ty: Type,
@@ -123,7 +123,7 @@ fn bitCastInner(
     return pack.get(dest_ty);
 }
 
-fn bitCastSpliceInner(
+fn bit_cast_splice_inner(
     sema: *Sema,
     val: Value,
     splice_val: Value,
@@ -424,7 +424,7 @@ const UnpackValueBits = struct {
         try unpack.unpacked.append(val.toIntern());
     }
 
-    fn splitPrimitive(unpack: *UnpackValueBits, val: Value, bit_offset: u64, bit_count: u64) BitCastError!void {
+    fn split_primitive(unpack: *UnpackValueBits, val: Value, bit_offset: u64, bit_count: u64) BitCastError!void {
         const zcu = unpack.zcu;
         const ty = val.typeOf(zcu);
 
@@ -620,7 +620,7 @@ const PackValueBits = struct {
                 const SizeSortCtx = struct {
                     zcu: *Zcu,
                     field_types: []const InternPool.Index,
-                    fn lessThan(ctx: @This(), a_idx: u32, b_idx: u32) bool {
+                    fn less_than(ctx: @This(), a_idx: u32, b_idx: u32) bool {
                         const a_ty = Type.fromInterned(ctx.field_types[a_idx]);
                         const b_ty = Type.fromInterned(ctx.field_types[b_idx]);
                         return a_ty.bitSize(ctx.zcu) > b_ty.bitSize(ctx.zcu);
@@ -732,7 +732,7 @@ const PackValueBits = struct {
         return Value.readFromPackedMemory(want_ty, zcu, buf, @intCast(bit_offset), pack.arena);
     }
 
-    fn prepareBits(pack: *PackValueBits, need_bits: u64) struct { []const InternPool.Index, u64 } {
+    fn prepare_bits(pack: *PackValueBits, need_bits: u64) struct { []const InternPool.Index, u64 } {
         if (need_bits == 0) return .{ &.{}, 0 };
 
         const zcu = pack.zcu;

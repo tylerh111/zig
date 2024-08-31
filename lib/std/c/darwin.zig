@@ -154,8 +154,8 @@ pub const ucontext_t = extern struct {
 pub const mcontext_t = arch_bits.mcontext_t;
 
 extern "c" fn __error() *c_int;
-pub extern "c" fn NSVersionOfRunTimeLibrary(library_name: [*:0]const u8) u32;
-pub extern "c" fn _NSGetExecutablePath(buf: [*:0]u8, bufsize: *u32) c_int;
+pub extern "c" fn nsversion_of_run_time_library(library_name: [*:0]const u8) u32;
+pub extern "c" fn _nsget_executable_path(buf: [*:0]u8, bufsize: *u32) c_int;
 pub extern "c" fn _dyld_image_count() u32;
 pub extern "c" fn _dyld_get_image_header(image_index: u32) ?*mach_header;
 pub extern "c" fn _dyld_get_image_vmaddr_slide(image_index: u32) usize;
@@ -410,7 +410,7 @@ pub const VM_REGION_BASIC_INFO_COUNT: mach_msg_type_number_t = @sizeOf(vm_region
 pub const VM_REGION_EXTENDED_INFO_COUNT: mach_msg_type_number_t = @sizeOf(vm_region_extended_info) / @sizeOf(natural_t);
 pub const VM_REGION_TOP_INFO_COUNT: mach_msg_type_number_t = @sizeOf(vm_region_top_info) / @sizeOf(natural_t);
 
-pub fn VM_MAKE_TAG(tag: u8) u32 {
+pub fn vm_make_tag(tag: u8) u32 {
     return @as(u32, tag) << 24;
 }
 
@@ -1687,22 +1687,22 @@ pub const W = struct {
     /// [XSI] notify on stop, untraced child
     pub const UNTRACED = 0x00000002;
 
-    pub fn EXITSTATUS(x: u32) u8 {
+    pub fn exitstatus(x: u32) u8 {
         return @as(u8, @intCast(x >> 8));
     }
-    pub fn TERMSIG(x: u32) u32 {
+    pub fn termsig(x: u32) u32 {
         return status(x);
     }
-    pub fn STOPSIG(x: u32) u32 {
+    pub fn stopsig(x: u32) u32 {
         return x >> 8;
     }
-    pub fn IFEXITED(x: u32) bool {
+    pub fn ifexited(x: u32) bool {
         return status(x) == 0;
     }
-    pub fn IFSTOPPED(x: u32) bool {
+    pub fn ifstopped(x: u32) bool {
         return status(x) == stopped and STOPSIG(x) != 0x13;
     }
-    pub fn IFSIGNALED(x: u32) bool {
+    pub fn ifsignaled(x: u32) bool {
         return status(x) != stopped and status(x) != 0;
     }
 
@@ -2271,7 +2271,7 @@ pub const KernE = enum(u32) {
 
 pub const mach_msg_return_t = kern_return_t;
 
-pub fn getMachMsgError(err: mach_msg_return_t) MachMsgE {
+pub fn get_mach_msg_error(err: mach_msg_return_t) MachMsgE {
     return @as(MachMsgE, @enumFromInt(@as(u32, @truncate(@as(usize, @intCast(err))))));
 }
 
@@ -2407,35 +2407,35 @@ pub const S = struct {
     pub const IWOTH = 0o002;
     pub const IXOTH = 0o001;
 
-    pub fn ISFIFO(m: u32) bool {
+    pub fn isfifo(m: u32) bool {
         return m & IFMT == IFIFO;
     }
 
-    pub fn ISCHR(m: u32) bool {
+    pub fn ischr(m: u32) bool {
         return m & IFMT == IFCHR;
     }
 
-    pub fn ISDIR(m: u32) bool {
+    pub fn isdir(m: u32) bool {
         return m & IFMT == IFDIR;
     }
 
-    pub fn ISBLK(m: u32) bool {
+    pub fn isblk(m: u32) bool {
         return m & IFMT == IFBLK;
     }
 
-    pub fn ISREG(m: u32) bool {
+    pub fn isreg(m: u32) bool {
         return m & IFMT == IFREG;
     }
 
-    pub fn ISLNK(m: u32) bool {
+    pub fn islnk(m: u32) bool {
         return m & IFMT == IFLNK;
     }
 
-    pub fn ISSOCK(m: u32) bool {
+    pub fn issock(m: u32) bool {
         return m & IFMT == IFSOCK;
     }
 
-    pub fn IWHT(m: u32) bool {
+    pub fn iwht(m: u32) bool {
         return m & IFMT == IFWHT;
     }
 };
@@ -2826,11 +2826,11 @@ pub extern "c" fn posix_spawnp(
     env: [*:null]?[*:0]const u8,
 ) c_int;
 
-pub fn getKernError(err: kern_return_t) KernE {
+pub fn get_kern_error(err: kern_return_t) KernE {
     return @as(KernE, @enumFromInt(@as(u32, @truncate(@as(usize, @intCast(err))))));
 }
 
-pub fn unexpectedKernError(err: KernE) std.posix.UnexpectedError {
+pub fn unexpected_kern_error(err: KernE) std.posix.UnexpectedError {
     if (std.posix.unexpected_error_tracing) {
         std.debug.print("unexpected error: {d}\n", .{@intFromEnum(err)});
         std.debug.dumpCurrentStackTrace(null);
@@ -2847,11 +2847,11 @@ pub const MachError = error{
 pub const MachTask = extern struct {
     port: mach_port_name_t,
 
-    pub fn isValid(self: MachTask) bool {
+    pub fn is_valid(self: MachTask) bool {
         return self.port != TASK_NULL;
     }
 
-    pub fn pidForTask(self: MachTask) MachError!std.c.pid_t {
+    pub fn pid_for_task(self: MachTask) MachError!std.c.pid_t {
         var pid: std.c.pid_t = undefined;
         switch (getKernError(pid_for_task(self.port, &pid))) {
             .SUCCESS => return pid,
@@ -2860,7 +2860,7 @@ pub const MachTask = extern struct {
         }
     }
 
-    pub fn allocatePort(self: MachTask, right: MACH_PORT_RIGHT) MachError!MachTask {
+    pub fn allocate_port(self: MachTask, right: MACH_PORT_RIGHT) MachError!MachTask {
         var out_port: mach_port_name_t = undefined;
         switch (getKernError(mach_port_allocate(
             self.port,
@@ -2873,11 +2873,11 @@ pub const MachTask = extern struct {
         }
     }
 
-    pub fn deallocatePort(self: MachTask, port: MachTask) void {
+    pub fn deallocate_port(self: MachTask, port: MachTask) void {
         _ = getKernError(mach_port_deallocate(self.port, port.port));
     }
 
-    pub fn insertRight(self: MachTask, port: MachTask, msg: MACH_MSG_TYPE) !void {
+    pub fn insert_right(self: MachTask, port: MachTask, msg: MACH_MSG_TYPE) !void {
         switch (getKernError(mach_port_insert_right(
             self.port,
             port.port,
@@ -2899,7 +2899,7 @@ pub const MachTask = extern struct {
         count: mach_msg_type_number_t,
     };
 
-    pub fn getExceptionPorts(self: MachTask, mask: exception_mask_t) !PortInfo {
+    pub fn get_exception_ports(self: MachTask, mask: exception_mask_t) !PortInfo {
         var info = PortInfo{
             .mask = mask,
             .masks = undefined,
@@ -2925,7 +2925,7 @@ pub const MachTask = extern struct {
         }
     }
 
-    pub fn setExceptionPorts(
+    pub fn set_exception_ports(
         self: MachTask,
         mask: exception_mask_t,
         new_port: MachTask,
@@ -2961,7 +2961,7 @@ pub const MachTask = extern struct {
         },
     };
 
-    pub fn getRegionInfo(
+    pub fn get_region_info(
         task: MachTask,
         address: u64,
         len: usize,
@@ -3021,7 +3021,7 @@ pub const MachTask = extern struct {
         },
     };
 
-    pub fn getRegionSubmapInfo(
+    pub fn get_region_submap_info(
         task: MachTask,
         address: u64,
         len: usize,
@@ -3060,20 +3060,20 @@ pub const MachTask = extern struct {
         }
     }
 
-    pub fn getCurrProtection(task: MachTask, address: u64, len: usize) MachError!vm_prot_t {
+    pub fn get_curr_protection(task: MachTask, address: u64, len: usize) MachError!vm_prot_t {
         const info = try task.getRegionSubmapInfo(address, len, 0, .short);
         return info.info.short.protection;
     }
 
-    pub fn setMaxProtection(task: MachTask, address: u64, len: usize, prot: vm_prot_t) MachError!void {
+    pub fn set_max_protection(task: MachTask, address: u64, len: usize, prot: vm_prot_t) MachError!void {
         return task.setProtectionImpl(address, len, true, prot);
     }
 
-    pub fn setCurrProtection(task: MachTask, address: u64, len: usize, prot: vm_prot_t) MachError!void {
+    pub fn set_curr_protection(task: MachTask, address: u64, len: usize, prot: vm_prot_t) MachError!void {
         return task.setProtectionImpl(address, len, false, prot);
     }
 
-    fn setProtectionImpl(task: MachTask, address: u64, len: usize, set_max: bool, prot: vm_prot_t) MachError!void {
+    fn set_protection_impl(task: MachTask, address: u64, len: usize, set_max: bool, prot: vm_prot_t) MachError!void {
         switch (getKernError(mach_vm_protect(task.port, address, len, @intFromBool(set_max), prot))) {
             .SUCCESS => return,
             .FAILURE => return error.PermissionDenied,
@@ -3084,7 +3084,7 @@ pub const MachTask = extern struct {
     /// Will write to VM even if current protection attributes specifically prohibit
     /// us from doing so, by temporarily setting protection level to a level with VM_PROT_COPY
     /// variant, and resetting after a successful or unsuccessful write.
-    pub fn writeMemProtected(task: MachTask, address: u64, buf: []const u8, arch: std.Target.Cpu.Arch) MachError!usize {
+    pub fn write_mem_protected(task: MachTask, address: u64, buf: []const u8, arch: std.Target.Cpu.Arch) MachError!usize {
         const curr_prot = try task.getCurrProtection(address, buf.len);
         try task.setCurrProtection(
             address,
@@ -3097,7 +3097,7 @@ pub const MachTask = extern struct {
         return task.writeMem(address, buf, arch);
     }
 
-    pub fn writeMem(task: MachTask, address: u64, buf: []const u8, arch: std.Target.Cpu.Arch) MachError!usize {
+    pub fn write_mem(task: MachTask, address: u64, buf: []const u8, arch: std.Target.Cpu.Arch) MachError!usize {
         const count = buf.len;
         var total_written: usize = 0;
         var curr_addr = address;
@@ -3144,7 +3144,7 @@ pub const MachTask = extern struct {
         return total_written;
     }
 
-    pub fn readMem(task: MachTask, address: u64, buf: []u8) MachError!usize {
+    pub fn read_mem(task: MachTask, address: u64, buf: []u8) MachError!usize {
         const count = buf.len;
         var total_read: usize = 0;
         var curr_addr = address;
@@ -3172,7 +3172,7 @@ pub const MachTask = extern struct {
         return total_read;
     }
 
-    fn maxBytesLeftInPage(page_size: usize, address: u64, count: usize) usize {
+    fn max_bytes_left_in_page(page_size: usize, address: u64, count: usize) usize {
         var left = count;
         if (page_size > 0) {
             const page_offset = address % page_size;
@@ -3184,7 +3184,7 @@ pub const MachTask = extern struct {
         return left;
     }
 
-    fn getPageSize(task: MachTask) MachError!usize {
+    fn get_page_size(task: MachTask) MachError!usize {
         if (task.isValid()) {
             var info_count = TASK_VM_INFO_COUNT;
             var vm_info: task_vm_info_data_t = undefined;
@@ -3205,7 +3205,7 @@ pub const MachTask = extern struct {
         }
     }
 
-    pub fn basicTaskInfo(task: MachTask) MachError!mach_task_basic_info {
+    pub fn basic_task_info(task: MachTask) MachError!mach_task_basic_info {
         var info: mach_task_basic_info = undefined;
         var count = MACH_TASK_BASIC_INFO_COUNT;
         switch (getKernError(task_info(
@@ -3246,7 +3246,7 @@ pub const MachTask = extern struct {
         }
     };
 
-    pub fn getThreads(task: MachTask) MachError!ThreadList {
+    pub fn get_threads(task: MachTask) MachError!ThreadList {
         var thread_list: mach_port_array_t = undefined;
         var thread_count: mach_msg_type_number_t = undefined;
         switch (getKernError(task_threads(task.port, &thread_list, &thread_count))) {
@@ -3259,11 +3259,11 @@ pub const MachTask = extern struct {
 pub const MachThread = extern struct {
     port: mach_port_t,
 
-    pub fn isValid(thread: MachThread) bool {
+    pub fn is_valid(thread: MachThread) bool {
         return thread.port != THREAD_NULL;
     }
 
-    pub fn getBasicInfo(thread: MachThread) MachError!thread_basic_info {
+    pub fn get_basic_info(thread: MachThread) MachError!thread_basic_info {
         var info: thread_basic_info = undefined;
         var count = THREAD_BASIC_INFO_COUNT;
         switch (getKernError(thread_info(
@@ -3277,7 +3277,7 @@ pub const MachThread = extern struct {
         }
     }
 
-    pub fn getIdentifierInfo(thread: MachThread) MachError!thread_identifier_info {
+    pub fn get_identifier_info(thread: MachThread) MachError!thread_identifier_info {
         var info: thread_identifier_info = undefined;
         var count = THREAD_IDENTIFIER_INFO_COUNT;
         switch (getKernError(thread_info(
@@ -3292,7 +3292,7 @@ pub const MachThread = extern struct {
     }
 };
 
-pub fn machTaskForPid(pid: std.c.pid_t) MachError!MachTask {
+pub fn mach_task_for_pid(pid: std.c.pid_t) MachError!MachTask {
     var port: mach_port_name_t = undefined;
     switch (getKernError(task_for_pid(mach_task_self(), pid, &port))) {
         .SUCCESS => {},
@@ -3302,7 +3302,7 @@ pub fn machTaskForPid(pid: std.c.pid_t) MachError!MachTask {
     return MachTask{ .port = port };
 }
 
-pub fn machTaskForSelf() MachTask {
+pub fn mach_task_for_self() MachTask {
     return .{ .port = mach_task_self() };
 }
 

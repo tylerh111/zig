@@ -13,7 +13,7 @@ pub const Kind = enum {
     tlsdesc,
 };
 
-fn Table(comptime len: comptime_int, comptime RelType: type, comptime mapping: [len]struct { Kind, RelType }) type {
+fn table(comptime len: comptime_int, comptime RelType: type, comptime mapping: [len]struct { Kind, RelType }) type {
     return struct {
         fn decode(r_type: u32) Kind {
             inline for (mapping) |entry| {
@@ -96,14 +96,14 @@ const FormatRelocTypeCtx = struct {
     cpu_arch: std.Target.Cpu.Arch,
 };
 
-pub fn fmtRelocType(r_type: u32, cpu_arch: std.Target.Cpu.Arch) std.fmt.Formatter(formatRelocType) {
+pub fn fmt_reloc_type(r_type: u32, cpu_arch: std.Target.Cpu.Arch) std.fmt.Formatter(formatRelocType) {
     return .{ .data = .{
         .r_type = r_type,
         .cpu_arch = cpu_arch,
     } };
 }
 
-fn formatRelocType(
+fn format_reloc_type(
     ctx: FormatRelocTypeCtx,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,

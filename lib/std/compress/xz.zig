@@ -11,7 +11,7 @@ pub const Check = enum(u4) {
     _,
 };
 
-fn readStreamFlags(reader: anytype, check: *Check) !void {
+fn read_stream_flags(reader: anytype, check: *Check) !void {
     var bit_reader = std.io.bitReader(.little, reader);
 
     const reserved1 = try bit_reader.readBitsNoEof(u8, 8);
@@ -29,7 +29,7 @@ pub fn decompress(allocator: Allocator, reader: anytype) !Decompress(@TypeOf(rea
     return Decompress(@TypeOf(reader)).init(allocator, reader);
 }
 
-pub fn Decompress(comptime ReaderType: type) type {
+pub fn decompress(comptime ReaderType: type) type {
     return struct {
         const Self = @This();
 

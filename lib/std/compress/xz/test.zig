@@ -11,7 +11,7 @@ fn decompress(data: []const u8) ![]u8 {
     return xz_stream.reader().readAllAlloc(testing.allocator, std.math.maxInt(usize));
 }
 
-fn testReader(data: []const u8, comptime expected: []const u8) !void {
+fn test_reader(data: []const u8, comptime expected: []const u8) !void {
     const buf = try decompress(data);
     defer testing.allocator.free(buf);
 
@@ -79,7 +79,7 @@ test "unsupported" {
     }
 }
 
-fn testDontPanic(data: []const u8) !void {
+fn test_dont_panic(data: []const u8) !void {
     const buf = decompress(data) catch |err| switch (err) {
         error.OutOfMemory => |e| return e,
         else => return,

@@ -306,27 +306,27 @@ pub const W = struct {
     pub const STOPPED = 0x10;
     pub const NOWAIT = 0x20;
 
-    pub fn EXITSTATUS(s: u32) u8 {
+    pub fn exitstatus(s: u32) u8 {
         return @as(u8, @intCast(s & 0xff));
     }
 
-    pub fn TERMSIG(s: u32) u32 {
+    pub fn termsig(s: u32) u32 {
         return (s >> 8) & 0xff;
     }
 
-    pub fn STOPSIG(s: u32) u32 {
+    pub fn stopsig(s: u32) u32 {
         return (s >> 16) & 0xff;
     }
 
-    pub fn IFEXITED(s: u32) bool {
+    pub fn ifexited(s: u32) bool {
         return (s & ~@as(u32, 0xff)) == 0;
     }
 
-    pub fn IFSTOPPED(s: u32) bool {
+    pub fn ifstopped(s: u32) bool {
         return ((s >> 16) & 0xff) != 0;
     }
 
-    pub fn IFSIGNALED(s: u32) bool {
+    pub fn ifsignaled(s: u32) bool {
         return ((s >> 8) & 0xff) != 0;
     }
 };
@@ -570,35 +570,35 @@ pub const S = struct {
     pub const IWOTH = 0o002;
     pub const IXOTH = 0o001;
 
-    pub fn ISREG(m: u32) bool {
+    pub fn isreg(m: u32) bool {
         return m & IFMT == IFREG;
     }
 
-    pub fn ISLNK(m: u32) bool {
+    pub fn islnk(m: u32) bool {
         return m & IFMT == IFLNK;
     }
 
-    pub fn ISBLK(m: u32) bool {
+    pub fn isblk(m: u32) bool {
         return m & IFMT == IFBLK;
     }
 
-    pub fn ISDIR(m: u32) bool {
+    pub fn isdir(m: u32) bool {
         return m & IFMT == IFDIR;
     }
 
-    pub fn ISCHR(m: u32) bool {
+    pub fn ischr(m: u32) bool {
         return m & IFMT == IFCHR;
     }
 
-    pub fn ISFIFO(m: u32) bool {
+    pub fn isfifo(m: u32) bool {
         return m & IFMT == IFIFO;
     }
 
-    pub fn ISSOCK(m: u32) bool {
+    pub fn issock(m: u32) bool {
         return m & IFMT == IFSOCK;
     }
 
-    pub fn ISINDEX(m: u32) bool {
+    pub fn isindex(m: u32) bool {
         return m & INDEX_DIR == INDEX_DIR;
     }
 };
@@ -1131,7 +1131,7 @@ pub const DirEnt = extern struct {
     reclen: u16,
     /// name of the entry (null byte terminated)
     name: [0]u8,
-    pub fn getName(dirent: *const DirEnt) [*:0]const u8 {
+    pub fn get_name(dirent: *const DirEnt) [*:0]const u8 {
         return @ptrCast(&dirent.name);
     }
 };

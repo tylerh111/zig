@@ -23,7 +23,7 @@ test "basic unions with floats" {
     try expect(foo.float == 12.34);
 }
 
-fn setFloat(foo: *FooWithFloats, x: f64) void {
+fn set_float(foo: *FooWithFloats, x: f64) void {
     foo.* = FooWithFloats{ .float = x };
 }
 
@@ -73,11 +73,11 @@ test "init union with runtime value" {
     try expect(std.mem.eql(u8, foo.str.slice, "Hello!"));
 }
 
-fn setInt(foo: *Foo, x: i32) void {
+fn set_int(foo: *Foo, x: i32) void {
     foo.* = Foo{ .int = x };
 }
 
-fn setStr(foo: *Foo, slice: []const u8) void {
+fn set_str(foo: *Foo, slice: []const u8) void {
     foo.* = Foo{ .str = .{ .slice = slice } };
 }
 
@@ -182,14 +182,14 @@ test "constant tagged union with payload" {
     shouldBeNotEmpty(full);
 }
 
-fn shouldBeEmpty(x: TaggedUnionWithPayload) void {
+fn should_be_empty(x: TaggedUnionWithPayload) void {
     switch (x) {
         TaggedUnionWithPayload.Empty => {},
         else => unreachable,
     }
 }
 
-fn shouldBeNotEmpty(x: TaggedUnionWithPayload) void {
+fn should_be_not_empty(x: TaggedUnionWithPayload) void {
     switch (x) {
         TaggedUnionWithPayload.Empty => unreachable,
         else => {},
@@ -248,7 +248,7 @@ test "packed union generates correctly aligned type" {
     try foo[0].f1();
 }
 
-fn doTest() error{TestUnexpectedResult}!void {
+fn do_test() error{TestUnexpectedResult}!void {
     try expect((try bar(Payload{ .A = 1234 })) == -10);
 }
 
@@ -261,7 +261,7 @@ fn bar(value: Payload) error{TestUnexpectedResult}!i32 {
     };
 }
 
-fn testComparison() !void {
+fn test_comparison() !void {
     var x = Payload{ .A = 42 };
     _ = &x;
     try expect(x == .A);
@@ -298,7 +298,7 @@ test "cast union to tag type of union" {
     try comptime testCastUnionToTag();
 }
 
-fn testCastUnionToTag() !void {
+fn test_cast_union_to_tag() !void {
     var u = TheUnion{ .B = 1234 };
     _ = &u;
     try expect(@as(TheTag, u) == TheTag.B);
@@ -338,7 +338,7 @@ test "implicit cast union to its tag type" {
     try expect(x == Letter2.B);
     try giveMeLetterB(x);
 }
-fn giveMeLetterB(x: Letter2) !void {
+fn give_me_letter_b(x: Letter2) !void {
     try expect(x == Value2.B);
 }
 
@@ -358,7 +358,7 @@ test "constant packed union" {
     try testConstPackedUnion(&[_]PackThis{PackThis{ .StringLiteral = 1 }});
 }
 
-fn testConstPackedUnion(expected_tokens: []const PackThis) !void {
+fn test_const_packed_union(expected_tokens: []const PackThis) !void {
     try expect(expected_tokens[0].StringLiteral == 1);
 }
 
@@ -428,7 +428,7 @@ const TaggedUnionWithAVoid = union(enum) {
     B: i32,
 };
 
-fn testTaggedUnionInit(x: anytype) bool {
+fn test_tagged_union_init(x: anytype) bool {
     const y = TaggedUnionWithAVoid{ .A = x };
     return @as(Tag(TaggedUnionWithAVoid), y) == TaggedUnionWithAVoid.A;
 }
@@ -566,13 +566,13 @@ test "method call on an empty union" {
             X1: [0]u8,
             X2: [0]u8,
 
-            pub fn useIt(self: *@This()) bool {
+            pub fn use_it(self: *@This()) bool {
                 _ = self;
                 return true;
             }
         };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var u = MyUnion{ .X1 = [0]u8{} };
             try expect(u.useIt());
         }
@@ -629,7 +629,7 @@ test "tagged union as return value" {
     }
 }
 
-fn returnAnInt(x: i32) TaggedFoo {
+fn return_an_int(x: i32) TaggedFoo {
     return TaggedFoo{ .One = x };
 }
 
@@ -651,7 +651,7 @@ test "tagged union with all void fields but a meaningful tag" {
 
         const C = struct {};
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: A = A{ .b = B{ .c = C{} } };
             try expect(@as(Tag(B), a.b) == Tag(B).c);
             a = A{ .b = B.None };
@@ -685,7 +685,7 @@ const MultipleChoice2 = union(enum(u32)) {
     Unspecified5: i32,
 };
 
-fn testEnumWithSpecifiedAndUnspecifiedTagValues(x: MultipleChoice2) !void {
+fn test_enum_with_specified_and_unspecified_tag_values(x: MultipleChoice2) !void {
     try expect(@intFromEnum(@as(Tag(MultipleChoice2), x)) == 60);
     try expect(1123 == switch (x) {
         MultipleChoice2.A => 1,
@@ -803,11 +803,11 @@ const Attribute = union(enum) {
     B: u8,
 };
 
-fn setAttribute(attr: Attribute) void {
+fn set_attribute(attr: Attribute) void {
     _ = attr;
 }
 
-fn Setter(comptime attr: Attribute) type {
+fn setter(comptime attr: Attribute) type {
     return struct {
         fn set() void {
             setAttribute(attr);
@@ -851,7 +851,7 @@ test "@unionInit stored to a const" {
             boolean: bool,
             byte: u8,
         };
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             {
                 var t = true;
                 _ = &t;
@@ -963,7 +963,7 @@ test "anonymous union literal syntax" {
             float: f64,
         };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var i: Number = .{ .int = 42 };
             _ = &i;
             const f = makeNumber();
@@ -971,7 +971,7 @@ test "anonymous union literal syntax" {
             try expect(f.float == 12.34);
         }
 
-        fn makeNumber() Number {
+        fn make_number() Number {
             return .{ .float = 12.34 };
         }
     };
@@ -993,7 +993,7 @@ test "function call result coerces from tagged union to the tag" {
 
         const ArchTag = Tag(Arch);
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x: ArchTag = getArch1();
             _ = &x;
             try expect(x == .One);
@@ -1003,11 +1003,11 @@ test "function call result coerces from tagged union to the tag" {
             try expect(y == .Two);
         }
 
-        pub fn getArch1() Arch {
+        pub fn get_arch1() Arch {
             return .One;
         }
 
-        pub fn getArch2() Arch {
+        pub fn get_arch2() Arch {
             return .{ .Two = 99 };
         }
     };
@@ -1027,7 +1027,7 @@ test "cast from anonymous struct to union" {
             B: []const u8,
             C: void,
         };
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var y: u32 = 42;
             _ = &y;
             const t0 = .{ .A = 123 };
@@ -1062,7 +1062,7 @@ test "cast from pointer to anonymous struct to pointer to union" {
             B: []const u8,
             C: void,
         };
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var y: u32 = 42;
             _ = &y;
             const t0 = &.{ .A = 123 };
@@ -1101,7 +1101,7 @@ test "switching on non exhaustive union" {
             a: i32,
             b: u32,
         };
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a = U{ .a = 2 };
             _ = &a;
             switch (a) {
@@ -1125,7 +1125,7 @@ test "containers with single-field enums" {
         const C = struct { a: A };
         const D = struct { a: B };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var array1 = [1]A{A{ .f1 = {} }};
             var array2 = [1]B{B{ .f1 = {} }};
             _ = .{ &array1, &array2 };
@@ -1167,7 +1167,7 @@ test "@unionInit on union with tag but no fields" {
             assert(@sizeOf(Data) == 1);
         }
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var data: Data = .{ .no_op = {} };
             _ = &data;
             var o = Data.decode(&[_]u8{});
@@ -1187,7 +1187,7 @@ test "union enum type gets a separate scope" {
             const foo = 1;
         };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try expect(!@hasDecl(Tag(U), "foo"));
         }
     };
@@ -1286,7 +1286,7 @@ test "union tag is set when initiated as a temporary value at runtime" {
         b: u32,
         c,
 
-        fn doTheTest(u: @This()) !void {
+        fn do_the_test(u: @This()) !void {
             try expect(u == .b);
         }
     };
@@ -1561,7 +1561,7 @@ test "packed union with zero-bit field" {
         },
         bar: u32,
 
-        fn doTest(self: @This()) !void {
+        fn do_test(self: @This()) !void {
             try expect(self.bar == 42);
         }
     };
@@ -1577,7 +1577,7 @@ test "reinterpreting enum value inside packed union" {
         tag: enum(u8) { a, b },
         val: u8,
 
-        fn doTest() !void {
+        fn do_test() !void {
             var u: @This() = .{ .tag = .a };
             u.val += 1;
             try expect(u.tag == .b);
@@ -1607,7 +1607,7 @@ test "coerce enum literal to union in result loc" {
         a,
         b: u8,
 
-        fn doTest(c: bool) !void {
+        fn do_test(c: bool) !void {
             const u = if (c) .a else @This(){ .b = 0 };
             try expect(u == .a);
         }
@@ -1624,7 +1624,7 @@ test "defined-layout union field pointer has correct alignment" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn doTheTest(comptime U: type) !void {
+        fn do_the_test(comptime U: type) !void {
             var a: U = .{ .x = 123 };
             var b: U align(1) = .{ .x = 456 };
             var c: U align(64) = .{ .x = 789 };
@@ -1659,7 +1659,7 @@ test "undefined-layout union field pointer has correct alignment" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn doTheTest(comptime U: type) !void {
+        fn do_the_test(comptime U: type) !void {
             var a: U = .{ .x = 123 };
             var b: U align(1) = .{ .x = 456 };
             var c: U align(64) = .{ .x = 789 };
@@ -1751,7 +1751,7 @@ test "memset extern union" {
     };
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var u: U = undefined;
             @memset(std.mem.asBytes(&u), 0);
             try expectEqual(@as(u8, 0), u.foo);
@@ -1773,7 +1773,7 @@ test "memset packed union" {
     };
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var u: U = undefined;
             @memset(std.mem.asBytes(&u), 42);
             try expectEqual(@as(u32, 0x2a2a2a2a), u.a);
@@ -1787,7 +1787,7 @@ test "memset packed union" {
     try S.doTheTest();
 }
 
-fn littleToNativeEndian(comptime T: type, v: T) T {
+fn little_to_native_endian(comptime T: type, v: T) T {
     return if (endian == .little) v else @byteSwap(v);
 }
 
@@ -1804,7 +1804,7 @@ test "reinterpret extern union" {
     };
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             {
                 // Undefined initialization
                 const u = blk: {
@@ -1876,7 +1876,7 @@ test "reinterpret packed union" {
     };
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             {
                 const u = blk: {
                     var u: U = undefined;
@@ -1952,7 +1952,7 @@ test "reinterpret packed union inside packed struct" {
     };
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var v: V = undefined;
             @memset(std.mem.asBytes(&v), 0x55);
             try expectEqual(@as(u7, 0x55), v.lo.a);
@@ -2132,15 +2132,15 @@ test "pass register-sized field as non-register-sized union" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn taggedUnion(u: union(enum) { x: usize, y: [2]usize }) !void {
+        fn tagged_union(u: union(enum) { x: usize, y: [2]usize }) !void {
             try expectEqual(@as(usize, 42), u.x);
         }
 
-        fn untaggedUnion(u: union { x: usize, y: [2]usize }) !void {
+        fn untagged_union(u: union { x: usize, y: [2]usize }) !void {
             try expectEqual(@as(usize, 42), u.x);
         }
 
-        fn externUnion(u: extern union { x: usize, y: [2]usize }) !void {
+        fn extern_union(u: extern union { x: usize, y: [2]usize }) !void {
             try expectEqual(@as(usize, 42), u.x);
         }
     };
@@ -2186,7 +2186,7 @@ test "pass nested union with rls" {
             d: u3,
         },
 
-        fn getC(u: @This()) u7 {
+        fn get_c(u: @This()) u7 {
             return u.b.c;
         }
     };
@@ -2271,7 +2271,7 @@ test "create union(enum) from other union(enum)" {
         literal_boolean: bool,
         literal_enum_value: []const u8,
 
-        fn commitCalleeParam(result: @This(), callee_param_type: ParamType) @This() {
+        fn commit_callee_param(result: @This(), callee_param_type: ParamType) @This() {
             switch (callee_param_type) {
                 .boolean => return result,
                 .buffer => return .{
@@ -2285,7 +2285,7 @@ test "create union(enum) from other union(enum)" {
         literal_boolean: bool,
         literal_enum_value: EnumLiteral,
 
-        fn genExpression(expr: @This()) !ExpressionResult {
+        fn gen_expression(expr: @This()) !ExpressionResult {
             switch (expr) {
                 .literal_boolean => |value| return .{
                     .literal_boolean = value,
@@ -2342,7 +2342,7 @@ test "create union(enum) from other union(enum)" {
 
 test "matching captures causes union equivalence" {
     const S = struct {
-        fn SignedUnsigned(comptime I: type) type {
+        fn signed_unsigned(comptime I: type) type {
             const bits = @typeInfo(I).Int.bits;
             return union {
                 u: @Type(.{ .Int = .{

@@ -136,7 +136,7 @@ const targets = [_]std.Target.Query{
     .{ .cpu_arch = .xtensa, .os_tag = .linux, .abi = .none },
 };
 
-pub fn addCases(
+pub fn add_cases(
     ctx: *Cases,
     build_options: @import("cases.zig").BuildOptions,
     b: *std.Build,

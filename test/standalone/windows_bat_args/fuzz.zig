@@ -73,13 +73,13 @@ pub fn main() anyerror!void {
     }
 }
 
-fn testExec(allocator: std.mem.Allocator, args: []const []const u8, env: ?*std.process.EnvMap) !void {
+fn test_exec(allocator: std.mem.Allocator, args: []const []const u8, env: ?*std.process.EnvMap) !void {
     try testExecBat(allocator, "args1.bat", args, env);
     try testExecBat(allocator, "args2.bat", args, env);
     try testExecBat(allocator, "args3.bat", args, env);
 }
 
-fn testExecBat(allocator: std.mem.Allocator, bat: []const u8, args: []const []const u8, env: ?*std.process.EnvMap) !void {
+fn test_exec_bat(allocator: std.mem.Allocator, bat: []const u8, args: []const []const u8, env: ?*std.process.EnvMap) !void {
     var argv = try std.ArrayList([]const u8).initCapacity(allocator, 1 + args.len);
     defer argv.deinit();
     argv.appendAssumeCapacity(bat);
@@ -109,7 +109,7 @@ fn testExecBat(allocator: std.mem.Allocator, bat: []const u8, args: []const []co
     }
 }
 
-fn randomArg(allocator: Allocator, rand: std.rand.Random) ![]const u8 {
+fn random_arg(allocator: Allocator, rand: std.rand.Random) ![]const u8 {
     const Choice = enum {
         backslash,
         quote,

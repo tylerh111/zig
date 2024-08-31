@@ -47,13 +47,13 @@ tree: Tree,
 comp: *aro.Compilation,
 mapper: aro.TypeMapper,
 
-fn getMangle(c: *Context) u32 {
+fn get_mangle(c: *Context) u32 {
     c.mangle_count += 1;
     return c.mangle_count;
 }
 
 /// Convert an aro TokenIndex to a 'file:line:column' string
-fn locStr(c: *Context, tok_idx: TokenIndex) ![]const u8 {
+fn loc_str(c: *Context, tok_idx: TokenIndex) ![]const u8 {
     const token_loc = c.tree.tokens.items(.loc)[tok_idx];
     const source = c.comp.getSource(token_loc.id);
     const line_col = source.lineCol(token_loc);
@@ -65,12 +65,12 @@ fn locStr(c: *Context, tok_idx: TokenIndex) ![]const u8 {
     return std.fmt.allocPrint(c.arena, "{s}:{d}:{d}", .{ filename, line, col });
 }
 
-fn maybeSuppressResult(c: *Context, used: ResultUsed, result: ZigNode) TransError!ZigNode {
+fn maybe_suppress_result(c: *Context, used: ResultUsed, result: ZigNode) TransError!ZigNode {
     if (used == .used) return result;
     return ZigTag.discard.create(c.arena, .{ .should_skip = false, .value = result });
 }
 
-fn addTopLevelDecl(c: *Context, name: []const u8, decl_node: ZigNode) !void {
+fn add_top_level_decl(c: *Context, name: []const u8, decl_node: ZigNode) !void {
     const gop = try c.global_scope.sym_table.getOrPut(name);
     if (!gop.found_existing) {
         gop.value_ptr.* = decl_node;
@@ -78,7 +78,7 @@ fn addTopLevelDecl(c: *Context, name: []const u8, decl_node: ZigNode) !void {
     }
 }
 
-fn failDecl(c: *Context, loc: TokenIndex, name: []const u8, comptime format: []const u8, args: anytype) Error!void {
+fn fail_decl(c: *Context, loc: TokenIndex, name: []const u8, comptime format: []const u8, args: anytype) Error!void {
     // location
     // pub const name = @compileError(msg);
     const fail_msg = try std.fmt.allocPrint(c.arena, format, args);
@@ -177,7 +177,7 @@ pub fn translate(
     return ast.render(gpa, context.global_scope.nodes.items);
 }
 
-fn prepopulateGlobalNameTable(c: *Context) !void {
+fn prepopulate_global_name_table(c: *Context) !void {
     const node_tags = c.tree.nodes.items(.tag);
     const node_types = c.tree.nodes.items(.ty);
     const node_data = c.tree.nodes.items(.data);
@@ -232,13 +232,13 @@ fn prepopulateGlobalNameTable(c: *Context) !void {
     }
 }
 
-fn transTopLevelDecls(c: *Context) !void {
+fn trans_top_level_decls(c: *Context) !void {
     for (c.tree.root_decls) |node| {
         try transDecl(c, &c.global_scope.base, node);
     }
 }
 
-fn transDecl(c: *Context, scope: *Scope, decl: NodeIndex) !void {
+fn trans_decl(c: *Context, scope: *Scope, decl: NodeIndex) !void {
     const node_tags = c.tree.nodes.items(.tag);
     const node_data = c.tree.nodes.items(.data);
     const data = node_data[@intFromEnum(decl)];
@@ -308,11 +308,11 @@ fn transDecl(c: *Context, scope: *Scope, decl: NodeIndex) !void {
     }
 }
 
-fn transTypeDef(_: *Context, _: *Scope, _: NodeIndex) Error!void {
+fn trans_type_def(_: *Context, _: *Scope, _: NodeIndex) Error!void {
     @panic("TODO");
 }
 
-fn mangleWeakGlobalName(c: *Context, want_name: []const u8) ![]const u8 {
+fn mangle_weak_global_name(c: *Context, want_name: []const u8) ![]const u8 {
     var cur_name = want_name;
 
     if (!c.weak_global_names.contains(want_name)) {
@@ -327,7 +327,7 @@ fn mangleWeakGlobalName(c: *Context, want_name: []const u8) ![]const u8 {
     return cur_name;
 }
 
-fn transRecordDecl(c: *Context, scope: *Scope, record_node: NodeIndex, field_nodes: []const NodeIndex) Error!void {
+fn trans_record_decl(c: *Context, scope: *Scope, record_node: NodeIndex, field_nodes: []const NodeIndex) Error!void {
     const node_types = c.tree.nodes.items(.ty);
     const raw_record_ty = node_types[@intFromEnum(record_node)];
     const record_decl = raw_record_ty.getRecord().?;
@@ -379,7 +379,7 @@ fn transRecordDecl(c: *Context, scope: *Scope, record_node: NodeIndex, field_nod
         const head_field_alignment: ?c_uint = if (has_alignment_attributes) headFieldAlignment(record_decl) else null;
 
         // Iterate over field nodes so that we translate any type decls included in this record decl.
-        // TODO: Move this logic into `fn transType()` instead of handling decl translation here.
+        // TODO: Move this logic into `fn trans_type()` instead of handling decl translation here.
         for (field_nodes) |field_node| {
             const field_raw_ty = node_types[@intFromEnum(field_node)];
             if (field_raw_ty.isEnumOrRecord()) try transDecl(c, scope, field_node);
@@ -470,7 +470,7 @@ fn transRecordDecl(c: *Context, scope: *Scope, record_node: NodeIndex, field_nod
     }
 }
 
-fn transFnDecl(c: *Context, fn_decl: NodeIndex) Error!void {
+fn trans_fn_decl(c: *Context, fn_decl: NodeIndex) Error!void {
     const raw_ty = c.tree.nodes.items(.ty)[@intFromEnum(fn_decl)];
     const fn_ty = raw_ty.canonicalize(.standard);
     const node_data = c.tree.nodes.items(.data)[@intFromEnum(fn_decl)];
@@ -563,11 +563,11 @@ fn transFnDecl(c: *Context, fn_decl: NodeIndex) Error!void {
     return addTopLevelDecl(c, fn_name, proto_node);
 }
 
-fn transVarDecl(_: *Context, _: NodeIndex, _: ?usize) Error!void {
+fn trans_var_decl(_: *Context, _: NodeIndex, _: ?usize) Error!void {
     @panic("TODO");
 }
 
-fn transEnumDecl(c: *Context, scope: *Scope, enum_decl: NodeIndex, field_nodes: []const NodeIndex) Error!void {
+fn trans_enum_decl(c: *Context, scope: *Scope, enum_decl: NodeIndex, field_nodes: []const NodeIndex) Error!void {
     const node_types = c.tree.nodes.items(.ty);
     const ty = node_types[@intFromEnum(enum_decl)];
     if (c.decl_table.get(@intFromPtr(ty.data.@"enum"))) |_|
@@ -651,7 +651,7 @@ fn transEnumDecl(c: *Context, scope: *Scope, enum_decl: NodeIndex, field_nodes: 
     }
 }
 
-fn transType(c: *Context, scope: *Scope, raw_ty: Type, qual_handling: Type.QualHandling, source_loc: TokenIndex) TypeError!ZigNode {
+fn trans_type(c: *Context, scope: *Scope, raw_ty: Type, qual_handling: Type.QualHandling, source_loc: TokenIndex) TypeError!ZigNode {
     const ty = raw_ty.canonicalize(qual_handling);
     switch (ty.specifier) {
         .void => return ZigTag.type.create(c.arena, "anyopaque"),
@@ -711,7 +711,7 @@ fn transType(c: *Context, scope: *Scope, raw_ty: Type, qual_handling: Type.QualH
 /// the fields with 0 offset need an `align` qualifier. Strictly speaking, we could just
 /// pedantically assign those fields the same alignment as the parent's pointer alignment,
 /// but this helps the generated code to be a little less verbose.
-fn headFieldAlignment(record_decl: *const Type.Record) ?c_uint {
+fn head_field_alignment(record_decl: *const Type.Record) ?c_uint {
     const bits_per_byte = 8;
     const parent_ptr_alignment_bits = record_decl.type_layout.pointer_alignment_bits;
     const parent_ptr_alignment = parent_ptr_alignment_bits / bits_per_byte;
@@ -742,7 +742,7 @@ fn headFieldAlignment(record_decl: *const Type.Record) ?c_uint {
 /// Returns a ?c_uint to match Clang's behaviour of using c_uint. The return type can be changed
 /// after the Clang frontend for translate-c is removed. A null value indicates that a field is
 /// 'naturally aligned'.
-fn alignmentForField(
+fn alignment_for_field(
     record_decl: *const Type.Record,
     head_field_alignment: ?c_uint,
     field_index: usize,
@@ -837,7 +837,7 @@ const FnProtoContext = struct {
     fn_name: ?[]const u8 = null,
 };
 
-fn transFnType(
+fn trans_fn_type(
     c: *Context,
     scope: *Scope,
     raw_ty: Type,
@@ -923,11 +923,11 @@ fn transFnType(
     return ZigNode.initPayload(&payload.base);
 }
 
-fn transStmt(c: *Context, node: NodeIndex) TransError!ZigNode {
+fn trans_stmt(c: *Context, node: NodeIndex) TransError!ZigNode {
     return transExpr(c, node, .unused);
 }
 
-fn transCompoundStmtInline(c: *Context, compound: NodeIndex, block: *Scope.Block) TransError!void {
+fn trans_compound_stmt_inline(c: *Context, compound: NodeIndex, block: *Scope.Block) TransError!void {
     const data = c.tree.nodes.items(.data)[@intFromEnum(compound)];
     var buf: [2]NodeIndex = undefined;
     // TODO move these helpers to Aro
@@ -949,14 +949,14 @@ fn transCompoundStmtInline(c: *Context, compound: NodeIndex, block: *Scope.Block
     }
 }
 
-fn transCompoundStmt(c: *Context, scope: *Scope, compound: NodeIndex) TransError!ZigNode {
+fn trans_compound_stmt(c: *Context, scope: *Scope, compound: NodeIndex) TransError!ZigNode {
     var block_scope = try Scope.Block.init(c, scope, false);
     defer block_scope.deinit();
     try transCompoundStmtInline(c, compound, &block_scope);
     return try block_scope.complete(c);
 }
 
-fn transExpr(c: *Context, node: NodeIndex, result_used: ResultUsed) TransError!ZigNode {
+fn trans_expr(c: *Context, node: NodeIndex, result_used: ResultUsed) TransError!ZigNode {
     std.debug.assert(node != .none);
     const ty = c.tree.nodes.items(.ty)[@intFromEnum(node)];
     if (c.tree.value_map.get(node)) |val| {
@@ -975,7 +975,7 @@ fn transExpr(c: *Context, node: NodeIndex, result_used: ResultUsed) TransError!Z
     return .none;
 }
 
-fn transCreateNodeAPInt(c: *Context, int: aro.Value) !ZigNode {
+fn trans_create_node_apint(c: *Context, int: aro.Value) !ZigNode {
     var space: aro.Interner.Tag.Int.BigIntSpace = undefined;
     var big = int.toBigInt(&space, c.comp);
     const is_negative = !big.positive;
@@ -1064,7 +1064,7 @@ pub const PatternList = struct {
     };
 
     /// Assumes that `ms` represents a tokenized function-like macro.
-    fn buildArgsHash(allocator: mem.Allocator, ms: MacroSlicer, hash: *ArgsPositionMap) MacroProcessingError!void {
+    fn build_args_hash(allocator: mem.Allocator, ms: MacroSlicer, hash: *ArgsPositionMap) MacroProcessingError!void {
         assert(ms.tokens.len > 2);
         assert(ms.tokens[0].id == .identifier or ms.tokens[0].id == .extended_identifier);
         assert(ms.tokens[1].id == .l_paren);
@@ -1122,7 +1122,7 @@ pub const PatternList = struct {
         /// macro. Please review this logic carefully if changing that assumption. Two
         /// function-like macros are considered equivalent if and only if they contain the same
         /// list of tokens, modulo parameter names.
-        pub fn isEquivalent(self: Pattern, ms: MacroSlicer, args_hash: ArgsPositionMap) bool {
+        pub fn is_equivalent(self: Pattern, ms: MacroSlicer, args_hash: ArgsPositionMap) bool {
             if (self.tokens.len != ms.tokens.len) return false;
             if (args_hash.count() != self.args_hash.count()) return false;
 
@@ -1219,7 +1219,7 @@ pub const ResultUsed = enum {
     unused,
 };
 
-pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: type) type {
+pub fn scope_extra(comptime ScopeExtraContext: type, comptime ScopeExtraType: type) type {
     return struct {
         id: Id,
         parent: ?*ScopeExtraScope,
@@ -1241,7 +1241,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
             base: ScopeExtraScope,
             block: ?Block = null,
 
-            pub fn getBlockScope(self: *Condition, c: *ScopeExtraContext) !*Block {
+            pub fn get_block_scope(self: *Condition, c: *ScopeExtraContext) !*Block {
                 if (self.block) |*b| return b;
                 self.block = try Block.init(c, &self.base, true);
                 return &self.block.?;
@@ -1323,16 +1323,16 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
             /// Given the desired name, return a name that does not shadow anything from outer scopes.
             /// Inserts the returned name into the scope.
             /// The name will not be visible to callers of getAlias.
-            pub fn reserveMangledName(scope: *Block, c: *ScopeExtraContext, name: []const u8) ![]const u8 {
+            pub fn reserve_mangled_name(scope: *Block, c: *ScopeExtraContext, name: []const u8) ![]const u8 {
                 return scope.createMangledName(c, name, true);
             }
 
             /// Same as reserveMangledName, but enables the alias immediately.
-            pub fn makeMangledName(scope: *Block, c: *ScopeExtraContext, name: []const u8) ![]const u8 {
+            pub fn make_mangled_name(scope: *Block, c: *ScopeExtraContext, name: []const u8) ![]const u8 {
                 return scope.createMangledName(c, name, false);
             }
 
-            pub fn createMangledName(scope: *Block, c: *ScopeExtraContext, name: []const u8, reservation: bool) ![]const u8 {
+            pub fn create_mangled_name(scope: *Block, c: *ScopeExtraContext, name: []const u8, reservation: bool) ![]const u8 {
                 const name_copy = try c.arena.dupe(u8, name);
                 var proposed_name = name_copy;
                 while (scope.contains(proposed_name)) {
@@ -1348,7 +1348,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
                 return proposed_name;
             }
 
-            pub fn getAlias(scope: *Block, name: []const u8) []const u8 {
+            pub fn get_alias(scope: *Block, name: []const u8) []const u8 {
                 for (scope.variables.items) |p| {
                     if (std.mem.eql(u8, p.name, name))
                         return p.alias;
@@ -1356,7 +1356,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
                 return scope.base.parent.?.getAlias(name);
             }
 
-            pub fn localContains(scope: *Block, name: []const u8) bool {
+            pub fn local_contains(scope: *Block, name: []const u8) bool {
                 for (scope.variables.items) |p| {
                     if (std.mem.eql(u8, p.alias, name))
                         return true;
@@ -1370,7 +1370,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
                 return scope.base.parent.?.contains(name);
             }
 
-            pub fn discardVariable(scope: *Block, c: *ScopeExtraContext, name: []const u8) Error!void {
+            pub fn discard_variable(scope: *Block, c: *ScopeExtraContext, name: []const u8) Error!void {
                 const name_node = try ast.Node.Tag.identifier.create(c.arena, name);
                 const discard = try ast.Node.Tag.discard.create(c.arena, .{ .should_skip = false, .value = name_node });
                 try scope.statements.append(discard);
@@ -1406,7 +1406,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
 
             /// Check if the global scope contains this name, without looking into the "future", e.g.
             /// ignore the preprocessed decl and macro names.
-            pub fn containsNow(scope: *Root, name: []const u8) bool {
+            pub fn contains_now(scope: *Root, name: []const u8) bool {
                 return scope.sym_table.contains(name);
             }
 
@@ -1416,7 +1416,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
             }
         };
 
-        pub fn findBlockScope(inner: *ScopeExtraScope, c: *ScopeExtraContext) !*Block {
+        pub fn find_block_scope(inner: *ScopeExtraScope, c: *ScopeExtraContext) !*Block {
             var scope = inner;
             while (true) {
                 switch (scope.id) {
@@ -1428,7 +1428,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
             }
         }
 
-        pub fn findBlockReturnType(inner: *ScopeExtraScope) ScopeExtraType {
+        pub fn find_block_return_type(inner: *ScopeExtraScope) ScopeExtraType {
             var scope = inner;
             while (true) {
                 switch (scope.id) {
@@ -1443,7 +1443,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
             }
         }
 
-        pub fn getAlias(scope: *ScopeExtraScope, name: []const u8) []const u8 {
+        pub fn get_alias(scope: *ScopeExtraScope, name: []const u8) []const u8 {
             return switch (scope.id) {
                 .root => return name,
                 .block => @as(*Block, @fieldParentPtr("base", scope)).getAlias(name),
@@ -1459,7 +1459,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
             };
         }
 
-        pub fn getBreakableScope(inner: *ScopeExtraScope) *ScopeExtraScope {
+        pub fn get_breakable_scope(inner: *ScopeExtraScope) *ScopeExtraScope {
             var scope = inner;
             while (true) {
                 switch (scope.id) {
@@ -1471,7 +1471,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
         }
 
         /// Appends a node to the first block scope if inside a function, or to the root tree if not.
-        pub fn appendNode(inner: *ScopeExtraScope, node: ast.Node) !void {
+        pub fn append_node(inner: *ScopeExtraScope, node: ast.Node) !void {
             var scope = inner;
             while (true) {
                 switch (scope.id) {
@@ -1488,7 +1488,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
             }
         }
 
-        pub fn skipVariableDiscard(inner: *ScopeExtraScope, name: []const u8) void {
+        pub fn skip_variable_discard(inner: *ScopeExtraScope, name: []const u8) void {
             if (true) {
                 // TODO: due to 'local variable is never mutated' errors, we can
                 // only skip discards if a variable is used as an lvalue, which
@@ -1516,7 +1516,7 @@ pub fn ScopeExtra(comptime ScopeExtraContext: type, comptime ScopeExtraType: typ
     };
 }
 
-pub fn tokenizeMacro(source: []const u8, tok_list: *std.ArrayList(CToken)) Error!void {
+pub fn tokenize_macro(source: []const u8, tok_list: *std.ArrayList(CToken)) Error!void {
     var tokenizer: aro.Tokenizer = .{
         .buf = source,
         .source = .unused,
@@ -1542,7 +1542,7 @@ test "Macro matching" {
     const testing = std.testing;
     const helper = struct {
         const MacroFunctions = std.zig.c_translation.Macros;
-        fn checkMacro(allocator: mem.Allocator, pattern_list: PatternList, source: []const u8, comptime expected_match: ?[]const u8) !void {
+        fn check_macro(allocator: mem.Allocator, pattern_list: PatternList, source: []const u8, comptime expected_match: ?[]const u8) !void {
             var tok_list = std.ArrayList(CToken).init(allocator);
             defer tok_list.deinit();
             try tokenizeMacro(source, &tok_list);

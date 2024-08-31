@@ -1,9 +1,9 @@
-pub inline fn isArithmeticOp(inst: *const [4]u8) bool {
+pub inline fn is_arithmetic_op(inst: *const [4]u8) bool {
     const group_decode = @as(u5, @truncate(inst[3]));
     return ((group_decode >> 2) == 4);
 }
 
-pub fn writeAddImmInst(value: u12, code: *[4]u8) void {
+pub fn write_add_imm_inst(value: u12, code: *[4]u8) void {
     var inst = Instruction{
         .add_subtract_immediate = mem.bytesToValue(std.meta.TagPayload(
             Instruction,
@@ -14,7 +14,7 @@ pub fn writeAddImmInst(value: u12, code: *[4]u8) void {
     mem.writeInt(u32, code, inst.toU32(), .little);
 }
 
-pub fn writeLoadStoreRegInst(value: u12, code: *[4]u8) void {
+pub fn write_load_store_reg_inst(value: u12, code: *[4]u8) void {
     var inst: Instruction = .{
         .load_store_register = mem.bytesToValue(std.meta.TagPayload(
             Instruction,
@@ -25,14 +25,14 @@ pub fn writeLoadStoreRegInst(value: u12, code: *[4]u8) void {
     mem.writeInt(u32, code, inst.toU32(), .little);
 }
 
-pub fn calcNumberOfPages(saddr: i64, taddr: i64) error{Overflow}!i21 {
+pub fn calc_number_of_pages(saddr: i64, taddr: i64) error{Overflow}!i21 {
     const spage = math.cast(i32, saddr >> 12) orelse return error.Overflow;
     const tpage = math.cast(i32, taddr >> 12) orelse return error.Overflow;
     const pages = math.cast(i21, tpage - spage) orelse return error.Overflow;
     return pages;
 }
 
-pub fn writeAdrpInst(pages: u21, code: *[4]u8) void {
+pub fn write_adrp_inst(pages: u21, code: *[4]u8) void {
     var inst = Instruction{
         .pc_relative_address = mem.bytesToValue(std.meta.TagPayload(
             Instruction,
@@ -44,7 +44,7 @@ pub fn writeAdrpInst(pages: u21, code: *[4]u8) void {
     mem.writeInt(u32, code, inst.toU32(), .little);
 }
 
-pub fn writeBranchImm(disp: i28, code: *[4]u8) void {
+pub fn write_branch_imm(disp: i28, code: *[4]u8) void {
     var inst = Instruction{
         .unconditional_branch_immediate = mem.bytesToValue(std.meta.TagPayload(
             Instruction,

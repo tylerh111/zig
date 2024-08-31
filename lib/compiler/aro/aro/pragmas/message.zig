@@ -26,7 +26,7 @@ fn deinit(pragma: *Pragma, comp: *Compilation) void {
     comp.gpa.destroy(self);
 }
 
-fn preprocessorHandler(_: *Pragma, pp: *Preprocessor, start_idx: TokenIndex) Pragma.Error!void {
+fn preprocessor_handler(_: *Pragma, pp: *Preprocessor, start_idx: TokenIndex) Pragma.Error!void {
     const message_tok = pp.tokens.get(start_idx);
     const message_expansion_locs = pp.expansionSlice(start_idx);
 

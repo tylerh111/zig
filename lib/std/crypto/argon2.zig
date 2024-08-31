@@ -92,14 +92,14 @@ pub const Params = struct {
     pub const sensitive_2id = Self.fromLimits(4, 1073741824);
 
     /// Create parameters from ops and mem limits, where mem_limit given in bytes
-    pub fn fromLimits(ops_limit: u32, mem_limit: usize) Self {
+    pub fn from_limits(ops_limit: u32, mem_limit: usize) Self {
         const m = mem_limit / 1024;
         std.debug.assert(m <= max_int);
         return .{ .t = ops_limit, .m = @as(u32, @intCast(m)), .p = 1 };
     }
 };
 
-fn initHash(
+fn init_hash(
     password: []const u8,
     salt: []const u8,
     params: Params,
@@ -137,7 +137,7 @@ fn initHash(
     return h0;
 }
 
-fn blake2bLong(out: []u8, in: []const u8) void {
+fn blake2b_long(out: []u8, in: []const u8) void {
     const H = Blake2b512;
     var outlen_bytes: [4]u8 = undefined;
     mem.writeInt(u32, &outlen_bytes, @as(u32, @intCast(out.len)), .little);
@@ -173,7 +173,7 @@ fn blake2bLong(out: []u8, in: []const u8) void {
     @memcpy(out_slice, out_buf[0..out_slice.len]);
 }
 
-fn initBlocks(
+fn init_blocks(
     blocks: *Blocks,
     h0: *H0,
     memory: u32,
@@ -199,7 +199,7 @@ fn initBlocks(
     }
 }
 
-fn processBlocks(
+fn process_blocks(
     allocator: mem.Allocator,
     blocks: *Blocks,
     time: u32,
@@ -217,7 +217,7 @@ fn processBlocks(
     }
 }
 
-fn processBlocksSt(
+fn process_blocks_st(
     blocks: *Blocks,
     time: u32,
     memory: u32,
@@ -238,7 +238,7 @@ fn processBlocksSt(
     }
 }
 
-fn processBlocksMt(
+fn process_blocks_mt(
     allocator: mem.Allocator,
     blocks: *Blocks,
     time: u32,
@@ -271,7 +271,7 @@ fn processBlocksMt(
     }
 }
 
-fn processSegment(
+fn process_segment(
     blocks: *Blocks,
     passes: u32,
     memory: u32,
@@ -328,7 +328,7 @@ fn processSegment(
     }
 }
 
-fn processBlock(
+fn process_block(
     out: *align(16) [block_length]u64,
     in1: *align(16) const [block_length]u64,
     in2: *align(16) const [block_length]u64,
@@ -336,7 +336,7 @@ fn processBlock(
     processBlockGeneric(out, in1, in2, false);
 }
 
-fn processBlockXor(
+fn process_block_xor(
     out: *[block_length]u64,
     in1: *const [block_length]u64,
     in2: *const [block_length]u64,
@@ -344,7 +344,7 @@ fn processBlockXor(
     processBlockGeneric(out, in1, in2, true);
 }
 
-fn processBlockGeneric(
+fn process_block_generic(
     out: *[block_length]u64,
     in1: *const [block_length]u64,
     in2: *const [block_length]u64,
@@ -386,16 +386,16 @@ fn processBlockGeneric(
 
 const QuarterRound = struct { a: usize, b: usize, c: usize, d: usize };
 
-fn Rp(a: usize, b: usize, c: usize, d: usize) QuarterRound {
+fn rp(a: usize, b: usize, c: usize, d: usize) QuarterRound {
     return .{ .a = a, .b = b, .c = c, .d = d };
 }
 
-fn fBlaMka(x: u64, y: u64) u64 {
+fn f_bla_mka(x: u64, y: u64) u64 {
     const xy = @as(u64, @as(u32, @truncate(x))) * @as(u64, @as(u32, @truncate(y)));
     return x +% y +% 2 *% xy;
 }
 
-fn blamkaGeneric(x: *[16]u64) void {
+fn blamka_generic(x: *[16]u64) void {
     const rounds = comptime [_]QuarterRound{
         Rp(0, 4, 8, 12),
         Rp(1, 5, 9, 13),
@@ -438,7 +438,7 @@ fn finalize(
     blake2bLong(out, &block);
 }
 
-fn indexAlpha(
+fn index_alpha(
     rand: u64,
     lanes: u32,
     segments: u32,
@@ -586,7 +586,7 @@ pub const HashOptions = struct {
 
 /// Compute a hash of a password using the argon2 key derivation function.
 /// The function returns a string that includes all the parameters required for verification.
-pub fn strHash(
+pub fn str_hash(
     password: []const u8,
     options: HashOptions,
     out: []u8,
@@ -612,7 +612,7 @@ pub const VerifyOptions = struct {
 };
 
 /// Verify that a previously computed hash is valid for a given password.
-pub fn strVerify(
+pub fn str_verify(
     str: []const u8,
     password: []const u8,
     options: VerifyOptions,

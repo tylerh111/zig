@@ -97,7 +97,7 @@ test "compile-time array initialization" {
 
 // call a function to initialize an array
 var more_points = [_]Point{makePoint(3)} ** 10;
-fn makePoint(x: i32) Point {
+fn make_point(x: i32) Point {
     return Point{
         .x = x,
         .y = x * 2,

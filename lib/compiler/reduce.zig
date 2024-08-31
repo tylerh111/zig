@@ -282,14 +282,14 @@ pub fn main() !void {
     return std.process.cleanExit();
 }
 
-fn sortTransformations(transformations: []Walk.Transformation, rng: std.Random) void {
+fn sort_transformations(transformations: []Walk.Transformation, rng: std.Random) void {
     rng.shuffle(Walk.Transformation, transformations);
     // Stable sort based on priority to keep randomness as the secondary sort.
     // TODO: introduce transformation priorities
     // std.mem.sort(transformations);
 }
 
-fn termToInteresting(term: std.process.Child.Term) Interestingness {
+fn term_to_interesting(term: std.process.Child.Term) Interestingness {
     return switch (term) {
         .Exited => |code| switch (code) {
             0 => .interesting,
@@ -303,7 +303,7 @@ fn termToInteresting(term: std.process.Child.Term) Interestingness {
     };
 }
 
-fn runCheck(arena: std.mem.Allocator, argv: []const []const u8) !Interestingness {
+fn run_check(arena: std.mem.Allocator, argv: []const []const u8) !Interestingness {
     const result = try std.process.Child.run(.{
         .allocator = arena,
         .argv = argv,
@@ -313,7 +313,7 @@ fn runCheck(arena: std.mem.Allocator, argv: []const []const u8) !Interestingness
     return termToInteresting(result.term);
 }
 
-fn transformationsToFixups(
+fn transformations_to_fixups(
     gpa: Allocator,
     arena: Allocator,
     root_source_file_path: []const u8,

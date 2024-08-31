@@ -25,7 +25,7 @@ const B64Encoder = std.base64.standard_no_pad.Encoder;
 /// This includes `salt`, `hash`, and any other binary parameters such as keys.
 ///
 /// Once initialized, the actual value can be read with the `constSlice()` function.
-pub fn BinValue(comptime max_len: usize) type {
+pub fn bin_value(comptime max_len: usize) type {
     return struct {
         const Self = @This();
         const capacity = max_len;
@@ -35,7 +35,7 @@ pub fn BinValue(comptime max_len: usize) type {
         len: usize = 0,
 
         /// Wrap an existing byte slice
-        pub fn fromSlice(slice: []const u8) Error!Self {
+        pub fn from_slice(slice: []const u8) Error!Self {
             if (slice.len > capacity) return Error.NoSpaceLeft;
             var bin_value: Self = undefined;
             @memcpy(bin_value.buf[0..slice.len], slice);
@@ -44,18 +44,18 @@ pub fn BinValue(comptime max_len: usize) type {
         }
 
         /// Return the slice containing the actual value.
-        pub fn constSlice(self: *const Self) []const u8 {
+        pub fn const_slice(self: *const Self) []const u8 {
             return self.buf[0..self.len];
         }
 
-        fn fromB64(self: *Self, str: []const u8) !void {
+        fn from_b64(self: *Self, str: []const u8) !void {
             const len = B64Decoder.calcSizeForSlice(str) catch return Error.InvalidEncoding;
             if (len > self.buf.len) return Error.NoSpaceLeft;
             B64Decoder.decode(&self.buf, str) catch return Error.InvalidEncoding;
             self.len = len;
         }
 
-        fn toB64(self: *const Self, buf: []u8) ![]const u8 {
+        fn to_b64(self: *const Self, buf: []u8) ![]const u8 {
             const value = self.constSlice();
             const len = B64Encoder.calcSize(value.len);
             if (len > buf.len) return Error.NoSpaceLeft;
@@ -190,13 +190,13 @@ pub fn serialize(params: anytype, str: []u8) Error![]const u8 {
 }
 
 /// Compute the number of bytes required to serialize `params`
-pub fn calcSize(params: anytype) usize {
+pub fn calc_size(params: anytype) usize {
     var buf = io.countingWriter(io.null_writer);
     serializeTo(params, buf.writer()) catch unreachable;
     return @as(usize, @intCast(buf.bytes_written));
 }
 
-fn serializeTo(params: anytype, out: anytype) !void {
+fn serialize_to(params: anytype, out: anytype) !void {
     const HashResult = @TypeOf(params);
     try out.writeAll(fields_delimiter);
     try out.writeAll(params.alg_id);
@@ -254,7 +254,7 @@ fn serializeTo(params: anytype, out: anytype) !void {
 }
 
 // Split a `key=value` string into `key` and `value`
-fn kvSplit(str: []const u8) !struct { key: []const u8, value: []const u8 } {
+fn kv_split(str: []const u8) !struct { key: []const u8, value: []const u8 } {
     var it = mem.splitScalar(u8, str, kv_delimiter_scalar);
     const key = it.first();
     const value = it.next() orelse return Error.InvalidEncoding;

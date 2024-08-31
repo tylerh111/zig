@@ -1,4 +1,4 @@
-pub fn S() type {
+pub fn s() type {
     return struct {};
 }
 pub export fn entry() void {

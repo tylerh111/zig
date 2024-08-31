@@ -1,4 +1,4 @@
-fn myFn(_: usize) void {
+fn my_fn(_: usize) void {
     return;
 }
 pub export fn entry() void {

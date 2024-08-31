@@ -2,7 +2,7 @@ const std = @import("std");
 const expect = std.testing.expect;
 const expectError = std.testing.expectError;
 
-fn isFieldOptional(comptime T: type, field_index: usize) !bool {
+fn is_field_optional(comptime T: type, field_index: usize) !bool {
     const fields = @typeInfo(T).Struct.fields;
     return switch (field_index) {
         // This prong is analyzed twice with `idx` being a
@@ -25,7 +25,7 @@ test "using @typeInfo with runtime values" {
 
 // Calls to `isFieldOptional` on `Struct1` get unrolled to an equivalent
 // of this function:
-fn isFieldOptionalUnrolled(field_index: usize) !bool {
+fn is_field_optional_unrolled(field_index: usize) !bool {
     return switch (field_index) {
         0 => false,
         1 => true,

@@ -17,7 +17,7 @@ test "@mulAdd" {
     try testMulAdd();
 }
 
-fn testMulAdd() !void {
+fn test_mul_add() !void {
     {
         var a: f32 = 5.5;
         var b: f32 = 2.5;
@@ -45,7 +45,7 @@ test "@mulAdd f16" {
     try testMulAdd16();
 }
 
-fn testMulAdd16() !void {
+fn test_mul_add16() !void {
     var a: f16 = 5.5;
     var b: f16 = 2.5;
     var c: f16 = 6.25;
@@ -66,7 +66,7 @@ test "@mulAdd f80" {
     try testMulAdd80();
 }
 
-fn testMulAdd80() !void {
+fn test_mul_add80() !void {
     var a: f16 = 5.5;
     var b: f80 = 2.5;
     var c: f80 = 6.25;
@@ -87,7 +87,7 @@ test "@mulAdd f128" {
     try testMulAdd128();
 }
 
-fn testMulAdd128() !void {
+fn test_mul_add128() !void {
     var a: f16 = 5.5;
     var b: f128 = 2.5;
     var c: f128 = 6.25;

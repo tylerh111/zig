@@ -218,7 +218,7 @@ const Tokenizer = struct {
         line_end: usize,
     };
 
-    fn getTokenLocation(self: *Tokenizer, token: Token) Location {
+    fn get_token_location(self: *Tokenizer, token: Token) Location {
         var loc = Location{
             .line = 0,
             .column = 0,
@@ -243,7 +243,7 @@ const Tokenizer = struct {
     }
 };
 
-fn parseError(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, args: anytype) anyerror {
+fn parse_error(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, args: anytype) anyerror {
     const loc = tokenizer.getTokenLocation(token);
     const args_prefix = .{ tokenizer.source_file_name, loc.line + 1, loc.column + 1 };
     print("{s}:{d}:{d}: error: " ++ fmt ++ "\n", args_prefix ++ args);
@@ -267,13 +267,13 @@ fn parseError(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, arg
     return error.ParseError;
 }
 
-fn assertToken(tokenizer: *Tokenizer, token: Token, id: Token.Id) !void {
+fn assert_token(tokenizer: *Tokenizer, token: Token, id: Token.Id) !void {
     if (token.id != id) {
         return parseError(tokenizer, token, "expected {s}, found {s}", .{ @tagName(id), @tagName(token.id) });
     }
 }
 
-fn eatToken(tokenizer: *Tokenizer, id: Token.Id) !Token {
+fn eat_token(tokenizer: *Tokenizer, id: Token.Id) !Token {
     const token = tokenizer.next();
     try assertToken(tokenizer, token, id);
     return token;
@@ -338,7 +338,7 @@ const Action = enum {
     close,
 };
 
-fn genToc(allocator: Allocator, tokenizer: *Tokenizer) !Toc {
+fn gen_toc(allocator: Allocator, tokenizer: *Tokenizer) !Toc {
     var urls = std.StringHashMap(Token).init(allocator);
     errdefer urls.deinit();
 
@@ -619,7 +619,7 @@ fn urlize(allocator: Allocator, input: []const u8) ![]u8 {
     return try buf.toOwnedSlice();
 }
 
-fn escapeHtml(allocator: Allocator, input: []const u8) ![]u8 {
+fn escape_html(allocator: Allocator, input: []const u8) ![]u8 {
     var buf = std.ArrayList(u8).init(allocator);
     defer buf.deinit();
 
@@ -628,7 +628,7 @@ fn escapeHtml(allocator: Allocator, input: []const u8) ![]u8 {
     return try buf.toOwnedSlice();
 }
 
-fn writeEscaped(out: anytype, input: []const u8) !void {
+fn write_escaped(out: anytype, input: []const u8) !void {
     for (input) |c| {
         try switch (c) {
             '&' => out.writeAll("&amp;"),
@@ -656,7 +656,7 @@ const builtin_types = [_][]const u8{
     "noreturn",     "type",    "anyerror",   "comptime_int", "comptime_float",
 };
 
-fn isType(name: []const u8) bool {
+fn is_type(name: []const u8) bool {
     for (builtin_types) |t| {
         if (mem.eql(u8, t, name))
             return true;
@@ -664,11 +664,11 @@ fn isType(name: []const u8) bool {
     return false;
 }
 
-fn writeEscapedLines(out: anytype, text: []const u8) !void {
+fn write_escaped_lines(out: anytype, text: []const u8) !void {
     return writeEscaped(out, text);
 }
 
-fn tokenizeAndPrintRaw(
+fn tokenize_and_print_raw(
     allocator: Allocator,
     docgen_tokenizer: *Tokenizer,
     out: anytype,
@@ -909,7 +909,7 @@ fn tokenizeAndPrintRaw(
     try out.writeAll("</code>");
 }
 
-fn tokenizeAndPrint(
+fn tokenize_and_print(
     allocator: Allocator,
     docgen_tokenizer: *Tokenizer,
     out: anytype,
@@ -919,7 +919,7 @@ fn tokenizeAndPrint(
     return tokenizeAndPrintRaw(allocator, docgen_tokenizer, out, source_token, raw_src);
 }
 
-fn printSourceBlock(allocator: Allocator, docgen_tokenizer: *Tokenizer, out: anytype, syntax_block: SyntaxBlock) !void {
+fn print_source_block(allocator: Allocator, docgen_tokenizer: *Tokenizer, out: anytype, syntax_block: SyntaxBlock) !void {
     const source_type = @tagName(syntax_block.source_type);
 
     try out.print("<figure><figcaption class=\"{s}-cap\"><cite class=\"file\">{s}</cite></figcaption><pre>", .{ source_type, syntax_block.name });
@@ -937,7 +937,7 @@ fn printSourceBlock(allocator: Allocator, docgen_tokenizer: *Tokenizer, out: any
     try out.writeAll("</pre></figure>");
 }
 
-fn printShell(out: anytype, shell_content: []const u8, escape: bool) !void {
+fn print_shell(out: anytype, shell_content: []const u8, escape: bool) !void {
     const trimmed_shell_content = mem.trim(u8, shell_content, " \r\n");
     try out.writeAll("<figure><figcaption class=\"shell-cap\">Shell</figcaption><pre><samp>");
     var cmd_cont: bool = false;
@@ -984,7 +984,7 @@ fn printShell(out: anytype, shell_content: []const u8, escape: bool) !void {
     try out.writeAll("</samp></pre></figure>");
 }
 
-fn genHtml(
+fn gen_html(
     allocator: Allocator,
     tokenizer: *Tokenizer,
     toc: *Toc,

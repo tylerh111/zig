@@ -146,7 +146,7 @@ pub const CPU_SETSIZE = 128;
 pub const cpu_set_t = [CPU_SETSIZE / @sizeOf(usize)]usize;
 pub const cpu_count_t = std.meta.Int(.unsigned, std.math.log2(CPU_SETSIZE * 8));
 
-pub fn CPU_COUNT(set: cpu_set_t) cpu_count_t {
+pub fn cpu_count(set: cpu_set_t) cpu_count_t {
     var sum: cpu_count_t = 0;
     for (set) |x| {
         sum += @popCount(x);
@@ -332,22 +332,22 @@ pub const W = struct {
     pub const CONTINUED = 8;
     pub const NOWAIT = 0x1000000;
 
-    pub fn EXITSTATUS(s: u32) u8 {
+    pub fn exitstatus(s: u32) u8 {
         return @as(u8, @intCast((s & 0xff00) >> 8));
     }
-    pub fn TERMSIG(s: u32) u32 {
+    pub fn termsig(s: u32) u32 {
         return s & 0x7f;
     }
-    pub fn STOPSIG(s: u32) u32 {
+    pub fn stopsig(s: u32) u32 {
         return EXITSTATUS(s);
     }
-    pub fn IFEXITED(s: u32) bool {
+    pub fn ifexited(s: u32) bool {
         return TERMSIG(s) == 0;
     }
-    pub fn IFSTOPPED(s: u32) bool {
+    pub fn ifstopped(s: u32) bool {
         return @as(u16, @truncate(((s & 0xffff) *% 0x10001) >> 8)) > 0x7f00;
     }
-    pub fn IFSIGNALED(s: u32) bool {
+    pub fn ifsignaled(s: u32) bool {
         return (s & 0xffff) -% 1 < 0xff;
     }
 };
@@ -597,31 +597,31 @@ pub const S = struct {
     pub const IXOTH = 0o001;
     pub const IRWXO = 0o007;
 
-    pub fn ISREG(m: mode_t) bool {
+    pub fn isreg(m: mode_t) bool {
         return m & IFMT == IFREG;
     }
 
-    pub fn ISDIR(m: mode_t) bool {
+    pub fn isdir(m: mode_t) bool {
         return m & IFMT == IFDIR;
     }
 
-    pub fn ISCHR(m: mode_t) bool {
+    pub fn ischr(m: mode_t) bool {
         return m & IFMT == IFCHR;
     }
 
-    pub fn ISBLK(m: mode_t) bool {
+    pub fn isblk(m: mode_t) bool {
         return m & IFMT == IFBLK;
     }
 
-    pub fn ISFIFO(m: mode_t) bool {
+    pub fn isfifo(m: mode_t) bool {
         return m & IFMT == IFIFO;
     }
 
-    pub fn ISLNK(m: mode_t) bool {
+    pub fn islnk(m: mode_t) bool {
         return m & IFMT == IFLNK;
     }
 
-    pub fn ISSOCK(m: mode_t) bool {
+    pub fn issock(m: mode_t) bool {
         return m & IFMT == IFSOCK;
     }
 };
@@ -1263,7 +1263,7 @@ pub extern "c" fn emscripten_has_asyncify() c_int;
 pub extern "c" fn emscripten_debugger() void;
 
 pub extern "c" fn emscripten_get_preloaded_image_data(path: [*:0]const u8, w: *c_int, h: *c_int) ?[*]u8;
-pub extern "c" fn emscripten_get_preloaded_image_data_from_FILE(file: *FILE, w: *c_int, h: *c_int) ?[*]u8;
+pub extern "c" fn emscripten_get_preloaded_image_data_from_file(file: *FILE, w: *c_int, h: *c_int) ?[*]u8;
 pub extern "c" fn emscripten_log(flags: c_int, format: [*:0]const u8, ...) void;
 pub extern "c" fn emscripten_get_callstack(flags: c_int, out: ?[*]u8, maxbytes: c_int) c_int;
 pub extern "c" fn emscripten_print_double(x: f64, to: ?[*]u8, max: c_int) c_int;

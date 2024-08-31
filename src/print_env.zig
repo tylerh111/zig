@@ -4,7 +4,7 @@ const introspect = @import("introspect.zig");
 const Allocator = std.mem.Allocator;
 const fatal = @import("main.zig").fatal;
 
-pub fn cmdEnv(arena: Allocator, args: []const []const u8, stdout: std.fs.File.Writer) !void {
+pub fn cmd_env(arena: Allocator, args: []const []const u8, stdout: std.fs.File.Writer) !void {
     _ = args;
     const self_exe_path = try introspect.findZigExePath(arena);
 

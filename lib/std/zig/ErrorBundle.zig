@@ -83,42 +83,42 @@ pub fn deinit(eb: *ErrorBundle, gpa: Allocator) void {
     eb.* = undefined;
 }
 
-pub fn errorMessageCount(eb: ErrorBundle) u32 {
+pub fn error_message_count(eb: ErrorBundle) u32 {
     if (eb.extra.len == 0) return 0;
     return eb.getErrorMessageList().len;
 }
 
-pub fn getErrorMessageList(eb: ErrorBundle) ErrorMessageList {
+pub fn get_error_message_list(eb: ErrorBundle) ErrorMessageList {
     return eb.extraData(ErrorMessageList, 0).data;
 }
 
-pub fn getMessages(eb: ErrorBundle) []const MessageIndex {
+pub fn get_messages(eb: ErrorBundle) []const MessageIndex {
     const list = eb.getErrorMessageList();
     return @as([]const MessageIndex, @ptrCast(eb.extra[list.start..][0..list.len]));
 }
 
-pub fn getErrorMessage(eb: ErrorBundle, index: MessageIndex) ErrorMessage {
+pub fn get_error_message(eb: ErrorBundle, index: MessageIndex) ErrorMessage {
     return eb.extraData(ErrorMessage, @intFromEnum(index)).data;
 }
 
-pub fn getSourceLocation(eb: ErrorBundle, index: SourceLocationIndex) SourceLocation {
+pub fn get_source_location(eb: ErrorBundle, index: SourceLocationIndex) SourceLocation {
     assert(index != .none);
     return eb.extraData(SourceLocation, @intFromEnum(index)).data;
 }
 
-pub fn getNotes(eb: ErrorBundle, index: MessageIndex) []const MessageIndex {
+pub fn get_notes(eb: ErrorBundle, index: MessageIndex) []const MessageIndex {
     const notes_len = eb.getErrorMessage(index).notes_len;
     const start = @intFromEnum(index) + @typeInfo(ErrorMessage).Struct.fields.len;
     return @as([]const MessageIndex, @ptrCast(eb.extra[start..][0..notes_len]));
 }
 
-pub fn getCompileLogOutput(eb: ErrorBundle) [:0]const u8 {
+pub fn get_compile_log_output(eb: ErrorBundle) [:0]const u8 {
     return nullTerminatedString(eb, getErrorMessageList(eb).compile_log_text);
 }
 
 /// Returns the requested data, as well as the new index which is at the start of the
 /// trailers for the object.
-fn extraData(eb: ErrorBundle, comptime T: type, index: usize) struct { data: T, end: usize } {
+fn extra_data(eb: ErrorBundle, comptime T: type, index: usize) struct { data: T, end: usize } {
     const fields = @typeInfo(T).Struct.fields;
     var i: usize = index;
     var result: T = undefined;
@@ -138,7 +138,7 @@ fn extraData(eb: ErrorBundle, comptime T: type, index: usize) struct { data: T, 
 }
 
 /// Given an index into `string_bytes` returns the null-terminated string found there.
-pub fn nullTerminatedString(eb: ErrorBundle, index: usize) [:0]const u8 {
+pub fn null_terminated_string(eb: ErrorBundle, index: usize) [:0]const u8 {
     const string_bytes = eb.string_bytes;
     var end: usize = index;
     while (string_bytes[end] != 0) {
@@ -154,14 +154,14 @@ pub const RenderOptions = struct {
     include_log_text: bool = true,
 };
 
-pub fn renderToStdErr(eb: ErrorBundle, options: RenderOptions) void {
+pub fn render_to_std_err(eb: ErrorBundle, options: RenderOptions) void {
     std.debug.lockStdErr();
     defer std.debug.unlockStdErr();
     const stderr = std.io.getStdErr();
     return renderToWriter(eb, options, stderr.writer()) catch return;
 }
 
-pub fn renderToWriter(eb: ErrorBundle, options: RenderOptions, writer: anytype) anyerror!void {
+pub fn render_to_writer(eb: ErrorBundle, options: RenderOptions, writer: anytype) anyerror!void {
     if (eb.extra.len == 0) return;
     for (eb.getMessages()) |err_msg| {
         try renderErrorMessageToWriter(eb, options, err_msg, writer, "error", .red, 0);
@@ -176,7 +176,7 @@ pub fn renderToWriter(eb: ErrorBundle, options: RenderOptions, writer: anytype) 
     }
 }
 
-fn renderErrorMessageToWriter(
+fn render_error_message_to_writer(
     eb: ErrorBundle,
     options: RenderOptions,
     err_msg_index: MessageIndex,
@@ -293,7 +293,7 @@ fn renderErrorMessageToWriter(
 /// to allow for long, good-looking error messages.
 ///
 /// This is used to split the message in `@compileError("hello\nworld")` for example.
-fn writeMsg(eb: ErrorBundle, err_msg: ErrorMessage, stderr: anytype, indent: usize) !void {
+fn write_msg(eb: ErrorBundle, err_msg: ErrorMessage, stderr: anytype, indent: usize) !void {
     var lines = std.mem.splitScalar(u8, eb.nullTerminatedString(err_msg.msg), '\n');
     while (lines.next()) |line| {
         try stderr.writeAll(line);
@@ -341,7 +341,7 @@ pub const Wip = struct {
         wip.* = undefined;
     }
 
-    pub fn toOwnedBundle(wip: *Wip, compile_log_text: []const u8) !ErrorBundle {
+    pub fn to_owned_bundle(wip: *Wip, compile_log_text: []const u8) !ErrorBundle {
         const gpa = wip.gpa;
         if (wip.root_list.items.len == 0) {
             assert(compile_log_text.len == 0);
@@ -377,14 +377,14 @@ pub const Wip = struct {
         };
     }
 
-    pub fn tmpBundle(wip: Wip) ErrorBundle {
+    pub fn tmp_bundle(wip: Wip) ErrorBundle {
         return .{
             .string_bytes = wip.string_bytes.items,
             .extra = wip.extra.items,
         };
     }
 
-    pub fn addString(wip: *Wip, s: []const u8) Allocator.Error!u32 {
+    pub fn add_string(wip: *Wip, s: []const u8) Allocator.Error!u32 {
         const gpa = wip.gpa;
         const index: u32 = @intCast(wip.string_bytes.items.len);
         try wip.string_bytes.ensureUnusedCapacity(gpa, s.len + 1);
@@ -393,7 +393,7 @@ pub const Wip = struct {
         return index;
     }
 
-    pub fn printString(wip: *Wip, comptime fmt: []const u8, args: anytype) Allocator.Error!u32 {
+    pub fn print_string(wip: *Wip, comptime fmt: []const u8, args: anytype) Allocator.Error!u32 {
         const gpa = wip.gpa;
         const index: u32 = @intCast(wip.string_bytes.items.len);
         try wip.string_bytes.writer(gpa).print(fmt, args);
@@ -401,28 +401,28 @@ pub const Wip = struct {
         return index;
     }
 
-    pub fn addRootErrorMessage(wip: *Wip, em: ErrorMessage) Allocator.Error!void {
+    pub fn add_root_error_message(wip: *Wip, em: ErrorMessage) Allocator.Error!void {
         try wip.root_list.ensureUnusedCapacity(wip.gpa, 1);
         wip.root_list.appendAssumeCapacity(try addErrorMessage(wip, em));
     }
 
-    pub fn addErrorMessage(wip: *Wip, em: ErrorMessage) Allocator.Error!MessageIndex {
+    pub fn add_error_message(wip: *Wip, em: ErrorMessage) Allocator.Error!MessageIndex {
         return @enumFromInt(try addExtra(wip, em));
     }
 
-    pub fn addErrorMessageAssumeCapacity(wip: *Wip, em: ErrorMessage) MessageIndex {
+    pub fn add_error_message_assume_capacity(wip: *Wip, em: ErrorMessage) MessageIndex {
         return @enumFromInt(addExtraAssumeCapacity(wip, em));
     }
 
-    pub fn addSourceLocation(wip: *Wip, sl: SourceLocation) Allocator.Error!SourceLocationIndex {
+    pub fn add_source_location(wip: *Wip, sl: SourceLocation) Allocator.Error!SourceLocationIndex {
         return @enumFromInt(try addExtra(wip, sl));
     }
 
-    pub fn addReferenceTrace(wip: *Wip, rt: ReferenceTrace) Allocator.Error!void {
+    pub fn add_reference_trace(wip: *Wip, rt: ReferenceTrace) Allocator.Error!void {
         _ = try addExtra(wip, rt);
     }
 
-    pub fn addBundleAsNotes(wip: *Wip, other: ErrorBundle) Allocator.Error!void {
+    pub fn add_bundle_as_notes(wip: *Wip, other: ErrorBundle) Allocator.Error!void {
         const gpa = wip.gpa;
 
         try wip.string_bytes.ensureUnusedCapacity(gpa, other.string_bytes.len);
@@ -439,7 +439,7 @@ pub const Wip = struct {
         }
     }
 
-    pub fn addBundleAsRoots(wip: *Wip, other: ErrorBundle) !void {
+    pub fn add_bundle_as_roots(wip: *Wip, other: ErrorBundle) !void {
         const gpa = wip.gpa;
 
         try wip.string_bytes.ensureUnusedCapacity(gpa, other.string_bytes.len);
@@ -454,14 +454,14 @@ pub const Wip = struct {
         }
     }
 
-    pub fn reserveNotes(wip: *Wip, notes_len: u32) !u32 {
+    pub fn reserve_notes(wip: *Wip, notes_len: u32) !u32 {
         try wip.extra.ensureUnusedCapacity(wip.gpa, notes_len +
             notes_len * @typeInfo(ErrorBundle.ErrorMessage).Struct.fields.len);
         wip.extra.items.len += notes_len;
         return @intCast(wip.extra.items.len - notes_len);
     }
 
-    pub fn addZirErrorMessages(
+    pub fn add_zir_error_messages(
         eb: *ErrorBundle.Wip,
         zir: std.zig.Zir,
         tree: std.zig.Ast,
@@ -547,7 +547,7 @@ pub const Wip = struct {
         }
     }
 
-    fn addOtherMessage(wip: *Wip, other: ErrorBundle, msg_index: MessageIndex) !MessageIndex {
+    fn add_other_message(wip: *Wip, other: ErrorBundle, msg_index: MessageIndex) !MessageIndex {
         const other_msg = other.getErrorMessage(msg_index);
         const src_loc = try wip.addOtherSourceLocation(other, other_msg.src_loc);
         const msg = try wip.addErrorMessage(.{
@@ -563,7 +563,7 @@ pub const Wip = struct {
         return msg;
     }
 
-    fn addOtherSourceLocation(
+    fn add_other_source_location(
         wip: *Wip,
         other: ErrorBundle,
         index: SourceLocationIndex,
@@ -614,14 +614,14 @@ pub const Wip = struct {
         return src_loc;
     }
 
-    fn addExtra(wip: *Wip, extra: anytype) Allocator.Error!u32 {
+    fn add_extra(wip: *Wip, extra: anytype) Allocator.Error!u32 {
         const gpa = wip.gpa;
         const fields = @typeInfo(@TypeOf(extra)).Struct.fields;
         try wip.extra.ensureUnusedCapacity(gpa, fields.len);
         return addExtraAssumeCapacity(wip, extra);
     }
 
-    fn addExtraAssumeCapacity(wip: *Wip, extra: anytype) u32 {
+    fn add_extra_assume_capacity(wip: *Wip, extra: anytype) u32 {
         const fields = @typeInfo(@TypeOf(extra)).Struct.fields;
         const result: u32 = @intCast(wip.extra.items.len);
         wip.extra.items.len += fields.len;
@@ -629,7 +629,7 @@ pub const Wip = struct {
         return result;
     }
 
-    fn setExtra(wip: *Wip, index: usize, extra: anytype) void {
+    fn set_extra(wip: *Wip, index: usize, extra: anytype) void {
         const fields = @typeInfo(@TypeOf(extra)).Struct.fields;
         var i = index;
         inline for (fields) |field| {

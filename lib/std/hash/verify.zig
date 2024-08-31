@@ -1,6 +1,6 @@
 const std = @import("std");
 
-fn hashMaybeSeed(comptime hash_fn: anytype, seed: anytype, buf: []const u8) @typeInfo(@TypeOf(hash_fn)).Fn.return_type.? {
+fn hash_maybe_seed(comptime hash_fn: anytype, seed: anytype, buf: []const u8) @typeInfo(@TypeOf(hash_fn)).Fn.return_type.? {
     const HashFn = @typeInfo(@TypeOf(hash_fn)).Fn;
     if (HashFn.params.len > 1) {
         if (@typeInfo(HashFn.params[0].type.?) == .Int) {
@@ -13,7 +13,7 @@ fn hashMaybeSeed(comptime hash_fn: anytype, seed: anytype, buf: []const u8) @typ
     }
 }
 
-fn initMaybeSeed(comptime Hash: anytype, seed: anytype) Hash {
+fn init_maybe_seed(comptime Hash: anytype, seed: anytype) Hash {
     const HashFn = @typeInfo(@TypeOf(Hash.init)).Fn;
     if (HashFn.params.len == 1) {
         return Hash.init(@intCast(seed));
@@ -43,7 +43,7 @@ pub fn smhasher(comptime hash_fn: anytype) u32 {
     return @truncate(hashMaybeSeed(hash_fn, 0, buf_all[0..]));
 }
 
-pub fn iterativeApi(comptime Hash: anytype) !void {
+pub fn iterative_api(comptime Hash: anytype) !void {
     // Sum(1..32) = 528
     var buf: [528]u8 = [_]u8{0} ** 528;
     var len: usize = 0;

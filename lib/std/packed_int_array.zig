@@ -11,7 +11,7 @@ const Endian = std.builtin.Endian;
 
 /// Provides a set of functions for reading and writing packed integers from a
 /// slice of bytes.
-pub fn PackedIntIo(comptime Int: type, comptime endian: Endian) type {
+pub fn packed_int_io(comptime Int: type, comptime endian: Endian) type {
     // The general technique employed here is to cast bytes in the array to a container
     // integer (having bits % 8 == 0) large enough to contain the number of bits we want,
     // then we can retrieve or store the new value with a relative minimum of masking
@@ -64,7 +64,7 @@ pub fn PackedIntIo(comptime Int: type, comptime endian: Endian) type {
             return getBits(bytes, MaxIo, bit_index);
         }
 
-        fn getBits(bytes: []const u8, comptime Container: type, bit_index: usize) Int {
+        fn get_bits(bytes: []const u8, comptime Container: type, bit_index: usize) Int {
             const container_bits = @bitSizeOf(Container);
 
             const start_byte = bit_index / 8;
@@ -106,7 +106,7 @@ pub fn PackedIntIo(comptime Int: type, comptime endian: Endian) type {
             setBits(bytes, MaxIo, bit_index, int);
         }
 
-        fn setBits(bytes: []u8, comptime Container: type, bit_index: usize, int: Int) void {
+        fn set_bits(bytes: []u8, comptime Container: type, bit_index: usize, int: Int) void {
             const container_bits = @bitSizeOf(Container);
             const Shift = std.math.Log2Int(Container);
 
@@ -162,7 +162,7 @@ pub fn PackedIntIo(comptime Int: type, comptime endian: Endian) type {
         /// Recasts a packed slice to a version with elements of type `NewInt` and endianness `new_endian`.
         /// Slice will begin at `bit_offset` within `bytes` and the new length will be automatically
         /// calculated from `old_len` using the sizes of the current integer type and `NewInt`.
-        pub fn sliceCast(bytes: []u8, comptime NewInt: type, comptime new_endian: Endian, bit_offset: u3, old_len: usize) PackedIntSliceEndian(NewInt, new_endian) {
+        pub fn slice_cast(bytes: []u8, comptime NewInt: type, comptime new_endian: Endian, bit_offset: u3, old_len: usize) PackedIntSliceEndian(NewInt, new_endian) {
             const new_int_bits = @bitSizeOf(NewInt);
             const New = PackedIntSliceEndian(NewInt, new_endian);
 
@@ -184,7 +184,7 @@ pub fn PackedIntIo(comptime Int: type, comptime endian: Endian) type {
 /// Elements are packed using native endianness and without storing any
 /// meta data. PackedArray(i3, 8) will occupy exactly 3 bytes
 /// of memory.
-pub fn PackedIntArray(comptime Int: type, comptime int_count: usize) type {
+pub fn packed_int_array(comptime Int: type, comptime int_count: usize) type {
     return PackedIntArrayEndian(Int, native_endian, int_count);
 }
 
@@ -192,7 +192,7 @@ pub fn PackedIntArray(comptime Int: type, comptime int_count: usize) type {
 /// Non-byte-multiple integers will take up less memory in PackedIntArrayEndian
 /// than in a normal array. Elements are packed without storing any meta data.
 /// PackedIntArrayEndian(i3, 8) will occupy exactly 3 bytes of memory.
-pub fn PackedIntArrayEndian(comptime Int: type, comptime endian: Endian, comptime int_count: usize) type {
+pub fn packed_int_array_endian(comptime Int: type, comptime endian: Endian, comptime int_count: usize) type {
     const int_bits = @bitSizeOf(Int);
     const total_bits = int_bits * int_count;
     const total_bytes = (total_bits + 7) / 8;
@@ -219,7 +219,7 @@ pub fn PackedIntArrayEndian(comptime Int: type, comptime endian: Endian, comptim
         }
 
         /// Initialize all entries of a packed array to the same value.
-        pub fn initAllTo(int: Int) Self {
+        pub fn init_all_to(int: Int) Self {
             var self: Self = undefined;
             self.setAll(int);
             return self;
@@ -238,7 +238,7 @@ pub fn PackedIntArrayEndian(comptime Int: type, comptime endian: Endian, comptim
         }
 
         /// Set all entries of a packed array to the value of `int`.
-        pub fn setAll(self: *Self, int: Int) void {
+        pub fn set_all(self: *Self, int: Int) void {
             var i: usize = 0;
             while (i < int_count) : (i += 1) {
                 self.set(i, int);
@@ -254,26 +254,26 @@ pub fn PackedIntArrayEndian(comptime Int: type, comptime endian: Endian, comptim
 
         /// Create a PackedIntSlice of the array using `NewInt` as the integer type.
         /// `NewInt`'s bit width must fit evenly within the array's `Int`'s total bits.
-        pub fn sliceCast(self: *Self, comptime NewInt: type) PackedIntSlice(NewInt) {
+        pub fn slice_cast(self: *Self, comptime NewInt: type) PackedIntSlice(NewInt) {
             return self.sliceCastEndian(NewInt, endian);
         }
 
         /// Create a PackedIntSliceEndian of the array using `NewInt` as the integer type
         /// and `new_endian` as the new endianness. `NewInt`'s bit width must fit evenly
         /// within the array's `Int`'s total bits.
-        pub fn sliceCastEndian(self: *Self, comptime NewInt: type, comptime new_endian: Endian) PackedIntSliceEndian(NewInt, new_endian) {
+        pub fn slice_cast_endian(self: *Self, comptime NewInt: type, comptime new_endian: Endian) PackedIntSliceEndian(NewInt, new_endian) {
             return Io.sliceCast(&self.bytes, NewInt, new_endian, 0, int_count);
         }
     };
 }
 
 /// A type representing a sub range of a PackedIntArray.
-pub fn PackedIntSlice(comptime Int: type) type {
+pub fn packed_int_slice(comptime Int: type) type {
     return PackedIntSliceEndian(Int, native_endian);
 }
 
 /// A type representing a sub range of a PackedIntArrayEndian.
-pub fn PackedIntSliceEndian(comptime Int: type, comptime endian: Endian) type {
+pub fn packed_int_slice_endian(comptime Int: type, comptime endian: Endian) type {
     const int_bits = @bitSizeOf(Int);
     const Io = PackedIntIo(Int, endian);
 
@@ -289,7 +289,7 @@ pub fn PackedIntSliceEndian(comptime Int: type, comptime endian: Endian) type {
 
         /// Calculates the number of bytes required to store a desired count
         /// of `Int`s.
-        pub fn bytesRequired(int_count: usize) usize {
+        pub fn bytes_required(int_count: usize) usize {
             const total_bits = int_bits * int_count;
             const total_bytes = (total_bits + 7) / 8;
             return total_bytes;
@@ -329,14 +329,14 @@ pub fn PackedIntSliceEndian(comptime Int: type, comptime endian: Endian) type {
 
         /// Create a PackedIntSlice of the sclice using `NewInt` as the integer type.
         /// `NewInt`'s bit width must fit evenly within the slice's `Int`'s total bits.
-        pub fn sliceCast(self: Self, comptime NewInt: type) PackedIntSliceEndian(NewInt, endian) {
+        pub fn slice_cast(self: Self, comptime NewInt: type) PackedIntSliceEndian(NewInt, endian) {
             return self.sliceCastEndian(NewInt, endian);
         }
 
         /// Create a PackedIntSliceEndian of the slice using `NewInt` as the integer type
         /// and `new_endian` as the new endianness. `NewInt`'s bit width must fit evenly
         /// within the slice's `Int`'s total bits.
-        pub fn sliceCastEndian(self: Self, comptime NewInt: type, comptime new_endian: Endian) PackedIntSliceEndian(NewInt, new_endian) {
+        pub fn slice_cast_endian(self: Self, comptime NewInt: type, comptime new_endian: Endian) PackedIntSliceEndian(NewInt, new_endian) {
             return Io.sliceCast(self.bytes, NewInt, new_endian, self.bit_offset, self.len);
         }
     };
@@ -394,7 +394,7 @@ test "PackedIntIo" {
 
 test "PackedIntArray init" {
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const PackedArray = PackedIntArray(u3, 8);
             var packed_array = PackedArray.init([_]u3{ 0, 1, 2, 3, 4, 5, 6, 7 });
             var i: usize = 0;
@@ -407,7 +407,7 @@ test "PackedIntArray init" {
 
 test "PackedIntArray initAllTo" {
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const PackedArray = PackedIntArray(u3, 8);
             var packed_array = PackedArray.initAllTo(5);
             var i: usize = 0;

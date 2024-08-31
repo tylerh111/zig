@@ -1,4 +1,4 @@
-export fn invalidBreak() u8 {
+export fn invalid_break() u8 {
     const result: u8 = label: {
         break :label 256;
     };

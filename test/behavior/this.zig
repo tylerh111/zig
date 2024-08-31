@@ -3,13 +3,13 @@ const builtin = @import("builtin");
 
 const module = @This();
 
-fn Point(comptime T: type) type {
+fn point(comptime T: type) type {
     return struct {
         const Self = @This();
         x: T,
         y: T,
 
-        fn addOne(self: *Self) void {
+        fn add_one(self: *Self) void {
             self.x += 1;
             self.y += 1;
         }

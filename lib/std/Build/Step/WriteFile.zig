@@ -30,7 +30,7 @@ pub const File = struct {
     sub_path: []const u8,
     contents: Contents,
 
-    pub fn getPath(file: *File) std.Build.LazyPath {
+    pub fn get_path(file: *File) std.Build.LazyPath {
         return .{ .generated = .{ .file = &file.generated_file } };
     }
 };
@@ -57,7 +57,7 @@ pub const Directory = struct {
         }
     };
 
-    pub fn getPath(dir: *Directory) std.Build.LazyPath {
+    pub fn get_path(dir: *Directory) std.Build.LazyPath {
         return .{ .generated = .{ .file = &dir.generated_dir } };
     }
 };
@@ -110,7 +110,7 @@ pub fn add(write_file: *WriteFile, sub_path: []const u8, bytes: []const u8) std.
 /// include sub-directories, in which case this step will ensure the
 /// required sub-path exists.
 /// This is the option expected to be used most commonly with `addCopyFile`.
-pub fn addCopyFile(write_file: *WriteFile, source: std.Build.LazyPath, sub_path: []const u8) std.Build.LazyPath {
+pub fn add_copy_file(write_file: *WriteFile, source: std.Build.LazyPath, sub_path: []const u8) std.Build.LazyPath {
     const b = write_file.step.owner;
     const gpa = b.allocator;
     const file = gpa.create(File) catch @panic("OOM");
@@ -129,7 +129,7 @@ pub fn addCopyFile(write_file: *WriteFile, source: std.Build.LazyPath, sub_path:
 /// Copy files matching the specified exclude/include patterns to the specified subdirectory
 /// relative to this step's generated directory.
 /// The returned value is a lazy path to the generated subdirectory.
-pub fn addCopyDirectory(
+pub fn add_copy_directory(
     write_file: *WriteFile,
     source: std.Build.LazyPath,
     sub_path: []const u8,
@@ -156,7 +156,7 @@ pub fn addCopyDirectory(
 /// used as part of the normal build process, but as a utility occasionally
 /// run by a developer with intent to modify source files and then commit
 /// those changes to version control.
-pub fn addCopyFileToSource(write_file: *WriteFile, source: std.Build.LazyPath, sub_path: []const u8) void {
+pub fn add_copy_file_to_source(write_file: *WriteFile, source: std.Build.LazyPath, sub_path: []const u8) void {
     const b = write_file.step.owner;
     write_file.output_source_files.append(b.allocator, .{
         .contents = .{ .copy = source },
@@ -170,7 +170,7 @@ pub fn addCopyFileToSource(write_file: *WriteFile, source: std.Build.LazyPath, s
 /// used as part of the normal build process, but as a utility occasionally
 /// run by a developer with intent to modify source files and then commit
 /// those changes to version control.
-pub fn addBytesToSource(write_file: *WriteFile, bytes: []const u8, sub_path: []const u8) void {
+pub fn add_bytes_to_source(write_file: *WriteFile, bytes: []const u8, sub_path: []const u8) void {
     const b = write_file.step.owner;
     write_file.output_source_files.append(b.allocator, .{
         .contents = .{ .bytes = bytes },
@@ -180,11 +180,11 @@ pub fn addBytesToSource(write_file: *WriteFile, bytes: []const u8, sub_path: []c
 
 /// Returns a `LazyPath` representing the base directory that contains all the
 /// files from this `WriteFile`.
-pub fn getDirectory(write_file: *WriteFile) std.Build.LazyPath {
+pub fn get_directory(write_file: *WriteFile) std.Build.LazyPath {
     return .{ .generated = .{ .file = &write_file.generated_directory } };
 }
 
-fn maybeUpdateName(write_file: *WriteFile) void {
+fn maybe_update_name(write_file: *WriteFile) void {
     if (write_file.files.items.len == 1 and write_file.directories.items.len == 0) {
         // First time adding a file; update name.
         if (std.mem.eql(u8, write_file.step.name, "WriteFile")) {

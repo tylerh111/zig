@@ -311,7 +311,7 @@ pub fn create(
     return b;
 }
 
-fn createChild(
+fn create_child(
     parent: *Build,
     dep_name: []const u8,
     build_root: Cache.Directory,
@@ -324,7 +324,7 @@ fn createChild(
     return child;
 }
 
-fn createChildOnly(
+fn create_child_only(
     parent: *Build,
     dep_name: []const u8,
     build_root: Cache.Directory,
@@ -406,7 +406,7 @@ fn createChildOnly(
     return child;
 }
 
-fn userInputOptionsFromArgs(allocator: Allocator, args: anytype) UserInputOptionsMap {
+fn user_input_options_from_args(allocator: Allocator, args: anytype) UserInputOptionsMap {
     var user_input_options = UserInputOptionsMap.init(allocator);
     inline for (@typeInfo(@TypeOf(args)).Struct.fields) |field| {
         const v = @field(args, field.name);
@@ -492,7 +492,7 @@ const OrderedUserValue = union(enum) {
     const Pair = struct {
         name: []const u8,
         value: OrderedUserValue,
-        fn lessThan(_: void, lhs: Pair, rhs: Pair) bool {
+        fn less_than(_: void, lhs: Pair, rhs: Pair) bool {
             return std.ascii.lessThanIgnoreCase(lhs.name, rhs.name);
         }
     };
@@ -511,7 +511,7 @@ const OrderedUserValue = union(enum) {
         }
     }
 
-    fn mapFromUnordered(allocator: Allocator, unordered: std.StringHashMap(*const UserValue)) ArrayList(Pair) {
+    fn map_from_unordered(allocator: Allocator, unordered: std.StringHashMap(*const UserValue)) ArrayList(Pair) {
         var ordered = ArrayList(Pair).init(allocator);
         var it = unordered.iterator();
         while (it.next()) |entry| {
@@ -525,7 +525,7 @@ const OrderedUserValue = union(enum) {
         return ordered;
     }
 
-    fn fromUnordered(allocator: Allocator, unordered: UserValue) OrderedUserValue {
+    fn from_unordered(allocator: Allocator, unordered: UserValue) OrderedUserValue {
         return switch (unordered) {
             .flag => .{ .flag = {} },
             .scalar => |scalar| .{ .scalar = scalar },
@@ -545,7 +545,7 @@ const OrderedUserInputOption = struct {
         opt.value.hash(hasher);
     }
 
-    fn fromUnordered(allocator: Allocator, user_input_option: UserInputOption) OrderedUserInputOption {
+    fn from_unordered(allocator: Allocator, user_input_option: UserInputOption) OrderedUserInputOption {
         return OrderedUserInputOption{
             .name = user_input_option.name,
             .used = user_input_option.used,
@@ -553,14 +553,14 @@ const OrderedUserInputOption = struct {
         };
     }
 
-    fn lessThan(_: void, lhs: OrderedUserInputOption, rhs: OrderedUserInputOption) bool {
+    fn less_than(_: void, lhs: OrderedUserInputOption, rhs: OrderedUserInputOption) bool {
         return std.ascii.lessThanIgnoreCase(lhs.name, rhs.name);
     }
 };
 
 // The hash should be consistent with the same values given a different order.
 // This function takes a user input map, orders it, then hashes the contents.
-fn hashUserInputOptionsMap(allocator: Allocator, user_input_options: UserInputOptionsMap, hasher: *std.hash.Wyhash) void {
+fn hash_user_input_options_map(allocator: Allocator, user_input_options: UserInputOptionsMap, hasher: *std.hash.Wyhash) void {
     var ordered = ArrayList(OrderedUserInputOption).init(allocator);
     var it = user_input_options.iterator();
     while (it.next()) |entry|
@@ -573,7 +573,7 @@ fn hashUserInputOptionsMap(allocator: Allocator, user_input_options: UserInputOp
         user_option.hash(hasher);
 }
 
-fn determineAndApplyInstallPrefix(b: *Build) !void {
+fn determine_and_apply_install_prefix(b: *Build) !void {
     // Create an installation directory local to this package. This will be used when
     // dependant packages require a standard prefix, such as include directories for C headers.
     var hash = b.graph.cache.hash;
@@ -592,7 +592,7 @@ fn determineAndApplyInstallPrefix(b: *Build) !void {
 }
 
 /// This function is intended to be called by lib/build_runner.zig, not a build.zig file.
-pub fn resolveInstallPrefix(b: *Build, install_prefix: ?[]const u8, dir_list: DirList) void {
+pub fn resolve_install_prefix(b: *Build, install_prefix: ?[]const u8, dir_list: DirList) void {
     if (b.dest_dir) |dest_dir| {
         b.install_prefix = install_prefix orelse "/usr";
         b.install_path = b.pathJoin(&.{ dest_dir, b.install_prefix });
@@ -631,7 +631,7 @@ pub fn resolveInstallPrefix(b: *Build, install_prefix: ?[]const u8, dir_list: Di
 /// In other words, this provides a way to expose build.zig values to Zig
 /// source code with `@import`.
 /// Related: `Module.addOptions`.
-pub fn addOptions(b: *Build) *Step.Options {
+pub fn add_options(b: *Build) *Step.Options {
     return Step.Options.create(b);
 }
 
@@ -666,7 +666,7 @@ pub const ExecutableOptions = struct {
     win32_manifest: ?LazyPath = null,
 };
 
-pub fn addExecutable(b: *Build, options: ExecutableOptions) *Step.Compile {
+pub fn add_executable(b: *Build, options: ExecutableOptions) *Step.Compile {
     return Step.Compile.create(b, .{
         .name = options.name,
         .root_module = .{
@@ -716,7 +716,7 @@ pub const ObjectOptions = struct {
     zig_lib_dir: ?LazyPath = null,
 };
 
-pub fn addObject(b: *Build, options: ObjectOptions) *Step.Compile {
+pub fn add_object(b: *Build, options: ObjectOptions) *Step.Compile {
     return Step.Compile.create(b, .{
         .name = options.name,
         .root_module = .{
@@ -770,7 +770,7 @@ pub const SharedLibraryOptions = struct {
     win32_manifest: ?LazyPath = null,
 };
 
-pub fn addSharedLibrary(b: *Build, options: SharedLibraryOptions) *Step.Compile {
+pub fn add_shared_library(b: *Build, options: SharedLibraryOptions) *Step.Compile {
     return Step.Compile.create(b, .{
         .name = options.name,
         .root_module = .{
@@ -821,7 +821,7 @@ pub const StaticLibraryOptions = struct {
     zig_lib_dir: ?LazyPath = null,
 };
 
-pub fn addStaticLibrary(b: *Build, options: StaticLibraryOptions) *Step.Compile {
+pub fn add_static_library(b: *Build, options: StaticLibraryOptions) *Step.Compile {
     return Step.Compile.create(b, .{
         .name = options.name,
         .root_module = .{
@@ -880,7 +880,7 @@ pub const TestOptions = struct {
 /// function will be passed to `addRunArtifact`, creating a `Step.Run`. These
 /// two steps are separated because they are independently configured and
 /// cached.
-pub fn addTest(b: *Build, options: TestOptions) *Step.Compile {
+pub fn add_test(b: *Build, options: TestOptions) *Step.Compile {
     return Step.Compile.create(b, .{
         .name = options.name,
         .kind = .@"test",
@@ -922,7 +922,7 @@ pub const AssemblyOptions = struct {
     zig_lib_dir: ?LazyPath = null,
 };
 
-pub fn addAssembly(b: *Build, options: AssemblyOptions) *Step.Compile {
+pub fn add_assembly(b: *Build, options: AssemblyOptions) *Step.Compile {
     const obj_step = Step.Compile.create(b, .{
         .name = options.name,
         .kind = .obj,
@@ -940,7 +940,7 @@ pub fn addAssembly(b: *Build, options: AssemblyOptions) *Step.Compile {
 /// This function creates a module and adds it to the package's module set, making
 /// it available to other packages which depend on this one.
 /// `createModule` can be used instead to create a private module.
-pub fn addModule(b: *Build, name: []const u8, options: Module.CreateOptions) *Module {
+pub fn add_module(b: *Build, name: []const u8, options: Module.CreateOptions) *Module {
     const module = Module.create(b, options);
     b.modules.put(b.dupe(name), module) catch @panic("OOM");
     return module;
@@ -949,7 +949,7 @@ pub fn addModule(b: *Build, name: []const u8, options: Module.CreateOptions) *Mo
 /// This function creates a private module, to be used by the current package,
 /// but not exposed to other packages depending on this one.
 /// `addModule` can be used instead to create a public module.
-pub fn createModule(b: *Build, options: Module.CreateOptions) *Module {
+pub fn create_module(b: *Build, options: Module.CreateOptions) *Module {
     return Module.create(b, options);
 }
 
@@ -958,7 +958,7 @@ pub fn createModule(b: *Build, options: Module.CreateOptions) *Module {
 /// `addArgs`, and `addArtifactArg`.
 /// Be careful using this function, as it introduces a system dependency.
 /// To run an executable built with zig build, see `Step.Compile.run`.
-pub fn addSystemCommand(b: *Build, argv: []const []const u8) *Step.Run {
+pub fn add_system_command(b: *Build, argv: []const []const u8) *Step.Run {
     assert(argv.len >= 1);
     const run_step = Step.Run.create(b, b.fmt("run {s}", .{argv[0]}));
     run_step.addArgs(argv);
@@ -967,7 +967,7 @@ pub fn addSystemCommand(b: *Build, argv: []const []const u8) *Step.Run {
 
 /// Creates a `Step.Run` with an executable built with `addExecutable`.
 /// Add command line arguments with methods of `Step.Run`.
-pub fn addRunArtifact(b: *Build, exe: *Step.Compile) *Step.Run {
+pub fn add_run_artifact(b: *Build, exe: *Step.Compile) *Step.Run {
     // It doesn't have to be native. We catch that if you actually try to run it.
     // Consider that this is declarative; the run step may not be run unless a user
     // option is supplied.
@@ -986,7 +986,7 @@ pub fn addRunArtifact(b: *Build, exe: *Step.Compile) *Step.Run {
 /// When an input template file is provided, this function will fail the build
 /// when an option not found in the input file is provided in `values`, and
 /// when an option found in the input file is missing from `values`.
-pub fn addConfigHeader(
+pub fn add_config_header(
     b: *Build,
     options: Step.ConfigHeader.Options,
     values: anytype,
@@ -1006,14 +1006,14 @@ pub fn dupe(b: *Build, bytes: []const u8) []u8 {
 }
 
 /// Duplicates an array of strings without the need to handle out of memory.
-pub fn dupeStrings(b: *Build, strings: []const []const u8) [][]u8 {
+pub fn dupe_strings(b: *Build, strings: []const []const u8) [][]u8 {
     const array = b.allocator.alloc([]u8, strings.len) catch @panic("OOM");
     for (array, strings) |*dest, source| dest.* = b.dupe(source);
     return array;
 }
 
 /// Duplicates a path and converts all slashes to the OS's canonical path separator.
-pub fn dupePath(b: *Build, bytes: []const u8) []u8 {
+pub fn dupe_path(b: *Build, bytes: []const u8) []u8 {
     const the_copy = b.dupe(bytes);
     for (the_copy) |*byte| {
         switch (byte.*) {
@@ -1024,43 +1024,43 @@ pub fn dupePath(b: *Build, bytes: []const u8) []u8 {
     return the_copy;
 }
 
-pub fn addWriteFile(b: *Build, file_path: []const u8, data: []const u8) *Step.WriteFile {
+pub fn add_write_file(b: *Build, file_path: []const u8, data: []const u8) *Step.WriteFile {
     const write_file_step = b.addWriteFiles();
     _ = write_file_step.add(file_path, data);
     return write_file_step;
 }
 
-pub fn addNamedWriteFiles(b: *Build, name: []const u8) *Step.WriteFile {
+pub fn add_named_write_files(b: *Build, name: []const u8) *Step.WriteFile {
     const wf = Step.WriteFile.create(b);
     b.named_writefiles.put(b.dupe(name), wf) catch @panic("OOM");
     return wf;
 }
 
-pub fn addWriteFiles(b: *Build) *Step.WriteFile {
+pub fn add_write_files(b: *Build) *Step.WriteFile {
     return Step.WriteFile.create(b);
 }
 
-pub fn addRemoveDirTree(b: *Build, dir_path: []const u8) *Step.RemoveDir {
+pub fn add_remove_dir_tree(b: *Build, dir_path: []const u8) *Step.RemoveDir {
     return Step.RemoveDir.create(b, dir_path);
 }
 
-pub fn addFmt(b: *Build, options: Step.Fmt.Options) *Step.Fmt {
+pub fn add_fmt(b: *Build, options: Step.Fmt.Options) *Step.Fmt {
     return Step.Fmt.create(b, options);
 }
 
-pub fn addTranslateC(b: *Build, options: Step.TranslateC.Options) *Step.TranslateC {
+pub fn add_translate_c(b: *Build, options: Step.TranslateC.Options) *Step.TranslateC {
     return Step.TranslateC.create(b, options);
 }
 
-pub fn getInstallStep(b: *Build) *Step {
+pub fn get_install_step(b: *Build) *Step {
     return &b.install_tls.step;
 }
 
-pub fn getUninstallStep(b: *Build) *Step {
+pub fn get_uninstall_step(b: *Build) *Step {
     return &b.uninstall_tls.step;
 }
 
-fn makeUninstall(uninstall_step: *Step, prog_node: std.Progress.Node) anyerror!void {
+fn make_uninstall(uninstall_step: *Step, prog_node: std.Progress.Node) anyerror!void {
     _ = prog_node;
     const uninstall_tls: *TopLevelStep = @fieldParentPtr("step", uninstall_step);
     const b: *Build = @fieldParentPtr("uninstall_tls", uninstall_tls);
@@ -1289,7 +1289,7 @@ pub const StandardOptimizeOptionOptions = struct {
     preferred_optimize_mode: ?std.builtin.OptimizeMode = null,
 };
 
-pub fn standardOptimizeOption(b: *Build, options: StandardOptimizeOptionOptions) std.builtin.OptimizeMode {
+pub fn standard_optimize_option(b: *Build, options: StandardOptimizeOptionOptions) std.builtin.OptimizeMode {
     if (options.preferred_optimize_mode) |mode| {
         if (b.option(bool, "release", "optimize for end users") orelse (b.release_mode != .off)) {
             return mode;
@@ -1325,7 +1325,7 @@ pub const StandardTargetOptionsArgs = struct {
 
 /// Exposes standard `zig build` options for choosing a target and additionally
 /// resolves the target query.
-pub fn standardTargetOptions(b: *Build, args: StandardTargetOptionsArgs) ResolvedTarget {
+pub fn standard_target_options(b: *Build, args: StandardTargetOptionsArgs) ResolvedTarget {
     const query = b.standardTargetOptionsQueryOnly(args);
     return b.resolveTargetQuery(query);
 }
@@ -1334,7 +1334,7 @@ pub fn standardTargetOptions(b: *Build, args: StandardTargetOptionsArgs) Resolve
 /// parsing failed.
 /// Asserts that the `diagnostics` field of `options` is `null`. This use case
 /// is handled instead by calling `std.Target.Query.parse` directly.
-pub fn parseTargetQuery(options: std.Target.Query.ParseOptions) error{ParseFailed}!std.Target.Query {
+pub fn parse_target_query(options: std.Target.Query.ParseOptions) error{ParseFailed}!std.Target.Query {
     assert(options.diagnostics == null);
     var diags: Target.Query.ParseOptions.Diagnostics = .{};
     var opts_copy = options;
@@ -1384,7 +1384,7 @@ pub fn parseTargetQuery(options: std.Target.Query.ParseOptions) error{ParseFaile
 }
 
 /// Exposes standard `zig build` options for choosing a target.
-pub fn standardTargetOptionsQueryOnly(b: *Build, args: StandardTargetOptionsArgs) Target.Query {
+pub fn standard_target_options_query_only(b: *Build, args: StandardTargetOptionsArgs) Target.Query {
     const maybe_triple = b.option(
         []const u8,
         "target",
@@ -1438,7 +1438,7 @@ pub fn standardTargetOptionsQueryOnly(b: *Build, args: StandardTargetOptionsArgs
     return args.default_target;
 }
 
-pub fn addUserInputOption(b: *Build, name_raw: []const u8, value_raw: []const u8) !bool {
+pub fn add_user_input_option(b: *Build, name_raw: []const u8, value_raw: []const u8) !bool {
     const name = b.dupe(name_raw);
     const value = b.dupe(value_raw);
     const gop = try b.user_input_options.getOrPut(name);
@@ -1486,7 +1486,7 @@ pub fn addUserInputOption(b: *Build, name_raw: []const u8, value_raw: []const u8
     return false;
 }
 
-pub fn addUserInputFlag(b: *Build, name_raw: []const u8) !bool {
+pub fn add_user_input_flag(b: *Build, name_raw: []const u8) !bool {
     const name = b.dupe(name_raw);
     const gop = try b.user_input_options.getOrPut(name);
     if (!gop.found_existing) {
@@ -1513,7 +1513,7 @@ pub fn addUserInputFlag(b: *Build, name_raw: []const u8) !bool {
     return false;
 }
 
-fn typeToEnum(comptime T: type) TypeId {
+fn type_to_enum(comptime T: type) TypeId {
     return switch (T) {
         std.zig.BuildId => .build_id,
         else => return switch (@typeInfo(T)) {
@@ -1534,11 +1534,11 @@ fn typeToEnum(comptime T: type) TypeId {
     };
 }
 
-fn markInvalidUserInput(b: *Build) void {
+fn mark_invalid_user_input(b: *Build) void {
     b.invalid_user_input = true;
 }
 
-pub fn validateUserInputDidItFail(b: *Build) bool {
+pub fn validate_user_input_did_it_fail(b: *Build) bool {
     // Make sure all args are used.
     var it = b.user_input_options.iterator();
     while (it.next()) |entry| {
@@ -1551,7 +1551,7 @@ pub fn validateUserInputDidItFail(b: *Build) bool {
     return b.invalid_user_input;
 }
 
-fn allocPrintCmd(ally: Allocator, opt_cwd: ?[]const u8, argv: []const []const u8) ![]u8 {
+fn alloc_print_cmd(ally: Allocator, opt_cwd: ?[]const u8, argv: []const []const u8) ![]u8 {
     var buf = ArrayList(u8).init(ally);
     if (opt_cwd) |cwd| try buf.writer().print("cd {s} && ", .{cwd});
     for (argv) |arg| {
@@ -1560,7 +1560,7 @@ fn allocPrintCmd(ally: Allocator, opt_cwd: ?[]const u8, argv: []const []const u8
     return buf.toOwnedSlice();
 }
 
-fn printCmd(ally: Allocator, cwd: ?[]const u8, argv: []const []const u8) void {
+fn print_cmd(ally: Allocator, cwd: ?[]const u8, argv: []const []const u8) void {
     const text = allocPrintCmd(ally, cwd, argv) catch @panic("OOM");
     std.debug.print("{s}\n", .{text});
 }
@@ -1568,13 +1568,13 @@ fn printCmd(ally: Allocator, cwd: ?[]const u8, argv: []const []const u8) void {
 /// This creates the install step and adds it to the dependencies of the
 /// top-level install step, using all the default options.
 /// See `addInstallArtifact` for a more flexible function.
-pub fn installArtifact(b: *Build, artifact: *Step.Compile) void {
+pub fn install_artifact(b: *Build, artifact: *Step.Compile) void {
     b.getInstallStep().dependOn(&b.addInstallArtifact(artifact, .{}).step);
 }
 
 /// This merely creates the step; it does not add it to the dependencies of the
 /// top-level install step.
-pub fn addInstallArtifact(
+pub fn add_install_artifact(
     b: *Build,
     artifact: *Step.Compile,
     options: Step.InstallArtifact.Options,
@@ -1583,49 +1583,49 @@ pub fn addInstallArtifact(
 }
 
 ///`dest_rel_path` is relative to prefix path
-pub fn installFile(b: *Build, src_path: []const u8, dest_rel_path: []const u8) void {
+pub fn install_file(b: *Build, src_path: []const u8, dest_rel_path: []const u8) void {
     b.getInstallStep().dependOn(&b.addInstallFileWithDir(b.path(src_path), .prefix, dest_rel_path).step);
 }
 
-pub fn installDirectory(b: *Build, options: Step.InstallDir.Options) void {
+pub fn install_directory(b: *Build, options: Step.InstallDir.Options) void {
     b.getInstallStep().dependOn(&b.addInstallDirectory(options).step);
 }
 
 ///`dest_rel_path` is relative to bin path
-pub fn installBinFile(b: *Build, src_path: []const u8, dest_rel_path: []const u8) void {
+pub fn install_bin_file(b: *Build, src_path: []const u8, dest_rel_path: []const u8) void {
     b.getInstallStep().dependOn(&b.addInstallFileWithDir(b.path(src_path), .bin, dest_rel_path).step);
 }
 
 ///`dest_rel_path` is relative to lib path
-pub fn installLibFile(b: *Build, src_path: []const u8, dest_rel_path: []const u8) void {
+pub fn install_lib_file(b: *Build, src_path: []const u8, dest_rel_path: []const u8) void {
     b.getInstallStep().dependOn(&b.addInstallFileWithDir(b.path(src_path), .lib, dest_rel_path).step);
 }
 
-pub fn addObjCopy(b: *Build, source: LazyPath, options: Step.ObjCopy.Options) *Step.ObjCopy {
+pub fn add_obj_copy(b: *Build, source: LazyPath, options: Step.ObjCopy.Options) *Step.ObjCopy {
     return Step.ObjCopy.create(b, source, options);
 }
 
 /// `dest_rel_path` is relative to install prefix path
-pub fn addInstallFile(b: *Build, source: LazyPath, dest_rel_path: []const u8) *Step.InstallFile {
+pub fn add_install_file(b: *Build, source: LazyPath, dest_rel_path: []const u8) *Step.InstallFile {
     return b.addInstallFileWithDir(source, .prefix, dest_rel_path);
 }
 
 /// `dest_rel_path` is relative to bin path
-pub fn addInstallBinFile(b: *Build, source: LazyPath, dest_rel_path: []const u8) *Step.InstallFile {
+pub fn add_install_bin_file(b: *Build, source: LazyPath, dest_rel_path: []const u8) *Step.InstallFile {
     return b.addInstallFileWithDir(source, .bin, dest_rel_path);
 }
 
 /// `dest_rel_path` is relative to lib path
-pub fn addInstallLibFile(b: *Build, source: LazyPath, dest_rel_path: []const u8) *Step.InstallFile {
+pub fn add_install_lib_file(b: *Build, source: LazyPath, dest_rel_path: []const u8) *Step.InstallFile {
     return b.addInstallFileWithDir(source, .lib, dest_rel_path);
 }
 
 /// `dest_rel_path` is relative to header path
-pub fn addInstallHeaderFile(b: *Build, source: LazyPath, dest_rel_path: []const u8) *Step.InstallFile {
+pub fn add_install_header_file(b: *Build, source: LazyPath, dest_rel_path: []const u8) *Step.InstallFile {
     return b.addInstallFileWithDir(source, .header, dest_rel_path);
 }
 
-pub fn addInstallFileWithDir(
+pub fn add_install_file_with_dir(
     b: *Build,
     source: LazyPath,
     install_dir: InstallDir,
@@ -1634,11 +1634,11 @@ pub fn addInstallFileWithDir(
     return Step.InstallFile.create(b, source, install_dir, dest_rel_path);
 }
 
-pub fn addInstallDirectory(b: *Build, options: Step.InstallDir.Options) *Step.InstallDir {
+pub fn add_install_directory(b: *Build, options: Step.InstallDir.Options) *Step.InstallDir {
     return Step.InstallDir.create(b, options);
 }
 
-pub fn addCheckFile(
+pub fn add_check_file(
     b: *Build,
     file_source: LazyPath,
     options: Step.CheckFile.Options,
@@ -1647,7 +1647,7 @@ pub fn addCheckFile(
 }
 
 /// deprecated: https://github.com/ziglang/zig/issues/14943
-pub fn pushInstalledFile(b: *Build, dir: InstallDir, dest_rel_path: []const u8) void {
+pub fn push_installed_file(b: *Build, dir: InstallDir, dest_rel_path: []const u8) void {
     const file = InstalledFile{
         .dir = dir,
         .path = dest_rel_path,
@@ -1655,7 +1655,7 @@ pub fn pushInstalledFile(b: *Build, dir: InstallDir, dest_rel_path: []const u8) 
     b.installed_files.append(file.dupe(b)) catch @panic("OOM");
 }
 
-pub fn truncateFile(b: *Build, dest_path: []const u8) !void {
+pub fn truncate_file(b: *Build, dest_path: []const u8) !void {
     if (b.verbose) {
         log.info("truncate {s}", .{dest_path});
     }
@@ -1688,20 +1688,20 @@ pub fn path(b: *Build, sub_path: []const u8) LazyPath {
 /// This is low-level implementation details of the build system, not meant to
 /// be called by users' build scripts. Even in the build system itself it is a
 /// code smell to call this function.
-pub fn pathFromRoot(b: *Build, sub_path: []const u8) []u8 {
+pub fn path_from_root(b: *Build, sub_path: []const u8) []u8 {
     return b.pathResolve(&.{ b.build_root.path orelse ".", sub_path });
 }
 
-fn pathFromCwd(b: *Build, sub_path: []const u8) []u8 {
+fn path_from_cwd(b: *Build, sub_path: []const u8) []u8 {
     const cwd = process.getCwdAlloc(b.allocator) catch @panic("OOM");
     return b.pathResolve(&.{ cwd, sub_path });
 }
 
-pub fn pathJoin(b: *Build, paths: []const []const u8) []u8 {
+pub fn path_join(b: *Build, paths: []const []const u8) []u8 {
     return fs.path.join(b.allocator, paths) catch @panic("OOM");
 }
 
-pub fn pathResolve(b: *Build, paths: []const []const u8) []u8 {
+pub fn path_resolve(b: *Build, paths: []const []const u8) []u8 {
     return fs.path.resolve(b.allocator, paths) catch @panic("OOM");
 }
 
@@ -1709,7 +1709,7 @@ pub fn fmt(b: *Build, comptime format: []const u8, args: anytype) []u8 {
     return std.fmt.allocPrint(b.allocator, format, args) catch @panic("OOM");
 }
 
-pub fn findProgram(b: *Build, names: []const []const u8, paths: []const []const u8) ![]const u8 {
+pub fn find_program(b: *Build, names: []const []const u8, paths: []const []const u8) ![]const u8 {
     // TODO report error for ambiguous situations
     const exe_extension = b.host.result.exeFileExt();
     for (b.search_prefixes.items) |search_prefix| {
@@ -1753,7 +1753,7 @@ pub fn findProgram(b: *Build, names: []const []const u8, paths: []const []const 
     return error.FileNotFound;
 }
 
-pub fn runAllowFail(
+pub fn run_allow_fail(
     b: *Build,
     argv: []const []const u8,
     out_code: *u8,
@@ -1815,11 +1815,11 @@ pub fn run(b: *Build, argv: []const []const u8) []u8 {
     };
 }
 
-pub fn addSearchPrefix(b: *Build, search_prefix: []const u8) void {
+pub fn add_search_prefix(b: *Build, search_prefix: []const u8) void {
     b.search_prefixes.append(b.allocator, b.dupePath(search_prefix)) catch @panic("OOM");
 }
 
-pub fn getInstallPath(b: *Build, dir: InstallDir, dest_rel_path: []const u8) []const u8 {
+pub fn get_install_path(b: *Build, dir: InstallDir, dest_rel_path: []const u8) []const u8 {
     assert(!fs.path.isAbsolute(dest_rel_path)); // Install paths must be relative to the prefix
     const base_dir = switch (dir) {
         .prefix => b.install_path,
@@ -1858,7 +1858,7 @@ pub const Dependency = struct {
         };
     }
 
-    pub fn namedWriteFiles(d: *Dependency, name: []const u8) *Step.WriteFile {
+    pub fn named_write_files(d: *Dependency, name: []const u8) *Step.WriteFile {
         return d.builder.named_writefiles.get(name) orelse {
             panic("unable to find named writefiles '{s}'", .{name});
         };
@@ -1874,7 +1874,7 @@ pub const Dependency = struct {
     }
 };
 
-fn findPkgHashOrFatal(b: *Build, name: []const u8) []const u8 {
+fn find_pkg_hash_or_fatal(b: *Build, name: []const u8) []const u8 {
     for (b.available_deps) |dep| {
         if (mem.eql(u8, dep[0], name)) return dep[1];
     }
@@ -1883,7 +1883,7 @@ fn findPkgHashOrFatal(b: *Build, name: []const u8) []const u8 {
     std.debug.panic("no dependency named '{s}' in '{s}'. All packages used in build.zig must be declared in this file", .{ name, full_path });
 }
 
-inline fn findImportPkgHashOrFatal(b: *Build, comptime asking_build_zig: type, comptime dep_name: []const u8) []const u8 {
+inline fn find_import_pkg_hash_or_fatal(b: *Build, comptime asking_build_zig: type, comptime dep_name: []const u8) []const u8 {
     const build_runner = @import("root");
     const deps = build_runner.dependencies;
 
@@ -1903,7 +1903,7 @@ inline fn findImportPkgHashOrFatal(b: *Build, comptime asking_build_zig: type, c
     std.debug.panic("no dependency named '{s}' in '{s}'. All packages used in build.zig must be declared in this file", .{ dep_name, full_path });
 }
 
-fn markNeededLazyDep(b: *Build, pkg_hash: []const u8) void {
+fn mark_needed_lazy_dep(b: *Build, pkg_hash: []const u8) void {
     b.graph.needed_lazy_dependencies.put(b.graph.arena, pkg_hash, {}) catch @panic("OOM");
 }
 
@@ -1920,7 +1920,7 @@ fn markNeededLazyDep(b: *Build, pkg_hash: []const u8) void {
 /// It is allowed to use this function for non-lazy dependencies, in which case
 /// it will never return `null`. This allows toggling laziness via
 /// build.zig.zon without changing build.zig logic.
-pub fn lazyDependency(b: *Build, name: []const u8, args: anytype) ?*Dependency {
+pub fn lazy_dependency(b: *Build, name: []const u8, args: anytype) ?*Dependency {
     const build_runner = @import("root");
     const deps = build_runner.dependencies;
     const pkg_hash = findPkgHashOrFatal(b, name);
@@ -1963,7 +1963,7 @@ pub fn dependency(b: *Build, name: []const u8, args: anytype) *Dependency {
 /// that dependency after the build script has finished running, then returns `null`.
 /// If the dependency is lazy but has already been fetched, or if it is eager, it returns
 /// the build.zig struct of that dependency, just like a regular `@import`.
-pub inline fn lazyImport(
+pub inline fn lazy_import(
     b: *Build,
     /// The build.zig struct of the package importing the dependency.
     /// When calling this function from the `build` function of a build.zig file's, you normally
@@ -1993,7 +1993,7 @@ pub inline fn lazyImport(
     comptime unreachable; // Bad @dependencies source
 }
 
-pub fn dependencyFromBuildZig(
+pub fn dependency_from_build_zig(
     b: *Build,
     /// The build.zig struct of the dependency, normally obtained by `@import` of the dependency.
     /// If called from the build.zig file itself, use `@This` to obtain a reference to the struct.
@@ -2019,7 +2019,7 @@ pub fn dependencyFromBuildZig(
     debug.panic("'{}' is not a build.zig struct of a dependecy in '{s}'", .{ build_zig, full_path });
 }
 
-fn userValuesAreSame(lhs: UserValue, rhs: UserValue) bool {
+fn user_values_are_same(lhs: UserValue, rhs: UserValue) bool {
     switch (lhs) {
         .flag => {},
         .scalar => |lhs_scalar| {
@@ -2066,7 +2066,7 @@ fn userValuesAreSame(lhs: UserValue, rhs: UserValue) bool {
     return true;
 }
 
-fn dependencyInner(
+fn dependency_inner(
     b: *Build,
     name: []const u8,
     build_root_string: []const u8,
@@ -2111,7 +2111,7 @@ fn dependencyInner(
     return dep;
 }
 
-pub fn runBuild(b: *Build, build_zig: anytype) anyerror!void {
+pub fn run_build(b: *Build, build_zig: anytype) anyerror!void {
     switch (@typeInfo(@typeInfo(@TypeOf(build_zig.build)).Fn.return_type.?)) {
         .Void => build_zig.build(b),
         .ErrorUnion => try build_zig.build(b),
@@ -2129,7 +2129,7 @@ pub const GeneratedFile = struct {
     /// This value must be set in the `fn make()` of the `step` and must not be `null` afterwards.
     path: ?[]const u8 = null,
 
-    pub fn getPath(gen: GeneratedFile) []const u8 {
+    pub fn get_path(gen: GeneratedFile) []const u8 {
         return gen.step.owner.pathFromRoot(gen.path orelse std.debug.panic(
             "getPath() was called on a GeneratedFile that wasn't built yet. Is there a missing Step dependency on step '{s}'?",
             .{gen.step.name},
@@ -2145,7 +2145,7 @@ pub const GeneratedFile = struct {
 // so that we can join it with another path (e.g. build root, cache root, etc.)
 //
 // dirname("") should still be null, because we can't go up any further.
-fn dirnameAllowEmpty(full_path: []const u8) ?[]const u8 {
+fn dirname_allow_empty(full_path: []const u8) ?[]const u8 {
     return fs.path.dirname(full_path) orelse {
         if (fs.path.isAbsolute(full_path) or full_path.len == 0) return null;
 
@@ -2285,7 +2285,7 @@ pub const LazyPath = union(enum) {
 
     /// Returns a string that can be shown to represent the file source.
     /// Either returns the path, `"generated"`, or `"dependency"`.
-    pub fn getDisplayName(lazy_path: LazyPath) []const u8 {
+    pub fn get_display_name(lazy_path: LazyPath) []const u8 {
         return switch (lazy_path) {
             .src_path => |sp| sp.sub_path,
             .cwd_relative => |p| p,
@@ -2295,7 +2295,7 @@ pub const LazyPath = union(enum) {
     }
 
     /// Adds dependencies this file source implies to the given step.
-    pub fn addStepDependencies(lazy_path: LazyPath, other_step: *Step) void {
+    pub fn add_step_dependencies(lazy_path: LazyPath, other_step: *Step) void {
         switch (lazy_path) {
             .src_path, .cwd_relative, .dependency => {},
             .generated => |gen| other_step.dependOn(gen.file.step),
@@ -2304,7 +2304,7 @@ pub const LazyPath = union(enum) {
 
     /// Returns an absolute path.
     /// Intended to be used during the make phase only.
-    pub fn getPath(lazy_path: LazyPath, src_builder: *Build) []const u8 {
+    pub fn get_path(lazy_path: LazyPath, src_builder: *Build) []const u8 {
         return getPath2(lazy_path, src_builder, null);
     }
 
@@ -2313,7 +2313,7 @@ pub const LazyPath = union(enum) {
     ///
     /// `asking_step` is only used for debugging purposes; it's the step being
     /// run that is asking for the path.
-    pub fn getPath2(lazy_path: LazyPath, src_builder: *Build, asking_step: ?*Step) []const u8 {
+    pub fn get_path2(lazy_path: LazyPath, src_builder: *Build, asking_step: ?*Step) []const u8 {
         switch (lazy_path) {
             .src_path => |sp| return sp.owner.pathFromRoot(sp.sub_path),
             .cwd_relative => |p| return src_builder.pathFromCwd(p),
@@ -2383,7 +2383,7 @@ pub const LazyPath = union(enum) {
     }
 };
 
-fn dumpBadDirnameHelp(
+fn dump_bad_dirname_help(
     fail_step: ?*Step,
     asking_step: ?*Step,
     comptime msg: []const u8,
@@ -2420,7 +2420,7 @@ fn dumpBadDirnameHelp(
 }
 
 /// In this function the stderr mutex has already been locked.
-pub fn dumpBadGetPathHelp(
+pub fn dump_bad_get_path_help(
     s: *Step,
     stderr: fs.File,
     src_builder: *Build,
@@ -2490,7 +2490,7 @@ pub const InstalledFile = struct {
 /// It returns an absolute directory path, which is potentially going to be a
 /// source of API breakage in the future, so keep that in mind when using this
 /// function.
-pub fn makeTempPath(b: *Build) []const u8 {
+pub fn make_temp_path(b: *Build) []const u8 {
     const rand_int = std.crypto.random.int(u64);
     const tmp_dir_sub_path = "tmp" ++ fs.path.sep_str ++ hex64(rand_int);
     const result_path = b.cache_root.join(b.allocator, &.{tmp_dir_sub_path}) catch @panic("OOM");
@@ -2527,7 +2527,7 @@ pub const ResolvedTarget = struct {
 
 /// Converts a target query into a fully resolved target that can be passed to
 /// various parts of the API.
-pub fn resolveTargetQuery(b: *Build, query: Target.Query) ResolvedTarget {
+pub fn resolve_target_query(b: *Build, query: Target.Query) ResolvedTarget {
     if (query.isNative()) {
         // Hot path. This is faster than querying the native CPU and OS again.
         return b.graph.host;
@@ -2539,7 +2539,7 @@ pub fn resolveTargetQuery(b: *Build, query: Target.Query) ResolvedTarget {
     };
 }
 
-pub fn wantSharedLibSymLinks(target: Target) bool {
+pub fn want_shared_lib_sym_links(target: Target) bool {
     return target.os.tag != .windows;
 }
 
@@ -2548,7 +2548,7 @@ pub const SystemIntegrationOptionConfig = struct {
     default: ?bool = null,
 };
 
-pub fn systemIntegrationOption(
+pub fn system_integration_option(
     b: *Build,
     name: []const u8,
     config: SystemIntegrationOptionConfig,

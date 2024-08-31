@@ -20,7 +20,7 @@ pub fn __divtf3(a: f128, b: f128) callconv(.C) f128 {
     return div(a, b);
 }
 
-fn _Qp_div(c: *f128, a: *const f128, b: *const f128) callconv(.C) void {
+fn _qp_div(c: *f128, a: *const f128, b: *const f128) callconv(.C) void {
     c.* = div(a.*, b.*);
 }
 

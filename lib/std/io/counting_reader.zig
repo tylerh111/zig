@@ -3,7 +3,7 @@ const io = std.io;
 const testing = std.testing;
 
 /// A Reader that counts how many bytes has been read from it.
-pub fn CountingReader(comptime ReaderType: anytype) type {
+pub fn counting_reader(comptime ReaderType: anytype) type {
     return struct {
         child_reader: ReaderType,
         bytes_read: u64 = 0,
@@ -23,7 +23,7 @@ pub fn CountingReader(comptime ReaderType: anytype) type {
     };
 }
 
-pub fn countingReader(reader: anytype) CountingReader(@TypeOf(reader)) {
+pub fn counting_reader(reader: anytype) CountingReader(@TypeOf(reader)) {
     return .{ .child_reader = reader };
 }
 

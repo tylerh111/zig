@@ -1,4 +1,4 @@
-fn SimpleList(comptime L: usize) type {
+fn simple_list(comptime L: usize) type {
     var T = u8;
     return struct {
         array: [L]T,

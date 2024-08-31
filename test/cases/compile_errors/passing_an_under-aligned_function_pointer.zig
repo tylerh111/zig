@@ -1,10 +1,10 @@
 export fn entry() void {
     testImplicitlyDecreaseFnAlign(alignedSmall, 1234);
 }
-fn testImplicitlyDecreaseFnAlign(ptr: *align(8) const fn () i32, answer: i32) void {
+fn test_implicitly_decrease_fn_align(ptr: *align(8) const fn () i32, answer: i32) void {
     if (ptr() != answer) unreachable;
 }
-fn alignedSmall() align(4) i32 {
+fn aligned_small() align(4) i32 {
     return 1234;
 }
 

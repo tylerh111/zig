@@ -72,7 +72,7 @@ pub fn free(sdk: WindowsSdk, allocator: std.mem.Allocator) void {
 /// Iterates via `iterator` and collects all folders with names starting with `strip_prefix`
 /// and a version. Returns slice of version strings sorted in descending order.
 /// Caller owns result.
-fn iterateAndFilterByVersion(
+fn iterate_and_filter_by_version(
     iterator: *std.fs.Dir.Iterator,
     allocator: std.mem.Allocator,
     prefix: []const u8,
@@ -81,7 +81,7 @@ fn iterateAndFilterByVersion(
         nums: [4]u32,
         build: []const u8,
 
-        fn parseNum(num: []const u8) ?u32 {
+        fn parse_num(num: []const u8) ?u32 {
             if (num[0] == '0' and num.len > 1) return null;
             return std.fmt.parseInt(u32, num, 10) catch null;
         }
@@ -126,7 +126,7 @@ fn iterateAndFilterByVersion(
     std.mem.sortUnstableContext(0, dirs.items.len, struct {
         versions: []Version,
         dirs: [][]const u8,
-        pub fn lessThan(context: @This(), lhs: usize, rhs: usize) bool {
+        pub fn less_than(context: @This(), lhs: usize, rhs: usize) bool {
             return context.versions[lhs].order(context.versions[rhs]).compare(.gt);
         }
         pub fn swap(context: @This(), lhs: usize, rhs: usize) void {
@@ -147,7 +147,7 @@ const RegistryWtf8 = struct {
     key: windows.HKEY,
 
     /// Assert that `key` is valid WTF-8 string
-    pub fn openKey(hkey: windows.HKEY, key: []const u8, options: OpenOptions) error{KeyNotFound}!RegistryWtf8 {
+    pub fn open_key(hkey: windows.HKEY, key: []const u8, options: OpenOptions) error{KeyNotFound}!RegistryWtf8 {
         const key_wtf16le: [:0]const u16 = key_wtf16le: {
             var key_wtf16le_buf: [RegistryWtf16Le.key_name_max_len]u16 = undefined;
             const key_wtf16le_len: usize = std.unicode.wtf8ToWtf16Le(key_wtf16le_buf[0..], key) catch |err| switch (err) {
@@ -162,7 +162,7 @@ const RegistryWtf8 = struct {
     }
 
     /// Closes key, after that usage is invalid
-    pub fn closeKey(reg: RegistryWtf8) void {
+    pub fn close_key(reg: RegistryWtf8) void {
         const return_code_int: windows.HRESULT = windows.advapi32.RegCloseKey(reg.key);
         const return_code: windows.Win32Error = @enumFromInt(return_code_int);
         switch (return_code) {
@@ -173,7 +173,7 @@ const RegistryWtf8 = struct {
 
     /// Get string from registry.
     /// Caller owns result.
-    pub fn getString(reg: RegistryWtf8, allocator: std.mem.Allocator, subkey: []const u8, value_name: []const u8) error{ OutOfMemory, ValueNameNotFound, NotAString, StringNotFound }![]u8 {
+    pub fn get_string(reg: RegistryWtf8, allocator: std.mem.Allocator, subkey: []const u8, value_name: []const u8) error{ OutOfMemory, ValueNameNotFound, NotAString, StringNotFound }![]u8 {
         const subkey_wtf16le: [:0]const u16 = subkey_wtf16le: {
             var subkey_wtf16le_buf: [RegistryWtf16Le.key_name_max_len]u16 = undefined;
             const subkey_wtf16le_len: usize = std.unicode.wtf8ToWtf16Le(subkey_wtf16le_buf[0..], subkey) catch unreachable;
@@ -199,7 +199,7 @@ const RegistryWtf8 = struct {
     }
 
     /// Get DWORD (u32) from registry.
-    pub fn getDword(reg: RegistryWtf8, subkey: []const u8, value_name: []const u8) error{ ValueNameNotFound, NotADword, DwordTooLong, DwordNotFound }!u32 {
+    pub fn get_dword(reg: RegistryWtf8, subkey: []const u8, value_name: []const u8) error{ ValueNameNotFound, NotADword, DwordTooLong, DwordNotFound }!u32 {
         const subkey_wtf16le: [:0]const u16 = subkey_wtf16le: {
             var subkey_wtf16le_buf: [RegistryWtf16Le.key_name_max_len]u16 = undefined;
             const subkey_wtf16le_len: usize = std.unicode.wtf8ToWtf16Le(subkey_wtf16le_buf[0..], subkey) catch unreachable;
@@ -221,7 +221,7 @@ const RegistryWtf8 = struct {
     /// Under private space with flags:
     /// KEY_QUERY_VALUE and KEY_ENUMERATE_SUB_KEYS.
     /// After finishing work, call `closeKey`.
-    pub fn loadFromPath(absolute_path: []const u8) error{KeyNotFound}!RegistryWtf8 {
+    pub fn load_from_path(absolute_path: []const u8) error{KeyNotFound}!RegistryWtf8 {
         const absolute_path_wtf16le: [:0]const u16 = absolute_path_wtf16le: {
             var absolute_path_wtf16le_buf: [RegistryWtf16Le.value_name_max_len]u16 = undefined;
             const absolute_path_wtf16le_len: usize = std.unicode.wtf8ToWtf16Le(absolute_path_wtf16le_buf[0..], absolute_path) catch unreachable;
@@ -247,7 +247,7 @@ const RegistryWtf16Le = struct {
     /// Under HKEY_LOCAL_MACHINE with flags:
     /// KEY_QUERY_VALUE, KEY_ENUMERATE_SUB_KEYS, optionally KEY_WOW64_32KEY.
     /// After finishing work, call `closeKey`.
-    fn openKey(hkey: windows.HKEY, key_wtf16le: [:0]const u16, options: OpenOptions) error{KeyNotFound}!RegistryWtf16Le {
+    fn open_key(hkey: windows.HKEY, key_wtf16le: [:0]const u16, options: OpenOptions) error{KeyNotFound}!RegistryWtf16Le {
         var key: windows.HKEY = undefined;
         var access: windows.REGSAM = windows.KEY_QUERY_VALUE | windows.KEY_ENUMERATE_SUB_KEYS;
         if (options.wow64_32) access |= windows.KEY_WOW64_32KEY;
@@ -269,7 +269,7 @@ const RegistryWtf16Le = struct {
     }
 
     /// Closes key, after that usage is invalid
-    fn closeKey(reg: RegistryWtf16Le) void {
+    fn close_key(reg: RegistryWtf16Le) void {
         const return_code_int: windows.HRESULT = windows.advapi32.RegCloseKey(reg.key);
         const return_code: windows.Win32Error = @enumFromInt(return_code_int);
         switch (return_code) {
@@ -279,7 +279,7 @@ const RegistryWtf16Le = struct {
     }
 
     /// Get string ([:0]const u16) from registry.
-    fn getString(reg: RegistryWtf16Le, allocator: std.mem.Allocator, subkey_wtf16le: [:0]const u16, value_name_wtf16le: [:0]const u16) error{ OutOfMemory, ValueNameNotFound, NotAString, StringNotFound }![]const u16 {
+    fn get_string(reg: RegistryWtf16Le, allocator: std.mem.Allocator, subkey_wtf16le: [:0]const u16, value_name_wtf16le: [:0]const u16) error{ OutOfMemory, ValueNameNotFound, NotAString, StringNotFound }![]const u16 {
         var actual_type: windows.ULONG = undefined;
 
         // Calculating length to allocate
@@ -348,7 +348,7 @@ const RegistryWtf16Le = struct {
     }
 
     /// Get DWORD (u32) from registry.
-    fn getDword(reg: RegistryWtf16Le, subkey_wtf16le: [:0]const u16, value_name_wtf16le: [:0]const u16) error{ ValueNameNotFound, NotADword, DwordTooLong, DwordNotFound }!u32 {
+    fn get_dword(reg: RegistryWtf16Le, subkey_wtf16le: [:0]const u16, value_name_wtf16le: [:0]const u16) error{ ValueNameNotFound, NotADword, DwordTooLong, DwordNotFound }!u32 {
         var actual_type: windows.ULONG = undefined;
         var reg_size: u32 = @sizeOf(u32);
         var reg_value: u32 = 0;
@@ -382,7 +382,7 @@ const RegistryWtf16Le = struct {
     /// Under private space with flags:
     /// KEY_QUERY_VALUE and KEY_ENUMERATE_SUB_KEYS.
     /// After finishing work, call `closeKey`.
-    fn loadFromPath(absolute_path_as_wtf16le: [:0]const u16) error{KeyNotFound}!RegistryWtf16Le {
+    fn load_from_path(absolute_path_as_wtf16le: [:0]const u16) error{KeyNotFound}!RegistryWtf16Le {
         var key: windows.HKEY = undefined;
 
         const return_code_int: windows.HRESULT = std.os.windows.advapi32.RegLoadAppKeyW(
@@ -430,7 +430,7 @@ pub const Installation = struct {
         return error.InstallationNotFound;
     }
 
-    fn findFromRoot(
+    fn find_from_root(
         allocator: std.mem.Allocator,
         roots_key: RegistryWtf8,
         roots_subkey: []const u8,
@@ -487,7 +487,7 @@ pub const Installation = struct {
         return .{ .path = path, .version = version };
     }
 
-    fn findFromInstallationFolder(
+    fn find_from_installation_folder(
         allocator: std.mem.Allocator,
         version_key_name: []const u8,
     ) error{ OutOfMemory, InstallationNotFound, PathTooLong, VersionTooLong }!Installation {
@@ -560,7 +560,7 @@ pub const Installation = struct {
     }
 
     /// Check whether this version is enumerated in registry.
-    fn isValidVersion(installation: Installation) bool {
+    fn is_valid_version(installation: Installation) bool {
         var buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
         const reg_query_as_wtf8 = std.fmt.bufPrint(buf[0..], "{s}\\{s}\\Installed Options", .{
             windows_kits_reg_key,
@@ -597,7 +597,7 @@ pub const Installation = struct {
 };
 
 const MsvcLibDir = struct {
-    fn findInstancesDirViaSetup(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }!std.fs.Dir {
+    fn find_instances_dir_via_setup(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }!std.fs.Dir {
         const vs_setup_key_path = "SOFTWARE\\Microsoft\\VisualStudio\\Setup";
         const vs_setup_key = RegistryWtf8.openKey(windows.HKEY_LOCAL_MACHINE, vs_setup_key_path, .{}) catch |err| switch (err) {
             error.KeyNotFound => return error.PathNotFound,
@@ -622,7 +622,7 @@ const MsvcLibDir = struct {
         return std.fs.openDirAbsolute(instances_path, .{ .iterate = true }) catch return error.PathNotFound;
     }
 
-    fn findInstancesDirViaCLSID(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }!std.fs.Dir {
+    fn find_instances_dir_via_clsid(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }!std.fs.Dir {
         const setup_configuration_clsid = "{177f0c4a-1cd3-4de7-a32c-71dbbb9fa36d}";
         const setup_config_key = RegistryWtf8.openKey(windows.HKEY_CLASSES_ROOT, "CLSID\\" ++ setup_configuration_clsid, .{}) catch |err| switch (err) {
             error.KeyNotFound => return error.PathNotFound,
@@ -658,7 +658,7 @@ const MsvcLibDir = struct {
         return std.fs.openDirAbsolute(instances_path, .{ .iterate = true }) catch return error.PathNotFound;
     }
 
-    fn findInstancesDir(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }!std.fs.Dir {
+    fn find_instances_dir(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }!std.fs.Dir {
         // First, try getting the packages cache path from the registry.
         // This only seems to exist when the path is different from the default.
         method1: {
@@ -697,7 +697,7 @@ const MsvcLibDir = struct {
 
     /// Intended to be equivalent to `ISetupHelper.ParseVersion`
     /// Example: 17.4.33205.214 -> 0x0011000481b500d6
-    fn parseVersionQuad(version: []const u8) error{InvalidVersion}!u64 {
+    fn parse_version_quad(version: []const u8) error{InvalidVersion}!u64 {
         var it = std.mem.splitScalar(u8, version, '.');
         const a = it.first();
         const b = it.next() orelse return error.InvalidVersion;
@@ -741,7 +741,7 @@ const MsvcLibDir = struct {
     ///
     /// The logic in this function is intended to match what ISetupConfiguration does
     /// under-the-hood, as verified using Procmon.
-    fn findViaCOM(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }![]const u8 {
+    fn find_via_com(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }![]const u8 {
         // Typically `%PROGRAMDATA%\Microsoft\VisualStudio\Packages\_Instances`
         // This will contain directories with names of instance IDs like 80a758ca,
         // which will contain `state.json` files that have the version and
@@ -800,7 +800,7 @@ const MsvcLibDir = struct {
         return latest_version_lib_dir.toOwnedSlice(allocator);
     }
 
-    fn libDirFromInstallationPath(allocator: std.mem.Allocator, installation_path: []const u8) error{ OutOfMemory, PathNotFound }![]const u8 {
+    fn lib_dir_from_installation_path(allocator: std.mem.Allocator, installation_path: []const u8) error{ OutOfMemory, PathNotFound }![]const u8 {
         var lib_dir_buf = try std.ArrayList(u8).initCapacity(allocator, installation_path.len + 64);
         errdefer lib_dir_buf.deinit();
 
@@ -839,7 +839,7 @@ const MsvcLibDir = struct {
     }
 
     // https://learn.microsoft.com/en-us/visualstudio/install/tools-for-managing-visual-studio-instances?view=vs-2022#editing-the-registry-for-a-visual-studio-instance
-    fn findViaRegistry(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }![]const u8 {
+    fn find_via_registry(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }![]const u8 {
 
         // %localappdata%\Microsoft\VisualStudio\
         // %appdata%\Local\Microsoft\VisualStudio\
@@ -928,7 +928,7 @@ const MsvcLibDir = struct {
         return msvc_dir;
     }
 
-    fn findViaVs7Key(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }![]const u8 {
+    fn find_via_vs7_key(allocator: std.mem.Allocator) error{ OutOfMemory, PathNotFound }![]const u8 {
         var base_path: std.ArrayList(u8) = base_path: {
             try_env: {
                 var env_map = std.process.getEnvMap(allocator) catch |err| switch (err) {
@@ -992,7 +992,7 @@ const MsvcLibDir = struct {
         return full_path;
     }
 
-    fn verifyLibDir(lib_dir_path: []const u8) bool {
+    fn verify_lib_dir(lib_dir_path: []const u8) bool {
         std.debug.assert(std.fs.path.isAbsolute(lib_dir_path)); // should be already handled in `findVia*`
 
         var dir = std.fs.openDirAbsolute(lib_dir_path, .{}) catch return false;

@@ -75,7 +75,7 @@ pub const DevicePath = extern struct {
         return @as(*DevicePath, @ptrCast(buf.ptr));
     }
 
-    pub fn getDevicePath(self: *const DevicePath) ?uefi.DevicePath {
+    pub fn get_device_path(self: *const DevicePath) ?uefi.DevicePath {
         inline for (@typeInfo(uefi.DevicePath).Union.fields) |ufield| {
             const enum_value = std.meta.stringToEnum(uefi.DevicePath.Type, ufield.name);
 
@@ -93,7 +93,7 @@ pub const DevicePath = extern struct {
         return null;
     }
 
-    pub fn initSubtype(self: *const DevicePath, comptime TUnion: type) ?TUnion {
+    pub fn init_subtype(self: *const DevicePath, comptime TUnion: type) ?TUnion {
         const type_info = @typeInfo(TUnion).Union;
         const TTag = type_info.tag_type.?;
 

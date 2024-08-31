@@ -3,7 +3,7 @@ const math = std.math;
 const mem = std.mem;
 const Allocator = std.mem.Allocator;
 
-pub fn Vec2D(comptime T: type) type {
+pub fn vec2_d(comptime T: type) type {
     return struct {
         data: []T,
         cols: usize,
@@ -39,7 +39,7 @@ pub fn Vec2D(comptime T: type) type {
             return self._get(row);
         }
 
-        pub fn getMut(self: *Self, row: usize) ![]T {
+        pub fn get_mut(self: *Self, row: usize) ![]T {
             return self._get(row);
         }
     };

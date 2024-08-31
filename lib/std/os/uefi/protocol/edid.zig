@@ -40,7 +40,7 @@ pub const Override = extern struct {
     _get_edid: *const fn (*const Override, Handle, *Attributes, *usize, *?[*]u8) callconv(cc) Status,
 
     /// Returns policy information and potentially a replacement EDID for the specified video output device.
-    pub fn getEdid(
+    pub fn get_edid(
         self: *const Override,
         handle: Handle,
         attributes: *Attributes,

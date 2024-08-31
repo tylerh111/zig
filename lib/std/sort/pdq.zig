@@ -18,7 +18,7 @@ pub fn pdq(
         items: []T,
         sub_ctx: @TypeOf(context),
 
-        pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
+        pub fn less_than(ctx: @This(), a: usize, b: usize) bool {
             return lessThanFn(ctx.sub_ctx, ctx.items[a], ctx.items[b]);
         }
 
@@ -40,7 +40,7 @@ const Hint = enum {
 /// `context` must have methods `swap` and `lessThan`,
 /// which each take 2 `usize` parameters indicating the index of an item.
 /// Sorts in ascending order with respect to `lessThan`.
-pub fn pdqContext(a: usize, b: usize, context: anytype) void {
+pub fn pdq_context(a: usize, b: usize, context: anytype) void {
     // slices of up to this length get sorted using insertion sort.
     const max_insertion = 24;
     // number of allowed imbalanced partitions before switching to heap sort.
@@ -179,7 +179,7 @@ fn partition(a: usize, b: usize, pivot: *usize, context: anytype) bool {
 /// followed by elements greater than `items[pivot]`.
 ///
 /// it assumed that `items[a..b]` does not contain elements smaller than the `items[pivot]`.
-fn partitionEqual(a: usize, b: usize, pivot: usize, context: anytype) usize {
+fn partition_equal(a: usize, b: usize, pivot: usize, context: anytype) usize {
     // move pivot to the first place
     context.swap(a, pivot);
 
@@ -202,7 +202,7 @@ fn partitionEqual(a: usize, b: usize, pivot: usize, context: anytype) usize {
 /// partially sorts a slice by shifting several out-of-order elements around.
 ///
 /// returns `true` if the slice is sorted at the end. This function is `O(n)` worst-case.
-fn partialInsertionSort(a: usize, b: usize, context: anytype) bool {
+fn partial_insertion_sort(a: usize, b: usize, context: anytype) bool {
     @setCold(true);
 
     // maximum number of adjacent out-of-order pairs that will get shifted
@@ -246,7 +246,7 @@ fn partialInsertionSort(a: usize, b: usize, context: anytype) bool {
     return false;
 }
 
-fn breakPatterns(a: usize, b: usize, context: anytype) void {
+fn break_patterns(a: usize, b: usize, context: anytype) void {
     @setCold(true);
 
     const len = b - a;
@@ -270,7 +270,7 @@ fn breakPatterns(a: usize, b: usize, context: anytype) void {
 
 /// choses a pivot in `items[a..b]`.
 /// swaps likely_sorted when `items[a..b]` seems to be already sorted.
-fn chosePivot(a: usize, b: usize, pivot: *usize, context: anytype) Hint {
+fn chose_pivot(a: usize, b: usize, pivot: *usize, context: anytype) Hint {
     // minimum length for using the Tukey's ninther method
     const shortest_ninther = 50;
     // max_swaps is the maximum number of swaps allowed in this function
@@ -319,7 +319,7 @@ fn sort3(a: usize, b: usize, c: usize, swaps: *usize, context: anytype) void {
     }
 }
 
-fn reverseRange(a: usize, b: usize, context: anytype) void {
+fn reverse_range(a: usize, b: usize, context: anytype) void {
     var i = a;
     var j = b - 1;
     while (i < j) {

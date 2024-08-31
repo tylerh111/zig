@@ -45,7 +45,7 @@ pub const Header = extern struct {
         return ret;
     }
 
-    pub fn setPath(self: *Header, prefix: []const u8, path: []const u8) !void {
+    pub fn set_path(self: *Header, prefix: []const u8, path: []const u8) !void {
         if (prefix.len + 1 + path.len > 100) {
             var i: usize = 0;
             while (i < path.len and path.len - i > 100) {
@@ -59,11 +59,11 @@ pub const Header = extern struct {
         }
     }
 
-    pub fn setSize(self: *Header, size: u64) !void {
+    pub fn set_size(self: *Header, size: u64) !void {
         _ = try std.fmt.bufPrint(&self.size, "{o:0>11}", .{size});
     }
 
-    pub fn updateChecksum(self: *Header) !void {
+    pub fn update_checksum(self: *Header) !void {
         const offset = @offsetOf(Header, "checksum");
         var checksum: usize = 0;
         for (std.mem.asBytes(self), 0..) |val, i| {

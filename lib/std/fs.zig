@@ -104,7 +104,7 @@ pub const base64_decoder = base64.Base64Decoder.init(base64_alphabet, null);
 /// On Windows, both paths should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, both paths should be encoded as valid UTF-8.
 /// On other platforms, both paths are an opaque sequence of bytes with no particular encoding.
-pub fn atomicSymLink(allocator: Allocator, existing_path: []const u8, new_path: []const u8) !void {
+pub fn atomic_sym_link(allocator: Allocator, existing_path: []const u8, new_path: []const u8) !void {
     if (cwd().symLink(existing_path, new_path, .{})) {
         return;
     } else |err| switch (err) {
@@ -138,7 +138,7 @@ pub fn atomicSymLink(allocator: Allocator, existing_path: []const u8, new_path: 
 /// On Windows, both paths should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, both paths should be encoded as valid UTF-8.
 /// On other platforms, both paths are an opaque sequence of bytes with no particular encoding.
-pub fn updateFileAbsolute(
+pub fn update_file_absolute(
     source_path: []const u8,
     dest_path: []const u8,
     args: Dir.CopyFileOptions,
@@ -155,7 +155,7 @@ pub fn updateFileAbsolute(
 /// On Windows, both paths should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, both paths should be encoded as valid UTF-8.
 /// On other platforms, both paths are an opaque sequence of bytes with no particular encoding.
-pub fn copyFileAbsolute(
+pub fn copy_file_absolute(
     source_path: []const u8,
     dest_path: []const u8,
     args: Dir.CopyFileOptions,
@@ -172,19 +172,19 @@ pub fn copyFileAbsolute(
 /// On Windows, `absolute_path` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `absolute_path` should be encoded as valid UTF-8.
 /// On other platforms, `absolute_path` is an opaque sequence of bytes with no particular encoding.
-pub fn makeDirAbsolute(absolute_path: []const u8) !void {
+pub fn make_dir_absolute(absolute_path: []const u8) !void {
     assert(path.isAbsolute(absolute_path));
     return posix.mkdir(absolute_path, Dir.default_mode);
 }
 
 /// Same as `makeDirAbsolute` except the parameter is null-terminated.
-pub fn makeDirAbsoluteZ(absolute_path_z: [*:0]const u8) !void {
+pub fn make_dir_absolute_z(absolute_path_z: [*:0]const u8) !void {
     assert(path.isAbsoluteZ(absolute_path_z));
     return posix.mkdirZ(absolute_path_z, Dir.default_mode);
 }
 
 /// Same as `makeDirAbsolute` except the parameter is a null-terminated WTF-16 LE-encoded string.
-pub fn makeDirAbsoluteW(absolute_path_w: [*:0]const u16) !void {
+pub fn make_dir_absolute_w(absolute_path_w: [*:0]const u16) !void {
     assert(path.isAbsoluteWindowsW(absolute_path_w));
     return posix.mkdirW(absolute_path_w, Dir.default_mode);
 }
@@ -193,19 +193,19 @@ pub fn makeDirAbsoluteW(absolute_path_w: [*:0]const u16) !void {
 /// On Windows, `dir_path` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `dir_path` should be encoded as valid UTF-8.
 /// On other platforms, `dir_path` is an opaque sequence of bytes with no particular encoding.
-pub fn deleteDirAbsolute(dir_path: []const u8) !void {
+pub fn delete_dir_absolute(dir_path: []const u8) !void {
     assert(path.isAbsolute(dir_path));
     return posix.rmdir(dir_path);
 }
 
 /// Same as `deleteDirAbsolute` except the path parameter is null-terminated.
-pub fn deleteDirAbsoluteZ(dir_path: [*:0]const u8) !void {
+pub fn delete_dir_absolute_z(dir_path: [*:0]const u8) !void {
     assert(path.isAbsoluteZ(dir_path));
     return posix.rmdirZ(dir_path);
 }
 
 /// Same as `deleteDirAbsolute` except the path parameter is WTF-16 and target OS is assumed Windows.
-pub fn deleteDirAbsoluteW(dir_path: [*:0]const u16) !void {
+pub fn delete_dir_absolute_w(dir_path: [*:0]const u16) !void {
     assert(path.isAbsoluteWindowsW(dir_path));
     return posix.rmdirW(dir_path);
 }
@@ -214,21 +214,21 @@ pub fn deleteDirAbsoluteW(dir_path: [*:0]const u16) !void {
 /// On Windows, both paths should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, both paths should be encoded as valid UTF-8.
 /// On other platforms, both paths are an opaque sequence of bytes with no particular encoding.
-pub fn renameAbsolute(old_path: []const u8, new_path: []const u8) !void {
+pub fn rename_absolute(old_path: []const u8, new_path: []const u8) !void {
     assert(path.isAbsolute(old_path));
     assert(path.isAbsolute(new_path));
     return posix.rename(old_path, new_path);
 }
 
 /// Same as `renameAbsolute` except the path parameters are null-terminated.
-pub fn renameAbsoluteZ(old_path: [*:0]const u8, new_path: [*:0]const u8) !void {
+pub fn rename_absolute_z(old_path: [*:0]const u8, new_path: [*:0]const u8) !void {
     assert(path.isAbsoluteZ(old_path));
     assert(path.isAbsoluteZ(new_path));
     return posix.renameZ(old_path, new_path);
 }
 
 /// Same as `renameAbsolute` except the path parameters are WTF-16 and target OS is assumed Windows.
-pub fn renameAbsoluteW(old_path: [*:0]const u16, new_path: [*:0]const u16) !void {
+pub fn rename_absolute_w(old_path: [*:0]const u16, new_path: [*:0]const u16) !void {
     assert(path.isAbsoluteWindowsW(old_path));
     assert(path.isAbsoluteWindowsW(new_path));
     return posix.renameW(old_path, new_path);
@@ -240,13 +240,13 @@ pub fn rename(old_dir: Dir, old_sub_path: []const u8, new_dir: Dir, new_sub_path
 }
 
 /// Same as `rename` except the parameters are null-terminated.
-pub fn renameZ(old_dir: Dir, old_sub_path_z: [*:0]const u8, new_dir: Dir, new_sub_path_z: [*:0]const u8) !void {
+pub fn rename_z(old_dir: Dir, old_sub_path_z: [*:0]const u8, new_dir: Dir, new_sub_path_z: [*:0]const u8) !void {
     return posix.renameatZ(old_dir.fd, old_sub_path_z, new_dir.fd, new_sub_path_z);
 }
 
 /// Same as `rename` except the parameters are WTF16LE, NT prefixed.
 /// This function is Windows-only.
-pub fn renameW(old_dir: Dir, old_sub_path_w: []const u16, new_dir: Dir, new_sub_path_w: []const u16) !void {
+pub fn rename_w(old_dir: Dir, old_sub_path_w: []const u16, new_dir: Dir, new_sub_path_w: []const u16) !void {
     return posix.renameatW(old_dir.fd, old_sub_path_w, new_dir.fd, new_sub_path_w);
 }
 
@@ -263,7 +263,7 @@ pub fn cwd() Dir {
     }
 }
 
-pub fn defaultWasiCwd() std.os.wasi.fd_t {
+pub fn default_wasi_cwd() std.os.wasi.fd_t {
     // Expect the first preopen to be current working directory.
     return 3;
 }
@@ -276,18 +276,18 @@ pub fn defaultWasiCwd() std.os.wasi.fd_t {
 /// On Windows, `absolute_path` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `absolute_path` should be encoded as valid UTF-8.
 /// On other platforms, `absolute_path` is an opaque sequence of bytes with no particular encoding.
-pub fn openDirAbsolute(absolute_path: []const u8, flags: Dir.OpenDirOptions) File.OpenError!Dir {
+pub fn open_dir_absolute(absolute_path: []const u8, flags: Dir.OpenDirOptions) File.OpenError!Dir {
     assert(path.isAbsolute(absolute_path));
     return cwd().openDir(absolute_path, flags);
 }
 
 /// Same as `openDirAbsolute` but the path parameter is null-terminated.
-pub fn openDirAbsoluteZ(absolute_path_c: [*:0]const u8, flags: Dir.OpenDirOptions) File.OpenError!Dir {
+pub fn open_dir_absolute_z(absolute_path_c: [*:0]const u8, flags: Dir.OpenDirOptions) File.OpenError!Dir {
     assert(path.isAbsoluteZ(absolute_path_c));
     return cwd().openDirZ(absolute_path_c, flags);
 }
 /// Same as `openDirAbsolute` but the path parameter is null-terminated.
-pub fn openDirAbsoluteW(absolute_path_c: [*:0]const u16, flags: Dir.OpenDirOptions) File.OpenError!Dir {
+pub fn open_dir_absolute_w(absolute_path_c: [*:0]const u16, flags: Dir.OpenDirOptions) File.OpenError!Dir {
     assert(path.isAbsoluteWindowsW(absolute_path_c));
     return cwd().openDirW(absolute_path_c, flags);
 }
@@ -301,19 +301,19 @@ pub fn openDirAbsoluteW(absolute_path_c: [*:0]const u16, flags: Dir.OpenDirOptio
 /// On Windows, `absolute_path` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `absolute_path` should be encoded as valid UTF-8.
 /// On other platforms, `absolute_path` is an opaque sequence of bytes with no particular encoding.
-pub fn openFileAbsolute(absolute_path: []const u8, flags: File.OpenFlags) File.OpenError!File {
+pub fn open_file_absolute(absolute_path: []const u8, flags: File.OpenFlags) File.OpenError!File {
     assert(path.isAbsolute(absolute_path));
     return cwd().openFile(absolute_path, flags);
 }
 
 /// Same as `openFileAbsolute` but the path parameter is null-terminated.
-pub fn openFileAbsoluteZ(absolute_path_c: [*:0]const u8, flags: File.OpenFlags) File.OpenError!File {
+pub fn open_file_absolute_z(absolute_path_c: [*:0]const u8, flags: File.OpenFlags) File.OpenError!File {
     assert(path.isAbsoluteZ(absolute_path_c));
     return cwd().openFileZ(absolute_path_c, flags);
 }
 
 /// Same as `openFileAbsolute` but the path parameter is WTF-16-encoded.
-pub fn openFileAbsoluteW(absolute_path_w: []const u16, flags: File.OpenFlags) File.OpenError!File {
+pub fn open_file_absolute_w(absolute_path_w: []const u16, flags: File.OpenFlags) File.OpenError!File {
     assert(path.isAbsoluteWindowsWTF16(absolute_path_w));
     return cwd().openFileW(absolute_path_w, flags);
 }
@@ -326,17 +326,17 @@ pub fn openFileAbsoluteW(absolute_path_w: []const u16, flags: File.OpenFlags) Fi
 /// On Windows, `absolute_path` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `absolute_path` should be encoded as valid UTF-8.
 /// On other platforms, `absolute_path` is an opaque sequence of bytes with no particular encoding.
-pub fn accessAbsolute(absolute_path: []const u8, flags: File.OpenFlags) Dir.AccessError!void {
+pub fn access_absolute(absolute_path: []const u8, flags: File.OpenFlags) Dir.AccessError!void {
     assert(path.isAbsolute(absolute_path));
     try cwd().access(absolute_path, flags);
 }
 /// Same as `accessAbsolute` but the path parameter is null-terminated.
-pub fn accessAbsoluteZ(absolute_path: [*:0]const u8, flags: File.OpenFlags) Dir.AccessError!void {
+pub fn access_absolute_z(absolute_path: [*:0]const u8, flags: File.OpenFlags) Dir.AccessError!void {
     assert(path.isAbsoluteZ(absolute_path));
     try cwd().accessZ(absolute_path, flags);
 }
 /// Same as `accessAbsolute` but the path parameter is WTF-16 encoded.
-pub fn accessAbsoluteW(absolute_path: [*:0]const u16, flags: File.OpenFlags) Dir.AccessError!void {
+pub fn access_absolute_w(absolute_path: [*:0]const u16, flags: File.OpenFlags) Dir.AccessError!void {
     assert(path.isAbsoluteWindowsW(absolute_path));
     try cwd().accessW(absolute_path, flags);
 }
@@ -350,19 +350,19 @@ pub fn accessAbsoluteW(absolute_path: [*:0]const u16, flags: File.OpenFlags) Dir
 /// On Windows, `absolute_path` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `absolute_path` should be encoded as valid UTF-8.
 /// On other platforms, `absolute_path` is an opaque sequence of bytes with no particular encoding.
-pub fn createFileAbsolute(absolute_path: []const u8, flags: File.CreateFlags) File.OpenError!File {
+pub fn create_file_absolute(absolute_path: []const u8, flags: File.CreateFlags) File.OpenError!File {
     assert(path.isAbsolute(absolute_path));
     return cwd().createFile(absolute_path, flags);
 }
 
 /// Same as `createFileAbsolute` but the path parameter is null-terminated.
-pub fn createFileAbsoluteZ(absolute_path_c: [*:0]const u8, flags: File.CreateFlags) File.OpenError!File {
+pub fn create_file_absolute_z(absolute_path_c: [*:0]const u8, flags: File.CreateFlags) File.OpenError!File {
     assert(path.isAbsoluteZ(absolute_path_c));
     return cwd().createFileZ(absolute_path_c, flags);
 }
 
 /// Same as `createFileAbsolute` but the path parameter is WTF-16 encoded.
-pub fn createFileAbsoluteW(absolute_path_w: [*:0]const u16, flags: File.CreateFlags) File.OpenError!File {
+pub fn create_file_absolute_w(absolute_path_w: [*:0]const u16, flags: File.CreateFlags) File.OpenError!File {
     assert(path.isAbsoluteWindowsW(absolute_path_w));
     return cwd().createFileW(absolute_path_w, flags);
 }
@@ -374,19 +374,19 @@ pub fn createFileAbsoluteW(absolute_path_w: [*:0]const u16, flags: File.CreateFl
 /// On Windows, `absolute_path` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `absolute_path` should be encoded as valid UTF-8.
 /// On other platforms, `absolute_path` is an opaque sequence of bytes with no particular encoding.
-pub fn deleteFileAbsolute(absolute_path: []const u8) Dir.DeleteFileError!void {
+pub fn delete_file_absolute(absolute_path: []const u8) Dir.DeleteFileError!void {
     assert(path.isAbsolute(absolute_path));
     return cwd().deleteFile(absolute_path);
 }
 
 /// Same as `deleteFileAbsolute` except the parameter is null-terminated.
-pub fn deleteFileAbsoluteZ(absolute_path_c: [*:0]const u8) Dir.DeleteFileError!void {
+pub fn delete_file_absolute_z(absolute_path_c: [*:0]const u8) Dir.DeleteFileError!void {
     assert(path.isAbsoluteZ(absolute_path_c));
     return cwd().deleteFileZ(absolute_path_c);
 }
 
 /// Same as `deleteFileAbsolute` except the parameter is WTF-16 encoded.
-pub fn deleteFileAbsoluteW(absolute_path_w: [*:0]const u16) Dir.DeleteFileError!void {
+pub fn delete_file_absolute_w(absolute_path_w: [*:0]const u16) Dir.DeleteFileError!void {
     assert(path.isAbsoluteWindowsW(absolute_path_w));
     return cwd().deleteFileW(absolute_path_w);
 }
@@ -399,7 +399,7 @@ pub fn deleteFileAbsoluteW(absolute_path_w: [*:0]const u16) Dir.DeleteFileError!
 /// On Windows, `absolute_path` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `absolute_path` should be encoded as valid UTF-8.
 /// On other platforms, `absolute_path` is an opaque sequence of bytes with no particular encoding.
-pub fn deleteTreeAbsolute(absolute_path: []const u8) !void {
+pub fn delete_tree_absolute(absolute_path: []const u8) !void {
     assert(path.isAbsolute(absolute_path));
     const dirname = path.dirname(absolute_path) orelse return error{
         /// Attempt to remove the root file system path.
@@ -417,20 +417,20 @@ pub fn deleteTreeAbsolute(absolute_path: []const u8) !void {
 /// On Windows, `pathname` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `pathname` should be encoded as valid UTF-8.
 /// On other platforms, `pathname` is an opaque sequence of bytes with no particular encoding.
-pub fn readLinkAbsolute(pathname: []const u8, buffer: *[MAX_PATH_BYTES]u8) ![]u8 {
+pub fn read_link_absolute(pathname: []const u8, buffer: *[MAX_PATH_BYTES]u8) ![]u8 {
     assert(path.isAbsolute(pathname));
     return posix.readlink(pathname, buffer);
 }
 
 /// Windows-only. Same as `readlinkW`, except the path parameter is null-terminated, WTF16
 /// encoded.
-pub fn readlinkAbsoluteW(pathname_w: [*:0]const u16, buffer: *[MAX_PATH_BYTES]u8) ![]u8 {
+pub fn readlink_absolute_w(pathname_w: [*:0]const u16, buffer: *[MAX_PATH_BYTES]u8) ![]u8 {
     assert(path.isAbsoluteWindowsW(pathname_w));
     return posix.readlinkW(pathname_w, buffer);
 }
 
 /// Same as `readLink`, except the path parameter is null-terminated.
-pub fn readLinkAbsoluteZ(pathname_c: [*:0]const u8, buffer: *[MAX_PATH_BYTES]u8) ![]u8 {
+pub fn read_link_absolute_z(pathname_c: [*:0]const u8, buffer: *[MAX_PATH_BYTES]u8) ![]u8 {
     assert(path.isAbsoluteZ(pathname_c));
     return posix.readlinkZ(pathname_c, buffer);
 }
@@ -443,7 +443,7 @@ pub fn readLinkAbsoluteZ(pathname_c: [*:0]const u8, buffer: *[MAX_PATH_BYTES]u8)
 /// On Windows, both paths should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, both paths should be encoded as valid UTF-8.
 /// On other platforms, both paths are an opaque sequence of bytes with no particular encoding.
-pub fn symLinkAbsolute(
+pub fn sym_link_absolute(
     target_path: []const u8,
     sym_link_path: []const u8,
     flags: Dir.SymLinkFlags,
@@ -462,7 +462,7 @@ pub fn symLinkAbsolute(
 /// Note that this function will by default try creating a symbolic link to a file. If you would
 /// like to create a symbolic link to a directory, specify this with `SymLinkFlags{ .is_directory = true }`.
 /// See also `symLinkAbsolute`, `symLinkAbsoluteZ`.
-pub fn symLinkAbsoluteW(
+pub fn sym_link_absolute_w(
     target_path_w: []const u16,
     sym_link_path_w: []const u16,
     flags: Dir.SymLinkFlags,
@@ -474,7 +474,7 @@ pub fn symLinkAbsoluteW(
 
 /// Same as `symLinkAbsolute` except the parameters are null-terminated pointers.
 /// See also `symLinkAbsolute`.
-pub fn symLinkAbsoluteZ(
+pub fn sym_link_absolute_z(
     target_path_c: [*:0]const u8,
     sym_link_path_c: [*:0]const u8,
     flags: Dir.SymLinkFlags,
@@ -491,7 +491,7 @@ pub fn symLinkAbsoluteZ(
 
 pub const OpenSelfExeError = posix.OpenError || SelfExePathError || posix.FlockError;
 
-pub fn openSelfExe(flags: File.OpenFlags) OpenSelfExeError!File {
+pub fn open_self_exe(flags: File.OpenFlags) OpenSelfExeError!File {
     if (native_os == .linux) {
         return openFileAbsoluteZ("/proc/self/exe", flags);
     }
@@ -553,7 +553,7 @@ pub const SelfExePathError = error{
 
 /// `selfExePath` except allocates the result on the heap.
 /// Caller owns returned memory.
-pub fn selfExePathAlloc(allocator: Allocator) ![]u8 {
+pub fn self_exe_path_alloc(allocator: Allocator) ![]u8 {
     // Use of MAX_PATH_BYTES here is justified as, at least on one tested Linux
     // system, readlink will completely fail to return a result larger than
     // PATH_MAX even if given a sufficiently large buffer. This makes it
@@ -577,7 +577,7 @@ pub fn selfExePathAlloc(allocator: Allocator) ![]u8 {
 /// On Linux, depends on procfs being mounted. If the currently executing binary has
 /// been deleted, the file path looks something like `/a/b/c/exe (deleted)`.
 /// TODO make the return type of this a null terminated pointer
-pub fn selfExePath(out_buffer: []u8) SelfExePathError![]u8 {
+pub fn self_exe_path(out_buffer: []u8) SelfExePathError![]u8 {
     if (is_darwin) {
         // Note that _NSGetExecutablePath() will return "a path" to
         // the executable not a "real path" to the executable.
@@ -688,7 +688,7 @@ pub fn selfExePath(out_buffer: []u8) SelfExePathError![]u8 {
 
 /// `selfExeDirPath` except allocates the result on the heap.
 /// Caller owns returned memory.
-pub fn selfExeDirPathAlloc(allocator: Allocator) ![]u8 {
+pub fn self_exe_dir_path_alloc(allocator: Allocator) ![]u8 {
     // Use of MAX_PATH_BYTES here is justified as, at least on one tested Linux
     // system, readlink will completely fail to return a result larger than
     // PATH_MAX even if given a sufficiently large buffer. This makes it
@@ -704,7 +704,7 @@ pub fn selfExeDirPathAlloc(allocator: Allocator) ![]u8 {
 /// Returned value is a slice of out_buffer.
 /// On Windows, the result is encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On other platforms, the result is an opaque sequence of bytes with no particular encoding.
-pub fn selfExeDirPath(out_buffer: []u8) SelfExePathError![]const u8 {
+pub fn self_exe_dir_path(out_buffer: []u8) SelfExePathError![]const u8 {
     const self_exe_path = try selfExePath(out_buffer);
     // Assume that the OS APIs return absolute paths, and therefore dirname
     // will not return null.
@@ -715,7 +715,7 @@ pub fn selfExeDirPath(out_buffer: []u8) SelfExePathError![]const u8 {
 /// On Windows, the result is encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On other platforms, the result is an opaque sequence of bytes with no particular encoding.
 /// See also `Dir.realpath`.
-pub fn realpathAlloc(allocator: Allocator, pathname: []const u8) ![]u8 {
+pub fn realpath_alloc(allocator: Allocator, pathname: []const u8) ![]u8 {
     // Use of MAX_PATH_BYTES here is valid as the realpath function does not
     // have a variant that takes an arbitrary-size buffer.
     // TODO(#4812): Consider reimplementing realpath or using the POSIX.1-2008

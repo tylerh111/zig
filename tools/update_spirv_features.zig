@@ -36,7 +36,7 @@ const Version = struct {
         return a.major == b.major and a.minor == b.minor;
     }
 
-    fn lessThan(ctx: void, a: Version, b: Version) bool {
+    fn less_than(ctx: void, a: Version, b: Version) bool {
         _ = ctx;
         return if (a.major == b.major)
             a.minor < b.minor
@@ -281,7 +281,7 @@ fn gather_extensions(allocator: Allocator, spirv_registry_root: []const u8) ![]c
     return extensions.items;
 }
 
-fn insertVersion(versions: *std.ArrayList(Version), version: ?[]const u8) !void {
+fn insert_version(versions: *std.ArrayList(Version), version: ?[]const u8) !void {
     const ver_str = version orelse return;
     if (std.mem.eql(u8, ver_str, "None"))
         return;
@@ -294,7 +294,7 @@ fn insertVersion(versions: *std.ArrayList(Version), version: ?[]const u8) !void 
     try versions.append(ver);
 }
 
-fn gatherVersions(allocator: Allocator, registry: g.CoreRegistry) ![]const Version {
+fn gather_versions(allocator: Allocator, registry: g.CoreRegistry) ![]const Version {
     // Expected number of versions is small
     var versions = std.ArrayList(Version).init(allocator);
 
@@ -314,7 +314,7 @@ fn gatherVersions(allocator: Allocator, registry: g.CoreRegistry) ![]const Versi
     return versions.items;
 }
 
-fn usageAndExit(file: fs.File, arg0: []const u8, code: u8) noreturn {
+fn usage_and_exit(file: fs.File, arg0: []const u8, code: u8) noreturn {
     file.writer().print(
         \\Usage: {s} /path/git/SPIRV-Headers /path/git/SPIRV-Registry
         \\

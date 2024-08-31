@@ -65,25 +65,25 @@ pub const Os = struct {
         illumos,
         other,
 
-        pub inline fn isDarwin(tag: Tag) bool {
+        pub inline fn is_darwin(tag: Tag) bool {
             return switch (tag) {
                 .ios, .macos, .watchos, .tvos, .visionos => true,
                 else => false,
             };
         }
 
-        pub inline fn isBSD(tag: Tag) bool {
+        pub inline fn is_bsd(tag: Tag) bool {
             return tag.isDarwin() or switch (tag) {
                 .kfreebsd, .freebsd, .openbsd, .netbsd, .dragonfly => true,
                 else => false,
             };
         }
 
-        pub inline fn isSolarish(tag: Tag) bool {
+        pub inline fn is_solarish(tag: Tag) bool {
             return tag == .solaris or tag == .illumos;
         }
 
-        pub fn exeFileExt(tag: Tag, arch: Cpu.Arch) [:0]const u8 {
+        pub fn exe_file_ext(tag: Tag, arch: Cpu.Arch) [:0]const u8 {
             return switch (tag) {
                 .windows => ".exe",
                 .uefi => ".efi",
@@ -95,7 +95,7 @@ pub const Os = struct {
             };
         }
 
-        pub fn staticLibSuffix(tag: Tag, abi: Abi) [:0]const u8 {
+        pub fn static_lib_suffix(tag: Tag, abi: Abi) [:0]const u8 {
             return switch (abi) {
                 .msvc => ".lib",
                 else => switch (tag) {
@@ -105,7 +105,7 @@ pub const Os = struct {
             };
         }
 
-        pub fn dynamicLibSuffix(tag: Tag) [:0]const u8 {
+        pub fn dynamic_lib_suffix(tag: Tag) [:0]const u8 {
             return switch (tag) {
                 .windows, .uefi => ".dll",
                 .ios, .macos, .watchos, .tvos, .visionos => ".dylib",
@@ -113,7 +113,7 @@ pub const Os = struct {
             };
         }
 
-        pub fn libPrefix(tag: Os.Tag, abi: Abi) [:0]const u8 {
+        pub fn lib_prefix(tag: Os.Tag, abi: Abi) [:0]const u8 {
             return switch (abi) {
                 .msvc => "",
                 else => switch (tag) {
@@ -123,18 +123,18 @@ pub const Os = struct {
             };
         }
 
-        pub inline fn isGnuLibC(tag: Os.Tag, abi: Abi) bool {
+        pub inline fn is_gnu_lib_c(tag: Os.Tag, abi: Abi) bool {
             return tag == .linux and abi.isGnu();
         }
 
-        pub fn defaultVersionRange(tag: Tag, arch: Cpu.Arch) Os {
+        pub fn default_version_range(tag: Tag, arch: Cpu.Arch) Os {
             return .{
                 .tag = tag,
                 .version_range = VersionRange.default(tag, arch),
             };
         }
 
-        pub inline fn getVersionRangeTag(tag: Tag) @typeInfo(TaggedVersionRange).Union.tag_type.? {
+        pub inline fn get_version_range_tag(tag: Tag) @typeInfo(TaggedVersionRange).Union.tag_type.? {
             return switch (tag) {
                 .freestanding,
                 .ananas,
@@ -192,7 +192,7 @@ pub const Os = struct {
             };
         }
 
-        pub fn archName(tag: Tag, arch: Cpu.Arch) [:0]const u8 {
+        pub fn arch_name(tag: Tag, arch: Cpu.Arch) [:0]const u8 {
             return switch (tag) {
                 .linux => switch (arch) {
                     .arm, .armeb, .thumb, .thumbeb => "arm",
@@ -253,7 +253,7 @@ pub const Os = struct {
         };
 
         /// Returns whether the first version `ver` is newer (greater) than or equal to the second version `ver`.
-        pub inline fn isAtLeast(ver: WindowsVersion, min_ver: WindowsVersion) bool {
+        pub inline fn is_at_least(ver: WindowsVersion, min_ver: WindowsVersion) bool {
             return @intFromEnum(ver) >= @intFromEnum(min_ver);
         }
 
@@ -261,14 +261,14 @@ pub const Os = struct {
             min: WindowsVersion,
             max: WindowsVersion,
 
-            pub inline fn includesVersion(range: Range, ver: WindowsVersion) bool {
+            pub inline fn includes_version(range: Range, ver: WindowsVersion) bool {
                 return @intFromEnum(ver) >= @intFromEnum(range.min) and
                     @intFromEnum(ver) <= @intFromEnum(range.max);
             }
 
             /// Checks if system is guaranteed to be at least `version` or older than `version`.
             /// Returns `null` if a runtime check is required.
-            pub inline fn isAtLeast(range: Range, min_ver: WindowsVersion) ?bool {
+            pub inline fn is_at_least(range: Range, min_ver: WindowsVersion) ?bool {
                 if (@intFromEnum(range.min) >= @intFromEnum(min_ver)) return true;
                 if (@intFromEnum(range.max) < @intFromEnum(min_ver)) return false;
                 return null;
@@ -313,13 +313,13 @@ pub const Os = struct {
         range: std.SemanticVersion.Range,
         glibc: std.SemanticVersion,
 
-        pub inline fn includesVersion(range: LinuxVersionRange, ver: std.SemanticVersion) bool {
+        pub inline fn includes_version(range: LinuxVersionRange, ver: std.SemanticVersion) bool {
             return range.range.includesVersion(ver);
         }
 
         /// Checks if system is guaranteed to be at least `version` or older than `version`.
         /// Returns `null` if a runtime check is required.
-        pub inline fn isAtLeast(range: LinuxVersionRange, ver: std.SemanticVersion) ?bool {
+        pub inline fn is_at_least(range: LinuxVersionRange, ver: std.SemanticVersion) ?bool {
             return range.range.isAtLeast(ver);
         }
     };
@@ -500,7 +500,7 @@ pub const Os = struct {
 
     /// Provides a tagged union. `Target` does not store the tag because it is
     /// redundant with the OS tag; this function abstracts that part away.
-    pub inline fn getVersionRange(os: Os) TaggedVersionRange {
+    pub inline fn get_version_range(os: Os) TaggedVersionRange {
         return switch (os.tag.getVersionRangeTag()) {
             .none => .{ .none = {} },
             .semver => .{ .semver = os.version_range.semver },
@@ -511,7 +511,7 @@ pub const Os = struct {
 
     /// Checks if system is guaranteed to be at least `version` or older than `version`.
     /// Returns `null` if a runtime check is required.
-    pub inline fn isAtLeast(os: Os, comptime tag: Tag, ver: switch (tag.getVersionRangeTag()) {
+    pub inline fn is_at_least(os: Os, comptime tag: Tag, ver: switch (tag.getVersionRangeTag()) {
         .none => void,
         .semver, .linux => std.SemanticVersion,
         .windows => WindowsVersion,
@@ -528,7 +528,7 @@ pub const Os = struct {
     /// On Darwin, we always link libSystem which contains libc.
     /// Similarly on FreeBSD and NetBSD we always link system libc
     /// since this is the stable syscall interface.
-    pub fn requiresLibC(os: Os) bool {
+    pub fn requires_lib_c(os: Os) bool {
         return switch (os.tag) {
             .freebsd,
             .netbsd,
@@ -708,14 +708,14 @@ pub const Abi = enum {
         };
     }
 
-    pub inline fn isGnu(abi: Abi) bool {
+    pub inline fn is_gnu(abi: Abi) bool {
         return switch (abi) {
             .gnu, .gnuabin32, .gnuabi64, .gnueabi, .gnueabihf, .gnux32 => true,
             else => false,
         };
     }
 
-    pub inline fn isMusl(abi: Abi) bool {
+    pub inline fn is_musl(abi: Abi) bool {
         return switch (abi) {
             .musl, .musleabi, .musleabihf, .muslx32 => true,
             .ohos => true,
@@ -723,7 +723,7 @@ pub const Abi = enum {
         };
     }
 
-    pub inline fn floatAbi(abi: Abi) FloatAbi {
+    pub inline fn float_abi(abi: Abi) FloatAbi {
         return switch (abi) {
             .gnueabihf,
             .eabihf,
@@ -759,7 +759,7 @@ pub const ObjectFormat = enum {
     /// Nvidia PTX format
     nvptx,
 
-    pub fn fileExt(of: ObjectFormat, arch: Cpu.Arch) [:0]const u8 {
+    pub fn file_ext(of: ObjectFormat, arch: Cpu.Arch) [:0]const u8 {
         return switch (of) {
             .coff => ".obj",
             .elf, .macho, .wasm => ".o",
@@ -841,27 +841,27 @@ pub const Cpu = struct {
 
             pub const empty = Set{ .ints = [1]usize{0} ** usize_count };
 
-            pub fn isEmpty(set: Set) bool {
+            pub fn is_empty(set: Set) bool {
                 return for (set.ints) |x| {
                     if (x != 0) break false;
                 } else true;
             }
 
-            pub fn isEnabled(set: Set, arch_feature_index: Index) bool {
+            pub fn is_enabled(set: Set, arch_feature_index: Index) bool {
                 const usize_index = arch_feature_index / @bitSizeOf(usize);
                 const bit_index: ShiftInt = @intCast(arch_feature_index % @bitSizeOf(usize));
                 return (set.ints[usize_index] & (@as(usize, 1) << bit_index)) != 0;
             }
 
             /// Adds the specified feature but not its dependencies.
-            pub fn addFeature(set: *Set, arch_feature_index: Index) void {
+            pub fn add_feature(set: *Set, arch_feature_index: Index) void {
                 const usize_index = arch_feature_index / @bitSizeOf(usize);
                 const bit_index: ShiftInt = @intCast(arch_feature_index % @bitSizeOf(usize));
                 set.ints[usize_index] |= @as(usize, 1) << bit_index;
             }
 
             /// Adds the specified feature set but not its dependencies.
-            pub fn addFeatureSet(set: *Set, other_set: Set) void {
+            pub fn add_feature_set(set: *Set, other_set: Set) void {
                 switch (builtin.zig_backend) {
                     .stage2_x86_64 => {
                         for (&set.ints, other_set.ints) |*set_int, other_set_int| set_int.* |= other_set_int;
@@ -873,14 +873,14 @@ pub const Cpu = struct {
             }
 
             /// Removes the specified feature but not its dependents.
-            pub fn removeFeature(set: *Set, arch_feature_index: Index) void {
+            pub fn remove_feature(set: *Set, arch_feature_index: Index) void {
                 const usize_index = arch_feature_index / @bitSizeOf(usize);
                 const bit_index: ShiftInt = @intCast(arch_feature_index % @bitSizeOf(usize));
                 set.ints[usize_index] &= ~(@as(usize, 1) << bit_index);
             }
 
             /// Removes the specified feature but not its dependents.
-            pub fn removeFeatureSet(set: *Set, other_set: Set) void {
+            pub fn remove_feature_set(set: *Set, other_set: Set) void {
                 switch (builtin.zig_backend) {
                     .stage2_x86_64 => {
                         for (&set.ints, other_set.ints) |*set_int, other_set_int| set_int.* &= ~other_set_int;
@@ -891,7 +891,7 @@ pub const Cpu = struct {
                 }
             }
 
-            pub fn populateDependencies(set: *Set, all_features_list: []const Cpu.Feature) void {
+            pub fn populate_dependencies(set: *Set, all_features_list: []const Cpu.Feature) void {
                 @setEvalBranchQuota(1000000);
 
                 var old = set.ints;
@@ -908,7 +908,7 @@ pub const Cpu = struct {
                 }
             }
 
-            pub fn asBytes(set: *const Set) *const [byte_count]u8 {
+            pub fn as_bytes(set: *const Set) *const [byte_count]u8 {
                 return std.mem.sliceAsBytes(&set.ints)[0..byte_count];
             }
 
@@ -916,7 +916,7 @@ pub const Cpu = struct {
                 return std.mem.eql(usize, &set.ints, &other_set.ints);
             }
 
-            pub fn isSuperSetOf(set: Set, other_set: Set) bool {
+            pub fn is_super_set_of(set: Set, other_set: Set) bool {
                 switch (builtin.zig_backend) {
                     .stage2_x86_64 => {
                         var result = true;
@@ -937,7 +937,7 @@ pub const Cpu = struct {
         pub fn feature_set_fns(comptime F: type) type {
             return struct {
                 /// Populates only the feature bits specified.
-                pub fn featureSet(features: []const F) Set {
+                pub fn feature_set(features: []const F) Set {
                     var x = Set.empty;
                     for (features) |feature| {
                         x.addFeature(@intFromEnum(feature));
@@ -946,12 +946,12 @@ pub const Cpu = struct {
                 }
 
                 /// Returns true if the specified feature is enabled.
-                pub fn featureSetHas(set: Set, feature: F) bool {
+                pub fn feature_set_has(set: Set, feature: F) bool {
                     return set.isEnabled(@intFromEnum(feature));
                 }
 
                 /// Returns true if any specified feature is enabled.
-                pub fn featureSetHasAny(set: Set, features: anytype) bool {
+                pub fn feature_set_has_any(set: Set, features: anytype) bool {
                     inline for (features) |feature| {
                         if (set.isEnabled(@intFromEnum(@as(F, feature)))) return true;
                     }
@@ -959,7 +959,7 @@ pub const Cpu = struct {
                 }
 
                 /// Returns true if every specified feature is enabled.
-                pub fn featureSetHasAll(set: Set, features: anytype) bool {
+                pub fn feature_set_has_all(set: Set, features: anytype) bool {
                     inline for (features) |feature| {
                         if (!set.isEnabled(@intFromEnum(@as(F, feature)))) return false;
                     }
@@ -1033,102 +1033,102 @@ pub const Cpu = struct {
         ve,
         spu_2,
 
-        pub inline fn isX86(arch: Arch) bool {
+        pub inline fn is_x86(arch: Arch) bool {
             return switch (arch) {
                 .x86, .x86_64 => true,
                 else => false,
             };
         }
 
-        pub inline fn isARM(arch: Arch) bool {
+        pub inline fn is_arm(arch: Arch) bool {
             return switch (arch) {
                 .arm, .armeb => true,
                 else => false,
             };
         }
 
-        pub inline fn isAARCH64(arch: Arch) bool {
+        pub inline fn is_aarch64(arch: Arch) bool {
             return switch (arch) {
                 .aarch64, .aarch64_be, .aarch64_32 => true,
                 else => false,
             };
         }
 
-        pub inline fn isThumb(arch: Arch) bool {
+        pub inline fn is_thumb(arch: Arch) bool {
             return switch (arch) {
                 .thumb, .thumbeb => true,
                 else => false,
             };
         }
 
-        pub inline fn isArmOrThumb(arch: Arch) bool {
+        pub inline fn is_arm_or_thumb(arch: Arch) bool {
             return arch.isARM() or arch.isThumb();
         }
 
-        pub inline fn isWasm(arch: Arch) bool {
+        pub inline fn is_wasm(arch: Arch) bool {
             return switch (arch) {
                 .wasm32, .wasm64 => true,
                 else => false,
             };
         }
 
-        pub inline fn isRISCV(arch: Arch) bool {
+        pub inline fn is_riscv(arch: Arch) bool {
             return switch (arch) {
                 .riscv32, .riscv64 => true,
                 else => false,
             };
         }
 
-        pub inline fn isMIPS(arch: Arch) bool {
+        pub inline fn is_mips(arch: Arch) bool {
             return switch (arch) {
                 .mips, .mipsel, .mips64, .mips64el => true,
                 else => false,
             };
         }
 
-        pub inline fn isPPC(arch: Arch) bool {
+        pub inline fn is_ppc(arch: Arch) bool {
             return switch (arch) {
                 .powerpc, .powerpcle => true,
                 else => false,
             };
         }
 
-        pub inline fn isPPC64(arch: Arch) bool {
+        pub inline fn is_ppc64(arch: Arch) bool {
             return switch (arch) {
                 .powerpc64, .powerpc64le => true,
                 else => false,
             };
         }
 
-        pub inline fn isSPARC(arch: Arch) bool {
+        pub inline fn is_sparc(arch: Arch) bool {
             return switch (arch) {
                 .sparc, .sparcel, .sparc64 => true,
                 else => false,
             };
         }
 
-        pub inline fn isSpirV(arch: Arch) bool {
+        pub inline fn is_spir_v(arch: Arch) bool {
             return switch (arch) {
                 .spirv32, .spirv64 => true,
                 else => false,
             };
         }
 
-        pub inline fn isBpf(arch: Arch) bool {
+        pub inline fn is_bpf(arch: Arch) bool {
             return switch (arch) {
                 .bpfel, .bpfeb => true,
                 else => false,
             };
         }
 
-        pub inline fn isNvptx(arch: Arch) bool {
+        pub inline fn is_nvptx(arch: Arch) bool {
             return switch (arch) {
                 .nvptx, .nvptx64 => true,
                 else => false,
             };
         }
 
-        pub fn parseCpuModel(arch: Arch, cpu_name: []const u8) !*const Cpu.Model {
+        pub fn parse_cpu_model(arch: Arch, cpu_name: []const u8) !*const Cpu.Model {
             for (arch.allCpuModels()) |cpu| {
                 if (std.mem.eql(u8, cpu_name, cpu.name)) {
                     return cpu;
@@ -1137,7 +1137,7 @@ pub const Cpu = struct {
             return error.UnknownCpuModel;
         }
 
-        pub fn toElfMachine(arch: Arch) std.elf.EM {
+        pub fn to_elf_machine(arch: Arch) std.elf.EM {
             return switch (arch) {
                 .avr => .AVR,
                 .msp430 => .MSP430,
@@ -1203,7 +1203,7 @@ pub const Cpu = struct {
             };
         }
 
-        pub fn toCoffMachine(arch: Arch) std.coff.MachineType {
+        pub fn to_coff_machine(arch: Arch) std.coff.MachineType {
             return switch (arch) {
                 .avr => .Unknown,
                 .msp430 => .Unknown,
@@ -1341,7 +1341,7 @@ pub const Cpu = struct {
         }
 
         /// Returns whether this architecture supports the address space
-        pub fn supportsAddressSpace(arch: Arch, address_space: std.builtin.AddressSpace) bool {
+        pub fn supports_address_space(arch: Arch, address_space: std.builtin.AddressSpace) bool {
             const is_nvptx = arch == .nvptx or arch == .nvptx64;
             const is_spirv = arch == .spirv32 or arch == .spirv64;
             const is_gpu = is_nvptx or is_spirv or arch == .amdgcn;
@@ -1357,7 +1357,7 @@ pub const Cpu = struct {
         }
 
         /// Returns a name that matches the lib/std/target/* source file name.
-        pub fn genericName(arch: Arch) [:0]const u8 {
+        pub fn generic_name(arch: Arch) [:0]const u8 {
             return switch (arch) {
                 .arm, .armeb, .thumb, .thumbeb => "arm",
                 .aarch64, .aarch64_be, .aarch64_32 => "aarch64",
@@ -1378,7 +1378,7 @@ pub const Cpu = struct {
         }
 
         /// All CPU features Zig is aware of, sorted lexicographically by name.
-        pub fn allFeaturesList(arch: Arch) []const Cpu.Feature {
+        pub fn all_features_list(arch: Arch) []const Cpu.Feature {
             return switch (arch) {
                 .arm, .armeb, .thumb, .thumbeb => &arm.all_features,
                 .aarch64, .aarch64_be, .aarch64_32 => &aarch64.all_features,
@@ -1408,7 +1408,7 @@ pub const Cpu = struct {
         }
 
         /// All processors Zig is aware of, sorted lexicographically by name.
-        pub fn allCpuModels(arch: Arch) []const *const Cpu.Model {
+        pub fn all_cpu_models(arch: Arch) []const *const Cpu.Model {
             return switch (arch) {
                 .arc => comptime allCpusFromDecls(arc.cpu),
                 .arm, .armeb, .thumb, .thumbeb => comptime allCpusFromDecls(arm.cpu),
@@ -1437,7 +1437,7 @@ pub const Cpu = struct {
             };
         }
 
-        fn allCpusFromDecls(comptime cpus: type) []const *const Cpu.Model {
+        fn all_cpus_from_decls(comptime cpus: type) []const *const Cpu.Model {
             @setEvalBranchQuota(2000);
             const decls = @typeInfo(cpus).Struct.decls;
             var array: [decls.len]*const Cpu.Model = undefined;
@@ -1458,7 +1458,7 @@ pub const Cpu = struct {
         /// kc sparc   Sun SPARC
         /// qc power   Power PC
         /// vc mips    big-endian MIPS 3000 family
-        pub fn plan9Ext(arch: Cpu.Arch) [:0]const u8 {
+        pub fn plan9_ext(arch: Cpu.Arch) [:0]const u8 {
             return switch (arch) {
                 .arm => ".5",
                 .x86_64 => ".6",
@@ -1478,7 +1478,7 @@ pub const Cpu = struct {
         llvm_name: ?[:0]const u8,
         features: Feature.Set,
 
-        pub fn toCpu(model: *const Model, arch: Arch) Cpu {
+        pub fn to_cpu(model: *const Model, arch: Arch) Cpu {
             var features = model.features;
             features.populateDependencies(arch.allFeaturesList());
             return .{
@@ -1551,75 +1551,75 @@ pub const Cpu = struct {
     }
 };
 
-pub fn zigTriple(target: Target, allocator: Allocator) Allocator.Error![]u8 {
+pub fn zig_triple(target: Target, allocator: Allocator) Allocator.Error![]u8 {
     return Query.fromTarget(target).zigTriple(allocator);
 }
 
-pub fn linuxTripleSimple(allocator: Allocator, arch: Cpu.Arch, os_tag: Os.Tag, abi: Abi) ![]u8 {
+pub fn linux_triple_simple(allocator: Allocator, arch: Cpu.Arch, os_tag: Os.Tag, abi: Abi) ![]u8 {
     return std.fmt.allocPrint(allocator, "{s}-{s}-{s}", .{ @tagName(arch), @tagName(os_tag), @tagName(abi) });
 }
 
-pub fn linuxTriple(target: Target, allocator: Allocator) ![]u8 {
+pub fn linux_triple(target: Target, allocator: Allocator) ![]u8 {
     return linuxTripleSimple(allocator, target.cpu.arch, target.os.tag, target.abi);
 }
 
-pub fn exeFileExt(target: Target) [:0]const u8 {
+pub fn exe_file_ext(target: Target) [:0]const u8 {
     return target.os.tag.exeFileExt(target.cpu.arch);
 }
 
-pub fn staticLibSuffix(target: Target) [:0]const u8 {
+pub fn static_lib_suffix(target: Target) [:0]const u8 {
     return target.os.tag.staticLibSuffix(target.abi);
 }
 
-pub fn dynamicLibSuffix(target: Target) [:0]const u8 {
+pub fn dynamic_lib_suffix(target: Target) [:0]const u8 {
     return target.os.tag.dynamicLibSuffix();
 }
 
-pub fn libPrefix(target: Target) [:0]const u8 {
+pub fn lib_prefix(target: Target) [:0]const u8 {
     return target.os.tag.libPrefix(target.abi);
 }
 
-pub inline fn isMinGW(target: Target) bool {
+pub inline fn is_min_gw(target: Target) bool {
     return target.os.tag == .windows and target.isGnu();
 }
 
-pub inline fn isGnu(target: Target) bool {
+pub inline fn is_gnu(target: Target) bool {
     return target.abi.isGnu();
 }
 
-pub inline fn isMusl(target: Target) bool {
+pub inline fn is_musl(target: Target) bool {
     return target.abi.isMusl();
 }
 
-pub inline fn isAndroid(target: Target) bool {
+pub inline fn is_android(target: Target) bool {
     return target.abi == .android;
 }
 
-pub inline fn isWasm(target: Target) bool {
+pub inline fn is_wasm(target: Target) bool {
     return target.cpu.arch.isWasm();
 }
 
-pub inline fn isDarwin(target: Target) bool {
+pub inline fn is_darwin(target: Target) bool {
     return target.os.tag.isDarwin();
 }
 
-pub inline fn isBSD(target: Target) bool {
+pub inline fn is_bsd(target: Target) bool {
     return target.os.tag.isBSD();
 }
 
-pub inline fn isBpfFreestanding(target: Target) bool {
+pub inline fn is_bpf_freestanding(target: Target) bool {
     return target.cpu.arch.isBpf() and target.os.tag == .freestanding;
 }
 
-pub inline fn isGnuLibC(target: Target) bool {
+pub inline fn is_gnu_lib_c(target: Target) bool {
     return target.os.tag.isGnuLibC(target.abi);
 }
 
-pub inline fn supportsNewStackCall(target: Target) bool {
+pub inline fn supports_new_stack_call(target: Target) bool {
     return !target.cpu.arch.isWasm();
 }
 
-pub inline fn isSpirV(target: Target) bool {
+pub inline fn is_spir_v(target: Target) bool {
     return target.cpu.arch.isSpirV();
 }
 
@@ -1628,11 +1628,11 @@ pub const FloatAbi = enum {
     soft,
 };
 
-pub inline fn getFloatAbi(target: Target) FloatAbi {
+pub inline fn get_float_abi(target: Target) FloatAbi {
     return target.abi.floatAbi();
 }
 
-pub inline fn hasDynamicLinker(target: Target) bool {
+pub inline fn has_dynamic_linker(target: Target) bool {
     if (target.cpu.arch.isWasm()) {
         return false;
     }
@@ -1675,7 +1675,7 @@ pub const DynamicLinker = struct {
         return dl;
     }
 
-    pub fn initFmt(comptime fmt_str: []const u8, args: anytype) !DynamicLinker {
+    pub fn init_fmt(comptime fmt_str: []const u8, args: anytype) !DynamicLinker {
         var dl: DynamicLinker = undefined;
         try dl.setFmt(fmt_str, args);
         return dl;
@@ -1694,7 +1694,7 @@ pub const DynamicLinker = struct {
     }
 
     /// Asserts that the length is less than or equal to 255 bytes.
-    pub fn setFmt(dl: *DynamicLinker, comptime fmt_str: []const u8, args: anytype) !void {
+    pub fn set_fmt(dl: *DynamicLinker, comptime fmt_str: []const u8, args: anytype) !void {
         dl.len = @intCast((try std.fmt.bufPrint(&dl.buffer, fmt_str, args)).len);
     }
 
@@ -1869,11 +1869,11 @@ pub const DynamicLinker = struct {
     }
 };
 
-pub fn standardDynamicLinkerPath(target: Target) DynamicLinker {
+pub fn standard_dynamic_linker_path(target: Target) DynamicLinker {
     return DynamicLinker.standard(target.cpu, target.os.tag, target.abi);
 }
 
-pub fn ptrBitWidth_cpu_abi(cpu: Cpu, abi: Abi) u16 {
+pub fn ptr_bit_width_cpu_abi(cpu: Cpu, abi: Abi) u16 {
     switch (abi) {
         .gnux32, .muslx32, .gnuabin32, .gnuilp32 => return 32,
         .gnuabi64 => return 64,
@@ -1952,11 +1952,11 @@ pub fn ptrBitWidth_cpu_abi(cpu: Cpu, abi: Abi) u16 {
     };
 }
 
-pub fn ptrBitWidth(target: Target) u16 {
+pub fn ptr_bit_width(target: Target) u16 {
     return ptrBitWidth_cpu_abi(target.cpu, target.abi);
 }
 
-pub fn stackAlignment(target: Target) u16 {
+pub fn stack_alignment(target: Target) u16 {
     return switch (target.cpu.arch) {
         .m68k => 2,
         .amdgcn => 4,
@@ -2002,7 +2002,7 @@ pub fn stackAlignment(target: Target) u16 {
 /// Default signedness of `char` for the native C compiler for this target
 /// Note that char signedness is implementation-defined and many compilers provide
 /// an option to override the default signedness e.g. GCC's -funsigned-char / -fsigned-char
-pub fn charSignedness(target: Target) std.builtin.Signedness {
+pub fn char_signedness(target: Target) std.builtin.Signedness {
     switch (target.cpu.arch) {
         .aarch64,
         .aarch64_32,
@@ -2747,7 +2747,7 @@ pub fn is_libcpp_lib_name(target: std.Target, name: []const u8) bool {
         eqlIgnoreCase(ignore_case, name, "c++abi");
 }
 
-fn eqlIgnoreCase(ignore_case: bool, a: []const u8, b: []const u8) bool {
+fn eql_ignore_case(ignore_case: bool, a: []const u8, b: []const u8) bool {
     if (ignore_case) {
         return std.ascii.eqlIgnoreCase(a, b);
     } else {
@@ -2755,7 +2755,7 @@ fn eqlIgnoreCase(ignore_case: bool, a: []const u8, b: []const u8) bool {
     }
 }
 
-pub fn osArchName(target: std.Target) [:0]const u8 {
+pub fn os_arch_name(target: std.Target) [:0]const u8 {
     return target.os.tag.archName(target.cpu.arch);
 }
 

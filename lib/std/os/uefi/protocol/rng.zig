@@ -10,12 +10,12 @@ pub const Rng = extern struct {
     _get_rng: *const fn (*const Rng, ?*align(8) const Guid, usize, [*]u8) callconv(cc) Status,
 
     /// Returns information about the random number generation implementation.
-    pub fn getInfo(self: *const Rng, list_size: *usize, list: [*]align(8) Guid) Status {
+    pub fn get_info(self: *const Rng, list_size: *usize, list: [*]align(8) Guid) Status {
         return self._get_info(self, list_size, list);
     }
 
     /// Produces and returns an RNG value using either the default or specified RNG algorithm.
-    pub fn getRNG(self: *const Rng, algo: ?*align(8) const Guid, value_length: usize, value: [*]u8) Status {
+    pub fn get_rng(self: *const Rng, algo: ?*align(8) const Guid, value_length: usize, value: [*]u8) Status {
         return self._get_rng(self, algo, value_length, value);
     }
 

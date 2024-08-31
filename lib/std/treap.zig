@@ -3,7 +3,7 @@ const assert = std.debug.assert;
 const testing = std.testing;
 const Order = std.math.Order;
 
-pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
+pub fn treap(comptime Key: type, comptime compareFn: anytype) type {
     return struct {
         const Self = @This();
 
@@ -55,7 +55,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
 
         /// Returns the smallest Node by key in the treap if there is one.
         /// Use `getEntryForExisting()` to replace/remove this Node from the treap.
-        pub fn getMin(self: Self) ?*Node {
+        pub fn get_min(self: Self) ?*Node {
             var node = self.root;
             while (node) |current| {
                 node = current.children[0] orelse break;
@@ -65,7 +65,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
 
         /// Returns the largest Node by key in the treap if there is one.
         /// Use `getEntryForExisting()` to replace/remove this Node from the treap.
-        pub fn getMax(self: Self) ?*Node {
+        pub fn get_max(self: Self) ?*Node {
             var node = self.root;
             while (node) |current| {
                 node = current.children[1] orelse break;
@@ -75,7 +75,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
 
         /// Lookup the Entry for the given key in the treap.
         /// The Entry act's as a slot in the treap to insert/replace/remove the node associated with the key.
-        pub fn getEntryFor(self: *Self, key: Key) Entry {
+        pub fn get_entry_for(self: *Self, key: Key) Entry {
             var parent: ?*Node = undefined;
             const node = self.find(key, &parent);
 
@@ -90,7 +90,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
         /// Get an entry for a Node that currently exists in the treap.
         /// It is undefined behavior if the Node is not currently inserted in the treap.
         /// The Entry act's as a slot in the treap to insert/replace/remove the node associated with the key.
-        pub fn getEntryForExisting(self: *Self, node: *Node) Entry {
+        pub fn get_entry_for_existing(self: *Self, node: *Node) Entry {
             assert(node.priority != 0);
 
             return Entry{
@@ -295,7 +295,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
             }
         };
 
-        pub fn inorderIterator(self: *Self) InorderIterator {
+        pub fn inorder_iterator(self: *Self) InorderIterator {
             return .{ .current = self.root };
         }
     };
@@ -303,7 +303,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
 
 // For iterating a slice in a random order
 // https://lemire.me/blog/2017/09/18/visiting-all-values-in-an-array-exactly-once-in-random-order/
-fn SliceIterRandomOrder(comptime T: type) type {
+fn slice_iter_random_order(comptime T: type) type {
     return struct {
         rng: std.Random,
         slice: []T,

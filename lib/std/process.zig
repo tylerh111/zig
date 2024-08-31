@@ -22,7 +22,7 @@ pub const GetCwdError = posix.GetCwdError;
 /// The result is a slice of `out_buffer`, from index `0`.
 /// On Windows, the result is encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On other platforms, the result is an opaque sequence of bytes with no particular encoding.
-pub fn getCwd(out_buffer: []u8) ![]u8 {
+pub fn get_cwd(out_buffer: []u8) ![]u8 {
     return posix.getcwd(out_buffer);
 }
 
@@ -31,7 +31,7 @@ pub const GetCwdAllocError = Allocator.Error || posix.GetCwdError;
 /// Caller must free the returned memory.
 /// On Windows, the result is encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On other platforms, the result is an opaque sequence of bytes with no particular encoding.
-pub fn getCwdAlloc(allocator: Allocator) ![]u8 {
+pub fn get_cwd_alloc(allocator: Allocator) ![]u8 {
     // The use of MAX_PATH_BYTES here is just a heuristic: most paths will fit
     // in stack_buf, avoiding an extra allocation in the common case.
     var stack_buf: [fs.MAX_PATH_BYTES]u8 = undefined;
@@ -140,7 +140,7 @@ pub const EnvMap = struct {
     /// than being copied.
     /// If `putMove` fails, the ownership of key and value does not transfer.
     /// On Windows `key` must be a valid [WTF-8](https://simonsapin.github.io/wtf-8/) string.
-    pub fn putMove(self: *EnvMap, key: []u8, value: []u8) !void {
+    pub fn put_move(self: *EnvMap, key: []u8, value: []u8) !void {
         assert(unicode.wtf8ValidateSlice(key));
         const get_or_put = try self.hash_map.getOrPut(key);
         if (get_or_put.found_existing) {
@@ -172,7 +172,7 @@ pub const EnvMap = struct {
     /// Find the address of the value associated with a key.
     /// The returned pointer is invalidated if the map resizes.
     /// On Windows `key` must be a valid [WTF-8](https://simonsapin.github.io/wtf-8/) string.
-    pub fn getPtr(self: EnvMap, key: []const u8) ?*[]const u8 {
+    pub fn get_ptr(self: EnvMap, key: []const u8) ?*[]const u8 {
         assert(unicode.wtf8ValidateSlice(key));
         return self.hash_map.getPtr(key);
     }
@@ -281,7 +281,7 @@ pub const GetEnvMapError = error{
 /// Any modifications to the resulting EnvMap will not be reflected in the environment, and
 /// likewise, any future modifications to the environment will not be reflected in the EnvMap.
 /// Caller owns resulting `EnvMap` and should call its `deinit` fn when done.
-pub fn getEnvMap(allocator: Allocator) GetEnvMapError!EnvMap {
+pub fn get_env_map(allocator: Allocator) GetEnvMapError!EnvMap {
     var result = EnvMap.init(allocator);
     errdefer result.deinit();
 
@@ -396,7 +396,7 @@ pub const GetEnvVarOwnedError = error{
 /// then `error.InvalidWtf8` is returned.
 /// On Windows, the value is encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On other platforms, the value is an opaque sequence of bytes with no particular encoding.
-pub fn getEnvVarOwned(allocator: Allocator, key: []const u8) GetEnvVarOwnedError![]u8 {
+pub fn get_env_var_owned(allocator: Allocator, key: []const u8) GetEnvVarOwnedError![]u8 {
     if (native_os == .windows) {
         const result_w = blk: {
             var stack_alloc = std.heap.stackFallback(256 * @sizeOf(u16), allocator);
@@ -420,7 +420,7 @@ pub fn getEnvVarOwned(allocator: Allocator, key: []const u8) GetEnvVarOwnedError
 }
 
 /// On Windows, `key` must be valid UTF-8.
-pub fn hasEnvVarConstant(comptime key: []const u8) bool {
+pub fn has_env_var_constant(comptime key: []const u8) bool {
     if (native_os == .windows) {
         const key_w = comptime unicode.utf8ToUtf16LeStringLiteral(key);
         return getenvW(key_w) != null;
@@ -438,7 +438,7 @@ pub const ParseEnvVarIntError = std.fmt.ParseIntError || error{EnvironmentVariab
 /// Since the key is comptime-known, no allocation is needed.
 ///
 /// On Windows, `key` must be valid UTF-8.
-pub fn parseEnvVarInt(comptime key: []const u8, comptime I: type, base: u8) ParseEnvVarIntError!I {
+pub fn parse_env_var_int(comptime key: []const u8, comptime I: type, base: u8) ParseEnvVarIntError!I {
     if (native_os == .windows) {
         const key_w = comptime std.unicode.utf8ToUtf16LeStringLiteral(key);
         const text = getenvW(key_w) orelse return error.EnvironmentVariableNotFound;
@@ -461,7 +461,7 @@ pub const HasEnvVarError = error{
 
 /// On Windows, if `key` is not valid [WTF-8](https://simonsapin.github.io/wtf-8/),
 /// then `error.InvalidWtf8` is returned.
-pub fn hasEnvVar(allocator: Allocator, key: []const u8) HasEnvVarError!bool {
+pub fn has_env_var(allocator: Allocator, key: []const u8) HasEnvVarError!bool {
     if (native_os == .windows) {
         var stack_alloc = std.heap.stackFallback(256 * @sizeOf(u16), allocator);
         const stack_allocator = stack_alloc.get();
@@ -487,7 +487,7 @@ pub fn hasEnvVar(allocator: Allocator, key: []const u8) HasEnvVarError!bool {
 /// * `getEnvVarOwned`
 /// * `hasEnvVarConstant`
 /// * `hasEnvVar`
-pub fn getenvW(key: [*:0]const u16) ?[:0]const u16 {
+pub fn getenv_w(key: [*:0]const u16) ?[:0]const u16 {
     if (native_os != .windows) {
         @compileError("Windows-only");
     }
@@ -586,7 +586,7 @@ pub const ArgIteratorWasi = struct {
         };
     }
 
-    fn internalInit(allocator: Allocator) InitError![][:0]u8 {
+    fn internal_init(allocator: Allocator) InitError![][:0]u8 {
         var count: usize = undefined;
         var buf_size: usize = undefined;
 
@@ -710,11 +710,11 @@ pub const ArgIteratorWindows = struct {
 
         const eof = null;
 
-        fn emitBackslashes(self: *ArgIteratorWindows, count: usize) void {
+        fn emit_backslashes(self: *ArgIteratorWindows, count: usize) void {
             for (0..count) |_| emitCharacter(self, '\\');
         }
 
-        fn emitCharacter(self: *ArgIteratorWindows, char: u8) void {
+        fn emit_character(self: *ArgIteratorWindows, char: u8) void {
             self.buffer[self.end] = char;
             self.end += 1;
 
@@ -743,7 +743,7 @@ pub const ArgIteratorWindows = struct {
             concatSurrogatePair(self);
         }
 
-        fn concatSurrogatePair(self: *ArgIteratorWindows) void {
+        fn concat_surrogate_pair(self: *ArgIteratorWindows) void {
             // Surrogate codepoints are always encoded as 3 bytes, so there
             // must be 6 bytes for a surrogate pair to exist.
             if (self.end - self.start >= 6) {
@@ -764,7 +764,7 @@ pub const ArgIteratorWindows = struct {
             }
         }
 
-        fn yieldArg(self: *ArgIteratorWindows) [:0]const u8 {
+        fn yield_arg(self: *ArgIteratorWindows) [:0]const u8 {
             self.buffer[self.end] = 0;
             const arg = self.buffer[self.start..self.end :0];
             self.end += 1;
@@ -778,16 +778,16 @@ pub const ArgIteratorWindows = struct {
 
         const eof = false;
 
-        fn emitBackslashes(_: *ArgIteratorWindows, _: usize) void {}
+        fn emit_backslashes(_: *ArgIteratorWindows, _: usize) void {}
 
-        fn emitCharacter(_: *ArgIteratorWindows, _: u8) void {}
+        fn emit_character(_: *ArgIteratorWindows, _: u8) void {}
 
-        fn yieldArg(_: *ArgIteratorWindows) bool {
+        fn yield_arg(_: *ArgIteratorWindows) bool {
             return true;
         }
     };
 
-    fn nextWithStrategy(self: *ArgIteratorWindows, comptime strategy: type) strategy.T {
+    fn next_with_strategy(self: *ArgIteratorWindows, comptime strategy: type) strategy.T {
         // The first argument (the executable name) uses different parsing rules.
         if (self.index == 0) {
             if (self.cmd_line.len == 0 or self.cmd_line[0] == 0) {
@@ -903,7 +903,7 @@ pub const ArgIteratorGeneralOptions = struct {
 };
 
 /// A general Iterator to parse a string into a set of arguments
-pub fn ArgIteratorGeneral(comptime options: ArgIteratorGeneralOptions) type {
+pub fn arg_iterator_general(comptime options: ArgIteratorGeneralOptions) type {
     return struct {
         allocator: Allocator,
         index: usize = 0,
@@ -936,7 +936,7 @@ pub fn ArgIteratorGeneral(comptime options: ArgIteratorGeneralOptions) type {
         }
 
         /// cmd_line_utf8 will be free'd (with the allocator) on deinit()
-        pub fn initTakeOwnership(allocator: Allocator, cmd_line_utf8: []const u8) InitError!Self {
+        pub fn init_take_ownership(allocator: Allocator, cmd_line_utf8: []const u8) InitError!Self {
             const buffer = try allocator.alloc(u8, cmd_line_utf8.len + 1);
             errdefer allocator.free(buffer);
 
@@ -951,7 +951,7 @@ pub fn ArgIteratorGeneral(comptime options: ArgIteratorGeneralOptions) type {
         // Skips over whitespace in the cmd_line.
         // Returns false if the terminating sentinel is reached, true otherwise.
         // Also skips over comments (if supported).
-        fn skipWhitespace(self: *Self) bool {
+        fn skip_whitespace(self: *Self) bool {
             while (true) : (self.index += 1) {
                 const character = if (self.index != self.cmd_line.len) self.cmd_line[self.index] else 0;
                 switch (character) {
@@ -1077,14 +1077,14 @@ pub fn ArgIteratorGeneral(comptime options: ArgIteratorGeneralOptions) type {
             }
         }
 
-        fn emitBackslashes(self: *Self, emit_count: usize) void {
+        fn emit_backslashes(self: *Self, emit_count: usize) void {
             var i: usize = 0;
             while (i < emit_count) : (i += 1) {
                 self.emitCharacter('\\');
             }
         }
 
-        fn emitCharacter(self: *Self, char: u8) void {
+        fn emit_character(self: *Self, char: u8) void {
             self.buffer[self.end] = char;
             self.end += 1;
         }
@@ -1126,7 +1126,7 @@ pub const ArgIterator = struct {
     pub const InitError = InnerType.InitError;
 
     /// You must deinitialize iterator's internal buffers by calling `deinit` when done.
-    pub fn initWithAllocator(allocator: Allocator) InitError!ArgIterator {
+    pub fn init_with_allocator(allocator: Allocator) InitError!ArgIterator {
         if (native_os == .wasi and !builtin.link_libc) {
             return ArgIterator{ .inner = try InnerType.init(allocator) };
         }
@@ -1173,14 +1173,14 @@ pub fn args() ArgIterator {
 }
 
 /// You must deinitialize iterator's internal buffers by calling `deinit` when done.
-pub fn argsWithAllocator(allocator: Allocator) ArgIterator.InitError!ArgIterator {
+pub fn args_with_allocator(allocator: Allocator) ArgIterator.InitError!ArgIterator {
     return ArgIterator.initWithAllocator(allocator);
 }
 
 /// Caller must call argsFree on result.
 /// On Windows, the result is encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On other platforms, the result is an opaque sequence of bytes with no particular encoding.
-pub fn argsAlloc(allocator: Allocator) ![][:0]u8 {
+pub fn args_alloc(allocator: Allocator) ![][:0]u8 {
     // TODO refactor to only make 1 allocation.
     var it = try argsWithAllocator(allocator);
     defer it.deinit();
@@ -1217,7 +1217,7 @@ pub fn argsAlloc(allocator: Allocator) ![][:0]u8 {
     return result_slice_list;
 }
 
-pub fn argsFree(allocator: Allocator, args_alloc: []const [:0]u8) void {
+pub fn args_free(allocator: Allocator, args_alloc: []const [:0]u8) void {
     var total_bytes: usize = 0;
     for (args_alloc) |arg| {
         total_bytes += @sizeOf([]u8) + arg.len + 1;
@@ -1360,7 +1360,7 @@ test ArgIteratorWindows {
     try t("foo.exe \"\xed\xa0\x81\"\xed\xb0\xb7", &.{ "foo.exe", "𐐷" });
 }
 
-fn testArgIteratorWindows(cmd_line: []const u8, expected_args: []const []const u8) !void {
+fn test_arg_iterator_windows(cmd_line: []const u8, expected_args: []const []const u8) !void {
     const cmd_line_w = try unicode.wtf8ToWtf16LeAllocZ(testing.allocator, cmd_line);
     defer testing.allocator.free(cmd_line_w);
 
@@ -1414,7 +1414,7 @@ test "general arg parsing" {
     , &.{ "'foo'", "bar" });
 }
 
-fn testGeneralCmdLine(input_cmd_line: []const u8, expected_args: []const []const u8) !void {
+fn test_general_cmd_line(input_cmd_line: []const u8, expected_args: []const []const u8) !void {
     var it = try ArgIteratorGeneral(.{}).init(std.testing.allocator, input_cmd_line);
     defer it.deinit();
     for (expected_args) |expected_arg| {
@@ -1454,7 +1454,7 @@ test "response file arg parsing" {
     , &.{ "foo", "bar" });
 }
 
-fn testResponseFileCmdLine(input_cmd_line: []const u8, expected_args: []const []const u8) !void {
+fn test_response_file_cmd_line(input_cmd_line: []const u8, expected_args: []const []const u8) !void {
     var it = try ArgIteratorGeneral(.{ .comments = true, .single_quotes = true })
         .init(std.testing.allocator, input_cmd_line);
     defer it.deinit();
@@ -1471,7 +1471,7 @@ pub const UserInfo = struct {
 };
 
 /// POSIX function which gets a uid from username.
-pub fn getUserInfo(name: []const u8) !UserInfo {
+pub fn get_user_info(name: []const u8) !UserInfo {
     return switch (native_os) {
         .linux,
         .macos,
@@ -1492,7 +1492,7 @@ pub fn getUserInfo(name: []const u8) !UserInfo {
 
 /// TODO this reads /etc/passwd. But sometimes the user/id mapping is in something else
 /// like NIS, AD, etc. See `man nss` or look at an strace for `id myuser`.
-pub fn posixGetUserInfo(name: []const u8) !UserInfo {
+pub fn posix_get_user_info(name: []const u8) !UserInfo {
     const file = try std.fs.openFileAbsolute("/etc/passwd", .{});
     defer file.close();
 
@@ -1594,7 +1594,7 @@ pub fn posixGetUserInfo(name: []const u8) !UserInfo {
     }
 }
 
-pub fn getBaseAddress() usize {
+pub fn get_base_address() usize {
     switch (native_os) {
         .linux => {
             const base = std.os.linux.getauxval(std.elf.AT_BASE);
@@ -1687,7 +1687,7 @@ pub const TotalSystemMemoryError = error{
 /// We return a u64 instead of usize due to PAE on ARM
 /// and Linux's /proc/meminfo reporting more memory when
 /// using QEMU user mode emulation.
-pub fn totalSystemMemory() TotalSystemMemoryError!u64 {
+pub fn total_system_memory() TotalSystemMemoryError!u64 {
     switch (native_os) {
         .linux => {
             return totalSystemMemoryLinux() catch return error.UnknownTotalSystemMemory;
@@ -1735,7 +1735,7 @@ pub fn totalSystemMemory() TotalSystemMemoryError!u64 {
     }
 }
 
-fn totalSystemMemoryLinux() !u64 {
+fn total_system_memory_linux() !u64 {
     var file = try std.fs.openFileAbsoluteZ("/proc/meminfo", .{});
     defer file.close();
     var buf: [50]u8 = undefined;
@@ -1756,7 +1756,7 @@ fn totalSystemMemoryLinux() !u64 {
 /// cleanup mechanisms are tested and so that external tools that
 /// check for resource leaks can be accurate. In release builds, this
 /// calls exit(0), and does not return.
-pub fn cleanExit() void {
+pub fn clean_exit() void {
     if (builtin.mode == .Debug) {
         return;
     } else {
@@ -1769,7 +1769,7 @@ pub fn cleanExit() void {
 ///
 /// On some systems, this raises the limit before seeing ProcessFdQuotaExceeded
 /// errors. On other systems, this does nothing.
-pub fn raiseFileDescriptorLimit() void {
+pub fn raise_file_descriptor_limit() void {
     const have_rlimit = switch (native_os) {
         .windows, .wasi => false,
         else => true,
@@ -1820,7 +1820,7 @@ pub const CreateEnvironOptions = struct {
 
 /// Creates a null-deliminated environment variable block in the format
 /// expected by POSIX, from a hash map plus options.
-pub fn createEnvironFromMap(
+pub fn create_environ_from_map(
     arena: Allocator,
     map: *const EnvMap,
     options: CreateEnvironOptions,
@@ -1882,7 +1882,7 @@ pub fn createEnvironFromMap(
 
 /// Creates a null-deliminated environment variable block in the format
 /// expected by POSIX, from a hash map plus options.
-pub fn createEnvironFromExisting(
+pub fn create_environ_from_existing(
     arena: Allocator,
     existing: [*:null]const ?[*:0]const u8,
     options: CreateEnvironOptions,
@@ -1944,7 +1944,7 @@ pub fn createEnvironFromExisting(
     return envp_buf;
 }
 
-pub fn createNullDelimitedEnvMap(arena: mem.Allocator, env_map: *const EnvMap) Allocator.Error![:null]?[*:0]u8 {
+pub fn create_null_delimited_env_map(arena: mem.Allocator, env_map: *const EnvMap) Allocator.Error![:null]?[*:0]u8 {
     return createEnvironFromMap(arena, env_map, .{});
 }
 
@@ -1981,7 +1981,7 @@ test createNullDelimitedEnvMap {
 }
 
 /// Caller must free result.
-pub fn createWindowsEnvBlock(allocator: mem.Allocator, env_map: *const EnvMap) ![]u16 {
+pub fn create_windows_env_block(allocator: mem.Allocator, env_map: *const EnvMap) ![]u16 {
     // count bytes needed
     const max_chars_needed = x: {
         var max_chars_needed: usize = 4; // 4 for the final 4 null bytes

@@ -462,7 +462,7 @@ pub const PDBStringTableHeader = extern struct {
     ByteSize: u32,
 };
 
-fn readSparseBitVector(stream: anytype, allocator: mem.Allocator) ![]u32 {
+fn read_sparse_bit_vector(stream: anytype, allocator: mem.Allocator) ![]u32 {
     const num_words = try stream.readInt(u32, .little);
     var list = ArrayList(u32).init(allocator);
     errdefer list.deinit();
@@ -538,7 +538,7 @@ pub const Pdb = struct {
         self.allocator.free(self.sect_contribs);
     }
 
-    pub fn parseDbiStream(self: *Pdb) !void {
+    pub fn parse_dbi_stream(self: *Pdb) !void {
         var stream = self.getStream(StreamType.Dbi) orelse
             return error.InvalidDebugInfo;
         const reader = stream.reader();
@@ -618,7 +618,7 @@ pub const Pdb = struct {
         self.sect_contribs = try sect_contribs.toOwnedSlice();
     }
 
-    pub fn parseInfoStream(self: *Pdb) !void {
+    pub fn parse_info_stream(self: *Pdb) !void {
         var stream = self.getStream(StreamType.Pdb) orelse
             return error.InvalidDebugInfo;
         const reader = stream.reader();
@@ -647,7 +647,7 @@ pub const Pdb = struct {
                 Size: u32,
                 Capacity: u32,
 
-                fn maxLoad(cap: u32) u32 {
+                fn max_load(cap: u32) u32 {
                     return cap * 2 / 3 + 1;
                 }
             };
@@ -682,7 +682,7 @@ pub const Pdb = struct {
             return error.MissingDebugInfo;
     }
 
-    pub fn getSymbolName(self: *Pdb, module: *Module, address: u64) ?[]const u8 {
+    pub fn get_symbol_name(self: *Pdb, module: *Module, address: u64) ?[]const u8 {
         _ = self;
         std.debug.assert(module.populated);
 
@@ -706,7 +706,7 @@ pub const Pdb = struct {
         return null;
     }
 
-    pub fn getLineNumberInfo(self: *Pdb, module: *Module, address: u64) !debug.LineInfo {
+    pub fn get_line_number_info(self: *Pdb, module: *Module, address: u64) !debug.LineInfo {
         std.debug.assert(module.populated);
         const subsect_info = module.subsect_info;
 
@@ -802,7 +802,7 @@ pub const Pdb = struct {
         return error.MissingDebugInfo;
     }
 
-    pub fn getModule(self: *Pdb, index: usize) !?*Module {
+    pub fn get_module(self: *Pdb, index: usize) !?*Module {
         if (index >= self.modules.len)
             return null;
 
@@ -855,13 +855,13 @@ pub const Pdb = struct {
         return mod;
     }
 
-    pub fn getStreamById(self: *Pdb, id: u32) ?*MsfStream {
+    pub fn get_stream_by_id(self: *Pdb, id: u32) ?*MsfStream {
         if (id >= self.msf.streams.len)
             return null;
         return &self.msf.streams[id];
     }
 
-    pub fn getStream(self: *Pdb, stream: StreamType) ?*MsfStream {
+    pub fn get_stream(self: *Pdb, stream: StreamType) ?*MsfStream {
         const id = @intFromEnum(stream);
         return self.getStreamById(id);
     }
@@ -966,7 +966,7 @@ const Msf = struct {
     }
 };
 
-fn blockCountFromSize(size: u32, block_size: u32) u32 {
+fn block_count_from_size(size: u32, block_size: u32) u32 {
     return (size + block_size - 1) / block_size;
 }
 
@@ -1067,23 +1067,23 @@ const MsfStream = struct {
         return buffer.len;
     }
 
-    pub fn seekBy(self: *MsfStream, len: i64) !void {
+    pub fn seek_by(self: *MsfStream, len: i64) !void {
         self.pos = @as(u64, @intCast(@as(i64, @intCast(self.pos)) + len));
         if (self.pos >= self.blocks.len * self.block_size)
             return error.EOF;
     }
 
-    pub fn seekTo(self: *MsfStream, len: u64) !void {
+    pub fn seek_to(self: *MsfStream, len: u64) !void {
         self.pos = len;
         if (self.pos >= self.blocks.len * self.block_size)
             return error.EOF;
     }
 
-    fn getSize(self: *const MsfStream) u64 {
+    fn get_size(self: *const MsfStream) u64 {
         return self.blocks.len * self.block_size;
     }
 
-    fn getFilePos(self: MsfStream) u64 {
+    fn get_file_pos(self: MsfStream) u64 {
         const block_id = self.pos / self.block_size;
         const block = self.blocks[block_id];
         const offset = self.pos % self.block_size;

@@ -1,4 +1,4 @@
-pub fn gcAtoms(elf_file: *Elf) !void {
+pub fn gc_atoms(elf_file: *Elf) !void {
     const comp = elf_file.base.comp;
     const gpa = comp.gpa;
     const num_files = elf_file.objects.items.len + @intFromBool(elf_file.zig_object_index != null);
@@ -15,7 +15,7 @@ pub fn gcAtoms(elf_file: *Elf) !void {
     prune(files.items, elf_file);
 }
 
-fn collectRoots(roots: *std.ArrayList(*Atom), files: []const File.Index, elf_file: *Elf) !void {
+fn collect_roots(roots: *std.ArrayList(*Atom), files: []const File.Index, elf_file: *Elf) !void {
     if (elf_file.entry_index) |index| {
         const global = elf_file.symbol(index);
         try markSymbol(global, roots, elf_file);
@@ -67,7 +67,7 @@ fn collectRoots(roots: *std.ArrayList(*Atom), files: []const File.Index, elf_fil
     }
 }
 
-fn markSymbol(sym: *Symbol, roots: *std.ArrayList(*Atom), elf_file: *Elf) !void {
+fn mark_symbol(sym: *Symbol, roots: *std.ArrayList(*Atom), elf_file: *Elf) !void {
     if (sym.mergeSubsection(elf_file)) |msub| {
         msub.alive = true;
         return;
@@ -76,13 +76,13 @@ fn markSymbol(sym: *Symbol, roots: *std.ArrayList(*Atom), elf_file: *Elf) !void 
     if (markAtom(atom)) try roots.append(atom);
 }
 
-fn markAtom(atom: *Atom) bool {
+fn mark_atom(atom: *Atom) bool {
     const already_visited = atom.flags.visited;
     atom.flags.visited = true;
     return atom.flags.alive and !already_visited;
 }
 
-fn markLive(atom: *Atom, elf_file: *Elf) void {
+fn mark_live(atom: *Atom, elf_file: *Elf) void {
     if (@import("build_options").enable_logging) track_live_level.incr();
 
     assert(atom.flags.visited);
@@ -130,7 +130,7 @@ fn prune(files: []const File.Index, elf_file: *Elf) void {
     }
 }
 
-pub fn dumpPrunedAtoms(elf_file: *Elf) !void {
+pub fn dump_pruned_atoms(elf_file: *Elf) !void {
     const stderr = std.io.getStdErr().writer();
     for (elf_file.objects.items) |index| {
         for (elf_file.file(index).?.object.atoms.items) |atom_index| {

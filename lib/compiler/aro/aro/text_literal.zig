@@ -68,7 +68,7 @@ pub const Kind = enum {
     /// May be smaller than the largest value that can be represented.
     /// For example u8 char literals may only specify 0-127 via literals or
     /// character escapes, but may specify up to \xFF via hex escapes.
-    pub fn maxCodepoint(kind: Kind, comp: *const Compilation) u21 {
+    pub fn max_codepoint(kind: Kind, comp: *const Compilation) u21 {
         return @intCast(switch (kind) {
             .char => std.math.maxInt(u7),
             .wide => @min(0x10FFFF, comp.types.wchar.maxInt(comp)),
@@ -80,7 +80,7 @@ pub const Kind = enum {
     }
 
     /// Largest integer that can be represented by this character kind
-    pub fn maxInt(kind: Kind, comp: *const Compilation) u32 {
+    pub fn max_int(kind: Kind, comp: *const Compilation) u32 {
         return @intCast(switch (kind) {
             .char, .utf_8 => std.math.maxInt(u8),
             .wide => comp.types.wchar.maxInt(comp),
@@ -91,7 +91,7 @@ pub const Kind = enum {
     }
 
     /// The C type of a character literal of this kind
-    pub fn charLiteralType(kind: Kind, comp: *const Compilation) Type {
+    pub fn char_literal_type(kind: Kind, comp: *const Compilation) Type {
         return switch (kind) {
             .char => Type.int,
             .wide => comp.types.wchar,
@@ -104,7 +104,7 @@ pub const Kind = enum {
 
     /// Return the actual contents of the literal with leading / trailing quotes and
     /// specifiers removed
-    pub fn contentSlice(kind: Kind, delimited: []const u8) []const u8 {
+    pub fn content_slice(kind: Kind, delimited: []const u8) []const u8 {
         const end = delimited.len - 1; // remove trailing quote
         return switch (kind) {
             .char => delimited[1..end],
@@ -117,7 +117,7 @@ pub const Kind = enum {
     }
 
     /// The size of a character unit for a string literal of this kind
-    pub fn charUnitSize(kind: Kind, comp: *const Compilation) Compilation.CharUnitSize {
+    pub fn char_unit_size(kind: Kind, comp: *const Compilation) Compilation.CharUnitSize {
         return switch (kind) {
             .char => .@"1",
             .wide => switch (comp.types.wchar.sizeof(comp).?) {
@@ -133,14 +133,14 @@ pub const Kind = enum {
     }
 
     /// Required alignment within aro (on compiler host) for writing to Interner.strings.
-    pub fn internalStorageAlignment(kind: Kind, comp: *const Compilation) usize {
+    pub fn internal_storage_alignment(kind: Kind, comp: *const Compilation) usize {
         return switch (kind.charUnitSize(comp)) {
             inline else => |size| @alignOf(size.Type()),
         };
     }
 
     /// The C type of an element of a string literal of this kind
-    pub fn elementType(kind: Kind, comp: *const Compilation) Type {
+    pub fn element_type(kind: Kind, comp: *const Compilation) Type {
         return switch (kind) {
             .unterminated => unreachable,
             .char => .{ .specifier = .char },
@@ -172,7 +172,7 @@ pub const Parser = struct {
         };
     }
 
-    fn prefixLen(self: *const Parser) usize {
+    fn prefix_len(self: *const Parser) usize {
         return switch (self.kind) {
             .unterminated => unreachable,
             .char => 0,
@@ -229,7 +229,7 @@ pub const Parser = struct {
         }
     }
 
-    fn parseUnicodeEscape(self: *Parser) ?Item {
+    fn parse_unicode_escape(self: *Parser) ?Item {
         const start = self.i;
 
         std.debug.assert(self.literal[self.i] == '\\');
@@ -302,7 +302,7 @@ pub const Parser = struct {
         return .{ .codepoint = @intCast(val) };
     }
 
-    fn parseEscapedChar(self: *Parser) Item {
+    fn parse_escaped_char(self: *Parser) Item {
         self.i += 1;
         const c = self.literal[self.i];
         defer if (c != 'x' and (c < '0' or c > '7')) {
@@ -338,7 +338,7 @@ pub const Parser = struct {
         }
     }
 
-    fn parseNumberEscape(self: *Parser, base: EscapeBase) u32 {
+    fn parse_number_escape(self: *Parser, base: EscapeBase) u32 {
         var val: u32 = 0;
         var count: usize = 0;
         var overflowed = false;

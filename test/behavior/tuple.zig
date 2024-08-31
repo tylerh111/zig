@@ -13,7 +13,7 @@ test "tuple concatenation" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: i32 = 1;
             var b: i32 = 2;
             _ = .{ &a, &b };
@@ -30,7 +30,7 @@ test "tuple concatenation" {
 
 test "tuple multiplication" {
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             {
                 const t = .{} ** 4;
                 try expect(@typeInfo(@TypeOf(t)).Struct.fields.len == 0);
@@ -63,7 +63,7 @@ test "more tuple concatenation" {
             try expect(tuple.len == len);
         }
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const t1 = .{};
 
             var rt_var: u8 = 42;
@@ -99,11 +99,11 @@ test "more tuple concatenation" {
 
 test "pass tuple to comptime var parameter" {
     const S = struct {
-        fn Foo(comptime args: anytype) !void {
+        fn foo(comptime args: anytype) !void {
             try expect(args[0] == 1);
         }
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try Foo(.{1});
         }
     };
@@ -113,7 +113,7 @@ test "pass tuple to comptime var parameter" {
 
 test "tuple initializer for var" {
     const S = struct {
-        fn doTheTest() void {
+        fn do_the_test() void {
             const Bytes = struct {
                 id: usize,
             };
@@ -159,7 +159,7 @@ test "array-like initializer for tuple types" {
         },
     });
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var obj: T = .{ -1234, 128 };
             _ = &obj;
             try expect(@as(i32, -1234) == obj[0]);
@@ -173,7 +173,7 @@ test "array-like initializer for tuple types" {
 
 test "anon struct as the result from a labeled block" {
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const precomputed = comptime blk: {
                 var x: i32 = 1234;
                 _ = &x;
@@ -191,7 +191,7 @@ test "anon struct as the result from a labeled block" {
 
 test "tuple as the result from a labeled block" {
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const precomputed = comptime blk: {
                 var x: i32 = 1234;
                 _ = &x;

@@ -27,7 +27,7 @@ pub const GetExternalExecutorOptions = struct {
 
 /// Return whether or not the given host is capable of running executables of
 /// the other target.
-pub fn getExternalExecutor(
+pub fn get_external_executor(
     host: std.Target,
     candidate: *const std.Target,
     options: GetExternalExecutorOptions,
@@ -162,7 +162,7 @@ pub const DetectError = error{
 /// and which are provided explicitly, this function resolves the native
 /// components by detecting the native system, and then resolves
 /// standard/default parts relative to that.
-pub fn resolveTargetQuery(query: Target.Query) DetectError!Target {
+pub fn resolve_target_query(query: Target.Query) DetectError!Target {
     const query_os_tag = query.os_tag orelse builtin.os.tag;
     var os = query_os_tag.defaultVersionRange(query.cpu_arch orelse builtin.cpu.arch);
     if (query.os_tag == null) {
@@ -370,7 +370,7 @@ pub fn resolveTargetQuery(query: Target.Query) DetectError!Target {
     return result;
 }
 
-fn updateCpuFeatures(
+fn update_cpu_features(
     set: *Target.Cpu.Feature.Set,
     all_features_list: []const Target.Cpu.Feature,
     add_set: Target.Cpu.Feature.Set,
@@ -382,7 +382,7 @@ fn updateCpuFeatures(
     set.removeFeatureSet(sub_set);
 }
 
-fn detectNativeCpuAndFeatures(cpu_arch: Target.Cpu.Arch, os: Target.Os, query: Target.Query) ?Target.Cpu {
+fn detect_native_cpu_and_features(cpu_arch: Target.Cpu.Arch, os: Target.Os, query: Target.Query) ?Target.Cpu {
     // Here we switch on a comptime value rather than `cpu_arch`. This is valid because `cpu_arch`,
     // although it is a runtime value, is guaranteed to be one of the architectures in the set
     // of the respective switch prong.
@@ -422,7 +422,7 @@ pub const AbiAndDynamicLinkerFromFileError = error{
     NameTooLong,
 };
 
-pub fn abiAndDynamicLinkerFromFile(
+pub fn abi_and_dynamic_linker_from_file(
     file: fs.File,
     cpu: Target.Cpu,
     os: Target.Os,
@@ -701,7 +701,7 @@ pub fn abiAndDynamicLinkerFromFile(
     return result;
 }
 
-fn glibcVerFromLinkName(link_name: []const u8, prefix: []const u8) error{ UnrecognizedGnuLibCFileName, InvalidGnuLibCVersion }!std.SemanticVersion {
+fn glibc_ver_from_link_name(link_name: []const u8, prefix: []const u8) error{ UnrecognizedGnuLibCFileName, InvalidGnuLibCVersion }!std.SemanticVersion {
     // example: "libc-2.3.4.so"
     // example: "libc-2.27.so"
     // example: "ld-2.33.so"
@@ -728,7 +728,7 @@ test glibcVerFromLinkName {
     try std.testing.expectError(error.InvalidGnuLibCVersion, glibcVerFromLinkName("ld-2.37.4.5.so", "ld-"));
 }
 
-fn glibcVerFromRPath(rpath: []const u8) !std.SemanticVersion {
+fn glibc_ver_from_rpath(rpath: []const u8) !std.SemanticVersion {
     var dir = fs.cwd().openDir(rpath, .{}) catch |err| switch (err) {
         error.NameTooLong => unreachable,
         error.InvalidUtf8 => unreachable, // WASI only
@@ -812,7 +812,7 @@ fn glibcVerFromRPath(rpath: []const u8) !std.SemanticVersion {
     };
 }
 
-fn glibcVerFromSoFile(file: fs.File) !std.SemanticVersion {
+fn glibc_ver_from_so_file(file: fs.File) !std.SemanticVersion {
     var hdr_buf: [@sizeOf(elf.Elf64_Ehdr)]u8 align(@alignOf(elf.Elf64_Ehdr)) = undefined;
     _ = try preadAtLeast(file, &hdr_buf, 0, hdr_buf.len);
     const hdr32: *elf.Elf32_Ehdr = @ptrCast(&hdr_buf);
@@ -922,7 +922,7 @@ fn glibcVerFromSoFile(file: fs.File) !std.SemanticVersion {
 /// answer to these questions, or if there is a shebang line, then it chases the referenced
 /// file recursively. If that does not provide the answer, then the function falls back to
 /// defaults.
-fn detectAbiAndDynamicLinker(
+fn detect_abi_and_dynamic_linker(
     cpu: Target.Cpu,
     os: Target.Os,
     query: Target.Query,
@@ -1116,7 +1116,7 @@ fn detectAbiAndDynamicLinker(
     };
 }
 
-fn defaultAbiAndDynamicLinker(cpu: Target.Cpu, os: Target.Os, query: Target.Query) Target {
+fn default_abi_and_dynamic_linker(cpu: Target.Cpu, os: Target.Os, query: Target.Query) Target {
     const abi = query.abi orelse Target.Abi.default(cpu.arch, os);
     return .{
         .cpu = cpu,
@@ -1135,7 +1135,7 @@ const LdInfo = struct {
     abi: Target.Abi,
 };
 
-fn preadAtLeast(file: fs.File, buf: []u8, offset: u64, min_read_len: usize) !usize {
+fn pread_at_least(file: fs.File, buf: []u8, offset: u64, min_read_len: usize) !usize {
     var i: usize = 0;
     while (i < min_read_len) {
         const len = file.pread(buf[i..], offset + i) catch |err| switch (err) {
@@ -1159,7 +1159,7 @@ fn preadAtLeast(file: fs.File, buf: []u8, offset: u64, min_read_len: usize) !usi
     return i;
 }
 
-fn elfInt(is_64: bool, need_bswap: bool, int_32: anytype, int_64: anytype) @TypeOf(int_64) {
+fn elf_int(is_64: bool, need_bswap: bool, int_32: anytype, int_64: anytype) @TypeOf(int_64) {
     if (is_64) {
         if (need_bswap) {
             return @byteSwap(int_64);

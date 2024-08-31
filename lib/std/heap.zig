@@ -50,11 +50,11 @@ const CAllocator = struct {
 
     pub const supports_posix_memalign = @hasDecl(c, "posix_memalign");
 
-    fn getHeader(ptr: [*]u8) *[*]u8 {
+    fn get_header(ptr: [*]u8) *[*]u8 {
         return @as(*[*]u8, @ptrFromInt(@intFromPtr(ptr) - @sizeOf(usize)));
     }
 
-    fn alignedAlloc(len: usize, log2_align: u8) ?[*]u8 {
+    fn aligned_alloc(len: usize, log2_align: u8) ?[*]u8 {
         const alignment = @as(usize, 1) << @as(Allocator.Log2Align, @intCast(log2_align));
         if (supports_posix_memalign) {
             // The posix_memalign only accepts alignment values that are a
@@ -80,7 +80,7 @@ const CAllocator = struct {
         return aligned_ptr;
     }
 
-    fn alignedFree(ptr: [*]u8) void {
+    fn aligned_free(ptr: [*]u8) void {
         if (supports_posix_memalign) {
             return c.free(ptr);
         }
@@ -89,7 +89,7 @@ const CAllocator = struct {
         c.free(unaligned_ptr);
     }
 
-    fn alignedAllocSize(ptr: [*]u8) usize {
+    fn aligned_alloc_size(ptr: [*]u8) usize {
         if (supports_posix_memalign) {
             return CAllocator.malloc_size(ptr);
         }
@@ -171,7 +171,7 @@ const raw_c_allocator_vtable = Allocator.VTable{
     .free = rawCFree,
 };
 
-fn rawCAlloc(
+fn raw_calloc(
     _: *anyopaque,
     len: usize,
     log2_ptr_align: u8,
@@ -188,7 +188,7 @@ fn rawCAlloc(
     return @as(?[*]u8, @ptrCast(c.malloc(len)));
 }
 
-fn rawCResize(
+fn raw_cresize(
     _: *anyopaque,
     buf: []u8,
     log2_old_align: u8,
@@ -209,7 +209,7 @@ fn rawCResize(
     return false;
 }
 
-fn rawCFree(
+fn raw_cfree(
     _: *anyopaque,
     buf: []u8,
     log2_old_align: u8,
@@ -253,7 +253,7 @@ pub const wasm_allocator = Allocator{
 };
 
 /// Verifies that the adjusted length will still map to the full length
-pub fn alignPageAllocLen(full_len: usize, len: usize) usize {
+pub fn align_page_alloc_len(full_len: usize, len: usize) usize {
     const aligned_len = mem.alignAllocLen(full_len, len);
     assert(mem.alignForward(usize, aligned_len, mem.page_size) == full_len);
     return aligned_len;
@@ -288,7 +288,7 @@ pub const HeapAllocator = switch (builtin.os.tag) {
             }
         }
 
-        fn getRecordPtr(buf: []u8) *align(1) usize {
+        fn get_record_ptr(buf: []u8) *align(1) usize {
             return @as(*align(1) usize, @ptrFromInt(@intFromPtr(buf.ptr) + buf.len));
         }
 
@@ -359,12 +359,12 @@ pub const HeapAllocator = switch (builtin.os.tag) {
     else => @compileError("Unsupported OS"),
 };
 
-fn sliceContainsPtr(container: []u8, ptr: [*]u8) bool {
+fn slice_contains_ptr(container: []u8, ptr: [*]u8) bool {
     return @intFromPtr(ptr) >= @intFromPtr(container.ptr) and
         @intFromPtr(ptr) < (@intFromPtr(container.ptr) + container.len);
 }
 
-fn sliceContainsSlice(container: []u8, slice: []u8) bool {
+fn slice_contains_slice(container: []u8, slice: []u8) bool {
     return @intFromPtr(slice.ptr) >= @intFromPtr(container.ptr) and
         (@intFromPtr(slice.ptr) + slice.len) <= (@intFromPtr(container.ptr) + container.len);
 }
@@ -394,7 +394,7 @@ pub const FixedBufferAllocator = struct {
 
     /// Provides a lock free thread safe `Allocator` interface to the underlying `FixedBufferAllocator`
     /// *WARNING* using this at the same time as the interface returned by `allocator` is not thread safe
-    pub fn threadSafeAllocator(self: *FixedBufferAllocator) Allocator {
+    pub fn thread_safe_allocator(self: *FixedBufferAllocator) Allocator {
         return .{
             .ptr = self,
             .vtable = &.{
@@ -405,18 +405,18 @@ pub const FixedBufferAllocator = struct {
         };
     }
 
-    pub fn ownsPtr(self: *FixedBufferAllocator, ptr: [*]u8) bool {
+    pub fn owns_ptr(self: *FixedBufferAllocator, ptr: [*]u8) bool {
         return sliceContainsPtr(self.buffer, ptr);
     }
 
-    pub fn ownsSlice(self: *FixedBufferAllocator, slice: []u8) bool {
+    pub fn owns_slice(self: *FixedBufferAllocator, slice: []u8) bool {
         return sliceContainsSlice(self.buffer, slice);
     }
 
     /// NOTE: this will not work in all cases, if the last allocation had an adjusted_index
     ///       then we won't be able to determine what the last allocation was.  This is because
     ///       the alignForward operation done in alloc is not reversible.
-    pub fn isLastAllocation(self: *FixedBufferAllocator, buf: []u8) bool {
+    pub fn is_last_allocation(self: *FixedBufferAllocator, buf: []u8) bool {
         return buf.ptr + buf.len == self.buffer.ptr + self.end_index;
     }
 
@@ -478,7 +478,7 @@ pub const FixedBufferAllocator = struct {
         }
     }
 
-    fn threadSafeAlloc(ctx: *anyopaque, n: usize, log2_ptr_align: u8, ra: usize) ?[*]u8 {
+    fn thread_safe_alloc(ctx: *anyopaque, n: usize, log2_ptr_align: u8, ra: usize) ?[*]u8 {
         const self: *FixedBufferAllocator = @ptrCast(@alignCast(ctx));
         _ = ra;
         const ptr_align = @as(usize, 1) << @as(Allocator.Log2Align, @intCast(log2_ptr_align));
@@ -503,7 +503,7 @@ pub const ThreadSafeFixedBufferAllocator = @compileError("ThreadSafeFixedBufferA
 /// Returns a `StackFallbackAllocator` allocating using either a
 /// `FixedBufferAllocator` on an array of size `size` and falling back to
 /// `fallback_allocator` if that fails.
-pub fn stackFallback(comptime size: usize, fallback_allocator: Allocator) StackFallbackAllocator(size) {
+pub fn stack_fallback(comptime size: usize, fallback_allocator: Allocator) StackFallbackAllocator(size) {
     return StackFallbackAllocator(size){
         .buffer = undefined,
         .fallback_allocator = fallback_allocator,
@@ -515,7 +515,7 @@ pub fn stackFallback(comptime size: usize, fallback_allocator: Allocator) StackF
 /// `FixedBufferAllocator` using an array of size `size`. If the
 /// allocation fails, it will fall back to using
 /// `fallback_allocator`. Easily created with `stackFallback`.
-pub fn StackFallbackAllocator(comptime size: usize) type {
+pub fn stack_fallback_allocator(comptime size: usize) type {
     return struct {
         const Self = @This();
 
@@ -747,7 +747,7 @@ test "Thread safe FixedBufferAllocator" {
 }
 
 /// This one should not try alignments that exceed what C malloc can handle.
-pub fn testAllocator(base_allocator: mem.Allocator) !void {
+pub fn test_allocator(base_allocator: mem.Allocator) !void {
     var validationAllocator = mem.validationWrap(base_allocator);
     const allocator = validationAllocator.allocator();
 
@@ -794,7 +794,7 @@ pub fn testAllocator(base_allocator: mem.Allocator) !void {
     allocator.free(oversize);
 }
 
-pub fn testAllocatorAligned(base_allocator: mem.Allocator) !void {
+pub fn test_allocator_aligned(base_allocator: mem.Allocator) !void {
     var validationAllocator = mem.validationWrap(base_allocator);
     const allocator = validationAllocator.allocator();
 
@@ -821,7 +821,7 @@ pub fn testAllocatorAligned(base_allocator: mem.Allocator) !void {
     }
 }
 
-pub fn testAllocatorLargeAlignment(base_allocator: mem.Allocator) !void {
+pub fn test_allocator_large_alignment(base_allocator: mem.Allocator) !void {
     var validationAllocator = mem.validationWrap(base_allocator);
     const allocator = validationAllocator.allocator();
 
@@ -850,7 +850,7 @@ pub fn testAllocatorLargeAlignment(base_allocator: mem.Allocator) !void {
     allocator.free(slice);
 }
 
-pub fn testAllocatorAlignedShrink(base_allocator: mem.Allocator) !void {
+pub fn test_allocator_aligned_shrink(base_allocator: mem.Allocator) !void {
     var validationAllocator = mem.validationWrap(base_allocator);
     const allocator = validationAllocator.allocator();
 

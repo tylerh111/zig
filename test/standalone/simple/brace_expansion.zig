@@ -134,7 +134,7 @@ fn parse(tokens: *const ArrayList(Token), token_index: *usize) ParseError!Node {
     }
 }
 
-fn expandString(input: []const u8, output: *ArrayList(u8)) !void {
+fn expand_string(input: []const u8, output: *ArrayList(u8)) !void {
     const tokens = try tokenize(input);
     defer tokens.deinit();
     if (tokens.items.len == 1) {
@@ -169,7 +169,7 @@ fn expandString(input: []const u8, output: *ArrayList(u8)) !void {
 
 const ExpandNodeError = error{OutOfMemory};
 
-fn expandNode(node: Node, output: *ArrayList(ArrayList(u8))) ExpandNodeError!void {
+fn expand_node(node: Node, output: *ArrayList(ArrayList(u8))) ExpandNodeError!void {
     assert(output.items.len == 0);
     switch (node) {
         .Scalar => |scalar| {
@@ -252,7 +252,7 @@ test "invalid inputs" {
     try expectError("\n", error.InvalidInput);
 }
 
-fn expectError(test_input: []const u8, expected_err: anyerror) !void {
+fn expect_error(test_input: []const u8, expected_err: anyerror) !void {
     var output_buf = ArrayList(u8).init(global_allocator);
     defer output_buf.deinit();
 
@@ -282,7 +282,7 @@ test "valid inputs" {
     try expectExpansion("a{b}", "ab");
 }
 
-fn expectExpansion(test_input: []const u8, expected_result: []const u8) !void {
+fn expect_expansion(test_input: []const u8, expected_result: []const u8) !void {
     var result = ArrayList(u8).init(global_allocator);
     defer result.deinit();
 

@@ -15,7 +15,7 @@ const TestCase = struct {
         source: []const u8,
     };
 
-    pub fn addSourceFile(self: *TestCase, filename: []const u8, source: []const u8) void {
+    pub fn add_source_file(self: *TestCase, filename: []const u8, source: []const u8) void {
         self.sources.append(SourceFile{
             .filename = filename,
             .source = source,
@@ -53,7 +53,7 @@ pub fn add(
     self.addCase(tc);
 }
 
-pub fn addAllowWarnings(
+pub fn add_allow_warnings(
     self: *RunTranslatedCContext,
     name: []const u8,
     source: []const u8,
@@ -63,7 +63,7 @@ pub fn addAllowWarnings(
     self.addCase(tc);
 }
 
-pub fn addCase(self: *RunTranslatedCContext, case: *const TestCase) void {
+pub fn add_case(self: *RunTranslatedCContext, case: *const TestCase) void {
     const b = self.b;
 
     const annotated_case_name = fmt.allocPrint(self.b.allocator, "run-translated-c {s}", .{case.name}) catch unreachable;

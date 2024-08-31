@@ -4,7 +4,7 @@ const assert = std.debug.assert;
 
 /// A Writer that returns whether the given character has been written to it.
 /// The contents are not written to anything.
-pub fn FindByteWriter(comptime UnderlyingWriter: type) type {
+pub fn find_byte_writer(comptime UnderlyingWriter: type) type {
     return struct {
         const Self = @This();
         pub const Error = UnderlyingWriter.Error;
@@ -31,7 +31,7 @@ pub fn FindByteWriter(comptime UnderlyingWriter: type) type {
     };
 }
 
-pub fn findByteWriter(byte: u8, underlying_writer: anytype) FindByteWriter(@TypeOf(underlying_writer)) {
+pub fn find_byte_writer(byte: u8, underlying_writer: anytype) FindByteWriter(@TypeOf(underlying_writer)) {
     return FindByteWriter(@TypeOf(underlying_writer)){
         .underlying_writer = underlying_writer,
         .byte = byte,

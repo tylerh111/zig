@@ -50,13 +50,13 @@ pub const Builder = struct {
         };
     }
 
-    pub fn startFn(b: *Builder) Allocator.Error!void {
+    pub fn start_fn(b: *Builder) Allocator.Error!void {
         const entry = try b.makeLabel("entry");
         try b.body.append(b.gpa, entry);
         b.current_label = entry;
     }
 
-    pub fn finishFn(b: *Builder, name: []const u8) !void {
+    pub fn finish_fn(b: *Builder, name: []const u8) !void {
         var duped_instructions = try b.instructions.clone(b.gpa);
         errdefer duped_instructions.deinit(b.gpa);
         var duped_body = try b.body.clone(b.gpa);
@@ -74,12 +74,12 @@ pub const Builder = struct {
         b.arg_count = 0;
     }
 
-    pub fn startBlock(b: *Builder, label: Ref) !void {
+    pub fn start_block(b: *Builder, label: Ref) !void {
         try b.body.append(b.gpa, label);
         b.current_label = label;
     }
 
-    pub fn addArg(b: *Builder, ty: Interner.Ref) Allocator.Error!Ref {
+    pub fn add_arg(b: *Builder, ty: Interner.Ref) Allocator.Error!Ref {
         const ref: Ref = @enumFromInt(b.instructions.len);
         try b.instructions.append(b.gpa, .{ .tag = .arg, .data = .{ .none = {} }, .ty = ty });
         try b.body.insert(b.gpa, b.arg_count, ref);
@@ -87,7 +87,7 @@ pub const Builder = struct {
         return ref;
     }
 
-    pub fn addAlloc(b: *Builder, size: u32, @"align": u32) Allocator.Error!Ref {
+    pub fn add_alloc(b: *Builder, size: u32, @"align": u32) Allocator.Error!Ref {
         const ref: Ref = @enumFromInt(b.instructions.len);
         try b.instructions.append(b.gpa, .{
             .tag = .alloc,
@@ -99,24 +99,24 @@ pub const Builder = struct {
         return ref;
     }
 
-    pub fn addInst(b: *Builder, tag: Ir.Inst.Tag, data: Ir.Inst.Data, ty: Interner.Ref) Allocator.Error!Ref {
+    pub fn add_inst(b: *Builder, tag: Ir.Inst.Tag, data: Ir.Inst.Data, ty: Interner.Ref) Allocator.Error!Ref {
         const ref: Ref = @enumFromInt(b.instructions.len);
         try b.instructions.append(b.gpa, .{ .tag = tag, .data = data, .ty = ty });
         try b.body.append(b.gpa, ref);
         return ref;
     }
 
-    pub fn makeLabel(b: *Builder, name: [*:0]const u8) Allocator.Error!Ref {
+    pub fn make_label(b: *Builder, name: [*:0]const u8) Allocator.Error!Ref {
         const ref: Ref = @enumFromInt(b.instructions.len);
         try b.instructions.append(b.gpa, .{ .tag = .label, .data = .{ .label = name }, .ty = .void });
         return ref;
     }
 
-    pub fn addJump(b: *Builder, label: Ref) Allocator.Error!void {
+    pub fn add_jump(b: *Builder, label: Ref) Allocator.Error!void {
         _ = try b.addInst(.jmp, .{ .un = label }, .noreturn);
     }
 
-    pub fn addBranch(b: *Builder, cond: Ref, true_label: Ref, false_label: Ref) Allocator.Error!void {
+    pub fn add_branch(b: *Builder, cond: Ref, true_label: Ref, false_label: Ref) Allocator.Error!void {
         const branch = try b.arena.allocator().create(Ir.Inst.Branch);
         branch.* = .{
             .cond = cond,
@@ -126,7 +126,7 @@ pub const Builder = struct {
         _ = try b.addInst(.branch, .{ .branch = branch }, .noreturn);
     }
 
-    pub fn addSwitch(b: *Builder, target: Ref, values: []Interner.Ref, labels: []Ref, default: Ref) Allocator.Error!void {
+    pub fn add_switch(b: *Builder, target: Ref, values: []Interner.Ref, labels: []Ref, default: Ref) Allocator.Error!void {
         assert(values.len == labels.len);
         const a = b.arena.allocator();
         const @"switch" = try a.create(Ir.Inst.Switch);
@@ -140,11 +140,11 @@ pub const Builder = struct {
         _ = try b.addInst(.@"switch", .{ .@"switch" = @"switch" }, .noreturn);
     }
 
-    pub fn addStore(b: *Builder, ptr: Ref, val: Ref) Allocator.Error!void {
+    pub fn add_store(b: *Builder, ptr: Ref, val: Ref) Allocator.Error!void {
         _ = try b.addInst(.store, .{ .bin = .{ .lhs = ptr, .rhs = val } }, .void);
     }
 
-    pub fn addConstant(b: *Builder, val: Interner.Ref, ty: Interner.Ref) Allocator.Error!Ref {
+    pub fn add_constant(b: *Builder, val: Interner.Ref, ty: Interner.Ref) Allocator.Error!Ref {
         const ref: Ref = @enumFromInt(b.instructions.len);
         try b.instructions.append(b.gpa, .{
             .tag = .constant,
@@ -154,7 +154,7 @@ pub const Builder = struct {
         return ref;
     }
 
-    pub fn addPhi(b: *Builder, inputs: []const Inst.Phi.Input, ty: Interner.Ref) Allocator.Error!Ref {
+    pub fn add_phi(b: *Builder, inputs: []const Inst.Phi.Input, ty: Interner.Ref) Allocator.Error!Ref {
         const a = b.arena.allocator();
         const input_refs = try a.alloc(Ref, inputs.len * 2 + 1);
         input_refs[0] = @enumFromInt(inputs.len);
@@ -163,7 +163,7 @@ pub const Builder = struct {
         return b.addInst(.phi, .{ .phi = .{ .ptr = input_refs.ptr } }, ty);
     }
 
-    pub fn addSelect(b: *Builder, cond: Ref, then: Ref, @"else": Ref, ty: Interner.Ref) Allocator.Error!Ref {
+    pub fn add_select(b: *Builder, cond: Ref, then: Ref, @"else": Ref, ty: Interner.Ref) Allocator.Error!Ref {
         const branch = try b.arena.allocator().create(Ir.Inst.Branch);
         branch.* = .{
             .cond = cond,
@@ -387,7 +387,7 @@ pub fn dump(ir: *const Ir, gpa: Allocator, config: std.io.tty.Config, w: anytype
     }
 }
 
-fn dumpDecl(ir: *const Ir, decl: *const Decl, gpa: Allocator, name: []const u8, config: std.io.tty.Config, w: anytype) !void {
+fn dump_decl(ir: *const Ir, decl: *const Decl, gpa: Allocator, name: []const u8, config: std.io.tty.Config, w: anytype) !void {
     const tags = decl.instructions.items(.tag);
     const data = decl.instructions.items(.data);
 
@@ -608,7 +608,7 @@ fn dumpDecl(ir: *const Ir, decl: *const Decl, gpa: Allocator, name: []const u8, 
     try w.writeAll("}\n\n");
 }
 
-fn writeType(ir: Ir, ty_ref: Interner.Ref, config: std.io.tty.Config, w: anytype) !void {
+fn write_type(ir: Ir, ty_ref: Interner.Ref, config: std.io.tty.Config, w: anytype) !void {
     const ty = ir.interner.get(ty_ref);
     try config.setColor(w, TYPE);
     switch (ty) {
@@ -638,7 +638,7 @@ fn writeType(ir: Ir, ty_ref: Interner.Ref, config: std.io.tty.Config, w: anytype
     }
 }
 
-fn writeValue(ir: Ir, val: Interner.Ref, config: std.io.tty.Config, w: anytype) !void {
+fn write_value(ir: Ir, val: Interner.Ref, config: std.io.tty.Config, w: anytype) !void {
     try config.setColor(w, LITERAL);
     const key = ir.interner.get(val);
     switch (key) {
@@ -654,7 +654,7 @@ fn writeValue(ir: Ir, val: Interner.Ref, config: std.io.tty.Config, w: anytype) 
     }
 }
 
-fn writeRef(ir: Ir, decl: *const Decl, ref_map: *RefMap, ref: Ref, config: std.io.tty.Config, w: anytype) !void {
+fn write_ref(ir: Ir, decl: *const Decl, ref_map: *RefMap, ref: Ref, config: std.io.tty.Config, w: anytype) !void {
     assert(ref != .none);
     const index = @intFromEnum(ref);
     const ty_ref = decl.instructions.items(.ty)[index];
@@ -677,7 +677,7 @@ fn writeRef(ir: Ir, decl: *const Decl, ref_map: *RefMap, ref: Ref, config: std.i
     try w.print(" %{d}", .{ref_index});
 }
 
-fn writeNewRef(ir: Ir, decl: *const Decl, ref_map: *RefMap, ref: Ref, config: std.io.tty.Config, w: anytype) !void {
+fn write_new_ref(ir: Ir, decl: *const Decl, ref_map: *RefMap, ref: Ref, config: std.io.tty.Config, w: anytype) !void {
     try ref_map.put(ref, {});
     try w.writeAll("    ");
     try ir.writeRef(decl, ref_map, ref, config, w);
@@ -686,7 +686,7 @@ fn writeNewRef(ir: Ir, decl: *const Decl, ref_map: *RefMap, ref: Ref, config: st
     try config.setColor(w, INST);
 }
 
-fn writeLabel(decl: *const Decl, label_map: *RefMap, ref: Ref, config: std.io.tty.Config, w: anytype) !void {
+fn write_label(decl: *const Decl, label_map: *RefMap, ref: Ref, config: std.io.tty.Config, w: anytype) !void {
     assert(ref != .none);
     const index = @intFromEnum(ref);
     const label = decl.instructions.items(.data)[index].label;

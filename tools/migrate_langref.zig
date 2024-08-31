@@ -169,7 +169,7 @@ const Tokenizer = struct {
         line_end: usize,
     };
 
-    fn getTokenLocation(self: *Tokenizer, token: Token) Location {
+    fn get_token_location(self: *Tokenizer, token: Token) Location {
         var loc = Location{
             .line = 0,
             .column = 0,
@@ -194,7 +194,7 @@ const Tokenizer = struct {
     }
 };
 
-fn parseError(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, args: anytype) anyerror {
+fn parse_error(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, args: anytype) anyerror {
     const loc = tokenizer.getTokenLocation(token);
     const args_prefix = .{ tokenizer.source_file_name, loc.line + 1, loc.column + 1 };
     print("{s}:{d}:{d}: error: " ++ fmt ++ "\n", args_prefix ++ args);
@@ -218,13 +218,13 @@ fn parseError(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, arg
     return error.ParseError;
 }
 
-fn assertToken(tokenizer: *Tokenizer, token: Token, id: Token.Id) !void {
+fn assert_token(tokenizer: *Tokenizer, token: Token, id: Token.Id) !void {
     if (token.id != id) {
         return parseError(tokenizer, token, "expected {s}, found {s}", .{ @tagName(id), @tagName(token.id) });
     }
 }
 
-fn eatToken(tokenizer: *Tokenizer, id: Token.Id) !Token {
+fn eat_token(tokenizer: *Tokenizer, id: Token.Id) !Token {
     const token = tokenizer.next();
     try assertToken(tokenizer, token, id);
     return token;

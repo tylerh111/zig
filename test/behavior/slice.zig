@@ -10,7 +10,7 @@ const mem = std.mem;
 // comptime array passed as slice argument
 comptime {
     const S = struct {
-        fn indexOfScalarPos(comptime T: type, slice: []const T, start_index: usize, value: T) ?usize {
+        fn index_of_scalar_pos(comptime T: type, slice: []const T, start_index: usize, value: T) ?usize {
             var i: usize = start_index;
             while (i < slice.len) : (i += 1) {
                 if (slice[i] == value) return i;
@@ -18,7 +18,7 @@ comptime {
             return null;
         }
 
-        fn indexOfScalar(comptime T: type, slice: []const T, value: T) ?usize {
+        fn index_of_scalar(comptime T: type, slice: []const T, value: T) ?usize {
             return indexOfScalarPos(T, slice, 0, value);
         }
     };
@@ -73,7 +73,7 @@ test "implicitly cast array of size 0 to slice" {
     try assertLenIsZero(&msg);
 }
 
-fn assertLenIsZero(msg: []const u8) !void {
+fn assert_len_is_zero(msg: []const u8) !void {
     try expect(msg.len == 0);
 }
 
@@ -81,7 +81,7 @@ test "access len index of sentinel-terminated slice" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var slice: [:0]const u8 = "hello";
             _ = &slice;
             try expect(slice.len == 5);
@@ -130,16 +130,16 @@ test "generic malloc free" {
     memFree(u8, a);
 }
 var some_mem: [100]u8 = undefined;
-fn memAlloc(comptime T: type, n: usize) anyerror![]T {
+fn mem_alloc(comptime T: type, n: usize) anyerror![]T {
     return @as([*]T, @ptrCast(&some_mem[0]))[0..n];
 }
-fn memFree(comptime T: type, memory: []T) void {
+fn mem_free(comptime T: type, memory: []T) void {
     _ = memory;
 }
 
 test "slice of hardcoded address to pointer" {
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const pointer = @as([*]u8, @ptrFromInt(0x04))[0..2];
             comptime assert(@TypeOf(pointer) == *[2]u8);
             const slice: []const u8 = pointer;
@@ -242,7 +242,7 @@ test "runtime safety lets us slice from len..len" {
     try expect(mem.eql(u8, sliceFromLenToLen(an_array[0..], 3, 3), ""));
 }
 
-fn sliceFromLenToLen(a_slice: []u8, start: usize, end: usize) []u8 {
+fn slice_from_len_to_len(a_slice: []u8, start: usize, end: usize) []u8 {
     return a_slice[start..end];
 }
 
@@ -282,7 +282,7 @@ test "comptime slices are disambiguated" {
     try expect(sliceSum(&[_]u8{ 3, 4 }) == 7);
 }
 
-fn sliceSum(comptime q: []const u8) i32 {
+fn slice_sum(comptime q: []const u8) i32 {
     comptime var result = 0;
     inline for (q) |item| {
         result += item;
@@ -334,7 +334,7 @@ test "obtaining a null terminated slice" {
 
 test "empty array to slice" {
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const empty: []align(16) u8 = &[_]u8{};
             const align_1: []align(1) u8 = empty;
             const align_4: []align(4) u8 = empty;
@@ -355,7 +355,7 @@ test "@ptrCast slice to pointer" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var array align(@alignOf(u16)) = [5]u8{ 0xff, 0xff, 0xff, 0xff, 0xff };
             const slice: []align(@alignOf(u16)) u8 = &array;
             const ptr: *u16 = @ptrCast(slice);
@@ -371,12 +371,12 @@ test "slice multi-pointer without end" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try testPointer();
             try testPointerZ();
         }
 
-        fn testPointer() !void {
+        fn test_pointer() !void {
             var array = [5]u8{ 1, 2, 3, 4, 5 };
             const pointer: [*]u8 = &array;
             const slice = pointer[1..];
@@ -385,7 +385,7 @@ test "slice multi-pointer without end" {
             try expect(slice[1] == 3);
         }
 
-        fn testPointerZ() !void {
+        fn test_pointer_z() !void {
             var array = [5:0]u8{ 1, 2, 3, 4, 5 };
             const pointer: [*:0]u8 = &array;
 
@@ -410,7 +410,7 @@ test "slice syntax resulting in pointer-to-array" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try testArray();
             try testArrayZ();
             try testArray0();
@@ -433,7 +433,7 @@ test "slice syntax resulting in pointer-to-array" {
             try testSingleItemPointer();
         }
 
-        fn testArray() !void {
+        fn test_array() !void {
             var array = [5]u8{ 1, 2, 3, 4, 5 };
             const slice = array[1..3];
             comptime assert(@TypeOf(slice) == *[2]u8);
@@ -441,7 +441,7 @@ test "slice syntax resulting in pointer-to-array" {
             try expect(slice[1] == 3);
         }
 
-        fn testArrayZ() !void {
+        fn test_array_z() !void {
             var array = [5:0]u8{ 1, 2, 3, 4, 5 };
             comptime assert(@TypeOf(array[1..3]) == *[2]u8);
             comptime assert(@TypeOf(array[1..5]) == *[4:0]u8);
@@ -449,7 +449,7 @@ test "slice syntax resulting in pointer-to-array" {
             comptime assert(@TypeOf(array[1..3 :4]) == *[2:4]u8);
         }
 
-        fn testArray0() !void {
+        fn test_array0() !void {
             {
                 var array = [0]u8{};
                 const slice = array[0..0];
@@ -463,7 +463,7 @@ test "slice syntax resulting in pointer-to-array" {
             }
         }
 
-        fn testArrayAlign() !void {
+        fn test_array_align() !void {
             var array align(4) = [5]u8{ 1, 2, 3, 4, 5 };
             const slice = array[4..5];
             comptime assert(@TypeOf(slice) == *align(4) [1]u8);
@@ -471,7 +471,7 @@ test "slice syntax resulting in pointer-to-array" {
             comptime assert(@TypeOf(array[0..2]) == *align(4) [2]u8);
         }
 
-        fn testPointer() !void {
+        fn test_pointer() !void {
             var array = [5]u8{ 1, 2, 3, 4, 5 };
             var pointer: [*]u8 = &array;
             const slice = pointer[1..3];
@@ -480,21 +480,21 @@ test "slice syntax resulting in pointer-to-array" {
             try expect(slice[1] == 3);
         }
 
-        fn testPointerZ() !void {
+        fn test_pointer_z() !void {
             var array = [5:0]u8{ 1, 2, 3, 4, 5 };
             var pointer: [*:0]u8 = &array;
             comptime assert(@TypeOf(pointer[1..3]) == *[2]u8);
             comptime assert(@TypeOf(pointer[1..3 :4]) == *[2:4]u8);
         }
 
-        fn testPointer0() !void {
+        fn test_pointer0() !void {
             var pointer: [*]const u0 = &[1]u0{0};
             const slice = pointer[0..1];
             comptime assert(@TypeOf(slice) == *const [1]u0);
             try expect(slice[0] == 0);
         }
 
-        fn testPointerAlign() !void {
+        fn test_pointer_align() !void {
             var array align(4) = [5]u8{ 1, 2, 3, 4, 5 };
             var pointer: [*]align(4) u8 = &array;
             const slice = pointer[4..5];
@@ -503,7 +503,7 @@ test "slice syntax resulting in pointer-to-array" {
             comptime assert(@TypeOf(pointer[0..2]) == *align(4) [2]u8);
         }
 
-        fn testSlice() !void {
+        fn test_slice() !void {
             var array = [5]u8{ 1, 2, 3, 4, 5 };
             var src_slice: []u8 = &array;
             const slice = src_slice[1..3];
@@ -512,7 +512,7 @@ test "slice syntax resulting in pointer-to-array" {
             try expect(slice[1] == 3);
         }
 
-        fn testSliceZ() !void {
+        fn test_slice_z() !void {
             var array = [5:0]u8{ 1, 2, 3, 4, 5 };
             var slice: [:0]u8 = &array;
             comptime assert(@TypeOf(slice[1..3]) == *[2]u8);
@@ -524,7 +524,7 @@ test "slice syntax resulting in pointer-to-array" {
             }
         }
 
-        fn testSliceOpt() !void {
+        fn test_slice_opt() !void {
             var array: [2]u8 = [2]u8{ 1, 2 };
             var slice: ?[]u8 = &array;
             comptime assert(@TypeOf(&array, slice) == ?[]u8);
@@ -532,7 +532,7 @@ test "slice syntax resulting in pointer-to-array" {
             comptime assert(@TypeOf(slice.?[0..2]) == *[2]u8);
         }
 
-        fn testSliceAlign() !void {
+        fn test_slice_align() !void {
             var array align(4) = [5]u8{ 1, 2, 3, 4, 5 };
             var src_slice: []align(4) u8 = &array;
             const slice = src_slice[4..5];
@@ -541,12 +541,12 @@ test "slice syntax resulting in pointer-to-array" {
             comptime assert(@TypeOf(src_slice[0..2]) == *align(4) [2]u8);
         }
 
-        fn testConcatStrLiterals() !void {
+        fn test_concat_str_literals() !void {
             try expectEqualSlices(u8, "ab", "a"[0..] ++ "b"[0..]);
             try expectEqualSlices(u8, "ab", "a"[0.. :0] ++ "b"[0.. :0]);
         }
 
-        fn testSliceLength() !void {
+        fn test_slice_length() !void {
             var array = [5]u8{ 1, 2, 3, 4, 5 };
             var slice: []u8 = &array;
             comptime assert(@TypeOf(slice[1..][0..2]) == *[2]u8);
@@ -554,7 +554,7 @@ test "slice syntax resulting in pointer-to-array" {
             comptime assert(@TypeOf(slice[1..][0..2 :4]) == *[2:4]u8);
         }
 
-        fn testSliceLengthZ() !void {
+        fn test_slice_length_z() !void {
             var array = [5:0]u8{ 1, 2, 3, 4, 5 };
             var slice: [:0]u8 = &array;
             comptime assert(@TypeOf(slice[1..][0..2]) == *[2]u8);
@@ -563,14 +563,14 @@ test "slice syntax resulting in pointer-to-array" {
             comptime assert(@TypeOf(slice[1.. :0][0..2 :4]) == *[2:4]u8);
         }
 
-        fn testArrayLength() !void {
+        fn test_array_length() !void {
             var array = [5]u8{ 1, 2, 3, 4, 5 };
             comptime assert(@TypeOf(array[1..][0..2]) == *[2]u8);
             comptime assert(@TypeOf(array[1..][0..4]) == *[4]u8);
             comptime assert(@TypeOf(array[1..][0..2 :4]) == *[2:4]u8);
         }
 
-        fn testArrayLengthZ() !void {
+        fn test_array_length_z() !void {
             var array = [5:0]u8{ 1, 2, 3, 4, 5 };
             comptime assert(@TypeOf(array[1..][0..2]) == *[2]u8);
             comptime assert(@TypeOf(array[1..][0..4]) == *[4:0]u8);
@@ -580,7 +580,7 @@ test "slice syntax resulting in pointer-to-array" {
             comptime assert(@TypeOf(array[1.. :0][0..2 :4]) == *[2:4]u8);
         }
 
-        fn testMultiPointer() !void {
+        fn test_multi_pointer() !void {
             var array = [5]u8{ 1, 2, 3, 4, 5 };
             var ptr: [*]u8 = &array;
             comptime assert(@TypeOf(ptr[1..][0..2]) == *[2]u8);
@@ -588,7 +588,7 @@ test "slice syntax resulting in pointer-to-array" {
             comptime assert(@TypeOf(ptr[1..][0..2 :4]) == *[2:4]u8);
         }
 
-        fn testMultiPointerLengthZ() !void {
+        fn test_multi_pointer_length_z() !void {
             var array = [5:0]u8{ 1, 2, 3, 4, 5 };
             var ptr: [*]u8 = &array;
             comptime assert(@TypeOf(ptr[1..][0..2]) == *[2]u8);
@@ -607,7 +607,7 @@ test "slice syntax resulting in pointer-to-array" {
             comptime assert(@TypeOf(ptr_z[1.. :0][0..2 :4]) == *[2:4]u8);
         }
 
-        fn testSingleItemPointer() !void {
+        fn test_single_item_pointer() !void {
             var value: u8 = 1;
             var ptr = &value;
 
@@ -689,7 +689,7 @@ test "type coercion of pointer to anon struct literal to pointer to slice" {
             c: []const u8,
         };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x1: u8 = 42;
             _ = &x1;
             const t1 = &.{ x1, 56, 54 };

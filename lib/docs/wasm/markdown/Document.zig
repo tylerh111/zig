@@ -124,7 +124,7 @@ pub const Node = struct {
         unordered = std.math.maxInt(u30),
         _,
 
-        pub fn asNumber(start: ListStart) ?u30 {
+        pub fn as_number(start: ListStart) ?u30 {
             if (start == .unordered) return null;
             assert(@intFromEnum(start) <= 999_999_999);
             return @intFromEnum(start);
@@ -165,11 +165,11 @@ pub fn render(doc: Document, writer: anytype) @TypeOf(writer).Error!void {
     try renderer.render(doc, writer);
 }
 
-pub fn ExtraData(comptime T: type) type {
+pub fn extra_data(comptime T: type) type {
     return struct { data: T, end: usize };
 }
 
-pub fn extraData(doc: Document, comptime T: type, index: ExtraIndex) ExtraData(T) {
+pub fn extra_data(doc: Document, comptime T: type, index: ExtraIndex) ExtraData(T) {
     const fields = @typeInfo(T).Struct.fields;
     var i: usize = @intFromEnum(index);
     var result: T = undefined;
@@ -183,7 +183,7 @@ pub fn extraData(doc: Document, comptime T: type, index: ExtraIndex) ExtraData(T
     return .{ .data = result, .end = i };
 }
 
-pub fn extraChildren(doc: Document, index: ExtraIndex) []const Node.Index {
+pub fn extra_children(doc: Document, index: ExtraIndex) []const Node.Index {
     const children = doc.extraData(Node.Children, index);
     return @ptrCast(doc.extra[children.end..][0..children.data.len]);
 }

@@ -4,7 +4,7 @@ const testing = std.testing;
 
 const __divxf3 = @import("divxf3.zig").__divxf3;
 
-fn compareResult(result: f80, expected: u80) bool {
+fn compare_result(result: f80, expected: u80) bool {
     const rep: u80 = @bitCast(result);
 
     if (rep == expected) return true;

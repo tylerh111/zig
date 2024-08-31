@@ -15,7 +15,7 @@ test "inline while loop" {
     try expect(sum == 9);
 }
 
-fn typeNameLength(comptime T: type) usize {
+fn type_name_length(comptime T: type) usize {
     return @typeName(T).len;
 }
 

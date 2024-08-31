@@ -27,7 +27,7 @@ pub fn init(secret_seed: [secret_seed_length]u8) Self {
 }
 
 /// Inserts entropy to refresh the internal state.
-pub fn addEntropy(self: *Self, bytes: []const u8) void {
+pub fn add_entropy(self: *Self, bytes: []const u8) void {
     comptime std.debug.assert(secret_seed_length % rate == 0);
     var i: usize = 0;
     while (i + rate < bytes.len) : (i += rate) {

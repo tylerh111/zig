@@ -3,7 +3,7 @@ const io = std.io;
 const testing = std.testing;
 
 /// A Writer that counts how many bytes has been written to it.
-pub fn CountingWriter(comptime WriterType: type) type {
+pub fn counting_writer(comptime WriterType: type) type {
     return struct {
         bytes_written: u64,
         child_stream: WriterType,
@@ -25,7 +25,7 @@ pub fn CountingWriter(comptime WriterType: type) type {
     };
 }
 
-pub fn countingWriter(child_stream: anytype) CountingWriter(@TypeOf(child_stream)) {
+pub fn counting_writer(child_stream: anytype) CountingWriter(@TypeOf(child_stream)) {
     return .{ .bytes_written = 0, .child_stream = child_stream };
 }
 

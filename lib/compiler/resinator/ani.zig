@@ -16,12 +16,12 @@ const std = @import("std");
 
 const AF_ICON: u32 = 1;
 
-pub fn isAnimatedIcon(reader: anytype) bool {
+pub fn is_animated_icon(reader: anytype) bool {
     const flags = getAniheaderFlags(reader) catch return false;
     return flags & AF_ICON == AF_ICON;
 }
 
-fn getAniheaderFlags(reader: anytype) !u32 {
+fn get_aniheader_flags(reader: anytype) !u32 {
     const riff_header = try reader.readBytesNoEof(4);
     if (!std.mem.eql(u8, &riff_header, "RIFF")) return error.InvalidFormat;
 

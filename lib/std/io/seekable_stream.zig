@@ -1,6 +1,6 @@
 const std = @import("../std.zig");
 
-pub fn SeekableStream(
+pub fn seekable_stream(
     comptime Context: type,
     comptime SeekErrorType: type,
     comptime GetSeekPosErrorType: type,
@@ -16,19 +16,19 @@ pub fn SeekableStream(
         pub const SeekError = SeekErrorType;
         pub const GetSeekPosError = GetSeekPosErrorType;
 
-        pub fn seekTo(self: Self, pos: u64) SeekError!void {
+        pub fn seek_to(self: Self, pos: u64) SeekError!void {
             return seekToFn(self.context, pos);
         }
 
-        pub fn seekBy(self: Self, amt: i64) SeekError!void {
+        pub fn seek_by(self: Self, amt: i64) SeekError!void {
             return seekByFn(self.context, amt);
         }
 
-        pub fn getEndPos(self: Self) GetSeekPosError!u64 {
+        pub fn get_end_pos(self: Self) GetSeekPosError!u64 {
             return getEndPosFn(self.context);
         }
 
-        pub fn getPos(self: Self) GetSeekPosError!u64 {
+        pub fn get_pos(self: Self) GetSeekPosError!u64 {
             return getPosFn(self.context);
         }
     };

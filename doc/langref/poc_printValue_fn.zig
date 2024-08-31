@@ -1,5 +1,5 @@
 const Writer = struct {
-    pub fn printValue(self: *Writer, value: anytype) !void {
+    pub fn print_value(self: *Writer, value: anytype) !void {
         switch (@typeInfo(@TypeOf(value))) {
             .Int => {
                 return self.writeInt(value);
@@ -20,11 +20,11 @@ const Writer = struct {
         _ = self;
         _ = value;
     }
-    fn writeInt(self: *Writer, value: anytype) !void {
+    fn write_int(self: *Writer, value: anytype) !void {
         _ = self;
         _ = value;
     }
-    fn writeFloat(self: *Writer, value: anytype) !void {
+    fn write_float(self: *Writer, value: anytype) !void {
         _ = self;
         _ = value;
     }

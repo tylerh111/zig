@@ -38,7 +38,7 @@ pub const Reloc = struct {
 };
 
 /// The returned slice is overwritten by the next call to lowerMir.
-pub fn lowerMir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
+pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
     insts: []const Instruction,
     relocs: []const Reloc,
 } {
@@ -308,7 +308,7 @@ fn reloc(lower: *Lower, target: Reloc.Target) Immediate {
     return Immediate.s(0);
 }
 
-fn pushPopRegList(lower: *Lower, comptime spilling: bool, reg_list: Mir.RegisterList) !void {
+fn push_pop_reg_list(lower: *Lower, comptime spilling: bool, reg_list: Mir.RegisterList) !void {
     var it = reg_list.iterator(.{ .direction = .forward });
 
     var reg_i: u31 = 0;

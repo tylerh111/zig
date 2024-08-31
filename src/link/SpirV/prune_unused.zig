@@ -25,7 +25,7 @@ const Word = spec.Word;
 /// have an .IdResult. If they don't, then they are regarded
 /// as 'decoration'-style instructions that don't keep their
 /// operands alive, but will be emitted if they are.
-fn canPrune(op: Opcode) bool {
+fn can_prune(op: Opcode) bool {
     // This list should be as worked out as possible, but just
     // getting common instructions is a good effort/effect ratio.
     // When adding items to this list, also check whether the
@@ -181,7 +181,7 @@ const AliveMarker = struct {
     result_id_offsets: std.ArrayList(u16),
     alive: std.DynamicBitSetUnmanaged,
 
-    fn markAlive(self: *AliveMarker, result_id: ResultId) BinaryModule.ParseError!void {
+    fn mark_alive(self: *AliveMarker, result_id: ResultId) BinaryModule.ParseError!void {
         const index = self.info.result_id_to_code_offset.getIndex(result_id) orelse {
             log.err("undefined result-id {}", .{result_id});
             return error.InvalidId;
@@ -202,7 +202,7 @@ const AliveMarker = struct {
         }
     }
 
-    fn markFunctionAlive(
+    fn mark_function_alive(
         self: *AliveMarker,
         func_inst: BinaryModule.Instruction,
     ) !void {
@@ -221,7 +221,7 @@ const AliveMarker = struct {
         }
     }
 
-    fn markInstructionAlive(
+    fn mark_instruction_alive(
         self: *AliveMarker,
         inst: BinaryModule.Instruction,
     ) !void {
@@ -239,7 +239,7 @@ const AliveMarker = struct {
     }
 };
 
-fn removeIdsFromMap(a: Allocator, map: anytype, info: ModuleInfo, alive_marker: AliveMarker) !void {
+fn remove_ids_from_map(a: Allocator, map: anytype, info: ModuleInfo, alive_marker: AliveMarker) !void {
     var to_remove = std.ArrayList(ResultId).init(a);
     var it = map.iterator();
     while (it.next()) |entry| {

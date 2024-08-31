@@ -10,7 +10,7 @@ pub const lzma2 = @import("compress/lzma2.zig");
 pub const xz = @import("compress/xz.zig");
 pub const zstd = @import("compress/zstandard.zig");
 
-pub fn HashedReader(
+pub fn hashed_reader(
     comptime ReaderType: anytype,
     comptime HasherType: anytype,
 ) type {
@@ -33,14 +33,14 @@ pub fn HashedReader(
     };
 }
 
-pub fn hashedReader(
+pub fn hashed_reader(
     reader: anytype,
     hasher: anytype,
 ) HashedReader(@TypeOf(reader), @TypeOf(hasher)) {
     return .{ .child_reader = reader, .hasher = hasher };
 }
 
-pub fn HashedWriter(
+pub fn hashed_writer(
     comptime WriterType: anytype,
     comptime HasherType: anytype,
 ) type {
@@ -63,7 +63,7 @@ pub fn HashedWriter(
     };
 }
 
-pub fn hashedWriter(
+pub fn hashed_writer(
     writer: anytype,
     hasher: anytype,
 ) HashedWriter(@TypeOf(writer), @TypeOf(hasher)) {

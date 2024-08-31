@@ -7,7 +7,7 @@
 
 const std = @import("std");
 
-pub fn Algorithm(comptime W: type) type {
+pub fn algorithm(comptime W: type) type {
     return struct {
         polynomial: W,
         initial: W,
@@ -17,7 +17,7 @@ pub fn Algorithm(comptime W: type) type {
     };
 }
 
-pub fn Crc(comptime W: type, comptime algorithm: Algorithm(W)) type {
+pub fn crc(comptime W: type, comptime algorithm: Algorithm(W)) type {
     return struct {
         const Self = @This();
         const I = if (@bitSizeOf(W) < 8) u8 else W;
@@ -59,7 +59,7 @@ pub fn Crc(comptime W: type, comptime algorithm: Algorithm(W)) type {
             return Self{ .crc = initial };
         }
 
-        inline fn tableEntry(index: I) I {
+        inline fn table_entry(index: I) I {
             return lookup_table[@as(u8, @intCast(index & 0xFF))];
         }
 

@@ -54,7 +54,7 @@ pub const abilists_max_size = 800 * 1024; // Bigger than this and something is d
 
 /// This function will emit a log error when there is a problem with the zig
 /// installation and then return `error.ZigInstallationCorrupt`.
-pub fn loadMetaData(gpa: Allocator, contents: []const u8) LoadMetaDataError!*ABI {
+pub fn load_meta_data(gpa: Allocator, contents: []const u8) LoadMetaDataError!*ABI {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -160,7 +160,7 @@ pub const CRTFile = enum {
     libc_nonshared_a,
 };
 
-pub fn buildCRTFile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progress.Node) !void {
+pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progress.Node) !void {
     if (!build_options.have_llvm) {
         return error.ZigCompilerNotBuiltWithLLVMExtensions;
     }
@@ -658,7 +658,7 @@ pub const BuiltSharedObjects = struct {
 
 const all_map_basename = "all.map";
 
-pub fn buildSharedObjects(comp: *Compilation, prog_node: std.Progress.Node) !void {
+pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -1058,7 +1058,7 @@ pub fn buildSharedObjects(comp: *Compilation, prog_node: std.Progress.Node) !voi
 
 // zig fmt: on
 
-fn buildSharedLib(
+fn build_shared_lib(
     comp: *Compilation,
     arena: Allocator,
     zig_cache_directory: Compilation.Directory,
@@ -1161,7 +1161,7 @@ fn buildSharedLib(
 }
 
 // Return true if glibc has crti/crtn sources for that architecture.
-pub fn needsCrtiCrtn(target: std.Target) bool {
+pub fn needs_crti_crtn(target: std.Target) bool {
     return switch (target.cpu.arch) {
         .riscv32, .riscv64 => false,
         else => true,

@@ -20,7 +20,7 @@ pub const Ip6 = extern struct {
     _poll: *const fn (*const Ip6) callconv(cc) Status,
 
     /// Gets the current operational settings for this instance of the EFI IPv6 Protocol driver.
-    pub fn getModeData(self: *const Ip6, ip6_mode_data: ?*Mode, mnp_config_data: ?*ManagedNetworkConfigData, snp_mode_data: ?*SimpleNetwork) Status {
+    pub fn get_mode_data(self: *const Ip6, ip6_mode_data: ?*Mode, mnp_config_data: ?*ManagedNetworkConfigData, snp_mode_data: ?*SimpleNetwork) Status {
         return self._get_mode_data(self, ip6_mode_data, mnp_config_data, snp_mode_data);
     }
 

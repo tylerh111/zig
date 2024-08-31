@@ -621,22 +621,22 @@ pub const W = struct {
     pub const EXITED = 16;
     pub const TRAPPED = 32;
 
-    pub fn EXITSTATUS(s: u32) u8 {
+    pub fn exitstatus(s: u32) u8 {
         return @as(u8, @intCast((s & 0xff00) >> 8));
     }
-    pub fn TERMSIG(s: u32) u32 {
+    pub fn termsig(s: u32) u32 {
         return s & 0x7f;
     }
-    pub fn STOPSIG(s: u32) u32 {
+    pub fn stopsig(s: u32) u32 {
         return EXITSTATUS(s);
     }
-    pub fn IFEXITED(s: u32) bool {
+    pub fn ifexited(s: u32) bool {
         return TERMSIG(s) == 0;
     }
-    pub fn IFSTOPPED(s: u32) bool {
+    pub fn ifstopped(s: u32) bool {
         return @as(u16, @truncate((((s & 0xffff) *% 0x10001) >> 8))) > 0x7f00;
     }
-    pub fn IFSIGNALED(s: u32) bool {
+    pub fn ifsignaled(s: u32) bool {
         return (s & 0xffff) -% 1 < 0xff;
     }
 };
@@ -702,16 +702,16 @@ pub const SIG = struct {
     pub const WORDS = 4;
     pub const MAXSIG = 128;
 
-    pub inline fn IDX(sig: usize) usize {
+    pub inline fn idx(sig: usize) usize {
         return sig - 1;
     }
-    pub inline fn WORD(sig: usize) usize {
+    pub inline fn word(sig: usize) usize {
         return IDX(sig) >> 5;
     }
-    pub inline fn BIT(sig: usize) usize {
+    pub inline fn bit(sig: usize) usize {
         return 1 << (IDX(sig) & 31);
     }
-    pub inline fn VALID(sig: usize) usize {
+    pub inline fn valid(sig: usize) usize {
         return sig <= MAXSIG and sig > 0;
     }
 };
@@ -1501,35 +1501,35 @@ pub const S = struct {
     pub const IWOTH = 0o002;
     pub const IXOTH = 0o001;
 
-    pub fn ISFIFO(m: u32) bool {
+    pub fn isfifo(m: u32) bool {
         return m & IFMT == IFIFO;
     }
 
-    pub fn ISCHR(m: u32) bool {
+    pub fn ischr(m: u32) bool {
         return m & IFMT == IFCHR;
     }
 
-    pub fn ISDIR(m: u32) bool {
+    pub fn isdir(m: u32) bool {
         return m & IFMT == IFDIR;
     }
 
-    pub fn ISBLK(m: u32) bool {
+    pub fn isblk(m: u32) bool {
         return m & IFMT == IFBLK;
     }
 
-    pub fn ISREG(m: u32) bool {
+    pub fn isreg(m: u32) bool {
         return m & IFMT == IFREG;
     }
 
-    pub fn ISLNK(m: u32) bool {
+    pub fn islnk(m: u32) bool {
         return m & IFMT == IFLNK;
     }
 
-    pub fn ISSOCK(m: u32) bool {
+    pub fn issock(m: u32) bool {
         return m & IFMT == IFSOCK;
     }
 
-    pub fn IWHT(m: u32) bool {
+    pub fn iwht(m: u32) bool {
         return m & IFMT == IFWHT;
     }
 };

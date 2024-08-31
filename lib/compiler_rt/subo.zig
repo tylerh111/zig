@@ -25,7 +25,7 @@ pub fn __suboti4(a: i128, b: i128, overflow: *c_int) callconv(.C) i128 {
     return suboXi4_generic(i128, a, b, overflow);
 }
 
-inline fn suboXi4_generic(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST {
+inline fn subo_xi4_generic(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST {
     overflow.* = 0;
     const sum: ST = a -% b;
     // Hackers Delight: section Overflow Detection, subsection Signed Add/Subtract

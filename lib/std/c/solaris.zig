@@ -534,28 +534,28 @@ pub const W = struct {
     pub const NOHANG = 0o100;
     pub const NOWAIT = 0o200;
 
-    pub fn EXITSTATUS(s: u32) u8 {
+    pub fn exitstatus(s: u32) u8 {
         return @as(u8, @intCast((s >> 8) & 0xff));
     }
-    pub fn TERMSIG(s: u32) u32 {
+    pub fn termsig(s: u32) u32 {
         return s & 0x7f;
     }
-    pub fn STOPSIG(s: u32) u32 {
+    pub fn stopsig(s: u32) u32 {
         return EXITSTATUS(s);
     }
-    pub fn IFEXITED(s: u32) bool {
+    pub fn ifexited(s: u32) bool {
         return TERMSIG(s) == 0;
     }
 
-    pub fn IFCONTINUED(s: u32) bool {
+    pub fn ifcontinued(s: u32) bool {
         return ((s & 0o177777) == 0o177777);
     }
 
-    pub fn IFSTOPPED(s: u32) bool {
+    pub fn ifstopped(s: u32) bool {
         return (s & 0x00ff != 0o177) and !(s & 0xff00 != 0);
     }
 
-    pub fn IFSIGNALED(s: u32) bool {
+    pub fn ifsignaled(s: u32) bool {
         return s & 0x00ff > 0 and s & 0xff00 == 0;
     }
 };
@@ -858,16 +858,16 @@ pub const SIG = struct {
     pub const RTMIN = 42;
     pub const RTMAX = 74;
 
-    pub inline fn IDX(sig: usize) usize {
+    pub inline fn idx(sig: usize) usize {
         return sig - 1;
     }
-    pub inline fn WORD(sig: usize) usize {
+    pub inline fn word(sig: usize) usize {
         return IDX(sig) >> 5;
     }
-    pub inline fn BIT(sig: usize) usize {
+    pub inline fn bit(sig: usize) usize {
         return 1 << (IDX(sig) & 31);
     }
-    pub inline fn VALID(sig: usize) usize {
+    pub inline fn valid(sig: usize) usize {
         return sig <= MAXSIG and sig > 0;
     }
 };
@@ -1326,39 +1326,39 @@ pub const S = struct {
     pub const IWOTH = 0o002;
     pub const IXOTH = 0o001;
 
-    pub fn ISFIFO(m: u32) bool {
+    pub fn isfifo(m: u32) bool {
         return m & IFMT == IFIFO;
     }
 
-    pub fn ISCHR(m: u32) bool {
+    pub fn ischr(m: u32) bool {
         return m & IFMT == IFCHR;
     }
 
-    pub fn ISDIR(m: u32) bool {
+    pub fn isdir(m: u32) bool {
         return m & IFMT == IFDIR;
     }
 
-    pub fn ISBLK(m: u32) bool {
+    pub fn isblk(m: u32) bool {
         return m & IFMT == IFBLK;
     }
 
-    pub fn ISREG(m: u32) bool {
+    pub fn isreg(m: u32) bool {
         return m & IFMT == IFREG;
     }
 
-    pub fn ISLNK(m: u32) bool {
+    pub fn islnk(m: u32) bool {
         return m & IFMT == IFLNK;
     }
 
-    pub fn ISSOCK(m: u32) bool {
+    pub fn issock(m: u32) bool {
         return m & IFMT == IFSOCK;
     }
 
-    pub fn ISDOOR(m: u32) bool {
+    pub fn isdoor(m: u32) bool {
         return m & IFMT == IFDOOR;
     }
 
-    pub fn ISPORT(m: u32) bool {
+    pub fn isport(m: u32) bool {
         return m & IFMT == IFPORT;
     }
 };
@@ -1697,7 +1697,7 @@ pub const FILE_EVENT = struct {
     /// Some other file/filesystem got mounted over the watched file/directory.
     pub const MOUNTEDOVER = 0x40000000;
 
-    pub fn isException(event: u32) bool {
+    pub fn is_exception(event: u32) bool {
         return event & (UNMOUNTED | DELETE | RENAME_TO | RENAME_FROM | MOUNTEDOVER) > 0;
     }
 };
@@ -1815,24 +1815,24 @@ const IoCtlCommand = enum(u32) {
     read_write = 0xc0000000,
 };
 
-fn ioImpl(cmd: IoCtlCommand, io_type: u8, nr: u8, comptime IOT: type) i32 {
+fn io_impl(cmd: IoCtlCommand, io_type: u8, nr: u8, comptime IOT: type) i32 {
     const size = @as(u32, @intCast(@as(u8, @truncate(@sizeOf(IOT))))) << 16;
     const t = @as(u32, @intCast(io_type)) << 8;
     return @as(i32, @bitCast(@intFromEnum(cmd) | size | t | nr));
 }
 
-pub fn IO(io_type: u8, nr: u8) i32 {
+pub fn io(io_type: u8, nr: u8) i32 {
     return ioImpl(.none, io_type, nr, void);
 }
 
-pub fn IOR(io_type: u8, nr: u8, comptime IOT: type) i32 {
+pub fn ior(io_type: u8, nr: u8, comptime IOT: type) i32 {
     return ioImpl(.write, io_type, nr, IOT);
 }
 
-pub fn IOW(io_type: u8, nr: u8, comptime IOT: type) i32 {
+pub fn iow(io_type: u8, nr: u8, comptime IOT: type) i32 {
     return ioImpl(.read, io_type, nr, IOT);
 }
 
-pub fn IOWR(io_type: u8, nr: u8, comptime IOT: type) i32 {
+pub fn iowr(io_type: u8, nr: u8, comptime IOT: type) i32 {
     return ioImpl(.read_write, io_type, nr, IOT);
 }

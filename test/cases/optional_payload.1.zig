@@ -4,7 +4,7 @@ pub fn main() void {
     assert(maybe_x == null);
 }
 
-fn byPtr(x: *u32) ?*u32 {
+fn by_ptr(x: *u32) ?*u32 {
     _ = x;
     return null;
 }

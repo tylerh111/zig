@@ -10,7 +10,7 @@ const Order = std.math.Order;
 /// Compares two arrays in constant time (for a given length) and returns whether they are equal.
 /// This function was designed to compare short cryptographic secrets (MACs, signatures).
 /// For all other applications, use mem.eql() instead.
-pub fn timingSafeEql(comptime T: type, a: T, b: T) bool {
+pub fn timing_safe_eql(comptime T: type, a: T, b: T) bool {
     switch (@typeInfo(T)) {
         .Array => |info| {
             const C = info.child;
@@ -45,7 +45,7 @@ pub fn timingSafeEql(comptime T: type, a: T, b: T) bool {
 
 /// Compare two integers serialized as arrays of the same size, in constant time.
 /// Returns .lt if a<b, .gt if a>b and .eq if a=b
-pub fn timingSafeCompare(comptime T: type, a: []const T, b: []const T, endian: Endian) Order {
+pub fn timing_safe_compare(comptime T: type, a: []const T, b: []const T, endian: Endian) Order {
     debug.assert(a.len == b.len);
     const bits = switch (@typeInfo(T)) {
         .Int => |cinfo| if (cinfo.signedness != .unsigned) @compileError("Elements to be compared must be unsigned") else cinfo.bits,
@@ -80,7 +80,7 @@ pub fn timingSafeCompare(comptime T: type, a: []const T, b: []const T, endian: E
 
 /// Add two integers serialized as arrays of the same size, in constant time.
 /// The result is stored into `result`, and `true` is returned if an overflow occurred.
-pub fn timingSafeAdd(comptime T: type, a: []const T, b: []const T, result: []T, endian: Endian) bool {
+pub fn timing_safe_add(comptime T: type, a: []const T, b: []const T, result: []T, endian: Endian) bool {
     const len = a.len;
     debug.assert(len == b.len and len == result.len);
     var carry: u1 = 0;
@@ -107,7 +107,7 @@ pub fn timingSafeAdd(comptime T: type, a: []const T, b: []const T, result: []T, 
 
 /// Subtract two integers serialized as arrays of the same size, in constant time.
 /// The result is stored into `result`, and `true` is returned if an underflow occurred.
-pub fn timingSafeSub(comptime T: type, a: []const T, b: []const T, result: []T, endian: Endian) bool {
+pub fn timing_safe_sub(comptime T: type, a: []const T, b: []const T, result: []T, endian: Endian) bool {
     const len = a.len;
     debug.assert(len == b.len and len == result.len);
     var borrow: u1 = 0;
@@ -134,7 +134,7 @@ pub fn timingSafeSub(comptime T: type, a: []const T, b: []const T, result: []T, 
 
 /// Sets a slice to zeroes.
 /// Prevents the store from being optimized out.
-pub inline fn secureZero(comptime T: type, s: []T) void {
+pub inline fn secure_zero(comptime T: type, s: []T) void {
     @memset(@as([]volatile T, s), 0);
 }
 

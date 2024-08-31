@@ -15,7 +15,7 @@ comptime {
 // * return if a+b overflows => 1 else => 0
 // - addoXi4_generic as default
 
-inline fn addoXi4_generic(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST {
+inline fn addo_xi4_generic(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST {
     @setRuntimeSafety(builtin.is_test);
     overflow.* = 0;
     const sum: ST = a +% b;

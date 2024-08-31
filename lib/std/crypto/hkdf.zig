@@ -11,7 +11,7 @@ pub const HkdfSha512 = Hkdf(hmac.sha2.HmacSha512);
 
 /// The Hkdf construction takes some source of initial keying material and
 /// derives one or more uniform keys from it.
-pub fn Hkdf(comptime Hmac: type) type {
+pub fn hkdf(comptime Hmac: type) type {
     return struct {
         /// Length of a master key, in bytes.
         pub const prk_length = Hmac.mac_length;
@@ -33,7 +33,7 @@ pub fn Hkdf(comptime Hmac: type) type {
         /// hkdf.update(ikm2);
         /// hkdf.final(&prk);
         /// ```
-        pub fn extractInit(salt: []const u8) Hmac {
+        pub fn extract_init(salt: []const u8) Hmac {
             return Hmac.init(salt);
         }
 

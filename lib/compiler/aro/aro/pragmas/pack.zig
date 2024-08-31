@@ -29,7 +29,7 @@ fn deinit(pragma: *Pragma, comp: *Compilation) void {
     comp.gpa.destroy(self);
 }
 
-fn parserHandler(pragma: *Pragma, p: *Parser, start_idx: TokenIndex) Compilation.Error!void {
+fn parser_handler(pragma: *Pragma, p: *Parser, start_idx: TokenIndex) Compilation.Error!void {
     var pack: *Pack = @fieldParentPtr("pragma", pragma);
     var idx = start_idx + 1;
     const l_paren = p.pp.tokens.get(idx);
@@ -119,7 +119,7 @@ fn parserHandler(pragma: *Pragma, p: *Parser, start_idx: TokenIndex) Compilation
     }
 }
 
-fn packInt(p: *Parser, tok_i: TokenIndex) Compilation.Error!?u8 {
+fn pack_int(p: *Parser, tok_i: TokenIndex) Compilation.Error!?u8 {
     const res = p.parseNumberToken(tok_i) catch |err| switch (err) {
         error.ParsingFailed => {
             try p.errTok(.pragma_pack_int, tok_i);
@@ -157,7 +157,7 @@ fn pop(pack: *Pack, p: *Parser, maybe_label: ?[]const u8) void {
     }
 }
 
-fn preserveTokens(_: *Pragma, pp: *Preprocessor, start_idx: TokenIndex) bool {
+fn preserve_tokens(_: *Pragma, pp: *Preprocessor, start_idx: TokenIndex) bool {
     _ = pp;
     _ = start_idx;
     return true;

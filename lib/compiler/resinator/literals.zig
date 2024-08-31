@@ -8,7 +8,7 @@ const Token = @import("lex.zig").Token;
 
 /// rc is maximally liberal in terms of what it accepts as a number literal
 /// for data values. As long as it starts with a number or - or ~, that's good enough.
-pub fn isValidNumberDataLiteral(str: []const u8) bool {
+pub fn is_valid_number_data_literal(str: []const u8) bool {
     if (str.len == 0) return false;
     switch (str[0]) {
         '~', '-', '0'...'9' => return true,
@@ -135,7 +135,7 @@ pub const IterativeStringParser = struct {
         return result;
     }
 
-    pub fn nextUnchecked(self: *IterativeStringParser) std.mem.Allocator.Error!?ParsedCodepoint {
+    pub fn next_unchecked(self: *IterativeStringParser) std.mem.Allocator.Error!?ParsedCodepoint {
         if (self.num_pending_spaces > 0) {
             // Ensure that we don't get into this predicament so we can ensure that
             // the order of processing any pending stuff doesn't matter
@@ -370,7 +370,7 @@ pub const StringParseOptions = struct {
     output_code_page: CodePage = .windows1252,
 };
 
-pub fn parseQuotedString(
+pub fn parse_quoted_string(
     comptime literal_type: StringType,
     allocator: std.mem.Allocator,
     bytes: SourceBytes,
@@ -439,17 +439,17 @@ pub fn parseQuotedString(
     }
 }
 
-pub fn parseQuotedAsciiString(allocator: std.mem.Allocator, bytes: SourceBytes, options: StringParseOptions) ![]u8 {
+pub fn parse_quoted_ascii_string(allocator: std.mem.Allocator, bytes: SourceBytes, options: StringParseOptions) ![]u8 {
     std.debug.assert(bytes.slice.len >= 2); // ""
     return parseQuotedString(.ascii, allocator, bytes, options);
 }
 
-pub fn parseQuotedWideString(allocator: std.mem.Allocator, bytes: SourceBytes, options: StringParseOptions) ![:0]u16 {
+pub fn parse_quoted_wide_string(allocator: std.mem.Allocator, bytes: SourceBytes, options: StringParseOptions) ![:0]u16 {
     std.debug.assert(bytes.slice.len >= 3); // L""
     return parseQuotedString(.wide, allocator, bytes, options);
 }
 
-pub fn parseQuotedStringAsWideString(allocator: std.mem.Allocator, bytes: SourceBytes, options: StringParseOptions) ![:0]u16 {
+pub fn parse_quoted_string_as_wide_string(allocator: std.mem.Allocator, bytes: SourceBytes, options: StringParseOptions) ![:0]u16 {
     std.debug.assert(bytes.slice.len >= 2); // ""
     return parseQuotedString(.wide, allocator, bytes, options);
 }
@@ -768,13 +768,13 @@ test "parse quoted ascii string as wide string" {
     ));
 }
 
-pub fn columnsUntilTabStop(column: usize, tab_columns: usize) usize {
+pub fn columns_until_tab_stop(column: usize, tab_columns: usize) usize {
     // 0 => 8, 1 => 7, 2 => 6, 3 => 5, 4 => 4
     // 5 => 3, 6 => 2, 7 => 1, 8 => 8
     return tab_columns - (column % tab_columns);
 }
 
-pub fn columnWidth(cur_column: usize, c: u8, tab_columns: usize) usize {
+pub fn column_width(cur_column: usize, c: u8, tab_columns: usize) usize {
     return switch (c) {
         '\t' => columnsUntilTabStop(cur_column, tab_columns),
         else => 1,
@@ -785,11 +785,11 @@ pub const Number = struct {
     value: u32,
     is_long: bool = false,
 
-    pub fn asWord(self: Number) u16 {
+    pub fn as_word(self: Number) u16 {
         return @truncate(self.value);
     }
 
-    pub fn evaluateOperator(lhs: Number, operator_char: u8, rhs: Number) Number {
+    pub fn evaluate_operator(lhs: Number, operator_char: u8, rhs: Number) Number {
         const result = switch (operator_char) {
             '-' => lhs.value -% rhs.value,
             '+' => lhs.value +% rhs.value,
@@ -812,7 +812,7 @@ pub const Number = struct {
 ///   example that is rejected: 1e1
 ///   example that is accepted: 1ea
 ///   (this function will parse the two examples above the same)
-pub fn parseNumberLiteral(bytes: SourceBytes) Number {
+pub fn parse_number_literal(bytes: SourceBytes) Number {
     std.debug.assert(bytes.slice.len > 0);
     var result = Number{ .value = 0, .is_long = false };
     var radix: u8 = 10;

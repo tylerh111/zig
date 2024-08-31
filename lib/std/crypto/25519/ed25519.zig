@@ -37,22 +37,22 @@ pub const Ed25519 = struct {
         }
 
         /// Return the raw public key bytes corresponding to this secret key.
-        pub fn publicKeyBytes(self: SecretKey) [PublicKey.encoded_length]u8 {
+        pub fn public_key_bytes(self: SecretKey) [PublicKey.encoded_length]u8 {
             return self.bytes[KeyPair.seed_length..].*;
         }
 
         /// Create a secret key from raw bytes.
-        pub fn fromBytes(bytes: [encoded_length]u8) !SecretKey {
+        pub fn from_bytes(bytes: [encoded_length]u8) !SecretKey {
             return SecretKey{ .bytes = bytes };
         }
 
         /// Return the secret key as raw bytes.
-        pub fn toBytes(sk: SecretKey) [encoded_length]u8 {
+        pub fn to_bytes(sk: SecretKey) [encoded_length]u8 {
             return sk.bytes;
         }
 
         // Return the clamped secret scalar and prefix for this secret key
-        fn scalarAndPrefix(self: SecretKey) struct { scalar: CompressedScalar, prefix: [32]u8 } {
+        fn scalar_and_prefix(self: SecretKey) struct { scalar: CompressedScalar, prefix: [32]u8 } {
             var az: [Sha512.digest_length]u8 = undefined;
             var h = Sha512.init(.{});
             h.update(&self.seed());
@@ -111,23 +111,23 @@ pub const Ed25519 = struct {
         bytes: [encoded_length]u8,
 
         /// Create a public key from raw bytes.
-        pub fn fromBytes(bytes: [encoded_length]u8) NonCanonicalError!PublicKey {
+        pub fn from_bytes(bytes: [encoded_length]u8) NonCanonicalError!PublicKey {
             try Curve.rejectNonCanonical(bytes);
             return PublicKey{ .bytes = bytes };
         }
 
         /// Convert a public key to raw bytes.
-        pub fn toBytes(pk: PublicKey) [encoded_length]u8 {
+        pub fn to_bytes(pk: PublicKey) [encoded_length]u8 {
             return pk.bytes;
         }
 
-        fn signWithNonce(public_key: PublicKey, msg: []const u8, scalar: CompressedScalar, nonce: CompressedScalar) (IdentityElementError || NonCanonicalError || KeyMismatchError || WeakPublicKeyError)!Signature {
+        fn sign_with_nonce(public_key: PublicKey, msg: []const u8, scalar: CompressedScalar, nonce: CompressedScalar) (IdentityElementError || NonCanonicalError || KeyMismatchError || WeakPublicKeyError)!Signature {
             var st = try Signer.init(scalar, nonce, public_key);
             st.update(msg);
             return st.finalize();
         }
 
-        fn computeNonceAndSign(public_key: PublicKey, msg: []const u8, noise: ?[noise_length]u8, scalar: CompressedScalar, prefix: []const u8) (IdentityElementError || NonCanonicalError || KeyMismatchError || WeakPublicKeyError)!Signature {
+        fn compute_nonce_and_sign(public_key: PublicKey, msg: []const u8, noise: ?[noise_length]u8, scalar: CompressedScalar, prefix: []const u8) (IdentityElementError || NonCanonicalError || KeyMismatchError || WeakPublicKeyError)!Signature {
             var h = Sha512.init(.{});
             if (noise) |*z| {
                 h.update(z);
@@ -197,7 +197,7 @@ pub const Ed25519 = struct {
         s: CompressedScalar,
 
         /// Return the raw signature (r, s) in little-endian format.
-        pub fn toBytes(self: Signature) [encoded_length]u8 {
+        pub fn to_bytes(self: Signature) [encoded_length]u8 {
             var bytes: [encoded_length]u8 = undefined;
             bytes[0..Curve.encoded_length].* = self.r;
             bytes[Curve.encoded_length..].* = self.s;
@@ -206,7 +206,7 @@ pub const Ed25519 = struct {
 
         /// Create a signature from a raw encoding of (r, s).
         /// EdDSA always assumes little-endian.
-        pub fn fromBytes(bytes: [encoded_length]u8) Signature {
+        pub fn from_bytes(bytes: [encoded_length]u8) Signature {
             return Signature{
                 .r = bytes[0..Curve.encoded_length].*,
                 .s = bytes[Curve.encoded_length..].*,
@@ -272,7 +272,7 @@ pub const Ed25519 = struct {
         /// from it is recommended over storing the entire secret key.
         /// The seed of an exiting key pair can be obtained with
         /// `key_pair.secret_key.seed()`.
-        pub fn fromSecretKey(secret_key: SecretKey) (NonCanonicalError || EncodingError || IdentityElementError)!KeyPair {
+        pub fn from_secret_key(secret_key: SecretKey) (NonCanonicalError || EncodingError || IdentityElementError)!KeyPair {
             // It is critical for EdDSA to use the correct public key.
             // In order to enforce this, a SecretKey implicitly includes a copy of the public key.
             // With runtime safety, we can still afford checking that the public key is correct.
@@ -337,7 +337,7 @@ pub const Ed25519 = struct {
     };
 
     /// Verify several signatures in a single operation, much faster than verifying signatures one-by-one
-    pub fn verifyBatch(comptime count: usize, signature_batch: [count]BatchElement) (SignatureVerificationError || IdentityElementError || WeakPublicKeyError || EncodingError || NonCanonicalError)!void {
+    pub fn verify_batch(comptime count: usize, signature_batch: [count]BatchElement) (SignatureVerificationError || IdentityElementError || WeakPublicKeyError || EncodingError || NonCanonicalError)!void {
         var r_batch: [count]CompressedScalar = undefined;
         var s_batch: [count]CompressedScalar = undefined;
         var a_batch: [count]Curve = undefined;
@@ -470,7 +470,7 @@ pub const Ed25519 = struct {
         };
 
         /// Compute a blind context from a blinding seed and a context.
-        fn blindCtx(blind_seed: [blind_seed_length]u8, ctx: []const u8) [Sha512.digest_length]u8 {
+        fn blind_ctx(blind_seed: [blind_seed_length]u8, ctx: []const u8) [Sha512.digest_length]u8 {
             var blind_h: [Sha512.digest_length]u8 = undefined;
             var hx = Sha512.init(.{});
             hx.update(&blind_seed);

@@ -52,7 +52,7 @@ pub const Decoder = struct {
         try accum.finish(writer);
     }
 
-    fn parseLzma(
+    fn parse_lzma(
         self: *Decoder,
         allocator: Allocator,
         reader: anytype,
@@ -148,7 +148,7 @@ pub const Decoder = struct {
         }
     }
 
-    fn parseUncompressed(
+    fn parse_uncompressed(
         allocator: Allocator,
         reader: anytype,
         writer: anytype,

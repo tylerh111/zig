@@ -12,7 +12,7 @@ test "saturating add" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try testSatAdd(i8, -3, 10, 7);
             try testSatAdd(i8, 3, -10, -7);
             try testSatAdd(i8, -128, -128, -128);
@@ -29,7 +29,7 @@ test "saturating add" {
             try testSatAdd(u3, 7, 1, 7);
         }
 
-        fn testSatAdd(comptime T: type, lhs: T, rhs: T, expected: T) !void {
+        fn test_sat_add(comptime T: type, lhs: T, rhs: T, expected: T) !void {
             try expect((lhs +| rhs) == expected);
 
             var x = lhs;
@@ -61,12 +61,12 @@ test "saturating add 128bit" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try testSatAdd(i128, maxInt(i128), -maxInt(i128), 0);
             try testSatAdd(i128, minInt(i128), maxInt(i128), -1);
             try testSatAdd(u128, maxInt(u128), 1, maxInt(u128));
         }
-        fn testSatAdd(comptime T: type, lhs: T, rhs: T, expected: T) !void {
+        fn test_sat_add(comptime T: type, lhs: T, rhs: T, expected: T) !void {
             try expect((lhs +| rhs) == expected);
 
             var x = lhs;
@@ -87,7 +87,7 @@ test "saturating subtraction" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try testSatSub(i8, -3, 10, -13);
             try testSatSub(i8, -3, -10, 7);
             try testSatSub(i8, -128, -128, 0);
@@ -103,7 +103,7 @@ test "saturating subtraction" {
             try testSatSub(u8, 0, 255, 0);
         }
 
-        fn testSatSub(comptime T: type, lhs: T, rhs: T, expected: T) !void {
+        fn test_sat_sub(comptime T: type, lhs: T, rhs: T, expected: T) !void {
             try expect((lhs -| rhs) == expected);
 
             var x = lhs;
@@ -135,13 +135,13 @@ test "saturating subtraction 128bit" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try testSatSub(i128, maxInt(i128), -1, maxInt(i128));
             try testSatSub(i128, minInt(i128), -maxInt(i128), -1);
             try testSatSub(u128, 0, maxInt(u128), 0);
         }
 
-        fn testSatSub(comptime T: type, lhs: T, rhs: T, expected: T) !void {
+        fn test_sat_sub(comptime T: type, lhs: T, rhs: T, expected: T) !void {
             try expect((lhs -| rhs) == expected);
 
             var x = lhs;
@@ -170,7 +170,7 @@ test "saturating multiplication" {
     }
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try testSatMul(i8, -3, 10, -30);
             try testSatMul(i4, 2, 4, 7);
             try testSatMul(i8, 2, 127, 127);
@@ -184,7 +184,7 @@ test "saturating multiplication" {
             try testSatMul(u128, maxInt(u128), maxInt(u128), maxInt(u128));
         }
 
-        fn testSatMul(comptime T: type, lhs: T, rhs: T, expected: T) !void {
+        fn test_sat_mul(comptime T: type, lhs: T, rhs: T, expected: T) !void {
             try expect((lhs *| rhs) == expected);
 
             var x = lhs;
@@ -211,7 +211,7 @@ test "saturating shift-left" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try testSatShl(i8, 1, 2, 4);
             try testSatShl(i8, 127, 1, 127);
             try testSatShl(i8, -128, 1, -128);
@@ -225,7 +225,7 @@ test "saturating shift-left" {
             try testSatShl(u8, 255, 1, 255);
         }
 
-        fn testSatShl(comptime T: type, lhs: T, rhs: T, expected: T) !void {
+        fn test_sat_shl(comptime T: type, lhs: T, rhs: T, expected: T) !void {
             try expect((lhs <<| rhs) == expected);
 
             var x = lhs;

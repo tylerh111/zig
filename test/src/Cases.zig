@@ -41,7 +41,7 @@ pub const Update = struct {
         Header: []const u8,
     },
 
-    pub fn addSourceFile(update: *Update, name: []const u8, src: [:0]const u8) void {
+    pub fn add_source_file(update: *Update, name: []const u8, src: [:0]const u8) void {
         update.files.append(.{ .path = name, .src = src }) catch @panic("out of memory");
     }
 };
@@ -91,12 +91,12 @@ pub const Case = struct {
 
     deps: std.ArrayList(DepModule),
 
-    pub fn addSourceFile(case: *Case, name: []const u8, src: [:0]const u8) void {
+    pub fn add_source_file(case: *Case, name: []const u8, src: [:0]const u8) void {
         const update = &case.updates.items[case.updates.items.len - 1];
         update.files.append(.{ .path = name, .src = src }) catch @panic("OOM");
     }
 
-    pub fn addDepModule(case: *Case, name: []const u8, path: []const u8) void {
+    pub fn add_dep_module(case: *Case, name: []const u8, path: []const u8) void {
         case.deps.append(.{
             .name = name,
             .path = path,
@@ -105,7 +105,7 @@ pub const Case = struct {
 
     /// Adds a subcase in which the module is updated with `src`, compiled,
     /// run, and the output is tested against `result`.
-    pub fn addCompareOutput(self: *Case, src: [:0]const u8, result: []const u8) void {
+    pub fn add_compare_output(self: *Case, src: [:0]const u8, result: []const u8) void {
         self.updates.append(.{
             .files = std.ArrayList(File).init(self.updates.allocator),
             .name = "update",
@@ -114,7 +114,7 @@ pub const Case = struct {
         addSourceFile(self, "tmp.zig", src);
     }
 
-    pub fn addError(self: *Case, src: [:0]const u8, errors: []const []const u8) void {
+    pub fn add_error(self: *Case, src: [:0]const u8, errors: []const []const u8) void {
         return self.addErrorNamed("update", src, errors);
     }
 
@@ -122,7 +122,7 @@ pub const Case = struct {
     /// should contain invalid input, and ensures that compilation fails
     /// for the expected reasons, given in sequential order in `errors` in
     /// the form `:line:column: error: message`.
-    pub fn addErrorNamed(
+    pub fn add_error_named(
         self: *Case,
         name: []const u8,
         src: [:0]const u8,
@@ -139,7 +139,7 @@ pub const Case = struct {
 
     /// Adds a subcase in which the module is updated with `src`, and
     /// asserts that it compiles without issue
-    pub fn addCompile(self: *Case, src: [:0]const u8) void {
+    pub fn add_compile(self: *Case, src: [:0]const u8) void {
         self.updates.append(.{
             .files = std.ArrayList(File).init(self.updates.allocator),
             .name = "compile",
@@ -168,7 +168,7 @@ pub const Translate = struct {
     },
 };
 
-pub fn addExe(
+pub fn add_exe(
     ctx: *Cases,
     name: []const u8,
     target: std.Build.ResolvedTarget,
@@ -188,7 +188,7 @@ pub fn exe(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Cas
     return ctx.addExe(name, target);
 }
 
-pub fn exeFromCompiledC(ctx: *Cases, name: []const u8, target_query: std.Target.Query, b: *std.Build) *Case {
+pub fn exe_from_compiled_c(ctx: *Cases, name: []const u8, target_query: std.Target.Query, b: *std.Build) *Case {
     var adjusted_query = target_query;
     adjusted_query.ofmt = .c;
     ctx.cases.append(Case{
@@ -202,7 +202,7 @@ pub fn exeFromCompiledC(ctx: *Cases, name: []const u8, target_query: std.Target.
     return &ctx.cases.items[ctx.cases.items.len - 1];
 }
 
-pub fn noEmitUsingLlvmBackend(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Case {
+pub fn no_emit_using_llvm_backend(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Case {
     ctx.cases.append(Case{
         .name = name,
         .target = target,
@@ -217,7 +217,7 @@ pub fn noEmitUsingLlvmBackend(ctx: *Cases, name: []const u8, target: std.Build.R
 
 /// Adds a test case that uses the LLVM backend to emit an executable.
 /// Currently this implies linking libc, because only then we can generate a testable executable.
-pub fn exeUsingLlvmBackend(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Case {
+pub fn exe_using_llvm_backend(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Case {
     ctx.cases.append(Case{
         .name = name,
         .target = target,
@@ -230,7 +230,7 @@ pub fn exeUsingLlvmBackend(ctx: *Cases, name: []const u8, target: std.Build.Reso
     return &ctx.cases.items[ctx.cases.items.len - 1];
 }
 
-pub fn addObj(
+pub fn add_obj(
     ctx: *Cases,
     name: []const u8,
     target: std.Build.ResolvedTarget,
@@ -245,7 +245,7 @@ pub fn addObj(
     return &ctx.cases.items[ctx.cases.items.len - 1];
 }
 
-pub fn addTest(
+pub fn add_test(
     ctx: *Cases,
     name: []const u8,
     target: std.Build.ResolvedTarget,
@@ -267,12 +267,12 @@ pub fn obj(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Cas
 }
 
 /// Adds a test case for ZIR input, producing an object file.
-pub fn objZIR(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Case {
+pub fn obj_zir(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Case {
     return ctx.addObj(name, target, .ZIR);
 }
 
 /// Adds a test case for Zig or ZIR input, producing C code.
-pub fn addC(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Case {
+pub fn add_c(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Case {
     var target_adjusted = target;
     target_adjusted.ofmt = std.Target.ObjectFormat.c;
     ctx.cases.append(Case{
@@ -285,7 +285,7 @@ pub fn addC(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Ca
     return &ctx.cases.items[ctx.cases.items.len - 1];
 }
 
-pub fn addCompareOutput(
+pub fn add_compare_output(
     ctx: *Cases,
     name: []const u8,
     src: [:0]const u8,
@@ -296,7 +296,7 @@ pub fn addCompareOutput(
 
 /// Adds a test case that compiles the Zig source given in `src`, executes
 /// it, runs it, and tests the output against `expected_stdout`
-pub fn compareOutput(
+pub fn compare_output(
     ctx: *Cases,
     name: []const u8,
     src: [:0]const u8,
@@ -305,7 +305,7 @@ pub fn compareOutput(
     return ctx.addCompareOutput(name, src, expected_stdout);
 }
 
-pub fn addTransform(
+pub fn add_transform(
     ctx: *Cases,
     name: []const u8,
     target: std.Build.ResolvedTarget,
@@ -327,7 +327,7 @@ pub fn transform(
     ctx.addTransform(name, target, src, result);
 }
 
-pub fn addError(
+pub fn add_error(
     ctx: *Cases,
     name: []const u8,
     target: std.Build.ResolvedTarget,
@@ -340,7 +340,7 @@ pub fn addError(
 /// Adds a test case that ensures that the Zig given in `src` fails to
 /// compile for the expected reasons, given in sequential order in
 /// `expected_errors` in the form `:line:column: error: message`.
-pub fn compileError(
+pub fn compile_error(
     ctx: *Cases,
     name: []const u8,
     target: std.Build.ResolvedTarget,
@@ -352,7 +352,7 @@ pub fn compileError(
 
 /// Adds a test case that asserts that the Zig given in `src` compiles
 /// without any errors.
-pub fn addCompile(
+pub fn add_compile(
     ctx: *Cases,
     name: []const u8,
     target: std.Build.ResolvedTarget,
@@ -368,7 +368,7 @@ pub fn addCompile(
 /// Each file should include a test manifest as a contiguous block of comments at
 /// the end of the file. The first line should be the test type, followed by a set of
 /// key-value config values, followed by a blank line, then the expected output.
-pub fn addFromDir(ctx: *Cases, dir: std.fs.Dir, b: *std.Build) void {
+pub fn add_from_dir(ctx: *Cases, dir: std.fs.Dir, b: *std.Build) void {
     var current_file: []const u8 = "none";
     ctx.addFromDirInner(dir, &current_file, b) catch |err| {
         std.debug.panicExtra(
@@ -380,7 +380,7 @@ pub fn addFromDir(ctx: *Cases, dir: std.fs.Dir, b: *std.Build) void {
     };
 }
 
-fn addFromDirInner(
+fn add_from_dir_inner(
     ctx: *Cases,
     iterable_dir: std.fs.Dir,
     /// This is kept up to date with the currently being processed file so
@@ -537,7 +537,7 @@ pub const TranslateCOptions = struct {
     skip_translate_c: bool = false,
     skip_run_translated_c: bool = false,
 };
-pub fn lowerToTranslateCSteps(
+pub fn lower_to_translate_csteps(
     self: *Cases,
     b: *std.Build,
     parent_step: *std.Build.Step,
@@ -618,7 +618,7 @@ pub fn lowerToTranslateCSteps(
     };
 }
 
-pub fn lowerToBuildSteps(
+pub fn lower_to_build_steps(
     self: *Cases,
     b: *std.Build,
     parent_step: *std.Build.Step,
@@ -770,9 +770,9 @@ pub fn lowerToBuildSteps(
 
 /// Sort test filenames in-place, so that incremental test cases ("foo.0.zig",
 /// "foo.1.zig", etc.) are contiguous and appear in numerical order.
-fn sortTestFilenames(filenames: [][]const u8) void {
+fn sort_test_filenames(filenames: [][]const u8) void {
     const Context = struct {
-        pub fn lessThan(_: @This(), a: []const u8, b: []const u8) bool {
+        pub fn less_than(_: @This(), a: []const u8, b: []const u8) bool {
             const a_parts = getTestFileNameParts(a);
             const b_parts = getTestFileNameParts(b);
 
@@ -823,7 +823,7 @@ const TestIterator = struct {
         return it.filenames[it.start..it.end];
     }
 
-    fn nextInner(it: *TestIterator) Error!void {
+    fn next_inner(it: *TestIterator) Error!void {
         it.start = it.end;
         if (it.end == it.filenames.len) return;
         if (it.end + 1 == it.filenames.len) {
@@ -868,7 +868,7 @@ const TestIterator = struct {
     /// In the event of an `error.InvalidIncrementalTestIndex`, this function can
     /// be used to find the current filename that was being processed.
     /// Asserts the iterator hasn't reached the end.
-    fn currentFilename(it: TestIterator) []const u8 {
+    fn current_filename(it: TestIterator) []const u8 {
         assert(it.end != it.filenames.len);
         const remaining = it.filenames[it.end..];
         return remaining[it.index + 1];
@@ -878,7 +878,7 @@ const TestIterator = struct {
 /// For a filename in the format "<filename>.X.<ext>" or "<filename>.<ext>", returns
 /// "<filename>", "<ext>" and X parsed as a decimal number. If X is not present, or
 /// cannot be parsed as a decimal number, it is treated as part of <filename>
-fn getTestFileNameParts(name: []const u8) struct {
+fn get_test_file_name_parts(name: []const u8) struct {
     base_name: []const u8,
     file_ext: []const u8,
     test_index: ?usize,
@@ -1013,7 +1013,7 @@ const TestManifest = struct {
         }
     };
 
-    fn ConfigValueIterator(comptime T: type) type {
+    fn config_value_iterator(comptime T: type) type {
         return struct {
             inner: std.mem.SplitIterator(u8, .scalar),
 
@@ -1103,7 +1103,7 @@ const TestManifest = struct {
         return manifest;
     }
 
-    fn getConfigForKey(
+    fn get_config_for_key(
         self: TestManifest,
         key: []const u8,
         comptime T: type,
@@ -1114,7 +1114,7 @@ const TestManifest = struct {
         };
     }
 
-    fn getConfigForKeyAlloc(
+    fn get_config_for_key_alloc(
         self: TestManifest,
         allocator: Allocator,
         key: []const u8,
@@ -1129,7 +1129,7 @@ const TestManifest = struct {
         return try out.toOwnedSlice();
     }
 
-    fn getConfigForKeyAssertSingle(self: TestManifest, key: []const u8, comptime T: type) !T {
+    fn get_config_for_key_assert_single(self: TestManifest, key: []const u8, comptime T: type) !T {
         var it = self.getConfigForKey(key, T);
         const res = (try it.next()) orelse unreachable;
         assert((try it.next()) == null);
@@ -1142,7 +1142,7 @@ const TestManifest = struct {
         };
     }
 
-    fn trailingSplit(self: TestManifest, allocator: Allocator) error{OutOfMemory}![]const u8 {
+    fn trailing_split(self: TestManifest, allocator: Allocator) error{OutOfMemory}![]const u8 {
         var out = std.ArrayList(u8).init(allocator);
         defer out.deinit();
         var trailing_it = self.trailing();
@@ -1156,7 +1156,7 @@ const TestManifest = struct {
         return try out.toOwnedSlice();
     }
 
-    fn trailingLines(self: TestManifest, allocator: Allocator) error{OutOfMemory}![]const []const u8 {
+    fn trailing_lines(self: TestManifest, allocator: Allocator) error{OutOfMemory}![]const []const u8 {
         var out = std.ArrayList([]const u8).init(allocator);
         defer out.deinit();
         var it = self.trailing();
@@ -1166,7 +1166,7 @@ const TestManifest = struct {
         return try out.toOwnedSlice();
     }
 
-    fn trailingLinesSplit(self: TestManifest, allocator: Allocator) error{OutOfMemory}![]const []const u8 {
+    fn trailing_lines_split(self: TestManifest, allocator: Allocator) error{OutOfMemory}![]const []const u8 {
         // Collect output lines split by empty lines
         var out = std.ArrayList([]const u8).init(allocator);
         defer out.deinit();
@@ -1188,11 +1188,11 @@ const TestManifest = struct {
         return try out.toOwnedSlice();
     }
 
-    fn ParseFn(comptime T: type) type {
+    fn parse_fn(comptime T: type) type {
         return fn ([]const u8) anyerror!T;
     }
 
-    fn getDefaultParser(comptime T: type) ParseFn(T) {
+    fn get_default_parser(comptime T: type) ParseFn(T) {
         if (T == std.Target.Query) return struct {
             fn parse(str: []const u8) anyerror!T {
                 return std.Target.Query.parse(.{ .arch_os_abi = str });
@@ -1420,7 +1420,7 @@ pub fn main() !void {
     return runCases(&ctx, zig_exe_path);
 }
 
-fn resolveTargetQuery(query: std.Target.Query) std.Build.ResolvedTarget {
+fn resolve_target_query(query: std.Target.Query) std.Build.ResolvedTarget {
     return .{
         .query = query,
         .target = std.zig.system.resolveTargetQuery(query) catch
@@ -1428,7 +1428,7 @@ fn resolveTargetQuery(query: std.Target.Query) std.Build.ResolvedTarget {
     };
 }
 
-fn runCases(self: *Cases, zig_exe_path: []const u8) !void {
+fn run_cases(self: *Cases, zig_exe_path: []const u8) !void {
     const host = try std.zig.system.resolveTargetQuery(.{});
 
     var progress = std.Progress{};
@@ -1502,7 +1502,7 @@ fn runCases(self: *Cases, zig_exe_path: []const u8) !void {
     }
 }
 
-fn runOneCase(
+fn run_one_case(
     allocator: Allocator,
     root_node: *std.Progress.Node,
     case: Case,
@@ -1889,7 +1889,7 @@ fn runOneCase(
     }
 }
 
-fn dumpArgs(argv: []const []const u8) void {
+fn dump_args(argv: []const []const u8) void {
     for (argv) |arg| {
         std.debug.print("{s} ", .{arg});
     }

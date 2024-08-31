@@ -67,7 +67,7 @@ const Writer = struct {
         _ = self;
         _ = value;
     }
-    pub fn printValue(self: *Writer, value: anytype) !void {
+    pub fn print_value(self: *Writer, value: anytype) !void {
         _ = self;
         _ = value;
     }

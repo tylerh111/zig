@@ -2,7 +2,7 @@ const Bar = union(enum(u32)) {
     X: i32 = 1,
 };
 
-fn testCompileLog(x: Bar) void {
+fn test_compile_log(x: Bar) void {
     @compileLog(x);
 }
 

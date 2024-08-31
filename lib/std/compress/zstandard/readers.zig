@@ -17,7 +17,7 @@ pub const ReversedByteReader = struct {
         return .{ .context = self };
     }
 
-    fn readFn(ctx: *ReversedByteReader, buffer: []u8) !usize {
+    fn read_fn(ctx: *ReversedByteReader, buffer: []u8) !usize {
         if (ctx.remaining_bytes == 0) return 0;
         const byte_index = ctx.remaining_bytes - 1;
         buffer[0] = ctx.bytes[byte_index];
@@ -42,41 +42,41 @@ pub const ReverseBitReader = struct {
         if (i == 8) return error.BitStreamHasNoStartBit;
     }
 
-    pub fn readBitsNoEof(self: *@This(), comptime U: type, num_bits: usize) error{EndOfStream}!U {
+    pub fn read_bits_no_eof(self: *@This(), comptime U: type, num_bits: usize) error{EndOfStream}!U {
         return self.bit_reader.readBitsNoEof(U, num_bits);
     }
 
-    pub fn readBits(self: *@This(), comptime U: type, num_bits: usize, out_bits: *usize) error{}!U {
+    pub fn read_bits(self: *@This(), comptime U: type, num_bits: usize, out_bits: *usize) error{}!U {
         return try self.bit_reader.readBits(U, num_bits, out_bits);
     }
 
-    pub fn alignToByte(self: *@This()) void {
+    pub fn align_to_byte(self: *@This()) void {
         self.bit_reader.alignToByte();
     }
 
-    pub fn isEmpty(self: ReverseBitReader) bool {
+    pub fn is_empty(self: ReverseBitReader) bool {
         return self.byte_reader.remaining_bytes == 0 and self.bit_reader.bit_count == 0;
     }
 };
 
-pub fn BitReader(comptime Reader: type) type {
+pub fn bit_reader(comptime Reader: type) type {
     return struct {
         underlying: std.io.BitReader(.little, Reader),
 
-        pub fn readBitsNoEof(self: *@This(), comptime U: type, num_bits: usize) !U {
+        pub fn read_bits_no_eof(self: *@This(), comptime U: type, num_bits: usize) !U {
             return self.underlying.readBitsNoEof(U, num_bits);
         }
 
-        pub fn readBits(self: *@This(), comptime U: type, num_bits: usize, out_bits: *usize) !U {
+        pub fn read_bits(self: *@This(), comptime U: type, num_bits: usize, out_bits: *usize) !U {
             return self.underlying.readBits(U, num_bits, out_bits);
         }
 
-        pub fn alignToByte(self: *@This()) void {
+        pub fn align_to_byte(self: *@This()) void {
             self.underlying.alignToByte();
         }
     };
 }
 
-pub fn bitReader(reader: anytype) BitReader(@TypeOf(reader)) {
+pub fn bit_reader(reader: anytype) BitReader(@TypeOf(reader)) {
     return .{ .underlying = std.io.bitReader(.little, reader) };
 }

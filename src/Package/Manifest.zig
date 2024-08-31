@@ -126,7 +126,7 @@ pub fn deinit(man: *Manifest, gpa: Allocator) void {
     man.* = undefined;
 }
 
-pub fn copyErrorsIntoBundle(
+pub fn copy_errors_into_bundle(
     man: Manifest,
     ast: Ast,
     /// ErrorBundle null-terminated string index
@@ -171,7 +171,7 @@ test hex64 {
     try std.testing.expectEqualStrings("[00efcdab78563412]", s);
 }
 
-pub fn hexDigest(digest: Digest) MultiHashHexDigest {
+pub fn hex_digest(digest: Digest) MultiHashHexDigest {
     var result: MultiHashHexDigest = undefined;
 
     result[0] = hex_charset[@intFromEnum(multihash_function) >> 4];
@@ -205,7 +205,7 @@ const Parse = struct {
 
     const InnerError = error{ ParseFailure, OutOfMemory };
 
-    fn parseRoot(p: *Parse, node: Ast.Node.Index) !void {
+    fn parse_root(p: *Parse, node: Ast.Node.Index) !void {
         const ast = p.ast;
         const main_tokens = ast.nodes.items(.main_token);
         const main_token = main_tokens[node];
@@ -271,7 +271,7 @@ const Parse = struct {
         }
     }
 
-    fn parseDependencies(p: *Parse, node: Ast.Node.Index) !void {
+    fn parse_dependencies(p: *Parse, node: Ast.Node.Index) !void {
         const ast = p.ast;
         const main_tokens = ast.nodes.items(.main_token);
 
@@ -289,7 +289,7 @@ const Parse = struct {
         }
     }
 
-    fn parseDependency(p: *Parse, node: Ast.Node.Index) !Dependency {
+    fn parse_dependency(p: *Parse, node: Ast.Node.Index) !Dependency {
         const ast = p.ast;
         const main_tokens = ast.nodes.items(.main_token);
 
@@ -365,7 +365,7 @@ const Parse = struct {
         return dep;
     }
 
-    fn parseIncludedPaths(p: *Parse, node: Ast.Node.Index) !void {
+    fn parse_included_paths(p: *Parse, node: Ast.Node.Index) !void {
         const ast = p.ast;
         const main_tokens = ast.nodes.items(.main_token);
 
@@ -384,7 +384,7 @@ const Parse = struct {
         }
     }
 
-    fn parseBool(p: *Parse, node: Ast.Node.Index) !bool {
+    fn parse_bool(p: *Parse, node: Ast.Node.Index) !bool {
         const ast = p.ast;
         const node_tags = ast.nodes.items(.tag);
         const main_tokens = ast.nodes.items(.main_token);
@@ -402,7 +402,7 @@ const Parse = struct {
         }
     }
 
-    fn parseString(p: *Parse, node: Ast.Node.Index) ![]const u8 {
+    fn parse_string(p: *Parse, node: Ast.Node.Index) ![]const u8 {
         const ast = p.ast;
         const node_tags = ast.nodes.items(.tag);
         const main_tokens = ast.nodes.items(.main_token);
@@ -417,7 +417,7 @@ const Parse = struct {
         return duped;
     }
 
-    fn parseHash(p: *Parse, node: Ast.Node.Index) ![]const u8 {
+    fn parse_hash(p: *Parse, node: Ast.Node.Index) ![]const u8 {
         const ast = p.ast;
         const main_tokens = ast.nodes.items(.main_token);
         const tok = main_tokens[node];
@@ -444,7 +444,7 @@ const Parse = struct {
     }
 
     /// TODO: try to DRY this with AstGen.identifierTokenString
-    fn identifierTokenString(p: *Parse, token: Ast.TokenIndex) InnerError![]const u8 {
+    fn identifier_token_string(p: *Parse, token: Ast.TokenIndex) InnerError![]const u8 {
         const ast = p.ast;
         const token_tags = ast.tokens.items(.tag);
         assert(token_tags[token] == .identifier);
@@ -459,7 +459,7 @@ const Parse = struct {
     }
 
     /// TODO: try to DRY this with AstGen.parseStrLit
-    fn parseStrLit(
+    fn parse_str_lit(
         p: *Parse,
         token: Ast.TokenIndex,
         buf: *std.ArrayListUnmanaged(u8),
@@ -477,7 +477,7 @@ const Parse = struct {
     }
 
     /// TODO: try to DRY this with AstGen.failWithStrLitError
-    fn appendStrLitError(
+    fn append_str_lit_error(
         p: *Parse,
         err: std.zig.string_literal.Error,
         token: Ast.TokenIndex,
@@ -571,11 +571,11 @@ const Parse = struct {
         return error.ParseFailure;
     }
 
-    fn appendError(p: *Parse, tok: Ast.TokenIndex, comptime fmt: []const u8, args: anytype) !void {
+    fn append_error(p: *Parse, tok: Ast.TokenIndex, comptime fmt: []const u8, args: anytype) !void {
         return appendErrorOff(p, tok, 0, fmt, args);
     }
 
-    fn appendErrorOff(
+    fn append_error_off(
         p: *Parse,
         tok: Ast.TokenIndex,
         byte_offset: u32,

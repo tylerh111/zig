@@ -80,11 +80,11 @@ const PdbOrDwarf = union(enum) {
 /// Allows the caller to freely write to stderr until `unlockStdErr` is called.
 ///
 /// During the lock, any `std.Progress` information is cleared from the terminal.
-pub fn lockStdErr() void {
+pub fn lock_std_err() void {
     std.Progress.lockStdErr();
 }
 
-pub fn unlockStdErr() void {
+pub fn unlock_std_err() void {
     std.Progress.unlockStdErr();
 }
 
@@ -97,14 +97,14 @@ pub fn print(comptime fmt: []const u8, args: anytype) void {
     nosuspend stderr.print(fmt, args) catch return;
 }
 
-pub fn getStderrMutex() *std.Thread.Mutex {
+pub fn get_stderr_mutex() *std.Thread.Mutex {
     @compileError("deprecated. call std.debug.lockStdErr() and std.debug.unlockStdErr() instead which will integrate properly with std.Progress");
 }
 
 /// TODO multithreaded awareness
 var self_debug_info: ?DebugInfo = null;
 
-pub fn getSelfDebugInfo() !*DebugInfo {
+pub fn get_self_debug_info() !*DebugInfo {
     if (self_debug_info) |*info| {
         return info;
     } else {
@@ -176,7 +176,7 @@ pub fn dump_hex_fallible(bytes: []const u8) !void {
 
 /// Tries to print the current stack trace to stderr, unbuffered, and ignores any error returned.
 /// TODO multithreaded awareness
-pub fn dumpCurrentStackTrace(start_addr: ?usize) void {
+pub fn dump_current_stack_trace(start_addr: ?usize) void {
     nosuspend {
         if (comptime builtin.target.isWasm()) {
             if (native_os == .wasi) {
@@ -221,14 +221,14 @@ pub const ThreadContext = blk: {
 };
 
 /// Copies one context to another, updating any internal pointers
-pub fn copyContext(source: *const ThreadContext, dest: *ThreadContext) void {
+pub fn copy_context(source: *const ThreadContext, dest: *ThreadContext) void {
     if (!have_ucontext) return {};
     dest.* = source.*;
     relocateContext(dest);
 }
 
 /// Updates any internal pointers in the context to reflect its current location
-pub fn relocateContext(context: *ThreadContext) void {
+pub fn relocate_context(context: *ThreadContext) void {
     return switch (native_os) {
         .macos => {
             context.mcontext = &context.__mcontext_data;
@@ -251,7 +251,7 @@ pub const have_getcontext = native_os != .openbsd and native_os != .haiku and
 ///
 /// It is valid to call this if the platform doesn't have context capturing support,
 /// in that case false will be returned.
-pub inline fn getContext(context: *ThreadContext) bool {
+pub inline fn get_context(context: *ThreadContext) bool {
     if (native_os == .windows) {
         context.* = std.mem.zeroes(windows.CONTEXT);
         windows.ntdll.RtlCaptureContext(context);
@@ -275,7 +275,7 @@ pub inline fn getContext(context: *ThreadContext) bool {
 /// Tries to print the stack trace starting from the supplied base pointer to stderr,
 /// unbuffered, and ignores any error returned.
 /// TODO multithreaded awareness
-pub fn dumpStackTraceFromBase(context: *const ThreadContext) void {
+pub fn dump_stack_trace_from_base(context: *const ThreadContext) void {
     nosuspend {
         if (comptime builtin.target.isWasm()) {
             if (native_os == .wasi) {
@@ -330,7 +330,7 @@ pub fn dumpStackTraceFromBase(context: *const ThreadContext) void {
 /// capture that many stack frames exactly, and then look for the first address,
 /// chopping off the irrelevant frames and shifting so that the returned addresses pointer
 /// equals the passed in addresses pointer.
-pub fn captureStackTrace(first_address: ?usize, stack_trace: *std.builtin.StackTrace) void {
+pub fn capture_stack_trace(first_address: ?usize, stack_trace: *std.builtin.StackTrace) void {
     if (native_os == .windows) {
         const addrs = stack_trace.instruction_addresses;
         const first_addr = first_address orelse {
@@ -373,7 +373,7 @@ pub fn captureStackTrace(first_address: ?usize, stack_trace: *std.builtin.StackT
 
 /// Tries to print a stack trace to stderr, unbuffered, and ignores any error returned.
 /// TODO multithreaded awareness
-pub fn dumpStackTrace(stack_trace: std.builtin.StackTrace) void {
+pub fn dump_stack_trace(stack_trace: std.builtin.StackTrace) void {
     nosuspend {
         if (comptime builtin.target.isWasm()) {
             if (native_os == .wasi) {
@@ -420,7 +420,7 @@ pub fn panic(comptime format: []const u8, args: anytype) noreturn {
 
 /// `panicExtra` is useful when you want to print out an `@errorReturnTrace`
 /// and also print out some values.
-pub fn panicExtra(
+pub fn panic_extra(
     trace: ?*std.builtin.StackTrace,
     ret_addr: ?usize,
     comptime format: []const u8,
@@ -456,7 +456,7 @@ threadlocal var panic_stage: usize = 0;
 
 // `panicImpl` could be useful in implementing a custom panic handler which
 // calls the default handler (on supported platforms)
-pub fn panicImpl(trace: ?*const std.builtin.StackTrace, first_trace_addr: ?usize, msg: []const u8) noreturn {
+pub fn panic_impl(trace: ?*const std.builtin.StackTrace, first_trace_addr: ?usize, msg: []const u8) noreturn {
     @setCold(true);
 
     if (enable_segfault_handler) {
@@ -511,7 +511,7 @@ pub fn panicImpl(trace: ?*const std.builtin.StackTrace, first_trace_addr: ?usize
 }
 
 /// Must be called only after adding 1 to `panicking`. There are three callsites.
-fn waitForOtherThreadToFinishPanicking() void {
+fn wait_for_other_thread_to_finish_panicking() void {
     if (panicking.fetchSub(1, .seq_cst) != 1) {
         // Another thread is panicking, wait for the last one to finish
         // and call abort()
@@ -524,7 +524,7 @@ fn waitForOtherThreadToFinishPanicking() void {
     }
 }
 
-pub fn writeStackTrace(
+pub fn write_stack_trace(
     stack_trace: std.builtin.StackTrace,
     out_stream: anytype,
     allocator: mem.Allocator,
@@ -593,7 +593,7 @@ pub const StackIterator = struct {
         };
     }
 
-    pub fn initWithContext(first_address: ?usize, debug_info: *DebugInfo, context: *const posix.ucontext_t) !StackIterator {
+    pub fn init_with_context(first_address: ?usize, debug_info: *DebugInfo, context: *const posix.ucontext_t) !StackIterator {
         // The implementation of DWARF unwinding on aarch64-macos is not complete. However, Apple mandates that
         // the frame pointer register is always used, so on this platform we can safely use the FP-based unwinder.
         if (comptime builtin.target.isDarwin() and native_arch == .aarch64) {
@@ -613,7 +613,7 @@ pub const StackIterator = struct {
         if (have_ucontext and self.unwind_state != null) self.unwind_state.?.dwarf_context.deinit();
     }
 
-    pub fn getLastError(self: *StackIterator) ?struct {
+    pub fn get_last_error(self: *StackIterator) ?struct {
         err: UnwindError,
         address: usize,
     } {
@@ -668,7 +668,7 @@ pub const StackIterator = struct {
         return address;
     }
 
-    fn isValidMemory(address: usize) bool {
+    fn is_valid_memory(address: usize) bool {
         // We are unable to determine validity of memory for freestanding targets
         if (native_os == .freestanding or native_os == .uefi) return true;
 
@@ -784,7 +784,7 @@ pub const StackIterator = struct {
     }
 };
 
-pub fn writeCurrentStackTrace(
+pub fn write_current_stack_trace(
     out_stream: anytype,
     debug_info: *DebugInfo,
     tty_config: io.tty.Config,
@@ -814,7 +814,7 @@ pub fn writeCurrentStackTrace(
     } else printLastUnwindError(&it, debug_info, out_stream, tty_config);
 }
 
-pub noinline fn walkStackWindows(addresses: []usize, existing_context: ?*const windows.CONTEXT) usize {
+pub noinline fn walk_stack_windows(addresses: []usize, existing_context: ?*const windows.CONTEXT) usize {
     if (builtin.cpu.arch == .x86) {
         // RtlVirtualUnwind doesn't exist on x86
         return windows.ntdll.RtlCaptureStackBackTrace(0, addresses.len, @as(**anyopaque, @ptrCast(addresses.ptr)), null);
@@ -870,7 +870,7 @@ pub noinline fn walkStackWindows(addresses: []usize, existing_context: ?*const w
     return i;
 }
 
-pub fn writeStackTraceWindows(
+pub fn write_stack_trace_windows(
     out_stream: anytype,
     debug_info: *DebugInfo,
     tty_config: io.tty.Config,
@@ -891,7 +891,7 @@ pub fn writeStackTraceWindows(
     }
 }
 
-fn machoSearchSymbols(symbols: []const MachoSymbol, address: usize) ?*const MachoSymbol {
+fn macho_search_symbols(symbols: []const MachoSymbol, address: usize) ?*const MachoSymbol {
     var min: usize = 0;
     var max: usize = symbols.len - 1;
     while (min < max) {
@@ -936,7 +936,7 @@ test machoSearchSymbols {
     try testing.expectEqual(&symbols[2], machoSearchSymbols(&symbols, 5000).?);
 }
 
-fn printUnknownSource(debug_info: *DebugInfo, out_stream: anytype, address: usize, tty_config: io.tty.Config) !void {
+fn print_unknown_source(debug_info: *DebugInfo, out_stream: anytype, address: usize, tty_config: io.tty.Config) !void {
     const module_name = debug_info.getModuleNameForAddress(address);
     return printLineInfo(
         out_stream,
@@ -949,14 +949,14 @@ fn printUnknownSource(debug_info: *DebugInfo, out_stream: anytype, address: usiz
     );
 }
 
-fn printLastUnwindError(it: *StackIterator, debug_info: *DebugInfo, out_stream: anytype, tty_config: io.tty.Config) void {
+fn print_last_unwind_error(it: *StackIterator, debug_info: *DebugInfo, out_stream: anytype, tty_config: io.tty.Config) void {
     if (!have_ucontext) return;
     if (it.getLastError()) |unwind_error| {
         printUnwindError(debug_info, out_stream, unwind_error.address, unwind_error.err, tty_config) catch {};
     }
 }
 
-fn printUnwindError(debug_info: *DebugInfo, out_stream: anytype, address: usize, err: UnwindError, tty_config: io.tty.Config) !void {
+fn print_unwind_error(debug_info: *DebugInfo, out_stream: anytype, address: usize, err: UnwindError, tty_config: io.tty.Config) !void {
     const module_name = debug_info.getModuleNameForAddress(address) orelse "???";
     try tty_config.setColor(out_stream, .dim);
     if (err == error.MissingDebugInfo) {
@@ -967,7 +967,7 @@ fn printUnwindError(debug_info: *DebugInfo, out_stream: anytype, address: usize,
     try tty_config.setColor(out_stream, .reset);
 }
 
-pub fn printSourceAtAddress(debug_info: *DebugInfo, out_stream: anytype, address: usize, tty_config: io.tty.Config) !void {
+pub fn print_source_at_address(debug_info: *DebugInfo, out_stream: anytype, address: usize, tty_config: io.tty.Config) !void {
     const module = debug_info.getModuleForAddress(address) catch |err| switch (err) {
         error.MissingDebugInfo, error.InvalidDebugInfo => return printUnknownSource(debug_info, out_stream, address, tty_config),
         else => return err,
@@ -990,7 +990,7 @@ pub fn printSourceAtAddress(debug_info: *DebugInfo, out_stream: anytype, address
     );
 }
 
-fn printLineInfo(
+fn print_line_info(
     out_stream: anytype,
     line_info: ?LineInfo,
     address: usize,
@@ -1043,7 +1043,7 @@ pub const OpenSelfDebugInfoError = error{
     UnsupportedOperatingSystem,
 } || @typeInfo(@typeInfo(@TypeOf(DebugInfo.init)).Fn.return_type.?).ErrorUnion.error_set;
 
-pub fn openSelfDebugInfo(allocator: mem.Allocator) OpenSelfDebugInfoError!DebugInfo {
+pub fn open_self_debug_info(allocator: mem.Allocator) OpenSelfDebugInfoError!DebugInfo {
     nosuspend {
         if (builtin.strip_debug_info)
             return error.MissingDebugInfo;
@@ -1066,7 +1066,7 @@ pub fn openSelfDebugInfo(allocator: mem.Allocator) OpenSelfDebugInfoError!DebugI
     }
 }
 
-fn readCoffDebugInfo(allocator: mem.Allocator, coff_obj: *coff.Coff) !ModuleDebugInfo {
+fn read_coff_debug_info(allocator: mem.Allocator, coff_obj: *coff.Coff) !ModuleDebugInfo {
     nosuspend {
         var di = ModuleDebugInfo{
             .base_address = undefined,
@@ -1132,7 +1132,7 @@ fn readCoffDebugInfo(allocator: mem.Allocator, coff_obj: *coff.Coff) !ModuleDebu
     }
 }
 
-fn chopSlice(ptr: []const u8, offset: u64, size: u64) error{Overflow}![]const u8 {
+fn chop_slice(ptr: []const u8, offset: u64, size: u64) error{Overflow}![]const u8 {
     const start = math.cast(usize, offset) orelse return error.Overflow;
     const end = start + (math.cast(usize, size) orelse return error.Overflow);
     return ptr[start..end];
@@ -1142,7 +1142,7 @@ fn chopSlice(ptr: []const u8, offset: u64, size: u64) error{Overflow}![]const u8
 /// If the required sections aren't present but a reference to external debug info is,
 /// then this this function will recurse to attempt to load the debug sections from
 /// an external file.
-pub fn readElfDebugInfo(
+pub fn read_elf_debug_info(
     allocator: mem.Allocator,
     elf_filename: ?[]const u8,
     build_id: ?[]const u8,
@@ -1335,7 +1335,7 @@ pub fn readElfDebugInfo(
 /// This takes ownership of macho_file: users of this function should not close
 /// it themselves, even on error.
 /// TODO it's weird to take ownership even on error, rework this code.
-fn readMachODebugInfo(allocator: mem.Allocator, macho_file: File) !ModuleDebugInfo {
+fn read_mach_odebug_info(allocator: mem.Allocator, macho_file: File) !ModuleDebugInfo {
     const mapped_mem = try mapWholeFile(macho_file);
 
     const hdr: *const macho.mach_header_64 = @ptrCast(@alignCast(mapped_mem.ptr));
@@ -1459,7 +1459,7 @@ fn readMachODebugInfo(allocator: mem.Allocator, macho_file: File) !ModuleDebugIn
     };
 }
 
-fn printLineFromFileAnyOs(out_stream: anytype, line_info: LineInfo) !void {
+fn print_line_from_file_any_os(out_stream: anytype, line_info: LineInfo) !void {
     // Need this to always block even in async I/O mode, because this could potentially
     // be called from e.g. the event loop code crashing.
     var f = try fs.cwd().openFile(line_info.file_name, .{});
@@ -1647,7 +1647,7 @@ const MachoSymbol = struct {
         return self.addr;
     }
 
-    fn addressLessThan(context: void, lhs: MachoSymbol, rhs: MachoSymbol) bool {
+    fn address_less_than(context: void, lhs: MachoSymbol, rhs: MachoSymbol) bool {
         _ = context;
         return lhs.addr < rhs.addr;
     }
@@ -1655,7 +1655,7 @@ const MachoSymbol = struct {
 
 /// Takes ownership of file, even on error.
 /// TODO it's weird to take ownership even on error, rework this code.
-fn mapWholeFile(file: File) ![]align(mem.page_size) const u8 {
+fn map_whole_file(file: File) ![]align(mem.page_size) const u8 {
     nosuspend {
         defer file.close();
 
@@ -1761,7 +1761,7 @@ pub const DebugInfo = struct {
         }
     }
 
-    pub fn getModuleForAddress(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
+    pub fn get_module_for_address(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
         if (comptime builtin.target.isDarwin()) {
             return self.lookupModuleDyld(address);
         } else if (native_os == .windows) {
@@ -1778,7 +1778,7 @@ pub const DebugInfo = struct {
     // Returns the module name for a given address.
     // This can be called when getModuleForAddress fails, so implementations should provide
     // a path that doesn't rely on any side-effects of a prior successful module lookup.
-    pub fn getModuleNameForAddress(self: *DebugInfo, address: usize) ?[]const u8 {
+    pub fn get_module_name_for_address(self: *DebugInfo, address: usize) ?[]const u8 {
         if (comptime builtin.target.isDarwin()) {
             return self.lookupModuleNameDyld(address);
         } else if (native_os == .windows) {
@@ -1792,7 +1792,7 @@ pub const DebugInfo = struct {
         }
     }
 
-    fn lookupModuleDyld(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
+    fn lookup_module_dyld(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
         const image_count = std.c._dyld_image_count();
 
         var i: u32 = 0;
@@ -1858,7 +1858,7 @@ pub const DebugInfo = struct {
         return error.MissingDebugInfo;
     }
 
-    fn lookupModuleNameDyld(self: *DebugInfo, address: usize) ?[]const u8 {
+    fn lookup_module_name_dyld(self: *DebugInfo, address: usize) ?[]const u8 {
         _ = self;
         const image_count = std.c._dyld_image_count();
 
@@ -1896,7 +1896,7 @@ pub const DebugInfo = struct {
         return null;
     }
 
-    fn lookupModuleWin32(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
+    fn lookup_module_win32(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
         for (self.modules.items) |*module| {
             if (address >= module.base_address and address < module.base_address + module.size) {
                 if (self.address_map.get(module.base_address)) |obj_di| {
@@ -1986,7 +1986,7 @@ pub const DebugInfo = struct {
         return error.MissingDebugInfo;
     }
 
-    fn lookupModuleNameWin32(self: *DebugInfo, address: usize) ?[]const u8 {
+    fn lookup_module_name_win32(self: *DebugInfo, address: usize) ?[]const u8 {
         for (self.modules.items) |module| {
             if (address >= module.base_address and address < module.base_address + module.size) {
                 return module.name;
@@ -1995,7 +1995,7 @@ pub const DebugInfo = struct {
         return null;
     }
 
-    fn lookupModuleNameDl(self: *DebugInfo, address: usize) ?[]const u8 {
+    fn lookup_module_name_dl(self: *DebugInfo, address: usize) ?[]const u8 {
         _ = self;
 
         var ctx: struct {
@@ -2033,7 +2033,7 @@ pub const DebugInfo = struct {
         return null;
     }
 
-    fn lookupModuleDl(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
+    fn lookup_module_dl(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
         var ctx: struct {
             // Input
             address: usize,
@@ -2127,13 +2127,13 @@ pub const DebugInfo = struct {
         return obj_di;
     }
 
-    fn lookupModuleHaiku(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
+    fn lookup_module_haiku(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
         _ = self;
         _ = address;
         @panic("TODO implement lookup module for Haiku");
     }
 
-    fn lookupModuleWasm(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
+    fn lookup_module_wasm(self: *DebugInfo, address: usize) !*ModuleDebugInfo {
         _ = self;
         _ = address;
         @panic("TODO implement lookup module for Wasm");
@@ -2171,7 +2171,7 @@ pub const ModuleDebugInfo = switch (native_os) {
             posix.munmap(self.mapped_memory);
         }
 
-        fn loadOFile(self: *@This(), allocator: mem.Allocator, o_file_path: []const u8) !*OFileInfo {
+        fn load_ofile(self: *@This(), allocator: mem.Allocator, o_file_path: []const u8) !*OFileInfo {
             const o_file = try fs.cwd().openFile(o_file_path, .{});
             const mapped_mem = try mapWholeFile(o_file);
 
@@ -2264,7 +2264,7 @@ pub const ModuleDebugInfo = switch (native_os) {
             return result.value_ptr;
         }
 
-        pub fn getSymbolAtAddress(self: *@This(), allocator: mem.Allocator, address: usize) !SymbolInfo {
+        pub fn get_symbol_at_address(self: *@This(), allocator: mem.Allocator, address: usize) !SymbolInfo {
             nosuspend {
                 const result = try self.getOFileInfoForAddress(allocator, address);
                 if (result.symbol == null) return .{};
@@ -2311,7 +2311,7 @@ pub const ModuleDebugInfo = switch (native_os) {
             }
         }
 
-        pub fn getOFileInfoForAddress(self: *@This(), allocator: mem.Allocator, address: usize) !struct {
+        pub fn get_ofile_info_for_address(self: *@This(), allocator: mem.Allocator, address: usize) !struct {
             relocated_address: usize,
             symbol: ?*const MachoSymbol = null,
             o_file_info: ?*OFileInfo = null,
@@ -2347,7 +2347,7 @@ pub const ModuleDebugInfo = switch (native_os) {
             }
         }
 
-        pub fn getDwarfInfoForAddress(self: *@This(), allocator: mem.Allocator, address: usize) !?*const DW.DwarfInfo {
+        pub fn get_dwarf_info_for_address(self: *@This(), allocator: mem.Allocator, address: usize) !?*const DW.DwarfInfo {
             return if ((try self.getOFileInfoForAddress(allocator, address)).o_file_info) |o_file_info| &o_file_info.di else null;
         }
     },
@@ -2371,7 +2371,7 @@ pub const ModuleDebugInfo = switch (native_os) {
             }
         }
 
-        fn getSymbolFromPdb(self: *@This(), relocated_address: usize) !?SymbolInfo {
+        fn get_symbol_from_pdb(self: *@This(), relocated_address: usize) !?SymbolInfo {
             var coff_section: *align(1) const coff.SectionHeader = undefined;
             const mod_index = for (self.pdb.?.sect_contribs) |sect_contrib| {
                 if (sect_contrib.Section > self.coff_section_headers.len) continue;
@@ -2408,7 +2408,7 @@ pub const ModuleDebugInfo = switch (native_os) {
             };
         }
 
-        pub fn getSymbolAtAddress(self: *@This(), allocator: mem.Allocator, address: usize) !SymbolInfo {
+        pub fn get_symbol_at_address(self: *@This(), allocator: mem.Allocator, address: usize) !SymbolInfo {
             // Translate the VA into an address into this object
             const relocated_address = address - self.base_address;
 
@@ -2424,7 +2424,7 @@ pub const ModuleDebugInfo = switch (native_os) {
             return SymbolInfo{};
         }
 
-        pub fn getDwarfInfoForAddress(self: *@This(), allocator: mem.Allocator, address: usize) !?*const DW.DwarfInfo {
+        pub fn get_dwarf_info_for_address(self: *@This(), allocator: mem.Allocator, address: usize) !?*const DW.DwarfInfo {
             _ = allocator;
             _ = address;
 
@@ -2446,13 +2446,13 @@ pub const ModuleDebugInfo = switch (native_os) {
             if (self.external_mapped_memory) |m| posix.munmap(m);
         }
 
-        pub fn getSymbolAtAddress(self: *@This(), allocator: mem.Allocator, address: usize) !SymbolInfo {
+        pub fn get_symbol_at_address(self: *@This(), allocator: mem.Allocator, address: usize) !SymbolInfo {
             // Translate the VA into an address into this object
             const relocated_address = address - self.base_address;
             return getSymbolFromDwarf(allocator, relocated_address, &self.dwarf);
         }
 
-        pub fn getDwarfInfoForAddress(self: *@This(), allocator: mem.Allocator, address: usize) !?*const DW.DwarfInfo {
+        pub fn get_dwarf_info_for_address(self: *@This(), allocator: mem.Allocator, address: usize) !?*const DW.DwarfInfo {
             _ = allocator;
             _ = address;
             return &self.dwarf;
@@ -2464,14 +2464,14 @@ pub const ModuleDebugInfo = switch (native_os) {
             _ = allocator;
         }
 
-        pub fn getSymbolAtAddress(self: *@This(), allocator: mem.Allocator, address: usize) !SymbolInfo {
+        pub fn get_symbol_at_address(self: *@This(), allocator: mem.Allocator, address: usize) !SymbolInfo {
             _ = self;
             _ = allocator;
             _ = address;
             return SymbolInfo{};
         }
 
-        pub fn getDwarfInfoForAddress(self: *@This(), allocator: mem.Allocator, address: usize) !?*const DW.DwarfInfo {
+        pub fn get_dwarf_info_for_address(self: *@This(), allocator: mem.Allocator, address: usize) !?*const DW.DwarfInfo {
             _ = self;
             _ = allocator;
             _ = address;
@@ -2481,7 +2481,7 @@ pub const ModuleDebugInfo = switch (native_os) {
     else => DW.DwarfInfo,
 };
 
-fn getSymbolFromDwarf(allocator: mem.Allocator, address: u64, di: *DW.DwarfInfo) !SymbolInfo {
+fn get_symbol_from_dwarf(allocator: mem.Allocator, address: u64, di: *DW.DwarfInfo) !SymbolInfo {
     if (nosuspend di.findCompileUnit(address)) |compile_unit| {
         return SymbolInfo{
             .symbol_name = nosuspend di.getSymbolName(address) orelse "???",
@@ -2504,7 +2504,7 @@ fn getSymbolFromDwarf(allocator: mem.Allocator, address: u64, di: *DW.DwarfInfo)
 /// TODO multithreaded awareness
 var debug_info_allocator: ?mem.Allocator = null;
 var debug_info_arena_allocator: std.heap.ArenaAllocator = undefined;
-fn getDebugInfoAllocator() mem.Allocator {
+fn get_debug_info_allocator() mem.Allocator {
     if (debug_info_allocator) |a| return a;
 
     debug_info_arena_allocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -2530,7 +2530,7 @@ pub const have_segfault_handling_support = switch (native_os) {
 const enable_segfault_handler = std.options.enable_segfault_handler;
 pub const default_enable_segfault_handler = runtime_safety and have_segfault_handling_support;
 
-pub fn maybeEnableSegfaultHandler() void {
+pub fn maybe_enable_segfault_handler() void {
     if (enable_segfault_handler) {
         std.debug.attachSegfaultHandler();
     }
@@ -2538,7 +2538,7 @@ pub fn maybeEnableSegfaultHandler() void {
 
 var windows_segfault_handle: ?windows.HANDLE = null;
 
-pub fn updateSegfaultHandler(act: ?*const posix.Sigaction) error{OperationNotSupported}!void {
+pub fn update_segfault_handler(act: ?*const posix.Sigaction) error{OperationNotSupported}!void {
     try posix.sigaction(posix.SIG.SEGV, act, null);
     try posix.sigaction(posix.SIG.ILL, act, null);
     try posix.sigaction(posix.SIG.BUS, act, null);
@@ -2546,7 +2546,7 @@ pub fn updateSegfaultHandler(act: ?*const posix.Sigaction) error{OperationNotSup
 }
 
 /// Attaches a global SIGSEGV handler which calls `@panic("segmentation fault");`
-pub fn attachSegfaultHandler() void {
+pub fn attach_segfault_handler() void {
     if (!have_segfault_handling_support) {
         @compileError("segfault handler not supported for this target");
     }
@@ -2565,7 +2565,7 @@ pub fn attachSegfaultHandler() void {
     };
 }
 
-fn resetSegfaultHandler() void {
+fn reset_segfault_handler() void {
     if (native_os == .windows) {
         if (windows_segfault_handle) |handle| {
             assert(windows.kernel32.RemoveVectoredExceptionHandler(handle) != 0);
@@ -2582,7 +2582,7 @@ fn resetSegfaultHandler() void {
     updateSegfaultHandler(&act) catch {};
 }
 
-fn handleSegfaultPosix(sig: i32, info: *const posix.siginfo_t, ctx_ptr: ?*anyopaque) callconv(.C) noreturn {
+fn handle_segfault_posix(sig: i32, info: *const posix.siginfo_t, ctx_ptr: ?*anyopaque) callconv(.C) noreturn {
     // Reset to the default handler so that if a segfault happens in this handler it will crash
     // the process. Also when this handler returns, the original instruction will be repeated
     // and the resulting segfault will crash the process rather than continually dump stack traces.
@@ -2624,7 +2624,7 @@ fn handleSegfaultPosix(sig: i32, info: *const posix.siginfo_t, ctx_ptr: ?*anyopa
     posix.abort();
 }
 
-fn dumpSegfaultInfoPosix(sig: i32, code: i32, addr: usize, ctx_ptr: ?*const anyopaque) void {
+fn dump_segfault_info_posix(sig: i32, code: i32, addr: usize, ctx_ptr: ?*const anyopaque) void {
     const stderr = io.getStdErr().writer();
     _ = switch (sig) {
         posix.SIG.SEGV => if (native_arch == .x86_64 and native_os == .linux and code == 128) // SI_KERNEL
@@ -2657,7 +2657,7 @@ fn dumpSegfaultInfoPosix(sig: i32, code: i32, addr: usize, ctx_ptr: ?*const anyo
     }
 }
 
-fn handleSegfaultWindows(info: *windows.EXCEPTION_POINTERS) callconv(windows.WINAPI) c_long {
+fn handle_segfault_windows(info: *windows.EXCEPTION_POINTERS) callconv(windows.WINAPI) c_long {
     switch (info.ExceptionRecord.ExceptionCode) {
         windows.EXCEPTION_DATATYPE_MISALIGNMENT => handleSegfaultWindowsExtra(info, 0, "Unaligned Memory Access"),
         windows.EXCEPTION_ACCESS_VIOLATION => handleSegfaultWindowsExtra(info, 1, null),
@@ -2667,7 +2667,7 @@ fn handleSegfaultWindows(info: *windows.EXCEPTION_POINTERS) callconv(windows.WIN
     }
 }
 
-fn handleSegfaultWindowsExtra(
+fn handle_segfault_windows_extra(
     info: *windows.EXCEPTION_POINTERS,
     msg: u8,
     label: ?[]const u8,
@@ -2709,7 +2709,7 @@ fn handleSegfaultWindowsExtra(
     }
 }
 
-fn dumpSegfaultInfoWindows(info: *windows.EXCEPTION_POINTERS, msg: u8, label: ?[]const u8) void {
+fn dump_segfault_info_windows(info: *windows.EXCEPTION_POINTERS, msg: u8, label: ?[]const u8) void {
     const stderr = io.getStdErr().writer();
     _ = switch (msg) {
         0 => stderr.print("{s}\n", .{label.?}),
@@ -2721,7 +2721,7 @@ fn dumpSegfaultInfoWindows(info: *windows.EXCEPTION_POINTERS, msg: u8, label: ?[
     dumpStackTraceFromBase(info.ContextRecord);
 }
 
-pub fn dumpStackPointerAddr(prefix: []const u8) void {
+pub fn dump_stack_pointer_addr(prefix: []const u8) void {
     const sp = asm (""
         : [argc] "={rsp}" (-> usize),
     );
@@ -2744,7 +2744,7 @@ test "manage resources correctly" {
     try printSourceAtAddress(&di, writer, showMyTrace(), io.tty.detectConfig(std.io.getStdErr()));
 }
 
-noinline fn showMyTrace() usize {
+noinline fn show_my_trace() usize {
     return @returnAddress();
 }
 
@@ -2757,7 +2757,7 @@ noinline fn showMyTrace() usize {
 /// For more advanced usage, see `ConfigurableTrace`.
 pub const Trace = ConfigurableTrace(2, 4, builtin.mode == .Debug);
 
-pub fn ConfigurableTrace(comptime size: usize, comptime stack_frame_count: usize, comptime is_enabled: bool) type {
+pub fn configurable_trace(comptime size: usize, comptime stack_frame_count: usize, comptime is_enabled: bool) type {
     return struct {
         addrs: [actual_size][stack_frame_count]usize,
         notes: [actual_size][]const u8,
@@ -2776,18 +2776,18 @@ pub fn ConfigurableTrace(comptime size: usize, comptime stack_frame_count: usize
 
         pub const add = if (enabled) addNoInline else addNoOp;
 
-        pub noinline fn addNoInline(t: *@This(), note: []const u8) void {
+        pub noinline fn add_no_inline(t: *@This(), note: []const u8) void {
             comptime assert(enabled);
             return addAddr(t, @returnAddress(), note);
         }
 
-        pub inline fn addNoOp(t: *@This(), note: []const u8) void {
+        pub inline fn add_no_op(t: *@This(), note: []const u8) void {
             _ = t;
             _ = note;
             comptime assert(!enabled);
         }
 
-        pub fn addAddr(t: *@This(), addr: usize, note: []const u8) void {
+        pub fn add_addr(t: *@This(), addr: usize, note: []const u8) void {
             if (!enabled) return;
 
             if (t.index < size) {
@@ -2870,7 +2870,7 @@ pub const SafetyLock = struct {
         l.state = .unlocked;
     }
 
-    pub fn assertUnlocked(l: SafetyLock) void {
+    pub fn assert_unlocked(l: SafetyLock) void {
         if (!runtime_safety) return;
         assert(l.state == .unlocked);
     }
@@ -2880,7 +2880,7 @@ pub const SafetyLock = struct {
 ///
 /// When Valgrind integrations are disabled, this returns comptime-known false.
 /// Otherwise, the result is runtime-known.
-pub inline fn inValgrind() bool {
+pub inline fn in_valgrind() bool {
     if (@inComptime()) return false;
     if (!builtin.valgrind_support) return false;
     return std.valgrind.runningOnValgrind() > 0;

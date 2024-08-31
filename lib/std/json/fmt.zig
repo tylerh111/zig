@@ -9,7 +9,7 @@ pub fn fmt(value: anytype, options: StringifyOptions) Formatter(@TypeOf(value)) 
 }
 
 /// Formats the given value using stringify.
-pub fn Formatter(comptime T: type) type {
+pub fn formatter(comptime T: type) type {
     return struct {
         value: T,
         options: StringifyOptions,

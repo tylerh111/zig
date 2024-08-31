@@ -1,4 +1,4 @@
-fn Func(comptime Type: type) type {
+fn func(comptime Type: type) type {
     return struct { value: Type };
 }
 

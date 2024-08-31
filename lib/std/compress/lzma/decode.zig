@@ -46,7 +46,7 @@ pub const Params = struct {
     dict_size: u32,
     unpacked_size: ?u64,
 
-    pub fn readHeader(reader: anytype, options: Options) !Params {
+    pub fn read_header(reader: anytype, options: Options) !Params {
         var props = try reader.readByte();
         if (props >= 225) {
             return error.CorruptInput;
@@ -133,7 +133,7 @@ pub const DecoderState = struct {
         self.* = undefined;
     }
 
-    pub fn resetState(self: *DecoderState, allocator: Allocator, new_props: Properties) !void {
+    pub fn reset_state(self: *DecoderState, allocator: Allocator, new_props: Properties) !void {
         new_props.validate();
         if (self.lzma_props.lc + self.lzma_props.lp == new_props.lc + new_props.lp) {
             self.literal_probs.fill(0x400);
@@ -158,7 +158,7 @@ pub const DecoderState = struct {
         self.rep_len_decoder.reset();
     }
 
-    fn processNextInner(
+    fn process_next_inner(
         self: *DecoderState,
         allocator: Allocator,
         reader: anytype,
@@ -262,7 +262,7 @@ pub const DecoderState = struct {
         return .continue_;
     }
 
-    fn processNext(
+    fn process_next(
         self: *DecoderState,
         allocator: Allocator,
         reader: anytype,
@@ -305,7 +305,7 @@ pub const DecoderState = struct {
         return .finished;
     }
 
-    fn decodeLiteral(
+    fn decode_literal(
         self: *DecoderState,
         reader: anytype,
         buffer: anytype,
@@ -345,7 +345,7 @@ pub const DecoderState = struct {
         return @as(u8, @truncate(result - 0x100));
     }
 
-    fn decodeDistance(
+    fn decode_distance(
         self: *DecoderState,
         reader: anytype,
         decoder: *RangeDecoder,

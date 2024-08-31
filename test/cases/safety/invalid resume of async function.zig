@@ -11,7 +11,7 @@ pub fn main() !void {
     resume p; //bad
     return error.TestFailed;
 }
-fn suspendOnce() void {
+fn suspend_once() void {
     suspend {}
 }
 // run

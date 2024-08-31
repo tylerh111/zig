@@ -39,7 +39,7 @@ const InnerError = error{
     EmitFail,
 };
 
-pub fn emitMir(emit: *Emit) InnerError!void {
+pub fn emit_mir(emit: *Emit) InnerError!void {
     const mir_tags = emit.mir.instructions.items(.tag);
     // write the locals in the prologue of the function body
     // before we emit the function body when lowering MIR
@@ -261,7 +261,7 @@ fn fail(emit: *Emit, comptime format: []const u8, args: anytype) InnerError {
     return error.EmitFail;
 }
 
-fn emitLocals(emit: *Emit) !void {
+fn emit_locals(emit: *Emit) !void {
     const writer = emit.code.writer();
     try leb128.writeULEB128(writer, @as(u32, @intCast(emit.locals.len)));
     // emit the actual locals amount
@@ -271,17 +271,17 @@ fn emitLocals(emit: *Emit) !void {
     }
 }
 
-fn emitTag(emit: *Emit, tag: Mir.Inst.Tag) !void {
+fn emit_tag(emit: *Emit, tag: Mir.Inst.Tag) !void {
     try emit.code.append(@intFromEnum(tag));
 }
 
-fn emitBlock(emit: *Emit, tag: Mir.Inst.Tag, inst: Mir.Inst.Index) !void {
+fn emit_block(emit: *Emit, tag: Mir.Inst.Tag, inst: Mir.Inst.Index) !void {
     const block_type = emit.mir.instructions.items(.data)[inst].block_type;
     try emit.code.append(@intFromEnum(tag));
     try emit.code.append(block_type);
 }
 
-fn emitBrTable(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_br_table(emit: *Emit, inst: Mir.Inst.Index) !void {
     const extra_index = emit.mir.instructions.items(.data)[inst].payload;
     const extra = emit.mir.extraData(Mir.JumpTable, extra_index);
     const labels = emit.mir.extra[extra.end..][0..extra.data.length];
@@ -294,13 +294,13 @@ fn emitBrTable(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn emitLabel(emit: *Emit, tag: Mir.Inst.Tag, inst: Mir.Inst.Index) !void {
+fn emit_label(emit: *Emit, tag: Mir.Inst.Tag, inst: Mir.Inst.Index) !void {
     const label = emit.mir.instructions.items(.data)[inst].label;
     try emit.code.append(@intFromEnum(tag));
     try leb128.writeULEB128(emit.code.writer(), label);
 }
 
-fn emitGlobal(emit: *Emit, tag: Mir.Inst.Tag, inst: Mir.Inst.Index) !void {
+fn emit_global(emit: *Emit, tag: Mir.Inst.Tag, inst: Mir.Inst.Index) !void {
     const comp = emit.bin_file.base.comp;
     const gpa = comp.gpa;
     const label = emit.mir.instructions.items(.data)[inst].label;
@@ -319,47 +319,47 @@ fn emitGlobal(emit: *Emit, tag: Mir.Inst.Tag, inst: Mir.Inst.Index) !void {
     });
 }
 
-fn emitImm32(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_imm32(emit: *Emit, inst: Mir.Inst.Index) !void {
     const value: i32 = emit.mir.instructions.items(.data)[inst].imm32;
     try emit.code.append(std.wasm.opcode(.i32_const));
     try leb128.writeILEB128(emit.code.writer(), value);
 }
 
-fn emitImm64(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_imm64(emit: *Emit, inst: Mir.Inst.Index) !void {
     const extra_index = emit.mir.instructions.items(.data)[inst].payload;
     const value = emit.mir.extraData(Mir.Imm64, extra_index);
     try emit.code.append(std.wasm.opcode(.i64_const));
     try leb128.writeILEB128(emit.code.writer(), @as(i64, @bitCast(value.data.toU64())));
 }
 
-fn emitFloat32(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_float32(emit: *Emit, inst: Mir.Inst.Index) !void {
     const value: f32 = emit.mir.instructions.items(.data)[inst].float32;
     try emit.code.append(std.wasm.opcode(.f32_const));
     try emit.code.writer().writeInt(u32, @bitCast(value), .little);
 }
 
-fn emitFloat64(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_float64(emit: *Emit, inst: Mir.Inst.Index) !void {
     const extra_index = emit.mir.instructions.items(.data)[inst].payload;
     const value = emit.mir.extraData(Mir.Float64, extra_index);
     try emit.code.append(std.wasm.opcode(.f64_const));
     try emit.code.writer().writeInt(u64, value.data.toU64(), .little);
 }
 
-fn emitMemArg(emit: *Emit, tag: Mir.Inst.Tag, inst: Mir.Inst.Index) !void {
+fn emit_mem_arg(emit: *Emit, tag: Mir.Inst.Tag, inst: Mir.Inst.Index) !void {
     const extra_index = emit.mir.instructions.items(.data)[inst].payload;
     const mem_arg = emit.mir.extraData(Mir.MemArg, extra_index).data;
     try emit.code.append(@intFromEnum(tag));
     try encodeMemArg(mem_arg, emit.code.writer());
 }
 
-fn encodeMemArg(mem_arg: Mir.MemArg, writer: anytype) !void {
+fn encode_mem_arg(mem_arg: Mir.MemArg, writer: anytype) !void {
     // wasm encodes alignment as power of 2, rather than natural alignment
     const encoded_alignment = @ctz(mem_arg.alignment);
     try leb128.writeULEB128(writer, encoded_alignment);
     try leb128.writeULEB128(writer, mem_arg.offset);
 }
 
-fn emitCall(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_call(emit: *Emit, inst: Mir.Inst.Index) !void {
     const comp = emit.bin_file.base.comp;
     const gpa = comp.gpa;
     const label = emit.mir.instructions.items(.data)[inst].label;
@@ -380,7 +380,7 @@ fn emitCall(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn emitCallIndirect(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_call_indirect(emit: *Emit, inst: Mir.Inst.Index) !void {
     const type_index = emit.mir.instructions.items(.data)[inst].label;
     try emit.code.append(std.wasm.opcode(.call_indirect));
     // NOTE: If we remove unused function types in the future for incremental
@@ -401,7 +401,7 @@ fn emitCallIndirect(emit: *Emit, inst: Mir.Inst.Index) !void {
     try leb128.writeULEB128(emit.code.writer(), @as(u32, 0)); // TODO: Emit relocation for table index
 }
 
-fn emitFunctionIndex(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_function_index(emit: *Emit, inst: Mir.Inst.Index) !void {
     const comp = emit.bin_file.base.comp;
     const gpa = comp.gpa;
     const symbol_index = emit.mir.instructions.items(.data)[inst].label;
@@ -422,7 +422,7 @@ fn emitFunctionIndex(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn emitMemAddress(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_mem_address(emit: *Emit, inst: Mir.Inst.Index) !void {
     const extra_index = emit.mir.instructions.items(.data)[inst].payload;
     const mem = emit.mir.extraData(Mir.Memory, extra_index).data;
     const mem_offset = emit.offset() + 1;
@@ -454,7 +454,7 @@ fn emitMemAddress(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn emitExtended(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_extended(emit: *Emit, inst: Mir.Inst.Index) !void {
     const extra_index = emit.mir.instructions.items(.data)[inst].payload;
     const opcode = emit.mir.extra[extra_index];
     const writer = emit.code.writer();
@@ -493,7 +493,7 @@ fn emitExtended(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn emitSimd(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_simd(emit: *Emit, inst: Mir.Inst.Index) !void {
     const extra_index = emit.mir.instructions.items(.data)[inst].payload;
     const opcode = emit.mir.extra[extra_index];
     const writer = emit.code.writer();
@@ -544,7 +544,7 @@ fn emitSimd(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn emitAtomic(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_atomic(emit: *Emit, inst: Mir.Inst.Index) !void {
     const extra_index = emit.mir.instructions.items(.data)[inst].payload;
     const opcode = emit.mir.extra[extra_index];
     const writer = emit.code.writer();
@@ -629,7 +629,7 @@ fn emitAtomic(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn emitMemFill(emit: *Emit) !void {
+fn emit_mem_fill(emit: *Emit) !void {
     try emit.code.append(0xFC);
     try emit.code.append(0x0B);
     // When multi-memory proposal reaches phase 4, we
@@ -638,13 +638,13 @@ fn emitMemFill(emit: *Emit) !void {
     try leb128.writeULEB128(emit.code.writer(), @as(u32, 0));
 }
 
-fn emitDbgLine(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn emit_dbg_line(emit: *Emit, inst: Mir.Inst.Index) !void {
     const extra_index = emit.mir.instructions.items(.data)[inst].payload;
     const dbg_line = emit.mir.extraData(Mir.DbgLineColumn, extra_index).data;
     try emit.dbgAdvancePCAndLine(dbg_line.line, dbg_line.column);
 }
 
-fn dbgAdvancePCAndLine(emit: *Emit, line: u32, column: u32) !void {
+fn dbg_advance_pcand_line(emit: *Emit, line: u32, column: u32) !void {
     if (emit.dbg_output != .dwarf) return;
 
     const delta_line = @as(i32, @intCast(line)) - @as(i32, @intCast(emit.prev_di_line));
@@ -658,14 +658,14 @@ fn dbgAdvancePCAndLine(emit: *Emit, line: u32, column: u32) !void {
     emit.prev_di_offset = emit.offset();
 }
 
-fn emitDbgPrologueEnd(emit: *Emit) !void {
+fn emit_dbg_prologue_end(emit: *Emit) !void {
     if (emit.dbg_output != .dwarf) return;
 
     try emit.dbg_output.dwarf.setPrologueEnd();
     try emit.dbgAdvancePCAndLine(emit.prev_di_line, emit.prev_di_column);
 }
 
-fn emitDbgEpilogueBegin(emit: *Emit) !void {
+fn emit_dbg_epilogue_begin(emit: *Emit) !void {
     if (emit.dbg_output != .dwarf) return;
 
     try emit.dbg_output.dwarf.setEpilogueBegin();

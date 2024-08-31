@@ -81,7 +81,7 @@ test "Random int" {
     try testRandomInt();
     try comptime testRandomInt();
 }
-fn testRandomInt() !void {
+fn test_random_int() !void {
     var rng = SequentialPrng.init();
     const random = rng.random();
 
@@ -128,7 +128,7 @@ test "Random boolean" {
     try testRandomBoolean();
     try comptime testRandomBoolean();
 }
-fn testRandomBoolean() !void {
+fn test_random_boolean() !void {
     var rng = SequentialPrng.init();
     const random = rng.random();
 
@@ -142,7 +142,7 @@ test "Random enum" {
     try testRandomEnumValue();
     try comptime testRandomEnumValue();
 }
-fn testRandomEnumValue() !void {
+fn test_random_enum_value() !void {
     const TestEnum = enum {
         First,
         Second,
@@ -161,7 +161,7 @@ test "Random intLessThan" {
     try testRandomIntLessThan();
     try comptime testRandomIntLessThan();
 }
-fn testRandomIntLessThan() !void {
+fn test_random_int_less_than() !void {
     var rng = SequentialPrng.init();
     const random = rng.random();
 
@@ -203,7 +203,7 @@ test "Random intAtMost" {
     try testRandomIntAtMost();
     try comptime testRandomIntAtMost();
 }
-fn testRandomIntAtMost() !void {
+fn test_random_int_at_most() !void {
     var rng = SequentialPrng.init();
     const random = rng.random();
 
@@ -399,7 +399,7 @@ test "Random shuffle" {
     }
 }
 
-fn sumArray(s: []const u8) u32 {
+fn sum_array(s: []const u8) u32 {
     var r: u32 = 0;
     for (s) |e|
         r += e;
@@ -416,11 +416,11 @@ test "Random range" {
     try testRange(random, -0x80, 0x7f);
 }
 
-fn testRange(r: Random, start: i8, end: i8) !void {
+fn test_range(r: Random, start: i8, end: i8) !void {
     try testRangeBias(r, start, end, true);
     try testRangeBias(r, start, end, false);
 }
-fn testRangeBias(r: Random, start: i8, end: i8, biased: bool) !void {
+fn test_range_bias(r: Random, start: i8, end: i8, biased: bool) !void {
     const count = @as(usize, @intCast(@as(i32, end) - @as(i32, start)));
     var values_buffer = [_]bool{false} ** 0x100;
     const values = values_buffer[0..count];

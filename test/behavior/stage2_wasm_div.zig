@@ -11,7 +11,7 @@ test "wasm integer division" {
     try testDivision();
     try comptime testDivision();
 }
-fn testDivision() !void {
+fn test_division() !void {
     try expect(div(u32, 13, 3) == 4);
     try expect(div(u64, 13, 3) == 4);
     try expect(div(u8, 13, 3) == 4);
@@ -43,7 +43,7 @@ fn testDivision() !void {
 fn div(comptime T: type, a: T, b: T) T {
     return a / b;
 }
-fn divFloor(comptime T: type, a: T, b: T) T {
+fn div_floor(comptime T: type, a: T, b: T) T {
     return @divFloor(a, b);
 }
 fn mod(comptime T: type, a: T, b: T) T {

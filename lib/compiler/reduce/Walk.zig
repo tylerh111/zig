@@ -51,7 +51,7 @@ pub const Transformation = union(enum) {
 pub const Error = error{OutOfMemory};
 
 /// The result will be priority shuffled.
-pub fn findTransformations(
+pub fn find_transformations(
     arena: std.mem.Allocator,
     ast: *const Ast,
     transformations: *std.ArrayList(Transformation),
@@ -82,7 +82,7 @@ pub fn findTransformations(
     }
 }
 
-fn walkMembers(w: *Walk, members: []const Ast.Node.Index) Error!void {
+fn walk_members(w: *Walk, members: []const Ast.Node.Index) Error!void {
     // First we scan for globals so that we can delete them while walking.
     try scanDecls(w, members, .add);
 
@@ -95,7 +95,7 @@ fn walkMembers(w: *Walk, members: []const Ast.Node.Index) Error!void {
 
 const ScanDeclsAction = enum { add, remove };
 
-fn scanDecls(w: *Walk, members: []const Ast.Node.Index, action: ScanDeclsAction) Error!void {
+fn scan_decls(w: *Walk, members: []const Ast.Node.Index, action: ScanDeclsAction) Error!void {
     const ast = w.ast;
     const gpa = w.gpa;
     const node_tags = ast.nodes.items(.tag);
@@ -143,7 +143,7 @@ fn scanDecls(w: *Walk, members: []const Ast.Node.Index, action: ScanDeclsAction)
     }
 }
 
-fn walkMember(w: *Walk, decl: Ast.Node.Index) Error!void {
+fn walk_member(w: *Walk, decl: Ast.Node.Index) Error!void {
     const ast = w.ast;
     const datas = ast.nodes.items(.data);
     switch (ast.nodes.items(.tag)[decl]) {
@@ -200,7 +200,7 @@ fn walkMember(w: *Walk, decl: Ast.Node.Index) Error!void {
     }
 }
 
-fn walkExpression(w: *Walk, node: Ast.Node.Index) Error!void {
+fn walk_expression(w: *Walk, node: Ast.Node.Index) Error!void {
     const ast = w.ast;
     const token_tags = ast.tokens.items(.tag);
     const main_tokens = ast.nodes.items(.main_token);
@@ -589,7 +589,7 @@ fn walkExpression(w: *Walk, node: Ast.Node.Index) Error!void {
     }
 }
 
-fn walkGlobalVarDecl(w: *Walk, decl_node: Ast.Node.Index, var_decl: Ast.full.VarDecl) Error!void {
+fn walk_global_var_decl(w: *Walk, decl_node: Ast.Node.Index, var_decl: Ast.full.VarDecl) Error!void {
     _ = decl_node;
 
     if (var_decl.ast.type_node != 0) {
@@ -616,7 +616,7 @@ fn walkGlobalVarDecl(w: *Walk, decl_node: Ast.Node.Index, var_decl: Ast.full.Var
     }
 }
 
-fn walkLocalVarDecl(w: *Walk, var_decl: Ast.full.VarDecl) Error!void {
+fn walk_local_var_decl(w: *Walk, var_decl: Ast.full.VarDecl) Error!void {
     try walkIdentifierNew(w, var_decl.ast.mut_token + 1); // name
 
     if (var_decl.ast.type_node != 0) {
@@ -643,7 +643,7 @@ fn walkLocalVarDecl(w: *Walk, var_decl: Ast.full.VarDecl) Error!void {
     }
 }
 
-fn walkContainerField(w: *Walk, field: Ast.full.ContainerField) Error!void {
+fn walk_container_field(w: *Walk, field: Ast.full.ContainerField) Error!void {
     if (field.ast.type_expr != 0) {
         try walkExpression(w, field.ast.type_expr); // type
     }
@@ -655,7 +655,7 @@ fn walkContainerField(w: *Walk, field: Ast.full.ContainerField) Error!void {
     }
 }
 
-fn walkBlock(
+fn walk_block(
     w: *Walk,
     block_node: Ast.Node.Index,
     statements: []const Ast.Node.Index,
@@ -702,7 +702,7 @@ fn walkBlock(
     }
 }
 
-fn walkArrayType(w: *Walk, array_type: Ast.full.ArrayType) Error!void {
+fn walk_array_type(w: *Walk, array_type: Ast.full.ArrayType) Error!void {
     try walkExpression(w, array_type.ast.elem_count);
     if (array_type.ast.sentinel != 0) {
         try walkExpression(w, array_type.ast.sentinel);
@@ -710,7 +710,7 @@ fn walkArrayType(w: *Walk, array_type: Ast.full.ArrayType) Error!void {
     return walkExpression(w, array_type.ast.elem_type);
 }
 
-fn walkArrayInit(w: *Walk, array_init: Ast.full.ArrayInit) Error!void {
+fn walk_array_init(w: *Walk, array_init: Ast.full.ArrayInit) Error!void {
     if (array_init.ast.type_expr != 0) {
         try walkExpression(w, array_init.ast.type_expr); // T
     }
@@ -719,7 +719,7 @@ fn walkArrayInit(w: *Walk, array_init: Ast.full.ArrayInit) Error!void {
     }
 }
 
-fn walkStructInit(
+fn walk_struct_init(
     w: *Walk,
     struct_node: Ast.Node.Index,
     struct_init: Ast.full.StructInit,
@@ -733,12 +733,12 @@ fn walkStructInit(
     }
 }
 
-fn walkCall(w: *Walk, call: Ast.full.Call) Error!void {
+fn walk_call(w: *Walk, call: Ast.full.Call) Error!void {
     try walkExpression(w, call.ast.fn_expr);
     try walkParamList(w, call.ast.params);
 }
 
-fn walkSlice(
+fn walk_slice(
     w: *Walk,
     slice_node: Ast.Node.Index,
     slice: Ast.full.Slice,
@@ -754,7 +754,7 @@ fn walkSlice(
     }
 }
 
-fn walkIdentifier(w: *Walk, name_ident: Ast.TokenIndex) Error!void {
+fn walk_identifier(w: *Walk, name_ident: Ast.TokenIndex) Error!void {
     const ast = w.ast;
     const token_tags = ast.tokens.items(.tag);
     assert(token_tags[name_ident] == .identifier);
@@ -762,12 +762,12 @@ fn walkIdentifier(w: *Walk, name_ident: Ast.TokenIndex) Error!void {
     _ = w.unreferenced_globals.swapRemove(name_bytes);
 }
 
-fn walkIdentifierNew(w: *Walk, name_ident: Ast.TokenIndex) Error!void {
+fn walk_identifier_new(w: *Walk, name_ident: Ast.TokenIndex) Error!void {
     _ = w;
     _ = name_ident;
 }
 
-fn walkContainerDecl(
+fn walk_container_decl(
     w: *Walk,
     container_decl_node: Ast.Node.Index,
     container_decl: Ast.full.ContainerDecl,
@@ -779,7 +779,7 @@ fn walkContainerDecl(
     try walkMembers(w, container_decl.ast.members);
 }
 
-fn walkBuiltinCall(
+fn walk_builtin_call(
     w: *Walk,
     call_node: Ast.Node.Index,
     params: []const Ast.Node.Index,
@@ -815,7 +815,7 @@ fn walkBuiltinCall(
     }
 }
 
-fn walkFnProto(w: *Walk, fn_proto: Ast.full.FnProto) Error!void {
+fn walk_fn_proto(w: *Walk, fn_proto: Ast.full.FnProto) Error!void {
     const ast = w.ast;
 
     {
@@ -846,20 +846,20 @@ fn walkFnProto(w: *Walk, fn_proto: Ast.full.FnProto) Error!void {
     try walkExpression(w, fn_proto.ast.return_type);
 }
 
-fn walkExpressions(w: *Walk, expressions: []const Ast.Node.Index) Error!void {
+fn walk_expressions(w: *Walk, expressions: []const Ast.Node.Index) Error!void {
     for (expressions) |expression| {
         try walkExpression(w, expression);
     }
 }
 
-fn walkSwitchCase(w: *Walk, switch_case: Ast.full.SwitchCase) Error!void {
+fn walk_switch_case(w: *Walk, switch_case: Ast.full.SwitchCase) Error!void {
     for (switch_case.ast.values) |value_expr| {
         try walkExpression(w, value_expr);
     }
     try walkExpression(w, switch_case.ast.target_expr);
 }
 
-fn walkWhile(w: *Walk, node_index: Ast.Node.Index, while_node: Ast.full.While) Error!void {
+fn walk_while(w: *Walk, node_index: Ast.Node.Index, while_node: Ast.full.While) Error!void {
     assert(while_node.ast.cond_expr != 0);
     assert(while_node.ast.then_expr != 0);
 
@@ -904,7 +904,7 @@ fn walkWhile(w: *Walk, node_index: Ast.Node.Index, while_node: Ast.full.While) E
     }
 }
 
-fn walkFor(w: *Walk, for_node: Ast.full.For) Error!void {
+fn walk_for(w: *Walk, for_node: Ast.full.For) Error!void {
     try walkParamList(w, for_node.ast.inputs);
     if (for_node.ast.then_expr != 0) {
         try walkExpression(w, for_node.ast.then_expr);
@@ -914,7 +914,7 @@ fn walkFor(w: *Walk, for_node: Ast.full.For) Error!void {
     }
 }
 
-fn walkIf(w: *Walk, node_index: Ast.Node.Index, if_node: Ast.full.If) Error!void {
+fn walk_if(w: *Walk, node_index: Ast.Node.Index, if_node: Ast.full.If) Error!void {
     assert(if_node.ast.cond_expr != 0);
     assert(if_node.ast.then_expr != 0);
 
@@ -955,21 +955,21 @@ fn walkIf(w: *Walk, node_index: Ast.Node.Index, if_node: Ast.full.If) Error!void
     }
 }
 
-fn walkAsm(w: *Walk, asm_node: Ast.full.Asm) Error!void {
+fn walk_asm(w: *Walk, asm_node: Ast.full.Asm) Error!void {
     try walkExpression(w, asm_node.ast.template);
     for (asm_node.ast.items) |item| {
         try walkExpression(w, item);
     }
 }
 
-fn walkParamList(w: *Walk, params: []const Ast.Node.Index) Error!void {
+fn walk_param_list(w: *Walk, params: []const Ast.Node.Index) Error!void {
     for (params) |param_node| {
         try walkExpression(w, param_node);
     }
 }
 
 /// Check if it is already gutted (i.e. its body replaced with `@trap()`).
-fn isFnBodyGutted(ast: *const Ast, body_node: Ast.Node.Index) bool {
+fn is_fn_body_gutted(ast: *const Ast, body_node: Ast.Node.Index) bool {
     // skip over discards
     const node_tags = ast.nodes.items(.tag);
     const datas = ast.nodes.items(.data);
@@ -1011,7 +1011,7 @@ const StmtCategory = enum {
     other,
 };
 
-fn categorizeStmt(ast: *const Ast, stmt: Ast.Node.Index) StmtCategory {
+fn categorize_stmt(ast: *const Ast, stmt: Ast.Node.Index) StmtCategory {
     const node_tags = ast.nodes.items(.tag);
     const datas = ast.nodes.items(.data);
     const main_tokens = ast.nodes.items(.main_token);
@@ -1045,7 +1045,7 @@ fn categorizeStmt(ast: *const Ast, stmt: Ast.Node.Index) StmtCategory {
     }
 }
 
-fn categorizeBuiltinCall(
+fn categorize_builtin_call(
     ast: *const Ast,
     builtin_token: Ast.TokenIndex,
     params: []const Ast.Node.Index,
@@ -1057,23 +1057,23 @@ fn categorizeBuiltinCall(
     return .other;
 }
 
-fn isDiscardIdent(ast: *const Ast, node: Ast.Node.Index) bool {
+fn is_discard_ident(ast: *const Ast, node: Ast.Node.Index) bool {
     return isMatchingIdent(ast, node, "_");
 }
 
-fn isUndefinedIdent(ast: *const Ast, node: Ast.Node.Index) bool {
+fn is_undefined_ident(ast: *const Ast, node: Ast.Node.Index) bool {
     return isMatchingIdent(ast, node, "undefined");
 }
 
-fn isTrueIdent(ast: *const Ast, node: Ast.Node.Index) bool {
+fn is_true_ident(ast: *const Ast, node: Ast.Node.Index) bool {
     return isMatchingIdent(ast, node, "true");
 }
 
-fn isFalseIdent(ast: *const Ast, node: Ast.Node.Index) bool {
+fn is_false_ident(ast: *const Ast, node: Ast.Node.Index) bool {
     return isMatchingIdent(ast, node, "false");
 }
 
-fn isMatchingIdent(ast: *const Ast, node: Ast.Node.Index, string: []const u8) bool {
+fn is_matching_ident(ast: *const Ast, node: Ast.Node.Index, string: []const u8) bool {
     const node_tags = ast.nodes.items(.tag);
     const main_tokens = ast.nodes.items(.main_token);
     switch (node_tags[node]) {
@@ -1086,7 +1086,7 @@ fn isMatchingIdent(ast: *const Ast, node: Ast.Node.Index, string: []const u8) bo
     }
 }
 
-fn isEmptyBlock(ast: *const Ast, node: Ast.Node.Index) bool {
+fn is_empty_block(ast: *const Ast, node: Ast.Node.Index) bool {
     const node_tags = ast.nodes.items(.tag);
     const node_data = ast.nodes.items(.data);
     switch (node_tags[node]) {

@@ -556,7 +556,7 @@ pub fn build(b: *std.Build) !void {
     update_mingw_step.dependOn(&update_mingw_run.step);
 }
 
-fn addWasiUpdateStep(b: *std.Build, version: [:0]const u8) !void {
+fn add_wasi_update_step(b: *std.Build, version: [:0]const u8) !void {
     const semver = try std.SemanticVersion.parse(version);
 
     var target_query: std.zig.CrossTarget = .{
@@ -614,7 +614,7 @@ const AddCompilerStepOptions = struct {
     single_threaded: ?bool = null,
 };
 
-fn addCompilerStep(b: *std.Build, options: AddCompilerStepOptions) *std.Build.Step.Compile {
+fn add_compiler_step(b: *std.Build, options: AddCompilerStepOptions) *std.Build.Step.Compile {
     const exe = b.addExecutable(.{
         .name = "zig",
         .root_source_file = b.path("src/main.zig"),
@@ -661,7 +661,7 @@ const exe_cflags = [_][]const u8{
     "-Wno-comment",
 };
 
-fn addCmakeCfgOptionsToExe(
+fn add_cmake_cfg_options_to_exe(
     b: *std.Build,
     cfg: CMakeConfig,
     exe: *std.Build.Step.Compile,
@@ -750,7 +750,7 @@ fn addCmakeCfgOptionsToExe(
     }
 }
 
-fn addStaticLlvmOptionsToExe(exe: *std.Build.Step.Compile) !void {
+fn add_static_llvm_options_to_exe(exe: *std.Build.Step.Compile) !void {
     // Adds the Zig C++ sources which both stage1 and stage2 need.
     //
     // We need this because otherwise zig_clang_cc1_main.cpp ends up pulling
@@ -789,7 +789,7 @@ fn addStaticLlvmOptionsToExe(exe: *std.Build.Step.Compile) !void {
     }
 }
 
-fn addCxxKnownPath(
+fn add_cxx_known_path(
     b: *std.Build,
     ctx: CMakeConfig,
     exe: *std.Build.Step.Compile,
@@ -830,7 +830,7 @@ fn addCxxKnownPath(
     }
 }
 
-fn addCMakeLibraryList(exe: *std.Build.Step.Compile, list: []const u8) void {
+fn add_cmake_library_list(exe: *std.Build.Step.Compile, list: []const u8) void {
     var it = mem.tokenizeScalar(u8, list, ';');
     while (it.next()) |lib| {
         if (mem.startsWith(u8, lib, "-l")) {
@@ -865,7 +865,7 @@ const CMakeConfig = struct {
 
 const max_config_h_bytes = 1 * 1024 * 1024;
 
-fn findConfigH(b: *std.Build, config_h_path_option: ?[]const u8) ?[]const u8 {
+fn find_config_h(b: *std.Build, config_h_path_option: ?[]const u8) ?[]const u8 {
     if (config_h_path_option) |path| {
         var config_h_or_err = fs.cwd().openFile(path, .{});
         if (config_h_or_err) |*file| {
@@ -911,7 +911,7 @@ fn findConfigH(b: *std.Build, config_h_path_option: ?[]const u8) ?[]const u8 {
     }
 }
 
-fn parseConfigH(b: *std.Build, config_h_text: []const u8) ?CMakeConfig {
+fn parse_config_h(b: *std.Build, config_h_text: []const u8) ?CMakeConfig {
     var ctx: CMakeConfig = .{
         .llvm_linkage = undefined,
         .cmake_binary_dir = undefined,
@@ -1011,7 +1011,7 @@ fn parseConfigH(b: *std.Build, config_h_text: []const u8) ?CMakeConfig {
     return ctx;
 }
 
-fn toNativePathSep(b: *std.Build, s: []const u8) []u8 {
+fn to_native_path_sep(b: *std.Build, s: []const u8) []u8 {
     const duplicated = b.allocator.dupe(u8, s) catch unreachable;
     for (duplicated) |*byte| switch (byte.*) {
         '/' => byte.* = fs.path.sep,
@@ -1255,7 +1255,7 @@ const llvm_libs = [_][]const u8{
     "LLVMDemangle",
 };
 
-fn generateLangRef(b: *std.Build) std.Build.LazyPath {
+fn generate_lang_ref(b: *std.Build) std.Build.LazyPath {
     const doctest_exe = b.addExecutable(.{
         .name = "doctest",
         .root_source_file = b.path("tools/doctest.zig"),

@@ -824,7 +824,7 @@ pub const DevicePath = union(Type) {
             subtype: Subtype,
             length: u16 align(1),
 
-            pub fn getPath(self: *const FilePathDevicePath) [*:0]align(1) const u16 {
+            pub fn get_path(self: *const FilePathDevicePath) [*:0]align(1) const u16 {
                 return @as([*:0]align(1) const u16, @ptrCast(@as([*]const u8, @ptrCast(self)) + @sizeOf(FilePathDevicePath)));
             }
         };
@@ -949,7 +949,7 @@ pub const DevicePath = union(Type) {
             device_type: u16 align(1),
             status_flag: u16 align(1),
 
-            pub fn getDescription(self: *const BBS101DevicePath) [*:0]const u8 {
+            pub fn get_description(self: *const BBS101DevicePath) [*:0]const u8 {
                 return @as([*:0]const u8, @ptrCast(self)) + @sizeOf(BBS101DevicePath);
             }
         };

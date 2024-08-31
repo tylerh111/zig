@@ -189,7 +189,7 @@ pub const Compiler = struct {
         characteristics: u32 = 0,
     };
 
-    pub fn writeRoot(self: *Compiler, root: *Node.Root, writer: anytype) !void {
+    pub fn write_root(self: *Compiler, root: *Node.Root, writer: anytype) !void {
         try writeEmptyResource(writer);
         for (root.body) |node| {
             try self.writeNode(node, writer);
@@ -226,7 +226,7 @@ pub const Compiler = struct {
         }
     }
 
-    pub fn writeNode(self: *Compiler, node: *Node, writer: anytype) !void {
+    pub fn write_node(self: *Compiler, node: *Node, writer: anytype) !void {
         switch (node.id) {
             .root => unreachable, // writeRoot should be called directly instead
             .resource_external => try self.writeResourceExternal(@alignCast(@fieldParentPtr("base", node)), writer),
@@ -261,7 +261,7 @@ pub const Compiler = struct {
     }
 
     /// Returns the filename encoded as UTF-8 (allocated by self.allocator)
-    pub fn evaluateFilenameExpression(self: *Compiler, expression_node: *Node) ![]u8 {
+    pub fn evaluate_filename_expression(self: *Compiler, expression_node: *Node) ![]u8 {
         switch (expression_node.id) {
             .literal => {
                 const literal_node = expression_node.cast(.literal).?;
@@ -354,7 +354,7 @@ pub const Compiler = struct {
     ///       matching file is invalid. That is, it does not do the `cmd` PATH searching
     ///       thing of continuing to look for matching files until it finds a valid
     ///       one if a matching file is invalid.
-    fn searchForFile(self: *Compiler, path: []const u8) !std.fs.File {
+    fn search_for_file(self: *Compiler, path: []const u8) !std.fs.File {
         // If the path is absolute, then it is not resolved relative to any search
         // paths, so there's no point in checking them.
         //
@@ -401,7 +401,7 @@ pub const Compiler = struct {
         return first_error orelse error.FileNotFound;
     }
 
-    pub fn parseDlgIncludeString(self: *Compiler, token: Token) ![]u8 {
+    pub fn parse_dlg_include_string(self: *Compiler, token: Token) ![]u8 {
         // For the purposes of parsing, we want to strip the L prefix
         // if it exists since we want escaped integers to be limited to
         // their ascii string range.
@@ -467,7 +467,7 @@ pub const Compiler = struct {
         return buf.toOwnedSlice();
     }
 
-    pub fn writeResourceExternal(self: *Compiler, node: *Node.ResourceExternal, writer: anytype) !void {
+    pub fn write_resource_external(self: *Compiler, node: *Node.ResourceExternal, writer: anytype) !void {
         // Init header with data size zero for now, will need to fill it in later
         var header = try self.resourceHeader(node.id, node.type, .{});
         defer header.deinit(self.allocator);
@@ -1002,7 +1002,7 @@ pub const Compiler = struct {
         try writeResourceData(writer, file.reader(), header.data_size);
     }
 
-    fn iconReadError(
+    fn icon_read_error(
         self: *Compiler,
         err: ico.ReadError,
         filename: []const u8,
@@ -1065,7 +1065,7 @@ pub const Compiler = struct {
     };
 
     /// Assumes that the node is a number or number expression
-    pub fn evaluateNumberExpression(expression_node: *Node, source: []const u8, code_page_lookup: *const CodePageLookup) Number {
+    pub fn evaluate_number_expression(expression_node: *Node, source: []const u8, code_page_lookup: *const CodePageLookup) Number {
         switch (expression_node.id) {
             .literal => {
                 const literal_node = expression_node.cast(.literal).?;
@@ -1095,7 +1095,7 @@ pub const Compiler = struct {
         value: u32,
         not_mask: u32 = 0xFFFFFFFF,
 
-        pub fn evaluateOperator(lhs: FlagsNumber, operator_char: u8, rhs: FlagsNumber) FlagsNumber {
+        pub fn evaluate_operator(lhs: FlagsNumber, operator_char: u8, rhs: FlagsNumber) FlagsNumber {
             const result = switch (operator_char) {
                 '-' => lhs.value -% rhs.value,
                 '+' => lhs.value +% rhs.value,
@@ -1109,12 +1109,12 @@ pub const Compiler = struct {
             };
         }
 
-        pub fn applyNotMask(self: FlagsNumber) u32 {
+        pub fn apply_not_mask(self: FlagsNumber) u32 {
             return self.value & self.not_mask;
         }
     };
 
-    pub fn evaluateFlagsExpressionWithDefault(default: u32, expression_node: *Node, source: []const u8, code_page_lookup: *const CodePageLookup) u32 {
+    pub fn evaluate_flags_expression_with_default(default: u32, expression_node: *Node, source: []const u8, code_page_lookup: *const CodePageLookup) u32 {
         var context = FlagsExpressionContext{ .initial_value = default };
         const number = evaluateFlagsExpression(expression_node, source, code_page_lookup, &context);
         return number.value;
@@ -1126,7 +1126,7 @@ pub const Compiler = struct {
     };
 
     /// Assumes that the node is a number expression (which can contain not_expressions)
-    pub fn evaluateFlagsExpression(expression_node: *Node, source: []const u8, code_page_lookup: *const CodePageLookup, context: *FlagsExpressionContext) FlagsNumber {
+    pub fn evaluate_flags_expression(expression_node: *Node, source: []const u8, code_page_lookup: *const CodePageLookup, context: *FlagsExpressionContext) FlagsNumber {
         switch (expression_node.id) {
             .literal => {
                 const literal_node = expression_node.cast(.literal).?;
@@ -1171,7 +1171,7 @@ pub const Compiler = struct {
         }
     }
 
-    pub fn evaluateDataExpression(self: *Compiler, expression_node: *Node) !Data {
+    pub fn evaluate_data_expression(self: *Compiler, expression_node: *Node) !Data {
         switch (expression_node.id) {
             .literal => {
                 const literal_node = expression_node.cast(.literal).?;
@@ -1219,7 +1219,7 @@ pub const Compiler = struct {
         }
     }
 
-    pub fn writeResourceRawData(self: *Compiler, node: *Node.ResourceRawData, writer: anytype) !void {
+    pub fn write_resource_raw_data(self: *Compiler, node: *Node.ResourceRawData, writer: anytype) !void {
         var data_buffer = std.ArrayList(u8).init(self.allocator);
         defer data_buffer.deinit();
         // The header's data length field is a u32 so limit the resource's data size so that
@@ -1250,7 +1250,7 @@ pub const Compiler = struct {
         try writeResourceData(writer, data_fbs.reader(), data_len);
     }
 
-    pub fn writeResourceHeader(self: *Compiler, writer: anytype, id_token: Token, type_token: Token, data_size: u32, common_resource_attributes: []Token, language: res.Language) !void {
+    pub fn write_resource_header(self: *Compiler, writer: anytype, id_token: Token, type_token: Token, data_size: u32, common_resource_attributes: []Token, language: res.Language) !void {
         var header = try self.resourceHeader(id_token, type_token, .{
             .language = language,
             .data_size = data_size,
@@ -1262,7 +1262,7 @@ pub const Compiler = struct {
         try header.write(writer, .{ .diagnostics = self.diagnostics, .token = id_token });
     }
 
-    pub fn writeResourceDataNoPadding(writer: anytype, data_reader: anytype, data_size: u32) !void {
+    pub fn write_resource_data_no_padding(writer: anytype, data_reader: anytype, data_size: u32) !void {
         var limited_reader = std.io.limitedReader(data_reader, data_size);
 
         const FifoBuffer = std.fifo.LinearFifo(u8, .{ .Static = 4096 });
@@ -1270,21 +1270,21 @@ pub const Compiler = struct {
         try fifo.pump(limited_reader.reader(), writer);
     }
 
-    pub fn writeResourceData(writer: anytype, data_reader: anytype, data_size: u32) !void {
+    pub fn write_resource_data(writer: anytype, data_reader: anytype, data_size: u32) !void {
         try writeResourceDataNoPadding(writer, data_reader, data_size);
         try writeDataPadding(writer, data_size);
     }
 
-    pub fn writeDataPadding(writer: anytype, data_size: u32) !void {
+    pub fn write_data_padding(writer: anytype, data_size: u32) !void {
         try writer.writeByteNTimes(0, numPaddingBytesNeeded(data_size));
     }
 
-    pub fn numPaddingBytesNeeded(data_size: u32) u2 {
+    pub fn num_padding_bytes_needed(data_size: u32) u2 {
         // Result is guaranteed to be between 0 and 3.
         return @intCast((4 -% data_size) % 4);
     }
 
-    pub fn evaluateAcceleratorKeyExpression(self: *Compiler, node: *Node, is_virt: bool) !u16 {
+    pub fn evaluate_accelerator_key_expression(self: *Compiler, node: *Node, is_virt: bool) !u16 {
         if (node.isNumberExpression()) {
             return evaluateNumberExpression(node, self.source, self.input_code_pages).asWord();
         } else {
@@ -1302,7 +1302,7 @@ pub const Compiler = struct {
         }
     }
 
-    pub fn writeAccelerators(self: *Compiler, node: *Node.Accelerators, writer: anytype) !void {
+    pub fn write_accelerators(self: *Compiler, node: *Node.Accelerators, writer: anytype) !void {
         var data_buffer = std.ArrayList(u8).init(self.allocator);
         defer data_buffer.deinit();
 
@@ -1340,7 +1340,7 @@ pub const Compiler = struct {
 
     /// Expects `data_writer` to be a LimitedWriter limited to u32, meaning all writes to
     /// the writer within this function could return error.NoSpaceLeft
-    pub fn writeAcceleratorsData(self: *Compiler, node: *Node.Accelerators, data_writer: anytype) !void {
+    pub fn write_accelerators_data(self: *Compiler, node: *Node.Accelerators, data_writer: anytype) !void {
         for (node.accelerators, 0..) |accel_node, i| {
             const accelerator: *Node.Accelerator = @alignCast(@fieldParentPtr("base", accel_node));
             var modifiers = res.AcceleratorModifiers{};
@@ -1391,7 +1391,7 @@ pub const Compiler = struct {
         caption: ?Token = null,
     };
 
-    pub fn writeDialog(self: *Compiler, node: *Node.Dialog, writer: anytype) !void {
+    pub fn write_dialog(self: *Compiler, node: *Node.Dialog, writer: anytype) !void {
         var data_buffer = std.ArrayList(u8).init(self.allocator);
         defer data_buffer.deinit();
         // The header's data length field is a u32 so limit the resource's data size so that
@@ -1745,7 +1745,7 @@ pub const Compiler = struct {
         try writeResourceData(writer, data_fbs.reader(), data_size);
     }
 
-    fn writeDialogHeaderAndStrings(
+    fn write_dialog_header_and_strings(
         self: *Compiler,
         node: *Node.Dialog,
         data_writer: anytype,
@@ -1805,7 +1805,7 @@ pub const Compiler = struct {
         }
     }
 
-    fn writeDialogControl(
+    fn write_dialog_control(
         self: *Compiler,
         control: *Node.ControlStatement,
         data_writer: anytype,
@@ -2014,7 +2014,7 @@ pub const Compiler = struct {
         try data_writer.writeAll(extra_data_buf.items);
     }
 
-    pub fn writeToolbar(self: *Compiler, node: *Node.Toolbar, writer: anytype) !void {
+    pub fn write_toolbar(self: *Compiler, node: *Node.Toolbar, writer: anytype) !void {
         var data_buffer = std.ArrayList(u8).init(self.allocator);
         defer data_buffer.deinit();
         const data_writer = data_buffer.writer();
@@ -2067,7 +2067,7 @@ pub const Compiler = struct {
         node: *Node.FontStatement,
     };
 
-    pub fn writeDialogFont(self: *Compiler, resource: Resource, values: FontStatementValues, writer: anytype) !void {
+    pub fn write_dialog_font(self: *Compiler, resource: Resource, values: FontStatementValues, writer: anytype) !void {
         const node = values.node;
         const point_size = evaluateNumberExpression(node.point_size, self.source, self.input_code_pages);
         try writer.writeInt(u16, point_size.asWord(), .little);
@@ -2092,7 +2092,7 @@ pub const Compiler = struct {
         try writer.writeAll(std.mem.sliceAsBytes(typeface[0 .. typeface.len + 1]));
     }
 
-    pub fn writeMenu(self: *Compiler, node: *Node.Menu, writer: anytype) !void {
+    pub fn write_menu(self: *Compiler, node: *Node.Menu, writer: anytype) !void {
         var data_buffer = std.ArrayList(u8).init(self.allocator);
         defer data_buffer.deinit();
         // The header's data length field is a u32 so limit the resource's data size so that
@@ -2136,7 +2136,7 @@ pub const Compiler = struct {
 
     /// Expects `data_writer` to be a LimitedWriter limited to u32, meaning all writes to
     /// the writer within this function could return error.NoSpaceLeft
-    pub fn writeMenuData(self: *Compiler, node: *Node.Menu, data_writer: anytype, resource: Resource) !void {
+    pub fn write_menu_data(self: *Compiler, node: *Node.Menu, data_writer: anytype, resource: Resource) !void {
         // menu header
         const version: u16 = if (resource == .menu) 0 else 1;
         try data_writer.writeInt(u16, version, .little);
@@ -2163,7 +2163,7 @@ pub const Compiler = struct {
         }
     }
 
-    pub fn writeMenuItem(self: *Compiler, node: *Node, writer: anytype, is_last_of_parent: bool) !void {
+    pub fn write_menu_item(self: *Compiler, node: *Node, writer: anytype, is_last_of_parent: bool) !void {
         switch (node.id) {
             .menu_item_separator => {
                 // This is the 'alternate compability form' of the separator, see
@@ -2273,7 +2273,7 @@ pub const Compiler = struct {
         }
     }
 
-    pub fn writeVersionInfo(self: *Compiler, node: *Node.VersionInfo, writer: anytype) !void {
+    pub fn write_version_info(self: *Compiler, node: *Node.VersionInfo, writer: anytype) !void {
         var data_buffer = std.ArrayList(u8).init(self.allocator);
         defer data_buffer.deinit();
         // The node's length field (which is inclusive of the length of all of its children) is a u16
@@ -2402,7 +2402,7 @@ pub const Compiler = struct {
     /// Expects writer to be a LimitedWriter limited to u16, meaning all writes to
     /// the writer within this function could return error.NoSpaceLeft, and that buf.items.len
     /// will never be able to exceed maxInt(u16).
-    pub fn writeVersionNode(self: *Compiler, node: *Node, writer: anytype, buf: *std.ArrayList(u8)) !void {
+    pub fn write_version_node(self: *Compiler, node: *Node, writer: anytype, buf: *std.ArrayList(u8)) !void {
         // We can assume that buf.items.len will never be able to exceed the limits of a u16
         try writeDataPadding(writer, @as(u16, @intCast(buf.items.len)));
 
@@ -2502,7 +2502,7 @@ pub const Compiler = struct {
         std.mem.writeInt(u16, node_and_children_size_slice[0..@sizeOf(u16)], @as(u16, @intCast(node_and_children_size)), .little);
     }
 
-    pub fn writeStringTable(self: *Compiler, node: *Node.StringTable) !void {
+    pub fn write_string_table(self: *Compiler, node: *Node.StringTable) !void {
         const language = getLanguageFromOptionalStatements(node.optional_statements, self.source, self.input_code_pages) orelse self.state.language;
 
         for (node.strings) |string_node| {
@@ -2545,7 +2545,7 @@ pub const Compiler = struct {
     }
 
     /// Expects this to be a top-level LANGUAGE statement
-    pub fn writeLanguageStatement(self: *Compiler, node: *Node.LanguageStatement) void {
+    pub fn write_language_statement(self: *Compiler, node: *Node.LanguageStatement) void {
         const primary = Compiler.evaluateNumberExpression(node.primary_language_id, self.source, self.input_code_pages);
         const sublanguage = Compiler.evaluateNumberExpression(node.sublanguage_id, self.source, self.input_code_pages);
         self.state.language.primary_language_id = @truncate(primary.value);
@@ -2553,7 +2553,7 @@ pub const Compiler = struct {
     }
 
     /// Expects this to be a top-level VERSION or CHARACTERISTICS statement
-    pub fn writeTopLevelSimpleStatement(self: *Compiler, node: *Node.SimpleStatement) void {
+    pub fn write_top_level_simple_statement(self: *Compiler, node: *Node.SimpleStatement) void {
         const value = Compiler.evaluateNumberExpression(node.value, self.source, self.input_code_pages);
         const statement_type = rc.TopLevelKeywords.map.get(node.identifier.slice(self.source)).?;
         switch (statement_type) {
@@ -2568,7 +2568,7 @@ pub const Compiler = struct {
         data_size: DWORD = 0,
     };
 
-    pub fn resourceHeader(self: *Compiler, id_token: Token, type_token: Token, options: ResourceHeaderOptions) !ResourceHeader {
+    pub fn resource_header(self: *Compiler, id_token: Token, type_token: Token, options: ResourceHeaderOptions) !ResourceHeader {
         const id_bytes = self.sourceBytesForToken(id_token);
         const type_bytes = self.sourceBytesForToken(type_token);
         return ResourceHeader.init(
@@ -2673,7 +2673,7 @@ pub const Compiler = struct {
             padding_after_name: u2,
         };
 
-        fn calcSize(self: ResourceHeader) error{Overflow}!SizeInfo {
+        fn calc_size(self: ResourceHeader) error{Overflow}!SizeInfo {
             var header_size: u32 = 8;
             header_size = try std.math.add(
                 u32,
@@ -2691,7 +2691,7 @@ pub const Compiler = struct {
             return .{ .bytes = header_size, .padding_after_name = padding_after_name };
         }
 
-        pub fn writeAssertNoOverflow(self: ResourceHeader, writer: anytype) !void {
+        pub fn write_assert_no_overflow(self: ResourceHeader, writer: anytype) !void {
             return self.writeSizeInfo(writer, self.calcSize() catch unreachable);
         }
 
@@ -2706,7 +2706,7 @@ pub const Compiler = struct {
             return self.writeSizeInfo(writer, size_info);
         }
 
-        fn writeSizeInfo(self: ResourceHeader, writer: anytype, size_info: SizeInfo) !void {
+        fn write_size_info(self: ResourceHeader, writer: anytype, size_info: SizeInfo) !void {
             try writer.writeInt(DWORD, self.data_size, .little); // DataSize
             try writer.writeInt(DWORD, size_info.bytes, .little); // HeaderSize
             try self.type_value.write(writer); // TYPE
@@ -2720,20 +2720,20 @@ pub const Compiler = struct {
             try writer.writeInt(DWORD, self.characteristics, .little); // Characteristics
         }
 
-        pub fn predefinedResourceType(self: ResourceHeader) ?res.RT {
+        pub fn predefined_resource_type(self: ResourceHeader) ?res.RT {
             return self.type_value.predefinedResourceType();
         }
 
-        pub fn applyMemoryFlags(self: *ResourceHeader, tokens: []Token, source: []const u8) void {
+        pub fn apply_memory_flags(self: *ResourceHeader, tokens: []Token, source: []const u8) void {
             applyToMemoryFlags(&self.memory_flags, tokens, source);
         }
 
-        pub fn applyOptionalStatements(self: *ResourceHeader, statements: []*Node, source: []const u8, code_page_lookup: *const CodePageLookup) void {
+        pub fn apply_optional_statements(self: *ResourceHeader, statements: []*Node, source: []const u8, code_page_lookup: *const CodePageLookup) void {
             applyToOptionalStatements(&self.language, &self.version, &self.characteristics, statements, source, code_page_lookup);
         }
     };
 
-    fn applyToMemoryFlags(flags: *MemoryFlags, tokens: []Token, source: []const u8) void {
+    fn apply_to_memory_flags(flags: *MemoryFlags, tokens: []Token, source: []const u8) void {
         for (tokens) |token| {
             const attribute = rc.CommonResourceAttributes.map.get(token.slice(source)).?;
             flags.set(attribute);
@@ -2741,7 +2741,7 @@ pub const Compiler = struct {
     }
 
     /// RT_GROUP_ICON and RT_GROUP_CURSOR have their own special rules for memory flags
-    fn applyToGroupMemoryFlags(flags: *MemoryFlags, tokens: []Token, source: []const u8) void {
+    fn apply_to_group_memory_flags(flags: *MemoryFlags, tokens: []Token, source: []const u8) void {
         // There's probably a cleaner implementation of this, but this will result in the same
         // flags as the Win32 RC compiler for all 986,410 K-permutations of memory flags
         // for an ICON resource.
@@ -2792,7 +2792,7 @@ pub const Compiler = struct {
     }
 
     /// Only handles the 'base' optional statements that are shared between resource types.
-    fn applyToOptionalStatements(language: *res.Language, version: *u32, characteristics: *u32, statements: []*Node, source: []const u8, code_page_lookup: *const CodePageLookup) void {
+    fn apply_to_optional_statements(language: *res.Language, version: *u32, characteristics: *u32, statements: []*Node, source: []const u8, code_page_lookup: *const CodePageLookup) void {
         for (statements) |node| switch (node.id) {
             .language_statement => {
                 const language_statement: *Node.LanguageStatement = @alignCast(@fieldParentPtr("base", node));
@@ -2812,7 +2812,7 @@ pub const Compiler = struct {
         };
     }
 
-    pub fn languageFromLanguageStatement(language_statement: *const Node.LanguageStatement, source: []const u8, code_page_lookup: *const CodePageLookup) res.Language {
+    pub fn language_from_language_statement(language_statement: *const Node.LanguageStatement, source: []const u8, code_page_lookup: *const CodePageLookup) res.Language {
         const primary = Compiler.evaluateNumberExpression(language_statement.primary_language_id, source, code_page_lookup);
         const sublanguage = Compiler.evaluateNumberExpression(language_statement.sublanguage_id, source, code_page_lookup);
         return .{
@@ -2821,7 +2821,7 @@ pub const Compiler = struct {
         };
     }
 
-    pub fn getLanguageFromOptionalStatements(statements: []*Node, source: []const u8, code_page_lookup: *const CodePageLookup) ?res.Language {
+    pub fn get_language_from_optional_statements(statements: []*Node, source: []const u8, code_page_lookup: *const CodePageLookup) ?res.Language {
         for (statements) |node| switch (node.id) {
             .language_statement => {
                 const language_statement: *Node.LanguageStatement = @alignCast(@fieldParentPtr("base", node));
@@ -2832,7 +2832,7 @@ pub const Compiler = struct {
         return null;
     }
 
-    pub fn writeEmptyResource(writer: anytype) !void {
+    pub fn write_empty_resource(writer: anytype) !void {
         const header = ResourceHeader{
             .name_value = .{ .ordinal = 0 },
             .type_value = .{ .ordinal = 0 },
@@ -2848,7 +2848,7 @@ pub const Compiler = struct {
         try header.writeAssertNoOverflow(writer);
     }
 
-    pub fn sourceBytesForToken(self: *Compiler, token: Token) SourceBytes {
+    pub fn source_bytes_for_token(self: *Compiler, token: Token) SourceBytes {
         return .{
             .slice = token.slice(self.source),
             .code_page = self.input_code_pages.getForToken(token),
@@ -2857,7 +2857,7 @@ pub const Compiler = struct {
 
     /// Helper that calls parseQuotedStringAsWideString with the relevant context
     /// Resulting slice is allocated by `self.allocator`.
-    pub fn parseQuotedStringAsWideString(self: *Compiler, token: Token) ![:0]u16 {
+    pub fn parse_quoted_string_as_wide_string(self: *Compiler, token: Token) ![:0]u16 {
         return literals.parseQuotedStringAsWideString(
             self.allocator,
             self.sourceBytesForToken(token),
@@ -2868,11 +2868,11 @@ pub const Compiler = struct {
         );
     }
 
-    fn addErrorDetails(self: *Compiler, details: ErrorDetails) Allocator.Error!void {
+    fn add_error_details(self: *Compiler, details: ErrorDetails) Allocator.Error!void {
         try self.diagnostics.append(details);
     }
 
-    fn addErrorDetailsAndFail(self: *Compiler, details: ErrorDetails) error{ CompileError, OutOfMemory } {
+    fn add_error_details_and_fail(self: *Compiler, details: ErrorDetails) error{ CompileError, OutOfMemory } {
         try self.addErrorDetails(details);
         return error.CompileError;
     }
@@ -2880,7 +2880,7 @@ pub const Compiler = struct {
 
 pub const OpenSearchPathError = std.fs.Dir.OpenError;
 
-fn openSearchPathDir(dir: std.fs.Dir, path: []const u8) OpenSearchPathError!std.fs.Dir {
+fn open_search_path_dir(dir: std.fs.Dir, path: []const u8) OpenSearchPathError!std.fs.Dir {
     // Validate the search path to avoid possible unreachable on invalid paths,
     // see https://github.com/ziglang/zig/issues/15607 for why this is currently necessary.
     try validateSearchPath(path);
@@ -2893,7 +2893,7 @@ fn openSearchPathDir(dir: std.fs.Dir, path: []const u8) OpenSearchPathError!std.
 /// Note that this function won't be necessary if/when
 /// https://github.com/ziglang/zig/issues/15607
 /// is accepted/implemented.
-fn validateSearchPath(path: []const u8) error{BadPathName}!void {
+fn validate_search_path(path: []const u8) error{BadPathName}!void {
     switch (builtin.os.tag) {
         .windows => {
             // This will return error.BadPathName on non-Win32 namespaced paths
@@ -2925,7 +2925,7 @@ pub const SearchDir = struct {
 };
 
 /// Slurps the first `size` bytes read into `slurped_header`
-pub fn HeaderSlurpingReader(comptime size: usize, comptime ReaderType: anytype) type {
+pub fn header_slurping_reader(comptime size: usize, comptime ReaderType: anytype) type {
     return struct {
         child_reader: ReaderType,
         bytes_read: usize = 0,
@@ -2951,7 +2951,7 @@ pub fn HeaderSlurpingReader(comptime size: usize, comptime ReaderType: anytype) 
     };
 }
 
-pub fn headerSlurpingReader(comptime size: usize, reader: anytype) HeaderSlurpingReader(size, @TypeOf(reader)) {
+pub fn header_slurping_reader(comptime size: usize, reader: anytype) HeaderSlurpingReader(size, @TypeOf(reader)) {
     return .{ .child_reader = reader };
 }
 
@@ -2960,7 +2960,7 @@ pub fn headerSlurpingReader(comptime size: usize, reader: anytype) HeaderSlurpin
 /// would ever exceed bytes_left, i.e. it does not always
 /// write up to the limit and instead will error if the
 /// limit would be breached if the entire slice was written.
-pub fn LimitedWriter(comptime WriterType: type) type {
+pub fn limited_writer(comptime WriterType: type) type {
     return struct {
         inner_writer: WriterType,
         bytes_left: u64,
@@ -2985,7 +2985,7 @@ pub fn LimitedWriter(comptime WriterType: type) type {
 
 /// Returns an initialised `LimitedWriter`
 /// `bytes_left` is a `u64` to be able to take 64 bit file offsets
-pub fn limitedWriter(inner_writer: anytype, bytes_left: u64) LimitedWriter(@TypeOf(inner_writer)) {
+pub fn limited_writer(inner_writer: anytype, bytes_left: u64) LimitedWriter(@TypeOf(inner_writer)) {
     return .{ .inner_writer = inner_writer, .bytes_left = bytes_left };
 }
 
@@ -3022,7 +3022,7 @@ pub const FontDir = struct {
         try self.fonts.append(allocator, font);
     }
 
-    pub fn writeResData(self: *FontDir, compiler: *Compiler, writer: anytype) !void {
+    pub fn write_res_data(self: *FontDir, compiler: *Compiler, writer: anytype) !void {
         if (self.fonts.items.len == 0) return;
 
         // We know the number of fonts is limited to maxInt(u16) because fonts
@@ -3154,7 +3154,7 @@ pub const StringTable = struct {
 
         /// Returns the index to insert the string into the `strings` list.
         /// Returns null if the string should be appended.
-        fn getInsertionIndex(self: *Block, index: u8) ?u8 {
+        fn get_insertion_index(self: *Block, index: u8) ?u8 {
             std.debug.assert(!self.set_indexes.isSet(index));
 
             const first_set = self.set_indexes.findFirstSet() orelse return null;
@@ -3171,7 +3171,7 @@ pub const StringTable = struct {
             return insertion_index;
         }
 
-        fn getTokenIndex(self: *Block, string_index: u8) ?u8 {
+        fn get_token_index(self: *Block, string_index: u8) ?u8 {
             const count = self.strings.items.len;
             if (count == 0) return null;
             if (count == 1) return 0;
@@ -3203,13 +3203,13 @@ pub const StringTable = struct {
             }
         }
 
-        pub fn applyAttributes(self: *Block, string_table: *Node.StringTable, source: []const u8, code_page_lookup: *const CodePageLookup) void {
+        pub fn apply_attributes(self: *Block, string_table: *Node.StringTable, source: []const u8, code_page_lookup: *const CodePageLookup) void {
             Compiler.applyToMemoryFlags(&self.memory_flags, string_table.common_resource_attributes, source);
             var dummy_language: res.Language = undefined;
             Compiler.applyToOptionalStatements(&dummy_language, &self.version, &self.characteristics, string_table.optional_statements, source, code_page_lookup);
         }
 
-        fn trimToDoubleNUL(comptime T: type, str: []const T) []const T {
+        fn trim_to_double_nul(comptime T: type, str: []const T) []const T {
             var last_was_null = false;
             for (str, 0..) |c, i| {
                 if (c == 0) {
@@ -3227,7 +3227,7 @@ pub const StringTable = struct {
             try std.testing.expectEqualStrings("a", trimToDoubleNUL(u8, "a\x00\x00b"));
         }
 
-        pub fn writeResData(self: *Block, compiler: *Compiler, language: res.Language, block_id: u16, writer: anytype) !void {
+        pub fn write_res_data(self: *Block, compiler: *Compiler, language: res.Language, block_id: u16, writer: anytype) !void {
             var data_buffer = std.ArrayList(u8).init(compiler.allocator);
             defer data_buffer.deinit();
             const data_writer = data_buffer.writer();
@@ -3371,7 +3371,7 @@ pub const StringTable = struct {
 
 test "StringTable" {
     const S = struct {
-        fn makeDummyToken(id: usize) Token {
+        fn make_dummy_token(id: usize) Token {
             return Token{
                 .id = .invalid,
                 .start = id,

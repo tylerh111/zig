@@ -48,7 +48,7 @@ pub const MergeSection = struct {
         return .{ .found_existing = gop.found_existing, .key = gop.key_ptr.*, .sub = gop.value_ptr };
     }
 
-    pub fn insertZ(msec: *MergeSection, allocator: Allocator, string: []const u8) !InsertResult {
+    pub fn insert_z(msec: *MergeSection, allocator: Allocator, string: []const u8) !InsertResult {
         const with_null = try allocator.alloc(u8, string.len + 1);
         defer allocator.free(with_null);
         @memcpy(with_null[0..string.len], string);
@@ -71,7 +71,7 @@ pub const MergeSection = struct {
         msec.table.clearAndFree(gpa);
 
         const sortFn = struct {
-            pub fn sortFn(ctx: *Elf, lhs: MergeSubsection.Index, rhs: MergeSubsection.Index) bool {
+            pub fn sort_fn(ctx: *Elf, lhs: MergeSubsection.Index, rhs: MergeSubsection.Index) bool {
                 const lhs_msub = ctx.mergeSubsection(lhs);
                 const rhs_msub = ctx.mergeSubsection(rhs);
                 if (lhs_msub.alignment.compareStrict(.eq, rhs_msub.alignment)) {
@@ -175,11 +175,11 @@ pub const MergeSubsection = struct {
         return msub.mergeSection(elf_file).address(elf_file) + msub.value;
     }
 
-    pub fn mergeSection(msub: MergeSubsection, elf_file: *Elf) *MergeSection {
+    pub fn merge_section(msub: MergeSubsection, elf_file: *Elf) *MergeSection {
         return elf_file.mergeSection(msub.merge_section_index);
     }
 
-    pub fn getString(msub: MergeSubsection, elf_file: *Elf) []const u8 {
+    pub fn get_string(msub: MergeSubsection, elf_file: *Elf) []const u8 {
         const msec = msub.mergeSection(elf_file);
         return msec.bytes.items[msub.string_index..][0..msub.size];
     }
@@ -245,12 +245,12 @@ pub const InputMergeSection = struct {
         imsec.strings.deinit(allocator);
     }
 
-    pub fn clearAndFree(imsec: *InputMergeSection, allocator: Allocator) void {
+    pub fn clear_and_free(imsec: *InputMergeSection, allocator: Allocator) void {
         imsec.bytes.clearAndFree(allocator);
         // TODO: imsec.strings.clearAndFree(allocator);
     }
 
-    pub fn findSubsection(imsec: InputMergeSection, offset: u32) ?struct { MergeSubsection.Index, u32 } {
+    pub fn find_subsection(imsec: InputMergeSection, offset: u32) ?struct { MergeSubsection.Index, u32 } {
         // TODO: binary search
         for (imsec.offsets.items, 0..) |off, index| {
             if (offset < off) return .{

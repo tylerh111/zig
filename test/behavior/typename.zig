@@ -133,7 +133,7 @@ const A_Enum = enum {
 fn regular() void {}
 
 const B = struct {
-    fn doTest() !void {}
+    fn do_test() !void {}
 };
 
 test "fn param" {
@@ -166,7 +166,7 @@ test "fn param" {
     );
 }
 
-fn TypeFromFn(comptime T: type) type {
+fn type_from_fn(comptime T: type) type {
     return struct {
         comptime {
             _ = T;
@@ -174,7 +174,7 @@ fn TypeFromFn(comptime T: type) type {
     };
 }
 
-fn TypeFromFn2(comptime T1: type, comptime T2: type) type {
+fn type_from_fn2(comptime T1: type, comptime T2: type) type {
     return struct {
         comptime {
             _ = T1;
@@ -183,7 +183,7 @@ fn TypeFromFn2(comptime T1: type, comptime T2: type) type {
     };
 }
 
-fn TypeFromFnB(comptime T1: type, comptime T2: type, comptime T3: type) type {
+fn type_from_fn_b(comptime T1: type, comptime T2: type, comptime T3: type) type {
     return struct {
         comptime {
             _ = T1;
@@ -194,7 +194,7 @@ fn TypeFromFnB(comptime T1: type, comptime T2: type, comptime T3: type) type {
 }
 
 /// Replaces integers in `actual` with '0' before doing the test.
-pub fn expectEqualStringsIgnoreDigits(expected: []const u8, actual: []const u8) !void {
+pub fn expect_equal_strings_ignore_digits(expected: []const u8, actual: []const u8) !void {
     var actual_buf: [1024]u8 = undefined;
     var actual_i: usize = 0;
     var last_digit = false;
@@ -252,7 +252,7 @@ test "anon name strategy used in sub expression" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn getTheName() []const u8 {
+        fn get_the_name() []const u8 {
             return struct {
                 const name = @typeName(@This());
             }.name;

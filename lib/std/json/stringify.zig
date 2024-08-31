@@ -56,7 +56,7 @@ pub fn stringify(
 /// `max_depth` is rounded up to the nearest multiple of 8.
 /// Give `null` for `max_depth` to disable some safety checks and allow arbitrary nesting depth.
 /// See `writeStreamMaxDepth` for more info.
-pub fn stringifyMaxDepth(
+pub fn stringify_max_depth(
     value: anytype,
     options: StringifyOptions,
     out_stream: anytype,
@@ -69,7 +69,7 @@ pub fn stringifyMaxDepth(
 /// Like `stringify` but takes an allocator to facilitate safety checks while allowing arbitrary nesting depth.
 /// These safety checks can be helpful when debugging custom `jsonStringify` implementations;
 /// See `WriteStream`.
-pub fn stringifyArbitraryDepth(
+pub fn stringify_arbitrary_depth(
     allocator: Allocator,
     value: anytype,
     options: StringifyOptions,
@@ -84,7 +84,7 @@ pub fn stringifyArbitraryDepth(
 /// instead of taking a `std.io.Writer`.
 ///
 /// Caller owns returned memory.
-pub fn stringifyAlloc(
+pub fn stringify_alloc(
     allocator: Allocator,
     value: anytype,
     options: StringifyOptions,
@@ -99,7 +99,7 @@ pub fn stringifyAlloc(
 /// Equivalent to calling `writeStreamMaxDepth` with a depth of `256`.
 ///
 /// The caller does *not* need to call `deinit()` on the returned object.
-pub fn writeStream(
+pub fn write_stream(
     out_stream: anytype,
     options: StringifyOptions,
 ) WriteStream(@TypeOf(out_stream), .{ .checked_to_fixed_depth = 256 }) {
@@ -116,7 +116,7 @@ pub fn writeStream(
 /// Alternatively, see `writeStreamArbitraryDepth` to do safety checks to arbitrary depth.
 ///
 /// The caller does *not* need to call `deinit()` on the returned object.
-pub fn writeStreamMaxDepth(
+pub fn write_stream_max_depth(
     out_stream: anytype,
     options: StringifyOptions,
     comptime max_depth: ?usize,
@@ -137,7 +137,7 @@ pub fn writeStreamMaxDepth(
 ///
 /// In `ReleaseFast` and `ReleaseSmall` mode, this function is effectively equivalent to calling `writeStreamMaxDepth(..., null)`;
 /// in those build modes, the allocator is *not used*.
-pub fn writeStreamArbitraryDepth(
+pub fn write_stream_arbitrary_depth(
     allocator: Allocator,
     out_stream: anytype,
     options: StringifyOptions,
@@ -175,19 +175,19 @@ pub fn writeStreamArbitraryDepth(
 ///  * Zig `[]T`, `[N]T`, `*[N]T`, `@Vector(N, T)`, and similar -> JSON array of the rendering of each item.
 ///  * Zig tuple -> JSON array of the rendering of each item.
 ///  * Zig `struct` -> JSON object with each field in declaration order.
-///      * If the struct declares a method `pub fn jsonStringify(self: *@This(), jw: anytype) !void`, it is called to do the serialization instead of the default behavior. The given `jw` is a pointer to this `WriteStream`. See `std.json.Value` for an example.
+///      * If the struct declares a method `pub fn json_stringify(self: *@This(), jw: anytype) !void`, it is called to do the serialization instead of the default behavior. The given `jw` is a pointer to this `WriteStream`. See `std.json.Value` for an example.
 ///      * See `StringifyOptions.emit_null_optional_fields`.
 ///  * Zig `union(enum)` -> JSON object with one field named for the active tag and a value representing the payload.
 ///      * If the payload is `void`, then the emitted value is `{}`.
-///      * If the union declares a method `pub fn jsonStringify(self: *@This(), jw: anytype) !void`, it is called to do the serialization instead of the default behavior. The given `jw` is a pointer to this `WriteStream`.
+///      * If the union declares a method `pub fn json_stringify(self: *@This(), jw: anytype) !void`, it is called to do the serialization instead of the default behavior. The given `jw` is a pointer to this `WriteStream`.
 ///  * Zig `enum` -> JSON string naming the active tag.
-///      * If the enum declares a method `pub fn jsonStringify(self: *@This(), jw: anytype) !void`, it is called to do the serialization instead of the default behavior. The given `jw` is a pointer to this `WriteStream`.
+///      * If the enum declares a method `pub fn json_stringify(self: *@This(), jw: anytype) !void`, it is called to do the serialization instead of the default behavior. The given `jw` is a pointer to this `WriteStream`.
 ///  * Zig untyped enum literal -> JSON string naming the active tag.
 ///  * Zig error -> JSON string naming the error.
 ///  * Zig `*T` -> the rendering of `T`. Note there is no guard against circular-reference infinite recursion.
 ///
 /// In `ReleaseFast` and `ReleaseSmall` mode, the given `safety_checks_hint` is ignored and is always treated as `.assumed_correct`.
-pub fn WriteStream(
+pub fn write_stream(
     comptime OutStream: type,
     comptime safety_checks_hint: union(enum) {
         checked_to_arbitrary_depth,
@@ -245,21 +245,21 @@ pub fn WriteStream(
             self.* = undefined;
         }
 
-        pub fn beginArray(self: *Self) Error!void {
+        pub fn begin_array(self: *Self) Error!void {
             try self.valueStart();
             try self.stream.writeByte('[');
             try self.pushIndentation(ARRAY_MODE);
             self.next_punctuation = .none;
         }
 
-        pub fn beginObject(self: *Self) Error!void {
+        pub fn begin_object(self: *Self) Error!void {
             try self.valueStart();
             try self.stream.writeByte('{');
             try self.pushIndentation(OBJECT_MODE);
             self.next_punctuation = .none;
         }
 
-        pub fn endArray(self: *Self) Error!void {
+        pub fn end_array(self: *Self) Error!void {
             self.popIndentation(ARRAY_MODE);
             switch (self.next_punctuation) {
                 .none => {},
@@ -272,7 +272,7 @@ pub fn WriteStream(
             self.valueDone();
         }
 
-        pub fn endObject(self: *Self) Error!void {
+        pub fn end_object(self: *Self) Error!void {
             self.popIndentation(OBJECT_MODE);
             switch (self.next_punctuation) {
                 .none => {},
@@ -285,7 +285,7 @@ pub fn WriteStream(
             self.valueDone();
         }
 
-        fn pushIndentation(self: *Self, mode: u1) !void {
+        fn push_indentation(self: *Self, mode: u1) !void {
             switch (safety_checks) {
                 .checked_to_arbitrary_depth => {
                     try self.nesting_stack.push(mode);
@@ -299,7 +299,7 @@ pub fn WriteStream(
                 },
             }
         }
-        fn popIndentation(self: *Self, assert_its_this_one: u1) void {
+        fn pop_indentation(self: *Self, assert_its_this_one: u1) void {
             switch (safety_checks) {
                 .checked_to_arbitrary_depth => {
                     assert(self.nesting_stack.pop() == assert_its_this_one);
@@ -332,15 +332,15 @@ pub fn WriteStream(
             try self.stream.writeByteNTimes(char, n_chars);
         }
 
-        fn valueStart(self: *Self) !void {
+        fn value_start(self: *Self) !void {
             if (self.isObjectKeyExpected()) |is_it| assert(!is_it); // Call objectField*(), not write(), for object keys.
             return self.valueStartAssumeTypeOk();
         }
-        fn objectFieldStart(self: *Self) !void {
+        fn object_field_start(self: *Self) !void {
             if (self.isObjectKeyExpected()) |is_it| assert(is_it); // Expected write(), not objectField*().
             return self.valueStartAssumeTypeOk();
         }
-        fn valueStartAssumeTypeOk(self: *Self) !void {
+        fn value_start_assume_type_ok(self: *Self) !void {
             assert(!self.isComplete()); // JSON document already complete.
             switch (self.next_punctuation) {
                 .the_beginning => {
@@ -363,12 +363,12 @@ pub fn WriteStream(
                 },
             }
         }
-        fn valueDone(self: *Self) void {
+        fn value_done(self: *Self) void {
             self.next_punctuation = .comma;
         }
 
         // Only when safety is enabled:
-        fn isObjectKeyExpected(self: *const Self) ?bool {
+        fn is_object_key_expected(self: *const Self) ?bool {
             switch (safety_checks) {
                 .checked_to_arbitrary_depth => return self.indent_level > 0 and
                     self.nesting_stack.peek() == OBJECT_MODE and
@@ -379,7 +379,7 @@ pub fn WriteStream(
                 .assumed_correct => return null,
             }
         }
-        fn isComplete(self: *const Self) bool {
+        fn is_complete(self: *const Self) bool {
             return self.indent_level == 0 and self.next_punctuation == .comma;
         }
 
@@ -398,7 +398,7 @@ pub fn WriteStream(
         /// `key` is the string content of the property name.
         /// Surrounding quotes will be added and any special characters will be escaped.
         /// See also `objectFieldRaw`.
-        pub fn objectField(self: *Self, key: []const u8) Error!void {
+        pub fn object_field(self: *Self, key: []const u8) Error!void {
             try self.objectFieldStart();
             try encodeJsonString(key, self.options, self.stream);
             self.next_punctuation = .colon;
@@ -407,7 +407,7 @@ pub fn WriteStream(
         /// `quoted_key` is the complete bytes of the key including quotes and any necessary escape sequences.
         /// A few assertions are performed on the given value to ensure that the caller of this function understands the API contract.
         /// See also `objectField`.
-        pub fn objectFieldRaw(self: *Self, quoted_key: []const u8) Error!void {
+        pub fn object_field_raw(self: *Self, quoted_key: []const u8) Error!void {
             assert(quoted_key.len >= 2 and quoted_key[0] == '"' and quoted_key[quoted_key.len - 1] == '"'); // quoted_key should be "quoted".
             try self.objectFieldStart();
             try self.stream.writeAll(quoted_key);
@@ -586,7 +586,7 @@ pub fn WriteStream(
             unreachable;
         }
 
-        fn stringValue(self: *Self, s: []const u8) !void {
+        fn string_value(self: *Self, s: []const u8) !void {
             try self.valueStart();
             try encodeJsonString(s, self.options, self.stream);
             self.valueDone();
@@ -594,7 +594,7 @@ pub fn WriteStream(
     };
 }
 
-fn outputUnicodeEscape(codepoint: u21, out_stream: anytype) !void {
+fn output_unicode_escape(codepoint: u21, out_stream: anytype) !void {
     if (codepoint <= 0xFFFF) {
         // If the character is in the Basic Multilingual Plane (U+0000 through U+FFFF),
         // then it may be represented as a six-character sequence: a reverse solidus, followed
@@ -614,7 +614,7 @@ fn outputUnicodeEscape(codepoint: u21, out_stream: anytype) !void {
     }
 }
 
-fn outputSpecialEscape(c: u8, writer: anytype) !void {
+fn output_special_escape(c: u8, writer: anytype) !void {
     switch (c) {
         '\\' => try writer.writeAll("\\\\"),
         '\"' => try writer.writeAll("\\\""),
@@ -628,14 +628,14 @@ fn outputSpecialEscape(c: u8, writer: anytype) !void {
 }
 
 /// Write `string` to `writer` as a JSON encoded string.
-pub fn encodeJsonString(string: []const u8, options: StringifyOptions, writer: anytype) !void {
+pub fn encode_json_string(string: []const u8, options: StringifyOptions, writer: anytype) !void {
     try writer.writeByte('\"');
     try encodeJsonStringChars(string, options, writer);
     try writer.writeByte('\"');
 }
 
 /// Write `chars` to `writer` as JSON encoded string characters.
-pub fn encodeJsonStringChars(chars: []const u8, options: StringifyOptions, writer: anytype) !void {
+pub fn encode_json_string_chars(chars: []const u8, options: StringifyOptions, writer: anytype) !void {
     var write_cursor: usize = 0;
     var i: usize = 0;
     if (options.escape_unicode) {

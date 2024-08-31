@@ -1,7 +1,7 @@
-fn A(comptime T: type) type {
+fn a(comptime T: type) type {
     return struct { a: T };
 }
-fn B(comptime T: type) type {
+fn b(comptime T: type) type {
     return struct { b: T };
 }
 fn foo() A(u32) {

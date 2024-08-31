@@ -43,7 +43,7 @@ test "three expr in a row" {
     try testThreeExprInARow(false, true);
     try comptime testThreeExprInARow(false, true);
 }
-fn testThreeExprInARow(f: bool, t: bool) !void {
+fn test_three_expr_in_arow(f: bool, t: bool) !void {
     try assertFalse(f or f or f);
     try assertFalse(t and t and f);
     try assertFalse(1 | 2 | 4 != 7);
@@ -57,7 +57,7 @@ fn testThreeExprInARow(f: bool, t: bool) !void {
     try assertFalse(!!false);
     try assertFalse(@as(i32, 7) != --(@as(i32, 7)));
 }
-fn assertFalse(b: bool) !void {
+fn assert_false(b: bool) !void {
     try expect(!b);
 }
 
@@ -71,7 +71,7 @@ test "@clz" {
     try comptime testClz();
 }
 
-fn testClz() !void {
+fn test_clz() !void {
     try expect(testOneClz(u8, 0b10001010) == 0);
     try expect(testOneClz(u8, 0b00001010) == 4);
     try expect(testOneClz(u8, 0b00011010) == 3);
@@ -90,12 +90,12 @@ test "@clz big ints" {
     try comptime testClzBigInts();
 }
 
-fn testClzBigInts() !void {
+fn test_clz_big_ints() !void {
     try expect(testOneClz(u128, 0xffffffffffffffff) == 64);
     try expect(testOneClz(u128, 0x10000000000000000) == 63);
 }
 
-fn testOneClz(comptime T: type, x: T) u32 {
+fn test_one_clz(comptime T: type, x: T) u32 {
     return @clz(x);
 }
 
@@ -112,7 +112,7 @@ test "@clz vectors" {
     try comptime testClzVectors();
 }
 
-fn testClzVectors() !void {
+fn test_clz_vectors() !void {
     const Vu4 = @Vector(64, u4);
     const Vu8 = @Vector(64, u8);
     const Vu128 = @Vector(64, u128);
@@ -126,7 +126,7 @@ fn testClzVectors() !void {
     try testOneClzVector(u128, 64, @as(Vu128, @splat(0x10000000000000000)), @as(Vu8, @splat(63)));
 }
 
-fn testOneClzVector(
+fn test_one_clz_vector(
     comptime T: type,
     comptime len: u32,
     x: @Vector(len, T),
@@ -135,7 +135,7 @@ fn testOneClzVector(
     try expectVectorsEqual(@clz(x), expected);
 }
 
-fn expectVectorsEqual(a: anytype, b: anytype) !void {
+fn expect_vectors_equal(a: anytype, b: anytype) !void {
     const len_a = @typeInfo(@TypeOf(a)).Vector.len;
     const len_b = @typeInfo(@TypeOf(b)).Vector.len;
     try expect(len_a == len_b);
@@ -156,14 +156,14 @@ test "@ctz" {
     try comptime testCtz();
 }
 
-fn testCtz() !void {
+fn test_ctz() !void {
     try expect(testOneCtz(u8, 0b10100000) == 5);
     try expect(testOneCtz(u8, 0b10001010) == 1);
     try expect(testOneCtz(u8, 0b00000000) == 8);
     try expect(testOneCtz(u16, 0b00000000) == 16);
 }
 
-fn testOneCtz(comptime T: type, x: T) u32 {
+fn test_one_ctz(comptime T: type, x: T) u32 {
     return @ctz(x);
 }
 
@@ -180,7 +180,7 @@ test "@ctz 128-bit integers" {
     try comptime testCtz128();
 }
 
-fn testCtz128() !void {
+fn test_ctz128() !void {
     try expect(testOneCtz(u128, @as(u128, 0x40000000000000000000000000000000)) == 126);
     try expect(math.rotl(u128, @as(u128, 0x40000000000000000000000000000000), @as(u8, 1)) == @as(u128, 0x80000000000000000000000000000000));
     try expect(testOneCtz(u128, @as(u128, 0x80000000000000000000000000000000)) == 127);
@@ -205,7 +205,7 @@ test "@ctz vectors" {
     try comptime testCtzVectors();
 }
 
-fn testCtzVectors() !void {
+fn test_ctz_vectors() !void {
     const Vu4 = @Vector(64, u4);
     const Vu8 = @Vector(64, u8);
     @setEvalBranchQuota(10_000);
@@ -215,7 +215,7 @@ fn testCtzVectors() !void {
     try testOneCtzVector(u16, 64, @as(@Vector(64, u16), @splat(0b00000000)), @as(@Vector(64, u5), @splat(16)));
 }
 
-fn testOneCtzVector(
+fn test_one_ctz_vector(
     comptime T: type,
     comptime len: u32,
     x: @Vector(len, T),
@@ -245,7 +245,7 @@ test "float equality" {
     try comptime testFloatEqualityImpl(x, y);
 }
 
-fn testFloatEqualityImpl(x: f64, y: f64) !void {
+fn test_float_equality_impl(x: f64, y: f64) !void {
     const y2 = x + 1.0;
     try expect(y == y2);
 }
@@ -365,7 +365,7 @@ fn test_xor() !void {
     try testOneXor(0xFF, 0xFF, 0x00);
 }
 
-fn testOneXor(a: u8, b: u8, c: u8) !void {
+fn test_one_xor(a: u8, b: u8, c: u8) !void {
     try expect(a ^ b == c);
 }
 
@@ -390,7 +390,7 @@ test "comptime_int param and return" {
     try expect(b == 985095453608931032642182098849559179469148836107390954364380);
 }
 
-fn comptimeAdd(comptime a: comptime_int, comptime b: comptime_int) comptime_int {
+fn comptime_add(comptime a: comptime_int, comptime b: comptime_int) comptime_int {
     return a + b;
 }
 
@@ -409,7 +409,7 @@ test "binary not" {
     try testBinaryNot(0b1010101010101010);
 }
 
-fn testBinaryNot(x: u16) !void {
+fn test_binary_not(x: u16) !void {
     try expect(~x == 0b0101010101010101);
 }
 
@@ -432,7 +432,7 @@ test "binary not 128-bit" {
     try testBinaryNot128(i128, @as(i128, @bitCast(@as(u128, 0xaaaaaaaa_aaaaaaaa_aaaaaaaa_aaaaaaaa))));
 }
 
-fn testBinaryNot128(comptime Type: type, x: Type) !void {
+fn test_binary_not128(comptime Type: type, x: Type) !void {
     try expect(~x == @as(Type, 0x55555555_55555555_55555555_55555555));
 }
 
@@ -454,7 +454,7 @@ test "division" {
     try comptime testDivision();
 }
 
-fn testDivision() !void {
+fn test_division() !void {
     try expect(div(u32, 13, 3) == 4);
     try expect(div(f32, 1.0, 2.0) == 0.5);
 
@@ -538,7 +538,7 @@ test "division half-precision floats" {
     try comptime testDivisionFP16();
 }
 
-fn testDivisionFP16() !void {
+fn test_division_fp16() !void {
     try expect(div(f16, 1.0, 2.0) == 0.5);
 
     try expect(divExact(f16, 55.0, 11.0) == 5.0);
@@ -555,13 +555,13 @@ fn testDivisionFP16() !void {
 fn div(comptime T: type, a: T, b: T) T {
     return a / b;
 }
-fn divExact(comptime T: type, a: T, b: T) T {
+fn div_exact(comptime T: type, a: T, b: T) T {
     return @divExact(a, b);
 }
-fn divFloor(comptime T: type, a: T, b: T) T {
+fn div_floor(comptime T: type, a: T, b: T) T {
     return @divFloor(a, b);
 }
-fn divTrunc(comptime T: type, a: T, b: T) T {
+fn div_trunc(comptime T: type, a: T, b: T) T {
     return @divTrunc(a, b);
 }
 fn mod(comptime T: type, a: T, b: T) T {
@@ -574,7 +574,7 @@ test "unsigned wrapping" {
     try testUnsignedWrappingEval(maxInt(u32));
     try comptime testUnsignedWrappingEval(maxInt(u32));
 }
-fn testUnsignedWrappingEval(x: u32) !void {
+fn test_unsigned_wrapping_eval(x: u32) !void {
     const zero = x +% 1;
     try expect(zero == 0);
     const orig = zero -% 1;
@@ -587,7 +587,7 @@ test "signed wrapping" {
     try testSignedWrappingEval(maxInt(i32));
     try comptime testSignedWrappingEval(maxInt(i32));
 }
-fn testSignedWrappingEval(x: i32) !void {
+fn test_signed_wrapping_eval(x: i32) !void {
     const min_val = x +% 1;
     try expect(min_val == minInt(i32));
     const max_val = min_val -% 1;
@@ -600,7 +600,7 @@ test "signed negation wrapping" {
     try testSignedNegationWrappingEval(minInt(i16));
     try comptime testSignedNegationWrappingEval(minInt(i16));
 }
-fn testSignedNegationWrappingEval(x: i16) !void {
+fn test_signed_negation_wrapping_eval(x: i16) !void {
     try expect(x == -32768);
     const neg = -%x;
     try expect(neg == -32768);
@@ -612,7 +612,7 @@ test "unsigned negation wrapping" {
     try testUnsignedNegationWrappingEval(1);
     try comptime testUnsignedNegationWrappingEval(1);
 }
-fn testUnsignedNegationWrappingEval(x: u16) !void {
+fn test_unsigned_negation_wrapping_eval(x: u16) !void {
     try expect(x == 1);
     const neg = -%x;
     try expect(neg == maxInt(u16));
@@ -626,7 +626,7 @@ test "negation wrapping" {
     try expectEqual(@as(u1, 1), negateWrap(u1, 1));
 }
 
-fn negateWrap(comptime T: type, x: T) T {
+fn negate_wrap(comptime T: type, x: T) T {
     // This is specifically testing a safety-checked add, so
     // special case minInt(T) which would overflow otherwise.
     return if (x == minInt(T)) minInt(T) else ~x + 1;
@@ -650,7 +650,7 @@ fn test_u64_div() !void {
     try expect(result.quotient == 33554432);
     try expect(result.remainder == 100663296);
 }
-fn divWithResult(a: u64, b: u64) DivResult {
+fn div_with_result(a: u64, b: u64) DivResult {
     return DivResult{
         .quotient = a / b,
         .remainder = a % b,
@@ -674,7 +674,7 @@ test "truncating shift right" {
     try testShrTrunc(maxInt(u16));
     try comptime testShrTrunc(maxInt(u16));
 }
-fn testShrTrunc(x: u16) !void {
+fn test_shr_trunc(x: u16) !void {
     const shifted = x >> 1;
     try expect(shifted == 32767);
 }
@@ -1301,7 +1301,7 @@ test "quad hex float literal parsing accurate" {
     try expect(@as(u128, @bitCast(b)) == expected);
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             {
                 var f: f128 = 0x1.2eab345678439abcdefea56782346p+5;
                 _ = &f;
@@ -1389,7 +1389,7 @@ test "truncating shift left" {
     try testShlTrunc(maxInt(u16));
     try comptime testShlTrunc(maxInt(u16));
 }
-fn testShlTrunc(x: u16) !void {
+fn test_shl_trunc(x: u16) !void {
     const shifted = x << 1;
     try expect(shifted == 65534);
 }
@@ -1402,7 +1402,7 @@ test "exact shift left" {
 
     if (@shlExact(1, 1) != 2) @compileError("should be 2");
 }
-fn testShlExact(x: u8) !void {
+fn test_shl_exact(x: u8) !void {
     const shifted = @shlExact(x, 2);
     try expect(shifted == 0b11010100);
 }
@@ -1413,7 +1413,7 @@ test "exact shift right" {
     try testShrExact(0b10110100);
     try comptime testShrExact(0b10110100);
 }
-fn testShrExact(x: u8) !void {
+fn test_shr_exact(x: u8) !void {
     const shifted = @shrExact(x, 2);
     try expect(shifted == 0b00101101);
 }
@@ -1422,7 +1422,7 @@ test "shift left/right on u0 operand" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x: u0 = 0;
             var y: u0 = 0;
             _ = .{ &x, &y };
@@ -1482,7 +1482,7 @@ fn remdiv(comptime T: type) !void {
     try remdivOne(T, 1, 7, 3);
 }
 
-fn remdivOne(comptime T: type, a: T, b: T, c: T) !void {
+fn remdiv_one(comptime T: type, a: T, b: T, c: T) !void {
     try expect(a == @rem(b, c));
     try expect(a == @mod(b, c));
 }
@@ -1527,7 +1527,7 @@ fn frem(comptime T: type) !void {
     try fremOne(T, -0.0, 1.0, -0.0, epsilon);
 }
 
-fn fremOne(comptime T: type, a: T, b: T, c: T, epsilon: T) !void {
+fn frem_one(comptime T: type, a: T, b: T, c: T, epsilon: T) !void {
     try expect(@abs(@rem(a, b) - c) < epsilon);
 }
 
@@ -1571,7 +1571,7 @@ fn fmod(comptime T: type) !void {
     try fmodOne(T, -0.0, 1.0, -0.0, epsilon);
 }
 
-fn fmodOne(comptime T: type, a: T, b: T, c: T, epsilon: T) !void {
+fn fmod_one(comptime T: type, a: T, b: T, c: T, epsilon: T) !void {
     try expect(@abs(@mod(@as(T, a), @as(T, b)) - @as(T, c)) < epsilon);
 }
 
@@ -1632,7 +1632,7 @@ test "@round f128" {
     try comptime testRound(f128, 12.0);
 }
 
-fn testRound(comptime T: type, x: T) !void {
+fn test_round(comptime T: type, x: T) !void {
     const y = x - 0.5;
     const z = @round(y);
     try expect(x == z);
@@ -1647,7 +1647,7 @@ test "vector integer addition" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: @Vector(4, i32) = [_]i32{ 1, 2, 3, 4 };
             var b: @Vector(4, i32) = [_]i32{ 5, 6, 7, 8 };
             _ = .{ &a, &b };
@@ -1691,7 +1691,7 @@ test "NaN comparison f80" {
     try comptime testNanEqNan(f80);
 }
 
-fn testNanEqNan(comptime F: type) !void {
+fn test_nan_eq_nan(comptime F: type) !void {
     var nan1 = math.nan(F);
     var nan2 = math.nan(F);
     _ = .{ &nan1, &nan2 };
@@ -1713,7 +1713,7 @@ test "vector comparison" {
         !comptime std.Target.x86.featureSetHas(builtin.cpu.features, .avx2)) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: @Vector(6, i32) = [_]i32{ 1, 3, -1, 5, 7, 9 };
             var b: @Vector(6, i32) = [_]i32{ -1, 3, 0, 6, 10, -10 };
             _ = .{ &a, &b };
@@ -1744,7 +1744,7 @@ test "signed zeros are represented properly" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try testOne(f16);
             try testOne(f32);
             try testOne(f64);
@@ -1753,7 +1753,7 @@ test "signed zeros are represented properly" {
             try testOne(c_longdouble);
         }
 
-        fn testOne(comptime T: type) !void {
+        fn test_one(comptime T: type) !void {
             const ST = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
             var as_fp_val = -@as(T, 0.0);
             _ = &as_fp_val;
@@ -1776,11 +1776,11 @@ test "absFloat" {
     try testAbsFloat();
     try comptime testAbsFloat();
 }
-fn testAbsFloat() !void {
+fn test_abs_float() !void {
     try testAbsFloatOne(-10.05, 10.05);
     try testAbsFloatOne(10.05, 10.05);
 }
-fn testAbsFloatOne(in: f32, out: f32) !void {
+fn test_abs_float_one(in: f32, out: f32) !void {
     try expect(@abs(@as(f32, in)) == @as(f32, out));
 }
 

@@ -64,7 +64,7 @@ pub const ZigTable = struct {
 };
 
 // zigNorInit
-pub fn ZigTableGen(
+pub fn zig_table_gen(
     comptime is_symmetric: bool,
     comptime r: f64,
     comptime v: f64,

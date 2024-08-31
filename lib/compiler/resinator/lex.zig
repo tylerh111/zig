@@ -39,7 +39,7 @@ pub const Token = struct {
         invalid,
         eof,
 
-        pub fn nameForErrorDisplay(self: Id) []const u8 {
+        pub fn name_for_error_display(self: Id) []const u8 {
             return switch (self) {
                 .literal => "<literal>",
                 .number => "<number>",
@@ -62,7 +62,7 @@ pub const Token = struct {
         return buffer[self.start..self.end];
     }
 
-    pub fn nameForErrorDisplay(self: Token, buffer: []const u8) []const u8 {
+    pub fn name_for_error_display(self: Token, buffer: []const u8) []const u8 {
         return switch (self.id) {
             .eof => self.id.nameForErrorDisplay(),
             else => self.slice(buffer),
@@ -70,7 +70,7 @@ pub const Token = struct {
     }
 
     /// Returns 0-based column
-    pub fn calculateColumn(token: Token, source: []const u8, tab_columns: usize, maybe_line_start: ?usize) usize {
+    pub fn calculate_column(token: Token, source: []const u8, tab_columns: usize, maybe_line_start: ?usize) usize {
         const line_start = maybe_line_start orelse token.getLineStartForColumnCalc(source);
 
         var i: usize = line_start;
@@ -83,7 +83,7 @@ pub const Token = struct {
 
     // TODO: More testing is needed to determine if this can be merged with getLineStartForErrorDisplay
     //       (the TODO in currentIndexFormsLineEndingPair should be taken into account as well)
-    pub fn getLineStartForColumnCalc(token: Token, source: []const u8) usize {
+    pub fn get_line_start_for_column_calc(token: Token, source: []const u8) usize {
         const line_start = line_start: {
             if (token.start != 0) {
                 // start checking at the byte before the token
@@ -98,7 +98,7 @@ pub const Token = struct {
         return line_start;
     }
 
-    pub fn getLineStartForErrorDisplay(token: Token, source: []const u8) usize {
+    pub fn get_line_start_for_error_display(token: Token, source: []const u8) usize {
         const line_start = line_start: {
             if (token.start != 0) {
                 // start checking at the byte before the token
@@ -113,7 +113,7 @@ pub const Token = struct {
         return line_start;
     }
 
-    pub fn getLineForErrorDisplay(token: Token, source: []const u8, maybe_line_start: ?usize) []const u8 {
+    pub fn get_line_for_error_display(token: Token, source: []const u8, maybe_line_start: ?usize) []const u8 {
         const line_start = maybe_line_start orelse token.getLineStartForErrorDisplay(source);
 
         var line_end = line_start;
@@ -121,7 +121,7 @@ pub const Token = struct {
         return source[line_start..line_end];
     }
 
-    pub fn isStringLiteral(token: Token) bool {
+    pub fn is_string_literal(token: Token) bool {
         return token.id == .quoted_ascii_string or token.id == .quoted_wide_string;
     }
 };
@@ -133,7 +133,7 @@ pub const LineHandler = struct {
 
     /// Like incrementLineNumber but checks that the current char is a line ending first.
     /// Returns the new line number if it was incremented, null otherwise.
-    pub fn maybeIncrementLineNumber(self: *LineHandler, cur_index: usize) ?usize {
+    pub fn maybe_increment_line_number(self: *LineHandler, cur_index: usize) ?usize {
         const c = self.buffer[cur_index];
         if (c == '\r' or c == '\n') {
             return self.incrementLineNumber(cur_index);
@@ -143,7 +143,7 @@ pub const LineHandler = struct {
 
     /// Increments line_number appropriately (handling line ending pairs)
     /// and returns the new line number if it was incremented, or null otherwise.
-    pub fn incrementLineNumber(self: *LineHandler, cur_index: usize) ?usize {
+    pub fn increment_line_number(self: *LineHandler, cur_index: usize) ?usize {
         if (self.currentIndexFormsLineEndingPair(cur_index)) {
             self.last_line_ending_index = null;
             return null;
@@ -162,7 +162,7 @@ pub const LineHandler = struct {
     ///       remaining line endings with well-formed CRLF pairs (e.g. `<CR>a<CR>b<LF>c` becomes `ab<CR><LF>c`).
     ///       Handling this the same as the Win32 RC compiler would need control over the preprocessor,
     ///       since Clang converts unpaired <CR> into unpaired <LF>.
-    pub fn currentIndexFormsLineEndingPair(self: *const LineHandler, cur_index: usize) bool {
+    pub fn current_index_forms_line_ending_pair(self: *const LineHandler, cur_index: usize) bool {
         if (self.last_line_ending_index == null) return false;
 
         // must immediately precede the current index, we know cur_index must
@@ -267,7 +267,7 @@ pub const Lexer = struct {
         semicolon,
     };
 
-    pub fn nextWhitespaceDelimeterOnly(self: *Self) LexError!Token {
+    pub fn next_whitespace_delimeter_only(self: *Self) LexError!Token {
         const start_index = self.index;
         var result = Token{
             .id = .eof,
@@ -384,11 +384,11 @@ pub const Lexer = struct {
     };
 
     /// TODO: A not-terrible name
-    pub fn nextNormal(self: *Self) LexError!Token {
+    pub fn next_normal(self: *Self) LexError!Token {
         return self.nextNormalWithContext(.any);
     }
 
-    pub fn nextNormalWithContext(self: *Self, context: enum { expect_operator, any }) LexError!Token {
+    pub fn next_normal_with_context(self: *Self, context: enum { expect_operator, any }) LexError!Token {
         const start_index = self.index;
         var result = Token{
             .id = .eof,
@@ -840,13 +840,13 @@ pub const Lexer = struct {
 
     /// Increments line_number appropriately (handling line ending pairs)
     /// and returns the new line number.
-    fn incrementLineNumber(self: *Self) usize {
+    fn increment_line_number(self: *Self) usize {
         _ = self.line_handler.incrementLineNumber(self.index);
         self.at_start_of_line = true;
         return self.line_handler.line_number;
     }
 
-    fn checkForIllegalCodepoint(self: *Self, codepoint: code_pages.Codepoint, in_string_literal: bool) LexError!void {
+    fn check_for_illegal_codepoint(self: *Self, codepoint: code_pages.Codepoint, in_string_literal: bool) LexError!void {
         const err = switch (codepoint.value) {
             // 0x00 = NUL
             // 0x1A = Substitute (treated as EOF)
@@ -890,7 +890,7 @@ pub const Lexer = struct {
         return err;
     }
 
-    fn evaluatePreprocessorCommand(self: *Self, start: usize, end: usize) !void {
+    fn evaluate_preprocessor_command(self: *Self, start: usize, end: usize) !void {
         const token = Token{
             .id = .preprocessor_command,
             .start = start,
@@ -1001,7 +1001,7 @@ pub const Lexer = struct {
         self.current_code_page = code_page;
     }
 
-    fn parseCodePageNum(str: []const u8) !u32 {
+    fn parse_code_page_num(str: []const u8) !u32 {
         var x: u32 = 0;
         for (str) |c| {
             const digit = try std.fmt.charToDigit(c, 10);
@@ -1011,7 +1011,7 @@ pub const Lexer = struct {
         return x;
     }
 
-    pub fn getErrorDetails(self: Self, lex_err: LexError) ErrorDetails {
+    pub fn get_error_details(self: Self, lex_err: LexError) ErrorDetails {
         const err = switch (lex_err) {
             error.UnfinishedStringLiteral => ErrorDetails.Error.unfinished_string_literal,
             error.StringLiteralTooLong => return .{
@@ -1042,7 +1042,7 @@ pub const Lexer = struct {
     }
 };
 
-fn testLexNormal(source: []const u8, expected_tokens: []const Token.Id) !void {
+fn test_lex_normal(source: []const u8, expected_tokens: []const Token.Id) !void {
     var lexer = Lexer.init(source, .{});
     if (dumpTokensDuringTests) std.debug.print("\n----------------------\n{s}\n----------------------\n", .{lexer.buffer});
     for (expected_tokens) |expected_token_id| {
@@ -1054,7 +1054,7 @@ fn testLexNormal(source: []const u8, expected_tokens: []const Token.Id) !void {
     try std.testing.expectEqual(Token.Id.eof, last_token.id);
 }
 
-fn expectLexError(expected: LexError, actual: anytype) !void {
+fn expect_lex_error(expected: LexError, actual: anytype) !void {
     try std.testing.expectError(expected, actual);
     if (dumpTokensDuringTests) std.debug.print("{!}\n", .{actual});
 }
@@ -1074,7 +1074,7 @@ test "normal: string literals" {
 
 test "superscript chars and code pages" {
     const firstToken = struct {
-        pub fn firstToken(source: []const u8, default_code_page: CodePage, comptime lex_method: Lexer.LexMethod) LexError!Token {
+        pub fn first_token(source: []const u8, default_code_page: CodePage, comptime lex_method: Lexer.LexMethod) LexError!Token {
             var lexer = Lexer.init(source, .{ .default_code_page = default_code_page });
             return lexer.next(lex_method);
         }

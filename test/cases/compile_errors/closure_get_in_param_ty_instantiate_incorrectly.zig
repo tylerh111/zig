@@ -1,4 +1,4 @@
-fn Observable(comptime T: type) type {
+fn observable(comptime T: type) type {
     return struct {
         fn map(Src: T, Dst: anytype, function: fn (T) Dst) Dst {
             _ = Src;
@@ -8,7 +8,7 @@ fn Observable(comptime T: type) type {
     };
 }
 
-fn u32Tou64(x: u32) u64 {
+fn u32_tou64(x: u32) u64 {
     _ = x;
     return 0;
 }

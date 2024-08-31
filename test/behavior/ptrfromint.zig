@@ -9,7 +9,7 @@ test "casting integer address to function pointer" {
     comptime addressToFunction();
 }
 
-fn addressToFunction() void {
+fn address_to_function() void {
     var addr: usize = 0xdeadbee0;
     _ = &addr;
     _ = @as(*const fn () void, @ptrFromInt(addr));
@@ -24,7 +24,7 @@ test "mutate through ptr initialized with constant ptrFromInt value" {
     forceCompilerAnalyzeBranchHardCodedPtrDereference(false);
 }
 
-fn forceCompilerAnalyzeBranchHardCodedPtrDereference(x: bool) void {
+fn force_compiler_analyze_branch_hard_coded_ptr_dereference(x: bool) void {
     const hardCodedP = @as(*volatile u8, @ptrFromInt(0xdeadbeef));
     if (x) {
         hardCodedP.* = hardCodedP.* | 10;

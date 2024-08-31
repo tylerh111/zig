@@ -2,7 +2,7 @@ const std = @import("std");
 const expect = std.testing.expect;
 const builtin = @import("builtin");
 
-fn ShardedTable(comptime Key: type, comptime mask_bit_count: comptime_int, comptime V: type) type {
+fn sharded_table(comptime Key: type, comptime mask_bit_count: comptime_int, comptime V: type) type {
     const key_bits = @typeInfo(Key).Int.bits;
     std.debug.assert(Key == std.meta.Int(.unsigned, key_bits));
     std.debug.assert(key_bits >= mask_bit_count);
@@ -17,7 +17,7 @@ fn ShardedTable(comptime Key: type, comptime mask_bit_count: comptime_int, compt
             return Self{ .shards = [_]?*Node{null} ** (1 << shard_key_bits) };
         }
 
-        fn getShardKey(key: Key) ShardKey {
+        fn get_shard_key(key: Key) ShardKey {
             // https://github.com/ziglang/zig/issues/1544
             // this special case is needed because you can't u32 >> 32.
             if (ShardKey == u0) return 0;
@@ -80,7 +80,7 @@ test "sharded table" {
     try testShardedTable(u0, 0, 1);
 }
 
-fn testShardedTable(comptime Key: type, comptime mask_bit_count: comptime_int, comptime node_count: comptime_int) !void {
+fn test_sharded_table(comptime Key: type, comptime mask_bit_count: comptime_int, comptime node_count: comptime_int) !void {
     const Table = ShardedTable(Key, mask_bit_count, void);
 
     var table = Table.create();
@@ -120,7 +120,7 @@ test "Saturating Shift Left where lhs is of a computed type" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn getIntShiftType(comptime T: type) type {
+        fn get_int_shift_type(comptime T: type) type {
             var unsigned_shift_type = @typeInfo(std.math.Log2Int(T)).Int;
             unsigned_shift_type.signedness = .signed;
 
@@ -129,14 +129,14 @@ test "Saturating Shift Left where lhs is of a computed type" {
             });
         }
 
-        pub fn FixedPoint(comptime value_type: type) type {
+        pub fn fixed_point(comptime value_type: type) type {
             return struct {
                 value: value_type,
                 exponent: ShiftType,
 
                 const ShiftType: type = getIntShiftType(value_type);
 
-                pub fn shiftExponent(self: @This(), shift: ShiftType) @This() {
+                pub fn shift_exponent(self: @This(), shift: ShiftType) @This() {
                     const shiftAbs = @abs(shift);
                     return .{ .value = if (shift >= 0) self.value >> shiftAbs else self.value <<| shiftAbs, .exponent = self.exponent + shift };
                 }

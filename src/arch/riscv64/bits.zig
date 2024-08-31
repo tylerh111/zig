@@ -33,7 +33,7 @@ pub const Memory = struct {
         /// Double word, 8 Bytes
         dword,
 
-        pub fn fromByteSize(size: u64) Size {
+        pub fn from_byte_size(size: u64) Size {
             return switch (size) {
                 1 => .byte,
                 2 => .hword,
@@ -43,7 +43,7 @@ pub const Memory = struct {
             };
         }
 
-        pub fn fromBitSize(bit_size: u64) Size {
+        pub fn from_bit_size(bit_size: u64) Size {
             return switch (bit_size) {
                 8 => .byte,
                 16 => .hword,
@@ -53,7 +53,7 @@ pub const Memory = struct {
             };
         }
 
-        pub fn bitSize(s: Size) u64 {
+        pub fn bit_size(s: Size) u64 {
             return switch (s) {
                 .byte => 8,
                 .hword => 16,
@@ -64,7 +64,7 @@ pub const Memory = struct {
     };
 
     /// Asserts `mem` can be represented as a `FrameLoc`.
-    pub fn toFrameLoc(mem: Memory, mir: Mir) Mir.FrameLoc {
+    pub fn to_frame_loc(mem: Memory, mir: Mir) Mir.FrameLoc {
         const offset: i32 = switch (mem.mod) {
             .off => |off| off,
             .rm => |rm| rm.disp,
@@ -101,7 +101,7 @@ pub const Immediate = union(enum) {
         return .{ .signed = x };
     }
 
-    pub fn asSigned(imm: Immediate, bit_size: u64) i64 {
+    pub fn as_signed(imm: Immediate, bit_size: u64) i64 {
         return switch (imm) {
             .signed => |x| switch (bit_size) {
                 1, 8 => @as(i8, @intCast(x)),
@@ -119,7 +119,7 @@ pub const Immediate = union(enum) {
         };
     }
 
-    pub fn asUnsigned(imm: Immediate, bit_size: u64) u64 {
+    pub fn as_unsigned(imm: Immediate, bit_size: u64) u64 {
         return switch (imm) {
             .signed => |x| switch (bit_size) {
                 1, 8 => @as(u8, @bitCast(@as(i8, @intCast(x)))),
@@ -137,7 +137,7 @@ pub const Immediate = union(enum) {
         };
     }
 
-    pub fn asBits(imm: Immediate, comptime T: type) T {
+    pub fn as_bits(imm: Immediate, comptime T: type) T {
         const int_info = @typeInfo(T).Int;
         if (int_info.signedness != .unsigned) @compileError("Immediate.asBits needs unsigned T");
         return switch (imm) {
@@ -174,7 +174,7 @@ pub const Register = enum(u6) {
         return @as(u5, @truncate(@intFromEnum(self)));
     }
 
-    pub fn dwarfLocOp(reg: Register) u8 {
+    pub fn dwarf_loc_op(reg: Register) u8 {
         return @as(u8, reg.id());
     }
 };
@@ -199,7 +199,7 @@ pub const FrameIndex = enum(u32) {
 
     pub const named_count = @typeInfo(FrameIndex).Enum.fields.len;
 
-    pub fn isNamed(fi: FrameIndex) bool {
+    pub fn is_named(fi: FrameIndex) bool {
         return @intFromEnum(fi) < named_count;
     }
 

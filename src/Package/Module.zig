@@ -39,7 +39,7 @@ builtin_file: ?*File,
 
 pub const Deps = std.StringArrayHashMapUnmanaged(*Module);
 
-pub fn isBuiltin(m: Module) bool {
+pub fn is_builtin(m: Module) bool {
     return m.builtin_file != null;
 }
 
@@ -470,7 +470,7 @@ pub const LimitedOptions = struct {
 
 /// This one can only be used if the Module will only be used for AstGen and earlier in
 /// the pipeline. Illegal behavior occurs if a limited module touches Sema.
-pub fn createLimited(gpa: Allocator, options: LimitedOptions) Allocator.Error!*Package.Module {
+pub fn create_limited(gpa: Allocator, options: LimitedOptions) Allocator.Error!*Package.Module {
     const mod = try gpa.create(Module);
     mod.* = .{
         .root = options.root,
@@ -502,7 +502,7 @@ pub fn createLimited(gpa: Allocator, options: LimitedOptions) Allocator.Error!*P
 /// Asserts that the module has a builtin module, which is not true for non-zig
 /// modules such as ones only used for `@embedFile`, or the root module when
 /// there is no Zig Compilation Unit.
-pub fn getBuiltinDependency(m: Module) *Module {
+pub fn get_builtin_dependency(m: Module) *Module {
     const result = m.deps.values()[0];
     assert(result.isBuiltin());
     return result;

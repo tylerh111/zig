@@ -13,10 +13,10 @@ test "while loop" {
     try expect(i == 4);
     try expect(whileLoop1() == 1);
 }
-fn whileLoop1() i32 {
+fn while_loop1() i32 {
     return whileLoop2();
 }
-fn whileLoop2() i32 {
+fn while_loop2() i32 {
     while (true) {
         return 1;
     }
@@ -28,10 +28,10 @@ test "static eval while" {
     try expect(static_eval_while_number == 1);
 }
 const static_eval_while_number = staticWhileLoop1();
-fn staticWhileLoop1() i32 {
+fn static_while_loop1() i32 {
     return staticWhileLoop2();
 }
-fn staticWhileLoop2() i32 {
+fn static_while_loop2() i32 {
     while (true) {
         return 1;
     }
@@ -63,13 +63,13 @@ test "while with else" {
 }
 
 var numbers_left: i32 = undefined;
-fn getNumberOrErr() anyerror!i32 {
+fn get_number_or_err() anyerror!i32 {
     return if (numbers_left == 0) error.OutOfNumbers else x: {
         numbers_left -= 1;
         break :x numbers_left;
     };
 }
-fn getNumberOrNull() ?i32 {
+fn get_number_or_null() ?i32 {
     return if (numbers_left == 0) null else x: {
         numbers_left -= 1;
         break :x numbers_left;
@@ -81,7 +81,7 @@ test "continue outer while loop" {
     comptime testContinueOuter();
 }
 
-fn testContinueOuter() void {
+fn test_continue_outer() void {
     var i: usize = 0;
     outer: while (i < 10) : (i += 1) {
         while (true) {
@@ -95,7 +95,7 @@ test "break from outer while loop" {
     comptime testBreakOuter();
 }
 
-fn testBreakOuter() void {
+fn test_break_outer() void {
     outer: while (true) {
         while (true) {
             break :outer;
@@ -109,7 +109,7 @@ test "while copies its payload" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var tmp: ?i32 = 10;
             while (tmp) |value| {
                 // Modify the original variable
@@ -129,7 +129,7 @@ test "continue and break" {
     try expect(continue_and_break_counter == 8);
 }
 var continue_and_break_counter: i32 = 0;
-fn runContinueAndBreakTest() !void {
+fn run_continue_and_break_test() !void {
     var i: i32 = 0;
     while (true) {
         continue_and_break_counter += 2;
@@ -228,29 +228,29 @@ test "while on optional with else result follow break prong" {
     try expect(result == 10);
 }
 
-fn returnNull() ?i32 {
+fn return_null() ?i32 {
     return null;
 }
-fn returnOptional(x: i32) ?i32 {
+fn return_optional(x: i32) ?i32 {
     return x;
 }
-fn returnError() anyerror!i32 {
+fn return_error() anyerror!i32 {
     return error.YouWantedAnError;
 }
-fn returnSuccess(x: i32) anyerror!i32 {
+fn return_success(x: i32) anyerror!i32 {
     return x;
 }
-fn returnFalse() bool {
+fn return_false() bool {
     return false;
 }
-fn returnTrue() bool {
+fn return_true() bool {
     return true;
 }
 
 test "return with implicit cast from while loop" {
     returnWithImplicitCastFromWhileLoopTest() catch unreachable;
 }
-fn returnWithImplicitCastFromWhileLoopTest() anyerror!void {
+fn return_with_implicit_cast_from_while_loop_test() anyerror!void {
     while (true) {
         return;
     }
@@ -399,7 +399,7 @@ test "breaking from a loop in an if statement" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn retOpt() ?u32 {
+        fn ret_opt() ?u32 {
             return null;
         }
     };

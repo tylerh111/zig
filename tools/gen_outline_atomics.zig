@@ -60,7 +60,7 @@ pub fn main() !void {
     try bw.flush();
 }
 
-fn writeFunction(
+fn write_function(
     arena: Allocator,
     w: anytype,
     name: []const u8,
@@ -147,11 +147,11 @@ const N = enum(u8) {
         return if (@intFromEnum(n) < 8) "w" else "x";
     }
 
-    fn toBytes(n: N) u8 {
+    fn to_bytes(n: N) u8 {
         return @intFromEnum(n);
     }
 
-    fn toBits(n: N) u8 {
+    fn to_bits(n: N) u8 {
         return n.toBytes() * 8;
     }
 };
@@ -206,7 +206,7 @@ const Ordering = enum {
 
 const LdName = enum { ldadd, ldclr, ldeor, ldset };
 
-fn generateCas(arena: Allocator, n: N, order: Ordering) ![]const u8 {
+fn generate_cas(arena: Allocator, n: N, order: Ordering) ![]const u8 {
     const s_def = n.defines();
     const o_def = order.defines();
 
@@ -267,7 +267,7 @@ fn generateCas(arena: Allocator, n: N, order: Ordering) ![]const u8 {
     }
 }
 
-fn generateSwp(arena: Allocator, n: N, order: Ordering) ![]const u8 {
+fn generate_swp(arena: Allocator, n: N, order: Ordering) ![]const u8 {
     const s_def = n.defines();
     const o_def = order.defines();
     const reg = n.register();
@@ -294,7 +294,7 @@ fn generateSwp(arena: Allocator, n: N, order: Ordering) ![]const u8 {
     });
 }
 
-fn generateLd(arena: Allocator, n: N, order: Ordering, ld: LdName) ![]const u8 {
+fn generate_ld(arena: Allocator, n: N, order: Ordering, ld: LdName) ![]const u8 {
     const s_def = n.defines();
     const o_def = order.defines();
     const op = switch (ld) {

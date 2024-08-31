@@ -18,7 +18,7 @@ pub const Udp6 = extern struct {
     _cancel: *const fn (*const Udp6, ?*CompletionToken) callconv(cc) Status,
     _poll: *const fn (*const Udp6) callconv(cc) Status,
 
-    pub fn getModeData(self: *const Udp6, udp6_config_data: ?*Config, ip6_mode_data: ?*Ip6.Mode, mnp_config_data: ?*ManagedNetworkConfigData, snp_mode_data: ?*SimpleNetwork) Status {
+    pub fn get_mode_data(self: *const Udp6, udp6_config_data: ?*Config, ip6_mode_data: ?*Ip6.Mode, mnp_config_data: ?*ManagedNetworkConfigData, snp_mode_data: ?*SimpleNetwork) Status {
         return self._get_mode_data(self, udp6_config_data, ip6_mode_data, mnp_config_data, snp_mode_data);
     }
 
@@ -85,7 +85,7 @@ pub const Udp6 = extern struct {
         data_length: u32,
         fragment_count: u32,
 
-        pub fn getFragments(self: *ReceiveData) []Fragment {
+        pub fn get_fragments(self: *ReceiveData) []Fragment {
             return @as([*]Fragment, @ptrCast(@alignCast(@as([*]u8, @ptrCast(self)) + @sizeOf(ReceiveData))))[0..self.fragment_count];
         }
     };
@@ -95,7 +95,7 @@ pub const Udp6 = extern struct {
         data_length: u32,
         fragment_count: u32,
 
-        pub fn getFragments(self: *TransmitData) []Fragment {
+        pub fn get_fragments(self: *TransmitData) []Fragment {
             return @as([*]Fragment, @ptrCast(@alignCast(@as([*]u8, @ptrCast(self)) + @sizeOf(TransmitData))))[0..self.fragment_count];
         }
     };

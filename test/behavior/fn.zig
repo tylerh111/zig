@@ -8,14 +8,14 @@ const expectEqual = testing.expectEqual;
 test "params" {
     try expect(testParamsAdd(22, 11) == 33);
 }
-fn testParamsAdd(a: i32, b: i32) i32 {
+fn test_params_add(a: i32, b: i32) i32 {
     return a + b;
 }
 
 test "local variables" {
     testLocVars(2);
 }
-fn testLocVars(b: i32) void {
+fn test_loc_vars(b: i32) void {
     const a: i32 = 1;
     if (a + b != 3) unreachable;
 }
@@ -57,7 +57,7 @@ test "assign inline fn to const variable" {
     a();
 }
 
-inline fn inlineFn() void {}
+inline fn inline_fn() void {}
 
 fn outer(y: u32) *const fn (u32) u32 {
     const Y = @TypeOf(y);
@@ -111,7 +111,7 @@ test "inline function call that calls optional function pointer, return pointer 
     const S = struct {
         field: u32,
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             bar2 = actualFn;
             const result = try foo();
             try expect(result.field == 1234);
@@ -131,7 +131,7 @@ test "inline function call that calls optional function pointer, return pointer 
 
         var bar2: ?*const fn () u32 = null;
 
-        fn actualFn() u32 {
+        fn actual_fn() u32 {
             return 1234;
         }
     };
@@ -142,11 +142,11 @@ test "implicit cast function unreachable return" {
     wantsFnWithVoid(fnWithUnreachable);
 }
 
-fn wantsFnWithVoid(comptime f: fn () void) void {
+fn wants_fn_with_void(comptime f: fn () void) void {
     _ = f;
 }
 
-fn fnWithUnreachable() noreturn {
+fn fn_with_unreachable() noreturn {
     unreachable;
 }
 
@@ -169,7 +169,7 @@ test "extern struct with stdcallcc fn pointer" {
 }
 
 const nComplexCallconv = 100;
-fn fComplexCallconvRet(x: u32) callconv(blk: {
+fn f_complex_callconv_ret(x: u32) callconv(blk: {
     const s: struct { n: u32 } = .{ .n = nComplexCallconv };
     break :blk switch (s.n) {
         0 => .C,
@@ -201,7 +201,7 @@ const Point = struct {
     y: i32,
 };
 
-fn addPointCoords(pt: Point) i32 {
+fn add_point_coords(pt: Point) i32 {
     return pt.x + pt.y;
 }
 
@@ -212,7 +212,7 @@ test "pass by non-copying value through var arg" {
     try expect((try addPointCoordsVar(Point{ .x = 1, .y = 2 })) == 3);
 }
 
-fn addPointCoordsVar(pt: anytype) !i32 {
+fn add_point_coords_var(pt: anytype) !i32 {
     comptime assert(@TypeOf(pt) == Point);
     return pt.x + pt.y;
 }
@@ -229,7 +229,7 @@ const Point2 = struct {
     x: i32,
     y: i32,
 
-    fn addPointCoords(self: Point2) i32 {
+    fn add_point_coords(self: Point2) i32 {
         return self.x + self.y;
     }
 };
@@ -246,7 +246,7 @@ const Point3 = struct {
     x: i32,
     y: i32,
 
-    fn addPointCoords(self: Point3, comptime T: type) i32 {
+    fn add_point_coords(self: Point3, comptime T: type) i32 {
         _ = T;
         return self.x + self.y;
     }
@@ -277,7 +277,7 @@ test "implicit cast fn call result to optional in field result" {
 
         const glob: i32 = 999;
 
-        fn optionalPtr() *const i32 {
+        fn optional_ptr() *const i32 {
             return &glob;
         }
 
@@ -296,7 +296,7 @@ test "void parameters" {
 
     try voidFun(1, void{}, 2, {});
 }
-fn voidFun(a: i32, b: void, c: i32, d: void) !void {
+fn void_fun(a: i32, b: void, c: i32, d: void) !void {
     _ = d;
     const v = b;
     const vv: void = if (a == 1) v else {};
@@ -310,7 +310,7 @@ test "call function with empty string" {
     acceptsString("");
 }
 
-fn acceptsString(foo: []u8) void {
+fn accepts_string(foo: []u8) void {
     _ = foo;
 }
 
@@ -348,7 +348,7 @@ test "number literal as an argument" {
     try comptime numberLiteralArg(3);
 }
 
-fn numberLiteralArg(a: anytype) !void {
+fn number_literal_arg(a: anytype) !void {
     try expect(a == 3);
 }
 
@@ -359,11 +359,11 @@ test "function call with anon list literal" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try consumeVec(.{ 9, 8, 7 });
         }
 
-        fn consumeVec(vec: [3]f32) !void {
+        fn consume_vec(vec: [3]f32) !void {
             try expect(vec[0] == 9);
             try expect(vec[1] == 8);
             try expect(vec[2] == 7);
@@ -380,11 +380,11 @@ test "function call with anon list literal - 2D" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try consumeVec(.{ .{ 9, 8 }, .{ 7, 6 } });
         }
 
-        fn consumeVec(vec: [2][2]f32) !void {
+        fn consume_vec(vec: [2][2]f32) !void {
             try expect(vec[0][0] == 9);
             try expect(vec[0][1] == 8);
             try expect(vec[1][0] == 7);
@@ -397,7 +397,7 @@ test "function call with anon list literal - 2D" {
 
 test "ability to give comptime types and non comptime types to same parameter" {
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x: i32 = 1;
             _ = &x;
             try expect(foo(x) == 10);
@@ -447,7 +447,7 @@ test "implicit cast function to function ptr" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S1 = struct {
-        export fn someFunctionThatReturnsAValue() c_int {
+        export fn some_function_that_returns_avalue() c_int {
             return 123;
         }
     };
@@ -455,7 +455,7 @@ test "implicit cast function to function ptr" {
     _ = &fnPtr1;
     try expect(fnPtr1() == 123);
     const S2 = struct {
-        extern fn someFunctionThatReturnsAValue() c_int;
+        extern fn some_function_that_returns_avalue() c_int;
     };
     var fnPtr2: *const fn () callconv(.C) c_int = S2.someFunctionThatReturnsAValue;
     _ = &fnPtr2;
@@ -473,7 +473,7 @@ test "method call with optional and error union first param" {
         fn opt(s: ?@This()) !void {
             try expect(s.?.x == 1234);
         }
-        fn errUnion(s: anyerror!@This()) !void {
+        fn err_union(s: anyerror!@This()) !void {
             try expect((try s).x == 1234);
         }
     };
@@ -546,7 +546,7 @@ test "peer type resolution of inferred error set with non-void payload" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn openDataFile(mode: enum { read, write }) !u32 {
+        fn open_data_file(mode: enum { read, write }) !u32 {
             return switch (mode) {
                 .read => foo(),
                 .write => bar(),
@@ -589,10 +589,10 @@ test "pass and return comptime-only types" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn returnNull(comptime x: @Type(.Null)) @Type(.Null) {
+        fn return_null(comptime x: @Type(.Null)) @Type(.Null) {
             return x;
         }
-        fn returnUndefined(comptime x: @Type(.Undefined)) @Type(.Undefined) {
+        fn return_undefined(comptime x: @Type(.Undefined)) @Type(.Undefined) {
             return x;
         }
     };

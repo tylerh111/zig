@@ -30,20 +30,20 @@ const FreeBlock = struct {
 
     const Io = std.packed_int_array.PackedIntIo(u1, .little);
 
-    fn totalPages(self: FreeBlock) usize {
+    fn total_pages(self: FreeBlock) usize {
         return self.data.len * 128;
     }
 
-    fn isInitialized(self: FreeBlock) bool {
+    fn is_initialized(self: FreeBlock) bool {
         return self.data.len > 0;
     }
 
-    fn getBit(self: FreeBlock, idx: usize) PageStatus {
+    fn get_bit(self: FreeBlock, idx: usize) PageStatus {
         const bit_offset = 0;
         return @as(PageStatus, @enumFromInt(Io.get(mem.sliceAsBytes(self.data), idx, bit_offset)));
     }
 
-    fn setBits(self: FreeBlock, start_idx: usize, len: usize, val: PageStatus) void {
+    fn set_bits(self: FreeBlock, start_idx: usize, len: usize, val: PageStatus) void {
         const bit_offset = 0;
         var i: usize = 0;
         while (i < len) : (i += 1) {
@@ -60,7 +60,7 @@ const FreeBlock = struct {
     // Revisit if this is settled: https://github.com/ziglang/zig/issues/3806
     const not_found = maxInt(usize);
 
-    fn useRecycled(self: FreeBlock, num_pages: usize, log2_align: u8) usize {
+    fn use_recycled(self: FreeBlock, num_pages: usize, log2_align: u8) usize {
         @setCold(true);
         for (self.data, 0..) |segment, i| {
             const spills_into_next = @as(i128, @bitCast(segment)) < 0;
@@ -95,11 +95,11 @@ var _conventional_data = [_]u128{0} ** 16;
 const conventional = FreeBlock{ .data = &_conventional_data };
 var extended = FreeBlock{ .data = &[_]u128{} };
 
-fn extendedOffset() usize {
+fn extended_offset() usize {
     return conventional.totalPages();
 }
 
-fn nPages(memsize: usize) usize {
+fn n_pages(memsize: usize) usize {
     return mem.alignForward(usize, memsize, mem.page_size) / mem.page_size;
 }
 
@@ -112,7 +112,7 @@ fn alloc(ctx: *anyopaque, len: usize, log2_align: u8, ra: usize) ?[*]u8 {
     return @as([*]u8, @ptrFromInt(page_idx * mem.page_size));
 }
 
-fn allocPages(page_count: usize, log2_align: u8) !usize {
+fn alloc_pages(page_count: usize, log2_align: u8) !usize {
     {
         const idx = conventional.useRecycled(page_count, log2_align);
         if (idx != FreeBlock.not_found) {
@@ -140,7 +140,7 @@ fn allocPages(page_count: usize, log2_align: u8) !usize {
     return @as(usize, @intCast(aligned_page_idx));
 }
 
-fn freePages(start: usize, end: usize) void {
+fn free_pages(start: usize, end: usize) void {
     if (start < extendedOffset()) {
         conventional.recycle(start, @min(extendedOffset(), end) - start);
     }

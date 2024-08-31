@@ -1,4 +1,4 @@
-pub fn A() type {
+pub fn a() type {
     return Q;
 }
 test "1" {

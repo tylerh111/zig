@@ -13,7 +13,7 @@ test "@memset on array pointers" {
     try comptime testMemsetArray();
 }
 
-fn testMemsetArray() !void {
+fn test_memset_array() !void {
     {
         // memset array to non-undefined, ABI size == 1
         var foo: [20]u8 = undefined;
@@ -43,7 +43,7 @@ test "@memset on slices" {
     try comptime testMemsetSlice();
 }
 
-fn testMemsetSlice() !void {
+fn test_memset_slice() !void {
     {
         // memset slice to non-undefined, ABI size == 1
         var array: [20]u8 = undefined;

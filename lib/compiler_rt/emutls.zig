@@ -37,14 +37,14 @@ const simple_allocator = struct {
     }
 
     /// Allocate a slice of T, with len elements.
-    pub fn allocSlice(comptime T: type, len: usize) []T {
+    pub fn alloc_slice(comptime T: type, len: usize) []T {
         return @as([*]T, @ptrCast(@alignCast(
             advancedAlloc(@alignOf(T), @sizeOf(T) * len),
         )))[0 .. len - 1];
     }
 
     /// Allocate a memory chunk.
-    pub fn advancedAlloc(alignment: u29, size: usize) [*]u8 {
+    pub fn advanced_alloc(alignment: u29, size: usize) [*]u8 {
         const minimal_alignment = @max(@alignOf(usize), alignment);
 
         var aligned_ptr: ?*anyopaque = undefined;
@@ -56,7 +56,7 @@ const simple_allocator = struct {
     }
 
     /// Resize a slice.
-    pub fn reallocSlice(comptime T: type, slice: []T, len: usize) []T {
+    pub fn realloc_slice(comptime T: type, slice: []T, len: usize) []T {
         const c_ptr: *anyopaque = @ptrCast(slice.ptr);
         const new_array: [*]T = @ptrCast(@alignCast(std.c.realloc(c_ptr, @sizeOf(T) * len) orelse abort()));
         return new_array[0..len];
@@ -102,7 +102,7 @@ const ObjectArray = struct {
     }
 
     /// resize the ObjectArray if needed.
-    pub fn ensureLength(self: *ObjectArray, new_len: usize) *ObjectArray {
+    pub fn ensure_length(self: *ObjectArray, new_len: usize) *ObjectArray {
         const old_len = self.slots.len;
 
         if (old_len > new_len) {
@@ -121,7 +121,7 @@ const ObjectArray = struct {
     }
 
     /// Retrieve the pointer at request index, using control to initialize it if needed.
-    pub fn getPointer(self: *ObjectArray, index: usize, control: *emutls_control) ObjectPointer {
+    pub fn get_pointer(self: *ObjectArray, index: usize, control: *emutls_control) ObjectPointer {
         if (self.slots[index] == null) {
             // initialize the slot
             const size = control.size;
@@ -152,7 +152,7 @@ const current_thread_storage = struct {
     var init_once = std.once(current_thread_storage.init);
 
     /// Return a per thread ObjectArray with at least the expected index.
-    pub fn getArray(index: usize) *ObjectArray {
+    pub fn get_array(index: usize) *ObjectArray {
         if (current_thread_storage.getspecific()) |array| {
             // we already have a specific. just ensure the array is
             // big enough for the wanted index.
@@ -242,7 +242,7 @@ const emutls_control = extern struct {
     }
 
     /// Helper to retrieve nad initialize global unique index per emutls variable.
-    pub fn getIndex(self: *emutls_control) usize {
+    pub fn get_index(self: *emutls_control) usize {
         // Two threads could race against the same emutls_control.
 
         // Use atomic for reading coherent value lockless.
@@ -283,7 +283,7 @@ const emutls_control = extern struct {
     }
 
     /// Get the pointer on allocated storage for emutls variable.
-    pub fn getPointer(self: *emutls_control) *anyopaque {
+    pub fn get_pointer(self: *emutls_control) *anyopaque {
         // ensure current_thread_storage initialization is done
         current_thread_storage.init_once.call();
 
@@ -362,7 +362,7 @@ test "test default_value with different sizes" {
     if (!builtin.link_libc or builtin.os.tag != .openbsd) return error.SkipZigTest;
 
     const testType = struct {
-        fn _testType(comptime T: type, value: T) !void {
+        fn _test_type(comptime T: type, value: T) !void {
             var ctl = emutls_control.init(T, &value);
             const x = ctl.get_typed_pointer(T);
             try expect(x.* == value);

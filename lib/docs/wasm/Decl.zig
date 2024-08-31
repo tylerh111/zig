@@ -189,7 +189,7 @@ pub fn append_parent_ns(list: *std.ArrayListUnmanaged(u8), parent: Decl.Index) O
     }
 }
 
-pub fn findFirstDocComment(ast: *const Ast, token: Ast.TokenIndex) Ast.TokenIndex {
+pub fn find_first_doc_comment(ast: *const Ast, token: Ast.TokenIndex) Ast.TokenIndex {
     const token_tags = ast.tokens.items(.tag);
     var it = token;
     while (it > 0) {

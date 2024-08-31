@@ -15,7 +15,7 @@ pub fn main() !void {
     _ = x;
     return error.TestFailed;
 }
-fn divExact(a: @Vector(4, i32), b: @Vector(4, i32)) @Vector(4, i32) {
+fn div_exact(a: @Vector(4, i32), b: @Vector(4, i32)) @Vector(4, i32) {
     return @divExact(a, b);
 }
 // run

@@ -1,4 +1,4 @@
-pub fn flushStaticLib(elf_file: *Elf, comp: *Compilation, module_obj_path: ?[]const u8) link.File.FlushError!void {
+pub fn flush_static_lib(elf_file: *Elf, comp: *Compilation, module_obj_path: ?[]const u8) link.File.FlushError!void {
     const gpa = comp.gpa;
 
     var positionals = std.ArrayList(Compilation.LinkObject).init(gpa);
@@ -149,7 +149,7 @@ pub fn flushStaticLib(elf_file: *Elf, comp: *Compilation, module_obj_path: ?[]co
     if (comp.link_errors.items.len > 0) return error.FlushFailure;
 }
 
-pub fn flushObject(elf_file: *Elf, comp: *Compilation, module_obj_path: ?[]const u8) link.File.FlushError!void {
+pub fn flush_object(elf_file: *Elf, comp: *Compilation, module_obj_path: ?[]const u8) link.File.FlushError!void {
     const gpa = elf_file.base.comp.gpa;
 
     var positionals = std.ArrayList(Compilation.LinkObject).init(gpa);
@@ -219,7 +219,7 @@ pub fn flushObject(elf_file: *Elf, comp: *Compilation, module_obj_path: ?[]const
     if (comp.link_errors.items.len > 0) return error.FlushFailure;
 }
 
-fn parsePositional(elf_file: *Elf, path: []const u8) Elf.ParseError!void {
+fn parse_positional(elf_file: *Elf, path: []const u8) Elf.ParseError!void {
     if (try Object.isObject(path)) {
         try parseObject(elf_file, path);
     } else if (try Archive.isArchive(path)) {
@@ -229,7 +229,7 @@ fn parsePositional(elf_file: *Elf, path: []const u8) Elf.ParseError!void {
     // Actually, should we even unpack an archive?
 }
 
-fn parseObject(elf_file: *Elf, path: []const u8) Elf.ParseError!void {
+fn parse_object(elf_file: *Elf, path: []const u8) Elf.ParseError!void {
     const gpa = elf_file.base.comp.gpa;
     const handle = try std.fs.cwd().openFile(path, .{});
     const fh = try elf_file.addFileHandle(handle);
@@ -246,7 +246,7 @@ fn parseObject(elf_file: *Elf, path: []const u8) Elf.ParseError!void {
     try object.parseAr(elf_file);
 }
 
-fn parseArchive(elf_file: *Elf, path: []const u8) Elf.ParseError!void {
+fn parse_archive(elf_file: *Elf, path: []const u8) Elf.ParseError!void {
     const gpa = elf_file.base.comp.gpa;
     const handle = try std.fs.cwd().openFile(path, .{});
     const fh = try elf_file.addFileHandle(handle);
@@ -268,7 +268,7 @@ fn parseArchive(elf_file: *Elf, path: []const u8) Elf.ParseError!void {
     }
 }
 
-fn claimUnresolved(elf_file: *Elf) void {
+fn claim_unresolved(elf_file: *Elf) void {
     if (elf_file.zigObjectPtr()) |zig_object| {
         zig_object.claimUnresolvedObject(elf_file);
     }
@@ -277,7 +277,7 @@ fn claimUnresolved(elf_file: *Elf) void {
     }
 }
 
-fn initSections(elf_file: *Elf) !void {
+fn init_sections(elf_file: *Elf) !void {
     const ptr_size = elf_file.ptrWidthBytes();
 
     for (elf_file.objects.items) |index| {
@@ -305,7 +305,7 @@ fn initSections(elf_file: *Elf) !void {
     try elf_file.initShStrtab();
 }
 
-fn initComdatGroups(elf_file: *Elf) !void {
+fn init_comdat_groups(elf_file: *Elf) !void {
     const gpa = elf_file.base.comp.gpa;
 
     for (elf_file.objects.items) |index| {
@@ -331,7 +331,7 @@ fn initComdatGroups(elf_file: *Elf) !void {
     }
 }
 
-fn updateSectionSizes(elf_file: *Elf) !void {
+fn update_section_sizes(elf_file: *Elf) !void {
     for (elf_file.output_sections.keys(), elf_file.output_sections.values()) |shndx, atom_list| {
         const shdr = &elf_file.shdrs.items[shndx];
         for (atom_list.items) |atom_index| {
@@ -370,7 +370,7 @@ fn updateSectionSizes(elf_file: *Elf) !void {
     elf_file.updateShStrtabSize();
 }
 
-fn updateComdatGroupsSizes(elf_file: *Elf) void {
+fn update_comdat_groups_sizes(elf_file: *Elf) void {
     for (elf_file.comdat_group_sections.items) |cg| {
         const shdr = &elf_file.shdrs.items[cg.shndx];
         shdr.sh_size = cg.size(elf_file);
@@ -383,7 +383,7 @@ fn updateComdatGroupsSizes(elf_file: *Elf) void {
 }
 
 /// Allocates alloc sections when merging relocatable objects files together.
-fn allocateAllocSections(elf_file: *Elf) !void {
+fn allocate_alloc_sections(elf_file: *Elf) !void {
     for (elf_file.shdrs.items) |*shdr| {
         if (shdr.sh_type == elf.SHT_NULL) continue;
         if (shdr.sh_flags & elf.SHF_ALLOC == 0) continue;
@@ -401,7 +401,7 @@ fn allocateAllocSections(elf_file: *Elf) !void {
     }
 }
 
-fn writeAtoms(elf_file: *Elf) !void {
+fn write_atoms(elf_file: *Elf) !void {
     const gpa = elf_file.base.comp.gpa;
 
     // TODO iterate over `output_sections` directly
@@ -470,7 +470,7 @@ fn writeAtoms(elf_file: *Elf) !void {
     }
 }
 
-fn writeSyntheticSections(elf_file: *Elf) !void {
+fn write_synthetic_sections(elf_file: *Elf) !void {
     const gpa = elf_file.base.comp.gpa;
 
     for (elf_file.output_rela_sections.values()) |sec| {
@@ -491,7 +491,7 @@ fn writeSyntheticSections(elf_file: *Elf) !void {
         assert(relocs.items.len == num_relocs);
 
         const SortRelocs = struct {
-            pub fn lessThan(ctx: void, lhs: elf.Elf64_Rela, rhs: elf.Elf64_Rela) bool {
+            pub fn less_than(ctx: void, lhs: elf.Elf64_Rela, rhs: elf.Elf64_Rela) bool {
                 _ = ctx;
                 return lhs.r_offset < rhs.r_offset;
             }
@@ -540,7 +540,7 @@ fn writeSyntheticSections(elf_file: *Elf) !void {
     try elf_file.writeShStrtab();
 }
 
-fn writeComdatGroups(elf_file: *Elf) !void {
+fn write_comdat_groups(elf_file: *Elf) !void {
     const gpa = elf_file.base.comp.gpa;
     for (elf_file.comdat_group_sections.items) |cgs| {
         const shdr = elf_file.shdrs.items[cgs.shndx];

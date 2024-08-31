@@ -113,17 +113,17 @@ fn _start2() callconv(.C) noreturn {
     callMain2();
 }
 
-fn callMain2() noreturn {
+fn call_main2() noreturn {
     @setAlignStack(16);
     root.main();
     exit2(0);
 }
 
-fn spirvMain2() callconv(.Kernel) void {
+fn spirv_main2() callconv(.Kernel) void {
     root.main();
 }
 
-fn wWinMainCRTStartup2() callconv(.C) noreturn {
+fn w_win_main_crtstartup2() callconv(.C) noreturn {
     root.main();
     exit2(0);
 }
@@ -177,7 +177,7 @@ fn exit2(code: usize) noreturn {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-fn _DllMainCRTStartup(
+fn _dll_main_crtstartup(
     hinstDLL: std.os.windows.HINSTANCE,
     fdwReason: std.os.windows.DWORD,
     lpReserved: std.os.windows.LPVOID,
@@ -225,7 +225,7 @@ fn riscv_start() callconv(.C) noreturn {
     });
 }
 
-fn EfiMain(handle: uefi.Handle, system_table: *uefi.tables.SystemTable) callconv(.C) usize {
+fn efi_main(handle: uefi.Handle, system_table: *uefi.tables.SystemTable) callconv(.C) usize {
     uefi.handle = handle;
     uefi.system_table = system_table;
 
@@ -352,7 +352,7 @@ fn _start() callconv(.Naked) noreturn {
     );
 }
 
-fn WinStartup() callconv(std.os.windows.WINAPI) noreturn {
+fn win_startup() callconv(std.os.windows.WINAPI) noreturn {
     @setAlignStack(16);
     if (!builtin.single_threaded and !builtin.link_libc) {
         _ = @import("start_windows_tls.zig");
@@ -363,7 +363,7 @@ fn WinStartup() callconv(std.os.windows.WINAPI) noreturn {
     std.os.windows.ntdll.RtlExitUserProcess(callMain());
 }
 
-fn wWinMainCRTStartup() callconv(std.os.windows.WINAPI) noreturn {
+fn w_win_main_crtstartup() callconv(std.os.windows.WINAPI) noreturn {
     @setAlignStack(16);
     if (!builtin.single_threaded and !builtin.link_libc) {
         _ = @import("start_windows_tls.zig");
@@ -375,7 +375,7 @@ fn wWinMainCRTStartup() callconv(std.os.windows.WINAPI) noreturn {
     std.os.windows.ntdll.RtlExitUserProcess(@as(std.os.windows.UINT, @bitCast(result)));
 }
 
-fn posixCallMainAndExit() callconv(.C) noreturn {
+fn posix_call_main_and_exit() callconv(.C) noreturn {
     const argc = argc_argv_ptr[0];
     const argv = @as([*][*:0]u8, @ptrCast(argc_argv_ptr + 1));
 
@@ -438,7 +438,7 @@ fn posixCallMainAndExit() callconv(.C) noreturn {
     std.posix.exit(callMainWithArgs(argc, argv, envp));
 }
 
-fn expandStackSize(phdrs: []elf.Phdr) void {
+fn expand_stack_size(phdrs: []elf.Phdr) void {
     for (phdrs) |*phdr| {
         switch (phdr.p_type) {
             elf.PT_GNU_STACK => {
@@ -472,7 +472,7 @@ fn expandStackSize(phdrs: []elf.Phdr) void {
     }
 }
 
-inline fn callMainWithArgs(argc: usize, argv: [*][*:0]u8, envp: [][*:0]u8) u8 {
+inline fn call_main_with_args(argc: usize, argv: [*][*:0]u8, envp: [][*:0]u8) u8 {
     std.os.argv = argv[0..argc];
     std.os.environ = envp;
 
@@ -497,7 +497,7 @@ fn main(c_argc: c_int, c_argv: [*][*:0]c_char, c_envp: [*:null]?[*:0]c_char) cal
     return callMainWithArgs(@as(usize, @intCast(c_argc)), @as([*][*:0]u8, @ptrCast(c_argv)), envp);
 }
 
-fn mainWithoutEnv(c_argc: c_int, c_argv: [*][*:0]c_char) callconv(.C) c_int {
+fn main_without_env(c_argc: c_int, c_argv: [*][*:0]c_char) callconv(.C) c_int {
     std.os.argv = @as([*][*:0]u8, @ptrCast(c_argv))[0..@as(usize, @intCast(c_argc))];
     return callMain();
 }
@@ -505,7 +505,7 @@ fn mainWithoutEnv(c_argc: c_int, c_argv: [*][*:0]c_char) callconv(.C) c_int {
 // General error message for a malformed return type
 const bad_main_ret = "expected return type of main to be 'void', '!void', 'noreturn', 'u8', or '!u8'";
 
-pub inline fn callMain() u8 {
+pub inline fn call_main() u8 {
     switch (@typeInfo(@typeInfo(@TypeOf(root.main)).Fn.return_type.?)) {
         .NoReturn => {
             root.main();
@@ -543,7 +543,7 @@ pub inline fn callMain() u8 {
     }
 }
 
-pub fn call_wWinMain() std.os.windows.INT {
+pub fn call_w_win_main() std.os.windows.INT {
     const peb = std.os.windows.peb();
     const MAIN_HINSTANCE = @typeInfo(@TypeOf(root.wWinMain)).Fn.params[0].type.?;
     const hInstance = @as(MAIN_HINSTANCE, @ptrCast(peb.ImageBaseAddress));
@@ -577,7 +577,7 @@ pub fn call_wWinMain() std.os.windows.INT {
     return root.wWinMain(hInstance, null, lpCmdLine, nCmdShow);
 }
 
-fn maybeIgnoreSigpipe() void {
+fn maybe_ignore_sigpipe() void {
     const have_sigpipe_support = switch (builtin.os.tag) {
         .linux,
         .plan9,
@@ -611,4 +611,4 @@ fn maybeIgnoreSigpipe() void {
     }
 }
 
-fn noopSigHandler(_: i32) callconv(.C) void {}
+fn noop_sig_handler(_: i32) callconv(.C) void {}

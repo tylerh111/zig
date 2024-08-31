@@ -177,7 +177,7 @@ pub fn pow(comptime T: type, x: T, y: T) T {
     return math.scalbn(a1, ae);
 }
 
-fn isOddInteger(x: f64) bool {
+fn is_odd_integer(x: f64) bool {
     if (@abs(x) >= 1 << 53) {
         // From https://golang.org/src/math/pow.go
         // 1 << 53 is the largest exact integer in the float64 format.

@@ -133,7 +133,7 @@ pub const JobQueue = struct {
     }
 
     /// Dumps all subsequent error bundles into the first one.
-    pub fn consolidateErrors(jq: *JobQueue) !void {
+    pub fn consolidate_errors(jq: *JobQueue) !void {
         const root = &jq.all_fetches.items[0].error_bundle;
         const gpa = root.gpa;
         for (jq.all_fetches.items[1..]) |fetch| {
@@ -147,7 +147,7 @@ pub const JobQueue = struct {
 
     /// Creates the dependencies.zig source code for the build runner to obtain
     /// via `@import("@dependencies")`.
-    pub fn createDependenciesSource(jq: *JobQueue, buf: *std.ArrayList(u8)) Allocator.Error!void {
+    pub fn create_dependencies_source(jq: *JobQueue, buf: *std.ArrayList(u8)) Allocator.Error!void {
         const keys = jq.table.keys();
 
         assert(keys.len != 0); // caller should have added the first one
@@ -161,7 +161,7 @@ pub const JobQueue = struct {
         // Ensure the generated .zig file is deterministic.
         jq.table.sortUnstable(@as(struct {
             keys: []const Manifest.MultiHashHexDigest,
-            pub fn lessThan(ctx: @This(), a_index: usize, b_index: usize) bool {
+            pub fn less_than(ctx: @This(), a_index: usize, b_index: usize) bool {
                 return std.mem.lessThan(u8, &ctx.keys[a_index], &ctx.keys[b_index]);
             }
         }, .{ .keys = keys }));
@@ -257,7 +257,7 @@ pub const JobQueue = struct {
         try buf.appendSlice("};\n");
     }
 
-    pub fn createEmptyDependenciesSource(buf: *std.ArrayList(u8)) Allocator.Error!void {
+    pub fn create_empty_dependencies_source(buf: *std.ArrayList(u8)) Allocator.Error!void {
         try buf.appendSlice(
             \\pub const packages = struct {};
             \\pub const root_deps: []const struct { []const u8, []const u8 } = &.{};
@@ -433,7 +433,7 @@ pub fn deinit(f: *Fetch) void {
 }
 
 /// Consumes `resource`, even if an error is returned.
-fn runResource(
+fn run_resource(
     f: *Fetch,
     uri_path: []const u8,
     resource: *Resource,
@@ -564,7 +564,7 @@ fn runResource(
 
 /// `computeHash` gets a free check for the existence of `build.zig`, but when
 /// not computing a hash, we need to do a syscall to check for it.
-fn checkBuildFileExistence(f: *Fetch) RunError!void {
+fn check_build_file_existence(f: *Fetch) RunError!void {
     const eb = &f.error_bundle;
     if (f.package_root.access(Package.build_zig_basename, .{})) |_| {
         f.has_build_zig = true;
@@ -582,7 +582,7 @@ fn checkBuildFileExistence(f: *Fetch) RunError!void {
 }
 
 /// This function populates `f.manifest` or leaves it `null`.
-fn loadManifest(f: *Fetch, pkg_root: Cache.Path) RunError!void {
+fn load_manifest(f: *Fetch, pkg_root: Cache.Path) RunError!void {
     const eb = &f.error_bundle;
     const arena = f.arena.allocator();
     const manifest_bytes = pkg_root.root_dir.handle.readFileAllocOptions(
@@ -626,7 +626,7 @@ fn loadManifest(f: *Fetch, pkg_root: Cache.Path) RunError!void {
     }
 }
 
-fn queueJobsForDeps(f: *Fetch) RunError!void {
+fn queue_jobs_for_deps(f: *Fetch) RunError!void {
     assert(f.job_queue.recursive);
 
     // If the package does not have a build.zig.zon file then there are no dependencies.
@@ -733,7 +733,7 @@ fn queueJobsForDeps(f: *Fetch) RunError!void {
     }
 }
 
-pub fn relativePathDigest(
+pub fn relative_path_digest(
     pkg_root: Cache.Path,
     cache_root: Cache.Directory,
 ) Manifest.MultiHashHexDigest {
@@ -749,7 +749,7 @@ pub fn relativePathDigest(
     return Manifest.hexDigest(hasher.finalResult());
 }
 
-pub fn workerRun(f: *Fetch, prog_name: []const u8) void {
+pub fn worker_run(f: *Fetch, prog_name: []const u8) void {
     const prog_node = f.prog_node.start(prog_name, 0);
     defer prog_node.end();
 
@@ -762,7 +762,7 @@ pub fn workerRun(f: *Fetch, prog_name: []const u8) void {
     };
 }
 
-fn srcLoc(
+fn src_loc(
     f: *Fetch,
     tok: std.zig.Ast.TokenIndex,
 ) Allocator.Error!ErrorBundle.SourceLocationIndex {
@@ -839,7 +839,7 @@ const FileType = enum {
     git_pack,
     zip,
 
-    fn fromPath(file_path: []const u8) ?FileType {
+    fn from_path(file_path: []const u8) ?FileType {
         if (ascii.endsWithIgnoreCase(file_path, ".tar")) return .tar;
         if (ascii.endsWithIgnoreCase(file_path, ".tgz")) return .@"tar.gz";
         if (ascii.endsWithIgnoreCase(file_path, ".tar.gz")) return .@"tar.gz";
@@ -852,7 +852,7 @@ const FileType = enum {
     }
 
     /// Parameter is a content-disposition header value.
-    fn fromContentDisposition(cd_header: []const u8) ?FileType {
+    fn from_content_disposition(cd_header: []const u8) ?FileType {
         const attach_end = ascii.indexOfIgnoreCase(cd_header, "attachment;") orelse
             return null;
 
@@ -891,7 +891,7 @@ const FileType = enum {
 
 const header_buffer_size = 16 * 1024;
 
-fn initResource(f: *Fetch, uri: std.Uri, server_header_buffer: []u8) RunError!Resource {
+fn init_resource(f: *Fetch, uri: std.Uri, server_header_buffer: []u8) RunError!Resource {
     const gpa = f.arena.child_allocator;
     const arena = f.arena.allocator();
     const eb = &f.error_bundle;
@@ -1042,7 +1042,7 @@ fn initResource(f: *Fetch, uri: std.Uri, server_header_buffer: []u8) RunError!Re
     ));
 }
 
-fn unpackResource(
+fn unpack_resource(
     f: *Fetch,
     resource: *Resource,
     uri_path: []const u8,
@@ -1165,7 +1165,7 @@ fn unpackResource(
     }
 }
 
-fn unpackTarball(f: *Fetch, out_dir: fs.Dir, reader: anytype) RunError!UnpackResult {
+fn unpack_tarball(f: *Fetch, out_dir: fs.Dir, reader: anytype) RunError!UnpackResult {
     const eb = &f.error_bundle;
     const arena = f.arena.allocator();
 
@@ -1287,7 +1287,7 @@ fn unzip(f: *Fetch, out_dir: fs.Dir, reader: anytype) RunError!UnpackResult {
     return res;
 }
 
-fn unpackGitPack(f: *Fetch, out_dir: fs.Dir, resource: *Resource) anyerror!UnpackResult {
+fn unpack_git_pack(f: *Fetch, out_dir: fs.Dir, resource: *Resource) anyerror!UnpackResult {
     const arena = f.arena.allocator();
     const gpa = f.arena.child_allocator;
     const want_oid = resource.git.want_oid;
@@ -1341,7 +1341,7 @@ fn unpackGitPack(f: *Fetch, out_dir: fs.Dir, resource: *Resource) anyerror!Unpac
     return res;
 }
 
-fn recursiveDirectoryCopy(f: *Fetch, dir: fs.Dir, tmp_dir: fs.Dir) anyerror!void {
+fn recursive_directory_copy(f: *Fetch, dir: fs.Dir, tmp_dir: fs.Dir) anyerror!void {
     const gpa = f.arena.child_allocator;
     // Recursive directory copy.
     var it = try dir.walk(gpa);
@@ -1381,7 +1381,7 @@ fn recursiveDirectoryCopy(f: *Fetch, dir: fs.Dir, tmp_dir: fs.Dir) anyerror!void
     }
 }
 
-pub fn renameTmpIntoCache(
+pub fn rename_tmp_into_cache(
     cache_dir: fs.Dir,
     tmp_dir_sub_path: []const u8,
     dest_dir_sub_path: []const u8,
@@ -1416,7 +1416,7 @@ pub fn renameTmpIntoCache(
 /// the hash are not present on the file system. Empty directories are *not
 /// hashed* and must not be present on the file system when calling this
 /// function.
-fn computeHash(
+fn compute_hash(
     f: *Fetch,
     pkg_path: Cache.Path,
     filter: Filter,
@@ -1510,7 +1510,7 @@ fn computeHash(
         // Sort by length, descending, so that child directories get removed first.
         sus_dirs.sortUnstable(@as(struct {
             keys: []const []const u8,
-            pub fn lessThan(ctx: @This(), a_index: usize, b_index: usize) bool {
+            pub fn less_than(ctx: @This(), a_index: usize, b_index: usize) bool {
                 return ctx.keys[b_index].len < ctx.keys[a_index].len;
             }
         }, .{ .keys = sus_dirs.keys() }));
@@ -1577,7 +1577,7 @@ fn computeHash(
     return hasher.finalResult();
 }
 
-fn dumpHashInfo(all_files: []const *const HashedFile) !void {
+fn dump_hash_info(all_files: []const *const HashedFile) !void {
     const stdout = std.io.getStdOut();
     var bw = std.io.bufferedWriter(stdout.writer());
     const w = bw.writer();
@@ -1593,15 +1593,15 @@ fn dumpHashInfo(all_files: []const *const HashedFile) !void {
     try bw.flush();
 }
 
-fn workerHashFile(dir: fs.Dir, hashed_file: *HashedFile) void {
+fn worker_hash_file(dir: fs.Dir, hashed_file: *HashedFile) void {
     hashed_file.failure = hashFileFallible(dir, hashed_file);
 }
 
-fn workerDeleteFile(dir: fs.Dir, deleted_file: *DeletedFile) void {
+fn worker_delete_file(dir: fs.Dir, deleted_file: *DeletedFile) void {
     deleted_file.failure = deleteFileFallible(dir, deleted_file);
 }
 
-fn hashFileFallible(dir: fs.Dir, hashed_file: *HashedFile) HashedFile.Error!void {
+fn hash_file_fallible(dir: fs.Dir, hashed_file: *HashedFile) HashedFile.Error!void {
     var buf: [8000]u8 = undefined;
     var hasher = Manifest.Hash.init(.{});
     hasher.update(hashed_file.normalized_path);
@@ -1637,11 +1637,11 @@ fn hashFileFallible(dir: fs.Dir, hashed_file: *HashedFile) HashedFile.Error!void
     hasher.final(&hashed_file.hash);
 }
 
-fn deleteFileFallible(dir: fs.Dir, deleted_file: *DeletedFile) DeletedFile.Error!void {
+fn delete_file_fallible(dir: fs.Dir, deleted_file: *DeletedFile) DeletedFile.Error!void {
     try dir.deleteFile(deleted_file.fs_path);
 }
 
-fn setExecutable(file: fs.File) !void {
+fn set_executable(file: fs.File) !void {
     if (!std.fs.has_executable_bit) return;
 
     const S = std.posix.S;
@@ -1674,14 +1674,14 @@ const HashedFile = struct {
 
     const Kind = enum { file, link };
 
-    fn lessThan(context: void, lhs: *const HashedFile, rhs: *const HashedFile) bool {
+    fn less_than(context: void, lhs: *const HashedFile, rhs: *const HashedFile) bool {
         _ = context;
         return std.mem.lessThan(u8, lhs.normalized_path, rhs.normalized_path);
     }
 };
 
 /// Strips root directory name from file system path.
-fn stripRoot(fs_path: []const u8, root_dir: []const u8) []const u8 {
+fn strip_root(fs_path: []const u8, root_dir: []const u8) []const u8 {
     if (root_dir.len == 0 or fs_path.len <= root_dir.len) return fs_path;
 
     if (std.mem.eql(u8, fs_path[0..root_dir.len], root_dir) and fs_path[root_dir.len] == fs.path.sep) {
@@ -1693,7 +1693,7 @@ fn stripRoot(fs_path: []const u8, root_dir: []const u8) []const u8 {
 
 /// Make a file system path identical independently of operating system path inconsistencies.
 /// This converts backslashes into forward slashes.
-fn normalizePathAlloc(arena: Allocator, pkg_path: []const u8) ![]const u8 {
+fn normalize_path_alloc(arena: Allocator, pkg_path: []const u8) ![]const u8 {
     const normalized = try arena.dupe(u8, pkg_path);
     if (fs.path.sep == canonical_sep) return normalized;
     normalizePath(normalized);
@@ -1702,7 +1702,7 @@ fn normalizePathAlloc(arena: Allocator, pkg_path: []const u8) ![]const u8 {
 
 const canonical_sep = fs.path.sep_posix;
 
-fn normalizePath(bytes: []u8) void {
+fn normalize_path(bytes: []u8) void {
     assert(fs.path.sep != canonical_sep);
     std.mem.replaceScalar(u8, bytes, fs.path.sep, canonical_sep);
 }
@@ -1711,7 +1711,7 @@ const Filter = struct {
     include_paths: std.StringArrayHashMapUnmanaged(void) = .{},
 
     /// sub_path is relative to the package root.
-    pub fn includePath(self: Filter, sub_path: []const u8) bool {
+    pub fn include_path(self: Filter, sub_path: []const u8) bool {
         if (self.include_paths.count() == 0) return true;
         if (self.include_paths.contains("")) return true;
         if (self.include_paths.contains(".")) return true;
@@ -1738,7 +1738,7 @@ const Filter = struct {
     }
 };
 
-pub fn depDigest(
+pub fn dep_digest(
     pkg_root: Cache.Path,
     cache_root: Cache.Directory,
     dep: Manifest.Dependency,
@@ -1798,7 +1798,7 @@ const FileHeader = struct {
         self.bytes_read += n;
     }
 
-    pub fn isExecutable(self: *FileHeader) bool {
+    pub fn is_executable(self: *FileHeader) bool {
         return std.mem.eql(u8, self.header[0..shebang.len], shebang) or
             std.mem.eql(u8, self.header[0..elf_magic.len], elf_magic);
     }
@@ -1854,16 +1854,16 @@ const UnpackResult = struct {
         }
     };
 
-    fn allocErrors(self: *UnpackResult, arena: std.mem.Allocator, n: usize, root_error_message: []const u8) !void {
+    fn alloc_errors(self: *UnpackResult, arena: std.mem.Allocator, n: usize, root_error_message: []const u8) !void {
         self.root_error_message = try arena.dupe(u8, root_error_message);
         self.errors = try arena.alloc(UnpackResult.Error, n);
     }
 
-    fn hasErrors(self: *UnpackResult) bool {
+    fn has_errors(self: *UnpackResult) bool {
         return self.errors_count > 0;
     }
 
-    fn unableToCreateFile(self: *UnpackResult, file_name: []const u8, err: anyerror) void {
+    fn unable_to_create_file(self: *UnpackResult, file_name: []const u8, err: anyerror) void {
         self.errors[self.errors_count] = .{ .unable_to_create_file = .{
             .code = err,
             .file_name = file_name,
@@ -1871,7 +1871,7 @@ const UnpackResult = struct {
         self.errors_count += 1;
     }
 
-    fn unableToCreateSymLink(self: *UnpackResult, file_name: []const u8, link_name: []const u8, err: anyerror) void {
+    fn unable_to_create_sym_link(self: *UnpackResult, file_name: []const u8, link_name: []const u8, err: anyerror) void {
         self.errors[self.errors_count] = .{ .unable_to_create_sym_link = .{
             .code = err,
             .file_name = file_name,
@@ -1880,7 +1880,7 @@ const UnpackResult = struct {
         self.errors_count += 1;
     }
 
-    fn unsupportedFileType(self: *UnpackResult, file_name: []const u8, file_type: u8) void {
+    fn unsupported_file_type(self: *UnpackResult, file_name: []const u8, file_type: u8) void {
         self.errors[self.errors_count] = .{ .unsupported_file_type = .{
             .file_name = file_name,
             .file_type = file_type,
@@ -2220,7 +2220,7 @@ test "set executable bit based on file content" {
     // -rwxrwxr-x 1    17 Apr   script_with_shebang_without_exec_bit
 }
 
-fn saveEmbedFile(comptime tarball_name: []const u8, dir: fs.Dir) !void {
+fn save_embed_file(comptime tarball_name: []const u8, dir: fs.Dir) !void {
     //const tarball_name = "duplicate_paths_excluded.tar.gz";
     const tarball_content = @embedFile("Fetch/testdata/" ++ tarball_name);
     var tmp_file = try dir.createFile(tarball_name, .{});
@@ -2296,14 +2296,14 @@ const TestFetchBuilder = struct {
         self.thread_pool.deinit();
     }
 
-    fn packageDir(self: *TestFetchBuilder) !fs.Dir {
+    fn package_dir(self: *TestFetchBuilder) !fs.Dir {
         const root = self.fetch.package_root;
         return try root.root_dir.handle.openDir(root.sub_path, .{ .iterate = true });
     }
 
     // Test helper, asserts thet package dir constains expected_files.
     // expected_files must be sorted.
-    fn expectPackageFiles(self: *TestFetchBuilder, expected_files: []const []const u8) !void {
+    fn expect_package_files(self: *TestFetchBuilder, expected_files: []const []const u8) !void {
         var package_dir = try self.packageDir();
         defer package_dir.close();
 
@@ -2320,7 +2320,7 @@ const TestFetchBuilder = struct {
             try actual_files.append(std.testing.allocator, path);
         }
         std.mem.sortUnstable([]u8, actual_files.items, {}, struct {
-            fn lessThan(_: void, a: []u8, b: []u8) bool {
+            fn less_than(_: void, a: []u8, b: []u8) bool {
                 return std.mem.lessThan(u8, a, b);
             }
         }.lessThan);
@@ -2333,7 +2333,7 @@ const TestFetchBuilder = struct {
     }
 
     // Test helper, asserts that fetch has failed with `msg` error message.
-    fn expectFetchErrors(self: *TestFetchBuilder, notes_len: usize, msg: []const u8) !void {
+    fn expect_fetch_errors(self: *TestFetchBuilder, notes_len: usize, msg: []const u8) !void {
         var errors = try self.fetch.error_bundle.toOwnedBundle("");
         defer errors.deinit(std.testing.allocator);
 

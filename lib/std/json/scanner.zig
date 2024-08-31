@@ -199,15 +199,15 @@ pub const Diagnostics = struct {
     cursor_pointer: *const usize = undefined,
 
     /// Starts at 1.
-    pub fn getLine(self: *const @This()) u64 {
+    pub fn get_line(self: *const @This()) u64 {
         return self.line_number;
     }
     /// Starts at 1.
-    pub fn getColumn(self: *const @This()) u64 {
+    pub fn get_column(self: *const @This()) u64 {
         return self.cursor_pointer.* -% self.line_start_cursor;
     }
     /// Starts at 0. Measures the byte offset since the start of the input.
-    pub fn getByteOffset(self: *const @This()) u64 {
+    pub fn get_byte_offset(self: *const @This()) u64 {
         return self.total_bytes_before_current_input + self.cursor_pointer.*;
     }
 };
@@ -221,7 +221,7 @@ pub const default_max_value_len = 4 * 1024 * 1024;
 
 /// Connects a `std.io.Reader` to a `std.json.Scanner`.
 /// All `next*()` methods here handle `error.BufferUnderrun` from `std.json.Scanner`, and then read from the reader.
-pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
+pub fn reader(comptime buffer_size: usize, comptime ReaderType: type) type {
     return struct {
         scanner: Scanner,
         reader: ReaderType,
@@ -241,7 +241,7 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
         }
 
         /// Calls `std.json.Scanner.enableDiagnostics`.
-        pub fn enableDiagnostics(self: *@This(), diagnostics: *Diagnostics) void {
+        pub fn enable_diagnostics(self: *@This(), diagnostics: *Diagnostics) void {
             self.scanner.enableDiagnostics(diagnostics);
         }
 
@@ -252,11 +252,11 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
 
         /// Equivalent to `nextAllocMax(allocator, when, default_max_value_len);`
         /// See also `std.json.Token` for documentation of `nextAlloc*()` function behavior.
-        pub fn nextAlloc(self: *@This(), allocator: Allocator, when: AllocWhen) AllocError!Token {
+        pub fn next_alloc(self: *@This(), allocator: Allocator, when: AllocWhen) AllocError!Token {
             return self.nextAllocMax(allocator, when, default_max_value_len);
         }
         /// See also `std.json.Token` for documentation of `nextAlloc*()` function behavior.
-        pub fn nextAllocMax(self: *@This(), allocator: Allocator, when: AllocWhen, max_value_len: usize) AllocError!Token {
+        pub fn next_alloc_max(self: *@This(), allocator: Allocator, when: AllocWhen, max_value_len: usize) AllocError!Token {
             const token_type = try self.peekNextTokenType();
             switch (token_type) {
                 .number, .string => {
@@ -291,11 +291,11 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
         }
 
         /// Equivalent to `allocNextIntoArrayListMax(value_list, when, default_max_value_len);`
-        pub fn allocNextIntoArrayList(self: *@This(), value_list: *ArrayList(u8), when: AllocWhen) AllocError!?[]const u8 {
+        pub fn alloc_next_into_array_list(self: *@This(), value_list: *ArrayList(u8), when: AllocWhen) AllocError!?[]const u8 {
             return self.allocNextIntoArrayListMax(value_list, when, default_max_value_len);
         }
         /// Calls `std.json.Scanner.allocNextIntoArrayListMax` and handles `error.BufferUnderrun`.
-        pub fn allocNextIntoArrayListMax(self: *@This(), value_list: *ArrayList(u8), when: AllocWhen, max_value_len: usize) AllocError!?[]const u8 {
+        pub fn alloc_next_into_array_list_max(self: *@This(), value_list: *ArrayList(u8), when: AllocWhen, max_value_len: usize) AllocError!?[]const u8 {
             while (true) {
                 return self.scanner.allocNextIntoArrayListMax(value_list, when, max_value_len) catch |err| switch (err) {
                     error.BufferUnderrun => {
@@ -308,7 +308,7 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
         }
 
         /// Like `std.json.Scanner.skipValue`, but handles `error.BufferUnderrun`.
-        pub fn skipValue(self: *@This()) SkipError!void {
+        pub fn skip_value(self: *@This()) SkipError!void {
             switch (try self.peekNextTokenType()) {
                 .object_begin, .array_begin => {
                     try self.skipUntilStackHeight(self.stackHeight());
@@ -338,7 +338,7 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
             }
         }
         /// Like `std.json.Scanner.skipUntilStackHeight()` but handles `error.BufferUnderrun`.
-        pub fn skipUntilStackHeight(self: *@This(), terminal_stack_height: usize) NextError!void {
+        pub fn skip_until_stack_height(self: *@This(), terminal_stack_height: usize) NextError!void {
             while (true) {
                 return self.scanner.skipUntilStackHeight(terminal_stack_height) catch |err| switch (err) {
                     error.BufferUnderrun => {
@@ -351,11 +351,11 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
         }
 
         /// Calls `std.json.Scanner.stackHeight`.
-        pub fn stackHeight(self: *const @This()) usize {
+        pub fn stack_height(self: *const @This()) usize {
             return self.scanner.stackHeight();
         }
         /// Calls `std.json.Scanner.ensureTotalStackCapacity`.
-        pub fn ensureTotalStackCapacity(self: *@This(), height: usize) Allocator.Error!void {
+        pub fn ensure_total_stack_capacity(self: *@This(), height: usize) Allocator.Error!void {
             try self.scanner.ensureTotalStackCapacity(height);
         }
 
@@ -373,7 +373,7 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
         }
 
         /// See `std.json.Scanner.peekNextTokenType()`.
-        pub fn peekNextTokenType(self: *@This()) PeekError!TokenType {
+        pub fn peek_next_token_type(self: *@This()) PeekError!TokenType {
             while (true) {
                 return self.scanner.peekNextTokenType() catch |err| switch (err) {
                     error.BufferUnderrun => {
@@ -385,7 +385,7 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
             }
         }
 
-        fn refillBuffer(self: *@This()) ReaderType.Error!void {
+        fn refill_buffer(self: *@This()) ReaderType.Error!void {
             const input = self.buffer[0..try self.reader.read(self.buffer[0..])];
             if (input.len > 0) {
                 self.scanner.feedInput(input);
@@ -422,7 +422,7 @@ pub const Scanner = struct {
     diagnostics: ?*Diagnostics = null,
 
     /// The allocator is only used to track `[]` and `{}` nesting levels.
-    pub fn initStreaming(allocator: Allocator) @This() {
+    pub fn init_streaming(allocator: Allocator) @This() {
         return .{
             .stack = BitStack.init(allocator),
         };
@@ -434,7 +434,7 @@ pub const Scanner = struct {
     /// feedInput(complete_input);
     /// endInput();
     /// ```
-    pub fn initCompleteInput(allocator: Allocator, complete_input: []const u8) @This() {
+    pub fn init_complete_input(allocator: Allocator, complete_input: []const u8) @This() {
         return .{
             .stack = BitStack.init(allocator),
             .input = complete_input,
@@ -446,14 +446,14 @@ pub const Scanner = struct {
         self.* = undefined;
     }
 
-    pub fn enableDiagnostics(self: *@This(), diagnostics: *Diagnostics) void {
+    pub fn enable_diagnostics(self: *@This(), diagnostics: *Diagnostics) void {
         diagnostics.cursor_pointer = &self.cursor;
         self.diagnostics = diagnostics;
     }
 
     /// Call this whenever you get `error.BufferUnderrun` from `next()`.
     /// When there is no more input to provide, call `endInput()`.
-    pub fn feedInput(self: *@This(), input: []const u8) void {
+    pub fn feed_input(self: *@This(), input: []const u8) void {
         assert(self.cursor == self.input.len); // Not done with the last input slice.
         if (self.diagnostics) |diag| {
             diag.total_bytes_before_current_input += self.input.len;
@@ -469,7 +469,7 @@ pub const Scanner = struct {
     /// This can be called either immediately after the last `feedInput()`,
     /// or at any time afterward, such as when getting `error.BufferUnderrun` from `next()`.
     /// Don't forget to call `next*()` after `endInput()` until you get `.end_of_document`.
-    pub fn endInput(self: *@This()) void {
+    pub fn end_input(self: *@This()) void {
         self.is_end_of_input = true;
     }
 
@@ -482,13 +482,13 @@ pub const Scanner = struct {
     /// Equivalent to `nextAllocMax(allocator, when, default_max_value_len);`
     /// This function is only available after `endInput()` (or `initCompleteInput()`) has been called.
     /// See also `std.json.Token` for documentation of `nextAlloc*()` function behavior.
-    pub fn nextAlloc(self: *@This(), allocator: Allocator, when: AllocWhen) AllocError!Token {
+    pub fn next_alloc(self: *@This(), allocator: Allocator, when: AllocWhen) AllocError!Token {
         return self.nextAllocMax(allocator, when, default_max_value_len);
     }
 
     /// This function is only available after `endInput()` (or `initCompleteInput()`) has been called.
     /// See also `std.json.Token` for documentation of `nextAlloc*()` function behavior.
-    pub fn nextAllocMax(self: *@This(), allocator: Allocator, when: AllocWhen, max_value_len: usize) AllocError!Token {
+    pub fn next_alloc_max(self: *@This(), allocator: Allocator, when: AllocWhen, max_value_len: usize) AllocError!Token {
         assert(self.is_end_of_input); // This function is not available in streaming mode.
         const token_type = self.peekNextTokenType() catch |e| switch (e) {
             error.BufferUnderrun => unreachable,
@@ -533,7 +533,7 @@ pub const Scanner = struct {
     }
 
     /// Equivalent to `allocNextIntoArrayListMax(value_list, when, default_max_value_len);`
-    pub fn allocNextIntoArrayList(self: *@This(), value_list: *ArrayList(u8), when: AllocWhen) AllocIntoArrayListError!?[]const u8 {
+    pub fn alloc_next_into_array_list(self: *@This(), value_list: *ArrayList(u8), when: AllocWhen) AllocIntoArrayListError!?[]const u8 {
         return self.allocNextIntoArrayListMax(value_list, when, default_max_value_len);
     }
     /// The next token type must be either `.number` or `.string`. See `peekNextTokenType()`.
@@ -546,7 +546,7 @@ pub const Scanner = struct {
     /// can be resumed by passing the same array list in again.
     /// This method does not indicate whether the token content being returned is for a `.number` or `.string` token type;
     /// the caller of this method is expected to know which type of token is being processed.
-    pub fn allocNextIntoArrayListMax(self: *@This(), value_list: *ArrayList(u8), when: AllocWhen, max_value_len: usize) AllocIntoArrayListError!?[]const u8 {
+    pub fn alloc_next_into_array_list_max(self: *@This(), value_list: *ArrayList(u8), when: AllocWhen, max_value_len: usize) AllocIntoArrayListError!?[]const u8 {
         while (true) {
             const token = try self.next();
             switch (token) {
@@ -610,7 +610,7 @@ pub const Scanner = struct {
     /// If the next token type is `.true`, `.false`, or `.null`, this function calls `next()` once.
     /// The next token type must not be `.object_end`, `.array_end`, or `.end_of_document`;
     /// see `peekNextTokenType()`.
-    pub fn skipValue(self: *@This()) SkipError!void {
+    pub fn skip_value(self: *@This()) SkipError!void {
         assert(self.is_end_of_input); // This function is not available in streaming mode.
         switch (self.peekNextTokenType() catch |e| switch (e) {
             error.BufferUnderrun => unreachable,
@@ -655,7 +655,7 @@ pub const Scanner = struct {
 
     /// Skip tokens until an `.object_end` or `.array_end` token results in a `stackHeight()` equal the given stack height.
     /// Unlike `skipValue()`, this function is available in streaming mode.
-    pub fn skipUntilStackHeight(self: *@This(), terminal_stack_height: usize) NextError!void {
+    pub fn skip_until_stack_height(self: *@This(), terminal_stack_height: usize) NextError!void {
         while (true) {
             switch (try self.next()) {
                 .object_end, .array_end => {
@@ -668,13 +668,13 @@ pub const Scanner = struct {
     }
 
     /// The depth of `{}` or `[]` nesting levels at the current position.
-    pub fn stackHeight(self: *const @This()) usize {
+    pub fn stack_height(self: *const @This()) usize {
         return self.stack.bit_len;
     }
 
     /// Pre allocate memory to hold the given number of nesting levels.
     /// `stackHeight()` up to the given number will not cause allocations.
-    pub fn ensureTotalStackCapacity(self: *@This(), height: usize) Allocator.Error!void {
+    pub fn ensure_total_stack_capacity(self: *@This(), height: usize) Allocator.Error!void {
         try self.stack.ensureTotalCapacity(height);
     }
 
@@ -1432,7 +1432,7 @@ pub const Scanner = struct {
     /// Seeks ahead in the input until the first byte of the next token (or the end of the input)
     /// determines which type of token will be returned from the next `next*()` call.
     /// This function is idempotent, only advancing past commas, colons, and inter-token whitespace.
-    pub fn peekNextTokenType(self: *@This()) PeekError!TokenType {
+    pub fn peek_next_token_type(self: *@This()) PeekError!TokenType {
         state_loop: while (true) {
             switch (self.state) {
                 .value => {
@@ -1610,7 +1610,7 @@ pub const Scanner = struct {
         literal_nul,
     };
 
-    fn expectByte(self: *const @This()) !u8 {
+    fn expect_byte(self: *const @This()) !u8 {
         if (self.cursor < self.input.len) {
             return self.input[self.cursor];
         }
@@ -1619,7 +1619,7 @@ pub const Scanner = struct {
         return error.BufferUnderrun;
     }
 
-    fn skipWhitespace(self: *@This()) void {
+    fn skip_whitespace(self: *@This()) void {
         while (self.cursor < self.input.len) : (self.cursor += 1) {
             switch (self.input[self.cursor]) {
                 // Whitespace
@@ -1638,12 +1638,12 @@ pub const Scanner = struct {
         }
     }
 
-    fn skipWhitespaceExpectByte(self: *@This()) !u8 {
+    fn skip_whitespace_expect_byte(self: *@This()) !u8 {
         self.skipWhitespace();
         return self.expectByte();
     }
 
-    fn skipWhitespaceCheckEnd(self: *@This()) !bool {
+    fn skip_whitespace_check_end(self: *@This()) !bool {
         self.skipWhitespace();
         if (self.cursor >= self.input.len) {
             // End of buffer.
@@ -1661,13 +1661,13 @@ pub const Scanner = struct {
         return false;
     }
 
-    fn takeValueSlice(self: *@This()) []const u8 {
+    fn take_value_slice(self: *@This()) []const u8 {
         const slice = self.input[self.value_start..self.cursor];
         self.value_start = self.cursor;
         return slice;
     }
 
-    fn endOfBufferInNumber(self: *@This(), allow_end: bool) !Token {
+    fn end_of_buffer_in_number(self: *@This(), allow_end: bool) !Token {
         const slice = self.takeValueSlice();
         if (self.is_end_of_input) {
             if (!allow_end) return error.UnexpectedEndOfInput;
@@ -1678,7 +1678,7 @@ pub const Scanner = struct {
         return Token{ .partial_number = slice };
     }
 
-    fn partialStringCodepoint(code_point: u21) Token {
+    fn partial_string_codepoint(code_point: u21) Token {
         var buf: [4]u8 = undefined;
         switch (std.unicode.utf8Encode(code_point, &buf) catch unreachable) {
             1 => return Token{ .partial_string_escaped_1 = buf[0..1].* },
@@ -1693,7 +1693,7 @@ pub const Scanner = struct {
 const OBJECT_MODE = 0;
 const ARRAY_MODE = 1;
 
-fn appendSlice(list: *std.ArrayList(u8), buf: []const u8, max_value_len: usize) !void {
+fn append_slice(list: *std.ArrayList(u8), buf: []const u8, max_value_len: usize) !void {
     const new_len = std.math.add(usize, list.items.len, buf.len) catch return error.ValueTooLong;
     if (new_len > max_value_len) return error.ValueTooLong;
     try list.appendSlice(buf);
@@ -1704,7 +1704,7 @@ fn appendSlice(list: *std.ArrayList(u8), buf: []const u8, max_value_len: usize) 
 /// Note, the numeric value encoded by the value may still be an integer, such as `1.0`.
 /// This function is meant to give a hint about whether integer parsing or float parsing should be used on the value.
 /// This function will not give meaningful results on non-numeric input.
-pub fn isNumberFormattedLikeAnInteger(value: []const u8) bool {
+pub fn is_number_formatted_like_an_integer(value: []const u8) bool {
     if (std.mem.eql(u8, value, "-0")) return false;
     return std.mem.indexOfAny(u8, value, ".eE") == null;
 }

@@ -10,7 +10,7 @@ const Value = @import("dynamic.zig").Value;
 /// `jsonParse`, `jsonParseFromValue`, and `jsonStringify`.
 /// This is useful when your JSON schema has an object with arbitrary data keys
 /// instead of comptime-known struct field names.
-pub fn ArrayHashMap(comptime T: type) type {
+pub fn array_hash_map(comptime T: type) type {
     return struct {
         map: std.StringArrayHashMapUnmanaged(T) = .{},
 
@@ -18,7 +18,7 @@ pub fn ArrayHashMap(comptime T: type) type {
             self.map.deinit(allocator);
         }
 
-        pub fn jsonParse(allocator: Allocator, source: anytype, options: ParseOptions) !@This() {
+        pub fn json_parse(allocator: Allocator, source: anytype, options: ParseOptions) !@This() {
             var map = std.StringArrayHashMapUnmanaged(T){};
             errdefer map.deinit(allocator);
 
@@ -49,7 +49,7 @@ pub fn ArrayHashMap(comptime T: type) type {
             return .{ .map = map };
         }
 
-        pub fn jsonParseFromValue(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
+        pub fn json_parse_from_value(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
             if (source != .object) return error.UnexpectedToken;
 
             var map = std.StringArrayHashMapUnmanaged(T){};
@@ -62,7 +62,7 @@ pub fn ArrayHashMap(comptime T: type) type {
             return .{ .map = map };
         }
 
-        pub fn jsonStringify(self: @This(), jws: anytype) !void {
+        pub fn json_stringify(self: @This(), jws: anytype) !void {
             try jws.beginObject();
             var it = self.map.iterator();
             while (it.next()) |kv| {

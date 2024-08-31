@@ -227,22 +227,22 @@ pub const W = struct {
     pub const EXITED = 0x0010;
     pub const TRAPPED = 0x0020;
 
-    pub fn EXITSTATUS(s: u32) u8 {
+    pub fn exitstatus(s: u32) u8 {
         return @as(u8, @intCast((s & 0xff00) >> 8));
     }
-    pub fn TERMSIG(s: u32) u32 {
+    pub fn termsig(s: u32) u32 {
         return s & 0x7f;
     }
-    pub fn STOPSIG(s: u32) u32 {
+    pub fn stopsig(s: u32) u32 {
         return EXITSTATUS(s);
     }
-    pub fn IFEXITED(s: u32) bool {
+    pub fn ifexited(s: u32) bool {
         return TERMSIG(s) == 0;
     }
-    pub fn IFSTOPPED(s: u32) bool {
+    pub fn ifstopped(s: u32) bool {
         return @as(u16, @truncate((((s & 0xffff) *% 0x10001) >> 8))) > 0x7f00;
     }
-    pub fn IFSIGNALED(s: u32) bool {
+    pub fn ifsignaled(s: u32) bool {
         return (s & 0xffff) -% 1 < 0xff;
     }
 };
@@ -608,7 +608,7 @@ pub const S = struct {
     pub const IFWHT = 57344;
     pub const IFMT = 61440;
 
-    pub fn ISCHR(m: u32) bool {
+    pub fn ischr(m: u32) bool {
         return m & IFMT == IFCHR;
     }
 };

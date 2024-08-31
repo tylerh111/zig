@@ -68,7 +68,7 @@ pub fn compressor(comptime container: Container, writer: anytype, options: Optio
 }
 
 /// Compressor type.
-pub fn Compressor(comptime container: Container, comptime WriterType: type) type {
+pub fn compressor(comptime container: Container, comptime WriterType: type) type {
     const TokenWriterType = BlockWriter(WriterType);
     return Deflate(container, WriterType, TokenWriterType);
 }
@@ -118,7 +118,7 @@ pub fn Compressor(comptime container: Container, comptime WriterType: type) type
 /// Deflate function accepts BlockWriterType so we can change that in test to test
 /// just tokenization part.
 ///
-fn Deflate(comptime container: Container, comptime WriterType: type, comptime BlockWriterType: type) type {
+fn deflate(comptime container: Container, comptime WriterType: type, comptime BlockWriterType: type) type {
     return struct {
         lookup: Lookup = .{},
         win: SlidingWindow = .{},
@@ -204,33 +204,33 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
             }
         }
 
-        fn windowAdvance(self: *Self, step: u16, lh: []const u8, pos: u16) void {
+        fn window_advance(self: *Self, step: u16, lh: []const u8, pos: u16) void {
             // current position is already added in findMatch
             self.lookup.bulkAdd(lh[1..], step - 1, pos + 1);
             self.win.advance(step);
         }
 
         // Add previous literal (if any) to the tokens list.
-        fn addPrevLiteral(self: *Self) !void {
+        fn add_prev_literal(self: *Self) !void {
             if (self.prev_literal) |l| try self.addToken(Token.initLiteral(l));
         }
 
         // Add match to the tokens list, reset prev pointers.
         // Returns length of the added match.
-        fn addMatch(self: *Self, m: Token) !u16 {
+        fn add_match(self: *Self, m: Token) !u16 {
             try self.addToken(m);
             self.prev_literal = null;
             self.prev_match = null;
             return m.length();
         }
 
-        fn addToken(self: *Self, token: Token) !void {
+        fn add_token(self: *Self, token: Token) !void {
             self.tokens.add(token);
             if (self.tokens.full()) try self.flushTokens(.none);
         }
 
         // Finds largest match in the history window with the data at current pos.
-        fn findMatch(self: *Self, pos: u16, lh: []const u8, min_len: u16) ?Token {
+        fn find_match(self: *Self, pos: u16, lh: []const u8, min_len: u16) ?Token {
             var len: u16 = min_len;
             // Previous location with the same hash (same 4 bytes).
             var prev_pos = self.lookup.add(lh, pos);
@@ -265,7 +265,7 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
             return match;
         }
 
-        fn flushTokens(self: *Self, flush_opt: FlushOption) !void {
+        fn flush_tokens(self: *Self, flush_opt: FlushOption) !void {
             // Pass tokens to the token writer
             try self.block_writer.write(self.tokens.tokens(), flush_opt == .final, self.win.tokensBuffer());
             // Stored block ensures byte aligment.
@@ -348,7 +348,7 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
 
         /// Use another writer while preserving history. Most probably flush
         /// should be called on old writer before setting new.
-        pub fn setWriter(self: *Self, new_writer: WriterType) void {
+        pub fn set_writer(self: *Self, new_writer: WriterType) void {
             self.block_writer.setWriter(new_writer);
             self.wrt = new_writer;
         }
@@ -405,7 +405,7 @@ pub const huffman = struct {
         try c.finish();
     }
 
-    pub fn Compressor(comptime container: Container, comptime WriterType: type) type {
+    pub fn compressor(comptime container: Container, comptime WriterType: type) type {
         return SimpleCompressor(.huffman, container, WriterType);
     }
 
@@ -424,7 +424,7 @@ pub const store = struct {
         try c.finish();
     }
 
-    pub fn Compressor(comptime container: Container, comptime WriterType: type) type {
+    pub fn compressor(comptime container: Container, comptime WriterType: type) type {
         return SimpleCompressor(.store, container, WriterType);
     }
 
@@ -438,7 +438,7 @@ const SimpleCompressorKind = enum {
     store,
 };
 
-fn simpleCompressor(
+fn simple_compressor(
     comptime kind: SimpleCompressorKind,
     comptime container: Container,
     writer: anytype,
@@ -446,7 +446,7 @@ fn simpleCompressor(
     return try SimpleCompressor(kind, container, @TypeOf(writer)).init(writer);
 }
 
-fn SimpleCompressor(
+fn simple_compressor(
     comptime kind: SimpleCompressorKind,
     comptime container: Container,
     comptime WriterType: type,
@@ -483,7 +483,7 @@ fn SimpleCompressor(
             try container.writeFooter(&self.hasher, self.wrt);
         }
 
-        fn flushBuffer(self: *Self, final: bool) !void {
+        fn flush_buffer(self: *Self, final: bool) !void {
             const buf = self.buffer[0..self.wp];
             switch (kind) {
                 .huffman => try self.block_writer.huffmanBlock(buf, final),
@@ -589,7 +589,7 @@ const TestTokenWriter = struct {
         }
     }
 
-    pub fn storedBlock(_: *Self, _: []const u8, _: bool) !void {}
+    pub fn stored_block(_: *Self, _: []const u8, _: bool) !void {}
 
     pub fn get(self: *Self) []Token {
         return self.actual[0..self.pos];
@@ -675,7 +675,7 @@ test "file tokenization" {
     }
 }
 
-fn TokenDecoder(comptime WriterType: type) type {
+fn token_decoder(comptime WriterType: type) type {
     return struct {
         const CircularBuffer = @import("CircularBuffer.zig");
         hist: CircularBuffer = .{},
@@ -700,9 +700,9 @@ fn TokenDecoder(comptime WriterType: type) type {
             try self.flushWin();
         }
 
-        pub fn storedBlock(_: *Self, _: []const u8, _: bool) !void {}
+        pub fn stored_block(_: *Self, _: []const u8, _: bool) !void {}
 
-        fn flushWin(self: *Self) !void {
+        fn flush_win(self: *Self) !void {
             while (true) {
                 const buf = self.hist.read();
                 if (buf.len == 0) break;

@@ -102,10 +102,10 @@ test "structs" {
     testMutation(&foo);
     try expect(foo.c == 100);
 }
-fn testFoo(foo: StructFoo) !void {
+fn test_foo(foo: StructFoo) !void {
     try expect(foo.b);
 }
-fn testMutation(foo: *StructFoo) void {
+fn test_mutation(foo: *StructFoo) void {
     foo.c = 100;
 }
 
@@ -139,7 +139,7 @@ const empty_global_instance = StructWithNoFields{};
 test "return empty struct instance" {
     _ = returnEmptyStructInstance();
 }
-fn returnEmptyStructInstance() StructWithNoFields {
+fn return_empty_struct_instance() StructWithNoFields {
     return empty_global_instance;
 }
 
@@ -150,11 +150,11 @@ test "fn call of struct field" {
         ptr: fn () i32,
     };
     const S = struct {
-        fn aFunc() i32 {
+        fn a_func() i32 {
             return 13;
         }
 
-        fn callStructField(comptime foo: Foo) i32 {
+        fn call_struct_field(comptime foo: Foo) i32 {
             return foo.ptr();
         }
     };
@@ -199,7 +199,7 @@ test "member functions" {
 }
 const MemberFnRand = struct {
     seed: u32,
-    pub fn getSeed(r: *const MemberFnRand) u32 {
+    pub fn get_seed(r: *const MemberFnRand) u32 {
         return r.seed;
     }
 };
@@ -212,7 +212,7 @@ test "return struct byval from function" {
     const Bar = struct {
         x: i32,
         y: i32,
-        fn makeBar2(x: i32, y: i32) @This() {
+        fn make_bar2(x: i32, y: i32) @This() {
             return .{
                 .x = x,
                 .y = y,
@@ -225,7 +225,7 @@ test "return struct byval from function" {
 
 test "call method with mutable reference to struct with no fields" {
     const S = struct {
-        fn doC(s: *const @This()) bool {
+        fn do_c(s: *const @This()) bool {
             _ = s;
             return true;
         }
@@ -259,7 +259,7 @@ test "struct field init with catch" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x: anyerror!isize = 1;
             _ = &x;
             const req = Foo{
@@ -338,7 +338,7 @@ test "return empty struct from fn" {
     _ = testReturnEmptyStructFromFn();
 }
 const EmptyStruct2 = struct {};
-fn testReturnEmptyStructFromFn() EmptyStruct2 {
+fn test_return_empty_struct_from_fn() EmptyStruct2 {
     return EmptyStruct2{};
 }
 
@@ -347,7 +347,7 @@ test "pass slice of empty struct to fn" {
 
     try expect(testPassSliceOfEmptyStructToFn(&[_]EmptyStruct2{EmptyStruct2{}}) == 1);
 }
-fn testPassSliceOfEmptyStructToFn(slice: []const EmptyStruct2) usize {
+fn test_pass_slice_of_empty_struct_to_fn(slice: []const EmptyStruct2) usize {
     return slice.len;
 }
 
@@ -542,7 +542,7 @@ test "implicit cast packed struct field to const ptr" {
         move_id: u9,
         level: u7,
 
-        fn toInt(value: u7) u7 {
+        fn to_int(value: u7) u7 {
             return value;
         }
     };
@@ -618,15 +618,15 @@ test "bit field access" {
     try expect(data.b == 3);
 }
 
-fn getA(data: *const BitField1) u3 {
+fn get_a(data: *const BitField1) u3 {
     return data.a;
 }
 
-fn getB(data: *const BitField1) u3 {
+fn get_b(data: *const BitField1) u3 {
     return data.b;
 }
 
-fn getC(data: *const BitField1) u2 {
+fn get_c(data: *const BitField1) u2 {
     return data.c;
 }
 
@@ -821,7 +821,7 @@ test "fn with C calling convention returns struct by value" {
             handle: i32,
         };
 
-        fn makeBar(t: i32) callconv(.C) ExternBar {
+        fn make_bar(t: i32) callconv(.C) ExternBar {
             return ExternBar{
                 .handle = t,
             };
@@ -872,7 +872,7 @@ test "packed struct field passed to generic function" {
             a: u1,
         };
 
-        fn genericReadPackedField(ptr: anytype) u5 {
+        fn generic_read_packed_field(ptr: anytype) u5 {
             return ptr.*;
         }
     };
@@ -894,7 +894,7 @@ test "anonymous struct literal syntax" {
             y: i32,
         };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var p: Point = .{
                 .x = 1,
                 .y = 2,
@@ -912,7 +912,7 @@ test "fully anonymous struct" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try dump(.{
                 .int = @as(u32, 1234),
                 .float = @as(f64, 12.34),
@@ -936,7 +936,7 @@ test "fully anonymous list literal" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try dump(.{ @as(u32, 1234), @as(f64, 12.34), true, "hi" });
         }
         fn dump(args: anytype) !void {
@@ -985,7 +985,7 @@ test "tuple element initialized with fn call" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const x = .{foo()};
             try expectEqualSlices(u8, x[0], "hi");
         }
@@ -1058,7 +1058,7 @@ test "type coercion of anon struct literal to struct" {
             field: i32 = 1234,
         };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var y: u32 = 42;
             _ = &y;
             const t0 = .{ .A = 123, .B = "foo", .C = {} };
@@ -1098,7 +1098,7 @@ test "type coercion of pointer to anon struct literal to pointer to struct" {
             field: i32 = 1234,
         };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var y: u32 = 42;
             _ = &y;
             const t0 = &.{ .A = 123, .B = "foo", .C = {} };
@@ -1136,7 +1136,7 @@ test "packed struct with undefined initializers" {
             _c: u3 = undefined,
         };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var p: P = undefined;
             p = P{ .a = 2, .b = 4, .c = 6 };
             // Make sure the compiler doesn't touch the unprefixed fields.
@@ -1169,13 +1169,13 @@ test "for loop over pointers to struct, getting field from struct pointer" {
         }
 
         const ArrayList = struct {
-            fn toSlice(self: *ArrayList) []*Foo {
+            fn to_slice(self: *ArrayList) []*Foo {
                 _ = self;
                 return @as([*]*Foo, undefined)[0..0];
             }
         };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var objects: ArrayList = undefined;
 
             for (objects.toSlice()) |obj| {
@@ -1207,7 +1207,7 @@ test "anon init through error unions and optionals" {
             return .{ 1, 2 };
         }
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const a = try (try foo()).?;
             const b = try bar().?;
             try expect(a.a + b[1] == 3);
@@ -1228,7 +1228,7 @@ test "anon init through optional" {
     const S = struct {
         a: u32,
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var s: ?@This() = null;
             s = .{ .a = 1 };
             try expect(s.?.a == 1);
@@ -1249,7 +1249,7 @@ test "anon init through error union" {
     const S = struct {
         a: u32,
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var s: anyerror!@This() = error.Foo;
             s = .{ .a = 1 };
             try expect((try s).a == 1);
@@ -1276,7 +1276,7 @@ test "typed init through error unions and optionals" {
             return [2]u8{ 1, 2 };
         }
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const a = try (try foo()).?;
             const b = try bar().?;
             try expect(a.a + b[1] == 3);
@@ -1351,7 +1351,7 @@ test "packed struct field access via pointer" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const S = packed struct { a: u30 };
             var s1: S = .{ .a = 1 };
             const s2 = &s1;
@@ -1432,7 +1432,7 @@ test "fieldParentPtr of a zero-bit field" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn testStruct(comptime A: type) !void {
+        fn test_struct(comptime A: type) !void {
             {
                 const a = A{ .u = 0 };
                 const b_ptr = &a.b;
@@ -1446,7 +1446,7 @@ test "fieldParentPtr of a zero-bit field" {
                 try std.testing.expectEqual(&a, a_ptr);
             }
         }
-        fn testNestedStruct(comptime A: type) !void {
+        fn test_nested_struct(comptime A: type) !void {
             {
                 const a = A{ .u = 0 };
                 const c_ptr = &a.b.c;
@@ -1464,7 +1464,7 @@ test "fieldParentPtr of a zero-bit field" {
                 try std.testing.expectEqual(&a, a_ptr);
             }
         }
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try testStruct(struct { b: void = {}, u: u8 });
             try testStruct(struct { u: u8, b: void = {} });
             try testNestedStruct(struct { b: struct { c: void = {} } = .{}, u: u8 });
@@ -1491,24 +1491,24 @@ test "struct has only one reference" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn optionalStructParam(_: ?struct { x: u8 }) void {}
-        fn errorUnionStructParam(_: error{}!struct { x: u8 }) void {}
-        fn optionalStructReturn() ?struct { x: u8 } {
+        fn optional_struct_param(_: ?struct { x: u8 }) void {}
+        fn error_union_struct_param(_: error{}!struct { x: u8 }) void {}
+        fn optional_struct_return() ?struct { x: u8 } {
             return null;
         }
-        fn errorUnionStructReturn() error{Foo}!struct { x: u8 } {
+        fn error_union_struct_return() error{Foo}!struct { x: u8 } {
             return error.Foo;
         }
 
-        fn pointerPackedStruct(_: *packed struct { x: u8 }) void {}
-        fn nestedPointerPackedStruct(_: struct { x: *packed struct { x: u8 } }) void {}
-        fn pointerNestedPackedStruct(_: *struct { x: packed struct { x: u8 } }) void {}
-        fn pointerNestedPointerPackedStruct(_: *struct { x: *packed struct { x: u8 } }) void {}
+        fn pointer_packed_struct(_: *packed struct { x: u8 }) void {}
+        fn nested_pointer_packed_struct(_: struct { x: *packed struct { x: u8 } }) void {}
+        fn pointer_nested_packed_struct(_: *struct { x: packed struct { x: u8 } }) void {}
+        fn pointer_nested_pointer_packed_struct(_: *struct { x: *packed struct { x: u8 } }) void {}
 
-        fn optionalComptimeIntParam(comptime x: ?comptime_int) comptime_int {
+        fn optional_comptime_int_param(comptime x: ?comptime_int) comptime_int {
             return x.?;
         }
-        fn errorUnionComptimeIntParam(comptime x: error{}!comptime_int) comptime_int {
+        fn error_union_comptime_int_param(comptime x: error{}!comptime_int) comptime_int {
             return x catch unreachable;
         }
     };
@@ -1580,7 +1580,7 @@ test "no dependency loop on optional field wrapped in generic function" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
 
     const S = struct {
-        fn Atomic(comptime T: type) type {
+        fn atomic(comptime T: type) type {
             return T;
         }
         const A = struct { b: Atomic(?*B) };
@@ -1632,7 +1632,7 @@ test "if inside struct init inside if" {
 test "optional generic function label struct field" {
     const Options = struct {
         isFoo: ?fn (type) u8 = defaultIsFoo,
-        fn defaultIsFoo(comptime _: type) u8 {
+        fn default_is_foo(comptime _: type) u8 {
             return 123;
         }
     };
@@ -1704,7 +1704,7 @@ test "struct field pointer has correct alignment" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: struct { x: u32 } = .{ .x = 123 };
             var b: struct { x: u32 } align(1) = .{ .x = 456 };
             var c: struct { x: u32 } align(64) = .{ .x = 789 };
@@ -1735,7 +1735,7 @@ test "extern struct field pointer has correct alignment" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: extern struct { x: u32, y: u16 } = .{ .x = 1, .y = 2 };
             var b: extern struct { x: u32, y: u16 } align(1) = .{ .x = 3, .y = 4 };
             var c: extern struct { x: u32, y: u16 } align(64) = .{ .x = 5, .y = 6 };
@@ -1778,7 +1778,7 @@ test "packed struct field in anonymous struct" {
 
     try std.testing.expect(countFields(.{ .t = T{} }) == 1);
 }
-fn countFields(v: anytype) usize {
+fn count_fields(v: anytype) usize {
     return @typeInfo(@TypeOf(v)).Struct.fields.len;
 }
 
@@ -1897,7 +1897,7 @@ test "initializer takes a pointer to a variable inside its struct" {
             var instance: S = undefined;
         };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var foo: S = .{};
             _ = &foo;
             try expectEqual(&S.instance, foo.s);
@@ -1951,7 +1951,7 @@ test "field calls do not force struct field init resolution" {
 
 test "tuple with comptime-only field" {
     const S = struct {
-        fn getTuple() struct { comptime_int } {
+        fn get_tuple() struct { comptime_int } {
             return struct { comptime comptime_int = 0 }{0};
         }
     };
@@ -2075,7 +2075,7 @@ test "runtime value in nested initializer passed as pointer to function" {
     const Foo = struct {
         a: Bar,
 
-        fn takeFoo(foo: *const @This()) !void {
+        fn take_foo(foo: *const @This()) !void {
             try std.testing.expectEqual(@as(u32, 24), foo.a.b);
         }
     };
@@ -2177,7 +2177,7 @@ test "initiate global variable with runtime value" {
 
     const S = struct {
         field: i32,
-        fn couldFail() anyerror!i32 {
+        fn could_fail() anyerror!i32 {
             return 1;
         }
         var some_struct: @This() = undefined;
@@ -2205,7 +2205,7 @@ test "struct containing optional pointer to array of @This()" {
 
 test "matching captures causes struct equivalence" {
     const S = struct {
-        fn UnsignedWrapper(comptime I: type) type {
+        fn unsigned_wrapper(comptime I: type) type {
             const bits = @typeInfo(I).Int.bits;
             return struct {
                 x: @Type(.{ .Int = .{

@@ -75,7 +75,7 @@ pub const ExpressionError = error{
 /// A stack machine that can decode and run DWARF expressions.
 /// Expressions can be decoded for non-native address size and endianness,
 /// but can only be executed if the current target matches the configuration.
-pub fn StackMachine(comptime options: ExpressionOptions) type {
+pub fn stack_machine(comptime options: ExpressionOptions) type {
     const addr_type = switch (options.addr_size) {
         2 => u16,
         4 => u32,
@@ -140,7 +140,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                 value_bytes: []const u8,
             },
 
-            pub fn asIntegral(self: Value) !addr_type {
+            pub fn as_integral(self: Value) !addr_type {
                 return switch (self) {
                     .generic => |v| v,
 
@@ -186,7 +186,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
             }
         }
 
-        pub fn readOperand(stream: *std.io.FixedBufferStream([]const u8), opcode: u8, context: ExpressionContext) !?Operand {
+        pub fn read_operand(stream: *std.io.FixedBufferStream([]const u8), opcode: u8, context: ExpressionContext) !?Operand {
             const reader = stream.reader();
             return switch (opcode) {
                 OP.addr => generic(try reader.readInt(addr_type, options.endian)),
@@ -783,7 +783,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
     };
 }
 
-pub fn Builder(comptime options: ExpressionOptions) type {
+pub fn builder(comptime options: ExpressionOptions) type {
     const addr_type = switch (options.addr_size) {
         2 => u16,
         4 => u32,
@@ -793,7 +793,7 @@ pub fn Builder(comptime options: ExpressionOptions) type {
 
     return struct {
         /// Zero-operand instructions
-        pub fn writeOpcode(writer: anytype, comptime opcode: u8) !void {
+        pub fn write_opcode(writer: anytype, comptime opcode: u8) !void {
             if (options.call_frame_context and !comptime isOpcodeValidInCFA(opcode)) return error.InvalidCFAOpcode;
             switch (opcode) {
                 OP.dup,
@@ -834,14 +834,14 @@ pub fn Builder(comptime options: ExpressionOptions) type {
         }
 
         // 2.5.1.1: Literal Encodings
-        pub fn writeLiteral(writer: anytype, literal: u8) !void {
+        pub fn write_literal(writer: anytype, literal: u8) !void {
             switch (literal) {
                 0...31 => |n| try writer.writeByte(n + OP.lit0),
                 else => return error.InvalidLiteral,
             }
         }
 
-        pub fn writeConst(writer: anytype, comptime T: type, value: T) !void {
+        pub fn write_const(writer: anytype, comptime T: type, value: T) !void {
             if (@typeInfo(T) != .Int) @compileError("Constants must be integers");
 
             switch (T) {
@@ -873,12 +873,12 @@ pub fn Builder(comptime options: ExpressionOptions) type {
             }
         }
 
-        pub fn writeConstx(writer: anytype, debug_addr_offset: anytype) !void {
+        pub fn write_constx(writer: anytype, debug_addr_offset: anytype) !void {
             try writer.writeByte(OP.constx);
             try leb.writeULEB128(writer, debug_addr_offset);
         }
 
-        pub fn writeConstType(writer: anytype, die_offset: anytype, value_bytes: []const u8) !void {
+        pub fn write_const_type(writer: anytype, die_offset: anytype, value_bytes: []const u8) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
             if (value_bytes.len > 0xff) return error.InvalidTypeLength;
             try writer.writeByte(OP.const_type);
@@ -887,36 +887,36 @@ pub fn Builder(comptime options: ExpressionOptions) type {
             try writer.writeAll(value_bytes);
         }
 
-        pub fn writeAddr(writer: anytype, value: addr_type) !void {
+        pub fn write_addr(writer: anytype, value: addr_type) !void {
             try writer.writeByte(OP.addr);
             try writer.writeInt(addr_type, value, options.endian);
         }
 
-        pub fn writeAddrx(writer: anytype, debug_addr_offset: anytype) !void {
+        pub fn write_addrx(writer: anytype, debug_addr_offset: anytype) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
             try writer.writeByte(OP.addrx);
             try leb.writeULEB128(writer, debug_addr_offset);
         }
 
         // 2.5.1.2: Register Values
-        pub fn writeFbreg(writer: anytype, offset: anytype) !void {
+        pub fn write_fbreg(writer: anytype, offset: anytype) !void {
             try writer.writeByte(OP.fbreg);
             try leb.writeILEB128(writer, offset);
         }
 
-        pub fn writeBreg(writer: anytype, register: u8, offset: anytype) !void {
+        pub fn write_breg(writer: anytype, register: u8, offset: anytype) !void {
             if (register > 31) return error.InvalidRegister;
             try writer.writeByte(OP.breg0 + register);
             try leb.writeILEB128(writer, offset);
         }
 
-        pub fn writeBregx(writer: anytype, register: anytype, offset: anytype) !void {
+        pub fn write_bregx(writer: anytype, register: anytype, offset: anytype) !void {
             try writer.writeByte(OP.bregx);
             try leb.writeULEB128(writer, register);
             try leb.writeILEB128(writer, offset);
         }
 
-        pub fn writeRegvalType(writer: anytype, register: anytype, offset: anytype) !void {
+        pub fn write_regval_type(writer: anytype, register: anytype, offset: anytype) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
             try writer.writeByte(OP.regval_type);
             try leb.writeULEB128(writer, register);
@@ -924,29 +924,29 @@ pub fn Builder(comptime options: ExpressionOptions) type {
         }
 
         // 2.5.1.3: Stack Operations
-        pub fn writePick(writer: anytype, index: u8) !void {
+        pub fn write_pick(writer: anytype, index: u8) !void {
             try writer.writeByte(OP.pick);
             try writer.writeByte(index);
         }
 
-        pub fn writeDerefSize(writer: anytype, size: u8) !void {
+        pub fn write_deref_size(writer: anytype, size: u8) !void {
             try writer.writeByte(OP.deref_size);
             try writer.writeByte(size);
         }
 
-        pub fn writeXDerefSize(writer: anytype, size: u8) !void {
+        pub fn write_xderef_size(writer: anytype, size: u8) !void {
             try writer.writeByte(OP.xderef_size);
             try writer.writeByte(size);
         }
 
-        pub fn writeDerefType(writer: anytype, size: u8, die_offset: anytype) !void {
+        pub fn write_deref_type(writer: anytype, size: u8, die_offset: anytype) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
             try writer.writeByte(OP.deref_type);
             try writer.writeByte(size);
             try leb.writeULEB128(writer, die_offset);
         }
 
-        pub fn writeXDerefType(writer: anytype, size: u8, die_offset: anytype) !void {
+        pub fn write_xderef_type(writer: anytype, size: u8, die_offset: anytype) !void {
             try writer.writeByte(OP.xderef_type);
             try writer.writeByte(size);
             try leb.writeULEB128(writer, die_offset);
@@ -954,24 +954,24 @@ pub fn Builder(comptime options: ExpressionOptions) type {
 
         // 2.5.1.4: Arithmetic and Logical Operations
 
-        pub fn writePlusUconst(writer: anytype, uint_value: anytype) !void {
+        pub fn write_plus_uconst(writer: anytype, uint_value: anytype) !void {
             try writer.writeByte(OP.plus_uconst);
             try leb.writeULEB128(writer, uint_value);
         }
 
         // 2.5.1.5: Control Flow Operations
 
-        pub fn writeSkip(writer: anytype, offset: i16) !void {
+        pub fn write_skip(writer: anytype, offset: i16) !void {
             try writer.writeByte(OP.skip);
             try writer.writeInt(i16, offset, options.endian);
         }
 
-        pub fn writeBra(writer: anytype, offset: i16) !void {
+        pub fn write_bra(writer: anytype, offset: i16) !void {
             try writer.writeByte(OP.bra);
             try writer.writeInt(i16, offset, options.endian);
         }
 
-        pub fn writeCall(writer: anytype, comptime T: type, offset: T) !void {
+        pub fn write_call(writer: anytype, comptime T: type, offset: T) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
             switch (T) {
                 u16 => try writer.writeByte(OP.call2),
@@ -982,19 +982,19 @@ pub fn Builder(comptime options: ExpressionOptions) type {
             try writer.writeInt(T, offset, options.endian);
         }
 
-        pub fn writeCallRef(writer: anytype, comptime is_64: bool, value: if (is_64) u64 else u32) !void {
+        pub fn write_call_ref(writer: anytype, comptime is_64: bool, value: if (is_64) u64 else u32) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
             try writer.writeByte(OP.call_ref);
             try writer.writeInt(if (is_64) u64 else u32, value, options.endian);
         }
 
-        pub fn writeConvert(writer: anytype, die_offset: anytype) !void {
+        pub fn write_convert(writer: anytype, die_offset: anytype) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
             try writer.writeByte(OP.convert);
             try leb.writeULEB128(writer, die_offset);
         }
 
-        pub fn writeReinterpret(writer: anytype, die_offset: anytype) !void {
+        pub fn write_reinterpret(writer: anytype, die_offset: anytype) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
             try writer.writeByte(OP.reinterpret);
             try leb.writeULEB128(writer, die_offset);
@@ -1002,23 +1002,23 @@ pub fn Builder(comptime options: ExpressionOptions) type {
 
         // 2.5.1.7: Special Operations
 
-        pub fn writeEntryValue(writer: anytype, expression: []const u8) !void {
+        pub fn write_entry_value(writer: anytype, expression: []const u8) !void {
             try writer.writeByte(OP.entry_value);
             try leb.writeULEB128(writer, expression.len);
             try writer.writeAll(expression);
         }
 
         // 2.6: Location Descriptions
-        pub fn writeReg(writer: anytype, register: u8) !void {
+        pub fn write_reg(writer: anytype, register: u8) !void {
             try writer.writeByte(OP.reg0 + register);
         }
 
-        pub fn writeRegx(writer: anytype, register: anytype) !void {
+        pub fn write_regx(writer: anytype, register: anytype) !void {
             try writer.writeByte(OP.regx);
             try leb.writeULEB128(writer, register);
         }
 
-        pub fn writeImplicitValue(writer: anytype, value_bytes: []const u8) !void {
+        pub fn write_implicit_value(writer: anytype, value_bytes: []const u8) !void {
             try writer.writeByte(OP.implicit_value);
             try leb.writeULEB128(writer, value_bytes.len);
             try writer.writeAll(value_bytes);
@@ -1027,7 +1027,7 @@ pub fn Builder(comptime options: ExpressionOptions) type {
 }
 
 // Certain opcodes are not allowed in a CFA context, see 6.4.2
-fn isOpcodeValidInCFA(opcode: u8) bool {
+fn is_opcode_valid_in_cfa(opcode: u8) bool {
     return switch (opcode) {
         OP.addrx,
         OP.call2,
@@ -1046,7 +1046,7 @@ fn isOpcodeValidInCFA(opcode: u8) bool {
     };
 }
 
-fn isOpcodeRegisterLocation(opcode: u8) bool {
+fn is_opcode_register_location(opcode: u8) bool {
     return switch (opcode) {
         OP.reg0...OP.reg31, OP.regx => true,
         else => false,

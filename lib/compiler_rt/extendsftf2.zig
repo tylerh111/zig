@@ -16,6 +16,6 @@ pub fn __extendsftf2(a: f32) callconv(.C) f128 {
     return extendf(f128, f32, @as(u32, @bitCast(a)));
 }
 
-fn _Qp_stoq(c: *f128, a: f32) callconv(.C) void {
+fn _qp_stoq(c: *f128, a: f32) callconv(.C) void {
     c.* = extendf(f128, f32, @as(u32, @bitCast(a)));
 }

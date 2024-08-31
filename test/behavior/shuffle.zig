@@ -12,7 +12,7 @@ test "@shuffle int" {
         !comptime std.Target.x86.featureSetHas(builtin.cpu.features, .ssse3)) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var v: @Vector(4, i32) = [4]i32{ 2147483647, -2, 30, 40 };
             _ = &v;
             var x: @Vector(4, i32) = [4]i32{ 1, 2147483647, 3, 4 };
@@ -65,7 +65,7 @@ test "@shuffle bool 1" {
     }
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x: @Vector(4, bool) = [4]bool{ false, true, false, true };
             _ = &x;
             var v: @Vector(2, bool) = [2]bool{ true, false };
@@ -93,7 +93,7 @@ test "@shuffle bool 2" {
     }
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x: @Vector(3, bool) = [3]bool{ false, true, false };
             _ = &x;
             var v: @Vector(2, bool) = [2]bool{ true, false };

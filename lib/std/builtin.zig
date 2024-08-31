@@ -859,33 +859,33 @@ pub fn default_panic(msg: []const u8, error_return_trace: ?*StackTrace, ret_addr
     }
 }
 
-pub fn checkNonScalarSentinel(expected: anytype, actual: @TypeOf(expected)) void {
+pub fn check_non_scalar_sentinel(expected: anytype, actual: @TypeOf(expected)) void {
     if (!std.meta.eql(expected, actual)) {
         panicSentinelMismatch(expected, actual);
     }
 }
 
-pub fn panicSentinelMismatch(expected: anytype, actual: @TypeOf(expected)) noreturn {
+pub fn panic_sentinel_mismatch(expected: anytype, actual: @TypeOf(expected)) noreturn {
     @setCold(true);
     std.debug.panicExtra(null, @returnAddress(), "sentinel mismatch: expected {any}, found {any}", .{ expected, actual });
 }
 
-pub fn panicUnwrapError(st: ?*StackTrace, err: anyerror) noreturn {
+pub fn panic_unwrap_error(st: ?*StackTrace, err: anyerror) noreturn {
     @setCold(true);
     std.debug.panicExtra(st, @returnAddress(), "attempt to unwrap error: {s}", .{@errorName(err)});
 }
 
-pub fn panicOutOfBounds(index: usize, len: usize) noreturn {
+pub fn panic_out_of_bounds(index: usize, len: usize) noreturn {
     @setCold(true);
     std.debug.panicExtra(null, @returnAddress(), "index out of bounds: index {d}, len {d}", .{ index, len });
 }
 
-pub fn panicStartGreaterThanEnd(start: usize, end: usize) noreturn {
+pub fn panic_start_greater_than_end(start: usize, end: usize) noreturn {
     @setCold(true);
     std.debug.panicExtra(null, @returnAddress(), "start index {d} is larger than end index {d}", .{ start, end });
 }
 
-pub fn panicInactiveUnionField(active: anytype, wanted: @TypeOf(active)) noreturn {
+pub fn panic_inactive_union_field(active: anytype, wanted: @TypeOf(active)) noreturn {
     @setCold(true);
     std.debug.panicExtra(null, @returnAddress(), "access of union field '{s}' while field '{s}' is active", .{ @tagName(wanted), @tagName(active) });
 }
@@ -918,13 +918,13 @@ pub const panic_messages = struct {
     pub const noreturn_returned = "'noreturn' function returned";
 };
 
-pub noinline fn returnError(st: *StackTrace) void {
+pub noinline fn return_error(st: *StackTrace) void {
     @setCold(true);
     @setRuntimeSafety(false);
     addErrRetTraceAddr(st, @returnAddress());
 }
 
-pub inline fn addErrRetTraceAddr(st: *StackTrace, addr: usize) void {
+pub inline fn add_err_ret_trace_addr(st: *StackTrace, addr: usize) void {
     if (st.index < st.instruction_addresses.len)
         st.instruction_addresses[st.index] = addr;
 

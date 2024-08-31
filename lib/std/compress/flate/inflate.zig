@@ -21,7 +21,7 @@ pub fn decompressor(comptime container: Container, reader: anytype) Decompressor
     return Decompressor(container, @TypeOf(reader)).init(reader);
 }
 
-pub fn Decompressor(comptime container: Container, comptime ReaderType: type) type {
+pub fn decompressor(comptime container: Container, comptime ReaderType: type) type {
     // zlib has 4 bytes footer, lookahead of 4 bytes ensures that we will not overshoot.
     // gzip has 8 bytes footer so we will not overshoot even with 8 bytes of lookahead.
     // For raw deflate there is always possibility of overshot so we use 8 bytes lookahead.
@@ -48,7 +48,7 @@ pub fn Decompressor(comptime container: Container, comptime ReaderType: type) ty
 ///   * 64K for history (CircularBuffer)
 ///   * ~10K huffman decoders (Literal and DistanceDecoder)
 ///
-pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comptime ReaderType: type) type {
+pub fn inflate(comptime container: Container, comptime LookaheadType: type, comptime ReaderType: type) type {
     assert(LookaheadType == u32 or LookaheadType == u64);
     const BitReaderType = BitReader(LookaheadType, ReaderType);
 
@@ -92,12 +92,12 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
             return .{ .bits = BitReaderType.init(rt) };
         }
 
-        fn blockHeader(self: *Self) !void {
+        fn block_header(self: *Self) !void {
             self.bfinal = try self.bits.read(u1);
             self.block_type = try self.bits.read(u2);
         }
 
-        fn storedBlock(self: *Self) !bool {
+        fn stored_block(self: *Self) !bool {
             self.bits.alignToByte(); // skip padding until byte boundary
             // everyting after this is byte aligned in stored block
             var len = try self.bits.read(u16);
@@ -112,7 +112,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
             return true;
         }
 
-        fn fixedBlock(self: *Self) !bool {
+        fn fixed_block(self: *Self) !bool {
             while (!self.hist.full()) {
                 const code = try self.bits.readFixedCode();
                 switch (code) {
@@ -127,14 +127,14 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
 
         // Handles fixed block non literal (length) code.
         // Length code is followed by 5 bits of distance code.
-        fn fixedDistanceCode(self: *Self, code: u8) !void {
+        fn fixed_distance_code(self: *Self, code: u8) !void {
             try self.bits.fill(5 + 5 + 13);
             const length = try self.decodeLength(code);
             const distance = try self.decodeDistance(try self.bits.readF(u5, F.buffered | F.reverse));
             try self.hist.writeMatch(length, distance);
         }
 
-        inline fn decodeLength(self: *Self, code: u8) !u16 {
+        inline fn decode_length(self: *Self, code: u8) !u16 {
             if (code > 28) return error.InvalidCode;
             const ml = Token.matchLength(code);
             return if (ml.extra_bits == 0) // 0 - 5 extra bits
@@ -143,7 +143,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
                 ml.base + try self.bits.readN(ml.extra_bits, F.buffered);
         }
 
-        fn decodeDistance(self: *Self, code: u8) !u16 {
+        fn decode_distance(self: *Self, code: u8) !u16 {
             if (code > 29) return error.InvalidCode;
             const md = Token.matchDistance(code);
             return if (md.extra_bits == 0) // 0 - 13 extra bits
@@ -152,7 +152,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
                 md.base + try self.bits.readN(md.extra_bits, F.buffered);
         }
 
-        fn dynamicBlockHeader(self: *Self) !void {
+        fn dynamic_block_header(self: *Self) !void {
             const hlit: u16 = @as(u16, try self.bits.read(u5)) + 257; // number of ll code entries present - 257
             const hdist: u16 = @as(u16, try self.bits.read(u5)) + 1; // number of distance code entries - 1
             const hclen: u8 = @as(u8, try self.bits.read(u4)) + 4; // hclen + 4 code lenths are encoded
@@ -190,7 +190,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
         // Decode code length symbol to code length. Writes decoded length into
         // lens slice starting at position pos. Returns number of positions
         // advanced.
-        fn dynamicCodeLength(self: *Self, code: u16, lens: []u4, pos: usize) !usize {
+        fn dynamic_code_length(self: *Self, code: u16, lens: []u4, pos: usize) !usize {
             if (pos >= lens.len)
                 return error.InvalidDynamicBlockHeader;
 
@@ -221,7 +221,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
 
         // In larger archives most blocks are usually dynamic, so decompression
         // performance depends on this function.
-        fn dynamicBlock(self: *Self) !bool {
+        fn dynamic_block(self: *Self) !bool {
             // Hot path loop!
             while (!self.hist.full()) {
                 try self.bits.fill(15); // optimization so other bit reads can be buffered (avoiding one `if` in hot path)
@@ -251,7 +251,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
         // decoder to find symbol for that code. We then know how many bits is
         // used. Shift bit reader for that much bits, those bits are used. And
         // return symbol.
-        fn decodeSymbol(self: *Self, decoder: anytype) !hfd.Symbol {
+        fn decode_symbol(self: *Self, decoder: anytype) !hfd.Symbol {
             const sym = try decoder.find(try self.bits.peekF(u15, F.buffered | F.reverse));
             try self.bits.shift(sym.code_bits);
             return sym;
@@ -289,7 +289,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
         }
 
         /// Replaces the inner reader with new reader.
-        pub fn setReader(self: *Self, new_reader: ReaderType) void {
+        pub fn set_reader(self: *Self, new_reader: ReaderType) void {
             self.bits.forward_reader = new_reader;
             if (self.state == .end or self.state == .protocol_footer) {
                 self.state = .protocol_header;
@@ -306,7 +306,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
 
         /// Returns the number of bytes that have been read from the internal
         /// reader but not yet consumed by the decompressor.
-        pub fn unreadBytes(self: Self) usize {
+        pub fn unread_bytes(self: Self) usize {
             // There can be no error here: the denominator is not zero, and
             // overflow is not possible since the type is unsigned.
             return std.math.divCeil(usize, self.bits.nbits, 8) catch unreachable;

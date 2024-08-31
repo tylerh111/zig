@@ -24,7 +24,7 @@ const c_string = @cImport(
 const glibc_ver = builtin.target.os.version_range.linux.glibc;
 
 // PR #17034 - fstat moved between libc_nonshared and libc
-fn checkStat() !void {
+fn check_stat() !void {
     const cwdFd = std.fs.cwd().fd;
 
     var stat = std.mem.zeroes(std.c.Stat);
@@ -38,7 +38,7 @@ fn checkStat() !void {
 }
 
 // PR #17607 - reallocarray not visible in headers
-fn checkReallocarray() !void {
+fn check_reallocarray() !void {
     // reallocarray was introduced in v2.26
     if (comptime glibc_ver.order(.{ .major = 2, .minor = 26, .patch = 0 }) == .lt) {
         if (@hasDecl(c_malloc, "reallocarray")) {
@@ -49,7 +49,7 @@ fn checkReallocarray() !void {
     }
 }
 
-fn checkReallocarray_v2_26() !void {
+fn check_reallocarray_v2_26() !void {
     const size = 16;
     const tenX = c_malloc.reallocarray(c_malloc.NULL, 10, size);
     const elevenX = c_malloc.reallocarray(tenX, 11, size);
@@ -59,7 +59,7 @@ fn checkReallocarray_v2_26() !void {
 }
 
 // getauxval introduced in v2.16
-fn checkGetAuxVal() !void {
+fn check_get_aux_val() !void {
     if (comptime glibc_ver.order(.{ .major = 2, .minor = 16, .patch = 0 }) == .lt) {
         if (@hasDecl(std.c, "getauxval")) {
             @compileError("Before v2.16 glibc does not define 'getauxval'");
@@ -69,7 +69,7 @@ fn checkGetAuxVal() !void {
     }
 }
 
-fn checkGetAuxVal_v2_16() !void {
+fn check_get_aux_val_v2_16() !void {
     const base = std.c.getauxval(std.elf.AT_BASE);
     const pgsz = std.c.getauxval(std.elf.AT_PAGESZ);
 
@@ -78,7 +78,7 @@ fn checkGetAuxVal_v2_16() !void {
 }
 
 // strlcpy introduced in v2.38, which is newer than many installed glibcs
-fn checkStrlcpy() !void {
+fn check_strlcpy() !void {
     if (comptime glibc_ver.order(.{ .major = 2, .minor = 38, .patch = 0 }) == .lt) {
         if (@hasDecl(c_string, "strlcpy")) {
             @compileError("Before v2.38 glibc does not define 'strlcpy'");
@@ -88,18 +88,18 @@ fn checkStrlcpy() !void {
     }
 }
 
-fn checkStrlcpy_v2_38() !void {
+fn check_strlcpy_v2_38() !void {
     var buf: [99]u8 = undefined;
     const used = c_string.strlcpy(&buf, "strlcpy works!", buf.len);
     assert(used == 14);
 }
 
 // atexit is part of libc_nonshared, so ensure its linked in correctly
-fn forceExit0Callback() callconv(.C) void {
+fn force_exit0_callback() callconv(.C) void {
     std.c.exit(0); // Override the main() exit code
 }
 
-fn checkAtExit() !void {
+fn check_at_exit() !void {
     const result = c_stdlib.atexit(forceExit0Callback);
     assert(result == 0);
 }

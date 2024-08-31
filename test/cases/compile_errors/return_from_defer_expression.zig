@@ -1,4 +1,4 @@
-pub fn testTrickyDefer() !void {
+pub fn test_tricky_defer() !void {
     defer canFail() catch {};
 
     defer try canFail();
@@ -6,9 +6,9 @@ pub fn testTrickyDefer() !void {
     const a = maybeInt() orelse return;
 }
 
-fn canFail() anyerror!void {}
+fn can_fail() anyerror!void {}
 
-pub fn maybeInt() ?i32 {
+pub fn maybe_int() ?i32 {
     return 0;
 }
 

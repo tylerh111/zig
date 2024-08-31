@@ -85,7 +85,7 @@ pub const Enumerant = struct {
         bitflag: []const u8, // Hexadecimal representation of the value
         int: u31,
 
-        pub fn jsonParse(
+        pub fn json_parse(
             allocator: std.mem.Allocator,
             source: anytype,
             options: std.json.ParseOptions,

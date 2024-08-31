@@ -1,4 +1,4 @@
-fn List(comptime T: type) type {
+fn list(comptime T: type) type {
     return struct {
         items: []T,
         len: usize,

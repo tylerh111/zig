@@ -174,7 +174,7 @@ const DeclMetadata = struct {
         m.exports.deinit(allocator);
     }
 
-    fn getExport(m: DeclMetadata, coff_file: *const Coff, name: []const u8) ?u32 {
+    fn get_export(m: DeclMetadata, coff_file: *const Coff, name: []const u8) ?u32 {
         for (m.exports.items) |exp| {
             if (mem.eql(u8, name, coff_file.getSymbolName(.{
                 .sym_index = exp,
@@ -184,7 +184,7 @@ const DeclMetadata = struct {
         return null;
     }
 
-    fn getExportPtr(m: *DeclMetadata, coff_file: *Coff, name: []const u8) ?*u32 {
+    fn get_export_ptr(m: *DeclMetadata, coff_file: *Coff, name: []const u8) ?*u32 {
         for (m.exports.items) |*exp| {
             if (mem.eql(u8, name, coff_file.getSymbolName(.{
                 .sym_index = exp.*,
@@ -236,7 +236,7 @@ const ideal_factor = 3;
 const minimum_text_block_size = 64;
 pub const min_text_capacity = padToIdeal(minimum_text_block_size);
 
-pub fn createEmpty(
+pub fn create_empty(
     arena: Allocator,
     comp: *Compilation,
     emit: Compilation.Emit,
@@ -515,7 +515,7 @@ pub fn deinit(self: *Coff) void {
     self.base_relocs.deinit(gpa);
 }
 
-fn allocateSection(self: *Coff, name: []const u8, size: u32, flags: coff.SectionHeaderFlags) !u16 {
+fn allocate_section(self: *Coff, name: []const u8, size: u32, flags: coff.SectionHeaderFlags) !u16 {
     const index = @as(u16, @intCast(self.sections.slice().len));
     const off = self.findFreeSpace(size, default_file_alignment);
     // Memory is always allocated in sequence
@@ -552,7 +552,7 @@ fn allocateSection(self: *Coff, name: []const u8, size: u32, flags: coff.Section
     return index;
 }
 
-fn growSection(self: *Coff, sect_id: u32, needed_size: u32) !void {
+fn grow_section(self: *Coff, sect_id: u32, needed_size: u32) !void {
     const header = &self.sections.items(.header)[sect_id];
     const maybe_last_atom_index = self.sections.items(.last_atom_index)[sect_id];
     const sect_capacity = self.allocatedSize(header.pointer_to_raw_data);
@@ -589,7 +589,7 @@ fn growSection(self: *Coff, sect_id: u32, needed_size: u32) !void {
     header.size_of_raw_data = needed_size;
 }
 
-fn growSectionVirtualMemory(self: *Coff, sect_id: u32, needed_size: u32) !void {
+fn grow_section_virtual_memory(self: *Coff, sect_id: u32, needed_size: u32) !void {
     const header = &self.sections.items(.header)[sect_id];
     const increased_size = padToIdeal(needed_size);
     const old_aligned_end = header.virtual_address + mem.alignForward(u32, header.virtual_size, self.page_size);
@@ -620,7 +620,7 @@ fn growSectionVirtualMemory(self: *Coff, sect_id: u32, needed_size: u32) !void {
     header.virtual_size = increased_size;
 }
 
-fn allocateAtom(self: *Coff, atom_index: Atom.Index, new_atom_size: u32, alignment: u32) !u32 {
+fn allocate_atom(self: *Coff, atom_index: Atom.Index, new_atom_size: u32, alignment: u32) !u32 {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -729,7 +729,7 @@ fn allocateAtom(self: *Coff, atom_index: Atom.Index, new_atom_size: u32, alignme
     return vaddr;
 }
 
-pub fn allocateSymbol(self: *Coff) !u32 {
+pub fn allocate_symbol(self: *Coff) !u32 {
     const gpa = self.base.comp.gpa;
     try self.locals.ensureUnusedCapacity(gpa, 1);
 
@@ -757,7 +757,7 @@ pub fn allocateSymbol(self: *Coff) !u32 {
     return index;
 }
 
-fn allocateGlobal(self: *Coff) !u32 {
+fn allocate_global(self: *Coff) !u32 {
     const gpa = self.base.comp.gpa;
     try self.globals.ensureUnusedCapacity(gpa, 1);
 
@@ -781,7 +781,7 @@ fn allocateGlobal(self: *Coff) !u32 {
     return index;
 }
 
-fn addGotEntry(self: *Coff, target: SymbolWithLoc) !void {
+fn add_got_entry(self: *Coff, target: SymbolWithLoc) !void {
     const gpa = self.base.comp.gpa;
     if (self.got_table.lookup.contains(target)) return;
     const got_index = try self.got_table.allocateEntry(gpa, target);
@@ -790,7 +790,7 @@ fn addGotEntry(self: *Coff, target: SymbolWithLoc) !void {
     self.markRelocsDirtyByTarget(target);
 }
 
-pub fn createAtom(self: *Coff) !Atom.Index {
+pub fn create_atom(self: *Coff) !Atom.Index {
     const gpa = self.base.comp.gpa;
     const atom_index = @as(Atom.Index, @intCast(self.atoms.items.len));
     const atom = try self.atoms.addOne(gpa);
@@ -807,7 +807,7 @@ pub fn createAtom(self: *Coff) !Atom.Index {
     return atom_index;
 }
 
-fn growAtom(self: *Coff, atom_index: Atom.Index, new_atom_size: u32, alignment: u32) !u32 {
+fn grow_atom(self: *Coff, atom_index: Atom.Index, new_atom_size: u32, alignment: u32) !u32 {
     const atom = self.getAtom(atom_index);
     const sym = atom.getSymbol(self);
     const align_ok = mem.alignBackward(u32, sym.value, alignment) == sym.value;
@@ -816,7 +816,7 @@ fn growAtom(self: *Coff, atom_index: Atom.Index, new_atom_size: u32, alignment: 
     return self.allocateAtom(atom_index, new_atom_size, alignment);
 }
 
-fn shrinkAtom(self: *Coff, atom_index: Atom.Index, new_block_size: u32) void {
+fn shrink_atom(self: *Coff, atom_index: Atom.Index, new_block_size: u32) void {
     _ = self;
     _ = atom_index;
     _ = new_block_size;
@@ -824,7 +824,7 @@ fn shrinkAtom(self: *Coff, atom_index: Atom.Index, new_block_size: u32) void {
     // capacity, insert a free list node for it.
 }
 
-fn writeAtom(self: *Coff, atom_index: Atom.Index, code: []u8) !void {
+fn write_atom(self: *Coff, atom_index: Atom.Index, code: []u8) !void {
     const atom = self.getAtom(atom_index);
     const sym = atom.getSymbol(self);
     const section = self.sections.get(@intFromEnum(sym.section_number) - 1);
@@ -893,7 +893,7 @@ fn writeAtom(self: *Coff, atom_index: Atom.Index, code: []u8) !void {
     }
 }
 
-fn debugMem(allocator: Allocator, handle: std.process.Child.Id, pvaddr: std.os.windows.LPVOID, code: []const u8) !void {
+fn debug_mem(allocator: Allocator, handle: std.process.Child.Id, pvaddr: std.os.windows.LPVOID, code: []const u8) !void {
     const buffer = try allocator.alloc(u8, code.len);
     defer allocator.free(buffer);
     const memread = try std.os.windows.ReadProcessMemory(handle, pvaddr, buffer);
@@ -901,7 +901,7 @@ fn debugMem(allocator: Allocator, handle: std.process.Child.Id, pvaddr: std.os.w
     log.debug("in memory: {x}", .{std.fmt.fmtSliceHexLower(memread)});
 }
 
-fn writeMemProtected(handle: std.process.Child.Id, pvaddr: std.os.windows.LPVOID, code: []const u8) !void {
+fn write_mem_protected(handle: std.process.Child.Id, pvaddr: std.os.windows.LPVOID, code: []const u8) !void {
     const old_prot = try std.os.windows.VirtualProtectEx(handle, pvaddr, code.len, std.os.windows.PAGE_EXECUTE_WRITECOPY);
     try writeMem(handle, pvaddr, code);
     // TODO: We can probably just set the pages writeable and leave it at that without having to restore the attributes.
@@ -909,12 +909,12 @@ fn writeMemProtected(handle: std.process.Child.Id, pvaddr: std.os.windows.LPVOID
     _ = try std.os.windows.VirtualProtectEx(handle, pvaddr, code.len, old_prot);
 }
 
-fn writeMem(handle: std.process.Child.Id, pvaddr: std.os.windows.LPVOID, code: []const u8) !void {
+fn write_mem(handle: std.process.Child.Id, pvaddr: std.os.windows.LPVOID, code: []const u8) !void {
     const amt = try std.os.windows.WriteProcessMemory(handle, pvaddr, code);
     if (amt != code.len) return error.InputOutput;
 }
 
-fn writeOffsetTableEntry(self: *Coff, index: usize) !void {
+fn write_offset_table_entry(self: *Coff, index: usize) !void {
     const sect_id = self.got_section_index.?;
 
     if (self.got_table_count_dirty) {
@@ -985,7 +985,7 @@ fn writeOffsetTableEntry(self: *Coff, index: usize) !void {
     }
 }
 
-fn markRelocsDirtyByTarget(self: *Coff, target: SymbolWithLoc) void {
+fn mark_relocs_dirty_by_target(self: *Coff, target: SymbolWithLoc) void {
     // TODO: reverse-lookup might come in handy here
     for (self.relocs.values()) |*relocs| {
         for (relocs.items) |*reloc| {
@@ -995,7 +995,7 @@ fn markRelocsDirtyByTarget(self: *Coff, target: SymbolWithLoc) void {
     }
 }
 
-fn markRelocsDirtyByAddress(self: *Coff, addr: u32) void {
+fn mark_relocs_dirty_by_address(self: *Coff, addr: u32) void {
     const got_moved = blk: {
         const sect_id = self.got_section_index orelse break :blk false;
         break :blk self.sections.items(.header)[sect_id].virtual_address >= addr;
@@ -1024,14 +1024,14 @@ fn markRelocsDirtyByAddress(self: *Coff, addr: u32) void {
     }
 }
 
-fn resolveRelocs(self: *Coff, atom_index: Atom.Index, relocs: []*const Relocation, code: []u8, image_base: u64) void {
+fn resolve_relocs(self: *Coff, atom_index: Atom.Index, relocs: []*const Relocation, code: []u8, image_base: u64) void {
     log.debug("relocating '{s}'", .{self.getAtom(atom_index).getName(self)});
     for (relocs) |reloc| {
         reloc.resolve(atom_index, code, image_base, self);
     }
 }
 
-pub fn ptraceAttach(self: *Coff, handle: std.process.Child.Id) !void {
+pub fn ptrace_attach(self: *Coff, handle: std.process.Child.Id) !void {
     if (!is_hot_update_compatible) return;
 
     log.debug("attaching to process with handle {*}", .{handle});
@@ -1041,14 +1041,14 @@ pub fn ptraceAttach(self: *Coff, handle: std.process.Child.Id) !void {
     };
 }
 
-pub fn ptraceDetach(self: *Coff, handle: std.process.Child.Id) void {
+pub fn ptrace_detach(self: *Coff, handle: std.process.Child.Id) void {
     if (!is_hot_update_compatible) return;
 
     log.debug("detaching from process with handle {*}", .{handle});
     self.hot_state.loaded_base_address = null;
 }
 
-fn freeAtom(self: *Coff, atom_index: Atom.Index) void {
+fn free_atom(self: *Coff, atom_index: Atom.Index) void {
     log.debug("freeAtom {d}", .{atom_index});
 
     const gpa = self.base.comp.gpa;
@@ -1120,7 +1120,7 @@ fn freeAtom(self: *Coff, atom_index: Atom.Index) void {
     self.getAtomPtr(atom_index).sym_index = 0;
 }
 
-pub fn updateFunc(self: *Coff, mod: *Module, func_index: InternPool.Index, air: Air, liveness: Liveness) !void {
+pub fn update_func(self: *Coff, mod: *Module, func_index: InternPool.Index, air: Air, liveness: Liveness) !void {
     if (build_options.skip_non_native and builtin.object_format != .coff) {
         @panic("Attempted to compile for object format that was disabled by build configuration");
     }
@@ -1167,7 +1167,7 @@ pub fn updateFunc(self: *Coff, mod: *Module, func_index: InternPool.Index, air: 
     return self.updateExports(mod, .{ .decl_index = decl_index }, mod.getDeclExports(decl_index));
 }
 
-pub fn lowerUnnamedConst(self: *Coff, val: Value, decl_index: InternPool.DeclIndex) !u32 {
+pub fn lower_unnamed_const(self: *Coff, val: Value, decl_index: InternPool.DeclIndex) !u32 {
     const gpa = self.base.comp.gpa;
     const mod = self.base.comp.module.?;
     const decl = mod.declPtr(decl_index);
@@ -1199,7 +1199,7 @@ const LowerConstResult = union(enum) {
     fail: *Module.ErrorMsg,
 };
 
-fn lowerConst(self: *Coff, name: []const u8, val: Value, required_alignment: InternPool.Alignment, sect_id: u16, src_loc: Module.SrcLoc) !LowerConstResult {
+fn lower_const(self: *Coff, name: []const u8, val: Value, required_alignment: InternPool.Alignment, sect_id: u16, src_loc: Module.SrcLoc) !LowerConstResult {
     const gpa = self.base.comp.gpa;
 
     var code_buffer = std.ArrayList(u8).init(gpa);
@@ -1235,7 +1235,7 @@ fn lowerConst(self: *Coff, name: []const u8, val: Value, required_alignment: Int
     return .{ .ok = atom_index };
 }
 
-pub fn updateDecl(
+pub fn update_decl(
     self: *Coff,
     mod: *Module,
     decl_index: InternPool.DeclIndex,
@@ -1291,7 +1291,7 @@ pub fn updateDecl(
     return self.updateExports(mod, .{ .decl_index = decl_index }, mod.getDeclExports(decl_index));
 }
 
-fn updateLazySymbolAtom(
+fn update_lazy_symbol_atom(
     self: *Coff,
     sym: link.File.LazySymbol,
     atom_index: Atom.Index,
@@ -1357,7 +1357,7 @@ fn updateLazySymbolAtom(
     try self.writeAtom(atom_index, code);
 }
 
-pub fn getOrCreateAtomForLazySymbol(self: *Coff, sym: link.File.LazySymbol) !Atom.Index {
+pub fn get_or_create_atom_for_lazy_symbol(self: *Coff, sym: link.File.LazySymbol) !Atom.Index {
     const gpa = self.base.comp.gpa;
     const mod = self.base.comp.module.?;
     const gop = try self.lazy_syms.getOrPut(gpa, sym.getDecl(mod));
@@ -1382,7 +1382,7 @@ pub fn getOrCreateAtomForLazySymbol(self: *Coff, sym: link.File.LazySymbol) !Ato
     return atom;
 }
 
-pub fn getOrCreateAtomForDecl(self: *Coff, decl_index: InternPool.DeclIndex) !Atom.Index {
+pub fn get_or_create_atom_for_decl(self: *Coff, decl_index: InternPool.DeclIndex) !Atom.Index {
     const gpa = self.base.comp.gpa;
     const gop = try self.decls.getOrPut(gpa, decl_index);
     if (!gop.found_existing) {
@@ -1395,7 +1395,7 @@ pub fn getOrCreateAtomForDecl(self: *Coff, decl_index: InternPool.DeclIndex) !At
     return gop.value_ptr.atom;
 }
 
-fn getDeclOutputSection(self: *Coff, decl_index: InternPool.DeclIndex) u16 {
+fn get_decl_output_section(self: *Coff, decl_index: InternPool.DeclIndex) u16 {
     const decl = self.base.comp.module.?.declPtr(decl_index);
     const mod = self.base.comp.module.?;
     const ty = decl.typeOf(mod);
@@ -1421,7 +1421,7 @@ fn getDeclOutputSection(self: *Coff, decl_index: InternPool.DeclIndex) u16 {
     return index;
 }
 
-fn updateDeclCode(self: *Coff, decl_index: InternPool.DeclIndex, code: []u8, complex_type: coff.ComplexType) !void {
+fn update_decl_code(self: *Coff, decl_index: InternPool.DeclIndex, code: []u8, complex_type: coff.ComplexType) !void {
     const mod = self.base.comp.module.?;
     const decl = mod.declPtr(decl_index);
 
@@ -1479,7 +1479,7 @@ fn updateDeclCode(self: *Coff, decl_index: InternPool.DeclIndex, code: []u8, com
     try self.writeAtom(atom_index, code);
 }
 
-fn freeUnnamedConsts(self: *Coff, decl_index: InternPool.DeclIndex) void {
+fn free_unnamed_consts(self: *Coff, decl_index: InternPool.DeclIndex) void {
     const gpa = self.base.comp.gpa;
     const unnamed_consts = self.unnamed_const_atoms.getPtr(decl_index) orelse return;
     for (unnamed_consts.items) |atom_index| {
@@ -1488,7 +1488,7 @@ fn freeUnnamedConsts(self: *Coff, decl_index: InternPool.DeclIndex) void {
     unnamed_consts.clearAndFree(gpa);
 }
 
-pub fn freeDecl(self: *Coff, decl_index: InternPool.DeclIndex) void {
+pub fn free_decl(self: *Coff, decl_index: InternPool.DeclIndex) void {
     if (self.llvm_object) |llvm_object| return llvm_object.freeDecl(decl_index);
 
     const gpa = self.base.comp.gpa;
@@ -1505,7 +1505,7 @@ pub fn freeDecl(self: *Coff, decl_index: InternPool.DeclIndex) void {
     }
 }
 
-pub fn updateExports(
+pub fn update_exports(
     self: *Coff,
     mod: *Module,
     exported: Module.Exported,
@@ -1641,7 +1641,7 @@ pub fn updateExports(
     }
 }
 
-pub fn deleteDeclExport(
+pub fn delete_decl_export(
     self: *Coff,
     decl_index: InternPool.DeclIndex,
     name: InternPool.NullTerminatedString,
@@ -1679,7 +1679,7 @@ pub fn deleteDeclExport(
     sym_index.* = 0;
 }
 
-fn resolveGlobalSymbol(self: *Coff, current: SymbolWithLoc) !void {
+fn resolve_global_symbol(self: *Coff, current: SymbolWithLoc) !void {
     const gpa = self.base.comp.gpa;
     const sym = self.getSymbol(current);
     const sym_name = self.getSymbolName(current);
@@ -1714,7 +1714,7 @@ pub fn flush(self: *Coff, arena: Allocator, prog_node: std.Progress.Node) link.F
     }
 }
 
-pub fn flushModule(self: *Coff, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
+pub fn flush_module(self: *Coff, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -1842,7 +1842,7 @@ pub fn flushModule(self: *Coff, arena: Allocator, prog_node: std.Progress.Node) 
     assert(!self.imports_count_dirty);
 }
 
-pub fn getDeclVAddr(self: *Coff, decl_index: InternPool.DeclIndex, reloc_info: link.File.RelocInfo) !u64 {
+pub fn get_decl_vaddr(self: *Coff, decl_index: InternPool.DeclIndex, reloc_info: link.File.RelocInfo) !u64 {
     assert(self.llvm_object == null);
 
     const this_atom_index = try self.getOrCreateAtomForDecl(decl_index);
@@ -1862,7 +1862,7 @@ pub fn getDeclVAddr(self: *Coff, decl_index: InternPool.DeclIndex, reloc_info: l
     return 0;
 }
 
-pub fn lowerAnonDecl(
+pub fn lower_anon_decl(
     self: *Coff,
     decl_val: InternPool.Index,
     explicit_alignment: InternPool.Alignment,
@@ -1909,7 +1909,7 @@ pub fn lowerAnonDecl(
     return .ok;
 }
 
-pub fn getAnonDeclVAddr(self: *Coff, decl_val: InternPool.Index, reloc_info: link.File.RelocInfo) !u64 {
+pub fn get_anon_decl_vaddr(self: *Coff, decl_val: InternPool.Index, reloc_info: link.File.RelocInfo) !u64 {
     assert(self.llvm_object == null);
 
     const this_atom_index = self.anon_decls.get(decl_val).?.atom;
@@ -1929,7 +1929,7 @@ pub fn getAnonDeclVAddr(self: *Coff, decl_val: InternPool.Index, reloc_info: lin
     return 0;
 }
 
-pub fn getGlobalSymbol(self: *Coff, name: []const u8, lib_name_name: ?[]const u8) !u32 {
+pub fn get_global_symbol(self: *Coff, name: []const u8, lib_name_name: ?[]const u8) !u32 {
     const gop = try self.getOrPutGlobalPtr(name);
     const global_index = self.getGlobalIndex(name).?;
 
@@ -1957,7 +1957,7 @@ pub fn getGlobalSymbol(self: *Coff, name: []const u8, lib_name_name: ?[]const u8
     return global_index;
 }
 
-pub fn updateDeclLineNumber(self: *Coff, module: *Module, decl_index: InternPool.DeclIndex) !void {
+pub fn update_decl_line_number(self: *Coff, module: *Module, decl_index: InternPool.DeclIndex) !void {
     _ = self;
     _ = module;
     _ = decl_index;
@@ -1967,7 +1967,7 @@ pub fn updateDeclLineNumber(self: *Coff, module: *Module, decl_index: InternPool
 /// TODO: note if we need to rewrite base relocations by dirtying any of the entries in the global table
 /// TODO: note that .ABSOLUTE is used as padding within each block; we could use this fact to do
 ///       incremental updates and writes into the table instead of doing it all at once
-fn writeBaseRelocations(self: *Coff) !void {
+fn write_base_relocations(self: *Coff) !void {
     const gpa = self.base.comp.gpa;
 
     var page_table = std.AutoHashMap(u32, std.ArrayList(coff.BaseRelocation)).init(gpa);
@@ -2075,7 +2075,7 @@ fn writeBaseRelocations(self: *Coff) !void {
     };
 }
 
-fn writeImportTables(self: *Coff) !void {
+fn write_import_tables(self: *Coff) !void {
     if (self.idata_section_index == null) return;
     if (!self.imports_count_dirty) return;
 
@@ -2214,7 +2214,7 @@ fn writeImportTables(self: *Coff) !void {
     self.imports_count_dirty = false;
 }
 
-fn writeStrtab(self: *Coff) !void {
+fn write_strtab(self: *Coff) !void {
     if (self.strtab_offset == null) return;
 
     const allocated_size = self.allocatedSize(self.strtab_offset.?);
@@ -2239,17 +2239,17 @@ fn writeStrtab(self: *Coff) !void {
     try self.base.file.?.pwriteAll(buffer.items, self.strtab_offset.?);
 }
 
-fn writeSectionHeaders(self: *Coff) !void {
+fn write_section_headers(self: *Coff) !void {
     const offset = self.getSectionHeadersOffset();
     try self.base.file.?.pwriteAll(mem.sliceAsBytes(self.sections.items(.header)), offset);
 }
 
-fn writeDataDirectoriesHeaders(self: *Coff) !void {
+fn write_data_directories_headers(self: *Coff) !void {
     const offset = self.getDataDirectoryHeadersOffset();
     try self.base.file.?.pwriteAll(mem.sliceAsBytes(&self.data_directories), offset);
 }
 
-fn writeHeader(self: *Coff) !void {
+fn write_header(self: *Coff) !void {
     const target = self.base.comp.root_mod.resolved_target.result;
     const gpa = self.base.comp.gpa;
     var buffer = std.ArrayList(u8).init(gpa);
@@ -2389,11 +2389,11 @@ fn writeHeader(self: *Coff) !void {
     try self.base.file.?.pwriteAll(buffer.items, 0);
 }
 
-pub fn padToIdeal(actual_size: anytype) @TypeOf(actual_size) {
+pub fn pad_to_ideal(actual_size: anytype) @TypeOf(actual_size) {
     return actual_size +| (actual_size / ideal_factor);
 }
 
-fn detectAllocCollision(self: *Coff, start: u32, size: u32) ?u32 {
+fn detect_alloc_collision(self: *Coff, start: u32, size: u32) ?u32 {
     const headers_size = @max(self.getSizeOfHeaders(), self.page_size);
     if (start < headers_size)
         return headers_size;
@@ -2421,7 +2421,7 @@ fn detectAllocCollision(self: *Coff, start: u32, size: u32) ?u32 {
     return null;
 }
 
-fn allocatedSize(self: *Coff, start: u32) u32 {
+fn allocated_size(self: *Coff, start: u32) u32 {
     if (start == 0)
         return 0;
     var min_pos: u32 = std.math.maxInt(u32);
@@ -2435,7 +2435,7 @@ fn allocatedSize(self: *Coff, start: u32) u32 {
     return min_pos - start;
 }
 
-fn findFreeSpace(self: *Coff, object_size: u32, min_alignment: u32) u32 {
+fn find_free_space(self: *Coff, object_size: u32, min_alignment: u32) u32 {
     var start: u32 = 0;
     while (self.detectAllocCollision(start, object_size)) |item_end| {
         start = mem.alignForward(u32, item_end, min_alignment);
@@ -2443,7 +2443,7 @@ fn findFreeSpace(self: *Coff, object_size: u32, min_alignment: u32) u32 {
     return start;
 }
 
-fn allocatedVirtualSize(self: *Coff, start: u32) u32 {
+fn allocated_virtual_size(self: *Coff, start: u32) u32 {
     if (start == 0)
         return 0;
     var min_pos: u32 = std.math.maxInt(u32);
@@ -2454,37 +2454,37 @@ fn allocatedVirtualSize(self: *Coff, start: u32) u32 {
     return min_pos - start;
 }
 
-inline fn getSizeOfHeaders(self: Coff) u32 {
+inline fn get_size_of_headers(self: Coff) u32 {
     const msdos_hdr_size = msdos_stub.len + 4;
     return @as(u32, @intCast(msdos_hdr_size + @sizeOf(coff.CoffHeader) + self.getOptionalHeaderSize() +
         self.getDataDirectoryHeadersSize() + self.getSectionHeadersSize()));
 }
 
-inline fn getOptionalHeaderSize(self: Coff) u32 {
+inline fn get_optional_header_size(self: Coff) u32 {
     return switch (self.ptr_width) {
         .p32 => @as(u32, @intCast(@sizeOf(coff.OptionalHeaderPE32))),
         .p64 => @as(u32, @intCast(@sizeOf(coff.OptionalHeaderPE64))),
     };
 }
 
-inline fn getDataDirectoryHeadersSize(self: Coff) u32 {
+inline fn get_data_directory_headers_size(self: Coff) u32 {
     return @as(u32, @intCast(self.data_directories.len * @sizeOf(coff.ImageDataDirectory)));
 }
 
-inline fn getSectionHeadersSize(self: Coff) u32 {
+inline fn get_section_headers_size(self: Coff) u32 {
     return @as(u32, @intCast(self.sections.slice().len * @sizeOf(coff.SectionHeader)));
 }
 
-inline fn getDataDirectoryHeadersOffset(self: Coff) u32 {
+inline fn get_data_directory_headers_offset(self: Coff) u32 {
     const msdos_hdr_size = msdos_stub.len + 4;
     return @as(u32, @intCast(msdos_hdr_size + @sizeOf(coff.CoffHeader) + self.getOptionalHeaderSize()));
 }
 
-inline fn getSectionHeadersOffset(self: Coff) u32 {
+inline fn get_section_headers_offset(self: Coff) u32 {
     return self.getDataDirectoryHeadersOffset() + self.getDataDirectoryHeadersSize();
 }
 
-inline fn getSizeOfImage(self: Coff) u32 {
+inline fn get_size_of_image(self: Coff) u32 {
     var image_size: u32 = mem.alignForward(u32, self.getSizeOfHeaders(), self.page_size);
     for (self.sections.items(.header)) |header| {
         image_size += mem.alignForward(u32, header.virtual_size, self.page_size);
@@ -2493,7 +2493,7 @@ inline fn getSizeOfImage(self: Coff) u32 {
 }
 
 /// Returns symbol location corresponding to the set entrypoint (if any).
-pub fn getEntryPoint(self: Coff) ?SymbolWithLoc {
+pub fn get_entry_point(self: Coff) ?SymbolWithLoc {
     const comp = self.base.comp;
 
     // TODO This is incomplete.
@@ -2514,19 +2514,19 @@ pub fn getEntryPoint(self: Coff) ?SymbolWithLoc {
 }
 
 /// Returns pointer-to-symbol described by `sym_loc` descriptor.
-pub fn getSymbolPtr(self: *Coff, sym_loc: SymbolWithLoc) *coff.Symbol {
+pub fn get_symbol_ptr(self: *Coff, sym_loc: SymbolWithLoc) *coff.Symbol {
     assert(sym_loc.file == null); // TODO linking object files
     return &self.locals.items[sym_loc.sym_index];
 }
 
 /// Returns symbol described by `sym_loc` descriptor.
-pub fn getSymbol(self: *const Coff, sym_loc: SymbolWithLoc) *const coff.Symbol {
+pub fn get_symbol(self: *const Coff, sym_loc: SymbolWithLoc) *const coff.Symbol {
     assert(sym_loc.file == null); // TODO linking object files
     return &self.locals.items[sym_loc.sym_index];
 }
 
 /// Returns name of the symbol described by `sym_loc` descriptor.
-pub fn getSymbolName(self: *const Coff, sym_loc: SymbolWithLoc) []const u8 {
+pub fn get_symbol_name(self: *const Coff, sym_loc: SymbolWithLoc) []const u8 {
     assert(sym_loc.file == null); // TODO linking object files
     const sym = self.getSymbol(sym_loc);
     const offset = sym.getNameOffset() orelse return sym.getName().?;
@@ -2534,24 +2534,24 @@ pub fn getSymbolName(self: *const Coff, sym_loc: SymbolWithLoc) []const u8 {
 }
 
 /// Returns pointer to the global entry for `name` if one exists.
-pub fn getGlobalPtr(self: *Coff, name: []const u8) ?*SymbolWithLoc {
+pub fn get_global_ptr(self: *Coff, name: []const u8) ?*SymbolWithLoc {
     const global_index = self.resolver.get(name) orelse return null;
     return &self.globals.items[global_index];
 }
 
 /// Returns the global entry for `name` if one exists.
-pub fn getGlobal(self: *const Coff, name: []const u8) ?SymbolWithLoc {
+pub fn get_global(self: *const Coff, name: []const u8) ?SymbolWithLoc {
     const global_index = self.resolver.get(name) orelse return null;
     return self.globals.items[global_index];
 }
 
 /// Returns the index of the global entry for `name` if one exists.
-pub fn getGlobalIndex(self: *const Coff, name: []const u8) ?u32 {
+pub fn get_global_index(self: *const Coff, name: []const u8) ?u32 {
     return self.resolver.get(name);
 }
 
 /// Returns global entry at `index`.
-pub fn getGlobalByIndex(self: *const Coff, index: u32) SymbolWithLoc {
+pub fn get_global_by_index(self: *const Coff, index: u32) SymbolWithLoc {
     assert(index < self.globals.items.len);
     return self.globals.items[index];
 }
@@ -2569,7 +2569,7 @@ pub const global_symbol_mask: u32 = 0x7fffffff;
 /// Return pointer to the global entry for `name` if one exists.
 /// Puts a new global entry for `name` if one doesn't exist, and
 /// returns a pointer to it.
-pub fn getOrPutGlobalPtr(self: *Coff, name: []const u8) !GetOrPutGlobalPtrResult {
+pub fn get_or_put_global_ptr(self: *Coff, name: []const u8) !GetOrPutGlobalPtrResult {
     if (self.getGlobalPtr(name)) |ptr| {
         return GetOrPutGlobalPtrResult{ .found_existing = true, .value_ptr = ptr };
     }
@@ -2581,24 +2581,24 @@ pub fn getOrPutGlobalPtr(self: *Coff, name: []const u8) !GetOrPutGlobalPtrResult
     return GetOrPutGlobalPtrResult{ .found_existing = false, .value_ptr = ptr };
 }
 
-pub fn getAtom(self: *const Coff, atom_index: Atom.Index) Atom {
+pub fn get_atom(self: *const Coff, atom_index: Atom.Index) Atom {
     assert(atom_index < self.atoms.items.len);
     return self.atoms.items[atom_index];
 }
 
-pub fn getAtomPtr(self: *Coff, atom_index: Atom.Index) *Atom {
+pub fn get_atom_ptr(self: *Coff, atom_index: Atom.Index) *Atom {
     assert(atom_index < self.atoms.items.len);
     return &self.atoms.items[atom_index];
 }
 
 /// Returns atom if there is an atom referenced by the symbol described by `sym_loc` descriptor.
 /// Returns null on failure.
-pub fn getAtomIndexForSymbol(self: *const Coff, sym_loc: SymbolWithLoc) ?Atom.Index {
+pub fn get_atom_index_for_symbol(self: *const Coff, sym_loc: SymbolWithLoc) ?Atom.Index {
     assert(sym_loc.file == null); // TODO linking with object files
     return self.atom_by_index_table.get(sym_loc.sym_index);
 }
 
-fn setSectionName(self: *Coff, header: *coff.SectionHeader, name: []const u8) !void {
+fn set_section_name(self: *Coff, header: *coff.SectionHeader, name: []const u8) !void {
     if (name.len <= 8) {
         @memcpy(header.name[0..name.len], name);
         @memset(header.name[name.len..], 0);
@@ -2610,7 +2610,7 @@ fn setSectionName(self: *Coff, header: *coff.SectionHeader, name: []const u8) !v
     @memset(header.name[name_offset.len..], 0);
 }
 
-fn getSectionName(self: *const Coff, header: *const coff.SectionHeader) []const u8 {
+fn get_section_name(self: *const Coff, header: *const coff.SectionHeader) []const u8 {
     if (header.getName()) |name| {
         return name;
     }
@@ -2618,7 +2618,7 @@ fn getSectionName(self: *const Coff, header: *const coff.SectionHeader) []const 
     return self.strtab.get(offset).?;
 }
 
-fn setSymbolName(self: *Coff, symbol: *coff.Symbol, name: []const u8) !void {
+fn set_symbol_name(self: *Coff, symbol: *coff.Symbol, name: []const u8) !void {
     if (name.len <= 8) {
         @memcpy(symbol.name[0..name.len], name);
         @memset(symbol.name[name.len..], 0);
@@ -2630,7 +2630,7 @@ fn setSymbolName(self: *Coff, symbol: *coff.Symbol, name: []const u8) !void {
     mem.writeInt(u32, symbol.name[4..8], offset, .little);
 }
 
-fn logSymAttributes(sym: *const coff.Symbol, buf: *[4]u8) []const u8 {
+fn log_sym_attributes(sym: *const coff.Symbol, buf: *[4]u8) []const u8 {
     @memset(buf[0..4], '_');
     switch (sym.section_number) {
         .UNDEFINED => {
@@ -2657,7 +2657,7 @@ fn logSymAttributes(sym: *const coff.Symbol, buf: *[4]u8) []const u8 {
     return buf[0..];
 }
 
-fn logSymtab(self: *Coff) void {
+fn log_symtab(self: *Coff) void {
     var buf: [4]u8 = undefined;
 
     log.debug("symtab:", .{});
@@ -2690,7 +2690,7 @@ fn logSymtab(self: *Coff) void {
     log.debug("{}", .{self.got_table});
 }
 
-fn logSections(self: *Coff) void {
+fn log_sections(self: *Coff) void {
     log.debug("sections:", .{});
     for (self.sections.items(.header)) |*header| {
         log.debug("  {s}: VM({x}, {x}) FILE({x}, {x})", .{
@@ -2703,7 +2703,7 @@ fn logSections(self: *Coff) void {
     }
 }
 
-fn logImportTables(self: *const Coff) void {
+fn log_import_tables(self: *const Coff) void {
     log.debug("import tables:", .{});
     for (self.import_tables.keys(), 0..) |off, i| {
         const itable = self.import_tables.values()[i];

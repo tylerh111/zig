@@ -13,7 +13,7 @@ fn fibonacci(x: i32) i32 {
     return fibonacci(x - 1) + fibonacci(x - 2);
 }
 
-fn unwrapAndAddOne(blah: ?i32) i32 {
+fn unwrap_and_add_one(blah: ?i32) i32 {
     return blah.? + 1;
 }
 const should_be_1235 = unwrapAndAddOne(1234);
@@ -49,7 +49,7 @@ test "static function evaluation" {
     try expect(statically_added_number == 3);
 }
 const statically_added_number = staticAdd(1, 2);
-fn staticAdd(a: i32, b: i32) i32 {
+fn static_add(a: i32, b: i32) i32 {
     return a + b;
 }
 
@@ -58,7 +58,7 @@ test "const expr eval on single expr blocks" {
     comptime assert(constExprEvalOnSingleExprBlocksFn(1, true) == 3);
 }
 
-fn constExprEvalOnSingleExprBlocksFn(x: i32, b: bool) i32 {
+fn const_expr_eval_on_single_expr_blocks_fn(x: i32, b: bool) i32 {
     const literal = 3;
 
     const result = if (b) b: {
@@ -90,7 +90,7 @@ fn max(comptime T: type, a: T, b: T) T {
         return b;
     }
 }
-fn letsTryToCompareBools(a: bool, b: bool) bool {
+fn lets_try_to_compare_bools(a: bool, b: bool) bool {
     return max(bool, a, b);
 }
 test "inlined block and runtime block phi" {
@@ -115,7 +115,7 @@ test "eval @setRuntimeSafety at compile-time" {
     try expect(result == 1234);
 }
 
-fn fnWithSetRuntimeSafety() i32 {
+fn fn_with_set_runtime_safety() i32 {
     @setRuntimeSafety(true);
     return 1234;
 }
@@ -169,7 +169,7 @@ test "comptime function with the same args is memoized" {
     }
 }
 
-fn MakeType(comptime T: type) type {
+fn make_type(comptime T: type) type {
     return struct {
         field: T,
     };
@@ -179,7 +179,7 @@ test "try to trick eval with runtime if" {
     try expect(testTryToTrickEvalWithRuntimeIf(true) == 10);
 }
 
-fn testTryToTrickEvalWithRuntimeIf(b: bool) usize {
+fn test_try_to_trick_eval_with_runtime_if(b: bool) usize {
     comptime var i: usize = 0;
     inline while (i < 10) : (i += 1) {
         const result = if (b) false else true;
@@ -252,7 +252,7 @@ const static_point_list = [_]Point{
     makePoint(1, 2),
     makePoint(3, 4),
 };
-fn makePoint(x: i32, y: i32) Point {
+fn make_point(x: i32, y: i32) Point {
     return Point{
         .x = x,
         .y = y,
@@ -294,7 +294,7 @@ fn three(value: i32) i32 {
     return value + 3;
 }
 
-fn performFn(comptime prefix_char: u8, start_value: i32) i32 {
+fn perform_fn(comptime prefix_char: u8, start_value: i32) i32 {
     var result: i32 = start_value;
     comptime var i = 0;
     inline while (i < cmd_fns.len) : (i += 1) {
@@ -324,7 +324,7 @@ const global_array = x: {
     break :x result;
 };
 
-fn generateTable(comptime T: type) [1010]T {
+fn generate_table(comptime T: type) [1010]T {
     var res: [1010]T = undefined;
     var i: usize = 0;
     while (i < 1010) : (i += 1) {
@@ -333,7 +333,7 @@ fn generateTable(comptime T: type) [1010]T {
     return res;
 }
 
-fn doesAlotT(comptime T: type, value: usize) T {
+fn does_alot_t(comptime T: type, value: usize) T {
     @setEvalBranchQuota(5000);
     const table = comptime blk: {
         break :blk generateTable(T);
@@ -369,7 +369,7 @@ test "refer to the type of a generic function" {
     f(i32);
 }
 
-fn doNothingWithType(comptime T: type) void {
+fn do_nothing_with_type(comptime T: type) void {
     _ = T;
 }
 
@@ -432,7 +432,7 @@ test {
     comptime assert(@as(f128, 1 << 113) == 10384593717069655257060992658440192);
 }
 
-fn copyWithPartialInline(s: []u32, b: []u8) void {
+fn copy_with_partial_inline(s: []u32, b: []u8) void {
     comptime var i: usize = 0;
     inline while (i < 4) : (i += 1) {
         s[i] = 0;
@@ -591,7 +591,7 @@ test "ptr to local array argument at comptime" {
     }
 }
 
-fn modifySomeBytes(bytes: []u8) void {
+fn modify_some_bytes(bytes: []u8) void {
     bytes[0] = 'a';
     bytes[9] = 'b';
 }
@@ -599,7 +599,7 @@ fn modifySomeBytes(bytes: []u8) void {
 test "comparisons 0 <= uint and 0 > uint should be comptime" {
     testCompTimeUIntComparisons(1234);
 }
-fn testCompTimeUIntComparisons(x: u32) void {
+fn test_comp_time_uint_comparisons(x: u32) void {
     if (!(0 <= x)) {
         @compileError("this condition should be comptime-known");
     }
@@ -622,7 +622,7 @@ test "const global shares pointer with other same one" {
     try assertEqualPtrs(&hi1[0], &hi2[0]);
     comptime assert(&hi1[0] == &hi2[0]);
 }
-fn assertEqualPtrs(ptr1: *const u8, ptr2: *const u8) !void {
+fn assert_equal_ptrs(ptr1: *const u8, ptr2: *const u8) !void {
     try expect(ptr1 == ptr2);
 }
 
@@ -645,7 +645,7 @@ test "string literal used as comptime slice is memoized" {
     comptime assert(TypeWithCompTimeSlice("link").Node == TypeWithCompTimeSlice("link").Node);
 }
 
-pub fn TypeWithCompTimeSlice(comptime field_name: []const u8) type {
+pub fn type_with_comp_time_slice(comptime field_name: []const u8) type {
     _ = field_name;
     return struct {
         pub const Node = struct {};
@@ -715,7 +715,7 @@ test "setting backward branch quota just before a generic fn call" {
     loopNTimes(1001);
 }
 
-fn loopNTimes(comptime n: usize) void {
+fn loop_ntimes(comptime n: usize) void {
     comptime var i = 0;
     inline while (i < n) : (i += 1) {}
 }
@@ -726,7 +726,7 @@ test "variable inside inline loop that has different types on different iteratio
     try testVarInsideInlineLoop(.{ true, @as(u32, 42) });
 }
 
-fn testVarInsideInlineLoop(args: anytype) !void {
+fn test_var_inside_inline_loop(args: anytype) !void {
     comptime var i = 0;
     inline while (i < args.len) : (i += 1) {
         const x = args[i];
@@ -762,7 +762,7 @@ test "array multiplication of function calls" {
     try expect(std.mem.eql(i32, &a, &[_]i32{ 3, 3 }));
 }
 
-fn oneItem(x: i32) [1]i32 {
+fn one_item(x: i32) [1]i32 {
     return [_]i32{x};
 }
 
@@ -1004,7 +1004,7 @@ test "comptime break passing through runtime condition converted to runtime brea
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var runtime: u8 = 'b';
             _ = &runtime;
             inline for ([3]u8{ 'a', 'b', 'c' }) |byte| {
@@ -1038,7 +1038,7 @@ test "comptime break to outer loop passing through runtime condition converted t
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var runtime: u8 = 'b';
             _ = &runtime;
             outer: inline for ([3]u8{ 'A', 'B', 'C' }) |outer_byte| {
@@ -1071,7 +1071,7 @@ test "comptime break to outer loop passing through runtime condition converted t
 
 test "comptime break operand passing through runtime condition converted to runtime break" {
     const S = struct {
-        fn doTheTest(runtime: u8) !void {
+        fn do_the_test(runtime: u8) !void {
             const result = inline for ([3]u8{ 'a', 'b', 'c' }) |byte| {
                 if (byte == runtime) {
                     break runtime;
@@ -1091,7 +1091,7 @@ test "comptime break operand passing through runtime switch converted to runtime
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest(runtime: u8) !void {
+        fn do_the_test(runtime: u8) !void {
             const result = inline for ([3]u8{ 'a', 'b', 'c' }) |byte| {
                 switch (runtime) {
                     byte => break runtime,
@@ -1112,7 +1112,7 @@ test "no dependency loop for alignment of self struct" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: namespace.A = undefined;
             a.d = .{ .g = &buf };
             a.d.g[3] = 42;
@@ -1127,7 +1127,7 @@ test "no dependency loop for alignment of self struct" {
             const A = C(B);
         };
 
-        pub fn C(comptime B: type) type {
+        pub fn c(comptime B: type) type {
             return struct {
                 d: D(F) = .{},
 
@@ -1135,7 +1135,7 @@ test "no dependency loop for alignment of self struct" {
             };
         }
 
-        pub fn D(comptime F: type) type {
+        pub fn d(comptime F: type) type {
             return struct {
                 g: [*]align(@alignOf(F)) u8 = undefined,
             };
@@ -1150,7 +1150,7 @@ test "no dependency loop for alignment of self bare union" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: namespace.A = undefined;
             a.d = .{ .g = &buf };
             a.d.g[3] = 42;
@@ -1165,7 +1165,7 @@ test "no dependency loop for alignment of self bare union" {
             const A = C(B);
         };
 
-        pub fn C(comptime B: type) type {
+        pub fn c(comptime B: type) type {
             return struct {
                 d: D(F) = .{},
 
@@ -1173,7 +1173,7 @@ test "no dependency loop for alignment of self bare union" {
             };
         }
 
-        pub fn D(comptime F: type) type {
+        pub fn d(comptime F: type) type {
             return struct {
                 g: [*]align(@alignOf(F)) u8 = undefined,
             };
@@ -1188,7 +1188,7 @@ test "no dependency loop for alignment of self tagged union" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: namespace.A = undefined;
             a.d = .{ .g = &buf };
             a.d.g[3] = 42;
@@ -1203,7 +1203,7 @@ test "no dependency loop for alignment of self tagged union" {
             const A = C(B);
         };
 
-        pub fn C(comptime B: type) type {
+        pub fn c(comptime B: type) type {
             return struct {
                 d: D(F) = .{},
 
@@ -1211,7 +1211,7 @@ test "no dependency loop for alignment of self tagged union" {
             };
         }
 
-        pub fn D(comptime F: type) type {
+        pub fn d(comptime F: type) type {
             return struct {
                 g: [*]align(@alignOf(F)) u8 = undefined,
             };
@@ -1232,7 +1232,7 @@ test "storing an array of type in a field" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() void {
+        fn do_the_test() void {
             const foobar = Foobar.foo();
             foo(foobar.str[0..10]);
         }
@@ -1272,7 +1272,7 @@ test "pass pointer to field of comptime-only type as a runtime parameter" {
 
         var ok = false;
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             foo(&bag.x);
             try expect(ok);
         }
@@ -1566,7 +1566,7 @@ test "non-optional and optional array elements concatenated" {
 
 test "inline call in @TypeOf inherits is_inline property" {
     const S = struct {
-        inline fn doNothing() void {}
+        inline fn do_nothing() void {}
         const T = @TypeOf(doNothing());
     };
     try expect(S.T == void);
@@ -1574,10 +1574,10 @@ test "inline call in @TypeOf inherits is_inline property" {
 
 test "comptime function turns function value to function pointer" {
     const S = struct {
-        fn fnPtr(function: anytype) *const @TypeOf(function) {
+        fn fn_ptr(function: anytype) *const @TypeOf(function) {
             return &function;
         }
-        fn Nil() u8 {
+        fn nil() u8 {
             return 0;
         }
         const foo = &[_]*const fn () u8{
@@ -1603,7 +1603,7 @@ test "container level const and var have unique addresses" {
 
 test "break from block results in type" {
     const S = struct {
-        fn NewType(comptime T: type) type {
+        fn new_type(comptime T: type) type {
             const Padded = blk: {
                 if (@sizeOf(T) <= @sizeOf(usize)) break :blk void;
                 break :blk T;
@@ -1706,7 +1706,7 @@ test "early exit in container level const" {
 
 test "@inComptime" {
     const S = struct {
-        fn inComptime() bool {
+        fn in_comptime() bool {
             return @inComptime();
         }
     };

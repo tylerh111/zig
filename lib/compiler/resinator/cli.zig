@@ -63,7 +63,7 @@ pub const usage_string_after_command_name =
     \\
 ;
 
-pub fn writeUsage(writer: anytype, command_name: []const u8) !void {
+pub fn write_usage(writer: anytype, command_name: []const u8) !void {
     try writer.writeAll("Usage: ");
     try writer.writeAll(command_name);
     try writer.writeAll(usage_string_after_command_name);
@@ -107,20 +107,20 @@ pub const Diagnostics = struct {
         try self.errors.append(self.allocator, error_details);
     }
 
-    pub fn renderToStdErr(self: *Diagnostics, args: []const []const u8, config: std.io.tty.Config) void {
+    pub fn render_to_std_err(self: *Diagnostics, args: []const []const u8, config: std.io.tty.Config) void {
         std.debug.lockStdErr();
         defer std.debug.unlockStdErr();
         const stderr = std.io.getStdErr().writer();
         self.renderToWriter(args, stderr, config) catch return;
     }
 
-    pub fn renderToWriter(self: *Diagnostics, args: []const []const u8, writer: anytype, config: std.io.tty.Config) !void {
+    pub fn render_to_writer(self: *Diagnostics, args: []const []const u8, writer: anytype, config: std.io.tty.Config) !void {
         for (self.errors.items) |err_details| {
             try renderErrorMessage(writer, config, err_details, args);
         }
     }
 
-    pub fn hasError(self: *const Diagnostics) bool {
+    pub fn has_error(self: *const Diagnostics) bool {
         for (self.errors.items) |err| {
             if (err.type == .err) return true;
         }
@@ -212,7 +212,7 @@ pub const Options = struct {
     /// worlds' situation where we'll be compatible with most use-cases
     /// of the .rc extension being omitted from the CLI args, but still
     /// work fine if the file itself does not have an extension.
-    pub fn maybeAppendRC(options: *Options, cwd: std.fs.Dir) !void {
+    pub fn maybe_append_rc(options: *Options, cwd: std.fs.Dir) !void {
         if (std.fs.path.extension(options.input_filename).len == 0) {
             cwd.access(options.input_filename, .{}) catch |err| switch (err) {
                 error.FileNotFound => {
@@ -248,7 +248,7 @@ pub const Options = struct {
         }
     }
 
-    pub fn dumpVerbose(self: *const Options, writer: anytype) !void {
+    pub fn dump_verbose(self: *const Options, writer: anytype) !void {
         try writer.print("Input filename: {s}\n", .{self.input_filename});
         try writer.print("Output filename: {s}\n", .{self.output_filename});
         if (self.extra_include_paths.items.len > 0) {
@@ -314,7 +314,7 @@ pub const Arg = struct {
     name_offset: usize,
     full: []const u8,
 
-    pub fn fromString(str: []const u8) ?@This() {
+    pub fn from_string(str: []const u8) ?@This() {
         if (std.mem.startsWith(u8, str, "--")) {
             return .{ .prefix = .long, .name_offset = 2, .full = str };
         } else if (std.mem.startsWith(u8, str, "-")) {
@@ -325,7 +325,7 @@ pub const Arg = struct {
         return null;
     }
 
-    pub fn prefixSlice(self: Arg) []const u8 {
+    pub fn prefix_slice(self: Arg) []const u8 {
         return self.full[0..(if (self.prefix == .long) 2 else 1)];
     }
 
@@ -333,11 +333,11 @@ pub const Arg = struct {
         return self.full[self.name_offset..];
     }
 
-    pub fn optionWithoutPrefix(self: Arg, option_len: usize) []const u8 {
+    pub fn option_without_prefix(self: Arg, option_len: usize) []const u8 {
         return self.name()[0..option_len];
     }
 
-    pub fn missingSpan(self: Arg) Diagnostics.ErrorDetails.ArgSpan {
+    pub fn missing_span(self: Arg) Diagnostics.ErrorDetails.ArgSpan {
         return .{
             .point_at_next_arg = true,
             .value_offset = 0,
@@ -346,11 +346,11 @@ pub const Arg = struct {
         };
     }
 
-    pub fn optionAndAfterSpan(self: Arg) Diagnostics.ErrorDetails.ArgSpan {
+    pub fn option_and_after_span(self: Arg) Diagnostics.ErrorDetails.ArgSpan {
         return self.optionSpan(0);
     }
 
-    pub fn optionSpan(self: Arg, option_len: usize) Diagnostics.ErrorDetails.ArgSpan {
+    pub fn option_span(self: Arg, option_len: usize) Diagnostics.ErrorDetails.ArgSpan {
         return .{
             .name_offset = self.name_offset,
             .prefix_len = self.prefixSlice().len,
@@ -362,7 +362,7 @@ pub const Arg = struct {
         slice: []const u8,
         index_increment: u2 = 1,
 
-        pub fn argSpan(self: Value, arg: Arg) Diagnostics.ErrorDetails.ArgSpan {
+        pub fn arg_span(self: Value, arg: Arg) Diagnostics.ErrorDetails.ArgSpan {
             const prefix_len = arg.prefixSlice().len;
             switch (self.index_increment) {
                 1 => return .{
@@ -970,7 +970,7 @@ pub fn parse(allocator: Allocator, args: []const []const u8, diagnostics: *Diagn
 }
 
 /// Returns true if the str is a valid C identifier for use in a #define/#undef macro
-pub fn isValidIdentifier(str: []const u8) bool {
+pub fn is_valid_identifier(str: []const u8) bool {
     for (str, 0..) |c, i| switch (c) {
         '0'...'9' => if (i == 0) return false,
         'a'...'z', 'A'...'Z', '_' => {},
@@ -985,7 +985,7 @@ pub fn isValidIdentifier(str: []const u8) bool {
 /// - Stops parsing on any invalid hexadecimal digits
 /// - Errors if a digit is not the first char
 /// - `-` (negative) prefix is allowed
-pub fn parsePercent(str: []const u8) error{InvalidFormat}!u32 {
+pub fn parse_percent(str: []const u8) error{InvalidFormat}!u32 {
     var result: u32 = 0;
     const radix: u8 = 10;
     var buf = str;
@@ -1040,7 +1040,7 @@ test parsePercent {
     try std.testing.expectError(error.InvalidFormat, parsePercent("~1"));
 }
 
-pub fn renderErrorMessage(writer: anytype, config: std.io.tty.Config, err_details: Diagnostics.ErrorDetails, args: []const []const u8) !void {
+pub fn render_error_message(writer: anytype, config: std.io.tty.Config, err_details: Diagnostics.ErrorDetails, args: []const []const u8) !void {
     try config.setColor(writer, .dim);
     try writer.writeAll("<cli>");
     try config.setColor(writer, .reset);
@@ -1146,15 +1146,15 @@ pub fn renderErrorMessage(writer: anytype, config: std.io.tty.Config, err_detail
     try config.setColor(writer, .reset);
 }
 
-fn testParse(args: []const []const u8) !Options {
+fn test_parse(args: []const []const u8) !Options {
     return (try testParseOutput(args, "")).?;
 }
 
-fn testParseWarning(args: []const []const u8, expected_output: []const u8) !Options {
+fn test_parse_warning(args: []const []const u8, expected_output: []const u8) !Options {
     return (try testParseOutput(args, expected_output)).?;
 }
 
-fn testParseError(args: []const []const u8, expected_output: []const u8) !void {
+fn test_parse_error(args: []const []const u8, expected_output: []const u8) !void {
     var maybe_options = try testParseOutput(args, expected_output);
     if (maybe_options != null) {
         std.debug.print("expected error, got options: {}\n", .{maybe_options.?});
@@ -1163,7 +1163,7 @@ fn testParseError(args: []const []const u8, expected_output: []const u8) !void {
     }
 }
 
-fn testParseOutput(args: []const []const u8, expected_output: []const u8) !?Options {
+fn test_parse_output(args: []const []const u8, expected_output: []const u8) !?Options {
     var diagnostics = Diagnostics.init(std.testing.allocator);
     defer diagnostics.deinit();
 

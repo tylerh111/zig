@@ -7,14 +7,14 @@ const consts = @import("consts.zig").huffman;
 const Token = @import("Token.zig");
 const BitWriter = @import("bit_writer.zig").BitWriter;
 
-pub fn blockWriter(writer: anytype) BlockWriter(@TypeOf(writer)) {
+pub fn block_writer(writer: anytype) BlockWriter(@TypeOf(writer)) {
     return BlockWriter(@TypeOf(writer)).init(writer);
 }
 
 /// Accepts list of tokens, decides what is best block type to write. What block
 /// type will provide best compression. Writes header and body of the block.
 ///
-pub fn BlockWriter(comptime WriterType: type) type {
+pub fn block_writer(comptime WriterType: type) type {
     const BitWriterType = BitWriter(WriterType);
     return struct {
         const codegen_order = consts.codegen_order;
@@ -54,11 +54,11 @@ pub fn BlockWriter(comptime WriterType: type) type {
             try self.bit_writer.flush();
         }
 
-        pub fn setWriter(self: *Self, new_writer: WriterType) void {
+        pub fn set_writer(self: *Self, new_writer: WriterType) void {
             self.bit_writer.setWriter(new_writer);
         }
 
-        fn writeCode(self: *Self, c: hc.HuffCode) Error!void {
+        fn write_code(self: *Self, c: hc.HuffCode) Error!void {
             try self.bit_writer.writeBits(c.code, c.len);
         }
 
@@ -75,7 +75,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
         // num_distances: The number of distances in distance_encoding
         // lit_enc: The literal encoder to use
         // dist_enc: The distance encoder to use
-        fn generateCodegen(
+        fn generate_codegen(
             self: *Self,
             num_literals: u32,
             num_distances: u32,
@@ -176,7 +176,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
         };
 
         // dynamicSize returns the size of dynamically encoded data in bits.
-        fn dynamicSize(
+        fn dynamic_size(
             self: *Self,
             lit_enc: *hc.LiteralEncoder, // literal encoder
             dist_enc: *hc.DistanceEncoder, // distance encoder
@@ -203,7 +203,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
         }
 
         // fixedSize returns the size of dynamically encoded data in bits.
-        fn fixedSize(self: *Self, extra_bits: u32) u32 {
+        fn fixed_size(self: *Self, extra_bits: u32) u32 {
             return 3 +
                 self.fixed_literal_encoding.bitLength(&self.literal_freq) +
                 self.fixed_distance_encoding.bitLength(&self.distance_freq) +
@@ -218,7 +218,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
         // storedSizeFits calculates the stored size, including header.
         // The function returns the size in bits and whether the block
         // fits inside a single block.
-        fn storedSizeFits(in: ?[]const u8) StoredSize {
+        fn stored_size_fits(in: ?[]const u8) StoredSize {
             if (in == null) {
                 return .{ .size = 0, .storable = false };
             }
@@ -234,7 +234,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
         //  num_distances: The number of distances specified in codegen
         //  num_codegens: The number of codegens used in codegen
         //  eof: Is it the end-of-file? (end of stream)
-        fn dynamicHeader(
+        fn dynamic_header(
             self: *Self,
             num_literals: u32,
             num_distances: u32,
@@ -280,7 +280,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
             }
         }
 
-        fn storedHeader(self: *Self, length: usize, eof: bool) Error!void {
+        fn stored_header(self: *Self, length: usize, eof: bool) Error!void {
             assert(length <= 65535);
             const flag: u32 = if (eof) 1 else 0;
             try self.bit_writer.writeBits(flag, 3);
@@ -290,7 +290,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
             try self.bit_writer.writeBits(~l, 16);
         }
 
-        fn fixedHeader(self: *Self, eof: bool) Error!void {
+        fn fixed_header(self: *Self, eof: bool) Error!void {
             // Indicate that we are a fixed Huffman block
             var value: u32 = 2;
             if (eof) {
@@ -382,7 +382,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
             try self.writeTokens(tokens, &literal_encoding.codes, &distance_encoding.codes);
         }
 
-        pub fn storedBlock(self: *Self, input: []const u8, eof: bool) Error!void {
+        pub fn stored_block(self: *Self, input: []const u8, eof: bool) Error!void {
             try self.storedHeader(input.len, eof);
             try self.bit_writer.writeBytes(input);
         }
@@ -392,7 +392,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
         // histogram distribution.
         // If input is supplied and the compression savings are below 1/16th of the
         // input size the block is stored.
-        fn dynamicBlock(
+        fn dynamic_block(
             self: *Self,
             tokens: []const Token,
             eof: bool,
@@ -441,7 +441,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
         // literal_freq and distance_freq, and generates literal_encoding
         // and distance_encoding.
         // The number of literal and distance tokens is returned.
-        fn indexTokens(self: *Self, tokens: []const Token) TotalIndexedTokens {
+        fn index_tokens(self: *Self, tokens: []const Token) TotalIndexedTokens {
             var num_literals: u32 = 0;
             var num_distances: u32 = 0;
 
@@ -489,7 +489,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
 
         // Writes a slice of tokens to the output followed by and end_block_marker.
         // codes for literal and distance encoding must be supplied.
-        fn writeTokens(
+        fn write_tokens(
             self: *Self,
             tokens: []const Token,
             le_codes: []hc.HuffCode,
@@ -521,7 +521,7 @@ pub fn BlockWriter(comptime WriterType: type) type {
 
         // Encodes a block of bytes as either Huffman encoded literals or uncompressed bytes
         // if the results only gains very little from compression.
-        pub fn huffmanBlock(self: *Self, input: []const u8, eof: bool) Error!void {
+        pub fn huffman_block(self: *Self, input: []const u8, eof: bool) Error!void {
             // Add everything as literals
             histogram(input, &self.literal_freq);
 
@@ -664,7 +664,7 @@ const TestFn = enum {
 //   dyn  - writeBlockDynamic
 //   huff - writeBlockHuff
 //
-fn testBlock(comptime tc: TestCase, comptime tfn: TestFn) !void {
+fn test_block(comptime tc: TestCase, comptime tfn: TestFn) !void {
     if (tc.input.len != 0 and tc.want.len != 0) {
         const want_name = comptime fmt.comptimePrint(tc.want, .{tfn.to_s()});
         const input = @embedFile("testdata/block_writer/" ++ tc.input);
@@ -682,7 +682,7 @@ fn testBlock(comptime tc: TestCase, comptime tfn: TestFn) !void {
 }
 
 // Uses writer function `tfn` to write `tokens`, tests that we got `want` as output.
-fn testWriteBlock(comptime tfn: TestFn, input: ?[]const u8, want: []const u8, tokens: []const Token) !void {
+fn test_write_block(comptime tfn: TestFn, input: ?[]const u8, want: []const u8, tokens: []const Token) !void {
     var buf = ArrayList(u8).init(testing.allocator);
     var bw = blockWriter(buf.writer());
     try tfn.write(&bw, tokens, input, false);

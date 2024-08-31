@@ -1,4 +1,4 @@
-fn S(comptime PtrTy: type) type {
+fn s(comptime PtrTy: type) type {
     return struct {
         fnPtr: PtrTy,
         a: u8,

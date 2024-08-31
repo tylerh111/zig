@@ -6,7 +6,7 @@ test "builtin.is_test" {
     try expect(isATest());
 }
 
-fn isATest() bool {
+fn is_atest() bool {
     return builtin.is_test;
 }
 

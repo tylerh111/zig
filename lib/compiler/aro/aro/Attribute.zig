@@ -29,7 +29,7 @@ pub const Kind = enum {
     declspec,
     gnu,
 
-    pub fn toSyntax(kind: Kind) Syntax {
+    pub fn to_syntax(kind: Kind) Syntax {
         return switch (kind) {
             .c23 => .c23,
             .declspec => .declspec,
@@ -47,7 +47,7 @@ pub const ArgumentType = enum {
     expression,
     nullptr_t,
 
-    pub fn toString(self: ArgumentType) []const u8 {
+    pub fn to_string(self: ArgumentType) []const u8 {
         return switch (self) {
             .string => "a string",
             .identifier => "an identifier",
@@ -60,7 +60,7 @@ pub const ArgumentType = enum {
 };
 
 /// number of required arguments
-pub fn requiredArgCount(attr: Tag) u32 {
+pub fn required_arg_count(attr: Tag) u32 {
     switch (attr) {
         inline else => |tag| {
             comptime var needed = 0;
@@ -76,7 +76,7 @@ pub fn requiredArgCount(attr: Tag) u32 {
 }
 
 /// maximum number of args that can be passed
-pub fn maxArgCount(attr: Tag) u32 {
+pub fn max_arg_count(attr: Tag) u32 {
     switch (attr) {
         inline else => |tag| {
             comptime var max = 0;
@@ -91,7 +91,7 @@ pub fn maxArgCount(attr: Tag) u32 {
     }
 }
 
-fn UnwrapOptional(comptime T: type) type {
+fn unwrap_optional(comptime T: type) type {
     return switch (@typeInfo(T)) {
         .Optional => |optional| optional.child,
         else => T,
@@ -102,7 +102,7 @@ pub const Formatting = struct {
     /// The quote char (single or double) to use when printing identifiers/strings corresponding
     /// to the enum in the first field of the `attr`. Identifier enums use single quotes, string enums
     /// use double quotes
-    fn quoteChar(attr: Tag) []const u8 {
+    fn quote_char(attr: Tag) []const u8 {
         switch (attr) {
             .calling_convention => unreachable,
             inline else => |tag| {
@@ -144,7 +144,7 @@ pub const Formatting = struct {
 };
 
 /// Checks if the first argument (if it exists) is an identifier enum
-pub fn wantsIdentEnum(attr: Tag) bool {
+pub fn wants_ident_enum(attr: Tag) bool {
     switch (attr) {
         .calling_convention => return false,
         inline else => |tag| {
@@ -159,7 +159,7 @@ pub fn wantsIdentEnum(attr: Tag) bool {
     }
 }
 
-pub fn diagnoseIdent(attr: Tag, arguments: *Arguments, ident: []const u8) ?Diagnostics.Message {
+pub fn diagnose_ident(attr: Tag, arguments: *Arguments, ident: []const u8) ?Diagnostics.Message {
     switch (attr) {
         inline else => |tag| {
             const fields = std.meta.fields(@field(attributes, @tagName(tag)));
@@ -178,7 +178,7 @@ pub fn diagnoseIdent(attr: Tag, arguments: *Arguments, ident: []const u8) ?Diagn
     }
 }
 
-pub fn wantsAlignment(attr: Tag, idx: usize) bool {
+pub fn wants_alignment(attr: Tag, idx: usize) bool {
     switch (attr) {
         inline else => |tag| {
             const fields = std.meta.fields(@field(attributes, @tagName(tag)));
@@ -192,7 +192,7 @@ pub fn wantsAlignment(attr: Tag, idx: usize) bool {
     }
 }
 
-pub fn diagnoseAlignment(attr: Tag, arguments: *Arguments, arg_idx: u32, res: Parser.Result, p: *Parser) !?Diagnostics.Message {
+pub fn diagnose_alignment(attr: Tag, arguments: *Arguments, arg_idx: u32, res: Parser.Result, p: *Parser) !?Diagnostics.Message {
     switch (attr) {
         inline else => |tag| {
             const arg_fields = std.meta.fields(@field(attributes, @tagName(tag)));
@@ -220,7 +220,7 @@ pub fn diagnoseAlignment(attr: Tag, arguments: *Arguments, arg_idx: u32, res: Pa
     }
 }
 
-fn diagnoseField(
+fn diagnose_field(
     comptime decl: ZigType.Declaration,
     comptime field: ZigType.StructField,
     comptime Wanted: type,
@@ -283,7 +283,7 @@ fn diagnoseField(
     });
 }
 
-fn invalidArgMsg(comptime Expected: type, actual: ArgumentType) Diagnostics.Message {
+fn invalid_arg_msg(comptime Expected: type, actual: ArgumentType) Diagnostics.Message {
     return .{
         .tag = .attribute_arg_invalid,
         .extra = .{ .attr_arg_type = .{ .expected = switch (Expected) {
@@ -661,12 +661,12 @@ pub const Arguments = blk: {
     });
 };
 
-pub fn ArgumentsForTag(comptime tag: Tag) type {
+pub fn arguments_for_tag(comptime tag: Tag) type {
     const decl = @typeInfo(attributes).Struct.decls[@intFromEnum(tag)];
     return @field(attributes, decl.name);
 }
 
-pub fn initArguments(tag: Tag, name_tok: TokenIndex) Arguments {
+pub fn init_arguments(tag: Tag, name_tok: TokenIndex) Arguments {
     switch (tag) {
         inline else => |arg_tag| {
             const union_element = @field(attributes, @tagName(arg_tag));
@@ -680,7 +680,7 @@ pub fn initArguments(tag: Tag, name_tok: TokenIndex) Arguments {
     }
 }
 
-pub fn fromString(kind: Kind, namespace: ?[]const u8, name: []const u8) ?Tag {
+pub fn from_string(kind: Kind, namespace: ?[]const u8, name: []const u8) ?Tag {
     const Properties = struct {
         tag: Tag,
         gnu: bool = false,
@@ -715,7 +715,7 @@ pub fn normalize(name: []const u8) []const u8 {
     return name;
 }
 
-fn ignoredAttrErr(p: *Parser, tok: TokenIndex, attr: Attribute.Tag, context: []const u8) !void {
+fn ignored_attr_err(p: *Parser, tok: TokenIndex, attr: Attribute.Tag, context: []const u8) !void {
     const strings_top = p.strings.items.len;
     defer p.strings.items.len = strings_top;
 
@@ -725,7 +725,7 @@ fn ignoredAttrErr(p: *Parser, tok: TokenIndex, attr: Attribute.Tag, context: []c
 }
 
 pub const applyParameterAttributes = applyVariableAttributes;
-pub fn applyVariableAttributes(p: *Parser, ty: Type, attr_buf_start: usize, tag: ?Diagnostics.Tag) !Type {
+pub fn apply_variable_attributes(p: *Parser, ty: Type, attr_buf_start: usize, tag: ?Diagnostics.Tag) !Type {
     const attrs = p.attr_buf.items(.attr)[attr_buf_start..];
     const toks = p.attr_buf.items(.tok)[attr_buf_start..];
     p.attr_application_buf.items.len = 0;
@@ -783,7 +783,7 @@ pub fn applyVariableAttributes(p: *Parser, ty: Type, attr_buf_start: usize, tag:
     return Type{ .specifier = .attributed, .data = .{ .attributed = attributed_type } };
 }
 
-pub fn applyFieldAttributes(p: *Parser, field_ty: *Type, attr_buf_start: usize) ![]const Attribute {
+pub fn apply_field_attributes(p: *Parser, field_ty: *Type, attr_buf_start: usize) ![]const Attribute {
     const attrs = p.attr_buf.items(.attr)[attr_buf_start..];
     const toks = p.attr_buf.items(.tok)[attr_buf_start..];
     p.attr_application_buf.items.len = 0;
@@ -800,7 +800,7 @@ pub fn applyFieldAttributes(p: *Parser, field_ty: *Type, attr_buf_start: usize) 
     return p.arena.dupe(Attribute, p.attr_application_buf.items);
 }
 
-pub fn applyTypeAttributes(p: *Parser, ty: Type, attr_buf_start: usize, tag: ?Diagnostics.Tag) !Type {
+pub fn apply_type_attributes(p: *Parser, ty: Type, attr_buf_start: usize, tag: ?Diagnostics.Tag) !Type {
     const attrs = p.attr_buf.items(.attr)[attr_buf_start..];
     const toks = p.attr_buf.items(.tok)[attr_buf_start..];
     p.attr_application_buf.items.len = 0;
@@ -841,7 +841,7 @@ pub fn applyTypeAttributes(p: *Parser, ty: Type, attr_buf_start: usize, tag: ?Di
     return base_ty;
 }
 
-pub fn applyFunctionAttributes(p: *Parser, ty: Type, attr_buf_start: usize) !Type {
+pub fn apply_function_attributes(p: *Parser, ty: Type, attr_buf_start: usize) !Type {
     const attrs = p.attr_buf.items(.attr)[attr_buf_start..];
     const toks = p.attr_buf.items(.tok)[attr_buf_start..];
     p.attr_application_buf.items.len = 0;
@@ -943,7 +943,7 @@ pub fn applyFunctionAttributes(p: *Parser, ty: Type, attr_buf_start: usize) !Typ
     return ty.withAttributes(p.arena, p.attr_application_buf.items);
 }
 
-pub fn applyLabelAttributes(p: *Parser, ty: Type, attr_buf_start: usize) !Type {
+pub fn apply_label_attributes(p: *Parser, ty: Type, attr_buf_start: usize) !Type {
     const attrs = p.attr_buf.items(.attr)[attr_buf_start..];
     const toks = p.attr_buf.items(.tok)[attr_buf_start..];
     p.attr_application_buf.items.len = 0;
@@ -968,7 +968,7 @@ pub fn applyLabelAttributes(p: *Parser, ty: Type, attr_buf_start: usize) !Type {
     return ty.withAttributes(p.arena, p.attr_application_buf.items);
 }
 
-pub fn applyStatementAttributes(p: *Parser, ty: Type, expr_start: TokenIndex, attr_buf_start: usize) !Type {
+pub fn apply_statement_attributes(p: *Parser, ty: Type, expr_start: TokenIndex, attr_buf_start: usize) !Type {
     const attrs = p.attr_buf.items(.attr)[attr_buf_start..];
     const toks = p.attr_buf.items(.tok)[attr_buf_start..];
     p.attr_application_buf.items.len = 0;
@@ -986,7 +986,7 @@ pub fn applyStatementAttributes(p: *Parser, ty: Type, expr_start: TokenIndex, at
     return ty.withAttributes(p.arena, p.attr_application_buf.items);
 }
 
-pub fn applyEnumeratorAttributes(p: *Parser, ty: Type, attr_buf_start: usize) !Type {
+pub fn apply_enumerator_attributes(p: *Parser, ty: Type, attr_buf_start: usize) !Type {
     const attrs = p.attr_buf.items(.attr)[attr_buf_start..];
     const toks = p.attr_buf.items(.tok)[attr_buf_start..];
     p.attr_application_buf.items.len = 0;
@@ -997,7 +997,7 @@ pub fn applyEnumeratorAttributes(p: *Parser, ty: Type, attr_buf_start: usize) !T
     return ty.withAttributes(p.arena, p.attr_application_buf.items);
 }
 
-fn applyAligned(attr: Attribute, p: *Parser, ty: Type, tag: ?Diagnostics.Tag) !void {
+fn apply_aligned(attr: Attribute, p: *Parser, ty: Type, tag: ?Diagnostics.Tag) !void {
     const base = ty.canonicalize(.standard);
     if (attr.args.aligned.alignment) |alignment| alignas: {
         if (attr.syntax != .keyword) break :alignas;
@@ -1015,7 +1015,7 @@ fn applyAligned(attr: Attribute, p: *Parser, ty: Type, tag: ?Diagnostics.Tag) !v
     try p.attr_application_buf.append(p.gpa, attr);
 }
 
-fn applyTransparentUnion(attr: Attribute, p: *Parser, tok: TokenIndex, ty: Type) !void {
+fn apply_transparent_union(attr: Attribute, p: *Parser, tok: TokenIndex, ty: Type) !void {
     const union_ty = ty.get(.@"union") orelse {
         return p.errTok(.transparent_union_wrong_type, tok);
     };
@@ -1042,7 +1042,7 @@ fn applyTransparentUnion(attr: Attribute, p: *Parser, tok: TokenIndex, ty: Type)
     try p.attr_application_buf.append(p.gpa, attr);
 }
 
-fn applyVectorSize(attr: Attribute, p: *Parser, tok: TokenIndex, ty: *Type) !void {
+fn apply_vector_size(attr: Attribute, p: *Parser, tok: TokenIndex, ty: *Type) !void {
     if (!(ty.isInt() or ty.isFloat()) or !ty.isReal()) {
         const orig_ty = try p.typeStr(ty.*);
         ty.* = Type.invalid;
@@ -1063,7 +1063,7 @@ fn applyVectorSize(attr: Attribute, p: *Parser, tok: TokenIndex, ty: *Type) !voi
     };
 }
 
-fn applyFormat(attr: Attribute, p: *Parser, ty: Type) !void {
+fn apply_format(attr: Attribute, p: *Parser, ty: Type) !void {
     // TODO validate
     _ = ty;
     try p.attr_application_buf.append(p.gpa, attr);

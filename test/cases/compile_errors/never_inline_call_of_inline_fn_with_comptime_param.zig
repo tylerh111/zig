@@ -1,11 +1,11 @@
 extern var X: *volatile i32;
 
-inline fn fiveXwithType(comptime T: type) void {
+inline fn five_xwith_type(comptime T: type) void {
     _ = T;
     X.* = 5;
 }
 
-inline fn fiveXwithArg(v: i32) void {
+inline fn five_xwith_arg(v: i32) void {
     _ = v;
     X.* = 5;
 }

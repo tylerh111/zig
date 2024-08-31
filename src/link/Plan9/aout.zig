@@ -17,7 +17,7 @@ pub const ExecHdr = extern struct {
         assert(@sizeOf(@This()) == 32);
     }
     /// It is up to the caller to discard the last 8 bytes if the header is not fat.
-    pub fn toU8s(self: *@This()) [40]u8 {
+    pub fn to_u8s(self: *@This()) [40]u8 {
         var buf: [40]u8 = undefined;
         var i: u8 = 0;
         inline for (std.meta.fields(@This())) |f| {
@@ -74,7 +74,7 @@ pub const Sym = struct {
         /// represents an undefined symbol, to be removed in flush
         bad = 0,
 
-        pub fn toGlobal(self: Type) Type {
+        pub fn to_global(self: Type) Type {
             return switch (self) {
                 .t => .T,
                 .b => .B,
@@ -86,7 +86,7 @@ pub const Sym = struct {
 };
 
 pub const HDR_MAGIC = 0x00008000;
-pub inline fn _MAGIC(f: anytype, b: anytype) @TypeOf(f | ((((@as(c_int, 4) * b) + @as(c_int, 0)) * b) + @as(c_int, 7))) {
+pub inline fn _magic(f: anytype, b: anytype) @TypeOf(f | ((((@as(c_int, 4) * b) + @as(c_int, 0)) * b) + @as(c_int, 7))) {
     return f | ((((@as(c_int, 4) * b) + @as(c_int, 0)) * b) + @as(c_int, 7));
 }
 pub const A_MAGIC = _MAGIC(0, 8); // 68020
@@ -107,7 +107,7 @@ pub const S_MAGIC = _MAGIC(HDR_MAGIC, 26); // amd64
 pub const T_MAGIC = _MAGIC(HDR_MAGIC, 27); // powerpc64
 pub const R_MAGIC = _MAGIC(HDR_MAGIC, 28); // arm64
 
-pub fn magicFromArch(arch: std.Target.Cpu.Arch) !u32 {
+pub fn magic_from_arch(arch: std.Target.Cpu.Arch) !u32 {
     return switch (arch) {
         .x86 => I_MAGIC,
         .sparc => K_MAGIC, // TODO should sparc64 and sparcel go here?
@@ -122,7 +122,7 @@ pub fn magicFromArch(arch: std.Target.Cpu.Arch) !u32 {
 }
 
 /// gets the quantization of pc for the arch
-pub fn getPCQuant(arch: std.Target.Cpu.Arch) !u8 {
+pub fn get_pcquant(arch: std.Target.Cpu.Arch) !u8 {
     return switch (arch) {
         .x86, .x86_64 => 1,
         .powerpc, .powerpc64, .mips, .sparc, .arm, .aarch64 => 4,

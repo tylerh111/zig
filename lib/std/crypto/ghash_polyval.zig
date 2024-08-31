@@ -23,7 +23,7 @@ pub const Ghash = Hash(.big, true);
 /// POLYVAL is typically used to compute the authentication tag in the AES-GCM-SIV construction.
 pub const Polyval = Hash(.little, false);
 
-fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
+fn hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
     return struct {
         const Self = @This();
 
@@ -51,7 +51,7 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
         buf: [block_length]u8 align(16) = undefined,
 
         /// Initialize the GHASH state with a key, and a minimum number of block count.
-        pub fn initForBlockCount(key: *const [key_length]u8, block_count: usize) Self {
+        pub fn init_for_block_count(key: *const [key_length]u8, block_count: usize) Self {
             var h = mem.readInt(u128, key[0..16], endian);
             if (shift_key) {
                 // Shift the key by 1 bit to the left & reduce for GCM.
@@ -90,7 +90,7 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
         const Selector = enum { lo, hi, hi_lo };
 
         // Carryless multiplication of two 64-bit integers for x86_64.
-        inline fn clmulPclmul(x: u128, y: u128, comptime half: Selector) u128 {
+        inline fn clmul_pclmul(x: u128, y: u128, comptime half: Selector) u128 {
             switch (half) {
                 .hi => {
                     const product = asm (
@@ -123,7 +123,7 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
         }
 
         // Carryless multiplication of two 64-bit integers for ARM crypto.
-        inline fn clmulPmull(x: u128, y: u128, comptime half: Selector) u128 {
+        inline fn clmul_pmull(x: u128, y: u128, comptime half: Selector) u128 {
             switch (half) {
                 .hi => {
                     const product = asm (
@@ -162,7 +162,7 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
         };
 
         // Software carryless multiplication of two 64-bit integers using native 128-bit registers.
-        fn clmulSoft128(x_: u128, y_: u128, comptime half: Selector) u128 {
+        fn clmul_soft128(x_: u128, y_: u128, comptime half: Selector) u128 {
             const x = @as(u64, @truncate(if (half == .hi or half == .hi_lo) x_ >> 64 else x_));
             const y = @as(u64, @truncate(if (half == .hi) y_ >> 64 else y_));
 
@@ -193,7 +193,7 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
         }
 
         // Software carryless multiplication of two 32-bit integers.
-        fn clmulSoft32(x: u32, y: u32) u64 {
+        fn clmul_soft32(x: u32, y: u32) u64 {
             const mulWide = math.mulWide;
             const a0 = x & 0x11111111;
             const a1 = x & 0x22222222;
@@ -211,7 +211,7 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
         }
 
         // Software carryless multiplication of two 128-bit integers using 64-bit registers.
-        fn clmulSoft128_64(x_: u128, y_: u128, comptime half: Selector) u128 {
+        fn clmul_soft128_64(x_: u128, y_: u128, comptime half: Selector) u128 {
             const a = @as(u64, @truncate(if (half == .hi or half == .hi_lo) x_ >> 64 else x_));
             const b = @as(u64, @truncate(if (half == .hi) y_ >> 64 else y_));
             const a0 = @as(u32, @truncate(a));

@@ -61,7 +61,7 @@ pub fn add(
 }
 
 /// Assumes a and b do not overlap
-fn lessThan(mod: *Module, a: Range, b: Range) bool {
+fn less_than(mod: *Module, a: Range, b: Range) bool {
     const ty = Type.fromInterned(mod.intern_pool.typeOf(a.first));
     return Value.fromInterned(a.first).compareScalar(.lt, Value.fromInterned(b.first), ty, mod);
 }

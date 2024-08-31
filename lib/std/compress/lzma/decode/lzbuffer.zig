@@ -25,7 +25,7 @@ pub const LzAccumBuffer = struct {
         };
     }
 
-    pub fn appendByte(self: *Self, allocator: Allocator, byte: u8) !void {
+    pub fn append_byte(self: *Self, allocator: Allocator, byte: u8) !void {
         try self.buf.append(allocator, byte);
         self.len += 1;
     }
@@ -38,7 +38,7 @@ pub const LzAccumBuffer = struct {
     }
 
     /// Retrieve the last byte or return a default
-    pub fn lastOr(self: Self, lit: u8) u8 {
+    pub fn last_or(self: Self, lit: u8) u8 {
         const buf_len = self.buf.items.len;
         return if (buf_len == 0)
             lit
@@ -47,7 +47,7 @@ pub const LzAccumBuffer = struct {
     }
 
     /// Retrieve the n-th last byte
-    pub fn lastN(self: Self, dist: usize) !u8 {
+    pub fn last_n(self: Self, dist: usize) !u8 {
         const buf_len = self.buf.items.len;
         if (dist > buf_len) {
             return error.CorruptInput;
@@ -57,7 +57,7 @@ pub const LzAccumBuffer = struct {
     }
 
     /// Append a literal
-    pub fn appendLiteral(
+    pub fn append_literal(
         self: *Self,
         allocator: Allocator,
         lit: u8,
@@ -72,7 +72,7 @@ pub const LzAccumBuffer = struct {
     }
 
     /// Fetch an LZ sequence (length, distance) from inside the buffer
-    pub fn appendLz(
+    pub fn append_lz(
         self: *Self,
         allocator: Allocator,
         len: usize,
@@ -155,7 +155,7 @@ pub const LzCircularBuffer = struct {
     }
 
     /// Retrieve the last byte or return a default
-    pub fn lastOr(self: Self, lit: u8) u8 {
+    pub fn last_or(self: Self, lit: u8) u8 {
         return if (self.len == 0)
             lit
         else
@@ -163,7 +163,7 @@ pub const LzCircularBuffer = struct {
     }
 
     /// Retrieve the n-th last byte
-    pub fn lastN(self: Self, dist: usize) !u8 {
+    pub fn last_n(self: Self, dist: usize) !u8 {
         if (dist > self.dict_size or dist > self.len) {
             return error.CorruptInput;
         }
@@ -173,7 +173,7 @@ pub const LzCircularBuffer = struct {
     }
 
     /// Append a literal
-    pub fn appendLiteral(
+    pub fn append_literal(
         self: *Self,
         allocator: Allocator,
         lit: u8,
@@ -191,7 +191,7 @@ pub const LzCircularBuffer = struct {
     }
 
     /// Fetch an LZ sequence (length, distance) from inside the buffer
-    pub fn appendLz(
+    pub fn append_lz(
         self: *Self,
         allocator: Allocator,
         len: usize,

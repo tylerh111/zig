@@ -669,7 +669,7 @@ test "zig fmt: array types last token" {
 
 test "zig fmt: sentinel-terminated array type" {
     try testCanonical(
-        \\pub fn cStrToPrefixedFileW(s: [*:0]const u8) ![PATH_MAX_WIDE:0]u16 {
+        \\pub fn c_str_to_prefixed_file_w(s: [*:0]const u8) ![PATH_MAX_WIDE:0]u16 {
         \\    return sliceToPrefixedFileW(mem.toSliceConst(u8, s));
         \\}
         \\
@@ -678,7 +678,7 @@ test "zig fmt: sentinel-terminated array type" {
 
 test "zig fmt: sentinel-terminated slice type" {
     try testCanonical(
-        \\pub fn toSlice(self: Buffer) [:0]u8 {
+        \\pub fn to_slice(self: Buffer) [:0]u8 {
         \\    return self.list.toSlice()[0..self.len()];
         \\}
         \\
@@ -1509,7 +1509,7 @@ test "zig fmt: 'zig fmt: (off|on)' works in the middle of code" {
 
 test "zig fmt: 'zig fmt: on' indentation is unchanged" {
     try testCanonical(
-        \\fn initOptionsAndLayouts(output: *Output, context: *Context) !void {
+        \\fn init_options_and_layouts(output: *Output, context: *Context) !void {
         \\    // zig fmt: off
         \\    try output.main_amount.init(output, "main_amount"); errdefer optput.main_amount.deinit();
         \\    try output.main_factor.init(output, "main_factor"); errdefer optput.main_factor.deinit();
@@ -3062,7 +3062,7 @@ test "zig fmt: functions" {
         \\pub export fn puts(s: *const u8) align(2 + 2) c_int;
         \\pub inline fn puts(s: *const u8) align(2 + 2) c_int;
         \\pub noinline fn puts(s: *const u8) align(2 + 2) c_int;
-        \\pub fn callInlineFn(func: fn () callconv(.Inline) void) void {
+        \\pub fn call_inline_fn(func: fn () callconv(.Inline) void) void {
         \\    func();
         \\}
         \\
@@ -3932,7 +3932,7 @@ test "zig fmt: inline asm" {
 
 test "zig fmt: async functions" {
     try testCanonical(
-        \\fn simpleAsyncFn() void {
+        \\fn simple_async_fn() void {
         \\    const a = async a.b();
         \\    x += 1;
         \\    suspend {}
@@ -4502,7 +4502,7 @@ test "zig fmt: integer literals with underscore separators" {
 
 test "zig fmt: hex literals with underscore separators" {
     try testTransform(
-        \\pub fn orMask(a: [ 1_000 ]u64, b: [  1_000]  u64) [1_000]u64 {
+        \\pub fn or_mask(a: [ 1_000 ]u64, b: [  1_000]  u64) [1_000]u64 {
         \\    var c: [1_000]u64 =  [1]u64{ 0xFFFF_FFFF_FFFF_FFFF}**1_000;
         \\    for (c [ 1_0 .. ], 0..) |_, i| {
         \\        c[i] = (a[i] | b[i]) & 0xCCAA_CCAA_CCAA_CCAA;
@@ -4512,7 +4512,7 @@ test "zig fmt: hex literals with underscore separators" {
         \\
         \\
     ,
-        \\pub fn orMask(a: [1_000]u64, b: [1_000]u64) [1_000]u64 {
+        \\pub fn or_mask(a: [1_000]u64, b: [1_000]u64) [1_000]u64 {
         \\    var c: [1_000]u64 = [1]u64{0xFFFF_FFFF_FFFF_FFFF} ** 1_000;
         \\    for (c[1_0..], 0..) |_, i| {
         \\        c[i] = (a[i] | b[i]) & 0xCCAA_CCAA_CCAA_CCAA;
@@ -4583,7 +4583,7 @@ test "zig fmt: Only indent multiline string literals in function calls" {
 
 test "zig fmt: Don't add extra newline after if" {
     try testCanonical(
-        \\pub fn atomicSymLink(allocator: Allocator, existing_path: []const u8, new_path: []const u8) !void {
+        \\pub fn atomic_sym_link(allocator: Allocator, existing_path: []const u8, new_path: []const u8) !void {
         \\    if (cwd().symLink(existing_path, new_path, .{})) {
         \\        return;
         \\    }
@@ -4770,7 +4770,7 @@ test "zig fmt: Control flow statement as body of blockless if" {
 
 test "zig fmt: regression test for #5722" {
     try testCanonical(
-        \\pub fn sendViewTags(self: Self) void {
+        \\pub fn send_view_tags(self: Self) void {
         \\    var it = ViewStack(View).iterator(self.output.views.first, std.math.maxInt(u32));
         \\    while (it.next()) |node|
         \\        view_tags.append(node.view.current_tags) catch {
@@ -4896,7 +4896,7 @@ test "zig fmt: multiline string literals should play nice with array initializer
 
 test "zig fmt: use of comments and multiline string literals may force the parameters over multiple lines" {
     try testCanonical(
-        \\pub fn makeMemUndefined(qzz: []u8) i1 {
+        \\pub fn make_mem_undefined(qzz: []u8) i1 {
         \\    cases.add( // fixed bug foo
         \\        "compile diagnostic string for top level decl type",
         \\        \\export fn entry() void {
@@ -5430,15 +5430,15 @@ test "zig fmt: canonicalize symbols (simple)" {
         \\const @"val_unesc_me": @"UnescMe" = .{};
         \\const @"val_esc!": @"Esc!" = .{};
         \\
-        \\fn fnNormal() void {}
+        \\fn fn_normal() void {}
         \\fn @"fnUnescMe"() void {}
         \\fn @"fnEsc!"() void {}
         \\
-        \\extern fn protoNormal() void;
+        \\extern fn proto_normal() void;
         \\extern fn @"protoUnescMe"() void;
         \\extern fn @"protoEsc!"() void;
         \\
-        \\fn fnWithArgs(normal: Normal, @"unesc_me": @"UnescMe", @"esc!": @"Esc!") void {
+        \\fn fn_with_args(normal: Normal, @"unesc_me": @"UnescMe", @"esc!": @"Esc!") void {
         \\    _ = normal;
         \\    _ = @"unesc_me";
         \\    _ = @"esc!";
@@ -5502,15 +5502,15 @@ test "zig fmt: canonicalize symbols (simple)" {
         \\const val_unesc_me: UnescMe = .{};
         \\const @"val_esc!": @"Esc!" = .{};
         \\
-        \\fn fnNormal() void {}
-        \\fn fnUnescMe() void {}
+        \\fn fn_normal() void {}
+        \\fn fn_unesc_me() void {}
         \\fn @"fnEsc!"() void {}
         \\
-        \\extern fn protoNormal() void;
-        \\extern fn protoUnescMe() void;
+        \\extern fn proto_normal() void;
+        \\extern fn proto_unesc_me() void;
         \\extern fn @"protoEsc!"() void;
         \\
-        \\fn fnWithArgs(normal: Normal, unesc_me: UnescMe, @"esc!": @"Esc!") void {
+        \\fn fn_with_args(normal: Normal, unesc_me: UnescMe, @"esc!": @"Esc!") void {
         \\    _ = normal;
         \\    _ = unesc_me;
         \\    _ = @"esc!";
@@ -6272,7 +6272,7 @@ const maxInt = std.math.maxInt;
 
 var fixed_buffer_mem: [100 * 1024]u8 = undefined;
 
-fn testParse(source: [:0]const u8, allocator: mem.Allocator, anything_changed: *bool) ![]u8 {
+fn test_parse(source: [:0]const u8, allocator: mem.Allocator, anything_changed: *bool) ![]u8 {
     const stderr = io.getStdErr().writer();
 
     var tree = try std.zig.Ast.parse(allocator, source, .zig);
@@ -6300,7 +6300,7 @@ fn testParse(source: [:0]const u8, allocator: mem.Allocator, anything_changed: *
     anything_changed.* = !mem.eql(u8, formatted, source);
     return formatted;
 }
-fn testTransformImpl(allocator: mem.Allocator, fba: *std.heap.FixedBufferAllocator, source: [:0]const u8, expected_source: []const u8) !void {
+fn test_transform_impl(allocator: mem.Allocator, fba: *std.heap.FixedBufferAllocator, source: [:0]const u8, expected_source: []const u8) !void {
     // reset the fixed buffer allocator each run so that it can be re-used for each
     // iteration of the failing index
     fba.reset();
@@ -6315,17 +6315,17 @@ fn testTransformImpl(allocator: mem.Allocator, fba: *std.heap.FixedBufferAllocat
     try std.testing.expect(anything_changed == changes_expected);
     allocator.free(result_source);
 }
-fn testTransform(source: [:0]const u8, expected_source: []const u8) !void {
+fn test_transform(source: [:0]const u8, expected_source: []const u8) !void {
     var fixed_allocator = std.heap.FixedBufferAllocator.init(fixed_buffer_mem[0..]);
     return std.testing.checkAllAllocationFailures(fixed_allocator.allocator(), testTransformImpl, .{ &fixed_allocator, source, expected_source });
 }
-fn testCanonical(source: [:0]const u8) !void {
+fn test_canonical(source: [:0]const u8) !void {
     return testTransform(source, source);
 }
 
 const Error = std.zig.Ast.Error.Tag;
 
-fn testError(source: [:0]const u8, expected_errors: []const Error) !void {
+fn test_error(source: [:0]const u8, expected_errors: []const Error) !void {
     var tree = try std.zig.Ast.parse(std.testing.allocator, source, .zig);
     defer tree.deinit(std.testing.allocator);
 

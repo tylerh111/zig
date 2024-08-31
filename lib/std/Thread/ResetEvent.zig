@@ -16,7 +16,7 @@ impl: Impl = .{},
 /// Returns if the ResetEvent was set().
 /// Once reset() is called, this returns false until the next set().
 /// The memory accesses before the set() can be said to happen before isSet() returns true.
-pub fn isSet(self: *const ResetEvent) bool {
+pub fn is_set(self: *const ResetEvent) bool {
     return self.impl.isSet();
 }
 
@@ -33,7 +33,7 @@ pub fn wait(self: *ResetEvent) void {
 /// If the timeout expires before the ResetEvent is set, `error.Timeout` is returned.
 /// This is effectively a more efficient version of `while (!isSet()) {}`.
 /// The memory accesses before the set() can be said to happen before timedWait() returns without error.
-pub fn timedWait(self: *ResetEvent, timeout_ns: u64) error{Timeout}!void {
+pub fn timed_wait(self: *ResetEvent, timeout_ns: u64) error{Timeout}!void {
     return self.impl.wait(timeout_ns);
 }
 
@@ -59,7 +59,7 @@ else
 const SingleThreadedImpl = struct {
     is_set: bool = false,
 
-    fn isSet(self: *const Impl) bool {
+    fn is_set(self: *const Impl) bool {
         return self.is_set;
     }
 
@@ -94,7 +94,7 @@ const FutexImpl = struct {
     const waiting = 1;
     const is_set = 2;
 
-    fn isSet(self: *const Impl) bool {
+    fn is_set(self: *const Impl) bool {
         // Acquire barrier ensures memory accesses before set() happen before we return true.
         return self.state.load(.acquire) == is_set;
     }
@@ -106,7 +106,7 @@ const FutexImpl = struct {
         }
     }
 
-    fn waitUntilSet(self: *Impl, timeout: ?u64) error{Timeout}!void {
+    fn wait_until_set(self: *Impl, timeout: ?u64) error{Timeout}!void {
         @setCold(true);
 
         // Try to set the state from `unset` to `waiting` to indicate

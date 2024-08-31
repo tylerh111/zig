@@ -16,6 +16,6 @@ pub fn __multf3(a: f128, b: f128) callconv(.C) f128 {
     return mulf3(f128, a, b);
 }
 
-fn _Qp_mul(c: *f128, a: *const f128, b: *const f128) callconv(.C) void {
+fn _qp_mul(c: *f128, a: *const f128, b: *const f128) callconv(.C) void {
     c.* = mulf3(f128, a.*, b.*);
 }

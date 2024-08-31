@@ -1,16 +1,16 @@
-fn List(comptime Head: type, comptime Tail: type) type {
+fn list(comptime Head: type, comptime Tail: type) type {
     return union {
         const Self = @This();
         head: Head,
         tail: Tail,
 
-        fn AppendReturnType(comptime item: anytype) type {
+        fn append_return_type(comptime item: anytype) type {
             return List(Head, List(@TypeOf(item), void));
         }
     };
 }
 
-fn makeList(item: anytype) List(@TypeOf(item), void) {
+fn make_list(item: anytype) List(@TypeOf(item), void) {
     return List(@TypeOf(item), void){ .head = item };
 }
 

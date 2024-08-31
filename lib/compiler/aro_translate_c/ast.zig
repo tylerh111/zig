@@ -228,7 +228,7 @@ pub const Node = extern union {
         pub const last_no_payload_tag = Tag.@"break";
         pub const no_payload_count = @intFromEnum(last_no_payload_tag) + 1;
 
-        pub fn Type(comptime t: Tag) type {
+        pub fn type(comptime t: Tag) type {
             return switch (t) {
                 .declaration,
                 .null_literal,
@@ -391,7 +391,7 @@ pub const Node = extern union {
             return Node{ .ptr_otherwise = &ptr.base };
         }
 
-        pub fn Data(comptime t: Tag) type {
+        pub fn data(comptime t: Tag) type {
             return std.meta.fieldInfo(t.Type(), .data).type;
         }
     };
@@ -404,7 +404,7 @@ pub const Node = extern union {
         }
     }
 
-    pub fn castTag(self: Node, comptime t: Tag) ?*t.Type() {
+    pub fn cast_tag(self: Node, comptime t: Tag) ?*t.Type() {
         if (self.tag_if_small_enough < Tag.no_payload_count)
             return null;
 
@@ -414,12 +414,12 @@ pub const Node = extern union {
         return null;
     }
 
-    pub fn initPayload(payload: *Payload) Node {
+    pub fn init_payload(payload: *Payload) Node {
         std.debug.assert(@intFromEnum(payload.tag) >= Tag.no_payload_count);
         return .{ .ptr_otherwise = payload };
     }
 
-    pub fn isNoreturn(node: Node, break_counts: bool) bool {
+    pub fn is_noreturn(node: Node, break_counts: bool) bool {
         switch (node.tag()) {
             .block => {
                 const block_node = node.castTag(.block).?;
@@ -809,7 +809,7 @@ const Context = struct {
     extra_data: std.ArrayListUnmanaged(std.zig.Ast.Node.Index) = .{},
     tokens: std.zig.Ast.TokenList = .{},
 
-    fn addTokenFmt(c: *Context, tag: TokenTag, comptime format: []const u8, args: anytype) Allocator.Error!TokenIndex {
+    fn add_token_fmt(c: *Context, tag: TokenTag, comptime format: []const u8, args: anytype) Allocator.Error!TokenIndex {
         const start_index = c.buf.items.len;
         try c.buf.writer().print(format ++ " ", args);
 
@@ -821,17 +821,17 @@ const Context = struct {
         return @as(u32, @intCast(c.tokens.len - 1));
     }
 
-    fn addToken(c: *Context, tag: TokenTag, bytes: []const u8) Allocator.Error!TokenIndex {
+    fn add_token(c: *Context, tag: TokenTag, bytes: []const u8) Allocator.Error!TokenIndex {
         return c.addTokenFmt(tag, "{s}", .{bytes});
     }
 
-    fn addIdentifier(c: *Context, bytes: []const u8) Allocator.Error!TokenIndex {
+    fn add_identifier(c: *Context, bytes: []const u8) Allocator.Error!TokenIndex {
         if (std.zig.primitives.isPrimitive(bytes))
             return c.addTokenFmt(.identifier, "@\"{s}\"", .{bytes});
         return c.addTokenFmt(.identifier, "{p}", .{std.zig.fmtId(bytes)});
     }
 
-    fn listToSpan(c: *Context, list: []const NodeIndex) Allocator.Error!NodeSubRange {
+    fn list_to_span(c: *Context, list: []const NodeIndex) Allocator.Error!NodeSubRange {
         try c.extra_data.appendSlice(c.gpa, list);
         return NodeSubRange{
             .start = @as(NodeIndex, @intCast(c.extra_data.items.len - list.len)),
@@ -839,13 +839,13 @@ const Context = struct {
         };
     }
 
-    fn addNode(c: *Context, elem: std.zig.Ast.Node) Allocator.Error!NodeIndex {
+    fn add_node(c: *Context, elem: std.zig.Ast.Node) Allocator.Error!NodeIndex {
         const result = @as(NodeIndex, @intCast(c.nodes.len));
         try c.nodes.append(c.gpa, elem);
         return result;
     }
 
-    fn addExtra(c: *Context, extra: anytype) Allocator.Error!NodeIndex {
+    fn add_extra(c: *Context, extra: anytype) Allocator.Error!NodeIndex {
         const fields = std.meta.fields(@TypeOf(extra));
         try c.extra_data.ensureUnusedCapacity(c.gpa, fields.len);
         const result = @as(u32, @intCast(c.extra_data.items.len));
@@ -857,7 +857,7 @@ const Context = struct {
     }
 };
 
-fn renderNodes(c: *Context, nodes: []const Node) Allocator.Error!NodeSubRange {
+fn render_nodes(c: *Context, nodes: []const Node) Allocator.Error!NodeSubRange {
     var result = std.ArrayList(NodeIndex).init(c.gpa);
     defer result.deinit();
 
@@ -870,7 +870,7 @@ fn renderNodes(c: *Context, nodes: []const Node) Allocator.Error!NodeSubRange {
     return try c.listToSpan(result.items);
 }
 
-fn renderNode(c: *Context, node: Node) Allocator.Error!NodeIndex {
+fn render_node(c: *Context, node: Node) Allocator.Error!NodeIndex {
     switch (node.tag()) {
         .declaration => unreachable,
         .warning => {
@@ -2085,7 +2085,7 @@ fn renderNode(c: *Context, node: Node) Allocator.Error!NodeIndex {
     }
 }
 
-fn renderRecord(c: *Context, node: Node) !NodeIndex {
+fn render_record(c: *Context, node: Node) !NodeIndex {
     const payload = @as(*Payload.Record, @alignCast(@fieldParentPtr("base", node.ptr_otherwise))).data;
     if (payload.layout == .@"packed")
         _ = try c.addToken(.keyword_packed, "packed")
@@ -2194,7 +2194,7 @@ fn renderRecord(c: *Context, node: Node) !NodeIndex {
     }
 }
 
-fn renderFieldAccess(c: *Context, lhs: NodeIndex, field_name: []const u8) !NodeIndex {
+fn render_field_access(c: *Context, lhs: NodeIndex, field_name: []const u8) !NodeIndex {
     return c.addNode(.{
         .tag = .field_access,
         .main_token = try c.addToken(.period, "."),
@@ -2205,7 +2205,7 @@ fn renderFieldAccess(c: *Context, lhs: NodeIndex, field_name: []const u8) !NodeI
     });
 }
 
-fn renderArrayInit(c: *Context, lhs: NodeIndex, inits: []const Node) !NodeIndex {
+fn render_array_init(c: *Context, lhs: NodeIndex, inits: []const Node) !NodeIndex {
     const l_brace = try c.addToken(.l_brace, "{");
     var rendered = try c.gpa.alloc(NodeIndex, @max(inits.len, 1));
     defer c.gpa.free(rendered);
@@ -2240,7 +2240,7 @@ fn renderArrayInit(c: *Context, lhs: NodeIndex, inits: []const Node) !NodeIndex 
     }
 }
 
-fn renderArrayType(c: *Context, len: usize, elem_type: Node) !NodeIndex {
+fn render_array_type(c: *Context, len: usize, elem_type: Node) !NodeIndex {
     const l_bracket = try c.addToken(.l_bracket, "[");
     const len_expr = try c.addNode(.{
         .tag = .number_literal,
@@ -2259,7 +2259,7 @@ fn renderArrayType(c: *Context, len: usize, elem_type: Node) !NodeIndex {
     });
 }
 
-fn renderNullSentinelArrayType(c: *Context, len: usize, elem_type: Node) !NodeIndex {
+fn render_null_sentinel_array_type(c: *Context, len: usize, elem_type: Node) !NodeIndex {
     const l_bracket = try c.addToken(.l_bracket, "[");
     const len_expr = try c.addNode(.{
         .tag = .number_literal,
@@ -2289,7 +2289,7 @@ fn renderNullSentinelArrayType(c: *Context, len: usize, elem_type: Node) !NodeIn
     });
 }
 
-fn addSemicolonIfNeeded(c: *Context, node: Node) !void {
+fn add_semicolon_if_needed(c: *Context, node: Node) !void {
     switch (node.tag()) {
         .warning => unreachable,
         .var_decl, .var_simple, .arg_redecl, .alias, .block, .empty_block, .block_single, .@"switch", .static_local_var, .mut_str => {},
@@ -2311,14 +2311,14 @@ fn addSemicolonIfNeeded(c: *Context, node: Node) !void {
     }
 }
 
-fn addSemicolonIfNotBlock(c: *Context, node: Node) !void {
+fn add_semicolon_if_not_block(c: *Context, node: Node) !void {
     switch (node.tag()) {
         .block, .empty_block, .block_single => {},
         else => _ = try c.addToken(.semicolon, ";"),
     }
 }
 
-fn renderNodeGrouped(c: *Context, node: Node) !NodeIndex {
+fn render_node_grouped(c: *Context, node: Node) !NodeIndex {
     switch (node.tag()) {
         .declaration => unreachable,
         .null_literal,
@@ -2487,7 +2487,7 @@ fn renderNodeGrouped(c: *Context, node: Node) !NodeIndex {
     }
 }
 
-fn renderPrefixOp(c: *Context, node: Node, tag: std.zig.Ast.Node.Tag, tok_tag: TokenTag, bytes: []const u8) !NodeIndex {
+fn render_prefix_op(c: *Context, node: Node, tag: std.zig.Ast.Node.Tag, tok_tag: TokenTag, bytes: []const u8) !NodeIndex {
     const payload = @as(*Payload.UnOp, @alignCast(@fieldParentPtr("base", node.ptr_otherwise))).data;
     return c.addNode(.{
         .tag = tag,
@@ -2499,7 +2499,7 @@ fn renderPrefixOp(c: *Context, node: Node, tag: std.zig.Ast.Node.Tag, tok_tag: T
     });
 }
 
-fn renderBinOpGrouped(c: *Context, node: Node, tag: std.zig.Ast.Node.Tag, tok_tag: TokenTag, bytes: []const u8) !NodeIndex {
+fn render_bin_op_grouped(c: *Context, node: Node, tag: std.zig.Ast.Node.Tag, tok_tag: TokenTag, bytes: []const u8) !NodeIndex {
     const payload = @as(*Payload.BinOp, @alignCast(@fieldParentPtr("base", node.ptr_otherwise))).data;
     const lhs = try renderNodeGrouped(c, payload.lhs);
     return c.addNode(.{
@@ -2512,7 +2512,7 @@ fn renderBinOpGrouped(c: *Context, node: Node, tag: std.zig.Ast.Node.Tag, tok_ta
     });
 }
 
-fn renderBinOp(c: *Context, node: Node, tag: std.zig.Ast.Node.Tag, tok_tag: TokenTag, bytes: []const u8) !NodeIndex {
+fn render_bin_op(c: *Context, node: Node, tag: std.zig.Ast.Node.Tag, tok_tag: TokenTag, bytes: []const u8) !NodeIndex {
     const payload = @as(*Payload.BinOp, @alignCast(@fieldParentPtr("base", node.ptr_otherwise))).data;
     const lhs = try renderNode(c, payload.lhs);
     return c.addNode(.{
@@ -2525,7 +2525,7 @@ fn renderBinOp(c: *Context, node: Node, tag: std.zig.Ast.Node.Tag, tok_tag: Toke
     });
 }
 
-fn renderStdImport(c: *Context, parts: []const []const u8) !NodeIndex {
+fn render_std_import(c: *Context, parts: []const []const u8) !NodeIndex {
     const import_tok = try c.addToken(.builtin, "@import");
     _ = try c.addToken(.l_paren, "(");
     const std_tok = try c.addToken(.string_literal, "\"std\"");
@@ -2552,7 +2552,7 @@ fn renderStdImport(c: *Context, parts: []const []const u8) !NodeIndex {
     return access_chain;
 }
 
-fn renderCall(c: *Context, lhs: NodeIndex, args: []const Node) !NodeIndex {
+fn render_call(c: *Context, lhs: NodeIndex, args: []const Node) !NodeIndex {
     const lparen = try c.addToken(.l_paren, "(");
     const res = switch (args.len) {
         0 => try c.addNode(.{
@@ -2600,7 +2600,7 @@ fn renderCall(c: *Context, lhs: NodeIndex, args: []const Node) !NodeIndex {
     return res;
 }
 
-fn renderBuiltinCall(c: *Context, builtin: []const u8, args: []const Node) !NodeIndex {
+fn render_builtin_call(c: *Context, builtin: []const u8, args: []const Node) !NodeIndex {
     const builtin_tok = try c.addToken(.builtin, builtin);
     _ = try c.addToken(.l_paren, "(");
     var arg_1: NodeIndex = 0;
@@ -2654,7 +2654,7 @@ fn renderBuiltinCall(c: *Context, builtin: []const u8, args: []const Node) !Node
     }
 }
 
-fn renderVar(c: *Context, node: Node) !NodeIndex {
+fn render_var(c: *Context, node: Node) !NodeIndex {
     const payload = node.castTag(.var_decl).?.data;
     if (payload.is_pub) _ = try c.addToken(.keyword_pub, "pub");
     if (payload.is_extern) _ = try c.addToken(.keyword_extern, "extern");
@@ -2738,7 +2738,7 @@ fn renderVar(c: *Context, node: Node) !NodeIndex {
     }
 }
 
-fn renderFunc(c: *Context, node: Node) !NodeIndex {
+fn render_func(c: *Context, node: Node) !NodeIndex {
     const payload = node.castTag(.func).?.data;
     if (payload.is_pub) _ = try c.addToken(.keyword_pub, "pub");
     if (payload.is_extern) _ = try c.addToken(.keyword_extern, "extern");
@@ -2865,7 +2865,7 @@ fn renderFunc(c: *Context, node: Node) !NodeIndex {
     });
 }
 
-fn renderMacroFunc(c: *Context, node: Node) !NodeIndex {
+fn render_macro_func(c: *Context, node: Node) !NodeIndex {
     const payload = node.castTag(.pub_inline_fn).?.data;
     _ = try c.addToken(.keyword_pub, "pub");
     _ = try c.addToken(.keyword_inline, "inline");
@@ -2913,7 +2913,7 @@ fn renderMacroFunc(c: *Context, node: Node) !NodeIndex {
     });
 }
 
-fn renderParams(c: *Context, params: []Payload.Param, is_var_args: bool) !std.ArrayList(NodeIndex) {
+fn render_params(c: *Context, params: []Payload.Param, is_var_args: bool) !std.ArrayList(NodeIndex) {
     _ = try c.addToken(.l_paren, "(");
     var rendered = try std.ArrayList(NodeIndex).initCapacity(c.gpa, @max(params.len, 1));
     errdefer rendered.deinit();

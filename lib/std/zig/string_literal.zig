@@ -41,7 +41,7 @@ pub const Error = union(enum) {
 
 /// Only validates escape sequence characters.
 /// Slice must be valid utf8 starting and ending with "'" and exactly one codepoint in between.
-pub fn parseCharLiteral(slice: []const u8) ParsedCharLiteral {
+pub fn parse_char_literal(slice: []const u8) ParsedCharLiteral {
     assert(slice.len >= 3 and slice[0] == '\'' and slice[slice.len - 1] == '\'');
 
     switch (slice[1]) {
@@ -63,7 +63,7 @@ pub fn parseCharLiteral(slice: []const u8) ParsedCharLiteral {
 
 /// Parse an escape sequence from `slice[offset..]`. If parsing is successful,
 /// offset is updated to reflect the characters consumed.
-pub fn parseEscapeSequence(slice: []const u8, offset: *usize) ParsedCharLiteral {
+pub fn parse_escape_sequence(slice: []const u8, offset: *usize) ParsedCharLiteral {
     assert(slice.len > offset.*);
     assert(slice[offset.*] == '\\');
 
@@ -233,7 +233,7 @@ test parseCharLiteral {
 
 /// Parses `bytes` as a Zig string literal and writes the result to the std.io.Writer type.
 /// Asserts `bytes` has '"' at beginning and end.
-pub fn parseWrite(writer: anytype, bytes: []const u8) error{OutOfMemory}!Result {
+pub fn parse_write(writer: anytype, bytes: []const u8) error{OutOfMemory}!Result {
     assert(bytes.len >= 2 and bytes[0] == '"' and bytes[bytes.len - 1] == '"');
 
     var index: usize = 1;
@@ -271,7 +271,7 @@ pub fn parseWrite(writer: anytype, bytes: []const u8) error{OutOfMemory}!Result 
 
 /// Higher level API. Does not return extra info about parse errors.
 /// Caller owns returned memory.
-pub fn parseAlloc(allocator: std.mem.Allocator, bytes: []const u8) ParseError![]u8 {
+pub fn parse_alloc(allocator: std.mem.Allocator, bytes: []const u8) ParseError![]u8 {
     var buf = std.ArrayList(u8).init(allocator);
     defer buf.deinit();
 

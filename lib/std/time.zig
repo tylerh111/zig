@@ -71,7 +71,7 @@ pub fn timestamp() i64 {
 /// The return value is signed because it is possible to have a date that is
 /// before the epoch.
 /// See `posix.clock_gettime` for a POSIX timestamp.
-pub fn milliTimestamp() i64 {
+pub fn milli_timestamp() i64 {
     return @as(i64, @intCast(@divFloor(nanoTimestamp(), ns_per_ms)));
 }
 
@@ -80,7 +80,7 @@ pub fn milliTimestamp() i64 {
 /// The return value is signed because it is possible to have a date that is
 /// before the epoch.
 /// See `posix.clock_gettime` for a POSIX timestamp.
-pub fn microTimestamp() i64 {
+pub fn micro_timestamp() i64 {
     return @as(i64, @intCast(@divFloor(nanoTimestamp(), ns_per_us)));
 }
 
@@ -90,7 +90,7 @@ pub fn microTimestamp() i64 {
 /// The return value is signed because it is possible to have a date that is
 /// before the epoch.
 /// See `posix.clock_gettime` for a POSIX timestamp.
-pub fn nanoTimestamp() i128 {
+pub fn nano_timestamp() i128 {
     switch (builtin.os.tag) {
         .windows => {
             // FileTime has a granularity of 100 nanoseconds and uses the NTFS/Windows epoch,

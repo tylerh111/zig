@@ -1,5 +1,5 @@
 const std = @import("std");
-extern fn testFnPtr(n: c_int, ...) void;
+extern fn test_fn_ptr(n: c_int, ...) void;
 
 const val: c_int = 123;
 

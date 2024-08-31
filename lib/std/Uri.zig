@@ -20,14 +20,14 @@ pub const Component = union(enum) {
 
     pub const empty: Component = .{ .percent_encoded = "" };
 
-    pub fn isEmpty(component: Component) bool {
+    pub fn is_empty(component: Component) bool {
         return switch (component) {
             .raw, .percent_encoded => |string| string.len == 0,
         };
     }
 
     /// Allocates the result with `arena` only if needed, so the result should not be freed.
-    pub fn toRawMaybeAlloc(
+    pub fn to_raw_maybe_alloc(
         component: Component,
         arena: std.mem.Allocator,
     ) std.mem.Allocator.Error![]const u8 {
@@ -96,7 +96,7 @@ pub const Component = union(enum) {
         } else @compileError("invalid format string '" ++ fmt_str ++ "'");
     }
 
-    pub fn percentEncode(
+    pub fn percent_encode(
         writer: anytype,
         raw: []const u8,
         comptime isValidChar: fn (u8) bool,
@@ -114,7 +114,7 @@ pub const Component = union(enum) {
 /// Percent decodes all %XX where XX is a valid hex number.
 /// `output` may alias `input` if `output.ptr <= input.ptr`.
 /// Mutates and returns a subslice of `output`.
-pub fn percentDecodeBackwards(output: []u8, input: []const u8) []u8 {
+pub fn percent_decode_backwards(output: []u8, input: []const u8) []u8 {
     var input_index = input.len;
     var output_index = output.len;
     while (input_index > 0) {
@@ -138,7 +138,7 @@ pub fn percentDecodeBackwards(output: []u8, input: []const u8) []u8 {
 
 /// Percent decodes all %XX where XX is a valid hex number.
 /// Mutates and returns a subslice of `buffer`.
-pub fn percentDecodeInPlace(buffer: []u8) []u8 {
+pub fn percent_decode_in_place(buffer: []u8) []u8 {
     return percentDecodeBackwards(buffer, buffer);
 }
 
@@ -148,7 +148,7 @@ pub const ParseError = error{ UnexpectedCharacter, InvalidFormat, InvalidPort };
 /// some forms of URIs in the wild, such as HTTP Location headers.
 /// The return value will contain strings pointing into the original `text`.
 /// Each component that is provided, will be non-`null`.
-pub fn parseAfterScheme(scheme: []const u8, text: []const u8) ParseError!Uri {
+pub fn parse_after_scheme(scheme: []const u8, text: []const u8) ParseError!Uri {
     var reader = SliceReader{ .slice = text };
 
     var uri: Uri = .{ .scheme = scheme, .path = undefined };
@@ -247,7 +247,7 @@ pub const WriteToStreamOptions = struct {
     port: bool = true,
 };
 
-pub fn writeToStream(
+pub fn write_to_stream(
     uri: Uri,
     options: WriteToStreamOptions,
     writer: anytype,
@@ -477,7 +477,7 @@ const SliceReader = struct {
         return self.slice[self.offset];
     }
 
-    fn readWhile(self: *Self, comptime predicate: fn (u8) bool) []const u8 {
+    fn read_while(self: *Self, comptime predicate: fn (u8) bool) []const u8 {
         const start = self.offset;
         var end = start;
         while (end < self.slice.len and predicate(self.slice[end])) {
@@ -487,7 +487,7 @@ const SliceReader = struct {
         return self.slice[start..end];
     }
 
-    fn readUntil(self: *Self, comptime predicate: fn (u8) bool) []const u8 {
+    fn read_until(self: *Self, comptime predicate: fn (u8) bool) []const u8 {
         const start = self.offset;
         var end = start;
         while (end < self.slice.len and !predicate(self.slice[end])) {
@@ -497,13 +497,13 @@ const SliceReader = struct {
         return self.slice[start..end];
     }
 
-    fn readUntilEof(self: *Self) []const u8 {
+    fn read_until_eof(self: *Self) []const u8 {
         const start = self.offset;
         self.offset = self.slice.len;
         return self.slice[start..];
     }
 
-    fn peekPrefix(self: Self, prefix: []const u8) bool {
+    fn peek_prefix(self: Self, prefix: []const u8) bool {
         if (self.offset + prefix.len > self.slice.len)
             return false;
         return std.mem.eql(u8, self.slice[self.offset..][0..prefix.len], prefix);
@@ -511,7 +511,7 @@ const SliceReader = struct {
 };
 
 /// scheme      = ALPHA *( ALPHA / DIGIT / "+" / "-" / "." )
-fn isSchemeChar(c: u8) bool {
+fn is_scheme_char(c: u8) bool {
     return switch (c) {
         'A'...'Z', 'a'...'z', '0'...'9', '+', '-', '.' => true,
         else => false,
@@ -519,12 +519,12 @@ fn isSchemeChar(c: u8) bool {
 }
 
 /// reserved    = gen-delims / sub-delims
-fn isReserved(c: u8) bool {
+fn is_reserved(c: u8) bool {
     return isGenLimit(c) or isSubLimit(c);
 }
 
 /// gen-delims  = ":" / "/" / "?" / "#" / "[" / "]" / "@"
-fn isGenLimit(c: u8) bool {
+fn is_gen_limit(c: u8) bool {
     return switch (c) {
         ':', ',', '?', '#', '[', ']', '@' => true,
         else => false,
@@ -533,7 +533,7 @@ fn isGenLimit(c: u8) bool {
 
 /// sub-delims  = "!" / "$" / "&" / "'" / "(" / ")"
 ///             / "*" / "+" / "," / ";" / "="
-fn isSubLimit(c: u8) bool {
+fn is_sub_limit(c: u8) bool {
     return switch (c) {
         '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=' => true,
         else => false,
@@ -541,50 +541,50 @@ fn isSubLimit(c: u8) bool {
 }
 
 /// unreserved  = ALPHA / DIGIT / "-" / "." / "_" / "~"
-fn isUnreserved(c: u8) bool {
+fn is_unreserved(c: u8) bool {
     return switch (c) {
         'A'...'Z', 'a'...'z', '0'...'9', '-', '.', '_', '~' => true,
         else => false,
     };
 }
 
-fn isUserChar(c: u8) bool {
+fn is_user_char(c: u8) bool {
     return isUnreserved(c) or isSubLimit(c);
 }
 
-fn isPasswordChar(c: u8) bool {
+fn is_password_char(c: u8) bool {
     return isUserChar(c) or c == ':';
 }
 
-fn isHostChar(c: u8) bool {
+fn is_host_char(c: u8) bool {
     return isPasswordChar(c) or c == '[' or c == ']';
 }
 
-fn isPathChar(c: u8) bool {
+fn is_path_char(c: u8) bool {
     return isUserChar(c) or c == '/' or c == ':' or c == '@';
 }
 
-fn isQueryChar(c: u8) bool {
+fn is_query_char(c: u8) bool {
     return isPathChar(c) or c == '?';
 }
 
 const isFragmentChar = isQueryChar;
 
-fn isAuthoritySeparator(c: u8) bool {
+fn is_authority_separator(c: u8) bool {
     return switch (c) {
         '/', '?', '#' => true,
         else => false,
     };
 }
 
-fn isPathSeparator(c: u8) bool {
+fn is_path_separator(c: u8) bool {
     return switch (c) {
         '?', '#' => true,
         else => false,
     };
 }
 
-fn isQuerySeparator(c: u8) bool {
+fn is_query_separator(c: u8) bool {
     return switch (c) {
         '#' => true,
         else => false,
@@ -677,7 +677,7 @@ test "authority.password" {
     try std.testing.expectEqualStrings(":", (try parse("scheme://username::@a")).password.?.percent_encoded);
 }
 
-fn testAuthorityHost(comptime hostlist: anytype) !void {
+fn test_authority_host(comptime hostlist: anytype) !void {
     inline for (hostlist) |hostname| {
         try std.testing.expectEqualStrings(hostname, (try parse("scheme://" ++ hostname)).host.?.percent_encoded);
     }

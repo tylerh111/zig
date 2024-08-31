@@ -8,7 +8,7 @@ const XCR0_MASKREG = 0x20;
 const XCR0_ZMM0_15 = 0x40;
 const XCR0_ZMM16_31 = 0x80;
 
-fn setFeature(cpu: *Target.Cpu, feature: Target.x86.Feature, enabled: bool) void {
+fn set_feature(cpu: *Target.Cpu, feature: Target.x86.Feature, enabled: bool) void {
     const idx = @as(Target.Cpu.Feature.Set.Index, @intFromEnum(feature));
 
     if (enabled) cpu.features.addFeature(idx) else cpu.features.removeFeature(idx);
@@ -18,11 +18,11 @@ inline fn bit(input: u32, offset: u5) bool {
     return (input >> offset) & 1 != 0;
 }
 
-inline fn hasMask(input: u32, mask: u32) bool {
+inline fn has_mask(input: u32, mask: u32) bool {
     return (input & mask) == mask;
 }
 
-pub fn detectNativeCpuAndFeatures(arch: Target.Cpu.Arch, os: Target.Os, query: Target.Query) Target.Cpu {
+pub fn detect_native_cpu_and_features(arch: Target.Cpu.Arch, os: Target.Os, query: Target.Query) Target.Cpu {
     _ = query;
     var cpu = Target.Cpu{
         .arch = arch,
@@ -74,7 +74,7 @@ pub fn detectNativeCpuAndFeatures(arch: Target.Cpu.Arch, os: Target.Os, query: T
     return cpu;
 }
 
-fn detectIntelProcessor(cpu: *Target.Cpu, family: u32, model: u32, brand_id: u32) void {
+fn detect_intel_processor(cpu: *Target.Cpu, family: u32, model: u32, brand_id: u32) void {
     if (brand_id != 0) {
         return;
     }
@@ -224,7 +224,7 @@ fn detectIntelProcessor(cpu: *Target.Cpu, family: u32, model: u32, brand_id: u32
     }
 }
 
-fn detectAMDProcessor(features: Target.Cpu.Feature.Set, family: u32, model: u32) ?*const Target.Cpu.Model {
+fn detect_amdprocessor(features: Target.Cpu.Feature.Set, family: u32, model: u32) ?*const Target.Cpu.Model {
     return switch (family) {
         4 => &Target.x86.cpu.i486,
         5 => switch (model) {
@@ -263,7 +263,7 @@ fn detectAMDProcessor(features: Target.Cpu.Feature.Set, family: u32, model: u32)
     };
 }
 
-fn detectNativeFeatures(cpu: *Target.Cpu, os_tag: Target.Os.Tag) void {
+fn detect_native_features(cpu: *Target.Cpu, os_tag: Target.Os.Tag) void {
     var leaf = cpuid(0, 0);
 
     const max_level = leaf.eax;
@@ -505,7 +505,7 @@ fn cpuid(leaf_id: u32, subid: u32) CpuidLeaf {
 extern fn zig_x86_get_xcr0() callconv(.C) u32;
 
 // Read control register 0 (XCR0). Used to detect features such as AVX.
-fn getXCR0() u32 {
+fn get_xcr0() u32 {
     if (builtin.zig_backend == .stage2_c) {
         return zig_x86_get_xcr0();
     }

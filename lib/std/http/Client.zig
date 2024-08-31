@@ -64,7 +64,7 @@ pub const ConnectionPool = struct {
 
     /// Finds and acquires a connection from the connection pool matching the criteria. This function is threadsafe.
     /// If no connection is found, null is returned.
-    pub fn findConnection(pool: *ConnectionPool, criteria: Criteria) ?*Connection {
+    pub fn find_connection(pool: *ConnectionPool, criteria: Criteria) ?*Connection {
         pool.mutex.lock();
         defer pool.mutex.unlock();
 
@@ -84,7 +84,7 @@ pub const ConnectionPool = struct {
     }
 
     /// Acquires an existing connection from the connection pool. This function is not threadsafe.
-    pub fn acquireUnsafe(pool: *ConnectionPool, node: *Node) void {
+    pub fn acquire_unsafe(pool: *ConnectionPool, node: *Node) void {
         pool.free.remove(node);
         pool.free_len -= 1;
 
@@ -135,7 +135,7 @@ pub const ConnectionPool = struct {
     }
 
     /// Adds a newly created node to the pool of used connections. This function is threadsafe.
-    pub fn addUsed(pool: *ConnectionPool, node: *Node) void {
+    pub fn add_used(pool: *ConnectionPool, node: *Node) void {
         pool.mutex.lock();
         defer pool.mutex.unlock();
 
@@ -220,7 +220,7 @@ pub const Connection = struct {
 
     pub const Protocol = enum { plain, tls };
 
-    pub fn readvDirectTls(conn: *Connection, buffers: []std.posix.iovec) ReadError!usize {
+    pub fn readv_direct_tls(conn: *Connection, buffers: []std.posix.iovec) ReadError!usize {
         return conn.tls_client.readv(conn.stream, buffers) catch |err| {
             // https://github.com/ziglang/zig/issues/2473
             if (mem.startsWith(u8, @errorName(err), "TlsAlert")) return error.TlsAlert;
@@ -234,7 +234,7 @@ pub const Connection = struct {
         };
     }
 
-    pub fn readvDirect(conn: *Connection, buffers: []std.posix.iovec) ReadError!usize {
+    pub fn readv_direct(conn: *Connection, buffers: []std.posix.iovec) ReadError!usize {
         if (conn.protocol == .tls) {
             if (disable_tls) unreachable;
 
@@ -318,14 +318,14 @@ pub const Connection = struct {
         return Reader{ .context = conn };
     }
 
-    pub fn writeAllDirectTls(conn: *Connection, buffer: []const u8) WriteError!void {
+    pub fn write_all_direct_tls(conn: *Connection, buffer: []const u8) WriteError!void {
         return conn.tls_client.writeAll(conn.stream, buffer) catch |err| switch (err) {
             error.BrokenPipe, error.ConnectionResetByPeer => return error.ConnectionResetByPeer,
             else => return error.UnexpectedWriteFailure,
         };
     }
 
-    pub fn writeAllDirect(conn: *Connection, buffer: []const u8) WriteError!void {
+    pub fn write_all_direct(conn: *Connection, buffer: []const u8) WriteError!void {
         if (conn.protocol == .tls) {
             if (disable_tls) unreachable;
 
@@ -356,7 +356,7 @@ pub const Connection = struct {
     }
 
     /// Returns a buffer to be filled with exactly len bytes to write to the connection.
-    pub fn allocWriteBuffer(conn: *Connection, len: BufferSize) WriteError![]u8 {
+    pub fn alloc_write_buffer(conn: *Connection, len: BufferSize) WriteError![]u8 {
         if (conn.write_buf.len - conn.write_end < len) try conn.flush();
         defer conn.write_end += len;
         return conn.write_buf[conn.write_end..][0..len];
@@ -592,7 +592,7 @@ pub const Response = struct {
         return @bitCast(array.*);
     }
 
-    fn parseInt3(text: *const [3]u8) u10 {
+    fn parse_int3(text: *const [3]u8) u10 {
         if (use_vectors) {
             const nnn: @Vector(3, u8) = text.*;
             const zero: @Vector(3, u8) = .{ '0', '0', '0' };
@@ -609,7 +609,7 @@ pub const Response = struct {
         try expectEqual(@as(u10, 999), parseInt3("999"));
     }
 
-    pub fn iterateHeaders(r: Response) http.HeaderIterator {
+    pub fn iterate_headers(r: Response) http.HeaderIterator {
         return http.HeaderIterator.init(r.parser.get());
     }
 
@@ -736,7 +736,7 @@ pub const Request = struct {
         unhandled = std.math.maxInt(u16),
         _,
 
-        pub fn subtractOne(rb: *RedirectBehavior) void {
+        pub fn subtract_one(rb: *RedirectBehavior) void {
             switch (rb.*) {
                 .not_allowed => unreachable,
                 .unhandled => unreachable,
@@ -922,7 +922,7 @@ pub const Request = struct {
 
     /// Returns true if the default behavior is required, otherwise handles
     /// writing (or not writing) the header.
-    fn emitOverridableHeader(prefix: []const u8, v: Headers.Value, w: anytype) !bool {
+    fn emit_overridable_header(prefix: []const u8, v: Headers.Value, w: anytype) !bool {
         switch (v) {
             .default => return true,
             .omit => return false,
@@ -939,11 +939,11 @@ pub const Request = struct {
 
     const TransferReader = std.io.Reader(*Request, TransferReadError, transferRead);
 
-    fn transferReader(req: *Request) TransferReader {
+    fn transfer_reader(req: *Request) TransferReader {
         return .{ .context = req };
     }
 
-    fn transferRead(req: *Request, buf: []u8) TransferReadError!usize {
+    fn transfer_read(req: *Request, buf: []u8) TransferReadError!usize {
         if (req.response.parser.done) return 0;
 
         var index: usize = 0;
@@ -1125,7 +1125,7 @@ pub const Request = struct {
     }
 
     /// Reads data from the response body. Must be called after `wait`.
-    pub fn readAll(req: *Request, buffer: []u8) !usize {
+    pub fn read_all(req: *Request, buffer: []u8) !usize {
         var index: usize = 0;
         while (index < buffer.len) {
             const amt = try read(req, buffer[index..]);
@@ -1169,7 +1169,7 @@ pub const Request = struct {
 
     /// Write `bytes` to the server. The `transfer_encoding` field determines how data will be sent.
     /// Must be called after `send` and before `finish`.
-    pub fn writeAll(req: *Request, bytes: []const u8) WriteError!void {
+    pub fn write_all(req: *Request, bytes: []const u8) WriteError!void {
         var index: usize = 0;
         while (index < bytes.len) {
             index += try write(req, bytes[index..]);
@@ -1218,7 +1218,7 @@ pub fn deinit(client: *Client) void {
 /// Asserts the client has no active connections.
 /// Uses `arena` for a few small allocations that must outlive the client, or
 /// at least until those fields are set to different values.
-pub fn initDefaultProxies(client: *Client, arena: Allocator) !void {
+pub fn init_default_proxies(client: *Client, arena: Allocator) !void {
     // Prevent any new connections from being created.
     client.connection_pool.mutex.lock();
     defer client.connection_pool.mutex.unlock();
@@ -1238,7 +1238,7 @@ pub fn initDefaultProxies(client: *Client, arena: Allocator) !void {
     }
 }
 
-fn createProxyFromEnvVar(arena: Allocator, env_var_names: []const []const u8) !?*Proxy {
+fn create_proxy_from_env_var(arena: Allocator, env_var_names: []const []const u8) !?*Proxy {
     const content = for (env_var_names) |name| {
         break std.process.getEnvVarOwned(arena, name) catch |err| switch (err) {
             error.EnvironmentVariableNotFound => continue,
@@ -1277,11 +1277,11 @@ pub const basic_authorization = struct {
 
     const prefix = "Basic ";
 
-    pub fn valueLength(user_len: usize, password_len: usize) usize {
+    pub fn value_length(user_len: usize, password_len: usize) usize {
         return prefix.len + std.base64.standard.Encoder.calcSize(user_len + 1 + password_len);
     }
 
-    pub fn valueLengthFromUri(uri: Uri) usize {
+    pub fn value_length_from_uri(uri: Uri) usize {
         var stream = std.io.countingWriter(std.io.null_writer);
         try stream.writer().print("{user}", .{uri.user orelse Uri.Component.empty});
         const user_len = stream.bytes_written;
@@ -1311,7 +1311,7 @@ pub const ConnectTcpError = Allocator.Error || error{ ConnectionRefused, Network
 /// Connect to `host:port` using the specified protocol. This will reuse a connection if one is already open.
 ///
 /// This function is threadsafe.
-pub fn connectTcp(client: *Client, host: []const u8, port: u16, protocol: Connection.Protocol) ConnectTcpError!*Connection {
+pub fn connect_tcp(client: *Client, host: []const u8, port: u16, protocol: Connection.Protocol) ConnectTcpError!*Connection {
     if (client.connection_pool.findConnection(.{
         .host = host,
         .port = port,
@@ -1370,7 +1370,7 @@ pub const ConnectUnixError = Allocator.Error || std.posix.SocketError || error{N
 /// Connect to `path` as a unix domain socket. This will reuse a connection if one is already open.
 ///
 /// This function is threadsafe.
-pub fn connectUnix(client: *Client, path: []const u8) ConnectUnixError!*Connection {
+pub fn connect_unix(client: *Client, path: []const u8) ConnectUnixError!*Connection {
     if (client.connection_pool.findConnection(.{
         .host = path,
         .port = 0,
@@ -1404,7 +1404,7 @@ pub fn connectUnix(client: *Client, path: []const u8) ConnectUnixError!*Connecti
 /// CONNECT. This will reuse a connection if one is already open.
 ///
 /// This function is threadsafe.
-pub fn connectTunnel(
+pub fn connect_tunnel(
     client: *Client,
     proxy: *Proxy,
     tunnel_host: []const u8,
@@ -1569,7 +1569,7 @@ pub const RequestOptions = struct {
     privileged_headers: []const http.Header = &.{},
 };
 
-fn validateUri(uri: Uri, arena: Allocator) !struct { Connection.Protocol, Uri } {
+fn validate_uri(uri: Uri, arena: Allocator) !struct { Connection.Protocol, Uri } {
     const protocol_map = std.StaticStringMap(Connection.Protocol).initComptime(.{
         .{ "http", .plain },
         .{ "ws", .plain },
@@ -1585,7 +1585,7 @@ fn validateUri(uri: Uri, arena: Allocator) !struct { Connection.Protocol, Uri } 
     return .{ protocol, valid_uri };
 }
 
-fn uriPort(uri: Uri, protocol: Connection.Protocol) u16 {
+fn uri_port(uri: Uri, protocol: Connection.Protocol) u16 {
     return uri.port orelse switch (protocol) {
         .plain => 80,
         .tls => 443,

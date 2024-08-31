@@ -162,7 +162,7 @@ pub inline fn mulf3(comptime T: type, a: T, b: T) T {
 /// Returns `true` if the right shift is inexact (i.e. any bit shifted out is non-zero)
 ///
 /// This is analogous to an shr version of `@shlWithOverflow`
-fn wideShrWithTruncation(comptime Z: type, hi: *Z, lo: *Z, count: u32) bool {
+fn wide_shr_with_truncation(comptime Z: type, hi: *Z, lo: *Z, count: u32) bool {
     @setRuntimeSafety(builtin.is_test);
     const typeWidth = @typeInfo(Z).Int.bits;
     var inexact = false;
@@ -193,7 +193,7 @@ fn normalize(comptime T: type, significand: *PowerOfTwoSignificandZ(T)) i32 {
 
 /// Returns a power-of-two integer type that is large enough to contain
 /// the significand of T, including an explicit integer bit
-fn PowerOfTwoSignificandZ(comptime T: type) type {
+fn power_of_two_significand_z(comptime T: type) type {
     const bits = math.ceilPowerOfTwoAssert(u16, math.floatFractionalBits(T) + 1);
     return std.meta.Int(.unsigned, bits);
 }

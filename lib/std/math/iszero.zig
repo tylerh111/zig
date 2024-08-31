@@ -3,7 +3,7 @@ const math = std.math;
 const expect = std.testing.expect;
 
 /// Returns whether x is positive zero.
-pub inline fn isPositiveZero(x: anytype) bool {
+pub inline fn is_positive_zero(x: anytype) bool {
     const T = @TypeOf(x);
     const bit_count = @typeInfo(T).Float.bits;
     const TBits = std.meta.Int(.unsigned, bit_count);
@@ -11,7 +11,7 @@ pub inline fn isPositiveZero(x: anytype) bool {
 }
 
 /// Returns whether x is negative zero.
-pub inline fn isNegativeZero(x: anytype) bool {
+pub inline fn is_negative_zero(x: anytype) bool {
     const T = @TypeOf(x);
     const bit_count = @typeInfo(T).Float.bits;
     const TBits = std.meta.Int(.unsigned, bit_count);

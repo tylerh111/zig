@@ -13,7 +13,7 @@ test "memcpy and memset intrinsics" {
     try comptime testMemcpyMemset();
 }
 
-fn testMemcpyMemset() !void {
+fn test_memcpy_memset() !void {
     var foo: [20]u8 = undefined;
     var bar: [20]u8 = undefined;
 
@@ -35,7 +35,7 @@ test "@memcpy with both operands single-ptr-to-array, one is null-terminated" {
     try comptime testMemcpyBothSinglePtrArrayOneIsNullTerminated();
 }
 
-fn testMemcpyBothSinglePtrArrayOneIsNullTerminated() !void {
+fn test_memcpy_both_single_ptr_array_one_is_null_terminated() !void {
     var buf: [100]u8 = undefined;
     const suffix = "hello";
     @memcpy(buf[buf.len - suffix.len ..], suffix);
@@ -56,7 +56,7 @@ test "@memcpy dest many pointer" {
     try comptime testMemcpyDestManyPtr();
 }
 
-fn testMemcpyDestManyPtr() !void {
+fn test_memcpy_dest_many_ptr() !void {
     var str = "hello".*;
     var buf: [5]u8 = undefined;
     var len: usize = 5;
@@ -79,7 +79,7 @@ test "@memcpy slice" {
     try comptime testMemcpySlice();
 }
 
-fn testMemcpySlice() !void {
+fn test_memcpy_slice() !void {
     var buf: [5]u8 = undefined;
     const dst: []u8 = &buf;
     const src: []const u8 = "hello";

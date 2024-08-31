@@ -1,4 +1,4 @@
-fn deferInvalidExample() !void {
+fn defer_invalid_example() !void {
     defer {
         return error.DeferError;
     }

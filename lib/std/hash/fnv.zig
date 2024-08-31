@@ -11,7 +11,7 @@ pub const Fnv1a_32 = Fnv1a(u32, 0x01000193, 0x811c9dc5);
 pub const Fnv1a_64 = Fnv1a(u64, 0x100000001b3, 0xcbf29ce484222325);
 pub const Fnv1a_128 = Fnv1a(u128, 0x1000000000000000000013b, 0x6c62272e07bb014262b821756295c58d);
 
-fn Fnv1a(comptime T: type, comptime prime: T, comptime offset: T) type {
+fn fnv1a(comptime T: type, comptime prime: T, comptime offset: T) type {
     return struct {
         const Self = @This();
 

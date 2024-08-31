@@ -7,7 +7,7 @@ var result_off: [7]usize = undefined;
 var result_len: [7]usize = undefined;
 var result_index: usize = 0;
 
-noinline fn insertionSort(data: []u64) void {
+noinline fn insertion_sort(data: []u64) void {
     result_off[result_index] = @intFromPtr(data.ptr) - base;
     result_len[result_index] = data.len;
     result_index += 1;

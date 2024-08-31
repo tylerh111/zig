@@ -1,4 +1,4 @@
-fn doTheTest() !void {
+fn do_the_test() !void {
     const src = @src(); // do not move
 
     try expect(src.line == 2);
@@ -24,7 +24,7 @@ test "@src" {
 
 test "@src used as a comptime parameter" {
     const S = struct {
-        fn Foo(comptime src: std.builtin.SourceLocation) type {
+        fn foo(comptime src: std.builtin.SourceLocation) type {
             return struct {
                 comptime {
                     _ = src;
@@ -41,7 +41,7 @@ test "@src in tuple passed to anytype function" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn Foo(a: anytype) u32 {
+        fn foo(a: anytype) u32 {
             return a[0].line;
         }
     };

@@ -16,6 +16,6 @@ pub fn __fixunstfsi(a: f128) callconv(.C) u32 {
     return intFromFloat(u32, a);
 }
 
-fn _Qp_qtoui(a: *const f128) callconv(.C) u32 {
+fn _qp_qtoui(a: *const f128) callconv(.C) u32 {
     return intFromFloat(u32, a.*);
 }

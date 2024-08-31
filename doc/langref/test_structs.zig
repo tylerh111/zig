@@ -75,7 +75,7 @@ test "struct namespaced variable" {
 
 // struct field order is determined by the compiler for optimal performance.
 // however, you can still calculate a struct base pointer given a field pointer:
-fn setYBasedOnX(x: *f32, y: f32) void {
+fn set_ybased_on_x(x: *f32, y: f32) void {
     const point: *Point = @fieldParentPtr("x", x);
     point.y = y;
 }
@@ -90,7 +90,7 @@ test "field parent pointer" {
 
 // You can return a struct from a function. This is how we do generics
 // in Zig:
-fn LinkedList(comptime T: type) type {
+fn linked_list(comptime T: type) type {
     return struct {
         pub const Node = struct {
             prev: ?*Node,

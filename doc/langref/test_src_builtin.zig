@@ -5,7 +5,7 @@ test "@src" {
     try doTheTest();
 }
 
-fn doTheTest() !void {
+fn do_the_test() !void {
     const src = @src();
 
     try expect(src.line == 9);

@@ -8,7 +8,7 @@ const assert = std.debug.assert;
 const Allocator = mem.Allocator;
 
 const UefiPoolAllocator = struct {
-    fn getHeader(ptr: [*]u8) *[*]align(8) u8 {
+    fn get_header(ptr: [*]u8) *[*]align(8) u8 {
         return @as(*[*]align(8) u8, @ptrFromInt(@intFromPtr(ptr) - @sizeOf(usize)));
     }
 

@@ -16,17 +16,17 @@ pub const CERT_CONTEXT = extern struct {
     hCertStore: HCERTSTORE,
 };
 
-pub extern "crypt32" fn CertOpenSystemStoreW(
+pub extern "crypt32" fn cert_open_system_store_w(
     _: ?*const anyopaque,
     szSubsystemProtocol: LPCWSTR,
 ) callconv(WINAPI) ?HCERTSTORE;
 
-pub extern "crypt32" fn CertCloseStore(
+pub extern "crypt32" fn cert_close_store(
     hCertStore: HCERTSTORE,
     dwFlags: DWORD,
 ) callconv(WINAPI) BOOL;
 
-pub extern "crypt32" fn CertEnumCertificatesInStore(
+pub extern "crypt32" fn cert_enum_certificates_in_store(
     hCertStore: HCERTSTORE,
     pPrevCertContext: ?*CERT_CONTEXT,
 ) callconv(WINAPI) ?*CERT_CONTEXT;

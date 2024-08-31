@@ -43,7 +43,7 @@ pub fn wait(sem: *Semaphore) void {
         sem.cond.signal();
 }
 
-pub fn timedWait(sem: *Semaphore, timeout_ns: u64) error{Timeout}!void {
+pub fn timed_wait(sem: *Semaphore, timeout_ns: u64) error{Timeout}!void {
     var timeout_timer = std.time.Timer.start() catch unreachable;
 
     sem.mutex.lock();

@@ -1,4 +1,4 @@
-fn Foo(comptime T: type) Foo(T) {
+fn foo(comptime T: type) Foo(T) {
     return struct { x: T };
 }
 export fn entry() void {

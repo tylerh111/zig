@@ -7,7 +7,7 @@ const Node = Document.Node;
 /// Each concrete `Renderer` type has a `renderDefault` function, with the
 /// intention that custom `renderFn` implementations can call `renderDefault`
 /// for node types for which they require no special rendering.
-pub fn Renderer(comptime Writer: type, comptime Context: type) type {
+pub fn renderer(comptime Writer: type, comptime Context: type) type {
     return struct {
         renderFn: *const fn (
             r: Self,
@@ -23,7 +23,7 @@ pub fn Renderer(comptime Writer: type, comptime Context: type) type {
             try r.renderFn(r, doc, .root, writer);
         }
 
-        pub fn renderDefault(
+        pub fn render_default(
             r: Self,
             doc: Document,
             node: Node.Index,
@@ -184,7 +184,7 @@ pub fn Renderer(comptime Writer: type, comptime Context: type) type {
 
 /// Renders an inline node as plain text. Asserts that the node is an inline and
 /// has no non-inline children.
-pub fn renderInlineNodeText(
+pub fn render_inline_node_text(
     doc: Document,
     node: Node.Index,
     writer: anytype,
@@ -229,11 +229,11 @@ pub fn renderInlineNodeText(
     }
 }
 
-pub fn fmtHtml(bytes: []const u8) std.fmt.Formatter(formatHtml) {
+pub fn fmt_html(bytes: []const u8) std.fmt.Formatter(formatHtml) {
     return .{ .data = bytes };
 }
 
-fn formatHtml(
+fn format_html(
     bytes: []const u8,
     comptime fmt: []const u8,
     options: std.fmt.FormatOptions,

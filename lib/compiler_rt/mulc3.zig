@@ -3,7 +3,7 @@ const isNan = std.math.isNan;
 const isInf = std.math.isInf;
 const copysign = std.math.copysign;
 
-pub fn Complex(comptime T: type) type {
+pub fn complex(comptime T: type) type {
     return extern struct {
         real: T,
         imag: T,

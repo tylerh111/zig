@@ -16,6 +16,6 @@ pub fn __fixtfdi(a: f128) callconv(.C) i64 {
     return intFromFloat(i64, a);
 }
 
-fn _Qp_qtox(a: *const f128) callconv(.C) i64 {
+fn _qp_qtox(a: *const f128) callconv(.C) i64 {
     return intFromFloat(i64, a.*);
 }

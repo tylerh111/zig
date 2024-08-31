@@ -78,7 +78,7 @@ pub const File = struct {
             return files.keys()[@intFromEnum(i)];
         }
 
-        pub fn findRootDecl(file_index: File.Index) Decl.Index {
+        pub fn find_root_decl(file_index: File.Index) Decl.Index {
             return file_index.get().node_decls.values()[0];
         }
 
@@ -434,7 +434,7 @@ pub const Scope = struct {
         field_count: u32,
     };
 
-    fn getNamespaceDecl(start_scope: *Scope) Decl.Index {
+    fn get_namespace_decl(start_scope: *Scope) Decl.Index {
         var it: *Scope = start_scope;
         while (true) switch (it.tag) {
             .top => unreachable,
@@ -1025,7 +1025,7 @@ fn while_expr(w: *Walk, scope: *Scope, parent_decl: Decl.Index, full: Ast.full.W
     try maybe_expr(w, scope, parent_decl, full.ast.else_expr);
 }
 
-fn scanDecls(w: *Walk, namespace: *Scope.Namespace, members: []const Ast.Node.Index) Oom!void {
+fn scan_decls(w: *Walk, namespace: *Scope.Namespace, members: []const Ast.Node.Index) Oom!void {
     const ast = w.file.get_ast();
     const node_tags = ast.nodes.items(.tag);
     const main_tokens = ast.nodes.items(.main_token);
@@ -1077,7 +1077,7 @@ fn scanDecls(w: *Walk, namespace: *Scope.Namespace, members: []const Ast.Node.In
     }
 }
 
-pub fn isPrimitiveNonType(name: []const u8) bool {
+pub fn is_primitive_non_type(name: []const u8) bool {
     return std.mem.eql(u8, name, "undefined") or
         std.mem.eql(u8, name, "null") or
         std.mem.eql(u8, name, "true") or
@@ -1114,6 +1114,6 @@ const log = std.log;
 const gpa = std.heap.wasm_allocator;
 const Oom = error{OutOfMemory};
 
-fn shrinkToFit(m: anytype) void {
+fn shrink_to_fit(m: anytype) void {
     m.shrinkAndFree(gpa, m.entries.len);
 }

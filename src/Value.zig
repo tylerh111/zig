@@ -35,11 +35,11 @@ pub fn dump(
     try out_stream.print("(interned: {})", .{start_val.toIntern()});
 }
 
-pub fn fmtDebug(val: Value) std.fmt.Formatter(dump) {
+pub fn fmt_debug(val: Value) std.fmt.Formatter(dump) {
     return .{ .data = val };
 }
 
-pub fn fmtValue(val: Value, mod: *Module, opt_sema: ?*Sema) std.fmt.Formatter(print_value.format) {
+pub fn fmt_value(val: Value, mod: *Module, opt_sema: ?*Sema) std.fmt.Formatter(print_value.format) {
     return .{ .data = .{
         .val = val,
         .mod = mod,
@@ -48,13 +48,13 @@ pub fn fmtValue(val: Value, mod: *Module, opt_sema: ?*Sema) std.fmt.Formatter(pr
     } };
 }
 
-pub fn fmtValueFull(ctx: print_value.FormatContext) std.fmt.Formatter(print_value.format) {
+pub fn fmt_value_full(ctx: print_value.FormatContext) std.fmt.Formatter(print_value.format) {
     return .{ .data = ctx };
 }
 
 /// Converts `val` to a null-terminated string stored in the InternPool.
 /// Asserts `val` is an array of `u8`
-pub fn toIpString(val: Value, ty: Type, mod: *Module) !InternPool.NullTerminatedString {
+pub fn to_ip_string(val: Value, ty: Type, mod: *Module) !InternPool.NullTerminatedString {
     assert(ty.zigTypeTag(mod) == .Array);
     assert(ty.childType(mod).toIntern() == .u8_type);
     const ip = &mod.intern_pool;
@@ -72,7 +72,7 @@ pub fn toIpString(val: Value, ty: Type, mod: *Module) !InternPool.NullTerminated
 
 /// Asserts that the value is representable as an array of bytes.
 /// Copies the value into a freshly allocated slice of memory, which is owned by the caller.
-pub fn toAllocatedBytes(val: Value, ty: Type, allocator: Allocator, mod: *Module) ![]u8 {
+pub fn to_allocated_bytes(val: Value, ty: Type, allocator: Allocator, mod: *Module) ![]u8 {
     const ip = &mod.intern_pool;
     return switch (ip.indexToKey(val.toIntern())) {
         .enum_literal => |enum_literal| allocator.dupe(u8, enum_literal.toSlice(ip)),
@@ -91,7 +91,7 @@ pub fn toAllocatedBytes(val: Value, ty: Type, allocator: Allocator, mod: *Module
     };
 }
 
-fn arrayToAllocatedBytes(val: Value, len: u64, allocator: Allocator, mod: *Module) ![]u8 {
+fn array_to_allocated_bytes(val: Value, len: u64, allocator: Allocator, mod: *Module) ![]u8 {
     const result = try allocator.alloc(u8, @intCast(len));
     for (result, 0..) |*elem, i| {
         const elem_val = try val.elemValue(mod, i);
@@ -100,7 +100,7 @@ fn arrayToAllocatedBytes(val: Value, len: u64, allocator: Allocator, mod: *Modul
     return result;
 }
 
-fn arrayToIpString(val: Value, len_u64: u64, mod: *Module) !InternPool.NullTerminatedString {
+fn array_to_ip_string(val: Value, len_u64: u64, mod: *Module) !InternPool.NullTerminatedString {
     const gpa = mod.gpa;
     const ip = &mod.intern_pool;
     const len: usize = @intCast(len_u64);
@@ -117,22 +117,22 @@ fn arrayToIpString(val: Value, len_u64: u64, mod: *Module) !InternPool.NullTermi
     return ip.getOrPutTrailingString(gpa, len, .no_embedded_nulls);
 }
 
-pub fn fromInterned(i: InternPool.Index) Value {
+pub fn from_interned(i: InternPool.Index) Value {
     assert(i != .none);
     return .{ .ip_index = i };
 }
 
-pub fn toIntern(val: Value) InternPool.Index {
+pub fn to_intern(val: Value) InternPool.Index {
     assert(val.ip_index != .none);
     return val.ip_index;
 }
 
 /// Asserts that the value is representable as a type.
-pub fn toType(self: Value) Type {
+pub fn to_type(self: Value) Type {
     return Type.fromInterned(self.toIntern());
 }
 
-pub fn intFromEnum(val: Value, ty: Type, mod: *Module) Allocator.Error!Value {
+pub fn int_from_enum(val: Value, ty: Type, mod: *Module) Allocator.Error!Value {
     const ip = &mod.intern_pool;
     const enum_ty = ip.typeOf(val.toIntern());
     return switch (ip.indexToKey(enum_ty)) {
@@ -161,12 +161,12 @@ pub fn intFromEnum(val: Value, ty: Type, mod: *Module) Allocator.Error!Value {
 }
 
 /// Asserts the value is an integer.
-pub fn toBigInt(val: Value, space: *BigIntSpace, mod: *Module) BigIntConst {
+pub fn to_big_int(val: Value, space: *BigIntSpace, mod: *Module) BigIntConst {
     return val.toBigIntAdvanced(space, mod, null) catch unreachable;
 }
 
 /// Asserts the value is an integer.
-pub fn toBigIntAdvanced(
+pub fn to_big_int_advanced(
     val: Value,
     space: *BigIntSpace,
     mod: *Module,
@@ -199,25 +199,25 @@ pub fn toBigIntAdvanced(
     };
 }
 
-pub fn isFuncBody(val: Value, mod: *Module) bool {
+pub fn is_func_body(val: Value, mod: *Module) bool {
     return mod.intern_pool.isFuncBody(val.toIntern());
 }
 
-pub fn getFunction(val: Value, mod: *Module) ?InternPool.Key.Func {
+pub fn get_function(val: Value, mod: *Module) ?InternPool.Key.Func {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .func => |x| x,
         else => null,
     };
 }
 
-pub fn getExternFunc(val: Value, mod: *Module) ?InternPool.Key.ExternFunc {
+pub fn get_extern_func(val: Value, mod: *Module) ?InternPool.Key.ExternFunc {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .extern_func => |extern_func| extern_func,
         else => null,
     };
 }
 
-pub fn getVariable(val: Value, mod: *Module) ?InternPool.Key.Variable {
+pub fn get_variable(val: Value, mod: *Module) ?InternPool.Key.Variable {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .variable => |variable| variable,
         else => null,
@@ -226,13 +226,13 @@ pub fn getVariable(val: Value, mod: *Module) ?InternPool.Key.Variable {
 
 /// If the value fits in a u64, return it, otherwise null.
 /// Asserts not undefined.
-pub fn getUnsignedInt(val: Value, mod: *Module) ?u64 {
+pub fn get_unsigned_int(val: Value, mod: *Module) ?u64 {
     return getUnsignedIntAdvanced(val, mod, null) catch unreachable;
 }
 
 /// If the value fits in a u64, return it, otherwise null.
 /// Asserts not undefined.
-pub fn getUnsignedIntAdvanced(val: Value, mod: *Module, opt_sema: ?*Sema) !?u64 {
+pub fn get_unsigned_int_advanced(val: Value, mod: *Module, opt_sema: ?*Sema) !?u64 {
     return switch (val.toIntern()) {
         .undef => unreachable,
         .bool_false => 0,
@@ -272,17 +272,17 @@ pub fn getUnsignedIntAdvanced(val: Value, mod: *Module, opt_sema: ?*Sema) !?u64 
 }
 
 /// Asserts the value is an integer and it fits in a u64
-pub fn toUnsignedInt(val: Value, mod: *Module) u64 {
+pub fn to_unsigned_int(val: Value, mod: *Module) u64 {
     return getUnsignedInt(val, mod).?;
 }
 
 /// Asserts the value is an integer and it fits in a u64
-pub fn toUnsignedIntAdvanced(val: Value, sema: *Sema) !u64 {
+pub fn to_unsigned_int_advanced(val: Value, sema: *Sema) !u64 {
     return (try getUnsignedIntAdvanced(val, sema.mod, sema)).?;
 }
 
 /// Asserts the value is an integer and it fits in a i64
-pub fn toSignedInt(val: Value, mod: *Module) i64 {
+pub fn to_signed_int(val: Value, mod: *Module) i64 {
     return switch (val.toIntern()) {
         .bool_false => 0,
         .bool_true => 1,
@@ -299,7 +299,7 @@ pub fn toSignedInt(val: Value, mod: *Module) i64 {
     };
 }
 
-pub fn toBool(val: Value) bool {
+pub fn to_bool(val: Value) bool {
     return switch (val.toIntern()) {
         .bool_true => true,
         .bool_false => false,
@@ -307,7 +307,7 @@ pub fn toBool(val: Value) bool {
     };
 }
 
-fn ptrHasIntAddr(val: Value, mod: *Module) bool {
+fn ptr_has_int_addr(val: Value, mod: *Module) bool {
     var check = val;
     while (true) switch (mod.intern_pool.indexToKey(check.toIntern())) {
         .ptr => |ptr| switch (ptr.base_addr) {
@@ -324,7 +324,7 @@ fn ptrHasIntAddr(val: Value, mod: *Module) bool {
 ///
 /// Asserts that buffer.len >= ty.abiSize(). The buffer is allowed to extend past
 /// the end of the value in memory.
-pub fn writeToMemory(val: Value, ty: Type, mod: *Module, buffer: []u8) error{
+pub fn write_to_memory(val: Value, ty: Type, mod: *Module, buffer: []u8) error{
     ReinterpretDeclRef,
     IllDefinedMemoryLayout,
     Unimplemented,
@@ -462,7 +462,7 @@ pub fn writeToMemory(val: Value, ty: Type, mod: *Module, buffer: []u8) error{
 ///
 /// Both the start and the end of the provided buffer must be tight, since
 /// big-endian packed memory layouts start at the end of the buffer.
-pub fn writeToPackedMemory(
+pub fn write_to_packed_memory(
     val: Value,
     ty: Type,
     mod: *Module,
@@ -591,7 +591,7 @@ pub fn writeToPackedMemory(
 ///
 /// Asserts that buffer.len >= ty.abiSize(). The buffer is allowed to extend past
 /// the end of the value in memory.
-pub fn readFromMemory(
+pub fn read_from_memory(
     ty: Type,
     mod: *Module,
     buffer: []const u8,
@@ -759,7 +759,7 @@ pub fn readFromMemory(
 ///
 /// Both the start and the end of the provided buffer must be tight, since
 /// big-endian packed memory layouts start at the end of the buffer.
-pub fn readFromPackedMemory(
+pub fn read_from_packed_memory(
     ty: Type,
     mod: *Module,
     buffer: []const u8,
@@ -898,7 +898,7 @@ pub fn readFromPackedMemory(
 }
 
 /// Asserts that the value is a float or an integer.
-pub fn toFloat(val: Value, comptime T: type, mod: *Module) T {
+pub fn to_float(val: Value, comptime T: type, mod: *Module) T {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .int => |int| switch (int.storage) {
             .big_int => |big_int| @floatCast(bigIntToFloat(big_int.limbs, big_int.positive)),
@@ -919,7 +919,7 @@ pub fn toFloat(val: Value, comptime T: type, mod: *Module) T {
 }
 
 /// TODO move this to std lib big int code
-fn bigIntToFloat(limbs: []const std.math.big.Limb, positive: bool) f128 {
+fn big_int_to_float(limbs: []const std.math.big.Limb, positive: bool) f128 {
     if (limbs.len == 0) return 0;
 
     const base = std.math.maxInt(std.math.big.Limb) + 1;
@@ -949,13 +949,13 @@ pub fn ctz(val: Value, ty: Type, mod: *Module) u64 {
     return bigint.ctz(ty.intInfo(mod).bits);
 }
 
-pub fn popCount(val: Value, ty: Type, mod: *Module) u64 {
+pub fn pop_count(val: Value, ty: Type, mod: *Module) u64 {
     var bigint_buf: BigIntSpace = undefined;
     const bigint = val.toBigInt(&bigint_buf, mod);
     return @intCast(bigint.popCount(ty.intInfo(mod).bits));
 }
 
-pub fn bitReverse(val: Value, ty: Type, mod: *Module, arena: Allocator) !Value {
+pub fn bit_reverse(val: Value, ty: Type, mod: *Module, arena: Allocator) !Value {
     const info = ty.intInfo(mod);
 
     var buffer: Value.BigIntSpace = undefined;
@@ -971,7 +971,7 @@ pub fn bitReverse(val: Value, ty: Type, mod: *Module, arena: Allocator) !Value {
     return mod.intValue_big(ty, result_bigint.toConst());
 }
 
-pub fn byteSwap(val: Value, ty: Type, mod: *Module, arena: Allocator) !Value {
+pub fn byte_swap(val: Value, ty: Type, mod: *Module, arena: Allocator) !Value {
     const info = ty.intInfo(mod);
 
     // Bit count must be evenly divisible by 8
@@ -992,7 +992,7 @@ pub fn byteSwap(val: Value, ty: Type, mod: *Module, arena: Allocator) !Value {
 
 /// Asserts the value is an integer and not undefined.
 /// Returns the number of bits the value requires to represent stored in twos complement form.
-pub fn intBitCountTwosComp(self: Value, mod: *Module) usize {
+pub fn int_bit_count_twos_comp(self: Value, mod: *Module) usize {
     var buffer: BigIntSpace = undefined;
     const big_int = self.toBigInt(&buffer, mod);
     return big_int.bitCountTwosComp();
@@ -1000,7 +1000,7 @@ pub fn intBitCountTwosComp(self: Value, mod: *Module) usize {
 
 /// Converts an integer or a float to a float. May result in a loss of information.
 /// Caller can find out by equality checking the result against the operand.
-pub fn floatCast(val: Value, dest_ty: Type, zcu: *Zcu) !Value {
+pub fn float_cast(val: Value, dest_ty: Type, zcu: *Zcu) !Value {
     const target = zcu.getTarget();
     if (val.isUndef(zcu)) return zcu.undefValue(dest_ty);
     return Value.fromInterned((try zcu.intern(.{ .float = .{
@@ -1017,7 +1017,7 @@ pub fn floatCast(val: Value, dest_ty: Type, zcu: *Zcu) !Value {
 }
 
 /// Asserts the value is a float
-pub fn floatHasFraction(self: Value, mod: *const Module) bool {
+pub fn float_has_fraction(self: Value, mod: *const Module) bool {
     return switch (mod.intern_pool.indexToKey(self.toIntern())) {
         .float => |float| switch (float.storage) {
             inline else => |x| @rem(x, 1) != 0,
@@ -1026,11 +1026,11 @@ pub fn floatHasFraction(self: Value, mod: *const Module) bool {
     };
 }
 
-pub fn orderAgainstZero(lhs: Value, mod: *Module) std.math.Order {
+pub fn order_against_zero(lhs: Value, mod: *Module) std.math.Order {
     return orderAgainstZeroAdvanced(lhs, mod, null) catch unreachable;
 }
 
-pub fn orderAgainstZeroAdvanced(
+pub fn order_against_zero_advanced(
     lhs: Value,
     mod: *Module,
     opt_sema: ?*Sema,
@@ -1073,7 +1073,7 @@ pub fn order(lhs: Value, rhs: Value, mod: *Module) std.math.Order {
 
 /// Asserts the value is comparable.
 /// If opt_sema is null then this function asserts things are resolved and cannot fail.
-pub fn orderAdvanced(lhs: Value, rhs: Value, mod: *Module, opt_sema: ?*Sema) !std.math.Order {
+pub fn order_advanced(lhs: Value, rhs: Value, mod: *Module, opt_sema: ?*Sema) !std.math.Order {
     const lhs_against_zero = try lhs.orderAgainstZeroAdvanced(mod, opt_sema);
     const rhs_against_zero = try rhs.orderAgainstZeroAdvanced(mod, opt_sema);
     switch (lhs_against_zero) {
@@ -1102,11 +1102,11 @@ pub fn orderAdvanced(lhs: Value, rhs: Value, mod: *Module, opt_sema: ?*Sema) !st
 
 /// Asserts the value is comparable. Does not take a type parameter because it supports
 /// comparisons between heterogeneous types.
-pub fn compareHetero(lhs: Value, op: std.math.CompareOperator, rhs: Value, mod: *Module) bool {
+pub fn compare_hetero(lhs: Value, op: std.math.CompareOperator, rhs: Value, mod: *Module) bool {
     return compareHeteroAdvanced(lhs, op, rhs, mod, null) catch unreachable;
 }
 
-pub fn compareHeteroAdvanced(
+pub fn compare_hetero_advanced(
     lhs: Value,
     op: std.math.CompareOperator,
     rhs: Value,
@@ -1139,7 +1139,7 @@ pub fn compareHeteroAdvanced(
 
 /// Asserts the values are comparable. Both operands have type `ty`.
 /// For vectors, returns true if comparison is true for ALL elements.
-pub fn compareAll(lhs: Value, op: std.math.CompareOperator, rhs: Value, ty: Type, mod: *Module) !bool {
+pub fn compare_all(lhs: Value, op: std.math.CompareOperator, rhs: Value, ty: Type, mod: *Module) !bool {
     if (ty.zigTypeTag(mod) == .Vector) {
         const scalar_ty = ty.scalarType(mod);
         for (0..ty.vectorLen(mod)) |i| {
@@ -1155,7 +1155,7 @@ pub fn compareAll(lhs: Value, op: std.math.CompareOperator, rhs: Value, ty: Type
 }
 
 /// Asserts the values are comparable. Both operands have type `ty`.
-pub fn compareScalar(
+pub fn compare_scalar(
     lhs: Value,
     op: std.math.CompareOperator,
     rhs: Value,
@@ -1174,11 +1174,11 @@ pub fn compareScalar(
 /// Returns `false` if the value or any vector element is undefined.
 ///
 /// Note that `!compareAllWithZero(.eq, ...) != compareAllWithZero(.neq, ...)`
-pub fn compareAllWithZero(lhs: Value, op: std.math.CompareOperator, mod: *Module) bool {
+pub fn compare_all_with_zero(lhs: Value, op: std.math.CompareOperator, mod: *Module) bool {
     return compareAllWithZeroAdvancedExtra(lhs, op, mod, null) catch unreachable;
 }
 
-pub fn compareAllWithZeroAdvanced(
+pub fn compare_all_with_zero_advanced(
     lhs: Value,
     op: std.math.CompareOperator,
     sema: *Sema,
@@ -1186,7 +1186,7 @@ pub fn compareAllWithZeroAdvanced(
     return compareAllWithZeroAdvancedExtra(lhs, op, sema.mod, sema);
 }
 
-pub fn compareAllWithZeroAdvancedExtra(
+pub fn compare_all_with_zero_advanced_extra(
     lhs: Value,
     op: std.math.CompareOperator,
     mod: *Module,
@@ -1226,7 +1226,7 @@ pub fn eql(a: Value, b: Value, ty: Type, mod: *Module) bool {
     return a.toIntern() == b.toIntern();
 }
 
-pub fn canMutateComptimeVarState(val: Value, zcu: *Zcu) bool {
+pub fn can_mutate_comptime_var_state(val: Value, zcu: *Zcu) bool {
     return switch (zcu.intern_pool.indexToKey(val.toIntern())) {
         .error_union => |error_union| switch (error_union.val) {
             .err_name => false,
@@ -1257,7 +1257,7 @@ pub fn canMutateComptimeVarState(val: Value, zcu: *Zcu) bool {
 /// Gets the decl referenced by this pointer.  If the pointer does not point
 /// to a decl, or if it points to some part of a decl (like field_ptr or element_ptr),
 /// this function returns null.
-pub fn pointerDecl(val: Value, mod: *Module) ?InternPool.DeclIndex {
+pub fn pointer_decl(val: Value, mod: *Module) ?InternPool.DeclIndex {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .variable => |variable| variable.decl,
         .extern_func => |extern_func| extern_func.decl,
@@ -1273,18 +1273,18 @@ pub fn pointerDecl(val: Value, mod: *Module) ?InternPool.DeclIndex {
 pub const slice_ptr_index = 0;
 pub const slice_len_index = 1;
 
-pub fn slicePtr(val: Value, mod: *Module) Value {
+pub fn slice_ptr(val: Value, mod: *Module) Value {
     return Value.fromInterned(mod.intern_pool.slicePtr(val.toIntern()));
 }
 
 /// Gets the `len` field of a slice value as a `u64`.
 /// Resolves the length using the provided `Sema` if necessary.
-pub fn sliceLen(val: Value, sema: *Sema) !u64 {
+pub fn slice_len(val: Value, sema: *Sema) !u64 {
     return Value.fromInterned(sema.mod.intern_pool.sliceLen(val.toIntern())).toUnsignedIntAdvanced(sema);
 }
 
 /// Asserts the value is an aggregate, and returns the element value at the given index.
-pub fn elemValue(val: Value, zcu: *Zcu, index: usize) Allocator.Error!Value {
+pub fn elem_value(val: Value, zcu: *Zcu, index: usize) Allocator.Error!Value {
     const ip = &zcu.intern_pool;
     switch (zcu.intern_pool.indexToKey(val.toIntern())) {
         .undef => |ty| {
@@ -1307,28 +1307,28 @@ pub fn elemValue(val: Value, zcu: *Zcu, index: usize) Allocator.Error!Value {
     }
 }
 
-pub fn isLazyAlign(val: Value, mod: *Module) bool {
+pub fn is_lazy_align(val: Value, mod: *Module) bool {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .int => |int| int.storage == .lazy_align,
         else => false,
     };
 }
 
-pub fn isLazySize(val: Value, mod: *Module) bool {
+pub fn is_lazy_size(val: Value, mod: *Module) bool {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .int => |int| int.storage == .lazy_size,
         else => false,
     };
 }
 
-pub fn isPtrToThreadLocal(val: Value, mod: *Module) bool {
+pub fn is_ptr_to_thread_local(val: Value, mod: *Module) bool {
     const backing_decl = mod.intern_pool.getBackingDecl(val.toIntern()).unwrap() orelse return false;
     const variable = mod.declPtr(backing_decl).getOwnedVariable(mod) orelse return false;
     return variable.is_threadlocal;
 }
 
 // Asserts that the provided start/end are in-bounds.
-pub fn sliceArray(
+pub fn slice_array(
     val: Value,
     sema: *Sema,
     start: usize,
@@ -1367,7 +1367,7 @@ pub fn sliceArray(
     }));
 }
 
-pub fn fieldValue(val: Value, mod: *Module, index: usize) !Value {
+pub fn field_value(val: Value, mod: *Module, index: usize) !Value {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .undef => |ty| Value.fromInterned((try mod.intern(.{
             .undef = Type.fromInterned(ty).structFieldType(index, mod).toIntern(),
@@ -1386,7 +1386,7 @@ pub fn fieldValue(val: Value, mod: *Module, index: usize) !Value {
     };
 }
 
-pub fn unionTag(val: Value, mod: *Module) ?Value {
+pub fn union_tag(val: Value, mod: *Module) ?Value {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .undef, .enum_tag => val,
         .un => |un| if (un.tag != .none) Value.fromInterned(un.tag) else return null,
@@ -1394,27 +1394,27 @@ pub fn unionTag(val: Value, mod: *Module) ?Value {
     };
 }
 
-pub fn unionValue(val: Value, mod: *Module) Value {
+pub fn union_value(val: Value, mod: *Module) Value {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .un => |un| Value.fromInterned(un.val),
         else => unreachable,
     };
 }
 
-pub fn isUndef(val: Value, mod: *Module) bool {
+pub fn is_undef(val: Value, mod: *Module) bool {
     return mod.intern_pool.isUndef(val.toIntern());
 }
 
 /// TODO: check for cases such as array that is not marked undef but all the element
 /// values are marked undef, or struct that is not marked undef but all fields are marked
 /// undef, etc.
-pub fn isUndefDeep(val: Value, mod: *Module) bool {
+pub fn is_undef_deep(val: Value, mod: *Module) bool {
     return val.isUndef(mod);
 }
 
 /// Asserts the value is not undefined and not unreachable.
 /// C pointers with an integer value of 0 are also considered null.
-pub fn isNull(val: Value, mod: *Module) bool {
+pub fn is_null(val: Value, mod: *Module) bool {
     return switch (val.toIntern()) {
         .undef => unreachable,
         .unreachable_value => unreachable,
@@ -1432,7 +1432,7 @@ pub fn isNull(val: Value, mod: *Module) bool {
 }
 
 /// Valid only for error (union) types. Asserts the value is not undefined and not unreachable.
-pub fn getErrorName(val: Value, mod: *const Module) InternPool.OptionalNullTerminatedString {
+pub fn get_error_name(val: Value, mod: *const Module) InternPool.OptionalNullTerminatedString {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .err => |err| err.name.toOptional(),
         .error_union => |error_union| switch (error_union.val) {
@@ -1443,7 +1443,7 @@ pub fn getErrorName(val: Value, mod: *const Module) InternPool.OptionalNullTermi
     };
 }
 
-pub fn getErrorInt(val: Value, mod: *const Module) Module.ErrorInt {
+pub fn get_error_int(val: Value, mod: *const Module) Module.ErrorInt {
     return if (getErrorName(val, mod).unwrap()) |err_name|
         @intCast(mod.global_error_set.getIndex(err_name).?)
     else
@@ -1452,12 +1452,12 @@ pub fn getErrorInt(val: Value, mod: *const Module) Module.ErrorInt {
 
 /// Assumes the type is an error union. Returns true if and only if the value is
 /// the error union payload, not an error.
-pub fn errorUnionIsPayload(val: Value, mod: *const Module) bool {
+pub fn error_union_is_payload(val: Value, mod: *const Module) bool {
     return mod.intern_pool.indexToKey(val.toIntern()).error_union.val == .payload;
 }
 
 /// Value of the optional, null if optional has no payload.
-pub fn optionalValue(val: Value, mod: *const Module) ?Value {
+pub fn optional_value(val: Value, mod: *const Module) ?Value {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .opt => |opt| switch (opt.val) {
             .none => null,
@@ -1469,7 +1469,7 @@ pub fn optionalValue(val: Value, mod: *const Module) ?Value {
 }
 
 /// Valid for all types. Asserts the value is not undefined.
-pub fn isFloat(self: Value, mod: *const Module) bool {
+pub fn is_float(self: Value, mod: *const Module) bool {
     return switch (self.toIntern()) {
         .undef => unreachable,
         else => switch (mod.intern_pool.indexToKey(self.toIntern())) {
@@ -1480,14 +1480,14 @@ pub fn isFloat(self: Value, mod: *const Module) bool {
     };
 }
 
-pub fn floatFromInt(val: Value, arena: Allocator, int_ty: Type, float_ty: Type, mod: *Module) !Value {
+pub fn float_from_int(val: Value, arena: Allocator, int_ty: Type, float_ty: Type, mod: *Module) !Value {
     return floatFromIntAdvanced(val, arena, int_ty, float_ty, mod, null) catch |err| switch (err) {
         error.OutOfMemory => return error.OutOfMemory,
         else => unreachable,
     };
 }
 
-pub fn floatFromIntAdvanced(val: Value, arena: Allocator, int_ty: Type, float_ty: Type, mod: *Module, opt_sema: ?*Sema) !Value {
+pub fn float_from_int_advanced(val: Value, arena: Allocator, int_ty: Type, float_ty: Type, mod: *Module, opt_sema: ?*Sema) !Value {
     if (int_ty.zigTypeTag(mod) == .Vector) {
         const result_data = try arena.alloc(InternPool.Index, int_ty.vectorLen(mod));
         const scalar_ty = float_ty.scalarType(mod);
@@ -1503,7 +1503,7 @@ pub fn floatFromIntAdvanced(val: Value, arena: Allocator, int_ty: Type, float_ty
     return floatFromIntScalar(val, float_ty, mod, opt_sema);
 }
 
-pub fn floatFromIntScalar(val: Value, float_ty: Type, mod: *Module, opt_sema: ?*Sema) !Value {
+pub fn float_from_int_scalar(val: Value, float_ty: Type, mod: *Module, opt_sema: ?*Sema) !Value {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .undef => try mod.undefValue(float_ty),
         .int => |int| switch (int.storage) {
@@ -1527,7 +1527,7 @@ pub fn floatFromIntScalar(val: Value, float_ty: Type, mod: *Module, opt_sema: ?*
     };
 }
 
-fn floatFromIntInner(x: anytype, dest_ty: Type, mod: *Module) !Value {
+fn float_from_int_inner(x: anytype, dest_ty: Type, mod: *Module) !Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (dest_ty.floatBits(target)) {
         16 => .{ .f16 = @floatFromInt(x) },
@@ -1543,7 +1543,7 @@ fn floatFromIntInner(x: anytype, dest_ty: Type, mod: *Module) !Value {
     } })));
 }
 
-fn calcLimbLenFloat(scalar: anytype) usize {
+fn calc_limb_len_float(scalar: anytype) usize {
     if (scalar == 0) {
         return 1;
     }
@@ -1558,7 +1558,7 @@ pub const OverflowArithmeticResult = struct {
 };
 
 /// Supports (vectors of) integers only; asserts neither operand is undefined.
-pub fn intAddSat(
+pub fn int_add_sat(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -1582,7 +1582,7 @@ pub fn intAddSat(
 }
 
 /// Supports integers only; asserts neither operand is undefined.
-pub fn intAddSatScalar(
+pub fn int_add_sat_scalar(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -1608,7 +1608,7 @@ pub fn intAddSatScalar(
 }
 
 /// Supports (vectors of) integers only; asserts neither operand is undefined.
-pub fn intSubSat(
+pub fn int_sub_sat(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -1632,7 +1632,7 @@ pub fn intSubSat(
 }
 
 /// Supports integers only; asserts neither operand is undefined.
-pub fn intSubSatScalar(
+pub fn int_sub_sat_scalar(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -1657,7 +1657,7 @@ pub fn intSubSatScalar(
     return mod.intValue_big(ty, result_bigint.toConst());
 }
 
-pub fn intMulWithOverflow(
+pub fn int_mul_with_overflow(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -1690,7 +1690,7 @@ pub fn intMulWithOverflow(
     return intMulWithOverflowScalar(lhs, rhs, ty, arena, mod);
 }
 
-pub fn intMulWithOverflowScalar(
+pub fn int_mul_with_overflow_scalar(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -1733,7 +1733,7 @@ pub fn intMulWithOverflowScalar(
 }
 
 /// Supports both (vectors of) floats and ints; handles undefined scalars.
-pub fn numberMulWrap(
+pub fn number_mul_wrap(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -1757,7 +1757,7 @@ pub fn numberMulWrap(
 }
 
 /// Supports both floats and ints; handles undefined.
-pub fn numberMulWrapScalar(
+pub fn number_mul_wrap_scalar(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -1779,7 +1779,7 @@ pub fn numberMulWrapScalar(
 }
 
 /// Supports (vectors of) integers only; asserts neither operand is undefined.
-pub fn intMulSat(
+pub fn int_mul_sat(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -1803,7 +1803,7 @@ pub fn intMulSat(
 }
 
 /// Supports (vectors of) integers only; asserts neither operand is undefined.
-pub fn intMulSatScalar(
+pub fn int_mul_sat_scalar(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -1838,7 +1838,7 @@ pub fn intMulSatScalar(
 }
 
 /// Supports both floats and ints; handles undefined.
-pub fn numberMax(lhs: Value, rhs: Value, mod: *Module) Value {
+pub fn number_max(lhs: Value, rhs: Value, mod: *Module) Value {
     if (lhs.isUndef(mod) or rhs.isUndef(mod)) return undef;
     if (lhs.isNan(mod)) return rhs;
     if (rhs.isNan(mod)) return lhs;
@@ -1850,7 +1850,7 @@ pub fn numberMax(lhs: Value, rhs: Value, mod: *Module) Value {
 }
 
 /// Supports both floats and ints; handles undefined.
-pub fn numberMin(lhs: Value, rhs: Value, mod: *Module) Value {
+pub fn number_min(lhs: Value, rhs: Value, mod: *Module) Value {
     if (lhs.isUndef(mod) or rhs.isUndef(mod)) return undef;
     if (lhs.isNan(mod)) return rhs;
     if (rhs.isNan(mod)) return lhs;
@@ -1862,7 +1862,7 @@ pub fn numberMin(lhs: Value, rhs: Value, mod: *Module) Value {
 }
 
 /// operands must be (vectors of) integers; handles undefined scalars.
-pub fn bitwiseNot(val: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
+pub fn bitwise_not(val: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
     if (ty.zigTypeTag(mod) == .Vector) {
         const result_data = try arena.alloc(InternPool.Index, ty.vectorLen(mod));
         const scalar_ty = ty.scalarType(mod);
@@ -1879,7 +1879,7 @@ pub fn bitwiseNot(val: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
 }
 
 /// operands must be integers; handles undefined.
-pub fn bitwiseNotScalar(val: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
+pub fn bitwise_not_scalar(val: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
     if (val.isUndef(mod)) return Value.fromInterned((try mod.intern(.{ .undef = ty.toIntern() })));
     if (ty.toIntern() == .bool_type) return makeBool(!val.toBool());
 
@@ -1904,7 +1904,7 @@ pub fn bitwiseNotScalar(val: Value, ty: Type, arena: Allocator, mod: *Module) !V
 }
 
 /// operands must be (vectors of) integers; handles undefined scalars.
-pub fn bitwiseAnd(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
+pub fn bitwise_and(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
     if (ty.zigTypeTag(mod) == .Vector) {
         const result_data = try allocator.alloc(InternPool.Index, ty.vectorLen(mod));
         const scalar_ty = ty.scalarType(mod);
@@ -1922,7 +1922,7 @@ pub fn bitwiseAnd(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *
 }
 
 /// operands must be integers; handles undefined.
-pub fn bitwiseAndScalar(orig_lhs: Value, orig_rhs: Value, ty: Type, arena: Allocator, zcu: *Zcu) !Value {
+pub fn bitwise_and_scalar(orig_lhs: Value, orig_rhs: Value, ty: Type, arena: Allocator, zcu: *Zcu) !Value {
     // If one operand is defined, we turn the other into `0xAA` so the bitwise AND can
     // still zero out some bits.
     // TODO: ideally we'd still like tracking for the undef bits. Related: #19634.
@@ -1957,7 +1957,7 @@ pub fn bitwiseAndScalar(orig_lhs: Value, orig_rhs: Value, ty: Type, arena: Alloc
 
 /// Given an integer or boolean type, creates an value of that with the bit pattern 0xAA.
 /// This is used to convert undef values into 0xAA when performing e.g. bitwise operations.
-fn intValueAa(ty: Type, arena: Allocator, zcu: *Zcu) !Value {
+fn int_value_aa(ty: Type, arena: Allocator, zcu: *Zcu) !Value {
     if (ty.toIntern() == .bool_type) return Value.true;
     const info = ty.intInfo(zcu);
 
@@ -1974,7 +1974,7 @@ fn intValueAa(ty: Type, arena: Allocator, zcu: *Zcu) !Value {
 }
 
 /// operands must be (vectors of) integers; handles undefined scalars.
-pub fn bitwiseNand(lhs: Value, rhs: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
+pub fn bitwise_nand(lhs: Value, rhs: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
     if (ty.zigTypeTag(mod) == .Vector) {
         const result_data = try arena.alloc(InternPool.Index, ty.vectorLen(mod));
         const scalar_ty = ty.scalarType(mod);
@@ -1992,7 +1992,7 @@ pub fn bitwiseNand(lhs: Value, rhs: Value, ty: Type, arena: Allocator, mod: *Mod
 }
 
 /// operands must be integers; handles undefined.
-pub fn bitwiseNandScalar(lhs: Value, rhs: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
+pub fn bitwise_nand_scalar(lhs: Value, rhs: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
     if (lhs.isUndef(mod) or rhs.isUndef(mod)) return Value.fromInterned((try mod.intern(.{ .undef = ty.toIntern() })));
     if (ty.toIntern() == .bool_type) return makeBool(!(lhs.toBool() and rhs.toBool()));
 
@@ -2002,7 +2002,7 @@ pub fn bitwiseNandScalar(lhs: Value, rhs: Value, ty: Type, arena: Allocator, mod
 }
 
 /// operands must be (vectors of) integers; handles undefined scalars.
-pub fn bitwiseOr(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
+pub fn bitwise_or(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
     if (ty.zigTypeTag(mod) == .Vector) {
         const result_data = try allocator.alloc(InternPool.Index, ty.vectorLen(mod));
         const scalar_ty = ty.scalarType(mod);
@@ -2020,7 +2020,7 @@ pub fn bitwiseOr(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *M
 }
 
 /// operands must be integers; handles undefined.
-pub fn bitwiseOrScalar(orig_lhs: Value, orig_rhs: Value, ty: Type, arena: Allocator, zcu: *Zcu) !Value {
+pub fn bitwise_or_scalar(orig_lhs: Value, orig_rhs: Value, ty: Type, arena: Allocator, zcu: *Zcu) !Value {
     // If one operand is defined, we turn the other into `0xAA` so the bitwise AND can
     // still zero out some bits.
     // TODO: ideally we'd still like tracking for the undef bits. Related: #19634.
@@ -2053,7 +2053,7 @@ pub fn bitwiseOrScalar(orig_lhs: Value, orig_rhs: Value, ty: Type, arena: Alloca
 }
 
 /// operands must be (vectors of) integers; handles undefined scalars.
-pub fn bitwiseXor(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
+pub fn bitwise_xor(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
     if (ty.zigTypeTag(mod) == .Vector) {
         const result_data = try allocator.alloc(InternPool.Index, ty.vectorLen(mod));
         const scalar_ty = ty.scalarType(mod);
@@ -2071,7 +2071,7 @@ pub fn bitwiseXor(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *
 }
 
 /// operands must be integers; handles undefined.
-pub fn bitwiseXorScalar(lhs: Value, rhs: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
+pub fn bitwise_xor_scalar(lhs: Value, rhs: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
     if (lhs.isUndef(mod) or rhs.isUndef(mod)) return Value.fromInterned((try mod.intern(.{ .undef = ty.toIntern() })));
     if (ty.toIntern() == .bool_type) return makeBool(lhs.toBool() != rhs.toBool());
 
@@ -2093,7 +2093,7 @@ pub fn bitwiseXorScalar(lhs: Value, rhs: Value, ty: Type, arena: Allocator, mod:
 
 /// If the value overflowed the type, returns a comptime_int (or vector thereof) instead, setting
 /// overflow_idx to the vector index the overflow was at (or 0 for a scalar).
-pub fn intDiv(lhs: Value, rhs: Value, ty: Type, overflow_idx: *?usize, allocator: Allocator, mod: *Module) !Value {
+pub fn int_div(lhs: Value, rhs: Value, ty: Type, overflow_idx: *?usize, allocator: Allocator, mod: *Module) !Value {
     var overflow: usize = undefined;
     return intDivInner(lhs, rhs, ty, &overflow, allocator, mod) catch |err| switch (err) {
         error.Overflow => {
@@ -2112,7 +2112,7 @@ pub fn intDiv(lhs: Value, rhs: Value, ty: Type, overflow_idx: *?usize, allocator
     };
 }
 
-fn intDivInner(lhs: Value, rhs: Value, ty: Type, overflow_idx: *usize, allocator: Allocator, mod: *Module) !Value {
+fn int_div_inner(lhs: Value, rhs: Value, ty: Type, overflow_idx: *usize, allocator: Allocator, mod: *Module) !Value {
     if (ty.zigTypeTag(mod) == .Vector) {
         const result_data = try allocator.alloc(InternPool.Index, ty.vectorLen(mod));
         const scalar_ty = ty.scalarType(mod);
@@ -2136,7 +2136,7 @@ fn intDivInner(lhs: Value, rhs: Value, ty: Type, overflow_idx: *usize, allocator
     return intDivScalar(lhs, rhs, ty, allocator, mod);
 }
 
-pub fn intDivScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
+pub fn int_div_scalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
     // TODO is this a performance issue? maybe we should try the operation without
     // resorting to BigInt first.
     var lhs_space: Value.BigIntSpace = undefined;
@@ -2167,7 +2167,7 @@ pub fn intDivScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod:
     return mod.intValue_big(ty, result_q.toConst());
 }
 
-pub fn intDivFloor(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
+pub fn int_div_floor(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
     if (ty.zigTypeTag(mod) == .Vector) {
         const result_data = try allocator.alloc(InternPool.Index, ty.vectorLen(mod));
         const scalar_ty = ty.scalarType(mod);
@@ -2184,7 +2184,7 @@ pub fn intDivFloor(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: 
     return intDivFloorScalar(lhs, rhs, ty, allocator, mod);
 }
 
-pub fn intDivFloorScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
+pub fn int_div_floor_scalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
     // TODO is this a performance issue? maybe we should try the operation without
     // resorting to BigInt first.
     var lhs_space: Value.BigIntSpace = undefined;
@@ -2209,7 +2209,7 @@ pub fn intDivFloorScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator,
     return mod.intValue_big(ty, result_q.toConst());
 }
 
-pub fn intMod(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
+pub fn int_mod(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
     if (ty.zigTypeTag(mod) == .Vector) {
         const result_data = try allocator.alloc(InternPool.Index, ty.vectorLen(mod));
         const scalar_ty = ty.scalarType(mod);
@@ -2226,7 +2226,7 @@ pub fn intMod(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Modu
     return intModScalar(lhs, rhs, ty, allocator, mod);
 }
 
-pub fn intModScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
+pub fn int_mod_scalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
     // TODO is this a performance issue? maybe we should try the operation without
     // resorting to BigInt first.
     var lhs_space: Value.BigIntSpace = undefined;
@@ -2252,7 +2252,7 @@ pub fn intModScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod:
 }
 
 /// Returns true if the value is a floating point type and is NaN. Returns false otherwise.
-pub fn isNan(val: Value, mod: *const Module) bool {
+pub fn is_nan(val: Value, mod: *const Module) bool {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .float => |float| switch (float.storage) {
             inline else => |x| std.math.isNan(x),
@@ -2262,7 +2262,7 @@ pub fn isNan(val: Value, mod: *const Module) bool {
 }
 
 /// Returns true if the value is a floating point type and is infinite. Returns false otherwise.
-pub fn isInf(val: Value, mod: *const Module) bool {
+pub fn is_inf(val: Value, mod: *const Module) bool {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .float => |float| switch (float.storage) {
             inline else => |x| std.math.isInf(x),
@@ -2271,7 +2271,7 @@ pub fn isInf(val: Value, mod: *const Module) bool {
     };
 }
 
-pub fn isNegativeInf(val: Value, mod: *const Module) bool {
+pub fn is_negative_inf(val: Value, mod: *const Module) bool {
     return switch (mod.intern_pool.indexToKey(val.toIntern())) {
         .float => |float| switch (float.storage) {
             inline else => |x| std.math.isNegativeInf(x),
@@ -2280,7 +2280,7 @@ pub fn isNegativeInf(val: Value, mod: *const Module) bool {
     };
 }
 
-pub fn floatRem(lhs: Value, rhs: Value, float_type: Type, arena: Allocator, mod: *Module) !Value {
+pub fn float_rem(lhs: Value, rhs: Value, float_type: Type, arena: Allocator, mod: *Module) !Value {
     if (float_type.zigTypeTag(mod) == .Vector) {
         const result_data = try arena.alloc(InternPool.Index, float_type.vectorLen(mod));
         const scalar_ty = float_type.scalarType(mod);
@@ -2297,7 +2297,7 @@ pub fn floatRem(lhs: Value, rhs: Value, float_type: Type, arena: Allocator, mod:
     return floatRemScalar(lhs, rhs, float_type, mod);
 }
 
-pub fn floatRemScalar(lhs: Value, rhs: Value, float_type: Type, mod: *Module) !Value {
+pub fn float_rem_scalar(lhs: Value, rhs: Value, float_type: Type, mod: *Module) !Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @rem(lhs.toFloat(f16, mod), rhs.toFloat(f16, mod)) },
@@ -2313,7 +2313,7 @@ pub fn floatRemScalar(lhs: Value, rhs: Value, float_type: Type, mod: *Module) !V
     } })));
 }
 
-pub fn floatMod(lhs: Value, rhs: Value, float_type: Type, arena: Allocator, mod: *Module) !Value {
+pub fn float_mod(lhs: Value, rhs: Value, float_type: Type, arena: Allocator, mod: *Module) !Value {
     if (float_type.zigTypeTag(mod) == .Vector) {
         const result_data = try arena.alloc(InternPool.Index, float_type.vectorLen(mod));
         const scalar_ty = float_type.scalarType(mod);
@@ -2330,7 +2330,7 @@ pub fn floatMod(lhs: Value, rhs: Value, float_type: Type, arena: Allocator, mod:
     return floatModScalar(lhs, rhs, float_type, mod);
 }
 
-pub fn floatModScalar(lhs: Value, rhs: Value, float_type: Type, mod: *Module) !Value {
+pub fn float_mod_scalar(lhs: Value, rhs: Value, float_type: Type, mod: *Module) !Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @mod(lhs.toFloat(f16, mod), rhs.toFloat(f16, mod)) },
@@ -2348,7 +2348,7 @@ pub fn floatModScalar(lhs: Value, rhs: Value, float_type: Type, mod: *Module) !V
 
 /// If the value overflowed the type, returns a comptime_int (or vector thereof) instead, setting
 /// overflow_idx to the vector index the overflow was at (or 0 for a scalar).
-pub fn intMul(lhs: Value, rhs: Value, ty: Type, overflow_idx: *?usize, allocator: Allocator, mod: *Module) !Value {
+pub fn int_mul(lhs: Value, rhs: Value, ty: Type, overflow_idx: *?usize, allocator: Allocator, mod: *Module) !Value {
     var overflow: usize = undefined;
     return intMulInner(lhs, rhs, ty, &overflow, allocator, mod) catch |err| switch (err) {
         error.Overflow => {
@@ -2367,7 +2367,7 @@ pub fn intMul(lhs: Value, rhs: Value, ty: Type, overflow_idx: *?usize, allocator
     };
 }
 
-fn intMulInner(lhs: Value, rhs: Value, ty: Type, overflow_idx: *usize, allocator: Allocator, mod: *Module) !Value {
+fn int_mul_inner(lhs: Value, rhs: Value, ty: Type, overflow_idx: *usize, allocator: Allocator, mod: *Module) !Value {
     if (ty.zigTypeTag(mod) == .Vector) {
         const result_data = try allocator.alloc(InternPool.Index, ty.vectorLen(mod));
         const scalar_ty = ty.scalarType(mod);
@@ -2391,7 +2391,7 @@ fn intMulInner(lhs: Value, rhs: Value, ty: Type, overflow_idx: *usize, allocator
     return intMulScalar(lhs, rhs, ty, allocator, mod);
 }
 
-pub fn intMulScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
+pub fn int_mul_scalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
     if (ty.toIntern() != .comptime_int_type) {
         const res = try intMulWithOverflowScalar(lhs, rhs, ty, allocator, mod);
         if (res.overflow_bit.compareAllWithZero(.neq, mod)) return error.Overflow;
@@ -2417,7 +2417,7 @@ pub fn intMulScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod:
     return mod.intValue_big(ty, result_bigint.toConst());
 }
 
-pub fn intTrunc(val: Value, ty: Type, allocator: Allocator, signedness: std.builtin.Signedness, bits: u16, mod: *Module) !Value {
+pub fn int_trunc(val: Value, ty: Type, allocator: Allocator, signedness: std.builtin.Signedness, bits: u16, mod: *Module) !Value {
     if (ty.zigTypeTag(mod) == .Vector) {
         const result_data = try allocator.alloc(InternPool.Index, ty.vectorLen(mod));
         const scalar_ty = ty.scalarType(mod);
@@ -2434,7 +2434,7 @@ pub fn intTrunc(val: Value, ty: Type, allocator: Allocator, signedness: std.buil
 }
 
 /// This variant may vectorize on `bits`. Asserts that `bits` is a (vector of) `u16`.
-pub fn intTruncBitsAsValue(
+pub fn int_trunc_bits_as_value(
     val: Value,
     ty: Type,
     allocator: Allocator,
@@ -2458,7 +2458,7 @@ pub fn intTruncBitsAsValue(
     return intTruncScalar(val, ty, allocator, signedness, @intCast(bits.toUnsignedInt(mod)), mod);
 }
 
-pub fn intTruncScalar(
+pub fn int_trunc_scalar(
     val: Value,
     ty: Type,
     allocator: Allocator,
@@ -2500,7 +2500,7 @@ pub fn shl(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module)
     return shlScalar(lhs, rhs, ty, allocator, mod);
 }
 
-pub fn shlScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
+pub fn shl_scalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
     // TODO is this a performance issue? maybe we should try the operation without
     // resorting to BigInt first.
     var lhs_space: Value.BigIntSpace = undefined;
@@ -2524,7 +2524,7 @@ pub fn shlScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *M
     return mod.intValue_big(ty, result_bigint.toConst());
 }
 
-pub fn shlWithOverflow(
+pub fn shl_with_overflow(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -2557,7 +2557,7 @@ pub fn shlWithOverflow(
     return shlWithOverflowScalar(lhs, rhs, ty, allocator, mod);
 }
 
-pub fn shlWithOverflowScalar(
+pub fn shl_with_overflow_scalar(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -2588,7 +2588,7 @@ pub fn shlWithOverflowScalar(
     };
 }
 
-pub fn shlSat(
+pub fn shl_sat(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -2611,7 +2611,7 @@ pub fn shlSat(
     return shlSatScalar(lhs, rhs, ty, arena, mod);
 }
 
-pub fn shlSatScalar(
+pub fn shl_sat_scalar(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -2638,7 +2638,7 @@ pub fn shlSatScalar(
     return mod.intValue_big(ty, result_bigint.toConst());
 }
 
-pub fn shlTrunc(
+pub fn shl_trunc(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -2661,7 +2661,7 @@ pub fn shlTrunc(
     return shlTruncScalar(lhs, rhs, ty, arena, mod);
 }
 
-pub fn shlTruncScalar(
+pub fn shl_trunc_scalar(
     lhs: Value,
     rhs: Value,
     ty: Type,
@@ -2691,7 +2691,7 @@ pub fn shr(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module)
     return shrScalar(lhs, rhs, ty, allocator, mod);
 }
 
-pub fn shrScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
+pub fn shr_scalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *Module) !Value {
     // TODO is this a performance issue? maybe we should try the operation without
     // resorting to BigInt first.
     var lhs_space: Value.BigIntSpace = undefined;
@@ -2722,7 +2722,7 @@ pub fn shrScalar(lhs: Value, rhs: Value, ty: Type, allocator: Allocator, mod: *M
     return mod.intValue_big(ty, result_bigint.toConst());
 }
 
-pub fn floatNeg(
+pub fn float_neg(
     val: Value,
     float_type: Type,
     arena: Allocator,
@@ -2743,7 +2743,7 @@ pub fn floatNeg(
     return floatNegScalar(val, float_type, mod);
 }
 
-pub fn floatNegScalar(
+pub fn float_neg_scalar(
     val: Value,
     float_type: Type,
     mod: *Module,
@@ -2763,7 +2763,7 @@ pub fn floatNegScalar(
     } })));
 }
 
-pub fn floatAdd(
+pub fn float_add(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -2786,7 +2786,7 @@ pub fn floatAdd(
     return floatAddScalar(lhs, rhs, float_type, mod);
 }
 
-pub fn floatAddScalar(
+pub fn float_add_scalar(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -2807,7 +2807,7 @@ pub fn floatAddScalar(
     } })));
 }
 
-pub fn floatSub(
+pub fn float_sub(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -2830,7 +2830,7 @@ pub fn floatSub(
     return floatSubScalar(lhs, rhs, float_type, mod);
 }
 
-pub fn floatSubScalar(
+pub fn float_sub_scalar(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -2851,7 +2851,7 @@ pub fn floatSubScalar(
     } })));
 }
 
-pub fn floatDiv(
+pub fn float_div(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -2874,7 +2874,7 @@ pub fn floatDiv(
     return floatDivScalar(lhs, rhs, float_type, mod);
 }
 
-pub fn floatDivScalar(
+pub fn float_div_scalar(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -2895,7 +2895,7 @@ pub fn floatDivScalar(
     } })));
 }
 
-pub fn floatDivFloor(
+pub fn float_div_floor(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -2918,7 +2918,7 @@ pub fn floatDivFloor(
     return floatDivFloorScalar(lhs, rhs, float_type, mod);
 }
 
-pub fn floatDivFloorScalar(
+pub fn float_div_floor_scalar(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -2939,7 +2939,7 @@ pub fn floatDivFloorScalar(
     } })));
 }
 
-pub fn floatDivTrunc(
+pub fn float_div_trunc(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -2962,7 +2962,7 @@ pub fn floatDivTrunc(
     return floatDivTruncScalar(lhs, rhs, float_type, mod);
 }
 
-pub fn floatDivTruncScalar(
+pub fn float_div_trunc_scalar(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -2983,7 +2983,7 @@ pub fn floatDivTruncScalar(
     } })));
 }
 
-pub fn floatMul(
+pub fn float_mul(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -3006,7 +3006,7 @@ pub fn floatMul(
     return floatMulScalar(lhs, rhs, float_type, mod);
 }
 
-pub fn floatMulScalar(
+pub fn float_mul_scalar(
     lhs: Value,
     rhs: Value,
     float_type: Type,
@@ -3043,7 +3043,7 @@ pub fn sqrt(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Value
     return sqrtScalar(val, float_type, mod);
 }
 
-pub fn sqrtScalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn sqrt_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @sqrt(val.toFloat(f16, mod)) },
@@ -3075,7 +3075,7 @@ pub fn sin(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Value 
     return sinScalar(val, float_type, mod);
 }
 
-pub fn sinScalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn sin_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @sin(val.toFloat(f16, mod)) },
@@ -3107,7 +3107,7 @@ pub fn cos(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Value 
     return cosScalar(val, float_type, mod);
 }
 
-pub fn cosScalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn cos_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @cos(val.toFloat(f16, mod)) },
@@ -3139,7 +3139,7 @@ pub fn tan(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Value 
     return tanScalar(val, float_type, mod);
 }
 
-pub fn tanScalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn tan_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @tan(val.toFloat(f16, mod)) },
@@ -3171,7 +3171,7 @@ pub fn exp(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Value 
     return expScalar(val, float_type, mod);
 }
 
-pub fn expScalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn exp_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @exp(val.toFloat(f16, mod)) },
@@ -3203,7 +3203,7 @@ pub fn exp2(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Value
     return exp2Scalar(val, float_type, mod);
 }
 
-pub fn exp2Scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn exp2_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @exp2(val.toFloat(f16, mod)) },
@@ -3235,7 +3235,7 @@ pub fn log(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Value 
     return logScalar(val, float_type, mod);
 }
 
-pub fn logScalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn log_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @log(val.toFloat(f16, mod)) },
@@ -3267,7 +3267,7 @@ pub fn log2(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Value
     return log2Scalar(val, float_type, mod);
 }
 
-pub fn log2Scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn log2_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @log2(val.toFloat(f16, mod)) },
@@ -3299,7 +3299,7 @@ pub fn log10(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Valu
     return log10Scalar(val, float_type, mod);
 }
 
-pub fn log10Scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn log10_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @log10(val.toFloat(f16, mod)) },
@@ -3331,7 +3331,7 @@ pub fn abs(val: Value, ty: Type, arena: Allocator, mod: *Module) !Value {
     return absScalar(val, ty, mod, arena);
 }
 
-pub fn absScalar(val: Value, ty: Type, mod: *Module, arena: Allocator) Allocator.Error!Value {
+pub fn abs_scalar(val: Value, ty: Type, mod: *Module, arena: Allocator) Allocator.Error!Value {
     switch (ty.zigTypeTag(mod)) {
         .Int => {
             var buffer: Value.BigIntSpace = undefined;
@@ -3382,7 +3382,7 @@ pub fn floor(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Valu
     return floorScalar(val, float_type, mod);
 }
 
-pub fn floorScalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn floor_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @floor(val.toFloat(f16, mod)) },
@@ -3414,7 +3414,7 @@ pub fn ceil(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Value
     return ceilScalar(val, float_type, mod);
 }
 
-pub fn ceilScalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn ceil_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @ceil(val.toFloat(f16, mod)) },
@@ -3446,7 +3446,7 @@ pub fn round(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Valu
     return roundScalar(val, float_type, mod);
 }
 
-pub fn roundScalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn round_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @round(val.toFloat(f16, mod)) },
@@ -3478,7 +3478,7 @@ pub fn trunc(val: Value, float_type: Type, arena: Allocator, mod: *Module) !Valu
     return truncScalar(val, float_type, mod);
 }
 
-pub fn truncScalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
+pub fn trunc_scalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!Value {
     const target = mod.getTarget();
     const storage: InternPool.Key.Float.Storage = switch (float_type.floatBits(target)) {
         16 => .{ .f16 = @trunc(val.toFloat(f16, mod)) },
@@ -3494,7 +3494,7 @@ pub fn truncScalar(val: Value, float_type: Type, mod: *Module) Allocator.Error!V
     } })));
 }
 
-pub fn mulAdd(
+pub fn mul_add(
     float_type: Type,
     mulend1: Value,
     mulend2: Value,
@@ -3519,7 +3519,7 @@ pub fn mulAdd(
     return mulAddScalar(float_type, mulend1, mulend2, addend, mod);
 }
 
-pub fn mulAddScalar(
+pub fn mul_add_scalar(
     float_type: Type,
     mulend1: Value,
     mulend2: Value,
@@ -3543,7 +3543,7 @@ pub fn mulAddScalar(
 
 /// If the value is represented in-memory as a series of bytes that all
 /// have the same value, return that byte value, otherwise null.
-pub fn hasRepeatedByteRepr(val: Value, ty: Type, mod: *Module) !?u8 {
+pub fn has_repeated_byte_repr(val: Value, ty: Type, mod: *Module) !?u8 {
     const abi_size = std.math.cast(usize, ty.abiSize(mod)) orelse return null;
     assert(abi_size >= 1);
     const byte_buffer = try mod.gpa.alloc(u8, abi_size);
@@ -3567,11 +3567,11 @@ pub fn hasRepeatedByteRepr(val: Value, ty: Type, mod: *Module) !?u8 {
     return first_byte;
 }
 
-pub fn isGenericPoison(val: Value) bool {
+pub fn is_generic_poison(val: Value) bool {
     return val.toIntern() == .generic_poison;
 }
 
-pub fn typeOf(val: Value, zcu: *const Zcu) Type {
+pub fn type_of(val: Value, zcu: *const Zcu) Type {
     return Type.fromInterned(zcu.intern_pool.typeOf(val.toIntern()));
 }
 
@@ -3579,7 +3579,7 @@ pub fn typeOf(val: Value, zcu: *const Zcu) Type {
 /// If `val` is not undef, the bounds are both `val`.
 /// If `val` is undef and has a fixed-width type, the bounds are the bounds of the type.
 /// If `val` is undef and is a `comptime_int`, returns null.
-pub fn intValueBounds(val: Value, mod: *Module) !?[2]Value {
+pub fn int_value_bounds(val: Value, mod: *Module) !?[2]Value {
     if (!val.isUndef(mod)) return .{ val, val };
     const ty = mod.intern_pool.typeOf(val.toIntern());
     if (ty == .comptime_int_type) return null;
@@ -3607,7 +3607,7 @@ pub const generic_poison: Value = .{ .ip_index = .generic_poison };
 pub const generic_poison_type: Value = .{ .ip_index = .generic_poison_type };
 pub const empty_struct: Value = .{ .ip_index = .empty_struct };
 
-pub fn makeBool(x: bool) Value {
+pub fn make_bool(x: bool) Value {
     return if (x) Value.true else Value.false;
 }
 
@@ -3616,7 +3616,7 @@ pub const RuntimeIndex = InternPool.RuntimeIndex;
 /// `parent_ptr` must be a single-pointer to some optional.
 /// Returns a pointer to the payload of the optional.
 /// This takes a `Sema` because it may need to perform type resolution.
-pub fn ptrOptPayload(parent_ptr: Value, sema: *Sema) !Value {
+pub fn ptr_opt_payload(parent_ptr: Value, sema: *Sema) !Value {
     const zcu = sema.mod;
 
     const parent_ptr_ty = parent_ptr.typeOf(zcu);
@@ -3651,7 +3651,7 @@ pub fn ptrOptPayload(parent_ptr: Value, sema: *Sema) !Value {
 /// `parent_ptr` must be a single-pointer to some error union.
 /// Returns a pointer to the payload of the error union.
 /// This takes a `Sema` because it may need to perform type resolution.
-pub fn ptrEuPayload(parent_ptr: Value, sema: *Sema) !Value {
+pub fn ptr_eu_payload(parent_ptr: Value, sema: *Sema) !Value {
     const zcu = sema.mod;
 
     const parent_ptr_ty = parent_ptr.typeOf(zcu);
@@ -3682,7 +3682,7 @@ pub fn ptrEuPayload(parent_ptr: Value, sema: *Sema) !Value {
 /// Returns a pointer to the aggregate field at the specified index.
 /// For slices, uses `slice_ptr_index` and `slice_len_index`.
 /// This takes a `Sema` because it may need to perform type resolution.
-pub fn ptrField(parent_ptr: Value, field_idx: u32, sema: *Sema) !Value {
+pub fn ptr_field(parent_ptr: Value, field_idx: u32, sema: *Sema) !Value {
     const zcu = sema.mod;
 
     const parent_ptr_ty = parent_ptr.typeOf(zcu);
@@ -3834,7 +3834,7 @@ pub fn ptrField(parent_ptr: Value, field_idx: u32, sema: *Sema) !Value {
 /// `orig_parent_ptr` must be either a single-pointer to an array or vector, or a many-pointer or C-pointer or slice.
 /// Returns a pointer to the element at the specified index.
 /// This takes a `Sema` because it may need to perform type resolution.
-pub fn ptrElem(orig_parent_ptr: Value, field_idx: u64, sema: *Sema) !Value {
+pub fn ptr_elem(orig_parent_ptr: Value, field_idx: u64, sema: *Sema) !Value {
     const zcu = sema.mod;
 
     const parent_ptr = switch (orig_parent_ptr.typeOf(zcu).ptrSize(zcu)) {
@@ -3918,7 +3918,7 @@ pub fn ptrElem(orig_parent_ptr: Value, field_idx: u64, sema: *Sema) !Value {
     }
 }
 
-fn canonicalizeBasePtr(base_ptr: Value, want_size: std.builtin.Type.Pointer.Size, want_child: Type, zcu: *Zcu) !Value {
+fn canonicalize_base_ptr(base_ptr: Value, want_size: std.builtin.Type.Pointer.Size, want_child: Type, zcu: *Zcu) !Value {
     const ptr_ty = base_ptr.typeOf(zcu);
     const ptr_info = ptr_ty.ptrInfo(zcu);
 
@@ -3949,7 +3949,7 @@ fn canonicalizeBasePtr(base_ptr: Value, want_size: std.builtin.Type.Pointer.Size
     return zcu.getCoerced(base_ptr, new_ty);
 }
 
-pub fn getOffsetPtr(ptr_val: Value, byte_off: u64, new_ty: Type, zcu: *Zcu) !Value {
+pub fn get_offset_ptr(ptr_val: Value, byte_off: u64, new_ty: Type, zcu: *Zcu) !Value {
     if (ptr_val.isUndef(zcu)) return ptr_val;
     var ptr = zcu.intern_pool.indexToKey(ptr_val.toIntern()).ptr;
     ptr.ty = new_ty.toIntern();
@@ -3997,7 +3997,7 @@ pub const PointerDeriveStep = union(enum) {
         new_ptr_ty: Type,
     },
 
-    pub fn ptrType(step: PointerDeriveStep, zcu: *Zcu) !Type {
+    pub fn ptr_type(step: PointerDeriveStep, zcu: *Zcu) !Type {
         return switch (step) {
             .int => |int| int.ptr_ty,
             .decl_ptr => |decl| try zcu.declPtr(decl).declPtrType(zcu),
@@ -4010,7 +4010,7 @@ pub const PointerDeriveStep = union(enum) {
     }
 };
 
-pub fn pointerDerivation(ptr_val: Value, arena: Allocator, zcu: *Zcu) Allocator.Error!PointerDeriveStep {
+pub fn pointer_derivation(ptr_val: Value, arena: Allocator, zcu: *Zcu) Allocator.Error!PointerDeriveStep {
     return ptr_val.pointerDerivationAdvanced(arena, zcu, null) catch |err| switch (err) {
         error.OutOfMemory => |e| return e,
         error.AnalysisFail,
@@ -4026,7 +4026,7 @@ pub fn pointerDerivation(ptr_val: Value, arena: Allocator, zcu: *Zcu) Allocator.
 /// only field and element pointers with no casts. This can be used by codegen backends
 /// which prefer field/elem accesses when lowering constant pointer values.
 /// It is also used by the Value printing logic for pointers.
-pub fn pointerDerivationAdvanced(ptr_val: Value, arena: Allocator, zcu: *Zcu, opt_sema: ?*Sema) !PointerDeriveStep {
+pub fn pointer_derivation_advanced(ptr_val: Value, arena: Allocator, zcu: *Zcu, opt_sema: ?*Sema) !PointerDeriveStep {
     const ptr = zcu.intern_pool.indexToKey(ptr_val.toIntern()).ptr;
     const base_derive: PointerDeriveStep = switch (ptr.base_addr) {
         .int => return .{ .int = .{

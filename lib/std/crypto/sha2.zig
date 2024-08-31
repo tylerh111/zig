@@ -87,7 +87,7 @@ const iv512 = Iv64{
 };
 
 const Iv32 = [8]u32;
-fn Sha2x32(comptime iv: Iv32, digest_bits: comptime_int) type {
+fn sha2x32(comptime iv: Iv32, digest_bits: comptime_int) type {
     return struct {
         const Self = @This();
         pub const block_length = 64;
@@ -174,7 +174,7 @@ fn Sha2x32(comptime iv: Iv32, digest_bits: comptime_int) type {
             }
         }
 
-        pub fn finalResult(d: *Self) [digest_length]u8 {
+        pub fn final_result(d: *Self) [digest_length]u8 {
             var result: [digest_length]u8 = undefined;
             d.final(&result);
             return result;
@@ -401,7 +401,7 @@ const RoundParam256 = struct {
     i: usize,
 };
 
-fn roundParam256(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize, g: usize, h: usize, i: usize) RoundParam256 {
+fn round_param256(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize, g: usize, h: usize, i: usize) RoundParam256 {
     return RoundParam256{
         .a = a,
         .b = b,
@@ -483,7 +483,7 @@ test "sha256 aligned final" {
 }
 
 const Iv64 = [8]u64;
-fn Sha2x64(comptime iv: Iv64, digest_bits: comptime_int) type {
+fn sha2x64(comptime iv: Iv64, digest_bits: comptime_int) type {
     return struct {
         const Self = @This();
         pub const block_length = 128;
@@ -579,7 +579,7 @@ fn Sha2x64(comptime iv: Iv64, digest_bits: comptime_int) type {
             }
         }
 
-        pub fn finalResult(d: *Self) [digest_length]u8 {
+        pub fn final_result(d: *Self) [digest_length]u8 {
             var result: [digest_length]u8 = undefined;
             d.final(&result);
             return result;
@@ -708,7 +708,7 @@ const RoundParam512 = struct {
     k: u64,
 };
 
-fn roundParam512(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize, g: usize, h: usize, i: usize, k: u64) RoundParam512 {
+fn round_param512(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize, g: usize, h: usize, i: usize, k: u64) RoundParam512 {
     return RoundParam512{
         .a = a,
         .b = b,
@@ -724,7 +724,7 @@ fn roundParam512(a: usize, b: usize, c: usize, d: usize, e: usize, f: usize, g: 
 }
 
 /// Compute the IV for a truncated version of SHA512 per FIPS 180 Section 5.3.6
-fn truncatedSha512Iv(digest_len: comptime_int) Iv64 {
+fn truncated_sha512_iv(digest_len: comptime_int) Iv64 {
     const assert = std.debug.assert;
     comptime assert(digest_len > 1);
     comptime assert(digest_len <= 512);

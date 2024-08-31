@@ -4,7 +4,7 @@ const Type = @import("Type.zig");
 const TargetSet = @import("Builtins/Properties.zig").TargetSet;
 
 /// intmax_t for this target
-pub fn intMaxType(target: std.Target) Type {
+pub fn int_max_type(target: std.Target) Type {
     switch (target.cpu.arch) {
         .aarch64,
         .aarch64_be,
@@ -36,7 +36,7 @@ pub fn intMaxType(target: std.Target) Type {
 }
 
 /// intptr_t for this target
-pub fn intPtrType(target: std.Target) Type {
+pub fn int_ptr_type(target: std.Target) Type {
     switch (target.os.tag) {
         .haiku => return .{ .specifier = .long },
         .nacl => return .{ .specifier = .int },
@@ -95,7 +95,7 @@ pub fn intPtrType(target: std.Target) Type {
 }
 
 /// int16_t for this target
-pub fn int16Type(target: std.Target) Type {
+pub fn int16_type(target: std.Target) Type {
     return switch (target.cpu.arch) {
         .avr => .{ .specifier = .int },
         else => .{ .specifier = .short },
@@ -103,7 +103,7 @@ pub fn int16Type(target: std.Target) Type {
 }
 
 /// sig_atomic_t for this target
-pub fn sigAtomicType(target: std.Target) Type {
+pub fn sig_atomic_type(target: std.Target) Type {
     if (target.cpu.arch.isWasm()) return .{ .specifier = .long };
     return switch (target.cpu.arch) {
         .avr => .{ .specifier = .schar },
@@ -113,7 +113,7 @@ pub fn sigAtomicType(target: std.Target) Type {
 }
 
 /// int64_t for this target
-pub fn int64Type(target: std.Target) Type {
+pub fn int64_type(target: std.Target) Type {
     switch (target.cpu.arch) {
         .loongarch64,
         .ve,
@@ -134,7 +134,7 @@ pub fn int64Type(target: std.Target) Type {
 }
 
 /// This function returns 1 if function alignment is not observable or settable.
-pub fn defaultFunctionAlignment(target: std.Target) u8 {
+pub fn default_function_alignment(target: std.Target) u8 {
     return switch (target.cpu.arch) {
         .arm, .armeb => 4,
         .aarch64, .aarch64_32, .aarch64_be => 4,
@@ -144,7 +144,7 @@ pub fn defaultFunctionAlignment(target: std.Target) u8 {
     };
 }
 
-pub fn isTlsSupported(target: std.Target) bool {
+pub fn is_tls_supported(target: std.Target) bool {
     if (target.isDarwin()) {
         var supported = false;
         switch (target.os.tag) {
@@ -159,7 +159,7 @@ pub fn isTlsSupported(target: std.Target) bool {
     };
 }
 
-pub fn ignoreNonZeroSizedBitfieldTypeAlignment(target: std.Target) bool {
+pub fn ignore_non_zero_sized_bitfield_type_alignment(target: std.Target) bool {
     switch (target.cpu.arch) {
         .avr => return true,
         .arm => {
@@ -175,14 +175,14 @@ pub fn ignoreNonZeroSizedBitfieldTypeAlignment(target: std.Target) bool {
     return false;
 }
 
-pub fn ignoreZeroSizedBitfieldTypeAlignment(target: std.Target) bool {
+pub fn ignore_zero_sized_bitfield_type_alignment(target: std.Target) bool {
     switch (target.cpu.arch) {
         .avr => return true,
         else => return false,
     }
 }
 
-pub fn minZeroWidthBitfieldAlignment(target: std.Target) ?u29 {
+pub fn min_zero_width_bitfield_alignment(target: std.Target) ?u29 {
     switch (target.cpu.arch) {
         .avr => return 8,
         .arm => {
@@ -197,7 +197,7 @@ pub fn minZeroWidthBitfieldAlignment(target: std.Target) ?u29 {
     }
 }
 
-pub fn unnamedFieldAffectsAlignment(target: std.Target) bool {
+pub fn unnamed_field_affects_alignment(target: std.Target) bool {
     switch (target.cpu.arch) {
         .aarch64 => {
             if (target.isDarwin() or target.os.tag == .windows) return false;
@@ -219,7 +219,7 @@ pub fn unnamedFieldAffectsAlignment(target: std.Target) bool {
     return false;
 }
 
-pub fn packAllEnums(target: std.Target) bool {
+pub fn pack_all_enums(target: std.Target) bool {
     return switch (target.cpu.arch) {
         .hexagon => true,
         else => false,
@@ -227,7 +227,7 @@ pub fn packAllEnums(target: std.Target) bool {
 }
 
 /// Default alignment (in bytes) for __attribute__((aligned)) when no alignment is specified
-pub fn defaultAlignment(target: std.Target) u29 {
+pub fn default_alignment(target: std.Target) u29 {
     switch (target.cpu.arch) {
         .avr => return 1,
         .arm => if (target.isAndroid() or target.os.tag == .ios) return 16 else return 8,
@@ -240,7 +240,7 @@ pub fn defaultAlignment(target: std.Target) u29 {
         else => return 16,
     }
 }
-pub fn systemCompiler(target: std.Target) LangOpts.Compiler {
+pub fn system_compiler(target: std.Target) LangOpts.Compiler {
     // Android is linux but not gcc, so these checks go first
     // the rest for documentation as fn returns .clang
     if (target.isDarwin() or
@@ -267,7 +267,7 @@ pub fn systemCompiler(target: std.Target) LangOpts.Compiler {
     return .clang;
 }
 
-pub fn hasFloat128(target: std.Target) bool {
+pub fn has_float128(target: std.Target) bool {
     if (target.cpu.arch.isWasm()) return true;
     if (target.isDarwin()) return false;
     if (target.cpu.arch.isPPC() or target.cpu.arch.isPPC64()) return std.Target.powerpc.featureSetHas(target.cpu.features, .float128);
@@ -282,13 +282,13 @@ pub fn hasFloat128(target: std.Target) bool {
     };
 }
 
-pub fn hasInt128(target: std.Target) bool {
+pub fn has_int128(target: std.Target) bool {
     if (target.cpu.arch == .wasm32) return true;
     if (target.cpu.arch == .x86_64) return true;
     return target.ptrBitWidth() >= 64;
 }
 
-pub fn hasHalfPrecisionFloatABI(target: std.Target) bool {
+pub fn has_half_precision_float_abi(target: std.Target) bool {
     return switch (target.cpu.arch) {
         .thumb, .thumbeb, .arm, .aarch64 => true,
         else => false,
@@ -310,7 +310,7 @@ pub const FPSemantics = enum {
     IBMExtendedDouble,
 
     /// Only intended for generating float.h macros for the preprocessor
-    pub fn forType(ty: std.Target.CType, target: std.Target) FPSemantics {
+    pub fn for_type(ty: std.Target.CType, target: std.Target) FPSemantics {
         std.debug.assert(ty == .float or ty == .double or ty == .longdouble);
         return switch (target.c_type_bit_size(ty)) {
             32 => .IEEESingle,
@@ -324,7 +324,7 @@ pub const FPSemantics = enum {
         };
     }
 
-    pub fn halfPrecisionType(target: std.Target) ?FPSemantics {
+    pub fn half_precision_type(target: std.Target) ?FPSemantics {
         switch (target.cpu.arch) {
             .aarch64,
             .aarch64_32,
@@ -343,7 +343,7 @@ pub const FPSemantics = enum {
         return null;
     }
 
-    pub fn chooseValue(self: FPSemantics, comptime T: type, values: [6]T) T {
+    pub fn choose_value(self: FPSemantics, comptime T: type, values: [6]T) T {
         return switch (self) {
             .IEEEHalf => values[0],
             .IEEESingle => values[1],
@@ -356,23 +356,23 @@ pub const FPSemantics = enum {
     }
 };
 
-pub fn isLP64(target: std.Target) bool {
+pub fn is_lp64(target: std.Target) bool {
     return target.c_type_bit_size(.int) == 32 and target.ptrBitWidth() == 64;
 }
 
-pub fn isKnownWindowsMSVCEnvironment(target: std.Target) bool {
+pub fn is_known_windows_msvcenvironment(target: std.Target) bool {
     return target.os.tag == .windows and target.abi == .msvc;
 }
 
-pub fn isWindowsMSVCEnvironment(target: std.Target) bool {
+pub fn is_windows_msvcenvironment(target: std.Target) bool {
     return target.os.tag == .windows and (target.abi == .msvc or target.abi == .none);
 }
 
-pub fn isCygwinMinGW(target: std.Target) bool {
+pub fn is_cygwin_min_gw(target: std.Target) bool {
     return target.os.tag == .windows and (target.abi == .gnu or target.abi == .cygnus);
 }
 
-pub fn builtinEnabled(target: std.Target, enabled_for: TargetSet) bool {
+pub fn builtin_enabled(target: std.Target, enabled_for: TargetSet) bool {
     var it = enabled_for.iterator();
     while (it.next()) |val| {
         switch (val) {
@@ -392,7 +392,7 @@ pub fn builtinEnabled(target: std.Target, enabled_for: TargetSet) bool {
     return false;
 }
 
-pub fn defaultFpEvalMethod(target: std.Target) LangOpts.FPEvalMethod {
+pub fn default_fp_eval_method(target: std.Target) LangOpts.FPEvalMethod {
     if (target.os.tag == .aix) return .double;
     switch (target.cpu.arch) {
         .x86, .x86_64 => {
@@ -413,7 +413,7 @@ pub fn defaultFpEvalMethod(target: std.Target) LangOpts.FPEvalMethod {
 }
 
 /// Value of the `-m` flag for `ld` for this target
-pub fn ldEmulationOption(target: std.Target, arm_endianness: ?std.builtin.Endian) ?[]const u8 {
+pub fn ld_emulation_option(target: std.Target, arm_endianness: ?std.builtin.Endian) ?[]const u8 {
     return switch (target.cpu.arch) {
         .x86 => if (target.os.tag == .elfiamcu) "elf_iamcu" else "elf_i386",
         .arm,
@@ -448,7 +448,7 @@ pub fn ldEmulationOption(target: std.Target, arm_endianness: ?std.builtin.Endian
     };
 }
 
-pub fn get32BitArchVariant(target: std.Target) ?std.Target {
+pub fn get32_bit_arch_variant(target: std.Target) ?std.Target {
     var copy = target;
     switch (target.cpu.arch) {
         .amdgcn,
@@ -520,7 +520,7 @@ pub fn get32BitArchVariant(target: std.Target) ?std.Target {
     return copy;
 }
 
-pub fn get64BitArchVariant(target: std.Target) ?std.Target {
+pub fn get64_bit_arch_variant(target: std.Target) ?std.Target {
     var copy = target;
     switch (target.cpu.arch) {
         .arc,
@@ -593,7 +593,7 @@ pub fn get64BitArchVariant(target: std.Target) ?std.Target {
 }
 
 /// Adapted from Zig's src/codegen/llvm.zig
-pub fn toLLVMTriple(target: std.Target, buf: []u8) []const u8 {
+pub fn to_llvmtriple(target: std.Target, buf: []u8) []const u8 {
     // 64 bytes is assumed to be large enough to hold any target triple; increase if necessary
     std.debug.assert(buf.len >= 64);
 
@@ -836,6 +836,6 @@ test "target size/align tests" {
 }
 
 /// The canonical integer representation of nullptr_t.
-pub fn nullRepr(_: std.Target) u64 {
+pub fn null_repr(_: std.Target) u64 {
     return 0;
 }

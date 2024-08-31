@@ -16,7 +16,7 @@ pub export fn entry2() void {
 fn simple(comptime n: usize) Type(n) {
     return n;
 }
-fn Type(comptime n: usize) type {
+fn type(comptime n: usize) type {
     if (n <= 1) return usize;
     return Type(n - 1);
 }

@@ -20,22 +20,22 @@ pub const SimpleTextInputEx = extern struct {
     }
 
     /// Reads the next keystroke from the input device.
-    pub fn readKeyStrokeEx(self: *const SimpleTextInputEx, key_data: *Key) Status {
+    pub fn read_key_stroke_ex(self: *const SimpleTextInputEx, key_data: *Key) Status {
         return self._read_key_stroke_ex(self, key_data);
     }
 
     /// Set certain state for the input device.
-    pub fn setState(self: *const SimpleTextInputEx, state: *const u8) Status {
+    pub fn set_state(self: *const SimpleTextInputEx, state: *const u8) Status {
         return self._set_state(self, state);
     }
 
     /// Register a notification function for a particular keystroke for the input device.
-    pub fn registerKeyNotify(self: *const SimpleTextInputEx, key_data: *const Key, notify: *const fn (*const Key) callconv(cc) usize, handle: **anyopaque) Status {
+    pub fn register_key_notify(self: *const SimpleTextInputEx, key_data: *const Key, notify: *const fn (*const Key) callconv(cc) usize, handle: **anyopaque) Status {
         return self._register_key_notify(self, key_data, notify, handle);
     }
 
     /// Remove the notification that was previously registered.
-    pub fn unregisterKeyNotify(self: *const SimpleTextInputEx, handle: *const anyopaque) Status {
+    pub fn unregister_key_notify(self: *const SimpleTextInputEx, handle: *const anyopaque) Status {
         return self._unregister_key_notify(self, handle);
     }
 

@@ -1,4 +1,4 @@
-fn F(val: anytype) type {
+fn f(val: anytype) type {
     _ = val;
     return struct {};
 }

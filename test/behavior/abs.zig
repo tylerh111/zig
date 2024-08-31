@@ -12,7 +12,7 @@ test "@abs integers" {
     try testAbsIntegers();
 }
 
-fn testAbsIntegers() !void {
+fn test_abs_integers() !void {
     {
         var x: i32 = -1000;
         _ = &x;
@@ -57,7 +57,7 @@ test "@abs unsigned integers" {
     try testAbsUnsignedIntegers();
 }
 
-fn testAbsUnsignedIntegers() !void {
+fn test_abs_unsigned_integers() !void {
     {
         var x: u32 = 1000;
         _ = &x;
@@ -107,7 +107,7 @@ test "@abs floats" {
     if (builtin.zig_backend != .stage2_wasm and builtin.zig_backend != .stage2_spirv64) try testAbsFloats(f128);
 }
 
-fn testAbsFloats(comptime T: type) !void {
+fn test_abs_floats(comptime T: type) !void {
     {
         var x: T = -2.62;
         _ = &x;
@@ -169,7 +169,7 @@ test "@abs int vectors" {
     try testAbsIntVectors(17);
 }
 
-fn testAbsIntVectors(comptime len: comptime_int) !void {
+fn test_abs_int_vectors(comptime len: comptime_int) !void {
     const I32 = @Vector(len, i32);
     const U32 = @Vector(len, u32);
     const I64 = @Vector(len, i64);
@@ -236,7 +236,7 @@ test "@abs unsigned int vectors" {
     try testAbsUnsignedIntVectors(17);
 }
 
-fn testAbsUnsignedIntVectors(comptime len: comptime_int) !void {
+fn test_abs_unsigned_int_vectors(comptime len: comptime_int) !void {
     const U32 = @Vector(len, u32);
     const U64 = @Vector(len, u64);
     {
@@ -362,7 +362,7 @@ test "@abs float vectors" {
     try testAbsFloatVectors(f128, 17);
 }
 
-fn testAbsFloatVectors(comptime T: type, comptime len: comptime_int) !void {
+fn test_abs_float_vectors(comptime T: type, comptime len: comptime_int) !void {
     const V = @Vector(len, T);
     {
         var x: V = @splat(-7.5);

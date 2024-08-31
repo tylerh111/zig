@@ -9,7 +9,7 @@ const tests = @import("tests.zig");
 // *                                                      *
 // ********************************************************
 
-pub fn addCases(cases: *tests.TranslateCContext) void {
+pub fn add_cases(cases: *tests.TranslateCContext) void {
     const default_enum_type = if (builtin.abi == .msvc) "c_int" else "c_uint";
 
     cases.add("do while with breaks",
@@ -184,7 +184,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\#define SYS_BASE_CACHED 0
         \\#define MEM_PHYSICAL_TO_K0(x) (void*)((uint32_t)(x) + SYS_BASE_CACHED)
     , &[_][]const u8{
-        \\pub inline fn MEM_PHYSICAL_TO_K0(x: anytype) ?*anyopaque {
+        \\pub inline fn mem_physical_to_k0(x: anytype) ?*anyopaque {
         \\    _ = &x;
         \\    return @import("std").zig.c_translation.cast(?*anyopaque, @import("std").zig.c_translation.cast(u32, x) + SYS_BASE_CACHED);
         \\}
@@ -223,13 +223,13 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\                             | (*((unsigned char *)(p) + 1) << 8)  \
         \\                             | (*((unsigned char *)(p) + 2) << 16))
     , &[_][]const u8{
-        \\pub inline fn FOO() @TypeOf((foo + @as(c_int, 2)).*) {
+        \\pub inline fn foo() @TypeOf((foo + @as(c_int, 2)).*) {
         \\    return (foo + @as(c_int, 2)).*;
         \\}
         ,
         \\pub const VALUE = ((((@as(c_int, 1) + (@as(c_int, 2) * @as(c_int, 3))) + (@as(c_int, 4) * @as(c_int, 5))) + @as(c_int, 6)) << @as(c_int, 7)) | @intFromBool(@as(c_int, 8) == @as(c_int, 9));
         ,
-        \\pub inline fn _AL_READ3BYTES(p: anytype) @TypeOf((@import("std").zig.c_translation.cast([*c]u8, p).* | ((@import("std").zig.c_translation.cast([*c]u8, p) + @as(c_int, 1)).* << @as(c_int, 8))) | ((@import("std").zig.c_translation.cast([*c]u8, p) + @as(c_int, 2)).* << @as(c_int, 16))) {
+        \\pub inline fn _al_read3_bytes(p: anytype) @TypeOf((@import("std").zig.c_translation.cast([*c]u8, p).* | ((@import("std").zig.c_translation.cast([*c]u8, p) + @as(c_int, 1)).* << @as(c_int, 8))) | ((@import("std").zig.c_translation.cast([*c]u8, p) + @as(c_int, 2)).* << @as(c_int, 16))) {
         \\    _ = &p;
         \\    return (@import("std").zig.c_translation.cast([*c]u8, p).* | ((@import("std").zig.c_translation.cast([*c]u8, p) + @as(c_int, 1)).* << @as(c_int, 8))) | ((@import("std").zig.c_translation.cast([*c]u8, p) + @as(c_int, 2)).* << @as(c_int, 16));
         \\}
@@ -310,7 +310,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\};
         \\pub const Color = struct_Color;
         ,
-        \\pub inline fn CLITERAL(@"type": anytype) @TypeOf(@"type") {
+        \\pub inline fn cliteral(@"type": anytype) @TypeOf(@"type") {
         \\    _ = &@"type";
         \\    return @"type";
         \\}
@@ -328,7 +328,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\    x: f32 = @import("std").mem.zeroes(f32),
         \\};
         ,
-        \\pub inline fn A(_x: anytype) MyCStruct {
+        \\pub inline fn a(_x: anytype) MyCStruct {
         \\    _ = &_x;
         \\    return @import("std").mem.zeroInit(MyCStruct, .{
         \\        .x = _x,
@@ -370,7 +370,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\#define FOO(x) ((x >= 0) + (x >= 0))
         \\#define BAR 1 && 2 > 4
     , &[_][]const u8{
-        \\pub inline fn FOO(x: anytype) @TypeOf(@intFromBool(x >= @as(c_int, 0)) + @intFromBool(x >= @as(c_int, 0))) {
+        \\pub inline fn foo(x: anytype) @TypeOf(@intFromBool(x >= @as(c_int, 0)) + @intFromBool(x >= @as(c_int, 0))) {
         \\    _ = &x;
         \\    return @intFromBool(x >= @as(c_int, 0)) + @intFromBool(x >= @as(c_int, 0));
         \\}
@@ -454,7 +454,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\#define FOO -\
         \\BAR
     , &[_][]const u8{
-        \\pub inline fn FOO() @TypeOf(-BAR) {
+        \\pub inline fn foo() @TypeOf(-BAR) {
         \\    return -BAR;
         \\}
     });
@@ -1766,7 +1766,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         ,
         \\pub const glClearPFN = PFNGLCLEARPROC;
         ,
-        \\pub inline fn glClearUnion(arg_2: GLbitfield) void {
+        \\pub inline fn gl_clear_union(arg_2: GLbitfield) void {
         \\    return glProcs.gl.Clear.?(arg_2);
         \\}
         ,
@@ -1789,18 +1789,18 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
     , &[_][]const u8{
         \\pub extern var c: c_int;
         ,
-        \\pub inline fn BASIC(c_1: anytype) @TypeOf(c_1 * @as(c_int, 2)) {
+        \\pub inline fn basic(c_1: anytype) @TypeOf(c_1 * @as(c_int, 2)) {
         \\    _ = &c_1;
         \\    return c_1 * @as(c_int, 2);
         \\}
         ,
-        \\pub inline fn FOO(L: anytype, b: anytype) @TypeOf(L + b) {
+        \\pub inline fn foo(L: anytype, b: anytype) @TypeOf(L + b) {
         \\    _ = &L;
         \\    _ = &b;
         \\    return L + b;
         \\}
         ,
-        \\pub inline fn BAR() @TypeOf(c * c) {
+        \\pub inline fn bar() @TypeOf(c * c) {
         \\    return c * c;
         \\}
     });
@@ -2457,11 +2457,11 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\    _ = c.*.b;
         \\}
         ,
-        \\pub inline fn ARROW() @TypeOf(a.*.b) {
+        \\pub inline fn arrow() @TypeOf(a.*.b) {
         \\    return a.*.b;
         \\}
         ,
-        \\pub inline fn DOT() @TypeOf(a.b) {
+        \\pub inline fn dot() @TypeOf(a.b) {
         \\    return a.b;
         \\}
     });
@@ -2480,7 +2480,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\    return array[@as(c_uint, @intCast(index))];
         \\}
         ,
-        \\pub inline fn ACCESS() @TypeOf(array[@as(usize, @intCast(@as(c_int, 2)))]) {
+        \\pub inline fn access() @TypeOf(array[@as(usize, @intCast(@as(c_int, 2)))]) {
         \\    return array[@as(usize, @intCast(@as(c_int, 2)))];
         \\}
     });
@@ -2534,7 +2534,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\#define CALL(arg) bar(arg)
         \\int bar(int x) { return x; }
     , &[_][]const u8{
-        \\pub inline fn CALL(arg: anytype) @TypeOf(bar(arg)) {
+        \\pub inline fn call(arg: anytype) @TypeOf(bar(arg)) {
         \\    _ = &arg;
         \\    return bar(arg);
         \\}
@@ -2544,7 +2544,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\#define CALL(arg) bar()
         \\int bar(void) { return 0; }
     , &[_][]const u8{
-        \\pub inline fn CALL(arg: anytype) @TypeOf(bar()) {
+        \\pub inline fn call(arg: anytype) @TypeOf(bar()) {
         \\    _ = &arg;
         \\    return bar();
         \\}
@@ -3116,7 +3116,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\#define BAZ (uint32_t)(2)
         \\#define a 2
     , &[_][]const u8{
-        \\pub inline fn FOO(bar: anytype) @TypeOf(baz(@import("std").zig.c_translation.cast(?*anyopaque, baz))) {
+        \\pub inline fn foo(bar: anytype) @TypeOf(baz(@import("std").zig.c_translation.cast(?*anyopaque, baz))) {
         \\    _ = &bar;
         \\    return baz(@import("std").zig.c_translation.cast(?*anyopaque, baz));
         \\}
@@ -3140,7 +3140,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\ int a, b, c;
         \\#define FOO a ? b : c
     , &[_][]const u8{
-        \\pub inline fn FOO() @TypeOf(if (a) b else c) {
+        \\pub inline fn foo() @TypeOf(if (a) b else c) {
         \\    return if (a) b else c;
         \\}
     });
@@ -3162,13 +3162,13 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\#define MIN(a, b) ((b) < (a) ? (b) : (a))
         \\#define MAX(a, b) ((b) > (a) ? (b) : (a))
     , &[_][]const u8{
-        \\pub inline fn MIN(a: anytype, b: anytype) @TypeOf(if (b < a) b else a) {
+        \\pub inline fn min(a: anytype, b: anytype) @TypeOf(if (b < a) b else a) {
         \\    _ = &a;
         \\    _ = &b;
         \\    return if (b < a) b else a;
         \\}
         ,
-        \\pub inline fn MAX(a: anytype, b: anytype) @TypeOf(if (b > a) b else a) {
+        \\pub inline fn max(a: anytype, b: anytype) @TypeOf(if (b > a) b else a) {
         \\    _ = &a;
         \\    _ = &b;
         \\    return if (b > a) b else a;
@@ -3371,7 +3371,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\#define DefaultScreen(dpy) (((_XPrivDisplay)(dpy))->default_screen)
         \\
     , &[_][]const u8{
-        \\pub inline fn DefaultScreen(dpy: anytype) @TypeOf(@import("std").zig.c_translation.cast(_XPrivDisplay, dpy).*.default_screen) {
+        \\pub inline fn default_screen(dpy: anytype) @TypeOf(@import("std").zig.c_translation.cast(_XPrivDisplay, dpy).*.default_screen) {
         \\    _ = &dpy;
         \\    return @import("std").zig.c_translation.cast(_XPrivDisplay, dpy).*.default_screen;
         \\}
@@ -3625,7 +3625,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\    return x;
         \\}
         ,
-        \\pub inline fn FOO(A: anytype, B: anytype) @TypeOf(A) {
+        \\pub inline fn foo(A: anytype, B: anytype) @TypeOf(A) {
         \\    _ = &A;
         \\    _ = &B;
         \\    return A;
@@ -3636,7 +3636,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         \\#define FOO _
         \\int _ = 42;
     , &[_][]const u8{
-        \\pub inline fn FOO() @TypeOf(@"_") {
+        \\pub inline fn foo() @TypeOf(@"_") {
         \\    return @"_";
         \\}
         ,

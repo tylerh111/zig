@@ -1,7 +1,7 @@
 const std = @import("std");
 const Cases = @import("src/Cases.zig");
 
-pub fn addCases(ctx: *Cases, b: *std.Build) !void {
+pub fn add_cases(ctx: *Cases, b: *std.Build) !void {
     const target = b.resolveTargetQuery(.{
         .cpu_arch = .nvptx64,
         .os_tag = .cuda,
@@ -28,7 +28,7 @@ pub fn addCases(ctx: *Cases, b: *std.Build) !void {
         var case = addPtx(ctx, target, "read special registers");
 
         case.addCompile(
-            \\fn threadIdX() u32 {
+            \\fn thread_id_x() u32 {
             \\    return asm ("mov.u32 \t%[r], %tid.x;"
             \\       : [r] "=r" (-> u32),
             \\    );
@@ -57,14 +57,14 @@ pub fn addCases(ctx: *Cases, b: *std.Build) !void {
     {
         var case = addPtx(ctx, target, "reduce in shared mem");
         case.addCompile(
-            \\fn threadIdX() u32 {
+            \\fn thread_id_x() u32 {
             \\    return asm ("mov.u32 \t%[r], %tid.x;"
             \\       : [r] "=r" (-> u32),
             \\    );
             \\}
             \\
             \\ var _sdata: [1024]f32 addrspace(.shared) = undefined;
-            \\ pub export fn reduceSum(d_x: []const f32, out: *f32) callconv(.Kernel) void {
+            \\ pub export fn reduce_sum(d_x: []const f32, out: *f32) callconv(.Kernel) void {
             \\     var sdata: *addrspace(.generic) [1024]f32 = @addrSpaceCast(&_sdata);
             \\     const tid: u32 = threadIdX();
             \\     var sum = d_x[tid];
@@ -87,7 +87,7 @@ pub fn addCases(ctx: *Cases, b: *std.Build) !void {
     }
 }
 
-fn addPtx(ctx: *Cases, target: std.Build.ResolvedTarget, name: []const u8) *Cases.Case {
+fn add_ptx(ctx: *Cases, target: std.Build.ResolvedTarget, name: []const u8) *Cases.Case {
     ctx.cases.append(.{
         .name = name,
         .target = target,

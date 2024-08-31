@@ -1,4 +1,4 @@
-fn Foo(comptime T: type) type {
+fn foo(comptime T: type) type {
     @compileLog(@typeName(T));
     return T;
 }

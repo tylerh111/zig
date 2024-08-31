@@ -5,7 +5,7 @@ const assert = std.debug.assert;
 const math = std.math;
 
 /// Creates a stream which allows for writing bit fields to another stream
-pub fn BitWriter(comptime endian: std.builtin.Endian, comptime WriterType: type) type {
+pub fn bit_writer(comptime endian: std.builtin.Endian, comptime WriterType: type) type {
     return struct {
         forward_writer: WriterType,
         bit_buffer: u8,
@@ -29,7 +29,7 @@ pub fn BitWriter(comptime endian: std.builtin.Endian, comptime WriterType: type)
         /// Write the specified number of bits to the stream from the least significant bits of
         ///  the specified unsigned int value. Bits will only be written to the stream when there
         ///  are enough to fill a byte.
-        pub fn writeBits(self: *Self, value: anytype, bits: usize) Error!void {
+        pub fn write_bits(self: *Self, value: anytype, bits: usize) Error!void {
             if (bits == 0) return;
 
             const U = @TypeOf(value);
@@ -110,7 +110,7 @@ pub fn BitWriter(comptime endian: std.builtin.Endian, comptime WriterType: type)
         }
 
         /// Flush any remaining bits to the stream.
-        pub fn flushBits(self: *Self) Error!void {
+        pub fn flush_bits(self: *Self) Error!void {
             if (self.bit_count == 0) return;
             try self.forward_writer.writeByte(self.bit_buffer);
             self.bit_buffer = 0;
@@ -134,7 +134,7 @@ pub fn BitWriter(comptime endian: std.builtin.Endian, comptime WriterType: type)
     };
 }
 
-pub fn bitWriter(
+pub fn bit_writer(
     comptime endian: std.builtin.Endian,
     underlying_stream: anytype,
 ) BitWriter(endian, @TypeOf(underlying_stream)) {

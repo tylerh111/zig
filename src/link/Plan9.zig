@@ -138,7 +138,7 @@ const LazySymbolMetadata = struct {
     text_state: State = .unused,
     rodata_state: State = .unused,
 
-    fn numberOfAtoms(self: LazySymbolMetadata) u32 {
+    fn number_of_atoms(self: LazySymbolMetadata) u32 {
         var n: u32 = 0;
         if (self.text_state != .unused) n += 1;
         if (self.rodata_state != .unused) n += 1;
@@ -168,10 +168,10 @@ pub const Atom = struct {
             code_len: usize,
             decl_index: InternPool.DeclIndex,
         },
-        fn fromSlice(slice: []u8) CodePtr {
+        fn from_slice(slice: []u8) CodePtr {
             return .{ .code_ptr = slice.ptr, .other = .{ .code_len = slice.len } };
         }
-        fn getCode(self: CodePtr, plan9: *const Plan9) []u8 {
+        fn get_code(self: CodePtr, plan9: *const Plan9) []u8 {
             const mod = plan9.base.comp.module.?;
             return if (self.code_ptr) |p| p[0..self.other.code_len] else blk: {
                 const decl_index = self.other.decl_index;
@@ -185,25 +185,25 @@ pub const Atom = struct {
                 }
             };
         }
-        fn getOwnedCode(self: CodePtr) ?[]u8 {
+        fn get_owned_code(self: CodePtr) ?[]u8 {
             return if (self.code_ptr) |p| p[0..self.other.code_len] else null;
         }
     };
 
     pub const Index = u32;
 
-    pub fn getOrCreateOffsetTableEntry(self: *Atom, plan9: *Plan9) usize {
+    pub fn get_or_create_offset_table_entry(self: *Atom, plan9: *Plan9) usize {
         if (self.got_index == null) self.got_index = plan9.allocateGotIndex();
         return self.got_index.?;
     }
 
-    pub fn getOrCreateSymbolTableEntry(self: *Atom, plan9: *Plan9) !usize {
+    pub fn get_or_create_symbol_table_entry(self: *Atom, plan9: *Plan9) !usize {
         if (self.sym_index == null) self.sym_index = try plan9.allocateSymbolIndex();
         return self.sym_index.?;
     }
 
     // asserts that self.got_index != null
-    pub fn getOffsetTableAddress(self: Atom, plan9: *Plan9) u64 {
+    pub fn get_offset_table_address(self: Atom, plan9: *Plan9) u64 {
         const target = plan9.base.comp.root_mod.resolved_target.result;
         const ptr_bytes = @divExact(target.ptrBitWidth(), 8);
         const got_addr = plan9.bases.data;
@@ -241,7 +241,7 @@ const DeclMetadata = struct {
     index: Atom.Index,
     exports: std.ArrayListUnmanaged(usize) = .{},
 
-    fn getExport(m: DeclMetadata, p9: *const Plan9, name: []const u8) ?usize {
+    fn get_export(m: DeclMetadata, p9: *const Plan9, name: []const u8) ?usize {
         for (m.exports.items) |exp| {
             const sym = p9.syms.items[exp];
             if (mem.eql(u8, name, sym.name)) return exp;
@@ -259,7 +259,7 @@ const FnDeclOutput = struct {
     end_line: u32,
 };
 
-fn getAddr(self: Plan9, addr: u64, t: aout.Sym.Type) u64 {
+fn get_addr(self: Plan9, addr: u64, t: aout.Sym.Type) u64 {
     return addr + switch (t) {
         .T, .t, .l, .L => self.bases.text,
         .D, .d, .B, .b => self.bases.data,
@@ -267,11 +267,11 @@ fn getAddr(self: Plan9, addr: u64, t: aout.Sym.Type) u64 {
     };
 }
 
-fn getSymAddr(self: Plan9, s: aout.Sym) u64 {
+fn get_sym_addr(self: Plan9, s: aout.Sym) u64 {
     return self.getAddr(s.value, s.type);
 }
 
-pub fn defaultBaseAddrs(arch: std.Target.Cpu.Arch) Bases {
+pub fn default_base_addrs(arch: std.Target.Cpu.Arch) Bases {
     return switch (arch) {
         .x86_64 => .{
             // header size => 40 => 0x28
@@ -292,7 +292,7 @@ pub fn defaultBaseAddrs(arch: std.Target.Cpu.Arch) Bases {
     };
 }
 
-pub fn createEmpty(
+pub fn create_empty(
     arena: Allocator,
     comp: *Compilation,
     emit: Compilation.Emit,
@@ -334,7 +334,7 @@ pub fn createEmpty(
     return self;
 }
 
-fn putFn(self: *Plan9, decl_index: InternPool.DeclIndex, out: FnDeclOutput) !void {
+fn put_fn(self: *Plan9, decl_index: InternPool.DeclIndex, out: FnDeclOutput) !void {
     const gpa = self.base.comp.gpa;
     const mod = self.base.comp.module.?;
     const decl = mod.declPtr(decl_index);
@@ -390,7 +390,7 @@ fn putFn(self: *Plan9, decl_index: InternPool.DeclIndex, out: FnDeclOutput) !voi
     }
 }
 
-fn addPathComponents(self: *Plan9, path: []const u8, a: *std.ArrayList(u8)) !void {
+fn add_path_components(self: *Plan9, path: []const u8, a: *std.ArrayList(u8)) !void {
     const gpa = self.base.comp.gpa;
     const sep = std.fs.path.sep;
     var it = std.mem.tokenizeScalar(u8, path, sep);
@@ -405,7 +405,7 @@ fn addPathComponents(self: *Plan9, path: []const u8, a: *std.ArrayList(u8)) !voi
     }
 }
 
-pub fn updateFunc(self: *Plan9, mod: *Module, func_index: InternPool.Index, air: Air, liveness: Liveness) !void {
+pub fn update_func(self: *Plan9, mod: *Module, func_index: InternPool.Index, air: Air, liveness: Liveness) !void {
     if (build_options.skip_non_native and builtin.object_format != .plan9) {
         @panic("Attempted to compile for object format that was disabled by build configuration");
     }
@@ -462,7 +462,7 @@ pub fn updateFunc(self: *Plan9, mod: *Module, func_index: InternPool.Index, air:
     return self.updateFinish(decl_index);
 }
 
-pub fn lowerUnnamedConst(self: *Plan9, val: Value, decl_index: InternPool.DeclIndex) !u32 {
+pub fn lower_unnamed_const(self: *Plan9, val: Value, decl_index: InternPool.DeclIndex) !u32 {
     const gpa = self.base.comp.gpa;
     _ = try self.seeDecl(decl_index);
     var code_buffer = std.ArrayList(u8).init(gpa);
@@ -524,7 +524,7 @@ pub fn lowerUnnamedConst(self: *Plan9, val: Value, decl_index: InternPool.DeclIn
     return new_atom_idx;
 }
 
-pub fn updateDecl(self: *Plan9, mod: *Module, decl_index: InternPool.DeclIndex) !void {
+pub fn update_decl(self: *Plan9, mod: *Module, decl_index: InternPool.DeclIndex) !void {
     const gpa = self.base.comp.gpa;
     const decl = mod.declPtr(decl_index);
 
@@ -558,7 +558,7 @@ pub fn updateDecl(self: *Plan9, mod: *Module, decl_index: InternPool.DeclIndex) 
     return self.updateFinish(decl_index);
 }
 /// called at the end of update{Decl,Func}
-fn updateFinish(self: *Plan9, decl_index: InternPool.DeclIndex) !void {
+fn update_finish(self: *Plan9, decl_index: InternPool.DeclIndex) !void {
     const gpa = self.base.comp.gpa;
     const mod = self.base.comp.module.?;
     const decl = mod.declPtr(decl_index);
@@ -585,7 +585,7 @@ fn updateFinish(self: *Plan9, decl_index: InternPool.DeclIndex) !void {
     }
 }
 
-fn allocateSymbolIndex(self: *Plan9) !usize {
+fn allocate_symbol_index(self: *Plan9) !usize {
     const gpa = self.base.comp.gpa;
     if (self.syms_index_free_list.popOrNull()) |i| {
         return i;
@@ -595,7 +595,7 @@ fn allocateSymbolIndex(self: *Plan9) !usize {
     }
 }
 
-fn allocateGotIndex(self: *Plan9) usize {
+fn allocate_got_index(self: *Plan9) usize {
     if (self.got_index_free_list.popOrNull()) |i| {
         return i;
     } else {
@@ -618,7 +618,7 @@ pub fn flush(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node) link.
     return self.flushModule(arena, prog_node);
 }
 
-pub fn changeLine(l: *std.ArrayList(u8), delta_line: i32) !void {
+pub fn change_line(l: *std.ArrayList(u8), delta_line: i32) !void {
     if (delta_line > 0 and delta_line < 65) {
         const toappend = @as(u8, @intCast(delta_line));
         try l.append(toappend);
@@ -631,7 +631,7 @@ pub fn changeLine(l: *std.ArrayList(u8), delta_line: i32) !void {
     }
 }
 
-fn externCount(self: *Plan9) usize {
+fn extern_count(self: *Plan9) usize {
     var extern_atom_count: usize = 0;
     for (self.etext_edata_end_atom_indices) |idx| {
         if (idx != null) extern_atom_count += 1;
@@ -639,7 +639,7 @@ fn externCount(self: *Plan9) usize {
     return extern_atom_count;
 }
 // counts decls, unnamed consts, and lazy syms
-fn atomCount(self: *Plan9) usize {
+fn atom_count(self: *Plan9) usize {
     var fn_decl_count: usize = 0;
     var itf_files = self.fn_decl_table.iterator();
     while (itf_files.next()) |ent| {
@@ -663,7 +663,7 @@ fn atomCount(self: *Plan9) usize {
     return data_decl_count + fn_decl_count + unnamed_const_count + lazy_atom_count + extern_atom_count + anon_atom_count;
 }
 
-pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
+pub fn flush_module(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
     if (build_options.skip_non_native and builtin.object_format != .plan9) {
         @panic("Attempted to compile for object format that was disabled by build configuration");
     }
@@ -1001,7 +1001,7 @@ pub fn flushModule(self: *Plan9, arena: Allocator, prog_node: std.Progress.Node)
     // write it all!
     try file.pwritevAll(iovecs, 0);
 }
-fn addDeclExports(
+fn add_decl_exports(
     self: *Plan9,
     mod: *Module,
     decl_index: InternPool.DeclIndex,
@@ -1042,7 +1042,7 @@ fn addDeclExports(
     }
 }
 
-pub fn freeDecl(self: *Plan9, decl_index: InternPool.DeclIndex) void {
+pub fn free_decl(self: *Plan9, decl_index: InternPool.DeclIndex) void {
     const gpa = self.base.comp.gpa;
     // TODO audit the lifetimes of decls table entries. It's possible to get
     // freeDecl without any updateDecl in between.
@@ -1089,7 +1089,7 @@ pub fn freeDecl(self: *Plan9, decl_index: InternPool.DeclIndex) void {
         assert(self.relocs.remove(atom_index));
     }
 }
-fn freeUnnamedConsts(self: *Plan9, decl_index: InternPool.DeclIndex) void {
+fn free_unnamed_consts(self: *Plan9, decl_index: InternPool.DeclIndex) void {
     const gpa = self.base.comp.gpa;
     const unnamed_consts = self.unnamed_const_atoms.getPtr(decl_index) orelse return;
     for (unnamed_consts.items) |atom_idx| {
@@ -1101,7 +1101,7 @@ fn freeUnnamedConsts(self: *Plan9, decl_index: InternPool.DeclIndex) void {
     unnamed_consts.clearAndFree(gpa);
 }
 
-fn createAtom(self: *Plan9) !Atom.Index {
+fn create_atom(self: *Plan9) !Atom.Index {
     const gpa = self.base.comp.gpa;
     const index = @as(Atom.Index, @intCast(self.atoms.items.len));
     const atom = try self.atoms.addOne(gpa);
@@ -1115,7 +1115,7 @@ fn createAtom(self: *Plan9) !Atom.Index {
     return index;
 }
 
-pub fn seeDecl(self: *Plan9, decl_index: InternPool.DeclIndex) !Atom.Index {
+pub fn see_decl(self: *Plan9, decl_index: InternPool.DeclIndex) !Atom.Index {
     const gpa = self.base.comp.gpa;
     const gop = try self.decls.getOrPut(gpa, decl_index);
     if (!gop.found_existing) {
@@ -1148,7 +1148,7 @@ pub fn seeDecl(self: *Plan9, decl_index: InternPool.DeclIndex) !Atom.Index {
     return atom_idx;
 }
 
-pub fn updateExports(
+pub fn update_exports(
     self: *Plan9,
     module: *Module,
     exported: Module.Exported,
@@ -1163,7 +1163,7 @@ pub fn updateExports(
     _ = exports;
 }
 
-pub fn getOrCreateAtomForLazySymbol(self: *Plan9, sym: File.LazySymbol) !Atom.Index {
+pub fn get_or_create_atom_for_lazy_symbol(self: *Plan9, sym: File.LazySymbol) !Atom.Index {
     const gpa = self.base.comp.gpa;
     const gop = try self.lazy_syms.getOrPut(gpa, sym.getDecl(self.base.comp.module.?));
     errdefer _ = if (!gop.found_existing) self.lazy_syms.pop();
@@ -1190,7 +1190,7 @@ pub fn getOrCreateAtomForLazySymbol(self: *Plan9, sym: File.LazySymbol) !Atom.In
     return atom;
 }
 
-fn updateLazySymbolAtom(self: *Plan9, sym: File.LazySymbol, atom_index: Atom.Index) !void {
+fn update_lazy_symbol_atom(self: *Plan9, sym: File.LazySymbol, atom_index: Atom.Index) !void {
     const gpa = self.base.comp.gpa;
     const mod = self.base.comp.module.?;
 
@@ -1355,7 +1355,7 @@ pub fn open(
     return self;
 }
 
-pub fn writeSym(self: *Plan9, w: anytype, sym: aout.Sym) !void {
+pub fn write_sym(self: *Plan9, w: anytype, sym: aout.Sym) !void {
     // log.debug("write sym{{name: {s}, value: {x}}}", .{ sym.name, sym.value });
     if (sym.type == .bad) return; // we don't want to write free'd symbols
     if (!self.sixtyfour_bit) {
@@ -1368,7 +1368,7 @@ pub fn writeSym(self: *Plan9, w: anytype, sym: aout.Sym) !void {
     try w.writeByte(0);
 }
 
-pub fn writeSyms(self: *Plan9, buf: *std.ArrayList(u8)) !void {
+pub fn write_syms(self: *Plan9, buf: *std.ArrayList(u8)) !void {
     const mod = self.base.comp.module.?;
     const ip = &mod.intern_pool;
     const writer = buf.writer();
@@ -1474,13 +1474,13 @@ pub fn writeSyms(self: *Plan9, buf: *std.ArrayList(u8)) !void {
 }
 
 /// Must be called only after a successful call to `updateDecl`.
-pub fn updateDeclLineNumber(self: *Plan9, mod: *Module, decl_index: InternPool.DeclIndex) !void {
+pub fn update_decl_line_number(self: *Plan9, mod: *Module, decl_index: InternPool.DeclIndex) !void {
     _ = self;
     _ = mod;
     _ = decl_index;
 }
 
-pub fn getDeclVAddr(
+pub fn get_decl_vaddr(
     self: *Plan9,
     decl_index: InternPool.DeclIndex,
     reloc_info: link.File.RelocInfo,
@@ -1526,7 +1526,7 @@ pub fn getDeclVAddr(
     return undefined;
 }
 
-pub fn lowerAnonDecl(
+pub fn lower_anon_decl(
     self: *Plan9,
     decl_val: InternPool.Index,
     explicit_alignment: InternPool.Alignment,
@@ -1576,7 +1576,7 @@ pub fn lowerAnonDecl(
     return .ok;
 }
 
-pub fn getAnonDeclVAddr(self: *Plan9, decl_val: InternPool.Index, reloc_info: link.File.RelocInfo) !u64 {
+pub fn get_anon_decl_vaddr(self: *Plan9, decl_val: InternPool.Index, reloc_info: link.File.RelocInfo) !u64 {
     const atom_index = self.anon_decls.get(decl_val).?;
     try self.addReloc(reloc_info.parent_atom_index, .{
         .target = atom_index,
@@ -1586,7 +1586,7 @@ pub fn getAnonDeclVAddr(self: *Plan9, decl_val: InternPool.Index, reloc_info: li
     return undefined;
 }
 
-pub fn addReloc(self: *Plan9, parent_index: Atom.Index, reloc: Reloc) !void {
+pub fn add_reloc(self: *Plan9, parent_index: Atom.Index, reloc: Reloc) !void {
     const gpa = self.base.comp.gpa;
     const gop = try self.relocs.getOrPut(gpa, parent_index);
     if (!gop.found_existing) {
@@ -1595,10 +1595,10 @@ pub fn addReloc(self: *Plan9, parent_index: Atom.Index, reloc: Reloc) !void {
     try gop.value_ptr.append(gpa, reloc);
 }
 
-pub fn getAtom(self: *const Plan9, index: Atom.Index) Atom {
+pub fn get_atom(self: *const Plan9, index: Atom.Index) Atom {
     return self.atoms.items[index];
 }
 
-fn getAtomPtr(self: *Plan9, index: Atom.Index) *Atom {
+fn get_atom_ptr(self: *Plan9, index: Atom.Index) *Atom {
     return &self.atoms.items[index];
 }

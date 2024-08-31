@@ -4,7 +4,7 @@ const mem = std.mem;
 const assert = std.debug.assert;
 
 /// Used to detect if the data written to a stream differs from a source buffer
-pub fn ChangeDetectionStream(comptime WriterType: type) type {
+pub fn change_detection_stream(comptime WriterType: type) type {
     return struct {
         const Self = @This();
         pub const Error = WriterType.Error;
@@ -36,13 +36,13 @@ pub fn ChangeDetectionStream(comptime WriterType: type) type {
             return self.underlying_writer.write(bytes);
         }
 
-        pub fn changeDetected(self: *Self) bool {
+        pub fn change_detected(self: *Self) bool {
             return self.anything_changed or (self.source_index != self.source.len);
         }
     };
 }
 
-pub fn changeDetectionStream(
+pub fn change_detection_stream(
     source: []const u8,
     underlying_writer: anytype,
 ) ChangeDetectionStream(@TypeOf(underlying_writer)) {

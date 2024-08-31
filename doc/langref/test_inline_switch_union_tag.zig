@@ -6,7 +6,7 @@ const U = union(enum) {
     b: f32,
 };
 
-fn getNum(u: U) u32 {
+fn get_num(u: U) u32 {
     switch (u) {
         // Here `num` is a runtime-known value that is either
         // `u.a` or `u.b` and `tag` is `u`'s comptime-known tag value.

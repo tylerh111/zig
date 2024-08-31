@@ -89,7 +89,7 @@ pub const control_code = struct {
 };
 
 /// Returns whether the character is alphanumeric: A-Z, a-z, or 0-9.
-pub fn isAlphanumeric(c: u8) bool {
+pub fn is_alphanumeric(c: u8) bool {
     return switch (c) {
         '0'...'9', 'A'...'Z', 'a'...'z' => true,
         else => false,
@@ -97,7 +97,7 @@ pub fn isAlphanumeric(c: u8) bool {
 }
 
 /// Returns whether the character is alphabetic: A-Z or a-z.
-pub fn isAlphabetic(c: u8) bool {
+pub fn is_alphabetic(c: u8) bool {
     return switch (c) {
         'A'...'Z', 'a'...'z' => true,
         else => false,
@@ -107,12 +107,12 @@ pub fn isAlphabetic(c: u8) bool {
 /// Returns whether the character is a control character.
 ///
 /// See also: `control_code`
-pub fn isControl(c: u8) bool {
+pub fn is_control(c: u8) bool {
     return c <= control_code.us or c == control_code.del;
 }
 
 /// Returns whether the character is a digit.
-pub fn isDigit(c: u8) bool {
+pub fn is_digit(c: u8) bool {
     return switch (c) {
         '0'...'9' => true,
         else => false,
@@ -120,7 +120,7 @@ pub fn isDigit(c: u8) bool {
 }
 
 /// Returns whether the character is a lowercase letter.
-pub fn isLower(c: u8) bool {
+pub fn is_lower(c: u8) bool {
     return switch (c) {
         'a'...'z' => true,
         else => false,
@@ -129,12 +129,12 @@ pub fn isLower(c: u8) bool {
 
 /// Returns whether the character is printable and has some graphical representation,
 /// including the space character.
-pub fn isPrint(c: u8) bool {
+pub fn is_print(c: u8) bool {
     return isASCII(c) and !isControl(c);
 }
 
 /// Returns whether this character is included in `whitespace`.
-pub fn isWhitespace(c: u8) bool {
+pub fn is_whitespace(c: u8) bool {
     return for (whitespace) |other| {
         if (c == other)
             break true;
@@ -157,7 +157,7 @@ test whitespace {
 }
 
 /// Returns whether the character is an uppercase letter.
-pub fn isUpper(c: u8) bool {
+pub fn is_upper(c: u8) bool {
     return switch (c) {
         'A'...'Z' => true,
         else => false,
@@ -165,7 +165,7 @@ pub fn isUpper(c: u8) bool {
 }
 
 /// Returns whether the character is a hexadecimal digit: A-F, a-f, or 0-9.
-pub fn isHex(c: u8) bool {
+pub fn is_hex(c: u8) bool {
     return switch (c) {
         '0'...'9', 'A'...'F', 'a'...'f' => true,
         else => false,
@@ -173,12 +173,12 @@ pub fn isHex(c: u8) bool {
 }
 
 /// Returns whether the character is a 7-bit ASCII character.
-pub fn isASCII(c: u8) bool {
+pub fn is_ascii(c: u8) bool {
     return c < 128;
 }
 
 /// Uppercases the character and returns it as-is if already uppercase or not a letter.
-pub fn toUpper(c: u8) u8 {
+pub fn to_upper(c: u8) u8 {
     if (isLower(c)) {
         return c & 0b11011111;
     } else {
@@ -187,7 +187,7 @@ pub fn toUpper(c: u8) u8 {
 }
 
 /// Lowercases the character and returns it as-is if already lowercase or not a letter.
-pub fn toLower(c: u8) u8 {
+pub fn to_lower(c: u8) u8 {
     if (isUpper(c)) {
         return c | 0b00100000;
     } else {
@@ -270,7 +270,7 @@ test "ASCII character classes" {
 
 /// Writes a lower case copy of `ascii_string` to `output`.
 /// Asserts `output.len >= ascii_string.len`.
-pub fn lowerString(output: []u8, ascii_string: []const u8) []u8 {
+pub fn lower_string(output: []u8, ascii_string: []const u8) []u8 {
     std.debug.assert(output.len >= ascii_string.len);
     for (ascii_string, 0..) |c, i| {
         output[i] = toLower(c);
@@ -286,7 +286,7 @@ test lowerString {
 
 /// Allocates a lower case copy of `ascii_string`.
 /// Caller owns returned string and must free with `allocator`.
-pub fn allocLowerString(allocator: std.mem.Allocator, ascii_string: []const u8) ![]u8 {
+pub fn alloc_lower_string(allocator: std.mem.Allocator, ascii_string: []const u8) ![]u8 {
     const result = try allocator.alloc(u8, ascii_string.len);
     return lowerString(result, ascii_string);
 }
@@ -299,7 +299,7 @@ test allocLowerString {
 
 /// Writes an upper case copy of `ascii_string` to `output`.
 /// Asserts `output.len >= ascii_string.len`.
-pub fn upperString(output: []u8, ascii_string: []const u8) []u8 {
+pub fn upper_string(output: []u8, ascii_string: []const u8) []u8 {
     std.debug.assert(output.len >= ascii_string.len);
     for (ascii_string, 0..) |c, i| {
         output[i] = toUpper(c);
@@ -315,7 +315,7 @@ test upperString {
 
 /// Allocates an upper case copy of `ascii_string`.
 /// Caller owns returned string and must free with `allocator`.
-pub fn allocUpperString(allocator: std.mem.Allocator, ascii_string: []const u8) ![]u8 {
+pub fn alloc_upper_string(allocator: std.mem.Allocator, ascii_string: []const u8) ![]u8 {
     const result = try allocator.alloc(u8, ascii_string.len);
     return upperString(result, ascii_string);
 }
@@ -327,7 +327,7 @@ test allocUpperString {
 }
 
 /// Compares strings `a` and `b` case-insensitively and returns whether they are equal.
-pub fn eqlIgnoreCase(a: []const u8, b: []const u8) bool {
+pub fn eql_ignore_case(a: []const u8, b: []const u8) bool {
     if (a.len != b.len) return false;
     for (a, 0..) |a_c, i| {
         if (toLower(a_c) != toLower(b[i])) return false;
@@ -341,7 +341,7 @@ test eqlIgnoreCase {
     try std.testing.expect(!eqlIgnoreCase("hElLo!", "helro!"));
 }
 
-pub fn startsWithIgnoreCase(haystack: []const u8, needle: []const u8) bool {
+pub fn starts_with_ignore_case(haystack: []const u8, needle: []const u8) bool {
     return if (needle.len > haystack.len) false else eqlIgnoreCase(haystack[0..needle.len], needle);
 }
 
@@ -350,7 +350,7 @@ test startsWithIgnoreCase {
     try std.testing.expect(!startsWithIgnoreCase("Needle in hAyStAcK", "haystack"));
 }
 
-pub fn endsWithIgnoreCase(haystack: []const u8, needle: []const u8) bool {
+pub fn ends_with_ignore_case(haystack: []const u8, needle: []const u8) bool {
     return if (needle.len > haystack.len) false else eqlIgnoreCase(haystack[haystack.len - needle.len ..], needle);
 }
 
@@ -360,13 +360,13 @@ test endsWithIgnoreCase {
 }
 
 /// Finds `needle` in `haystack`, ignoring case, starting at index 0.
-pub fn indexOfIgnoreCase(haystack: []const u8, needle: []const u8) ?usize {
+pub fn index_of_ignore_case(haystack: []const u8, needle: []const u8) ?usize {
     return indexOfIgnoreCasePos(haystack, 0, needle);
 }
 
 /// Finds `needle` in `haystack`, ignoring case, starting at `start_index`.
 /// Uses Boyer-Moore-Horspool algorithm on large inputs; `indexOfIgnoreCasePosLinear` on small inputs.
-pub fn indexOfIgnoreCasePos(haystack: []const u8, start_index: usize, needle: []const u8) ?usize {
+pub fn index_of_ignore_case_pos(haystack: []const u8, start_index: usize, needle: []const u8) ?usize {
     if (needle.len > haystack.len) return null;
     if (needle.len == 0) return start_index;
 
@@ -387,7 +387,7 @@ pub fn indexOfIgnoreCasePos(haystack: []const u8, start_index: usize, needle: []
 
 /// Consider using `indexOfIgnoreCasePos` instead of this, which will automatically use a
 /// more sophisticated algorithm on larger inputs.
-pub fn indexOfIgnoreCasePosLinear(haystack: []const u8, start_index: usize, needle: []const u8) ?usize {
+pub fn index_of_ignore_case_pos_linear(haystack: []const u8, start_index: usize, needle: []const u8) ?usize {
     var i: usize = start_index;
     const end = haystack.len - needle.len;
     while (i <= end) : (i += 1) {
@@ -396,7 +396,7 @@ pub fn indexOfIgnoreCasePosLinear(haystack: []const u8, start_index: usize, need
     return null;
 }
 
-fn boyerMooreHorspoolPreprocessIgnoreCase(pattern: []const u8, table: *[256]usize) void {
+fn boyer_moore_horspool_preprocess_ignore_case(pattern: []const u8, table: *[256]usize) void {
     for (table) |*c| {
         c.* = pattern.len;
     }
@@ -421,7 +421,7 @@ test indexOfIgnoreCase {
 }
 
 /// Returns the lexicographical order of two slices. O(n).
-pub fn orderIgnoreCase(lhs: []const u8, rhs: []const u8) std.math.Order {
+pub fn order_ignore_case(lhs: []const u8, rhs: []const u8) std.math.Order {
     const n = @min(lhs.len, rhs.len);
     var i: usize = 0;
     while (i < n) : (i += 1) {
@@ -435,6 +435,6 @@ pub fn orderIgnoreCase(lhs: []const u8, rhs: []const u8) std.math.Order {
 }
 
 /// Returns whether the lexicographical order of `lhs` is lower than `rhs`.
-pub fn lessThanIgnoreCase(lhs: []const u8, rhs: []const u8) bool {
+pub fn less_than_ignore_case(lhs: []const u8, rhs: []const u8) bool {
     return orderIgnoreCase(lhs, rhs) == .lt;
 }

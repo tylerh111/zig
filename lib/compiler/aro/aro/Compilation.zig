@@ -57,7 +57,7 @@ pub const Environment = struct {
 
     /// Load all of the environment variables using the std.process API. Do not use if using Aro as a shared library on Linux without libc
     /// See https://github.com/ziglang/zig/issues/4524
-    pub fn loadAll(allocator: std.mem.Allocator) !Environment {
+    pub fn load_all(allocator: std.mem.Allocator) !Environment {
         var env: Environment = .{};
         errdefer env.deinit(allocator);
 
@@ -138,7 +138,7 @@ pub fn init(gpa: Allocator) Compilation {
 
 /// Initialize Compilation with default environment,
 /// pragma handlers and emulation mode set to target.
-pub fn initDefault(gpa: Allocator) !Compilation {
+pub fn init_default(gpa: Allocator) !Compilation {
     var comp: Compilation = .{
         .gpa = gpa,
         .environment = try Environment.loadAll(gpa),
@@ -172,7 +172,7 @@ pub fn deinit(comp: *Compilation) void {
     comp.environment.deinit(comp.gpa);
 }
 
-pub fn getSourceEpoch(self: *const Compilation, max: i64) !?i64 {
+pub fn get_source_epoch(self: *const Compilation, max: i64) !?i64 {
     const provided = self.environment.source_date_epoch orelse return null;
     const parsed = std.fmt.parseInt(i64, provided, 10) catch return error.InvalidEpoch;
     if (parsed < 0 or parsed > max) return error.InvalidEpoch;
@@ -182,7 +182,7 @@ pub fn getSourceEpoch(self: *const Compilation, max: i64) !?i64 {
 /// Dec 31 9999 23:59:59
 const max_timestamp = 253402300799;
 
-fn getTimestamp(comp: *Compilation) !u47 {
+fn get_timestamp(comp: *Compilation) !u47 {
     const provided: ?i64 = comp.getSourceEpoch(max_timestamp) catch blk: {
         try comp.addDiagnostic(.{
             .tag = .invalid_source_epoch,
@@ -194,7 +194,7 @@ fn getTimestamp(comp: *Compilation) !u47 {
     return @intCast(std.math.clamp(timestamp, 0, max_timestamp));
 }
 
-fn generateDateAndTime(w: anytype, timestamp: u47) !void {
+fn generate_date_and_time(w: anytype, timestamp: u47) !void {
     const epoch_seconds = EpochSeconds{ .secs = timestamp };
     const epoch_day = epoch_seconds.getEpochDay();
     const day_seconds = epoch_seconds.getDaySeconds();
@@ -238,7 +238,7 @@ pub const SystemDefinesMode = enum {
     include_system_defines,
 };
 
-fn generateSystemDefines(comp: *Compilation, w: anytype) !void {
+fn generate_system_defines(comp: *Compilation, w: anytype) !void {
     const ptr_width = comp.target.ptrBitWidth();
 
     if (comp.langopts.gnuc_version > 0) {
@@ -526,7 +526,7 @@ fn generateSystemDefines(comp: *Compilation, w: anytype) !void {
 }
 
 /// Generate builtin macros that will be available to each source file.
-pub fn generateBuiltinMacros(comp: *Compilation, system_defines_mode: SystemDefinesMode) !Source {
+pub fn generate_builtin_macros(comp: *Compilation, system_defines_mode: SystemDefinesMode) !Source {
     try comp.generateBuiltinTypes();
 
     var buf = std.ArrayList(u8).init(comp.gpa);
@@ -570,7 +570,7 @@ pub fn generateBuiltinMacros(comp: *Compilation, system_defines_mode: SystemDefi
     return comp.addSourceFromBuffer("<builtin>", buf.items);
 }
 
-fn generateFloatMacros(w: anytype, prefix: []const u8, semantics: target_util.FPSemantics, ext: []const u8) !void {
+fn generate_float_macros(w: anytype, prefix: []const u8, semantics: target_util.FPSemantics, ext: []const u8) !void {
     const denormMin = semantics.chooseValue(
         []const u8,
         .{
@@ -649,13 +649,13 @@ fn generateFloatMacros(w: anytype, prefix: []const u8, semantics: target_util.FP
     try w.print("#define {s}MIN__ {s}{s}\n", .{ prefix_slice, min, ext });
 }
 
-fn generateTypeMacro(w: anytype, mapper: StrInt.TypeMapper, name: []const u8, ty: Type, langopts: LangOpts) !void {
+fn generate_type_macro(w: anytype, mapper: StrInt.TypeMapper, name: []const u8, ty: Type, langopts: LangOpts) !void {
     try w.print("#define {s} ", .{name});
     try ty.print(mapper, langopts, w);
     try w.writeByte('\n');
 }
 
-fn generateBuiltinTypes(comp: *Compilation) !void {
+fn generate_builtin_types(comp: *Compilation) !void {
     const os = comp.target.os.tag;
     const wchar: Type = switch (comp.target.cpu.arch) {
         .xcore => .{ .specifier = .uchar },
@@ -721,7 +721,7 @@ fn generateBuiltinTypes(comp: *Compilation) !void {
 }
 
 /// Smallest integer type with at least N bits
-fn intLeastN(comp: *const Compilation, bits: usize, signedness: std.builtin.Signedness) Type {
+fn int_least_n(comp: *const Compilation, bits: usize, signedness: std.builtin.Signedness) Type {
     if (bits == 64 and (comp.target.isDarwin() or comp.target.isWasm())) {
         // WebAssembly and Darwin use `long long` for `int_least64_t` and `int_fast64_t`.
         return .{ .specifier = if (signedness == .signed) .long_long else .ulong_long };
@@ -740,12 +740,12 @@ fn intLeastN(comp: *const Compilation, bits: usize, signedness: std.builtin.Sign
     } else unreachable;
 }
 
-fn intSize(comp: *const Compilation, specifier: Type.Specifier) u64 {
+fn int_size(comp: *const Compilation, specifier: Type.Specifier) u64 {
     const ty = Type{ .specifier = specifier };
     return ty.sizeof(comp).?;
 }
 
-fn generateFastOrLeastType(
+fn generate_fast_or_least_type(
     comp: *Compilation,
     bits: usize,
     kind: enum { least, fast },
@@ -781,7 +781,7 @@ fn generateFastOrLeastType(
     try comp.generateFmt(prefix, w, ty);
 }
 
-fn generateFastAndLeastWidthTypes(comp: *Compilation, w: anytype, mapper: StrInt.TypeMapper) !void {
+fn generate_fast_and_least_width_types(comp: *Compilation, w: anytype, mapper: StrInt.TypeMapper) !void {
     const sizes = [_]usize{ 8, 16, 32, 64 };
     for (sizes) |size| {
         try comp.generateFastOrLeastType(size, .least, .signed, w, mapper);
@@ -791,7 +791,7 @@ fn generateFastAndLeastWidthTypes(comp: *Compilation, w: anytype, mapper: StrInt
     }
 }
 
-fn generateExactWidthTypes(comp: *const Compilation, w: anytype, mapper: StrInt.TypeMapper) !void {
+fn generate_exact_width_types(comp: *const Compilation, w: anytype, mapper: StrInt.TypeMapper) !void {
     try comp.generateExactWidthType(w, mapper, .schar);
 
     if (comp.intSize(.short) > comp.intSize(.char)) {
@@ -839,7 +839,7 @@ fn generateExactWidthTypes(comp: *const Compilation, w: anytype, mapper: StrInt.
     }
 }
 
-fn generateFmt(comp: *const Compilation, prefix: []const u8, w: anytype, ty: Type) !void {
+fn generate_fmt(comp: *const Compilation, prefix: []const u8, w: anytype, ty: Type) !void {
     const unsigned = ty.isUnsignedInt(comp);
     const modifier = ty.formatModifier();
     const formats = if (unsigned) "ouxX" else "di";
@@ -848,7 +848,7 @@ fn generateFmt(comp: *const Compilation, prefix: []const u8, w: anytype, ty: Typ
     }
 }
 
-fn generateSuffixMacro(comp: *const Compilation, prefix: []const u8, w: anytype, ty: Type) !void {
+fn generate_suffix_macro(comp: *const Compilation, prefix: []const u8, w: anytype, ty: Type) !void {
     return w.print("#define {s}_C_SUFFIX__ {s}\n", .{ prefix, ty.intValueSuffix(comp) });
 }
 
@@ -856,7 +856,7 @@ fn generateSuffixMacro(comp: *const Compilation, prefix: []const u8, w: anytype,
 ///     Name macro (e.g. #define __UINT32_TYPE__ unsigned int)
 ///     Format strings (e.g. #define __UINT32_FMTu__ "u")
 ///     Suffix macro (e.g. #define __UINT32_C_SUFFIX__ U)
-fn generateExactWidthType(comp: *const Compilation, w: anytype, mapper: StrInt.TypeMapper, specifier: Type.Specifier) !void {
+fn generate_exact_width_type(comp: *const Compilation, w: anytype, mapper: StrInt.TypeMapper, specifier: Type.Specifier) !void {
     var ty = Type{ .specifier = specifier };
     const width = 8 * ty.sizeof(comp).?;
     const unsigned = ty.isUnsignedInt(comp);
@@ -881,15 +881,15 @@ fn generateExactWidthType(comp: *const Compilation, w: anytype, mapper: StrInt.T
     try comp.generateSuffixMacro(prefix, w, ty);
 }
 
-pub fn hasFloat128(comp: *const Compilation) bool {
+pub fn has_float128(comp: *const Compilation) bool {
     return target_util.hasFloat128(comp.target);
 }
 
-pub fn hasHalfPrecisionFloatABI(comp: *const Compilation) bool {
+pub fn has_half_precision_float_abi(comp: *const Compilation) bool {
     return comp.langopts.allow_half_args_and_returns or target_util.hasHalfPrecisionFloatABI(comp.target);
 }
 
-fn generateNsConstantStringType(comp: *Compilation) !void {
+fn generate_ns_constant_string_type(comp: *Compilation) !void {
     comp.types.ns_constant_string.record = .{
         .name = try StrInt.intern(comp, "__NSConstantString_tag"),
         .fields = &comp.types.ns_constant_string.fields,
@@ -907,7 +907,7 @@ fn generateNsConstantStringType(comp: *Compilation) !void {
     record_layout.compute(&comp.types.ns_constant_string.record, comp.types.ns_constant_string.ty, comp, null);
 }
 
-fn generateVaListType(comp: *Compilation) !Type {
+fn generate_va_list_type(comp: *Compilation) !Type {
     const Kind = enum { char_ptr, void_ptr, aarch64_va_list, x86_64_va_list };
     const kind: Kind = switch (comp.target.cpu.arch) {
         .aarch64 => switch (comp.target.os.tag) {
@@ -986,7 +986,7 @@ fn generateVaListType(comp: *Compilation) !Type {
     return ty;
 }
 
-fn generateIntMax(comp: *const Compilation, w: anytype, name: []const u8, ty: Type) !void {
+fn generate_int_max(comp: *const Compilation, w: anytype, name: []const u8, ty: Type) !void {
     const bit_count: u8 = @intCast(ty.sizeof(comp).? * 8);
     const unsigned = ty.isUnsignedInt(comp);
     const max = if (bit_count == 128)
@@ -996,7 +996,7 @@ fn generateIntMax(comp: *const Compilation, w: anytype, name: []const u8, ty: Ty
     try w.print("#define __{s}_MAX__ {d}{s}\n", .{ name, max, ty.intValueSuffix(comp) });
 }
 
-fn generateExactWidthIntMax(comp: *const Compilation, w: anytype, specifier: Type.Specifier) !void {
+fn generate_exact_width_int_max(comp: *const Compilation, w: anytype, specifier: Type.Specifier) !void {
     var ty = Type{ .specifier = specifier };
     const bit_count: u8 = @intCast(ty.sizeof(comp).? * 8);
     const unsigned = ty.isUnsignedInt(comp);
@@ -1013,20 +1013,20 @@ fn generateExactWidthIntMax(comp: *const Compilation, w: anytype, specifier: Typ
     return comp.generateIntMax(w, name, ty);
 }
 
-fn generateIntWidth(comp: *Compilation, w: anytype, name: []const u8, ty: Type) !void {
+fn generate_int_width(comp: *Compilation, w: anytype, name: []const u8, ty: Type) !void {
     try w.print("#define __{s}_WIDTH__ {d}\n", .{ name, 8 * ty.sizeof(comp).? });
 }
 
-fn generateIntMaxAndWidth(comp: *Compilation, w: anytype, name: []const u8, ty: Type) !void {
+fn generate_int_max_and_width(comp: *Compilation, w: anytype, name: []const u8, ty: Type) !void {
     try comp.generateIntMax(w, name, ty);
     try comp.generateIntWidth(w, name, ty);
 }
 
-fn generateSizeofType(comp: *Compilation, w: anytype, name: []const u8, ty: Type) !void {
+fn generate_sizeof_type(comp: *Compilation, w: anytype, name: []const u8, ty: Type) !void {
     try w.print("#define {s} {d}\n", .{ name, ty.sizeof(comp).? });
 }
 
-pub fn nextLargestIntSameSign(comp: *const Compilation, ty: Type) ?Type {
+pub fn next_largest_int_same_sign(comp: *const Compilation, ty: Type) ?Type {
     assert(ty.isInt());
     const specifiers = if (ty.isUnsignedInt(comp))
         [_]Type.Specifier{ .short, .int, .long, .long_long }
@@ -1044,7 +1044,7 @@ pub fn nextLargestIntSameSign(comp: *const Compilation, ty: Type) ?Type {
 /// __attribute__((packed)) or the range of values of the corresponding enumerator constants,
 /// specify it here.
 /// TODO: likely incomplete
-pub fn fixedEnumTagSpecifier(comp: *const Compilation) ?Type.Specifier {
+pub fn fixed_enum_tag_specifier(comp: *const Compilation) ?Type.Specifier {
     switch (comp.langopts.emulate) {
         .msvc => return .int,
         .clang => if (comp.target.os.tag == .windows) return .int,
@@ -1053,12 +1053,12 @@ pub fn fixedEnumTagSpecifier(comp: *const Compilation) ?Type.Specifier {
     return null;
 }
 
-pub fn getCharSignedness(comp: *const Compilation) std.builtin.Signedness {
+pub fn get_char_signedness(comp: *const Compilation) std.builtin.Signedness {
     return comp.langopts.char_signedness_override orelse comp.target.charSignedness();
 }
 
 /// Add built-in aro headers directory to system include paths
-pub fn addBuiltinIncludeDir(comp: *Compilation, aro_dir: []const u8) !void {
+pub fn add_builtin_include_dir(comp: *Compilation, aro_dir: []const u8) !void {
     var search_path = aro_dir;
     while (std.fs.path.dirname(search_path)) |dirname| : (search_path = dirname) {
         var base_dir = std.fs.cwd().openDir(dirname, .{}) catch continue;
@@ -1072,13 +1072,13 @@ pub fn addBuiltinIncludeDir(comp: *Compilation, aro_dir: []const u8) !void {
     } else return error.AroIncludeNotFound;
 }
 
-pub fn addSystemIncludeDir(comp: *Compilation, path: []const u8) !void {
+pub fn add_system_include_dir(comp: *Compilation, path: []const u8) !void {
     const duped = try comp.gpa.dupe(u8, path);
     errdefer comp.gpa.free(duped);
     try comp.system_include_dirs.append(comp.gpa, duped);
 }
 
-pub fn getSource(comp: *const Compilation, id: Source.Id) Source {
+pub fn get_source(comp: *const Compilation, id: Source.Id) Source {
     if (id == .generated) return .{
         .path = "<scratch space>",
         .buf = comp.generated_buf.items,
@@ -1090,7 +1090,7 @@ pub fn getSource(comp: *const Compilation, id: Source.Id) Source {
 }
 
 /// Creates a Source from the contents of `reader` and adds it to the Compilation
-pub fn addSourceFromReader(comp: *Compilation, reader: anytype, path: []const u8, kind: Source.Kind) !Source {
+pub fn add_source_from_reader(comp: *Compilation, reader: anytype, path: []const u8, kind: Source.Kind) !Source {
     const contents = try reader.readAllAlloc(comp.gpa, std.math.maxInt(u32));
     errdefer comp.gpa.free(contents);
     return comp.addSourceFromOwnedBuffer(contents, path, kind);
@@ -1103,7 +1103,7 @@ pub fn addSourceFromReader(comp: *Compilation, reader: anytype, path: []const u8
 /// caller retains ownership of `path`
 /// To add the contents of an arbitrary reader as a Source, see addSourceFromReader
 /// To add a file's contents given its path, see addSourceFromPath
-pub fn addSourceFromOwnedBuffer(comp: *Compilation, buf: []u8, path: []const u8, kind: Source.Kind) !Source {
+pub fn add_source_from_owned_buffer(comp: *Compilation, buf: []u8, path: []const u8, kind: Source.Kind) !Source {
     try comp.sources.ensureUnusedCapacity(comp.gpa, 1);
 
     var contents = buf;
@@ -1244,7 +1244,7 @@ pub fn addSourceFromOwnedBuffer(comp: *Compilation, buf: []u8, path: []const u8,
 /// Caller retains ownership of `path` and `buf`.
 /// Dupes the source buffer; if it is acceptable to modify the source buffer and possibly resize
 /// the allocation, please use `addSourceFromOwnedBuffer`
-pub fn addSourceFromBuffer(comp: *Compilation, path: []const u8, buf: []const u8) !Source {
+pub fn add_source_from_buffer(comp: *Compilation, path: []const u8, buf: []const u8) !Source {
     if (comp.sources.get(path)) |some| return some;
     if (@as(u64, buf.len) > std.math.maxInt(u32)) return error.StreamTooLong;
 
@@ -1255,12 +1255,12 @@ pub fn addSourceFromBuffer(comp: *Compilation, path: []const u8, buf: []const u8
 }
 
 /// Caller retains ownership of `path`.
-pub fn addSourceFromPath(comp: *Compilation, path: []const u8) !Source {
+pub fn add_source_from_path(comp: *Compilation, path: []const u8) !Source {
     return comp.addSourceFromPathExtra(path, .user);
 }
 
 /// Caller retains ownership of `path`.
-fn addSourceFromPathExtra(comp: *Compilation, path: []const u8, kind: Source.Kind) !Source {
+fn add_source_from_path_extra(comp: *Compilation, path: []const u8, kind: Source.Kind) !Source {
     if (comp.sources.get(path)) |some| return some;
 
     if (mem.indexOfScalar(u8, path, 0) != null) {
@@ -1315,7 +1315,7 @@ pub const IncludeDirIterator = struct {
     }
 
     /// Returned value's path field must be freed by allocator
-    fn nextWithFile(self: *IncludeDirIterator, filename: []const u8, allocator: Allocator) !?FoundSource {
+    fn next_with_file(self: *IncludeDirIterator, filename: []const u8, allocator: Allocator) !?FoundSource {
         while (self.next()) |found| {
             const path = try std.fs.path.join(allocator, &.{ found.path, filename });
             if (self.comp.langopts.ms_extensions) {
@@ -1328,7 +1328,7 @@ pub const IncludeDirIterator = struct {
 
     /// Advance the iterator until it finds an include directory that matches
     /// the directory which contains `source`.
-    fn skipUntilDirMatch(self: *IncludeDirIterator, source: Source.Id) void {
+    fn skip_until_dir_match(self: *IncludeDirIterator, source: Source.Id) void {
         const path = self.comp.getSource(source).path;
         const includer_path = std.fs.path.dirname(path) orelse ".";
         while (self.next()) |found| {
@@ -1337,7 +1337,7 @@ pub const IncludeDirIterator = struct {
     }
 };
 
-pub fn hasInclude(
+pub fn has_include(
     comp: *const Compilation,
     filename: []const u8,
     includer_token_source: Source.Id,
@@ -1388,7 +1388,7 @@ pub const IncludeType = enum {
     angle_brackets,
 };
 
-fn getFileContents(comp: *Compilation, path: []const u8, limit: ?u32) ![]const u8 {
+fn get_file_contents(comp: *Compilation, path: []const u8, limit: ?u32) ![]const u8 {
     if (mem.indexOfScalar(u8, path, 0) != null) {
         return error.FileNotFound;
     }
@@ -1408,7 +1408,7 @@ fn getFileContents(comp: *Compilation, path: []const u8, limit: ?u32) ![]const u
     return buf.toOwnedSlice();
 }
 
-pub fn findEmbed(
+pub fn find_embed(
     comp: *Compilation,
     filename: []const u8,
     includer_token_source: Source.Id,
@@ -1445,7 +1445,7 @@ pub fn findEmbed(
     return null;
 }
 
-pub fn findInclude(
+pub fn find_include(
     comp: *Compilation,
     filename: []const u8,
     includer_token: Token,
@@ -1503,11 +1503,11 @@ pub fn findInclude(
     return null;
 }
 
-pub fn addPragmaHandler(comp: *Compilation, name: []const u8, handler: *Pragma) Allocator.Error!void {
+pub fn add_pragma_handler(comp: *Compilation, name: []const u8, handler: *Pragma) Allocator.Error!void {
     try comp.pragma_handlers.putNoClobber(comp.gpa, name, handler);
 }
 
-pub fn addDefaultPragmaHandlers(comp: *Compilation) Allocator.Error!void {
+pub fn add_default_pragma_handlers(comp: *Compilation) Allocator.Error!void {
     const GCC = @import("pragmas/gcc.zig");
     var gcc = try GCC.init(comp.gpa);
     errdefer gcc.deinit(gcc, comp);
@@ -1530,7 +1530,7 @@ pub fn addDefaultPragmaHandlers(comp: *Compilation) Allocator.Error!void {
     try comp.addPragmaHandler("pack", pack);
 }
 
-pub fn getPragma(comp: *Compilation, name: []const u8) ?*Pragma {
+pub fn get_pragma(comp: *Compilation, name: []const u8) ?*Pragma {
     return comp.pragma_handlers.get(name);
 }
 
@@ -1540,7 +1540,7 @@ const PragmaEvent = enum {
     after_parse,
 };
 
-pub fn pragmaEvent(comp: *Compilation, event: PragmaEvent) void {
+pub fn pragma_event(comp: *Compilation, event: PragmaEvent) void {
     for (comp.pragma_handlers.values()) |pragma| {
         const maybe_func = switch (event) {
             .before_preprocess => pragma.beforePreprocess,
@@ -1551,7 +1551,7 @@ pub fn pragmaEvent(comp: *Compilation, event: PragmaEvent) void {
     }
 }
 
-pub fn hasBuiltin(comp: *const Compilation, name: []const u8) bool {
+pub fn has_builtin(comp: *const Compilation, name: []const u8) bool {
     if (std.mem.eql(u8, name, "__builtin_va_arg") or
         std.mem.eql(u8, name, "__builtin_choose_expr") or
         std.mem.eql(u8, name, "__builtin_bitoffsetof") or
@@ -1562,7 +1562,7 @@ pub fn hasBuiltin(comp: *const Compilation, name: []const u8) bool {
     return comp.hasBuiltinFunction(builtin);
 }
 
-pub fn hasBuiltinFunction(comp: *const Compilation, builtin: Builtin) bool {
+pub fn has_builtin_function(comp: *const Compilation, builtin: Builtin) bool {
     if (!target_util.builtinEnabled(comp.target, builtin.properties.target_set)) return false;
 
     switch (builtin.properties.language) {
@@ -1577,7 +1577,7 @@ pub const CharUnitSize = enum(u32) {
     @"2" = 2,
     @"4" = 4,
 
-    pub fn Type(comptime self: CharUnitSize) type {
+    pub fn type(comptime self: CharUnitSize) type {
         return switch (self) {
             .@"1" => u8,
             .@"2" => u16,
@@ -1590,7 +1590,7 @@ pub const addDiagnostic = Diagnostics.add;
 
 test "addSourceFromReader" {
     const Test = struct {
-        fn addSourceFromReader(str: []const u8, expected: []const u8, warning_count: u32, splices: []const u32) !void {
+        fn add_source_from_reader(str: []const u8, expected: []const u8, warning_count: u32, splices: []const u32) !void {
             var comp = Compilation.init(std.testing.allocator);
             defer comp.deinit();
 
@@ -1602,7 +1602,7 @@ test "addSourceFromReader" {
             try std.testing.expectEqualSlices(u32, splices, source.splice_locs);
         }
 
-        fn withAllocationFailures(allocator: std.mem.Allocator) !void {
+        fn with_allocation_failures(allocator: std.mem.Allocator) !void {
             var comp = Compilation.init(allocator);
             defer comp.deinit();
 

@@ -2,7 +2,7 @@ const std = @import("std");
 const popcount = @import("popcount.zig");
 const testing = std.testing;
 
-fn popcountdi2Naive(a: i64) i32 {
+fn popcountdi2_naive(a: i64) i32 {
     var x = a;
     var r: i32 = 0;
     while (x != 0) : (x = @as(i64, @bitCast(@as(u64, @bitCast(x)) >> 1))) {

@@ -25,7 +25,7 @@ pub fn __negvti2(a: i128) callconv(.C) i128 {
     return negvXi(i128, a);
 }
 
-inline fn negvXi(comptime ST: type, a: ST) ST {
+inline fn negv_xi(comptime ST: type, a: ST) ST {
     const UT = switch (ST) {
         i32 => u32,
         i64 => u64,

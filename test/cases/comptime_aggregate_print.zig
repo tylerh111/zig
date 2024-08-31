@@ -2,7 +2,7 @@ const UnionContainer = union {
     buf: [2]i32,
 };
 
-fn getUnionSlice() []i32 {
+fn get_union_slice() []i32 {
     var c = UnionContainer{ .buf = .{ 1, 2 } };
     return c.buf[0..2];
 }
@@ -11,7 +11,7 @@ const StructContainer = struct {
     buf: [2]i32,
 };
 
-fn getStructSlice() []i32 {
+fn get_struct_slice() []i32 {
     var c = StructContainer{ .buf = .{ 3, 4 } };
     return c.buf[0..2];
 }

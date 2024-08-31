@@ -52,7 +52,7 @@ pub const Error = error{
 /// It is variation of the algorithm explained in [zlib](https://github.com/madler/zlib/blob/643e17b7498d12ab8d15565662880579692f769d/doc/algorithm.txt#L92)
 /// with difference that we here use statically allocated arrays.
 ///
-fn HuffmanDecoder(
+fn huffman_decoder(
     comptime alphabet_size: u16,
     comptime max_code_bits: u4,
     comptime lookup_bits: u4,
@@ -121,7 +121,7 @@ fn HuffmanDecoder(
         /// Huffman code for n symbols.
         ///
         /// Reference: https://github.com/madler/zlib/blob/5c42a230b7b468dff011f444161c0145b5efae59/contrib/puff/puff.c#L340
-        fn checkCompleteness(lens: []const u4) !void {
+        fn check_completeness(lens: []const u4) !void {
             if (alphabet_size == 286)
                 if (lens[256] == 0) return error.MissingEndOfBlockCode;
 
@@ -160,7 +160,7 @@ fn HuffmanDecoder(
             return self.findLinked(code, sym.next);
         }
 
-        inline fn findLinked(self: *Self, code: u16, start: u16) !Symbol {
+        inline fn find_linked(self: *Self, code: u16, start: u16) !Symbol {
             var pos = start;
             while (pos > 0) {
                 const sym = self.symbols[pos];

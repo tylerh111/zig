@@ -6,7 +6,7 @@ const mem = std.mem;
 const native_endian = builtin.cpu.arch.endian();
 
 /// The Keccak-f permutation.
-pub fn KeccakF(comptime f: u11) type {
+pub fn keccak_f(comptime f: u11) type {
     comptime assert(f >= 200 and f <= 1600 and f % 200 == 0); // invalid bit size
     const T = std.meta.Int(.unsigned, f / 25);
     const Block = [25]T;
@@ -51,19 +51,19 @@ pub fn KeccakF(comptime f: u11) type {
         }
 
         /// A representation of the state as bytes. The byte order is architecture-dependent.
-        pub fn asBytes(self: *Self) *[block_bytes]u8 {
+        pub fn as_bytes(self: *Self) *[block_bytes]u8 {
             return mem.asBytes(&self.st);
         }
 
         /// Byte-swap the entire state if the architecture doesn't match the required endianness.
-        pub fn endianSwap(self: *Self) void {
+        pub fn endian_swap(self: *Self) void {
             for (&self.st) |*w| {
                 w.* = mem.littleToNative(T, w.*);
             }
         }
 
         /// Set bytes starting at the beginning of the state.
-        pub fn setBytes(self: *Self, bytes: []const u8) void {
+        pub fn set_bytes(self: *Self, bytes: []const u8) void {
             var i: usize = 0;
             while (i + @sizeOf(T) <= bytes.len) : (i += @sizeOf(T)) {
                 self.st[i / @sizeOf(T)] = mem.readInt(T, bytes[i..][0..@sizeOf(T)], .little);
@@ -76,13 +76,13 @@ pub fn KeccakF(comptime f: u11) type {
         }
 
         /// XOR a byte into the state at a given offset.
-        pub fn addByte(self: *Self, byte: u8, offset: usize) void {
+        pub fn add_byte(self: *Self, byte: u8, offset: usize) void {
             const z = @sizeOf(T) * @as(math.Log2Int(T), @truncate(offset % @sizeOf(T)));
             self.st[offset / @sizeOf(T)] ^= @as(T, byte) << z;
         }
 
         /// XOR bytes into the beginning of the state.
-        pub fn addBytes(self: *Self, bytes: []const u8) void {
+        pub fn add_bytes(self: *Self, bytes: []const u8) void {
             var i: usize = 0;
             while (i + @sizeOf(T) <= bytes.len) : (i += @sizeOf(T)) {
                 self.st[i / @sizeOf(T)] ^= mem.readInt(T, bytes[i..][0..@sizeOf(T)], .little);
@@ -95,7 +95,7 @@ pub fn KeccakF(comptime f: u11) type {
         }
 
         /// Extract the first bytes of the state.
-        pub fn extractBytes(self: *Self, out: []u8) void {
+        pub fn extract_bytes(self: *Self, out: []u8) void {
             var i: usize = 0;
             while (i + @sizeOf(T) <= out.len) : (i += @sizeOf(T)) {
                 mem.writeInt(T, out[i..][0..@sizeOf(T)], self.st[i / @sizeOf(T)], .little);
@@ -108,7 +108,7 @@ pub fn KeccakF(comptime f: u11) type {
         }
 
         /// XOR the first bytes of the state into a slice of bytes.
-        pub fn xorBytes(self: *Self, out: []u8, in: []const u8) void {
+        pub fn xor_bytes(self: *Self, out: []u8, in: []const u8) void {
             assert(out.len == in.len);
 
             var i: usize = 0;
@@ -131,7 +131,7 @@ pub fn KeccakF(comptime f: u11) type {
         }
 
         /// Clear the entire state, disabling compiler optimizations.
-        pub fn secureZero(self: *Self) void {
+        pub fn secure_zero(self: *Self) void {
             std.crypto.utils.secureZero(T, &self.st);
         }
 
@@ -175,7 +175,7 @@ pub fn KeccakF(comptime f: u11) type {
         }
 
         /// Apply a (possibly) reduced-round permutation to the state.
-        pub fn permuteR(self: *Self, comptime rounds: u5) void {
+        pub fn permute_r(self: *Self, comptime rounds: u5) void {
             var i = RC.len - rounds;
             while (i < RC.len - RC.len % 3) : (i += 3) {
                 self.round(RC[i]);
@@ -195,7 +195,7 @@ pub fn KeccakF(comptime f: u11) type {
 }
 
 /// A generic Keccak-P state.
-pub fn State(comptime f: u11, comptime capacity: u11, comptime rounds: u5) type {
+pub fn state(comptime f: u11, comptime capacity: u11, comptime rounds: u5) type {
     comptime assert(f >= 200 and f <= 1600 and f % 200 == 0); // invalid state size
     comptime assert(capacity < f and capacity % 8 == 0); // invalid capacity size
 
@@ -253,7 +253,7 @@ pub fn State(comptime f: u11, comptime capacity: u11, comptime rounds: u5) type 
         }
 
         /// Align the input to the rate boundary.
-        pub fn fillBlock(self: *Self) void {
+        pub fn fill_block(self: *Self) void {
             self.st.addBytes(self.buf[0..self.offset]);
             self.st.permuteR(rounds);
             self.offset = 0;

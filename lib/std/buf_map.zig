@@ -33,7 +33,7 @@ pub const BufMap = struct {
     /// Same as `put` but the key and value become owned by the BufMap rather
     /// than being copied.
     /// If `putMove` fails, the ownership of key and value does not transfer.
-    pub fn putMove(self: *BufMap, key: []u8, value: []u8) !void {
+    pub fn put_move(self: *BufMap, key: []u8, value: []u8) !void {
         const get_or_put = try self.hash_map.getOrPut(key);
         if (get_or_put.found_existing) {
             self.free(get_or_put.key_ptr.*);
@@ -61,7 +61,7 @@ pub const BufMap = struct {
 
     /// Find the address of the value associated with a key.
     /// The returned pointer is invalidated if the map resizes.
-    pub fn getPtr(self: BufMap, key: []const u8) ?*[]const u8 {
+    pub fn get_ptr(self: BufMap, key: []const u8) ?*[]const u8 {
         return self.hash_map.getPtr(key);
     }
 

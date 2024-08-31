@@ -4,7 +4,7 @@ const expect = std.testing.expect;
 const expectEqual = std.testing.expectEqual;
 const mem = std.mem;
 
-fn initStaticArray() [10]i32 {
+fn init_static_array() [10]i32 {
     var array: [10]i32 = undefined;
     array[0] = 1;
     array[4] = 2;
@@ -35,12 +35,12 @@ test "init static array to undefined" {
 const Foo = struct {
     x: i32,
 
-    fn setFooXMethod(foo: *Foo) void {
+    fn set_foo_xmethod(foo: *Foo) void {
         foo.x = 3;
     }
 };
 
-fn setFooX(foo: *Foo) void {
+fn set_foo_x(foo: *Foo) void {
     foo.x = 2;
 }
 
@@ -108,11 +108,11 @@ test "returned undef is 0xaa bytes when runtime safety is enabled" {
 
     const Rect = struct {
         x: f32,
-        fn getUndefStruct() @This() {
+        fn get_undef_struct() @This() {
             @setRuntimeSafety(true);
             return undefined;
         }
-        fn getUndefInt() u32 {
+        fn get_undef_int() u32 {
             @setRuntimeSafety(true);
             return undefined;
         }

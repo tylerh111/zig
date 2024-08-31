@@ -20,7 +20,7 @@ const Config = struct {
     };
 };
 
-pub fn addCase(self: *StackTrace, config: Config) void {
+pub fn add_case(self: *StackTrace, config: Config) void {
     if (config.Debug) |per_mode|
         self.addExpect(config.name, config.source, .Debug, per_mode);
 
@@ -34,7 +34,7 @@ pub fn addCase(self: *StackTrace, config: Config) void {
         self.addExpect(config.name, config.source, .ReleaseSafe, per_mode);
 }
 
-fn addExpect(
+fn add_expect(
     self: *StackTrace,
     name: []const u8,
     source: []const u8,

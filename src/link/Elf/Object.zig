@@ -27,7 +27,7 @@ num_dynrelocs: u32 = 0,
 output_symtab_ctx: Elf.SymtabCtx = .{},
 output_ar_state: Archive.ArState = .{},
 
-pub fn isObject(path: []const u8) !bool {
+pub fn is_object(path: []const u8) !bool {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
     const reader = file.reader();
@@ -76,7 +76,7 @@ pub fn parse(self: *Object, elf_file: *Elf) !void {
     }
 }
 
-fn parseCommon(self: *Object, allocator: Allocator, handle: std.fs.File, elf_file: *Elf) !void {
+fn parse_common(self: *Object, allocator: Allocator, handle: std.fs.File, elf_file: *Elf) !void {
     const offset = if (self.archive) |ar| ar.offset else 0;
     const file_size = (try handle.stat()).size;
 
@@ -166,7 +166,7 @@ fn parseCommon(self: *Object, allocator: Allocator, handle: std.fs.File, elf_fil
     }
 }
 
-fn initAtoms(self: *Object, allocator: Allocator, handle: std.fs.File, elf_file: *Elf) !void {
+fn init_atoms(self: *Object, allocator: Allocator, handle: std.fs.File, elf_file: *Elf) !void {
     const shdrs = self.shdrs.items;
     try self.atoms.resize(allocator, shdrs.len);
     @memset(self.atoms.items, 0);
@@ -258,7 +258,7 @@ fn initAtoms(self: *Object, allocator: Allocator, handle: std.fs.File, elf_file:
     };
 }
 
-fn addAtom(self: *Object, allocator: Allocator, handle: std.fs.File, shdr: elf.Elf64_Shdr, shndx: u32, elf_file: *Elf) !void {
+fn add_atom(self: *Object, allocator: Allocator, handle: std.fs.File, shdr: elf.Elf64_Shdr, shndx: u32, elf_file: *Elf) !void {
     const atom_index = try elf_file.addAtom();
     const atom = elf_file.atom(atom_index).?;
     atom.atom_index = atom_index;
@@ -279,7 +279,7 @@ fn addAtom(self: *Object, allocator: Allocator, handle: std.fs.File, shdr: elf.E
     }
 }
 
-fn initOutputSection(self: Object, elf_file: *Elf, shdr: elf.Elf64_Shdr) error{OutOfMemory}!u32 {
+fn init_output_section(self: Object, elf_file: *Elf, shdr: elf.Elf64_Shdr) error{OutOfMemory}!u32 {
     const name = blk: {
         const name = self.getString(shdr.sh_name);
         if (elf_file.base.isRelocatable()) break :blk name;
@@ -331,7 +331,7 @@ fn initOutputSection(self: Object, elf_file: *Elf, shdr: elf.Elf64_Shdr) error{O
     return out_shndx;
 }
 
-fn skipShdr(self: *Object, index: u32, elf_file: *Elf) bool {
+fn skip_shdr(self: *Object, index: u32, elf_file: *Elf) bool {
     const comp = elf_file.base.comp;
     const shdr = self.shdrs.items[index];
     const name = self.getString(shdr.sh_name);
@@ -346,7 +346,7 @@ fn skipShdr(self: *Object, index: u32, elf_file: *Elf) bool {
     return ignore;
 }
 
-fn initSymtab(self: *Object, allocator: Allocator, elf_file: *Elf) !void {
+fn init_symtab(self: *Object, allocator: Allocator, elf_file: *Elf) !void {
     const first_global = self.first_global orelse self.symtab.items.len;
 
     try self.symbols.ensureTotalCapacityPrecise(allocator, self.symtab.items.len);
@@ -369,7 +369,7 @@ fn initSymtab(self: *Object, allocator: Allocator, elf_file: *Elf) !void {
     }
 }
 
-fn parseEhFrame(self: *Object, allocator: Allocator, handle: std.fs.File, shndx: u32, elf_file: *Elf) !void {
+fn parse_eh_frame(self: *Object, allocator: Allocator, handle: std.fs.File, shndx: u32, elf_file: *Elf) !void {
     const relocs_shndx = for (self.shdrs.items, 0..) |shdr, i| switch (shdr.sh_type) {
         elf.SHT_RELA => if (shdr.sh_info == shndx) break @as(u32, @intCast(i)),
         else => {},
@@ -434,7 +434,7 @@ fn parseEhFrame(self: *Object, allocator: Allocator, handle: std.fs.File, shndx:
 
     // Tie each FDE record to its matching atom
     const SortFdes = struct {
-        pub fn lessThan(ctx: *Elf, lhs: Fde, rhs: Fde) bool {
+        pub fn less_than(ctx: *Elf, lhs: Fde, rhs: Fde) bool {
             const lhs_atom = lhs.atom(ctx);
             const rhs_atom = rhs.atom(ctx);
             return lhs_atom.priority(ctx) < rhs_atom.priority(ctx);
@@ -458,9 +458,9 @@ fn parseEhFrame(self: *Object, allocator: Allocator, handle: std.fs.File, shndx:
     }
 }
 
-fn sortRelocs(relocs: []elf.Elf64_Rela) void {
+fn sort_relocs(relocs: []elf.Elf64_Rela) void {
     const sortFn = struct {
-        fn lessThan(c: void, lhs: elf.Elf64_Rela, rhs: elf.Elf64_Rela) bool {
+        fn less_than(c: void, lhs: elf.Elf64_Rela, rhs: elf.Elf64_Rela) bool {
             _ = c;
             return lhs.r_offset < rhs.r_offset;
         }
@@ -468,7 +468,7 @@ fn sortRelocs(relocs: []elf.Elf64_Rela) void {
     mem.sort(elf.Elf64_Rela, relocs, {}, sortFn);
 }
 
-fn filterRelocs(
+fn filter_relocs(
     relocs: []const elf.Elf64_Rela,
     start: u64,
     len: u64,
@@ -494,7 +494,7 @@ fn filterRelocs(
     return .{ .start = f_start, .len = f_len };
 }
 
-pub fn scanRelocs(self: *Object, elf_file: *Elf, undefs: anytype) !void {
+pub fn scan_relocs(self: *Object, elf_file: *Elf, undefs: anytype) !void {
     const comp = elf_file.base.comp;
     const gpa = comp.gpa;
     for (self.atoms.items) |atom_index| {
@@ -528,7 +528,7 @@ pub fn scanRelocs(self: *Object, elf_file: *Elf, undefs: anytype) !void {
     }
 }
 
-pub fn resolveSymbols(self: *Object, elf_file: *Elf) void {
+pub fn resolve_symbols(self: *Object, elf_file: *Elf) void {
     const first_global = self.first_global orelse return;
     for (self.globals(), 0..) |index, i| {
         const esym_index = @as(Symbol.Index, @intCast(first_global + i));
@@ -558,7 +558,7 @@ pub fn resolveSymbols(self: *Object, elf_file: *Elf) void {
     }
 }
 
-pub fn claimUnresolved(self: *Object, elf_file: *Elf) void {
+pub fn claim_unresolved(self: *Object, elf_file: *Elf) void {
     const first_global = self.first_global orelse return;
     for (self.globals(), 0..) |index, i| {
         const esym_index = @as(u32, @intCast(first_global + i));
@@ -586,7 +586,7 @@ pub fn claimUnresolved(self: *Object, elf_file: *Elf) void {
     }
 }
 
-pub fn claimUnresolvedObject(self: *Object, elf_file: *Elf) void {
+pub fn claim_unresolved_object(self: *Object, elf_file: *Elf) void {
     const first_global = self.first_global orelse return;
     for (self.globals(), 0..) |index, i| {
         const esym_index = @as(u32, @intCast(first_global + i));
@@ -605,7 +605,7 @@ pub fn claimUnresolvedObject(self: *Object, elf_file: *Elf) void {
     }
 }
 
-pub fn markLive(self: *Object, elf_file: *Elf) void {
+pub fn mark_live(self: *Object, elf_file: *Elf) void {
     const first_global = self.first_global orelse return;
     for (self.globals(), 0..) |index, i| {
         const sym_idx = first_global + i;
@@ -623,7 +623,7 @@ pub fn markLive(self: *Object, elf_file: *Elf) void {
     }
 }
 
-pub fn markEhFrameAtomsDead(self: Object, elf_file: *Elf) void {
+pub fn mark_eh_frame_atoms_dead(self: Object, elf_file: *Elf) void {
     const cpu_arch = elf_file.getTarget().cpu.arch;
     for (self.atoms.items) |atom_index| {
         const atom = elf_file.atom(atom_index) orelse continue;
@@ -633,7 +633,7 @@ pub fn markEhFrameAtomsDead(self: Object, elf_file: *Elf) void {
     }
 }
 
-pub fn checkDuplicates(self: *Object, dupes: anytype, elf_file: *Elf) error{OutOfMemory}!void {
+pub fn check_duplicates(self: *Object, dupes: anytype, elf_file: *Elf) error{OutOfMemory}!void {
     const first_global = self.first_global orelse return;
     for (self.globals(), 0..) |index, i| {
         const sym_idx = first_global + i;
@@ -660,7 +660,7 @@ pub fn checkDuplicates(self: *Object, dupes: anytype, elf_file: *Elf) error{OutO
     }
 }
 
-pub fn initMergeSections(self: *Object, elf_file: *Elf) !void {
+pub fn init_merge_sections(self: *Object, elf_file: *Elf) !void {
     const gpa = elf_file.base.comp.gpa;
 
     try self.merge_sections.resize(gpa, self.shdrs.items.len);
@@ -693,7 +693,7 @@ pub fn initMergeSections(self: *Object, elf_file: *Elf) !void {
             };
 
             const isNull = struct {
-                fn isNull(slice: []u8) bool {
+                fn is_null(slice: []u8) bool {
                     for (slice) |x| if (x != 0) return false;
                     return true;
                 }
@@ -737,7 +737,7 @@ pub fn initMergeSections(self: *Object, elf_file: *Elf) !void {
     }
 }
 
-pub fn resolveMergeSubsections(self: *Object, elf_file: *Elf) !void {
+pub fn resolve_merge_subsections(self: *Object, elf_file: *Elf) !void {
     const gpa = elf_file.base.comp.gpa;
 
     for (self.merge_sections.items) |index| {
@@ -834,7 +834,7 @@ pub fn resolveMergeSubsections(self: *Object, elf_file: *Elf) !void {
 
 /// We will create dummy shdrs per each resolved common symbols to make it
 /// play nicely with the rest of the system.
-pub fn convertCommonSymbols(self: *Object, elf_file: *Elf) !void {
+pub fn convert_common_symbols(self: *Object, elf_file: *Elf) !void {
     const first_global = self.first_global orelse return;
     for (self.globals(), 0..) |index, i| {
         const sym_idx = @as(u32, @intCast(first_global + i));
@@ -897,7 +897,7 @@ pub fn convertCommonSymbols(self: *Object, elf_file: *Elf) !void {
     }
 }
 
-pub fn initOutputSections(self: Object, elf_file: *Elf) !void {
+pub fn init_output_sections(self: Object, elf_file: *Elf) !void {
     for (self.atoms.items) |atom_index| {
         const atom = elf_file.atom(atom_index) orelse continue;
         if (!atom.flags.alive) continue;
@@ -906,7 +906,7 @@ pub fn initOutputSections(self: Object, elf_file: *Elf) !void {
     }
 }
 
-pub fn addAtomsToOutputSections(self: *Object, elf_file: *Elf) !void {
+pub fn add_atoms_to_output_sections(self: *Object, elf_file: *Elf) !void {
     for (self.atoms.items) |atom_index| {
         const atom = elf_file.atom(atom_index) orelse continue;
         if (!atom.flags.alive) continue;
@@ -953,7 +953,7 @@ pub fn addAtomsToOutputSections(self: *Object, elf_file: *Elf) !void {
     }
 }
 
-pub fn initRelaSections(self: Object, elf_file: *Elf) !void {
+pub fn init_rela_sections(self: Object, elf_file: *Elf) !void {
     for (self.atoms.items) |atom_index| {
         const atom = elf_file.atom(atom_index) orelse continue;
         if (!atom.flags.alive) continue;
@@ -967,7 +967,7 @@ pub fn initRelaSections(self: Object, elf_file: *Elf) !void {
     }
 }
 
-pub fn addAtomsToRelaSections(self: Object, elf_file: *Elf) !void {
+pub fn add_atoms_to_rela_sections(self: Object, elf_file: *Elf) !void {
     for (self.atoms.items) |atom_index| {
         const atom = elf_file.atom(atom_index) orelse continue;
         if (!atom.flags.alive) continue;
@@ -988,13 +988,13 @@ pub fn addAtomsToRelaSections(self: Object, elf_file: *Elf) !void {
     }
 }
 
-pub fn parseAr(self: *Object, elf_file: *Elf) !void {
+pub fn parse_ar(self: *Object, elf_file: *Elf) !void {
     const gpa = elf_file.base.comp.gpa;
     const handle = elf_file.fileHandle(self.file_handle);
     try self.parseCommon(gpa, handle, elf_file);
 }
 
-pub fn updateArSymtab(self: Object, ar_symtab: *Archive.ArSymtab, elf_file: *Elf) !void {
+pub fn update_ar_symtab(self: Object, ar_symtab: *Archive.ArSymtab, elf_file: *Elf) !void {
     const comp = elf_file.base.comp;
     const gpa = comp.gpa;
     const start = self.first_global orelse self.symtab.items.len;
@@ -1008,14 +1008,14 @@ pub fn updateArSymtab(self: Object, ar_symtab: *Archive.ArSymtab, elf_file: *Elf
     }
 }
 
-pub fn updateArSize(self: *Object, elf_file: *Elf) !void {
+pub fn update_ar_size(self: *Object, elf_file: *Elf) !void {
     self.output_ar_state.size = if (self.archive) |ar| ar.size else size: {
         const handle = elf_file.fileHandle(self.file_handle);
         break :size (try handle.stat()).size;
     };
 }
 
-pub fn writeAr(self: Object, elf_file: *Elf, writer: anytype) !void {
+pub fn write_ar(self: Object, elf_file: *Elf, writer: anytype) !void {
     const size = std.math.cast(usize, self.output_ar_state.size) orelse return error.Overflow;
     const offset: u64 = if (self.archive) |ar| ar.offset else 0;
     const name = self.path;
@@ -1036,9 +1036,9 @@ pub fn writeAr(self: Object, elf_file: *Elf, writer: anytype) !void {
     try writer.writeAll(data);
 }
 
-pub fn updateSymtabSize(self: *Object, elf_file: *Elf) !void {
+pub fn update_symtab_size(self: *Object, elf_file: *Elf) !void {
     const isAlive = struct {
-        fn isAlive(sym: *const Symbol, ctx: *Elf) bool {
+        fn is_alive(sym: *const Symbol, ctx: *Elf) bool {
             if (sym.mergeSubsection(ctx)) |msub| return msub.alive;
             if (sym.atom(ctx)) |atom_ptr| return atom_ptr.flags.alive;
             return true;
@@ -1077,7 +1077,7 @@ pub fn updateSymtabSize(self: *Object, elf_file: *Elf) !void {
     }
 }
 
-pub fn writeSymtab(self: Object, elf_file: *Elf) void {
+pub fn write_symtab(self: Object, elf_file: *Elf) void {
     for (self.locals()) |local_index| {
         const local = elf_file.symbol(local_index);
         const idx = local.outputSymtabIndex(elf_file) orelse continue;
@@ -1118,7 +1118,7 @@ pub fn globals(self: Object) []const Symbol.Index {
 
 /// Returns atom's code and optionally uncompresses data if required (for compressed sections).
 /// Caller owns the memory.
-pub fn codeDecompressAlloc(self: Object, elf_file: *Elf, atom_index: Atom.Index) ![]u8 {
+pub fn code_decompress_alloc(self: Object, elf_file: *Elf, atom_index: Atom.Index) ![]u8 {
     const comp = elf_file.base.comp;
     const gpa = comp.gpa;
     const atom_ptr = elf_file.atom(atom_index).?;
@@ -1149,16 +1149,16 @@ pub fn codeDecompressAlloc(self: Object, elf_file: *Elf, atom_index: Atom.Index)
     return data;
 }
 
-pub fn asFile(self: *Object) File {
+pub fn as_file(self: *Object) File {
     return .{ .object = self };
 }
 
-pub fn getString(self: Object, off: u32) [:0]const u8 {
+pub fn get_string(self: Object, off: u32) [:0]const u8 {
     assert(off < self.strtab.items.len);
     return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.strtab.items.ptr + off)), 0);
 }
 
-fn addString(self: *Object, allocator: Allocator, str: []const u8) !u32 {
+fn add_string(self: *Object, allocator: Allocator, str: []const u8) !u32 {
     const off: u32 = @intCast(self.strtab.items.len);
     try self.strtab.ensureUnusedCapacity(allocator, str.len + 1);
     self.strtab.appendSliceAssumeCapacity(str);
@@ -1167,7 +1167,7 @@ fn addString(self: *Object, allocator: Allocator, str: []const u8) !u32 {
 }
 
 /// Caller owns the memory.
-fn preadShdrContentsAlloc(self: Object, allocator: Allocator, handle: std.fs.File, index: u32) ![]u8 {
+fn pread_shdr_contents_alloc(self: Object, allocator: Allocator, handle: std.fs.File, index: u32) ![]u8 {
     assert(index < self.shdrs.items.len);
     const offset = if (self.archive) |ar| ar.offset else 0;
     const shdr = self.shdrs.items[index];
@@ -1177,7 +1177,7 @@ fn preadShdrContentsAlloc(self: Object, allocator: Allocator, handle: std.fs.Fil
 }
 
 /// Caller owns the memory.
-fn preadRelocsAlloc(self: Object, allocator: Allocator, handle: std.fs.File, shndx: u32) ![]align(1) const elf.Elf64_Rela {
+fn pread_relocs_alloc(self: Object, allocator: Allocator, handle: std.fs.File, shndx: u32) ![]align(1) const elf.Elf64_Rela {
     const raw = try self.preadShdrContentsAlloc(allocator, handle, shndx);
     const num = @divExact(raw.len, @sizeOf(elf.Elf64_Rela));
     return @as([*]align(1) const elf.Elf64_Rela, @ptrCast(raw.ptr))[0..num];
@@ -1196,7 +1196,7 @@ pub fn format(
     @compileError("do not format objects directly");
 }
 
-pub fn fmtSymtab(self: *Object, elf_file: *Elf) std.fmt.Formatter(formatSymtab) {
+pub fn fmt_symtab(self: *Object, elf_file: *Elf) std.fmt.Formatter(formatSymtab) {
     return .{ .data = .{
         .object = self,
         .elf_file = elf_file,
@@ -1208,7 +1208,7 @@ const FormatContext = struct {
     elf_file: *Elf,
 };
 
-fn formatSymtab(
+fn format_symtab(
     ctx: FormatContext,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,
@@ -1229,14 +1229,14 @@ fn formatSymtab(
     }
 }
 
-pub fn fmtAtoms(self: *Object, elf_file: *Elf) std.fmt.Formatter(formatAtoms) {
+pub fn fmt_atoms(self: *Object, elf_file: *Elf) std.fmt.Formatter(formatAtoms) {
     return .{ .data = .{
         .object = self,
         .elf_file = elf_file,
     } };
 }
 
-fn formatAtoms(
+fn format_atoms(
     ctx: FormatContext,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,
@@ -1252,14 +1252,14 @@ fn formatAtoms(
     }
 }
 
-pub fn fmtCies(self: *Object, elf_file: *Elf) std.fmt.Formatter(formatCies) {
+pub fn fmt_cies(self: *Object, elf_file: *Elf) std.fmt.Formatter(formatCies) {
     return .{ .data = .{
         .object = self,
         .elf_file = elf_file,
     } };
 }
 
-fn formatCies(
+fn format_cies(
     ctx: FormatContext,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,
@@ -1274,14 +1274,14 @@ fn formatCies(
     }
 }
 
-pub fn fmtFdes(self: *Object, elf_file: *Elf) std.fmt.Formatter(formatFdes) {
+pub fn fmt_fdes(self: *Object, elf_file: *Elf) std.fmt.Formatter(formatFdes) {
     return .{ .data = .{
         .object = self,
         .elf_file = elf_file,
     } };
 }
 
-fn formatFdes(
+fn format_fdes(
     ctx: FormatContext,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,
@@ -1296,14 +1296,14 @@ fn formatFdes(
     }
 }
 
-pub fn fmtComdatGroups(self: *Object, elf_file: *Elf) std.fmt.Formatter(formatComdatGroups) {
+pub fn fmt_comdat_groups(self: *Object, elf_file: *Elf) std.fmt.Formatter(formatComdatGroups) {
     return .{ .data = .{
         .object = self,
         .elf_file = elf_file,
     } };
 }
 
-fn formatComdatGroups(
+fn format_comdat_groups(
     ctx: FormatContext,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,
@@ -1328,11 +1328,11 @@ fn formatComdatGroups(
     }
 }
 
-pub fn fmtPath(self: *Object) std.fmt.Formatter(formatPath) {
+pub fn fmt_path(self: *Object) std.fmt.Formatter(formatPath) {
     return .{ .data = self };
 }
 
-fn formatPath(
+fn format_path(
     object: *Object,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,

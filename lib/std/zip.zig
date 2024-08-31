@@ -107,7 +107,7 @@ pub const EndRecord = extern struct {
 /// Note that `seekable_stream` must be an instance of `std.io.SeekabkeStream` and
 /// its context must also have a `.reader()` method that returns an instance of
 /// `std.io.Reader`.
-pub fn findEndRecord(seekable_stream: anytype, stream_len: u64) !EndRecord {
+pub fn find_end_record(seekable_stream: anytype, stream_len: u64) !EndRecord {
     var buf: [@sizeOf(EndRecord) + std.math.maxInt(u16)]u8 = undefined;
     const record_len_max = @min(stream_len, buf.len);
     var loaded_len: u32 = 0;
@@ -192,7 +192,7 @@ pub fn decompress(
     return hash.final();
 }
 
-fn isBadFilename(filename: []const u8) bool {
+fn is_bad_filename(filename: []const u8) bool {
     if (filename.len == 0 or filename[0] == '/')
         return true;
 
@@ -205,7 +205,7 @@ fn isBadFilename(filename: []const u8) bool {
     return false;
 }
 
-fn isMaxInt(uint: anytype) bool {
+fn is_max_int(uint: anytype) bool {
     return uint == std.math.maxInt(@TypeOf(uint));
 }
 
@@ -215,7 +215,7 @@ const FileExtents = struct {
     local_file_header_offset: u64,
 };
 
-fn readZip64FileExtents(header: CentralDirectoryFileHeader, extents: *FileExtents, data: []u8) !void {
+fn read_zip64_file_extents(header: CentralDirectoryFileHeader, extents: *FileExtents, data: []u8) !void {
     var data_offset: usize = 0;
     if (isMaxInt(header.uncompressed_size)) {
         if (data_offset + 8 > data.len)
@@ -247,7 +247,7 @@ fn readZip64FileExtents(header: CentralDirectoryFileHeader, extents: *FileExtent
         return error.ZipBadCd64Size;
 }
 
-pub fn Iterator(comptime SeekableStream: type) type {
+pub fn iterator(comptime SeekableStream: type) type {
     return struct {
         stream: SeekableStream,
 
@@ -529,7 +529,7 @@ pub fn Iterator(comptime SeekableStream: type) type {
 }
 
 // returns true if `filename` starts with `root` followed by a forward slash
-fn filenameInRoot(filename: []const u8, root: []const u8) bool {
+fn filename_in_root(filename: []const u8, root: []const u8) bool {
     return (filename.len >= root.len + 1) and
         (filename[root.len] == '/') and
         std.mem.eql(u8, filename[0..root.len], root);
@@ -551,7 +551,7 @@ pub const Diagnostics = struct {
     // This function assumes name is a filename from a zip file which has already been verified to
     // not start with a slash, backslashes have been normalized to forward slashes, and directories
     // always end in a slash.
-    pub fn nextFilename(self: *Diagnostics, name: []const u8) error{OutOfMemory}!void {
+    pub fn next_filename(self: *Diagnostics, name: []const u8) error{OutOfMemory}!void {
         if (!self.saw_first_file) {
             self.saw_first_file = true;
             std.debug.assert(self.root_dir.len == 0);
@@ -594,11 +594,11 @@ pub fn extract(dest: std.fs.Dir, seekable_stream: anytype, options: ExtractOptio
     }
 }
 
-fn testZip(options: ExtractOptions, comptime files: []const File, write_opt: testutil.WriteZipOptions) !void {
+fn test_zip(options: ExtractOptions, comptime files: []const File, write_opt: testutil.WriteZipOptions) !void {
     var store: [files.len]FileStore = undefined;
     try testZipWithStore(options, files, write_opt, &store);
 }
-fn testZipWithStore(
+fn test_zip_with_store(
     options: ExtractOptions,
     test_files: []const File,
     write_opt: testutil.WriteZipOptions,
@@ -612,7 +612,7 @@ fn testZipWithStore(
     try extract(tmp.dir, fbs.seekableStream(), options);
     try testutil.expectFiles(test_files, tmp.dir, .{});
 }
-fn testZipError(expected_error: anyerror, file: File, options: ExtractOptions) !void {
+fn test_zip_error(expected_error: anyerror, file: File, options: ExtractOptions) !void {
     var zip_buf: [4096]u8 = undefined;
     var store: [1]FileStore = undefined;
     var fbs = try testutil.makeZipWithStore(&zip_buf, &[_]File{file}, .{}, &store);

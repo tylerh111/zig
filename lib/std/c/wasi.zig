@@ -17,7 +17,7 @@ pub const timespec = extern struct {
     tv_sec: time_t,
     tv_nsec: isize,
 
-    pub fn fromTimestamp(tm: wasi.timestamp_t) timespec {
+    pub fn from_timestamp(tm: wasi.timestamp_t) timespec {
         const tv_sec: wasi.timestamp_t = tm / 1_000_000_000;
         const tv_nsec = tm - tv_sec * 1_000_000_000;
         return .{
@@ -26,7 +26,7 @@ pub const timespec = extern struct {
         };
     }
 
-    pub fn toTimestamp(ts: timespec) wasi.timestamp_t {
+    pub fn to_timestamp(ts: timespec) wasi.timestamp_t {
         return @as(wasi.timestamp_t, @intCast(ts.tv_sec * 1_000_000_000)) +
             @as(wasi.timestamp_t, @intCast(ts.tv_nsec));
     }
@@ -93,7 +93,7 @@ pub const Stat = extern struct {
         return self.ctim;
     }
 
-    pub fn fromFilestat(stat: wasi.filestat_t) Stat {
+    pub fn from_filestat(stat: wasi.filestat_t) Stat {
         return .{
             .dev = stat.dev,
             .ino = stat.ino,

@@ -5,7 +5,7 @@ export fn a() void {
     while (frame) |f| resume f;
 }
 
-fn rangeSum(x: i32) i32 {
+fn range_sum(x: i32) i32 {
     suspend {
         frame = @frame();
     }
@@ -16,7 +16,7 @@ fn rangeSum(x: i32) i32 {
     return child + 1;
 }
 
-fn rangeSumIndirect(x: i32) i32 {
+fn range_sum_indirect(x: i32) i32 {
     suspend {
         frame = @frame();
     }

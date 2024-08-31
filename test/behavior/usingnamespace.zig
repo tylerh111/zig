@@ -16,7 +16,7 @@ test "basic usingnamespace" {
     try std.testing.expect(C.B == bool);
 }
 
-fn Foo(comptime T: type) type {
+fn foo(comptime T: type) type {
     return struct {
         usingnamespace T;
     };
@@ -50,7 +50,7 @@ test "usingnamespace omits mixing in private functions" {
     try expect(@This().privateFunction());
     try expect(!@This().printText());
 }
-fn privateFunction() bool {
+fn private_function() bool {
     return true;
 }
 

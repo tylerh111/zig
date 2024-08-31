@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 
 var read_count: u64 = 0;
 
-fn readOnce() anyerror!u64 {
+fn read_once() anyerror!u64 {
     read_count += 1;
     return read_count;
 }
@@ -13,7 +13,7 @@ const FormValue = union(enum) {
     Other: bool,
 };
 
-fn doThing(form_id: u64) anyerror!FormValue {
+fn do_thing(form_id: u64) anyerror!FormValue {
     return switch (form_id) {
         17 => FormValue{ .Address = try readOnce() },
         else => error.InvalidDebugInfo,

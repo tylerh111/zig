@@ -5,11 +5,11 @@ const testing = std.testing;
 
 pub const CWriter = io.Writer(*std.c.FILE, std.fs.File.WriteError, cWriterWrite);
 
-pub fn cWriter(c_file: *std.c.FILE) CWriter {
+pub fn c_writer(c_file: *std.c.FILE) CWriter {
     return .{ .context = c_file };
 }
 
-fn cWriterWrite(c_file: *std.c.FILE, bytes: []const u8) std.fs.File.WriteError!usize {
+fn c_writer_write(c_file: *std.c.FILE, bytes: []const u8) std.fs.File.WriteError!usize {
     const amt_written = std.c.fwrite(bytes.ptr, 1, bytes.len, c_file);
     if (amt_written >= 0) return amt_written;
     switch (@as(std.c.E, @enumFromInt(std.c._errno().*))) {

@@ -81,7 +81,7 @@ pub const OsVersion = union(enum) {
         };
     }
 
-    pub fn eqlOpt(a: ?OsVersion, b: ?OsVersion) bool {
+    pub fn eql_opt(a: ?OsVersion, b: ?OsVersion) bool {
         if (a == null and b == null) return true;
         if (a == null or b == null) return false;
         return OsVersion.eql(a.?, b.?);
@@ -90,7 +90,7 @@ pub const OsVersion = union(enum) {
 
 pub const SemanticVersion = std.SemanticVersion;
 
-pub fn fromTarget(target: Target) Query {
+pub fn from_target(target: Target) Query {
     var result: Query = .{
         .cpu_arch = target.cpu.arch,
         .cpu_model = .{ .explicit = target.cpu.model },
@@ -123,7 +123,7 @@ pub fn fromTarget(target: Target) Query {
     return result;
 }
 
-fn updateOsVersionRange(self: *Query, os: Target.Os) void {
+fn update_os_version_range(self: *Query, os: Target.Os) void {
     self.os_version_min, self.os_version_max = switch (os.tag.getVersionRangeTag()) {
         .none => .{ .{ .none = {} }, .{ .none = {} } },
         .semver => .{
@@ -305,7 +305,7 @@ pub fn parse(args: ParseOptions) !Query {
 /// architecture and returns it if it can be determined, and returns `null` otherwise.
 /// This is intended to be used if the API user of Query needs to learn the
 /// target CPU architecture in order to fully populate `ParseOptions`.
-pub fn parseCpuArch(args: ParseOptions) ?Target.Cpu.Arch {
+pub fn parse_cpu_arch(args: ParseOptions) ?Target.Cpu.Arch {
     var it = mem.splitScalar(u8, args.arch_os_abi, '-');
     const arch_name = it.first();
     const arch_is_native = mem.eql(u8, arch_name, "native");
@@ -319,9 +319,9 @@ pub fn parseCpuArch(args: ParseOptions) ?Target.Cpu.Arch {
 /// Similar to `SemanticVersion.parse`, but with following changes:
 /// * Leading zeroes are allowed.
 /// * Supports only 2 or 3 version components (major, minor, [patch]). If 3-rd component is omitted, it will be 0.
-pub fn parseVersion(ver: []const u8) error{ InvalidVersion, Overflow }!SemanticVersion {
+pub fn parse_version(ver: []const u8) error{ InvalidVersion, Overflow }!SemanticVersion {
     const parseVersionComponentFn = (struct {
-        fn parseVersionComponentInner(component: []const u8) error{ InvalidVersion, Overflow }!usize {
+        fn parse_version_component_inner(component: []const u8) error{ InvalidVersion, Overflow }!usize {
             return std.fmt.parseUnsigned(usize, component, 10) catch |err| switch (err) {
                 error.InvalidCharacter => return error.InvalidVersion,
                 error.Overflow => return error.Overflow,
@@ -347,30 +347,30 @@ test parseVersion {
     try std.testing.expectError(error.InvalidVersion, parseVersion("1.2.3.4"));
 }
 
-pub fn isNativeCpu(self: Query) bool {
+pub fn is_native_cpu(self: Query) bool {
     return self.cpu_arch == null and
         (self.cpu_model == .native or self.cpu_model == .determined_by_cpu_arch) and
         self.cpu_features_sub.isEmpty() and self.cpu_features_add.isEmpty();
 }
 
-pub fn isNativeOs(self: Query) bool {
+pub fn is_native_os(self: Query) bool {
     return self.os_tag == null and self.os_version_min == null and self.os_version_max == null and
         self.dynamic_linker.get() == null and self.glibc_version == null;
 }
 
-pub fn isNativeAbi(self: Query) bool {
+pub fn is_native_abi(self: Query) bool {
     return self.os_tag == null and self.abi == null;
 }
 
-pub fn isNativeTriple(self: Query) bool {
+pub fn is_native_triple(self: Query) bool {
     return self.isNativeCpu() and self.isNativeOs() and self.isNativeAbi();
 }
 
-pub fn isNative(self: Query) bool {
+pub fn is_native(self: Query) bool {
     return self.isNativeTriple() and self.ofmt == null;
 }
 
-pub fn canDetectLibC(self: Query) bool {
+pub fn can_detect_lib_c(self: Query) bool {
     if (self.isNativeOs()) return true;
     if (self.os_tag) |os| {
         if (builtin.os.tag == .macos and os.isDarwin()) return true;
@@ -381,7 +381,7 @@ pub fn canDetectLibC(self: Query) bool {
 
 /// Formats a version with the patch component omitted if it is zero,
 /// unlike SemanticVersion.format which formats all its version components regardless.
-fn formatVersion(version: SemanticVersion, writer: anytype) !void {
+fn format_version(version: SemanticVersion, writer: anytype) !void {
     if (version.patch == 0) {
         try writer.print("{d}.{d}", .{ version.major, version.minor });
     } else {
@@ -389,7 +389,7 @@ fn formatVersion(version: SemanticVersion, writer: anytype) !void {
     }
 }
 
-pub fn zigTriple(self: Query, allocator: Allocator) Allocator.Error![]u8 {
+pub fn zig_triple(self: Query, allocator: Allocator) Allocator.Error![]u8 {
     if (self.isNativeTriple())
         return allocator.dupe(u8, "native");
 
@@ -450,7 +450,7 @@ pub fn zigTriple(self: Query, allocator: Allocator) Allocator.Error![]u8 {
 /// Renders the query into a textual representation that can be parsed via the
 /// `-mcpu` flag passed to the Zig compiler.
 /// Appends the result to `buffer`.
-pub fn serializeCpu(q: Query, buffer: *std.ArrayList(u8)) Allocator.Error!void {
+pub fn serialize_cpu(q: Query, buffer: *std.ArrayList(u8)) Allocator.Error!void {
     try buffer.ensureUnusedCapacity(8);
     switch (q.cpu_model) {
         .native => {
@@ -492,23 +492,23 @@ pub fn serializeCpu(q: Query, buffer: *std.ArrayList(u8)) Allocator.Error!void {
     }
 }
 
-pub fn serializeCpuAlloc(q: Query, ally: Allocator) Allocator.Error![]u8 {
+pub fn serialize_cpu_alloc(q: Query, ally: Allocator) Allocator.Error![]u8 {
     var buffer = std.ArrayList(u8).init(ally);
     try serializeCpu(q, &buffer);
     return buffer.toOwnedSlice();
 }
 
-pub fn allocDescription(self: Query, allocator: Allocator) ![]u8 {
+pub fn alloc_description(self: Query, allocator: Allocator) ![]u8 {
     // TODO is there anything else worthy of the description that is not
     // already captured in the triple?
     return self.zigTriple(allocator);
 }
 
-pub fn setGnuLibCVersion(self: *Query, major: u32, minor: u32, patch: u32) void {
+pub fn set_gnu_lib_cversion(self: *Query, major: u32, minor: u32, patch: u32) void {
     self.glibc_version = SemanticVersion{ .major = major, .minor = minor, .patch = patch };
 }
 
-fn parseOs(result: *Query, diags: *ParseOptions.Diagnostics, text: []const u8) !void {
+fn parse_os(result: *Query, diags: *ParseOptions.Diagnostics, text: []const u8) !void {
     var it = mem.splitScalar(u8, text, '.');
     const os_name = it.first();
     diags.os_name = os_name;
@@ -566,7 +566,7 @@ pub fn eql(a: Query, b: Query) bool {
     return true;
 }
 
-fn versionEqualOpt(a: ?SemanticVersion, b: ?SemanticVersion) bool {
+fn version_equal_opt(a: ?SemanticVersion, b: ?SemanticVersion) bool {
     if (a == null and b == null) return true;
     if (a == null or b == null) return false;
     return SemanticVersion.order(a.?, b.?) == .eq;

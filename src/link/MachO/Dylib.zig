@@ -21,7 +21,7 @@ referenced: bool = false,
 
 output_symtab_ctx: MachO.SymtabCtx = .{},
 
-pub fn isDylib(path: []const u8, fat_arch: ?fat.Arch) !bool {
+pub fn is_dylib(path: []const u8, fat_arch: ?fat.Arch) !bool {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
     if (fat_arch) |arch| {
@@ -155,11 +155,11 @@ const TrieIterator = struct {
     data: []const u8,
     pos: usize = 0,
 
-    fn getStream(it: *TrieIterator) std.io.FixedBufferStream([]const u8) {
+    fn get_stream(it: *TrieIterator) std.io.FixedBufferStream([]const u8) {
         return std.io.fixedBufferStream(it.data[it.pos..]);
     }
 
-    fn readULEB128(it: *TrieIterator) !u64 {
+    fn read_uleb128(it: *TrieIterator) !u64 {
         var stream = it.getStream();
         var creader = std.io.countingReader(stream.reader());
         const reader = creader.reader();
@@ -168,7 +168,7 @@ const TrieIterator = struct {
         return value;
     }
 
-    fn readString(it: *TrieIterator) ![:0]const u8 {
+    fn read_string(it: *TrieIterator) ![:0]const u8 {
         var stream = it.getStream();
         const reader = stream.reader();
 
@@ -183,7 +183,7 @@ const TrieIterator = struct {
         return str;
     }
 
-    fn readByte(it: *TrieIterator) !u8 {
+    fn read_byte(it: *TrieIterator) !u8 {
         var stream = it.getStream();
         const value = try stream.reader().readByte();
         it.pos += 1;
@@ -191,14 +191,14 @@ const TrieIterator = struct {
     }
 };
 
-pub fn addExport(self: *Dylib, allocator: Allocator, name: []const u8, flags: Export.Flags) !void {
+pub fn add_export(self: *Dylib, allocator: Allocator, name: []const u8, flags: Export.Flags) !void {
     try self.exports.append(allocator, .{
         .name = try self.addString(allocator, name),
         .flags = flags,
     });
 }
 
-fn parseTrieNode(
+fn parse_trie_node(
     self: *Dylib,
     it: *TrieIterator,
     allocator: Allocator,
@@ -243,7 +243,7 @@ fn parseTrieNode(
     }
 }
 
-fn parseTrie(self: *Dylib, data: []const u8, macho_file: *MachO) !void {
+fn parse_trie(self: *Dylib, data: []const u8, macho_file: *MachO) !void {
     const tracy = trace(@src());
     defer tracy.end();
     const gpa = macho_file.base.comp.gpa;
@@ -254,7 +254,7 @@ fn parseTrie(self: *Dylib, data: []const u8, macho_file: *MachO) !void {
     try self.parseTrieNode(&it, gpa, arena.allocator(), "");
 }
 
-pub fn parseTbd(
+pub fn parse_tbd(
     self: *Dylib,
     cpu_arch: std.Target.Cpu.Arch,
     platform: MachO.Platform,
@@ -467,20 +467,20 @@ pub fn parseTbd(
     }
 }
 
-fn addObjCClass(self: *Dylib, allocator: Allocator, name: []const u8) !void {
+fn add_obj_cclass(self: *Dylib, allocator: Allocator, name: []const u8) !void {
     try self.addObjCExport(allocator, "_OBJC_CLASS_", name);
     try self.addObjCExport(allocator, "_OBJC_METACLASS_", name);
 }
 
-fn addObjCIVar(self: *Dylib, allocator: Allocator, name: []const u8) !void {
+fn add_obj_civar(self: *Dylib, allocator: Allocator, name: []const u8) !void {
     try self.addObjCExport(allocator, "_OBJC_IVAR_", name);
 }
 
-fn addObjCEhType(self: *Dylib, allocator: Allocator, name: []const u8) !void {
+fn add_obj_ceh_type(self: *Dylib, allocator: Allocator, name: []const u8) !void {
     try self.addObjCExport(allocator, "_OBJC_EHTYPE_", name);
 }
 
-fn addObjCExport(
+fn add_obj_cexport(
     self: *Dylib,
     allocator: Allocator,
     comptime prefix: []const u8,
@@ -491,7 +491,7 @@ fn addObjCExport(
     try self.addExport(allocator, full_name, .{});
 }
 
-pub fn initSymbols(self: *Dylib, macho_file: *MachO) !void {
+pub fn init_symbols(self: *Dylib, macho_file: *MachO) !void {
     const gpa = macho_file.base.comp.gpa;
 
     try self.symbols.ensureTotalCapacityPrecise(gpa, self.exports.items(.name).len);
@@ -504,7 +504,7 @@ pub fn initSymbols(self: *Dylib, macho_file: *MachO) !void {
     }
 }
 
-pub fn resolveSymbols(self: *Dylib, macho_file: *MachO) void {
+pub fn resolve_symbols(self: *Dylib, macho_file: *MachO) void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -528,7 +528,7 @@ pub fn resolveSymbols(self: *Dylib, macho_file: *MachO) void {
     }
 }
 
-pub fn resetGlobals(self: *Dylib, macho_file: *MachO) void {
+pub fn reset_globals(self: *Dylib, macho_file: *MachO) void {
     for (self.symbols.items) |sym_index| {
         const sym = macho_file.getSymbol(sym_index);
         const name = sym.name;
@@ -541,12 +541,12 @@ pub fn resetGlobals(self: *Dylib, macho_file: *MachO) void {
     }
 }
 
-pub fn isAlive(self: Dylib, macho_file: *MachO) bool {
+pub fn is_alive(self: Dylib, macho_file: *MachO) bool {
     if (!macho_file.dead_strip_dylibs) return self.explicit or self.referenced or self.needed;
     return self.referenced or self.needed;
 }
 
-pub fn markReferenced(self: *Dylib, macho_file: *MachO) void {
+pub fn mark_referenced(self: *Dylib, macho_file: *MachO) void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -560,7 +560,7 @@ pub fn markReferenced(self: *Dylib, macho_file: *MachO) void {
     }
 }
 
-pub fn calcSymtabSize(self: *Dylib, macho_file: *MachO) !void {
+pub fn calc_symtab_size(self: *Dylib, macho_file: *MachO) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -577,7 +577,7 @@ pub fn calcSymtabSize(self: *Dylib, macho_file: *MachO) !void {
     }
 }
 
-pub fn writeSymtab(self: Dylib, macho_file: *MachO, ctx: anytype) void {
+pub fn write_symtab(self: Dylib, macho_file: *MachO, ctx: anytype) void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -595,22 +595,22 @@ pub fn writeSymtab(self: Dylib, macho_file: *MachO, ctx: anytype) void {
     }
 }
 
-pub inline fn getUmbrella(self: Dylib, macho_file: *MachO) *Dylib {
+pub inline fn get_umbrella(self: Dylib, macho_file: *MachO) *Dylib {
     return macho_file.getFile(self.umbrella).?.dylib;
 }
 
-fn addString(self: *Dylib, allocator: Allocator, name: []const u8) !u32 {
+fn add_string(self: *Dylib, allocator: Allocator, name: []const u8) !u32 {
     const off = @as(u32, @intCast(self.strtab.items.len));
     try self.strtab.writer(allocator).print("{s}\x00", .{name});
     return off;
 }
 
-pub inline fn getString(self: Dylib, off: u32) [:0]const u8 {
+pub inline fn get_string(self: Dylib, off: u32) [:0]const u8 {
     assert(off < self.strtab.items.len);
     return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.strtab.items.ptr + off)), 0);
 }
 
-pub fn asFile(self: *Dylib) File {
+pub fn as_file(self: *Dylib) File {
     return .{ .dylib = self };
 }
 
@@ -627,7 +627,7 @@ pub fn format(
     @compileError("do not format dylib directly");
 }
 
-pub fn fmtSymtab(self: *Dylib, macho_file: *MachO) std.fmt.Formatter(formatSymtab) {
+pub fn fmt_symtab(self: *Dylib, macho_file: *MachO) std.fmt.Formatter(formatSymtab) {
     return .{ .data = .{
         .dylib = self,
         .macho_file = macho_file,
@@ -639,7 +639,7 @@ const FormatContext = struct {
     macho_file: *MachO,
 };
 
-fn formatSymtab(
+fn format_symtab(
     ctx: FormatContext,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,
@@ -699,7 +699,7 @@ pub const TargetMatcher = struct {
         self.target_strings.deinit(self.allocator);
     }
 
-    inline fn cpuArchToAppleString(cpu_arch: std.Target.Cpu.Arch) []const u8 {
+    inline fn cpu_arch_to_apple_string(cpu_arch: std.Target.Cpu.Arch) []const u8 {
         return switch (cpu_arch) {
             .aarch64 => "arm64",
             .x86_64 => "x86_64",
@@ -707,7 +707,7 @@ pub const TargetMatcher = struct {
         };
     }
 
-    pub fn targetToAppleString(allocator: Allocator, cpu_arch: std.Target.Cpu.Arch, platform: macho.PLATFORM) ![]const u8 {
+    pub fn target_to_apple_string(allocator: Allocator, cpu_arch: std.Target.Cpu.Arch, platform: macho.PLATFORM) ![]const u8 {
         const arch = cpuArchToAppleString(cpu_arch);
         const plat = switch (platform) {
             .MACOS => "macos",
@@ -727,25 +727,25 @@ pub const TargetMatcher = struct {
         return std.fmt.allocPrint(allocator, "{s}-{s}", .{ arch, plat });
     }
 
-    fn hasValue(stack: []const []const u8, needle: []const u8) bool {
+    fn has_value(stack: []const []const u8, needle: []const u8) bool {
         for (stack) |v| {
             if (mem.eql(u8, v, needle)) return true;
         }
         return false;
     }
 
-    fn matchesArch(self: TargetMatcher, archs: []const []const u8) bool {
+    fn matches_arch(self: TargetMatcher, archs: []const []const u8) bool {
         return hasValue(archs, cpuArchToAppleString(self.cpu_arch));
     }
 
-    fn matchesTarget(self: TargetMatcher, targets: []const []const u8) bool {
+    fn matches_target(self: TargetMatcher, targets: []const []const u8) bool {
         for (self.target_strings.items) |t| {
             if (hasValue(targets, t)) return true;
         }
         return false;
     }
 
-    pub fn matchesTargetTbd(self: TargetMatcher, tbd: Tbd) !bool {
+    pub fn matches_target_tbd(self: TargetMatcher, tbd: Tbd) !bool {
         var arena = std.heap.ArenaAllocator.init(self.allocator);
         defer arena.deinit();
 
@@ -786,7 +786,7 @@ pub const Id = struct {
         };
     }
 
-    pub fn fromLoadCommand(allocator: Allocator, lc: macho.dylib_command, name: []const u8) !Id {
+    pub fn from_load_command(allocator: Allocator, lc: macho.dylib_command, name: []const u8) !Id {
         return Id{
             .name = try allocator.dupe(u8, name),
             .timestamp = lc.dylib.timestamp,
@@ -801,15 +801,15 @@ pub const Id = struct {
 
     pub const ParseError = fmt.ParseIntError || fmt.BufPrintError;
 
-    pub fn parseCurrentVersion(id: *Id, version: anytype) ParseError!void {
+    pub fn parse_current_version(id: *Id, version: anytype) ParseError!void {
         id.current_version = try parseVersion(version);
     }
 
-    pub fn parseCompatibilityVersion(id: *Id, version: anytype) ParseError!void {
+    pub fn parse_compatibility_version(id: *Id, version: anytype) ParseError!void {
         id.compatibility_version = try parseVersion(version);
     }
 
-    fn parseVersion(version: anytype) ParseError!u32 {
+    fn parse_version(version: anytype) ParseError!u32 {
         const string = blk: {
             switch (version) {
                 .int => |int| {

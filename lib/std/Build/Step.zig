@@ -49,11 +49,11 @@ pub const TestResults = struct {
     log_err_count: u32 = 0,
     test_count: u32 = 0,
 
-    pub fn isSuccess(tr: TestResults) bool {
+    pub fn is_success(tr: TestResults) bool {
         return tr.fail_count == 0 and tr.leak_count == 0 and tr.log_err_count == 0;
     }
 
-    pub fn passCount(tr: TestResults) u32 {
+    pub fn pass_count(tr: TestResults) u32 {
         return tr.test_count - tr.fail_count - tr.skip_count;
     }
 };
@@ -94,7 +94,7 @@ pub const Id = enum {
     options,
     custom,
 
-    pub fn Type(comptime id: Id) type {
+    pub fn type(comptime id: Id) type {
         return switch (id) {
             .top_level => Build.TopLevelStep,
             .compile => Compile,
@@ -201,11 +201,11 @@ pub fn make(s: *Step, prog_node: std.Progress.Node) error{ MakeFailed, MakeSkipp
     }
 }
 
-pub fn dependOn(step: *Step, other: *Step) void {
+pub fn depend_on(step: *Step, other: *Step) void {
     step.dependencies.append(other) catch @panic("OOM");
 }
 
-pub fn getStackTrace(s: *Step) ?std.builtin.StackTrace {
+pub fn get_stack_trace(s: *Step) ?std.builtin.StackTrace {
     var len: usize = 0;
     while (len < s.debug_stack_trace.len and s.debug_stack_trace[len] != 0) {
         len += 1;
@@ -217,7 +217,7 @@ pub fn getStackTrace(s: *Step) ?std.builtin.StackTrace {
     };
 }
 
-fn makeNoOp(step: *Step, prog_node: std.Progress.Node) anyerror!void {
+fn make_no_op(step: *Step, prog_node: std.Progress.Node) anyerror!void {
     _ = prog_node;
 
     var all_cached = true;
@@ -269,7 +269,7 @@ const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const builtin = @import("builtin");
 
-pub fn evalChildProcess(s: *Step, argv: []const []const u8) !void {
+pub fn eval_child_process(s: *Step, argv: []const []const u8) !void {
     const arena = s.owner.allocator;
 
     try handleChildProcUnsupported(s, null, argv);
@@ -292,7 +292,7 @@ pub fn fail(step: *Step, comptime fmt: []const u8, args: anytype) error{ OutOfMe
     return error.MakeFailed;
 }
 
-pub fn addError(step: *Step, comptime fmt: []const u8, args: anytype) error{OutOfMemory}!void {
+pub fn add_error(step: *Step, comptime fmt: []const u8, args: anytype) error{OutOfMemory}!void {
     const arena = step.owner.allocator;
     const msg = try std.fmt.allocPrint(arena, fmt, args);
     try step.result_error_msgs.append(arena, msg);
@@ -300,7 +300,7 @@ pub fn addError(step: *Step, comptime fmt: []const u8, args: anytype) error{OutO
 
 /// Assumes that argv contains `--listen=-` and that the process being spawned
 /// is the zig compiler - the same version that compiled the build runner.
-pub fn evalZigProcess(
+pub fn eval_zig_process(
     s: *Step,
     argv: []const []const u8,
     prog_node: std.Progress.Node,
@@ -426,7 +426,7 @@ pub fn evalZigProcess(
     return result;
 }
 
-fn sendMessage(file: std.fs.File, tag: std.zig.Client.Message.Tag) !void {
+fn send_message(file: std.fs.File, tag: std.zig.Client.Message.Tag) !void {
     const header: std.zig.Client.Message.Header = .{
         .tag = tag,
         .bytes_len = 0,
@@ -434,7 +434,7 @@ fn sendMessage(file: std.fs.File, tag: std.zig.Client.Message.Tag) !void {
     try file.writeAll(std.mem.asBytes(&header));
 }
 
-pub fn handleVerbose(
+pub fn handle_verbose(
     b: *Build,
     opt_cwd: ?[]const u8,
     argv: []const []const u8,
@@ -442,7 +442,7 @@ pub fn handleVerbose(
     return handleVerbose2(b, opt_cwd, null, argv);
 }
 
-pub fn handleVerbose2(
+pub fn handle_verbose2(
     b: *Build,
     opt_cwd: ?[]const u8,
     opt_env: ?*const std.process.EnvMap,
@@ -456,7 +456,7 @@ pub fn handleVerbose2(
     }
 }
 
-pub inline fn handleChildProcUnsupported(
+pub inline fn handle_child_proc_unsupported(
     s: *Step,
     opt_cwd: ?[]const u8,
     argv: []const []const u8,
@@ -469,7 +469,7 @@ pub inline fn handleChildProcUnsupported(
     }
 }
 
-pub fn handleChildProcessTerm(
+pub fn handle_child_process_term(
     s: *Step,
     term: std.process.Child.Term,
     opt_cwd: ?[]const u8,
@@ -494,7 +494,7 @@ pub fn handleChildProcessTerm(
     }
 }
 
-pub fn allocPrintCmd(
+pub fn alloc_print_cmd(
     arena: Allocator,
     opt_cwd: ?[]const u8,
     argv: []const []const u8,
@@ -502,7 +502,7 @@ pub fn allocPrintCmd(
     return allocPrintCmd2(arena, opt_cwd, null, argv);
 }
 
-pub fn allocPrintCmd2(
+pub fn alloc_print_cmd2(
     arena: Allocator,
     opt_cwd: ?[]const u8,
     opt_env: ?*const std.process.EnvMap,
@@ -528,19 +528,19 @@ pub fn allocPrintCmd2(
     return buf.toOwnedSlice(arena);
 }
 
-pub fn cacheHit(s: *Step, man: *std.Build.Cache.Manifest) !bool {
+pub fn cache_hit(s: *Step, man: *std.Build.Cache.Manifest) !bool {
     s.result_cached = man.hit() catch |err| return failWithCacheError(s, man, err);
     return s.result_cached;
 }
 
-fn failWithCacheError(s: *Step, man: *const std.Build.Cache.Manifest, err: anyerror) anyerror {
+fn fail_with_cache_error(s: *Step, man: *const std.Build.Cache.Manifest, err: anyerror) anyerror {
     const i = man.failed_file_index orelse return err;
     const pp = man.files.keys()[i].prefixed_path;
     const prefix = man.cache.prefixes()[pp.prefix].path orelse "";
     return s.fail("{s}: {s}/{s}", .{ @errorName(err), prefix, pp.sub_path });
 }
 
-pub fn writeManifest(s: *Step, man: *std.Build.Cache.Manifest) !void {
+pub fn write_manifest(s: *Step, man: *std.Build.Cache.Manifest) !void {
     if (s.test_results.isSuccess()) {
         man.writeManifest() catch |err| {
             try s.addError("unable to write cache manifest: {s}", .{@errorName(err)});

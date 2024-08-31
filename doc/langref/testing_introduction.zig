@@ -16,7 +16,7 @@ test addOne {
 }
 
 /// The function `addOne` adds one to the number given as its argument.
-fn addOne(number: i32) i32 {
+fn add_one(number: i32) i32 {
     return number + 1;
 }
 

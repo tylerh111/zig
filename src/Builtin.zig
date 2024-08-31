@@ -221,7 +221,7 @@ pub fn append(opts: @This(), buffer: *std.ArrayList(u8)) Allocator.Error!void {
     }
 }
 
-pub fn populateFile(comp: *Compilation, mod: *Module, file: *File) !void {
+pub fn populate_file(comp: *Compilation, mod: *Module, file: *File) !void {
     assert(file.source_loaded == true);
 
     if (mod.root.statFile(mod.root_src_path)) |stat| {
@@ -265,7 +265,7 @@ pub fn populateFile(comp: *Compilation, mod: *Module, file: *File) !void {
     // all the way back in `Package.Module.create`.
 }
 
-fn writeFile(file: *File, mod: *Module) !void {
+fn write_file(file: *File, mod: *Module) !void {
     var buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
     var af = try mod.root.atomicFile(mod.root_src_path, .{ .make_path = true }, &buf);
     defer af.deinit();
