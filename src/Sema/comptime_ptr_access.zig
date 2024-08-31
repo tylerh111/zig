@@ -11,7 +11,7 @@ pub const ComptimeLoadResult = union(enum) {
     exceeds_host_size,
 };
 
-pub fn loadComptimePtr(sema: *Sema, block: *Block, src: LazySrcLoc, ptr: Value) !ComptimeLoadResult {
+pub fn load_comptime_ptr(sema: *Sema, block: *Block, src: LazySrcLoc, ptr: Value) !ComptimeLoadResult {
     const zcu = sema.mod;
     const ptr_info = ptr.typeOf(zcu).ptrInfo(zcu);
     // TODO: host size for vectors is terrible
@@ -53,7 +53,7 @@ pub const ComptimeStoreResult = union(enum) {
 
 /// Perform a comptime load of value `store_val` to a pointer.
 /// The pointer's type is ignored.
-pub fn storeComptimePtr(
+pub fn store_comptime_ptr(
     sema: *Sema,
     block: *Block,
     src: LazySrcLoc,
@@ -193,7 +193,7 @@ pub fn storeComptimePtr(
 
 /// Perform a comptime load of type `load_ty` from a pointer.
 /// The pointer's type is ignored.
-fn loadComptimePtrInner(
+fn load_comptime_ptr_inner(
     sema: *Sema,
     block: *Block,
     src: LazySrcLoc,
@@ -554,7 +554,7 @@ const ComptimeStoreStrategy = union(enum) {
 
 /// Decide the strategy we will use to perform a comptime store of type `store_ty` to a pointer.
 /// The pointer's type is ignored.
-fn prepareComptimePtrStore(
+fn prepare_comptime_ptr_store(
     sema: *Sema,
     block: *Block,
     src: LazySrcLoc,
@@ -909,7 +909,7 @@ fn prepareComptimePtrStore(
 
 /// Given a potentially-nested array value, recursively flatten all of its elements into the given
 /// output array. The result can be used by `unflattenArray` to restructure array values.
-fn flattenArray(
+fn flatten_array(
     sema: *Sema,
     val: MutableValue,
     skip: *u64,
@@ -951,7 +951,7 @@ fn flattenArray(
 
 /// Given a sequence of non-array elements, "unflatten" them into the given array type.
 /// Asserts that values of `elems` are in-memory coercible to the array base type of `ty`.
-fn unflattenArray(
+fn unflatten_array(
     sema: *Sema,
     ty: Type,
     elems: []const InternPool.Index,
@@ -985,7 +985,7 @@ fn unflattenArray(
 /// the array's base type. For instance, given a [3][3]T, the index 5 represents 'val[1][2]'.
 /// The final level of array is not dereferenced. This allows use sites to use `setElem` to prevent
 /// unnecessary `MutableValue` representation changes.
-fn recursiveIndex(
+fn recursive_index(
     sema: *Sema,
     mv: *MutableValue,
     index: *u64,
@@ -1015,7 +1015,7 @@ fn recursiveIndex(
     unreachable; // should be handled by initial check
 }
 
-fn checkComptimeVarStore(
+fn check_comptime_var_store(
     sema: *Sema,
     block: *Block,
     src: LazySrcLoc,

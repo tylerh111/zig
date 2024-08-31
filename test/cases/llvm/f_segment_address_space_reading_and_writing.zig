@@ -2,7 +2,7 @@ fn assert(ok: bool) void {
     if (!ok) unreachable;
 }
 
-fn setFs(value: c_ulong) void {
+fn set_fs(value: c_ulong) void {
     asm volatile (
         \\syscall
         :
@@ -13,7 +13,7 @@ fn setFs(value: c_ulong) void {
     );
 }
 
-fn getFs() c_ulong {
+fn get_fs() c_ulong {
     var result: c_ulong = undefined;
     asm volatile (
         \\syscall

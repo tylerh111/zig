@@ -1,7 +1,7 @@
 const first_25_primes = firstNPrimes(25);
 const sum_of_first_25_primes = sum(&first_25_primes);
 
-fn firstNPrimes(comptime n: usize) [n]i32 {
+fn first_nprimes(comptime n: usize) [n]i32 {
     var prime_list: [n]i32 = undefined;
     var next_index: usize = 0;
     var test_number: i32 = 2;

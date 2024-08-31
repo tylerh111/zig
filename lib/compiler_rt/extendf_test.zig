@@ -183,27 +183,27 @@ test "extendsftf2" {
     try test__extendsftf2(0x1.edcbap-45, 0x3fd2edcba0000000, 0x0);
 }
 
-fn makeQNaN64() f64 {
+fn make_qna_n64() f64 {
     return @bitCast(@as(u64, 0x7ff8000000000000));
 }
 
-fn makeInf64() f64 {
+fn make_inf64() f64 {
     return @bitCast(@as(u64, 0x7ff0000000000000));
 }
 
-fn makeNaN64(rand: u64) f64 {
+fn make_na_n64(rand: u64) f64 {
     return @bitCast(0x7ff0000000000000 | (rand & 0xfffffffffffff));
 }
 
-fn makeQNaN32() f32 {
+fn make_qna_n32() f32 {
     return @bitCast(@as(u32, 0x7fc00000));
 }
 
-fn makeNaN32(rand: u32) f32 {
+fn make_na_n32(rand: u32) f32 {
     return @bitCast(0x7f800000 | (rand & 0x7fffff));
 }
 
-fn makeInf32() f32 {
+fn make_inf32() f32 {
     return @bitCast(@as(u32, 0x7f800000));
 }
 

@@ -2,7 +2,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const Cases = @import("src/Cases.zig");
 
-pub fn addCases(ctx: *Cases, b: *std.Build) !void {
+pub fn add_cases(ctx: *Cases, b: *std.Build) !void {
     {
         const case = ctx.obj("multiline error messages", b.host);
 
@@ -190,15 +190,15 @@ pub fn addCases(ctx: *Cases, b: *std.Build) !void {
         case.addError(
             \\pub const import = @import("import.zig");
             \\
-            \\export fn callComptimeBoolFunctionWithRuntimeBool(x: bool) void {
+            \\export fn call_comptime_bool_function_with_runtime_bool(x: bool) void {
             \\    import.comptimeBoolFunction(x);
             \\}
             \\
-            \\export fn callComptimeAnytypeFunctionWithRuntimeBool(x: bool) void {
+            \\export fn call_comptime_anytype_function_with_runtime_bool(x: bool) void {
             \\    import.comptimeAnytypeFunction(x);
             \\}
             \\
-            \\export fn callAnytypeFunctionWithRuntimeComptimeOnlyType(x: u32) void {
+            \\export fn call_anytype_function_with_runtime_comptime_only_type(x: u32) void {
             \\    const S = struct { x: u32, y: type };
             \\    import.anytypeFunction(S{ .x = x, .y = u32 });
             \\}
@@ -212,9 +212,9 @@ pub fn addCases(ctx: *Cases, b: *std.Build) !void {
         });
 
         case.addSourceFile("import.zig",
-            \\pub fn comptimeBoolFunction(comptime _: bool) void {}
-            \\pub fn comptimeAnytypeFunction(comptime _: anytype) void {}
-            \\pub fn anytypeFunction(_: anytype) void {}
+            \\pub fn comptime_bool_function(comptime _: bool) void {}
+            \\pub fn comptime_anytype_function(comptime _: anytype) void {}
+            \\pub fn anytype_function(_: anytype) void {}
         );
     }
 }

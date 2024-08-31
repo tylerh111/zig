@@ -34,7 +34,7 @@ fn print(comptime fmt: []const u8, args: anytype) void {
 
 /// This function is intended to be used only in tests. It prints diagnostics to stderr
 /// and then returns a test failure error when actual_error_union is not expected_error.
-pub fn expectError(expected_error: anyerror, actual_error_union: anytype) !void {
+pub fn expect_error(expected_error: anyerror, actual_error_union: anytype) !void {
     if (actual_error_union) |actual_payload| {
         print("expected error.{s}, found {any}\n", .{ @errorName(expected_error), actual_payload });
         return error.TestUnexpectedError;
@@ -53,12 +53,12 @@ pub fn expectError(expected_error: anyerror, actual_error_union: anytype) !void 
 /// equal, prints diagnostics to stderr to show exactly how they are not equal,
 /// then returns a test failure error.
 /// `actual` and `expected` are coerced to a common type using peer type resolution.
-pub inline fn expectEqual(expected: anytype, actual: anytype) !void {
+pub inline fn expect_equal(expected: anytype, actual: anytype) !void {
     const T = @TypeOf(expected, actual);
     return expectEqualInner(T, expected, actual);
 }
 
-fn expectEqualInner(comptime T: type, expected: T, actual: T) !void {
+fn expect_equal_inner(comptime T: type, expected: T, actual: T) !void {
     switch (@typeInfo(@TypeOf(actual))) {
         .NoReturn,
         .Opaque,
@@ -212,7 +212,7 @@ test "expectEqual.union(enum)" {
 /// and its arguments does not equal the expected text, it prints diagnostics to stderr to show how
 /// they are not equal, then returns an error. It depends on `expectEqualStrings()` for printing
 /// diagnostics.
-pub fn expectFmt(expected: []const u8, comptime template: []const u8, args: anytype) !void {
+pub fn expect_fmt(expected: []const u8, comptime template: []const u8, args: anytype) !void {
     const actual = try std.fmt.allocPrint(allocator, template, args);
     defer allocator.free(actual);
     return expectEqualStrings(expected, actual);
@@ -224,12 +224,12 @@ pub fn expectFmt(expected: []const u8, comptime template: []const u8, args: anyt
 /// See `math.approxEqAbs` for more information on the tolerance parameter.
 /// The types must be floating-point.
 /// `actual` and `expected` are coerced to a common type using peer type resolution.
-pub inline fn expectApproxEqAbs(expected: anytype, actual: anytype, tolerance: anytype) !void {
+pub inline fn expect_approx_eq_abs(expected: anytype, actual: anytype, tolerance: anytype) !void {
     const T = @TypeOf(expected, actual, tolerance);
     return expectApproxEqAbsInner(T, expected, actual, tolerance);
 }
 
-fn expectApproxEqAbsInner(comptime T: type, expected: T, actual: T, tolerance: T) !void {
+fn expect_approx_eq_abs_inner(comptime T: type, expected: T, actual: T, tolerance: T) !void {
     switch (@typeInfo(T)) {
         .Float => if (!math.approxEqAbs(T, expected, actual, tolerance)) {
             print("actual {}, not within absolute tolerance {} of expected {}\n", .{ actual, tolerance, expected });
@@ -260,12 +260,12 @@ test expectApproxEqAbs {
 /// See `math.approxEqRel` for more information on the tolerance parameter.
 /// The types must be floating-point.
 /// `actual` and `expected` are coerced to a common type using peer type resolution.
-pub inline fn expectApproxEqRel(expected: anytype, actual: anytype, tolerance: anytype) !void {
+pub inline fn expect_approx_eq_rel(expected: anytype, actual: anytype, tolerance: anytype) !void {
     const T = @TypeOf(expected, actual, tolerance);
     return expectApproxEqRelInner(T, expected, actual, tolerance);
 }
 
-fn expectApproxEqRelInner(comptime T: type, expected: T, actual: T, tolerance: T) !void {
+fn expect_approx_eq_rel_inner(comptime T: type, expected: T, actual: T, tolerance: T) !void {
     switch (@typeInfo(T)) {
         .Float => if (!math.approxEqRel(T, expected, actual, tolerance)) {
             print("actual {}, not within relative tolerance {} of expected {}\n", .{ actual, tolerance, expected });
@@ -298,7 +298,7 @@ test expectApproxEqRel {
 /// the differences highlighted in red), then returns a test failure error.
 /// The colorized output is optional and controlled by the return of `std.io.tty.detectConfig()`.
 /// If your inputs are UTF-8 encoded strings, consider calling `expectEqualStrings` instead.
-pub fn expectEqualSlices(comptime T: type, expected: []const T, actual: []const T) !void {
+pub fn expect_equal_slices(comptime T: type, expected: []const T, actual: []const T) !void {
     if (expected.ptr == actual.ptr and expected.len == actual.len) {
         return;
     }
@@ -471,7 +471,7 @@ const BytesDiffer = struct {
         }
     }
 
-    fn writeDiff(self: BytesDiffer, writer: anytype, comptime fmt: []const u8, args: anytype, diff: bool) !void {
+    fn write_diff(self: BytesDiffer, writer: anytype, comptime fmt: []const u8, args: anytype, diff: bool) !void {
         if (diff) try self.ttyconf.setColor(writer, .red);
         try writer.print(fmt, args);
         if (diff) try self.ttyconf.setColor(writer, .reset);
@@ -494,7 +494,7 @@ test {
 
 /// This function is intended to be used only in tests. Checks that two slices or two arrays are equal,
 /// including that their sentinel (if any) are the same. Will error if given another type.
-pub fn expectEqualSentinel(comptime T: type, comptime sentinel: T, expected: [:sentinel]const T, actual: [:sentinel]const T) !void {
+pub fn expect_equal_sentinel(comptime T: type, comptime sentinel: T, expected: [:sentinel]const T, actual: [:sentinel]const T) !void {
     try expectEqualSlices(T, expected, actual);
 
     const expected_value_sentinel = blk: {
@@ -556,7 +556,7 @@ pub const TmpDir = struct {
     }
 };
 
-pub fn tmpDir(opts: std.fs.Dir.OpenDirOptions) TmpDir {
+pub fn tmp_dir(opts: std.fs.Dir.OpenDirOptions) TmpDir {
     var random_bytes: [TmpDir.random_bytes_count]u8 = undefined;
     std.crypto.random.bytes(&random_bytes);
     var sub_path: [TmpDir.sub_path_len]u8 = undefined;
@@ -599,7 +599,7 @@ test "expectEqual vector" {
     try expectEqual(a, b);
 }
 
-pub fn expectEqualStrings(expected: []const u8, actual: []const u8) !void {
+pub fn expect_equal_strings(expected: []const u8, actual: []const u8) !void {
     if (std.mem.indexOfDiff(u8, actual, expected)) |diff_index| {
         print("\n====== expected this output: =========\n", .{});
         printWithVisibleNewlines(expected);
@@ -623,7 +623,7 @@ pub fn expectEqualStrings(expected: []const u8, actual: []const u8) !void {
     }
 }
 
-pub fn expectStringStartsWith(actual: []const u8, expected_starts_with: []const u8) !void {
+pub fn expect_string_starts_with(actual: []const u8, expected_starts_with: []const u8) !void {
     if (std.mem.startsWith(u8, actual, expected_starts_with))
         return;
 
@@ -643,7 +643,7 @@ pub fn expectStringStartsWith(actual: []const u8, expected_starts_with: []const 
     return error.TestExpectedStartsWith;
 }
 
-pub fn expectStringEndsWith(actual: []const u8, expected_ends_with: []const u8) !void {
+pub fn expect_string_ends_with(actual: []const u8, expected_ends_with: []const u8) !void {
     if (std.mem.endsWith(u8, actual, expected_ends_with))
         return;
 
@@ -676,12 +676,12 @@ pub fn expectStringEndsWith(actual: []const u8, expected_ends_with: []const u8) 
 ///
 /// Note: Self-referential structs are supported (e.g. things like std.SinglyLinkedList)
 /// but may cause infinite recursion or stack overflow when a container has a pointer to itself.
-pub inline fn expectEqualDeep(expected: anytype, actual: anytype) error{TestExpectedEqual}!void {
+pub inline fn expect_equal_deep(expected: anytype, actual: anytype) error{TestExpectedEqual}!void {
     const T = @TypeOf(expected, actual);
     return expectEqualDeepInner(T, expected, actual);
 }
 
-fn expectEqualDeepInner(comptime T: type, expected: T, actual: T) error{TestExpectedEqual}!void {
+fn expect_equal_deep_inner(comptime T: type, expected: T, actual: T) error{TestExpectedEqual}!void {
     switch (@typeInfo(@TypeOf(actual))) {
         .NoReturn,
         .Opaque,
@@ -915,7 +915,7 @@ test "expectEqualDeep composite type" {
     }
 }
 
-fn printIndicatorLine(source: []const u8, indicator_index: usize) void {
+fn print_indicator_line(source: []const u8, indicator_index: usize) void {
     const line_begin_index = if (std.mem.lastIndexOfScalar(u8, source[0..indicator_index], '\n')) |line_begin|
         line_begin + 1
     else
@@ -934,7 +934,7 @@ fn printIndicatorLine(source: []const u8, indicator_index: usize) void {
         print("^ ('\\x{x:0>2}')\n", .{source[indicator_index]});
 }
 
-fn printWithVisibleNewlines(source: []const u8) void {
+fn print_with_visible_newlines(source: []const u8) void {
     var i: usize = 0;
     while (std.mem.indexOfScalar(u8, source[i..], '\n')) |nl| : (i += nl + 1) {
         printLine(source[i..][0..nl]);
@@ -942,7 +942,7 @@ fn printWithVisibleNewlines(source: []const u8) void {
     print("{s}␃\n", .{source[i..]}); // End of Text symbol (ETX)
 }
 
-fn printLine(line: []const u8) void {
+fn print_line(line: []const u8) void {
     if (line.len != 0) switch (line[line.len - 1]) {
         ' ', '\t' => return print("{s}⏎\n", .{line}), // Return symbol
         else => {},
@@ -1003,7 +1003,7 @@ test {
 /// doing:
 ///
 /// ```zig
-/// fn testImpl(allocator: std.mem.Allocator, length: usize) !void {
+/// fn test_impl(allocator: std.mem.Allocator, length: usize) !void {
 ///     var foo = try allocator.alloc(u8, length);
 ///     var bar = try allocator.alloc(u8, length);
 ///
@@ -1022,14 +1022,14 @@ test {
 /// `bar` fails. The simplest fix, in this case, would be to use defer like so:
 ///
 /// ```zig
-/// fn testImpl(allocator: std.mem.Allocator, length: usize) !void {
+/// fn test_impl(allocator: std.mem.Allocator, length: usize) !void {
 ///     var foo = try allocator.alloc(u8, length);
 ///     defer allocator.free(foo);
 ///     var bar = try allocator.alloc(u8, length);
 ///     defer allocator.free(bar);
 /// }
 /// ```
-pub fn checkAllAllocationFailures(backing_allocator: std.mem.Allocator, comptime test_fn: anytype, extra_args: anytype) !void {
+pub fn check_all_allocation_failures(backing_allocator: std.mem.Allocator, comptime test_fn: anytype, extra_args: anytype) !void {
     switch (@typeInfo(@typeInfo(@TypeOf(test_fn)).Fn.return_type.?)) {
         .ErrorUnion => |info| {
             if (info.payload != void) {
@@ -1109,7 +1109,7 @@ pub fn checkAllAllocationFailures(backing_allocator: std.mem.Allocator, comptime
 }
 
 /// Given a type, references all the declarations inside, so that the semantic analyzer sees them.
-pub fn refAllDecls(comptime T: type) void {
+pub fn ref_all_decls(comptime T: type) void {
     if (!builtin.is_test) return;
     inline for (comptime std.meta.declarations(T)) |decl| {
         _ = &@field(T, decl.name);
@@ -1118,7 +1118,7 @@ pub fn refAllDecls(comptime T: type) void {
 
 /// Given a type, recursively references all the declarations inside, so that the semantic analyzer sees them.
 /// For deep types, you may use `@setEvalBranchQuota`.
-pub fn refAllDeclsRecursive(comptime T: type) void {
+pub fn ref_all_decls_recursive(comptime T: type) void {
     if (!builtin.is_test) return;
     inline for (comptime std.meta.declarations(T)) |decl| {
         if (@TypeOf(@field(T, decl.name)) == type) {

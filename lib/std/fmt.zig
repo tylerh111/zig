@@ -206,7 +206,7 @@ pub fn format(
     }
 }
 
-fn cacheString(str: anytype) []const u8 {
+fn cache_string(str: anytype) []const u8 {
     return &str;
 }
 
@@ -392,11 +392,11 @@ pub const ArgState = struct {
     used_args: ArgSetType = 0,
     args_len: usize,
 
-    pub fn hasUnusedArgs(self: *@This()) bool {
+    pub fn has_unused_args(self: *@This()) bool {
         return @popCount(self.used_args) != self.args_len;
     }
 
-    pub fn nextArg(self: *@This(), arg_index: ?usize) ?usize {
+    pub fn next_arg(self: *@This(), arg_index: ?usize) ?usize {
         const next_index = arg_index orelse init: {
             const arg = self.next_arg;
             self.next_arg += 1;
@@ -413,7 +413,7 @@ pub const ArgState = struct {
     }
 };
 
-pub fn formatAddress(value: anytype, options: FormatOptions, writer: anytype) @TypeOf(writer).Error!void {
+pub fn format_address(value: anytype, options: FormatOptions, writer: anytype) @TypeOf(writer).Error!void {
     _ = options;
     const T = @TypeOf(value);
 
@@ -442,7 +442,7 @@ pub fn formatAddress(value: anytype, options: FormatOptions, writer: anytype) @T
 // This ANY const is a workaround for: https://github.com/ziglang/zig/issues/7948
 const ANY = "any";
 
-pub fn defaultSpec(comptime T: type) [:0]const u8 {
+pub fn default_spec(comptime T: type) [:0]const u8 {
     switch (@typeInfo(T)) {
         .Array => |_| return ANY,
         .Pointer => |ptr_info| switch (ptr_info.size) {
@@ -460,18 +460,18 @@ pub fn defaultSpec(comptime T: type) [:0]const u8 {
     return "";
 }
 
-fn stripOptionalOrErrorUnionSpec(comptime fmt: []const u8) []const u8 {
+fn strip_optional_or_error_union_spec(comptime fmt: []const u8) []const u8 {
     return if (std.mem.eql(u8, fmt[1..], ANY))
         ANY
     else
         fmt[1..];
 }
 
-pub fn invalidFmtError(comptime fmt: []const u8, value: anytype) void {
+pub fn invalid_fmt_error(comptime fmt: []const u8, value: anytype) void {
     @compileError("invalid format string '" ++ fmt ++ "' for type '" ++ @typeName(@TypeOf(value)) ++ "'");
 }
 
-pub fn formatType(
+pub fn format_type(
     value: anytype,
     comptime fmt: []const u8,
     options: FormatOptions,
@@ -693,7 +693,7 @@ pub fn formatType(
     }
 }
 
-fn formatValue(
+fn format_value(
     value: anytype,
     comptime fmt: []const u8,
     options: FormatOptions,
@@ -708,7 +708,7 @@ fn formatValue(
     }
 }
 
-pub fn formatIntValue(
+pub fn format_int_value(
     value: anytype,
     comptime fmt: []const u8,
     options: FormatOptions,
@@ -760,7 +760,7 @@ pub const format_float = @import("fmt/format_float.zig");
 pub const formatFloat = format_float.formatFloat;
 pub const FormatFloatError = format_float.FormatError;
 
-fn formatFloatValue(
+fn format_float_value(
     value: anytype,
     comptime fmt: []const u8,
     options: FormatOptions,
@@ -795,11 +795,11 @@ test {
 
 pub const Case = enum { lower, upper };
 
-fn formatSliceHexImpl(comptime case: Case) type {
+fn format_slice_hex_impl(comptime case: Case) type {
     const charset = "0123456789" ++ if (case == .upper) "ABCDEF" else "abcdef";
 
     return struct {
-        pub fn formatSliceHexImpl(
+        pub fn format_slice_hex_impl(
             bytes: []const u8,
             comptime fmt: []const u8,
             options: std.fmt.FormatOptions,
@@ -823,21 +823,21 @@ const formatSliceHexUpper = formatSliceHexImpl(.upper).formatSliceHexImpl;
 
 /// Return a Formatter for a []const u8 where every byte is formatted as a pair
 /// of lowercase hexadecimal digits.
-pub fn fmtSliceHexLower(bytes: []const u8) std.fmt.Formatter(formatSliceHexLower) {
+pub fn fmt_slice_hex_lower(bytes: []const u8) std.fmt.Formatter(formatSliceHexLower) {
     return .{ .data = bytes };
 }
 
 /// Return a Formatter for a []const u8 where every byte is formatted as pair
 /// of uppercase hexadecimal digits.
-pub fn fmtSliceHexUpper(bytes: []const u8) std.fmt.Formatter(formatSliceHexUpper) {
+pub fn fmt_slice_hex_upper(bytes: []const u8) std.fmt.Formatter(formatSliceHexUpper) {
     return .{ .data = bytes };
 }
 
-fn formatSliceEscapeImpl(comptime case: Case) type {
+fn format_slice_escape_impl(comptime case: Case) type {
     const charset = "0123456789" ++ if (case == .upper) "ABCDEF" else "abcdef";
 
     return struct {
-        pub fn formatSliceEscapeImpl(
+        pub fn format_slice_escape_impl(
             bytes: []const u8,
             comptime fmt: []const u8,
             options: std.fmt.FormatOptions,
@@ -869,20 +869,20 @@ const formatSliceEscapeUpper = formatSliceEscapeImpl(.upper).formatSliceEscapeIm
 /// Return a Formatter for a []const u8 where every non-printable ASCII
 /// character is escaped as \xNN, where NN is the character in lowercase
 /// hexadecimal notation.
-pub fn fmtSliceEscapeLower(bytes: []const u8) std.fmt.Formatter(formatSliceEscapeLower) {
+pub fn fmt_slice_escape_lower(bytes: []const u8) std.fmt.Formatter(formatSliceEscapeLower) {
     return .{ .data = bytes };
 }
 
 /// Return a Formatter for a []const u8 where every non-printable ASCII
 /// character is escaped as \xNN, where NN is the character in uppercase
 /// hexadecimal notation.
-pub fn fmtSliceEscapeUpper(bytes: []const u8) std.fmt.Formatter(formatSliceEscapeUpper) {
+pub fn fmt_slice_escape_upper(bytes: []const u8) std.fmt.Formatter(formatSliceEscapeUpper) {
     return .{ .data = bytes };
 }
 
-fn formatSizeImpl(comptime base: comptime_int) type {
+fn format_size_impl(comptime base: comptime_int) type {
     return struct {
-        fn formatSizeImpl(
+        fn format_size_impl(
             value: u64,
             comptime fmt: []const u8,
             options: FormatOptions,
@@ -945,18 +945,18 @@ const formatSizeBin = formatSizeImpl(1024).formatSizeImpl;
 /// Return a Formatter for a u64 value representing a file size.
 /// This formatter represents the number as multiple of 1000 and uses the SI
 /// measurement units (kB, MB, GB, ...).
-pub fn fmtIntSizeDec(value: u64) std.fmt.Formatter(formatSizeDec) {
+pub fn fmt_int_size_dec(value: u64) std.fmt.Formatter(formatSizeDec) {
     return .{ .data = value };
 }
 
 /// Return a Formatter for a u64 value representing a file size.
 /// This formatter represents the number as multiple of 1024 and uses the IEC
 /// measurement units (KiB, MiB, GiB, ...).
-pub fn fmtIntSizeBin(value: u64) std.fmt.Formatter(formatSizeBin) {
+pub fn fmt_int_size_bin(value: u64) std.fmt.Formatter(formatSizeBin) {
     return .{ .data = value };
 }
 
-fn checkTextFmt(comptime fmt: []const u8) void {
+fn check_text_fmt(comptime fmt: []const u8) void {
     if (fmt.len != 1)
         @compileError("unsupported format string '" ++ fmt ++ "' when formatting text");
     switch (fmt[0]) {
@@ -968,7 +968,7 @@ fn checkTextFmt(comptime fmt: []const u8) void {
     }
 }
 
-pub fn formatText(
+pub fn format_text(
     bytes: []const u8,
     comptime fmt: []const u8,
     options: FormatOptions,
@@ -978,7 +978,7 @@ pub fn formatText(
     return formatBuf(bytes, options, writer);
 }
 
-pub fn formatAsciiChar(
+pub fn format_ascii_char(
     c: u8,
     options: FormatOptions,
     writer: anytype,
@@ -986,7 +986,7 @@ pub fn formatAsciiChar(
     return formatBuf(@as(*const [1]u8, &c), options, writer);
 }
 
-pub fn formatUnicodeCodepoint(
+pub fn format_unicode_codepoint(
     c: u21,
     options: FormatOptions,
     writer: anytype,
@@ -1000,7 +1000,7 @@ pub fn formatUnicodeCodepoint(
     return formatBuf(buf[0..len], options, writer);
 }
 
-pub fn formatBuf(
+pub fn format_buf(
     buf: []const u8,
     options: FormatOptions,
     writer: anytype,
@@ -1044,7 +1044,7 @@ pub fn formatBuf(
     }
 }
 
-pub fn formatFloatHexadecimal(
+pub fn format_float_hexadecimal(
     value: anytype,
     options: FormatOptions,
     writer: anytype,
@@ -1153,7 +1153,7 @@ pub fn formatFloatHexadecimal(
     try formatInt(exponent - exponent_bias, 10, .lower, .{}, writer);
 }
 
-pub fn formatInt(
+pub fn format_int(
     value: anytype,
     base: u8,
     case: Case,
@@ -1221,7 +1221,7 @@ pub fn formatInt(
     return formatBuf(buf[index..], options, writer);
 }
 
-pub fn formatIntBuf(out_buf: []u8, value: anytype, base: u8, case: Case, options: FormatOptions) usize {
+pub fn format_int_buf(out_buf: []u8, value: anytype, base: u8, case: Case, options: FormatOptions) usize {
     var fbs = std.io.fixedBufferStream(out_buf);
     formatInt(value, base, case, options, fbs.writer()) catch unreachable;
     return fbs.pos;
@@ -1241,7 +1241,7 @@ const FormatDurationData = struct {
     negative: bool = false,
 };
 
-fn formatDuration(data: FormatDurationData, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+fn format_duration(data: FormatDurationData, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
     _ = fmt;
 
     // worst case: "-XXXyXXwXXdXXhXXmXX.XXXs".len = 24
@@ -1301,7 +1301,7 @@ fn formatDuration(data: FormatDurationData, comptime fmt: []const u8, options: s
 
 /// Return a Formatter for number of nanoseconds according to its magnitude:
 /// [#y][#w][#d][#h][#m]#[.###][n|u|m]s
-pub fn fmtDuration(ns: u64) Formatter(formatDuration) {
+pub fn fmt_duration(ns: u64) Formatter(formatDuration) {
     const data = FormatDurationData{ .ns = ns };
     return .{ .data = data };
 }
@@ -1354,7 +1354,7 @@ test fmtDuration {
     }
 }
 
-fn formatDurationSigned(ns: i64, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+fn format_duration_signed(ns: i64, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
     if (ns < 0) {
         const data = FormatDurationData{ .ns = @as(u64, @intCast(-ns)), .negative = true };
         try formatDuration(data, fmt, options, writer);
@@ -1366,7 +1366,7 @@ fn formatDurationSigned(ns: i64, comptime fmt: []const u8, options: std.fmt.Form
 
 /// Return a Formatter for number of nanoseconds according to its signed magnitude:
 /// [#y][#w][#d][#h][#m]#[.###][n|u|m]s
-pub fn fmtDurationSigned(ns: i64) Formatter(formatDurationSigned) {
+pub fn fmt_duration_signed(ns: i64) Formatter(formatDurationSigned) {
     return .{ .data = ns };
 }
 
@@ -1460,7 +1460,7 @@ pub const ParseIntError = error{
 /// the data to be formatted using the given function `func`.  `func` must be of the following
 /// form:
 ///
-///     fn formatExample(
+///     fn format_example(
 ///         data: T,
 ///         comptime fmt: []const u8,
 ///         options: std.fmt.FormatOptions,
@@ -1493,12 +1493,12 @@ pub fn Formatter(comptime format_fn: anytype) type {
 ///
 /// Ignores '_' character in `buf`.
 /// See also `parseUnsigned`.
-pub fn parseInt(comptime T: type, buf: []const u8, base: u8) ParseIntError!T {
+pub fn parse_int(comptime T: type, buf: []const u8, base: u8) ParseIntError!T {
     return parseIntWithGenericCharacter(T, u8, buf, base);
 }
 
 /// Like `parseInt`, but with a generic `Character` type.
-pub fn parseIntWithGenericCharacter(
+pub fn parse_int_with_generic_character(
     comptime Result: type,
     comptime Character: type,
     buf: []const Character,
@@ -1570,7 +1570,7 @@ test parseInt {
     try std.testing.expectEqual(@as(i5, -16), try std.fmt.parseInt(i5, "-10", 16));
 }
 
-fn parseIntWithSign(
+fn parse_int_with_sign(
     comptime Result: type,
     comptime Character: type,
     buf: []const Character,
@@ -1649,7 +1649,7 @@ fn parseIntWithSign(
 ///
 /// Ignores '_' character in `buf`.
 /// See also `parseInt`.
-pub fn parseUnsigned(comptime T: type, buf: []const u8, base: u8) ParseIntError!T {
+pub fn parse_unsigned(comptime T: type, buf: []const u8, base: u8) ParseIntError!T {
     return parseIntWithSign(T, u8, buf, base, .pos);
 }
 
@@ -1690,7 +1690,7 @@ test parseUnsigned {
 }
 
 /// Parses a number like '2G', '2Gi', or '2GiB'.
-pub fn parseIntSizeSuffix(buf: []const u8, digit_base: u8) ParseIntError!usize {
+pub fn parse_int_size_suffix(buf: []const u8, digit_base: u8) ParseIntError!usize {
     var without_B = buf;
     if (mem.endsWith(u8, buf, "B")) without_B.len -= 1;
     var without_i = without_B;
@@ -1746,7 +1746,7 @@ test {
     _ = &parseFloat;
 }
 
-pub fn charToDigit(c: u8, base: u8) (error{InvalidCharacter}!u8) {
+pub fn char_to_digit(c: u8, base: u8) (error{InvalidCharacter}!u8) {
     const value = switch (c) {
         '0'...'9' => c - '0',
         'A'...'Z' => c - 'A' + 10,
@@ -1759,7 +1759,7 @@ pub fn charToDigit(c: u8, base: u8) (error{InvalidCharacter}!u8) {
     return value;
 }
 
-pub fn digitToChar(digit: u8, case: Case) u8 {
+pub fn digit_to_char(digit: u8, case: Case) u8 {
     return switch (digit) {
         0...9 => digit + '0',
         10...35 => digit + ((if (case == .upper) @as(u8, 'A') else @as(u8, 'a')) - 10),
@@ -1774,7 +1774,7 @@ pub const BufPrintError = error{
 
 /// Print a Formatter string into `buf`. Actually just a thin wrapper around `format` and `fixedBufferStream`.
 /// Returns a slice of the bytes printed to.
-pub fn bufPrint(buf: []u8, comptime fmt: []const u8, args: anytype) BufPrintError![]u8 {
+pub fn buf_print(buf: []u8, comptime fmt: []const u8, args: anytype) BufPrintError![]u8 {
     var fbs = std.io.fixedBufferStream(buf);
     format(fbs.writer().any(), fmt, args) catch |err| switch (err) {
         error.NoSpaceLeft => return error.NoSpaceLeft,
@@ -1783,7 +1783,7 @@ pub fn bufPrint(buf: []u8, comptime fmt: []const u8, args: anytype) BufPrintErro
     return fbs.getWritten();
 }
 
-pub fn bufPrintZ(buf: []u8, comptime fmt: []const u8, args: anytype) BufPrintError![:0]u8 {
+pub fn buf_print_z(buf: []u8, comptime fmt: []const u8, args: anytype) BufPrintError![:0]u8 {
     const result = try bufPrint(buf, fmt ++ "\x00", args);
     return result[0 .. result.len - 1 :0];
 }
@@ -1797,7 +1797,7 @@ pub fn count(comptime fmt: []const u8, args: anytype) u64 {
 
 pub const AllocPrintError = error{OutOfMemory};
 
-pub fn allocPrint(allocator: mem.Allocator, comptime fmt: []const u8, args: anytype) AllocPrintError![]u8 {
+pub fn alloc_print(allocator: mem.Allocator, comptime fmt: []const u8, args: anytype) AllocPrintError![]u8 {
     const size = math.cast(usize, count(fmt, args)) orelse return error.OutOfMemory;
     const buf = try allocator.alloc(u8, size);
     return bufPrint(buf, fmt, args) catch |err| switch (err) {
@@ -1805,7 +1805,7 @@ pub fn allocPrint(allocator: mem.Allocator, comptime fmt: []const u8, args: anyt
     };
 }
 
-pub fn allocPrintZ(allocator: mem.Allocator, comptime fmt: []const u8, args: anytype) AllocPrintError![:0]u8 {
+pub fn alloc_print_z(allocator: mem.Allocator, comptime fmt: []const u8, args: anytype) AllocPrintError![:0]u8 {
     const result = try allocPrint(allocator, fmt ++ "\x00", args);
     return result[0 .. result.len - 1 :0];
 }
@@ -1831,11 +1831,11 @@ test bufPrintIntToSlice {
     try std.testing.expectEqualSlices(u8, "-42", bufPrintIntToSlice(buf, @as(i32, -42), 10, .lower, FormatOptions{ .width = 3 }));
 }
 
-pub fn bufPrintIntToSlice(buf: []u8, value: anytype, base: u8, case: Case, options: FormatOptions) []u8 {
+pub fn buf_print_int_to_slice(buf: []u8, value: anytype, base: u8, case: Case, options: FormatOptions) []u8 {
     return buf[0..formatIntBuf(buf, value, base, case, options)];
 }
 
-pub inline fn comptimePrint(comptime fmt: []const u8, args: anytype) *const [count(fmt, args):0]u8 {
+pub inline fn comptime_print(comptime fmt: []const u8, args: anytype) *const [count(fmt, args):0]u8 {
     comptime {
         var buf: [count(fmt, args):0]u8 = undefined;
         _ = bufPrint(&buf, fmt, args) catch unreachable;
@@ -1987,7 +1987,7 @@ test "buffer" {
 }
 
 // Test formatting of arrays by value, by single-item pointer, and as a slice
-fn expectArrayFmt(expected: []const u8, comptime template: []const u8, comptime array_value: anytype) !void {
+fn expect_array_fmt(expected: []const u8, comptime template: []const u8, comptime array_value: anytype) !void {
     try expectFmt(expected, template, .{array_value});
     try expectFmt(expected, template, .{&array_value});
     var runtime_zero: usize = 0;
@@ -2431,7 +2431,7 @@ test "bytes.hex" {
 
 /// Encodes a sequence of bytes as hexadecimal digits.
 /// Returns an array containing the encoded bytes.
-pub fn bytesToHex(input: anytype, case: Case) [input.len * 2]u8 {
+pub fn bytes_to_hex(input: anytype, case: Case) [input.len * 2]u8 {
     if (input.len == 0) return [_]u8{};
     comptime assert(@TypeOf(input[0]) == u8); // elements to encode must be unsigned bytes
 
@@ -2447,7 +2447,7 @@ pub fn bytesToHex(input: anytype, case: Case) [input.len * 2]u8 {
 /// Decodes the sequence of bytes represented by the specified string of
 /// hexadecimal characters.
 /// Returns a slice of the output buffer containing the decoded bytes.
-pub fn hexToBytes(out: []u8, input: []const u8) ![]u8 {
+pub fn hex_to_bytes(out: []u8, input: []const u8) ![]u8 {
     // Expect 0 or n pairs of hexadecimal digits.
     if (input.len & 1 != 0)
         return error.InvalidLength;

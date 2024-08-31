@@ -17,7 +17,7 @@ test {
     try testDiv(f128, __divtc3);
 }
 
-fn testDiv(comptime T: type, comptime f: fn (T, T, T, T) callconv(.C) Complex(T)) !void {
+fn test_div(comptime T: type, comptime f: fn (T, T, T, T) callconv(.C) Complex(T)) !void {
     {
         const a: T = 1.0;
         const b: T = 0.0;

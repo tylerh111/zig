@@ -1,6 +1,6 @@
 objects: std.ArrayListUnmanaged(Object) = .{},
 
-pub fn isArchive(path: []const u8, fat_arch: ?fat.Arch) !bool {
+pub fn is_archive(path: []const u8, fat_arch: ?fat.Arch) !bool {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
     if (fat_arch) |arch| {
@@ -85,7 +85,7 @@ pub fn parse(self: *Archive, macho_file: *MachO, path: []const u8, handle_index:
     }
 }
 
-pub fn writeHeader(
+pub fn write_header(
     object_name: []const u8,
     object_size: usize,
     format: Format,
@@ -183,7 +183,7 @@ pub const ar_hdr = extern struct {
         return value[0..sentinel];
     }
 
-    fn nameLength(self: ar_hdr) !?u32 {
+    fn name_length(self: ar_hdr) !?u32 {
         const value = &self.ar_name;
         if (!mem.startsWith(u8, value, "#1/")) return null;
         const trimmed = mem.trimRight(u8, self.ar_name["#1/".len..], &[_]u8{0x20});
@@ -270,7 +270,7 @@ pub const ArSymtab = struct {
         /// Exporting file
         file: File.Index,
 
-        pub fn lessThan(ctx: void, lhs: Entry, rhs: Entry) bool {
+        pub fn less_than(ctx: void, lhs: Entry, rhs: Entry) bool {
             _ = ctx;
             if (lhs.off == rhs.off) return lhs.file < rhs.file;
             return lhs.off < rhs.off;
@@ -283,14 +283,14 @@ pub const Format = enum {
     p64,
 };
 
-pub fn ptrWidth(format: Format) usize {
+pub fn ptr_width(format: Format) usize {
     return switch (format) {
         .p32 => @as(usize, 4),
         .p64 => 8,
     };
 }
 
-pub fn writeInt(format: Format, value: u64, writer: anytype) !void {
+pub fn write_int(format: Format, value: u64, writer: anytype) !void {
     switch (format) {
         .p32 => try writer.writeInt(u32, std.math.cast(u32, value) orelse return error.Overflow, .little),
         .p64 => try writer.writeInt(u64, value, .little),

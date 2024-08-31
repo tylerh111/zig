@@ -35,7 +35,7 @@ test "slices pointing at the same address as global array." {
     const S = struct {
         const a = [_]u8{ 1, 2, 3 };
 
-        fn checkAddress(s: []const u8) !void {
+        fn check_address(s: []const u8) !void {
             for (s, 0..) |*i, j| {
                 try expect(i == &a[j]);
             }

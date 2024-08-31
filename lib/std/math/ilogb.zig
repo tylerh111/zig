@@ -25,7 +25,7 @@ pub fn ilogb(x: anytype) i32 {
 pub const fp_ilogbnan = minInt(i32);
 pub const fp_ilogb0 = minInt(i32);
 
-fn ilogbX(comptime T: type, x: T) i32 {
+fn ilogb_x(comptime T: type, x: T) i32 {
     const typeWidth = @typeInfo(T).Float.bits;
     const significandBits = math.floatMantissaBits(T);
     const exponentBits = math.floatExponentBits(T);

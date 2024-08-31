@@ -50,7 +50,7 @@ pub fn Field(comptime params: FieldParams) type {
         };
 
         /// Reject non-canonical encodings of an element.
-        pub fn rejectNonCanonical(s_: [encoded_length]u8, endian: std.builtin.Endian) NonCanonicalError!void {
+        pub fn reject_non_canonical(s_: [encoded_length]u8, endian: std.builtin.Endian) NonCanonicalError!void {
             var s = if (endian == .little) s_ else orderSwap(s_);
             const field_order_s = comptime fos: {
                 var fos: [encoded_length]u8 = undefined;
@@ -63,14 +63,14 @@ pub fn Field(comptime params: FieldParams) type {
         }
 
         /// Swap the endianness of an encoded element.
-        pub fn orderSwap(s: [encoded_length]u8) [encoded_length]u8 {
+        pub fn order_swap(s: [encoded_length]u8) [encoded_length]u8 {
             var t = s;
             for (s, 0..) |x, i| t[t.len - 1 - i] = x;
             return t;
         }
 
         /// Unpack a field element.
-        pub fn fromBytes(s_: [encoded_length]u8, endian: std.builtin.Endian) NonCanonicalError!Fe {
+        pub fn from_bytes(s_: [encoded_length]u8, endian: std.builtin.Endian) NonCanonicalError!Fe {
             const s = if (endian == .little) s_ else orderSwap(s_);
             try rejectNonCanonical(s, .little);
             var limbs_z: NonMontgomeryDomainFieldElement = undefined;
@@ -81,7 +81,7 @@ pub fn Field(comptime params: FieldParams) type {
         }
 
         /// Pack a field element.
-        pub fn toBytes(fe: Fe, endian: std.builtin.Endian) [encoded_length]u8 {
+        pub fn to_bytes(fe: Fe, endian: std.builtin.Endian) [encoded_length]u8 {
             var limbs_z: NonMontgomeryDomainFieldElement = undefined;
             fiat.fromMontgomery(&limbs_z, fe.limbs);
             var s: [encoded_length]u8 = undefined;
@@ -93,20 +93,20 @@ pub fn Field(comptime params: FieldParams) type {
         pub const IntRepr = meta.Int(.unsigned, params.field_bits);
 
         /// Create a field element from an integer.
-        pub fn fromInt(comptime x: IntRepr) NonCanonicalError!Fe {
+        pub fn from_int(comptime x: IntRepr) NonCanonicalError!Fe {
             var s: [encoded_length]u8 = undefined;
             mem.writeInt(IntRepr, &s, x, .little);
             return fromBytes(s, .little);
         }
 
         /// Return the field element as an integer.
-        pub fn toInt(fe: Fe) IntRepr {
+        pub fn to_int(fe: Fe) IntRepr {
             const s = fe.toBytes(.little);
             return mem.readInt(IntRepr, &s, .little);
         }
 
         /// Return true if the field element is zero.
-        pub fn isZero(fe: Fe) bool {
+        pub fn is_zero(fe: Fe) bool {
             var z: @TypeOf(fe.limbs[0]) = undefined;
             fiat.nonzero(&z, fe.limbs);
             return z == 0;
@@ -118,13 +118,13 @@ pub fn Field(comptime params: FieldParams) type {
         }
 
         /// Return true if the element is odd.
-        pub fn isOdd(fe: Fe) bool {
+        pub fn is_odd(fe: Fe) bool {
             const s = fe.toBytes(.little);
             return @as(u1, @truncate(s[0])) != 0;
         }
 
         /// Conditonally replace a field element with `a` if `c` is positive.
-        pub fn cMov(fe: *Fe, a: Fe, c: u1) void {
+        pub fn c_mov(fe: *Fe, a: Fe, c: u1) void {
             fiat.selectznz(&fe.limbs, c, fe.limbs, a.limbs);
         }
 
@@ -246,7 +246,7 @@ pub fn Field(comptime params: FieldParams) type {
         }
 
         /// Return true if the field element is a square.
-        pub fn isSquare(x2: Fe) bool {
+        pub fn is_square(x2: Fe) bool {
             if (field_order == 115792089210356248762697446949407573530086143415290314195533631308867097853951) {
                 const t110 = x2.mul(x2.sq()).sq();
                 const t111 = x2.mul(t110);
@@ -276,7 +276,7 @@ pub fn Field(comptime params: FieldParams) type {
         }
 
         // x=x2^((field_order+1)/4) w/ field order=3 (mod 4).
-        fn uncheckedSqrt(x2: Fe) Fe {
+        fn unchecked_sqrt(x2: Fe) Fe {
             if (field_order % 4 != 3) @compileError("unimplemented");
             if (field_order == 115792089210356248762697446949407573530086143415290314195533631308867097853951) {
                 const t11 = x2.mul(x2.sq());

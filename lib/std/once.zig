@@ -24,7 +24,7 @@ pub fn Once(comptime f: fn () void) type {
             return self.callSlow();
         }
 
-        fn callSlow(self: *@This()) void {
+        fn call_slow(self: *@This()) void {
             @setCold(true);
 
             self.mutex.lock();

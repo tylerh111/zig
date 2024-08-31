@@ -8,7 +8,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 
-pub fn suggestVectorLengthForCpu(comptime T: type, comptime cpu: std.Target.Cpu) ?comptime_int {
+pub fn suggest_vector_length_for_cpu(comptime T: type, comptime cpu: std.Target.Cpu) ?comptime_int {
     // This is guesswork, if you have better suggestions can add it or edit the current here
     // This can run in comptime only, but stage 1 fails at it, stage 2 can understand it
     const element_bit_size = @max(8, std.math.ceilPowerOfTwo(u16, @bitSizeOf(T)) catch unreachable);
@@ -57,7 +57,7 @@ pub fn suggestVectorLengthForCpu(comptime T: type, comptime cpu: std.Target.Cpu)
 
 /// Suggests a target-dependant vector length for a given type, or null if scalars are recommended.
 /// Not yet implemented for every CPU architecture.
-pub fn suggestVectorLength(comptime T: type) ?comptime_int {
+pub fn suggest_vector_length(comptime T: type) ?comptime_int {
     return suggestVectorLengthForCpu(T, builtin.cpu);
 }
 
@@ -75,7 +75,7 @@ test "suggestVectorLengthForCpu works with signed and unsigned values" {
     try std.testing.expectEqual(expected_len, signed_integer_len);
 }
 
-fn vectorLength(comptime VectorType: type) comptime_int {
+fn vector_length(comptime VectorType: type) comptime_int {
     return switch (@typeInfo(VectorType)) {
         .Vector => |info| info.len,
         .Array => |info| info.len,
@@ -235,7 +235,7 @@ test "vector patterns" {
 }
 
 /// Joins two vectors, shifts them leftwards (towards lower indices) and extracts the leftmost elements into a vector the length of a and b.
-pub fn mergeShift(a: anytype, b: anytype, comptime shift: VectorCount(@TypeOf(a, b))) @TypeOf(a, b) {
+pub fn merge_shift(a: anytype, b: anytype, comptime shift: VectorCount(@TypeOf(a, b))) @TypeOf(a, b) {
     const len = vectorLength(@TypeOf(a, b));
 
     return extract(join(a, b), shift, len);
@@ -243,7 +243,7 @@ pub fn mergeShift(a: anytype, b: anytype, comptime shift: VectorCount(@TypeOf(a,
 
 /// Elements are shifted rightwards (towards higher indices). New elements are added to the left, and the rightmost elements are cut off
 /// so that the length of the vector stays the same.
-pub fn shiftElementsRight(vec: anytype, comptime amount: VectorCount(@TypeOf(vec)), shift_in: std.meta.Child(@TypeOf(vec))) @TypeOf(vec) {
+pub fn shift_elements_right(vec: anytype, comptime amount: VectorCount(@TypeOf(vec)), shift_in: std.meta.Child(@TypeOf(vec))) @TypeOf(vec) {
     // It may be possible to implement shifts and rotates with a runtime-friendly slice of two joined vectors, as the length of the
     // slice would be comptime-known. This would permit vector shifts and rotates by a non-comptime-known amount.
     // However, I am unsure whether compiler optimizations would handle that well enough on all platforms.
@@ -255,23 +255,23 @@ pub fn shiftElementsRight(vec: anytype, comptime amount: VectorCount(@TypeOf(vec
 
 /// Elements are shifted leftwards (towards lower indices). New elements are added to the right, and the leftmost elements are cut off
 /// so that no elements with indices below 0 remain.
-pub fn shiftElementsLeft(vec: anytype, comptime amount: VectorCount(@TypeOf(vec)), shift_in: std.meta.Child(@TypeOf(vec))) @TypeOf(vec) {
+pub fn shift_elements_left(vec: anytype, comptime amount: VectorCount(@TypeOf(vec)), shift_in: std.meta.Child(@TypeOf(vec))) @TypeOf(vec) {
     const V = @TypeOf(vec);
 
     return mergeShift(vec, @as(V, @splat(shift_in)), amount);
 }
 
 /// Elements are shifted leftwards (towards lower indices). Elements that leave to the left will reappear to the right in the same order.
-pub fn rotateElementsLeft(vec: anytype, comptime amount: VectorCount(@TypeOf(vec))) @TypeOf(vec) {
+pub fn rotate_elements_left(vec: anytype, comptime amount: VectorCount(@TypeOf(vec))) @TypeOf(vec) {
     return mergeShift(vec, vec, amount);
 }
 
 /// Elements are shifted rightwards (towards higher indices). Elements that leave to the right will reappear to the left in the same order.
-pub fn rotateElementsRight(vec: anytype, comptime amount: VectorCount(@TypeOf(vec))) @TypeOf(vec) {
+pub fn rotate_elements_right(vec: anytype, comptime amount: VectorCount(@TypeOf(vec))) @TypeOf(vec) {
     return rotateElementsLeft(vec, vectorLength(@TypeOf(vec)) - amount);
 }
 
-pub fn reverseOrder(vec: anytype) @TypeOf(vec) {
+pub fn reverse_order(vec: anytype) @TypeOf(vec) {
     const Child = std.meta.Child(@TypeOf(vec));
     const len = vectorLength(@TypeOf(vec));
 
@@ -290,7 +290,7 @@ test "vector shifting" {
     try std.testing.expectEqual([4]u32{ 40, 30, 20, 10 }, reverseOrder(base));
 }
 
-pub fn firstTrue(vec: anytype) ?VectorIndex(@TypeOf(vec)) {
+pub fn first_true(vec: anytype) ?VectorIndex(@TypeOf(vec)) {
     const len = vectorLength(@TypeOf(vec));
     const IndexInt = VectorIndex(@TypeOf(vec));
 
@@ -302,7 +302,7 @@ pub fn firstTrue(vec: anytype) ?VectorIndex(@TypeOf(vec)) {
     return @reduce(.Min, indices);
 }
 
-pub fn lastTrue(vec: anytype) ?VectorIndex(@TypeOf(vec)) {
+pub fn last_true(vec: anytype) ?VectorIndex(@TypeOf(vec)) {
     const len = vectorLength(@TypeOf(vec));
     const IndexInt = VectorIndex(@TypeOf(vec));
 
@@ -315,7 +315,7 @@ pub fn lastTrue(vec: anytype) ?VectorIndex(@TypeOf(vec)) {
     return @reduce(.Max, indices);
 }
 
-pub fn countTrues(vec: anytype) VectorCount(@TypeOf(vec)) {
+pub fn count_trues(vec: anytype) VectorCount(@TypeOf(vec)) {
     const len = vectorLength(@TypeOf(vec));
     const CountIntType = VectorCount(@TypeOf(vec));
 
@@ -326,19 +326,19 @@ pub fn countTrues(vec: anytype) VectorCount(@TypeOf(vec)) {
     return @reduce(.Add, one_if_true);
 }
 
-pub fn firstIndexOfValue(vec: anytype, value: std.meta.Child(@TypeOf(vec))) ?VectorIndex(@TypeOf(vec)) {
+pub fn first_index_of_value(vec: anytype, value: std.meta.Child(@TypeOf(vec))) ?VectorIndex(@TypeOf(vec)) {
     const V = @TypeOf(vec);
 
     return firstTrue(vec == @as(V, @splat(value)));
 }
 
-pub fn lastIndexOfValue(vec: anytype, value: std.meta.Child(@TypeOf(vec))) ?VectorIndex(@TypeOf(vec)) {
+pub fn last_index_of_value(vec: anytype, value: std.meta.Child(@TypeOf(vec))) ?VectorIndex(@TypeOf(vec)) {
     const V = @TypeOf(vec);
 
     return lastTrue(vec == @as(V, @splat(value)));
 }
 
-pub fn countElementsWithValue(vec: anytype, value: std.meta.Child(@TypeOf(vec))) VectorCount(@TypeOf(vec)) {
+pub fn count_elements_with_value(vec: anytype, value: std.meta.Child(@TypeOf(vec))) VectorCount(@TypeOf(vec)) {
     const V = @TypeOf(vec);
 
     return countTrues(vec == @as(V, @splat(value)));
@@ -356,7 +356,7 @@ test "vector searching" {
 }
 
 /// Same as prefixScan, but with a user-provided, mathematically associative function.
-pub fn prefixScanWithFunc(
+pub fn prefix_scan_with_func(
     comptime hop: isize,
     vec: anytype,
     /// The error type that `func` might return. Set this to `void` if `func` doesn't return an error union.
@@ -389,7 +389,7 @@ pub fn prefixScanWithFunc(
 /// Supports the same operations as the @reduce() builtin. Takes O(logN) to compute.
 /// The scan is not linear, which may affect floating point errors. This may affect the determinism of
 /// algorithms that use this function.
-pub fn prefixScan(comptime op: std.builtin.ReduceOp, comptime hop: isize, vec: anytype) @TypeOf(vec) {
+pub fn prefix_scan(comptime op: std.builtin.ReduceOp, comptime hop: isize, vec: anytype) @TypeOf(vec) {
     const VecType = @TypeOf(vec);
     const Child = std.meta.Child(VecType);
 
@@ -416,7 +416,7 @@ pub fn prefixScan(comptime op: std.builtin.ReduceOp, comptime hop: isize, vec: a
     };
 
     const fn_container = struct {
-        fn opFn(a: VecType, b: VecType) VecType {
+        fn op_fn(a: VecType, b: VecType) VecType {
             return if (Child == bool) switch (op) {
                 .And => @select(bool, a, b, @as(VecType, @splat(false))),
                 .Or => @select(bool, a, @as(VecType, @splat(true)), b),

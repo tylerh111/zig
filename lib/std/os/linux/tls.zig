@@ -109,7 +109,7 @@ const TLSImage = struct {
 
 pub var tls_image: TLSImage = undefined;
 
-pub fn setThreadPointer(addr: usize) void {
+pub fn set_thread_pointer(addr: usize) void {
     switch (native_arch) {
         .x86 => {
             var user_desc: linux.user_desc = .{
@@ -188,7 +188,7 @@ pub fn setThreadPointer(addr: usize) void {
     }
 }
 
-fn initTLS(phdrs: []elf.Phdr) void {
+fn init_tls(phdrs: []elf.Phdr) void {
     var tls_phdr: ?*elf.Phdr = null;
     var img_base: usize = 0;
 
@@ -270,13 +270,13 @@ fn initTLS(phdrs: []elf.Phdr) void {
     };
 }
 
-inline fn alignPtrCast(comptime T: type, ptr: [*]u8) *T {
+inline fn align_ptr_cast(comptime T: type, ptr: [*]u8) *T {
     return @ptrCast(@alignCast(ptr));
 }
 
 /// Initializes all the fields of the static TLS area and returns the computed
 /// architecture-specific value of the thread-pointer register
-pub fn prepareTLS(area: []u8) usize {
+pub fn prepare_tls(area: []u8) usize {
     // Clear the area we're going to use, just to be safe
     @memset(area, 0);
     // Prepare the DTV
@@ -309,7 +309,7 @@ pub fn prepareTLS(area: []u8) usize {
 // overhead.
 var main_thread_tls_buffer: [0x2100]u8 align(mem.page_size) = undefined;
 
-pub fn initStaticTLS(phdrs: []elf.Phdr) void {
+pub fn init_static_tls(phdrs: []elf.Phdr) void {
     initTLS(phdrs);
 
     const tls_area = blk: {

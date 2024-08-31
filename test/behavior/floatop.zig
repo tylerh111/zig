@@ -6,7 +6,7 @@ const math = std.math;
 const epsilon_16 = 0.002;
 const epsilon = 0.000001;
 
-fn epsForType(comptime T: type) T {
+fn eps_for_type(comptime T: type) T {
     return switch (T) {
         f16 => @as(f16, epsilon_16),
         else => @as(T, epsilon),
@@ -43,7 +43,7 @@ test "add f80/f128/c_longdouble" {
     try comptime testAdd(c_longdouble);
 }
 
-fn testAdd(comptime T: type) !void {
+fn test_add(comptime T: type) !void {
     var one_point_two_five: T = 1.25;
     var two_point_seven_five: T = 2.75;
     _ = &one_point_two_five;
@@ -81,7 +81,7 @@ test "sub f80/f128/c_longdouble" {
     try comptime testSub(c_longdouble);
 }
 
-fn testSub(comptime T: type) !void {
+fn test_sub(comptime T: type) !void {
     var one_point_two_five: T = 1.25;
     var two_point_seven_five: T = 2.75;
     _ = &one_point_two_five;
@@ -119,7 +119,7 @@ test "mul f80/f128/c_longdouble" {
     try comptime testMul(c_longdouble);
 }
 
-fn testMul(comptime T: type) !void {
+fn test_mul(comptime T: type) !void {
     var one_point_two_five: T = 1.25;
     var two_point_seven_five: T = 2.75;
     _ = &one_point_two_five;
@@ -169,7 +169,7 @@ test "cmp f80/c_longdouble" {
     try comptime testCmp(c_longdouble);
 }
 
-fn testCmp(comptime T: type) !void {
+fn test_cmp(comptime T: type) !void {
     {
         // No decimal part
         var x: T = 1.0;
@@ -234,7 +234,7 @@ test "different sized float comparisons" {
     try comptime testDifferentSizedFloatComparisons();
 }
 
-fn testDifferentSizedFloatComparisons() !void {
+fn test_different_sized_float_comparisons() !void {
     var a: f16 = 1;
     var b: f64 = 2;
     _ = .{ &a, &b };
@@ -247,7 +247,7 @@ fn testDifferentSizedFloatComparisons() !void {
 //    testNearbyInt();
 //}
 
-//fn testNearbyInt() void {
+//fn test_nearby_int() void {
 //    // TODO test f16, f128, and c_longdouble
 //    // https://github.com/ziglang/zig/issues/4026
 //    {
@@ -318,7 +318,7 @@ test "@sqrt f80/f128/c_longdouble" {
     try comptime testSqrt(c_longdouble);
 }
 
-fn testSqrt(comptime T: type) !void {
+fn test_sqrt(comptime T: type) !void {
     const eps = epsForType(T);
     var four: T = 4.0;
     try expect(@sqrt(four) == 2.0);
@@ -396,7 +396,7 @@ test "@sqrt with vectors" {
     try comptime testSqrtWithVectors();
 }
 
-fn testSqrtWithVectors() !void {
+fn test_sqrt_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, 2.2, 3.3, 4.4 };
     _ = &v;
     const result = @sqrt(v);
@@ -448,7 +448,7 @@ test "@sin f80/f128/c_longdouble" {
     comptime try testSin(c_longdouble);
 }
 
-fn testSin(comptime T: type) !void {
+fn test_sin(comptime T: type) !void {
     const eps = epsForType(T);
     var zero: T = 0;
     _ = &zero;
@@ -472,7 +472,7 @@ test "@sin with vectors" {
     try comptime testSinWithVectors();
 }
 
-fn testSinWithVectors() !void {
+fn test_sin_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, 2.2, 3.3, 4.4 };
     _ = &v;
     const result = @sin(v);
@@ -524,7 +524,7 @@ test "@cos f80/f128/c_longdouble" {
     try comptime testCos(c_longdouble);
 }
 
-fn testCos(comptime T: type) !void {
+fn test_cos(comptime T: type) !void {
     const eps = epsForType(T);
     var zero: T = 0;
     _ = &zero;
@@ -548,7 +548,7 @@ test "@cos with vectors" {
     try comptime testCosWithVectors();
 }
 
-fn testCosWithVectors() !void {
+fn test_cos_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, 2.2, 3.3, 4.4 };
     _ = &v;
     const result = @cos(v);
@@ -600,7 +600,7 @@ test "@tan f80/f128/c_longdouble" {
     try comptime testTan(c_longdouble);
 }
 
-fn testTan(comptime T: type) !void {
+fn test_tan(comptime T: type) !void {
     const eps = epsForType(T);
     var zero: T = 0;
     _ = &zero;
@@ -624,7 +624,7 @@ test "@tan with vectors" {
     try comptime testTanWithVectors();
 }
 
-fn testTanWithVectors() !void {
+fn test_tan_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, 2.2, 3.3, 4.4 };
     _ = &v;
     const result = @tan(v);
@@ -676,7 +676,7 @@ test "@exp f80/f128/c_longdouble" {
     try comptime testExp(c_longdouble);
 }
 
-fn testExp(comptime T: type) !void {
+fn test_exp(comptime T: type) !void {
     const eps = epsForType(T);
 
     var zero: T = 0;
@@ -704,7 +704,7 @@ test "@exp with vectors" {
     try comptime testExpWithVectors();
 }
 
-fn testExpWithVectors() !void {
+fn test_exp_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, 2.2, 0.3, 0.4 };
     _ = &v;
     const result = @exp(v);
@@ -756,7 +756,7 @@ test "@exp2 f80/f128/c_longdouble" {
     try comptime testExp2(c_longdouble);
 }
 
-fn testExp2(comptime T: type) !void {
+fn test_exp2(comptime T: type) !void {
     const eps = epsForType(T);
     var two: T = 2;
     try expect(@exp2(two) == 4);
@@ -779,7 +779,7 @@ test "@exp2 with @vectors" {
     try comptime testExp2WithVectors();
 }
 
-fn testExp2WithVectors() !void {
+fn test_exp2_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, 2.2, 0.3, 0.4 };
     _ = &v;
     const result = @exp2(v);
@@ -831,7 +831,7 @@ test "@log f80/f128/c_longdouble" {
     try comptime testLog(c_longdouble);
 }
 
-fn testLog(comptime T: type) !void {
+fn test_log(comptime T: type) !void {
     const eps = epsForType(T);
     var e: T = math.e;
     try expect(math.approxEqAbs(T, @log(e), 1, eps));
@@ -904,7 +904,7 @@ test "@log2 f80/f128/c_longdouble" {
     try comptime testLog2(c_longdouble);
 }
 
-fn testLog2(comptime T: type) !void {
+fn test_log2(comptime T: type) !void {
     const eps = epsForType(T);
     var four: T = 4;
     try expect(@log2(four) == 2);
@@ -931,7 +931,7 @@ test "@log2 with vectors" {
     try comptime testLog2WithVectors();
 }
 
-fn testLog2WithVectors() !void {
+fn test_log2_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, 2.2, 0.3, 0.4 };
     _ = &v;
     const result = @log2(v);
@@ -983,7 +983,7 @@ test "@log10 f80/f128/c_longdouble" {
     try comptime testLog10(c_longdouble);
 }
 
-fn testLog10(comptime T: type) !void {
+fn test_log10(comptime T: type) !void {
     const eps = epsForType(T);
     var hundred: T = 100;
     try expect(@log10(hundred) == 2);
@@ -1006,7 +1006,7 @@ test "@log10 with vectors" {
     try comptime testLog10WithVectors();
 }
 
-fn testLog10WithVectors() !void {
+fn test_log10_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, 2.2, 0.3, 0.4 };
     _ = &v;
     const result = @log10(v);
@@ -1056,7 +1056,7 @@ test "@abs f80/f128/c_longdouble" {
     try comptime testFabs(c_longdouble);
 }
 
-fn testFabs(comptime T: type) !void {
+fn test_fabs(comptime T: type) !void {
     var two_point_five: T = 2.5;
     try expect(@abs(two_point_five) == 2.5);
     var neg_two_point_five: T = -2.5;
@@ -1130,7 +1130,7 @@ test "@abs with vectors" {
     try comptime testFabsWithVectors();
 }
 
-fn testFabsWithVectors() !void {
+fn test_fabs_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, -2.2, 0.3, -0.4 };
     _ = &v;
     const result = @abs(v);
@@ -1186,7 +1186,7 @@ test "@floor f80/f128/c_longdouble" {
     try comptime testFloor(c_longdouble);
 }
 
-fn testFloor(comptime T: type) !void {
+fn test_floor(comptime T: type) !void {
     var two_point_one: T = 2.1;
     try expect(@floor(two_point_one) == 2.0);
     var neg_two_point_one: T = -2.1;
@@ -1228,7 +1228,7 @@ test "@floor with vectors" {
     try comptime testFloorWithVectors();
 }
 
-fn testFloorWithVectors() !void {
+fn test_floor_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, -2.2, 0.3, -0.4 };
     _ = &v;
     const result = @floor(v);
@@ -1286,7 +1286,7 @@ test "@ceil f80/f128/c_longdouble" {
     try comptime testCeil(c_longdouble);
 }
 
-fn testCeil(comptime T: type) !void {
+fn test_ceil(comptime T: type) !void {
     var two_point_one: T = 2.1;
     try expect(@ceil(two_point_one) == 3.0);
     var neg_two_point_one: T = -2.1;
@@ -1329,7 +1329,7 @@ test "@ceil with vectors" {
     try comptime testCeilWithVectors();
 }
 
-fn testCeilWithVectors() !void {
+fn test_ceil_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, -2.2, 0.3, -0.4 };
     _ = &v;
     const result = @ceil(v);
@@ -1397,7 +1397,7 @@ test "@trunc f80/f128/c_longdouble" {
     try comptime testTrunc(c_longdouble);
 }
 
-fn testTrunc(comptime T: type) !void {
+fn test_trunc(comptime T: type) !void {
     var two_point_one: T = 2.1;
     try expect(@trunc(two_point_one) == 2.0);
     var neg_two_point_one: T = -2.1;
@@ -1440,7 +1440,7 @@ test "@trunc with vectors" {
     try comptime testTruncWithVectors();
 }
 
-fn testTruncWithVectors() !void {
+fn test_trunc_with_vectors() !void {
     var v: @Vector(4, f32) = [_]f32{ 1.1, -2.2, 0.3, -0.4 };
     _ = &v;
     const result = @trunc(v);
@@ -1499,7 +1499,7 @@ test "neg f80/f128/c_longdouble" {
     try comptime testNeg(c_longdouble);
 }
 
-fn testNeg(comptime T: type) !void {
+fn test_neg(comptime T: type) !void {
     var two_point_five: T = 2.5;
     try expect(-two_point_five == -2.5);
     var neg_two_point_five: T = -2.5;
@@ -1576,7 +1576,7 @@ test "eval @setFloatMode at compile-time" {
     try expect(result == 1234.0);
 }
 
-fn fnWithFloatMode() f32 {
+fn fn_with_float_mode() f32 {
     @setFloatMode(std.builtin.FloatMode.strict);
     return 1234.0;
 }

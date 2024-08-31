@@ -121,7 +121,7 @@ fn HuffmanDecoder(
         /// Huffman code for n symbols.
         ///
         /// Reference: https://github.com/madler/zlib/blob/5c42a230b7b468dff011f444161c0145b5efae59/contrib/puff/puff.c#L340
-        fn checkCompleteness(lens: []const u4) !void {
+        fn check_completeness(lens: []const u4) !void {
             if (alphabet_size == 286)
                 if (lens[256] == 0) return error.MissingEndOfBlockCode;
 
@@ -160,7 +160,7 @@ fn HuffmanDecoder(
             return self.findLinked(code, sym.next);
         }
 
-        inline fn findLinked(self: *Self, code: u16, start: u16) !Symbol {
+        inline fn find_linked(self: *Self, code: u16, start: u16) !Symbol {
             var pos = start;
             while (pos > 0) {
                 const sym = self.symbols[pos];

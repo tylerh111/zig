@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub fn windows1252ToUtf8Stream(writer: anytype, reader: anytype) !usize {
+pub fn windows1252_to_utf8_stream(writer: anytype, reader: anytype) !usize {
     var bytes_written: usize = 0;
     var utf8_buf: [3]u8 = undefined;
     while (true) {
@@ -21,7 +21,7 @@ pub fn windows1252ToUtf8Stream(writer: anytype, reader: anytype) !usize {
 }
 
 /// Returns the number of code units written to the writer
-pub fn windows1252ToUtf16AllocZ(allocator: std.mem.Allocator, win1252_str: []const u8) ![:0]u16 {
+pub fn windows1252_to_utf16_alloc_z(allocator: std.mem.Allocator, win1252_str: []const u8) ![:0]u16 {
     // Guaranteed to need exactly the same number of code units as Windows-1252 bytes
     var utf16_slice = try allocator.allocSentinel(u16, win1252_str.len, 0);
     errdefer allocator.free(utf16_slice);
@@ -32,7 +32,7 @@ pub fn windows1252ToUtf16AllocZ(allocator: std.mem.Allocator, win1252_str: []con
 }
 
 /// https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WindowsBestFit/bestfit1252.txt
-pub fn toCodepoint(c: u8) u16 {
+pub fn to_codepoint(c: u8) u16 {
     return switch (c) {
         0x80 => 0x20ac, // Euro Sign
         0x82 => 0x201a, // Single Low-9 Quotation Mark
@@ -78,7 +78,7 @@ pub fn toCodepoint(c: u8) u16 {
 ///  0x202F => 0xA0, // Narrow No-Break Space
 ///  0x2033 => '"', // Double Prime
 ///  0x2036 => '"', // Reversed Double Prime
-pub fn bestFitFromCodepoint(codepoint: u21) ?u8 {
+pub fn best_fit_from_codepoint(codepoint: u21) ?u8 {
     return switch (codepoint) {
         0x00...0x7F,
         0x81,

@@ -7,11 +7,11 @@ pub const Bool = enum(c_int) {
     True,
     _,
 
-    pub fn fromBool(b: bool) Bool {
+    pub fn from_bool(b: bool) Bool {
         return @as(Bool, @enumFromInt(@intFromBool(b)));
     }
 
-    pub fn toBool(b: Bool) bool {
+    pub fn to_bool(b: Bool) bool {
         return b != .False;
     }
 };

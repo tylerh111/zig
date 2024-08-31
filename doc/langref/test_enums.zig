@@ -62,7 +62,7 @@ const Suit = enum {
     diamonds,
     hearts,
 
-    pub fn isClubs(self: Suit) bool {
+    pub fn is_clubs(self: Suit) bool {
         return self == Suit.clubs;
     }
 };

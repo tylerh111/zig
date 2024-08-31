@@ -41,7 +41,7 @@ pub const Address = extern union {
     /// Parse the given IP address string into an Address value.
     /// It is recommended to use `resolveIp` instead, to handle
     /// IPv6 link-local unix addresses.
-    pub fn parseIp(name: []const u8, port: u16) !Address {
+    pub fn parse_ip(name: []const u8, port: u16) !Address {
         if (parseIp4(name, port)) |ip4| return ip4 else |err| switch (err) {
             error.Overflow,
             error.InvalidEnd,
@@ -63,7 +63,7 @@ pub const Address = extern union {
         return error.InvalidIPAddressFormat;
     }
 
-    pub fn resolveIp(name: []const u8, port: u16) !Address {
+    pub fn resolve_ip(name: []const u8, port: u16) !Address {
         if (parseIp4(name, port)) |ip4| return ip4 else |err| switch (err) {
             error.Overflow,
             error.InvalidEnd,
@@ -86,7 +86,7 @@ pub const Address = extern union {
         return error.InvalidIPAddressFormat;
     }
 
-    pub fn parseExpectingFamily(name: []const u8, family: posix.sa_family_t, port: u16) !Address {
+    pub fn parse_expecting_family(name: []const u8, family: posix.sa_family_t, port: u16) !Address {
         switch (family) {
             posix.AF.INET => return parseIp4(name, port),
             posix.AF.INET6 => return parseIp6(name, port),
@@ -95,27 +95,27 @@ pub const Address = extern union {
         }
     }
 
-    pub fn parseIp6(buf: []const u8, port: u16) IPv6ParseError!Address {
+    pub fn parse_ip6(buf: []const u8, port: u16) IPv6ParseError!Address {
         return .{ .in6 = try Ip6Address.parse(buf, port) };
     }
 
-    pub fn resolveIp6(buf: []const u8, port: u16) IPv6ResolveError!Address {
+    pub fn resolve_ip6(buf: []const u8, port: u16) IPv6ResolveError!Address {
         return .{ .in6 = try Ip6Address.resolve(buf, port) };
     }
 
-    pub fn parseIp4(buf: []const u8, port: u16) IPv4ParseError!Address {
+    pub fn parse_ip4(buf: []const u8, port: u16) IPv4ParseError!Address {
         return .{ .in = try Ip4Address.parse(buf, port) };
     }
 
-    pub fn initIp4(addr: [4]u8, port: u16) Address {
+    pub fn init_ip4(addr: [4]u8, port: u16) Address {
         return .{ .in = Ip4Address.init(addr, port) };
     }
 
-    pub fn initIp6(addr: [16]u8, port: u16, flowinfo: u32, scope_id: u32) Address {
+    pub fn init_ip6(addr: [16]u8, port: u16, flowinfo: u32, scope_id: u32) Address {
         return .{ .in6 = Ip6Address.init(addr, port, flowinfo, scope_id) };
     }
 
-    pub fn initUnix(path: []const u8) !Address {
+    pub fn init_unix(path: []const u8) !Address {
         var sock_addr = posix.sockaddr.un{
             .family = posix.AF.UNIX,
             .path = undefined,
@@ -132,7 +132,7 @@ pub const Address = extern union {
 
     /// Returns the port in native endian.
     /// Asserts that the address is ip4 or ip6.
-    pub fn getPort(self: Address) u16 {
+    pub fn get_port(self: Address) u16 {
         return switch (self.any.family) {
             posix.AF.INET => self.in.getPort(),
             posix.AF.INET6 => self.in6.getPort(),
@@ -142,7 +142,7 @@ pub const Address = extern union {
 
     /// `port` is native-endian.
     /// Asserts that the address is ip4 or ip6.
-    pub fn setPort(self: *Address, port: u16) void {
+    pub fn set_port(self: *Address, port: u16) void {
         switch (self.any.family) {
             posix.AF.INET => self.in.setPort(port),
             posix.AF.INET6 => self.in6.setPort(port),
@@ -153,7 +153,7 @@ pub const Address = extern union {
     /// Asserts that `addr` is an IP address.
     /// This function will read past the end of the pointer, with a size depending
     /// on the address family.
-    pub fn initPosix(addr: *align(4) const posix.sockaddr) Address {
+    pub fn init_posix(addr: *align(4) const posix.sockaddr) Address {
         switch (addr.family) {
             posix.AF.INET => return Address{ .in = Ip4Address{ .sa = @as(*const posix.sockaddr.in, @ptrCast(addr)).* } },
             posix.AF.INET6 => return Address{ .in6 = Ip6Address{ .sa = @as(*const posix.sockaddr.in6, @ptrCast(addr)).* } },
@@ -188,7 +188,7 @@ pub const Address = extern union {
         return mem.eql(u8, a_bytes, b_bytes);
     }
 
-    pub fn getOsSockLen(self: Address) posix.socklen_t {
+    pub fn get_os_sock_len(self: Address) posix.socklen_t {
         switch (self.any.family) {
             posix.AF.INET => return self.in.getOsSockLen(),
             posix.AF.INET6 => return self.in6.getOsSockLen(),
@@ -317,7 +317,7 @@ pub const Ip4Address = extern struct {
         return error.Incomplete;
     }
 
-    pub fn resolveIp(name: []const u8, port: u16) !Ip4Address {
+    pub fn resolve_ip(name: []const u8, port: u16) !Ip4Address {
         if (parse(name, port)) |ip4| return ip4 else |err| switch (err) {
             error.Overflow,
             error.InvalidEnd,
@@ -340,13 +340,13 @@ pub const Ip4Address = extern struct {
 
     /// Returns the port in native endian.
     /// Asserts that the address is ip4 or ip6.
-    pub fn getPort(self: Ip4Address) u16 {
+    pub fn get_port(self: Ip4Address) u16 {
         return mem.bigToNative(u16, self.sa.port);
     }
 
     /// `port` is native-endian.
     /// Asserts that the address is ip4 or ip6.
-    pub fn setPort(self: *Ip4Address, port: u16) void {
+    pub fn set_port(self: *Ip4Address, port: u16) void {
         self.sa.port = mem.nativeToBig(u16, port);
     }
 
@@ -368,7 +368,7 @@ pub const Ip4Address = extern struct {
         });
     }
 
-    pub fn getOsSockLen(self: Ip4Address) posix.socklen_t {
+    pub fn get_os_sock_len(self: Ip4Address) posix.socklen_t {
         _ = self;
         return @sizeOf(posix.sockaddr.in);
     }
@@ -644,13 +644,13 @@ pub const Ip6Address = extern struct {
 
     /// Returns the port in native endian.
     /// Asserts that the address is ip4 or ip6.
-    pub fn getPort(self: Ip6Address) u16 {
+    pub fn get_port(self: Ip6Address) u16 {
         return mem.bigToNative(u16, self.sa.port);
     }
 
     /// `port` is native-endian.
     /// Asserts that the address is ip4 or ip6.
-    pub fn setPort(self: *Ip6Address, port: u16) void {
+    pub fn set_port(self: *Ip6Address, port: u16) void {
         self.sa.port = mem.nativeToBig(u16, port);
     }
 
@@ -703,13 +703,13 @@ pub const Ip6Address = extern struct {
         try std.fmt.format(out_stream, "]:{}", .{port});
     }
 
-    pub fn getOsSockLen(self: Ip6Address) posix.socklen_t {
+    pub fn get_os_sock_len(self: Ip6Address) posix.socklen_t {
         _ = self;
         return @sizeOf(posix.sockaddr.in6);
     }
 };
 
-pub fn connectUnixSocket(path: []const u8) !Stream {
+pub fn connect_unix_socket(path: []const u8) !Stream {
     const opt_non_block = 0;
     const sockfd = try posix.socket(
         posix.AF.UNIX,
@@ -773,7 +773,7 @@ pub const AddressList = struct {
 pub const TcpConnectToHostError = GetAddressListError || TcpConnectToAddressError;
 
 /// All memory allocated with `allocator` will be freed before this function returns.
-pub fn tcpConnectToHost(allocator: mem.Allocator, name: []const u8, port: u16) TcpConnectToHostError!Stream {
+pub fn tcp_connect_to_host(allocator: mem.Allocator, name: []const u8, port: u16) TcpConnectToHostError!Stream {
     const list = try getAddressList(allocator, name, port);
     defer list.deinit();
 
@@ -792,7 +792,7 @@ pub fn tcpConnectToHost(allocator: mem.Allocator, name: []const u8, port: u16) T
 
 pub const TcpConnectToAddressError = posix.SocketError || posix.ConnectError;
 
-pub fn tcpConnectToAddress(address: Address) TcpConnectToAddressError!Stream {
+pub fn tcp_connect_to_address(address: Address) TcpConnectToAddressError!Stream {
     const nonblock = 0;
     const sock_flags = posix.SOCK.STREAM | nonblock |
         (if (native_os == .windows) 0 else posix.SOCK.CLOEXEC);
@@ -829,7 +829,7 @@ const GetAddressListError = std.mem.Allocator.Error || std.fs.File.OpenError || 
 };
 
 /// Call `AddressList.deinit` on the result.
-pub fn getAddressList(allocator: mem.Allocator, name: []const u8, port: u16) GetAddressListError!*AddressList {
+pub fn get_address_list(allocator: mem.Allocator, name: []const u8, port: u16) GetAddressListError!*AddressList {
     const result = blk: {
         var arena = std.heap.ArenaAllocator.init(allocator);
         errdefer arena.deinit();
@@ -1023,7 +1023,7 @@ const DAS_SCOPE_SHIFT = 16;
 const DAS_PREFIX_SHIFT = 8;
 const DAS_ORDER_SHIFT = 0;
 
-fn linuxLookupName(
+fn linux_lookup_name(
     addrs: *std.ArrayList(LookupAddr),
     canon: *std.ArrayList(u8),
     opt_name: ?[]const u8,
@@ -1207,7 +1207,7 @@ const defined_policies = [_]Policy{
     },
 };
 
-fn policyOf(a: [16]u8) *const Policy {
+fn policy_of(a: [16]u8) *const Policy {
     for (&defined_policies) |*policy| {
         if (!mem.eql(u8, a[0..policy.len], policy.addr[0..policy.len])) continue;
         if ((a[policy.len] & policy.mask) != policy.addr[policy.len]) continue;
@@ -1216,7 +1216,7 @@ fn policyOf(a: [16]u8) *const Policy {
     unreachable;
 }
 
-fn scopeOf(a: [16]u8) u8 {
+fn scope_of(a: [16]u8) u8 {
     if (IN6_IS_ADDR_MULTICAST(a)) return a[1] & 15;
     if (IN6_IS_ADDR_LINKLOCAL(a)) return 2;
     if (IN6_IS_ADDR_LOOPBACK(a)) return 2;
@@ -1224,7 +1224,7 @@ fn scopeOf(a: [16]u8) u8 {
     return 14;
 }
 
-fn prefixMatch(s: [16]u8, d: [16]u8) u8 {
+fn prefix_match(s: [16]u8, d: [16]u8) u8 {
     // TODO: This FIXME inherited from porting from musl libc.
     // I don't want this to go into zig std lib 1.0.0.
 
@@ -1237,7 +1237,7 @@ fn prefixMatch(s: [16]u8, d: [16]u8) u8 {
     return i;
 }
 
-fn labelOf(a: [16]u8) u8 {
+fn label_of(a: [16]u8) u8 {
     return policyOf(a).label;
 }
 
@@ -1261,12 +1261,12 @@ fn IN6_IS_ADDR_SITELOCAL(a: [16]u8) bool {
 }
 
 // Parameters `b` and `a` swapped to make this descending.
-fn addrCmpLessThan(context: void, b: LookupAddr, a: LookupAddr) bool {
+fn addr_cmp_less_than(context: void, b: LookupAddr, a: LookupAddr) bool {
     _ = context;
     return a.sortkey < b.sortkey;
 }
 
-fn linuxLookupNameFromNull(
+fn linux_lookup_name_from_null(
     addrs: *std.ArrayList(LookupAddr),
     family: posix.sa_family_t,
     flags: u32,
@@ -1297,7 +1297,7 @@ fn linuxLookupNameFromNull(
     }
 }
 
-fn linuxLookupNameFromHosts(
+fn linux_lookup_name_from_hosts(
     addrs: *std.ArrayList(LookupAddr),
     canon: *std.ArrayList(u8),
     name: []const u8,
@@ -1359,7 +1359,7 @@ fn linuxLookupNameFromHosts(
     }
 }
 
-pub fn isValidHostName(hostname: []const u8) bool {
+pub fn is_valid_host_name(hostname: []const u8) bool {
     if (hostname.len >= 254) return false;
     if (!std.unicode.utf8ValidateSlice(hostname)) return false;
     for (hostname) |byte| {
@@ -1371,7 +1371,7 @@ pub fn isValidHostName(hostname: []const u8) bool {
     return true;
 }
 
-fn linuxLookupNameFromDnsSearch(
+fn linux_lookup_name_from_dns_search(
     addrs: *std.ArrayList(LookupAddr),
     canon: *std.ArrayList(u8),
     name: []const u8,
@@ -1426,7 +1426,7 @@ const dpc_ctx = struct {
     port: u16,
 };
 
-fn linuxLookupNameFromDns(
+fn linux_lookup_name_from_dns(
     addrs: *std.ArrayList(LookupAddr),
     canon: *std.ArrayList(u8),
     name: []const u8,
@@ -1495,7 +1495,7 @@ const ResolvConf = struct {
 
 /// Ignores lines longer than 512 bytes.
 /// TODO: https://github.com/ziglang/zig/issues/2765 and https://github.com/ziglang/zig/issues/2761
-fn getResolvConf(allocator: mem.Allocator, rc: *ResolvConf) !void {
+fn get_resolv_conf(allocator: mem.Allocator, rc: *ResolvConf) !void {
     rc.* = ResolvConf{
         .ns = std.ArrayList(LookupAddr).init(allocator),
         .search = std.ArrayList(u8).init(allocator),
@@ -1565,7 +1565,7 @@ fn getResolvConf(allocator: mem.Allocator, rc: *ResolvConf) !void {
     }
 }
 
-fn linuxLookupNameFromNumericUnspec(
+fn linux_lookup_name_from_numeric_unspec(
     addrs: *std.ArrayList(LookupAddr),
     name: []const u8,
     port: u16,
@@ -1574,7 +1574,7 @@ fn linuxLookupNameFromNumericUnspec(
     (try addrs.addOne()).* = LookupAddr{ .addr = addr };
 }
 
-fn resMSendRc(
+fn res_msend_rc(
     queries: []const []const u8,
     answers: [][]u8,
     answer_bufs: []const []u8,
@@ -1724,7 +1724,7 @@ fn resMSendRc(
     }
 }
 
-fn dnsParse(
+fn dns_parse(
     r: []const u8,
     ctx: anytype,
     comptime callback: anytype,
@@ -1757,7 +1757,7 @@ fn dnsParse(
     }
 }
 
-fn dnsParseCallback(ctx: dpc_ctx, rr: u8, data: []const u8, packet: []const u8) !void {
+fn dns_parse_callback(ctx: dpc_ctx, rr: u8, data: []const u8, packet: []const u8) !void {
     switch (rr) {
         posix.RR.A => {
             if (data.len != 4) return error.InvalidDnsARecord;
@@ -1835,7 +1835,7 @@ pub const Stream = struct {
     /// Returns the number of bytes read. If the number read is smaller than
     /// `buffer.len`, it means the stream reached the end. Reaching the end of
     /// a stream is not an error condition.
-    pub fn readAll(s: Stream, buffer: []u8) ReadError!usize {
+    pub fn read_all(s: Stream, buffer: []u8) ReadError!usize {
         return readAtLeast(s, buffer, buffer.len);
     }
 
@@ -1844,7 +1844,7 @@ pub const Stream = struct {
     /// filled. If the number read is less than `len` it means the stream
     /// reached the end. Reaching the end of the stream is not an error
     /// condition.
-    pub fn readAtLeast(s: Stream, buffer: []u8, len: usize) ReadError!usize {
+    pub fn read_at_least(s: Stream, buffer: []u8, len: usize) ReadError!usize {
         assert(len <= buffer.len);
         var index: usize = 0;
         while (index < len) {
@@ -1866,7 +1866,7 @@ pub const Stream = struct {
         return posix.write(self.handle, buffer);
     }
 
-    pub fn writeAll(self: Stream, bytes: []const u8) WriteError!void {
+    pub fn write_all(self: Stream, bytes: []const u8) WriteError!void {
         var index: usize = 0;
         while (index < bytes.len) {
             index += try self.write(bytes[index..]);
@@ -1883,7 +1883,7 @@ pub const Stream = struct {
     /// order to handle partial writes from the underlying OS layer.
     /// See https://github.com/ziglang/zig/issues/7699
     /// See equivalent function: `std.fs.File.writevAll`.
-    pub fn writevAll(self: Stream, iovecs: []posix.iovec_const) WriteError!void {
+    pub fn writev_all(self: Stream, iovecs: []posix.iovec_const) WriteError!void {
         if (iovecs.len == 0) return;
 
         var i: usize = 0;

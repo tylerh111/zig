@@ -140,11 +140,11 @@ pub fn SbrkAllocator(comptime sbrk: *const fn (n: usize) usize) type {
             }
         }
 
-        inline fn bigPagesNeeded(byte_count: usize) usize {
+        inline fn big_pages_needed(byte_count: usize) usize {
             return (byte_count + (bigpage_size + (@sizeOf(usize) - 1))) / bigpage_size;
         }
 
-        fn allocBigPages(n: usize) usize {
+        fn alloc_big_pages(n: usize) usize {
             const pow2_pages = math.ceilPowerOfTwoAssert(usize, n);
             const slot_size_bytes = pow2_pages * bigpage_size;
             const class = math.log2(pow2_pages);

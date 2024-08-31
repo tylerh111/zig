@@ -28,7 +28,7 @@ test "while null capture" {
 }
 
 var numbers_left: u32 = undefined;
-fn eventuallyNullSequence() ?u32 {
+fn eventually_null_sequence() ?u32 {
     return if (numbers_left == 0) null else blk: {
         numbers_left -= 1;
         break :blk numbers_left;

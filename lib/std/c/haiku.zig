@@ -1131,7 +1131,7 @@ pub const DirEnt = extern struct {
     reclen: u16,
     /// name of the entry (null byte terminated)
     name: [0]u8,
-    pub fn getName(dirent: *const DirEnt) [*:0]const u8 {
+    pub fn get_name(dirent: *const DirEnt) [*:0]const u8 {
         return @ptrCast(&dirent.name);
     }
 };

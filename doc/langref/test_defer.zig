@@ -2,7 +2,7 @@ const std = @import("std");
 const expect = std.testing.expect;
 const print = std.debug.print;
 
-fn deferExample() !usize {
+fn defer_example() !usize {
     var a: usize = 1;
 
     {

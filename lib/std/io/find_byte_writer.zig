@@ -31,7 +31,7 @@ pub fn FindByteWriter(comptime UnderlyingWriter: type) type {
     };
 }
 
-pub fn findByteWriter(byte: u8, underlying_writer: anytype) FindByteWriter(@TypeOf(underlying_writer)) {
+pub fn find_byte_writer(byte: u8, underlying_writer: anytype) FindByteWriter(@TypeOf(underlying_writer)) {
     return FindByteWriter(@TypeOf(underlying_writer)){
         .underlying_writer = underlying_writer,
         .byte = byte,

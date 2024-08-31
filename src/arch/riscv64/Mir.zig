@@ -323,7 +323,7 @@ pub const FrameLoc = struct {
 
 /// Returns the requested data, as well as the new index which is at the start of the
 /// trailers for the object.
-pub fn extraData(mir: Mir, comptime T: type, index: usize) struct { data: T, end: usize } {
+pub fn extra_data(mir: Mir, comptime T: type, index: usize) struct { data: T, end: usize } {
     const fields = std.meta.fields(T);
     var i: usize = index;
     var result: T = undefined;
@@ -354,7 +354,7 @@ pub const RegisterList = struct {
     const BitSet = IntegerBitSet(32);
     const Self = @This();
 
-    fn getIndexForReg(registers: []const Register, reg: Register) BitSet.MaskInt {
+    fn get_index_for_reg(registers: []const Register, reg: Register) BitSet.MaskInt {
         for (registers, 0..) |cpreg, i| {
             if (reg.id() == cpreg.id()) return @intCast(i);
         }
@@ -366,7 +366,7 @@ pub const RegisterList = struct {
         self.bitset.set(index);
     }
 
-    pub fn isSet(self: Self, registers: []const Register, reg: Register) bool {
+    pub fn is_set(self: Self, registers: []const Register, reg: Register) bool {
         const index = getIndexForReg(registers, reg);
         return self.bitset.isSet(index);
     }

@@ -1,10 +1,10 @@
 // purposefully conflicting function with main source file
 // but it's private so it should be OK
-fn privateFunction() bool {
+fn private_function() bool {
     return false;
 }
 
-pub fn printText() bool {
+pub fn print_text() bool {
     return privateFunction();
 }
 

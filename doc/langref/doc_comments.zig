@@ -8,7 +8,7 @@ const Timestamp = struct {
 
     /// Returns a `Timestamp` struct representing the Unix epoch; that is, the
     /// moment of 1970 Jan 1 00:00:00 UTC (this is a doc comment too).
-    pub fn unixEpoch() Timestamp {
+    pub fn unix_epoch() Timestamp {
         return Timestamp{
             .seconds = 0,
             .nanos = 0,

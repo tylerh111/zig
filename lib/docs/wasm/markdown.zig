@@ -139,7 +139,7 @@ pub const main = if (@import("root") == @This())
 else
     @compileError("only available as root source file");
 
-fn mainImpl() !void {
+fn main_impl() !void {
     const gpa = std.heap.c_allocator;
 
     var parser = try Parser.init(gpa);
@@ -1108,7 +1108,7 @@ test "Unicode handling" {
     try testRender("\xE2\x82", "<p>\u{FFFD}</p>\n");
 }
 
-fn testRender(input: []const u8, expected: []const u8) !void {
+fn test_render(input: []const u8, expected: []const u8) !void {
     var parser = try Parser.init(testing.allocator);
     defer parser.deinit();
 

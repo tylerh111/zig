@@ -4,7 +4,7 @@ const assert = std.debug.assert;
 const types = @import("../types.zig");
 const Table = types.compressed_block.Table;
 
-pub fn decodeFseTable(
+pub fn decode_fse_table(
     bit_reader: anytype,
     expected_symbol_count: usize,
     max_accuracy_log: u4,
@@ -68,7 +68,7 @@ pub fn decodeFseTable(
     return table_size;
 }
 
-fn buildFseTable(values: []const u16, entries: []Table.Fse) !void {
+fn build_fse_table(values: []const u16, entries: []Table.Fse) !void {
     const total_probability = @as(u16, @intCast(entries.len));
     const accuracy_log = std.math.log2_int(u16, total_probability);
     assert(total_probability <= 1 << 9);

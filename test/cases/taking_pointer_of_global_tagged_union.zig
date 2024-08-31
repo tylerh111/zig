@@ -5,7 +5,7 @@ const A = union(enum) { hello: usize, merp: void };
 var global_a: A = .{ .hello = 12 };
 var global_usize: usize = 0;
 
-fn doSomethingWithUsize(ptr: *usize) usize {
+fn do_something_with_usize(ptr: *usize) usize {
     ptr.* = ptr.* + 1;
     return ptr.*;
 }

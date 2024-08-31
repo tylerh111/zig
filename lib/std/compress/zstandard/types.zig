@@ -107,13 +107,13 @@ pub const compressed_block = struct {
                 return Result{ .index = i };
             }
 
-            pub fn weightToBitCount(weight: u4, max_bit_count: u4) u4 {
+            pub fn weight_to_bit_count(weight: u4, max_bit_count: u4) u4 {
                 return if (weight == 0) 0 else ((max_bit_count + 1) - weight);
             }
         };
 
         pub const StreamCount = enum { one, four };
-        pub fn streamCount(size_format: u2, block_type: BlockType) StreamCount {
+        pub fn stream_count(size_format: u2, block_type: BlockType) StreamCount {
             return switch (block_type) {
                 .raw, .rle => .one,
                 .compressed, .treeless => if (size_format == 0) .one else .four,

@@ -3,7 +3,7 @@ const testing = std.testing;
 
 /// Read a single unsigned LEB128 value from the given reader as type T,
 /// or error.Overflow if the value cannot fit.
-pub fn readULEB128(comptime T: type, reader: anytype) !T {
+pub fn read_uleb128(comptime T: type, reader: anytype) !T {
     const U = if (@typeInfo(T).Int.bits < 8) u8 else T;
     const ShiftT = std.math.Log2Int(U);
 
@@ -33,7 +33,7 @@ pub fn readULEB128(comptime T: type, reader: anytype) !T {
 }
 
 /// Write a single unsigned integer as unsigned LEB128 to the given writer.
-pub fn writeULEB128(writer: anytype, uint_value: anytype) !void {
+pub fn write_uleb128(writer: anytype, uint_value: anytype) !void {
     const T = @TypeOf(uint_value);
     const U = if (@typeInfo(T).Int.bits < 8) u8 else T;
     var value: U = @intCast(uint_value);
@@ -52,7 +52,7 @@ pub fn writeULEB128(writer: anytype, uint_value: anytype) !void {
 
 /// Read a single signed LEB128 value from the given reader as type T,
 /// or error.Overflow if the value cannot fit.
-pub fn readILEB128(comptime T: type, reader: anytype) !T {
+pub fn read_ileb128(comptime T: type, reader: anytype) !T {
     const S = if (@typeInfo(T).Int.bits < 8) i8 else T;
     const U = std.meta.Int(.unsigned, @typeInfo(S).Int.bits);
     const ShiftU = std.math.Log2Int(U);
@@ -109,7 +109,7 @@ pub fn readILEB128(comptime T: type, reader: anytype) !T {
 }
 
 /// Write a single signed integer as signed LEB128 to the given writer.
-pub fn writeILEB128(writer: anytype, int_value: anytype) !void {
+pub fn write_ileb128(writer: anytype, int_value: anytype) !void {
     const T = @TypeOf(int_value);
     const S = if (@typeInfo(T).Int.bits < 8) i8 else T;
     const U = std.meta.Int(.unsigned, @typeInfo(S).Int.bits);
@@ -137,7 +137,7 @@ pub fn writeILEB128(writer: anytype, int_value: anytype) !void {
 /// An example use case of this is in emitting DWARF info where one wants to make a ULEB128 field
 /// "relocatable", meaning that it becomes possible to later go back and patch the number to be a
 /// different value without shifting all the following code.
-pub fn writeUnsignedFixed(comptime l: usize, ptr: *[l]u8, int: std.meta.Int(.unsigned, l * 7)) void {
+pub fn write_unsigned_fixed(comptime l: usize, ptr: *[l]u8, int: std.meta.Int(.unsigned, l * 7)) void {
     const T = @TypeOf(int);
     const U = if (@typeInfo(T).Int.bits < 8) u8 else T;
     var value: U = @intCast(int);
@@ -181,7 +181,7 @@ test writeUnsignedFixed {
 /// An example use case of this is in emitting DWARF info where one wants to make a ILEB128 field
 /// "relocatable", meaning that it becomes possible to later go back and patch the number to be a
 /// different value without shifting all the following code.
-pub fn writeSignedFixed(comptime l: usize, ptr: *[l]u8, int: std.meta.Int(.signed, l * 7)) void {
+pub fn write_signed_fixed(comptime l: usize, ptr: *[l]u8, int: std.meta.Int(.signed, l * 7)) void {
     const T = @TypeOf(int);
     const U = if (@typeInfo(T).Int.bits < 8) u8 else T;
     var value: U = @intCast(int);

@@ -9,7 +9,7 @@ const assert = std.debug.assert;
 
 pub const Class = enum { memory, byval, integer, double_integer, fields, none };
 
-pub fn classifyType(ty: Type, mod: *Module) Class {
+pub fn classify_type(ty: Type, mod: *Module) Class {
     const target = mod.getTarget();
     std.debug.assert(ty.hasRuntimeBitsIgnoreComptime(mod));
 
@@ -95,7 +95,7 @@ pub fn classifyType(ty: Type, mod: *Module) Class {
 
 /// There are a maximum of 8 possible return slots. Returned values are in
 /// the beginning of the array; unused slots are filled with .none.
-pub fn classifySystem(ty: Type, zcu: *Module) [8]Class {
+pub fn classify_system(ty: Type, zcu: *Module) [8]Class {
     var result = [1]Class{.none} ** 8;
     const memory_class = [_]Class{
         .memory, .none, .none, .none,
@@ -173,7 +173,7 @@ pub fn classifySystem(ty: Type, zcu: *Module) [8]Class {
     }
 }
 
-fn classifyStruct(
+fn classify_struct(
     result: *[8]Class,
     byte_offset: *u64,
     loaded_struct: InternPool.LoadedStructType,

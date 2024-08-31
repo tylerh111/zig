@@ -12,7 +12,7 @@ const Number = common.Number;
 ///
 /// This is based off the algorithm described in "Fast numeric string to
 /// int", available here: <https://johnnylee-sde.github.io/Fast-numeric-string-to-int/>.
-fn parse8Digits(v_: u64) u64 {
+fn parse8_digits(v_: u64) u64 {
     var v = v_;
     const mask = 0x0000_00ff_0000_00ff;
     const mul1 = 0x000f_4240_0000_0064;
@@ -25,7 +25,7 @@ fn parse8Digits(v_: u64) u64 {
 }
 
 /// Parse digits until a non-digit character is found.
-fn tryParseDigits(comptime T: type, stream: *FloatStream, x: *T, comptime base: u8) void {
+fn try_parse_digits(comptime T: type, stream: *FloatStream, x: *T, comptime base: u8) void {
     // Try to parse 8 digits at a time, using an optimized algorithm.
     // This only supports decimal digits.
     if (base == 10) {
@@ -54,7 +54,7 @@ fn min_n_digit_int(comptime T: type, digit_count: usize) T {
 }
 
 /// Parse up to N digits
-fn tryParseNDigits(comptime T: type, stream: *FloatStream, x: *T, comptime base: u8, comptime n: usize) void {
+fn try_parse_ndigits(comptime T: type, stream: *FloatStream, x: *T, comptime base: u8, comptime n: usize) void {
     while (x.* < min_n_digit_int(T, n)) {
         if (stream.scanDigit(base)) |digit| {
             x.* *%= base;
@@ -66,7 +66,7 @@ fn tryParseNDigits(comptime T: type, stream: *FloatStream, x: *T, comptime base:
 }
 
 /// Parse the scientific notation component of a float.
-fn parseScientific(stream: *FloatStream) ?i64 {
+fn parse_scientific(stream: *FloatStream) ?i64 {
     var exponent: i64 = 0;
     var negative = false;
 
@@ -99,7 +99,7 @@ const ParseInfo = struct {
     exp_char_lower: u8,
 };
 
-fn parsePartialNumberBase(comptime T: type, stream: *FloatStream, negative: bool, n: *usize, comptime info: ParseInfo) ?Number(T) {
+fn parse_partial_number_base(comptime T: type, stream: *FloatStream, negative: bool, n: *usize, comptime info: ParseInfo) ?Number(T) {
     const MantissaT = common.mantissaType(T);
 
     // parse initial digits before dot
@@ -210,7 +210,7 @@ fn parsePartialNumberBase(comptime T: type, stream: *FloatStream, negative: bool
 ///
 /// This creates a representation of the float as the
 /// significant digits and the decimal exponent.
-fn parsePartialNumber(comptime T: type, s: []const u8, negative: bool, n: *usize) ?Number(T) {
+fn parse_partial_number(comptime T: type, s: []const u8, negative: bool, n: *usize) ?Number(T) {
     std.debug.assert(s.len != 0);
     var stream = FloatStream.init(s);
     const MantissaT = common.mantissaType(T);
@@ -231,7 +231,7 @@ fn parsePartialNumber(comptime T: type, s: []const u8, negative: bool, n: *usize
     }
 }
 
-pub fn parseNumber(comptime T: type, s: []const u8, negative: bool) ?Number(T) {
+pub fn parse_number(comptime T: type, s: []const u8, negative: bool) ?Number(T) {
     var consumed: usize = 0;
     if (parsePartialNumber(T, s, negative, &consumed)) |number| {
         // must consume entire float (no trailing data)
@@ -242,7 +242,7 @@ pub fn parseNumber(comptime T: type, s: []const u8, negative: bool) ?Number(T) {
     return null;
 }
 
-fn parsePartialInfOrNan(comptime T: type, s: []const u8, negative: bool, n: *usize) ?T {
+fn parse_partial_inf_or_nan(comptime T: type, s: []const u8, negative: bool, n: *usize) ?T {
     // inf/infinity; infxxx should only consume inf.
     if (std.ascii.startsWithIgnoreCase(s, "inf")) {
         n.* = 3;
@@ -261,7 +261,7 @@ fn parsePartialInfOrNan(comptime T: type, s: []const u8, negative: bool, n: *usi
     return null;
 }
 
-pub fn parseInfOrNan(comptime T: type, s: []const u8, negative: bool) ?T {
+pub fn parse_inf_or_nan(comptime T: type, s: []const u8, negative: bool) ?T {
     var consumed: usize = 0;
     if (parsePartialInfOrNan(T, s, negative, &consumed)) |special| {
         if (s.len == consumed) {
@@ -271,7 +271,7 @@ pub fn parseInfOrNan(comptime T: type, s: []const u8, negative: bool) ?T {
     return null;
 }
 
-pub fn validUnderscores(s: []const u8, comptime base: u8) bool {
+pub fn valid_underscores(s: []const u8, comptime base: u8) bool {
     var i: usize = 0;
     while (i < s.len) : (i += 1) {
         if (s[i] == '_') {

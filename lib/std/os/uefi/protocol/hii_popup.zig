@@ -11,7 +11,7 @@ pub const HiiPopup = extern struct {
     _create_popup: *const fn (*const HiiPopup, PopupStyle, PopupType, hii.Handle, u16, ?*PopupSelection) callconv(cc) Status,
 
     /// Displays a popup window.
-    pub fn createPopup(self: *const HiiPopup, style: PopupStyle, popup_type: PopupType, handle: hii.Handle, msg: u16, user_selection: ?*PopupSelection) Status {
+    pub fn create_popup(self: *const HiiPopup, style: PopupStyle, popup_type: PopupType, handle: hii.Handle, msg: u16, user_selection: ?*PopupSelection) Status {
         return self._create_popup(self, style, popup_type, handle, msg, user_selection);
     }
 

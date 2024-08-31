@@ -91,7 +91,7 @@ pub const DeclState = struct {
 
     /// Adds local type relocation of the form: @offset => @this + addend
     /// @this signifies the offset within the .debug_abbrev section of the containing atom.
-    fn addTypeRelocLocal(self: *DeclState, atom_index: Atom.Index, offset: u32, addend: u32) !void {
+    fn add_type_reloc_local(self: *DeclState, atom_index: Atom.Index, offset: u32, addend: u32) !void {
         log.debug("{x}: @this + {x}", .{ offset, addend });
         try self.abbrev_relocs.append(self.dwarf.allocator, .{
             .target = null,
@@ -104,7 +104,7 @@ pub const DeclState = struct {
     /// Adds global type relocation of the form: @offset => @symbol + 0
     /// @symbol signifies a type abbreviation posititioned somewhere in the .debug_abbrev section
     /// which we use as our target of the relocation.
-    fn addTypeRelocGlobal(self: *DeclState, atom_index: Atom.Index, ty: Type, offset: u32) !void {
+    fn add_type_reloc_global(self: *DeclState, atom_index: Atom.Index, ty: Type, offset: u32) !void {
         const gpa = self.dwarf.allocator;
         const resolv = self.abbrev_resolver.get(ty.toIntern()) orelse blk: {
             const sym_index: u32 = @intCast(self.abbrev_table.items.len);
@@ -126,7 +126,7 @@ pub const DeclState = struct {
         });
     }
 
-    fn addDbgInfoType(
+    fn add_dbg_info_type(
         self: *DeclState,
         mod: *Module,
         atom_index: Atom.Index,
@@ -548,7 +548,7 @@ pub const DeclState = struct {
         nop,
     };
 
-    pub fn genArgDbgInfo(
+    pub fn gen_arg_dbg_info(
         self: *DeclState,
         name: [:0]const u8,
         ty: Type,
@@ -662,7 +662,7 @@ pub const DeclState = struct {
         dbg_info.appendSliceAssumeCapacity(name_with_null); // DW.AT.name, DW.FORM.string
     }
 
-    pub fn genVarDbgInfo(
+    pub fn gen_var_dbg_info(
         self: *DeclState,
         name: [:0]const u8,
         ty: Type,
@@ -878,7 +878,7 @@ pub const DeclState = struct {
         dbg_info.appendSliceAssumeCapacity(name_with_null); // DW.AT.name, DW.FORM.string
     }
 
-    pub fn advancePCAndLine(
+    pub fn advance_pcand_line(
         self: *DeclState,
         delta_line: i33,
         delta_pc: u64,
@@ -919,21 +919,21 @@ pub const DeclState = struct {
         }
     }
 
-    pub fn setColumn(self: *DeclState, column: u32) error{OutOfMemory}!void {
+    pub fn set_column(self: *DeclState, column: u32) error{OutOfMemory}!void {
         try self.dbg_line.ensureUnusedCapacity(1 + 5);
         self.dbg_line.appendAssumeCapacity(DW.LNS.set_column);
         leb128.writeULEB128(self.dbg_line.writer(), column + 1) catch unreachable;
     }
 
-    pub fn setPrologueEnd(self: *DeclState) error{OutOfMemory}!void {
+    pub fn set_prologue_end(self: *DeclState) error{OutOfMemory}!void {
         try self.dbg_line.append(DW.LNS.set_prologue_end);
     }
 
-    pub fn setEpilogueBegin(self: *DeclState) error{OutOfMemory}!void {
+    pub fn set_epilogue_begin(self: *DeclState) error{OutOfMemory}!void {
         try self.dbg_line.append(DW.LNS.set_epilogue_begin);
     }
 
-    pub fn setInlineFunc(self: *DeclState, func: InternPool.Index) error{OutOfMemory}!void {
+    pub fn set_inline_func(self: *DeclState, func: InternPool.Index) error{OutOfMemory}!void {
         if (self.dbg_line_func == func) return;
 
         try self.dbg_line.ensureUnusedCapacity((1 + 4) + (1 + 5));
@@ -1074,7 +1074,7 @@ pub fn deinit(self: *Dwarf) void {
 
 /// Initializes Decl's state and its matching output buffers.
 /// Call this before `commitDeclState`.
-pub fn initDeclState(self: *Dwarf, mod: *Module, decl_index: InternPool.DeclIndex) !DeclState {
+pub fn init_decl_state(self: *Dwarf, mod: *Module, decl_index: InternPool.DeclIndex) !DeclState {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -1189,7 +1189,7 @@ pub fn initDeclState(self: *Dwarf, mod: *Module, decl_index: InternPool.DeclInde
     return decl_state;
 }
 
-pub fn commitDeclState(
+pub fn commit_decl_state(
     self: *Dwarf,
     zcu: *Module,
     decl_index: InternPool.DeclIndex,
@@ -1504,7 +1504,7 @@ pub fn commitDeclState(
     try self.writeDeclDebugInfo(di_atom_index, dbg_info_buffer.items);
 }
 
-fn updateDeclDebugInfoAllocation(self: *Dwarf, atom_index: Atom.Index, len: u32) !void {
+fn update_decl_debug_info_allocation(self: *Dwarf, atom_index: Atom.Index, len: u32) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -1584,7 +1584,7 @@ fn updateDeclDebugInfoAllocation(self: *Dwarf, atom_index: Atom.Index, len: u32)
     }
 }
 
-fn writeDeclDebugInfo(self: *Dwarf, atom_index: Atom.Index, dbg_info_buf: []const u8) !void {
+fn write_decl_debug_info(self: *Dwarf, atom_index: Atom.Index, dbg_info_buf: []const u8) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -1691,7 +1691,7 @@ fn writeDeclDebugInfo(self: *Dwarf, atom_index: Atom.Index, dbg_info_buf: []cons
     }
 }
 
-pub fn updateDeclLineNumber(self: *Dwarf, mod: *Module, decl_index: InternPool.DeclIndex) !void {
+pub fn update_decl_line_number(self: *Dwarf, mod: *Module, decl_index: InternPool.DeclIndex) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -1740,7 +1740,7 @@ pub fn updateDeclLineNumber(self: *Dwarf, mod: *Module, decl_index: InternPool.D
     }
 }
 
-pub fn freeDecl(self: *Dwarf, decl_index: InternPool.DeclIndex) void {
+pub fn free_decl(self: *Dwarf, decl_index: InternPool.DeclIndex) void {
     const gpa = self.allocator;
 
     // Free SrcFn atom
@@ -1798,7 +1798,7 @@ pub fn freeDecl(self: *Dwarf, decl_index: InternPool.DeclIndex) void {
     }
 }
 
-pub fn writeDbgAbbrev(self: *Dwarf) !void {
+pub fn write_dbg_abbrev(self: *Dwarf) !void {
     // These are LEB encoded but since the values are all less than 127
     // we can simply append these bytes.
     // zig fmt: off
@@ -1964,12 +1964,12 @@ pub fn writeDbgAbbrev(self: *Dwarf) !void {
     }
 }
 
-fn dbgInfoHeaderBytes(self: *Dwarf) usize {
+fn dbg_info_header_bytes(self: *Dwarf) usize {
     _ = self;
     return 120;
 }
 
-pub fn writeDbgInfoHeader(self: *Dwarf, zcu: *Module, low_pc: u64, high_pc: u64) !void {
+pub fn write_dbg_info_header(self: *Dwarf, zcu: *Module, low_pc: u64, high_pc: u64) !void {
     // If this value is null it means there is an error in the module;
     // leave debug_info_header_dirty=true.
     const first_dbg_info_off = self.getDebugInfoOff() orelse return;
@@ -2058,7 +2058,7 @@ pub fn writeDbgInfoHeader(self: *Dwarf, zcu: *Module, low_pc: u64, high_pc: u64)
     }
 }
 
-fn resolveCompilationDir(module: *Module, buffer: *[std.fs.MAX_PATH_BYTES]u8) []const u8 {
+fn resolve_compilation_dir(module: *Module, buffer: *[std.fs.MAX_PATH_BYTES]u8) []const u8 {
     // We fully resolve all paths at this point to avoid lack of source line info in stack
     // traces or lack of debugging information which, if relative paths were used, would
     // be very location dependent.
@@ -2077,7 +2077,7 @@ fn resolveCompilationDir(module: *Module, buffer: *[std.fs.MAX_PATH_BYTES]u8) []
     return buffer[0..len];
 }
 
-fn writeAddrAssumeCapacity(self: *Dwarf, buf: *std.ArrayList(u8), addr: u64) void {
+fn write_addr_assume_capacity(self: *Dwarf, buf: *std.ArrayList(u8), addr: u64) void {
     const comp = self.bin_file.comp;
     const target = comp.root_mod.resolved_target.result;
     const target_endian = target.cpu.arch.endian();
@@ -2087,7 +2087,7 @@ fn writeAddrAssumeCapacity(self: *Dwarf, buf: *std.ArrayList(u8), addr: u64) voi
     }
 }
 
-fn writeOffsetAssumeCapacity(self: *Dwarf, buf: *std.ArrayList(u8), off: u64) void {
+fn write_offset_assume_capacity(self: *Dwarf, buf: *std.ArrayList(u8), off: u64) void {
     const comp = self.bin_file.comp;
     const target = comp.root_mod.resolved_target.result;
     const target_endian = target.cpu.arch.endian();
@@ -2102,7 +2102,7 @@ fn writeOffsetAssumeCapacity(self: *Dwarf, buf: *std.ArrayList(u8), off: u64) vo
 /// are less than 1044480 bytes (if this limit is ever reached, this function can be
 /// improved to make more than one pwritev call, or the limit can be raised by a fixed
 /// amount by increasing the length of `vecs`).
-fn pwriteDbgLineNops(
+fn pwrite_dbg_line_nops(
     file: fs.File,
     offset: u64,
     prev_padding_size: usize,
@@ -2178,7 +2178,7 @@ fn pwriteDbgLineNops(
     try file.pwritevAll(vecs[0..vec_index], offset - prev_padding_size);
 }
 
-fn writeDbgLineNopsBuffered(
+fn write_dbg_line_nops_buffered(
     buf: []u8,
     offset: u32,
     prev_padding_size: usize,
@@ -2219,7 +2219,7 @@ fn writeDbgLineNopsBuffered(
 
 /// Writes to the file a buffer, prefixed and suffixed by the specified number of
 /// bytes of padding.
-fn pwriteDbgInfoNops(
+fn pwrite_dbg_info_nops(
     file: fs.File,
     offset: u64,
     prev_padding_size: usize,
@@ -2289,7 +2289,7 @@ fn pwriteDbgInfoNops(
     try file.pwritevAll(vecs[0..vec_index], offset - prev_padding_size);
 }
 
-fn writeDbgInfoNopsToArrayList(
+fn write_dbg_info_nops_to_array_list(
     gpa: Allocator,
     buffer: *std.ArrayListUnmanaged(u8),
     offset: u32,
@@ -2311,7 +2311,7 @@ fn writeDbgInfoNopsToArrayList(
     }
 }
 
-pub fn writeDbgAranges(self: *Dwarf, addr: u64, size: u64) !void {
+pub fn write_dbg_aranges(self: *Dwarf, addr: u64, size: u64) !void {
     const comp = self.bin_file.comp;
     const target = comp.root_mod.resolved_target.result;
     const target_endian = target.cpu.arch.endian();
@@ -2394,7 +2394,7 @@ pub fn writeDbgAranges(self: *Dwarf, addr: u64, size: u64) !void {
     }
 }
 
-pub fn writeDbgLineHeader(self: *Dwarf) !void {
+pub fn write_dbg_line_header(self: *Dwarf) !void {
     const comp = self.bin_file.comp;
     const gpa = self.allocator;
     const target = comp.root_mod.resolved_target.result;
@@ -2607,39 +2607,39 @@ pub fn writeDbgLineHeader(self: *Dwarf) !void {
     }
 }
 
-fn getDebugInfoOff(self: Dwarf) ?u32 {
+fn get_debug_info_off(self: Dwarf) ?u32 {
     const first_index = self.di_atom_first_index orelse return null;
     const first = self.getAtom(.di_atom, first_index);
     return first.off;
 }
 
-fn getDebugInfoEnd(self: Dwarf) ?u32 {
+fn get_debug_info_end(self: Dwarf) ?u32 {
     const last_index = self.di_atom_last_index orelse return null;
     const last = self.getAtom(.di_atom, last_index);
     return last.off + last.len;
 }
 
-fn getDebugLineProgramOff(self: Dwarf) ?u32 {
+fn get_debug_line_program_off(self: Dwarf) ?u32 {
     const first_index = self.src_fn_first_index orelse return null;
     const first = self.getAtom(.src_fn, first_index);
     return first.off;
 }
 
-fn getDebugLineProgramEnd(self: Dwarf) ?u32 {
+fn get_debug_line_program_end(self: Dwarf) ?u32 {
     const last_index = self.src_fn_last_index orelse return null;
     const last = self.getAtom(.src_fn, last_index);
     return last.off + last.len;
 }
 
 /// Always 4 or 8 depending on whether this is 32-bit or 64-bit format.
-fn ptrWidthBytes(self: Dwarf) u8 {
+fn ptr_width_bytes(self: Dwarf) u8 {
     return switch (self.ptr_width) {
         .p32 => 4,
         .p64 => 8,
     };
 }
 
-fn dbgLineNeededHeaderBytes(self: Dwarf, dirs: []const []const u8, files: []const []const u8) u32 {
+fn dbg_line_needed_header_bytes(self: Dwarf, dirs: []const []const u8, files: []const []const u8) u32 {
     var size: usize = switch (self.format) { // length field
         .dwarf32 => 4,
         .dwarf64 => 12,
@@ -2666,23 +2666,23 @@ fn dbgLineNeededHeaderBytes(self: Dwarf, dirs: []const []const u8, files: []cons
 
 /// The reloc offset for the line offset of a function from the previous function's line.
 /// It's a fixed-size 4-byte ULEB128.
-fn getRelocDbgLineOff(self: Dwarf) usize {
+fn get_reloc_dbg_line_off(self: Dwarf) usize {
     return dbg_line_vaddr_reloc_index + self.ptrWidthBytes() + 1;
 }
 
-fn getRelocDbgFileIndex(self: Dwarf) usize {
+fn get_reloc_dbg_file_index(self: Dwarf) usize {
     return self.getRelocDbgLineOff() + 5;
 }
 
-fn getRelocDbgInfoSubprogramHighPC(self: Dwarf) u32 {
+fn get_reloc_dbg_info_subprogram_high_pc(self: Dwarf) u32 {
     return dbg_info_low_pc_reloc_index + self.ptrWidthBytes();
 }
 
-fn padToIdeal(actual_size: anytype) @TypeOf(actual_size) {
+fn pad_to_ideal(actual_size: anytype) @TypeOf(actual_size) {
     return actual_size +| (actual_size / ideal_factor);
 }
 
-pub fn flushModule(self: *Dwarf, module: *Module) !void {
+pub fn flush_module(self: *Dwarf, module: *Module) !void {
     const comp = self.bin_file.comp;
     const target = comp.root_mod.resolved_target.result;
 
@@ -2759,7 +2759,7 @@ pub fn flushModule(self: *Dwarf, module: *Module) !void {
     }
 }
 
-fn addDIFile(self: *Dwarf, mod: *Module, decl_index: InternPool.DeclIndex) !u28 {
+fn add_difile(self: *Dwarf, mod: *Module, decl_index: InternPool.DeclIndex) !u28 {
     const decl = mod.declPtr(decl_index);
     const file_scope = decl.getFileScope(mod);
     const gop = try self.di_files.getOrPut(self.allocator, file_scope);
@@ -2785,7 +2785,7 @@ fn addDIFile(self: *Dwarf, mod: *Module, decl_index: InternPool.DeclIndex) !u28 
     return @intCast(gop.index + 1);
 }
 
-fn genIncludeDirsAndFileNames(self: *Dwarf, arena: Allocator) !struct {
+fn gen_include_dirs_and_file_names(self: *Dwarf, arena: Allocator) !struct {
     dirs: []const []const u8,
     files: []const []const u8,
     files_dirs_indexes: []u28,
@@ -2826,7 +2826,7 @@ fn genIncludeDirsAndFileNames(self: *Dwarf, arena: Allocator) !struct {
     };
 }
 
-fn addDbgInfoErrorSet(
+fn add_dbg_info_error_set(
     mod: *Module,
     ty: Type,
     target: std.Target,
@@ -2835,7 +2835,7 @@ fn addDbgInfoErrorSet(
     return addDbgInfoErrorSetNames(mod, ty, ty.errorSetNames(mod).get(&mod.intern_pool), target, dbg_info_buffer);
 }
 
-fn addDbgInfoErrorSetNames(
+fn add_dbg_info_error_set_names(
     mod: *Module,
     /// Used for printing the type name only.
     ty: Type,
@@ -2882,7 +2882,7 @@ fn addDbgInfoErrorSetNames(
 
 const Kind = enum { src_fn, di_atom };
 
-fn createAtom(self: *Dwarf, comptime kind: Kind) !Atom.Index {
+fn create_atom(self: *Dwarf, comptime kind: Kind) !Atom.Index {
     const index = blk: {
         switch (kind) {
             .src_fn => {
@@ -2907,7 +2907,7 @@ fn createAtom(self: *Dwarf, comptime kind: Kind) !Atom.Index {
     return index;
 }
 
-fn getOrCreateAtomForDecl(self: *Dwarf, comptime kind: Kind, decl_index: InternPool.DeclIndex) !Atom.Index {
+fn get_or_create_atom_for_decl(self: *Dwarf, comptime kind: Kind, decl_index: InternPool.DeclIndex) !Atom.Index {
     switch (kind) {
         .src_fn => {
             const gop = try self.src_fn_decls.getOrPut(self.allocator, decl_index);
@@ -2926,14 +2926,14 @@ fn getOrCreateAtomForDecl(self: *Dwarf, comptime kind: Kind, decl_index: InternP
     }
 }
 
-fn getAtom(self: *const Dwarf, comptime kind: Kind, index: Atom.Index) Atom {
+fn get_atom(self: *const Dwarf, comptime kind: Kind, index: Atom.Index) Atom {
     return switch (kind) {
         .src_fn => self.src_fns.items[index],
         .di_atom => self.di_atoms.items[index],
     };
 }
 
-fn getAtomPtr(self: *Dwarf, comptime kind: Kind, index: Atom.Index) *Atom {
+fn get_atom_ptr(self: *Dwarf, comptime kind: Kind, index: Atom.Index) *Atom {
     return switch (kind) {
         .src_fn => &self.src_fns.items[index],
         .di_atom => &self.di_atoms.items[index],

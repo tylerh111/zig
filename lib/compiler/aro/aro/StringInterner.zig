@@ -55,7 +55,7 @@ pub fn intern(comp: *Compilation, str: []const u8) !StringId {
     return comp.string_interner.internExtra(comp.gpa, str);
 }
 
-pub fn internExtra(self: *StringInterner, allocator: mem.Allocator, str: []const u8) !StringId {
+pub fn intern_extra(self: *StringInterner, allocator: mem.Allocator, str: []const u8) !StringId {
     if (str.len == 0) return .empty;
 
     const gop = try self.string_table.getOrPut(allocator, str);
@@ -67,12 +67,12 @@ pub fn internExtra(self: *StringInterner, allocator: mem.Allocator, str: []const
 }
 
 /// deinit for the returned TypeMapper is a no-op and does not need to be called
-pub fn getSlowTypeMapper(self: *const StringInterner) TypeMapper {
+pub fn get_slow_type_mapper(self: *const StringInterner) TypeMapper {
     return TypeMapper{ .data = .{ .slow = &self.string_table } };
 }
 
 /// Caller must call `deinit` on the returned TypeMapper
-pub fn getFastTypeMapper(self: *const StringInterner, allocator: mem.Allocator) !TypeMapper {
+pub fn get_fast_type_mapper(self: *const StringInterner, allocator: mem.Allocator) !TypeMapper {
     var strings = try allocator.alloc([]const u8, @intFromEnum(self.next_id));
     var it = self.string_table.iterator();
     strings[0] = "";

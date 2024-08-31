@@ -11,11 +11,11 @@ pub fn main() void {
     printFn();
 }
 
-fn stopSayingThat() void {
+fn stop_saying_that() void {
     _ = std.posix.write(1, "Hello, my name is Inigo Montoya; you killed my father, prepare to die.\n") catch {};
 }
 
-fn moveEveryZig() void {
+fn move_every_zig() void {
     _ = std.posix.write(1, "All your codebase are belong to us\n") catch {};
 }
 

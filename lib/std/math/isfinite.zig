@@ -3,7 +3,7 @@ const math = std.math;
 const expect = std.testing.expect;
 
 /// Returns whether x is a finite value.
-pub fn isFinite(x: anytype) bool {
+pub fn is_finite(x: anytype) bool {
     const T = @TypeOf(x);
     const TBits = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
     const remove_sign = ~@as(TBits, 0) >> 1;

@@ -12,7 +12,7 @@ test "one param, explicit comptime" {
     try expect(x == 6);
 }
 
-fn checkSize(comptime T: type) usize {
+fn check_size(comptime T: type) usize {
     return @sizeOf(T);
 }
 
@@ -40,15 +40,15 @@ test "compile time generic eval" {
     try expect(the_max == 5678);
 }
 
-fn gimmeTheBigOne(a: u32, b: u32) u32 {
+fn gimme_the_big_one(a: u32, b: u32) u32 {
     return max(u32, a, b);
 }
 
-fn shouldCallSameInstance(a: u32, b: u32) u32 {
+fn should_call_same_instance(a: u32, b: u32) u32 {
     return max(u32, a, b);
 }
 
-fn sameButWithFloats(a: f64, b: f64) f64 {
+fn same_but_with_floats(a: f64, b: f64) f64 {
     return max(f64, a, b);
 }
 
@@ -151,7 +151,7 @@ fn GenericDataThing(comptime count: isize) type {
 test "use generic param in generic param" {
     try expect(aGenericFn(i32, 3, 4) == 7);
 }
-fn aGenericFn(comptime T: type, comptime a: T, b: T) T {
+fn a_generic_fn(comptime T: type, comptime a: T, b: T) T {
     return a + b;
 }
 
@@ -167,10 +167,10 @@ test "generic fn with implicit cast" {
         13,
     }) == 0);
 }
-fn getByte(ptr: ?*const u8) u8 {
+fn get_byte(ptr: ?*const u8) u8 {
     return ptr.?.*;
 }
-fn getFirstByte(comptime T: type, mem: []const T) u8 {
+fn get_first_byte(comptime T: type, mem: []const T) u8 {
     return getByte(@as(*const u8, @ptrCast(&mem[0])));
 }
 
@@ -230,7 +230,7 @@ fn GenNode(comptime T: type) type {
     return struct {
         value: T,
         next: ?*GenNode(T),
-        fn getVal(n: *const GenNode(T)) T {
+        fn get_val(n: *const GenNode(T)) T {
             return n.value;
         }
     };
@@ -256,13 +256,13 @@ test "generic function instantiation turns into comptime call" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const E1 = enum { A };
             const e1f = fieldInfo(E1, .A);
             try expect(std.mem.eql(u8, e1f.name, "A"));
         }
 
-        pub fn fieldInfo(comptime T: type, comptime field: FieldEnum(T)) switch (@typeInfo(T)) {
+        pub fn field_info(comptime T: type, comptime field: FieldEnum(T)) switch (@typeInfo(T)) {
             .Enum => std.builtin.Type.EnumField,
             else => void,
         } {
@@ -307,7 +307,7 @@ test "anonymous struct return type referencing comptime parameter" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        pub fn extraData(comptime T: type, index: usize) struct { data: T, end: usize } {
+        pub fn extra_data(comptime T: type, index: usize) struct { data: T, end: usize } {
             return .{
                 .data = 1234,
                 .end = index,
@@ -379,9 +379,9 @@ test "extern function used as generic parameter" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
     const S = struct {
-        extern fn usedAsGenericParameterFoo() void;
-        extern fn usedAsGenericParameterBar() void;
-        inline fn usedAsGenericParameterBaz(comptime token: anytype) type {
+        extern fn used_as_generic_parameter_foo() void;
+        extern fn used_as_generic_parameter_bar() void;
+        inline fn used_as_generic_parameter_baz(comptime token: anytype) type {
             return struct {
                 comptime {
                     _ = token;
@@ -398,10 +398,10 @@ test "generic struct as parameter type" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest(comptime Int: type, thing: struct { int: Int }) !void {
+        fn do_the_test(comptime Int: type, thing: struct { int: Int }) !void {
             try expect(thing.int == 123);
         }
-        fn doTheTest2(comptime Int: type, comptime thing: struct { int: Int }) !void {
+        fn do_the_test2(comptime Int: type, comptime thing: struct { int: Int }) !void {
             try expect(thing.int == 456);
         }
     };
@@ -413,7 +413,7 @@ test "slice as parameter type" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn internComptimeString(comptime str: []const u8) *const []const u8 {
+        fn intern_comptime_string(comptime str: []const u8) *const []const u8 {
             return &struct {
                 const intern: []const u8 = str;
             }.intern;
@@ -427,7 +427,7 @@ test "slice as parameter type" {
 
 test "null sentinel pointer passed as generic argument" {
     const S = struct {
-        fn doTheTest(a: anytype) !void {
+        fn do_the_test(a: anytype) !void {
             try std.testing.expect(@intFromPtr(a) == 8);
         }
     };
@@ -439,7 +439,7 @@ test "generic function passed as comptime argument" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doMath(comptime f: fn (type, i32, i32) error{Overflow}!i32, a: i32, b: i32) !void {
+        fn do_math(comptime f: fn (type, i32, i32) error{Overflow}!i32, a: i32, b: i32) !void {
             const result = try f(i32, a, b);
             try expect(result == 11);
         }
@@ -482,11 +482,11 @@ test "coerced function body has inequal value with its uncoerced body" {
 
 test "generic function returns value from callconv(.C) function" {
     const S = struct {
-        fn getU8() callconv(.C) u8 {
+        fn get_u8() callconv(.C) u8 {
             return 123;
         }
 
-        fn getGeneric(comptime T: type, supplier: fn () callconv(.C) T) T {
+        fn get_generic(comptime T: type, supplier: fn () callconv(.C) T) T {
             return supplier();
         }
     };
@@ -563,12 +563,12 @@ test "call generic function with from function called by the generic function" {
         };
     };
     const ArgSerializer = struct {
-        fn isCommand(comptime T: type) bool {
+        fn is_command(comptime T: type) bool {
             const tid = @typeInfo(T);
             return (tid == .Struct or tid == .Enum or tid == .Union) and
                 @hasDecl(T, "Redis") and @hasDecl(T.Redis, "Command");
         }
-        fn serializeCommand(command: anytype) void {
+        fn serialize_command(command: anytype) void {
             const CmdT = @TypeOf(command);
 
             if (comptime isCommand(CmdT)) {

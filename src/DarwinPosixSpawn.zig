@@ -85,7 +85,7 @@ pub const Actions = struct {
         return self.openZ(fd, &posix_path, flags, mode);
     }
 
-    pub fn openZ(self: *Actions, fd: std.c.fd_t, path: [*:0]const u8, flags: u32, mode: std.c.mode_t) Error!void {
+    pub fn open_z(self: *Actions, fd: std.c.fd_t, path: [*:0]const u8, flags: u32, mode: std.c.mode_t) Error!void {
         switch (errno(std.c.posix_spawn_file_actions_addopen(&self.actions, fd, path, @as(c_int, @bitCast(flags)), mode))) {
             .SUCCESS => return,
             .BADF => return error.InvalidFileDescriptor,
@@ -134,7 +134,7 @@ pub const Actions = struct {
         return self.chdirZ(&posix_path);
     }
 
-    pub fn chdirZ(self: *Actions, path: [*:0]const u8) Error!void {
+    pub fn chdir_z(self: *Actions, path: [*:0]const u8) Error!void {
         switch (errno(std.c.posix_spawn_file_actions_addchdir_np(&self.actions, path))) {
             .SUCCESS => return,
             .NOMEM => return error.SystemResources,
@@ -168,7 +168,7 @@ pub fn spawn(
     return spawnZ(&posix_path, actions, attr, argv, envp);
 }
 
-pub fn spawnZ(
+pub fn spawn_z(
     path: [*:0]const u8,
     actions: ?Actions,
     attr: ?Attr,

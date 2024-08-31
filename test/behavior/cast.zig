@@ -33,7 +33,7 @@ test "peer type resolution: ?T and T" {
         try expect(peerTypeTAndOptionalT(false, false).? == 3);
     }
 }
-fn peerTypeTAndOptionalT(c: bool, b: bool) ?usize {
+fn peer_type_tand_optional_t(c: bool, b: bool) ?usize {
     if (c) {
         return if (b) null else @as(usize, 0);
     }
@@ -45,7 +45,7 @@ test "resolve undefined with integer" {
     try testResolveUndefWithInt(true, 1234);
     try comptime testResolveUndefWithInt(true, 1234);
 }
-fn testResolveUndefWithInt(b: bool, x: i32) !void {
+fn test_resolve_undef_with_int(b: bool, x: i32) !void {
     const value = if (b) x else undefined;
     if (b) {
         try expect(value == x);
@@ -109,11 +109,11 @@ test "@floatFromInt" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try testIntToFloat(-2);
         }
 
-        fn testIntToFloat(k: i32) !void {
+        fn test_int_to_float(k: i32) !void {
             const f = @as(f32, @floatFromInt(k));
             const i = @as(i32, @intFromFloat(f));
             try expect(i == k);
@@ -133,11 +133,11 @@ test "@floatFromInt(f80)" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest(comptime Int: type) !void {
+        fn do_the_test(comptime Int: type) !void {
             try testIntToFloat(Int, -2);
         }
 
-        fn testIntToFloat(comptime Int: type, k: Int) !void {
+        fn test_int_to_float(comptime Int: type, k: Int) !void {
             @setRuntimeSafety(false); // TODO
             const f = @as(f80, @floatFromInt(k));
             const i = @as(Int, @intFromFloat(f));
@@ -171,7 +171,7 @@ test "@intFromFloat" {
     try comptime testIntFromFloats();
 }
 
-fn testIntFromFloats() !void {
+fn test_int_from_floats() !void {
     const x = @as(i32, 1e4);
     try expect(x == 10000);
     const y = @as(i32, @intFromFloat(@as(f32, 1e4)));
@@ -181,7 +181,7 @@ fn testIntFromFloats() !void {
     try expectIntFromFloat(f32, -128.2, i8, -128);
 }
 
-fn expectIntFromFloat(comptime F: type, f: F, comptime I: type, i: I) !void {
+fn expect_int_from_float(comptime F: type, f: F, comptime I: type, i: I) !void {
     try expect(@as(I, @intFromFloat(f)) == i);
 }
 
@@ -193,16 +193,16 @@ test "implicitly cast indirect pointer to maybe-indirect pointer" {
     const S = struct {
         const Self = @This();
         x: u8,
-        fn constConst(p: *const *const Self) u8 {
+        fn const_const(p: *const *const Self) u8 {
             return p.*.x;
         }
-        fn maybeConstConst(p: ?*const *const Self) u8 {
+        fn maybe_const_const(p: ?*const *const Self) u8 {
             return p.?.*.x;
         }
-        fn constConstConst(p: *const *const *const Self) u8 {
+        fn const_const_const(p: *const *const *const Self) u8 {
             return p.*.*.x;
         }
-        fn maybeConstConstConst(p: ?*const *const *const Self) u8 {
+        fn maybe_const_const_const(p: ?*const *const *const Self) u8 {
             return p.?.*.*.x;
         }
     };
@@ -257,11 +257,11 @@ test "coerce undefined to optional" {
 
 fn MakeType(comptime T: type) type {
     return struct {
-        fn getNull() ?T {
+        fn get_null() ?T {
             return null;
         }
 
-        fn getNonNull() ?T {
+        fn get_non_null() ?T {
             return @as(T, undefined);
         }
     };
@@ -295,7 +295,7 @@ test "@enumFromInt passed a comptime_int to an enum with one item" {
 
 test "@intCast to u0 and use the result" {
     const S = struct {
-        fn doTheTest(zero: u1, one: u1, bigzero: i32) !void {
+        fn do_the_test(zero: u1, one: u1, bigzero: i32) !void {
             try expect((one << @as(u0, @intCast(bigzero))) == 1);
             try expect((zero << @as(u0, @intCast(bigzero))) == 0);
         }
@@ -367,7 +367,7 @@ test "implicitly cast from int to anyerror!?T" {
     implicitIntLitToOptional();
     comptime implicitIntLitToOptional();
 }
-fn implicitIntLitToOptional() void {
+fn implicit_int_lit_to_optional() void {
     const f: ?i32 = 1;
     _ = f;
     const g: anyerror!?i32 = 1;
@@ -381,7 +381,7 @@ test "return u8 coercing into ?u32 return type" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try expect(foo(123).? == 123);
         }
         fn foo(arg: u8) ?u32 {
@@ -432,7 +432,7 @@ test "explicit cast from integer to error type" {
     try testCastIntToErr(error.ItBroke);
     try comptime testCastIntToErr(error.ItBroke);
 }
-fn testCastIntToErr(err: anyerror) !void {
+fn test_cast_int_to_err(err: anyerror) !void {
     const x = @intFromError(err);
     const y = @errorFromInt(x);
     try expect(error.ItBroke == y);
@@ -446,7 +446,7 @@ test "peer resolve array and const slice" {
     try testPeerResolveArrayConstSlice(true);
     try comptime testPeerResolveArrayConstSlice(true);
 }
-fn testPeerResolveArrayConstSlice(b: bool) !void {
+fn test_peer_resolve_array_const_slice(b: bool) !void {
     const value1 = if (b) "aoeu" else @as([]const u8, "zz");
     const value2 = if (b) @as([]const u8, "zz") else "aoeu";
     try expect(mem.eql(u8, value1, "aoeu"));
@@ -466,7 +466,7 @@ test "implicitly cast from T to anyerror!?T" {
 const A = struct {
     a: i32,
 };
-fn castToOptionalTypeError(z: i32) !void {
+fn cast_to_optional_type_error(z: i32) !void {
     const x = @as(i32, 1);
     const y: anyerror!?i32 = x;
     try expect((try y).? == 1);
@@ -489,11 +489,11 @@ test "implicitly cast from [0]T to anyerror![]T" {
     try comptime testCastZeroArrayToErrSliceMut();
 }
 
-fn testCastZeroArrayToErrSliceMut() !void {
+fn test_cast_zero_array_to_err_slice_mut() !void {
     try expect((gimmeErrOrSlice() catch unreachable).len == 0);
 }
 
-fn gimmeErrOrSlice() anyerror![]u8 {
+fn gimme_err_or_slice() anyerror![]u8 {
     return &[_]u8{};
 }
 
@@ -504,7 +504,7 @@ test "peer type resolution: [0]u8, []const u8, and anyerror![]u8" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() anyerror!void {
+        fn do_the_test() anyerror!void {
             {
                 var data = "hi".*;
                 const slice = data[0..];
@@ -522,7 +522,7 @@ test "peer type resolution: [0]u8, []const u8, and anyerror![]u8" {
     try S.doTheTest();
     try comptime S.doTheTest();
 }
-fn peerTypeEmptyArrayAndSliceAndError(a: bool, slice: []u8) anyerror![]u8 {
+fn peer_type_empty_array_and_slice_and_error(a: bool, slice: []u8) anyerror![]u8 {
     if (a) {
         return &[_]u8{};
     }
@@ -538,7 +538,7 @@ test "implicit cast from *const [N]T to []const T" {
     try comptime testCastConstArrayRefToConstSlice();
 }
 
-fn testCastConstArrayRefToConstSlice() !void {
+fn test_cast_const_array_ref_to_const_slice() !void {
     {
         const blah = "aoeu".*;
         const const_array_ref = &blah;
@@ -566,13 +566,13 @@ test "peer type resolution: error and [N]T" {
     comptime assert(mem.eql(u8, try testPeerErrorAndArray2(1), "OKK"));
 }
 
-fn testPeerErrorAndArray(x: u8) anyerror![]const u8 {
+fn test_peer_error_and_array(x: u8) anyerror![]const u8 {
     return switch (x) {
         0x00 => "OK",
         else => error.BadValue,
     };
 }
-fn testPeerErrorAndArray2(x: u8) anyerror![]const u8 {
+fn test_peer_error_and_array2(x: u8) anyerror![]const u8 {
     return switch (x) {
         0x00 => "OK",
         0x01 => "OKK",
@@ -589,7 +589,7 @@ test "single-item pointer of array to slice to unknown length pointer" {
     try comptime testCastPtrOfArrayToSliceAndPtr();
 }
 
-fn testCastPtrOfArrayToSliceAndPtr() !void {
+fn test_cast_ptr_of_array_to_slice_and_ptr() !void {
     {
         var array = "aoeu".*;
         const x: [*]u8 = &array;
@@ -629,7 +629,7 @@ test "@intCast on vector" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             // Upcast (implicit, equivalent to @intCast)
             var up0: @Vector(2, u8) = [_]u8{ 0x55, 0xaa };
             _ = &up0;
@@ -886,7 +886,7 @@ test "peer resolution of string literals" {
     const S = struct {
         const E = enum { a, b, c, d };
 
-        fn doTheTest(e: E) !void {
+        fn do_the_test(e: E) !void {
             const cmd = switch (e) {
                 .a => "one",
                 .b => "two",
@@ -906,7 +906,7 @@ test "peer cast [:x]T to []T" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var array = [4:0]i32{ 1, 2, 3, 4 };
             const slice: [:0]i32 = &array;
             const dest: []i32 = slice;
@@ -923,7 +923,7 @@ test "peer cast [N:x]T to [N]T" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var array = [4:0]i32{ 1, 2, 3, 4 };
             _ = &array;
             const dest: [4]i32 = array;
@@ -940,7 +940,7 @@ test "peer cast *[N:x]T to *[N]T" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var array = [4:0]i32{ 1, 2, 3, 4 };
             const dest: *[4]i32 = &array;
             try expect(mem.eql(i32, dest, &[_]i32{ 1, 2, 3, 4 }));
@@ -956,7 +956,7 @@ test "peer cast [*:x]T to [*]T" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var array = [4:99]i32{ 1, 2, 3, 4 };
             const dest: [*]i32 = &array;
             try expect(dest[0] == 1);
@@ -977,7 +977,7 @@ test "peer cast [:x]T to [*:x]T" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var array = [4:0]i32{ 1, 2, 3, 4 };
             const slice: [:0]i32 = &array;
             const dest: [*:0]i32 = slice;
@@ -998,7 +998,7 @@ test "peer type resolution implicit cast to return type" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             for ("hello") |c| _ = f(c);
         }
         fn f(c: u8) []const u8 {
@@ -1019,7 +1019,7 @@ test "peer type resolution implicit cast to variable type" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x: []const u8 = undefined;
             for ("hello") |c| x = switch (c) {
                 'h', 'e' => &[_]u8{c}, // should cast to slice
@@ -1048,7 +1048,7 @@ test "cast between C pointer with different but compatible types" {
         fn foo(arg: [*]c_ushort) u16 {
             return arg[0];
         }
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x = [_]u16{ 4, 2, 1, 3 };
             try expect(foo(@as([*]u16, @ptrCast(&x))) == 4);
         }
@@ -1136,7 +1136,7 @@ test "implicit cast from [*]T to ?*anyopaque" {
     try expect(std.mem.eql(u8, &a, &[_]u8{ 4, 3, 2 }));
 }
 
-fn incrementVoidPtrArray(array: ?*anyopaque, len: usize) void {
+fn increment_void_ptr_array(array: ?*anyopaque, len: usize) void {
     var n: usize = 0;
     while (n < len) : (n += 1) {
         @as([*]u8, @ptrCast(array.?))[n] += 1;
@@ -1173,7 +1173,7 @@ test "cast function with an opaque parameter" {
     const Foo = struct {
         x: i32,
         y: i32,
-        fn funcImpl(self: *@This()) void {
+        fn func_impl(self: *@This()) void {
             self.x += 1;
             self.y += 1;
         }
@@ -1211,11 +1211,11 @@ test "return null from fn () anyerror!?&T" {
     const b = returnNullLitFromOptionalTypeErrorRef();
     try expect((try a) == null and (try b) == null);
 }
-fn returnNullFromOptionalTypeErrorRef() anyerror!?*A {
+fn return_null_from_optional_type_error_ref() anyerror!?*A {
     const a: ?*A = null;
     return a;
 }
-fn returnNullLitFromOptionalTypeErrorRef() anyerror!?*A {
+fn return_null_lit_from_optional_type_error_ref() anyerror!?*A {
     return null;
 }
 
@@ -1231,7 +1231,7 @@ test "peer type resolution: [0]u8 and []const u8" {
         try expect(peerTypeEmptyArrayAndSlice(false, "hi").len == 1);
     }
 }
-fn peerTypeEmptyArrayAndSlice(a: bool, slice: []const u8) []const u8 {
+fn peer_type_empty_array_and_slice(a: bool, slice: []const u8) []const u8 {
     if (a) {
         return &[_]u8{};
     }
@@ -1249,7 +1249,7 @@ test "implicitly cast from [N]T to ?[]const T" {
     comptime assert(mem.eql(u8, castToOptionalSlice().?, "hi"));
 }
 
-fn castToOptionalSlice() ?[]const u8 {
+fn cast_to_optional_slice() ?[]const u8 {
     return "hi";
 }
 
@@ -1264,15 +1264,15 @@ test "cast u128 to f128 and back" {
     try testCast128();
 }
 
-fn testCast128() !void {
+fn test_cast128() !void {
     try expect(cast128Int(cast128Float(0x7fff0000000000000000000000000000)) == 0x7fff0000000000000000000000000000);
 }
 
-fn cast128Int(x: f128) u128 {
+fn cast128_int(x: f128) u128 {
     return @as(u128, @bitCast(x));
 }
 
-fn cast128Float(x: u128) f128 {
+fn cast128_float(x: u128) f128 {
     return @as(f128, @bitCast(x));
 }
 
@@ -1303,7 +1303,7 @@ test "implicit cast from *T to ?*anyopaque" {
     try std.testing.expect(a == 2);
 }
 
-fn incrementVoidPtrValue(value: ?*anyopaque) void {
+fn increment_void_ptr_value(value: ?*anyopaque) void {
     @as(*u8, @ptrCast(value.?)).* += 1;
 }
 
@@ -1335,7 +1335,7 @@ test "*const [N]null u8 to ?[]const u8" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a = "Hello";
             _ = &a;
             const b: ?[]const u8 = a;
@@ -1349,15 +1349,15 @@ test "*const [N]null u8 to ?[]const u8" {
 test "cast between [*c]T and ?[*:0]T on fn parameter" {
     const S = struct {
         const Handler = ?fn ([*c]const u8) callconv(.C) void;
-        fn addCallback(comptime handler: Handler) void {
+        fn add_callback(comptime handler: Handler) void {
             _ = handler;
         }
 
-        fn myCallback(cstr: ?[*:0]const u8) callconv(.C) void {
+        fn my_callback(cstr: ?[*:0]const u8) callconv(.C) void {
             _ = cstr;
         }
 
-        fn doTheTest() void {
+        fn do_the_test() void {
             addCallback(myCallback);
         }
     };
@@ -1393,7 +1393,7 @@ test "peer resolve arrays of different size to const slice" {
     comptime assert(mem.eql(u8, boolToStr(true), "true"));
     comptime assert(mem.eql(u8, boolToStr(false), "false"));
 }
-fn boolToStr(b: bool) []const u8 {
+fn bool_to_str(b: bool) []const u8 {
     return if (b) "true" else "false";
 }
 
@@ -1407,7 +1407,7 @@ test "cast f16 to wider types" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x: f16 = 1234.0;
             _ = &x;
             try expect(@as(f32, 1234.0) == x);
@@ -1428,7 +1428,7 @@ test "cast f128 to narrower types" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x: f128 = 1234.0;
             _ = &x;
             try expect(@as(f16, 1234.0) == @as(f16, @floatCast(x)));
@@ -1447,7 +1447,7 @@ test "peer type resolution: unreachable, null, slice" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest(num: usize, word: []const u8) !void {
+        fn do_the_test(num: usize, word: []const u8) !void {
             const result = switch (num) {
                 0 => null,
                 1 => word,
@@ -1464,16 +1464,16 @@ test "cast i8 fn call peers to i32 result" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var cond = true;
             _ = &cond;
             const value: i32 = if (cond) smallBoi() else bigBoi();
             try expect(value == 123);
         }
-        fn smallBoi() i8 {
+        fn small_boi() i8 {
             return 123;
         }
-        fn bigBoi() i16 {
+        fn big_boi() i16 {
             return 1234;
         }
     };
@@ -1698,7 +1698,7 @@ test "peer type resolution: const sentinel slice and mutable non-sentinel slice"
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest(comptime T: type, comptime s: T) !void {
+        fn do_the_test(comptime T: type, comptime s: T) !void {
             var a: [:s]const T = @as(*const [2:s]T, @ptrFromInt(0x1000));
             var b: []T = @as(*[3]T, @ptrFromInt(0x2000));
             _ = .{ &a, &b };
@@ -2341,7 +2341,7 @@ test "cast builtins can wrap result in optional" {
             return @ptrCast(&x);
         }
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const ra = a() orelse return error.ImpossibleError;
             const rb = b() orelse return error.ImpossibleError;
             const rc = c() orelse return error.ImpossibleError;
@@ -2380,7 +2380,7 @@ test "cast builtins can wrap result in error union" {
             return @ptrCast(&x);
         }
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const ra = try a();
             const rb = try b();
             const rc = try c();
@@ -2419,7 +2419,7 @@ test "cast builtins can wrap result in error union and optional" {
             return @ptrCast(&x);
         }
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const ra = try a() orelse return error.ImpossibleError;
             const rb = try b() orelse return error.ImpossibleError;
             const rc = try c() orelse return error.ImpossibleError;
@@ -2447,7 +2447,7 @@ test "@floatCast on vector" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             {
                 var a: @Vector(2, f64) = .{ 1.5, 2.5 };
                 _ = &a;
@@ -2488,7 +2488,7 @@ test "@ptrFromInt on vector" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: @Vector(3, usize) = .{ 0x1000, 0x2000, 0x3000 };
             _ = &a;
             const b: @Vector(3, *anyopaque) = @ptrFromInt(a);
@@ -2512,7 +2512,7 @@ test "@intFromPtr on vector" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: @Vector(3, *anyopaque) = .{
                 @ptrFromInt(0x1000),
                 @ptrFromInt(0x2000),
@@ -2537,7 +2537,7 @@ test "@floatFromInt on vector" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: @Vector(3, u32) = .{ 10, 20, 30 };
             _ = &a;
             const b: @Vector(3, f32) = @floatFromInt(a);
@@ -2557,7 +2557,7 @@ test "@intFromFloat on vector" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: @Vector(3, f32) = .{ 10.3, 20.5, 30.7 };
             _ = &a;
             const b: @Vector(3, u32) = @intFromFloat(a);
@@ -2585,7 +2585,7 @@ test "@intFromBool on vector" {
     }
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: @Vector(3, bool) = .{ false, true, false };
             _ = &a;
             const b: @Vector(3, u1) = @intFromBool(a);
@@ -2642,7 +2642,7 @@ test "result information is preserved through many nested structures" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const E = error{Foo};
             const T = *const ?E!struct { x: ?*const E!?u8 };
 

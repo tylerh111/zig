@@ -16,7 +16,7 @@ pub const CRTFile = enum {
     mingw32_lib,
 };
 
-pub fn buildCRTFile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progress.Node) !void {
+pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progress.Node) !void {
     if (!build_options.have_llvm) {
         return error.ZigCompilerNotBuiltWithLLVMExtensions;
     }
@@ -156,7 +156,7 @@ fn add_cc_args(
     });
 }
 
-pub fn buildImportLib(comp: *Compilation, lib_name: []const u8) !void {
+pub fn build_import_lib(comp: *Compilation, lib_name: []const u8) !void {
     if (build_options.only_c) @compileError("building import libs not included in core functionality");
     var arena_allocator = std.heap.ArenaAllocator.init(comp.gpa);
     defer arena_allocator.deinit();
@@ -296,7 +296,7 @@ pub fn buildImportLib(comp: *Compilation, lib_name: []const u8) !void {
     });
 }
 
-pub fn libExists(
+pub fn lib_exists(
     allocator: Allocator,
     target: std.Target,
     zig_lib_directory: Cache.Directory,
@@ -312,7 +312,7 @@ pub fn libExists(
 
 /// This function body is verbose but all it does is test 3 different paths and
 /// see if a .def file exists.
-fn findDef(
+fn find_def(
     allocator: Allocator,
     target: std.Target,
     zig_lib_directory: Cache.Directory,

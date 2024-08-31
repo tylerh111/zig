@@ -55,7 +55,7 @@ const SysVContext = struct {
         };
     }
 
-    fn layoutFields(self: *SysVContext, rec: *const Record) void {
+    fn layout_fields(self: *SysVContext, rec: *const Record) void {
         for (rec.fields, 0..) |*fld, fld_indx| {
             if (fld.ty.specifier == .invalid) continue;
             const type_layout = computeLayout(fld.ty, self.comp);
@@ -82,7 +82,7 @@ const SysVContext = struct {
     /// - the field is a bit-field and the previous field was a non-zero-sized bit-field with the same type size
     /// - the field is a zero-sized bit-field and the previous field was not a non-zero-sized bit-field
     /// See test case 0068.
-    fn ignoreTypeAlignment(is_attr_packed: bool, bit_width: ?u32, ongoing_bitfield: ?OngoingBitfield, fld_layout: TypeLayout) bool {
+    fn ignore_type_alignment(is_attr_packed: bool, bit_width: ?u32, ongoing_bitfield: ?OngoingBitfield, fld_layout: TypeLayout) bool {
         if (is_attr_packed) return true;
         if (bit_width) |width| {
             if (ongoing_bitfield) |ongoing| {
@@ -94,7 +94,7 @@ const SysVContext = struct {
         return false;
     }
 
-    fn layoutMinGWField(
+    fn layout_min_gwfield(
         self: *SysVContext,
         field: *const Field,
         field_attrs: ?[]const Attribute,
@@ -151,7 +151,7 @@ const SysVContext = struct {
         }
     }
 
-    fn layoutBitFieldMinGW(
+    fn layout_bit_field_min_gw(
         self: *SysVContext,
         ty_size_bits: u64,
         field_alignment_bits: u64,
@@ -203,7 +203,7 @@ const SysVContext = struct {
         };
     }
 
-    fn layoutRegularFieldMinGW(
+    fn layout_regular_field_min_gw(
         self: *SysVContext,
         ty_size_bits: u64,
         field_alignment_bits: u64,
@@ -224,7 +224,7 @@ const SysVContext = struct {
         };
     }
 
-    fn layoutRegularField(
+    fn layout_regular_field(
         self: *SysVContext,
         fld_attrs: ?[]const Attribute,
         fld_layout: TypeLayout,
@@ -265,7 +265,7 @@ const SysVContext = struct {
         };
     }
 
-    fn layoutBitField(
+    fn layout_bit_field(
         self: *SysVContext,
         fld_attrs: ?[]const Attribute,
         fld_layout: TypeLayout,
@@ -436,7 +436,7 @@ const MsvcContext = struct {
         };
     }
 
-    fn layoutField(self: *MsvcContext, fld: *const Field, fld_attrs: ?[]const Attribute) FieldLayout {
+    fn layout_field(self: *MsvcContext, fld: *const Field, fld_attrs: ?[]const Attribute) FieldLayout {
         const type_layout = computeLayout(fld.ty, self.comp);
 
         // The required alignment of the field is the maximum of the required alignment of the
@@ -480,7 +480,7 @@ const MsvcContext = struct {
         }
     }
 
-    fn layoutBitField(self: *MsvcContext, ty_size_bits: u64, field_align: u32, bit_width: u32) FieldLayout {
+    fn layout_bit_field(self: *MsvcContext, ty_size_bits: u64, field_align: u32, bit_width: u32) FieldLayout {
         if (bit_width == 0) {
             // A zero-sized bit-field that does not follow a non-zero-sized bit-field does not affect
             // the overall layout of the record. Even in a union where the order would otherwise
@@ -534,7 +534,7 @@ const MsvcContext = struct {
         return .{ .offset_bits = offset_bits, .size_bits = bit_width };
     }
 
-    fn layoutRegularField(self: *MsvcContext, size_bits: u64, field_align: u32) FieldLayout {
+    fn layout_regular_field(self: *MsvcContext, size_bits: u64, field_align: u32) FieldLayout {
         self.contains_non_bitfield = true;
         self.ongoing_bitfield = null;
         // The alignment of the field affects both the pointer alignment and the field
@@ -548,7 +548,7 @@ const MsvcContext = struct {
         self.size_bits = @max(self.size_bits, offset_bits + size_bits);
         return .{ .offset_bits = offset_bits, .size_bits = size_bits };
     }
-    fn handleZeroSizedRecord(self: *MsvcContext) void {
+    fn handle_zero_sized_record(self: *MsvcContext) void {
         if (self.is_union) {
             // MSVC does not allow unions without fields.
             // If all fields in a union have size 0, the size of the union is set to
@@ -613,7 +613,7 @@ pub fn compute(rec: *Type.Record, ty: Type, comp: *const Compilation, pragma_pac
     }
 }
 
-fn computeLayout(ty: Type, comp: *const Compilation) TypeLayout {
+fn compute_layout(ty: Type, comp: *const Compilation) TypeLayout {
     if (ty.getRecord()) |rec| {
         const requested = BITS_PER_BYTE * (ty.requestedAlignment(comp) orelse 0);
         return .{
@@ -633,7 +633,7 @@ fn computeLayout(ty: Type, comp: *const Compilation) TypeLayout {
     }
 }
 
-fn isPacked(attrs: ?[]const Attribute) bool {
+fn is_packed(attrs: ?[]const Attribute) bool {
     const a = attrs orelse return false;
 
     for (a) |attribute| {
@@ -656,7 +656,7 @@ fn isPacked(attrs: ?[]const Attribute) bool {
 //        activate the default.
 //
 // See test case 0020.
-pub fn msvcPragmaPack(comp: *const Compilation, pack: u32) ?u32 {
+pub fn msvc_pragma_pack(comp: *const Compilation, pack: u32) ?u32 {
     return switch (pack) {
         8, 16, 32 => pack,
         64 => if (comp.target.cpu.arch == .x86) null else pack,

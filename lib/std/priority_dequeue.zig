@@ -14,7 +14,7 @@ const expectError = testing.expectError;
 /// if the third argument should be min-popped second.
 /// Popping the max element works in reverse. For example,
 /// to make `popMin` return the smallest number, provide
-/// `fn lessThan(context: void, a: T, b: T) Order { _ = context; return std.math.order(a, b); }`
+/// `fn less_than(context: void, a: T, b: T) Order { _ = context; return std.math.order(a, b); }`
 pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compareFn: fn (context: Context, a: T, b: T) Order) type {
     return struct {
         const Self = @This();
@@ -46,14 +46,14 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
         }
 
         /// Add each element in `items` to the dequeue.
-        pub fn addSlice(self: *Self, items: []const T) !void {
+        pub fn add_slice(self: *Self, items: []const T) !void {
             try self.ensureUnusedCapacity(items.len);
             for (items) |e| {
                 self.addUnchecked(e);
             }
         }
 
-        fn addUnchecked(self: *Self, elem: T) void {
+        fn add_unchecked(self: *Self, elem: T) void {
             self.items[self.len] = elem;
 
             if (self.len > 0) {
@@ -64,7 +64,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             self.len += 1;
         }
 
-        fn isMinLayer(index: usize) bool {
+        fn is_min_layer(index: usize) bool {
             // In the min-max heap structure:
             // The first element is on a min layer;
             // next two are on a max layer;
@@ -72,7 +72,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             return 1 == @clz(index +% 1) & 1;
         }
 
-        fn nextIsMinLayer(self: Self) bool {
+        fn next_is_min_layer(self: Self) bool {
             return isMinLayer(self.len);
         }
 
@@ -81,7 +81,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             min_layer: bool,
         };
 
-        fn getStartForSiftUp(self: Self, child: T, index: usize) StartIndexAndLayer {
+        fn get_start_for_sift_up(self: Self, child: T, index: usize) StartIndexAndLayer {
             const child_index = index;
             const parent_index = parentIndex(child_index);
             const parent = self.items[parent_index];
@@ -104,7 +104,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             }
         }
 
-        fn siftUp(self: *Self, start: StartIndexAndLayer) void {
+        fn sift_up(self: *Self, start: StartIndexAndLayer) void {
             if (start.min_layer) {
                 doSiftUp(self, start.index, .lt);
             } else {
@@ -112,7 +112,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             }
         }
 
-        fn doSiftUp(self: *Self, start_index: usize, target_order: Order) void {
+        fn do_sift_up(self: *Self, start_index: usize, target_order: Order) void {
             var child_index = start_index;
             while (child_index > 2) {
                 const grandparent_index = grandparentIndex(child_index);
@@ -131,20 +131,20 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
 
         /// Look at the smallest element in the dequeue. Returns
         /// `null` if empty.
-        pub fn peekMin(self: *Self) ?T {
+        pub fn peek_min(self: *Self) ?T {
             return if (self.len > 0) self.items[0] else null;
         }
 
         /// Look at the largest element in the dequeue. Returns
         /// `null` if empty.
-        pub fn peekMax(self: *Self) ?T {
+        pub fn peek_max(self: *Self) ?T {
             if (self.len == 0) return null;
             if (self.len == 1) return self.items[0];
             if (self.len == 2) return self.items[1];
             return self.bestItemAtIndices(1, 2, .gt).item;
         }
 
-        fn maxIndex(self: Self) ?usize {
+        fn max_index(self: Self) ?usize {
             if (self.len == 0) return null;
             if (self.len == 1) return 0;
             if (self.len == 2) return 1;
@@ -153,32 +153,32 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
 
         /// Pop the smallest element from the dequeue. Returns
         /// `null` if empty.
-        pub fn removeMinOrNull(self: *Self) ?T {
+        pub fn remove_min_or_null(self: *Self) ?T {
             return if (self.len > 0) self.removeMin() else null;
         }
 
         /// Remove and return the smallest element from the
         /// dequeue.
-        pub fn removeMin(self: *Self) T {
+        pub fn remove_min(self: *Self) T {
             return self.removeIndex(0);
         }
 
         /// Pop the largest element from the dequeue. Returns
         /// `null` if empty.
-        pub fn removeMaxOrNull(self: *Self) ?T {
+        pub fn remove_max_or_null(self: *Self) ?T {
             return if (self.len > 0) self.removeMax() else null;
         }
 
         /// Remove and return the largest element from the
         /// dequeue.
-        pub fn removeMax(self: *Self) T {
+        pub fn remove_max(self: *Self) T {
             return self.removeIndex(self.maxIndex().?);
         }
 
         /// Remove and return element at index. Indices are in the
         /// same order as iterator, which is not necessarily priority
         /// order.
-        pub fn removeIndex(self: *Self, index: usize) T {
+        pub fn remove_index(self: *Self, index: usize) T {
             assert(self.len > index);
             const item = self.items[index];
             const last = self.items[self.len - 1];
@@ -190,7 +190,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             return item;
         }
 
-        fn siftDown(self: *Self, index: usize) void {
+        fn sift_down(self: *Self, index: usize) void {
             if (isMinLayer(index)) {
                 self.doSiftDown(index, .lt);
             } else {
@@ -198,7 +198,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             }
         }
 
-        fn doSiftDown(self: *Self, start_index: usize, target_order: Order) void {
+        fn do_sift_down(self: *Self, start_index: usize, target_order: Order) void {
             var index = start_index;
             const half = self.len >> 1;
             while (true) {
@@ -255,7 +255,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             }
         }
 
-        fn swapIfParentIsBetter(self: *Self, child: T, child_index: usize, target_order: Order) void {
+        fn swap_if_parent_is_better(self: *Self, child: T, child_index: usize, target_order: Order) void {
             const parent_index = parentIndex(child_index);
             const parent = self.items[parent_index];
 
@@ -270,14 +270,14 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             index: usize,
         };
 
-        fn getItem(self: Self, index: usize) ItemAndIndex {
+        fn get_item(self: Self, index: usize) ItemAndIndex {
             return .{
                 .item = self.items[index],
                 .index = index,
             };
         }
 
-        fn bestItem(self: Self, item1: ItemAndIndex, item2: ItemAndIndex, target_order: Order) ItemAndIndex {
+        fn best_item(self: Self, item1: ItemAndIndex, item2: ItemAndIndex, target_order: Order) ItemAndIndex {
             if (compareFn(self.context, item1.item, item2.item) == target_order) {
                 return item1;
             } else {
@@ -285,13 +285,13 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             }
         }
 
-        fn bestItemAtIndices(self: Self, index1: usize, index2: usize, target_order: Order) ItemAndIndex {
+        fn best_item_at_indices(self: Self, index1: usize, index2: usize, target_order: Order) ItemAndIndex {
             const item1 = self.getItem(index1);
             const item2 = self.getItem(index2);
             return self.bestItem(item1, item2, target_order);
         }
 
-        fn bestDescendent(self: Self, first_child_index: usize, first_grandchild_index: usize, target_order: Order) ItemAndIndex {
+        fn best_descendent(self: Self, first_child_index: usize, first_grandchild_index: usize, target_order: Order) ItemAndIndex {
             const second_child_index = first_child_index + 1;
             if (first_grandchild_index >= self.len) {
                 // No grandchildren, find the best child (second may not exist)
@@ -336,7 +336,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
         /// Dequeue takes ownership of the passed in slice. The slice must have been
         /// allocated with `allocator`.
         /// De-initialize with `deinit`.
-        pub fn fromOwnedSlice(allocator: Allocator, items: []T, context: Context) Self {
+        pub fn from_owned_slice(allocator: Allocator, items: []T, context: Context) Self {
             var queue = Self{
                 .items = items,
                 .len = items.len,
@@ -356,7 +356,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
         }
 
         /// Ensure that the dequeue can fit at least `new_capacity` items.
-        pub fn ensureTotalCapacity(self: *Self, new_capacity: usize) !void {
+        pub fn ensure_total_capacity(self: *Self, new_capacity: usize) !void {
             var better_capacity = self.capacity();
             if (better_capacity >= new_capacity) return;
             while (true) {
@@ -367,12 +367,12 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
         }
 
         /// Ensure that the dequeue can fit at least `additional_count` **more** items.
-        pub fn ensureUnusedCapacity(self: *Self, additional_count: usize) !void {
+        pub fn ensure_unused_capacity(self: *Self, additional_count: usize) !void {
             return self.ensureTotalCapacity(self.len + additional_count);
         }
 
         /// Reduce allocated capacity to `new_len`.
-        pub fn shrinkAndFree(self: *Self, new_len: usize) void {
+        pub fn shrink_and_free(self: *Self, new_len: usize) void {
             assert(new_len <= self.items.len);
 
             // Cannot shrink to smaller than the current queue size without invalidating the heap property
@@ -442,25 +442,25 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             print(" }}\n", .{});
         }
 
-        fn parentIndex(index: usize) usize {
+        fn parent_index(index: usize) usize {
             return (index - 1) >> 1;
         }
 
-        fn grandparentIndex(index: usize) usize {
+        fn grandparent_index(index: usize) usize {
             return parentIndex(parentIndex(index));
         }
 
-        fn firstChildIndex(index: usize) usize {
+        fn first_child_index(index: usize) usize {
             return (index << 1) + 1;
         }
 
-        fn firstGrandchildIndex(index: usize) usize {
+        fn first_grandchild_index(index: usize) usize {
             return firstChildIndex(firstChildIndex(index));
         }
     };
 }
 
-fn lessThanComparison(context: void, a: u32, b: u32) Order {
+fn less_than_comparison(context: void, a: u32, b: u32) Order {
     _ = context;
     return std.math.order(a, b);
 }
@@ -878,7 +878,7 @@ test "fuzz testing min" {
     }
 }
 
-fn fuzzTestMin(rng: std.Random, comptime queue_size: usize) !void {
+fn fuzz_test_min(rng: std.Random, comptime queue_size: usize) !void {
     const allocator = testing.allocator;
     const items = try generateRandomSlice(allocator, rng, queue_size);
 
@@ -907,7 +907,7 @@ test "fuzz testing max" {
     }
 }
 
-fn fuzzTestMax(rng: std.Random, queue_size: usize) !void {
+fn fuzz_test_max(rng: std.Random, queue_size: usize) !void {
     const allocator = testing.allocator;
     const items = try generateRandomSlice(allocator, rng, queue_size);
 
@@ -936,7 +936,7 @@ test "fuzz testing min and max" {
     }
 }
 
-fn fuzzTestMinMax(rng: std.Random, queue_size: usize) !void {
+fn fuzz_test_min_max(rng: std.Random, queue_size: usize) !void {
     const allocator = testing.allocator;
     const items = try generateRandomSlice(allocator, rng, queue_size);
 
@@ -963,7 +963,7 @@ fn fuzzTestMinMax(rng: std.Random, queue_size: usize) !void {
     }
 }
 
-fn generateRandomSlice(allocator: std.mem.Allocator, rng: std.Random, size: usize) ![]u32 {
+fn generate_random_slice(allocator: std.mem.Allocator, rng: std.Random, size: usize) ![]u32 {
     var array = std.ArrayList(u32).init(allocator);
     try array.ensureTotalCapacity(size);
 
@@ -976,7 +976,7 @@ fn generateRandomSlice(allocator: std.mem.Allocator, rng: std.Random, size: usiz
     return array.toOwnedSlice();
 }
 
-fn contextLessThanComparison(context: []const u32, a: usize, b: usize) Order {
+fn context_less_than_comparison(context: []const u32, a: usize, b: usize) Order {
     return std.math.order(context[a], context[b]);
 }
 
@@ -1008,7 +1008,7 @@ var all_cmps_unique = true;
 
 test "don't compare a value to a copy of itself" {
     var depq = PriorityDequeue(u32, void, struct {
-        fn uniqueLessThan(_: void, a: u32, b: u32) Order {
+        fn unique_less_than(_: void, a: u32, b: u32) Order {
             all_cmps_unique = all_cmps_unique and (a != b);
             return std.math.order(a, b);
         }

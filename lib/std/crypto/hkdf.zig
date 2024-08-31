@@ -33,7 +33,7 @@ pub fn Hkdf(comptime Hmac: type) type {
         /// hkdf.update(ikm2);
         /// hkdf.final(&prk);
         /// ```
-        pub fn extractInit(salt: []const u8) Hmac {
+        pub fn extract_init(salt: []const u8) Hmac {
             return Hmac.init(salt);
         }
 

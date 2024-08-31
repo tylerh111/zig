@@ -39,7 +39,7 @@ pub fn Vec2D(comptime T: type) type {
             return self._get(row);
         }
 
-        pub fn getMut(self: *Self, row: usize) ![]T {
+        pub fn get_mut(self: *Self, row: usize) ![]T {
             return self._get(row);
         }
     };

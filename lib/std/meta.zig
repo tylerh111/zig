@@ -14,7 +14,7 @@ test {
 }
 
 /// Returns the variant of an enum type, `T`, which is named `str`, or `null` if no such variant exists.
-pub fn stringToEnum(comptime T: type, str: []const u8) ?T {
+pub fn string_to_enum(comptime T: type, str: []const u8) ?T {
     // Using StaticStringMap here is more performant, but it will start to take too
     // long to compile if the enum is large enough, due to the current limits of comptime
     // performance when doing things like constructing lookup maps at comptime.
@@ -162,7 +162,7 @@ test sentinel {
     try comptime testSentinel();
 }
 
-fn testSentinel() !void {
+fn test_sentinel() !void {
     try testing.expectEqual(@as(u8, 0), sentinel([:0]u8).?);
     try testing.expectEqual(@as(u8, 0), sentinel([*:0]u8).?);
     try testing.expectEqual(@as(u8, 0), sentinel([5:0]u8).?);
@@ -242,7 +242,7 @@ pub fn Sentinel(comptime T: type, comptime sentinel_val: Elem(T)) type {
 
 pub const assumeSentinel = @compileError("This function has been removed, consider using std.mem.sliceTo() or if needed a @ptrCast()");
 
-pub fn containerLayout(comptime T: type) Type.ContainerLayout {
+pub fn container_layout(comptime T: type) Type.ContainerLayout {
     return switch (@typeInfo(T)) {
         .Struct => |info| info.layout,
         .Union => |info| info.layout,
@@ -315,7 +315,7 @@ test declarations {
     }
 }
 
-pub fn declarationInfo(comptime T: type, comptime decl_name: []const u8) Type.Declaration {
+pub fn declaration_info(comptime T: type, comptime decl_name: []const u8) Type.Declaration {
     inline for (comptime declarations(T)) |decl| {
         if (comptime mem.eql(u8, decl.name, decl_name))
             return decl;
@@ -394,7 +394,7 @@ test fields {
     try testing.expect(comptime uf[0].type == u8);
 }
 
-pub fn fieldInfo(comptime T: type, comptime field: FieldEnum(T)) switch (@typeInfo(T)) {
+pub fn field_info(comptime T: type, comptime field: FieldEnum(T)) switch (@typeInfo(T)) {
     .Struct => Type.StructField,
     .Union => Type.UnionField,
     .ErrorSet => Type.Error,
@@ -455,7 +455,7 @@ test FieldType {
     try testing.expect(FieldType(U, .d) == *const u8);
 }
 
-pub fn fieldNames(comptime T: type) *const [fields(T).len][:0]const u8 {
+pub fn field_names(comptime T: type) *const [fields(T).len][:0]const u8 {
     return comptime blk: {
         const fieldInfos = fields(T);
         var names: [fieldInfos.len][:0]const u8 = undefined;
@@ -566,7 +566,7 @@ pub fn FieldEnum(comptime T: type) type {
     });
 }
 
-fn expectEqualEnum(expected: anytype, actual: @TypeOf(expected)) !void {
+fn expect_equal_enum(expected: anytype, actual: @TypeOf(expected)) !void {
     // TODO: https://github.com/ziglang/zig/issues/7419
     // testing.expectEqual(@typeInfo(expected).Enum, @typeInfo(actual).Enum);
     try testing.expectEqual(
@@ -682,7 +682,7 @@ test Tag {
 }
 
 ///Returns the active tag of a tagged union
-pub fn activeTag(u: anytype) Tag(@TypeOf(u)) {
+pub fn active_tag(u: anytype) Tag(@TypeOf(u)) {
     const T = @TypeOf(u);
     return @as(Tag(T), u);
 }
@@ -886,7 +886,7 @@ test intToEnum {
 
 pub const IntToEnumError = error{InvalidEnumTag};
 
-pub fn intToEnum(comptime EnumTag: type, tag_int: anytype) IntToEnumError!EnumTag {
+pub fn int_to_enum(comptime EnumTag: type, tag_int: anytype) IntToEnumError!EnumTag {
     const enum_info = @typeInfo(EnumTag).Enum;
 
     if (!enum_info.is_exhaustive) {
@@ -916,7 +916,7 @@ pub fn intToEnum(comptime EnumTag: type, tag_int: anytype) IntToEnumError!EnumTa
 
 /// Given a type and a name, return the field index according to source order.
 /// Returns `null` if the field is not found.
-pub fn fieldIndex(comptime T: type, comptime name: []const u8) ?comptime_int {
+pub fn field_index(comptime T: type, comptime name: []const u8) ?comptime_int {
     inline for (fields(T), 0..) |field, i| {
         if (mem.eql(u8, field.name, name))
             return i;
@@ -927,9 +927,9 @@ pub fn fieldIndex(comptime T: type, comptime name: []const u8) ?comptime_int {
 pub const refAllDecls = @compileError("refAllDecls has been moved from std.meta to std.testing");
 
 /// Returns a slice of pointers to public declarations of a namespace.
-pub fn declList(comptime Namespace: type, comptime Decl: type) []const *const Decl {
+pub fn decl_list(comptime Namespace: type, comptime Decl: type) []const *const Decl {
     const S = struct {
-        fn declNameLessThan(context: void, lhs: *const Decl, rhs: *const Decl) bool {
+        fn decl_name_less_than(context: void, lhs: *const Decl, rhs: *const Decl) bool {
             _ = context;
             return mem.lessThan(u8, lhs.name, rhs.name);
         }
@@ -1030,12 +1030,12 @@ fn CreateUniqueTuple(comptime N: comptime_int, comptime types: [N]type) type {
 }
 
 const TupleTester = struct {
-    fn assertTypeEqual(comptime Expected: type, comptime Actual: type) void {
+    fn assert_type_equal(comptime Expected: type, comptime Actual: type) void {
         if (Expected != Actual)
             @compileError("Expected type " ++ @typeName(Expected) ++ ", but got type " ++ @typeName(Actual));
     }
 
-    fn assertTuple(comptime expected: anytype, comptime Actual: type) void {
+    fn assert_tuple(comptime expected: anytype, comptime Actual: type) void {
         const info = @typeInfo(Actual);
         if (info != .Struct)
             @compileError("Expected struct type");
@@ -1096,7 +1096,7 @@ test "ArgsTuple forwarding" {
 }
 
 /// Returns whether `error_union` contains an error.
-pub fn isError(error_union: anytype) bool {
+pub fn is_error(error_union: anytype) bool {
     return if (error_union) |_| false else |_| true;
 }
 
@@ -1107,7 +1107,7 @@ test isError {
 
 /// Returns true if a type has a namespace and the namespace contains `name`;
 /// `false` otherwise. Result is always comptime-known.
-pub inline fn hasFn(comptime T: type, comptime name: []const u8) bool {
+pub inline fn has_fn(comptime T: type, comptime name: []const u8) bool {
     switch (@typeInfo(T)) {
         .Struct, .Union, .Enum, .Opaque => {},
         else => return false,
@@ -1136,7 +1136,7 @@ test hasFn {
 
 /// Returns true if a type has a `name` method; `false` otherwise.
 /// Result is always comptime-known.
-pub inline fn hasMethod(comptime T: type, comptime name: []const u8) bool {
+pub inline fn has_method(comptime T: type, comptime name: []const u8) bool {
     return switch (@typeInfo(T)) {
         .Pointer => |P| switch (P.size) {
             .One => hasFn(P.child, name),
@@ -1181,7 +1181,7 @@ test hasMethod {
 /// True if every value of the type `T` has a unique bit pattern representing it.
 /// In other words, `T` has no unused bits and no padding.
 /// Result is always comptime-known.
-pub inline fn hasUniqueRepresentation(comptime T: type) bool {
+pub inline fn has_unique_representation(comptime T: type) bool {
     return switch (@typeInfo(T)) {
         else => false, // TODO can we know if it's true for some of these types ?
 

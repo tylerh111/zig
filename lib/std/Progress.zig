@@ -91,7 +91,7 @@ pub const Node = struct {
         name: [max_name_len]u8,
 
         /// Not thread-safe.
-        fn getIpcFd(s: Storage) ?posix.fd_t {
+        fn get_ipc_fd(s: Storage) ?posix.fd_t {
             return if (s.estimated_total_count == std.math.maxInt(u32)) switch (@typeInfo(posix.fd_t)) {
                 .Int => @bitCast(s.completed_count),
                 .Pointer => @ptrFromInt(s.completed_count),
@@ -100,7 +100,7 @@ pub const Node = struct {
         }
 
         /// Thread-safe.
-        fn setIpcFd(s: *Storage, fd: posix.fd_t) void {
+        fn set_ipc_fd(s: *Storage, fd: posix.fd_t) void {
             const integer: u32 = switch (@typeInfo(posix.fd_t)) {
                 .Int => @bitCast(fd),
                 .Pointer => @intFromPtr(fd),
@@ -114,7 +114,7 @@ pub const Node = struct {
         }
 
         /// Not thread-safe.
-        fn byteSwap(s: *Storage) void {
+        fn byte_swap(s: *Storage) void {
             s.completed_count = @byteSwap(s.completed_count);
             s.estimated_total_count = @byteSwap(s.estimated_total_count);
         }
@@ -150,7 +150,7 @@ pub const Node = struct {
             return @enumFromInt(@intFromEnum(i));
         }
 
-        fn toParent(i: @This()) Parent {
+        fn to_parent(i: @This()) Parent {
             assert(@intFromEnum(i) != @intFromEnum(Parent.unused));
             return @enumFromInt(@intFromEnum(i));
         }
@@ -160,13 +160,13 @@ pub const Node = struct {
     pub const Index = enum(u8) {
         _,
 
-        fn toParent(i: @This()) Parent {
+        fn to_parent(i: @This()) Parent {
             assert(@intFromEnum(i) != @intFromEnum(Parent.unused));
             assert(@intFromEnum(i) != @intFromEnum(Parent.none));
             return @enumFromInt(@intFromEnum(i));
         }
 
-        pub fn toOptional(i: @This()) OptionalIndex {
+        pub fn to_optional(i: @This()) OptionalIndex {
             return @enumFromInt(@intFromEnum(i));
         }
     };
@@ -203,21 +203,21 @@ pub const Node = struct {
     }
 
     /// This is the same as calling `start` and then `end` on the returned `Node`. Thread-safe.
-    pub fn completeOne(n: Node) void {
+    pub fn complete_one(n: Node) void {
         const index = n.index.unwrap() orelse return;
         const storage = storageByIndex(index);
         _ = @atomicRmw(u32, &storage.completed_count, .Add, 1, .monotonic);
     }
 
     /// Thread-safe.
-    pub fn setCompletedItems(n: Node, completed_items: usize) void {
+    pub fn set_completed_items(n: Node, completed_items: usize) void {
         const index = n.index.unwrap() orelse return;
         const storage = storageByIndex(index);
         @atomicStore(u32, &storage.completed_count, std.math.lossyCast(u32, completed_items), .monotonic);
     }
 
     /// Thread-safe. 0 means unknown.
-    pub fn setEstimatedTotalItems(n: Node, count: usize) void {
+    pub fn set_estimated_total_items(n: Node, count: usize) void {
         const index = n.index.unwrap() orelse return;
         const storage = storageByIndex(index);
         // Avoid u32 max int which is used to indicate a special state.
@@ -226,7 +226,7 @@ pub const Node = struct {
     }
 
     /// Thread-safe.
-    pub fn increaseEstimatedTotalItems(n: Node, count: usize) void {
+    pub fn increase_estimated_total_items(n: Node, count: usize) void {
         const index = n.index.unwrap() orelse return;
         const storage = storageByIndex(index);
         _ = @atomicRmw(u32, &storage.estimated_total_count, .Add, std.math.lossyCast(u32, count), .monotonic);
@@ -258,7 +258,7 @@ pub const Node = struct {
     }
 
     /// Posix-only. Used by `std.process.Child`. Thread-safe.
-    pub fn setIpcFd(node: Node, fd: posix.fd_t) void {
+    pub fn set_ipc_fd(node: Node, fd: posix.fd_t) void {
         const index = node.index.unwrap() orelse return;
         assert(fd >= 0);
         assert(fd != posix.STDOUT_FILENO);
@@ -267,15 +267,15 @@ pub const Node = struct {
         storageByIndex(index).setIpcFd(fd);
     }
 
-    fn storageByIndex(index: Node.Index) *Node.Storage {
+    fn storage_by_index(index: Node.Index) *Node.Storage {
         return &global_progress.node_storage[@intFromEnum(index)];
     }
 
-    fn parentByIndex(index: Node.Index) *Node.Parent {
+    fn parent_by_index(index: Node.Index) *Node.Parent {
         return &global_progress.node_parents[@intFromEnum(index)];
     }
 
-    fn freelistByIndex(index: Node.Index) *Node.OptionalIndex {
+    fn freelist_by_index(index: Node.Index) *Node.OptionalIndex {
         return &global_progress.node_freelist[@intFromEnum(index)];
     }
 
@@ -431,7 +431,7 @@ fn wait(timeout_ns: u64) bool {
     return resize_flag or (global_progress.cols == 0);
 }
 
-fn updateThreadRun() void {
+fn update_thread_run() void {
     // Store this data in the thread so that it does not need to be part of the
     // linker data of the main executable.
     var serialized_buffer: Serialized.Buffer = undefined;
@@ -469,7 +469,7 @@ fn updateThreadRun() void {
     }
 }
 
-fn windowsApiWriteMarker() void {
+fn windows_api_write_marker() void {
     // Write the marker that we will use to find the beginning of the progress when clearing.
     // Note: This doesn't have to use WriteConsoleW, but doing so avoids dealing with the code page.
     var num_chars_written: windows.DWORD = undefined;
@@ -477,7 +477,7 @@ fn windowsApiWriteMarker() void {
     _ = windows.kernel32.WriteConsoleW(handle, &[_]u16{windows_api_start_marker}, 1, &num_chars_written, null);
 }
 
-fn windowsApiUpdateThreadRun() void {
+fn windows_api_update_thread_run() void {
     var serialized_buffer: Serialized.Buffer = undefined;
 
     {
@@ -521,16 +521,16 @@ fn windowsApiUpdateThreadRun() void {
 /// Allows the caller to freely write to stderr until `unlockStdErr` is called.
 ///
 /// During the lock, any `std.Progress` information is cleared from the terminal.
-pub fn lockStdErr() void {
+pub fn lock_std_err() void {
     stderr_mutex.lock();
     clearWrittenWithEscapeCodes() catch {};
 }
 
-pub fn unlockStdErr() void {
+pub fn unlock_std_err() void {
     stderr_mutex.unlock();
 }
 
-fn ipcThreadRun(fd: posix.fd_t) anyerror!void {
+fn ipc_thread_run(fd: posix.fd_t) anyerror!void {
     // Store this data in the thread so that it does not need to be part of the
     // linker data of the main executable.
     var serialized_buffer: Serialized.Buffer = undefined;
@@ -583,7 +583,7 @@ const TreeSymbol = enum {
     };
 
     /// The escape sequence representation as a string literal
-    fn escapeSeq(symbol: TreeSymbol) *const [9:0]u8 {
+    fn escape_seq(symbol: TreeSymbol) *const [9:0]u8 {
         return switch (symbol) {
             .tee => "\x1B\x28\x30\x74\x71\x1B\x28\x42 ",
             .line => "\x1B\x28\x30\x78\x1B\x28\x42  ",
@@ -612,7 +612,7 @@ const TreeSymbol = enum {
         };
     }
 
-    fn maxByteLen(symbol: TreeSymbol) usize {
+    fn max_byte_len(symbol: TreeSymbol) usize {
         var max: usize = 0;
         inline for (@typeInfo(Encoding).Enum.fields) |field| {
             const len = symbol.bytes(@field(Encoding, field.name)).len;
@@ -622,7 +622,7 @@ const TreeSymbol = enum {
     }
 };
 
-fn appendTreeSymbol(symbol: TreeSymbol, buf: []u8, start_i: usize) usize {
+fn append_tree_symbol(symbol: TreeSymbol, buf: []u8, start_i: usize) usize {
     switch (global_progress.terminal_mode) {
         .off => unreachable,
         .ansi_escape_codes => {
@@ -645,7 +645,7 @@ fn appendTreeSymbol(symbol: TreeSymbol, buf: []u8, start_i: usize) usize {
     }
 }
 
-fn clearWrittenWithEscapeCodes() anyerror!void {
+fn clear_written_with_escape_codes() anyerror!void {
     if (!global_progress.need_clear) return;
 
     var i: usize = 0;
@@ -661,7 +661,7 @@ fn clearWrittenWithEscapeCodes() anyerror!void {
 /// U+25BA or ►
 const windows_api_start_marker = 0x25BA;
 
-fn clearWrittenWindowsApi() error{Unexpected}!void {
+fn clear_written_windows_api() error{Unexpected}!void {
     // This uses a 'marker' strategy. The idea is:
     // - Always write a marker (in this case U+25BA or ►) at the beginning of the progress
     // - Get the current cursor position (at the end of the progress)
@@ -695,7 +695,7 @@ fn clearWrittenWindowsApi() error{Unexpected}!void {
     }
 }
 
-fn windowsApiMoveToMarker(nl_n: usize) error{Unexpected}!void {
+fn windows_api_move_to_marker(nl_n: usize) error{Unexpected}!void {
     const handle = global_progress.terminal.handle;
     var console_info: windows.CONSOLE_SCREEN_BUFFER_INFO = undefined;
     if (windows.kernel32.GetConsoleScreenBufferInfo(handle, &console_info) == 0) {
@@ -818,7 +818,7 @@ const Fd = enum(i32) {
 
 var ipc_metadata_len: u8 = 0;
 
-fn serializeIpc(start_serialized_len: usize, serialized_buffer: *Serialized.Buffer) usize {
+fn serialize_ipc(start_serialized_len: usize, serialized_buffer: *Serialized.Buffer) usize {
     const ipc_metadata_fds_copy = &serialized_buffer.ipc_metadata_fds_copy;
     const ipc_metadata_copy = &serialized_buffer.ipc_metadata_copy;
     const ipc_metadata_fds = &serialized_buffer.ipc_metadata_fds;
@@ -947,7 +947,7 @@ fn serializeIpc(start_serialized_len: usize, serialized_buffer: *Serialized.Buff
     return serialized_len;
 }
 
-fn copyRoot(dest: *Node.Storage, src: *align(1) Node.Storage) void {
+fn copy_root(dest: *Node.Storage, src: *align(1) Node.Storage) void {
     dest.* = .{
         .completed_count = src.completed_count,
         .estimated_total_count = src.estimated_total_count,
@@ -955,7 +955,7 @@ fn copyRoot(dest: *Node.Storage, src: *align(1) Node.Storage) void {
     };
 }
 
-fn findOld(
+fn find_old(
     ipc_fd: posix.fd_t,
     old_metadata_fds: []Fd,
     old_metadata: []SavedMetadata,
@@ -967,7 +967,7 @@ fn findOld(
     return null;
 }
 
-fn useSavedIpcData(
+fn use_saved_ipc_data(
     start_serialized_len: usize,
     serialized_buffer: *Serialized.Buffer,
     main_storage: *Node.Storage,
@@ -1035,7 +1035,7 @@ fn useSavedIpcData(
     return start_serialized_len + storage.len;
 }
 
-fn computeRedraw(serialized_buffer: *Serialized.Buffer) struct { []u8, usize } {
+fn compute_redraw(serialized_buffer: *Serialized.Buffer) struct { []u8, usize } {
     const serialized = serialize(serialized_buffer);
 
     // Now we can analyze our copy of the graph without atomics, reconstructing
@@ -1103,7 +1103,7 @@ fn computeRedraw(serialized_buffer: *Serialized.Buffer) struct { []u8, usize } {
     return .{ buf[0..i], nl_n };
 }
 
-fn computePrefix(
+fn compute_prefix(
     buf: []u8,
     start_i: usize,
     nl_n: usize,
@@ -1134,7 +1134,7 @@ fn computePrefix(
     return i;
 }
 
-fn lineUpperBoundLen(nl_n: usize) usize {
+fn line_upper_bound_len(nl_n: usize) usize {
     // \r\n on Windows, \n otherwise.
     const nl_len = if (is_windows) 2 else 1;
     return @max(TreeSymbol.tee.maxByteLen(), TreeSymbol.langle.maxByteLen()) +
@@ -1143,7 +1143,7 @@ fn lineUpperBoundLen(nl_n: usize) usize {
         finish_sync.len;
 }
 
-fn computeNode(
+fn compute_node(
     buf: []u8,
     start_i: usize,
     start_nl_n: usize,
@@ -1217,7 +1217,7 @@ fn computeNode(
     return .{ i, nl_n };
 }
 
-fn withinRowLimit(p: *Progress, nl_n: usize) bool {
+fn within_row_limit(p: *Progress, nl_n: usize) bool {
     // The +2 here is so that the PS1 is not scrolled off the top of the terminal.
     // one because we keep the cursor on the next line
     // one more to account for the PS1
@@ -1230,7 +1230,7 @@ fn write(buf: []const u8) anyerror!void {
 
 var remaining_write_trash_bytes: usize = 0;
 
-fn writeIpc(fd: posix.fd_t, serialized: Serialized) error{BrokenPipe}!void {
+fn write_ipc(fd: posix.fd_t, serialized: Serialized) error{BrokenPipe}!void {
     // Byteswap if necessary to ensure little endian over the pipe. This is
     // needed because the parent or child process might be running in qemu.
     if (is_big_endian) for (serialized.storage) |*s| s.byteSwap();
@@ -1286,7 +1286,7 @@ fn writeIpc(fd: posix.fd_t, serialized: Serialized) error{BrokenPipe}!void {
     }
 }
 
-fn writevNonblock(fd: posix.fd_t, iov: []posix.iovec_const) posix.WriteError!usize {
+fn writev_nonblock(fd: posix.fd_t, iov: []posix.iovec_const) posix.WriteError!usize {
     var iov_index: usize = 0;
     var written: usize = 0;
     var total_written: usize = 0;
@@ -1303,7 +1303,7 @@ fn writevNonblock(fd: posix.fd_t, iov: []posix.iovec_const) posix.WriteError!usi
     }
 }
 
-fn maybeUpdateSize(resize_flag: bool) void {
+fn maybe_update_size(resize_flag: bool) void {
     if (!resize_flag) return;
 
     const fd = global_progress.terminal.handle;
@@ -1343,7 +1343,7 @@ fn maybeUpdateSize(resize_flag: bool) void {
     }
 }
 
-fn handleSigWinch(sig: i32, info: *const posix.siginfo_t, ctx_ptr: ?*anyopaque) callconv(.C) void {
+fn handle_sig_winch(sig: i32, info: *const posix.siginfo_t, ctx_ptr: ?*anyopaque) callconv(.C) void {
     _ = info;
     _ = ctx_ptr;
     assert(sig == posix.SIG.WINCH);

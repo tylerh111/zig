@@ -12,7 +12,7 @@ pub const Class = union(enum) {
     i32_array: u8,
     i64_array: u8,
 
-    fn arrSize(total_size: u64, arr_size: u64) Class {
+    fn arr_size(total_size: u64, arr_size: u64) Class {
         const count = @as(u8, @intCast(std.mem.alignForward(u64, total_size, arr_size) / arr_size));
         if (arr_size == 32) {
             return .{ .i32_array = count };
@@ -24,7 +24,7 @@ pub const Class = union(enum) {
 
 pub const Context = enum { ret, arg };
 
-pub fn classifyType(ty: Type, mod: *Module, ctx: Context) Class {
+pub fn classify_type(ty: Type, mod: *Module, ctx: Context) Class {
     assert(ty.hasRuntimeBitsIgnoreComptime(mod));
 
     var maybe_float_bits: ?u16 = null;
@@ -120,7 +120,7 @@ pub fn classifyType(ty: Type, mod: *Module, ctx: Context) Class {
 }
 
 const byval_float_count = 4;
-fn countFloats(ty: Type, mod: *Module, maybe_float_bits: *?u16) u32 {
+fn count_floats(ty: Type, mod: *Module, maybe_float_bits: *?u16) u32 {
     const ip = &mod.intern_pool;
     const target = mod.getTarget();
     const invalid = std.math.maxInt(u32);

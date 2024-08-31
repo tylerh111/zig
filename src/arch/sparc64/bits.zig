@@ -24,7 +24,7 @@ pub const Register = enum(u6) {
         return self.id();
     }
 
-    pub fn dwarfLocOp(reg: Register) u8 {
+    pub fn dwarf_loc_op(reg: Register) u8 {
         return @as(u8, reg.id()) + DW.OP.reg0;
     }
 };
@@ -567,7 +567,7 @@ pub const Instruction = union(enum) {
         /// Converts a std.math.CompareOperator into a condition flag,
         /// i.e. returns the condition that is true iff the result of the
         /// comparison is true.
-        pub fn fromCompareOperator(op: std.math.CompareOperator) FCondition {
+        pub fn from_compare_operator(op: std.math.CompareOperator) FCondition {
             return switch (op) {
                 .gte => .ge,
                 .gt => .gt,
@@ -639,7 +639,7 @@ pub const Instruction = union(enum) {
         /// Converts a std.math.CompareOperator into a condition flag,
         /// i.e. returns the condition that is true iff the result of the
         /// comparison is true. Assumes signed comparison.
-        pub fn fromCompareOperatorSigned(op: std.math.CompareOperator) ICondition {
+        pub fn from_compare_operator_signed(op: std.math.CompareOperator) ICondition {
             return switch (op) {
                 .gte => .ge,
                 .gt => .gt,
@@ -653,7 +653,7 @@ pub const Instruction = union(enum) {
         /// Converts a std.math.CompareOperator into a condition flag,
         /// i.e. returns the condition that is true iff the result of the
         /// comparison is true. Assumes unsigned comparison.
-        pub fn fromCompareOperatorUnsigned(op: std.math.CompareOperator) ICondition {
+        pub fn from_compare_operator_unsigned(op: std.math.CompareOperator) ICondition {
             return switch (op) {
                 .gte => .cc,
                 .gt => .gu,
@@ -711,7 +711,7 @@ pub const Instruction = union(enum) {
         }
     };
 
-    pub fn toU32(self: Instruction) u32 {
+    pub fn to_u32(self: Instruction) u32 {
         // TODO: Remove this once packed structs work.
         return switch (self) {
             .format_1 => |v| (@as(u32, v.op) << 30) | @as(u32, v.disp30),

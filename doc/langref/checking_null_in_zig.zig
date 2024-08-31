@@ -1,9 +1,9 @@
 const Foo = struct {};
-fn doSomethingWithFoo(foo: *Foo) void {
+fn do_something_with_foo(foo: *Foo) void {
     _ = foo;
 }
 
-fn doAThing(optional_foo: ?*Foo) void {
+fn do_athing(optional_foo: ?*Foo) void {
     // do some stuff
 
     if (optional_foo) |foo| {

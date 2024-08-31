@@ -24,7 +24,7 @@ pub const Container = enum {
         return headerSize(w) + footerSize(w);
     }
 
-    pub fn headerSize(w: Container) usize {
+    pub fn header_size(w: Container) usize {
         return switch (w) {
             .gzip => 10,
             .zlib => 2,
@@ -32,7 +32,7 @@ pub const Container = enum {
         };
     }
 
-    pub fn footerSize(w: Container) usize {
+    pub fn footer_size(w: Container) usize {
         return switch (w) {
             .gzip => 8,
             .zlib => 4,
@@ -50,7 +50,7 @@ pub const Container = enum {
         WrongZlibChecksum,
     };
 
-    pub fn writeHeader(comptime wrap: Container, writer: anytype) !void {
+    pub fn write_header(comptime wrap: Container, writer: anytype) !void {
         switch (wrap) {
             .gzip => {
                 // GZIP 10 byte header (https://datatracker.ietf.org/doc/html/rfc1952#page-5):
@@ -82,7 +82,7 @@ pub const Container = enum {
         }
     }
 
-    pub fn writeFooter(comptime wrap: Container, hasher: *Hasher(wrap), writer: anytype) !void {
+    pub fn write_footer(comptime wrap: Container, hasher: *Hasher(wrap), writer: anytype) !void {
         var bits: [4]u8 = undefined;
         switch (wrap) {
             .gzip => {
@@ -108,7 +108,7 @@ pub const Container = enum {
         }
     }
 
-    pub fn parseHeader(comptime wrap: Container, reader: anytype) !void {
+    pub fn parse_header(comptime wrap: Container, reader: anytype) !void {
         switch (wrap) {
             .gzip => try parseGzipHeader(reader),
             .zlib => try parseZlibHeader(reader),
@@ -116,7 +116,7 @@ pub const Container = enum {
         }
     }
 
-    fn parseGzipHeader(reader: anytype) !void {
+    fn parse_gzip_header(reader: anytype) !void {
         const magic1 = try reader.read(u8);
         const magic2 = try reader.read(u8);
         const method = try reader.read(u8);
@@ -142,7 +142,7 @@ pub const Container = enum {
         }
     }
 
-    fn parseZlibHeader(reader: anytype) !void {
+    fn parse_zlib_header(reader: anytype) !void {
         const cm = try reader.read(u4);
         const cinfo = try reader.read(u4);
         _ = try reader.read(u8);
@@ -151,7 +151,7 @@ pub const Container = enum {
         }
     }
 
-    pub fn parseFooter(comptime wrap: Container, hasher: *Hasher(wrap), reader: anytype) !void {
+    pub fn parse_footer(comptime wrap: Container, hasher: *Hasher(wrap), reader: anytype) !void {
         switch (wrap) {
             .gzip => {
                 try reader.fill(0);
@@ -200,7 +200,7 @@ pub const Container = enum {
                 }
             }
 
-            pub fn bytesRead(self: *Self) u32 {
+            pub fn bytes_read(self: *Self) u32 {
                 return @truncate(self.bytes);
             }
         };

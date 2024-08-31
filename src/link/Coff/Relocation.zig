@@ -46,12 +46,12 @@ length: u2,
 dirty: bool = true,
 
 /// Returns true if and only if the reloc can be resolved.
-pub fn isResolvable(self: Relocation, coff_file: *Coff) bool {
+pub fn is_resolvable(self: Relocation, coff_file: *Coff) bool {
     _ = self.getTargetAddress(coff_file) orelse return false;
     return true;
 }
 
-pub fn isGotIndirection(self: Relocation) bool {
+pub fn is_got_indirection(self: Relocation) bool {
     return switch (self.type) {
         .got, .got_page, .got_pageoff => true,
         else => false,
@@ -59,7 +59,7 @@ pub fn isGotIndirection(self: Relocation) bool {
 }
 
 /// Returns address of the target if any.
-pub fn getTargetAddress(self: Relocation, coff_file: *const Coff) ?u32 {
+pub fn get_target_address(self: Relocation, coff_file: *const Coff) ?u32 {
     switch (self.type) {
         .got, .got_page, .got_pageoff => {
             const got_index = coff_file.got_table.lookup.get(self.target) orelse return null;
@@ -123,7 +123,7 @@ const Context = struct {
     ptr_width: Coff.PtrWidth,
 };
 
-fn resolveAarch64(self: Relocation, ctx: Context) void {
+fn resolve_aarch64(self: Relocation, ctx: Context) void {
     var buffer = ctx.code[self.offset..];
     switch (self.type) {
         .got_page, .import_page, .page => {
@@ -196,7 +196,7 @@ fn resolveAarch64(self: Relocation, ctx: Context) void {
     }
 }
 
-fn resolveX86(self: Relocation, ctx: Context) void {
+fn resolve_x86(self: Relocation, ctx: Context) void {
     var buffer = ctx.code[self.offset..];
     switch (self.type) {
         .got_page => unreachable,
@@ -227,7 +227,7 @@ fn resolveX86(self: Relocation, ctx: Context) void {
     }
 }
 
-inline fn isArithmeticOp(inst: *const [4]u8) bool {
+inline fn is_arithmetic_op(inst: *const [4]u8) bool {
     const group_decode = @as(u5, @truncate(inst[3]));
     return ((group_decode >> 2) == 4);
 }

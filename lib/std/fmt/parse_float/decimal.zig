@@ -85,7 +85,7 @@ pub fn Decimal(comptime T: type) type {
         }
 
         /// Append a digit to the buffer
-        pub fn tryAddDigit(self: *Self, digit: u8) void {
+        pub fn try_add_digit(self: *Self, digit: u8) void {
             if (self.num_digits < max_digits) {
                 self.digits[self.num_digits] = digit;
             }
@@ -139,7 +139,7 @@ pub fn Decimal(comptime T: type) type {
         }
 
         /// Computes decimal * 2^shift.
-        pub fn leftShift(self: *Self, shift: usize) void {
+        pub fn left_shift(self: *Self, shift: usize) void {
             if (self.num_digits == 0) {
                 return;
             }
@@ -183,7 +183,7 @@ pub fn Decimal(comptime T: type) type {
         }
 
         /// Computes decimal * 2^-shift.
-        pub fn rightShift(self: *Self, shift: usize) void {
+        pub fn right_shift(self: *Self, shift: usize) void {
             var read_index: usize = 0;
             var write_index: usize = 0;
             var n: MantissaT = 0;
@@ -324,7 +324,7 @@ pub fn Decimal(comptime T: type) type {
         //
         // See also https://github.com/golang/go/blob/go1.15.3/src/strconv/decimal.go#L163 for
         // another description of the method.
-        pub fn numberOfDigitsLeftShift(self: *Self, shift: usize) usize {
+        pub fn number_of_digits_left_shift(self: *Self, shift: usize) usize {
             const ShiftCutoff = struct {
                 delta: u8,
                 cutoff: []const u8,

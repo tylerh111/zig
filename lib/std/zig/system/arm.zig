@@ -126,7 +126,7 @@ pub const cpu_models = struct {
         E{ .part = 0x039, .m64 = &A64.apple_m2 },
     };
 
-    pub fn isKnown(core: CoreInfo, is_64bit: bool) ?*const Target.Cpu.Model {
+    pub fn is_known(core: CoreInfo, is_64bit: bool) ?*const Target.Cpu.Model {
         const models = switch (core.implementer) {
             0x41 => &ARM,
             0x42 => &Broadcom,
@@ -150,13 +150,13 @@ pub const cpu_models = struct {
 };
 
 pub const aarch64 = struct {
-    fn setFeature(cpu: *Target.Cpu, feature: Target.aarch64.Feature, enabled: bool) void {
+    fn set_feature(cpu: *Target.Cpu, feature: Target.aarch64.Feature, enabled: bool) void {
         const idx = @as(Target.Cpu.Feature.Set.Index, @intFromEnum(feature));
 
         if (enabled) cpu.features.addFeature(idx) else cpu.features.removeFeature(idx);
     }
 
-    inline fn bitField(input: u64, offset: u6) u4 {
+    inline fn bit_field(input: u64, offset: u6) u4 {
         return @as(u4, @truncate(input >> offset));
     }
 
@@ -173,7 +173,7 @@ pub const aarch64 = struct {
     /// 9  -> ID_AA64MMFR0_EL1
     /// 10 -> ID_AA64MMFR1_EL1
     /// 11 -> ID_AA64MMFR2_EL1
-    pub fn detectNativeCpuAndFeatures(arch: Target.Cpu.Arch, registers: [12]u64) ?Target.Cpu {
+    pub fn detect_native_cpu_and_features(arch: Target.Cpu.Arch, registers: [12]u64) ?Target.Cpu {
         const info = detectNativeCoreInfo(registers[0]);
         const model = cpu_models.isKnown(info, true) orelse return null;
 
@@ -190,7 +190,7 @@ pub const aarch64 = struct {
     }
 
     /// Takes readout of MIDR_EL1 register as input.
-    fn detectNativeCoreInfo(midr: u64) CoreInfo {
+    fn detect_native_core_info(midr: u64) CoreInfo {
         var info = CoreInfo{
             .implementer = @as(u8, @truncate(midr >> 24)),
             .part = @as(u12, @truncate(midr >> 4)),
@@ -226,7 +226,7 @@ pub const aarch64 = struct {
     /// 8  -> ID_AA64MMFR0_EL1
     /// 9  -> ID_AA64MMFR1_EL1
     /// 10 -> ID_AA64MMFR2_EL1
-    fn detectNativeCpuFeatures(cpu: *Target.Cpu, registers: *const [11]u64) void {
+    fn detect_native_cpu_features(cpu: *Target.Cpu, registers: *const [11]u64) void {
         // ID_AA64PFR0_EL1
         setFeature(cpu, .dit, bitField(registers[0], 48) >= 1);
         setFeature(cpu, .am, bitField(registers[0], 44) >= 1);
@@ -305,7 +305,7 @@ pub const aarch64 = struct {
         setFeature(cpu, .uaops, bitField(registers[10], 4) >= 1);
     }
 
-    fn addInstructionFusions(cpu: *Target.Cpu, info: CoreInfo) void {
+    fn add_instruction_fusions(cpu: *Target.Cpu, info: CoreInfo) void {
         switch (info.implementer) {
             0x41 => switch (info.part) {
                 0xd4b, 0xd4c => {

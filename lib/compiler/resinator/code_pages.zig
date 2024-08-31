@@ -232,7 +232,7 @@ pub const CodePage = enum(u16) {
     x_iscii_pa = 57011, // x-iscii-pa    ISCII Punjabi
     utf7 = 65000, // utf-7    Unicode (UTF-7)
 
-    pub fn codepointAt(code_page: CodePage, index: usize, bytes: []const u8) ?Codepoint {
+    pub fn codepoint_at(code_page: CodePage, index: usize, bytes: []const u8) ?Codepoint {
         if (index >= bytes.len) return null;
         switch (code_page) {
             .windows1252 => {
@@ -249,14 +249,14 @@ pub const CodePage = enum(u16) {
         }
     }
 
-    pub fn isSupported(code_page: CodePage) bool {
+    pub fn is_supported(code_page: CodePage) bool {
         return switch (code_page) {
             .windows1252, .utf8 => true,
             else => false,
         };
     }
 
-    pub fn getByIdentifier(identifier: u16) !CodePage {
+    pub fn get_by_identifier(identifier: u16) !CodePage {
         // There's probably a more efficient way to do this (e.g. ComptimeHashMap?) but
         // this should be fine, especially since this function likely won't be called much.
         inline for (@typeInfo(CodePage).Enum.fields) |enumField| {
@@ -267,7 +267,7 @@ pub const CodePage = enum(u16) {
         return error.InvalidCodePage;
     }
 
-    pub fn getByIdentifierEnsureSupported(identifier: u16) !CodePage {
+    pub fn get_by_identifier_ensure_supported(identifier: u16) !CodePage {
         const code_page = try getByIdentifier(identifier);
         switch (isSupported(code_page)) {
             true => return code_page,
@@ -286,7 +286,7 @@ pub const Utf8 = struct {
         /// Like std.unicode.utf8ByteSequenceLength, but:
         /// - Rejects non-well-formed first bytes, i.e. C0-C1, F5-FF
         /// - Returns an optional value instead of an error union
-        pub fn sequenceLength(first_byte: u8) ?u3 {
+        pub fn sequence_length(first_byte: u8) ?u3 {
             return switch (first_byte) {
                 0x00...0x7F => 1,
                 0xC2...0xDF => 2,
@@ -296,7 +296,7 @@ pub const Utf8 = struct {
             };
         }
 
-        fn isContinuationByte(byte: u8) bool {
+        fn is_continuation_byte(byte: u8) bool {
             return switch (byte) {
                 0x80...0xBF => true,
                 else => false,

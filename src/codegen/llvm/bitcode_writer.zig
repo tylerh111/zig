@@ -25,7 +25,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
 
         widths: [types.len]u16,
 
-        pub fn getTypeWidth(self: BcWriter, comptime Type: type) u16 {
+        pub fn get_type_width(self: BcWriter, comptime Type: type) u16 {
             return self.widths[comptime std.mem.indexOfScalar(type, types, Type).?];
         }
 
@@ -40,7 +40,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
             self.buffer.deinit();
         }
 
-        pub fn toOwnedSlice(self: *BcWriter) Error![]const u32 {
+        pub fn to_owned_slice(self: *BcWriter) Error![]const u32 {
             std.debug.assert(self.bit_count == 0);
             return self.buffer.toOwnedSlice();
         }
@@ -50,7 +50,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
             return self.buffer.items.len;
         }
 
-        pub fn writeBits(self: *BcWriter, value: anytype, bits: u16) Error!void {
+        pub fn write_bits(self: *BcWriter, value: anytype, bits: u16) Error!void {
             if (bits == 0) return;
 
             var in_buffer = bufValue(value, 32);
@@ -88,7 +88,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
             }
         }
 
-        pub fn writeVBR(self: *BcWriter, value: anytype, comptime vbr_bits: usize) Error!void {
+        pub fn write_vbr(self: *BcWriter, value: anytype, comptime vbr_bits: usize) Error!void {
             comptime {
                 std.debug.assert(vbr_bits > 1);
                 if (@bitSizeOf(@TypeOf(value)) > 64) @compileError("Unsupported VBR block type: " ++ @typeName(@TypeOf(value)));
@@ -110,7 +110,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
             try self.writeBits(in_buffer, vbr_bits);
         }
 
-        pub fn bitsVBR(_: *const BcWriter, value: anytype, comptime vbr_bits: usize) u16 {
+        pub fn bits_vbr(_: *const BcWriter, value: anytype, comptime vbr_bits: usize) u16 {
             comptime {
                 std.debug.assert(vbr_bits > 1);
                 if (@bitSizeOf(@TypeOf(value)) > 64) @compileError("Unsupported VBR block type: " ++ @typeName(@TypeOf(value)));
@@ -135,11 +135,11 @@ pub fn BitcodeWriter(comptime types: []const type) type {
             return bits;
         }
 
-        pub fn write6BitChar(self: *BcWriter, c: u8) Error!void {
+        pub fn write6_bit_char(self: *BcWriter, c: u8) Error!void {
             try self.writeBits(charTo6Bit(c), 6);
         }
 
-        pub fn writeBlob(self: *BcWriter, blob: []const u8) Error!void {
+        pub fn write_blob(self: *BcWriter, blob: []const u8) Error!void {
             const blob_word_size = std.mem.alignForward(usize, blob.len, 4);
             try self.buffer.ensureUnusedCapacity(blob_word_size + 1);
             self.alignTo32() catch unreachable;
@@ -150,7 +150,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
             @memset(slice_bytes[blob.len..], 0);
         }
 
-        pub fn alignTo32(self: *BcWriter) Error!void {
+        pub fn align_to32(self: *BcWriter) Error!void {
             if (self.bit_count == 0) return;
 
             try self.buffer.append(self.bit_buffer);
@@ -158,7 +158,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
             self.bit_count = 0;
         }
 
-        pub fn enterTopBlock(self: *BcWriter, comptime SubBlock: type) Error!BlockWriter(SubBlock) {
+        pub fn enter_top_block(self: *BcWriter, comptime SubBlock: type) Error!BlockWriter(SubBlock) {
             return BlockWriter(SubBlock).init(self, 2, true);
         }
 
@@ -200,7 +200,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
                     return self;
                 }
 
-                pub fn enterSubBlock(self: Self, comptime SubBlock: type, comptime define_abbrevs: bool) Error!BlockWriter(SubBlock) {
+                pub fn enter_sub_block(self: Self, comptime SubBlock: type, comptime define_abbrevs: bool) Error!BlockWriter(SubBlock) {
                     return BlockWriter(SubBlock).init(self.bitcode, abbrev_len, define_abbrevs);
                 }
 
@@ -212,7 +212,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
                     self.bitcode.buffer.items[self.start] = @truncate(self.bitcode.length() - self.start - 1);
                 }
 
-                pub fn writeUnabbrev(self: *Self, code: u32, values: []const u64) Error!void {
+                pub fn write_unabbrev(self: *Self, code: u32, values: []const u64) Error!void {
                     try self.bitcode.writeBits(3, abbrev_len);
                     try self.bitcode.writeVBR(code, 6);
                     try self.bitcode.writeVBR(values.len, 6);
@@ -221,7 +221,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
                     }
                 }
 
-                pub fn writeAbbrev(self: *Self, params: anytype) Error!void {
+                pub fn write_abbrev(self: *Self, params: anytype) Error!void {
                     return self.writeAbbrevAdapted(params, struct {
                         pub fn get(_: @This(), param: anytype, comptime _: []const u8) @TypeOf(param) {
                             return param;
@@ -229,7 +229,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
                     }{});
                 }
 
-                pub fn abbrevId(comptime Abbrev: type) u32 {
+                pub fn abbrev_id(comptime Abbrev: type) u32 {
                     inline for (Block.abbrevs, 0..) |abbrev, i| {
                         if (Abbrev == abbrev) return i + 4;
                     }
@@ -237,7 +237,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
                     @compileError("Unknown abbrev: " ++ @typeName(Abbrev));
                 }
 
-                pub fn writeAbbrevAdapted(
+                pub fn write_abbrev_adapted(
                     self: *Self,
                     params: anytype,
                     adapter: anytype,
@@ -302,7 +302,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
                     }
                 }
 
-                pub fn defineAbbrev(self: *Self, comptime ops: []const AbbrevOp) Error!void {
+                pub fn define_abbrev(self: *Self, comptime ops: []const AbbrevOp) Error!void {
                     const bitcode = self.bitcode;
                     try bitcode.writeBits(2, abbrev_len);
 
@@ -394,7 +394,7 @@ pub fn BitcodeWriter(comptime types: []const type) type {
     };
 }
 
-fn charTo6Bit(c: u8) u8 {
+fn char_to6_bit(c: u8) u8 {
     return switch (c) {
         'a'...'z' => c - 'a',
         'A'...'Z' => c - 'A' + 26,
@@ -422,7 +422,7 @@ fn BufType(comptime T: type, comptime min_len: usize) type {
     })));
 }
 
-fn bufValue(value: anytype, comptime min_len: usize) BufType(@TypeOf(value), min_len) {
+fn buf_value(value: anytype, comptime min_len: usize) BufType(@TypeOf(value), min_len) {
     return switch (@typeInfo(@TypeOf(value))) {
         .ComptimeInt, .Int => @intCast(value),
         .Enum => @intFromEnum(value),

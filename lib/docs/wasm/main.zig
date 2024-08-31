@@ -28,7 +28,7 @@ pub fn panic(msg: []const u8, st: ?*std.builtin.StackTrace, addr: ?usize) noretu
     @trap();
 }
 
-fn logFn(
+fn log_fn(
     comptime message_level: log.Level,
     comptime scope: @TypeOf(.enum_literal),
     comptime format: []const u8,
@@ -167,7 +167,7 @@ fn query_exec_fallible(query: []const u8, ignore_case: bool) !void {
             std.mem.swap(Decl.Index, &query_results.items[a_index], &query_results.items[b_index]);
         }
 
-        pub fn lessThan(sc: @This(), a_index: usize, b_index: usize) bool {
+        pub fn less_than(sc: @This(), a_index: usize, b_index: usize) bool {
             _ = sc;
             const a_score = g.scores.items[a_index];
             const b_score = g.scores.items[b_index];
@@ -216,7 +216,7 @@ const ErrorIdentifier = packed struct(u64) {
     token_index: Ast.TokenIndex,
     decl_index: Decl.Index,
 
-    fn hasDocs(ei: ErrorIdentifier) bool {
+    fn has_docs(ei: ErrorIdentifier) bool {
         const decl_index = ei.decl_index;
         const ast = decl_index.get().file.get_ast();
         const token_tags = ast.tokens.items(.tag);
@@ -290,7 +290,7 @@ fn decl_error_set_fallible(decl_index: Decl.Index) Oom![]ErrorIdentifier {
 
 fn sort_error_set_result() void {
     const sort_context: struct {
-        pub fn lessThan(sc: @This(), a_index: usize, b_index: usize) bool {
+        pub fn less_than(sc: @This(), a_index: usize, b_index: usize) bool {
             _ = sc;
             const a_name = error_set_result.keys()[a_index];
             const b_name = error_set_result.keys()[b_index];
@@ -300,7 +300,7 @@ fn sort_error_set_result() void {
     error_set_result.sortUnstable(sort_context);
 }
 
-fn addErrorsFromDecl(
+fn add_errors_from_decl(
     decl_index: Decl.Index,
     out: *std.StringArrayHashMapUnmanaged(ErrorIdentifier),
 ) Oom!void {
@@ -311,7 +311,7 @@ fn addErrorsFromDecl(
     }
 }
 
-fn addErrorsFromExpr(
+fn add_errors_from_expr(
     decl_index: Decl.Index,
     out: *std.StringArrayHashMapUnmanaged(ErrorIdentifier),
     node: Ast.Node.Index,
@@ -339,7 +339,7 @@ fn addErrorsFromExpr(
     }
 }
 
-fn addErrorsFromNode(
+fn add_errors_from_node(
     decl_index: Decl.Index,
     out: *std.StringArrayHashMapUnmanaged(ErrorIdentifier),
     node: Ast.Node.Index,
@@ -1211,7 +1211,7 @@ fn unindent(s: []const u8, indent: usize) []const u8 {
     return s[indent_idx..];
 }
 
-fn appendUnindented(out: *std.ArrayListUnmanaged(u8), s: []const u8, indent: usize) !void {
+fn append_unindented(out: *std.ArrayListUnmanaged(u8), s: []const u8, indent: usize) !void {
     var it = std.mem.split(u8, s, "\n");
     var is_first_line = true;
     while (it.next()) |line| {
@@ -1272,7 +1272,7 @@ fn walk_field_accesses(
     }
 }
 
-fn appendEscaped(out: *std.ArrayListUnmanaged(u8), s: []const u8) !void {
+fn append_escaped(out: *std.ArrayListUnmanaged(u8), s: []const u8) !void {
     for (s) |c| {
         try out.ensureUnusedCapacity(gpa, 6);
         switch (c) {

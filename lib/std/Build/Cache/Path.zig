@@ -24,7 +24,7 @@ pub fn join(p: Path, arena: Allocator, sub_path: []const u8) Allocator.Error!Pat
     };
 }
 
-pub fn resolvePosix(p: Path, arena: Allocator, sub_path: []const u8) Allocator.Error!Path {
+pub fn resolve_posix(p: Path, arena: Allocator, sub_path: []const u8) Allocator.Error!Path {
     if (sub_path.len == 0) return p;
     return .{
         .root_dir = p.root_dir,
@@ -32,19 +32,19 @@ pub fn resolvePosix(p: Path, arena: Allocator, sub_path: []const u8) Allocator.E
     };
 }
 
-pub fn joinString(p: Path, allocator: Allocator, sub_path: []const u8) Allocator.Error![]u8 {
+pub fn join_string(p: Path, allocator: Allocator, sub_path: []const u8) Allocator.Error![]u8 {
     const parts: []const []const u8 =
         if (p.sub_path.len == 0) &.{sub_path} else &.{ p.sub_path, sub_path };
     return p.root_dir.join(allocator, parts);
 }
 
-pub fn joinStringZ(p: Path, allocator: Allocator, sub_path: []const u8) Allocator.Error![:0]u8 {
+pub fn join_string_z(p: Path, allocator: Allocator, sub_path: []const u8) Allocator.Error![:0]u8 {
     const parts: []const []const u8 =
         if (p.sub_path.len == 0) &.{sub_path} else &.{ p.sub_path, sub_path };
     return p.root_dir.joinZ(allocator, parts);
 }
 
-pub fn openFile(
+pub fn open_file(
     p: Path,
     sub_path: []const u8,
     flags: fs.File.OpenFlags,
@@ -58,7 +58,7 @@ pub fn openFile(
     return p.root_dir.handle.openFile(joined_path, flags);
 }
 
-pub fn makeOpenPath(p: Path, sub_path: []const u8, opts: fs.OpenDirOptions) !fs.Dir {
+pub fn make_open_path(p: Path, sub_path: []const u8, opts: fs.OpenDirOptions) !fs.Dir {
     var buf: [fs.MAX_PATH_BYTES]u8 = undefined;
     const joined_path = if (p.sub_path.len == 0) sub_path else p: {
         break :p std.fmt.bufPrint(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
@@ -68,7 +68,7 @@ pub fn makeOpenPath(p: Path, sub_path: []const u8, opts: fs.OpenDirOptions) !fs.
     return p.root_dir.handle.makeOpenPath(joined_path, opts);
 }
 
-pub fn statFile(p: Path, sub_path: []const u8) !fs.Dir.Stat {
+pub fn stat_file(p: Path, sub_path: []const u8) !fs.Dir.Stat {
     var buf: [fs.MAX_PATH_BYTES]u8 = undefined;
     const joined_path = if (p.sub_path.len == 0) sub_path else p: {
         break :p std.fmt.bufPrint(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
@@ -78,7 +78,7 @@ pub fn statFile(p: Path, sub_path: []const u8) !fs.Dir.Stat {
     return p.root_dir.handle.statFile(joined_path);
 }
 
-pub fn atomicFile(
+pub fn atomic_file(
     p: Path,
     sub_path: []const u8,
     options: fs.Dir.AtomicFileOptions,
@@ -102,7 +102,7 @@ pub fn access(p: Path, sub_path: []const u8, flags: fs.File.OpenFlags) !void {
     return p.root_dir.handle.access(joined_path, flags);
 }
 
-pub fn makePath(p: Path, sub_path: []const u8) !void {
+pub fn make_path(p: Path, sub_path: []const u8) !void {
     var buf: [fs.MAX_PATH_BYTES]u8 = undefined;
     const joined_path = if (p.sub_path.len == 0) sub_path else p: {
         break :p std.fmt.bufPrint(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{

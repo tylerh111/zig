@@ -19,7 +19,7 @@ pub fn any(s: []const u8) !void {
     testLowLevelScanner(s) catch {};
     testHighLevelDynamicParser(s) catch {};
 }
-fn testLowLevelScanner(s: []const u8) !void {
+fn test_low_level_scanner(s: []const u8) !void {
     var scanner = JsonScanner.initCompleteInput(testing.allocator, s);
     defer scanner.deinit();
     while (true) {
@@ -27,7 +27,7 @@ fn testLowLevelScanner(s: []const u8) !void {
         if (token == .end_of_document) break;
     }
 }
-fn testHighLevelDynamicParser(s: []const u8) !void {
+fn test_high_level_dynamic_parser(s: []const u8) !void {
     var parsed = try parseFromSlice(Value, testing.allocator, s, .{});
     defer parsed.deinit();
 }
@@ -44,7 +44,7 @@ test "n_object_closed_missing_value" {
     );
 }
 
-fn roundTrip(s: []const u8) !void {
+fn round_trip(s: []const u8) !void {
     try testing.expect(try validate(testing.allocator, s));
 
     var parsed = try parseFromSlice(Value, testing.allocator, s, .{});

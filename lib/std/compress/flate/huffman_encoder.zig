@@ -94,7 +94,7 @@ pub fn HuffmanEncoder(comptime size: usize) type {
             self.assignEncodingAndSize(bit_count, list);
         }
 
-        pub fn bitLength(self: *Self, freq: []u16) u32 {
+        pub fn bit_length(self: *Self, freq: []u16) u32 {
             var total: u32 = 0;
             for (freq, 0..) |f, i| {
                 if (f != 0) {
@@ -119,7 +119,7 @@ pub fn HuffmanEncoder(comptime size: usize) type {
         //
         // Returns an integer array in which array[i] indicates the number of literals
         // that should be encoded in i bits.
-        fn bitCounts(self: *Self, list: []LiteralNode, max_bits_to_use: usize) []u32 {
+        fn bit_counts(self: *Self, list: []LiteralNode, max_bits_to_use: usize) []u32 {
             var max_bits = max_bits_to_use;
             const n = list.len;
             const max_bits_limit = 16;
@@ -248,7 +248,7 @@ pub fn HuffmanEncoder(comptime size: usize) type {
 
         // Look at the leaves and assign them a bit count and an encoding as specified
         // in RFC 1951 3.2.2
-        fn assignEncodingAndSize(self: *Self, bit_count: []u32, list_arg: []LiteralNode) void {
+        fn assign_encoding_and_size(self: *Self, bit_count: []u32, list_arg: []LiteralNode) void {
             var code = @as(u16, 0);
             var list = list_arg;
 
@@ -279,14 +279,14 @@ pub fn HuffmanEncoder(comptime size: usize) type {
     };
 }
 
-fn maxNode() LiteralNode {
+fn max_node() LiteralNode {
     return LiteralNode{
         .literal = math.maxInt(u16),
         .freq = math.maxInt(u16),
     };
 }
 
-pub fn huffmanEncoder(comptime size: u32) HuffmanEncoder(size) {
+pub fn huffman_encoder(comptime size: u32) HuffmanEncoder(size) {
     return .{};
 }
 
@@ -295,7 +295,7 @@ pub const DistanceEncoder = HuffmanEncoder(consts.distance_code_count);
 pub const CodegenEncoder = HuffmanEncoder(19);
 
 // Generates a HuffmanCode corresponding to the fixed literal table
-pub fn fixedLiteralEncoder() LiteralEncoder {
+pub fn fixed_literal_encoder() LiteralEncoder {
     var h: LiteralEncoder = undefined;
     var ch: u16 = 0;
 
@@ -329,7 +329,7 @@ pub fn fixedLiteralEncoder() LiteralEncoder {
     return h;
 }
 
-pub fn fixedDistanceEncoder() DistanceEncoder {
+pub fn fixed_distance_encoder() DistanceEncoder {
     var h: DistanceEncoder = undefined;
     for (h.codes, 0..) |_, ch| {
         h.codes[ch] = HuffCode{ .code = bitReverse(u16, @as(u16, @intCast(ch)), 5), .len = 5 };
@@ -337,7 +337,7 @@ pub fn fixedDistanceEncoder() DistanceEncoder {
     return h;
 }
 
-pub fn huffmanDistanceEncoder() DistanceEncoder {
+pub fn huffman_distance_encoder() DistanceEncoder {
     var distance_freq = [1]u16{0} ** consts.distance_code_count;
     distance_freq[0] = 1;
     // huff_distance is a static distance encoder used for huffman only encoding.
@@ -347,12 +347,12 @@ pub fn huffmanDistanceEncoder() DistanceEncoder {
     return h;
 }
 
-fn byLiteral(context: void, a: LiteralNode, b: LiteralNode) bool {
+fn by_literal(context: void, a: LiteralNode, b: LiteralNode) bool {
     _ = context;
     return a.literal < b.literal;
 }
 
-fn byFreq(context: void, a: LiteralNode, b: LiteralNode) bool {
+fn by_freq(context: void, a: LiteralNode, b: LiteralNode) bool {
     _ = context;
     if (a.freq == b.freq) {
         return a.literal < b.literal;
@@ -453,7 +453,7 @@ test "generate a Huffman code for the 30 possible relative distances (LZ77 dista
 }
 
 // Reverse bit-by-bit a N-bit code.
-fn bitReverse(comptime T: type, value: T, n: usize) T {
+fn bit_reverse(comptime T: type, value: T, n: usize) T {
     const r = @bitReverse(value);
     return r >> @as(math.Log2Int(T), @intCast(@typeInfo(T).Int.bits - n));
 }

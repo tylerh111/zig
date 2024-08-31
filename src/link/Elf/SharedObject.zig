@@ -19,7 +19,7 @@ alive: bool,
 
 output_symtab_ctx: Elf.SymtabCtx = .{},
 
-pub fn isSharedObject(path: []const u8) !bool {
+pub fn is_shared_object(path: []const u8) !bool {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
     const reader = file.reader();
@@ -135,7 +135,7 @@ pub fn parse(self: *SharedObject, elf_file: *Elf, handle: std.fs.File) !void {
     });
 }
 
-fn parseVersions(self: *SharedObject, elf_file: *Elf, handle: std.fs.File, opts: struct {
+fn parse_versions(self: *SharedObject, elf_file: *Elf, handle: std.fs.File, opts: struct {
     symtab: []align(1) const elf.Elf64_Sym,
     verdef_sect_index: ?u32,
     versym_sect_index: ?u32,
@@ -188,7 +188,7 @@ fn parseVersions(self: *SharedObject, elf_file: *Elf, handle: std.fs.File, opts:
     }
 }
 
-fn initSymtab(self: *SharedObject, elf_file: *Elf, opts: struct {
+fn init_symtab(self: *SharedObject, elf_file: *Elf, opts: struct {
     symtab: []align(1) const elf.Elf64_Sym,
     strtab: []const u8,
 }) !void {
@@ -222,7 +222,7 @@ fn initSymtab(self: *SharedObject, elf_file: *Elf, opts: struct {
     }
 }
 
-pub fn resolveSymbols(self: *SharedObject, elf_file: *Elf) void {
+pub fn resolve_symbols(self: *SharedObject, elf_file: *Elf) void {
     for (self.globals(), 0..) |index, i| {
         const esym_index = @as(u32, @intCast(i));
         const this_sym = self.symtab.items[esym_index];
@@ -240,7 +240,7 @@ pub fn resolveSymbols(self: *SharedObject, elf_file: *Elf) void {
     }
 }
 
-pub fn markLive(self: *SharedObject, elf_file: *Elf) void {
+pub fn mark_live(self: *SharedObject, elf_file: *Elf) void {
     for (self.globals(), 0..) |index, i| {
         const sym = self.symtab.items[i];
         if (sym.st_shndx != elf.SHN_UNDEF) continue;
@@ -262,7 +262,7 @@ pub fn globals(self: SharedObject) []const Symbol.Index {
     return self.symbols.items;
 }
 
-pub fn updateSymtabSize(self: *SharedObject, elf_file: *Elf) !void {
+pub fn update_symtab_size(self: *SharedObject, elf_file: *Elf) !void {
     for (self.globals()) |global_index| {
         const global = elf_file.symbol(global_index);
         const file_ptr = global.file(elf_file) orelse continue;
@@ -275,7 +275,7 @@ pub fn updateSymtabSize(self: *SharedObject, elf_file: *Elf) !void {
     }
 }
 
-pub fn writeSymtab(self: SharedObject, elf_file: *Elf) void {
+pub fn write_symtab(self: SharedObject, elf_file: *Elf) void {
     for (self.globals()) |global_index| {
         const global = elf_file.symbol(global_index);
         const file_ptr = global.file(elf_file) orelse continue;
@@ -290,16 +290,16 @@ pub fn writeSymtab(self: SharedObject, elf_file: *Elf) void {
     }
 }
 
-pub fn versionString(self: SharedObject, index: elf.Elf64_Versym) [:0]const u8 {
+pub fn version_string(self: SharedObject, index: elf.Elf64_Versym) [:0]const u8 {
     const off = self.verstrings.items[index & elf.VERSYM_VERSION];
     return self.getString(off);
 }
 
-pub fn asFile(self: *SharedObject) File {
+pub fn as_file(self: *SharedObject) File {
     return .{ .shared_object = self };
 }
 
-fn verdefNum(self: *SharedObject) u32 {
+fn verdef_num(self: *SharedObject) u32 {
     for (self.dynamic_table.items) |entry| switch (entry.d_tag) {
         elf.DT_VERDEFNUM => return @as(u32, @intCast(entry.d_val)),
         else => {},
@@ -315,11 +315,11 @@ pub fn soname(self: *SharedObject) []const u8 {
     return std.fs.path.basename(self.path);
 }
 
-pub fn initSymbolAliases(self: *SharedObject, elf_file: *Elf) !void {
+pub fn init_symbol_aliases(self: *SharedObject, elf_file: *Elf) !void {
     assert(self.aliases == null);
 
     const SortAlias = struct {
-        pub fn lessThan(ctx: *Elf, lhs: Symbol.Index, rhs: Symbol.Index) bool {
+        pub fn less_than(ctx: *Elf, lhs: Symbol.Index, rhs: Symbol.Index) bool {
             const lhs_sym = ctx.symbol(lhs).elfSym(ctx);
             const rhs_sym = ctx.symbol(rhs).elfSym(ctx);
             return lhs_sym.st_value < rhs_sym.st_value;
@@ -344,7 +344,7 @@ pub fn initSymbolAliases(self: *SharedObject, elf_file: *Elf) !void {
     self.aliases = aliases.moveToUnmanaged();
 }
 
-pub fn symbolAliases(self: *SharedObject, index: u32, elf_file: *Elf) []const u32 {
+pub fn symbol_aliases(self: *SharedObject, index: u32, elf_file: *Elf) []const u32 {
     assert(self.aliases != null);
 
     const symbol = elf_file.symbol(index).elfSym(elf_file);
@@ -363,7 +363,7 @@ pub fn symbolAliases(self: *SharedObject, index: u32, elf_file: *Elf) []const u3
     return aliases.items[start..end];
 }
 
-pub fn getString(self: SharedObject, off: u32) [:0]const u8 {
+pub fn get_string(self: SharedObject, off: u32) [:0]const u8 {
     assert(off < self.strtab.items.len);
     return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.strtab.items.ptr + off)), 0);
 }
@@ -381,7 +381,7 @@ pub fn format(
     @compileError("do not format shared objects directly");
 }
 
-pub fn fmtSymtab(self: SharedObject, elf_file: *Elf) std.fmt.Formatter(formatSymtab) {
+pub fn fmt_symtab(self: SharedObject, elf_file: *Elf) std.fmt.Formatter(formatSymtab) {
     return .{ .data = .{
         .shared = self,
         .elf_file = elf_file,
@@ -393,7 +393,7 @@ const FormatContext = struct {
     elf_file: *Elf,
 };
 
-fn formatSymtab(
+fn format_symtab(
     ctx: FormatContext,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,

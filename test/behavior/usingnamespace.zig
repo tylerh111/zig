@@ -50,7 +50,7 @@ test "usingnamespace omits mixing in private functions" {
     try expect(@This().privateFunction());
     try expect(!@This().printText());
 }
-fn privateFunction() bool {
+fn private_function() bool {
     return true;
 }
 

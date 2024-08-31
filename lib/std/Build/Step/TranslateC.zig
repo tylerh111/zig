@@ -58,12 +58,12 @@ pub const AddExecutableOptions = struct {
     linkage: ?std.builtin.LinkMode = null,
 };
 
-pub fn getOutput(translate_c: *TranslateC) std.Build.LazyPath {
+pub fn get_output(translate_c: *TranslateC) std.Build.LazyPath {
     return .{ .generated = .{ .file = &translate_c.output_file } };
 }
 
 /// Creates a step to build an executable from the translated source.
-pub fn addExecutable(translate_c: *TranslateC, options: AddExecutableOptions) *Step.Compile {
+pub fn add_executable(translate_c: *TranslateC, options: AddExecutableOptions) *Step.Compile {
     return translate_c.step.owner.addExecutable(.{
         .root_source_file = translate_c.getOutput(),
         .name = options.name orelse "translated_c",
@@ -77,7 +77,7 @@ pub fn addExecutable(translate_c: *TranslateC, options: AddExecutableOptions) *S
 /// Creates a module from the translated source and adds it to the package's
 /// module set making it available to other packages which depend on this one.
 /// `createModule` can be used instead to create a private module.
-pub fn addModule(translate_c: *TranslateC, name: []const u8) *std.Build.Module {
+pub fn add_module(translate_c: *TranslateC, name: []const u8) *std.Build.Module {
     return translate_c.step.owner.addModule(name, .{
         .root_source_file = translate_c.getOutput(),
     });
@@ -86,17 +86,17 @@ pub fn addModule(translate_c: *TranslateC, name: []const u8) *std.Build.Module {
 /// Creates a private module from the translated source to be used by the
 /// current package, but not exposed to other packages depending on this one.
 /// `addModule` can be used instead to create a public module.
-pub fn createModule(translate_c: *TranslateC) *std.Build.Module {
+pub fn create_module(translate_c: *TranslateC) *std.Build.Module {
     return translate_c.step.owner.createModule(.{
         .root_source_file = translate_c.getOutput(),
     });
 }
 
-pub fn addIncludeDir(translate_c: *TranslateC, include_dir: []const u8) void {
+pub fn add_include_dir(translate_c: *TranslateC, include_dir: []const u8) void {
     translate_c.include_dirs.append(translate_c.step.owner.dupePath(include_dir)) catch @panic("OOM");
 }
 
-pub fn addCheckFile(translate_c: *TranslateC, expected_matches: []const []const u8) *Step.CheckFile {
+pub fn add_check_file(translate_c: *TranslateC, expected_matches: []const []const u8) *Step.CheckFile {
     return Step.CheckFile.create(
         translate_c.step.owner,
         translate_c.getOutput(),
@@ -106,13 +106,13 @@ pub fn addCheckFile(translate_c: *TranslateC, expected_matches: []const []const 
 
 /// If the value is omitted, it is set to 1.
 /// `name` and `value` need not live longer than the function call.
-pub fn defineCMacro(translate_c: *TranslateC, name: []const u8, value: ?[]const u8) void {
+pub fn define_cmacro(translate_c: *TranslateC, name: []const u8, value: ?[]const u8) void {
     const macro = std.Build.constructranslate_cMacro(translate_c.step.owner.allocator, name, value);
     translate_c.c_macros.append(macro) catch @panic("OOM");
 }
 
 /// name_and_value looks like [name]=[value]. If the value is omitted, it is set to 1.
-pub fn defineCMacroRaw(translate_c: *TranslateC, name_and_value: []const u8) void {
+pub fn define_cmacro_raw(translate_c: *TranslateC, name_and_value: []const u8) void {
     translate_c.c_macros.append(translate_c.step.owner.dupe(name_and_value)) catch @panic("OOM");
 }
 

@@ -215,11 +215,11 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
 
             const trace_n = if (config.retain_metadata) traces_per_slot else 1;
 
-            fn dumpStackTrace(self: *LargeAlloc, trace_kind: TraceKind) void {
+            fn dump_stack_trace(self: *LargeAlloc, trace_kind: TraceKind) void {
                 std.debug.dumpStackTrace(self.getStackTrace(trace_kind));
             }
 
-            fn getStackTrace(self: *LargeAlloc, trace_kind: TraceKind) std.builtin.StackTrace {
+            fn get_stack_trace(self: *LargeAlloc, trace_kind: TraceKind) std.builtin.StackTrace {
                 assert(@intFromEnum(trace_kind) < trace_n);
                 const stack_addresses = &self.stack_addresses[@intFromEnum(trace_kind)];
                 var len: usize = 0;
@@ -232,7 +232,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
                 };
             }
 
-            fn captureStackTrace(self: *LargeAlloc, ret_addr: usize, trace_kind: TraceKind) void {
+            fn capture_stack_trace(self: *LargeAlloc, ret_addr: usize, trace_kind: TraceKind) void {
                 assert(@intFromEnum(trace_kind) < trace_n);
                 const stack_addresses = &self.stack_addresses[@intFromEnum(trace_kind)];
                 collectStackTrace(ret_addr, stack_addresses);
@@ -254,11 +254,11 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             alloc_cursor: SlotIndex,
             used_count: SlotIndex,
 
-            fn usedBits(bucket: *BucketHeader, index: usize) *u8 {
+            fn used_bits(bucket: *BucketHeader, index: usize) *u8 {
                 return @as(*u8, @ptrFromInt(@intFromPtr(bucket) + @sizeOf(BucketHeader) + index));
             }
 
-            fn requestedSizes(bucket: *BucketHeader, size_class: usize) []LargestSizeClassInt {
+            fn requested_sizes(bucket: *BucketHeader, size_class: usize) []LargestSizeClassInt {
                 if (!config.safety) @compileError("requested size is only stored when safety is enabled");
                 const start_ptr = @as([*]u8, @ptrCast(bucket)) + bucketRequestedSizesStart(size_class);
                 const sizes = @as([*]LargestSizeClassInt, @ptrCast(@alignCast(start_ptr)));
@@ -266,14 +266,14 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
                 return sizes[0..slot_count];
             }
 
-            fn log2PtrAligns(bucket: *BucketHeader, size_class: usize) []u8 {
+            fn log2_ptr_aligns(bucket: *BucketHeader, size_class: usize) []u8 {
                 if (!config.safety) @compileError("requested size is only stored when safety is enabled");
                 const aligns_ptr = @as([*]u8, @ptrCast(bucket)) + bucketAlignsStart(size_class);
                 const slot_count = @divExact(page_size, size_class);
                 return aligns_ptr[0..slot_count];
             }
 
-            fn stackTracePtr(
+            fn stack_trace_ptr(
                 bucket: *BucketHeader,
                 size_class: usize,
                 slot_index: SlotIndex,
@@ -285,7 +285,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
                 return @ptrCast(@alignCast(addr));
             }
 
-            fn captureStackTrace(
+            fn capture_stack_trace(
                 bucket: *BucketHeader,
                 ret_addr: usize,
                 size_class: usize,
@@ -300,7 +300,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
 
             /// Only valid for buckets within `empty_buckets`, and relies on the `alloc_cursor`
             /// of empty buckets being set to `slot_count` when they are added to `empty_buckets`
-            fn emptyBucketSizeClass(bucket: *BucketHeader) usize {
+            fn empty_bucket_size_class(bucket: *BucketHeader) usize {
                 return @divExact(page_size, bucket.alloc_cursor);
             }
         };
@@ -316,7 +316,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             };
         }
 
-        fn bucketStackTrace(
+        fn bucket_stack_trace(
             bucket: *BucketHeader,
             size_class: usize,
             slot_index: SlotIndex,
@@ -333,7 +333,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             };
         }
 
-        fn bucketRequestedSizesStart(size_class: usize) usize {
+        fn bucket_requested_sizes_start(size_class: usize) usize {
             if (!config.safety) @compileError("requested sizes are not stored unless safety is enabled");
             return mem.alignForward(
                 usize,
@@ -342,13 +342,13 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             );
         }
 
-        fn bucketAlignsStart(size_class: usize) usize {
+        fn bucket_aligns_start(size_class: usize) usize {
             if (!config.safety) @compileError("requested sizes are not stored unless safety is enabled");
             const slot_count = @divExact(page_size, size_class);
             return bucketRequestedSizesStart(size_class) + (@sizeOf(LargestSizeClassInt) * slot_count);
         }
 
-        fn bucketStackFramesStart(size_class: usize) usize {
+        fn bucket_stack_frames_start(size_class: usize) usize {
             const unaligned_start = if (config.safety) blk: {
                 const slot_count = @divExact(page_size, size_class);
                 break :blk bucketAlignsStart(size_class) + slot_count;
@@ -360,18 +360,18 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             );
         }
 
-        fn bucketSize(size_class: usize) usize {
+        fn bucket_size(size_class: usize) usize {
             const slot_count = @divExact(page_size, size_class);
             return bucketStackFramesStart(size_class) + one_trace_size * traces_per_slot * slot_count;
         }
 
-        fn usedBitsCount(size_class: usize) usize {
+        fn used_bits_count(size_class: usize) usize {
             const slot_count = @divExact(page_size, size_class);
             if (slot_count < 8) return 1;
             return @divExact(slot_count, 8);
         }
 
-        fn detectLeaksInBucket(
+        fn detect_leaks_in_bucket(
             bucket: *BucketHeader,
             size_class: usize,
             used_bits_count: usize,
@@ -402,7 +402,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
         }
 
         /// Emits log messages for leaks and then returns whether there were any leaks.
-        pub fn detectLeaks(self: *Self) bool {
+        pub fn detect_leaks(self: *Self) bool {
             var leaks = false;
 
             for (&self.buckets, 0..) |*buckets, bucket_i| {
@@ -427,13 +427,13 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             return leaks;
         }
 
-        fn freeBucket(self: *Self, bucket: *BucketHeader, size_class: usize) void {
+        fn free_bucket(self: *Self, bucket: *BucketHeader, size_class: usize) void {
             const bucket_size = bucketSize(size_class);
             const bucket_slice = @as([*]align(@alignOf(BucketHeader)) u8, @ptrCast(bucket))[0..bucket_size];
             self.backing_allocator.free(bucket_slice);
         }
 
-        fn freeRetainedMetadata(self: *Self) void {
+        fn free_retained_metadata(self: *Self) void {
             if (config.retain_metadata) {
                 if (config.never_unmap) {
                     // free large allocations that were intentionally leaked by never_unmap
@@ -463,7 +463,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             }
         }
 
-        pub fn flushRetainedMetadata(self: *Self) void {
+        pub fn flush_retained_metadata(self: *Self) void {
             if (!config.retain_metadata) {
                 @compileError("'flushRetainedMetadata' requires 'config.retain_metadata = true'");
             }
@@ -489,7 +489,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             return @as(Check, @enumFromInt(@intFromBool(leaks)));
         }
 
-        fn collectStackTrace(first_trace_addr: usize, addresses: *[stack_n]usize) void {
+        fn collect_stack_trace(first_trace_addr: usize, addresses: *[stack_n]usize) void {
             if (stack_n == 0) return;
             @memset(addresses, 0);
             var stack_trace = StackTrace{
@@ -499,7 +499,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             std.debug.captureStackTrace(first_trace_addr, &stack_trace);
         }
 
-        fn reportDoubleFree(ret_addr: usize, alloc_stack_trace: StackTrace, free_stack_trace: StackTrace) void {
+        fn report_double_free(ret_addr: usize, alloc_stack_trace: StackTrace, free_stack_trace: StackTrace) void {
             var addresses: [stack_n]usize = [1]usize{0} ** stack_n;
             var second_free_stack_trace = StackTrace{
                 .instruction_addresses = &addresses,
@@ -517,7 +517,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             ptr: [*]u8,
         };
 
-        fn allocSlot(self: *Self, size_class: usize, trace_addr: usize) Error!Slot {
+        fn alloc_slot(self: *Self, size_class: usize, trace_addr: usize) Error!Slot {
             const bucket_index = math.log2(size_class);
             var buckets = &self.buckets[bucket_index];
             const slot_count = @divExact(page_size, size_class);
@@ -548,7 +548,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             };
         }
 
-        fn searchBucket(
+        fn search_bucket(
             buckets: *Buckets,
             addr: usize,
             current_bucket: ?*BucketHeader,
@@ -565,7 +565,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
 
         /// This function assumes the object is in the large object storage regardless
         /// of the parameters.
-        fn resizeLarge(
+        fn resize_large(
             self: *Self,
             old_mem: []u8,
             log2_old_align: u8,
@@ -641,7 +641,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
 
         /// This function assumes the object is in the large object storage regardless
         /// of the parameters.
-        fn freeLarge(
+        fn free_large(
             self: *Self,
             old_mem: []u8,
             log2_old_align: u8,
@@ -699,7 +699,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             }
         }
 
-        pub fn setRequestedMemoryLimit(self: *Self, limit: usize) void {
+        pub fn set_requested_memory_limit(self: *Self, limit: usize) void {
             self.requested_memory_limit = limit;
         }
 
@@ -955,7 +955,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
 
         // Returns true if an allocation of `size` bytes is within the specified
         // limits if enable_memory_limit is true
-        fn isAllocationAllowed(self: *Self, size: usize) bool {
+        fn is_allocation_allowed(self: *Self, size: usize) bool {
             if (config.enable_memory_limit) {
                 const new_req_bytes = self.total_requested_bytes + size;
                 if (new_req_bytes > self.requested_memory_limit)
@@ -974,7 +974,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             return allocInner(self, len, @as(Allocator.Log2Align, @intCast(log2_ptr_align)), ret_addr) catch return null;
         }
 
-        fn allocInner(
+        fn alloc_inner(
             self: *Self,
             len: usize,
             log2_ptr_align: Allocator.Log2Align,
@@ -1023,7 +1023,7 @@ pub fn GeneralPurposeAllocator(comptime config: Config) type {
             return slot.ptr;
         }
 
-        fn createBucket(self: *Self, size_class: usize) Error!*BucketHeader {
+        fn create_bucket(self: *Self, size_class: usize) Error!*BucketHeader {
             const page = try self.backing_allocator.alignedAlloc(u8, page_size, page_size);
             errdefer self.backing_allocator.free(page);
 

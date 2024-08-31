@@ -1,7 +1,7 @@
 const Int = @import("std").meta.Int;
 const math = @import("std").math;
 
-pub fn floatFromInt(comptime T: type, x: anytype) T {
+pub fn float_from_int(comptime T: type, x: anytype) T {
     if (x == 0) return 0;
 
     // Various constants whose values follow from the type parameters.

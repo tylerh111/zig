@@ -1,4 +1,4 @@
-fn doTheTest() !void {
+fn do_the_test() !void {
     const src = @src(); // do not move
 
     try expect(src.line == 2);

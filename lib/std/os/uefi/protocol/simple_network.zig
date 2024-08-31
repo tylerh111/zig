@@ -49,12 +49,12 @@ pub const SimpleNetwork = extern struct {
     }
 
     /// Manages the multicast receive filters of a network interface.
-    pub fn receiveFilters(self: *const SimpleNetwork, enable: ReceiveFilter, disable: ReceiveFilter, reset_mcast_filter: bool, mcast_filter_cnt: usize, mcast_filter: ?[*]const MacAddress) Status {
+    pub fn receive_filters(self: *const SimpleNetwork, enable: ReceiveFilter, disable: ReceiveFilter, reset_mcast_filter: bool, mcast_filter_cnt: usize, mcast_filter: ?[*]const MacAddress) Status {
         return self._receive_filters(self, enable, disable, reset_mcast_filter, mcast_filter_cnt, mcast_filter);
     }
 
     /// Modifies or resets the current station address, if supported.
-    pub fn stationAddress(self: *const SimpleNetwork, reset_flag: bool, new: ?*const MacAddress) Status {
+    pub fn station_address(self: *const SimpleNetwork, reset_flag: bool, new: ?*const MacAddress) Status {
         return self._station_address(self, reset_flag, new);
     }
 
@@ -64,7 +64,7 @@ pub const SimpleNetwork = extern struct {
     }
 
     /// Converts a multicast IP address to a multicast HW MAC address.
-    pub fn mcastIpToMac(self: *const SimpleNetwork, ipv6: bool, ip: *const anyopaque, mac: *MacAddress) Status {
+    pub fn mcast_ip_to_mac(self: *const SimpleNetwork, ipv6: bool, ip: *const anyopaque, mac: *MacAddress) Status {
         return self._mcast_ip_to_mac(self, ipv6, ip, mac);
     }
 
@@ -74,7 +74,7 @@ pub const SimpleNetwork = extern struct {
     }
 
     /// Reads the current interrupt status and recycled transmit buffer status from a network interface.
-    pub fn getStatus(self: *const SimpleNetwork, interrupt_status: *InterruptStatus, tx_buf: ?*?[*]u8) Status {
+    pub fn get_status(self: *const SimpleNetwork, interrupt_status: *InterruptStatus, tx_buf: ?*?[*]u8) Status {
         return self._get_status(self, interrupt_status, tx_buf);
     }
 

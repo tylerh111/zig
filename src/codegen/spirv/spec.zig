@@ -8,7 +8,7 @@ pub const Version = packed struct(Word) {
     major: u8,
     padding0: u8 = 0,
 
-    pub fn toWord(self: @This()) Word {
+    pub fn to_word(self: @This()) Word {
         return @bitCast(self);
     }
 };

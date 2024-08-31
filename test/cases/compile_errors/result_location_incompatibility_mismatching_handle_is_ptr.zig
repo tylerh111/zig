@@ -4,7 +4,7 @@ export fn entry() void {
     };
     _ = damn;
 }
-pub fn getOptional() ?i32 {
+pub fn get_optional() ?i32 {
     return 0;
 }
 pub const Container = struct {

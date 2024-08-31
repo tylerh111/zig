@@ -9,7 +9,7 @@ pub const File = struct {
     compression: zip.CompressionMethod,
 };
 
-pub fn expectFiles(
+pub fn expect_files(
     test_files: []const File,
     dir: std.fs.Dir,
     opt: struct {
@@ -48,7 +48,7 @@ pub const FileStore = struct {
     uncompressed_size: usize,
 };
 
-pub fn makeZip(
+pub fn make_zip(
     buf: []u8,
     comptime files: []const File,
     options: WriteZipOptions,
@@ -57,7 +57,7 @@ pub fn makeZip(
     return try makeZipWithStore(buf, files, options, &store);
 }
 
-pub fn makeZipWithStore(
+pub fn make_zip_with_store(
     buf: []u8,
     files: []const File,
     options: WriteZipOptions,
@@ -92,7 +92,7 @@ pub const Zip64Options = struct {
     central_directory_size: ?u64 = null,
 };
 
-pub fn writeZip(
+pub fn write_zip(
     writer: anytype,
     files: []const File,
     store: []FileStore,
@@ -115,7 +115,7 @@ pub fn writeZip(
     try zipper.writeEndRecord(if (options.end) |e| e else .{});
 }
 
-pub fn initZipper(writer: anytype) Zipper(@TypeOf(writer)) {
+pub fn init_zipper(writer: anytype) Zipper(@TypeOf(writer)) {
     return .{ .counting_writer = std.io.countingWriter(writer) };
 }
 
@@ -130,7 +130,7 @@ pub fn Zipper(comptime Writer: type) type {
 
         const Self = @This();
 
-        pub fn writeFile(
+        pub fn write_file(
             self: *Self,
             opt: struct {
                 name: []const u8,
@@ -185,7 +185,7 @@ pub fn Zipper(comptime Writer: type) type {
             };
         }
 
-        pub fn writeCentralRecord(
+        pub fn write_central_record(
             self: *Self,
             store: FileStore,
             opt: struct {
@@ -222,7 +222,7 @@ pub fn Zipper(comptime Writer: type) type {
             self.last_central_limit = self.counting_writer.bytes_written;
         }
 
-        pub fn writeEndRecord(self: *Self, opt: EndRecordOptions) !void {
+        pub fn write_end_record(self: *Self, opt: EndRecordOptions) !void {
             const cd_offset = self.first_central_offset orelse 0;
             const cd_end = self.last_central_limit orelse 0;
 

@@ -51,7 +51,7 @@ pub fn hypot(x: anytype, y: anytype) @TypeOf(x, y) {
     return hypfn(T, major, minor);
 }
 
-inline fn emulateFma(comptime T: type) bool {
+inline fn emulate_fma(comptime T: type) bool {
     // If @mulAdd lowers to the software implementation,
     // hypotUnfused should be used in place of hypotFused.
     // This takes an educated guess, but ideally we should
@@ -60,7 +60,7 @@ inline fn emulateFma(comptime T: type) bool {
     return (T == f128 or T == f80);
 }
 
-inline fn hypotFused(comptime F: type, x: F, y: F) F {
+inline fn hypot_fused(comptime F: type, x: F, y: F) F {
     const r = @sqrt(@mulAdd(F, x, x, y * y));
     const rr = r * r;
     const xx = x * x;
@@ -68,7 +68,7 @@ inline fn hypotFused(comptime F: type, x: F, y: F) F {
     return r - z / (2 * r);
 }
 
-inline fn hypotUnfused(comptime F: type, x: F, y: F) F {
+inline fn hypot_unfused(comptime F: type, x: F, y: F) F {
     const r = @sqrt(x * x + y * y);
     if (r <= 2 * y) { // 30deg or steeper
         const dx = r - y;

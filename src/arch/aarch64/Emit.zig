@@ -71,7 +71,7 @@ const BranchType = enum {
     }
 };
 
-pub fn emitMir(
+pub fn emit_mir(
     emit: *Emit,
 ) !void {
     const mir_tags = emit.mir.instructions.items(.tag);
@@ -231,7 +231,7 @@ pub fn deinit(emit: *Emit) void {
     emit.* = undefined;
 }
 
-fn optimalBranchType(emit: *Emit, tag: Mir.Inst.Tag, offset: i64) !BranchType {
+fn optimal_branch_type(emit: *Emit, tag: Mir.Inst.Tag, offset: i64) !BranchType {
     assert(offset & 0b11 == 0);
 
     switch (tag) {
@@ -260,7 +260,7 @@ fn optimalBranchType(emit: *Emit, tag: Mir.Inst.Tag, offset: i64) !BranchType {
     }
 }
 
-fn instructionSize(emit: *Emit, inst: Mir.Inst.Index) usize {
+fn instruction_size(emit: *Emit, inst: Mir.Inst.Index) usize {
     const tag = emit.mir.instructions.items(.tag)[inst];
 
     if (isBranch(tag)) {
@@ -293,7 +293,7 @@ fn instructionSize(emit: *Emit, inst: Mir.Inst.Index) usize {
     }
 }
 
-fn isBranch(tag: Mir.Inst.Tag) bool {
+fn is_branch(tag: Mir.Inst.Tag) bool {
     return switch (tag) {
         .cbz,
         .b,
@@ -304,7 +304,7 @@ fn isBranch(tag: Mir.Inst.Tag) bool {
     };
 }
 
-fn branchTarget(emit: *Emit, inst: Mir.Inst.Index) Mir.Inst.Index {
+fn branch_target(emit: *Emit, inst: Mir.Inst.Index) Mir.Inst.Index {
     const tag = emit.mir.instructions.items(.tag)[inst];
 
     switch (tag) {
@@ -315,7 +315,7 @@ fn branchTarget(emit: *Emit, inst: Mir.Inst.Index) Mir.Inst.Index {
     }
 }
 
-fn lowerBranches(emit: *Emit) !void {
+fn lower_branches(emit: *Emit) !void {
     const comp = emit.bin_file.comp;
     const gpa = comp.gpa;
     const mir_tags = emit.mir.instructions.items(.tag);
@@ -424,7 +424,7 @@ fn lowerBranches(emit: *Emit) !void {
     }
 }
 
-fn writeInstruction(emit: *Emit, instruction: Instruction) !void {
+fn write_instruction(emit: *Emit, instruction: Instruction) !void {
     const endian = emit.target.cpu.arch.endian();
     std.mem.writeInt(u32, try emit.code.addManyAsArray(4), instruction.toU32(), endian);
 }
@@ -438,7 +438,7 @@ fn fail(emit: *Emit, comptime format: []const u8, args: anytype) InnerError {
     return error.EmitFail;
 }
 
-fn dbgAdvancePCAndLine(emit: *Emit, line: u32, column: u32) InnerError!void {
+fn dbg_advance_pcand_line(emit: *Emit, line: u32, column: u32) InnerError!void {
     const delta_line = @as(i33, line) - @as(i33, emit.prev_di_line);
     const delta_pc: usize = emit.code.items.len - emit.prev_di_pc;
     log.debug("  (advance pc={d} and line={d})", .{ delta_pc, delta_line });
@@ -487,7 +487,7 @@ fn dbgAdvancePCAndLine(emit: *Emit, line: u32, column: u32) InnerError!void {
     }
 }
 
-fn mirAddSubtractImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_add_subtract_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     switch (tag) {
         .add_immediate,
@@ -526,7 +526,7 @@ fn mirAddSubtractImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirDataProcessing2Source(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_data_processing2_source(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const rrr = emit.mir.instructions.items(.data)[inst].rrr;
     const rd = rrr.rd;
@@ -543,7 +543,7 @@ fn mirDataProcessing2Source(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirShiftImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_shift_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const rr_shift = emit.mir.instructions.items(.data)[inst].rr_shift;
     const rd = rr_shift.rd;
@@ -558,7 +558,7 @@ fn mirShiftImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirConditionalBranchImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_conditional_branch_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const inst_cond = emit.mir.instructions.items(.data)[inst].inst_cond;
 
@@ -575,7 +575,7 @@ fn mirConditionalBranchImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_branch(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const target_inst = emit.mir.instructions.items(.data)[inst].inst;
 
@@ -600,7 +600,7 @@ fn mirBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirCompareAndBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_compare_and_branch(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const r_inst = emit.mir.instructions.items(.data)[inst].r_inst;
 
@@ -617,7 +617,7 @@ fn mirCompareAndBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirUnconditionalBranchRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_unconditional_branch_register(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const reg = emit.mir.instructions.items(.data)[inst].reg;
 
@@ -628,7 +628,7 @@ fn mirUnconditionalBranchRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirExceptionGeneration(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_exception_generation(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const imm16 = emit.mir.instructions.items(.data)[inst].imm16;
 
@@ -639,7 +639,7 @@ fn mirExceptionGeneration(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirDbgLine(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_dbg_line(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const dbg_line_column = emit.mir.instructions.items(.data)[inst].dbg_line_column;
 
@@ -649,7 +649,7 @@ fn mirDbgLine(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirDebugPrologueEnd(emit: *Emit) !void {
+fn mir_debug_prologue_end(emit: *Emit) !void {
     switch (emit.debug_output) {
         .dwarf => |dw| {
             try dw.setPrologueEnd();
@@ -663,7 +663,7 @@ fn mirDebugPrologueEnd(emit: *Emit) !void {
     }
 }
 
-fn mirDebugEpilogueBegin(emit: *Emit) !void {
+fn mir_debug_epilogue_begin(emit: *Emit) !void {
     switch (emit.debug_output) {
         .dwarf => |dw| {
             try dw.setEpilogueBegin();
@@ -674,7 +674,7 @@ fn mirDebugEpilogueBegin(emit: *Emit) !void {
     }
 }
 
-fn mirCallExtern(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_call_extern(emit: *Emit, inst: Mir.Inst.Index) !void {
     assert(emit.mir.instructions.items(.tag)[inst] == .call_extern);
     const relocation = emit.mir.instructions.items(.data)[inst].relocation;
     _ = relocation;
@@ -708,7 +708,7 @@ fn mirCallExtern(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirLogicalImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_logical_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const rr_bitmask = emit.mir.instructions.items(.data)[inst].rr_bitmask;
     const rd = rr_bitmask.rd;
@@ -731,7 +731,7 @@ fn mirLogicalImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirAddSubtractShiftedRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_add_subtract_shifted_register(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     switch (tag) {
         .add_shifted_register,
@@ -772,7 +772,7 @@ fn mirAddSubtractShiftedRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirAddSubtractExtendedRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_add_subtract_extended_register(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     switch (tag) {
         .add_extended_register,
@@ -813,7 +813,7 @@ fn mirAddSubtractExtendedRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirConditionalSelect(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_conditional_select(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     switch (tag) {
         .csel => {
@@ -837,7 +837,7 @@ fn mirConditionalSelect(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirLogicalShiftedRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_logical_shifted_register(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const rrr_imm6_logical_shift = emit.mir.instructions.items(.data)[inst].rrr_imm6_logical_shift;
     const rd = rrr_imm6_logical_shift.rd;
@@ -854,7 +854,7 @@ fn mirLogicalShiftedRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirLoadMemoryPie(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_load_memory_pie(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const payload = emit.mir.instructions.items(.data)[inst].payload;
     const data = emit.mir.extraData(Mir.LoadMemoryPie, payload).data;
@@ -982,7 +982,7 @@ fn mirLoadMemoryPie(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirLoadStoreRegisterPair(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_load_store_register_pair(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const load_store_register_pair = emit.mir.instructions.items(.data)[inst].load_store_register_pair;
     const rt = load_store_register_pair.rt;
@@ -997,7 +997,7 @@ fn mirLoadStoreRegisterPair(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirLoadStackArgument(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_load_stack_argument(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const load_store_stack = emit.mir.instructions.items(.data)[inst].load_store_stack;
     const rt = load_store_stack.rt;
@@ -1058,7 +1058,7 @@ fn mirLoadStackArgument(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirLoadStoreStack(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_load_store_stack(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const load_store_stack = emit.mir.instructions.items(.data)[inst].load_store_stack;
     const rt = load_store_stack.rt;
@@ -1122,7 +1122,7 @@ fn mirLoadStoreStack(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirLoadStoreRegisterImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_load_store_register_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const load_store_register_immediate = emit.mir.instructions.items(.data)[inst].load_store_register_immediate;
     const rt = load_store_register_immediate.rt;
@@ -1143,7 +1143,7 @@ fn mirLoadStoreRegisterImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirLoadStoreRegisterRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_load_store_register_register(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const load_store_register_register = emit.mir.instructions.items(.data)[inst].load_store_register_register;
     const rt = load_store_register_register.rt;
@@ -1161,7 +1161,7 @@ fn mirLoadStoreRegisterRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirMoveRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_move_register(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     switch (tag) {
         .mov_register => {
@@ -1196,7 +1196,7 @@ fn mirMoveRegister(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirMoveWideImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_move_wide_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const r_imm16_sh = emit.mir.instructions.items(.data)[inst].r_imm16_sh;
 
@@ -1207,7 +1207,7 @@ fn mirMoveWideImmediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirDataProcessing3Source(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_data_processing3_source(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
 
     switch (tag) {
@@ -1238,15 +1238,15 @@ fn mirDataProcessing3Source(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirNop(emit: *Emit) !void {
+fn mir_nop(emit: *Emit) !void {
     try emit.writeInstruction(Instruction.nop());
 }
 
-fn regListIsSet(reg_list: u32, reg: Register) bool {
+fn reg_list_is_set(reg_list: u32, reg: Register) bool {
     return reg_list & @as(u32, 1) << @as(u5, @intCast(reg.id())) != 0;
 }
 
-fn mirPushPopRegs(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_push_pop_regs(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const reg_list = emit.mir.instructions.items(.data)[inst].reg_list;
 
@@ -1325,7 +1325,7 @@ fn mirPushPopRegs(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirBitfieldExtract(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_bitfield_extract(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const rr_lsb_width = emit.mir.instructions.items(.data)[inst].rr_lsb_width;
     const rd = rr_lsb_width.rd;
@@ -1340,7 +1340,7 @@ fn mirBitfieldExtract(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mirExtend(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mir_extend(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const rr = emit.mir.instructions.items(.data)[inst].rr;
 

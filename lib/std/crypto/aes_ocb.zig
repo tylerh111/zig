@@ -84,7 +84,7 @@ fn AesOcb(comptime Aes: anytype) type {
             return sum;
         }
 
-        fn getOffset(aes_enc_ctx: EncryptCtx, npub: [nonce_length]u8) Block {
+        fn get_offset(aes_enc_ctx: EncryptCtx, npub: [nonce_length]u8) Block {
             var nx = [_]u8{0} ** 16;
             nx[0] = @as(u8, @intCast(@as(u7, @truncate(tag_length * 8)) << 1));
             nx[16 - nonce_length - 1] = 1;
@@ -244,7 +244,7 @@ fn AesOcb(comptime Aes: anytype) type {
     };
 }
 
-inline fn xorBlocks(x: Block, y: Block) Block {
+inline fn xor_blocks(x: Block, y: Block) Block {
     var z: Block = x;
     for (&z, 0..) |*v, i| {
         v.* = x[i] ^ y[i];
@@ -252,7 +252,7 @@ inline fn xorBlocks(x: Block, y: Block) Block {
     return z;
 }
 
-inline fn xorWith(x: *Block, y: Block) void {
+inline fn xor_with(x: *Block, y: Block) void {
     for (x, 0..) |*v, i| {
         v.* ^= y[i];
     }

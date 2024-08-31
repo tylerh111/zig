@@ -247,14 +247,14 @@ pub const Tree = struct {
         self.docs.deinit(self.allocator);
     }
 
-    pub fn getDirective(self: Tree, doc_index: usize) ?[]const u8 {
+    pub fn get_directive(self: Tree, doc_index: usize) ?[]const u8 {
         assert(doc_index < self.docs.items.len);
         const doc = self.docs.items[doc_index].cast(Node.Doc) orelse return null;
         const id = doc.directive orelse return null;
         return self.getRaw(id, id);
     }
 
-    pub fn getRaw(self: Tree, start: TokenIndex, end: TokenIndex) []const u8 {
+    pub fn get_raw(self: Tree, start: TokenIndex, end: TokenIndex) []const u8 {
         assert(start <= end);
         assert(start < self.tokens.len and end < self.tokens.len);
         const start_token = self.tokens[start];
@@ -611,7 +611,7 @@ const Parser = struct {
         return &node.base;
     }
 
-    fn eatCommentsAndSpace(self: *Parser, comptime exclusions: []const Token.Id) void {
+    fn eat_comments_and_space(self: *Parser, comptime exclusions: []const Token.Id) void {
         log.debug("eatCommentsAndSpace", .{});
         outer: while (self.token_it.next()) |token| {
             log.debug("  (token '{s}')", .{@tagName(token.id)});
@@ -632,7 +632,7 @@ const Parser = struct {
         }
     }
 
-    fn eatToken(self: *Parser, id: Token.Id, comptime exclusions: []const Token.Id) ?TokenIndex {
+    fn eat_token(self: *Parser, id: Token.Id, comptime exclusions: []const Token.Id) ?TokenIndex {
         log.debug("eatToken('{s}')", .{@tagName(id)});
         self.eatCommentsAndSpace(exclusions);
         const pos = self.token_it.pos;
@@ -647,20 +647,20 @@ const Parser = struct {
         }
     }
 
-    fn expectToken(self: *Parser, id: Token.Id, comptime exclusions: []const Token.Id) ParseError!TokenIndex {
+    fn expect_token(self: *Parser, id: Token.Id, comptime exclusions: []const Token.Id) ParseError!TokenIndex {
         log.debug("expectToken('{s}')", .{@tagName(id)});
         return self.eatToken(id, exclusions) orelse error.UnexpectedToken;
     }
 
-    fn getLine(self: *Parser, index: TokenIndex) usize {
+    fn get_line(self: *Parser, index: TokenIndex) usize {
         return self.line_cols.get(index).?.line;
     }
 
-    fn getCol(self: *Parser, index: TokenIndex) usize {
+    fn get_col(self: *Parser, index: TokenIndex) usize {
         return self.line_cols.get(index).?.col;
     }
 
-    fn parseSingleQuoted(self: *Parser, node: *Node.Value, raw: []const u8) ParseError!void {
+    fn parse_single_quoted(self: *Parser, node: *Node.Value, raw: []const u8) ParseError!void {
         assert(raw[0] == '\'' and raw[raw.len - 1] == '\'');
 
         const raw_no_quotes = raw[1 .. raw.len - 1];
@@ -694,7 +694,7 @@ const Parser = struct {
         }
     }
 
-    fn parseDoubleQuoted(self: *Parser, node: *Node.Value, raw: []const u8) ParseError!void {
+    fn parse_double_quoted(self: *Parser, node: *Node.Value, raw: []const u8) ParseError!void {
         assert(raw[0] == '"' and raw[raw.len - 1] == '"');
 
         const raw_no_quotes = raw[1 .. raw.len - 1];

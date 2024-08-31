@@ -241,7 +241,7 @@ test "compress/decompress" {
     }
 }
 
-fn testDecompress(comptime container: Container, compressed: []const u8, expected_plain: []const u8) !void {
+fn test_decompress(comptime container: Container, compressed: []const u8, expected_plain: []const u8) !void {
     var in = fixedBufferStream(compressed);
     var out = std.ArrayList(u8).init(testing.allocator);
     defer out.deinit();
@@ -379,7 +379,7 @@ test "public interface" {
     try testInterface(flate, &deflate_block, &plain_data);
 }
 
-fn testInterface(comptime pkg: type, gzip_data: []const u8, plain_data: []const u8) !void {
+fn test_interface(comptime pkg: type, gzip_data: []const u8, plain_data: []const u8) !void {
     var buffer1: [64]u8 = undefined;
     var buffer2: [64]u8 = undefined;
 

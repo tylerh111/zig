@@ -4,7 +4,7 @@
 /// and we will use it too as it seems accepted by Apple OSes.
 /// TODO LLD also hashes the output filename to disambiguate between same builds with different
 /// output files. Should we also do that?
-pub fn calcUuid(comp: *const Compilation, file: fs.File, file_size: u64, out: *[Md5.digest_length]u8) !void {
+pub fn calc_uuid(comp: *const Compilation, file: fs.File, file_size: u64, out: *[Md5.digest_length]u8) !void {
     const tracy = trace(@src());
     defer tracy.end();
 

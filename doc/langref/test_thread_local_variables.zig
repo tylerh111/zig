@@ -11,7 +11,7 @@ test "thread local storage" {
     thread2.join();
 }
 
-fn testTls() void {
+fn test_tls() void {
     assert(x == 1234);
     x += 1;
     assert(x == 1235);

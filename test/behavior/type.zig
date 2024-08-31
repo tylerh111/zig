@@ -4,7 +4,7 @@ const Type = std.builtin.Type;
 const testing = std.testing;
 const assert = std.debug.assert;
 
-fn testTypes(comptime types: []const type) !void {
+fn test_types(comptime types: []const type) !void {
     inline for (types) |testType| {
         try testing.expect(testType == @Type(@typeInfo(testType)));
     }
@@ -674,7 +674,7 @@ test "empty struct assigned to reified struct field" {
             });
         }
 
-        fn namespacedComponents(comptime modules: anytype) NamespacedComponents(modules) {
+        fn namespaced_components(comptime modules: anytype) NamespacedComponents(modules) {
             var x: NamespacedComponents(modules) = undefined;
             x.components = modules.components;
             return x;

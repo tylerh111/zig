@@ -64,7 +64,7 @@ pub fn boolean(r: Random) bool {
 /// Note that this will not yield consistent results across all targets
 /// due to dependence on the representation of `usize` as an index.
 /// See `enumValueWithIndex` for further commentary.
-pub inline fn enumValue(r: Random, comptime EnumType: type) EnumType {
+pub inline fn enum_value(r: Random, comptime EnumType: type) EnumType {
     return r.enumValueWithIndex(EnumType, usize);
 }
 
@@ -78,7 +78,7 @@ pub inline fn enumValue(r: Random, comptime EnumType: type) EnumType {
 ///
 /// See `uintLessThan`, which this function uses in most cases,
 /// for commentary on the runtime of this function.
-pub fn enumValueWithIndex(r: Random, comptime EnumType: type, comptime Index: type) EnumType {
+pub fn enum_value_with_index(r: Random, comptime EnumType: type, comptime Index: type) EnumType {
     comptime assert(@typeInfo(EnumType) == .Enum);
 
     // We won't use int -> enum casting because enum elements can have
@@ -118,7 +118,7 @@ pub fn int(r: Random, comptime T: type) T {
 
 /// Constant-time implementation off `uintLessThan`.
 /// The results of this function may be biased.
-pub fn uintLessThanBiased(r: Random, comptime T: type, less_than: T) T {
+pub fn uint_less_than_biased(r: Random, comptime T: type, less_than: T) T {
     comptime assert(@typeInfo(T).Int.signedness == .unsigned);
     assert(0 < less_than);
     return limitRangeBiased(T, r.int(T), less_than);
@@ -132,7 +132,7 @@ pub fn uintLessThanBiased(r: Random, comptime T: type, less_than: T) T {
 /// However, if `fillFn` is backed by any evenly distributed pseudo random number generator,
 /// this function is guaranteed to return.
 /// If you need deterministic runtime bounds, use `uintLessThanBiased`.
-pub fn uintLessThan(r: Random, comptime T: type, less_than: T) T {
+pub fn uint_less_than(r: Random, comptime T: type, less_than: T) T {
     comptime assert(@typeInfo(T).Int.signedness == .unsigned);
     const bits = @typeInfo(T).Int.bits;
     assert(0 < less_than);
@@ -163,7 +163,7 @@ pub fn uintLessThan(r: Random, comptime T: type, less_than: T) T {
 
 /// Constant-time implementation off `uintAtMost`.
 /// The results of this function may be biased.
-pub fn uintAtMostBiased(r: Random, comptime T: type, at_most: T) T {
+pub fn uint_at_most_biased(r: Random, comptime T: type, at_most: T) T {
     assert(@typeInfo(T).Int.signedness == .unsigned);
     if (at_most == maxInt(T)) {
         // have the full range
@@ -175,7 +175,7 @@ pub fn uintAtMostBiased(r: Random, comptime T: type, at_most: T) T {
 /// Returns an evenly distributed random unsigned integer `0 <= i <= at_most`.
 /// See `uintLessThan`, which this function uses in most cases,
 /// for commentary on the runtime of this function.
-pub fn uintAtMost(r: Random, comptime T: type, at_most: T) T {
+pub fn uint_at_most(r: Random, comptime T: type, at_most: T) T {
     assert(@typeInfo(T).Int.signedness == .unsigned);
     if (at_most == maxInt(T)) {
         // have the full range
@@ -186,7 +186,7 @@ pub fn uintAtMost(r: Random, comptime T: type, at_most: T) T {
 
 /// Constant-time implementation off `intRangeLessThan`.
 /// The results of this function may be biased.
-pub fn intRangeLessThanBiased(r: Random, comptime T: type, at_least: T, less_than: T) T {
+pub fn int_range_less_than_biased(r: Random, comptime T: type, at_least: T, less_than: T) T {
     assert(at_least < less_than);
     const info = @typeInfo(T).Int;
     if (info.signedness == .signed) {
@@ -205,7 +205,7 @@ pub fn intRangeLessThanBiased(r: Random, comptime T: type, at_least: T, less_tha
 /// Returns an evenly distributed random integer `at_least <= i < less_than`.
 /// See `uintLessThan`, which this function uses in most cases,
 /// for commentary on the runtime of this function.
-pub fn intRangeLessThan(r: Random, comptime T: type, at_least: T, less_than: T) T {
+pub fn int_range_less_than(r: Random, comptime T: type, at_least: T, less_than: T) T {
     assert(at_least < less_than);
     const info = @typeInfo(T).Int;
     if (info.signedness == .signed) {
@@ -223,7 +223,7 @@ pub fn intRangeLessThan(r: Random, comptime T: type, at_least: T, less_than: T) 
 
 /// Constant-time implementation off `intRangeAtMostBiased`.
 /// The results of this function may be biased.
-pub fn intRangeAtMostBiased(r: Random, comptime T: type, at_least: T, at_most: T) T {
+pub fn int_range_at_most_biased(r: Random, comptime T: type, at_least: T, at_most: T) T {
     assert(at_least <= at_most);
     const info = @typeInfo(T).Int;
     if (info.signedness == .signed) {
@@ -242,7 +242,7 @@ pub fn intRangeAtMostBiased(r: Random, comptime T: type, at_least: T, at_most: T
 /// Returns an evenly distributed random integer `at_least <= i <= at_most`.
 /// See `uintLessThan`, which this function uses in most cases,
 /// for commentary on the runtime of this function.
-pub fn intRangeAtMost(r: Random, comptime T: type, at_least: T, at_most: T) T {
+pub fn int_range_at_most(r: Random, comptime T: type, at_least: T, at_most: T) T {
     assert(at_least <= at_most);
     const info = @typeInfo(T).Int;
     if (info.signedness == .signed) {
@@ -316,7 +316,7 @@ pub fn float(r: Random, comptime T: type) T {
 /// Return a floating point value normally distributed with mean = 0, stddev = 1.
 ///
 /// To use different parameters, use: floatNorm(...) * desiredStddev + desiredMean.
-pub fn floatNorm(r: Random, comptime T: type) T {
+pub fn float_norm(r: Random, comptime T: type) T {
     const value = ziggurat.next_f64(r, ziggurat.NormDist);
     switch (T) {
         f32 => return @floatCast(value),
@@ -328,7 +328,7 @@ pub fn floatNorm(r: Random, comptime T: type) T {
 /// Return an exponentially distributed float with a rate parameter of 1.
 ///
 /// To use a different rate parameter, use: floatExp(...) / desiredRate.
-pub fn floatExp(r: Random, comptime T: type) T {
+pub fn float_exp(r: Random, comptime T: type) T {
     const value = ziggurat.next_f64(r, ziggurat.ExpDist);
     switch (T) {
         f32 => return @floatCast(value),
@@ -358,7 +358,7 @@ pub inline fn shuffle(r: Random, comptime T: type, buf: []T) void {
 ///
 /// See `intRangeLessThan`, which this function uses,
 /// for commentary on the runtime of this function.
-pub fn shuffleWithIndex(r: Random, comptime T: type, buf: []T, comptime Index: type) void {
+pub fn shuffle_with_index(r: Random, comptime T: type, buf: []T, comptime Index: type) void {
     const MinInt = MinArrayIndex(Index);
     if (buf.len < 2) {
         return;
@@ -380,7 +380,7 @@ pub fn shuffleWithIndex(r: Random, comptime T: type, buf: []T, comptime Index: t
 ///
 /// This is useful for selecting an item from a slice where weights are not equal.
 /// `T` must be a numeric type capable of holding the sum of `proportions`.
-pub fn weightedIndex(r: Random, comptime T: type, proportions: []const T) usize {
+pub fn weighted_index(r: Random, comptime T: type, proportions: []const T) usize {
     // This implementation works by summing the proportions and picking a
     // random point in [0, sum).  We then loop over the proportions,
     // accumulating until our accumulator is greater than the random point.
@@ -414,7 +414,7 @@ pub fn weightedIndex(r: Random, comptime T: type, proportions: []const T) usize 
 /// Convert a random integer 0 <= random_int <= maxValue(T),
 /// into an integer 0 <= result < less_than.
 /// This function introduces a minor bias.
-pub fn limitRangeBiased(comptime T: type, random_int: T, less_than: T) T {
+pub fn limit_range_biased(comptime T: type, random_int: T, less_than: T) T {
     comptime assert(@typeInfo(T).Int.signedness == .unsigned);
     const bits = @typeInfo(T).Int.bits;
 

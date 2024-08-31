@@ -72,7 +72,7 @@ pub const NonMontgomeryDomainFieldElement = [4]u64;
 /// Output Bounds:
 ///   out1: [0x0 ~> 0xffffffffffffffff]
 ///   out2: [0x0 ~> 0x1]
-inline fn addcarryxU64(out1: *u64, out2: *u1, arg1: u1, arg2: u64, arg3: u64) void {
+inline fn addcarryx_u64(out1: *u64, out2: *u1, arg1: u1, arg2: u64, arg3: u64) void {
     const x = @as(u128, arg2) +% arg3 +% arg1;
     out1.* = @truncate(x);
     out2.* = @truncate(x >> 64);
@@ -91,7 +91,7 @@ inline fn addcarryxU64(out1: *u64, out2: *u1, arg1: u1, arg2: u64, arg3: u64) vo
 /// Output Bounds:
 ///   out1: [0x0 ~> 0xffffffffffffffff]
 ///   out2: [0x0 ~> 0x1]
-inline fn subborrowxU64(out1: *u64, out2: *u1, arg1: u1, arg2: u64, arg3: u64) void {
+inline fn subborrowx_u64(out1: *u64, out2: *u1, arg1: u1, arg2: u64, arg3: u64) void {
     const x = @as(u128, arg2) -% arg3 -% arg1;
     out1.* = @truncate(x);
     out2.* = @truncate(x >> 64);
@@ -109,7 +109,7 @@ inline fn subborrowxU64(out1: *u64, out2: *u1, arg1: u1, arg2: u64, arg3: u64) v
 /// Output Bounds:
 ///   out1: [0x0 ~> 0xffffffffffffffff]
 ///   out2: [0x0 ~> 0xffffffffffffffff]
-inline fn mulxU64(out1: *u64, out2: *u64, arg1: u64, arg2: u64) void {
+inline fn mulx_u64(out1: *u64, out2: *u64, arg1: u64, arg2: u64) void {
     @setRuntimeSafety(mode == .Debug);
 
     const x = @as(u128, arg1) * @as(u128, arg2);
@@ -128,7 +128,7 @@ inline fn mulxU64(out1: *u64, out2: *u64, arg1: u64, arg2: u64) void {
 ///   arg3: [0x0 ~> 0xffffffffffffffff]
 /// Output Bounds:
 ///   out1: [0x0 ~> 0xffffffffffffffff]
-inline fn cmovznzU64(out1: *u64, arg1: u1, arg2: u64, arg3: u64) void {
+inline fn cmovznz_u64(out1: *u64, arg1: u1, arg2: u64, arg3: u64) void {
     @setRuntimeSafety(mode == .Debug);
 
     const mask = 0 -% @as(u64, arg1);
@@ -868,7 +868,7 @@ pub fn opp(out1: *MontgomeryDomainFieldElement, arg1: MontgomeryDomainFieldEleme
 ///   eval out1 mod m = (eval arg1 * ((2^64)⁻¹ mod m)^4) mod m
 ///   0 ≤ eval out1 < m
 ///
-pub fn fromMontgomery(out1: *NonMontgomeryDomainFieldElement, arg1: MontgomeryDomainFieldElement) void {
+pub fn from_montgomery(out1: *NonMontgomeryDomainFieldElement, arg1: MontgomeryDomainFieldElement) void {
     @setRuntimeSafety(mode == .Debug);
 
     const x1 = (arg1[0]);
@@ -1021,7 +1021,7 @@ pub fn fromMontgomery(out1: *NonMontgomeryDomainFieldElement, arg1: MontgomeryDo
 ///   eval (from_montgomery out1) mod m = eval arg1 mod m
 ///   0 ≤ eval out1 < m
 ///
-pub fn toMontgomery(out1: *MontgomeryDomainFieldElement, arg1: NonMontgomeryDomainFieldElement) void {
+pub fn to_montgomery(out1: *MontgomeryDomainFieldElement, arg1: NonMontgomeryDomainFieldElement) void {
     @setRuntimeSafety(mode == .Debug);
 
     const x1 = (arg1[1]);
@@ -1342,7 +1342,7 @@ pub fn selectznz(out1: *[4]u64, arg1: u1, arg2: [4]u64, arg3: [4]u64) void {
 ///   arg1: [[0x0 ~> 0xffffffffffffffff], [0x0 ~> 0xffffffffffffffff], [0x0 ~> 0xffffffffffffffff], [0x0 ~> 0xffffffffffffffff]]
 /// Output Bounds:
 ///   out1: [[0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff]]
-pub fn toBytes(out1: *[32]u8, arg1: [4]u64) void {
+pub fn to_bytes(out1: *[32]u8, arg1: [4]u64) void {
     @setRuntimeSafety(mode == .Debug);
 
     const x1 = (arg1[3]);
@@ -1451,7 +1451,7 @@ pub fn toBytes(out1: *[32]u8, arg1: [4]u64) void {
 ///   arg1: [[0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff], [0x0 ~> 0xff]]
 /// Output Bounds:
 ///   out1: [[0x0 ~> 0xffffffffffffffff], [0x0 ~> 0xffffffffffffffff], [0x0 ~> 0xffffffffffffffff], [0x0 ~> 0xffffffffffffffff]]
-pub fn fromBytes(out1: *[4]u64, arg1: [32]u8) void {
+pub fn from_bytes(out1: *[4]u64, arg1: [32]u8) void {
     @setRuntimeSafety(mode == .Debug);
 
     const x1 = (@as(u64, (arg1[31])) << 56);
@@ -1526,7 +1526,7 @@ pub fn fromBytes(out1: *[4]u64, arg1: [32]u8) void {
 ///   eval (from_montgomery out1) mod m = 1 mod m
 ///   0 ≤ eval out1 < m
 ///
-pub fn setOne(out1: *MontgomeryDomainFieldElement) void {
+pub fn set_one(out1: *MontgomeryDomainFieldElement) void {
     @setRuntimeSafety(mode == .Debug);
 
     out1[0] = @as(u64, 0x1);
@@ -1815,7 +1815,7 @@ pub fn divstep(out1: *u64, out2: *[5]u64, out3: *[5]u64, out4: *[4]u64, out5: *[
 ///
 /// Output Bounds:
 ///   out1: [[0x0 ~> 0xffffffffffffffff], [0x0 ~> 0xffffffffffffffff], [0x0 ~> 0xffffffffffffffff], [0x0 ~> 0xffffffffffffffff]]
-pub fn divstepPrecomp(out1: *[4]u64) void {
+pub fn divstep_precomp(out1: *[4]u64) void {
     @setRuntimeSafety(mode == .Debug);
 
     out1[0] = 0x67ffffffb8000000;

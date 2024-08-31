@@ -16,7 +16,7 @@ pub const CRTFile = enum {
     libwasi_emulated_signal_a,
 };
 
-pub fn getEmulatedLibCRTFile(lib_name: []const u8) ?CRTFile {
+pub fn get_emulated_lib_crtfile(lib_name: []const u8) ?CRTFile {
     if (mem.eql(u8, lib_name, "wasi-emulated-process-clocks")) {
         return .libwasi_emulated_process_clocks_a;
     }
@@ -32,7 +32,7 @@ pub fn getEmulatedLibCRTFile(lib_name: []const u8) ?CRTFile {
     return null;
 }
 
-pub fn emulatedLibCRFileLibName(crt_file: CRTFile) []const u8 {
+pub fn emulated_lib_crfile_lib_name(crt_file: CRTFile) []const u8 {
     return switch (crt_file) {
         .libwasi_emulated_process_clocks_a => "libwasi-emulated-process-clocks.a",
         .libwasi_emulated_getpid_a => "libwasi-emulated-getpid.a",
@@ -42,14 +42,14 @@ pub fn emulatedLibCRFileLibName(crt_file: CRTFile) []const u8 {
     };
 }
 
-pub fn execModelCrtFile(wasi_exec_model: std.builtin.WasiExecModel) CRTFile {
+pub fn exec_model_crt_file(wasi_exec_model: std.builtin.WasiExecModel) CRTFile {
     return switch (wasi_exec_model) {
         .reactor => CRTFile.crt1_reactor_o,
         .command => CRTFile.crt1_command_o,
     };
 }
 
-pub fn execModelCrtFileFullName(wasi_exec_model: std.builtin.WasiExecModel) []const u8 {
+pub fn exec_model_crt_file_full_name(wasi_exec_model: std.builtin.WasiExecModel) []const u8 {
     return switch (execModelCrtFile(wasi_exec_model)) {
         .crt1_reactor_o => "crt1-reactor.o",
         .crt1_command_o => "crt1-command.o",
@@ -57,7 +57,7 @@ pub fn execModelCrtFileFullName(wasi_exec_model: std.builtin.WasiExecModel) []co
     };
 }
 
-pub fn buildCRTFile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progress.Node) !void {
+pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progress.Node) !void {
     if (!build_options.have_llvm) {
         return error.ZigCompilerNotBuiltWithLLVMExtensions;
     }
@@ -264,7 +264,7 @@ const CCOptions = struct {
     no_strict_aliasing: bool = false,
 };
 
-fn addCCArgs(
+fn add_ccargs(
     comp: *Compilation,
     arena: Allocator,
     args: *std.ArrayList([]const u8),
@@ -301,7 +301,7 @@ fn addCCArgs(
     }
 }
 
-fn addLibcBottomHalfIncludes(
+fn add_libc_bottom_half_includes(
     comp: *Compilation,
     arena: Allocator,
     args: *std.ArrayList([]const u8),
@@ -357,7 +357,7 @@ fn addLibcBottomHalfIncludes(
     });
 }
 
-fn addLibcTopHalfIncludes(
+fn add_libc_top_half_includes(
     comp: *Compilation,
     arena: Allocator,
     args: *std.ArrayList([]const u8),

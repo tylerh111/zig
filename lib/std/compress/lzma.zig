@@ -12,7 +12,7 @@ pub fn decompress(
     return decompressWithOptions(allocator, reader, .{});
 }
 
-pub fn decompressWithOptions(
+pub fn decompress_with_options(
     allocator: Allocator,
     reader: anytype,
     options: decode.Options,

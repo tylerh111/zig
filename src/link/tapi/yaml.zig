@@ -32,27 +32,27 @@ pub const Value = union(enum) {
     list: List,
     map: Map,
 
-    pub fn asInt(self: Value) !i64 {
+    pub fn as_int(self: Value) !i64 {
         if (self != .int) return error.TypeMismatch;
         return self.int;
     }
 
-    pub fn asFloat(self: Value) !f64 {
+    pub fn as_float(self: Value) !f64 {
         if (self != .float) return error.TypeMismatch;
         return self.float;
     }
 
-    pub fn asString(self: Value) ![]const u8 {
+    pub fn as_string(self: Value) ![]const u8 {
         if (self != .string) return error.TypeMismatch;
         return self.string;
     }
 
-    pub fn asList(self: Value) !List {
+    pub fn as_list(self: Value) !List {
         if (self != .list) return error.TypeMismatch;
         return self.list;
     }
 
-    pub fn asMap(self: Value) !Map {
+    pub fn as_map(self: Value) !Map {
         if (self != .map) return error.TypeMismatch;
         return self.map;
     }
@@ -137,14 +137,14 @@ pub const Value = union(enum) {
         }
     }
 
-    fn isCompound(self: Value) bool {
+    fn is_compound(self: Value) bool {
         return switch (self) {
             .list, .map => true,
             else => false,
         };
     }
 
-    fn fromNode(arena: Allocator, tree: *const Tree, node: *const Node) YamlError!Value {
+    fn from_node(arena: Allocator, tree: *const Tree, node: *const Node) YamlError!Value {
         if (node.cast(Node.Doc)) |doc| {
             const inner = doc.value orelse {
                 // empty doc
@@ -372,7 +372,7 @@ pub const Yaml = struct {
         }
     }
 
-    fn parseValue(self: *Yaml, comptime T: type, value: Value) Error!T {
+    fn parse_value(self: *Yaml, comptime T: type, value: Value) Error!T {
         return switch (@typeInfo(T)) {
             .Int => math.cast(T, try value.asInt()) orelse return error.Overflow,
             .Float => if (value.asFloat()) |float| {
@@ -394,7 +394,7 @@ pub const Yaml = struct {
         };
     }
 
-    fn parseUnion(self: *Yaml, comptime T: type, value: Value) Error!T {
+    fn parse_union(self: *Yaml, comptime T: type, value: Value) Error!T {
         const union_info = @typeInfo(T).Union;
 
         if (union_info.tag_type) |_| {
@@ -410,13 +410,13 @@ pub const Yaml = struct {
         return error.UnionTagMissing;
     }
 
-    fn parseOptional(self: *Yaml, comptime T: type, value: ?Value) Error!T {
+    fn parse_optional(self: *Yaml, comptime T: type, value: ?Value) Error!T {
         const unwrapped = value orelse return null;
         const opt_info = @typeInfo(T).Optional;
         return @as(T, try self.parseValue(opt_info.child, unwrapped));
     }
 
-    fn parseStruct(self: *Yaml, comptime T: type, map: Map) Error!T {
+    fn parse_struct(self: *Yaml, comptime T: type, map: Map) Error!T {
         const struct_info = @typeInfo(T).Struct;
         var parsed: T = undefined;
 
@@ -441,7 +441,7 @@ pub const Yaml = struct {
         return parsed;
     }
 
-    fn parsePointer(self: *Yaml, comptime T: type, value: Value) Error!T {
+    fn parse_pointer(self: *Yaml, comptime T: type, value: Value) Error!T {
         const ptr_info = @typeInfo(T).Pointer;
         const arena = self.arena.allocator();
 
@@ -461,7 +461,7 @@ pub const Yaml = struct {
         }
     }
 
-    fn parseArray(self: *Yaml, comptime T: type, list: List) Error!T {
+    fn parse_array(self: *Yaml, comptime T: type, list: List) Error!T {
         const array_info = @typeInfo(T).Array;
         if (array_info.len != list.len) return error.ArraySizeMismatch;
 

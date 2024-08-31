@@ -16,7 +16,7 @@ test "@bitCast between packed structs" {
     try comptime doTheTest();
 }
 
-fn doTheTest() !void {
+fn do_the_test() !void {
     try expect(@sizeOf(Full) == 2);
     try expect(@sizeOf(Divided) == 2);
     const full = Full{ .number = 0x1234 };

@@ -41,7 +41,7 @@ fn _start() callconv(.Naked) noreturn {
 
 // The inline calling convention forces a function to be inlined at all call sites.
 // If the function cannot be inlined, it is a compile-time error.
-inline fn shiftLeftOne(a: u32) u32 {
+inline fn shift_left_one(a: u32) u32 {
     return a << 1;
 }
 
@@ -53,7 +53,7 @@ pub fn sub2(a: i8, b: i8) i8 {
 
 // Function pointers are prefixed with `*const `.
 const Call2Op = *const fn (a: i8, b: i8) i8;
-fn doOp(fnCall: Call2Op, op1: i8, op2: i8) i8 {
+fn do_op(fnCall: Call2Op, op1: i8, op2: i8) i8 {
     return fnCall(op1, op2);
 }
 

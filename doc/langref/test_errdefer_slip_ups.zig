@@ -5,19 +5,19 @@ const Foo = struct {
     data: u32,
 };
 
-fn tryToAllocateFoo(allocator: Allocator) !*Foo {
+fn try_to_allocate_foo(allocator: Allocator) !*Foo {
     return allocator.create(Foo);
 }
 
-fn deallocateFoo(allocator: Allocator, foo: *Foo) void {
+fn deallocate_foo(allocator: Allocator, foo: *Foo) void {
     allocator.destroy(foo);
 }
 
-fn getFooData() !u32 {
+fn get_foo_data() !u32 {
     return 666;
 }
 
-fn createFoo(allocator: Allocator, param: i32) !*Foo {
+fn create_foo(allocator: Allocator, param: i32) !*Foo {
     const foo = getFoo: {
         var foo = try tryToAllocateFoo(allocator);
         errdefer deallocateFoo(allocator, foo); // Only lasts until the end of getFoo

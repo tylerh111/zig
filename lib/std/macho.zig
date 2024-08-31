@@ -659,11 +659,11 @@ pub const segment_command_64 = extern struct {
     nsects: u32 = 0,
     flags: u32 = 0,
 
-    pub fn segName(seg: *const segment_command_64) []const u8 {
+    pub fn seg_name(seg: *const segment_command_64) []const u8 {
         return parseName(&seg.segname);
     }
 
-    pub fn isWriteable(seg: segment_command_64) bool {
+    pub fn is_writeable(seg: segment_command_64) bool {
         return seg.initprot & PROT.WRITE != 0;
     }
 };
@@ -782,11 +782,11 @@ pub const section_64 = extern struct {
     /// reserved
     reserved3: u32 = 0,
 
-    pub fn sectName(sect: *const section_64) []const u8 {
+    pub fn sect_name(sect: *const section_64) []const u8 {
         return parseName(&sect.sectname);
     }
 
-    pub fn segName(sect: *const section_64) []const u8 {
+    pub fn seg_name(sect: *const section_64) []const u8 {
         return parseName(&sect.segname);
     }
 
@@ -798,35 +798,35 @@ pub const section_64 = extern struct {
         return sect.flags & 0xffffff00;
     }
 
-    pub fn isCode(sect: section_64) bool {
+    pub fn is_code(sect: section_64) bool {
         const attr = sect.attrs();
         return attr & S_ATTR_PURE_INSTRUCTIONS != 0 or attr & S_ATTR_SOME_INSTRUCTIONS != 0;
     }
 
-    pub fn isZerofill(sect: section_64) bool {
+    pub fn is_zerofill(sect: section_64) bool {
         const tt = sect.type();
         return tt == S_ZEROFILL or tt == S_GB_ZEROFILL or tt == S_THREAD_LOCAL_ZEROFILL;
     }
 
-    pub fn isSymbolStubs(sect: section_64) bool {
+    pub fn is_symbol_stubs(sect: section_64) bool {
         const tt = sect.type();
         return tt == S_SYMBOL_STUBS;
     }
 
-    pub fn isDebug(sect: section_64) bool {
+    pub fn is_debug(sect: section_64) bool {
         return sect.attrs() & S_ATTR_DEBUG != 0;
     }
 
-    pub fn isDontDeadStrip(sect: section_64) bool {
+    pub fn is_dont_dead_strip(sect: section_64) bool {
         return sect.attrs() & S_ATTR_NO_DEAD_STRIP != 0;
     }
 
-    pub fn isDontDeadStripIfReferencesLive(sect: section_64) bool {
+    pub fn is_dont_dead_strip_if_references_live(sect: section_64) bool {
         return sect.attrs() & S_ATTR_LIVE_SUPPORT != 0;
     }
 };
 
-fn parseName(name: *const [16]u8) []const u8 {
+fn parse_name(name: *const [16]u8) []const u8 {
     const len = mem.indexOfScalar(u8, name, @as(u8, 0)) orelse name.len;
     return name[0..len];
 }
@@ -878,11 +878,11 @@ pub const nlist_64 = extern struct {
         return type_ == N_ABS;
     }
 
-    pub fn weakDef(sym: nlist_64) bool {
+    pub fn weak_def(sym: nlist_64) bool {
         return sym.n_desc & N_WEAK_DEF != 0;
     }
 
-    pub fn weakRef(sym: nlist_64) bool {
+    pub fn weak_ref(sym: nlist_64) bool {
         return sym.n_desc & N_WEAK_REF != 0;
     }
 
@@ -890,7 +890,7 @@ pub const nlist_64 = extern struct {
         return sym.n_desc & N_DESC_DISCARDED != 0;
     }
 
-    pub fn noDeadStrip(sym: nlist_64) bool {
+    pub fn no_dead_strip(sym: nlist_64) bool {
         return sym.n_desc & N_NO_DEAD_STRIP != 0;
     }
 
@@ -1915,7 +1915,7 @@ pub const LoadCommandIterator = struct {
         }
 
         /// Asserts LoadCommand is of type segment_command_64.
-        pub fn getSections(lc: LoadCommand) []align(1) const section_64 {
+        pub fn get_sections(lc: LoadCommand) []align(1) const section_64 {
             const segment_lc = lc.cast(segment_command_64).?;
             if (segment_lc.nsects == 0) return &[0]section_64{};
             const data = lc.data[@sizeOf(segment_command_64)..];
@@ -1924,21 +1924,21 @@ pub const LoadCommandIterator = struct {
         }
 
         /// Asserts LoadCommand is of type dylib_command.
-        pub fn getDylibPathName(lc: LoadCommand) []const u8 {
+        pub fn get_dylib_path_name(lc: LoadCommand) []const u8 {
             const dylib_lc = lc.cast(dylib_command).?;
             const data = lc.data[dylib_lc.dylib.name..];
             return mem.sliceTo(data, 0);
         }
 
         /// Asserts LoadCommand is of type rpath_command.
-        pub fn getRpathPathName(lc: LoadCommand) []const u8 {
+        pub fn get_rpath_path_name(lc: LoadCommand) []const u8 {
             const rpath_lc = lc.cast(rpath_command).?;
             const data = lc.data[rpath_lc.path..];
             return mem.sliceTo(data, 0);
         }
 
         /// Asserts LoadCommand is of type build_version_command.
-        pub fn getBuildVersionTools(lc: LoadCommand) []align(1) const build_tool_version {
+        pub fn get_build_version_tools(lc: LoadCommand) []align(1) const build_tool_version {
             const build_lc = lc.cast(build_version_command).?;
             const ntools = build_lc.ntools;
             if (ntools == 0) return &[0]build_tool_version{};

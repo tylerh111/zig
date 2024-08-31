@@ -12,7 +12,7 @@ test "while error union capture" {
 
 var numbers_left: u32 = undefined;
 
-fn eventuallyErrorSequence() anyerror!u32 {
+fn eventually_error_sequence() anyerror!u32 {
     return if (numbers_left == 0) error.ReachedZero else blk: {
         numbers_left -= 1;
         break :blk numbers_left;

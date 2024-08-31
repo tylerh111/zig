@@ -11,19 +11,19 @@ pub const Ip6Config = extern struct {
     _register_data_notify: *const fn (*const Ip6Config, DataType, Event) callconv(cc) Status,
     _unregister_data_notify: *const fn (*const Ip6Config, DataType, Event) callconv(cc) Status,
 
-    pub fn setData(self: *const Ip6Config, data_type: DataType, data_size: usize, data: *const anyopaque) Status {
+    pub fn set_data(self: *const Ip6Config, data_type: DataType, data_size: usize, data: *const anyopaque) Status {
         return self._set_data(self, data_type, data_size, data);
     }
 
-    pub fn getData(self: *const Ip6Config, data_type: DataType, data_size: *usize, data: ?*const anyopaque) Status {
+    pub fn get_data(self: *const Ip6Config, data_type: DataType, data_size: *usize, data: ?*const anyopaque) Status {
         return self._get_data(self, data_type, data_size, data);
     }
 
-    pub fn registerDataNotify(self: *const Ip6Config, data_type: DataType, event: Event) Status {
+    pub fn register_data_notify(self: *const Ip6Config, data_type: DataType, event: Event) Status {
         return self._register_data_notify(self, data_type, event);
     }
 
-    pub fn unregisterDataNotify(self: *const Ip6Config, data_type: DataType, event: Event) Status {
+    pub fn unregister_data_notify(self: *const Ip6Config, data_type: DataType, event: Event) Status {
         return self._unregister_data_notify(self, data_type, event);
     }
 

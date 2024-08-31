@@ -109,11 +109,11 @@ pub const OpenFlags = struct {
     /// controlling TTY for the current process.
     allow_ctty: bool = false,
 
-    pub fn isRead(self: OpenFlags) bool {
+    pub fn is_read(self: OpenFlags) bool {
         return self.mode != .write_only;
     }
 
-    pub fn isWrite(self: OpenFlags) bool {
+    pub fn is_write(self: OpenFlags) bool {
         return self.mode != .read_only;
     }
 };
@@ -189,11 +189,11 @@ pub fn sync(self: File) SyncError!void {
 
 /// Test whether the file refers to a terminal.
 /// See also `getOrEnableAnsiEscapeSupport` and `supportsAnsiEscapeCodes`.
-pub fn isTty(self: File) bool {
+pub fn is_tty(self: File) bool {
     return posix.isatty(self.handle);
 }
 
-pub fn isCygwinPty(file: File) bool {
+pub fn is_cygwin_pty(file: File) bool {
     if (builtin.os.tag != .windows) return false;
 
     const handle = file.handle;
@@ -254,7 +254,7 @@ pub fn isCygwinPty(file: File) bool {
 /// supported or support was unable to be enabled.
 ///
 /// See also `supportsAnsiEscapeCodes`.
-pub fn getOrEnableAnsiEscapeSupport(self: File) bool {
+pub fn get_or_enable_ansi_escape_support(self: File) bool {
     if (builtin.os.tag == .windows) {
         var original_console_mode: windows.DWORD = 0;
 
@@ -287,7 +287,7 @@ pub fn getOrEnableAnsiEscapeSupport(self: File) bool {
 /// attempting to enable support for ANSI escape codes.
 ///
 /// See also `getOrEnableAnsiEscapeSupport`.
-pub fn supportsAnsiEscapeCodes(self: File) bool {
+pub fn supports_ansi_escape_codes(self: File) bool {
     if (builtin.os.tag == .windows) {
         var console_mode: windows.DWORD = 0;
         if (windows.kernel32.GetConsoleMode(self.handle, &console_mode) != 0) {
@@ -318,7 +318,7 @@ pub const SetEndPosError = posix.TruncateError;
 
 /// Shrinks or expands the file.
 /// The file offset after this call is left unchanged.
-pub fn setEndPos(self: File, length: u64) SetEndPosError!void {
+pub fn set_end_pos(self: File, length: u64) SetEndPosError!void {
     try posix.ftruncate(self.handle, length);
 }
 
@@ -326,31 +326,31 @@ pub const SeekError = posix.SeekError;
 
 /// Repositions read/write file offset relative to the current offset.
 /// TODO: integrate with async I/O
-pub fn seekBy(self: File, offset: i64) SeekError!void {
+pub fn seek_by(self: File, offset: i64) SeekError!void {
     return posix.lseek_CUR(self.handle, offset);
 }
 
 /// Repositions read/write file offset relative to the end.
 /// TODO: integrate with async I/O
-pub fn seekFromEnd(self: File, offset: i64) SeekError!void {
+pub fn seek_from_end(self: File, offset: i64) SeekError!void {
     return posix.lseek_END(self.handle, offset);
 }
 
 /// Repositions read/write file offset relative to the beginning.
 /// TODO: integrate with async I/O
-pub fn seekTo(self: File, offset: u64) SeekError!void {
+pub fn seek_to(self: File, offset: u64) SeekError!void {
     return posix.lseek_SET(self.handle, offset);
 }
 
 pub const GetSeekPosError = posix.SeekError || posix.FStatError;
 
 /// TODO: integrate with async I/O
-pub fn getPos(self: File) GetSeekPosError!u64 {
+pub fn get_pos(self: File) GetSeekPosError!u64 {
     return posix.lseek_CUR_get(self.handle);
 }
 
 /// TODO: integrate with async I/O
-pub fn getEndPos(self: File) GetSeekPosError!u64 {
+pub fn get_end_pos(self: File) GetSeekPosError!u64 {
     if (builtin.os.tag == .windows) {
         return windows.GetFileSizeEx(self.handle);
     }
@@ -392,7 +392,7 @@ pub const Stat = struct {
     /// Last status/metadata change time in nanoseconds, relative to UTC 1970-01-01.
     ctime: i128,
 
-    pub fn fromSystem(st: posix.Stat) Stat {
+    pub fn from_system(st: posix.Stat) Stat {
         const atime = st.atime();
         const mtime = st.mtime();
         const ctime = st.ctime();
@@ -426,7 +426,7 @@ pub const Stat = struct {
         };
     }
 
-    pub fn fromWasi(st: std.os.wasi.filestat_t) Stat {
+    pub fn from_wasi(st: std.os.wasi.filestat_t) Stat {
         return .{
             .inode = st.ino,
             .size = @bitCast(st.size),
@@ -541,14 +541,14 @@ pub const Permissions = struct {
 
     /// Returns `true` if permissions represent an unwritable file.
     /// On Unix, `true` is returned only if no class has write permissions.
-    pub fn readOnly(self: Self) bool {
+    pub fn read_only(self: Self) bool {
         return self.inner.readOnly();
     }
 
     /// Sets whether write permissions are provided.
     /// On Unix, this affects *all* classes. If this is undesired, use `unixSet`.
     /// This method *DOES NOT* set permissions on the filesystem: use `File.setPermissions(permissions)`
-    pub fn setReadOnly(self: *Self, read_only: bool) void {
+    pub fn set_read_only(self: *Self, read_only: bool) void {
         self.inner.setReadOnly(read_only);
     }
 };
@@ -559,13 +559,13 @@ pub const PermissionsWindows = struct {
     const Self = @This();
 
     /// Returns `true` if permissions represent an unwritable file.
-    pub fn readOnly(self: Self) bool {
+    pub fn read_only(self: Self) bool {
         return self.attributes & windows.FILE_ATTRIBUTE_READONLY != 0;
     }
 
     /// Sets whether write permissions are provided.
     /// This method *DOES NOT* set permissions on the filesystem: use `File.setPermissions(permissions)`
-    pub fn setReadOnly(self: *Self, read_only: bool) void {
+    pub fn set_read_only(self: *Self, read_only: bool) void {
         if (read_only) {
             self.attributes |= windows.FILE_ATTRIBUTE_READONLY;
         } else {
@@ -581,14 +581,14 @@ pub const PermissionsUnix = struct {
 
     /// Returns `true` if permissions represent an unwritable file.
     /// `true` is returned only if no class has write permissions.
-    pub fn readOnly(self: Self) bool {
+    pub fn read_only(self: Self) bool {
         return self.mode & 0o222 == 0;
     }
 
     /// Sets whether write permissions are provided.
     /// This affects *all* classes. If this is undesired, use `unixSet`.
     /// This method *DOES NOT* set permissions on the filesystem: use `File.setPermissions(permissions)`
-    pub fn setReadOnly(self: *Self, read_only: bool) void {
+    pub fn set_read_only(self: *Self, read_only: bool) void {
         if (read_only) {
             self.mode &= ~@as(Mode, 0o222);
         } else {
@@ -610,14 +610,14 @@ pub const PermissionsUnix = struct {
 
     /// Returns `true` if the chosen class has the selected permission.
     /// This method is only available on Unix platforms.
-    pub fn unixHas(self: Self, class: Class, permission: Permission) bool {
+    pub fn unix_has(self: Self, class: Class, permission: Permission) bool {
         const mask = @as(Mode, @intFromEnum(permission)) << @as(u3, @intFromEnum(class)) * 3;
         return self.mode & mask != 0;
     }
 
     /// Sets the permissions for the chosen class. Any permissions set to `null` are left unchanged.
     /// This method *DOES NOT* set permissions on the filesystem: use `File.setPermissions(permissions)`
-    pub fn unixSet(self: *Self, class: Class, permissions: struct {
+    pub fn unix_set(self: *Self, class: Class, permissions: struct {
         read: ?bool = null,
         write: ?bool = null,
         execute: ?bool = null,
@@ -647,7 +647,7 @@ pub const PermissionsUnix = struct {
     }
 
     /// Returns a `Permissions` struct representing the permissions from the passed mode.
-    pub fn unixNew(new_mode: Mode) Self {
+    pub fn unix_new(new_mode: Mode) Self {
         return Self{
             .mode = new_mode,
         };
@@ -658,7 +658,7 @@ pub const SetPermissionsError = ChmodError;
 
 /// Sets permissions according to the provided `Permissions` struct.
 /// This method is *NOT* available on WASI
-pub fn setPermissions(self: File, permissions: Permissions) SetPermissionsError!void {
+pub fn set_permissions(self: File, permissions: Permissions) SetPermissionsError!void {
     switch (builtin.os.tag) {
         .windows => {
             var io_status_block: windows.IO_STATUS_BLOCK = undefined;
@@ -1058,7 +1058,7 @@ pub const UpdateTimesError = posix.FutimensError || windows.SetFileTimeError;
 /// Further, the maximum value is limited by the system ABI. When a value is provided
 /// that exceeds this range, the value is clamped to the maximum.
 /// TODO: integrate with async I/O
-pub fn updateTimes(
+pub fn update_times(
     self: File,
     /// access timestamp in nanoseconds
     atime: i128,
@@ -1086,7 +1086,7 @@ pub fn updateTimes(
 /// Reads all the bytes from the current position to the end of the file.
 /// On success, caller owns returned buffer.
 /// If the file is larger than `max_bytes`, returns `error.FileTooBig`.
-pub fn readToEndAlloc(self: File, allocator: Allocator, max_bytes: usize) ![]u8 {
+pub fn read_to_end_alloc(self: File, allocator: Allocator, max_bytes: usize) ![]u8 {
     return self.readToEndAllocOptions(allocator, max_bytes, null, @alignOf(u8), null);
 }
 
@@ -1096,7 +1096,7 @@ pub fn readToEndAlloc(self: File, allocator: Allocator, max_bytes: usize) ![]u8 
 /// If `size_hint` is specified the initial buffer size is calculated using
 /// that value, otherwise an arbitrary value is used instead.
 /// Allows specifying alignment and a sentinel value.
-pub fn readToEndAllocOptions(
+pub fn read_to_end_alloc_options(
     self: File,
     allocator: Allocator,
     max_bytes: usize,
@@ -1139,7 +1139,7 @@ pub fn read(self: File, buffer: []u8) ReadError!usize {
 
 /// Returns the number of bytes read. If the number read is smaller than `buffer.len`, it
 /// means the file reached the end. Reaching the end of a file is not an error condition.
-pub fn readAll(self: File, buffer: []u8) ReadError!usize {
+pub fn read_all(self: File, buffer: []u8) ReadError!usize {
     var index: usize = 0;
     while (index != buffer.len) {
         const amt = try self.read(buffer[index..]);
@@ -1163,7 +1163,7 @@ pub fn pread(self: File, buffer: []u8, offset: u64) PReadError!usize {
 /// means the file reached the end. Reaching the end of a file is not an error condition.
 /// On Windows, this function currently does alter the file pointer.
 /// https://github.com/ziglang/zig/issues/12783
-pub fn preadAll(self: File, buffer: []u8, offset: u64) PReadError!usize {
+pub fn pread_all(self: File, buffer: []u8, offset: u64) PReadError!usize {
     var index: usize = 0;
     while (index != buffer.len) {
         const amt = try self.pread(buffer[index..], offset + index);
@@ -1198,7 +1198,7 @@ pub fn readv(self: File, iovecs: []const posix.iovec) ReadError!usize {
 ///   when the length is zero.
 ///
 /// Related open issue: https://github.com/ziglang/zig/issues/7699
-pub fn readvAll(self: File, iovecs: []posix.iovec) ReadError!usize {
+pub fn readv_all(self: File, iovecs: []posix.iovec) ReadError!usize {
     if (iovecs.len == 0) return 0;
 
     // We use the address of this local variable for all zero-length
@@ -1249,7 +1249,7 @@ pub fn preadv(self: File, iovecs: []const posix.iovec, offset: u64) PReadError!u
 /// See https://github.com/ziglang/zig/issues/7699
 /// On Windows, this function currently does alter the file pointer.
 /// https://github.com/ziglang/zig/issues/12783
-pub fn preadvAll(self: File, iovecs: []posix.iovec, offset: u64) PReadError!usize {
+pub fn preadv_all(self: File, iovecs: []posix.iovec, offset: u64) PReadError!usize {
     if (iovecs.len == 0) return 0;
 
     var i: usize = 0;
@@ -1281,7 +1281,7 @@ pub fn write(self: File, bytes: []const u8) WriteError!usize {
     return posix.write(self.handle, bytes);
 }
 
-pub fn writeAll(self: File, bytes: []const u8) WriteError!void {
+pub fn write_all(self: File, bytes: []const u8) WriteError!void {
     var index: usize = 0;
     while (index < bytes.len) {
         index += try self.write(bytes[index..]);
@@ -1300,7 +1300,7 @@ pub fn pwrite(self: File, bytes: []const u8, offset: u64) PWriteError!usize {
 
 /// On Windows, this function currently does alter the file pointer.
 /// https://github.com/ziglang/zig/issues/12783
-pub fn pwriteAll(self: File, bytes: []const u8, offset: u64) PWriteError!void {
+pub fn pwrite_all(self: File, bytes: []const u8, offset: u64) PWriteError!void {
     var index: usize = 0;
     while (index < bytes.len) {
         index += try self.pwrite(bytes[index..], offset + index);
@@ -1329,7 +1329,7 @@ pub fn writev(self: File, iovecs: []const posix.iovec_const) WriteError!usize {
 ///   when the length is zero.
 /// See https://github.com/ziglang/zig/issues/7699
 /// See equivalent function: `std.net.Stream.writevAll`.
-pub fn writevAll(self: File, iovecs: []posix.iovec_const) WriteError!void {
+pub fn writev_all(self: File, iovecs: []posix.iovec_const) WriteError!void {
     if (iovecs.len == 0) return;
 
     // We use the address of this local variable for all zero-length
@@ -1372,7 +1372,7 @@ pub fn pwritev(self: File, iovecs: []posix.iovec_const, offset: u64) PWriteError
 /// See https://github.com/ziglang/zig/issues/7699
 /// On Windows, this function currently does alter the file pointer.
 /// https://github.com/ziglang/zig/issues/12783
-pub fn pwritevAll(self: File, iovecs: []posix.iovec_const, offset: u64) PWriteError!void {
+pub fn pwritev_all(self: File, iovecs: []posix.iovec_const, offset: u64) PWriteError!void {
     if (iovecs.len == 0) return;
 
     var i: usize = 0;
@@ -1392,7 +1392,7 @@ pub fn pwritevAll(self: File, iovecs: []posix.iovec_const, offset: u64) PWriteEr
 
 pub const CopyRangeError = posix.CopyFileRangeError;
 
-pub fn copyRange(in: File, in_offset: u64, out: File, out_offset: u64, len: u64) CopyRangeError!u64 {
+pub fn copy_range(in: File, in_offset: u64, out: File, out_offset: u64, len: u64) CopyRangeError!u64 {
     const adjusted_len = math.cast(usize, len) orelse maxInt(usize);
     const result = try posix.copy_file_range(in.handle, in_offset, out.handle, out_offset, adjusted_len, 0);
     return result;
@@ -1400,7 +1400,7 @@ pub fn copyRange(in: File, in_offset: u64, out: File, out_offset: u64, len: u64)
 
 /// Returns the number of bytes copied. If the number read is smaller than `buffer.len`, it
 /// means the in file reached the end. Reaching the end of a file is not an error condition.
-pub fn copyRangeAll(in: File, in_offset: u64, out: File, out_offset: u64, len: u64) CopyRangeError!u64 {
+pub fn copy_range_all(in: File, in_offset: u64, out: File, out_offset: u64, len: u64) CopyRangeError!u64 {
     var total_bytes_copied: u64 = 0;
     var in_off = in_offset;
     var out_off = out_offset;
@@ -1432,7 +1432,7 @@ pub const WriteFileOptions = struct {
 
 pub const WriteFileError = ReadError || error{EndOfStream} || WriteError;
 
-pub fn writeFileAll(self: File, in_file: File, args: WriteFileOptions) WriteFileError!void {
+pub fn write_file_all(self: File, in_file: File, args: WriteFileOptions) WriteFileError!void {
     return self.writeFileAllSendfile(in_file, args) catch |err| switch (err) {
         error.Unseekable,
         error.FastOpenAlreadyInProgress,
@@ -1448,7 +1448,7 @@ pub fn writeFileAll(self: File, in_file: File, args: WriteFileOptions) WriteFile
 
 /// Does not try seeking in either of the File parameters.
 /// See `writeFileAll` as an alternative to calling this.
-pub fn writeFileAllUnseekable(self: File, in_file: File, args: WriteFileOptions) WriteFileError!void {
+pub fn write_file_all_unseekable(self: File, in_file: File, args: WriteFileOptions) WriteFileError!void {
     const headers = args.headers_and_trailers[0..args.header_count];
     const trailers = args.headers_and_trailers[args.header_count..];
 
@@ -1470,7 +1470,7 @@ pub fn writeFileAllUnseekable(self: File, in_file: File, args: WriteFileOptions)
 /// Low level function which can fail for OS-specific reasons.
 /// See `writeFileAll` as an alternative to calling this.
 /// TODO integrate with async I/O
-fn writeFileAllSendfile(self: File, in_file: File, args: WriteFileOptions) posix.SendFileError!void {
+fn write_file_all_sendfile(self: File, in_file: File, args: WriteFileOptions) posix.SendFileError!void {
     const count = blk: {
         if (args.in_len) |l| {
             if (l == 0) {
@@ -1556,7 +1556,7 @@ pub const SeekableStream = io.SeekableStream(
     getEndPos,
 );
 
-pub fn seekableStream(file: File) SeekableStream {
+pub fn seekable_stream(file: File) SeekableStream {
     return .{ .context = file };
 }
 
@@ -1642,7 +1642,7 @@ pub fn unlock(file: File) void {
 /// Assumes the file is unlocked.
 ///
 /// TODO: integrate with async I/O
-pub fn tryLock(file: File, l: Lock) LockError!bool {
+pub fn try_lock(file: File, l: Lock) LockError!bool {
     if (is_windows) {
         var io_status_block: windows.IO_STATUS_BLOCK = undefined;
         const exclusive = switch (l) {
@@ -1682,7 +1682,7 @@ pub fn tryLock(file: File, l: Lock) LockError!bool {
 /// Atomically modifies the lock to be in shared mode, without releasing it.
 ///
 /// TODO: integrate with async I/O
-pub fn downgradeLock(file: File) LockError!void {
+pub fn downgrade_lock(file: File) LockError!void {
     if (is_windows) {
         // On Windows it works like a semaphore + exclusivity flag. To implement this
         // function, we first obtain another lock in shared mode. This changes the

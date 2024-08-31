@@ -4,7 +4,7 @@ export fn entry() void {
     };
     _ = &damn;
 }
-pub fn getOptional(comptime T: type) ?T {
+pub fn get_optional(comptime T: type) ?T {
     return 0;
 }
 pub const Container = struct {

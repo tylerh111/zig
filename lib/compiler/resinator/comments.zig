@@ -22,7 +22,7 @@ const formsLineEndingPair = @import("source_mapping.zig").formsLineEndingPair;
 
 /// `buf` must be at least as long as `source`
 /// In-place transformation is supported (i.e. `source` and `buf` can be the same slice)
-pub fn removeComments(source: []const u8, buf: []u8, source_mappings: ?*SourceMappings) ![]u8 {
+pub fn remove_comments(source: []const u8, buf: []u8, source_mappings: ?*SourceMappings) ![]u8 {
     std.debug.assert(buf.len >= source.len);
     var result = UncheckedSliceWriter{ .slice = buf };
     const State = enum {
@@ -178,7 +178,7 @@ pub fn removeComments(source: []const u8, buf: []u8, source_mappings: ?*SourceMa
     return result.getWritten();
 }
 
-inline fn handleMultilineCarriageReturn(
+inline fn handle_multiline_carriage_return(
     source: []const u8,
     line_handler: *LineHandler,
     index: usize,
@@ -213,14 +213,14 @@ inline fn handleMultilineCarriageReturn(
     }
 }
 
-pub fn removeCommentsAlloc(allocator: Allocator, source: []const u8, source_mappings: ?*SourceMappings) ![]u8 {
+pub fn remove_comments_alloc(allocator: Allocator, source: []const u8, source_mappings: ?*SourceMappings) ![]u8 {
     const buf = try allocator.alloc(u8, source.len);
     errdefer allocator.free(buf);
     const result = try removeComments(source, buf, source_mappings);
     return allocator.realloc(buf, result.len);
 }
 
-fn testRemoveComments(expected: []const u8, source: []const u8) !void {
+fn test_remove_comments(expected: []const u8, source: []const u8) !void {
     const result = try removeCommentsAlloc(std.testing.allocator, source, null);
     defer std.testing.allocator.free(result);
 

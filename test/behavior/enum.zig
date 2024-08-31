@@ -7,7 +7,7 @@ const Tag = std.meta.Tag;
 
 const Number = enum { Zero, One, Two, Three, Four };
 
-fn shouldEqual(n: Number, expected: u3) !void {
+fn should_equal(n: Number, expected: u3) !void {
     try expect(@intFromEnum(n) == expected);
 }
 
@@ -19,7 +19,7 @@ test "enum to int" {
     try shouldEqual(Number.Four, 4);
 }
 
-fn testIntToEnumEval(x: i32) !void {
+fn test_int_to_enum_eval(x: i32) !void {
     try expect(@as(IntToEnumNumber, @enumFromInt(x)) == IntToEnumNumber.Three);
 }
 const IntToEnumNumber = enum { Zero, One, Two, Three, Four };
@@ -597,7 +597,7 @@ const MultipleChoice = enum(u32) {
     D = 1000,
 };
 
-fn testEnumWithSpecifiedTagValues(x: MultipleChoice) !void {
+fn test_enum_with_specified_tag_values(x: MultipleChoice) !void {
     try expect(@intFromEnum(x) == 60);
     try expect(1234 == switch (x) {
         MultipleChoice.A => 1,
@@ -624,7 +624,7 @@ test "non-exhaustive enum" {
     const S = struct {
         const E = enum(u8) { a, b, _ };
 
-        fn doTheTest(y: u8) !void {
+        fn do_the_test(y: u8) !void {
             var e: E = .b;
             try expect(switch (e) {
                 .a => false,
@@ -665,7 +665,7 @@ test "empty non-exhaustive enum" {
     const S = struct {
         const E = enum(u8) { _ };
 
-        fn doTheTest(y: u8) !void {
+        fn do_the_test(y: u8) !void {
             var e: E = @enumFromInt(y);
             _ = &e;
             try expect(switch (e) {
@@ -688,7 +688,7 @@ test "single field non-exhaustive enum" {
 
     const S = struct {
         const E = enum(u8) { a, _ };
-        fn doTheTest(y: u8) !void {
+        fn do_the_test(y: u8) !void {
             var e: E = .a;
             try expect(switch (e) {
                 .a => true,
@@ -755,7 +755,7 @@ test "enum with specified and unspecified tag values" {
     try comptime testEnumWithSpecifiedAndUnspecifiedTagValues(MultipleChoice2.D);
 }
 
-fn testEnumWithSpecifiedAndUnspecifiedTagValues(x: MultipleChoice2) !void {
+fn test_enum_with_specified_and_unspecified_tag_values(x: MultipleChoice2) !void {
     try expect(@intFromEnum(x) == 1000);
     try expect(1234 == switch (x) {
         MultipleChoice2.A => 1,
@@ -791,7 +791,7 @@ test "casting enum to its tag type" {
     try comptime testCastEnumTag(Small2.Two);
 }
 
-fn testCastEnumTag(value: Small2) !void {
+fn test_cast_enum_tag(value: Small2) !void {
     try expect(@intFromEnum(value) == 1);
 }
 
@@ -848,7 +848,7 @@ test "enum with one member default to u0 tag type" {
 
 const EnumWithOneMember = enum { Eof };
 
-fn doALoopThing(id: EnumWithOneMember) void {
+fn do_aloop_thing(id: EnumWithOneMember) void {
     while (true) {
         if (id == EnumWithOneMember.Eof) {
             break;
@@ -887,7 +887,7 @@ test "method call on an enum" {
                 return self.* == .two and foo == bool;
             }
         };
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var e = E.two;
             try expect(e.method());
             try expect(e.generic_method(bool));
@@ -1002,7 +1002,7 @@ test "@tagName" {
     comptime assert(mem.eql(u8, testEnumTagNameBare(BareNumber.Three), "Three"));
 }
 
-fn testEnumTagNameBare(n: anytype) []const u8 {
+fn test_enum_tag_name_bare(n: anytype) []const u8 {
     return @tagName(n);
 }
 
@@ -1028,7 +1028,7 @@ test "@tagName is null-terminated" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest(n: BareNumber) !void {
+        fn do_the_test(n: BareNumber) !void {
             try expect(@tagName(n)[3] == 0);
         }
     };
@@ -1127,15 +1127,15 @@ test "bit field access with enum fields" {
     try expect(data.b == B.Four3);
 }
 
-fn getA(data: *const BitFieldOfEnums) A {
+fn get_a(data: *const BitFieldOfEnums) A {
     return data.a;
 }
 
-fn getB(data: *const BitFieldOfEnums) B {
+fn get_b(data: *const BitFieldOfEnums) B {
     return data.b;
 }
 
-fn getC(data: *const BitFieldOfEnums) C {
+fn get_c(data: *const BitFieldOfEnums) C {
     return data.c;
 }
 
@@ -1249,7 +1249,7 @@ test "lazy initialized field" {
     try std.testing.expectEqual(@as(u8, @alignOf(struct {})), getLazyInitialized(.a));
 }
 
-fn getLazyInitialized(param: enum(u8) {
+fn get_lazy_initialized(param: enum(u8) {
     a = @bitCast(packed struct(u8) { a: u8 }{ .a = @alignOf(struct {}) }),
 }) u8 {
     return @intFromEnum(param);

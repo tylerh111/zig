@@ -1,22 +1,22 @@
-export fn invalidRuntimeThen(cond: bool) u0 {
+export fn invalid_runtime_then(cond: bool) u0 {
     const invalid: u16 = 256;
     const result: u8 = if (cond) invalid else 0;
     return result;
 }
 
-export fn invalidComptimeThen() u0 {
+export fn invalid_comptime_then() u0 {
     const invalid: u16 = 256;
     const result: u8 = if (true) invalid else 0;
     return result;
 }
 
-export fn invalidRuntimeElse(cond: bool) u0 {
+export fn invalid_runtime_else(cond: bool) u0 {
     const invalid: u16 = 256;
     const result: u8 = if (cond) 0 else invalid;
     return result;
 }
 
-export fn invalidComptimeElse() u0 {
+export fn invalid_comptime_else() u0 {
     const invalid: u16 = 256;
     const result: u8 = if (false) 0 else invalid;
     return result;

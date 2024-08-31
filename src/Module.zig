@@ -239,7 +239,7 @@ pub const GlobalEmitH = struct {
     /// identical indexes.
     allocated_emit_h: std.SegmentedList(EmitH, 0) = .{},
 
-    pub fn declPtr(global_emit_h: *GlobalEmitH, decl_index: Decl.Index) *EmitH {
+    pub fn decl_ptr(global_emit_h: *GlobalEmitH, decl_index: Decl.Index) *EmitH {
         return global_emit_h.allocated_emit_h.at(@intFromEnum(decl_index));
     }
 };
@@ -278,7 +278,7 @@ pub const Export = struct {
         visibility: std.builtin.SymbolVisibility = .default,
     };
 
-    pub fn getSrcLoc(exp: Export, mod: *Module) SrcLoc {
+    pub fn get_src_loc(exp: Export, mod: *Module) SrcLoc {
         const src_decl = mod.declPtr(exp.src_decl);
         return .{
             .file_scope = src_decl.getFileScope(mod),
@@ -410,7 +410,7 @@ pub const Decl = struct {
     const Index = InternPool.DeclIndex;
     const OptionalIndex = InternPool.OptionalDeclIndex;
 
-    pub fn zirBodies(decl: Decl, zcu: *Zcu) Zir.Inst.Declaration.Bodies {
+    pub fn zir_bodies(decl: Decl, zcu: *Zcu) Zir.Inst.Declaration.Bodies {
         const zir = decl.getFileScope(zcu).zir;
         const zir_index = decl.zir_decl_index.unwrap().?.resolve(&zcu.intern_pool);
         const pl_node = zir.instructions.items(.data)[@intFromEnum(zir_index)].pl_node;
@@ -418,19 +418,19 @@ pub const Decl = struct {
         return extra.data.getBodies(@intCast(extra.end), zir);
     }
 
-    pub fn relativeToNodeIndex(decl: Decl, offset: i32) Ast.Node.Index {
+    pub fn relative_to_node_index(decl: Decl, offset: i32) Ast.Node.Index {
         return @bitCast(offset + @as(i32, @bitCast(decl.src_node)));
     }
 
-    pub fn nodeIndexToRelative(decl: Decl, node_index: Ast.Node.Index) i32 {
+    pub fn node_index_to_relative(decl: Decl, node_index: Ast.Node.Index) i32 {
         return @as(i32, @bitCast(node_index)) - @as(i32, @bitCast(decl.src_node));
     }
 
-    pub fn srcLoc(decl: Decl, zcu: *Zcu) SrcLoc {
+    pub fn src_loc(decl: Decl, zcu: *Zcu) SrcLoc {
         return decl.nodeOffsetSrcLoc(0, zcu);
     }
 
-    pub fn nodeOffsetSrcLoc(decl: Decl, node_offset: i32, zcu: *Zcu) SrcLoc {
+    pub fn node_offset_src_loc(decl: Decl, node_offset: i32, zcu: *Zcu) SrcLoc {
         return .{
             .file_scope = decl.getFileScope(zcu),
             .parent_decl_node = decl.src_node,
@@ -438,7 +438,7 @@ pub const Decl = struct {
         };
     }
 
-    pub fn renderFullyQualifiedName(decl: Decl, zcu: *Zcu, writer: anytype) !void {
+    pub fn render_fully_qualified_name(decl: Decl, zcu: *Zcu, writer: anytype) !void {
         if (decl.name_fully_qualified) {
             try writer.print("{}", .{decl.name.fmt(&zcu.intern_pool)});
         } else {
@@ -446,30 +446,30 @@ pub const Decl = struct {
         }
     }
 
-    pub fn renderFullyQualifiedDebugName(decl: Decl, zcu: *Zcu, writer: anytype) !void {
+    pub fn render_fully_qualified_debug_name(decl: Decl, zcu: *Zcu, writer: anytype) !void {
         return zcu.namespacePtr(decl.src_namespace).renderFullyQualifiedDebugName(zcu, decl.name, writer);
     }
 
-    pub fn fullyQualifiedName(decl: Decl, zcu: *Zcu) !InternPool.NullTerminatedString {
+    pub fn fully_qualified_name(decl: Decl, zcu: *Zcu) !InternPool.NullTerminatedString {
         return if (decl.name_fully_qualified)
             decl.name
         else
             zcu.namespacePtr(decl.src_namespace).fullyQualifiedName(zcu, decl.name);
     }
 
-    pub fn typeOf(decl: Decl, zcu: *const Zcu) Type {
+    pub fn type_of(decl: Decl, zcu: *const Zcu) Type {
         assert(decl.has_tv);
         return decl.val.typeOf(zcu);
     }
 
     /// Small wrapper for Sema to use over direct access to the `val` field.
     /// If the value is not populated, instead returns `error.AnalysisFail`.
-    pub fn valueOrFail(decl: Decl) error{AnalysisFail}!Value {
+    pub fn value_or_fail(decl: Decl) error{AnalysisFail}!Value {
         if (!decl.has_tv) return error.AnalysisFail;
         return decl.val;
     }
 
-    pub fn getOwnedFunction(decl: Decl, zcu: *Zcu) ?InternPool.Key.Func {
+    pub fn get_owned_function(decl: Decl, zcu: *Zcu) ?InternPool.Key.Func {
         const i = decl.getOwnedFunctionIndex();
         if (i == .none) return null;
         return switch (zcu.intern_pool.indexToKey(i)) {
@@ -479,25 +479,25 @@ pub const Decl = struct {
     }
 
     /// This returns an InternPool.Index even when the value is not a function.
-    pub fn getOwnedFunctionIndex(decl: Decl) InternPool.Index {
+    pub fn get_owned_function_index(decl: Decl) InternPool.Index {
         return if (decl.owns_tv) decl.val.toIntern() else .none;
     }
 
     /// If the Decl owns its value and it is an extern function, returns it,
     /// otherwise null.
-    pub fn getOwnedExternFunc(decl: Decl, zcu: *Zcu) ?InternPool.Key.ExternFunc {
+    pub fn get_owned_extern_func(decl: Decl, zcu: *Zcu) ?InternPool.Key.ExternFunc {
         return if (decl.owns_tv) decl.val.getExternFunc(zcu) else null;
     }
 
     /// If the Decl owns its value and it is a variable, returns it,
     /// otherwise null.
-    pub fn getOwnedVariable(decl: Decl, zcu: *Zcu) ?InternPool.Key.Variable {
+    pub fn get_owned_variable(decl: Decl, zcu: *Zcu) ?InternPool.Key.Variable {
         return if (decl.owns_tv) decl.val.getVariable(zcu) else null;
     }
 
     /// Gets the namespace that this Decl creates by being a struct, union,
     /// enum, or opaque.
-    pub fn getInnerNamespaceIndex(decl: Decl, zcu: *Zcu) Namespace.OptionalIndex {
+    pub fn get_inner_namespace_index(decl: Decl, zcu: *Zcu) Namespace.OptionalIndex {
         if (!decl.has_tv) return .none;
         const ip = &zcu.intern_pool;
         return switch (decl.val.ip_index) {
@@ -514,26 +514,26 @@ pub const Decl = struct {
     }
 
     /// Like `getInnerNamespaceIndex`, but only returns it if the Decl is the owner.
-    pub fn getOwnedInnerNamespaceIndex(decl: Decl, zcu: *Zcu) Namespace.OptionalIndex {
+    pub fn get_owned_inner_namespace_index(decl: Decl, zcu: *Zcu) Namespace.OptionalIndex {
         if (!decl.owns_tv) return .none;
         return decl.getInnerNamespaceIndex(zcu);
     }
 
     /// Same as `getOwnedInnerNamespaceIndex` but additionally obtains the pointer.
-    pub fn getOwnedInnerNamespace(decl: Decl, zcu: *Zcu) ?*Namespace {
+    pub fn get_owned_inner_namespace(decl: Decl, zcu: *Zcu) ?*Namespace {
         return zcu.namespacePtrUnwrap(decl.getOwnedInnerNamespaceIndex(zcu));
     }
 
     /// Same as `getInnerNamespaceIndex` but additionally obtains the pointer.
-    pub fn getInnerNamespace(decl: Decl, zcu: *Zcu) ?*Namespace {
+    pub fn get_inner_namespace(decl: Decl, zcu: *Zcu) ?*Namespace {
         return zcu.namespacePtrUnwrap(decl.getInnerNamespaceIndex(zcu));
     }
 
-    pub fn getFileScope(decl: Decl, zcu: *Zcu) *File {
+    pub fn get_file_scope(decl: Decl, zcu: *Zcu) *File {
         return zcu.namespacePtr(decl.src_namespace).file_scope;
     }
 
-    pub fn getExternDecl(decl: Decl, zcu: *Zcu) OptionalIndex {
+    pub fn get_extern_decl(decl: Decl, zcu: *Zcu) OptionalIndex {
         assert(decl.has_tv);
         return switch (zcu.intern_pool.indexToKey(decl.val.toIntern())) {
             .variable => |variable| if (variable.is_extern) variable.decl.toOptional() else .none,
@@ -542,18 +542,18 @@ pub const Decl = struct {
         };
     }
 
-    pub fn isExtern(decl: Decl, zcu: *Zcu) bool {
+    pub fn is_extern(decl: Decl, zcu: *Zcu) bool {
         return decl.getExternDecl(zcu) != .none;
     }
 
-    pub fn getAlignment(decl: Decl, zcu: *Zcu) Alignment {
+    pub fn get_alignment(decl: Decl, zcu: *Zcu) Alignment {
         assert(decl.has_tv);
         if (decl.alignment != .none) return decl.alignment;
         return decl.typeOf(zcu).abiAlignment(zcu);
     }
 
     /// Upgrade a `LazySrcLoc` to a `SrcLoc` based on the `Decl` provided.
-    pub fn toSrcLoc(decl: *Decl, lazy: LazySrcLoc, mod: *Module) SrcLoc {
+    pub fn to_src_loc(decl: *Decl, lazy: LazySrcLoc, mod: *Module) SrcLoc {
         return switch (lazy) {
             .unneeded,
             .entire_file,
@@ -647,7 +647,7 @@ pub const Decl = struct {
         };
     }
 
-    pub fn declPtrType(decl: Decl, zcu: *Zcu) !Type {
+    pub fn decl_ptr_type(decl: Decl, zcu: *Zcu) !Type {
         assert(decl.has_tv);
         const decl_ty = decl.typeOf(zcu);
         return zcu.ptrType(.{
@@ -719,7 +719,7 @@ pub const Namespace = struct {
     };
 
     // This renders e.g. "std.fs.Dir.OpenOptions"
-    pub fn renderFullyQualifiedName(
+    pub fn render_fully_qualified_name(
         ns: Namespace,
         zcu: *Zcu,
         name: InternPool.NullTerminatedString,
@@ -738,7 +738,7 @@ pub const Namespace = struct {
     }
 
     /// This renders e.g. "std/fs.zig:Dir.OpenOptions"
-    pub fn renderFullyQualifiedDebugName(
+    pub fn render_fully_qualified_debug_name(
         ns: Namespace,
         zcu: *Zcu,
         name: InternPool.NullTerminatedString,
@@ -758,7 +758,7 @@ pub const Namespace = struct {
         if (name != .empty) try writer.print("{c}{}", .{ sep, name.fmt(&zcu.intern_pool) });
     }
 
-    pub fn fullyQualifiedName(
+    pub fn fully_qualified_name(
         ns: Namespace,
         zcu: *Zcu,
         name: InternPool.NullTerminatedString,
@@ -798,7 +798,7 @@ pub const Namespace = struct {
         return ip.getOrPutTrailingString(gpa, ip.string_bytes.items.len - start, .no_embedded_nulls);
     }
 
-    pub fn getType(ns: Namespace, zcu: *Zcu) Type {
+    pub fn get_type(ns: Namespace, zcu: *Zcu) Type {
         const decl = zcu.declPtr(ns.decl_index);
         assert(decl.has_tv);
         return decl.val.toType();
@@ -859,21 +859,21 @@ pub const File = struct {
         file.unloadZir(gpa);
     }
 
-    pub fn unloadTree(file: *File, gpa: Allocator) void {
+    pub fn unload_tree(file: *File, gpa: Allocator) void {
         if (file.tree_loaded) {
             file.tree_loaded = false;
             file.tree.deinit(gpa);
         }
     }
 
-    pub fn unloadSource(file: *File, gpa: Allocator) void {
+    pub fn unload_source(file: *File, gpa: Allocator) void {
         if (file.source_loaded) {
             file.source_loaded = false;
             gpa.free(file.source);
         }
     }
 
-    pub fn unloadZir(file: *File, gpa: Allocator) void {
+    pub fn unload_zir(file: *File, gpa: Allocator) void {
         if (file.zir_loaded) {
             file.zir_loaded = false;
             file.zir.deinit(gpa);
@@ -907,7 +907,7 @@ pub const File = struct {
         stat: Cache.File.Stat,
     };
 
-    pub fn getSource(file: *File, gpa: Allocator) !Source {
+    pub fn get_source(file: *File, gpa: Allocator) !Source {
         if (file.source_loaded) return Source{
             .bytes = file.source,
             .stat = file.stat,
@@ -945,7 +945,7 @@ pub const File = struct {
         };
     }
 
-    pub fn getTree(file: *File, gpa: Allocator) !*const Ast {
+    pub fn get_tree(file: *File, gpa: Allocator) !*const Ast {
         if (file.tree_loaded) return &file.tree;
 
         const source = try file.getSource(gpa);
@@ -961,7 +961,7 @@ pub const File = struct {
         if (!is_builtin) gpa.destroy(file);
     }
 
-    pub fn renderFullyQualifiedName(file: File, writer: anytype) !void {
+    pub fn render_fully_qualified_name(file: File, writer: anytype) !void {
         // Convert all the slashes into dots and truncate the extension.
         const ext = std.fs.path.extension(file.sub_file_path);
         const noext = file.sub_file_path[0 .. file.sub_file_path.len - ext.len];
@@ -971,30 +971,30 @@ pub const File = struct {
         };
     }
 
-    pub fn renderFullyQualifiedDebugName(file: File, writer: anytype) !void {
+    pub fn render_fully_qualified_debug_name(file: File, writer: anytype) !void {
         for (file.sub_file_path) |byte| switch (byte) {
             '/', '\\' => try writer.writeByte('/'),
             else => try writer.writeByte(byte),
         };
     }
 
-    pub fn fullyQualifiedName(file: File, mod: *Module) !InternPool.NullTerminatedString {
+    pub fn fully_qualified_name(file: File, mod: *Module) !InternPool.NullTerminatedString {
         const ip = &mod.intern_pool;
         const start = ip.string_bytes.items.len;
         try file.renderFullyQualifiedName(ip.string_bytes.writer(mod.gpa));
         return ip.getOrPutTrailingString(mod.gpa, ip.string_bytes.items.len - start, .no_embedded_nulls);
     }
 
-    pub fn fullPath(file: File, ally: Allocator) ![]u8 {
+    pub fn full_path(file: File, ally: Allocator) ![]u8 {
         return file.mod.root.joinString(ally, file.sub_file_path);
     }
 
-    pub fn dumpSrc(file: *File, src: LazySrcLoc) void {
+    pub fn dump_src(file: *File, src: LazySrcLoc) void {
         const loc = std.zig.findLineColumn(file.source.bytes, src);
         std.debug.print("{s}:{d}:{d}\n", .{ file.sub_file_path, loc.line + 1, loc.column + 1 });
     }
 
-    pub fn okToReportErrors(file: File) bool {
+    pub fn ok_to_report_errors(file: File) bool {
         return switch (file.status) {
             .parse_failure, .astgen_failure => false,
             else => true,
@@ -1002,7 +1002,7 @@ pub const File = struct {
     }
 
     /// Add a reference to this file during AstGen.
-    pub fn addReference(file: *File, mod: Module, ref: Reference) !void {
+    pub fn add_reference(file: *File, mod: Module, ref: Reference) !void {
         // Don't add the same module root twice. Note that since we always add module roots at the
         // front of the references array (see below), this loop is actually O(1) on valid code.
         if (ref == .root) {
@@ -1034,7 +1034,7 @@ pub const File = struct {
 
     /// Mark this file and every file referenced by it as multi_pkg and report an
     /// astgen_failure error for them. AstGen must have completed in its entirety.
-    pub fn recursiveMarkMultiPkg(file: *File, mod: *Module) void {
+    pub fn recursive_mark_multi_pkg(file: *File, mod: *Module) void {
         file.multi_pkg = true;
         file.status = .astgen_failure;
 
@@ -1143,12 +1143,12 @@ pub const SrcLoc = struct {
     /// Relative to `parent_decl_node`.
     lazy: LazySrcLoc,
 
-    pub fn declSrcToken(src_loc: SrcLoc) Ast.TokenIndex {
+    pub fn decl_src_token(src_loc: SrcLoc) Ast.TokenIndex {
         const tree = src_loc.file_scope.tree;
         return tree.firstToken(src_loc.parent_decl_node);
     }
 
-    pub fn declRelativeToNodeIndex(src_loc: SrcLoc, offset: i32) Ast.Node.Index {
+    pub fn decl_relative_to_node_index(src_loc: SrcLoc, offset: i32) Ast.Node.Index {
         return @bitCast(offset + @as(i32, @bitCast(src_loc.parent_decl_node)));
     }
 
@@ -1882,7 +1882,7 @@ pub const SrcLoc = struct {
         }
     }
 
-    pub fn byteOffsetBuiltinCallArg(
+    pub fn byte_offset_builtin_call_arg(
         src_loc: SrcLoc,
         gpa: Allocator,
         node_off: i32,
@@ -2041,7 +2041,7 @@ pub fn deinit(zcu: *Zcu) void {
     zcu.intern_pool.deinit(gpa);
 }
 
-pub fn destroyDecl(mod: *Module, decl_index: Decl.Index) void {
+pub fn destroy_decl(mod: *Module, decl_index: Decl.Index) void {
     const gpa = mod.gpa;
     const ip = &mod.intern_pool;
 
@@ -2061,27 +2061,27 @@ pub fn destroyDecl(mod: *Module, decl_index: Decl.Index) void {
     }
 }
 
-pub fn declPtr(mod: *Module, index: Decl.Index) *Decl {
+pub fn decl_ptr(mod: *Module, index: Decl.Index) *Decl {
     return mod.intern_pool.declPtr(index);
 }
 
-pub fn namespacePtr(mod: *Module, index: Namespace.Index) *Namespace {
+pub fn namespace_ptr(mod: *Module, index: Namespace.Index) *Namespace {
     return mod.intern_pool.namespacePtr(index);
 }
 
-pub fn namespacePtrUnwrap(mod: *Module, index: Namespace.OptionalIndex) ?*Namespace {
+pub fn namespace_ptr_unwrap(mod: *Module, index: Namespace.OptionalIndex) ?*Namespace {
     return mod.namespacePtr(index.unwrap() orelse return null);
 }
 
 /// Returns true if and only if the Decl is the top level struct associated with a File.
-pub fn declIsRoot(mod: *Module, decl_index: Decl.Index) bool {
+pub fn decl_is_root(mod: *Module, decl_index: Decl.Index) bool {
     const decl = mod.declPtr(decl_index);
     const namespace = mod.namespacePtr(decl.src_namespace);
     if (namespace.parent != .none) return false;
     return decl_index == namespace.decl_index;
 }
 
-fn freeExportList(gpa: Allocator, export_list: *ArrayListUnmanaged(*Export)) void {
+fn free_export_list(gpa: Allocator, export_list: *ArrayListUnmanaged(*Export)) void {
     for (export_list.items) |exp| gpa.destroy(exp);
     export_list.deinit(gpa);
 }
@@ -2098,7 +2098,7 @@ comptime {
     }
 }
 
-pub fn astGenFile(mod: *Module, file: *File) !void {
+pub fn ast_gen_file(mod: *Module, file: *File) !void {
     assert(!file.mod.isBuiltin());
 
     const tracy = trace(@src());
@@ -2391,11 +2391,11 @@ pub fn astGenFile(mod: *Module, file: *File) !void {
     }
 }
 
-pub fn loadZirCache(gpa: Allocator, cache_file: std.fs.File) !Zir {
+pub fn load_zir_cache(gpa: Allocator, cache_file: std.fs.File) !Zir {
     return loadZirCacheBody(gpa, try cache_file.reader().readStruct(Zir.Header), cache_file);
 }
 
-fn loadZirCacheBody(gpa: Allocator, header: Zir.Header, cache_file: std.fs.File) !Zir {
+fn load_zir_cache_body(gpa: Allocator, header: Zir.Header, cache_file: std.fs.File) !Zir {
     var instructions: std.MultiArrayList(Zir.Inst) = .{};
     errdefer instructions.deinit(gpa);
 
@@ -2463,7 +2463,7 @@ fn loadZirCacheBody(gpa: Allocator, header: Zir.Header, cache_file: std.fs.File)
 
 /// This is called from the AstGen thread pool, so must acquire
 /// the Compilation mutex when acting on shared state.
-fn updateZirRefs(zcu: *Module, file: *File, old_zir: Zir) !void {
+fn update_zir_refs(zcu: *Module, file: *File, old_zir: Zir) !void {
     const gpa = zcu.gpa;
     const new_zir = file.zir;
 
@@ -2582,7 +2582,7 @@ fn updateZirRefs(zcu: *Module, file: *File, old_zir: Zir) !void {
     }
 }
 
-pub fn markDependeeOutdated(zcu: *Zcu, dependee: InternPool.Dependee) !void {
+pub fn mark_dependee_outdated(zcu: *Zcu, dependee: InternPool.Dependee) !void {
     log.debug("outdated dependee: {}", .{dependee});
     var it = zcu.intern_pool.dependencyIterator(dependee);
     while (it.next()) |depender| {
@@ -2611,7 +2611,7 @@ pub fn markDependeeOutdated(zcu: *Zcu, dependee: InternPool.Dependee) !void {
     }
 }
 
-fn markPoDependeeUpToDate(zcu: *Zcu, dependee: InternPool.Dependee) !void {
+fn mark_po_dependee_up_to_date(zcu: *Zcu, dependee: InternPool.Dependee) !void {
     var it = zcu.intern_pool.dependencyIterator(dependee);
     while (it.next()) |depender| {
         if (zcu.outdated.getPtr(depender)) |po_dep_count| {
@@ -2644,7 +2644,7 @@ fn markPoDependeeUpToDate(zcu: *Zcu, dependee: InternPool.Dependee) !void {
 
 /// Given a Depender which is newly outdated or PO, mark all Dependers which may
 /// in turn be PO, due to a dependency on the original Depender's tyval or IES.
-fn markTransitiveDependersPotentiallyOutdated(zcu: *Zcu, maybe_outdated: InternPool.Depender) !void {
+fn mark_transitive_dependers_potentially_outdated(zcu: *Zcu, maybe_outdated: InternPool.Depender) !void {
     var it = zcu.intern_pool.dependencyIterator(switch (maybe_outdated.unwrap()) {
         .decl => |decl_index| .{ .decl_val = decl_index }, // TODO: also `decl_ref` deps when introduced
         .func => |func_index| .{ .func_ies = func_index },
@@ -2671,7 +2671,7 @@ fn markTransitiveDependersPotentiallyOutdated(zcu: *Zcu, maybe_outdated: InternP
     }
 }
 
-pub fn findOutdatedToAnalyze(zcu: *Zcu) Allocator.Error!?InternPool.Depender {
+pub fn find_outdated_to_analyze(zcu: *Zcu) Allocator.Error!?InternPool.Depender {
     if (!zcu.comp.debug_incremental) return null;
 
     if (zcu.outdated.count() == 0 and zcu.potentially_outdated.count() == 0) {
@@ -2781,7 +2781,7 @@ pub fn findOutdatedToAnalyze(zcu: *Zcu) Allocator.Error!?InternPool.Depender {
 
 /// During an incremental update, before semantic analysis, call this to flush all values from
 /// `retryable_failures` and mark them as outdated so they get re-analyzed.
-pub fn flushRetryableFailures(zcu: *Zcu) !void {
+pub fn flush_retryable_failures(zcu: *Zcu) !void {
     const gpa = zcu.gpa;
     for (zcu.retryable_failures.items) |depender| {
         if (zcu.outdated.contains(depender)) continue;
@@ -2799,7 +2799,7 @@ pub fn flushRetryableFailures(zcu: *Zcu) !void {
     zcu.retryable_failures.clearRetainingCapacity();
 }
 
-pub fn mapOldZirToNew(
+pub fn map_old_zir_to_new(
     gpa: Allocator,
     old_zir: Zir,
     new_zir: Zir,
@@ -2927,7 +2927,7 @@ pub fn mapOldZirToNew(
 }
 
 /// Like `ensureDeclAnalyzed`, but the Decl is a file's root Decl.
-pub fn ensureFileAnalyzed(zcu: *Zcu, file: *File) SemaError!void {
+pub fn ensure_file_analyzed(zcu: *Zcu, file: *File) SemaError!void {
     if (file.root_decl.unwrap()) |existing_root| {
         return zcu.ensureDeclAnalyzed(existing_root);
     } else {
@@ -2939,7 +2939,7 @@ pub fn ensureFileAnalyzed(zcu: *Zcu, file: *File) SemaError!void {
 /// However the resolution status of the Type may not be fully resolved.
 /// For example an inferred error set is not resolved until after `analyzeFnBody`.
 /// is called.
-pub fn ensureDeclAnalyzed(mod: *Module, decl_index: Decl.Index) SemaError!void {
+pub fn ensure_decl_analyzed(mod: *Module, decl_index: Decl.Index) SemaError!void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -3057,7 +3057,7 @@ pub fn ensureDeclAnalyzed(mod: *Module, decl_index: Decl.Index) SemaError!void {
     }
 }
 
-pub fn ensureFuncBodyAnalyzed(zcu: *Zcu, maybe_coerced_func_index: InternPool.Index) SemaError!void {
+pub fn ensure_func_body_analyzed(zcu: *Zcu, maybe_coerced_func_index: InternPool.Index) SemaError!void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -3255,7 +3255,7 @@ pub fn ensureFuncBodyAnalyzed(zcu: *Zcu, maybe_coerced_func_index: InternPool.In
 /// analyzed, and for ensuring it can exist at runtime (see
 /// `sema.fnHasRuntimeBits`). This function does *not* guarantee that the body
 /// will be analyzed when it returns: for that, see `ensureFuncBodyAnalyzed`.
-pub fn ensureFuncBodyAnalysisQueued(mod: *Module, func_index: InternPool.Index) !void {
+pub fn ensure_func_body_analysis_queued(mod: *Module, func_index: InternPool.Index) !void {
     const ip = &mod.intern_pool;
     const func = mod.funcInfo(func_index);
     const decl_index = func.owner_decl;
@@ -3308,14 +3308,14 @@ pub fn ensureFuncBodyAnalysisQueued(mod: *Module, func_index: InternPool.Index) 
 }
 
 /// https://github.com/ziglang/zig/issues/14307
-pub fn semaPkg(mod: *Module, pkg: *Package.Module) !void {
+pub fn sema_pkg(mod: *Module, pkg: *Package.Module) !void {
     const file = (try mod.importPkg(pkg)).file;
     if (file.root_decl == .none) {
         return mod.semaFile(file);
     }
 }
 
-fn getFileRootStruct(zcu: *Zcu, decl_index: Decl.Index, namespace_index: Namespace.Index, file: *File) Allocator.Error!InternPool.Index {
+fn get_file_root_struct(zcu: *Zcu, decl_index: Decl.Index, namespace_index: Namespace.Index, file: *File) Allocator.Error!InternPool.Index {
     const gpa = zcu.gpa;
     const ip = &zcu.intern_pool;
     const extended = file.zir.instructions.items(.data)[@intFromEnum(Zir.Inst.Index.main_struct_inst)].extended;
@@ -3383,7 +3383,7 @@ fn getFileRootStruct(zcu: *Zcu, decl_index: Decl.Index, namespace_index: Namespa
 /// If `type_outdated`, the struct type itself is considered outdated and is
 /// reconstructed at a new InternPool index. Otherwise, the namespace is just
 /// re-analyzed. Returns whether the decl's tyval was invalidated.
-fn semaFileUpdate(zcu: *Zcu, file: *File, type_outdated: bool) SemaError!bool {
+fn sema_file_update(zcu: *Zcu, file: *File, type_outdated: bool) SemaError!bool {
     const decl = zcu.declPtr(file.root_decl.unwrap().?);
 
     log.debug("semaFileUpdate mod={s} sub_file_path={s} type_outdated={}", .{
@@ -3443,7 +3443,7 @@ fn semaFileUpdate(zcu: *Zcu, file: *File, type_outdated: bool) SemaError!bool {
 
 /// Regardless of the file status, will create a `Decl` if none exists so that we can track
 /// dependencies and re-analyze when the file becomes outdated.
-fn semaFile(mod: *Module, file: *File) SemaError!void {
+fn sema_file(mod: *Module, file: *File) SemaError!void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -3521,7 +3521,7 @@ const SemaDeclResult = packed struct {
     invalidate_decl_ref: bool,
 };
 
-fn semaDecl(mod: *Module, decl_index: Decl.Index) !SemaDeclResult {
+fn sema_decl(mod: *Module, decl_index: Decl.Index) !SemaDeclResult {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -3802,7 +3802,7 @@ fn semaDecl(mod: *Module, decl_index: Decl.Index) !SemaDeclResult {
     return result;
 }
 
-fn semaAnonOwnerDecl(zcu: *Zcu, decl_index: Decl.Index) !SemaDeclResult {
+fn sema_anon_owner_decl(zcu: *Zcu, decl_index: Decl.Index) !SemaDeclResult {
     const decl = zcu.declPtr(decl_index);
 
     assert(decl.has_tv);
@@ -3844,7 +3844,7 @@ pub const ImportFileResult = struct {
     is_pkg: bool,
 };
 
-pub fn importPkg(zcu: *Zcu, mod: *Package.Module) !ImportFileResult {
+pub fn import_pkg(zcu: *Zcu, mod: *Package.Module) !ImportFileResult {
     const gpa = zcu.gpa;
 
     // The resolved path is used as the key in the import table, to detect if
@@ -3909,7 +3909,7 @@ pub fn importPkg(zcu: *Zcu, mod: *Package.Module) !ImportFileResult {
     };
 }
 
-pub fn importFile(
+pub fn import_file(
     mod: *Module,
     cur_file: *File,
     import_string: []const u8,
@@ -3996,7 +3996,7 @@ pub fn importFile(
     };
 }
 
-pub fn embedFile(
+pub fn embed_file(
     mod: *Module,
     cur_file: *File,
     import_string: []const u8,
@@ -4069,7 +4069,7 @@ pub fn embedFile(
 }
 
 /// https://github.com/ziglang/zig/issues/14307
-fn newEmbedFile(
+fn new_embed_file(
     mod: *Module,
     pkg: *Package.Module,
     sub_file_path: []const u8,
@@ -4149,7 +4149,7 @@ fn newEmbedFile(
     return ptr_val;
 }
 
-pub fn scanNamespace(
+pub fn scan_namespace(
     zcu: *Zcu,
     namespace_index: Namespace.Index,
     decls: []const Zir.Inst.Index,
@@ -4228,7 +4228,7 @@ const ScanDeclIter = struct {
     comptime_index: usize = 0,
     unnamed_test_index: usize = 0,
 
-    fn avoidNameConflict(iter: *ScanDeclIter, comptime fmt: []const u8, args: anytype) !InternPool.NullTerminatedString {
+    fn avoid_name_conflict(iter: *ScanDeclIter, comptime fmt: []const u8, args: anytype) !InternPool.NullTerminatedString {
         const zcu = iter.zcu;
         const gpa = zcu.gpa;
         const ip = &zcu.intern_pool;
@@ -4244,7 +4244,7 @@ const ScanDeclIter = struct {
     }
 };
 
-fn scanDecl(iter: *ScanDeclIter, decl_inst: Zir.Inst.Index) Allocator.Error!void {
+fn scan_decl(iter: *ScanDeclIter, decl_inst: Zir.Inst.Index) Allocator.Error!void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -4418,13 +4418,13 @@ fn scanDecl(iter: *ScanDeclIter, decl_inst: Zir.Inst.Index) Allocator.Error!void
 
 /// Cancel the creation of an anon decl and delete any references to it.
 /// If other decls depend on this decl, they must be aborted first.
-pub fn abortAnonDecl(mod: *Module, decl_index: Decl.Index) void {
+pub fn abort_anon_decl(mod: *Module, decl_index: Decl.Index) void {
     assert(!mod.declIsRoot(decl_index));
     mod.destroyDecl(decl_index);
 }
 
 /// Finalize the creation of an anon decl.
-pub fn finalizeAnonDecl(mod: *Module, decl_index: Decl.Index) Allocator.Error!void {
+pub fn finalize_anon_decl(mod: *Module, decl_index: Decl.Index) Allocator.Error!void {
     if (mod.declPtr(decl_index).typeOf(mod).isFnOrHasRuntimeBits(mod)) {
         try mod.comp.work_queue.writeItem(.{ .codegen_decl = decl_index });
     }
@@ -4432,7 +4432,7 @@ pub fn finalizeAnonDecl(mod: *Module, decl_index: Decl.Index) Allocator.Error!vo
 
 /// Delete all the Export objects that are caused by this Decl. Re-analysis of
 /// this Decl will cause them to be re-created (or not).
-fn deleteDeclExports(mod: *Module, decl_index: Decl.Index) Allocator.Error!void {
+fn delete_decl_exports(mod: *Module, decl_index: Decl.Index) Allocator.Error!void {
     var export_owners = (mod.export_owners.fetchSwapRemove(decl_index) orelse return).value;
 
     for (export_owners.items) |exp| {
@@ -4489,7 +4489,7 @@ fn deleteDeclExports(mod: *Module, decl_index: Decl.Index) Allocator.Error!void 
     export_owners.deinit(mod.gpa);
 }
 
-pub fn analyzeFnBody(mod: *Module, func_index: InternPool.Index, arena: Allocator) SemaError!Air {
+pub fn analyze_fn_body(mod: *Module, func_index: InternPool.Index, arena: Allocator) SemaError!Air {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -4744,15 +4744,15 @@ pub fn analyzeFnBody(mod: *Module, func_index: InternPool.Index, arena: Allocato
     };
 }
 
-pub fn createNamespace(mod: *Module, initialization: Namespace) !Namespace.Index {
+pub fn create_namespace(mod: *Module, initialization: Namespace) !Namespace.Index {
     return mod.intern_pool.createNamespace(mod.gpa, initialization);
 }
 
-pub fn destroyNamespace(mod: *Module, index: Namespace.Index) void {
+pub fn destroy_namespace(mod: *Module, index: Namespace.Index) void {
     return mod.intern_pool.destroyNamespace(mod.gpa, index);
 }
 
-pub fn allocateNewDecl(
+pub fn allocate_new_decl(
     mod: *Module,
     namespace: Namespace.Index,
     src_node: Ast.Node.Index,
@@ -4787,7 +4787,7 @@ pub fn allocateNewDecl(
     return decl_index;
 }
 
-pub fn getErrorValue(
+pub fn get_error_value(
     mod: *Module,
     name: InternPool.NullTerminatedString,
 ) Allocator.Error!ErrorInt {
@@ -4795,7 +4795,7 @@ pub fn getErrorValue(
     return @as(ErrorInt, @intCast(gop.index));
 }
 
-pub fn getErrorValueFromSlice(
+pub fn get_error_value_from_slice(
     mod: *Module,
     name: []const u8,
 ) Allocator.Error!ErrorInt {
@@ -4803,12 +4803,12 @@ pub fn getErrorValueFromSlice(
     return getErrorValue(mod, interned_name);
 }
 
-pub fn errorSetBits(mod: *Module) u16 {
+pub fn error_set_bits(mod: *Module) u16 {
     if (mod.error_limit == 0) return 0;
     return std.math.log2_int_ceil(ErrorInt, mod.error_limit + 1); // +1 for no error
 }
 
-pub fn initNewAnonDecl(
+pub fn init_new_anon_decl(
     mod: *Module,
     new_decl_index: Decl.Index,
     src_line: u32,
@@ -4826,7 +4826,7 @@ pub fn initNewAnonDecl(
     new_decl.analysis = .complete;
 }
 
-pub fn errNoteNonLazy(
+pub fn err_note_non_lazy(
     mod: *Module,
     src_loc: SrcLoc,
     parent: *ErrorMsg,
@@ -4850,18 +4850,18 @@ pub fn errNoteNonLazy(
 /// Deprecated. There is no global target for a Zig Compilation Unit. Instead,
 /// look up the target based on the Module that contains the source code being
 /// analyzed.
-pub fn getTarget(zcu: Module) Target {
+pub fn get_target(zcu: Module) Target {
     return zcu.root_mod.resolved_target.result;
 }
 
 /// Deprecated. There is no global optimization mode for a Zig Compilation
 /// Unit. Instead, look up the optimization mode based on the Module that
 /// contains the source code being analyzed.
-pub fn optimizeMode(zcu: Module) std.builtin.OptimizeMode {
+pub fn optimize_mode(zcu: Module) std.builtin.OptimizeMode {
     return zcu.root_mod.optimize_mode;
 }
 
-fn lockAndClearFileCompileError(mod: *Module, file: *File) void {
+fn lock_and_clear_file_compile_error(mod: *Module, file: *File) void {
     switch (file.status) {
         .success_zir, .retryable_failure => {},
         .never_loaded, .parse_failure, .astgen_failure => {
@@ -5085,7 +5085,7 @@ const FieldSrcQuery = struct {
     range: enum { name, type, value, alignment } = .name,
 };
 
-fn queryFieldSrc(
+fn query_field_src(
     tree: Ast,
     query: FieldSrcQuery,
     file_scope: *File,
@@ -5123,7 +5123,7 @@ fn queryFieldSrc(
     unreachable;
 }
 
-pub fn paramSrc(
+pub fn param_src(
     func_node_offset: i32,
     mod: *Module,
     decl: *Decl,
@@ -5155,7 +5155,7 @@ pub fn paramSrc(
     unreachable;
 }
 
-pub fn initSrc(
+pub fn init_src(
     mod: *Module,
     init_node_offset: i32,
     decl: *Decl,
@@ -5202,7 +5202,7 @@ pub fn initSrc(
     }
 }
 
-pub fn optionsSrc(mod: *Module, decl: *Decl, base_src: LazySrcLoc, wanted: []const u8) LazySrcLoc {
+pub fn options_src(mod: *Module, decl: *Decl, base_src: LazySrcLoc, wanted: []const u8) LazySrcLoc {
     @setCold(true);
     const gpa = mod.gpa;
     const tree = decl.getFileScope(mod).getTree(gpa) catch |err| {
@@ -5247,7 +5247,7 @@ pub fn optionsSrc(mod: *Module, decl: *Decl, base_src: LazySrcLoc, wanted: []con
 /// Called from `Compilation.update`, after everything is done, just before
 /// reporting compile errors. In this function we emit exported symbol collision
 /// errors and communicate exported symbols to the linker backend.
-pub fn processExports(mod: *Module) !void {
+pub fn process_exports(mod: *Module) !void {
     // Map symbol names to `Export` for name collision detection.
     var symbol_exports: SymbolExports = .{};
     defer symbol_exports.deinit(mod.gpa);
@@ -5265,7 +5265,7 @@ pub fn processExports(mod: *Module) !void {
 
 const SymbolExports = std.AutoArrayHashMapUnmanaged(InternPool.NullTerminatedString, *Export);
 
-fn processExportsInner(
+fn process_exports_inner(
     zcu: *Zcu,
     symbol_exports: *SymbolExports,
     exported: Exported,
@@ -5300,7 +5300,7 @@ fn processExportsInner(
     }
 }
 
-fn handleUpdateExports(
+fn handle_update_exports(
     zcu: *Zcu,
     exports: []const *Export,
     result: link.File.UpdateExportsError!void,
@@ -5321,7 +5321,7 @@ fn handleUpdateExports(
     };
 }
 
-pub fn populateTestFunctions(
+pub fn populate_test_functions(
     mod: *Module,
     main_progress_node: std.Progress.Node,
 ) !void {
@@ -5458,7 +5458,7 @@ pub fn populateTestFunctions(
     }
 }
 
-pub fn linkerUpdateDecl(zcu: *Zcu, decl_index: Decl.Index) !void {
+pub fn linker_update_decl(zcu: *Zcu, decl_index: Decl.Index) !void {
     const comp = zcu.comp;
 
     const decl = zcu.declPtr(decl_index);
@@ -5496,7 +5496,7 @@ pub fn linkerUpdateDecl(zcu: *Zcu, decl_index: Decl.Index) !void {
     }
 }
 
-fn reportRetryableFileError(
+fn report_retryable_file_error(
     mod: *Module,
     file: *File,
     comptime format: []const u8,
@@ -5528,7 +5528,7 @@ fn reportRetryableFileError(
     gop.value_ptr.* = err_msg;
 }
 
-pub fn addGlobalAssembly(mod: *Module, decl_index: Decl.Index, source: []const u8) !void {
+pub fn add_global_assembly(mod: *Module, decl_index: Decl.Index, source: []const u8) !void {
     const gop = try mod.global_assembly.getOrPut(mod.gpa, decl_index);
     if (gop.found_existing) {
         const new_value = try std.fmt.allocPrint(mod.gpa, "{s}\n{s}", .{ gop.value_ptr.*, source });
@@ -5539,7 +5539,7 @@ pub fn addGlobalAssembly(mod: *Module, decl_index: Decl.Index, source: []const u
     }
 }
 
-pub fn getDeclExports(mod: Module, decl_index: Decl.Index) []const *Export {
+pub fn get_decl_exports(mod: Module, decl_index: Decl.Index) []const *Export {
     if (mod.decl_exports.get(decl_index)) |l| {
         return l.items;
     } else {
@@ -5565,7 +5565,7 @@ pub const Feature = enum {
     safety_checked_instructions,
 };
 
-pub fn backendSupportsFeature(zcu: Module, feature: Feature) bool {
+pub fn backend_supports_feature(zcu: Module, feature: Feature) bool {
     const cpu_arch = zcu.root_mod.resolved_target.result.cpu.arch;
     const ofmt = zcu.root_mod.resolved_target.result.ofmt;
     const use_llvm = zcu.comp.config.use_llvm;
@@ -5578,37 +5578,37 @@ pub fn intern(mod: *Module, key: InternPool.Key) Allocator.Error!InternPool.Inde
 }
 
 /// Shortcut for calling `intern_pool.getCoerced`.
-pub fn getCoerced(mod: *Module, val: Value, new_ty: Type) Allocator.Error!Value {
+pub fn get_coerced(mod: *Module, val: Value, new_ty: Type) Allocator.Error!Value {
     return Value.fromInterned((try mod.intern_pool.getCoerced(mod.gpa, val.toIntern(), new_ty.toIntern())));
 }
 
-pub fn intType(mod: *Module, signedness: std.builtin.Signedness, bits: u16) Allocator.Error!Type {
+pub fn int_type(mod: *Module, signedness: std.builtin.Signedness, bits: u16) Allocator.Error!Type {
     return Type.fromInterned((try intern(mod, .{ .int_type = .{
         .signedness = signedness,
         .bits = bits,
     } })));
 }
 
-pub fn errorIntType(mod: *Module) std.mem.Allocator.Error!Type {
+pub fn error_int_type(mod: *Module) std.mem.Allocator.Error!Type {
     return mod.intType(.unsigned, mod.errorSetBits());
 }
 
-pub fn arrayType(mod: *Module, info: InternPool.Key.ArrayType) Allocator.Error!Type {
+pub fn array_type(mod: *Module, info: InternPool.Key.ArrayType) Allocator.Error!Type {
     const i = try intern(mod, .{ .array_type = info });
     return Type.fromInterned(i);
 }
 
-pub fn vectorType(mod: *Module, info: InternPool.Key.VectorType) Allocator.Error!Type {
+pub fn vector_type(mod: *Module, info: InternPool.Key.VectorType) Allocator.Error!Type {
     const i = try intern(mod, .{ .vector_type = info });
     return Type.fromInterned(i);
 }
 
-pub fn optionalType(mod: *Module, child_type: InternPool.Index) Allocator.Error!Type {
+pub fn optional_type(mod: *Module, child_type: InternPool.Index) Allocator.Error!Type {
     const i = try intern(mod, .{ .opt_type = child_type });
     return Type.fromInterned(i);
 }
 
-pub fn ptrType(mod: *Module, info: InternPool.Key.PtrType) Allocator.Error!Type {
+pub fn ptr_type(mod: *Module, info: InternPool.Key.PtrType) Allocator.Error!Type {
     var canon_info = info;
 
     if (info.flags.size == .C) canon_info.flags.is_allowzero = true;
@@ -5641,11 +5641,11 @@ pub fn ptrType(mod: *Module, info: InternPool.Key.PtrType) Allocator.Error!Type 
     return Type.fromInterned((try intern(mod, .{ .ptr_type = canon_info })));
 }
 
-pub fn singleMutPtrType(mod: *Module, child_type: Type) Allocator.Error!Type {
+pub fn single_mut_ptr_type(mod: *Module, child_type: Type) Allocator.Error!Type {
     return ptrType(mod, .{ .child = child_type.toIntern() });
 }
 
-pub fn singleConstPtrType(mod: *Module, child_type: Type) Allocator.Error!Type {
+pub fn single_const_ptr_type(mod: *Module, child_type: Type) Allocator.Error!Type {
     return ptrType(mod, .{
         .child = child_type.toIntern(),
         .flags = .{
@@ -5654,7 +5654,7 @@ pub fn singleConstPtrType(mod: *Module, child_type: Type) Allocator.Error!Type {
     });
 }
 
-pub fn manyConstPtrType(mod: *Module, child_type: Type) Allocator.Error!Type {
+pub fn many_const_ptr_type(mod: *Module, child_type: Type) Allocator.Error!Type {
     return ptrType(mod, .{
         .child = child_type.toIntern(),
         .flags = .{
@@ -5664,37 +5664,37 @@ pub fn manyConstPtrType(mod: *Module, child_type: Type) Allocator.Error!Type {
     });
 }
 
-pub fn adjustPtrTypeChild(mod: *Module, ptr_ty: Type, new_child: Type) Allocator.Error!Type {
+pub fn adjust_ptr_type_child(mod: *Module, ptr_ty: Type, new_child: Type) Allocator.Error!Type {
     var info = ptr_ty.ptrInfo(mod);
     info.child = new_child.toIntern();
     return mod.ptrType(info);
 }
 
-pub fn funcType(mod: *Module, key: InternPool.GetFuncTypeKey) Allocator.Error!Type {
+pub fn func_type(mod: *Module, key: InternPool.GetFuncTypeKey) Allocator.Error!Type {
     return Type.fromInterned((try mod.intern_pool.getFuncType(mod.gpa, key)));
 }
 
 /// Use this for `anyframe->T` only.
 /// For `anyframe`, use the `InternPool.Index.anyframe` tag directly.
-pub fn anyframeType(mod: *Module, payload_ty: Type) Allocator.Error!Type {
+pub fn anyframe_type(mod: *Module, payload_ty: Type) Allocator.Error!Type {
     return Type.fromInterned((try intern(mod, .{ .anyframe_type = payload_ty.toIntern() })));
 }
 
-pub fn errorUnionType(mod: *Module, error_set_ty: Type, payload_ty: Type) Allocator.Error!Type {
+pub fn error_union_type(mod: *Module, error_set_ty: Type, payload_ty: Type) Allocator.Error!Type {
     return Type.fromInterned((try intern(mod, .{ .error_union_type = .{
         .error_set_type = error_set_ty.toIntern(),
         .payload_type = payload_ty.toIntern(),
     } })));
 }
 
-pub fn singleErrorSetType(mod: *Module, name: InternPool.NullTerminatedString) Allocator.Error!Type {
+pub fn single_error_set_type(mod: *Module, name: InternPool.NullTerminatedString) Allocator.Error!Type {
     const names: *const [1]InternPool.NullTerminatedString = &name;
     const new_ty = try mod.intern_pool.getErrorSetType(mod.gpa, names);
     return Type.fromInterned(new_ty);
 }
 
 /// Sorts `names` in place.
-pub fn errorSetFromUnsortedNames(
+pub fn error_set_from_unsorted_names(
     mod: *Module,
     names: []InternPool.NullTerminatedString,
 ) Allocator.Error!Type {
@@ -5709,7 +5709,7 @@ pub fn errorSetFromUnsortedNames(
 }
 
 /// Supports only pointers, not pointer-like optionals.
-pub fn ptrIntValue(mod: *Module, ty: Type, x: u64) Allocator.Error!Value {
+pub fn ptr_int_value(mod: *Module, ty: Type, x: u64) Allocator.Error!Value {
     assert(ty.zigTypeTag(mod) == .Pointer and !ty.isSlice(mod));
     assert(x != 0 or ty.isAllowzeroPtr(mod));
     const i = try intern(mod, .{ .ptr = .{
@@ -5721,7 +5721,7 @@ pub fn ptrIntValue(mod: *Module, ty: Type, x: u64) Allocator.Error!Value {
 }
 
 /// Creates an enum tag value based on the integer tag value.
-pub fn enumValue(mod: *Module, ty: Type, tag_int: InternPool.Index) Allocator.Error!Value {
+pub fn enum_value(mod: *Module, ty: Type, tag_int: InternPool.Index) Allocator.Error!Value {
     if (std.debug.runtime_safety) {
         const tag = ty.zigTypeTag(mod);
         assert(tag == .Enum);
@@ -5735,7 +5735,7 @@ pub fn enumValue(mod: *Module, ty: Type, tag_int: InternPool.Index) Allocator.Er
 
 /// Creates an enum tag value based on the field index according to source code
 /// declaration order.
-pub fn enumValueFieldIndex(mod: *Module, ty: Type, field_index: u32) Allocator.Error!Value {
+pub fn enum_value_field_index(mod: *Module, ty: Type, field_index: u32) Allocator.Error!Value {
     const ip = &mod.intern_pool;
     const gpa = mod.gpa;
     const enum_type = ip.loadEnumType(ty.toIntern());
@@ -5757,15 +5757,15 @@ pub fn enumValueFieldIndex(mod: *Module, ty: Type, field_index: u32) Allocator.E
     } })));
 }
 
-pub fn undefValue(mod: *Module, ty: Type) Allocator.Error!Value {
+pub fn undef_value(mod: *Module, ty: Type) Allocator.Error!Value {
     return Value.fromInterned((try mod.intern(.{ .undef = ty.toIntern() })));
 }
 
-pub fn undefRef(mod: *Module, ty: Type) Allocator.Error!Air.Inst.Ref {
+pub fn undef_ref(mod: *Module, ty: Type) Allocator.Error!Air.Inst.Ref {
     return Air.internedToRef((try mod.undefValue(ty)).toIntern());
 }
 
-pub fn intValue(mod: *Module, ty: Type, x: anytype) Allocator.Error!Value {
+pub fn int_value(mod: *Module, ty: Type, x: anytype) Allocator.Error!Value {
     if (std.math.cast(u64, x)) |casted| return intValue_u64(mod, ty, casted);
     if (std.math.cast(i64, x)) |casted| return intValue_i64(mod, ty, casted);
     var limbs_buffer: [4]usize = undefined;
@@ -5773,11 +5773,11 @@ pub fn intValue(mod: *Module, ty: Type, x: anytype) Allocator.Error!Value {
     return intValue_big(mod, ty, big_int.toConst());
 }
 
-pub fn intRef(mod: *Module, ty: Type, x: anytype) Allocator.Error!Air.Inst.Ref {
+pub fn int_ref(mod: *Module, ty: Type, x: anytype) Allocator.Error!Air.Inst.Ref {
     return Air.internedToRef((try mod.intValue(ty, x)).toIntern());
 }
 
-pub fn intValue_big(mod: *Module, ty: Type, x: BigIntConst) Allocator.Error!Value {
+pub fn int_value_big(mod: *Module, ty: Type, x: BigIntConst) Allocator.Error!Value {
     const i = try intern(mod, .{ .int = .{
         .ty = ty.toIntern(),
         .storage = .{ .big_int = x },
@@ -5785,7 +5785,7 @@ pub fn intValue_big(mod: *Module, ty: Type, x: BigIntConst) Allocator.Error!Valu
     return Value.fromInterned(i);
 }
 
-pub fn intValue_u64(mod: *Module, ty: Type, x: u64) Allocator.Error!Value {
+pub fn int_value_u64(mod: *Module, ty: Type, x: u64) Allocator.Error!Value {
     const i = try intern(mod, .{ .int = .{
         .ty = ty.toIntern(),
         .storage = .{ .u64 = x },
@@ -5793,7 +5793,7 @@ pub fn intValue_u64(mod: *Module, ty: Type, x: u64) Allocator.Error!Value {
     return Value.fromInterned(i);
 }
 
-pub fn intValue_i64(mod: *Module, ty: Type, x: i64) Allocator.Error!Value {
+pub fn int_value_i64(mod: *Module, ty: Type, x: i64) Allocator.Error!Value {
     const i = try intern(mod, .{ .int = .{
         .ty = ty.toIntern(),
         .storage = .{ .i64 = x },
@@ -5801,7 +5801,7 @@ pub fn intValue_i64(mod: *Module, ty: Type, x: i64) Allocator.Error!Value {
     return Value.fromInterned(i);
 }
 
-pub fn unionValue(mod: *Module, union_ty: Type, tag: Value, val: Value) Allocator.Error!Value {
+pub fn union_value(mod: *Module, union_ty: Type, tag: Value, val: Value) Allocator.Error!Value {
     const i = try intern(mod, .{ .un = .{
         .ty = union_ty.toIntern(),
         .tag = tag.toIntern(),
@@ -5812,7 +5812,7 @@ pub fn unionValue(mod: *Module, union_ty: Type, tag: Value, val: Value) Allocato
 
 /// This function casts the float representation down to the representation of the type, potentially
 /// losing data if the representation wasn't correct.
-pub fn floatValue(mod: *Module, ty: Type, x: anytype) Allocator.Error!Value {
+pub fn float_value(mod: *Module, ty: Type, x: anytype) Allocator.Error!Value {
     const storage: InternPool.Key.Float.Storage = switch (ty.floatBits(mod.getTarget())) {
         16 => .{ .f16 = @as(f16, @floatCast(x)) },
         32 => .{ .f32 = @as(f32, @floatCast(x)) },
@@ -5828,7 +5828,7 @@ pub fn floatValue(mod: *Module, ty: Type, x: anytype) Allocator.Error!Value {
     return Value.fromInterned(i);
 }
 
-pub fn nullValue(mod: *Module, opt_ty: Type) Allocator.Error!Value {
+pub fn null_value(mod: *Module, opt_ty: Type) Allocator.Error!Value {
     const ip = &mod.intern_pool;
     assert(ip.isOptionalType(opt_ty.toIntern()));
     const result = try ip.get(mod.gpa, .{ .opt = .{
@@ -5838,14 +5838,14 @@ pub fn nullValue(mod: *Module, opt_ty: Type) Allocator.Error!Value {
     return Value.fromInterned(result);
 }
 
-pub fn smallestUnsignedInt(mod: *Module, max: u64) Allocator.Error!Type {
+pub fn smallest_unsigned_int(mod: *Module, max: u64) Allocator.Error!Type {
     return intType(mod, .unsigned, Type.smallestUnsignedBits(max));
 }
 
 /// Returns the smallest possible integer type containing both `min` and
 /// `max`. Asserts that neither value is undef.
 /// TODO: if #3806 is implemented, this becomes trivial
-pub fn intFittingRange(mod: *Module, min: Value, max: Value) !Type {
+pub fn int_fitting_range(mod: *Module, min: Value, max: Value) !Type {
     assert(!min.isUndef(mod));
     assert(!max.isUndef(mod));
 
@@ -5868,7 +5868,7 @@ pub fn intFittingRange(mod: *Module, min: Value, max: Value) !Type {
 /// this value in an integer. If `sign` is true, returns the number of bits necessary in a
 /// twos-complement integer; otherwise in an unsigned integer.
 /// Asserts that `val` is not undef. If `val` is negative, asserts that `sign` is true.
-pub fn intBitsForValue(mod: *Module, val: Value, sign: bool) u16 {
+pub fn int_bits_for_value(mod: *Module, val: Value, sign: bool) u16 {
     assert(!val.isUndef(mod));
 
     const key = mod.intern_pool.indexToKey(val.toIntern());
@@ -5917,7 +5917,7 @@ pub const AtomicPtrAlignmentDiagnostics = struct {
 /// to perform atomic operations.
 // TODO this function does not take into account CPU features, which can affect
 // this value. Audit this!
-pub fn atomicPtrAlignment(
+pub fn atomic_ptr_alignment(
     mod: *Module,
     ty: Type,
     diags: *AtomicPtrAlignmentDiagnostics,
@@ -6030,7 +6030,7 @@ pub fn atomicPtrAlignment(
     return .none;
 }
 
-pub fn declFileScope(mod: *Module, decl_index: Decl.Index) *File {
+pub fn decl_file_scope(mod: *Module, decl_index: Decl.Index) *File {
     return mod.declPtr(decl_index).getFileScope(mod);
 }
 
@@ -6038,7 +6038,7 @@ pub fn declFileScope(mod: *Module, decl_index: Decl.Index) *File {
 /// * `@TypeOf(.{})`
 /// * A struct which has no fields (`struct {}`).
 /// * Not a struct.
-pub fn typeToStruct(mod: *Module, ty: Type) ?InternPool.LoadedStructType {
+pub fn type_to_struct(mod: *Module, ty: Type) ?InternPool.LoadedStructType {
     if (ty.ip_index == .none) return null;
     const ip = &mod.intern_pool;
     return switch (ip.indexToKey(ty.ip_index)) {
@@ -6047,13 +6047,13 @@ pub fn typeToStruct(mod: *Module, ty: Type) ?InternPool.LoadedStructType {
     };
 }
 
-pub fn typeToPackedStruct(mod: *Module, ty: Type) ?InternPool.LoadedStructType {
+pub fn type_to_packed_struct(mod: *Module, ty: Type) ?InternPool.LoadedStructType {
     const s = mod.typeToStruct(ty) orelse return null;
     if (s.layout != .@"packed") return null;
     return s;
 }
 
-pub fn typeToUnion(mod: *Module, ty: Type) ?InternPool.LoadedUnionType {
+pub fn type_to_union(mod: *Module, ty: Type) ?InternPool.LoadedUnionType {
     if (ty.ip_index == .none) return null;
     const ip = &mod.intern_pool;
     return switch (ip.indexToKey(ty.ip_index)) {
@@ -6062,28 +6062,28 @@ pub fn typeToUnion(mod: *Module, ty: Type) ?InternPool.LoadedUnionType {
     };
 }
 
-pub fn typeToFunc(mod: *Module, ty: Type) ?InternPool.Key.FuncType {
+pub fn type_to_func(mod: *Module, ty: Type) ?InternPool.Key.FuncType {
     if (ty.ip_index == .none) return null;
     return mod.intern_pool.indexToFuncType(ty.toIntern());
 }
 
-pub fn funcOwnerDeclPtr(mod: *Module, func_index: InternPool.Index) *Decl {
+pub fn func_owner_decl_ptr(mod: *Module, func_index: InternPool.Index) *Decl {
     return mod.declPtr(mod.funcOwnerDeclIndex(func_index));
 }
 
-pub fn funcOwnerDeclIndex(mod: *Module, func_index: InternPool.Index) Decl.Index {
+pub fn func_owner_decl_index(mod: *Module, func_index: InternPool.Index) Decl.Index {
     return mod.funcInfo(func_index).owner_decl;
 }
 
-pub fn iesFuncIndex(mod: *const Module, ies_index: InternPool.Index) InternPool.Index {
+pub fn ies_func_index(mod: *const Module, ies_index: InternPool.Index) InternPool.Index {
     return mod.intern_pool.iesFuncIndex(ies_index);
 }
 
-pub fn funcInfo(mod: *Module, func_index: InternPool.Index) InternPool.Key.Func {
+pub fn func_info(mod: *Module, func_index: InternPool.Index) InternPool.Key.Func {
     return mod.intern_pool.indexToKey(func_index).func;
 }
 
-pub fn fieldSrcLoc(mod: *Module, owner_decl_index: Decl.Index, query: FieldSrcQuery) SrcLoc {
+pub fn field_src_loc(mod: *Module, owner_decl_index: Decl.Index, query: FieldSrcQuery) SrcLoc {
     @setCold(true);
     const owner_decl = mod.declPtr(owner_decl_index);
     const file = owner_decl.getFileScope(mod);
@@ -6104,11 +6104,11 @@ pub fn fieldSrcLoc(mod: *Module, owner_decl_index: Decl.Index, query: FieldSrcQu
     }
 }
 
-pub fn toEnum(mod: *Module, comptime E: type, val: Value) E {
+pub fn to_enum(mod: *Module, comptime E: type, val: Value) E {
     return mod.intern_pool.toEnum(E, val.toIntern());
 }
 
-pub fn isAnytypeParam(mod: *Module, func: InternPool.Index, index: u32) bool {
+pub fn is_anytype_param(mod: *Module, func: InternPool.Index, index: u32) bool {
     const file = mod.declPtr(func.owner_decl).getFileScope(mod);
 
     const tags = file.zir.instructions.items(.tag);
@@ -6123,7 +6123,7 @@ pub fn isAnytypeParam(mod: *Module, func: InternPool.Index, index: u32) bool {
     };
 }
 
-pub fn getParamName(mod: *Module, func_index: InternPool.Index, index: u32) [:0]const u8 {
+pub fn get_param_name(mod: *Module, func_index: InternPool.Index, index: u32) [:0]const u8 {
     const func = mod.funcInfo(func_index);
     const file = mod.declPtr(func.owner_decl).getFileScope(mod);
 
@@ -6159,7 +6159,7 @@ pub const UnionLayout = struct {
     padding: u32,
 };
 
-pub fn getUnionLayout(mod: *Module, loaded_union: InternPool.LoadedUnionType) UnionLayout {
+pub fn get_union_layout(mod: *Module, loaded_union: InternPool.LoadedUnionType) UnionLayout {
     const ip = &mod.intern_pool;
     assert(loaded_union.haveLayout(ip));
     var most_aligned_field: u32 = undefined;
@@ -6218,12 +6218,12 @@ pub fn getUnionLayout(mod: *Module, loaded_union: InternPool.LoadedUnionType) Un
     };
 }
 
-pub fn unionAbiSize(mod: *Module, loaded_union: InternPool.LoadedUnionType) u64 {
+pub fn union_abi_size(mod: *Module, loaded_union: InternPool.LoadedUnionType) u64 {
     return mod.getUnionLayout(loaded_union).abi_size;
 }
 
 /// Returns 0 if the union is represented with 0 bits at runtime.
-pub fn unionAbiAlignment(mod: *Module, loaded_union: InternPool.LoadedUnionType) Alignment {
+pub fn union_abi_alignment(mod: *Module, loaded_union: InternPool.LoadedUnionType) Alignment {
     const ip = &mod.intern_pool;
     const have_tag = loaded_union.flagsPtr(ip).runtime_tag.hasTag();
     var max_align: Alignment = .none;
@@ -6240,7 +6240,7 @@ pub fn unionAbiAlignment(mod: *Module, loaded_union: InternPool.LoadedUnionType)
 /// Returns the field alignment, assuming the union is not packed.
 /// Keep implementation in sync with `Sema.unionFieldAlignment`.
 /// Prefer to call that function instead of this one during Sema.
-pub fn unionFieldNormalAlignment(mod: *Module, loaded_union: InternPool.LoadedUnionType, field_index: u32) Alignment {
+pub fn union_field_normal_alignment(mod: *Module, loaded_union: InternPool.LoadedUnionType, field_index: u32) Alignment {
     const ip = &mod.intern_pool;
     const field_align = loaded_union.fieldAlign(ip, field_index);
     if (field_align != .none) return field_align;
@@ -6249,7 +6249,7 @@ pub fn unionFieldNormalAlignment(mod: *Module, loaded_union: InternPool.LoadedUn
 }
 
 /// Returns the index of the active field, given the current tag value
-pub fn unionTagFieldIndex(mod: *Module, loaded_union: InternPool.LoadedUnionType, enum_tag: Value) ?u32 {
+pub fn union_tag_field_index(mod: *Module, loaded_union: InternPool.LoadedUnionType, enum_tag: Value) ?u32 {
     const ip = &mod.intern_pool;
     if (enum_tag.toIntern() == .none) return null;
     assert(ip.typeOf(enum_tag.toIntern()) == loaded_union.enum_tag_ty);
@@ -6259,7 +6259,7 @@ pub fn unionTagFieldIndex(mod: *Module, loaded_union: InternPool.LoadedUnionType
 /// Returns the field alignment of a non-packed struct in byte units.
 /// Keep implementation in sync with `Sema.structFieldAlignment`.
 /// asserts the layout is not packed.
-pub fn structFieldAlignment(
+pub fn struct_field_alignment(
     mod: *Module,
     explicit_alignment: InternPool.Alignment,
     field_ty: Type,
@@ -6282,7 +6282,7 @@ pub fn structFieldAlignment(
 
 /// Returns the field alignment of an extern struct in byte units.
 /// This logic is duplicated in Type.abiAlignmentAdvanced.
-pub fn structFieldAlignmentExtern(mod: *Module, field_ty: Type) Alignment {
+pub fn struct_field_alignment_extern(mod: *Module, field_ty: Type) Alignment {
     const ty_abi_align = field_ty.abiAlignment(mod);
 
     if (field_ty.isAbiInt(mod) and field_ty.intInfo(mod).bits >= 128) {
@@ -6298,7 +6298,7 @@ pub fn structFieldAlignmentExtern(mod: *Module, field_ty: Type) Alignment {
 /// into the packed struct InternPool data rather than computing this on the
 /// fly, however it was found to perform worse when measured on real world
 /// projects.
-pub fn structPackedFieldBitOffset(
+pub fn struct_packed_field_bit_offset(
     mod: *Module,
     struct_type: InternPool.LoadedStructType,
     field_index: u32,

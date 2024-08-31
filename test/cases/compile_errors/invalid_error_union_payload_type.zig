@@ -4,7 +4,7 @@ comptime {
 comptime {
     _ = anyerror!anyerror;
 }
-fn someFunction() !anyerror {
+fn some_function() !anyerror {
     return error.C;
 }
 comptime {

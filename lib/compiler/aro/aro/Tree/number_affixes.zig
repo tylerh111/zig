@@ -7,7 +7,7 @@ pub const Prefix = enum(u8) {
     decimal = 10,
     hex = 16,
 
-    pub fn digitAllowed(prefix: Prefix, c: u8) bool {
+    pub fn digit_allowed(prefix: Prefix, c: u8) bool {
         return switch (c) {
             '0', '1' => true,
             '2'...'7' => prefix != .binary,
@@ -17,7 +17,7 @@ pub const Prefix = enum(u8) {
         };
     }
 
-    pub fn fromString(buf: []const u8) Prefix {
+    pub fn from_string(buf: []const u8) Prefix {
         if (buf.len == 1) return .decimal;
         // tokenizer enforces that first byte is a decimal digit or period
         switch (buf[0]) {
@@ -43,7 +43,7 @@ pub const Prefix = enum(u8) {
     }
 
     /// Length of this prefix as a string
-    pub fn stringLen(prefix: Prefix) usize {
+    pub fn string_len(prefix: Prefix) usize {
         return switch (prefix) {
             .binary => 2,
             .octal => 1,
@@ -135,7 +135,7 @@ pub const Suffix = enum {
         .{ .IQ, &.{ "I", "Q" } },
     };
 
-    pub fn fromString(buf: []const u8, suffix_kind: enum { int, float }) ?Suffix {
+    pub fn from_string(buf: []const u8, suffix_kind: enum { int, float }) ?Suffix {
         if (buf.len == 0) return .None;
 
         const suffixes = switch (suffix_kind) {
@@ -159,14 +159,14 @@ pub const Suffix = enum {
         return null;
     }
 
-    pub fn isImaginary(suffix: Suffix) bool {
+    pub fn is_imaginary(suffix: Suffix) bool {
         return switch (suffix) {
             .I, .IL, .IF, .IU, .IUL, .ILL, .IULL, .IWB, .IUWB, .IF128, .IQ, .IW => true,
             .None, .L, .F16, .F, .U, .UL, .LL, .ULL, .WB, .UWB, .F128, .Q, .W => false,
         };
     }
 
-    pub fn isSignedInteger(suffix: Suffix) bool {
+    pub fn is_signed_integer(suffix: Suffix) bool {
         return switch (suffix) {
             .None, .L, .LL, .I, .IL, .ILL, .WB, .IWB => true,
             .U, .UL, .ULL, .IU, .IUL, .IULL, .UWB, .IUWB => false,
@@ -178,7 +178,7 @@ pub const Suffix = enum {
         return if (suffix.isSignedInteger()) .signed else .unsigned;
     }
 
-    pub fn isBitInt(suffix: Suffix) bool {
+    pub fn is_bit_int(suffix: Suffix) bool {
         return switch (suffix) {
             .WB, .UWB, .IWB, .IUWB => true,
             else => false,

@@ -50,7 +50,7 @@ pub fn address(self: Atom, elf_file: *Elf) i64 {
     return @as(i64, @intCast(shdr.sh_addr)) + self.value;
 }
 
-pub fn debugTombstoneValue(self: Atom, target: Symbol, elf_file: *Elf) ?u64 {
+pub fn debug_tombstone_value(self: Atom, target: Symbol, elf_file: *Elf) ?u64 {
     if (target.mergeSubsection(elf_file)) |msub| {
         if (msub.alive) return null;
     }
@@ -72,7 +72,7 @@ pub fn thunk(self: Atom, elf_file: *Elf) *Thunk {
     return elf_file.thunk(extras.thunk);
 }
 
-pub fn inputShdr(self: Atom, elf_file: *Elf) elf.Elf64_Shdr {
+pub fn input_shdr(self: Atom, elf_file: *Elf) elf.Elf64_Shdr {
     return switch (self.file(elf_file).?) {
         .object => |x| x.shdrs.items[self.input_section_index],
         .zig_object => |x| x.inputShdr(self.atom_index, elf_file),
@@ -80,12 +80,12 @@ pub fn inputShdr(self: Atom, elf_file: *Elf) elf.Elf64_Shdr {
     };
 }
 
-pub fn relocsShndx(self: Atom) ?u32 {
+pub fn relocs_shndx(self: Atom) ?u32 {
     if (self.relocs_section_index == 0) return null;
     return self.relocs_section_index;
 }
 
-pub fn outputShndx(self: Atom) ?u32 {
+pub fn output_shndx(self: Atom) ?u32 {
     if (self.output_section_index == 0) return null;
     return self.output_section_index;
 }
@@ -106,7 +106,7 @@ pub fn capacity(self: Atom, elf_file: *Elf) u64 {
     return @intCast(next_addr - self.address(elf_file));
 }
 
-pub fn freeListEligible(self: Atom, elf_file: *Elf) bool {
+pub fn free_list_eligible(self: Atom, elf_file: *Elf) bool {
     // No need to keep a free list node for the last block.
     const next = elf_file.atom(self.next_index) orelse return false;
     const cap: u64 = @intCast(next.address(elf_file) - self.address(elf_file));
@@ -320,7 +320,7 @@ pub fn relocs(self: Atom, elf_file: *Elf) []const elf.Elf64_Rela {
     }
 }
 
-pub fn writeRelocs(self: Atom, elf_file: *Elf, out_relocs: *std.ArrayList(elf.Elf64_Rela)) !void {
+pub fn write_relocs(self: Atom, elf_file: *Elf, out_relocs: *std.ArrayList(elf.Elf64_Rela)) !void {
     relocs_log.debug("0x{x}: {s}", .{ self.address(elf_file), self.name(elf_file) });
 
     const cpu_arch = elf_file.getTarget().cpu.arch;
@@ -372,13 +372,13 @@ pub fn fdes(self: Atom, elf_file: *Elf) []Fde {
     return object.fdes.items[extras.fde_start..][0..extras.fde_count];
 }
 
-pub fn markFdesDead(self: Atom, elf_file: *Elf) void {
+pub fn mark_fdes_dead(self: Atom, elf_file: *Elf) void {
     for (self.fdes(elf_file)) |*fde| {
         fde.alive = false;
     }
 }
 
-pub fn addReloc(self: Atom, elf_file: *Elf, reloc: elf.Elf64_Rela) !void {
+pub fn add_reloc(self: Atom, elf_file: *Elf, reloc: elf.Elf64_Rela) !void {
     const comp = elf_file.base.comp;
     const gpa = comp.gpa;
     const file_ptr = self.file(elf_file).?;
@@ -388,14 +388,14 @@ pub fn addReloc(self: Atom, elf_file: *Elf, reloc: elf.Elf64_Rela) !void {
     try rels.append(gpa, reloc);
 }
 
-pub fn freeRelocs(self: Atom, elf_file: *Elf) void {
+pub fn free_relocs(self: Atom, elf_file: *Elf) void {
     const file_ptr = self.file(elf_file).?;
     assert(file_ptr == .zig_object);
     const zig_object = file_ptr.zig_object;
     zig_object.relocs.items[self.relocs_section_index].clearRetainingCapacity();
 }
 
-pub fn scanRelocsRequiresCode(self: Atom, elf_file: *Elf) bool {
+pub fn scan_relocs_requires_code(self: Atom, elf_file: *Elf) bool {
     const cpu_arch = elf_file.getTarget().cpu.arch;
     for (self.relocs(elf_file)) |rel| {
         switch (cpu_arch) {
@@ -409,7 +409,7 @@ pub fn scanRelocsRequiresCode(self: Atom, elf_file: *Elf) bool {
     return false;
 }
 
-pub fn scanRelocs(self: Atom, elf_file: *Elf, code: ?[]const u8, undefs: anytype) RelocError!void {
+pub fn scan_relocs(self: Atom, elf_file: *Elf, code: ?[]const u8, undefs: anytype) RelocError!void {
     const cpu_arch = elf_file.getTarget().cpu.arch;
     const file_ptr = self.file(elf_file).?;
     const rels = self.relocs(elf_file);
@@ -474,7 +474,7 @@ pub fn scanRelocs(self: Atom, elf_file: *Elf, code: ?[]const u8, undefs: anytype
     if (has_reloc_errors) return error.RelocFailure;
 }
 
-fn scanReloc(
+fn scan_reloc(
     self: Atom,
     symbol: *Symbol,
     rel: elf.Elf64_Rela,
@@ -567,7 +567,7 @@ const RelocAction = enum {
     ifunc,
 };
 
-fn pcRelocAction(symbol: *const Symbol, elf_file: *Elf) RelocAction {
+fn pc_reloc_action(symbol: *const Symbol, elf_file: *Elf) RelocAction {
     // zig fmt: off
     const table: [3][4]RelocAction = .{
         //  Abs       Local   Import data  Import func
@@ -581,7 +581,7 @@ fn pcRelocAction(symbol: *const Symbol, elf_file: *Elf) RelocAction {
     return table[output][data];
 }
 
-fn absRelocAction(symbol: *const Symbol, elf_file: *Elf) RelocAction {
+fn abs_reloc_action(symbol: *const Symbol, elf_file: *Elf) RelocAction {
     // zig fmt: off
     const table: [3][4]RelocAction = .{
         //  Abs    Local       Import data  Import func
@@ -595,7 +595,7 @@ fn absRelocAction(symbol: *const Symbol, elf_file: *Elf) RelocAction {
     return table[output][data];
 }
 
-fn dynAbsRelocAction(symbol: *const Symbol, elf_file: *Elf) RelocAction {
+fn dyn_abs_reloc_action(symbol: *const Symbol, elf_file: *Elf) RelocAction {
     if (symbol.isIFunc(elf_file)) return .ifunc;
     // zig fmt: off
     const table: [3][4]RelocAction = .{
@@ -610,7 +610,7 @@ fn dynAbsRelocAction(symbol: *const Symbol, elf_file: *Elf) RelocAction {
     return table[output][data];
 }
 
-fn outputType(elf_file: *Elf) u2 {
+fn output_type(elf_file: *Elf) u2 {
     const comp = elf_file.base.comp;
     assert(!elf_file.base.isRelocatable());
     return switch (elf_file.base.comp.config.output_mode) {
@@ -623,14 +623,14 @@ fn outputType(elf_file: *Elf) u2 {
     };
 }
 
-fn dataType(symbol: *const Symbol, elf_file: *Elf) u2 {
+fn data_type(symbol: *const Symbol, elf_file: *Elf) u2 {
     if (symbol.isAbs(elf_file)) return 0;
     if (!symbol.flags.import) return 1;
     if (symbol.type(elf_file) != elf.STT_FUNC) return 2;
     return 3;
 }
 
-fn reportUnhandledRelocError(self: Atom, rel: elf.Elf64_Rela, elf_file: *Elf) RelocError!void {
+fn report_unhandled_reloc_error(self: Atom, rel: elf.Elf64_Rela, elf_file: *Elf) RelocError!void {
     var err = try elf_file.addErrorWithNotes(1);
     try err.addMsg(elf_file, "fatal linker error: unhandled relocation type {} at offset 0x{x}", .{
         relocation.fmtRelocType(rel.r_type(), elf_file.getTarget().cpu.arch),
@@ -643,7 +643,7 @@ fn reportUnhandledRelocError(self: Atom, rel: elf.Elf64_Rela, elf_file: *Elf) Re
     return error.RelocFailure;
 }
 
-fn reportTextRelocError(
+fn report_text_reloc_error(
     self: Atom,
     symbol: *const Symbol,
     rel: elf.Elf64_Rela,
@@ -661,7 +661,7 @@ fn reportTextRelocError(
     return error.RelocFailure;
 }
 
-fn reportPicError(
+fn report_pic_error(
     self: Atom,
     symbol: *const Symbol,
     rel: elf.Elf64_Rela,
@@ -680,7 +680,7 @@ fn reportPicError(
     return error.RelocFailure;
 }
 
-fn reportNoPicError(
+fn report_no_pic_error(
     self: Atom,
     symbol: *const Symbol,
     rel: elf.Elf64_Rela,
@@ -700,7 +700,7 @@ fn reportNoPicError(
 }
 
 // This function will report any undefined non-weak symbols that are not imports.
-fn reportUndefined(
+fn report_undefined(
     self: Atom,
     elf_file: *Elf,
     sym: *const Symbol,
@@ -733,7 +733,7 @@ fn reportUndefined(
     return false;
 }
 
-pub fn resolveRelocsAlloc(self: Atom, elf_file: *Elf, code: []u8) RelocError!void {
+pub fn resolve_relocs_alloc(self: Atom, elf_file: *Elf, code: []u8) RelocError!void {
     relocs_log.debug("0x{x}: {s}", .{ self.address(elf_file), self.name(elf_file) });
 
     const cpu_arch = elf_file.getTarget().cpu.arch;
@@ -818,7 +818,7 @@ pub fn resolveRelocsAlloc(self: Atom, elf_file: *Elf, code: []u8) RelocError!voi
     if (has_reloc_errors) return error.RelaxFailure;
 }
 
-fn resolveDynAbsReloc(
+fn resolve_dyn_abs_reloc(
     self: Atom,
     target: *const Symbol,
     rel: elf.Elf64_Rela,
@@ -910,14 +910,14 @@ fn resolveDynAbsReloc(
     }
 }
 
-fn applyDynamicReloc(value: i64, elf_file: *Elf, writer: anytype) !void {
+fn apply_dynamic_reloc(value: i64, elf_file: *Elf, writer: anytype) !void {
     _ = elf_file;
     // if (elf_file.options.apply_dynamic_relocs) {
     try writer.writeInt(i64, value, .little);
     // }
 }
 
-pub fn resolveRelocsNonAlloc(self: Atom, elf_file: *Elf, code: []u8, undefs: anytype) !void {
+pub fn resolve_relocs_non_alloc(self: Atom, elf_file: *Elf, code: []u8, undefs: anytype) !void {
     relocs_log.debug("0x{x}: {s}", .{ self.address(elf_file), self.name(elf_file) });
 
     const cpu_arch = elf_file.getTarget().cpu.arch;
@@ -1013,7 +1013,7 @@ const AddExtraOpts = struct {
     rel_count: ?u32 = null,
 };
 
-pub fn addExtra(atom: *Atom, opts: AddExtraOpts, elf_file: *Elf) !void {
+pub fn add_extra(atom: *Atom, opts: AddExtraOpts, elf_file: *Elf) !void {
     if (atom.extra(elf_file) == null) {
         atom.extra_index = try elf_file.addAtomExtra(.{});
     }
@@ -1030,7 +1030,7 @@ pub inline fn extra(atom: Atom, elf_file: *Elf) ?Extra {
     return elf_file.atomExtra(atom.extra_index);
 }
 
-pub inline fn setExtra(atom: Atom, extras: Extra, elf_file: *Elf) void {
+pub inline fn set_extra(atom: Atom, extras: Extra, elf_file: *Elf) void {
     elf_file.setAtomExtra(atom.extra_index, extras);
 }
 
@@ -1105,7 +1105,7 @@ pub const Flags = packed struct {
 };
 
 const x86_64 = struct {
-    fn scanReloc(
+    fn scan_reloc(
         atom: Atom,
         elf_file: *Elf,
         rel: elf.Elf64_Rela,
@@ -1225,7 +1225,7 @@ const x86_64 = struct {
         }
     }
 
-    fn resolveRelocAlloc(
+    fn resolve_reloc_alloc(
         atom: Atom,
         elf_file: *Elf,
         rel: elf.Elf64_Rela,
@@ -1370,7 +1370,7 @@ const x86_64 = struct {
         }
     }
 
-    fn resolveRelocNonAlloc(
+    fn resolve_reloc_non_alloc(
         atom: Atom,
         elf_file: *Elf,
         rel: elf.Elf64_Rela,
@@ -1419,7 +1419,7 @@ const x86_64 = struct {
         }
     }
 
-    fn relaxGotpcrelx(code: []u8) !void {
+    fn relax_gotpcrelx(code: []u8) !void {
         const old_inst = disassemble(code) orelse return error.RelaxFailure;
         const inst = switch (old_inst.encoding.mnemonic) {
             .call => try Instruction.new(old_inst.prefix, .call, &.{
@@ -1437,7 +1437,7 @@ const x86_64 = struct {
         try encode(&.{ nop, inst }, code);
     }
 
-    fn relaxRexGotpcrelx(code: []u8) !void {
+    fn relax_rex_gotpcrelx(code: []u8) !void {
         const old_inst = disassemble(code) orelse return error.RelaxFailure;
         switch (old_inst.encoding.mnemonic) {
             .mov => {
@@ -1449,7 +1449,7 @@ const x86_64 = struct {
         }
     }
 
-    fn relaxTlsGdToIe(
+    fn relax_tls_gd_to_ie(
         self: Atom,
         rels: []const elf.Elf64_Rela,
         value: i32,
@@ -1488,7 +1488,7 @@ const x86_64 = struct {
         }
     }
 
-    fn relaxTlsLdToLe(
+    fn relax_tls_ld_to_le(
         self: Atom,
         rels: []const elf.Elf64_Rela,
         value: i32,
@@ -1542,7 +1542,7 @@ const x86_64 = struct {
         }
     }
 
-    fn canRelaxGotTpOff(code: []const u8) bool {
+    fn can_relax_got_tp_off(code: []const u8) bool {
         const old_inst = disassemble(code) orelse return false;
         switch (old_inst.encoding.mnemonic) {
             .mov => if (Instruction.new(old_inst.prefix, .mov, &.{
@@ -1557,7 +1557,7 @@ const x86_64 = struct {
         }
     }
 
-    fn relaxGotTpOff(code: []u8) void {
+    fn relax_got_tp_off(code: []u8) void {
         const old_inst = disassemble(code) orelse unreachable;
         switch (old_inst.encoding.mnemonic) {
             .mov => {
@@ -1573,7 +1573,7 @@ const x86_64 = struct {
         }
     }
 
-    fn relaxGotPcTlsDesc(code: []u8) !void {
+    fn relax_got_pc_tls_desc(code: []u8) !void {
         const old_inst = disassemble(code) orelse return error.RelaxFailure;
         switch (old_inst.encoding.mnemonic) {
             .lea => {
@@ -1589,7 +1589,7 @@ const x86_64 = struct {
         }
     }
 
-    fn relaxTlsGdToLe(
+    fn relax_tls_gd_to_le(
         self: Atom,
         rels: []const elf.Elf64_Rela,
         value: i32,
@@ -1656,7 +1656,7 @@ const x86_64 = struct {
 };
 
 const aarch64 = struct {
-    fn scanReloc(
+    fn scan_reloc(
         atom: Atom,
         elf_file: *Elf,
         rel: elf.Elf64_Rela,
@@ -1742,7 +1742,7 @@ const aarch64 = struct {
         }
     }
 
-    fn resolveRelocAlloc(
+    fn resolve_reloc_alloc(
         atom: Atom,
         elf_file: *Elf,
         rel: elf.Elf64_Rela,
@@ -1952,7 +1952,7 @@ const aarch64 = struct {
         }
     }
 
-    fn resolveRelocNonAlloc(
+    fn resolve_reloc_non_alloc(
         atom: Atom,
         elf_file: *Elf,
         rel: elf.Elf64_Rela,
@@ -1987,7 +1987,7 @@ const aarch64 = struct {
 };
 
 const riscv = struct {
-    fn scanReloc(
+    fn scan_reloc(
         atom: Atom,
         elf_file: *Elf,
         rel: elf.Elf64_Rela,
@@ -2037,7 +2037,7 @@ const riscv = struct {
         }
     }
 
-    fn resolveRelocAlloc(
+    fn resolve_reloc_alloc(
         atom: Atom,
         elf_file: *Elf,
         rel: elf.Elf64_Rela,
@@ -2162,7 +2162,7 @@ const riscv = struct {
         }
     }
 
-    fn resolveRelocNonAlloc(
+    fn resolve_reloc_non_alloc(
         atom: Atom,
         elf_file: *Elf,
         rel: elf.Elf64_Rela,

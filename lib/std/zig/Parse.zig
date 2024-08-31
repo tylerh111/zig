@@ -23,7 +23,7 @@ const Members = struct {
     rhs: Node.Index,
     trailing: bool,
 
-    fn toSpan(self: Members, p: *Parse) !Node.SubRange {
+    fn to_span(self: Members, p: *Parse) !Node.SubRange {
         if (self.len <= 2) {
             const nodes = [2]Node.Index{ self.lhs, self.rhs };
             return p.listToSpan(nodes[0..self.len]);
@@ -33,7 +33,7 @@ const Members = struct {
     }
 };
 
-fn listToSpan(p: *Parse, list: []const Node.Index) !Node.SubRange {
+fn list_to_span(p: *Parse, list: []const Node.Index) !Node.SubRange {
     try p.extra_data.appendSlice(p.gpa, list);
     return Node.SubRange{
         .start = @as(Node.Index, @intCast(p.extra_data.items.len - list.len)),
@@ -41,24 +41,24 @@ fn listToSpan(p: *Parse, list: []const Node.Index) !Node.SubRange {
     };
 }
 
-fn addNode(p: *Parse, elem: Ast.Node) Allocator.Error!Node.Index {
+fn add_node(p: *Parse, elem: Ast.Node) Allocator.Error!Node.Index {
     const result = @as(Node.Index, @intCast(p.nodes.len));
     try p.nodes.append(p.gpa, elem);
     return result;
 }
 
-fn setNode(p: *Parse, i: usize, elem: Ast.Node) Node.Index {
+fn set_node(p: *Parse, i: usize, elem: Ast.Node) Node.Index {
     p.nodes.set(i, elem);
     return @as(Node.Index, @intCast(i));
 }
 
-fn reserveNode(p: *Parse, tag: Ast.Node.Tag) !usize {
+fn reserve_node(p: *Parse, tag: Ast.Node.Tag) !usize {
     try p.nodes.resize(p.gpa, p.nodes.len + 1);
     p.nodes.items(.tag)[p.nodes.len - 1] = tag;
     return p.nodes.len - 1;
 }
 
-fn unreserveNode(p: *Parse, node_index: usize) void {
+fn unreserve_node(p: *Parse, node_index: usize) void {
     if (p.nodes.len == node_index) {
         p.nodes.resize(p.gpa, p.nodes.len - 1) catch unreachable;
     } else {
@@ -69,7 +69,7 @@ fn unreserveNode(p: *Parse, node_index: usize) void {
     }
 }
 
-fn addExtra(p: *Parse, extra: anytype) Allocator.Error!Node.Index {
+fn add_extra(p: *Parse, extra: anytype) Allocator.Error!Node.Index {
     const fields = std.meta.fields(@TypeOf(extra));
     try p.extra_data.ensureUnusedCapacity(p.gpa, fields.len);
     const result = @as(u32, @intCast(p.extra_data.items.len));
@@ -80,7 +80,7 @@ fn addExtra(p: *Parse, extra: anytype) Allocator.Error!Node.Index {
     return result;
 }
 
-fn warnExpected(p: *Parse, expected_token: Token.Tag) error{OutOfMemory}!void {
+fn warn_expected(p: *Parse, expected_token: Token.Tag) error{OutOfMemory}!void {
     @setCold(true);
     try p.warnMsg(.{
         .tag = .expected_token,
@@ -94,7 +94,7 @@ fn warn(p: *Parse, error_tag: AstError.Tag) error{OutOfMemory}!void {
     try p.warnMsg(.{ .tag = error_tag, .token = p.tok_i });
 }
 
-fn warnMsg(p: *Parse, msg: Ast.Error) error{OutOfMemory}!void {
+fn warn_msg(p: *Parse, msg: Ast.Error) error{OutOfMemory}!void {
     @setCold(true);
     switch (msg.tag) {
         .expected_semi_after_decl,
@@ -145,7 +145,7 @@ fn fail(p: *Parse, tag: Ast.Error.Tag) error{ ParseError, OutOfMemory } {
     return p.failMsg(.{ .tag = tag, .token = p.tok_i });
 }
 
-fn failExpected(p: *Parse, expected_token: Token.Tag) error{ ParseError, OutOfMemory } {
+fn fail_expected(p: *Parse, expected_token: Token.Tag) error{ ParseError, OutOfMemory } {
     @setCold(true);
     return p.failMsg(.{
         .tag = .expected_token,
@@ -154,14 +154,14 @@ fn failExpected(p: *Parse, expected_token: Token.Tag) error{ ParseError, OutOfMe
     });
 }
 
-fn failMsg(p: *Parse, msg: Ast.Error) error{ ParseError, OutOfMemory } {
+fn fail_msg(p: *Parse, msg: Ast.Error) error{ ParseError, OutOfMemory } {
     @setCold(true);
     try p.warnMsg(msg);
     return error.ParseError;
 }
 
 /// Root <- skip container_doc_comment? ContainerMembers eof
-pub fn parseRoot(p: *Parse) !void {
+pub fn parse_root(p: *Parse) !void {
     // Root node must be index 0.
     p.nodes.appendAssumeCapacity(.{
         .tag = .root,
@@ -182,7 +182,7 @@ pub fn parseRoot(p: *Parse) !void {
 /// Parse in ZON mode. Subset of the language.
 /// TODO: set a flag in Parse struct, and honor that flag
 /// by emitting compilation errors when non-zon nodes are encountered.
-pub fn parseZon(p: *Parse) !void {
+pub fn parse_zon(p: *Parse) !void {
     // We must use index 0 so that 0 can be used as null elsewhere.
     p.nodes.appendAssumeCapacity(.{
         .tag = .root,
@@ -210,7 +210,7 @@ pub fn parseZon(p: *Parse) !void {
 /// ContainerDeclaration <- TestDecl / ComptimeDecl / doc_comment? KEYWORD_pub? Decl
 ///
 /// ComptimeDecl <- KEYWORD_comptime Block
-fn parseContainerMembers(p: *Parse) Allocator.Error!Members {
+fn parse_container_members(p: *Parse) Allocator.Error!Members {
     const scratch_top = p.scratch.items.len;
     defer p.scratch.shrinkRetainingCapacity(scratch_top);
 
@@ -477,7 +477,7 @@ fn parseContainerMembers(p: *Parse) Allocator.Error!Members {
 }
 
 /// Attempts to find next container member by searching for certain tokens
-fn findNextContainerMember(p: *Parse) void {
+fn find_next_container_member(p: *Parse) void {
     var level: u32 = 0;
     while (true) {
         const tok = p.nextToken();
@@ -535,7 +535,7 @@ fn findNextContainerMember(p: *Parse) void {
 }
 
 /// Attempts to find the next statement by searching for a semicolon
-fn findNextStmt(p: *Parse) void {
+fn find_next_stmt(p: *Parse) void {
     var level: u32 = 0;
     while (true) {
         const tok = p.nextToken();
@@ -563,7 +563,7 @@ fn findNextStmt(p: *Parse) void {
 }
 
 /// TestDecl <- KEYWORD_test (STRINGLITERALSINGLE / IDENTIFIER)? Block
-fn expectTestDecl(p: *Parse) !Node.Index {
+fn expect_test_decl(p: *Parse) !Node.Index {
     const test_token = p.assertToken(.keyword_test);
     const name_token = switch (p.token_tags[p.tok_i]) {
         .string_literal, .identifier => p.nextToken(),
@@ -581,7 +581,7 @@ fn expectTestDecl(p: *Parse) !Node.Index {
     });
 }
 
-fn expectTestDeclRecoverable(p: *Parse) error{OutOfMemory}!Node.Index {
+fn expect_test_decl_recoverable(p: *Parse) error{OutOfMemory}!Node.Index {
     return p.expectTestDecl() catch |err| switch (err) {
         error.OutOfMemory => return error.OutOfMemory,
         error.ParseError => {
@@ -595,7 +595,7 @@ fn expectTestDeclRecoverable(p: *Parse) error{OutOfMemory}!Node.Index {
 ///     <- (KEYWORD_export / KEYWORD_extern STRINGLITERALSINGLE? / KEYWORD_inline / KEYWORD_noinline)? FnProto (SEMICOLON / Block)
 ///      / (KEYWORD_export / KEYWORD_extern STRINGLITERALSINGLE?)? KEYWORD_threadlocal? VarDecl
 ///      / KEYWORD_usingnamespace Expr SEMICOLON
-fn expectTopLevelDecl(p: *Parse) !Node.Index {
+fn expect_top_level_decl(p: *Parse) !Node.Index {
     const extern_export_inline_token = p.nextToken();
     var is_extern: bool = false;
     var expect_fn: bool = false;
@@ -667,7 +667,7 @@ fn expectTopLevelDecl(p: *Parse) !Node.Index {
     return p.expectUsingNamespace();
 }
 
-fn expectTopLevelDeclRecoverable(p: *Parse) error{OutOfMemory}!Node.Index {
+fn expect_top_level_decl_recoverable(p: *Parse) error{OutOfMemory}!Node.Index {
     return p.expectTopLevelDecl() catch |err| switch (err) {
         error.OutOfMemory => return error.OutOfMemory,
         error.ParseError => {
@@ -677,7 +677,7 @@ fn expectTopLevelDeclRecoverable(p: *Parse) error{OutOfMemory}!Node.Index {
     };
 }
 
-fn expectUsingNamespace(p: *Parse) !Node.Index {
+fn expect_using_namespace(p: *Parse) !Node.Index {
     const usingnamespace_token = p.assertToken(.keyword_usingnamespace);
     const expr = try p.expectExpr();
     try p.expectSemicolon(.expected_semi_after_decl, false);
@@ -691,7 +691,7 @@ fn expectUsingNamespace(p: *Parse) !Node.Index {
     });
 }
 
-fn expectUsingNamespaceRecoverable(p: *Parse) error{OutOfMemory}!Node.Index {
+fn expect_using_namespace_recoverable(p: *Parse) error{OutOfMemory}!Node.Index {
     return p.expectUsingNamespace() catch |err| switch (err) {
         error.OutOfMemory => return error.OutOfMemory,
         error.ParseError => {
@@ -702,7 +702,7 @@ fn expectUsingNamespaceRecoverable(p: *Parse) error{OutOfMemory}!Node.Index {
 }
 
 /// FnProto <- KEYWORD_fn IDENTIFIER? LPAREN ParamDeclList RPAREN ByteAlign? AddrSpace? LinkSection? CallConv? EXCLAMATIONMARK? TypeExpr
-fn parseFnProto(p: *Parse) !Node.Index {
+fn parse_fn_proto(p: *Parse) !Node.Index {
     const fn_token = p.eatToken(.keyword_fn) orelse return null_node;
 
     // We want the fn proto node to be before its children in the array.
@@ -786,7 +786,7 @@ fn parseFnProto(p: *Parse) !Node.Index {
 
 /// VarDeclProto <- (KEYWORD_const / KEYWORD_var) IDENTIFIER (COLON TypeExpr)? ByteAlign? AddrSpace? LinkSection?
 /// Returns a `*_var_decl` node with its rhs (init expression) initialized to 0.
-fn parseVarDeclProto(p: *Parse) !Node.Index {
+fn parse_var_decl_proto(p: *Parse) !Node.Index {
     const mut_token = p.eatToken(.keyword_const) orelse
         p.eatToken(.keyword_var) orelse
         return null_node;
@@ -849,7 +849,7 @@ fn parseVarDeclProto(p: *Parse) !Node.Index {
 }
 
 /// GlobalVarDecl <- VarDeclProto (EQUAL Expr?) SEMICOLON
-fn parseGlobalVarDecl(p: *Parse) !Node.Index {
+fn parse_global_var_decl(p: *Parse) !Node.Index {
     const var_decl = try p.parseVarDeclProto();
     if (var_decl == 0) {
         return null_node;
@@ -875,7 +875,7 @@ fn parseGlobalVarDecl(p: *Parse) !Node.Index {
 }
 
 /// ContainerField <- doc_comment? KEYWORD_comptime? !KEYWORD_fn (IDENTIFIER COLON)? TypeExpr ByteAlign? (EQUAL Expr)?
-fn expectContainerField(p: *Parse) !Node.Index {
+fn expect_container_field(p: *Parse) !Node.Index {
     _ = p.eatToken(.keyword_comptime);
     const main_token = p.tok_i;
     if (p.token_tags[p.tok_i] == .identifier and p.token_tags[p.tok_i + 1] == .colon) p.tok_i += 2;
@@ -926,7 +926,7 @@ fn expectContainerField(p: *Parse) !Node.Index {
 ///      / LabeledStatement
 ///      / SwitchExpr
 ///      / VarDeclExprStatement
-fn expectStatement(p: *Parse, allow_defer_var: bool) Error!Node.Index {
+fn expect_statement(p: *Parse, allow_defer_var: bool) Error!Node.Index {
     if (p.eatToken(.keyword_comptime)) |comptime_token| {
         const block_expr = try p.parseBlockExpr();
         if (block_expr != 0) {
@@ -1029,7 +1029,7 @@ fn expectStatement(p: *Parse, allow_defer_var: bool) Error!Node.Index {
 /// ComptimeStatement
 ///     <- BlockExpr
 ///      / VarDeclExprStatement
-fn expectComptimeStatement(p: *Parse, comptime_token: TokenIndex) !Node.Index {
+fn expect_comptime_statement(p: *Parse, comptime_token: TokenIndex) !Node.Index {
     const block_expr = try p.parseBlockExpr();
     if (block_expr != 0) {
         return p.addNode(.{
@@ -1044,7 +1044,7 @@ fn expectComptimeStatement(p: *Parse, comptime_token: TokenIndex) !Node.Index {
 /// VarDeclExprStatement
 ///    <- VarDeclProto (COMMA (VarDeclProto / Expr))* EQUAL Expr SEMICOLON
 ///     / Expr (AssignOp Expr / (COMMA (VarDeclProto / Expr))+ EQUAL Expr)? SEMICOLON
-fn expectVarDeclExprStatement(p: *Parse, comptime_token: ?TokenIndex) !Node.Index {
+fn expect_var_decl_expr_statement(p: *Parse, comptime_token: ?TokenIndex) !Node.Index {
     const scratch_top = p.scratch.items.len;
     defer p.scratch.shrinkRetainingCapacity(scratch_top);
 
@@ -1161,7 +1161,7 @@ fn expectVarDeclExprStatement(p: *Parse, comptime_token: ?TokenIndex) !Node.Inde
 /// If a parse error occurs, reports an error, but then finds the next statement
 /// and returns that one instead. If a parse error occurs but there is no following
 /// statement, returns 0.
-fn expectStatementRecoverable(p: *Parse) Error!Node.Index {
+fn expect_statement_recoverable(p: *Parse) Error!Node.Index {
     while (true) {
         return p.expectStatement(true) catch |err| switch (err) {
             error.OutOfMemory => return error.OutOfMemory,
@@ -1180,7 +1180,7 @@ fn expectStatementRecoverable(p: *Parse) Error!Node.Index {
 /// IfStatement
 ///     <- IfPrefix BlockExpr ( KEYWORD_else Payload? Statement )?
 ///      / IfPrefix AssignExpr ( SEMICOLON / KEYWORD_else Payload? Statement )
-fn expectIfStatement(p: *Parse) !Node.Index {
+fn expect_if_statement(p: *Parse) !Node.Index {
     const if_token = p.assertToken(.keyword_if);
     _ = try p.expectToken(.l_paren);
     const condition = try p.expectExpr();
@@ -1239,7 +1239,7 @@ fn expectIfStatement(p: *Parse) !Node.Index {
 }
 
 /// LabeledStatement <- BlockLabel? (Block / LoopStatement)
-fn parseLabeledStatement(p: *Parse) !Node.Index {
+fn parse_labeled_statement(p: *Parse) !Node.Index {
     const label_token = p.parseBlockLabel();
     const block = try p.parseBlock();
     if (block != 0) return block;
@@ -1266,7 +1266,7 @@ fn parseLabeledStatement(p: *Parse) !Node.Index {
 }
 
 /// LoopStatement <- KEYWORD_inline? (ForStatement / WhileStatement)
-fn parseLoopStatement(p: *Parse) !Node.Index {
+fn parse_loop_statement(p: *Parse) !Node.Index {
     const inline_token = p.eatToken(.keyword_inline);
 
     const for_statement = try p.parseForStatement();
@@ -1284,7 +1284,7 @@ fn parseLoopStatement(p: *Parse) !Node.Index {
 /// ForStatement
 ///     <- ForPrefix BlockExpr ( KEYWORD_else Statement )?
 ///      / ForPrefix AssignExpr ( SEMICOLON / KEYWORD_else Statement )
-fn parseForStatement(p: *Parse) !Node.Index {
+fn parse_for_statement(p: *Parse) !Node.Index {
     const for_token = p.eatToken(.keyword_for) orelse return null_node;
 
     const scratch_top = p.scratch.items.len;
@@ -1345,7 +1345,7 @@ fn parseForStatement(p: *Parse) !Node.Index {
 /// WhileStatement
 ///     <- WhilePrefix BlockExpr ( KEYWORD_else Payload? Statement )?
 ///      / WhilePrefix AssignExpr ( SEMICOLON / KEYWORD_else Payload? Statement )
-fn parseWhileStatement(p: *Parse) !Node.Index {
+fn parse_while_statement(p: *Parse) !Node.Index {
     const while_token = p.eatToken(.keyword_while) orelse return null_node;
     _ = try p.expectToken(.l_paren);
     const condition = try p.expectExpr();
@@ -1436,7 +1436,7 @@ fn parseWhileStatement(p: *Parse) !Node.Index {
 /// BlockExprStatement
 ///     <- BlockExpr
 ///      / AssignExpr SEMICOLON
-fn parseBlockExprStatement(p: *Parse) !Node.Index {
+fn parse_block_expr_statement(p: *Parse) !Node.Index {
     const block_expr = try p.parseBlockExpr();
     if (block_expr != 0) {
         return block_expr;
@@ -1449,7 +1449,7 @@ fn parseBlockExprStatement(p: *Parse) !Node.Index {
     return null_node;
 }
 
-fn expectBlockExprStatement(p: *Parse) !Node.Index {
+fn expect_block_expr_statement(p: *Parse) !Node.Index {
     const node = try p.parseBlockExprStatement();
     if (node == 0) {
         return p.fail(.expected_block_or_expr);
@@ -1458,7 +1458,7 @@ fn expectBlockExprStatement(p: *Parse) !Node.Index {
 }
 
 /// BlockExpr <- BlockLabel? Block
-fn parseBlockExpr(p: *Parse) Error!Node.Index {
+fn parse_block_expr(p: *Parse) Error!Node.Index {
     switch (p.token_tags[p.tok_i]) {
         .identifier => {
             if (p.token_tags[p.tok_i + 1] == .colon and
@@ -1496,14 +1496,14 @@ fn parseBlockExpr(p: *Parse) Error!Node.Index {
 ///      / PLUSPERCENTEQUAL
 ///      / MINUSPERCENTEQUAL
 ///      / EQUAL
-fn parseAssignExpr(p: *Parse) !Node.Index {
+fn parse_assign_expr(p: *Parse) !Node.Index {
     const expr = try p.parseExpr();
     if (expr == 0) return null_node;
     return p.finishAssignExpr(expr);
 }
 
 /// SingleAssignExpr <- Expr (AssignOp Expr)?
-fn parseSingleAssignExpr(p: *Parse) !Node.Index {
+fn parse_single_assign_expr(p: *Parse) !Node.Index {
     const lhs = try p.parseExpr();
     if (lhs == 0) return null_node;
     const tag = assignOpNode(p.token_tags[p.tok_i]) orelse return lhs;
@@ -1517,7 +1517,7 @@ fn parseSingleAssignExpr(p: *Parse) !Node.Index {
     });
 }
 
-fn finishAssignExpr(p: *Parse, lhs: Node.Index) !Node.Index {
+fn finish_assign_expr(p: *Parse, lhs: Node.Index) !Node.Index {
     const tok = p.token_tags[p.tok_i];
     if (tok == .comma) return p.finishAssignDestructureExpr(lhs);
     const tag = assignOpNode(tok) orelse return lhs;
@@ -1531,7 +1531,7 @@ fn finishAssignExpr(p: *Parse, lhs: Node.Index) !Node.Index {
     });
 }
 
-fn assignOpNode(tok: Token.Tag) ?Node.Tag {
+fn assign_op_node(tok: Token.Tag) ?Node.Tag {
     return switch (tok) {
         .asterisk_equal => .assign_mul,
         .slash_equal => .assign_div,
@@ -1555,7 +1555,7 @@ fn assignOpNode(tok: Token.Tag) ?Node.Tag {
     };
 }
 
-fn finishAssignDestructureExpr(p: *Parse, first_lhs: Node.Index) !Node.Index {
+fn finish_assign_destructure_expr(p: *Parse, first_lhs: Node.Index) !Node.Index {
     const scratch_top = p.scratch.items.len;
     defer p.scratch.shrinkRetainingCapacity(scratch_top);
 
@@ -1588,7 +1588,7 @@ fn finishAssignDestructureExpr(p: *Parse, first_lhs: Node.Index) !Node.Index {
     });
 }
 
-fn expectSingleAssignExpr(p: *Parse) !Node.Index {
+fn expect_single_assign_expr(p: *Parse) !Node.Index {
     const expr = try p.parseSingleAssignExpr();
     if (expr == 0) {
         return p.fail(.expected_expr_or_assignment);
@@ -1596,7 +1596,7 @@ fn expectSingleAssignExpr(p: *Parse) !Node.Index {
     return expr;
 }
 
-fn expectAssignExpr(p: *Parse) !Node.Index {
+fn expect_assign_expr(p: *Parse) !Node.Index {
     const expr = try p.parseAssignExpr();
     if (expr == 0) {
         return p.fail(.expected_expr_or_assignment);
@@ -1604,11 +1604,11 @@ fn expectAssignExpr(p: *Parse) !Node.Index {
     return expr;
 }
 
-fn parseExpr(p: *Parse) Error!Node.Index {
+fn parse_expr(p: *Parse) Error!Node.Index {
     return p.parseExprPrecedence(0);
 }
 
-fn expectExpr(p: *Parse) Error!Node.Index {
+fn expect_expr(p: *Parse) Error!Node.Index {
     const node = try p.parseExpr();
     if (node == 0) {
         return p.fail(.expected_expr);
@@ -1670,7 +1670,7 @@ const operTable = std.enums.directEnumArrayDefault(Token.Tag, OperInfo, .{ .prec
     .asterisk_pipe = .{ .prec = 70, .tag = .mul_sat },
 });
 
-fn parseExprPrecedence(p: *Parse, min_prec: i32) Error!Node.Index {
+fn parse_expr_precedence(p: *Parse, min_prec: i32) Error!Node.Index {
     assert(min_prec >= 0);
     var node = try p.parsePrefixExpr();
     if (node == 0) {
@@ -1740,7 +1740,7 @@ fn parseExprPrecedence(p: *Parse, min_prec: i32) Error!Node.Index {
 ///      / AMPERSAND
 ///      / KEYWORD_try
 ///      / KEYWORD_await
-fn parsePrefixExpr(p: *Parse) Error!Node.Index {
+fn parse_prefix_expr(p: *Parse) Error!Node.Index {
     const tag: Node.Tag = switch (p.token_tags[p.tok_i]) {
         .bang => .bool_not,
         .minus => .negation,
@@ -1761,7 +1761,7 @@ fn parsePrefixExpr(p: *Parse) Error!Node.Index {
     });
 }
 
-fn expectPrefixExpr(p: *Parse) Error!Node.Index {
+fn expect_prefix_expr(p: *Parse) Error!Node.Index {
     const node = try p.parsePrefixExpr();
     if (node == 0) {
         return p.fail(.expected_prefix_expr);
@@ -1786,7 +1786,7 @@ fn expectPrefixExpr(p: *Parse) Error!Node.Index {
 ///      / LBRACKET ASTERISK (LETTERC / COLON Expr)? RBRACKET
 ///
 /// ArrayTypeStart <- LBRACKET Expr (COLON Expr)? RBRACKET
-fn parseTypeExpr(p: *Parse) Error!Node.Index {
+fn parse_type_expr(p: *Parse) Error!Node.Index {
     switch (p.token_tags[p.tok_i]) {
         .question_mark => return p.addNode(.{
             .tag = .optional_type,
@@ -2058,7 +2058,7 @@ fn parseTypeExpr(p: *Parse) Error!Node.Index {
     }
 }
 
-fn expectTypeExpr(p: *Parse) Error!Node.Index {
+fn expect_type_expr(p: *Parse) Error!Node.Index {
     const node = try p.parseTypeExpr();
     if (node == 0) {
         return p.fail(.expected_type_expr);
@@ -2078,7 +2078,7 @@ fn expectTypeExpr(p: *Parse) Error!Node.Index {
 ///      / BlockLabel? LoopExpr
 ///      / Block
 ///      / CurlySuffixExpr
-fn parsePrimaryExpr(p: *Parse) !Node.Index {
+fn parse_primary_expr(p: *Parse) !Node.Index {
     switch (p.token_tags[p.tok_i]) {
         .keyword_asm => return p.expectAsmExpr(),
         .keyword_if => return p.parseIfExpr(),
@@ -2187,12 +2187,12 @@ fn parsePrimaryExpr(p: *Parse) !Node.Index {
 }
 
 /// IfExpr <- IfPrefix Expr (KEYWORD_else Payload? Expr)?
-fn parseIfExpr(p: *Parse) !Node.Index {
+fn parse_if_expr(p: *Parse) !Node.Index {
     return p.parseIf(expectExpr);
 }
 
 /// Block <- LBRACE Statement* RBRACE
-fn parseBlock(p: *Parse) !Node.Index {
+fn parse_block(p: *Parse) !Node.Index {
     const lbrace = p.eatToken(.l_brace) orelse return null_node;
     const scratch_top = p.scratch.items.len;
     defer p.scratch.shrinkRetainingCapacity(scratch_top);
@@ -2249,7 +2249,7 @@ fn parseBlock(p: *Parse) !Node.Index {
 /// ForInput <- Expr (DOT2 Expr?)?
 ///
 /// ForPayload <- PIPE ASTERISK? IDENTIFIER (COMMA ASTERISK? IDENTIFIER)* PIPE
-fn forPrefix(p: *Parse) Error!usize {
+fn for_prefix(p: *Parse) Error!usize {
     const start = p.scratch.items.len;
     _ = try p.expectToken(.l_paren);
 
@@ -2319,7 +2319,7 @@ fn forPrefix(p: *Parse) Error!usize {
 /// WhilePrefix <- KEYWORD_while LPAREN Expr RPAREN PtrPayload? WhileContinueExpr?
 ///
 /// WhileExpr <- WhilePrefix Expr (KEYWORD_else Payload? Expr)?
-fn parseWhileExpr(p: *Parse) !Node.Index {
+fn parse_while_expr(p: *Parse) !Node.Index {
     const while_token = p.eatToken(.keyword_while) orelse return null_node;
     _ = try p.expectToken(.l_paren);
     const condition = try p.expectExpr();
@@ -2374,7 +2374,7 @@ fn parseWhileExpr(p: *Parse) !Node.Index {
 ///     <- LBRACE FieldInit (COMMA FieldInit)* COMMA? RBRACE
 ///      / LBRACE Expr (COMMA Expr)* COMMA? RBRACE
 ///      / LBRACE RBRACE
-fn parseCurlySuffixExpr(p: *Parse) !Node.Index {
+fn parse_curly_suffix_expr(p: *Parse) !Node.Index {
     const lhs = try p.parseTypeExpr();
     if (lhs == 0) return null_node;
     const lbrace = p.eatToken(.l_brace) orelse return lhs;
@@ -2471,7 +2471,7 @@ fn parseCurlySuffixExpr(p: *Parse) !Node.Index {
 }
 
 /// ErrorUnionExpr <- SuffixExpr (EXCLAMATIONMARK TypeExpr)?
-fn parseErrorUnionExpr(p: *Parse) !Node.Index {
+fn parse_error_union_expr(p: *Parse) !Node.Index {
     const suffix_expr = try p.parseSuffixExpr();
     if (suffix_expr == 0) return null_node;
     const bang = p.eatToken(.bang) orelse return suffix_expr;
@@ -2492,7 +2492,7 @@ fn parseErrorUnionExpr(p: *Parse) !Node.Index {
 /// FnCallArguments <- LPAREN ExprList RPAREN
 ///
 /// ExprList <- (Expr COMMA)* Expr?
-fn parseSuffixExpr(p: *Parse) !Node.Index {
+fn parse_suffix_expr(p: *Parse) !Node.Index {
     if (p.eatToken(.keyword_async)) |_| {
         var res = try p.expectPrimaryTypeExpr();
         while (true) {
@@ -2649,7 +2649,7 @@ fn parseSuffixExpr(p: *Parse) !Node.Index {
 ///      / BlockLabel? LoopTypeExpr
 ///
 /// LoopTypeExpr <- KEYWORD_inline? (ForTypeExpr / WhileTypeExpr)
-fn parsePrimaryTypeExpr(p: *Parse) !Node.Index {
+fn parse_primary_type_expr(p: *Parse) !Node.Index {
     switch (p.token_tags[p.tok_i]) {
         .char_literal => return p.addNode(.{
             .tag = .char_literal,
@@ -2968,7 +2968,7 @@ fn parsePrimaryTypeExpr(p: *Parse) !Node.Index {
     }
 }
 
-fn expectPrimaryTypeExpr(p: *Parse) !Node.Index {
+fn expect_primary_type_expr(p: *Parse) !Node.Index {
     const node = try p.parsePrimaryTypeExpr();
     if (node == 0) {
         return p.fail(.expected_primary_type_expr);
@@ -2979,7 +2979,7 @@ fn expectPrimaryTypeExpr(p: *Parse) !Node.Index {
 /// WhilePrefix <- KEYWORD_while LPAREN Expr RPAREN PtrPayload? WhileContinueExpr?
 ///
 /// WhileTypeExpr <- WhilePrefix TypeExpr (KEYWORD_else Payload? TypeExpr)?
-fn parseWhileTypeExpr(p: *Parse) !Node.Index {
+fn parse_while_type_expr(p: *Parse) !Node.Index {
     const while_token = p.eatToken(.keyword_while) orelse return null_node;
     _ = try p.expectToken(.l_paren);
     const condition = try p.expectExpr();
@@ -3029,7 +3029,7 @@ fn parseWhileTypeExpr(p: *Parse) !Node.Index {
 }
 
 /// SwitchExpr <- KEYWORD_switch LPAREN Expr RPAREN LBRACE SwitchProngList RBRACE
-fn expectSwitchExpr(p: *Parse) !Node.Index {
+fn expect_switch_expr(p: *Parse) !Node.Index {
     const switch_token = p.assertToken(.keyword_switch);
     _ = try p.expectToken(.l_paren);
     const expr_node = try p.expectExpr();
@@ -3065,7 +3065,7 @@ fn expectSwitchExpr(p: *Parse) !Node.Index {
 /// AsmOutputList <- (AsmOutputItem COMMA)* AsmOutputItem?
 ///
 /// AsmInputList <- (AsmInputItem COMMA)* AsmInputItem?
-fn expectAsmExpr(p: *Parse) !Node.Index {
+fn expect_asm_expr(p: *Parse) !Node.Index {
     const asm_token = p.assertToken(.keyword_asm);
     _ = p.eatToken(.keyword_volatile);
     _ = try p.expectToken(.l_paren);
@@ -3140,7 +3140,7 @@ fn expectAsmExpr(p: *Parse) !Node.Index {
 }
 
 /// AsmOutputItem <- LBRACKET IDENTIFIER RBRACKET STRINGLITERAL LPAREN (MINUSRARROW TypeExpr / IDENTIFIER) RPAREN
-fn parseAsmOutputItem(p: *Parse) !Node.Index {
+fn parse_asm_output_item(p: *Parse) !Node.Index {
     _ = p.eatToken(.l_bracket) orelse return null_node;
     const identifier = try p.expectToken(.identifier);
     _ = try p.expectToken(.r_bracket);
@@ -3166,7 +3166,7 @@ fn parseAsmOutputItem(p: *Parse) !Node.Index {
 }
 
 /// AsmInputItem <- LBRACKET IDENTIFIER RBRACKET STRINGLITERAL LPAREN Expr RPAREN
-fn parseAsmInputItem(p: *Parse) !Node.Index {
+fn parse_asm_input_item(p: *Parse) !Node.Index {
     _ = p.eatToken(.l_bracket) orelse return null_node;
     const identifier = try p.expectToken(.identifier);
     _ = try p.expectToken(.r_bracket);
@@ -3185,13 +3185,13 @@ fn parseAsmInputItem(p: *Parse) !Node.Index {
 }
 
 /// BreakLabel <- COLON IDENTIFIER
-fn parseBreakLabel(p: *Parse) !TokenIndex {
+fn parse_break_label(p: *Parse) !TokenIndex {
     _ = p.eatToken(.colon) orelse return null_node;
     return p.expectToken(.identifier);
 }
 
 /// BlockLabel <- IDENTIFIER COLON
-fn parseBlockLabel(p: *Parse) TokenIndex {
+fn parse_block_label(p: *Parse) TokenIndex {
     if (p.token_tags[p.tok_i] == .identifier and
         p.token_tags[p.tok_i + 1] == .colon)
     {
@@ -3203,7 +3203,7 @@ fn parseBlockLabel(p: *Parse) TokenIndex {
 }
 
 /// FieldInit <- DOT IDENTIFIER EQUAL Expr
-fn parseFieldInit(p: *Parse) !Node.Index {
+fn parse_field_init(p: *Parse) !Node.Index {
     if (p.token_tags[p.tok_i + 0] == .period and
         p.token_tags[p.tok_i + 1] == .identifier and
         p.token_tags[p.tok_i + 2] == .equal)
@@ -3215,7 +3215,7 @@ fn parseFieldInit(p: *Parse) !Node.Index {
     }
 }
 
-fn expectFieldInit(p: *Parse) !Node.Index {
+fn expect_field_init(p: *Parse) !Node.Index {
     if (p.token_tags[p.tok_i] != .period or
         p.token_tags[p.tok_i + 1] != .identifier or
         p.token_tags[p.tok_i + 2] != .equal)
@@ -3226,7 +3226,7 @@ fn expectFieldInit(p: *Parse) !Node.Index {
 }
 
 /// WhileContinueExpr <- COLON LPAREN AssignExpr RPAREN
-fn parseWhileContinueExpr(p: *Parse) !Node.Index {
+fn parse_while_continue_expr(p: *Parse) !Node.Index {
     _ = p.eatToken(.colon) orelse {
         if (p.token_tags[p.tok_i] == .l_paren and
             p.tokensOnSameLine(p.tok_i - 1, p.tok_i))
@@ -3241,7 +3241,7 @@ fn parseWhileContinueExpr(p: *Parse) !Node.Index {
 }
 
 /// LinkSection <- KEYWORD_linksection LPAREN Expr RPAREN
-fn parseLinkSection(p: *Parse) !Node.Index {
+fn parse_link_section(p: *Parse) !Node.Index {
     _ = p.eatToken(.keyword_linksection) orelse return null_node;
     _ = try p.expectToken(.l_paren);
     const expr_node = try p.expectExpr();
@@ -3250,7 +3250,7 @@ fn parseLinkSection(p: *Parse) !Node.Index {
 }
 
 /// CallConv <- KEYWORD_callconv LPAREN Expr RPAREN
-fn parseCallconv(p: *Parse) !Node.Index {
+fn parse_callconv(p: *Parse) !Node.Index {
     _ = p.eatToken(.keyword_callconv) orelse return null_node;
     _ = try p.expectToken(.l_paren);
     const expr_node = try p.expectExpr();
@@ -3259,7 +3259,7 @@ fn parseCallconv(p: *Parse) !Node.Index {
 }
 
 /// AddrSpace <- KEYWORD_addrspace LPAREN Expr RPAREN
-fn parseAddrSpace(p: *Parse) !Node.Index {
+fn parse_addr_space(p: *Parse) !Node.Index {
     _ = p.eatToken(.keyword_addrspace) orelse return null_node;
     _ = try p.expectToken(.l_paren);
     const expr_node = try p.expectExpr();
@@ -3278,7 +3278,7 @@ fn parseAddrSpace(p: *Parse) !Node.Index {
 /// ParamType
 ///     <- KEYWORD_anytype
 ///      / TypeExpr
-fn expectParamDecl(p: *Parse) !Node.Index {
+fn expect_param_decl(p: *Parse) !Node.Index {
     _ = try p.eatDocComments();
     switch (p.token_tags[p.tok_i]) {
         .keyword_noalias, .keyword_comptime => p.tok_i += 1,
@@ -3303,7 +3303,7 @@ fn expectParamDecl(p: *Parse) !Node.Index {
 }
 
 /// Payload <- PIPE IDENTIFIER PIPE
-fn parsePayload(p: *Parse) !TokenIndex {
+fn parse_payload(p: *Parse) !TokenIndex {
     _ = p.eatToken(.pipe) orelse return null_node;
     const identifier = try p.expectToken(.identifier);
     _ = try p.expectToken(.pipe);
@@ -3311,7 +3311,7 @@ fn parsePayload(p: *Parse) !TokenIndex {
 }
 
 /// PtrPayload <- PIPE ASTERISK? IDENTIFIER PIPE
-fn parsePtrPayload(p: *Parse) !TokenIndex {
+fn parse_ptr_payload(p: *Parse) !TokenIndex {
     _ = p.eatToken(.pipe) orelse return null_node;
     _ = p.eatToken(.asterisk);
     const identifier = try p.expectToken(.identifier);
@@ -3322,7 +3322,7 @@ fn parsePtrPayload(p: *Parse) !TokenIndex {
 /// Returns the first identifier token, if any.
 ///
 /// PtrIndexPayload <- PIPE ASTERISK? IDENTIFIER (COMMA IDENTIFIER)? PIPE
-fn parsePtrIndexPayload(p: *Parse) !TokenIndex {
+fn parse_ptr_index_payload(p: *Parse) !TokenIndex {
     _ = p.eatToken(.pipe) orelse return null_node;
     _ = p.eatToken(.asterisk);
     const identifier = try p.expectToken(.identifier);
@@ -3338,7 +3338,7 @@ fn parsePtrIndexPayload(p: *Parse) !TokenIndex {
 /// SwitchCase
 ///     <- SwitchItem (COMMA SwitchItem)* COMMA?
 ///      / KEYWORD_else
-fn parseSwitchProng(p: *Parse) !Node.Index {
+fn parse_switch_prong(p: *Parse) !Node.Index {
     const scratch_top = p.scratch.items.len;
     defer p.scratch.shrinkRetainingCapacity(scratch_top);
 
@@ -3389,7 +3389,7 @@ fn parseSwitchProng(p: *Parse) !Node.Index {
 }
 
 /// SwitchItem <- Expr (DOT3 Expr)?
-fn parseSwitchItem(p: *Parse) !Node.Index {
+fn parse_switch_item(p: *Parse) !Node.Index {
     const expr = try p.parseExpr();
     if (expr == 0) return null_node;
 
@@ -3413,7 +3413,7 @@ const PtrModifiers = struct {
     bit_range_end: Node.Index,
 };
 
-fn parsePtrModifiers(p: *Parse) !PtrModifiers {
+fn parse_ptr_modifiers(p: *Parse) !PtrModifiers {
     var result: PtrModifiers = .{
         .align_node = 0,
         .addrspace_node = 0,
@@ -3478,7 +3478,7 @@ fn parsePtrModifiers(p: *Parse) !PtrModifiers {
 ///      / DOT IDENTIFIER
 ///      / DOTASTERISK
 ///      / DOTQUESTIONMARK
-fn parseSuffixOp(p: *Parse, lhs: Node.Index) !Node.Index {
+fn parse_suffix_op(p: *Parse, lhs: Node.Index) !Node.Index {
     switch (p.token_tags[p.tok_i]) {
         .l_bracket => {
             const lbracket = p.nextToken();
@@ -3594,7 +3594,7 @@ fn parseSuffixOp(p: *Parse, lhs: Node.Index) !Node.Index {
 ///      / KEYWORD_opaque
 ///      / KEYWORD_enum (LPAREN Expr RPAREN)?
 ///      / KEYWORD_union (LPAREN (KEYWORD_enum (LPAREN Expr RPAREN)? / Expr) RPAREN)?
-fn parseContainerDeclAuto(p: *Parse) !Node.Index {
+fn parse_container_decl_auto(p: *Parse) !Node.Index {
     const main_token = p.nextToken();
     const arg_expr = switch (p.token_tags[main_token]) {
         .keyword_opaque => null_node,
@@ -3728,7 +3728,7 @@ fn parseContainerDeclAuto(p: *Parse) !Node.Index {
 
 /// Give a helpful error message for those transitioning from
 /// C's 'struct Foo {};' to Zig's 'const Foo = struct {};'.
-fn parseCStyleContainer(p: *Parse) Error!bool {
+fn parse_cstyle_container(p: *Parse) Error!bool {
     const main_token = p.tok_i;
     switch (p.token_tags[p.tok_i]) {
         .keyword_enum, .keyword_union, .keyword_struct => {},
@@ -3760,7 +3760,7 @@ fn parseCStyleContainer(p: *Parse) Error!bool {
 /// Holds temporary data until we are ready to construct the full ContainerDecl AST node.
 ///
 /// ByteAlign <- KEYWORD_align LPAREN Expr RPAREN
-fn parseByteAlign(p: *Parse) !Node.Index {
+fn parse_byte_align(p: *Parse) !Node.Index {
     _ = p.eatToken(.keyword_align) orelse return null_node;
     _ = try p.expectToken(.l_paren);
     const expr = try p.expectExpr();
@@ -3769,7 +3769,7 @@ fn parseByteAlign(p: *Parse) !Node.Index {
 }
 
 /// SwitchProngList <- (SwitchProng COMMA)* SwitchProng?
-fn parseSwitchProngList(p: *Parse) !Node.SubRange {
+fn parse_switch_prong_list(p: *Parse) !Node.SubRange {
     const scratch_top = p.scratch.items.len;
     defer p.scratch.shrinkRetainingCapacity(scratch_top);
 
@@ -3791,7 +3791,7 @@ fn parseSwitchProngList(p: *Parse) !Node.SubRange {
 }
 
 /// ParamDeclList <- (ParamDecl COMMA)* ParamDecl?
-fn parseParamDeclList(p: *Parse) !SmallSpan {
+fn parse_param_decl_list(p: *Parse) !SmallSpan {
     _ = try p.expectToken(.l_paren);
     const scratch_top = p.scratch.items.len;
     defer p.scratch.shrinkRetainingCapacity(scratch_top);
@@ -3830,7 +3830,7 @@ fn parseParamDeclList(p: *Parse) !SmallSpan {
 /// FnCallArguments <- LPAREN ExprList RPAREN
 ///
 /// ExprList <- (Expr COMMA)* Expr?
-fn parseBuiltinCall(p: *Parse) !Node.Index {
+fn parse_builtin_call(p: *Parse) !Node.Index {
     const builtin_token = p.assertToken(.builtin);
     _ = p.eatToken(.l_paren) orelse {
         try p.warn(.expected_param_list);
@@ -3902,7 +3902,7 @@ fn parseBuiltinCall(p: *Parse) !Node.Index {
 }
 
 /// IfPrefix <- KEYWORD_if LPAREN Expr RPAREN PtrPayload?
-fn parseIf(p: *Parse, comptime bodyParseFn: fn (p: *Parse) Error!Node.Index) !Node.Index {
+fn parse_if(p: *Parse, comptime bodyParseFn: fn (p: *Parse) Error!Node.Index) !Node.Index {
     const if_token = p.eatToken(.keyword_if) orelse return null_node;
     _ = try p.expectToken(.l_paren);
     const condition = try p.expectExpr();
@@ -3940,7 +3940,7 @@ fn parseIf(p: *Parse, comptime bodyParseFn: fn (p: *Parse) Error!Node.Index) !No
 /// ForExpr <- ForPrefix Expr (KEYWORD_else Expr)?
 ///
 /// ForTypeExpr <- ForPrefix TypeExpr (KEYWORD_else TypeExpr)?
-fn parseFor(p: *Parse, comptime bodyParseFn: fn (p: *Parse) Error!Node.Index) !Node.Index {
+fn parse_for(p: *Parse, comptime bodyParseFn: fn (p: *Parse) Error!Node.Index) !Node.Index {
     const for_token = p.eatToken(.keyword_for) orelse return null_node;
 
     const scratch_top = p.scratch.items.len;
@@ -3980,7 +3980,7 @@ fn parseFor(p: *Parse, comptime bodyParseFn: fn (p: *Parse) Error!Node.Index) !N
 }
 
 /// Skips over doc comment tokens. Returns the first one, if any.
-fn eatDocComments(p: *Parse) Allocator.Error!?TokenIndex {
+fn eat_doc_comments(p: *Parse) Allocator.Error!?TokenIndex {
     if (p.eatToken(.doc_comment)) |tok| {
         var first_line = tok;
         if (tok > 0 and tokensOnSameLine(p, tok - 1, tok)) {
@@ -3996,21 +3996,21 @@ fn eatDocComments(p: *Parse) Allocator.Error!?TokenIndex {
     return null;
 }
 
-fn tokensOnSameLine(p: *Parse, token1: TokenIndex, token2: TokenIndex) bool {
+fn tokens_on_same_line(p: *Parse, token1: TokenIndex, token2: TokenIndex) bool {
     return std.mem.indexOfScalar(u8, p.source[p.token_starts[token1]..p.token_starts[token2]], '\n') == null;
 }
 
-fn eatToken(p: *Parse, tag: Token.Tag) ?TokenIndex {
+fn eat_token(p: *Parse, tag: Token.Tag) ?TokenIndex {
     return if (p.token_tags[p.tok_i] == tag) p.nextToken() else null;
 }
 
-fn assertToken(p: *Parse, tag: Token.Tag) TokenIndex {
+fn assert_token(p: *Parse, tag: Token.Tag) TokenIndex {
     const token = p.nextToken();
     assert(p.token_tags[token] == tag);
     return token;
 }
 
-fn expectToken(p: *Parse, tag: Token.Tag) Error!TokenIndex {
+fn expect_token(p: *Parse, tag: Token.Tag) Error!TokenIndex {
     if (p.token_tags[p.tok_i] != tag) {
         return p.failMsg(.{
             .tag = .expected_token,
@@ -4021,7 +4021,7 @@ fn expectToken(p: *Parse, tag: Token.Tag) Error!TokenIndex {
     return p.nextToken();
 }
 
-fn expectSemicolon(p: *Parse, error_tag: AstError.Tag, recoverable: bool) Error!void {
+fn expect_semicolon(p: *Parse, error_tag: AstError.Tag, recoverable: bool) Error!void {
     if (p.token_tags[p.tok_i] == .semicolon) {
         _ = p.nextToken();
         return;
@@ -4030,7 +4030,7 @@ fn expectSemicolon(p: *Parse, error_tag: AstError.Tag, recoverable: bool) Error!
     if (!recoverable) return error.ParseError;
 }
 
-fn nextToken(p: *Parse) TokenIndex {
+fn next_token(p: *Parse) TokenIndex {
     const result = p.tok_i;
     p.tok_i += 1;
     return result;

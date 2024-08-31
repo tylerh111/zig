@@ -296,12 +296,12 @@ fn Kyber(comptime p: Params) type {
             }
 
             /// Serializes the key into a byte array.
-            pub fn toBytes(pk: PublicKey) [bytes_length]u8 {
+            pub fn to_bytes(pk: PublicKey) [bytes_length]u8 {
                 return pk.pk.toBytes();
             }
 
             /// Deserializes the key from a byte array.
-            pub fn fromBytes(buf: *const [bytes_length]u8) errors.NonCanonicalError!PublicKey {
+            pub fn from_bytes(buf: *const [bytes_length]u8) errors.NonCanonicalError!PublicKey {
                 var ret: PublicKey = undefined;
                 ret.pk = try InnerPk.fromBytes(buf[0..InnerPk.bytes_length]);
                 sha3.Sha3_256.hash(buf, &ret.hpk, .{});
@@ -353,12 +353,12 @@ fn Kyber(comptime p: Params) type {
             }
 
             /// Serializes the key into a byte array.
-            pub fn toBytes(sk: SecretKey) [bytes_length]u8 {
+            pub fn to_bytes(sk: SecretKey) [bytes_length]u8 {
                 return sk.sk.toBytes() ++ sk.pk.toBytes() ++ sk.hpk ++ sk.z;
             }
 
             /// Deserializes the key from a byte array.
-            pub fn fromBytes(buf: *const [bytes_length]u8) errors.NonCanonicalError!SecretKey {
+            pub fn from_bytes(buf: *const [bytes_length]u8) errors.NonCanonicalError!SecretKey {
                 var ret: SecretKey = undefined;
                 comptime var s: usize = 0;
                 ret.sk = InnerSk.fromBytes(buf[s .. s + InnerSk.bytes_length]);
@@ -451,11 +451,11 @@ fn Kyber(comptime p: Params) type {
                 return u.compress(p.du) ++ v.compress(p.dv);
             }
 
-            fn toBytes(pk: InnerPk) [bytes_length]u8 {
+            fn to_bytes(pk: InnerPk) [bytes_length]u8 {
                 return pk.th.toBytes() ++ pk.rho;
             }
 
-            fn fromBytes(buf: *const [bytes_length]u8) errors.NonCanonicalError!InnerPk {
+            fn from_bytes(buf: *const [bytes_length]u8) errors.NonCanonicalError!InnerPk {
                 var ret: InnerPk = undefined;
 
                 const th_bytes = buf[0..V.bytes_length];
@@ -491,11 +491,11 @@ fn Kyber(comptime p: Params) type {
                     .normalize().compress(1);
             }
 
-            fn toBytes(sk: InnerSk) [bytes_length]u8 {
+            fn to_bytes(sk: InnerSk) [bytes_length]u8 {
                 return sk.sh.toBytes();
             }
 
-            fn fromBytes(buf: *const [bytes_length]u8) InnerSk {
+            fn from_bytes(buf: *const [bytes_length]u8) InnerSk {
                 var ret: InnerSk = undefined;
                 ret.sh = V.fromBytes(buf).normalize();
                 return ret;
@@ -503,7 +503,7 @@ fn Kyber(comptime p: Params) type {
         };
 
         // Derives inner PKE keypair from given seed.
-        fn innerKeyFromSeed(seed: [inner_seed_length]u8, pk: *InnerPk, sk: *InnerSk) void {
+        fn inner_key_from_seed(seed: [inner_seed_length]u8, pk: *InnerPk, sk: *InnerSk) void {
             var expanded_seed: [64]u8 = undefined;
             sha3.Sha3_512.hash(&seed, &expanded_seed, .{});
             pk.rho = expanded_seed[0..32].*;
@@ -654,14 +654,14 @@ fn lcm(a: anytype, b: @TypeOf(a)) @TypeOf(a) {
 }
 
 // Invert modulo p.
-fn invertMod(a: anytype, p: @TypeOf(a)) @TypeOf(a) {
+fn invert_mod(a: anytype, p: @TypeOf(a)) @TypeOf(a) {
     const r = eea(a, p);
     assert(r.gcd == 1);
     return r.x;
 }
 
 // Reduce mod q for testing.
-fn modQ32(x: i32) i16 {
+fn mod_q32(x: i32) i16 {
     var y = @as(i16, @intCast(@rem(x, @as(i32, Q))));
     if (y < 0) {
         y += Q;
@@ -670,7 +670,7 @@ fn modQ32(x: i32) i16 {
 }
 
 // Given -2¹⁵ q ≤ x < 2¹⁵ q, returns -q < y < q with x 2⁻¹⁶ = y (mod q).
-fn montReduce(x: i32) i16 {
+fn mont_reduce(x: i32) i16 {
     const qInv = comptime invertMod(@as(i32, Q), R);
     // This is Montgomery reduction with R=2¹⁶.
     //
@@ -714,7 +714,7 @@ test "Test montReduce" {
 }
 
 // Given any x, return x R mod q where R=2¹⁶.
-fn feToMont(x: i16) i16 {
+fn fe_to_mont(x: i16) i16 {
     // Note |1353 x| ≤ 1353 2¹⁵ ≤ 13318 q ≤ 2¹⁵ q and so we're within
     // the bounds of montReduce.
     return montReduce(@as(i32, x) * r2_mod_q);
@@ -732,7 +732,7 @@ test "Test feToMont" {
 //
 // Beware: we might have feBarrettReduce(x) = q ≠ 0 for some x.  In fact,
 // this happens if and only if x = -nq for some positive integer n.
-fn feBarrettReduce(x: i16) i16 {
+fn fe_barrett_reduce(x: i16) i16 {
     // This is standard Barrett reduction.
     //
     // For any x we have x mod q = x - ⌊x/q⌋ q.  We will use 20159/2²⁶ as
@@ -805,7 +805,7 @@ fn mpow(a: anytype, s: @TypeOf(a), p: @TypeOf(a)) @TypeOf(a) {
 }
 
 // Computes zetas table used by ntt and invNTT.
-fn computeZetas() [128]i16 {
+fn compute_zetas() [128]i16 {
     @setEvalBranchQuota(10000);
     var ret: [128]i16 = undefined;
     for (&ret, 0..) |*r, i| {
@@ -846,7 +846,7 @@ const Poly = struct {
 
     // For testing, generates a random polynomial with for each
     // coefficient |x| ≤ q.
-    fn randAbsLeqQ(rnd: anytype) Poly {
+    fn rand_abs_leq_q(rnd: anytype) Poly {
         var ret: Poly = undefined;
         for (0..N) |i| {
             ret.cs[i] = rnd.random().intRangeAtMost(i16, -Q, Q);
@@ -855,7 +855,7 @@ const Poly = struct {
     }
 
     // For testing, generates a random normalized polynomial.
-    fn randNormalized(rnd: anytype) Poly {
+    fn rand_normalized(rnd: anytype) Poly {
         var ret: Poly = undefined;
         for (0..N) |i| {
             ret.cs[i] = rnd.random().intRangeLessThan(i16, 0, Q);
@@ -952,7 +952,7 @@ const Poly = struct {
     // coefficients are in absolute value ≤q.  If the input is in Montgomery
     // form, then the result is in Montgomery form and so (by linearity)
     // if the input is in regular form, then the result is also in regular form.
-    fn invNTT(a: Poly) Poly {
+    fn inv_ntt(a: Poly) Poly {
         var k: usize = 127; // index into zetas
         var r: usize = 0; // index into invNTTReductions
         var p = a;
@@ -1018,7 +1018,7 @@ const Poly = struct {
     }
 
     // Put p in Montgomery form.
-    fn toMont(a: Poly) Poly {
+    fn to_mont(a: Poly) Poly {
         var ret: Poly = undefined;
         for (0..N) |i| {
             ret.cs[i] = feToMont(a.cs[i]);
@@ -1029,7 +1029,7 @@ const Poly = struct {
     // Barret reduce coefficients.
     //
     // Beware, this does not fully normalize coefficients.
-    fn barrettReduce(a: Poly) Poly {
+    fn barrett_reduce(a: Poly) Poly {
         var ret: Poly = undefined;
         for (0..N) |i| {
             ret.cs[i] = feBarrettReduce(a.cs[i]);
@@ -1037,7 +1037,7 @@ const Poly = struct {
         return ret;
     }
 
-    fn compressedSize(comptime d: u8) usize {
+    fn compressed_size(comptime d: u8) usize {
         return @divTrunc(N * d, 8);
     }
 
@@ -1164,7 +1164,7 @@ const Poly = struct {
     // Montgomery form.  Products between coefficients of a and b must be strictly
     // bounded in absolute value by 2¹⁵q.  a o b will be in Montgomery form and
     // bounded in absolute value by 2q.
-    fn mulHat(a: Poly, b: Poly) Poly {
+    fn mul_hat(a: Poly, b: Poly) Poly {
         // Recall from the discussion in ntt(), that a transformed polynomial is
         // an element of ℤ_q[x]/(x²-ζ) x … x  ℤ_q[x]/(x²+ζ¹²⁷);
         // that is: 128 degree-one polynomials instead of simply 256 elements
@@ -1317,7 +1317,7 @@ const Poly = struct {
     // Packs p.
     //
     // Assumes p is normalized (and not just Barrett reduced).
-    fn toBytes(p: Poly) [bytes_length]u8 {
+    fn to_bytes(p: Poly) [bytes_length]u8 {
         var ret: [bytes_length]u8 = undefined;
         for (0..comptime N / 2) |i| {
             const t0 = @as(u16, @intCast(p.cs[2 * i]));
@@ -1332,7 +1332,7 @@ const Poly = struct {
     // Unpacks a Poly from buf.
     //
     // p will not be normalized; instead 0 ≤ p[i] < 4096.
-    fn fromBytes(buf: *const [bytes_length]u8) Poly {
+    fn from_bytes(buf: *const [bytes_length]u8) Poly {
         var ret: Poly = undefined;
         for (0..comptime N / 2) |i| {
             const b0 = @as(i16, buf[3 * i]);
@@ -1353,7 +1353,7 @@ fn Vec(comptime K: u8) type {
         const Self = @This();
         const bytes_length = K * Poly.bytes_length;
 
-        fn compressedSize(comptime d: u8) usize {
+        fn compressed_size(comptime d: u8) usize {
             return Poly.compressedSize(d) * K;
         }
 
@@ -1365,7 +1365,7 @@ fn Vec(comptime K: u8) type {
             return ret;
         }
 
-        fn invNTT(a: Self) Self {
+        fn inv_ntt(a: Self) Self {
             var ret: Self = undefined;
             for (0..K) |i| {
                 ret.ps[i] = a.ps[i].invNTT();
@@ -1381,7 +1381,7 @@ fn Vec(comptime K: u8) type {
             return ret;
         }
 
-        fn barrettReduce(a: Self) Self {
+        fn barrett_reduce(a: Self) Self {
             var ret: Self = undefined;
             for (0..K) |i| {
                 ret.ps[i] = a.ps[i].barrettReduce();
@@ -1423,7 +1423,7 @@ fn Vec(comptime K: u8) type {
         // If a and b are not in Montgomery form, then the action is the same
         // as "pointwise" multiplication followed by multiplying by R⁻¹, the inverse
         // of the Montgomery factor.
-        fn dotHat(a: Self, b: Self) Poly {
+        fn dot_hat(a: Self, b: Self) Poly {
             var ret: Poly = Poly.zero;
             for (0..K) |i| {
                 ret = ret.add(a.ps[i].mulHat(b.ps[i]));
@@ -1450,7 +1450,7 @@ fn Vec(comptime K: u8) type {
         }
 
         /// Serializes the key into a byte array.
-        fn toBytes(v: Self) [bytes_length]u8 {
+        fn to_bytes(v: Self) [bytes_length]u8 {
             var ret: [bytes_length]u8 = undefined;
             inline for (0..K) |i| {
                 ret[i * Poly.bytes_length .. (i + 1) * Poly.bytes_length].* = v.ps[i].toBytes();
@@ -1459,7 +1459,7 @@ fn Vec(comptime K: u8) type {
         }
 
         /// Deserializes the key from a byte array.
-        fn fromBytes(buf: *const [bytes_length]u8) Self {
+        fn from_bytes(buf: *const [bytes_length]u8) Self {
             var ret: Self = undefined;
             inline for (0..K) |i| {
                 ret.ps[i] = Poly.fromBytes(
@@ -1771,7 +1771,7 @@ const NistDRBG = struct {
     key: [32]u8,
     v: [16]u8,
 
-    fn incV(g: *NistDRBG) void {
+    fn inc_v(g: *NistDRBG) void {
         var j: usize = 15;
         while (j >= 0) : (j -= 1) {
             if (g.v[j] == 255) {

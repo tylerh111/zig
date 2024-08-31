@@ -66,7 +66,7 @@ pub fn MemoryPoolExtra(comptime Item: type, comptime pool_options: Options) type
         /// Creates a new memory pool and pre-allocates `initial_size` items.
         /// This allows the up to `initial_size` active allocations before a
         /// `OutOfMemory` error happens when calling `create()`.
-        pub fn initPreheated(allocator: std.mem.Allocator, initial_size: usize) MemoryPoolError!Pool {
+        pub fn init_preheated(allocator: std.mem.Allocator, initial_size: usize) MemoryPoolError!Pool {
             var pool = init(allocator);
             errdefer pool.deinit();
 
@@ -138,7 +138,7 @@ pub fn MemoryPoolExtra(comptime Item: type, comptime pool_options: Options) type
             pool.free_list = node;
         }
 
-        fn allocNew(pool: *Pool) MemoryPoolError!*align(item_alignment) [item_size]u8 {
+        fn alloc_new(pool: *Pool) MemoryPoolError!*align(item_alignment) [item_size]u8 {
             const mem = try pool.arena.allocator().alignedAlloc(u8, item_alignment, item_size);
             return mem[0..item_size]; // coerce slice to array pointer
         }

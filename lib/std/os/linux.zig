@@ -402,7 +402,7 @@ pub const getauxval = if (extern_getauxval) struct {
     extern fn getauxval(index: usize) usize;
 }.getauxval else getauxvalImpl;
 
-fn getauxvalImpl(index: usize) callconv(.C) usize {
+fn getauxval_impl(index: usize) callconv(.C) usize {
     const auxv = elf_aux_maybe orelse return 0;
     var i: usize = 0;
     while (auxv[i].a_type != std.elf.AT_NULL) : (i += 1) {
@@ -422,21 +422,21 @@ const require_aligned_register_pair =
 
 // Split a 64bit value into a {LSB,MSB} pair.
 // The LE/BE variants specify the endianness to assume.
-fn splitValueLE64(val: i64) [2]u32 {
+fn split_value_le64(val: i64) [2]u32 {
     const u: u64 = @bitCast(val);
     return [2]u32{
         @as(u32, @truncate(u)),
         @as(u32, @truncate(u >> 32)),
     };
 }
-fn splitValueBE64(val: i64) [2]u32 {
+fn split_value_be64(val: i64) [2]u32 {
     const u: u64 = @bitCast(val);
     return [2]u32{
         @as(u32, @truncate(u >> 32)),
         @as(u32, @truncate(u)),
     };
 }
-fn splitValue64(val: i64) [2]u32 {
+fn split_value64(val: i64) [2]u32 {
     const u: u64 = @bitCast(val);
     switch (native_endian) {
         .little => return [2]u32{
@@ -452,7 +452,7 @@ fn splitValue64(val: i64) [2]u32 {
 
 /// Get the errno from a syscall return value, or 0 for no error.
 /// The public API is exposed via the `E` namespace.
-fn errnoFromSyscall(r: usize) E {
+fn errno_from_syscall(r: usize) E {
     const signed_r: isize = @bitCast(r);
     const int = if (signed_r > -4096 and signed_r < 0) -signed_r else 0;
     return @enumFromInt(int);
@@ -4600,7 +4600,7 @@ pub const inotify_event = extern struct {
     // if an event is returned for a directory or file inside the directory being watched
     // returns the name of said directory/file
     // returns `null` if the directory/file is the one being watched
-    pub fn getName(self: *const inotify_event) ?[:0]const u8 {
+    pub fn get_name(self: *const inotify_event) ?[:0]const u8 {
         if (self.len == 0) return null;
         return std.mem.span(@as([*:0]const u8, @ptrCast(self)) + @sizeOf(inotify_event));
     }
@@ -7152,7 +7152,7 @@ pub const AUDIT = struct {
         SPARC64 = toAudit(.sparc64),
         X86_64 = toAudit(.x86_64),
 
-        fn toAudit(arch: std.Target.Cpu.Arch) u32 {
+        fn to_audit(arch: std.Target.Cpu.Arch) u32 {
             var res: u32 = @intFromEnum(arch.toElfMachine());
             if (arch.endian() == .little) res |= LE;
             switch (arch) {

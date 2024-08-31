@@ -22,7 +22,7 @@ pub fn main() !void {
     return cmdObjCopy(gpa, arena, args[1..]);
 }
 
-fn cmdObjCopy(
+fn cmd_obj_copy(
     gpa: Allocator,
     arena: Allocator,
     args: []const []const u8,
@@ -243,7 +243,7 @@ pub const EmitRawElfOptions = struct {
     pad_to: ?u64 = null,
 };
 
-fn emitElf(
+fn emit_elf(
     arena: Allocator,
     in_file: File,
     out_file: File,
@@ -454,16 +454,16 @@ const BinaryElfOutput = struct {
         return self;
     }
 
-    fn sectionWithinSegment(section: *BinaryElfSection, segment: elf.Elf64_Phdr) bool {
+    fn section_within_segment(section: *BinaryElfSection, segment: elf.Elf64_Phdr) bool {
         return segment.p_offset <= section.elfOffset and (segment.p_offset + segment.p_filesz) >= (section.elfOffset + section.fileSize);
     }
 
-    fn sectionValidForOutput(shdr: anytype) bool {
+    fn section_valid_for_output(shdr: anytype) bool {
         return shdr.sh_type != elf.SHT_NOBITS and
             ((shdr.sh_flags & elf.SHF_ALLOC) == elf.SHF_ALLOC);
     }
 
-    fn segmentSortCompare(context: void, left: *BinaryElfSegment, right: *BinaryElfSegment) bool {
+    fn segment_sort_compare(context: void, left: *BinaryElfSegment, right: *BinaryElfSegment) bool {
         _ = context;
         if (left.physicalAddress < right.physicalAddress) {
             return true;
@@ -474,13 +474,13 @@ const BinaryElfOutput = struct {
         return false;
     }
 
-    fn sectionSortCompare(context: void, left: *BinaryElfSection, right: *BinaryElfSection) bool {
+    fn section_sort_compare(context: void, left: *BinaryElfSection, right: *BinaryElfSection) bool {
         _ = context;
         return left.binaryOffset < right.binaryOffset;
     }
 };
 
-fn writeBinaryElfSection(elf_file: File, out_file: File, section: *BinaryElfSection) !void {
+fn write_binary_elf_section(elf_file: File, out_file: File, section: *BinaryElfSection) !void {
     try out_file.writeFileAll(elf_file, .{
         .in_offset = section.elfOffset,
         .in_len = section.fileSize,
@@ -494,7 +494,7 @@ const HexWriter = struct {
     /// Max data bytes per line of output
     const MAX_PAYLOAD_LEN: u8 = 16;
 
-    fn addressParts(address: u16) [2]u8 {
+    fn address_parts(address: u16) [2]u8 {
         const msb: u8 = @truncate(address >> 8);
         const lsb: u8 = @truncate(address);
         return [2]u8{ msb, lsb };
@@ -546,7 +546,7 @@ const HexWriter = struct {
             }
         }
 
-        fn getPayloadBytes(self: *const Record) []const u8 {
+        fn get_payload_bytes(self: *const Record) []const u8 {
             return switch (self.payload) {
                 .Data => |d| d,
                 .EOF => @as([]const u8, &.{}),
@@ -587,7 +587,7 @@ const HexWriter = struct {
         }
     };
 
-    pub fn writeSegment(self: *HexWriter, segment: *const BinaryElfSegment, elf_file: File) !void {
+    pub fn write_segment(self: *HexWriter, segment: *const BinaryElfSegment, elf_file: File) !void {
         var buf: [MAX_PAYLOAD_LEN]u8 = undefined;
         var bytes_read: usize = 0;
         while (bytes_read < segment.fileSize) {
@@ -604,7 +604,7 @@ const HexWriter = struct {
         }
     }
 
-    fn writeDataRow(self: *HexWriter, address: u32, data: []const u8) File.WriteError!void {
+    fn write_data_row(self: *HexWriter, address: u32, data: []const u8) File.WriteError!void {
         const record = Record.Data(address, data);
         if (address > 0xFFFF and (self.prev_addr == null or record.address != self.prev_addr.?)) {
             try Record.Address(address).write(self.out_file);
@@ -613,12 +613,12 @@ const HexWriter = struct {
         self.prev_addr = @intCast(record.address + data.len);
     }
 
-    fn writeEOF(self: HexWriter) File.WriteError!void {
+    fn write_eof(self: HexWriter) File.WriteError!void {
         try Record.EOF().write(self.out_file);
     }
 };
 
-fn containsValidAddressRange(segments: []*BinaryElfSegment) bool {
+fn contains_valid_address_range(segments: []*BinaryElfSegment) bool {
     const max_address = std.math.maxInt(u32);
     for (segments) |segment| {
         if (segment.fileSize > max_address or
@@ -627,7 +627,7 @@ fn containsValidAddressRange(segments: []*BinaryElfSegment) bool {
     return true;
 }
 
-fn padFile(f: File, opt_size: ?u64) !void {
+fn pad_file(f: File, opt_size: ?u64) !void {
     const size = opt_size orelse return;
     try f.setEndPos(size);
 }
@@ -685,7 +685,7 @@ const StripElfOptions = struct {
     compress_debug: bool = false,
 };
 
-fn stripElf(
+fn strip_elf(
     allocator: Allocator,
     in_file: File,
     out_file: File,
@@ -1158,7 +1158,7 @@ fn ElfFile(comptime is_64: bool) type {
             try ElfFileHelper.write(allocator, out_file, in_file, cmdbuf.items);
         }
 
-        fn sectionWithinSegment(section: Elf_Shdr, segment: Elf_Phdr) bool {
+        fn section_within_segment(section: Elf_Shdr, segment: Elf_Phdr) bool {
             const file_size = if (section.sh_type == elf.SHT_NOBITS) 0 else section.sh_size;
             return segment.p_offset <= section.sh_offset and (segment.p_offset + segment.p_filesz) >= (section.sh_offset + file_size);
         }
@@ -1170,7 +1170,7 @@ const ElfFileHelper = struct {
     const Filter = enum { all, program, debug, program_and_symbols, debug_and_symbols };
 
     const SectionCategory = enum { common, exe, debug, symbols, none };
-    fn propagateCategory(cur: *SectionCategory, new: SectionCategory) u1 {
+    fn propagate_category(cur: *SectionCategory, new: SectionCategory) u1 {
         const cat: SectionCategory = switch (cur.*) {
             .none => new,
             .common => .common,
@@ -1198,7 +1198,7 @@ const ElfFileHelper = struct {
     }
 
     const Action = enum { keep, strip, empty };
-    fn selectAction(category: SectionCategory, filter: Filter) Action {
+    fn select_action(category: SectionCategory, filter: Filter) Action {
         if (category == .none) return .strip;
         return switch (filter) {
             .all => switch (category) {
@@ -1296,7 +1296,7 @@ const ElfFileHelper = struct {
         }
     }
 
-    fn tryCompressSection(allocator: Allocator, in_file: File, offset: u64, size: u64, prefix: []const u8) !?[]align(8) const u8 {
+    fn try_compress_section(allocator: Allocator, in_file: File, offset: u64, size: u64, prefix: []const u8) !?[]align(8) const u8 {
         if (size < prefix.len) return null;
 
         try in_file.seekTo(offset);
@@ -1338,7 +1338,7 @@ const ElfFileHelper = struct {
         return data[0..compressed_len];
     }
 
-    fn createDebugLink(path: []const u8) DebugLink {
+    fn create_debug_link(path: []const u8) DebugLink {
         const file = std.fs.cwd().openFile(path, .{}) catch |err| {
             fatal("zig objcopy: could not open `{s}`: {s}\n", .{ path, @errorName(err) });
         };
@@ -1353,7 +1353,7 @@ const ElfFileHelper = struct {
         };
     }
 
-    fn computeFileCrc(file: File) !u32 {
+    fn compute_file_crc(file: File) !u32 {
         var buf: [8000]u8 = undefined;
 
         try file.seekTo(0);

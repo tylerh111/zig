@@ -26,19 +26,19 @@ const TestCase = struct {
         source: []const u8,
     };
 
-    pub fn addSourceFile(self: *TestCase, filename: []const u8, source: []const u8) void {
+    pub fn add_source_file(self: *TestCase, filename: []const u8, source: []const u8) void {
         self.sources.append(SourceFile{
             .filename = filename,
             .source = source,
         }) catch @panic("OOM");
     }
 
-    pub fn setCommandLineArgs(self: *TestCase, args: []const []const u8) void {
+    pub fn set_command_line_args(self: *TestCase, args: []const []const u8) void {
         self.cli_args = args;
     }
 };
 
-pub fn createExtra(self: *CompareOutput, name: []const u8, source: []const u8, expected_output: []const u8, special: Special) TestCase {
+pub fn create_extra(self: *CompareOutput, name: []const u8, source: []const u8, expected_output: []const u8, special: Special) TestCase {
     var tc = TestCase{
         .name = name,
         .sources = ArrayList(TestCase.SourceFile).init(self.b.allocator),
@@ -56,7 +56,7 @@ pub fn create(self: *CompareOutput, name: []const u8, source: []const u8, expect
     return createExtra(self, name, source, expected_output, Special.None);
 }
 
-pub fn addC(self: *CompareOutput, name: []const u8, source: []const u8, expected_output: []const u8) void {
+pub fn add_c(self: *CompareOutput, name: []const u8, source: []const u8, expected_output: []const u8) void {
     var tc = self.create(name, source, expected_output);
     tc.link_libc = true;
     self.addCase(tc);
@@ -67,17 +67,17 @@ pub fn add(self: *CompareOutput, name: []const u8, source: []const u8, expected_
     self.addCase(tc);
 }
 
-pub fn addAsm(self: *CompareOutput, name: []const u8, source: []const u8, expected_output: []const u8) void {
+pub fn add_asm(self: *CompareOutput, name: []const u8, source: []const u8, expected_output: []const u8) void {
     const tc = self.createExtra(name, source, expected_output, Special.Asm);
     self.addCase(tc);
 }
 
-pub fn addRuntimeSafety(self: *CompareOutput, name: []const u8, source: []const u8) void {
+pub fn add_runtime_safety(self: *CompareOutput, name: []const u8, source: []const u8) void {
     const tc = self.createExtra(name, source, undefined, Special.RuntimeSafety);
     self.addCase(tc);
 }
 
-pub fn addCase(self: *CompareOutput, case: TestCase) void {
+pub fn add_case(self: *CompareOutput, case: TestCase) void {
     const b = self.b;
 
     const write_src = b.addWriteFiles();

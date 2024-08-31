@@ -10,7 +10,7 @@ fn List(comptime Head: type, comptime Tail: type) type {
     };
 }
 
-fn makeList(item: anytype) List(@TypeOf(item), void) {
+fn make_list(item: anytype) List(@TypeOf(item), void) {
     return List(@TypeOf(item), void){ .head = item };
 }
 

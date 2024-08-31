@@ -72,7 +72,7 @@ test "truncate on vectors" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var v1: @Vector(4, u16) = .{ 0xaabb, 0xccdd, 0xeeff, 0x1122 };
             _ = &v1;
             const v2: @Vector(4, u8) = @truncate(v1);

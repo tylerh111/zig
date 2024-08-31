@@ -60,7 +60,7 @@ pub fn cast(comptime DestType: type, target: anytype) DestType {
     return @as(DestType, target);
 }
 
-fn castInt(comptime DestType: type, target: anytype) DestType {
+fn cast_int(comptime DestType: type, target: anytype) DestType {
     const dest = @typeInfo(DestType).Int;
     const source = @typeInfo(@TypeOf(target)).Int;
 
@@ -70,11 +70,11 @@ fn castInt(comptime DestType: type, target: anytype) DestType {
         return @as(DestType, @bitCast(@as(std.meta.Int(source.signedness, dest.bits), target)));
 }
 
-fn castPtr(comptime DestType: type, target: anytype) DestType {
+fn cast_ptr(comptime DestType: type, target: anytype) DestType {
     return @constCast(@volatileCast(@alignCast(@ptrCast(target))));
 }
 
-fn castToPtr(comptime DestType: type, comptime SourceType: type, target: anytype) DestType {
+fn cast_to_ptr(comptime DestType: type, comptime SourceType: type, target: anytype) DestType {
     switch (@typeInfo(SourceType)) {
         .Int => {
             return @as(DestType, @ptrFromInt(castInt(usize, target)));
@@ -98,7 +98,7 @@ fn castToPtr(comptime DestType: type, comptime SourceType: type, target: anytype
     return @as(DestType, target);
 }
 
-fn ptrInfo(comptime PtrType: type) std.builtin.Type.Pointer {
+fn ptr_info(comptime PtrType: type) std.builtin.Type.Pointer {
     return switch (@typeInfo(PtrType)) {
         .Optional => |opt_info| @typeInfo(opt_info.child).Pointer,
         .Pointer => |ptr_info| ptr_info,
@@ -280,7 +280,7 @@ fn PromoteIntLiteralReturnType(comptime SuffixType: type, comptime number: compt
 }
 
 /// Promote the type of an integer literal until it fits as C would.
-pub fn promoteIntLiteral(
+pub fn promote_int_literal(
     comptime SuffixType: type,
     comptime number: comptime_int,
     comptime base: CIntLiteralBase,
@@ -312,7 +312,7 @@ test "promoteIntLiteral" {
 /// clang enforces that `this_index` is less than the total number of vector elements
 /// See https://ziglang.org/documentation/master/#shuffle
 /// See https://clang.llvm.org/docs/LanguageExtensions.html#langext-builtin-shufflevector
-pub fn shuffleVectorIndex(comptime this_index: c_int, comptime source_vector_len: usize) i32 {
+pub fn shuffle_vector_index(comptime this_index: c_int, comptime source_vector_len: usize) i32 {
     const positive_index = std.math.cast(usize, this_index) orelse return undefined;
     if (positive_index < source_vector_len) return @as(i32, @intCast(this_index));
     const b_index = positive_index - source_vector_len;
@@ -371,7 +371,7 @@ test "Flexible Array Type" {
 /// The quotient is not representable if denominator is zero, or if numerator is the minimum integer for
 /// the type and denominator is -1. C has undefined behavior for those two cases; this function has safety
 /// checked undefined behavior
-pub fn signedRemainder(numerator: anytype, denominator: anytype) @TypeOf(numerator, denominator) {
+pub fn signed_remainder(numerator: anytype, denominator: anytype) @TypeOf(numerator, denominator) {
     std.debug.assert(@typeInfo(@TypeOf(numerator, denominator)).Int.signedness == .signed);
     if (denominator > 0) return @rem(numerator, denominator);
     return numerator - @divTrunc(numerator, denominator) * denominator;
@@ -453,7 +453,7 @@ fn PromotedIntType(comptime T: type) type {
 }
 
 /// C11 6.3.1.1.1
-fn integerRank(comptime T: type) u8 {
+fn integer_rank(comptime T: type) u8 {
     return switch (T) {
         bool => 0,
         u8, i8 => 1,
@@ -513,7 +513,7 @@ test "ArithmeticConversion" {
 
     const Test = struct {
         /// Order of operands should not matter for arithmetic conversions
-        fn checkPromotion(comptime A: type, comptime B: type, comptime Expected: type) !void {
+        fn check_promotion(comptime A: type, comptime B: type, comptime Expected: type) !void {
             try std.testing.expect(ArithmeticConversion(A, B) == Expected);
             try std.testing.expect(ArithmeticConversion(B, A) == Expected);
         }
@@ -622,10 +622,10 @@ test "CAST_OR_CALL casting" {
 test "CAST_OR_CALL calling" {
     const Helper = struct {
         var last_val: bool = false;
-        fn returnsVoid(val: bool) void {
+        fn returns_void(val: bool) void {
             last_val = val;
         }
-        fn returnsBool(f: f32) bool {
+        fn returns_bool(f: f32) bool {
             return f > 0;
         }
         fn identity(self: c_uint) c_uint {

@@ -11,7 +11,7 @@ pub const IsProcessorFeaturePresent = std.os.windows.IsProcessorFeaturePresent;
 
 /// Returns the highest known WindowsVersion deduced from reported runtime information.
 /// Discards information about in-between versions we don't differentiate.
-pub fn detectRuntimeVersion() WindowsVersion {
+pub fn detect_runtime_version() WindowsVersion {
     var version_info: std.os.windows.RTL_OSVERSIONINFOW = undefined;
     version_info.dwOSVersionInfoSize = @sizeOf(@TypeOf(version_info));
 
@@ -52,7 +52,7 @@ pub fn detectRuntimeVersion() WindowsVersion {
 // https://learn.microsoft.com/en-us/windows/win32/sysinfo/registry-element-size-limits
 const max_value_len = 2048;
 
-fn getCpuInfoFromRegistry(core: usize, args: anytype) !void {
+fn get_cpu_info_from_registry(core: usize, args: anytype) !void {
     const ArgsType = @TypeOf(args);
     const args_type_info = @typeInfo(ArgsType);
 
@@ -187,13 +187,13 @@ fn getCpuInfoFromRegistry(core: usize, args: anytype) !void {
     }
 }
 
-fn setFeature(comptime Feature: type, cpu: *Target.Cpu, feature: Feature, enabled: bool) void {
+fn set_feature(comptime Feature: type, cpu: *Target.Cpu, feature: Feature, enabled: bool) void {
     const idx = @as(Target.Cpu.Feature.Set.Index, @intFromEnum(feature));
 
     if (enabled) cpu.features.addFeature(idx) else cpu.features.removeFeature(idx);
 }
 
-fn getCpuCount() usize {
+fn get_cpu_count() usize {
     return std.os.windows.peb().NumberOfProcessors;
 }
 
@@ -201,7 +201,7 @@ fn getCpuCount() usize {
 /// we fallback to a generic CPU model but we override the feature set
 /// using `SharedUserData` contents.
 /// This is effectively what LLVM does for all ARM chips on Windows.
-fn genericCpuAndNativeFeatures(arch: Target.Cpu.Arch) Target.Cpu {
+fn generic_cpu_and_native_features(arch: Target.Cpu.Arch) Target.Cpu {
     var cpu = Target.Cpu{
         .arch = arch,
         .model = Target.Cpu.Model.generic(arch),
@@ -226,7 +226,7 @@ fn genericCpuAndNativeFeatures(arch: Target.Cpu.Arch) Target.Cpu {
     return cpu;
 }
 
-pub fn detectNativeCpuAndFeatures() ?Target.Cpu {
+pub fn detect_native_cpu_and_features() ?Target.Cpu {
     const current_arch = builtin.cpu.arch;
     const cpu: ?Target.Cpu = switch (current_arch) {
         .aarch64, .aarch64_be, .aarch64_32 => blk: {

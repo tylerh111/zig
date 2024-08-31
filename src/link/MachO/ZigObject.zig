@@ -129,7 +129,7 @@ pub fn deinit(self: *ZigObject, allocator: Allocator) void {
     }
 }
 
-fn addNlist(self: *ZigObject, allocator: Allocator) !Symbol.Index {
+fn add_nlist(self: *ZigObject, allocator: Allocator) !Symbol.Index {
     try self.symtab.ensureUnusedCapacity(allocator, 1);
     const index = @as(Symbol.Index, @intCast(self.symtab.addOneAssumeCapacity()));
     self.symtab.set(index, .{
@@ -140,7 +140,7 @@ fn addNlist(self: *ZigObject, allocator: Allocator) !Symbol.Index {
     return index;
 }
 
-pub fn addAtom(self: *ZigObject, macho_file: *MachO) !Symbol.Index {
+pub fn add_atom(self: *ZigObject, macho_file: *MachO) !Symbol.Index {
     const gpa = macho_file.base.comp.gpa;
     const atom_index = try macho_file.addAtom();
     const symbol_index = try macho_file.addSymbol();
@@ -169,7 +169,7 @@ pub fn addAtom(self: *ZigObject, macho_file: *MachO) !Symbol.Index {
     return symbol_index;
 }
 
-pub fn getAtomData(self: ZigObject, macho_file: *MachO, atom: Atom, buffer: []u8) !void {
+pub fn get_atom_data(self: ZigObject, macho_file: *MachO, atom: Atom, buffer: []u8) !void {
     assert(atom.file == self.index);
     assert(atom.size == buffer.len);
     const sect = macho_file.sections.items(.header)[atom.out_n_sect];
@@ -191,21 +191,21 @@ pub fn getAtomData(self: ZigObject, macho_file: *MachO, atom: Atom, buffer: []u8
     }
 }
 
-pub fn getAtomRelocs(self: *ZigObject, atom: Atom, macho_file: *MachO) []const Relocation {
+pub fn get_atom_relocs(self: *ZigObject, atom: Atom, macho_file: *MachO) []const Relocation {
     if (!atom.flags.relocs) return &[0]Relocation{};
     const extra = atom.getExtra(macho_file).?;
     const relocs = self.relocs.items[extra.rel_index];
     return relocs.items[0..extra.rel_count];
 }
 
-pub fn freeAtomRelocs(self: *ZigObject, atom: Atom, macho_file: *MachO) void {
+pub fn free_atom_relocs(self: *ZigObject, atom: Atom, macho_file: *MachO) void {
     if (atom.flags.relocs) {
         const extra = atom.getExtra(macho_file).?;
         self.relocs.items[extra.rel_index].clearRetainingCapacity();
     }
 }
 
-pub fn resolveSymbols(self: *ZigObject, macho_file: *MachO) void {
+pub fn resolve_symbols(self: *ZigObject, macho_file: *MachO) void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -264,7 +264,7 @@ pub fn resolveSymbols(self: *ZigObject, macho_file: *MachO) void {
     }
 }
 
-pub fn resetGlobals(self: *ZigObject, macho_file: *MachO) void {
+pub fn reset_globals(self: *ZigObject, macho_file: *MachO) void {
     for (self.symbols.items, 0..) |sym_index, nlist_idx| {
         if (!self.symtab.items(.nlist)[nlist_idx].ext()) continue;
         const sym = macho_file.getSymbol(sym_index);
@@ -278,7 +278,7 @@ pub fn resetGlobals(self: *ZigObject, macho_file: *MachO) void {
     }
 }
 
-pub fn markLive(self: *ZigObject, macho_file: *MachO) void {
+pub fn mark_live(self: *ZigObject, macho_file: *MachO) void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -296,7 +296,7 @@ pub fn markLive(self: *ZigObject, macho_file: *MachO) void {
     }
 }
 
-pub fn checkDuplicates(self: *ZigObject, dupes: anytype, macho_file: *MachO) !void {
+pub fn check_duplicates(self: *ZigObject, dupes: anytype, macho_file: *MachO) !void {
     for (self.symbols.items, 0..) |index, nlist_idx| {
         const sym = macho_file.getSymbol(index);
         if (sym.visibility != .global) continue;
@@ -314,14 +314,14 @@ pub fn checkDuplicates(self: *ZigObject, dupes: anytype, macho_file: *MachO) !vo
     }
 }
 
-pub fn resolveLiterals(self: *ZigObject, lp: *MachO.LiteralPool, macho_file: *MachO) !void {
+pub fn resolve_literals(self: *ZigObject, lp: *MachO.LiteralPool, macho_file: *MachO) !void {
     _ = self;
     _ = lp;
     _ = macho_file;
     // TODO
 }
 
-pub fn dedupLiterals(self: *ZigObject, lp: MachO.LiteralPool, macho_file: *MachO) void {
+pub fn dedup_literals(self: *ZigObject, lp: MachO.LiteralPool, macho_file: *MachO) void {
     _ = self;
     _ = lp;
     _ = macho_file;
@@ -331,14 +331,14 @@ pub fn dedupLiterals(self: *ZigObject, lp: MachO.LiteralPool, macho_file: *MachO
 /// This is just a temporary helper function that allows us to re-read what we wrote to file into a buffer.
 /// We need this so that we can write to an archive.
 /// TODO implement writing ZigObject data directly to a buffer instead.
-pub fn readFileContents(self: *ZigObject, size: usize, macho_file: *MachO) !void {
+pub fn read_file_contents(self: *ZigObject, size: usize, macho_file: *MachO) !void {
     const gpa = macho_file.base.comp.gpa;
     try self.data.resize(gpa, size);
     const amt = try macho_file.base.file.?.preadAll(self.data.items, 0);
     if (amt != size) return error.InputOutput;
 }
 
-pub fn updateArSymtab(self: ZigObject, ar_symtab: *Archive.ArSymtab, macho_file: *MachO) error{OutOfMemory}!void {
+pub fn update_ar_symtab(self: ZigObject, ar_symtab: *Archive.ArSymtab, macho_file: *MachO) error{OutOfMemory}!void {
     const gpa = macho_file.base.comp.gpa;
     for (self.symbols.items) |sym_index| {
         const sym = macho_file.getSymbol(sym_index);
@@ -350,11 +350,11 @@ pub fn updateArSymtab(self: ZigObject, ar_symtab: *Archive.ArSymtab, macho_file:
     }
 }
 
-pub fn updateArSize(self: *ZigObject) void {
+pub fn update_ar_size(self: *ZigObject) void {
     self.output_ar_state.size = self.data.items.len;
 }
 
-pub fn writeAr(self: ZigObject, ar_format: Archive.Format, writer: anytype) !void {
+pub fn write_ar(self: ZigObject, ar_format: Archive.Format, writer: anytype) !void {
     // Header
     const size = std.math.cast(usize, self.output_ar_state.size) orelse return error.Overflow;
     try Archive.writeHeader(self.path, size, ar_format, writer);
@@ -362,7 +362,7 @@ pub fn writeAr(self: ZigObject, ar_format: Archive.Format, writer: anytype) !voi
     try writer.writeAll(self.data.items);
 }
 
-pub fn scanRelocs(self: *ZigObject, macho_file: *MachO) !void {
+pub fn scan_relocs(self: *ZigObject, macho_file: *MachO) !void {
     for (self.atoms.items) |atom_index| {
         const atom = macho_file.getAtom(atom_index) orelse continue;
         if (!atom.flags.alive) continue;
@@ -372,7 +372,7 @@ pub fn scanRelocs(self: *ZigObject, macho_file: *MachO) !void {
     }
 }
 
-pub fn calcSymtabSize(self: *ZigObject, macho_file: *MachO) !void {
+pub fn calc_symtab_size(self: *ZigObject, macho_file: *MachO) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -397,7 +397,7 @@ pub fn calcSymtabSize(self: *ZigObject, macho_file: *MachO) !void {
     }
 }
 
-pub fn writeSymtab(self: ZigObject, macho_file: *MachO, ctx: anytype) void {
+pub fn write_symtab(self: ZigObject, macho_file: *MachO, ctx: anytype) void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -415,7 +415,7 @@ pub fn writeSymtab(self: ZigObject, macho_file: *MachO, ctx: anytype) void {
     }
 }
 
-pub fn getInputSection(self: ZigObject, atom: Atom, macho_file: *MachO) macho.section_64 {
+pub fn get_input_section(self: ZigObject, atom: Atom, macho_file: *MachO) macho.section_64 {
     _ = self;
     var sect = macho_file.sections.items(.header)[atom.out_n_sect];
     sect.addr = 0;
@@ -425,7 +425,7 @@ pub fn getInputSection(self: ZigObject, atom: Atom, macho_file: *MachO) macho.se
     return sect;
 }
 
-pub fn flushModule(self: *ZigObject, macho_file: *MachO) !void {
+pub fn flush_module(self: *ZigObject, macho_file: *MachO) !void {
     // Handle any lazy symbols that were emitted by incremental compilation.
     if (self.lazy_syms.getPtr(.none)) |metadata| {
         const zcu = macho_file.base.comp.module.?;
@@ -515,7 +515,7 @@ pub fn flushModule(self: *ZigObject, macho_file: *MachO) !void {
     assert(!self.debug_strtab_dirty);
 }
 
-pub fn getDeclVAddr(
+pub fn get_decl_vaddr(
     self: *ZigObject,
     macho_file: *MachO,
     decl_index: InternPool.DeclIndex,
@@ -541,7 +541,7 @@ pub fn getDeclVAddr(
     return vaddr;
 }
 
-pub fn getAnonDeclVAddr(
+pub fn get_anon_decl_vaddr(
     self: *ZigObject,
     macho_file: *MachO,
     decl_val: InternPool.Index,
@@ -567,7 +567,7 @@ pub fn getAnonDeclVAddr(
     return vaddr;
 }
 
-pub fn lowerAnonDecl(
+pub fn lower_anon_decl(
     self: *ZigObject,
     macho_file: *MachO,
     decl_val: InternPool.Index,
@@ -615,7 +615,7 @@ pub fn lowerAnonDecl(
     return .ok;
 }
 
-fn freeUnnamedConsts(self: *ZigObject, macho_file: *MachO, decl_index: InternPool.DeclIndex) void {
+fn free_unnamed_consts(self: *ZigObject, macho_file: *MachO, decl_index: InternPool.DeclIndex) void {
     const gpa = macho_file.base.comp.gpa;
     const unnamed_consts = self.unnamed_consts.getPtr(decl_index) orelse return;
     for (unnamed_consts.items) |sym_index| {
@@ -624,7 +624,7 @@ fn freeUnnamedConsts(self: *ZigObject, macho_file: *MachO, decl_index: InternPoo
     unnamed_consts.clearAndFree(gpa);
 }
 
-fn freeDeclMetadata(self: *ZigObject, macho_file: *MachO, sym_index: Symbol.Index) void {
+fn free_decl_metadata(self: *ZigObject, macho_file: *MachO, sym_index: Symbol.Index) void {
     _ = self;
     const gpa = macho_file.base.comp.gpa;
     const sym = macho_file.getSymbol(sym_index);
@@ -635,7 +635,7 @@ fn freeDeclMetadata(self: *ZigObject, macho_file: *MachO, sym_index: Symbol.Inde
     // TODO free GOT entry here
 }
 
-pub fn freeDecl(self: *ZigObject, macho_file: *MachO, decl_index: InternPool.DeclIndex) void {
+pub fn free_decl(self: *ZigObject, macho_file: *MachO, decl_index: InternPool.DeclIndex) void {
     const gpa = macho_file.base.comp.gpa;
     const mod = macho_file.base.comp.module.?;
     const decl = mod.declPtr(decl_index);
@@ -653,7 +653,7 @@ pub fn freeDecl(self: *ZigObject, macho_file: *MachO, decl_index: InternPool.Dec
     // TODO free decl in dSYM
 }
 
-pub fn updateFunc(
+pub fn update_func(
     self: *ZigObject,
     macho_file: *MachO,
     mod: *Module,
@@ -718,7 +718,7 @@ pub fn updateFunc(
     return self.updateExports(macho_file, mod, .{ .decl_index = decl_index }, mod.getDeclExports(decl_index));
 }
 
-pub fn updateDecl(
+pub fn update_decl(
     self: *ZigObject,
     macho_file: *MachO,
     mod: *Module,
@@ -795,7 +795,7 @@ pub fn updateDecl(
     try self.updateExports(macho_file, mod, .{ .decl_index = decl_index }, mod.getDeclExports(decl_index));
 }
 
-fn updateDeclCode(
+fn update_decl_code(
     self: *ZigObject,
     macho_file: *MachO,
     decl_index: InternPool.DeclIndex,
@@ -880,7 +880,7 @@ fn updateDeclCode(
 /// Lowering a TLV on macOS involves two stages:
 /// 1. first we lower the initializer into appopriate section (__thread_data or __thread_bss)
 /// 2. next, we create a corresponding threadlocal variable descriptor in __thread_vars
-fn updateTlv(
+fn update_tlv(
     self: *ZigObject,
     macho_file: *MachO,
     decl_index: InternPool.DeclIndex,
@@ -910,7 +910,7 @@ fn updateTlv(
     try self.createTlvDescriptor(macho_file, sym_index, init_sym_index, decl_name_slice);
 }
 
-fn createTlvInitializer(
+fn create_tlv_initializer(
     self: *ZigObject,
     macho_file: *MachO,
     name: []const u8,
@@ -961,7 +961,7 @@ fn createTlvInitializer(
     return sym_index;
 }
 
-fn createTlvDescriptor(
+fn create_tlv_descriptor(
     self: *ZigObject,
     macho_file: *MachO,
     sym_index: Symbol.Index,
@@ -1027,7 +1027,7 @@ fn createTlvDescriptor(
     try macho_file.sections.items(.atoms)[sect_index].append(gpa, atom.atom_index);
 }
 
-fn getDeclOutputSection(
+fn get_decl_output_section(
     self: *ZigObject,
     macho_file: *MachO,
     decl: *const Module.Decl,
@@ -1080,7 +1080,7 @@ fn getDeclOutputSection(
     return sect_id;
 }
 
-pub fn lowerUnnamedConst(
+pub fn lower_unnamed_const(
     self: *ZigObject,
     macho_file: *MachO,
     val: Value,
@@ -1124,7 +1124,7 @@ const LowerConstResult = union(enum) {
     fail: *Module.ErrorMsg,
 };
 
-fn lowerConst(
+fn lower_const(
     self: *ZigObject,
     macho_file: *MachO,
     name: []const u8,
@@ -1182,7 +1182,7 @@ fn lowerConst(
     return .{ .ok = sym_index };
 }
 
-pub fn updateExports(
+pub fn update_exports(
     self: *ZigObject,
     macho_file: *MachO,
     mod: *Module,
@@ -1272,7 +1272,7 @@ pub fn updateExports(
     }
 }
 
-fn updateLazySymbol(
+fn update_lazy_symbol(
     self: *ZigObject,
     macho_file: *MachO,
     lazy_sym: link.File.LazySymbol,
@@ -1358,13 +1358,13 @@ fn updateLazySymbol(
 }
 
 /// Must be called only after a successful call to `updateDecl`.
-pub fn updateDeclLineNumber(self: *ZigObject, mod: *Module, decl_index: InternPool.DeclIndex) !void {
+pub fn update_decl_line_number(self: *ZigObject, mod: *Module, decl_index: InternPool.DeclIndex) !void {
     if (self.dwarf) |*dw| {
         try dw.updateDeclLineNumber(mod, decl_index);
     }
 }
 
-pub fn deleteDeclExport(
+pub fn delete_decl_export(
     self: *ZigObject,
     macho_file: *MachO,
     decl_index: InternPool.DeclIndex,
@@ -1389,7 +1389,7 @@ pub fn deleteDeclExport(
     nlist.* = MachO.null_sym;
 }
 
-pub fn getGlobalSymbol(self: *ZigObject, macho_file: *MachO, name: []const u8, lib_name: ?[]const u8) !u32 {
+pub fn get_global_symbol(self: *ZigObject, macho_file: *MachO, name: []const u8, lib_name: ?[]const u8) !u32 {
     _ = lib_name;
     const gpa = macho_file.base.comp.gpa;
     const sym_name = try std.fmt.allocPrint(gpa, "_{s}", .{name});
@@ -1409,7 +1409,7 @@ pub fn getGlobalSymbol(self: *ZigObject, macho_file: *MachO, name: []const u8, l
     return lookup_gop.value_ptr.*;
 }
 
-pub fn getOrCreateMetadataForDecl(
+pub fn get_or_create_metadata_for_decl(
     self: *ZigObject,
     macho_file: *MachO,
     decl_index: InternPool.DeclIndex,
@@ -1435,7 +1435,7 @@ pub fn getOrCreateMetadataForDecl(
     return gop.value_ptr.symbol_index;
 }
 
-pub fn getOrCreateMetadataForLazySymbol(
+pub fn get_or_create_metadata_for_lazy_symbol(
     self: *ZigObject,
     macho_file: *MachO,
     lazy_sym: link.File.LazySymbol,
@@ -1475,11 +1475,11 @@ pub fn getOrCreateMetadataForLazySymbol(
     return symbol_index;
 }
 
-pub fn asFile(self: *ZigObject) File {
+pub fn as_file(self: *ZigObject) File {
     return .{ .zig_object = self };
 }
 
-pub fn fmtSymtab(self: *ZigObject, macho_file: *MachO) std.fmt.Formatter(formatSymtab) {
+pub fn fmt_symtab(self: *ZigObject, macho_file: *MachO) std.fmt.Formatter(formatSymtab) {
     return .{ .data = .{
         .self = self,
         .macho_file = macho_file,
@@ -1491,7 +1491,7 @@ const FormatContext = struct {
     macho_file: *MachO,
 };
 
-fn formatSymtab(
+fn format_symtab(
     ctx: FormatContext,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,
@@ -1506,14 +1506,14 @@ fn formatSymtab(
     }
 }
 
-pub fn fmtAtoms(self: *ZigObject, macho_file: *MachO) std.fmt.Formatter(formatAtoms) {
+pub fn fmt_atoms(self: *ZigObject, macho_file: *MachO) std.fmt.Formatter(formatAtoms) {
     return .{ .data = .{
         .self = self,
         .macho_file = macho_file,
     } };
 }
 
-fn formatAtoms(
+fn format_atoms(
     ctx: FormatContext,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,

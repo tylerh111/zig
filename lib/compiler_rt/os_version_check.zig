@@ -29,7 +29,7 @@ comptime {
 // available on macOS 10.15+, iOS 13+, tvOS 13+ and watchOS 6+.
 
 const __isPlatformVersionAtLeast = if (have_availability_version_check) struct {
-    inline fn constructVersion(major: u32, minor: u32, subminor: u32) u32 {
+    inline fn construct_version(major: u32, minor: u32, subminor: u32) u32 {
         return ((major & 0xffff) << 16) | ((minor & 0xff) << 8) | (subminor & 0xff);
     }
 

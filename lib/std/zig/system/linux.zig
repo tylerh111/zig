@@ -207,7 +207,7 @@ const ArmCpuinfoImpl = struct {
 
     const cpu_models = @import("arm.zig").cpu_models;
 
-    fn addOne(self: *ArmCpuinfoImpl) void {
+    fn add_one(self: *ArmCpuinfoImpl) void {
         if (self.have_fields == 4 and self.core_no < num_cores) {
             if (self.core_no > 0) {
                 // Deduplicate the core info.
@@ -336,7 +336,7 @@ test "cpuinfo: ARM" {
     );
 }
 
-fn testParser(
+fn test_parser(
     parser: anytype,
     arch: Target.Cpu.Arch,
     expected_model: *const Target.Cpu.Model,
@@ -374,13 +374,13 @@ fn CpuinfoParser(comptime impl: anytype) type {
     };
 }
 
-inline fn getAArch64CpuFeature(comptime feat_reg: []const u8) u64 {
+inline fn get_aarch64_cpu_feature(comptime feat_reg: []const u8) u64 {
     return asm ("mrs %[ret], " ++ feat_reg
         : [ret] "=r" (-> u64),
     );
 }
 
-pub fn detectNativeCpuAndFeatures() ?Target.Cpu {
+pub fn detect_native_cpu_and_features() ?Target.Cpu {
     var f = fs.openFileAbsolute("/proc/cpuinfo", .{}) catch |err| switch (err) {
         else => return null,
     };

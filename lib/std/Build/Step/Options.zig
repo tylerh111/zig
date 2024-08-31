@@ -35,16 +35,16 @@ pub fn create(owner: *std.Build) *Options {
     return options;
 }
 
-pub fn addOption(options: *Options, comptime T: type, name: []const u8, value: T) void {
+pub fn add_option(options: *Options, comptime T: type, name: []const u8, value: T) void {
     return addOptionFallible(options, T, name, value) catch @panic("unhandled error");
 }
 
-fn addOptionFallible(options: *Options, comptime T: type, name: []const u8, value: T) !void {
+fn add_option_fallible(options: *Options, comptime T: type, name: []const u8, value: T) !void {
     const out = options.contents.writer();
     try printType(options, out, T, value, 0, name);
 }
 
-fn printType(options: *Options, out: anytype, comptime T: type, value: T, indent: u8, name: ?[]const u8) !void {
+fn print_type(options: *Options, out: anytype, comptime T: type, value: T, indent: u8, name: ?[]const u8) !void {
     switch (T) {
         []const []const u8 => {
             if (name) |payload| {
@@ -258,7 +258,7 @@ fn printType(options: *Options, out: anytype, comptime T: type, value: T, indent
     }
 }
 
-fn printUserDefinedType(options: *Options, out: anytype, comptime T: type, indent: u8) !void {
+fn print_user_defined_type(options: *Options, out: anytype, comptime T: type, indent: u8) !void {
     switch (@typeInfo(T)) {
         .Enum => |info| {
             return try printEnum(options, out, T, info, indent);
@@ -270,7 +270,7 @@ fn printUserDefinedType(options: *Options, out: anytype, comptime T: type, inden
     }
 }
 
-fn printEnum(options: *Options, out: anytype, comptime T: type, comptime val: std.builtin.Type.Enum, indent: u8) !void {
+fn print_enum(options: *Options, out: anytype, comptime T: type, comptime val: std.builtin.Type.Enum, indent: u8) !void {
     const gop = try options.encountered_types.getOrPut(@typeName(T));
     if (gop.found_existing) return;
 
@@ -291,7 +291,7 @@ fn printEnum(options: *Options, out: anytype, comptime T: type, comptime val: st
     try out.writeAll("};\n");
 }
 
-fn printStruct(options: *Options, out: anytype, comptime T: type, comptime val: std.builtin.Type.Struct, indent: u8) !void {
+fn print_struct(options: *Options, out: anytype, comptime T: type, comptime val: std.builtin.Type.Struct, indent: u8) !void {
     const gop = try options.encountered_types.getOrPut(@typeName(T));
     if (gop.found_existing) return;
 
@@ -344,7 +344,7 @@ fn printStruct(options: *Options, out: anytype, comptime T: type, comptime val: 
     }
 }
 
-fn printStructValue(options: *Options, out: anytype, comptime struct_val: std.builtin.Type.Struct, val: anytype, indent: u8) !void {
+fn print_struct_value(options: *Options, out: anytype, comptime struct_val: std.builtin.Type.Struct, val: anytype, indent: u8) !void {
     try out.writeAll(".{\n");
 
     if (struct_val.is_tuple) {
@@ -378,7 +378,7 @@ fn printStructValue(options: *Options, out: anytype, comptime struct_val: std.bu
 
 /// The value is the path in the cache dir.
 /// Adds a dependency automatically.
-pub fn addOptionPath(
+pub fn add_option_path(
     options: *Options,
     name: []const u8,
     path: LazyPath,
@@ -391,11 +391,11 @@ pub fn addOptionPath(
 }
 
 /// Deprecated: use `addOptionPath(options, name, artifact.getEmittedBin())` instead.
-pub fn addOptionArtifact(options: *Options, name: []const u8, artifact: *Step.Compile) void {
+pub fn add_option_artifact(options: *Options, name: []const u8, artifact: *Step.Compile) void {
     return addOptionPath(options, name, artifact.getEmittedBin());
 }
 
-pub fn createModule(options: *Options) *std.Build.Module {
+pub fn create_module(options: *Options) *std.Build.Module {
     return options.step.owner.createModule(.{
         .root_source_file = options.getOutput(),
     });
@@ -406,7 +406,7 @@ pub const getSource = getOutput;
 
 /// Returns the main artifact of this Build Step which is a Zig source file
 /// generated from the key-value pairs of the Options.
-pub fn getOutput(options: *Options) LazyPath {
+pub fn get_output(options: *Options) LazyPath {
     return .{ .generated = .{ .file = &options.generated_file } };
 }
 

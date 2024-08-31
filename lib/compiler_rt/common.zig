@@ -103,7 +103,7 @@ pub fn F16T(comptime OtherType: type) type {
     };
 }
 
-pub fn wideMultiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
+pub fn wide_multiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
     switch (Z) {
         u16 => {
             // 16x16 --> 32 bit multiply
@@ -119,10 +119,10 @@ pub fn wideMultiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
         },
         u64 => {
             const S = struct {
-                fn loWord(x: u64) u64 {
+                fn lo_word(x: u64) u64 {
                     return @as(u32, @truncate(x));
                 }
-                fn hiWord(x: u64) u64 {
+                fn hi_word(x: u64) u64 {
                     return @as(u32, @truncate(x >> 32));
                 }
             };

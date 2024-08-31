@@ -12,7 +12,7 @@ pub const Class = enum {
     float_combine,
     integer_per_element,
 
-    fn isX87(class: Class) bool {
+    fn is_x87(class: Class) bool {
         return switch (class) {
             .x87, .x87up, .complex_x87 => true,
             else => false,
@@ -20,7 +20,7 @@ pub const Class = enum {
     }
 
     /// Combine a field class with the prev one.
-    fn combineSystemV(prev_class: Class, next_class: Class) Class {
+    fn combine_system_v(prev_class: Class, next_class: Class) Class {
         // "If both classes are equal, this is the resulting class."
         if (prev_class == next_class)
             return if (prev_class == .float) .float_combine else prev_class;
@@ -44,7 +44,7 @@ pub const Class = enum {
     }
 };
 
-pub fn classifyWindows(ty: Type, zcu: *Zcu) Class {
+pub fn classify_windows(ty: Type, zcu: *Zcu) Class {
     // https://docs.microsoft.com/en-gb/cpp/build/x64-calling-convention?view=vs-2017
     // "There's a strict one-to-one correspondence between a function call's arguments
     // and the registers used for those arguments. Any argument that doesn't fit in 8
@@ -100,7 +100,7 @@ pub const Context = enum { ret, arg, field, other };
 
 /// There are a maximum of 8 possible return slots. Returned values are in
 /// the beginning of the array; unused slots are filled with .none.
-pub fn classifySystemV(ty: Type, zcu: *Zcu, target: std.Target, ctx: Context) [8]Class {
+pub fn classify_system_v(ty: Type, zcu: *Zcu, target: std.Target, ctx: Context) [8]Class {
     const memory_class = [_]Class{
         .memory, .none, .none, .none,
         .none,   .none, .none, .none,
@@ -322,7 +322,7 @@ pub fn classifySystemV(ty: Type, zcu: *Zcu, target: std.Target, ctx: Context) [8
     }
 }
 
-fn classifySystemVStruct(
+fn classify_system_vstruct(
     result: *[8]Class,
     starting_byte_offset: u64,
     loaded_struct: InternPool.LoadedStructType,
@@ -371,7 +371,7 @@ fn classifySystemVStruct(
     return final_byte_offset;
 }
 
-fn classifySystemVUnion(
+fn classify_system_vunion(
     result: *[8]Class,
     starting_byte_offset: u64,
     loaded_union: InternPool.LoadedUnionType,
@@ -435,7 +435,7 @@ pub const Win64 = struct {
     pub const c_abi_sse_return_regs = sse_avx_regs[0..1].*;
 };
 
-pub fn resolveCallingConvention(
+pub fn resolve_calling_convention(
     cc: std.builtin.CallingConvention,
     target: std.Target,
 ) std.builtin.CallingConvention {
@@ -448,7 +448,7 @@ pub fn resolveCallingConvention(
     };
 }
 
-pub fn getCalleePreservedRegs(cc: std.builtin.CallingConvention) []const Register {
+pub fn get_callee_preserved_regs(cc: std.builtin.CallingConvention) []const Register {
     return switch (cc) {
         .SysV => &SysV.callee_preserved_regs,
         .Win64 => &Win64.callee_preserved_regs,
@@ -456,7 +456,7 @@ pub fn getCalleePreservedRegs(cc: std.builtin.CallingConvention) []const Registe
     };
 }
 
-pub fn getCallerPreservedRegs(cc: std.builtin.CallingConvention) []const Register {
+pub fn get_caller_preserved_regs(cc: std.builtin.CallingConvention) []const Register {
     return switch (cc) {
         .SysV => &SysV.caller_preserved_regs,
         .Win64 => &Win64.caller_preserved_regs,
@@ -464,7 +464,7 @@ pub fn getCallerPreservedRegs(cc: std.builtin.CallingConvention) []const Registe
     };
 }
 
-pub fn getCAbiIntParamRegs(cc: std.builtin.CallingConvention) []const Register {
+pub fn get_cabi_int_param_regs(cc: std.builtin.CallingConvention) []const Register {
     return switch (cc) {
         .SysV => &SysV.c_abi_int_param_regs,
         .Win64 => &Win64.c_abi_int_param_regs,
@@ -472,7 +472,7 @@ pub fn getCAbiIntParamRegs(cc: std.builtin.CallingConvention) []const Register {
     };
 }
 
-pub fn getCAbiSseParamRegs(cc: std.builtin.CallingConvention) []const Register {
+pub fn get_cabi_sse_param_regs(cc: std.builtin.CallingConvention) []const Register {
     return switch (cc) {
         .SysV => &SysV.c_abi_sse_param_regs,
         .Win64 => &Win64.c_abi_sse_param_regs,
@@ -480,7 +480,7 @@ pub fn getCAbiSseParamRegs(cc: std.builtin.CallingConvention) []const Register {
     };
 }
 
-pub fn getCAbiIntReturnRegs(cc: std.builtin.CallingConvention) []const Register {
+pub fn get_cabi_int_return_regs(cc: std.builtin.CallingConvention) []const Register {
     return switch (cc) {
         .SysV => &SysV.c_abi_int_return_regs,
         .Win64 => &Win64.c_abi_int_return_regs,
@@ -488,7 +488,7 @@ pub fn getCAbiIntReturnRegs(cc: std.builtin.CallingConvention) []const Register 
     };
 }
 
-pub fn getCAbiSseReturnRegs(cc: std.builtin.CallingConvention) []const Register {
+pub fn get_cabi_sse_return_regs(cc: std.builtin.CallingConvention) []const Register {
     return switch (cc) {
         .SysV => &SysV.c_abi_sse_return_regs,
         .Win64 => &Win64.c_abi_sse_return_regs,

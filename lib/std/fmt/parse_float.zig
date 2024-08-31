@@ -16,7 +16,7 @@ pub const ParseFloatError = error{
     InvalidCharacter,
 };
 
-pub fn parseFloat(comptime T: type, s: []const u8) ParseFloatError!T {
+pub fn parse_float(comptime T: type, s: []const u8) ParseFloatError!T {
     if (@typeInfo(T) != .Float) {
         @compileError("Cannot parse a float into a non-floating point type.");
     }

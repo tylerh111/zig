@@ -7,7 +7,7 @@ const std = @import("std");
 /// - Stops parsing on any invalid hexadecimal digits
 /// - Errors if a digit is not the first char
 /// - `-` (negative) prefix is allowed
-pub fn parseInt(str: []const u8) error{InvalidLanguageId}!u16 {
+pub fn parse_int(str: []const u8) error{InvalidLanguageId}!u16 {
     var result: u16 = 0;
     const radix: u8 = 16;
     var buf = str;
@@ -71,7 +71,7 @@ test parseInt {
 /// language tags: invalid tags are rejected, but tags that don't have
 /// a specific assigned ID but are otherwise valid enough will get
 /// converted to an ID of LOCALE_CUSTOM_UNSPECIFIED.
-pub fn tagToInt(tag: []const u8) error{InvalidLanguageTag}!u16 {
+pub fn tag_to_int(tag: []const u8) error{InvalidLanguageTag}!u16 {
     const maybe_id = try tagToId(tag);
     if (maybe_id) |id| {
         return @intFromEnum(id);
@@ -80,7 +80,7 @@ pub fn tagToInt(tag: []const u8) error{InvalidLanguageTag}!u16 {
     }
 }
 
-pub fn tagToId(tag: []const u8) error{InvalidLanguageTag}!?LanguageId {
+pub fn tag_to_id(tag: []const u8) error{InvalidLanguageTag}!?LanguageId {
     const parsed = try parse(tag);
     // There are currently no language tags with assigned IDs that have
     // multiple suffixes, so we can skip the lookup.
@@ -157,7 +157,7 @@ test "exhaustive tagToId" {
     }
 }
 
-fn normalizeTag(tag: []const u8, buf: []u8) []u8 {
+fn normalize_tag(tag: []const u8, buf: []u8) []u8 {
     std.debug.assert(buf.len >= tag.len);
     for (tag, 0..) |c, i| {
         if (c == '-')
@@ -310,7 +310,7 @@ pub const Parsed = struct {
     /// the number of suffixes allowed when parsing.
     multiple_suffixes: bool = false,
 
-    pub fn isSuffixValidSortOrder(self: Parsed) bool {
+    pub fn is_suffix_valid_sort_order(self: Parsed) bool {
         if (self.country_code == null) return false;
         if (self.suffix == null) return false;
         if (self.script_tag != null) return false;
@@ -420,21 +420,21 @@ test "parse" {
     try std.testing.expectError(error.InvalidLanguageTag, parse("e"));
 }
 
-fn isAllAlphabetic(str: []const u8) bool {
+fn is_all_alphabetic(str: []const u8) bool {
     for (str) |c| {
         if (!std.ascii.isAlphabetic(c)) return false;
     }
     return true;
 }
 
-fn isAllAlphanumeric(str: []const u8) bool {
+fn is_all_alphanumeric(str: []const u8) bool {
     for (str) |c| {
         if (!std.ascii.isAlphanumeric(c)) return false;
     }
     return true;
 }
 
-fn isAllNumeric(str: []const u8) bool {
+fn is_all_numeric(str: []const u8) bool {
     for (str) |c| {
         if (!std.ascii.isDigit(c)) return false;
     }

@@ -1,26 +1,26 @@
-export fn optionalVector() void {
+export fn optional_vector() void {
     var x: ?@Vector(10, i32) = undefined;
     var y: @Vector(11, i32) = undefined;
     _ = .{ &x, &y };
     _ = @TypeOf(x, y);
 }
-export fn badTupleField() void {
+export fn bad_tuple_field() void {
     var x = .{ @as(u8, 0), @as(u32, 1) };
     var y = .{ @as(u8, 1), "hello" };
     _ = .{ &x, &y };
     _ = @TypeOf(x, y);
 }
-export fn badNestedField() void {
+export fn bad_nested_field() void {
     const x = .{ .foo = "hi", .bar = .{ 0, 1 } };
     const y = .{ .foo = "hello", .bar = .{ 2, "hi" } };
     _ = @TypeOf(x, y);
 }
-export fn incompatiblePointers() void {
+export fn incompatible_pointers() void {
     const x: []const u8 = "foo";
     const y: [*:0]const u8 = "bar";
     _ = @TypeOf(x, y);
 }
-export fn incompatiblePointers4() void {
+export fn incompatible_pointers4() void {
     const a: *const [5]u8 = "hello";
     const b: *const [3:0]u8 = "foo";
     const c: []const u8 = "baz"; // The conflict must be reported against this element!

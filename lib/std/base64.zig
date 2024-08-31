@@ -24,7 +24,7 @@ pub const Codecs = struct {
 };
 
 pub const standard_alphabet_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".*;
-fn standardBase64DecoderWithIgnore(ignore: []const u8) Base64DecoderWithIgnore {
+fn standard_base64_decoder_with_ignore(ignore: []const u8) Base64DecoderWithIgnore {
     return Base64DecoderWithIgnore.init(standard_alphabet_chars, '=', ignore);
 }
 
@@ -47,7 +47,7 @@ pub const standard_no_pad = Codecs{
 };
 
 pub const url_safe_alphabet_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_".*;
-fn urlSafeBase64DecoderWithIgnore(ignore: []const u8) Base64DecoderWithIgnore {
+fn url_safe_base64_decoder_with_ignore(ignore: []const u8) Base64DecoderWithIgnore {
     return Base64DecoderWithIgnore.init(url_safe_alphabet_chars, null, ignore);
 }
 
@@ -89,7 +89,7 @@ pub const Base64Encoder = struct {
     }
 
     /// Compute the encoded length
-    pub fn calcSize(encoder: *const Base64Encoder, source_len: usize) usize {
+    pub fn calc_size(encoder: *const Base64Encoder, source_len: usize) usize {
         if (encoder.pad_char != null) {
             return @divTrunc(source_len + 2, 3) * 4;
         } else {
@@ -181,7 +181,7 @@ pub const Base64Decoder = struct {
 
     /// Return the maximum possible decoded size for a given input length - The actual length may be less if the input includes padding.
     /// `InvalidPadding` is returned if the input length is not valid.
-    pub fn calcSizeUpperBound(decoder: *const Base64Decoder, source_len: usize) Error!usize {
+    pub fn calc_size_upper_bound(decoder: *const Base64Decoder, source_len: usize) Error!usize {
         var result = source_len / 4 * 3;
         const leftover = source_len % 4;
         if (decoder.pad_char != null) {
@@ -195,7 +195,7 @@ pub const Base64Decoder = struct {
 
     /// Return the exact decoded size for a slice.
     /// `InvalidPadding` is returned if the input length is not valid.
-    pub fn calcSizeForSlice(decoder: *const Base64Decoder, source: []const u8) Error!usize {
+    pub fn calc_size_for_slice(decoder: *const Base64Decoder, source: []const u8) Error!usize {
         const source_len = source.len;
         var result = try decoder.calcSizeUpperBound(source_len);
         if (decoder.pad_char) |pad_char| {
@@ -296,7 +296,7 @@ pub const Base64DecoderWithIgnore = struct {
 
     /// Return the maximum possible decoded size for a given input length - The actual length may be less if the input includes padding.
     /// `InvalidPadding` is returned if the input length is not valid.
-    pub fn calcSizeUpperBound(decoder_with_ignore: *const Base64DecoderWithIgnore, source_len: usize) Error!usize {
+    pub fn calc_size_upper_bound(decoder_with_ignore: *const Base64DecoderWithIgnore, source_len: usize) Error!usize {
         var result = source_len / 4 * 3;
         if (decoder_with_ignore.decoder.pad_char == null) {
             const leftover = source_len % 4;
@@ -382,7 +382,7 @@ test "base64 url_safe_no_pad" {
     try comptime testAllApis(url_safe_no_pad, "comptime", "Y29tcHRpbWU");
 }
 
-fn testBase64() !void {
+fn test_base64() !void {
     const codecs = standard;
 
     try testAllApis(codecs, "", "");
@@ -434,7 +434,7 @@ fn testBase64() !void {
     try testFourBytesDestNoSpaceLeftError(codecs, "AAAAAAAAAAAAAAAA");
 }
 
-fn testBase64UrlSafeNoPad() !void {
+fn test_base64_url_safe_no_pad() !void {
     const codecs = url_safe_no_pad;
 
     try testAllApis(codecs, "", "");
@@ -474,7 +474,7 @@ fn testBase64UrlSafeNoPad() !void {
     try testFourBytesDestNoSpaceLeftError(codecs, "AAAAAAAAAAAAAAAA");
 }
 
-fn testAllApis(codecs: Codecs, expected_decoded: []const u8, expected_encoded: []const u8) !void {
+fn test_all_apis(codecs: Codecs, expected_decoded: []const u8, expected_encoded: []const u8) !void {
     // Base64Encoder
     {
         var buffer: [0x100]u8 = undefined;
@@ -501,7 +501,7 @@ fn testAllApis(codecs: Codecs, expected_decoded: []const u8, expected_encoded: [
     }
 }
 
-fn testDecodeIgnoreSpace(codecs: Codecs, expected_decoded: []const u8, encoded: []const u8) !void {
+fn test_decode_ignore_space(codecs: Codecs, expected_decoded: []const u8, encoded: []const u8) !void {
     const decoder_ignore_space = codecs.decoderWithIgnore(" ");
     var buffer: [0x100]u8 = undefined;
     const decoded = buffer[0..try decoder_ignore_space.calcSizeUpperBound(encoded.len)];
@@ -509,7 +509,7 @@ fn testDecodeIgnoreSpace(codecs: Codecs, expected_decoded: []const u8, encoded: 
     try testing.expectEqualSlices(u8, expected_decoded, decoded[0..written]);
 }
 
-fn testError(codecs: Codecs, encoded: []const u8, expected_err: anyerror) !void {
+fn test_error(codecs: Codecs, encoded: []const u8, expected_err: anyerror) !void {
     const decoder_ignore_space = codecs.decoderWithIgnore(" ");
     var buffer: [0x100]u8 = undefined;
     if (codecs.Decoder.calcSizeForSlice(encoded)) |decoded_size| {
@@ -524,7 +524,7 @@ fn testError(codecs: Codecs, encoded: []const u8, expected_err: anyerror) !void 
     } else |err| if (err != expected_err) return err;
 }
 
-fn testNoSpaceLeftError(codecs: Codecs, encoded: []const u8) !void {
+fn test_no_space_left_error(codecs: Codecs, encoded: []const u8) !void {
     const decoder_ignore_space = codecs.decoderWithIgnore(" ");
     var buffer: [0x100]u8 = undefined;
     const decoded = buffer[0 .. (try codecs.Decoder.calcSizeForSlice(encoded)) - 1];
@@ -533,7 +533,7 @@ fn testNoSpaceLeftError(codecs: Codecs, encoded: []const u8) !void {
     } else |err| if (err != error.NoSpaceLeft) return err;
 }
 
-fn testFourBytesDestNoSpaceLeftError(codecs: Codecs, encoded: []const u8) !void {
+fn test_four_bytes_dest_no_space_left_error(codecs: Codecs, encoded: []const u8) !void {
     const decoder_ignore_space = codecs.decoderWithIgnore(" ");
     var buffer: [0x100]u8 = undefined;
     const decoded = buffer[0..4];

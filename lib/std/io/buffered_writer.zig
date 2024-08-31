@@ -38,6 +38,6 @@ pub fn BufferedWriter(comptime buffer_size: usize, comptime WriterType: type) ty
     };
 }
 
-pub fn bufferedWriter(underlying_stream: anytype) BufferedWriter(4096, @TypeOf(underlying_stream)) {
+pub fn buffered_writer(underlying_stream: anytype) BufferedWriter(4096, @TypeOf(underlying_stream)) {
     return .{ .unbuffered_writer = underlying_stream };
 }

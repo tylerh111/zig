@@ -23,7 +23,7 @@ pub fn CountingReader(comptime ReaderType: anytype) type {
     };
 }
 
-pub fn countingReader(reader: anytype) CountingReader(@TypeOf(reader)) {
+pub fn counting_reader(reader: anytype) CountingReader(@TypeOf(reader)) {
     return .{ .child_reader = reader };
 }
 

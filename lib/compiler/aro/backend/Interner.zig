@@ -54,7 +54,7 @@ pub const Key = union(enum) {
         i64: i64,
         big_int: BigIntConst,
 
-        pub fn toBigInt(repr: @This(), space: *Tag.Int.BigIntSpace) BigIntConst {
+        pub fn to_big_int(repr: @This(), space: *Tag.Int.BigIntSpace) BigIntConst {
             return switch (repr) {
                 .big_int => |x| x,
                 inline .u64, .i64 => |x| BigIntMutable.init(&space.limbs, x).toConst(),
@@ -135,7 +135,7 @@ pub const Key = union(enum) {
         }
     }
 
-    fn toRef(key: Key) ?Ref {
+    fn to_ref(key: Key) ?Ref {
         switch (key) {
             .int_ty => |bits| switch (bits) {
                 1 => return .i1,
@@ -264,7 +264,7 @@ pub const Tag = enum(u8) {
         len1: u32,
         child: Ref,
 
-        pub fn getLen(a: Array) u64 {
+        pub fn get_len(a: Array) u64 {
             return (PackedU64{
                 .a = a.len0,
                 .b = a.len1,
@@ -526,13 +526,13 @@ pub fn put(i: *Interner, gpa: Allocator, key: Key) !Ref {
     return @enumFromInt(gop.index);
 }
 
-fn addExtra(i: *Interner, gpa: Allocator, extra: anytype) Allocator.Error!u32 {
+fn add_extra(i: *Interner, gpa: Allocator, extra: anytype) Allocator.Error!u32 {
     const fields = @typeInfo(@TypeOf(extra)).Struct.fields;
     try i.extra.ensureUnusedCapacity(gpa, fields.len);
     return i.addExtraAssumeCapacity(extra);
 }
 
-fn addExtraAssumeCapacity(i: *Interner, extra: anytype) u32 {
+fn add_extra_assume_capacity(i: *Interner, extra: anytype) u32 {
     const result = @as(u32, @intCast(i.extra.items.len));
     inline for (@typeInfo(@TypeOf(extra)).Struct.fields) |field| {
         i.extra.appendAssumeCapacity(switch (field.type) {
@@ -625,11 +625,11 @@ pub fn get(i: *const Interner, ref: Ref) Key {
     };
 }
 
-fn extraData(i: *const Interner, comptime T: type, index: usize) T {
+fn extra_data(i: *const Interner, comptime T: type, index: usize) T {
     return i.extraDataTrail(T, index).data;
 }
 
-fn extraDataTrail(i: *const Interner, comptime T: type, index: usize) struct { data: T, end: u32 } {
+fn extra_data_trail(i: *const Interner, comptime T: type, index: usize) struct { data: T, end: u32 } {
     var result: T = undefined;
     const fields = @typeInfo(T).Struct.fields;
     inline for (fields, 0..) |field, field_i| {

@@ -298,7 +298,7 @@ test "twos complement limit set" {
     try testTwosComplementLimit(i65);
 }
 
-fn testTwosComplementLimit(comptime T: type) !void {
+fn test_twos_complement_limit(comptime T: type) !void {
     const int_info = @typeInfo(T).Int;
 
     var a = try Managed.init(testing.allocator);
@@ -2789,7 +2789,7 @@ test "big int popcount" {
     try popCountTest(&a, limb_size * 4 + 2, limb_size * 3 + 3);
 }
 
-fn popCountTest(val: *const Managed, bit_count: usize, expected: usize) !void {
+fn pop_count_test(val: *const Managed, bit_count: usize, expected: usize) !void {
     var b = try Managed.init(testing.allocator);
     defer b.deinit();
     try b.popCount(val, bit_count);
@@ -3019,7 +3019,7 @@ test "big int conversion write twos complement zero" {
     try testing.expect(m.toConst().orderAgainstScalar(0x0) == .eq);
 }
 
-fn bitReverseTest(comptime T: type, comptime input: comptime_int, comptime expected_output: comptime_int) !void {
+fn bit_reverse_test(comptime T: type, comptime input: comptime_int, comptime expected_output: comptime_int) !void {
     const bit_count = @typeInfo(T).Int.bits;
     const signedness = @typeInfo(T).Int.signedness;
 
@@ -3066,7 +3066,7 @@ test "big int bit reverse" {
     try bitReverseTest(i128, @as(i128, @bitCast(@as(u128, 0x123456789abcdef11121314151617181))), @as(i128, @bitCast(@as(u128, 0x818e868a828c84888f7b3d591e6a2c48))));
 }
 
-fn byteSwapTest(comptime T: type, comptime input: comptime_int, comptime expected_output: comptime_int) !void {
+fn byte_swap_test(comptime T: type, comptime input: comptime_int, comptime expected_output: comptime_int) !void {
     const byte_count = @typeInfo(T).Int.bits / 8;
     const signedness = @typeInfo(T).Int.signedness;
 

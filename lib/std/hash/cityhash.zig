@@ -1,6 +1,6 @@
 const std = @import("std");
 
-inline fn offsetPtr(ptr: [*]const u8, offset: usize) [*]const u8 {
+inline fn offset_ptr(ptr: [*]const u8, offset: usize) [*]const u8 {
     // ptr + offset doesn't work at comptime so we need this instead.
     return @as([*]const u8, @ptrCast(&ptr[offset]));
 }
@@ -48,7 +48,7 @@ pub const CityHash32 = struct {
         return h1 *% 5 +% 0xe6546b64;
     }
 
-    fn hash32Len0To4(str: []const u8) u32 {
+    fn hash32_len0_to4(str: []const u8) u32 {
         const len: u32 = @as(u32, @truncate(str.len));
         var b: u32 = 0;
         var c: u32 = 9;
@@ -59,7 +59,7 @@ pub const CityHash32 = struct {
         return fmix(mur(b, mur(len, c)));
     }
 
-    fn hash32Len5To12(str: []const u8) u32 {
+    fn hash32_len5_to12(str: []const u8) u32 {
         var a: u32 = @as(u32, @truncate(str.len));
         var b: u32 = a *% 5;
         var c: u32 = 9;
@@ -72,7 +72,7 @@ pub const CityHash32 = struct {
         return fmix(mur(c, mur(b, mur(a, d))));
     }
 
-    fn hash32Len13To24(str: []const u8) u32 {
+    fn hash32_len13_to24(str: []const u8) u32 {
         const len: u32 = @as(u32, @truncate(str.len));
         const a: u32 = fetch32(str.ptr, (str.len >> 1) - 4);
         const b: u32 = fetch32(str.ptr, 4);
@@ -184,11 +184,11 @@ pub const CityHash64 = struct {
         return v ^ (v >> 47);
     }
 
-    fn hashLen16(u: u64, v: u64) u64 {
+    fn hash_len16(u: u64, v: u64) u64 {
         return @call(.always_inline, hash128To64, .{ u, v });
     }
 
-    fn hashLen16Mul(low: u64, high: u64, mul: u64) u64 {
+    fn hash_len16_mul(low: u64, high: u64, mul: u64) u64 {
         var a: u64 = (low ^ high) *% mul;
         a ^= (a >> 47);
         var b: u64 = (high ^ a) *% mul;
@@ -197,11 +197,11 @@ pub const CityHash64 = struct {
         return b;
     }
 
-    fn hash128To64(low: u64, high: u64) u64 {
+    fn hash128_to64(low: u64, high: u64) u64 {
         return @call(.always_inline, hashLen16Mul, .{ low, high, 0x9ddfea08eb382d69 });
     }
 
-    fn hashLen0To16(str: []const u8) u64 {
+    fn hash_len0_to16(str: []const u8) u64 {
         const len: u64 = @as(u64, str.len);
         if (len >= 8) {
             const mul: u64 = k2 +% len *% 2;
@@ -227,7 +227,7 @@ pub const CityHash64 = struct {
         return k2;
     }
 
-    fn hashLen17To32(str: []const u8) u64 {
+    fn hash_len17_to32(str: []const u8) u64 {
         const len: u64 = @as(u64, str.len);
         const mul: u64 = k2 +% len *% 2;
         const a: u64 = fetch64(str.ptr, 0) *% k1;
@@ -238,7 +238,7 @@ pub const CityHash64 = struct {
         return hashLen16Mul(rotr64(a +% b, 43) +% rotr64(c, 30) +% d, a +% rotr64(b +% k2, 18) +% c, mul);
     }
 
-    fn hashLen33To64(str: []const u8) u64 {
+    fn hash_len33_to64(str: []const u8) u64 {
         const len: u64 = @as(u64, str.len);
         const mul: u64 = k2 +% len *% 2;
         const a: u64 = fetch64(str.ptr, 0) *% k2;
@@ -266,7 +266,7 @@ pub const CityHash64 = struct {
         second: u64,
     };
 
-    fn weakHashLen32WithSeedsHelper(w: u64, x: u64, y: u64, z: u64, a: u64, b: u64) WeakPair {
+    fn weak_hash_len32_with_seeds_helper(w: u64, x: u64, y: u64, z: u64, a: u64, b: u64) WeakPair {
         var a1: u64 = a;
         var b1: u64 = b;
         a1 +%= w;
@@ -278,7 +278,7 @@ pub const CityHash64 = struct {
         return WeakPair{ .first = a1 +% z, .second = b1 +% c };
     }
 
-    fn weakHashLen32WithSeeds(ptr: [*]const u8, a: u64, b: u64) WeakPair {
+    fn weak_hash_len32_with_seeds(ptr: [*]const u8, a: u64, b: u64) WeakPair {
         return @call(.always_inline, weakHashLen32WithSeedsHelper, .{
             fetch64(ptr, 0),
             fetch64(ptr, 8),
@@ -333,11 +333,11 @@ pub const CityHash64 = struct {
         return hashLen16(hashLen16(v.first, w.first) +% shiftmix(y) *% k1 +% z, hashLen16(v.second, w.second) +% x);
     }
 
-    pub fn hashWithSeed(str: []const u8, seed: u64) u64 {
+    pub fn hash_with_seed(str: []const u8, seed: u64) u64 {
         return @call(.always_inline, Self.hashWithSeeds, .{ str, k2, seed });
     }
 
-    pub fn hashWithSeeds(str: []const u8, seed0: u64, seed1: u64) u64 {
+    pub fn hash_with_seeds(str: []const u8, seed0: u64, seed1: u64) u64 {
         return hashLen16(hash(str) -% seed0, seed1);
     }
 };

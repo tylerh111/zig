@@ -14,7 +14,7 @@ test "flags in packed union" {
     try comptime testFlagsInPackedUnion();
 }
 
-fn testFlagsInPackedUnion() !void {
+fn test_flags_in_packed_union() !void {
     const FlagBits = packed struct(u8) {
         enable_1: bool = false,
         enable_2: bool = false,
@@ -57,7 +57,7 @@ test "flags in packed union at offset" {
     try comptime testFlagsInPackedUnionAtOffset();
 }
 
-fn testFlagsInPackedUnionAtOffset() !void {
+fn test_flags_in_packed_union_at_offset() !void {
     const FlagBits = packed union {
         base_flags: packed union {
             flags: packed struct(u4) {
@@ -109,7 +109,7 @@ test "packed union in packed struct" {
     try comptime testPackedUnionInPackedStruct();
 }
 
-fn testPackedUnionInPackedStruct() !void {
+fn test_packed_union_in_packed_struct() !void {
     const ReadRequest = packed struct { key: i32 };
     const RequestType = enum(u1) {
         read,

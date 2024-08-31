@@ -26,7 +26,7 @@ pub fn init(allocator: mem.Allocator) !*Pragma {
     return &once.pragma;
 }
 
-fn afterParse(pragma: *Pragma, _: *Compilation) void {
+fn after_parse(pragma: *Pragma, _: *Compilation) void {
     var self: *Once = @fieldParentPtr("pragma", pragma);
     self.pragma_once.clearRetainingCapacity();
 }
@@ -37,7 +37,7 @@ fn deinit(pragma: *Pragma, comp: *Compilation) void {
     comp.gpa.destroy(self);
 }
 
-fn preprocessorHandler(pragma: *Pragma, pp: *Preprocessor, start_idx: TokenIndex) Pragma.Error!void {
+fn preprocessor_handler(pragma: *Pragma, pp: *Preprocessor, start_idx: TokenIndex) Pragma.Error!void {
     var self: *Once = @fieldParentPtr("pragma", pragma);
     const name_tok = pp.tokens.get(start_idx);
     const next = pp.tokens.get(start_idx + 1);

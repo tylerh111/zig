@@ -263,7 +263,7 @@ pub fn main() !void {
     }
 }
 
-fn getIncludePaths(arena: std.mem.Allocator, auto_includes_option: cli.Options.AutoIncludes, zig_lib_dir: []const u8) ![]const []const u8 {
+fn get_include_paths(arena: std.mem.Allocator, auto_includes_option: cli.Options.AutoIncludes, zig_lib_dir: []const u8) ![]const []const u8 {
     var includes = auto_includes_option;
     if (builtin.target.os.tag != .windows) {
         switch (includes) {
@@ -332,7 +332,7 @@ const ErrorHandler = union(enum) {
     server: std.zig.Server,
     tty: std.io.tty.Config,
 
-    pub fn emitCliDiagnostics(
+    pub fn emit_cli_diagnostics(
         self: *ErrorHandler,
         allocator: std.mem.Allocator,
         args: []const []const u8,
@@ -351,7 +351,7 @@ const ErrorHandler = union(enum) {
         }
     }
 
-    pub fn emitAroDiagnostics(
+    pub fn emit_aro_diagnostics(
         self: *ErrorHandler,
         allocator: std.mem.Allocator,
         fail_msg: []const u8,
@@ -372,7 +372,7 @@ const ErrorHandler = union(enum) {
         }
     }
 
-    pub fn emitDiagnostics(
+    pub fn emit_diagnostics(
         self: *ErrorHandler,
         allocator: std.mem.Allocator,
         cwd: std.fs.Dir,
@@ -393,7 +393,7 @@ const ErrorHandler = union(enum) {
         }
     }
 
-    pub fn emitMessage(
+    pub fn emit_message(
         self: *ErrorHandler,
         allocator: std.mem.Allocator,
         msg_type: @import("utils.zig").ErrorMessageType,
@@ -417,7 +417,7 @@ const ErrorHandler = union(enum) {
     }
 };
 
-fn cliDiagnosticsToErrorBundle(
+fn cli_diagnostics_to_error_bundle(
     gpa: std.mem.Allocator,
     diagnostics: *cli.Diagnostics,
 ) !ErrorBundle {
@@ -462,7 +462,7 @@ fn cliDiagnosticsToErrorBundle(
     return try bundle.toOwnedBundle("");
 }
 
-fn diagnosticsToErrorBundle(
+fn diagnostics_to_error_bundle(
     gpa: std.mem.Allocator,
     source: []const u8,
     diagnostics: *Diagnostics,
@@ -550,7 +550,7 @@ fn diagnosticsToErrorBundle(
     return try bundle.toOwnedBundle("");
 }
 
-fn flushErrorMessageIntoBundle(wip: *ErrorBundle.Wip, msg: ErrorBundle.ErrorMessage, notes: []const ErrorBundle.ErrorMessage) !void {
+fn flush_error_message_into_bundle(wip: *ErrorBundle.Wip, msg: ErrorBundle.ErrorMessage, notes: []const ErrorBundle.ErrorMessage) !void {
     try wip.addRootErrorMessage(msg);
     const notes_start = try wip.reserveNotes(@intCast(notes.len));
     for (notes_start.., notes) |i, note| {
@@ -558,7 +558,7 @@ fn flushErrorMessageIntoBundle(wip: *ErrorBundle.Wip, msg: ErrorBundle.ErrorMess
     }
 }
 
-fn errorStringToErrorBundle(allocator: std.mem.Allocator, comptime format: []const u8, args: anytype) !ErrorBundle {
+fn error_string_to_error_bundle(allocator: std.mem.Allocator, comptime format: []const u8, args: anytype) !ErrorBundle {
     @setCold(true);
     var bundle: ErrorBundle.Wip = undefined;
     try bundle.init(allocator);
@@ -569,7 +569,7 @@ fn errorStringToErrorBundle(allocator: std.mem.Allocator, comptime format: []con
     return try bundle.toOwnedBundle("");
 }
 
-fn aroDiagnosticsToErrorBundle(
+fn aro_diagnostics_to_error_bundle(
     gpa: std.mem.Allocator,
     fail_msg: []const u8,
     comp: *aro.Compilation,
@@ -675,7 +675,7 @@ const MsgWriter = struct {
         m.buf.deinit();
     }
 
-    fn resetRetainingCapacity(m: *MsgWriter) void {
+    fn reset_retaining_capacity(m: *MsgWriter) void {
         m.buf.clearRetainingCapacity();
         m.path = null;
         m.source_line = null;
@@ -689,7 +689,7 @@ const MsgWriter = struct {
         m.buf.writer().writeAll(msg) catch {};
     }
 
-    pub fn setColor(m: *MsgWriter, color: std.io.tty.Color) void {
+    pub fn set_color(m: *MsgWriter, color: std.io.tty.Color) void {
         _ = m;
         _ = color;
     }

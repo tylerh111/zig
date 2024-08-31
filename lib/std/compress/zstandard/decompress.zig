@@ -16,7 +16,7 @@ pub const block = @import("decode/block.zig");
 const readers = @import("readers.zig");
 
 /// Returns `true` is `magic` is a valid magic number for a skippable frame
-pub fn isSkippableMagic(magic: u32) bool {
+pub fn is_skippable_magic(magic: u32) bool {
     return frame.Skippable.magic_number_min <= magic and magic <= frame.Skippable.magic_number_max;
 }
 
@@ -27,7 +27,7 @@ pub fn isSkippableMagic(magic: u32) bool {
 ///     Zstandard frame magic number, or outside the range of magic numbers for
 ///     skippable frames.
 ///   - `error.EndOfStream` if `source` contains fewer than 4 bytes
-pub fn decodeFrameType(source: anytype) error{ BadMagic, EndOfStream }!frame.Kind {
+pub fn decode_frame_type(source: anytype) error{ BadMagic, EndOfStream }!frame.Kind {
     const magic = try source.readInt(u32, .little);
     return frameType(magic);
 }
@@ -36,7 +36,7 @@ pub fn decodeFrameType(source: anytype) error{ BadMagic, EndOfStream }!frame.Kin
 ///
 /// Errors returned:
 ///   - `error.BadMagic` if `magic` is not a valid magic number.
-pub fn frameType(magic: u32) error{BadMagic}!frame.Kind {
+pub fn frame_type(magic: u32) error{BadMagic}!frame.Kind {
     return if (magic == frame.Zstandard.magic_number)
         .zstandard
     else if (isSkippableMagic(magic))
@@ -61,7 +61,7 @@ pub const HeaderError = error{ BadMagic, EndOfStream, ReservedBitSet };
 ///   - `error.EndOfStream` if `source` contains fewer than 4 bytes
 ///   - `error.ReservedBitSet` if the frame is a Zstandard frame and any of the
 ///     reserved bits are set
-pub fn decodeFrameHeader(source: anytype) (@TypeOf(source).Error || HeaderError)!FrameHeader {
+pub fn decode_frame_header(source: anytype) (@TypeOf(source).Error || HeaderError)!FrameHeader {
     const magic = try source.readInt(u32, .little);
     const frame_type = try frameType(magic);
     switch (frame_type) {
@@ -121,7 +121,7 @@ pub fn decode(dest: []u8, src: []const u8, verify_checksum: bool) error{
 ///     uses a dictionary
 ///   - `error.MalformedFrame` if a frame in `src` is invalid
 ///   - `error.OutOfMemory` if `allocator` cannot allocate enough memory
-pub fn decodeAlloc(
+pub fn decode_alloc(
     allocator: Allocator,
     src: []const u8,
     verify_checksum: bool,
@@ -173,7 +173,7 @@ pub fn decodeAlloc(
 ///   - an error in `block.Error` if there are errors decoding a block
 ///   - `error.SkippableSizeTooLarge` if the frame is skippable and reports a
 ///     size greater than `src.len`
-pub fn decodeFrame(
+pub fn decode_frame(
     dest: []u8,
     src: []const u8,
     verify_checksum: bool,
@@ -226,7 +226,7 @@ pub fn decodeFrame(
 ///   - an error in `block.Error` if there are errors decoding a block
 ///   - `error.SkippableSizeTooLarge` if the frame is skippable and reports a
 ///     size greater than `src.len`
-pub fn decodeFrameArrayList(
+pub fn decode_frame_array_list(
     allocator: Allocator,
     dest: *std.ArrayList(u8),
     src: []const u8,
@@ -255,7 +255,7 @@ pub fn decodeFrameArrayList(
 }
 
 /// Returns the frame checksum corresponding to the data fed into `hasher`
-pub fn computeChecksum(hasher: *std.hash.XxHash64) u32 {
+pub fn compute_checksum(hasher: *std.hash.XxHash64) u32 {
     const hash = hasher.final();
     return @as(u32, @intCast(hash & 0xFFFFFFFF));
 }
@@ -288,7 +288,7 @@ const FrameError = error{
 ///   - an error in `block.Error` if there are errors decoding a block
 ///   - `error.BadContentSize` if the content size declared by the frame does
 ///     not equal the actual size of decompressed data
-pub fn decodeZstandardFrame(
+pub fn decode_zstandard_frame(
     dest: []u8,
     src: []const u8,
     verify_checksum: bool,
@@ -327,7 +327,7 @@ pub fn decodeZstandardFrame(
     };
 }
 
-pub fn decodeZStandardFrameBlocks(
+pub fn decode_zstandard_frame_blocks(
     dest: []u8,
     src: []const u8,
     frame_context: *FrameContext,
@@ -435,7 +435,7 @@ pub const FrameContext = struct {
 ///   - an error in `block.Error` if there are errors decoding a block
 ///   - `error.BadContentSize` if the content size declared by the frame does
 ///     not equal the size of decompressed data
-pub fn decodeZstandardFrameArrayList(
+pub fn decode_zstandard_frame_array_list(
     allocator: Allocator,
     dest: *std.ArrayList(u8),
     src: []const u8,
@@ -462,7 +462,7 @@ pub fn decodeZstandardFrameArrayList(
     return consumed_count;
 }
 
-pub fn decodeZstandardFrameBlocksArrayList(
+pub fn decode_zstandard_frame_blocks_array_list(
     allocator: Allocator,
     dest: *std.ArrayList(u8),
     src: []const u8,
@@ -526,7 +526,7 @@ pub fn decodeZstandardFrameBlocksArrayList(
     return consumed_count;
 }
 
-fn decodeFrameBlocksInner(
+fn decode_frame_blocks_inner(
     dest: []u8,
     src: []const u8,
     consumed_count: *usize,
@@ -565,7 +565,7 @@ fn decodeFrameBlocksInner(
 
 /// Decode the header of a skippable frame. The first four bytes of `src` must
 /// be a valid magic number for a skippable frame.
-pub fn decodeSkippableHeader(src: *const [8]u8) SkippableHeader {
+pub fn decode_skippable_header(src: *const [8]u8) SkippableHeader {
     const magic = std.mem.readInt(u32, src[0..4], .little);
     assert(isSkippableMagic(magic));
     const frame_size = std.mem.readInt(u32, src[4..8], .little);
@@ -577,7 +577,7 @@ pub fn decodeSkippableHeader(src: *const [8]u8) SkippableHeader {
 
 /// Returns the window size required to decompress a frame, or `null` if it
 /// cannot be determined (which indicates a malformed frame header).
-pub fn frameWindowSize(header: ZstandardHeader) ?u64 {
+pub fn frame_window_size(header: ZstandardHeader) ?u64 {
     if (header.window_descriptor) |descriptor| {
         const exponent = (descriptor & 0b11111000) >> 3;
         const mantissa = descriptor & 0b00000111;
@@ -593,7 +593,7 @@ pub fn frameWindowSize(header: ZstandardHeader) ?u64 {
 /// Errors returned:
 ///   - `error.ReservedBitSet` if any of the reserved bits of the header are set
 ///   - `error.EndOfStream` if `source` does not contain a complete header
-pub fn decodeZstandardHeader(
+pub fn decode_zstandard_header(
     source: anytype,
 ) (@TypeOf(source).Error || error{ EndOfStream, ReservedBitSet })!ZstandardHeader {
     const descriptor = @as(ZstandardHeader.Descriptor, @bitCast(try source.readByte()));

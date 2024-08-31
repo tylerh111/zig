@@ -1,8 +1,8 @@
 var hidden: u32 = 0;
-export fn updateHidden(val: u32) void {
+export fn update_hidden(val: u32) void {
     hidden = val;
 }
-export fn getHidden() u32 {
+export fn get_hidden() u32 {
     return hidden;
 }
 

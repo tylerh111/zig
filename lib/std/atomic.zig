@@ -48,7 +48,7 @@ pub fn Value(comptime T: type) type {
             return @atomicRmw(T, &self.raw, .Xchg, operand, order);
         }
 
-        pub inline fn cmpxchgWeak(
+        pub inline fn cmpxchg_weak(
             self: *Self,
             expected_value: T,
             new_value: T,
@@ -58,7 +58,7 @@ pub fn Value(comptime T: type) type {
             return @cmpxchgWeak(T, &self.raw, expected_value, new_value, success_order, fail_order);
         }
 
-        pub inline fn cmpxchgStrong(
+        pub inline fn cmpxchg_strong(
             self: *Self,
             expected_value: T,
             new_value: T,
@@ -68,35 +68,35 @@ pub fn Value(comptime T: type) type {
             return @cmpxchgStrong(T, &self.raw, expected_value, new_value, success_order, fail_order);
         }
 
-        pub inline fn fetchAdd(self: *Self, operand: T, comptime order: AtomicOrder) T {
+        pub inline fn fetch_add(self: *Self, operand: T, comptime order: AtomicOrder) T {
             return @atomicRmw(T, &self.raw, .Add, operand, order);
         }
 
-        pub inline fn fetchSub(self: *Self, operand: T, comptime order: AtomicOrder) T {
+        pub inline fn fetch_sub(self: *Self, operand: T, comptime order: AtomicOrder) T {
             return @atomicRmw(T, &self.raw, .Sub, operand, order);
         }
 
-        pub inline fn fetchMin(self: *Self, operand: T, comptime order: AtomicOrder) T {
+        pub inline fn fetch_min(self: *Self, operand: T, comptime order: AtomicOrder) T {
             return @atomicRmw(T, &self.raw, .Min, operand, order);
         }
 
-        pub inline fn fetchMax(self: *Self, operand: T, comptime order: AtomicOrder) T {
+        pub inline fn fetch_max(self: *Self, operand: T, comptime order: AtomicOrder) T {
             return @atomicRmw(T, &self.raw, .Max, operand, order);
         }
 
-        pub inline fn fetchAnd(self: *Self, operand: T, comptime order: AtomicOrder) T {
+        pub inline fn fetch_and(self: *Self, operand: T, comptime order: AtomicOrder) T {
             return @atomicRmw(T, &self.raw, .And, operand, order);
         }
 
-        pub inline fn fetchNand(self: *Self, operand: T, comptime order: AtomicOrder) T {
+        pub inline fn fetch_nand(self: *Self, operand: T, comptime order: AtomicOrder) T {
             return @atomicRmw(T, &self.raw, .Nand, operand, order);
         }
 
-        pub inline fn fetchXor(self: *Self, operand: T, comptime order: AtomicOrder) T {
+        pub inline fn fetch_xor(self: *Self, operand: T, comptime order: AtomicOrder) T {
             return @atomicRmw(T, &self.raw, .Xor, operand, order);
         }
 
-        pub inline fn fetchOr(self: *Self, operand: T, comptime order: AtomicOrder) T {
+        pub inline fn fetch_or(self: *Self, operand: T, comptime order: AtomicOrder) T {
             return @atomicRmw(T, &self.raw, .Or, operand, order);
         }
 
@@ -114,7 +114,7 @@ pub fn Value(comptime T: type) type {
         /// Marked `inline` so that if `bit` is comptime-known, the instruction
         /// can be lowered to a more efficient machine code instruction if
         /// possible.
-        pub inline fn bitSet(self: *Self, bit: Bit, comptime order: AtomicOrder) u1 {
+        pub inline fn bit_set(self: *Self, bit: Bit, comptime order: AtomicOrder) u1 {
             const mask = @as(T, 1) << bit;
             const value = self.fetchOr(mask, order);
             return @intFromBool(value & mask != 0);
@@ -123,7 +123,7 @@ pub fn Value(comptime T: type) type {
         /// Marked `inline` so that if `bit` is comptime-known, the instruction
         /// can be lowered to a more efficient machine code instruction if
         /// possible.
-        pub inline fn bitReset(self: *Self, bit: Bit, comptime order: AtomicOrder) u1 {
+        pub inline fn bit_reset(self: *Self, bit: Bit, comptime order: AtomicOrder) u1 {
             const mask = @as(T, 1) << bit;
             const value = self.fetchAnd(~mask, order);
             return @intFromBool(value & mask != 0);
@@ -132,7 +132,7 @@ pub fn Value(comptime T: type) type {
         /// Marked `inline` so that if `bit` is comptime-known, the instruction
         /// can be lowered to a more efficient machine code instruction if
         /// possible.
-        pub inline fn bitToggle(self: *Self, bit: Bit, comptime order: AtomicOrder) u1 {
+        pub inline fn bit_toggle(self: *Self, bit: Bit, comptime order: AtomicOrder) u1 {
             const mask = @as(T, 1) << bit;
             const value = self.fetchXor(mask, order);
             return @intFromBool(value & mask != 0);
@@ -373,7 +373,7 @@ test "Value.bitToggle" {
 }
 
 /// Signals to the processor that the caller is inside a busy-wait spin-loop.
-pub inline fn spinLoopHint() void {
+pub inline fn spin_loop_hint() void {
     switch (builtin.target.cpu.arch) {
         // No-op instruction that can hint to save (or share with a hardware-thread)
         // pipelining/power resources

@@ -19,7 +19,7 @@ comptime {
     @export(__powixf2, .{ .name = "__powixf2", .linkage = common.linkage, .visibility = common.visibility });
 }
 
-inline fn powiXf2(comptime FT: type, a: FT, b: i32) FT {
+inline fn powi_xf2(comptime FT: type, a: FT, b: i32) FT {
     var x_a: FT = a;
     var x_b: i32 = b;
     const is_recip: bool = b < 0;

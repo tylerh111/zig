@@ -303,7 +303,7 @@ pub const HeaderInstallation = union(enum) {
         }
     };
 
-    pub fn getSource(installation: HeaderInstallation) LazyPath {
+    pub fn get_source(installation: HeaderInstallation) LazyPath {
         return switch (installation) {
             inline .file, .directory => |x| x.source,
         };
@@ -456,7 +456,7 @@ pub fn create(owner: *std.Build, options: Options) *Compile {
 /// Marks the specified header for installation alongside this artifact.
 /// When a module links with this artifact, all headers marked for installation are added to that
 /// module's include search path.
-pub fn installHeader(cs: *Compile, source: LazyPath, dest_rel_path: []const u8) void {
+pub fn install_header(cs: *Compile, source: LazyPath, dest_rel_path: []const u8) void {
     const b = cs.step.owner;
     const installation: HeaderInstallation = .{ .file = .{
         .source = source.dupe(b),
@@ -470,7 +470,7 @@ pub fn installHeader(cs: *Compile, source: LazyPath, dest_rel_path: []const u8) 
 /// Marks headers from the specified directory for installation alongside this artifact.
 /// When a module links with this artifact, all headers marked for installation are added to that
 /// module's include search path.
-pub fn installHeadersDirectory(
+pub fn install_headers_directory(
     cs: *Compile,
     source: LazyPath,
     dest_rel_path: []const u8,
@@ -490,14 +490,14 @@ pub fn installHeadersDirectory(
 /// Marks the specified config header for installation alongside this artifact.
 /// When a module links with this artifact, all headers marked for installation are added to that
 /// module's include search path.
-pub fn installConfigHeader(cs: *Compile, config_header: *Step.ConfigHeader) void {
+pub fn install_config_header(cs: *Compile, config_header: *Step.ConfigHeader) void {
     cs.installHeader(config_header.getOutput(), config_header.include_path);
 }
 
 /// Forwards all headers marked for installation from `lib` to this artifact.
 /// When a module links with this artifact, all headers marked for installation are added to that
 /// module's include search path.
-pub fn installLibraryHeaders(cs: *Compile, lib: *Compile) void {
+pub fn install_library_headers(cs: *Compile, lib: *Compile) void {
     assert(lib.kind == .lib);
     for (lib.installed_headers.items) |installation| {
         const installation_copy = installation.dupe(lib.step.owner);
@@ -507,7 +507,7 @@ pub fn installLibraryHeaders(cs: *Compile, lib: *Compile) void {
     }
 }
 
-fn addHeaderInstallationToIncludeTree(cs: *Compile, installation: HeaderInstallation) void {
+fn add_header_installation_to_include_tree(cs: *Compile, installation: HeaderInstallation) void {
     if (cs.installed_headers_include_tree) |wf| switch (installation) {
         .file => |file| {
             _ = wf.addCopyFile(file.source, file.dest_rel_path);
@@ -521,7 +521,7 @@ fn addHeaderInstallationToIncludeTree(cs: *Compile, installation: HeaderInstalla
     };
 }
 
-pub fn getEmittedIncludeTree(cs: *Compile) LazyPath {
+pub fn get_emitted_include_tree(cs: *Compile) LazyPath {
     if (cs.installed_headers_include_tree) |wf| return wf.getDirectory();
     const b = cs.step.owner;
     const wf = b.addWriteFiles();
@@ -534,7 +534,7 @@ pub fn getEmittedIncludeTree(cs: *Compile) LazyPath {
     return wf.getDirectory();
 }
 
-pub fn addObjCopy(cs: *Compile, options: Step.ObjCopy.Options) *Step.ObjCopy {
+pub fn add_obj_copy(cs: *Compile, options: Step.ObjCopy.Options) *Step.ObjCopy {
     const b = cs.step.owner;
     var copy = options;
     if (copy.basename == null) {
@@ -547,33 +547,33 @@ pub fn addObjCopy(cs: *Compile, options: Step.ObjCopy.Options) *Step.ObjCopy {
     return b.addObjCopy(cs.getEmittedBin(), copy);
 }
 
-pub fn checkObject(compile: *Compile) *Step.CheckObject {
+pub fn check_object(compile: *Compile) *Step.CheckObject {
     return Step.CheckObject.create(compile.step.owner, compile.getEmittedBin(), compile.rootModuleTarget().ofmt);
 }
 
 /// deprecated: use `setLinkerScript`
 pub const setLinkerScriptPath = setLinkerScript;
 
-pub fn setLinkerScript(compile: *Compile, source: LazyPath) void {
+pub fn set_linker_script(compile: *Compile, source: LazyPath) void {
     const b = compile.step.owner;
     compile.linker_script = source.dupe(b);
     source.addStepDependencies(&compile.step);
 }
 
-pub fn setVersionScript(compile: *Compile, source: LazyPath) void {
+pub fn set_version_script(compile: *Compile, source: LazyPath) void {
     const b = compile.step.owner;
     compile.version_script = source.dupe(b);
     source.addStepDependencies(&compile.step);
 }
 
-pub fn forceUndefinedSymbol(compile: *Compile, symbol_name: []const u8) void {
+pub fn force_undefined_symbol(compile: *Compile, symbol_name: []const u8) void {
     const b = compile.step.owner;
     compile.force_undefined_symbols.put(b.dupe(symbol_name), {}) catch @panic("OOM");
 }
 
 /// Returns whether the library, executable, or object depends on a particular system library.
 /// Includes transitive dependencies.
-pub fn dependsOnSystemLibrary(compile: *const Compile, name: []const u8) bool {
+pub fn depends_on_system_library(compile: *const Compile, name: []const u8) bool {
     var is_linking_libc = false;
     var is_linking_libcpp = false;
 
@@ -600,19 +600,19 @@ pub fn dependsOnSystemLibrary(compile: *const Compile, name: []const u8) bool {
     return false;
 }
 
-pub fn isDynamicLibrary(compile: *const Compile) bool {
+pub fn is_dynamic_library(compile: *const Compile) bool {
     return compile.kind == .lib and compile.linkage == .dynamic;
 }
 
-pub fn isStaticLibrary(compile: *const Compile) bool {
+pub fn is_static_library(compile: *const Compile) bool {
     return compile.kind == .lib and compile.linkage != .dynamic;
 }
 
-pub fn isDll(compile: *Compile) bool {
+pub fn is_dll(compile: *Compile) bool {
     return compile.isDynamicLibrary() and compile.rootModuleTarget().os.tag == .windows;
 }
 
-pub fn producesPdbFile(compile: *Compile) bool {
+pub fn produces_pdb_file(compile: *Compile) bool {
     const target = compile.rootModuleTarget();
     // TODO: Is this right? Isn't PDB for *any* PE/COFF file?
     // TODO: just share this logic with the compiler, silly!
@@ -629,20 +629,20 @@ pub fn producesPdbFile(compile: *Compile) bool {
     return compile.isDynamicLibrary() or compile.kind == .exe or compile.kind == .@"test";
 }
 
-pub fn producesImplib(compile: *Compile) bool {
+pub fn produces_implib(compile: *Compile) bool {
     return compile.isDll();
 }
 
-pub fn linkLibC(compile: *Compile) void {
+pub fn link_lib_c(compile: *Compile) void {
     compile.root_module.link_libc = true;
 }
 
-pub fn linkLibCpp(compile: *Compile) void {
+pub fn link_lib_cpp(compile: *Compile) void {
     compile.root_module.link_libcpp = true;
 }
 
 /// Deprecated. Use `c.root_module.addCMacro`.
-pub fn defineCMacro(c: *Compile, name: []const u8, value: ?[]const u8) void {
+pub fn define_cmacro(c: *Compile, name: []const u8, value: ?[]const u8) void {
     c.root_module.addCMacro(name, value orelse "1");
 }
 
@@ -653,7 +653,7 @@ const PkgConfigResult = struct {
 
 /// Run pkg-config for the given library name and parse the output, returning the arguments
 /// that should be passed to zig to link the given library.
-fn runPkgConfig(compile: *Compile, lib_name: []const u8) !PkgConfigResult {
+fn run_pkg_config(compile: *Compile, lib_name: []const u8) !PkgConfigResult {
     const b = compile.step.owner;
     const pkg_name = match: {
         // First we have to map the library name to pkg config name. Unfortunately,
@@ -752,11 +752,11 @@ fn runPkgConfig(compile: *Compile, lib_name: []const u8) !PkgConfigResult {
     };
 }
 
-pub fn linkSystemLibrary(compile: *Compile, name: []const u8) void {
+pub fn link_system_library(compile: *Compile, name: []const u8) void {
     return compile.root_module.linkSystemLibrary(name, .{});
 }
 
-pub fn linkSystemLibrary2(
+pub fn link_system_library2(
     compile: *Compile,
     name: []const u8,
     options: Module.LinkSystemLibraryOptions,
@@ -764,50 +764,50 @@ pub fn linkSystemLibrary2(
     return compile.root_module.linkSystemLibrary(name, options);
 }
 
-pub fn linkFramework(c: *Compile, name: []const u8) void {
+pub fn link_framework(c: *Compile, name: []const u8) void {
     c.root_module.linkFramework(name, .{});
 }
 
 /// Deprecated. Use `c.root_module.linkFramework`.
-pub fn linkFrameworkNeeded(c: *Compile, name: []const u8) void {
+pub fn link_framework_needed(c: *Compile, name: []const u8) void {
     c.root_module.linkFramework(name, .{ .needed = true });
 }
 
 /// Deprecated. Use `c.root_module.linkFramework`.
-pub fn linkFrameworkWeak(c: *Compile, name: []const u8) void {
+pub fn link_framework_weak(c: *Compile, name: []const u8) void {
     c.root_module.linkFramework(name, .{ .weak = true });
 }
 
 /// Handy when you have many C/C++ source files and want them all to have the same flags.
-pub fn addCSourceFiles(compile: *Compile, options: Module.AddCSourceFilesOptions) void {
+pub fn add_csource_files(compile: *Compile, options: Module.AddCSourceFilesOptions) void {
     compile.root_module.addCSourceFiles(options);
 }
 
-pub fn addCSourceFile(compile: *Compile, source: Module.CSourceFile) void {
+pub fn add_csource_file(compile: *Compile, source: Module.CSourceFile) void {
     compile.root_module.addCSourceFile(source);
 }
 
 /// Resource files must have the extension `.rc`.
 /// Can be called regardless of target. The .rc file will be ignored
 /// if the target object format does not support embedded resources.
-pub fn addWin32ResourceFile(compile: *Compile, source: Module.RcSourceFile) void {
+pub fn add_win32_resource_file(compile: *Compile, source: Module.RcSourceFile) void {
     compile.root_module.addWin32ResourceFile(source);
 }
 
-pub fn setVerboseLink(compile: *Compile, value: bool) void {
+pub fn set_verbose_link(compile: *Compile, value: bool) void {
     compile.verbose_link = value;
 }
 
-pub fn setVerboseCC(compile: *Compile, value: bool) void {
+pub fn set_verbose_cc(compile: *Compile, value: bool) void {
     compile.verbose_cc = value;
 }
 
-pub fn setLibCFile(compile: *Compile, libc_file: ?LazyPath) void {
+pub fn set_lib_cfile(compile: *Compile, libc_file: ?LazyPath) void {
     const b = compile.step.owner;
     compile.libc_file = if (libc_file) |f| f.dupe(b) else null;
 }
 
-fn getEmittedFileGeneric(compile: *Compile, output_file: *?*GeneratedFile) LazyPath {
+fn get_emitted_file_generic(compile: *Compile, output_file: *?*GeneratedFile) LazyPath {
     if (output_file.*) |file| return .{ .generated = .{ .file = file } };
     const arena = compile.step.owner.allocator;
     const generated_file = arena.create(GeneratedFile) catch @panic("OOM");
@@ -817,27 +817,27 @@ fn getEmittedFileGeneric(compile: *Compile, output_file: *?*GeneratedFile) LazyP
 }
 
 /// Returns the path to the directory that contains the emitted binary file.
-pub fn getEmittedBinDirectory(compile: *Compile) LazyPath {
+pub fn get_emitted_bin_directory(compile: *Compile) LazyPath {
     _ = compile.getEmittedBin();
     return compile.getEmittedFileGeneric(&compile.emit_directory);
 }
 
 /// Returns the path to the generated executable, library or object file.
 /// To run an executable built with zig build, use `run`, or create an install step and invoke it.
-pub fn getEmittedBin(compile: *Compile) LazyPath {
+pub fn get_emitted_bin(compile: *Compile) LazyPath {
     return compile.getEmittedFileGeneric(&compile.generated_bin);
 }
 
 /// Returns the path to the generated import library.
 /// This function can only be called for libraries.
-pub fn getEmittedImplib(compile: *Compile) LazyPath {
+pub fn get_emitted_implib(compile: *Compile) LazyPath {
     assert(compile.kind == .lib);
     return compile.getEmittedFileGeneric(&compile.generated_implib);
 }
 
 /// Returns the path to the generated header file.
 /// This function can only be called for libraries or objects.
-pub fn getEmittedH(compile: *Compile) LazyPath {
+pub fn get_emitted_h(compile: *Compile) LazyPath {
     assert(compile.kind != .exe and compile.kind != .@"test");
     return compile.getEmittedFileGeneric(&compile.generated_h);
 }
@@ -845,80 +845,80 @@ pub fn getEmittedH(compile: *Compile) LazyPath {
 /// Returns the generated PDB file.
 /// If the compilation does not produce a PDB file, this causes a FileNotFound error
 /// at build time.
-pub fn getEmittedPdb(compile: *Compile) LazyPath {
+pub fn get_emitted_pdb(compile: *Compile) LazyPath {
     _ = compile.getEmittedBin();
     return compile.getEmittedFileGeneric(&compile.generated_pdb);
 }
 
 /// Returns the path to the generated documentation directory.
-pub fn getEmittedDocs(compile: *Compile) LazyPath {
+pub fn get_emitted_docs(compile: *Compile) LazyPath {
     return compile.getEmittedFileGeneric(&compile.generated_docs);
 }
 
 /// Returns the path to the generated assembly code.
-pub fn getEmittedAsm(compile: *Compile) LazyPath {
+pub fn get_emitted_asm(compile: *Compile) LazyPath {
     return compile.getEmittedFileGeneric(&compile.generated_asm);
 }
 
 /// Returns the path to the generated LLVM IR.
-pub fn getEmittedLlvmIr(compile: *Compile) LazyPath {
+pub fn get_emitted_llvm_ir(compile: *Compile) LazyPath {
     return compile.getEmittedFileGeneric(&compile.generated_llvm_ir);
 }
 
 /// Returns the path to the generated LLVM BC.
-pub fn getEmittedLlvmBc(compile: *Compile) LazyPath {
+pub fn get_emitted_llvm_bc(compile: *Compile) LazyPath {
     return compile.getEmittedFileGeneric(&compile.generated_llvm_bc);
 }
 
-pub fn addAssemblyFile(compile: *Compile, source: LazyPath) void {
+pub fn add_assembly_file(compile: *Compile, source: LazyPath) void {
     compile.root_module.addAssemblyFile(source);
 }
 
-pub fn addObjectFile(compile: *Compile, source: LazyPath) void {
+pub fn add_object_file(compile: *Compile, source: LazyPath) void {
     compile.root_module.addObjectFile(source);
 }
 
-pub fn addObject(compile: *Compile, object: *Compile) void {
+pub fn add_object(compile: *Compile, object: *Compile) void {
     compile.root_module.addObject(object);
 }
 
-pub fn linkLibrary(compile: *Compile, library: *Compile) void {
+pub fn link_library(compile: *Compile, library: *Compile) void {
     compile.root_module.linkLibrary(library);
 }
 
-pub fn addAfterIncludePath(compile: *Compile, lazy_path: LazyPath) void {
+pub fn add_after_include_path(compile: *Compile, lazy_path: LazyPath) void {
     compile.root_module.addAfterIncludePath(lazy_path);
 }
 
-pub fn addSystemIncludePath(compile: *Compile, lazy_path: LazyPath) void {
+pub fn add_system_include_path(compile: *Compile, lazy_path: LazyPath) void {
     compile.root_module.addSystemIncludePath(lazy_path);
 }
 
-pub fn addIncludePath(compile: *Compile, lazy_path: LazyPath) void {
+pub fn add_include_path(compile: *Compile, lazy_path: LazyPath) void {
     compile.root_module.addIncludePath(lazy_path);
 }
 
-pub fn addConfigHeader(compile: *Compile, config_header: *Step.ConfigHeader) void {
+pub fn add_config_header(compile: *Compile, config_header: *Step.ConfigHeader) void {
     compile.root_module.addConfigHeader(config_header);
 }
 
-pub fn addLibraryPath(compile: *Compile, directory_path: LazyPath) void {
+pub fn add_library_path(compile: *Compile, directory_path: LazyPath) void {
     compile.root_module.addLibraryPath(directory_path);
 }
 
-pub fn addRPath(compile: *Compile, directory_path: LazyPath) void {
+pub fn add_rpath(compile: *Compile, directory_path: LazyPath) void {
     compile.root_module.addRPath(directory_path);
 }
 
-pub fn addSystemFrameworkPath(compile: *Compile, directory_path: LazyPath) void {
+pub fn add_system_framework_path(compile: *Compile, directory_path: LazyPath) void {
     compile.root_module.addSystemFrameworkPath(directory_path);
 }
 
-pub fn addFrameworkPath(compile: *Compile, directory_path: LazyPath) void {
+pub fn add_framework_path(compile: *Compile, directory_path: LazyPath) void {
     compile.root_module.addFrameworkPath(directory_path);
 }
 
-pub fn setExecCmd(compile: *Compile, args: []const ?[]const u8) void {
+pub fn set_exec_cmd(compile: *Compile, args: []const ?[]const u8) void {
     const b = compile.step.owner;
     assert(compile.kind == .@"test");
     const duped_args = b.allocator.alloc(?[]u8, args.len) catch @panic("OOM");
@@ -965,7 +965,7 @@ const CliNamedModules = struct {
     }
 };
 
-fn getGeneratedFilePath(compile: *Compile, comptime tag_name: []const u8, asking_step: ?*Step) []const u8 {
+fn get_generated_file_path(compile: *Compile, comptime tag_name: []const u8, asking_step: ?*Step) []const u8 {
     const maybe_path: ?*GeneratedFile = @field(compile, tag_name);
 
     const generated_file = maybe_path orelse {
@@ -1796,7 +1796,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     }
 }
 
-pub fn doAtomicSymLinks(
+pub fn do_atomic_sym_links(
     step: *Step,
     output_path: []const u8,
     filename_major_only: []const u8,
@@ -1822,7 +1822,7 @@ pub fn doAtomicSymLinks(
     };
 }
 
-fn execPkgConfigList(compile: *std.Build, out_code: *u8) (PkgConfigError || RunError)![]const PkgConfigPkg {
+fn exec_pkg_config_list(compile: *std.Build, out_code: *u8) (PkgConfigError || RunError)![]const PkgConfigPkg {
     const stdout = try compile.runAllowFail(&[_][]const u8{ "pkg-config", "--list-all" }, out_code, .Ignore);
     var list = ArrayList(PkgConfigPkg).init(compile.allocator);
     errdefer list.deinit();
@@ -1838,7 +1838,7 @@ fn execPkgConfigList(compile: *std.Build, out_code: *u8) (PkgConfigError || RunE
     return list.toOwnedSlice();
 }
 
-fn getPkgConfigList(compile: *std.Build) ![]const PkgConfigPkg {
+fn get_pkg_config_list(compile: *std.Build) ![]const PkgConfigPkg {
     if (compile.pkg_config_pkg_list) |res| {
         return res;
     }
@@ -1861,7 +1861,7 @@ fn getPkgConfigList(compile: *std.Build) ![]const PkgConfigPkg {
     }
 }
 
-fn addFlag(args: *ArrayList([]const u8), comptime name: []const u8, opt: ?bool) !void {
+fn add_flag(args: *ArrayList([]const u8), comptime name: []const u8, opt: ?bool) !void {
     const cond = opt orelse return;
     try args.ensureUnusedCapacity(1);
     if (cond) {
@@ -1871,7 +1871,7 @@ fn addFlag(args: *ArrayList([]const u8), comptime name: []const u8, opt: ?bool) 
     }
 }
 
-fn checkCompileErrors(compile: *Compile) !void {
+fn check_compile_errors(compile: *Compile) !void {
     // Clear this field so that it does not get printed by the build runner.
     const actual_eb = compile.step.result_error_bundle;
     compile.step.result_error_bundle = std.zig.ErrorBundle.empty;
@@ -1939,7 +1939,7 @@ fn checkCompileErrors(compile: *Compile) !void {
     }
 }
 
-fn matchCompileError(actual: []const u8, expected: []const u8) bool {
+fn match_compile_error(actual: []const u8, expected: []const u8) bool {
     if (mem.endsWith(u8, actual, expected)) return true;
     if (mem.startsWith(u8, expected, ":?:?: ")) {
         if (mem.endsWith(u8, actual, expected[":?:?: ".len..])) return true;
@@ -1956,12 +1956,12 @@ fn matchCompileError(actual: []const u8, expected: []const u8) bool {
     return false;
 }
 
-pub fn rootModuleTarget(c: *Compile) std.Target {
+pub fn root_module_target(c: *Compile) std.Target {
     // The root module is always given a target, so we know this to be non-null.
     return c.root_module.resolved_target.?.result;
 }
 
-fn moduleNeedsCliArg(mod: *const Module) bool {
+fn module_needs_cli_arg(mod: *const Module) bool {
     return for (mod.link_objects.items) |o| switch (o) {
         .c_source_file, .c_source_files, .assembly_file, .win32_resource_file => break true,
         else => continue,

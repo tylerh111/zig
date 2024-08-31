@@ -47,7 +47,7 @@ const Scope = struct {
         self.tags.deinit(allocator);
     }
 
-    fn clearRetainingCapacity(self: *Scope) void {
+    fn clear_retaining_capacity(self: *Scope) void {
         self.vars.clearRetainingCapacity();
         self.tags.clearRetainingCapacity();
     }
@@ -62,7 +62,7 @@ pub fn deinit(s: *SymbolStack, gpa: Allocator) void {
     s.* = undefined;
 }
 
-pub fn pushScope(s: *SymbolStack, p: *Parser) !void {
+pub fn push_scope(s: *SymbolStack, p: *Parser) !void {
     if (s.active_len + 1 > s.scopes.items.len) {
         try s.scopes.append(p.gpa, .{});
         s.active_len = s.scopes.items.len;
@@ -72,11 +72,11 @@ pub fn pushScope(s: *SymbolStack, p: *Parser) !void {
     }
 }
 
-pub fn popScope(s: *SymbolStack) void {
+pub fn pop_scope(s: *SymbolStack) void {
     s.active_len -= 1;
 }
 
-pub fn findTypedef(s: *SymbolStack, p: *Parser, name: StringId, name_tok: TokenIndex, no_type_yet: bool) !?Symbol {
+pub fn find_typedef(s: *SymbolStack, p: *Parser, name: StringId, name_tok: TokenIndex, no_type_yet: bool) !?Symbol {
     const prev = s.lookup(name, .vars) orelse s.lookup(name, .tags) orelse return null;
     switch (prev.kind) {
         .typedef => return prev,
@@ -99,11 +99,11 @@ pub fn findTypedef(s: *SymbolStack, p: *Parser, name: StringId, name_tok: TokenI
     }
 }
 
-pub fn findSymbol(s: *SymbolStack, name: StringId) ?Symbol {
+pub fn find_symbol(s: *SymbolStack, name: StringId) ?Symbol {
     return s.lookup(name, .vars);
 }
 
-pub fn findTag(
+pub fn find_tag(
     s: *SymbolStack,
     p: *Parser,
     name: StringId,
@@ -167,7 +167,7 @@ pub fn define(s: *SymbolStack, allocator: Allocator, symbol: Symbol) !void {
     }
 }
 
-pub fn defineTypedef(
+pub fn define_typedef(
     s: *SymbolStack,
     p: *Parser,
     name: StringId,
@@ -200,7 +200,7 @@ pub fn defineTypedef(
     });
 }
 
-pub fn defineSymbol(
+pub fn define_symbol(
     s: *SymbolStack,
     p: *Parser,
     name: StringId,
@@ -246,14 +246,14 @@ pub fn defineSymbol(
 
 /// Get a pointer to the named symbol in the innermost scope.
 /// Asserts that a symbol with the name exists.
-pub fn getPtr(s: *SymbolStack, name: StringId, kind: ScopeKind) *Symbol {
+pub fn get_ptr(s: *SymbolStack, name: StringId, kind: ScopeKind) *Symbol {
     return switch (kind) {
         .tags => s.scopes.items[s.active_len - 1].tags.getPtr(name).?,
         .vars => s.scopes.items[s.active_len - 1].vars.getPtr(name).?,
     };
 }
 
-pub fn declareSymbol(
+pub fn declare_symbol(
     s: *SymbolStack,
     p: *Parser,
     name: StringId,
@@ -298,7 +298,7 @@ pub fn declareSymbol(
     });
 }
 
-pub fn defineParam(s: *SymbolStack, p: *Parser, name: StringId, ty: Type, tok: TokenIndex) !void {
+pub fn define_param(s: *SymbolStack, p: *Parser, name: StringId, ty: Type, tok: TokenIndex) !void {
     if (s.get(name, .vars)) |prev| {
         switch (prev.kind) {
             .enumeration, .decl, .def, .constexpr => {
@@ -324,7 +324,7 @@ pub fn defineParam(s: *SymbolStack, p: *Parser, name: StringId, ty: Type, tok: T
     });
 }
 
-pub fn defineTag(
+pub fn define_tag(
     s: *SymbolStack,
     p: *Parser,
     name: StringId,
@@ -355,7 +355,7 @@ pub fn defineTag(
     }
 }
 
-pub fn defineEnumeration(
+pub fn define_enumeration(
     s: *SymbolStack,
     p: *Parser,
     name: StringId,

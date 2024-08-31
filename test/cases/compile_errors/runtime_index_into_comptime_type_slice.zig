@@ -1,7 +1,7 @@
 const Struct = struct {
     a: u32,
 };
-fn getIndex() usize {
+fn get_index() usize {
     return 2;
 }
 export fn entry() void {

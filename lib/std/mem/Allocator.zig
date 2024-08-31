@@ -53,7 +53,7 @@ pub const VTable = struct {
     free: *const fn (ctx: *anyopaque, buf: []u8, buf_align: u8, ret_addr: usize) void,
 };
 
-pub fn noResize(
+pub fn no_resize(
     self: *anyopaque,
     buf: []u8,
     log2_buf_align: u8,
@@ -68,7 +68,7 @@ pub fn noResize(
     return false;
 }
 
-pub fn noFree(
+pub fn no_free(
     self: *anyopaque,
     buf: []u8,
     log2_buf_align: u8,
@@ -82,19 +82,19 @@ pub fn noFree(
 
 /// This function is not intended to be called except from within the
 /// implementation of an Allocator
-pub inline fn rawAlloc(self: Allocator, len: usize, ptr_align: u8, ret_addr: usize) ?[*]u8 {
+pub inline fn raw_alloc(self: Allocator, len: usize, ptr_align: u8, ret_addr: usize) ?[*]u8 {
     return self.vtable.alloc(self.ptr, len, ptr_align, ret_addr);
 }
 
 /// This function is not intended to be called except from within the
 /// implementation of an Allocator
-pub inline fn rawResize(self: Allocator, buf: []u8, log2_buf_align: u8, new_len: usize, ret_addr: usize) bool {
+pub inline fn raw_resize(self: Allocator, buf: []u8, log2_buf_align: u8, new_len: usize, ret_addr: usize) bool {
     return self.vtable.resize(self.ptr, buf, log2_buf_align, new_len, ret_addr);
 }
 
 /// This function is not intended to be called except from within the
 /// implementation of an Allocator
-pub inline fn rawFree(self: Allocator, buf: []u8, log2_buf_align: u8, ret_addr: usize) void {
+pub inline fn raw_free(self: Allocator, buf: []u8, log2_buf_align: u8, ret_addr: usize) void {
     return self.vtable.free(self.ptr, buf, log2_buf_align, ret_addr);
 }
 
@@ -129,7 +129,7 @@ pub fn alloc(self: Allocator, comptime T: type, n: usize) Error![]T {
     return self.allocAdvancedWithRetAddr(T, null, n, @returnAddress());
 }
 
-pub fn allocWithOptions(
+pub fn alloc_with_options(
     self: Allocator,
     comptime Elem: type,
     n: usize,
@@ -140,7 +140,7 @@ pub fn allocWithOptions(
     return self.allocWithOptionsRetAddr(Elem, n, optional_alignment, optional_sentinel, @returnAddress());
 }
 
-pub fn allocWithOptionsRetAddr(
+pub fn alloc_with_options_ret_addr(
     self: Allocator,
     comptime Elem: type,
     n: usize,
@@ -174,7 +174,7 @@ fn AllocWithOptionsPayload(comptime Elem: type, comptime alignment: ?u29, compti
 /// call `free` when done.
 ///
 /// For allocating a single item, see `create`.
-pub fn allocSentinel(
+pub fn alloc_sentinel(
     self: Allocator,
     comptime Elem: type,
     n: usize,
@@ -183,7 +183,7 @@ pub fn allocSentinel(
     return self.allocWithOptionsRetAddr(Elem, n, null, sentinel, @returnAddress());
 }
 
-pub fn alignedAlloc(
+pub fn aligned_alloc(
     self: Allocator,
     comptime T: type,
     /// null means naturally aligned
@@ -193,7 +193,7 @@ pub fn alignedAlloc(
     return self.allocAdvancedWithRetAddr(T, alignment, n, @returnAddress());
 }
 
-pub inline fn allocAdvancedWithRetAddr(
+pub inline fn alloc_advanced_with_ret_addr(
     self: Allocator,
     comptime T: type,
     /// null means naturally aligned
@@ -206,12 +206,12 @@ pub inline fn allocAdvancedWithRetAddr(
     return ptr[0..n];
 }
 
-fn allocWithSizeAndAlignment(self: Allocator, comptime size: usize, comptime alignment: u29, n: usize, return_address: usize) Error![*]align(alignment) u8 {
+fn alloc_with_size_and_alignment(self: Allocator, comptime size: usize, comptime alignment: u29, n: usize, return_address: usize) Error![*]align(alignment) u8 {
     const byte_count = math.mul(usize, size, n) catch return Error.OutOfMemory;
     return self.allocBytesWithAlignment(alignment, byte_count, return_address);
 }
 
-fn allocBytesWithAlignment(self: Allocator, comptime alignment: u29, byte_count: usize, return_address: usize) Error![*]align(alignment) u8 {
+fn alloc_bytes_with_alignment(self: Allocator, comptime alignment: u29, byte_count: usize, return_address: usize) Error![*]align(alignment) u8 {
     // The Zig Allocator interface is not intended to solve alignments beyond
     // the minimum OS page size. For these use cases, the caller must use OS
     // APIs directly.
@@ -259,7 +259,7 @@ pub fn realloc(self: Allocator, old_mem: anytype, new_n: usize) t: {
     return self.reallocAdvanced(old_mem, new_n, @returnAddress());
 }
 
-pub fn reallocAdvanced(
+pub fn realloc_advanced(
     self: Allocator,
     old_mem: anytype,
     new_n: usize,
@@ -322,7 +322,7 @@ pub fn dupe(allocator: Allocator, comptime T: type, m: []const T) Error![]T {
 }
 
 /// Copies `m` to newly allocated memory, with a null-terminated element. Caller owns the memory.
-pub fn dupeZ(allocator: Allocator, comptime T: type, m: []const T) Error![:0]T {
+pub fn dupe_z(allocator: Allocator, comptime T: type, m: []const T) Error![:0]T {
     const new_buf = try allocator.alloc(T, m.len + 1);
     @memcpy(new_buf[0..m.len], m);
     new_buf[m.len] = 0;

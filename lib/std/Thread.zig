@@ -54,7 +54,7 @@ pub const SetNameError = error{
     Unexpected,
 } || posix.PrctlError || posix.WriteError || std.fs.File.OpenError || std.fmt.BufPrintError;
 
-pub fn setName(self: Thread, name: []const u8) SetNameError!void {
+pub fn set_name(self: Thread, name: []const u8) SetNameError!void {
     if (name.len > max_name_len) return error.NameTooLong;
 
     const name_with_terminator = blk: {
@@ -165,7 +165,7 @@ pub const GetNameError = error{
 
 /// On Windows, the result is encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On other platforms, the result is an opaque sequence of bytes with no particular encoding.
-pub fn getName(self: Thread, buffer_ptr: *[max_name_len:0]u8) GetNameError!?[]const u8 {
+pub fn get_name(self: Thread, buffer_ptr: *[max_name_len:0]u8) GetNameError!?[]const u8 {
     buffer_ptr[max_name_len] = 0;
     var buffer: [:0]u8 = buffer_ptr;
 
@@ -273,7 +273,7 @@ pub const Id = switch (native_os) {
 
 /// Returns the platform ID of the callers thread.
 /// Attempts to use thread locals and avoid syscalls when possible.
-pub fn getCurrentId() Id {
+pub fn get_current_id() Id {
     return Impl.getCurrentId();
 }
 
@@ -284,7 +284,7 @@ pub const CpuCountError = error{
 };
 
 /// Returns the platforms view on the number of logical CPU cores available.
-pub fn getCpuCount() CpuCountError!usize {
+pub fn get_cpu_count() CpuCountError!usize {
     return Impl.getCpuCount();
 }
 
@@ -347,7 +347,7 @@ pub fn spawn(config: SpawnConfig, comptime function: anytype, args: anytype) Spa
 pub const Handle = Impl.ThreadHandle;
 
 /// Returns the handle of this thread
-pub fn getHandle(self: Thread) Handle {
+pub fn get_handle(self: Thread) Handle {
     return self.impl.getHandle();
 }
 
@@ -391,7 +391,7 @@ const Completion = std.atomic.Value(enum(u8) {
 });
 
 /// Used by the Thread implementations to call the spawned function with the arguments.
-fn callFn(comptime f: anytype, args: anytype) switch (Impl) {
+fn call_fn(comptime f: anytype, args: anytype) switch (Impl) {
     WindowsThreadImpl => windows.DWORD,
     LinuxThreadImpl => u8,
     PosixThreadImpl => ?*anyopaque,
@@ -446,11 +446,11 @@ fn callFn(comptime f: anytype, args: anytype) switch (Impl) {
 const UnsupportedImpl = struct {
     pub const ThreadHandle = void;
 
-    fn getCurrentId() usize {
+    fn get_current_id() usize {
         return unsupported({});
     }
 
-    fn getCpuCount() !usize {
+    fn get_cpu_count() !usize {
         return unsupported({});
     }
 
@@ -458,7 +458,7 @@ const UnsupportedImpl = struct {
         return unsupported(.{ config, f, args });
     }
 
-    fn getHandle(self: Impl) ThreadHandle {
+    fn get_handle(self: Impl) ThreadHandle {
         return unsupported(self);
     }
 
@@ -479,11 +479,11 @@ const UnsupportedImpl = struct {
 const WindowsThreadImpl = struct {
     pub const ThreadHandle = windows.HANDLE;
 
-    fn getCurrentId() windows.DWORD {
+    fn get_current_id() windows.DWORD {
         return windows.kernel32.GetCurrentThreadId();
     }
 
-    fn getCpuCount() !usize {
+    fn get_cpu_count() !usize {
         // Faster than calling into GetSystemInfo(), even if amortized.
         return windows.peb().NumberOfProcessors;
     }
@@ -508,7 +508,7 @@ const WindowsThreadImpl = struct {
             fn_args: Args,
             thread: ThreadCompletion,
 
-            fn entryFn(raw_ptr: windows.PVOID) callconv(.C) windows.DWORD {
+            fn entry_fn(raw_ptr: windows.PVOID) callconv(.C) windows.DWORD {
                 const self: *@This() = @ptrCast(@alignCast(raw_ptr));
                 defer switch (self.thread.completion.swap(.completed, .seq_cst)) {
                     .running => {},
@@ -557,7 +557,7 @@ const WindowsThreadImpl = struct {
         return Impl{ .thread = &instance.thread };
     }
 
-    fn getHandle(self: Impl) ThreadHandle {
+    fn get_handle(self: Impl) ThreadHandle {
         return self.thread.thread_handle;
     }
 
@@ -583,7 +583,7 @@ const PosixThreadImpl = struct {
 
     pub const ThreadHandle = c.pthread_t;
 
-    fn getCurrentId() Id {
+    fn get_current_id() Id {
         switch (native_os) {
             .linux => {
                 return LinuxThreadImpl.getCurrentId();
@@ -615,7 +615,7 @@ const PosixThreadImpl = struct {
         }
     }
 
-    fn getCpuCount() !usize {
+    fn get_cpu_count() !usize {
         switch (native_os) {
             .linux => {
                 return LinuxThreadImpl.getCpuCount();
@@ -668,7 +668,7 @@ const PosixThreadImpl = struct {
         const allocator = std.heap.c_allocator;
 
         const Instance = struct {
-            fn entryFn(raw_arg: ?*anyopaque) callconv(.C) ?*anyopaque {
+            fn entry_fn(raw_arg: ?*anyopaque) callconv(.C) ?*anyopaque {
                 const args_ptr: *Args = @ptrCast(@alignCast(raw_arg));
                 defer allocator.destroy(args_ptr);
                 return callFn(f, args_ptr.*);
@@ -703,7 +703,7 @@ const PosixThreadImpl = struct {
         }
     }
 
-    fn getHandle(self: Impl) ThreadHandle {
+    fn get_handle(self: Impl) ThreadHandle {
         return self.handle;
     }
 
@@ -775,11 +775,11 @@ const WasiThreadImpl = struct {
 
     const State = std.atomic.Value(enum(u8) { running, completed, detached });
 
-    fn getCurrentId() Id {
+    fn get_current_id() Id {
         return tls_thread_id;
     }
 
-    fn getHandle(self: Impl) ThreadHandle {
+    fn get_handle(self: Impl) ThreadHandle {
         return self.thread.tid.load(.seq_cst);
     }
 
@@ -1046,7 +1046,7 @@ const LinuxThreadImpl = struct {
 
     threadlocal var tls_thread_id: ?Id = null;
 
-    fn getCurrentId() Id {
+    fn get_current_id() Id {
         return tls_thread_id orelse {
             const tid = @as(u32, @bitCast(linux.gettid()));
             tls_thread_id = tid;
@@ -1054,7 +1054,7 @@ const LinuxThreadImpl = struct {
         };
     }
 
-    fn getCpuCount() !usize {
+    fn get_cpu_count() !usize {
         const cpu_set = try posix.sched_getaffinity(0);
         // TODO: should not need this usize cast
         return @as(usize, posix.CPU_COUNT(cpu_set));
@@ -1071,7 +1071,7 @@ const LinuxThreadImpl = struct {
         /// Calls `munmap(mapped.ptr, mapped.len)` then `exit(1)` without touching the stack (which lives in `mapped.ptr`).
         /// Ported over from musl libc's pthread detached implementation:
         /// https://github.com/ifduyue/musl/search?q=__unmapself
-        fn freeAndExit(self: *ThreadCompletion) noreturn {
+        fn free_and_exit(self: *ThreadCompletion) noreturn {
             switch (target.cpu.arch) {
                 .x86 => asm volatile (
                     \\  movl $91, %%eax
@@ -1216,7 +1216,7 @@ const LinuxThreadImpl = struct {
             fn_args: Args,
             thread: ThreadCompletion,
 
-            fn entryFn(raw_arg: usize) callconv(.C) u8 {
+            fn entry_fn(raw_arg: usize) callconv(.C) u8 {
                 const self = @as(*@This(), @ptrFromInt(raw_arg));
                 defer switch (self.thread.completion.swap(.completed, .seq_cst)) {
                     .running => {},
@@ -1333,7 +1333,7 @@ const LinuxThreadImpl = struct {
         }
     }
 
-    fn getHandle(self: Impl) ThreadHandle {
+    fn get_handle(self: Impl) ThreadHandle {
         return self.thread.parent_tid;
     }
 
@@ -1376,7 +1376,7 @@ const LinuxThreadImpl = struct {
     }
 };
 
-fn testThreadName(thread: *Thread) !void {
+fn test_thread_name(thread: *Thread) !void {
     const testCases = &[_][]const u8{
         "mythread",
         "b" ** max_name_len,
@@ -1459,7 +1459,7 @@ test {
     _ = RwLock;
 }
 
-fn testIncrementNotify(value: *usize, event: *ResetEvent) void {
+fn test_increment_notify(value: *usize, event: *ResetEvent) void {
     value.* += 1;
     event.set();
 }

@@ -135,7 +135,7 @@ fn SipHashStateless(comptime T: type, comptime c_rounds: usize, comptime d_round
             self.v0 ^= m;
         }
 
-        fn sipRound(d: *Self) void {
+        fn sip_round(d: *Self) void {
             d.v0 +%= d.v1;
             d.v1 = math.rotl(u64, d.v1, @as(u64, 13));
             d.v1 ^= d.v0;
@@ -216,7 +216,7 @@ fn SipHash(comptime T: type, comptime c_rounds: usize, comptime d_rounds: usize)
             mem.writeInt(T, out, self.state.final(self.buf[0..self.buf_len]), .little);
         }
 
-        pub fn finalResult(self: *Self) [mac_length]u8 {
+        pub fn final_result(self: *Self) [mac_length]u8 {
             var result: [mac_length]u8 = undefined;
             self.final(&result);
             return result;
@@ -230,12 +230,12 @@ fn SipHash(comptime T: type, comptime c_rounds: usize, comptime d_rounds: usize)
         }
 
         /// Return an authentication tag for the current state, as an integer
-        pub fn finalInt(self: *Self) T {
+        pub fn final_int(self: *Self) T {
             return self.state.final(self.buf[0..self.buf_len]);
         }
 
         /// Return an authentication tag for a message and a key, as an integer
-        pub fn toInt(msg: []const u8, key: *const [key_length]u8) T {
+        pub fn to_int(msg: []const u8, key: *const [key_length]u8) T {
             return State.hash(msg, key);
         }
 

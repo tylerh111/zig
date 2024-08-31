@@ -13,7 +13,7 @@ pub const File = union(enum) {
         };
     }
 
-    pub fn segmentInfo(file: File) []const types.Segment {
+    pub fn segment_info(file: File) []const types.Segment {
         return switch (file) {
             .zig_object => |obj| obj.segment_info.items,
             .object => |obj| obj.segment_info,
@@ -34,7 +34,7 @@ pub const File = union(enum) {
         };
     }
 
-    pub fn symbolName(file: File, index: Symbol.Index) []const u8 {
+    pub fn symbol_name(file: File, index: Symbol.Index) []const u8 {
         switch (file) {
             .zig_object => |obj| {
                 const sym = obj.symbols.items[@intFromEnum(index)];
@@ -47,7 +47,7 @@ pub const File = union(enum) {
         }
     }
 
-    pub fn parseSymbolIntoAtom(file: File, wasm_file: *Wasm, index: Symbol.Index) !AtomIndex {
+    pub fn parse_symbol_into_atom(file: File, wasm_file: *Wasm, index: Symbol.Index) !AtomIndex {
         return switch (file) {
             inline else => |obj| obj.parseSymbolIntoAtom(wasm_file, index),
         };
@@ -71,19 +71,19 @@ pub const File = union(enum) {
         };
     }
 
-    pub fn importedGlobals(file: File) u32 {
+    pub fn imported_globals(file: File) u32 {
         return switch (file) {
             inline else => |obj| obj.imported_globals_count,
         };
     }
 
-    pub fn importedFunctions(file: File) u32 {
+    pub fn imported_functions(file: File) u32 {
         return switch (file) {
             inline else => |obj| obj.imported_functions_count,
         };
     }
 
-    pub fn importedTables(file: File) u32 {
+    pub fn imported_tables(file: File) u32 {
         return switch (file) {
             inline else => |obj| obj.imported_tables_count,
         };
@@ -109,7 +109,7 @@ pub const File = union(enum) {
         };
     }
 
-    pub fn funcTypes(file: File) []const std.wasm.Type {
+    pub fn func_types(file: File) []const std.wasm.Type {
         return switch (file) {
             .zig_object => |obj| obj.func_types.items,
             .object => |obj| obj.func_types,

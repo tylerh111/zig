@@ -38,7 +38,7 @@ pub fn BitWriter(comptime WriterType: type) type {
             return .{ .inner_writer = writer };
         }
 
-        pub fn setWriter(self: *Self, new_writer: WriterType) void {
+        pub fn set_writer(self: *Self, new_writer: WriterType) void {
             //assert(self.bits == 0 and self.nbits == 0 and self.nbytes == 0);
             self.inner_writer = new_writer;
         }
@@ -60,7 +60,7 @@ pub fn BitWriter(comptime WriterType: type) type {
             self.nbytes = 0;
         }
 
-        pub fn writeBits(self: *Self, b: u32, nb: u32) Error!void {
+        pub fn write_bits(self: *Self, b: u32, nb: u32) Error!void {
             self.bits |= @as(u64, @intCast(b)) << @as(u6, @intCast(self.nbits));
             self.nbits += nb;
             if (self.nbits < 48)
@@ -78,7 +78,7 @@ pub fn BitWriter(comptime WriterType: type) type {
             self.nbits -= 48;
         }
 
-        pub fn writeBytes(self: *Self, bytes: []const u8) Error!void {
+        pub fn write_bytes(self: *Self, bytes: []const u8) Error!void {
             var n = self.nbytes;
             if (self.nbits & 7 != 0) {
                 return error.UnfinishedBits;

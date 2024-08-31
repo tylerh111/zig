@@ -14,7 +14,7 @@ const HasFuncs = struct {
         return self.state;
     }
 
-    fn getPtr(self: *const HasFuncs) *const u32 {
+    fn get_ptr(self: *const HasFuncs) *const u32 {
         return &self.state;
     }
 

@@ -59,7 +59,7 @@ pub fn Crc(comptime W: type, comptime algorithm: Algorithm(W)) type {
             return Self{ .crc = initial };
         }
 
-        inline fn tableEntry(index: I) I {
+        inline fn table_entry(index: I) I {
             return lookup_table[@as(u8, @intCast(index & 0xFF))];
         }
 

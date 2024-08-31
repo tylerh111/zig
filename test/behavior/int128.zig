@@ -115,7 +115,7 @@ test "shift int128" {
     }
 }
 
-fn testShlTrunc(comptime Type: type, x: Type, rhs: u7) !void {
+fn test_shl_trunc(comptime Type: type, x: Type, rhs: u7) !void {
     const shifted = x << rhs;
     try expect(shifted == @as(Type, 0x40000000_00000000_00000000_00000000));
 }

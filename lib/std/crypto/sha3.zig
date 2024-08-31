@@ -188,7 +188,7 @@ fn ShakeLike(comptime security_level: u11, comptime default_delim: u8, comptime 
         }
 
         /// Align the input to a block boundary.
-        pub fn fillBlock(self: *Self) void {
+        pub fn fill_block(self: *Self) void {
             self.st.fillBlock();
         }
 
@@ -281,7 +281,7 @@ fn CShakeLike(comptime security_level: u11, comptime default_delim: u8, comptime
         }
 
         /// Align the input to a block boundary.
-        pub fn fillBlock(self: *Self) void {
+        pub fn fill_block(self: *Self) void {
             self.shaker.fillBlock();
         }
 
@@ -334,7 +334,7 @@ fn KMacLike(comptime security_level: u11, comptime default_delim: u8, comptime r
         /// Initialize a state for the KMAC function, with an optional context and an arbitrary-long key.
         /// If the context and key are going to be reused, the structure can be initialized once, and cloned for each message.
         /// This is more efficient than reinitializing the state for each message at the cost of a small amount of memory.
-        pub fn initWithOptions(key: []const u8, options: Options) Self {
+        pub fn init_with_options(key: []const u8, options: Options) Self {
             var cshaker = CShaker.init(.{ .context = options.context });
             const encoded_rate_len = NistLengthEncoding.encode(.left, block_length / 8);
             cshaker.update(encoded_rate_len.slice());
@@ -378,7 +378,7 @@ fn KMacLike(comptime security_level: u11, comptime default_delim: u8, comptime r
         }
 
         /// Return an authentication tag for a message and a key, with an optional context.
-        pub fn createWithOptions(out: []u8, msg: []const u8, key: []const u8, options: Options) void {
+        pub fn create_with_options(out: []u8, msg: []const u8, key: []const u8, options: Options) void {
             var ctx = Self.initWithOptions(key, options);
             ctx.update(msg);
             ctx.final(out);
@@ -441,7 +441,7 @@ fn TupleHashLike(comptime security_level: u11, comptime default_delim: u8, compt
         /// This is more efficient than reinitializing the state for each message at the cost of a small amount of memory.
         ///
         /// A key can be optionally added to the context to create a keyed TupleHash function, similar to KMAC.
-        pub fn initWithOptions(options: Options) Self {
+        pub fn init_with_options(options: Options) Self {
             const cshaker = CShaker.init(.{ .context = options.context });
             return Self{
                 .cshaker = cshaker,
@@ -468,7 +468,7 @@ fn TupleHashLike(comptime security_level: u11, comptime default_delim: u8, compt
         }
 
         /// Align the input to a block boundary.
-        pub fn fillBlock(self: *Self) void {
+        pub fn fill_block(self: *Self) void {
             self.cshaker.fillBlock();
         }
 

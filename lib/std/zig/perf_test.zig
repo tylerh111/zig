@@ -30,7 +30,7 @@ pub fn main() !void {
     });
 }
 
-fn testOnce() usize {
+fn test_once() usize {
     var fixed_buf_alloc = std.heap.FixedBufferAllocator.init(fixed_buffer_mem[0..]);
     const allocator = fixed_buf_alloc.allocator();
     _ = std.zig.Ast.parse(allocator, source, .zig) catch @panic("parse failure");

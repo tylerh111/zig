@@ -49,7 +49,7 @@ test "implicitly decreasing pointer alignment" {
     try expect(addUnaligned(&a, &b) == 7);
 }
 
-fn addUnaligned(a: *align(1) const u32, b: *align(1) const u32) u32 {
+fn add_unaligned(a: *align(1) const u32, b: *align(1) const u32) u32 {
     return a.* + b.*;
 }
 
@@ -59,7 +59,7 @@ test "@alignCast pointers" {
     expectsOnly1(&x);
     try expect(x == 2);
 }
-fn expectsOnly1(x: *align(1) u32) void {
+fn expects_only1(x: *align(1) u32) void {
     expects4(@alignCast(x));
 }
 fn expects4(x: *align(4) u32) void {
@@ -220,7 +220,7 @@ test "alignstack" {
     try expect(fnWithAlignedStack() == 1234);
 }
 
-fn fnWithAlignedStack() i32 {
+fn fn_with_aligned_stack() i32 {
     @setAlignStack(256);
     return 1234;
 }
@@ -233,7 +233,7 @@ test "implicitly decreasing slice alignment" {
     const b: u32 align(8) = 4;
     try expect(addUnalignedSlice(@as(*const [1]u32, &a)[0..], @as(*const [1]u32, &b)[0..]) == 7);
 }
-fn addUnalignedSlice(a: []align(1) const u32, b: []align(1) const u32) u32 {
+fn add_unaligned_slice(a: []align(1) const u32, b: []align(1) const u32) u32 {
     return a[0] + b[0];
 }
 
@@ -244,7 +244,7 @@ test "specifying alignment allows pointer cast" {
 
     try testBytesAlign(0x33);
 }
-fn testBytesAlign(b: u8) !void {
+fn test_bytes_align(b: u8) !void {
     var bytes align(4) = [_]u8{ b, b, b, b };
     const ptr = @as(*u32, @ptrCast(&bytes[0]));
     try expect(ptr.* == 0x33333333);
@@ -262,10 +262,10 @@ test "@alignCast slices" {
     sliceExpectsOnly1(slice);
     try expect(slice[0] == 2);
 }
-fn sliceExpectsOnly1(slice: []align(1) u32) void {
+fn slice_expects_only1(slice: []align(1) u32) void {
     sliceExpects4(@alignCast(slice));
 }
-fn sliceExpects4(slice: []align(4) u32) void {
+fn slice_expects4(slice: []align(4) u32) void {
     slice[0] += 1;
 }
 
@@ -318,7 +318,7 @@ test "function alignment" {
     if (native_arch == .wasm32 or native_arch == .wasm64) return error.SkipZigTest;
 
     const S = struct {
-        fn alignExpr() align(@sizeOf(usize) * 2) i32 {
+        fn align_expr() align(@sizeOf(usize) * 2) i32 {
             return 1234;
         }
         fn align1() align(1) void {}
@@ -351,14 +351,14 @@ test "implicitly decreasing fn alignment" {
     try testImplicitlyDecreaseFnAlign(alignedBig, 5678);
 }
 
-fn testImplicitlyDecreaseFnAlign(ptr: *align(1) const fn () i32, answer: i32) !void {
+fn test_implicitly_decrease_fn_align(ptr: *align(1) const fn () i32, answer: i32) !void {
     try expect(ptr() == answer);
 }
 
-fn alignedSmall() align(8) i32 {
+fn aligned_small() align(8) i32 {
     return 1234;
 }
-fn alignedBig() align(16) i32 {
+fn aligned_big() align(16) i32 {
     return 5678;
 }
 
@@ -374,10 +374,10 @@ test "@alignCast functions" {
 
     try expect(fnExpectsOnly1(simple4) == 0x19);
 }
-fn fnExpectsOnly1(ptr: *align(1) const fn () i32) i32 {
+fn fn_expects_only1(ptr: *align(1) const fn () i32) i32 {
     return fnExpects4(@alignCast(ptr));
 }
-fn fnExpects4(ptr: *align(4) const fn () i32) i32 {
+fn fn_expects4(ptr: *align(4) const fn () i32) i32 {
     return ptr();
 }
 fn simple4() align(4) i32 {
@@ -394,7 +394,7 @@ test "function align expression depends on generic parameter" {
     if (native_arch == .thumb) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try expect(foobar(1) == 2);
             try expect(foobar(4) == 5);
             try expect(foobar(8) == 9);
@@ -412,7 +412,7 @@ test "function callconv expression depends on generic parameter" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try expect(foobar(.C, 1) == 2);
             try expect(foobar(.Unspecified, 2) == 3);
         }
@@ -460,10 +460,10 @@ test "runtime-known array index has best alignment possible" {
     try testIndex2(&array, 2, *u8);
     try testIndex2(&array, 3, *u8);
 }
-fn testIndex(smaller: [*]align(2) u32, index: usize, comptime T: type) !void {
+fn test_index(smaller: [*]align(2) u32, index: usize, comptime T: type) !void {
     comptime assert(@TypeOf(&smaller[index]) == T);
 }
-fn testIndex2(ptr: [*]align(4) u8, index: usize, comptime T: type) !void {
+fn test_index2(ptr: [*]align(4) u8, index: usize, comptime T: type) !void {
     comptime assert(@TypeOf(&ptr[index]) == T);
 }
 
@@ -544,7 +544,7 @@ test "align(@alignOf(T)) T does not force resolution of T" {
         const A = struct {
             a: *align(@alignOf(A)) A,
         };
-        fn doTheTest() void {
+        fn do_the_test() void {
             suspend {
                 resume @frame();
             }

@@ -33,7 +33,7 @@ pub fn HashedReader(
     };
 }
 
-pub fn hashedReader(
+pub fn hashed_reader(
     reader: anytype,
     hasher: anytype,
 ) HashedReader(@TypeOf(reader), @TypeOf(hasher)) {
@@ -63,7 +63,7 @@ pub fn HashedWriter(
     };
 }
 
-pub fn hashedWriter(
+pub fn hashed_writer(
     writer: anytype,
     hasher: anytype,
 ) HashedWriter(@TypeOf(writer), @TypeOf(hasher)) {

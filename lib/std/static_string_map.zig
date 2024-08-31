@@ -10,7 +10,7 @@ pub fn StaticStringMap(comptime V: type) type {
 
 /// Like `std.mem.eql`, but takes advantage of the fact that the lengths
 /// of `a` and `b` are known to be equal.
-pub fn defaultEql(a: []const u8, b: []const u8) bool {
+pub fn default_eql(a: []const u8, b: []const u8) bool {
     if (a.ptr == b.ptr) return true;
     for (a, b) |a_elem, b_elem| {
         if (a_elem != b_elem) return false;
@@ -20,7 +20,7 @@ pub fn defaultEql(a: []const u8, b: []const u8) bool {
 
 /// Like `std.ascii.eqlIgnoreCase` but takes advantage of the fact that
 /// the lengths of `a` and `b` are known to be equal.
-pub fn eqlAsciiIgnoreCase(a: []const u8, b: []const u8) bool {
+pub fn eql_ascii_ignore_case(a: []const u8, b: []const u8) bool {
     if (a.ptr == b.ptr) return true;
     for (a, b) |a_c, b_c| {
         if (std.ascii.toLower(a_c) != std.ascii.toLower(b_c)) return false;
@@ -68,7 +68,7 @@ pub fn StaticStringMapWithEql(
         /// `kvs_list` must be either a list of `struct { []const u8, V }`
         /// (key-value pair) tuples, or a list of `struct { []const u8 }`
         /// (only keys) tuples if `V` is `void`.
-        pub inline fn initComptime(comptime kvs_list: anytype) Self {
+        pub inline fn init_comptime(comptime kvs_list: anytype) Self {
             comptime {
                 var self = Self{};
                 if (kvs_list.len == 0)
@@ -142,7 +142,7 @@ pub fn StaticStringMapWithEql(
             keys: [][]const u8,
             vals: []V,
 
-            pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
+            pub fn less_than(ctx: @This(), a: usize, b: usize) bool {
                 return ctx.keys[a].len < ctx.keys[b].len;
             }
 
@@ -152,7 +152,7 @@ pub fn StaticStringMapWithEql(
             }
         };
 
-        fn initSortedKVs(
+        fn init_sorted_kvs(
             self: *Self,
             kvs_list: anytype,
             sorted_keys: [][]const u8,
@@ -170,7 +170,7 @@ pub fn StaticStringMapWithEql(
             });
         }
 
-        fn initLenIndexes(self: Self, len_indexes: []u32) void {
+        fn init_len_indexes(self: Self, len_indexes: []u32) void {
             var len: usize = 0;
             var i: u32 = 0;
             while (len <= self.max_len) : (len += 1) {
@@ -195,7 +195,7 @@ pub fn StaticStringMapWithEql(
             return self.kvs.values[self.getIndex(str) orelse return null];
         }
 
-        pub fn getIndex(self: Self, str: []const u8) ?usize {
+        pub fn get_index(self: Self, str: []const u8) ?usize {
             const kvs = self.kvs.*;
             if (kvs.len == 0)
                 return null;
@@ -222,7 +222,7 @@ pub fn StaticStringMapWithEql(
         /// This is effectively an O(N) algorithm which loops from `max_len` to
         /// `min_len` and calls `getIndex()` to check all keys with the given
         /// len.
-        pub fn getLongestPrefix(self: Self, str: []const u8) ?KV {
+        pub fn get_longest_prefix(self: Self, str: []const u8) ?KV {
             if (self.kvs.len == 0)
                 return null;
             const i = self.getLongestPrefixIndex(str) orelse return null;
@@ -233,7 +233,7 @@ pub fn StaticStringMapWithEql(
             };
         }
 
-        pub fn getLongestPrefixIndex(self: Self, str: []const u8) ?usize {
+        pub fn get_longest_prefix_index(self: Self, str: []const u8) ?usize {
             if (self.kvs.len == 0)
                 return null;
 
@@ -314,7 +314,7 @@ test "slice of structs" {
     try testMap(TestMap.initComptime(slice));
 }
 
-fn testMap(map: anytype) !void {
+fn test_map(map: anytype) !void {
     try testing.expectEqual(TestEnum.A, map.get("have").?);
     try testing.expectEqual(TestEnum.B, map.get("nothing").?);
     try testing.expect(null == map.get("missing"));
@@ -354,7 +354,7 @@ test "void value type, list literal of list literals" {
     try testSet(TestMapVoid.initComptime(slice));
 }
 
-fn testSet(map: TestMapVoid) !void {
+fn test_set(map: TestMapVoid) !void {
     try testing.expectEqual({}, map.get("have").?);
     try testing.expectEqual({}, map.get("nothing").?);
     try testing.expect(null == map.get("missing"));
@@ -368,7 +368,7 @@ fn testSet(map: TestMapVoid) !void {
     try testing.expect(null == map.get("averylongstringthathasnomatches"));
 }
 
-fn testStaticStringMapWithEql(map: TestMapWithEql) !void {
+fn test_static_string_map_with_eql(map: TestMapWithEql) !void {
     try testMap(map);
     try testing.expectEqual(TestEnum.A, map.get("HAVE").?);
     try testing.expectEqual(TestEnum.E, map.get("SameLen").?);

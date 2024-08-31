@@ -430,7 +430,7 @@ pub fn main() !void {
     try buf_out.flush();
 }
 
-fn usageAndExit(file: fs.File, arg0: []const u8, code: u8) noreturn {
+fn usage_and_exit(file: fs.File, arg0: []const u8, code: u8) noreturn {
     file.writer().print(
         \\Usage: {s} /path/to/zig /path/to/linux
         \\Alternative Usage: zig run /path/to/git/zig/tools/generate_linux_syscalls.zig -- /path/to/zig /path/to/linux

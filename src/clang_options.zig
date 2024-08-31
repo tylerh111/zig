@@ -44,7 +44,7 @@ pub const CliArg = struct {
         multi_arg: u8,
     };
 
-    pub fn matchEql(self: CliArg, arg: []const u8) u2 {
+    pub fn match_eql(self: CliArg, arg: []const u8) u2 {
         if (self.pd1 and arg.len >= self.name.len + 1 and
             mem.startsWith(u8, arg, "-") and mem.eql(u8, arg[1..], self.name))
         {
@@ -63,7 +63,7 @@ pub const CliArg = struct {
         return 0;
     }
 
-    pub fn matchStartsWith(self: CliArg, arg: []const u8) usize {
+    pub fn match_starts_with(self: CliArg, arg: []const u8) usize {
         if (self.pd1 and arg.len >= self.name.len + 1 and
             mem.startsWith(u8, arg, "-") and mem.startsWith(u8, arg[1..], self.name))
         {

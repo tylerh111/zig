@@ -48,7 +48,7 @@ const Iterator = struct {
         self.decimal = 0;
     }
 
-    fn nextRange(self: *Iterator) Range {
+    fn next_range(self: *Iterator) Range {
         const start = self.decimal;
 
         self.decimal += self.decimal_step;
@@ -68,7 +68,7 @@ const Iterator = struct {
         return self.decimal >= self.size;
     }
 
-    fn nextLevel(self: *Iterator) bool {
+    fn next_level(self: *Iterator) bool {
         self.decimal_step += self.decimal_step;
         self.numerator_step += self.numerator_step;
         if (self.numerator_step >= self.denominator) {
@@ -104,7 +104,7 @@ pub fn block(
     comptime lessThanFn: fn (@TypeOf(context), lhs: T, rhs: T) bool,
 ) void {
     const lessThan = if (builtin.mode == .Debug) struct {
-        fn lessThan(ctx: @TypeOf(context), lhs: T, rhs: T) bool {
+        fn less_than(ctx: @TypeOf(context), lhs: T, rhs: T) bool {
             const lt = lessThanFn(ctx, lhs, rhs);
             const gt = lessThanFn(ctx, rhs, lhs);
             std.debug.assert(!(lt and gt));
@@ -755,7 +755,7 @@ pub fn block(
     }
 }
 // merge operation without a buffer
-fn mergeInPlace(
+fn merge_in_place(
     comptime T: type,
     items: []T,
     A_arg: Range,
@@ -804,7 +804,7 @@ fn mergeInPlace(
 }
 
 // merge operation using an internal buffer
-fn mergeInternal(
+fn merge_internal(
     comptime T: type,
     items: []T,
     A: Range,
@@ -839,7 +839,7 @@ fn mergeInternal(
     blockSwap(T, items, buffer.start + A_count, A.start + insert, A.length() - A_count);
 }
 
-fn blockSwap(comptime T: type, items: []T, start1: usize, start2: usize, block_size: usize) void {
+fn block_swap(comptime T: type, items: []T, start1: usize, start2: usize, block_size: usize) void {
     var index: usize = 0;
     while (index < block_size) : (index += 1) {
         mem.swap(T, &items[start1 + index], &items[start2 + index]);
@@ -848,7 +848,7 @@ fn blockSwap(comptime T: type, items: []T, start1: usize, start2: usize, block_s
 
 // combine a linear search with a binary search to reduce the number of comparisons in situations
 // where have some idea as to how many unique values there are and where the next value might be
-fn findFirstForward(
+fn find_first_forward(
     comptime T: type,
     items: []T,
     value: T,
@@ -870,7 +870,7 @@ fn findFirstForward(
     return binaryFirst(T, items, value, Range.init(index - skip, index), context, lessThan);
 }
 
-fn findFirstBackward(
+fn find_first_backward(
     comptime T: type,
     items: []T,
     value: T,
@@ -892,7 +892,7 @@ fn findFirstBackward(
     return binaryFirst(T, items, value, Range.init(index, index + skip), context, lessThan);
 }
 
-fn findLastForward(
+fn find_last_forward(
     comptime T: type,
     items: []T,
     value: T,
@@ -914,7 +914,7 @@ fn findLastForward(
     return binaryLast(T, items, value, Range.init(index - skip, index), context, lessThan);
 }
 
-fn findLastBackward(
+fn find_last_backward(
     comptime T: type,
     items: []T,
     value: T,
@@ -936,7 +936,7 @@ fn findLastBackward(
     return binaryLast(T, items, value, Range.init(index, index + skip), context, lessThan);
 }
 
-fn binaryFirst(
+fn binary_first(
     comptime T: type,
     items: []T,
     value: T,
@@ -959,7 +959,7 @@ fn binaryFirst(
     return curr;
 }
 
-fn binaryLast(
+fn binary_last(
     comptime T: type,
     items: []T,
     value: T,
@@ -982,7 +982,7 @@ fn binaryLast(
     return curr;
 }
 
-fn mergeInto(
+fn merge_into(
     comptime T: type,
     from: []T,
     A: Range,
@@ -1022,7 +1022,7 @@ fn mergeInto(
     }
 }
 
-fn mergeExternal(
+fn merge_external(
     comptime T: type,
     items: []T,
     A: Range,

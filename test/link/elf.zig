@@ -2,7 +2,7 @@
 //! Currently, we support linking x86_64 Linux, but in the future we
 //! will progressively relax those to exercise more combinations.
 
-pub fn testAll(b: *Build, build_opts: BuildOptions) *Step {
+pub fn test_all(b: *Build, build_opts: BuildOptions) *Step {
     _ = build_opts;
     const elf_step = b.step("test-elf", "Run ELF tests");
 
@@ -173,7 +173,7 @@ pub fn testAll(b: *Build, build_opts: BuildOptions) *Step {
     return elf_step;
 }
 
-fn testAbsSymbols(b: *Build, opts: Options) *Step {
+fn test_abs_symbols(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "abs-symbols", opts);
 
     const obj = addObject(b, opts, .{
@@ -219,7 +219,7 @@ fn testAbsSymbols(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testAsNeeded(b: *Build, opts: Options) *Step {
+fn test_as_needed(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "as-needed", opts);
 
     const main_o = addObject(b, opts, .{
@@ -308,7 +308,7 @@ fn testAsNeeded(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testCanonicalPlt(b: *Build, opts: Options) *Step {
+fn test_canonical_plt(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "canonical-plt", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -368,7 +368,7 @@ fn testCanonicalPlt(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testCommentString(b: *Build, opts: Options) *Step {
+fn test_comment_string(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "comment-string", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main", .zig_source_bytes = 
@@ -383,7 +383,7 @@ fn testCommentString(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testCommentStringStaticLib(b: *Build, opts: Options) *Step {
+fn test_comment_string_static_lib(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "comment-string-static-lib", opts);
 
     const lib = addStaticLibrary(b, opts, .{ .name = "lib", .zig_source_bytes = 
@@ -398,7 +398,7 @@ fn testCommentStringStaticLib(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testCommonSymbols(b: *Build, opts: Options) *Step {
+fn test_common_symbols(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "common-symbols", opts);
 
     const exe = addExecutable(b, opts, .{
@@ -427,7 +427,7 @@ fn testCommonSymbols(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testCommonSymbolsInArchive(b: *Build, opts: Options) *Step {
+fn test_common_symbols_in_archive(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "common-symbols-in-archive", opts);
 
     const a_o = addObject(b, opts, .{
@@ -517,7 +517,7 @@ fn testCommonSymbolsInArchive(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testCopyrel(b: *Build, opts: Options) *Step {
+fn test_copyrel(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "copyrel", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -547,7 +547,7 @@ fn testCopyrel(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testCopyrelAlias(b: *Build, opts: Options) *Step {
+fn test_copyrel_alias(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "copyrel-alias", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -586,7 +586,7 @@ fn testCopyrelAlias(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testCopyrelAlignment(b: *Build, opts: Options) *Step {
+fn test_copyrel_alignment(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "copyrel-alignment", opts);
 
     const a_so = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -672,7 +672,7 @@ fn testCopyrelAlignment(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testDsoPlt(b: *Build, opts: Options) *Step {
+fn test_dso_plt(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "dso-plt", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "dso" });
@@ -712,7 +712,7 @@ fn testDsoPlt(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testDsoUndef(b: *Build, opts: Options) *Step {
+fn test_dso_undef(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "dso-undef", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "dso" });
@@ -754,7 +754,7 @@ fn testDsoUndef(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testEmitRelocatable(b: *Build, opts: Options) *Step {
+fn test_emit_relocatable(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "emit-relocatable", opts);
 
     const a_o = addObject(b, opts, .{ .name = "a", .zig_source_bytes = 
@@ -763,7 +763,7 @@ fn testEmitRelocatable(b: *Build, opts: Options) *Step {
     \\export fn foo() i32 {
     \\   return bar;
     \\}
-    \\export fn printFoo() void {
+    \\export fn print_foo() void {
     \\    std.debug.print("foo={d}\n", .{foo()});
     \\}
     });
@@ -784,8 +784,8 @@ fn testEmitRelocatable(b: *Build, opts: Options) *Step {
 
     const exe = addExecutable(b, opts, .{ .name = "test", .zig_source_bytes = 
     \\const std = @import("std");
-    \\extern fn printFoo() void;
-    \\extern fn printBar() void;
+    \\extern fn print_foo() void;
+    \\extern fn print_bar() void;
     \\pub fn main() void {
     \\    printFoo();
     \\    printBar();
@@ -805,7 +805,7 @@ fn testEmitRelocatable(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testEmitStaticLib(b: *Build, opts: Options) *Step {
+fn test_emit_static_lib(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "emit-static-lib", opts);
 
     const obj1 = addObject(b, opts, .{
@@ -828,7 +828,7 @@ fn testEmitStaticLib(b: *Build, opts: Options) *Step {
     const obj3 = addObject(b, opts, .{
         .name = "a_very_long_file_name_so_that_it_ends_up_in_strtab",
         .zig_source_bytes =
-        \\fn weakFoo() callconv(.C) usize {
+        \\fn weak_foo() callconv(.C) usize {
         \\    return 42;
         \\}
         \\export var strongBar: usize = 100;
@@ -871,7 +871,7 @@ fn testEmitStaticLib(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testEmitStaticLibZig(b: *Build, opts: Options) *Step {
+fn test_emit_static_lib_zig(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "emit-static-lib-zig", opts);
 
     const obj1 = addObject(b, opts, .{
@@ -887,7 +887,7 @@ fn testEmitStaticLibZig(b: *Build, opts: Options) *Step {
         .zig_source_bytes =
         \\extern var foo: i32;
         \\extern var bar: i32;
-        \\export fn fooBar() i32 {
+        \\export fn foo_bar() i32 {
         \\  return foo + bar;
         \\}
         ,
@@ -898,7 +898,7 @@ fn testEmitStaticLibZig(b: *Build, opts: Options) *Step {
         .name = "test",
         .zig_source_bytes =
         \\const std = @import("std");
-        \\extern fn fooBar() i32;
+        \\extern fn foo_bar() i32;
         \\pub fn main() void {
         \\  std.debug.print("{d}", .{fooBar()});
         \\}
@@ -913,7 +913,7 @@ fn testEmitStaticLibZig(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testEmptyObject(b: *Build, opts: Options) *Step {
+fn test_empty_object(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "empty-object", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "test" });
@@ -928,7 +928,7 @@ fn testEmptyObject(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testEntryPoint(b: *Build, opts: Options) *Step {
+fn test_entry_point(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "entry-point", opts);
 
     const a_o = addObject(b, opts, .{
@@ -978,7 +978,7 @@ fn testEntryPoint(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testExportDynamic(b: *Build, opts: Options) *Step {
+fn test_export_dynamic(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "export-dynamic", opts);
 
     const obj = addObject(b, opts, .{
@@ -1023,7 +1023,7 @@ fn testExportDynamic(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testExportSymbolsFromExe(b: *Build, opts: Options) *Step {
+fn test_export_symbols_from_exe(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "export-symbols-from-exe", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -1061,7 +1061,7 @@ fn testExportSymbolsFromExe(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testFuncAddress(b: *Build, opts: Options) *Step {
+fn test_func_address(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "func-address", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -1088,7 +1088,7 @@ fn testFuncAddress(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testGcSections(b: *Build, opts: Options) *Step {
+fn test_gc_sections(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "gc-sections", opts);
 
     const obj = addObject(b, opts, .{
@@ -1180,7 +1180,7 @@ fn testGcSections(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testGcSectionsZig(b: *Build, opts: Options) *Step {
+fn test_gc_sections_zig(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "gc-sections-zig", opts);
 
     const obj = addObject(b, .{
@@ -1289,7 +1289,7 @@ fn testGcSectionsZig(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testHiddenWeakUndef(b: *Build, opts: Options) *Step {
+fn test_hidden_weak_undef(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "hidden-weak-undef", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -1308,7 +1308,7 @@ fn testHiddenWeakUndef(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testIFuncAlias(b: *Build, opts: Options) *Step {
+fn test_ifunc_alias(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ifunc-alias", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -1332,7 +1332,7 @@ fn testIFuncAlias(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testIFuncDlopen(b: *Build, opts: Options) *Step {
+fn test_ifunc_dlopen(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ifunc-dlopen", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -1376,7 +1376,7 @@ fn testIFuncDlopen(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testIFuncDso(b: *Build, opts: Options) *Step {
+fn test_ifunc_dso(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ifunc-dso", opts);
 
     const dso = addSharedLibrary(b, opts, .{
@@ -1414,7 +1414,7 @@ fn testIFuncDso(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testIFuncDynamic(b: *Build, opts: Options) *Step {
+fn test_ifunc_dynamic(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ifunc-dynamic", opts);
 
     const main_c =
@@ -1456,7 +1456,7 @@ fn testIFuncDynamic(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testIFuncExport(b: *Build, opts: Options) *Step {
+fn test_ifunc_export(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ifunc-export", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -1482,7 +1482,7 @@ fn testIFuncExport(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testIFuncFuncPtr(b: *Build, opts: Options) *Step {
+fn test_ifunc_func_ptr(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ifunc-func-ptr", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -1518,7 +1518,7 @@ fn testIFuncFuncPtr(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testIFuncNoPlt(b: *Build, opts: Options) *Step {
+fn test_ifunc_no_plt(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ifunc-noplt", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -1547,7 +1547,7 @@ fn testIFuncNoPlt(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testIFuncStatic(b: *Build, opts: Options) *Step {
+fn test_ifunc_static(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ifunc-static", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -1575,7 +1575,7 @@ fn testIFuncStatic(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testIFuncStaticPie(b: *Build, opts: Options) *Step {
+fn test_ifunc_static_pie(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ifunc-static-pie", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -1617,7 +1617,7 @@ fn testIFuncStaticPie(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testImageBase(b: *Build, opts: Options) *Step {
+fn test_image_base(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "image-base", opts);
 
     {
@@ -1660,7 +1660,7 @@ fn testImageBase(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testImportingDataDynamic(b: *Build, opts: Options) *Step {
+fn test_importing_data_dynamic(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "importing-data-dynamic", opts);
 
     const dso = addSharedLibrary(b, .{
@@ -1693,7 +1693,7 @@ fn testImportingDataDynamic(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testImportingDataStatic(b: *Build, opts: Options) *Step {
+fn test_importing_data_static(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "importing-data-static", opts);
 
     const obj = addObject(b, .{
@@ -1734,7 +1734,7 @@ fn testImportingDataStatic(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testInitArrayOrder(b: *Build, opts: Options) *Step {
+fn test_init_array_order(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "init-array-order", opts);
 
     const a_o = addObject(b, opts, .{
@@ -1829,7 +1829,7 @@ fn testInitArrayOrder(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLargeAlignmentDso(b: *Build, opts: Options) *Step {
+fn test_large_alignment_dso(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "large-alignment-dso", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "dso" });
@@ -1876,7 +1876,7 @@ fn testLargeAlignmentDso(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLargeAlignmentExe(b: *Build, opts: Options) *Step {
+fn test_large_alignment_exe(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "large-alignment-exe", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "test" });
@@ -1919,7 +1919,7 @@ fn testLargeAlignmentExe(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLargeBss(b: *Build, opts: Options) *Step {
+fn test_large_bss(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "large-bss", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -1938,7 +1938,7 @@ fn testLargeBss(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLinkOrder(b: *Build, opts: Options) *Step {
+fn test_link_order(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "link-order", opts);
 
     const obj = addObject(b, opts, .{
@@ -2001,7 +2001,7 @@ fn testLinkOrder(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLdScript(b: *Build, opts: Options) *Step {
+fn test_ld_script(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ld-script", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "bar" });
@@ -2031,7 +2031,7 @@ fn testLdScript(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLdScriptPathError(b: *Build, opts: Options) *Step {
+fn test_ld_script_path_error(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ld-script-path-error", opts);
 
     const scripts = WriteFile.create(b);
@@ -2054,7 +2054,7 @@ fn testLdScriptPathError(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLdScriptAllowUndefinedVersion(b: *Build, opts: Options) *Step {
+fn test_ld_script_allow_undefined_version(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ld-script-allow-undefined-version", opts);
 
     const so = addSharedLibrary(b, opts, .{
@@ -2089,7 +2089,7 @@ fn testLdScriptAllowUndefinedVersion(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLdScriptDisallowUndefinedVersion(b: *Build, opts: Options) *Step {
+fn test_ld_script_disallow_undefined_version(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "ld-script-disallow-undefined-version", opts);
 
     const so = addSharedLibrary(b, opts, .{
@@ -2115,7 +2115,7 @@ fn testLdScriptDisallowUndefinedVersion(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testMismatchedCpuArchitectureError(b: *Build, opts: Options) *Step {
+fn test_mismatched_cpu_architecture_error(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "mismatched-cpu-architecture-error", opts);
 
     const obj = addObject(b, .{
@@ -2144,7 +2144,7 @@ fn testMismatchedCpuArchitectureError(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLinkingC(b: *Build, opts: Options) *Step {
+fn test_linking_c(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "linking-c", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "test" });
@@ -2173,7 +2173,7 @@ fn testLinkingC(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLinkingCpp(b: *Build, opts: Options) *Step {
+fn test_linking_cpp(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "linking-cpp", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "test" });
@@ -2203,14 +2203,14 @@ fn testLinkingCpp(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLinkingObj(b: *Build, opts: Options) *Step {
+fn test_linking_obj(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "linking-obj", opts);
 
     const obj = addObject(b, opts, .{
         .name = "aobj",
         .zig_source_bytes =
         \\extern var mod: usize;
-        \\export fn callMe() usize {
+        \\export fn call_me() usize {
         \\    return me * mod;
         \\}
         \\var me: usize = 42;
@@ -2221,7 +2221,7 @@ fn testLinkingObj(b: *Build, opts: Options) *Step {
         .name = "testobj",
         .zig_source_bytes =
         \\const std = @import("std");
-        \\extern fn callMe() usize;
+        \\extern fn call_me() usize;
         \\export var mod: usize = 2;
         \\pub fn main() void {
         \\    std.debug.print("{d}\n", .{callMe()});
@@ -2237,7 +2237,7 @@ fn testLinkingObj(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLinkingStaticLib(b: *Build, opts: Options) *Step {
+fn test_linking_static_lib(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "linking-static-lib", opts);
 
     const obj = addObject(b, opts, .{
@@ -2275,7 +2275,7 @@ fn testLinkingStaticLib(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testLinkingZig(b: *Build, opts: Options) *Step {
+fn test_linking_zig(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "linking-zig-static", opts);
 
     const exe = addExecutable(b, opts, .{
@@ -2304,7 +2304,7 @@ fn testLinkingZig(b: *Build, opts: Options) *Step {
 }
 
 // Adapted from https://github.com/rui314/mold/blob/main/test/elf/mergeable-strings.sh
-fn testMergeStrings(b: *Build, opts: Options) *Step {
+fn test_merge_strings(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "merge-strings", opts);
 
     const obj1 = addObject(b, opts, .{ .name = "a.o" });
@@ -2359,7 +2359,7 @@ fn testMergeStrings(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testMergeStrings2(b: *Build, opts: Options) *Step {
+fn test_merge_strings2(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "merge-strings2", opts);
 
     const obj1 = addObject(b, opts, .{ .name = "a", .zig_source_bytes = 
@@ -2422,7 +2422,7 @@ fn testMergeStrings2(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testNoEhFrameHdr(b: *Build, opts: Options) *Step {
+fn test_no_eh_frame_hdr(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "no-eh-frame-hdr", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -2439,7 +2439,7 @@ fn testNoEhFrameHdr(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testPie(b: *Build, opts: Options) *Step {
+fn test_pie(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "hello-pie", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -2470,7 +2470,7 @@ fn testPie(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testPltGot(b: *Build, opts: Options) *Step {
+fn test_plt_got(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "plt-got", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -2501,7 +2501,7 @@ fn testPltGot(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testPreinitArray(b: *Build, opts: Options) *Step {
+fn test_preinit_array(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "preinit-array", opts);
 
     {
@@ -2536,7 +2536,7 @@ fn testPreinitArray(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testRelocatableArchive(b: *Build, opts: Options) *Step {
+fn test_relocatable_archive(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "relocatable-archive", opts);
 
     const obj1 = addObject(b, opts, .{
@@ -2596,7 +2596,7 @@ fn testRelocatableArchive(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testRelocatableEhFrame(b: *Build, opts: Options) *Step {
+fn test_relocatable_eh_frame(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "relocatable-eh-frame", opts);
 
     {
@@ -2684,7 +2684,7 @@ fn testRelocatableEhFrame(b: *Build, opts: Options) *Step {
 }
 
 // Adapted from https://github.com/rui314/mold/blob/main/test/elf/relocatable-mergeable-sections.sh
-fn testRelocatableMergeStrings(b: *Build, opts: Options) *Step {
+fn test_relocatable_merge_strings(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "relocatable-merge-strings", opts);
 
     const obj1 = addObject(b, opts, .{ .name = "a", .asm_source_bytes = 
@@ -2710,7 +2710,7 @@ fn testRelocatableMergeStrings(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testRelocatableNoEhFrame(b: *Build, opts: Options) *Step {
+fn test_relocatable_no_eh_frame(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "relocatable-no-eh-frame", opts);
 
     const obj1 = addObject(b, opts, .{
@@ -2742,7 +2742,7 @@ fn testRelocatableNoEhFrame(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testSharedAbsSymbol(b: *Build, opts: Options) *Step {
+fn test_shared_abs_symbol(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "shared-abs-symbol", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -2806,7 +2806,7 @@ fn testSharedAbsSymbol(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testStrip(b: *Build, opts: Options) *Step {
+fn test_strip(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "strip", opts);
 
     const obj = addObject(b, opts, .{
@@ -2850,7 +2850,7 @@ fn testStrip(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testThunks(b: *Build, opts: Options) *Step {
+fn test_thunks(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "thunks", opts);
 
     const src =
@@ -2895,7 +2895,7 @@ fn testThunks(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsDfStaticTls(b: *Build, opts: Options) *Step {
+fn test_tls_df_static_tls(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-df-static-tls", opts);
 
     const obj = addObject(b, opts, .{
@@ -2935,7 +2935,7 @@ fn testTlsDfStaticTls(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsDso(b: *Build, opts: Options) *Step {
+fn test_tls_dso(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-dso", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -2975,7 +2975,7 @@ fn testTlsDso(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsGd(b: *Build, opts: Options) *Step {
+fn test_tls_gd(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-gd", opts);
 
     const main_o = addObject(b, opts, .{
@@ -3079,7 +3079,7 @@ fn testTlsGd(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsGdNoPlt(b: *Build, opts: Options) *Step {
+fn test_tls_gd_no_plt(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-gd-no-plt", opts);
 
     const obj = addObject(b, opts, .{
@@ -3147,7 +3147,7 @@ fn testTlsGdNoPlt(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsGdToIe(b: *Build, opts: Options) *Step {
+fn test_tls_gd_to_ie(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-gd-to-ie", opts);
 
     const a_o = addObject(b, opts, .{
@@ -3238,7 +3238,7 @@ fn testTlsGdToIe(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsIe(b: *Build, opts: Options) *Step {
+fn test_tls_ie(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-ie", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -3302,7 +3302,7 @@ fn testTlsIe(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsLargeAlignment(b: *Build, opts: Options) *Step {
+fn test_tls_large_alignment(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-large-alignment", opts);
 
     const a_o = addObject(b, opts, .{
@@ -3369,7 +3369,7 @@ fn testTlsLargeAlignment(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsLargeTbss(b: *Build, opts: Options) *Step {
+fn test_tls_large_tbss(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-large-tbss", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -3401,7 +3401,7 @@ fn testTlsLargeTbss(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsLargeStaticImage(b: *Build, opts: Options) *Step {
+fn test_tls_large_static_image(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-large-static-image", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -3423,7 +3423,7 @@ fn testTlsLargeStaticImage(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsLd(b: *Build, opts: Options) *Step {
+fn test_tls_ld(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-ld", opts);
 
     const main_o = addObject(b, opts, .{
@@ -3480,7 +3480,7 @@ fn testTlsLd(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsLdDso(b: *Build, opts: Options) *Step {
+fn test_tls_ld_dso(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-ld-dso", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -3512,7 +3512,7 @@ fn testTlsLdDso(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsLdNoPlt(b: *Build, opts: Options) *Step {
+fn test_tls_ld_no_plt(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-ld-no-plt", opts);
 
     const a_o = addObject(b, opts, .{
@@ -3568,7 +3568,7 @@ fn testTlsLdNoPlt(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsNoPic(b: *Build, opts: Options) *Step {
+fn test_tls_no_pic(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-no-pic", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -3599,7 +3599,7 @@ fn testTlsNoPic(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsOffsetAlignment(b: *Build, opts: Options) *Step {
+fn test_tls_offset_alignment(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-offset-alignment", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -3652,7 +3652,7 @@ fn testTlsOffsetAlignment(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsPic(b: *Build, opts: Options) *Step {
+fn test_tls_pic(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-pic", opts);
 
     const obj = addObject(b, opts, .{
@@ -3688,7 +3688,7 @@ fn testTlsPic(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsSmallAlignment(b: *Build, opts: Options) *Step {
+fn test_tls_small_alignment(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-small-alignment", opts);
 
     const a_o = addObject(b, opts, .{
@@ -3751,7 +3751,7 @@ fn testTlsSmallAlignment(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testTlsStatic(b: *Build, opts: Options) *Step {
+fn test_tls_static(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "tls-static", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "test" });
@@ -3782,7 +3782,7 @@ fn testTlsStatic(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testUnknownFileTypeError(b: *Build, opts: Options) *Step {
+fn test_unknown_file_type_error(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "unknown-file-type-error", opts);
 
     const dylib = addSharedLibrary(b, .{
@@ -3817,7 +3817,7 @@ fn testUnknownFileTypeError(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testUnresolvedError(b: *Build, opts: Options) *Step {
+fn test_unresolved_error(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "unresolved-error", opts);
 
     const obj1 = addObject(b, opts, .{
@@ -3861,7 +3861,7 @@ fn testUnresolvedError(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testWeakExports(b: *Build, opts: Options) *Step {
+fn test_weak_exports(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "weak-exports", opts);
 
     const obj = addObject(b, opts, .{
@@ -3906,7 +3906,7 @@ fn testWeakExports(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testWeakUndefsDso(b: *Build, opts: Options) *Step {
+fn test_weak_undefs_dso(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "weak-undef-dso", opts);
 
     const dso = addSharedLibrary(b, opts, .{ .name = "a" });
@@ -3949,7 +3949,7 @@ fn testWeakUndefsDso(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testZNow(b: *Build, opts: Options) *Step {
+fn test_znow(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "z-now", opts);
 
     const obj = addObject(b, opts, .{
@@ -3982,7 +3982,7 @@ fn testZNow(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testZStackSize(b: *Build, opts: Options) *Step {
+fn test_zstack_size(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "z-stack-size", opts);
 
     const exe = addExecutable(b, opts, .{ .name = "main" });
@@ -4000,7 +4000,7 @@ fn testZStackSize(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn testZText(b: *Build, opts: Options) *Step {
+fn test_ztext(b: *Build, opts: Options) *Step {
     const test_step = addTestStep(b, "z-text", opts);
 
     // Previously, following mold, this test tested text relocs present in a PIE executable.
@@ -4069,7 +4069,7 @@ fn testZText(b: *Build, opts: Options) *Step {
     return test_step;
 }
 
-fn addTestStep(b: *Build, comptime prefix: []const u8, opts: Options) *Step {
+fn add_test_step(b: *Build, comptime prefix: []const u8, opts: Options) *Step {
     return link.addTestStep(b, "elf-" ++ prefix, opts);
 }
 

@@ -35,7 +35,7 @@ pub const SystemLib = struct {
     path: ?[]const u8,
 };
 
-pub fn hashAddSystemLibs(
+pub fn hash_add_system_libs(
     man: *Cache.Manifest,
     hm: std.StringArrayHashMapUnmanaged(SystemLib),
 ) !void {
@@ -199,7 +199,7 @@ pub const File = struct {
         }
     }
 
-    pub fn createEmpty(
+    pub fn create_empty(
         arena: Allocator,
         comp: *Compilation,
         emit: Compilation.Emit,
@@ -218,7 +218,7 @@ pub const File = struct {
         return if (base.tag == T.base_tag) @fieldParentPtr("base", base) else null;
     }
 
-    pub fn makeWritable(base: *File) !void {
+    pub fn make_writable(base: *File) !void {
         const comp = base.comp;
         const gpa = comp.gpa;
         switch (base.tag) {
@@ -267,7 +267,7 @@ pub const File = struct {
         }
     }
 
-    pub fn makeExecutable(base: *File) !void {
+    pub fn make_executable(base: *File) !void {
         const comp = base.comp;
         const output_mode = comp.config.output_mode;
         const link_mode = comp.config.link_mode;
@@ -365,7 +365,7 @@ pub const File = struct {
     /// Called from within the CodeGen to lower a local variable instantion as an unnamed
     /// constant. Returns the symbol index of the lowered constant in the read-only section
     /// of the final binary.
-    pub fn lowerUnnamedConst(base: *File, val: Value, decl_index: InternPool.DeclIndex) UpdateDeclError!u32 {
+    pub fn lower_unnamed_const(base: *File, val: Value, decl_index: InternPool.DeclIndex) UpdateDeclError!u32 {
         if (build_options.only_c) @compileError("unreachable");
         switch (base.tag) {
             .spirv => unreachable,
@@ -382,7 +382,7 @@ pub const File = struct {
     /// be created. This symbol may get resolved once all relocatables are (re-)linked.
     /// Optionally, it is possible to specify where to expect the symbol defined if it
     /// is an import.
-    pub fn getGlobalSymbol(base: *File, name: []const u8, lib_name: ?[]const u8) UpdateDeclError!u32 {
+    pub fn get_global_symbol(base: *File, name: []const u8, lib_name: ?[]const u8) UpdateDeclError!u32 {
         if (build_options.only_c) @compileError("unreachable");
         log.debug("getGlobalSymbol '{s}' (expected in '{?s}')", .{ name, lib_name });
         switch (base.tag) {
@@ -397,7 +397,7 @@ pub const File = struct {
     }
 
     /// May be called before or after updateExports for any given Decl.
-    pub fn updateDecl(base: *File, module: *Module, decl_index: InternPool.DeclIndex) UpdateDeclError!void {
+    pub fn update_decl(base: *File, module: *Module, decl_index: InternPool.DeclIndex) UpdateDeclError!void {
         const decl = module.declPtr(decl_index);
         assert(decl.has_tv);
         switch (base.tag) {
@@ -409,7 +409,7 @@ pub const File = struct {
     }
 
     /// May be called before or after updateExports for any given Decl.
-    pub fn updateFunc(
+    pub fn update_func(
         base: *File,
         module: *Module,
         func_index: InternPool.Index,
@@ -424,7 +424,7 @@ pub const File = struct {
         }
     }
 
-    pub fn updateDeclLineNumber(base: *File, module: *Module, decl_index: InternPool.DeclIndex) UpdateDeclError!void {
+    pub fn update_decl_line_number(base: *File, module: *Module, decl_index: InternPool.DeclIndex) UpdateDeclError!void {
         const decl = module.declPtr(decl_index);
         assert(decl.has_tv);
         switch (base.tag) {
@@ -436,14 +436,14 @@ pub const File = struct {
         }
     }
 
-    pub fn releaseLock(self: *File) void {
+    pub fn release_lock(self: *File) void {
         if (self.lock) |*lock| {
             lock.release();
             self.lock = null;
         }
     }
 
-    pub fn toOwnedLock(self: *File) Cache.Lock {
+    pub fn to_owned_lock(self: *File) Cache.Lock {
         const lock = self.lock.?;
         self.lock = null;
         return lock;
@@ -572,7 +572,7 @@ pub const File = struct {
 
     /// Commit pending changes and write headers. Works based on `effectiveOutputMode`
     /// rather than final output mode.
-    pub fn flushModule(base: *File, arena: Allocator, prog_node: std.Progress.Node) FlushError!void {
+    pub fn flush_module(base: *File, arena: Allocator, prog_node: std.Progress.Node) FlushError!void {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
@@ -582,7 +582,7 @@ pub const File = struct {
     }
 
     /// Called when a Decl is deleted from the Module.
-    pub fn freeDecl(base: *File, decl_index: InternPool.DeclIndex) void {
+    pub fn free_decl(base: *File, decl_index: InternPool.DeclIndex) void {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
@@ -600,7 +600,7 @@ pub const File = struct {
     /// a list of size 1, meaning that `exported` is exported once. However, it is possible
     /// to export the same thing with multiple different symbol names (aliases).
     /// May be called before or after updateDecl for any given Decl.
-    pub fn updateExports(
+    pub fn update_exports(
         base: *File,
         module: *Module,
         exported: Module.Exported,
@@ -626,7 +626,7 @@ pub const File = struct {
     /// `Decl`'s address was not yet resolved, or the containing atom gets moved in virtual memory.
     /// May be called before or after updateFunc/updateDecl therefore it is up to the linker to allocate
     /// the block/atom.
-    pub fn getDeclVAddr(base: *File, decl_index: InternPool.DeclIndex, reloc_info: RelocInfo) !u64 {
+    pub fn get_decl_vaddr(base: *File, decl_index: InternPool.DeclIndex, reloc_info: RelocInfo) !u64 {
         if (build_options.only_c) @compileError("unreachable");
         switch (base.tag) {
             .c => unreachable,
@@ -640,7 +640,7 @@ pub const File = struct {
 
     pub const LowerResult = @import("codegen.zig").Result;
 
-    pub fn lowerAnonDecl(
+    pub fn lower_anon_decl(
         base: *File,
         decl_val: InternPool.Index,
         decl_align: InternPool.Alignment,
@@ -657,7 +657,7 @@ pub const File = struct {
         }
     }
 
-    pub fn getAnonDeclVAddr(base: *File, decl_val: InternPool.Index, reloc_info: RelocInfo) !u64 {
+    pub fn get_anon_decl_vaddr(base: *File, decl_val: InternPool.Index, reloc_info: RelocInfo) !u64 {
         if (build_options.only_c) @compileError("unreachable");
         switch (base.tag) {
             .c => unreachable,
@@ -669,7 +669,7 @@ pub const File = struct {
         }
     }
 
-    pub fn deleteDeclExport(
+    pub fn delete_decl_export(
         base: *File,
         decl_index: InternPool.DeclIndex,
         name: InternPool.NullTerminatedString,
@@ -688,7 +688,7 @@ pub const File = struct {
         }
     }
 
-    pub fn linkAsArchive(base: *File, arena: Allocator, prog_node: std.Progress.Node) FlushError!void {
+    pub fn link_as_archive(base: *File, arena: Allocator, prog_node: std.Progress.Node) FlushError!void {
         const tracy = trace(@src());
         defer tracy.end();
 
@@ -854,7 +854,7 @@ pub const File = struct {
             };
         }
 
-        pub fn fromObjectFormat(ofmt: std.Target.ObjectFormat) Tag {
+        pub fn from_object_format(ofmt: std.Target.ObjectFormat) Tag {
             return switch (ofmt) {
                 .coff => .coff,
                 .elf => .elf,
@@ -895,26 +895,26 @@ pub const File = struct {
         kind: Kind,
         ty: Type,
 
-        pub fn initDecl(kind: Kind, decl: ?InternPool.DeclIndex, mod: *Module) LazySymbol {
+        pub fn init_decl(kind: Kind, decl: ?InternPool.DeclIndex, mod: *Module) LazySymbol {
             return .{ .kind = kind, .ty = if (decl) |decl_index|
                 mod.declPtr(decl_index).val.toType()
             else
                 Type.anyerror };
         }
 
-        pub fn getDecl(self: LazySymbol, mod: *Module) InternPool.OptionalDeclIndex {
+        pub fn get_decl(self: LazySymbol, mod: *Module) InternPool.OptionalDeclIndex {
             return InternPool.OptionalDeclIndex.init(self.ty.getOwnerDeclOrNull(mod));
         }
     };
 
-    pub fn effectiveOutputMode(
+    pub fn effective_output_mode(
         use_lld: bool,
         output_mode: std.builtin.OutputMode,
     ) std.builtin.OutputMode {
         return if (use_lld) .Obj else output_mode;
     }
 
-    pub fn determineMode(
+    pub fn determine_mode(
         use_lld: bool,
         output_mode: std.builtin.OutputMode,
         link_mode: std.builtin.LinkMode,
@@ -934,35 +934,35 @@ pub const File = struct {
         }
     }
 
-    pub fn isStatic(self: File) bool {
+    pub fn is_static(self: File) bool {
         return self.comp.config.link_mode == .static;
     }
 
-    pub fn isObject(self: File) bool {
+    pub fn is_object(self: File) bool {
         const output_mode = self.comp.config.output_mode;
         return output_mode == .Obj;
     }
 
-    pub fn isExe(self: File) bool {
+    pub fn is_exe(self: File) bool {
         const output_mode = self.comp.config.output_mode;
         return output_mode == .Exe;
     }
 
-    pub fn isStaticLib(self: File) bool {
+    pub fn is_static_lib(self: File) bool {
         const output_mode = self.comp.config.output_mode;
         return output_mode == .Lib and self.isStatic();
     }
 
-    pub fn isRelocatable(self: File) bool {
+    pub fn is_relocatable(self: File) bool {
         return self.isObject() or self.isStaticLib();
     }
 
-    pub fn isDynLib(self: File) bool {
+    pub fn is_dyn_lib(self: File) bool {
         const output_mode = self.comp.config.output_mode;
         return output_mode == .Lib and !self.isStatic();
     }
 
-    pub fn emitLlvmObject(
+    pub fn emit_llvm_object(
         base: File,
         arena: Allocator,
         llvm_object: *LlvmObject,
@@ -985,7 +985,7 @@ pub const File = struct {
     pub const Dwarf = @import("link/Dwarf.zig");
 };
 
-pub fn spawnLld(
+pub fn spawn_lld(
     comp: *Compilation,
     arena: Allocator,
     argv: []const []const u8,

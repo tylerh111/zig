@@ -69,12 +69,12 @@ pub fn IntegerBitSet(comptime size: u16) type {
         mask: MaskInt,
 
         /// Creates a bit set with no elements present.
-        pub fn initEmpty() Self {
+        pub fn init_empty() Self {
             return .{ .mask = 0 };
         }
 
         /// Creates a bit set with all elements present.
-        pub fn initFull() Self {
+        pub fn init_full() Self {
             return .{ .mask = ~@as(MaskInt, 0) };
         }
 
@@ -86,7 +86,7 @@ pub fn IntegerBitSet(comptime size: u16) type {
 
         /// Returns true if the bit at the specified index
         /// is present in the set, false otherwise.
-        pub fn isSet(self: Self, index: usize) bool {
+        pub fn is_set(self: Self, index: usize) bool {
             assert(index < bit_length);
             return (self.mask & maskBit(index)) != 0;
         }
@@ -98,7 +98,7 @@ pub fn IntegerBitSet(comptime size: u16) type {
 
         /// Changes the value of the specified bit of the bit
         /// set to match the passed boolean.
-        pub fn setValue(self: *Self, index: usize, value: bool) void {
+        pub fn set_value(self: *Self, index: usize, value: bool) void {
             assert(index < bit_length);
             if (MaskInt == u0) return;
             const bit = maskBit(index);
@@ -114,7 +114,7 @@ pub fn IntegerBitSet(comptime size: u16) type {
 
         /// Changes the value of all bits in the specified range to
         /// match the passed boolean.
-        pub fn setRangeValue(self: *Self, range: Range, value: bool) void {
+        pub fn set_range_value(self: *Self, range: Range, value: bool) void {
             assert(range.end <= bit_length);
             assert(range.start <= range.end);
             if (range.start == range.end) return;
@@ -153,32 +153,32 @@ pub fn IntegerBitSet(comptime size: u16) type {
 
         /// Flips all bits in this bit set which are present
         /// in the toggles bit set.
-        pub fn toggleSet(self: *Self, toggles: Self) void {
+        pub fn toggle_set(self: *Self, toggles: Self) void {
             self.mask ^= toggles.mask;
         }
 
         /// Flips every bit in the bit set.
-        pub fn toggleAll(self: *Self) void {
+        pub fn toggle_all(self: *Self) void {
             self.mask = ~self.mask;
         }
 
         /// Performs a union of two bit sets, and stores the
         /// result in the first one.  Bits in the result are
         /// set if the corresponding bits were set in either input.
-        pub fn setUnion(self: *Self, other: Self) void {
+        pub fn set_union(self: *Self, other: Self) void {
             self.mask |= other.mask;
         }
 
         /// Performs an intersection of two bit sets, and stores
         /// the result in the first one.  Bits in the result are
         /// set if the corresponding bits were set in both inputs.
-        pub fn setIntersection(self: *Self, other: Self) void {
+        pub fn set_intersection(self: *Self, other: Self) void {
             self.mask &= other.mask;
         }
 
         /// Finds the index of the first set bit.
         /// If no bits are set, returns null.
-        pub fn findFirstSet(self: Self) ?usize {
+        pub fn find_first_set(self: Self) ?usize {
             const mask = self.mask;
             if (mask == 0) return null;
             return @ctz(mask);
@@ -186,7 +186,7 @@ pub fn IntegerBitSet(comptime size: u16) type {
 
         /// Finds the index of the first set bit, and unsets it.
         /// If no bits are set, returns null.
-        pub fn toggleFirstSet(self: *Self) ?usize {
+        pub fn toggle_first_set(self: *Self) ?usize {
             const mask = self.mask;
             if (mask == 0) return null;
             const index = @ctz(mask);
@@ -202,13 +202,13 @@ pub fn IntegerBitSet(comptime size: u16) type {
 
         /// Returns true iff the first bit set is the subset
         /// of the second one.
-        pub fn subsetOf(self: Self, other: Self) bool {
+        pub fn subset_of(self: Self, other: Self) bool {
             return self.intersectWith(other).eql(self);
         }
 
         /// Returns true iff the first bit set is the superset
         /// of the second one.
-        pub fn supersetOf(self: Self, other: Self) bool {
+        pub fn superset_of(self: Self, other: Self) bool {
             return other.subsetOf(self);
         }
 
@@ -223,7 +223,7 @@ pub fn IntegerBitSet(comptime size: u16) type {
         /// Returns the union of two bit sets. Bits in the
         /// result are set if the corresponding bits were set
         /// in either input.
-        pub fn unionWith(self: Self, other: Self) Self {
+        pub fn union_with(self: Self, other: Self) Self {
             var result = self;
             result.setUnion(other);
             return result;
@@ -232,7 +232,7 @@ pub fn IntegerBitSet(comptime size: u16) type {
         /// Returns the intersection of two bit sets. Bits in
         /// the result are set if the corresponding bits were
         /// set in both inputs.
-        pub fn intersectWith(self: Self, other: Self) Self {
+        pub fn intersect_with(self: Self, other: Self) Self {
             var result = self;
             result.setIntersection(other);
             return result;
@@ -241,7 +241,7 @@ pub fn IntegerBitSet(comptime size: u16) type {
         /// Returns the xor of two bit sets. Bits in the
         /// result are set if the corresponding bits were
         /// not the same in both inputs.
-        pub fn xorWith(self: Self, other: Self) Self {
+        pub fn xor_with(self: Self, other: Self) Self {
             var result = self;
             result.toggleSet(other);
             return result;
@@ -250,7 +250,7 @@ pub fn IntegerBitSet(comptime size: u16) type {
         /// Returns the difference of two bit sets. Bits in
         /// the result are set if set in the first but not
         /// set in the second set.
-        pub fn differenceWith(self: Self, other: Self) Self {
+        pub fn difference_with(self: Self, other: Self) Self {
             var result = self;
             result.setIntersection(other.complement());
             return result;
@@ -301,11 +301,11 @@ pub fn IntegerBitSet(comptime size: u16) type {
             };
         }
 
-        fn maskBit(index: usize) MaskInt {
+        fn mask_bit(index: usize) MaskInt {
             if (MaskInt == u0) return 0;
             return @as(MaskInt, 1) << @as(ShiftInt, @intCast(index));
         }
-        fn boolMaskBit(index: usize, value: bool) MaskInt {
+        fn bool_mask_bit(index: usize, value: bool) MaskInt {
             if (MaskInt == u0) return 0;
             return @as(MaskInt, @intFromBool(value)) << @as(ShiftInt, @intCast(index));
         }
@@ -380,12 +380,12 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
         masks: [num_masks]MaskInt,
 
         /// Creates a bit set with no elements present.
-        pub fn initEmpty() Self {
+        pub fn init_empty() Self {
             return .{ .masks = [_]MaskInt{0} ** num_masks };
         }
 
         /// Creates a bit set with all elements present.
-        pub fn initFull() Self {
+        pub fn init_full() Self {
             if (num_masks == 0) {
                 return .{ .masks = .{} };
             } else {
@@ -401,7 +401,7 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
 
         /// Returns true if the bit at the specified index
         /// is present in the set, false otherwise.
-        pub fn isSet(self: Self, index: usize) bool {
+        pub fn is_set(self: Self, index: usize) bool {
             assert(index < bit_length);
             if (num_masks == 0) return false; // doesn't compile in this case
             return (self.masks[maskIndex(index)] & maskBit(index)) != 0;
@@ -418,7 +418,7 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
 
         /// Changes the value of the specified bit of the bit
         /// set to match the passed boolean.
-        pub fn setValue(self: *Self, index: usize, value: bool) void {
+        pub fn set_value(self: *Self, index: usize, value: bool) void {
             assert(index < bit_length);
             if (num_masks == 0) return; // doesn't compile in this case
             const bit = maskBit(index);
@@ -436,7 +436,7 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
 
         /// Changes the value of all bits in the specified range to
         /// match the passed boolean.
-        pub fn setRangeValue(self: *Self, range: Range, value: bool) void {
+        pub fn set_range_value(self: *Self, range: Range, value: bool) void {
             assert(range.end <= bit_length);
             assert(range.start <= range.end);
             if (range.start == range.end) return;
@@ -495,14 +495,14 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
 
         /// Flips all bits in this bit set which are present
         /// in the toggles bit set.
-        pub fn toggleSet(self: *Self, toggles: Self) void {
+        pub fn toggle_set(self: *Self, toggles: Self) void {
             for (&self.masks, 0..) |*mask, i| {
                 mask.* ^= toggles.masks[i];
             }
         }
 
         /// Flips every bit in the bit set.
-        pub fn toggleAll(self: *Self) void {
+        pub fn toggle_all(self: *Self) void {
             for (&self.masks) |*mask| {
                 mask.* = ~mask.*;
             }
@@ -516,7 +516,7 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
         /// Performs a union of two bit sets, and stores the
         /// result in the first one.  Bits in the result are
         /// set if the corresponding bits were set in either input.
-        pub fn setUnion(self: *Self, other: Self) void {
+        pub fn set_union(self: *Self, other: Self) void {
             for (&self.masks, 0..) |*mask, i| {
                 mask.* |= other.masks[i];
             }
@@ -525,7 +525,7 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
         /// Performs an intersection of two bit sets, and stores
         /// the result in the first one.  Bits in the result are
         /// set if the corresponding bits were set in both inputs.
-        pub fn setIntersection(self: *Self, other: Self) void {
+        pub fn set_intersection(self: *Self, other: Self) void {
             for (&self.masks, 0..) |*mask, i| {
                 mask.* &= other.masks[i];
             }
@@ -533,7 +533,7 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
 
         /// Finds the index of the first set bit.
         /// If no bits are set, returns null.
-        pub fn findFirstSet(self: Self) ?usize {
+        pub fn find_first_set(self: Self) ?usize {
             var offset: usize = 0;
             const mask = for (self.masks) |mask| {
                 if (mask != 0) break mask;
@@ -544,7 +544,7 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
 
         /// Finds the index of the first set bit, and unsets it.
         /// If no bits are set, returns null.
-        pub fn toggleFirstSet(self: *Self) ?usize {
+        pub fn toggle_first_set(self: *Self) ?usize {
             var offset: usize = 0;
             const mask = for (&self.masks) |*mask| {
                 if (mask.* != 0) break mask;
@@ -568,13 +568,13 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
 
         /// Returns true iff the first bit set is the subset
         /// of the second one.
-        pub fn subsetOf(self: Self, other: Self) bool {
+        pub fn subset_of(self: Self, other: Self) bool {
             return self.intersectWith(other).eql(self);
         }
 
         /// Returns true iff the first bit set is the superset
         /// of the second one.
-        pub fn supersetOf(self: Self, other: Self) bool {
+        pub fn superset_of(self: Self, other: Self) bool {
             return other.subsetOf(self);
         }
 
@@ -589,7 +589,7 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
         /// Returns the union of two bit sets. Bits in the
         /// result are set if the corresponding bits were set
         /// in either input.
-        pub fn unionWith(self: Self, other: Self) Self {
+        pub fn union_with(self: Self, other: Self) Self {
             var result = self;
             result.setUnion(other);
             return result;
@@ -598,7 +598,7 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
         /// Returns the intersection of two bit sets. Bits in
         /// the result are set if the corresponding bits were
         /// set in both inputs.
-        pub fn intersectWith(self: Self, other: Self) Self {
+        pub fn intersect_with(self: Self, other: Self) Self {
             var result = self;
             result.setIntersection(other);
             return result;
@@ -607,7 +607,7 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
         /// Returns the xor of two bit sets. Bits in the
         /// result are set if the corresponding bits were
         /// not the same in both inputs.
-        pub fn xorWith(self: Self, other: Self) Self {
+        pub fn xor_with(self: Self, other: Self) Self {
             var result = self;
             result.toggleSet(other);
             return result;
@@ -616,7 +616,7 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
         /// Returns the difference of two bit sets. Bits in
         /// the result are set if set in the first but not
         /// set in the second set.
-        pub fn differenceWith(self: Self, other: Self) Self {
+        pub fn difference_with(self: Self, other: Self) Self {
             var result = self;
             result.setIntersection(other.complement());
             return result;
@@ -634,13 +634,13 @@ pub fn ArrayBitSet(comptime MaskIntType: type, comptime size: usize) type {
             return BitSetIterator(MaskInt, options);
         }
 
-        fn maskBit(index: usize) MaskInt {
+        fn mask_bit(index: usize) MaskInt {
             return @as(MaskInt, 1) << @as(ShiftInt, @truncate(index));
         }
-        fn maskIndex(index: usize) usize {
+        fn mask_index(index: usize) usize {
             return index >> @bitSizeOf(ShiftInt);
         }
-        fn boolMaskBit(index: usize, value: bool) MaskInt {
+        fn bool_mask_bit(index: usize, value: bool) MaskInt {
             return @as(MaskInt, @intFromBool(value)) << @as(ShiftInt, @intCast(index));
         }
     };
@@ -677,7 +677,7 @@ pub const DynamicBitSetUnmanaged = struct {
 
     /// Creates a bit set with no elements present.
     /// If bit_length is not zero, deinit must eventually be called.
-    pub fn initEmpty(allocator: Allocator, bit_length: usize) !Self {
+    pub fn init_empty(allocator: Allocator, bit_length: usize) !Self {
         var self = Self{};
         try self.resize(allocator, bit_length, false);
         return self;
@@ -685,7 +685,7 @@ pub const DynamicBitSetUnmanaged = struct {
 
     /// Creates a bit set with all elements present.
     /// If bit_length is not zero, deinit must eventually be called.
-    pub fn initFull(allocator: Allocator, bit_length: usize) !Self {
+    pub fn init_full(allocator: Allocator, bit_length: usize) !Self {
         var self = Self{};
         try self.resize(allocator, bit_length, true);
         return self;
@@ -777,7 +777,7 @@ pub const DynamicBitSetUnmanaged = struct {
 
     /// Returns true if the bit at the specified index
     /// is present in the set, false otherwise.
-    pub fn isSet(self: Self, index: usize) bool {
+    pub fn is_set(self: Self, index: usize) bool {
         assert(index < self.bit_length);
         return (self.masks[maskIndex(index)] & maskBit(index)) != 0;
     }
@@ -795,7 +795,7 @@ pub const DynamicBitSetUnmanaged = struct {
 
     /// Changes the value of the specified bit of the bit
     /// set to match the passed boolean.
-    pub fn setValue(self: *Self, index: usize, value: bool) void {
+    pub fn set_value(self: *Self, index: usize, value: bool) void {
         assert(index < self.bit_length);
         const bit = maskBit(index);
         const mask_index = maskIndex(index);
@@ -811,7 +811,7 @@ pub const DynamicBitSetUnmanaged = struct {
 
     /// Changes the value of all bits in the specified range to
     /// match the passed boolean.
-    pub fn setRangeValue(self: *Self, range: Range, value: bool) void {
+    pub fn set_range_value(self: *Self, range: Range, value: bool) void {
         assert(range.end <= self.bit_length);
         assert(range.start <= range.end);
         if (range.start == range.end) return;
@@ -860,13 +860,13 @@ pub const DynamicBitSetUnmanaged = struct {
     }
 
     /// Set all bits to 0.
-    pub fn unsetAll(self: *Self) void {
+    pub fn unset_all(self: *Self) void {
         const masks_len = numMasks(self.bit_length);
         @memset(self.masks[0..masks_len], 0);
     }
 
     /// Set all bits to 1.
-    pub fn setAll(self: *Self) void {
+    pub fn set_all(self: *Self) void {
         const masks_len = numMasks(self.bit_length);
         @memset(self.masks[0..masks_len], std.math.maxInt(MaskInt));
     }
@@ -880,7 +880,7 @@ pub const DynamicBitSetUnmanaged = struct {
     /// Flips all bits in this bit set which are present
     /// in the toggles bit set.  Both sets must have the
     /// same bit_length.
-    pub fn toggleSet(self: *Self, toggles: Self) void {
+    pub fn toggle_set(self: *Self, toggles: Self) void {
         assert(toggles.bit_length == self.bit_length);
         const num_masks = numMasks(self.bit_length);
         for (self.masks[0..num_masks], 0..) |*mask, i| {
@@ -889,7 +889,7 @@ pub const DynamicBitSetUnmanaged = struct {
     }
 
     /// Flips every bit in the bit set.
-    pub fn toggleAll(self: *Self) void {
+    pub fn toggle_all(self: *Self) void {
         const bit_length = self.bit_length;
         // avoid underflow if bit_length is zero
         if (bit_length == 0) return;
@@ -908,7 +908,7 @@ pub const DynamicBitSetUnmanaged = struct {
     /// result in the first one.  Bits in the result are
     /// set if the corresponding bits were set in either input.
     /// The two sets must both be the same bit_length.
-    pub fn setUnion(self: *Self, other: Self) void {
+    pub fn set_union(self: *Self, other: Self) void {
         assert(other.bit_length == self.bit_length);
         const num_masks = numMasks(self.bit_length);
         for (self.masks[0..num_masks], 0..) |*mask, i| {
@@ -920,7 +920,7 @@ pub const DynamicBitSetUnmanaged = struct {
     /// the result in the first one.  Bits in the result are
     /// set if the corresponding bits were set in both inputs.
     /// The two sets must both be the same bit_length.
-    pub fn setIntersection(self: *Self, other: Self) void {
+    pub fn set_intersection(self: *Self, other: Self) void {
         assert(other.bit_length == self.bit_length);
         const num_masks = numMasks(self.bit_length);
         for (self.masks[0..num_masks], 0..) |*mask, i| {
@@ -930,7 +930,7 @@ pub const DynamicBitSetUnmanaged = struct {
 
     /// Finds the index of the first set bit.
     /// If no bits are set, returns null.
-    pub fn findFirstSet(self: Self) ?usize {
+    pub fn find_first_set(self: Self) ?usize {
         var offset: usize = 0;
         var mask = self.masks;
         while (offset < self.bit_length) {
@@ -943,7 +943,7 @@ pub const DynamicBitSetUnmanaged = struct {
 
     /// Finds the index of the first set bit, and unsets it.
     /// If no bits are set, returns null.
-    pub fn toggleFirstSet(self: *Self) ?usize {
+    pub fn toggle_first_set(self: *Self) ?usize {
         var offset: usize = 0;
         var mask = self.masks;
         while (offset < self.bit_length) {
@@ -973,7 +973,7 @@ pub const DynamicBitSetUnmanaged = struct {
 
     /// Returns true iff the first bit set is the subset
     /// of the second one.
-    pub fn subsetOf(self: Self, other: Self) bool {
+    pub fn subset_of(self: Self, other: Self) bool {
         if (self.bit_length != other.bit_length) {
             return false;
         }
@@ -988,7 +988,7 @@ pub const DynamicBitSetUnmanaged = struct {
 
     /// Returns true iff the first bit set is the superset
     /// of the second one.
-    pub fn supersetOf(self: Self, other: Self) bool {
+    pub fn superset_of(self: Self, other: Self) bool {
         if (self.bit_length != other.bit_length) {
             return false;
         }
@@ -1017,16 +1017,16 @@ pub const DynamicBitSetUnmanaged = struct {
         return BitSetIterator(MaskInt, options);
     }
 
-    fn maskBit(index: usize) MaskInt {
+    fn mask_bit(index: usize) MaskInt {
         return @as(MaskInt, 1) << @as(ShiftInt, @truncate(index));
     }
-    fn maskIndex(index: usize) usize {
+    fn mask_index(index: usize) usize {
         return index >> @bitSizeOf(ShiftInt);
     }
-    fn boolMaskBit(index: usize, value: bool) MaskInt {
+    fn bool_mask_bit(index: usize, value: bool) MaskInt {
         return @as(MaskInt, @intFromBool(value)) << @as(ShiftInt, @intCast(index));
     }
-    fn numMasks(bit_length: usize) usize {
+    fn num_masks(bit_length: usize) usize {
         return (bit_length + (@bitSizeOf(MaskInt) - 1)) / @bitSizeOf(MaskInt);
     }
 };
@@ -1050,7 +1050,7 @@ pub const DynamicBitSet = struct {
     unmanaged: DynamicBitSetUnmanaged = .{},
 
     /// Creates a bit set with no elements present.
-    pub fn initEmpty(allocator: Allocator, bit_length: usize) !Self {
+    pub fn init_empty(allocator: Allocator, bit_length: usize) !Self {
         return Self{
             .unmanaged = try DynamicBitSetUnmanaged.initEmpty(allocator, bit_length),
             .allocator = allocator,
@@ -1058,7 +1058,7 @@ pub const DynamicBitSet = struct {
     }
 
     /// Creates a bit set with all elements present.
-    pub fn initFull(allocator: Allocator, bit_length: usize) !Self {
+    pub fn init_full(allocator: Allocator, bit_length: usize) !Self {
         return Self{
             .unmanaged = try DynamicBitSetUnmanaged.initFull(allocator, bit_length),
             .allocator = allocator,
@@ -1093,7 +1093,7 @@ pub const DynamicBitSet = struct {
 
     /// Returns true if the bit at the specified index
     /// is present in the set, false otherwise.
-    pub fn isSet(self: Self, index: usize) bool {
+    pub fn is_set(self: Self, index: usize) bool {
         return self.unmanaged.isSet(index);
     }
 
@@ -1104,7 +1104,7 @@ pub const DynamicBitSet = struct {
 
     /// Changes the value of the specified bit of the bit
     /// set to match the passed boolean.
-    pub fn setValue(self: *Self, index: usize, value: bool) void {
+    pub fn set_value(self: *Self, index: usize, value: bool) void {
         self.unmanaged.setValue(index, value);
     }
 
@@ -1115,7 +1115,7 @@ pub const DynamicBitSet = struct {
 
     /// Changes the value of all bits in the specified range to
     /// match the passed boolean.
-    pub fn setRangeValue(self: *Self, range: Range, value: bool) void {
+    pub fn set_range_value(self: *Self, range: Range, value: bool) void {
         self.unmanaged.setRangeValue(range, value);
     }
 
@@ -1132,12 +1132,12 @@ pub const DynamicBitSet = struct {
     /// Flips all bits in this bit set which are present
     /// in the toggles bit set.  Both sets must have the
     /// same bit_length.
-    pub fn toggleSet(self: *Self, toggles: Self) void {
+    pub fn toggle_set(self: *Self, toggles: Self) void {
         self.unmanaged.toggleSet(toggles.unmanaged);
     }
 
     /// Flips every bit in the bit set.
-    pub fn toggleAll(self: *Self) void {
+    pub fn toggle_all(self: *Self) void {
         self.unmanaged.toggleAll();
     }
 
@@ -1145,7 +1145,7 @@ pub const DynamicBitSet = struct {
     /// result in the first one.  Bits in the result are
     /// set if the corresponding bits were set in either input.
     /// The two sets must both be the same bit_length.
-    pub fn setUnion(self: *Self, other: Self) void {
+    pub fn set_union(self: *Self, other: Self) void {
         self.unmanaged.setUnion(other.unmanaged);
     }
 
@@ -1153,19 +1153,19 @@ pub const DynamicBitSet = struct {
     /// the result in the first one.  Bits in the result are
     /// set if the corresponding bits were set in both inputs.
     /// The two sets must both be the same bit_length.
-    pub fn setIntersection(self: *Self, other: Self) void {
+    pub fn set_intersection(self: *Self, other: Self) void {
         self.unmanaged.setIntersection(other.unmanaged);
     }
 
     /// Finds the index of the first set bit.
     /// If no bits are set, returns null.
-    pub fn findFirstSet(self: Self) ?usize {
+    pub fn find_first_set(self: Self) ?usize {
         return self.unmanaged.findFirstSet();
     }
 
     /// Finds the index of the first set bit, and unsets it.
     /// If no bits are set, returns null.
-    pub fn toggleFirstSet(self: *Self) ?usize {
+    pub fn toggle_first_set(self: *Self) ?usize {
         return self.unmanaged.toggleFirstSet();
     }
 
@@ -1279,7 +1279,7 @@ fn BitSetIterator(comptime MaskInt: type, comptime options: IteratorOptions) typ
         // isn't a next word.  If the next word is the
         // last word, mask off the padding bits so we
         // don't visit them.
-        inline fn nextWord(self: *Self, comptime is_first_word: bool) void {
+        inline fn next_word(self: *Self, comptime is_first_word: bool) void {
             var word = switch (direction) {
                 .forward => self.words_remain[0],
                 .reverse => self.words_remain[self.words_remain.len - 1],
@@ -1316,7 +1316,7 @@ pub const Range = struct {
 
 const testing = std.testing;
 
-fn testEql(empty: anytype, full: anytype, len: usize) !void {
+fn test_eql(empty: anytype, full: anytype, len: usize) !void {
     try testing.expect(empty.eql(empty));
     try testing.expect(full.eql(full));
     switch (len) {
@@ -1331,7 +1331,7 @@ fn testEql(empty: anytype, full: anytype, len: usize) !void {
     }
 }
 
-fn testSubsetOf(empty: anytype, full: anytype, even: anytype, odd: anytype, len: usize) !void {
+fn test_subset_of(empty: anytype, full: anytype, even: anytype, odd: anytype, len: usize) !void {
     try testing.expect(empty.subsetOf(empty));
     try testing.expect(empty.subsetOf(full));
     try testing.expect(full.subsetOf(full));
@@ -1351,7 +1351,7 @@ fn testSubsetOf(empty: anytype, full: anytype, even: anytype, odd: anytype, len:
     }
 }
 
-fn testSupersetOf(empty: anytype, full: anytype, even: anytype, odd: anytype, len: usize) !void {
+fn test_superset_of(empty: anytype, full: anytype, even: anytype, odd: anytype, len: usize) !void {
     try testing.expect(full.supersetOf(full));
     try testing.expect(full.supersetOf(empty));
     try testing.expect(empty.supersetOf(empty));
@@ -1371,7 +1371,7 @@ fn testSupersetOf(empty: anytype, full: anytype, even: anytype, odd: anytype, le
     }
 }
 
-fn testBitSet(a: anytype, b: anytype, len: usize) !void {
+fn test_bit_set(a: anytype, b: anytype, len: usize) !void {
     try testing.expectEqual(len, a.capacity());
     try testing.expectEqual(len, b.capacity());
 
@@ -1569,21 +1569,21 @@ fn testBitSet(a: anytype, b: anytype, len: usize) !void {
     }
 }
 
-fn fillEven(set: anytype, len: usize) void {
+fn fill_even(set: anytype, len: usize) void {
     var i: usize = 0;
     while (i < len) : (i += 1) {
         set.setValue(i, i & 1 == 0);
     }
 }
 
-fn fillOdd(set: anytype, len: usize) void {
+fn fill_odd(set: anytype, len: usize) void {
     var i: usize = 0;
     while (i < len) : (i += 1) {
         set.setValue(i, i & 1 == 1);
     }
 }
 
-fn testPureBitSet(comptime Set: type) !void {
+fn test_pure_bit_set(comptime Set: type) !void {
     const empty = Set.initEmpty();
     const full = Set.initFull();
 
@@ -1636,7 +1636,7 @@ fn testPureBitSet(comptime Set: type) !void {
     try testing.expect(full.differenceWith(even).eql(odd));
 }
 
-fn testStaticBitSet(comptime Set: type) !void {
+fn test_static_bit_set(comptime Set: type) !void {
     var a = Set.initEmpty();
     var b = Set.initFull();
     try testing.expectEqual(@as(usize, 0), a.count());

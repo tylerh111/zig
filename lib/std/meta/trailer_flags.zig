@@ -53,7 +53,7 @@ pub fn TrailerFlags(comptime Fields: type) type {
             return self.ptrConst(p, field).*;
         }
 
-        pub fn setFlag(self: *Self, comptime field: FieldEnum) void {
+        pub fn set_flag(self: *Self, comptime field: FieldEnum) void {
             const field_index = @intFromEnum(field);
             self.bits |= 1 << field_index;
         }
@@ -69,7 +69,7 @@ pub fn TrailerFlags(comptime Fields: type) type {
         }
 
         /// `fields` is a struct with each field set to an optional value
-        pub fn setMany(self: Self, p: [*]align(@alignOf(Fields)) u8, fields: FieldValues) void {
+        pub fn set_many(self: Self, p: [*]align(@alignOf(Fields)) u8, fields: FieldValues) void {
             inline for (@typeInfo(Fields).Struct.fields, 0..) |field, i| {
                 if (@field(fields, field.name)) |value|
                     self.set(p, @as(FieldEnum, @enumFromInt(i)), value);
@@ -92,7 +92,7 @@ pub fn TrailerFlags(comptime Fields: type) type {
             return @ptrCast(@alignCast(p + off));
         }
 
-        pub fn ptrConst(self: Self, p: [*]align(@alignOf(Fields)) const u8, comptime field: FieldEnum) *const Field(field) {
+        pub fn ptr_const(self: Self, p: [*]align(@alignOf(Fields)) const u8, comptime field: FieldEnum) *const Field(field) {
             if (@sizeOf(Field(field)) == 0)
                 return undefined;
             const off = self.offset(field);
@@ -117,7 +117,7 @@ pub fn TrailerFlags(comptime Fields: type) type {
             return @typeInfo(Fields).Struct.fields[@intFromEnum(field)].type;
         }
 
-        pub fn sizeInBytes(self: Self) usize {
+        pub fn size_in_bytes(self: Self) usize {
             var off: usize = 0;
             inline for (@typeInfo(Fields).Struct.fields, 0..) |field, i| {
                 if (@sizeOf(field.type) == 0)

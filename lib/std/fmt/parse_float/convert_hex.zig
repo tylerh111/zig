@@ -14,7 +14,7 @@ const floatFromUnsigned = common.floatFromUnsigned;
 // EEE = exponent
 //
 // MMM.NNN is stored as an integer, the exponent is offset.
-pub fn convertHex(comptime T: type, n_: Number(T)) T {
+pub fn convert_hex(comptime T: type, n_: Number(T)) T {
     const MantissaT = common.mantissaType(T);
     var n = n_;
 

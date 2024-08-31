@@ -20,22 +20,22 @@ pub const HiiDatabase = extern struct {
     _get_package_list_handle: Status, // TODO
 
     /// Removes a package list from the HII database.
-    pub fn removePackageList(self: *const HiiDatabase, handle: hii.Handle) Status {
+    pub fn remove_package_list(self: *const HiiDatabase, handle: hii.Handle) Status {
         return self._remove_package_list(self, handle);
     }
 
     /// Update a package list in the HII database.
-    pub fn updatePackageList(self: *const HiiDatabase, handle: hii.Handle, buffer: *const hii.PackageList) Status {
+    pub fn update_package_list(self: *const HiiDatabase, handle: hii.Handle, buffer: *const hii.PackageList) Status {
         return self._update_package_list(self, handle, buffer);
     }
 
     /// Determines the handles that are currently active in the database.
-    pub fn listPackageLists(self: *const HiiDatabase, package_type: u8, package_guid: ?*const Guid, buffer_length: *usize, handles: [*]hii.Handle) Status {
+    pub fn list_package_lists(self: *const HiiDatabase, package_type: u8, package_guid: ?*const Guid, buffer_length: *usize, handles: [*]hii.Handle) Status {
         return self._list_package_lists(self, package_type, package_guid, buffer_length, handles);
     }
 
     /// Exports the contents of one or all package lists in the HII database into a buffer.
-    pub fn exportPackageLists(self: *const HiiDatabase, handle: ?hii.Handle, buffer_size: *usize, buffer: *hii.PackageList) Status {
+    pub fn export_package_lists(self: *const HiiDatabase, handle: ?hii.Handle, buffer_size: *usize, buffer: *hii.PackageList) Status {
         return self._export_package_lists(self, handle, buffer_size, buffer);
     }
 

@@ -16,7 +16,7 @@ test "peer resolve arrays of different size to const slice" {
     try comptime expect(mem.eql(u8, boolToStr(true), "true"));
     try comptime expect(mem.eql(u8, boolToStr(false), "false"));
 }
-fn boolToStr(b: bool) []const u8 {
+fn bool_to_str(b: bool) []const u8 {
     return if (b) "true" else "false";
 }
 
@@ -24,7 +24,7 @@ test "peer resolve array and const slice" {
     try testPeerResolveArrayConstSlice(true);
     try comptime testPeerResolveArrayConstSlice(true);
 }
-fn testPeerResolveArrayConstSlice(b: bool) !void {
+fn test_peer_resolve_array_const_slice(b: bool) !void {
     const value1 = if (b) "aoeu" else @as([]const u8, "zz");
     const value2 = if (b) @as([]const u8, "zz") else "aoeu";
     try expect(mem.eql(u8, value1, "aoeu"));
@@ -39,7 +39,7 @@ test "peer type resolution: ?T and T" {
         try expect(peerTypeTAndOptionalT(false, false).? == 3);
     }
 }
-fn peerTypeTAndOptionalT(c: bool, b: bool) ?usize {
+fn peer_type_tand_optional_t(c: bool, b: bool) ?usize {
     if (c) {
         return if (b) null else @as(usize, 0);
     }
@@ -55,7 +55,7 @@ test "peer type resolution: *[0]u8 and []const u8" {
         try expect(peerTypeEmptyArrayAndSlice(false, "hi").len == 1);
     }
 }
-fn peerTypeEmptyArrayAndSlice(a: bool, slice: []const u8) []const u8 {
+fn peer_type_empty_array_and_slice(a: bool, slice: []const u8) []const u8 {
     if (a) {
         return &[_]u8{};
     }
@@ -76,7 +76,7 @@ test "peer type resolution: *[0]u8, []const u8, and anyerror![]u8" {
         try expect((try peerTypeEmptyArrayAndSliceAndError(false, slice)).len == 1);
     }
 }
-fn peerTypeEmptyArrayAndSliceAndError(a: bool, slice: []u8) anyerror![]u8 {
+fn peer_type_empty_array_and_slice_and_error(a: bool, slice: []u8) anyerror![]u8 {
     if (a) {
         return &[_]u8{};
     }

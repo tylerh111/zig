@@ -10,7 +10,7 @@ test "dereference pointer" {
     try testDerefPtr();
 }
 
-fn testDerefPtr() !void {
+fn test_deref_ptr() !void {
     var x: i32 = 1234;
     const y = &x;
     y.* += 1;
@@ -90,7 +90,7 @@ test "C pointer comparison and arithmetic" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var ptr1: [*c]u32 = 0;
             var ptr2 = ptr1 + 10;
             _ = &ptr1;
@@ -123,7 +123,7 @@ const Foo1 = struct {
     x: void,
 };
 
-fn testDerefPtrOneVal() !void {
+fn test_deref_ptr_one_val() !void {
     // Foo1 satisfies the OnePossibleValueYes criteria
     const x = &Foo1{ .x = {} };
     const y = x.*;
@@ -177,7 +177,7 @@ test "implicit cast error unions with non-optional to optional pointer" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             try expectError(error.Fail, foo());
         }
         fn foo() anyerror!?*u8 {
@@ -293,7 +293,7 @@ test "null terminated pointer" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var array_with_zero = [_:0]u8{ 'h', 'e', 'l', 'l', 'o' };
             const zero_ptr: [*:0]const u8 = @ptrCast(&array_with_zero);
             const no_zero_ptr: [*]const u8 = zero_ptr;
@@ -311,7 +311,7 @@ test "allow any sentinel" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var array = [_:std.math.minInt(i32)]i32{ 1, 2, 3, 4 };
             const ptr: [*:std.math.minInt(i32)]i32 = &array;
             try expect(ptr[4] == std.math.minInt(i32));
@@ -333,7 +333,7 @@ test "pointer sentinel with enums" {
             sentinel,
         };
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var ptr: [*:.sentinel]const Number = &[_:.sentinel]Number{ .one, .two, .two, .one };
             _ = &ptr;
             try expect(ptr[4] == .sentinel); // TODO this should be comptime assert, see #3731
@@ -350,7 +350,7 @@ test "pointer sentinel with optional element" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var ptr: [*:null]const ?i32 = &[_:null]?i32{ 1, 2, 3, 4 };
             _ = &ptr;
             try expect(ptr[4] == null); // TODO this should be comptime assert, see #3731
@@ -367,7 +367,7 @@ test "pointer sentinel with +inf" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             const inf_f32 = comptime std.math.inf(f32);
             var ptr: [*:inf_f32]const f32 = &[_:inf_f32]f32{ 1.1, 2.2, 3.3, 4.4 };
             _ = &ptr;
@@ -445,7 +445,7 @@ test "element pointer to slice" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var cases: [2][2]i32 = [_][2]i32{
                 [_]i32{ 0, 1 },
                 [_]i32{ 2, 3 },
@@ -468,7 +468,7 @@ test "element pointer arithmetic to slice" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var cases: [2][2]i32 = [_][2]i32{
                 [_]i32{ 0, 1 },
                 [_]i32{ 2, 3 },
@@ -493,7 +493,7 @@ test "array slicing to slice" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var str: [5]i32 = [_]i32{ 1, 2, 3, 4, 5 };
             const sub: *[2]i32 = str[1..3];
             const slice: []i32 = sub; // used to cause failures

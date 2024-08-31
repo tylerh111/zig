@@ -7,7 +7,7 @@ pub fn main() void {
     printNumberHex(0x31415926);
 }
 
-fn printNumberHex(x: u32) void {
+fn print_number_hex(x: u32) void {
     const digit_chars = "0123456789abcdef";
     var i: u5 = 28;
     while (true) : (i -= 4) {

@@ -89,7 +89,7 @@ pub fn wait(self: *Condition, mutex: *Mutex) void {
 ///
 /// Given `timedWait()` can be interrupted spuriously, the blocking condition should be checked continuously
 /// irrespective of any notifications from `signal()` or `broadcast()`.
-pub fn timedWait(self: *Condition, mutex: *Mutex, timeout_ns: u64) error{Timeout}!void {
+pub fn timed_wait(self: *Condition, mutex: *Mutex, timeout_ns: u64) error{Timeout}!void {
     return self.impl.wait(mutex, timeout_ns);
 }
 

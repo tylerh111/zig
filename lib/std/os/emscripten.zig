@@ -1263,7 +1263,7 @@ pub extern "c" fn emscripten_has_asyncify() c_int;
 pub extern "c" fn emscripten_debugger() void;
 
 pub extern "c" fn emscripten_get_preloaded_image_data(path: [*:0]const u8, w: *c_int, h: *c_int) ?[*]u8;
-pub extern "c" fn emscripten_get_preloaded_image_data_from_FILE(file: *FILE, w: *c_int, h: *c_int) ?[*]u8;
+pub extern "c" fn emscripten_get_preloaded_image_data_from_file(file: *FILE, w: *c_int, h: *c_int) ?[*]u8;
 pub extern "c" fn emscripten_log(flags: c_int, format: [*:0]const u8, ...) void;
 pub extern "c" fn emscripten_get_callstack(flags: c_int, out: ?[*]u8, maxbytes: c_int) c_int;
 pub extern "c" fn emscripten_print_double(x: f64, to: ?[*]u8, max: c_int) c_int;

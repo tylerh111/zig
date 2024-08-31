@@ -53,7 +53,7 @@ fn lookahead(self: *Self) []const u8 {
 /// Returns part of the lookahead buffer. If should_flush is set no lookahead is
 /// preserved otherwise preserves enough data for the longest match. Returns
 /// null if there is not enough data.
-pub fn activeLookahead(self: *Self, should_flush: bool) ?[]const u8 {
+pub fn active_lookahead(self: *Self, should_flush: bool) ?[]const u8 {
     const min: usize = if (should_flush) 0 else min_lookahead;
     const lh = self.lookahead();
     return if (lh.len > min) lh else null;
@@ -116,7 +116,7 @@ pub fn flush(self: *Self) void {
 
 /// Part of the buffer since last flush or null if there was slide in between (so
 /// fp becomes negative).
-pub fn tokensBuffer(self: *Self) ?[]const u8 {
+pub fn tokens_buffer(self: *Self) ?[]const u8 {
     assert(self.fp <= self.rp);
     if (self.fp < 0) return null;
     return self.buffer[@intCast(self.fp)..self.rp];

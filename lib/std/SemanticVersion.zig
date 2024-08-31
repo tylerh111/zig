@@ -15,7 +15,7 @@ pub const Range = struct {
     min: Version,
     max: Version,
 
-    pub fn includesVersion(self: Range, ver: Version) bool {
+    pub fn includes_version(self: Range, ver: Version) bool {
         if (self.min.order(ver) == .gt) return false;
         if (self.max.order(ver) == .lt) return false;
         return true;
@@ -23,7 +23,7 @@ pub const Range = struct {
 
     /// Checks if system is guaranteed to be at least `version` or older than `version`.
     /// Returns `null` if a runtime check is required.
-    pub fn isAtLeast(self: Range, ver: Version) ?bool {
+    pub fn is_at_least(self: Range, ver: Version) ?bool {
         if (self.min.order(ver) != .lt) return true;
         if (self.max.order(ver) == .lt) return false;
         return null;
@@ -140,7 +140,7 @@ pub fn parse(text: []const u8) !Version {
     return ver;
 }
 
-fn parseNum(text: []const u8) error{ InvalidVersion, Overflow }!usize {
+fn parse_num(text: []const u8) error{ InvalidVersion, Overflow }!usize {
     // Leading zeroes are not allowed.
     if (text.len > 1 and text[0] == '0') return error.InvalidVersion;
 

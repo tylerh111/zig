@@ -62,7 +62,7 @@ test "type pun value and struct" {
     }
 }
 
-fn bigToNativeEndian(comptime T: type, v: T) T {
+fn big_to_native_endian(comptime T: type, v: T) T {
     return if (endian == .big) v else @byteSwap(v);
 }
 test "type pun endianness" {
@@ -126,7 +126,7 @@ fn shuffle(ptr: usize, comptime From: type, comptime To: type) usize {
     return result;
 }
 
-fn doTypePunBitsTest(as_bits: *Bits) !void {
+fn do_type_pun_bits_test(as_bits: *Bits) !void {
     const as_u32 = @as(*align(1) u32, @ptrCast(as_bits));
     const as_bytes = @as(*[4]u8, @ptrCast(as_bits));
     as_u32.* = bigToNativeEndian(u32, 0xB0A7DEED);
@@ -444,7 +444,7 @@ test "write empty array to end" {
     comptime std.debug.assert(std.mem.eql(u8, "hello", &array));
 }
 
-fn doublePtrTest() !void {
+fn double_ptr_test() !void {
     var a: u32 = 0;
     const ptr = &a;
     const double_ptr = &ptr;
@@ -453,10 +453,10 @@ fn doublePtrTest() !void {
     setDoublePtr(double_ptr, 1);
     try std.testing.expect(a == 1);
 }
-fn setDoublePtr(ptr: *const *const u32, value: u32) void {
+fn set_double_ptr(ptr: *const *const u32, value: u32) void {
     setPtr(ptr.*, value);
 }
-fn setPtr(ptr: *const u32, value: u32) void {
+fn set_ptr(ptr: *const u32, value: u32) void {
     const mut_ptr: *u32 = @constCast(ptr);
     mut_ptr.* = value;
 }
@@ -480,7 +480,7 @@ fn GenericIntApplier(
             };
         }
 
-        fn typeErasedApplyFn(context: *const anyopaque, arg: u32) void {
+        fn type_erased_apply_fn(context: *const anyopaque, arg: u32) void {
             const ptr: *const Context = @alignCast(@ptrCast(context));
             applyFn(ptr.*, arg);
         }
@@ -507,7 +507,7 @@ const Accumulator = struct {
         context.* += arg;
     }
 };
-fn fieldPtrTest() u32 {
+fn field_ptr_test() u32 {
     var a: Accumulator = .{ .value = 0 };
     const applier = a.applier();
     applier.any().apply(1);

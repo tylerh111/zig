@@ -44,7 +44,7 @@ pub const Register = enum(u8) {
         return @enumFromInt(@as(u8, self.id()) + 16);
     }
 
-    pub fn dwarfLocOp(reg: Register) u8 {
+    pub fn dwarf_loc_op(reg: Register) u8 {
         return switch (reg.to32()) {
             .eax => DW.OP.reg0,
             .ecx => DW.OP.reg1,

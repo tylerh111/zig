@@ -27,7 +27,7 @@ pub fn reset(section: *Section) void {
     section.instructions.items.len = 0;
 }
 
-pub fn toWords(section: Section) []Word {
+pub fn to_words(section: Section) []Word {
     return section.instructions.items;
 }
 
@@ -37,12 +37,12 @@ pub fn append(section: *Section, allocator: Allocator, other_section: Section) !
 }
 
 /// Ensure capacity of at least `capacity` more words in this section.
-pub fn ensureUnusedCapacity(section: *Section, allocator: Allocator, capacity: usize) !void {
+pub fn ensure_unused_capacity(section: *Section, allocator: Allocator, capacity: usize) !void {
     try section.instructions.ensureUnusedCapacity(allocator, capacity);
 }
 
 /// Write an instruction and size, operands are to be inserted manually.
-pub fn emitRaw(
+pub fn emit_raw(
     section: *Section,
     allocator: Allocator,
     opcode: Opcode,
@@ -54,7 +54,7 @@ pub fn emitRaw(
 }
 
 /// Write an entire instruction, including all operands
-pub fn emitRawInstruction(
+pub fn emit_raw_instruction(
     section: *Section,
     allocator: Allocator,
     opcode: Opcode,
@@ -76,7 +76,7 @@ pub fn emit(
     section.writeOperands(opcode.Operands(), operands);
 }
 
-pub fn emitBranch(
+pub fn emit_branch(
     section: *Section,
     allocator: Allocator,
     target_label: spec.IdRef,
@@ -86,7 +86,7 @@ pub fn emitBranch(
     });
 }
 
-pub fn emitSpecConstantOp(
+pub fn emit_spec_constant_op(
     section: *Section,
     allocator: Allocator,
     comptime opcode: spec.Opcode,
@@ -105,22 +105,22 @@ pub fn emitSpecConstantOp(
     }
 }
 
-pub fn writeWord(section: *Section, word: Word) void {
+pub fn write_word(section: *Section, word: Word) void {
     section.instructions.appendAssumeCapacity(word);
 }
 
-pub fn writeWords(section: *Section, words: []const Word) void {
+pub fn write_words(section: *Section, words: []const Word) void {
     section.instructions.appendSliceAssumeCapacity(words);
 }
 
-pub fn writeDoubleWord(section: *Section, dword: DoubleWord) void {
+pub fn write_double_word(section: *Section, dword: DoubleWord) void {
     section.writeWords(&.{
         @truncate(dword),
         @truncate(dword >> @bitSizeOf(Word)),
     });
 }
 
-fn writeOperands(section: *Section, comptime Operands: type, operands: Operands) void {
+fn write_operands(section: *Section, comptime Operands: type, operands: Operands) void {
     const fields = switch (@typeInfo(Operands)) {
         .Struct => |info| info.fields,
         .Void => return,
@@ -132,7 +132,7 @@ fn writeOperands(section: *Section, comptime Operands: type, operands: Operands)
     }
 }
 
-pub fn writeOperand(section: *Section, comptime Operand: type, operand: Operand) void {
+pub fn write_operand(section: *Section, comptime Operand: type, operand: Operand) void {
     switch (Operand) {
         spec.IdResult => section.writeWord(@intFromEnum(operand)),
 
@@ -177,7 +177,7 @@ pub fn writeOperand(section: *Section, comptime Operand: type, operand: Operand)
     }
 }
 
-fn writeString(section: *Section, str: []const u8) void {
+fn write_string(section: *Section, str: []const u8) void {
     // TODO: Not actually sure whether this is correct for big-endian.
     // See https://www.khronos.org/registry/spir-v/specs/unified1/SPIRV.html#Literal
     const zero_terminated_len = str.len + 1;
@@ -194,7 +194,7 @@ fn writeString(section: *Section, str: []const u8) void {
     }
 }
 
-fn writeContextDependentNumber(section: *Section, operand: spec.LiteralContextDependentNumber) void {
+fn write_context_dependent_number(section: *Section, operand: spec.LiteralContextDependentNumber) void {
     switch (operand) {
         .int32 => |int| section.writeWord(@bitCast(int)),
         .uint32 => |int| section.writeWord(@bitCast(int)),
@@ -205,7 +205,7 @@ fn writeContextDependentNumber(section: *Section, operand: spec.LiteralContextDe
     }
 }
 
-fn writeExtendedMask(section: *Section, comptime Operand: type, operand: Operand) void {
+fn write_extended_mask(section: *Section, comptime Operand: type, operand: Operand) void {
     var mask: Word = 0;
     inline for (@typeInfo(Operand).Struct.fields, 0..) |field, bit| {
         switch (@typeInfo(field.type)) {
@@ -232,7 +232,7 @@ fn writeExtendedMask(section: *Section, comptime Operand: type, operand: Operand
     }
 }
 
-fn writeExtendedUnion(section: *Section, comptime Operand: type, operand: Operand) void {
+fn write_extended_union(section: *Section, comptime Operand: type, operand: Operand) void {
     const tag = std.meta.activeTag(operand);
     section.writeWord(@intFromEnum(tag));
 
@@ -245,11 +245,11 @@ fn writeExtendedUnion(section: *Section, comptime Operand: type, operand: Operan
     unreachable;
 }
 
-fn instructionSize(comptime opcode: spec.Opcode, operands: opcode.Operands()) usize {
+fn instruction_size(comptime opcode: spec.Opcode, operands: opcode.Operands()) usize {
     return 1 + operandsSize(opcode.Operands(), operands);
 }
 
-fn operandsSize(comptime Operands: type, operands: Operands) usize {
+fn operands_size(comptime Operands: type, operands: Operands) usize {
     const fields = switch (@typeInfo(Operands)) {
         .Struct => |info| info.fields,
         .Void => return 0,
@@ -264,7 +264,7 @@ fn operandsSize(comptime Operands: type, operands: Operands) usize {
     return total;
 }
 
-fn operandSize(comptime Operand: type, operand: Operand) usize {
+fn operand_size(comptime Operand: type, operand: Operand) usize {
     return switch (Operand) {
         spec.IdResult,
         spec.LiteralInteger,
@@ -306,7 +306,7 @@ fn operandSize(comptime Operand: type, operand: Operand) usize {
     };
 }
 
-fn extendedMaskSize(comptime Operand: type, operand: Operand) usize {
+fn extended_mask_size(comptime Operand: type, operand: Operand) usize {
     var total: usize = 0;
     var any_set = false;
     inline for (@typeInfo(Operand).Struct.fields) |field| {
@@ -324,7 +324,7 @@ fn extendedMaskSize(comptime Operand: type, operand: Operand) usize {
     return total + 1; // Add one for the mask itself.
 }
 
-fn extendedUnionSize(comptime Operand: type, operand: Operand) usize {
+fn extended_union_size(comptime Operand: type, operand: Operand) usize {
     const tag = std.meta.activeTag(operand);
     inline for (@typeInfo(Operand).Union.fields) |field| {
         if (@field(Operand, field.name) == tag) {

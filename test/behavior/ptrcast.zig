@@ -11,7 +11,7 @@ test "reinterpret bytes as integer with nonzero offset" {
     try comptime testReinterpretBytesAsInteger();
 }
 
-fn testReinterpretBytesAsInteger() !void {
+fn test_reinterpret_bytes_as_integer() !void {
     const bytes = "\x12\x34\x56\x78\xab";
     const expected = switch (native_endian) {
         .little => 0xab785634,
@@ -30,7 +30,7 @@ test "reinterpret an array over multiple elements, with no well-defined layout" 
     try comptime testReinterpretWithOffsetAndNoWellDefinedLayout();
 }
 
-fn testReinterpretWithOffsetAndNoWellDefinedLayout() !void {
+fn test_reinterpret_with_offset_and_no_well_defined_layout() !void {
     const bytes: ?[5]?u8 = [5]?u8{ 0x12, 0x34, 0x56, 0x78, 0x9a };
     const ptr = &bytes.?[1];
     const copy: [4]?u8 = @as(*const [4]?u8, @ptrCast(ptr)).*;
@@ -45,7 +45,7 @@ test "reinterpret bytes inside auto-layout struct as integer with nonzero offset
     try comptime testReinterpretStructWrappedBytesAsInteger();
 }
 
-fn testReinterpretStructWrappedBytesAsInteger() !void {
+fn test_reinterpret_struct_wrapped_bytes_as_integer() !void {
     const S = struct { bytes: [5:0]u8 };
     const obj = S{ .bytes = "\x12\x34\x56\x78\xab".* };
     const expected = switch (native_endian) {
@@ -64,7 +64,7 @@ test "reinterpret bytes of an array into an extern struct" {
     try comptime testReinterpretBytesAsExternStruct();
 }
 
-fn testReinterpretBytesAsExternStruct() !void {
+fn test_reinterpret_bytes_as_extern_struct() !void {
     var bytes align(2) = [_]u8{ 1, 2, 3, 4, 5, 6 };
 
     const S = extern struct {
@@ -85,7 +85,7 @@ test "reinterpret bytes of an extern struct (with under-aligned fields) into ano
     try comptime testReinterpretExternStructAsExternStruct();
 }
 
-fn testReinterpretExternStructAsExternStruct() !void {
+fn test_reinterpret_extern_struct_as_extern_struct() !void {
     const S1 = extern struct {
         a: u8,
         b: u16,
@@ -109,7 +109,7 @@ test "reinterpret bytes of an extern struct into another" {
     try comptime testReinterpretOverAlignedExternStructAsExternStruct();
 }
 
-fn testReinterpretOverAlignedExternStructAsExternStruct() !void {
+fn test_reinterpret_over_aligned_extern_struct_as_extern_struct() !void {
     const S1 = extern struct {
         a: u32,
         b: u32,

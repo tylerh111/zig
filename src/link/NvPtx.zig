@@ -25,7 +25,7 @@ const LlvmObject = @import("../codegen/llvm.zig").Object;
 base: link.File,
 llvm_object: *LlvmObject,
 
-pub fn createEmpty(
+pub fn create_empty(
     arena: Allocator,
     comp: *Compilation,
     emit: Compilation.Emit,
@@ -82,15 +82,15 @@ pub fn deinit(self: *NvPtx) void {
     self.llvm_object.deinit();
 }
 
-pub fn updateFunc(self: *NvPtx, module: *Module, func_index: InternPool.Index, air: Air, liveness: Liveness) !void {
+pub fn update_func(self: *NvPtx, module: *Module, func_index: InternPool.Index, air: Air, liveness: Liveness) !void {
     try self.llvm_object.updateFunc(module, func_index, air, liveness);
 }
 
-pub fn updateDecl(self: *NvPtx, module: *Module, decl_index: InternPool.DeclIndex) !void {
+pub fn update_decl(self: *NvPtx, module: *Module, decl_index: InternPool.DeclIndex) !void {
     return self.llvm_object.updateDecl(module, decl_index);
 }
 
-pub fn updateExports(
+pub fn update_exports(
     self: *NvPtx,
     module: *Module,
     exported: Module.Exported,
@@ -102,7 +102,7 @@ pub fn updateExports(
     return self.llvm_object.updateExports(module, exported, exports);
 }
 
-pub fn freeDecl(self: *NvPtx, decl_index: InternPool.DeclIndex) void {
+pub fn free_decl(self: *NvPtx, decl_index: InternPool.DeclIndex) void {
     return self.llvm_object.freeDecl(decl_index);
 }
 
@@ -110,7 +110,7 @@ pub fn flush(self: *NvPtx, arena: Allocator, prog_node: std.Progress.Node) link.
     return self.flushModule(arena, prog_node);
 }
 
-pub fn flushModule(self: *NvPtx, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
+pub fn flush_module(self: *NvPtx, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
     if (build_options.skip_non_native)
         @panic("Attempted to compile for architecture that was disabled by build configuration");
 

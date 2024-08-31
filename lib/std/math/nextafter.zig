@@ -12,7 +12,7 @@ const expect = std.testing.expect;
 /// - For floats, if `x == 0.0` and `@abs(y) > 0.0`, the smallest subnormal number with the sign of
 ///   `y` is returned.
 ///
-pub fn nextAfter(comptime T: type, x: T, y: T) T {
+pub fn next_after(comptime T: type, x: T, y: T) T {
     return switch (@typeInfo(T)) {
         .Int, .ComptimeInt => nextAfterInt(T, x, y),
         .Float => nextAfterFloat(T, x, y),
@@ -20,7 +20,7 @@ pub fn nextAfter(comptime T: type, x: T, y: T) T {
     };
 }
 
-fn nextAfterInt(comptime T: type, x: T, y: T) T {
+fn next_after_int(comptime T: type, x: T, y: T) T {
     comptime assert(@typeInfo(T) == .Int or @typeInfo(T) == .ComptimeInt);
     return if (@typeInfo(T) == .Int and @bitSizeOf(T) < 2)
         // Special case for `i0`, `u0`, `i1`, and `u1`.
@@ -37,7 +37,7 @@ fn nextAfterInt(comptime T: type, x: T, y: T) T {
 // <https://github.com/mingw-w64/mingw-w64/blob/e89de847dd3e05bb8e46344378ce3e124f4e7d1c/mingw-w64-crt/math/nextafterf.c>
 // <https://github.com/mingw-w64/mingw-w64/blob/e89de847dd3e05bb8e46344378ce3e124f4e7d1c/mingw-w64-crt/math/nextafterl.c>
 
-fn nextAfterFloat(comptime T: type, x: T, y: T) T {
+fn next_after_float(comptime T: type, x: T, y: T) T {
     comptime assert(@typeInfo(T) == .Float);
     if (x == y) {
         // Returning `y` ensures that (0.0, -0.0) returns -0.0 and that (-0.0, 0.0) returns 0.0.
@@ -319,7 +319,7 @@ test "float" {
 }
 
 /// Helps ensure that 0.0 doesn't compare equal to -0.0.
-fn bitwiseEqual(comptime T: type, x: T, y: T) bool {
+fn bitwise_equal(comptime T: type, x: T, y: T) bool {
     comptime assert(@typeInfo(T) == .Float);
     const Bits = std.meta.Int(.unsigned, @bitSizeOf(T));
     return @as(Bits, @bitCast(x)) == @as(Bits, @bitCast(y));

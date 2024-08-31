@@ -276,19 +276,19 @@ pub fn next(self: *Tokenizer) ?Token {
     unreachable;
 }
 
-fn errorPosition(comptime id: std.meta.Tag(Token), index: usize, bytes: []const u8) Token {
+fn error_position(comptime id: std.meta.Tag(Token), index: usize, bytes: []const u8) Token {
     return @unionInit(Token, @tagName(id), .{ .index = index, .bytes = bytes });
 }
 
-fn errorIllegalChar(comptime id: std.meta.Tag(Token), index: usize, char: u8) Token {
+fn error_illegal_char(comptime id: std.meta.Tag(Token), index: usize, char: u8) Token {
     return @unionInit(Token, @tagName(id), .{ .index = index, .char = char });
 }
 
-fn finishTarget(must_resolve: bool, bytes: []const u8) Token {
+fn finish_target(must_resolve: bool, bytes: []const u8) Token {
     return if (must_resolve) .{ .target_must_resolve = bytes } else .{ .target = bytes };
 }
 
-fn finishPrereq(must_resolve: bool, bytes: []const u8) Token {
+fn finish_prereq(must_resolve: bool, bytes: []const u8) Token {
     return if (must_resolve) .{ .prereq_must_resolve = bytes } else .{ .prereq = bytes };
 }
 
@@ -400,7 +400,7 @@ pub const Token = union(enum) {
         }
     }
 
-    pub fn printError(self: Token, writer: anytype) @TypeOf(writer).Error!void {
+    pub fn print_error(self: Token, writer: anytype) @TypeOf(writer).Error!void {
         switch (self) {
             .target, .target_must_resolve, .prereq, .prereq_must_resolve => unreachable, // not an error
             .incomplete_quoted_prerequisite,
@@ -428,7 +428,7 @@ pub const Token = union(enum) {
         }
     }
 
-    fn errStr(self: Token) []const u8 {
+    fn err_str(self: Token) []const u8 {
         return switch (self) {
             .target, .target_must_resolve, .prereq, .prereq_must_resolve => unreachable, // not an error
             .incomplete_quoted_prerequisite => "incomplete quoted prerequisite",
@@ -964,7 +964,7 @@ test "error prereq - continuation expecting end-of-line" {
 }
 
 // - tokenize input, emit textual representation, and compare to expect
-fn depTokenizer(input: []const u8, expect: []const u8) !void {
+fn dep_tokenizer(input: []const u8, expect: []const u8) !void {
     var arena_allocator = std.heap.ArenaAllocator.init(std.testing.allocator);
     const arena = arena_allocator.allocator();
     defer arena_allocator.deinit();
@@ -1027,7 +1027,7 @@ fn depTokenizer(input: []const u8, expect: []const u8) !void {
     try testing.expect(false);
 }
 
-fn printSection(out: anytype, label: []const u8, bytes: []const u8) !void {
+fn print_section(out: anytype, label: []const u8, bytes: []const u8) !void {
     try printLabel(out, label, bytes);
     try hexDump(out, bytes);
     try printRuler(out);
@@ -1035,7 +1035,7 @@ fn printSection(out: anytype, label: []const u8, bytes: []const u8) !void {
     try out.writeAll("\n");
 }
 
-fn printLabel(out: anytype, label: []const u8, bytes: []const u8) !void {
+fn print_label(out: anytype, label: []const u8, bytes: []const u8) !void {
     var buf: [80]u8 = undefined;
     const text = try std.fmt.bufPrint(buf[0..], "{s} {d} bytes ", .{ label, bytes.len });
     try out.writeAll(text);
@@ -1047,7 +1047,7 @@ fn printLabel(out: anytype, label: []const u8, bytes: []const u8) !void {
     try out.writeAll("\n");
 }
 
-fn printRuler(out: anytype) !void {
+fn print_ruler(out: anytype) !void {
     var i: usize = 0;
     const end = 79;
     while (i < end) : (i += 1) {
@@ -1056,7 +1056,7 @@ fn printRuler(out: anytype) !void {
     try out.writeAll("\n");
 }
 
-fn hexDump(out: anytype, bytes: []const u8) !void {
+fn hex_dump(out: anytype, bytes: []const u8) !void {
     const n16 = bytes.len >> 4;
     var line: usize = 0;
     var offset: usize = 0;
@@ -1103,7 +1103,7 @@ fn hexDump(out: anytype, bytes: []const u8) !void {
     try out.writeAll("\n");
 }
 
-fn hexDump16(out: anytype, offset: usize, bytes: []const u8) !void {
+fn hex_dump16(out: anytype, offset: usize, bytes: []const u8) !void {
     try printDecValue(out, offset, 8);
     try out.writeAll(":");
     try out.writeAll(" ");
@@ -1121,25 +1121,25 @@ fn hexDump16(out: anytype, offset: usize, bytes: []const u8) !void {
     try out.writeAll("|\n");
 }
 
-fn printDecValue(out: anytype, value: u64, width: u8) !void {
+fn print_dec_value(out: anytype, value: u64, width: u8) !void {
     var buffer: [20]u8 = undefined;
     const len = std.fmt.formatIntBuf(buffer[0..], value, 10, .lower, .{ .width = width, .fill = '0' });
     try out.writeAll(buffer[0..len]);
 }
 
-fn printHexValue(out: anytype, value: u64, width: u8) !void {
+fn print_hex_value(out: anytype, value: u64, width: u8) !void {
     var buffer: [16]u8 = undefined;
     const len = std.fmt.formatIntBuf(buffer[0..], value, 16, .lower, .{ .width = width, .fill = '0' });
     try out.writeAll(buffer[0..len]);
 }
 
-fn printCharValues(out: anytype, bytes: []const u8) !void {
+fn print_char_values(out: anytype, bytes: []const u8) !void {
     for (bytes) |b| {
         try out.writeAll(&[_]u8{printable_char_tab[b]});
     }
 }
 
-fn printUnderstandableChar(out: anytype, char: u8) !void {
+fn print_understandable_char(out: anytype, char: u8) !void {
     if (std.ascii.isPrint(char)) {
         try out.print("'{c}'", .{char});
     } else {

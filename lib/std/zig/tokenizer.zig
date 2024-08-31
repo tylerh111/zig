@@ -61,7 +61,7 @@ pub const Token = struct {
         .{ "while", .keyword_while },
     });
 
-    pub fn getKeyword(bytes: []const u8) ?Tag {
+    pub fn get_keyword(bytes: []const u8) ?Tag {
         return keywords.get(bytes);
     }
 
@@ -414,7 +414,7 @@ pub const Tokenizer = struct {
     /// parser or another later stage, both to give more useful error messages
     /// with that extra context and in order to be able to remove this
     /// workaround.
-    pub fn findTagAtCurrentIndex(self: *Tokenizer, tag: Token.Tag) Token {
+    pub fn find_tag_at_current_index(self: *Tokenizer, tag: Token.Tag) Token {
         if (tag == .invalid) {
             const target_index = self.index;
             var starting_index = target_index;
@@ -1255,7 +1255,7 @@ pub const Tokenizer = struct {
         return result;
     }
 
-    fn checkLiteralCharacter(self: *Tokenizer) void {
+    fn check_literal_character(self: *Tokenizer) void {
         if (self.pending_invalid_token != null) return;
         const invalid_length = self.getInvalidCharacterLength();
         if (invalid_length == 0) return;
@@ -1268,7 +1268,7 @@ pub const Tokenizer = struct {
         };
     }
 
-    fn getInvalidCharacterLength(self: *Tokenizer) u3 {
+    fn get_invalid_character_length(self: *Tokenizer) u3 {
         const c0 = self.buffer[self.index];
         if (std.ascii.isASCII(c0)) {
             if (c0 == '\r') {
@@ -1917,7 +1917,7 @@ test "null byte before eof" {
     try testTokenize("/// NUL\x00\n", &.{ .doc_comment, .invalid });
 }
 
-fn testTokenize(source: [:0]const u8, expected_token_tags: []const Token.Tag) !void {
+fn test_tokenize(source: [:0]const u8, expected_token_tags: []const Token.Tag) !void {
     var tokenizer = Tokenizer.init(source);
     for (expected_token_tags) |expected_token_tag| {
         const token = tokenizer.next();

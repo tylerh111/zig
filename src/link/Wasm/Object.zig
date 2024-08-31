@@ -99,13 +99,13 @@ const RelocatableData = struct {
     /// meta data of the given object file.
     /// NOTE: Alignment is encoded as a power of 2, so we shift the symbol's
     /// alignment to retrieve the natural alignment.
-    pub fn getAlignment(relocatable_data: RelocatableData, object: *const Object) Alignment {
+    pub fn get_alignment(relocatable_data: RelocatableData, object: *const Object) Alignment {
         if (relocatable_data.type != .data) return .@"1";
         return object.segment_info[relocatable_data.index].alignment;
     }
 
     /// Returns the symbol kind that corresponds to the relocatable section
-    pub fn getSymbolKind(relocatable_data: RelocatableData) Symbol.Tag {
+    pub fn get_symbol_kind(relocatable_data: RelocatableData) Symbol.Tag {
         return switch (relocatable_data.type) {
             .data => .data,
             .code => .function,
@@ -115,7 +115,7 @@ const RelocatableData = struct {
 
     /// Returns the index within a section, or in case of a custom section,
     /// returns the section index within the object file.
-    pub fn getIndex(relocatable_data: RelocatableData) u32 {
+    pub fn get_index(relocatable_data: RelocatableData) u32 {
         if (relocatable_data.type == .custom) return relocatable_data.section_index;
         return relocatable_data.index;
     }
@@ -209,7 +209,7 @@ pub fn deinit(object: *Object, gpa: Allocator) void {
 
 /// Finds the import within the list of imports from a given kind and index of that kind.
 /// Asserts the import exists
-pub fn findImport(object: *const Object, sym: Symbol) types.Import {
+pub fn find_import(object: *const Object, sym: Symbol) types.Import {
     var i: u32 = 0;
     return for (object.imports) |import| {
         if (std.meta.activeTag(import.kind) == sym.tag.externalType()) {
@@ -225,7 +225,7 @@ pub fn findImport(object: *const Object, sym: Symbol) types.Import {
 /// we initialize a new table symbol that corresponds to that import and return that symbol.
 ///
 /// When the object file is *NOT* MVP, we return `null`.
-fn checkLegacyIndirectFunctionTable(object: *Object, wasm_file: *const Wasm) !?Symbol {
+fn check_legacy_indirect_function_table(object: *Object, wasm_file: *const Wasm) !?Symbol {
     var table_count: usize = 0;
     for (object.symtable) |sym| {
         if (sym.tag == .table) table_count += 1;
@@ -342,7 +342,7 @@ fn Parser(comptime ReaderType: type) type {
         }
 
         /// Verifies that the first 4 bytes contains \0Asm
-        fn verifyMagicBytes(parser: *ObjectParser) Error!void {
+        fn verify_magic_bytes(parser: *ObjectParser) Error!void {
             var magic_bytes: [4]u8 = undefined;
 
             try parser.reader.reader().readNoEof(&magic_bytes);
@@ -352,7 +352,7 @@ fn Parser(comptime ReaderType: type) type {
             }
         }
 
-        fn parseObject(parser: *ObjectParser, gpa: Allocator, is_object_file: *bool) Error!void {
+        fn parse_object(parser: *ObjectParser, gpa: Allocator, is_object_file: *bool) Error!void {
             errdefer parser.object.deinit(gpa);
             try parser.verifyMagicBytes();
             const version = try parser.reader.reader().readInt(u32, .little);
@@ -586,7 +586,7 @@ fn Parser(comptime ReaderType: type) type {
         /// features that tell the linker what features were enabled and may be mandatory
         /// to be able to link.
         /// Logs an info message when an undefined feature is detected.
-        fn parseFeatures(parser: *ObjectParser, gpa: Allocator) !void {
+        fn parse_features(parser: *ObjectParser, gpa: Allocator) !void {
             const reader = parser.reader.reader();
             for (try readVec(&parser.object.features, reader, gpa)) |*feature| {
                 const prefix = try readEnum(types.Feature.Prefix, reader);
@@ -611,7 +611,7 @@ fn Parser(comptime ReaderType: type) type {
         /// Parses a "reloc" custom section into a list of relocations.
         /// The relocations are mapped into `Object` where the key is the section
         /// they apply to.
-        fn parseRelocations(parser: *ObjectParser, gpa: Allocator) !void {
+        fn parse_relocations(parser: *ObjectParser, gpa: Allocator) !void {
             const reader = parser.reader.reader();
             const section = try leb.readULEB128(u32, reader);
             const count = try leb.readULEB128(u32, reader);
@@ -647,7 +647,7 @@ fn Parser(comptime ReaderType: type) type {
         /// supported will be an error. `payload_size` is required to be able
         /// to calculate the subsections we need to parse, as that data is not
         /// available within the section itparser.
-        fn parseMetadata(parser: *ObjectParser, gpa: Allocator, payload_size: usize) !void {
+        fn parse_metadata(parser: *ObjectParser, gpa: Allocator, payload_size: usize) !void {
             var limited = std.io.limitedReader(parser.reader.reader(), payload_size);
             const limited_reader = limited.reader();
 
@@ -666,7 +666,7 @@ fn Parser(comptime ReaderType: type) type {
         ///
         /// `parser` is used to provide access to other sections that may be needed,
         /// such as access to the `import` section to find the name of a symbol.
-        fn parseSubsection(parser: *ObjectParser, gpa: Allocator, reader: anytype) !void {
+        fn parse_subsection(parser: *ObjectParser, gpa: Allocator, reader: anytype) !void {
             const sub_type = try leb.readULEB128(u8, reader);
             log.debug("Found subsection: {s}", .{@tagName(@as(types.SubsectionType, @enumFromInt(sub_type)))});
             const payload_len = try leb.readULEB128(u32, reader);
@@ -798,7 +798,7 @@ fn Parser(comptime ReaderType: type) type {
         /// Parses the symbol information based on its kind,
         /// requires access to `Object` to find the name of a symbol when it's
         /// an import and flag `WASM_SYM_EXPLICIT_NAME` is not set.
-        fn parseSymbol(parser: *ObjectParser, gpa: Allocator, reader: anytype) !Symbol {
+        fn parse_symbol(parser: *ObjectParser, gpa: Allocator, reader: anytype) !Symbol {
             const tag = @as(Symbol.Tag, @enumFromInt(try leb.readULEB128(u8, reader)));
             const flags = try leb.readULEB128(u32, reader);
             var symbol: Symbol = .{
@@ -856,7 +856,7 @@ fn Parser(comptime ReaderType: type) type {
 
 /// First reads the count from the reader and then allocate
 /// a slice of ptr child's element type.
-fn readVec(ptr: anytype, reader: anytype, gpa: Allocator) ![]ElementType(@TypeOf(ptr)) {
+fn read_vec(ptr: anytype, reader: anytype, gpa: Allocator) ![]ElementType(@TypeOf(ptr)) {
     const len = try readLeb(u32, reader);
     const slice = try gpa.alloc(ElementType(@TypeOf(ptr)), len);
     ptr.* = slice;
@@ -870,7 +870,7 @@ fn ElementType(comptime ptr: type) type {
 /// Uses either `readILEB128` or `readULEB128` depending on the
 /// signedness of the given type `T`.
 /// Asserts `T` is an integer.
-fn readLeb(comptime T: type, reader: anytype) !T {
+fn read_leb(comptime T: type, reader: anytype) !T {
     return switch (@typeInfo(T).Int.signedness) {
         .signed => try leb.readILEB128(T, reader),
         .unsigned => try leb.readULEB128(T, reader),
@@ -879,14 +879,14 @@ fn readLeb(comptime T: type, reader: anytype) !T {
 
 /// Reads an enum type from the given reader.
 /// Asserts `T` is an enum
-fn readEnum(comptime T: type, reader: anytype) !T {
+fn read_enum(comptime T: type, reader: anytype) !T {
     switch (@typeInfo(T)) {
         .Enum => |enum_type| return @as(T, @enumFromInt(try readLeb(enum_type.tag_type, reader))),
         else => @compileError("T must be an enum. Instead was given type " ++ @typeName(T)),
     }
 }
 
-fn readLimits(reader: anytype) !std.wasm.Limits {
+fn read_limits(reader: anytype) !std.wasm.Limits {
     const flags = try reader.readByte();
     const min = try readLeb(u32, reader);
     var limits: std.wasm.Limits = .{
@@ -900,7 +900,7 @@ fn readLimits(reader: anytype) !std.wasm.Limits {
     return limits;
 }
 
-fn readInit(reader: anytype) !std.wasm.InitExpression {
+fn read_init(reader: anytype) !std.wasm.InitExpression {
     const opcode = try reader.readByte();
     const init_expr: std.wasm.InitExpression = switch (@as(std.wasm.Opcode, @enumFromInt(opcode))) {
         .i32_const => .{ .i32_const = try readLeb(i32, reader) },
@@ -912,7 +912,7 @@ fn readInit(reader: anytype) !std.wasm.InitExpression {
     return init_expr;
 }
 
-fn assertEnd(reader: anytype) !void {
+fn assert_end(reader: anytype) !void {
     var buf: [1]u8 = undefined;
     const len = try reader.read(&buf);
     if (len != 0) return error.MalformedSection;
@@ -920,7 +920,7 @@ fn assertEnd(reader: anytype) !void {
 }
 
 /// Parses an object file into atoms, for code and data sections
-pub fn parseSymbolIntoAtom(object: *Object, wasm: *Wasm, symbol_index: Symbol.Index) !Atom.Index {
+pub fn parse_symbol_into_atom(object: *Object, wasm: *Wasm, symbol_index: Symbol.Index) !Atom.Index {
     const comp = wasm.base.comp;
     const gpa = comp.gpa;
     const symbol = &object.symtable[@intFromEnum(symbol_index)];
@@ -985,7 +985,7 @@ pub fn parseSymbolIntoAtom(object: *Object, wasm: *Wasm, symbol_index: Symbol.In
     return atom_index;
 }
 
-fn searchRelocStart(relocs: []const types.Relocation, address: u32) usize {
+fn search_reloc_start(relocs: []const types.Relocation, address: u32) usize {
     var min: usize = 0;
     var max: usize = relocs.len;
     while (min < max) {
@@ -1000,7 +1000,7 @@ fn searchRelocStart(relocs: []const types.Relocation, address: u32) usize {
     return min;
 }
 
-fn searchRelocEnd(relocs: []const types.Relocation, address: u32) usize {
+fn search_reloc_end(relocs: []const types.Relocation, address: u32) usize {
     for (relocs, 0..relocs.len) |reloc, index| {
         if (reloc.offset > address) {
             return index;

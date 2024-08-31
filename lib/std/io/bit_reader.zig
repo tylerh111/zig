@@ -31,7 +31,7 @@ pub fn BitReader(comptime endian: std.builtin.Endian, comptime ReaderType: type)
         /// Reads `bits` bits from the stream and returns a specified unsigned int type
         ///  containing them in the least significant end, returning an error if the
         ///  specified number of bits could not be read.
-        pub fn readBitsNoEof(self: *Self, comptime U: type, bits: usize) !U {
+        pub fn read_bits_no_eof(self: *Self, comptime U: type, bits: usize) !U {
             var n: usize = undefined;
             const result = try self.readBits(U, bits, &n);
             if (n < bits) return error.EndOfStream;
@@ -41,7 +41,7 @@ pub fn BitReader(comptime endian: std.builtin.Endian, comptime ReaderType: type)
         /// Reads `bits` bits from the stream and returns a specified unsigned int type
         ///  containing them in the least significant end. The number of bits successfully
         ///  read is placed in `out_bits`, as reaching the end of the stream is not an error.
-        pub fn readBits(self: *Self, comptime U: type, bits: usize, out_bits: *usize) Error!U {
+        pub fn read_bits(self: *Self, comptime U: type, bits: usize, out_bits: *usize) Error!U {
             //by extending the buffer to a minimum of u8 we can cover a number of edge cases
             // related to shifting and casting.
             const u_bit_count = @bitSizeOf(U);
@@ -126,7 +126,7 @@ pub fn BitReader(comptime endian: std.builtin.Endian, comptime ReaderType: type)
             return @as(U, @intCast(out_buffer));
         }
 
-        pub fn alignToByte(self: *Self) void {
+        pub fn align_to_byte(self: *Self) void {
             self.bit_buffer = 0;
             self.bit_count = 0;
         }
@@ -153,7 +153,7 @@ pub fn BitReader(comptime endian: std.builtin.Endian, comptime ReaderType: type)
     };
 }
 
-pub fn bitReader(
+pub fn bit_reader(
     comptime endian: std.builtin.Endian,
     underlying_stream: anytype,
 ) BitReader(endian, @TypeOf(underlying_stream)) {

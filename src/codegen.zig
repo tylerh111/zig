@@ -44,7 +44,7 @@ pub const DebugInfoOutput = union(enum) {
     none,
 };
 
-pub fn generateFunction(
+pub fn generate_function(
     lf: *link.File,
     src_loc: Module.SrcLoc,
     func_index: InternPool.Index,
@@ -76,7 +76,7 @@ pub fn generateFunction(
     }
 }
 
-pub fn generateLazyFunction(
+pub fn generate_lazy_function(
     lf: *link.File,
     src_loc: Module.SrcLoc,
     lazy_sym: link.File.LazySymbol,
@@ -94,7 +94,7 @@ pub fn generateLazyFunction(
     }
 }
 
-fn writeFloat(comptime F: type, f: F, target: Target, endian: std.builtin.Endian, code: []u8) void {
+fn write_float(comptime F: type, f: F, target: Target, endian: std.builtin.Endian, code: []u8) void {
     _ = target;
     const bits = @typeInfo(F).Float.bits;
     const Int = @Type(.{ .Int = .{ .signedness = .unsigned, .bits = bits } });
@@ -102,7 +102,7 @@ fn writeFloat(comptime F: type, f: F, target: Target, endian: std.builtin.Endian
     mem.writeInt(Int, code[0..@divExact(bits, 8)], int, endian);
 }
 
-pub fn generateLazySymbol(
+pub fn generate_lazy_symbol(
     bin_file: *link.File,
     src_loc: Module.SrcLoc,
     lazy_sym: link.File.LazySymbol,
@@ -168,7 +168,7 @@ pub fn generateLazySymbol(
     ) };
 }
 
-pub fn generateSymbol(
+pub fn generate_symbol(
     bin_file: *link.File,
     src_loc: Module.SrcLoc,
     val: Value,
@@ -615,7 +615,7 @@ pub fn generateSymbol(
     return .ok;
 }
 
-fn lowerPtr(
+fn lower_ptr(
     bin_file: *link.File,
     src_loc: Module.SrcLoc,
     ptr_val: InternPool.Index,
@@ -680,7 +680,7 @@ const RelocInfo = struct {
     parent_atom_index: u32,
 };
 
-fn lowerAnonDeclRef(
+fn lower_anon_decl_ref(
     lf: *link.File,
     src_loc: Module.SrcLoc,
     anon_decl: InternPool.Key.Ptr.BaseAddr.AnonDecl,
@@ -727,7 +727,7 @@ fn lowerAnonDeclRef(
     return Result.ok;
 }
 
-fn lowerDeclRef(
+fn lower_decl_ref(
     lf: *link.File,
     src_loc: Module.SrcLoc,
     decl_index: InternPool.DeclIndex,
@@ -822,7 +822,7 @@ pub const GenResult = union(enum) {
     }
 };
 
-fn genDeclRef(
+fn gen_decl_ref(
     lf: *link.File,
     src_loc: Module.SrcLoc,
     val: Value,
@@ -928,7 +928,7 @@ fn genDeclRef(
     }
 }
 
-fn genUnnamedConst(
+fn gen_unnamed_const(
     lf: *link.File,
     src_loc: Module.SrcLoc,
     val: Value,
@@ -967,7 +967,7 @@ fn genUnnamedConst(
     }
 }
 
-pub fn genTypedValue(
+pub fn gen_typed_value(
     lf: *link.File,
     src_loc: Module.SrcLoc,
     val: Value,
@@ -1092,7 +1092,7 @@ pub fn genTypedValue(
     return genUnnamedConst(lf, src_loc, val, owner_decl_index);
 }
 
-pub fn errUnionPayloadOffset(payload_ty: Type, mod: *Module) u64 {
+pub fn err_union_payload_offset(payload_ty: Type, mod: *Module) u64 {
     if (!payload_ty.hasRuntimeBitsIgnoreComptime(mod)) return 0;
     const payload_align = payload_ty.abiAlignment(mod);
     const error_align = Type.anyerror.abiAlignment(mod);
@@ -1103,7 +1103,7 @@ pub fn errUnionPayloadOffset(payload_ty: Type, mod: *Module) u64 {
     }
 }
 
-pub fn errUnionErrorOffset(payload_ty: Type, mod: *Module) u64 {
+pub fn err_union_error_offset(payload_ty: Type, mod: *Module) u64 {
     if (!payload_ty.hasRuntimeBitsIgnoreComptime(mod)) return 0;
     const payload_align = payload_ty.abiAlignment(mod);
     const error_align = Type.anyerror.abiAlignment(mod);

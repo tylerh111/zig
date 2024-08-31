@@ -11,7 +11,7 @@ const special_exponent = 0x7fffffff;
 pub const min_buffer_size = 53;
 
 /// Returns the minimum buffer size needed to print every float of a specific type and format.
-pub fn bufferSize(comptime mode: Format, comptime T: type) comptime_int {
+pub fn buffer_size(comptime mode: Format, comptime T: type) comptime_int {
     comptime std.debug.assert(@typeInfo(T) == .Float);
     return switch (mode) {
         .scientific => 53,
@@ -52,7 +52,7 @@ pub const FormatOptions = struct {
 ///
 /// When printing full precision decimals, use `bufferSize` to get the required space. It is
 /// recommended to bound decimal output with a fixed precision to reduce the required buffer size.
-pub fn formatFloat(buf: []u8, v_: anytype, options: FormatOptions) FormatError![]const u8 {
+pub fn format_float(buf: []u8, v_: anytype, options: FormatOptions) FormatError![]const u8 {
     const v = switch (@TypeOf(v_)) {
         // comptime_float internally is a f128; this preserves precision.
         comptime_float => @as(f128, v_),
@@ -88,7 +88,7 @@ pub fn FloatDecimal(comptime T: type) type {
     };
 }
 
-fn copySpecialStr(buf: []u8, f: anytype) []const u8 {
+fn copy_special_str(buf: []u8, f: anytype) []const u8 {
     if (f.sign) {
         buf[0] = '-';
     }
@@ -101,7 +101,7 @@ fn copySpecialStr(buf: []u8, f: anytype) []const u8 {
     return buf[0 .. 3 + offset];
 }
 
-fn writeDecimal(buf: []u8, value: anytype, count: usize) void {
+fn write_decimal(buf: []u8, value: anytype, count: usize) void {
     var i: usize = 0;
 
     while (i + 2 < count) : (i += 2) {
@@ -119,7 +119,7 @@ fn writeDecimal(buf: []u8, value: anytype, count: usize) void {
     }
 }
 
-fn isPowerOf10(n_: u128) bool {
+fn is_power_of10(n_: u128) bool {
     var n = n_;
     while (n != 0) : (n /= 10) {
         if (n % 10 != 0) return false;
@@ -192,7 +192,7 @@ fn round(comptime T: type, f: FloatDecimal(T), mode: RoundMode, precision: usize
 /// will not fit.
 ///
 /// It is recommended to bound decimal formatting with an exact precision.
-pub fn formatScientific(comptime T: type, buf: []u8, f_: FloatDecimal(T), precision: ?usize) FormatError![]const u8 {
+pub fn format_scientific(comptime T: type, buf: []u8, f_: FloatDecimal(T), precision: ?usize) FormatError![]const u8 {
     std.debug.assert(buf.len >= min_buffer_size);
     var f = f_;
 
@@ -263,7 +263,7 @@ pub fn formatScientific(comptime T: type, buf: []u8, f_: FloatDecimal(T), precis
 /// The buffer provided must be greater than `min_buffer_size` bytes in length. If no precision is
 /// specified, this may still return an error. If precision is specified, `2 + precision` bytes will
 /// always be written.
-pub fn formatDecimal(comptime T: type, buf: []u8, f_: FloatDecimal(T), precision: ?usize) FormatError![]const u8 {
+pub fn format_decimal(comptime T: type, buf: []u8, f_: FloatDecimal(T), precision: ?usize) FormatError![]const u8 {
     std.debug.assert(buf.len >= min_buffer_size);
     var f = f_;
 
@@ -358,7 +358,7 @@ fn cast_i32(v: anytype) i32 {
 }
 
 /// Convert a binary float representation to decimal.
-pub fn binaryToDecimal(comptime T: type, bits: T, mantissa_bits: std.math.Log2Int(T), exponent_bits: u5, explicit_leading_bit: bool, comptime tables: anytype) FloatDecimal(T) {
+pub fn binary_to_decimal(comptime T: type, bits: T, mantissa_bits: std.math.Log2Int(T), exponent_bits: u5, explicit_leading_bit: bool, comptime tables: anytype) FloatDecimal(T) {
     if (T != tables.T) {
         @compileError("table type does not match backend type: " ++ @typeName(tables.T) ++ " != " ++ @typeName(T));
     }
@@ -495,7 +495,7 @@ pub fn binaryToDecimal(comptime T: type, bits: T, mantissa_bits: std.math.Log2In
     };
 }
 
-fn decimalLength(v: anytype) u32 {
+fn decimal_length(v: anytype) u32 {
     switch (@TypeOf(v)) {
         u32, u64 => {
             std.debug.assert(v < 100000000000000000);
@@ -532,24 +532,24 @@ fn decimalLength(v: anytype) u32 {
 }
 
 // floor(log_10(2^e))
-fn log10Pow2(e: u32) u32 {
+fn log10_pow2(e: u32) u32 {
     std.debug.assert(e <= 1 << 15);
     return @intCast((@as(u64, @intCast(e)) * 169464822037455) >> 49);
 }
 
 // floor(log_10(5^e))
-fn log10Pow5(e: u32) u32 {
+fn log10_pow5(e: u32) u32 {
     std.debug.assert(e <= 1 << 15);
     return @intCast((@as(u64, @intCast(e)) * 196742565691928) >> 48);
 }
 
 // if (e == 0) 1 else ceil(log_2(5^e))
-fn pow5Bits(e: u32) u32 {
+fn pow5_bits(e: u32) u32 {
     std.debug.assert(e <= 1 << 15);
     return @intCast(((@as(u64, @intCast(e)) * 163391164108059) >> 46) + 1);
 }
 
-fn pow5Factor(value_: anytype) u32 {
+fn pow5_factor(value_: anytype) u32 {
     var count: u32 = 0;
     var value = value_;
     while (value > 0) : ({
@@ -561,19 +561,19 @@ fn pow5Factor(value_: anytype) u32 {
     return 0;
 }
 
-fn multipleOfPowerOf5(value: anytype, p: u32) bool {
+fn multiple_of_power_of5(value: anytype, p: u32) bool {
     const T = @TypeOf(value);
     std.debug.assert(@typeInfo(T) == .Int);
     return pow5Factor(value) >= p;
 }
 
-fn multipleOfPowerOf2(value: anytype, p: u32) bool {
+fn multiple_of_power_of2(value: anytype, p: u32) bool {
     const T = @TypeOf(value);
     std.debug.assert(@typeInfo(T) == .Int);
     return (value & ((@as(T, 1) << @as(std.math.Log2Int(T), @intCast(p))) - 1)) == 0;
 }
 
-fn mulShift128(m: u128, mul: *const [4]u64, j: u32) u128 {
+fn mul_shift128(m: u128, mul: *const [4]u64, j: u32) u128 {
     std.debug.assert(j > 128);
     const a: [2]u64 = .{ @truncate(m), @truncate(m >> 64) };
     const r = mul_128_256_shift(&a, mul, j, 0);
@@ -639,7 +639,7 @@ pub const Backend128_Tables = struct {
     const bound2 = 127;
     const adjust_q = true;
 
-    fn computePow5(i: u32) [4]u64 {
+    fn compute_pow5(i: u32) [4]u64 {
         const base = i / FLOAT128_POW5_TABLE_SIZE;
         const base2 = base * FLOAT128_POW5_TABLE_SIZE;
         const mul = &FLOAT128_POW5_SPLIT[base];
@@ -656,7 +656,7 @@ pub const Backend128_Tables = struct {
         }
     }
 
-    fn computeInvPow5(i: u32) [4]u64 {
+    fn compute_inv_pow5(i: u32) [4]u64 {
         const base = (i + FLOAT128_POW5_TABLE_SIZE - 1) / FLOAT128_POW5_TABLE_SIZE;
         const base2 = base * FLOAT128_POW5_TABLE_SIZE;
         const mul = &FLOAT128_POW5_INV_SPLIT[base]; // 1 / 5^base2
@@ -674,7 +674,7 @@ pub const Backend128_Tables = struct {
     }
 };
 
-fn mulShift64(m: u64, mul: *const [2]u64, j: u32) u64 {
+fn mul_shift64(m: u64, mul: *const [2]u64, j: u32) u64 {
     std.debug.assert(j > 64);
     const b0 = @as(u128, m) * mul[0];
     const b2 = @as(u128, m) * mul[1];
@@ -697,11 +697,11 @@ pub const Backend64_TablesFull = struct {
     const bound2 = 63;
     const adjust_q = false;
 
-    fn computePow5(i: u32) [2]u64 {
+    fn compute_pow5(i: u32) [2]u64 {
         return FLOAT64_POW5_SPLIT[i];
     }
 
-    fn computeInvPow5(i: u32) [2]u64 {
+    fn compute_inv_pow5(i: u32) [2]u64 {
         return FLOAT64_POW5_INV_SPLIT[i];
     }
 };
@@ -716,7 +716,7 @@ pub const Backend64_TablesSmall = struct {
     const bound2 = 63;
     const adjust_q = false;
 
-    fn computePow5(i: u32) [2]u64 {
+    fn compute_pow5(i: u32) [2]u64 {
         const base = i / FLOAT64_POW5_TABLE_SIZE;
         const base2 = base * FLOAT64_POW5_TABLE_SIZE;
         const mul = &FLOAT64_POW5_SPLIT2[base];
@@ -734,7 +734,7 @@ pub const Backend64_TablesSmall = struct {
         }
     }
 
-    fn computeInvPow5(i: u32) [2]u64 {
+    fn compute_inv_pow5(i: u32) [2]u64 {
         const base = (i + FLOAT64_POW5_TABLE_SIZE - 1) / FLOAT64_POW5_TABLE_SIZE;
         const base2 = base * FLOAT64_POW5_TABLE_SIZE;
         const mul = &FLOAT64_POW5_INV_SPLIT2[base]; // 1 / 5^base2

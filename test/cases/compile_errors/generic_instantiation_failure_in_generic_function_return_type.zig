@@ -5,11 +5,11 @@ pub export fn entry() void {
     _ = sliceAsBytes(ohnoes);
     _ = &ohnoes;
 }
-fn sliceAsBytes(slice: anytype) isPtrTo(.Array)(@TypeOf(slice)) {}
+fn slice_as_bytes(slice: anytype) isPtrTo(.Array)(@TypeOf(slice)) {}
 
 pub const TraitFn = fn (type) bool;
 
-pub fn isPtrTo(comptime id: std.builtin.TypeId) TraitFn {
+pub fn is_ptr_to(comptime id: std.builtin.TypeId) TraitFn {
     const Closure = struct {
         pub fn trait(comptime T: type) bool {
             if (!comptime isSingleItemPtr(T)) return false;
@@ -19,7 +19,7 @@ pub fn isPtrTo(comptime id: std.builtin.TypeId) TraitFn {
     return Closure.trait;
 }
 
-pub fn isSingleItemPtr(comptime T: type) bool {
+pub fn is_single_item_ptr(comptime T: type) bool {
     if (comptime is(.Pointer)(T)) {
         return @typeInfo(T).Pointer.size == .One;
     }

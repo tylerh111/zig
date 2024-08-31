@@ -1697,7 +1697,7 @@ pub const FILE_EVENT = struct {
     /// Some other file/filesystem got mounted over the watched file/directory.
     pub const MOUNTEDOVER = 0x40000000;
 
-    pub fn isException(event: u32) bool {
+    pub fn is_exception(event: u32) bool {
         return event & (UNMOUNTED | DELETE | RENAME_TO | RENAME_FROM | MOUNTEDOVER) > 0;
     }
 };
@@ -1815,7 +1815,7 @@ const IoCtlCommand = enum(u32) {
     read_write = 0xc0000000,
 };
 
-fn ioImpl(cmd: IoCtlCommand, io_type: u8, nr: u8, comptime IOT: type) i32 {
+fn io_impl(cmd: IoCtlCommand, io_type: u8, nr: u8, comptime IOT: type) i32 {
     const size = @as(u32, @intCast(@as(u8, @truncate(@sizeOf(IOT))))) << 16;
     const t = @as(u32, @intCast(io_type)) << 8;
     return @as(i32, @bitCast(@intFromEnum(cmd) | size | t | nr));

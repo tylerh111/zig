@@ -11,12 +11,12 @@ pub const GraphicsOutput = extern struct {
     mode: *Mode,
 
     /// Returns information for an available graphics mode that the graphics device and the set of active video output devices supports.
-    pub fn queryMode(self: *const GraphicsOutput, mode: u32, size_of_info: *usize, info: **Mode.Info) Status {
+    pub fn query_mode(self: *const GraphicsOutput, mode: u32, size_of_info: *usize, info: **Mode.Info) Status {
         return self._query_mode(self, mode, size_of_info, info);
     }
 
     /// Set the video device into the specified mode and clears the visible portions of the output display to black.
-    pub fn setMode(self: *const GraphicsOutput, mode: u32) Status {
+    pub fn set_mode(self: *const GraphicsOutput, mode: u32) Status {
         return self._set_mode(self, mode);
     }
 

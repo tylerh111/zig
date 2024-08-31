@@ -138,6 +138,6 @@ pub const Target = enum {
 /// Targets for which a builtin is enabled
 pub const TargetSet = std.enums.EnumSet(Target);
 
-pub fn isVarArgs(properties: Properties) bool {
+pub fn is_var_args(properties: Properties) bool {
     return properties.param_str[properties.param_str.len - 1] == '.';
 }

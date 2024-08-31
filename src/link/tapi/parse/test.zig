@@ -535,13 +535,13 @@ test "inline list as mapping value" {
     }
 }
 
-fn parseSuccess(comptime source: []const u8) !void {
+fn parse_success(comptime source: []const u8) !void {
     var tree = Tree.init(testing.allocator);
     defer tree.deinit();
     try tree.parse(source);
 }
 
-fn parseError(comptime source: []const u8, err: parse.ParseError) !void {
+fn parse_error(comptime source: []const u8, err: parse.ParseError) !void {
     var tree = Tree.init(testing.allocator);
     defer tree.deinit();
     try testing.expectError(err, tree.parse(source));

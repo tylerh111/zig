@@ -23,7 +23,7 @@ pub fn insertion(
         items: []T,
         sub_ctx: @TypeOf(context),
 
-        pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
+        pub fn less_than(ctx: @This(), a: usize, b: usize) bool {
             return lessThanFn(ctx.sub_ctx, ctx.items[a], ctx.items[b]);
         }
 
@@ -39,7 +39,7 @@ pub fn insertion(
 /// `context` must have methods `swap` and `lessThan`,
 /// which each take 2 `usize` parameters indicating the index of an item.
 /// Sorts in ascending order with respect to `lessThan`.
-pub fn insertionContext(a: usize, b: usize, context: anytype) void {
+pub fn insertion_context(a: usize, b: usize, context: anytype) void {
     assert(a <= b);
 
     var i = a + 1;
@@ -64,7 +64,7 @@ pub fn heap(
         items: []T,
         sub_ctx: @TypeOf(context),
 
-        pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
+        pub fn less_than(ctx: @This(), a: usize, b: usize) bool {
             return lessThanFn(ctx.sub_ctx, ctx.items[a], ctx.items[b]);
         }
 
@@ -80,7 +80,7 @@ pub fn heap(
 /// `context` must have methods `swap` and `lessThan`,
 /// which each take 2 `usize` parameters indicating the index of an item.
 /// Sorts in ascending order with respect to `lessThan`.
-pub fn heapContext(a: usize, b: usize, context: anytype) void {
+pub fn heap_context(a: usize, b: usize, context: anytype) void {
     assert(a <= b);
     // build the heap in linear time.
     var i = a + (b - a) / 2;
@@ -98,7 +98,7 @@ pub fn heapContext(a: usize, b: usize, context: anytype) void {
     }
 }
 
-fn siftDown(a: usize, target: usize, b: usize, context: anytype) void {
+fn sift_down(a: usize, target: usize, b: usize, context: anytype) void {
     var cur = target;
     while (true) {
         // When we don't overflow from the multiply below, the following expression equals (2*cur) - (2*a) + a + 1
@@ -169,7 +169,7 @@ const IdAndValue = struct {
     id: usize,
     value: i32,
 
-    fn lessThan(context: void, a: IdAndValue, b: IdAndValue) bool {
+    fn less_than(context: void, a: IdAndValue, b: IdAndValue) bool {
         _ = context;
         return a.value < b.value;
     }
@@ -343,7 +343,7 @@ test "sort with context in the middle of a slice" {
     const Context = struct {
         items: []i32,
 
-        pub fn lessThan(ctx: @This(), a: usize, b: usize) bool {
+        pub fn less_than(ctx: @This(), a: usize, b: usize) bool {
             return ctx.items[a] < ctx.items[b];
         }
 
@@ -406,7 +406,7 @@ test "sort fuzz testing" {
 /// `items` must be sorted in ascending order with respect to `compareFn`.
 ///
 /// O(log n) complexity.
-pub fn binarySearch(
+pub fn binary_search(
     comptime T: type,
     key: anytype,
     items: []const T,
@@ -515,7 +515,7 @@ test binarySearch {
 /// `items` must be sorted in ascending order with respect to `compareFn`.
 ///
 /// O(log n) complexity.
-pub fn lowerBound(
+pub fn lower_bound(
     comptime T: type,
     key: anytype,
     items: []const T,
@@ -605,7 +605,7 @@ test lowerBound {
 /// `items` must be sorted in ascending order with respect to `compareFn`.
 ///
 /// O(log n) complexity.
-pub fn upperBound(
+pub fn upper_bound(
     comptime T: type,
     key: anytype,
     items: []const T,
@@ -699,7 +699,7 @@ test upperBound {
 /// O(log n) complexity.
 ///
 /// See also: `lowerBound` and `upperBound`.
-pub fn equalRange(
+pub fn equal_range(
     comptime T: type,
     key: anytype,
     items: []const T,
@@ -770,7 +770,7 @@ test equalRange {
     );
 }
 
-pub fn argMin(
+pub fn arg_min(
     comptime T: type,
     items: []const T,
     context: anytype,
@@ -822,7 +822,7 @@ test min {
     try testing.expectEqual(@as(?i32, 7), min(i32, &[_]i32{ 6, 3, 5, 7, 6 }, {}, desc_i32));
 }
 
-pub fn argMax(
+pub fn arg_max(
     comptime T: type,
     items: []const T,
     context: anytype,
@@ -874,7 +874,7 @@ test max {
     try testing.expectEqual(@as(?i32, 3), max(i32, &[_]i32{ 6, 3, 5, 7, 6 }, {}, desc_i32));
 }
 
-pub fn isSorted(
+pub fn is_sorted(
     comptime T: type,
     items: []const T,
     context: anytype,

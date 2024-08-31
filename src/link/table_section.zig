@@ -10,7 +10,7 @@ pub fn TableSection(comptime Entry: type) type {
             self.lookup.deinit(allocator);
         }
 
-        pub fn allocateEntry(self: *Self, allocator: Allocator, entry: Entry) Allocator.Error!Index {
+        pub fn allocate_entry(self: *Self, allocator: Allocator, entry: Entry) Allocator.Error!Index {
             try self.entries.ensureUnusedCapacity(allocator, 1);
             const index = blk: {
                 if (self.free_list.popOrNull()) |index| {
@@ -28,7 +28,7 @@ pub fn TableSection(comptime Entry: type) type {
             return index;
         }
 
-        pub fn freeEntry(self: *Self, allocator: Allocator, entry: Entry) void {
+        pub fn free_entry(self: *Self, allocator: Allocator, entry: Entry) void {
             const index = self.lookup.get(entry) orelse return;
             self.free_list.append(allocator, index) catch {};
             self.entries.items[index] = undefined;

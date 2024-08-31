@@ -26,11 +26,11 @@ const example_document_str =
     \\}
 ;
 
-fn expectNext(scanner_or_reader: anytype, expected_token: Token) !void {
+fn expect_next(scanner_or_reader: anytype, expected_token: Token) !void {
     return expectEqualTokens(expected_token, try scanner_or_reader.next());
 }
 
-fn expectPeekNext(scanner_or_reader: anytype, expected_token_type: TokenType, expected_token: Token) !void {
+fn expect_peek_next(scanner_or_reader: anytype, expected_token_type: TokenType, expected_token: Token) !void {
     try std.testing.expectEqual(expected_token_type, try scanner_or_reader.peekNextTokenType());
     try expectEqualTokens(expected_token, try scanner_or_reader.next());
 }
@@ -81,7 +81,7 @@ const all_types_test_case =
     \\]
 ;
 
-fn testAllTypes(source: anytype, large_buffer: bool) !void {
+fn test_all_types(source: anytype, large_buffer: bool) !void {
     try expectPeekNext(source, .array_begin, .array_begin);
     try expectPeekNext(source, .string, Token{ .string = "" });
     try expectPeekNext(source, .string, Token{ .partial_string = "a" });
@@ -288,7 +288,7 @@ test "nesting" {
     }
 }
 
-fn expectMaybeError(document_str: []const u8, maybe_error: ?Error) !void {
+fn expect_maybe_error(document_str: []const u8, maybe_error: ?Error) !void {
     var scanner = JsonScanner.initCompleteInput(std.testing.allocator, document_str);
     defer scanner.deinit();
 
@@ -304,7 +304,7 @@ fn expectMaybeError(document_str: []const u8, maybe_error: ?Error) !void {
     if (maybe_error != null) return error.ExpectedError;
 }
 
-fn expectEqualTokens(expected_token: Token, actual_token: Token) !void {
+fn expect_equal_tokens(expected_token: Token, actual_token: Token) !void {
     try std.testing.expectEqual(std.meta.activeTag(expected_token), std.meta.activeTag(actual_token));
     switch (expected_token) {
         .number => |expected_value| {
@@ -317,7 +317,7 @@ fn expectEqualTokens(expected_token: Token, actual_token: Token) !void {
     }
 }
 
-fn testTinyBufferSize(document_str: []const u8) !void {
+fn test_tiny_buffer_size(document_str: []const u8) !void {
     var tiny_stream = std.io.fixedBufferStream(document_str);
     var normal_stream = std.io.fixedBufferStream(document_str);
 
@@ -331,7 +331,7 @@ fn testTinyBufferSize(document_str: []const u8) !void {
         return err;
     };
 }
-fn expectEqualStreamOfTokens(control_json_reader: anytype, test_json_reader: anytype) !void {
+fn expect_equal_stream_of_tokens(control_json_reader: anytype, test_json_reader: anytype) !void {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     while (true) {
@@ -362,7 +362,7 @@ test "validate" {
     try std.testing.expectEqual(false, try validate(std.testing.allocator, "{{{{[]}}}]"));
 }
 
-fn testSkipValue(s: []const u8) !void {
+fn test_skip_value(s: []const u8) !void {
     var scanner = JsonScanner.initCompleteInput(std.testing.allocator, s);
     defer scanner.deinit();
     try scanner.skipValue();
@@ -397,7 +397,7 @@ test "skipValue" {
     try std.testing.expectError(error.SyntaxError, testSkipValue("[102, 111, 111}"));
 }
 
-fn testEnsureStackCapacity(do_ensure: bool) !void {
+fn test_ensure_stack_capacity(do_ensure: bool) !void {
     var fail_alloc = std.testing.FailingAllocator.init(std.testing.allocator, .{ .fail_index = 1 });
     const failing_allocator = fail_alloc.allocator();
 
@@ -419,7 +419,7 @@ test "ensureTotalStackCapacity" {
     try testEnsureStackCapacity(true);
 }
 
-fn testDiagnosticsFromSource(expected_error: ?anyerror, line: u64, col: u64, byte_offset: u64, source: anytype) !void {
+fn test_diagnostics_from_source(expected_error: ?anyerror, line: u64, col: u64, byte_offset: u64, source: anytype) !void {
     var diagnostics = Diagnostics{};
     source.enableDiagnostics(&diagnostics);
 
@@ -433,7 +433,7 @@ fn testDiagnosticsFromSource(expected_error: ?anyerror, line: u64, col: u64, byt
     try std.testing.expectEqual(col, diagnostics.getColumn());
     try std.testing.expectEqual(byte_offset, diagnostics.getByteOffset());
 }
-fn testDiagnostics(expected_error: ?anyerror, line: u64, col: u64, byte_offset: u64, s: []const u8) !void {
+fn test_diagnostics(expected_error: ?anyerror, line: u64, col: u64, byte_offset: u64, s: []const u8) !void {
     var scanner = JsonScanner.initCompleteInput(std.testing.allocator, s);
     defer scanner.deinit();
     try testDiagnosticsFromSource(expected_error, line, col, byte_offset, &scanner);

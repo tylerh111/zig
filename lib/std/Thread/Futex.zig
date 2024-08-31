@@ -42,7 +42,7 @@ pub fn wait(ptr: *const atomic.Value(u32), expect: u32) void {
 ///
 /// The checking of `ptr` and `expect`, along with blocking the caller, is done atomically
 /// and totally ordered (sequentially consistent) with respect to other wait()/wake() calls on the same `ptr`.
-pub fn timedWait(ptr: *const atomic.Value(u32), expect: u32, timeout_ns: u64) error{Timeout}!void {
+pub fn timed_wait(ptr: *const atomic.Value(u32), expect: u32, timeout_ns: u64) error{Timeout}!void {
     @setCold(true);
 
     // Avoid calling into the OS for no-op timeouts.
@@ -682,7 +682,7 @@ const PosixImpl = struct {
             return removed;
         }
 
-        fn tryRemove(treap: *Treap, address: usize, waiter: *Waiter) bool {
+        fn try_remove(treap: *Treap, address: usize, waiter: *Waiter) bool {
             if (!waiter.is_queued) {
                 return false;
             }

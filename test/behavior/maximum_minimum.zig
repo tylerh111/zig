@@ -12,7 +12,7 @@ test "@max" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x: i32 = 10;
             var y: f32 = 0.68;
             var nan: f32 = std.math.nan(f32);
@@ -37,7 +37,7 @@ test "@max on vectors" {
         !comptime std.Target.x86.featureSetHas(builtin.cpu.features, .sse4_1)) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: @Vector(4, i32) = [4]i32{ 2147483647, -2, 30, 40 };
             var b: @Vector(4, i32) = [4]i32{ 1, 2147483647, 3, 4 };
             const x = @max(a, b);
@@ -68,7 +68,7 @@ test "@min" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var x: i32 = 10;
             var y: f32 = 0.68;
             var nan: f32 = std.math.nan(f32);
@@ -93,7 +93,7 @@ test "@min for vectors" {
         !comptime std.Target.x86.featureSetHas(builtin.cpu.features, .sse4_1)) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var a: @Vector(4, i32) = [4]i32{ 2147483647, -2, 30, 40 };
             var b: @Vector(4, i32) = [4]i32{ 1, 2147483647, 3, 4 };
             _ = .{ &a, &b };
@@ -127,7 +127,7 @@ test "@min/max for floats" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest(comptime T: type) !void {
+        fn do_the_test(comptime T: type) !void {
             var x: T = -3.14;
             var y: T = 5.27;
             _ = .{ &x, &y };

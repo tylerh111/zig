@@ -2,6 +2,6 @@ comptime {
     @export(internalName, .{ .name = "foo", .linkage = .strong });
 }
 
-fn internalName() callconv(.C) void {}
+fn internal_name() callconv(.C) void {}
 
 // obj

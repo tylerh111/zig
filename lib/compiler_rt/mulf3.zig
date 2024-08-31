@@ -162,7 +162,7 @@ pub inline fn mulf3(comptime T: type, a: T, b: T) T {
 /// Returns `true` if the right shift is inexact (i.e. any bit shifted out is non-zero)
 ///
 /// This is analogous to an shr version of `@shlWithOverflow`
-fn wideShrWithTruncation(comptime Z: type, hi: *Z, lo: *Z, count: u32) bool {
+fn wide_shr_with_truncation(comptime Z: type, hi: *Z, lo: *Z, count: u32) bool {
     @setRuntimeSafety(builtin.is_test);
     const typeWidth = @typeInfo(Z).Int.bits;
     var inexact = false;

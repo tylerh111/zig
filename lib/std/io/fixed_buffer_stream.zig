@@ -40,7 +40,7 @@ pub fn FixedBufferStream(comptime Buffer: type) type {
             return .{ .context = self };
         }
 
-        pub fn seekableStream(self: *Self) SeekableStream {
+        pub fn seekable_stream(self: *Self) SeekableStream {
             return .{ .context = self };
         }
 
@@ -71,11 +71,11 @@ pub fn FixedBufferStream(comptime Buffer: type) type {
             return n;
         }
 
-        pub fn seekTo(self: *Self, pos: u64) SeekError!void {
+        pub fn seek_to(self: *Self, pos: u64) SeekError!void {
             self.pos = @min(std.math.lossyCast(usize, pos), self.buffer.len);
         }
 
-        pub fn seekBy(self: *Self, amt: i64) SeekError!void {
+        pub fn seek_by(self: *Self, amt: i64) SeekError!void {
             if (amt < 0) {
                 const abs_amt = @abs(amt);
                 const abs_amt_usize = std.math.cast(usize, abs_amt) orelse std.math.maxInt(usize);
@@ -91,15 +91,15 @@ pub fn FixedBufferStream(comptime Buffer: type) type {
             }
         }
 
-        pub fn getEndPos(self: *Self) GetSeekPosError!u64 {
+        pub fn get_end_pos(self: *Self) GetSeekPosError!u64 {
             return self.buffer.len;
         }
 
-        pub fn getPos(self: *Self) GetSeekPosError!u64 {
+        pub fn get_pos(self: *Self) GetSeekPosError!u64 {
             return self.pos;
         }
 
-        pub fn getWritten(self: Self) Buffer {
+        pub fn get_written(self: Self) Buffer {
             return self.buffer[0..self.pos];
         }
 
@@ -109,7 +109,7 @@ pub fn FixedBufferStream(comptime Buffer: type) type {
     };
 }
 
-pub fn fixedBufferStream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {
+pub fn fixed_buffer_stream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {
     return .{ .buffer = buffer, .pos = 0 };
 }
 

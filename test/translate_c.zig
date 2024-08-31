@@ -9,7 +9,7 @@ const tests = @import("tests.zig");
 // *                                                      *
 // ********************************************************
 
-pub fn addCases(cases: *tests.TranslateCContext) void {
+pub fn add_cases(cases: *tests.TranslateCContext) void {
     const default_enum_type = if (builtin.abi == .msvc) "c_int" else "c_uint";
 
     cases.add("do while with breaks",
@@ -1766,7 +1766,7 @@ pub fn addCases(cases: *tests.TranslateCContext) void {
         ,
         \\pub const glClearPFN = PFNGLCLEARPROC;
         ,
-        \\pub inline fn glClearUnion(arg_2: GLbitfield) void {
+        \\pub inline fn gl_clear_union(arg_2: GLbitfield) void {
         \\    return glProcs.gl.Clear.?(arg_2);
         \\}
         ,

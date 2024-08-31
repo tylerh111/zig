@@ -41,7 +41,7 @@ test "equality compare optional pointers" {
     try comptime testNullPtrsEql();
 }
 
-fn testNullPtrsEql() !void {
+fn test_null_ptrs_eql() !void {
     var number: i32 = 1234;
 
     var x: ?*i32 = null;
@@ -63,7 +63,7 @@ test "optional with zero-bit type" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest(comptime ZeroBit: type, comptime zero_bit: ZeroBit) !void {
+        fn do_the_test(comptime ZeroBit: type, comptime zero_bit: ZeroBit) !void {
             const WithRuntime = struct {
                 zero_bit: ZeroBit,
                 runtime: u1,
@@ -122,7 +122,7 @@ test "address of unwrap optional" {
 
         var global: ?Foo = null;
 
-        pub fn getFoo() anyerror!*Foo {
+        pub fn get_foo() anyerror!*Foo {
             return &global.?;
         }
     };
@@ -157,7 +157,7 @@ test "equality compare optionals and non-optionals" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var five: isize = 5;
             var ten: isize = 10;
             var opt_null: ?isize = null;
@@ -332,7 +332,7 @@ test "coerce an anon struct literal to optional struct" {
         const Struct = struct {
             field: u32,
         };
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var maybe_dims: ?Struct = null;
             maybe_dims = .{ .field = 1 };
             try expect(maybe_dims.?.field == 1);
@@ -349,7 +349,7 @@ test "0-bit child type coerced to optional return ptr result location" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var y = Foo{};
             const z = y.thing();
             try expect(z != null);
@@ -375,7 +375,7 @@ test "0-bit child type coerced to optional" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var it: Foo = .{
                 .list = undefined,
             };
@@ -474,7 +474,7 @@ test "optional pointer to zero bit error union payload" {
 
 const NoReturn = struct {
     var a: u32 = undefined;
-    fn someData() bool {
+    fn some_data() bool {
         a -= 1;
         return a == 0;
     }
@@ -483,7 +483,7 @@ const NoReturn = struct {
             if (someData()) return null;
         }
     }
-    fn testOrelse() u32 {
+    fn test_orelse() u32 {
         loop() orelse return 123;
         @compileError("bad");
     }

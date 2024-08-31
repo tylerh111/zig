@@ -26,7 +26,7 @@ const Data = struct {
     feature: Feature,
 };
 
-pub fn findByMnemonic(
+pub fn find_by_mnemonic(
     prefix: Instruction.Prefix,
     mnemonic: Mnemonic,
     ops: []const Instruction.Operand,
@@ -79,7 +79,7 @@ pub fn findByMnemonic(
 }
 
 /// Returns first matching encoding by opcode.
-pub fn findByOpcode(opc: []const u8, prefixes: struct {
+pub fn find_by_opcode(opc: []const u8, prefixes: struct {
     legacy: LegacyPrefixes,
     rex: Rex,
 }, modrm_ext: ?u3) ?Encoding {
@@ -105,7 +105,7 @@ pub fn opcode(encoding: *const Encoding) []const u8 {
     return encoding.data.opc[0..encoding.data.opc_len];
 }
 
-pub fn mandatoryPrefix(encoding: *const Encoding) ?u8 {
+pub fn mandatory_prefix(encoding: *const Encoding) ?u8 {
     const prefix = encoding.data.opc[0];
     return switch (prefix) {
         0x66, 0xf2, 0xf3 => prefix,
@@ -113,7 +113,7 @@ pub fn mandatoryPrefix(encoding: *const Encoding) ?u8 {
     };
 }
 
-pub fn modRmExt(encoding: Encoding) u3 {
+pub fn mod_rm_ext(encoding: Encoding) u3 {
     return switch (encoding.data.op_en) {
         .m, .mi, .m1, .mc, .vmi => encoding.data.modrm_ext,
         else => unreachable,
@@ -455,7 +455,7 @@ pub const Op = enum {
     ymm, ymm_m256,
     // zig fmt: on
 
-    pub fn fromOperand(operand: Instruction.Operand) Op {
+    pub fn from_operand(operand: Instruction.Operand) Op {
         return switch (operand) {
             .none => .none,
 
@@ -533,7 +533,7 @@ pub const Op = enum {
         };
     }
 
-    pub fn immBitSize(op: Op) u64 {
+    pub fn imm_bit_size(op: Op) u64 {
         return switch (op) {
             .none, .o16, .o32, .o64, .moffs, .m, .sreg => unreachable,
             .al, .cl, .r8, .rm8, .r32_m8 => unreachable,
@@ -552,7 +552,7 @@ pub const Op = enum {
         };
     }
 
-    pub fn regBitSize(op: Op) u64 {
+    pub fn reg_bit_size(op: Op) u64 {
         return switch (op) {
             .none, .o16, .o32, .o64, .moffs, .m, .sreg => unreachable,
             .unity, .imm8, .imm8s, .imm16, .imm16s, .imm32, .imm32s, .imm64 => unreachable,
@@ -568,7 +568,7 @@ pub const Op = enum {
         };
     }
 
-    pub fn memBitSize(op: Op) u64 {
+    pub fn mem_bit_size(op: Op) u64 {
         return switch (op) {
             .none, .o16, .o32, .o64, .moffs, .m, .sreg => unreachable,
             .unity, .imm8, .imm8s, .imm16, .imm16s, .imm32, .imm32s, .imm64 => unreachable,
@@ -585,7 +585,7 @@ pub const Op = enum {
         };
     }
 
-    pub fn isSigned(op: Op) bool {
+    pub fn is_signed(op: Op) bool {
         return switch (op) {
             .unity, .imm8, .imm16, .imm32, .imm64 => false,
             .imm8s, .imm16s, .imm32s => true,
@@ -594,11 +594,11 @@ pub const Op = enum {
         };
     }
 
-    pub fn isUnsigned(op: Op) bool {
+    pub fn is_unsigned(op: Op) bool {
         return !op.isSigned();
     }
 
-    pub fn isRegister(op: Op) bool {
+    pub fn is_register(op: Op) bool {
         // zig fmt: off
         return switch (op) {
             .cl,
@@ -615,7 +615,7 @@ pub const Op = enum {
         // zig fmt: on
     }
 
-    pub fn isImmediate(op: Op) bool {
+    pub fn is_immediate(op: Op) bool {
         // zig fmt: off
         return switch (op) {
             .imm8, .imm16, .imm32, .imm64, 
@@ -628,7 +628,7 @@ pub const Op = enum {
         // zig fmt: on
     }
 
-    pub fn isMemory(op: Op) bool {
+    pub fn is_memory(op: Op) bool {
         // zig fmt: off
         return switch (op) {
             .rm8, .rm16, .rm32, .rm64,
@@ -644,7 +644,7 @@ pub const Op = enum {
         // zig fmt: on
     }
 
-    pub fn isSegmentRegister(op: Op) bool {
+    pub fn is_segment_register(op: Op) bool {
         return switch (op) {
             .moffs, .sreg => true,
             else => false,
@@ -667,7 +667,7 @@ pub const Op = enum {
     }
 
     /// Given an operand `op` checks if `target` is a subset for the purposes of the encoding.
-    pub fn isSubset(op: Op, target: Op) bool {
+    pub fn is_subset(op: Op, target: Op) bool {
         switch (op) {
             .o16, .o32, .o64 => unreachable,
             .moffs, .sreg => return op == target,
@@ -721,14 +721,14 @@ pub const Mode = enum {
     vex_lz_w0,  vex_lz_w1,  vex_lz_wig,
     // zig fmt: on
 
-    pub fn isShort(mode: Mode) bool {
+    pub fn is_short(mode: Mode) bool {
         return switch (mode) {
             .short, .rex_short => true,
             else => false,
         };
     }
 
-    pub fn isLong(mode: Mode) bool {
+    pub fn is_long(mode: Mode) bool {
         return switch (mode) {
             .long,
             .vex_128_w1,
@@ -740,14 +740,14 @@ pub const Mode = enum {
         };
     }
 
-    pub fn isRex(mode: Mode) bool {
+    pub fn is_rex(mode: Mode) bool {
         return switch (mode) {
             else => false,
             .rex, .rex_short => true,
         };
     }
 
-    pub fn isVex(mode: Mode) bool {
+    pub fn is_vex(mode: Mode) bool {
         return switch (mode) {
             // zig fmt: off
             else => false,
@@ -760,7 +760,7 @@ pub const Mode = enum {
         };
     }
 
-    pub fn isVecLong(mode: Mode) bool {
+    pub fn is_vec_long(mode: Mode) bool {
         return switch (mode) {
             // zig fmt: off
             else => unreachable,
@@ -801,7 +801,7 @@ pub const Feature = enum {
     x87,
 };
 
-fn estimateInstructionLength(prefix: Prefix, encoding: Encoding, ops: []const Operand) usize {
+fn estimate_instruction_length(prefix: Prefix, encoding: Encoding, ops: []const Operand) usize {
     var inst = Instruction{
         .prefix = prefix,
         .encoding = encoding,

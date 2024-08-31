@@ -1078,7 +1078,7 @@ const Job = struct {
     llvm_target: LlvmTarget,
 };
 
-fn processOneTarget(job: Job) anyerror!void {
+fn process_one_target(job: Job) anyerror!void {
     const llvm_target = job.llvm_target;
 
     var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
@@ -1489,7 +1489,7 @@ fn processOneTarget(job: Job) anyerror!void {
     render_progress.end();
 }
 
-fn usageAndExit(file: fs.File, arg0: []const u8, code: u8) noreturn {
+fn usage_and_exit(file: fs.File, arg0: []const u8, code: u8) noreturn {
     file.writer().print(
         \\Usage: {s} /path/to/llvm-tblgen /path/git/llvm-project /path/git/zig
         \\
@@ -1501,22 +1501,22 @@ fn usageAndExit(file: fs.File, arg0: []const u8, code: u8) noreturn {
     std.process.exit(code);
 }
 
-fn featureLessThan(context: void, a: Feature, b: Feature) bool {
+fn feature_less_than(context: void, a: Feature, b: Feature) bool {
     _ = context;
     return std.ascii.lessThanIgnoreCase(a.zig_name, b.zig_name);
 }
 
-fn cpuLessThan(context: void, a: Cpu, b: Cpu) bool {
+fn cpu_less_than(context: void, a: Cpu, b: Cpu) bool {
     _ = context;
     return std.ascii.lessThanIgnoreCase(a.zig_name, b.zig_name);
 }
 
-fn asciiLessThan(context: void, a: []const u8, b: []const u8) bool {
+fn ascii_less_than(context: void, a: []const u8, b: []const u8) bool {
     _ = context;
     return std.ascii.lessThanIgnoreCase(a, b);
 }
 
-fn llvmNameToZigName(arena: mem.Allocator, llvm_name: []const u8) ![]const u8 {
+fn llvm_name_to_zig_name(arena: mem.Allocator, llvm_name: []const u8) ![]const u8 {
     const duped = try arena.dupe(u8, llvm_name);
     for (duped) |*byte| switch (byte.*) {
         '-', '.' => byte.* = '_',
@@ -1525,7 +1525,7 @@ fn llvmNameToZigName(arena: mem.Allocator, llvm_name: []const u8) ![]const u8 {
     return duped;
 }
 
-fn llvmNameToZigNameOmit(
+fn llvm_name_to_zig_name_omit(
     arena: mem.Allocator,
     llvm_target: LlvmTarget,
     llvm_name: []const u8,
@@ -1539,7 +1539,7 @@ fn llvmNameToZigNameOmit(
     return try llvmNameToZigName(arena, llvm_name);
 }
 
-fn hasSuperclass(obj: *json.ObjectMap, class_name: []const u8) bool {
+fn has_superclass(obj: *json.ObjectMap, class_name: []const u8) bool {
     const superclasses_json = obj.get("!superclasses") orelse return false;
     for (superclasses_json.array.items) |superclass_json| {
         const superclass = superclass_json.string;
@@ -1550,7 +1550,7 @@ fn hasSuperclass(obj: *json.ObjectMap, class_name: []const u8) bool {
     return false;
 }
 
-fn pruneFeatures(
+fn prune_features(
     arena: mem.Allocator,
     features_table: std.StringHashMap(Feature),
     deps_set: *std.StringHashMap(void),
@@ -1574,7 +1574,7 @@ fn pruneFeatures(
     }
 }
 
-fn walkFeatures(
+fn walk_features(
     features_table: std.StringHashMap(Feature),
     deletion_set: *std.StringHashMap(void),
     feature: Feature,
@@ -1586,7 +1586,7 @@ fn walkFeatures(
     }
 }
 
-fn putDep(
+fn put_dep(
     deps_set: *std.StringHashMap(void),
     features_table: std.StringHashMap(Feature),
     zig_feature_name: []const u8,

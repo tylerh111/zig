@@ -46,18 +46,18 @@ pub const AnalyzeBody = if (build_options.enable_debug_extensions) struct {
         head.* = old.parent;
     }
 
-    pub fn setBodyIndex(self: *@This(), index: usize) void {
+    pub fn set_body_index(self: *@This(), index: usize) void {
         self.body_index = index;
     }
 } else struct {
     pub inline fn push(_: @This()) void {}
     pub inline fn pop(_: @This()) void {}
-    pub inline fn setBodyIndex(_: @This(), _: usize) void {}
+    pub inline fn set_body_index(_: @This(), _: usize) void {}
 };
 
 threadlocal var zir_state: ?*AnalyzeBody = if (build_options.enable_debug_extensions) null else @compileError("Cannot use zir_state without debug extensions.");
 
-pub fn prepAnalyzeBody(sema: *Sema, block: *Sema.Block, body: []const Zir.Inst.Index) AnalyzeBody {
+pub fn prep_analyze_body(sema: *Sema, block: *Sema.Block, body: []const Zir.Inst.Index) AnalyzeBody {
     return if (build_options.enable_debug_extensions) .{
         .parent = null,
         .sema = sema,
@@ -67,7 +67,7 @@ pub fn prepAnalyzeBody(sema: *Sema, block: *Sema.Block, body: []const Zir.Inst.I
     } else .{};
 }
 
-fn dumpStatusReport() !void {
+fn dump_status_report() !void {
     const anal = zir_state orelse return;
     // Note: We have the panic mutex here, so we can safely use the global crash heap.
     var fba = std.heap.FixedBufferAllocator.init(&crash_heap);
@@ -126,7 +126,7 @@ fn dumpStatusReport() !void {
 
 var crash_heap: [16 * 4096]u8 = undefined;
 
-fn writeFilePath(file: *Module.File, writer: anytype) !void {
+fn write_file_path(file: *Module.File, writer: anytype) !void {
     if (file.mod.root.root_dir.path) |path| {
         try writer.writeAll(path);
         try writer.writeAll(std.fs.path.sep_str);
@@ -138,13 +138,13 @@ fn writeFilePath(file: *Module.File, writer: anytype) !void {
     try writer.writeAll(file.sub_file_path);
 }
 
-fn writeFullyQualifiedDeclWithFile(mod: *Module, decl: *Decl, writer: anytype) !void {
+fn write_fully_qualified_decl_with_file(mod: *Module, decl: *Decl, writer: anytype) !void {
     try writeFilePath(decl.getFileScope(mod), writer);
     try writer.writeAll(": ");
     try decl.renderFullyQualifiedDebugName(mod, writer);
 }
 
-pub fn compilerPanic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, maybe_ret_addr: ?usize) noreturn {
+pub fn compiler_panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, maybe_ret_addr: ?usize) noreturn {
     PanicSwitch.preDispatch();
     @setCold(true);
     const ret_addr = maybe_ret_addr orelse @returnAddress();
@@ -153,7 +153,7 @@ pub fn compilerPanic(msg: []const u8, error_return_trace: ?*std.builtin.StackTra
 }
 
 /// Attaches a global SIGSEGV handler
-pub fn attachSegfaultHandler() void {
+pub fn attach_segfault_handler() void {
     if (!debug.have_segfault_handling_support) {
         @compileError("segfault handler not supported for this target");
     }
@@ -172,7 +172,7 @@ pub fn attachSegfaultHandler() void {
     };
 }
 
-fn handleSegfaultPosix(sig: i32, info: *const posix.siginfo_t, ctx_ptr: ?*anyopaque) callconv(.C) noreturn {
+fn handle_segfault_posix(sig: i32, info: *const posix.siginfo_t, ctx_ptr: ?*anyopaque) callconv(.C) noreturn {
     // TODO: use alarm() here to prevent infinite loops
     PanicSwitch.preDispatch();
 
@@ -211,7 +211,7 @@ const WindowsSegfaultMessage = union(enum) {
     illegal_instruction: void,
 };
 
-fn handleSegfaultWindows(info: *windows.EXCEPTION_POINTERS) callconv(windows.WINAPI) c_long {
+fn handle_segfault_windows(info: *windows.EXCEPTION_POINTERS) callconv(windows.WINAPI) c_long {
     switch (info.ExceptionRecord.ExceptionCode) {
         windows.EXCEPTION_DATATYPE_MISALIGNMENT => handleSegfaultWindowsExtra(info, .{ .literal = "Unaligned Memory Access" }),
         windows.EXCEPTION_ACCESS_VIOLATION => handleSegfaultWindowsExtra(info, .segfault),
@@ -221,7 +221,7 @@ fn handleSegfaultWindows(info: *windows.EXCEPTION_POINTERS) callconv(windows.WIN
     }
 }
 
-fn handleSegfaultWindowsExtra(info: *windows.EXCEPTION_POINTERS, comptime msg: WindowsSegfaultMessage) noreturn {
+fn handle_segfault_windows_extra(info: *windows.EXCEPTION_POINTERS, comptime msg: WindowsSegfaultMessage) noreturn {
     PanicSwitch.preDispatch();
 
     const stack_ctx = if (@hasDecl(windows, "CONTEXT"))
@@ -265,7 +265,7 @@ const StackContext = union(enum) {
     exception: *const debug.ThreadContext,
     not_supported: void,
 
-    pub fn dumpStackTrace(ctx: @This()) void {
+    pub fn dump_stack_trace(ctx: @This()) void {
         switch (ctx) {
             .current => |ct| {
                 debug.dumpCurrentStackTrace(ct.ret_addr);
@@ -320,7 +320,7 @@ const PanicSwitch = struct {
 
     /// The segfault handlers above need to do some work before they can dispatch
     /// this switch.  Calling preDispatch() first makes that work fault tolerant.
-    pub fn preDispatch() void {
+    pub fn pre_dispatch() void {
         // TODO: We want segfaults to trigger the panic recursively here,
         // but if there is a segfault accessing this TLS slot it will cause an
         // infinite loop.  We should use `alarm()` to prevent the infinite
@@ -363,7 +363,7 @@ const PanicSwitch = struct {
         };
     }
 
-    noinline fn initPanic(
+    noinline fn init_panic(
         state: *volatile PanicState,
         trace: ?*const std.builtin.StackTrace,
         stack: StackContext,
@@ -403,7 +403,7 @@ const PanicSwitch = struct {
         goTo(reportStack, .{state});
     }
 
-    noinline fn recoverReportStack(
+    noinline fn recover_report_stack(
         state: *volatile PanicState,
         trace: ?*const std.builtin.StackTrace,
         stack: StackContext,
@@ -417,7 +417,7 @@ const PanicSwitch = struct {
         goTo(reportStack, .{state});
     }
 
-    noinline fn reportStack(state: *volatile PanicState) noreturn {
+    noinline fn report_stack(state: *volatile PanicState) noreturn {
         state.recover_stage = .release_mutex;
 
         if (state.panic_trace) |t| {
@@ -428,7 +428,7 @@ const PanicSwitch = struct {
         goTo(releaseMutex, .{state});
     }
 
-    noinline fn recoverReleaseMutex(
+    noinline fn recover_release_mutex(
         state: *volatile PanicState,
         trace: ?*const std.builtin.StackTrace,
         stack: StackContext,
@@ -438,7 +438,7 @@ const PanicSwitch = struct {
         goTo(releaseMutex, .{state});
     }
 
-    noinline fn releaseMutex(state: *volatile PanicState) noreturn {
+    noinline fn release_mutex(state: *volatile PanicState) noreturn {
         state.recover_stage = .abort;
 
         panic_mutex.unlock();
@@ -446,7 +446,7 @@ const PanicSwitch = struct {
         goTo(releaseRefCount, .{state});
     }
 
-    noinline fn recoverReleaseRefCount(
+    noinline fn recover_release_ref_count(
         state: *volatile PanicState,
         trace: ?*const std.builtin.StackTrace,
         stack: StackContext,
@@ -456,7 +456,7 @@ const PanicSwitch = struct {
         goTo(releaseRefCount, .{state});
     }
 
-    noinline fn releaseRefCount(state: *volatile PanicState) noreturn {
+    noinline fn release_ref_count(state: *volatile PanicState) noreturn {
         state.recover_stage = .abort;
 
         if (panicking.fetchSub(1, .seq_cst) != 1) {
@@ -474,7 +474,7 @@ const PanicSwitch = struct {
         goTo(abort, .{});
     }
 
-    noinline fn recoverAbort(
+    noinline fn recover_abort(
         state: *volatile PanicState,
         trace: ?*const std.builtin.StackTrace,
         stack: StackContext,
@@ -492,7 +492,7 @@ const PanicSwitch = struct {
         std.process.abort();
     }
 
-    inline fn goTo(comptime func: anytype, args: anytype) noreturn {
+    inline fn go_to(comptime func: anytype, args: anytype) noreturn {
         // TODO: Tailcall is broken right now, but eventually this should be used
         // to avoid blowing up the stack.  It's ok for now though, there are no
         // cycles in the state machine so the max stack usage is bounded.

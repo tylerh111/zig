@@ -26,7 +26,7 @@ fn SalsaVecImpl(comptime rounds: comptime_int) type {
         const Half = @Vector(2, u32);
         const BlockVec = [4]Lane;
 
-        fn initContext(key: [8]u32, d: [4]u32) BlockVec {
+        fn init_context(key: [8]u32, d: [4]u32) BlockVec {
             const c = "expand 32-byte k";
             const constant_le = comptime [4]u32{
                 mem.readInt(u32, c[0..4], .little),
@@ -42,7 +42,7 @@ fn SalsaVecImpl(comptime rounds: comptime_int) type {
             };
         }
 
-        inline fn salsaCore(x: *BlockVec, input: BlockVec, comptime feedback: bool) void {
+        inline fn salsa_core(x: *BlockVec, input: BlockVec, comptime feedback: bool) void {
             const n1n2n3n0 = Lane{ input[3][1], input[3][2], input[3][3], input[3][0] };
             const n1n2 = Half{ n1n2n3n0[0], n1n2n3n0[1] };
             const n3n0 = Half{ n1n2n3n0[2], n1n2n3n0[3] };
@@ -109,7 +109,7 @@ fn SalsaVecImpl(comptime rounds: comptime_int) type {
             x[3] = Lane{ x12x13x6x7[0], x12x13x6x7[1], x4x5x14x15[2], x4x5x14x15[3] };
         }
 
-        fn hashToBytes(out: *[64]u8, x: BlockVec) void {
+        fn hash_to_bytes(out: *[64]u8, x: BlockVec) void {
             var i: usize = 0;
             while (i < 4) : (i += 1) {
                 mem.writeInt(u32, out[16 * i + 0 ..][0..4], x[i][0], .little);
@@ -119,7 +119,7 @@ fn SalsaVecImpl(comptime rounds: comptime_int) type {
             }
         }
 
-        fn salsaXor(out: []u8, in: []const u8, key: [8]u32, d: [4]u32) void {
+        fn salsa_xor(out: []u8, in: []const u8, key: [8]u32, d: [4]u32) void {
             var ctx = initContext(key, d);
             var x: BlockVec = undefined;
             var buf: [64]u8 = undefined;
@@ -181,7 +181,7 @@ fn SalsaNonVecImpl(comptime rounds: comptime_int) type {
     return struct {
         const BlockVec = [16]u32;
 
-        fn initContext(key: [8]u32, d: [4]u32) BlockVec {
+        fn init_context(key: [8]u32, d: [4]u32) BlockVec {
             const c = "expand 32-byte k";
             const constant_le = comptime [4]u32{
                 mem.readInt(u32, c[0..4], .little),
@@ -213,7 +213,7 @@ fn SalsaNonVecImpl(comptime rounds: comptime_int) type {
             };
         }
 
-        inline fn salsaCore(x: *BlockVec, input: BlockVec, comptime feedback: bool) void {
+        inline fn salsa_core(x: *BlockVec, input: BlockVec, comptime feedback: bool) void {
             const arx_steps = comptime [_]QuarterRound{
                 Rp(4, 0, 12, 7),   Rp(8, 4, 0, 9),    Rp(12, 8, 4, 13),   Rp(0, 12, 8, 18),
                 Rp(9, 5, 1, 7),    Rp(13, 9, 5, 9),   Rp(1, 13, 9, 13),   Rp(5, 1, 13, 18),
@@ -239,13 +239,13 @@ fn SalsaNonVecImpl(comptime rounds: comptime_int) type {
             }
         }
 
-        fn hashToBytes(out: *[64]u8, x: BlockVec) void {
+        fn hash_to_bytes(out: *[64]u8, x: BlockVec) void {
             for (x, 0..) |w, i| {
                 mem.writeInt(u32, out[i * 4 ..][0..4], w, .little);
             }
         }
 
-        fn salsaXor(out: []u8, in: []const u8, key: [8]u32, d: [4]u32) void {
+        fn salsa_xor(out: []u8, in: []const u8, key: [8]u32, d: [4]u32) void {
             var ctx = initContext(key, d);
             var x: BlockVec = undefined;
             var buf: [64]u8 = undefined;
@@ -307,7 +307,7 @@ const SalsaImpl = if (builtin.cpu.arch == .x86_64)
 else
     SalsaNonVecImpl;
 
-fn keyToWords(key: [32]u8) [8]u32 {
+fn key_to_words(key: [32]u8) [8]u32 {
     var k: [8]u32 = undefined;
     var i: usize = 0;
     while (i < 8) : (i += 1) {
@@ -488,7 +488,7 @@ pub const Box = struct {
     pub const KeyPair = X25519.KeyPair;
 
     /// Compute a secret suitable for `secretbox` given a recipent's public key and a sender's secret key.
-    pub fn createSharedSecret(public_key: [public_length]u8, secret_key: [secret_length]u8) (IdentityElementError || WeakPublicKeyError)![shared_length]u8 {
+    pub fn create_shared_secret(public_key: [public_length]u8, secret_key: [secret_length]u8) (IdentityElementError || WeakPublicKeyError)![shared_length]u8 {
         const p = try X25519.scalarmult(secret_key, public_key);
         const zero = [_]u8{0} ** 16;
         return SalsaImpl(20).hsalsa(zero, p);
@@ -523,7 +523,7 @@ pub const SealedBox = struct {
     /// A key pair.
     pub const KeyPair = Box.KeyPair;
 
-    fn createNonce(pk1: [public_length]u8, pk2: [public_length]u8) [Box.nonce_length]u8 {
+    fn create_nonce(pk1: [public_length]u8, pk2: [public_length]u8) [Box.nonce_length]u8 {
         var hasher = Blake2b(Box.nonce_length * 8).init(.{});
         hasher.update(&pk1);
         hasher.update(&pk2);

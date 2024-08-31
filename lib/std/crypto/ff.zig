@@ -72,7 +72,7 @@ pub fn Uint(comptime max_bits: comptime_int) type {
         pub const encoded_bytes = math.divCeil(usize, max_bits, 8) catch unreachable;
 
         /// Constant slice of active limbs.
-        fn limbsConst(self: *const Self) []const Limb {
+        fn limbs_const(self: *const Self) []const Limb {
             return self.limbs_buffer[0..self.limbs_len];
         }
 
@@ -102,7 +102,7 @@ pub fn Uint(comptime max_bits: comptime_int) type {
 
         /// Creates a new big integer from a primitive type.
         /// This function may not run in constant time.
-        pub fn fromPrimitive(comptime T: type, init_value: T) OverflowError!Self {
+        pub fn from_primitive(comptime T: type, init_value: T) OverflowError!Self {
             var x = init_value;
             var out: Self = .{
                 .limbs_buffer = undefined,
@@ -120,7 +120,7 @@ pub fn Uint(comptime max_bits: comptime_int) type {
 
         /// Converts a big integer to a primitive type.
         /// This function may not run in constant time.
-        pub fn toPrimitive(self: Self, comptime T: type) OverflowError!T {
+        pub fn to_primitive(self: Self, comptime T: type) OverflowError!T {
             var x: T = 0;
             var i = self.limbs_len - 1;
             while (true) : (i -= 1) {
@@ -136,7 +136,7 @@ pub fn Uint(comptime max_bits: comptime_int) type {
         }
 
         /// Encodes a big integer into a byte array.
-        pub fn toBytes(self: Self, bytes: []u8, comptime endian: Endian) OverflowError!void {
+        pub fn to_bytes(self: Self, bytes: []u8, comptime endian: Endian) OverflowError!void {
             if (bytes.len == 0) {
                 if (self.isZero()) return;
                 return error.Overflow;
@@ -183,7 +183,7 @@ pub fn Uint(comptime max_bits: comptime_int) type {
         }
 
         /// Creates a new big integer from a byte array.
-        pub fn fromBytes(bytes: []const u8, comptime endian: Endian) OverflowError!Self {
+        pub fn from_bytes(bytes: []const u8, comptime endian: Endian) OverflowError!Self {
             if (bytes.len == 0) return Self.zero;
             var shift: usize = 0;
             var out = Self.zero;
@@ -239,7 +239,7 @@ pub fn Uint(comptime max_bits: comptime_int) type {
         }
 
         /// Returns `true` if the integer is zero.
-        pub fn isZero(x: Self) bool {
+        pub fn is_zero(x: Self) bool {
             var t: Limb = 0;
             for (x.limbsConst()) |elem| {
                 t |= elem;
@@ -248,17 +248,17 @@ pub fn Uint(comptime max_bits: comptime_int) type {
         }
 
         /// Returns `true` if the integer is odd.
-        pub fn isOdd(x: Self) bool {
+        pub fn is_odd(x: Self) bool {
             return @as(u1, @truncate(x.limbsConst()[0])) != 0;
         }
 
         /// Adds `y` to `x`, and returns `true` if the operation overflowed.
-        pub fn addWithOverflow(x: *Self, y: Self) u1 {
+        pub fn add_with_overflow(x: *Self, y: Self) u1 {
             return x.conditionalAddWithOverflow(true, y);
         }
 
         /// Subtracts `y` from `x`, and returns `true` if the operation overflowed.
-        pub fn subWithOverflow(x: *Self, y: Self) u1 {
+        pub fn sub_with_overflow(x: *Self, y: Self) u1 {
             return x.conditionalSubWithOverflow(true, y);
         }
 
@@ -271,7 +271,7 @@ pub fn Uint(comptime max_bits: comptime_int) type {
 
         // Adds `y` to `x` if `on` is `true`, and returns `true` if the
         // operation overflowed.
-        fn conditionalAddWithOverflow(x: *Self, on: bool, y: Self) u1 {
+        fn conditional_add_with_overflow(x: *Self, on: bool, y: Self) u1 {
             var carry: u1 = 0;
             for (x.limbs(), y.limbsConst()) |*x_limb, y_limb| {
                 const res = x_limb.* + y_limb + carry;
@@ -283,7 +283,7 @@ pub fn Uint(comptime max_bits: comptime_int) type {
 
         // Subtracts `y` from `x` if `on` is `true`, and returns `true` if the
         // operation overflowed.
-        fn conditionalSubWithOverflow(x: *Self, on: bool, y: Self) u1 {
+        fn conditional_sub_with_overflow(x: *Self, on: bool, y: Self) u1 {
             var borrow: u1 = 0;
             for (x.limbs(), y.limbsConst()) |*x_limb, y_limb| {
                 const res = x_limb.* -% y_limb -% borrow;
@@ -318,7 +318,7 @@ fn Fe_(comptime bits: comptime_int) type {
 
         /// Creates a field element from a primitive.
         /// This function may not run in constant time.
-        pub fn fromPrimitive(comptime T: type, m: Modulus(bits), x: T) (OverflowError || FieldElementError)!Self {
+        pub fn from_primitive(comptime T: type, m: Modulus(bits), x: T) (OverflowError || FieldElementError)!Self {
             comptime assert(@bitSizeOf(T) <= bits); // Primitive type is larger than the modulus type.
             const v = try FeUint.fromPrimitive(T, x);
             var fe = Self{ .v = v };
@@ -329,12 +329,12 @@ fn Fe_(comptime bits: comptime_int) type {
 
         /// Converts the field element to a primitive.
         /// This function may not run in constant time.
-        pub fn toPrimitive(self: Self, comptime T: type) OverflowError!T {
+        pub fn to_primitive(self: Self, comptime T: type) OverflowError!T {
             return self.v.toPrimitive(T);
         }
 
         /// Creates a field element from a byte string.
-        pub fn fromBytes(m: Modulus(bits), bytes: []const u8, comptime endian: Endian) (OverflowError || FieldElementError)!Self {
+        pub fn from_bytes(m: Modulus(bits), bytes: []const u8, comptime endian: Endian) (OverflowError || FieldElementError)!Self {
             const v = try FeUint.fromBytes(bytes, endian);
             var fe = Self{ .v = v };
             try m.shrink(&fe);
@@ -343,7 +343,7 @@ fn Fe_(comptime bits: comptime_int) type {
         }
 
         /// Converts the field element to a byte string.
-        pub fn toBytes(self: Self, bytes: []u8, comptime endian: Endian) OverflowError!void {
+        pub fn to_bytes(self: Self, bytes: []u8, comptime endian: Endian) OverflowError!void {
             return self.v.toBytes(bytes, endian);
         }
 
@@ -358,12 +358,12 @@ fn Fe_(comptime bits: comptime_int) type {
         }
 
         /// Returns `true` if the element is zero.
-        pub fn isZero(self: Self) bool {
+        pub fn is_zero(self: Self) bool {
             return self.v.isZero();
         }
 
         /// Returns `true` is the element is odd.
-        pub fn isOdd(self: Self) bool {
+        pub fn is_odd(self: Self) bool {
             return self.v.isOdd();
         }
     };
@@ -413,7 +413,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
 
         /// Creates a new modulus from a `Uint` value.
         /// The modulus must be odd and larger than 2.
-        pub fn fromUint(v_: FeUint) InvalidModulusError!Self {
+        pub fn from_uint(v_: FeUint) InvalidModulusError!Self {
             if (!v_.isOdd()) return error.EvenModulus;
 
             var v = v_.normalize();
@@ -450,25 +450,25 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
 
         /// Creates a new modulus from a primitive value.
         /// The modulus must be odd and larger than 2.
-        pub fn fromPrimitive(comptime T: type, x: T) (InvalidModulusError || OverflowError)!Self {
+        pub fn from_primitive(comptime T: type, x: T) (InvalidModulusError || OverflowError)!Self {
             comptime assert(@bitSizeOf(T) <= max_bits); // Primitive type is larger than the modulus type.
             const v = try FeUint.fromPrimitive(T, x);
             return try Self.fromUint(v);
         }
 
         /// Creates a new modulus from a byte string.
-        pub fn fromBytes(bytes: []const u8, comptime endian: Endian) (InvalidModulusError || OverflowError)!Self {
+        pub fn from_bytes(bytes: []const u8, comptime endian: Endian) (InvalidModulusError || OverflowError)!Self {
             const v = try FeUint.fromBytes(bytes, endian);
             return try Self.fromUint(v);
         }
 
         /// Serializes the modulus to a byte string.
-        pub fn toBytes(self: Self, bytes: []u8, comptime endian: Endian) OverflowError!void {
+        pub fn to_bytes(self: Self, bytes: []u8, comptime endian: Endian) OverflowError!void {
             return self.v.toBytes(bytes, endian);
         }
 
         /// Rejects field elements that are not in the canonical form.
-        pub fn rejectNonCanonical(self: Self, fe: Fe) error{NonCanonical}!void {
+        pub fn reject_non_canonical(self: Self, fe: Fe) error{NonCanonical}!void {
             if (fe.limbs_count() != self.limbs_count() or ct.limbsCmpGeq(fe.v, self.v)) {
                 return error.NonCanonical;
             }
@@ -488,7 +488,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
         }
 
         // Computes R^2 for the Montgomery representation.
-        fn computeRR(self: *Self) void {
+        fn compute_rr(self: *Self) void {
             self.rr = self.zero;
             const n = self.rr.limbs_count();
             self.rr.v.limbs()[n - 1] = 1;
@@ -499,7 +499,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
         }
 
         /// Computes x << t_bits + y (mod m)
-        fn shiftIn(self: Self, x: *Fe, y: Limb) void {
+        fn shift_in(self: Self, x: *Fe, y: Limb) void {
             var d = self.zero;
             const x_limbs = x.v.limbs();
             const d_limbs = d.v.limbs();
@@ -546,7 +546,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
         }
 
         /// Converts a field element to the Montgomery form.
-        pub fn toMontgomery(self: Self, x: *Fe) RepresentationError!void {
+        pub fn to_montgomery(self: Self, x: *Fe) RepresentationError!void {
             if (x.montgomery) {
                 return error.UnexpectedRepresentation;
             }
@@ -556,7 +556,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
         }
 
         /// Takes a field element out of the Montgomery form.
-        pub fn fromMontgomery(self: Self, x: *Fe) RepresentationError!void {
+        pub fn from_montgomery(self: Self, x: *Fe) RepresentationError!void {
             if (!x.montgomery) {
                 return error.UnexpectedRepresentation;
             }
@@ -585,7 +585,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
             return out;
         }
 
-        fn montgomeryLoop(self: Self, d: *Fe, x: Fe, y: Fe) u1 {
+        fn montgomery_loop(self: Self, d: *Fe, x: Fe, y: Fe) u1 {
             assert(d.limbs_count() == x.limbs_count());
             assert(d.limbs_count() == y.limbs_count());
             assert(d.limbs_count() == self.limbs_count());
@@ -632,7 +632,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
         }
 
         // Montgomery multiplication.
-        fn montgomeryMul(self: Self, x: Fe, y: Fe) Fe {
+        fn montgomery_mul(self: Self, x: Fe, y: Fe) Fe {
             var d = self.zero;
             assert(x.limbs_count() == self.limbs_count());
             assert(y.limbs_count() == self.limbs_count());
@@ -645,7 +645,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
         }
 
         // Montgomery squaring.
-        fn montgomerySq(self: Self, x: Fe) Fe {
+        fn montgomery_sq(self: Self, x: Fe) Fe {
             var d = self.zero;
             assert(x.limbs_count() == self.limbs_count());
             const overflow = self.montgomeryLoop(&d, x, x);
@@ -658,7 +658,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
 
         // Returns x^e (mod m), with the exponent provided as a byte string.
         // `public` must be set to `false` if the exponent it secret.
-        fn powWithEncodedExponentInternal(self: Self, x: Fe, e: []const u8, endian: Endian, comptime public: bool) NullExponentError!Fe {
+        fn pow_with_encoded_exponent_internal(self: Self, x: Fe, e: []const u8, endian: Endian, comptime public: bool) NullExponentError!Fe {
             var acc: u8 = 0;
             for (e) |b| acc |= b;
             if (acc == 0) return error.NullExponent;
@@ -786,7 +786,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
 
         /// Returns x^e (mod m), assuming that the exponent is public.
         /// The function remains constant time with respect to `x`.
-        pub fn powPublic(self: Self, x: Fe, e: Fe) NullExponentError!Fe {
+        pub fn pow_public(self: Self, x: Fe, e: Fe) NullExponentError!Fe {
             var e_normalized = Fe{ .v = e.v.normalize() };
             var buf_: [Fe.encoded_bytes]u8 = undefined;
             var buf = buf_[0 .. math.divCeil(usize, e_normalized.v.limbs_len * t_bits, 8) catch unreachable];
@@ -801,7 +801,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
         /// doesn't have to be created if a serialized representation is already available.
         ///
         /// If the exponent is public, `powWithEncodedPublicExponent()` can be used instead for a slight speedup.
-        pub fn powWithEncodedExponent(self: Self, x: Fe, e: []const u8, endian: Endian) NullExponentError!Fe {
+        pub fn pow_with_encoded_exponent(self: Self, x: Fe, e: []const u8, endian: Endian) NullExponentError!Fe {
             return self.powWithEncodedExponentInternal(x, e, endian, false);
         }
 
@@ -810,7 +810,7 @@ pub fn Modulus(comptime max_bits: comptime_int) type {
         /// doesn't have to be created if a serialized representation is already available.
         ///
         /// If the exponent is secret, `powWithEncodedExponent` must be used instead.
-        pub fn powWithEncodedPublicExponent(self: Self, x: Fe, e: []const u8, endian: Endian) NullExponentError!Fe {
+        pub fn pow_with_encoded_public_exponent(self: Self, x: Fe, e: []const u8, endian: Endian) NullExponentError!Fe {
             return self.powWithEncodedExponentInternal(x, e, endian, true);
         }
     };
@@ -833,7 +833,7 @@ const ct_protected = struct {
     }
 
     // Compares two big integers in constant time, returning true if x < y.
-    fn limbsCmpLt(x: anytype, y: @TypeOf(x)) bool {
+    fn limbs_cmp_lt(x: anytype, y: @TypeOf(x)) bool {
         var c: u1 = 0;
         for (x.limbsConst(), y.limbsConst()) |x_limb, y_limb| {
             c = @truncate((x_limb -% y_limb -% c) >> t_bits);
@@ -842,12 +842,12 @@ const ct_protected = struct {
     }
 
     // Compares two big integers in constant time, returning true if x >= y.
-    fn limbsCmpGeq(x: anytype, y: @TypeOf(x)) bool {
+    fn limbs_cmp_geq(x: anytype, y: @TypeOf(x)) bool {
         return !limbsCmpLt(x, y);
     }
 
     // Multiplies two limbs and returns the result as a wide limb.
-    fn mulWide(x: Limb, y: Limb) WideLimb {
+    fn mul_wide(x: Limb, y: Limb) WideLimb {
         const half_bits = @typeInfo(Limb).Int.bits / 2;
         const Half = meta.Int(.unsigned, half_bits);
         const x0 = @as(Half, @truncate(x));
@@ -877,7 +877,7 @@ const ct_unprotected = struct {
     }
 
     // Compares two big integers in constant time, returning true if x < y.
-    fn limbsCmpLt(x: anytype, y: @TypeOf(x)) bool {
+    fn limbs_cmp_lt(x: anytype, y: @TypeOf(x)) bool {
         const x_limbs = x.limbsConst();
         const y_limbs = y.limbsConst();
         assert(x_limbs.len == y_limbs.len);
@@ -893,12 +893,12 @@ const ct_unprotected = struct {
     }
 
     // Compares two big integers in constant time, returning true if x >= y.
-    fn limbsCmpGeq(x: anytype, y: @TypeOf(x)) bool {
+    fn limbs_cmp_geq(x: anytype, y: @TypeOf(x)) bool {
         return !limbsCmpLt(x, y);
     }
 
     // Multiplies two limbs and returns the result as a wide limb.
-    fn mulWide(x: Limb, y: Limb) WideLimb {
+    fn mul_wide(x: Limb, y: Limb) WideLimb {
         const wide = math.mulWide(Limb, x, y);
         return .{
             .hi = @as(Limb, @truncate(wide >> @typeInfo(Limb).Int.bits)),
@@ -962,7 +962,7 @@ test "finite field arithmetic" {
     try m.fromMontgomery(&x);
 }
 
-fn testCt(ct_: anytype) !void {
+fn test_ct(ct_: anytype) !void {
     if (builtin.zig_backend == .stage2_c) return error.SkipZigTest;
 
     const l0: Limb = 0;

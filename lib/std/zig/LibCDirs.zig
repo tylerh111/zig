@@ -88,7 +88,7 @@ pub fn detect(
     };
 }
 
-fn detectFromInstallation(arena: Allocator, target: std.Target, lci: *const LibCInstallation) !LibCDirs {
+fn detect_from_installation(arena: Allocator, target: std.Target, lci: *const LibCInstallation) !LibCDirs {
     var list = try std.ArrayList([]const u8).initCapacity(arena, 5);
     var framework_list = std.ArrayList([]const u8).init(arena);
 
@@ -143,7 +143,7 @@ fn detectFromInstallation(arena: Allocator, target: std.Target, lci: *const LibC
     };
 }
 
-pub fn detectFromBuilding(
+pub fn detect_from_building(
     arena: Allocator,
     zig_lib_dir: []const u8,
     target: std.Target,
@@ -219,7 +219,7 @@ pub fn detectFromBuilding(
     };
 }
 
-fn libCGenericName(target: std.Target) [:0]const u8 {
+fn lib_cgeneric_name(target: std.Target) [:0]const u8 {
     switch (target.os.tag) {
         .windows => return "mingw",
         .macos, .ios, .tvos, .watchos, .visionos => return "darwin",

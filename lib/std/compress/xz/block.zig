@@ -82,7 +82,7 @@ pub fn Decoder(comptime ReaderType: type) type {
             }
         }
 
-        fn readBlock(self: *Self) Error!void {
+        fn read_block(self: *Self) Error!void {
             var block_counter = std.io.countingReader(self.inner_reader);
             const block_reader = block_counter.reader();
 

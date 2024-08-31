@@ -13,7 +13,7 @@ const expectError = testing.expectError;
 /// `Order.eq` if the arguments are of equal priority, or `Order.gt`
 /// if the third argument should be popped first.
 /// For example, to make `pop` return the smallest number, provide
-/// `fn lessThan(context: void, a: T, b: T) Order { _ = context; return std.math.order(a, b); }`
+/// `fn less_than(context: void, a: T, b: T) Order { _ = context; return std.math.order(a, b); }`
 pub fn PriorityQueue(comptime T: type, comptime Context: type, comptime compareFn: fn (context: Context, a: T, b: T) Order) type {
     return struct {
         const Self = @This();
@@ -44,13 +44,13 @@ pub fn PriorityQueue(comptime T: type, comptime Context: type, comptime compareF
             addUnchecked(self, elem);
         }
 
-        fn addUnchecked(self: *Self, elem: T) void {
+        fn add_unchecked(self: *Self, elem: T) void {
             self.items.len += 1;
             self.items[self.items.len - 1] = elem;
             siftUp(self, self.items.len - 1);
         }
 
-        fn siftUp(self: *Self, start_index: usize) void {
+        fn sift_up(self: *Self, start_index: usize) void {
             const child = self.items[start_index];
             var child_index = start_index;
             while (child_index > 0) {
@@ -64,7 +64,7 @@ pub fn PriorityQueue(comptime T: type, comptime Context: type, comptime compareF
         }
 
         /// Add each element in `items` to the queue.
-        pub fn addSlice(self: *Self, items: []const T) !void {
+        pub fn add_slice(self: *Self, items: []const T) !void {
             try self.ensureUnusedCapacity(items.len);
             for (items) |e| {
                 self.addUnchecked(e);
@@ -79,7 +79,7 @@ pub fn PriorityQueue(comptime T: type, comptime Context: type, comptime compareF
 
         /// Pop the highest priority element from the queue. Returns
         /// `null` if empty.
-        pub fn removeOrNull(self: *Self) ?T {
+        pub fn remove_or_null(self: *Self) ?T {
             return if (self.items.len > 0) self.remove() else null;
         }
 
@@ -92,7 +92,7 @@ pub fn PriorityQueue(comptime T: type, comptime Context: type, comptime compareF
         /// Remove and return element at index. Indices are in the
         /// same order as iterator, which is not necessarily priority
         /// order.
-        pub fn removeIndex(self: *Self, index: usize) T {
+        pub fn remove_index(self: *Self, index: usize) T {
             assert(self.items.len > index);
             const last = self.items[self.items.len - 1];
             const item = self.items[index];
@@ -130,12 +130,12 @@ pub fn PriorityQueue(comptime T: type, comptime Context: type, comptime compareF
 
         /// Returns a slice of all the items plus the extra capacity, whose memory
         /// contents are `undefined`.
-        fn allocatedSlice(self: Self) []T {
+        fn allocated_slice(self: Self) []T {
             // `items.len` is the length, not the capacity.
             return self.items.ptr[0..self.cap];
         }
 
-        fn siftDown(self: *Self, target_index: usize) void {
+        fn sift_down(self: *Self, target_index: usize) void {
             const target_element = self.items[target_index];
             var index = target_index;
             while (true) {
@@ -158,7 +158,7 @@ pub fn PriorityQueue(comptime T: type, comptime Context: type, comptime compareF
         /// PriorityQueue takes ownership of the passed in slice. The slice must have been
         /// allocated with `allocator`.
         /// Deinitialize with `deinit`.
-        pub fn fromOwnedSlice(allocator: Allocator, items: []T, context: Context) Self {
+        pub fn from_owned_slice(allocator: Allocator, items: []T, context: Context) Self {
             var self = Self{
                 .items = items,
                 .cap = items.len,
@@ -175,7 +175,7 @@ pub fn PriorityQueue(comptime T: type, comptime Context: type, comptime compareF
         }
 
         /// Ensure that the queue can fit at least `new_capacity` items.
-        pub fn ensureTotalCapacity(self: *Self, new_capacity: usize) !void {
+        pub fn ensure_total_capacity(self: *Self, new_capacity: usize) !void {
             var better_capacity = self.cap;
             if (better_capacity >= new_capacity) return;
             while (true) {
@@ -189,12 +189,12 @@ pub fn PriorityQueue(comptime T: type, comptime Context: type, comptime compareF
         }
 
         /// Ensure that the queue can fit at least `additional_count` **more** item.
-        pub fn ensureUnusedCapacity(self: *Self, additional_count: usize) !void {
+        pub fn ensure_unused_capacity(self: *Self, additional_count: usize) !void {
             return self.ensureTotalCapacity(self.items.len + additional_count);
         }
 
         /// Reduce allocated capacity to `new_capacity`.
-        pub fn shrinkAndFree(self: *Self, new_capacity: usize) void {
+        pub fn shrink_and_free(self: *Self, new_capacity: usize) void {
             assert(new_capacity <= self.cap);
 
             // Cannot shrink to smaller than the current queue size without invalidating the heap property
@@ -273,12 +273,12 @@ pub fn PriorityQueue(comptime T: type, comptime Context: type, comptime compareF
     };
 }
 
-fn lessThan(context: void, a: u32, b: u32) Order {
+fn less_than(context: void, a: u32, b: u32) Order {
     _ = context;
     return std.math.order(a, b);
 }
 
-fn greaterThan(context: void, a: u32, b: u32) Order {
+fn greater_than(context: void, a: u32, b: u32) Order {
     return lessThan(context, a, b).invert();
 }
 
@@ -611,7 +611,7 @@ test "siftUp in remove" {
     }
 }
 
-fn contextLessThan(context: []const u32, a: usize, b: usize) Order {
+fn context_less_than(context: []const u32, a: usize, b: usize) Order {
     return std.math.order(context[a], context[b]);
 }
 

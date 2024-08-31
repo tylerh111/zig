@@ -1,4 +1,4 @@
-pub fn writeSetSub6(comptime op: enum { set, sub }, code: *[1]u8, addend: anytype) void {
+pub fn write_set_sub6(comptime op: enum { set, sub }, code: *[1]u8, addend: anytype) void {
     const mask: u8 = 0b11_000000;
     const actual: i8 = @truncate(addend);
     var value: u8 = mem.readInt(u8, code, .little);
@@ -9,7 +9,7 @@ pub fn writeSetSub6(comptime op: enum { set, sub }, code: *[1]u8, addend: anytyp
     mem.writeInt(u8, code, value, .little);
 }
 
-pub fn writeAddend(
+pub fn write_addend(
     comptime Int: type,
     comptime op: enum { add, sub },
     code: *[@typeInfo(Int).Int.bits / 8]u8,
@@ -24,7 +24,7 @@ pub fn writeAddend(
     mem.writeInt(Int, code, V, .little);
 }
 
-pub fn writeInstU(code: *[4]u8, value: u32) void {
+pub fn write_inst_u(code: *[4]u8, value: u32) void {
     var data = Encoding.Data{
         .U = mem.bytesToValue(std.meta.TagPayload(
             Encoding.Data,
@@ -36,7 +36,7 @@ pub fn writeInstU(code: *[4]u8, value: u32) void {
     mem.writeInt(u32, code, data.toU32(), .little);
 }
 
-pub fn writeInstI(code: *[4]u8, value: u32) void {
+pub fn write_inst_i(code: *[4]u8, value: u32) void {
     var data = Encoding.Data{
         .I = mem.bytesToValue(std.meta.TagPayload(
             Encoding.Data,
@@ -47,7 +47,7 @@ pub fn writeInstI(code: *[4]u8, value: u32) void {
     mem.writeInt(u32, code, data.toU32(), .little);
 }
 
-pub fn writeInstS(code: *[4]u8, value: u32) void {
+pub fn write_inst_s(code: *[4]u8, value: u32) void {
     var data = Encoding.Data{
         .S = mem.bytesToValue(std.meta.TagPayload(
             Encoding.Data,
@@ -59,7 +59,7 @@ pub fn writeInstS(code: *[4]u8, value: u32) void {
     mem.writeInt(u32, code, data.toU32(), .little);
 }
 
-pub fn writeInstJ(code: *[4]u8, value: u32) void {
+pub fn write_inst_j(code: *[4]u8, value: u32) void {
     var data = Encoding.Data{
         .J = mem.bytesToValue(std.meta.TagPayload(
             Encoding.Data,
@@ -73,7 +73,7 @@ pub fn writeInstJ(code: *[4]u8, value: u32) void {
     mem.writeInt(u32, code, data.toU32(), .little);
 }
 
-pub fn writeInstB(code: *[4]u8, value: u32) void {
+pub fn write_inst_b(code: *[4]u8, value: u32) void {
     var data = Encoding.Data{
         .B = mem.bytesToValue(std.meta.TagPayload(
             Encoding.Data,
@@ -87,7 +87,7 @@ pub fn writeInstB(code: *[4]u8, value: u32) void {
     mem.writeInt(u32, code, data.toU32(), .little);
 }
 
-fn bitSlice(
+fn bit_slice(
     value: anytype,
     comptime high: comptime_int,
     comptime low: comptime_int,

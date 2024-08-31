@@ -1,5 +1,5 @@
 const Geo3DTex2D = struct { vertices: [][2]f32 };
-pub fn getGeo3DTex2D() Geo3DTex2D {
+pub fn get_geo3_dtex2_d() Geo3DTex2D {
     return Geo3DTex2D{
         .vertices = [_][2]f32{
             [_]f32{ -0.5, -0.5 },

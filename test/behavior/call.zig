@@ -117,7 +117,7 @@ test "function call with 40 arguments" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn doTheTest(thirty_nine: i32) !void {
+        fn do_the_test(thirty_nine: i32) !void {
             const result = add(
                 0,
                 1,
@@ -256,7 +256,7 @@ test "function call with 40 arguments" {
 
 test "arguments to comptime parameters generated in comptime blocks" {
     const S = struct {
-        fn fortyTwo() i32 {
+        fn forty_two() i32 {
             return 42;
         }
 
@@ -286,7 +286,7 @@ test "forced tail call" {
     if (builtin.zig_backend == .stage2_c and builtin.os.tag == .windows) return error.SkipZigTest; // MSVC doesn't support always tail calls
 
     const S = struct {
-        fn fibonacciTailInternal(n: u16, a: u16, b: u16) u16 {
+        fn fibonacci_tail_internal(n: u16, a: u16, b: u16) u16 {
             if (n == 0) return a;
             if (n == 1) return b;
             return @call(
@@ -296,7 +296,7 @@ test "forced tail call" {
             );
         }
 
-        fn fibonacciTail(n: u16) u16 {
+        fn fibonacci_tail(n: u16) u16 {
             return fibonacciTailInternal(n, 0, 1);
         }
     };
@@ -484,7 +484,7 @@ test "argument to generic function has correct result type" {
             return e == .b;
         }
 
-        fn doTheTest() !void {
+        fn do_the_test() !void {
             var t = true;
             _ = &t;
 

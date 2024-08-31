@@ -56,7 +56,7 @@ test "@embedFile() returns a string literal" {
     try std.testing.expect(std.mem.eql(u8, expected_contents, ptr_actual_contents[0..actual_contents.len]));
 }
 
-fn testFnForSrc() std.builtin.SourceLocation {
+fn test_fn_for_src() std.builtin.SourceLocation {
     return @src();
 }
 

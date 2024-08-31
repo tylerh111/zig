@@ -11,7 +11,7 @@ const RoundParam = struct {
     i: u32,
 };
 
-fn roundParam(a: usize, b: usize, c: usize, d: usize, e: usize, i: u32) RoundParam {
+fn round_param(a: usize, b: usize, c: usize, d: usize, e: usize, i: u32) RoundParam {
     return RoundParam{
         .a = a,
         .b = b,
@@ -115,7 +115,7 @@ pub const Sha1 = struct {
         }
     }
 
-    pub fn finalResult(d: *Self) [digest_length]u8 {
+    pub fn final_result(d: *Self) [digest_length]u8 {
         var result: [digest_length]u8 = undefined;
         d.final(&result);
         return result;

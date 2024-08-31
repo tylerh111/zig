@@ -86,7 +86,7 @@ pub fn LogToWriterAllocator(comptime Writer: type) type {
 
 /// This allocator is used in front of another allocator and logs to the provided writer
 /// on every call to the allocator. Writer errors are ignored.
-pub fn logToWriterAllocator(
+pub fn log_to_writer_allocator(
     parent_allocator: Allocator,
     writer: anytype,
 ) LogToWriterAllocator(@TypeOf(writer)) {

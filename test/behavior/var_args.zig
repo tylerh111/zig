@@ -21,7 +21,7 @@ test "add arbitrary args" {
     try expect(add(.{}) == 0);
 }
 
-fn readFirstVarArg(args: anytype) void {
+fn read_first_var_arg(args: anytype) void {
     _ = args[0];
 }
 
@@ -41,7 +41,7 @@ test "pass args directly" {
     try expect(addSomeStuff(.{}) == 0);
 }
 
-fn addSomeStuff(args: anytype) i32 {
+fn add_some_stuff(args: anytype) i32 {
     return add(args);
 }
 
@@ -61,7 +61,7 @@ test "runtime parameter before var args" {
     }
 }
 
-fn extraFn(extra: u32, args: anytype) !usize {
+fn extra_fn(extra: u32, args: anytype) !usize {
     _ = extra;
     if (args.len >= 1) {
         try expect(args[0] == false);
@@ -99,7 +99,7 @@ test "pass zero length array to var args param" {
     doNothingWithFirstArg(.{""});
 }
 
-fn doNothingWithFirstArg(args: anytype) void {
+fn do_nothing_with_first_arg(args: anytype) void {
     _ = args[0];
 }
 
@@ -177,7 +177,7 @@ test "coerce reference to var arg" {
     if (builtin.cpu.arch == .x86_64 and builtin.os.tag == .windows) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn addPtr(count: c_int, ...) callconv(.C) c_int {
+        fn add_ptr(count: c_int, ...) callconv(.C) c_int {
             var ap = @cVaStart();
             defer @cVaEnd(&ap);
             var i: usize = 0;
@@ -289,7 +289,7 @@ test "unused VaList arg" {
     }
 
     const S = struct {
-        fn thirdArg(dummy: c_int, ...) callconv(.C) c_int {
+        fn third_arg(dummy: c_int, ...) callconv(.C) c_int {
             _ = dummy;
 
             var ap = @cVaStart();

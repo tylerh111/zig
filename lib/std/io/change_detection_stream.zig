@@ -36,13 +36,13 @@ pub fn ChangeDetectionStream(comptime WriterType: type) type {
             return self.underlying_writer.write(bytes);
         }
 
-        pub fn changeDetected(self: *Self) bool {
+        pub fn change_detected(self: *Self) bool {
             return self.anything_changed or (self.source_index != self.source.len);
         }
     };
 }
 
-pub fn changeDetectionStream(
+pub fn change_detection_stream(
     source: []const u8,
     underlying_writer: anytype,
 ) ChangeDetectionStream(@TypeOf(underlying_writer)) {

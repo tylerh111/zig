@@ -8,7 +8,7 @@ pub const ZigGotSection = struct {
         zig_got.entries.deinit(allocator);
     }
 
-    fn allocateEntry(zig_got: *ZigGotSection, allocator: Allocator) !Index {
+    fn allocate_entry(zig_got: *ZigGotSection, allocator: Allocator) !Index {
         try zig_got.entries.ensureUnusedCapacity(allocator, 1);
         // TODO add free list
         const index = @as(Index, @intCast(zig_got.entries.items.len));
@@ -17,7 +17,7 @@ pub const ZigGotSection = struct {
         return index;
     }
 
-    pub fn addSymbol(zig_got: *ZigGotSection, sym_index: Symbol.Index, macho_file: *MachO) !Index {
+    pub fn add_symbol(zig_got: *ZigGotSection, sym_index: Symbol.Index, macho_file: *MachO) !Index {
         const comp = macho_file.base.comp;
         const gpa = comp.gpa;
         const index = try zig_got.allocateEntry(gpa);
@@ -30,13 +30,13 @@ pub const ZigGotSection = struct {
         return index;
     }
 
-    pub fn entryOffset(zig_got: ZigGotSection, index: Index, macho_file: *MachO) u64 {
+    pub fn entry_offset(zig_got: ZigGotSection, index: Index, macho_file: *MachO) u64 {
         _ = zig_got;
         const sect = macho_file.sections.items(.header)[macho_file.zig_got_sect_index.?];
         return sect.offset + @sizeOf(u64) * index;
     }
 
-    pub fn entryAddress(zig_got: ZigGotSection, index: Index, macho_file: *MachO) u64 {
+    pub fn entry_address(zig_got: ZigGotSection, index: Index, macho_file: *MachO) u64 {
         _ = zig_got;
         const sect = macho_file.sections.items(.header)[macho_file.zig_got_sect_index.?];
         return sect.addr + @sizeOf(u64) * index;
@@ -47,7 +47,7 @@ pub const ZigGotSection = struct {
         return @sizeOf(u64) * zig_got.entries.items.len;
     }
 
-    pub fn writeOne(zig_got: *ZigGotSection, macho_file: *MachO, index: Index) !void {
+    pub fn write_one(zig_got: *ZigGotSection, macho_file: *MachO, index: Index) !void {
         if (zig_got.dirty) {
             const needed_size = zig_got.size(macho_file);
             try macho_file.growSection(macho_file.zig_got_sect_index.?, needed_size);
@@ -62,7 +62,7 @@ pub const ZigGotSection = struct {
         try macho_file.base.file.?.pwriteAll(&buf, off);
     }
 
-    pub fn writeAll(zig_got: ZigGotSection, macho_file: *MachO, writer: anytype) !void {
+    pub fn write_all(zig_got: ZigGotSection, macho_file: *MachO, writer: anytype) !void {
         for (zig_got.entries.items) |entry| {
             const symbol = macho_file.getSymbol(entry);
             const value = symbol.address(.{ .stubs = false }, macho_file);
@@ -70,7 +70,7 @@ pub const ZigGotSection = struct {
         }
     }
 
-    pub fn addDyldRelocs(zig_got: ZigGotSection, macho_file: *MachO) !void {
+    pub fn add_dyld_relocs(zig_got: ZigGotSection, macho_file: *MachO) !void {
         const tracy = trace(@src());
         defer tracy.end();
         const gpa = macho_file.base.comp.gpa;
@@ -126,7 +126,7 @@ pub const GotSection = struct {
         got.symbols.deinit(allocator);
     }
 
-    pub fn addSymbol(got: *GotSection, sym_index: Symbol.Index, macho_file: *MachO) !void {
+    pub fn add_symbol(got: *GotSection, sym_index: Symbol.Index, macho_file: *MachO) !void {
         const gpa = macho_file.base.comp.gpa;
         const index = @as(Index, @intCast(got.symbols.items.len));
         const entry = try got.symbols.addOne(gpa);
@@ -136,7 +136,7 @@ pub const GotSection = struct {
         try symbol.addExtra(.{ .got = index }, macho_file);
     }
 
-    pub fn getAddress(got: GotSection, index: Index, macho_file: *MachO) u64 {
+    pub fn get_address(got: GotSection, index: Index, macho_file: *MachO) u64 {
         assert(index < got.symbols.items.len);
         const header = macho_file.sections.items(.header)[macho_file.got_sect_index.?];
         return header.addr + index * @sizeOf(u64);
@@ -146,7 +146,7 @@ pub const GotSection = struct {
         return got.symbols.items.len * @sizeOf(u64);
     }
 
-    pub fn addDyldRelocs(got: GotSection, macho_file: *MachO) !void {
+    pub fn add_dyld_relocs(got: GotSection, macho_file: *MachO) !void {
         const tracy = trace(@src());
         defer tracy.end();
         const gpa = macho_file.base.comp.gpa;
@@ -230,7 +230,7 @@ pub const StubsSection = struct {
         stubs.symbols.deinit(allocator);
     }
 
-    pub fn addSymbol(stubs: *StubsSection, sym_index: Symbol.Index, macho_file: *MachO) !void {
+    pub fn add_symbol(stubs: *StubsSection, sym_index: Symbol.Index, macho_file: *MachO) !void {
         const gpa = macho_file.base.comp.gpa;
         const index = @as(Index, @intCast(stubs.symbols.items.len));
         const entry = try stubs.symbols.addOne(gpa);
@@ -239,7 +239,7 @@ pub const StubsSection = struct {
         try symbol.addExtra(.{ .stubs = index }, macho_file);
     }
 
-    pub fn getAddress(stubs: StubsSection, index: Index, macho_file: *MachO) u64 {
+    pub fn get_address(stubs: StubsSection, index: Index, macho_file: *MachO) u64 {
         assert(index < stubs.symbols.items.len);
         const header = macho_file.sections.items(.header)[macho_file.stubs_sect_index.?];
         return header.addr + index * header.reserved2;
@@ -313,7 +313,7 @@ pub const StubsSection = struct {
 };
 
 pub const StubsHelperSection = struct {
-    pub inline fn preambleSize(cpu_arch: std.Target.Cpu.Arch) usize {
+    pub inline fn preamble_size(cpu_arch: std.Target.Cpu.Arch) usize {
         return switch (cpu_arch) {
             .x86_64 => 16,
             .aarch64 => 6 * @sizeOf(u32),
@@ -321,7 +321,7 @@ pub const StubsHelperSection = struct {
         };
     }
 
-    pub inline fn entrySize(cpu_arch: std.Target.Cpu.Arch) usize {
+    pub inline fn entry_size(cpu_arch: std.Target.Cpu.Arch) usize {
         return switch (cpu_arch) {
             .x86_64 => 10,
             .aarch64 => 3 * @sizeOf(u32),
@@ -388,7 +388,7 @@ pub const StubsHelperSection = struct {
         }
     }
 
-    fn writePreamble(stubs_helper: StubsHelperSection, macho_file: *MachO, writer: anytype) !void {
+    fn write_preamble(stubs_helper: StubsHelperSection, macho_file: *MachO, writer: anytype) !void {
         _ = stubs_helper;
         const cpu_arch = macho_file.getTarget().cpu.arch;
         const sect = macho_file.sections.items(.header)[macho_file.stubs_helper_sect_index.?];
@@ -446,7 +446,7 @@ pub const LaSymbolPtrSection = struct {
         return macho_file.stubs.symbols.items.len * @sizeOf(u64);
     }
 
-    pub fn addDyldRelocs(laptr: LaSymbolPtrSection, macho_file: *MachO) !void {
+    pub fn add_dyld_relocs(laptr: LaSymbolPtrSection, macho_file: *MachO) !void {
         const tracy = trace(@src());
         defer tracy.end();
         _ = laptr;
@@ -520,7 +520,7 @@ pub const TlvPtrSection = struct {
         tlv.symbols.deinit(allocator);
     }
 
-    pub fn addSymbol(tlv: *TlvPtrSection, sym_index: Symbol.Index, macho_file: *MachO) !void {
+    pub fn add_symbol(tlv: *TlvPtrSection, sym_index: Symbol.Index, macho_file: *MachO) !void {
         const gpa = macho_file.base.comp.gpa;
         const index = @as(Index, @intCast(tlv.symbols.items.len));
         const entry = try tlv.symbols.addOne(gpa);
@@ -529,7 +529,7 @@ pub const TlvPtrSection = struct {
         try symbol.addExtra(.{ .tlv_ptr = index }, macho_file);
     }
 
-    pub fn getAddress(tlv: TlvPtrSection, index: Index, macho_file: *MachO) u64 {
+    pub fn get_address(tlv: TlvPtrSection, index: Index, macho_file: *MachO) u64 {
         assert(index < tlv.symbols.items.len);
         const header = macho_file.sections.items(.header)[macho_file.tlv_ptr_sect_index.?];
         return header.addr + index * @sizeOf(u64);
@@ -539,7 +539,7 @@ pub const TlvPtrSection = struct {
         return tlv.symbols.items.len * @sizeOf(u64);
     }
 
-    pub fn addDyldRelocs(tlv: TlvPtrSection, macho_file: *MachO) !void {
+    pub fn add_dyld_relocs(tlv: TlvPtrSection, macho_file: *MachO) !void {
         const tracy = trace(@src());
         defer tracy.end();
         const gpa = macho_file.base.comp.gpa;
@@ -625,7 +625,7 @@ pub const ObjcStubsSection = struct {
         objc.symbols.deinit(allocator);
     }
 
-    pub fn entrySize(cpu_arch: std.Target.Cpu.Arch) u8 {
+    pub fn entry_size(cpu_arch: std.Target.Cpu.Arch) u8 {
         return switch (cpu_arch) {
             .x86_64 => 13,
             .aarch64 => 8 * @sizeOf(u32),
@@ -633,7 +633,7 @@ pub const ObjcStubsSection = struct {
         };
     }
 
-    pub fn addSymbol(objc: *ObjcStubsSection, sym_index: Symbol.Index, macho_file: *MachO) !void {
+    pub fn add_symbol(objc: *ObjcStubsSection, sym_index: Symbol.Index, macho_file: *MachO) !void {
         const gpa = macho_file.base.comp.gpa;
         const index = @as(Index, @intCast(objc.symbols.items.len));
         const entry = try objc.symbols.addOne(gpa);
@@ -642,7 +642,7 @@ pub const ObjcStubsSection = struct {
         try symbol.addExtra(.{ .objc_stubs = index }, macho_file);
     }
 
-    pub fn getAddress(objc: ObjcStubsSection, index: Index, macho_file: *MachO) u64 {
+    pub fn get_address(objc: ObjcStubsSection, index: Index, macho_file: *MachO) u64 {
         assert(index < objc.symbols.items.len);
         const header = macho_file.sections.items(.header)[macho_file.objc_stubs_sect_index.?];
         return header.addr + index * entrySize(macho_file.getTarget().cpu.arch);

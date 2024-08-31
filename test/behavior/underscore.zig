@@ -18,6 +18,6 @@ test "ignore lval with underscore (while loop)" {
     } else |_| {}
 }
 
-fn optionalReturnError() !?u32 {
+fn optional_return_error() !?u32 {
     return error.optionalReturnError;
 }

@@ -132,7 +132,7 @@ pub const Time = extern struct {
     /// Time is to be interpreted as local time
     pub const unspecified_timezone: i16 = 0x7ff;
 
-    fn daysInYear(year: u16, maxMonth: u4) u32 {
+    fn days_in_year(year: u16, maxMonth: u4) u32 {
         const leapYear: std.time.epoch.YearLeapKind = if (std.time.epoch.isLeapYear(year)) .leap else .not_leap;
         var days: u32 = 0;
         var month: u4 = 0;
@@ -142,7 +142,7 @@ pub const Time = extern struct {
         return days;
     }
 
-    pub fn toEpoch(self: std.os.uefi.Time) u64 {
+    pub fn to_epoch(self: std.os.uefi.Time) u64 {
         var year: u16 = 0;
         var days: u32 = 0;
 
@@ -192,7 +192,7 @@ pub const FileInfo = extern struct {
     modification_time: Time,
     attribute: u64,
 
-    pub fn getFileName(self: *const FileInfo) [*:0]const u16 {
+    pub fn get_file_name(self: *const FileInfo) [*:0]const u16 {
         return @ptrCast(@alignCast(@as([*]const u8, @ptrCast(self)) + @sizeOf(FileInfo)));
     }
 
@@ -222,7 +222,7 @@ pub const FileSystemInfo = extern struct {
     block_size: u32,
     _volume_label: u16,
 
-    pub fn getVolumeLabel(self: *const FileSystemInfo) [*:0]const u16 {
+    pub fn get_volume_label(self: *const FileSystemInfo) [*:0]const u16 {
         return @as([*:0]const u16, @ptrCast(&self._volume_label));
     }
 

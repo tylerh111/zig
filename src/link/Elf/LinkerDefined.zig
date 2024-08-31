@@ -11,7 +11,7 @@ pub fn deinit(self: *LinkerDefined, allocator: Allocator) void {
     self.symbols.deinit(allocator);
 }
 
-pub fn addGlobal(self: *LinkerDefined, name: [:0]const u8, elf_file: *Elf) !u32 {
+pub fn add_global(self: *LinkerDefined, name: [:0]const u8, elf_file: *Elf) !u32 {
     const comp = elf_file.base.comp;
     const gpa = comp.gpa;
     try self.symtab.ensureUnusedCapacity(gpa, 1);
@@ -31,7 +31,7 @@ pub fn addGlobal(self: *LinkerDefined, name: [:0]const u8, elf_file: *Elf) !u32 
     return gop.index;
 }
 
-pub fn resolveSymbols(self: *LinkerDefined, elf_file: *Elf) void {
+pub fn resolve_symbols(self: *LinkerDefined, elf_file: *Elf) void {
     for (self.symbols.items, 0..) |index, i| {
         const sym_idx = @as(Symbol.Index, @intCast(i));
         const this_sym = self.symtab.items[sym_idx];
@@ -53,7 +53,7 @@ pub fn globals(self: LinkerDefined) []const Symbol.Index {
     return self.symbols.items;
 }
 
-pub fn updateSymtabSize(self: *LinkerDefined, elf_file: *Elf) !void {
+pub fn update_symtab_size(self: *LinkerDefined, elf_file: *Elf) !void {
     for (self.globals()) |global_index| {
         const global = elf_file.symbol(global_index);
         const file_ptr = global.file(elf_file) orelse continue;
@@ -70,7 +70,7 @@ pub fn updateSymtabSize(self: *LinkerDefined, elf_file: *Elf) !void {
     }
 }
 
-pub fn writeSymtab(self: LinkerDefined, elf_file: *Elf) void {
+pub fn write_symtab(self: LinkerDefined, elf_file: *Elf) void {
     for (self.globals()) |global_index| {
         const global = elf_file.symbol(global_index);
         const file_ptr = global.file(elf_file) orelse continue;
@@ -85,16 +85,16 @@ pub fn writeSymtab(self: LinkerDefined, elf_file: *Elf) void {
     }
 }
 
-pub fn asFile(self: *LinkerDefined) File {
+pub fn as_file(self: *LinkerDefined) File {
     return .{ .linker_defined = self };
 }
 
-pub fn getString(self: LinkerDefined, off: u32) [:0]const u8 {
+pub fn get_string(self: LinkerDefined, off: u32) [:0]const u8 {
     assert(off < self.strtab.items.len);
     return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.strtab.items.ptr + off)), 0);
 }
 
-pub fn fmtSymtab(self: *LinkerDefined, elf_file: *Elf) std.fmt.Formatter(formatSymtab) {
+pub fn fmt_symtab(self: *LinkerDefined, elf_file: *Elf) std.fmt.Formatter(formatSymtab) {
     return .{ .data = .{
         .self = self,
         .elf_file = elf_file,
@@ -106,7 +106,7 @@ const FormatContext = struct {
     elf_file: *Elf,
 };
 
-fn formatSymtab(
+fn format_symtab(
     ctx: FormatContext,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,

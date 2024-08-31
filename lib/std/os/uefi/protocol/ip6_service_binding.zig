@@ -9,11 +9,11 @@ pub const Ip6ServiceBinding = extern struct {
     _create_child: *const fn (*const Ip6ServiceBinding, *?Handle) callconv(cc) Status,
     _destroy_child: *const fn (*const Ip6ServiceBinding, Handle) callconv(cc) Status,
 
-    pub fn createChild(self: *const Ip6ServiceBinding, handle: *?Handle) Status {
+    pub fn create_child(self: *const Ip6ServiceBinding, handle: *?Handle) Status {
         return self._create_child(self, handle);
     }
 
-    pub fn destroyChild(self: *const Ip6ServiceBinding, handle: Handle) Status {
+    pub fn destroy_child(self: *const Ip6ServiceBinding, handle: Handle) Status {
         return self._destroy_child(self, handle);
     }
 

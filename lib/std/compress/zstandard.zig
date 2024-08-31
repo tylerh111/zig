@@ -70,7 +70,7 @@ pub fn Decompressor(comptime ReaderType: type) type {
             };
         }
 
-        fn frameInit(self: *Self) !void {
+        fn frame_init(self: *Self) !void {
             const source_reader = self.source.reader();
             switch (try decompress.decodeFrameHeader(source_reader)) {
                 .skippable => |header| {
@@ -126,7 +126,7 @@ pub fn Decompressor(comptime ReaderType: type) type {
             return size;
         }
 
-        fn readInner(self: *Self, buffer: []u8) Error!usize {
+        fn read_inner(self: *Self, buffer: []u8) Error!usize {
             std.debug.assert(self.state != .NewFrame);
 
             var ring_buffer = RingBuffer{
@@ -206,7 +206,7 @@ pub fn decompressor(reader: anytype, options: DecompressorOptions) Decompressor(
     return Decompressor(@TypeOf(reader)).init(reader, options);
 }
 
-fn testDecompress(data: []const u8) ![]u8 {
+fn test_decompress(data: []const u8) ![]u8 {
     const window_buffer = try std.testing.allocator.alloc(u8, 1 << 23);
     defer std.testing.allocator.free(window_buffer);
 
@@ -216,7 +216,7 @@ fn testDecompress(data: []const u8) ![]u8 {
     return result;
 }
 
-fn testReader(data: []const u8, comptime expected: []const u8) !void {
+fn test_reader(data: []const u8, comptime expected: []const u8) !void {
     const buf = try testDecompress(data);
     defer std.testing.allocator.free(buf);
     try std.testing.expectEqualSlices(u8, expected, buf);
@@ -243,7 +243,7 @@ test "decompression" {
     try testReader(compressed19, uncompressed);
 }
 
-fn expectEqualDecoded(expected: []const u8, input: []const u8) !void {
+fn expect_equal_decoded(expected: []const u8, input: []const u8) !void {
     {
         const result = try decompress.decodeAlloc(std.testing.allocator, input, false, 1 << 23);
         defer std.testing.allocator.free(result);
@@ -259,7 +259,7 @@ fn expectEqualDecoded(expected: []const u8, input: []const u8) !void {
     }
 }
 
-fn expectEqualDecodedStreaming(expected: []const u8, input: []const u8) !void {
+fn expect_equal_decoded_streaming(expected: []const u8, input: []const u8) !void {
     const window_buffer = try std.testing.allocator.alloc(u8, 1 << 23);
     defer std.testing.allocator.free(window_buffer);
 
