@@ -1,0 +1,19 @@
+fn bad_camel_case() void {}
+fn bad_camel_case_with_some_underscores() void {}
+fn good_snake_case() void {}
+fn read_u32_be() void {}
+fn open_z() void {}
+fn open0() void {}
+fn os() void {}
+fn json() void {}
+fn url() void {}
+fn xml_http_request() void {} // (use underscore even in TitleCase to indicate border between initialisms/acronyms)
+fn xml_http_request2() void {}
+fn xml_http_request_read_json() void {} // (no underscore between Request and Read)
+fn xml_http_request_read_json_u32() void {} // (don't mangle primitive type names for the sake of TitleCase)
+fn xml_http_request_u32() void {} // (need underscore to show where Request ends and u32 begins)
+fn xml_http_request_u32_2() void {}
+fn serve_http() void {}
+fn serve_http_os() void {}
+
+mantissa_one
