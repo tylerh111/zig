@@ -29,12 +29,12 @@ pub const Fde = struct {
         return object.cies.items[fde.cie_index];
     }
 
-    pub fn cie_pointer(fde: Fde, elf_file: *Elf) u32 {
+    pub fn ciePointer(fde: Fde, elf_file: *Elf) u32 {
         const fde_data = fde.data(elf_file);
         return std.mem.readInt(u32, fde_data[4..8], .little);
     }
 
-    pub fn calc_size(fde: Fde) usize {
+    pub fn calcSize(fde: Fde) usize {
         return fde.size + 4;
     }
 
@@ -123,7 +123,7 @@ pub const Cie = struct {
         return object.eh_frame_data.items[cie.offset..][0..cie.calcSize()];
     }
 
-    pub fn calc_size(cie: Cie) usize {
+    pub fn calcSize(cie: Cie) usize {
         return cie.size + 4;
     }
 
@@ -229,7 +229,7 @@ pub const Iterator = struct {
     }
 };
 
-pub fn calc_eh_frame_size(elf_file: *Elf) !usize {
+pub fn calcEhFrameSize(elf_file: *Elf) !usize {
     const comp = elf_file.base.comp;
     const gpa = comp.gpa;
 
@@ -275,7 +275,7 @@ pub fn calc_eh_frame_size(elf_file: *Elf) !usize {
     return offset;
 }
 
-pub fn calc_eh_frame_hdr_size(elf_file: *Elf) usize {
+pub fn calcEhFrameHdrSize(elf_file: *Elf) usize {
     var count: usize = 0;
     for (elf_file.objects.items) |index| {
         for (elf_file.file(index).?.object.fdes.items) |fde| {
@@ -286,7 +286,7 @@ pub fn calc_eh_frame_hdr_size(elf_file: *Elf) usize {
     return eh_frame_hdr_header_size + count * 8;
 }
 
-pub fn calc_eh_frame_relocs(elf_file: *Elf) usize {
+pub fn calcEhFrameRelocs(elf_file: *Elf) usize {
     var count: usize = 0;
     for (elf_file.objects.items) |index| {
         const object = elf_file.file(index).?.object;
@@ -302,7 +302,7 @@ pub fn calc_eh_frame_relocs(elf_file: *Elf) usize {
     return count;
 }
 
-fn resolve_reloc(rec: anytype, sym: *const Symbol, rel: elf.Elf64_Rela, elf_file: *Elf, contents: []u8) !void {
+fn resolveReloc(rec: anytype, sym: *const Symbol, rel: elf.Elf64_Rela, elf_file: *Elf, contents: []u8) !void {
     const cpu_arch = elf_file.getTarget().cpu.arch;
     const offset = std.math.cast(usize, rel.r_offset - rec.offset) orelse return error.Overflow;
     const P = math.cast(i64, rec.address(elf_file) + offset) orelse return error.Overflow;
@@ -325,7 +325,7 @@ fn resolve_reloc(rec: anytype, sym: *const Symbol, rel: elf.Elf64_Rela, elf_file
     }
 }
 
-pub fn write_eh_frame(elf_file: *Elf, writer: anytype) !void {
+pub fn writeEhFrame(elf_file: *Elf, writer: anytype) !void {
     relocs_log.debug("{x}: .eh_frame", .{elf_file.shdrs.items[elf_file.eh_frame_section_index.?].sh_addr});
 
     var has_reloc_errors = false;
@@ -382,7 +382,7 @@ pub fn write_eh_frame(elf_file: *Elf, writer: anytype) !void {
     if (has_reloc_errors) return error.RelocFailure;
 }
 
-pub fn write_eh_frame_object(elf_file: *Elf, writer: anytype) !void {
+pub fn writeEhFrameObject(elf_file: *Elf, writer: anytype) !void {
     for (elf_file.objects.items) |index| {
         const object = elf_file.file(index).?.object;
 
@@ -412,7 +412,7 @@ pub fn write_eh_frame_object(elf_file: *Elf, writer: anytype) !void {
     }
 }
 
-fn emit_reloc(elf_file: *Elf, rec: anytype, sym: *const Symbol, rel: elf.Elf64_Rela) elf.Elf64_Rela {
+fn emitReloc(elf_file: *Elf, rec: anytype, sym: *const Symbol, rel: elf.Elf64_Rela) elf.Elf64_Rela {
     const cpu_arch = elf_file.getTarget().cpu.arch;
     const r_offset = rec.address(elf_file) + rel.r_offset - rec.offset;
     const r_type = rel.r_type();
@@ -443,7 +443,7 @@ fn emit_reloc(elf_file: *Elf, rec: anytype, sym: *const Symbol, rel: elf.Elf64_R
     };
 }
 
-pub fn write_eh_frame_relocs(elf_file: *Elf, writer: anytype) !void {
+pub fn writeEhFrameRelocs(elf_file: *Elf, writer: anytype) !void {
     relocs_log.debug("{x}: .eh_frame", .{elf_file.shdrs.items[elf_file.eh_frame_section_index.?].sh_addr});
 
     for (elf_file.objects.items) |index| {
@@ -469,7 +469,7 @@ pub fn write_eh_frame_relocs(elf_file: *Elf, writer: anytype) !void {
     }
 }
 
-pub fn write_eh_frame_hdr(elf_file: *Elf, writer: anytype) !void {
+pub fn writeEhFrameHdr(elf_file: *Elf, writer: anytype) !void {
     const comp = elf_file.base.comp;
     const gpa = comp.gpa;
 
@@ -495,7 +495,7 @@ pub fn write_eh_frame_hdr(elf_file: *Elf, writer: anytype) !void {
         init_addr: u32,
         fde_addr: u32,
 
-        pub fn less_than(ctx: void, lhs: @This(), rhs: @This()) bool {
+        pub fn lessThan(ctx: void, lhs: @This(), rhs: @This()) bool {
             _ = ctx;
             return lhs.init_addr < rhs.init_addr;
         }
@@ -553,7 +553,7 @@ const EH_PE = struct {
 };
 
 const x86_64 = struct {
-    fn resolve_reloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela, source: i64, target: i64, data: []u8) !void {
+    fn resolveReloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela, source: i64, target: i64, data: []u8) !void {
         const r_type: elf.R_X86_64 = @enumFromInt(rel.r_type());
         switch (r_type) {
             .NONE => {},
@@ -567,7 +567,7 @@ const x86_64 = struct {
 };
 
 const aarch64 = struct {
-    fn resolve_reloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela, source: i64, target: i64, data: []u8) !void {
+    fn resolveReloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela, source: i64, target: i64, data: []u8) !void {
         const r_type: elf.R_AARCH64 = @enumFromInt(rel.r_type());
         switch (r_type) {
             .NONE => {},
@@ -580,7 +580,7 @@ const aarch64 = struct {
 };
 
 const riscv = struct {
-    fn resolve_reloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela, source: i64, target: i64, data: []u8) !void {
+    fn resolveReloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela, source: i64, target: i64, data: []u8) !void {
         const r_type: elf.R_RISCV = @enumFromInt(rel.r_type());
         switch (r_type) {
             .NONE => {},
@@ -590,7 +590,7 @@ const riscv = struct {
     }
 };
 
-fn report_invalid_reloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela) !void {
+fn reportInvalidReloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela) !void {
     var err = try elf_file.addErrorWithNotes(1);
     try err.addMsg(elf_file, "invalid relocation type {} at offset 0x{x}", .{
         relocation.fmtRelocType(rel.r_type(), elf_file.getTarget().cpu.arch),

@@ -246,7 +246,7 @@ test "readlink on Windows" {
     try testReadlink("C:\\Users", "C:\\Documents and Settings");
 }
 
-fn test_readlink(target_path: []const u8, symlink_path: []const u8) !void {
+fn testReadlink(target_path: []const u8, symlink_path: []const u8) !void {
     var buffer: [fs.MAX_PATH_BYTES]u8 = undefined;
     const given = try posix.readlink(symlink_path, buffer[0..]);
     try expect(mem.eql(u8, target_path, given));
@@ -390,7 +390,7 @@ test "readlinkat" {
     try expect(mem.eql(u8, "file.txt", read_link));
 }
 
-fn test_thread_id_fn(thread_id: *Thread.Id) void {
+fn testThreadIdFn(thread_id: *Thread.Id) void {
     thread_id.* = Thread.getCurrentId();
 }
 
@@ -448,7 +448,7 @@ test "thread local storage" {
 }
 
 threadlocal var x: i32 = 1234;
-fn test_tls() !void {
+fn testTls() !void {
     if (x != 1234) return error.TlsBadStartValue;
     x += 1;
     if (x != 1235) return error.TlsBadEndValue;
@@ -1241,7 +1241,7 @@ test "pwrite with empty buffer" {
     _ = try posix.pwrite(file.handle, bytes, 0);
 }
 
-fn expect_mode(dir: posix.fd_t, file: []const u8, mode: posix.mode_t) !void {
+fn expectMode(dir: posix.fd_t, file: []const u8, mode: posix.mode_t) !void {
     const st = try posix.fstatat(dir, file, posix.AT.SYMLINK_NOFOLLOW);
     try expectEqual(mode, st.mode & 0b111_111_111);
 }

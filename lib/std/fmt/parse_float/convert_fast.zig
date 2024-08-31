@@ -15,7 +15,7 @@ const FloatInfo = @import("FloatInfo.zig");
 const Number = common.Number;
 const floatFromU64 = common.floatFromU64;
 
-fn is_fast_path(comptime T: type, n: Number(T)) bool {
+fn isFastPath(comptime T: type, n: Number(T)) bool {
     const info = FloatInfo.from(T);
 
     return info.min_exponent_fast_path <= n.exponent and
@@ -28,7 +28,7 @@ fn is_fast_path(comptime T: type, n: Number(T)) bool {
 // for f64 this is floor(53 / log2(5)) = 22.
 //
 // Must have max_disguised_fast_path - max_exponent_fast_path entries. (82 - 48 = 34 for f128)
-fn fast_pow10(comptime T: type, i: usize) T {
+fn fastPow10(comptime T: type, i: usize) T {
     return switch (T) {
         f16 => ([8]f16{
             1e0, 1e1, 1e2, 1e3, 1e4, 0, 0, 0,
@@ -61,7 +61,7 @@ fn fast_pow10(comptime T: type, i: usize) T {
     };
 }
 
-fn fast_int_pow10(comptime T: type, i: usize) T {
+fn fastIntPow10(comptime T: type, i: usize) T {
     return switch (T) {
         u64 => ([16]u64{
             1,             10,             100,             1000,
@@ -95,7 +95,7 @@ fn fast_int_pow10(comptime T: type, i: usize) T {
     };
 }
 
-pub fn convert_fast(comptime T: type, n: Number(T)) ?T {
+pub fn convertFast(comptime T: type, n: Number(T)) ?T {
     const MantissaT = common.mantissaType(T);
 
     if (!isFastPath(T, n)) {

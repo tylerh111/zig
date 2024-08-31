@@ -60,7 +60,7 @@ pub const Error = union(enum) {
 
 /// Parse Zig number literal accepted by fmt.parseInt, fmt.parseFloat and big_int.setString.
 /// Valid for any input.
-pub fn parse_number_literal(bytes: []const u8) Result {
+pub fn parseNumberLiteral(bytes: []const u8) Result {
     var i: usize = 0;
     var base: u8 = 10;
     if (bytes.len >= 2 and bytes[0] == '0') switch (bytes[1]) {

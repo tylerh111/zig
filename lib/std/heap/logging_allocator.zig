@@ -4,7 +4,7 @@ const Allocator = std.mem.Allocator;
 /// This allocator is used in front of another allocator and logs to `std.log`
 /// on every call to the allocator.
 /// For logging to a `std.io.Writer` see `std.heap.LogToWriterAllocator`
-pub fn logging_allocator(
+pub fn LoggingAllocator(
     comptime success_log_level: std.log.Level,
     comptime failure_log_level: std.log.Level,
 ) type {
@@ -14,7 +14,7 @@ pub fn logging_allocator(
 /// This allocator is used in front of another allocator and logs to `std.log`
 /// with the given scope on every call to the allocator.
 /// For logging to a `std.io.Writer` see `std.heap.LogToWriterAllocator`
-pub fn scoped_logging_allocator(
+pub fn ScopedLoggingAllocator(
     comptime scope: @Type(.EnumLiteral),
     comptime success_log_level: std.log.Level,
     comptime failure_log_level: std.log.Level,
@@ -44,7 +44,7 @@ pub fn scoped_logging_allocator(
         }
 
         // This function is required as the `std.log.log` function is not public
-        inline fn log_helper(comptime log_level: std.log.Level, comptime format: []const u8, args: anytype) void {
+        inline fn logHelper(comptime log_level: std.log.Level, comptime format: []const u8, args: anytype) void {
             switch (log_level) {
                 .err => log.err(format, args),
                 .warn => log.warn(format, args),
@@ -128,6 +128,6 @@ pub fn scoped_logging_allocator(
 /// This allocator is used in front of another allocator and logs to `std.log`
 /// on every call to the allocator.
 /// For logging to a `std.io.Writer` see `std.heap.LogToWriterAllocator`
-pub fn logging_allocator(parent_allocator: Allocator) LoggingAllocator(.debug, .err) {
+pub fn loggingAllocator(parent_allocator: Allocator) LoggingAllocator(.debug, .err) {
     return LoggingAllocator(.debug, .err).init(parent_allocator);
 }

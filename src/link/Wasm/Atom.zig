@@ -58,13 +58,13 @@ pub fn format(atom: Atom, comptime fmt: []const u8, options: std.fmt.FormatOptio
 }
 
 /// Returns the location of the symbol that represents this `Atom`
-pub fn symbol_loc(atom: Atom) Wasm.SymbolLoc {
+pub fn symbolLoc(atom: Atom) Wasm.SymbolLoc {
     return .{ .file = atom.file, .index = atom.sym_index };
 }
 
 /// Resolves the relocations within the atom, writing the new value
 /// at the calculated offset.
-pub fn resolve_relocs(atom: *Atom, wasm_bin: *const Wasm) void {
+pub fn resolveRelocs(atom: *Atom, wasm_bin: *const Wasm) void {
     if (atom.relocs.items.len == 0) return;
     const symbol_name = atom.symbolLoc().getName(wasm_bin);
     log.debug("Resolving relocs in atom '{s}' count({d})", .{
@@ -113,7 +113,7 @@ pub fn resolve_relocs(atom: *Atom, wasm_bin: *const Wasm) void {
 /// From a given `relocation` will return the new value to be written.
 /// All values will be represented as a `u64` as all values can fit within it.
 /// The final value must be casted to the correct size.
-fn relocation_value(atom: Atom, relocation: types.Relocation, wasm_bin: *const Wasm) u64 {
+fn relocationValue(atom: Atom, relocation: types.Relocation, wasm_bin: *const Wasm) u64 {
     const target_loc = (Wasm.SymbolLoc{ .file = atom.file, .index = @enumFromInt(relocation.index) }).finalLoc(wasm_bin);
     const symbol = target_loc.getSymbol(wasm_bin);
     if (relocation.relocation_type != .R_WASM_TYPE_INDEX_LEB and

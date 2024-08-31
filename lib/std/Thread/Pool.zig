@@ -80,7 +80,7 @@ fn join(pool: *Pool, spawned: usize) void {
 ///
 /// In the case that queuing the function call fails to allocate memory, or the
 /// target is single-threaded, the function is called directly.
-pub fn spawn_wg(pool: *Pool, wait_group: *WaitGroup, comptime func: anytype, args: anytype) void {
+pub fn spawnWg(pool: *Pool, wait_group: *WaitGroup, comptime func: anytype, args: anytype) void {
     wait_group.start();
 
     if (builtin.single_threaded) {
@@ -96,7 +96,7 @@ pub fn spawn_wg(pool: *Pool, wait_group: *WaitGroup, comptime func: anytype, arg
         run_node: RunQueue.Node = .{ .data = .{ .runFn = runFn } },
         wait_group: *WaitGroup,
 
-        fn run_fn(runnable: *Runnable) void {
+        fn runFn(runnable: *Runnable) void {
             const run_node: *RunQueue.Node = @fieldParentPtr("data", runnable);
             const closure: *@This() = @alignCast(@fieldParentPtr("run_node", run_node));
             @call(.auto, func, closure.arguments);
@@ -146,7 +146,7 @@ pub fn spawn(pool: *Pool, comptime func: anytype, args: anytype) !void {
         pool: *Pool,
         run_node: RunQueue.Node = .{ .data = .{ .runFn = runFn } },
 
-        fn run_fn(runnable: *Runnable) void {
+        fn runFn(runnable: *Runnable) void {
             const run_node: *RunQueue.Node = @fieldParentPtr("data", runnable);
             const closure: *@This() = @alignCast(@fieldParentPtr("run_node", run_node));
             @call(.auto, func, closure.arguments);
@@ -200,7 +200,7 @@ fn worker(pool: *Pool) void {
     }
 }
 
-pub fn wait_and_work(pool: *Pool, wait_group: *WaitGroup) void {
+pub fn waitAndWork(pool: *Pool, wait_group: *WaitGroup) void {
     while (!wait_group.isDone()) {
         if (blk: {
             pool.mutex.lock();

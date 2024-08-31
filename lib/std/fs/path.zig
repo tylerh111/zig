@@ -47,7 +47,7 @@ pub const delimiter_posix = ':';
 pub const delimiter = if (native_os == .windows) delimiter_windows else delimiter_posix;
 
 /// Returns if the given byte is a valid path separator
-pub fn is_sep(byte: u8) bool {
+pub fn isSep(byte: u8) bool {
     return switch (native_os) {
         .windows => byte == '/' or byte == '\\',
         .uefi => byte == '\\',
@@ -61,7 +61,7 @@ pub const PathType = enum {
     posix,
 
     /// Returns true if `c` is a valid path separator for the `path_type`.
-    pub inline fn is_sep(comptime path_type: PathType, comptime T: type, c: T) bool {
+    pub inline fn isSep(comptime path_type: PathType, comptime T: type, c: T) bool {
         return switch (path_type) {
             .windows => c == '/' or c == '\\',
             .posix => c == '/',
@@ -72,7 +72,7 @@ pub const PathType = enum {
 
 /// This is different from mem.join in that the separator will not be repeated if
 /// it is found at the end or beginning of a pair of consecutive paths.
-fn join_sep_maybe_z(allocator: Allocator, separator: u8, comptime sepPredicate: fn (u8) bool, paths: []const []const u8, zero: bool) ![]u8 {
+fn joinSepMaybeZ(allocator: Allocator, separator: u8, comptime sepPredicate: fn (u8) bool, paths: []const []const u8, zero: bool) ![]u8 {
     if (paths.len == 0) return if (zero) try allocator.dupe(u8, &[1]u8{0}) else &[0]u8{};
 
     // Find first non-empty path index.
@@ -142,14 +142,14 @@ pub fn join(allocator: Allocator, paths: []const []const u8) ![]u8 {
 
 /// Naively combines a series of paths with the native path separator and null terminator.
 /// Allocates memory for the result, which must be freed by the caller.
-pub fn join_z(allocator: Allocator, paths: []const []const u8) ![:0]u8 {
+pub fn joinZ(allocator: Allocator, paths: []const []const u8) ![:0]u8 {
     const out = try joinSepMaybeZ(allocator, sep, isSep, paths, true);
     return out[0 .. out.len - 1 :0];
 }
 
-fn test_join_maybe_zuefi(paths: []const []const u8, expected: []const u8, zero: bool) !void {
+fn testJoinMaybeZUefi(paths: []const []const u8, expected: []const u8, zero: bool) !void {
     const uefiIsSep = struct {
-        fn is_sep(byte: u8) bool {
+        fn isSep(byte: u8) bool {
             return byte == '\\';
         }
     }.isSep;
@@ -158,9 +158,9 @@ fn test_join_maybe_zuefi(paths: []const []const u8, expected: []const u8, zero: 
     try testing.expectEqualSlices(u8, expected, if (zero) actual[0 .. actual.len - 1 :0] else actual);
 }
 
-fn test_join_maybe_zwindows(paths: []const []const u8, expected: []const u8, zero: bool) !void {
+fn testJoinMaybeZWindows(paths: []const []const u8, expected: []const u8, zero: bool) !void {
     const windowsIsSep = struct {
-        fn is_sep(byte: u8) bool {
+        fn isSep(byte: u8) bool {
             return byte == '/' or byte == '\\';
         }
     }.isSep;
@@ -169,9 +169,9 @@ fn test_join_maybe_zwindows(paths: []const []const u8, expected: []const u8, zer
     try testing.expectEqualSlices(u8, expected, if (zero) actual[0 .. actual.len - 1 :0] else actual);
 }
 
-fn test_join_maybe_zposix(paths: []const []const u8, expected: []const u8, zero: bool) !void {
+fn testJoinMaybeZPosix(paths: []const []const u8, expected: []const u8, zero: bool) !void {
     const posixIsSep = struct {
-        fn is_sep(byte: u8) bool {
+        fn isSep(byte: u8) bool {
             return byte == '/';
         }
     }.isSep;
@@ -240,7 +240,7 @@ test join {
     }
 }
 
-pub fn is_absolute_z(path_c: [*:0]const u8) bool {
+pub fn isAbsoluteZ(path_c: [*:0]const u8) bool {
     if (native_os == .windows) {
         return isAbsoluteWindowsZ(path_c);
     } else {
@@ -248,7 +248,7 @@ pub fn is_absolute_z(path_c: [*:0]const u8) bool {
     }
 }
 
-pub fn is_absolute(path: []const u8) bool {
+pub fn isAbsolute(path: []const u8) bool {
     if (native_os == .windows) {
         return isAbsoluteWindows(path);
     } else {
@@ -256,7 +256,7 @@ pub fn is_absolute(path: []const u8) bool {
     }
 }
 
-fn is_absolute_windows_impl(comptime T: type, path: []const T) bool {
+fn isAbsoluteWindowsImpl(comptime T: type, path: []const T) bool {
     if (path.len < 1)
         return false;
 
@@ -279,27 +279,27 @@ fn is_absolute_windows_impl(comptime T: type, path: []const T) bool {
     return false;
 }
 
-pub fn is_absolute_windows(path: []const u8) bool {
+pub fn isAbsoluteWindows(path: []const u8) bool {
     return isAbsoluteWindowsImpl(u8, path);
 }
 
-pub fn is_absolute_windows_w(path_w: [*:0]const u16) bool {
+pub fn isAbsoluteWindowsW(path_w: [*:0]const u16) bool {
     return isAbsoluteWindowsImpl(u16, mem.sliceTo(path_w, 0));
 }
 
-pub fn is_absolute_windows_wtf16(path: []const u16) bool {
+pub fn isAbsoluteWindowsWTF16(path: []const u16) bool {
     return isAbsoluteWindowsImpl(u16, path);
 }
 
-pub fn is_absolute_windows_z(path_c: [*:0]const u8) bool {
+pub fn isAbsoluteWindowsZ(path_c: [*:0]const u8) bool {
     return isAbsoluteWindowsImpl(u8, mem.sliceTo(path_c, 0));
 }
 
-pub fn is_absolute_posix(path: []const u8) bool {
+pub fn isAbsolutePosix(path: []const u8) bool {
     return path.len > 0 and path[0] == sep_posix;
 }
 
-pub fn is_absolute_posix_z(path_c: [*:0]const u8) bool {
+pub fn isAbsolutePosixZ(path_c: [*:0]const u8) bool {
     return isAbsolutePosix(mem.sliceTo(path_c, 0));
 }
 
@@ -334,11 +334,11 @@ test isAbsolutePosix {
     try testIsAbsolutePosix("./baz", false);
 }
 
-fn test_is_absolute_windows(path: []const u8, expected_result: bool) !void {
+fn testIsAbsoluteWindows(path: []const u8, expected_result: bool) !void {
     try testing.expectEqual(expected_result, isAbsoluteWindows(path));
 }
 
-fn test_is_absolute_posix(path: []const u8, expected_result: bool) !void {
+fn testIsAbsolutePosix(path: []const u8, expected_result: bool) !void {
     try testing.expectEqual(expected_result, isAbsolutePosix(path));
 }
 
@@ -354,7 +354,7 @@ pub const WindowsPath = struct {
     };
 };
 
-pub fn windows_parse_path(path: []const u8) WindowsPath {
+pub fn windowsParsePath(path: []const u8) WindowsPath {
     if (path.len >= 2 and path[1] == ':') {
         return WindowsPath{
             .is_abs = isAbsoluteWindows(path),
@@ -433,7 +433,7 @@ test windowsParsePath {
     }
 }
 
-pub fn disk_designator(path: []const u8) []const u8 {
+pub fn diskDesignator(path: []const u8) []const u8 {
     if (native_os == .windows) {
         return diskDesignatorWindows(path);
     } else {
@@ -441,11 +441,11 @@ pub fn disk_designator(path: []const u8) []const u8 {
     }
 }
 
-pub fn disk_designator_windows(path: []const u8) []const u8 {
+pub fn diskDesignatorWindows(path: []const u8) []const u8 {
     return windowsParsePath(path).disk_designator;
 }
 
-fn network_share_servers_eql(ns1: []const u8, ns2: []const u8) bool {
+fn networkShareServersEql(ns1: []const u8, ns2: []const u8) bool {
     const sep1 = ns1[0];
     const sep2 = ns2[0];
 
@@ -455,7 +455,7 @@ fn network_share_servers_eql(ns1: []const u8, ns2: []const u8) bool {
     return windows.eqlIgnoreCaseWtf8(it1.next().?, it2.next().?);
 }
 
-fn compare_disk_designators(kind: WindowsPath.Kind, p1: []const u8, p2: []const u8) bool {
+fn compareDiskDesignators(kind: WindowsPath.Kind, p1: []const u8, p2: []const u8) bool {
     switch (kind) {
         WindowsPath.Kind.None => {
             assert(p1.len == 0);
@@ -494,7 +494,7 @@ pub fn resolve(allocator: Allocator, paths: []const []const u8) ![]u8 {
 /// Note: all usage of this function should be audited due to the existence of symlinks.
 /// Without performing actual syscalls, resolving `..` could be incorrect.
 /// This API may break in the future: https://github.com/ziglang/zig/issues/13613
-pub fn resolve_windows(allocator: Allocator, paths: []const []const u8) ![]u8 {
+pub fn resolveWindows(allocator: Allocator, paths: []const []const u8) ![]u8 {
     assert(paths.len > 0);
 
     // determine which disk designator we will result with, if any
@@ -669,7 +669,7 @@ pub fn resolve_windows(allocator: Allocator, paths: []const []const u8) ![]u8 {
 /// This function does not perform any syscalls. Executing this series of path
 /// lookups on the actual filesystem may produce different results due to
 /// symlinks.
-pub fn resolve_posix(allocator: Allocator, paths: []const []const u8) Allocator.Error![]u8 {
+pub fn resolvePosix(allocator: Allocator, paths: []const []const u8) Allocator.Error![]u8 {
     assert(paths.len > 0);
 
     var result = std.ArrayList(u8).init(allocator);
@@ -798,13 +798,13 @@ test resolvePosix {
     try testResolvePosix(&.{ ".", "src/test.zig", "..", "../test/cases.zig" }, "test/cases.zig");
 }
 
-fn test_resolve_windows(paths: []const []const u8, expected: []const u8) !void {
+fn testResolveWindows(paths: []const []const u8, expected: []const u8) !void {
     const actual = try resolveWindows(testing.allocator, paths);
     defer testing.allocator.free(actual);
     try testing.expectEqualStrings(expected, actual);
 }
 
-fn test_resolve_posix(paths: []const []const u8, expected: []const u8) !void {
+fn testResolvePosix(paths: []const []const u8, expected: []const u8) !void {
     const actual = try resolvePosix(testing.allocator, paths);
     defer testing.allocator.free(actual);
     try testing.expectEqualStrings(expected, actual);
@@ -824,7 +824,7 @@ pub fn dirname(path: []const u8) ?[]const u8 {
     }
 }
 
-pub fn dirname_windows(path: []const u8) ?[]const u8 {
+pub fn dirnameWindows(path: []const u8) ?[]const u8 {
     if (path.len == 0)
         return null;
 
@@ -858,7 +858,7 @@ pub fn dirname_windows(path: []const u8) ?[]const u8 {
     return path[0..end_index];
 }
 
-pub fn dirname_posix(path: []const u8) ?[]const u8 {
+pub fn dirnamePosix(path: []const u8) ?[]const u8 {
     if (path.len == 0)
         return null;
 
@@ -934,7 +934,7 @@ test dirnameWindows {
     try testDirnameWindows("foo", null);
 }
 
-fn test_dirname_posix(input: []const u8, expected_output: ?[]const u8) !void {
+fn testDirnamePosix(input: []const u8, expected_output: ?[]const u8) !void {
     if (dirnamePosix(input)) |output| {
         try testing.expect(mem.eql(u8, output, expected_output.?));
     } else {
@@ -942,7 +942,7 @@ fn test_dirname_posix(input: []const u8, expected_output: ?[]const u8) !void {
     }
 }
 
-fn test_dirname_windows(input: []const u8, expected_output: ?[]const u8) !void {
+fn testDirnameWindows(input: []const u8, expected_output: ?[]const u8) !void {
     if (dirnameWindows(input)) |output| {
         try testing.expect(mem.eql(u8, output, expected_output.?));
     } else {
@@ -958,7 +958,7 @@ pub fn basename(path: []const u8) []const u8 {
     }
 }
 
-pub fn basename_posix(path: []const u8) []const u8 {
+pub fn basenamePosix(path: []const u8) []const u8 {
     if (path.len == 0)
         return &[_]u8{};
 
@@ -979,7 +979,7 @@ pub fn basename_posix(path: []const u8) []const u8 {
     return path[start_index + 1 .. end_index];
 }
 
-pub fn basename_windows(path: []const u8) []const u8 {
+pub fn basenameWindows(path: []const u8) []const u8 {
     if (path.len == 0)
         return &[_]u8{};
 
@@ -1050,15 +1050,15 @@ test basename {
     try testBasenameWindows("file:stream", "file:stream");
 }
 
-fn test_basename(input: []const u8, expected_output: []const u8) !void {
+fn testBasename(input: []const u8, expected_output: []const u8) !void {
     try testing.expectEqualSlices(u8, expected_output, basename(input));
 }
 
-fn test_basename_posix(input: []const u8, expected_output: []const u8) !void {
+fn testBasenamePosix(input: []const u8, expected_output: []const u8) !void {
     try testing.expectEqualSlices(u8, expected_output, basenamePosix(input));
 }
 
-fn test_basename_windows(input: []const u8, expected_output: []const u8) !void {
+fn testBasenameWindows(input: []const u8, expected_output: []const u8) !void {
     try testing.expectEqualSlices(u8, expected_output, basenameWindows(input));
 }
 
@@ -1074,7 +1074,7 @@ pub fn relative(allocator: Allocator, from: []const u8, to: []const u8) ![]u8 {
     }
 }
 
-pub fn relative_windows(allocator: Allocator, from: []const u8, to: []const u8) ![]u8 {
+pub fn relativeWindows(allocator: Allocator, from: []const u8, to: []const u8) ![]u8 {
     const cwd = try process.getCwdAlloc(allocator);
     defer allocator.free(cwd);
     const resolved_from = try resolveWindows(allocator, &[_][]const u8{ cwd, from });
@@ -1144,7 +1144,7 @@ pub fn relative_windows(allocator: Allocator, from: []const u8, to: []const u8) 
     return [_]u8{};
 }
 
-pub fn relative_posix(allocator: Allocator, from: []const u8, to: []const u8) ![]u8 {
+pub fn relativePosix(allocator: Allocator, from: []const u8, to: []const u8) ![]u8 {
     const cwd = try process.getCwdAlloc(allocator);
     defer allocator.free(cwd);
     const resolved_from = try resolvePosix(allocator, &[_][]const u8{ cwd, from });
@@ -1234,13 +1234,13 @@ test relative {
     try testRelativePosix("/baz", "/baz-quux", "../baz-quux");
 }
 
-fn test_relative_posix(from: []const u8, to: []const u8, expected_output: []const u8) !void {
+fn testRelativePosix(from: []const u8, to: []const u8, expected_output: []const u8) !void {
     const result = try relativePosix(testing.allocator, from, to);
     defer testing.allocator.free(result);
     try testing.expectEqualStrings(expected_output, result);
 }
 
-fn test_relative_windows(from: []const u8, to: []const u8, expected_output: []const u8) !void {
+fn testRelativeWindows(from: []const u8, to: []const u8, expected_output: []const u8) !void {
     const result = try relativeWindows(testing.allocator, from, to);
     defer testing.allocator.free(result);
     try testing.expectEqualStrings(expected_output, result);
@@ -1267,7 +1267,7 @@ pub fn extension(path: []const u8) []const u8 {
     return filename[index..];
 }
 
-fn test_extension(path: []const u8, expected: []const u8) !void {
+fn testExtension(path: []const u8, expected: []const u8) !void {
     try testing.expectEqualStrings(expected, extension(path));
 }
 
@@ -1324,7 +1324,7 @@ pub fn stem(path: []const u8) []const u8 {
     return filename[0..index];
 }
 
-fn test_stem(path: []const u8, expected: []const u8) !void {
+fn testStem(path: []const u8, expected: []const u8) !void {
     try testing.expectEqualStrings(expected, stem(path));
 }
 
@@ -1358,7 +1358,7 @@ test stem {
 /// when iterating.
 /// All returned component names/paths are slices of the original path.
 /// There is no normalization of paths performed while iterating.
-pub fn component_iterator(comptime path_type: PathType, comptime T: type) type {
+pub fn ComponentIterator(comptime path_type: PathType, comptime T: type) type {
     return struct {
         path: []const T,
         root_end_index: usize = 0,
@@ -1528,7 +1528,7 @@ pub fn component_iterator(comptime path_type: PathType, comptime T: type) type {
         }
 
         /// Like `next`, but does not modify the iterator state.
-        pub fn peek_next(self: Self) ?Component {
+        pub fn peekNext(self: Self) ?Component {
             var start_index = self.end_index;
             while (start_index < self.path.len and path_type.isSep(T, self.path[start_index])) {
                 start_index += 1;
@@ -1556,7 +1556,7 @@ pub fn component_iterator(comptime path_type: PathType, comptime T: type) type {
         }
 
         /// Like `previous`, but does not modify the iterator state.
-        pub fn peek_previous(self: Self) ?Component {
+        pub fn peekPrevious(self: Self) ?Component {
             var end_index = self.start_index;
             while (true) {
                 if (end_index == self.root_end_index) return null;
@@ -1584,7 +1584,7 @@ pub const NativeComponentIterator = ComponentIterator(switch (native_os) {
     else => .posix,
 }, u8);
 
-pub fn component_iterator(path: []const u8) !NativeComponentIterator {
+pub fn componentIterator(path: []const u8) !NativeComponentIterator {
     return NativeComponentIterator.init(path);
 }
 

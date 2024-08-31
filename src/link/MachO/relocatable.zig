@@ -1,4 +1,4 @@
-pub fn flush_object(macho_file: *MachO, comp: *Compilation, module_obj_path: ?[]const u8) link.File.FlushError!void {
+pub fn flushObject(macho_file: *MachO, comp: *Compilation, module_obj_path: ?[]const u8) link.File.FlushError!void {
     const gpa = macho_file.base.comp.gpa;
 
     var positionals = std.ArrayList(Compilation.LinkObject).init(gpa);
@@ -90,7 +90,7 @@ pub fn flush_object(macho_file: *MachO, comp: *Compilation, module_obj_path: ?[]
     try writeHeader(macho_file, ncmds, sizeofcmds);
 }
 
-pub fn flush_static_lib(macho_file: *MachO, comp: *Compilation, module_obj_path: ?[]const u8) link.File.FlushError!void {
+pub fn flushStaticLib(macho_file: *MachO, comp: *Compilation, module_obj_path: ?[]const u8) link.File.FlushError!void {
     const gpa = comp.gpa;
 
     var positionals = std.ArrayList(Compilation.LinkObject).init(gpa);
@@ -258,7 +258,7 @@ pub fn flush_static_lib(macho_file: *MachO, comp: *Compilation, module_obj_path:
     if (comp.link_errors.items.len > 0) return error.FlushFailure;
 }
 
-fn parse_positional(macho_file: *MachO, path: []const u8) MachO.ParseError!void {
+fn parsePositional(macho_file: *MachO, path: []const u8) MachO.ParseError!void {
     const tracy = trace(@src());
     defer tracy.end();
     if (try Object.isObject(path)) {
@@ -273,7 +273,7 @@ fn parse_positional(macho_file: *MachO, path: []const u8) MachO.ParseError!void 
     } else return error.UnknownFileType;
 }
 
-fn parse_object(macho_file: *MachO, path: []const u8) MachO.ParseError!void {
+fn parseObject(macho_file: *MachO, path: []const u8) MachO.ParseError!void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -298,7 +298,7 @@ fn parse_object(macho_file: *MachO, path: []const u8) MachO.ParseError!void {
     try object.parseAr(macho_file);
 }
 
-fn parse_archive(macho_file: *MachO, path: []const u8, fat_arch: ?fat.Arch) MachO.ParseError!void {
+fn parseArchive(macho_file: *MachO, path: []const u8, fat_arch: ?fat.Arch) MachO.ParseError!void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -327,7 +327,7 @@ fn parse_archive(macho_file: *MachO, path: []const u8, fat_arch: ?fat.Arch) Mach
     if (has_parse_error) return error.MalformedArchive;
 }
 
-fn mark_exports(macho_file: *MachO) void {
+fn markExports(macho_file: *MachO) void {
     if (macho_file.getZigObject()) |zo| {
         zo.asFile().markExportsRelocatable(macho_file);
     }
@@ -336,7 +336,7 @@ fn mark_exports(macho_file: *MachO) void {
     }
 }
 
-pub fn claim_unresolved(macho_file: *MachO) void {
+pub fn claimUnresolved(macho_file: *MachO) void {
     if (macho_file.getZigObject()) |zo| {
         zo.asFile().claimUnresolvedRelocatable(macho_file);
     }
@@ -345,7 +345,7 @@ pub fn claim_unresolved(macho_file: *MachO) void {
     }
 }
 
-fn init_output_sections(macho_file: *MachO) !void {
+fn initOutputSections(macho_file: *MachO) !void {
     for (macho_file.objects.items) |index| {
         const object = macho_file.getFile(index).?.object;
         for (object.atoms.items) |atom_index| {
@@ -373,7 +373,7 @@ fn init_output_sections(macho_file: *MachO) !void {
     }
 }
 
-fn calc_section_sizes(macho_file: *MachO) !void {
+fn calcSectionSizes(macho_file: *MachO) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -414,7 +414,7 @@ fn calc_section_sizes(macho_file: *MachO) !void {
     }
 }
 
-fn calc_compact_unwind_size(macho_file: *MachO, sect_index: u8) void {
+fn calcCompactUnwindSize(macho_file: *MachO, sect_index: u8) void {
     var size: u32 = 0;
     var nreloc: u32 = 0;
 
@@ -440,7 +440,7 @@ fn calc_compact_unwind_size(macho_file: *MachO, sect_index: u8) void {
     sect.@"align" = 3;
 }
 
-fn allocate_sections(macho_file: *MachO) !void {
+fn allocateSections(macho_file: *MachO) !void {
     const slice = macho_file.sections.slice();
     for (slice.items(.header)) |*header| {
         const needed_size = header.size;
@@ -465,7 +465,7 @@ fn allocate_sections(macho_file: *MachO) !void {
 /// allocation mechanism to not rely so much on having `_ZIG` sections always
 /// pushed to the back. For instance, this is not a problem in ELF linker.
 /// Then, we can create sections with the correct name from the start in `MachO.initMetadata`.
-fn sanitize_zig_sections(macho_file: *MachO) void {
+fn sanitizeZigSections(macho_file: *MachO) void {
     if (macho_file.zig_text_sect_index) |index| {
         const header = &macho_file.sections.items(.header)[index];
         header.segname = MachO.makeStaticString("__TEXT");
@@ -484,7 +484,7 @@ fn sanitize_zig_sections(macho_file: *MachO) void {
     }
 }
 
-fn create_segment(macho_file: *MachO) !void {
+fn createSegment(macho_file: *MachO) !void {
     const gpa = macho_file.base.comp.gpa;
 
     // For relocatable, we only ever need a single segment so create it now.
@@ -500,7 +500,7 @@ fn create_segment(macho_file: *MachO) !void {
     seg.cmdsize += seg.nsects * @sizeOf(macho.section_64);
 }
 
-fn allocate_segment(macho_file: *MachO) void {
+fn allocateSegment(macho_file: *MachO) void {
     // Allocate the single segment.
     const seg = &macho_file.segments.items[0];
     var vmaddr: u64 = 0;
@@ -519,7 +519,7 @@ fn allocate_segment(macho_file: *MachO) void {
     seg.filesize = fileoff - seg.fileoff;
 }
 
-fn allocate_sections_relocs(macho_file: *MachO, off: u32) u32 {
+fn allocateSectionsRelocs(macho_file: *MachO, off: u32) u32 {
     var fileoff = off;
     const slice = macho_file.sections.slice();
     for (slice.items(.header)) |*header| {
@@ -531,12 +531,12 @@ fn allocate_sections_relocs(macho_file: *MachO, off: u32) u32 {
 }
 
 // We need to sort relocations in descending order to be compatible with Apple's linker.
-fn sort_reloc(ctx: void, lhs: macho.relocation_info, rhs: macho.relocation_info) bool {
+fn sortReloc(ctx: void, lhs: macho.relocation_info, rhs: macho.relocation_info) bool {
     _ = ctx;
     return lhs.r_address > rhs.r_address;
 }
 
-fn write_atoms(macho_file: *MachO) !void {
+fn writeAtoms(macho_file: *MachO) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -638,7 +638,7 @@ fn write_atoms(macho_file: *MachO) !void {
     }
 }
 
-fn write_compact_unwind(macho_file: *MachO) !void {
+fn writeCompactUnwind(macho_file: *MachO) !void {
     const sect_index = macho_file.unwind_info_sect_index orelse return;
     const gpa = macho_file.base.comp.gpa;
     const header = macho_file.sections.items(.header)[sect_index];
@@ -651,7 +651,7 @@ fn write_compact_unwind(macho_file: *MachO) !void {
     defer relocs.deinit();
 
     const addReloc = struct {
-        fn add_reloc(offset: i32, cpu_arch: std.Target.Cpu.Arch) macho.relocation_info {
+        fn addReloc(offset: i32, cpu_arch: std.Target.Cpu.Arch) macho.relocation_info {
             return .{
                 .r_address = offset,
                 .r_symbolnum = 0,
@@ -725,7 +725,7 @@ fn write_compact_unwind(macho_file: *MachO) !void {
     try macho_file.base.file.?.pwriteAll(mem.sliceAsBytes(relocs.items), header.reloff);
 }
 
-fn write_eh_frame(macho_file: *MachO) !void {
+fn writeEhFrame(macho_file: *MachO) !void {
     const sect_index = macho_file.eh_frame_sect_index orelse return;
     const gpa = macho_file.base.comp.gpa;
     const header = macho_file.sections.items(.header)[sect_index];
@@ -747,7 +747,7 @@ fn write_eh_frame(macho_file: *MachO) !void {
     try macho_file.base.file.?.pwriteAll(mem.sliceAsBytes(relocs.items), header.reloff);
 }
 
-fn write_load_commands(macho_file: *MachO) !struct { usize, usize } {
+fn writeLoadCommands(macho_file: *MachO) !struct { usize, usize } {
     const gpa = macho_file.base.comp.gpa;
     const needed_size = load_commands.calcLoadCommandsSizeObject(macho_file);
     const buffer = try gpa.alloc(u8, needed_size);
@@ -791,7 +791,7 @@ fn write_load_commands(macho_file: *MachO) !struct { usize, usize } {
     return .{ ncmds, buffer.len };
 }
 
-fn write_header(macho_file: *MachO, ncmds: usize, sizeofcmds: usize) !void {
+fn writeHeader(macho_file: *MachO, ncmds: usize, sizeofcmds: usize) !void {
     var header: macho.mach_header_64 = .{};
     header.filetype = macho.MH_OBJECT;
 

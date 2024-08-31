@@ -1,7 +1,7 @@
 const builtin = @import("builtin");
 const testing = @import("std").testing;
 
-fn ret_addr() usize {
+fn retAddr() usize {
     return @returnAddress();
 }
 

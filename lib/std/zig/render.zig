@@ -48,7 +48,7 @@ pub const Fixups = struct {
             @intFromBool(f.rebase_imported_paths != null);
     }
 
-    pub fn clear_retaining_capacity(f: *Fixups) void {
+    pub fn clearRetainingCapacity(f: *Fixups) void {
         f.unused_var_decls.clearRetainingCapacity();
         f.gut_functions.clearRetainingCapacity();
         f.omit_nodes.clearRetainingCapacity();
@@ -79,7 +79,7 @@ const Render = struct {
     fixups: Fixups,
 };
 
-pub fn render_tree(buffer: *std.ArrayList(u8), tree: Ast, fixups: Fixups) Error!void {
+pub fn renderTree(buffer: *std.ArrayList(u8), tree: Ast, fixups: Fixups) Error!void {
     assert(tree.errors.len == 0); // Cannot render an invalid tree.
     var auto_indenting_stream = Ais{
         .indent_delta = indent_delta,
@@ -116,7 +116,7 @@ pub fn render_tree(buffer: *std.ArrayList(u8), tree: Ast, fixups: Fixups) Error!
 }
 
 /// Render all members in the given slice, keeping empty lines where appropriate
-fn render_members(r: *Render, members: []const Ast.Node.Index) Error!void {
+fn renderMembers(r: *Render, members: []const Ast.Node.Index) Error!void {
     const tree = r.tree;
     if (members.len == 0) return;
     const container: Container = for (members) |member| {
@@ -135,7 +135,7 @@ const Container = enum {
     other,
 };
 
-fn render_member(
+fn renderMember(
     r: *Render,
     container: Container,
     decl: Ast.Node.Index,
@@ -323,7 +323,7 @@ fn render_member(
 }
 
 /// Render all expressions in the slice, keeping empty lines where appropriate
-fn render_expressions(r: *Render, expressions: []const Ast.Node.Index, space: Space) Error!void {
+fn renderExpressions(r: *Render, expressions: []const Ast.Node.Index, space: Space) Error!void {
     if (expressions.len == 0) return;
     try renderExpression(r, expressions[0], space);
     for (expressions[1..]) |expression| {
@@ -332,7 +332,7 @@ fn render_expressions(r: *Render, expressions: []const Ast.Node.Index, space: Sp
     }
 }
 
-fn render_expression(r: *Render, node: Ast.Node.Index, space: Space) Error!void {
+fn renderExpression(r: *Render, node: Ast.Node.Index, space: Space) Error!void {
     const tree = r.tree;
     const ais = r.ais;
     const token_tags = tree.tokens.items(.tag);
@@ -913,7 +913,7 @@ fn render_expression(r: *Render, node: Ast.Node.Index, space: Space) Error!void 
 
 /// Same as `renderExpression`, but afterwards looks for any
 /// append_string_after_node fixups to apply
-fn render_expression_fixup(r: *Render, node: Ast.Node.Index, space: Space) Error!void {
+fn renderExpressionFixup(r: *Render, node: Ast.Node.Index, space: Space) Error!void {
     const ais = r.ais;
     try renderExpression(r, node, space);
     if (r.fixups.append_string_after_node.get(node)) |bytes| {
@@ -921,7 +921,7 @@ fn render_expression_fixup(r: *Render, node: Ast.Node.Index, space: Space) Error
     }
 }
 
-fn render_array_type(
+fn renderArrayType(
     r: *Render,
     array_type: Ast.full.ArrayType,
     space: Space,
@@ -943,7 +943,7 @@ fn render_array_type(
     return renderExpression(r, array_type.ast.elem_type, space);
 }
 
-fn render_ptr_type(r: *Render, ptr_type: Ast.full.PtrType, space: Space) Error!void {
+fn renderPtrType(r: *Render, ptr_type: Ast.full.PtrType, space: Space) Error!void {
     const tree = r.tree;
     switch (ptr_type.size) {
         .One => {
@@ -1031,7 +1031,7 @@ fn render_ptr_type(r: *Render, ptr_type: Ast.full.PtrType, space: Space) Error!v
     try renderExpression(r, ptr_type.ast.child_type, space);
 }
 
-fn render_slice(
+fn renderSlice(
     r: *Render,
     slice_node: Ast.Node.Index,
     slice: Ast.full.Slice,
@@ -1066,7 +1066,7 @@ fn render_slice(
     try renderToken(r, tree.lastToken(slice_node), space); // rbracket
 }
 
-fn render_asm_output(
+fn renderAsmOutput(
     r: *Render,
     asm_output: Ast.Node.Index,
     space: Space,
@@ -1095,7 +1095,7 @@ fn render_asm_output(
     }
 }
 
-fn render_asm_input(
+fn renderAsmInput(
     r: *Render,
     asm_input: Ast.Node.Index,
     space: Space,
@@ -1116,7 +1116,7 @@ fn render_asm_input(
     return renderToken(r, datas[asm_input].rhs, space); // rparen
 }
 
-fn render_var_decl(
+fn renderVarDecl(
     r: *Render,
     var_decl: Ast.full.VarDecl,
     /// Destructures intentionally ignore leading `comptime` tokens.
@@ -1134,7 +1134,7 @@ fn render_var_decl(
     }
 }
 
-fn render_var_decl_without_fixups(
+fn renderVarDeclWithoutFixups(
     r: *Render,
     var_decl: Ast.full.VarDecl,
     /// Destructures intentionally ignore leading `comptime` tokens.
@@ -1256,7 +1256,7 @@ fn render_var_decl_without_fixups(
     return renderExpression(r, var_decl.ast.init_node, space); // ;
 }
 
-fn render_if(r: *Render, if_node: Ast.full.If, space: Space) Error!void {
+fn renderIf(r: *Render, if_node: Ast.full.If, space: Space) Error!void {
     return renderWhile(r, .{
         .ast = .{
             .while_token = if_node.ast.if_token,
@@ -1275,7 +1275,7 @@ fn render_if(r: *Render, if_node: Ast.full.If, space: Space) Error!void {
 
 /// Note that this function is additionally used to render if expressions, with
 /// respective values set to null.
-fn render_while(r: *Render, while_node: Ast.full.While, space: Space) Error!void {
+fn renderWhile(r: *Render, while_node: Ast.full.While, space: Space) Error!void {
     const tree = r.tree;
     const token_tags = tree.tokens.items(.tag);
 
@@ -1338,7 +1338,7 @@ fn render_while(r: *Render, while_node: Ast.full.While, space: Space) Error!void
     );
 }
 
-fn render_then_else(
+fn renderThenElse(
     r: *Render,
     last_prefix_token: Ast.TokenIndex,
     then_expr: Ast.Node.Index,
@@ -1400,7 +1400,7 @@ fn render_then_else(
     }
 }
 
-fn render_for(r: *Render, for_node: Ast.full.For, space: Space) Error!void {
+fn renderFor(r: *Render, for_node: Ast.full.For, space: Space) Error!void {
     const tree = r.tree;
     const ais = r.ais;
     const token_tags = tree.tokens.items(.tag);
@@ -1470,7 +1470,7 @@ fn render_for(r: *Render, for_node: Ast.full.For, space: Space) Error!void {
     );
 }
 
-fn render_container_field(
+fn renderContainerField(
     r: *Render,
     container: Container,
     field_param: Ast.full.ContainerField,
@@ -1574,7 +1574,7 @@ fn render_container_field(
     }
 }
 
-fn render_builtin_call(
+fn renderBuiltinCall(
     r: *Render,
     builtin_token: Ast.TokenIndex,
     params: []const Ast.Node.Index,
@@ -1649,7 +1649,7 @@ fn render_builtin_call(
     }
 }
 
-fn render_fn_proto(r: *Render, fn_proto: Ast.full.FnProto, space: Space) Error!void {
+fn renderFnProto(r: *Render, fn_proto: Ast.full.FnProto, space: Space) Error!void {
     const tree = r.tree;
     const ais = r.ais;
     const token_tags = tree.tokens.items(.tag);
@@ -1866,7 +1866,7 @@ fn render_fn_proto(r: *Render, fn_proto: Ast.full.FnProto, space: Space) Error!v
     return renderExpression(r, fn_proto.ast.return_type, space);
 }
 
-fn render_switch_case(
+fn renderSwitchCase(
     r: *Render,
     switch_case: Ast.full.SwitchCase,
     space: Space,
@@ -1926,7 +1926,7 @@ fn render_switch_case(
     try renderExpression(r, switch_case.ast.target_expr, space);
 }
 
-fn render_block(
+fn renderBlock(
     r: *Render,
     block_node: Ast.Node.Index,
     statements: []const Ast.Node.Index,
@@ -1954,7 +1954,7 @@ fn render_block(
     return finishRenderBlock(r, block_node, statements, space);
 }
 
-fn finish_render_block(
+fn finishRenderBlock(
     r: *Render,
     block_node: Ast.Node.Index,
     statements: []const Ast.Node.Index,
@@ -1981,7 +1981,7 @@ fn finish_render_block(
     try renderToken(r, tree.lastToken(block_node), space); // rbrace
 }
 
-fn render_struct_init(
+fn renderStructInit(
     r: *Render,
     struct_node: Ast.Node.Index,
     struct_init: Ast.full.StructInit,
@@ -2047,7 +2047,7 @@ fn render_struct_init(
     return renderToken(r, rbrace, space);
 }
 
-fn render_array_init(
+fn renderArrayInit(
     r: *Render,
     array_init: Ast.full.ArrayInit,
     space: Space,
@@ -2273,7 +2273,7 @@ fn render_array_init(
     return renderToken(r, rbrace, space); // rbrace
 }
 
-fn render_container_decl(
+fn renderContainerDecl(
     r: *Render,
     container_decl_node: Ast.Node.Index,
     container_decl: Ast.full.ContainerDecl,
@@ -2389,7 +2389,7 @@ fn render_container_decl(
     return renderToken(r, rbrace, space); // rbrace
 }
 
-fn render_asm(
+fn renderAsm(
     r: *Render,
     asm_node: Ast.full.Asm,
     space: Space,
@@ -2548,7 +2548,7 @@ fn render_asm(
     }
 }
 
-fn render_call(
+fn renderCall(
     r: *Render,
     call: Ast.full.Call,
     space: Space,
@@ -2560,7 +2560,7 @@ fn render_call(
     try renderParamList(r, call.ast.lparen, call.ast.params, space);
 }
 
-fn render_param_list(
+fn renderParamList(
     r: *Render,
     lparen: Ast.TokenIndex,
     params: []const Ast.Node.Index,
@@ -2630,7 +2630,7 @@ fn render_param_list(
 
 /// Renders the given expression indented, popping the indent before rendering
 /// any following line comments
-fn render_expression_indented(r: *Render, node: Ast.Node.Index, space: Space) Error!void {
+fn renderExpressionIndented(r: *Render, node: Ast.Node.Index, space: Space) Error!void {
     const tree = r.tree;
     const ais = r.ais;
     const token_starts = tree.tokens.items(.start);
@@ -2690,7 +2690,7 @@ fn render_expression_indented(r: *Render, node: Ast.Node.Index, space: Space) Er
 
 /// Render an expression, and the comma that follows it, if it is present in the source.
 /// If a comma is present, and `space` is `Space.comma`, render only a single comma.
-fn render_expression_comma(r: *Render, node: Ast.Node.Index, space: Space) Error!void {
+fn renderExpressionComma(r: *Render, node: Ast.Node.Index, space: Space) Error!void {
     const tree = r.tree;
     const token_tags = tree.tokens.items(.tag);
     const maybe_comma = tree.lastToken(node) + 1;
@@ -2704,7 +2704,7 @@ fn render_expression_comma(r: *Render, node: Ast.Node.Index, space: Space) Error
 
 /// Render a token, and the comma that follows it, if it is present in the source.
 /// If a comma is present, and `space` is `Space.comma`, render only a single comma.
-fn render_token_comma(r: *Render, token: Ast.TokenIndex, space: Space) Error!void {
+fn renderTokenComma(r: *Render, token: Ast.TokenIndex, space: Space) Error!void {
     const tree = r.tree;
     const token_tags = tree.tokens.items(.tag);
     const maybe_comma = token + 1;
@@ -2718,7 +2718,7 @@ fn render_token_comma(r: *Render, token: Ast.TokenIndex, space: Space) Error!voi
 
 /// Render an identifier, and the comma that follows it, if it is present in the source.
 /// If a comma is present, and `space` is `Space.comma`, render only a single comma.
-fn render_identifier_comma(r: *Render, token: Ast.TokenIndex, space: Space, quote: QuoteBehavior) Error!void {
+fn renderIdentifierComma(r: *Render, token: Ast.TokenIndex, space: Space, quote: QuoteBehavior) Error!void {
     const tree = r.tree;
     const token_tags = tree.tokens.items(.tag);
     const maybe_comma = token + 1;
@@ -2751,7 +2751,7 @@ const Space = enum {
     skip,
 };
 
-fn render_token(r: *Render, token_index: Ast.TokenIndex, space: Space) Error!void {
+fn renderToken(r: *Render, token_index: Ast.TokenIndex, space: Space) Error!void {
     const tree = r.tree;
     const ais = r.ais;
     const lexeme = tokenSliceForRender(tree, token_index);
@@ -2759,7 +2759,7 @@ fn render_token(r: *Render, token_index: Ast.TokenIndex, space: Space) Error!voi
     try renderSpace(r, token_index, lexeme.len, space);
 }
 
-fn render_space(r: *Render, token_index: Ast.TokenIndex, lexeme_len: usize, space: Space) Error!void {
+fn renderSpace(r: *Render, token_index: Ast.TokenIndex, lexeme_len: usize, space: Space) Error!void {
     const tree = r.tree;
     const ais = r.ais;
     const token_tags = tree.tokens.items(.tag);
@@ -2801,7 +2801,7 @@ fn render_space(r: *Render, token_index: Ast.TokenIndex, lexeme_len: usize, spac
     }
 }
 
-fn render_only_space(r: *Render, space: Space) Error!void {
+fn renderOnlySpace(r: *Render, space: Space) Error!void {
     const ais = r.ais;
     switch (space) {
         .none => {},
@@ -2820,7 +2820,7 @@ const QuoteBehavior = enum {
     eagerly_unquote_except_underscore,
 };
 
-fn render_identifier(r: *Render, token_index: Ast.TokenIndex, space: Space, quote: QuoteBehavior) Error!void {
+fn renderIdentifier(r: *Render, token_index: Ast.TokenIndex, space: Space, quote: QuoteBehavior) Error!void {
     const tree = r.tree;
     const token_tags = tree.tokens.items(.tag);
     assert(token_tags[token_index] == .identifier);
@@ -2929,7 +2929,7 @@ fn render_identifier(r: *Render, token_index: Ast.TokenIndex, space: Space, quot
 // Renders a @"" quoted identifier, normalizing escapes.
 // Unnecessary escapes are un-escaped, and \u escapes are normalized to \x when they fit.
 // If unquote is true, the @"" is removed and the result is a bare symbol whose validity is asserted.
-fn render_quoted_identifier(r: *Render, token_index: Ast.TokenIndex, space: Space, comptime unquote: bool) !void {
+fn renderQuotedIdentifier(r: *Render, token_index: Ast.TokenIndex, space: Space, comptime unquote: bool) !void {
     const tree = r.tree;
     const ais = r.ais;
     const token_tags = tree.tokens.items(.tag);
@@ -2945,7 +2945,7 @@ fn render_quoted_identifier(r: *Render, token_index: Ast.TokenIndex, space: Spac
     try renderSpace(r, token_index, lexeme.len, space);
 }
 
-fn render_identifier_contents(writer: anytype, bytes: []const u8) !void {
+fn renderIdentifierContents(writer: anytype, bytes: []const u8) !void {
     var pos: usize = 0;
     while (pos < bytes.len) {
         const byte = bytes[pos];
@@ -2985,7 +2985,7 @@ fn render_identifier_contents(writer: anytype, bytes: []const u8) !void {
 /// `start_token` to `end_token`. This is used to determine if e.g. a
 /// fn_proto should be wrapped and have a trailing comma inserted even if
 /// there is none in the source.
-fn has_comment(tree: Ast, start_token: Ast.TokenIndex, end_token: Ast.TokenIndex) bool {
+fn hasComment(tree: Ast, start_token: Ast.TokenIndex, end_token: Ast.TokenIndex) bool {
     const token_starts = tree.tokens.items(.start);
 
     var i = start_token;
@@ -3000,7 +3000,7 @@ fn has_comment(tree: Ast, start_token: Ast.TokenIndex, end_token: Ast.TokenIndex
 
 /// Returns true if there exists a multiline string literal between the start
 /// of token `start_token` and the start of token `end_token`.
-fn has_multiline_string(tree: Ast, start_token: Ast.TokenIndex, end_token: Ast.TokenIndex) bool {
+fn hasMultilineString(tree: Ast, start_token: Ast.TokenIndex, end_token: Ast.TokenIndex) bool {
     const token_tags = tree.tokens.items(.tag);
 
     for (token_tags[start_token..end_token]) |tag| {
@@ -3015,7 +3015,7 @@ fn has_multiline_string(tree: Ast, start_token: Ast.TokenIndex, end_token: Ast.T
 
 /// Assumes that start is the first byte past the previous token and
 /// that end is the last byte before the next token.
-fn render_comments(r: *Render, start: usize, end: usize) Error!bool {
+fn renderComments(r: *Render, start: usize, end: usize) Error!bool {
     const tree = r.tree;
     const ais = r.ais;
 
@@ -3078,12 +3078,12 @@ fn render_comments(r: *Render, start: usize, end: usize) Error!bool {
     return index != start;
 }
 
-fn render_extra_newline(r: *Render, node: Ast.Node.Index) Error!void {
+fn renderExtraNewline(r: *Render, node: Ast.Node.Index) Error!void {
     return renderExtraNewlineToken(r, r.tree.firstToken(node));
 }
 
 /// Check if there is an empty line immediately before the given token. If so, render it.
-fn render_extra_newline_token(r: *Render, token_index: Ast.TokenIndex) Error!void {
+fn renderExtraNewlineToken(r: *Render, token_index: Ast.TokenIndex) Error!void {
     const tree = r.tree;
     const ais = r.ais;
     const token_starts = tree.tokens.items(.start);
@@ -3112,7 +3112,7 @@ fn render_extra_newline_token(r: *Render, token_index: Ast.TokenIndex) Error!voi
 
 /// end_token is the token one past the last doc comment token. This function
 /// searches backwards from there.
-fn render_doc_comments(r: *Render, end_token: Ast.TokenIndex) Error!void {
+fn renderDocComments(r: *Render, end_token: Ast.TokenIndex) Error!void {
     const tree = r.tree;
     // Search backwards for the first doc comment.
     const token_tags = tree.tokens.items(.tag);
@@ -3144,7 +3144,7 @@ fn render_doc_comments(r: *Render, end_token: Ast.TokenIndex) Error!void {
 }
 
 /// start_token is first container doc comment token.
-fn render_container_doc_comments(r: *Render, start_token: Ast.TokenIndex) Error!void {
+fn renderContainerDocComments(r: *Render, start_token: Ast.TokenIndex) Error!void {
     const tree = r.tree;
     const token_tags = tree.tokens.items(.tag);
     var tok = start_token;
@@ -3159,7 +3159,7 @@ fn render_container_doc_comments(r: *Render, start_token: Ast.TokenIndex) Error!
     }
 }
 
-fn discard_all_params(r: *Render, fn_proto_node: Ast.Node.Index) Error!void {
+fn discardAllParams(r: *Render, fn_proto_node: Ast.Node.Index) Error!void {
     const tree = &r.tree;
     const ais = r.ais;
     var buf: [1]Ast.Node.Index = undefined;
@@ -3176,7 +3176,7 @@ fn discard_all_params(r: *Render, fn_proto_node: Ast.Node.Index) Error!void {
     }
 }
 
-fn token_slice_for_render(tree: Ast, token_index: Ast.TokenIndex) []const u8 {
+fn tokenSliceForRender(tree: Ast, token_index: Ast.TokenIndex) []const u8 {
     var ret = tree.tokenSlice(token_index);
     switch (tree.tokens.items(.tag)[token_index]) {
         .multiline_string_literal_line => {
@@ -3190,7 +3190,7 @@ fn token_slice_for_render(tree: Ast, token_index: Ast.TokenIndex) []const u8 {
     return ret;
 }
 
-fn has_same_line_comment(tree: Ast, token_index: Ast.TokenIndex) bool {
+fn hasSameLineComment(tree: Ast, token_index: Ast.TokenIndex) bool {
     const token_starts = tree.tokens.items(.start);
     const between_source = tree.source[token_starts[token_index]..token_starts[token_index + 1]];
     for (between_source) |byte| switch (byte) {
@@ -3203,7 +3203,7 @@ fn has_same_line_comment(tree: Ast, token_index: Ast.TokenIndex) bool {
 
 /// Returns `true` if and only if there are any tokens or line comments between
 /// start_token and end_token.
-fn anything_between(tree: Ast, start_token: Ast.TokenIndex, end_token: Ast.TokenIndex) bool {
+fn anythingBetween(tree: Ast, start_token: Ast.TokenIndex, end_token: Ast.TokenIndex) bool {
     if (start_token + 1 != end_token) return true;
     const token_starts = tree.tokens.items(.start);
     const between_source = tree.source[token_starts[start_token]..token_starts[start_token + 1]];
@@ -3214,7 +3214,7 @@ fn anything_between(tree: Ast, start_token: Ast.TokenIndex, end_token: Ast.Token
     return false;
 }
 
-fn write_fixing_whitespace(writer: std.ArrayList(u8).Writer, slice: []const u8) Error!void {
+fn writeFixingWhitespace(writer: std.ArrayList(u8).Writer, slice: []const u8) Error!void {
     for (slice) |byte| switch (byte) {
         '\t' => try writer.writeAll(" " ** 4),
         '\r' => {},
@@ -3222,7 +3222,7 @@ fn write_fixing_whitespace(writer: std.ArrayList(u8).Writer, slice: []const u8) 
     };
 }
 
-fn node_is_block(tag: Ast.Node.Tag) bool {
+fn nodeIsBlock(tag: Ast.Node.Tag) bool {
     return switch (tag) {
         .block,
         .block_semicolon,
@@ -3233,7 +3233,7 @@ fn node_is_block(tag: Ast.Node.Tag) bool {
     };
 }
 
-fn node_is_if_for_while_switch(tag: Ast.Node.Tag) bool {
+fn nodeIsIfForWhileSwitch(tag: Ast.Node.Tag) bool {
     return switch (tag) {
         .@"if",
         .if_simple,
@@ -3249,7 +3249,7 @@ fn node_is_if_for_while_switch(tag: Ast.Node.Tag) bool {
     };
 }
 
-fn node_causes_slice_op_space(tag: Ast.Node.Tag) bool {
+fn nodeCausesSliceOpSpace(tag: Ast.Node.Tag) bool {
     return switch (tag) {
         .@"catch",
         .add,
@@ -3299,7 +3299,7 @@ fn node_causes_slice_op_space(tag: Ast.Node.Tag) bool {
 }
 
 // Returns the number of nodes in `exprs` that are on the same line as `rtoken`.
-fn row_size(tree: Ast, exprs: []const Ast.Node.Index, rtoken: Ast.TokenIndex) usize {
+fn rowSize(tree: Ast, exprs: []const Ast.Node.Index, rtoken: Ast.TokenIndex) usize {
     const token_tags = tree.tokens.items(.tag);
 
     const first_token = tree.firstToken(exprs[0]);
@@ -3325,7 +3325,7 @@ fn row_size(tree: Ast, exprs: []const Ast.Node.Index, rtoken: Ast.TokenIndex) us
 
 /// Automatically inserts indentation of written data by keeping
 /// track of the current indentation level
-fn auto_indenting_stream(comptime UnderlyingWriter: type) type {
+fn AutoIndentingStream(comptime UnderlyingWriter: type) type {
     return struct {
         const Self = @This();
         pub const WriteError = UnderlyingWriter.Error;
@@ -3364,7 +3364,7 @@ fn auto_indenting_stream(comptime UnderlyingWriter: type) type {
         }
 
         // Change the indent delta without changing the final indentation level
-        pub fn set_indent_delta(self: *Self, new_indent_delta: usize) void {
+        pub fn setIndentDelta(self: *Self, new_indent_delta: usize) void {
             if (self.indent_delta == new_indent_delta) {
                 return;
             } else if (self.indent_delta > new_indent_delta) {
@@ -3378,7 +3378,7 @@ fn auto_indenting_stream(comptime UnderlyingWriter: type) type {
             self.indent_delta = new_indent_delta;
         }
 
-        fn write_no_indent(self: *Self, bytes: []const u8) WriteError!usize {
+        fn writeNoIndent(self: *Self, bytes: []const u8) WriteError!usize {
             if (bytes.len == 0)
                 return @as(usize, 0);
 
@@ -3388,17 +3388,17 @@ fn auto_indenting_stream(comptime UnderlyingWriter: type) type {
             return bytes.len;
         }
 
-        pub fn insert_newline(self: *Self) WriteError!void {
+        pub fn insertNewline(self: *Self) WriteError!void {
             _ = try self.writeNoIndent("\n");
         }
 
-        fn reset_line(self: *Self) void {
+        fn resetLine(self: *Self) void {
             self.current_line_empty = true;
             self.indent_next_line = 0;
         }
 
         /// Insert a newline unless the current line is blank
-        pub fn maybe_insert_newline(self: *Self) WriteError!void {
+        pub fn maybeInsertNewline(self: *Self) WriteError!void {
             if (!self.current_line_empty)
                 try self.insertNewline();
         }
@@ -3406,31 +3406,31 @@ fn auto_indenting_stream(comptime UnderlyingWriter: type) type {
         /// Push default indentation
         /// Doesn't actually write any indentation.
         /// Just primes the stream to be able to write the correct indentation if it needs to.
-        pub fn push_indent(self: *Self) void {
+        pub fn pushIndent(self: *Self) void {
             self.indent_count += 1;
         }
 
         /// Push an indent that is automatically popped after being applied
-        pub fn push_indent_one_shot(self: *Self) void {
+        pub fn pushIndentOneShot(self: *Self) void {
             self.indent_one_shot_count += 1;
             self.pushIndent();
         }
 
         /// Turns all one-shot indents into regular indents
         /// Returns number of indents that must now be manually popped
-        pub fn lock_one_shot_indent(self: *Self) usize {
+        pub fn lockOneShotIndent(self: *Self) usize {
             const locked_count = self.indent_one_shot_count;
             self.indent_one_shot_count = 0;
             return locked_count;
         }
 
         /// Push an indent that should not take effect until the next line
-        pub fn push_indent_next_line(self: *Self) void {
+        pub fn pushIndentNextLine(self: *Self) void {
             self.indent_next_line += 1;
             self.pushIndent();
         }
 
-        pub fn pop_indent(self: *Self) void {
+        pub fn popIndent(self: *Self) void {
             assert(self.indent_count != 0);
             self.indent_count -= 1;
 
@@ -3439,7 +3439,7 @@ fn auto_indenting_stream(comptime UnderlyingWriter: type) type {
         }
 
         /// Writes ' ' bytes if the current line is empty
-        fn apply_indent(self: *Self) WriteError!void {
+        fn applyIndent(self: *Self) WriteError!void {
             const current_indent = self.currentIndent();
             if (self.current_line_empty and current_indent > 0) {
                 if (self.disabled_offset == null) {
@@ -3454,12 +3454,12 @@ fn auto_indenting_stream(comptime UnderlyingWriter: type) type {
         }
 
         /// Checks to see if the most recent indentation exceeds the currently pushed indents
-        pub fn is_line_over_indented(self: *Self) bool {
+        pub fn isLineOverIndented(self: *Self) bool {
             if (self.current_line_empty) return false;
             return self.applied_indent > self.currentIndent();
         }
 
-        fn current_indent(self: *Self) usize {
+        fn currentIndent(self: *Self) usize {
             var indent_current: usize = 0;
             if (self.indent_count > 0) {
                 const indent_count = self.indent_count - self.indent_next_line;

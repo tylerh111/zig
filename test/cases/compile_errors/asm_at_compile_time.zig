@@ -2,7 +2,7 @@ comptime {
     doSomeAsm();
 }
 
-fn do_some_asm() void {
+fn doSomeAsm() void {
     asm volatile (
         \\.globl aoeu;
         \\.type aoeu, @function;

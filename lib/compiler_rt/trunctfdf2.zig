@@ -16,6 +16,6 @@ pub fn __trunctfdf2(a: f128) callconv(.C) f64 {
     return truncf(f64, f128, a);
 }
 
-fn _qp_qtod(a: *const f128) callconv(.C) f64 {
+fn _Qp_qtod(a: *const f128) callconv(.C) f64 {
     return truncf(f64, f128, a.*);
 }

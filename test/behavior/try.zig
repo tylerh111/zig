@@ -10,7 +10,7 @@ test "try on error union" {
     try comptime tryOnErrorUnionImpl();
 }
 
-fn try_on_error_union_impl() !void {
+fn tryOnErrorUnionImpl() !void {
     const x = if (returnsTen()) |val| val + 1 else |err| switch (err) {
         error.ItBroke, error.NoMem => 1,
         error.CrappedOut => @as(i32, 2),
@@ -19,7 +19,7 @@ fn try_on_error_union_impl() !void {
     try expect(x == 11);
 }
 
-fn returns_ten() anyerror!i32 {
+fn returnsTen() anyerror!i32 {
     return 10;
 }
 
@@ -31,7 +31,7 @@ test "try without vars" {
     try expect(result2 == 1);
 }
 
-fn fail_if_true(ok: bool) anyerror!void {
+fn failIfTrue(ok: bool) anyerror!void {
     if (ok) {
         return error.ItBroke;
     } else {
@@ -55,11 +55,11 @@ test "`try`ing an if/else expression" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn get_error() !void {
+        fn getError() !void {
             return error.Test;
         }
 
-        fn get_error2() !void {
+        fn getError2() !void {
             var a: u8 = 'c';
             _ = &a;
             try if (a == 'a') getError() else if (a == 'b') getError() else getError();

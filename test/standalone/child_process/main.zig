@@ -44,7 +44,7 @@ pub fn main() !void {
 
 var parent_test_error = false;
 
-fn test_error(comptime fmt: []const u8, args: anytype) void {
+fn testError(comptime fmt: []const u8, args: anytype) void {
     const stderr = std.io.getStdErr().writer();
     stderr.print("PARENT TEST ERROR: ", .{}) catch {};
     stderr.print(fmt, args) catch {};

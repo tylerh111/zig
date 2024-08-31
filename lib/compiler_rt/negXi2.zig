@@ -30,7 +30,7 @@ pub fn __negti2(a: i128) callconv(.C) i128 {
     return negXi2(i128, a);
 }
 
-inline fn neg_xi2(comptime T: type, a: T) T {
+inline fn negXi2(comptime T: type, a: T) T {
     return -a;
 }
 

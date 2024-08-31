@@ -86,7 +86,7 @@ fn deinit(astrl: *AstRlAnnotate, gpa: Allocator) void {
     astrl.nodes_need_rl.deinit(gpa);
 }
 
-fn container_decl(
+fn containerDecl(
     astrl: *AstRlAnnotate,
     block: ?*Block,
     full: Ast.full.ContainerDecl,
@@ -769,7 +769,7 @@ fn expr(astrl: *AstRlAnnotate, node: Ast.Node.Index, block: ?*Block, ri: ResultI
     }
 }
 
-fn ident_string(astrl: *AstRlAnnotate, token: Ast.TokenIndex) ![]const u8 {
+fn identString(astrl: *AstRlAnnotate, token: Ast.TokenIndex) ![]const u8 {
     const tree = astrl.tree;
     const token_tags = tree.tokens.items(.tag);
     assert(token_tags[token] == .identifier);
@@ -783,7 +783,7 @@ fn ident_string(astrl: *AstRlAnnotate, token: Ast.TokenIndex) ![]const u8 {
     };
 }
 
-fn block_expr(astrl: *AstRlAnnotate, parent_block: ?*Block, ri: ResultInfo, node: Ast.Node.Index, statements: []const Ast.Node.Index) !bool {
+fn blockExpr(astrl: *AstRlAnnotate, parent_block: ?*Block, ri: ResultInfo, node: Ast.Node.Index, statements: []const Ast.Node.Index) !bool {
     const tree = astrl.tree;
     const token_tags = tree.tokens.items(.tag);
     const main_tokens = tree.nodes.items(.main_token);
@@ -816,7 +816,7 @@ fn block_expr(astrl: *AstRlAnnotate, parent_block: ?*Block, ri: ResultInfo, node
     }
 }
 
-fn builtin_call(astrl: *AstRlAnnotate, block: ?*Block, ri: ResultInfo, node: Ast.Node.Index, args: []const Ast.Node.Index) !bool {
+fn builtinCall(astrl: *AstRlAnnotate, block: ?*Block, ri: ResultInfo, node: Ast.Node.Index, args: []const Ast.Node.Index) !bool {
     _ = ri; // Currently, no builtin consumes its result location.
 
     const tree = astrl.tree;

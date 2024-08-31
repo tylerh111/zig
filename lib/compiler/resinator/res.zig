@@ -40,7 +40,7 @@ pub const RT = enum(u8) {
 
     /// Returns null if the resource type is user-defined
     /// Asserts that the resource is not `stringtable`
-    pub fn from_resource(resource: Resource) ?RT {
+    pub fn fromResource(resource: Resource) ?RT {
         return switch (resource) {
             .accelerators => .ACCELERATOR,
             .bitmap => .BITMAP,
@@ -129,7 +129,7 @@ pub const MemoryFlags = packed struct(u16) {
         }
     }
 
-    pub fn set_group(self: *MemoryFlags, attribute: CommonResourceAttributes, implied_shared_or_pure: bool) void {
+    pub fn setGroup(self: *MemoryFlags, attribute: CommonResourceAttributes, implied_shared_or_pure: bool) void {
         switch (attribute) {
             .preload => {
                 self.value |= PRELOAD;
@@ -155,11 +155,11 @@ pub const Language = packed struct(u16) {
     /// Default language ID as a u16
     pub const default: u16 = (Language{}).asInt();
 
-    pub fn from_int(int: u16) Language {
+    pub fn fromInt(int: u16) Language {
         return @bitCast(int);
     }
 
-    pub fn as_int(self: Language) u16 {
+    pub fn asInt(self: Language) u16 {
         return @bitCast(self);
     }
 };
@@ -173,7 +173,7 @@ pub const ControlClass = enum(u16) {
     scrollbar = 0x84,
     combobox = 0x85,
 
-    pub fn from_control(control: rc.Control) ?ControlClass {
+    pub fn fromControl(control: rc.Control) ?ControlClass {
         return switch (control) {
             // zig fmt: off
             .auto3state, .autocheckbox, .autoradiobutton,
@@ -189,7 +189,7 @@ pub const ControlClass = enum(u16) {
         };
     }
 
-    pub fn get_implied_style(control: rc.Control) u32 {
+    pub fn getImpliedStyle(control: rc.Control) u32 {
         var style = WS.CHILD | WS.VISIBLE;
         switch (control) {
             .auto3state => style |= BS.AUTO3STATE | WS.TABSTOP,
@@ -233,7 +233,7 @@ pub const NameOrOrdinal = union(enum) {
 
     /// Returns the full length of the amount of bytes that would be written by `write`
     /// (e.g. for an ordinal it will return the length including the 0xFFFF indicator)
-    pub fn byte_len(self: NameOrOrdinal) usize {
+    pub fn byteLen(self: NameOrOrdinal) usize {
         switch (self) {
             .name => |name| {
                 // + 1 for 0-terminated
@@ -255,18 +255,18 @@ pub const NameOrOrdinal = union(enum) {
         }
     }
 
-    pub fn write_empty(writer: anytype) !void {
+    pub fn writeEmpty(writer: anytype) !void {
         try writer.writeInt(u16, 0, .little);
     }
 
-    pub fn from_string(allocator: Allocator, bytes: SourceBytes) !NameOrOrdinal {
+    pub fn fromString(allocator: Allocator, bytes: SourceBytes) !NameOrOrdinal {
         if (maybeOrdinalFromString(bytes)) |ordinal| {
             return ordinal;
         }
         return nameFromString(allocator, bytes);
     }
 
-    pub fn name_from_string(allocator: Allocator, bytes: SourceBytes) !NameOrOrdinal {
+    pub fn nameFromString(allocator: Allocator, bytes: SourceBytes) !NameOrOrdinal {
         // Names have a limit of 256 UTF-16 code units + null terminator
         var buf = try std.ArrayList(u16).initCapacity(allocator, @min(257, bytes.slice.len));
         errdefer buf.deinit();
@@ -303,7 +303,7 @@ pub const NameOrOrdinal = union(enum) {
     /// Returns `null` if the bytes do not form a valid number.
     /// Does not allow non-ASCII digits (which the Win32 RC compiler does allow
     /// in base 10 numbers, see `maybeNonAsciiOrdinalFromString`).
-    pub fn maybe_ordinal_from_string(bytes: SourceBytes) ?NameOrOrdinal {
+    pub fn maybeOrdinalFromString(bytes: SourceBytes) ?NameOrOrdinal {
         var buf = bytes.slice;
         var radix: u8 = 10;
         if (buf.len > 2 and buf[0] == '0') {
@@ -356,7 +356,7 @@ pub const NameOrOrdinal = union(enum) {
     /// non-ASCII digits in number literals but still detect when the Win32
     /// RC compiler would have allowed them, so that a proper warning/error
     /// can be emitted.
-    pub fn maybe_non_ascii_ordinal_from_string(bytes: SourceBytes) ?NameOrOrdinal {
+    pub fn maybeNonAsciiOrdinalFromString(bytes: SourceBytes) ?NameOrOrdinal {
         const buf = bytes.slice;
         const radix = 10;
         if (buf.len > 2 and buf[0] == '0') {
@@ -388,7 +388,7 @@ pub const NameOrOrdinal = union(enum) {
         return NameOrOrdinal{ .ordinal = result };
     }
 
-    pub fn predefined_resource_type(self: NameOrOrdinal) ?RT {
+    pub fn predefinedResourceType(self: NameOrOrdinal) ?RT {
         switch (self) {
             .ordinal => |ordinal| {
                 if (ordinal >= 256) return null;
@@ -425,7 +425,7 @@ pub const NameOrOrdinal = union(enum) {
     }
 };
 
-fn expect_name_or_ordinal(expected: NameOrOrdinal, actual: NameOrOrdinal) !void {
+fn expectNameOrOrdinal(expected: NameOrOrdinal, actual: NameOrOrdinal) !void {
     switch (expected) {
         .name => {
             if (actual != .name) return error.TestExpectedEqual;
@@ -579,13 +579,13 @@ pub const AcceleratorModifiers = struct {
         self.value |= modifierValue(modifier);
     }
 
-    pub fn is_set(self: AcceleratorModifiers, modifier: rc.AcceleratorTypeAndOptions) bool {
+    pub fn isSet(self: AcceleratorModifiers, modifier: rc.AcceleratorTypeAndOptions) bool {
         // ASCII is set whenever VIRTKEY is not
         if (modifier == .ascii) return self.value & modifierValue(.virtkey) == 0;
         return self.value & modifierValue(modifier) != 0;
     }
 
-    fn modifier_value(modifier: rc.AcceleratorTypeAndOptions) u8 {
+    fn modifierValue(modifier: rc.AcceleratorTypeAndOptions) u8 {
         return switch (modifier) {
             .ascii => ASCII,
             .virtkey => VIRTKEY,
@@ -596,7 +596,7 @@ pub const AcceleratorModifiers = struct {
         };
     }
 
-    pub fn mark_last(self: *AcceleratorModifiers) void {
+    pub fn markLast(self: *AcceleratorModifiers) void {
         self.value |= last_accelerator_in_table;
     }
 };
@@ -617,7 +617,7 @@ const AcceleratorKeyCodepointTranslator = struct {
 pub const ParseAcceleratorKeyStringError = error{ EmptyAccelerator, AcceleratorTooLong, InvalidControlCharacter, ControlCharacterOutOfRange };
 
 /// Expects bytes to be the full bytes of a string literal token (e.g. including the "" or L"").
-pub fn parse_accelerator_key_string(bytes: SourceBytes, is_virt: bool, options: literals.StringParseOptions) (ParseAcceleratorKeyStringError || Allocator.Error)!u16 {
+pub fn parseAcceleratorKeyString(bytes: SourceBytes, is_virt: bool, options: literals.StringParseOptions) (ParseAcceleratorKeyStringError || Allocator.Error)!u16 {
     if (bytes.slice.len == 0) {
         return error.EmptyAccelerator;
     }
@@ -876,7 +876,7 @@ test "accelerator keys" {
 }
 
 pub const ForcedOrdinal = struct {
-    pub fn from_bytes(bytes: SourceBytes) u16 {
+    pub fn fromBytes(bytes: SourceBytes) u16 {
         var i: usize = 0;
         var result: u21 = 0;
         while (bytes.code_page.codepointAt(i, bytes.slice)) |codepoint| : (i += codepoint.byte_len) {
@@ -903,7 +903,7 @@ pub const ForcedOrdinal = struct {
         return @truncate(result);
     }
 
-    pub fn from_utf16_le(utf16: [:0]const u16) u16 {
+    pub fn fromUtf16Le(utf16: [:0]const u16) u16 {
         var result: u16 = 0;
         for (utf16) |code_unit| {
             if (result != 0) result *%= 10;
@@ -953,11 +953,11 @@ pub const FixedFileInfo = struct {
     pub const Version = struct {
         parts: [4]u16 = [_]u16{0} ** 4,
 
-        pub fn most_significant_combined_parts(self: Version) u32 {
+        pub fn mostSignificantCombinedParts(self: Version) u32 {
             return (@as(u32, self.parts[0]) << 16) + self.parts[1];
         }
 
-        pub fn least_significant_combined_parts(self: Version) u32 {
+        pub fn leastSignificantCombinedParts(self: Version) u32 {
             return (@as(u32, self.parts[2]) << 16) + self.parts[3];
         }
     };
@@ -999,11 +999,11 @@ pub const MenuItemFlags = struct {
         self.value |= optionValue(option);
     }
 
-    pub fn is_set(self: MenuItemFlags, option: rc.MenuItem.Option) bool {
+    pub fn isSet(self: MenuItemFlags, option: rc.MenuItem.Option) bool {
         return self.value & optionValue(option) != 0;
     }
 
-    fn option_value(option: rc.MenuItem.Option) u16 {
+    fn optionValue(option: rc.MenuItem.Option) u16 {
         return @intCast(switch (option) {
             .checked => MF.CHECKED,
             .grayed => MF.GRAYED,
@@ -1014,7 +1014,7 @@ pub const MenuItemFlags = struct {
         });
     }
 
-    pub fn mark_last(self: *MenuItemFlags) void {
+    pub fn markLast(self: *MenuItemFlags) void {
         self.value |= @intCast(MF.END);
     }
 };

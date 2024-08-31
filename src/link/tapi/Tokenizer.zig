@@ -62,11 +62,11 @@ pub const TokenIterator = struct {
         self.pos = 0;
     }
 
-    pub fn seek_to(self: *TokenIterator, pos: TokenIndex) void {
+    pub fn seekTo(self: *TokenIterator, pos: TokenIndex) void {
         self.pos = pos;
     }
 
-    pub fn seek_by(self: *TokenIterator, offset: isize) void {
+    pub fn seekBy(self: *TokenIterator, offset: isize) void {
         const new_pos = @as(isize, @bitCast(self.pos)) + offset;
         if (new_pos < 0) {
             self.pos = 0;
@@ -76,7 +76,7 @@ pub const TokenIterator = struct {
     }
 };
 
-fn string_matches_pattern(comptime pattern: []const u8, slice: []const u8) bool {
+fn stringMatchesPattern(comptime pattern: []const u8, slice: []const u8) bool {
     comptime var count: usize = 0;
     inline while (count < pattern.len) : (count += 1) {
         if (count >= slice.len) return false;
@@ -86,7 +86,7 @@ fn string_matches_pattern(comptime pattern: []const u8, slice: []const u8) bool 
     return true;
 }
 
-fn matches_pattern(self: Tokenizer, comptime pattern: []const u8) bool {
+fn matchesPattern(self: Tokenizer, comptime pattern: []const u8) bool {
     return stringMatchesPattern(pattern, self.buffer[self.index..]);
 }
 
@@ -292,7 +292,7 @@ pub fn next(self: *Tokenizer) Token {
     return result;
 }
 
-fn test_expected(source: []const u8, expected: []const Token.Id) !void {
+fn testExpected(source: []const u8, expected: []const Token.Id) !void {
     var tokenizer = Tokenizer{
         .buffer = source,
     };

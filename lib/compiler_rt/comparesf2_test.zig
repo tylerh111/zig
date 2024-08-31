@@ -74,7 +74,7 @@ const arguments = [_]f32{
     std.math.inf(f32),
 };
 
-fn generate_vector(comptime a: f32, comptime b: f32) TestVector {
+fn generateVector(comptime a: f32, comptime b: f32) TestVector {
     const leResult = if (a < b) -1 else if (a == b) 0 else 1;
     const geResult = if (a > b) 1 else if (a == b) 0 else -1;
     const unResult = if (a != a or b != b) 1 else 0;

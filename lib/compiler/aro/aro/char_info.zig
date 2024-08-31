@@ -8,7 +8,7 @@ const assert = @import("std").debug.assert;
 const tables = @import("char_info/identifier_tables.zig");
 
 /// C11 Standard Annex D
-pub fn is_c11_id_char(codepoint: u21) bool {
+pub fn isC11IdChar(codepoint: u21) bool {
     assert(codepoint > 0x7F);
     return switch (codepoint) {
         // 1
@@ -77,7 +77,7 @@ pub fn is_c11_id_char(codepoint: u21) bool {
 }
 
 /// C99 Standard Annex D
-pub fn is_c99_id_char(codepoint: u21) bool {
+pub fn isC99IdChar(codepoint: u21) bool {
     assert(codepoint > 0x7F);
     return switch (codepoint) {
         // Latin
@@ -387,7 +387,7 @@ pub fn is_c99_id_char(codepoint: u21) bool {
 }
 
 /// C11 standard Annex D
-pub fn is_c11_disallowed_initial_id_char(codepoint: u21) bool {
+pub fn isC11DisallowedInitialIdChar(codepoint: u21) bool {
     assert(codepoint > 0x7F);
     return switch (codepoint) {
         0x0300...0x036F,
@@ -401,7 +401,7 @@ pub fn is_c11_disallowed_initial_id_char(codepoint: u21) bool {
 
 /// These are "digit" characters; C99 disallows them as the first
 /// character of an identifier
-pub fn is_c99_disallowed_initial_idchar(codepoint: u21) bool {
+pub fn isC99DisallowedInitialIDChar(codepoint: u21) bool {
     assert(codepoint > 0x7F);
     return switch (codepoint) {
         0x0660...0x0669,
@@ -423,7 +423,7 @@ pub fn is_c99_disallowed_initial_idchar(codepoint: u21) bool {
     };
 }
 
-pub fn is_invisible(codepoint: u21) bool {
+pub fn isInvisible(codepoint: u21) bool {
     assert(codepoint > 0x7F);
     return switch (codepoint) {
         0x00ad, // SOFT HYPHEN
@@ -488,7 +488,7 @@ pub fn homoglyph(codepoint: u21) ?u21 {
     };
 }
 
-pub fn is_xid_start(c: u21) bool {
+pub fn isXidStart(c: u21) bool {
     assert(c > 0x7F);
     const idx = c / 8 / tables.chunk;
     const chunk: usize = if (idx < tables.trie_start.len) tables.trie_start[idx] else 0;
@@ -496,7 +496,7 @@ pub fn is_xid_start(c: u21) bool {
     return (tables.leaf[offset] >> (@as(u3, @intCast(c % 8)))) & 1 != 0;
 }
 
-pub fn is_xid_continue(c: u21) bool {
+pub fn isXidContinue(c: u21) bool {
     assert(c > 0x7F);
     const idx = c / 8 / tables.chunk;
     const chunk: usize = if (idx < tables.trie_continue.len) tables.trie_continue[idx] else 0;
@@ -533,7 +533,7 @@ test isXidContinue {
 
 pub const NfcQuickCheck = enum { no, maybe, yes };
 
-pub fn is_normalized(codepoint: u21) NfcQuickCheck {
+pub fn isNormalized(codepoint: u21) NfcQuickCheck {
     return switch (codepoint) {
         0x0340...0x0341,
         0x0343...0x0344,
@@ -716,7 +716,7 @@ pub const CanonicalCombiningClass = enum(u8) {
     iota_subscript = 240,
 };
 
-pub fn get_canonical_class(codepoint: u21) CanonicalCombiningClass {
+pub fn getCanonicalClass(codepoint: u21) CanonicalCombiningClass {
     return switch (codepoint) {
         0x300...0x314 => .above,
         0x315...0x315 => .above_right,

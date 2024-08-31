@@ -7,7 +7,7 @@ pub fn main() void {
     std.debug.print("function: {s}\n", .{@typeName(List(i32))});
 }
 
-fn list(comptime T: type) type {
+fn List(comptime T: type) type {
     return struct {
         x: T,
     };

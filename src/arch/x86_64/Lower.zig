@@ -66,7 +66,7 @@ pub const Reloc = struct {
 };
 
 /// The returned slice is overwritten by the next call to lowerMir.
-pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
+pub fn lowerMir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
     insts: []const Instruction,
     relocs: []const Reloc,
 } {
@@ -636,7 +636,7 @@ fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
     });
 }
 
-fn push_pop_reg_list(lower: *Lower, comptime mnemonic: Mnemonic, inst: Mir.Inst) Error!void {
+fn pushPopRegList(lower: *Lower, comptime mnemonic: Mnemonic, inst: Mir.Inst) Error!void {
     const callee_preserved_regs = abi.getCalleePreservedRegs(lower.cc);
     var it = inst.data.reg_list.iterator(.{ .direction = switch (mnemonic) {
         .push => .reverse,

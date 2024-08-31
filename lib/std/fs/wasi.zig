@@ -23,7 +23,7 @@ pub const Preopens = struct {
     }
 };
 
-pub fn preopens_alloc(gpa: Allocator) Allocator.Error!Preopens {
+pub fn preopensAlloc(gpa: Allocator) Allocator.Error!Preopens {
     var names: std.ArrayListUnmanaged([]const u8) = .{};
     defer names.deinit(gpa);
 

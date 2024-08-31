@@ -30,7 +30,7 @@ flags: Flags = .{},
 
 extra_index: u32 = 0,
 
-pub fn is_abs(symbol: Symbol, elf_file: *Elf) bool {
+pub fn isAbs(symbol: Symbol, elf_file: *Elf) bool {
     const file_ptr = symbol.file(elf_file).?;
     if (file_ptr == .shared_object) return symbol.elfSym(elf_file).st_shndx == elf.SHN_ABS;
     return !symbol.flags.import and symbol.atom(elf_file) == null and
@@ -38,17 +38,17 @@ pub fn is_abs(symbol: Symbol, elf_file: *Elf) bool {
         file_ptr != .linker_defined;
 }
 
-pub fn output_shndx(symbol: Symbol) ?u32 {
+pub fn outputShndx(symbol: Symbol) ?u32 {
     if (symbol.output_section_index == 0) return null;
     return symbol.output_section_index;
 }
 
-pub fn is_local(symbol: Symbol, elf_file: *Elf) bool {
+pub fn isLocal(symbol: Symbol, elf_file: *Elf) bool {
     if (elf_file.base.isRelocatable()) return symbol.elfSym(elf_file).st_bind() == elf.STB_LOCAL;
     return !(symbol.flags.import or symbol.flags.@"export");
 }
 
-pub fn is_ifunc(symbol: Symbol, elf_file: *Elf) bool {
+pub fn isIFunc(symbol: Symbol, elf_file: *Elf) bool {
     return symbol.type(elf_file) == elf.STT_GNU_IFUNC;
 }
 
@@ -71,7 +71,7 @@ pub fn atom(symbol: Symbol, elf_file: *Elf) ?*Atom {
     return elf_file.atom(symbol.atom_index);
 }
 
-pub fn merge_subsection(symbol: Symbol, elf_file: *Elf) ?*MergeSubsection {
+pub fn mergeSubsection(symbol: Symbol, elf_file: *Elf) ?*MergeSubsection {
     if (!symbol.flags.merge_subsection) return null;
     const extras = symbol.extra(elf_file).?;
     return elf_file.mergeSubsection(extras.subsection);
@@ -81,7 +81,7 @@ pub fn file(symbol: Symbol, elf_file: *Elf) ?File {
     return elf_file.file(symbol.file_index);
 }
 
-pub fn elf_sym(symbol: Symbol, elf_file: *Elf) elf.Elf64_Sym {
+pub fn elfSym(symbol: Symbol, elf_file: *Elf) elf.Elf64_Sym {
     const file_ptr = symbol.file(elf_file).?;
     return switch (file_ptr) {
         .zig_object => |x| x.elfSym(symbol.esym_index).*,
@@ -89,7 +89,7 @@ pub fn elf_sym(symbol: Symbol, elf_file: *Elf) elf.Elf64_Sym {
     };
 }
 
-pub fn symbol_rank(symbol: Symbol, elf_file: *Elf) u32 {
+pub fn symbolRank(symbol: Symbol, elf_file: *Elf) u32 {
     const file_ptr = symbol.file(elf_file) orelse return std.math.maxInt(u32);
     const sym = symbol.elfSym(elf_file);
     const in_archive = switch (file_ptr) {
@@ -148,7 +148,7 @@ pub fn address(symbol: Symbol, opts: struct { plt: bool = true }, elf_file: *Elf
     return symbol.value;
 }
 
-pub fn output_symtab_index(symbol: Symbol, elf_file: *Elf) ?u32 {
+pub fn outputSymtabIndex(symbol: Symbol, elf_file: *Elf) ?u32 {
     if (!symbol.flags.output_symtab) return null;
     const file_ptr = symbol.file(elf_file).?;
     const symtab_ctx = switch (file_ptr) {
@@ -158,14 +158,14 @@ pub fn output_symtab_index(symbol: Symbol, elf_file: *Elf) ?u32 {
     return if (symbol.isLocal(elf_file)) idx + symtab_ctx.ilocal else idx + symtab_ctx.iglobal;
 }
 
-pub fn got_address(symbol: Symbol, elf_file: *Elf) i64 {
+pub fn gotAddress(symbol: Symbol, elf_file: *Elf) i64 {
     if (!symbol.flags.has_got) return 0;
     const extras = symbol.extra(elf_file).?;
     const entry = elf_file.got.entries.items[extras.got];
     return entry.address(elf_file);
 }
 
-pub fn plt_got_address(symbol: Symbol, elf_file: *Elf) i64 {
+pub fn pltGotAddress(symbol: Symbol, elf_file: *Elf) i64 {
     if (!(symbol.flags.has_plt and symbol.flags.has_got)) return 0;
     const extras = symbol.extra(elf_file).?;
     const shdr = elf_file.shdrs.items[elf_file.plt_got_section_index.?];
@@ -173,7 +173,7 @@ pub fn plt_got_address(symbol: Symbol, elf_file: *Elf) i64 {
     return @intCast(shdr.sh_addr + extras.plt_got * PltGotSection.entrySize(cpu_arch));
 }
 
-pub fn plt_address(symbol: Symbol, elf_file: *Elf) i64 {
+pub fn pltAddress(symbol: Symbol, elf_file: *Elf) i64 {
     if (!symbol.flags.has_plt) return 0;
     const extras = symbol.extra(elf_file).?;
     const shdr = elf_file.shdrs.items[elf_file.plt_section_index.?];
@@ -181,34 +181,34 @@ pub fn plt_address(symbol: Symbol, elf_file: *Elf) i64 {
     return @intCast(shdr.sh_addr + extras.plt * PltSection.entrySize(cpu_arch) + PltSection.preambleSize(cpu_arch));
 }
 
-pub fn got_plt_address(symbol: Symbol, elf_file: *Elf) i64 {
+pub fn gotPltAddress(symbol: Symbol, elf_file: *Elf) i64 {
     if (!symbol.flags.has_plt) return 0;
     const extras = symbol.extra(elf_file).?;
     const shdr = elf_file.shdrs.items[elf_file.got_plt_section_index.?];
     return @intCast(shdr.sh_addr + extras.plt * 8 + GotPltSection.preamble_size);
 }
 
-pub fn copy_rel_address(symbol: Symbol, elf_file: *Elf) i64 {
+pub fn copyRelAddress(symbol: Symbol, elf_file: *Elf) i64 {
     if (!symbol.flags.has_copy_rel) return 0;
     const shdr = elf_file.shdrs.items[elf_file.copy_rel_section_index.?];
     return @as(i64, @intCast(shdr.sh_addr)) + symbol.value;
 }
 
-pub fn tls_gd_address(symbol: Symbol, elf_file: *Elf) i64 {
+pub fn tlsGdAddress(symbol: Symbol, elf_file: *Elf) i64 {
     if (!symbol.flags.has_tlsgd) return 0;
     const extras = symbol.extra(elf_file).?;
     const entry = elf_file.got.entries.items[extras.tlsgd];
     return entry.address(elf_file);
 }
 
-pub fn got_tp_address(symbol: Symbol, elf_file: *Elf) i64 {
+pub fn gotTpAddress(symbol: Symbol, elf_file: *Elf) i64 {
     if (!symbol.flags.has_gottp) return 0;
     const extras = symbol.extra(elf_file).?;
     const entry = elf_file.got.entries.items[extras.gottp];
     return entry.address(elf_file);
 }
 
-pub fn tls_desc_address(symbol: Symbol, elf_file: *Elf) i64 {
+pub fn tlsDescAddress(symbol: Symbol, elf_file: *Elf) i64 {
     if (!symbol.flags.has_tlsdesc) return 0;
     const extras = symbol.extra(elf_file).?;
     const entry = elf_file.got.entries.items[extras.tlsdesc];
@@ -220,7 +220,7 @@ const GetOrCreateZigGotEntryResult = struct {
     index: ZigGotSection.Index,
 };
 
-pub fn get_or_create_zig_got_entry(symbol: *Symbol, symbol_index: Index, elf_file: *Elf) !GetOrCreateZigGotEntryResult {
+pub fn getOrCreateZigGotEntry(symbol: *Symbol, symbol_index: Index, elf_file: *Elf) !GetOrCreateZigGotEntryResult {
     assert(!elf_file.base.isRelocatable());
     assert(symbol.flags.needs_zig_got);
     if (symbol.flags.has_zig_got) return .{ .found_existing = true, .index = symbol.extra(elf_file).?.zig_got };
@@ -228,13 +228,13 @@ pub fn get_or_create_zig_got_entry(symbol: *Symbol, symbol_index: Index, elf_fil
     return .{ .found_existing = false, .index = index };
 }
 
-pub fn zig_got_address(symbol: Symbol, elf_file: *Elf) i64 {
+pub fn zigGotAddress(symbol: Symbol, elf_file: *Elf) i64 {
     if (!symbol.flags.has_zig_got) return 0;
     const extras = symbol.extra(elf_file).?;
     return elf_file.zig_got.entryAddress(extras.zig_got, elf_file);
 }
 
-pub fn dso_alignment(symbol: Symbol, elf_file: *Elf) !u64 {
+pub fn dsoAlignment(symbol: Symbol, elf_file: *Elf) !u64 {
     const file_ptr = symbol.file(elf_file) orelse return 0;
     assert(file_ptr == .shared_object);
     const shared_object = file_ptr.shared_object;
@@ -261,7 +261,7 @@ const AddExtraOpts = struct {
     subsection: ?u32 = null,
 };
 
-pub fn add_extra(symbol: *Symbol, opts: AddExtraOpts, elf_file: *Elf) !void {
+pub fn addExtra(symbol: *Symbol, opts: AddExtraOpts, elf_file: *Elf) !void {
     if (symbol.extra(elf_file) == null) {
         symbol.extra_index = try elf_file.addSymbolExtra(.{});
     }
@@ -278,11 +278,11 @@ pub fn extra(symbol: Symbol, elf_file: *Elf) ?Extra {
     return elf_file.symbolExtra(symbol.extra_index);
 }
 
-pub fn set_extra(symbol: Symbol, extras: Extra, elf_file: *Elf) void {
+pub fn setExtra(symbol: Symbol, extras: Extra, elf_file: *Elf) void {
     elf_file.setSymbolExtra(symbol.extra_index, extras);
 }
 
-pub fn set_output_sym(symbol: Symbol, elf_file: *Elf, out: *elf.Elf64_Sym) void {
+pub fn setOutputSym(symbol: Symbol, elf_file: *Elf, out: *elf.Elf64_Sym) void {
     const file_ptr = symbol.file(elf_file).?;
     const esym = symbol.elfSym(elf_file);
     const st_type = symbol.type(elf_file);
@@ -337,14 +337,14 @@ const FormatContext = struct {
     elf_file: *Elf,
 };
 
-pub fn fmt_name(symbol: Symbol, elf_file: *Elf) std.fmt.Formatter(formatName) {
+pub fn fmtName(symbol: Symbol, elf_file: *Elf) std.fmt.Formatter(formatName) {
     return .{ .data = .{
         .symbol = symbol,
         .elf_file = elf_file,
     } };
 }
 
-fn format_name(
+fn formatName(
     ctx: FormatContext,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,

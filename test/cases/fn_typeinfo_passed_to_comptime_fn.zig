@@ -4,7 +4,7 @@ test {
     try foo(@typeInfo(@TypeOf(someFn)));
 }
 
-fn some_fn(arg: ?*c_int) f64 {
+fn someFn(arg: ?*c_int) f64 {
     _ = arg;
     return 8;
 }

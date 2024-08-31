@@ -33,7 +33,7 @@ impl: Impl = .{},
 /// Tries to acquire the mutex without blocking the caller's thread.
 /// Returns `false` if the calling thread would have to block to acquire it.
 /// Otherwise, returns `true` and the caller should `unlock()` the Mutex to release it.
-pub fn try_lock(self: *Mutex) bool {
+pub fn tryLock(self: *Mutex) bool {
     return self.impl.tryLock();
 }
 
@@ -68,7 +68,7 @@ const DebugImpl = struct {
     locking_thread: std.atomic.Value(Thread.Id) = std.atomic.Value(Thread.Id).init(0), // 0 means it's not locked.
     impl: ReleaseImpl = .{},
 
-    inline fn try_lock(self: *@This()) bool {
+    inline fn tryLock(self: *@This()) bool {
         const locking = self.impl.tryLock();
         if (locking) {
             self.locking_thread.store(Thread.getCurrentId(), .unordered);
@@ -95,7 +95,7 @@ const DebugImpl = struct {
 const SingleThreadedImpl = struct {
     is_locked: bool = false,
 
-    fn try_lock(self: *@This()) bool {
+    fn tryLock(self: *@This()) bool {
         if (self.is_locked) return false;
         self.is_locked = true;
         return true;
@@ -118,7 +118,7 @@ const SingleThreadedImpl = struct {
 const WindowsImpl = struct {
     srwlock: windows.SRWLOCK = .{},
 
-    fn try_lock(self: *@This()) bool {
+    fn tryLock(self: *@This()) bool {
         return windows.kernel32.TryAcquireSRWLockExclusive(&self.srwlock) != windows.FALSE;
     }
 
@@ -137,7 +137,7 @@ const WindowsImpl = struct {
 const DarwinImpl = struct {
     oul: c.os_unfair_lock = .{},
 
-    fn try_lock(self: *@This()) bool {
+    fn tryLock(self: *@This()) bool {
         return c.os_unfair_lock_trylock(&self.oul);
     }
 
@@ -164,7 +164,7 @@ const FutexImpl = struct {
             self.lockSlow();
     }
 
-    fn try_lock(self: *@This()) bool {
+    fn tryLock(self: *@This()) bool {
         // On x86, use `lock bts` instead of `lock cmpxchg` as:
         // - they both seem to mark the cache-line as modified regardless: https://stackoverflow.com/a/63350048
         // - `lock bts` is smaller instruction-wise which makes it better for inlining
@@ -178,7 +178,7 @@ const FutexImpl = struct {
         return self.state.cmpxchgWeak(unlocked, locked, .acquire, .monotonic) == null;
     }
 
-    fn lock_slow(self: *@This()) void {
+    fn lockSlow(self: *@This()) void {
         @setCold(true);
 
         // Avoid doing an atomic swap below if we already know the state is contended.

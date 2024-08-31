@@ -17,7 +17,7 @@ test {
     try testMul(f128, __multc3);
 }
 
-fn test_mul(comptime T: type, comptime f: fn (T, T, T, T) callconv(.C) Complex(T)) !void {
+fn testMul(comptime T: type, comptime f: fn (T, T, T, T) callconv(.C) Complex(T)) !void {
     {
         const a: T = 1.0;
         const b: T = 0.0;

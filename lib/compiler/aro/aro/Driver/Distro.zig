@@ -64,7 +64,7 @@ pub const Tag = enum {
     ubuntu_lunar,
     unknown,
 
-    pub fn get_hash_style(self: Tag) HashStyle {
+    pub fn getHashStyle(self: Tag) HashStyle {
         if (self.isOpenSUSE()) return .both;
         return switch (self) {
             .ubuntu_lucid,
@@ -75,7 +75,7 @@ pub const Tag = enum {
         };
     }
 
-    pub fn is_redhat(self: Tag) bool {
+    pub fn isRedhat(self: Tag) bool {
         return switch (self) {
             .fedora,
             .rhel5,
@@ -86,11 +86,11 @@ pub const Tag = enum {
         };
     }
 
-    pub fn is_open_suse(self: Tag) bool {
+    pub fn isOpenSUSE(self: Tag) bool {
         return self == .open_suse;
     }
 
-    pub fn is_debian(self: Tag) bool {
+    pub fn isDebian(self: Tag) bool {
         return switch (self) {
             .debian_lenny,
             .debian_squeeze,
@@ -105,7 +105,7 @@ pub const Tag = enum {
             else => false,
         };
     }
-    pub fn is_ubuntu(self: Tag) bool {
+    pub fn isUbuntu(self: Tag) bool {
         return switch (self) {
             .ubuntu_hardy,
             .ubuntu_intrepid,
@@ -143,15 +143,15 @@ pub const Tag = enum {
             else => false,
         };
     }
-    pub fn is_alpine(self: Tag) bool {
+    pub fn isAlpine(self: Tag) bool {
         return self == .alpine;
     }
-    pub fn is_gentoo(self: Tag) bool {
+    pub fn isGentoo(self: Tag) bool {
         return self == .gentoo;
     }
 };
 
-fn scan_for_os_release(buf: []const u8) ?Tag {
+fn scanForOsRelease(buf: []const u8) ?Tag {
     var it = mem.splitScalar(u8, buf, '\n');
     while (it.next()) |line| {
         if (mem.startsWith(u8, line, "ID=")) {
@@ -168,13 +168,13 @@ fn scan_for_os_release(buf: []const u8) ?Tag {
     return null;
 }
 
-fn detect_os_release(fs: Filesystem) ?Tag {
+fn detectOsRelease(fs: Filesystem) ?Tag {
     var buf: [MAX_BYTES]u8 = undefined;
     const data = fs.readFile("/etc/os-release", &buf) orelse fs.readFile("/usr/lib/os-release", &buf) orelse return null;
     return scanForOsRelease(data);
 }
 
-fn scan_for_lsbrelease(buf: []const u8) ?Tag {
+fn scanForLSBRelease(buf: []const u8) ?Tag {
     var it = mem.splitScalar(u8, buf, '\n');
     while (it.next()) |line| {
         if (mem.startsWith(u8, line, "DISTRIB_CODENAME=")) {
@@ -215,14 +215,14 @@ fn scan_for_lsbrelease(buf: []const u8) ?Tag {
     return null;
 }
 
-fn detect_lsbrelease(fs: Filesystem) ?Tag {
+fn detectLSBRelease(fs: Filesystem) ?Tag {
     var buf: [MAX_BYTES]u8 = undefined;
     const data = fs.readFile("/etc/lsb-release", &buf) orelse return null;
 
     return scanForLSBRelease(data);
 }
 
-fn scan_for_red_hat(buf: []const u8) Tag {
+fn scanForRedHat(buf: []const u8) Tag {
     if (mem.startsWith(u8, buf, "Fedora release")) return .fedora;
     if (mem.startsWith(u8, buf, "Red Hat Enterprise Linux") or mem.startsWith(u8, buf, "CentOS") or mem.startsWith(u8, buf, "Scientific Linux")) {
         if (mem.indexOfPos(u8, buf, 0, "release 7") != null) return .rhel7;
@@ -233,13 +233,13 @@ fn scan_for_red_hat(buf: []const u8) Tag {
     return .unknown;
 }
 
-fn detect_redhat(fs: Filesystem) ?Tag {
+fn detectRedhat(fs: Filesystem) ?Tag {
     var buf: [MAX_BYTES]u8 = undefined;
     const data = fs.readFile("/etc/redhat-release", &buf) orelse return null;
     return scanForRedHat(data);
 }
 
-fn scan_for_debian(buf: []const u8) Tag {
+fn scanForDebian(buf: []const u8) Tag {
     var it = mem.splitScalar(u8, buf, '.');
     if (std.fmt.parseInt(u8, it.next().?, 10)) |major| {
         return switch (major) {
@@ -269,7 +269,7 @@ fn scan_for_debian(buf: []const u8) Tag {
     return .unknown;
 }
 
-fn detect_debian(fs: Filesystem) ?Tag {
+fn detectDebian(fs: Filesystem) ?Tag {
     var buf: [MAX_BYTES]u8 = undefined;
     const data = fs.readFile("/etc/debian_version", &buf) orelse return null;
     return scanForDebian(data);

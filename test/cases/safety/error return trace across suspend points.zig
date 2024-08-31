@@ -16,7 +16,7 @@ pub fn main() !void {
     return error.TestFailed;
 }
 
-fn non_failing() anyframe->anyerror!void {
+fn nonFailing() anyframe->anyerror!void {
     failing_frame = async failing();
     return &failing_frame;
 }
@@ -30,7 +30,7 @@ fn second() callconv(.Async) anyerror!void {
     return error.Fail;
 }
 
-fn print_trace(p: anyframe->anyerror!void) void {
+fn printTrace(p: anyframe->anyerror!void) void {
     (await p) catch unreachable;
 }
 // run

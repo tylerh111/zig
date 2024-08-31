@@ -1,7 +1,7 @@
 const std = @import("std");
 const maxInt = std.math.maxInt;
 
-pub fn parse_u64(buf: []const u8, radix: u8) !u64 {
+pub fn parseU64(buf: []const u8, radix: u8) !u64 {
     var x: u64 = 0;
 
     for (buf) |c| {
@@ -24,7 +24,7 @@ pub fn parse_u64(buf: []const u8, radix: u8) !u64 {
     return x;
 }
 
-fn char_to_digit(c: u8) u8 {
+fn charToDigit(c: u8) u8 {
     return switch (c) {
         '0'...'9' => c - '0',
         'A'...'Z' => c - 'A' + 10,

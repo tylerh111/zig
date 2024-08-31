@@ -1,4 +1,4 @@
-fn create_type() !type {
+fn CreateType() !type {
     return struct {};
 }
 const MyType = CreateType();

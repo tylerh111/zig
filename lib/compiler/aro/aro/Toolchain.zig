@@ -65,11 +65,11 @@ selected_multilib: Multilib = .{},
 
 inner: Inner = .{ .uninitialized = {} },
 
-pub fn get_target(tc: *const Toolchain) std.Target {
+pub fn getTarget(tc: *const Toolchain) std.Target {
     return tc.driver.comp.target;
 }
 
-fn get_default_linker(tc: *const Toolchain) []const u8 {
+fn getDefaultLinker(tc: *const Toolchain) []const u8 {
     return switch (tc.inner) {
         .uninitialized => unreachable,
         .linux => |linux| linux.getDefaultLinker(tc.getTarget()),
@@ -114,7 +114,7 @@ pub fn deinit(tc: *Toolchain) void {
 }
 
 /// Write linker path to `buf` and return a slice of it
-pub fn get_linker_path(tc: *const Toolchain, buf: []u8) ![]const u8 {
+pub fn getLinkerPath(tc: *const Toolchain, buf: []u8) ![]const u8 {
     // --ld-path= takes precedence over -fuse-ld= and specifies the executable
     // name. -B, COMPILER_PATH and PATH are consulted if the value does not
     // contain a path component separator.
@@ -187,7 +187,7 @@ pub fn get_linker_path(tc: *const Toolchain, buf: []u8) ![]const u8 {
 /// TODO: this isn't exactly right since our target names don't necessarily match up
 /// with GCC's.
 /// For example the Zig target `arm-freestanding-eabi` would need the `arm-none-eabi` tools
-fn possible_program_names(raw_triple: ?[]const u8, name: []const u8, buf: *[64]u8) std.BoundedArray([]const u8, 2) {
+fn possibleProgramNames(raw_triple: ?[]const u8, name: []const u8, buf: *[64]u8) std.BoundedArray([]const u8, 2) {
     var possible_names: std.BoundedArray([]const u8, 2) = .{};
     if (raw_triple) |triple| {
         if (std.fmt.bufPrint(buf, "{s}-{s}", .{ triple, name })) |res| {
@@ -200,7 +200,7 @@ fn possible_program_names(raw_triple: ?[]const u8, name: []const u8, buf: *[64]u
 }
 
 /// Add toolchain `file_paths` to argv as `-L` arguments
-pub fn add_file_path_lib_args(tc: *const Toolchain, argv: *std.ArrayList([]const u8)) !void {
+pub fn addFilePathLibArgs(tc: *const Toolchain, argv: *std.ArrayList([]const u8)) !void {
     try argv.ensureUnusedCapacity(tc.file_paths.items.len);
 
     var bytes_needed: usize = 0;
@@ -220,7 +220,7 @@ pub fn add_file_path_lib_args(tc: *const Toolchain, argv: *std.ArrayList([]const
 /// Search for an executable called `name` or `{triple}-{name} in program_paths and the $PATH environment variable
 /// If not found there, just use `name`
 /// Writes the result to `buf` and returns a slice of it
-fn get_program_path(tc: *const Toolchain, name: []const u8, buf: []u8) []const u8 {
+fn getProgramPath(tc: *const Toolchain, name: []const u8, buf: []u8) []const u8 {
     var path_buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
     var fib = std.heap.FixedBufferAllocator.init(&path_buf);
 
@@ -244,13 +244,13 @@ fn get_program_path(tc: *const Toolchain, name: []const u8, buf: []u8) []const u
     return buf[0..name.len];
 }
 
-pub fn get_sysroot(tc: *const Toolchain) []const u8 {
+pub fn getSysroot(tc: *const Toolchain) []const u8 {
     return tc.driver.sysroot orelse system_defaults.sysroot;
 }
 
 /// Search for `name` in a variety of places
 /// TODO: cache results based on `name` so we're not repeatedly allocating the same strings?
-pub fn get_file_path(tc: *const Toolchain, name: []const u8) ![]const u8 {
+pub fn getFilePath(tc: *const Toolchain, name: []const u8) ![]const u8 {
     var path_buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
     var fib = std.heap.FixedBufferAllocator.init(&path_buf);
     const allocator = fib.allocator();
@@ -278,7 +278,7 @@ pub fn get_file_path(tc: *const Toolchain, name: []const u8) ![]const u8 {
 
 /// Search a list of `path_prefixes` for the existence `name`
 /// Assumes that `fba` is a fixed-buffer allocator, so does not free joined path candidates
-fn search_paths(tc: *const Toolchain, fib: *std.heap.FixedBufferAllocator, sysroot: []const u8, path_prefixes: []const []const u8, name: []const u8) ?[]const u8 {
+fn searchPaths(tc: *const Toolchain, fib: *std.heap.FixedBufferAllocator, sysroot: []const u8, path_prefixes: []const []const u8, name: []const u8) ?[]const u8 {
     for (path_prefixes) |path| {
         fib.reset();
         if (path.len == 0) continue;
@@ -303,7 +303,7 @@ const PathKind = enum {
 
 /// Join `components` into a path. If the path exists, dupe it into the toolchain arena and
 /// add it to the specified path list.
-pub fn add_path_if_exists(tc: *Toolchain, components: []const []const u8, dest_kind: PathKind) !void {
+pub fn addPathIfExists(tc: *Toolchain, components: []const []const u8, dest_kind: PathKind) !void {
     var path_buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
     var fib = std.heap.FixedBufferAllocator.init(&path_buf);
 
@@ -322,7 +322,7 @@ pub fn add_path_if_exists(tc: *Toolchain, components: []const []const u8, dest_k
 
 /// Join `components` using the toolchain arena and add the resulting path to `dest_kind`. Does not check
 /// whether the path actually exists
-pub fn add_path_from_components(tc: *Toolchain, components: []const []const u8, dest_kind: PathKind) !void {
+pub fn addPathFromComponents(tc: *Toolchain, components: []const []const u8, dest_kind: PathKind) !void {
     const full_path = try std.fs.path.join(tc.arena, components);
     const dest = switch (dest_kind) {
         .library => &tc.library_paths,
@@ -334,7 +334,7 @@ pub fn add_path_from_components(tc: *Toolchain, components: []const []const u8, 
 
 /// Add linker args to `argv`. Does not add path to linker executable as first item; that must be handled separately
 /// Items added to `argv` will be string literals or owned by `tc.arena` so they must not be individually freed
-pub fn build_linker_args(tc: *Toolchain, argv: *std.ArrayList([]const u8)) !void {
+pub fn buildLinkerArgs(tc: *Toolchain, argv: *std.ArrayList([]const u8)) !void {
     return switch (tc.inner) {
         .uninitialized => unreachable,
         .linux => |*linux| linux.buildLinkerArgs(tc, argv),
@@ -342,14 +342,14 @@ pub fn build_linker_args(tc: *Toolchain, argv: *std.ArrayList([]const u8)) !void
     };
 }
 
-fn get_default_runtime_lib_kind(tc: *const Toolchain) RuntimeLibKind {
+fn getDefaultRuntimeLibKind(tc: *const Toolchain) RuntimeLibKind {
     if (tc.getTarget().isAndroid()) {
         return .compiler_rt;
     }
     return .libgcc;
 }
 
-pub fn get_runtime_lib_kind(tc: *const Toolchain) RuntimeLibKind {
+pub fn getRuntimeLibKind(tc: *const Toolchain) RuntimeLibKind {
     const libname = tc.driver.rtlib orelse system_defaults.rtlib;
     if (mem.eql(u8, libname, "compiler-rt"))
         return .compiler_rt
@@ -360,14 +360,14 @@ pub fn get_runtime_lib_kind(tc: *const Toolchain) RuntimeLibKind {
 }
 
 /// TODO
-pub fn get_compiler_rt(tc: *const Toolchain, component: []const u8, file_kind: FileKind) ![]const u8 {
+pub fn getCompilerRt(tc: *const Toolchain, component: []const u8, file_kind: FileKind) ![]const u8 {
     _ = file_kind;
     _ = component;
     _ = tc;
     return "";
 }
 
-fn get_lib_gcckind(tc: *const Toolchain) LibGCCKind {
+fn getLibGCCKind(tc: *const Toolchain) LibGCCKind {
     const target = tc.getTarget();
     if (tc.driver.static_libgcc or tc.driver.static or tc.driver.static_pie or target.isAndroid()) {
         return .static;
@@ -378,7 +378,7 @@ fn get_lib_gcckind(tc: *const Toolchain) LibGCCKind {
     return .unspecified;
 }
 
-fn get_unwind_lib_kind(tc: *const Toolchain) !UnwindLibKind {
+fn getUnwindLibKind(tc: *const Toolchain) !UnwindLibKind {
     const libname = tc.driver.unwindlib orelse system_defaults.unwindlib;
     if (libname.len == 0 or mem.eql(u8, libname, "platform")) {
         switch (tc.getRuntimeLibKind()) {
@@ -406,7 +406,7 @@ fn get_unwind_lib_kind(tc: *const Toolchain) !UnwindLibKind {
     }
 }
 
-fn get_as_needed_option(is_solaris: bool, needed: bool) []const u8 {
+fn getAsNeededOption(is_solaris: bool, needed: bool) []const u8 {
     if (is_solaris) {
         return if (needed) "-zignore" else "-zrecord";
     } else {
@@ -414,7 +414,7 @@ fn get_as_needed_option(is_solaris: bool, needed: bool) []const u8 {
     }
 }
 
-fn add_unwind_library(tc: *const Toolchain, argv: *std.ArrayList([]const u8)) !void {
+fn addUnwindLibrary(tc: *const Toolchain, argv: *std.ArrayList([]const u8)) !void {
     const unw = try tc.getUnwindLibKind();
     const target = tc.getTarget();
     if ((target.isAndroid() and unw == .libgcc) or
@@ -453,7 +453,7 @@ fn add_unwind_library(tc: *const Toolchain, argv: *std.ArrayList([]const u8)) !v
     }
 }
 
-fn add_lib_gcc(tc: *const Toolchain, argv: *std.ArrayList([]const u8)) !void {
+fn addLibGCC(tc: *const Toolchain, argv: *std.ArrayList([]const u8)) !void {
     const libgcc_kind = tc.getLibGCCKind();
     if (libgcc_kind == .static or libgcc_kind == .unspecified) {
         try argv.append("-lgcc");
@@ -464,7 +464,7 @@ fn add_lib_gcc(tc: *const Toolchain, argv: *std.ArrayList([]const u8)) !void {
     }
 }
 
-pub fn add_runtime_libs(tc: *const Toolchain, argv: *std.ArrayList([]const u8)) !void {
+pub fn addRuntimeLibs(tc: *const Toolchain, argv: *std.ArrayList([]const u8)) !void {
     const target = tc.getTarget();
     const rlt = tc.getRuntimeLibKind();
     switch (rlt) {
@@ -488,7 +488,7 @@ pub fn add_runtime_libs(tc: *const Toolchain, argv: *std.ArrayList([]const u8)) 
     }
 }
 
-pub fn define_system_includes(tc: *Toolchain) !void {
+pub fn defineSystemIncludes(tc: *Toolchain) !void {
     return switch (tc.inner) {
         .uninitialized => unreachable,
         .linux => |*linux| linux.defineSystemIncludes(tc),

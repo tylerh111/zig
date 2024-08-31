@@ -10,38 +10,38 @@ meta: packed struct {
     symbolnum: u24,
 },
 
-pub fn get_target_symbol(rel: Relocation, macho_file: *MachO) *Symbol {
+pub fn getTargetSymbol(rel: Relocation, macho_file: *MachO) *Symbol {
     assert(rel.tag == .@"extern");
     return macho_file.getSymbol(rel.target);
 }
 
-pub fn get_target_atom(rel: Relocation, macho_file: *MachO) *Atom {
+pub fn getTargetAtom(rel: Relocation, macho_file: *MachO) *Atom {
     assert(rel.tag == .local);
     return macho_file.getAtom(rel.target).?;
 }
 
-pub fn get_target_address(rel: Relocation, macho_file: *MachO) u64 {
+pub fn getTargetAddress(rel: Relocation, macho_file: *MachO) u64 {
     return switch (rel.tag) {
         .local => rel.getTargetAtom(macho_file).getAddress(macho_file),
         .@"extern" => rel.getTargetSymbol(macho_file).getAddress(.{}, macho_file),
     };
 }
 
-pub fn get_got_target_address(rel: Relocation, macho_file: *MachO) u64 {
+pub fn getGotTargetAddress(rel: Relocation, macho_file: *MachO) u64 {
     return switch (rel.tag) {
         .local => 0,
         .@"extern" => rel.getTargetSymbol(macho_file).getGotAddress(macho_file),
     };
 }
 
-pub fn get_zig_got_target_address(rel: Relocation, macho_file: *MachO) u64 {
+pub fn getZigGotTargetAddress(rel: Relocation, macho_file: *MachO) u64 {
     return switch (rel.tag) {
         .local => 0,
         .@"extern" => rel.getTargetSymbol(macho_file).getZigGotAddress(macho_file),
     };
 }
 
-pub fn get_reloc_addend(rel: Relocation, cpu_arch: std.Target.Cpu.Arch) i64 {
+pub fn getRelocAddend(rel: Relocation, cpu_arch: std.Target.Cpu.Arch) i64 {
     const addend: i64 = switch (rel.type) {
         .signed => 0,
         .signed1 => -1,
@@ -55,18 +55,18 @@ pub fn get_reloc_addend(rel: Relocation, cpu_arch: std.Target.Cpu.Arch) i64 {
     };
 }
 
-pub fn less_than(ctx: void, lhs: Relocation, rhs: Relocation) bool {
+pub fn lessThan(ctx: void, lhs: Relocation, rhs: Relocation) bool {
     _ = ctx;
     return lhs.offset < rhs.offset;
 }
 
 const FormatCtx = struct { Relocation, std.Target.Cpu.Arch };
 
-pub fn fmt_pretty(rel: Relocation, cpu_arch: std.Target.Cpu.Arch) std.fmt.Formatter(formatPretty) {
+pub fn fmtPretty(rel: Relocation, cpu_arch: std.Target.Cpu.Arch) std.fmt.Formatter(formatPretty) {
     return .{ .data = .{ rel, cpu_arch } };
 }
 
-fn format_pretty(
+fn formatPretty(
     ctx: FormatCtx,
     comptime unused_fmt_string: []const u8,
     options: std.fmt.FormatOptions,

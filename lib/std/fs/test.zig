@@ -19,7 +19,7 @@ const PathType = enum {
     absolute,
     unc,
 
-    pub fn is_supported(self: PathType, target_os: std.Target.Os) bool {
+    pub fn isSupported(self: PathType, target_os: std.Target.Os) bool {
         return switch (self) {
             .relative => true,
             .absolute => std.os.isGetFdPathSupportedOnTarget(target_os),
@@ -30,7 +30,7 @@ const PathType = enum {
     pub const TransformError = posix.RealPathError || error{OutOfMemory};
     pub const TransformFn = fn (allocator: mem.Allocator, dir: Dir, relative_path: [:0]const u8) TransformError![:0]const u8;
 
-    pub fn get_transform_fn(comptime path_type: PathType) TransformFn {
+    pub fn getTransformFn(comptime path_type: PathType) TransformFn {
         switch (path_type) {
             .relative => return struct {
                 fn transform(allocator: mem.Allocator, dir: Dir, relative_path: [:0]const u8) TransformError![:0]const u8 {
@@ -101,7 +101,7 @@ const TestContext = struct {
     /// with any supported path separators replaced by `path_sep`.
     /// The result is allocated by the TestContext's arena and will be free'd during
     /// `TestContext.deinit`.
-    pub fn transform_path(self: *TestContext, relative_path: [:0]const u8) ![:0]const u8 {
+    pub fn transformPath(self: *TestContext, relative_path: [:0]const u8) ![:0]const u8 {
         const allocator = self.arena.allocator();
         const transformed_path = try self.transform_fn(allocator, self.dir, relative_path);
         if (native_os == .windows) {
@@ -120,7 +120,7 @@ const TestContext = struct {
     /// (e.g. all path separators are converted to `\` on Windows).
     /// If path separators are replaced, then the result is allocated by the
     /// TestContext's arena and will be free'd during `TestContext.deinit`.
-    pub fn to_canonical_path_sep(self: *TestContext, path: [:0]const u8) ![:0]const u8 {
+    pub fn toCanonicalPathSep(self: *TestContext, path: [:0]const u8) ![:0]const u8 {
         if (native_os == .windows) {
             const allocator = self.arena.allocator();
             const transformed_sep_path = try allocator.dupeZ(u8, path);
@@ -135,7 +135,7 @@ const TestContext = struct {
 /// `test_func` will be called once for each PathType that the current target supports,
 /// and will be passed a TestContext that can transform a relative path into the path type under test.
 /// The TestContext will also create a tmp directory for you (and will clean it up for you too).
-fn test_with_all_supported_path_types(test_func: anytype) !void {
+fn testWithAllSupportedPathTypes(test_func: anytype) !void {
     try testWithPathTypeIfSupported(.relative, '/', test_func);
     try testWithPathTypeIfSupported(.absolute, '/', test_func);
     try testWithPathTypeIfSupported(.unc, '/', test_func);
@@ -144,7 +144,7 @@ fn test_with_all_supported_path_types(test_func: anytype) !void {
     try testWithPathTypeIfSupported(.unc, '\\', test_func);
 }
 
-fn test_with_path_type_if_supported(comptime path_type: PathType, comptime path_sep: u8, test_func: anytype) !void {
+fn testWithPathTypeIfSupported(comptime path_type: PathType, comptime path_sep: u8, test_func: anytype) !void {
     if (!(comptime path_type.isSupported(builtin.os))) return;
     if (!(comptime fs.path.isSep(path_sep))) return;
 
@@ -156,7 +156,7 @@ fn test_with_path_type_if_supported(comptime path_type: PathType, comptime path_
 
 // For use in test setup.  If the symlink creation fails on Windows with
 // AccessDenied, then make the test failure silent (it is not a Zig failure).
-fn setup_symlink(dir: Dir, target: []const u8, link: []const u8, flags: SymLinkFlags) !void {
+fn setupSymlink(dir: Dir, target: []const u8, link: []const u8, flags: SymLinkFlags) !void {
     return dir.symLink(target, link, flags) catch |err| switch (err) {
         // Symlink requires admin privileges on windows, so this test can legitimately fail.
         error.AccessDenied => if (native_os == .windows) return error.SkipZigTest else return err,
@@ -166,7 +166,7 @@ fn setup_symlink(dir: Dir, target: []const u8, link: []const u8, flags: SymLinkF
 
 // For use in test setup.  If the symlink creation fails on Windows with
 // AccessDenied, then make the test failure silent (it is not a Zig failure).
-fn setup_symlink_absolute(target: []const u8, link: []const u8, flags: SymLinkFlags) !void {
+fn setupSymlinkAbsolute(target: []const u8, link: []const u8, flags: SymLinkFlags) !void {
     return fs.symLinkAbsolute(target, link, flags) catch |err| switch (err) {
         error.AccessDenied => if (native_os == .windows) return error.SkipZigTest else return err,
         else => return err,
@@ -205,13 +205,13 @@ test "Dir.readLink" {
     }.impl);
 }
 
-fn test_read_link(dir: Dir, target_path: []const u8, symlink_path: []const u8) !void {
+fn testReadLink(dir: Dir, target_path: []const u8, symlink_path: []const u8) !void {
     var buffer: [fs.MAX_PATH_BYTES]u8 = undefined;
     const actual = try dir.readLink(symlink_path, buffer[0..]);
     try testing.expectEqualStrings(target_path, actual);
 }
 
-fn test_read_link_absolute(target_path: []const u8, symlink_path: []const u8) !void {
+fn testReadLinkAbsolute(target_path: []const u8, symlink_path: []const u8) !void {
     var buffer: [fs.MAX_PATH_BYTES]u8 = undefined;
     const given = try fs.readLinkAbsolute(symlink_path, buffer[0..]);
     try testing.expectEqualStrings(target_path, given);
@@ -592,7 +592,7 @@ test "Dir.Iterator but dir is deleted during iteration" {
     }
 }
 
-fn entry_eql(lhs: Dir.Entry, rhs: Dir.Entry) bool {
+fn entryEql(lhs: Dir.Entry, rhs: Dir.Entry) bool {
     return mem.eql(u8, lhs.name, rhs.name) and lhs.kind == rhs.kind;
 }
 
@@ -1151,7 +1151,7 @@ test "makePath but sub_path contains pre-existing file" {
     try testing.expectError(error.NotDir, tmp.dir.makePath("foo/bar/baz"));
 }
 
-fn expect_dir(dir: Dir, path: []const u8) !void {
+fn expectDir(dir: Dir, path: []const u8) !void {
     var d = try dir.openDir(path, .{});
     d.close();
 }
@@ -1234,7 +1234,7 @@ test "makepath ignores '.'" {
     try expectDir(tmp.dir, expectedPath);
 }
 
-fn test_filename_limits(iterable_dir: Dir, maxed_filename: []const u8) !void {
+fn testFilenameLimits(iterable_dir: Dir, maxed_filename: []const u8) !void {
     // setup, create a dir and a nested file both with maxed filenames, and walk the dir
     {
         var maxed_dir = try iterable_dir.makeOpenPath(maxed_filename, .{});
@@ -1491,7 +1491,7 @@ test "copyFile" {
     }.impl);
 }
 
-fn expect_file_contents(dir: Dir, file_path: []const u8, data: []const u8) !void {
+fn expectFileContents(dir: Dir, file_path: []const u8, data: []const u8) !void {
     const contents = try dir.readFileAlloc(testing.allocator, file_path, 1000);
     defer testing.allocator.free(contents);
 
@@ -1581,7 +1581,7 @@ test "open file with exclusive lock twice, make sure second lock waits" {
             errdefer file.close();
 
             const S = struct {
-                fn check_fn(dir: *fs.Dir, path: []const u8, started: *std.Thread.ResetEvent, locked: *std.Thread.ResetEvent) !void {
+                fn checkFn(dir: *fs.Dir, path: []const u8, started: *std.Thread.ResetEvent, locked: *std.Thread.ResetEvent) !void {
                     started.set();
                     const file1 = try dir.createFile(path, .{ .lock = .exclusive });
 

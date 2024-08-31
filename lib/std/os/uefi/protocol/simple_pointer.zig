@@ -18,7 +18,7 @@ pub const SimplePointer = struct {
     }
 
     /// Retrieves the current state of a pointer device.
-    pub fn get_state(self: *const SimplePointer, state: *State) Status {
+    pub fn getState(self: *const SimplePointer, state: *State) Status {
         return self._get_state(self, state);
     }
 

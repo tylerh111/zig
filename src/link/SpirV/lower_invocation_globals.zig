@@ -207,7 +207,7 @@ const ModuleInfo = struct {
 
     /// For each function, extend the list of `invocation_globals` with the
     /// invocation globals that ALL of its dependencies use.
-    fn resolve_invocation_global_usage(self: *ModuleInfo, arena: Allocator) !void {
+    fn resolveInvocationGlobalUsage(self: *ModuleInfo, arena: Allocator) !void {
         var seen = try std.DynamicBitSetUnmanaged.initEmpty(arena, self.functions.count());
 
         for (self.functions.keys()) |id| {
@@ -215,7 +215,7 @@ const ModuleInfo = struct {
         }
     }
 
-    fn resolve_invocation_global_usage_step(
+    fn resolveInvocationGlobalUsageStep(
         self: *ModuleInfo,
         arena: Allocator,
         id: ResultId,
@@ -243,7 +243,7 @@ const ModuleInfo = struct {
 
     /// For each invocation global, populate and fully resolve the `dependencies` set.
     /// This requires `resolveInvocationGlobalUsage()` to be already done.
-    fn resolve_invocation_global_dependencies(
+    fn resolveInvocationGlobalDependencies(
         self: *ModuleInfo,
         arena: Allocator,
     ) !void {
@@ -254,7 +254,7 @@ const ModuleInfo = struct {
         }
     }
 
-    fn resolve_invocation_global_dependencies_step(
+    fn resolveInvocationGlobalDependenciesStep(
         self: *ModuleInfo,
         arena: Allocator,
         id: ResultId,
@@ -328,7 +328,7 @@ const ModuleBuilder = struct {
         /// `ModuleInfo.Fn.invocation_globals`.
         global_id_base: u32,
 
-        fn invocation_global_id(self: FunctionNewInfo, index: usize) ResultId {
+        fn invocationGlobalId(self: FunctionNewInfo, index: usize) ResultId {
             return @enumFromInt(self.global_id_base + @as(u32, @intCast(index)));
         }
     };
@@ -360,11 +360,11 @@ const ModuleBuilder = struct {
         return self;
     }
 
-    fn alloc_id(self: *ModuleBuilder) ResultId {
+    fn allocId(self: *ModuleBuilder) ResultId {
         return self.allocIds(1);
     }
 
-    fn alloc_ids(self: *ModuleBuilder, n: u32) ResultId {
+    fn allocIds(self: *ModuleBuilder, n: u32) ResultId {
         defer self.id_bound += n;
         return @enumFromInt(self.id_bound);
     }
@@ -378,7 +378,7 @@ const ModuleBuilder = struct {
     }
 
     /// Process everything from `binary` up to the first function and emit it into the builder.
-    fn process_preamble(self: *ModuleBuilder, binary: BinaryModule, info: ModuleInfo) !void {
+    fn processPreamble(self: *ModuleBuilder, binary: BinaryModule, info: ModuleInfo) !void {
         var it = binary.iterateInstructions();
         while (it.next()) |inst| {
             switch (inst.opcode) {
@@ -417,7 +417,7 @@ const ModuleBuilder = struct {
     }
 
     /// Derive new information required for further emitting this module,
-    fn derive_new_fn_info(self: *ModuleBuilder, info: ModuleInfo) !void {
+    fn deriveNewFnInfo(self: *ModuleBuilder, info: ModuleInfo) !void {
         for (info.functions.keys(), info.functions.values()) |func, fn_info| {
             const invocation_global_count = fn_info.invocation_globals.count();
             const new_param_types = try self.arena.alloc(ResultId, fn_info.param_types.len + invocation_global_count);
@@ -439,7 +439,7 @@ const ModuleBuilder = struct {
     /// no duplicates in the final program.
     /// TODO: The above should be resolved by a generalized deduplication pass, and then
     /// we only need to emit the new function pointers type here.
-    fn emit_function_types(self: *ModuleBuilder, info: ModuleInfo) !void {
+    fn emitFunctionTypes(self: *ModuleBuilder, info: ModuleInfo) !void {
         // TODO: Handle decorators. Function types usually don't have those
         // though, but stuff like OpName could be a possibility.
 
@@ -459,7 +459,7 @@ const ModuleBuilder = struct {
         }
     }
 
-    fn intern_function_type(self: *ModuleBuilder, return_type: ResultId, param_types: []const ResultId) !ResultId {
+    fn internFunctionType(self: *ModuleBuilder, return_type: ResultId, param_types: []const ResultId) !ResultId {
         const entry = try self.function_types.getOrPut(self.arena, .{
             .return_type = return_type,
             .param_types = param_types,
@@ -474,7 +474,7 @@ const ModuleBuilder = struct {
     }
 
     /// Rewrite the modules' functions and emit them with the new parameter types.
-    fn rewrite_functions(
+    fn rewriteFunctions(
         self: *ModuleBuilder,
         parser: *BinaryModule.Parser,
         binary: BinaryModule,
@@ -564,7 +564,7 @@ const ModuleBuilder = struct {
         }
     }
 
-    fn emit_new_entry_points(self: *ModuleBuilder, info: ModuleInfo) !void {
+    fn emitNewEntryPoints(self: *ModuleBuilder, info: ModuleInfo) !void {
         var all_function_invocation_globals = std.AutoArrayHashMap(ResultId, void).init(self.arena);
 
         for (info.entry_points.keys(), 0..) |func, entry_point_index| {
@@ -653,7 +653,7 @@ const ModuleBuilder = struct {
         }
     }
 
-    fn call_with_globals_and_linear_params(
+    fn callWithGlobalsAndLinearParams(
         self: *ModuleBuilder,
         all_globals: std.AutoArrayHashMap(ResultId, void),
         func: ResultId,

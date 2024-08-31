@@ -3,7 +3,7 @@ const std = @import("../std.zig");
 const io = std.io;
 const mem = std.mem;
 
-pub fn buffered_writer(comptime buffer_size: usize, comptime WriterType: type) type {
+pub fn BufferedWriter(comptime buffer_size: usize, comptime WriterType: type) type {
     return struct {
         unbuffered_writer: WriterType,
         buf: [buffer_size]u8 = undefined,
@@ -38,6 +38,6 @@ pub fn buffered_writer(comptime buffer_size: usize, comptime WriterType: type) t
     };
 }
 
-pub fn buffered_writer(underlying_stream: anytype) BufferedWriter(4096, @TypeOf(underlying_stream)) {
+pub fn bufferedWriter(underlying_stream: anytype) BufferedWriter(4096, @TypeOf(underlying_stream)) {
     return .{ .unbuffered_writer = underlying_stream };
 }

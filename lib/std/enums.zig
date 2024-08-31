@@ -12,7 +12,7 @@ const eval_branch_quota_cushion = 5;
 /// If the enum is extern and has multiple names for the same value, only
 /// the first name is used.  Each field is of type Data and has the provided
 /// default, which may be undefined.
-pub fn enum_field_struct(comptime E: type, comptime Data: type, comptime field_default: ?Data) type {
+pub fn EnumFieldStruct(comptime E: type, comptime Data: type, comptime field_default: ?Data) type {
     @setEvalBranchQuota(@typeInfo(E).Enum.fields.len + eval_branch_quota_cushion);
     var struct_fields: [@typeInfo(E).Enum.fields.len]std.builtin.Type.StructField = undefined;
     for (&struct_fields, @typeInfo(E).Enum.fields) |*struct_field, enum_field| {
@@ -35,7 +35,7 @@ pub fn enum_field_struct(comptime E: type, comptime Data: type, comptime field_d
 /// Looks up the supplied fields in the given enum type.
 /// Uses only the field names, field values are ignored.
 /// The result array is in the same order as the input.
-pub inline fn values_from_fields(comptime E: type, comptime fields: []const EnumField) []const E {
+pub inline fn valuesFromFields(comptime E: type, comptime fields: []const EnumField) []const E {
     comptime {
         var result: [fields.len]E = undefined;
         for (&result, fields) |*r, f| {
@@ -55,7 +55,7 @@ pub fn values(comptime E: type) []const E {
 /// A safe alternative to @tagName() for non-exhaustive enums that doesn't
 /// panic when `e` has no tagged value.
 /// Returns the tag name for `e` or null if no tag exists.
-pub fn tag_name(comptime E: type, e: E) ?[]const u8 {
+pub fn tagName(comptime E: type, e: E) ?[]const u8 {
     return inline for (@typeInfo(E).Enum.fields) |f| {
         if (@intFromEnum(e) == f.value) break f.name;
     } else null;
@@ -77,7 +77,7 @@ test tagName {
 /// the total number of items which have no matching enum key (holes in the enum
 /// numbering).  So for example, if an enum has values 1, 2, 5, and 6, max_unused_slots
 /// must be at least 3, to allow unused slots 0, 3, and 4.
-pub fn direct_enum_array_len(comptime E: type, comptime max_unused_slots: comptime_int) comptime_int {
+pub fn directEnumArrayLen(comptime E: type, comptime max_unused_slots: comptime_int) comptime_int {
     var max_value: comptime_int = -1;
     const max_usize: comptime_int = ~@as(usize, 0);
     const fields = @typeInfo(E).Enum.fields;
@@ -115,7 +115,7 @@ pub fn direct_enum_array_len(comptime E: type, comptime max_unused_slots: compti
 /// The init_values parameter must be a struct with field names that match the enum values.
 /// If the enum has multiple fields with the same value, the name of the first one must
 /// be used.
-pub fn direct_enum_array(
+pub fn directEnumArray(
     comptime E: type,
     comptime Data: type,
     comptime max_unused_slots: comptime_int,
@@ -150,7 +150,7 @@ test directEnumArray {
 /// The init_values parameter must be a struct with field names that match the enum values.
 /// If the enum has multiple fields with the same value, the name of the first one must
 /// be used.
-pub fn direct_enum_array_default(
+pub fn directEnumArrayDefault(
     comptime E: type,
     comptime Data: type,
     comptime default: ?Data,
@@ -199,7 +199,7 @@ test "directEnumArrayDefault slice" {
 
 /// Cast an enum literal, value, or string to the enum value of type E
 /// with the same name.
-pub fn name_cast(comptime E: type, comptime value: anytype) E {
+pub fn nameCast(comptime E: type, comptime value: anytype) E {
     return comptime blk: {
         const V = @TypeOf(value);
         if (V == E) break :blk value;
@@ -244,7 +244,7 @@ test nameCast {
 /// is exhaustive but not dense, a mapping will be constructed from enum values
 /// to dense indices.  This type does no dynamic allocation and
 /// can be copied by value.
-pub fn enum_set(comptime E: type) type {
+pub fn EnumSet(comptime E: type) type {
     return struct {
         const Self = @This();
 
@@ -285,24 +285,24 @@ pub fn enum_set(comptime E: type) type {
         }
 
         /// Returns a set containing no keys.
-        pub fn init_empty() Self {
+        pub fn initEmpty() Self {
             return .{ .bits = BitSet.initEmpty() };
         }
 
         /// Returns a set containing all possible keys.
-        pub fn init_full() Self {
+        pub fn initFull() Self {
             return .{ .bits = BitSet.initFull() };
         }
 
         /// Returns a set containing multiple keys.
-        pub fn init_many(keys: []const Key) Self {
+        pub fn initMany(keys: []const Key) Self {
             var set = initEmpty();
             for (keys) |key| set.insert(key);
             return set;
         }
 
         /// Returns a set containing a single key.
-        pub fn init_one(key: Key) Self {
+        pub fn initOne(key: Key) Self {
             return initMany(&[_]Key{key});
         }
 
@@ -327,7 +327,7 @@ pub fn enum_set(comptime E: type) type {
         }
 
         /// Changes the presence of a key in the set to match the passed bool.
-        pub fn set_present(self: *Self, key: Key, present: bool) void {
+        pub fn setPresent(self: *Self, key: Key, present: bool) void {
             self.bits.setValue(Indexer.indexOf(key), present);
         }
 
@@ -338,22 +338,22 @@ pub fn enum_set(comptime E: type) type {
         }
 
         /// Toggles the presence of all keys in the passed set.
-        pub fn toggle_set(self: *Self, other: Self) void {
+        pub fn toggleSet(self: *Self, other: Self) void {
             self.bits.toggleSet(other.bits);
         }
 
         /// Toggles all possible keys in the set.
-        pub fn toggle_all(self: *Self) void {
+        pub fn toggleAll(self: *Self) void {
             self.bits.toggleAll();
         }
 
         /// Adds all keys in the passed set to this set.
-        pub fn set_union(self: *Self, other: Self) void {
+        pub fn setUnion(self: *Self, other: Self) void {
             self.bits.setUnion(other.bits);
         }
 
         /// Removes all keys which are not in the passed set.
-        pub fn set_intersection(self: *Self, other: Self) void {
+        pub fn setIntersection(self: *Self, other: Self) void {
             self.bits.setIntersection(other.bits);
         }
 
@@ -365,14 +365,14 @@ pub fn enum_set(comptime E: type) type {
         /// Returns true iff all the keys in this set are
         /// in the other set. The other set may have keys
         /// not found in this set.
-        pub fn subset_of(self: Self, other: Self) bool {
+        pub fn subsetOf(self: Self, other: Self) bool {
             return self.bits.subsetOf(other.bits);
         }
 
         /// Returns true iff this set contains all the keys
         /// in the other set. This set may have keys not
         /// found in the other set.
-        pub fn superset_of(self: Self, other: Self) bool {
+        pub fn supersetOf(self: Self, other: Self) bool {
             return self.bits.supersetOf(other.bits);
         }
 
@@ -383,25 +383,25 @@ pub fn enum_set(comptime E: type) type {
 
         /// Returns a set with keys that are in either this
         /// set or the other set.
-        pub fn union_with(self: Self, other: Self) Self {
+        pub fn unionWith(self: Self, other: Self) Self {
             return .{ .bits = self.bits.unionWith(other.bits) };
         }
 
         /// Returns a set with keys that are in both this
         /// set and the other set.
-        pub fn intersect_with(self: Self, other: Self) Self {
+        pub fn intersectWith(self: Self, other: Self) Self {
             return .{ .bits = self.bits.intersectWith(other.bits) };
         }
 
         /// Returns a set with keys that are in either this
         /// set or the other set, but not both.
-        pub fn xor_with(self: Self, other: Self) Self {
+        pub fn xorWith(self: Self, other: Self) Self {
             return .{ .bits = self.bits.xorWith(other.bits) };
         }
 
         /// Returns a set with keys that are in this set
         /// except for keys in the other set.
-        pub fn difference_with(self: Self, other: Self) Self {
+        pub fn differenceWith(self: Self, other: Self) Self {
             return .{ .bits = self.bits.differenceWith(other.bits) };
         }
 
@@ -430,7 +430,7 @@ pub fn enum_set(comptime E: type) type {
 /// If the enum is exhaustive but not dense, a mapping will be constructed from
 /// enum values to dense indices.  This type does no dynamic
 /// allocation and can be copied by value.
-pub fn enum_map(comptime E: type, comptime V: type) type {
+pub fn EnumMap(comptime E: type, comptime V: type) type {
     return struct {
         const Self = @This();
 
@@ -479,7 +479,7 @@ pub fn enum_map(comptime E: type, comptime V: type) type {
 
         /// Initializes a full mapping with all keys set to value.
         /// Consider using EnumArray instead if the map will remain full.
-        pub fn init_full(value: Value) Self {
+        pub fn initFull(value: Value) Self {
             var result: Self = .{
                 .bits = Self.BitSet.initFull(),
                 .values = undefined,
@@ -490,13 +490,13 @@ pub fn enum_map(comptime E: type, comptime V: type) type {
 
         /// Initializes a full mapping with supplied values.
         /// Consider using EnumArray instead if the map will remain full.
-        pub fn init_full_with(init_values: EnumFieldStruct(E, Value, null)) Self {
+        pub fn initFullWith(init_values: EnumFieldStruct(E, Value, null)) Self {
             return initFullWithDefault(null, init_values);
         }
 
         /// Initializes a full mapping with a provided default.
         /// Consider using EnumArray instead if the map will remain full.
-        pub fn init_full_with_default(comptime default: ?Value, init_values: EnumFieldStruct(E, Value, default)) Self {
+        pub fn initFullWithDefault(comptime default: ?Value, init_values: EnumFieldStruct(E, Value, default)) Self {
             @setEvalBranchQuota(2 * @typeInfo(E).Enum.fields.len);
             var result: Self = .{
                 .bits = Self.BitSet.initFull(),
@@ -529,7 +529,7 @@ pub fn enum_map(comptime E: type, comptime V: type) type {
 
         /// Gets the value associated with a key, which must
         /// exist in the map.
-        pub fn get_assert_contains(self: Self, key: Key) Value {
+        pub fn getAssertContains(self: Self, key: Key) Value {
             const index = Indexer.indexOf(key);
             assert(self.bits.isSet(index));
             return self.values[index];
@@ -537,21 +537,21 @@ pub fn enum_map(comptime E: type, comptime V: type) type {
 
         /// Gets the address of the value associated with a key.
         /// If the key is not in the map, returns null.
-        pub fn get_ptr(self: *Self, key: Key) ?*Value {
+        pub fn getPtr(self: *Self, key: Key) ?*Value {
             const index = Indexer.indexOf(key);
             return if (self.bits.isSet(index)) &self.values[index] else null;
         }
 
         /// Gets the address of the const value associated with a key.
         /// If the key is not in the map, returns null.
-        pub fn get_ptr_const(self: *const Self, key: Key) ?*const Value {
+        pub fn getPtrConst(self: *const Self, key: Key) ?*const Value {
             const index = Indexer.indexOf(key);
             return if (self.bits.isSet(index)) &self.values[index] else null;
         }
 
         /// Gets the address of the value associated with a key.
         /// The key must be present in the map.
-        pub fn get_ptr_assert_contains(self: *Self, key: Key) *Value {
+        pub fn getPtrAssertContains(self: *Self, key: Key) *Value {
             const index = Indexer.indexOf(key);
             assert(self.bits.isSet(index));
             return &self.values[index];
@@ -559,7 +559,7 @@ pub fn enum_map(comptime E: type, comptime V: type) type {
 
         /// Gets the address of the const value associated with a key.
         /// The key must be present in the map.
-        pub fn get_ptr_const_assert_contains(self: *const Self, key: Key) *const Value {
+        pub fn getPtrConstAssertContains(self: *const Self, key: Key) *const Value {
             const index = Indexer.indexOf(key);
             assert(self.bits.isSet(index));
             return &self.values[index];
@@ -577,7 +577,7 @@ pub fn enum_map(comptime E: type, comptime V: type) type {
         /// If the key is already in the map, the value becomes undefined.
         /// A pointer to the value is returned, which should be
         /// used to initialize the value.
-        pub fn put_uninitialized(self: *Self, key: Key) *Value {
+        pub fn putUninitialized(self: *Self, key: Key) *Value {
             const index = Indexer.indexOf(key);
             self.bits.set(index);
             self.values[index] = undefined;
@@ -587,7 +587,7 @@ pub fn enum_map(comptime E: type, comptime V: type) type {
         /// Sets the value associated with the key in the map,
         /// and returns the old value.  If the key was not in
         /// the map, returns null.
-        pub fn fetch_put(self: *Self, key: Key, value: Value) ?Value {
+        pub fn fetchPut(self: *Self, key: Key, value: Value) ?Value {
             const index = Indexer.indexOf(key);
             const result: ?Value = if (self.bits.isSet(index)) self.values[index] else null;
             self.bits.set(index);
@@ -605,7 +605,7 @@ pub fn enum_map(comptime E: type, comptime V: type) type {
 
         /// Removes a key from the map, and returns the old value.
         /// If the key was not in the map, returns null.
-        pub fn fetch_remove(self: *Self, key: Key) ?Value {
+        pub fn fetchRemove(self: *Self, key: Key) ?Value {
             const index = Indexer.indexOf(key);
             const result: ?Value = if (self.bits.isSet(index)) self.values[index] else null;
             self.bits.unset(index);
@@ -668,14 +668,14 @@ test EnumMap {
 /// A multiset of enum elements up to a count of usize. Backed
 /// by an EnumArray. This type does no dynamic allocation and can
 /// be copied by value.
-pub fn enum_multiset(comptime E: type) type {
+pub fn EnumMultiset(comptime E: type) type {
     return BoundedEnumMultiset(E, usize);
 }
 
 /// A multiset of enum elements up to CountSize. Backed by an
 /// EnumArray. This type does no dynamic allocation and can be
 /// copied by value.
-pub fn bounded_enum_multiset(comptime E: type, comptime CountSize: type) type {
+pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
     return struct {
         const Self = @This();
 
@@ -694,13 +694,13 @@ pub fn bounded_enum_multiset(comptime E: type, comptime CountSize: type) type {
         }
 
         /// Initializes the multiset with a count of zero.
-        pub fn init_empty() Self {
+        pub fn initEmpty() Self {
             return initWithCount(0);
         }
 
         /// Initializes the multiset with all keys at the
         /// same count.
-        pub fn init_with_count(comptime c: CountSize) Self {
+        pub fn initWithCount(comptime c: CountSize) Self {
             return .{
                 .counts = EnumArray(E, CountSize).initDefault(c, .{}),
             };
@@ -722,13 +722,13 @@ pub fn bounded_enum_multiset(comptime E: type, comptime CountSize: type) type {
 
         /// Removes all instance of a key from multiset. Same as
         /// setCount(key, 0).
-        pub fn remove_all(self: *Self, key: E) void {
+        pub fn removeAll(self: *Self, key: E) void {
             return self.counts.set(key, 0);
         }
 
         /// Increases the key count by given amount. Caller asserts
         /// operation will not overflow.
-        pub fn add_assert_safe(self: *Self, key: E, c: CountSize) void {
+        pub fn addAssertSafe(self: *Self, key: E, c: CountSize) void {
             self.counts.getPtr(key).* += c;
         }
 
@@ -745,18 +745,18 @@ pub fn bounded_enum_multiset(comptime E: type, comptime CountSize: type) type {
         }
 
         /// Returns the count for a key.
-        pub fn get_count(self: Self, key: E) CountSize {
+        pub fn getCount(self: Self, key: E) CountSize {
             return self.counts.get(key);
         }
 
         /// Set the count for a key.
-        pub fn set_count(self: *Self, key: E, c: CountSize) void {
+        pub fn setCount(self: *Self, key: E, c: CountSize) void {
             self.counts.set(key, c);
         }
 
         /// Increases the all key counts by given multiset. Caller
         /// asserts operation will not overflow any key.
-        pub fn add_set_assert_safe(self: *Self, other: Self) void {
+        pub fn addSetAssertSafe(self: *Self, other: Self) void {
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const key = @as(E, @enumFromInt(field.value));
                 self.addAssertSafe(key, other.getCount(key));
@@ -764,7 +764,7 @@ pub fn bounded_enum_multiset(comptime E: type, comptime CountSize: type) type {
         }
 
         /// Increases the all key counts by given multiset.
-        pub fn add_set(self: *Self, other: Self) error{Overflow}!void {
+        pub fn addSet(self: *Self, other: Self) error{Overflow}!void {
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const key = @as(E, @enumFromInt(field.value));
                 try self.add(key, other.getCount(key));
@@ -774,7 +774,7 @@ pub fn bounded_enum_multiset(comptime E: type, comptime CountSize: type) type {
         /// Decreases the all key counts by given multiset. If
         /// the given multiset has more key counts than this,
         /// then that key will have a key count of zero.
-        pub fn remove_set(self: *Self, other: Self) void {
+        pub fn removeSet(self: *Self, other: Self) void {
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const key = @as(E, @enumFromInt(field.value));
                 self.remove(key, other.getCount(key));
@@ -795,7 +795,7 @@ pub fn bounded_enum_multiset(comptime E: type, comptime CountSize: type) type {
 
         /// Returns true iff all key counts less than or
         /// equal to the given multiset.
-        pub fn subset_of(self: Self, other: Self) bool {
+        pub fn subsetOf(self: Self, other: Self) bool {
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const key = @as(E, @enumFromInt(field.value));
                 if (self.getCount(key) > other.getCount(key)) {
@@ -807,7 +807,7 @@ pub fn bounded_enum_multiset(comptime E: type, comptime CountSize: type) type {
 
         /// Returns true iff all key counts greater than or
         /// equal to the given multiset.
-        pub fn superset_of(self: Self, other: Self) bool {
+        pub fn supersetOf(self: Self, other: Self) bool {
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const key = @as(E, @enumFromInt(field.value));
                 if (self.getCount(key) < other.getCount(key)) {
@@ -820,7 +820,7 @@ pub fn bounded_enum_multiset(comptime E: type, comptime CountSize: type) type {
         /// Returns a multiset with the total key count of this
         /// multiset and the other multiset. Caller asserts
         /// operation will not overflow any key.
-        pub fn plus_assert_safe(self: Self, other: Self) Self {
+        pub fn plusAssertSafe(self: Self, other: Self) Self {
             var result = self;
             result.addSetAssertSafe(other);
             return result;
@@ -1066,7 +1066,7 @@ test EnumMultiset {
 /// If the enum is not dense, a mapping will be constructed from
 /// enum values to dense indices.  This type does no dynamic
 /// allocation and can be copied by value.
-pub fn enum_array(comptime E: type, comptime V: type) type {
+pub fn EnumArray(comptime E: type, comptime V: type) type {
     return struct {
         const Self = @This();
 
@@ -1086,7 +1086,7 @@ pub fn enum_array(comptime E: type, comptime V: type) type {
         }
 
         /// Initializes values in the enum array, with the specified default.
-        pub fn init_default(comptime default: ?Value, init_values: EnumFieldStruct(E, Value, default)) Self {
+        pub fn initDefault(comptime default: ?Value, init_values: EnumFieldStruct(E, Value, default)) Self {
             @setEvalBranchQuota(2 * @typeInfo(E).Enum.fields.len);
             var result: Self = .{ .values = undefined };
             inline for (0..Self.len) |i| {
@@ -1097,11 +1097,11 @@ pub fn enum_array(comptime E: type, comptime V: type) type {
             return result;
         }
 
-        pub fn init_undefined() Self {
+        pub fn initUndefined() Self {
             return Self{ .values = undefined };
         }
 
-        pub fn init_fill(v: Value) Self {
+        pub fn initFill(v: Value) Self {
             var self: Self = undefined;
             @memset(&self.values, v);
             return self;
@@ -1113,12 +1113,12 @@ pub fn enum_array(comptime E: type, comptime V: type) type {
         }
 
         /// Returns a pointer to the slot in the array associated with a key.
-        pub fn get_ptr(self: *Self, key: Key) *Value {
+        pub fn getPtr(self: *Self, key: Key) *Value {
             return &self.values[Indexer.indexOf(key)];
         }
 
         /// Returns a const pointer to the slot in the array associated with a key.
-        pub fn get_ptr_const(self: *const Self, key: Key) *const Value {
+        pub fn getPtrConst(self: *const Self, key: Key) *const Value {
             return &self.values[Indexer.indexOf(key)];
         }
 
@@ -1274,7 +1274,7 @@ test "EnumSet non-exhaustive" {
     try testing.expect(flags.contains(.c));
 }
 
-pub fn enum_indexer(comptime E: type) type {
+pub fn EnumIndexer(comptime E: type) type {
     // Assumes that the enum fields are sorted in ascending order (optimistic).
     // Unsorted enums may require the user to manually increase the quota.
     @setEvalBranchQuota(3 * @typeInfo(E).Enum.fields.len + eval_branch_quota_cushion);
@@ -1294,7 +1294,7 @@ pub fn enum_indexer(comptime E: type) type {
             const RangeType = std.meta.Int(.unsigned, @bitSizeOf(BackingInt));
             pub const count: comptime_int = std.math.maxInt(RangeType) + 1;
 
-            pub fn index_of(e: E) usize {
+            pub fn indexOf(e: E) usize {
                 if (backing_int_sign == .unsigned)
                     return @intFromEnum(e);
 
@@ -1303,7 +1303,7 @@ pub fn enum_indexer(comptime E: type) type {
                 else
                     @as(RangeType, -min_value) + @as(RangeType, @intCast(@intFromEnum(e)));
             }
-            pub fn key_for_index(i: usize) E {
+            pub fn keyForIndex(i: usize) E {
                 if (backing_int_sign == .unsigned)
                     return @enumFromInt(i);
 
@@ -1320,11 +1320,11 @@ pub fn enum_indexer(comptime E: type) type {
         return struct {
             pub const Key = E;
             pub const count: comptime_int = 0;
-            pub fn index_of(e: E) usize {
+            pub fn indexOf(e: E) usize {
                 _ = e;
                 unreachable;
             }
-            pub fn key_for_index(i: usize) E {
+            pub fn keyForIndex(i: usize) E {
                 _ = i;
                 unreachable;
             }
@@ -1337,7 +1337,7 @@ pub fn enum_indexer(comptime E: type) type {
     const SortContext = struct {
         fields: []EnumField,
 
-        pub fn less_than(comptime ctx: @This(), comptime a: usize, comptime b: usize) bool {
+        pub fn lessThan(comptime ctx: @This(), comptime a: usize, comptime b: usize) bool {
             return ctx.fields[a].value < ctx.fields[b].value;
         }
 
@@ -1351,10 +1351,10 @@ pub fn enum_indexer(comptime E: type) type {
         return struct {
             pub const Key = E;
             pub const count: comptime_int = fields_len;
-            pub fn index_of(e: E) usize {
+            pub fn indexOf(e: E) usize {
                 return @as(usize, @intCast(@intFromEnum(e) - min));
             }
-            pub fn key_for_index(i: usize) E {
+            pub fn keyForIndex(i: usize) E {
                 // TODO fix addition semantics.  This calculation
                 // gives up some safety to avoid artificially limiting
                 // the range of signed enum values to max_isize.
@@ -1369,13 +1369,13 @@ pub fn enum_indexer(comptime E: type) type {
     return struct {
         pub const Key = E;
         pub const count: comptime_int = fields_len;
-        pub fn index_of(e: E) usize {
+        pub fn indexOf(e: E) usize {
             for (keys, 0..) |k, i| {
                 if (k == e) return i;
             }
             unreachable;
         }
-        pub fn key_for_index(i: usize) E {
+        pub fn keyForIndex(i: usize) E {
             return keys[i];
         }
     };

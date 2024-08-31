@@ -72,7 +72,7 @@ pub const Resource = enum {
         .{ "VXD", .vxd },
     });
 
-    pub fn from_string(bytes: SourceBytes) Resource {
+    pub fn fromString(bytes: SourceBytes) Resource {
         const maybe_ordinal = res.NameOrOrdinal.maybeOrdinalFromString(bytes);
         if (maybe_ordinal) |ordinal| {
             if (ordinal.ordinal >= 256) return .user_defined;
@@ -82,7 +82,7 @@ pub const Resource = enum {
     }
 
     // TODO: Some comptime validation that RT <-> Resource conversion is synced?
-    pub fn from_rt(rt: res.RT) Resource {
+    pub fn fromRT(rt: res.RT) Resource {
         return switch (rt) {
             .ACCELERATOR => .accelerators,
             .ANICURSOR => .anicursor_num,
@@ -111,7 +111,7 @@ pub const Resource = enum {
         };
     }
 
-    pub fn can_use_raw_data(resource: Resource) bool {
+    pub fn canUseRawData(resource: Resource) bool {
         return switch (resource) {
             .user_defined,
             .html,
@@ -125,7 +125,7 @@ pub const Resource = enum {
         };
     }
 
-    pub fn name_for_error_display(resource: Resource) []const u8 {
+    pub fn nameForErrorDisplay(resource: Resource) []const u8 {
         return switch (resource) {
             // zig fmt: off
             .accelerators, .bitmap, .cursor, .dialog, .dialogex, .dlginclude, .dlginit, .font,
@@ -234,7 +234,7 @@ pub const Control = enum {
         .{ "USERBUTTON", .userbutton },
     });
 
-    pub fn has_text_param(control: Control) bool {
+    pub fn hasTextParam(control: Control) bool {
         switch (control) {
             .scrollbar, .listbox, .iedit, .hedit, .edittext, .combobox => return false,
             else => return true,
@@ -257,7 +257,7 @@ pub const ControlClass = struct {
 
     /// Like `map.get` but works on WTF16 strings, for use with parsed
     /// string literals ("BUTTON", or even "\x42UTTON")
-    pub fn from_wide_string(str: []const u16) ?res.ControlClass {
+    pub fn fromWideString(str: []const u16) ?res.ControlClass {
         const utf16Literal = std.unicode.utf8ToUtf16LeStringLiteral;
         return if (ascii.eqlIgnoreCaseW(str, utf16Literal("BUTTON")))
             .button
@@ -278,7 +278,7 @@ pub const ControlClass = struct {
 
 const ascii = struct {
     /// Compares ASCII values case-insensitively, non-ASCII values are compared directly
-    pub fn eql_ignore_case_w(a: []const u16, b: []const u16) bool {
+    pub fn eqlIgnoreCaseW(a: []const u16, b: []const u16) bool {
         if (a.len != b.len) return false;
         for (a, b) |a_c, b_c| {
             if (a_c < 128) {
@@ -303,7 +303,7 @@ pub const MenuItem = enum {
         .{ "POPUP", .popup },
     });
 
-    pub fn is_separator(bytes: []const u8) bool {
+    pub fn isSeparator(bytes: []const u8) bool {
         return std.ascii.eqlIgnoreCase(bytes, "SEPARATOR");
     }
 

@@ -25,7 +25,7 @@ suffix: []const u8 = "",
 /// This orders versions according to the preferred usage order, not a notion of release-time ordering
 /// Higher version numbers are preferred, but nonexistent minor/patch/suffix is preferred to one that does exist
 /// e.g. `4.1` is preferred over `4.0` but `4` is preferred over both `4.0` and `4.1`
-pub fn is_less_than(self: GCCVersion, rhs_major: i32, rhs_minor: i32, rhs_patch: i32, rhs_suffix: []const u8) bool {
+pub fn isLessThan(self: GCCVersion, rhs_major: i32, rhs_minor: i32, rhs_patch: i32, rhs_suffix: []const u8) bool {
     if (self.major != rhs_major) {
         return self.major < rhs_major;
     }
@@ -100,7 +100,7 @@ pub fn order(a: GCCVersion, b: GCCVersion) Order {
 
 /// Used for determining __GNUC__ macro values
 /// This matches clang's logic for overflowing values
-pub fn to_unsigned(self: GCCVersion) u32 {
+pub fn toUnsigned(self: GCCVersion) u32 {
     var result: u32 = 0;
     if (self.major > 0) result = @as(u32, @intCast(self.major)) *% 10_000;
     if (self.minor > 0) result +%= @as(u32, @intCast(self.minor)) *% 100;

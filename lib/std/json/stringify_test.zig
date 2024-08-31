@@ -41,7 +41,7 @@ test "json write stream" {
     }
 }
 
-fn test_basic_write_stream(w: anytype, slice_stream: anytype) !void {
+fn testBasicWriteStream(w: anytype, slice_stream: anytype) !void {
     slice_stream.reset();
 
     try w.beginObject();
@@ -89,7 +89,7 @@ fn test_basic_write_stream(w: anytype, slice_stream: anytype) !void {
     try std.testing.expectEqualStrings(expected, result);
 }
 
-fn get_json_object(allocator: std.mem.Allocator) !Value {
+fn getJsonObject(allocator: std.mem.Allocator) !Value {
     var value = Value{ .object = ObjectMap.init(allocator) };
     try value.object.put("one", Value{ .integer = @as(i64, @intCast(1)) });
     try value.object.put("two", Value{ .float = 2.0 });
@@ -275,7 +275,7 @@ test "stringify struct with custom stringifier" {
     try testStringify("[\"something special\",42]", struct {
         foo: u32,
         const Self = @This();
-        pub fn json_stringify(value: @This(), jws: anytype) !void {
+        pub fn jsonStringify(value: @This(), jws: anytype) !void {
             _ = value;
             try jws.beginArray();
             try jws.write("something special");
@@ -295,7 +295,7 @@ test "stringify tuple" {
     try testStringify("[\"foo\",42]", std.meta.Tuple(&.{ []const u8, usize }){ "foo", 42 }, .{});
 }
 
-fn test_stringify(expected: []const u8, value: anytype, options: StringifyOptions) !void {
+fn testStringify(expected: []const u8, value: anytype, options: StringifyOptions) !void {
     const ValidationWriter = struct {
         const Self = @This();
         pub const Writer = std.io.Writer(*Self, Error, write);
@@ -355,7 +355,7 @@ fn test_stringify(expected: []const u8, value: anytype, options: StringifyOption
     try testStringifyArbitraryDepth(expected, value, options);
 }
 
-fn test_stringify_max_depth(expected: []const u8, value: anytype, options: StringifyOptions, comptime max_depth: ?usize) !void {
+fn testStringifyMaxDepth(expected: []const u8, value: anytype, options: StringifyOptions, comptime max_depth: ?usize) !void {
     var out_buf: [1024]u8 = undefined;
     var slice_stream = std.io.fixedBufferStream(&out_buf);
     const out = slice_stream.writer();
@@ -366,7 +366,7 @@ fn test_stringify_max_depth(expected: []const u8, value: anytype, options: Strin
     try testing.expectEqualStrings(expected, got);
 }
 
-fn test_stringify_arbitrary_depth(expected: []const u8, value: anytype, options: StringifyOptions) !void {
+fn testStringifyArbitraryDepth(expected: []const u8, value: anytype, options: StringifyOptions) !void {
     var out_buf: [1024]u8 = undefined;
     var slice_stream = std.io.fixedBufferStream(&out_buf);
     const out = slice_stream.writer();

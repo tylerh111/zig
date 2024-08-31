@@ -22,7 +22,7 @@ test "@bitReverse" {
     try testBitReverse();
 }
 
-fn test_bit_reverse() !void {
+fn testBitReverse() !void {
     // using comptime_ints, unsigned
     try expect(@bitReverse(@as(u0, 0)) == 0);
     try expect(@bitReverse(@as(u5, 0x12)) == 0x9);

@@ -59,7 +59,7 @@ test "maybe return" {
     try comptime maybeReturnImpl();
 }
 
-fn maybe_return_impl() !void {
+fn maybeReturnImpl() !void {
     try expect(foo(1235).?);
     if (foo(null) != null) unreachable;
     try expect(!foo(1234).?);
@@ -77,7 +77,7 @@ test "test null runtime" {
 
     try testTestNullRuntime(null);
 }
-fn test_test_null_runtime(x: ?i32) !void {
+fn testTestNullRuntime(x: ?i32) !void {
     try expect(x == null);
     try expect(!(x != null));
 }
@@ -91,7 +91,7 @@ test "optional void" {
     try comptime optionalVoidImpl();
 }
 
-fn optional_void_impl() !void {
+fn optionalVoidImpl() !void {
     try expect(bar(null) == null);
     try expect(bar({}) != null);
 }
@@ -115,7 +115,7 @@ test "optional struct{}" {
     _ = try comptime optionalEmptyStructImpl();
 }
 
-fn optional_empty_struct_impl() !void {
+fn optionalEmptyStructImpl() !void {
     try expect(baz(null) == null);
     try expect(baz(Empty{}) != null);
 }
@@ -156,7 +156,7 @@ test "if var maybe pointer" {
         .d = 1,
     }) == 15);
 }
-fn should_be_aplus1(p: Particle) u64 {
+fn shouldBeAPlus1(p: Particle) u64 {
     var maybe_particle: ?Particle = p;
     if (maybe_particle) |*particle| {
         particle.a += 1;

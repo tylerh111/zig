@@ -54,7 +54,7 @@ pub const Record = struct {
     operands: []const u64,
     blob: []const u8,
 
-    fn to_owned_abbrev(record: Record, allocator: std.mem.Allocator) !Abbrev {
+    fn toOwnedAbbrev(record: Record, allocator: std.mem.Allocator) !Abbrev {
         var operands = std.ArrayList(Abbrev.Operand).init(allocator);
         defer operands.deinit();
 
@@ -119,7 +119,7 @@ pub fn deinit(bc: *BitcodeReader) void {
     bc.* = undefined;
 }
 
-pub fn check_magic(bc: *BitcodeReader, magic: *const [4]u8) !void {
+pub fn checkMagic(bc: *BitcodeReader, magic: *const [4]u8) !void {
     var buffer: [4]u8 = undefined;
     try bc.readBytes(&buffer);
     if (!std.mem.eql(u8, &buffer, magic)) return error.InvalidMagic;
@@ -170,13 +170,13 @@ pub fn next(bc: *BitcodeReader) !?Item {
     }
 }
 
-pub fn skip_block(bc: *BitcodeReader, block: Block) !void {
+pub fn skipBlock(bc: *BitcodeReader, block: Block) !void {
     assert(bc.bit_offset == 0);
     try bc.reader.skipBytes(@as(u34, block.len) * 4, .{});
     try bc.endBlock();
 }
 
-fn next_record(bc: *BitcodeReader) !?Record {
+fn nextRecord(bc: *BitcodeReader) !?Record {
     const state = &bc.stack.items[bc.stack.items.len - 1];
     const abbrev_id = bc.readFixed(u32, state.abbrev_id_width) catch |err| switch (err) {
         error.EndOfStream => return null,
@@ -259,7 +259,7 @@ fn next_record(bc: *BitcodeReader) !?Record {
     };
 }
 
-fn start_block(bc: *BitcodeReader, block_id: ?u32, new_abbrev_len: u6) !void {
+fn startBlock(bc: *BitcodeReader, block_id: ?u32, new_abbrev_len: u6) !void {
     const abbrevs = if (block_id) |id|
         if (bc.block_info.get(id)) |block_info| block_info.abbrevs.abbrevs.items else &.{}
     else
@@ -313,13 +313,13 @@ fn start_block(bc: *BitcodeReader, block_id: ?u32, new_abbrev_len: u6) !void {
     for (abbrevs) |abbrev| try state.abbrevs.addAbbrevAssumeCapacity(bc.allocator, abbrev);
 }
 
-fn end_block(bc: *BitcodeReader) !void {
+fn endBlock(bc: *BitcodeReader) !void {
     if (bc.stack.items.len == 0) return error.InvalidEndBlock;
     bc.stack.items[bc.stack.items.len - 1].deinit(bc.allocator);
     bc.stack.items.len -= 1;
 }
 
-fn parse_block_info_block(bc: *BitcodeReader) !void {
+fn parseBlockInfoBlock(bc: *BitcodeReader) !void {
     var block_id: ?u32 = null;
     while (true) {
         const record = (try bc.nextRecord()) orelse return error.EndOfStream;
@@ -365,16 +365,16 @@ fn parse_block_info_block(bc: *BitcodeReader) !void {
     }
 }
 
-fn align32_bits(bc: *BitcodeReader) void {
+fn align32Bits(bc: *BitcodeReader) void {
     bc.bit_offset = 0;
 }
 
-fn read32_bits(bc: *BitcodeReader) !u32 {
+fn read32Bits(bc: *BitcodeReader) !u32 {
     assert(bc.bit_offset == 0);
     return bc.reader.readInt(u32, .little);
 }
 
-fn read_bytes(bc: *BitcodeReader, bytes: []u8) !void {
+fn readBytes(bc: *BitcodeReader, bytes: []u8) !void {
     assert(bc.bit_offset == 0);
     try bc.reader.readNoEof(bytes);
 
@@ -387,7 +387,7 @@ fn read_bytes(bc: *BitcodeReader, bytes: []u8) !void {
     }
 }
 
-fn read_fixed(bc: *BitcodeReader, comptime T: type, bits: u7) !T {
+fn readFixed(bc: *BitcodeReader, comptime T: type, bits: u7) !T {
     var result: T = 0;
     var shift: std.math.Log2IntCeil(T) = 0;
     var remaining = bits;
@@ -403,7 +403,7 @@ fn read_fixed(bc: *BitcodeReader, comptime T: type, bits: u7) !T {
     return result;
 }
 
-fn read_vbr(bc: *BitcodeReader, comptime T: type, bits: u7) !T {
+fn readVbr(bc: *BitcodeReader, comptime T: type, bits: u7) !T {
     const chunk_bits: u6 = @intCast(bits - 1);
     const chunk_msb = @as(u64, 1) << chunk_bits;
 
@@ -418,7 +418,7 @@ fn read_vbr(bc: *BitcodeReader, comptime T: type, bits: u7) !T {
     return @intCast(result);
 }
 
-fn read_char6(bc: *BitcodeReader) !u8 {
+fn readChar6(bc: *BitcodeReader) !u8 {
     return switch (try bc.readFixed(u6, 6)) {
         0...25 => |c| @as(u8, c - 0) + 'a',
         26...51 => |c| @as(u8, c - 26) + 'A',
@@ -449,7 +449,7 @@ const Abbrev = struct {
         unabbrev_record,
 
         const first_record_id: u32 = std.math.maxInt(u32) - @typeInfo(Builtin).Enum.fields.len + 1;
-        fn to_record_id(builtin: Builtin) u32 {
+        fn toRecordId(builtin: Builtin) u32 {
             return first_record_id + @intFromEnum(builtin);
         }
     };
@@ -487,23 +487,23 @@ const Abbrev = struct {
             store.* = undefined;
         }
 
-        fn add_abbrev(store: *Store, allocator: std.mem.Allocator, abbrev: Abbrev) !void {
+        fn addAbbrev(store: *Store, allocator: std.mem.Allocator, abbrev: Abbrev) !void {
             try store.ensureUnusedCapacity(allocator, 1);
             store.addAbbrevAssumeCapacity(abbrev);
         }
 
-        fn add_abbrev_assume_capacity(store: *Store, allocator: std.mem.Allocator, abbrev: Abbrev) !void {
+        fn addAbbrevAssumeCapacity(store: *Store, allocator: std.mem.Allocator, abbrev: Abbrev) !void {
             store.abbrevs.appendAssumeCapacity(.{
                 .operands = try allocator.dupe(Abbrev.Operand, abbrev.operands),
             });
         }
 
-        fn add_owned_abbrev(store: *Store, allocator: std.mem.Allocator, abbrev: Abbrev) !void {
+        fn addOwnedAbbrev(store: *Store, allocator: std.mem.Allocator, abbrev: Abbrev) !void {
             try store.abbrevs.ensureUnusedCapacity(allocator, 1);
             store.addOwnedAbbrevAssumeCapacity(abbrev);
         }
 
-        fn add_owned_abbrev_assume_capacity(store: *Store, abbrev: Abbrev) void {
+        fn addOwnedAbbrevAssumeCapacity(store: *Store, abbrev: Abbrev) void {
             store.abbrevs.appendAssumeCapacity(abbrev);
         }
     };

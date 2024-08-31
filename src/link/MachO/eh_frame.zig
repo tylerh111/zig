@@ -52,21 +52,21 @@ pub const Cie = struct {
         };
     }
 
-    pub inline fn get_size(cie: Cie) u32 {
+    pub inline fn getSize(cie: Cie) u32 {
         return cie.size + 4;
     }
 
-    pub fn get_object(cie: Cie, macho_file: *MachO) *Object {
+    pub fn getObject(cie: Cie, macho_file: *MachO) *Object {
         const file = macho_file.getFile(cie.file).?;
         return file.object;
     }
 
-    pub fn get_data(cie: Cie, macho_file: *MachO) []const u8 {
+    pub fn getData(cie: Cie, macho_file: *MachO) []const u8 {
         const object = cie.getObject(macho_file);
         return object.eh_frame_data.items[cie.offset..][0..cie.getSize()];
     }
 
-    pub fn get_personality(cie: Cie, macho_file: *MachO) ?*Symbol {
+    pub fn getPersonality(cie: Cie, macho_file: *MachO) ?*Symbol {
         const personality = cie.personality orelse return null;
         return macho_file.getSymbol(personality.index);
     }
@@ -203,30 +203,30 @@ pub const Fde = struct {
         }
     }
 
-    pub inline fn get_size(fde: Fde) u32 {
+    pub inline fn getSize(fde: Fde) u32 {
         return fde.size + 4;
     }
 
-    pub fn get_object(fde: Fde, macho_file: *MachO) *Object {
+    pub fn getObject(fde: Fde, macho_file: *MachO) *Object {
         const file = macho_file.getFile(fde.file).?;
         return file.object;
     }
 
-    pub fn get_data(fde: Fde, macho_file: *MachO) []const u8 {
+    pub fn getData(fde: Fde, macho_file: *MachO) []const u8 {
         const object = fde.getObject(macho_file);
         return object.eh_frame_data.items[fde.offset..][0..fde.getSize()];
     }
 
-    pub fn get_cie(fde: Fde, macho_file: *MachO) *const Cie {
+    pub fn getCie(fde: Fde, macho_file: *MachO) *const Cie {
         const object = fde.getObject(macho_file);
         return &object.cies.items[fde.cie];
     }
 
-    pub fn get_atom(fde: Fde, macho_file: *MachO) *Atom {
+    pub fn getAtom(fde: Fde, macho_file: *MachO) *Atom {
         return macho_file.getAtom(fde.atom).?;
     }
 
-    pub fn get_lsda_atom(fde: Fde, macho_file: *MachO) ?*Atom {
+    pub fn getLsdaAtom(fde: Fde, macho_file: *MachO) ?*Atom {
         return macho_file.getAtom(fde.lsda);
     }
 
@@ -308,7 +308,7 @@ pub const Iterator = struct {
     }
 };
 
-pub fn calc_size(macho_file: *MachO) !u32 {
+pub fn calcSize(macho_file: *MachO) !u32 {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -350,7 +350,7 @@ pub fn calc_size(macho_file: *MachO) !u32 {
     return offset;
 }
 
-pub fn calc_num_relocs(macho_file: *MachO) u32 {
+pub fn calcNumRelocs(macho_file: *MachO) u32 {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -448,7 +448,7 @@ pub fn write(macho_file: *MachO, buffer: []u8) void {
     }
 }
 
-pub fn write_relocs(macho_file: *MachO, code: []u8, relocs: *std.ArrayList(macho.relocation_info)) error{Overflow}!void {
+pub fn writeRelocs(macho_file: *MachO, code: []u8, relocs: *std.ArrayList(macho.relocation_info)) error{Overflow}!void {
     const tracy = trace(@src());
     defer tracy.end();
 

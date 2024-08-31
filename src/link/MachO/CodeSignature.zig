@@ -20,7 +20,7 @@ const Blob = union(enum) {
     entitlements: *Entitlements,
     signature: *Signature,
 
-    fn slot_type(self: Blob) u32 {
+    fn slotType(self: Blob) u32 {
         return switch (self) {
             .code_directory => |x| x.slotType(),
             .requirements => |x| x.slotType(),
@@ -95,13 +95,13 @@ const CodeDirectory = struct {
         self.code_slots.deinit(allocator);
     }
 
-    fn add_special_hash(self: *CodeDirectory, index: u32, hash: [hash_size]u8) void {
+    fn addSpecialHash(self: *CodeDirectory, index: u32, hash: [hash_size]u8) void {
         assert(index > 0);
         self.inner.nSpecialSlots = @max(self.inner.nSpecialSlots, index);
         @memcpy(&self.special_slots[index - 1], &hash);
     }
 
-    fn slot_type(self: CodeDirectory) u32 {
+    fn slotType(self: CodeDirectory) u32 {
         _ = self;
         return macho.CSSLOT_CODEDIRECTORY;
     }
@@ -155,7 +155,7 @@ const Requirements = struct {
         _ = allocator;
     }
 
-    fn slot_type(self: Requirements) u32 {
+    fn slotType(self: Requirements) u32 {
         _ = self;
         return macho.CSSLOT_REQUIREMENTS;
     }
@@ -179,7 +179,7 @@ const Entitlements = struct {
         allocator.free(self.inner);
     }
 
-    fn slot_type(self: Entitlements) u32 {
+    fn slotType(self: Entitlements) u32 {
         _ = self;
         return macho.CSSLOT_ENTITLEMENTS;
     }
@@ -201,7 +201,7 @@ const Signature = struct {
         _ = allocator;
     }
 
-    fn slot_type(self: Signature) u32 {
+    fn slotType(self: Signature) u32 {
         _ = self;
         return macho.CSSLOT_SIGNATURESLOT;
     }
@@ -243,7 +243,7 @@ pub fn deinit(self: *CodeSignature, allocator: Allocator) void {
     }
 }
 
-pub fn add_entitlements(self: *CodeSignature, allocator: Allocator, path: []const u8) !void {
+pub fn addEntitlements(self: *CodeSignature, allocator: Allocator, path: []const u8) !void {
     const file = try fs.cwd().openFile(path, .{});
     defer file.close();
     const inner = try file.readToEndAlloc(allocator, std.math.maxInt(u32));
@@ -258,7 +258,7 @@ pub const WriteOpts = struct {
     dylib: bool,
 };
 
-pub fn write_adhoc_signature(
+pub fn writeAdhocSignature(
     self: *CodeSignature,
     macho_file: *MachO,
     opts: WriteOpts,
@@ -364,7 +364,7 @@ pub fn size(self: CodeSignature) u32 {
     return ssize;
 }
 
-pub fn estimate_size(self: CodeSignature, file_size: u64) u32 {
+pub fn estimateSize(self: CodeSignature, file_size: u64) u32 {
     var ssize: u64 = @sizeOf(macho.SuperBlob) + @sizeOf(macho.BlobIndex) + self.code_directory.size();
     // Approx code slots
     const total_pages = mem.alignForward(u64, file_size, self.page_size) / self.page_size;

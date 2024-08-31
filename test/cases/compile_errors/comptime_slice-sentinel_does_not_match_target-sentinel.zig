@@ -13,7 +13,7 @@ export fn foo_ptr_array() void {
         _ = slice;
     }
 }
-export fn foo_vector_const_ptr_special_base_array() void {
+export fn foo_vector_ConstPtrSpecialBaseArray() void {
     comptime {
         var buf = [_:0]u8{ 'a', 'b', 'c', 'd' } ++ [_]u8{undefined} ** 10;
         var target: [*]u8 = &buf;
@@ -21,7 +21,7 @@ export fn foo_vector_const_ptr_special_base_array() void {
         _ = slice;
     }
 }
-export fn foo_vector_const_ptr_special_ref() void {
+export fn foo_vector_ConstPtrSpecialRef() void {
     comptime {
         var buf = [_:0]u8{ 'a', 'b', 'c', 'd' } ++ [_]u8{undefined} ** 10;
         var target: [*]u8 = @ptrCast(&buf);
@@ -29,7 +29,7 @@ export fn foo_vector_const_ptr_special_ref() void {
         _ = slice;
     }
 }
-export fn foo_cvector_const_ptr_special_base_array() void {
+export fn foo_cvector_ConstPtrSpecialBaseArray() void {
     comptime {
         var buf = [_:0]u8{ 'a', 'b', 'c', 'd' } ++ [_]u8{undefined} ** 10;
         var target: [*c]u8 = &buf;
@@ -37,7 +37,7 @@ export fn foo_cvector_const_ptr_special_base_array() void {
         _ = slice;
     }
 }
-export fn foo_cvector_const_ptr_special_ref() void {
+export fn foo_cvector_ConstPtrSpecialRef() void {
     comptime {
         var buf = [_:0]u8{ 'a', 'b', 'c', 'd' } ++ [_]u8{undefined} ** 10;
         var target: [*c]u8 = @ptrCast(&buf);
@@ -63,7 +63,7 @@ export fn string_slice() void {
     const slice = str[0..1 :12];
     _ = slice;
 }
-export fn type_name_slice() void {
+export fn typeName_slice() void {
     const arr = @typeName(usize);
     const slice = arr[0..2 :0];
     _ = slice;

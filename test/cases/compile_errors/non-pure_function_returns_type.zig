@@ -1,10 +1,10 @@
 var a: u32 = 0;
-pub fn list(comptime T: type) type {
+pub fn List(comptime T: type) type {
     a += 1;
     return SmallList(T, 8);
 }
 
-pub fn small_list(comptime T: type, comptime STATIC_SIZE: usize) type {
+pub fn SmallList(comptime T: type, comptime STATIC_SIZE: usize) type {
     return struct {
         items: []T,
         length: usize,

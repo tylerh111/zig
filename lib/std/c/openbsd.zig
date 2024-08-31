@@ -436,28 +436,28 @@ pub const W = struct {
     pub const UNTRACED = 2;
     pub const CONTINUED = 8;
 
-    pub fn exitstatus(s: u32) u8 {
+    pub fn EXITSTATUS(s: u32) u8 {
         return @as(u8, @intCast((s >> 8) & 0xff));
     }
-    pub fn termsig(s: u32) u32 {
+    pub fn TERMSIG(s: u32) u32 {
         return (s & 0x7f);
     }
-    pub fn stopsig(s: u32) u32 {
+    pub fn STOPSIG(s: u32) u32 {
         return EXITSTATUS(s);
     }
-    pub fn ifexited(s: u32) bool {
+    pub fn IFEXITED(s: u32) bool {
         return TERMSIG(s) == 0;
     }
 
-    pub fn ifcontinued(s: u32) bool {
+    pub fn IFCONTINUED(s: u32) bool {
         return ((s & 0o177777) == 0o177777);
     }
 
-    pub fn ifstopped(s: u32) bool {
+    pub fn IFSTOPPED(s: u32) bool {
         return (s & 0xff == 0o177);
     }
 
-    pub fn ifsignaled(s: u32) bool {
+    pub fn IFSIGNALED(s: u32) bool {
         return (((s) & 0o177) != 0o177) and (((s) & 0o177) != 0);
     }
 };
@@ -1113,31 +1113,31 @@ pub const S = struct {
     pub const IWOTH = 0o002;
     pub const IXOTH = 0o001;
 
-    pub fn isfifo(m: u32) bool {
+    pub fn ISFIFO(m: u32) bool {
         return m & IFMT == IFIFO;
     }
 
-    pub fn ischr(m: u32) bool {
+    pub fn ISCHR(m: u32) bool {
         return m & IFMT == IFCHR;
     }
 
-    pub fn isdir(m: u32) bool {
+    pub fn ISDIR(m: u32) bool {
         return m & IFMT == IFDIR;
     }
 
-    pub fn isblk(m: u32) bool {
+    pub fn ISBLK(m: u32) bool {
         return m & IFMT == IFBLK;
     }
 
-    pub fn isreg(m: u32) bool {
+    pub fn ISREG(m: u32) bool {
         return m & IFMT == IFREG;
     }
 
-    pub fn islnk(m: u32) bool {
+    pub fn ISLNK(m: u32) bool {
         return m & IFMT == IFLNK;
     }
 
-    pub fn issock(m: u32) bool {
+    pub fn ISSOCK(m: u32) bool {
         return m & IFMT == IFSOCK;
     }
 };

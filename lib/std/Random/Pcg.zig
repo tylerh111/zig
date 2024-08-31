@@ -40,7 +40,7 @@ fn seed(self: *Pcg, init_s: u64) void {
     self.seedTwo(gen.next(), gen.next());
 }
 
-fn seed_two(self: *Pcg, init_s: u64, init_i: u64) void {
+fn seedTwo(self: *Pcg, init_s: u64, init_i: u64) void {
     self.s = 0;
     self.i = (init_s << 1) | 1;
     self.s = self.s *% default_multiplier +% self.i;

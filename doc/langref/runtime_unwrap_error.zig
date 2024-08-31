@@ -5,7 +5,7 @@ pub fn main() void {
     std.debug.print("value: {}\n", .{number});
 }
 
-fn get_number_or_fail() !i32 {
+fn getNumberOrFail() !i32 {
     return error.UnableToReturnNumber;
 }
 

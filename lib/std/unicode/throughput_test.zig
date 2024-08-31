@@ -15,7 +15,7 @@ const ResultCount = struct {
     throughput: u64,
 };
 
-fn benchmark_codepoint_count(buf: []const u8) !ResultCount {
+fn benchmarkCodepointCount(buf: []const u8) !ResultCount {
     var timer = try Timer.start();
 
     const bytes = N * buf.len;

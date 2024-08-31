@@ -372,7 +372,7 @@ pub fn deinit(mir: *Mir, gpa: std.mem.Allocator) void {
 
 /// Returns the requested data, as well as the new index which is at the start of the
 /// trailers for the object.
-pub fn extra_data(mir: Mir, comptime T: type, index: usize) struct { data: T, end: usize } {
+pub fn extraData(mir: Mir, comptime T: type, index: usize) struct { data: T, end: usize } {
     const fields = std.meta.fields(T);
     var i: usize = index;
     var result: T = undefined;

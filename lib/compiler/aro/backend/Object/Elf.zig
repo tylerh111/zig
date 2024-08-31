@@ -69,7 +69,7 @@ pub fn deinit(elf: *Elf) void {
     gpa.destroy(elf);
 }
 
-fn section_string(sec: Object.Section) []const u8 {
+fn sectionString(sec: Object.Section) []const u8 {
     return switch (sec) {
         .undefined => unreachable,
         .data => "data",
@@ -80,7 +80,7 @@ fn section_string(sec: Object.Section) []const u8 {
     };
 }
 
-pub fn get_section(elf: *Elf, section_kind: Object.Section) !*std.ArrayList(u8) {
+pub fn getSection(elf: *Elf, section_kind: Object.Section) !*std.ArrayList(u8) {
     const section_name = sectionString(section_kind);
     const section = elf.sections.get(section_name) orelse blk: {
         const section = try elf.arena.allocator().create(Section);
@@ -102,7 +102,7 @@ pub fn get_section(elf: *Elf, section_kind: Object.Section) !*std.ArrayList(u8) 
     return &section.data;
 }
 
-pub fn declare_symbol(
+pub fn declareSymbol(
     elf: *Elf,
     section_kind: Object.Section,
     maybe_name: ?[]const u8,
@@ -150,7 +150,7 @@ pub fn declare_symbol(
     return name;
 }
 
-pub fn add_relocation(elf: *Elf, name: []const u8, section_kind: Object.Section, address: u64, addend: i64) !void {
+pub fn addRelocation(elf: *Elf, name: []const u8, section_kind: Object.Section, address: u64, addend: i64) !void {
     const section_name = sectionString(section_kind);
     const symbol = elf.local_symbols.get(name) orelse elf.global_symbols.get(name).?; // reference to undeclared symbol
     const section = elf.sections.get(section_name).?;

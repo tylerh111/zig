@@ -30,7 +30,7 @@ pub fn __popcountti2(a: i128) callconv(.C) i32 {
     return popcountXi2(i128, a);
 }
 
-inline fn popcount_xi2(comptime ST: type, a: ST) i32 {
+inline fn popcountXi2(comptime ST: type, a: ST) i32 {
     const UT = switch (ST) {
         i32 => u32,
         i64 => u64,

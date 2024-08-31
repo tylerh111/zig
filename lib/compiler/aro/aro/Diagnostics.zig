@@ -81,10 +81,10 @@ const Properties = struct {
     suppress_clang: bool = false,
     suppress_msvc: bool = false,
 
-    pub fn make_opt(comptime str: []const u8) u16 {
+    pub fn makeOpt(comptime str: []const u8) u16 {
         return @offsetOf(Options, str);
     }
-    pub fn get_kind(prop: Properties, options: *Options) Kind {
+    pub fn getKind(prop: Properties, options: *Options) Kind {
         const opt = @as([*]Kind, @ptrCast(options))[prop.opt orelse return prop.kind];
         if (opt == .default) return prop.kind;
         return opt;
@@ -221,7 +221,7 @@ options: Options = .{},
 errors: u32 = 0,
 macro_backtrace_limit: u32 = 6,
 
-pub fn warning_exists(name: []const u8) bool {
+pub fn warningExists(name: []const u8) bool {
     inline for (std.meta.fields(Options)) |f| {
         if (mem.eql(u8, f.name, name)) return true;
     }
@@ -256,7 +256,7 @@ pub fn add(comp: *Compilation, msg: Message, expansion_locs: []const Source.Loca
     return comp.diagnostics.addExtra(comp.langopts, msg, expansion_locs, true);
 }
 
-pub fn add_extra(
+pub fn addExtra(
     d: *Diagnostics,
     langopts: LangOpts,
     msg: Message,
@@ -320,11 +320,11 @@ pub fn render(comp: *Compilation, config: std.io.tty.Config) void {
     defer m.deinit();
     renderMessages(comp, &m);
 }
-pub fn default_msg_writer(config: std.io.tty.Config) MsgWriter {
+pub fn defaultMsgWriter(config: std.io.tty.Config) MsgWriter {
     return MsgWriter.init(config);
 }
 
-pub fn render_messages(comp: *Compilation, m: anytype) void {
+pub fn renderMessages(comp: *Compilation, m: anytype) void {
     var errors: u32 = 0;
     var warnings: u32 = 0;
     for (comp.diagnostics.list.items) |msg| {
@@ -351,7 +351,7 @@ pub fn render_messages(comp: *Compilation, m: anytype) void {
     comp.diagnostics.errors += errors;
 }
 
-pub fn render_message(comp: *Compilation, m: anytype, msg: Message) void {
+pub fn renderMessage(comp: *Compilation, m: anytype, msg: Message) void {
     var line: ?[]const u8 = null;
     var end_with_splice = false;
     const width = if (msg.loc.id != .unused) blk: {
@@ -485,7 +485,7 @@ pub fn render_message(comp: *Compilation, m: anytype, msg: Message) void {
     m.end(line, width, end_with_splice);
 }
 
-fn print_rt(m: anytype, str: []const u8, comptime fmts: anytype, args: anytype) void {
+fn printRt(m: anytype, str: []const u8, comptime fmts: anytype, args: anytype) void {
     var i: usize = 0;
     inline for (fmts, args) |fmt, arg| {
         const new = std.mem.indexOfPos(u8, str, i, fmt).?;
@@ -496,11 +496,11 @@ fn print_rt(m: anytype, str: []const u8, comptime fmts: anytype, args: anytype) 
     m.write(str[i..]);
 }
 
-fn opt_name(offset: u16) []const u8 {
+fn optName(offset: u16) []const u8 {
     return std.meta.fieldNames(Options)[offset / @sizeOf(Kind)];
 }
 
-fn tag_kind(d: *Diagnostics, tag: Tag, langopts: LangOpts) Kind {
+fn tagKind(d: *Diagnostics, tag: Tag, langopts: LangOpts) Kind {
     const prop = tag.property();
     var kind = prop.getKind(&d.options);
 
@@ -548,7 +548,7 @@ const MsgWriter = struct {
         m.w.writer().writeAll(msg) catch {};
     }
 
-    fn set_color(m: *MsgWriter, color: std.io.tty.Color) void {
+    fn setColor(m: *MsgWriter, color: std.io.tty.Color) void {
         m.config.setColor(m.w.writer(), color) catch {};
     }
 

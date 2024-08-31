@@ -2,7 +2,7 @@ const std = @import("std");
 const os = std.os;
 const tests = @import("tests.zig");
 
-pub fn add_cases(cases: *tests.CompareOutputContext) void {
+pub fn addCases(cases: *tests.CompareOutputContext) void {
     cases.addC("hello world with libc",
         \\const c = @cImport({
         \\    // See https://github.com/ziglang/zig/issues/515

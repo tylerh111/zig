@@ -38,7 +38,7 @@ splice_locs: []const u32,
 kind: Kind,
 
 /// Todo: binary search instead of scanning entire `splice_locs`.
-pub fn num_splices_before(source: Source, byte_offset: u32) u32 {
+pub fn numSplicesBefore(source: Source, byte_offset: u32) u32 {
     for (source.splice_locs, 0..) |splice_offset, i| {
         if (splice_offset > byte_offset) return @intCast(i);
     }
@@ -47,13 +47,13 @@ pub fn num_splices_before(source: Source, byte_offset: u32) u32 {
 
 /// Returns the actual line number (before newline splicing) of a Location
 /// This corresponds to what the user would actually see in their text editor
-pub fn physical_line(source: Source, loc: Location) u32 {
+pub fn physicalLine(source: Source, loc: Location) u32 {
     return loc.line + source.numSplicesBefore(loc.byte_offset);
 }
 
 const LineCol = struct { line: []const u8, line_no: u32, col: u32, width: u32, end_with_splice: bool };
 
-pub fn line_col(source: Source, loc: Location) LineCol {
+pub fn lineCol(source: Source, loc: Location) LineCol {
     var start: usize = 0;
     // find the start of the line which is either a newline or a splice
     if (std.mem.lastIndexOfScalar(u8, source.buf[0..loc.byte_offset], '\n')) |some| start = some + 1;
@@ -100,7 +100,7 @@ pub fn line_col(source: Source, loc: Location) LineCol {
     };
 }
 
-fn codepoint_width(cp: u32) u32 {
+fn codepointWidth(cp: u32) u32 {
     return switch (cp) {
         0x1100...0x115F,
         0x2329,

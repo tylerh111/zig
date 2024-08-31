@@ -91,7 +91,7 @@ pub fn deinit(s: *Server) void {
     s.* = undefined;
 }
 
-pub fn receive_message(s: *Server) !InMessage.Header {
+pub fn receiveMessage(s: *Server) !InMessage.Header {
     const Header = InMessage.Header;
     const fifo = &s.receive_fifo;
 
@@ -124,7 +124,7 @@ pub fn receive_message(s: *Server) !InMessage.Header {
     }
 }
 
-pub fn receive_body_u32(s: *Server) !u32 {
+pub fn receiveBody_u32(s: *Server) !u32 {
     const fifo = &s.receive_fifo;
     const buf = fifo.readableSlice(0);
     const result = @as(*align(1) const u32, @ptrCast(buf[0..4])).*;
@@ -132,14 +132,14 @@ pub fn receive_body_u32(s: *Server) !u32 {
     return bswap(result);
 }
 
-pub fn serve_string_message(s: *Server, tag: OutMessage.Tag, msg: []const u8) !void {
+pub fn serveStringMessage(s: *Server, tag: OutMessage.Tag, msg: []const u8) !void {
     return s.serveMessage(.{
         .tag = tag,
         .bytes_len = @as(u32, @intCast(msg.len)),
     }, &.{msg});
 }
 
-pub fn serve_message(
+pub fn serveMessage(
     s: *const Server,
     header: OutMessage.Header,
     bufs: []const []const u8,
@@ -159,7 +159,7 @@ pub fn serve_message(
     try s.out.writevAll(iovecs[0 .. bufs.len + 1]);
 }
 
-pub fn serve_emit_bin_path(
+pub fn serveEmitBinPath(
     s: *Server,
     fs_path: []const u8,
     header: OutMessage.EmitBinPath,
@@ -173,7 +173,7 @@ pub fn serve_emit_bin_path(
     });
 }
 
-pub fn serve_test_results(
+pub fn serveTestResults(
     s: *Server,
     msg: OutMessage.TestResults,
 ) !void {
@@ -186,7 +186,7 @@ pub fn serve_test_results(
     });
 }
 
-pub fn serve_error_bundle(s: *Server, error_bundle: std.zig.ErrorBundle) !void {
+pub fn serveErrorBundle(s: *Server, error_bundle: std.zig.ErrorBundle) !void {
     const eb_hdr: OutMessage.ErrorBundle = .{
         .extra_len = @as(u32, @intCast(error_bundle.extra.len)),
         .string_bytes_len = @as(u32, @intCast(error_bundle.string_bytes.len)),
@@ -210,7 +210,7 @@ pub const TestMetadata = struct {
     string_bytes: []const u8,
 };
 
-pub fn serve_test_metadata(s: *Server, test_metadata: TestMetadata) !void {
+pub fn serveTestMetadata(s: *Server, test_metadata: TestMetadata) !void {
     const header: OutMessage.TestMetadata = .{
         .tests_len = bswap(@as(u32, @intCast(test_metadata.names.len))),
         .string_bytes_len = bswap(@as(u32, @intCast(test_metadata.string_bytes.len))),

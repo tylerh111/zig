@@ -18,15 +18,15 @@ const Alignment = InternPool.Alignment;
 pub const Type = struct {
     ip_index: InternPool.Index,
 
-    pub fn zig_type_tag(ty: Type, mod: *const Module) std.builtin.TypeId {
+    pub fn zigTypeTag(ty: Type, mod: *const Module) std.builtin.TypeId {
         return ty.zigTypeTagOrPoison(mod) catch unreachable;
     }
 
-    pub fn zig_type_tag_or_poison(ty: Type, mod: *const Module) error{GenericPoison}!std.builtin.TypeId {
+    pub fn zigTypeTagOrPoison(ty: Type, mod: *const Module) error{GenericPoison}!std.builtin.TypeId {
         return mod.intern_pool.zigTypeTagOrPoison(ty.toIntern());
     }
 
-    pub fn base_zig_type_tag(self: Type, mod: *Module) std.builtin.TypeId {
+    pub fn baseZigTypeTag(self: Type, mod: *Module) std.builtin.TypeId {
         return switch (self.zigTypeTag(mod)) {
             .ErrorUnion => self.errorUnionPayload(mod).baseZigTypeTag(mod),
             .Optional => {
@@ -36,7 +36,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn is_self_comparable(ty: Type, mod: *const Module, is_equality_cmp: bool) bool {
+    pub fn isSelfComparable(ty: Type, mod: *const Module, is_equality_cmp: bool) bool {
         return switch (ty.zigTypeTag(mod)) {
             .Int,
             .Float,
@@ -76,7 +76,7 @@ pub const Type = struct {
     }
 
     /// If it is a function pointer, returns the function type. Otherwise returns null.
-    pub fn cast_ptr_to_fn(ty: Type, mod: *const Module) ?Type {
+    pub fn castPtrToFn(ty: Type, mod: *const Module) ?Type {
         if (ty.zigTypeTag(mod) != .Pointer) return null;
         const elem_ty = ty.childType(mod);
         if (elem_ty.zigTypeTag(mod) != .Fn) return null;
@@ -84,7 +84,7 @@ pub const Type = struct {
     }
 
     /// Asserts the type is a pointer.
-    pub fn ptr_is_mutable(ty: Type, mod: *const Module) bool {
+    pub fn ptrIsMutable(ty: Type, mod: *const Module) bool {
         return !mod.intern_pool.indexToKey(ty.toIntern()).ptr_type.flags.is_const;
     }
 
@@ -94,7 +94,7 @@ pub const Type = struct {
         len: u64,
     };
 
-    pub fn array_info(self: Type, mod: *const Module) ArrayInfo {
+    pub fn arrayInfo(self: Type, mod: *const Module) ArrayInfo {
         return .{
             .len = self.arrayLen(mod),
             .sentinel = self.sentinel(mod),
@@ -102,7 +102,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn ptr_info(ty: Type, mod: *const Module) InternPool.Key.PtrType {
+    pub fn ptrInfo(ty: Type, mod: *const Module) InternPool.Key.PtrType {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |p| p,
             .opt_type => |child| switch (mod.intern_pool.indexToKey(child)) {
@@ -154,7 +154,7 @@ pub const Type = struct {
         return print(ctx.ty, writer, ctx.module);
     }
 
-    pub fn fmt_debug(ty: Type) std.fmt.Formatter(dump) {
+    pub fn fmtDebug(ty: Type) std.fmt.Formatter(dump) {
         return .{ .data = ty };
     }
 
@@ -441,17 +441,17 @@ pub const Type = struct {
         }
     }
 
-    pub fn from_interned(i: InternPool.Index) Type {
+    pub fn fromInterned(i: InternPool.Index) Type {
         assert(i != .none);
         return .{ .ip_index = i };
     }
 
-    pub fn to_intern(ty: Type) InternPool.Index {
+    pub fn toIntern(ty: Type) InternPool.Index {
         assert(ty.ip_index != .none);
         return ty.ip_index;
     }
 
-    pub fn to_value(self: Type) Value {
+    pub fn toValue(self: Type) Value {
         return Value.fromInterned(self.toIntern());
     }
 
@@ -468,7 +468,7 @@ pub const Type = struct {
     ///     making it one-possible-value only if the integer tag type has 0 bits.
     /// When `ignore_comptime_only` is true, then types that are comptime-only
     /// may return false positives.
-    pub fn has_runtime_bits_advanced(
+    pub fn hasRuntimeBitsAdvanced(
         ty: Type,
         mod: *Module,
         ignore_comptime_only: bool,
@@ -664,7 +664,7 @@ pub const Type = struct {
     /// true if and only if the type has a well-defined memory layout
     /// readFrom/writeToMemory are supported only for types with a well-
     /// defined memory layout
-    pub fn has_well_defined_layout(ty: Type, mod: *Module) bool {
+    pub fn hasWellDefinedLayout(ty: Type, mod: *Module) bool {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .int_type,
@@ -772,15 +772,15 @@ pub const Type = struct {
         };
     }
 
-    pub fn has_runtime_bits(ty: Type, mod: *Module) bool {
+    pub fn hasRuntimeBits(ty: Type, mod: *Module) bool {
         return hasRuntimeBitsAdvanced(ty, mod, false, .eager) catch unreachable;
     }
 
-    pub fn has_runtime_bits_ignore_comptime(ty: Type, mod: *Module) bool {
+    pub fn hasRuntimeBitsIgnoreComptime(ty: Type, mod: *Module) bool {
         return hasRuntimeBitsAdvanced(ty, mod, true, .eager) catch unreachable;
     }
 
-    pub fn fn_has_runtime_bits(ty: Type, mod: *Module) bool {
+    pub fn fnHasRuntimeBits(ty: Type, mod: *Module) bool {
         return ty.fnHasRuntimeBitsAdvanced(mod, null) catch unreachable;
     }
 
@@ -788,7 +788,7 @@ pub const Type = struct {
     /// function with this type can exist at runtime.
     /// Asserts that `ty` is a function type.
     /// If `opt_sema` is not provided, asserts that the return type is sufficiently resolved.
-    pub fn fn_has_runtime_bits_advanced(ty: Type, mod: *Module, opt_sema: ?*Sema) Module.CompileError!bool {
+    pub fn fnHasRuntimeBitsAdvanced(ty: Type, mod: *Module, opt_sema: ?*Sema) Module.CompileError!bool {
         const fn_info = mod.typeToFunc(ty).?;
         if (fn_info.is_generic) return false;
         if (fn_info.is_var_args) return true;
@@ -796,7 +796,7 @@ pub const Type = struct {
         return !try Type.fromInterned(fn_info.return_type).comptimeOnlyAdvanced(mod, opt_sema);
     }
 
-    pub fn is_fn_or_has_runtime_bits(ty: Type, mod: *Module) bool {
+    pub fn isFnOrHasRuntimeBits(ty: Type, mod: *Module) bool {
         switch (ty.zigTypeTag(mod)) {
             .Fn => return ty.fnHasRuntimeBits(mod),
             else => return ty.hasRuntimeBits(mod),
@@ -804,23 +804,23 @@ pub const Type = struct {
     }
 
     /// Same as `isFnOrHasRuntimeBits` but comptime-only types may return a false positive.
-    pub fn is_fn_or_has_runtime_bits_ignore_comptime(ty: Type, mod: *Module) bool {
+    pub fn isFnOrHasRuntimeBitsIgnoreComptime(ty: Type, mod: *Module) bool {
         return switch (ty.zigTypeTag(mod)) {
             .Fn => true,
             else => return ty.hasRuntimeBitsIgnoreComptime(mod),
         };
     }
 
-    pub fn is_no_return(ty: Type, mod: *Module) bool {
+    pub fn isNoReturn(ty: Type, mod: *Module) bool {
         return mod.intern_pool.isNoReturn(ty.toIntern());
     }
 
     /// Returns `none` if the pointer is naturally aligned and the element type is 0-bit.
-    pub fn ptr_alignment(ty: Type, mod: *Module) Alignment {
+    pub fn ptrAlignment(ty: Type, mod: *Module) Alignment {
         return ptrAlignmentAdvanced(ty, mod, null) catch unreachable;
     }
 
-    pub fn ptr_alignment_advanced(ty: Type, mod: *Module, opt_sema: ?*Sema) !Alignment {
+    pub fn ptrAlignmentAdvanced(ty: Type, mod: *Module, opt_sema: ?*Sema) !Alignment {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_type| {
                 if (ptr_type.flags.alignment != .none)
@@ -838,7 +838,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn ptr_address_space(ty: Type, mod: *const Module) std.builtin.AddressSpace {
+    pub fn ptrAddressSpace(ty: Type, mod: *const Module) std.builtin.AddressSpace {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_type| ptr_type.flags.address_space,
             .opt_type => |child| mod.intern_pool.indexToKey(child).ptr_type.flags.address_space,
@@ -847,13 +847,13 @@ pub const Type = struct {
     }
 
     /// Never returns `none`. Asserts that all necessary type resolution is already done.
-    pub fn abi_alignment(ty: Type, mod: *Module) Alignment {
+    pub fn abiAlignment(ty: Type, mod: *Module) Alignment {
         return (ty.abiAlignmentAdvanced(mod, .eager) catch unreachable).scalar;
     }
 
     /// May capture a reference to `ty`.
     /// Returned value has type `comptime_int`.
-    pub fn lazy_abi_alignment(ty: Type, mod: *Module) !Value {
+    pub fn lazyAbiAlignment(ty: Type, mod: *Module) !Value {
         switch (try ty.abiAlignmentAdvanced(mod, .lazy)) {
             .val => |val| return val,
             .scalar => |x| return mod.intValue(Type.comptime_int, x.toByteUnits() orelse 0),
@@ -877,7 +877,7 @@ pub const Type = struct {
     /// If `val` is returned, a reference to `ty` has been captured.
     /// If you pass `sema` you will get back `scalar` and resolve the type if
     /// necessary, possibly returning a CompileError.
-    pub fn abi_alignment_advanced(
+    pub fn abiAlignmentAdvanced(
         ty: Type,
         mod: *Module,
         strat: AbiAlignmentAdvancedStrat,
@@ -1111,7 +1111,7 @@ pub const Type = struct {
         }
     }
 
-    fn abi_alignment_advanced_error_union(
+    fn abiAlignmentAdvancedErrorUnion(
         ty: Type,
         mod: *Module,
         strat: AbiAlignmentAdvancedStrat,
@@ -1148,7 +1148,7 @@ pub const Type = struct {
         }
     }
 
-    fn abi_alignment_advanced_optional(
+    fn abiAlignmentAdvancedOptional(
         ty: Type,
         mod: *Module,
         strat: AbiAlignmentAdvancedStrat,
@@ -1187,7 +1187,7 @@ pub const Type = struct {
     }
 
     /// May capture a reference to `ty`.
-    pub fn lazy_abi_size(ty: Type, mod: *Module) !Value {
+    pub fn lazyAbiSize(ty: Type, mod: *Module) !Value {
         switch (try ty.abiSizeAdvanced(mod, .lazy)) {
             .val => |val| return val,
             .scalar => |x| return mod.intValue(Type.comptime_int, x),
@@ -1196,7 +1196,7 @@ pub const Type = struct {
 
     /// Asserts the type has the ABI size already resolved.
     /// Types that return false for hasRuntimeBits() return 0.
-    pub fn abi_size(ty: Type, mod: *Module) u64 {
+    pub fn abiSize(ty: Type, mod: *Module) u64 {
         return (abiSizeAdvanced(ty, mod, .eager) catch unreachable).scalar;
     }
 
@@ -1211,7 +1211,7 @@ pub const Type = struct {
     /// If `val` is returned, a reference to `ty` has been captured.
     /// If you pass `sema` you will get back `scalar` and resolve the type if
     /// necessary, possibly returning a CompileError.
-    pub fn abi_size_advanced(
+    pub fn abiSizeAdvanced(
         ty: Type,
         mod: *Module,
         strat: AbiAlignmentAdvancedStrat,
@@ -1487,7 +1487,7 @@ pub const Type = struct {
         }
     }
 
-    fn abi_size_advanced_optional(
+    fn abiSizeAdvancedOptional(
         ty: Type,
         mod: *Module,
         strat: AbiAlignmentAdvancedStrat,
@@ -1531,15 +1531,15 @@ pub const Type = struct {
         };
     }
 
-    pub fn ptr_abi_alignment(target: Target) Alignment {
+    pub fn ptrAbiAlignment(target: Target) Alignment {
         return Alignment.fromNonzeroByteUnits(@divExact(target.ptrBitWidth(), 8));
     }
 
-    pub fn int_abi_size(bits: u16, target: Target, use_llvm: bool) u64 {
+    pub fn intAbiSize(bits: u16, target: Target, use_llvm: bool) u64 {
         return intAbiAlignment(bits, target, use_llvm).forward(@as(u16, @intCast((@as(u17, bits) + 7) / 8)));
     }
 
-    pub fn int_abi_alignment(bits: u16, target: Target, use_llvm: bool) Alignment {
+    pub fn intAbiAlignment(bits: u16, target: Target, use_llvm: bool) Alignment {
         return switch (target.cpu.arch) {
             .x86 => switch (bits) {
                 0 => .none,
@@ -1566,7 +1566,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn max_int_alignment(target: std.Target, use_llvm: bool) u16 {
+    pub fn maxIntAlignment(target: std.Target, use_llvm: bool) u16 {
         return switch (target.cpu.arch) {
             .avr => 1,
             .msp430 => 2,
@@ -1657,14 +1657,14 @@ pub const Type = struct {
         };
     }
 
-    pub fn bit_size(ty: Type, mod: *Module) u64 {
+    pub fn bitSize(ty: Type, mod: *Module) u64 {
         return bitSizeAdvanced(ty, mod, null) catch unreachable;
     }
 
     /// If you pass `opt_sema`, any recursive type resolutions will happen if
     /// necessary, possibly returning a CompileError. Passing `null` instead asserts
     /// the type is fully resolved, and there will be no error, guaranteed.
-    pub fn bit_size_advanced(
+    pub fn bitSizeAdvanced(
         ty: Type,
         mod: *Module,
         opt_sema: ?*Sema,
@@ -1831,7 +1831,7 @@ pub const Type = struct {
 
     /// Returns true if the type's layout is already resolved and it is safe
     /// to use `abiSize`, `abiAlignment` and `bitSize` on it.
-    pub fn layout_is_resolved(ty: Type, mod: *Module) bool {
+    pub fn layoutIsResolved(ty: Type, mod: *Module) bool {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => ip.loadStructType(ty.toIntern()).haveLayout(ip),
@@ -1846,7 +1846,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn is_single_pointer(ty: Type, mod: *const Module) bool {
+    pub fn isSinglePointer(ty: Type, mod: *const Module) bool {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_info| ptr_info.flags.size == .One,
             else => false,
@@ -1854,48 +1854,48 @@ pub const Type = struct {
     }
 
     /// Asserts `ty` is a pointer.
-    pub fn ptr_size(ty: Type, mod: *const Module) std.builtin.Type.Pointer.Size {
+    pub fn ptrSize(ty: Type, mod: *const Module) std.builtin.Type.Pointer.Size {
         return ptrSizeOrNull(ty, mod).?;
     }
 
     /// Returns `null` if `ty` is not a pointer.
-    pub fn ptr_size_or_null(ty: Type, mod: *const Module) ?std.builtin.Type.Pointer.Size {
+    pub fn ptrSizeOrNull(ty: Type, mod: *const Module) ?std.builtin.Type.Pointer.Size {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_info| ptr_info.flags.size,
             else => null,
         };
     }
 
-    pub fn is_slice(ty: Type, mod: *const Module) bool {
+    pub fn isSlice(ty: Type, mod: *const Module) bool {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_type| ptr_type.flags.size == .Slice,
             else => false,
         };
     }
 
-    pub fn slice_ptr_field_type(ty: Type, mod: *const Module) Type {
+    pub fn slicePtrFieldType(ty: Type, mod: *const Module) Type {
         return Type.fromInterned(mod.intern_pool.slicePtrType(ty.toIntern()));
     }
 
-    pub fn is_const_ptr(ty: Type, mod: *const Module) bool {
+    pub fn isConstPtr(ty: Type, mod: *const Module) bool {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_type| ptr_type.flags.is_const,
             else => false,
         };
     }
 
-    pub fn is_volatile_ptr(ty: Type, mod: *const Module) bool {
+    pub fn isVolatilePtr(ty: Type, mod: *const Module) bool {
         return isVolatilePtrIp(ty, &mod.intern_pool);
     }
 
-    pub fn is_volatile_ptr_ip(ty: Type, ip: *const InternPool) bool {
+    pub fn isVolatilePtrIp(ty: Type, ip: *const InternPool) bool {
         return switch (ip.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_type| ptr_type.flags.is_volatile,
             else => false,
         };
     }
 
-    pub fn is_allowzero_ptr(ty: Type, mod: *const Module) bool {
+    pub fn isAllowzeroPtr(ty: Type, mod: *const Module) bool {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_type| ptr_type.flags.is_allowzero,
             .opt_type => true,
@@ -1903,14 +1903,14 @@ pub const Type = struct {
         };
     }
 
-    pub fn is_cptr(ty: Type, mod: *const Module) bool {
+    pub fn isCPtr(ty: Type, mod: *const Module) bool {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_type| ptr_type.flags.size == .C,
             else => false,
         };
     }
 
-    pub fn is_ptr_at_runtime(ty: Type, mod: *const Module) bool {
+    pub fn isPtrAtRuntime(ty: Type, mod: *const Module) bool {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_type| switch (ptr_type.flags.size) {
                 .Slice => false,
@@ -1929,7 +1929,7 @@ pub const Type = struct {
 
     /// For pointer-like optionals, returns true, otherwise returns the allowzero property
     /// of pointers.
-    pub fn ptr_allows_zero(ty: Type, mod: *const Module) bool {
+    pub fn ptrAllowsZero(ty: Type, mod: *const Module) bool {
         if (ty.isPtrLikeOptional(mod)) {
             return true;
         }
@@ -1937,7 +1937,7 @@ pub const Type = struct {
     }
 
     /// See also `isPtrLikeOptional`.
-    pub fn optional_repr_is_payload(ty: Type, mod: *const Module) bool {
+    pub fn optionalReprIsPayload(ty: Type, mod: *const Module) bool {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .opt_type => |child_type| child_type == .anyerror_type or switch (mod.intern_pool.indexToKey(child_type)) {
                 .ptr_type => |ptr_type| ptr_type.flags.size != .C and !ptr_type.flags.is_allowzero,
@@ -1952,7 +1952,7 @@ pub const Type = struct {
     /// Returns true if the type is optional and would be lowered to a single pointer
     /// address value, using 0 for null. Note that this returns true for C pointers.
     /// This function must be kept in sync with `Sema.typePtrOrOptionalPtrTy`.
-    pub fn is_ptr_like_optional(ty: Type, mod: *const Module) bool {
+    pub fn isPtrLikeOptional(ty: Type, mod: *const Module) bool {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_type| ptr_type.flags.size == .C,
             .opt_type => |child| switch (mod.intern_pool.indexToKey(child)) {
@@ -1969,11 +1969,11 @@ pub const Type = struct {
     /// For *[N]T,  returns [N]T.
     /// For *T,     returns T.
     /// For [*]T,   returns T.
-    pub fn child_type(ty: Type, mod: *const Module) Type {
+    pub fn childType(ty: Type, mod: *const Module) Type {
         return childTypeIp(ty, &mod.intern_pool);
     }
 
-    pub fn child_type_ip(ty: Type, ip: *const InternPool) Type {
+    pub fn childTypeIp(ty: Type, ip: *const InternPool) Type {
         return Type.fromInterned(ip.childType(ty.toIntern()));
     }
 
@@ -1986,7 +1986,7 @@ pub const Type = struct {
     /// For [N]T,        returns T.
     /// For []T,         returns T.
     /// For anyframe->T, returns T.
-    pub fn elem_type2(ty: Type, mod: *const Module) Type {
+    pub fn elemType2(ty: Type, mod: *const Module) Type {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .ptr_type => |ptr_type| switch (ptr_type.flags.size) {
                 .One => Type.fromInterned(ptr_type.child).shallowElemType(mod),
@@ -2003,7 +2003,7 @@ pub const Type = struct {
         };
     }
 
-    fn shallow_elem_type(child_ty: Type, mod: *const Module) Type {
+    fn shallowElemType(child_ty: Type, mod: *const Module) Type {
         return switch (child_ty.zigTypeTag(mod)) {
             .Array, .Vector => child_ty.childType(mod),
             else => child_ty,
@@ -2011,7 +2011,7 @@ pub const Type = struct {
     }
 
     /// For vectors, returns the element type. Otherwise returns self.
-    pub fn scalar_type(ty: Type, mod: *Module) Type {
+    pub fn scalarType(ty: Type, mod: *Module) Type {
         return switch (ty.zigTypeTag(mod)) {
             .Vector => ty.childType(mod),
             else => ty,
@@ -2020,7 +2020,7 @@ pub const Type = struct {
 
     /// Asserts that the type is an optional.
     /// Note that for C pointers this returns the type unmodified.
-    pub fn optional_child(ty: Type, mod: *const Module) Type {
+    pub fn optionalChild(ty: Type, mod: *const Module) Type {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .opt_type => |child| Type.fromInterned(child),
             .ptr_type => |ptr_type| b: {
@@ -2033,7 +2033,7 @@ pub const Type = struct {
 
     /// Returns the tag type of a union, if the type is a union and it has a tag type.
     /// Otherwise, returns `null`.
-    pub fn union_tag_type(ty: Type, mod: *Module) ?Type {
+    pub fn unionTagType(ty: Type, mod: *Module) ?Type {
         const ip = &mod.intern_pool;
         switch (ip.indexToKey(ty.toIntern())) {
             .union_type => {},
@@ -2051,7 +2051,7 @@ pub const Type = struct {
 
     /// Same as `unionTagType` but includes safety tag.
     /// Codegen should use this version.
-    pub fn union_tag_type_safety(ty: Type, mod: *Module) ?Type {
+    pub fn unionTagTypeSafety(ty: Type, mod: *Module) ?Type {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .union_type => {
@@ -2066,12 +2066,12 @@ pub const Type = struct {
 
     /// Asserts the type is a union; returns the tag type, even if the tag will
     /// not be stored at runtime.
-    pub fn union_tag_type_hypothetical(ty: Type, mod: *Module) Type {
+    pub fn unionTagTypeHypothetical(ty: Type, mod: *Module) Type {
         const union_obj = mod.typeToUnion(ty).?;
         return Type.fromInterned(union_obj.enum_tag_ty);
     }
 
-    pub fn union_field_type(ty: Type, enum_tag: Value, mod: *Module) ?Type {
+    pub fn unionFieldType(ty: Type, enum_tag: Value, mod: *Module) ?Type {
         const ip = &mod.intern_pool;
         const union_obj = mod.typeToUnion(ty).?;
         const union_fields = union_obj.field_types.get(ip);
@@ -2079,18 +2079,18 @@ pub const Type = struct {
         return Type.fromInterned(union_fields[index]);
     }
 
-    pub fn union_field_type_by_index(ty: Type, index: usize, mod: *Module) Type {
+    pub fn unionFieldTypeByIndex(ty: Type, index: usize, mod: *Module) Type {
         const ip = &mod.intern_pool;
         const union_obj = mod.typeToUnion(ty).?;
         return Type.fromInterned(union_obj.field_types.get(ip)[index]);
     }
 
-    pub fn union_tag_field_index(ty: Type, enum_tag: Value, mod: *Module) ?u32 {
+    pub fn unionTagFieldIndex(ty: Type, enum_tag: Value, mod: *Module) ?u32 {
         const union_obj = mod.typeToUnion(ty).?;
         return mod.unionTagFieldIndex(union_obj, enum_tag);
     }
 
-    pub fn union_has_all_zero_bit_field_types(ty: Type, mod: *Module) bool {
+    pub fn unionHasAllZeroBitFieldTypes(ty: Type, mod: *Module) bool {
         const ip = &mod.intern_pool;
         const union_obj = mod.typeToUnion(ty).?;
         for (union_obj.field_types.get(ip)) |field_ty| {
@@ -2101,7 +2101,7 @@ pub const Type = struct {
 
     /// Returns the type used for backing storage of this union during comptime operations.
     /// Asserts the type is either an extern or packed union.
-    pub fn union_backing_type(ty: Type, mod: *Module) !Type {
+    pub fn unionBackingType(ty: Type, mod: *Module) !Type {
         return switch (ty.containerLayout(mod)) {
             .@"extern" => try mod.arrayType(.{ .len = ty.abiSize(mod), .child = .u8_type }),
             .@"packed" => try mod.intType(.unsigned, @intCast(ty.bitSize(mod))),
@@ -2109,13 +2109,13 @@ pub const Type = struct {
         };
     }
 
-    pub fn union_get_layout(ty: Type, mod: *Module) Module.UnionLayout {
+    pub fn unionGetLayout(ty: Type, mod: *Module) Module.UnionLayout {
         const ip = &mod.intern_pool;
         const union_obj = ip.loadUnionType(ty.toIntern());
         return mod.getUnionLayout(union_obj);
     }
 
-    pub fn container_layout(ty: Type, mod: *Module) std.builtin.Type.ContainerLayout {
+    pub fn containerLayout(ty: Type, mod: *Module) std.builtin.Type.ContainerLayout {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => ip.loadStructType(ty.toIntern()).layout,
@@ -2126,17 +2126,17 @@ pub const Type = struct {
     }
 
     /// Asserts that the type is an error union.
-    pub fn error_union_payload(ty: Type, mod: *Module) Type {
+    pub fn errorUnionPayload(ty: Type, mod: *Module) Type {
         return Type.fromInterned(mod.intern_pool.indexToKey(ty.toIntern()).error_union_type.payload_type);
     }
 
     /// Asserts that the type is an error union.
-    pub fn error_union_set(ty: Type, mod: *Module) Type {
+    pub fn errorUnionSet(ty: Type, mod: *Module) Type {
         return Type.fromInterned(mod.intern_pool.errorUnionSet(ty.toIntern()));
     }
 
     /// Returns false for unresolved inferred error sets.
-    pub fn error_set_is_empty(ty: Type, mod: *Module) bool {
+    pub fn errorSetIsEmpty(ty: Type, mod: *Module) bool {
         const ip = &mod.intern_pool;
         return switch (ty.toIntern()) {
             .anyerror_type, .adhoc_inferred_error_set_type => false,
@@ -2154,7 +2154,7 @@ pub const Type = struct {
     /// Returns true if it is an error set that includes anyerror, false otherwise.
     /// Note that the result may be a false negative if the type did not get error set
     /// resolution prior to this call.
-    pub fn is_any_error(ty: Type, mod: *Module) bool {
+    pub fn isAnyError(ty: Type, mod: *Module) bool {
         const ip = &mod.intern_pool;
         return switch (ty.toIntern()) {
             .anyerror_type => true,
@@ -2166,7 +2166,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn is_error(ty: Type, mod: *const Module) bool {
+    pub fn isError(ty: Type, mod: *const Module) bool {
         return switch (ty.zigTypeTag(mod)) {
             .ErrorUnion, .ErrorSet => true,
             else => false,
@@ -2176,7 +2176,7 @@ pub const Type = struct {
     /// Returns whether ty, which must be an error set, includes an error `name`.
     /// Might return a false negative if `ty` is an inferred error set and not fully
     /// resolved yet.
-    pub fn error_set_has_field_ip(
+    pub fn errorSetHasFieldIp(
         ip: *const InternPool,
         ty: InternPool.Index,
         name: InternPool.NullTerminatedString,
@@ -2198,7 +2198,7 @@ pub const Type = struct {
     /// Returns whether ty, which must be an error set, includes an error `name`.
     /// Might return a false negative if `ty` is an inferred error set and not fully
     /// resolved yet.
-    pub fn error_set_has_field(ty: Type, name: []const u8, mod: *Module) bool {
+    pub fn errorSetHasField(ty: Type, name: []const u8, mod: *Module) bool {
         const ip = &mod.intern_pool;
         return switch (ty.toIntern()) {
             .anyerror_type => true,
@@ -2223,19 +2223,19 @@ pub const Type = struct {
     }
 
     /// Asserts the type is an array or vector or struct.
-    pub fn array_len(ty: Type, mod: *const Module) u64 {
+    pub fn arrayLen(ty: Type, mod: *const Module) u64 {
         return ty.arrayLenIp(&mod.intern_pool);
     }
 
-    pub fn array_len_ip(ty: Type, ip: *const InternPool) u64 {
+    pub fn arrayLenIp(ty: Type, ip: *const InternPool) u64 {
         return ip.aggregateTypeLen(ty.toIntern());
     }
 
-    pub fn array_len_including_sentinel(ty: Type, mod: *const Module) u64 {
+    pub fn arrayLenIncludingSentinel(ty: Type, mod: *const Module) u64 {
         return mod.intern_pool.aggregateTypeLenIncludingSentinel(ty.toIntern());
     }
 
-    pub fn vector_len(ty: Type, mod: *const Module) u32 {
+    pub fn vectorLen(ty: Type, mod: *const Module) u32 {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .vector_type => |vector_type| vector_type.len,
             .anon_struct_type => |tuple| @intCast(tuple.types.len),
@@ -2259,13 +2259,13 @@ pub const Type = struct {
     }
 
     /// Returns true if and only if the type is a fixed-width integer.
-    pub fn is_int(self: Type, mod: *const Module) bool {
+    pub fn isInt(self: Type, mod: *const Module) bool {
         return self.toIntern() != .comptime_int_type and
             mod.intern_pool.isIntegerType(self.toIntern());
     }
 
     /// Returns true if and only if the type is a fixed-width, signed integer.
-    pub fn is_signed_int(ty: Type, mod: *const Module) bool {
+    pub fn isSignedInt(ty: Type, mod: *const Module) bool {
         return switch (ty.toIntern()) {
             .c_char_type => mod.getTarget().charSignedness() == .signed,
             .isize_type, .c_short_type, .c_int_type, .c_long_type, .c_longlong_type => true,
@@ -2277,7 +2277,7 @@ pub const Type = struct {
     }
 
     /// Returns true if and only if the type is a fixed-width, unsigned integer.
-    pub fn is_unsigned_int(ty: Type, mod: *const Module) bool {
+    pub fn isUnsignedInt(ty: Type, mod: *const Module) bool {
         return switch (ty.toIntern()) {
             .c_char_type => mod.getTarget().charSignedness() == .unsigned,
             .usize_type, .c_ushort_type, .c_uint_type, .c_ulong_type, .c_ulonglong_type => true,
@@ -2290,7 +2290,7 @@ pub const Type = struct {
 
     /// Returns true for integers, enums, error sets, and packed structs.
     /// If this function returns true, then intInfo() can be called on the type.
-    pub fn is_abi_int(ty: Type, mod: *Module) bool {
+    pub fn isAbiInt(ty: Type, mod: *Module) bool {
         return switch (ty.zigTypeTag(mod)) {
             .Int, .Enum, .ErrorSet => true,
             .Struct => ty.containerLayout(mod) == .@"packed",
@@ -2299,7 +2299,7 @@ pub const Type = struct {
     }
 
     /// Asserts the type is an integer, enum, error set, or vector of one of them.
-    pub fn int_info(starting_ty: Type, mod: *Module) InternPool.Key.IntType {
+    pub fn intInfo(starting_ty: Type, mod: *Module) InternPool.Key.IntType {
         const ip = &mod.intern_pool;
         const target = mod.getTarget();
         var ty = starting_ty;
@@ -2368,7 +2368,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn is_named_int(ty: Type) bool {
+    pub fn isNamedInt(ty: Type) bool {
         return switch (ty.toIntern()) {
             .usize_type,
             .isize_type,
@@ -2388,7 +2388,7 @@ pub const Type = struct {
     }
 
     /// Returns `false` for `comptime_float`.
-    pub fn is_runtime_float(ty: Type) bool {
+    pub fn isRuntimeFloat(ty: Type) bool {
         return switch (ty.toIntern()) {
             .f16_type,
             .f32_type,
@@ -2403,7 +2403,7 @@ pub const Type = struct {
     }
 
     /// Returns `true` for `comptime_float`.
-    pub fn is_any_float(ty: Type) bool {
+    pub fn isAnyFloat(ty: Type) bool {
         return switch (ty.toIntern()) {
             .f16_type,
             .f32_type,
@@ -2420,7 +2420,7 @@ pub const Type = struct {
 
     /// Asserts the type is a fixed-size float or comptime_float.
     /// Returns 128 for comptime_float types.
-    pub fn float_bits(ty: Type, target: Target) u16 {
+    pub fn floatBits(ty: Type, target: Target) u16 {
         return switch (ty.toIntern()) {
             .f16_type => 16,
             .f32_type => 32,
@@ -2434,23 +2434,23 @@ pub const Type = struct {
     }
 
     /// Asserts the type is a function or a function pointer.
-    pub fn fn_return_type(ty: Type, mod: *Module) Type {
+    pub fn fnReturnType(ty: Type, mod: *Module) Type {
         return Type.fromInterned(mod.intern_pool.funcTypeReturnType(ty.toIntern()));
     }
 
     /// Asserts the type is a function.
-    pub fn fn_calling_convention(ty: Type, mod: *Module) std.builtin.CallingConvention {
+    pub fn fnCallingConvention(ty: Type, mod: *Module) std.builtin.CallingConvention {
         return mod.intern_pool.indexToKey(ty.toIntern()).func_type.cc;
     }
 
-    pub fn is_valid_param_type(self: Type, mod: *const Module) bool {
+    pub fn isValidParamType(self: Type, mod: *const Module) bool {
         return switch (self.zigTypeTagOrPoison(mod) catch return true) {
             .Opaque, .NoReturn => false,
             else => true,
         };
     }
 
-    pub fn is_valid_return_type(self: Type, mod: *const Module) bool {
+    pub fn isValidReturnType(self: Type, mod: *const Module) bool {
         return switch (self.zigTypeTagOrPoison(mod) catch return true) {
             .Opaque => false,
             else => true,
@@ -2458,11 +2458,11 @@ pub const Type = struct {
     }
 
     /// Asserts the type is a function.
-    pub fn fn_is_var_args(ty: Type, mod: *Module) bool {
+    pub fn fnIsVarArgs(ty: Type, mod: *Module) bool {
         return mod.intern_pool.indexToKey(ty.toIntern()).func_type.is_var_args;
     }
 
-    pub fn is_numeric(ty: Type, mod: *const Module) bool {
+    pub fn isNumeric(ty: Type, mod: *const Module) bool {
         return switch (ty.toIntern()) {
             .f16_type,
             .f32_type,
@@ -2494,7 +2494,7 @@ pub const Type = struct {
 
     /// During semantic analysis, instead call `Sema.typeHasOnePossibleValue` which
     /// resolves field types rather than asserting they are already resolved.
-    pub fn one_possible_value(starting_type: Type, mod: *Module) !?Value {
+    pub fn onePossibleValue(starting_type: Type, mod: *Module) !?Value {
         var ty = starting_type;
         const ip = &mod.intern_pool;
         while (true) switch (ty.toIntern()) {
@@ -2718,14 +2718,14 @@ pub const Type = struct {
 
     /// During semantic analysis, instead call `Sema.typeRequiresComptime` which
     /// resolves field types rather than asserting they are already resolved.
-    pub fn comptime_only(ty: Type, mod: *Module) bool {
+    pub fn comptimeOnly(ty: Type, mod: *Module) bool {
         return ty.comptimeOnlyAdvanced(mod, null) catch unreachable;
     }
 
     /// `generic_poison` will return false.
     /// May return false negatives when structs and unions are having their field types resolved.
     /// If `opt_sema` is not provided, asserts that the type is sufficiently resolved.
-    pub fn comptime_only_advanced(ty: Type, mod: *Module, opt_sema: ?*Sema) Module.CompileError!bool {
+    pub fn comptimeOnlyAdvanced(ty: Type, mod: *Module, opt_sema: ?*Sema) Module.CompileError!bool {
         const ip = &mod.intern_pool;
         return switch (ty.toIntern()) {
             .empty_struct_type => false,
@@ -2913,25 +2913,25 @@ pub const Type = struct {
         };
     }
 
-    pub fn is_vector(ty: Type, mod: *const Module) bool {
+    pub fn isVector(ty: Type, mod: *const Module) bool {
         return ty.zigTypeTag(mod) == .Vector;
     }
 
     /// Returns 0 if not a vector, otherwise returns @bitSizeOf(Element) * vector_len.
-    pub fn total_vector_bits(ty: Type, zcu: *Zcu) u64 {
+    pub fn totalVectorBits(ty: Type, zcu: *Zcu) u64 {
         if (!ty.isVector(zcu)) return 0;
         const v = zcu.intern_pool.indexToKey(ty.toIntern()).vector_type;
         return v.len * Type.fromInterned(v.child).bitSize(zcu);
     }
 
-    pub fn is_array_or_vector(ty: Type, mod: *const Module) bool {
+    pub fn isArrayOrVector(ty: Type, mod: *const Module) bool {
         return switch (ty.zigTypeTag(mod)) {
             .Array, .Vector => true,
             else => false,
         };
     }
 
-    pub fn is_indexable(ty: Type, mod: *Module) bool {
+    pub fn isIndexable(ty: Type, mod: *Module) bool {
         return switch (ty.zigTypeTag(mod)) {
             .Array, .Vector => true,
             .Pointer => switch (ty.ptrSize(mod)) {
@@ -2947,7 +2947,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn indexable_has_len(ty: Type, mod: *Module) bool {
+    pub fn indexableHasLen(ty: Type, mod: *Module) bool {
         return switch (ty.zigTypeTag(mod)) {
             .Array, .Vector => true,
             .Pointer => switch (ty.ptrSize(mod)) {
@@ -2965,12 +2965,12 @@ pub const Type = struct {
     }
 
     /// Asserts that the type can have a namespace.
-    pub fn get_namespace_index(ty: Type, zcu: *Zcu) InternPool.OptionalNamespaceIndex {
+    pub fn getNamespaceIndex(ty: Type, zcu: *Zcu) InternPool.OptionalNamespaceIndex {
         return ty.getNamespace(zcu).?;
     }
 
     /// Returns null if the type has no namespace.
-    pub fn get_namespace(ty: Type, zcu: *Zcu) ?InternPool.OptionalNamespaceIndex {
+    pub fn getNamespace(ty: Type, zcu: *Zcu) ?InternPool.OptionalNamespaceIndex {
         const ip = &zcu.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .opaque_type => ip.loadOpaqueType(ty.toIntern()).namespace,
@@ -3001,7 +3001,7 @@ pub const Type = struct {
     }
 
     // Works for vectors and vectors of integers.
-    pub fn min_int(ty: Type, mod: *Module, dest_ty: Type) !Value {
+    pub fn minInt(ty: Type, mod: *Module, dest_ty: Type) !Value {
         const scalar = try minIntScalar(ty.scalarType(mod), mod, dest_ty.scalarType(mod));
         return if (ty.zigTypeTag(mod) == .Vector) Value.fromInterned((try mod.intern(.{ .aggregate = .{
             .ty = dest_ty.toIntern(),
@@ -3010,7 +3010,7 @@ pub const Type = struct {
     }
 
     /// Asserts that the type is an integer.
-    pub fn min_int_scalar(ty: Type, mod: *Module, dest_ty: Type) !Value {
+    pub fn minIntScalar(ty: Type, mod: *Module, dest_ty: Type) !Value {
         const info = ty.intInfo(mod);
         if (info.signedness == .unsigned) return mod.intValue(dest_ty, 0);
         if (info.bits == 0) return mod.intValue(dest_ty, -1);
@@ -3030,7 +3030,7 @@ pub const Type = struct {
 
     // Works for vectors and vectors of integers.
     /// The returned Value will have type dest_ty.
-    pub fn max_int(ty: Type, mod: *Module, dest_ty: Type) !Value {
+    pub fn maxInt(ty: Type, mod: *Module, dest_ty: Type) !Value {
         const scalar = try maxIntScalar(ty.scalarType(mod), mod, dest_ty.scalarType(mod));
         return if (ty.zigTypeTag(mod) == .Vector) Value.fromInterned((try mod.intern(.{ .aggregate = .{
             .ty = dest_ty.toIntern(),
@@ -3039,7 +3039,7 @@ pub const Type = struct {
     }
 
     /// The returned Value will have type dest_ty.
-    pub fn max_int_scalar(ty: Type, mod: *Module, dest_ty: Type) !Value {
+    pub fn maxIntScalar(ty: Type, mod: *Module, dest_ty: Type) !Value {
         const info = ty.intInfo(mod);
 
         switch (info.bits) {
@@ -3074,7 +3074,7 @@ pub const Type = struct {
     }
 
     /// Asserts the type is an enum or a union.
-    pub fn int_tag_type(ty: Type, mod: *Module) Type {
+    pub fn intTagType(ty: Type, mod: *Module) Type {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .union_type => Type.fromInterned(ip.loadUnionType(ty.toIntern()).enum_tag_ty).intTagType(mod),
@@ -3083,7 +3083,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn is_nonexhaustive_enum(ty: Type, mod: *Module) bool {
+    pub fn isNonexhaustiveEnum(ty: Type, mod: *Module) bool {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .enum_type => switch (ip.loadEnumType(ty.toIntern()).tag_mode) {
@@ -3096,7 +3096,7 @@ pub const Type = struct {
 
     // Asserts that `ty` is an error set and not `anyerror`.
     // Asserts that `ty` is resolved if it is an inferred error set.
-    pub fn error_set_names(ty: Type, mod: *Module) InternPool.NullTerminatedString.Slice {
+    pub fn errorSetNames(ty: Type, mod: *Module) InternPool.NullTerminatedString.Slice {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .error_set_type => |x| x.names,
@@ -3109,20 +3109,20 @@ pub const Type = struct {
         };
     }
 
-    pub fn enum_fields(ty: Type, mod: *Module) InternPool.NullTerminatedString.Slice {
+    pub fn enumFields(ty: Type, mod: *Module) InternPool.NullTerminatedString.Slice {
         return mod.intern_pool.loadEnumType(ty.toIntern()).names;
     }
 
-    pub fn enum_field_count(ty: Type, mod: *Module) usize {
+    pub fn enumFieldCount(ty: Type, mod: *Module) usize {
         return mod.intern_pool.loadEnumType(ty.toIntern()).names.len;
     }
 
-    pub fn enum_field_name(ty: Type, field_index: usize, mod: *Module) InternPool.NullTerminatedString {
+    pub fn enumFieldName(ty: Type, field_index: usize, mod: *Module) InternPool.NullTerminatedString {
         const ip = &mod.intern_pool;
         return ip.loadEnumType(ty.toIntern()).names.get(ip)[field_index];
     }
 
-    pub fn enum_field_index(ty: Type, field_name: InternPool.NullTerminatedString, mod: *Module) ?u32 {
+    pub fn enumFieldIndex(ty: Type, field_name: InternPool.NullTerminatedString, mod: *Module) ?u32 {
         const ip = &mod.intern_pool;
         const enum_type = ip.loadEnumType(ty.toIntern());
         return enum_type.nameIndex(ip, field_name);
@@ -3131,7 +3131,7 @@ pub const Type = struct {
     /// Asserts `ty` is an enum. `enum_tag` can either be `enum_field_index` or
     /// an integer which represents the enum value. Returns the field index in
     /// declaration order, or `null` if `enum_tag` does not match any field.
-    pub fn enum_tag_field_index(ty: Type, enum_tag: Value, mod: *Module) ?u32 {
+    pub fn enumTagFieldIndex(ty: Type, enum_tag: Value, mod: *Module) ?u32 {
         const ip = &mod.intern_pool;
         const enum_type = ip.loadEnumType(ty.toIntern());
         const int_tag = switch (ip.indexToKey(enum_tag.toIntern())) {
@@ -3144,7 +3144,7 @@ pub const Type = struct {
     }
 
     /// Returns none in the case of a tuple which uses the integer index as the field name.
-    pub fn struct_field_name(ty: Type, index: usize, mod: *Module) InternPool.OptionalNullTerminatedString {
+    pub fn structFieldName(ty: Type, index: usize, mod: *Module) InternPool.OptionalNullTerminatedString {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => ip.loadStructType(ty.toIntern()).fieldName(ip, index),
@@ -3153,7 +3153,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn struct_field_count(ty: Type, mod: *Module) u32 {
+    pub fn structFieldCount(ty: Type, mod: *Module) u32 {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => ip.loadStructType(ty.toIntern()).field_types.len,
@@ -3163,7 +3163,7 @@ pub const Type = struct {
     }
 
     /// Supports structs and unions.
-    pub fn struct_field_type(ty: Type, index: usize, mod: *Module) Type {
+    pub fn structFieldType(ty: Type, index: usize, mod: *Module) Type {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => Type.fromInterned(ip.loadStructType(ty.toIntern()).field_types.get(ip)[index]),
@@ -3176,11 +3176,11 @@ pub const Type = struct {
         };
     }
 
-    pub fn struct_field_align(ty: Type, index: usize, zcu: *Zcu) Alignment {
+    pub fn structFieldAlign(ty: Type, index: usize, zcu: *Zcu) Alignment {
         return ty.structFieldAlignAdvanced(index, zcu, null) catch unreachable;
     }
 
-    pub fn struct_field_align_advanced(ty: Type, index: usize, zcu: *Zcu, opt_sema: ?*Sema) !Alignment {
+    pub fn structFieldAlignAdvanced(ty: Type, index: usize, zcu: *Zcu, opt_sema: ?*Sema) !Alignment {
         const ip = &zcu.intern_pool;
         switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => {
@@ -3209,7 +3209,7 @@ pub const Type = struct {
         }
     }
 
-    pub fn struct_field_default_value(ty: Type, index: usize, mod: *Module) Value {
+    pub fn structFieldDefaultValue(ty: Type, index: usize, mod: *Module) Value {
         const ip = &mod.intern_pool;
         switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => {
@@ -3229,7 +3229,7 @@ pub const Type = struct {
         }
     }
 
-    pub fn struct_field_value_comptime(ty: Type, mod: *Module, index: usize) !?Value {
+    pub fn structFieldValueComptime(ty: Type, mod: *Module, index: usize) !?Value {
         const ip = &mod.intern_pool;
         switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => {
@@ -3253,7 +3253,7 @@ pub const Type = struct {
         }
     }
 
-    pub fn struct_field_is_comptime(ty: Type, index: usize, mod: *Module) bool {
+    pub fn structFieldIsComptime(ty: Type, index: usize, mod: *Module) bool {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => ip.loadStructType(ty.toIntern()).fieldIsComptime(ip, index),
@@ -3268,7 +3268,7 @@ pub const Type = struct {
     };
 
     /// Supports structs and unions.
-    pub fn struct_field_offset(ty: Type, index: usize, mod: *Module) u64 {
+    pub fn structFieldOffset(ty: Type, index: usize, mod: *Module) u64 {
         const ip = &mod.intern_pool;
         switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => {
@@ -3317,20 +3317,20 @@ pub const Type = struct {
         }
     }
 
-    pub fn decl_src_loc(ty: Type, mod: *Module) Module.SrcLoc {
+    pub fn declSrcLoc(ty: Type, mod: *Module) Module.SrcLoc {
         return declSrcLocOrNull(ty, mod).?;
     }
 
-    pub fn decl_src_loc_or_null(ty: Type, mod: *Module) ?Module.SrcLoc {
+    pub fn declSrcLocOrNull(ty: Type, mod: *Module) ?Module.SrcLoc {
         const decl = ty.getOwnerDeclOrNull(mod) orelse return null;
         return mod.declPtr(decl).srcLoc(mod);
     }
 
-    pub fn get_owner_decl(ty: Type, mod: *Module) InternPool.DeclIndex {
+    pub fn getOwnerDecl(ty: Type, mod: *Module) InternPool.DeclIndex {
         return ty.getOwnerDeclOrNull(mod) orelse unreachable;
     }
 
-    pub fn get_owner_decl_or_null(ty: Type, mod: *Module) ?InternPool.DeclIndex {
+    pub fn getOwnerDeclOrNull(ty: Type, mod: *Module) ?InternPool.DeclIndex {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => ip.loadStructType(ty.toIntern()).decl.unwrap(),
@@ -3341,11 +3341,11 @@ pub const Type = struct {
         };
     }
 
-    pub fn is_generic_poison(ty: Type) bool {
+    pub fn isGenericPoison(ty: Type) bool {
         return ty.toIntern() == .generic_poison_type;
     }
 
-    pub fn is_tuple(ty: Type, mod: *Module) bool {
+    pub fn isTuple(ty: Type, mod: *Module) bool {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => {
@@ -3359,7 +3359,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn is_anon_struct(ty: Type, mod: *Module) bool {
+    pub fn isAnonStruct(ty: Type, mod: *Module) bool {
         if (ty.toIntern() == .empty_struct_type) return true;
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .anon_struct_type => |anon_struct_type| anon_struct_type.names.len > 0,
@@ -3367,7 +3367,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn is_tuple_or_anon_struct(ty: Type, mod: *Module) bool {
+    pub fn isTupleOrAnonStruct(ty: Type, mod: *Module) bool {
         const ip = &mod.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => {
@@ -3381,14 +3381,14 @@ pub const Type = struct {
         };
     }
 
-    pub fn is_simple_tuple(ty: Type, mod: *Module) bool {
+    pub fn isSimpleTuple(ty: Type, mod: *Module) bool {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .anon_struct_type => |anon_struct_type| anon_struct_type.names.len == 0,
             else => false,
         };
     }
 
-    pub fn is_simple_tuple_or_anon_struct(ty: Type, mod: *Module) bool {
+    pub fn isSimpleTupleOrAnonStruct(ty: Type, mod: *Module) bool {
         return switch (mod.intern_pool.indexToKey(ty.toIntern())) {
             .anon_struct_type => true,
             else => false,
@@ -3397,7 +3397,7 @@ pub const Type = struct {
 
     /// Traverses optional child types and error union payloads until the type
     /// is not a pointer. For `E!?u32`, returns `u32`; for `*u8`, returns `*u8`.
-    pub fn opt_eu_base_type(ty: Type, mod: *Module) Type {
+    pub fn optEuBaseType(ty: Type, mod: *Module) Type {
         var cur = ty;
         while (true) switch (cur.zigTypeTag(mod)) {
             .Optional => cur = cur.optionalChild(mod),
@@ -3406,7 +3406,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn to_unsigned(ty: Type, mod: *Module) !Type {
+    pub fn toUnsigned(ty: Type, mod: *Module) !Type {
         return switch (ty.zigTypeTag(mod)) {
             .Int => mod.intType(.unsigned, ty.intInfo(mod).bits),
             .Vector => try mod.vectorType(.{
@@ -3417,7 +3417,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn type_decl_inst(ty: Type, zcu: *const Zcu) ?InternPool.TrackedInst.Index {
+    pub fn typeDeclInst(ty: Type, zcu: *const Zcu) ?InternPool.TrackedInst.Index {
         const ip = &zcu.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => ip.loadStructType(ty.toIntern()).zir_index.unwrap(),
@@ -3429,7 +3429,7 @@ pub const Type = struct {
     }
 
     /// Given a namespace type, returns its list of caotured values.
-    pub fn get_captures(ty: Type, zcu: *const Zcu) InternPool.CaptureValue.Slice {
+    pub fn getCaptures(ty: Type, zcu: *const Zcu) InternPool.CaptureValue.Slice {
         const ip = &zcu.intern_pool;
         return switch (ip.indexToKey(ty.toIntern())) {
             .struct_type => ip.loadStructType(ty.toIntern()).captures,
@@ -3440,7 +3440,7 @@ pub const Type = struct {
         };
     }
 
-    pub fn array_base(ty: Type, zcu: *const Zcu) struct { Type, u64 } {
+    pub fn arrayBase(ty: Type, zcu: *const Zcu) struct { Type, u64 } {
         var cur_ty: Type = ty;
         var cur_len: u64 = 1;
         while (cur_ty.zigTypeTag(zcu) == .Array) {
@@ -3450,7 +3450,7 @@ pub const Type = struct {
         return .{ cur_ty, cur_len };
     }
 
-    pub fn packed_struct_field_ptr_info(struct_ty: Type, parent_ptr_ty: Type, field_idx: u32, zcu: *Zcu) union(enum) {
+    pub fn packedStructFieldPtrInfo(struct_ty: Type, parent_ptr_ty: Type, field_idx: u32, zcu: *Zcu) union(enum) {
         /// The result is a bit-pointer with the same value and a new packed offset.
         bit_ptr: InternPool.Key.PtrType.PackedOffset,
         /// The result is a standard pointer.
@@ -3560,7 +3560,7 @@ pub const Type = struct {
 
     pub const generic_poison: Type = .{ .ip_index = .generic_poison_type };
 
-    pub fn smallest_unsigned_bits(max: u64) u16 {
+    pub fn smallestUnsignedBits(max: u64) u16 {
         if (max == 0) return 0;
         const base = std.math.log2(max);
         const upper = (@as(u64, 1) << @as(u6, @intCast(base))) - 1;
@@ -3572,6 +3572,6 @@ pub const Type = struct {
     pub const packed_struct_layout_version = 2;
 };
 
-fn c_type_align(target: Target, c_type: Target.CType) Alignment {
+fn cTypeAlign(target: Target, c_type: Target.CType) Alignment {
     return Alignment.fromByteUnits(target.c_type_alignment(c_type));
 }

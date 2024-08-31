@@ -51,7 +51,7 @@ const Opcode = enum(u8) {
     pub const hi_user = 0x3f;
 };
 
-fn read_block(stream: *std.io.FixedBufferStream([]const u8)) ![]const u8 {
+fn readBlock(stream: *std.io.FixedBufferStream([]const u8)) ![]const u8 {
     const reader = stream.reader();
     const block_len = try leb.readULEB128(usize, reader);
     if (stream.pos + block_len > stream.buffer.len) return error.InvalidOperand;
@@ -301,7 +301,7 @@ pub const Instruction = union(Opcode) {
 /// Since register rules are applied (usually) during a panic,
 /// checked addition / subtraction is used so that we can return
 /// an error and fall back to FP-based unwinding.
-pub fn apply_offset(base: usize, offset: i64) !usize {
+pub fn applyOffset(base: usize, offset: i64) !usize {
     return if (offset >= 0)
         try std.math.add(usize, base, @as(usize, @intCast(offset)))
     else
@@ -361,7 +361,7 @@ pub const VirtualMachine = struct {
         rule: RegisterRule = .{ .default = {} },
 
         /// Resolves the register rule and places the result into `out` (see dwarf.abi.regBytes)
-        pub fn resolve_value(
+        pub fn resolveValue(
             self: Column,
             context: *dwarf.UnwindContext,
             expression_context: dwarf.expressions.ExpressionContext,
@@ -452,13 +452,13 @@ pub const VirtualMachine = struct {
     }
 
     /// Return a slice backed by the row's non-CFA columns
-    pub fn row_columns(self: VirtualMachine, row: Row) []Column {
+    pub fn rowColumns(self: VirtualMachine, row: Row) []Column {
         if (row.columns.len == 0) return &.{};
         return self.columns.items[row.columns.start..][0..row.columns.len];
     }
 
     /// Either retrieves or adds a column for `register` (non-CFA) in the current row.
-    fn get_or_add_column(self: *VirtualMachine, allocator: std.mem.Allocator, register: u8) !*Column {
+    fn getOrAddColumn(self: *VirtualMachine, allocator: std.mem.Allocator, register: u8) !*Column {
         for (self.rowColumns(self.current_row)) |*c| {
             if (c.register == register) return c;
         }
@@ -478,7 +478,7 @@ pub const VirtualMachine = struct {
 
     /// Runs the CIE instructions, then the FDE instructions. Execution halts
     /// once the row that corresponds to `pc` is known, and the row is returned.
-    pub fn run_to(
+    pub fn runTo(
         self: *VirtualMachine,
         allocator: std.mem.Allocator,
         pc: u64,
@@ -510,7 +510,7 @@ pub const VirtualMachine = struct {
         return self.current_row;
     }
 
-    pub fn run_to_native(
+    pub fn runToNative(
         self: *VirtualMachine,
         allocator: std.mem.Allocator,
         pc: u64,
@@ -520,7 +520,7 @@ pub const VirtualMachine = struct {
         return self.runTo(allocator, pc, cie, fde, @sizeOf(usize), builtin.target.cpu.arch.endian());
     }
 
-    fn resolve_copy_on_write(self: *VirtualMachine, allocator: std.mem.Allocator) !void {
+    fn resolveCopyOnWrite(self: *VirtualMachine, allocator: std.mem.Allocator) !void {
         if (!self.current_row.copy_on_write) return;
 
         const new_start = self.columns.items.len;

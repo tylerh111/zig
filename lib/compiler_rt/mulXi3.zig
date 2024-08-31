@@ -42,7 +42,7 @@ fn __aeabi_lmul(a: i64, b: i64) callconv(.AAPCS) i64 {
     return mulX(i64, a, b);
 }
 
-inline fn mul_x(comptime T: type, a: T, b: T) T {
+inline fn mulX(comptime T: type, a: T, b: T) T {
     const word_t = common.HalveInt(T, false);
     const x = word_t{ .all = a };
     const y = word_t{ .all = b };
@@ -54,7 +54,7 @@ inline fn mul_x(comptime T: type, a: T, b: T) T {
     return r.all;
 }
 
-fn double_int(comptime T: type) type {
+fn DoubleInt(comptime T: type) type {
     return switch (T) {
         u32 => i64,
         u64 => i128,
@@ -64,7 +64,7 @@ fn double_int(comptime T: type) type {
     };
 }
 
-fn muld_xi(comptime T: type, a: T, b: T) DoubleInt(T) {
+fn muldXi(comptime T: type, a: T, b: T) DoubleInt(T) {
     const DT = DoubleInt(T);
     const word_t = common.HalveInt(DT, false);
     const bits_in_word_2 = @sizeOf(T) * 8 / 2;

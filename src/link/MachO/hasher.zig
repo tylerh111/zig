@@ -1,4 +1,4 @@
-pub fn parallel_hasher(comptime Hasher: type) type {
+pub fn ParallelHasher(comptime Hasher: type) type {
     const hash_size = Hasher.digest_length;
 
     return struct {

@@ -42,7 +42,7 @@ pub fn create(
     return check_file;
 }
 
-pub fn set_name(check_file: *CheckFile, name: []const u8) void {
+pub fn setName(check_file: *CheckFile, name: []const u8) void {
     check_file.step.name = name;
 }
 

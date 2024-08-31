@@ -69,7 +69,7 @@ pub const ArenaAllocator = struct {
     };
     /// Queries the current memory use of this arena.
     /// This will **not** include the storage required for internal keeping.
-    pub fn query_capacity(self: ArenaAllocator) usize {
+    pub fn queryCapacity(self: ArenaAllocator) usize {
         var size: usize = 0;
         var it = self.state.buffer_list.first;
         while (it) |node| : (it = node.next) {
@@ -159,7 +159,7 @@ pub const ArenaAllocator = struct {
         return true;
     }
 
-    fn create_node(self: *ArenaAllocator, prev_len: usize, minimum_size: usize) ?*BufNode {
+    fn createNode(self: *ArenaAllocator, prev_len: usize, minimum_size: usize) ?*BufNode {
         const actual_min_size = minimum_size + (@sizeOf(BufNode) + 16);
         const big_enough_len = prev_len + actual_min_size;
         const len = big_enough_len + big_enough_len / 2;

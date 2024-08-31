@@ -2,7 +2,7 @@ pub fn main() void {
     assert(addMul(3, 4) == 357747496);
 }
 
-fn add_mul(a: u32, b: u32) u32 {
+fn addMul(a: u32, b: u32) u32 {
     const x: u32 = blk: {
         const c = a + b; // 7
         const d = a + c; // 10

@@ -349,7 +349,7 @@ pub const MutableValue = union(enum) {
     /// untouched. When an entire field must be modified, this should be used in preference to `elemPtr`
     /// to allow for an optimal representation.
     /// For slices, uses `Value.slice_ptr_index` and `Value.slice_len_index`.
-    pub fn set_elem(
+    pub fn setElem(
         mv: *MutableValue,
         zcu: *Zcu,
         arena: Allocator,
@@ -449,7 +449,7 @@ pub const MutableValue = union(enum) {
 
     /// Get the value of a single field of a `MutableValue` which represents an aggregate or slice.
     /// For slices, uses `Value.slice_ptr_index` and `Value.slice_len_index`.
-    pub fn get_elem(
+    pub fn getElem(
         mv: MutableValue,
         zcu: *Zcu,
         field_idx: usize,
@@ -496,7 +496,7 @@ pub const MutableValue = union(enum) {
         };
     }
 
-    fn is_trivial_int(mv: MutableValue, zcu: *Zcu) bool {
+    fn isTrivialInt(mv: MutableValue, zcu: *Zcu) bool {
         return switch (mv) {
             else => false,
             .interned => |ip_index| switch (zcu.intern_pool.indexToKey(ip_index)) {
@@ -509,14 +509,14 @@ pub const MutableValue = union(enum) {
         };
     }
 
-    pub fn type_of(mv: MutableValue, zcu: *Zcu) Type {
+    pub fn typeOf(mv: MutableValue, zcu: *Zcu) Type {
         return switch (mv) {
             .interned => |ip_index| Type.fromInterned(zcu.intern_pool.typeOf(ip_index)),
             inline else => |x| Type.fromInterned(x.ty),
         };
     }
 
-    pub fn unpack_optional(mv: MutableValue, zcu: *Zcu) union(enum) {
+    pub fn unpackOptional(mv: MutableValue, zcu: *Zcu) union(enum) {
         undef,
         null,
         payload: MutableValue,
@@ -532,7 +532,7 @@ pub const MutableValue = union(enum) {
         };
     }
 
-    pub fn unpack_error_union(mv: MutableValue, zcu: *Zcu) union(enum) {
+    pub fn unpackErrorUnion(mv: MutableValue, zcu: *Zcu) union(enum) {
         undef,
         err: InternPool.NullTerminatedString,
         payload: MutableValue,
@@ -554,7 +554,7 @@ pub const MutableValue = union(enum) {
     /// Fast equality checking which may return false negatives.
     /// Used for deciding when to switch aggregate representations without fully
     /// interning many values.
-    fn eql_trivial(a: MutableValue, b: MutableValue) bool {
+    fn eqlTrivial(a: MutableValue, b: MutableValue) bool {
         const Tag = @typeInfo(MutableValue).Union.tag_type.?;
         if (@as(Tag, a) != @as(Tag, b)) return false;
         return switch (a) {

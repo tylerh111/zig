@@ -8,7 +8,7 @@ const testing = std.testing;
 /// the behavior of RtlDosPathNameToNtPathName_U with wToPrefixedFileW
 /// Note: RtlDosPathNameToNtPathName_U is not used in the Zig implementation
 //        because it allocates.
-fn rtl_dos_path_name_to_nt_path_name_u(path: [:0]const u16) !windows.PathSpace {
+fn RtlDosPathNameToNtPathName_U(path: [:0]const u16) !windows.PathSpace {
     var out: windows.UNICODE_STRING = undefined;
     const rc = windows.ntdll.RtlDosPathNameToNtPathName_U(path, &out, null, null);
     if (rc != windows.TRUE) return error.BadPathName;
@@ -25,7 +25,7 @@ fn rtl_dos_path_name_to_nt_path_name_u(path: [:0]const u16) !windows.PathSpace {
 
 /// Test that the Zig conversion matches the expected_path (for instances where
 /// the Zig implementation intentionally diverges from what RtlDosPathNameToNtPathName_U does).
-fn test_to_prefixed_file_no_oracle(comptime path: []const u8, comptime expected_path: []const u8) !void {
+fn testToPrefixedFileNoOracle(comptime path: []const u8, comptime expected_path: []const u8) !void {
     const path_utf16 = std.unicode.utf8ToUtf16LeStringLiteral(path);
     const expected_path_utf16 = std.unicode.utf8ToUtf16LeStringLiteral(expected_path);
     const actual_path = try windows.wToPrefixedFileW(null, path_utf16);
@@ -37,13 +37,13 @@ fn test_to_prefixed_file_no_oracle(comptime path: []const u8, comptime expected_
 
 /// Test that the Zig conversion matches the expected_path and that the
 /// expected_path matches the conversion that RtlDosPathNameToNtPathName_U does.
-fn test_to_prefixed_file_with_oracle(comptime path: []const u8, comptime expected_path: []const u8) !void {
+fn testToPrefixedFileWithOracle(comptime path: []const u8, comptime expected_path: []const u8) !void {
     try testToPrefixedFileNoOracle(path, expected_path);
     try testToPrefixedFileOnlyOracle(path);
 }
 
 /// Test that the Zig conversion matches the conversion that RtlDosPathNameToNtPathName_U does.
-fn test_to_prefixed_file_only_oracle(comptime path: []const u8) !void {
+fn testToPrefixedFileOnlyOracle(comptime path: []const u8) !void {
     const path_utf16 = std.unicode.utf8ToUtf16LeStringLiteral(path);
     const zig_result = try windows.wToPrefixedFileW(null, path_utf16);
     const win32_api_result = try RtlDosPathNameToNtPathName_U(path_utf16);
@@ -179,13 +179,13 @@ test "toPrefixedFileW" {
     try testToPrefixedFileWithOracle("//.", "\\??\\");
 }
 
-fn test_remove_dot_dirs(str: []const u8, expected: []const u8) !void {
+fn testRemoveDotDirs(str: []const u8, expected: []const u8) !void {
     const mutable = try testing.allocator.dupe(u8, str);
     defer testing.allocator.free(mutable);
     const actual = mutable[0..try windows.removeDotDirsSanitized(u8, mutable)];
     try testing.expect(mem.eql(u8, actual, expected));
 }
-fn test_remove_dot_dirs_error(err: anyerror, str: []const u8) !void {
+fn testRemoveDotDirsError(err: anyerror, str: []const u8) !void {
     const mutable = try testing.allocator.dupe(u8, str);
     defer testing.allocator.free(mutable);
     try testing.expectError(err, windows.removeDotDirsSanitized(u8, mutable));

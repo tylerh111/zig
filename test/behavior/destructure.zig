@@ -5,7 +5,7 @@ const expect = std.testing.expect;
 
 test "simple destructure" {
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var x: u32 = undefined;
             x, const y, var z: u64 = .{ 1, @as(u16, 2), 3 };
             _ = &z;
@@ -26,7 +26,7 @@ test "destructure with comptime syntax" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             {
                 comptime var x: f32 = undefined;
                 comptime x, const y, var z = .{ 0.5, 123, 456 }; // z is a comptime var
@@ -79,7 +79,7 @@ test "destructure with comptime syntax" {
 
 test "destructure from labeled block" {
     const S = struct {
-        fn do_the_test(rt_true: bool) !void {
+        fn doTheTest(rt_true: bool) !void {
             const x: u32, const y: u8, const z: i64 = blk: {
                 if (rt_true) break :blk .{ 1, 2, 3 };
                 break :blk .{ 4, 5, 6 };

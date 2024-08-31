@@ -15,7 +15,7 @@ test "@select vectors" {
     try selectVectors();
 }
 
-fn select_vectors() !void {
+fn selectVectors() !void {
     var a = @Vector(4, bool){ true, false, true, false };
     var b = @Vector(4, i32){ -1, 4, 999, -31 };
     var c = @Vector(4, i32){ -5, 1, 0, 1234 };
@@ -48,7 +48,7 @@ test "@select arrays" {
     try selectArrays();
 }
 
-fn select_arrays() !void {
+fn selectArrays() !void {
     var a = [4]bool{ false, true, false, true };
     var b = [4]usize{ 0, 1, 2, 3 };
     var c = [4]usize{ 4, 5, 6, 7 };

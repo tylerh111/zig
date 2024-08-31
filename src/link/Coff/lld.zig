@@ -16,7 +16,7 @@ const Allocator = mem.Allocator;
 const Coff = @import("../Coff.zig");
 const Compilation = @import("../../Compilation.zig");
 
-pub fn link_with_lld(self: *Coff, arena: Allocator, prog_node: std.Progress.Node) !void {
+pub fn linkWithLLD(self: *Coff, arena: Allocator, prog_node: std.Progress.Node) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -518,7 +518,7 @@ pub fn link_with_lld(self: *Coff, arena: Allocator, prog_node: std.Progress.Node
     }
 }
 
-fn find_lib(arena: Allocator, name: []const u8, lib_dirs: []const []const u8) !?[]const u8 {
+fn findLib(arena: Allocator, name: []const u8, lib_dirs: []const []const u8) !?[]const u8 {
     for (lib_dirs) |lib_dir| {
         const full_path = try fs.path.join(arena, &.{ lib_dir, name });
         fs.cwd().access(full_path, .{}) catch |err| switch (err) {

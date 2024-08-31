@@ -32,14 +32,14 @@ pub const TokenWithExpansionLocs = struct {
     loc: Source.Location,
     expansion_locs: ?[*]Source.Location = null,
 
-    pub fn expansion_slice(tok: TokenWithExpansionLocs) []const Source.Location {
+    pub fn expansionSlice(tok: TokenWithExpansionLocs) []const Source.Location {
         const locs = tok.expansion_locs orelse return &[0]Source.Location{};
         var i: usize = 0;
         while (locs[i].id != .unused) : (i += 1) {}
         return locs[0..i];
     }
 
-    pub fn add_expansion_location(tok: *TokenWithExpansionLocs, gpa: std.mem.Allocator, new: []const Source.Location) !void {
+    pub fn addExpansionLocation(tok: *TokenWithExpansionLocs, gpa: std.mem.Allocator, new: []const Source.Location) !void {
         if (new.len == 0 or tok.id == .whitespace or tok.id == .macro_ws or tok.id == .placemarker) return;
         var list = std.ArrayList(Source.Location).init(gpa);
         defer {
@@ -87,7 +87,7 @@ pub const TokenWithExpansionLocs = struct {
         return copy;
     }
 
-    pub fn check_ms_eof(tok: TokenWithExpansionLocs, source: Source, comp: *Compilation) !void {
+    pub fn checkMsEof(tok: TokenWithExpansionLocs, source: Source, comp: *Compilation) !void {
         std.debug.assert(tok.id == .eof);
         if (source.buf.len > tok.loc.byte_offset and source.buf[tok.loc.byte_offset] == 0x1A) {
             try comp.addDiagnostic(.{
@@ -171,7 +171,7 @@ pub const Node = struct {
         int: u64,
         return_zero: bool,
 
-        pub fn for_decl(data: Data, tree: *const Tree) struct {
+        pub fn forDecl(data: Data, tree: *const Tree) struct {
             decls: []const NodeIndex,
             cond: NodeIndex,
             incr: NodeIndex,
@@ -188,7 +188,7 @@ pub const Node = struct {
             };
         }
 
-        pub fn for_stmt(data: Data, tree: *const Tree) struct {
+        pub fn forStmt(data: Data, tree: *const Tree) struct {
             init: NodeIndex,
             cond: NodeIndex,
             incr: NodeIndex,
@@ -564,7 +564,7 @@ pub const Tag = enum(u8) {
     /// Inserted in record and scalar initializers for unspecified elements.
     default_init_expr,
 
-    pub fn is_implicit(tag: Tag) bool {
+    pub fn isImplicit(tag: Tag) bool {
         return switch (tag) {
             .implicit_cast,
             .implicit_return,
@@ -578,13 +578,13 @@ pub const Tag = enum(u8) {
     }
 };
 
-pub fn is_bitfield(tree: *const Tree, node: NodeIndex) bool {
+pub fn isBitfield(tree: *const Tree, node: NodeIndex) bool {
     return tree.bitfieldWidth(node, false) != null;
 }
 
 /// Returns null if node is not a bitfield. If inspect_lval is true, this function will
 /// recurse into implicit lval_to_rval casts (useful for arithmetic conversions)
-pub fn bitfield_width(tree: *const Tree, node: NodeIndex, inspect_lval: bool) ?u32 {
+pub fn bitfieldWidth(tree: *const Tree, node: NodeIndex, inspect_lval: bool) ?u32 {
     if (node == .none) return null;
     switch (tree.nodes.items(.tag)[@intFromEnum(node)]) {
         .member_access_expr, .member_access_ptr_expr => {
@@ -608,12 +608,12 @@ pub fn bitfield_width(tree: *const Tree, node: NodeIndex, inspect_lval: bool) ?u
     }
 }
 
-pub fn is_lval(tree: *const Tree, node: NodeIndex) bool {
+pub fn isLval(tree: *const Tree, node: NodeIndex) bool {
     var is_const: bool = undefined;
     return tree.isLvalExtra(node, &is_const);
 }
 
-pub fn is_lval_extra(tree: *const Tree, node: NodeIndex, is_const: *bool) bool {
+pub fn isLvalExtra(tree: *const Tree, node: NodeIndex, is_const: *bool) bool {
     is_const.* = false;
     switch (tree.nodes.items(.tag)[@intFromEnum(node)]) {
         .compound_literal_expr,
@@ -672,7 +672,7 @@ pub fn is_lval_extra(tree: *const Tree, node: NodeIndex, is_const: *bool) bool {
     }
 }
 
-pub fn tok_slice(tree: *const Tree, tok_i: TokenIndex) []const u8 {
+pub fn tokSlice(tree: *const Tree, tok_i: TokenIndex) []const u8 {
     if (tree.tokens.items(.id)[tok_i].lexeme()) |some| return some;
     const loc = tree.tokens.items(.loc)[tok_i];
     var tmp_tokenizer = Tokenizer{
@@ -695,7 +695,7 @@ pub fn dump(tree: *const Tree, config: std.io.tty.Config, writer: anytype) !void
     }
 }
 
-fn dump_field_attributes(tree: *const Tree, attributes: []const Attribute, level: u32, writer: anytype) !void {
+fn dumpFieldAttributes(tree: *const Tree, attributes: []const Attribute, level: u32, writer: anytype) !void {
     for (attributes) |attr| {
         try writer.writeByteNTimes(' ', level);
         try writer.print("field attr: {s}", .{@tagName(attr.tag)});
@@ -703,7 +703,7 @@ fn dump_field_attributes(tree: *const Tree, attributes: []const Attribute, level
     }
 }
 
-fn dump_attribute(tree: *const Tree, attr: Attribute, writer: anytype) !void {
+fn dumpAttribute(tree: *const Tree, attr: Attribute, writer: anytype) !void {
     switch (attr.tag) {
         inline else => |tag| {
             const args = @field(attr.args, @tagName(tag));
@@ -735,7 +735,7 @@ fn dump_attribute(tree: *const Tree, attr: Attribute, writer: anytype) !void {
     }
 }
 
-fn dump_node(
+fn dumpNode(
     tree: *const Tree,
     node: NodeIndex,
     level: u32,

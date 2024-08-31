@@ -9,7 +9,7 @@ const build_options = @import("build_options");
 /// Returns the sub_path that worked, or `null` if none did.
 /// The path of the returned Directory is relative to `base`.
 /// The handle of the returned Directory is open.
-fn test_zig_install_prefix(base_dir: fs.Dir) ?Compilation.Directory {
+fn testZigInstallPrefix(base_dir: fs.Dir) ?Compilation.Directory {
     const test_index_file = "std" ++ fs.path.sep_str ++ "std.zig";
 
     zig_dir: {
@@ -36,7 +36,7 @@ fn test_zig_install_prefix(base_dir: fs.Dir) ?Compilation.Directory {
 
 /// This is a small wrapper around selfExePathAlloc that adds support for WASI
 /// based on a hard-coded Preopen directory ("/zig")
-pub fn find_zig_exe_path(allocator: mem.Allocator) ![]u8 {
+pub fn findZigExePath(allocator: mem.Allocator) ![]u8 {
     if (builtin.os.tag == .wasi) {
         @compileError("this function is unsupported on WASI");
     }
@@ -45,7 +45,7 @@ pub fn find_zig_exe_path(allocator: mem.Allocator) ![]u8 {
 }
 
 /// Both the directory handle and the path are newly allocated resources which the caller now owns.
-pub fn find_zig_lib_dir(gpa: mem.Allocator) !Compilation.Directory {
+pub fn findZigLibDir(gpa: mem.Allocator) !Compilation.Directory {
     const self_exe_path = try findZigExePath(gpa);
     defer gpa.free(self_exe_path);
 
@@ -53,7 +53,7 @@ pub fn find_zig_lib_dir(gpa: mem.Allocator) !Compilation.Directory {
 }
 
 /// Both the directory handle and the path are newly allocated resources which the caller now owns.
-pub fn find_zig_lib_dir_from_self_exe(
+pub fn findZigLibDirFromSelfExe(
     allocator: mem.Allocator,
     self_exe_path: []const u8,
 ) error{
@@ -80,7 +80,7 @@ pub fn find_zig_lib_dir_from_self_exe(
 }
 
 /// Caller owns returned memory.
-pub fn resolve_global_cache_dir(allocator: mem.Allocator) ![]u8 {
+pub fn resolveGlobalCacheDir(allocator: mem.Allocator) ![]u8 {
     if (builtin.os.tag == .wasi)
         @compileError("on WASI the global cache dir must be resolved with preopens");
 
@@ -106,7 +106,7 @@ pub fn resolve_global_cache_dir(allocator: mem.Allocator) ![]u8 {
 ///   return an absolute path based on the cwd.
 /// * When targeting WASI, fail with an error message if an absolute path is
 ///   used.
-pub fn resolve_path(
+pub fn resolvePath(
     ally: mem.Allocator,
     p: []const u8,
 ) error{
@@ -138,6 +138,6 @@ pub fn resolve_path(
 }
 
 /// TODO move this to std.fs.path
-pub fn is_up_dir(p: []const u8) bool {
+pub fn isUpDir(p: []const u8) bool {
     return mem.startsWith(u8, p, "..") and (p.len == 2 or p[2] == fs.path.sep);
 }

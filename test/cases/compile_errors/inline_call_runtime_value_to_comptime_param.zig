@@ -1,7 +1,7 @@
-inline fn need_comptime(comptime a: u64) void {
+inline fn needComptime(comptime a: u64) void {
     if (a != 0) @compileError("foo");
 }
-fn accept_runtime(value: u64) void {
+fn acceptRuntime(value: u64) void {
     needComptime(value);
 }
 pub export fn entry() void {

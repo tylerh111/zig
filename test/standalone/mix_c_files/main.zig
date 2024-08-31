@@ -1,7 +1,7 @@
 const std = @import("std");
 
-extern fn add_c(x: i32) i32;
-extern fn add_c_zig(x: i32) i32;
+extern fn add_C(x: i32) i32;
+extern fn add_C_zig(x: i32) i32;
 extern threadlocal var C_k: c_int;
 
 export var zig_k: c_int = 1;

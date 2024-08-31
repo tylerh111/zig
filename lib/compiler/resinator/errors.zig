@@ -49,7 +49,7 @@ pub const Diagnostics = struct {
     /// in order to avoid needing to `@intCast` it at callsites of putString.
     /// Instead, this function will error if the index would ever exceed the
     /// smallest FilenameStringIndex of an ErrorDetails type.
-    pub fn put_string(self: *Diagnostics, str: []const u8) !SmallestStringIndexType {
+    pub fn putString(self: *Diagnostics, str: []const u8) !SmallestStringIndexType {
         if (self.strings.items.len >= std.math.maxInt(SmallestStringIndexType)) {
             return error.OutOfMemory; // ran out of string indexes
         }
@@ -59,7 +59,7 @@ pub const Diagnostics = struct {
         return @intCast(index);
     }
 
-    pub fn render_to_std_err(self: *Diagnostics, cwd: std.fs.Dir, source: []const u8, tty_config: std.io.tty.Config, source_mappings: ?SourceMappings) void {
+    pub fn renderToStdErr(self: *Diagnostics, cwd: std.fs.Dir, source: []const u8, tty_config: std.io.tty.Config, source_mappings: ?SourceMappings) void {
         std.debug.lockStdErr();
         defer std.debug.unlockStdErr();
         const stderr = std.io.getStdErr().writer();
@@ -68,7 +68,7 @@ pub const Diagnostics = struct {
         }
     }
 
-    pub fn render_to_std_err_detect_tty(self: *Diagnostics, cwd: std.fs.Dir, source: []const u8, source_mappings: ?SourceMappings) void {
+    pub fn renderToStdErrDetectTTY(self: *Diagnostics, cwd: std.fs.Dir, source: []const u8, source_mappings: ?SourceMappings) void {
         const tty_config = std.io.tty.detectConfig(std.io.getStdErr());
         return self.renderToStdErr(cwd, source, tty_config, source_mappings);
     }
@@ -80,7 +80,7 @@ pub const Diagnostics = struct {
         return false;
     }
 
-    pub fn contains_any(self: *const Diagnostics, errors: []const ErrorDetails.Error) bool {
+    pub fn containsAny(self: *const Diagnostics, errors: []const ErrorDetails.Error) bool {
         for (self.errors.items) |details| {
             for (errors) |err| {
                 if (details.err == err) return true;
@@ -162,7 +162,7 @@ pub const ErrorDetails = struct {
         pub const FilenameStringIndex = std.meta.Int(.unsigned, 32 - @bitSizeOf(FileOpenErrorEnum));
         pub const FileOpenErrorEnum = std.meta.FieldEnum(std.fs.File.OpenError);
 
-        pub fn enum_from_error(err: std.fs.File.OpenError) FileOpenErrorEnum {
+        pub fn enumFromError(err: std.fs.File.OpenError) FileOpenErrorEnum {
             return switch (err) {
                 inline else => |e| @field(ErrorDetails.FileOpenError.FileOpenErrorEnum, @errorName(e)),
             };
@@ -177,7 +177,7 @@ pub const ErrorDetails = struct {
         pub const FilenameStringIndex = std.meta.Int(.unsigned, 32 - @bitSizeOf(IconReadErrorEnum) - 1);
         pub const IconReadErrorEnum = std.meta.FieldEnum(ico.ReadError);
 
-        pub fn enum_from_error(err: ico.ReadError) IconReadErrorEnum {
+        pub fn enumFromError(err: ico.ReadError) IconReadErrorEnum {
             return switch (err) {
                 inline else => |e| @field(ErrorDetails.IconReadError.IconReadErrorEnum, @errorName(e)),
             };
@@ -201,7 +201,7 @@ pub const ErrorDetails = struct {
         pub const FilenameStringIndex = std.meta.Int(.unsigned, 32 - @bitSizeOf(BitmapReadErrorEnum));
         pub const BitmapReadErrorEnum = std.meta.FieldEnum(bmp.ReadError);
 
-        pub fn enum_from_error(err: bmp.ReadError) BitmapReadErrorEnum {
+        pub fn enumFromError(err: bmp.ReadError) BitmapReadErrorEnum {
             return switch (err) {
                 inline else => |e| @field(ErrorDetails.BitmapReadError.BitmapReadErrorEnum, @errorName(e)),
             };
@@ -222,7 +222,7 @@ pub const ErrorDetails = struct {
         pub const Padding = std.meta.Int(.unsigned, 32 - @bitSizeOf(AcceleratorErrorEnum));
         pub const AcceleratorErrorEnum = std.meta.FieldEnum(res.ParseAcceleratorKeyStringError);
 
-        pub fn enum_from_error(err: res.ParseAcceleratorKeyStringError) AcceleratorErrorEnum {
+        pub fn enumFromError(err: res.ParseAcceleratorKeyStringError) AcceleratorErrorEnum {
             return switch (err) {
                 inline else => |e| @field(ErrorDetails.AcceleratorError.AcceleratorErrorEnum, @errorName(e)),
             };
@@ -249,7 +249,7 @@ pub const ErrorDetails = struct {
             .{ "literal", "unquoted literal" },
         });
 
-        pub fn write_comma_separated(self: ExpectedTypes, writer: anytype) !void {
+        pub fn writeCommaSeparated(self: ExpectedTypes, writer: anytype) !void {
             const struct_info = @typeInfo(ExpectedTypes).Struct;
             const num_real_fields = struct_info.fields.len - 1;
             const num_padding_bits = @bitSizeOf(ExpectedTypes) - num_real_fields;
@@ -790,7 +790,7 @@ pub const ErrorDetails = struct {
         after_len: usize,
     };
 
-    pub fn visual_token_info(self: ErrorDetails, source_line_start: usize, source_line_end: usize) VisualTokenInfo {
+    pub fn visualTokenInfo(self: ErrorDetails, source_line_start: usize, source_line_end: usize) VisualTokenInfo {
         // Note: A perfect solution here would involve full grapheme cluster
         //       awareness, but oh well. This will give incorrect offsets
         //       if there are any multibyte codepoints within the relevant span,
@@ -828,7 +828,7 @@ pub const ErrorDetails = struct {
     }
 };
 
-pub fn render_error_message(allocator: std.mem.Allocator, writer: anytype, tty_config: std.io.tty.Config, cwd: std.fs.Dir, err_details: ErrorDetails, source: []const u8, strings: []const []const u8, source_mappings: ?SourceMappings) !void {
+pub fn renderErrorMessage(allocator: std.mem.Allocator, writer: anytype, tty_config: std.io.tty.Config, cwd: std.fs.Dir, err_details: ErrorDetails, source: []const u8, strings: []const []const u8, source_mappings: ?SourceMappings) !void {
     if (err_details.type == .hint) return;
 
     const source_line_start = err_details.token.getLineStartForErrorDisplay(source);
@@ -1019,11 +1019,11 @@ const CorrespondingLines = struct {
     }
 };
 
-fn write_source_slice(writer: anytype, slice: []const u8) !void {
+fn writeSourceSlice(writer: anytype, slice: []const u8) !void {
     for (slice) |c| try writeSourceByte(writer, c);
 }
 
-inline fn write_source_byte(writer: anytype, byte: u8) !void {
+inline fn writeSourceByte(writer: anytype, byte: u8) !void {
     switch (byte) {
         '\x00'...'\x08', '\x0E'...'\x1F', '\x7F' => try writer.writeAll("�"),
         // \r is seemingly ignored by the RC compiler so skipping it when printing source lines
@@ -1039,7 +1039,7 @@ inline fn write_source_byte(writer: anytype, byte: u8) !void {
     }
 }
 
-pub fn write_lines_from_stream(writer: anytype, input: anytype, start_line: usize, end_line: usize) !void {
+pub fn writeLinesFromStream(writer: anytype, input: anytype, start_line: usize, end_line: usize) !void {
     var line_num: usize = 1;
     var last_byte: u8 = 0;
     while (try readByteOrEof(input)) |byte| {
@@ -1068,7 +1068,7 @@ pub fn write_lines_from_stream(writer: anytype, input: anytype, start_line: usiz
     }
 }
 
-pub fn read_byte_or_eof(reader: anytype) !?u8 {
+pub fn readByteOrEof(reader: anytype) !?u8 {
     return reader.readByte() catch |err| switch (err) {
         error.EndOfStream => return null,
         else => |e| return e,

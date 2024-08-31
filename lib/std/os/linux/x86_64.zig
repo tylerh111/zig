@@ -355,11 +355,11 @@ pub const ucontext_t = extern struct {
     fpregs_mem: [64]usize,
 };
 
-fn gp_register_offset(comptime reg_index: comptime_int) usize {
+fn gpRegisterOffset(comptime reg_index: comptime_int) usize {
     return @offsetOf(ucontext_t, "mcontext") + @offsetOf(mcontext_t, "gregs") + @sizeOf(usize) * reg_index;
 }
 
-fn get_context_internal() callconv(.Naked) usize {
+fn getContextInternal() callconv(.Naked) usize {
     // TODO: Read GS/FS registers?
     asm volatile (
         \\ movq $0, %[flags_offset:c](%%rdi)

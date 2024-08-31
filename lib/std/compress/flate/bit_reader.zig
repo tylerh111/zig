@@ -2,15 +2,15 @@ const std = @import("std");
 const assert = std.debug.assert;
 const testing = std.testing;
 
-pub fn bit_reader(comptime T: type, reader: anytype) BitReader(T, @TypeOf(reader)) {
+pub fn bitReader(comptime T: type, reader: anytype) BitReader(T, @TypeOf(reader)) {
     return BitReader(T, @TypeOf(reader)).init(reader);
 }
 
-pub fn bit_reader64(comptime ReaderType: type) type {
+pub fn BitReader64(comptime ReaderType: type) type {
     return BitReader(u64, ReaderType);
 }
 
-pub fn bit_reader32(comptime ReaderType: type) type {
+pub fn BitReader32(comptime ReaderType: type) type {
     return BitReader(u32, ReaderType);
 }
 
@@ -23,7 +23,7 @@ pub fn bit_reader32(comptime ReaderType: type) type {
 /// fill buffer from forward_reader by calling fill in advance and readF with
 /// buffered flag set.
 ///
-pub fn bit_reader(comptime T: type, comptime ReaderType: type) type {
+pub fn BitReader(comptime T: type, comptime ReaderType: type) type {
     assert(T == u32 or T == u64);
     const t_bytes: usize = @sizeOf(T);
     const Tshift = if (T == u64) u6 else u5;
@@ -80,7 +80,7 @@ pub fn bit_reader(comptime T: type, comptime ReaderType: type) type {
         }
 
         /// Read exactly buf.len bytes into buf.
-        pub fn read_all(self: *Self, buf: []u8) !void {
+        pub fn readAll(self: *Self, buf: []u8) !void {
             assert(self.alignBits() == 0); // internal bits must be at byte boundary
 
             // First read from internal bits buffer.
@@ -105,12 +105,12 @@ pub fn bit_reader(comptime T: type, comptime ReaderType: type) type {
         }
 
         /// Alias for readF with flag.peak set.
-        pub inline fn peek_f(self: *Self, comptime U: type, comptime how: u3) !U {
+        pub inline fn peekF(self: *Self, comptime U: type, comptime how: u3) !U {
             return self.readF(U, how | flag.peek);
         }
 
         /// Read with flags provided.
-        pub fn read_f(self: *Self, comptime U: type, comptime how: u3) !U {
+        pub fn readF(self: *Self, comptime U: type, comptime how: u3) !U {
             if (U == T) {
                 assert(how == 0);
                 assert(self.alignBits() == 0);
@@ -164,7 +164,7 @@ pub fn bit_reader(comptime T: type, comptime ReaderType: type) type {
 
         /// Read n number of bits.
         /// Only buffered flag can be used in how.
-        pub fn read_n(self: *Self, n: u4, comptime how: u3) !u16 {
+        pub fn readN(self: *Self, n: u4, comptime how: u3) !u16 {
             switch (how) {
                 0 => {
                     try self.fill(n);
@@ -186,7 +186,7 @@ pub fn bit_reader(comptime T: type, comptime ReaderType: type) type {
         }
 
         /// Skip n bytes.
-        pub fn skip_bytes(self: *Self, n: u16) !void {
+        pub fn skipBytes(self: *Self, n: u16) !void {
             for (0..n) |_| {
                 try self.fill(8);
                 try self.shift(8);
@@ -194,18 +194,18 @@ pub fn bit_reader(comptime T: type, comptime ReaderType: type) type {
         }
 
         // Number of bits to align stream to the byte boundary.
-        fn align_bits(self: *Self) u3 {
+        fn alignBits(self: *Self) u3 {
             return @intCast(self.nbits & 0x7);
         }
 
         /// Align stream to the byte boundary.
-        pub fn align_to_byte(self: *Self) void {
+        pub fn alignToByte(self: *Self) void {
             const ab = self.alignBits();
             if (ab > 0) self.shift(ab) catch unreachable;
         }
 
         /// Skip zero terminated string.
-        pub fn skip_string_z(self: *Self) !void {
+        pub fn skipStringZ(self: *Self) !void {
             while (true) {
                 if (try self.readF(u8, 0) == 0) break;
             }
@@ -224,7 +224,7 @@ pub fn bit_reader(comptime T: type, comptime ReaderType: type) type {
         ///                                   0010111
         ///          280 - 287     8          11000000 through
         ///                                   11000111
-        pub fn read_fixed_code(self: *Self) !u16 {
+        pub fn readFixedCode(self: *Self) !u16 {
             try self.fill(7 + 2);
             const code7 = try self.readF(u7, flag.buffered | flag.reverse);
             if (code7 <= 0b0010_111) { // 7 bits, 256-279, codes 0000_000 - 0010_111

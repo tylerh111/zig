@@ -19,7 +19,7 @@ pub const Ristretto255 = struct {
 
     p: Curve,
 
-    fn sqrt_ratio_m1(u: Fe, v: Fe) struct { ratio_is_square: u32, root: Fe } {
+    fn sqrtRatioM1(u: Fe, v: Fe) struct { ratio_is_square: u32, root: Fe } {
         const v3 = v.sq().mul(v); // v^3
         var x = v3.sq().mul(u).mul(v).pow2523().mul(v3).mul(u); // uv^3(uv^7)^((q-5)/8)
         const vxx = x.sq().mul(v); // vx^2
@@ -34,7 +34,7 @@ pub const Ristretto255 = struct {
         return .{ .ratio_is_square = @intFromBool(has_m_root) | @intFromBool(has_p_root), .root = x.abs() };
     }
 
-    fn reject_non_canonical(s: [encoded_length]u8) NonCanonicalError!void {
+    fn rejectNonCanonical(s: [encoded_length]u8) NonCanonicalError!void {
         if ((s[0] & 1) != 0) {
             return error.NonCanonical;
         }
@@ -42,7 +42,7 @@ pub const Ristretto255 = struct {
     }
 
     /// Reject the neutral element.
-    pub inline fn reject_identity(p: Ristretto255) IdentityElementError!void {
+    pub inline fn rejectIdentity(p: Ristretto255) IdentityElementError!void {
         return p.p.rejectIdentity();
     }
 
@@ -50,7 +50,7 @@ pub const Ristretto255 = struct {
     pub const basePoint = Ristretto255{ .p = Curve.basePoint };
 
     /// Decode a Ristretto255 representative.
-    pub fn from_bytes(s: [encoded_length]u8) (NonCanonicalError || EncodingError)!Ristretto255 {
+    pub fn fromBytes(s: [encoded_length]u8) (NonCanonicalError || EncodingError)!Ristretto255 {
         try rejectNonCanonical(s);
         const s_ = Fe.fromBytes(s);
         const ss = s_.sq(); // s^2
@@ -80,7 +80,7 @@ pub const Ristretto255 = struct {
     }
 
     /// Encode to a Ristretto255 representative.
-    pub fn to_bytes(e: Ristretto255) [encoded_length]u8 {
+    pub fn toBytes(e: Ristretto255) [encoded_length]u8 {
         const p = &e.p;
         var u1_ = p.z.add(p.y); // Z+Y
         const zmy = p.z.sub(p.y); // Z-Y
@@ -134,7 +134,7 @@ pub const Ristretto255 = struct {
     }
 
     /// Map a 64-bit string into a Ristretto255 group element
-    pub fn from_uniform(h: [64]u8) Ristretto255 {
+    pub fn fromUniform(h: [64]u8) Ristretto255 {
         const p0 = elligator(Fe.fromBytes(h[0..32].*));
         const p1 = elligator(Fe.fromBytes(h[32..64].*));
         return Ristretto255{ .p = p0.add(p1) };

@@ -20,7 +20,7 @@ const field_order_s = s: {
 };
 
 /// Reject a scalar whose encoding is not canonical.
-pub fn reject_non_canonical(s: CompressedScalar) NonCanonicalError!void {
+pub fn rejectNonCanonical(s: CompressedScalar) NonCanonicalError!void {
     var c: u8 = 0;
     var n: u8 = 1;
     var i: usize = 31;
@@ -61,7 +61,7 @@ pub fn mul(a: CompressedScalar, b: CompressedScalar) CompressedScalar {
 }
 
 /// Return a*b+c (mod L)
-pub fn mul_add(a: CompressedScalar, b: CompressedScalar, c: CompressedScalar) CompressedScalar {
+pub fn mulAdd(a: CompressedScalar, b: CompressedScalar, c: CompressedScalar) CompressedScalar {
     return Scalar.fromBytes(a).mul(Scalar.fromBytes(b)).add(Scalar.fromBytes(c)).toBytes();
 }
 
@@ -111,19 +111,19 @@ pub const Scalar = struct {
     limbs: Limbs = undefined,
 
     /// Unpack a 32-byte representation of a scalar
-    pub fn from_bytes(bytes: CompressedScalar) Scalar {
+    pub fn fromBytes(bytes: CompressedScalar) Scalar {
         var scalar = ScalarDouble.fromBytes32(bytes);
         return scalar.reduce(5);
     }
 
     /// Unpack a 64-byte representation of a scalar
-    pub fn from_bytes64(bytes: [64]u8) Scalar {
+    pub fn fromBytes64(bytes: [64]u8) Scalar {
         var scalar = ScalarDouble.fromBytes64(bytes);
         return scalar.reduce(5);
     }
 
     /// Pack a scalar into bytes
-    pub fn to_bytes(expanded: *const Scalar) CompressedScalar {
+    pub fn toBytes(expanded: *const Scalar) CompressedScalar {
         var bytes: CompressedScalar = undefined;
         var i: usize = 0;
         while (i < 4) : (i += 1) {
@@ -134,7 +134,7 @@ pub const Scalar = struct {
     }
 
     /// Return true if the scalar is zero
-    pub fn is_zero(n: Scalar) bool {
+    pub fn isZero(n: Scalar) bool {
         const limbs = n.limbs;
         return (limbs[0] | limbs[1] | limbs[2] | limbs[3] | limbs[4]) == 0;
     }
@@ -576,7 +576,7 @@ const ScalarDouble = struct {
     const Limbs = [10]u64;
     limbs: Limbs = undefined,
 
-    fn from_bytes64(bytes: [64]u8) ScalarDouble {
+    fn fromBytes64(bytes: [64]u8) ScalarDouble {
         var limbs: Limbs = undefined;
         var i: usize = 0;
         while (i < 9) : (i += 1) {
@@ -586,7 +586,7 @@ const ScalarDouble = struct {
         return ScalarDouble{ .limbs = limbs };
     }
 
-    fn from_bytes32(bytes: CompressedScalar) ScalarDouble {
+    fn fromBytes32(bytes: CompressedScalar) ScalarDouble {
         var limbs: Limbs = undefined;
         var i: usize = 0;
         while (i < 4) : (i += 1) {
@@ -597,7 +597,7 @@ const ScalarDouble = struct {
         return ScalarDouble{ .limbs = limbs };
     }
 
-    fn to_bytes(expanded_double: *ScalarDouble) CompressedScalar {
+    fn toBytes(expanded_double: *ScalarDouble) CompressedScalar {
         return expanded_double.reduce(10).toBytes();
     }
 

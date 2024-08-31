@@ -27,7 +27,7 @@ pub const AllocateRegistersError = error{
     CodegenFail,
 };
 
-pub fn register_manager(
+pub fn RegisterManager(
     comptime Function: type,
     comptime Register: type,
     comptime tracked_registers: []const Register,
@@ -58,37 +58,37 @@ pub fn register_manager(
         pub const TrackedIndex = std.math.IntFittingRange(0, tracked_registers.len - 1);
         pub const RegisterBitSet = StaticBitSet(tracked_registers.len);
 
-        fn get_function(self: *Self) *Function {
+        fn getFunction(self: *Self) *Function {
             return @alignCast(@fieldParentPtr("register_manager", self));
         }
 
-        fn exclude_register(reg: Register, register_class: RegisterBitSet) bool {
+        fn excludeRegister(reg: Register, register_class: RegisterBitSet) bool {
             const index = indexOfRegIntoTracked(reg) orelse return true;
             return !register_class.isSet(index);
         }
 
-        fn mark_reg_index_allocated(self: *Self, tracked_index: TrackedIndex) void {
+        fn markRegIndexAllocated(self: *Self, tracked_index: TrackedIndex) void {
             self.allocated_registers.set(tracked_index);
         }
-        fn mark_reg_allocated(self: *Self, reg: Register) void {
+        fn markRegAllocated(self: *Self, reg: Register) void {
             self.markRegIndexAllocated(indexOfRegIntoTracked(reg) orelse return);
         }
 
-        fn mark_reg_index_used(self: *Self, tracked_index: TrackedIndex) void {
+        fn markRegIndexUsed(self: *Self, tracked_index: TrackedIndex) void {
             self.free_registers.unset(tracked_index);
         }
-        fn mark_reg_used(self: *Self, reg: Register) void {
+        fn markRegUsed(self: *Self, reg: Register) void {
             self.markRegIndexUsed(indexOfRegIntoTracked(reg) orelse return);
         }
 
-        fn mark_reg_index_free(self: *Self, tracked_index: TrackedIndex) void {
+        fn markRegIndexFree(self: *Self, tracked_index: TrackedIndex) void {
             self.free_registers.set(tracked_index);
         }
-        fn mark_reg_free(self: *Self, reg: Register) void {
+        fn markRegFree(self: *Self, reg: Register) void {
             self.markRegIndexFree(indexOfRegIntoTracked(reg) orelse return);
         }
 
-        pub fn index_of_reg(
+        pub fn indexOfReg(
             comptime set: []const Register,
             reg: Register,
         ) ?std.math.IntFittingRange(0, set.len - 1) {
@@ -111,19 +111,19 @@ pub fn register_manager(
             return if (set_index < set.len) @intCast(set_index) else null;
         }
 
-        pub fn index_of_reg_into_tracked(reg: Register) ?TrackedIndex {
+        pub fn indexOfRegIntoTracked(reg: Register) ?TrackedIndex {
             return indexOfReg(tracked_registers, reg);
         }
 
-        pub fn reg_at_tracked_index(tracked_index: TrackedIndex) Register {
+        pub fn regAtTrackedIndex(tracked_index: TrackedIndex) Register {
             return tracked_registers[tracked_index];
         }
 
         /// Returns true when this register is not tracked
-        pub fn is_reg_index_free(self: Self, tracked_index: TrackedIndex) bool {
+        pub fn isRegIndexFree(self: Self, tracked_index: TrackedIndex) bool {
             return self.free_registers.isSet(tracked_index);
         }
-        pub fn is_reg_free(self: Self, reg: Register) bool {
+        pub fn isRegFree(self: Self, reg: Register) bool {
             return self.isRegIndexFree(indexOfRegIntoTracked(reg) orelse return true);
         }
 
@@ -131,7 +131,7 @@ pub fn register_manager(
         /// of this function.
         ///
         /// Returns false when this register is not tracked
-        pub fn is_reg_allocated(self: Self, reg: Register) bool {
+        pub fn isRegAllocated(self: Self, reg: Register) bool {
             const index = indexOfRegIntoTracked(reg) orelse return false;
             return self.allocated_registers.isSet(index);
         }
@@ -139,10 +139,10 @@ pub fn register_manager(
         /// Returns whether this register is locked
         ///
         /// Returns false when this register is not tracked
-        fn is_reg_index_locked(self: Self, tracked_index: TrackedIndex) bool {
+        fn isRegIndexLocked(self: Self, tracked_index: TrackedIndex) bool {
             return self.locked_registers.isSet(tracked_index);
         }
-        pub fn is_reg_locked(self: Self, reg: Register) bool {
+        pub fn isRegLocked(self: Self, reg: Register) bool {
             return self.isRegIndexLocked(indexOfRegIntoTracked(reg) orelse return false);
         }
 
@@ -154,7 +154,7 @@ pub fn register_manager(
         /// locked, or `null` otherwise.
         /// Only the owner of the `RegisterLock` can unlock the
         /// register later.
-        pub fn lock_reg_index(self: *Self, tracked_index: TrackedIndex) ?RegisterLock {
+        pub fn lockRegIndex(self: *Self, tracked_index: TrackedIndex) ?RegisterLock {
             log.debug("locking {}", .{regAtTrackedIndex(tracked_index)});
             if (self.isRegIndexLocked(tracked_index)) {
                 log.debug("  register already locked", .{});
@@ -163,24 +163,24 @@ pub fn register_manager(
             self.locked_registers.set(tracked_index);
             return RegisterLock{ .tracked_index = tracked_index };
         }
-        pub fn lock_reg(self: *Self, reg: Register) ?RegisterLock {
+        pub fn lockReg(self: *Self, reg: Register) ?RegisterLock {
             return self.lockRegIndex(indexOfRegIntoTracked(reg) orelse return null);
         }
 
         /// Like `lockReg` but asserts the register was unused always
         /// returning a valid lock.
-        pub fn lock_reg_index_assume_unused(self: *Self, tracked_index: TrackedIndex) RegisterLock {
+        pub fn lockRegIndexAssumeUnused(self: *Self, tracked_index: TrackedIndex) RegisterLock {
             log.debug("locking asserting free {}", .{regAtTrackedIndex(tracked_index)});
             assert(!self.isRegIndexLocked(tracked_index));
             self.locked_registers.set(tracked_index);
             return RegisterLock{ .tracked_index = tracked_index };
         }
-        pub fn lock_reg_assume_unused(self: *Self, reg: Register) RegisterLock {
+        pub fn lockRegAssumeUnused(self: *Self, reg: Register) RegisterLock {
             return self.lockRegIndexAssumeUnused(indexOfRegIntoTracked(reg) orelse unreachable);
         }
 
         /// Like `lockReg` but locks multiple registers.
-        pub fn lock_regs(
+        pub fn lockRegs(
             self: *Self,
             comptime count: comptime_int,
             regs: [count]Register,
@@ -191,7 +191,7 @@ pub fn register_manager(
         }
 
         /// Like `lockRegAssumeUnused` but locks multiple registers.
-        pub fn lock_regs_assume_unused(
+        pub fn lockRegsAssumeUnused(
             self: *Self,
             comptime count: comptime_int,
             regs: [count]Register,
@@ -204,20 +204,20 @@ pub fn register_manager(
         /// Unlocks the register allowing its re-allocation and re-use.
         /// Requires `RegisterLock` to unlock a register.
         /// Call `lockReg` to obtain the lock first.
-        pub fn unlock_reg(self: *Self, lock: RegisterLock) void {
+        pub fn unlockReg(self: *Self, lock: RegisterLock) void {
             log.debug("unlocking {}", .{regAtTrackedIndex(lock.tracked_index)});
             self.locked_registers.unset(lock.tracked_index);
         }
 
         /// Returns true when at least one register is locked
-        pub fn locked_regs_exist(self: Self) bool {
+        pub fn lockedRegsExist(self: Self) bool {
             return self.locked_registers.count() > 0;
         }
 
         /// Allocates a specified number of registers, optionally
         /// tracking them. Returns `null` if not enough registers are
         /// free.
-        pub fn try_alloc_regs(
+        pub fn tryAllocRegs(
             self: *Self,
             comptime count: comptime_int,
             insts: [count]?Air.Inst.Index,
@@ -266,14 +266,14 @@ pub fn register_manager(
         /// Allocates a register and optionally tracks it with a
         /// corresponding instruction. Returns `null` if all registers
         /// are allocated.
-        pub fn try_alloc_reg(self: *Self, inst: ?Air.Inst.Index, register_class: RegisterBitSet) ?Register {
+        pub fn tryAllocReg(self: *Self, inst: ?Air.Inst.Index, register_class: RegisterBitSet) ?Register {
             return if (tryAllocRegs(self, 1, .{inst}, register_class)) |regs| regs[0] else null;
         }
 
         /// Allocates a specified number of registers, optionally
         /// tracking them. Asserts that count is not
         /// larger than the total number of registers available.
-        pub fn alloc_regs(
+        pub fn allocRegs(
             self: *Self,
             comptime count: comptime_int,
             insts: [count]?Air.Inst.Index,
@@ -331,7 +331,7 @@ pub fn register_manager(
 
         /// Allocates a register and optionally tracks it with a
         /// corresponding instruction.
-        pub fn alloc_reg(
+        pub fn allocReg(
             self: *Self,
             inst: ?Air.Inst.Index,
             register_class: RegisterBitSet,
@@ -342,7 +342,7 @@ pub fn register_manager(
         /// Spills the register if it is currently allocated. If a
         /// corresponding instruction is passed, will also track this
         /// register.
-        fn get_reg_index(
+        fn getRegIndex(
             self: *Self,
             tracked_index: TrackedIndex,
             inst: ?Air.Inst.Index,
@@ -359,11 +359,11 @@ pub fn register_manager(
                 if (inst == null) self.freeRegIndex(tracked_index);
             } else self.getRegIndexAssumeFree(tracked_index, inst);
         }
-        pub fn get_reg(self: *Self, reg: Register, inst: ?Air.Inst.Index) AllocateRegistersError!void {
+        pub fn getReg(self: *Self, reg: Register, inst: ?Air.Inst.Index) AllocateRegistersError!void {
             log.debug("getting reg: {}", .{reg});
             return self.getRegIndex(indexOfRegIntoTracked(reg) orelse return, inst);
         }
-        pub fn get_known_reg(
+        pub fn getKnownReg(
             self: *Self,
             comptime reg: Register,
             inst: ?Air.Inst.Index,
@@ -374,7 +374,7 @@ pub fn register_manager(
         /// Allocates the specified register with the specified
         /// instruction. Asserts that the register is free and no
         /// spilling is necessary.
-        fn get_reg_index_assume_free(
+        fn getRegIndexAssumeFree(
             self: *Self,
             tracked_index: TrackedIndex,
             inst: ?Air.Inst.Index,
@@ -388,17 +388,17 @@ pub fn register_manager(
                 self.markRegIndexUsed(tracked_index);
             }
         }
-        pub fn get_reg_assume_free(self: *Self, reg: Register, inst: ?Air.Inst.Index) void {
+        pub fn getRegAssumeFree(self: *Self, reg: Register, inst: ?Air.Inst.Index) void {
             self.getRegIndexAssumeFree(indexOfRegIntoTracked(reg) orelse return, inst);
         }
 
         /// Marks the specified register as free
-        fn free_reg_index(self: *Self, tracked_index: TrackedIndex) void {
+        fn freeRegIndex(self: *Self, tracked_index: TrackedIndex) void {
             log.debug("freeing register {}", .{regAtTrackedIndex(tracked_index)});
             self.registers[tracked_index] = undefined;
             self.markRegIndexFree(tracked_index);
         }
-        pub fn free_reg(self: *Self, reg: Register) void {
+        pub fn freeReg(self: *Self, reg: Register) void {
             self.freeRegIndex(indexOfRegIntoTracked(reg) orelse return);
         }
     };
@@ -509,7 +509,7 @@ const MockRegister3 = enum(u3) {
     };
 };
 
-fn mock_function(comptime Register: type) type {
+fn MockFunction(comptime Register: type) type {
     return struct {
         allocator: Allocator,
         register_manager: Register.RM = .{},
@@ -521,12 +521,12 @@ fn mock_function(comptime Register: type) type {
             self.spilled.deinit(self.allocator);
         }
 
-        pub fn spill_instruction(self: *Self, reg: Register, inst: Air.Inst.Index) !void {
+        pub fn spillInstruction(self: *Self, reg: Register, inst: Air.Inst.Index) !void {
             _ = inst;
             try self.spilled.append(self.allocator, reg);
         }
 
-        pub fn gen_add(self: *Self, res: Register, lhs: Register, rhs: Register) !void {
+        pub fn genAdd(self: *Self, res: Register, lhs: Register, rhs: Register) !void {
             _ = self;
             _ = res;
             _ = lhs;

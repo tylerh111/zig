@@ -38,7 +38,7 @@ pub fn reset(self: *WaitGroup) void {
     self.event.reset();
 }
 
-pub fn is_done(wg: *WaitGroup) bool {
+pub fn isDone(wg: *WaitGroup) bool {
     const state = wg.state.load(.acquire);
     assert(state & is_waiting == 0);
 
@@ -47,7 +47,7 @@ pub fn is_done(wg: *WaitGroup) bool {
 
 // Spawns a new thread for the task. This is appropriate when the callee
 // delegates all work.
-pub fn spawn_manager(
+pub fn spawnManager(
     wg: *WaitGroup,
     comptime func: anytype,
     args: anytype,

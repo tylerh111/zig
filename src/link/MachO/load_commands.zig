@@ -11,13 +11,13 @@ const MachO = @import("../MachO.zig");
 
 pub const default_dyld_path: [*:0]const u8 = "/usr/lib/dyld";
 
-fn calc_install_name_len(cmd_size: u64, name: []const u8, assume_max_path_len: bool) u64 {
+fn calcInstallNameLen(cmd_size: u64, name: []const u8, assume_max_path_len: bool) u64 {
     const darwin_path_max = 1024;
     const name_len = if (assume_max_path_len) darwin_path_max else name.len + 1;
     return mem.alignForward(u64, cmd_size + name_len, @alignOf(u64));
 }
 
-pub fn calc_load_commands_size(macho_file: *MachO, assume_max_path_len: bool) !u32 {
+pub fn calcLoadCommandsSize(macho_file: *MachO, assume_max_path_len: bool) !u32 {
     var sizeofcmds: u64 = 0;
 
     // LC_SEGMENT_64
@@ -99,7 +99,7 @@ pub fn calc_load_commands_size(macho_file: *MachO, assume_max_path_len: bool) !u
     return @as(u32, @intCast(sizeofcmds));
 }
 
-pub fn calc_load_commands_size_dsym(macho_file: *MachO, dsym: *const DebugSymbols) u32 {
+pub fn calcLoadCommandsSizeDsym(macho_file: *MachO, dsym: *const DebugSymbols) u32 {
     var sizeofcmds: u64 = 0;
 
     // LC_SEGMENT_64
@@ -120,7 +120,7 @@ pub fn calc_load_commands_size_dsym(macho_file: *MachO, dsym: *const DebugSymbol
     return @as(u32, @intCast(sizeofcmds));
 }
 
-pub fn calc_load_commands_size_object(macho_file: *MachO) u32 {
+pub fn calcLoadCommandsSizeObject(macho_file: *MachO) u32 {
     var sizeofcmds: u64 = 0;
 
     // LC_SEGMENT_64
@@ -149,7 +149,7 @@ pub fn calc_load_commands_size_object(macho_file: *MachO) u32 {
     return @as(u32, @intCast(sizeofcmds));
 }
 
-pub fn calc_min_header_pad_size(macho_file: *MachO) !u32 {
+pub fn calcMinHeaderPadSize(macho_file: *MachO) !u32 {
     var padding: u32 = (try calcLoadCommandsSize(macho_file, false)) + (macho_file.headerpad_size orelse 0);
     log.debug("minimum requested headerpad size 0x{x}", .{padding + @sizeOf(macho.mach_header_64)});
 
@@ -167,7 +167,7 @@ pub fn calc_min_header_pad_size(macho_file: *MachO) !u32 {
     return offset;
 }
 
-pub fn write_dylinker_lc(writer: anytype) !void {
+pub fn writeDylinkerLC(writer: anytype) !void {
     const name_len = mem.sliceTo(default_dyld_path, 0).len;
     const cmdsize = @as(u32, @intCast(mem.alignForward(
         u64,
@@ -194,7 +194,7 @@ const WriteDylibLCCtx = struct {
     compatibility_version: u32 = 0x10000,
 };
 
-pub fn write_dylib_lc(ctx: WriteDylibLCCtx, writer: anytype) !void {
+pub fn writeDylibLC(ctx: WriteDylibLCCtx, writer: anytype) !void {
     const name_len = ctx.name.len + 1;
     const cmdsize = @as(u32, @intCast(mem.alignForward(
         u64,
@@ -219,7 +219,7 @@ pub fn write_dylib_lc(ctx: WriteDylibLCCtx, writer: anytype) !void {
     }
 }
 
-pub fn write_dylib_id_lc(macho_file: *MachO, writer: anytype) !void {
+pub fn writeDylibIdLC(macho_file: *MachO, writer: anytype) !void {
     const comp = macho_file.base.comp;
     const gpa = comp.gpa;
     assert(comp.config.output_mode == .Lib and comp.config.link_mode == .dynamic);
@@ -245,7 +245,7 @@ pub fn write_dylib_id_lc(macho_file: *MachO, writer: anytype) !void {
     }, writer);
 }
 
-pub fn write_rpath_lcs(rpaths: []const []const u8, writer: anytype) !void {
+pub fn writeRpathLCs(rpaths: []const []const u8, writer: anytype) !void {
     for (rpaths) |rpath| {
         const rpath_len = rpath.len + 1;
         const cmdsize = @as(u32, @intCast(mem.alignForward(
@@ -266,7 +266,7 @@ pub fn write_rpath_lcs(rpaths: []const []const u8, writer: anytype) !void {
     }
 }
 
-pub fn write_version_min_lc(platform: MachO.Platform, sdk_version: ?std.SemanticVersion, writer: anytype) !void {
+pub fn writeVersionMinLC(platform: MachO.Platform, sdk_version: ?std.SemanticVersion, writer: anytype) !void {
     const cmd: macho.LC = switch (platform.os_tag) {
         .macos => .VERSION_MIN_MACOSX,
         .ios => .VERSION_MIN_IPHONEOS,
@@ -284,7 +284,7 @@ pub fn write_version_min_lc(platform: MachO.Platform, sdk_version: ?std.Semantic
     }));
 }
 
-pub fn write_build_version_lc(platform: MachO.Platform, sdk_version: ?std.SemanticVersion, writer: anytype) !void {
+pub fn writeBuildVersionLC(platform: MachO.Platform, sdk_version: ?std.SemanticVersion, writer: anytype) !void {
     const cmdsize = @sizeOf(macho.build_version_command) + @sizeOf(macho.build_tool_version);
     try writer.writeStruct(macho.build_version_command{
         .cmdsize = cmdsize,

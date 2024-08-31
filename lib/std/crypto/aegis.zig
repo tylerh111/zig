@@ -126,7 +126,7 @@ const State128L = struct {
     }
 };
 
-fn aegis128_lgeneric(comptime tag_bits: u9) type {
+fn Aegis128LGeneric(comptime tag_bits: u9) type {
     comptime assert(tag_bits == 128 or tag_bits == 256); // tag must be 128 or 256 bits
 
     return struct {
@@ -309,7 +309,7 @@ const State256 = struct {
 /// The 256 bit variant of AEGIS has a 256 bit key, a 256 bit nonce, and processes 128 bit message blocks.
 ///
 /// https://datatracker.ietf.org/doc/draft-irtf-cfrg-aegis-aead/
-fn aegis256_generic(comptime tag_bits: u9) type {
+fn Aegis256Generic(comptime tag_bits: u9) type {
     comptime assert(tag_bits == 128 or tag_bits == 256); // tag must be 128 or 256 bits
 
     return struct {
@@ -434,7 +434,7 @@ pub const Aegis128LMac_128 = AegisMac(Aegis128L);
 /// If unsure, use the  Aegis256Mac type, that has a 256 bit output.
 pub const Aegis256Mac_128 = AegisMac(Aegis256);
 
-fn aegis_mac(comptime T: type) type {
+fn AegisMac(comptime T: type) type {
     return struct {
         const Self = @This();
 

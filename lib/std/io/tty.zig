@@ -9,7 +9,7 @@ const native_os = builtin.os.tag;
 /// This includes feature checks for ANSI escape codes and the Windows console API, as well as
 /// respecting the `NO_COLOR` and `CLICOLOR_FORCE` environment variables to override the default.
 /// Will attempt to enable ANSI escape code support if necessary/possible.
-pub fn detect_config(file: File) Config {
+pub fn detectConfig(file: File) Config {
     const force_color: ?bool = if (builtin.os.tag == .wasi)
         null // wasi does not support environment variables
     else if (process.hasEnvVarConstant("NO_COLOR"))
@@ -71,7 +71,7 @@ pub const Config = union(enum) {
         reset_attributes: u16,
     };
 
-    pub fn set_color(
+    pub fn setColor(
         conf: Config,
         writer: anytype,
         color: Color,

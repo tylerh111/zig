@@ -33,7 +33,7 @@ const fmt = std.fmt;
 const Allocator = std.mem.Allocator;
 const log = std.log.scoped(.cache);
 
-pub fn add_prefix(cache: *Cache, directory: Directory) void {
+pub fn addPrefix(cache: *Cache, directory: Directory) void {
     cache.prefixes_buffer[cache.prefixes_len] = directory;
     cache.prefixes_len += 1;
 }
@@ -66,7 +66,7 @@ const PrefixedPath = struct {
     }
 };
 
-fn find_prefix(cache: *const Cache, file_path: []const u8) !PrefixedPath {
+fn findPrefix(cache: *const Cache, file_path: []const u8) !PrefixedPath {
     const gpa = cache.gpa;
     const resolved_path = try fs.path.resolve(gpa, &[_][]const u8{file_path});
     errdefer gpa.free(resolved_path);
@@ -74,7 +74,7 @@ fn find_prefix(cache: *const Cache, file_path: []const u8) !PrefixedPath {
 }
 
 /// Takes ownership of `resolved_path` on success.
-fn find_prefix_resolved(cache: *const Cache, resolved_path: []u8) !PrefixedPath {
+fn findPrefixResolved(cache: *const Cache, resolved_path: []u8) !PrefixedPath {
     const gpa = cache.gpa;
     const prefixes_slice = cache.prefixes();
     var i: u8 = 1; // Start at 1 to skip over checking the null prefix.
@@ -98,7 +98,7 @@ fn find_prefix_resolved(cache: *const Cache, resolved_path: []u8) !PrefixedPath 
     };
 }
 
-fn get_prefix_subpath(allocator: Allocator, prefix: []const u8, path: []u8) ![]u8 {
+fn getPrefixSubpath(allocator: Allocator, prefix: []const u8, path: []u8) ![]u8 {
     const relative = try std.fs.path.relative(allocator, prefix, path);
     errdefer allocator.free(relative);
     var component_iterator = std.fs.path.NativeComponentIterator.init(relative) catch {
@@ -161,7 +161,7 @@ pub const File = struct {
         self.* = undefined;
     }
 
-    pub fn update_max_size(file: *File, new_max_size: ?usize) void {
+    pub fn updateMaxSize(file: *File, new_max_size: ?usize) void {
         const new = new_max_size orelse return;
         file.max_file_size = if (file.max_file_size) |old| @max(old, new) else new;
     }
@@ -171,22 +171,22 @@ pub const HashHelper = struct {
     hasher: Hasher = hasher_init,
 
     /// Record a slice of bytes as a dependency of the process being cached.
-    pub fn add_bytes(hh: *HashHelper, bytes: []const u8) void {
+    pub fn addBytes(hh: *HashHelper, bytes: []const u8) void {
         hh.hasher.update(mem.asBytes(&bytes.len));
         hh.hasher.update(bytes);
     }
 
-    pub fn add_optional_bytes(hh: *HashHelper, optional_bytes: ?[]const u8) void {
+    pub fn addOptionalBytes(hh: *HashHelper, optional_bytes: ?[]const u8) void {
         hh.add(optional_bytes != null);
         hh.addBytes(optional_bytes orelse return);
     }
 
-    pub fn add_list_of_bytes(hh: *HashHelper, list_of_bytes: []const []const u8) void {
+    pub fn addListOfBytes(hh: *HashHelper, list_of_bytes: []const []const u8) void {
         hh.add(list_of_bytes.len);
         for (list_of_bytes) |bytes| hh.addBytes(bytes);
     }
 
-    pub fn add_optional_list_of_bytes(hh: *HashHelper, optional_list_of_bytes: ?[]const []const u8) void {
+    pub fn addOptionalListOfBytes(hh: *HashHelper, optional_list_of_bytes: ?[]const []const u8) void {
         hh.add(optional_list_of_bytes != null);
         hh.addListOfBytes(optional_list_of_bytes orelse return);
     }
@@ -228,7 +228,7 @@ pub const HashHelper = struct {
         }
     }
 
-    pub fn add_optional(hh: *HashHelper, optional: anytype) void {
+    pub fn addOptional(hh: *HashHelper, optional: anytype) void {
         hh.add(optional != null);
         hh.add(optional orelse return);
     }
@@ -239,7 +239,7 @@ pub const HashHelper = struct {
         return copy.final();
     }
 
-    pub fn peek_bin(hh: HashHelper) BinDigest {
+    pub fn peekBin(hh: HashHelper) BinDigest {
         var copy = hh;
         var bin_digest: BinDigest = undefined;
         copy.hasher.final(&bin_digest);
@@ -260,7 +260,7 @@ pub const HashHelper = struct {
         return out_digest;
     }
 
-    pub fn one_shot(bytes: []const u8) [hex_digest_len]u8 {
+    pub fn oneShot(bytes: []const u8) [hex_digest_len]u8 {
         var hasher: Hasher = hasher_init;
         hasher.update(bytes);
         var bin_digest: BinDigest = undefined;
@@ -357,7 +357,7 @@ pub const Manifest = struct {
     /// ```
     /// var file_contents = cache_hash.files.keys()[file_index].contents.?;
     /// ```
-    pub fn add_file(self: *Manifest, file_path: []const u8, max_file_size: ?usize) !usize {
+    pub fn addFile(self: *Manifest, file_path: []const u8, max_file_size: ?usize) !usize {
         assert(self.manifest_file == null);
 
         const gpa = self.cache.gpa;
@@ -384,20 +384,20 @@ pub const Manifest = struct {
         return gop.index;
     }
 
-    pub fn add_optional_file(self: *Manifest, optional_file_path: ?[]const u8) !void {
+    pub fn addOptionalFile(self: *Manifest, optional_file_path: ?[]const u8) !void {
         self.hash.add(optional_file_path != null);
         const file_path = optional_file_path orelse return;
         _ = try self.addFile(file_path, null);
     }
 
-    pub fn add_list_of_files(self: *Manifest, list_of_files: []const []const u8) !void {
+    pub fn addListOfFiles(self: *Manifest, list_of_files: []const []const u8) !void {
         self.hash.add(list_of_files.len);
         for (list_of_files) |file_path| {
             _ = try self.addFile(file_path, null);
         }
     }
 
-    pub fn add_dep_file(self: *Manifest, dir: fs.Dir, dep_file_basename: []const u8) !void {
+    pub fn addDepFile(self: *Manifest, dir: fs.Dir, dep_file_basename: []const u8) !void {
         assert(self.manifest_file == null);
         return self.addDepFileMaybePost(dir, dep_file_basename);
     }
@@ -648,7 +648,7 @@ pub const Manifest = struct {
         }
     }
 
-    fn is_problematic_timestamp(man: *Manifest, file_time: i128) bool {
+    fn isProblematicTimestamp(man: *Manifest, file_time: i128) bool {
         // If the file_time is prior to the most recent problematic timestamp
         // then we don't need to access the filesystem.
         if (file_time < man.recent_problematic_timestamp)
@@ -682,7 +682,7 @@ pub const Manifest = struct {
         return file_time >= man.recent_problematic_timestamp;
     }
 
-    fn populate_file_hash(self: *Manifest, ch_file: *File) !void {
+    fn populateFileHash(self: *Manifest, ch_file: *File) !void {
         const pp = ch_file.prefixed_path;
         const dir = self.cache.prefixes()[pp.prefix].handle;
         const file = try dir.openFile(pp.sub_path, .{});
@@ -734,7 +734,7 @@ pub const Manifest = struct {
     /// calculated. This is useful for processes that don't know all the files that
     /// are depended on ahead of time. For example, a source file that can import other files
     /// will need to be recompiled if the imported file is changed.
-    pub fn add_file_post_fetch(self: *Manifest, file_path: []const u8, max_file_size: usize) ![]const u8 {
+    pub fn addFilePostFetch(self: *Manifest, file_path: []const u8, max_file_size: usize) ![]const u8 {
         assert(self.manifest_file != null);
 
         const gpa = self.cache.gpa;
@@ -770,7 +770,7 @@ pub const Manifest = struct {
     /// This is useful for processes that don't know the all the files that are
     /// depended on ahead of time. For example, a source file that can import
     /// other files will need to be recompiled if the imported file is changed.
-    pub fn add_file_post(self: *Manifest, file_path: []const u8) !void {
+    pub fn addFilePost(self: *Manifest, file_path: []const u8) !void {
         assert(self.manifest_file != null);
 
         const gpa = self.cache.gpa;
@@ -801,7 +801,7 @@ pub const Manifest = struct {
 
     /// Like `addFilePost` but when the file contents have already been loaded from disk.
     /// On success, cache takes ownership of `resolved_path`.
-    pub fn add_file_post_contents(
+    pub fn addFilePostContents(
         self: *Manifest,
         resolved_path: []u8,
         bytes: []const u8,
@@ -846,12 +846,12 @@ pub const Manifest = struct {
         self.hash.hasher.update(&new_file.bin_digest);
     }
 
-    pub fn add_dep_file_post(self: *Manifest, dir: fs.Dir, dep_file_basename: []const u8) !void {
+    pub fn addDepFilePost(self: *Manifest, dir: fs.Dir, dep_file_basename: []const u8) !void {
         assert(self.manifest_file != null);
         return self.addDepFileMaybePost(dir, dep_file_basename);
     }
 
-    fn add_dep_file_maybe_post(self: *Manifest, dir: fs.Dir, dep_file_basename: []const u8) !void {
+    fn addDepFileMaybePost(self: *Manifest, dir: fs.Dir, dep_file_basename: []const u8) !void {
         const dep_file_contents = try dir.readFileAlloc(self.cache.gpa, dep_file_basename, manifest_file_size_max);
         defer self.cache.gpa.free(dep_file_contents);
 
@@ -911,7 +911,7 @@ pub const Manifest = struct {
 
     /// If `want_shared_lock` is true, this function automatically downgrades the
     /// lock from exclusive to shared.
-    pub fn write_manifest(self: *Manifest) !void {
+    pub fn writeManifest(self: *Manifest) !void {
         assert(self.have_exclusive_lock);
 
         const manifest_file = self.manifest_file.?;
@@ -943,7 +943,7 @@ pub const Manifest = struct {
         }
     }
 
-    fn downgrade_to_shared_lock(self: *Manifest) !void {
+    fn downgradeToSharedLock(self: *Manifest) !void {
         if (!self.have_exclusive_lock) return;
 
         // WASI does not currently support flock, so we bypass it here.
@@ -957,7 +957,7 @@ pub const Manifest = struct {
         self.have_exclusive_lock = false;
     }
 
-    fn upgrade_to_exclusive_lock(self: *Manifest) !bool {
+    fn upgradeToExclusiveLock(self: *Manifest) !bool {
         if (self.have_exclusive_lock) return false;
         assert(self.manifest_file != null);
 
@@ -978,7 +978,7 @@ pub const Manifest = struct {
     /// Obtain only the data needed to maintain a lock on the manifest file.
     /// The `Manifest` remains safe to deinit.
     /// Don't forget to call `writeManifest` before this!
-    pub fn to_owned_lock(self: *Manifest) Lock {
+    pub fn toOwnedLock(self: *Manifest) Lock {
         const lock: Lock = .{
             .manifest_file = self.manifest_file.?,
         };
@@ -1009,7 +1009,7 @@ pub const Manifest = struct {
 /// On operating systems that support symlinks, does a readlink. On other operating systems,
 /// uses the file contents. Windows supports symlinks but only with elevated privileges, so
 /// it is treated as not supporting symlinks.
-pub fn read_small_file(dir: fs.Dir, sub_path: []const u8, buffer: []u8) ![]u8 {
+pub fn readSmallFile(dir: fs.Dir, sub_path: []const u8, buffer: []u8) ![]u8 {
     if (builtin.os.tag == .windows) {
         return dir.readFile(sub_path, buffer);
     } else {
@@ -1021,7 +1021,7 @@ pub fn read_small_file(dir: fs.Dir, sub_path: []const u8, buffer: []u8) ![]u8 {
 /// uses the file contents. Windows supports symlinks but only with elevated privileges, so
 /// it is treated as not supporting symlinks.
 /// `data` must be a valid UTF-8 encoded file path and 255 bytes or fewer.
-pub fn write_small_file(dir: fs.Dir, sub_path: []const u8, data: []const u8) !void {
+pub fn writeSmallFile(dir: fs.Dir, sub_path: []const u8, data: []const u8) !void {
     assert(data.len <= 255);
     if (builtin.os.tag == .windows) {
         return dir.writeFile(.{ .sub_path = sub_path, .data = data });
@@ -1030,7 +1030,7 @@ pub fn write_small_file(dir: fs.Dir, sub_path: []const u8, data: []const u8) !vo
     }
 }
 
-fn hash_file(file: fs.File, bin_digest: *[Hasher.mac_length]u8) !void {
+fn hashFile(file: fs.File, bin_digest: *[Hasher.mac_length]u8) !void {
     var buf: [1024]u8 = undefined;
 
     var hasher = hasher_init;
@@ -1044,7 +1044,7 @@ fn hash_file(file: fs.File, bin_digest: *[Hasher.mac_length]u8) !void {
 }
 
 // Create/Write a file, close it, then grab its stat.mtime timestamp.
-fn test_get_current_file_timestamp(dir: fs.Dir) !i128 {
+fn testGetCurrentFileTimestamp(dir: fs.Dir) !i128 {
     const test_out_file = "test-filetimestamp.tmp";
 
     var file = try dir.createFile(test_out_file, .{

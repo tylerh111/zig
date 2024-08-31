@@ -6,7 +6,7 @@ pub fn main() void {
     assert(x == -1);
 }
 
-fn by_ptr(x: *i8) ?*i8 {
+fn byPtr(x: *i8) ?*i8 {
     return x;
 }
 

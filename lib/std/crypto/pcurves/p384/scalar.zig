@@ -28,7 +28,7 @@ const Fe = Field(.{
 pub const field_order = Fe.field_order;
 
 /// Reject a scalar whose encoding is not canonical.
-pub fn reject_non_canonical(s: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!void {
+pub fn rejectNonCanonical(s: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!void {
     return Fe.rejectNonCanonical(s, endian);
 }
 
@@ -43,7 +43,7 @@ pub fn mul(a: CompressedScalar, b: CompressedScalar, endian: std.builtin.Endian)
 }
 
 /// Return a*b+c (mod L)
-pub fn mul_add(a: CompressedScalar, b: CompressedScalar, c: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!CompressedScalar {
+pub fn mulAdd(a: CompressedScalar, b: CompressedScalar, c: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!CompressedScalar {
     return (try Scalar.fromBytes(a, endian)).mul(try Scalar.fromBytes(b, endian)).add(try Scalar.fromBytes(c, endian)).toBytes(endian);
 }
 
@@ -78,28 +78,28 @@ pub const Scalar = struct {
     pub const one = Scalar{ .fe = Fe.one };
 
     /// Unpack a serialized representation of a scalar.
-    pub fn from_bytes(s: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!Scalar {
+    pub fn fromBytes(s: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!Scalar {
         return Scalar{ .fe = try Fe.fromBytes(s, endian) };
     }
 
     /// Reduce a 512 bit input to the field size.
-    pub fn from_bytes64(s: [64]u8, endian: std.builtin.Endian) Scalar {
+    pub fn fromBytes64(s: [64]u8, endian: std.builtin.Endian) Scalar {
         const t = ScalarDouble.fromBytes(512, s, endian);
         return t.reduce(512);
     }
 
     /// Pack a scalar into bytes.
-    pub fn to_bytes(n: Scalar, endian: std.builtin.Endian) CompressedScalar {
+    pub fn toBytes(n: Scalar, endian: std.builtin.Endian) CompressedScalar {
         return n.fe.toBytes(endian);
     }
 
     /// Return true if the scalar is zero..
-    pub fn is_zero(n: Scalar) bool {
+    pub fn isZero(n: Scalar) bool {
         return n.fe.isZero();
     }
 
     /// Return true if the scalar is odd.
-    pub fn is_odd(n: Scalar) bool {
+    pub fn isOdd(n: Scalar) bool {
         return n.fe.isOdd();
     }
 
@@ -149,7 +149,7 @@ pub const Scalar = struct {
     }
 
     /// Return true if n is a quadratic residue mod L.
-    pub fn is_square(n: Scalar) bool {
+    pub fn isSquare(n: Scalar) bool {
         return n.fe.isSquare();
     }
 
@@ -175,7 +175,7 @@ const ScalarDouble = struct {
     x1: Fe,
     x2: Fe,
 
-    fn from_bytes(comptime bits: usize, s_: [bits / 8]u8, endian: std.builtin.Endian) ScalarDouble {
+    fn fromBytes(comptime bits: usize, s_: [bits / 8]u8, endian: std.builtin.Endian) ScalarDouble {
         debug.assert(bits > 0 and bits <= 512 and bits >= Fe.saturated_bits and bits <= Fe.saturated_bits * 2);
 
         var s = s_;

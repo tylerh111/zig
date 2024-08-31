@@ -11,7 +11,7 @@ const AuthenticationError = crypto.errors.AuthenticationError;
 pub const Aes128Gcm = AesGcm(crypto.core.aes.Aes128);
 pub const Aes256Gcm = AesGcm(crypto.core.aes.Aes256);
 
-fn aes_gcm(comptime Aes: anytype) type {
+fn AesGcm(comptime Aes: anytype) type {
     debug.assert(Aes.block.block_length == 16);
 
     return struct {

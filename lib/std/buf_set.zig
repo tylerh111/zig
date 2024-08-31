@@ -71,7 +71,7 @@ pub const BufSet = struct {
     }
 
     /// Creates a copy of this BufSet, using a specified allocator.
-    pub fn clone_with_allocator(
+    pub fn cloneWithAllocator(
         self: *const BufSet,
         new_allocator: Allocator,
     ) Allocator.Error!BufSet {

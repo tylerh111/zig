@@ -20,7 +20,7 @@ comptime {
 // 00 00 ff 00 << 1*8 (2n right  byte)
 // 00 00 00 ff << 3*8 (rightmost byte)
 
-inline fn bswap_xi2(comptime T: type, a: T) T {
+inline fn bswapXi2(comptime T: type, a: T) T {
     switch (@bitSizeOf(T)) {
         32 => {
             // zig fmt: off

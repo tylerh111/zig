@@ -175,7 +175,7 @@ pub fn print(
     }
 }
 
-fn print_aggregate(
+fn printAggregate(
     val: Value,
     aggregate: InternPool.Key.Aggregate,
     is_ref: bool,
@@ -260,7 +260,7 @@ fn print_aggregate(
     return writer.writeAll(" }");
 }
 
-fn print_ptr(ptr_val: Value, writer: anytype, level: u8, zcu: *Zcu, opt_sema: ?*Sema) (@TypeOf(writer).Error || Module.CompileError)!void {
+fn printPtr(ptr_val: Value, writer: anytype, level: u8, zcu: *Zcu, opt_sema: ?*Sema) (@TypeOf(writer).Error || Module.CompileError)!void {
     const ptr = switch (zcu.intern_pool.indexToKey(ptr_val.toIntern())) {
         .undef => return writer.writeAll("undefined"),
         .ptr => |ptr| ptr,
@@ -290,7 +290,7 @@ fn print_ptr(ptr_val: Value, writer: anytype, level: u8, zcu: *Zcu, opt_sema: ?*
 }
 
 /// Print `derivation` as an lvalue, i.e. such that writing `&` before this gives the pointer value.
-fn print_ptr_derivation(derivation: Value.PointerDeriveStep, writer: anytype, level: u8, zcu: *Zcu, opt_sema: ?*Sema) (@TypeOf(writer).Error || Module.CompileError)!void {
+fn printPtrDerivation(derivation: Value.PointerDeriveStep, writer: anytype, level: u8, zcu: *Zcu, opt_sema: ?*Sema) (@TypeOf(writer).Error || Module.CompileError)!void {
     const ip = &zcu.intern_pool;
     switch (derivation) {
         .int => |int| try writer.print("@as({}, @ptrFromInt({x})).*", .{

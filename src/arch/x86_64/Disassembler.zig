@@ -248,7 +248,7 @@ const Prefixes = struct {
     // TODO add support for VEX prefix
 };
 
-fn parse_prefixes(dis: *Disassembler) !Prefixes {
+fn parsePrefixes(dis: *Disassembler) !Prefixes {
     const rex_prefix_mask: u4 = 0b0100;
     var stream = std.io.fixedBufferStream(dis.code[dis.pos..]);
     const reader = stream.reader();
@@ -300,7 +300,7 @@ fn parse_prefixes(dis: *Disassembler) !Prefixes {
     return res;
 }
 
-fn parse_encoding(dis: *Disassembler, prefixes: Prefixes) !?Encoding {
+fn parseEncoding(dis: *Disassembler, prefixes: Prefixes) !?Encoding {
     const o_mask: u8 = 0b1111_1000;
 
     var opcode: [3]u8 = .{ 0, 0, 0 };
@@ -342,7 +342,7 @@ fn parse_encoding(dis: *Disassembler, prefixes: Prefixes) !?Encoding {
     return null;
 }
 
-fn parse_gp_register(low_enc: u3, is_extended: bool, rex: Rex, bit_size: u64) Register {
+fn parseGpRegister(low_enc: u3, is_extended: bool, rex: Rex, bit_size: u64) Register {
     const reg_id: u4 = @as(u4, @intCast(@intFromBool(is_extended))) << 3 | low_enc;
     const reg = @as(Register, @enumFromInt(reg_id)).toBitSize(bit_size);
     return switch (reg) {
@@ -354,7 +354,7 @@ fn parse_gp_register(low_enc: u3, is_extended: bool, rex: Rex, bit_size: u64) Re
     };
 }
 
-fn parse_imm(dis: *Disassembler, kind: Encoding.Op) !Immediate {
+fn parseImm(dis: *Disassembler, kind: Encoding.Op) !Immediate {
     var stream = std.io.fixedBufferStream(dis.code[dis.pos..]);
     var creader = std.io.countingReader(stream.reader());
     const reader = creader.reader();
@@ -372,7 +372,7 @@ fn parse_imm(dis: *Disassembler, kind: Encoding.Op) !Immediate {
     return imm;
 }
 
-fn parse_offset(dis: *Disassembler) !u64 {
+fn parseOffset(dis: *Disassembler) !u64 {
     var stream = std.io.fixedBufferStream(dis.code[dis.pos..]);
     const reader = stream.reader();
     const offset = try reader.readInt(u64, .little);
@@ -398,7 +398,7 @@ const ModRm = packed struct {
     }
 };
 
-fn parse_mod_rm_byte(dis: *Disassembler) !ModRm {
+fn parseModRmByte(dis: *Disassembler) !ModRm {
     if (dis.code[dis.pos..].len == 0) return error.EndOfStream;
     const modrm_byte = dis.code[dis.pos];
     dis.pos += 1;
@@ -408,7 +408,7 @@ fn parse_mod_rm_byte(dis: *Disassembler) !ModRm {
     return ModRm{ .mod = mod, .op1 = op1, .op2 = op2 };
 }
 
-fn segment_register(prefixes: LegacyPrefixes) Register {
+fn segmentRegister(prefixes: LegacyPrefixes) Register {
     if (prefixes.prefix_2e) return .cs;
     if (prefixes.prefix_36) return .ss;
     if (prefixes.prefix_26) return .es;
@@ -422,7 +422,7 @@ const Sib = packed struct {
     index: u3,
     base: u3,
 
-    fn scale_index(self: Sib, rex: Rex) ?Memory.ScaleIndex {
+    fn scaleIndex(self: Sib, rex: Rex) ?Memory.ScaleIndex {
         if (self.index == 0b100 and !rex.x) return null;
         return .{
             .scale = @as(u4, 1) << self.scale,
@@ -430,7 +430,7 @@ const Sib = packed struct {
         };
     }
 
-    fn base_reg(self: Sib, modrm: ModRm, prefixes: Prefixes) ?Register {
+    fn baseReg(self: Sib, modrm: ModRm, prefixes: Prefixes) ?Register {
         if (self.base == 0b101 and modrm.mod == 0) {
             if (self.scaleIndex(prefixes.rex)) |_| return null;
             return segmentRegister(prefixes.legacy);
@@ -439,7 +439,7 @@ const Sib = packed struct {
     }
 };
 
-fn parse_sib_byte(dis: *Disassembler) !Sib {
+fn parseSibByte(dis: *Disassembler) !Sib {
     if (dis.code[dis.pos..].len == 0) return error.EndOfStream;
     const sib_byte = dis.code[dis.pos];
     dis.pos += 1;
@@ -449,7 +449,7 @@ fn parse_sib_byte(dis: *Disassembler) !Sib {
     return Sib{ .scale = scale, .index = index, .base = base };
 }
 
-fn parse_displacement(dis: *Disassembler, modrm: ModRm, sib: ?Sib) !i32 {
+fn parseDisplacement(dis: *Disassembler, modrm: ModRm, sib: ?Sib) !i32 {
     var stream = std.io.fixedBufferStream(dis.code[dis.pos..]);
     var creader = std.io.countingReader(stream.reader());
     const reader = creader.reader();

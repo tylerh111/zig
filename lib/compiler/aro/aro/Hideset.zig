@@ -31,7 +31,7 @@ const Identifier = struct {
         return tmp_tokenizer.buf[res.start..res.end];
     }
 
-    fn from_location(loc: Source.Location) Identifier {
+    fn fromLocation(loc: Source.Location) Identifier {
         return .{
             .id = loc.id,
             .byte_offset = loc.byte_offset,
@@ -76,12 +76,12 @@ pub fn deinit(self: *Hideset) void {
     self.linked_list.deinit(self.comp.gpa);
 }
 
-pub fn clear_retaining_capacity(self: *Hideset) void {
+pub fn clearRetainingCapacity(self: *Hideset) void {
     self.linked_list.shrinkRetainingCapacity(0);
     self.map.clearRetainingCapacity();
 }
 
-pub fn clear_and_free(self: *Hideset) void {
+pub fn clearAndFree(self: *Hideset) void {
     self.map.clearAndFree(self.comp.gpa);
     self.intersection_map.clearAndFree(self.comp.gpa);
     self.linked_list.shrinkAndFree(self.comp.gpa, 0);
@@ -103,12 +103,12 @@ pub fn put(self: *Hideset, loc: Source.Location, value: Index) !void {
     try self.map.put(self.comp.gpa, Identifier.fromLocation(loc), value);
 }
 
-fn ensure_unused_capacity(self: *Hideset, new_size: usize) !void {
+fn ensureUnusedCapacity(self: *Hideset, new_size: usize) !void {
     try self.linked_list.ensureUnusedCapacity(self.comp.gpa, new_size);
 }
 
 /// Creates a one-item list with contents `identifier`
-fn create_node_assume_capacity(self: *Hideset, identifier: Identifier) Index {
+fn createNodeAssumeCapacity(self: *Hideset, identifier: Identifier) Index {
     const next_idx = self.linked_list.len;
     self.linked_list.appendAssumeCapacity(.{ .identifier = identifier });
     return @enumFromInt(next_idx);

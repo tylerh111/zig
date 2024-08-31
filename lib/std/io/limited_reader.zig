@@ -3,7 +3,7 @@ const io = std.io;
 const assert = std.debug.assert;
 const testing = std.testing;
 
-pub fn limited_reader(comptime ReaderType: type) type {
+pub fn LimitedReader(comptime ReaderType: type) type {
     return struct {
         inner_reader: ReaderType,
         bytes_left: u64,
@@ -28,7 +28,7 @@ pub fn limited_reader(comptime ReaderType: type) type {
 
 /// Returns an initialised `LimitedReader`.
 /// `bytes_left` is a `u64` to be able to take 64 bit file offsets
-pub fn limited_reader(inner_reader: anytype, bytes_left: u64) LimitedReader(@TypeOf(inner_reader)) {
+pub fn limitedReader(inner_reader: anytype, bytes_left: u64) LimitedReader(@TypeOf(inner_reader)) {
     return .{ .inner_reader = inner_reader, .bytes_left = bytes_left };
 }
 

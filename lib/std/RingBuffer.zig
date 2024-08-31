@@ -57,7 +57,7 @@ pub fn write(self: *RingBuffer, byte: u8) Error!void {
 
 /// Write `byte` into the ring buffer. If the ring buffer is full, the
 /// oldest byte is overwritten.
-pub fn write_assume_capacity(self: *RingBuffer, byte: u8) void {
+pub fn writeAssumeCapacity(self: *RingBuffer, byte: u8) void {
     self.data[self.mask(self.write_index)] = byte;
     self.write_index = self.mask2(self.write_index + 1);
 }
@@ -65,7 +65,7 @@ pub fn write_assume_capacity(self: *RingBuffer, byte: u8) void {
 /// Write `bytes` into the ring buffer. Returns `error.Full` if the ring
 /// buffer does not have enough space, without writing any data.
 /// Uses memcpy and so `bytes` must not overlap ring buffer data.
-pub fn write_slice(self: *RingBuffer, bytes: []const u8) Error!void {
+pub fn writeSlice(self: *RingBuffer, bytes: []const u8) Error!void {
     if (self.len() + bytes.len > self.data.len) return error.Full;
     self.writeSliceAssumeCapacity(bytes);
 }
@@ -73,7 +73,7 @@ pub fn write_slice(self: *RingBuffer, bytes: []const u8) Error!void {
 /// Write `bytes` into the ring buffer. If there is not enough space, older
 /// bytes will be overwritten.
 /// Uses memcpy and so `bytes` must not overlap ring buffer data.
-pub fn write_slice_assume_capacity(self: *RingBuffer, bytes: []const u8) void {
+pub fn writeSliceAssumeCapacity(self: *RingBuffer, bytes: []const u8) void {
     assert(bytes.len <= self.data.len);
     const data_start = self.mask(self.write_index);
     const part1_data_end = @min(data_start + bytes.len, self.data.len);
@@ -96,7 +96,7 @@ pub fn write_slice_assume_capacity(self: *RingBuffer, bytes: []const u8) void {
 /// Write `bytes` into the ring buffer. Returns `error.Full` if the ring
 /// buffer does not have enough space, without writing any data.
 /// Uses copyForwards and can write slices from this RingBuffer into itself.
-pub fn write_slice_forwards(self: *RingBuffer, bytes: []const u8) Error!void {
+pub fn writeSliceForwards(self: *RingBuffer, bytes: []const u8) Error!void {
     if (self.len() + bytes.len > self.data.len) return error.Full;
     self.writeSliceForwardsAssumeCapacity(bytes);
 }
@@ -104,7 +104,7 @@ pub fn write_slice_forwards(self: *RingBuffer, bytes: []const u8) Error!void {
 /// Write `bytes` into the ring buffer. If there is not enough space, older
 /// bytes will be overwritten.
 /// Uses copyForwards and can write slices from this RingBuffer into itself.
-pub fn write_slice_forwards_assume_capacity(self: *RingBuffer, bytes: []const u8) void {
+pub fn writeSliceForwardsAssumeCapacity(self: *RingBuffer, bytes: []const u8) void {
     assert(bytes.len <= self.data.len);
     const data_start = self.mask(self.write_index);
     const part1_data_end = @min(data_start + bytes.len, self.data.len);
@@ -130,7 +130,7 @@ pub fn read(self: *RingBuffer) ?u8 {
 
 /// Consume a byte from the ring buffer and return it; asserts that the buffer
 /// is not empty.
-pub fn read_assume_length(self: *RingBuffer) u8 {
+pub fn readAssumeLength(self: *RingBuffer) u8 {
     assert(!self.isEmpty());
     const byte = self.data[self.mask(self.read_index)];
     self.read_index = self.mask2(self.read_index + 1);
@@ -140,7 +140,7 @@ pub fn read_assume_length(self: *RingBuffer) u8 {
 /// Reads first `length` bytes written to the ring buffer into `dest`; Returns
 /// Error.ReadLengthInvalid if length greater than ring or dest length
 /// Uses memcpy and so `dest` must not overlap ring buffer data.
-pub fn read_first(self: *RingBuffer, dest: []u8, length: usize) Error!void {
+pub fn readFirst(self: *RingBuffer, dest: []u8, length: usize) Error!void {
     if (length > self.len() or length > dest.len) return error.ReadLengthInvalid;
     self.readFirstAssumeLength(dest, length);
 }
@@ -148,7 +148,7 @@ pub fn read_first(self: *RingBuffer, dest: []u8, length: usize) Error!void {
 /// Reads first `length` bytes written to the ring buffer into `dest`;
 /// Asserts that length not greater than ring buffer or dest length
 /// Uses memcpy and so `dest` must not overlap ring buffer data.
-pub fn read_first_assume_length(self: *RingBuffer, dest: []u8, length: usize) void {
+pub fn readFirstAssumeLength(self: *RingBuffer, dest: []u8, length: usize) void {
     assert(length <= self.len() and length <= dest.len);
     const slice = self.sliceAt(self.read_index, length);
     slice.copyTo(dest);
@@ -159,7 +159,7 @@ pub fn read_first_assume_length(self: *RingBuffer, dest: []u8, length: usize) vo
 /// Error.ReadLengthInvalid if length greater than ring or dest length
 /// Uses memcpy and so `dest` must not overlap ring buffer data.
 /// Reduces write index by `length`.
-pub fn read_last(self: *RingBuffer, dest: []u8, length: usize) Error!void {
+pub fn readLast(self: *RingBuffer, dest: []u8, length: usize) Error!void {
     if (length > self.len() or length > dest.len) return error.ReadLengthInvalid;
     self.readLastAssumeLength(dest, length);
 }
@@ -168,7 +168,7 @@ pub fn read_last(self: *RingBuffer, dest: []u8, length: usize) Error!void {
 /// Asserts that length not greater than ring buffer or dest length
 /// Uses memcpy and so `dest` must not overlap ring buffer data.
 /// Reduces write index by `length`.
-pub fn read_last_assume_length(self: *RingBuffer, dest: []u8, length: usize) void {
+pub fn readLastAssumeLength(self: *RingBuffer, dest: []u8, length: usize) void {
     assert(length <= self.len() and length <= dest.len);
     const slice = self.sliceLast(length);
     slice.copyTo(dest);
@@ -179,12 +179,12 @@ pub fn read_last_assume_length(self: *RingBuffer, dest: []u8, length: usize) voi
 }
 
 /// Returns `true` if the ring buffer is empty and `false` otherwise.
-pub fn is_empty(self: RingBuffer) bool {
+pub fn isEmpty(self: RingBuffer) bool {
     return self.write_index == self.read_index;
 }
 
 /// Returns `true` if the ring buffer is full and `false` otherwise.
-pub fn is_full(self: RingBuffer) bool {
+pub fn isFull(self: RingBuffer) bool {
     return self.mask2(self.write_index + self.data.len) == self.read_index;
 }
 
@@ -203,7 +203,7 @@ pub const Slice = struct {
     second: []u8,
 
     /// Copy data from `self` into `dest`
-    pub fn copy_to(self: Slice, dest: []u8) void {
+    pub fn copyTo(self: Slice, dest: []u8) void {
         @memcpy(dest[0..self.first.len], self.first);
         @memcpy(dest[self.first.len..][0..self.second.len], self.second);
     }
@@ -211,7 +211,7 @@ pub const Slice = struct {
 
 /// Returns a `Slice` for the region of the ring buffer starting at
 /// `self.mask(start_unmasked)` with the specified length.
-pub fn slice_at(self: RingBuffer, start_unmasked: usize, length: usize) Slice {
+pub fn sliceAt(self: RingBuffer, start_unmasked: usize, length: usize) Slice {
     assert(length <= self.data.len);
     const slice1_start = self.mask(start_unmasked);
     const slice1_end = @min(self.data.len, slice1_start + length);
@@ -225,6 +225,6 @@ pub fn slice_at(self: RingBuffer, start_unmasked: usize, length: usize) Slice {
 
 /// Returns a `Slice` for the last `length` bytes written to the ring buffer.
 /// Does not check that any bytes have been written into the region.
-pub fn slice_last(self: RingBuffer, length: usize) Slice {
+pub fn sliceLast(self: RingBuffer, length: usize) Slice {
     return self.sliceAt(self.write_index + self.data.len - length, length);
 }

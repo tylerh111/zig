@@ -25,7 +25,7 @@ pub fn insert(self: *Self, gpa: Allocator, string: []const u8) !u32 {
     return new_off;
 }
 
-pub fn get_offset(self: *Self, string: []const u8) ?u32 {
+pub fn getOffset(self: *Self, string: []const u8) ?u32 {
     return self.table.getKeyAdapted(string, StringIndexAdapter{
         .bytes = &self.buffer,
     });
@@ -36,7 +36,7 @@ pub fn get(self: Self, off: u32) ?[:0]const u8 {
     return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.buffer.items.ptr + off)), 0);
 }
 
-pub fn get_assume_exists(self: Self, off: u32) [:0]const u8 {
+pub fn getAssumeExists(self: Self, off: u32) [:0]const u8 {
     return self.get(off) orelse unreachable;
 }
 

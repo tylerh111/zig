@@ -3,7 +3,7 @@ const MyStruct = struct {
     a: i32,
     b: i32,
 
-    pub fn get_a(self: *List) i32 {
+    pub fn getA(self: *List) i32 {
         return self.items(.c);
     }
 };

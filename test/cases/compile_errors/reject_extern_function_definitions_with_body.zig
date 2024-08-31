@@ -1,4 +1,4 @@
-extern "c" fn definitely_not_in_lib_c(a: i32, b: i32) i32 {
+extern "c" fn definitelyNotInLibC(a: i32, b: i32) i32 {
     return a + b;
 }
 

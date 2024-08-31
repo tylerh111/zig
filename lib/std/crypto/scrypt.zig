@@ -26,11 +26,11 @@ const default_hash_len = 32;
 const max_salt_len = 64;
 const max_hash_len = 64;
 
-fn block_copy(dst: []align(16) u32, src: []align(16) const u32, n: usize) void {
+fn blockCopy(dst: []align(16) u32, src: []align(16) const u32, n: usize) void {
     @memcpy(dst[0 .. n * 16], src[0 .. n * 16]);
 }
 
-fn block_xor(dst: []align(16) u32, src: []align(16) const u32, n: usize) void {
+fn blockXor(dst: []align(16) u32, src: []align(16) const u32, n: usize) void {
     for (src[0 .. n * 16], 0..) |v, i| {
         dst[i] ^= v;
     }
@@ -38,7 +38,7 @@ fn block_xor(dst: []align(16) u32, src: []align(16) const u32, n: usize) void {
 
 const QuarterRound = struct { a: usize, b: usize, c: usize, d: u6 };
 
-fn rp(a: usize, b: usize, c: usize, d: u6) QuarterRound {
+fn Rp(a: usize, b: usize, c: usize, d: u6) QuarterRound {
     return QuarterRound{ .a = a, .b = b, .c = c, .d = d };
 }
 
@@ -66,13 +66,13 @@ fn salsa8core(b: *align(16) [16]u32) void {
     }
 }
 
-fn salsa_xor(tmp: *align(16) [16]u32, in: []align(16) const u32, out: []align(16) u32) void {
+fn salsaXor(tmp: *align(16) [16]u32, in: []align(16) const u32, out: []align(16) u32) void {
     blockXor(tmp, in, 1);
     salsa8core(tmp);
     blockCopy(out, tmp, 1);
 }
 
-fn block_mix(tmp: *align(16) [16]u32, in: []align(16) const u32, out: []align(16) u32, r: u30) void {
+fn blockMix(tmp: *align(16) [16]u32, in: []align(16) const u32, out: []align(16) u32, r: u30) void {
     blockCopy(tmp, @alignCast(in[(2 * r - 1) * 16 ..]), 1);
     var i: usize = 0;
     while (i < 2 * r) : (i += 2) {
@@ -142,7 +142,7 @@ pub const Params = struct {
     pub const sensitive = Self.fromLimits(33554432, 1073741824);
 
     /// Create parameters from ops and mem limits, where mem_limit given in bytes
-    pub fn from_limits(ops_limit: u64, mem_limit: usize) Self {
+    pub fn fromLimits(ops_limit: u64, mem_limit: usize) Self {
         const ops = @max(32768, ops_limit);
         const r: u30 = 8;
         if (ops < mem_limit / 32) {
@@ -211,7 +211,7 @@ const crypt_format = struct {
     pub const prefix = "$7$";
 
     /// Standard type for a set of scrypt parameters, with the salt and hash.
-    pub fn hash_result(comptime crypt_max_hash_len: usize) type {
+    pub fn HashResult(comptime crypt_max_hash_len: usize) type {
         return struct {
             ln: u6,
             r: u30,
@@ -229,7 +229,7 @@ const crypt_format = struct {
     /// This includes `salt`, `hash`, and any other binary parameters such as keys.
     ///
     /// Once initialized, the actual value can be read with the `constSlice()` function.
-    pub fn bin_value(comptime max_len: usize) type {
+    pub fn BinValue(comptime max_len: usize) type {
         return struct {
             const Self = @This();
             const capacity = max_len;
@@ -239,7 +239,7 @@ const crypt_format = struct {
             len: usize = 0,
 
             /// Wrap an existing byte slice
-            pub fn from_slice(slice: []const u8) EncodingError!Self {
+            pub fn fromSlice(slice: []const u8) EncodingError!Self {
                 if (slice.len > capacity) return EncodingError.NoSpaceLeft;
                 var bin_value: Self = undefined;
                 @memcpy(bin_value.buf[0..slice.len], slice);
@@ -248,18 +248,18 @@ const crypt_format = struct {
             }
 
             /// Return the slice containing the actual value.
-            pub fn const_slice(self: *const Self) []const u8 {
+            pub fn constSlice(self: *const Self) []const u8 {
                 return self.buf[0..self.len];
             }
 
-            fn from_b64(self: *Self, str: []const u8) !void {
+            fn fromB64(self: *Self, str: []const u8) !void {
                 const len = Codec.decodedLen(str.len);
                 if (len > self.buf.len) return EncodingError.NoSpaceLeft;
                 try Codec.decode(self.buf[0..len], str);
                 self.len = len;
             }
 
-            fn to_b64(self: *const Self, buf: []u8) ![]const u8 {
+            fn toB64(self: *const Self, buf: []u8) ![]const u8 {
                 const value = self.constSlice();
                 const len = Codec.encodedLen(value.len);
                 if (len > buf.len) return EncodingError.NoSpaceLeft;
@@ -271,7 +271,7 @@ const crypt_format = struct {
     }
 
     /// Expand binary data into a salt for the modular crypt format.
-    pub fn salt_from_bin(comptime len: usize, salt: [len]u8) [Codec.encodedLen(len)]u8 {
+    pub fn saltFromBin(comptime len: usize, salt: [len]u8) [Codec.encodedLen(len)]u8 {
         var buf: [Codec.encodedLen(len)]u8 = undefined;
         Codec.encode(&buf, &salt);
         return buf;
@@ -306,13 +306,13 @@ const crypt_format = struct {
     }
 
     /// Compute the number of bytes required to serialize `params`
-    pub fn calc_size(params: anytype) usize {
+    pub fn calcSize(params: anytype) usize {
         var buf = io.countingWriter(io.null_writer);
         serializeTo(params, buf.writer()) catch unreachable;
         return @as(usize, @intCast(buf.bytes_written));
     }
 
-    fn serialize_to(params: anytype, out: anytype) !void {
+    fn serializeTo(params: anytype, out: anytype) !void {
         var header: [14]u8 = undefined;
         header[0..3].* = prefix.*;
         Codec.intEncode(header[3..4], params.ln);
@@ -328,19 +328,19 @@ const crypt_format = struct {
 
     /// Custom codec that maps 6 bits into 8 like regular Base64, but uses its own alphabet,
     /// encodes bits in little-endian, and can also encode integers.
-    fn custom_b64_codec(comptime map: [64]u8) type {
+    fn CustomB64Codec(comptime map: [64]u8) type {
         return struct {
             const map64 = map;
 
-            fn encoded_len(len: usize) usize {
+            fn encodedLen(len: usize) usize {
                 return (len * 4 + 2) / 3;
             }
 
-            fn decoded_len(len: usize) usize {
+            fn decodedLen(len: usize) usize {
                 return len / 4 * 3 + (len % 4) * 3 / 4;
             }
 
-            fn int_encode(dst: []u8, src: anytype) void {
+            fn intEncode(dst: []u8, src: anytype) void {
                 var n = src;
                 for (dst) |*x| {
                     x.* = map64[@as(u6, @truncate(n))];
@@ -348,7 +348,7 @@ const crypt_format = struct {
                 }
             }
 
-            fn int_decode(comptime T: type, src: *const [(@bitSizeOf(T) + 5) / 6]u8) !T {
+            fn intDecode(comptime T: type, src: *const [(@bitSizeOf(T) + 5) / 6]u8) !T {
                 var v: T = 0;
                 for (src, 0..) |x, i| {
                     const vi = mem.indexOfScalar(u8, &map64, x) orelse return EncodingError.InvalidEncoding;
@@ -504,7 +504,7 @@ pub const HashOptions = struct {
 
 /// Compute a hash of a password using the scrypt key derivation function.
 /// The function returns a string that includes all the parameters required for verification.
-pub fn str_hash(
+pub fn strHash(
     password: []const u8,
     options: HashOptions,
     out: []u8,
@@ -524,7 +524,7 @@ pub const VerifyOptions = struct {
 };
 
 /// Verify that a previously computed hash is valid for a given password.
-pub fn str_verify(
+pub fn strVerify(
     str: []const u8,
     password: []const u8,
     options: VerifyOptions,

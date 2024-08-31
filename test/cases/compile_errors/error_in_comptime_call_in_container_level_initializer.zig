@@ -2,7 +2,7 @@ const std = @import("std");
 const Version = std.SemanticVersion;
 const print = @import("std").debug.print;
 
-fn read_version() Version {
+fn readVersion() Version {
     const version_file = "foo";
     const len = std.mem.indexOfAny(u8, version_file, " \n") orelse version_file.len;
     const version_string = version_file[0..len];

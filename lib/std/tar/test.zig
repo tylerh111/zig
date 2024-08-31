@@ -326,11 +326,11 @@ const cases = [_]Case{
 const Md5Writer = struct {
     h: std.crypto.hash.Md5 = std.crypto.hash.Md5.init(.{}),
 
-    pub fn write_all(self: *Md5Writer, buf: []const u8) !void {
+    pub fn writeAll(self: *Md5Writer, buf: []const u8) !void {
         self.h.update(buf);
     }
 
-    pub fn write_byte(self: *Md5Writer, byte: u8) !void {
+    pub fn writeByte(self: *Md5Writer, byte: u8) !void {
         self.h.update(&[_]u8{byte});
     }
 

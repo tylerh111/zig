@@ -40,7 +40,7 @@ pub const Condition = enum(u4) {
     /// Converts a std.math.CompareOperator into a condition flag,
     /// i.e. returns the condition that is true iff the result of the
     /// comparison is true. Assumes signed comparison
-    pub fn from_compare_operator_signed(op: std.math.CompareOperator) Condition {
+    pub fn fromCompareOperatorSigned(op: std.math.CompareOperator) Condition {
         return switch (op) {
             .gte => .ge,
             .gt => .gt,
@@ -54,7 +54,7 @@ pub const Condition = enum(u4) {
     /// Converts a std.math.CompareOperator into a condition flag,
     /// i.e. returns the condition that is true iff the result of the
     /// comparison is true. Assumes unsigned comparison
-    pub fn from_compare_operator_unsigned(op: std.math.CompareOperator) Condition {
+    pub fn fromCompareOperatorUnsigned(op: std.math.CompareOperator) Condition {
         return switch (op) {
             .gte => .cs,
             .gt => .hi,
@@ -162,7 +162,7 @@ pub const Register = enum(u5) {
         return @as(u4, @truncate(@intFromEnum(self)));
     }
 
-    pub fn dwarf_loc_op(self: Register) u8 {
+    pub fn dwarfLocOp(self: Register) u8 {
         return @as(u8, self.id()) + DW.OP.reg0;
     }
 };
@@ -397,7 +397,7 @@ pub const Instruction = union(enum) {
                 },
             };
 
-            pub fn to_u8(self: Shift) u8 {
+            pub fn toU8(self: Shift) u8 {
                 return switch (self) {
                     .register => |v| @as(u8, @bitCast(v)),
                     .immediate => |v| @as(u8, @bitCast(v)),
@@ -423,7 +423,7 @@ pub const Instruction = union(enum) {
             }
         };
 
-        pub fn to_u12(self: Operand) u12 {
+        pub fn toU12(self: Operand) u12 {
             return switch (self) {
                 .register => |v| @as(u12, @bitCast(v)),
                 .immediate => |v| @as(u12, @bitCast(v)),
@@ -451,7 +451,7 @@ pub const Instruction = union(enum) {
         /// Tries to convert an unsigned 32 bit integer into an
         /// immediate operand using rotation. Returns null when there
         /// is no conversion
-        pub fn from_u32(x: u32) ?Operand {
+        pub fn fromU32(x: u32) ?Operand {
             const masks = comptime blk: {
                 const base_mask: u32 = std.math.maxInt(u8);
                 var result = [_]u32{0} ** 16;
@@ -520,7 +520,7 @@ pub const Instruction = union(enum) {
             .immediate = 0,
         };
 
-        pub fn to_u12(self: Offset) u12 {
+        pub fn toU12(self: Offset) u12 {
             return switch (self) {
                 .register => |v| @as(u12, @bitCast(v)),
                 .immediate => |v| v,
@@ -602,7 +602,7 @@ pub const Instruction = union(enum) {
         r15: bool = false,
     };
 
-    pub fn to_u32(self: Instruction) u32 {
+    pub fn toU32(self: Instruction) u32 {
         return switch (self) {
             .data_processing => |v| @as(u32, @bitCast(v)),
             .multiply => |v| @as(u32, @bitCast(v)),
@@ -623,7 +623,7 @@ pub const Instruction = union(enum) {
 
     // Helper functions for the "real" functions below
 
-    fn data_processing(
+    fn dataProcessing(
         cond: Condition,
         opcode: Opcode,
         s: u1,
@@ -644,7 +644,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn special_mov(
+    fn specialMov(
         cond: Condition,
         rd: Register,
         imm: u16,
@@ -684,7 +684,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn multiply_long(
+    fn multiplyLong(
         cond: Condition,
         signed: u1,
         accumulate: u1,
@@ -708,7 +708,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn signed_multiply_halfwords(
+    fn signedMultiplyHalfwords(
         n: u1,
         m: u1,
         cond: Condition,
@@ -728,7 +728,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn integer_saturation_arithmetic(
+    fn integerSaturationArithmetic(
         cond: Condition,
         rd: Register,
         rm: Register,
@@ -746,7 +746,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn bit_field_extract(
+    fn bitFieldExtract(
         unsigned: u1,
         cond: Condition,
         rd: Register,
@@ -767,7 +767,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn single_data_transfer(
+    fn singleDataTransfer(
         cond: Condition,
         rd: Register,
         rn: Register,
@@ -799,7 +799,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn extra_load_store(
+    fn extraLoadStore(
         cond: Condition,
         mode: AddressingMode,
         positive: bool,
@@ -841,7 +841,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn block_data_transfer(
+    fn blockDataTransfer(
         cond: Condition,
         rn: Register,
         reg_list: RegisterList,
@@ -875,7 +875,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn branch_exchange(cond: Condition, rn: Register, link: u1) Instruction {
+    fn branchExchange(cond: Condition, rn: Register, link: u1) Instruction {
         return Instruction{
             .branch_exchange = .{
                 .cond = @intFromEnum(cond),
@@ -885,7 +885,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn supervisor_call(cond: Condition, comment: u24) Instruction {
+    fn supervisorCall(cond: Condition, comment: u24) Instruction {
         return Instruction{
             .supervisor_call = .{
                 .cond = @intFromEnum(cond),
@@ -895,7 +895,7 @@ pub const Instruction = union(enum) {
     }
 
     // This instruction has no official mnemonic equivalent so it is public as-is.
-    pub fn undefined_instruction() Instruction {
+    pub fn undefinedInstruction() Instruction {
         return Instruction{
             .undefined_instruction = .{},
         };

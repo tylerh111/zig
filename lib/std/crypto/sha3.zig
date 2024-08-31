@@ -29,19 +29,19 @@ pub const TupleHash256 = TupleHash(256);
 /// It is based on the same permutation as SHA3 and SHAKE128, but which much higher performance.
 /// The delimiter is 0x1f by default, but can be changed for context-separation.
 /// For a protocol that uses both KangarooTwelve and TurboSHAKE128, it is recommended to avoid using 0x06, 0x07 or 0x0b for the delimiter.
-pub fn turbo_shake128(delim: ?u7) type {
+pub fn TurboShake128(delim: ?u7) type {
     return TurboShake(128, delim);
 }
 
 /// TurboSHAKE256 is a XOF (a secure hash function with a variable output length), with a 256 bit security level.
 /// It is based on the same permutation as SHA3 and SHAKE256, but which much higher performance.
 /// The delimiter is 0x1f by default, but can be changed for context-separation.
-pub fn turbo_shake256(comptime delim: ?u7) type {
+pub fn TurboShake256(comptime delim: ?u7) type {
     return TurboShake(256, delim);
 }
 
 /// A generic Keccak hash function.
-pub fn keccak(comptime f: u11, comptime output_bits: u11, comptime default_delim: u8, comptime rounds: u5) type {
+pub fn Keccak(comptime f: u11, comptime output_bits: u11, comptime default_delim: u8, comptime rounds: u5) type {
     comptime assert(output_bits > 0 and output_bits * 2 < f and output_bits % 8 == 0); // invalid output length
 
     const State = KeccakState(f, output_bits * 2, rounds);
@@ -96,7 +96,7 @@ pub fn keccak(comptime f: u11, comptime output_bits: u11, comptime default_delim
 }
 
 /// The SHAKE extendable output hash function.
-pub fn shake(comptime security_level: u11) type {
+pub fn Shake(comptime security_level: u11) type {
     return ShakeLike(security_level, 0x1f, 24);
 }
 
@@ -104,14 +104,14 @@ pub fn shake(comptime security_level: u11) type {
 /// It is based on the same permutation as SHA3 and SHAKE, but which much higher performance.
 /// The delimiter is 0x1f by default, but can be changed for context-separation.
 /// https://eprint.iacr.org/2023/342
-pub fn turbo_shake(comptime security_level: u11, comptime delim: ?u7) type {
+pub fn TurboShake(comptime security_level: u11, comptime delim: ?u7) type {
     comptime assert(security_level <= 256);
     const d = delim orelse 0x1f;
     comptime assert(d >= 0x01); // delimiter must be >= 1
     return ShakeLike(security_level, d, 12);
 }
 
-fn shake_like(comptime security_level: u11, comptime default_delim: u8, comptime rounds: u5) type {
+fn ShakeLike(comptime security_level: u11, comptime default_delim: u8, comptime rounds: u5) type {
     const f = 1600;
     const State = KeccakState(f, security_level * 2, rounds);
 
@@ -188,7 +188,7 @@ fn shake_like(comptime security_level: u11, comptime default_delim: u8, comptime
         }
 
         /// Align the input to a block boundary.
-        pub fn fill_block(self: *Self) void {
+        pub fn fillBlock(self: *Self) void {
             self.st.fillBlock();
         }
 
@@ -208,11 +208,11 @@ fn shake_like(comptime security_level: u11, comptime default_delim: u8, comptime
 
 /// The cSHAKE extendable output hash function.
 /// cSHAKE is similar to SHAKE, but in addition to the input message, it also takes an optional context (aka customization string).
-pub fn cshake(comptime security_level: u11, comptime fname: ?[]const u8) type {
+pub fn CShake(comptime security_level: u11, comptime fname: ?[]const u8) type {
     return CShakeLike(security_level, 0x04, 24, fname);
 }
 
-fn cshake_like(comptime security_level: u11, comptime default_delim: u8, comptime rounds: u5, comptime fname: ?[]const u8) type {
+fn CShakeLike(comptime security_level: u11, comptime default_delim: u8, comptime rounds: u5, comptime fname: ?[]const u8) type {
     return struct {
         const Shaker = ShakeLike(security_level, default_delim, rounds);
         shaker: Shaker,
@@ -281,7 +281,7 @@ fn cshake_like(comptime security_level: u11, comptime default_delim: u8, comptim
         }
 
         /// Align the input to a block boundary.
-        pub fn fill_block(self: *Self) void {
+        pub fn fillBlock(self: *Self) void {
             self.shaker.fillBlock();
         }
 
@@ -302,11 +302,11 @@ fn cshake_like(comptime security_level: u11, comptime default_delim: u8, comptim
 /// The KMAC extendable output authentication function.
 /// KMAC is a keyed version of the cSHAKE function, with an optional context.
 /// It can be used as an SHA-3 based alternative to HMAC, as well as a generic keyed XoF (extendable output function).
-pub fn kmac(comptime security_level: u11) type {
+pub fn KMac(comptime security_level: u11) type {
     return KMacLike(security_level, 0x04, 24);
 }
 
-fn kmac_like(comptime security_level: u11, comptime default_delim: u8, comptime rounds: u5) type {
+fn KMacLike(comptime security_level: u11, comptime default_delim: u8, comptime rounds: u5) type {
     const CShaker = CShakeLike(security_level, default_delim, rounds, "KMAC");
 
     return struct {
@@ -334,7 +334,7 @@ fn kmac_like(comptime security_level: u11, comptime default_delim: u8, comptime 
         /// Initialize a state for the KMAC function, with an optional context and an arbitrary-long key.
         /// If the context and key are going to be reused, the structure can be initialized once, and cloned for each message.
         /// This is more efficient than reinitializing the state for each message at the cost of a small amount of memory.
-        pub fn init_with_options(key: []const u8, options: Options) Self {
+        pub fn initWithOptions(key: []const u8, options: Options) Self {
             var cshaker = CShaker.init(.{ .context = options.context });
             const encoded_rate_len = NistLengthEncoding.encode(.left, block_length / 8);
             cshaker.update(encoded_rate_len.slice());
@@ -378,7 +378,7 @@ fn kmac_like(comptime security_level: u11, comptime default_delim: u8, comptime 
         }
 
         /// Return an authentication tag for a message and a key, with an optional context.
-        pub fn create_with_options(out: []u8, msg: []const u8, key: []const u8, options: Options) void {
+        pub fn createWithOptions(out: []u8, msg: []const u8, key: []const u8, options: Options) void {
             var ctx = Self.initWithOptions(key, options);
             ctx.update(msg);
             ctx.final(out);
@@ -413,11 +413,11 @@ fn kmac_like(comptime security_level: u11, comptime default_delim: u8, comptime 
 /// With TupleHash, this is not the case: `update("A"); update("B")` is different from `update("AB")`.
 ///
 /// Any number of inputs can be hashed, and the output depends on individual inputs and their order.
-pub fn tuple_hash(comptime security_level: u11) type {
+pub fn TupleHash(comptime security_level: u11) type {
     return TupleHashLike(security_level, 0x04, 24);
 }
 
-fn tuple_hash_like(comptime security_level: u11, comptime default_delim: u8, comptime rounds: u5) type {
+fn TupleHashLike(comptime security_level: u11, comptime default_delim: u8, comptime rounds: u5) type {
     const CShaker = CShakeLike(security_level, default_delim, rounds, "TupleHash");
 
     return struct {
@@ -441,7 +441,7 @@ fn tuple_hash_like(comptime security_level: u11, comptime default_delim: u8, com
         /// This is more efficient than reinitializing the state for each message at the cost of a small amount of memory.
         ///
         /// A key can be optionally added to the context to create a keyed TupleHash function, similar to KMAC.
-        pub fn init_with_options(options: Options) Self {
+        pub fn initWithOptions(options: Options) Self {
             const cshaker = CShaker.init(.{ .context = options.context });
             return Self{
                 .cshaker = cshaker,
@@ -468,7 +468,7 @@ fn tuple_hash_like(comptime security_level: u11, comptime default_delim: u8, com
         }
 
         /// Align the input to a block boundary.
-        pub fn fill_block(self: *Self) void {
+        pub fn fillBlock(self: *Self) void {
             self.cshaker.fillBlock();
         }
 

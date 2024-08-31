@@ -77,12 +77,12 @@ pub const XChaCha12Poly1305 = XChaChaPoly1305(12);
 pub const XChaCha8Poly1305 = XChaChaPoly1305(8);
 
 // Vectorized implementation of the core function
-fn cha_cha_vec_impl(comptime rounds_nb: usize, comptime degree: comptime_int) type {
+fn ChaChaVecImpl(comptime rounds_nb: usize, comptime degree: comptime_int) type {
     return struct {
         const Lane = @Vector(4 * degree, u32);
         const BlockVec = [4]Lane;
 
-        fn init_context(key: [8]u32, d: [4]u32) BlockVec {
+        fn initContext(key: [8]u32, d: [4]u32) BlockVec {
             const c = "expand 32-byte k";
             switch (degree) {
                 1 => {
@@ -151,7 +151,7 @@ fn cha_cha_vec_impl(comptime rounds_nb: usize, comptime degree: comptime_int) ty
             }
         }
 
-        inline fn chacha20_core(x: *BlockVec, input: BlockVec) void {
+        inline fn chacha20Core(x: *BlockVec, input: BlockVec) void {
             x.* = input;
 
             const m0 = switch (degree) {
@@ -215,7 +215,7 @@ fn cha_cha_vec_impl(comptime rounds_nb: usize, comptime degree: comptime_int) ty
             }
         }
 
-        inline fn hash_to_bytes(comptime dm: usize, out: *[64 * dm]u8, x: BlockVec) void {
+        inline fn hashToBytes(comptime dm: usize, out: *[64 * dm]u8, x: BlockVec) void {
             for (0..dm) |d| {
                 for (0..4) |i| {
                     mem.writeInt(u32, out[64 * d + 16 * i + 0 ..][0..4], x[i][0 + 4 * d], .little);
@@ -226,14 +226,14 @@ fn cha_cha_vec_impl(comptime rounds_nb: usize, comptime degree: comptime_int) ty
             }
         }
 
-        inline fn context_feedback(x: *BlockVec, ctx: BlockVec) void {
+        inline fn contextFeedback(x: *BlockVec, ctx: BlockVec) void {
             x[0] +%= ctx[0];
             x[1] +%= ctx[1];
             x[2] +%= ctx[2];
             x[3] +%= ctx[3];
         }
 
-        fn chacha20_xor(out: []u8, in: []const u8, key: [8]u32, nonce_and_counter: [4]u32, comptime count64: bool) void {
+        fn chacha20Xor(out: []u8, in: []const u8, key: [8]u32, nonce_and_counter: [4]u32, comptime count64: bool) void {
             var ctx = initContext(key, nonce_and_counter);
             var x: BlockVec = undefined;
             var buf: [64 * degree]u8 = undefined;
@@ -276,7 +276,7 @@ fn cha_cha_vec_impl(comptime rounds_nb: usize, comptime degree: comptime_int) ty
             }
         }
 
-        fn chacha20_stream(out: []u8, key: [8]u32, nonce_and_counter: [4]u32, comptime count64: bool) void {
+        fn chacha20Stream(out: []u8, key: [8]u32, nonce_and_counter: [4]u32, comptime count64: bool) void {
             var ctx = initContext(key, nonce_and_counter);
             var x: BlockVec = undefined;
             var i: usize = 0;
@@ -329,11 +329,11 @@ fn cha_cha_vec_impl(comptime rounds_nb: usize, comptime degree: comptime_int) ty
 }
 
 // Non-vectorized implementation of the core function
-fn cha_cha_non_vec_impl(comptime rounds_nb: usize) type {
+fn ChaChaNonVecImpl(comptime rounds_nb: usize) type {
     return struct {
         const BlockVec = [16]u32;
 
-        fn init_context(key: [8]u32, d: [4]u32) BlockVec {
+        fn initContext(key: [8]u32, d: [4]u32) BlockVec {
             const c = "expand 32-byte k";
             const constant_le = comptime [4]u32{
                 mem.readInt(u32, c[0..4], .little),
@@ -356,7 +356,7 @@ fn cha_cha_non_vec_impl(comptime rounds_nb: usize) type {
             d: usize,
         };
 
-        fn rp(a: usize, b: usize, c: usize, d: usize) QuarterRound {
+        fn Rp(a: usize, b: usize, c: usize, d: usize) QuarterRound {
             return QuarterRound{
                 .a = a,
                 .b = b,
@@ -365,7 +365,7 @@ fn cha_cha_non_vec_impl(comptime rounds_nb: usize) type {
             };
         }
 
-        inline fn chacha20_core(x: *BlockVec, input: BlockVec) void {
+        inline fn chacha20Core(x: *BlockVec, input: BlockVec) void {
             x.* = input;
 
             const rounds = comptime [_]QuarterRound{
@@ -394,7 +394,7 @@ fn cha_cha_non_vec_impl(comptime rounds_nb: usize) type {
             }
         }
 
-        inline fn hash_to_bytes(out: *[64]u8, x: BlockVec) void {
+        inline fn hashToBytes(out: *[64]u8, x: BlockVec) void {
             for (0..4) |i| {
                 mem.writeInt(u32, out[16 * i + 0 ..][0..4], x[i * 4 + 0], .little);
                 mem.writeInt(u32, out[16 * i + 4 ..][0..4], x[i * 4 + 1], .little);
@@ -403,13 +403,13 @@ fn cha_cha_non_vec_impl(comptime rounds_nb: usize) type {
             }
         }
 
-        inline fn context_feedback(x: *BlockVec, ctx: BlockVec) void {
+        inline fn contextFeedback(x: *BlockVec, ctx: BlockVec) void {
             for (0..16) |i| {
                 x[i] +%= ctx[i];
             }
         }
 
-        fn chacha20_xor(out: []u8, in: []const u8, key: [8]u32, nonce_and_counter: [4]u32, comptime count64: bool) void {
+        fn chacha20Xor(out: []u8, in: []const u8, key: [8]u32, nonce_and_counter: [4]u32, comptime count64: bool) void {
             var ctx = initContext(key, nonce_and_counter);
             var x: BlockVec = undefined;
             var buf: [64]u8 = undefined;
@@ -448,7 +448,7 @@ fn cha_cha_non_vec_impl(comptime rounds_nb: usize) type {
             }
         }
 
-        fn chacha20_stream(out: []u8, key: [8]u32, nonce_and_counter: [4]u32, comptime count64: bool) void {
+        fn chacha20Stream(out: []u8, key: [8]u32, nonce_and_counter: [4]u32, comptime count64: bool) void {
             var ctx = initContext(key, nonce_and_counter);
             var x: BlockVec = undefined;
             var i: usize = 0;
@@ -496,7 +496,7 @@ fn cha_cha_non_vec_impl(comptime rounds_nb: usize) type {
     };
 }
 
-fn cha_cha_impl(comptime rounds_nb: usize) type {
+fn ChaChaImpl(comptime rounds_nb: usize) type {
     switch (builtin.cpu.arch) {
         .x86_64 => {
             if (builtin.zig_backend == .stage2_x86_64) return ChaChaNonVecImpl(rounds_nb);
@@ -516,7 +516,7 @@ fn cha_cha_impl(comptime rounds_nb: usize) type {
     }
 }
 
-fn key_to_words(key: [32]u8) [8]u32 {
+fn keyToWords(key: [32]u8) [8]u32 {
     var k: [8]u32 = undefined;
     for (0..8) |i| {
         k[i] = mem.readInt(u32, key[i * 4 ..][0..4], .little);
@@ -534,7 +534,7 @@ fn extend(key: [32]u8, nonce: [24]u8, comptime rounds_nb: usize) struct { key: [
     };
 }
 
-fn cha_cha_ietf(comptime rounds_nb: usize) type {
+fn ChaChaIETF(comptime rounds_nb: usize) type {
     return struct {
         /// Nonce length in bytes.
         pub const nonce_length = 12;
@@ -572,7 +572,7 @@ fn cha_cha_ietf(comptime rounds_nb: usize) type {
     };
 }
 
-fn cha_cha_with64_bit_nonce(comptime rounds_nb: usize) type {
+fn ChaChaWith64BitNonce(comptime rounds_nb: usize) type {
     return struct {
         /// Nonce length in bytes.
         pub const nonce_length = 8;
@@ -612,7 +612,7 @@ fn cha_cha_with64_bit_nonce(comptime rounds_nb: usize) type {
     };
 }
 
-fn xcha_cha_ietf(comptime rounds_nb: usize) type {
+fn XChaChaIETF(comptime rounds_nb: usize) type {
     return struct {
         /// Nonce length in bytes.
         pub const nonce_length = 24;
@@ -637,7 +637,7 @@ fn xcha_cha_ietf(comptime rounds_nb: usize) type {
     };
 }
 
-fn cha_cha_poly1305(comptime rounds_nb: usize) type {
+fn ChaChaPoly1305(comptime rounds_nb: usize) type {
     return struct {
         pub const tag_length = 16;
         pub const nonce_length = 12;
@@ -725,7 +725,7 @@ fn cha_cha_poly1305(comptime rounds_nb: usize) type {
     };
 }
 
-fn xcha_cha_poly1305(comptime rounds_nb: usize) type {
+fn XChaChaPoly1305(comptime rounds_nb: usize) type {
     return struct {
         pub const tag_length = 16;
         pub const nonce_length = 24;

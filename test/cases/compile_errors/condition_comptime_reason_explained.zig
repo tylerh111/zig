@@ -4,7 +4,7 @@ const S = struct {
 fn bar() void {}
 fn baz() void {}
 var runtime: bool = true;
-fn if_expr() S {
+fn ifExpr() S {
     if (runtime) {
         return .{
             .fnPtr = bar,
@@ -18,7 +18,7 @@ fn if_expr() S {
 pub export fn entry1() void {
     _ = ifExpr();
 }
-fn switch_expr() S {
+fn switchExpr() S {
     switch (runtime) {
         true => return .{
             .fnPtr = bar,

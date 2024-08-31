@@ -347,7 +347,7 @@ test "byte-aligned field pointer offsets" {
             b: u16,
         };
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var a: A = .{
                 .a = 1,
                 .b = 2,
@@ -842,7 +842,7 @@ test "nested packed struct at non-zero offset 2" {
             last: i16,
         };
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var k: u8 = 123;
             _ = &k;
             var v: A = .{
@@ -1266,7 +1266,7 @@ test "bitcasting a packed struct at comptime and using the result" {
                 return @bitCast(fd);
             }
 
-            pub fn cannot_reach(_: @This()) i32 {
+            pub fn cannotReach(_: @This()) i32 {
                 return 0;
             }
         };

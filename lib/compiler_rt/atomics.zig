@@ -165,7 +165,7 @@ fn __atomic_compare_exchange(
 // Specialized versions of the GCC atomic builtin functions.
 // LLVM emits those iff the object size is known and the pointers are correctly
 // aligned.
-inline fn atomic_load_n(comptime T: type, src: *T, model: i32) T {
+inline fn atomic_load_N(comptime T: type, src: *T, model: i32) T {
     _ = model;
     if (@sizeOf(T) > largest_atomic_size) {
         var sl = spinlocks.get(@intFromPtr(src));
@@ -196,7 +196,7 @@ fn __atomic_load_16(src: *u128, model: i32) callconv(.C) u128 {
     return atomic_load_N(u128, src, model);
 }
 
-inline fn atomic_store_n(comptime T: type, dst: *T, value: T, model: i32) void {
+inline fn atomic_store_N(comptime T: type, dst: *T, value: T, model: i32) void {
     _ = model;
     if (@sizeOf(T) > largest_atomic_size) {
         var sl = spinlocks.get(@intFromPtr(dst));
@@ -227,7 +227,7 @@ fn __atomic_store_16(dst: *u128, value: u128, model: i32) callconv(.C) void {
     return atomic_store_N(u128, dst, value, model);
 }
 
-fn wide_update(comptime T: type, ptr: *T, val: T, update: anytype) T {
+fn wideUpdate(comptime T: type, ptr: *T, val: T, update: anytype) T {
     const WideAtomic = std.meta.Int(.unsigned, smallest_atomic_fetch_exch_size * 8);
 
     const addr = @intFromPtr(ptr);
@@ -252,7 +252,7 @@ fn wide_update(comptime T: type, ptr: *T, val: T, update: anytype) T {
     }
 }
 
-inline fn atomic_exchange_n(comptime T: type, ptr: *T, val: T, model: i32) T {
+inline fn atomic_exchange_N(comptime T: type, ptr: *T, val: T, model: i32) T {
     _ = model;
     if (@sizeOf(T) > largest_atomic_size) {
         var sl = spinlocks.get(@intFromPtr(ptr));
@@ -294,7 +294,7 @@ fn __atomic_exchange_16(ptr: *u128, val: u128, model: i32) callconv(.C) u128 {
     return atomic_exchange_N(u128, ptr, val, model);
 }
 
-inline fn atomic_compare_exchange_n(
+inline fn atomic_compare_exchange_N(
     comptime T: type,
     ptr: *T,
     expected: *T,
@@ -343,7 +343,7 @@ fn __atomic_compare_exchange_16(ptr: *u128, expected: *u128, desired: u128, succ
     return atomic_compare_exchange_N(u128, ptr, expected, desired, success, failure);
 }
 
-inline fn fetch_op_n(comptime T: type, comptime op: std.builtin.AtomicRmwOp, ptr: *T, val: T, model: i32) T {
+inline fn fetch_op_N(comptime T: type, comptime op: std.builtin.AtomicRmwOp, ptr: *T, val: T, model: i32) T {
     _ = model;
     const Updater = struct {
         fn update(new: T, old: T) T {

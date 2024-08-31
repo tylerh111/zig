@@ -78,7 +78,7 @@ pub const Condition = enum(u5) {
     /// Converts a std.math.CompareOperator into a condition flag,
     /// i.e. returns the condition that is true iff the result of the
     /// comparison is true. Assumes signed comparison
-    pub fn from_compare_operator_signed(op: std.math.CompareOperator) Condition {
+    pub fn fromCompareOperatorSigned(op: std.math.CompareOperator) Condition {
         return switch (op) {
             .gte => .ge,
             .gt => .g,
@@ -92,7 +92,7 @@ pub const Condition = enum(u5) {
     /// Converts a std.math.CompareOperator into a condition flag,
     /// i.e. returns the condition that is true iff the result of the
     /// comparison is true. Assumes unsigned comparison
-    pub fn from_compare_operator_unsigned(op: std.math.CompareOperator) Condition {
+    pub fn fromCompareOperatorUnsigned(op: std.math.CompareOperator) Condition {
         return switch (op) {
             .gte => .ae,
             .gt => .a,
@@ -103,7 +103,7 @@ pub const Condition = enum(u5) {
         };
     }
 
-    pub fn from_compare_operator(
+    pub fn fromCompareOperator(
         signedness: std.builtin.Signedness,
         op: std.math.CompareOperator,
     ) Condition {
@@ -237,7 +237,7 @@ pub const Register = enum(u7) {
         return @intCast(@intFromEnum(reg) - base);
     }
 
-    pub fn bit_size(reg: Register) u10 {
+    pub fn bitSize(reg: Register) u10 {
         return switch (@intFromEnum(reg)) {
             // zig fmt: off
             @intFromEnum(Register.rax)  ... @intFromEnum(Register.r15)   => 64,
@@ -258,7 +258,7 @@ pub const Register = enum(u7) {
         };
     }
 
-    pub fn is_extended(reg: Register) bool {
+    pub fn isExtended(reg: Register) bool {
         return switch (@intFromEnum(reg)) {
             // zig fmt: off
             @intFromEnum(Register.r8)  ... @intFromEnum(Register.r15)    => true,
@@ -296,11 +296,11 @@ pub const Register = enum(u7) {
         return @truncate(@intFromEnum(reg) - base);
     }
 
-    pub fn low_enc(reg: Register) u3 {
+    pub fn lowEnc(reg: Register) u3 {
         return @truncate(reg.enc());
     }
 
-    pub fn to_bit_size(reg: Register, bit_size: u64) Register {
+    pub fn toBitSize(reg: Register, bit_size: u64) Register {
         return switch (bit_size) {
             8 => reg.to8(),
             16 => reg.to16(),
@@ -312,7 +312,7 @@ pub const Register = enum(u7) {
         };
     }
 
-    fn gp_base(reg: Register) u7 {
+    fn gpBase(reg: Register) u7 {
         assert(reg.class() == .general_purpose);
         return switch (@intFromEnum(reg)) {
             // zig fmt: off
@@ -342,7 +342,7 @@ pub const Register = enum(u7) {
         return @enumFromInt(@intFromEnum(reg) - reg.gpBase() + @intFromEnum(Register.al));
     }
 
-    fn sse_base(reg: Register) u7 {
+    fn sseBase(reg: Register) u7 {
         assert(reg.class() == .sse);
         return switch (@intFromEnum(reg)) {
             @intFromEnum(Register.ymm0)...@intFromEnum(Register.ymm15) => @intFromEnum(Register.ymm0),
@@ -360,7 +360,7 @@ pub const Register = enum(u7) {
     }
 
     /// DWARF register encoding
-    pub fn dwarf_num(reg: Register) u6 {
+    pub fn dwarfNum(reg: Register) u6 {
         return switch (reg.class()) {
             .general_purpose => if (reg.isExtended())
                 reg.enc()
@@ -422,7 +422,7 @@ pub const FrameIndex = enum(u32) {
 
     pub const named_count = @typeInfo(FrameIndex).Enum.fields.len;
 
-    pub fn is_named(fi: FrameIndex) bool {
+    pub fn isNamed(fi: FrameIndex) bool {
         return @intFromEnum(fi) < named_count;
     }
 
@@ -477,7 +477,7 @@ pub const Memory = struct {
 
         pub const Tag = @typeInfo(Base).Union.tag_type.?;
 
-        pub fn is_extended(self: Base) bool {
+        pub fn isExtended(self: Base) bool {
             return switch (self) {
                 .none, .frame, .reloc => false, // rsp, rbp, and rip are not extended
                 .reg => |reg| reg.isExtended(),
@@ -506,7 +506,7 @@ pub const Memory = struct {
         yword,
         zword,
 
-        pub fn from_size(size: u32) Size {
+        pub fn fromSize(size: u32) Size {
             return switch (size) {
                 1...1 => .byte,
                 2...2 => .word,
@@ -519,7 +519,7 @@ pub const Memory = struct {
             };
         }
 
-        pub fn from_bit_size(bit_size: u64) Size {
+        pub fn fromBitSize(bit_size: u64) Size {
             return switch (bit_size) {
                 8 => .byte,
                 16 => .word,
@@ -533,7 +533,7 @@ pub const Memory = struct {
             };
         }
 
-        pub fn bit_size(s: Size) u64 {
+        pub fn bitSize(s: Size) u64 {
             return switch (s) {
                 .none => 0,
                 .byte => 8,
@@ -574,7 +574,7 @@ pub const Immediate = union(enum) {
         return .{ .signed = x };
     }
 
-    pub fn as_signed(imm: Immediate, bit_size: u64) i64 {
+    pub fn asSigned(imm: Immediate, bit_size: u64) i64 {
         return switch (imm) {
             .signed => |x| switch (bit_size) {
                 1, 8 => @as(i8, @intCast(x)),
@@ -592,7 +592,7 @@ pub const Immediate = union(enum) {
         };
     }
 
-    pub fn as_unsigned(imm: Immediate, bit_size: u64) u64 {
+    pub fn asUnsigned(imm: Immediate, bit_size: u64) u64 {
         return switch (imm) {
             .signed => |x| switch (bit_size) {
                 1, 8 => @as(u8, @bitCast(@as(i8, @intCast(x)))),

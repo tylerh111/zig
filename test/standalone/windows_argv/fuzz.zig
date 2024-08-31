@@ -72,7 +72,7 @@ pub fn main() !void {
     }
 }
 
-fn random_command_line_w(allocator: Allocator, rand: std.rand.Random) ![:0]const u16 {
+fn randomCommandLineW(allocator: Allocator, rand: std.rand.Random) ![:0]const u16 {
     const Choice = enum {
         backslash,
         quote,
@@ -108,7 +108,7 @@ fn random_command_line_w(allocator: Allocator, rand: std.rand.Random) ![:0]const
 }
 
 /// Returns the exit code of the verify process
-fn spawn_verify(verify_path: [:0]const u16, cmd_line: [:0]const u16) !windows.DWORD {
+fn spawnVerify(verify_path: [:0]const u16, cmd_line: [:0]const u16) !windows.DWORD {
     const child_proc = spawn: {
         var startup_info: windows.STARTUPINFOW = .{
             .cb = @sizeOf(windows.STARTUPINFOW),

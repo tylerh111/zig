@@ -145,14 +145,14 @@ const Piece = packed struct {
     const Type = enum(u3) { KING, QUEEN, BISHOP, KNIGHT, ROOK, PAWN };
     const Color = enum(u1) { WHITE, BLACK };
 
-    fn char_to_piece(c: u8) !@This() {
+    fn charToPiece(c: u8) !@This() {
         return .{
             .type = try charToPieceType(c),
             .color = if (std.ascii.isUpper(c)) Color.WHITE else Color.BLACK,
         };
     }
 
-    fn char_to_piece_type(c: u8) !Type {
+    fn charToPieceType(c: u8) !Type {
         return switch (std.ascii.toLower(c)) {
             'p' => .PAWN,
             'k' => .KING,

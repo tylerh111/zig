@@ -16,7 +16,7 @@ pub const fmt_oid_length = 2 * oid_length;
 /// The ID of a Git object (an SHA-1 hash).
 pub const Oid = [oid_length]u8;
 
-pub fn parse_oid(s: []const u8) !Oid {
+pub fn parseOid(s: []const u8) !Oid {
     if (s.len != fmt_oid_length) return error.InvalidOid;
     var oid: Oid = undefined;
     for (&oid, 0..) |*b, i| {
@@ -98,7 +98,7 @@ pub const Repository = struct {
     }
 
     /// Checks out the tree at `tree_oid` to `worktree`.
-    fn checkout_tree(
+    fn checkoutTree(
         repository: *Repository,
         dir: std.fs.Dir,
         tree_oid: Oid,
@@ -170,7 +170,7 @@ pub const Repository = struct {
 
     /// Returns the ID of the tree associated with the given commit (provided as
     /// raw object data).
-    fn get_commit_tree(commit_data: []const u8) !Oid {
+    fn getCommitTree(commit_data: []const u8) !Oid {
         if (!mem.startsWith(u8, commit_data, "tree ") or
             commit_data.len < "tree ".len + fmt_oid_length + "\n".len or
             commit_data["tree ".len + fmt_oid_length] != '\n')
@@ -260,7 +260,7 @@ const Odb = struct {
     }
 
     /// Reads the object at the current position in the database.
-    fn read_object(odb: *Odb) !Object {
+    fn readObject(odb: *Odb) !Object {
         var base_offset = try odb.pack_file.getPos();
         var base_header: EntryHeader = undefined;
         var delta_offsets = std.ArrayListUnmanaged(u64){};
@@ -302,7 +302,7 @@ const Odb = struct {
     }
 
     /// Seeks to the beginning of the object with the given ID.
-    fn seek_oid(odb: *Odb, oid: Oid) !void {
+    fn seekOid(odb: *Odb, oid: Oid) !void {
         const key = oid[0];
         var start_index = if (key > 0) odb.index_header.fan_out_table[key - 1] else 0;
         var end_index = odb.index_header.fan_out_table[key];
@@ -479,7 +479,7 @@ const Packet = union(enum) {
     /// [protocol-common](https://git-scm.com/docs/protocol-common#_pkt_line_format),
     /// non-binary (textual) pkt-line data should contain a trailing '\n', but
     /// is not required to do so (implementations must support both forms).
-    fn normalize_text(data: []const u8) []const u8 {
+    fn normalizeText(data: []const u8) []const u8 {
         return if (mem.endsWith(u8, data, "\n"))
             data[0 .. data.len - 1]
         else
@@ -505,7 +505,7 @@ pub const Session = struct {
     /// efficient (e.g. no shallow fetches).
     ///
     /// See the note on `getCapabilities` regarding `redirect_uri`.
-    pub fn discover_capabilities(
+    pub fn discoverCapabilities(
         session: *Session,
         allocator: Allocator,
         redirect_uri: *[]u8,
@@ -533,7 +533,7 @@ pub const Session = struct {
     /// `redirect_uri` is populated with the URI resulting from the redirects.
     /// When this occurs, the value of `redirect_uri` must be freed with
     /// `allocator` when the caller is done with it.
-    fn get_capabilities(
+    fn getCapabilities(
         session: Session,
         allocator: Allocator,
         redirect_uri: *[]u8,
@@ -649,7 +649,7 @@ pub const Session = struct {
     };
 
     /// Returns an iterator over refs known to the server.
-    pub fn list_refs(session: Session, allocator: Allocator, options: ListRefsOptions) !RefIterator {
+    pub fn listRefs(session: Session, allocator: Allocator, options: ListRefsOptions) !RefIterator {
         var upload_pack_uri = session.uri;
         {
             const session_uri_path = try std.fmt.allocPrint(allocator, "{path}", .{session.uri.path});
@@ -944,14 +944,14 @@ const EntryHeader = union(Type) {
         uncompressed_length: u64,
     };
 
-    fn object_type(header: EntryHeader) Object.Type {
+    fn objectType(header: EntryHeader) Object.Type {
         return switch (header) {
             inline .commit, .tree, .blob, .tag => |_, tag| @field(Object.Type, @tagName(tag)),
             else => unreachable,
         };
     }
 
-    fn uncompressed_length(header: EntryHeader) u64 {
+    fn uncompressedLength(header: EntryHeader) u64 {
         return switch (header) {
             inline else => |entry| entry.uncompressed_length,
         };
@@ -986,7 +986,7 @@ const EntryHeader = union(Type) {
     }
 };
 
-fn read_size_var_int(r: anytype) !u64 {
+fn readSizeVarInt(r: anytype) !u64 {
     const Byte = packed struct { value: u7, has_next: bool };
     var b: Byte = @bitCast(try r.readByte());
     var value: u64 = b.value;
@@ -999,7 +999,7 @@ fn read_size_var_int(r: anytype) !u64 {
     return value;
 }
 
-fn read_offset_var_int(r: anytype) !u64 {
+fn readOffsetVarInt(r: anytype) !u64 {
     const Byte = packed struct { value: u7, has_next: bool };
     var b: Byte = @bitCast(try r.readByte());
     var value: u64 = b.value;
@@ -1041,7 +1041,7 @@ const IndexEntry = struct {
 
 /// Writes out a version 2 index for the given packfile, as documented in
 /// [pack-format](https://git-scm.com/docs/pack-format).
-pub fn index_pack(allocator: Allocator, pack: std.fs.File, index_writer: anytype) !void {
+pub fn indexPack(allocator: Allocator, pack: std.fs.File, index_writer: anytype) !void {
     try pack.seekTo(0);
 
     var index_entries = std.AutoHashMapUnmanaged(Oid, IndexEntry){};
@@ -1076,7 +1076,7 @@ pub fn index_pack(allocator: Allocator, pack: std.fs.File, index_writer: anytype
         oids.appendAssumeCapacity(entry.key_ptr.*);
     }
     mem.sortUnstable(Oid, oids.items, {}, struct {
-        fn less_than(_: void, o1: Oid, o2: Oid) bool {
+        fn lessThan(_: void, o1: Oid, o2: Oid) bool {
             return mem.lessThan(u8, &o1, &o2);
         }
     }.lessThan);
@@ -1134,7 +1134,7 @@ pub fn index_pack(allocator: Allocator, pack: std.fs.File, index_writer: anytype
 /// This will index all non-delta objects, queue delta objects for further
 /// processing, and return the pack checksum (which is part of the index
 /// format).
-fn index_pack_first_pass(
+fn indexPackFirstPass(
     allocator: Allocator,
     pack: std.fs.File,
     index_entries: *std.AutoHashMapUnmanaged(Oid, IndexEntry),
@@ -1203,7 +1203,7 @@ fn index_pack_first_pass(
 /// Attempts to determine the final object ID of the given deltified object.
 /// May return null if this is not yet possible (if the delta is a ref-based
 /// delta and we do not yet know the offset of the base object).
-fn index_pack_hash_delta(
+fn indexPackHashDelta(
     allocator: Allocator,
     pack: std.fs.File,
     delta: IndexEntry,
@@ -1252,7 +1252,7 @@ fn index_pack_hash_delta(
 /// assumed to be looking at the start of the object data for the base object of
 /// the chain, and will then apply the deltas in `delta_offsets` in reverse order
 /// to obtain the final object.
-fn resolve_delta_chain(
+fn resolveDeltaChain(
     allocator: Allocator,
     pack: std.fs.File,
     base_object: Object,
@@ -1291,7 +1291,7 @@ fn resolve_delta_chain(
 /// Reads the complete contents of an object from `reader`. This function may
 /// read more bytes than required from `reader`, so the reader position after
 /// returning is not reliable.
-fn read_object_raw(allocator: Allocator, reader: anytype, size: u64) ![]u8 {
+fn readObjectRaw(allocator: Allocator, reader: anytype, size: u64) ![]u8 {
     const alloc_size = std.math.cast(usize, size) orelse return error.ObjectTooLarge;
     var buffered_reader = std.io.bufferedReader(reader);
     var decompress_stream = std.compress.zlib.decompressor(buffered_reader.reader());
@@ -1310,7 +1310,7 @@ fn read_object_raw(allocator: Allocator, reader: anytype, size: u64) ![]u8 {
 ///
 /// The format of the delta data is documented in
 /// [pack-format](https://git-scm.com/docs/pack-format).
-fn expand_delta(base_object: anytype, delta_reader: anytype, writer: anytype) !void {
+fn expandDelta(base_object: anytype, delta_reader: anytype, writer: anytype) !void {
     while (true) {
         const inst: packed struct { value: u7, copy: bool } = @bitCast(delta_reader.readByte() catch |e| switch (e) {
             error.EndOfStream => return,
@@ -1354,7 +1354,7 @@ fn expand_delta(base_object: anytype, delta_reader: anytype, writer: anytype) !v
     }
 }
 
-fn hashed_writer(
+fn HashedWriter(
     comptime WriterType: anytype,
     comptime HasherType: anytype,
 ) type {
@@ -1377,7 +1377,7 @@ fn hashed_writer(
     };
 }
 
-fn hashed_writer(
+fn hashedWriter(
     writer: anytype,
     hasher: anytype,
 ) HashedWriter(@TypeOf(writer), @TypeOf(hasher)) {
@@ -1460,7 +1460,7 @@ test "packfile indexing and checkout" {
         try actual_files.append(testing.allocator, path);
     }
     mem.sortUnstable([]u8, actual_files.items, {}, struct {
-        fn less_than(_: void, a: []u8, b: []u8) bool {
+        fn lessThan(_: void, a: []u8, b: []u8) bool {
             return mem.lessThan(u8, a, b);
         }
     }.lessThan);

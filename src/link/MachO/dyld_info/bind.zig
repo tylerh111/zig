@@ -15,7 +15,7 @@ pub const Entry = struct {
     segment_id: u8,
     addend: i64,
 
-    pub fn less_than(ctx: *MachO, entry: Entry, other: Entry) bool {
+    pub fn lessThan(ctx: *MachO, entry: Entry, other: Entry) bool {
         if (entry.segment_id == other.segment_id) {
             if (entry.target == other.target) {
                 return entry.offset < other.offset;
@@ -65,7 +65,7 @@ pub const Bind = struct {
         try done(writer);
     }
 
-    fn finalize_segment(entries: []const Entry, ctx: *MachO, writer: anytype) !void {
+    fn finalizeSegment(entries: []const Entry, ctx: *MachO, writer: anytype) !void {
         if (entries.len == 0) return;
 
         const seg_id = entries[0].segment_id;
@@ -220,7 +220,7 @@ pub const WeakBind = struct {
         try done(writer);
     }
 
-    fn finalize_segment(entries: []const Entry, ctx: *MachO, writer: anytype) !void {
+    fn finalizeSegment(entries: []const Entry, ctx: *MachO, writer: anytype) !void {
         if (entries.len == 0) return;
 
         const seg_id = entries[0].segment_id;
@@ -389,25 +389,25 @@ pub const LazyBind = struct {
     }
 };
 
-fn set_segment_offset(segment_id: u8, offset: u64, writer: anytype) !void {
+fn setSegmentOffset(segment_id: u8, offset: u64, writer: anytype) !void {
     log.debug(">>> set segment: {d} and offset: {x}", .{ segment_id, offset });
     try writer.writeByte(macho.BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | @as(u4, @truncate(segment_id)));
     try std.leb.writeULEB128(writer, offset);
 }
 
-fn set_symbol(name: []const u8, flags: u8, writer: anytype) !void {
+fn setSymbol(name: []const u8, flags: u8, writer: anytype) !void {
     log.debug(">>> set symbol: {s} with flags: {x}", .{ name, flags });
     try writer.writeByte(macho.BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM | @as(u4, @truncate(flags)));
     try writer.writeAll(name);
     try writer.writeByte(0);
 }
 
-fn set_type_pointer(writer: anytype) !void {
+fn setTypePointer(writer: anytype) !void {
     log.debug(">>> set type: {d}", .{macho.BIND_TYPE_POINTER});
     try writer.writeByte(macho.BIND_OPCODE_SET_TYPE_IMM | @as(u4, @truncate(macho.BIND_TYPE_POINTER)));
 }
 
-fn set_dylib_ordinal(ordinal: i16, writer: anytype) !void {
+fn setDylibOrdinal(ordinal: i16, writer: anytype) !void {
     if (ordinal <= 0) {
         switch (ordinal) {
             macho.BIND_SPECIAL_DYLIB_SELF,
@@ -431,18 +431,18 @@ fn set_dylib_ordinal(ordinal: i16, writer: anytype) !void {
     }
 }
 
-fn set_addend(addend: i64, writer: anytype) !void {
+fn setAddend(addend: i64, writer: anytype) !void {
     log.debug(">>> set addend: {x}", .{addend});
     try writer.writeByte(macho.BIND_OPCODE_SET_ADDEND_SLEB);
     try std.leb.writeILEB128(writer, addend);
 }
 
-fn do_bind(writer: anytype) !void {
+fn doBind(writer: anytype) !void {
     log.debug(">>> bind", .{});
     try writer.writeByte(macho.BIND_OPCODE_DO_BIND);
 }
 
-fn do_bind_add_addr(addr: u64, writer: anytype) !void {
+fn doBindAddAddr(addr: u64, writer: anytype) !void {
     log.debug(">>> bind with add: {x}", .{addr});
     if (std.mem.isAlignedGeneric(u64, addr, @sizeOf(u64))) {
         const imm = @divExact(addr, @sizeOf(u64));
@@ -457,14 +457,14 @@ fn do_bind_add_addr(addr: u64, writer: anytype) !void {
     try std.leb.writeULEB128(writer, addr);
 }
 
-fn do_bind_times_skip(count: usize, skip: u64, writer: anytype) !void {
+fn doBindTimesSkip(count: usize, skip: u64, writer: anytype) !void {
     log.debug(">>> bind with count: {d} and skip: {x}", .{ count, skip });
     try writer.writeByte(macho.BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB);
     try std.leb.writeULEB128(writer, count);
     try std.leb.writeULEB128(writer, skip);
 }
 
-fn add_addr(addr: u64, writer: anytype) !void {
+fn addAddr(addr: u64, writer: anytype) !void {
     log.debug(">>> add: {x}", .{addr});
     try writer.writeByte(macho.BIND_OPCODE_ADD_ADDR_ULEB);
     try std.leb.writeULEB128(writer, addr);

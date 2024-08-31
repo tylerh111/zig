@@ -402,7 +402,7 @@ pub const getauxval = if (extern_getauxval) struct {
     extern fn getauxval(index: usize) usize;
 }.getauxval else getauxvalImpl;
 
-fn getauxval_impl(index: usize) callconv(.C) usize {
+fn getauxvalImpl(index: usize) callconv(.C) usize {
     const auxv = elf_aux_maybe orelse return 0;
     var i: usize = 0;
     while (auxv[i].a_type != std.elf.AT_NULL) : (i += 1) {
@@ -422,21 +422,21 @@ const require_aligned_register_pair =
 
 // Split a 64bit value into a {LSB,MSB} pair.
 // The LE/BE variants specify the endianness to assume.
-fn split_value_le64(val: i64) [2]u32 {
+fn splitValueLE64(val: i64) [2]u32 {
     const u: u64 = @bitCast(val);
     return [2]u32{
         @as(u32, @truncate(u)),
         @as(u32, @truncate(u >> 32)),
     };
 }
-fn split_value_be64(val: i64) [2]u32 {
+fn splitValueBE64(val: i64) [2]u32 {
     const u: u64 = @bitCast(val);
     return [2]u32{
         @as(u32, @truncate(u >> 32)),
         @as(u32, @truncate(u)),
     };
 }
-fn split_value64(val: i64) [2]u32 {
+fn splitValue64(val: i64) [2]u32 {
     const u: u64 = @bitCast(val);
     switch (native_endian) {
         .little => return [2]u32{
@@ -452,7 +452,7 @@ fn split_value64(val: i64) [2]u32 {
 
 /// Get the errno from a syscall return value, or 0 for no error.
 /// The public API is exposed via the `E` namespace.
-fn errno_from_syscall(r: usize) E {
+fn errnoFromSyscall(r: usize) E {
     const signed_r: isize = @bitCast(r);
     const int = if (signed_r > -4096 and signed_r < 0) -signed_r else 0;
     return @enumFromInt(int);
@@ -3010,22 +3010,22 @@ pub const W = struct {
     pub const CONTINUED = 8;
     pub const NOWAIT = 0x1000000;
 
-    pub fn exitstatus(s: u32) u8 {
+    pub fn EXITSTATUS(s: u32) u8 {
         return @as(u8, @intCast((s & 0xff00) >> 8));
     }
-    pub fn termsig(s: u32) u32 {
+    pub fn TERMSIG(s: u32) u32 {
         return s & 0x7f;
     }
-    pub fn stopsig(s: u32) u32 {
+    pub fn STOPSIG(s: u32) u32 {
         return EXITSTATUS(s);
     }
-    pub fn ifexited(s: u32) bool {
+    pub fn IFEXITED(s: u32) bool {
         return TERMSIG(s) == 0;
     }
-    pub fn ifstopped(s: u32) bool {
+    pub fn IFSTOPPED(s: u32) bool {
         return @as(u16, @truncate(((s & 0xffff) *% 0x10001) >> 8)) > 0x7f00;
     }
-    pub fn ifsignaled(s: u32) bool {
+    pub fn IFSIGNALED(s: u32) bool {
         return (s & 0xffff) -% 1 < 0xff;
     }
 };
@@ -4214,31 +4214,31 @@ pub const S = struct {
     pub const IXOTH = 0o001;
     pub const IRWXO = 0o007;
 
-    pub fn isreg(m: mode_t) bool {
+    pub fn ISREG(m: mode_t) bool {
         return m & IFMT == IFREG;
     }
 
-    pub fn isdir(m: mode_t) bool {
+    pub fn ISDIR(m: mode_t) bool {
         return m & IFMT == IFDIR;
     }
 
-    pub fn ischr(m: mode_t) bool {
+    pub fn ISCHR(m: mode_t) bool {
         return m & IFMT == IFCHR;
     }
 
-    pub fn isblk(m: mode_t) bool {
+    pub fn ISBLK(m: mode_t) bool {
         return m & IFMT == IFBLK;
     }
 
-    pub fn isfifo(m: mode_t) bool {
+    pub fn ISFIFO(m: mode_t) bool {
         return m & IFMT == IFIFO;
     }
 
-    pub fn islnk(m: mode_t) bool {
+    pub fn ISLNK(m: mode_t) bool {
         return m & IFMT == IFLNK;
     }
 
-    pub fn issock(m: mode_t) bool {
+    pub fn ISSOCK(m: mode_t) bool {
         return m & IFMT == IFSOCK;
     }
 };
@@ -4565,11 +4565,11 @@ pub const CAP = struct {
         return x >= 0 and x <= LAST_CAP;
     }
 
-    pub fn to_mask(cap: u8) u32 {
+    pub fn TO_MASK(cap: u8) u32 {
         return @as(u32, 1) << @as(u5, @intCast(cap & 31));
     }
 
-    pub fn to_index(cap: u8) u8 {
+    pub fn TO_INDEX(cap: u8) u8 {
         return cap >> 5;
     }
 };
@@ -4600,7 +4600,7 @@ pub const inotify_event = extern struct {
     // if an event is returned for a directory or file inside the directory being watched
     // returns the name of said directory/file
     // returns `null` if the directory/file is the one being watched
-    pub fn get_name(self: *const inotify_event) ?[:0]const u8 {
+    pub fn getName(self: *const inotify_event) ?[:0]const u8 {
         if (self.len == 0) return null;
         return std.mem.span(@as([*:0]const u8, @ptrCast(self)) + @sizeOf(inotify_event));
     }
@@ -4625,7 +4625,7 @@ pub const CPU_SETSIZE = 128;
 pub const cpu_set_t = [CPU_SETSIZE / @sizeOf(usize)]usize;
 pub const cpu_count_t = std.meta.Int(.unsigned, std.math.log2(CPU_SETSIZE * 8));
 
-pub fn cpu_count(set: cpu_set_t) cpu_count_t {
+pub fn CPU_COUNT(set: cpu_set_t) cpu_count_t {
     var sum: cpu_count_t = 0;
     for (set) |x| {
         sum += @popCount(x);
@@ -7152,7 +7152,7 @@ pub const AUDIT = struct {
         SPARC64 = toAudit(.sparc64),
         X86_64 = toAudit(.x86_64),
 
-        fn to_audit(arch: std.Target.Cpu.Arch) u32 {
+        fn toAudit(arch: std.Target.Cpu.Arch) u32 {
             var res: u32 = @intFromEnum(arch.toElfMachine());
             if (arch.endian() == .little) res |= LE;
             switch (arch) {

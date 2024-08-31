@@ -5,7 +5,7 @@ export fn returns() void {
         }
     }
 }
-fn optional_return() ?u32 {
+fn optionalReturn() ?u32 {
     return 1;
 }
 

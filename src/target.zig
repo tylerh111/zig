@@ -6,7 +6,7 @@ const Feature = @import("Module.zig").Feature;
 
 pub const default_stack_protector_buffer_size = 4;
 
-pub fn cannot_dynamic_link(target: std.Target) bool {
+pub fn cannotDynamicLink(target: std.Target) bool {
     return switch (target.os.tag) {
         .freestanding, .other => true,
         else => target.isSpirV(),
@@ -16,11 +16,11 @@ pub fn cannot_dynamic_link(target: std.Target) bool {
 /// On Darwin, we always link libSystem which contains libc.
 /// Similarly on FreeBSD and NetBSD we always link system libc
 /// since this is the stable syscall interface.
-pub fn os_requires_lib_c(target: std.Target) bool {
+pub fn osRequiresLibC(target: std.Target) bool {
     return target.os.requiresLibC();
 }
 
-pub fn libc_needs_lib_unwind(target: std.Target) bool {
+pub fn libcNeedsLibUnwind(target: std.Target) bool {
     return switch (target.os.tag) {
         .macos,
         .ios,
@@ -36,12 +36,12 @@ pub fn libc_needs_lib_unwind(target: std.Target) bool {
     };
 }
 
-pub fn requires_pie(target: std.Target) bool {
+pub fn requiresPIE(target: std.Target) bool {
     return target.isAndroid() or target.isDarwin() or target.os.tag == .openbsd;
 }
 
 /// This function returns whether non-pic code is completely invalid on the given target.
-pub fn requires_pic(target: std.Target, linking_libc: bool) bool {
+pub fn requiresPIC(target: std.Target, linking_libc: bool) bool {
     return target.isAndroid() or
         target.os.tag == .windows or target.os.tag == .uefi or
         osRequiresLibC(target) or
@@ -55,12 +55,12 @@ pub fn supports_fpic(target: std.Target) bool {
     return target.os.tag != .windows and target.os.tag != .uefi;
 }
 
-pub fn always_single_threaded(target: std.Target) bool {
+pub fn alwaysSingleThreaded(target: std.Target) bool {
     _ = target;
     return false;
 }
 
-pub fn default_single_threaded(target: std.Target) bool {
+pub fn defaultSingleThreaded(target: std.Target) bool {
     switch (target.cpu.arch) {
         .wasm32, .wasm64 => return true,
         else => {},
@@ -73,7 +73,7 @@ pub fn default_single_threaded(target: std.Target) bool {
 }
 
 /// Valgrind supports more, but Zig does not support them yet.
-pub fn has_valgrind_support(target: std.Target) bool {
+pub fn hasValgrindSupport(target: std.Target) bool {
     switch (target.cpu.arch) {
         .x86,
         .x86_64,
@@ -91,7 +91,7 @@ pub fn has_valgrind_support(target: std.Target) bool {
 /// The set of targets that LLVM has non-experimental support for.
 /// Used to select between LLVM backend and self-hosted backend when compiling in
 /// release modes.
-pub fn has_llvm_support(target: std.Target, ofmt: std.Target.ObjectFormat) bool {
+pub fn hasLlvmSupport(target: std.Target, ofmt: std.Target.ObjectFormat) bool {
     switch (ofmt) {
         // LLVM does not support these object formats:
         .c,
@@ -179,7 +179,7 @@ pub fn has_llvm_support(target: std.Target, ofmt: std.Target.ObjectFormat) bool 
 }
 
 /// The set of targets that Zig supports using LLD to link for.
-pub fn has_lld_support(ofmt: std.Target.ObjectFormat) bool {
+pub fn hasLldSupport(ofmt: std.Target.ObjectFormat) bool {
     return switch (ofmt) {
         .elf, .coff, .wasm => true,
         else => false,
@@ -190,17 +190,17 @@ pub fn has_lld_support(ofmt: std.Target.ObjectFormat) bool {
 /// Used to select between LLVM backend and self-hosted backend when compiling in
 /// debug mode. A given target should only return true here if it is passing greater
 /// than or equal to the number of behavior tests as the respective LLVM backend.
-pub fn self_hosted_backend_is_as_robust_as_llvm(target: std.Target) bool {
+pub fn selfHostedBackendIsAsRobustAsLlvm(target: std.Target) bool {
     _ = target;
     return false;
 }
 
-pub fn supports_stack_probing(target: std.Target) bool {
+pub fn supportsStackProbing(target: std.Target) bool {
     return target.os.tag != .windows and target.os.tag != .uefi and
         (target.cpu.arch == .x86 or target.cpu.arch == .x86_64);
 }
 
-pub fn supports_stack_protector(target: std.Target, backend: std.builtin.CompilerBackend) bool {
+pub fn supportsStackProtector(target: std.Target, backend: std.builtin.CompilerBackend) bool {
     switch (target.os.tag) {
         .plan9 => return false,
         else => {},
@@ -215,18 +215,18 @@ pub fn supports_stack_protector(target: std.Target, backend: std.builtin.Compile
     };
 }
 
-pub fn clang_supports_stack_protector(target: std.Target) bool {
+pub fn clangSupportsStackProtector(target: std.Target) bool {
     return switch (target.cpu.arch) {
         .spirv32, .spirv64 => return false,
         else => true,
     };
 }
 
-pub fn libc_provides_stack_protector(target: std.Target) bool {
+pub fn libcProvidesStackProtector(target: std.Target) bool {
     return !target.isMinGW() and target.os.tag != .wasi and !target.isSpirV();
 }
 
-pub fn supports_return_address(target: std.Target) bool {
+pub fn supportsReturnAddress(target: std.Target) bool {
     return switch (target.cpu.arch) {
         .wasm32, .wasm64 => target.os.tag == .emscripten,
         .bpfel, .bpfeb => false,
@@ -237,7 +237,7 @@ pub fn supports_return_address(target: std.Target) bool {
 
 pub const CompilerRtClassification = enum { none, only_compiler_rt, only_libunwind, both };
 
-pub fn classify_compiler_rt_lib_name(target: std.Target, name: []const u8) CompilerRtClassification {
+pub fn classifyCompilerRtLibName(target: std.Target, name: []const u8) CompilerRtClassification {
     if (target.abi.isGnu() and std.mem.eql(u8, name, "gcc_s")) {
         // libgcc_s includes exception handling functions, so if linking this library
         // is requested, zig needs to instead link libunwind. Otherwise we end up with
@@ -253,7 +253,7 @@ pub fn classify_compiler_rt_lib_name(target: std.Target, name: []const u8) Compi
     return .none;
 }
 
-pub fn has_debug_info(target: std.Target) bool {
+pub fn hasDebugInfo(target: std.Target) bool {
     return switch (target.cpu.arch) {
         .nvptx, .nvptx64 => std.Target.nvptx.featureSetHas(target.cpu.features, .ptx75) or
             std.Target.nvptx.featureSetHas(target.cpu.features, .ptx76) or
@@ -266,7 +266,7 @@ pub fn has_debug_info(target: std.Target) bool {
     };
 }
 
-pub fn default_compiler_rt_optimize_mode(target: std.Target) std.builtin.OptimizeMode {
+pub fn defaultCompilerRtOptimizeMode(target: std.Target) std.builtin.OptimizeMode {
     if (target.cpu.arch.isWasm() and target.os.tag == .freestanding) {
         return .ReleaseSmall;
     } else {
@@ -274,7 +274,7 @@ pub fn default_compiler_rt_optimize_mode(target: std.Target) std.builtin.Optimiz
     }
 }
 
-pub fn has_red_zone(target: std.Target) bool {
+pub fn hasRedZone(target: std.Target) bool {
     return switch (target.cpu.arch) {
         .x86_64,
         .x86,
@@ -287,7 +287,7 @@ pub fn has_red_zone(target: std.Target) bool {
     };
 }
 
-pub fn libc_full_link_flags(target: std.Target) []const []const u8 {
+pub fn libcFullLinkFlags(target: std.Target) []const []const u8 {
     // The linking order of these is significant and should match the order other
     // c compilers such as gcc or clang use.
     return switch (target.os.tag) {
@@ -329,7 +329,7 @@ pub fn libc_full_link_flags(target: std.Target) []const []const u8 {
     };
 }
 
-pub fn clang_might_shell_out_for_assembly(target: std.Target) bool {
+pub fn clangMightShellOutForAssembly(target: std.Target) bool {
     // Clang defaults to using the system assembler over the internal one
     // when targeting a non-BSD OS.
     return target.cpu.arch.isSPARC();
@@ -337,18 +337,18 @@ pub fn clang_might_shell_out_for_assembly(target: std.Target) bool {
 
 /// Each backend architecture in Clang has a different codepath which may or may not
 /// support an -mcpu flag.
-pub fn clang_assembler_supports_mcpu_arg(target: std.Target) bool {
+pub fn clangAssemblerSupportsMcpuArg(target: std.Target) bool {
     return switch (target.cpu.arch) {
         .arm, .armeb, .thumb, .thumbeb => true,
         else => false,
     };
 }
 
-pub fn need_unwind_tables(target: std.Target) bool {
+pub fn needUnwindTables(target: std.Target) bool {
     return target.os.tag == .windows or target.isDarwin() or std.dwarf.abi.supportsUnwinding(target);
 }
 
-pub fn default_address_space(
+pub fn defaultAddressSpace(
     target: std.Target,
     context: enum {
         /// Query the default address space for global constant values.
@@ -368,7 +368,7 @@ pub fn default_address_space(
 }
 
 /// Returns true if pointers in `from` can be converted to a pointer in `to`.
-pub fn addr_space_cast_is_valid(
+pub fn addrSpaceCastIsValid(
     target: std.Target,
     from: AddressSpace,
     to: AddressSpace,
@@ -385,7 +385,7 @@ pub fn addr_space_cast_is_valid(
     }
 }
 
-pub fn llvm_machine_abi(target: std.Target) ?[:0]const u8 {
+pub fn llvmMachineAbi(target: std.Target) ?[:0]const u8 {
     const have_float = switch (target.abi) {
         .gnuilp32 => return "ilp32",
         .gnueabihf, .musleabihf, .eabihf => true,
@@ -421,7 +421,7 @@ pub fn llvm_machine_abi(target: std.Target) ?[:0]const u8 {
 }
 
 /// This function returns 1 if function alignment is not observable or settable.
-pub fn default_function_alignment(target: std.Target) Alignment {
+pub fn defaultFunctionAlignment(target: std.Target) Alignment {
     return switch (target.cpu.arch) {
         .arm, .armeb => .@"4",
         .aarch64, .aarch64_32, .aarch64_be => .@"4",
@@ -431,14 +431,14 @@ pub fn default_function_alignment(target: std.Target) Alignment {
     };
 }
 
-pub fn supports_function_alignment(target: std.Target) bool {
+pub fn supportsFunctionAlignment(target: std.Target) bool {
     return switch (target.cpu.arch) {
         .wasm32, .wasm64 => false,
         else => true,
     };
 }
 
-pub fn supports_tail_call(target: std.Target, backend: std.builtin.CompilerBackend) bool {
+pub fn supportsTailCall(target: std.Target, backend: std.builtin.CompilerBackend) bool {
     switch (backend) {
         .stage1, .stage2_llvm => return @import("codegen/llvm.zig").supportsTailCall(target),
         .stage2_c => return true,
@@ -446,14 +446,14 @@ pub fn supports_tail_call(target: std.Target, backend: std.builtin.CompilerBacke
     }
 }
 
-pub fn supports_threads(target: std.Target, backend: std.builtin.CompilerBackend) bool {
+pub fn supportsThreads(target: std.Target, backend: std.builtin.CompilerBackend) bool {
     return switch (backend) {
         .stage2_x86_64 => target.ofmt == .macho or target.ofmt == .elf,
         else => true,
     };
 }
 
-pub fn libc_float_prefix(float_bits: u16) []const u8 {
+pub fn libcFloatPrefix(float_bits: u16) []const u8 {
     return switch (float_bits) {
         16, 80 => "__",
         32, 64, 128 => "",
@@ -461,7 +461,7 @@ pub fn libc_float_prefix(float_bits: u16) []const u8 {
     };
 }
 
-pub fn libc_float_suffix(float_bits: u16) []const u8 {
+pub fn libcFloatSuffix(float_bits: u16) []const u8 {
     return switch (float_bits) {
         16 => "h", // Non-standard
         32 => "f",
@@ -472,7 +472,7 @@ pub fn libc_float_suffix(float_bits: u16) []const u8 {
     };
 }
 
-pub fn compiler_rt_float_abbrev(float_bits: u16) []const u8 {
+pub fn compilerRtFloatAbbrev(float_bits: u16) []const u8 {
     return switch (float_bits) {
         16 => "h",
         32 => "s",
@@ -483,7 +483,7 @@ pub fn compiler_rt_float_abbrev(float_bits: u16) []const u8 {
     };
 }
 
-pub fn compiler_rt_int_abbrev(bits: u16) []const u8 {
+pub fn compilerRtIntAbbrev(bits: u16) []const u8 {
     return switch (bits) {
         16 => "h",
         32 => "s",
@@ -493,7 +493,7 @@ pub fn compiler_rt_int_abbrev(bits: u16) []const u8 {
     };
 }
 
-pub fn fn_call_conv_allows_zig_types(target: std.Target, cc: std.builtin.CallingConvention) bool {
+pub fn fnCallConvAllowsZigTypes(target: std.Target, cc: std.builtin.CallingConvention) bool {
     return switch (cc) {
         .Unspecified, .Async, .Inline => true,
         // For now we want to authorize PTX kernel to use zig objects, even if
@@ -504,7 +504,7 @@ pub fn fn_call_conv_allows_zig_types(target: std.Target, cc: std.builtin.Calling
     };
 }
 
-pub fn zig_backend(target: std.Target, use_llvm: bool) std.builtin.CompilerBackend {
+pub fn zigBackend(target: std.Target, use_llvm: bool) std.builtin.CompilerBackend {
     if (use_llvm) return .stage2_llvm;
     if (target.ofmt == .c) return .stage2_c;
     return switch (target.cpu.arch) {
@@ -520,7 +520,7 @@ pub fn zig_backend(target: std.Target, use_llvm: bool) std.builtin.CompilerBacke
     };
 }
 
-pub fn backend_supports_feature(
+pub fn backendSupportsFeature(
     cpu_arch: std.Target.Cpu.Arch,
     ofmt: std.Target.ObjectFormat,
     use_llvm: bool,

@@ -52,7 +52,7 @@ const ar_hdr = extern struct {
         index: u32,
     };
 
-    fn name_or_index(archive: ar_hdr) !NameOrIndex {
+    fn nameOrIndex(archive: ar_hdr) !NameOrIndex {
         const value = getValue(&archive.ar_name);
         const slash_index = mem.indexOfScalar(u8, value, '/') orelse return error.MalformedArchive;
         const len = value.len;
@@ -77,7 +77,7 @@ const ar_hdr = extern struct {
         return std.fmt.parseInt(u32, value, 10);
     }
 
-    fn get_value(raw: []const u8) []const u8 {
+    fn getValue(raw: []const u8) []const u8 {
         return mem.trimRight(u8, raw, &[_]u8{@as(u8, 0x20)});
     }
 };
@@ -113,7 +113,7 @@ pub fn parse(archive: *Archive, allocator: Allocator) !void {
     try archive.parseNameTable(allocator, reader);
 }
 
-fn parse_name(archive: *const Archive, header: ar_hdr) ![]const u8 {
+fn parseName(archive: *const Archive, header: ar_hdr) ![]const u8 {
     const name_or_index = try header.nameOrIndex();
     switch (name_or_index) {
         .name => |name| return name,
@@ -124,7 +124,7 @@ fn parse_name(archive: *const Archive, header: ar_hdr) ![]const u8 {
     }
 }
 
-fn parse_table_of_contents(archive: *Archive, allocator: Allocator, reader: anytype) !void {
+fn parseTableOfContents(archive: *Archive, allocator: Allocator, reader: anytype) !void {
     // size field can have extra spaces padded in front as well as the end,
     // so we trim those first before parsing the ASCII value.
     const size_trimmed = mem.trim(u8, &archive.header.ar_size, " ");
@@ -161,7 +161,7 @@ fn parse_table_of_contents(archive: *Archive, allocator: Allocator, reader: anyt
     }
 }
 
-fn parse_name_table(archive: *Archive, allocator: Allocator, reader: anytype) !void {
+fn parseNameTable(archive: *Archive, allocator: Allocator, reader: anytype) !void {
     const header: ar_hdr = try reader.readStruct(ar_hdr);
     if (!mem.eql(u8, &header.ar_fmag, ARFMAG)) {
         return error.InvalidHeaderDelimiter;
@@ -178,7 +178,7 @@ fn parse_name_table(archive: *Archive, allocator: Allocator, reader: anytype) !v
 
 /// From a given file offset, starts reading for a file header.
 /// When found, parses the object file into an `Object` and returns it.
-pub fn parse_object(archive: Archive, wasm_file: *const Wasm, file_offset: u32) !Object {
+pub fn parseObject(archive: Archive, wasm_file: *const Wasm, file_offset: u32) !Object {
     const gpa = wasm_file.base.comp.gpa;
     try archive.file.seekTo(file_offset);
     const reader = archive.file.reader();

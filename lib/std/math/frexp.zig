@@ -4,7 +4,7 @@ const expect = std.testing.expect;
 const expectEqual = std.testing.expectEqual;
 const expectApproxEqAbs = std.testing.expectApproxEqAbs;
 
-pub fn frexp(comptime T: type) type {
+pub fn Frexp(comptime T: type) type {
     return struct {
         significand: T,
         exponent: i32,
@@ -86,7 +86,7 @@ pub fn frexp(x: anytype) Frexp(@TypeOf(x)) {
 }
 
 /// Generate a namespace of tests for frexp on values of the given type
-fn frexp_tests(comptime Float: type) type {
+fn FrexpTests(comptime Float: type) type {
     return struct {
         const T = Float;
         test "normal" {

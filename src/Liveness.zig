@@ -85,7 +85,7 @@ const LivenessPass = enum {
 
 /// Each analysis pass may wish to pass data through calls. A pointer to a `LivenessPassData(pass)`
 /// stored on the stack is passed through calls to `analyzeInst` etc.
-fn liveness_pass_data(comptime pass: LivenessPass) type {
+fn LivenessPassData(comptime pass: LivenessPass) type {
     return switch (pass) {
         .loop_analysis => struct {
             /// The set of blocks which are exited with a `br` instruction at some point within this
@@ -176,20 +176,20 @@ pub fn analyze(gpa: Allocator, air: Air, intern_pool: *InternPool) Allocator.Err
     };
 }
 
-pub fn get_tomb_bits(l: Liveness, inst: Air.Inst.Index) Bpi {
+pub fn getTombBits(l: Liveness, inst: Air.Inst.Index) Bpi {
     const usize_index = (@intFromEnum(inst) * bpi) / @bitSizeOf(usize);
     return @as(Bpi, @truncate(l.tomb_bits[usize_index] >>
         @as(Log2Int(usize), @intCast((@intFromEnum(inst) % (@bitSizeOf(usize) / bpi)) * bpi))));
 }
 
-pub fn is_unused(l: Liveness, inst: Air.Inst.Index) bool {
+pub fn isUnused(l: Liveness, inst: Air.Inst.Index) bool {
     const usize_index = (@intFromEnum(inst) * bpi) / @bitSizeOf(usize);
     const mask = @as(usize, 1) <<
         @as(Log2Int(usize), @intCast((@intFromEnum(inst) % (@bitSizeOf(usize) / bpi)) * bpi + (bpi - 1)));
     return (l.tomb_bits[usize_index] & mask) != 0;
 }
 
-pub fn operand_dies(l: Liveness, inst: Air.Inst.Index, operand: OperandInt) bool {
+pub fn operandDies(l: Liveness, inst: Air.Inst.Index, operand: OperandInt) bool {
     assert(operand < bpi - 1);
     const usize_index = (@intFromEnum(inst) * bpi) / @bitSizeOf(usize);
     const mask = @as(usize, 1) <<
@@ -197,7 +197,7 @@ pub fn operand_dies(l: Liveness, inst: Air.Inst.Index, operand: OperandInt) bool
     return (l.tomb_bits[usize_index] & mask) != 0;
 }
 
-pub fn clear_operand_death(l: Liveness, inst: Air.Inst.Index, operand: OperandInt) void {
+pub fn clearOperandDeath(l: Liveness, inst: Air.Inst.Index, operand: OperandInt) void {
     assert(operand < bpi - 1);
     const usize_index = (@intFromEnum(inst) * bpi) / @bitSizeOf(usize);
     const mask = @as(usize, 1) <<
@@ -220,7 +220,7 @@ const OperandCategory = enum {
 
 /// Given an instruction that we are examining, and an operand that we are looking for,
 /// returns a classification.
-pub fn categorize_operand(
+pub fn categorizeOperand(
     l: Liveness,
     air: Air,
     inst: Air.Inst.Index,
@@ -680,7 +680,7 @@ pub fn categorize_operand(
     }
 }
 
-fn match_operand_small_index(
+fn matchOperandSmallIndex(
     l: Liveness,
     inst: Air.Inst.Index,
     operand: OperandInt,
@@ -699,7 +699,7 @@ pub const CondBrSlices = struct {
     else_deaths: []const Air.Inst.Index,
 };
 
-pub fn get_cond_br(l: Liveness, inst: Air.Inst.Index) CondBrSlices {
+pub fn getCondBr(l: Liveness, inst: Air.Inst.Index) CondBrSlices {
     var index: usize = l.special.get(inst) orelse return .{
         .then_deaths = &.{},
         .else_deaths = &.{},
@@ -723,7 +723,7 @@ pub const SwitchBrTable = struct {
 };
 
 /// Caller owns the memory.
-pub fn get_switch_br(l: Liveness, gpa: Allocator, inst: Air.Inst.Index, cases_len: u32) Allocator.Error!SwitchBrTable {
+pub fn getSwitchBr(l: Liveness, gpa: Allocator, inst: Air.Inst.Index, cases_len: u32) Allocator.Error!SwitchBrTable {
     var index: usize = l.special.get(inst) orelse return SwitchBrTable{
         .deaths = &.{},
     };
@@ -758,7 +758,7 @@ pub const BlockSlices = struct {
     deaths: []const Air.Inst.Index,
 };
 
-pub fn get_block(l: Liveness, inst: Air.Inst.Index) BlockSlices {
+pub fn getBlock(l: Liveness, inst: Air.Inst.Index) BlockSlices {
     const index: usize = l.special.get(inst) orelse return .{
         .deaths = &.{},
     };
@@ -780,7 +780,7 @@ pub fn deinit(l: *Liveness, gpa: Allocator) void {
     l.* = undefined;
 }
 
-pub fn iterate_big_tomb(l: Liveness, inst: Air.Inst.Index) BigTomb {
+pub fn iterateBigTomb(l: Liveness, inst: Air.Inst.Index) BigTomb {
     return .{
         .tomb_bits = l.getTombBits(inst),
         .extra_start = l.special.get(inst) orelse 0,
@@ -841,19 +841,19 @@ const Analysis = struct {
     special: std.AutoHashMapUnmanaged(Air.Inst.Index, u32),
     extra: std.ArrayListUnmanaged(u32),
 
-    fn store_tomb_bits(a: *Analysis, inst: Air.Inst.Index, tomb_bits: Bpi) void {
+    fn storeTombBits(a: *Analysis, inst: Air.Inst.Index, tomb_bits: Bpi) void {
         const usize_index = (inst * bpi) / @bitSizeOf(usize);
         a.tomb_bits[usize_index] |= @as(usize, tomb_bits) <<
             @as(Log2Int(usize), @intCast((inst % (@bitSizeOf(usize) / bpi)) * bpi));
     }
 
-    fn add_extra(a: *Analysis, extra: anytype) Allocator.Error!u32 {
+    fn addExtra(a: *Analysis, extra: anytype) Allocator.Error!u32 {
         const fields = std.meta.fields(@TypeOf(extra));
         try a.extra.ensureUnusedCapacity(a.gpa, fields.len);
         return addExtraAssumeCapacity(a, extra);
     }
 
-    fn add_extra_assume_capacity(a: *Analysis, extra: anytype) u32 {
+    fn addExtraAssumeCapacity(a: *Analysis, extra: anytype) u32 {
         const fields = std.meta.fields(@TypeOf(extra));
         const result = @as(u32, @intCast(a.extra.items.len));
         inline for (fields) |field| {
@@ -866,7 +866,7 @@ const Analysis = struct {
     }
 };
 
-fn analyze_body(
+fn analyzeBody(
     a: *Analysis,
     comptime pass: LivenessPass,
     data: *LivenessPassData(pass),
@@ -880,7 +880,7 @@ fn analyze_body(
     }
 }
 
-fn analyze_inst(
+fn analyzeInst(
     a: *Analysis,
     comptime pass: LivenessPass,
     data: *LivenessPassData(pass),
@@ -1267,7 +1267,7 @@ fn analyze_inst(
 /// Every instruction should hit this (after handling any nested bodies), in every pass. In the
 /// initial pass, it is responsible for marking deaths of the (first three) operands and noticing
 /// immediate deaths.
-fn analyze_operands(
+fn analyzeOperands(
     a: *Analysis,
     comptime pass: LivenessPass,
     data: *LivenessPassData(pass),
@@ -1330,7 +1330,7 @@ fn analyze_operands(
 
 /// Like `analyzeOperands`, but for an instruction which returns from a function, so should
 /// effectively kill every remaining live value other than its operands.
-fn analyze_func_end(
+fn analyzeFuncEnd(
     a: *Analysis,
     comptime pass: LivenessPass,
     data: *LivenessPassData(pass),
@@ -1351,7 +1351,7 @@ fn analyze_func_end(
     return analyzeOperands(a, pass, data, inst, operands);
 }
 
-fn analyze_inst_br(
+fn analyzeInstBr(
     a: *Analysis,
     comptime pass: LivenessPass,
     data: *LivenessPassData(pass),
@@ -1378,7 +1378,7 @@ fn analyze_inst_br(
     return analyzeOperands(a, pass, data, inst, .{ br.operand, .none, .none });
 }
 
-fn analyze_inst_block(
+fn analyzeInstBlock(
     a: *Analysis,
     comptime pass: LivenessPass,
     data: *LivenessPassData(pass),
@@ -1446,7 +1446,7 @@ fn analyze_inst_block(
     }
 }
 
-fn analyze_inst_loop(
+fn analyzeInstLoop(
     a: *Analysis,
     comptime pass: LivenessPass,
     data: *LivenessPassData(pass),
@@ -1549,7 +1549,7 @@ fn analyze_inst_loop(
 /// Despite its name, this function is used for analysis of not only `cond_br` instructions, but
 /// also `try` and `try_ptr`, which are highly related. The `inst_type` parameter indicates which
 /// type of instruction `inst` points to.
-fn analyze_inst_cond_br(
+fn analyzeInstCondBr(
     a: *Analysis,
     comptime pass: LivenessPass,
     data: *LivenessPassData(pass),
@@ -1663,7 +1663,7 @@ fn analyze_inst_cond_br(
     try analyzeOperands(a, pass, data, inst, .{ condition, .none, .none });
 }
 
-fn analyze_inst_switch_br(
+fn analyzeInstSwitchBr(
     a: *Analysis,
     comptime pass: LivenessPass,
     data: *LivenessPassData(pass),
@@ -1777,7 +1777,7 @@ fn analyze_inst_switch_br(
     try analyzeOperands(a, pass, data, inst, .{ condition, .none, .none });
 }
 
-fn analyze_big_operands(comptime pass: LivenessPass) type {
+fn AnalyzeBigOperands(comptime pass: LivenessPass) type {
     return struct {
         a: *Analysis,
         data: *LivenessPassData(pass),
@@ -1903,7 +1903,7 @@ fn analyze_big_operands(comptime pass: LivenessPass) type {
     };
 }
 
-fn fmt_inst_set(set: *const std.AutoHashMapUnmanaged(Air.Inst.Index, void)) FmtInstSet {
+fn fmtInstSet(set: *const std.AutoHashMapUnmanaged(Air.Inst.Index, void)) FmtInstSet {
     return .{ .set = set };
 }
 
@@ -1923,7 +1923,7 @@ const FmtInstSet = struct {
     }
 };
 
-fn fmt_inst_list(list: []const Air.Inst.Index) FmtInstList {
+fn fmtInstList(list: []const Air.Inst.Index) FmtInstList {
     return .{ .list = list };
 }
 

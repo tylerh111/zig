@@ -25,7 +25,7 @@ pub fn deinit(info: *UnwindInfo, allocator: Allocator) void {
     info.lsdas_lookup.deinit(allocator);
 }
 
-fn can_fold(macho_file: *MachO, lhs_index: Record.Index, rhs_index: Record.Index) bool {
+fn canFold(macho_file: *MachO, lhs_index: Record.Index, rhs_index: Record.Index) bool {
     const cpu_arch = macho_file.getTarget().cpu.arch;
     const lhs = macho_file.getUnwindRecord(lhs_index);
     const rhs = macho_file.getUnwindRecord(rhs_index);
@@ -83,7 +83,7 @@ pub fn generate(info: *UnwindInfo, macho_file: *MachO) !void {
 
     // Sort by assigned relative address within each output section
     const sortFn = struct {
-        fn sort_fn(ctx: *MachO, lhs_index: Record.Index, rhs_index: Record.Index) bool {
+        fn sortFn(ctx: *MachO, lhs_index: Record.Index, rhs_index: Record.Index) bool {
             const lhs = ctx.getUnwindRecord(lhs_index);
             const rhs = ctx.getUnwindRecord(rhs_index);
             const lhsa = lhs.getAtom(ctx);
@@ -129,7 +129,7 @@ pub fn generate(info: *UnwindInfo, macho_file: *MachO) !void {
             enc: Encoding,
             count: u32,
 
-            fn greater_than(ctx: void, lhs: @This(), rhs: @This()) bool {
+            fn greaterThan(ctx: void, lhs: @This(), rhs: @This()) bool {
                 _ = ctx;
                 return lhs.count > rhs.count;
             }
@@ -254,7 +254,7 @@ pub fn generate(info: *UnwindInfo, macho_file: *MachO) !void {
     }
 }
 
-pub fn calc_size(info: UnwindInfo) usize {
+pub fn calcSize(info: UnwindInfo) usize {
     var total_size: usize = 0;
     total_size += @sizeOf(macho.unwind_info_section_header);
     total_size +=
@@ -340,7 +340,7 @@ pub fn write(info: UnwindInfo, macho_file: *MachO, buffer: []u8) !void {
     @memset(buffer[stream.pos..], 0);
 }
 
-fn get_or_put_personality_function(info: *UnwindInfo, sym_index: Symbol.Index) error{TooManyPersonalities}!u2 {
+fn getOrPutPersonalityFunction(info: *UnwindInfo, sym_index: Symbol.Index) error{TooManyPersonalities}!u2 {
     comptime var index: u2 = 0;
     inline while (index < max_personalities) : (index += 1) {
         if (info.personalities[index] == sym_index) {
@@ -354,13 +354,13 @@ fn get_or_put_personality_function(info: *UnwindInfo, sym_index: Symbol.Index) e
     return error.TooManyPersonalities;
 }
 
-fn append_common_encoding(info: *UnwindInfo, enc: Encoding) void {
+fn appendCommonEncoding(info: *UnwindInfo, enc: Encoding) void {
     assert(info.common_encodings_count <= max_common_encodings);
     info.common_encodings[info.common_encodings_count] = enc;
     info.common_encodings_count += 1;
 }
 
-fn get_common_encoding(info: UnwindInfo, enc: Encoding) ?u7 {
+fn getCommonEncoding(info: UnwindInfo, enc: Encoding) ?u7 {
     comptime var index: u7 = 0;
     inline while (index < max_common_encodings) : (index += 1) {
         if (index >= info.common_encodings_count) return null;
@@ -374,13 +374,13 @@ fn get_common_encoding(info: UnwindInfo, enc: Encoding) ?u7 {
 pub const Encoding = extern struct {
     enc: macho.compact_unwind_encoding_t,
 
-    pub fn get_mode(enc: Encoding) u4 {
+    pub fn getMode(enc: Encoding) u4 {
         comptime assert(macho.UNWIND_ARM64_MODE_MASK == macho.UNWIND_X86_64_MODE_MASK);
         const shift = comptime @ctz(macho.UNWIND_ARM64_MODE_MASK);
         return @as(u4, @truncate((enc.enc & macho.UNWIND_ARM64_MODE_MASK) >> shift));
     }
 
-    pub fn is_dwarf(enc: Encoding, macho_file: *MachO) bool {
+    pub fn isDwarf(enc: Encoding, macho_file: *MachO) bool {
         const mode = enc.getMode();
         return switch (macho_file.getTarget().cpu.arch) {
             .aarch64 => @as(macho.UNWIND_ARM64_MODE, @enumFromInt(mode)) == .DWARF,
@@ -389,42 +389,42 @@ pub const Encoding = extern struct {
         };
     }
 
-    pub fn set_mode(enc: *Encoding, mode: anytype) void {
+    pub fn setMode(enc: *Encoding, mode: anytype) void {
         comptime assert(macho.UNWIND_ARM64_MODE_MASK == macho.UNWIND_X86_64_MODE_MASK);
         const shift = comptime @ctz(macho.UNWIND_ARM64_MODE_MASK);
         enc.enc |= @as(u32, @intCast(@intFromEnum(mode))) << shift;
     }
 
-    pub fn has_lsda(enc: Encoding) bool {
+    pub fn hasLsda(enc: Encoding) bool {
         const shift = comptime @ctz(macho.UNWIND_HAS_LSDA);
         const has_lsda = @as(u1, @truncate((enc.enc & macho.UNWIND_HAS_LSDA) >> shift));
         return has_lsda == 1;
     }
 
-    pub fn set_has_lsda(enc: *Encoding, has_lsda: bool) void {
+    pub fn setHasLsda(enc: *Encoding, has_lsda: bool) void {
         const shift = comptime @ctz(macho.UNWIND_HAS_LSDA);
         const mask = @as(u32, @intCast(@intFromBool(has_lsda))) << shift;
         enc.enc |= mask;
     }
 
-    pub fn get_personality_index(enc: Encoding) u2 {
+    pub fn getPersonalityIndex(enc: Encoding) u2 {
         const shift = comptime @ctz(macho.UNWIND_PERSONALITY_MASK);
         const index = @as(u2, @truncate((enc.enc & macho.UNWIND_PERSONALITY_MASK) >> shift));
         return index;
     }
 
-    pub fn set_personality_index(enc: *Encoding, index: u2) void {
+    pub fn setPersonalityIndex(enc: *Encoding, index: u2) void {
         const shift = comptime @ctz(macho.UNWIND_PERSONALITY_MASK);
         const mask = @as(u32, @intCast(index)) << shift;
         enc.enc |= mask;
     }
 
-    pub fn get_dwarf_section_offset(enc: Encoding) u24 {
+    pub fn getDwarfSectionOffset(enc: Encoding) u24 {
         const offset = @as(u24, @truncate(enc.enc));
         return offset;
     }
 
-    pub fn set_dwarf_section_offset(enc: *Encoding, offset: u24) void {
+    pub fn setDwarfSectionOffset(enc: *Encoding, offset: u24) void {
         enc.enc |= offset;
     }
 
@@ -456,39 +456,39 @@ pub const Record = struct {
     file: File.Index = 0,
     alive: bool = true,
 
-    pub fn get_object(rec: Record, macho_file: *MachO) *Object {
+    pub fn getObject(rec: Record, macho_file: *MachO) *Object {
         return macho_file.getFile(rec.file).?.object;
     }
 
-    pub fn get_atom(rec: Record, macho_file: *MachO) *Atom {
+    pub fn getAtom(rec: Record, macho_file: *MachO) *Atom {
         return macho_file.getAtom(rec.atom).?;
     }
 
-    pub fn get_lsda_atom(rec: Record, macho_file: *MachO) ?*Atom {
+    pub fn getLsdaAtom(rec: Record, macho_file: *MachO) ?*Atom {
         return macho_file.getAtom(rec.lsda);
     }
 
-    pub fn get_personality(rec: Record, macho_file: *MachO) ?*Symbol {
+    pub fn getPersonality(rec: Record, macho_file: *MachO) ?*Symbol {
         const personality = rec.personality orelse return null;
         return macho_file.getSymbol(personality);
     }
 
-    pub fn get_fde(rec: Record, macho_file: *MachO) ?Fde {
+    pub fn getFde(rec: Record, macho_file: *MachO) ?Fde {
         if (!rec.enc.isDwarf(macho_file)) return null;
         return rec.getObject(macho_file).fdes.items[rec.fde];
     }
 
-    pub fn get_fde_ptr(rec: Record, macho_file: *MachO) ?*Fde {
+    pub fn getFdePtr(rec: Record, macho_file: *MachO) ?*Fde {
         if (!rec.enc.isDwarf(macho_file)) return null;
         return &rec.getObject(macho_file).fdes.items[rec.fde];
     }
 
-    pub fn get_atom_address(rec: Record, macho_file: *MachO) u64 {
+    pub fn getAtomAddress(rec: Record, macho_file: *MachO) u64 {
         const atom = rec.getAtom(macho_file);
         return atom.getAddress(macho_file) + rec.atom_offset;
     }
 
-    pub fn get_lsda_address(rec: Record, macho_file: *MachO) u64 {
+    pub fn getLsdaAddress(rec: Record, macho_file: *MachO) u64 {
         const lsda = rec.getLsdaAtom(macho_file) orelse return 0;
         return lsda.getAddress(macho_file) + rec.lsda_offset;
     }
@@ -563,13 +563,13 @@ const Page = struct {
     page_encodings: [max_compact_encodings]Encoding = undefined,
     page_encodings_count: u9 = 0,
 
-    fn append_page_encoding(page: *Page, enc: Encoding) void {
+    fn appendPageEncoding(page: *Page, enc: Encoding) void {
         assert(page.page_encodings_count <= max_compact_encodings);
         page.page_encodings[page.page_encodings_count] = enc;
         page.page_encodings_count += 1;
     }
 
-    fn get_page_encoding(page: Page, enc: Encoding) ?u8 {
+    fn getPageEncoding(page: Page, enc: Encoding) ?u8 {
         comptime var index: u9 = 0;
         inline while (index < max_compact_encodings) : (index += 1) {
             if (index >= page.page_encodings_count) return null;

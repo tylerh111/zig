@@ -15,7 +15,7 @@ const linux = std.os.linux;
 /// If linking gnu libc (glibc), returns true if the target version is greater
 /// than or equal to `glibc_version`.
 /// If linking a libc other than these, returns `false`.
-pub inline fn version_check(comptime glibc_version: std.SemanticVersion) bool {
+pub inline fn versionCheck(comptime glibc_version: std.SemanticVersion) bool {
     return comptime blk: {
         if (!builtin.link_libc) break :blk false;
         if (native_abi.isMusl()) break :blk true;

@@ -117,7 +117,7 @@ test "function call with 40 arguments" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test(thirty_nine: i32) !void {
+        fn doTheTest(thirty_nine: i32) !void {
             const result = add(
                 0,
                 1,
@@ -256,7 +256,7 @@ test "function call with 40 arguments" {
 
 test "arguments to comptime parameters generated in comptime blocks" {
     const S = struct {
-        fn forty_two() i32 {
+        fn fortyTwo() i32 {
             return 42;
         }
 
@@ -286,7 +286,7 @@ test "forced tail call" {
     if (builtin.zig_backend == .stage2_c and builtin.os.tag == .windows) return error.SkipZigTest; // MSVC doesn't support always tail calls
 
     const S = struct {
-        fn fibonacci_tail_internal(n: u16, a: u16, b: u16) u16 {
+        fn fibonacciTailInternal(n: u16, a: u16, b: u16) u16 {
             if (n == 0) return a;
             if (n == 1) return b;
             return @call(
@@ -296,7 +296,7 @@ test "forced tail call" {
             );
         }
 
-        fn fibonacci_tail(n: u16) u16 {
+        fn fibonacciTail(n: u16) u16 {
             return fibonacciTailInternal(n, 0, 1);
         }
     };
@@ -433,7 +433,7 @@ test "method call as parameter type" {
         fn foo(x: anytype, y: @TypeOf(x).Inner()) @TypeOf(y) {
             return y;
         }
-        fn inner() type {
+        fn Inner() type {
             return u64;
         }
     };
@@ -484,7 +484,7 @@ test "argument to generic function has correct result type" {
             return e == .b;
         }
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var t = true;
             _ = &t;
 
@@ -631,7 +631,7 @@ test "call with union with zero sized field is not memorized incorrectly" {
     const U = union(enum) {
         T: type,
         N: void,
-        fn s(comptime query: @This()) type {
+        fn S(comptime query: @This()) type {
             return struct {
                 fn tag() type {
                     return query.T;

@@ -96,7 +96,7 @@ pub fn main() !void {
     try bw.flush();
 }
 
-fn read_ext_registry(exts: *std.ArrayList(Extension), a: Allocator, dir: std.fs.Dir, sub_path: []const u8) !void {
+fn readExtRegistry(exts: *std.ArrayList(Extension), a: Allocator, dir: std.fs.Dir, sub_path: []const u8) !void {
     const filename = std.fs.path.basename(sub_path);
     if (!std.mem.startsWith(u8, filename, "extinst.")) {
         return;
@@ -111,7 +111,7 @@ fn read_ext_registry(exts: *std.ArrayList(Extension), a: Allocator, dir: std.fs.
     try exts.append(.{ .name = set_names.get(name).?, .spec = spec });
 }
 
-fn read_registry(comptime RegistryType: type, a: Allocator, dir: std.fs.Dir, path: []const u8) !RegistryType {
+fn readRegistry(comptime RegistryType: type, a: Allocator, dir: std.fs.Dir, path: []const u8) !RegistryType {
     const spec = try dir.readFileAlloc(a, path, std.math.maxInt(usize));
     // Required for json parsing.
     @setEvalBranchQuota(10000);
@@ -128,7 +128,7 @@ fn read_registry(comptime RegistryType: type, a: Allocator, dir: std.fs.Dir, pat
 
 /// Returns a set with types that require an extra struct for the `Instruction` interface
 /// to the spir-v spec, or whether the original type can be used.
-fn extended_structs(
+fn extendedStructs(
     a: Allocator,
     kinds: []const OperandKind,
 ) !ExtendedStructSet {
@@ -154,7 +154,7 @@ fn extended_structs(
 // removed by picking the tag with the lowest score to keep, and by making an alias for the
 // other. Note that the tag does not need to be just a tag at this point, in which case it
 // gets the lowest score automatically anyway.
-fn tag_priority_score(tag: []const u8) usize {
+fn tagPriorityScore(tag: []const u8) usize {
     if (tag.len == 0) {
         return 1;
     } else if (std.mem.eql(u8, tag, "EXT")) {
@@ -178,7 +178,7 @@ fn render(writer: anytype, a: Allocator, registry: CoreRegistry, extensions: []c
         \\    major: u8,
         \\    padding0: u8 = 0,
         \\
-        \\    pub fn to_word(self: @This()) Word {
+        \\    pub fn toWord(self: @This()) Word {
         \\        return @bitCast(self);
         \\    }
         \\};
@@ -297,7 +297,7 @@ fn render(writer: anytype, a: Allocator, registry: CoreRegistry, extensions: []c
     try renderInstructionSet(writer, a, registry, extensions, all_operand_kinds);
 }
 
-fn render_instruction_set(
+fn renderInstructionSet(
     writer: anytype,
     a: Allocator,
     core: CoreRegistry,
@@ -334,7 +334,7 @@ fn render_instruction_set(
     );
 }
 
-fn render_instructions_case(
+fn renderInstructionsCase(
     writer: anytype,
     set_name: []const u8,
     instructions: []const Instruction,
@@ -382,7 +382,7 @@ fn render_instructions_case(
     );
 }
 
-fn render_class(writer: anytype, a: Allocator, instructions: []const Instruction) !void {
+fn renderClass(writer: anytype, a: Allocator, instructions: []const Instruction) !void {
     var class_map = std.StringArrayHashMap(void).init(a);
 
     for (instructions) |inst| {
@@ -400,7 +400,7 @@ fn render_class(writer: anytype, a: Allocator, instructions: []const Instruction
     try writer.writeAll("};\n\n");
 }
 
-fn render_instruction_class(writer: anytype, class: []const u8) !void {
+fn renderInstructionClass(writer: anytype, class: []const u8) !void {
     // Just assume that these wont clobber zig builtin types.
     var prev_was_sep = true;
     for (class) |c| {
@@ -416,7 +416,7 @@ fn render_instruction_class(writer: anytype, class: []const u8) !void {
     }
 }
 
-fn render_operand_kind(writer: anytype, operands: []const OperandKind) !void {
+fn renderOperandKind(writer: anytype, operands: []const OperandKind) !void {
     try writer.writeAll(
         \\pub const OperandKind = enum {
         \\    Opcode,
@@ -472,7 +472,7 @@ fn render_operand_kind(writer: anytype, operands: []const OperandKind) !void {
     try writer.writeAll("};\n}\n};\n");
 }
 
-fn render_enumerant(writer: anytype, enumerant: Enumerant) !void {
+fn renderEnumerant(writer: anytype, enumerant: Enumerant) !void {
     try writer.print(".{{.name = \"{s}\", .value = ", .{enumerant.enumerant});
     switch (enumerant.value) {
         .bitflag => |flag| try writer.writeAll(flag),
@@ -488,7 +488,7 @@ fn render_enumerant(writer: anytype, enumerant: Enumerant) !void {
     try writer.writeAll("}}");
 }
 
-fn render_opcodes(
+fn renderOpcodes(
     writer: anytype,
     a: Allocator,
     instructions: []const Instruction,
@@ -545,7 +545,7 @@ fn render_opcodes(
 
     try writer.writeAll(
         \\
-        \\pub fn operands(comptime self: Opcode) type {
+        \\pub fn Operands(comptime self: Opcode) type {
         \\    return switch (self) {
         \\
     );
@@ -578,7 +578,7 @@ fn render_opcodes(
     );
 }
 
-fn render_operand_kinds(
+fn renderOperandKinds(
     writer: anytype,
     a: Allocator,
     kinds: []const OperandKind,
@@ -593,7 +593,7 @@ fn render_operand_kinds(
     }
 }
 
-fn render_value_enum(
+fn renderValueEnum(
     writer: anytype,
     a: Allocator,
     enumeration: OperandKind,
@@ -673,7 +673,7 @@ fn render_value_enum(
     try writer.writeAll("};\n};\n");
 }
 
-fn render_bit_enum(
+fn renderBitEnum(
     writer: anytype,
     a: Allocator,
     enumeration: OperandKind,
@@ -757,7 +757,7 @@ fn render_bit_enum(
     try writer.writeAll("};\n};\n");
 }
 
-fn render_operand(
+fn renderOperand(
     writer: anytype,
     kind: enum {
         @"union",
@@ -831,7 +831,7 @@ fn render_operand(
     try writer.writeAll(",\n");
 }
 
-fn render_field_name(writer: anytype, operands: []const Operand, field_index: usize) !void {
+fn renderFieldName(writer: anytype, operands: []const Operand, field_index: usize) !void {
     const operand = operands[field_index];
 
     // Should be enough for all names - adjust as needed.
@@ -891,14 +891,14 @@ fn render_field_name(writer: anytype, operands: []const Operand, field_index: us
     }
 }
 
-fn parse_hex_int(text: []const u8) !u31 {
+fn parseHexInt(text: []const u8) !u31 {
     const prefix = "0x";
     if (!std.mem.startsWith(u8, text, prefix))
         return error.InvalidHexInt;
     return try std.fmt.parseInt(u31, text[prefix.len..], 16);
 }
 
-fn usage_and_exit(arg0: []const u8, code: u8) noreturn {
+fn usageAndExit(arg0: []const u8, code: u8) noreturn {
     std.io.getStdErr().writer().print(
         \\Usage: {s} <SPIRV-Headers repository path> <path/to/zig/src/codegen/spirv/extinst.zig.grammar.json>
         \\

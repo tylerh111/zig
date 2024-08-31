@@ -35,7 +35,7 @@ test "@popCount 128bit integer" {
     try expect(@popCount(@as(i128, 0b11111111000110001100010000100001000011000011100101010001)) == 24);
 }
 
-fn test_pop_count_integers() !void {
+fn testPopCountIntegers() !void {
     {
         var x: u32 = 0xffffffff;
         _ = &x;
@@ -89,7 +89,7 @@ test "@popCount vectors" {
     try testPopCountVectors();
 }
 
-fn test_pop_count_vectors() !void {
+fn testPopCountVectors() !void {
     {
         var x: @Vector(8, u32) = [1]u32{0xffffffff} ** 8;
         _ = &x;

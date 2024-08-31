@@ -3,7 +3,7 @@ const Compilation = @import("Compilation.zig");
 const target_util = @import("target.zig");
 
 /// Used to implement the __has_feature macro.
-pub fn has_feature(comp: *Compilation, ext: []const u8) bool {
+pub fn hasFeature(comp: *Compilation, ext: []const u8) bool {
     const list = .{
         .assume_nonnull = true,
         .attribute_analyzer_noreturn = true,
@@ -52,7 +52,7 @@ pub fn has_feature(comp: *Compilation, ext: []const u8) bool {
 }
 
 /// Used to implement the __has_extension macro.
-pub fn has_extension(comp: *Compilation, ext: []const u8) bool {
+pub fn hasExtension(comp: *Compilation, ext: []const u8) bool {
     const list = .{
         // C11 features
         .c_alignas = true,

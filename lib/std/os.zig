@@ -56,7 +56,7 @@ pub var argv: [][*:0]u8 = if (builtin.link_libc) undefined else switch (builtin.
 
 /// Call from Windows-specific code if you already have a WTF-16LE encoded, null terminated string.
 /// Otherwise use `access` or `accessZ`.
-pub fn access_w(path: [*:0]const u16) windows.GetFileAttributesError!void {
+pub fn accessW(path: [*:0]const u16) windows.GetFileAttributesError!void {
     const ret = try windows.GetFileAttributesW(path);
     if (ret != windows.INVALID_FILE_ATTRIBUTES) {
         return;
@@ -69,7 +69,7 @@ pub fn access_w(path: [*:0]const u16) windows.GetFileAttributesError!void {
     }
 }
 
-pub fn is_get_fd_path_supported_on_target(os: std.Target.Os) bool {
+pub fn isGetFdPathSupportedOnTarget(os: std.Target.Os) bool {
     return switch (os.tag) {
         .windows,
         .macos,
@@ -99,7 +99,7 @@ pub fn is_get_fd_path_supported_on_target(os: std.Target.Os) bool {
 /// * On other platforms, the result is an opaque sequence of bytes with no particular encoding.
 ///
 /// Calling this function is usually a bug.
-pub fn get_fd_path(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posix.RealPathError![]u8 {
+pub fn getFdPath(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posix.RealPathError![]u8 {
     if (!comptime isGetFdPathSupportedOnTarget(builtin.os)) {
         @compileError("querying for canonical path of a handle is unsupported on this host");
     }

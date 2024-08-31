@@ -2,7 +2,7 @@ const std = @import("std");
 const os = std.os;
 const tests = @import("tests.zig");
 
-pub fn add_cases(cases: *tests.StackTracesContext) void {
+pub fn addCases(cases: *tests.StackTracesContext) void {
     cases.addCase(.{
         .name = "return",
         .source =
@@ -505,14 +505,14 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
     cases.addCase(.{
         .name = "error passed to function has its trace preserved for duration of the call",
         .source =
-        \\pub fn expect_error(expected_error: anyerror, actual_error: anyerror!void) !void {
+        \\pub fn expectError(expected_error: anyerror, actual_error: anyerror!void) !void {
         \\    actual_error catch |err| {
         \\        if (err == expected_error) return {};
         \\    };
         \\    return error.TestExpectedError;
         \\}
         \\
-        \\fn always_errors() !void { return error.ThisErrorShouldNotAppearInAnyTrace; }
+        \\fn alwaysErrors() !void { return error.ThisErrorShouldNotAppearInAnyTrace; }
         \\fn foo() !void { return error.Foo; }
         \\
         \\pub fn main() !void {

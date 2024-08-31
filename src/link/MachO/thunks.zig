@@ -1,4 +1,4 @@
-pub fn create_thunks(sect_id: u8, macho_file: *MachO) !void {
+pub fn createThunks(sect_id: u8, macho_file: *MachO) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -61,7 +61,7 @@ fn advance(sect: *macho.section_64, size: u64, alignment: Atom.Alignment) !u64 {
     return offset;
 }
 
-fn is_reachable(atom: *const Atom, rel: Relocation, macho_file: *MachO) bool {
+fn isReachable(atom: *const Atom, rel: Relocation, macho_file: *MachO) bool {
     const target = rel.getTargetSymbol(macho_file);
     if (target.flags.stubs or target.flags.objc_stubs) return false;
     if (atom.out_n_sect != target.out_n_sect) return false;
@@ -86,12 +86,12 @@ pub const Thunk = struct {
         return thunk.symbols.keys().len * trampoline_size;
     }
 
-    pub fn get_address(thunk: Thunk, macho_file: *MachO) u64 {
+    pub fn getAddress(thunk: Thunk, macho_file: *MachO) u64 {
         const header = macho_file.sections.items(.header)[thunk.out_n_sect];
         return header.addr + thunk.value;
     }
 
-    pub fn get_target_address(thunk: Thunk, sym_index: Symbol.Index, macho_file: *MachO) u64 {
+    pub fn getTargetAddress(thunk: Thunk, sym_index: Symbol.Index, macho_file: *MachO) u64 {
         return thunk.getAddress(macho_file) + thunk.symbols.getIndex(sym_index).? * trampoline_size;
     }
 

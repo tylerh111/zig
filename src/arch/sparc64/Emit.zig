@@ -59,7 +59,7 @@ const BranchType = enum {
     }
 };
 
-pub fn emit_mir(
+pub fn emitMir(
     emit: *Emit,
 ) InnerError!void {
     const mir_tags = emit.mir.instructions.items(.tag);
@@ -165,7 +165,7 @@ pub fn deinit(emit: *Emit) void {
     emit.* = undefined;
 }
 
-fn mir_dbg_line(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mirDbgLine(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const dbg_line_column = emit.mir.instructions.items(.data)[inst].dbg_line_column;
 
@@ -175,7 +175,7 @@ fn mir_dbg_line(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mir_debug_prologue_end(emit: *Emit) !void {
+fn mirDebugPrologueEnd(emit: *Emit) !void {
     switch (emit.debug_output) {
         .dwarf => |dbg_out| {
             try dbg_out.setPrologueEnd();
@@ -186,7 +186,7 @@ fn mir_debug_prologue_end(emit: *Emit) !void {
     }
 }
 
-fn mir_debug_epilogue_begin(emit: *Emit) !void {
+fn mirDebugEpilogueBegin(emit: *Emit) !void {
     switch (emit.debug_output) {
         .dwarf => |dbg_out| {
             try dbg_out.setEpilogueBegin();
@@ -197,7 +197,7 @@ fn mir_debug_epilogue_begin(emit: *Emit) !void {
     }
 }
 
-fn mir_arithmetic2_op(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mirArithmetic2Op(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const data = emit.mir.instructions.items(.data)[inst].arithmetic_2op;
 
@@ -224,7 +224,7 @@ fn mir_arithmetic2_op(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mir_arithmetic3_op(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mirArithmetic3Op(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const data = emit.mir.instructions.items(.data)[inst].arithmetic_3op;
 
@@ -288,7 +288,7 @@ fn mir_arithmetic3_op(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mir_conditional_branch(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mirConditionalBranch(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const branch_type = emit.branch_types.get(inst).?;
 
@@ -332,7 +332,7 @@ fn mir_conditional_branch(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mir_conditional_move(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mirConditionalMove(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
 
     switch (tag) {
@@ -380,7 +380,7 @@ fn mir_conditional_move(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mir_mem_asi(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mirMemASI(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const data = emit.mir.instructions.items(.data)[inst].mem_asi;
 
@@ -403,7 +403,7 @@ fn mir_mem_asi(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mir_membar(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mirMembar(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const mask = emit.mir.instructions.items(.data)[inst].membar_mask;
     assert(tag == .membar);
@@ -414,11 +414,11 @@ fn mir_membar(emit: *Emit, inst: Mir.Inst.Index) !void {
     ));
 }
 
-fn mir_nop(emit: *Emit) !void {
+fn mirNop(emit: *Emit) !void {
     try emit.writeInstruction(Instruction.nop());
 }
 
-fn mir_sethi(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mirSethi(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const data = emit.mir.instructions.items(.data)[inst].sethi;
 
@@ -429,7 +429,7 @@ fn mir_sethi(emit: *Emit, inst: Mir.Inst.Index) !void {
     try emit.writeInstruction(Instruction.sethi(imm, rd));
 }
 
-fn mir_shift(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mirShift(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const data = emit.mir.instructions.items(.data)[inst].shift;
 
@@ -461,7 +461,7 @@ fn mir_shift(emit: *Emit, inst: Mir.Inst.Index) !void {
     }
 }
 
-fn mir_trap(emit: *Emit, inst: Mir.Inst.Index) !void {
+fn mirTrap(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const data = emit.mir.instructions.items(.data)[inst].trap;
 
@@ -486,7 +486,7 @@ fn mir_trap(emit: *Emit, inst: Mir.Inst.Index) !void {
 
 // Common helper functions
 
-fn branch_target(emit: *Emit, inst: Mir.Inst.Index) Mir.Inst.Index {
+fn branchTarget(emit: *Emit, inst: Mir.Inst.Index) Mir.Inst.Index {
     const tag = emit.mir.instructions.items(.tag)[inst];
 
     switch (tag) {
@@ -496,7 +496,7 @@ fn branch_target(emit: *Emit, inst: Mir.Inst.Index) Mir.Inst.Index {
     }
 }
 
-fn dbg_advance_pcand_line(emit: *Emit, line: u32, column: u32) !void {
+fn dbgAdvancePCAndLine(emit: *Emit, line: u32, column: u32) !void {
     const delta_line = @as(i32, @intCast(line)) - @as(i32, @intCast(emit.prev_di_line));
     const delta_pc: usize = emit.code.items.len - emit.prev_di_pc;
     switch (emit.debug_output) {
@@ -519,7 +519,7 @@ fn fail(emit: *Emit, comptime format: []const u8, args: anytype) InnerError {
     return error.EmitFail;
 }
 
-fn instruction_size(emit: *Emit, inst: Mir.Inst.Index) usize {
+fn instructionSize(emit: *Emit, inst: Mir.Inst.Index) usize {
     const tag = emit.mir.instructions.items(.tag)[inst];
 
     switch (tag) {
@@ -532,7 +532,7 @@ fn instruction_size(emit: *Emit, inst: Mir.Inst.Index) usize {
     }
 }
 
-fn is_branch(tag: Mir.Inst.Tag) bool {
+fn isBranch(tag: Mir.Inst.Tag) bool {
     return switch (tag) {
         .bpcc => true,
         .bpr => true,
@@ -540,7 +540,7 @@ fn is_branch(tag: Mir.Inst.Tag) bool {
     };
 }
 
-fn lower_branches(emit: *Emit) !void {
+fn lowerBranches(emit: *Emit) !void {
     const comp = emit.bin_file.comp;
     const gpa = comp.gpa;
     const mir_tags = emit.mir.instructions.items(.tag);
@@ -649,7 +649,7 @@ fn lower_branches(emit: *Emit) !void {
     }
 }
 
-fn optimal_branch_type(emit: *Emit, tag: Mir.Inst.Tag, offset: i64) !BranchType {
+fn optimalBranchType(emit: *Emit, tag: Mir.Inst.Tag, offset: i64) !BranchType {
     assert(offset & 0b11 == 0);
 
     switch (tag) {
@@ -678,7 +678,7 @@ fn optimal_branch_type(emit: *Emit, tag: Mir.Inst.Tag, offset: i64) !BranchType 
     }
 }
 
-fn write_instruction(emit: *Emit, instruction: Instruction) !void {
+fn writeInstruction(emit: *Emit, instruction: Instruction) !void {
     // SPARCv9 instructions are always arranged in BE regardless of the
     // endianness mode the CPU is running in (Section 3.1 of the ISA specification).
     // This is to ease porting in case someone wants to do a LE SPARCv9 backend.

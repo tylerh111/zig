@@ -30,7 +30,7 @@ pub const DynLib = struct {
     }
 
     /// Trusts the file. Malicious file will be able to execute arbitrary code.
-    pub fn open_z(path_c: [*:0]const u8) Error!DynLib {
+    pub fn openZ(path_c: [*:0]const u8) Error!DynLib {
         return .{ .inner = try InnerType.open(path_c) };
     }
 
@@ -82,7 +82,7 @@ const RDebug = extern struct {
 
 /// TODO make it possible to reference this same external symbol 2x so we don't need this
 /// helper function.
-pub fn get_dynamic() ?[*]elf.Dyn {
+pub fn get_DYNAMIC() ?[*]elf.Dyn {
     return @extern([*]elf.Dyn, .{ .name = "_DYNAMIC", .linkage = .weak });
 }
 
@@ -277,7 +277,7 @@ pub const ElfDynLib = struct {
     }
 
     /// Trusts the file. Malicious file will be able to execute arbitrary code.
-    pub fn open_z(path_c: [*:0]const u8) Error!ElfDynLib {
+    pub fn openZ(path_c: [*:0]const u8) Error!ElfDynLib {
         return open(mem.sliceTo(path_c, 0));
     }
 
@@ -297,7 +297,7 @@ pub const ElfDynLib = struct {
 
     /// ElfDynLib specific
     /// Returns the address of the symbol
-    pub fn lookup_address(self: *const ElfDynLib, vername: []const u8, name: []const u8) ?usize {
+    pub fn lookupAddress(self: *const ElfDynLib, vername: []const u8, name: []const u8) ?usize {
         const maybe_versym = if (self.verdef == null) null else self.versym;
 
         const OK_TYPES = (1 << elf.STT_NOTYPE | 1 << elf.STT_OBJECT | 1 << elf.STT_FUNC | 1 << elf.STT_COMMON);
@@ -319,7 +319,7 @@ pub const ElfDynLib = struct {
         return null;
     }
 
-    fn elf_to_mmap_prot(elf_prot: u64) u32 {
+    fn elfToMmapProt(elf_prot: u64) u32 {
         var result: u32 = posix.PROT.NONE;
         if ((elf_prot & elf.PF_R) != 0) result |= posix.PROT.READ;
         if ((elf_prot & elf.PF_W) != 0) result |= posix.PROT.WRITE;
@@ -364,30 +364,30 @@ pub const WindowsDynLib = struct {
 
     /// WindowsDynLib specific
     /// Opens dynamic library with specified library loading flags.
-    pub fn open_ex(path: []const u8, flags: windows.LoadLibraryFlags) Error!WindowsDynLib {
+    pub fn openEx(path: []const u8, flags: windows.LoadLibraryFlags) Error!WindowsDynLib {
         const path_w = windows.sliceToPrefixedFileW(null, path) catch return error.InvalidPath;
         return openExW(path_w.span().ptr, flags);
     }
 
-    pub fn open_z(path_c: [*:0]const u8) Error!WindowsDynLib {
+    pub fn openZ(path_c: [*:0]const u8) Error!WindowsDynLib {
         return openExZ(path_c, .none);
     }
 
     /// WindowsDynLib specific
     /// Opens dynamic library with specified library loading flags.
-    pub fn open_ex_z(path_c: [*:0]const u8, flags: windows.LoadLibraryFlags) Error!WindowsDynLib {
+    pub fn openExZ(path_c: [*:0]const u8, flags: windows.LoadLibraryFlags) Error!WindowsDynLib {
         const path_w = try windows.cStrToPrefixedFileW(null, path_c);
         return openExW(path_w.span().ptr, flags);
     }
 
     /// WindowsDynLib specific
-    pub fn open_w(path_w: [*:0]const u16) Error!WindowsDynLib {
+    pub fn openW(path_w: [*:0]const u16) Error!WindowsDynLib {
         return openExW(path_w, .none);
     }
 
     /// WindowsDynLib specific
     /// Opens dynamic library with specified library loading flags.
-    pub fn open_ex_w(path_w: [*:0]const u16, flags: windows.LoadLibraryFlags) Error!WindowsDynLib {
+    pub fn openExW(path_w: [*:0]const u16, flags: windows.LoadLibraryFlags) Error!WindowsDynLib {
         var offset: usize = 0;
         if (path_w[0] == '\\' and path_w[1] == '?' and path_w[2] == '?' and path_w[3] == '\\') {
             // + 4 to skip over the \??\
@@ -423,7 +423,7 @@ pub const DlDynLib = struct {
         return openZ(&path_c);
     }
 
-    pub fn open_z(path_c: [*:0]const u8) Error!DlDynLib {
+    pub fn openZ(path_c: [*:0]const u8) Error!DlDynLib {
         return .{
             .handle = std.c.dlopen(path_c, std.c.RTLD.LAZY) orelse {
                 return error.FileNotFound;
@@ -452,7 +452,7 @@ pub const DlDynLib = struct {
     /// DlDynLib specific
     /// Returns human readable string describing most recent error than occurred from `lookup`
     /// or `null` if no error has occurred since initialization or when `getError` was last called.
-    pub fn get_error() ?[:0]const u8 {
+    pub fn getError() ?[:0]const u8 {
         return mem.span(std.c.dlerror());
     }
 };

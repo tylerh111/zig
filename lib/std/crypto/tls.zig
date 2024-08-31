@@ -197,7 +197,7 @@ pub const AlertDescription = enum(u8) {
     no_application_protocol = 120,
     _,
 
-    pub fn to_error(alert: AlertDescription) Error!void {
+    pub fn toError(alert: AlertDescription) Error!void {
         return switch (alert) {
             .close_notify => {}, // not an error
             .unexpected_message => error.TlsAlertUnexpectedMessage,
@@ -308,7 +308,7 @@ pub const KeyUpdateRequest = enum(u8) {
     _,
 };
 
-pub fn handshake_cipher_t(comptime AeadType: type, comptime HashType: type) type {
+pub fn HandshakeCipherT(comptime AeadType: type, comptime HashType: type) type {
     return struct {
         pub const AEAD = AeadType;
         pub const Hash = HashType;
@@ -335,7 +335,7 @@ pub const HandshakeCipher = union(enum) {
     AEGIS_128L_SHA256: HandshakeCipherT(crypto.aead.aegis.Aegis128L, crypto.hash.sha2.Sha256),
 };
 
-pub fn application_cipher_t(comptime AeadType: type, comptime HashType: type) type {
+pub fn ApplicationCipherT(comptime AeadType: type, comptime HashType: type) type {
     return struct {
         pub const AEAD = AeadType;
         pub const Hash = HashType;
@@ -360,7 +360,7 @@ pub const ApplicationCipher = union(enum) {
     AEGIS_128L_SHA256: ApplicationCipherT(crypto.aead.aegis.Aegis128L, crypto.hash.sha2.Sha256),
 };
 
-pub fn hkdf_expand_label(
+pub fn hkdfExpandLabel(
     comptime Hkdf: type,
     key: [Hkdf.prk_length]u8,
     label: []const u8,
@@ -387,7 +387,7 @@ pub fn hkdf_expand_label(
     return result;
 }
 
-pub fn empty_hash(comptime Hash: type) [Hash.digest_length]u8 {
+pub fn emptyHash(comptime Hash: type) [Hash.digest_length]u8 {
     var result: [Hash.digest_length]u8 = undefined;
     Hash.hash(&.{}, &result, .{});
     return result;
@@ -450,7 +450,7 @@ pub const Decoder = struct {
     /// Debug helper to prevent illegal calls to read functions.
     disable_reads: bool = false,
 
-    pub fn from_their_slice(buf: []u8) Decoder {
+    pub fn fromTheirSlice(buf: []u8) Decoder {
         return .{
             .buf = buf,
             .their_end = buf.len,
@@ -460,7 +460,7 @@ pub const Decoder = struct {
     }
 
     /// Use this function to increase `their_end`.
-    pub fn read_at_least(d: *Decoder, stream: anytype, their_amt: usize) !void {
+    pub fn readAtLeast(d: *Decoder, stream: anytype, their_amt: usize) !void {
         assert(!d.disable_reads);
         const existing_amt = d.cap - d.idx;
         d.their_end = d.idx + their_amt;
@@ -475,7 +475,7 @@ pub const Decoder = struct {
 
     /// Same as `readAtLeast` but also increases `our_end` by exactly `our_amt`.
     /// Use when `our_amt` is calculated by us, not by them.
-    pub fn read_at_least_our_amt(d: *Decoder, stream: anytype, our_amt: usize) !void {
+    pub fn readAtLeastOurAmt(d: *Decoder, stream: anytype, our_amt: usize) !void {
         assert(!d.disable_reads);
         try readAtLeast(d, stream, our_amt);
         d.our_end = d.idx + our_amt;

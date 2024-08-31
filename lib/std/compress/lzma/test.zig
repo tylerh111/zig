@@ -1,7 +1,7 @@
 const std = @import("../../std.zig");
 const lzma = @import("../lzma.zig");
 
-fn test_decompress(compressed: []const u8) ![]u8 {
+fn testDecompress(compressed: []const u8) ![]u8 {
     const allocator = std.testing.allocator;
     var stream = std.io.fixedBufferStream(compressed);
     var decompressor = try lzma.decompress(allocator, stream.reader());
@@ -10,14 +10,14 @@ fn test_decompress(compressed: []const u8) ![]u8 {
     return reader.readAllAlloc(allocator, std.math.maxInt(usize));
 }
 
-fn test_decompress_equal(expected: []const u8, compressed: []const u8) !void {
+fn testDecompressEqual(expected: []const u8, compressed: []const u8) !void {
     const allocator = std.testing.allocator;
     const decomp = try testDecompress(compressed);
     defer allocator.free(decomp);
     try std.testing.expectEqualSlices(u8, expected, decomp);
 }
 
-fn test_decompress_error(expected: anyerror, compressed: []const u8) !void {
+fn testDecompressError(expected: anyerror, compressed: []const u8) !void {
     return std.testing.expectError(expected, testDecompress(compressed));
 }
 

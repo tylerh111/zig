@@ -8,7 +8,7 @@ pub fn once(comptime f: fn () void) Once(f) {
 
 /// An object that executes the function `f` just once.
 /// It is undefined behavior if `f` re-enters the same Once instance.
-pub fn once(comptime f: fn () void) type {
+pub fn Once(comptime f: fn () void) type {
     return struct {
         done: bool = false,
         mutex: std.Thread.Mutex = std.Thread.Mutex{},
@@ -24,7 +24,7 @@ pub fn once(comptime f: fn () void) type {
             return self.callSlow();
         }
 
-        fn call_slow(self: *@This()) void {
+        fn callSlow(self: *@This()) void {
             @setCold(true);
 
             self.mutex.lock();

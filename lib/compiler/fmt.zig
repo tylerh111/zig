@@ -208,7 +208,7 @@ const FmtError = error{
     InvalidArgument,
 } || fs.File.OpenError;
 
-fn fmt_path(fmt: *Fmt, file_path: []const u8, check_mode: bool, dir: fs.Dir, sub_path: []const u8) FmtError!void {
+fn fmtPath(fmt: *Fmt, file_path: []const u8, check_mode: bool, dir: fs.Dir, sub_path: []const u8) FmtError!void {
     fmtPathFile(fmt, file_path, check_mode, dir, sub_path) catch |err| switch (err) {
         error.IsDir, error.AccessDenied => return fmtPathDir(fmt, file_path, check_mode, dir, sub_path),
         else => {
@@ -219,7 +219,7 @@ fn fmt_path(fmt: *Fmt, file_path: []const u8, check_mode: bool, dir: fs.Dir, sub
     };
 }
 
-fn fmt_path_dir(
+fn fmtPathDir(
     fmt: *Fmt,
     file_path: []const u8,
     check_mode: bool,
@@ -255,7 +255,7 @@ fn fmt_path_dir(
     }
 }
 
-fn fmt_path_file(
+fn fmtPathFile(
     fmt: *Fmt,
     file_path: []const u8,
     check_mode: bool,

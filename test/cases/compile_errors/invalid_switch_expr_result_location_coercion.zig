@@ -1,6 +1,6 @@
 const Enum = enum(u8) { first, second, _ };
 
-export fn invalid_first_prong(enum_value: Enum) u8 {
+export fn invalidFirstProng(enum_value: Enum) u8 {
     const result: u8 = switch (enum_value) {
         .first => 256,
         .second => 0,
@@ -9,7 +9,7 @@ export fn invalid_first_prong(enum_value: Enum) u8 {
     return result;
 }
 
-export fn invalid_second_prong(enum_value: Enum) u8 {
+export fn invalidSecondProng(enum_value: Enum) u8 {
     const result: u8 = switch (enum_value) {
         .first => 0,
         .second => 256,
@@ -18,7 +18,7 @@ export fn invalid_second_prong(enum_value: Enum) u8 {
     return result;
 }
 
-export fn invalid_else_prong(enum_value: Enum) u8 {
+export fn invalidElseProng(enum_value: Enum) u8 {
     const result: u8 = switch (enum_value) {
         .first => 0,
         .second => 0,
@@ -27,7 +27,7 @@ export fn invalid_else_prong(enum_value: Enum) u8 {
     return result;
 }
 
-export fn invalid_non_exhaustive_prong(enum_value: Enum) u8 {
+export fn invalidNonExhaustiveProng(enum_value: Enum) u8 {
     const result: u8 = switch (enum_value) {
         .first => 0,
         .second => 0,

@@ -39,7 +39,7 @@ pub const names = std.StaticStringMap(void).initComptime(.{
 /// Integer type names like `u8` or `i32` are only matched for syntax,
 /// so this will still return true when they have an oversized bit count
 /// or leading zeroes.
-pub fn is_primitive(name: []const u8) bool {
+pub fn isPrimitive(name: []const u8) bool {
     if (names.get(name) != null) return true;
     if (name.len < 2) return false;
     const first_c = name[0];

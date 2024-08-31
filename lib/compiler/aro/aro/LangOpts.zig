@@ -59,23 +59,23 @@ pub const Standard = enum {
         .{ "gnu23", .gnu23 },            .{ "c2x", .c23 },          .{ "gnu2x", .gnu23 },
     });
 
-    pub fn at_least(self: Standard, other: Standard) bool {
+    pub fn atLeast(self: Standard, other: Standard) bool {
         return @intFromEnum(self) >= @intFromEnum(other);
     }
 
-    pub fn is_gnu(standard: Standard) bool {
+    pub fn isGNU(standard: Standard) bool {
         return switch (standard) {
             .gnu89, .gnu99, .gnu11, .default, .gnu17, .gnu23 => true,
             else => false,
         };
     }
 
-    pub fn is_explicit_gnu(standard: Standard) bool {
+    pub fn isExplicitGNU(standard: Standard) bool {
         return standard.isGNU() and standard != .default;
     }
 
     /// Value reported by __STDC_VERSION__ macro
-    pub fn std_cversion_macro(standard: Standard) ?[]const u8 {
+    pub fn StdCVersionMacro(standard: Standard) ?[]const u8 {
         return switch (standard) {
             .c89, .gnu89 => null,
             .iso9899 => "199409L",
@@ -86,7 +86,7 @@ pub const Standard = enum {
         };
     }
 
-    pub fn codepoint_allowed_in_identifier(standard: Standard, codepoint: u21, is_start: bool) bool {
+    pub fn codepointAllowedInIdentifier(standard: Standard, codepoint: u21, is_start: bool) bool {
         if (is_start) {
             return if (standard.atLeast(.c23))
                 char_info.isXidStart(codepoint)
@@ -140,37 +140,37 @@ preserve_comments_in_macros: bool = false,
 /// e.g. 4.2.1 == 40201
 gnuc_version: u32 = 0,
 
-pub fn set_standard(self: *LangOpts, name: []const u8) error{InvalidStandard}!void {
+pub fn setStandard(self: *LangOpts, name: []const u8) error{InvalidStandard}!void {
     self.standard = Standard.NameMap.get(name) orelse return error.InvalidStandard;
 }
 
-pub fn enable_msextensions(self: *LangOpts) void {
+pub fn enableMSExtensions(self: *LangOpts) void {
     self.declspec_attrs = true;
     self.ms_extensions = true;
 }
 
-pub fn disable_msextensions(self: *LangOpts) void {
+pub fn disableMSExtensions(self: *LangOpts) void {
     self.declspec_attrs = false;
     self.ms_extensions = true;
 }
 
-pub fn has_char8_t(self: *const LangOpts) bool {
+pub fn hasChar8_T(self: *const LangOpts) bool {
     return self.has_char8_t_override orelse self.standard.atLeast(.c23);
 }
 
-pub fn has_digraphs(self: *const LangOpts) bool {
+pub fn hasDigraphs(self: *const LangOpts) bool {
     return self.digraphs orelse self.standard.atLeast(.gnu89);
 }
 
-pub fn set_emulated_compiler(self: *LangOpts, compiler: Compiler) void {
+pub fn setEmulatedCompiler(self: *LangOpts, compiler: Compiler) void {
     self.emulate = compiler;
     if (compiler == .msvc) self.enableMSExtensions();
 }
 
-pub fn set_fp_eval_method(self: *LangOpts, fp_eval_method: FPEvalMethod) void {
+pub fn setFpEvalMethod(self: *LangOpts, fp_eval_method: FPEvalMethod) void {
     self.fp_eval_method = fp_eval_method;
 }
 
-pub fn set_char_signedness(self: *LangOpts, signedness: std.builtin.Signedness) void {
+pub fn setCharSignedness(self: *LangOpts, signedness: std.builtin.Signedness) void {
     self.char_signedness_override = signedness;
 }

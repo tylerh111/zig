@@ -486,7 +486,7 @@ test "Trie basic" {
     }
 }
 
-fn expect_equal_hex_strings(expected: []const u8, given: []const u8) !void {
+fn expectEqualHexStrings(expected: []const u8, given: []const u8) !void {
     assert(expected.len > 0);
     if (mem.eql(u8, expected, given)) return;
     const expected_fmt = try std.fmt.allocPrint(testing.allocator, "{x}", .{std.fmt.fmtSliceHexLower(expected)});

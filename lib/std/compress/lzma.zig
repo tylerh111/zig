@@ -12,7 +12,7 @@ pub fn decompress(
     return decompressWithOptions(allocator, reader, .{});
 }
 
-pub fn decompress_with_options(
+pub fn decompressWithOptions(
     allocator: Allocator,
     reader: anytype,
     options: decode.Options,
@@ -21,7 +21,7 @@ pub fn decompress_with_options(
     return Decompress(@TypeOf(reader)).init(allocator, reader, params, options.memlimit);
 }
 
-pub fn decompress(comptime ReaderType: type) type {
+pub fn Decompress(comptime ReaderType: type) type {
     return struct {
         const Self = @This();
 

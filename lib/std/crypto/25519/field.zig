@@ -56,7 +56,7 @@ pub const Fe = struct {
     pub const edwards25519sqrtam2 = Fe{ .limbs = .{ 1693982333959686, 608509411481997, 2235573344831311, 947681270984193, 266558006233600 } };
 
     /// Return true if the field element is zero
-    pub inline fn is_zero(fe: Fe) bool {
+    pub inline fn isZero(fe: Fe) bool {
         var reduced = fe;
         reduced.reduce();
         const limbs = reduced.limbs;
@@ -69,7 +69,7 @@ pub const Fe = struct {
     }
 
     /// Unpack a field element
-    pub fn from_bytes(s: [32]u8) Fe {
+    pub fn fromBytes(s: [32]u8) Fe {
         var fe: Fe = undefined;
         fe.limbs[0] = std.mem.readInt(u64, s[0..8], .little) & MASK51;
         fe.limbs[1] = (std.mem.readInt(u64, s[6..14], .little) >> 3) & MASK51;
@@ -81,7 +81,7 @@ pub const Fe = struct {
     }
 
     /// Pack a field element
-    pub fn to_bytes(fe: Fe) [32]u8 {
+    pub fn toBytes(fe: Fe) [32]u8 {
         var reduced = fe;
         reduced.reduce();
         var s: [32]u8 = undefined;
@@ -94,7 +94,7 @@ pub const Fe = struct {
     }
 
     /// Map a 64 bytes big endian string into a field element
-    pub fn from_bytes64(s: [64]u8) Fe {
+    pub fn fromBytes64(s: [64]u8) Fe {
         var fl: [32]u8 = undefined;
         var gl: [32]u8 = undefined;
         var i: usize = 0;
@@ -116,7 +116,7 @@ pub const Fe = struct {
     }
 
     /// Reject non-canonical encodings of an element, possibly ignoring the top bit
-    pub fn reject_non_canonical(s: [32]u8, comptime ignore_extra_bit: bool) NonCanonicalError!void {
+    pub fn rejectNonCanonical(s: [32]u8, comptime ignore_extra_bit: bool) NonCanonicalError!void {
         var c: u16 = (s[31] & 0x7f) ^ 0x7f;
         comptime var i = 30;
         inline while (i > 0) : (i -= 1) {
@@ -202,12 +202,12 @@ pub const Fe = struct {
     }
 
     /// Return true if a field element is negative
-    pub inline fn is_negative(a: Fe) bool {
+    pub inline fn isNegative(a: Fe) bool {
         return (a.toBytes()[0] & 1) != 0;
     }
 
     /// Conditonally replace a field element with `a` if `c` is positive
-    pub inline fn c_mov(fe: *Fe, a: Fe, c: u64) void {
+    pub inline fn cMov(fe: *Fe, a: Fe, c: u64) void {
         const mask: u64 = 0 -% c;
         var x = fe.*;
         comptime var i = 0;
@@ -225,7 +225,7 @@ pub const Fe = struct {
     }
 
     /// Conditionally swap two pairs of field elements if `c` is positive
-    pub fn c_swap2(a0: *Fe, b0: *Fe, a1: *Fe, b1: *Fe, c: u64) void {
+    pub fn cSwap2(a0: *Fe, b0: *Fe, a1: *Fe, b1: *Fe, c: u64) void {
         const mask: u64 = 0 -% c;
         var x0 = a0.*;
         var x1 = a1.*;
@@ -390,7 +390,7 @@ pub const Fe = struct {
     }
 
     /// Return true if the field element is a square
-    pub fn is_square(a: Fe) bool {
+    pub fn isSquare(a: Fe) bool {
         // Compute the Jacobi symbol x^((p-1)/2)
         const _11 = a.mul(a.sq());
         const _1111 = _11.mul(_11.sq().sq());
@@ -403,7 +403,7 @@ pub const Fe = struct {
         return @as(bool, @bitCast(@as(u1, @truncate(~(t4.toBytes()[1] & 1)))));
     }
 
-    fn unchecked_sqrt(x2: Fe) Fe {
+    fn uncheckedSqrt(x2: Fe) Fe {
         var e = x2.pow2523();
         const p_root = e.mul(x2); // positive root
         const m_root = p_root.mul(Fe.sqrtm1); // negative root

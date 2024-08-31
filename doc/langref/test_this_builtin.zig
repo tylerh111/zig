@@ -7,7 +7,7 @@ test "@This()" {
     try expect(list.length() == 4);
 }
 
-fn list(comptime T: type) type {
+fn List(comptime T: type) type {
     return struct {
         const Self = @This();
 

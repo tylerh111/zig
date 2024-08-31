@@ -7,14 +7,14 @@ test "if statements" {
     shouldBeEqual(1, 1);
     firstEqlThird(2, 1, 2);
 }
-fn should_be_equal(a: i32, b: i32) void {
+fn shouldBeEqual(a: i32, b: i32) void {
     if (a != b) {
         unreachable;
     } else {
         return;
     }
 }
-fn first_eql_third(a: i32, b: i32, c: i32) void {
+fn firstEqlThird(a: i32, b: i32, c: i32) void {
     if (a == b) {
         unreachable;
     } else if (b == c) {
@@ -29,7 +29,7 @@ fn first_eql_third(a: i32, b: i32, c: i32) void {
 test "else if expression" {
     try expect(elseIfExpressionF(1) == 1);
 }
-fn else_if_expression_f(c: u8) u8 {
+fn elseIfExpressionF(c: u8) u8 {
     if (c == 0) {
         return 0;
     } else if (c == 1) {
@@ -86,7 +86,7 @@ test "if copies its payload" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var tmp: ?i32 = 10;
             if (tmp) |value| {
                 // Modify the original variable
@@ -101,7 +101,7 @@ test "if copies its payload" {
 
 test "if prongs cast to expected type instead of peer type resolution" {
     const S = struct {
-        fn do_the_test(f: bool) !void {
+        fn doTheTest(f: bool) !void {
             var x: i32 = 0;
             x = if (f) 1 else 2;
             try expect(x == 2);
@@ -174,7 +174,7 @@ test "if-@as-if chain" {
     try expect(num_frames == 4);
 }
 
-fn return_true() bool {
+fn returnTrue() bool {
     return true;
 }
 

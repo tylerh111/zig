@@ -193,7 +193,7 @@ pub fn main() anyerror!void {
     }
 }
 
-fn usage_and_exit(file: fs.File, arg0: []const u8, code: u8) noreturn {
+fn usageAndExit(file: fs.File, arg0: []const u8, code: u8) noreturn {
     file.writer().print(
         \\Usage: {s} /path/git/zig
         \\

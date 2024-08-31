@@ -8,7 +8,7 @@ pub const Version = packed struct(Word) {
     major: u8,
     padding0: u8 = 0,
 
-    pub fn to_word(self: @This()) Word {
+    pub fn toWord(self: @This()) Word {
         return @bitCast(self);
     }
 };
@@ -2134,7 +2134,7 @@ pub const Opcode = enum(u16) {
     pub const OpDecorateStringGOOGLE = Opcode.OpDecorateString;
     pub const OpMemberDecorateStringGOOGLE = Opcode.OpMemberDecorateString;
 
-    pub fn operands(comptime self: Opcode) type {
+    pub fn Operands(comptime self: Opcode) type {
         return switch (self) {
             .OpNop => void,
             .OpUndef => struct { id_result_type: IdResultType, id_result: IdResult },

@@ -92,7 +92,7 @@ pub const Wyhash = struct {
     }
 
     // Copies the core wyhash state but not any internal buffers.
-    inline fn shallow_copy(self: *Wyhash) Wyhash {
+    inline fn shallowCopy(self: *Wyhash) Wyhash {
         return .{
             .a = self.a,
             .b = self.b,
@@ -103,7 +103,7 @@ pub const Wyhash = struct {
         };
     }
 
-    inline fn small_key(self: *Wyhash, input: []const u8) void {
+    inline fn smallKey(self: *Wyhash, input: []const u8) void {
         std.debug.assert(input.len <= 16);
 
         if (input.len >= 4) {

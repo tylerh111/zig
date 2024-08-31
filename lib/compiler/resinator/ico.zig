@@ -38,7 +38,7 @@ pub fn read(allocator: std.mem.Allocator, reader: anytype, max_size: u64) ReadEr
 // TODO: This seems like a somewhat strange pattern, could be a better way
 //       to do this. Maybe it makes more sense to handle the translation
 //       at the call site instead of having a helper function here.
-pub fn read_any_error(allocator: std.mem.Allocator, reader: anytype, max_size: u64) !IconDir {
+pub fn readAnyError(allocator: std.mem.Allocator, reader: anytype, max_size: u64) !IconDir {
     const reserved = try reader.readInt(u16, .little);
     if (reserved != 0) {
         return error.InvalidHeader;
@@ -128,13 +128,13 @@ pub const IconDir = struct {
 
     pub const res_header_byte_len = 6;
 
-    pub fn get_res_data_size(self: IconDir) u32 {
+    pub fn getResDataSize(self: IconDir) u32 {
         // maxInt(u16) * Entry.res_byte_len = 917,490 which is well within the u32 range.
         // Note: self.entries.len is limited to maxInt(u16)
         return @intCast(IconDir.res_header_byte_len + self.entries.len * Entry.res_byte_len);
     }
 
-    pub fn write_res_data(self: IconDir, writer: anytype, first_image_id: u16) !void {
+    pub fn writeResData(self: IconDir, writer: anytype, first_image_id: u16) !void {
         try writer.writeInt(u16, 0, .little);
         try writer.writeInt(u16, @intFromEnum(self.image_type), .little);
         // We know that entries.len must fit into a u16
@@ -172,7 +172,7 @@ pub const Entry = struct {
 
     pub const res_byte_len = 14;
 
-    pub fn write_res_data(self: Entry, writer: anytype, id: u16) !void {
+    pub fn writeResData(self: Entry, writer: anytype, id: u16) !void {
         switch (self.type_specific_data) {
             .icon => |icon_data| {
                 try writer.writeInt(u8, @as(u8, @truncate(self.width)), .little);
@@ -299,7 +299,7 @@ pub const BitmapHeader = extern struct {
             };
         }
 
-        pub fn name_for_error_display(v: Version) []const u8 {
+        pub fn nameForErrorDisplay(v: Version) []const u8 {
             return switch (v) {
                 .unknown => "unknown",
                 .@"win2.0" => "Windows 2.0 (BITMAPCOREHEADER)",

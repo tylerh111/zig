@@ -13,7 +13,7 @@ const RoundParam = struct {
     y: usize,
 };
 
-fn round_param(a: usize, b: usize, c: usize, d: usize, x: usize, y: usize) RoundParam {
+fn roundParam(a: usize, b: usize, c: usize, d: usize, x: usize, y: usize) RoundParam {
     return RoundParam{
         .a = a,
         .b = b,
@@ -32,7 +32,7 @@ pub const Blake2s160 = Blake2s(160);
 pub const Blake2s224 = Blake2s(224);
 pub const Blake2s256 = Blake2s(256);
 
-pub fn blake2s(comptime out_bits: usize) type {
+pub fn Blake2s(comptime out_bits: usize) type {
     return struct {
         const Self = @This();
         pub const block_length = 64;
@@ -466,7 +466,7 @@ pub const Blake2b256 = Blake2b(256);
 pub const Blake2b384 = Blake2b(384);
 pub const Blake2b512 = Blake2b(512);
 
-pub fn blake2b(comptime out_bits: usize) type {
+pub fn Blake2b(comptime out_bits: usize) type {
     return struct {
         const Self = @This();
         pub const block_length = 128;

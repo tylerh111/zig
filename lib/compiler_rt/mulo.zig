@@ -17,7 +17,7 @@ comptime {
 // - muloXi4_genericSmall as default
 // - muloXi4_genericFast for 2*bitsize <= usize
 
-inline fn mulo_xi4_generic_small(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST {
+inline fn muloXi4_genericSmall(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST {
     overflow.* = 0;
     const min = math.minInt(ST);
     const res: ST = a *% b;
@@ -31,7 +31,7 @@ inline fn mulo_xi4_generic_small(comptime ST: type, a: ST, b: ST, overflow: *c_i
     return res;
 }
 
-inline fn mulo_xi4_generic_fast(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST {
+inline fn muloXi4_genericFast(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST {
     overflow.* = 0;
     const EST = switch (ST) {
         i32 => i64,

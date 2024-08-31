@@ -6,7 +6,7 @@ pub fn main() void {
     assert(x == 123);
 }
 
-fn by_ptr(x: *u32) ?*u32 {
+fn byPtr(x: *u32) ?*u32 {
     return x;
 }
 

@@ -7,7 +7,7 @@ export fn returns() void {
         }
     }
 }
-fn optional_return_error() !?u32 {
+fn optionalReturnError() !?u32 {
     return error.optionalReturnError;
 }
 

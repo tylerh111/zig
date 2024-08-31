@@ -5,7 +5,7 @@
 const __divsf3 = @import("divsf3.zig").__divsf3;
 const testing = @import("std").testing;
 
-fn compare_result_f(result: f32, expected: u32) bool {
+fn compareResultF(result: f32, expected: u32) bool {
     const rep: u32 = @bitCast(result);
 
     if (rep == expected) {

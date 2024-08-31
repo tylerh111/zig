@@ -115,7 +115,7 @@ const Context = struct {
     global_cache_path: []const u8,
 };
 
-fn serve_request(request: *std.http.Server.Request, context: *Context) !void {
+fn serveRequest(request: *std.http.Server.Request, context: *Context) !void {
     if (std.mem.eql(u8, request.head.target, "/") or
         std.mem.eql(u8, request.head.target, "/debug") or
         std.mem.eql(u8, request.head.target, "/debug/"))
@@ -148,7 +148,7 @@ const cache_control_header: std.http.Header = .{
     .value = "max-age=0, must-revalidate",
 };
 
-fn serve_docs_file(
+fn serveDocsFile(
     request: *std.http.Server.Request,
     context: *Context,
     name: []const u8,
@@ -168,7 +168,7 @@ fn serve_docs_file(
     });
 }
 
-fn serve_sources_tar(request: *std.http.Server.Request, context: *Context) !void {
+fn serveSourcesTar(request: *std.http.Server.Request, context: *Context) !void {
     const gpa = context.gpa;
 
     var send_buffer: [0x4000]u8 = undefined;
@@ -243,7 +243,7 @@ fn serve_sources_tar(request: *std.http.Server.Request, context: *Context) !void
     try response.end();
 }
 
-fn serve_wasm(
+fn serveWasm(
     request: *std.http.Server.Request,
     context: *Context,
     optimize_mode: std.builtin.OptimizeMode,
@@ -268,7 +268,7 @@ fn serve_wasm(
     });
 }
 
-fn build_wasm_binary(
+fn buildWasmBinary(
     arena: Allocator,
     context: *Context,
     optimize_mode: std.builtin.OptimizeMode,
@@ -417,7 +417,7 @@ fn build_wasm_binary(
     };
 }
 
-fn send_message(file: std.fs.File, tag: std.zig.Client.Message.Tag) !void {
+fn sendMessage(file: std.fs.File, tag: std.zig.Client.Message.Tag) !void {
     const header: std.zig.Client.Message.Header = .{
         .tag = tag,
         .bytes_len = 0,
@@ -425,13 +425,13 @@ fn send_message(file: std.fs.File, tag: std.zig.Client.Message.Tag) !void {
     try file.writeAll(std.mem.asBytes(&header));
 }
 
-fn open_browser_tab(gpa: Allocator, url: []const u8) !void {
+fn openBrowserTab(gpa: Allocator, url: []const u8) !void {
     // Until https://github.com/ziglang/zig/issues/19205 is implemented, we
     // spawn a thread for this child process.
     _ = try std.Thread.spawn(.{}, openBrowserTabThread, .{ gpa, url });
 }
 
-fn open_browser_tab_thread(gpa: Allocator, url: []const u8) !void {
+fn openBrowserTabThread(gpa: Allocator, url: []const u8) !void {
     const main_exe = switch (builtin.os.tag) {
         .windows => "explorer",
         .macos => "open",

@@ -28,7 +28,7 @@ comptime {
 
 // Arithmetic shift left: shift in 0 from right to left
 // Precondition: 0 <= b < bits_in_dword
-inline fn ashl_xi3(comptime T: type, a: T, b: i32) T {
+inline fn ashlXi3(comptime T: type, a: T, b: i32) T {
     const word_t = common.HalveInt(T, false);
 
     const input = word_t{ .all = a };
@@ -50,7 +50,7 @@ inline fn ashl_xi3(comptime T: type, a: T, b: i32) T {
 
 // Arithmetic shift right: shift in 1 from left to right
 // Precondition: 0 <= b < T.bit_count
-inline fn ashr_xi3(comptime T: type, a: T, b: i32) T {
+inline fn ashrXi3(comptime T: type, a: T, b: i32) T {
     const word_t = common.HalveInt(T, true);
 
     const input = word_t{ .all = a };
@@ -73,7 +73,7 @@ inline fn ashr_xi3(comptime T: type, a: T, b: i32) T {
 
 // Logical shift right: shift in 0 from left to right
 // Precondition: 0 <= b < T.bit_count
-inline fn lshr_xi3(comptime T: type, a: T, b: i32) T {
+inline fn lshrXi3(comptime T: type, a: T, b: i32) T {
     const word_t = common.HalveInt(T, false);
 
     const input = word_t{ .all = a };

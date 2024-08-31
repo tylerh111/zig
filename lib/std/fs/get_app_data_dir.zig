@@ -13,7 +13,7 @@ pub const GetAppDataDirError = error{
 
 /// Caller owns returned memory.
 /// TODO determine if we can remove the allocator requirement
-pub fn get_app_data_dir(allocator: mem.Allocator, appname: []const u8) GetAppDataDirError![]u8 {
+pub fn getAppDataDir(allocator: mem.Allocator, appname: []const u8) GetAppDataDirError![]u8 {
     switch (native_os) {
         .windows => {
             const local_app_data_dir = std.process.getEnvVarOwned(allocator, "LOCALAPPDATA") catch |err| switch (err) {

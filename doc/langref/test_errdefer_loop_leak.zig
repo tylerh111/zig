@@ -3,11 +3,11 @@ const Allocator = std.mem.Allocator;
 
 const Foo = struct { data: *u32 };
 
-fn get_data() !u32 {
+fn getData() !u32 {
     return 666;
 }
 
-fn gen_foos(allocator: Allocator, num: usize) ![]Foo {
+fn genFoos(allocator: Allocator, num: usize) ![]Foo {
     const foos = try allocator.alloc(Foo, num);
     errdefer allocator.free(foos);
 

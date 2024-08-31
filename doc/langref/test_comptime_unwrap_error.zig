@@ -3,7 +3,7 @@ comptime {
     _ = number;
 }
 
-fn get_number_or_fail() !i32 {
+fn getNumberOrFail() !i32 {
     return error.UnableToReturnNumber;
 }
 

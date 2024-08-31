@@ -24,7 +24,7 @@ pub const tanh = @import("complex/tanh.zig").tanh;
 pub const tan = @import("complex/tan.zig").tan;
 
 /// A complex number consisting of a real an imaginary part. T must be a floating-point value.
-pub fn complex(comptime T: type) type {
+pub fn Complex(comptime T: type) type {
     return struct {
         const Self = @This();
 

@@ -460,12 +460,12 @@ pub const ImportLookupEntry32 = struct {
 
     const mask = 0x80000000;
 
-    pub fn get_import_by_name(raw: u32) ?ByName {
+    pub fn getImportByName(raw: u32) ?ByName {
         if (mask & raw != 0) return null;
         return @as(ByName, @bitCast(raw));
     }
 
-    pub fn get_import_by_ordinal(raw: u32) ?ByOrdinal {
+    pub fn getImportByOrdinal(raw: u32) ?ByOrdinal {
         if (mask & raw == 0) return null;
         return @as(ByOrdinal, @bitCast(raw));
     }
@@ -486,12 +486,12 @@ pub const ImportLookupEntry64 = struct {
 
     const mask = 0x8000000000000000;
 
-    pub fn get_import_by_name(raw: u64) ?ByName {
+    pub fn getImportByName(raw: u64) ?ByName {
         if (mask & raw != 0) return null;
         return @as(ByName, @bitCast(raw));
     }
 
-    pub fn get_import_by_ordinal(raw: u64) ?ByOrdinal {
+    pub fn getImportByOrdinal(raw: u64) ?ByOrdinal {
         if (mask & raw == 0) return null;
         return @as(ByOrdinal, @bitCast(raw));
     }
@@ -521,13 +521,13 @@ pub const SectionHeader = extern struct {
     number_of_linenumbers: u16,
     flags: SectionHeaderFlags,
 
-    pub fn get_name(self: *align(1) const SectionHeader) ?[]const u8 {
+    pub fn getName(self: *align(1) const SectionHeader) ?[]const u8 {
         if (self.name[0] == '/') return null;
         const len = std.mem.indexOfScalar(u8, &self.name, @as(u8, 0)) orelse self.name.len;
         return self.name[0..len];
     }
 
-    pub fn get_name_offset(self: SectionHeader) ?u32 {
+    pub fn getNameOffset(self: SectionHeader) ?u32 {
         if (self.name[0] != '/') return null;
         const len = std.mem.indexOfScalar(u8, &self.name, @as(u8, 0)) orelse self.name.len;
         const offset = std.fmt.parseInt(u32, self.name[1..len], 10) catch unreachable;
@@ -535,21 +535,21 @@ pub const SectionHeader = extern struct {
     }
 
     /// Applicable only to section headers in COFF objects.
-    pub fn get_alignment(self: SectionHeader) ?u16 {
+    pub fn getAlignment(self: SectionHeader) ?u16 {
         if (self.flags.ALIGN == 0) return null;
         return std.math.powi(u16, 2, self.flags.ALIGN - 1) catch unreachable;
     }
 
-    pub fn set_alignment(self: *SectionHeader, new_alignment: u16) void {
+    pub fn setAlignment(self: *SectionHeader, new_alignment: u16) void {
         assert(new_alignment > 0 and new_alignment <= 8192);
         self.flags.ALIGN = std.math.log2(new_alignment);
     }
 
-    pub fn is_code(self: SectionHeader) bool {
+    pub fn isCode(self: SectionHeader) bool {
         return self.flags.CNT_CODE == 0b1;
     }
 
-    pub fn is_comdat(self: SectionHeader) bool {
+    pub fn isComdat(self: SectionHeader) bool {
         return self.flags.LNK_COMDAT == 0b1;
     }
 };
@@ -659,17 +659,17 @@ pub const Symbol = struct {
     storage_class: StorageClass,
     number_of_aux_symbols: u8,
 
-    pub fn size_of() usize {
+    pub fn sizeOf() usize {
         return 18;
     }
 
-    pub fn get_name(self: *const Symbol) ?[]const u8 {
+    pub fn getName(self: *const Symbol) ?[]const u8 {
         if (std.mem.eql(u8, self.name[0..4], "\x00\x00\x00\x00")) return null;
         const len = std.mem.indexOfScalar(u8, &self.name, @as(u8, 0)) orelse self.name.len;
         return self.name[0..len];
     }
 
-    pub fn get_name_offset(self: Symbol) ?u32 {
+    pub fn getNameOffset(self: Symbol) ?u32 {
         if (!std.mem.eql(u8, self.name[0..4], "\x00\x00\x00\x00")) return null;
         const offset = std.mem.readInt(u32, self.name[4..8], .little);
         return offset;
@@ -905,7 +905,7 @@ pub const FileDefinition = struct {
     /// This is padded with nulls if it is less than the maximum length.
     file_name: [18]u8,
 
-    pub fn get_file_name(self: *const FileDefinition) []const u8 {
+    pub fn getFileName(self: *const FileDefinition) []const u8 {
         const len = std.mem.indexOfScalar(u8, &self.file_name, @as(u8, 0)) orelse self.file_name.len;
         return self.file_name[0..len];
     }
@@ -1037,7 +1037,7 @@ pub const MachineType = enum(u16) {
 
     _,
 
-    pub fn from_target_cpu_arch(arch: std.Target.Cpu.Arch) MachineType {
+    pub fn fromTargetCpuArch(arch: std.Target.Cpu.Arch) MachineType {
         return switch (arch) {
             .arm => .ARM,
             .powerpc => .POWERPC,
@@ -1052,7 +1052,7 @@ pub const MachineType = enum(u16) {
         };
     }
 
-    pub fn to_target_cpu_arch(machine_type: MachineType) ?std.Target.Cpu.Arch {
+    pub fn toTargetCpuArch(machine_type: MachineType) ?std.Target.Cpu.Arch {
         return switch (machine_type) {
             .ARM => .arm,
             .POWERPC => .powerpc,
@@ -1122,7 +1122,7 @@ pub const Coff = struct {
         return coff;
     }
 
-    pub fn get_pdb_path(self: *Coff) !?[]const u8 {
+    pub fn getPdbPath(self: *Coff) !?[]const u8 {
         assert(self.is_image);
 
         const data_dirs = self.getDataDirectories();
@@ -1171,29 +1171,29 @@ pub const Coff = struct {
         return self.data[start .. start + len];
     }
 
-    pub fn get_coff_header(self: Coff) CoffHeader {
+    pub fn getCoffHeader(self: Coff) CoffHeader {
         return @as(*align(1) const CoffHeader, @ptrCast(self.data[self.coff_header_offset..][0..@sizeOf(CoffHeader)])).*;
     }
 
-    pub fn get_optional_header(self: Coff) OptionalHeader {
+    pub fn getOptionalHeader(self: Coff) OptionalHeader {
         assert(self.is_image);
         const offset = self.coff_header_offset + @sizeOf(CoffHeader);
         return @as(*align(1) const OptionalHeader, @ptrCast(self.data[offset..][0..@sizeOf(OptionalHeader)])).*;
     }
 
-    pub fn get_optional_header32(self: Coff) OptionalHeaderPE32 {
+    pub fn getOptionalHeader32(self: Coff) OptionalHeaderPE32 {
         assert(self.is_image);
         const offset = self.coff_header_offset + @sizeOf(CoffHeader);
         return @as(*align(1) const OptionalHeaderPE32, @ptrCast(self.data[offset..][0..@sizeOf(OptionalHeaderPE32)])).*;
     }
 
-    pub fn get_optional_header64(self: Coff) OptionalHeaderPE64 {
+    pub fn getOptionalHeader64(self: Coff) OptionalHeaderPE64 {
         assert(self.is_image);
         const offset = self.coff_header_offset + @sizeOf(CoffHeader);
         return @as(*align(1) const OptionalHeaderPE64, @ptrCast(self.data[offset..][0..@sizeOf(OptionalHeaderPE64)])).*;
     }
 
-    pub fn get_image_base(self: Coff) u64 {
+    pub fn getImageBase(self: Coff) u64 {
         const hdr = self.getOptionalHeader();
         return switch (hdr.magic) {
             IMAGE_NT_OPTIONAL_HDR32_MAGIC => self.getOptionalHeader32().image_base,
@@ -1202,7 +1202,7 @@ pub const Coff = struct {
         };
     }
 
-    pub fn get_number_of_data_directories(self: Coff) u32 {
+    pub fn getNumberOfDataDirectories(self: Coff) u32 {
         const hdr = self.getOptionalHeader();
         return switch (hdr.magic) {
             IMAGE_NT_OPTIONAL_HDR32_MAGIC => self.getOptionalHeader32().number_of_rva_and_sizes,
@@ -1211,7 +1211,7 @@ pub const Coff = struct {
         };
     }
 
-    pub fn get_data_directories(self: *const Coff) []align(1) const ImageDataDirectory {
+    pub fn getDataDirectories(self: *const Coff) []align(1) const ImageDataDirectory {
         const hdr = self.getOptionalHeader();
         const size: usize = switch (hdr.magic) {
             IMAGE_NT_OPTIONAL_HDR32_MAGIC => @sizeOf(OptionalHeaderPE32),
@@ -1222,7 +1222,7 @@ pub const Coff = struct {
         return @as([*]align(1) const ImageDataDirectory, @ptrCast(self.data[offset..]))[0..self.getNumberOfDataDirectories()];
     }
 
-    pub fn get_symtab(self: *const Coff) ?Symtab {
+    pub fn getSymtab(self: *const Coff) ?Symtab {
         const coff_header = self.getCoffHeader();
         if (coff_header.pointer_to_symbol_table == 0) return null;
 
@@ -1231,7 +1231,7 @@ pub const Coff = struct {
         return .{ .buffer = self.data[offset..][0..size] };
     }
 
-    pub fn get_strtab(self: *const Coff) error{InvalidStrtabSize}!?Strtab {
+    pub fn getStrtab(self: *const Coff) error{InvalidStrtabSize}!?Strtab {
         const coff_header = self.getCoffHeader();
         if (coff_header.pointer_to_symbol_table == 0) return null;
 
@@ -1242,18 +1242,18 @@ pub const Coff = struct {
         return Strtab{ .buffer = self.data[offset..][0..size] };
     }
 
-    pub fn strtab_required(self: *const Coff) bool {
+    pub fn strtabRequired(self: *const Coff) bool {
         for (self.getSectionHeaders()) |*sect_hdr| if (sect_hdr.getName() == null) return true;
         return false;
     }
 
-    pub fn get_section_headers(self: *const Coff) []align(1) const SectionHeader {
+    pub fn getSectionHeaders(self: *const Coff) []align(1) const SectionHeader {
         const coff_header = self.getCoffHeader();
         const offset = self.coff_header_offset + @sizeOf(CoffHeader) + coff_header.size_of_optional_header;
         return @as([*]align(1) const SectionHeader, @ptrCast(self.data.ptr + offset))[0..coff_header.number_of_sections];
     }
 
-    pub fn get_section_headers_alloc(self: *const Coff, allocator: mem.Allocator) ![]SectionHeader {
+    pub fn getSectionHeadersAlloc(self: *const Coff, allocator: mem.Allocator) ![]SectionHeader {
         const section_headers = self.getSectionHeaders();
         const out_buff = try allocator.alloc(SectionHeader, section_headers.len);
         for (out_buff, 0..) |*section_header, i| {
@@ -1263,7 +1263,7 @@ pub const Coff = struct {
         return out_buff;
     }
 
-    pub fn get_section_name(self: *const Coff, sect_hdr: *align(1) const SectionHeader) error{InvalidStrtabSize}![]const u8 {
+    pub fn getSectionName(self: *const Coff, sect_hdr: *align(1) const SectionHeader) error{InvalidStrtabSize}![]const u8 {
         const name = sect_hdr.getName() orelse blk: {
             const strtab = (try self.getStrtab()).?;
             const name_offset = sect_hdr.getNameOffset().?;
@@ -1272,7 +1272,7 @@ pub const Coff = struct {
         return name;
     }
 
-    pub fn get_section_by_name(self: *const Coff, comptime name: []const u8) ?*align(1) const SectionHeader {
+    pub fn getSectionByName(self: *const Coff, comptime name: []const u8) ?*align(1) const SectionHeader {
         for (self.getSectionHeaders()) |*sect| {
             const section_name = self.getSectionName(sect) catch |e| switch (e) {
                 error.InvalidStrtabSize => continue, //ignore invalid(?) strtab entries - see also GitHub issue #15238
@@ -1284,12 +1284,12 @@ pub const Coff = struct {
         return null;
     }
 
-    pub fn get_section_data(self: *const Coff, sec: *align(1) const SectionHeader) []const u8 {
+    pub fn getSectionData(self: *const Coff, sec: *align(1) const SectionHeader) []const u8 {
         const offset = if (self.is_loaded) sec.virtual_address else sec.pointer_to_raw_data;
         return self.data[offset..][0..sec.virtual_size];
     }
 
-    pub fn get_section_data_alloc(self: *const Coff, sec: *align(1) const SectionHeader, allocator: mem.Allocator) ![]u8 {
+    pub fn getSectionDataAlloc(self: *const Coff, sec: *align(1) const SectionHeader, allocator: mem.Allocator) ![]u8 {
         const section_data = self.getSectionData(sec);
         return allocator.dupe(u8, section_data);
     }
@@ -1334,7 +1334,7 @@ pub const Symtab = struct {
         };
     }
 
-    fn as_symbol(raw: []const u8) Symbol {
+    fn asSymbol(raw: []const u8) Symbol {
         return .{
             .name = raw[0..8].*,
             .value = mem.readInt(u32, raw[8..12], .little),
@@ -1345,7 +1345,7 @@ pub const Symtab = struct {
         };
     }
 
-    fn as_debug_info(raw: []const u8) DebugInfoDefinition {
+    fn asDebugInfo(raw: []const u8) DebugInfoDefinition {
         return .{
             .unused_1 = raw[0..4].*,
             .linenumber = mem.readInt(u16, raw[4..6], .little),
@@ -1355,7 +1355,7 @@ pub const Symtab = struct {
         };
     }
 
-    fn as_func_def(raw: []const u8) FunctionDefinition {
+    fn asFuncDef(raw: []const u8) FunctionDefinition {
         return .{
             .tag_index = mem.readInt(u32, raw[0..4], .little),
             .total_size = mem.readInt(u32, raw[4..8], .little),
@@ -1365,7 +1365,7 @@ pub const Symtab = struct {
         };
     }
 
-    fn as_weak_ext_def(raw: []const u8) WeakExternalDefinition {
+    fn asWeakExtDef(raw: []const u8) WeakExternalDefinition {
         return .{
             .tag_index = mem.readInt(u32, raw[0..4], .little),
             .flag = @as(WeakExternalFlag, @enumFromInt(mem.readInt(u32, raw[4..8], .little))),
@@ -1373,13 +1373,13 @@ pub const Symtab = struct {
         };
     }
 
-    fn as_file_def(raw: []const u8) FileDefinition {
+    fn asFileDef(raw: []const u8) FileDefinition {
         return .{
             .file_name = raw[0..18].*,
         };
     }
 
-    fn as_sect_def(raw: []const u8) SectionDefinition {
+    fn asSectDef(raw: []const u8) SectionDefinition {
         return .{
             .length = mem.readInt(u32, raw[0..4], .little),
             .number_of_relocations = mem.readInt(u16, raw[4..6], .little),

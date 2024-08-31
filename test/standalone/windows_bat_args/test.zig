@@ -91,17 +91,17 @@ pub fn main() anyerror!void {
     try std.testing.expectError(error.FileNotFound, tmp.dir.access("file.txt", .{}));
 }
 
-fn test_exec_error(err: anyerror, allocator: std.mem.Allocator, args: []const []const u8) !void {
+fn testExecError(err: anyerror, allocator: std.mem.Allocator, args: []const []const u8) !void {
     return std.testing.expectError(err, testExec(allocator, args, null));
 }
 
-fn test_exec(allocator: std.mem.Allocator, args: []const []const u8, env: ?*std.process.EnvMap) !void {
+fn testExec(allocator: std.mem.Allocator, args: []const []const u8, env: ?*std.process.EnvMap) !void {
     try testExecBat(allocator, "args1.bat", args, env);
     try testExecBat(allocator, "args2.bat", args, env);
     try testExecBat(allocator, "args3.bat", args, env);
 }
 
-fn test_exec_bat(allocator: std.mem.Allocator, bat: []const u8, args: []const []const u8, env: ?*std.process.EnvMap) !void {
+fn testExecBat(allocator: std.mem.Allocator, bat: []const u8, args: []const []const u8, env: ?*std.process.EnvMap) !void {
     var argv = try std.ArrayList([]const u8).initCapacity(allocator, 1 + args.len);
     defer argv.deinit();
     argv.appendAssumeCapacity(bat);

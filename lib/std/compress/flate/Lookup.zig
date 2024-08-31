@@ -52,7 +52,7 @@ pub fn slide(self: *Self, n: u16) void {
 
 // Add `len` 4 bytes hashes from `data` into lookup.
 // Position of the first byte is `pos`.
-pub fn bulk_add(self: *Self, data: []const u8, len: u16, pos: u16) void {
+pub fn bulkAdd(self: *Self, data: []const u8, len: u16, pos: u16) void {
     if (len == 0 or data.len < consts.match.min_length) {
         return;
     }

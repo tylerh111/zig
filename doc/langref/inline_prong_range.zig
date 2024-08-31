@@ -1,4 +1,4 @@
-fn is_field_optional(comptime T: type, field_index: usize) !bool {
+fn isFieldOptional(comptime T: type, field_index: usize) !bool {
     const fields = @typeInfo(T).Struct.fields;
     return switch (field_index) {
         inline 0...fields.len - 1 => |idx| @typeInfo(fields[idx].type) == .Optional,

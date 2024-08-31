@@ -25,7 +25,7 @@ pub fn deinit(b: *Builtins, gpa: std.mem.Allocator) void {
     b._name_to_type_map.deinit(gpa);
 }
 
-fn spec_for_size(comp: *const Compilation, size_bits: u32) Type.Builder.Specifier {
+fn specForSize(comp: *const Compilation, size_bits: u32) Type.Builder.Specifier {
     var ty = Type{ .specifier = .short };
     if (ty.sizeof(comp).? * 8 == size_bits) return .short;
 
@@ -41,7 +41,7 @@ fn spec_for_size(comp: *const Compilation, size_bits: u32) Type.Builder.Specifie
     unreachable;
 }
 
-fn create_type(desc: TypeDescription, it: *TypeDescription.TypeIterator, comp: *const Compilation, allocator: std.mem.Allocator) !Type {
+fn createType(desc: TypeDescription, it: *TypeDescription.TypeIterator, comp: *const Compilation, allocator: std.mem.Allocator) !Type {
     var builder: Type.Builder = .{ .error_on_invalid = true };
     var require_native_int32 = false;
     var require_native_int64 = false;
@@ -242,7 +242,7 @@ fn create_type(desc: TypeDescription, it: *TypeDescription.TypeIterator, comp: *
     return builder.finish(undefined) catch unreachable;
 }
 
-fn create_builtin(comp: *const Compilation, builtin: Builtin, type_arena: std.mem.Allocator) !Type {
+fn createBuiltin(comp: *const Compilation, builtin: Builtin, type_arena: std.mem.Allocator) !Type {
     var it = TypeDescription.TypeIterator.init(builtin.properties.param_str);
 
     const ret_ty_desc = it.next().?;
@@ -279,7 +279,7 @@ pub fn lookup(b: *const Builtins, name: []const u8) Expanded {
     };
 }
 
-pub fn get_or_create(b: *Builtins, comp: *Compilation, name: []const u8, type_arena: std.mem.Allocator) !?Expanded {
+pub fn getOrCreate(b: *Builtins, comp: *Compilation, name: []const u8, type_arena: std.mem.Allocator) !?Expanded {
     const ty = b._name_to_type_map.get(name) orelse {
         const builtin = Builtin.fromName(name) orelse return null;
         if (!comp.hasBuiltinFunction(builtin)) return null;
@@ -372,7 +372,7 @@ test "All builtins" {
 
 test "Allocation failures" {
     const Test = struct {
-        fn test_one(allocator: std.mem.Allocator) !void {
+        fn testOne(allocator: std.mem.Allocator) !void {
             var comp = Compilation.init(allocator);
             defer comp.deinit();
             _ = try comp.generateBuiltinMacros(.include_system_defines);

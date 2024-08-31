@@ -54,7 +54,7 @@ pub const StreamSource = union(enum) {
         }
     }
 
-    pub fn seek_to(self: *StreamSource, pos: u64) SeekError!void {
+    pub fn seekTo(self: *StreamSource, pos: u64) SeekError!void {
         switch (self.*) {
             .buffer => |*x| return x.seekTo(pos),
             .const_buffer => |*x| return x.seekTo(pos),
@@ -62,7 +62,7 @@ pub const StreamSource = union(enum) {
         }
     }
 
-    pub fn seek_by(self: *StreamSource, amt: i64) SeekError!void {
+    pub fn seekBy(self: *StreamSource, amt: i64) SeekError!void {
         switch (self.*) {
             .buffer => |*x| return x.seekBy(amt),
             .const_buffer => |*x| return x.seekBy(amt),
@@ -70,7 +70,7 @@ pub const StreamSource = union(enum) {
         }
     }
 
-    pub fn get_end_pos(self: *StreamSource) GetSeekPosError!u64 {
+    pub fn getEndPos(self: *StreamSource) GetSeekPosError!u64 {
         switch (self.*) {
             .buffer => |*x| return x.getEndPos(),
             .const_buffer => |*x| return x.getEndPos(),
@@ -78,7 +78,7 @@ pub const StreamSource = union(enum) {
         }
     }
 
-    pub fn get_pos(self: *StreamSource) GetSeekPosError!u64 {
+    pub fn getPos(self: *StreamSource) GetSeekPosError!u64 {
         switch (self.*) {
             .buffer => |*x| return x.getPos(),
             .const_buffer => |*x| return x.getPos(),
@@ -94,7 +94,7 @@ pub const StreamSource = union(enum) {
         return .{ .context = self };
     }
 
-    pub fn seekable_stream(self: *StreamSource) SeekableStream {
+    pub fn seekableStream(self: *StreamSource) SeekableStream {
         return .{ .context = self };
     }
 };

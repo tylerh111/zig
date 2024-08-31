@@ -9,7 +9,7 @@ pub const SimpleFileSystem = extern struct {
     revision: u64,
     _open_volume: *const fn (*const SimpleFileSystem, **const FileProtocol) callconv(cc) Status,
 
-    pub fn open_volume(self: *const SimpleFileSystem, root: **const FileProtocol) Status {
+    pub fn openVolume(self: *const SimpleFileSystem, root: **const FileProtocol) Status {
         return self._open_volume(self, root);
     }
 

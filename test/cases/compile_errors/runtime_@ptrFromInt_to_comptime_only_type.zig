@@ -1,7 +1,7 @@
 const GuSettings = struct {
     fin: ?fn (c_int) callconv(.C) void,
 };
-pub export fn callback_fin(id: c_int, arg: ?*anyopaque) void {
+pub export fn callbackFin(id: c_int, arg: ?*anyopaque) void {
     const settings: ?*GuSettings = @as(?*GuSettings, @ptrFromInt(@intFromPtr(arg)));
     if (settings.?.fin != null) {
         settings.?.fin.?(id & 0xffff);

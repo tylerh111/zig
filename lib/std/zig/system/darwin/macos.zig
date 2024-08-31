@@ -73,7 +73,7 @@ pub fn detect(target_os: *Target.Os) !void {
     return error.OSVersionDetectionFail;
 }
 
-fn parse_system_version(buf: []const u8) !std.SemanticVersion {
+fn parseSystemVersion(buf: []const u8) !std.SemanticVersion {
     var svt = SystemVersionTokenizer{ .bytes = buf };
     try svt.skipUntilTag(.start, "dict");
     while (true) {
@@ -229,7 +229,7 @@ const SystemVersionTokenizer = struct {
         return null;
     }
 
-    fn expect_content(self: *@This()) ![]const u8 {
+    fn expectContent(self: *@This()) ![]const u8 {
         if (try self.next()) |tok| {
             switch (tok) {
                 .content => |content| {
@@ -241,7 +241,7 @@ const SystemVersionTokenizer = struct {
         return error.UnexpectedToken;
     }
 
-    fn skip_until_tag(self: *@This(), kind: Tag.Kind, name: []const u8) !void {
+    fn skipUntilTag(self: *@This(), kind: Tag.Kind, name: []const u8) !void {
         while (try self.next()) |tok| {
             switch (tok) {
                 .tag => |tag| {
@@ -393,7 +393,7 @@ test "detect" {
     }
 }
 
-pub fn detect_native_cpu_and_features() ?Target.Cpu {
+pub fn detectNativeCpuAndFeatures() ?Target.Cpu {
     var cpu_family: std.c.CPUFAMILY = undefined;
     var len: usize = @sizeOf(std.c.CPUFAMILY);
     std.posix.sysctlbynameZ("hw.cpufamily", &cpu_family, &len, null, 0) catch |err| switch (err) {

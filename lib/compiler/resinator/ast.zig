@@ -44,7 +44,7 @@ pub const CodePageLookup = struct {
     }
 
     /// line_num is 1-indexed
-    pub fn set_for_line_num(self: *CodePageLookup, line_num: usize, code_page: CodePage) !void {
+    pub fn setForLineNum(self: *CodePageLookup, line_num: usize, code_page: CodePage) !void {
         const index = line_num - 1;
         if (index >= self.lookup.items.len) {
             const new_size = line_num;
@@ -66,16 +66,16 @@ pub const CodePageLookup = struct {
         self.lookup.items[index] = code_page;
     }
 
-    pub fn set_for_token(self: *CodePageLookup, token: Token, code_page: CodePage) !void {
+    pub fn setForToken(self: *CodePageLookup, token: Token, code_page: CodePage) !void {
         return self.setForLineNum(token.line_number, code_page);
     }
 
     /// line_num is 1-indexed
-    pub fn get_for_line_num(self: CodePageLookup, line_num: usize) CodePage {
+    pub fn getForLineNum(self: CodePageLookup, line_num: usize) CodePage {
         return self.lookup.items[line_num - 1];
     }
 
-    pub fn get_for_token(self: CodePageLookup, token: Token) CodePage {
+    pub fn getForToken(self: CodePageLookup, token: Token) CodePage {
         return self.getForLineNum(token.line_number);
     }
 };
@@ -137,7 +137,7 @@ pub const Node = struct {
         simple_statement,
         invalid,
 
-        pub fn type(comptime id: Id) type {
+        pub fn Type(comptime id: Id) type {
             return switch (id) {
                 .root => Root,
                 .resource_external => ResourceExternal,
@@ -281,7 +281,7 @@ pub const Node = struct {
 
         /// Returns true if this node describes a user-defined CONTROL control
         /// https://learn.microsoft.com/en-us/windows/win32/menurc/control-control
-        pub fn is_user_defined(self: *const ControlStatement) bool {
+        pub fn isUserDefined(self: *const ControlStatement) bool {
             return self.class != null;
         }
     };
@@ -458,7 +458,7 @@ pub const Node = struct {
         context: []Token,
     };
 
-    pub fn is_number_expression(node: *const Node) bool {
+    pub fn isNumberExpression(node: *const Node) bool {
         switch (node.id) {
             .literal => {
                 const literal: *const Node.Literal = @alignCast(@fieldParentPtr("base", node));
@@ -472,7 +472,7 @@ pub const Node = struct {
         }
     }
 
-    pub fn is_string_literal(node: *const Node) bool {
+    pub fn isStringLiteral(node: *const Node) bool {
         switch (node.id) {
             .literal => {
                 const literal: *const Node.Literal = @alignCast(@fieldParentPtr("base", node));
@@ -485,7 +485,7 @@ pub const Node = struct {
         }
     }
 
-    pub fn get_first_token(node: *const Node) Token {
+    pub fn getFirstToken(node: *const Node) Token {
         switch (node.id) {
             .root => unreachable,
             .resource_external => {
@@ -591,7 +591,7 @@ pub const Node = struct {
         }
     }
 
-    pub fn get_last_token(node: *const Node) Token {
+    pub fn getLastToken(node: *const Node) Token {
         switch (node.id) {
             .root => unreachable,
             .resource_external => {

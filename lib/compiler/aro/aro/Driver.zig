@@ -180,7 +180,7 @@ pub const usage =
 ;
 
 /// Process command line arguments, returns true if something was written to std_out.
-pub fn parse_args(
+pub fn parseArgs(
     d: *Driver,
     std_out: anytype,
     macro_buf: anytype,
@@ -494,7 +494,7 @@ fn option(arg: []const u8, name: []const u8) ?[]const u8 {
     return null;
 }
 
-fn add_source(d: *Driver, path: []const u8) !Source {
+fn addSource(d: *Driver, path: []const u8) !Source {
     if (mem.eql(u8, "-", path)) {
         const stdin = std.io.getStdIn().reader();
         const input = try stdin.readAllAlloc(d.comp.gpa, std.math.maxInt(u32));
@@ -517,11 +517,11 @@ pub fn fatal(d: *Driver, comptime fmt: []const u8, args: anytype) error{ FatalEr
     return error.FatalError;
 }
 
-pub fn render_errors(d: *Driver) void {
+pub fn renderErrors(d: *Driver) void {
     Diagnostics.render(d.comp, d.detectConfig(std.io.getStdErr()));
 }
 
-pub fn detect_config(d: *Driver, file: std.fs.File) std.io.tty.Config {
+pub fn detectConfig(d: *Driver, file: std.fs.File) std.io.tty.Config {
     if (d.color == true) return .escape_codes;
     if (d.color == false) return .no_color;
 
@@ -540,7 +540,7 @@ pub fn detect_config(d: *Driver, file: std.fs.File) std.io.tty.Config {
     return .no_color;
 }
 
-pub fn error_description(e: anyerror) []const u8 {
+pub fn errorDescription(e: anyerror) []const u8 {
     return switch (e) {
         error.OutOfMemory => "ran out of memory",
         error.FileNotFound => "file not found",
@@ -621,7 +621,7 @@ pub fn main(d: *Driver, tc: *Toolchain, args: []const []const u8, comptime fast_
     if (fast_exit) std.process.exit(0);
 }
 
-fn process_source(
+fn processSource(
     d: *Driver,
     tc: *Toolchain,
     source: Source,
@@ -777,7 +777,7 @@ fn process_source(
     }
 }
 
-fn dump_linker_args(items: []const []const u8) !void {
+fn dumpLinkerArgs(items: []const []const u8) !void {
     const stdout = std.io.getStdOut().writer();
     for (items, 0..) |item, i| {
         if (i > 0) try stdout.writeByte(' ');
@@ -788,7 +788,7 @@ fn dump_linker_args(items: []const []const u8) !void {
 
 /// The entry point of the Aro compiler.
 /// **MAY call `exit` if `fast_exit` is set.**
-pub fn invoke_linker(d: *Driver, tc: *Toolchain, comptime fast_exit: bool) !void {
+pub fn invokeLinker(d: *Driver, tc: *Toolchain, comptime fast_exit: bool) !void {
     var argv = std.ArrayList([]const u8).init(d.comp.gpa);
     defer argv.deinit();
 
@@ -827,7 +827,7 @@ pub fn invoke_linker(d: *Driver, tc: *Toolchain, comptime fast_exit: bool) !void
     if (fast_exit) d.exitWithCleanup(0);
 }
 
-fn exit_with_cleanup(d: *Driver, code: u8) noreturn {
+fn exitWithCleanup(d: *Driver, code: u8) noreturn {
     for (d.link_objects.items[d.link_objects.items.len - d.temp_file_count ..]) |obj| {
         std.fs.deleteFileAbsolute(obj) catch {};
     }

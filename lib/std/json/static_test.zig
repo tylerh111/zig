@@ -229,13 +229,13 @@ const Subnamespaces = struct {
     explicit_enum: enum(u8) { a = 0, b = 1 },
 
     custom_struct: struct {
-        pub fn json_parse(allocator: Allocator, source: anytype, options: ParseOptions) !@This() {
+        pub fn jsonParse(allocator: Allocator, source: anytype, options: ParseOptions) !@This() {
             _ = allocator;
             _ = options;
             try source.skipValue();
             return @This(){};
         }
-        pub fn json_parse_from_value(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
+        pub fn jsonParseFromValue(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
             _ = allocator;
             _ = source;
             _ = options;
@@ -245,13 +245,13 @@ const Subnamespaces = struct {
     custom_union: union(enum) {
         i: i32,
         s: []const u8,
-        pub fn json_parse(allocator: Allocator, source: anytype, options: ParseOptions) !@This() {
+        pub fn jsonParse(allocator: Allocator, source: anytype, options: ParseOptions) !@This() {
             _ = allocator;
             _ = options;
             try source.skipValue();
             return @This(){ .i = 0 };
         }
-        pub fn json_parse_from_value(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
+        pub fn jsonParseFromValue(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
             _ = allocator;
             _ = source;
             _ = options;
@@ -261,13 +261,13 @@ const Subnamespaces = struct {
     custom_enum: enum {
         a,
         b,
-        pub fn json_parse(allocator: Allocator, source: anytype, options: ParseOptions) !@This() {
+        pub fn jsonParse(allocator: Allocator, source: anytype, options: ParseOptions) !@This() {
             _ = allocator;
             _ = options;
             try source.skipValue();
             return .a;
         }
-        pub fn json_parse_from_value(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
+        pub fn jsonParseFromValue(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
             _ = allocator;
             _ = source;
             _ = options;
@@ -297,7 +297,7 @@ const subnamespaces_0_doc =
     \\}
 ;
 
-fn test_all_parse_functions(comptime T: type, expected: T, doc: []const u8) !void {
+fn testAllParseFunctions(comptime T: type, expected: T, doc: []const u8) !void {
     // First do the one with the debug info in case we get a SyntaxError or something.
     {
         var scanner = JsonScanner.initCompleteInput(testing.allocator, doc);
@@ -802,7 +802,7 @@ test "parse into vector" {
     try testing.expectEqual(@Vector(4, i32){ 4, 5, 6, 7 }, parsed.value.vec_i32);
 }
 
-fn assert_key(
+fn assertKey(
     allocator: Allocator,
     test_string: []const u8,
     scanner: anytype,

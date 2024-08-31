@@ -19,7 +19,7 @@ pub const CRTFile = enum {
     libc_so,
 };
 
-pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progress.Node) !void {
+pub fn buildCRTFile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progress.Node) !void {
     if (!build_options.have_llvm) {
         return error.ZigCompilerNotBuiltWithLLVMExtensions;
     }
@@ -298,7 +298,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
 
 // Return true if musl has arch-specific crti/crtn sources.
 // See lib/libc/musl/crt/ARCH/crt?.s .
-pub fn needs_crti_crtn(target: std.Target) bool {
+pub fn needsCrtiCrtn(target: std.Target) bool {
     // zig fmt: off
     return switch (target.cpu.arch) {
         .riscv64,
@@ -308,7 +308,7 @@ pub fn needs_crti_crtn(target: std.Target) bool {
     // zig fmt: on
 }
 
-fn is_musl_arch_name(name: []const u8) bool {
+fn isMuslArchName(name: []const u8) bool {
     const musl_arch_names = [_][]const u8{
         "aarch64",
         "arm",
@@ -343,7 +343,7 @@ const Ext = enum {
     o3,
 };
 
-fn add_src_file(arena: Allocator, source_table: *std.StringArrayHashMap(Ext), file_path: []const u8) !void {
+fn addSrcFile(arena: Allocator, source_table: *std.StringArrayHashMap(Ext), file_path: []const u8) !void {
     const ext: Ext = ext: {
         if (mem.endsWith(u8, file_path, ".c")) {
             if (mem.startsWith(u8, file_path, "musl/src/malloc/") or
@@ -375,7 +375,7 @@ fn add_src_file(arena: Allocator, source_table: *std.StringArrayHashMap(Ext), fi
     source_table.putAssumeCapacityNoClobber(key, ext);
 }
 
-fn add_cc_args(
+fn addCcArgs(
     comp: *Compilation,
     arena: Allocator,
     args: *std.ArrayList([]const u8),

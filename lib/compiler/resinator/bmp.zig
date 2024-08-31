@@ -47,19 +47,19 @@ pub const BitmapInfo = struct {
     pixel_data_offset: u32,
     compression: Compression,
 
-    pub fn get_expected_palette_byte_len(self: *const BitmapInfo) u64 {
+    pub fn getExpectedPaletteByteLen(self: *const BitmapInfo) u64 {
         return @as(u64, self.colors_in_palette) * self.bytes_per_color_palette_element;
     }
 
-    pub fn get_actual_palette_byte_len(self: *const BitmapInfo) u64 {
+    pub fn getActualPaletteByteLen(self: *const BitmapInfo) u64 {
         return self.getByteLenBetweenHeadersAndPixels() - self.getBitmasksByteLen();
     }
 
-    pub fn get_byte_len_between_headers_and_pixels(self: *const BitmapInfo) u64 {
+    pub fn getByteLenBetweenHeadersAndPixels(self: *const BitmapInfo) u64 {
         return @as(u64, self.pixel_data_offset) - self.dib_header_size - file_header_len;
     }
 
-    pub fn get_bitmasks_byte_len(self: *const BitmapInfo) u8 {
+    pub fn getBitmasksByteLen(self: *const BitmapInfo) u8 {
         return switch (self.compression) {
             .BI_BITFIELDS => 12,
             .BI_ALPHABITFIELDS => 16,
@@ -67,22 +67,22 @@ pub const BitmapInfo = struct {
         };
     }
 
-    pub fn get_missing_palette_byte_len(self: *const BitmapInfo) u64 {
+    pub fn getMissingPaletteByteLen(self: *const BitmapInfo) u64 {
         if (self.getActualPaletteByteLen() >= self.getExpectedPaletteByteLen()) return 0;
         return self.getExpectedPaletteByteLen() - self.getActualPaletteByteLen();
     }
 
     /// Returns the full byte len of the DIB header + optional bitmasks + color palette
-    pub fn get_expected_byte_len_before_pixel_data(self: *const BitmapInfo) u64 {
+    pub fn getExpectedByteLenBeforePixelData(self: *const BitmapInfo) u64 {
         return @as(u64, self.dib_header_size) + self.getBitmasksByteLen() + self.getExpectedPaletteByteLen();
     }
 
     /// Returns the full expected byte len
-    pub fn get_expected_byte_len(self: *const BitmapInfo, file_size: u64) u64 {
+    pub fn getExpectedByteLen(self: *const BitmapInfo, file_size: u64) u64 {
         return self.getExpectedByteLenBeforePixelData() + self.getPixelDataLen(file_size);
     }
 
-    pub fn get_pixel_data_len(self: *const BitmapInfo, file_size: u64) u64 {
+    pub fn getPixelDataLen(self: *const BitmapInfo, file_size: u64) u64 {
         return file_size - self.pixel_data_offset;
     }
 };
@@ -170,7 +170,7 @@ pub const BITMAPINFOHEADER = extern struct {
     /// since any more couldn't possibly be indexed in the pixel data)
     ///
     /// Returns error.InvalidBitsPerPixel if the bit depth is not 1, 4, 8, 16, 24, or 32.
-    pub fn num_colors_in_table(self: BITMAPINFOHEADER) !u32 {
+    pub fn numColorsInTable(self: BITMAPINFOHEADER) !u32 {
         switch (self.biBitCount) {
             inline 1, 4, 8 => |bit_count| switch (self.biClrUsed) {
                 // > If biClrUsed is zero, the array contains the maximum number of
@@ -223,7 +223,7 @@ pub const Compression = enum(u32) {
     _,
 };
 
-fn struct_fields_little_to_native(comptime T: type, x: *T) void {
+fn structFieldsLittleToNative(comptime T: type, x: *T) void {
     inline for (@typeInfo(T).Struct.fields) |field| {
         @field(x, field.name) = std.mem.littleToNative(field.type, @field(x, field.name));
     }

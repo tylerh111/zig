@@ -21,7 +21,7 @@ const native_endian = builtin.cpu.arch.endian();
 ///
 /// The NIST submission (v1.2) serializes these words as big-endian,
 /// but software implementations are free to use native endianness.
-pub fn state(comptime endian: std.builtin.Endian) type {
+pub fn State(comptime endian: std.builtin.Endian) type {
     return struct {
         const Self = @This();
 
@@ -41,12 +41,12 @@ pub fn state(comptime endian: std.builtin.Endian) type {
         }
 
         /// Initialize the state from u64 words in native endianness.
-        pub fn init_from_words(initial_state: [5]u64) Self {
+        pub fn initFromWords(initial_state: [5]u64) Self {
             return .{ .st = initial_state };
         }
 
         /// Initialize the state for Ascon XOF
-        pub fn init_xof() Self {
+        pub fn initXof() Self {
             return Self{ .st = Block{
                 0xb57e273b814cd416,
                 0x2b51042562ae2420,
@@ -57,7 +57,7 @@ pub fn state(comptime endian: std.builtin.Endian) type {
         }
 
         /// Initialize the state for Ascon XOFa
-        pub fn init_xof_a() Self {
+        pub fn initXofA() Self {
             return Self{ .st = Block{
                 0x44906568b77b9832,
                 0xcd8d6cae53455532,
@@ -68,19 +68,19 @@ pub fn state(comptime endian: std.builtin.Endian) type {
         }
 
         /// A representation of the state as bytes. The byte order is architecture-dependent.
-        pub fn as_bytes(self: *Self) *[block_bytes]u8 {
+        pub fn asBytes(self: *Self) *[block_bytes]u8 {
             return mem.asBytes(&self.st);
         }
 
         /// Byte-swap the entire state if the architecture doesn't match the required endianness.
-        pub fn endian_swap(self: *Self) void {
+        pub fn endianSwap(self: *Self) void {
             for (&self.st) |*w| {
                 w.* = mem.toNative(u64, w.*, endian);
             }
         }
 
         /// Set bytes starting at the beginning of the state.
-        pub fn set_bytes(self: *Self, bytes: []const u8) void {
+        pub fn setBytes(self: *Self, bytes: []const u8) void {
             var i: usize = 0;
             while (i + 8 <= bytes.len) : (i += 8) {
                 self.st[i / 8] = mem.readInt(u64, bytes[i..][0..8], endian);
@@ -93,7 +93,7 @@ pub fn state(comptime endian: std.builtin.Endian) type {
         }
 
         /// XOR a byte into the state at a given offset.
-        pub fn add_byte(self: *Self, byte: u8, offset: usize) void {
+        pub fn addByte(self: *Self, byte: u8, offset: usize) void {
             const z = switch (endian) {
                 .big => 64 - 8 - 8 * @as(u6, @truncate(offset % 8)),
                 .little => 8 * @as(u6, @truncate(offset % 8)),
@@ -102,7 +102,7 @@ pub fn state(comptime endian: std.builtin.Endian) type {
         }
 
         /// XOR bytes into the beginning of the state.
-        pub fn add_bytes(self: *Self, bytes: []const u8) void {
+        pub fn addBytes(self: *Self, bytes: []const u8) void {
             var i: usize = 0;
             while (i + 8 <= bytes.len) : (i += 8) {
                 self.st[i / 8] ^= mem.readInt(u64, bytes[i..][0..8], endian);
@@ -115,7 +115,7 @@ pub fn state(comptime endian: std.builtin.Endian) type {
         }
 
         /// Extract the first bytes of the state.
-        pub fn extract_bytes(self: *Self, out: []u8) void {
+        pub fn extractBytes(self: *Self, out: []u8) void {
             var i: usize = 0;
             while (i + 8 <= out.len) : (i += 8) {
                 mem.writeInt(u64, out[i..][0..8], self.st[i / 8], endian);
@@ -128,7 +128,7 @@ pub fn state(comptime endian: std.builtin.Endian) type {
         }
 
         /// XOR the first bytes of the state into a slice of bytes.
-        pub fn xor_bytes(self: *Self, out: []u8, in: []const u8) void {
+        pub fn xorBytes(self: *Self, out: []u8, in: []const u8) void {
             debug.assert(out.len == in.len);
 
             var i: usize = 0;
@@ -151,12 +151,12 @@ pub fn state(comptime endian: std.builtin.Endian) type {
         }
 
         /// Clear the entire state, disabling compiler optimizations.
-        pub fn secure_zero(self: *Self) void {
+        pub fn secureZero(self: *Self) void {
             std.crypto.utils.secureZero(u64, &self.st);
         }
 
         /// Apply a reduced-round permutation to the state.
-        pub inline fn permute_r(state: *Self, comptime rounds: u4) void {
+        pub inline fn permuteR(state: *Self, comptime rounds: u4) void {
             const rks = [12]u64{ 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87, 0x78, 0x69, 0x5a, 0x4b };
             inline for (rks[rks.len - rounds ..]) |rk| {
                 state.round(rk);
@@ -170,7 +170,7 @@ pub fn state(comptime endian: std.builtin.Endian) type {
 
         /// Apply a permutation to the state and prevent backtracking.
         /// The rate is expressed in bytes and must be a multiple of the word size (8).
-        pub inline fn permute_ratchet(state: *Self, comptime rounds: u4, comptime rate: u6) void {
+        pub inline fn permuteRatchet(state: *Self, comptime rounds: u4, comptime rate: u6) void {
             const capacity = block_bytes - rate;
             debug.assert(capacity > 0 and capacity % 8 == 0); // capacity must be a multiple of 64 bits
             var mask: [capacity / 8]u64 = undefined;

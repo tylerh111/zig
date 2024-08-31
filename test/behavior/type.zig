@@ -4,7 +4,7 @@ const Type = std.builtin.Type;
 const testing = std.testing;
 const assert = std.debug.assert;
 
-fn test_types(comptime types: []const type) !void {
+fn testTypes(comptime types: []const type) !void {
     inline for (types) |testType| {
         try testing.expect(testType == @Type(@typeInfo(testType)));
     }
@@ -574,7 +574,7 @@ test "reified struct field name from optional payload" {
 
 test "reified union uses @alignOf" {
     const S = struct {
-        fn create_union(comptime T: type) type {
+        fn CreateUnion(comptime T: type) type {
             return @Type(.{
                 .Union = .{
                     .layout = .auto,
@@ -596,7 +596,7 @@ test "reified union uses @alignOf" {
 
 test "reified struct uses @alignOf" {
     const S = struct {
-        fn namespaced_globals(comptime modules: anytype) type {
+        fn NamespacedGlobals(comptime modules: anytype) type {
             return @Type(.{
                 .Struct = .{
                     .layout = .auto,
@@ -657,7 +657,7 @@ test "reified function type params initialized with field pointer" {
 
 test "empty struct assigned to reified struct field" {
     const S = struct {
-        fn namespaced_components(comptime modules: anytype) type {
+        fn NamespacedComponents(comptime modules: anytype) type {
             return @Type(.{
                 .Struct = .{
                     .layout = .auto,
@@ -674,7 +674,7 @@ test "empty struct assigned to reified struct field" {
             });
         }
 
-        fn namespaced_components(comptime modules: anytype) NamespacedComponents(modules) {
+        fn namespacedComponents(comptime modules: anytype) NamespacedComponents(modules) {
             var x: NamespacedComponents(modules) = undefined;
             x.components = modules.components;
             return x;
@@ -739,7 +739,7 @@ test "struct field names sliced at comptime from larger string" {
 
 test "matching captures causes opaque equivalence" {
     const S = struct {
-        fn unsigned_id(comptime I: type) type {
+        fn UnsignedId(comptime I: type) type {
             const U = @Type(.{ .Int = .{
                 .signedness = .unsigned,
                 .bits = @typeInfo(I).Int.bits,

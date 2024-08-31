@@ -20,7 +20,7 @@ pub fn decoder(allocator: Allocator, reader: anytype, check: xz.Check) !Decoder(
     return Decoder(@TypeOf(reader)).init(allocator, reader, check);
 }
 
-pub fn decoder(comptime ReaderType: type) type {
+pub fn Decoder(comptime ReaderType: type) type {
     return struct {
         const Self = @This();
         pub const Error =
@@ -82,7 +82,7 @@ pub fn decoder(comptime ReaderType: type) type {
             }
         }
 
-        fn read_block(self: *Self) Error!void {
+        fn readBlock(self: *Self) Error!void {
             var block_counter = std.io.countingReader(self.inner_reader);
             const block_reader = block_counter.reader();
 

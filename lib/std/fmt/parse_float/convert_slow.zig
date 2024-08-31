@@ -9,7 +9,7 @@ const max_shift = 60;
 const num_powers = 19;
 const powers = [_]u8{ 0, 3, 6, 9, 13, 16, 19, 23, 26, 29, 33, 36, 39, 43, 46, 49, 53, 56, 59 };
 
-pub fn get_shift(n: usize) usize {
+pub fn getShift(n: usize) usize {
     return if (n < num_powers) powers[n] else max_shift;
 }
 
@@ -35,7 +35,7 @@ pub fn get_shift(n: usize) usize {
 ///
 /// Note that this function needs a lot of stack space and is marked
 /// cold to hint against inlining into the caller.
-pub fn convert_slow(comptime T: type, s: []const u8) BiasedFp(T) {
+pub fn convertSlow(comptime T: type, s: []const u8) BiasedFp(T) {
     @setCold(true);
 
     const MantissaT = mantissaType(T);

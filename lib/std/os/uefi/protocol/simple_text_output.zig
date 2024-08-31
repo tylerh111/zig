@@ -23,42 +23,42 @@ pub const SimpleTextOutput = extern struct {
     }
 
     /// Writes a string to the output device.
-    pub fn output_string(self: *const SimpleTextOutput, msg: [*:0]const u16) Status {
+    pub fn outputString(self: *const SimpleTextOutput, msg: [*:0]const u16) Status {
         return self._output_string(self, msg);
     }
 
     /// Verifies that all characters in a string can be output to the target device.
-    pub fn test_string(self: *const SimpleTextOutput, msg: [*:0]const u16) Status {
+    pub fn testString(self: *const SimpleTextOutput, msg: [*:0]const u16) Status {
         return self._test_string(self, msg);
     }
 
     /// Returns information for an available text mode that the output device(s) supports.
-    pub fn query_mode(self: *const SimpleTextOutput, mode_number: usize, columns: *usize, rows: *usize) Status {
+    pub fn queryMode(self: *const SimpleTextOutput, mode_number: usize, columns: *usize, rows: *usize) Status {
         return self._query_mode(self, mode_number, columns, rows);
     }
 
     /// Sets the output device(s) to a specified mode.
-    pub fn set_mode(self: *const SimpleTextOutput, mode_number: usize) Status {
+    pub fn setMode(self: *const SimpleTextOutput, mode_number: usize) Status {
         return self._set_mode(self, mode_number);
     }
 
     /// Sets the background and foreground colors for the outputString() and clearScreen() functions.
-    pub fn set_attribute(self: *const SimpleTextOutput, attribute: usize) Status {
+    pub fn setAttribute(self: *const SimpleTextOutput, attribute: usize) Status {
         return self._set_attribute(self, attribute);
     }
 
     /// Clears the output device(s) display to the currently selected background color.
-    pub fn clear_screen(self: *const SimpleTextOutput) Status {
+    pub fn clearScreen(self: *const SimpleTextOutput) Status {
         return self._clear_screen(self);
     }
 
     /// Sets the current coordinates of the cursor position.
-    pub fn set_cursor_position(self: *const SimpleTextOutput, column: usize, row: usize) Status {
+    pub fn setCursorPosition(self: *const SimpleTextOutput, column: usize, row: usize) Status {
         return self._set_cursor_position(self, column, row);
     }
 
     /// Makes the cursor visible or invisible.
-    pub fn enable_cursor(self: *const SimpleTextOutput, visible: bool) Status {
+    pub fn enableCursor(self: *const SimpleTextOutput, visible: bool) Status {
         return self._enable_cursor(self, visible);
     }
 

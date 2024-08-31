@@ -26,7 +26,7 @@
 //!     .logFn = myLogFn,
 //! };
 //!
-//! pub fn my_log_fn(
+//! pub fn myLogFn(
 //!     comptime level: std.log.Level,
 //!     comptime scope: @TypeOf(.EnumLiteral),
 //!     comptime format: []const u8,
@@ -88,7 +88,7 @@ pub const Level = enum {
     debug,
 
     /// Returns a string literal of the given level in full text form.
-    pub fn as_text(comptime self: Level) []const u8 {
+    pub fn asText(comptime self: Level) []const u8 {
         return switch (self) {
             .err => "error",
             .warn => "warning",
@@ -126,7 +126,7 @@ fn log(
 }
 
 /// Determine if a specific log message level and scope combination are enabled for logging.
-pub fn log_enabled(comptime message_level: Level, comptime scope: @Type(.EnumLiteral)) bool {
+pub fn logEnabled(comptime message_level: Level, comptime scope: @Type(.EnumLiteral)) bool {
     inline for (scope_levels) |scope_level| {
         if (scope_level.scope == scope) return @intFromEnum(message_level) <= @intFromEnum(scope_level.level);
     }
@@ -134,13 +134,13 @@ pub fn log_enabled(comptime message_level: Level, comptime scope: @Type(.EnumLit
 }
 
 /// Determine if a specific log message level using the default log scope is enabled for logging.
-pub fn default_log_enabled(comptime message_level: Level) bool {
+pub fn defaultLogEnabled(comptime message_level: Level) bool {
     return comptime logEnabled(message_level, default_log_scope);
 }
 
 /// The default implementation for the log function, custom log functions may
 /// forward log messages to this function.
-pub fn default_log(
+pub fn defaultLog(
     comptime message_level: Level,
     comptime scope: @Type(.EnumLiteral),
     comptime format: []const u8,

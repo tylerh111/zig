@@ -631,7 +631,7 @@ const c_abi_targets = [_]CAbiTarget{
     },
 };
 
-pub fn add_compare_output_tests(
+pub fn addCompareOutputTests(
     b: *std.Build,
     test_filters: []const []const u8,
     optimize_modes: []const OptimizeMode,
@@ -650,7 +650,7 @@ pub fn add_compare_output_tests(
     return cases.step;
 }
 
-pub fn add_stack_trace_tests(
+pub fn addStackTraceTests(
     b: *std.Build,
     test_filters: []const []const u8,
     optimize_modes: []const OptimizeMode,
@@ -677,13 +677,13 @@ pub fn add_stack_trace_tests(
     return cases.step;
 }
 
-fn compiler_has_package_manager(b: *std.Build) bool {
+fn compilerHasPackageManager(b: *std.Build) bool {
     // We can only use dependencies if the compiler was built with support for package management.
     // (zig2 doesn't support it, but we still need to construct a build graph to build stage3.)
     return b.available_deps.len != 0;
 }
 
-pub fn add_standalone_tests(
+pub fn addStandaloneTests(
     b: *std.Build,
     optimize_modes: []const OptimizeMode,
     enable_macos_sdk: bool,
@@ -709,7 +709,7 @@ pub fn add_standalone_tests(
     return step;
 }
 
-pub fn add_link_tests(
+pub fn addLinkTests(
     b: *std.Build,
     enable_macos_sdk: bool,
     enable_ios_sdk: bool,
@@ -730,7 +730,7 @@ pub fn add_link_tests(
     return step;
 }
 
-pub fn add_cli_tests(b: *std.Build) *Step {
+pub fn addCliTests(b: *std.Build) *Step {
     const step = b.step("test-cli", "Test the command line interface");
     const s = std.fs.path.sep_str;
 
@@ -924,7 +924,7 @@ pub fn add_cli_tests(b: *std.Build) *Step {
     return step;
 }
 
-pub fn add_assemble_and_link_tests(b: *std.Build, test_filters: []const []const u8, optimize_modes: []const OptimizeMode) *Step {
+pub fn addAssembleAndLinkTests(b: *std.Build, test_filters: []const []const u8, optimize_modes: []const OptimizeMode) *Step {
     const cases = b.allocator.create(CompareOutputContext) catch @panic("OOM");
     cases.* = CompareOutputContext{
         .b = b,
@@ -939,7 +939,7 @@ pub fn add_assemble_and_link_tests(b: *std.Build, test_filters: []const []const 
     return cases.step;
 }
 
-pub fn add_translate_ctests(b: *std.Build, parent_step: *std.Build.Step, test_filters: []const []const u8) void {
+pub fn addTranslateCTests(b: *std.Build, parent_step: *std.Build.Step, test_filters: []const []const u8) void {
     const cases = b.allocator.create(TranslateCContext) catch @panic("OOM");
     cases.* = TranslateCContext{
         .b = b,
@@ -953,7 +953,7 @@ pub fn add_translate_ctests(b: *std.Build, parent_step: *std.Build.Step, test_fi
     return;
 }
 
-pub fn add_run_translated_ctests(
+pub fn addRunTranslatedCTests(
     b: *std.Build,
     parent_step: *std.Build.Step,
     test_filters: []const []const u8,
@@ -987,7 +987,7 @@ const ModuleTestOptions = struct {
     no_builtin: bool = false,
 };
 
-pub fn add_module_tests(b: *std.Build, options: ModuleTestOptions) *Step {
+pub fn addModuleTests(b: *std.Build, options: ModuleTestOptions) *Step {
     const step = b.step(b.fmt("test-{s}", .{options.name}), options.desc);
 
     for (test_targets) |test_target| {
@@ -1184,7 +1184,7 @@ pub fn add_module_tests(b: *std.Build, options: ModuleTestOptions) *Step {
     return step;
 }
 
-pub fn add_cabi_tests(b: *std.Build, skip_non_native: bool, skip_release: bool) *Step {
+pub fn addCAbiTests(b: *std.Build, skip_non_native: bool, skip_release: bool) *Step {
     const step = b.step("test-c-abi", "Run the C ABI tests");
 
     const optimize_modes: [3]OptimizeMode = .{ .Debug, .ReleaseSafe, .ReleaseFast };
@@ -1246,7 +1246,7 @@ pub fn add_cabi_tests(b: *std.Build, skip_non_native: bool, skip_release: bool) 
     return step;
 }
 
-pub fn add_cases(
+pub fn addCases(
     b: *std.Build,
     parent_step: *Step,
     test_filters: []const []const u8,

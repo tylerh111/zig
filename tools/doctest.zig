@@ -94,7 +94,7 @@ pub fn main() !void {
     try bw.flush();
 }
 
-fn print_output(
+fn printOutput(
     arena: Allocator,
     out: anytype,
     code: Code,
@@ -554,14 +554,14 @@ fn print_output(
     }
 }
 
-fn dump_args(args: []const []const u8) void {
+fn dumpArgs(args: []const []const u8) void {
     for (args) |arg|
         std.debug.print("{s} ", .{arg})
     else
         std.debug.print("\n", .{});
 }
 
-fn print_source_block(arena: Allocator, out: anytype, source_bytes: []const u8, name: []const u8) !void {
+fn printSourceBlock(arena: Allocator, out: anytype, source_bytes: []const u8, name: []const u8) !void {
     try out.print("<figure><figcaption class=\"{s}-cap\"><cite class=\"file\">{s}</cite></figcaption><pre>", .{
         "zig", name,
     });
@@ -569,7 +569,7 @@ fn print_source_block(arena: Allocator, out: anytype, source_bytes: []const u8, 
     try out.writeAll("</pre></figure>");
 }
 
-fn tokenize_and_print(arena: Allocator, out: anytype, raw_src: []const u8) !void {
+fn tokenizeAndPrint(arena: Allocator, out: anytype, raw_src: []const u8) !void {
     const src_non_terminated = mem.trim(u8, raw_src, " \r\n");
     const src = try arena.dupeZ(u8, src_non_terminated);
 
@@ -800,7 +800,7 @@ fn tokenize_and_print(arena: Allocator, out: anytype, raw_src: []const u8) !void
     try out.writeAll("</code>");
 }
 
-fn write_escaped_lines(out: anytype, text: []const u8) !void {
+fn writeEscapedLines(out: anytype, text: []const u8) !void {
     return writeEscaped(out, text);
 }
 
@@ -832,13 +832,13 @@ const Code = struct {
     };
 };
 
-fn strip_manifest(source_bytes: []const u8) []const u8 {
+fn stripManifest(source_bytes: []const u8) []const u8 {
     const manifest_start = mem.lastIndexOf(u8, source_bytes, "\n\n// ") orelse
         fatal("missing manifest comment", .{});
     return source_bytes[0 .. manifest_start + 1];
 }
 
-fn parse_manifest(arena: Allocator, source_bytes: []const u8) !Code {
+fn parseManifest(arena: Allocator, source_bytes: []const u8) !Code {
     const manifest_start = mem.lastIndexOf(u8, source_bytes, "\n\n// ") orelse
         fatal("missing manifest comment", .{});
     var it = mem.tokenizeScalar(u8, source_bytes[manifest_start..], '\n');
@@ -914,14 +914,14 @@ fn parse_manifest(arena: Allocator, source_bytes: []const u8) !Code {
     };
 }
 
-fn skip_prefix(line: []const u8) []const u8 {
+fn skipPrefix(line: []const u8) []const u8 {
     if (!mem.startsWith(u8, line, "// ")) {
         fatal("line does not start with '// ': '{s}", .{line});
     }
     return line[3..];
 }
 
-fn escape_html(allocator: Allocator, input: []const u8) ![]u8 {
+fn escapeHtml(allocator: Allocator, input: []const u8) ![]u8 {
     var buf = std.ArrayList(u8).init(allocator);
     defer buf.deinit();
 
@@ -930,7 +930,7 @@ fn escape_html(allocator: Allocator, input: []const u8) ![]u8 {
     return try buf.toOwnedSlice();
 }
 
-fn write_escaped(out: anytype, input: []const u8) !void {
+fn writeEscaped(out: anytype, input: []const u8) !void {
     for (input) |c| {
         try switch (c) {
             '&' => out.writeAll("&amp;"),
@@ -942,7 +942,7 @@ fn write_escaped(out: anytype, input: []const u8) !void {
     }
 }
 
-fn term_color(allocator: Allocator, input: []const u8) ![]u8 {
+fn termColor(allocator: Allocator, input: []const u8) ![]u8 {
     // The SRG sequences generates by the Zig compiler are in the format:
     //   ESC [ <foreground-color> ; <n> m
     // or
@@ -1103,7 +1103,7 @@ fn run(
     return result;
 }
 
-fn print_shell(out: anytype, shell_content: []const u8, escape: bool) !void {
+fn printShell(out: anytype, shell_content: []const u8, escape: bool) !void {
     const trimmed_shell_content = mem.trim(u8, shell_content, " \r\n");
     try out.writeAll("<figure><figcaption class=\"shell-cap\">Shell</figcaption><pre><samp>");
     var cmd_cont: bool = false;
@@ -1236,13 +1236,13 @@ test "term output from zig" {
 
     {
         // 2.2-without-reference-traces.out
-        const input = "\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:128:29: \x1b[31;1merror: \x1b[0m\x1b[1minvalid type given to fixedBufferStream\n\x1b[0m                    else => @compileError(\"invalid type given to fixedBufferStream\"),\n                            \x1b[32;1m^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\x1b[0m\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:116:66: \x1b[36;1mnote: \x1b[0m\x1b[1mcalled from here\n\x1b[0mpub fn fixed_buffer_stream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {\n;                                                            \x1b[32;1m~~~~~^~~~~~~~~~~~~~~~~\n\x1b[0m";
+        const input = "\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:128:29: \x1b[31;1merror: \x1b[0m\x1b[1minvalid type given to fixedBufferStream\n\x1b[0m                    else => @compileError(\"invalid type given to fixedBufferStream\"),\n                            \x1b[32;1m^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\x1b[0m\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:116:66: \x1b[36;1mnote: \x1b[0m\x1b[1mcalled from here\n\x1b[0mpub fn fixedBufferStream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {\n;                                                            \x1b[32;1m~~~~~^~~~~~~~~~~~~~~~~\n\x1b[0m";
         const expect =
             \\<span class="sgr-1m">/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:128:29: </span><span class="sgr-31_1m">error: </span><span class="sgr-1m">invalid type given to fixedBufferStream
             \\</span>                    else => @compileError("invalid type given to fixedBufferStream"),
             \\                            <span class="sgr-32_1m">^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             \\</span><span class="sgr-1m">/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:116:66: </span><span class="sgr-36_1m">note: </span><span class="sgr-1m">called from here
-            \\</span>pub fn fixed_buffer_stream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {
+            \\</span>pub fn fixedBufferStream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {
             \\;                                                            <span class="sgr-32_1m">~~~~~^~~~~~~~~~~~~~~~~
             \\</span>
         ;

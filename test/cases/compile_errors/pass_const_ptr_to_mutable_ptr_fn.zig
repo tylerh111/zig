@@ -3,7 +3,7 @@ fn foo() bool {
     const b = &a;
     return ptrEql(b, b);
 }
-fn ptr_eql(a: *[]const u8, b: *[]const u8) bool {
+fn ptrEql(a: *[]const u8, b: *[]const u8) bool {
     _ = a;
     _ = b;
     return true;

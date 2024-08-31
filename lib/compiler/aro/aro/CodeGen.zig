@@ -64,7 +64,7 @@ fn fail(c: *CodeGen, comptime fmt: []const u8, args: anytype) error{ FatalError,
     return error.FatalError;
 }
 
-pub fn gen_ir(tree: Tree) Compilation.Error!Ir {
+pub fn genIr(tree: Tree) Compilation.Error!Ir {
     const gpa = tree.comp.gpa;
     var c = CodeGen{
         .builder = .{
@@ -132,7 +132,7 @@ pub fn gen_ir(tree: Tree) Compilation.Error!Ir {
     return c.builder.finish();
 }
 
-fn gen_type(c: *CodeGen, base_ty: Type) !Interner.Ref {
+fn genType(c: *CodeGen, base_ty: Type) !Interner.Ref {
     var key: Interner.Key = undefined;
     const ty = base_ty.canonicalize(.standard);
     switch (ty.specifier) {
@@ -183,7 +183,7 @@ fn gen_type(c: *CodeGen, base_ty: Type) !Interner.Ref {
     return c.builder.interner.put(c.builder.gpa, key);
 }
 
-fn gen_fn(c: *CodeGen, decl: NodeIndex) Error!void {
+fn genFn(c: *CodeGen, decl: NodeIndex) Error!void {
     const name = c.tree.tokSlice(c.node_data[@intFromEnum(decl)].decl.name);
     const func_ty = c.node_ty[@intFromEnum(decl)].canonicalize(.standard);
     c.ret_nodes.items.len = 0;
@@ -220,15 +220,15 @@ fn gen_fn(c: *CodeGen, decl: NodeIndex) Error!void {
     try c.builder.finishFn(name);
 }
 
-fn add_un(c: *CodeGen, tag: Ir.Inst.Tag, operand: Ir.Ref, ty: Type) !Ir.Ref {
+fn addUn(c: *CodeGen, tag: Ir.Inst.Tag, operand: Ir.Ref, ty: Type) !Ir.Ref {
     return c.builder.addInst(tag, .{ .un = operand }, try c.genType(ty));
 }
 
-fn add_bin(c: *CodeGen, tag: Ir.Inst.Tag, lhs: Ir.Ref, rhs: Ir.Ref, ty: Type) !Ir.Ref {
+fn addBin(c: *CodeGen, tag: Ir.Inst.Tag, lhs: Ir.Ref, rhs: Ir.Ref, ty: Type) !Ir.Ref {
     return c.builder.addInst(tag, .{ .bin = .{ .lhs = lhs, .rhs = rhs } }, try c.genType(ty));
 }
 
-fn add_branch(c: *CodeGen, cond: Ir.Ref, true_label: Ir.Ref, false_label: Ir.Ref) !void {
+fn addBranch(c: *CodeGen, cond: Ir.Ref, true_label: Ir.Ref, false_label: Ir.Ref) !void {
     if (true_label == c.bool_end_label) {
         if (false_label == c.bool_end_label) {
             try c.phi_nodes.append(c.comp.gpa, .{ .label = c.builder.current_label, .value = cond });
@@ -242,16 +242,16 @@ fn add_branch(c: *CodeGen, cond: Ir.Ref, true_label: Ir.Ref, false_label: Ir.Ref
     return c.builder.addBranch(cond, true_label, false_label);
 }
 
-fn add_bool_phi(c: *CodeGen, value: bool) !void {
+fn addBoolPhi(c: *CodeGen, value: bool) !void {
     const val = try c.builder.addConstant((try Value.int(@intFromBool(value), c.comp)).ref(), .i1);
     try c.phi_nodes.append(c.comp.gpa, .{ .label = c.builder.current_label, .value = val });
 }
 
-fn gen_stmt(c: *CodeGen, node: NodeIndex) Error!void {
+fn genStmt(c: *CodeGen, node: NodeIndex) Error!void {
     _ = try c.genExpr(node);
 }
 
-fn gen_expr(c: *CodeGen, node: NodeIndex) Error!Ir.Ref {
+fn genExpr(c: *CodeGen, node: NodeIndex) Error!Ir.Ref {
     std.debug.assert(node != .none);
     const ty = c.node_ty[@intFromEnum(node)];
     if (c.tree.value_map.get(node)) |val| {
@@ -957,7 +957,7 @@ fn gen_expr(c: *CodeGen, node: NodeIndex) Error!Ir.Ref {
     return .none;
 }
 
-fn gen_lval(c: *CodeGen, node: NodeIndex) Error!Ir.Ref {
+fn genLval(c: *CodeGen, node: NodeIndex) Error!Ir.Ref {
     std.debug.assert(node != .none);
     assert(c.tree.isLval(node));
     const data = c.node_data[@intFromEnum(node)];
@@ -1011,7 +1011,7 @@ fn gen_lval(c: *CodeGen, node: NodeIndex) Error!Ir.Ref {
     }
 }
 
-fn gen_bool_expr(c: *CodeGen, base: NodeIndex, true_label: Ir.Ref, false_label: Ir.Ref) Error!void {
+fn genBoolExpr(c: *CodeGen, base: NodeIndex, true_label: Ir.Ref, false_label: Ir.Ref) Error!void {
     var node = base;
     while (true) switch (c.node_tag[@intFromEnum(node)]) {
         .paren_expr => {
@@ -1163,13 +1163,13 @@ fn gen_bool_expr(c: *CodeGen, base: NodeIndex, true_label: Ir.Ref, false_label: 
     try c.addBranch(cmp, true_label, false_label);
 }
 
-fn gen_builtin_call(c: *CodeGen, builtin: Builtin, arg_nodes: []const NodeIndex, ty: Type) Error!Ir.Ref {
+fn genBuiltinCall(c: *CodeGen, builtin: Builtin, arg_nodes: []const NodeIndex, ty: Type) Error!Ir.Ref {
     _ = arg_nodes;
     _ = ty;
     return c.fail("TODO CodeGen.genBuiltinCall {s}\n", .{Builtin.nameFromTag(builtin.tag).span()});
 }
 
-fn gen_call(c: *CodeGen, fn_node: NodeIndex, arg_nodes: []const NodeIndex, ty: Type) Error!Ir.Ref {
+fn genCall(c: *CodeGen, fn_node: NodeIndex, arg_nodes: []const NodeIndex, ty: Type) Error!Ir.Ref {
     // Detect direct calls.
     const fn_ref = blk: {
         const data = c.node_data[@intFromEnum(fn_node)];
@@ -1224,7 +1224,7 @@ fn gen_call(c: *CodeGen, fn_node: NodeIndex, arg_nodes: []const NodeIndex, ty: T
     return c.builder.addInst(.call, .{ .call = call }, try c.genType(ty));
 }
 
-fn gen_compound_assign(c: *CodeGen, node: NodeIndex, tag: Ir.Inst.Tag) Error!Ir.Ref {
+fn genCompoundAssign(c: *CodeGen, node: NodeIndex, tag: Ir.Inst.Tag) Error!Ir.Ref {
     const bin = c.node_data[@intFromEnum(node)].bin;
     const ty = c.node_ty[@intFromEnum(node)];
     const rhs = try c.genExpr(bin.rhs);
@@ -1234,7 +1234,7 @@ fn gen_compound_assign(c: *CodeGen, node: NodeIndex, tag: Ir.Inst.Tag) Error!Ir.
     return res;
 }
 
-fn gen_bin_op(c: *CodeGen, node: NodeIndex, tag: Ir.Inst.Tag) Error!Ir.Ref {
+fn genBinOp(c: *CodeGen, node: NodeIndex, tag: Ir.Inst.Tag) Error!Ir.Ref {
     const bin = c.node_data[@intFromEnum(node)].bin;
     const ty = c.node_ty[@intFromEnum(node)];
     const lhs = try c.genExpr(bin.lhs);
@@ -1242,7 +1242,7 @@ fn gen_bin_op(c: *CodeGen, node: NodeIndex, tag: Ir.Inst.Tag) Error!Ir.Ref {
     return c.addBin(tag, lhs, rhs, ty);
 }
 
-fn gen_comparison(c: *CodeGen, node: NodeIndex, tag: Ir.Inst.Tag) Error!Ir.Ref {
+fn genComparison(c: *CodeGen, node: NodeIndex, tag: Ir.Inst.Tag) Error!Ir.Ref {
     const bin = c.node_data[@intFromEnum(node)].bin;
     const lhs = try c.genExpr(bin.lhs);
     const rhs = try c.genExpr(bin.rhs);
@@ -1250,7 +1250,7 @@ fn gen_comparison(c: *CodeGen, node: NodeIndex, tag: Ir.Inst.Tag) Error!Ir.Ref {
     return c.builder.addInst(tag, .{ .bin = .{ .lhs = lhs, .rhs = rhs } }, .i1);
 }
 
-fn gen_ptr_arithmetic(c: *CodeGen, ptr: Ir.Ref, offset: Ir.Ref, offset_ty: Type, ty: Type) Error!Ir.Ref {
+fn genPtrArithmetic(c: *CodeGen, ptr: Ir.Ref, offset: Ir.Ref, offset_ty: Type, ty: Type) Error!Ir.Ref {
     // TODO consider adding a getelemptr instruction
     const size = ty.elemType().sizeof(c.comp).?;
     if (size == 1) {
@@ -1262,7 +1262,7 @@ fn gen_ptr_arithmetic(c: *CodeGen, ptr: Ir.Ref, offset: Ir.Ref, offset_ty: Type,
     return c.addBin(.add, ptr, offset_inst, offset_ty);
 }
 
-fn gen_initializer(c: *CodeGen, ptr: Ir.Ref, dest_ty: Type, initializer: NodeIndex) Error!void {
+fn genInitializer(c: *CodeGen, ptr: Ir.Ref, dest_ty: Type, initializer: NodeIndex) Error!void {
     std.debug.assert(initializer != .none);
     switch (c.node_tag[@intFromEnum(initializer)]) {
         .array_init_expr_two,
@@ -1289,7 +1289,7 @@ fn gen_initializer(c: *CodeGen, ptr: Ir.Ref, dest_ty: Type, initializer: NodeInd
     }
 }
 
-fn gen_var(c: *CodeGen, decl: NodeIndex) Error!void {
+fn genVar(c: *CodeGen, decl: NodeIndex) Error!void {
     _ = decl;
     return c.fail("TODO CodeGen.genVar\n", .{});
 }

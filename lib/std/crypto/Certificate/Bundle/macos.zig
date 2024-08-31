@@ -7,7 +7,7 @@ const Bundle = @import("../Bundle.zig");
 
 pub const RescanMacError = Allocator.Error || fs.File.OpenError || fs.File.ReadError || fs.File.SeekError || Bundle.ParseCertError || error{EndOfStream};
 
-pub fn rescan_mac(cb: *Bundle, gpa: Allocator) RescanMacError!void {
+pub fn rescanMac(cb: *Bundle, gpa: Allocator) RescanMacError!void {
     cb.bytes.clearRetainingCapacity();
     cb.map.clearRetainingCapacity();
 

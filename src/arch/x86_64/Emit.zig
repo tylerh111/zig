@@ -16,7 +16,7 @@ pub const Error = Lower.Error || error{
     EmitFail,
 };
 
-pub fn emit_mir(emit: *Emit) Error!void {
+pub fn emitMir(emit: *Emit) Error!void {
     for (0..emit.lower.mir.instructions.len) |mir_i| {
         const mir_index: Mir.Inst.Index = @intCast(mir_i);
         try emit.code_offset_mapping.putNoClobber(
@@ -314,7 +314,7 @@ const Reloc = struct {
     length: u5,
 };
 
-fn fixup_relocs(emit: *Emit) Error!void {
+fn fixupRelocs(emit: *Emit) Error!void {
     // TODO this function currently assumes all relocs via JMP/CALL instructions are 32bit in size.
     // This should be reversed like it is done in aarch64 MIR emit code: start with the smallest
     // possible resolution, i.e., 8bit, and iteratively converge on the minimum required resolution
@@ -327,7 +327,7 @@ fn fixup_relocs(emit: *Emit) Error!void {
     }
 }
 
-fn dbg_advance_pcand_line(emit: *Emit, line: u32, column: u32) Error!void {
+fn dbgAdvancePCAndLine(emit: *Emit, line: u32, column: u32) Error!void {
     const delta_line = @as(i33, line) - @as(i33, emit.prev_di_line);
     const delta_pc: usize = emit.code.items.len - emit.prev_di_pc;
     log.debug("  (advance pc={d} and line={d})", .{ delta_pc, delta_line });

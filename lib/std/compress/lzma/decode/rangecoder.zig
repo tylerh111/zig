@@ -16,7 +16,7 @@ pub const RangeDecoder = struct {
         };
     }
 
-    pub fn from_parts(
+    pub fn fromParts(
         range: u32,
         code: u32,
     ) RangeDecoder {
@@ -31,7 +31,7 @@ pub const RangeDecoder = struct {
         self.code = code;
     }
 
-    pub inline fn is_finished(self: RangeDecoder) bool {
+    pub inline fn isFinished(self: RangeDecoder) bool {
         return self.code == 0;
     }
 
@@ -42,7 +42,7 @@ pub const RangeDecoder = struct {
         }
     }
 
-    inline fn get_bit(self: *RangeDecoder, reader: anytype) !bool {
+    inline fn getBit(self: *RangeDecoder, reader: anytype) !bool {
         self.range >>= 1;
 
         const bit = self.code >= self.range;
@@ -61,7 +61,7 @@ pub const RangeDecoder = struct {
         return result;
     }
 
-    pub inline fn decode_bit(self: *RangeDecoder, reader: anytype, prob: *u16, update: bool) !bool {
+    pub inline fn decodeBit(self: *RangeDecoder, reader: anytype, prob: *u16, update: bool) !bool {
         const bound = (self.range >> 11) * prob.*;
 
         if (self.code < bound) {
@@ -82,7 +82,7 @@ pub const RangeDecoder = struct {
         }
     }
 
-    fn parse_bit_tree(
+    fn parseBitTree(
         self: *RangeDecoder,
         reader: anytype,
         num_bits: u5,
@@ -98,7 +98,7 @@ pub const RangeDecoder = struct {
         return tmp - (@as(u32, 1) << num_bits);
     }
 
-    pub fn parse_reverse_bit_tree(
+    pub fn parseReverseBitTree(
         self: *RangeDecoder,
         reader: anytype,
         num_bits: u5,
@@ -118,7 +118,7 @@ pub const RangeDecoder = struct {
     }
 };
 
-pub fn bit_tree(comptime num_bits: usize) type {
+pub fn BitTree(comptime num_bits: usize) type {
     return struct {
         probs: [1 << num_bits]u16 = .{0x400} ** (1 << num_bits),
 
@@ -133,7 +133,7 @@ pub fn bit_tree(comptime num_bits: usize) type {
             return decoder.parseBitTree(reader, num_bits, &self.probs, update);
         }
 
-        pub fn parse_reverse(
+        pub fn parseReverse(
             self: *Self,
             reader: anytype,
             decoder: *RangeDecoder,

@@ -35,7 +35,7 @@ pub fn join(self: Directory, allocator: Allocator, paths: []const []const u8) ![
     }
 }
 
-pub fn join_z(self: Directory, allocator: Allocator, paths: []const []const u8) ![:0]u8 {
+pub fn joinZ(self: Directory, allocator: Allocator, paths: []const []const u8) ![:0]u8 {
     if (self.path) |p| {
         // TODO clean way to do this with only 1 allocation
         const part2 = try fs.path.join(allocator, paths);
@@ -49,7 +49,7 @@ pub fn join_z(self: Directory, allocator: Allocator, paths: []const []const u8) 
 /// Whether or not the handle should be closed, or the path should be freed
 /// is determined by usage, however this function is provided for convenience
 /// if it happens to be what the caller needs.
-pub fn close_and_free(self: *Directory, gpa: Allocator) void {
+pub fn closeAndFree(self: *Directory, gpa: Allocator) void {
     self.handle.close();
     if (self.path) |p| gpa.free(p);
     self.* = undefined;

@@ -409,7 +409,7 @@ test "duplicate map keys" {
     try testing.expectError(error.DuplicateMapKey, Yaml.load(testing.allocator, source));
 }
 
-fn test_stringify(expected: []const u8, input: anytype) !void {
+fn testStringify(expected: []const u8, input: anytype) !void {
     var output = std.ArrayList(u8).init(testing.allocator);
     defer output.deinit();
 

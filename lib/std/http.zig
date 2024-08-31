@@ -45,7 +45,7 @@ pub const Method = enum(u64) {
 
     /// Returns true if a request of this method is allowed to have a body
     /// Actual behavior from servers may vary and should still be checked
-    pub fn request_has_body(self: Method) bool {
+    pub fn requestHasBody(self: Method) bool {
         return switch (self) {
             .POST, .PUT, .PATCH => true,
             .GET, .HEAD, .DELETE, .CONNECT, .OPTIONS, .TRACE => false,
@@ -55,7 +55,7 @@ pub const Method = enum(u64) {
 
     /// Returns true if a response to this method is allowed to have a body
     /// Actual behavior from clients may vary and should still be checked
-    pub fn response_has_body(self: Method) bool {
+    pub fn responseHasBody(self: Method) bool {
         return switch (self) {
             .GET, .POST, .DELETE, .CONNECT, .OPTIONS, .PATCH => true,
             .HEAD, .PUT, .TRACE => false,

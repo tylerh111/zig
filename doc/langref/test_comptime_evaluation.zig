@@ -20,7 +20,7 @@ fn three(value: i32) i32 {
     return value + 3;
 }
 
-fn perform_fn(comptime prefix_char: u8, start_value: i32) i32 {
+fn performFn(comptime prefix_char: u8, start_value: i32) i32 {
     var result: i32 = start_value;
     comptime var i = 0;
     inline while (i < cmd_fns.len) : (i += 1) {

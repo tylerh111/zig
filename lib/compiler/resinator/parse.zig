@@ -77,7 +77,7 @@ pub const Parser = struct {
         return tree;
     }
 
-    fn parse_root(self: *Self) Error!*Node {
+    fn parseRoot(self: *Self) Error!*Node {
         var statements = std.ArrayList(*Node).init(self.state.allocator);
         defer statements.deinit();
 
@@ -91,7 +91,7 @@ pub const Parser = struct {
         return &node.base;
     }
 
-    fn parse_statements(self: *Self, statements: *std.ArrayList(*Node)) Error!void {
+    fn parseStatements(self: *Self, statements: *std.ArrayList(*Node)) Error!void {
         while (true) {
             try self.nextToken(.whitespace_delimiter_only);
             if (self.state.token.id == .eof) break;
@@ -110,7 +110,7 @@ pub const Parser = struct {
     /// common resource attributes (if any). If there are no common resource attributes, the
     /// current token is unchanged.
     /// The returned slice is allocated by the parser's arena
-    fn parse_common_resource_attributes(self: *Self) ![]Token {
+    fn parseCommonResourceAttributes(self: *Self) ![]Token {
         var common_resource_attributes = std.ArrayListUnmanaged(Token){};
         while (true) {
             const maybe_common_resource_attribute = try self.lookaheadToken(.normal);
@@ -130,7 +130,7 @@ pub const Parser = struct {
     /// optional statements (if any). If there are no optional statements, the
     /// current token is unchanged.
     /// The returned slice is allocated by the parser's arena
-    fn parse_optional_statements(self: *Self, resource: Resource) ![]*Node {
+    fn parseOptionalStatements(self: *Self, resource: Resource) ![]*Node {
         var optional_statements = std.ArrayListUnmanaged(*Node){};
         while (true) {
             const lookahead_token = try self.lookaheadToken(.normal);
@@ -277,7 +277,7 @@ pub const Parser = struct {
     }
 
     /// Expects the current token to be the first token of the statement.
-    fn parse_statement(self: *Self) Error!*Node {
+    fn parseStatement(self: *Self) Error!*Node {
         const first_token = self.state.token;
         std.debug.assert(first_token.id == .literal);
 
@@ -795,7 +795,7 @@ pub const Parser = struct {
 
     /// Expects the current token to be a begin token.
     /// After return, the current token will be the end token.
-    fn parse_raw_data_block(self: *Self) Error![]*Node {
+    fn parseRawDataBlock(self: *Self) Error![]*Node {
         var raw_data = std.ArrayList(*Node).init(self.state.allocator);
         defer raw_data.deinit();
         while (true) {
@@ -852,7 +852,7 @@ pub const Parser = struct {
     /// begin on the next token.
     /// After return, the current token will be the token immediately before the end of the
     /// control statement (or unchanged if the function returns null).
-    fn parse_control_statement(self: *Self, resource: Resource) Error!?*Node {
+    fn parseControlStatement(self: *Self, resource: Resource) Error!?*Node {
         const control_token = try self.lookaheadToken(.normal);
         const control = rc.Control.map.get(control_token.slice(self.lexer.buffer)) orelse return null;
         self.nextToken(.normal) catch unreachable;
@@ -984,7 +984,7 @@ pub const Parser = struct {
         return &node.base;
     }
 
-    fn parse_toolbar_button_statement(self: *Self) Error!?*Node {
+    fn parseToolbarButtonStatement(self: *Self) Error!?*Node {
         const keyword_token = try self.lookaheadToken(.normal);
         const button_type = rc.ToolbarButton.map.get(keyword_token.slice(self.lexer.buffer)) orelse return null;
         self.nextToken(.normal) catch unreachable;
@@ -1014,7 +1014,7 @@ pub const Parser = struct {
     /// begin on the next token.
     /// After return, the current token will be the token immediately before the end of the
     /// menuitem statement (or unchanged if the function returns null).
-    fn parse_menu_item_statement(self: *Self, resource: Resource, top_level_menu_id_token: Token, nesting_level: u32) Error!?*Node {
+    fn parseMenuItemStatement(self: *Self, resource: Resource, top_level_menu_id_token: Token, nesting_level: u32) Error!?*Node {
         const menuitem_token = try self.lookaheadToken(.normal);
         const menuitem = rc.MenuItem.map.get(menuitem_token.slice(self.lexer.buffer)) orelse return null;
         self.nextToken(.normal) catch unreachable;
@@ -1254,7 +1254,7 @@ pub const Parser = struct {
     /// begin on the next token.
     /// After return, the current token will be the token immediately before the end of the
     /// version statement (or unchanged if the function returns null).
-    fn parse_version_statement(self: *Self) Error!?*Node {
+    fn parseVersionStatement(self: *Self) Error!?*Node {
         const type_token = try self.lookaheadToken(.normal);
         const statement_type = rc.VersionInfo.map.get(type_token.slice(self.lexer.buffer)) orelse return null;
         self.nextToken(.normal) catch unreachable;
@@ -1298,7 +1298,7 @@ pub const Parser = struct {
     /// begin on the next token.
     /// After return, the current token will be the token immediately before the end of the
     /// version BLOCK/VALUE (or unchanged if the function returns null).
-    fn parse_version_block_or_value(self: *Self, top_level_version_id_token: Token, nesting_level: u32) Error!?*Node {
+    fn parseVersionBlockOrValue(self: *Self, top_level_version_id_token: Token, nesting_level: u32) Error!?*Node {
         const keyword_token = try self.lookaheadToken(.normal);
         const keyword = rc.VersionBlock.map.get(keyword_token.slice(self.lexer.buffer)) orelse return null;
         self.nextToken(.normal) catch unreachable;
@@ -1373,7 +1373,7 @@ pub const Parser = struct {
         }
     }
 
-    fn parse_block_values_list(self: *Self, had_comma_before_first_value: bool) Error![]*Node {
+    fn parseBlockValuesList(self: *Self, had_comma_before_first_value: bool) Error![]*Node {
         var values = std.ArrayListUnmanaged(*Node){};
         var seen_number: bool = false;
         var first_string_value: ?*Node = null;
@@ -1450,13 +1450,13 @@ pub const Parser = struct {
         return values.toOwnedSlice(self.state.arena);
     }
 
-    fn number_expression_contains_any_lsuffixes(expression_node: *Node, source: []const u8, code_page_lookup: *const CodePageLookup) bool {
+    fn numberExpressionContainsAnyLSuffixes(expression_node: *Node, source: []const u8, code_page_lookup: *const CodePageLookup) bool {
         // TODO: This could probably be done without evaluating the whole expression
         return Compiler.evaluateNumberExpression(expression_node, source, code_page_lookup).is_long;
     }
 
     /// Expects the current token to be a literal token that contains the string LANGUAGE
-    fn parse_language_statement(self: *Self) Error!*Node {
+    fn parseLanguageStatement(self: *Self) Error!*Node {
         const language_token = self.state.token;
 
         const primary_language = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
@@ -1541,7 +1541,7 @@ pub const Parser = struct {
             }
         };
 
-        pub fn to_error_details(options: ParseExpressionOptions, token: Token) ErrorDetails {
+        pub fn toErrorDetails(options: ParseExpressionOptions, token: Token) ErrorDetails {
             // TODO: expected_types_override interaction with is_known_to_be_number_expression?
             const expected_types = options.expected_types_override orelse ErrorDetails.ExpectedTypes{
                 .number = options.allowed_types.number,
@@ -1559,7 +1559,7 @@ pub const Parser = struct {
 
     /// Returns true if the next lookahead token is a number or could be the start of a number expression.
     /// Only useful when looking for empty expressions in optional fields.
-    fn lookahead_could_be_number_expression(self: *Self, not_allowed: enum { not_allowed, not_disallowed }) Error!bool {
+    fn lookaheadCouldBeNumberExpression(self: *Self, not_allowed: enum { not_allowed, not_disallowed }) Error!bool {
         var lookahead_token = try self.lookaheadToken(.normal);
         switch (lookahead_token.id) {
             .literal => if (not_allowed == .not_allowed) {
@@ -1576,7 +1576,7 @@ pub const Parser = struct {
         }
     }
 
-    fn parse_primary(self: *Self, options: ParseExpressionOptions) Error!*Node {
+    fn parsePrimary(self: *Self, options: ParseExpressionOptions) Error!*Node {
         try self.nextToken(.normal);
         const first_token = self.state.token;
         var is_close_paren_expression = false;
@@ -1711,7 +1711,7 @@ pub const Parser = struct {
     /// Expects the current token to have already been dealt with, and that the
     /// expression will start on the next token.
     /// After return, the current token will have been dealt with.
-    fn parse_expression(self: *Self, options: ParseExpressionOptions) Error!*Node {
+    fn parseExpression(self: *Self, options: ParseExpressionOptions) Error!*Node {
         if (options.nesting_context.level > max_nested_expression_level) {
             try self.addErrorDetails(.{
                 .err = .nested_expression_level_exceeds_max,
@@ -1765,36 +1765,36 @@ pub const Parser = struct {
     /// Skips any amount of commas (including zero)
     /// In other words, it will skip the regex `,*`
     /// Assumes the token(s) should be parsed with `.normal` as the method.
-    fn skip_any_commas(self: *Self) !void {
+    fn skipAnyCommas(self: *Self) !void {
         while (try self.parseOptionalToken(.comma)) {}
     }
 
     /// Advances the current token only if the token's id matches the specified `id`.
     /// Assumes the token should be parsed with `.normal` as the method.
     /// Returns true if the token matched, false otherwise.
-    fn parse_optional_token(self: *Self, id: Token.Id) Error!bool {
+    fn parseOptionalToken(self: *Self, id: Token.Id) Error!bool {
         return self.parseOptionalTokenAdvanced(id, .normal);
     }
 
     /// Advances the current token only if the token's id matches the specified `id`.
     /// Returns true if the token matched, false otherwise.
-    fn parse_optional_token_advanced(self: *Self, id: Token.Id, comptime method: Lexer.LexMethod) Error!bool {
+    fn parseOptionalTokenAdvanced(self: *Self, id: Token.Id, comptime method: Lexer.LexMethod) Error!bool {
         const maybe_token = try self.lookaheadToken(method);
         if (maybe_token.id != id) return false;
         self.nextToken(method) catch unreachable;
         return true;
     }
 
-    fn add_error_details(self: *Self, details: ErrorDetails) Allocator.Error!void {
+    fn addErrorDetails(self: *Self, details: ErrorDetails) Allocator.Error!void {
         try self.state.diagnostics.append(details);
     }
 
-    fn add_error_details_and_fail(self: *Self, details: ErrorDetails) Error {
+    fn addErrorDetailsAndFail(self: *Self, details: ErrorDetails) Error {
         try self.addErrorDetails(details);
         return error.ParseError;
     }
 
-    fn next_token(self: *Self, comptime method: Lexer.LexMethod) Error!void {
+    fn nextToken(self: *Self, comptime method: Lexer.LexMethod) Error!void {
         self.state.token = token: while (true) {
             const token = self.lexer.next(method) catch |err| switch (err) {
                 error.CodePagePragmaInIncludedFile => {
@@ -1839,7 +1839,7 @@ pub const Parser = struct {
         try self.state.output_code_page_lookup.setForToken(self.state.token, output_code_page);
     }
 
-    fn lookahead_token(self: *Self, comptime method: Lexer.LexMethod) Error!Token {
+    fn lookaheadToken(self: *Self, comptime method: Lexer.LexMethod) Error!Token {
         self.state.lookahead_lexer = self.lexer.*;
         return token: while (true) {
             break :token self.state.lookahead_lexer.next(method) catch |err| switch (err) {
@@ -1851,12 +1851,12 @@ pub const Parser = struct {
         };
     }
 
-    fn token_slice(self: *Self) []const u8 {
+    fn tokenSlice(self: *Self) []const u8 {
         return self.state.token.slice(self.lexer.buffer);
     }
 
     /// Check that the current token is something that can be used as an ID
-    fn check_id(self: *Self) !void {
+    fn checkId(self: *Self) !void {
         switch (self.state.token.id) {
             .literal => {},
             else => {
@@ -1879,7 +1879,7 @@ pub const Parser = struct {
         }
     }
 
-    fn check_resource(self: *Self) !Resource {
+    fn checkResource(self: *Self) !Resource {
         switch (self.state.token.id) {
             .literal => return Resource.fromString(.{
                 .slice = self.state.token.slice(self.lexer.buffer),

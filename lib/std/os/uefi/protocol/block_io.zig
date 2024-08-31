@@ -20,17 +20,17 @@ pub const BlockIo = extern struct {
     }
 
     /// Reads the number of requested blocks from the device.
-    pub fn read_blocks(self: *Self, media_id: u32, lba: u64, buffer_size: usize, buf: [*]u8) Status {
+    pub fn readBlocks(self: *Self, media_id: u32, lba: u64, buffer_size: usize, buf: [*]u8) Status {
         return self._read_blocks(self, media_id, lba, buffer_size, buf);
     }
 
     /// Writes a specified number of blocks to the device.
-    pub fn write_blocks(self: *Self, media_id: u32, lba: u64, buffer_size: usize, buf: [*]u8) Status {
+    pub fn writeBlocks(self: *Self, media_id: u32, lba: u64, buffer_size: usize, buf: [*]u8) Status {
         return self._write_blocks(self, media_id, lba, buffer_size, buf);
     }
 
     /// Flushes all modified data to a physical block device.
-    pub fn flush_blocks(self: *Self) Status {
+    pub fn flushBlocks(self: *Self) Status {
         return self._flush_blocks(self);
     }
 

@@ -1,6 +1,6 @@
 const expect = @import("std").testing.expect;
 
-fn add_forty_two(x: anytype) @TypeOf(x) {
+fn addFortyTwo(x: anytype) @TypeOf(x) {
     return x + 42;
 }
 

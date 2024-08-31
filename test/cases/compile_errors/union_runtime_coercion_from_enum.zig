@@ -9,7 +9,7 @@ const U = union(E) {
 fn foo() E {
     return E.b;
 }
-export fn do_the_test() u64 {
+export fn doTheTest() u64 {
     var u: U = foo();
     return (&u).b;
 }

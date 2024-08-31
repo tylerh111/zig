@@ -540,7 +540,7 @@ const known_options = [_]KnownOpt{
 
 const blacklisted_options = [_][]const u8{};
 
-fn known_option(name: []const u8) ?[]const u8 {
+fn knownOption(name: []const u8) ?[]const u8 {
     const chopped_name = if (std.mem.endsWith(u8, name, "=")) name[0 .. name.len - 1] else name;
     for (known_options) |item| {
         if (std.mem.eql(u8, chopped_name, item.name)) {
@@ -808,7 +808,7 @@ const Syntax = union(enum) {
     }
 };
 
-fn obj_syntax(obj: *json.ObjectMap) ?Syntax {
+fn objSyntax(obj: *json.ObjectMap) ?Syntax {
     const num_args = @as(u8, @intCast(obj.get("NumArgs").?.integer));
     for (obj.get("!superclasses").?.array.items) |superclass_json| {
         const superclass = superclass_json.string;
@@ -869,7 +869,7 @@ fn obj_syntax(obj: *json.ObjectMap) ?Syntax {
     return null;
 }
 
-fn syntax_matches_with_eql(syntax: Syntax) bool {
+fn syntaxMatchesWithEql(syntax: Syntax) bool {
     return switch (syntax) {
         .flag,
         .separate,
@@ -885,7 +885,7 @@ fn syntax_matches_with_eql(syntax: Syntax) bool {
     };
 }
 
-fn object_less_than(context: void, a: *json.ObjectMap, b: *json.ObjectMap) bool {
+fn objectLessThan(context: void, a: *json.ObjectMap, b: *json.ObjectMap) bool {
     _ = context;
     // Priority is determined by exact matches first, followed by prefix matches in descending
     // length, with key as a final tiebreaker.
@@ -914,7 +914,7 @@ fn object_less_than(context: void, a: *json.ObjectMap, b: *json.ObjectMap) bool 
     return std.mem.lessThan(u8, a_key, b_key);
 }
 
-fn usage_and_exit(file: fs.File, arg0: []const u8, code: u8) noreturn {
+fn usageAndExit(file: fs.File, arg0: []const u8, code: u8) noreturn {
     file.writer().print(
         \\Usage: {s} /path/to/llvm-tblgen /path/to/git/llvm/llvm-project
         \\Alternative Usage: zig run /path/to/git/zig/tools/update_clang_options.zig -- /path/to/llvm-tblgen /path/to/git/llvm/llvm-project

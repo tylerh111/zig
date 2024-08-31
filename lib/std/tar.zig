@@ -48,7 +48,7 @@ pub const Diagnostics = struct {
         },
     };
 
-    fn find_root(d: *Diagnostics, path: []const u8) !void {
+    fn findRoot(d: *Diagnostics, path: []const u8) !void {
         if (path.len == 0) return;
 
         d.entries += 1;
@@ -64,7 +64,7 @@ pub const Diagnostics = struct {
     }
 
     // Returns root dir of the path, assumes non empty path.
-    fn root_dir(path: []const u8) []const u8 {
+    fn rootDir(path: []const u8) []const u8 {
         const start_index: usize = if (path[0] == '/') 1 else 0;
         const end_index: usize = if (path[path.len - 1] == '/') path.len - 1 else path.len;
         const buf = path[start_index..end_index];
@@ -157,7 +157,7 @@ const Header = struct {
 
     /// Includes prefix concatenated, if any.
     /// TODO: check against "../" and other nefarious things
-    pub fn full_name(header: Header, buffer: []u8) ![]const u8 {
+    pub fn fullName(header: Header, buffer: []u8) ![]const u8 {
         const n = name(header);
         const p = prefix(header);
         if (buffer.len < n.len + p.len + 1) return error.TarInsufficientBuffer;
@@ -173,7 +173,7 @@ const Header = struct {
 
     /// When kind is symbolic_link linked-to name (target_path) is specified in
     /// the linkname field.
-    pub fn link_name(header: Header, buffer: []u8) ![]const u8 {
+    pub fn linkName(header: Header, buffer: []u8) ![]const u8 {
         const link_name = header.str(157, 100);
         if (link_name.len == 0) {
             return buffer[0..0];
@@ -250,7 +250,7 @@ const Header = struct {
 
     // Sum of all bytes in the header block. The chksum field is treated as if
     // it were filled with spaces (ASCII 32).
-    fn compute_chksum(header: Header) Chksums {
+    fn computeChksum(header: Header) Chksums {
         var cs: Chksums = .{ .signed = 0, .unsigned = 0 };
         for (header.bytes, 0..) |v, i| {
             const b = if (148 <= i and i < 156) 32 else v; // Treating chksum bytes as spaces.
@@ -263,7 +263,7 @@ const Header = struct {
     // Checks calculated chksum with value of chksum field.
     // Returns error or valid chksum value.
     // Zero value indicates empty block.
-    pub fn check_chksum(header: Header) !u64 {
+    pub fn checkChksum(header: Header) !u64 {
         const field = try header.chksum();
         const cs = header.computeChksum();
         if (field == 0 and cs.unsigned == 256) return 0;
@@ -273,7 +273,7 @@ const Header = struct {
 };
 
 // Breaks string on first null character.
-fn null_str(str: []const u8) []const u8 {
+fn nullStr(str: []const u8) []const u8 {
     for (str, 0..) |c, i| {
         if (c == 0) return str[0..i];
     }
@@ -310,7 +310,7 @@ pub const FileKind = enum {
 };
 
 /// Iteartor over entries in the tar file represented by reader.
-pub fn iterator(comptime ReaderType: type) type {
+pub fn Iterator(comptime ReaderType: type) type {
     return struct {
         reader: ReaderType,
         diagnostics: ?*Diagnostics = null,
@@ -349,7 +349,7 @@ pub fn iterator(comptime ReaderType: type) type {
             }
 
             // Writes file content to writer.
-            pub fn write_all(self: File, writer: anytype) !void {
+            pub fn writeAll(self: File, writer: anytype) !void {
                 var buffer: [4096]u8 = undefined;
 
                 while (self.unread_bytes.* > 0) {
@@ -363,7 +363,7 @@ pub fn iterator(comptime ReaderType: type) type {
 
         const Self = @This();
 
-        fn read_header(self: *Self) !?Header {
+        fn readHeader(self: *Self) !?Header {
             if (self.padding > 0) {
                 try self.reader.skipBytes(self.padding, .{});
             }
@@ -375,14 +375,14 @@ pub fn iterator(comptime ReaderType: type) type {
             return header;
         }
 
-        fn read_string(self: *Self, size: usize, buffer: []u8) ![]const u8 {
+        fn readString(self: *Self, size: usize, buffer: []u8) ![]const u8 {
             if (size > buffer.len) return error.TarInsufficientBuffer;
             const buf = buffer[0..size];
             try self.reader.readNoEof(buf);
             return nullStr(buf);
         }
 
-        fn new_file(self: *Self) File {
+        fn newFile(self: *Self) File {
             return .{
                 .name = self.file_name_buffer[0..0],
                 .link_name = self.link_name_buffer[0..0],
@@ -392,7 +392,7 @@ pub fn iterator(comptime ReaderType: type) type {
         }
 
         // Number of padding bytes in the last file block.
-        fn block_padding(size: u64) usize {
+        fn blockPadding(size: u64) usize {
             const block_rounded = std.mem.alignForward(u64, size, Header.SIZE); // size rounded to te block boundary
             return @intCast(block_rounded - size);
         }
@@ -490,7 +490,7 @@ pub fn iterator(comptime ReaderType: type) type {
             return null;
         }
 
-        fn skip_gnu_sparse_extended_headers(self: *Self, header: Header) !void {
+        fn skipGnuSparseExtendedHeaders(self: *Self, header: Header) !void {
             var is_extended = header.bytes[482] > 0;
             while (is_extended) {
                 var buf: [Header.SIZE]u8 = undefined;
@@ -504,7 +504,7 @@ pub fn iterator(comptime ReaderType: type) type {
 
 /// Pax attributes iterator.
 /// Size is length of pax extended header in reader.
-fn pax_iterator(reader: anytype, size: usize) PaxIterator(@TypeOf(reader)) {
+fn paxIterator(reader: anytype, size: usize) PaxIterator(@TypeOf(reader)) {
     return PaxIterator(@TypeOf(reader)){
         .reader = reader,
         .size = size,
@@ -520,7 +520,7 @@ const PaxAttributeKind = enum {
 // maxInt(u64) has 20 chars, base 10 in practice we got 24 chars
 const pax_max_size_attr_len = 64;
 
-fn pax_iterator(comptime ReaderType: type) type {
+fn PaxIterator(comptime ReaderType: type) type {
     return struct {
         size: usize, // cumulative size of all pax attributes
         reader: ReaderType,
@@ -590,7 +590,7 @@ fn pax_iterator(comptime ReaderType: type) type {
             return null;
         }
 
-        fn read_until(self: *Self, delimiter: u8) ![]const u8 {
+        fn readUntil(self: *Self, delimiter: u8) ![]const u8 {
             var fbs = std.io.fixedBufferStream(&self.scratch);
             try self.reader.streamUntilDelimiter(fbs.writer(), delimiter, null);
             return fbs.getWritten();
@@ -600,19 +600,19 @@ fn pax_iterator(comptime ReaderType: type) type {
             return std.mem.eql(u8, a, b);
         }
 
-        fn has_null(str: []const u8) bool {
+        fn hasNull(str: []const u8) bool {
             return (std.mem.indexOfScalar(u8, str, 0)) != null;
         }
 
         // Checks that each record ends with new line.
-        fn validate_attribute_ending(reader: ReaderType) !void {
+        fn validateAttributeEnding(reader: ReaderType) !void {
             if (try reader.readByte() != '\n') return error.PaxInvalidAttributeEnd;
         }
     };
 }
 
 /// Saves tar file content to the file systems.
-pub fn pipe_to_file_system(dir: std.fs.Dir, reader: anytype, options: PipeOptions) !void {
+pub fn pipeToFileSystem(dir: std.fs.Dir, reader: anytype, options: PipeOptions) !void {
     var file_name_buffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
     var link_name_buffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
     var iter = iterator(reader, .{
@@ -662,7 +662,7 @@ pub fn pipe_to_file_system(dir: std.fs.Dir, reader: anytype, options: PipeOption
     }
 }
 
-fn create_dir_and_file(dir: std.fs.Dir, file_name: []const u8, mode: std.fs.File.Mode) !std.fs.File {
+fn createDirAndFile(dir: std.fs.Dir, file_name: []const u8, mode: std.fs.File.Mode) !std.fs.File {
     const fs_file = dir.createFile(file_name, .{ .exclusive = true, .mode = mode }) catch |err| {
         if (err == error.FileNotFound) {
             if (std.fs.path.dirname(file_name)) |dir_name| {
@@ -676,7 +676,7 @@ fn create_dir_and_file(dir: std.fs.Dir, file_name: []const u8, mode: std.fs.File
 }
 
 // Creates a symbolic link at path `file_name` which points to `link_name`.
-fn create_dir_and_symlink(dir: std.fs.Dir, link_name: []const u8, file_name: []const u8) !void {
+fn createDirAndSymlink(dir: std.fs.Dir, link_name: []const u8, file_name: []const u8) !void {
     dir.symLink(link_name, file_name, .{}) catch |err| {
         if (err == error.FileNotFound) {
             if (std.fs.path.dirname(file_name)) |dir_name| {
@@ -688,7 +688,7 @@ fn create_dir_and_symlink(dir: std.fs.Dir, link_name: []const u8, file_name: []c
     };
 }
 
-fn strip_components(path: []const u8, count: u32) []const u8 {
+fn stripComponents(path: []const u8, count: u32) []const u8 {
     var i: usize = 0;
     var c = count;
     while (c > 0) : (c -= 1) {
@@ -1096,7 +1096,7 @@ test "findRoot without explicit root dir" {
     try testing.expectEqualStrings("root", diagnostics.root_dir);
 }
 
-fn normalize_path(bytes: []u8) []u8 {
+fn normalizePath(bytes: []u8) []u8 {
     const canonical_sep = std.fs.path.sep_posix;
     if (std.fs.path.sep == canonical_sep) return bytes;
     std.mem.replaceScalar(u8, bytes, std.fs.path.sep, canonical_sep);
@@ -1106,7 +1106,7 @@ fn normalize_path(bytes: []u8) []u8 {
 const default_mode = std.fs.File.default_mode;
 
 // File system mode based on tar header mode and mode_mode options.
-fn file_mode(mode: u32, options: PipeOptions) std.fs.File.Mode {
+fn fileMode(mode: u32, options: PipeOptions) std.fs.File.Mode {
     if (!std.fs.has_executable_bit or options.mode_mode == .ignore)
         return default_mode;
 

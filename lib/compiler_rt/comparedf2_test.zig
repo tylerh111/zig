@@ -74,7 +74,7 @@ const arguments = [_]f64{
     std.math.inf(f64),
 };
 
-fn generate_vector(comptime a: f64, comptime b: f64) TestVector {
+fn generateVector(comptime a: f64, comptime b: f64) TestVector {
     const leResult = if (a < b) -1 else if (a == b) 0 else 1;
     const geResult = if (a > b) 1 else if (a == b) 0 else -1;
     const unResult = if (a != a or b != b) 1 else 0;

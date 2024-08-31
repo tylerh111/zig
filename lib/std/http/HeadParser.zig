@@ -348,7 +348,7 @@ inline fn int32(array: *const [4]u8) u32 {
     return @bitCast(array.*);
 }
 
-inline fn int_shift(comptime T: type, x: anytype) T {
+inline fn intShift(comptime T: type, x: anytype) T {
     switch (@import("builtin").cpu.arch.endian()) {
         .little => return @truncate(x >> (@bitSizeOf(@TypeOf(x)) - @bitSizeOf(T))),
         .big => return @truncate(x),

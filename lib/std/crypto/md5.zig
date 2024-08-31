@@ -12,7 +12,7 @@ const RoundParam = struct {
     t: u32,
 };
 
-fn round_param(a: usize, b: usize, c: usize, d: usize, k: usize, s: u32, t: u32) RoundParam {
+fn roundParam(a: usize, b: usize, c: usize, d: usize, k: usize, s: u32, t: u32) RoundParam {
     return RoundParam{
         .a = a,
         .b = b,

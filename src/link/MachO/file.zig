@@ -4,17 +4,17 @@ pub const File = union(enum) {
     object: *Object,
     dylib: *Dylib,
 
-    pub fn get_index(file: File) Index {
+    pub fn getIndex(file: File) Index {
         return switch (file) {
             inline else => |x| x.index,
         };
     }
 
-    pub fn fmt_path(file: File) std.fmt.Formatter(formatPath) {
+    pub fn fmtPath(file: File) std.fmt.Formatter(formatPath) {
         return .{ .data = file };
     }
 
-    fn format_path(
+    fn formatPath(
         file: File,
         comptime unused_fmt_string: []const u8,
         options: std.fmt.FormatOptions,
@@ -30,21 +30,21 @@ pub const File = union(enum) {
         }
     }
 
-    pub fn resolve_symbols(file: File, macho_file: *MachO) void {
+    pub fn resolveSymbols(file: File, macho_file: *MachO) void {
         switch (file) {
             .internal => unreachable,
             inline else => |x| x.resolveSymbols(macho_file),
         }
     }
 
-    pub fn reset_globals(file: File, macho_file: *MachO) void {
+    pub fn resetGlobals(file: File, macho_file: *MachO) void {
         switch (file) {
             .internal => unreachable,
             inline else => |x| x.resetGlobals(macho_file),
         }
     }
 
-    pub fn claim_unresolved(file: File, macho_file: *MachO) error{OutOfMemory}!void {
+    pub fn claimUnresolved(file: File, macho_file: *MachO) error{OutOfMemory}!void {
         assert(file == .object or file == .zig_object);
 
         for (file.getSymbols(), 0..) |sym_index, i| {
@@ -79,7 +79,7 @@ pub const File = union(enum) {
         }
     }
 
-    pub fn claim_unresolved_relocatable(file: File, macho_file: *MachO) void {
+    pub fn claimUnresolvedRelocatable(file: File, macho_file: *MachO) void {
         assert(file == .object or file == .zig_object);
 
         for (file.getSymbols(), 0..) |sym_index, i| {
@@ -105,7 +105,7 @@ pub const File = union(enum) {
         }
     }
 
-    pub fn mark_imports_exports(file: File, macho_file: *MachO) void {
+    pub fn markImportsExports(file: File, macho_file: *MachO) void {
         assert(file == .object or file == .zig_object);
 
         for (file.getSymbols()) |sym_index| {
@@ -122,7 +122,7 @@ pub const File = union(enum) {
         }
     }
 
-    pub fn mark_exports_relocatable(file: File, macho_file: *MachO) void {
+    pub fn markExportsRelocatable(file: File, macho_file: *MachO) void {
         assert(file == .object or file == .zig_object);
 
         for (file.getSymbols()) |sym_index| {
@@ -143,7 +143,7 @@ pub const File = union(enum) {
     /// * weak in archive/dylib
     /// * tentative in archive
     /// * unclaimed
-    pub fn get_symbol_rank(file: File, args: struct {
+    pub fn getSymbolRank(file: File, args: struct {
         archive: bool = false,
         weak: bool = false,
         tentative: bool = false,
@@ -162,27 +162,27 @@ pub const File = union(enum) {
         return base + (file.getIndex() << 24);
     }
 
-    pub fn get_symbols(file: File) []const Symbol.Index {
+    pub fn getSymbols(file: File) []const Symbol.Index {
         return switch (file) {
             inline else => |x| x.symbols.items,
         };
     }
 
-    pub fn get_atoms(file: File) []const Atom.Index {
+    pub fn getAtoms(file: File) []const Atom.Index {
         return switch (file) {
             .dylib => unreachable,
             inline else => |x| x.atoms.items,
         };
     }
 
-    pub fn update_ar_symtab(file: File, ar_symtab: *Archive.ArSymtab, macho_file: *MachO) error{OutOfMemory}!void {
+    pub fn updateArSymtab(file: File, ar_symtab: *Archive.ArSymtab, macho_file: *MachO) error{OutOfMemory}!void {
         return switch (file) {
             .dylib, .internal => unreachable,
             inline else => |x| x.updateArSymtab(ar_symtab, macho_file),
         };
     }
 
-    pub fn update_ar_size(file: File, macho_file: *MachO) !void {
+    pub fn updateArSize(file: File, macho_file: *MachO) !void {
         return switch (file) {
             .dylib, .internal => unreachable,
             .zig_object => |x| x.updateArSize(),
@@ -190,7 +190,7 @@ pub const File = union(enum) {
         };
     }
 
-    pub fn write_ar(file: File, ar_format: Archive.Format, macho_file: *MachO, writer: anytype) !void {
+    pub fn writeAr(file: File, ar_format: Archive.Format, macho_file: *MachO, writer: anytype) !void {
         return switch (file) {
             .dylib, .internal => unreachable,
             .zig_object => |x| x.writeAr(ar_format, writer),
@@ -198,13 +198,13 @@ pub const File = union(enum) {
         };
     }
 
-    pub fn calc_symtab_size(file: File, macho_file: *MachO) !void {
+    pub fn calcSymtabSize(file: File, macho_file: *MachO) !void {
         return switch (file) {
             inline else => |x| x.calcSymtabSize(macho_file),
         };
     }
 
-    pub fn write_symtab(file: File, macho_file: *MachO, ctx: anytype) !void {
+    pub fn writeSymtab(file: File, macho_file: *MachO, ctx: anytype) !void {
         return switch (file) {
             inline else => |x| x.writeSymtab(macho_file, ctx),
         };

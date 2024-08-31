@@ -1,5 +1,5 @@
 const Parser = @This();
-fn chunk() type {
+fn Chunk() type {
     return struct {
         const Self = @This();
     };

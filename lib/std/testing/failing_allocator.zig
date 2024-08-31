@@ -128,7 +128,7 @@ pub const FailingAllocator = struct {
     }
 
     /// Only valid once `has_induced_failure == true`
-    pub fn get_stack_trace(self: *FailingAllocator) std.builtin.StackTrace {
+    pub fn getStackTrace(self: *FailingAllocator) std.builtin.StackTrace {
         std.debug.assert(self.has_induced_failure);
         var len: usize = 0;
         while (len < self.stack_addresses.len and self.stack_addresses[len] != 0) {

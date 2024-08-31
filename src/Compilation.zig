@@ -235,7 +235,7 @@ pub const Emit = struct {
 
     /// Returns the full path to `basename` if it were in the same directory as the
     /// `Emit` sub_path.
-    pub fn basename_path(emit: Emit, arena: Allocator, basename: []const u8) ![:0]const u8 {
+    pub fn basenamePath(emit: Emit, arena: Allocator, basename: []const u8) ![:0]const u8 {
         const full_path = if (emit.directory.path) |p|
             try std.fs.path.join(arena, &[_][]const u8{ p, emit.sub_path })
         else
@@ -409,14 +409,14 @@ pub const CObject = struct {
             return total;
         }
 
-        pub fn add_to_error_bundle(diag: Diag, eb: *ErrorBundle.Wip, bundle: Bundle, note: *u32) !void {
+        pub fn addToErrorBundle(diag: Diag, eb: *ErrorBundle.Wip, bundle: Bundle, note: *u32) !void {
             const err_msg = try eb.addErrorMessage(try diag.toErrorMessage(eb, bundle, 0));
             eb.extra.items[note.*] = @intFromEnum(err_msg);
             note.* += 1;
             for (diag.sub_diags) |sub_diag| try sub_diag.addToErrorBundle(eb, bundle, note);
         }
 
-        pub fn to_error_message(
+        pub fn toErrorMessage(
             diag: Diag,
             eb: *ErrorBundle.Wip,
             bundle: Bundle,
@@ -631,7 +631,7 @@ pub const CObject = struct {
                 return bundle;
             }
 
-            pub fn add_to_error_bundle(bundle: Bundle, eb: *ErrorBundle.Wip) !void {
+            pub fn addToErrorBundle(bundle: Bundle, eb: *ErrorBundle.Wip) !void {
                 for (bundle.diags) |diag| {
                     const notes_len = diag.count() - 1;
                     try eb.addRootErrorMessage(try diag.toErrorMessage(eb, bundle, notes_len));
@@ -646,7 +646,7 @@ pub const CObject = struct {
     };
 
     /// Returns if there was failure.
-    pub fn clear_status(self: *CObject, gpa: Allocator) bool {
+    pub fn clearStatus(self: *CObject, gpa: Allocator) bool {
         switch (self.status) {
             .new => return false,
             .failure, .failure_retryable => {
@@ -693,7 +693,7 @@ pub const Win32Resource = struct {
     },
 
     /// Returns true if there was failure.
-    pub fn clear_status(self: *Win32Resource, gpa: Allocator) bool {
+    pub fn clearStatus(self: *Win32Resource, gpa: Allocator) bool {
         switch (self.status) {
             .new => return false,
             .failure, .failure_retryable => {
@@ -802,7 +802,7 @@ pub const EmitLoc = struct {
 };
 
 pub const cache_helpers = struct {
-    pub fn add_module(hh: *Cache.HashHelper, mod: *const Package.Module) void {
+    pub fn addModule(hh: *Cache.HashHelper, mod: *const Package.Module) void {
         addResolvedTarget(hh, mod.resolved_target);
         hh.add(mod.optimize_mode);
         hh.add(mod.code_model);
@@ -821,7 +821,7 @@ pub const cache_helpers = struct {
         hh.addListOfBytes(mod.cc_argv);
     }
 
-    pub fn add_resolved_target(
+    pub fn addResolvedTarget(
         hh: *Cache.HashHelper,
         resolved_target: Package.Module.ResolvedTarget,
     ) void {
@@ -837,21 +837,21 @@ pub const cache_helpers = struct {
         hh.add(resolved_target.is_native_abi);
     }
 
-    pub fn add_emit_loc(hh: *Cache.HashHelper, emit_loc: EmitLoc) void {
+    pub fn addEmitLoc(hh: *Cache.HashHelper, emit_loc: EmitLoc) void {
         hh.addBytes(emit_loc.basename);
     }
 
-    pub fn add_optional_emit_loc(hh: *Cache.HashHelper, optional_emit_loc: ?EmitLoc) void {
+    pub fn addOptionalEmitLoc(hh: *Cache.HashHelper, optional_emit_loc: ?EmitLoc) void {
         hh.add(optional_emit_loc != null);
         addEmitLoc(hh, optional_emit_loc orelse return);
     }
 
-    pub fn add_optional_debug_format(hh: *Cache.HashHelper, x: ?Config.DebugFormat) void {
+    pub fn addOptionalDebugFormat(hh: *Cache.HashHelper, x: ?Config.DebugFormat) void {
         hh.add(x != null);
         addDebugFormat(hh, x orelse return);
     }
 
-    pub fn add_debug_format(hh: *Cache.HashHelper, x: Config.DebugFormat) void {
+    pub fn addDebugFormat(hh: *Cache.HashHelper, x: Config.DebugFormat) void {
         const tag: @typeInfo(Config.DebugFormat).Union.tag_type.? = x;
         hh.add(tag);
         switch (x) {
@@ -860,7 +860,7 @@ pub const cache_helpers = struct {
         }
     }
 
-    pub fn hash_csource(self: *Cache.Manifest, c_source: CSourceFile) !void {
+    pub fn hashCSource(self: *Cache.Manifest, c_source: CSourceFile) !void {
         _ = try self.addFile(c_source.src_path, null);
         // Hash the extra flags, with special care to call addFile for file parameters.
         // TODO this logic can likely be improved by utilizing clang_options_data.zig.
@@ -915,14 +915,14 @@ const CacheUse = union(CacheMode) {
         /// Prevents other processes from clobbering files in the output directory.
         lock: ?Cache.Lock,
 
-        fn release_lock(whole: *Whole) void {
+        fn releaseLock(whole: *Whole) void {
             if (whole.lock) |*lock| {
                 lock.release();
                 whole.lock = null;
             }
         }
 
-        fn move_lock(whole: *Whole) Cache.Lock {
+        fn moveLock(whole: *Whole) Cache.Lock {
             const result = whole.lock.?;
             whole.lock = null;
             return result;
@@ -1131,7 +1131,7 @@ pub const CreateOptions = struct {
     pub const Entry = link.File.OpenOptions.Entry;
 };
 
-fn add_module_table_to_cache_hash(
+fn addModuleTableToCacheHash(
     gpa: Allocator,
     arena: Allocator,
     hash: *Cache.HashHelper,
@@ -1152,7 +1152,7 @@ fn add_module_table_to_cache_hash(
         has_builtin: bool,
         names: []const []const u8,
 
-        pub fn less_than(ctx: @This(), lhs: usize, rhs: usize) bool {
+        pub fn lessThan(ctx: @This(), lhs: usize, rhs: usize) bool {
             return if (ctx.has_builtin and (lhs == 0 or rhs == 0))
                 lhs < rhs
             else
@@ -1918,7 +1918,7 @@ pub fn destroy(comp: *Compilation) void {
     comp.cache_parent.manifest_dir.close();
 }
 
-pub fn clear_misc_failures(comp: *Compilation) void {
+pub fn clearMiscFailures(comp: *Compilation) void {
     comp.alloc_failure_occurred = false;
     for (comp.misc_failures.values()) |*value| {
         value.deinit(comp.gpa);
@@ -1927,12 +1927,12 @@ pub fn clear_misc_failures(comp: *Compilation) void {
     comp.misc_failures = .{};
 }
 
-pub fn get_target(self: Compilation) Target {
+pub fn getTarget(self: Compilation) Target {
     return self.root_mod.resolved_target.result;
 }
 
 /// Only legal to call when cache mode is incremental and a link file is present.
-pub fn hot_code_swap(
+pub fn hotCodeSwap(
     comp: *Compilation,
     prog_node: std.Progress.Node,
     pid: std.process.Child.Id,
@@ -1944,7 +1944,7 @@ pub fn hot_code_swap(
     try lf.makeExecutable();
 }
 
-fn cleanup_after_update(comp: *Compilation) void {
+fn cleanupAfterUpdate(comp: *Compilation) void {
     switch (comp.cache_use) {
         .incremental => return,
         .whole => |whole| {
@@ -2296,7 +2296,7 @@ fn flush(comp: *Compilation, arena: Allocator, prog_node: std.Progress.Node) !vo
 /// Linker backends which do not have this requirement can fall back to the simple
 /// implementation at the bottom of this function.
 /// This function is only called when CacheMode is `whole`.
-fn rename_tmp_into_cache(
+fn renameTmpIntoCache(
     cache_directory: Compilation.Directory,
     tmp_dir_sub_path: []const u8,
     o_sub_path: []const u8,
@@ -2335,7 +2335,7 @@ fn rename_tmp_into_cache(
 }
 
 /// Communicate the output binary location to parent Compilations.
-fn whole_cache_mode_set_bin_file_path(
+fn wholeCacheModeSetBinFilePath(
     comp: *Compilation,
     whole: *CacheUse.Whole,
     digest: *const [Cache.hex_digest_len]u8,
@@ -2365,7 +2365,7 @@ fn whole_cache_mode_set_bin_file_path(
     }
 }
 
-fn prepare_whole_emit_sub_path(arena: Allocator, opt_emit: ?EmitLoc) error{OutOfMemory}!?[]u8 {
+fn prepareWholeEmitSubPath(arena: Allocator, opt_emit: ?EmitLoc) error{OutOfMemory}!?[]u8 {
     const emit = opt_emit orelse return null;
     if (emit.directory != null) return null;
     const s = std.fs.path.sep_str;
@@ -2379,7 +2379,7 @@ fn prepare_whole_emit_sub_path(arena: Allocator, opt_emit: ?EmitLoc) error{OutOf
 /// anything from the link cache manifest.
 pub const link_hash_implementation_version = 13;
 
-fn add_non_incremental_stuff_to_cache_manifest(
+fn addNonIncrementalStuffToCacheManifest(
     comp: *Compilation,
     arena: Allocator,
     man: *Cache.Manifest,
@@ -2522,7 +2522,7 @@ fn add_non_incremental_stuff_to_cache_manifest(
     man.hash.addOptional(opts.minor_subsystem_version);
 }
 
-fn emit_others(comp: *Compilation) void {
+fn emitOthers(comp: *Compilation) void {
     if (comp.config.output_mode != .Obj or comp.module != null or
         comp.c_object_table.count() == 0)
     {
@@ -2560,7 +2560,7 @@ fn emit_others(comp: *Compilation) void {
     }
 }
 
-pub fn emit_llvm_object(
+pub fn emitLlvmObject(
     comp: *Compilation,
     arena: Allocator,
     default_emit: Emit,
@@ -2589,7 +2589,7 @@ pub fn emit_llvm_object(
     });
 }
 
-fn resolve_emit_loc(
+fn resolveEmitLoc(
     arena: Allocator,
     default_emit: Emit,
     opt_loc: ?EmitLoc,
@@ -2602,7 +2602,7 @@ fn resolve_emit_loc(
     return slice.ptr;
 }
 
-fn report_multi_module_errors(mod: *Module) !void {
+fn reportMultiModuleErrors(mod: *Module) !void {
     // Some cases can give you a whole bunch of multi-module errors, which it's not helpful to
     // print all of, so we'll cap the number of these to emit.
     var num_errors: u32 = 0;
@@ -2707,12 +2707,12 @@ fn report_multi_module_errors(mod: *Module) !void {
 /// binary is concerned. This will remove the write flag, or close the file,
 /// or whatever is needed so that it can be executed.
 /// After this, one must call` makeFileWritable` before calling `update`.
-pub fn make_bin_file_executable(comp: *Compilation) !void {
+pub fn makeBinFileExecutable(comp: *Compilation) !void {
     const lf = comp.bin_file orelse return;
     return lf.makeExecutable();
 }
 
-pub fn make_bin_file_writable(comp: *Compilation) !void {
+pub fn makeBinFileWritable(comp: *Compilation) !void {
     const lf = comp.bin_file orelse return;
     return lf.makeWritable();
 }
@@ -2737,7 +2737,7 @@ const Header = extern struct {
 /// Note that all state that is included in the cache hash namespace is *not*
 /// saved, such as the target and most CLI flags. A cache hit will only occur
 /// when subsequent compiler invocations use the same set of flags.
-pub fn save_state(comp: *Compilation) !void {
+pub fn saveState(comp: *Compilation) !void {
     var bufs_list: [19]std.posix.iovec_const = undefined;
     var bufs_len: usize = 0;
 
@@ -2805,7 +2805,7 @@ pub fn save_state(comp: *Compilation) !void {
     try af.finish();
 }
 
-fn add_buf(bufs_list: []std.posix.iovec_const, bufs_len: *usize, buf: []const u8) void {
+fn addBuf(bufs_list: []std.posix.iovec_const, bufs_len: *usize, buf: []const u8) void {
     const i = bufs_len.*;
     bufs_len.* = i + 1;
     bufs_list[i] = .{
@@ -2815,7 +2815,7 @@ fn add_buf(bufs_list: []std.posix.iovec_const, bufs_len: *usize, buf: []const u8
 }
 
 /// This function is temporally single-threaded.
-pub fn total_error_count(comp: *Compilation) u32 {
+pub fn totalErrorCount(comp: *Compilation) u32 {
     var total: usize =
         comp.misc_failures.count() +
         @intFromBool(comp.alloc_failure_occurred) +
@@ -2891,7 +2891,7 @@ pub fn total_error_count(comp: *Compilation) u32 {
 }
 
 /// This function is temporally single-threaded.
-pub fn get_all_errors_alloc(comp: *Compilation) !ErrorBundle {
+pub fn getAllErrorsAlloc(comp: *Compilation) !ErrorBundle {
     const gpa = comp.gpa;
 
     var bundle: ErrorBundle.Wip = undefined;
@@ -3118,7 +3118,7 @@ pub const ErrorNoteHashContext = struct {
     }
 };
 
-pub fn add_module_error_msg(mod: *Module, eb: *ErrorBundle.Wip, module_err_msg: Module.ErrorMsg) !void {
+pub fn addModuleErrorMsg(mod: *Module, eb: *ErrorBundle.Wip, module_err_msg: Module.ErrorMsg) !void {
     const gpa = eb.gpa;
     const ip = &mod.intern_pool;
     const err_source = module_err_msg.src_loc.file_scope.getSource(gpa) catch |err| {
@@ -3235,7 +3235,7 @@ pub fn add_module_error_msg(mod: *Module, eb: *ErrorBundle.Wip, module_err_msg: 
     }
 }
 
-pub fn add_zir_error_messages(eb: *ErrorBundle.Wip, file: *Module.File) !void {
+pub fn addZirErrorMessages(eb: *ErrorBundle.Wip, file: *Module.File) !void {
     assert(file.zir_loaded);
     assert(file.tree_loaded);
     assert(file.source_loaded);
@@ -3245,7 +3245,7 @@ pub fn add_zir_error_messages(eb: *ErrorBundle.Wip, file: *Module.File) !void {
     return eb.addZirErrorMessages(file.zir, file.tree, file.source, src_path);
 }
 
-pub fn perform_all_the_work(
+pub fn performAllTheWork(
     comp: *Compilation,
     main_progress_node: std.Progress.Node,
 ) error{ TimerUnsupported, OutOfMemory }!void {
@@ -3370,7 +3370,7 @@ pub fn perform_all_the_work(
     }
 }
 
-fn process_one_job(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !void {
+fn processOneJob(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !void {
     switch (job) {
         .codegen_decl => |decl_index| {
             const module = comp.module.?;
@@ -3669,7 +3669,7 @@ fn process_one_job(comp: *Compilation, job: Job, prog_node: std.Progress.Node) !
     }
 }
 
-fn worker_docs_copy(comp: *Compilation) void {
+fn workerDocsCopy(comp: *Compilation) void {
     docsCopyFallible(comp) catch |err| {
         return comp.lockAndSetMiscFailure(
             .docs_copy,
@@ -3679,7 +3679,7 @@ fn worker_docs_copy(comp: *Compilation) void {
     };
 }
 
-fn docs_copy_fallible(comp: *Compilation) anyerror!void {
+fn docsCopyFallible(comp: *Compilation) anyerror!void {
     const zcu = comp.module orelse
         return comp.lockAndSetMiscFailure(.docs_copy, "no Zig code to document", .{});
 
@@ -3730,7 +3730,7 @@ fn docs_copy_fallible(comp: *Compilation) anyerror!void {
     }
 }
 
-fn docs_copy_module(comp: *Compilation, module: *Package.Module, name: []const u8, tar_file: std.fs.File) !void {
+fn docsCopyModule(comp: *Compilation, module: *Package.Module, name: []const u8, tar_file: std.fs.File) !void {
     const root = module.root;
     const sub_path = if (root.sub_path.len == 0) "." else root.sub_path;
     var mod_dir = root.root_dir.handle.openDir(sub_path, .{ .iterate = true }) catch |err| {
@@ -3794,7 +3794,7 @@ fn docs_copy_module(comp: *Compilation, module: *Package.Module, name: []const u
     }
 }
 
-fn worker_docs_wasm(comp: *Compilation, parent_prog_node: std.Progress.Node) void {
+fn workerDocsWasm(comp: *Compilation, parent_prog_node: std.Progress.Node) void {
     const prog_node = parent_prog_node.start("Compile Autodocs", 0);
     defer prog_node.end();
 
@@ -3805,7 +3805,7 @@ fn worker_docs_wasm(comp: *Compilation, parent_prog_node: std.Progress.Node) voi
     };
 }
 
-fn worker_docs_wasm_fallible(comp: *Compilation, prog_node: std.Progress.Node) anyerror!void {
+fn workerDocsWasmFallible(comp: *Compilation, prog_node: std.Progress.Node) anyerror!void {
     const gpa = comp.gpa;
 
     var arena_allocator = std.heap.ArenaAllocator.init(gpa);
@@ -3943,7 +3943,7 @@ const AstGenSrc = union(enum) {
     },
 };
 
-fn worker_ast_gen_file(
+fn workerAstGenFile(
     comp: *Compilation,
     file: *Module.File,
     prog_node: std.Progress.Node,
@@ -4015,7 +4015,7 @@ fn worker_ast_gen_file(
     }
 }
 
-fn worker_update_builtin_zig_file(
+fn workerUpdateBuiltinZigFile(
     comp: *Compilation,
     mod: *Package.Module,
     file: *Module.File,
@@ -4030,7 +4030,7 @@ fn worker_update_builtin_zig_file(
     };
 }
 
-fn worker_check_embed_file(comp: *Compilation, embed_file: *Module.EmbedFile) void {
+fn workerCheckEmbedFile(comp: *Compilation, embed_file: *Module.EmbedFile) void {
     comp.detectEmbedFileUpdate(embed_file) catch |err| {
         comp.reportRetryableEmbedFileError(embed_file, err) catch |oom| switch (oom) {
             // Swallowing this error is OK because it's implied to be OOM when
@@ -4041,7 +4041,7 @@ fn worker_check_embed_file(comp: *Compilation, embed_file: *Module.EmbedFile) vo
     };
 }
 
-fn detect_embed_file_update(comp: *Compilation, embed_file: *Module.EmbedFile) !void {
+fn detectEmbedFileUpdate(comp: *Compilation, embed_file: *Module.EmbedFile) !void {
     const mod = comp.module.?;
     const ip = &mod.intern_pool;
     var file = try embed_file.owner.root.openFile(embed_file.sub_file_path.toSlice(ip), .{});
@@ -4059,7 +4059,7 @@ fn detect_embed_file_update(comp: *Compilation, embed_file: *Module.EmbedFile) !
     @panic("TODO: handle embed file incremental update");
 }
 
-pub fn obtain_cobject_cache_manifest(
+pub fn obtainCObjectCacheManifest(
     comp: *const Compilation,
     owner_mod: *Package.Module,
 ) Cache.Manifest {
@@ -4083,7 +4083,7 @@ pub fn obtain_cobject_cache_manifest(
     return man;
 }
 
-pub fn obtain_win32_resource_cache_manifest(comp: *const Compilation) Cache.Manifest {
+pub fn obtainWin32ResourceCacheManifest(comp: *const Compilation) Cache.Manifest {
     var man = comp.cache_parent.obtain();
 
     man.hash.add(comp.rc_includes);
@@ -4104,7 +4104,7 @@ pub const CImportResult = struct {
 /// Caller owns returned memory.
 /// This API is currently coupled pretty tightly to stage1's needs; it will need to be reworked
 /// a bit when we want to start using it from self-hosted.
-pub fn c_import(comp: *Compilation, c_src: []const u8, owner_mod: *Package.Module) !CImportResult {
+pub fn cImport(comp: *Compilation, c_src: []const u8, owner_mod: *Package.Module) !CImportResult {
     if (build_options.only_core_functionality) @panic("@cImport is not available in a zig2.c build");
     const tracy_trace = trace(@src());
     defer tracy_trace.end();
@@ -4255,7 +4255,7 @@ pub fn c_import(comp: *Compilation, c_src: []const u8, owner_mod: *Package.Modul
     };
 }
 
-fn worker_update_cobject(
+fn workerUpdateCObject(
     comp: *Compilation,
     c_object: *CObject,
     progress_node: std.Progress.Node,
@@ -4272,7 +4272,7 @@ fn worker_update_cobject(
     };
 }
 
-fn worker_update_win32_resource(
+fn workerUpdateWin32Resource(
     comp: *Compilation,
     win32_resource: *Win32Resource,
     progress_node: std.Progress.Node,
@@ -4289,7 +4289,7 @@ fn worker_update_win32_resource(
     };
 }
 
-fn build_compiler_rt_one_shot(
+fn buildCompilerRtOneShot(
     comp: *Compilation,
     output_mode: std.builtin.OutputMode,
     out: *?CRTFile,
@@ -4311,7 +4311,7 @@ fn build_compiler_rt_one_shot(
     };
 }
 
-fn report_retryable_cobject_error(
+fn reportRetryableCObjectError(
     comp: *Compilation,
     c_object: *CObject,
     err: anyerror,
@@ -4324,7 +4324,7 @@ fn report_retryable_cobject_error(
     }
 }
 
-fn report_retryable_win32_resource_error(
+fn reportRetryableWin32ResourceError(
     comp: *Compilation,
     win32_resource: *Win32Resource,
     err: anyerror,
@@ -4356,7 +4356,7 @@ fn report_retryable_win32_resource_error(
     }
 }
 
-fn report_retryable_ast_gen_error(
+fn reportRetryableAstGenError(
     comp: *Compilation,
     src: AstGenSrc,
     file: *Module.File,
@@ -4396,7 +4396,7 @@ fn report_retryable_ast_gen_error(
     }
 }
 
-fn report_retryable_embed_file_error(
+fn reportRetryableEmbedFileError(
     comp: *Compilation,
     embed_file: *Module.EmbedFile,
     err: anyerror,
@@ -4420,7 +4420,7 @@ fn report_retryable_embed_file_error(
     }
 }
 
-fn update_cobject(comp: *Compilation, c_object: *CObject, c_obj_prog_node: std.Progress.Node) !void {
+fn updateCObject(comp: *Compilation, c_object: *CObject, c_obj_prog_node: std.Progress.Node) !void {
     if (comp.config.c_frontend == .aro) {
         return comp.failCObj(c_object, "aro does not support compiling C objects yet", .{});
     }
@@ -4722,7 +4722,7 @@ fn update_cobject(comp: *Compilation, c_object: *CObject, c_obj_prog_node: std.P
     };
 }
 
-fn update_win32_resource(comp: *Compilation, win32_resource: *Win32Resource, win32_resource_prog_node: std.Progress.Node) !void {
+fn updateWin32Resource(comp: *Compilation, win32_resource: *Win32Resource, win32_resource_prog_node: std.Progress.Node) !void {
     if (!std.process.can_spawn) {
         return comp.failWin32Resource(win32_resource, "{s} does not support spawning a child process", .{@tagName(builtin.os.tag)});
     }
@@ -4787,7 +4787,7 @@ fn update_win32_resource(comp: *Compilation, win32_resource: *Win32Resource, win
 
             // In .rc files, a " within a quoted string is escaped as ""
             const fmtRcEscape = struct {
-                fn format_rc_escape(bytes: []const u8, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+                fn formatRcEscape(bytes: []const u8, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
                     _ = fmt;
                     _ = options;
                     for (bytes) |byte| switch (byte) {
@@ -4797,7 +4797,7 @@ fn update_win32_resource(comp: *Compilation, win32_resource: *Win32Resource, win
                     };
                 }
 
-                pub fn fmt_rc_escape(bytes: []const u8) std.fmt.Formatter(formatRcEscape) {
+                pub fn fmtRcEscape(bytes: []const u8) std.fmt.Formatter(formatRcEscape) {
                     return .{ .data = bytes };
                 }
             }.fmtRcEscape;
@@ -4952,7 +4952,7 @@ fn update_win32_resource(comp: *Compilation, win32_resource: *Win32Resource, win
     };
 }
 
-fn spawn_zig_rc(
+fn spawnZigRc(
     comp: *Compilation,
     win32_resource: *Win32Resource,
     arena: Allocator,
@@ -5036,7 +5036,7 @@ fn spawn_zig_rc(
     }
 }
 
-pub fn tmp_file_path(comp: Compilation, ally: Allocator, suffix: []const u8) error{OutOfMemory}![]const u8 {
+pub fn tmpFilePath(comp: Compilation, ally: Allocator, suffix: []const u8) error{OutOfMemory}![]const u8 {
     const s = std.fs.path.sep_str;
     const rand_int = std.crypto.random.int(u64);
     if (comp.local_cache_directory.path) |p| {
@@ -5046,7 +5046,7 @@ pub fn tmp_file_path(comp: Compilation, ally: Allocator, suffix: []const u8) err
     }
 }
 
-pub fn add_translate_ccargs(
+pub fn addTranslateCCArgs(
     comp: *Compilation,
     arena: Allocator,
     argv: *std.ArrayList([]const u8),
@@ -5061,7 +5061,7 @@ pub fn add_translate_ccargs(
 }
 
 /// Add common C compiler args between translate-c and C object compilation.
-pub fn add_ccargs(
+pub fn addCCArgs(
     comp: *const Compilation,
     arena: Allocator,
     argv: *std.ArrayList([]const u8),
@@ -5488,7 +5488,7 @@ pub fn add_ccargs(
     try argv.appendSlice(mod.cc_argv);
 }
 
-fn fail_cobj(
+fn failCObj(
     comp: *Compilation,
     c_object: *CObject,
     comptime format: []const u8,
@@ -5513,7 +5513,7 @@ fn fail_cobj(
     return comp.failCObjWithOwnedDiagBundle(c_object, diag_bundle);
 }
 
-fn fail_cobj_with_owned_diag_bundle(
+fn failCObjWithOwnedDiagBundle(
     comp: *Compilation,
     c_object: *CObject,
     diag_bundle: *CObject.Diag.Bundle,
@@ -5533,7 +5533,7 @@ fn fail_cobj_with_owned_diag_bundle(
     return error.AnalysisFail;
 }
 
-fn fail_win32_resource(comp: *Compilation, win32_resource: *Win32Resource, comptime format: []const u8, args: anytype) SemaError {
+fn failWin32Resource(comp: *Compilation, win32_resource: *Win32Resource, comptime format: []const u8, args: anytype) SemaError {
     @setCold(true);
     var bundle: ErrorBundle.Wip = undefined;
     try bundle.init(comp.gpa);
@@ -5556,7 +5556,7 @@ fn fail_win32_resource(comp: *Compilation, win32_resource: *Win32Resource, compt
     return comp.failWin32ResourceWithOwnedBundle(win32_resource, finished_bundle);
 }
 
-fn fail_win32_resource_with_owned_bundle(
+fn failWin32ResourceWithOwnedBundle(
     comp: *Compilation,
     win32_resource: *Win32Resource,
     err_bundle: ErrorBundle,
@@ -5595,7 +5595,7 @@ pub const FileExt = enum {
     manifest,
     unknown,
 
-    pub fn clang_supports_diagnostics(ext: FileExt) bool {
+    pub fn clangSupportsDiagnostics(ext: FileExt) bool {
         return switch (ext) {
             .c, .cpp, .h, .hpp, .hm, .hmm, .m, .mm, .cu, .ll, .bc => true,
 
@@ -5614,7 +5614,7 @@ pub const FileExt = enum {
         };
     }
 
-    pub fn clang_supports_dep_file(ext: FileExt) bool {
+    pub fn clangSupportsDepFile(ext: FileExt) bool {
         return switch (ext) {
             .c, .cpp, .h, .hpp, .hm, .hmm, .m, .mm, .cu => true,
 
@@ -5635,7 +5635,7 @@ pub const FileExt = enum {
         };
     }
 
-    pub fn canonical_name(ext: FileExt, target: Target) [:0]const u8 {
+    pub fn canonicalName(ext: FileExt, target: Target) [:0]const u8 {
         return switch (ext) {
             .c => ".c",
             .cpp => ".cpp",
@@ -5663,19 +5663,19 @@ pub const FileExt = enum {
     }
 };
 
-pub fn has_object_ext(filename: []const u8) bool {
+pub fn hasObjectExt(filename: []const u8) bool {
     return mem.endsWith(u8, filename, ".o") or mem.endsWith(u8, filename, ".obj");
 }
 
-pub fn has_static_library_ext(filename: []const u8) bool {
+pub fn hasStaticLibraryExt(filename: []const u8) bool {
     return mem.endsWith(u8, filename, ".a") or mem.endsWith(u8, filename, ".lib");
 }
 
-pub fn has_cext(filename: []const u8) bool {
+pub fn hasCExt(filename: []const u8) bool {
     return mem.endsWith(u8, filename, ".c");
 }
 
-pub fn has_cpp_ext(filename: []const u8) bool {
+pub fn hasCppExt(filename: []const u8) bool {
     return mem.endsWith(u8, filename, ".C") or
         mem.endsWith(u8, filename, ".cc") or
         mem.endsWith(u8, filename, ".cpp") or
@@ -5683,15 +5683,15 @@ pub fn has_cpp_ext(filename: []const u8) bool {
         mem.endsWith(u8, filename, ".stub");
 }
 
-pub fn has_obj_cext(filename: []const u8) bool {
+pub fn hasObjCExt(filename: []const u8) bool {
     return mem.endsWith(u8, filename, ".m");
 }
 
-pub fn has_obj_cpp_ext(filename: []const u8) bool {
+pub fn hasObjCppExt(filename: []const u8) bool {
     return mem.endsWith(u8, filename, ".mm");
 }
 
-pub fn has_shared_library_ext(filename: []const u8) bool {
+pub fn hasSharedLibraryExt(filename: []const u8) bool {
     if (mem.endsWith(u8, filename, ".so") or
         mem.endsWith(u8, filename, ".dll") or
         mem.endsWith(u8, filename, ".dylib") or
@@ -5718,7 +5718,7 @@ pub fn has_shared_library_ext(filename: []const u8) bool {
     return true;
 }
 
-pub fn classify_file_ext(filename: []const u8) FileExt {
+pub fn classifyFileExt(filename: []const u8) FileExt {
     if (hasCExt(filename)) {
         return .c;
     } else if (hasCppExt(filename)) {
@@ -5787,7 +5787,7 @@ pub fn get_libc_crt_file(comp: *Compilation, arena: Allocator, basename: []const
     return full_path;
 }
 
-fn want_build_lib_cfrom_source(comp: Compilation) bool {
+fn wantBuildLibCFromSource(comp: Compilation) bool {
     const is_exe_or_dyn_lib = switch (comp.config.output_mode) {
         .Obj => false,
         .Lib => comp.config.link_mode == .dynamic,
@@ -5798,25 +5798,25 @@ fn want_build_lib_cfrom_source(comp: Compilation) bool {
         comp.libc_installation == null and ofmt != .c;
 }
 
-fn want_build_glib_cfrom_source(comp: Compilation) bool {
+fn wantBuildGLibCFromSource(comp: Compilation) bool {
     return comp.wantBuildLibCFromSource() and comp.getTarget().isGnuLibC();
 }
 
-fn want_build_musl_from_source(comp: Compilation) bool {
+fn wantBuildMuslFromSource(comp: Compilation) bool {
     return comp.wantBuildLibCFromSource() and comp.getTarget().isMusl() and
         !comp.getTarget().isWasm();
 }
 
-fn want_build_wasi_libc_from_source(comp: Compilation) bool {
+fn wantBuildWasiLibcFromSource(comp: Compilation) bool {
     return comp.wantBuildLibCFromSource() and comp.getTarget().isWasm() and
         comp.getTarget().os.tag == .wasi;
 }
 
-fn want_build_min_gwfrom_source(comp: Compilation) bool {
+fn wantBuildMinGWFromSource(comp: Compilation) bool {
     return comp.wantBuildLibCFromSource() and comp.getTarget().isMinGW();
 }
 
-fn want_build_lib_unwind_from_source(comp: *Compilation) bool {
+fn wantBuildLibUnwindFromSource(comp: *Compilation) bool {
     const is_exe_or_dyn_lib = switch (comp.config.output_mode) {
         .Obj => false,
         .Lib => comp.config.link_mode == .dynamic,
@@ -5826,14 +5826,14 @@ fn want_build_lib_unwind_from_source(comp: *Compilation) bool {
     return is_exe_or_dyn_lib and comp.config.link_libunwind and ofmt != .c;
 }
 
-fn set_alloc_failure(comp: *Compilation) void {
+fn setAllocFailure(comp: *Compilation) void {
     log.debug("memory allocation failure", .{});
     comp.alloc_failure_occurred = true;
 }
 
 /// Assumes that Compilation mutex is locked.
 /// See also `lockAndSetMiscFailure`.
-pub fn set_misc_failure(
+pub fn setMiscFailure(
     comp: *Compilation,
     tag: MiscTask,
     comptime format: []const u8,
@@ -5849,7 +5849,7 @@ pub fn set_misc_failure(
 }
 
 /// See also `setMiscFailure`.
-pub fn lock_and_set_misc_failure(
+pub fn lockAndSetMiscFailure(
     comp: *Compilation,
     tag: MiscTask,
     comptime format: []const u8,
@@ -5861,7 +5861,7 @@ pub fn lock_and_set_misc_failure(
     return setMiscFailure(comp, tag, format, args);
 }
 
-fn parse_lld_stderr(comp: *Compilation, prefix: []const u8, stderr: []const u8) Allocator.Error!void {
+fn parseLldStderr(comp: *Compilation, prefix: []const u8, stderr: []const u8) Allocator.Error!void {
     var context_lines = std.ArrayList([]const u8).init(comp.gpa);
     defer context_lines.deinit();
 
@@ -5902,7 +5902,7 @@ fn parse_lld_stderr(comp: *Compilation, prefix: []const u8, stderr: []const u8) 
     }
 }
 
-pub fn lock_and_parse_lld_stderr(comp: *Compilation, prefix: []const u8, stderr: []const u8) void {
+pub fn lockAndParseLldStderr(comp: *Compilation, prefix: []const u8, stderr: []const u8) void {
     comp.mutex.lock();
     defer comp.mutex.unlock();
 
@@ -5919,7 +5919,7 @@ pub fn dump_argv(argv: []const []const u8) void {
     nosuspend stderr.print("{s}\n", .{argv[argv.len - 1]}) catch {};
 }
 
-fn can_build_lib_compiler_rt(target: std.Target, use_llvm: bool) bool {
+fn canBuildLibCompilerRt(target: std.Target, use_llvm: bool) bool {
     switch (target.os.tag) {
         .plan9 => return false,
         else => {},
@@ -5937,7 +5937,7 @@ fn can_build_lib_compiler_rt(target: std.Target, use_llvm: bool) bool {
 
 /// Not to be confused with canBuildLibC, which builds musl, glibc, and similar.
 /// This one builds lib/c.zig.
-fn can_build_zig_lib_c(target: std.Target, use_llvm: bool) bool {
+fn canBuildZigLibC(target: std.Target, use_llvm: bool) bool {
     switch (target.os.tag) {
         .plan9 => return false,
         else => {},
@@ -5953,12 +5953,12 @@ fn can_build_zig_lib_c(target: std.Target, use_llvm: bool) bool {
     };
 }
 
-pub fn get_zig_backend(comp: Compilation) std.builtin.CompilerBackend {
+pub fn getZigBackend(comp: Compilation) std.builtin.CompilerBackend {
     const target = comp.root_mod.resolved_target.result;
     return target_util.zigBackend(target, comp.config.use_llvm);
 }
 
-pub fn update_sub_compilation(
+pub fn updateSubCompilation(
     parent_comp: *Compilation,
     sub_comp: *Compilation,
     misc_task: MiscTask,
@@ -5990,7 +5990,7 @@ pub fn update_sub_compilation(
     }
 }
 
-fn build_output_from_zig(
+fn buildOutputFromZig(
     comp: *Compilation,
     src_basename: []const u8,
     output_mode: std.builtin.OutputMode,
@@ -6206,7 +6206,7 @@ pub fn build_crt_file(
     comp.crt_files.putAssumeCapacityNoClobber(basename, try sub_compilation.toCrtFile());
 }
 
-pub fn to_crt_file(comp: *Compilation) Allocator.Error!CRTFile {
+pub fn toCrtFile(comp: *Compilation) Allocator.Error!CRTFile {
     return .{
         .full_object_path = try comp.local_cache_directory.join(comp.gpa, &.{
             comp.cache_use.whole.bin_sub_path.?,
@@ -6215,7 +6215,7 @@ pub fn to_crt_file(comp: *Compilation) Allocator.Error!CRTFile {
     };
 }
 
-pub fn add_link_lib(comp: *Compilation, lib_name: []const u8) !void {
+pub fn addLinkLib(comp: *Compilation, lib_name: []const u8) !void {
     // Avoid deadlocking on building import libs such as kernel32.lib
     // This can happen when the user uses `build-exe foo.obj -lkernel32` and
     // then when we create a sub-Compilation for zig libc, it also tries to
@@ -6243,7 +6243,7 @@ pub fn add_link_lib(comp: *Compilation, lib_name: []const u8) !void {
 
 /// This decides the optimization mode for all zig-provided libraries, including
 /// compiler-rt, libcxx, libc, libunwind, etc.
-pub fn compiler_rt_opt_mode(comp: Compilation) std.builtin.OptimizeMode {
+pub fn compilerRtOptMode(comp: Compilation) std.builtin.OptimizeMode {
     if (comp.debug_compiler_runtime_libs) {
         return comp.root_mod.optimize_mode;
     }
@@ -6257,6 +6257,6 @@ pub fn compiler_rt_opt_mode(comp: Compilation) std.builtin.OptimizeMode {
 
 /// This decides whether to strip debug info for all zig-provided libraries, including
 /// compiler-rt, libcxx, libc, libunwind, etc.
-pub fn compiler_rt_strip(comp: Compilation) bool {
+pub fn compilerRtStrip(comp: Compilation) bool {
     return comp.root_mod.strip;
 }

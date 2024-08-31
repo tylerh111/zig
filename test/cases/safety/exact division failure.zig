@@ -13,7 +13,7 @@ pub fn main() !void {
     if (x == 0) return error.Whatever;
     return error.TestFailed;
 }
-fn div_exact(a: i32, b: i32) i32 {
+fn divExact(a: i32, b: i32) i32 {
     return @divExact(a, b);
 }
 // run

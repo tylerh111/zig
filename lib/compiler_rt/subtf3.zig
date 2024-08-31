@@ -16,7 +16,7 @@ pub fn __subtf3(a: f128, b: f128) callconv(.C) f128 {
     return sub(a, b);
 }
 
-fn _qp_sub(c: *f128, a: *const f128, b: *const f128) callconv(.C) void {
+fn _Qp_sub(c: *f128, a: *const f128, b: *const f128) callconv(.C) void {
     c.* = sub(a.*, b.*);
 }
 

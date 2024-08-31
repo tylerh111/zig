@@ -5,7 +5,7 @@ test "while else" {
     try expect(!rangeHasNumber(0, 10, 15));
 }
 
-fn range_has_number(begin: usize, end: usize, number: usize) bool {
+fn rangeHasNumber(begin: usize, end: usize, number: usize) bool {
     var i = begin;
     return while (i < end) : (i += 1) {
         if (i == number) {

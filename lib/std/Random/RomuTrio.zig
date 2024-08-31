@@ -32,7 +32,7 @@ fn next(self: *RomuTrio) u64 {
     return xp;
 }
 
-pub fn seed_with_buf(self: *RomuTrio, buf: [24]u8) void {
+pub fn seedWithBuf(self: *RomuTrio, buf: [24]u8) void {
     const seed_buf = @as([3]u64, @bitCast(buf));
     self.x_state = seed_buf[0];
     self.y_state = seed_buf[1];

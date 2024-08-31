@@ -4,7 +4,7 @@ const mem = std.mem;
 const native_os = builtin.os.tag;
 const posix = std.posix;
 
-pub fn supports_unwinding(target: std.Target) bool {
+pub fn supportsUnwinding(target: std.Target) bool {
     return switch (target.cpu.arch) {
         .x86 => switch (target.os.tag) {
             .linux, .netbsd, .solaris, .illumos => true,
@@ -26,7 +26,7 @@ pub fn supports_unwinding(target: std.Target) bool {
     };
 }
 
-pub fn ip_reg_num() u8 {
+pub fn ipRegNum() u8 {
     return switch (builtin.cpu.arch) {
         .x86 => 8,
         .x86_64 => 16,
@@ -36,7 +36,7 @@ pub fn ip_reg_num() u8 {
     };
 }
 
-pub fn fp_reg_num(reg_context: RegisterContext) u8 {
+pub fn fpRegNum(reg_context: RegisterContext) u8 {
     return switch (builtin.cpu.arch) {
         // GCC on OS X historicaly did the opposite of ELF for these registers (only in .eh_frame), and that is now the convention for MachO
         .x86 => if (reg_context.eh_frame and reg_context.is_macho) 4 else 5,
@@ -47,7 +47,7 @@ pub fn fp_reg_num(reg_context: RegisterContext) u8 {
     };
 }
 
-pub fn sp_reg_num(reg_context: RegisterContext) u8 {
+pub fn spRegNum(reg_context: RegisterContext) u8 {
     return switch (builtin.cpu.arch) {
         .x86 => if (reg_context.eh_frame and reg_context.is_macho) 5 else 4,
         .x86_64 => 7,
@@ -59,7 +59,7 @@ pub fn sp_reg_num(reg_context: RegisterContext) u8 {
 
 /// Some platforms use pointer authentication - the upper bits of instruction pointers contain a signature.
 /// This function clears these signature bits to make the pointer usable.
-pub inline fn strip_instruction_ptr_auth_code(ptr: usize) usize {
+pub inline fn stripInstructionPtrAuthCode(ptr: usize) usize {
     if (builtin.cpu.arch == .aarch64) {
         // `hint 0x07` maps to `xpaclri` (or `nop` if the hardware doesn't support it)
         // The save / restore is because `xpaclri` operates on x30 (LR)
@@ -91,7 +91,7 @@ pub const AbiError = error{
     ThreadContextNotSupported,
 };
 
-fn reg_value_return_type(comptime ContextPtrType: type, comptime T: type) type {
+fn RegValueReturnType(comptime ContextPtrType: type, comptime T: type) type {
     const reg_bytes_type = comptime RegBytesReturnType(ContextPtrType);
     const info = @typeInfo(reg_bytes_type).Pointer;
     return @Type(.{
@@ -109,7 +109,7 @@ fn reg_value_return_type(comptime ContextPtrType: type, comptime T: type) type {
 }
 
 /// Returns a pointer to a register stored in a ThreadContext, preserving the pointer attributes of the context.
-pub fn reg_value_native(
+pub fn regValueNative(
     comptime T: type,
     thread_context_ptr: anytype,
     reg_number: u8,
@@ -120,7 +120,7 @@ pub fn reg_value_native(
     return mem.bytesAsValue(T, reg_bytes[0..@sizeOf(T)]);
 }
 
-fn reg_bytes_return_type(comptime ContextPtrType: type) type {
+fn RegBytesReturnType(comptime ContextPtrType: type) type {
     const info = @typeInfo(ContextPtrType);
     if (info != .Pointer or info.Pointer.child != std.debug.ThreadContext) {
         @compileError("Expected a pointer to std.debug.ThreadContext, got " ++ @typeName(@TypeOf(ContextPtrType)));
@@ -134,7 +134,7 @@ fn reg_bytes_return_type(comptime ContextPtrType: type) type {
 /// `reg_context` describes in what context the register number is used, as it can have different
 /// meanings depending on the DWARF container. It is only required when getting the stack or
 /// frame pointer register on some architectures.
-pub fn reg_bytes(
+pub fn regBytes(
     thread_context_ptr: anytype,
     reg_number: u8,
     reg_context: ?RegisterContext,
@@ -392,7 +392,7 @@ pub fn reg_bytes(
 /// Returns the ABI-defined default value this register has in the unwinding table
 /// before running any of the CIE instructions. The DWARF spec defines these as having
 /// the .undefined rule by default, but allows ABI authors to override that.
-pub fn get_reg_default_value(reg_number: u8, context: *std.dwarf.UnwindContext, out: []u8) !void {
+pub fn getRegDefaultValue(reg_number: u8, context: *std.dwarf.UnwindContext, out: []u8) !void {
     switch (builtin.cpu.arch) {
         .aarch64 => {
             // Callee-saved registers are initialized as if they had the .same_value rule

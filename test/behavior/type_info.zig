@@ -14,7 +14,7 @@ test "type info: integer, floating point type info" {
     try comptime testIntFloat();
 }
 
-fn test_int_float() !void {
+fn testIntFloat() !void {
     const u8_info = @typeInfo(u8);
     try expect(u8_info == .Int);
     try expect(u8_info.Int.signedness == .unsigned);
@@ -30,7 +30,7 @@ test "type info: optional type info" {
     try comptime testOptional();
 }
 
-fn test_optional() !void {
+fn testOptional() !void {
     const null_info = @typeInfo(?void);
     try expect(null_info == .Optional);
     try expect(null_info.Optional.child == void);
@@ -41,7 +41,7 @@ test "type info: C pointer type info" {
     try comptime testCPtr();
 }
 
-fn test_cptr() !void {
+fn testCPtr() !void {
     const ptr_info = @typeInfo([*c]align(4) const i8);
     try expect(ptr_info == .Pointer);
     try expect(ptr_info.Pointer.size == .C);
@@ -64,7 +64,7 @@ test "type info: tag type, void info" {
     try comptime testBasic();
 }
 
-fn test_basic() !void {
+fn testBasic() !void {
     try expect(@typeInfo(Type).Union.tag_type == TypeId);
     const void_info = @typeInfo(void);
     try expect(void_info == TypeId.Void);
@@ -76,7 +76,7 @@ test "type info: pointer type info" {
     try comptime testPointer();
 }
 
-fn test_pointer() !void {
+fn testPointer() !void {
     const u32_ptr_info = @typeInfo(*u32);
     try expect(u32_ptr_info == .Pointer);
     try expect(u32_ptr_info.Pointer.size == .One);
@@ -92,7 +92,7 @@ test "type info: unknown length pointer type info" {
     try comptime testUnknownLenPtr();
 }
 
-fn test_unknown_len_ptr() !void {
+fn testUnknownLenPtr() !void {
     const u32_ptr_info = @typeInfo([*]const volatile f64);
     try expect(u32_ptr_info == .Pointer);
     try expect(u32_ptr_info.Pointer.size == .Many);
@@ -108,7 +108,7 @@ test "type info: null terminated pointer type info" {
     try comptime testNullTerminatedPtr();
 }
 
-fn test_null_terminated_ptr() !void {
+fn testNullTerminatedPtr() !void {
     const ptr_info = @typeInfo([*:0]u8);
     try expect(ptr_info == .Pointer);
     try expect(ptr_info.Pointer.size == .Many);
@@ -124,7 +124,7 @@ test "type info: slice type info" {
     try comptime testSlice();
 }
 
-fn test_slice() !void {
+fn testSlice() !void {
     const u32_slice_info = @typeInfo([]u32);
     try expect(u32_slice_info == .Pointer);
     try expect(u32_slice_info.Pointer.size == .Slice);
@@ -139,7 +139,7 @@ test "type info: array type info" {
     try comptime testArray();
 }
 
-fn test_array() !void {
+fn testArray() !void {
     {
         const info = @typeInfo([42]u8);
         try expect(info == .Array);
@@ -166,7 +166,7 @@ test "type info: error set, error union info, anyerror" {
     try comptime testErrorSet();
 }
 
-fn test_error_set() !void {
+fn testErrorSet() !void {
     const TestErrorSet = error{
         First,
         Second,
@@ -225,7 +225,7 @@ test "type info: enum info" {
     try comptime testEnum();
 }
 
-fn test_enum() !void {
+fn testEnum() !void {
     const Os = enum {
         Windows,
         Macos,
@@ -247,7 +247,7 @@ test "type info: union info" {
     try comptime testUnion();
 }
 
-fn test_union() !void {
+fn testUnion() !void {
     const typeinfo_info = @typeInfo(Type);
     try expect(typeinfo_info == .Union);
     try expect(typeinfo_info.Union.layout == .auto);
@@ -287,7 +287,7 @@ test "type info: struct info" {
     try comptime testStruct();
 }
 
-fn test_struct() !void {
+fn testStruct() !void {
     const unpacked_struct_info = @typeInfo(TestStruct);
     try expect(unpacked_struct_info.Struct.is_tuple == false);
     try expect(unpacked_struct_info.Struct.backing_integer == null);
@@ -306,7 +306,7 @@ test "type info: packed struct info" {
     try comptime testPackedStruct();
 }
 
-fn test_packed_struct() !void {
+fn testPackedStruct() !void {
     const struct_info = @typeInfo(TestPackedStruct);
     try expect(struct_info == .Struct);
     try expect(struct_info.Struct.is_tuple == false);
@@ -338,7 +338,7 @@ test "type info: opaque info" {
     try comptime testOpaque();
 }
 
-fn test_opaque() !void {
+fn testOpaque() !void {
     const Foo = opaque {
         pub const A = 1;
         pub fn b() void {}
@@ -355,7 +355,7 @@ test "type info: function type info" {
     try comptime testFunction();
 }
 
-fn test_function() !void {
+fn testFunction() !void {
     const foo_fn_type = @TypeOf(typeInfoFoo);
     const foo_fn_info = @typeInfo(foo_fn_type);
     try expect(foo_fn_info.Fn.calling_convention == .C);
@@ -390,8 +390,8 @@ fn test_function() !void {
     try expect(aligned_foo_ptr_fn_info.Pointer.sentinel == null);
 }
 
-extern fn type_info_foo(a: usize, b: bool, ...) callconv(.C) usize;
-extern fn type_info_foo_aligned(a: usize, b: bool, ...) align(4) callconv(.C) usize;
+extern fn typeInfoFoo(a: usize, b: bool, ...) callconv(.C) usize;
+extern fn typeInfoFooAligned(a: usize, b: bool, ...) align(4) callconv(.C) usize;
 
 test "type info: generic function types" {
     const G1 = @typeInfo(@TypeOf(generic1));
@@ -448,7 +448,7 @@ test "type info: vectors" {
     try comptime testVector();
 }
 
-fn test_vector() !void {
+fn testVector() !void {
     const vec_info = @typeInfo(@Vector(4, i32));
     try expect(vec_info == .Vector);
     try expect(vec_info.Vector.len == 4);
@@ -465,7 +465,7 @@ test "type info: anyframe and anyframe->T" {
     try comptime testAnyFrame();
 }
 
-fn test_any_frame() !void {
+fn testAnyFrame() !void {
     {
         const anyframe_info = @typeInfo(anyframe->i32);
         try expect(anyframe_info == .AnyFrame);
@@ -484,7 +484,7 @@ test "type info: pass to function" {
     _ = comptime passTypeInfo(@typeInfo(void));
 }
 
-fn pass_type_info(comptime info: Type) type {
+fn passTypeInfo(comptime info: Type) type {
     _ = info;
     return void;
 }
@@ -503,7 +503,7 @@ test "@typeInfo does not force declarations into existence" {
     const S = struct {
         x: i32,
 
-        fn do_not_reference_me() void {
+        fn doNotReferenceMe() void {
             @compileError("test failed");
         }
     };
@@ -615,7 +615,7 @@ test "@typeInfo decls and usingnamespace" {
 
 test "@typeInfo decls ignore dependency loops" {
     const S = struct {
-        pub fn def(comptime T: type) type {
+        pub fn Def(comptime T: type) type {
             std.debug.assert(@typeInfo(T).Struct.decls.len == 1);
             return struct {
                 const foo = u32;

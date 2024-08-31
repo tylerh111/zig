@@ -11,7 +11,7 @@ export fn verify(argc: c_int, argv: [*]const [*:0]const u16) c_int {
     return 1;
 }
 
-fn test_argv(expected_args: []const [*:0]const u16) !void {
+fn testArgv(expected_args: []const [*:0]const u16) !void {
     var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena_state.deinit();
     const allocator = arena_state.allocator();

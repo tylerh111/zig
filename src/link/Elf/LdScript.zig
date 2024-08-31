@@ -72,7 +72,7 @@ pub fn parse(scr: *LdScript, data: []const u8, elf_file: *Elf) Error!void {
     scr.args = args.moveToUnmanaged();
 }
 
-fn do_parse(scr: *LdScript, ctx: struct {
+fn doParse(scr: *LdScript, ctx: struct {
     parser: *Parser,
     args: *std.ArrayList(Elf.SystemLib),
 }) !void {
@@ -107,7 +107,7 @@ const Command = enum {
     group,
     as_needed,
 
-    fn from_string(s: []const u8) ?Command {
+    fn fromString(s: []const u8) ?Command {
         inline for (@typeInfo(Command).Enum.fields) |field| {
             const upper_name = n: {
                 comptime var buf: [field.name.len]u8 = undefined;
@@ -126,7 +126,7 @@ const Parser = struct {
     source: []const u8,
     it: *TokenIterator,
 
-    fn output_format(p: *Parser) !std.Target.Cpu.Arch {
+    fn outputFormat(p: *Parser) !std.Target.Cpu.Arch {
         const value = value: {
             if (p.skip(&.{.lparen})) {
                 const value_id = try p.require(.literal);
@@ -166,7 +166,7 @@ const Parser = struct {
         _ = try p.require(.rparen);
     }
 
-    fn as_needed(p: *Parser, args: *std.ArrayList(Elf.SystemLib)) !void {
+    fn asNeeded(p: *Parser, args: *std.ArrayList(Elf.SystemLib)) !void {
         if (!p.skip(&.{.lparen})) return error.UnexpectedToken;
 
         while (p.maybe(.literal)) |tok_id| {
@@ -190,7 +190,7 @@ const Parser = struct {
         return true;
     }
 
-    fn skip_any(p: *Parser, comptime ids: []const Token.Id) void {
+    fn skipAny(p: *Parser, comptime ids: []const Token.Id) void {
         outer: while (p.it.next()) |tok| {
             inline for (ids) |id| {
                 if (id == tok.id) continue :outer;
@@ -211,7 +211,7 @@ const Parser = struct {
         return p.maybe(id) orelse return error.UnexpectedToken;
     }
 
-    fn get_command(p: *Parser, index: Token.Index) Command {
+    fn getCommand(p: *Parser, index: Token.Index) Command {
         const tok = p.it.get(index);
         assert(tok.id == .command);
         return Command.fromString(tok.get(p.source)).?;
@@ -252,7 +252,7 @@ const Tokenizer = struct {
     source: []const u8,
     index: usize = 0,
 
-    fn matches_pattern(comptime pattern: []const u8, slice: []const u8) bool {
+    fn matchesPattern(comptime pattern: []const u8, slice: []const u8) bool {
         comptime var count: usize = 0;
         inline while (count < pattern.len) : (count += 1) {
             if (count >= slice.len) return false;
@@ -266,7 +266,7 @@ const Tokenizer = struct {
         return matchesPattern(pattern, tok.source[tok.index..]);
     }
 
-    fn is_command(tok: Tokenizer, start: usize, end: usize) bool {
+    fn isCommand(tok: Tokenizer, start: usize, end: usize) bool {
         return if (Command.fromString(tok.source[start..end]) == null) false else true;
     }
 
@@ -407,11 +407,11 @@ const TokenIterator = struct {
         it.pos = 0;
     }
 
-    inline fn seek_to(it: *TokenIterator, pos: Token.Index) void {
+    inline fn seekTo(it: *TokenIterator, pos: Token.Index) void {
         it.pos = pos;
     }
 
-    fn seek_by(it: *TokenIterator, offset: isize) void {
+    fn seekBy(it: *TokenIterator, offset: isize) void {
         const new_pos = @as(isize, @bitCast(it.pos)) + offset;
         if (new_pos < 0) {
             it.pos = 0;

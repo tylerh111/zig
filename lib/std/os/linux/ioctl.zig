@@ -35,19 +35,19 @@ fn io_impl(dir: Direction, io_type: u8, nr: u8, comptime T: type) u32 {
     return @as(u32, @bitCast(request));
 }
 
-pub fn io(io_type: u8, nr: u8) u32 {
+pub fn IO(io_type: u8, nr: u8) u32 {
     return io_impl(bits.none, io_type, nr, void);
 }
 
-pub fn ior(io_type: u8, nr: u8, comptime T: type) u32 {
+pub fn IOR(io_type: u8, nr: u8, comptime T: type) u32 {
     return io_impl(bits.read, io_type, nr, T);
 }
 
-pub fn iow(io_type: u8, nr: u8, comptime T: type) u32 {
+pub fn IOW(io_type: u8, nr: u8, comptime T: type) u32 {
     return io_impl(bits.write, io_type, nr, T);
 }
 
-pub fn iowr(io_type: u8, nr: u8, comptime T: type) u32 {
+pub fn IOWR(io_type: u8, nr: u8, comptime T: type) u32 {
     return io_impl(bits.read | bits.write, io_type, nr, T);
 }
 

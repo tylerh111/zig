@@ -1,14 +1,14 @@
-export fn call_bool_method_with_void() void {
+export fn callBoolMethodWithVoid() void {
     const s = S{};
     s.boolMethod({});
 }
 
-export fn call_void_method_with_bool() void {
+export fn callVoidMethodWithBool() void {
     const s = S{};
     s.voidMethod(false);
 }
 
-export fn call_comptime_bool_method_with_runtime_bool() void {
+export fn callComptimeBoolMethodWithRuntimeBool() void {
     const s = S{};
     var arg = true;
     _ = &arg;
@@ -16,9 +16,9 @@ export fn call_comptime_bool_method_with_runtime_bool() void {
 }
 
 const S = struct {
-    fn bool_method(comptime _: @This(), _: bool) void {}
-    fn void_method(comptime _: @This(), _: void) void {}
-    fn comptime_bool_method(comptime _: @This(), comptime _: bool) void {}
+    fn boolMethod(comptime _: @This(), _: bool) void {}
+    fn voidMethod(comptime _: @This(), _: void) void {}
+    fn comptimeBoolMethod(comptime _: @This(), comptime _: bool) void {}
 };
 
 // error

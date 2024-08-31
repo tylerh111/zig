@@ -80,11 +80,11 @@ pub const DeclBlock = struct {
     }
 };
 
-pub fn get_string(this: C, s: String) []const u8 {
+pub fn getString(this: C, s: String) []const u8 {
     return this.string_bytes.items[s.start..][0..s.len];
 }
 
-pub fn add_string(this: *C, s: []const u8) Allocator.Error!String {
+pub fn addString(this: *C, s: []const u8) Allocator.Error!String {
     const comp = this.base.comp;
     const gpa = comp.gpa;
     try this.string_bytes.appendSlice(gpa, s);
@@ -103,7 +103,7 @@ pub fn open(
     return createEmpty(arena, comp, emit, options);
 }
 
-pub fn create_empty(
+pub fn createEmpty(
     arena: Allocator,
     comp: *Compilation,
     emit: Compilation.Emit,
@@ -168,7 +168,7 @@ pub fn deinit(self: *C) void {
     self.lazy_code_buf.deinit(gpa);
 }
 
-pub fn free_decl(self: *C, decl_index: InternPool.DeclIndex) void {
+pub fn freeDecl(self: *C, decl_index: InternPool.DeclIndex) void {
     const gpa = self.base.comp.gpa;
     if (self.decl_table.fetchSwapRemove(decl_index)) |kv| {
         var decl_block = kv.value;
@@ -176,7 +176,7 @@ pub fn free_decl(self: *C, decl_index: InternPool.DeclIndex) void {
     }
 }
 
-pub fn update_func(
+pub fn updateFunc(
     self: *C,
     zcu: *Zcu,
     func_index: InternPool.Index,
@@ -249,7 +249,7 @@ pub fn update_func(
     gop.value_ptr.code = try self.addString(function.object.code.items);
 }
 
-fn update_anon_decl(self: *C, zcu: *Zcu, i: usize) !void {
+fn updateAnonDecl(self: *C, zcu: *Zcu, i: usize) !void {
     const gpa = self.base.comp.gpa;
     const anon_decl = self.anon_decls.keys()[i];
 
@@ -305,7 +305,7 @@ fn update_anon_decl(self: *C, zcu: *Zcu, i: usize) !void {
     };
 }
 
-pub fn update_decl(self: *C, zcu: *Zcu, decl_index: InternPool.DeclIndex) !void {
+pub fn updateDecl(self: *C, zcu: *Zcu, decl_index: InternPool.DeclIndex) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -362,7 +362,7 @@ pub fn update_decl(self: *C, zcu: *Zcu, decl_index: InternPool.DeclIndex) !void 
     gop.value_ptr.fwd_decl = try self.addString(object.dg.fwd_decl.items);
 }
 
-pub fn update_decl_line_number(self: *C, zcu: *Zcu, decl_index: InternPool.DeclIndex) !void {
+pub fn updateDeclLineNumber(self: *C, zcu: *Zcu, decl_index: InternPool.DeclIndex) !void {
     // The C backend does not have the ability to fix line numbers without re-generating
     // the entire Decl.
     _ = self;
@@ -374,7 +374,7 @@ pub fn flush(self: *C, arena: Allocator, prog_node: std.Progress.Node) !void {
     return self.flushModule(arena, prog_node);
 }
 
-fn abi_defines(self: *C, target: std.Target) !std.ArrayList(u8) {
+fn abiDefines(self: *C, target: std.Target) !std.ArrayList(u8) {
     const gpa = self.base.comp.gpa;
     var defines = std.ArrayList(u8).init(gpa);
     errdefer defines.deinit();
@@ -389,7 +389,7 @@ fn abi_defines(self: *C, target: std.Target) !std.ArrayList(u8) {
     return defines;
 }
 
-pub fn flush_module(self: *C, arena: Allocator, prog_node: std.Progress.Node) !void {
+pub fn flushModule(self: *C, arena: Allocator, prog_node: std.Progress.Node) !void {
     _ = arena; // Has the same lifetime as the call to Compilation.update.
 
     const tracy = trace(@src());
@@ -526,7 +526,7 @@ const Flush = struct {
 
     const LazyFns = std.AutoHashMapUnmanaged(codegen.LazyFnKey, void);
 
-    fn append_buf_assume_capacity(f: *Flush, buf: []const u8) void {
+    fn appendBufAssumeCapacity(f: *Flush, buf: []const u8) void {
         if (buf.len == 0) return;
         f.all_buffers.appendAssumeCapacity(.{ .base = buf.ptr, .len = buf.len });
         f.file_size += buf.len;
@@ -548,7 +548,7 @@ const FlushDeclError = error{
     OutOfMemory,
 };
 
-fn flush_ctypes(
+fn flushCTypes(
     self: *C,
     zcu: *Zcu,
     f: *Flush,
@@ -605,7 +605,7 @@ fn flush_ctypes(
     }
 }
 
-fn flush_err_decls(self: *C, zcu: *Zcu, ctype_pool: *codegen.CType.Pool) FlushDeclError!void {
+fn flushErrDecls(self: *C, zcu: *Zcu, ctype_pool: *codegen.CType.Pool) FlushDeclError!void {
     const gpa = self.base.comp.gpa;
 
     const fwd_decl = &self.lazy_fwd_decl_buf;
@@ -645,7 +645,7 @@ fn flush_err_decls(self: *C, zcu: *Zcu, ctype_pool: *codegen.CType.Pool) FlushDe
     };
 }
 
-fn flush_lazy_fn(
+fn flushLazyFn(
     self: *C,
     zcu: *Zcu,
     mod: *Module,
@@ -694,7 +694,7 @@ fn flush_lazy_fn(
     };
 }
 
-fn flush_lazy_fns(
+fn flushLazyFns(
     self: *C,
     zcu: *Zcu,
     mod: *Module,
@@ -714,7 +714,7 @@ fn flush_lazy_fns(
     }
 }
 
-fn flush_decl_block(
+fn flushDeclBlock(
     self: *C,
     zcu: *Zcu,
     mod: *Module,
@@ -734,7 +734,7 @@ fn flush_decl_block(
     }
 }
 
-pub fn flush_emit_h(zcu: *Zcu) !void {
+pub fn flushEmitH(zcu: *Zcu) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
@@ -777,7 +777,7 @@ pub fn flush_emit_h(zcu: *Zcu) !void {
     try file.pwritevAll(all_buffers.items, 0);
 }
 
-pub fn update_exports(
+pub fn updateExports(
     self: *C,
     zcu: *Zcu,
     exported: Zcu.Exported,

@@ -1,4 +1,4 @@
-pub fn gc_atoms(macho_file: *MachO) !void {
+pub fn gcAtoms(macho_file: *MachO) !void {
     const gpa = macho_file.base.comp.gpa;
 
     var objects = try std.ArrayList(File.Index).initCapacity(gpa, macho_file.objects.items.len + 1);
@@ -14,7 +14,7 @@ pub fn gc_atoms(macho_file: *MachO) !void {
     prune(objects.items, macho_file);
 }
 
-fn collect_roots(roots: *std.ArrayList(*Atom), objects: []const File.Index, macho_file: *MachO) !void {
+fn collectRoots(roots: *std.ArrayList(*Atom), objects: []const File.Index, macho_file: *MachO) !void {
     for (objects) |index| {
         const object = macho_file.getFile(index).?;
         for (object.getSymbols()) |sym_index| {
@@ -67,12 +67,12 @@ fn collect_roots(roots: *std.ArrayList(*Atom), objects: []const File.Index, mach
     }
 }
 
-fn mark_symbol(sym: *Symbol, roots: *std.ArrayList(*Atom), macho_file: *MachO) !void {
+fn markSymbol(sym: *Symbol, roots: *std.ArrayList(*Atom), macho_file: *MachO) !void {
     const atom = sym.getAtom(macho_file) orelse return;
     if (markAtom(atom)) try roots.append(atom);
 }
 
-fn mark_atom(atom: *Atom) bool {
+fn markAtom(atom: *Atom) bool {
     const already_visited = atom.flags.visited;
     atom.flags.visited = true;
     return atom.flags.alive and !already_visited;
@@ -105,7 +105,7 @@ fn mark(roots: []*Atom, objects: []const File.Index, macho_file: *MachO) void {
     }
 }
 
-fn mark_live(atom: *Atom, macho_file: *MachO) void {
+fn markLive(atom: *Atom, macho_file: *MachO) void {
     assert(atom.flags.visited);
     atom.flags.alive = true;
     track_live_log.debug("{}marking live atom({d},{s})", .{
@@ -146,7 +146,7 @@ fn mark_live(atom: *Atom, macho_file: *MachO) void {
     }
 }
 
-fn refers_live(atom: *Atom, macho_file: *MachO) bool {
+fn refersLive(atom: *Atom, macho_file: *MachO) bool {
     for (atom.getRelocs(macho_file)) |rel| {
         const target_atom = switch (rel.tag) {
             .local => rel.getTargetAtom(macho_file),

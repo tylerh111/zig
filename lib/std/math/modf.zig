@@ -4,7 +4,7 @@ const expect = std.testing.expect;
 const expectEqual = std.testing.expectEqual;
 const expectApproxEqAbs = std.testing.expectApproxEqAbs;
 
-pub fn modf(comptime T: type) type {
+pub fn Modf(comptime T: type) type {
     return struct {
         fpart: T,
         ipart: T,
@@ -51,7 +51,7 @@ test modf {
 }
 
 /// Generate a namespace of tests for modf on values of the given type
-fn modf_tests(comptime T: type) type {
+fn ModfTests(comptime T: type) type {
     return struct {
         test "normal" {
             const epsilon: comptime_float = @max(1e-6, math.floatEps(T));

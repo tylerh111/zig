@@ -46,13 +46,13 @@ pub const Rational = struct {
     }
 
     /// Set a Rational from a primitive integer type.
-    pub fn set_int(self: *Rational, a: anytype) !void {
+    pub fn setInt(self: *Rational, a: anytype) !void {
         try self.p.set(a);
         try self.q.set(1);
     }
 
     /// Set a Rational from a string of the form `A/B` where A and B are base-10 integers.
-    pub fn set_float_string(self: *Rational, str: []const u8) !void {
+    pub fn setFloatString(self: *Rational, str: []const u8) !void {
         // TODO: Accept a/b fractions and exponent form
         if (str.len == 0) {
             return error.InvalidFloatString;
@@ -133,7 +133,7 @@ pub const Rational = struct {
 
     /// Set a Rational from a floating-point value. The rational will have enough precision to
     /// completely represent the provided float.
-    pub fn set_float(self: *Rational, comptime T: type, f: T) !void {
+    pub fn setFloat(self: *Rational, comptime T: type, f: T) !void {
         // Translated from golang.go/src/math/big/rat.go.
         debug.assert(@typeInfo(T) == .Float);
 
@@ -190,7 +190,7 @@ pub const Rational = struct {
     ///
     /// The result may not be exact if the Rational is too precise or too large for the
     /// target type.
-    pub fn to_float(self: Rational, comptime T: type) !T {
+    pub fn toFloat(self: Rational, comptime T: type) !T {
         // Translated from golang.go/src/math/big/rat.go.
         // TODO: Indicate whether the result is not exact.
         debug.assert(@typeInfo(T) == .Float);
@@ -286,7 +286,7 @@ pub const Rational = struct {
     }
 
     /// Set a rational from an integer ratio.
-    pub fn set_ratio(self: *Rational, p: anytype, q: anytype) !void {
+    pub fn setRatio(self: *Rational, p: anytype, q: anytype) !void {
         try self.p.set(p);
         try self.q.set(q);
 
@@ -301,13 +301,13 @@ pub const Rational = struct {
     }
 
     /// Set a Rational directly from an Int.
-    pub fn copy_int(self: *Rational, a: Int) !void {
+    pub fn copyInt(self: *Rational, a: Int) !void {
         try self.p.copy(a.toConst());
         try self.q.set(1);
     }
 
     /// Set a Rational directly from a ratio of two Int's.
-    pub fn copy_ratio(self: *Rational, a: Int, b: Int) !void {
+    pub fn copyRatio(self: *Rational, a: Int, b: Int) !void {
         try self.p.copy(a.toConst());
         try self.q.copy(b.toConst());
 
@@ -342,12 +342,12 @@ pub const Rational = struct {
 
     /// Returns math.Order.lt, math.Order.eq, math.Order.gt if |a| < |b|, |a| ==
     /// |b| or |a| > |b| respectively.
-    pub fn order_abs(a: Rational, b: Rational) !math.Order {
+    pub fn orderAbs(a: Rational, b: Rational) !math.Order {
         return cmpInternal(a, b, true);
     }
 
     // p/q > x/y iff p*y > x*q
-    fn cmp_internal(a: Rational, b: Rational, is_abs: bool) !math.Order {
+    fn cmpInternal(a: Rational, b: Rational, is_abs: bool) !math.Order {
         // TODO: Would a div compare algorithm of sorts be viable and quicker? Can we avoid
         // the memory allocations here?
         var q = try Int.init(a.p.allocator);
@@ -472,7 +472,7 @@ pub const Rational = struct {
     }
 };
 
-fn extract_low_bits(a: Int, comptime T: type) T {
+fn extractLowBits(a: Int, comptime T: type) T {
     debug.assert(@typeInfo(T) == .Int);
 
     const t_bits = @typeInfo(T).Int.bits;

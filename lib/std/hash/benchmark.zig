@@ -105,7 +105,7 @@ const Result = struct {
 
 const block_size: usize = 8 * 8192;
 
-pub fn benchmark_hash(comptime H: anytype, bytes: usize, allocator: std.mem.Allocator) !Result {
+pub fn benchmarkHash(comptime H: anytype, bytes: usize, allocator: std.mem.Allocator) !Result {
     var blocks = try allocator.alloc(u8, bytes);
     defer allocator.free(blocks);
     random.bytes(blocks);
@@ -141,7 +141,7 @@ pub fn benchmark_hash(comptime H: anytype, bytes: usize, allocator: std.mem.Allo
     };
 }
 
-pub fn benchmark_hash_small_keys(comptime H: anytype, key_size: usize, bytes: usize, allocator: std.mem.Allocator) !Result {
+pub fn benchmarkHashSmallKeys(comptime H: anytype, key_size: usize, bytes: usize, allocator: std.mem.Allocator) !Result {
     var blocks = try allocator.alloc(u8, bytes);
     defer allocator.free(blocks);
     random.bytes(blocks);
@@ -185,7 +185,7 @@ pub fn benchmark_hash_small_keys(comptime H: anytype, key_size: usize, bytes: us
 // the array and array pointer benchmarks for xxhash are very sensitive to in-lining,
 // if you see strange performance changes consider using `.never_inline` or `.always_inline`
 // to ensure the changes are not only due to the optimiser inlining the benchmark differently
-pub fn benchmark_hash_small_keys_array_ptr(
+pub fn benchmarkHashSmallKeysArrayPtr(
     comptime H: anytype,
     comptime key_size: usize,
     bytes: usize,
@@ -233,7 +233,7 @@ pub fn benchmark_hash_small_keys_array_ptr(
 // the array and array pointer benchmarks for xxhash are very sensitive to in-lining,
 // if you see strange performance changes consider using `.never_inline` or `.always_inline`
 // to ensure the changes are not only due to the optimiser inlining the benchmark differently
-pub fn benchmark_hash_small_keys_array(
+pub fn benchmarkHashSmallKeysArray(
     comptime H: anytype,
     comptime key_size: usize,
     bytes: usize,
@@ -279,7 +279,7 @@ pub fn benchmark_hash_small_keys_array(
     };
 }
 
-pub fn benchmark_hash_small_api(comptime H: anytype, key_size: usize, bytes: usize, allocator: std.mem.Allocator) !Result {
+pub fn benchmarkHashSmallApi(comptime H: anytype, key_size: usize, bytes: usize, allocator: std.mem.Allocator) !Result {
     var blocks = try allocator.alloc(u8, bytes);
     defer allocator.free(blocks);
     random.bytes(blocks);

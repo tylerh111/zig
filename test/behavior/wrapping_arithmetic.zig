@@ -9,7 +9,7 @@ test "wrapping add" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try testWrapAdd(i8, -3, 10, 7);
             try testWrapAdd(i8, -128, -128, 0);
             try testWrapAdd(i2, 1, 1, -2);
@@ -24,7 +24,7 @@ test "wrapping add" {
             try testWrapAdd(u128, maxInt(u128), 1, minInt(u128));
         }
 
-        fn test_wrap_add(comptime T: type, lhs: T, rhs: T, expected: T) !void {
+        fn testWrapAdd(comptime T: type, lhs: T, rhs: T, expected: T) !void {
             try expect((lhs +% rhs) == expected);
 
             var x = lhs;
@@ -47,7 +47,7 @@ test "wrapping subtraction" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try testWrapSub(i8, -3, 10, -13);
             try testWrapSub(i8, -128, -128, 0);
             try testWrapSub(i8, -1, 127, -128);
@@ -60,7 +60,7 @@ test "wrapping subtraction" {
             try testWrapSub(u128, 0, maxInt(u128), 1);
         }
 
-        fn test_wrap_sub(comptime T: type, lhs: T, rhs: T, expected: T) !void {
+        fn testWrapSub(comptime T: type, lhs: T, rhs: T, expected: T) !void {
             try expect((lhs -% rhs) == expected);
 
             var x = lhs;
@@ -86,7 +86,7 @@ test "wrapping multiplication" {
     if (builtin.cpu.arch == .wasm32) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try testWrapMul(i8, -3, 10, -30);
             try testWrapMul(i4, 2, 4, -8);
             try testWrapMul(i8, 2, 127, -2);
@@ -100,7 +100,7 @@ test "wrapping multiplication" {
             try testWrapMul(u128, maxInt(u128), maxInt(u128), 1);
         }
 
-        fn test_wrap_mul(comptime T: type, lhs: T, rhs: T, expected: T) !void {
+        fn testWrapMul(comptime T: type, lhs: T, rhs: T, expected: T) !void {
             try expect((lhs *% rhs) == expected);
 
             var x = lhs;

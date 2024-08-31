@@ -54,7 +54,7 @@ pub fn wasi_cwd() std.os.wasi.fd_t {
     return cwd_fd;
 }
 
-fn get_wasi_preopen(name: []const u8) Compilation.Directory {
+fn getWasiPreopen(name: []const u8) Compilation.Directory {
     return .{
         .path = name,
         .handle = .{
@@ -211,7 +211,7 @@ pub fn main() anyerror!void {
 
 /// Check that LLVM and Clang have been linked properly so that they are using the same
 /// libc++ and can safely share objects with pointers to static variables in libc++
-fn verify_libcxx_correctly_linked() void {
+fn verifyLibcxxCorrectlyLinked() void {
     if (build_options.have_llvm and ZigClangIsLLVMUsingSeparateLibcxx()) {
         fatal(
             \\Zig was built/linked incorrectly: LLVM and Clang have separate copies of libc++
@@ -220,7 +220,7 @@ fn verify_libcxx_correctly_linked() void {
     }
 }
 
-fn main_args(gpa: Allocator, arena: Allocator, args: []const []const u8) !void {
+fn mainArgs(gpa: Allocator, arena: Allocator, args: []const []const u8) !void {
     if (args.len <= 1) {
         std.log.info("{s}", .{usage});
         fatal("expected command argument", .{});
@@ -746,7 +746,7 @@ const ArgsIterator = struct {
         defer it.i += 1;
         return it.args[it.i];
     }
-    fn next_or_fatal(it: *@This()) []const u8 {
+    fn nextOrFatal(it: *@This()) []const u8 {
         if (it.i >= it.args.len) {
             if (it.resp_file) |*resp| if (resp.next()) |ret| return ret;
             fatal("expected parameter after {s}", .{it.args[it.i - 1]});
@@ -768,7 +768,7 @@ const SystemLib = struct {
 
     const SearchStrategy = enum { paths_first, mode_first, no_fallback };
 
-    fn fallback_mode(this: SystemLib) std.builtin.LinkMode {
+    fn fallbackMode(this: SystemLib) std.builtin.LinkMode {
         assert(this.search_strategy != .no_fallback);
         return switch (this.preferred_mode) {
             .dynamic => .static,
@@ -805,7 +805,7 @@ const CliModule = struct {
     };
 };
 
-fn build_output_type(
+fn buildOutputType(
     gpa: Allocator,
     arena: Allocator,
     all_args: []const []const u8,
@@ -3532,7 +3532,7 @@ const CreateModule = struct {
     link_objects: std.ArrayListUnmanaged(Compilation.LinkObject),
 };
 
-fn create_module(
+fn createModule(
     gpa: Allocator,
     arena: Allocator,
     create_module: *CreateModule,
@@ -4010,7 +4010,7 @@ fn create_module(
     return mod;
 }
 
-fn save_state(comp: *Compilation, debug_incremental: bool) void {
+fn saveState(comp: *Compilation, debug_incremental: bool) void {
     if (debug_incremental) {
         comp.saveState() catch |err| {
             warn("unable to save incremental compilation state: {s}", .{@errorName(err)});
@@ -4127,7 +4127,7 @@ fn serve(
     }
 }
 
-fn serve_update_results(s: *Server, comp: *Compilation) !void {
+fn serveUpdateResults(s: *Server, comp: *Compilation) !void {
     const gpa = comp.gpa;
     var error_bundle = try comp.getAllErrorsAlloc();
     defer error_bundle.deinit(gpa);
@@ -4195,7 +4195,7 @@ fn serve_update_results(s: *Server, comp: *Compilation) !void {
     }
 }
 
-fn run_or_test(
+fn runOrTest(
     comp: *Compilation,
     gpa: Allocator,
     arena: Allocator,
@@ -4302,7 +4302,7 @@ fn run_or_test(
     }
 }
 
-fn run_or_test_hot_swap(
+fn runOrTestHotSwap(
     comp: *Compilation,
     gpa: Allocator,
     test_exec_args: []const ?[]const u8,
@@ -4400,7 +4400,7 @@ fn run_or_test_hot_swap(
     }
 }
 
-fn update_module(comp: *Compilation, color: Color, prog_node: std.Progress.Node) !void {
+fn updateModule(comp: *Compilation, color: Color, prog_node: std.Progress.Node) !void {
     try comp.update(prog_node);
 
     var errors = try comp.getAllErrorsAlloc();
@@ -4412,7 +4412,7 @@ fn update_module(comp: *Compilation, color: Color, prog_node: std.Progress.Node)
     }
 }
 
-fn cmd_translate_c(
+fn cmdTranslateC(
     comp: *Compilation,
     arena: Allocator,
     fancy_output: ?*Compilation.CImportResult,
@@ -4580,7 +4580,7 @@ const usage_init =
     \\
 ;
 
-fn cmd_init(gpa: Allocator, arena: Allocator, args: []const []const u8) !void {
+fn cmdInit(gpa: Allocator, arena: Allocator, args: []const []const u8) !void {
     {
         var i: usize = 0;
         while (i < args.len) : (i += 1) {
@@ -4655,7 +4655,7 @@ const usage_build =
     \\
 ;
 
-fn cmd_build(gpa: Allocator, arena: Allocator, args: []const []const u8) !void {
+fn cmdBuild(gpa: Allocator, arena: Allocator, args: []const []const u8) !void {
     var build_file: ?[]const u8 = null;
     var override_lib_dir: ?[]const u8 = try EnvVar.ZIG_LIB_DIR.get(arena);
     var override_global_cache_dir: ?[]const u8 = try EnvVar.ZIG_GLOBAL_CACHE_DIR.get(arena);
@@ -5268,7 +5268,7 @@ const JitCmdOptions = struct {
     progress_node: ?std.Progress.Node = null,
 };
 
-fn jit_cmd(
+fn jitCmd(
     gpa: Allocator,
     arena: Allocator,
     args: []const []const u8,
@@ -5512,12 +5512,12 @@ const info_zen =
     \\
 ;
 
-extern fn zig_clang_is_llvmusing_separate_libcxx() bool;
+extern fn ZigClangIsLLVMUsingSeparateLibcxx() bool;
 
-extern "c" fn zig_clang_main(argc: c_int, argv: [*:null]?[*:0]u8) c_int;
-extern "c" fn zig_llvm_ar_main(argc: c_int, argv: [*:null]?[*:0]u8) c_int;
+extern "c" fn ZigClang_main(argc: c_int, argv: [*:null]?[*:0]u8) c_int;
+extern "c" fn ZigLlvmAr_main(argc: c_int, argv: [*:null]?[*:0]u8) c_int;
 
-fn args_copy_z(alloc: Allocator, args: []const []const u8) ![:null]?[*:0]u8 {
+fn argsCopyZ(alloc: Allocator, args: []const []const u8) ![:null]?[*:0]u8 {
     var argv = try alloc.allocSentinel(?[*:0]u8, args.len, null);
     for (args, 0..) |arg, i| {
         argv[i] = try alloc.dupeZ(u8, arg); // TODO If there was an argsAllocZ we could avoid this allocation.
@@ -5525,7 +5525,7 @@ fn args_copy_z(alloc: Allocator, args: []const []const u8) ![:null]?[*:0]u8 {
     return argv;
 }
 
-pub fn clang_main(alloc: Allocator, args: []const []const u8) error{OutOfMemory}!u8 {
+pub fn clangMain(alloc: Allocator, args: []const []const u8) error{OutOfMemory}!u8 {
     if (!build_options.have_llvm)
         fatal("`zig cc` and `zig c++` unavailable: compiler built without LLVM extensions", .{});
 
@@ -5539,7 +5539,7 @@ pub fn clang_main(alloc: Allocator, args: []const []const u8) error{OutOfMemory}
     return @as(u8, @bitCast(@as(i8, @truncate(exit_code))));
 }
 
-pub fn llvm_ar_main(alloc: Allocator, args: []const []const u8) error{OutOfMemory}!u8 {
+pub fn llvmArMain(alloc: Allocator, args: []const []const u8) error{OutOfMemory}!u8 {
     if (!build_options.have_llvm)
         fatal("`zig ar`, `zig dlltool`, `zig ranlib', and `zig lib` unavailable: compiler built without LLVM extensions", .{});
 
@@ -5558,7 +5558,7 @@ pub fn llvm_ar_main(alloc: Allocator, args: []const []const u8) error{OutOfMemor
 /// * `ld.lld` - ELF
 /// * `lld-link` - COFF
 /// * `wasm-ld` - WebAssembly
-pub fn lld_main(
+pub fn lldMain(
     alloc: Allocator,
     args: []const []const u8,
     can_exit_early: bool,
@@ -5604,7 +5604,7 @@ pub fn lld_main(
 const ArgIteratorResponseFile = process.ArgIteratorGeneral(.{ .comments = true, .single_quotes = true });
 
 /// Initialize the arguments from a Response File. "*.rsp"
-fn init_arg_iterator_response_file(allocator: Allocator, resp_file_path: []const u8) !ArgIteratorResponseFile {
+fn initArgIteratorResponseFile(allocator: Allocator, resp_file_path: []const u8) !ArgIteratorResponseFile {
     const max_bytes = 10 * 1024 * 1024; // 10 MiB of command line arguments is a reasonable limit
     const cmd_line = try fs.cwd().readFileAlloc(allocator, resp_file_path, max_bytes);
     errdefer allocator.free(cmd_line);
@@ -5870,12 +5870,12 @@ pub const ClangArgIterator = struct {
         }
     }
 
-    fn increment_arg_index(self: *ClangArgIterator) void {
+    fn incrementArgIndex(self: *ClangArgIterator) void {
         self.next_index += 1;
         self.resolveRespFileArgs();
     }
 
-    fn resolve_resp_file_args(self: *ClangArgIterator) void {
+    fn resolveRespFileArgs(self: *ClangArgIterator) void {
         const arena = self.arena;
         if (self.next_index >= self.argv.len) {
             if (self.root_args) |root_args| {
@@ -5892,7 +5892,7 @@ pub const ClangArgIterator = struct {
     }
 };
 
-fn parse_code_model(arg: []const u8) std.builtin.CodeModel {
+fn parseCodeModel(arg: []const u8) std.builtin.CodeModel {
     return std.meta.stringToEnum(std.builtin.CodeModel, arg) orelse
         fatal("unsupported machine code model: '{s}'", .{arg});
 }
@@ -5914,7 +5914,7 @@ const usage_ast_check =
     \\
 ;
 
-fn cmd_ast_check(
+fn cmdAstCheck(
     gpa: Allocator,
     arena: Allocator,
     args: []const []const u8,
@@ -6074,7 +6074,7 @@ fn cmd_ast_check(
     return @import("print_zir.zig").renderAsTextToFile(gpa, &file, io.getStdOut());
 }
 
-fn cmd_detect_cpu(
+fn cmdDetectCpu(
     gpa: Allocator,
     arena: Allocator,
     args: []const []const u8,
@@ -6130,7 +6130,7 @@ fn cmd_detect_cpu(
     }
 }
 
-fn detect_native_cpu_with_llvm(
+fn detectNativeCpuWithLLVM(
     arch: std.Target.Cpu.Arch,
     llvm_cpu_name_z: ?[*:0]const u8,
     llvm_cpu_features_opt: ?[*:0]const u8,
@@ -6193,7 +6193,7 @@ fn detect_native_cpu_with_llvm(
     return result;
 }
 
-fn print_cpu(cpu: std.Target.Cpu) !void {
+fn printCpu(cpu: std.Target.Cpu) !void {
     var bw = io.bufferedWriter(io.getStdOut().writer());
     const stdout = bw.writer();
 
@@ -6213,7 +6213,7 @@ fn print_cpu(cpu: std.Target.Cpu) !void {
     try bw.flush();
 }
 
-fn cmd_dump_llvm_ints(
+fn cmdDumpLlvmInts(
     gpa: Allocator,
     arena: Allocator,
     args: []const []const u8,
@@ -6256,7 +6256,7 @@ fn cmd_dump_llvm_ints(
 }
 
 /// This is only enabled for debug builds.
-fn cmd_dump_zir(
+fn cmdDumpZir(
     gpa: Allocator,
     arena: Allocator,
     args: []const []const u8,
@@ -6316,7 +6316,7 @@ fn cmd_dump_zir(
 }
 
 /// This is only enabled for debug builds.
-fn cmd_changelist(
+fn cmdChangelist(
     gpa: Allocator,
     arena: Allocator,
     args: []const []const u8,
@@ -6442,7 +6442,7 @@ fn cmd_changelist(
     try bw.flush();
 }
 
-fn eat_int_prefix(arg: []const u8, base: u8) []const u8 {
+fn eatIntPrefix(arg: []const u8, base: u8) []const u8 {
     if (arg.len > 2 and arg[0] == '0') {
         switch (std.ascii.toLower(arg[1])) {
             'b' => if (base == 2) return arg[2..],
@@ -6454,13 +6454,13 @@ fn eat_int_prefix(arg: []const u8, base: u8) []const u8 {
     return arg;
 }
 
-fn parse_int_suffix(arg: []const u8, prefix_len: usize) u64 {
+fn parseIntSuffix(arg: []const u8, prefix_len: usize) u64 {
     return std.fmt.parseUnsigned(u64, arg[prefix_len..], 0) catch |err| {
         fatal("unable to parse '{s}': {s}", .{ arg, @errorName(err) });
     };
 }
 
-fn warn_about_foreign_binaries(
+fn warnAboutForeignBinaries(
     arena: Allocator,
     arg_mode: ArgMode,
     target: *const std.Target,
@@ -6570,7 +6570,7 @@ fn warn_about_foreign_binaries(
     }
 }
 
-fn parse_sub_system(next_arg: []const u8) !std.Target.SubSystem {
+fn parseSubSystem(next_arg: []const u8) !std.Target.SubSystem {
     if (mem.eql(u8, next_arg, "console")) {
         return .Console;
     } else if (mem.eql(u8, next_arg, "windows")) {
@@ -6613,7 +6613,7 @@ const ClangSearchSanitizer = struct {
         self.map.clearRetainingCapacity();
     }
 
-    fn add_include_path(
+    fn addIncludePath(
         self: *@This(),
         ally: Allocator,
         argv: *std.ArrayListUnmanaged([]const u8),
@@ -6686,7 +6686,7 @@ const ClangSearchSanitizer = struct {
     };
 };
 
-fn access_lib_path(
+fn accessLibPath(
     test_path: *std.ArrayList(u8),
     checked_paths: *std.ArrayList(u8),
     lib_dir_path: []const u8,
@@ -6766,7 +6766,7 @@ fn access_lib_path(
     return false;
 }
 
-fn access_framework_path(
+fn accessFrameworkPath(
     test_path: *std.ArrayList(u8),
     checked_paths: *std.ArrayList(u8),
     framework_dir_path: []const u8,
@@ -6795,7 +6795,7 @@ fn access_framework_path(
     return false;
 }
 
-fn parse_rc_includes(arg: []const u8) Compilation.RcIncludes {
+fn parseRcIncludes(arg: []const u8) Compilation.RcIncludes {
     return std.meta.stringToEnum(Compilation.RcIncludes, arg) orelse
         fatal("unsupported rc includes type: '{s}'", .{arg});
 }
@@ -6817,7 +6817,7 @@ const usage_fetch =
     \\
 ;
 
-fn cmd_fetch(
+fn cmdFetch(
     gpa: Allocator,
     arena: Allocator,
     args: []const []const u8,
@@ -7073,7 +7073,7 @@ fn cmd_fetch(
     return cleanExit();
 }
 
-fn create_empty_dependencies_module(
+fn createEmptyDependenciesModule(
     arena: Allocator,
     main_mod: *Package.Module,
     global_cache_directory: Cache.Directory,
@@ -7096,7 +7096,7 @@ fn create_empty_dependencies_module(
 
 /// Creates the dependencies.zig file and corresponding `Package.Module` for the
 /// build runner to obtain via `@import("@dependencies")`.
-fn create_dependencies_module(
+fn createDependenciesModule(
     arena: Allocator,
     source: []const u8,
     main_mod: *Package.Module,
@@ -7165,7 +7165,7 @@ const FindBuildRootOptions = struct {
     cwd_path: ?[]const u8 = null,
 };
 
-fn find_build_root(arena: Allocator, options: FindBuildRootOptions) !BuildRoot {
+fn findBuildRoot(arena: Allocator, options: FindBuildRootOptions) !BuildRoot {
     const cwd_path = options.cwd_path orelse try process.getCwdAlloc(arena);
     const build_zig_basename = if (options.build_file) |bf|
         fs.path.basename(bf)
@@ -7228,7 +7228,7 @@ const LoadManifestOptions = struct {
     color: Color,
 };
 
-fn load_manifest(
+fn loadManifest(
     gpa: Allocator,
     arena: Allocator,
     options: LoadManifestOptions,
@@ -7333,7 +7333,7 @@ const Templates = struct {
     }
 };
 
-fn find_templates(gpa: Allocator, arena: Allocator) Templates {
+fn findTemplates(gpa: Allocator, arena: Allocator) Templates {
     const self_exe_path = introspect.findZigExePath(arena) catch |err| {
         fatal("unable to find self exe path: {s}", .{@errorName(err)});
     };
@@ -7357,27 +7357,27 @@ fn find_templates(gpa: Allocator, arena: Allocator) Templates {
     };
 }
 
-fn parse_optimize_mode(s: []const u8) std.builtin.OptimizeMode {
+fn parseOptimizeMode(s: []const u8) std.builtin.OptimizeMode {
     return std.meta.stringToEnum(std.builtin.OptimizeMode, s) orelse
         fatal("unrecognized optimization mode: '{s}'", .{s});
 }
 
-fn parse_wasi_exec_model(s: []const u8) std.builtin.WasiExecModel {
+fn parseWasiExecModel(s: []const u8) std.builtin.WasiExecModel {
     return std.meta.stringToEnum(std.builtin.WasiExecModel, s) orelse
         fatal("expected [command|reactor] for -mexec-mode=[value], found '{s}'", .{s});
 }
 
-fn parse_stack_size(s: []const u8) u64 {
+fn parseStackSize(s: []const u8) u64 {
     return std.fmt.parseUnsigned(u64, s, 0) catch |err|
         fatal("unable to parse stack size '{s}': {s}", .{ s, @errorName(err) });
 }
 
-fn parse_image_base(s: []const u8) u64 {
+fn parseImageBase(s: []const u8) u64 {
     return std.fmt.parseUnsigned(u64, s, 0) catch |err|
         fatal("unable to parse image base '{s}': {s}", .{ s, @errorName(err) });
 }
 
-fn handle_mod_arg(
+fn handleModArg(
     arena: Allocator,
     mod_name: []const u8,
     opt_root_src_orig: ?[]const u8,

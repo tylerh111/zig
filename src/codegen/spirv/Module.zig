@@ -216,7 +216,7 @@ pub const IdRange = struct {
     }
 };
 
-pub fn alloc_ids(self: *Module, n: u32) IdRange {
+pub fn allocIds(self: *Module, n: u32) IdRange {
     defer self.next_result_id += n;
     return .{
         .base = self.next_result_id,
@@ -224,15 +224,15 @@ pub fn alloc_ids(self: *Module, n: u32) IdRange {
     };
 }
 
-pub fn alloc_id(self: *Module) IdResult {
+pub fn allocId(self: *Module) IdResult {
     return self.allocIds(1).at(0);
 }
 
-pub fn id_bound(self: Module) Word {
+pub fn idBound(self: Module) Word {
     return self.next_result_id;
 }
 
-fn add_entry_point_deps(
+fn addEntryPointDeps(
     self: *Module,
     decl_index: Decl.Index,
     seen: *std.DynamicBitSetUnmanaged,
@@ -256,7 +256,7 @@ fn add_entry_point_deps(
     }
 }
 
-fn entry_points(self: *Module) !Section {
+fn entryPoints(self: *Module) !Section {
     var entry_points = Section{};
     errdefer entry_points.deinit(self.gpa);
 
@@ -354,14 +354,14 @@ pub fn finalize(self: *Module, a: Allocator, target: std.Target) ![]Word {
 }
 
 /// Merge the sections making up a function declaration into this module.
-pub fn add_function(self: *Module, decl_index: Decl.Index, func: Fn) !void {
+pub fn addFunction(self: *Module, decl_index: Decl.Index, func: Fn) !void {
     try self.sections.functions.append(self.gpa, func.prologue);
     try self.sections.functions.append(self.gpa, func.body);
     try self.declareDeclDeps(decl_index, func.decl_deps.keys());
 }
 
 /// Imports or returns the existing id of an extended instruction set
-pub fn import_instruction_set(self: *Module, set: spec.InstructionSet) !IdRef {
+pub fn importInstructionSet(self: *Module, set: spec.InstructionSet) !IdRef {
     assert(set != .core);
 
     const gop = try self.extended_instruction_set.getOrPut(self.gpa, set);
@@ -378,7 +378,7 @@ pub fn import_instruction_set(self: *Module, set: spec.InstructionSet) !IdRef {
 }
 
 /// Fetch the result-id of an instruction corresponding to a string.
-pub fn resolve_string(self: *Module, string: []const u8) !IdRef {
+pub fn resolveString(self: *Module, string: []const u8) !IdRef {
     if (self.strings.get(string)) |id| {
         return id;
     }
@@ -394,7 +394,7 @@ pub fn resolve_string(self: *Module, string: []const u8) !IdRef {
     return id;
 }
 
-pub fn struct_type(self: *Module, types: []const IdRef, maybe_names: ?[]const []const u8) !IdRef {
+pub fn structType(self: *Module, types: []const IdRef, maybe_names: ?[]const []const u8) !IdRef {
     const result_id = self.allocId();
 
     try self.sections.types_globals_constants.emit(self.gpa, .OpTypeStruct, .{
@@ -412,7 +412,7 @@ pub fn struct_type(self: *Module, types: []const IdRef, maybe_names: ?[]const []
     return result_id;
 }
 
-pub fn bool_type(self: *Module) !IdRef {
+pub fn boolType(self: *Module) !IdRef {
     if (self.cache.bool_type) |id| return id;
 
     const result_id = self.allocId();
@@ -423,7 +423,7 @@ pub fn bool_type(self: *Module) !IdRef {
     return result_id;
 }
 
-pub fn void_type(self: *Module) !IdRef {
+pub fn voidType(self: *Module) !IdRef {
     if (self.cache.void_type) |id| return id;
 
     const result_id = self.allocId();
@@ -435,7 +435,7 @@ pub fn void_type(self: *Module) !IdRef {
     return result_id;
 }
 
-pub fn int_type(self: *Module, signedness: std.builtin.Signedness, bits: u16) !IdRef {
+pub fn intType(self: *Module, signedness: std.builtin.Signedness, bits: u16) !IdRef {
     assert(bits > 0);
     const entry = try self.cache.int_types.getOrPut(self.gpa, .{ .signedness = signedness, .bits = bits });
     if (!entry.found_existing) {
@@ -458,7 +458,7 @@ pub fn int_type(self: *Module, signedness: std.builtin.Signedness, bits: u16) !I
     return entry.value_ptr.*;
 }
 
-pub fn float_type(self: *Module, bits: u16) !IdRef {
+pub fn floatType(self: *Module, bits: u16) !IdRef {
     assert(bits > 0);
     const entry = try self.cache.float_types.getOrPut(self.gpa, .{ .bits = bits });
     if (!entry.found_existing) {
@@ -473,7 +473,7 @@ pub fn float_type(self: *Module, bits: u16) !IdRef {
     return entry.value_ptr.*;
 }
 
-pub fn vector_type(self: *Module, len: u32, child_id: IdRef) !IdRef {
+pub fn vectorType(self: *Module, len: u32, child_id: IdRef) !IdRef {
     const result_id = self.allocId();
     try self.sections.types_globals_constants.emit(self.gpa, .OpTypeVector, .{
         .id_result = result_id,
@@ -483,7 +483,7 @@ pub fn vector_type(self: *Module, len: u32, child_id: IdRef) !IdRef {
     return result_id;
 }
 
-pub fn const_undef(self: *Module, ty_id: IdRef) !IdRef {
+pub fn constUndef(self: *Module, ty_id: IdRef) !IdRef {
     const result_id = self.allocId();
     try self.sections.types_globals_constants.emit(self.gpa, .OpUndef, .{
         .id_result_type = ty_id,
@@ -492,7 +492,7 @@ pub fn const_undef(self: *Module, ty_id: IdRef) !IdRef {
     return result_id;
 }
 
-pub fn const_null(self: *Module, ty_id: IdRef) !IdRef {
+pub fn constNull(self: *Module, ty_id: IdRef) !IdRef {
     const result_id = self.allocId();
     try self.sections.types_globals_constants.emit(self.gpa, .OpConstantNull, .{
         .id_result_type = ty_id,
@@ -514,7 +514,7 @@ pub fn decorate(
 }
 
 /// Decorate a result-id which is a member of some struct.
-pub fn decorate_member(
+pub fn decorateMember(
     self: *Module,
     structure_type: IdRef,
     member: u32,
@@ -527,7 +527,7 @@ pub fn decorate_member(
     });
 }
 
-pub fn alloc_decl(self: *Module, kind: Decl.Kind) !Decl.Index {
+pub fn allocDecl(self: *Module, kind: Decl.Kind) !Decl.Index {
     try self.decls.append(self.gpa, .{
         .kind = kind,
         .result_id = self.allocId(),
@@ -538,12 +538,12 @@ pub fn alloc_decl(self: *Module, kind: Decl.Kind) !Decl.Index {
     return @as(Decl.Index, @enumFromInt(@as(u32, @intCast(self.decls.items.len - 1))));
 }
 
-pub fn decl_ptr(self: *Module, index: Decl.Index) *Decl {
+pub fn declPtr(self: *Module, index: Decl.Index) *Decl {
     return &self.decls.items[@intFromEnum(index)];
 }
 
 /// Declare ALL dependencies for a decl.
-pub fn declare_decl_deps(self: *Module, decl_index: Decl.Index, deps: []const Decl.Index) !void {
+pub fn declareDeclDeps(self: *Module, decl_index: Decl.Index, deps: []const Decl.Index) !void {
     const begin_dep: u32 = @intCast(self.decl_deps.items.len);
     try self.decl_deps.appendSlice(self.gpa, deps);
     const end_dep: u32 = @intCast(self.decl_deps.items.len);
@@ -556,7 +556,7 @@ pub fn declare_decl_deps(self: *Module, decl_index: Decl.Index, deps: []const De
 /// Declare a SPIR-V function as an entry point. This causes an extra wrapper
 /// function to be generated, which is then exported as the real entry point. The purpose of this
 /// wrapper is to allocate and initialize the structure holding the instance globals.
-pub fn declare_entry_point(
+pub fn declareEntryPoint(
     self: *Module,
     decl_index: Decl.Index,
     name: []const u8,
@@ -569,20 +569,20 @@ pub fn declare_entry_point(
     });
 }
 
-pub fn debug_name(self: *Module, target: IdResult, name: []const u8) !void {
+pub fn debugName(self: *Module, target: IdResult, name: []const u8) !void {
     try self.sections.debug_names.emit(self.gpa, .OpName, .{
         .target = target,
         .name = name,
     });
 }
 
-pub fn debug_name_fmt(self: *Module, target: IdResult, comptime fmt: []const u8, args: anytype) !void {
+pub fn debugNameFmt(self: *Module, target: IdResult, comptime fmt: []const u8, args: anytype) !void {
     const name = try std.fmt.allocPrint(self.gpa, fmt, args);
     defer self.gpa.free(name);
     try self.debugName(target, name);
 }
 
-pub fn member_debug_name(self: *Module, target: IdResult, member: u32, name: []const u8) !void {
+pub fn memberDebugName(self: *Module, target: IdResult, member: u32, name: []const u8) !void {
     try self.sections.debug_names.emit(self.gpa, .OpMemberName, .{
         .type = target,
         .member = member,

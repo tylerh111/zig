@@ -3,7 +3,7 @@ const Allocator = std.mem.Allocator;
 
 /// This allocator is used in front of another allocator and logs to the provided writer
 /// on every call to the allocator. Writer errors are ignored.
-pub fn log_to_writer_allocator(comptime Writer: type) type {
+pub fn LogToWriterAllocator(comptime Writer: type) type {
     return struct {
         parent_allocator: Allocator,
         writer: Writer,
@@ -86,7 +86,7 @@ pub fn log_to_writer_allocator(comptime Writer: type) type {
 
 /// This allocator is used in front of another allocator and logs to the provided writer
 /// on every call to the allocator. Writer errors are ignored.
-pub fn log_to_writer_allocator(
+pub fn logToWriterAllocator(
     parent_allocator: Allocator,
     writer: anytype,
 ) LogToWriterAllocator(@TypeOf(writer)) {

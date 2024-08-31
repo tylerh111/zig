@@ -17,7 +17,7 @@ pub const SimpleTextInput = extern struct {
     }
 
     /// Reads the next keystroke from the input device.
-    pub fn read_key_stroke(self: *const SimpleTextInput, input_key: *Key.Input) Status {
+    pub fn readKeyStroke(self: *const SimpleTextInput, input_key: *Key.Input) Status {
         return self._read_key_stroke(self, input_key);
     }
 

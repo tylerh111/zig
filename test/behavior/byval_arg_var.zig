@@ -25,7 +25,7 @@ fn bar(x: anytype) void {
     result = x;
 }
 
-fn blow_up_stack(x: u32) void {
+fn blowUpStack(x: u32) void {
     if (x == 0) return;
     blowUpStack(x - 1);
 }

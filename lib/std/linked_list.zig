@@ -10,7 +10,7 @@ const testing = std.testing;
 /// A singly-linked list may only be traversed in the forward direction.
 /// Singly-linked lists are ideal for applications with large datasets and
 /// few or no removals or for implementing a LIFO queue.
-pub fn singly_linked_list(comptime T: type) type {
+pub fn SinglyLinkedList(comptime T: type) type {
     return struct {
         const Self = @This();
 
@@ -25,7 +25,7 @@ pub fn singly_linked_list(comptime T: type) type {
             ///
             /// Arguments:
             ///     new_node: Pointer to the new node to insert.
-            pub fn insert_after(node: *Node, new_node: *Node) void {
+            pub fn insertAfter(node: *Node, new_node: *Node) void {
                 new_node.next = node.next;
                 node.next = new_node;
             }
@@ -36,7 +36,7 @@ pub fn singly_linked_list(comptime T: type) type {
             ///     node: Pointer to the node to be removed.
             /// Returns:
             ///     node removed
-            pub fn remove_next(node: *Node) ?*Node {
+            pub fn removeNext(node: *Node) ?*Node {
                 const next_node = node.next orelse return null;
                 node.next = next_node.next;
                 return next_node;
@@ -44,7 +44,7 @@ pub fn singly_linked_list(comptime T: type) type {
 
             /// Iterate over the singly-linked list from this node, until the final node is found.
             /// This operation is O(N).
-            pub fn find_last(node: *Node) *Node {
+            pub fn findLast(node: *Node) *Node {
                 var it = node;
                 while (true) {
                     it = it.next orelse return it;
@@ -53,7 +53,7 @@ pub fn singly_linked_list(comptime T: type) type {
 
             /// Iterate over each next node, returning the count of all nodes except the starting one.
             /// This operation is O(N).
-            pub fn count_children(node: *const Node) usize {
+            pub fn countChildren(node: *const Node) usize {
                 var count: usize = 0;
                 var it: ?*const Node = node.next;
                 while (it) |n| : (it = n.next) {
@@ -108,7 +108,7 @@ pub fn singly_linked_list(comptime T: type) type {
         ///
         /// Returns:
         ///     A pointer to the first node in the list.
-        pub fn pop_first(list: *Self) ?*Node {
+        pub fn popFirst(list: *Self) ?*Node {
             const first = list.first orelse return null;
             list.first = first.next;
             return first;
@@ -181,7 +181,7 @@ test "basic SinglyLinkedList test" {
 /// - Removing an element.
 /// - Inserting a new element before an existing element.
 /// - Pushing or popping an element from the end of the list.
-pub fn doubly_linked_list(comptime T: type) type {
+pub fn DoublyLinkedList(comptime T: type) type {
     return struct {
         const Self = @This();
 
@@ -201,7 +201,7 @@ pub fn doubly_linked_list(comptime T: type) type {
         /// Arguments:
         ///     node: Pointer to a node in the list.
         ///     new_node: Pointer to the new node to insert.
-        pub fn insert_after(list: *Self, node: *Node, new_node: *Node) void {
+        pub fn insertAfter(list: *Self, node: *Node, new_node: *Node) void {
             new_node.prev = node;
             if (node.next) |next_node| {
                 // Intermediate node.
@@ -222,7 +222,7 @@ pub fn doubly_linked_list(comptime T: type) type {
         /// Arguments:
         ///     node: Pointer to a node in the list.
         ///     new_node: Pointer to the new node to insert.
-        pub fn insert_before(list: *Self, node: *Node, new_node: *Node) void {
+        pub fn insertBefore(list: *Self, node: *Node, new_node: *Node) void {
             new_node.next = node;
             if (node.prev) |prev_node| {
                 // Intermediate node.
@@ -243,7 +243,7 @@ pub fn doubly_linked_list(comptime T: type) type {
         /// Arguments:
         ///     list1: the list to concatenate onto
         ///     list2: the list to be concatenated
-        pub fn concat_by_moving(list1: *Self, list2: *Self) void {
+        pub fn concatByMoving(list1: *Self, list2: *Self) void {
             const l2_first = list2.first orelse return;
             if (list1.last) |l1_last| {
                 l1_last.next = list2.first;
@@ -332,7 +332,7 @@ pub fn doubly_linked_list(comptime T: type) type {
         ///
         /// Returns:
         ///     A pointer to the first node in the list.
-        pub fn pop_first(list: *Self) ?*Node {
+        pub fn popFirst(list: *Self) ?*Node {
             const first = list.first orelse return null;
             list.remove(first);
             return first;

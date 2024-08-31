@@ -9,7 +9,7 @@ const nl = if (@import("builtin").os.tag == .windows) "\r\n" else "\n";
 // *                                                       *
 // *********************************************************
 
-pub fn add_cases(cases: *tests.RunTranslatedCContext) void {
+pub fn addCases(cases: *tests.RunTranslatedCContext) void {
     cases.add("division of floating literals",
         \\#define _NO_CRT_STDIO_INLINE 1
         \\#include <stdio.h>

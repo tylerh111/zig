@@ -10,7 +10,7 @@ const Opcode = spec.Opcode;
 const ResultId = spec.IdResult;
 const Word = spec.Word;
 
-fn can_deduplicate(opcode: Opcode) bool {
+fn canDeduplicate(opcode: Opcode) bool {
     return switch (opcode) {
         .OpTypeForwardPointer => false, // Don't need to handle these
         .OpGroupDecorate, .OpGroupMemberDecorate => {
@@ -127,7 +127,7 @@ const ModuleInfo = struct {
             entities: std.AutoArrayHashMapUnmanaged(ResultId, Entity),
             ids: []const ResultId,
 
-            pub fn less_than(ctx: @This(), a_index: usize, b_index: usize) bool {
+            pub fn lessThan(ctx: @This(), a_index: usize, b_index: usize) bool {
                 // If any index is not in the entities set, its because its not a
                 // deduplicatable result-id. Those should be considered largest and
                 // float to the end.
@@ -164,7 +164,7 @@ const ModuleInfo = struct {
         };
     }
 
-    fn entity_decorations_by_index(self: ModuleInfo, index: usize) []const Entity {
+    fn entityDecorationsByIndex(self: ModuleInfo, index: usize) []const Entity {
         const values = self.entities.values();
         const first_decoration = values[index].first_decoration;
         if (index == values.len - 1) {
@@ -190,7 +190,7 @@ const EntityContext = struct {
         self.* = undefined;
     }
 
-    fn equalize_map_capacity(self: *EntityContext) !void {
+    fn equalizeMapCapacity(self: *EntityContext) !void {
         const cap = @max(self.ptr_map_a.capacity(), self.ptr_map_b.capacity());
         try self.ptr_map_a.ensureTotalCapacity(self.a, cap);
         try self.ptr_map_b.ensureTotalCapacity(self.a, cap);
@@ -203,7 +203,7 @@ const EntityContext = struct {
         return hasher.final();
     }
 
-    fn hash_inner(self: *EntityContext, hasher: *std.hash.Wyhash, id: ResultId) error{OutOfMemory}!void {
+    fn hashInner(self: *EntityContext, hasher: *std.hash.Wyhash, id: ResultId) error{OutOfMemory}!void {
         const index = self.info.entities.getIndex(id) orelse {
             // Index unknown, the type or constant may depend on another result-id
             // that couldn't be deduplicated and so it wasn't added to info.entities.
@@ -270,7 +270,7 @@ const EntityContext = struct {
         }
     }
 
-    fn hash_entity(self: *EntityContext, hasher: *std.hash.Wyhash, entity: ModuleInfo.Entity) !void {
+    fn hashEntity(self: *EntityContext, hasher: *std.hash.Wyhash, entity: ModuleInfo.Entity) !void {
         std.hash.autoHash(hasher, entity.kind);
         // Process operands
         const operands = entity.operands(self.binary);
@@ -295,7 +295,7 @@ const EntityContext = struct {
         return try self.eqlInner(a, b);
     }
 
-    fn eql_inner(self: *EntityContext, id_a: ResultId, id_b: ResultId) error{OutOfMemory}!bool {
+    fn eqlInner(self: *EntityContext, id_a: ResultId, id_b: ResultId) error{OutOfMemory}!bool {
         const maybe_index_a = self.info.entities.getIndex(id_a);
         const maybe_index_b = self.info.entities.getIndex(id_b);
 
@@ -364,7 +364,7 @@ const EntityContext = struct {
         return true;
     }
 
-    fn eql_entities(self: *EntityContext, entity_a: ModuleInfo.Entity, entity_b: ModuleInfo.Entity) !bool {
+    fn eqlEntities(self: *EntityContext, entity_a: ModuleInfo.Entity, entity_b: ModuleInfo.Entity) !bool {
         if (entity_a.kind != entity_b.kind) {
             return false;
         } else if (entity_a.result_id_index != entity_a.result_id_index) {

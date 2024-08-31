@@ -84,7 +84,7 @@ pub const Instruction = struct {
             return .{ .rip = .{ .ptr_size = ptr_size, .disp = disp } };
         }
 
-        pub fn is_segment_register(mem: Memory) bool {
+        pub fn isSegmentRegister(mem: Memory) bool {
             return switch (mem) {
                 .moffs => true,
                 .rip => false,
@@ -103,14 +103,14 @@ pub const Instruction = struct {
             };
         }
 
-        pub fn scale_index(mem: Memory) ?ScaleIndex {
+        pub fn scaleIndex(mem: Memory) ?ScaleIndex {
             return switch (mem) {
                 .moffs, .rip => null,
                 .sib => |s| if (s.scale_index.scale > 0) s.scale_index else null,
             };
         }
 
-        pub fn bit_size(mem: Memory) u64 {
+        pub fn bitSize(mem: Memory) u64 {
             return switch (mem) {
                 .rip => |r| r.ptr_size.bitSize(),
                 .sib => |s| s.ptr_size.bitSize(),
@@ -126,7 +126,7 @@ pub const Instruction = struct {
         imm: Immediate,
 
         /// Returns the bitsize of the operand.
-        pub fn bit_size(op: Operand) u64 {
+        pub fn bitSize(op: Operand) u64 {
             return switch (op) {
                 .none => unreachable,
                 .reg => |reg| reg.bitSize(),
@@ -137,7 +137,7 @@ pub const Instruction = struct {
 
         /// Returns true if the operand is a segment register.
         /// Asserts the operand is either register or memory.
-        pub fn is_segment_register(op: Operand) bool {
+        pub fn isSegmentRegister(op: Operand) bool {
             return switch (op) {
                 .none => unreachable,
                 .reg => |reg| reg.class() == .segment,
@@ -146,7 +146,7 @@ pub const Instruction = struct {
             };
         }
 
-        pub fn is_base_extended(op: Operand) bool {
+        pub fn isBaseExtended(op: Operand) bool {
             return switch (op) {
                 .none, .imm => false,
                 .reg => |reg| reg.isExtended(),
@@ -154,7 +154,7 @@ pub const Instruction = struct {
             };
         }
 
-        pub fn is_index_extended(op: Operand) bool {
+        pub fn isIndexExtended(op: Operand) bool {
             return switch (op) {
                 .none, .reg, .imm => false,
                 .mem => |mem| if (mem.scaleIndex()) |si| si.index.isExtended() else false,
@@ -251,7 +251,7 @@ pub const Instruction = struct {
             }
         }
 
-        pub fn fmt_print(op: Operand, enc_op: Encoding.Op) std.fmt.Formatter(fmt) {
+        pub fn fmtPrint(op: Operand, enc_op: Encoding.Op) std.fmt.Formatter(fmt) {
             return .{ .data = .{ .op = op, .enc_op = enc_op } };
         }
     };
@@ -361,7 +361,7 @@ pub const Instruction = struct {
         }
     }
 
-    fn encode_opcode(inst: Instruction, encoder: anytype) !void {
+    fn encodeOpcode(inst: Instruction, encoder: anytype) !void {
         const opcode = inst.encoding.opcode();
         const first = @intFromBool(inst.encoding.mandatoryPrefix() != null);
         const final = opcode.len - 1;
@@ -372,7 +372,7 @@ pub const Instruction = struct {
         }
     }
 
-    fn encode_legacy_prefixes(inst: Instruction, encoder: anytype) !void {
+    fn encodeLegacyPrefixes(inst: Instruction, encoder: anytype) !void {
         const enc = inst.encoding;
         const data = enc.data;
         const op_en = data.op_en;
@@ -420,7 +420,7 @@ pub const Instruction = struct {
         try encoder.legacyPrefixes(legacy);
     }
 
-    fn encode_rex_prefix(inst: Instruction, encoder: anytype) !void {
+    fn encodeRexPrefix(inst: Instruction, encoder: anytype) !void {
         const op_en = inst.encoding.data.op_en;
 
         var rex = Rex{};
@@ -452,7 +452,7 @@ pub const Instruction = struct {
         try encoder.rex(rex);
     }
 
-    fn encode_vex_prefix(inst: Instruction, encoder: anytype) !void {
+    fn encodeVexPrefix(inst: Instruction, encoder: anytype) !void {
         const op_en = inst.encoding.data.op_en;
         const opc = inst.encoding.opcode();
         const mand_pre = inst.encoding.mandatoryPrefix();
@@ -511,12 +511,12 @@ pub const Instruction = struct {
         try encoder.vex(vex);
     }
 
-    fn encode_mandatory_prefix(inst: Instruction, encoder: anytype) !void {
+    fn encodeMandatoryPrefix(inst: Instruction, encoder: anytype) !void {
         const prefix = inst.encoding.mandatoryPrefix() orelse return;
         try encoder.opcode_1byte(prefix);
     }
 
-    fn encode_memory(encoding: Encoding, mem: Memory, operand: Operand, encoder: anytype) !void {
+    fn encodeMemory(encoding: Encoding, mem: Memory, operand: Operand, encoder: anytype) !void {
         const operand_enc = switch (operand) {
             .reg => |reg| reg.lowEnc(),
             .none => encoding.modRmExt(),
@@ -606,7 +606,7 @@ pub const Instruction = struct {
         }
     }
 
-    fn encode_imm(imm: Immediate, kind: Encoding.Op, encoder: anytype) !void {
+    fn encodeImm(imm: Immediate, kind: Encoding.Op, encoder: anytype) !void {
         const raw = imm.asUnsigned(kind.immBitSize());
         switch (kind.immBitSize()) {
             8 => try encoder.imm8(@as(u8, @intCast(raw))),
@@ -648,7 +648,7 @@ pub const LegacyPrefixes = packed struct {
 
     padding: u5 = 0,
 
-    pub fn set_segment_override(self: *LegacyPrefixes, reg: Register) void {
+    pub fn setSegmentOverride(self: *LegacyPrefixes, reg: Register) void {
         assert(reg.class() == .segment);
         switch (reg) {
             .cs => self.prefix_2e = true,
@@ -661,14 +661,14 @@ pub const LegacyPrefixes = packed struct {
         }
     }
 
-    pub fn set16_bit_override(self: *LegacyPrefixes) void {
+    pub fn set16BitOverride(self: *LegacyPrefixes) void {
         self.prefix_66 = true;
     }
 };
 
 pub const Options = struct { allow_frame_locs: bool = false, allow_symbols: bool = false };
 
-fn encoder(comptime T: type, comptime opts: Options) type {
+fn Encoder(comptime T: type, comptime opts: Options) type {
     return struct {
         writer: T,
 
@@ -680,7 +680,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         // --------
 
         /// Encodes legacy prefixes
-        pub fn legacy_prefixes(self: Self, prefixes: LegacyPrefixes) !void {
+        pub fn legacyPrefixes(self: Self, prefixes: LegacyPrefixes) !void {
             if (@as(u16, @bitCast(prefixes)) != 0) {
                 // Hopefully this path isn't taken very often, so we'll do it the slow way for now
 
@@ -716,7 +716,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         /// Use 16 bit operand size
         ///
         /// Note that this flag is overridden by REX.W, if both are present.
-        pub fn prefix16_bit_mode(self: Self) !void {
+        pub fn prefix16BitMode(self: Self) !void {
             try self.writer.writeByte(0x66);
         }
 
@@ -800,7 +800,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         /// Encodes a 1 byte opcode with a reg field
         ///
         /// Remember to add a REX prefix byte if reg is extended!
-        pub fn opcode_with_reg(self: Self, opcode: u8, reg: u3) !void {
+        pub fn opcode_withReg(self: Self, opcode: u8, reg: u3) !void {
             assert(opcode & 0b111 == 0);
             try self.writer.writeByte(opcode | reg);
         }
@@ -812,7 +812,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         /// Construct a ModR/M byte given all the fields
         ///
         /// Remember to add a REX prefix byte if reg or rm are extended!
-        pub fn mod_rm(self: Self, mod: u2, reg_or_opx: u3, rm: u3) !void {
+        pub fn modRm(self: Self, mod: u2, reg_or_opx: u3, rm: u3) !void {
             try self.writer.writeByte(@as(u8, mod) << 6 | @as(u8, reg_or_opx) << 3 | rm);
         }
 
@@ -821,7 +821,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         ///
         /// Note reg's effective address is always just reg for the ModR/M byte.
         /// Remember to add a REX prefix byte if reg or rm are extended!
-        pub fn mod_rm_direct(self: Self, reg_or_opx: u3, rm: u3) !void {
+        pub fn modRm_direct(self: Self, reg_or_opx: u3, rm: u3) !void {
             try self.modRm(0b11, reg_or_opx, rm);
         }
 
@@ -830,7 +830,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         ///
         /// Note reg's effective address is always just reg for the ModR/M byte.
         /// Remember to add a REX prefix byte if reg or rm are extended!
-        pub fn mod_rm_indirect_disp0(self: Self, reg_or_opx: u3, rm: u3) !void {
+        pub fn modRm_indirectDisp0(self: Self, reg_or_opx: u3, rm: u3) !void {
             assert(rm != 4 and rm != 5);
             try self.modRm(0b00, reg_or_opx, rm);
         }
@@ -840,7 +840,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         ///
         /// Note reg's effective address is always just reg for the ModR/M byte.
         /// Remember to add a REX prefix byte if reg or rm are extended!
-        pub fn mod_rm_sibdisp0(self: Self, reg_or_opx: u3) !void {
+        pub fn modRm_SIBDisp0(self: Self, reg_or_opx: u3) !void {
             try self.modRm(0b00, reg_or_opx, 0b100);
         }
 
@@ -849,7 +849,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         ///
         /// Note reg's effective address is always just reg for the ModR/M byte.
         /// Remember to add a REX prefix byte if reg or rm are extended!
-        pub fn mod_rm_ripdisp32(self: Self, reg_or_opx: u3) !void {
+        pub fn modRm_RIPDisp32(self: Self, reg_or_opx: u3) !void {
             try self.modRm(0b00, reg_or_opx, 0b101);
         }
 
@@ -858,7 +858,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         ///
         /// Note reg's effective address is always just reg for the ModR/M byte.
         /// Remember to add a REX prefix byte if reg or rm are extended!
-        pub fn mod_rm_indirect_disp8(self: Self, reg_or_opx: u3, rm: u3) !void {
+        pub fn modRm_indirectDisp8(self: Self, reg_or_opx: u3, rm: u3) !void {
             assert(rm != 4);
             try self.modRm(0b01, reg_or_opx, rm);
         }
@@ -868,7 +868,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         ///
         /// Note reg's effective address is always just reg for the ModR/M byte.
         /// Remember to add a REX prefix byte if reg or rm are extended!
-        pub fn mod_rm_sibdisp8(self: Self, reg_or_opx: u3) !void {
+        pub fn modRm_SIBDisp8(self: Self, reg_or_opx: u3) !void {
             try self.modRm(0b01, reg_or_opx, 0b100);
         }
 
@@ -877,7 +877,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         ///
         /// Note reg's effective address is always just reg for the ModR/M byte.
         /// Remember to add a REX prefix byte if reg or rm are extended!
-        pub fn mod_rm_indirect_disp32(self: Self, reg_or_opx: u3, rm: u3) !void {
+        pub fn modRm_indirectDisp32(self: Self, reg_or_opx: u3, rm: u3) !void {
             assert(rm != 4);
             try self.modRm(0b10, reg_or_opx, rm);
         }
@@ -887,7 +887,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         ///
         /// Note reg's effective address is always just reg for the ModR/M byte.
         /// Remember to add a REX prefix byte if reg or rm are extended!
-        pub fn mod_rm_sibdisp32(self: Self, reg_or_opx: u3) !void {
+        pub fn modRm_SIBDisp32(self: Self, reg_or_opx: u3) !void {
             try self.modRm(0b10, reg_or_opx, 0b100);
         }
 
@@ -906,7 +906,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         /// r/m effective address: [base + scale * index]
         ///
         /// Remember to add a REX prefix byte if index or base are extended!
-        pub fn sib_scale_index_base(self: Self, scale: u2, index: u3, base: u3) !void {
+        pub fn sib_scaleIndexBase(self: Self, scale: u2, index: u3, base: u3) !void {
             assert(base != 5);
 
             try self.sib(scale, index, base);
@@ -916,7 +916,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         /// r/m effective address: [scale * index + disp32]
         ///
         /// Remember to add a REX prefix byte if index or base are extended!
-        pub fn sib_scale_index_disp32(self: Self, scale: u2, index: u3) !void {
+        pub fn sib_scaleIndexDisp32(self: Self, scale: u2, index: u3) !void {
             // scale is actually ignored
             // index = 4 means no index if and only if we haven't extended the register
             // TODO enforce this
@@ -951,7 +951,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         /// r/m effective address: [base + scale * index + disp8]
         ///
         /// Remember to add a REX prefix byte if index or base are extended!
-        pub fn sib_scale_index_base_disp8(self: Self, scale: u2, index: u3, base: u3) !void {
+        pub fn sib_scaleIndexBaseDisp8(self: Self, scale: u2, index: u3, base: u3) !void {
             try self.sib(scale, index, base);
         }
 
@@ -959,7 +959,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         /// r/m effective address: [base + disp8]
         ///
         /// Remember to add a REX prefix byte if index or base are extended!
-        pub fn sib_base_disp8(self: Self, base: u3) !void {
+        pub fn sib_baseDisp8(self: Self, base: u3) !void {
             // scale is ignored
             // index = 4 means no index
             try self.sib(0, 4, base);
@@ -969,7 +969,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         /// r/m effective address: [base + scale * index + disp32]
         ///
         /// Remember to add a REX prefix byte if index or base are extended!
-        pub fn sib_scale_index_base_disp32(self: Self, scale: u2, index: u3, base: u3) !void {
+        pub fn sib_scaleIndexBaseDisp32(self: Self, scale: u2, index: u3, base: u3) !void {
             try self.sib(scale, index, base);
         }
 
@@ -977,7 +977,7 @@ fn encoder(comptime T: type, comptime opts: Options) type {
         /// r/m effective address: [base + disp32]
         ///
         /// Remember to add a REX prefix byte if index or base are extended!
-        pub fn sib_base_disp32(self: Self, base: u3) !void {
+        pub fn sib_baseDisp32(self: Self, base: u3) !void {
             // scale is ignored
             // index = 4 means no index
             try self.sib(0, 4, base);
@@ -1038,7 +1038,7 @@ pub const Rex = struct {
     b: bool = false,
     present: bool = false,
 
-    pub fn is_set(rex: Rex) bool {
+    pub fn isSet(rex: Rex) bool {
         return rex.w or rex.r or rex.x or rex.b;
     }
 };
@@ -1063,13 +1063,13 @@ pub const Vex = struct {
     } = .@"0f",
     v: Register = .ymm0,
 
-    pub fn is3_byte(vex: Vex) bool {
+    pub fn is3Byte(vex: Vex) bool {
         return vex.w or vex.x or vex.b or vex.m != .@"0f";
     }
 };
 
 // Tests
-fn expect_equal_hex_strings(expected: []const u8, given: []const u8, assembly: []const u8) !void {
+fn expectEqualHexStrings(expected: []const u8, given: []const u8, assembly: []const u8) !void {
     assert(expected.len > 0);
     if (std.mem.eql(u8, expected, given)) return;
     const expected_fmt = try std.fmt.allocPrint(testing.allocator, "{x}", .{std.fmt.fmtSliceHexLower(expected)});
@@ -1854,7 +1854,7 @@ test "lower NP encoding" {
     try expectEqualHexStrings("\x0f\x05", enc.code(), "syscall");
 }
 
-fn invalid_instruction(mnemonic: Instruction.Mnemonic, ops: []const Instruction.Operand) !void {
+fn invalidInstruction(mnemonic: Instruction.Mnemonic, ops: []const Instruction.Operand) !void {
     const err = Instruction.new(.none, mnemonic, ops);
     try testing.expectError(error.InvalidInstruction, err);
 }
@@ -1907,7 +1907,7 @@ test "invalid instruction" {
     });
 }
 
-fn cannot_encode(mnemonic: Instruction.Mnemonic, ops: []const Instruction.Operand) !void {
+fn cannotEncode(mnemonic: Instruction.Mnemonic, ops: []const Instruction.Operand) !void {
     try testing.expectError(error.CannotEncode, Instruction.new(.none, mnemonic, ops));
 }
 
@@ -2079,7 +2079,7 @@ const Assembler = struct {
             return result;
         }
 
-        fn seek_to(it: *Tokenizer, pos: usize) void {
+        fn seekTo(it: *Tokenizer, pos: usize) void {
             it.pos = pos;
         }
     };
@@ -2182,7 +2182,7 @@ const Assembler = struct {
         }
     }
 
-    fn mnemonic_from_string(bytes: []const u8) ?Instruction.Mnemonic {
+    fn mnemonicFromString(bytes: []const u8) ?Instruction.Mnemonic {
         const ti = @typeInfo(Instruction.Mnemonic).Enum;
         inline for (ti.fields) |field| {
             if (std.mem.eql(u8, bytes, field.name)) {
@@ -2192,7 +2192,7 @@ const Assembler = struct {
         return null;
     }
 
-    fn parse_operand_rule(as: *Assembler, rule: anytype, ops: *[4]Instruction.Operand) ParseError!void {
+    fn parseOperandRule(as: *Assembler, rule: anytype, ops: *[4]Instruction.Operand) ParseError!void {
         inline for (rule, 0..) |cond, i| {
             comptime assert(i < 4);
             if (i > 0) {
@@ -2235,7 +2235,7 @@ const Assembler = struct {
         }
     }
 
-    fn register_from_string(bytes: []const u8) ?Register {
+    fn registerFromString(bytes: []const u8) ?Register {
         const ti = @typeInfo(Register).Enum;
         inline for (ti.fields) |field| {
             if (std.mem.eql(u8, bytes, field.name)) {
@@ -2245,7 +2245,7 @@ const Assembler = struct {
         return null;
     }
 
-    fn parse_memory(as: *Assembler) ParseError!Instruction.Memory {
+    fn parseMemory(as: *Assembler) ParseError!Instruction.Memory {
         const ptr_size: ?Instruction.Memory.PtrSize = blk: {
             const pos = as.it.pos;
             const ptr_size = as.parsePtrSize() catch |err| switch (err) {
@@ -2323,7 +2323,7 @@ const Assembler = struct {
         offset: ?u64 = null,
     };
 
-    fn parse_memory_rule(as: *Assembler, rule: anytype) ParseError!Instruction.MemoryParseResult {
+    fn parseMemoryRule(as: *Assembler, rule: anytype) ParseError!Instruction.MemoryParseResult {
         var res: MemoryParseResult = .{};
         inline for (rule, 0..) |cond, i| {
             if (@typeInfo(@TypeOf(cond)) != .EnumLiteral) {
@@ -2390,7 +2390,7 @@ const Assembler = struct {
         return res;
     }
 
-    fn parse_ptr_size(as: *Assembler) ParseError!Instruction.Memory.PtrSize {
+    fn parsePtrSize(as: *Assembler) ParseError!Instruction.Memory.PtrSize {
         const size = try as.expect(.string);
         try as.skip(1, .{.space});
         const ptr = try as.expect(.string);

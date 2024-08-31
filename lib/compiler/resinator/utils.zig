@@ -13,13 +13,13 @@ pub const UncheckedSliceWriter = struct {
         self.pos += 1;
     }
 
-    pub fn write_slice(self: *Self, slice: []const u8) void {
+    pub fn writeSlice(self: *Self, slice: []const u8) void {
         for (slice) |c| {
             self.write(c);
         }
     }
 
-    pub fn get_written(self: Self) []u8 {
+    pub fn getWritten(self: Self) []u8 {
         return self.slice[0..self.pos];
     }
 };
@@ -27,7 +27,7 @@ pub const UncheckedSliceWriter = struct {
 /// Cross-platform 'std.fs.Dir.openFile' wrapper that will always return IsDir if
 /// a directory is attempted to be opened.
 /// TODO: Remove once https://github.com/ziglang/zig/issues/5732 is addressed.
-pub fn open_file_not_dir(cwd: std.fs.Dir, path: []const u8, flags: std.fs.File.OpenFlags) std.fs.File.OpenError!std.fs.File {
+pub fn openFileNotDir(cwd: std.fs.Dir, path: []const u8, flags: std.fs.File.OpenFlags) std.fs.File.OpenError!std.fs.File {
     const file = try cwd.openFile(path, flags);
     errdefer file.close();
     // https://github.com/ziglang/zig/issues/5732
@@ -42,7 +42,7 @@ pub fn open_file_not_dir(cwd: std.fs.Dir, path: []const u8, flags: std.fs.File.O
 
 /// Emulates the Windows implementation of `iswdigit`, but only returns true
 /// for the non-ASCII digits that `iswdigit` on Windows would return true for.
-pub fn is_non_ascii_digit(c: u21) bool {
+pub fn isNonAsciiDigit(c: u21) bool {
     return switch (c) {
         '²',
         '³',
@@ -86,7 +86,7 @@ pub const ErrorMessageType = enum { err, warning, note };
 
 /// Used for generic colored errors/warnings/notes, more context-specific error messages
 /// are handled elsewhere.
-pub fn render_error_message(writer: anytype, config: std.io.tty.Config, msg_type: ErrorMessageType, comptime format: []const u8, args: anytype) !void {
+pub fn renderErrorMessage(writer: anytype, config: std.io.tty.Config, msg_type: ErrorMessageType, comptime format: []const u8, args: anytype) !void {
     switch (msg_type) {
         .err => {
             try config.setColor(writer, .bold);
@@ -113,7 +113,7 @@ pub fn render_error_message(writer: anytype, config: std.io.tty.Config, msg_type
     try config.setColor(writer, .reset);
 }
 
-pub fn is_line_ending_pair(first: u8, second: u8) bool {
+pub fn isLineEndingPair(first: u8, second: u8) bool {
     if (first != '\r' and first != '\n') return false;
     if (second != '\r' and second != '\n') return false;
 

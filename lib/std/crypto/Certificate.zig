@@ -34,7 +34,7 @@ pub const Algorithm = enum {
         .{ &[_]u8{ 0x2B, 0x65, 0x70 }, .curveEd25519 },
     });
 
-    pub fn hash(comptime algorithm: Algorithm) type {
+    pub fn Hash(comptime algorithm: Algorithm) type {
         return switch (algorithm) {
             .sha1WithRSAEncryption => crypto.hash.Sha1,
             .ecdsa_with_SHA224, .sha224WithRSAEncryption => crypto.hash.sha2.Sha224,
@@ -100,7 +100,7 @@ pub const NamedCurve = enum {
         .{ &[_]u8{ 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x03, 0x01, 0x07 }, .X9_62_prime256v1 },
     });
 
-    pub fn curve(comptime curve: NamedCurve) type {
+    pub fn Curve(comptime curve: NamedCurve) type {
         return switch (curve) {
             .X9_62_prime256v1 => crypto.ecc.P256,
             .secp384r1 => crypto.ecc.P384,
@@ -208,7 +208,7 @@ pub const Parsed = struct {
         return p.slice(p.subject_slice);
     }
 
-    pub fn common_name(p: Parsed) []const u8 {
+    pub fn commonName(p: Parsed) []const u8 {
         return p.slice(p.common_name_slice);
     }
 
@@ -216,11 +216,11 @@ pub const Parsed = struct {
         return p.slice(p.signature_slice);
     }
 
-    pub fn pub_key(p: Parsed) []const u8 {
+    pub fn pubKey(p: Parsed) []const u8 {
         return p.slice(p.pub_key_slice);
     }
 
-    pub fn pub_key_sig_algo(p: Parsed) []const u8 {
+    pub fn pubKeySigAlgo(p: Parsed) []const u8 {
         return p.slice(p.pub_key_signature_algorithm_slice);
     }
 
@@ -228,7 +228,7 @@ pub const Parsed = struct {
         return p.slice(p.message_slice);
     }
 
-    pub fn subject_alt_name(p: Parsed) []const u8 {
+    pub fn subjectAltName(p: Parsed) []const u8 {
         return p.slice(p.subject_alt_name_slice);
     }
 
@@ -307,7 +307,7 @@ pub const Parsed = struct {
         CertificateFieldHasInvalidLength,
     };
 
-    pub fn verify_host_name(parsed_subject: Parsed, host_name: []const u8) VerifyHostNameError!void {
+    pub fn verifyHostName(parsed_subject: Parsed, host_name: []const u8) VerifyHostNameError!void {
         // If the Subject Alternative Names extension is present, this is
         // what to check. Otherwise, only the common name is checked.
         const subject_alt_name = parsed_subject.subjectAltName();
@@ -344,7 +344,7 @@ pub const Parsed = struct {
     // character * which is considered to match any single domain name
     // component or component fragment. E.g., *.a.com matches foo.a.com but
     // not bar.foo.a.com. f*.com matches foo.com but not bar.com.
-    fn check_host_name(host_name: []const u8, dns_name: []const u8) bool {
+    fn checkHostName(host_name: []const u8, dns_name: []const u8) bool {
         if (mem.eql(u8, dns_name, host_name)) {
             return true; // exact match
         }
@@ -533,7 +533,7 @@ pub fn contents(cert: Certificate, elem: der.Element) []const u8 {
 
 pub const ParseBitStringError = error{ CertificateFieldHasWrongDataType, CertificateHasInvalidBitString };
 
-pub fn parse_bit_string(cert: Certificate, elem: der.Element) !der.Element.Slice {
+pub fn parseBitString(cert: Certificate, elem: der.Element) !der.Element.Slice {
     if (elem.identifier.tag != .bitstring) return error.CertificateFieldHasWrongDataType;
     if (cert.buffer[elem.slice.start] != 0) return error.CertificateHasInvalidBitString;
     return .{ .start = elem.slice.start + 1, .end = elem.slice.end };
@@ -542,7 +542,7 @@ pub fn parse_bit_string(cert: Certificate, elem: der.Element) !der.Element.Slice
 pub const ParseTimeError = error{ CertificateTimeInvalid, CertificateFieldHasWrongDataType };
 
 /// Returns number of seconds since epoch.
-pub fn parse_time(cert: Certificate, elem: der.Element) ParseTimeError!u64 {
+pub fn parseTime(cert: Certificate, elem: der.Element) ParseTimeError!u64 {
     const bytes = cert.contents(elem);
     switch (elem.identifier.tag) {
         .utc_time => {
@@ -596,7 +596,7 @@ const Date = struct {
     second: u8,
 
     /// Convert to number of seconds since epoch.
-    pub fn to_seconds(date: Date) u64 {
+    pub fn toSeconds(date: Date) u64 {
         var sec: u64 = 0;
 
         {
@@ -628,7 +628,7 @@ const Date = struct {
     }
 };
 
-pub fn parse_time_digits(text: *const [2]u8, min: u8, max: u8) !u8 {
+pub fn parseTimeDigits(text: *const [2]u8, min: u8, max: u8) !u8 {
     const result = if (use_vectors) result: {
         const nn: @Vector(2, u16) = .{ text[0], text[1] };
         const zero: @Vector(2, u16) = .{ '0', '0' };
@@ -652,7 +652,7 @@ test parseTimeDigits {
     try expectError(error.CertificateTimeInvalid, parseTimeDigits("Di", 0, 99));
 }
 
-pub fn parse_year4(text: *const [4]u8) !u16 {
+pub fn parseYear4(text: *const [4]u8) !u16 {
     const result = if (use_vectors) result: {
         const nnnn: @Vector(4, u32) = .{ text[0], text[1], text[2], text[3] };
         const zero: @Vector(4, u32) = .{ '0', '0', '0', '0' };
@@ -675,29 +675,29 @@ test parseYear4 {
     try expectError(error.CertificateTimeInvalid, parseYear4("r:bQ"));
 }
 
-pub fn parse_algorithm(bytes: []const u8, element: der.Element) ParseEnumError!Algorithm {
+pub fn parseAlgorithm(bytes: []const u8, element: der.Element) ParseEnumError!Algorithm {
     return parseEnum(Algorithm, bytes, element);
 }
 
-pub fn parse_algorithm_category(bytes: []const u8, element: der.Element) ParseEnumError!AlgorithmCategory {
+pub fn parseAlgorithmCategory(bytes: []const u8, element: der.Element) ParseEnumError!AlgorithmCategory {
     return parseEnum(AlgorithmCategory, bytes, element);
 }
 
-pub fn parse_attribute(bytes: []const u8, element: der.Element) ParseEnumError!Attribute {
+pub fn parseAttribute(bytes: []const u8, element: der.Element) ParseEnumError!Attribute {
     return parseEnum(Attribute, bytes, element);
 }
 
-pub fn parse_named_curve(bytes: []const u8, element: der.Element) ParseEnumError!NamedCurve {
+pub fn parseNamedCurve(bytes: []const u8, element: der.Element) ParseEnumError!NamedCurve {
     return parseEnum(NamedCurve, bytes, element);
 }
 
-pub fn parse_extension_id(bytes: []const u8, element: der.Element) ParseEnumError!ExtensionId {
+pub fn parseExtensionId(bytes: []const u8, element: der.Element) ParseEnumError!ExtensionId {
     return parseEnum(ExtensionId, bytes, element);
 }
 
 pub const ParseEnumError = error{ CertificateFieldHasWrongDataType, CertificateHasUnrecognizedObjectId };
 
-fn parse_enum(comptime E: type, bytes: []const u8, element: der.Element) ParseEnumError!E {
+fn parseEnum(comptime E: type, bytes: []const u8, element: der.Element) ParseEnumError!E {
     if (element.identifier.tag != .object_identifier)
         return error.CertificateFieldHasWrongDataType;
     const oid_bytes = bytes[element.slice.start..element.slice.end];
@@ -706,7 +706,7 @@ fn parse_enum(comptime E: type, bytes: []const u8, element: der.Element) ParseEn
 
 pub const ParseVersionError = error{ UnsupportedCertificateVersion, CertificateFieldHasInvalidLength };
 
-pub fn parse_version(bytes: []const u8, version_elem: der.Element) ParseVersionError!Version {
+pub fn parseVersion(bytes: []const u8, version_elem: der.Element) ParseVersionError!Version {
     if (@as(u8, @bitCast(version_elem.identifier)) != 0xa0)
         return .v1;
 
@@ -726,7 +726,7 @@ pub fn parse_version(bytes: []const u8, version_elem: der.Element) ParseVersionE
     return error.UnsupportedCertificateVersion;
 }
 
-fn verify_rsa(
+fn verifyRsa(
     comptime Hash: type,
     message: []const u8,
     sig: []const u8,
@@ -833,7 +833,7 @@ fn verify_ecdsa(
     }
 }
 
-fn verify_ed25519(
+fn verifyEd25519(
     message: []const u8,
     encoded_sig: []const u8,
     pub_key_algo: Parsed.PubKeyAlgo,
@@ -956,7 +956,7 @@ pub const rsa = struct {
     const Fe = Modulus.Fe;
 
     pub const PSSSignature = struct {
-        pub fn from_bytes(comptime modulus_len: usize, msg: []const u8) [modulus_len]u8 {
+        pub fn fromBytes(comptime modulus_len: usize, msg: []const u8) [modulus_len]u8 {
             var result = [1]u8{0} ** modulus_len;
             std.mem.copyForwards(u8, &result, msg);
             return result;
@@ -969,7 +969,7 @@ pub const rsa = struct {
             EMSA_PSS_VERIFY(msg, &em_dec, mod_bits - 1, Hash.digest_length, Hash) catch unreachable;
         }
 
-        fn emsa_pss_verify(msg: []const u8, em: []const u8, emBit: usize, sLen: usize, comptime Hash: type) !void {
+        fn EMSA_PSS_VERIFY(msg: []const u8, em: []const u8, emBit: usize, sLen: usize, comptime Hash: type) !void {
             // 1.   If the length of M is greater than the input limitation for
             //      the hash function (2^61 - 1 octets for SHA-1), output
             //      "inconsistent" and stop.
@@ -1078,7 +1078,7 @@ pub const rsa = struct {
             }
         }
 
-        fn mgf1(comptime Hash: type, out: []u8, seed: *const [Hash.digest_length]u8, len: usize) ![]u8 {
+        fn MGF1(comptime Hash: type, out: []u8, seed: *const [Hash.digest_length]u8, len: usize) ![]u8 {
             var counter: usize = 0;
             var idx: usize = 0;
             var c: [4]u8 = undefined;
@@ -1109,7 +1109,7 @@ pub const rsa = struct {
         n: Modulus,
         e: Fe,
 
-        pub fn from_bytes(pub_bytes: []const u8, modulus_bytes: []const u8) !PublicKey {
+        pub fn fromBytes(pub_bytes: []const u8, modulus_bytes: []const u8) !PublicKey {
             // Reject modulus below 512 bits.
             // 512-bit RSA was factored in 1999, so this limit barely means anything,
             // but establish some limit now to ratchet in what we can.
@@ -1134,7 +1134,7 @@ pub const rsa = struct {
             };
         }
 
-        pub fn parse_der(pub_key: []const u8) !struct { modulus: []const u8, exponent: []const u8 } {
+        pub fn parseDer(pub_key: []const u8) !struct { modulus: []const u8, exponent: []const u8 } {
             const pub_key_seq = try der.Element.parse(pub_key, 0);
             if (pub_key_seq.identifier.tag != .sequence) return error.CertificateFieldHasWrongDataType;
             const modulus_elem = try der.Element.parse(pub_key, pub_key_seq.slice.start);

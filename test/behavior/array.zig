@@ -43,7 +43,7 @@ test "arrays" {
     try expect(accumulator == 15);
     try expect(getArrayLen(&array) == 5);
 }
-fn get_array_len(a: []const u32) usize {
+fn getArrayLen(a: []const u32) usize {
     return a.len;
 }
 
@@ -53,7 +53,7 @@ test "array concat with undefined" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             {
                 var array = "hello".* ++ @as([5]u8, undefined);
                 array[5..10].* = "world".*;
@@ -166,7 +166,7 @@ test "array with sentinels" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test(is_ct: bool) !void {
+        fn doTheTest(is_ct: bool) !void {
             {
                 var zero_sized: [0:0xde]u8 = [_:0xde]u8{};
                 try expect(zero_sized[0] == 0xde);
@@ -238,7 +238,7 @@ test "implicit comptime in array type size" {
     try expect(arr.len == 11);
 }
 
-fn plus_one(x: u32) u32 {
+fn plusOne(x: u32) u32 {
     return x + 1;
 }
 
@@ -251,7 +251,7 @@ test "single-item pointer to array indexing and slicing" {
     try comptime testSingleItemPtrArrayIndexSlice();
 }
 
-fn test_single_item_ptr_array_index_slice() !void {
+fn testSingleItemPtrArrayIndexSlice() !void {
     {
         var array: [4]u8 = "aaaa".*;
         doSomeMangling(&array);
@@ -264,7 +264,7 @@ fn test_single_item_ptr_array_index_slice() !void {
     }
 }
 
-fn do_some_mangling(array: *[4]u8) void {
+fn doSomeMangling(array: *[4]u8) void {
     array[1] = 'z';
     array[2..3][0] = 'y';
 }
@@ -291,7 +291,7 @@ test "anonymous list literal syntax" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var array: [4]u8 = .{ 1, 2, 3, 4 };
             _ = &array;
             try expect(array[0] == 1);
@@ -329,7 +329,7 @@ test "read/write through global variable array of struct fields initialized via 
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try expect(storage[0].term == 1);
             storage[0] = MyStruct{ .term = 123 };
             try expect(storage[0].term == 123);
@@ -353,14 +353,14 @@ test "implicit cast single-item pointer" {
     try comptime testImplicitCastSingleItemPtr();
 }
 
-fn test_implicit_cast_single_item_ptr() !void {
+fn testImplicitCastSingleItemPtr() !void {
     var byte: u8 = 100;
     const slice = @as(*[1]u8, &byte)[0..];
     slice[0] += 1;
     try expect(byte == 101);
 }
 
-fn test_array_by_val_at_comptime(b: [2]u8) u8 {
+fn testArrayByValAtComptime(b: [2]u8) u8 {
     return b[0];
 }
 
@@ -486,7 +486,7 @@ test "anonymous literal in array" {
             a: usize = 2,
             b: usize = 4,
         };
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var array: [2]Foo = .{
                 .{ .a = 3 },
                 .{ .b = 3 },
@@ -508,7 +508,7 @@ test "access the null element of a null terminated array" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var array: [4:0]u8 = .{ 'a', 'o', 'e', 'u' };
             _ = &array;
             try expect(array[4] == 0);
@@ -528,7 +528,7 @@ test "type deduction for array subscript expression" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var array = [_]u8{ 0x55, 0xAA };
             var v0 = true;
             try expect(@as(u8, 0xAA) == array[if (v0) 1 else 0]);
@@ -548,7 +548,7 @@ test "sentinel element count towards the ABI size calculation" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             const T = extern struct {
                 fill_pre: u8 = 0x55,
                 data: [0:0]u8 = undefined,
@@ -602,7 +602,7 @@ test "type coercion of anon struct literal to array" {
             c: []const u8,
         };
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var x1: u8 = 42;
             _ = &x1;
             const t1 = .{ x1, 56, 54 };
@@ -637,7 +637,7 @@ test "type coercion of pointer to anon struct literal to pointer to array" {
             c: []const u8,
         };
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var x1: u8 = 42;
             _ = &x1;
             const t1 = &.{ x1, 56, 54 };
@@ -988,7 +988,7 @@ test "store array of array of structs at comptime" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const S = struct {
-        fn store_array_of_array_of_structs() u8 {
+        fn storeArrayOfArrayOfStructs() u8 {
             const S = struct {
                 x: u8,
             };

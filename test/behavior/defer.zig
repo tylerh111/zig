@@ -9,7 +9,7 @@ test "break and continue inside loop inside defer expression" {
     comptime testBreakContInDefer(10);
 }
 
-fn test_break_cont_in_defer(x: usize) void {
+fn testBreakContInDefer(x: usize) void {
     defer {
         var i: usize = 0;
         while (i < x) : (i += 1) {
@@ -38,7 +38,7 @@ test "errdefer does not apply to fn inside fn" {
     if (testNestedFnErrDefer()) |_| @panic("expected error") else |e| try expect(e == error.Bad);
 }
 
-fn test_nested_fn_err_defer() anyerror!void {
+fn testNestedFnErrDefer() anyerror!void {
     var a: i32 = 0;
     errdefer a += 1;
     const S = struct {
@@ -56,11 +56,11 @@ test "return variable while defer expression in scope to modify it" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try expect(notNull().? == 1);
         }
 
-        fn not_null() ?u8 {
+        fn notNull() ?u8 {
             var res: ?u8 = 1;
             defer res = null;
             return res;
@@ -74,7 +74,7 @@ test "return variable while defer expression in scope to modify it" {
 var result: [3]u8 = undefined;
 var index: usize = undefined;
 
-fn run_some_error_defers(x: bool) !bool {
+fn runSomeErrorDefers(x: bool) !bool {
     index = 0;
     defer {
         result[index] = 'a';
@@ -125,7 +125,7 @@ test "errdefer with payload" {
             }
             return error.One;
         }
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try expectError(error.One, foo());
         }
     };
@@ -151,7 +151,7 @@ test "reference to errdefer payload" {
             }
             return error.One;
         }
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try expectError(error.One, foo());
         }
     };

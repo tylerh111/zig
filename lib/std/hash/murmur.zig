@@ -12,7 +12,7 @@ pub const Murmur2_32 = struct {
         return @call(.always_inline, Self.hashWithSeed, .{ str, default_seed });
     }
 
-    pub fn hash_with_seed(str: []const u8, seed: u32) u32 {
+    pub fn hashWithSeed(str: []const u8, seed: u32) u32 {
         const m: u32 = 0x5bd1e995;
         const len: u32 = @truncate(str.len);
         var h1: u32 = seed ^ len;
@@ -44,11 +44,11 @@ pub const Murmur2_32 = struct {
         return h1;
     }
 
-    pub fn hash_uint32(v: u32) u32 {
+    pub fn hashUint32(v: u32) u32 {
         return @call(.always_inline, Self.hashUint32WithSeed, .{ v, default_seed });
     }
 
-    pub fn hash_uint32_with_seed(v: u32, seed: u32) u32 {
+    pub fn hashUint32WithSeed(v: u32, seed: u32) u32 {
         const m: u32 = 0x5bd1e995;
         const len: u32 = 4;
         var h1: u32 = seed ^ len;
@@ -64,11 +64,11 @@ pub const Murmur2_32 = struct {
         return h1;
     }
 
-    pub fn hash_uint64(v: u64) u32 {
+    pub fn hashUint64(v: u64) u32 {
         return @call(.always_inline, Self.hashUint64WithSeed, .{ v, default_seed });
     }
 
-    pub fn hash_uint64_with_seed(v: u64, seed: u32) u32 {
+    pub fn hashUint64WithSeed(v: u64, seed: u32) u32 {
         const m: u32 = 0x5bd1e995;
         const len: u32 = 8;
         var h1: u32 = seed ^ len;
@@ -97,7 +97,7 @@ pub const Murmur2_64 = struct {
         return @call(.always_inline, Self.hashWithSeed, .{ str, default_seed });
     }
 
-    pub fn hash_with_seed(str: []const u8, seed: u64) u64 {
+    pub fn hashWithSeed(str: []const u8, seed: u64) u64 {
         const m: u64 = 0xc6a4a7935bd1e995;
         var h1: u64 = seed ^ (@as(u64, str.len) *% m);
         for (@as([*]align(1) const u64, @ptrCast(str.ptr))[0 .. str.len / 8]) |v| {
@@ -126,11 +126,11 @@ pub const Murmur2_64 = struct {
         return h1;
     }
 
-    pub fn hash_uint32(v: u32) u64 {
+    pub fn hashUint32(v: u32) u64 {
         return @call(.always_inline, Self.hashUint32WithSeed, .{ v, default_seed });
     }
 
-    pub fn hash_uint32_with_seed(v: u32, seed: u64) u64 {
+    pub fn hashUint32WithSeed(v: u32, seed: u64) u64 {
         const m: u64 = 0xc6a4a7935bd1e995;
         const len: u64 = 4;
         var h1: u64 = seed ^ (len *% m);
@@ -143,11 +143,11 @@ pub const Murmur2_64 = struct {
         return h1;
     }
 
-    pub fn hash_uint64(v: u64) u64 {
+    pub fn hashUint64(v: u64) u64 {
         return @call(.always_inline, Self.hashUint64WithSeed, .{ v, default_seed });
     }
 
-    pub fn hash_uint64_with_seed(v: u64, seed: u64) u64 {
+    pub fn hashUint64WithSeed(v: u64, seed: u64) u64 {
         const m: u64 = 0xc6a4a7935bd1e995;
         const len: u64 = 8;
         var h1: u64 = seed ^ (len *% m);
@@ -175,7 +175,7 @@ pub const Murmur3_32 = struct {
         return @call(.always_inline, Self.hashWithSeed, .{ str, default_seed });
     }
 
-    pub fn hash_with_seed(str: []const u8, seed: u32) u32 {
+    pub fn hashWithSeed(str: []const u8, seed: u32) u32 {
         const c1: u32 = 0xcc9e2d51;
         const c2: u32 = 0x1b873593;
         const len: u32 = @truncate(str.len);
@@ -219,11 +219,11 @@ pub const Murmur3_32 = struct {
         return h1;
     }
 
-    pub fn hash_uint32(v: u32) u32 {
+    pub fn hashUint32(v: u32) u32 {
         return @call(.always_inline, Self.hashUint32WithSeed, .{ v, default_seed });
     }
 
-    pub fn hash_uint32_with_seed(v: u32, seed: u32) u32 {
+    pub fn hashUint32WithSeed(v: u32, seed: u32) u32 {
         const c1: u32 = 0xcc9e2d51;
         const c2: u32 = 0x1b873593;
         const len: u32 = 4;
@@ -245,11 +245,11 @@ pub const Murmur3_32 = struct {
         return h1;
     }
 
-    pub fn hash_uint64(v: u64) u32 {
+    pub fn hashUint64(v: u64) u32 {
         return @call(.always_inline, Self.hashUint64WithSeed, .{ v, default_seed });
     }
 
-    pub fn hash_uint64_with_seed(v: u64, seed: u32) u32 {
+    pub fn hashUint64WithSeed(v: u64, seed: u32) u32 {
         const c1: u32 = 0xcc9e2d51;
         const c2: u32 = 0x1b873593;
         const len: u32 = 8;

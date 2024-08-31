@@ -64,7 +64,7 @@ var install_atfork_handler = std.once(struct {
 
 threadlocal var wipe_mem: []align(mem.page_size) u8 = &[_]u8{};
 
-fn tls_csprng_fill(_: *anyopaque, buffer: []u8) void {
+fn tlsCsprngFill(_: *anyopaque, buffer: []u8) void {
     if (builtin.link_libc and @hasDecl(std.c, "arc4random_buf")) {
         // arc4random is already a thread-local CSPRNG.
         return std.c.arc4random_buf(buffer.ptr, buffer.len);
@@ -148,28 +148,28 @@ fn tls_csprng_fill(_: *anyopaque, buffer: []u8) void {
     }
 }
 
-fn setup_pthread_atfork_and_fill(buffer: []u8) void {
+fn setupPthreadAtforkAndFill(buffer: []u8) void {
     install_atfork_handler.call();
     return initAndFill(buffer);
 }
 
-fn child_at_fork_handler() callconv(.C) void {
+fn childAtForkHandler() callconv(.C) void {
     // The atfork handler is global, this function may be called after
     // fork()-ing threads that never initialized the CSPRNG context.
     if (wipe_mem.len == 0) return;
     std.crypto.utils.secureZero(u8, wipe_mem);
 }
 
-fn fill_with_csprng(buffer: []u8) void {
+fn fillWithCsprng(buffer: []u8) void {
     const ctx = @as(*Context, @ptrCast(wipe_mem.ptr));
     return ctx.rng.fill(buffer);
 }
 
-pub fn default_random_seed(buffer: []u8) void {
+pub fn defaultRandomSeed(buffer: []u8) void {
     posix.getrandom(buffer) catch @panic("getrandom() failed to provide entropy");
 }
 
-fn init_and_fill(buffer: []u8) void {
+fn initAndFill(buffer: []u8) void {
     var seed: [Rng.secret_seed_length]u8 = undefined;
     // Because we panic on getrandom() failing, we provide the opportunity
     // to override the default seed function. This also makes

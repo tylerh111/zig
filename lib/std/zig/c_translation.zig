@@ -60,7 +60,7 @@ pub fn cast(comptime DestType: type, target: anytype) DestType {
     return @as(DestType, target);
 }
 
-fn cast_int(comptime DestType: type, target: anytype) DestType {
+fn castInt(comptime DestType: type, target: anytype) DestType {
     const dest = @typeInfo(DestType).Int;
     const source = @typeInfo(@TypeOf(target)).Int;
 
@@ -70,11 +70,11 @@ fn cast_int(comptime DestType: type, target: anytype) DestType {
         return @as(DestType, @bitCast(@as(std.meta.Int(source.signedness, dest.bits), target)));
 }
 
-fn cast_ptr(comptime DestType: type, target: anytype) DestType {
+fn castPtr(comptime DestType: type, target: anytype) DestType {
     return @constCast(@volatileCast(@alignCast(@ptrCast(target))));
 }
 
-fn cast_to_ptr(comptime DestType: type, comptime SourceType: type, target: anytype) DestType {
+fn castToPtr(comptime DestType: type, comptime SourceType: type, target: anytype) DestType {
     switch (@typeInfo(SourceType)) {
         .Int => {
             return @as(DestType, @ptrFromInt(castInt(usize, target)));
@@ -98,7 +98,7 @@ fn cast_to_ptr(comptime DestType: type, comptime SourceType: type, target: anyty
     return @as(DestType, target);
 }
 
-fn ptr_info(comptime PtrType: type) std.builtin.Type.Pointer {
+fn ptrInfo(comptime PtrType: type) std.builtin.Type.Pointer {
     return switch (@typeInfo(PtrType)) {
         .Optional => |opt_info| @typeInfo(opt_info.child).Pointer,
         .Pointer => |ptr_info| ptr_info,
@@ -257,7 +257,7 @@ pub const CIntLiteralBase = enum { decimal, octal, hex };
 /// Deprecated: use `CIntLiteralBase`
 pub const CIntLiteralRadix = CIntLiteralBase;
 
-fn promote_int_literal_return_type(comptime SuffixType: type, comptime number: comptime_int, comptime base: CIntLiteralBase) type {
+fn PromoteIntLiteralReturnType(comptime SuffixType: type, comptime number: comptime_int, comptime base: CIntLiteralBase) type {
     const signed_decimal = [_]type{ c_int, c_long, c_longlong, c_ulonglong };
     const signed_oct_hex = [_]type{ c_int, c_uint, c_long, c_ulong, c_longlong, c_ulonglong };
     const unsigned = [_]type{ c_uint, c_ulong, c_ulonglong };
@@ -280,7 +280,7 @@ fn promote_int_literal_return_type(comptime SuffixType: type, comptime number: c
 }
 
 /// Promote the type of an integer literal until it fits as C would.
-pub fn promote_int_literal(
+pub fn promoteIntLiteral(
     comptime SuffixType: type,
     comptime number: comptime_int,
     comptime base: CIntLiteralBase,
@@ -312,7 +312,7 @@ test "promoteIntLiteral" {
 /// clang enforces that `this_index` is less than the total number of vector elements
 /// See https://ziglang.org/documentation/master/#shuffle
 /// See https://clang.llvm.org/docs/LanguageExtensions.html#langext-builtin-shufflevector
-pub fn shuffle_vector_index(comptime this_index: c_int, comptime source_vector_len: usize) i32 {
+pub fn shuffleVectorIndex(comptime this_index: c_int, comptime source_vector_len: usize) i32 {
     const positive_index = std.math.cast(usize, this_index) orelse return undefined;
     if (positive_index < source_vector_len) return @as(i32, @intCast(this_index));
     const b_index = positive_index - source_vector_len;
@@ -337,7 +337,7 @@ test "shuffleVectorIndex" {
 
 /// Constructs a [*c] pointer with the const and volatile annotations
 /// from SelfType for pointing to a C flexible array of ElementType.
-pub fn flexible_array_type(comptime SelfType: type, comptime ElementType: type) type {
+pub fn FlexibleArrayType(comptime SelfType: type, comptime ElementType: type) type {
     switch (@typeInfo(SelfType)) {
         .Pointer => |ptr| {
             return @Type(.{ .Pointer = .{
@@ -371,25 +371,25 @@ test "Flexible Array Type" {
 /// The quotient is not representable if denominator is zero, or if numerator is the minimum integer for
 /// the type and denominator is -1. C has undefined behavior for those two cases; this function has safety
 /// checked undefined behavior
-pub fn signed_remainder(numerator: anytype, denominator: anytype) @TypeOf(numerator, denominator) {
+pub fn signedRemainder(numerator: anytype, denominator: anytype) @TypeOf(numerator, denominator) {
     std.debug.assert(@typeInfo(@TypeOf(numerator, denominator)).Int.signedness == .signed);
     if (denominator > 0) return @rem(numerator, denominator);
     return numerator - @divTrunc(numerator, denominator) * denominator;
 }
 
 pub const Macros = struct {
-    pub fn u_suffix(comptime n: comptime_int) @TypeOf(promoteIntLiteral(c_uint, n, .decimal)) {
+    pub fn U_SUFFIX(comptime n: comptime_int) @TypeOf(promoteIntLiteral(c_uint, n, .decimal)) {
         return promoteIntLiteral(c_uint, n, .decimal);
     }
 
-    fn l_suffix_return_type(comptime number: anytype) type {
+    fn L_SUFFIX_ReturnType(comptime number: anytype) type {
         switch (@typeInfo(@TypeOf(number))) {
             .Int, .ComptimeInt => return @TypeOf(promoteIntLiteral(c_long, number, .decimal)),
             .Float, .ComptimeFloat => return c_longdouble,
             else => @compileError("Invalid value for L suffix"),
         }
     }
-    pub fn l_suffix(comptime number: anytype) L_SUFFIX_ReturnType(number) {
+    pub fn L_SUFFIX(comptime number: anytype) L_SUFFIX_ReturnType(number) {
         switch (@typeInfo(@TypeOf(number))) {
             .Int, .ComptimeInt => return promoteIntLiteral(c_long, number, .decimal),
             .Float, .ComptimeFloat => @compileError("TODO: c_longdouble initialization from comptime_float not supported"),
@@ -397,29 +397,29 @@ pub const Macros = struct {
         }
     }
 
-    pub fn ul_suffix(comptime n: comptime_int) @TypeOf(promoteIntLiteral(c_ulong, n, .decimal)) {
+    pub fn UL_SUFFIX(comptime n: comptime_int) @TypeOf(promoteIntLiteral(c_ulong, n, .decimal)) {
         return promoteIntLiteral(c_ulong, n, .decimal);
     }
 
-    pub fn ll_suffix(comptime n: comptime_int) @TypeOf(promoteIntLiteral(c_longlong, n, .decimal)) {
+    pub fn LL_SUFFIX(comptime n: comptime_int) @TypeOf(promoteIntLiteral(c_longlong, n, .decimal)) {
         return promoteIntLiteral(c_longlong, n, .decimal);
     }
 
-    pub fn ull_suffix(comptime n: comptime_int) @TypeOf(promoteIntLiteral(c_ulonglong, n, .decimal)) {
+    pub fn ULL_SUFFIX(comptime n: comptime_int) @TypeOf(promoteIntLiteral(c_ulonglong, n, .decimal)) {
         return promoteIntLiteral(c_ulonglong, n, .decimal);
     }
 
-    pub fn f_suffix(comptime f: comptime_float) f32 {
+    pub fn F_SUFFIX(comptime f: comptime_float) f32 {
         return @as(f32, f);
     }
 
-    pub fn wl_container_of(ptr: anytype, sample: anytype, comptime member: []const u8) @TypeOf(sample) {
+    pub fn WL_CONTAINER_OF(ptr: anytype, sample: anytype, comptime member: []const u8) @TypeOf(sample) {
         return @fieldParentPtr(member, ptr);
     }
 
     /// A 2-argument function-like macro defined as #define FOO(A, B) (A)(B)
     /// could be either: cast B to A, or call A with the value B.
-    pub fn cast_or_call(a: anytype, b: anytype) switch (@typeInfo(@TypeOf(a))) {
+    pub fn CAST_OR_CALL(a: anytype, b: anytype) switch (@typeInfo(@TypeOf(a))) {
         .Type => a,
         .Fn => |fn_info| fn_info.return_type orelse void,
         else => |info| @compileError("Unexpected argument type: " ++ @tagName(info)),
@@ -431,13 +431,13 @@ pub const Macros = struct {
         }
     }
 
-    pub inline fn discard(x: anytype) void {
+    pub inline fn DISCARD(x: anytype) void {
         _ = x;
     }
 };
 
 /// Integer promotion described in C11 6.3.1.1.2
-fn promoted_int_type(comptime T: type) type {
+fn PromotedIntType(comptime T: type) type {
     return switch (T) {
         bool, u8, i8, c_short => c_int,
         c_ushort => if (@sizeOf(c_ushort) == @sizeOf(c_int)) c_uint else c_int,
@@ -453,7 +453,7 @@ fn promoted_int_type(comptime T: type) type {
 }
 
 /// C11 6.3.1.1.1
-fn integer_rank(comptime T: type) u8 {
+fn integerRank(comptime T: type) u8 {
     return switch (T) {
         bool => 0,
         u8, i8 => 1,
@@ -465,7 +465,7 @@ fn integer_rank(comptime T: type) u8 {
     };
 }
 
-fn to_unsigned(comptime T: type) type {
+fn ToUnsigned(comptime T: type) type {
     return switch (T) {
         c_int => c_uint,
         c_long => c_ulong,
@@ -475,7 +475,7 @@ fn to_unsigned(comptime T: type) type {
 }
 
 /// "Usual arithmetic conversions" from C11 standard 6.3.1.8
-fn arithmetic_conversion(comptime A: type, comptime B: type) type {
+fn ArithmeticConversion(comptime A: type, comptime B: type) type {
     if (A == c_longdouble or B == c_longdouble) return c_longdouble;
     if (A == f80 or B == f80) return f80;
     if (A == f64 or B == f64) return f64;
@@ -513,7 +513,7 @@ test "ArithmeticConversion" {
 
     const Test = struct {
         /// Order of operands should not matter for arithmetic conversions
-        fn check_promotion(comptime A: type, comptime B: type, comptime Expected: type) !void {
+        fn checkPromotion(comptime A: type, comptime B: type, comptime Expected: type) !void {
             try std.testing.expect(ArithmeticConversion(A, B) == Expected);
             try std.testing.expect(ArithmeticConversion(B, A) == Expected);
         }
@@ -622,10 +622,10 @@ test "CAST_OR_CALL casting" {
 test "CAST_OR_CALL calling" {
     const Helper = struct {
         var last_val: bool = false;
-        fn returns_void(val: bool) void {
+        fn returnsVoid(val: bool) void {
             last_val = val;
         }
-        fn returns_bool(f: f32) bool {
+        fn returnsBool(f: f32) bool {
             return f > 0;
         }
         fn identity(self: c_uint) c_uint {

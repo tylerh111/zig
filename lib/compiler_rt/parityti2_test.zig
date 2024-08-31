@@ -2,7 +2,7 @@ const std = @import("std");
 const parity = @import("parity.zig");
 const testing = std.testing;
 
-fn parityti2_naive(a: i128) i32 {
+fn parityti2Naive(a: i128) i32 {
     var x: u128 = @bitCast(a);
     var has_parity: bool = false;
     while (x > 0) {

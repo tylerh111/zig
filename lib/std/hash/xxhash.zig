@@ -34,7 +34,7 @@ pub const XxHash64 = struct {
             };
         }
 
-        fn update_empty(self: *Accumulator, input: anytype, comptime unroll_count: usize) usize {
+        fn updateEmpty(self: *Accumulator, input: anytype, comptime unroll_count: usize) usize {
             var i: usize = 0;
 
             if (unroll_count > 0) {
@@ -53,7 +53,7 @@ pub const XxHash64 = struct {
             return i;
         }
 
-        fn process_stripe(self: *Accumulator, buf: *const [32]u8) void {
+        fn processStripe(self: *Accumulator, buf: *const [32]u8) void {
             self.acc1 = round(self.acc1, mem.readInt(u64, buf[0..8], .little));
             self.acc2 = round(self.acc2, mem.readInt(u64, buf[8..16], .little));
             self.acc3 = round(self.acc3, mem.readInt(u64, buf[16..24], .little));
@@ -70,7 +70,7 @@ pub const XxHash64 = struct {
             return acc;
         }
 
-        fn merge_accumulator(acc: u64, other: u64) u64 {
+        fn mergeAccumulator(acc: u64, other: u64) u64 {
             const a = acc ^ round(0, other);
             const b = a *% prime_1;
             return b +% prime_4;
@@ -268,7 +268,7 @@ pub const XxHash32 = struct {
             };
         }
 
-        fn update_empty(self: *Accumulator, input: anytype, comptime unroll_count: usize) usize {
+        fn updateEmpty(self: *Accumulator, input: anytype, comptime unroll_count: usize) usize {
             var i: usize = 0;
 
             if (unroll_count > 0) {
@@ -287,7 +287,7 @@ pub const XxHash32 = struct {
             return i;
         }
 
-        fn process_stripe(self: *Accumulator, buf: *const [16]u8) void {
+        fn processStripe(self: *Accumulator, buf: *const [16]u8) void {
             self.acc1 = round(self.acc1, mem.readInt(u32, buf[0..4], .little));
             self.acc2 = round(self.acc2, mem.readInt(u32, buf[4..8], .little));
             self.acc3 = round(self.acc3, mem.readInt(u32, buf[8..12], .little));
@@ -468,7 +468,7 @@ pub const XxHash3 = struct {
         return if (native_endian == .big) @byteSwap(x) else x;
     }
 
-    inline fn disable_auto_vectorization(x: anytype) void {
+    inline fn disableAutoVectorization(x: anytype) void {
         if (!@inComptime()) asm volatile (""
             :
             : [x] "r" (x),
@@ -675,7 +675,7 @@ pub const XxHash3 = struct {
         return avalanche(.h3, acc);
     }
 
-    noinline fn hash_long(seed: u64, input: []const u8) u64 {
+    noinline fn hashLong(seed: u64, input: []const u8) u64 {
         @setCold(true);
         std.debug.assert(input.len >= 240);
 
@@ -771,7 +771,7 @@ pub const XxHash3 = struct {
 
 const verify = @import("verify.zig");
 
-fn test_expect(comptime H: type, seed: anytype, input: []const u8, expected: u64) !void {
+fn testExpect(comptime H: type, seed: anytype, input: []const u8, expected: u64) !void {
     try expectEqual(expected, H.hash(seed, input));
 
     var hasher = H.init(seed);

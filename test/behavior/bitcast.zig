@@ -51,7 +51,7 @@ test "@bitCast iX -> uX exotic integers" {
     }
 }
 
-fn test_bit_cast(comptime N: usize) !void {
+fn testBitCast(comptime N: usize) !void {
     const iN = std.meta.Int(.signed, N);
     const uN = std.meta.Int(.unsigned, N);
 
@@ -72,11 +72,11 @@ fn test_bit_cast(comptime N: usize) !void {
     }
 }
 
-fn conv_i_n(comptime N: usize, x: std.meta.Int(.signed, N)) std.meta.Int(.unsigned, N) {
+fn conv_iN(comptime N: usize, x: std.meta.Int(.signed, N)) std.meta.Int(.unsigned, N) {
     return @as(std.meta.Int(.unsigned, N), @bitCast(x));
 }
 
-fn conv_u_n(comptime N: usize, x: std.meta.Int(.unsigned, N)) std.meta.Int(.signed, N) {
+fn conv_uN(comptime N: usize, x: std.meta.Int(.unsigned, N)) std.meta.Int(.signed, N) {
     return @as(std.meta.Int(.signed, N), @bitCast(x));
 }
 
@@ -95,7 +95,7 @@ test "bitcast uX to bytes" {
     }
 }
 
-fn test_bit_castu_xto_bytes(comptime N: usize) !void {
+fn testBitCastuXToBytes(comptime N: usize) !void {
 
     // The location of padding bits in these layouts are technically not defined
     // by LLVM, but we currently allow exotic integers to be cast (at comptime)
@@ -176,7 +176,7 @@ test "@bitCast packed structs at runtime and comptime" {
         quarter4: u4,
     };
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var full = Full{ .number = 0x1234 };
             _ = &full;
             const two_halves: Divided = @bitCast(full);
@@ -202,7 +202,7 @@ test "@bitCast extern structs at runtime and comptime" {
         half2: u8,
     };
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var full = Full{ .number = 0x1234 };
             _ = &full;
             const two_halves: TwoHalves = @bitCast(full);
@@ -234,7 +234,7 @@ test "bitcast packed struct to integer and back" {
         level: u7,
     };
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var move = LevelUpMove{ .move_id = 1, .level = 2 };
             _ = &move;
             const v: u16 = @bitCast(move);
@@ -328,7 +328,7 @@ test "@bitCast packed struct of floats" {
     };
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var foo = Foo{};
             _ = &foo;
             const v: Foo2 = @bitCast(foo);
@@ -423,16 +423,16 @@ test "bitcast vector to integer and back" {
     try expect(@as(u16, @bitCast(x)) == comptime @as(u16, @bitCast(@as(@Vector(16, bool), arr))));
 }
 
-fn bit_cast_wrapper16(x: f16) u16 {
+fn bitCastWrapper16(x: f16) u16 {
     return @as(u16, @bitCast(x));
 }
-fn bit_cast_wrapper32(x: f32) u32 {
+fn bitCastWrapper32(x: f32) u32 {
     return @as(u32, @bitCast(x));
 }
-fn bit_cast_wrapper64(x: f64) u64 {
+fn bitCastWrapper64(x: f64) u64 {
     return @as(u64, @bitCast(x));
 }
-fn bit_cast_wrapper128(x: f128) u128 {
+fn bitCastWrapper128(x: f128) u128 {
     return @as(u128, @bitCast(x));
 }
 test "bitcast nan float does not modify signaling bit" {
@@ -551,7 +551,7 @@ test "@bitCast of packed struct containing pointer" {
             ptr: *const i32,
         };
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             const x: u32 = 123;
             var a: A = undefined;
             a = .{ .ptr = &x };
@@ -580,7 +580,7 @@ test "@bitCast of extern struct containing pointer" {
             ptr: *const i32,
         };
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             const x: u32 = 123;
             var a: A = undefined;
             a = .{ .ptr = &x };

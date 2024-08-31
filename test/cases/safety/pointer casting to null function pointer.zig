@@ -8,7 +8,7 @@ pub fn panic(message: []const u8, stack_trace: ?*std.builtin.StackTrace, _: ?usi
     std.process.exit(1);
 }
 
-fn get_null_ptr() ?*const anyopaque {
+fn getNullPtr() ?*const anyopaque {
     return null;
 }
 pub fn main() !void {

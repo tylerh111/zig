@@ -43,7 +43,7 @@ pub fn is(v: Value, tag: std.meta.Tag(Interner.Key), comp: *const Compilation) b
 
 /// Number of bits needed to hold `v`.
 /// Asserts that `v` is not negative
-pub fn min_unsigned_bits(v: Value, comp: *const Compilation) usize {
+pub fn minUnsignedBits(v: Value, comp: *const Compilation) usize {
     var space: BigIntSpace = undefined;
     const big = v.toBigInt(&space, comp);
     assert(big.positive);
@@ -52,7 +52,7 @@ pub fn min_unsigned_bits(v: Value, comp: *const Compilation) usize {
 
 test "minUnsignedBits" {
     const Test = struct {
-        fn check_int_bits(comp: *Compilation, v: u64, expected: usize) !void {
+        fn checkIntBits(comp: *Compilation, v: u64, expected: usize) !void {
             const val = try intern(comp, .{ .int = .{ .u64 = v } });
             try std.testing.expectEqual(expected, val.minUnsignedBits(comp));
         }
@@ -78,7 +78,7 @@ test "minUnsignedBits" {
 
 /// Minimum number of bits needed to represent `v` in 2's complement notation
 /// Asserts that `v` is negative.
-pub fn min_signed_bits(v: Value, comp: *const Compilation) usize {
+pub fn minSignedBits(v: Value, comp: *const Compilation) usize {
     var space: BigIntSpace = undefined;
     const big = v.toBigInt(&space, comp);
     assert(!big.positive);
@@ -87,7 +87,7 @@ pub fn min_signed_bits(v: Value, comp: *const Compilation) usize {
 
 test "minSignedBits" {
     const Test = struct {
-        fn check_int_bits(comp: *Compilation, v: i64, expected: usize) !void {
+        fn checkIntBits(comp: *Compilation, v: i64, expected: usize) !void {
             const val = try intern(comp, .{ .int = .{ .i64 = v } });
             try std.testing.expectEqual(expected, val.minSignedBits(comp));
         }
@@ -123,7 +123,7 @@ pub const FloatToIntChangeKind = enum {
 
 /// Converts the stored value from a float to an integer.
 /// `.none` value remains unchanged.
-pub fn float_to_int(v: *Value, dest_ty: Type, comp: *Compilation) !FloatToIntChangeKind {
+pub fn floatToInt(v: *Value, dest_ty: Type, comp: *Compilation) !FloatToIntChangeKind {
     if (v.opt_ref == .none) return .none;
 
     const float_val = v.toFloat(f128, comp);
@@ -177,7 +177,7 @@ pub fn float_to_int(v: *Value, dest_ty: Type, comp: *Compilation) !FloatToIntCha
 
 /// Converts the stored value from an integer to a float.
 /// `.none` value remains unchanged.
-pub fn int_to_float(v: *Value, dest_ty: Type, comp: *Compilation) !void {
+pub fn intToFloat(v: *Value, dest_ty: Type, comp: *Compilation) !void {
     if (v.opt_ref == .none) return;
     const bits = dest_ty.bitSizeof(comp).?;
     return switch (comp.interner.get(v.ref()).int) {
@@ -209,7 +209,7 @@ pub fn int_to_float(v: *Value, dest_ty: Type, comp: *Compilation) !void {
 
 /// Truncates or extends bits based on type.
 /// `.none` value remains unchanged.
-pub fn int_cast(v: *Value, dest_ty: Type, comp: *Compilation) !void {
+pub fn intCast(v: *Value, dest_ty: Type, comp: *Compilation) !void {
     if (v.opt_ref == .none) return;
     const bits: usize = @intCast(dest_ty.bitSizeof(comp).?);
     var space: BigIntSpace = undefined;
@@ -228,7 +228,7 @@ pub fn int_cast(v: *Value, dest_ty: Type, comp: *Compilation) !void {
 
 /// Converts the stored value to a float of the specified type
 /// `.none` value remains unchanged.
-pub fn float_cast(v: *Value, dest_ty: Type, comp: *Compilation) !void {
+pub fn floatCast(v: *Value, dest_ty: Type, comp: *Compilation) !void {
     if (v.opt_ref == .none) return;
     // TODO complex values
     const bits = dest_ty.makeReal().bitSizeof(comp).?;
@@ -243,7 +243,7 @@ pub fn float_cast(v: *Value, dest_ty: Type, comp: *Compilation) !void {
     v.* = try intern(comp, .{ .float = f });
 }
 
-pub fn to_float(v: Value, comptime T: type, comp: *const Compilation) T {
+pub fn toFloat(v: Value, comptime T: type, comp: *const Compilation) T {
     return switch (comp.interner.get(v.ref())) {
         .int => |repr| switch (repr) {
             inline .u64, .i64 => |data| @floatFromInt(data),
@@ -256,7 +256,7 @@ pub fn to_float(v: Value, comptime T: type, comp: *const Compilation) T {
     };
 }
 
-fn big_int_to_float(limbs: []const std.math.big.Limb, positive: bool) f128 {
+fn bigIntToFloat(limbs: []const std.math.big.Limb, positive: bool) f128 {
     if (limbs.len == 0) return 0;
 
     const base = std.math.maxInt(std.math.big.Limb) + 1;
@@ -274,14 +274,14 @@ fn big_int_to_float(limbs: []const std.math.big.Limb, positive: bool) f128 {
     }
 }
 
-pub fn to_big_int(val: Value, space: *BigIntSpace, comp: *const Compilation) BigIntConst {
+pub fn toBigInt(val: Value, space: *BigIntSpace, comp: *const Compilation) BigIntConst {
     return switch (comp.interner.get(val.ref()).int) {
         inline .u64, .i64 => |x| BigIntMutable.init(&space.limbs, x).toConst(),
         .big_int => |b| b,
     };
 }
 
-pub fn is_zero(v: Value, comp: *const Compilation) bool {
+pub fn isZero(v: Value, comp: *const Compilation) bool {
     if (v.opt_ref == .none) return false;
     switch (v.ref()) {
         .zero => return true,
@@ -305,20 +305,20 @@ pub fn is_zero(v: Value, comp: *const Compilation) bool {
 
 /// Converts value to zero or one;
 /// `.none` value remains unchanged.
-pub fn bool_cast(v: *Value, comp: *const Compilation) void {
+pub fn boolCast(v: *Value, comp: *const Compilation) void {
     if (v.opt_ref == .none) return;
     v.* = fromBool(v.toBool(comp));
 }
 
-pub fn from_bool(b: bool) Value {
+pub fn fromBool(b: bool) Value {
     return if (b) one else zero;
 }
 
-pub fn to_bool(v: Value, comp: *const Compilation) bool {
+pub fn toBool(v: Value, comp: *const Compilation) bool {
     return !v.isZero(comp);
 }
 
-pub fn to_int(v: Value, comptime T: type, comp: *const Compilation) ?T {
+pub fn toInt(v: Value, comptime T: type, comp: *const Compilation) ?T {
     if (v.opt_ref == .none) return null;
     if (comp.interner.get(v.ref()) != .int) return null;
     var space: BigIntSpace = undefined;
@@ -531,7 +531,7 @@ pub fn rem(lhs: Value, rhs: Value, ty: Type, comp: *Compilation) !Value {
     return intern(comp, .{ .int = .{ .big_int = result_r.toConst() } });
 }
 
-pub fn bit_or(lhs: Value, rhs: Value, comp: *Compilation) !Value {
+pub fn bitOr(lhs: Value, rhs: Value, comp: *Compilation) !Value {
     var lhs_space: BigIntSpace = undefined;
     var rhs_space: BigIntSpace = undefined;
     const lhs_bigint = lhs.toBigInt(&lhs_space, comp);
@@ -548,7 +548,7 @@ pub fn bit_or(lhs: Value, rhs: Value, comp: *Compilation) !Value {
     return intern(comp, .{ .int = .{ .big_int = result_bigint.toConst() } });
 }
 
-pub fn bit_xor(lhs: Value, rhs: Value, comp: *Compilation) !Value {
+pub fn bitXor(lhs: Value, rhs: Value, comp: *Compilation) !Value {
     var lhs_space: BigIntSpace = undefined;
     var rhs_space: BigIntSpace = undefined;
     const lhs_bigint = lhs.toBigInt(&lhs_space, comp);
@@ -565,7 +565,7 @@ pub fn bit_xor(lhs: Value, rhs: Value, comp: *Compilation) !Value {
     return intern(comp, .{ .int = .{ .big_int = result_bigint.toConst() } });
 }
 
-pub fn bit_and(lhs: Value, rhs: Value, comp: *Compilation) !Value {
+pub fn bitAnd(lhs: Value, rhs: Value, comp: *Compilation) !Value {
     var lhs_space: BigIntSpace = undefined;
     var rhs_space: BigIntSpace = undefined;
     const lhs_bigint = lhs.toBigInt(&lhs_space, comp);
@@ -582,7 +582,7 @@ pub fn bit_and(lhs: Value, rhs: Value, comp: *Compilation) !Value {
     return intern(comp, .{ .int = .{ .big_int = result_bigint.toConst() } });
 }
 
-pub fn bit_not(val: Value, ty: Type, comp: *Compilation) !Value {
+pub fn bitNot(val: Value, ty: Type, comp: *Compilation) !Value {
     const bits: usize = @intCast(ty.bitSizeof(comp).?);
     var val_space: Value.BigIntSpace = undefined;
     const val_bigint = val.toBigInt(&val_space, comp);
@@ -700,7 +700,7 @@ pub fn print(v: Value, ty: Type, comp: *const Compilation, w: anytype) @TypeOf(w
     }
 }
 
-pub fn print_string(bytes: []const u8, ty: Type, comp: *const Compilation, w: anytype) @TypeOf(w).Error!void {
+pub fn printString(bytes: []const u8, ty: Type, comp: *const Compilation, w: anytype) @TypeOf(w).Error!void {
     const size: Compilation.CharUnitSize = @enumFromInt(ty.elemType().sizeof(comp).?);
     const without_null = bytes[0 .. bytes.len - @intFromEnum(size)];
     switch (size) {

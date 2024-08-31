@@ -382,7 +382,7 @@ const Run = struct {
     stderr: File,
 };
 
-fn run_step_names(
+fn runStepNames(
     arena: std.mem.Allocator,
     b: *std.Build,
     step_names: []const []const u8,
@@ -605,7 +605,7 @@ const PrintNode = struct {
     last: bool = false,
 };
 
-fn print_prefix(node: *PrintNode, stderr: File, ttyconf: std.io.tty.Config) !void {
+fn printPrefix(node: *PrintNode, stderr: File, ttyconf: std.io.tty.Config) !void {
     const parent = node.parent orelse return;
     if (parent.parent == null) return;
     try printPrefix(parent, stderr, ttyconf);
@@ -619,14 +619,14 @@ fn print_prefix(node: *PrintNode, stderr: File, ttyconf: std.io.tty.Config) !voi
     }
 }
 
-fn print_child_node_prefix(stderr: File, ttyconf: std.io.tty.Config) !void {
+fn printChildNodePrefix(stderr: File, ttyconf: std.io.tty.Config) !void {
     try stderr.writeAll(switch (ttyconf) {
         .no_color, .windows_api => "+- ",
         .escape_codes => "\x1B\x28\x30\x6d\x71\x1B\x28\x42 ", // └─
     });
 }
 
-fn print_step_status(
+fn printStepStatus(
     s: *Step,
     stderr: File,
     ttyconf: std.io.tty.Config,
@@ -706,7 +706,7 @@ fn print_step_status(
     }
 }
 
-fn print_step_failure(
+fn printStepFailure(
     s: *Step,
     stderr: File,
     ttyconf: std.io.tty.Config,
@@ -758,7 +758,7 @@ fn print_step_failure(
     }
 }
 
-fn print_tree_step(
+fn printTreeStep(
     b: *std.Build,
     s: *Step,
     run: *const Run,
@@ -841,7 +841,7 @@ fn print_tree_step(
 /// - each step's `dependants` list is also filled in a random order, so that
 ///   when it finishes executing in `workerMakeOneStep`, it spawns next steps
 ///   to run in random order
-fn construct_graph_and_check_for_dependency_loop(
+fn constructGraphAndCheckForDependencyLoop(
     b: *std.Build,
     s: *Step,
     step_stack: *std.AutoArrayHashMapUnmanaged(*Step, void),
@@ -887,7 +887,7 @@ fn construct_graph_and_check_for_dependency_loop(
     }
 }
 
-fn worker_make_one_step(
+fn workerMakeOneStep(
     wg: *std.Thread.WaitGroup,
     thread_pool: *std.Thread.Pool,
     b: *std.Build,
@@ -1010,7 +1010,7 @@ fn worker_make_one_step(
     }
 }
 
-fn print_error_messages(b: *std.Build, failing_step: *Step, run: *const Run) !void {
+fn printErrorMessages(b: *std.Build, failing_step: *Step, run: *const Run) !void {
     const gpa = b.allocator;
     const stderr = run.stderr;
     const ttyconf = run.ttyconf;
@@ -1200,25 +1200,25 @@ fn usage(b: *std.Build, out_stream: anytype) !void {
     );
 }
 
-fn next_arg(args: [][:0]const u8, idx: *usize) ?[:0]const u8 {
+fn nextArg(args: [][:0]const u8, idx: *usize) ?[:0]const u8 {
     if (idx.* >= args.len) return null;
     defer idx.* += 1;
     return args[idx.*];
 }
 
-fn next_arg_or_fatal(args: [][:0]const u8, idx: *usize) [:0]const u8 {
+fn nextArgOrFatal(args: [][:0]const u8, idx: *usize) [:0]const u8 {
     return nextArg(args, idx) orelse {
         std.debug.print("expected argument after '{s}'\n  access the help menu with 'zig build -h'\n", .{args[idx.*]});
         process.exit(1);
     };
 }
 
-fn args_rest(args: [][:0]const u8, idx: usize) ?[][:0]const u8 {
+fn argsRest(args: [][:0]const u8, idx: usize) ?[][:0]const u8 {
     if (idx >= args.len) return null;
     return args[idx..];
 }
 
-fn clean_exit() void {
+fn cleanExit() void {
     // Perhaps in the future there could be an Advanced Options flag such as
     // --debug-build-runner-leaks which would make this function return instead
     // of calling exit.
@@ -1236,7 +1236,7 @@ fn get_tty_conf(color: Color, stderr: File) std.io.tty.Config {
     };
 }
 
-fn render_options(ttyconf: std.io.tty.Config) std.zig.ErrorBundle.RenderOptions {
+fn renderOptions(ttyconf: std.io.tty.Config) std.zig.ErrorBundle.RenderOptions {
     return .{
         .ttyconf = ttyconf,
         .include_source_line = ttyconf != .no_color,
@@ -1244,7 +1244,7 @@ fn render_options(ttyconf: std.io.tty.Config) std.zig.ErrorBundle.RenderOptions 
     };
 }
 
-fn fatal_with_hint(comptime f: []const u8, args: anytype) noreturn {
+fn fatalWithHint(comptime f: []const u8, args: anytype) noreturn {
     std.debug.print(f ++ "\n  access the help menu with 'zig build -h'\n", args);
     process.exit(1);
 }
@@ -1254,7 +1254,7 @@ fn fatal(comptime f: []const u8, args: anytype) noreturn {
     process.exit(1);
 }
 
-fn validate_system_library_options(b: *std.Build) void {
+fn validateSystemLibraryOptions(b: *std.Build) void {
     var bad = false;
     for (b.graph.system_library_options.keys(), b.graph.system_library_options.values()) |k, v| {
         switch (v) {

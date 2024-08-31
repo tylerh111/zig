@@ -16,7 +16,7 @@ pub const Entry = struct {
     offset: u64,
     segment_id: u8,
 
-    pub fn less_than(ctx: void, entry: Entry, other: Entry) bool {
+    pub fn lessThan(ctx: void, entry: Entry, other: Entry) bool {
         _ = ctx;
         if (entry.segment_id == other.segment_id) {
             return entry.offset < other.offset;
@@ -58,7 +58,7 @@ pub fn finalize(rebase: *Rebase, gpa: Allocator) !void {
     try done(writer);
 }
 
-fn finalize_segment(entries: []const Entry, writer: anytype) !void {
+fn finalizeSegment(entries: []const Entry, writer: anytype) !void {
     if (entries.len == 0) return;
 
     const segment_id = entries[0].segment_id;
@@ -145,24 +145,24 @@ fn finalize_segment(entries: []const Entry, writer: anytype) !void {
     }
 }
 
-fn set_type_pointer(writer: anytype) !void {
+fn setTypePointer(writer: anytype) !void {
     log.debug(">>> set type: {d}", .{macho.REBASE_TYPE_POINTER});
     try writer.writeByte(macho.REBASE_OPCODE_SET_TYPE_IMM | @as(u4, @truncate(macho.REBASE_TYPE_POINTER)));
 }
 
-fn set_segment_offset(segment_id: u8, offset: u64, writer: anytype) !void {
+fn setSegmentOffset(segment_id: u8, offset: u64, writer: anytype) !void {
     log.debug(">>> set segment: {d} and offset: {x}", .{ segment_id, offset });
     try writer.writeByte(macho.REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | @as(u4, @truncate(segment_id)));
     try std.leb.writeULEB128(writer, offset);
 }
 
-fn rebase_add_addr(addr: u64, writer: anytype) !void {
+fn rebaseAddAddr(addr: u64, writer: anytype) !void {
     log.debug(">>> rebase with add: {x}", .{addr});
     try writer.writeByte(macho.REBASE_OPCODE_DO_REBASE_ADD_ADDR_ULEB);
     try std.leb.writeULEB128(writer, addr);
 }
 
-fn rebase_times(count: usize, writer: anytype) !void {
+fn rebaseTimes(count: usize, writer: anytype) !void {
     log.debug(">>> rebase with count: {d}", .{count});
     if (count <= 0xf) {
         try writer.writeByte(macho.REBASE_OPCODE_DO_REBASE_IMM_TIMES | @as(u4, @truncate(count)));
@@ -172,14 +172,14 @@ fn rebase_times(count: usize, writer: anytype) !void {
     }
 }
 
-fn rebase_times_skip(count: usize, skip: u64, writer: anytype) !void {
+fn rebaseTimesSkip(count: usize, skip: u64, writer: anytype) !void {
     log.debug(">>> rebase with count: {d} and skip: {x}", .{ count, skip });
     try writer.writeByte(macho.REBASE_OPCODE_DO_REBASE_ULEB_TIMES_SKIPPING_ULEB);
     try std.leb.writeULEB128(writer, count);
     try std.leb.writeULEB128(writer, skip);
 }
 
-fn add_addr(addr: u64, writer: anytype) !void {
+fn addAddr(addr: u64, writer: anytype) !void {
     log.debug(">>> add: {x}", .{addr});
     if (std.mem.isAlignedGeneric(u64, addr, @sizeOf(u64))) {
         const imm = @divExact(addr, @sizeOf(u64));

@@ -60,13 +60,13 @@ pub const ExtraIndex = enum(u32) {
     _,
 };
 
-fn extra_data(comptime T: type) type {
+fn ExtraData(comptime T: type) type {
     return struct { data: T, end: usize };
 }
 
 /// Returns the requested data, as well as the new index which is at the start of the
 /// trailers for the object.
-pub fn extra_data(code: Zir, comptime T: type, index: usize) ExtraData(T) {
+pub fn extraData(code: Zir, comptime T: type, index: usize) ExtraData(T) {
     const fields = @typeInfo(T).Struct.fields;
     var i: usize = index;
     var result: T = undefined;
@@ -105,20 +105,20 @@ pub const NullTerminatedString = enum(u32) {
 };
 
 /// Given an index into `string_bytes` returns the null-terminated string found there.
-pub fn null_terminated_string(code: Zir, index: NullTerminatedString) [:0]const u8 {
+pub fn nullTerminatedString(code: Zir, index: NullTerminatedString) [:0]const u8 {
     const slice = code.string_bytes[@intFromEnum(index)..];
     return slice[0..std.mem.indexOfScalar(u8, slice, 0).? :0];
 }
 
-pub fn ref_slice(code: Zir, start: usize, len: usize) []Inst.Ref {
+pub fn refSlice(code: Zir, start: usize, len: usize) []Inst.Ref {
     return @ptrCast(code.extra[start..][0..len]);
 }
 
-pub fn body_slice(zir: Zir, start: usize, len: usize) []Inst.Index {
+pub fn bodySlice(zir: Zir, start: usize, len: usize) []Inst.Index {
     return @ptrCast(zir.extra[start..][0..len]);
 }
 
-pub fn has_compile_errors(code: Zir) bool {
+pub fn hasCompileErrors(code: Zir) bool {
     return code.extra[@intFromEnum(ExtraIndex.compile_errors)] != 0;
 }
 
@@ -1027,7 +1027,7 @@ pub const Inst = struct {
 
         /// Returns whether the instruction is one of the control flow "noreturn" types.
         /// Function calls do not count.
-        pub fn is_no_return(tag: Tag) bool {
+        pub fn isNoReturn(tag: Tag) bool {
             return switch (tag) {
                 .param,
                 .param_comptime,
@@ -1286,7 +1286,7 @@ pub const Inst = struct {
             };
         }
 
-        pub fn is_param(tag: Tag) bool {
+        pub fn isParam(tag: Tag) bool {
             return switch (tag) {
                 .param,
                 .param_comptime,
@@ -1301,7 +1301,7 @@ pub const Inst = struct {
         /// AstGen uses this to find out if `Ref.void_value` should be used in place
         /// of the result of a given instruction. This allows Sema to forego adding
         /// the instruction to the map after analysis.
-        pub fn is_always_void(tag: Tag, data: Data) bool {
+        pub fn isAlwaysVoid(tag: Tag, data: Data) bool {
             return switch (tag) {
                 .dbg_stmt,
                 .dbg_var_ptr,
@@ -2078,11 +2078,11 @@ pub const Inst = struct {
 
         pub const static_len = 84;
 
-        pub fn to_ref(i: Index) Inst.Ref {
+        pub fn toRef(i: Index) Inst.Ref {
             return @enumFromInt(@intFromEnum(Index.ref_start_index) + @intFromEnum(i));
         }
 
-        pub fn to_optional(i: Index) OptionalIndex {
+        pub fn toOptional(i: Index) OptionalIndex {
             return @enumFromInt(@intFromEnum(i));
         }
     };
@@ -2200,7 +2200,7 @@ pub const Inst = struct {
 
         _,
 
-        pub fn to_index(inst: Ref) ?Index {
+        pub fn toIndex(inst: Ref) ?Index {
             assert(inst != .none);
             const ref_int = @intFromEnum(inst);
             if (ref_int >= @intFromEnum(Index.ref_start_index)) {
@@ -2210,7 +2210,7 @@ pub const Inst = struct {
             }
         }
 
-        pub fn to_index_allow_none(inst: Ref) ?Index {
+        pub fn toIndexAllowNone(inst: Ref) ?Index {
             if (inst == .none) return null;
             return toIndex(inst);
         }
@@ -2357,7 +2357,7 @@ pub const Inst = struct {
             str: NullTerminatedString,
             operand: Ref,
 
-            pub fn get_str(self: @This(), zir: Zir) [:0]const u8 {
+            pub fn getStr(self: @This(), zir: Zir) [:0]const u8 {
                 return zir.nullTerminatedString(self.str);
             }
         },
@@ -2657,13 +2657,13 @@ pub const Inst = struct {
             /// test, and the actual name begins at the following byte.
             _,
 
-            pub fn is_named_test(name: Name, zir: Zir) bool {
+            pub fn isNamedTest(name: Name, zir: Zir) bool {
                 return switch (name) {
                     .@"comptime", .@"usingnamespace", .unnamed_test, .decltest => false,
                     _ => zir.string_bytes[@intFromEnum(name)] == 0,
                 };
             }
-            pub fn to_string(name: Name, zir: Zir) ?NullTerminatedString {
+            pub fn toString(name: Name, zir: Zir) ?NullTerminatedString {
                 switch (name) {
                     .@"comptime", .@"usingnamespace", .unnamed_test, .decltest => return null,
                     _ => {},
@@ -2684,7 +2684,7 @@ pub const Inst = struct {
             addrspace_body: ?[]const Index,
         };
 
-        pub fn get_bodies(declaration: Declaration, extra_end: u32, zir: Zir) Bodies {
+        pub fn getBodies(declaration: Declaration, extra_end: u32, zir: Zir) Bodies {
             var extra_index: u32 = extra_end;
             extra_index += @intFromBool(declaration.flags.has_doc_comment);
             const value_body_len = declaration.flags.value_body_len;
@@ -2952,7 +2952,7 @@ pub const Inst = struct {
 
             pub const ScalarCasesLen = u28;
 
-            pub fn special_prong(bits: Bits) SpecialProng {
+            pub fn specialProng(bits: Bits) SpecialProng {
                 const has_else: u2 = @intFromBool(bits.has_else);
                 const has_under: u2 = @intFromBool(bits.has_under);
                 return switch ((has_else << 1) | has_under) {
@@ -3127,7 +3127,7 @@ pub const Inst = struct {
         const_cast: bool = false,
         volatile_cast: bool = false,
 
-        pub inline fn need_result_type_builtin_name(flags: FullPtrCastFlags) []const u8 {
+        pub inline fn needResultTypeBuiltinName(flags: FullPtrCastFlags) []const u8 {
             if (flags.ptr_cast) return "@ptrCast";
             if (flags.align_cast) return "@alignCast";
             if (flags.addrspace_cast) return "@addrSpaceCast";
@@ -3447,7 +3447,7 @@ pub const Inst = struct {
             /// index of another `Item`.
             notes: u32,
 
-            pub fn notes_len(item: Item, zir: Zir) u32 {
+            pub fn notesLen(item: Item, zir: Zir) u32 {
                 if (item.notes == 0) return 0;
                 const block = zir.extraData(Block, item.notes);
                 return block.data.body_len;
@@ -3537,7 +3537,7 @@ pub const DeclIterator = struct {
     }
 };
 
-pub fn decl_iterator(zir: Zir, decl_inst: Zir.Inst.Index) DeclIterator {
+pub fn declIterator(zir: Zir, decl_inst: Zir.Inst.Index) DeclIterator {
     const tags = zir.instructions.items(.tag);
     const datas = zir.instructions.items(.data);
     switch (tags[@intFromEnum(decl_inst)]) {
@@ -3666,7 +3666,7 @@ pub fn decl_iterator(zir: Zir, decl_inst: Zir.Inst.Index) DeclIterator {
 
 /// The iterator would have to allocate memory anyway to iterate. So here we populate
 /// an ArrayList as the result.
-pub fn find_decls(zir: Zir, list: *std.ArrayList(Inst.Index), decl_inst: Zir.Inst.Index) !void {
+pub fn findDecls(zir: Zir, list: *std.ArrayList(Inst.Index), decl_inst: Zir.Inst.Index) !void {
     list.clearRetainingCapacity();
     const declaration, const extra_end = zir.getDeclaration(decl_inst);
     const bodies = declaration.getBodies(extra_end, zir);
@@ -3677,7 +3677,7 @@ pub fn find_decls(zir: Zir, list: *std.ArrayList(Inst.Index), decl_inst: Zir.Ins
     if (bodies.addrspace_body) |b| try zir.findDeclsBody(list, b);
 }
 
-fn find_decls_inner(
+fn findDeclsInner(
     zir: Zir,
     list: *std.ArrayList(Inst.Index),
     inst: Inst.Index,
@@ -3816,7 +3816,7 @@ fn find_decls_inner(
     }
 }
 
-fn find_decls_switch(
+fn findDeclsSwitch(
     zir: Zir,
     list: *std.ArrayList(Inst.Index),
     inst: Inst.Index,
@@ -3880,7 +3880,7 @@ fn find_decls_switch(
     }
 }
 
-fn find_decls_body(
+fn findDeclsBody(
     zir: Zir,
     list: *std.ArrayList(Inst.Index),
     body: []const Inst.Index,
@@ -3899,7 +3899,7 @@ pub const FnInfo = struct {
     total_params_len: u32,
 };
 
-pub fn get_param_body(zir: Zir, fn_inst: Inst.Index) []const Zir.Inst.Index {
+pub fn getParamBody(zir: Zir, fn_inst: Inst.Index) []const Zir.Inst.Index {
     const tags = zir.instructions.items(.tag);
     const datas = zir.instructions.items(.data);
     const inst_data = datas[@intFromEnum(fn_inst)].pl_node;
@@ -3929,7 +3929,7 @@ pub fn get_param_body(zir: Zir, fn_inst: Inst.Index) []const Zir.Inst.Index {
     }
 }
 
-pub fn get_fn_info(zir: Zir, fn_inst: Inst.Index) FnInfo {
+pub fn getFnInfo(zir: Zir, fn_inst: Inst.Index) FnInfo {
     const tags = zir.instructions.items(.tag);
     const datas = zir.instructions.items(.data);
     const info: struct {
@@ -4052,7 +4052,7 @@ pub fn get_fn_info(zir: Zir, fn_inst: Inst.Index) FnInfo {
     };
 }
 
-pub fn get_declaration(zir: Zir, inst: Zir.Inst.Index) struct { Inst.Declaration, u32 } {
+pub fn getDeclaration(zir: Zir, inst: Zir.Inst.Index) struct { Inst.Declaration, u32 } {
     assert(zir.instructions.items(.tag)[@intFromEnum(inst)] == .declaration);
     const pl_node = zir.instructions.items(.data)[@intFromEnum(inst)].pl_node;
     const extra = zir.extraData(Inst.Declaration, pl_node.payload_index);
@@ -4062,7 +4062,7 @@ pub fn get_declaration(zir: Zir, inst: Zir.Inst.Index) struct { Inst.Declaration
     };
 }
 
-pub fn get_associated_src_hash(zir: Zir, inst: Zir.Inst.Index) ?std.zig.SrcHash {
+pub fn getAssociatedSrcHash(zir: Zir, inst: Zir.Inst.Index) ?std.zig.SrcHash {
     const tag = zir.instructions.items(.tag);
     const data = zir.instructions.items(.data);
     switch (tag[@intFromEnum(inst)]) {

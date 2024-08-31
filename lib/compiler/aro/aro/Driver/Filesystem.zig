@@ -3,7 +3,7 @@ const mem = std.mem;
 const builtin = @import("builtin");
 const is_windows = builtin.os.tag == .windows;
 
-fn read_file_fake(entries: []const Filesystem.Entry, path: []const u8, buf: []u8) ?[]const u8 {
+fn readFileFake(entries: []const Filesystem.Entry, path: []const u8, buf: []u8) ?[]const u8 {
     @setCold(true);
     for (entries) |entry| {
         if (mem.eql(u8, entry.path, path)) {
@@ -15,7 +15,7 @@ fn read_file_fake(entries: []const Filesystem.Entry, path: []const u8, buf: []u8
     return null;
 }
 
-fn find_program_by_name_fake(entries: []const Filesystem.Entry, name: []const u8, path: ?[]const u8, buf: []u8) ?[]const u8 {
+fn findProgramByNameFake(entries: []const Filesystem.Entry, name: []const u8, path: ?[]const u8, buf: []u8) ?[]const u8 {
     @setCold(true);
     if (mem.indexOfScalar(u8, name, '/') != null) {
         @memcpy(buf[0..name.len], name);
@@ -34,7 +34,7 @@ fn find_program_by_name_fake(entries: []const Filesystem.Entry, name: []const u8
     return null;
 }
 
-fn can_execute_fake(entries: []const Filesystem.Entry, path: []const u8) bool {
+fn canExecuteFake(entries: []const Filesystem.Entry, path: []const u8) bool {
     @setCold(true);
     for (entries) |entry| {
         if (mem.eql(u8, entry.path, path)) {
@@ -44,7 +44,7 @@ fn can_execute_fake(entries: []const Filesystem.Entry, path: []const u8) bool {
     return false;
 }
 
-fn exists_fake(entries: []const Filesystem.Entry, path: []const u8) bool {
+fn existsFake(entries: []const Filesystem.Entry, path: []const u8) bool {
     @setCold(true);
     var buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
     var fib = std.heap.FixedBufferAllocator.init(&buf);
@@ -55,20 +55,20 @@ fn exists_fake(entries: []const Filesystem.Entry, path: []const u8) bool {
     return false;
 }
 
-fn can_execute_posix(path: []const u8) bool {
+fn canExecutePosix(path: []const u8) bool {
     std.os.access(path, std.os.X_OK) catch return false;
     // Todo: ensure path is not a directory
     return true;
 }
 
 /// TODO
-fn can_execute_windows(path: []const u8) bool {
+fn canExecuteWindows(path: []const u8) bool {
     _ = path;
     return true;
 }
 
 /// TODO
-fn find_program_by_name_windows(allocator: std.mem.Allocator, name: []const u8, path: ?[]const u8, buf: []u8) ?[]const u8 {
+fn findProgramByNameWindows(allocator: std.mem.Allocator, name: []const u8, path: ?[]const u8, buf: []u8) ?[]const u8 {
     _ = path;
     _ = buf;
     _ = name;
@@ -77,7 +77,7 @@ fn find_program_by_name_windows(allocator: std.mem.Allocator, name: []const u8, 
 }
 
 /// TODO: does WASI need special handling?
-fn find_program_by_name_posix(name: []const u8, path: ?[]const u8, buf: []u8) ?[]const u8 {
+fn findProgramByNamePosix(name: []const u8, path: ?[]const u8, buf: []u8) ?[]const u8 {
     if (mem.indexOfScalar(u8, name, '/') != null) {
         @memcpy(buf[0..name.len], name);
         return buf[0..name.len];
@@ -180,14 +180,14 @@ pub const Filesystem = union(enum) {
         }
     }
 
-    pub fn joined_exists(fs: Filesystem, parts: []const []const u8) bool {
+    pub fn joinedExists(fs: Filesystem, parts: []const []const u8) bool {
         var buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
         var fib = std.heap.FixedBufferAllocator.init(&buf);
         const joined = std.fs.path.join(fib.allocator(), parts) catch return false;
         return fs.exists(joined);
     }
 
-    pub fn can_execute(fs: Filesystem, path: []const u8) bool {
+    pub fn canExecute(fs: Filesystem, path: []const u8) bool {
         return switch (fs) {
             .real => if (is_windows) canExecuteWindows(path) else canExecutePosix(path),
             .fake => |entries| canExecuteFake(entries, path),
@@ -197,7 +197,7 @@ pub const Filesystem = union(enum) {
     /// Search for an executable named `name` using platform-specific logic
     /// If it's found, write the full path to `buf` and return a slice of it
     /// Otherwise retun null
-    pub fn find_program_by_name(fs: Filesystem, allocator: std.mem.Allocator, name: []const u8, path: ?[]const u8, buf: []u8) ?[]const u8 {
+    pub fn findProgramByName(fs: Filesystem, allocator: std.mem.Allocator, name: []const u8, path: ?[]const u8, buf: []u8) ?[]const u8 {
         std.debug.assert(name.len > 0);
         return switch (fs) {
             .real => if (is_windows) findProgramByNameWindows(allocator, name, path, buf) else findProgramByNamePosix(name, path, buf),
@@ -208,7 +208,7 @@ pub const Filesystem = union(enum) {
     /// Read the file at `path` into `buf`.
     /// Returns null if any errors are encountered
     /// Otherwise returns a slice of `buf`. If the file is larger than `buf` partial contents are returned
-    pub fn read_file(fs: Filesystem, path: []const u8, buf: []u8) ?[]const u8 {
+    pub fn readFile(fs: Filesystem, path: []const u8, buf: []u8) ?[]const u8 {
         return switch (fs) {
             .real => {
                 const file = std.fs.cwd().openFile(path, .{}) catch return null;
@@ -221,7 +221,7 @@ pub const Filesystem = union(enum) {
         };
     }
 
-    pub fn open_dir(fs: Filesystem, dir_name: []const u8) std.fs.Dir.OpenError!Dir {
+    pub fn openDir(fs: Filesystem, dir_name: []const u8) std.fs.Dir.OpenError!Dir {
         return switch (fs) {
             .real => .{ .dir = try std.fs.cwd().openDir(dir_name, .{ .access_sub_paths = false, .iterate = true }) },
             .fake => |entries| .{ .fake = .{ .entries = entries, .path = dir_name } },

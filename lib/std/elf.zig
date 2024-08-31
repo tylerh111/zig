@@ -532,7 +532,7 @@ pub const Header = struct {
     }
 };
 
-pub fn program_header_iterator(comptime ParseSource: anytype) type {
+pub fn ProgramHeaderIterator(comptime ParseSource: anytype) type {
     return struct {
         elf_header: Header,
         parse_source: ParseSource,
@@ -582,7 +582,7 @@ pub fn program_header_iterator(comptime ParseSource: anytype) type {
     };
 }
 
-pub fn section_header_iterator(comptime ParseSource: anytype) type {
+pub fn SectionHeaderIterator(comptime ParseSource: anytype) type {
     return struct {
         elf_header: Header,
         parse_source: ParseSource,
@@ -1635,7 +1635,7 @@ pub const EM = enum(u16) {
 
     _,
 
-    pub fn to_target_cpu_arch(em: EM) ?std.Target.Cpu.Arch {
+    pub fn toTargetCpuArch(em: EM) ?std.Target.Cpu.Arch {
         return switch (em) {
             .AVR => .avr,
             .MSP430 => .msp430,
@@ -2272,23 +2272,23 @@ pub const ar_hdr = extern struct {
         return std.fmt.parseInt(u32, value, 10);
     }
 
-    pub fn is_strtab(self: ar_hdr) bool {
+    pub fn isStrtab(self: ar_hdr) bool {
         return mem.eql(u8, &self.ar_name, STRNAME);
     }
 
-    pub fn is_symtab(self: ar_hdr) bool {
+    pub fn isSymtab(self: ar_hdr) bool {
         return mem.eql(u8, &self.ar_name, SYMNAME);
     }
 
-    pub fn is_symtab64(self: ar_hdr) bool {
+    pub fn isSymtab64(self: ar_hdr) bool {
         return mem.eql(u8, &self.ar_name, SYM64NAME);
     }
 
-    pub fn is_symdef(self: ar_hdr) bool {
+    pub fn isSymdef(self: ar_hdr) bool {
         return mem.eql(u8, &self.ar_name, SYMDEFNAME);
     }
 
-    pub fn is_symdef_sorted(self: ar_hdr) bool {
+    pub fn isSymdefSorted(self: ar_hdr) bool {
         return mem.eql(u8, &self.ar_name, SYMDEFSORTEDNAME);
     }
 
@@ -2299,7 +2299,7 @@ pub const ar_hdr = extern struct {
         return value[0..sentinel];
     }
 
-    pub fn name_offset(self: ar_hdr) std.fmt.ParseIntError!?u32 {
+    pub fn nameOffset(self: ar_hdr) std.fmt.ParseIntError!?u32 {
         const value = &self.ar_name;
         if (value[0] != '/') return null;
         const trimmed = mem.trimRight(u8, value, &[_]u8{0x20});
@@ -2307,7 +2307,7 @@ pub const ar_hdr = extern struct {
     }
 };
 
-fn gen_special_member_name(comptime name: []const u8) *const [16]u8 {
+fn genSpecialMemberName(comptime name: []const u8) *const [16]u8 {
     assert(name.len <= 16);
     const padding = 16 - name.len;
     return name ++ &[_]u8{0x20} ** padding;

@@ -7,7 +7,7 @@ pub fn decompress(reader: anytype, writer: anytype) !void {
 }
 
 /// Decompressor type
-pub fn decompressor(comptime ReaderType: type) type {
+pub fn Decompressor(comptime ReaderType: type) type {
     return inflate.Decompressor(.zlib, ReaderType);
 }
 
@@ -25,7 +25,7 @@ pub fn compress(reader: anytype, writer: anytype, options: Options) !void {
 }
 
 /// Compressor type
-pub fn compressor(comptime WriterType: type) type {
+pub fn Compressor(comptime WriterType: type) type {
     return deflate.Compressor(.zlib, WriterType);
 }
 
@@ -41,7 +41,7 @@ pub const huffman = struct {
         try deflate.huffman.compress(.zlib, reader, writer);
     }
 
-    pub fn compressor(comptime WriterType: type) type {
+    pub fn Compressor(comptime WriterType: type) type {
         return deflate.huffman.Compressor(.zlib, WriterType);
     }
 
@@ -56,7 +56,7 @@ pub const store = struct {
         try deflate.store.compress(.zlib, reader, writer);
     }
 
-    pub fn compressor(comptime WriterType: type) type {
+    pub fn Compressor(comptime WriterType: type) type {
         return deflate.store.Compressor(.zlib, WriterType);
     }
 

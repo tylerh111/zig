@@ -26,7 +26,7 @@ pub const EcdsaSecp256k1Sha256 = Ecdsa(crypto.ecc.Secp256k1, crypto.hash.sha2.Sh
 pub const EcdsaSecp256k1Sha256oSha256 = Ecdsa(crypto.ecc.Secp256k1, crypto.hash.composition.Sha256oSha256);
 
 /// Elliptic Curve Digital Signature Algorithm (ECDSA).
-pub fn ecdsa(comptime Curve: type, comptime Hash: type) type {
+pub fn Ecdsa(comptime Curve: type, comptime Hash: type) type {
     const Prf = switch (Hash) {
         sha3.Shake128 => sha3.KMac128,
         sha3.Shake256 => sha3.KMac256,
@@ -44,11 +44,11 @@ pub fn ecdsa(comptime Curve: type, comptime Hash: type) type {
 
             bytes: Curve.scalar.CompressedScalar,
 
-            pub fn from_bytes(bytes: [encoded_length]u8) !SecretKey {
+            pub fn fromBytes(bytes: [encoded_length]u8) !SecretKey {
                 return SecretKey{ .bytes = bytes };
             }
 
-            pub fn to_bytes(sk: SecretKey) [encoded_length]u8 {
+            pub fn toBytes(sk: SecretKey) [encoded_length]u8 {
                 return sk.bytes;
             }
         };
@@ -63,17 +63,17 @@ pub fn ecdsa(comptime Curve: type, comptime Hash: type) type {
             p: Curve,
 
             /// Create a public key from a SEC-1 representation.
-            pub fn from_sec1(sec1: []const u8) !PublicKey {
+            pub fn fromSec1(sec1: []const u8) !PublicKey {
                 return PublicKey{ .p = try Curve.fromSec1(sec1) };
             }
 
             /// Encode the public key using the compressed SEC-1 format.
-            pub fn to_compressed_sec1(pk: PublicKey) [compressed_sec1_encoded_length]u8 {
+            pub fn toCompressedSec1(pk: PublicKey) [compressed_sec1_encoded_length]u8 {
                 return pk.p.toCompressedSec1();
             }
 
             /// Encoding the public key using the uncompressed SEC-1 format.
-            pub fn to_uncompressed_sec1(pk: PublicKey) [uncompressed_sec1_encoded_length]u8 {
+            pub fn toUncompressedSec1(pk: PublicKey) [uncompressed_sec1_encoded_length]u8 {
                 return pk.p.toUncompressedSec1();
             }
         };
@@ -105,7 +105,7 @@ pub fn ecdsa(comptime Curve: type, comptime Hash: type) type {
             }
 
             /// Return the raw signature (r, s) in big-endian format.
-            pub fn to_bytes(self: Signature) [encoded_length]u8 {
+            pub fn toBytes(self: Signature) [encoded_length]u8 {
                 var bytes: [encoded_length]u8 = undefined;
                 @memcpy(bytes[0 .. encoded_length / 2], &self.r);
                 @memcpy(bytes[encoded_length / 2 ..], &self.s);
@@ -114,7 +114,7 @@ pub fn ecdsa(comptime Curve: type, comptime Hash: type) type {
 
             /// Create a signature from a raw encoding of (r, s).
             /// ECDSA always assumes big-endian.
-            pub fn from_bytes(bytes: [encoded_length]u8) Signature {
+            pub fn fromBytes(bytes: [encoded_length]u8) Signature {
                 return Signature{
                     .r = bytes[0 .. encoded_length / 2].*,
                     .s = bytes[encoded_length / 2 ..].*,
@@ -124,7 +124,7 @@ pub fn ecdsa(comptime Curve: type, comptime Hash: type) type {
             /// Encode the signature using the DER format.
             /// The maximum length of the DER encoding is der_encoded_length_max.
             /// The function returns a slice, that can be shorter than der_encoded_length_max.
-            pub fn to_der(self: Signature, buf: *[der_encoded_length_max]u8) []u8 {
+            pub fn toDer(self: Signature, buf: *[der_encoded_length_max]u8) []u8 {
                 var fb = io.fixedBufferStream(buf);
                 const w = fb.writer();
                 const r_len = @as(u8, @intCast(self.r.len + (self.r[0] >> 7)));
@@ -145,7 +145,7 @@ pub fn ecdsa(comptime Curve: type, comptime Hash: type) type {
             }
 
             // Read a DER-encoded integer.
-            fn read_der_int(out: []u8, reader: anytype) EncodingError!void {
+            fn readDerInt(out: []u8, reader: anytype) EncodingError!void {
                 var buf: [2]u8 = undefined;
                 _ = reader.readNoEof(&buf) catch return error.InvalidEncoding;
                 if (buf[0] != 0x02) return error.InvalidEncoding;
@@ -164,7 +164,7 @@ pub fn ecdsa(comptime Curve: type, comptime Hash: type) type {
 
             /// Create a signature from a DER representation.
             /// Returns InvalidEncoding if the DER encoding is invalid.
-            pub fn from_der(der: []const u8) EncodingError!Signature {
+            pub fn fromDer(der: []const u8) EncodingError!Signature {
                 var sig: Signature = mem.zeroInit(Signature, .{});
                 var fb = io.fixedBufferStream(der);
                 const reader = fb.reader();
@@ -305,7 +305,7 @@ pub fn ecdsa(comptime Curve: type, comptime Hash: type) type {
             }
 
             /// Return the public key corresponding to the secret key.
-            pub fn from_secret_key(secret_key: SecretKey) IdentityElementError!KeyPair {
+            pub fn fromSecretKey(secret_key: SecretKey) IdentityElementError!KeyPair {
                 const public_key = try Curve.basePoint.mul(secret_key.bytes, .big);
                 return KeyPair{ .secret_key = secret_key, .public_key = PublicKey{ .p = public_key } };
             }
@@ -327,7 +327,7 @@ pub fn ecdsa(comptime Curve: type, comptime Hash: type) type {
         };
 
         // Reduce the coordinate of a field element to the scalar field.
-        fn reduce_to_scalar(comptime unreduced_len: usize, s: [unreduced_len]u8) Curve.scalar.Scalar {
+        fn reduceToScalar(comptime unreduced_len: usize, s: [unreduced_len]u8) Curve.scalar.Scalar {
             if (unreduced_len >= 48) {
                 var xs = [_]u8{0} ** 64;
                 @memcpy(xs[xs.len - s.len ..], s[0..]);
@@ -340,7 +340,7 @@ pub fn ecdsa(comptime Curve: type, comptime Hash: type) type {
 
         // Create a deterministic scalar according to a secret key and optional noise.
         // This uses the overly conservative scheme from the "Deterministic ECDSA and EdDSA Signatures with Additional Randomness" draft.
-        fn deterministic_scalar(h: [Hash.digest_length]u8, secret_key: Curve.scalar.CompressedScalar, noise: ?[noise_length]u8) Curve.scalar.Scalar {
+        fn deterministicScalar(h: [Hash.digest_length]u8, secret_key: Curve.scalar.CompressedScalar, noise: ?[noise_length]u8) Curve.scalar.Scalar {
             var k = [_]u8{0x00} ** h.len;
             var m = [_]u8{0x00} ** (h.len + 1 + noise_length + secret_key.len + h.len);
             var t = [_]u8{0x00} ** Curve.scalar.encoded_length;
@@ -869,7 +869,7 @@ test "Test vectors from Project Wycheproof" {
     }
 }
 
-fn tv_try(vector: TestVector) !void {
+fn tvTry(vector: TestVector) !void {
     const Scheme = EcdsaP256Sha256;
     var key_sec1_: [Scheme.PublicKey.uncompressed_sec1_encoded_length]u8 = undefined;
     const key_sec1 = try fmt.hexToBytes(&key_sec1_, vector.key);

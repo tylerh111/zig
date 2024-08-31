@@ -191,7 +191,7 @@ test "@sizeOf comparison against zero" {
         f: *@This(),
     };
     const S1 = struct {
-        fn h(comptime T: type) type {
+        fn H(comptime T: type) type {
             return struct {
                 x: T,
             };
@@ -201,7 +201,7 @@ test "@sizeOf comparison against zero" {
         f2: H(***@This()),
     };
     const U1 = union {
-        fn h(comptime T: type) type {
+        fn H(comptime T: type) type {
             return struct {
                 x: T,
             };
@@ -211,7 +211,7 @@ test "@sizeOf comparison against zero" {
         f2: H(***@This()),
     };
     const S = struct {
-        fn do_the_test(comptime T: type, comptime result: bool) !void {
+        fn doTheTest(comptime T: type, comptime result: bool) !void {
             try expect(result == (@sizeOf(T) > 0));
         }
     };
@@ -381,7 +381,7 @@ test "Extern function calls in @TypeOf" {
             return 1;
         }
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try expect(@TypeOf(test_fn_1(0, 42)) == c_int);
             try expect(@TypeOf(test_fn_2(&S{ .state = 1 }, 0)) == c_short);
         }
@@ -399,7 +399,7 @@ test "Peer resolution of extern function calls in @TypeOf" {
             return 0;
         }
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try expect(@TypeOf(test_fn()) == c_long);
         }
     };
@@ -425,7 +425,7 @@ test "Extern function calls, dereferences and field access in @TypeOf" {
             return 255;
         }
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try expect(@TypeOf(test_fn_1(0)) == FILE);
             try expect(@TypeOf(test_fn_2(0)) == u8);
         }

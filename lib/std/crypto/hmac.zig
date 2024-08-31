@@ -13,7 +13,7 @@ pub const sha2 = struct {
     pub const HmacSha512 = Hmac(crypto.hash.sha2.Sha512);
 };
 
-pub fn hmac(comptime Hash: type) type {
+pub fn Hmac(comptime Hash: type) type {
     return struct {
         const Self = @This();
         pub const mac_length = Hash.digest_length;

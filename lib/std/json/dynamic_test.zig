@@ -115,7 +115,7 @@ test "write json then parse it" {
     try testing.expect(mem.eql(u8, parsed.value.object.get("str").?.string, "hello"));
 }
 
-fn test_parse(allocator: std.mem.Allocator, json_str: []const u8) !Value {
+fn testParse(allocator: std.mem.Allocator, json_str: []const u8) !Value {
     return parseFromSliceLeaky(Value, allocator, json_str, .{});
 }
 
@@ -268,7 +268,7 @@ test "polymorphic parsing" {
             caption: []const u8,
         };
 
-        pub fn json_parse_from_value(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
+        pub fn jsonParseFromValue(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
             if (source != .object) return error.UnexpectedToken;
             const type_value = source.object.get("type") orelse return error.UnexpectedToken; // Missing "type" field.
             if (type_value != .string) return error.UnexpectedToken; // "type" expected to be string.
@@ -350,6 +350,6 @@ test "negative zero" {
     try testing.expect(std.math.isNegativeZero(parsed.value.float));
 }
 
-fn small_buffer_json_reader(allocator: Allocator, io_reader: anytype) JsonReader(16, @TypeOf(io_reader)) {
+fn smallBufferJsonReader(allocator: Allocator, io_reader: anytype) JsonReader(16, @TypeOf(io_reader)) {
     return JsonReader(16, @TypeOf(io_reader)).init(allocator, io_reader);
 }

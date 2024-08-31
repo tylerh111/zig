@@ -36,7 +36,7 @@ const hashes = [_]Crypto{
 
 const block_size: usize = 8 * 8192;
 
-pub fn benchmark_hash(comptime Hash: anytype, comptime bytes: comptime_int) !u64 {
+pub fn benchmarkHash(comptime Hash: anytype, comptime bytes: comptime_int) !u64 {
     const blocks_count = bytes / block_size;
     var block: [block_size]u8 = undefined;
     random.bytes(&block);
@@ -77,7 +77,7 @@ const macs = [_]Crypto{
     Crypto{ .ty = crypto.auth.cmac.CmacAes128, .name = "aes-cmac" },
 };
 
-pub fn benchmark_mac(comptime Mac: anytype, comptime bytes: comptime_int) !u64 {
+pub fn benchmarkMac(comptime Mac: anytype, comptime bytes: comptime_int) !u64 {
     var in: [512 * KiB]u8 = undefined;
     random.bytes(in[0..]);
 
@@ -103,7 +103,7 @@ pub fn benchmark_mac(comptime Mac: anytype, comptime bytes: comptime_int) !u64 {
 
 const exchanges = [_]Crypto{Crypto{ .ty = crypto.dh.X25519, .name = "x25519" }};
 
-pub fn benchmark_key_exchange(comptime DhKeyExchange: anytype, comptime exchange_count: comptime_int) !u64 {
+pub fn benchmarkKeyExchange(comptime DhKeyExchange: anytype, comptime exchange_count: comptime_int) !u64 {
     std.debug.assert(DhKeyExchange.shared_length >= DhKeyExchange.secret_length);
 
     var secret: [DhKeyExchange.shared_length]u8 = undefined;
@@ -138,7 +138,7 @@ const signatures = [_]Crypto{
     Crypto{ .ty = crypto.sign.ecdsa.EcdsaSecp256k1Sha256, .name = "ecdsa-secp256k1" },
 };
 
-pub fn benchmark_signature(comptime Signature: anytype, comptime signatures_count: comptime_int) !u64 {
+pub fn benchmarkSignature(comptime Signature: anytype, comptime signatures_count: comptime_int) !u64 {
     const msg = [_]u8{0} ** 64;
     const key_pair = try Signature.KeyPair.create(null);
 
@@ -161,7 +161,7 @@ pub fn benchmark_signature(comptime Signature: anytype, comptime signatures_coun
 
 const signature_verifications = [_]Crypto{Crypto{ .ty = crypto.sign.Ed25519, .name = "ed25519" }};
 
-pub fn benchmark_signature_verification(comptime Signature: anytype, comptime signatures_count: comptime_int) !u64 {
+pub fn benchmarkSignatureVerification(comptime Signature: anytype, comptime signatures_count: comptime_int) !u64 {
     const msg = [_]u8{0} ** 64;
     const key_pair = try Signature.KeyPair.create(null);
     const sig = try key_pair.sign(&msg, null);
@@ -185,7 +185,7 @@ pub fn benchmark_signature_verification(comptime Signature: anytype, comptime si
 
 const batch_signature_verifications = [_]Crypto{Crypto{ .ty = crypto.sign.Ed25519, .name = "ed25519" }};
 
-pub fn benchmark_batch_signature_verification(comptime Signature: anytype, comptime signatures_count: comptime_int) !u64 {
+pub fn benchmarkBatchSignatureVerification(comptime Signature: anytype, comptime signatures_count: comptime_int) !u64 {
     const msg = [_]u8{0} ** 64;
     const key_pair = try Signature.KeyPair.create(null);
     const sig = try key_pair.sign(&msg, null);
@@ -218,7 +218,7 @@ const kems = [_]Crypto{
     Crypto{ .ty = crypto.kem.kyber_d00.Kyber1024, .name = "kyber1024d00" },
 };
 
-pub fn benchmark_kem(comptime Kem: anytype, comptime kems_count: comptime_int) !u64 {
+pub fn benchmarkKem(comptime Kem: anytype, comptime kems_count: comptime_int) !u64 {
     const key_pair = try Kem.KeyPair.create(null);
 
     var timer = try Timer.start();
@@ -238,7 +238,7 @@ pub fn benchmark_kem(comptime Kem: anytype, comptime kems_count: comptime_int) !
     return throughput;
 }
 
-pub fn benchmark_kem_decaps(comptime Kem: anytype, comptime kems_count: comptime_int) !u64 {
+pub fn benchmarkKemDecaps(comptime Kem: anytype, comptime kems_count: comptime_int) !u64 {
     const key_pair = try Kem.KeyPair.create(null);
 
     const e = key_pair.public_key.encaps(null);
@@ -260,7 +260,7 @@ pub fn benchmark_kem_decaps(comptime Kem: anytype, comptime kems_count: comptime
     return throughput;
 }
 
-pub fn benchmark_kem_key_gen(comptime Kem: anytype, comptime kems_count: comptime_int) !u64 {
+pub fn benchmarkKemKeyGen(comptime Kem: anytype, comptime kems_count: comptime_int) !u64 {
     var timer = try Timer.start();
     const start = timer.lap();
     {
@@ -292,7 +292,7 @@ const aeads = [_]Crypto{
     Crypto{ .ty = crypto.aead.isap.IsapA128A, .name = "isapa128a" },
 };
 
-pub fn benchmark_aead(comptime Aead: anytype, comptime bytes: comptime_int) !u64 {
+pub fn benchmarkAead(comptime Aead: anytype, comptime bytes: comptime_int) !u64 {
     var in: [512 * KiB]u8 = undefined;
     random.bytes(in[0..]);
 
@@ -325,7 +325,7 @@ const aes = [_]Crypto{
     Crypto{ .ty = crypto.core.aes.Aes256, .name = "aes256-single" },
 };
 
-pub fn benchmark_aes(comptime Aes: anytype, comptime count: comptime_int) !u64 {
+pub fn benchmarkAes(comptime Aes: anytype, comptime count: comptime_int) !u64 {
     var key: [Aes.key_bits / 8]u8 = undefined;
     random.bytes(key[0..]);
     const ctx = Aes.initEnc(key);
@@ -354,7 +354,7 @@ const aes8 = [_]Crypto{
     Crypto{ .ty = crypto.core.aes.Aes256, .name = "aes256-8" },
 };
 
-pub fn benchmark_aes8(comptime Aes: anytype, comptime count: comptime_int) !u64 {
+pub fn benchmarkAes8(comptime Aes: anytype, comptime count: comptime_int) !u64 {
     var key: [Aes.key_bits / 8]u8 = undefined;
     random.bytes(key[0..]);
     const ctx = Aes.initEnc(key);
@@ -402,7 +402,7 @@ const pwhashes = [_]CryptoPwhash{
     },
 };
 
-fn benchmark_pwhash(
+fn benchmarkPwhash(
     allocator: mem.Allocator,
     comptime ty: anytype,
     comptime params: *const anyopaque,

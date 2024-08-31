@@ -21,7 +21,7 @@ test "cmpxchg" {
     try comptime testCmpxchg();
 }
 
-fn test_cmpxchg() !void {
+fn testCmpxchg() !void {
     var x: i32 = 1234;
     if (@cmpxchgWeak(i32, &x, 99, 5678, .seq_cst, .seq_cst)) |x1| {
         try expect(x1 == 1234);
@@ -62,7 +62,7 @@ test "atomicrmw and atomicload" {
     try testAtomicLoad(&data);
 }
 
-fn test_atomic_rmw(ptr: *u8) !void {
+fn testAtomicRmw(ptr: *u8) !void {
     const prev_value = @atomicRmw(u8, ptr, .Xchg, 42, .seq_cst);
     try expect(prev_value == 200);
     comptime {
@@ -73,7 +73,7 @@ fn test_atomic_rmw(ptr: *u8) !void {
     }
 }
 
-fn test_atomic_load(ptr: *u8) !void {
+fn testAtomicLoad(ptr: *u8) !void {
     const x = @atomicLoad(u8, ptr, .seq_cst);
     try expect(x == 42);
 }
@@ -208,7 +208,7 @@ test "atomic store comptime" {
     try testAtomicStore();
 }
 
-fn test_atomic_store() !void {
+fn testAtomicStore() !void {
     var x: u32 = 0;
     @atomicStore(u32, &x, 1, .seq_cst);
     try expect(@atomicLoad(u32, &x, .seq_cst) == 1);
@@ -231,7 +231,7 @@ test "atomicrmw with floats" {
     try comptime testAtomicRmwFloat();
 }
 
-fn test_atomic_rmw_float() !void {
+fn testAtomicRmwFloat() !void {
     var x: f32 = 0;
     try expect(x == 0);
     _ = @atomicRmw(f32, &x, .Xchg, 1, .seq_cst);
@@ -262,7 +262,7 @@ test "atomicrmw with ints" {
     try comptime testAtomicRmwInts();
 }
 
-fn test_atomic_rmw_ints() !void {
+fn testAtomicRmwInts() !void {
     // TODO: Use the max atomic bit size for the target, maybe builtin?
     try testAtomicRmwInt(.unsigned, 8);
 
@@ -273,7 +273,7 @@ fn test_atomic_rmw_ints() !void {
     }
 }
 
-fn test_atomic_rmw_int(comptime signedness: std.builtin.Signedness, comptime N: usize) !void {
+fn testAtomicRmwInt(comptime signedness: std.builtin.Signedness, comptime N: usize) !void {
     const int = std.meta.Int(signedness, N);
 
     var x: int = 1;
@@ -336,7 +336,7 @@ test "atomicrmw with 128-bit ints" {
     try comptime testAtomicRmwInt128(.unsigned);
 }
 
-fn test_atomic_rmw_int128(comptime signedness: std.builtin.Signedness) !void {
+fn testAtomicRmwInt128(comptime signedness: std.builtin.Signedness) !void {
     const uint = std.meta.Int(.unsigned, 128);
     const int = std.meta.Int(signedness, 128);
 
@@ -415,7 +415,7 @@ test "atomics with different types" {
     try testAtomicsWithType(i0, 0, 0);
 }
 
-fn test_atomics_with_type(comptime T: type, a: T, b: T) !void {
+fn testAtomicsWithType(comptime T: type, a: T, b: T) !void {
     var x: T = b;
     @atomicStore(T, &x, a, .seq_cst);
     try expect(x == a);
@@ -448,7 +448,7 @@ test "return @atomicStore, using it as a void value" {
             }
         };
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var x: A = .{ .value = 5 };
             x.store(10);
             try expect(x.value == 10);

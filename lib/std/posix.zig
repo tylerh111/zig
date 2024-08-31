@@ -616,7 +616,7 @@ pub fn getrandom(buffer: []u8) GetRandomError!void {
     }
 }
 
-fn get_random_bytes_dev_urandom(buf: []u8) !void {
+fn getRandomBytesDevURandom(buf: []u8) !void {
     const fd = try openZ("/dev/urandom", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
     defer close(fd);
 
@@ -1570,7 +1570,7 @@ pub fn open(file_path: []const u8, flags: O, perm: mode_t) OpenError!fd_t {
 /// On WASI, `file_path` should be encoded as valid UTF-8.
 /// On other platforms, `file_path` is an opaque sequence of bytes with no particular encoding.
 /// See also `open`.
-pub fn open_z(file_path: [*:0]const u8, flags: O, perm: mode_t) OpenError!fd_t {
+pub fn openZ(file_path: [*:0]const u8, flags: O, perm: mode_t) OpenError!fd_t {
     if (native_os == .windows) {
         @compileError("Windows does not support POSIX; use Windows-specific API or cross-platform std.fs API");
     } else if (native_os == .wasi and !builtin.link_libc) {
@@ -1647,7 +1647,7 @@ pub fn openat(dir_fd: fd_t, file_path: []const u8, flags: O, mode: mode_t) OpenE
 }
 
 /// Open and possibly create a file in WASI.
-pub fn openat_wasi(
+pub fn openatWasi(
     dir_fd: fd_t,
     file_path: []const u8,
     lookup_flags: wasi.lookupflags_t,
@@ -1698,7 +1698,7 @@ const WasiOpenOptions = struct {
 };
 
 /// Compute rights + flags corresponding to the provided POSIX access mode.
-fn open_options_from_flags_wasi(oflag: O) OpenError!WasiOpenOptions {
+fn openOptionsFromFlagsWasi(oflag: O) OpenError!WasiOpenOptions {
     const w = std.os.wasi;
 
     // Next, calculate the read/write rights to request, depending on the
@@ -1739,7 +1739,7 @@ fn open_options_from_flags_wasi(oflag: O) OpenError!WasiOpenOptions {
 /// On WASI, `file_path` should be encoded as valid UTF-8.
 /// On other platforms, `file_path` is an opaque sequence of bytes with no particular encoding.
 /// See also `openat`.
-pub fn openat_z(dir_fd: fd_t, file_path: [*:0]const u8, flags: O, mode: mode_t) OpenError!fd_t {
+pub fn openatZ(dir_fd: fd_t, file_path: [*:0]const u8, flags: O, mode: mode_t) OpenError!fd_t {
     if (native_os == .windows) {
         @compileError("Windows does not support POSIX; use Windows-specific API or cross-platform std.fs API");
     } else if (native_os == .wasi and !builtin.link_libc) {
@@ -1822,7 +1822,7 @@ pub const ExecveError = error{
 } || UnexpectedError;
 
 /// This function ignores PATH environment variable. See `execvpeZ` for that.
-pub fn execve_z(
+pub fn execveZ(
     path: [*:0]const u8,
     child_argv: [*:null]const ?[*:0]const u8,
     envp: [*:null]const ?[*:0]const u8,
@@ -1868,7 +1868,7 @@ pub const Arg0Expand = enum {
 /// Like `execvpeZ` except if `arg0_expand` is `.expand`, then `argv` is mutable,
 /// and `argv[0]` is expanded to be the same absolute path that is passed to the execve syscall.
 /// If this function returns with an error, `argv[0]` will be restored to the value it was when it was passed in.
-pub fn execvpe_z_expand_arg0(
+pub fn execvpeZ_expandArg0(
     comptime arg0_expand: Arg0Expand,
     file: [*:0]const u8,
     child_argv: switch (arg0_expand) {
@@ -1920,7 +1920,7 @@ pub fn execvpe_z_expand_arg0(
 
 /// This function also uses the PATH environment variable to get the full path to the executable.
 /// If `file` is an absolute path, this is the same as `execveZ`.
-pub fn execvpe_z(
+pub fn execvpeZ(
     file: [*:0]const u8,
     argv_ptr: [*:null]const ?[*:0]const u8,
     envp: [*:null]const ?[*:0]const u8,
@@ -1966,7 +1966,7 @@ pub fn getenv(key: []const u8) ?[:0]const u8 {
 
 /// Get an environment variable with a null-terminated name.
 /// See also `getenv`.
-pub fn getenv_z(key: [*:0]const u8) ?[:0]const u8 {
+pub fn getenvZ(key: [*:0]const u8) ?[:0]const u8 {
     if (builtin.link_libc) {
         const value = system.getenv(key) orelse return null;
         return mem.sliceTo(value, 0);
@@ -2056,7 +2056,7 @@ pub fn symlink(target_path: []const u8, sym_link_path: []const u8) SymLinkError!
 
 /// This is the same as `symlink` except the parameters are null-terminated pointers.
 /// See also `symlink`.
-pub fn symlink_z(target_path: [*:0]const u8, sym_link_path: [*:0]const u8) SymLinkError!void {
+pub fn symlinkZ(target_path: [*:0]const u8, sym_link_path: [*:0]const u8) SymLinkError!void {
     if (native_os == .windows) {
         @compileError("symlink is not supported on Windows; use std.os.windows.CreateSymbolicLink instead");
     } else if (native_os == .wasi and !builtin.link_libc) {
@@ -2108,7 +2108,7 @@ pub fn symlinkat(target_path: []const u8, newdirfd: fd_t, sym_link_path: []const
 
 /// WASI-only. The same as `symlinkat` but targeting WASI.
 /// See also `symlinkat`.
-pub fn symlinkat_wasi(target_path: []const u8, newdirfd: fd_t, sym_link_path: []const u8) SymLinkError!void {
+pub fn symlinkatWasi(target_path: []const u8, newdirfd: fd_t, sym_link_path: []const u8) SymLinkError!void {
     switch (wasi.path_symlink(target_path.ptr, target_path.len, newdirfd, sym_link_path.ptr, sym_link_path.len)) {
         .SUCCESS => {},
         .FAULT => unreachable,
@@ -2134,7 +2134,7 @@ pub fn symlinkat_wasi(target_path: []const u8, newdirfd: fd_t, sym_link_path: []
 
 /// The same as `symlinkat` except the parameters are null-terminated pointers.
 /// See also `symlinkat`.
-pub fn symlinkat_z(target_path: [*:0]const u8, newdirfd: fd_t, sym_link_path: [*:0]const u8) SymLinkError!void {
+pub fn symlinkatZ(target_path: [*:0]const u8, newdirfd: fd_t, sym_link_path: [*:0]const u8) SymLinkError!void {
     if (native_os == .windows) {
         @compileError("symlinkat is not supported on Windows; use std.os.windows.CreateSymbolicLink instead");
     } else if (native_os == .wasi and !builtin.link_libc) {
@@ -2184,7 +2184,7 @@ pub const LinkError = UnexpectedError || error{
 
 /// On WASI, both paths should be encoded as valid UTF-8.
 /// On other platforms, both paths are an opaque sequence of bytes with no particular encoding.
-pub fn link_z(oldpath: [*:0]const u8, newpath: [*:0]const u8, flags: i32) LinkError!void {
+pub fn linkZ(oldpath: [*:0]const u8, newpath: [*:0]const u8, flags: i32) LinkError!void {
     if (native_os == .wasi and !builtin.link_libc) {
         return link(mem.sliceTo(oldpath, 0), mem.sliceTo(newpath, 0), flags);
     }
@@ -2231,7 +2231,7 @@ pub const LinkatError = LinkError || error{NotDir};
 
 /// On WASI, both paths should be encoded as valid UTF-8.
 /// On other platforms, both paths are an opaque sequence of bytes with no particular encoding.
-pub fn linkat_z(
+pub fn linkatZ(
     olddir: fd_t,
     oldpath: [*:0]const u8,
     newdir: fd_t,
@@ -2368,7 +2368,7 @@ pub fn unlink(file_path: []const u8) UnlinkError!void {
 }
 
 /// Same as `unlink` except the parameter is null terminated.
-pub fn unlink_z(file_path: [*:0]const u8) UnlinkError!void {
+pub fn unlinkZ(file_path: [*:0]const u8) UnlinkError!void {
     if (native_os == .windows) {
         const file_path_w = try windows.cStrToPrefixedFileW(null, file_path);
         return unlinkW(file_path_w.span());
@@ -2399,7 +2399,7 @@ pub fn unlink_z(file_path: [*:0]const u8) UnlinkError!void {
 }
 
 /// Windows-only. Same as `unlink` except the parameter is null-terminated, WTF16 LE encoded.
-pub fn unlink_w(file_path_w: []const u16) UnlinkError!void {
+pub fn unlinkW(file_path_w: []const u16) UnlinkError!void {
     windows.DeleteFile(file_path_w, .{ .dir = fs.cwd().fd }) catch |err| switch (err) {
         error.DirNotEmpty => unreachable, // we're not passing .remove_dir = true
         else => |e| return e,
@@ -2430,7 +2430,7 @@ pub fn unlinkat(dirfd: fd_t, file_path: []const u8, flags: u32) UnlinkatError!vo
 
 /// WASI-only. Same as `unlinkat` but targeting WASI.
 /// See also `unlinkat`.
-pub fn unlinkat_wasi(dirfd: fd_t, file_path: []const u8, flags: u32) UnlinkatError!void {
+pub fn unlinkatWasi(dirfd: fd_t, file_path: []const u8, flags: u32) UnlinkatError!void {
     const remove_dir = (flags & AT.REMOVEDIR) != 0;
     const res = if (remove_dir)
         wasi.path_remove_directory(dirfd, file_path.ptr, file_path.len)
@@ -2462,7 +2462,7 @@ pub fn unlinkat_wasi(dirfd: fd_t, file_path: []const u8, flags: u32) UnlinkatErr
 }
 
 /// Same as `unlinkat` but `file_path` is a null-terminated string.
-pub fn unlinkat_z(dirfd: fd_t, file_path_c: [*:0]const u8, flags: u32) UnlinkatError!void {
+pub fn unlinkatZ(dirfd: fd_t, file_path_c: [*:0]const u8, flags: u32) UnlinkatError!void {
     if (native_os == .windows) {
         const file_path_w = try windows.cStrToPrefixedFileW(dirfd, file_path_c);
         return unlinkatW(dirfd, file_path_w.span(), flags);
@@ -2498,7 +2498,7 @@ pub fn unlinkat_z(dirfd: fd_t, file_path_c: [*:0]const u8, flags: u32) UnlinkatE
 }
 
 /// Same as `unlinkat` but `sub_path_w` is WTF16LE, NT prefixed. Windows only.
-pub fn unlinkat_w(dirfd: fd_t, sub_path_w: []const u16, flags: u32) UnlinkatError!void {
+pub fn unlinkatW(dirfd: fd_t, sub_path_w: []const u16, flags: u32) UnlinkatError!void {
     const remove_dir = (flags & AT.REMOVEDIR) != 0;
     return windows.DeleteFile(sub_path_w, .{ .dir = dirfd, .remove_dir = remove_dir });
 }
@@ -2561,7 +2561,7 @@ pub fn rename(old_path: []const u8, new_path: []const u8) RenameError!void {
 }
 
 /// Same as `rename` except the parameters are null-terminated.
-pub fn rename_z(old_path: [*:0]const u8, new_path: [*:0]const u8) RenameError!void {
+pub fn renameZ(old_path: [*:0]const u8, new_path: [*:0]const u8) RenameError!void {
     if (native_os == .windows) {
         const old_path_w = try windows.cStrToPrefixedFileW(null, old_path);
         const new_path_w = try windows.cStrToPrefixedFileW(null, new_path);
@@ -2599,7 +2599,7 @@ pub fn rename_z(old_path: [*:0]const u8, new_path: [*:0]const u8) RenameError!vo
 
 /// Same as `rename` except the parameters are null-terminated and WTF16LE encoded.
 /// Assumes target is Windows.
-pub fn rename_w(old_path: [*:0]const u16, new_path: [*:0]const u16) RenameError!void {
+pub fn renameW(old_path: [*:0]const u16, new_path: [*:0]const u16) RenameError!void {
     const flags = windows.MOVEFILE_REPLACE_EXISTING | windows.MOVEFILE_WRITE_THROUGH;
     return windows.MoveFileExW(old_path, new_path, flags);
 }
@@ -2631,7 +2631,7 @@ pub fn renameat(
 
 /// WASI-only. Same as `renameat` expect targeting WASI.
 /// See also `renameat`.
-fn renameat_wasi(old: RelativePathWasi, new: RelativePathWasi) RenameError!void {
+fn renameatWasi(old: RelativePathWasi, new: RelativePathWasi) RenameError!void {
     switch (wasi.path_rename(old.dir_fd, old.relative_path.ptr, old.relative_path.len, new.dir_fd, new.relative_path.ptr, new.relative_path.len)) {
         .SUCCESS => return,
         .ACCES => return error.AccessDenied,
@@ -2670,7 +2670,7 @@ const RelativePathWasi = struct {
 };
 
 /// Same as `renameat` except the parameters are null-terminated.
-pub fn renameat_z(
+pub fn renameatZ(
     old_dir_fd: fd_t,
     old_path: [*:0]const u8,
     new_dir_fd: fd_t,
@@ -2714,7 +2714,7 @@ pub fn renameat_z(
 
 /// Same as `renameat` but Windows-only and the path parameters are
 /// [WTF-16](https://simonsapin.github.io/wtf-8/#potentially-ill-formed-utf-16) encoded.
-pub fn renameat_w(
+pub fn renameatW(
     old_dir_fd: fd_t,
     old_path_w: []const u16,
     new_dir_fd: fd_t,
@@ -2834,7 +2834,7 @@ pub fn mkdirat(dir_fd: fd_t, sub_dir_path: []const u8, mode: u32) MakeDirError!v
     }
 }
 
-pub fn mkdirat_wasi(dir_fd: fd_t, sub_dir_path: []const u8, mode: u32) MakeDirError!void {
+pub fn mkdiratWasi(dir_fd: fd_t, sub_dir_path: []const u8, mode: u32) MakeDirError!void {
     _ = mode;
     switch (wasi.path_create_directory(dir_fd, sub_dir_path.ptr, sub_dir_path.len)) {
         .SUCCESS => return,
@@ -2859,7 +2859,7 @@ pub fn mkdirat_wasi(dir_fd: fd_t, sub_dir_path: []const u8, mode: u32) MakeDirEr
 }
 
 /// Same as `mkdirat` except the parameters are null-terminated.
-pub fn mkdirat_z(dir_fd: fd_t, sub_dir_path: [*:0]const u8, mode: u32) MakeDirError!void {
+pub fn mkdiratZ(dir_fd: fd_t, sub_dir_path: [*:0]const u8, mode: u32) MakeDirError!void {
     if (native_os == .windows) {
         const sub_dir_path_w = try windows.cStrToPrefixedFileW(dir_fd, sub_dir_path);
         return mkdiratW(dir_fd, sub_dir_path_w.span(), mode);
@@ -2893,7 +2893,7 @@ pub fn mkdirat_z(dir_fd: fd_t, sub_dir_path: [*:0]const u8, mode: u32) MakeDirEr
 }
 
 /// Windows-only. Same as `mkdirat` except the parameter WTF16 LE encoded.
-pub fn mkdirat_w(dir_fd: fd_t, sub_path_w: []const u16, mode: u32) MakeDirError!void {
+pub fn mkdiratW(dir_fd: fd_t, sub_path_w: []const u16, mode: u32) MakeDirError!void {
     _ = mode;
     const sub_dir_handle = windows.OpenFile(sub_path_w, .{
         .dir = dir_fd,
@@ -2956,7 +2956,7 @@ pub fn mkdir(dir_path: []const u8, mode: u32) MakeDirError!void {
 /// On Windows, `dir_path` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `dir_path` should be encoded as valid UTF-8.
 /// On other platforms, `dir_path` is an opaque sequence of bytes with no particular encoding.
-pub fn mkdir_z(dir_path: [*:0]const u8, mode: u32) MakeDirError!void {
+pub fn mkdirZ(dir_path: [*:0]const u8, mode: u32) MakeDirError!void {
     if (native_os == .windows) {
         const dir_path_w = try windows.cStrToPrefixedFileW(null, dir_path);
         return mkdirW(dir_path_w.span(), mode);
@@ -2987,7 +2987,7 @@ pub fn mkdir_z(dir_path: [*:0]const u8, mode: u32) MakeDirError!void {
 }
 
 /// Windows-only. Same as `mkdir` but the parameters is WTF16LE encoded.
-pub fn mkdir_w(dir_path_w: []const u16, mode: u32) MakeDirError!void {
+pub fn mkdirW(dir_path_w: []const u16, mode: u32) MakeDirError!void {
     _ = mode;
     const sub_dir_handle = windows.OpenFile(dir_path_w, .{
         .dir = fs.cwd().fd,
@@ -3048,7 +3048,7 @@ pub fn rmdir(dir_path: []const u8) DeleteDirError!void {
 /// On Windows, `dir_path` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `dir_path` should be encoded as valid UTF-8.
 /// On other platforms, `dir_path` is an opaque sequence of bytes with no particular encoding.
-pub fn rmdir_z(dir_path: [*:0]const u8) DeleteDirError!void {
+pub fn rmdirZ(dir_path: [*:0]const u8) DeleteDirError!void {
     if (native_os == .windows) {
         const dir_path_w = try windows.cStrToPrefixedFileW(null, dir_path);
         return rmdirW(dir_path_w.span());
@@ -3079,7 +3079,7 @@ pub fn rmdir_z(dir_path: [*:0]const u8) DeleteDirError!void {
 }
 
 /// Windows-only. Same as `rmdir` except the parameter is WTF-16 LE encoded.
-pub fn rmdir_w(dir_path_w: []const u16) DeleteDirError!void {
+pub fn rmdirW(dir_path_w: []const u16) DeleteDirError!void {
     return windows.DeleteFile(dir_path_w, .{ .dir = fs.cwd().fd, .remove_dir = true }) catch |err| switch (err) {
         error.IsDir => unreachable,
         else => |e| return e,
@@ -3124,7 +3124,7 @@ pub fn chdir(dir_path: []const u8) ChangeCurDirError!void {
 /// On Windows, `dir_path` should be encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// On WASI, `dir_path` should be encoded as valid UTF-8.
 /// On other platforms, `dir_path` is an opaque sequence of bytes with no particular encoding.
-pub fn chdir_z(dir_path: [*:0]const u8) ChangeCurDirError!void {
+pub fn chdirZ(dir_path: [*:0]const u8) ChangeCurDirError!void {
     if (native_os == .windows) {
         var wtf16_dir_path: [windows.PATH_MAX_WIDE]u16 = undefined;
         const len = try std.unicode.wtf8ToWtf16Le(wtf16_dir_path[0..], mem.span(dir_path));
@@ -3152,7 +3152,7 @@ pub fn chdir_z(dir_path: [*:0]const u8) ChangeCurDirError!void {
 }
 
 /// Windows-only. Same as `chdir` except the parameter is WTF16 LE encoded.
-pub fn chdir_w(dir_path: []const u16) ChangeCurDirError!void {
+pub fn chdirW(dir_path: []const u16) ChangeCurDirError!void {
     windows.SetCurrentDirectory(dir_path) catch |err| switch (err) {
         error.NoDevice => return error.FileSystem,
         else => |e| return e,
@@ -3227,12 +3227,12 @@ pub fn readlink(file_path: []const u8, out_buffer: []u8) ReadLinkError![]u8 {
 /// Windows-only. Same as `readlink` except `file_path` is WTF16 LE encoded.
 /// The result is encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// See also `readlinkZ`.
-pub fn readlink_w(file_path: []const u16, out_buffer: []u8) ReadLinkError![]u8 {
+pub fn readlinkW(file_path: []const u16, out_buffer: []u8) ReadLinkError![]u8 {
     return windows.ReadLink(fs.cwd().fd, file_path, out_buffer);
 }
 
 /// Same as `readlink` except `file_path` is null-terminated.
-pub fn readlink_z(file_path: [*:0]const u8, out_buffer: []u8) ReadLinkError![]u8 {
+pub fn readlinkZ(file_path: [*:0]const u8, out_buffer: []u8) ReadLinkError![]u8 {
     if (native_os == .windows) {
         const file_path_w = try windows.cStrToPrefixedFileW(null, file_path);
         return readlinkW(file_path_w.span(), out_buffer);
@@ -3282,7 +3282,7 @@ pub fn readlinkat(dirfd: fd_t, file_path: []const u8, out_buffer: []u8) ReadLink
 
 /// WASI-only. Same as `readlinkat` but targets WASI.
 /// See also `readlinkat`.
-pub fn readlinkat_wasi(dirfd: fd_t, file_path: []const u8, out_buffer: []u8) ReadLinkError![]u8 {
+pub fn readlinkatWasi(dirfd: fd_t, file_path: []const u8, out_buffer: []u8) ReadLinkError![]u8 {
     var bufused: usize = undefined;
     switch (wasi.path_readlink(dirfd, file_path.ptr, file_path.len, out_buffer.ptr, out_buffer.len, &bufused)) {
         .SUCCESS => return out_buffer[0..bufused],
@@ -3304,13 +3304,13 @@ pub fn readlinkat_wasi(dirfd: fd_t, file_path: []const u8, out_buffer: []u8) Rea
 /// Windows-only. Same as `readlinkat` except `file_path` is null-terminated, WTF16 LE encoded.
 /// The result is encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 /// See also `readlinkat`.
-pub fn readlinkat_w(dirfd: fd_t, file_path: []const u16, out_buffer: []u8) ReadLinkError![]u8 {
+pub fn readlinkatW(dirfd: fd_t, file_path: []const u16, out_buffer: []u8) ReadLinkError![]u8 {
     return windows.ReadLink(dirfd, file_path, out_buffer);
 }
 
 /// Same as `readlinkat` except `file_path` is null-terminated.
 /// See also `readlinkat`.
-pub fn readlinkat_z(dirfd: fd_t, file_path: [*:0]const u8, out_buffer: []u8) ReadLinkError![]u8 {
+pub fn readlinkatZ(dirfd: fd_t, file_path: [*:0]const u8, out_buffer: []u8) ReadLinkError![]u8 {
     if (native_os == .windows) {
         const file_path_w = try windows.cStrToPrefixedFileW(dirfd, file_path);
         return readlinkatW(dirfd, file_path_w.span(), out_buffer);
@@ -3857,7 +3857,7 @@ pub fn accept(
     return accepted_sock;
 }
 
-fn set_sock_flags(sock: socket_t, flags: u32) !void {
+fn setSockFlags(sock: socket_t, flags: u32) !void {
     if ((flags & SOCK.CLOEXEC) != 0) {
         if (native_os == .windows) {
             // TODO: Find out if this is supported for sockets
@@ -4198,7 +4198,7 @@ pub fn connect(sock: socket_t, sock_addr: *const sockaddr, len: socklen_t) Conne
     }
 }
 
-pub fn getsockopt_error(sockfd: fd_t) ConnectError!void {
+pub fn getsockoptError(sockfd: fd_t) ConnectError!void {
     var err_code: i32 = undefined;
     var size: u32 = @sizeOf(u32);
     const rc = system.getsockopt(sockfd, SOL.SOCKET, SO.ERROR, @ptrCast(&err_code), &size);
@@ -4333,7 +4333,7 @@ pub fn fstatat(dirfd: fd_t, pathname: []const u8, flags: u32) FStatAtError!Stat 
 
 /// Same as `fstatat` but `pathname` is null-terminated.
 /// See also `fstatat`.
-pub fn fstatat_z(dirfd: fd_t, pathname: [*:0]const u8, flags: u32) FStatAtError!Stat {
+pub fn fstatatZ(dirfd: fd_t, pathname: [*:0]const u8, flags: u32) FStatAtError!Stat {
     if (native_os == .wasi and !builtin.link_libc) {
         const filestat = try std.os.fstatat_wasi(dirfd, mem.sliceTo(pathname, 0), .{
             .SYMLINK_FOLLOW = (flags & AT.SYMLINK_NOFOLLOW) == 0,
@@ -4465,7 +4465,7 @@ pub fn inotify_add_watch(inotify_fd: i32, pathname: []const u8, mask: u32) INoti
 }
 
 /// Same as `inotify_add_watch` except pathname is null-terminated.
-pub fn inotify_add_watch_z(inotify_fd: i32, pathname: [*:0]const u8, mask: u32) INotifyAddWatchError!i32 {
+pub fn inotify_add_watchZ(inotify_fd: i32, pathname: [*:0]const u8, mask: u32) INotifyAddWatchError!i32 {
     const rc = system.inotify_add_watch(inotify_fd, pathname, mask);
     switch (errno(rc)) {
         .SUCCESS => return @intCast(rc),
@@ -4539,7 +4539,7 @@ pub fn fanotify_mark(fanotify_fd: i32, flags: u32, mask: u64, dirfd: i32, pathna
     return fanotify_markZ(fanotify_fd, flags, mask, dirfd, null);
 }
 
-pub fn fanotify_mark_z(fanotify_fd: i32, flags: u32, mask: u64, dirfd: i32, pathname: ?[*:0]const u8) FanotifyMarkError!void {
+pub fn fanotify_markZ(fanotify_fd: i32, flags: u32, mask: u64, dirfd: i32, pathname: ?[*:0]const u8) FanotifyMarkError!void {
     const rc = system.fanotify_mark(fanotify_fd, flags, mask, dirfd, pathname);
     switch (errno(rc)) {
         .SUCCESS => return,
@@ -4744,7 +4744,7 @@ pub fn access(path: []const u8, mode: u32) AccessError!void {
 }
 
 /// Same as `access` except `path` is null-terminated.
-pub fn access_z(path: [*:0]const u8, mode: u32) AccessError!void {
+pub fn accessZ(path: [*:0]const u8, mode: u32) AccessError!void {
     if (native_os == .windows) {
         const path_w = windows.cStrToPrefixedFileW(null, path) catch |err| switch (err) {
             error.AccessDenied => return error.PermissionDenied,
@@ -4833,7 +4833,7 @@ pub fn faccessat(dirfd: fd_t, path: []const u8, mode: u32, flags: u32) AccessErr
 }
 
 /// Same as `faccessat` except the path parameter is null-terminated.
-pub fn faccessat_z(dirfd: fd_t, path: [*:0]const u8, mode: u32, flags: u32) AccessError!void {
+pub fn faccessatZ(dirfd: fd_t, path: [*:0]const u8, mode: u32, flags: u32) AccessError!void {
     if (native_os == .windows) {
         const path_w = try windows.cStrToPrefixedFileW(dirfd, path);
         return faccessatW(dirfd, path_w.span().ptr);
@@ -4863,7 +4863,7 @@ pub fn faccessat_z(dirfd: fd_t, path: [*:0]const u8, mode: u32, flags: u32) Acce
 
 /// Same as `faccessat` except asserts the target is Windows and the path parameter
 /// is NtDll-prefixed, null-terminated, WTF-16 encoded.
-pub fn faccessat_w(dirfd: fd_t, sub_path_w: [*:0]const u16) AccessError!void {
+pub fn faccessatW(dirfd: fd_t, sub_path_w: [*:0]const u16) AccessError!void {
     if (sub_path_w[0] == '.' and sub_path_w[1] == 0) {
         return;
     }
@@ -5005,7 +5005,7 @@ pub fn sysctl(
     }
 }
 
-pub fn sysctlbyname_z(
+pub fn sysctlbynameZ(
     name: [*:0]const u8,
     oldp: ?*anyopaque,
     oldlenp: ?*usize,
@@ -5046,7 +5046,7 @@ pub const SeekError = error{
 } || UnexpectedError;
 
 /// Repositions read/write file offset relative to the beginning.
-pub fn lseek_set(fd: fd_t, offset: u64) SeekError!void {
+pub fn lseek_SET(fd: fd_t, offset: u64) SeekError!void {
     if (native_os == .linux and !builtin.link_libc and @sizeOf(usize) == 4) {
         var result: u64 = undefined;
         switch (errno(system.llseek(fd, offset, &result, SEEK.SET))) {
@@ -5089,7 +5089,7 @@ pub fn lseek_set(fd: fd_t, offset: u64) SeekError!void {
 }
 
 /// Repositions read/write file offset relative to the current offset.
-pub fn lseek_cur(fd: fd_t, offset: i64) SeekError!void {
+pub fn lseek_CUR(fd: fd_t, offset: i64) SeekError!void {
     if (native_os == .linux and !builtin.link_libc and @sizeOf(usize) == 4) {
         var result: u64 = undefined;
         switch (errno(system.llseek(fd, @bitCast(offset), &result, SEEK.CUR))) {
@@ -5131,7 +5131,7 @@ pub fn lseek_cur(fd: fd_t, offset: i64) SeekError!void {
 }
 
 /// Repositions read/write file offset relative to the end.
-pub fn lseek_end(fd: fd_t, offset: i64) SeekError!void {
+pub fn lseek_END(fd: fd_t, offset: i64) SeekError!void {
     if (native_os == .linux and !builtin.link_libc and @sizeOf(usize) == 4) {
         var result: u64 = undefined;
         switch (errno(system.llseek(fd, @bitCast(offset), &result, SEEK.END))) {
@@ -5173,7 +5173,7 @@ pub fn lseek_end(fd: fd_t, offset: i64) SeekError!void {
 }
 
 /// Returns the read/write file offset relative to the beginning.
-pub fn lseek_cur_get(fd: fd_t) SeekError!u64 {
+pub fn lseek_CUR_get(fd: fd_t) SeekError!u64 {
     if (native_os == .linux and !builtin.link_libc and @sizeOf(usize) == 4) {
         var result: u64 = undefined;
         switch (errno(system.llseek(fd, 0, &result, SEEK.CUR))) {
@@ -5346,7 +5346,7 @@ pub fn realpath(pathname: []const u8, out_buffer: *[max_path_bytes]u8) RealPathE
 /// Same as `realpath` except `pathname` is null-terminated.
 ///
 /// Calling this function is usually a bug.
-pub fn realpath_z(pathname: [*:0]const u8, out_buffer: *[max_path_bytes]u8) RealPathError![]u8 {
+pub fn realpathZ(pathname: [*:0]const u8, out_buffer: *[max_path_bytes]u8) RealPathError![]u8 {
     if (native_os == .windows) {
         const pathname_w = try windows.cStrToPrefixedFileW(null, pathname);
         return realpathW(pathname_w.span(), out_buffer);
@@ -5398,7 +5398,7 @@ pub fn realpath_z(pathname: [*:0]const u8, out_buffer: *[max_path_bytes]u8) Real
 /// The result is encoded as [WTF-8](https://simonsapin.github.io/wtf-8/).
 ///
 /// Calling this function is usually a bug.
-pub fn realpath_w(pathname: []const u16, out_buffer: *[max_path_bytes]u8) RealPathError![]u8 {
+pub fn realpathW(pathname: []const u16, out_buffer: *[max_path_bytes]u8) RealPathError![]u8 {
     const w = windows;
 
     const dir = fs.cwd().fd;
@@ -5464,7 +5464,7 @@ pub fn dl_iterate_phdr(
 
     if (builtin.link_libc) {
         switch (system.dl_iterate_phdr(struct {
-            fn callback_c(info: *dl_phdr_info, size: usize, data: ?*anyopaque) callconv(.C) c_int {
+            fn callbackC(info: *dl_phdr_info, size: usize, data: ?*anyopaque) callconv(.C) c_int {
                 const context_ptr: *const Context = @ptrCast(@alignCast(data));
                 callback(info, size, context_ptr.*) catch |err| return @intFromError(err);
                 return 0;
@@ -6729,7 +6729,7 @@ pub const MemFdCreateError = error{
     SystemOutdated,
 } || UnexpectedError;
 
-pub fn memfd_create_z(name: [*:0]const u8, flags: u32) MemFdCreateError!fd_t {
+pub fn memfd_createZ(name: [*:0]const u8, flags: u32) MemFdCreateError!fd_t {
     switch (native_os) {
         .linux => {
             // memfd_create is available only in glibc versions starting with 2.27.
@@ -7274,7 +7274,7 @@ pub const IoCtl_SIOCGIFINDEX_Error = error{
     InterfaceNotFound,
 } || UnexpectedError;
 
-pub fn ioctl_siocgifindex(fd: fd_t, ifr: *ifreq) IoCtl_SIOCGIFINDEX_Error!void {
+pub fn ioctl_SIOCGIFINDEX(fd: fd_t, ifr: *ifreq) IoCtl_SIOCGIFINDEX_Error!void {
     while (true) {
         switch (errno(system.ioctl(fd, SIOCGIFINDEX, @intFromPtr(ifr)))) {
             .SUCCESS => return,
@@ -7314,7 +7314,7 @@ pub const UnexpectedError = error{
 
 /// Call this when you made a syscall or something that sets errno
 /// and you get an unexpected error.
-pub fn unexpected_errno(err: E) UnexpectedError {
+pub fn unexpectedErrno(err: E) UnexpectedError {
     if (unexpected_error_tracing) {
         std.debug.print("unexpected errno: {d}\n", .{@intFromEnum(err)});
         std.debug.dumpCurrentStackTrace(null);
@@ -7323,7 +7323,7 @@ pub fn unexpected_errno(err: E) UnexpectedError {
 }
 
 /// Used to convert a slice to a null terminated slice on the stack.
-pub fn to_posix_path(file_path: []const u8) error{NameTooLong}![PATH_MAX - 1:0]u8 {
+pub fn toPosixPath(file_path: []const u8) error{NameTooLong}![PATH_MAX - 1:0]u8 {
     if (std.debug.runtime_safety) assert(mem.indexOfScalar(u8, file_path, 0) == null);
     var path_with_null: [PATH_MAX - 1:0]u8 = undefined;
     // >= rather than > to make room for the null byte

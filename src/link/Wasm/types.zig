@@ -42,7 +42,7 @@ pub const Relocation = struct {
         R_WASM_MEMORY_ADDR_TLS_SLEB64 = 25,
 
         /// Returns true for relocation types where the `addend` field is present.
-        pub fn addend_is_present(self: RelocationType) bool {
+        pub fn addendIsPresent(self: RelocationType) bool {
             return switch (self) {
                 .R_WASM_MEMORY_ADDR_LEB,
                 .R_WASM_MEMORY_ADDR_SLEB,
@@ -62,7 +62,7 @@ pub const Relocation = struct {
 
     /// Verifies the relocation type of a given `Relocation` and returns
     /// true when the relocation references a function call or address to a function.
-    pub fn is_function(self: Relocation) bool {
+    pub fn isFunction(self: Relocation) bool {
         return switch (self.relocation_type) {
             .R_WASM_FUNCTION_INDEX_LEB,
             .R_WASM_TABLE_INDEX_SLEB,
@@ -119,14 +119,14 @@ pub const Segment = struct {
     /// Bitfield containing flags for a segment
     flags: u32,
 
-    pub fn is_tls(segment: Segment) bool {
+    pub fn isTLS(segment: Segment) bool {
         return segment.flags & @intFromEnum(Flags.WASM_SEG_FLAG_TLS) != 0;
     }
 
     /// Returns the name as how it will be output into the final object
     /// file or binary. When `merge_segments` is true, this will return the
     /// short name. i.e. ".rodata". When false, it returns the entire name instead.
-    pub fn output_name(segment: Segment, merge_segments: bool) []const u8 {
+    pub fn outputName(segment: Segment, merge_segments: bool) []const u8 {
         if (segment.isTLS()) {
             return ".tdata";
         } else if (!merge_segments) {
@@ -207,7 +207,7 @@ pub const Feature = struct {
         shared_mem,
 
         /// From a given cpu feature, returns its linker feature
-        pub fn from_cpu_feature(feature: std.Target.wasm.Feature) Tag {
+        pub fn fromCpuFeature(feature: std.Target.wasm.Feature) Tag {
             return @as(Tag, @enumFromInt(@intFromEnum(feature)));
         }
 

@@ -72,7 +72,7 @@ pub fn preprocess(
     }
 }
 
-fn has_any_errors(comp: *aro.Compilation) bool {
+fn hasAnyErrors(comp: *aro.Compilation) bool {
     // In theory we could just check Diagnostics.errors != 0, but that only
     // gets set during rendering of the error messages, see:
     // https://github.com/Vexu/arocc/issues/603
@@ -87,7 +87,7 @@ fn has_any_errors(comp: *aro.Compilation) bool {
 
 /// `arena` is used for temporary -D argument strings and the INCLUDE environment variable.
 /// The arena should be kept alive at least as long as `argv`.
-pub fn append_aro_args(arena: Allocator, argv: *std.ArrayList([]const u8), options: cli.Options, system_include_paths: []const []const u8) !void {
+pub fn appendAroArgs(arena: Allocator, argv: *std.ArrayList([]const u8), options: cli.Options, system_include_paths: []const []const u8) !void {
     try argv.appendSlice(&.{
         "-E",
         "--comments",

@@ -15,12 +15,12 @@ pub const Curve25519 = struct {
     x: Fe,
 
     /// Decode a Curve25519 point from its compressed (X) coordinates.
-    pub inline fn from_bytes(s: [32]u8) Curve25519 {
+    pub inline fn fromBytes(s: [32]u8) Curve25519 {
         return .{ .x = Fe.fromBytes(s) };
     }
 
     /// Encode a Curve25519 point.
-    pub inline fn to_bytes(p: Curve25519) [32]u8 {
+    pub inline fn toBytes(p: Curve25519) [32]u8 {
         return p.x.toBytes();
     }
 
@@ -28,19 +28,19 @@ pub const Curve25519 = struct {
     pub const basePoint = Curve25519{ .x = Fe.curve25519BasePoint };
 
     /// Check that the encoding of a Curve25519 point is canonical.
-    pub fn reject_non_canonical(s: [32]u8) NonCanonicalError!void {
+    pub fn rejectNonCanonical(s: [32]u8) NonCanonicalError!void {
         return Fe.rejectNonCanonical(s, false);
     }
 
     /// Reject the neutral element.
-    pub fn reject_identity(p: Curve25519) IdentityElementError!void {
+    pub fn rejectIdentity(p: Curve25519) IdentityElementError!void {
         if (p.x.isZero()) {
             return error.IdentityElement;
         }
     }
 
     /// Multiply a point by the cofactor, returning WeakPublicKey if the element is in a small-order group.
-    pub fn clear_cofactor(p: Curve25519) WeakPublicKeyError!Curve25519 {
+    pub fn clearCofactor(p: Curve25519) WeakPublicKeyError!Curve25519 {
         const cofactor = [_]u8{8} ++ [_]u8{0} ** 31;
         return ladder(p, cofactor, 4) catch return error.WeakPublicKey;
     }
@@ -86,7 +86,7 @@ pub const Curve25519 = struct {
     /// way to use Curve25519 for a DH operation.
     /// Return error.IdentityElement if the resulting point is
     /// the identity element.
-    pub fn clamped_mul(p: Curve25519, s: [32]u8) IdentityElementError!Curve25519 {
+    pub fn clampedMul(p: Curve25519, s: [32]u8) IdentityElementError!Curve25519 {
         var t: [32]u8 = s;
         scalar.clamp(&t);
         return try ladder(p, t, 255);
@@ -110,7 +110,7 @@ pub const Curve25519 = struct {
     /// If this is required, for example for compatibility with libsodium's strict
     /// validation policy, the caller can call the `rejectUnexpectedSubgroup` function
     /// on the input point before calling this function.
-    pub fn from_edwards25519(p: crypto.ecc.Edwards25519) IdentityElementError!Curve25519 {
+    pub fn fromEdwards25519(p: crypto.ecc.Edwards25519) IdentityElementError!Curve25519 {
         try p.clearCofactor().rejectIdentity();
         const one = crypto.ecc.Edwards25519.Fe.one;
         const py = p.y.mul(p.z.invert());

@@ -26,7 +26,7 @@ pub fn init(secret_seed: [secret_seed_length]u8) Self {
 }
 
 /// Inserts entropy to refresh the internal state.
-pub fn add_entropy(self: *Self, bytes: []const u8) void {
+pub fn addEntropy(self: *Self, bytes: []const u8) void {
     var i: usize = 0;
     while (i + Cipher.key_length <= bytes.len) : (i += Cipher.key_length) {
         Cipher.xor(

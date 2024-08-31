@@ -8,7 +8,7 @@ test "pub enum" {
 
     try pubEnumTest(other.APubEnum.Two);
 }
-fn pub_enum_test(foo: other.APubEnum) !void {
+fn pubEnumTest(foo: other.APubEnum) !void {
     try expect(foo == other.APubEnum.Two);
 }
 

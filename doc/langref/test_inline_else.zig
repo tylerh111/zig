@@ -16,7 +16,7 @@ const AnySlice = union(enum) {
     d: []AnySlice,
 };
 
-fn with_for(any: AnySlice) usize {
+fn withFor(any: AnySlice) usize {
     const Tag = @typeInfo(AnySlice).Union.tag_type.?;
     inline for (@typeInfo(Tag).Enum.fields) |field| {
         // With `inline for` the function gets generated as
@@ -31,7 +31,7 @@ fn with_for(any: AnySlice) usize {
     unreachable;
 }
 
-fn with_switch(any: AnySlice) usize {
+fn withSwitch(any: AnySlice) usize {
     return switch (any) {
         // With `inline else` the function is explicitly generated
         // as the desired switch and the compiler can check that

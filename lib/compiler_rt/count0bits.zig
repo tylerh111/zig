@@ -30,7 +30,7 @@ comptime {
 // * dont pay for `if (x == 0) return shift;` inside ctz
 // - ffsXi2 for unoptimized little and big endian
 
-inline fn clz_xi2(comptime T: type, a: T) i32 {
+inline fn clzXi2(comptime T: type, a: T) i32 {
     var x = switch (@bitSizeOf(T)) {
         32 => @as(u32, @bitCast(a)),
         64 => @as(u64, @bitCast(a)),
@@ -167,7 +167,7 @@ pub fn __clzti2(a: i128) callconv(.C) i32 {
     return clzXi2(i128, a);
 }
 
-inline fn ctz_xi2(comptime T: type, a: T) i32 {
+inline fn ctzXi2(comptime T: type, a: T) i32 {
     var x = switch (@bitSizeOf(T)) {
         32 => @as(u32, @bitCast(a)),
         64 => @as(u64, @bitCast(a)),
@@ -202,7 +202,7 @@ pub fn __ctzti2(a: i128) callconv(.C) i32 {
     return ctzXi2(i128, a);
 }
 
-inline fn ffs_xi2(comptime T: type, a: T) i32 {
+inline fn ffsXi2(comptime T: type, a: T) i32 {
     var x: std.meta.Int(.unsigned, @typeInfo(T).Int.bits) = @bitCast(a);
     var n: T = 1;
     // adapted from Number of trailing zeroes (see ctzXi2)

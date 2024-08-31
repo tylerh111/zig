@@ -17,27 +17,27 @@ pub const Tag = enum(u16) { _ };
 
 const Self = @This();
 
-pub fn from_name(name: []const u8) ?@This() {
+pub fn fromName(name: []const u8) ?@This() {
     const data_index = tagFromName(name) orelse return null;
     return data[@intFromEnum(data_index)];
 }
 
-pub fn tag_from_name(name: []const u8) ?Tag {
+pub fn tagFromName(name: []const u8) ?Tag {
     const unique_index = uniqueIndex(name) orelse return null;
     return @enumFromInt(unique_index - 1);
 }
 
-pub fn from_tag(tag: Tag) @This() {
+pub fn fromTag(tag: Tag) @This() {
     return data[@intFromEnum(tag)];
 }
 
-pub fn name_from_tag_into_buf(tag: Tag, name_buf: []u8) []u8 {
+pub fn nameFromTagIntoBuf(tag: Tag, name_buf: []u8) []u8 {
     std.debug.assert(name_buf.len >= longest_name);
     const unique_index = @intFromEnum(tag) + 1;
     return nameFromUniqueIndex(unique_index, name_buf);
 }
 
-pub fn name_from_tag(tag: Tag) NameBuf {
+pub fn nameFromTag(tag: Tag) NameBuf {
     var name_buf: NameBuf = undefined;
     const unique_index = @intFromEnum(tag) + 1;
     const name = nameFromUniqueIndex(unique_index, &name_buf.buf);
@@ -70,7 +70,7 @@ pub const longest_name = 43;
 /// Search siblings of `first_child_index` for the `char`
 /// If found, returns the index of the node within the `dafsa` array.
 /// Otherwise, returns `null`.
-pub fn find_in_list(first_child_index: u16, char: u8) ?u16 {
+pub fn findInList(first_child_index: u16, char: u8) ?u16 {
     var index = first_child_index;
     while (true) {
         if (dafsa[index].char == char) return index;
@@ -82,7 +82,7 @@ pub fn find_in_list(first_child_index: u16, char: u8) ?u16 {
 
 /// Returns a unique (minimal perfect hash) index (starting at 1) for the `name`,
 /// or null if the name was not found.
-pub fn unique_index(name: []const u8) ?u16 {
+pub fn uniqueIndex(name: []const u8) ?u16 {
     if (name.len < shortest_name or name.len > longest_name) return null;
 
     var index: u16 = 0;
@@ -113,7 +113,7 @@ pub fn unique_index(name: []const u8) ?u16 {
 /// This function should only be called with an `index` that
 /// is already known to exist within the `dafsa`, e.g. an index
 /// returned from `uniqueIndex`.
-pub fn name_from_unique_index(index: u16, buf: []u8) []u8 {
+pub fn nameFromUniqueIndex(index: u16, buf: []u8) []u8 {
     std.debug.assert(index >= 1 and index <= data.len);
 
     var node_index: u16 = 0;

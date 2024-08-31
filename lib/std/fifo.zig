@@ -19,7 +19,7 @@ pub const LinearFifoBufferType = union(enum) {
     Dynamic,
 };
 
-pub fn linear_fifo(
+pub fn LinearFifo(
     comptime T: type,
     comptime buffer_type: LinearFifoBufferType,
 ) type {
@@ -52,7 +52,7 @@ pub fn linear_fifo(
             .Dynamic => initDynamic,
         };
 
-        fn init_static() Self {
+        fn initStatic() Self {
             comptime assert(buffer_type == .Static);
             return .{
                 .allocator = {},
@@ -62,7 +62,7 @@ pub fn linear_fifo(
             };
         }
 
-        fn init_slice(buf: []T) Self {
+        fn initSlice(buf: []T) Self {
             comptime assert(buffer_type == .Slice);
             return .{
                 .allocator = {},
@@ -72,7 +72,7 @@ pub fn linear_fifo(
             };
         }
 
-        fn init_dynamic(allocator: Allocator) Self {
+        fn initDynamic(allocator: Allocator) Self {
             comptime assert(buffer_type == .Dynamic);
             return .{
                 .allocator = allocator,
@@ -120,7 +120,7 @@ pub fn linear_fifo(
         }
 
         /// Ensure that the buffer can fit at least `size` items
-        pub fn ensure_total_capacity(self: *Self, size: usize) !void {
+        pub fn ensureTotalCapacity(self: *Self, size: usize) !void {
             if (self.buf.len >= size) return;
             if (buffer_type == .Dynamic) {
                 self.realign();
@@ -132,19 +132,19 @@ pub fn linear_fifo(
         }
 
         /// Makes sure at least `size` items are unused
-        pub fn ensure_unused_capacity(self: *Self, size: usize) error{OutOfMemory}!void {
+        pub fn ensureUnusedCapacity(self: *Self, size: usize) error{OutOfMemory}!void {
             if (self.writableLength() >= size) return;
 
             return try self.ensureTotalCapacity(math.add(usize, self.count, size) catch return error.OutOfMemory);
         }
 
         /// Returns number of items currently in fifo
-        pub fn readable_length(self: Self) usize {
+        pub fn readableLength(self: Self) usize {
             return self.count;
         }
 
         /// Returns a writable slice from the 'read' end of the fifo
-        fn readable_slice_mut(self: SliceSelfArg, offset: usize) []T {
+        fn readableSliceMut(self: SliceSelfArg, offset: usize) []T {
             if (offset > self.count) return &[_]T{};
 
             var start = self.head + offset;
@@ -158,11 +158,11 @@ pub fn linear_fifo(
         }
 
         /// Returns a readable slice from `offset`
-        pub fn readable_slice(self: SliceSelfArg, offset: usize) []const T {
+        pub fn readableSlice(self: SliceSelfArg, offset: usize) []const T {
             return self.readableSliceMut(offset);
         }
 
-        pub fn readable_slice_of_len(self: *Self, len: usize) []const T {
+        pub fn readableSliceOfLen(self: *Self, len: usize) []const T {
             assert(len <= self.count);
             const buf = self.readableSlice(0);
             if (buf.len >= len) {
@@ -206,7 +206,7 @@ pub fn linear_fifo(
         }
 
         /// Read the next item from the fifo
-        pub fn read_item(self: *Self) ?T {
+        pub fn readItem(self: *Self) ?T {
             if (self.count == 0) return null;
 
             const c = self.buf[self.head];
@@ -232,7 +232,7 @@ pub fn linear_fifo(
 
         /// Same as `read` except it returns an error union
         /// The purpose of this function existing is to match `std.io.Reader` API.
-        fn read_fn(self: *Self, dest: []u8) error{}!usize {
+        fn readFn(self: *Self, dest: []u8) error{}!usize {
             return self.read(dest);
         }
 
@@ -241,13 +241,13 @@ pub fn linear_fifo(
         }
 
         /// Returns number of items available in fifo
-        pub fn writable_length(self: Self) usize {
+        pub fn writableLength(self: Self) usize {
             return self.buf.len - self.count;
         }
 
         /// Returns the first section of writable buffer.
         /// Note that this may be of length 0
-        pub fn writable_slice(self: SliceSelfArg, offset: usize) []T {
+        pub fn writableSlice(self: SliceSelfArg, offset: usize) []T {
             if (offset > self.buf.len) return &[_]T{};
 
             const tail = self.head + offset + self.count;
@@ -260,7 +260,7 @@ pub fn linear_fifo(
 
         /// Returns a writable buffer of at least `size` items, allocating memory as needed.
         /// Use `fifo.update` once you've written data to it.
-        pub fn writable_with_size(self: *Self, size: usize) ![]T {
+        pub fn writableWithSize(self: *Self, size: usize) ![]T {
             try self.ensureUnusedCapacity(size);
 
             // try to avoid realigning buffer
@@ -280,7 +280,7 @@ pub fn linear_fifo(
 
         /// Appends the data in `src` to the fifo.
         /// You must have ensured there is enough space.
-        pub fn write_assume_capacity(self: *Self, src: []const T) void {
+        pub fn writeAssumeCapacity(self: *Self, src: []const T) void {
             assert(self.writableLength() >= src.len);
 
             var src_left = src;
@@ -295,12 +295,12 @@ pub fn linear_fifo(
         }
 
         /// Write a single item to the fifo
-        pub fn write_item(self: *Self, item: T) !void {
+        pub fn writeItem(self: *Self, item: T) !void {
             try self.ensureUnusedCapacity(1);
             return self.writeItemAssumeCapacity(item);
         }
 
-        pub fn write_item_assume_capacity(self: *Self, item: T) void {
+        pub fn writeItemAssumeCapacity(self: *Self, item: T) void {
             var tail = self.head + self.count;
             if (powers_of_two) {
                 tail &= self.buf.len - 1;
@@ -321,7 +321,7 @@ pub fn linear_fifo(
 
         /// Same as `write` except it returns the number of bytes written, which is always the same
         /// as `bytes.len`. The purpose of this function existing is to match `std.io.Writer` API.
-        fn append_write(self: *Self, bytes: []const u8) error{OutOfMemory}!usize {
+        fn appendWrite(self: *Self, bytes: []const u8) error{OutOfMemory}!usize {
             try self.write(bytes);
             return bytes.len;
         }
@@ -362,7 +362,7 @@ pub fn linear_fifo(
 
         /// Returns the item at `offset`.
         /// Asserts offset is within bounds.
-        pub fn peek_item(self: Self, offset: usize) T {
+        pub fn peekItem(self: Self, offset: usize) T {
             assert(offset < self.count);
 
             var index = self.head + offset;
@@ -393,7 +393,7 @@ pub fn linear_fifo(
             }
         }
 
-        pub fn to_owned_slice(self: *Self) Allocator.Error![]T {
+        pub fn toOwnedSlice(self: *Self) Allocator.Error![]T {
             if (self.head != 0) self.realign();
             assert(self.head == 0);
             assert(self.count <= self.buf.len);

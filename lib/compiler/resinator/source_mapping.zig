@@ -38,7 +38,7 @@ pub const ParseAndRemoveLineCommandsOptions = struct {
 ///
 /// If `options.initial_filename` is provided, that filename is guaranteed to be
 /// within the `mappings.files` table and `root_filename_offset` will be set appropriately.
-pub fn parse_and_remove_line_commands(allocator: Allocator, source: []const u8, buf: []u8, options: ParseAndRemoveLineCommandsOptions) !ParseLineCommandsResult {
+pub fn parseAndRemoveLineCommands(allocator: Allocator, source: []const u8, buf: []u8, options: ParseAndRemoveLineCommandsOptions) !ParseLineCommandsResult {
     var parse_result = ParseLineCommandsResult{
         .result = undefined,
         .mappings = .{},
@@ -195,14 +195,14 @@ pub fn parse_and_remove_line_commands(allocator: Allocator, source: []const u8, 
 }
 
 /// Note: This should function the same as lex.LineHandler.currentIndexFormsLineEndingPair
-pub fn forms_line_ending_pair(source: []const u8, line_ending: u8, next_index: usize) bool {
+pub fn formsLineEndingPair(source: []const u8, line_ending: u8, next_index: usize) bool {
     if (next_index >= source.len) return false;
 
     const next_ending = source[next_index];
     return utils.isLineEndingPair(line_ending, next_ending);
 }
 
-pub fn handle_line_end(allocator: Allocator, post_processed_line_number: usize, mapping: *SourceMappings, current_mapping: *CurrentMapping) !void {
+pub fn handleLineEnd(allocator: Allocator, post_processed_line_number: usize, mapping: *SourceMappings, current_mapping: *CurrentMapping) !void {
     const filename_offset = try mapping.files.put(allocator, current_mapping.filename.items);
 
     try mapping.set(post_processed_line_number, current_mapping.line_num, filename_offset);
@@ -212,7 +212,7 @@ pub fn handle_line_end(allocator: Allocator, post_processed_line_number: usize, 
 }
 
 // TODO: Might want to provide diagnostics on invalid line commands instead of just returning
-pub fn handle_line_command(allocator: Allocator, line_command: []const u8, current_mapping: *CurrentMapping) error{OutOfMemory}!void {
+pub fn handleLineCommand(allocator: Allocator, line_command: []const u8, current_mapping: *CurrentMapping) error{OutOfMemory}!void {
     // TODO: Are there other whitespace characters that should be included?
     var tokenizer = std.mem.tokenize(u8, line_command, " \t");
     const line_directive = tokenizer.next() orelse return; // #line
@@ -243,7 +243,7 @@ pub fn handle_line_command(allocator: Allocator, line_command: []const u8, curre
     current_mapping.ignore_contents = std.ascii.endsWithIgnoreCase(filename, ".c") or std.ascii.endsWithIgnoreCase(filename, ".h");
 }
 
-pub fn parse_and_remove_line_commands_alloc(allocator: Allocator, source: []const u8, options: ParseAndRemoveLineCommandsOptions) !ParseLineCommandsResult {
+pub fn parseAndRemoveLineCommandsAlloc(allocator: Allocator, source: []const u8, options: ParseAndRemoveLineCommandsOptions) !ParseLineCommandsResult {
     const buf = try allocator.alloc(u8, source.len);
     errdefer allocator.free(buf);
     var result = try parseAndRemoveLineCommands(allocator, source, buf, options);
@@ -261,7 +261,7 @@ pub fn parse_and_remove_line_commands_alloc(allocator: Allocator, source: []cons
 ///   on any problems found.
 ///
 /// The result is a UTF-8 encoded string.
-fn parse_filename(allocator: Allocator, str: []const u8) error{ OutOfMemory, InvalidString }![]u8 {
+fn parseFilename(allocator: Allocator, str: []const u8) error{ OutOfMemory, InvalidString }![]u8 {
     const State = enum {
         string,
         escape,
@@ -392,7 +392,7 @@ fn parse_filename(allocator: Allocator, str: []const u8) error{ OutOfMemory, Inv
     return filename.toOwnedSlice();
 }
 
-fn test_parse_filename(expected: []const u8, input: []const u8) !void {
+fn testParseFilename(expected: []const u8, input: []const u8) !void {
     const parsed = try parseFilename(std.testing.allocator, input);
     defer std.testing.allocator.free(parsed);
 
@@ -443,7 +443,7 @@ pub const SourceMappings = struct {
 
     /// Find the node that 'contains' the `line`, i.e. the node's start_line is
     /// >= `line`
-    fn find_node(self: SourceMappings, line: usize) ?*Sources.Node {
+    fn findNode(self: SourceMappings, line: usize) ?*Sources.Node {
         var node = self.sources.root;
         var last_gt: ?*Sources.Node = null;
 
@@ -536,7 +536,7 @@ pub const SourceMappings = struct {
         filename_offset: u32,
     };
 
-    pub fn get_corresponding_span(self: SourceMappings, line_num: usize) ?CorrespondingSpan {
+    pub fn getCorrespondingSpan(self: SourceMappings, line_num: usize) ?CorrespondingSpan {
         const source = self.get(line_num) orelse return null;
         const diff = line_num - source.start_line;
         const start_line = source.corresponding_start_line + (if (line_num == source.start_line) 0 else source.span + diff);
@@ -597,7 +597,7 @@ pub const SourceMappings = struct {
 
     /// Returns true if the line is from the main/root file (i.e. not a file that has been
     /// `#include`d).
-    pub fn is_root_file(self: *SourceMappings, line_num: usize) bool {
+    pub fn isRootFile(self: *SourceMappings, line_num: usize) bool {
         const source = self.get(line_num) orelse return false;
         return source.filename_offset == self.root_filename_offset;
     }
@@ -664,7 +664,7 @@ pub const StringTable = struct {
         return std.mem.sliceTo(@as([*:0]const u8, @ptrCast(self.data.items.ptr + offset)), 0);
     }
 
-    pub fn get_offset(self: *StringTable, value: []const u8) ?u32 {
+    pub fn getOffset(self: *StringTable, value: []const u8) ?u32 {
         return self.map.getKeyAdapted(
             value,
             std.hash_map.StringIndexAdapter{ .bytes = &self.data },
@@ -678,7 +678,7 @@ const ExpectedSourceSpan = struct {
     filename: []const u8,
 };
 
-fn test_parse_and_remove_line_commands(
+fn testParseAndRemoveLineCommands(
     expected: []const u8,
     comptime expected_spans: []const ExpectedSourceSpan,
     source: []const u8,
@@ -708,7 +708,7 @@ fn test_parse_and_remove_line_commands(
     };
 }
 
-fn expect_equal_mappings(expected_spans: []const ExpectedSourceSpan, mappings: SourceMappings) !void {
+fn expectEqualMappings(expected_spans: []const ExpectedSourceSpan, mappings: SourceMappings) !void {
     try std.testing.expectEqual(expected_spans.len, mappings.end_line);
     for (expected_spans, 0..) |expected_span, i| {
         const line_num = i + 1;

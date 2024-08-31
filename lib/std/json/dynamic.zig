@@ -32,7 +32,7 @@ pub const Value = union(enum) {
     array: Array,
     object: ObjectMap,
 
-    pub fn parse_from_number_slice(s: []const u8) Value {
+    pub fn parseFromNumberSlice(s: []const u8) Value {
         if (!isNumberFormattedLikeAnInteger(s)) {
             const f = std.fmt.parseFloat(f64, s) catch unreachable;
             if (std.math.isFinite(f)) {
@@ -59,7 +59,7 @@ pub const Value = union(enum) {
         stringify(self, .{}, stderr) catch return;
     }
 
-    pub fn json_stringify(value: @This(), jws: anytype) !void {
+    pub fn jsonStringify(value: @This(), jws: anytype) !void {
         switch (value) {
             .null => try jws.write(null),
             .bool => |inner| try jws.write(inner),
@@ -80,7 +80,7 @@ pub const Value = union(enum) {
         }
     }
 
-    pub fn json_parse(allocator: Allocator, source: anytype, options: ParseOptions) ParseError(@TypeOf(source.*))!@This() {
+    pub fn jsonParse(allocator: Allocator, source: anytype, options: ParseOptions) ParseError(@TypeOf(source.*))!@This() {
         // The grammar of the stack is:
         //  (.array | .object .string)*
         var stack = Array.init(allocator);
@@ -126,14 +126,14 @@ pub const Value = union(enum) {
         }
     }
 
-    pub fn json_parse_from_value(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
+    pub fn jsonParseFromValue(allocator: Allocator, source: Value, options: ParseOptions) !@This() {
         _ = allocator;
         _ = options;
         return source;
     }
 };
 
-fn handle_complete_value(stack: *Array, allocator: Allocator, source: anytype, value_: Value, options: ParseOptions) !?Value {
+fn handleCompleteValue(stack: *Array, allocator: Allocator, source: anytype, value_: Value, options: ParseOptions) !?Value {
     if (stack.items.len == 0) return value_;
     var value = value_;
     while (true) {

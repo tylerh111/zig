@@ -168,7 +168,7 @@ pub const BootServices = extern struct {
     createEventEx: *const fn (type: u32, notify_tpl: usize, notify_func: EfiEventNotify, notify_ctx: *const anyopaque, event_group: *align(8) const Guid, event: *Event) callconv(cc) Status,
 
     /// Opens a protocol with a structure as the loaded image for a UEFI application
-    pub fn open_protocol_st(self: *BootServices, comptime protocol: type, handle: Handle) !*protocol {
+    pub fn openProtocolSt(self: *BootServices, comptime protocol: type, handle: Handle) !*protocol {
         if (!@hasDecl(protocol, "guid"))
             @compileError("Protocol is missing guid!");
 

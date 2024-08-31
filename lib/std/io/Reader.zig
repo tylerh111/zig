@@ -13,7 +13,7 @@ pub fn read(self: Self, buffer: []u8) anyerror!usize {
 /// Returns the number of bytes read. If the number read is smaller than `buffer.len`, it
 /// means the stream reached the end. Reaching the end of a stream is not an error
 /// condition.
-pub fn read_all(self: Self, buffer: []u8) anyerror!usize {
+pub fn readAll(self: Self, buffer: []u8) anyerror!usize {
     return readAtLeast(self, buffer, buffer.len);
 }
 
@@ -22,7 +22,7 @@ pub fn read_all(self: Self, buffer: []u8) anyerror!usize {
 /// `len` bytes filled. If the number read is less than `len` it means
 /// the stream reached the end. Reaching the end of the stream is not
 /// an error condition.
-pub fn read_at_least(self: Self, buffer: []u8, len: usize) anyerror!usize {
+pub fn readAtLeast(self: Self, buffer: []u8, len: usize) anyerror!usize {
     assert(len <= buffer.len);
     var index: usize = 0;
     while (index < len) {
@@ -34,7 +34,7 @@ pub fn read_at_least(self: Self, buffer: []u8, len: usize) anyerror!usize {
 }
 
 /// If the number read would be smaller than `buf.len`, `error.EndOfStream` is returned instead.
-pub fn read_no_eof(self: Self, buf: []u8) anyerror!void {
+pub fn readNoEof(self: Self, buf: []u8) anyerror!void {
     const amt_read = try self.readAll(buf);
     if (amt_read < buf.len) return error.EndOfStream;
 }
@@ -44,7 +44,7 @@ pub fn read_no_eof(self: Self, buf: []u8) anyerror!void {
 /// If the number of bytes appended would exceed `max_append_size`,
 /// `error.StreamTooLong` is returned
 /// and the `std.ArrayList` has exactly `max_append_size` bytes appended.
-pub fn read_all_array_list(
+pub fn readAllArrayList(
     self: Self,
     array_list: *std.ArrayList(u8),
     max_append_size: usize,
@@ -52,7 +52,7 @@ pub fn read_all_array_list(
     return self.readAllArrayListAligned(null, array_list, max_append_size);
 }
 
-pub fn read_all_array_list_aligned(
+pub fn readAllArrayListAligned(
     self: Self,
     comptime alignment: ?u29,
     array_list: *std.ArrayListAligned(u8, alignment),
@@ -86,7 +86,7 @@ pub fn read_all_array_list_aligned(
 /// memory would be greater than `max_size`, returns `error.StreamTooLong`.
 /// Caller owns returned memory.
 /// If this function returns an error, the contents from the stream read so far are lost.
-pub fn read_all_alloc(self: Self, allocator: mem.Allocator, max_size: usize) anyerror![]u8 {
+pub fn readAllAlloc(self: Self, allocator: mem.Allocator, max_size: usize) anyerror![]u8 {
     var array_list = std.ArrayList(u8).init(allocator);
     defer array_list.deinit();
     try self.readAllArrayList(&array_list, max_size);
@@ -98,7 +98,7 @@ pub fn read_all_alloc(self: Self, allocator: mem.Allocator, max_size: usize) any
 /// Does not include the delimiter in the result.
 /// If the `std.ArrayList` length would exceed `max_size`, `error.StreamTooLong` is returned and the
 /// `std.ArrayList` is populated with `max_size` bytes from the stream.
-pub fn read_until_delimiter_array_list(
+pub fn readUntilDelimiterArrayList(
     self: Self,
     array_list: *std.ArrayList(u8),
     delimiter: u8,
@@ -113,7 +113,7 @@ pub fn read_until_delimiter_array_list(
 /// memory would be greater than `max_size`, returns `error.StreamTooLong`.
 /// Caller owns returned memory.
 /// If this function returns an error, the contents from the stream read so far are lost.
-pub fn read_until_delimiter_alloc(
+pub fn readUntilDelimiterAlloc(
     self: Self,
     allocator: mem.Allocator,
     delimiter: u8,
@@ -132,7 +132,7 @@ pub fn read_until_delimiter_alloc(
 /// Returns a slice of the stream data, with ptr equal to `buf.ptr`. The
 /// delimiter byte is written to the output buffer but is not included
 /// in the returned slice.
-pub fn read_until_delimiter(self: Self, buf: []u8, delimiter: u8) anyerror![]u8 {
+pub fn readUntilDelimiter(self: Self, buf: []u8, delimiter: u8) anyerror![]u8 {
     var fbs = std.io.fixedBufferStream(buf);
     try self.streamUntilDelimiter(fbs.writer(), delimiter, fbs.buffer.len);
     const output = fbs.getWritten();
@@ -148,7 +148,7 @@ pub fn read_until_delimiter(self: Self, buf: []u8, delimiter: u8) anyerror![]u8 
 /// null.
 /// Caller owns returned memory.
 /// If this function returns an error, the contents from the stream read so far are lost.
-pub fn read_until_delimiter_or_eof_alloc(
+pub fn readUntilDelimiterOrEofAlloc(
     self: Self,
     allocator: mem.Allocator,
     delimiter: u8,
@@ -173,7 +173,7 @@ pub fn read_until_delimiter_or_eof_alloc(
 /// Returns a slice of the stream data, with ptr equal to `buf.ptr`. The
 /// delimiter byte is written to the output buffer but is not included
 /// in the returned slice.
-pub fn read_until_delimiter_or_eof(self: Self, buf: []u8, delimiter: u8) anyerror!?[]u8 {
+pub fn readUntilDelimiterOrEof(self: Self, buf: []u8, delimiter: u8) anyerror!?[]u8 {
     var fbs = std.io.fixedBufferStream(buf);
     self.streamUntilDelimiter(fbs.writer(), delimiter, fbs.buffer.len) catch |err| switch (err) {
         error.EndOfStream => if (fbs.getWritten().len == 0) {
@@ -192,7 +192,7 @@ pub fn read_until_delimiter_or_eof(self: Self, buf: []u8, delimiter: u8) anyerro
 /// If `optional_max_size` is not null and amount of written bytes exceeds `optional_max_size`,
 /// returns `error.StreamTooLong` and finishes appending.
 /// If `optional_max_size` is null, appending is unbounded.
-pub fn stream_until_delimiter(
+pub fn streamUntilDelimiter(
     self: Self,
     writer: anytype,
     delimiter: u8,
@@ -218,7 +218,7 @@ pub fn stream_until_delimiter(
 /// Reads from the stream until specified byte is found, discarding all data,
 /// including the delimiter.
 /// If end-of-stream is found, this function succeeds.
-pub fn skip_until_delimiter_or_eof(self: Self, delimiter: u8) anyerror!void {
+pub fn skipUntilDelimiterOrEof(self: Self, delimiter: u8) anyerror!void {
     while (true) {
         const byte = self.readByte() catch |err| switch (err) {
             error.EndOfStream => return,
@@ -229,7 +229,7 @@ pub fn skip_until_delimiter_or_eof(self: Self, delimiter: u8) anyerror!void {
 }
 
 /// Reads 1 byte from the stream or returns `error.EndOfStream`.
-pub fn read_byte(self: Self) anyerror!u8 {
+pub fn readByte(self: Self) anyerror!u8 {
     var result: [1]u8 = undefined;
     const amt_read = try self.read(result[0..]);
     if (amt_read < 1) return error.EndOfStream;
@@ -237,13 +237,13 @@ pub fn read_byte(self: Self) anyerror!u8 {
 }
 
 /// Same as `readByte` except the returned byte is signed.
-pub fn read_byte_signed(self: Self) anyerror!i8 {
+pub fn readByteSigned(self: Self) anyerror!i8 {
     return @as(i8, @bitCast(try self.readByte()));
 }
 
 /// Reads exactly `num_bytes` bytes and returns as an array.
 /// `num_bytes` must be comptime-known
-pub fn read_bytes_no_eof(self: Self, comptime num_bytes: usize) anyerror![num_bytes]u8 {
+pub fn readBytesNoEof(self: Self, comptime num_bytes: usize) anyerror![num_bytes]u8 {
     var bytes: [num_bytes]u8 = undefined;
     try self.readNoEof(&bytes);
     return bytes;
@@ -253,7 +253,7 @@ pub fn read_bytes_no_eof(self: Self, comptime num_bytes: usize) anyerror![num_by
 /// or the stream ends.
 ///
 /// * it is assumed that `num_bytes` will not exceed `bounded.capacity()`
-pub fn read_into_bounded_bytes(
+pub fn readIntoBoundedBytes(
     self: Self,
     comptime num_bytes: usize,
     bounded: *std.BoundedArray(u8, num_bytes),
@@ -270,18 +270,18 @@ pub fn read_into_bounded_bytes(
 }
 
 /// Reads at most `num_bytes` and returns as a bounded array.
-pub fn read_bounded_bytes(self: Self, comptime num_bytes: usize) anyerror!std.BoundedArray(u8, num_bytes) {
+pub fn readBoundedBytes(self: Self, comptime num_bytes: usize) anyerror!std.BoundedArray(u8, num_bytes) {
     var result = std.BoundedArray(u8, num_bytes){};
     try self.readIntoBoundedBytes(num_bytes, &result);
     return result;
 }
 
-pub inline fn read_int(self: Self, comptime T: type, endian: std.builtin.Endian) anyerror!T {
+pub inline fn readInt(self: Self, comptime T: type, endian: std.builtin.Endian) anyerror!T {
     const bytes = try self.readBytesNoEof(@divExact(@typeInfo(T).Int.bits, 8));
     return mem.readInt(T, &bytes, endian);
 }
 
-pub fn read_var_int(
+pub fn readVarInt(
     self: Self,
     comptime ReturnType: type,
     endian: std.builtin.Endian,
@@ -301,7 +301,7 @@ pub const SkipBytesOptions = struct {
 
 // `num_bytes` is a `u64` to match `off_t`
 /// Reads `num_bytes` bytes from the stream and discards them
-pub fn skip_bytes(self: Self, num_bytes: u64, comptime options: SkipBytesOptions) anyerror!void {
+pub fn skipBytes(self: Self, num_bytes: u64, comptime options: SkipBytesOptions) anyerror!void {
     var buf: [options.buf_size]u8 = undefined;
     var remaining = num_bytes;
 
@@ -313,7 +313,7 @@ pub fn skip_bytes(self: Self, num_bytes: u64, comptime options: SkipBytesOptions
 }
 
 /// Reads `slice.len` bytes from the stream and returns if they are the same as the passed slice
-pub fn is_bytes(self: Self, slice: []const u8) anyerror!bool {
+pub fn isBytes(self: Self, slice: []const u8) anyerror!bool {
     var i: usize = 0;
     var matches = true;
     while (i < slice.len) : (i += 1) {
@@ -324,7 +324,7 @@ pub fn is_bytes(self: Self, slice: []const u8) anyerror!bool {
     return matches;
 }
 
-pub fn read_struct(self: Self, comptime T: type) anyerror!T {
+pub fn readStruct(self: Self, comptime T: type) anyerror!T {
     // Only extern and packed structs have defined in-memory layout.
     comptime assert(@typeInfo(T).Struct.layout != .auto);
     var res: [1]T = undefined;
@@ -332,7 +332,7 @@ pub fn read_struct(self: Self, comptime T: type) anyerror!T {
     return res[0];
 }
 
-pub fn read_struct_endian(self: Self, comptime T: type, endian: std.builtin.Endian) anyerror!T {
+pub fn readStructEndian(self: Self, comptime T: type, endian: std.builtin.Endian) anyerror!T {
     var res = try self.readStruct(T);
     if (native_endian != endian) {
         mem.byteSwapAllFields(T, &res);
@@ -343,7 +343,7 @@ pub fn read_struct_endian(self: Self, comptime T: type, endian: std.builtin.Endi
 /// Reads an integer with the same size as the given enum's tag type. If the integer matches
 /// an enum tag, casts the integer to the enum tag and returns it. Otherwise, returns an `error.InvalidValue`.
 /// TODO optimization taking advantage of most fields being in order
-pub fn read_enum(self: Self, comptime Enum: type, endian: std.builtin.Endian) anyerror!Enum {
+pub fn readEnum(self: Self, comptime Enum: type, endian: std.builtin.Endian) anyerror!Enum {
     const E = error{
         /// An integer was read, but it did not match any of the tags in the supplied enum.
         InvalidValue,

@@ -22,7 +22,7 @@ test "cast bool to int" {
     try nonConstCastIntFromBool(t, f);
 }
 
-fn non_const_cast_int_from_bool(t: bool, f: bool) !void {
+fn nonConstCastIntFromBool(t: bool, f: bool) !void {
     try expectEqual(@as(u32, 1), @intFromBool(t));
     try expectEqual(@as(u32, 0), @intFromBool(f));
     try expectEqual(@as(i1, -1), @as(i1, @bitCast(@intFromBool(t))));
@@ -34,7 +34,7 @@ fn non_const_cast_int_from_bool(t: bool, f: bool) !void {
 test "bool cmp" {
     try expect(testBoolCmp(true, false) == false);
 }
-fn test_bool_cmp(a: bool, b: bool) bool {
+fn testBoolCmp(a: bool, b: bool) bool {
     return a == b;
 }
 
@@ -52,7 +52,7 @@ test "short circuit" {
     try comptime testShortCircuit(false, true);
 }
 
-fn test_short_circuit(f: bool, t: bool) !void {
+fn testShortCircuit(f: bool, t: bool) !void {
     var hit_1 = f;
     var hit_2 = f;
     var hit_3 = f;

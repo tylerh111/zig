@@ -7,7 +7,7 @@ const mem = std.mem;
 
 /// A more basic implementation of std.testing.expectError which
 /// does not require formatter/printing support
-fn expect_error(expected_err: anyerror, observed_err_union: anytype) !void {
+fn expectError(expected_err: anyerror, observed_err_union: anytype) !void {
     if (observed_err_union) |_| {
         return error.TestExpectedError;
     } else |err| if (err == expected_err) {
@@ -25,7 +25,7 @@ test "error values" {
 test "redefinition of error values allowed" {
     shouldBeNotEqual(error.AnError, error.SecondError);
 }
-fn should_be_not_equal(a: anyerror, b: anyerror) void {
+fn shouldBeNotEqual(a: anyerror, b: anyerror) void {
     if (a == b) unreachable;
 }
 
@@ -38,7 +38,7 @@ test "error binary operator" {
     try expect(a == 3);
     try expect(b == 10);
 }
-fn err_binary_operator_g(x: bool) anyerror!isize {
+fn errBinaryOperatorG(x: bool) anyerror!isize {
     return if (x) error.ItBroke else @as(isize, 10);
 }
 
@@ -75,7 +75,7 @@ test "unwrap simple value from error" {
     const i = unwrapSimpleValueFromErrorDo() catch unreachable;
     try expect(i == 13);
 }
-fn unwrap_simple_value_from_error_do() anyerror!isize {
+fn unwrapSimpleValueFromErrorDo() anyerror!isize {
     return 13;
 }
 
@@ -86,12 +86,12 @@ test "error return in assignment" {
     doErrReturnInAssignment() catch unreachable;
 }
 
-fn do_err_return_in_assignment() anyerror!void {
+fn doErrReturnInAssignment() anyerror!void {
     var x: i32 = undefined;
     x = try makeANonErr();
 }
 
-fn make_anon_err() anyerror!i32 {
+fn makeANonErr() anyerror!i32 {
     return 1;
 }
 
@@ -164,7 +164,7 @@ fn entry() void {
     foo2(bar2);
 }
 
-fn entry_ptr() void {
+fn entryPtr() void {
     var ptr = &bar2;
     _ = &ptr;
     fooPtr(ptr);
@@ -177,7 +177,7 @@ fn foo2(comptime f: fn () anyerror!void) void {
     };
 }
 
-fn foo_ptr(f: *const fn () anyerror!void) void {
+fn fooPtr(f: *const fn () anyerror!void) void {
     const x = f();
     x catch {
         @panic("fail");
@@ -191,7 +191,7 @@ test "error union type " {
     try comptime testErrorUnionType();
 }
 
-fn test_error_union_type() !void {
+fn testErrorUnionType() !void {
     const x: anyerror!i32 = 1234;
     if (x) |value| try expect(value == 1234) else |_| unreachable;
     try expect(@typeInfo(@TypeOf(x)) == .ErrorUnion);
@@ -209,7 +209,7 @@ const MyErrSet = error{
     FileNotFound,
 };
 
-fn test_error_set_type() !void {
+fn testErrorSetType() !void {
     try expect(@typeInfo(MyErrSet).ErrorSet.?.len == 2);
 
     const a: MyErrSet!i32 = 5678;
@@ -232,7 +232,7 @@ test "explicit error set cast" {
 const Set1 = error{ A, B };
 const Set2 = error{ A, C };
 
-fn test_explicit_error_set_cast(set1: Set1) !void {
+fn testExplicitErrorSetCast(set1: Set1) !void {
     const x: Set2 = @errorCast(set1);
     try expect(@TypeOf(x) == Set2);
     const y: Set1 = @errorCast(x);
@@ -244,7 +244,7 @@ test "@errorCast on error unions" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             {
                 const casted: error{Bad}!i32 = @errorCast(retErrUnion());
                 try expect((try casted) == 1234);
@@ -255,11 +255,11 @@ test "@errorCast on error unions" {
             }
         }
 
-        fn ret_err_union() anyerror!i32 {
+        fn retErrUnion() anyerror!i32 {
             return 1234;
         }
 
-        fn ret_inferred_err_union() !i32 {
+        fn retInferredErrUnion() !i32 {
             return 5678;
         }
     };
@@ -278,7 +278,7 @@ test "comptime test error for empty error set" {
 
 const EmptyErrorSet = error{};
 
-fn test_comptime_test_error_empty_set(x: EmptyErrorSet!i32) !void {
+fn testComptimeTestErrorEmptySet(x: EmptyErrorSet!i32) !void {
     if (x) |v| try expect(v == 1234) else |err| {
         _ = err;
         @compileError("bad");
@@ -289,7 +289,7 @@ test "comptime err to int of error set with only 1 possible value" {
     testErrToIntWithOnePossibleValue(error.A, @intFromError(error.A));
     comptime testErrToIntWithOnePossibleValue(error.A, @intFromError(error.A));
 }
-fn test_err_to_int_with_one_possible_value(
+fn testErrToIntWithOnePossibleValue(
     x: error{A},
     comptime value: u32,
 ) void {
@@ -315,9 +315,9 @@ test "error inference with an empty set" {
             }
         };
 
-        fn another_struct(comptime SubStruct: type) type {
+        fn AnotherStruct(comptime SubStruct: type) type {
             return struct {
-                fn another_func() !void {
+                fn anotherFunc() !void {
                     try expect(0 == (try SubStruct.func()));
                 }
             };
@@ -335,7 +335,7 @@ test "error union peer type resolution" {
     try testErrorUnionPeerTypeResolution(1);
 }
 
-fn test_error_union_peer_type_resolution(x: i32) !void {
+fn testErrorUnionPeerTypeResolution(x: i32) !void {
     const y = switch (x) {
         1 => bar_1(),
         2 => baz_1(),
@@ -386,7 +386,7 @@ test "error: Infer error set from literals" {
     _ = comptime intLiteral("n") catch |err| handleErrors(err);
 }
 
-fn handle_errors(err: anytype) noreturn {
+fn handleErrors(err: anytype) noreturn {
     switch (err) {
         error.T => {},
     }
@@ -394,19 +394,19 @@ fn handle_errors(err: anytype) noreturn {
     unreachable;
 }
 
-fn null_literal(str: []const u8) !?i64 {
+fn nullLiteral(str: []const u8) !?i64 {
     if (str[0] == 'n') return null;
 
     return error.T;
 }
 
-fn float_literal(str: []const u8) !?f64 {
+fn floatLiteral(str: []const u8) !?f64 {
     if (str[0] == 'n') return 1.0;
 
     return error.T;
 }
 
-fn int_literal(str: []const u8) !?i64 {
+fn intLiteral(str: []const u8) !?i64 {
     if (str[0] == 'n') return 1;
 
     return error.T;
@@ -438,15 +438,15 @@ test "nested error union function call in optional unwrap" {
             return x.a;
         }
 
-        fn get_foo() anyerror!?Foo {
+        fn getFoo() anyerror!?Foo {
             return Foo{ .a = 1234 };
         }
 
-        fn get_foo2() anyerror!?Foo {
+        fn getFoo2() anyerror!?Foo {
             return error.Failure;
         }
 
-        fn get_foo3() anyerror!?Foo {
+        fn getFoo3() anyerror!?Foo {
             return null;
         }
     };
@@ -487,7 +487,7 @@ test "optional error set is the same size as error set" {
     comptime assert(@sizeOf(?anyerror) == @sizeOf(anyerror));
     comptime assert(@alignOf(?anyerror) == @alignOf(anyerror));
     const S = struct {
-        fn returns_opt_err_set() ?anyerror {
+        fn returnsOptErrSet() ?anyerror {
             return null;
         }
     };
@@ -538,7 +538,7 @@ test "function pointer with return type that is error union with payload which i
             return Err.UnspecifiedErr;
         }
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var x = Foo{ .fun = @This().bar };
             try expectError(error.UnspecifiedErr, x.fun(1));
         }
@@ -553,7 +553,7 @@ test "return result loc as peer result loc in inferred error set function" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             if (quux(2)) |x| {
                 try expect(x.Two);
             } else |e| switch (e) {
@@ -619,7 +619,7 @@ test "@errorName" {
     try expect(mem.eql(u8, @errorName(error.ALongerErrorName), "ALongerErrorName"));
     try expect(mem.eql(u8, @errorName(gimmeItBroke()), "ItBroke"));
 }
-fn gimme_it_broke() anyerror {
+fn gimmeItBroke() anyerror {
     return error.ItBroke;
 }
 
@@ -636,7 +636,7 @@ test "@errorName sentinel length matches slice length" {
     try expect(length == name.len);
 }
 
-pub fn test_builtin_error_name(err: anyerror) [:0]const u8 {
+pub fn testBuiltinErrorName(err: anyerror) [:0]const u8 {
     return @errorName(err);
 }
 
@@ -744,7 +744,7 @@ test "ret_ptr doesn't cause own inferred error set to be resolved" {
     const S = struct {
         fn foo() !void {}
 
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             errdefer @compileError("bad");
 
             return try @This().foo();
@@ -794,7 +794,7 @@ test "pointer to error union payload" {
 
 const NoReturn = struct {
     var a: u32 = undefined;
-    fn some_data() bool {
+    fn someData() bool {
         a -= 1;
         return a == 0;
     }
@@ -804,10 +804,10 @@ const NoReturn = struct {
                 return error.GenericFailure;
         }
     }
-    fn test_try() anyerror {
+    fn testTry() anyerror {
         try loop();
     }
-    fn test_catch() anyerror {
+    fn testCatch() anyerror {
         loop() catch return error.OtherFailure;
         @compileError("bad");
     }
@@ -968,7 +968,7 @@ test "optional error set function parameter" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test(a: ?anyerror) !void {
+        fn doTheTest(a: ?anyerror) !void {
             try std.testing.expect(a.? == error.OutOfMemory);
         }
     };
@@ -1021,7 +1021,7 @@ test "try used in recursive function with inferred error set" {
 
 test "generic inline function returns inferred error set" {
     const S = struct {
-        inline fn ret_err(comptime T: type) !T {
+        inline fn retErr(comptime T: type) !T {
             return error.AnError;
         }
 

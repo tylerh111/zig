@@ -51,7 +51,7 @@ pub const Secp256k1 = struct {
         };
 
         /// Compute r1 and r2 so that k = r1 + r2*lambda (mod L).
-        pub fn split_scalar(s: [32]u8, endian: std.builtin.Endian) NonCanonicalError!SplitScalar {
+        pub fn splitScalar(s: [32]u8, endian: std.builtin.Endian) NonCanonicalError!SplitScalar {
             const b1_neg_s = comptime s: {
                 var buf: [32]u8 = undefined;
                 mem.writeInt(u256, &buf, 303414439467246543595250775667605759171, .little);
@@ -88,7 +88,7 @@ pub const Secp256k1 = struct {
     };
 
     /// Reject the neutral element.
-    pub fn reject_identity(p: Secp256k1) IdentityElementError!void {
+    pub fn rejectIdentity(p: Secp256k1) IdentityElementError!void {
         const affine_0 = @intFromBool(p.x.equivalent(AffineCoordinates.identityElement.x)) & (@intFromBool(p.y.isZero()) | @intFromBool(p.y.equivalent(AffineCoordinates.identityElement.y)));
         const is_identity = @intFromBool(p.z.isZero()) | affine_0;
         if (is_identity != 0) {
@@ -97,7 +97,7 @@ pub const Secp256k1 = struct {
     }
 
     /// Create a point from affine coordinates after checking that they match the curve equation.
-    pub fn from_affine_coordinates(p: AffineCoordinates) EncodingError!Secp256k1 {
+    pub fn fromAffineCoordinates(p: AffineCoordinates) EncodingError!Secp256k1 {
         const x = p.x;
         const y = p.y;
         const x3B = x.sq().mul(x).add(B);
@@ -113,14 +113,14 @@ pub const Secp256k1 = struct {
     }
 
     /// Create a point from serialized affine coordinates.
-    pub fn from_serialized_affine_coordinates(xs: [32]u8, ys: [32]u8, endian: std.builtin.Endian) (NonCanonicalError || EncodingError)!Secp256k1 {
+    pub fn fromSerializedAffineCoordinates(xs: [32]u8, ys: [32]u8, endian: std.builtin.Endian) (NonCanonicalError || EncodingError)!Secp256k1 {
         const x = try Fe.fromBytes(xs, endian);
         const y = try Fe.fromBytes(ys, endian);
         return fromAffineCoordinates(.{ .x = x, .y = y });
     }
 
     /// Recover the Y coordinate from the X coordinate.
-    pub fn recover_y(x: Fe, is_odd: bool) NotSquareError!Fe {
+    pub fn recoverY(x: Fe, is_odd: bool) NotSquareError!Fe {
         const x3B = x.sq().mul(x).add(B);
         var y = try x3B.sqrt();
         const yn = y.neg();
@@ -129,7 +129,7 @@ pub const Secp256k1 = struct {
     }
 
     /// Deserialize a SEC1-encoded point.
-    pub fn from_sec1(s: []const u8) (EncodingError || NotSquareError || NonCanonicalError)!Secp256k1 {
+    pub fn fromSec1(s: []const u8) (EncodingError || NotSquareError || NonCanonicalError)!Secp256k1 {
         if (s.len < 1) return error.InvalidEncoding;
         const encoding_type = s[0];
         const encoded = s[1..];
@@ -156,7 +156,7 @@ pub const Secp256k1 = struct {
     }
 
     /// Serialize a point using the compressed SEC-1 format.
-    pub fn to_compressed_sec1(p: Secp256k1) [33]u8 {
+    pub fn toCompressedSec1(p: Secp256k1) [33]u8 {
         var out: [33]u8 = undefined;
         const xy = p.affineCoordinates();
         out[0] = if (xy.y.isOdd()) 3 else 2;
@@ -165,7 +165,7 @@ pub const Secp256k1 = struct {
     }
 
     /// Serialize a point using the uncompressed SEC-1 format.
-    pub fn to_uncompressed_sec1(p: Secp256k1) [65]u8 {
+    pub fn toUncompressedSec1(p: Secp256k1) [65]u8 {
         var out: [65]u8 = undefined;
         out[0] = 4;
         const xy = p.affineCoordinates();
@@ -217,7 +217,7 @@ pub const Secp256k1 = struct {
 
     /// Add secp256k1 points, the second being specified using affine coordinates.
     // Algorithm 8 from https://eprint.iacr.org/2015/1060.pdf
-    pub fn add_mixed(p: Secp256k1, q: AffineCoordinates) Secp256k1 {
+    pub fn addMixed(p: Secp256k1, q: AffineCoordinates) Secp256k1 {
         var t0 = p.x.mul(q.x);
         var t1 = p.y.mul(q.y);
         var t3 = q.x.add(q.y);
@@ -310,12 +310,12 @@ pub const Secp256k1 = struct {
     }
 
     /// Subtract secp256k1 points, the second being specified using affine coordinates.
-    pub fn sub_mixed(p: Secp256k1, q: AffineCoordinates) Secp256k1 {
+    pub fn subMixed(p: Secp256k1, q: AffineCoordinates) Secp256k1 {
         return p.addMixed(q.neg());
     }
 
     /// Return affine coordinates.
-    pub fn affine_coordinates(p: Secp256k1) AffineCoordinates {
+    pub fn affineCoordinates(p: Secp256k1) AffineCoordinates {
         const affine_0 = @intFromBool(p.x.equivalent(AffineCoordinates.identityElement.x)) & (@intFromBool(p.y.isZero()) | @intFromBool(p.y.equivalent(AffineCoordinates.identityElement.y)));
         const is_identity = @intFromBool(p.z.isZero()) | affine_0;
         const zinv = p.z.invert();
@@ -336,13 +336,13 @@ pub const Secp256k1 = struct {
         }
     }
 
-    fn c_mov(p: *Secp256k1, a: Secp256k1, c: u1) void {
+    fn cMov(p: *Secp256k1, a: Secp256k1, c: u1) void {
         p.x.cMov(a.x, c);
         p.y.cMov(a.y, c);
         p.z.cMov(a.z, c);
     }
 
-    fn pc_select(comptime n: usize, pc: *const [n]Secp256k1, b: u8) Secp256k1 {
+    fn pcSelect(comptime n: usize, pc: *const [n]Secp256k1, b: u8) Secp256k1 {
         var t = Secp256k1.identityElement;
         comptime var i: u8 = 1;
         inline while (i < pc.len) : (i += 1) {
@@ -371,7 +371,7 @@ pub const Secp256k1 = struct {
         return e;
     }
 
-    fn pc_mul(pc: *const [9]Secp256k1, s: [32]u8, comptime vartime: bool) IdentityElementError!Secp256k1 {
+    fn pcMul(pc: *const [9]Secp256k1, s: [32]u8, comptime vartime: bool) IdentityElementError!Secp256k1 {
         std.debug.assert(vartime);
         const e = slide(s);
         var q = Secp256k1.identityElement;
@@ -390,7 +390,7 @@ pub const Secp256k1 = struct {
         return q;
     }
 
-    fn pc_mul16(pc: *const [16]Secp256k1, s: [32]u8, comptime vartime: bool) IdentityElementError!Secp256k1 {
+    fn pcMul16(pc: *const [16]Secp256k1, s: [32]u8, comptime vartime: bool) IdentityElementError!Secp256k1 {
         var q = Secp256k1.identityElement;
         var pos: usize = 252;
         while (true) : (pos -= 4) {
@@ -439,7 +439,7 @@ pub const Secp256k1 = struct {
 
     /// Multiply an elliptic curve point by a *PUBLIC* scalar *IN VARIABLE TIME*
     /// This can be used for signature verification.
-    pub fn mul_public(p: Secp256k1, s_: [32]u8, endian: std.builtin.Endian) (IdentityElementError || NonCanonicalError)!Secp256k1 {
+    pub fn mulPublic(p: Secp256k1, s_: [32]u8, endian: std.builtin.Endian) (IdentityElementError || NonCanonicalError)!Secp256k1 {
         const s = if (endian == .little) s_ else Fe.orderSwap(s_);
         const zero = comptime scalar.Scalar.zero.toBytes(.little);
         if (mem.eql(u8, &zero, &s)) {
@@ -466,7 +466,7 @@ pub const Secp256k1 = struct {
     // Half-size double-base public multiplication when using the curve endomorphism.
     // Scalars must be in little-endian.
     // The second point is unlikely to be the generator, so don't even try to use the comptime table for it.
-    fn mul_double_base_public_endo(p1: Secp256k1, s1: [32]u8, p2: Secp256k1, s2: [32]u8) IdentityElementError!Secp256k1 {
+    fn mulDoubleBasePublicEndo(p1: Secp256k1, s1: [32]u8, p2: Secp256k1, s2: [32]u8) IdentityElementError!Secp256k1 {
         var pc1_array: [9]Secp256k1 = undefined;
         const pc1 = if (p1.is_base) basePointPc[0..9] else pc: {
             pc1_array = precompute(p1, 8);
@@ -501,7 +501,7 @@ pub const Secp256k1 = struct {
 
     /// Double-base multiplication of public parameters - Compute (p1*s1)+(p2*s2) *IN VARIABLE TIME*
     /// This can be used for signature verification.
-    pub fn mul_double_base_public(p1: Secp256k1, s1_: [32]u8, p2: Secp256k1, s2_: [32]u8, endian: std.builtin.Endian) IdentityElementError!Secp256k1 {
+    pub fn mulDoubleBasePublic(p1: Secp256k1, s1_: [32]u8, p2: Secp256k1, s2_: [32]u8, endian: std.builtin.Endian) IdentityElementError!Secp256k1 {
         const s1 = if (endian == .little) s1_ else Fe.orderSwap(s1_);
         const s2 = if (endian == .little) s2_ else Fe.orderSwap(s2_);
         try p1.rejectIdentity();
@@ -549,7 +549,7 @@ pub const AffineCoordinates = struct {
     /// Identity element in affine coordinates.
     pub const identityElement = AffineCoordinates{ .x = Secp256k1.identityElement.x, .y = Secp256k1.identityElement.y };
 
-    fn c_mov(p: *AffineCoordinates, a: AffineCoordinates, c: u1) void {
+    fn cMov(p: *AffineCoordinates, a: AffineCoordinates, c: u1) void {
         p.x.cMov(a.x, c);
         p.y.cMov(a.y, c);
     }

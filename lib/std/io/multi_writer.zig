@@ -2,7 +2,7 @@ const std = @import("../std.zig");
 const io = std.io;
 
 /// Takes a tuple of streams, and constructs a new stream that writes to all of them
-pub fn multi_writer(comptime Writers: type) type {
+pub fn MultiWriter(comptime Writers: type) type {
     comptime var ErrSet = error{};
     inline for (@typeInfo(Writers).Struct.fields) |field| {
         const StreamType = field.type;
@@ -29,7 +29,7 @@ pub fn multi_writer(comptime Writers: type) type {
     };
 }
 
-pub fn multi_writer(streams: anytype) MultiWriter(@TypeOf(streams)) {
+pub fn multiWriter(streams: anytype) MultiWriter(@TypeOf(streams)) {
     return .{ .streams = streams };
 }
 

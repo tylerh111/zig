@@ -543,12 +543,12 @@ pub const Inst = struct {
         memory_address = 0xFF,
 
         /// From a given wasm opcode, returns a MIR tag.
-        pub fn from_opcode(opcode: std.wasm.Opcode) Tag {
+        pub fn fromOpcode(opcode: std.wasm.Opcode) Tag {
             return @as(Tag, @enumFromInt(@intFromEnum(opcode))); // Given `Opcode` is not present as a tag for MIR yet
         }
 
         /// Returns a wasm opcode from a given MIR tag.
-        pub fn to_opcode(self: Tag) std.wasm.Opcode {
+        pub fn toOpcode(self: Tag) std.wasm.Opcode {
             return @as(std.wasm.Opcode, @enumFromInt(@intFromEnum(self)));
         }
     };
@@ -589,7 +589,7 @@ pub fn deinit(self: *Mir, gpa: std.mem.Allocator) void {
     self.* = undefined;
 }
 
-pub fn extra_data(self: *const Mir, comptime T: type, index: usize) struct { data: T, end: usize } {
+pub fn extraData(self: *const Mir, comptime T: type, index: usize) struct { data: T, end: usize } {
     const fields = std.meta.fields(T);
     var i: usize = index;
     var result: T = undefined;
@@ -619,14 +619,14 @@ pub const Imm64 = struct {
     msb: u32,
     lsb: u32,
 
-    pub fn from_u64(imm: u64) Imm64 {
+    pub fn fromU64(imm: u64) Imm64 {
         return .{
             .msb = @as(u32, @truncate(imm >> 32)),
             .lsb = @as(u32, @truncate(imm)),
         };
     }
 
-    pub fn to_u64(self: Imm64) u64 {
+    pub fn toU64(self: Imm64) u64 {
         var result: u64 = 0;
         result |= @as(u64, self.msb) << 32;
         result |= @as(u64, self.lsb);
@@ -638,7 +638,7 @@ pub const Float64 = struct {
     msb: u32,
     lsb: u32,
 
-    pub fn from_float64(float: f64) Float64 {
+    pub fn fromFloat64(float: f64) Float64 {
         const tmp = @as(u64, @bitCast(float));
         return .{
             .msb = @as(u32, @truncate(tmp >> 32)),
@@ -646,11 +646,11 @@ pub const Float64 = struct {
         };
     }
 
-    pub fn to_f64(self: Float64) f64 {
+    pub fn toF64(self: Float64) f64 {
         @as(f64, @bitCast(self.toU64()));
     }
 
-    pub fn to_u64(self: Float64) u64 {
+    pub fn toU64(self: Float64) u64 {
         var result: u64 = 0;
         result |= @as(u64, self.msb) << 32;
         result |= @as(u64, self.lsb);

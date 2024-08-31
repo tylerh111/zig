@@ -27,7 +27,7 @@ test "int comparison elision" {
 
 // All comparisons in this test have a guaranteed result,
 // so one branch of each 'if' should never be analyzed.
-fn test_int_edges(comptime T: type) void {
+fn testIntEdges(comptime T: type) void {
     const min = minInt(T);
     const max = maxInt(T);
 

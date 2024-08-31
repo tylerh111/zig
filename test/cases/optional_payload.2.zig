@@ -6,7 +6,7 @@ pub fn main() void {
     assert(x == 255);
 }
 
-fn by_ptr(x: *u8) ?*u8 {
+fn byPtr(x: *u8) ?*u8 {
     return x;
 }
 

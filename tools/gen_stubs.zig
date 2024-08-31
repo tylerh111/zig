@@ -58,7 +58,7 @@ const MultiSym = struct {
     ty: u4,
     visib: elf.STV,
 
-    fn all_present(ms: MultiSym) bool {
+    fn allPresent(ms: MultiSym) bool {
         for (arches, 0..) |_, i| {
             if (!ms.present[i]) {
                 return false;
@@ -67,7 +67,7 @@ const MultiSym = struct {
         return true;
     }
 
-    fn is32_only(ms: MultiSym) bool {
+    fn is32Only(ms: MultiSym) bool {
         return ms.present[archIndex(.riscv64)] == false and
             ms.present[archIndex(.mips)] == true and
             ms.present[archIndex(.mips64)] == false and
@@ -78,7 +78,7 @@ const MultiSym = struct {
             ms.present[archIndex(.aarch64)] == false;
     }
 
-    fn common_size(ms: MultiSym) ?u64 {
+    fn commonSize(ms: MultiSym) ?u64 {
         var size: ?u64 = null;
         for (arches, 0..) |_, i| {
             if (!ms.present[i]) continue;
@@ -93,7 +93,7 @@ const MultiSym = struct {
         return size.?;
     }
 
-    fn common_binding(ms: MultiSym) ?u4 {
+    fn commonBinding(ms: MultiSym) ?u4 {
         var binding: ?u4 = null;
         for (arches, 0..) |_, i| {
             if (!ms.present[i]) continue;
@@ -108,7 +108,7 @@ const MultiSym = struct {
         return binding.?;
     }
 
-    fn is_ptr_size(ms: MultiSym) bool {
+    fn isPtrSize(ms: MultiSym) bool {
         const map = .{
             .{ .riscv64, 8 },
             .{ .mips, 4 },
@@ -130,7 +130,7 @@ const MultiSym = struct {
         return true;
     }
 
-    fn is_ptr2_size(ms: MultiSym) bool {
+    fn isPtr2Size(ms: MultiSym) bool {
         const map = .{
             .{ .riscv64, 16 },
             .{ .mips, 8 },
@@ -152,7 +152,7 @@ const MultiSym = struct {
         return true;
     }
 
-    fn is_weak64(ms: MultiSym) bool {
+    fn isWeak64(ms: MultiSym) bool {
         const map = .{
             .{ .riscv64, 2 },
             .{ .mips, 1 },
@@ -266,7 +266,7 @@ pub fn main() !void {
         sym_table: *const std.StringArrayHashMap(MultiSym),
 
         /// Sort first by section name, then by symbol name
-        pub fn less_than(ctx: @This(), index_a: usize, index_b: usize) bool {
+        pub fn lessThan(ctx: @This(), index_a: usize, index_b: usize) bool {
             const multi_sym_a = ctx.sym_table.values()[index_a];
             const multi_sym_b = ctx.sym_table.values()[index_b];
 
@@ -405,20 +405,20 @@ pub fn main() !void {
     }
 }
 
-fn parse_elf(parse: Parse, comptime is_64: bool, comptime endian: builtin.Endian) !void {
+fn parseElf(parse: Parse, comptime is_64: bool, comptime endian: builtin.Endian) !void {
     const arena = parse.arena;
     const elf_bytes = parse.elf_bytes;
     const header = parse.header;
     const Sym = if (is_64) elf.Elf64_Sym else elf.Elf32_Sym;
     const S = struct {
-        fn endian_swap(x: anytype) @TypeOf(x) {
+        fn endianSwap(x: anytype) @TypeOf(x) {
             if (endian != native_endian) {
                 return @byteSwap(x);
             } else {
                 return x;
             }
         }
-        fn symbol_addr_less_than(_: void, lhs: Sym, rhs: Sym) bool {
+        fn symbolAddrLessThan(_: void, lhs: Sym, rhs: Sym) bool {
             return endianSwap(lhs.st_value) < endianSwap(rhs.st_value);
         }
     };
@@ -580,7 +580,7 @@ fn parse_elf(parse: Parse, comptime is_64: bool, comptime endian: builtin.Endian
     }
 }
 
-fn arch_index(arch: std.Target.Cpu.Arch) u8 {
+fn archIndex(arch: std.Target.Cpu.Arch) u8 {
     return switch (arch) {
         // zig fmt: off
         .riscv64     => 0,
@@ -598,7 +598,7 @@ fn arch_index(arch: std.Target.Cpu.Arch) u8 {
     };
 }
 
-fn arch_musl_name(arch: std.Target.Cpu.Arch) []const u8 {
+fn archMuslName(arch: std.Target.Cpu.Arch) []const u8 {
     return switch (arch) {
         // zig fmt: off
         .riscv64     => "riscv64",
@@ -616,7 +616,7 @@ fn arch_musl_name(arch: std.Target.Cpu.Arch) []const u8 {
     };
 }
 
-fn arch_set_name(arch_set: [arches.len]bool) []const u8 {
+fn archSetName(arch_set: [arches.len]bool) []const u8 {
     for (arches, arch_set) |arch, set_item| {
         if (set_item) {
             return @tagName(arch);

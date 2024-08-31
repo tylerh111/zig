@@ -38,7 +38,7 @@ pub fn main() void {
     }
 }
 
-fn main_server() !void {
+fn mainServer() !void {
     var server = try std.zig.Server.init(.{
         .gpa = fba.allocator(),
         .in = std.io.getStdIn(),
@@ -124,7 +124,7 @@ fn main_server() !void {
     }
 }
 
-fn main_terminal() void {
+fn mainTerminal() void {
     const test_fn_list = builtin.test_functions;
     var ok_count: usize = 0;
     var skip_count: usize = 0;
@@ -220,7 +220,7 @@ pub fn log(
 
 /// Simpler main(), exercising fewer language features, so that
 /// work-in-progress backends can handle it.
-pub fn main_simple() anyerror!void {
+pub fn mainSimple() anyerror!void {
     const enable_print = false;
     const print_all = false;
 
@@ -257,7 +257,7 @@ pub fn main_simple() anyerror!void {
     }
 }
 
-pub fn main_extra_simple() !void {
+pub fn mainExtraSimple() !void {
     var fail_count: u8 = 0;
 
     for (builtin.test_functions) |test_fn| {

@@ -16,6 +16,6 @@ pub fn __floatunditf(a: u64) callconv(.C) f128 {
     return floatFromInt(f128, a);
 }
 
-fn _qp_uxtoq(c: *f128, a: u64) callconv(.C) void {
+fn _Qp_uxtoq(c: *f128, a: u64) callconv(.C) void {
     c.* = floatFromInt(f128, a);
 }

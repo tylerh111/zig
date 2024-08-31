@@ -61,7 +61,7 @@ pub const ReceiveHeadError = error{
 
 /// The header bytes reference the read buffer that Server was initialized with
 /// and remain alive until the next call to receiveHead.
-pub fn receive_head(s: *Server) ReceiveHeadError!Request {
+pub fn receiveHead(s: *Server) ReceiveHeadError!Request {
     assert(s.state == .ready);
     s.state = .received_head;
     errdefer s.state = .receiving_head;
@@ -106,7 +106,7 @@ pub fn receive_head(s: *Server) ReceiveHeadError!Request {
     }
 }
 
-fn finish_receiving_head(s: *Server, head_end: usize) ReceiveHeadError!Request {
+fn finishReceivingHead(s: *Server, head_end: usize) ReceiveHeadError!Request {
     return .{
         .server = s,
         .head_end = head_end,
@@ -299,7 +299,7 @@ pub const Request = struct {
         }
     };
 
-    pub fn iterate_headers(r: *Request) http.HeaderIterator {
+    pub fn iterateHeaders(r: *Request) http.HeaderIterator {
         return http.HeaderIterator.init(r.server.read_buffer[0..r.head_end]);
     }
 
@@ -555,7 +555,7 @@ pub const Request = struct {
     ///
     /// Asserts `send_buffer` is large enough to store the entire response header.
     /// Asserts status is not `continue`.
-    pub fn respond_streaming(request: *Request, options: RespondStreamingOptions) Response {
+    pub fn respondStreaming(request: *Request, options: RespondStreamingOptions) Response {
         const o = options.respond_options;
         assert(o.status != .@"continue");
         const transfer_encoding_none = (o.transfer_encoding orelse .chunked) == .none;
@@ -790,7 +790,7 @@ pub const Request = struct {
     /// Returns whether the connection should remain persistent.
     /// If it would fail, it instead sets the Server state to `receiving_body`
     /// and returns false.
-    fn discard_body(request: *Request, keep_alive: bool) bool {
+    fn discardBody(request: *Request, keep_alive: bool) bool {
         // Prepare to receive another request on the same connection.
         // There are two factors to consider:
         // * Any body the client sent must be discarded.
@@ -877,7 +877,7 @@ pub const Response = struct {
     /// flushes the stream to the system.
     /// Respects the value of `elide_body` to omit all data after the headers.
     /// Asserts there are at most 25 trailers.
-    pub fn end_chunked(r: *Response, options: EndChunkedOptions) WriteError!void {
+    pub fn endChunked(r: *Response, options: EndChunkedOptions) WriteError!void {
         assert(r.transfer_encoding == .chunked);
         try flush_chunked(r, options.trailers);
         r.* = undefined;
@@ -997,7 +997,7 @@ pub const Response = struct {
 
     /// If using content-length, asserts that writing these bytes to the client
     /// would not exceed the content-length value sent in the HTTP header.
-    pub fn write_all(r: *Response, bytes: []const u8) WriteError!void {
+    pub fn writeAll(r: *Response, bytes: []const u8) WriteError!void {
         var index: usize = 0;
         while (index < bytes.len) {
             index += try write(r, bytes[index..]);

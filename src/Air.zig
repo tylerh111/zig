@@ -848,7 +848,7 @@ pub const Inst = struct {
         /// Operand is unused and set to Ref.none
         work_group_id,
 
-        pub fn from_cmp_op(op: std.math.CompareOperator, optimized: bool) Tag {
+        pub fn fromCmpOp(op: std.math.CompareOperator, optimized: bool) Tag {
             switch (op) {
                 .lt => return if (optimized) .cmp_lt_optimized else .cmp_lt,
                 .lte => return if (optimized) .cmp_lte_optimized else .cmp_lte,
@@ -859,7 +859,7 @@ pub const Inst = struct {
             }
         }
 
-        pub fn to_cmp_op(tag: Tag) ?std.math.CompareOperator {
+        pub fn toCmpOp(tag: Tag) ?std.math.CompareOperator {
             return switch (tag) {
                 .cmp_lt, .cmp_lt_optimized => .lt,
                 .cmp_lte, .cmp_lte_optimized => .lte,
@@ -876,12 +876,12 @@ pub const Inst = struct {
     pub const Index = enum(u32) {
         _,
 
-        pub fn to_ref(i: Index) Inst.Ref {
+        pub fn toRef(i: Index) Inst.Ref {
             assert(@intFromEnum(i) >> 31 == 0);
             return @enumFromInt((1 << 31) | @intFromEnum(i));
         }
 
-        pub fn to_target_index(i: Index) u31 {
+        pub fn toTargetIndex(i: Index) u31 {
             assert(@intFromEnum(i) >> 31 == 1);
             return @truncate(@intFromEnum(i));
         }
@@ -983,12 +983,12 @@ pub const Inst = struct {
         none = @intFromEnum(InternPool.Index.none),
         _,
 
-        pub fn to_interned(ref: Ref) ?InternPool.Index {
+        pub fn toInterned(ref: Ref) ?InternPool.Index {
             assert(ref != .none);
             return ref.toInternedAllowNone();
         }
 
-        pub fn to_interned_allow_none(ref: Ref) ?InternPool.Index {
+        pub fn toInternedAllowNone(ref: Ref) ?InternPool.Index {
             return switch (ref) {
                 .none => .none,
                 else => if (@intFromEnum(ref) >> 31 == 0)
@@ -998,12 +998,12 @@ pub const Inst = struct {
             };
         }
 
-        pub fn to_index(ref: Ref) ?Index {
+        pub fn toIndex(ref: Ref) ?Index {
             assert(ref != .none);
             return ref.toIndexAllowNone();
         }
 
-        pub fn to_index_allow_none(ref: Ref) ?Index {
+        pub fn toIndexAllowNone(ref: Ref) ?Index {
             return switch (ref) {
                 .none => null,
                 else => if (@intFromEnum(ref) >> 31 != 0)
@@ -1013,7 +1013,7 @@ pub const Inst = struct {
             };
         }
 
-        pub fn to_type(ref: Ref) Type {
+        pub fn toType(ref: Ref) Type {
             return Type.fromInterned(ref.toInterned().?);
         }
     };
@@ -1183,11 +1183,11 @@ pub const VectorCmp = struct {
     rhs: Inst.Ref,
     op: u32,
 
-    pub fn compare_operator(self: VectorCmp) std.math.CompareOperator {
+    pub fn compareOperator(self: VectorCmp) std.math.CompareOperator {
         return @as(std.math.CompareOperator, @enumFromInt(@as(u3, @truncate(self.op))));
     }
 
-    pub fn encode_op(compare_operator: std.math.CompareOperator) u32 {
+    pub fn encodeOp(compare_operator: std.math.CompareOperator) u32 {
         return @intFromEnum(compare_operator);
     }
 };
@@ -1228,11 +1228,11 @@ pub const Cmpxchg = struct {
     /// 0b00000000000000000000000000XXX000 - failure_order
     flags: u32,
 
-    pub fn success_order(self: Cmpxchg) std.builtin.AtomicOrder {
+    pub fn successOrder(self: Cmpxchg) std.builtin.AtomicOrder {
         return @as(std.builtin.AtomicOrder, @enumFromInt(@as(u3, @truncate(self.flags))));
     }
 
-    pub fn failure_order(self: Cmpxchg) std.builtin.AtomicOrder {
+    pub fn failureOrder(self: Cmpxchg) std.builtin.AtomicOrder {
         return @as(std.builtin.AtomicOrder, @enumFromInt(@as(u3, @truncate(self.flags >> 3))));
     }
 };
@@ -1257,13 +1257,13 @@ pub const UnionInit = struct {
     init: Inst.Ref,
 };
 
-pub fn get_main_body(air: Air) []const Air.Inst.Index {
+pub fn getMainBody(air: Air) []const Air.Inst.Index {
     const body_index = air.extra[@intFromEnum(ExtraIndex.main_block)];
     const extra = air.extraData(Block, body_index);
     return @ptrCast(air.extra[extra.end..][0..extra.data.body_len]);
 }
 
-pub fn type_of(air: *const Air, inst: Air.Inst.Ref, ip: *const InternPool) Type {
+pub fn typeOf(air: *const Air, inst: Air.Inst.Ref, ip: *const InternPool) Type {
     if (inst.toInterned()) |ip_index| {
         return Type.fromInterned(ip.typeOf(ip_index));
     } else {
@@ -1271,7 +1271,7 @@ pub fn type_of(air: *const Air, inst: Air.Inst.Ref, ip: *const InternPool) Type 
     }
 }
 
-pub fn type_of_index(air: *const Air, inst: Air.Inst.Index, ip: *const InternPool) Type {
+pub fn typeOfIndex(air: *const Air, inst: Air.Inst.Index, ip: *const InternPool) Type {
     const datas = air.instructions.items(.data);
     switch (air.instructions.items(.tag)[@intFromEnum(inst)]) {
         .add,
@@ -1524,7 +1524,7 @@ pub fn type_of_index(air: *const Air, inst: Air.Inst.Index, ip: *const InternPoo
 
 /// Returns the requested data, as well as the new index which is at the start of the
 /// trailers for the object.
-pub fn extra_data(air: Air, comptime T: type, index: usize) struct { data: T, end: usize } {
+pub fn extraData(air: Air, comptime T: type, index: usize) struct { data: T, end: usize } {
     const fields = std.meta.fields(T);
     var i: usize = index;
     var result: T = undefined;
@@ -1550,7 +1550,7 @@ pub fn deinit(air: *Air, gpa: std.mem.Allocator) void {
     air.* = undefined;
 }
 
-pub fn interned_to_ref(ip_index: InternPool.Index) Inst.Ref {
+pub fn internedToRef(ip_index: InternPool.Index) Inst.Ref {
     return switch (ip_index) {
         .none => .none,
         else => {
@@ -1569,7 +1569,7 @@ pub fn value(air: Air, inst: Inst.Ref, mod: *Module) !?Value {
     return air.typeOfIndex(index, &mod.intern_pool).onePossibleValue(mod);
 }
 
-pub fn null_terminated_string(air: Air, index: usize) [:0]const u8 {
+pub fn nullTerminatedString(air: Air, index: usize) [:0]const u8 {
     const bytes = std.mem.sliceAsBytes(air.extra[index..]);
     var end: usize = 0;
     while (bytes[end] != 0) {
@@ -1582,7 +1582,7 @@ pub fn null_terminated_string(air: Air, index: usize) [:0]const u8 {
 /// because it can cause side effects. If an instruction does not need to be
 /// lowered, and Liveness determines its result is unused, backends should
 /// avoid lowering it.
-pub fn must_lower(air: Air, inst: Air.Inst.Index, ip: *const InternPool) bool {
+pub fn mustLower(air: Air, inst: Air.Inst.Index, ip: *const InternPool) bool {
     const data = air.instructions.items(.data)[@intFromEnum(inst)];
     return switch (air.instructions.items(.tag)[@intFromEnum(inst)]) {
         .arg,

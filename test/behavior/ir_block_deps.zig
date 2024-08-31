@@ -13,7 +13,7 @@ fn foo(id: u64) !i32 {
     };
 }
 
-fn get_err_int() anyerror!i32 {
+fn getErrInt() anyerror!i32 {
     return 0;
 }
 

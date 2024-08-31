@@ -45,7 +45,7 @@ pub const Year = u16;
 pub const epoch_year = 1970;
 pub const secs_per_day: u17 = 24 * 60 * 60;
 
-pub fn is_leap_year(year: Year) bool {
+pub fn isLeapYear(year: Year) bool {
     if (@mod(year, 4) != 0)
         return false;
     if (@mod(year, 100) != 0)
@@ -60,7 +60,7 @@ test isLeapYear {
     try testing.expectEqual(true, isLeapYear(2400));
 }
 
-pub fn get_days_in_year(year: Year) u9 {
+pub fn getDaysInYear(year: Year) u9 {
     return if (isLeapYear(year)) 366 else 365;
 }
 
@@ -88,7 +88,7 @@ pub const Month = enum(u4) {
 };
 
 /// Get the number of days in the given month
-pub fn get_days_in_month(leap_year: YearLeapKind, month: Month) u5 {
+pub fn getDaysInMonth(leap_year: YearLeapKind, month: Month) u5 {
     return switch (month) {
         .jan => 31,
         .feb => @as(u5, switch (leap_year) {
@@ -113,7 +113,7 @@ pub const YearAndDay = struct {
     /// The number of days into the year (0 to 365)
     day: u9,
 
-    pub fn calculate_month_day(self: YearAndDay) MonthAndDay {
+    pub fn calculateMonthDay(self: YearAndDay) MonthAndDay {
         var month: Month = .jan;
         var days_left = self.day;
         const leap_kind: YearLeapKind = if (isLeapYear(self.year)) .leap else .not_leap;
@@ -136,7 +136,7 @@ pub const MonthAndDay = struct {
 // days since epoch Oct 1, 1970
 pub const EpochDay = struct {
     day: u47, // u47 = u64 - u17 (because day = sec(u64) / secs_per_day(u17)
-    pub fn calculate_year_day(self: EpochDay) YearAndDay {
+    pub fn calculateYearDay(self: EpochDay) YearAndDay {
         var year_day = self.day;
         var year: Year = epoch_year;
         while (true) {
@@ -155,15 +155,15 @@ pub const DaySeconds = struct {
     secs: u17, // max is 24*60*60 = 86400
 
     /// the number of hours past the start of the day (0 to 23)
-    pub fn get_hours_into_day(self: DaySeconds) u5 {
+    pub fn getHoursIntoDay(self: DaySeconds) u5 {
         return @as(u5, @intCast(@divTrunc(self.secs, 3600)));
     }
     /// the number of minutes past the hour (0 to 59)
-    pub fn get_minutes_into_hour(self: DaySeconds) u6 {
+    pub fn getMinutesIntoHour(self: DaySeconds) u6 {
         return @as(u6, @intCast(@divTrunc(@mod(self.secs, 3600), 60)));
     }
     /// the number of seconds past the start of the minute (0 to 59)
-    pub fn get_seconds_into_minute(self: DaySeconds) u6 {
+    pub fn getSecondsIntoMinute(self: DaySeconds) u6 {
         return math.comptimeMod(self.secs, 60);
     }
 };
@@ -174,18 +174,18 @@ pub const EpochSeconds = struct {
 
     /// Returns the number of days since the epoch as an EpochDay.
     /// Use EpochDay to get information about the day of this time.
-    pub fn get_epoch_day(self: EpochSeconds) EpochDay {
+    pub fn getEpochDay(self: EpochSeconds) EpochDay {
         return EpochDay{ .day = @as(u47, @intCast(@divTrunc(self.secs, secs_per_day))) };
     }
 
     /// Returns the number of seconds into the day as DaySeconds.
     /// Use DaySeconds to get information about the time.
-    pub fn get_day_seconds(self: EpochSeconds) DaySeconds {
+    pub fn getDaySeconds(self: EpochSeconds) DaySeconds {
         return DaySeconds{ .secs = math.comptimeMod(self.secs, secs_per_day) };
     }
 };
 
-fn test_epoch(secs: u64, expected_year_day: YearAndDay, expected_month_day: MonthAndDay, expected_day_seconds: struct {
+fn testEpoch(secs: u64, expected_year_day: YearAndDay, expected_month_day: MonthAndDay, expected_day_seconds: struct {
     /// 0 to 23
     hours_into_day: u5,
     /// 0 to 59

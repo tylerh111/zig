@@ -15,15 +15,15 @@ pub const Timetype = struct {
         return std.mem.sliceTo(self.name_data[0..], 0);
     }
 
-    pub fn is_dst(self: Timetype) bool {
+    pub fn isDst(self: Timetype) bool {
         return (self.flags & 0x01) > 0;
     }
 
-    pub fn standard_time_indicator(self: Timetype) bool {
+    pub fn standardTimeIndicator(self: Timetype) bool {
         return (self.flags & 0x02) > 0;
     }
 
-    pub fn ut_indicator(self: Timetype) bool {
+    pub fn utIndicator(self: Timetype) bool {
         return (self.flags & 0x04) > 0;
     }
 };
@@ -81,7 +81,7 @@ pub const Tz = struct {
         }
     }
 
-    fn parse_block(allocator: std.mem.Allocator, reader: anytype, header: Header, legacy: bool) !Tz {
+    fn parseBlock(allocator: std.mem.Allocator, reader: anytype, header: Header, legacy: bool) !Tz {
         if (header.counts.isstdcnt != 0 and header.counts.isstdcnt != header.counts.typecnt) return error.Malformed; // rfc8536: isstdcnt [...] MUST either be zero or equal to "typecnt"
         if (header.counts.isutcnt != 0 and header.counts.isutcnt != header.counts.typecnt) return error.Malformed; // rfc8536: isutcnt [...] MUST either be zero or equal to "typecnt"
         if (header.counts.typecnt == 0) return error.Malformed; // rfc8536: typecnt [...] MUST NOT be zero

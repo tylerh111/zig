@@ -25,7 +25,7 @@ test "break from outer for loop" {
     try comptime testBreakOuter();
 }
 
-fn test_break_outer() !void {
+fn testBreakOuter() !void {
     const array = "aoeu";
     var count: usize = 0;
     outer: for (array) |_| {
@@ -42,7 +42,7 @@ test "continue outer for loop" {
     try comptime testContinueOuter();
 }
 
-fn test_continue_outer() !void {
+fn testContinueOuter() !void {
     const array = "aoeu";
     var counter: usize = 0;
     outer: for (array) |_| {
@@ -116,7 +116,7 @@ test "for with null and T peer types and inferred result location type" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test(slice: []const u8) !void {
+        fn doTheTest(slice: []const u8) !void {
             if (for (slice) |item| {
                 if (item == 10) {
                     break item;
@@ -174,7 +174,7 @@ test "for loop with pointer elem var" {
     }
 }
 
-fn mangle_string(s: []u8) void {
+fn mangleString(s: []u8) void {
     for (s) |*c| {
         c.* += 1;
     }
@@ -186,7 +186,7 @@ test "for copies its payload" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var x = [_]usize{ 1, 2, 3 };
             for (x, 0..) |value, i| {
                 // Modify the original array
@@ -206,7 +206,7 @@ test "for on slice with allowzero ptr" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test(slice: []const u8) !void {
+        fn doTheTest(slice: []const u8) !void {
             const ptr = @as([*]allowzero const u8, @ptrCast(slice.ptr))[0..slice.len];
             for (ptr, 0..) |x, i| try expect(x == i + 1);
             for (ptr, 0..) |*x, i| try expect(x.* == i + 1);

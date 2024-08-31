@@ -131,7 +131,7 @@ pub const Register = enum(u8) {
     }
 
     /// Convert from a general-purpose register to its 64 bit alias.
-    pub fn to_x(self: Register) Register {
+    pub fn toX(self: Register) Register {
         return switch (@intFromEnum(self)) {
             @intFromEnum(Register.x0)...@intFromEnum(Register.xzr) => @as(
                 Register,
@@ -146,7 +146,7 @@ pub const Register = enum(u8) {
     }
 
     /// Convert from a general-purpose register to its 32 bit alias.
-    pub fn to_w(self: Register) Register {
+    pub fn toW(self: Register) Register {
         return switch (@intFromEnum(self)) {
             @intFromEnum(Register.x0)...@intFromEnum(Register.xzr) => @as(
                 Register,
@@ -161,7 +161,7 @@ pub const Register = enum(u8) {
     }
 
     /// Convert from a floating-point register to its 128 bit alias.
-    pub fn to_q(self: Register) Register {
+    pub fn toQ(self: Register) Register {
         return switch (@intFromEnum(self)) {
             @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(
                 Register,
@@ -188,7 +188,7 @@ pub const Register = enum(u8) {
     }
 
     /// Convert from a floating-point register to its 64 bit alias.
-    pub fn to_d(self: Register) Register {
+    pub fn toD(self: Register) Register {
         return switch (@intFromEnum(self)) {
             @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(
                 Register,
@@ -215,7 +215,7 @@ pub const Register = enum(u8) {
     }
 
     /// Convert from a floating-point register to its 32 bit alias.
-    pub fn to_s(self: Register) Register {
+    pub fn toS(self: Register) Register {
         return switch (@intFromEnum(self)) {
             @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(
                 Register,
@@ -242,7 +242,7 @@ pub const Register = enum(u8) {
     }
 
     /// Convert from a floating-point register to its 16 bit alias.
-    pub fn to_h(self: Register) Register {
+    pub fn toH(self: Register) Register {
         return switch (@intFromEnum(self)) {
             @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(
                 Register,
@@ -269,7 +269,7 @@ pub const Register = enum(u8) {
     }
 
     /// Convert from a floating-point register to its 8 bit alias.
-    pub fn to_b(self: Register) Register {
+    pub fn toB(self: Register) Register {
         return switch (@intFromEnum(self)) {
             @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(
                 Register,
@@ -295,14 +295,14 @@ pub const Register = enum(u8) {
         };
     }
 
-    pub fn dwarf_loc_op(self: Register) u8 {
+    pub fn dwarfLocOp(self: Register) u8 {
         return @as(u8, self.enc()) + DW.OP.reg0;
     }
 
     /// DWARF encodings that push a value onto the DWARF stack that is either
     /// the contents of a register or the result of adding the contents a given
     /// register to a given signed offset.
-    pub fn dwarf_loc_op_deref(self: Register) u8 {
+    pub fn dwarfLocOpDeref(self: Register) u8 {
         return @as(u8, self.enc()) + DW.OP.breg0;
     }
 };
@@ -561,7 +561,7 @@ pub const Instruction = union(enum) {
         /// Converts a std.math.CompareOperator into a condition flag,
         /// i.e. returns the condition that is true iff the result of the
         /// comparison is true. Assumes signed comparison
-        pub fn from_compare_operator_signed(op: std.math.CompareOperator) Condition {
+        pub fn fromCompareOperatorSigned(op: std.math.CompareOperator) Condition {
             return switch (op) {
                 .gte => .ge,
                 .gt => .gt,
@@ -575,7 +575,7 @@ pub const Instruction = union(enum) {
         /// Converts a std.math.CompareOperator into a condition flag,
         /// i.e. returns the condition that is true iff the result of the
         /// comparison is true. Assumes unsigned comparison
-        pub fn from_compare_operator_unsigned(op: std.math.CompareOperator) Condition {
+        pub fn fromCompareOperatorUnsigned(op: std.math.CompareOperator) Condition {
             return switch (op) {
                 .gte => .cs,
                 .gt => .hi,
@@ -610,7 +610,7 @@ pub const Instruction = union(enum) {
         }
     };
 
-    pub fn to_u32(self: Instruction) u32 {
+    pub fn toU32(self: Instruction) u32 {
         return switch (self) {
             .move_wide_immediate => |v| @as(u32, @bitCast(v)),
             .pc_relative_address => |v| @as(u32, @bitCast(v)),
@@ -636,7 +636,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn move_wide_immediate(
+    fn moveWideImmediate(
         opc: u2,
         rd: Register,
         imm16: u16,
@@ -661,7 +661,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn pc_relative_address(rd: Register, imm21: i21, op: u1) Instruction {
+    fn pcRelativeAddress(rd: Register, imm21: i21, op: u1) Instruction {
         assert(rd.size() == 64);
         const imm21_u = @as(u21, @bitCast(imm21));
         return Instruction{
@@ -701,7 +701,7 @@ pub const Instruction = union(enum) {
             .immediate = .{ .unsigned = 0 },
         };
 
-        pub fn to_u12(self: LoadStoreOffset) u12 {
+        pub fn toU12(self: LoadStoreOffset) u12 {
             return switch (self) {
                 .immediate => |imm_type| switch (imm_type) {
                     .post_index => |v| (@as(u12, @intCast(@as(u9, @bitCast(v)))) << 2) + 1,
@@ -817,7 +817,7 @@ pub const Instruction = union(enum) {
         ldrsw,
     };
 
-    fn load_store_register(
+    fn loadStoreRegister(
         rt: Register,
         rn: Register,
         offset: LoadStoreOffset,
@@ -880,7 +880,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn load_store_register_pair(
+    fn loadStoreRegisterPair(
         rt1: Register,
         rt2: Register,
         rn: Register,
@@ -926,7 +926,7 @@ pub const Instruction = union(enum) {
         }
     }
 
-    fn load_literal(rt: Register, imm19: u19) Instruction {
+    fn loadLiteral(rt: Register, imm19: u19) Instruction {
         return Instruction{
             .load_literal = .{
                 .rt = rt.enc(),
@@ -940,7 +940,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn exception_generation(
+    fn exceptionGeneration(
         opc: u3,
         op2: u3,
         ll: u2,
@@ -956,7 +956,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn unconditional_branch_register(
+    fn unconditionalBranchRegister(
         opc: u4,
         op2: u5,
         op3: u6,
@@ -976,7 +976,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn unconditional_branch_immediate(
+    fn unconditionalBranchImmediate(
         op: u1,
         offset: i28,
     ) Instruction {
@@ -990,7 +990,7 @@ pub const Instruction = union(enum) {
 
     pub const LogicalShiftedRegisterShift = enum(u2) { lsl, lsr, asr, ror };
 
-    fn logical_shifted_register(
+    fn logicalShiftedRegister(
         opc: u2,
         n: u1,
         rd: Register,
@@ -1021,7 +1021,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn add_subtract_immediate(
+    fn addSubtractImmediate(
         op: u1,
         s: u1,
         rd: Register,
@@ -1049,7 +1049,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn logical_immediate(
+    fn logicalImmediate(
         opc: u2,
         rd: Register,
         rn: Register,
@@ -1108,7 +1108,7 @@ pub const Instruction = union(enum) {
 
     pub const AddSubtractShiftedRegisterShift = enum(u2) { lsl, lsr, asr, _ };
 
-    fn add_subtract_shifted_register(
+    fn addSubtractShiftedRegister(
         op: u1,
         s: u1,
         shift: AddSubtractShiftedRegisterShift,
@@ -1149,7 +1149,7 @@ pub const Instruction = union(enum) {
         sxtx,
     };
 
-    fn add_subtract_extended_register(
+    fn addSubtractExtendedRegister(
         op: u1,
         s: u1,
         rd: Register,
@@ -1176,7 +1176,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn conditional_branch(
+    fn conditionalBranch(
         o0: u1,
         o1: u1,
         cond: Condition,
@@ -1194,7 +1194,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn compare_and_branch(
+    fn compareAndBranch(
         op: u1,
         rt: Register,
         offset: i21,
@@ -1215,7 +1215,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn conditional_select(
+    fn conditionalSelect(
         op2: u2,
         op: u1,
         s: u1,
@@ -1245,7 +1245,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn data_processing3_source(
+    fn dataProcessing3Source(
         op54: u2,
         op31: u3,
         o0: u1,
@@ -1272,7 +1272,7 @@ pub const Instruction = union(enum) {
         };
     }
 
-    fn data_processing2_source(
+    fn dataProcessing2Source(
         s: u1,
         opcode: u6,
         rd: Register,
@@ -1326,7 +1326,7 @@ pub const Instruction = union(enum) {
 
     // Load or store register
 
-    pub fn ldr_literal(rt: Register, literal: u19) Instruction {
+    pub fn ldrLiteral(rt: Register, literal: u19) Instruction {
         return loadLiteral(rt, literal);
     }
 
@@ -1463,7 +1463,7 @@ pub const Instruction = union(enum) {
 
     // Logical (shifted register)
 
-    pub fn and_shifted_register(
+    pub fn andShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1473,7 +1473,7 @@ pub const Instruction = union(enum) {
         return logicalShiftedRegister(0b00, 0b0, rd, rn, rm, shift, amount);
     }
 
-    pub fn bic_shifted_register(
+    pub fn bicShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1483,7 +1483,7 @@ pub const Instruction = union(enum) {
         return logicalShiftedRegister(0b00, 0b1, rd, rn, rm, shift, amount);
     }
 
-    pub fn orr_shifted_register(
+    pub fn orrShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1493,7 +1493,7 @@ pub const Instruction = union(enum) {
         return logicalShiftedRegister(0b01, 0b0, rd, rn, rm, shift, amount);
     }
 
-    pub fn orn_shifted_register(
+    pub fn ornShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1503,7 +1503,7 @@ pub const Instruction = union(enum) {
         return logicalShiftedRegister(0b01, 0b1, rd, rn, rm, shift, amount);
     }
 
-    pub fn eor_shifted_register(
+    pub fn eorShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1513,7 +1513,7 @@ pub const Instruction = union(enum) {
         return logicalShiftedRegister(0b10, 0b0, rd, rn, rm, shift, amount);
     }
 
-    pub fn eon_shifted_register(
+    pub fn eonShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1523,7 +1523,7 @@ pub const Instruction = union(enum) {
         return logicalShiftedRegister(0b10, 0b1, rd, rn, rm, shift, amount);
     }
 
-    pub fn ands_shifted_register(
+    pub fn andsShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1533,7 +1533,7 @@ pub const Instruction = union(enum) {
         return logicalShiftedRegister(0b11, 0b0, rd, rn, rm, shift, amount);
     }
 
-    pub fn bics_shifted_register(
+    pub fn bicsShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1563,19 +1563,19 @@ pub const Instruction = union(enum) {
 
     // Logical (immediate)
 
-    pub fn and_immediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
+    pub fn andImmediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
         return logicalImmediate(0b00, rd, rn, imms, immr, n);
     }
 
-    pub fn orr_immediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
+    pub fn orrImmediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
         return logicalImmediate(0b01, rd, rn, imms, immr, n);
     }
 
-    pub fn eor_immediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
+    pub fn eorImmediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
         return logicalImmediate(0b10, rd, rn, imms, immr, n);
     }
 
-    pub fn ands_immediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
+    pub fn andsImmediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
         return logicalImmediate(0b11, rd, rn, imms, immr, n);
     }
 
@@ -1608,7 +1608,7 @@ pub const Instruction = union(enum) {
         return bitfield(0b10, n, rd, rn, immr, imms);
     }
 
-    pub fn asr_immediate(rd: Register, rn: Register, shift: u6) Instruction {
+    pub fn asrImmediate(rd: Register, rn: Register, shift: u6) Instruction {
         const imms = @as(u6, @intCast(rd.size() - 1));
         return sbfm(rd, rn, shift, imms);
     }
@@ -1630,12 +1630,12 @@ pub const Instruction = union(enum) {
         return sbfm(rd, rn, 0, 31);
     }
 
-    pub fn lsl_immediate(rd: Register, rn: Register, shift: u6) Instruction {
+    pub fn lslImmediate(rd: Register, rn: Register, shift: u6) Instruction {
         const size = @as(u6, @intCast(rd.size() - 1));
         return ubfm(rd, rn, size - shift + 1, size - shift);
     }
 
-    pub fn lsr_immediate(rd: Register, rn: Register, shift: u6) Instruction {
+    pub fn lsrImmediate(rd: Register, rn: Register, shift: u6) Instruction {
         const imms = @as(u6, @intCast(rd.size() - 1));
         return ubfm(rd, rn, shift, imms);
     }
@@ -1654,7 +1654,7 @@ pub const Instruction = union(enum) {
 
     // Add/subtract (shifted register)
 
-    pub fn add_shifted_register(
+    pub fn addShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1664,7 +1664,7 @@ pub const Instruction = union(enum) {
         return addSubtractShiftedRegister(0b0, 0b0, shift, rd, rn, rm, imm6);
     }
 
-    pub fn adds_shifted_register(
+    pub fn addsShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1674,7 +1674,7 @@ pub const Instruction = union(enum) {
         return addSubtractShiftedRegister(0b0, 0b1, shift, rd, rn, rm, imm6);
     }
 
-    pub fn sub_shifted_register(
+    pub fn subShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1684,7 +1684,7 @@ pub const Instruction = union(enum) {
         return addSubtractShiftedRegister(0b1, 0b0, shift, rd, rn, rm, imm6);
     }
 
-    pub fn subs_shifted_register(
+    pub fn subsShiftedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1696,7 +1696,7 @@ pub const Instruction = union(enum) {
 
     // Add/subtract (extended register)
 
-    pub fn add_extended_register(
+    pub fn addExtendedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1706,7 +1706,7 @@ pub const Instruction = union(enum) {
         return addSubtractExtendedRegister(0b0, 0b0, rd, rn, rm, extend, imm3);
     }
 
-    pub fn adds_extended_register(
+    pub fn addsExtendedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1716,7 +1716,7 @@ pub const Instruction = union(enum) {
         return addSubtractExtendedRegister(0b0, 0b1, rd, rn, rm, extend, imm3);
     }
 
-    pub fn sub_extended_register(
+    pub fn subExtendedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1726,7 +1726,7 @@ pub const Instruction = union(enum) {
         return addSubtractExtendedRegister(0b1, 0b0, rd, rn, rm, extend, imm3);
     }
 
-    pub fn subs_extended_register(
+    pub fn subsExtendedRegister(
         rd: Register,
         rn: Register,
         rm: Register,
@@ -1738,7 +1738,7 @@ pub const Instruction = union(enum) {
 
     // Conditional branch
 
-    pub fn b_cond(cond: Condition, offset: i21) Instruction {
+    pub fn bCond(cond: Condition, offset: i21) Instruction {
         return conditionalBranch(0b0, 0b0, cond, offset);
     }
 

@@ -15,7 +15,7 @@ pub const Style = union(enum) {
     /// Start with nothing, like blank, and output a nasm .asm file.
     nasm,
 
-    pub fn get_path(style: Style) ?std.Build.LazyPath {
+    pub fn getPath(style: Style) ?std.Build.LazyPath {
         switch (style) {
             .autoconf, .cmake => |s| return s,
             .blank, .nasm => return null,
@@ -100,21 +100,21 @@ pub fn create(owner: *std.Build, options: Options) *ConfigHeader {
     return config_header;
 }
 
-pub fn add_values(config_header: *ConfigHeader, values: anytype) void {
+pub fn addValues(config_header: *ConfigHeader, values: anytype) void {
     return addValuesInner(config_header, values) catch @panic("OOM");
 }
 
-pub fn get_output(config_header: *ConfigHeader) std.Build.LazyPath {
+pub fn getOutput(config_header: *ConfigHeader) std.Build.LazyPath {
     return .{ .generated = .{ .file = &config_header.output_file } };
 }
 
-fn add_values_inner(config_header: *ConfigHeader, values: anytype) !void {
+fn addValuesInner(config_header: *ConfigHeader, values: anytype) !void {
     inline for (@typeInfo(@TypeOf(values)).Struct.fields) |field| {
         try putValue(config_header, field.name, field.type, @field(values, field.name));
     }
 }
 
-fn put_value(config_header: *ConfigHeader, field_name: []const u8, comptime T: type, v: T) !void {
+fn putValue(config_header: *ConfigHeader, field_name: []const u8, comptime T: type, v: T) !void {
     switch (@typeInfo(T)) {
         .Null => {
             try config_header.values.put(field_name, .undef);
@@ -474,7 +474,7 @@ fn render_nasm(output: *std.ArrayList(u8), defines: std.StringArrayHashMap(Value
     }
 }
 
-fn render_value_c(output: *std.ArrayList(u8), name: []const u8, value: Value) !void {
+fn renderValueC(output: *std.ArrayList(u8), name: []const u8, value: Value) !void {
     switch (value) {
         .undef => {
             try output.appendSlice("/* #undef ");
@@ -504,7 +504,7 @@ fn render_value_c(output: *std.ArrayList(u8), name: []const u8, value: Value) !v
     }
 }
 
-fn render_value_nasm(output: *std.ArrayList(u8), name: []const u8, value: Value) !void {
+fn renderValueNasm(output: *std.ArrayList(u8), name: []const u8, value: Value) !void {
     switch (value) {
         .undef => {
             try output.appendSlice("; %undef ");
@@ -662,7 +662,7 @@ fn expand_variables_cmake(
     return result.toOwnedSlice();
 }
 
-fn test_replace_variables(
+fn testReplaceVariables(
     allocator: Allocator,
     contents: []const u8,
     expected: []const u8,

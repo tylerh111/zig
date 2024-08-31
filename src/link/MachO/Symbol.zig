@@ -28,11 +28,11 @@ visibility: Visibility = .local,
 
 extra: u32 = 0,
 
-pub fn is_local(symbol: Symbol) bool {
+pub fn isLocal(symbol: Symbol) bool {
     return !(symbol.flags.import or symbol.flags.@"export");
 }
 
-pub fn is_symbol_stab(symbol: Symbol, macho_file: *MachO) bool {
+pub fn isSymbolStab(symbol: Symbol, macho_file: *MachO) bool {
     const file = symbol.getFile(macho_file) orelse return false;
     return switch (file) {
         .object => symbol.getNlist(macho_file).stab(),
@@ -40,12 +40,12 @@ pub fn is_symbol_stab(symbol: Symbol, macho_file: *MachO) bool {
     };
 }
 
-pub fn is_tlv_init(symbol: Symbol, macho_file: *MachO) bool {
+pub fn isTlvInit(symbol: Symbol, macho_file: *MachO) bool {
     const name = symbol.getName(macho_file);
     return std.mem.indexOf(u8, name, "$tlv$init") != null;
 }
 
-pub fn weak_ref(symbol: Symbol, macho_file: *MachO) bool {
+pub fn weakRef(symbol: Symbol, macho_file: *MachO) bool {
     const file = symbol.getFile(macho_file).?;
     const is_dylib_weak = switch (file) {
         .dylib => |x| x.weak,
@@ -54,7 +54,7 @@ pub fn weak_ref(symbol: Symbol, macho_file: *MachO) bool {
     return is_dylib_weak or symbol.flags.weak_ref;
 }
 
-pub fn get_name(symbol: Symbol, macho_file: *MachO) [:0]const u8 {
+pub fn getName(symbol: Symbol, macho_file: *MachO) [:0]const u8 {
     if (symbol.flags.global) return macho_file.strings.getAssumeExists(symbol.name);
     return switch (symbol.getFile(macho_file).?) {
         .dylib => unreachable, // There are no local symbols for dylibs
@@ -63,16 +63,16 @@ pub fn get_name(symbol: Symbol, macho_file: *MachO) [:0]const u8 {
     };
 }
 
-pub fn get_atom(symbol: Symbol, macho_file: *MachO) ?*Atom {
+pub fn getAtom(symbol: Symbol, macho_file: *MachO) ?*Atom {
     return macho_file.getAtom(symbol.atom);
 }
 
-pub fn get_file(symbol: Symbol, macho_file: *MachO) ?File {
+pub fn getFile(symbol: Symbol, macho_file: *MachO) ?File {
     return macho_file.getFile(symbol.file);
 }
 
 /// Asserts file is an object.
-pub fn get_nlist(symbol: Symbol, macho_file: *MachO) macho.nlist_64 {
+pub fn getNlist(symbol: Symbol, macho_file: *MachO) macho.nlist_64 {
     const file = symbol.getFile(macho_file).?;
     return switch (file) {
         .object => |x| x.symtab.items(.nlist)[symbol.nlist_idx],
@@ -80,13 +80,13 @@ pub fn get_nlist(symbol: Symbol, macho_file: *MachO) macho.nlist_64 {
     };
 }
 
-pub fn get_size(symbol: Symbol, macho_file: *MachO) u64 {
+pub fn getSize(symbol: Symbol, macho_file: *MachO) u64 {
     const file = symbol.getFile(macho_file).?;
     assert(file == .object);
     return file.object.symtab.items(.size)[symbol.nlist_idx];
 }
 
-pub fn get_dylib_ordinal(symbol: Symbol, macho_file: *MachO) ?u16 {
+pub fn getDylibOrdinal(symbol: Symbol, macho_file: *MachO) ?u16 {
     assert(symbol.flags.import);
     const file = symbol.getFile(macho_file) orelse return null;
     return switch (file) {
@@ -95,7 +95,7 @@ pub fn get_dylib_ordinal(symbol: Symbol, macho_file: *MachO) ?u16 {
     };
 }
 
-pub fn get_symbol_rank(symbol: Symbol, macho_file: *MachO) u32 {
+pub fn getSymbolRank(symbol: Symbol, macho_file: *MachO) u32 {
     const file = symbol.getFile(macho_file) orelse return std.math.maxInt(u32);
     const in_archive = switch (file) {
         .object => |x| !x.alive,
@@ -108,7 +108,7 @@ pub fn get_symbol_rank(symbol: Symbol, macho_file: *MachO) u32 {
     });
 }
 
-pub fn get_address(symbol: Symbol, opts: struct {
+pub fn getAddress(symbol: Symbol, opts: struct {
     stubs: bool = true,
 }, macho_file: *MachO) u64 {
     if (opts.stubs) {
@@ -122,25 +122,25 @@ pub fn get_address(symbol: Symbol, opts: struct {
     return symbol.value;
 }
 
-pub fn get_got_address(symbol: Symbol, macho_file: *MachO) u64 {
+pub fn getGotAddress(symbol: Symbol, macho_file: *MachO) u64 {
     if (!symbol.flags.has_got) return 0;
     const extra = symbol.getExtra(macho_file).?;
     return macho_file.got.getAddress(extra.got, macho_file);
 }
 
-pub fn get_stubs_address(symbol: Symbol, macho_file: *MachO) u64 {
+pub fn getStubsAddress(symbol: Symbol, macho_file: *MachO) u64 {
     if (!symbol.flags.stubs) return 0;
     const extra = symbol.getExtra(macho_file).?;
     return macho_file.stubs.getAddress(extra.stubs, macho_file);
 }
 
-pub fn get_objc_stubs_address(symbol: Symbol, macho_file: *MachO) u64 {
+pub fn getObjcStubsAddress(symbol: Symbol, macho_file: *MachO) u64 {
     if (!symbol.flags.objc_stubs) return 0;
     const extra = symbol.getExtra(macho_file).?;
     return macho_file.objc_stubs.getAddress(extra.objc_stubs, macho_file);
 }
 
-pub fn get_objc_selrefs_address(symbol: Symbol, macho_file: *MachO) u64 {
+pub fn getObjcSelrefsAddress(symbol: Symbol, macho_file: *MachO) u64 {
     if (!symbol.flags.objc_stubs) return 0;
     const extra = symbol.getExtra(macho_file).?;
     const atom = macho_file.getAtom(extra.objc_selrefs).?;
@@ -148,7 +148,7 @@ pub fn get_objc_selrefs_address(symbol: Symbol, macho_file: *MachO) u64 {
     return atom.getAddress(macho_file);
 }
 
-pub fn get_tlv_ptr_address(symbol: Symbol, macho_file: *MachO) u64 {
+pub fn getTlvPtrAddress(symbol: Symbol, macho_file: *MachO) u64 {
     if (!symbol.flags.tlv_ptr) return 0;
     const extra = symbol.getExtra(macho_file).?;
     return macho_file.tlv_ptr.getAddress(extra.tlv_ptr, macho_file);
@@ -159,7 +159,7 @@ const GetOrCreateZigGotEntryResult = struct {
     index: ZigGotSection.Index,
 };
 
-pub fn get_or_create_zig_got_entry(symbol: *Symbol, symbol_index: Index, macho_file: *MachO) !GetOrCreateZigGotEntryResult {
+pub fn getOrCreateZigGotEntry(symbol: *Symbol, symbol_index: Index, macho_file: *MachO) !GetOrCreateZigGotEntryResult {
     assert(!macho_file.base.isRelocatable());
     assert(symbol.flags.needs_zig_got);
     if (symbol.flags.has_zig_got) return .{ .found_existing = true, .index = symbol.getExtra(macho_file).?.zig_got };
@@ -167,13 +167,13 @@ pub fn get_or_create_zig_got_entry(symbol: *Symbol, symbol_index: Index, macho_f
     return .{ .found_existing = false, .index = index };
 }
 
-pub fn get_zig_got_address(symbol: Symbol, macho_file: *MachO) u64 {
+pub fn getZigGotAddress(symbol: Symbol, macho_file: *MachO) u64 {
     if (!symbol.flags.has_zig_got) return 0;
     const extras = symbol.getExtra(macho_file).?;
     return macho_file.zig_got.entryAddress(extras.zig_got, macho_file);
 }
 
-pub fn get_output_symtab_index(symbol: Symbol, macho_file: *MachO) ?u32 {
+pub fn getOutputSymtabIndex(symbol: Symbol, macho_file: *MachO) ?u32 {
     if (!symbol.flags.output_symtab) return null;
     assert(!symbol.isSymbolStab(macho_file));
     const file = symbol.getFile(macho_file).?;
@@ -202,7 +202,7 @@ const AddExtraOpts = struct {
     symtab: ?u32 = null,
 };
 
-pub fn add_extra(symbol: *Symbol, opts: AddExtraOpts, macho_file: *MachO) !void {
+pub fn addExtra(symbol: *Symbol, opts: AddExtraOpts, macho_file: *MachO) !void {
     if (symbol.getExtra(macho_file) == null) {
         symbol.extra = try macho_file.addSymbolExtra(.{});
     }
@@ -215,15 +215,15 @@ pub fn add_extra(symbol: *Symbol, opts: AddExtraOpts, macho_file: *MachO) !void 
     symbol.setExtra(extra, macho_file);
 }
 
-pub inline fn get_extra(symbol: Symbol, macho_file: *MachO) ?Extra {
+pub inline fn getExtra(symbol: Symbol, macho_file: *MachO) ?Extra {
     return macho_file.getSymbolExtra(symbol.extra);
 }
 
-pub inline fn set_extra(symbol: Symbol, extra: Extra, macho_file: *MachO) void {
+pub inline fn setExtra(symbol: Symbol, extra: Extra, macho_file: *MachO) void {
     macho_file.setSymbolExtra(symbol.extra, extra);
 }
 
-pub fn set_output_sym(symbol: Symbol, macho_file: *MachO, out: *macho.nlist_64) void {
+pub fn setOutputSym(symbol: Symbol, macho_file: *MachO, out: *macho.nlist_64) void {
     if (symbol.isLocal()) {
         out.n_type = if (symbol.flags.abs) macho.N_ABS else macho.N_SECT;
         out.n_sect = if (symbol.flags.abs) 0 else @intCast(symbol.out_n_sect + 1);

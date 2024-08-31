@@ -15,14 +15,14 @@ const TestCase = struct {
         source: []const u8,
     };
 
-    pub fn add_source_file(self: *TestCase, filename: []const u8, source: []const u8) void {
+    pub fn addSourceFile(self: *TestCase, filename: []const u8, source: []const u8) void {
         self.sources.append(SourceFile{
             .filename = filename,
             .source = source,
         }) catch unreachable;
     }
 
-    pub fn add_expected_line(self: *TestCase, text: []const u8) void {
+    pub fn addExpectedLine(self: *TestCase, text: []const u8) void {
         self.expected_lines.append(text) catch unreachable;
     }
 };
@@ -61,7 +61,7 @@ pub fn add(
     self.addCase(tc);
 }
 
-pub fn add_with_target(
+pub fn addWithTarget(
     self: *TranslateCContext,
     name: []const u8,
     target: std.Target.Query,
@@ -73,7 +73,7 @@ pub fn add_with_target(
     self.addCase(tc);
 }
 
-pub fn add_allow_warnings(
+pub fn addAllowWarnings(
     self: *TranslateCContext,
     name: []const u8,
     source: []const u8,
@@ -83,7 +83,7 @@ pub fn add_allow_warnings(
     self.addCase(tc);
 }
 
-pub fn add_case(self: *TranslateCContext, case: *const TestCase) void {
+pub fn addCase(self: *TranslateCContext, case: *const TestCase) void {
     const b = self.b;
 
     const translate_c_cmd = "translate-c";

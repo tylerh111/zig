@@ -68,7 +68,7 @@ pub fn build(b: *std.Build) void {
 
 // Runs exe with the parameters [dirname, args...].
 // Expects the exit code to be 0.
-fn add_test_run(
+fn addTestRun(
     test_step: *std.Build.Step,
     exe: *std.Build.Step.Compile,
     dirname: std.Build.LazyPath,

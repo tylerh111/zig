@@ -9,7 +9,7 @@ const expectEqualStrings = std.testing.expectEqualStrings;
 
 /// this is a documentation comment
 /// doc comment line 2
-fn empty_function_with_comments() void {}
+fn emptyFunctionWithComments() void {}
 
 test "empty function with comments" {
     emptyFunctionWithComments();
@@ -21,7 +21,7 @@ test "truncate" {
     try expect(testTruncate(0x10fd) == 0xfd);
     comptime assert(testTruncate(0x10fd) == 0xfd);
 }
-fn test_truncate(x: u32) u8 {
+fn testTruncate(x: u32) u8 {
     return @as(u8, @truncate(x));
 }
 
@@ -58,7 +58,7 @@ test "truncate to non-power-of-two integers from 128-bit" {
     try testTrunc(i128, i5, std.math.maxInt(i128), -1);
 }
 
-fn test_trunc(comptime Big: type, comptime Little: type, big: Big, little: Little) !void {
+fn testTrunc(comptime Big: type, comptime Little: type, big: Big, little: Little) !void {
     try expect(@as(Little, @truncate(big)) == little);
 }
 
@@ -116,7 +116,7 @@ test "cold function" {
     comptime thisIsAColdFn();
 }
 
-fn this_is_acold_fn() void {
+fn thisIsAColdFn() void {
     @setCold(true);
 }
 
@@ -130,7 +130,7 @@ test "unicode character in character literal" {
     try expect('💩' == 128169);
 }
 
-fn first4_keys_of_home_row() []const u8 {
+fn first4KeysOfHomeRow() []const u8 {
     return "aoeu";
 }
 
@@ -247,7 +247,7 @@ test "cast undefined" {
     const slice = @as([]const u8, &array);
     testCastUndefined(slice);
 }
-fn test_cast_undefined(x: []const u8) void {
+fn testCastUndefined(x: []const u8) void {
     _ = x;
 }
 
@@ -268,7 +268,7 @@ test "comptime if inside runtime while which unconditionally breaks" {
     testComptimeIfInsideRuntimeWhileWhichUnconditionallyBreaks(true);
     comptime testComptimeIfInsideRuntimeWhileWhichUnconditionallyBreaks(true);
 }
-fn test_comptime_if_inside_runtime_while_which_unconditionally_breaks(cond: bool) void {
+fn testComptimeIfInsideRuntimeWhileWhichUnconditionallyBreaks(cond: bool) void {
     while (cond) {
         if (false) {}
         break;
@@ -281,7 +281,7 @@ test "implicit comptime while" {
     }
 }
 
-fn fn_that_closes_over_local_const() type {
+fn fnThatClosesOverLocalConst() type {
     const c = 1;
     return struct {
         fn g() i32 {
@@ -302,10 +302,10 @@ test "volatile load and store" {
     try expect(ptr.* == 1235);
 }
 
-fn f_a() []const u8 {
+fn fA() []const u8 {
     return "a";
 }
-fn f_b() []const u8 {
+fn fB() []const u8 {
     return "b";
 }
 
@@ -366,7 +366,7 @@ test "variable is allowed to be a pointer to an opaque type" {
     var x: i32 = 1234;
     _ = hereIsAnOpaqueType(@as(*OpaqueA, @ptrCast(&x)));
 }
-fn here_is_an_opaque_type(ptr: *OpaqueA) *OpaqueA {
+fn hereIsAnOpaqueType(ptr: *OpaqueA) *OpaqueA {
     var a = ptr;
     _ = &a;
     return a;
@@ -380,7 +380,7 @@ test "take address of parameter" {
 
     try testTakeAddressOfParameter(12.34);
 }
-fn test_take_address_of_parameter(f: f32) !void {
+fn testTakeAddressOfParameter(f: f32) !void {
     const f_ptr = &f;
     try expect(f_ptr.* == 12.34);
 }
@@ -388,12 +388,12 @@ fn test_take_address_of_parameter(f: f32) !void {
 test "pointer to void return type" {
     try testPointerToVoidReturnType();
 }
-fn test_pointer_to_void_return_type() anyerror!void {
+fn testPointerToVoidReturnType() anyerror!void {
     const a = testPointerToVoidReturnType2();
     return a.*;
 }
 const test_pointer_to_void_return_type_x = void{};
-fn test_pointer_to_void_return_type2() *const void {
+fn testPointerToVoidReturnType2() *const void {
     return &test_pointer_to_void_return_type_x;
 }
 
@@ -442,7 +442,7 @@ test "array 3D const double ptr with offset" {
     try testArray2DConstDoublePtr(&rect_3d_vertexes[1][1][0]);
 }
 
-fn test_array2_dconst_double_ptr(ptr: *const f32) !void {
+fn testArray2DConstDoublePtr(ptr: *const f32) !void {
     const ptr2 = @as([*]const f32, @ptrCast(ptr));
     try expect(ptr2[0] == 1.0);
     try expect(ptr2[1] == 2.0);
@@ -467,7 +467,7 @@ test "struct inside function" {
     try comptime testStructInFn();
 }
 
-fn test_struct_in_fn() !void {
+fn testStructInFn() !void {
     const BlockKind = u32;
 
     const Block = struct {
@@ -487,7 +487,7 @@ test "fn call returning scalar optional in equality expression" {
     try expect(getNull() == null);
 }
 
-fn get_null() ?*i32 {
+fn getNull() ?*i32 {
     return null;
 }
 
@@ -516,7 +516,7 @@ test "peer result location with typed parent, runtime condition, comptime prongs
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test(arg: i32) i32 {
+        fn doTheTest(arg: i32) i32 {
             const st = Structy{
                 .bleh = if (arg == 1) 1 else 1,
             };
@@ -538,13 +538,13 @@ test "non-ambiguous reference of shadowed decls" {
     try expect(ZA().B().Self != ZA().Self);
 }
 
-fn za() type {
+fn ZA() type {
     return struct {
         b: B(),
 
         const Self = @This();
 
-        fn b() type {
+        fn B() type {
             return struct {
                 const Self = @This();
             };
@@ -575,7 +575,7 @@ test "constant equal function pointers" {
     });
 }
 
-fn empty_fn() void {}
+fn emptyFn() void {}
 
 const addr1 = @as(*const u8, @ptrCast(&emptyFn));
 test "comptime cast fn to ptr" {
@@ -629,7 +629,7 @@ test "global constant is loaded with a runtime-known index" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var index: usize = 1;
             _ = &index;
             const ptr = &pieces[index].field;
@@ -682,7 +682,7 @@ test "pointer comparison" {
     const b = &a;
     try expect(ptrEql(b, b));
 }
-fn ptr_eql(a: *const []const u8, b: *const []const u8) bool {
+fn ptrEql(a: *const []const u8, b: *const []const u8) bool {
     return a == b;
 }
 
@@ -925,7 +925,7 @@ test "weird array and tuple initializations" {
 
 test "array type comes from generic function" {
     const S = struct {
-        fn a() type {
+        fn A() type {
             return struct { a: u8 = 0 };
         }
     };
@@ -1151,7 +1151,7 @@ test "integer compare" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test_signed(comptime T: type) !void {
+        fn doTheTestSigned(comptime T: type) !void {
             var z: T = 0;
             var p: T = 123;
             var n: T = -123;
@@ -1170,7 +1170,7 @@ test "integer compare" {
             try expect(!(0 != z or 123 != p or -123 != n));
             try expect(!(z > 0 or -123 > p or 123 < n));
         }
-        fn do_the_test_unsigned(comptime T: type) !void {
+        fn doTheTestUnsigned(comptime T: type) !void {
             var z: T = 0;
             var p: T = 123;
             _ = .{ &z, &p };
@@ -1319,7 +1319,7 @@ test "break out of block based on comptime known values" {
     const S = struct {
         const source = "A-";
 
-        fn parse_note() ?i32 {
+        fn parseNote() ?i32 {
             const letter = source[0];
             const modifier = source[1];
 
@@ -1389,7 +1389,7 @@ test "loading array from struct is not optimized away" {
 
     const S = struct {
         arr: [1]u32 = .{0},
-        fn do_the_test(self: *@This()) !void {
+        fn doTheTest(self: *@This()) !void {
             const o = self.arr;
             self.arr[0] = 1;
             try expect(o[0] == 0);

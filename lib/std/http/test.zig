@@ -185,7 +185,7 @@ test "echo content server" {
             }
         }
 
-        fn handle_request(request: *http.Server.Request) !void {
+        fn handleRequest(request: *http.Server.Request) !void {
             //std.debug.print("server received {s} {s} {s}\n", .{
             //    @tagName(request.head.method),
             //    @tagName(request.head.version),
@@ -377,7 +377,7 @@ test "general client/server API coverage" {
             }
         }
 
-        fn handle_request(request: *http.Server.Request, listen_port: u16) !void {
+        fn handleRequest(request: *http.Server.Request, listen_port: u16) !void {
             const log = std.log.scoped(.server);
 
             log.info("{} {s} {s}", .{
@@ -505,7 +505,7 @@ test "general client/server API coverage" {
             }
         }
 
-        fn get_unused_tcp_port() !u16 {
+        fn getUnusedTcpPort() !u16 {
             const addr = try std.net.Address.parseIp("127.0.0.1", 0);
             var s = try addr.listen(.{});
             defer s.deinit();
@@ -966,7 +966,7 @@ test "Server streams both reading and writing" {
     try expectEqualStrings("ONE FISH", body);
 }
 
-fn echo_tests(client: *http.Client, port: u16) !void {
+fn echoTests(client: *http.Client, port: u16) !void {
     const gpa = std.testing.allocator;
     var location_buffer: [100]u8 = undefined;
 
@@ -1132,7 +1132,7 @@ const TestServer = struct {
     }
 };
 
-fn create_test_server(S: type) !*TestServer {
+fn createTestServer(S: type) !*TestServer {
     if (builtin.single_threaded) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_llvm and native_endian == .big) {
         // https://github.com/ziglang/zig/issues/13782

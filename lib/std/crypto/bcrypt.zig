@@ -303,7 +303,7 @@ pub const State = struct {
         0xb5470917, 0x9216d5d9, 0x8979fb1b,
     },
 
-    fn to_word(data: []const u8, current: *usize) u32 {
+    fn toWord(data: []const u8, current: *usize) u32 {
         var t: u32 = 0;
         var j = current.*;
         var i: usize = 0;
@@ -375,7 +375,7 @@ pub const State = struct {
 
     const Halves = struct { l: u32, r: u32 };
 
-    fn half_round(state: *const State, i: u32, j: u32, n: usize) u32 {
+    fn halfRound(state: *const State, i: u32, j: u32, n: usize) u32 {
         var r = state.sboxes[0][@as(u8, @truncate(j >> 24))];
         r +%= state.sboxes[1][@as(u8, @truncate(j >> 16))];
         r ^= state.sboxes[2][@as(u8, @truncate(j >> 8))];
@@ -464,7 +464,7 @@ pub fn bcrypt(
 ///
 /// This function is identical to `bcrypt`, except that it doesn't silently truncate passwords.
 /// Instead, passwords longer than 72 bytes are pre-hashed using HMAC-SHA512 before being passed to bcrypt.
-pub fn bcrypt_without_truncation(
+pub fn bcryptWithoutTruncation(
     password: []const u8,
     salt: [salt_length]u8,
     params: Params,
@@ -578,7 +578,7 @@ const crypt_format = struct {
         .Decoder = base64.Base64Decoder.init(bcrypt_alphabet, null),
     };
 
-    fn str_hash_internal(
+    fn strHashInternal(
         password: []const u8,
         salt: [salt_length]u8,
         params: Params,
@@ -720,7 +720,7 @@ pub const HashOptions = struct {
 ///
 /// IMPORTANT: by design, bcrypt silently truncates passwords to 72 bytes.
 /// If this is an issue for your application, set the `silently_truncate_password` option to `false`.
-pub fn str_hash(
+pub fn strHash(
     password: []const u8,
     options: HashOptions,
     out: []u8,
@@ -740,7 +740,7 @@ pub const VerifyOptions = struct {
 };
 
 /// Verify that a previously computed hash is valid for a given password.
-pub fn str_verify(
+pub fn strVerify(
     str: []const u8,
     password: []const u8,
     options: VerifyOptions,

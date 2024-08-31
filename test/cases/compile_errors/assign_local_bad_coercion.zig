@@ -2,12 +2,12 @@ fn g() u64 {
     return 0;
 }
 
-export fn const_entry() u32 {
+export fn constEntry() u32 {
     const x: u32 = g();
     return x;
 }
 
-export fn var_entry() u32 {
+export fn varEntry() u32 {
     var x: u32 = g();
     return (&x).*;
 }

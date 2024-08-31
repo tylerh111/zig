@@ -52,7 +52,7 @@ object: codegen.Object,
 
 pub const base_tag: link.File.Tag = .spirv;
 
-pub fn create_empty(
+pub fn createEmpty(
     arena: Allocator,
     comp: *Compilation,
     emit: Compilation.Emit,
@@ -123,7 +123,7 @@ pub fn deinit(self: *SpirV) void {
     self.object.deinit();
 }
 
-pub fn update_func(self: *SpirV, module: *Module, func_index: InternPool.Index, air: Air, liveness: Liveness) !void {
+pub fn updateFunc(self: *SpirV, module: *Module, func_index: InternPool.Index, air: Air, liveness: Liveness) !void {
     if (build_options.skip_non_native) {
         @panic("Attempted to compile for architecture that was disabled by build configuration");
     }
@@ -135,7 +135,7 @@ pub fn update_func(self: *SpirV, module: *Module, func_index: InternPool.Index, 
     try self.object.updateFunc(module, func_index, air, liveness);
 }
 
-pub fn update_decl(self: *SpirV, module: *Module, decl_index: InternPool.DeclIndex) !void {
+pub fn updateDecl(self: *SpirV, module: *Module, decl_index: InternPool.DeclIndex) !void {
     if (build_options.skip_non_native) {
         @panic("Attempted to compile for architecture that was disabled by build configuration");
     }
@@ -146,7 +146,7 @@ pub fn update_decl(self: *SpirV, module: *Module, decl_index: InternPool.DeclInd
     try self.object.updateDecl(module, decl_index);
 }
 
-pub fn update_exports(
+pub fn updateExports(
     self: *SpirV,
     mod: *Module,
     exported: Module.Exported,
@@ -188,7 +188,7 @@ pub fn update_exports(
     // TODO: Export regular functions, variables, etc using Linkage attributes.
 }
 
-pub fn free_decl(self: *SpirV, decl_index: InternPool.DeclIndex) void {
+pub fn freeDecl(self: *SpirV, decl_index: InternPool.DeclIndex) void {
     _ = self;
     _ = decl_index;
 }
@@ -197,7 +197,7 @@ pub fn flush(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node) link.
     return self.flushModule(arena, prog_node);
 }
 
-pub fn flush_module(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
+pub fn flushModule(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
     if (build_options.skip_non_native) {
         @panic("Attempted to compile for architecture that was disabled by build configuration");
     }
@@ -236,7 +236,7 @@ pub fn flush_module(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node
             error_info.writer(),
             name.toSlice(&mod.intern_pool),
             struct {
-                fn is_valid_char(c: u8) bool {
+                fn isValidChar(c: u8) bool {
                     return switch (c) {
                         0, '%', ':' => false,
                         else => true,
@@ -263,7 +263,7 @@ pub fn flush_module(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node
     try self.base.file.?.writeAll(std.mem.sliceAsBytes(linked_module));
 }
 
-fn link_module(self: *SpirV, a: Allocator, module: []Word, progress: std.Progress.Node) ![]Word {
+fn linkModule(self: *SpirV, a: Allocator, module: []Word, progress: std.Progress.Node) ![]Word {
     _ = self;
 
     const lower_invocation_globals = @import("SpirV/lower_invocation_globals.zig");
@@ -281,7 +281,7 @@ fn link_module(self: *SpirV, a: Allocator, module: []Word, progress: std.Progres
     return binary.finalize(a);
 }
 
-fn write_capabilities(spv: *SpvModule, target: std.Target) !void {
+fn writeCapabilities(spv: *SpvModule, target: std.Target) !void {
     const gpa = spv.gpa;
     // TODO: Integrate with a hypothetical feature system
     const caps: []const spec.Capability = switch (target.os.tag) {
@@ -298,7 +298,7 @@ fn write_capabilities(spv: *SpvModule, target: std.Target) !void {
     }
 }
 
-fn write_memory_model(spv: *SpvModule, target: std.Target) !void {
+fn writeMemoryModel(spv: *SpvModule, target: std.Target) !void {
     const gpa = spv.gpa;
 
     const addressing_model = switch (target.os.tag) {

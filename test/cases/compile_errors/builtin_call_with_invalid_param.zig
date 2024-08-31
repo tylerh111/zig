@@ -1,8 +1,8 @@
-export fn builtin_call_bool_function_inline_with_void() void {
+export fn builtinCallBoolFunctionInlineWithVoid() void {
     @call(.always_inline, boolFunction, .{{}});
 }
 
-fn bool_function(_: bool) void {}
+fn boolFunction(_: bool) void {}
 
 // error
 // backend=stage2

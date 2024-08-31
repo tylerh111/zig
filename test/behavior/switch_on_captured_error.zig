@@ -12,7 +12,7 @@ test "switch on error union catch capture" {
 
     const S = struct {
         const Error = error{ A, B, C };
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try testScalar();
             try testMulti();
             try testElse();
@@ -22,7 +22,7 @@ test "switch on error union catch capture" {
             try testAddressOf();
         }
 
-        fn test_scalar() !void {
+        fn testScalar() !void {
             {
                 var a: Error!u64 = 3;
                 _ = &a;
@@ -55,7 +55,7 @@ test "switch on error union catch capture" {
             }
         }
 
-        fn test_multi() !void {
+        fn testMulti() !void {
             {
                 var a: Error!u64 = 3;
                 _ = &a;
@@ -103,7 +103,7 @@ test "switch on error union catch capture" {
             }
         }
 
-        fn test_else() !void {
+        fn testElse() !void {
             {
                 var a: Error!u64 = 3;
                 _ = &a;
@@ -151,7 +151,7 @@ test "switch on error union catch capture" {
             }
         }
 
-        fn test_capture() !void {
+        fn testCapture() !void {
             {
                 var a: Error!u64 = error.A;
                 _ = &a;
@@ -199,7 +199,7 @@ test "switch on error union catch capture" {
             }
         }
 
-        fn test_inline() !void {
+        fn testInline() !void {
             {
                 var a: Error!u64 = error.B;
                 _ = &a;
@@ -237,7 +237,7 @@ test "switch on error union catch capture" {
             }
         }
 
-        fn test_empty_err_set() !void {
+        fn testEmptyErrSet() !void {
             {
                 var a: error{}!u64 = 0;
                 _ = &a;
@@ -257,7 +257,7 @@ test "switch on error union catch capture" {
             }
         }
 
-        fn test_address_of() !void {
+        fn testAddressOf() !void {
             {
                 const a: anyerror!usize = 0;
                 const ptr = &(a catch |e| switch (e) {
@@ -307,7 +307,7 @@ test "switch on error union if else capture" {
 
     const S = struct {
         const Error = error{ A, B, C };
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try testScalar();
             try testScalarPtr();
             try testMulti();
@@ -323,7 +323,7 @@ test "switch on error union if else capture" {
             try testAddressOf();
         }
 
-        fn test_scalar() !void {
+        fn testScalar() !void {
             {
                 var a: Error!u64 = 3;
                 _ = &a;
@@ -356,7 +356,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_scalar_ptr() !void {
+        fn testScalarPtr() !void {
             {
                 var a: Error!u64 = 3;
                 _ = &a;
@@ -389,7 +389,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_multi() !void {
+        fn testMulti() !void {
             {
                 var a: Error!u64 = 3;
                 _ = &a;
@@ -437,7 +437,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_multi_ptr() !void {
+        fn testMultiPtr() !void {
             {
                 var a: Error!u64 = 3;
                 _ = &a;
@@ -485,7 +485,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_else() !void {
+        fn testElse() !void {
             {
                 var a: Error!u64 = 3;
                 _ = &a;
@@ -533,7 +533,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_else_ptr() !void {
+        fn testElsePtr() !void {
             {
                 var a: Error!u64 = 3;
                 _ = &a;
@@ -581,7 +581,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_capture() !void {
+        fn testCapture() !void {
             {
                 var a: Error!u64 = error.A;
                 _ = &a;
@@ -629,7 +629,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_capture_ptr() !void {
+        fn testCapturePtr() !void {
             {
                 var a: Error!u64 = error.A;
                 _ = &a;
@@ -677,7 +677,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_inline() !void {
+        fn testInline() !void {
             {
                 var a: Error!u64 = error.B;
                 _ = &a;
@@ -715,7 +715,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_inline_ptr() !void {
+        fn testInlinePtr() !void {
             {
                 var a: Error!u64 = error.B;
                 _ = &a;
@@ -753,7 +753,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_empty_err_set() !void {
+        fn testEmptyErrSet() !void {
             {
                 var a: error{}!u64 = 0;
                 _ = &a;
@@ -773,7 +773,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_empty_err_set_ptr() !void {
+        fn testEmptyErrSetPtr() !void {
             {
                 var a: error{}!u64 = 0;
                 _ = &a;
@@ -793,7 +793,7 @@ test "switch on error union if else capture" {
             }
         }
 
-        fn test_address_of() !void {
+        fn testAddressOf() !void {
             if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest;
             {
                 const a: anyerror!usize = 0;

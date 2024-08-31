@@ -20,11 +20,11 @@ pub const @"f64": CType = .{ .index = .zig_f64 };
 pub const @"f80": CType = .{ .index = .zig_f80 };
 pub const @"f128": CType = .{ .index = .zig_f128 };
 
-pub fn from_pool_index(pool_index: usize) CType {
+pub fn fromPoolIndex(pool_index: usize) CType {
     return .{ .index = @enumFromInt(CType.Index.first_pool_index + pool_index) };
 }
 
-pub fn to_pool_index(ctype: CType) ?u32 {
+pub fn toPoolIndex(ctype: CType) ?u32 {
     const pool_index, const is_null =
         @subWithOverflow(@intFromEnum(ctype.index), CType.Index.first_pool_index);
     return switch (is_null) {
@@ -37,14 +37,14 @@ pub fn eql(lhs: CType, rhs: CType) bool {
     return lhs.index == rhs.index;
 }
 
-pub fn is_bool(ctype: CType) bool {
+pub fn isBool(ctype: CType) bool {
     return switch (ctype.index) {
         ._Bool, .bool => true,
         else => false,
     };
 }
 
-pub fn is_integer(ctype: CType) bool {
+pub fn isInteger(ctype: CType) bool {
     return switch (ctype.index) {
         .char,
         .@"signed char",
@@ -109,7 +109,7 @@ pub fn signedness(ctype: CType, mod: *Module) std.builtin.Signedness {
     };
 }
 
-pub fn is_float(ctype: CType) bool {
+pub fn isFloat(ctype: CType) bool {
     return switch (ctype.index) {
         .float,
         .double,
@@ -125,7 +125,7 @@ pub fn is_float(ctype: CType) bool {
     };
 }
 
-pub fn to_signed(ctype: CType) CType {
+pub fn toSigned(ctype: CType) CType {
     return switch (ctype.index) {
         .char, .@"signed char", .@"unsigned char" => .{ .index = .@"signed char" },
         .short, .@"unsigned short" => .{ .index = .short },
@@ -152,7 +152,7 @@ pub fn to_signed(ctype: CType) CType {
     };
 }
 
-pub fn to_unsigned(ctype: CType) CType {
+pub fn toUnsigned(ctype: CType) CType {
     return switch (ctype.index) {
         .char, .@"signed char", .@"unsigned char" => .{ .index = .@"unsigned char" },
         .short, .@"unsigned short" => .{ .index = .@"unsigned short" },
@@ -170,14 +170,14 @@ pub fn to_unsigned(ctype: CType) CType {
     };
 }
 
-pub fn to_signedness(ctype: CType, s: std.builtin.Signedness) CType {
+pub fn toSignedness(ctype: CType, s: std.builtin.Signedness) CType {
     return switch (s) {
         .unsigned => ctype.toUnsigned(),
         .signed => ctype.toSigned(),
     };
 }
 
-pub fn get_standard_define_abbrev(ctype: CType) ?[]const u8 {
+pub fn getStandardDefineAbbrev(ctype: CType) ?[]const u8 {
     return switch (ctype.index) {
         .char => "CHAR",
         .@"signed char" => "SCHAR",
@@ -209,7 +209,7 @@ pub fn get_standard_define_abbrev(ctype: CType) ?[]const u8 {
     };
 }
 
-pub fn render_literal_prefix(ctype: CType, writer: anytype, kind: Kind, pool: *const Pool) @TypeOf(writer).Error!void {
+pub fn renderLiteralPrefix(ctype: CType, writer: anytype, kind: Kind, pool: *const Pool) @TypeOf(writer).Error!void {
     switch (ctype.info(pool)) {
         .basic => |basic_info| switch (basic_info) {
             .void => unreachable,
@@ -270,7 +270,7 @@ pub fn render_literal_prefix(ctype: CType, writer: anytype, kind: Kind, pool: *c
     }
 }
 
-pub fn render_literal_suffix(ctype: CType, writer: anytype, pool: *const Pool) @TypeOf(writer).Error!void {
+pub fn renderLiteralSuffix(ctype: CType, writer: anytype, pool: *const Pool) @TypeOf(writer).Error!void {
     switch (ctype.info(pool)) {
         .basic => |basic_info| switch (basic_info) {
             .void => unreachable,
@@ -323,7 +323,7 @@ pub fn render_literal_suffix(ctype: CType, writer: anytype, pool: *const Pool) @
     }
 }
 
-pub fn float_active_bits(ctype: CType, mod: *Module) u16 {
+pub fn floatActiveBits(ctype: CType, mod: *Module) u16 {
     const target = &mod.resolved_target.result;
     return switch (ctype.index) {
         .float => target.c_type_bit_size(.float),
@@ -338,7 +338,7 @@ pub fn float_active_bits(ctype: CType, mod: *Module) u16 {
     };
 }
 
-pub fn byte_size(ctype: CType, pool: *const Pool, mod: *Module) u64 {
+pub fn byteSize(ctype: CType, pool: *const Pool, mod: *Module) u64 {
     const target = &mod.resolved_target.result;
     return switch (ctype.info(pool)) {
         .basic => |basic_info| switch (basic_info) {
@@ -591,7 +591,7 @@ pub fn hash(ctype: CType, pool: *const Pool) Pool.Map.Hash {
         CType.Index.basic_hashes[@intFromEnum(ctype.index)];
 }
 
-fn to_forward(ctype: CType, pool: *Pool, allocator: std.mem.Allocator) !CType {
+fn toForward(ctype: CType, pool: *Pool, allocator: std.mem.Allocator) !CType {
     return switch (ctype.info(pool)) {
         .basic, .pointer, .fwd_decl => ctype,
         .aligned => |aligned_info| pool.getAligned(allocator, .{
@@ -700,28 +700,28 @@ pub const Kind = enum {
     global,
     parameter,
 
-    pub fn is_forward(kind: Kind) bool {
+    pub fn isForward(kind: Kind) bool {
         return switch (kind) {
             .forward, .forward_parameter => true,
             .complete, .global, .parameter => false,
         };
     }
 
-    pub fn is_parameter(kind: Kind) bool {
+    pub fn isParameter(kind: Kind) bool {
         return switch (kind) {
             .forward_parameter, .parameter => true,
             .forward, .complete, .global => false,
         };
     }
 
-    pub fn as_parameter(kind: Kind) Kind {
+    pub fn asParameter(kind: Kind) Kind {
         return switch (kind) {
             .forward, .forward_parameter => .forward_parameter,
             .complete, .parameter, .global => .parameter,
         };
     }
 
-    pub fn no_parameter(kind: Kind) Kind {
+    pub fn noParameter(kind: Kind) Kind {
         return switch (kind) {
             .forward, .forward_parameter => .forward,
             .complete, .parameter => .complete,
@@ -791,7 +791,7 @@ pub const Info = union(enum) {
                 };
             }
 
-            fn eql_adapted(
+            fn eqlAdapted(
                 lhs_slice: Field.Slice,
                 lhs_pool: *const Pool,
                 rhs_slice: Field.Slice,
@@ -811,7 +811,7 @@ pub const Info = union(enum) {
             }
         };
 
-        fn eql_adapted(
+        fn eqlAdapted(
             lhs_field: Field,
             lhs_pool: *const Pool,
             rhs_field: Field,
@@ -857,7 +857,7 @@ pub const Info = union(enum) {
         varargs: bool = false,
     };
 
-    pub fn eql_adapted(
+    pub fn eqlAdapted(
         lhs_info: Info,
         lhs_pool: *const Pool,
         rhs_ctype: CType,
@@ -947,19 +947,19 @@ pub const Pool = struct {
             return .{ .data = .{ .string = str, .pool = pool } };
         }
 
-        fn from_unnamed(index: u31) String {
+        fn fromUnnamed(index: u31) String {
             return .{ .index = @enumFromInt(index) };
         }
 
-        fn is_named(str: String) bool {
+        fn isNamed(str: String) bool {
             return @intFromEnum(str.index) >= String.Index.first_named_index;
         }
 
-        pub fn to_slice(str: String, pool: *const Pool) ?[]const u8 {
+        pub fn toSlice(str: String, pool: *const Pool) ?[]const u8 {
             return str.toPoolSlice(pool) orelse if (str.isNamed()) @tagName(str.index) else null;
         }
 
-        fn to_pool_slice(str: String, pool: *const Pool) ?[]const u8 {
+        fn toPoolSlice(str: String, pool: *const Pool) ?[]const u8 {
             if (str.toPoolIndex()) |pool_index| {
                 const start = pool.string_indices.items[pool_index + 0];
                 const end = pool.string_indices.items[pool_index + 1];
@@ -967,11 +967,11 @@ pub const Pool = struct {
             } else return null;
         }
 
-        fn from_pool_index(pool_index: usize) String {
+        fn fromPoolIndex(pool_index: usize) String {
             return .{ .index = @enumFromInt(String.Index.first_pool_index + pool_index) };
         }
 
-        fn to_pool_index(str: String) ?u32 {
+        fn toPoolIndex(str: String) ?u32 {
             const pool_index, const is_null =
                 @subWithOverflow(@intFromEnum(str.index), String.Index.first_pool_index);
             return switch (is_null) {
@@ -1039,7 +1039,7 @@ pub const Pool = struct {
         return pool.*;
     }
 
-    pub fn clear_retaining_capacity(pool: *Pool) void {
+    pub fn clearRetainingCapacity(pool: *Pool) void {
         pool.map.clearRetainingCapacity();
         pool.items.shrinkRetainingCapacity(0);
         pool.extra.clearRetainingCapacity();
@@ -1049,7 +1049,7 @@ pub const Pool = struct {
         pool.string_bytes.clearRetainingCapacity();
     }
 
-    pub fn free_unused_capacity(pool: *Pool, allocator: std.mem.Allocator) void {
+    pub fn freeUnusedCapacity(pool: *Pool, allocator: std.mem.Allocator) void {
         pool.map.shrinkAndFree(allocator, pool.map.count());
         pool.items.shrinkAndFree(allocator, pool.items.len);
         pool.extra.shrinkAndFree(allocator, pool.extra.items.len);
@@ -1059,7 +1059,7 @@ pub const Pool = struct {
         pool.string_bytes.shrinkAndFree(allocator, pool.string_bytes.items.len);
     }
 
-    pub fn get_pointer(pool: *Pool, allocator: std.mem.Allocator, pointer_info: Info.Pointer) !CType {
+    pub fn getPointer(pool: *Pool, allocator: std.mem.Allocator, pointer_info: Info.Pointer) !CType {
         var hasher = Hasher.init;
         hasher.update(pointer_info.elem_ctype.hash(pool));
         return pool.tagData(
@@ -1070,14 +1070,14 @@ pub const Pool = struct {
         );
     }
 
-    pub fn get_aligned(pool: *Pool, allocator: std.mem.Allocator, aligned_info: Info.Aligned) !CType {
+    pub fn getAligned(pool: *Pool, allocator: std.mem.Allocator, aligned_info: Info.Aligned) !CType {
         return pool.tagExtra(allocator, .aligned, Aligned, .{
             .ctype = aligned_info.ctype.index,
             .flags = .{ .alignas = aligned_info.alignas },
         });
     }
 
-    pub fn get_array(pool: *Pool, allocator: std.mem.Allocator, array_info: Info.Sequence) !CType {
+    pub fn getArray(pool: *Pool, allocator: std.mem.Allocator, array_info: Info.Sequence) !CType {
         return if (std.math.cast(u32, array_info.len)) |small_len|
             pool.tagExtra(allocator, .array_small, SequenceSmall, .{
                 .elem_ctype = array_info.elem_ctype.index,
@@ -1091,14 +1091,14 @@ pub const Pool = struct {
             });
     }
 
-    pub fn get_vector(pool: *Pool, allocator: std.mem.Allocator, vector_info: Info.Sequence) !CType {
+    pub fn getVector(pool: *Pool, allocator: std.mem.Allocator, vector_info: Info.Sequence) !CType {
         return pool.tagExtra(allocator, .vector, SequenceSmall, .{
             .elem_ctype = vector_info.elem_ctype.index,
             .len = @intCast(vector_info.len),
         });
     }
 
-    pub fn get_fwd_decl(
+    pub fn getFwdDecl(
         pool: *Pool,
         allocator: std.mem.Allocator,
         fwd_decl_info: struct {
@@ -1156,7 +1156,7 @@ pub const Pool = struct {
         }
     }
 
-    pub fn get_aggregate(
+    pub fn getAggregate(
         pool: *Pool,
         allocator: std.mem.Allocator,
         aggregate_info: struct {
@@ -1236,7 +1236,7 @@ pub const Pool = struct {
         }
     }
 
-    pub fn get_function(
+    pub fn getFunction(
         pool: *Pool,
         allocator: std.mem.Allocator,
         function_info: struct {
@@ -1262,7 +1262,7 @@ pub const Pool = struct {
         }, extra_index);
     }
 
-    pub fn from_fields(
+    pub fn fromFields(
         pool: *Pool,
         allocator: std.mem.Allocator,
         tag: Info.AggregateTag,
@@ -1281,7 +1281,7 @@ pub const Pool = struct {
         });
     }
 
-    pub fn from_int_info(
+    pub fn fromIntInfo(
         pool: *Pool,
         allocator: std.mem.Allocator,
         int_info: std.builtin.Type.Int,
@@ -1334,7 +1334,7 @@ pub const Pool = struct {
         }
     }
 
-    pub fn from_type(
+    pub fn fromType(
         pool: *Pool,
         allocator: std.mem.Allocator,
         scratch: *std.ArrayListUnmanaged(u32),
@@ -2037,7 +2037,7 @@ pub const Pool = struct {
         }
     }
 
-    pub fn get_or_put_adapted(
+    pub fn getOrPutAdapted(
         pool: *Pool,
         allocator: std.mem.Allocator,
         source_pool: *const Pool,
@@ -2191,7 +2191,7 @@ pub const Pool = struct {
         return pool.trailingString(allocator);
     }
 
-    fn ensure_unused_capacity(pool: *Pool, allocator: std.mem.Allocator, len: u32) !void {
+    fn ensureUnusedCapacity(pool: *Pool, allocator: std.mem.Allocator, len: u32) !void {
         try pool.map.ensureUnusedCapacity(allocator, len);
         try pool.items.ensureUnusedCapacity(allocator, len);
     }
@@ -2202,7 +2202,7 @@ pub const Pool = struct {
 
         const init: Hasher = .{ .impl = Impl.init(0) };
 
-        fn update_extra(hasher: *Hasher, comptime Extra: type, extra: Extra, pool: *const Pool) void {
+        fn updateExtra(hasher: *Hasher, comptime Extra: type, extra: Extra, pool: *const Pool) void {
             inline for (@typeInfo(Extra).Struct.fields) |field| {
                 const value = @field(extra, field.name);
                 switch (field.type) {
@@ -2234,7 +2234,7 @@ pub const Pool = struct {
         }
     };
 
-    fn tag_data(
+    fn tagData(
         pool: *Pool,
         allocator: std.mem.Allocator,
         hasher: Hasher,
@@ -2261,7 +2261,7 @@ pub const Pool = struct {
         return CType.fromPoolIndex(gop.index);
     }
 
-    fn tag_extra(
+    fn tagExtra(
         pool: *Pool,
         allocator: std.mem.Allocator,
         tag: Pool.Tag,
@@ -2278,7 +2278,7 @@ pub const Pool = struct {
         );
     }
 
-    fn tag_trailing_extra(
+    fn tagTrailingExtra(
         pool: *Pool,
         allocator: std.mem.Allocator,
         hasher: Hasher,
@@ -2289,7 +2289,7 @@ pub const Pool = struct {
         return pool.tagTrailingExtraAssumeCapacity(hasher, tag, extra_index);
     }
 
-    fn tag_trailing_extra_assume_capacity(
+    fn tagTrailingExtraAssumeCapacity(
         pool: *Pool,
         hasher: Hasher,
         tag: Pool.Tag,
@@ -2319,7 +2319,7 @@ pub const Pool = struct {
         return CType.fromPoolIndex(gop.index);
     }
 
-    fn sort_fields(fields: []Info.Field) void {
+    fn sortFields(fields: []Info.Field) void {
         std.mem.sort(Info.Field, fields, {}, struct {
             fn before(_: void, lhs_field: Info.Field, rhs_field: Info.Field) bool {
                 return lhs_field.alignas.order(rhs_field.alignas).compare(.gt);
@@ -2327,7 +2327,7 @@ pub const Pool = struct {
         }.before);
     }
 
-    fn trailing_string(pool: *Pool, allocator: std.mem.Allocator) !String {
+    fn trailingString(pool: *Pool, allocator: std.mem.Allocator) !String {
         const start = pool.string_indices.getLast();
         const slice: []const u8 = pool.string_bytes.items[start..];
         if (slice.len >= 2 and slice[0] == 'f' and switch (slice[1]) {
@@ -2441,7 +2441,7 @@ pub const Pool = struct {
         param_ctypes_len: u32,
     };
 
-    fn add_extra(
+    fn addExtra(
         pool: *Pool,
         allocator: std.mem.Allocator,
         comptime Extra: type,
@@ -2455,10 +2455,10 @@ pub const Pool = struct {
         defer pool.addExtraAssumeCapacity(Extra, extra);
         return @intCast(pool.extra.items.len);
     }
-    fn add_extra_assume_capacity(pool: *Pool, comptime Extra: type, extra: Extra) void {
+    fn addExtraAssumeCapacity(pool: *Pool, comptime Extra: type, extra: Extra) void {
         addExtraAssumeCapacityTo(&pool.extra, Extra, extra);
     }
-    fn add_extra_assume_capacity_to(
+    fn addExtraAssumeCapacityTo(
         array: *std.ArrayListUnmanaged(u32),
         comptime Extra: type,
         extra: Extra,
@@ -2475,7 +2475,7 @@ pub const Pool = struct {
         }
     }
 
-    fn add_hashed_extra(
+    fn addHashedExtra(
         pool: *Pool,
         allocator: std.mem.Allocator,
         hasher: *Hasher,
@@ -2486,7 +2486,7 @@ pub const Pool = struct {
         hasher.updateExtra(Extra, extra, pool);
         return pool.addExtra(allocator, Extra, extra, trailing_len);
     }
-    fn add_hashed_extra_assume_capacity(
+    fn addHashedExtraAssumeCapacity(
         pool: *Pool,
         hasher: *Hasher,
         comptime Extra: type,
@@ -2495,7 +2495,7 @@ pub const Pool = struct {
         hasher.updateExtra(Extra, extra, pool);
         pool.addExtraAssumeCapacity(Extra, extra);
     }
-    fn add_hashed_extra_assume_capacity_to(
+    fn addHashedExtraAssumeCapacityTo(
         pool: *Pool,
         array: *std.ArrayListUnmanaged(u32),
         hasher: *Hasher,
@@ -2520,7 +2520,7 @@ pub const Pool = struct {
         }
     };
 
-    fn get_extra_trail(
+    fn getExtraTrail(
         pool: *const Pool,
         comptime Extra: type,
         extra_index: ExtraIndex,
@@ -2540,7 +2540,7 @@ pub const Pool = struct {
         };
     }
 
-    fn get_extra(pool: *const Pool, comptime Extra: type, extra_index: ExtraIndex) Extra {
+    fn getExtra(pool: *const Pool, comptime Extra: type, extra_index: ExtraIndex) Extra {
         return pool.getExtraTrail(Extra, extra_index).extra;
     }
 };
@@ -2549,18 +2549,18 @@ pub const AlignAs = packed struct {
     @"align": Alignment,
     abi: Alignment,
 
-    pub fn from_alignment(alignas: AlignAs) AlignAs {
+    pub fn fromAlignment(alignas: AlignAs) AlignAs {
         assert(alignas.abi != .none);
         return .{
             .@"align" = if (alignas.@"align" != .none) alignas.@"align" else alignas.abi,
             .abi = alignas.abi,
         };
     }
-    pub fn from_abi_alignment(abi: Alignment) AlignAs {
+    pub fn fromAbiAlignment(abi: Alignment) AlignAs {
         assert(abi != .none);
         return .{ .@"align" = abi, .abi = abi };
     }
-    pub fn from_byte_units(@"align": u64, abi: u64) AlignAs {
+    pub fn fromByteUnits(@"align": u64, abi: u64) AlignAs {
         return fromAlignment(.{
             .@"align" = Alignment.fromByteUnits(@"align"),
             .abi = Alignment.fromNonzeroByteUnits(abi),
@@ -2570,10 +2570,10 @@ pub const AlignAs = packed struct {
     pub fn order(lhs: AlignAs, rhs: AlignAs) std.math.Order {
         return lhs.@"align".order(rhs.@"align");
     }
-    pub fn abi_order(alignas: AlignAs) std.math.Order {
+    pub fn abiOrder(alignas: AlignAs) std.math.Order {
         return alignas.@"align".order(alignas.abi);
     }
-    pub fn to_byte_units(alignas: AlignAs) u64 {
+    pub fn toByteUnits(alignas: AlignAs) u64 {
         return alignas.@"align".toByteUnits().?;
     }
 };

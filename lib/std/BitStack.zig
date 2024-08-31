@@ -20,7 +20,7 @@ pub fn deinit(self: *@This()) void {
     self.* = undefined;
 }
 
-pub fn ensure_total_capacity(self: *@This(), bit_capcity: usize) Allocator.Error!void {
+pub fn ensureTotalCapacity(self: *@This(), bit_capcity: usize) Allocator.Error!void {
     const byte_capacity = (bit_capcity + 7) >> 3;
     try self.bytes.ensureTotalCapacity(byte_capacity);
 }
@@ -43,7 +43,7 @@ pub fn pop(self: *@This()) u1 {
 }
 
 /// Standalone function for working with a fixed-size buffer.
-pub fn push_with_state_assume_capacity(buf: []u8, bit_len: *usize, b: u1) void {
+pub fn pushWithStateAssumeCapacity(buf: []u8, bit_len: *usize, b: u1) void {
     const byte_index = bit_len.* >> 3;
     const bit_index = @as(u3, @intCast(bit_len.* & 7));
 
@@ -54,14 +54,14 @@ pub fn push_with_state_assume_capacity(buf: []u8, bit_len: *usize, b: u1) void {
 }
 
 /// Standalone function for working with a fixed-size buffer.
-pub fn peek_with_state(buf: []const u8, bit_len: usize) u1 {
+pub fn peekWithState(buf: []const u8, bit_len: usize) u1 {
     const byte_index = (bit_len - 1) >> 3;
     const bit_index = @as(u3, @intCast((bit_len - 1) & 7));
     return @as(u1, @intCast((buf[byte_index] >> bit_index) & 1));
 }
 
 /// Standalone function for working with a fixed-size buffer.
-pub fn pop_with_state(buf: []const u8, bit_len: *usize) u1 {
+pub fn popWithState(buf: []const u8, bit_len: *usize) u1 {
     const b = peekWithState(buf, bit_len.*);
     bit_len.* -= 1;
     return b;

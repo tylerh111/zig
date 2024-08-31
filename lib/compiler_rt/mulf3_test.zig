@@ -15,7 +15,7 @@ const __mulsf3 = @import("mulsf3.zig").__mulsf3;
 // return true if equal
 // use two 64-bit integers instead of one 128-bit integer
 // because 128-bit integer constant can't be assigned directly
-fn compare_result_ld(result: f128, expectedHi: u64, expectedLo: u64) bool {
+fn compareResultLD(result: f128, expectedHi: u64, expectedLo: u64) bool {
     const rep: u128 = @bitCast(result);
     const hi: u64 = @intCast(rep >> 64);
     const lo: u64 = @truncate(rep);
@@ -43,7 +43,7 @@ fn test__multf3(a: f128, b: f128, expected_hi: u64, expected_lo: u64) !void {
     @panic("__multf3 test failure");
 }
 
-fn make_na_n128(rand: u64) f128 {
+fn makeNaN128(rand: u64) f128 {
     const int_result = @as(u128, 0x7fff000000000000 | (rand & 0xffffffffffff)) << 64;
     return @bitCast(int_result);
 }

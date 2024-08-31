@@ -5362,7 +5362,7 @@ test "C ABI pointer sized float struct" {
 }
 
 //=== Helpers for struct test ===//
-pub inline fn expect_ok(c_err: c_int) !void {
+pub inline fn expectOk(c_err: c_int) !void {
     if (c_err != 0) {
         std.debug.print("ABI mismatch on field v{d}.\n", .{c_err});
         return error.TestExpectedEqual;
@@ -5400,18 +5400,18 @@ test "DC: C returns to Zig" {
     try expectEqual(DC{ .v1 = -0.25, .v2 = 15 }, c_ret_DC());
 }
 
-pub extern fn c_assert_dc(lv: DC) c_int;
-pub extern fn c_assert_ret_dc() c_int;
-pub extern fn c_send_dc() c_int;
-pub extern fn c_ret_dc() DC;
-pub export fn zig_assert_dc(lv: DC) c_int {
+pub extern fn c_assert_DC(lv: DC) c_int;
+pub extern fn c_assert_ret_DC() c_int;
+pub extern fn c_send_DC() c_int;
+pub extern fn c_ret_DC() DC;
+pub export fn zig_assert_DC(lv: DC) c_int {
     var err: c_int = 0;
     if (lv.v1 != -0.25) err = 1;
     if (lv.v2 != 15) err = 2;
     if (err != 0) std.debug.print("Received {}", .{lv});
     return err;
 }
-pub export fn zig_ret_dc() DC {
+pub export fn zig_ret_DC() DC {
     return .{ .v1 = -0.25, .v2 = 15 };
 }
 
@@ -5449,11 +5449,11 @@ test "CFF: C returns to Zig" {
     if (builtin.cpu.arch.isPPC64()) return error.SkipZigTest;
     try expectEqual(CFF{ .v1 = 39, .v2 = 0.875, .v3 = 1.0 }, c_ret_CFF());
 }
-pub extern fn c_assert_cff(lv: CFF) c_int;
-pub extern fn c_assert_ret_cff() c_int;
-pub extern fn c_send_cff() c_int;
-pub extern fn c_ret_cff() CFF;
-pub export fn zig_assert_cff(lv: CFF) c_int {
+pub extern fn c_assert_CFF(lv: CFF) c_int;
+pub extern fn c_assert_ret_CFF() c_int;
+pub extern fn c_send_CFF() c_int;
+pub extern fn c_ret_CFF() CFF;
+pub export fn zig_assert_CFF(lv: CFF) c_int {
     var err: c_int = 0;
     if (lv.v1 != 39) err = 1;
     if (lv.v2 != 0.875) err = 2;
@@ -5461,7 +5461,7 @@ pub export fn zig_assert_cff(lv: CFF) c_int {
     if (err != 0) std.debug.print("Received {}", .{lv});
     return err;
 }
-pub export fn zig_ret_cff() CFF {
+pub export fn zig_ret_CFF() CFF {
     return .{ .v1 = 39, .v2 = 0.875, .v3 = 1.0 };
 }
 
@@ -5492,21 +5492,21 @@ test "PD: C returns to Zig" {
     if (builtin.cpu.arch.isPPC64()) return error.SkipZigTest;
     try expectEqual(PD{ .v1 = null, .v2 = 0.5 }, c_ret_PD());
 }
-pub extern fn c_assert_pd(lv: PD) c_int;
-pub extern fn c_assert_ret_pd() c_int;
-pub extern fn c_send_pd() c_int;
-pub extern fn c_ret_pd() PD;
-pub export fn zig_c_assert_pd(lv: PD) c_int {
+pub extern fn c_assert_PD(lv: PD) c_int;
+pub extern fn c_assert_ret_PD() c_int;
+pub extern fn c_send_PD() c_int;
+pub extern fn c_ret_PD() PD;
+pub export fn zig_c_assert_PD(lv: PD) c_int {
     var err: c_int = 0;
     if (lv.v1 != null) err = 1;
     if (lv.v2 != 0.5) err = 2;
     if (err != 0) std.debug.print("Received {}", .{lv});
     return err;
 }
-pub export fn zig_ret_pd() PD {
+pub export fn zig_ret_PD() PD {
     return .{ .v1 = null, .v2 = 0.5 };
 }
-pub export fn zig_assert_pd(lv: PD) c_int {
+pub export fn zig_assert_PD(lv: PD) c_int {
     var err: c_int = 0;
     if (lv.v1 != null) err = 1;
     if (lv.v2 != 0.5) err = 2;

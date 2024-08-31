@@ -130,7 +130,7 @@ const uppercase_table = [2544]u16{
 ///       since it depends on the `uppercase_table` data. When
 ///       targeting Windows, `ntdll.RtlUpcaseUnicodeChar` can be
 ///       used instead to avoid having to include a copy of this data.
-pub fn upcase_w(c: u16) u16 {
+pub fn upcaseW(c: u16) u16 {
     if (c < 'a') {
         return c;
     }

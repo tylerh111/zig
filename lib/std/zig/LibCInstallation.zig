@@ -164,7 +164,7 @@ pub const FindNativeOptions = struct {
 };
 
 /// Finds the default, native libc.
-pub fn find_native(args: FindNativeOptions) FindError!LibCInstallation {
+pub fn findNative(args: FindNativeOptions) FindError!LibCInstallation {
     var self: LibCInstallation = .{};
 
     if (is_darwin and args.target.isDarwin()) {
@@ -227,7 +227,7 @@ pub fn deinit(self: *LibCInstallation, allocator: Allocator) void {
     self.* = undefined;
 }
 
-fn find_native_include_dir_posix(self: *LibCInstallation, args: FindNativeOptions) FindError!void {
+fn findNativeIncludeDirPosix(self: *LibCInstallation, args: FindNativeOptions) FindError!void {
     const allocator = args.allocator;
 
     // Detect infinite loops.
@@ -355,7 +355,7 @@ fn find_native_include_dir_posix(self: *LibCInstallation, args: FindNativeOption
     return error.LibCStdLibHeaderNotFound;
 }
 
-fn find_native_include_dir_windows(
+fn findNativeIncludeDirWindows(
     self: *LibCInstallation,
     args: FindNativeOptions,
     sdk: std.zig.WindowsSdk,
@@ -394,7 +394,7 @@ fn find_native_include_dir_windows(
     return error.LibCStdLibHeaderNotFound;
 }
 
-fn find_native_crt_dir_windows(
+fn findNativeCrtDirWindows(
     self: *LibCInstallation,
     args: FindNativeOptions,
     sdk: std.zig.WindowsSdk,
@@ -440,7 +440,7 @@ fn find_native_crt_dir_windows(
     return error.LibCRuntimeNotFound;
 }
 
-fn find_native_crt_dir_posix(self: *LibCInstallation, args: FindNativeOptions) FindError!void {
+fn findNativeCrtDirPosix(self: *LibCInstallation, args: FindNativeOptions) FindError!void {
     self.crt_dir = try ccPrintFileName(.{
         .allocator = args.allocator,
         .search_basename = switch (args.target.os.tag) {
@@ -452,7 +452,7 @@ fn find_native_crt_dir_posix(self: *LibCInstallation, args: FindNativeOptions) F
     });
 }
 
-fn find_native_gcc_dir_haiku(self: *LibCInstallation, args: FindNativeOptions) FindError!void {
+fn findNativeGccDirHaiku(self: *LibCInstallation, args: FindNativeOptions) FindError!void {
     self.gcc_dir = try ccPrintFileName(.{
         .allocator = args.allocator,
         .search_basename = "crtbeginS.o",
@@ -461,7 +461,7 @@ fn find_native_gcc_dir_haiku(self: *LibCInstallation, args: FindNativeOptions) F
     });
 }
 
-fn find_native_kernel32_lib_dir(
+fn findNativeKernel32LibDir(
     self: *LibCInstallation,
     args: FindNativeOptions,
     sdk: std.zig.WindowsSdk,
@@ -508,7 +508,7 @@ fn find_native_kernel32_lib_dir(
     return error.LibCKernel32LibNotFound;
 }
 
-fn find_native_msvc_include_dir(
+fn findNativeMsvcIncludeDir(
     self: *LibCInstallation,
     args: FindNativeOptions,
     sdk: std.zig.WindowsSdk,
@@ -540,7 +540,7 @@ fn find_native_msvc_include_dir(
     self.sys_include_dir = dir_path;
 }
 
-fn find_native_msvc_lib_dir(
+fn findNativeMsvcLibDir(
     self: *LibCInstallation,
     args: FindNativeOptions,
     sdk: std.zig.WindowsSdk,
@@ -558,7 +558,7 @@ pub const CCPrintFileNameOptions = struct {
 };
 
 /// caller owns returned memory
-fn cc_print_file_name(args: CCPrintFileNameOptions) ![:0]u8 {
+fn ccPrintFileName(args: CCPrintFileNameOptions) ![:0]u8 {
     const allocator = args.allocator;
 
     // Detect infinite loops.
@@ -631,7 +631,7 @@ fn cc_print_file_name(args: CCPrintFileNameOptions) ![:0]u8 {
     }
 }
 
-fn print_verbose_invocation(
+fn printVerboseInvocation(
     argv: []const []const u8,
     search_basename: ?[]const u8,
     verbose: bool,
@@ -654,7 +654,7 @@ fn print_verbose_invocation(
     }
 }
 
-fn fill_installations(
+fn fillInstallations(
     installs: *[2]std.zig.WindowsSdk.Installation,
     sdk: std.zig.WindowsSdk,
 ) []std.zig.WindowsSdk.Installation {
@@ -672,7 +672,7 @@ fn fill_installations(
 
 const inf_loop_env_key = "ZIG_IS_DETECTING_LIBC_PATHS";
 
-fn append_cc_exe(args: *std.ArrayList([]const u8), skip_cc_env_var: bool) !void {
+fn appendCcExe(args: *std.ArrayList([]const u8), skip_cc_env_var: bool) !void {
     const default_cc_exe = if (is_windows) "cc.exe" else "cc";
     try args.ensureUnusedCapacity(1);
     if (skip_cc_env_var) {

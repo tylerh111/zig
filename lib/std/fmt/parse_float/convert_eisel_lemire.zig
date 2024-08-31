@@ -23,7 +23,7 @@ const Number = common.Number;
 /// at a Gigabyte per Second" in section 5, "Fast Algorithm", and
 /// section 6, "Exact Numbers And Ties", available online:
 /// <https://arxiv.org/abs/2101.11408.pdf>.
-pub fn convert_eisel_lemire(comptime T: type, q: i64, w_: u64) ?BiasedFp(f64) {
+pub fn convertEiselLemire(comptime T: type, q: i64, w_: u64) ?BiasedFp(f64) {
     std.debug.assert(T == f16 or T == f32 or T == f64);
     var w = w_;
     const float_info = FloatInfo.from(T);
@@ -148,7 +148,7 @@ const U128 = struct {
 // This will compute or rather approximate w * 5**q and return a pair of 64-bit words
 // approximating the result, with the "high" part corresponding to the most significant
 // bits and the low part corresponding to the least significant bits.
-fn compute_product_approx(q: i64, w: u64, comptime precision: usize) U128 {
+fn computeProductApprox(q: i64, w: u64, comptime precision: usize) U128 {
     std.debug.assert(q >= eisel_lemire_smallest_power_of_five);
     std.debug.assert(q <= eisel_lemire_largest_power_of_five);
     std.debug.assert(precision <= 64);

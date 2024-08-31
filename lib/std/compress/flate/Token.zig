@@ -33,13 +33,13 @@ pub fn length(t: Token) u16 {
     return @as(u16, t.len_lit) + consts.base_length;
 }
 
-pub fn init_literal(lit: u8) Token {
+pub fn initLiteral(lit: u8) Token {
     return .{ .kind = .literal, .len_lit = lit };
 }
 
 // distance range 1 - 32768, stored in dist as 0 - 32767 (u15)
 // length range 3 - 258, stored in len_lit as 0 - 255 (u8)
-pub fn init_match(dist: u16, len: u16) Token {
+pub fn initMatch(dist: u16, len: u16) Token {
     assert(len >= consts.min_length and len <= consts.max_length);
     assert(dist >= consts.min_distance and dist <= consts.max_distance);
     return .{
@@ -55,11 +55,11 @@ pub fn eql(t: Token, o: Token) bool {
         t.len_lit == o.len_lit;
 }
 
-pub fn length_code(t: Token) u16 {
+pub fn lengthCode(t: Token) u16 {
     return match_lengths[match_lengths_index[t.len_lit]].code;
 }
 
-pub fn length_encoding(t: Token) MatchLength {
+pub fn lengthEncoding(t: Token) MatchLength {
     var c = match_lengths[match_lengths_index[t.len_lit]];
     c.extra_length = t.len_lit - c.base_scaled;
     return c;
@@ -67,7 +67,7 @@ pub fn length_encoding(t: Token) MatchLength {
 
 // Returns the distance code corresponding to a specific distance.
 // Distance code is in range: 0 - 29.
-pub fn distance_code(t: Token) u8 {
+pub fn distanceCode(t: Token) u8 {
     var dist: u16 = t.dist;
     if (dist < match_distances_index.len) {
         return match_distances_index[dist];
@@ -80,25 +80,25 @@ pub fn distance_code(t: Token) u8 {
     return match_distances_index[dist] + 28;
 }
 
-pub fn distance_encoding(t: Token) MatchDistance {
+pub fn distanceEncoding(t: Token) MatchDistance {
     var c = match_distances[t.distanceCode()];
     c.extra_distance = t.dist - c.base_scaled;
     return c;
 }
 
-pub fn length_extra_bits(code: u32) u8 {
+pub fn lengthExtraBits(code: u32) u8 {
     return match_lengths[code - length_codes_start].extra_bits;
 }
 
-pub fn match_length(code: u8) MatchLength {
+pub fn matchLength(code: u8) MatchLength {
     return match_lengths[code];
 }
 
-pub fn match_distance(code: u8) MatchDistance {
+pub fn matchDistance(code: u8) MatchDistance {
     return match_distances[code];
 }
 
-pub fn distance_extra_bits(code: u32) u8 {
+pub fn distanceExtraBits(code: u32) u8 {
     return match_distances[code].extra_bits;
 }
 

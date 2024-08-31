@@ -28,7 +28,7 @@ pub const State = enum {
     chunk_data_suffix_r,
 
     /// Returns true if the parser is in a content state (ie. not waiting for more headers).
-    pub fn is_content(self: State) bool {
+    pub fn isContent(self: State) bool {
         return switch (self) {
             .invalid, .start, .seen_n, .seen_r, .seen_rn, .seen_rnr => false,
             .finished, .chunk_head_size, .chunk_head_ext, .chunk_head_r, .chunk_data, .chunk_data_suffix, .chunk_data_suffix_r => true,
@@ -73,7 +73,7 @@ pub const HeadersParser = struct {
         return hp.header_bytes_buffer[0..hp.header_bytes_len];
     }
 
-    pub fn find_headers_end(r: *HeadersParser, bytes: []const u8) u32 {
+    pub fn findHeadersEnd(r: *HeadersParser, bytes: []const u8) u32 {
         var hp: std.http.HeadParser = .{
             .state = switch (r.state) {
                 .start => .start,
@@ -97,7 +97,7 @@ pub const HeadersParser = struct {
         return @intCast(result);
     }
 
-    pub fn find_chunked_len(r: *HeadersParser, bytes: []const u8) u32 {
+    pub fn findChunkedLen(r: *HeadersParser, bytes: []const u8) u32 {
         var cp: std.http.ChunkParser = .{
             .state = switch (r.state) {
                 .chunk_head_size => .head_size,
@@ -128,7 +128,7 @@ pub const HeadersParser = struct {
     /// Returns whether or not the parser has finished parsing a complete
     /// message. A message is only complete after the entire body has been read
     /// and any trailing headers have been parsed.
-    pub fn is_complete(r: *HeadersParser) bool {
+    pub fn isComplete(r: *HeadersParser) bool {
         return r.done and r.state == .finished;
     }
 
@@ -136,7 +136,7 @@ pub const HeadersParser = struct {
 
     /// Pushes `in` into the parser. Returns the number of bytes consumed by
     /// the header. Any header bytes are appended to `header_bytes_buffer`.
-    pub fn check_complete_head(hp: *HeadersParser, in: []const u8) CheckCompleteHeadError!u32 {
+    pub fn checkCompleteHead(hp: *HeadersParser, in: []const u8) CheckCompleteHeadError!u32 {
         if (hp.state.isContent()) return 0;
 
         const i = hp.findHeadersEnd(in);
@@ -262,7 +262,7 @@ inline fn int32(array: *const [4]u8) u32 {
     return @as(u32, @bitCast(array.*));
 }
 
-inline fn int_shift(comptime T: type, x: anytype) T {
+inline fn intShift(comptime T: type, x: anytype) T {
     switch (@import("builtin").cpu.arch.endian()) {
         .little => return @as(T, @truncate(x >> (@bitSizeOf(@TypeOf(x)) - @bitSizeOf(T)))),
         .big => return @as(T, @truncate(x)),
@@ -295,7 +295,7 @@ const MockBufferedConnection = struct {
         conn.start += num;
     }
 
-    pub fn read_at_least(conn: *MockBufferedConnection, buffer: []u8, len: usize) ReadError!usize {
+    pub fn readAtLeast(conn: *MockBufferedConnection, buffer: []u8, len: usize) ReadError!usize {
         var out_index: u16 = 0;
         while (out_index < len) {
             const available = conn.end - conn.start;
@@ -333,7 +333,7 @@ const MockBufferedConnection = struct {
         return Reader{ .context = conn };
     }
 
-    pub fn write_all(conn: *MockBufferedConnection, buffer: []const u8) WriteError!void {
+    pub fn writeAll(conn: *MockBufferedConnection, buffer: []const u8) WriteError!void {
         return conn.conn.writeAll(buffer);
     }
 

@@ -22,7 +22,7 @@ const mem = std.mem;
 ///
 /// SipHash is not a traditional hash function. If the input includes untrusted content, a secret key is absolutely necessary.
 /// And due to its small output size, collisions in SipHash64 can be found with an exhaustive search.
-pub fn sip_hash64(comptime c_rounds: usize, comptime d_rounds: usize) type {
+pub fn SipHash64(comptime c_rounds: usize, comptime d_rounds: usize) type {
     return SipHash(u64, c_rounds, d_rounds);
 }
 
@@ -36,11 +36,11 @@ pub fn sip_hash64(comptime c_rounds: usize, comptime d_rounds: usize) type {
 /// - (c_rounds=1, d_rounds=2) fastest option, but the output may be distinguishable from random data with related keys or non-uniform input - not suitable as a PRF.
 ///
 /// SipHash is not a traditional hash function. If the input includes untrusted content, a secret key is absolutely necessary.
-pub fn sip_hash128(comptime c_rounds: usize, comptime d_rounds: usize) type {
+pub fn SipHash128(comptime c_rounds: usize, comptime d_rounds: usize) type {
     return SipHash(u128, c_rounds, d_rounds);
 }
 
-fn sip_hash_stateless(comptime T: type, comptime c_rounds: usize, comptime d_rounds: usize) type {
+fn SipHashStateless(comptime T: type, comptime c_rounds: usize, comptime d_rounds: usize) type {
     assert(T == u64 or T == u128);
     assert(c_rounds > 0 and d_rounds > 0);
 
@@ -135,7 +135,7 @@ fn sip_hash_stateless(comptime T: type, comptime c_rounds: usize, comptime d_rou
             self.v0 ^= m;
         }
 
-        fn sip_round(d: *Self) void {
+        fn sipRound(d: *Self) void {
             d.v0 +%= d.v1;
             d.v1 = math.rotl(u64, d.v1, @as(u64, 13));
             d.v1 ^= d.v0;
@@ -161,7 +161,7 @@ fn sip_hash_stateless(comptime T: type, comptime c_rounds: usize, comptime d_rou
     };
 }
 
-fn sip_hash(comptime T: type, comptime c_rounds: usize, comptime d_rounds: usize) type {
+fn SipHash(comptime T: type, comptime c_rounds: usize, comptime d_rounds: usize) type {
     assert(T == u64 or T == u128);
     assert(c_rounds > 0 and d_rounds > 0);
 
@@ -216,7 +216,7 @@ fn sip_hash(comptime T: type, comptime c_rounds: usize, comptime d_rounds: usize
             mem.writeInt(T, out, self.state.final(self.buf[0..self.buf_len]), .little);
         }
 
-        pub fn final_result(self: *Self) [mac_length]u8 {
+        pub fn finalResult(self: *Self) [mac_length]u8 {
             var result: [mac_length]u8 = undefined;
             self.final(&result);
             return result;
@@ -230,12 +230,12 @@ fn sip_hash(comptime T: type, comptime c_rounds: usize, comptime d_rounds: usize
         }
 
         /// Return an authentication tag for the current state, as an integer
-        pub fn final_int(self: *Self) T {
+        pub fn finalInt(self: *Self) T {
             return self.state.final(self.buf[0..self.buf_len]);
         }
 
         /// Return an authentication tag for a message and a key, as an integer
-        pub fn to_int(msg: []const u8, key: *const [key_length]u8) T {
+        pub fn toInt(msg: []const u8, key: *const [key_length]u8) T {
             return State.hash(msg, key);
         }
 

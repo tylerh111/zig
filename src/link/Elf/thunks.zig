@@ -1,4 +1,4 @@
-pub fn create_thunks(shndx: u32, elf_file: *Elf) !void {
+pub fn createThunks(shndx: u32, elf_file: *Elf) !void {
     const gpa = elf_file.base.comp.gpa;
     const cpu_arch = elf_file.getTarget().cpu.arch;
     const max_distance = maxAllowedDistance(cpu_arch);
@@ -71,7 +71,7 @@ fn advance(shdr: *elf.Elf64_Shdr, size: u64, alignment: Atom.Alignment) !i64 {
 
 /// A branch will need an extender if its target is larger than
 /// `2^(jump_bits - 1) - margin` where margin is some arbitrary number.
-fn max_allowed_distance(cpu_arch: std.Target.Cpu.Arch) u32 {
+fn maxAllowedDistance(cpu_arch: std.Target.Cpu.Arch) u32 {
     return switch (cpu_arch) {
         .aarch64 => 0x500_000,
         .x86_64, .riscv64 => unreachable,
@@ -99,7 +99,7 @@ pub const Thunk = struct {
         return @as(i64, @intCast(shdr.sh_addr)) + thunk.value;
     }
 
-    pub fn target_address(thunk: Thunk, sym_index: Symbol.Index, elf_file: *Elf) i64 {
+    pub fn targetAddress(thunk: Thunk, sym_index: Symbol.Index, elf_file: *Elf) i64 {
         const cpu_arch = elf_file.getTarget().cpu.arch;
         return thunk.address(elf_file) + @as(i64, @intCast(thunk.symbols.getIndex(sym_index).? * trampolineSize(cpu_arch)));
     }
@@ -112,7 +112,7 @@ pub const Thunk = struct {
         }
     }
 
-    pub fn calc_symtab_size(thunk: *Thunk, elf_file: *Elf) void {
+    pub fn calcSymtabSize(thunk: *Thunk, elf_file: *Elf) void {
         thunk.output_symtab_ctx.nlocals = @as(u32, @intCast(thunk.symbols.keys().len));
         for (thunk.symbols.keys()) |sym_index| {
             const sym = elf_file.symbol(sym_index);
@@ -120,7 +120,7 @@ pub const Thunk = struct {
         }
     }
 
-    pub fn write_symtab(thunk: Thunk, elf_file: *Elf) void {
+    pub fn writeSymtab(thunk: Thunk, elf_file: *Elf) void {
         const cpu_arch = elf_file.getTarget().cpu.arch;
         for (thunk.symbols.keys(), thunk.output_symtab_ctx.ilocal..) |sym_index, ilocal| {
             const sym = elf_file.symbol(sym_index);
@@ -139,7 +139,7 @@ pub const Thunk = struct {
         }
     }
 
-    fn trampoline_size(cpu_arch: std.Target.Cpu.Arch) usize {
+    fn trampolineSize(cpu_arch: std.Target.Cpu.Arch) usize {
         return switch (cpu_arch) {
             .aarch64 => aarch64.trampoline_size,
             .x86_64, .riscv64 => unreachable,
@@ -193,7 +193,7 @@ pub const Thunk = struct {
 };
 
 const aarch64 = struct {
-    fn is_reachable(atom: *const Atom, rel: elf.Elf64_Rela, elf_file: *Elf) bool {
+    fn isReachable(atom: *const Atom, rel: elf.Elf64_Rela, elf_file: *Elf) bool {
         const r_type: elf.R_AARCH64 = @enumFromInt(rel.r_type());
         if (r_type != .CALL26 and r_type != .JUMP26) return true;
         const file = atom.file(elf_file).?;

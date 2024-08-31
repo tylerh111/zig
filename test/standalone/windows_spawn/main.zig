@@ -149,15 +149,15 @@ pub fn main() anyerror!void {
     try testExecWithCwd(allocator, "goodbye", tmp_absolute_path, "hello from exe\n");
 }
 
-fn test_exec_error(err: anyerror, allocator: std.mem.Allocator, command: []const u8) !void {
+fn testExecError(err: anyerror, allocator: std.mem.Allocator, command: []const u8) !void {
     return std.testing.expectError(err, testExec(allocator, command, ""));
 }
 
-fn test_exec(allocator: std.mem.Allocator, command: []const u8, expected_stdout: []const u8) !void {
+fn testExec(allocator: std.mem.Allocator, command: []const u8, expected_stdout: []const u8) !void {
     return testExecWithCwd(allocator, command, null, expected_stdout);
 }
 
-fn test_exec_with_cwd(allocator: std.mem.Allocator, command: []const u8, cwd: ?[]const u8, expected_stdout: []const u8) !void {
+fn testExecWithCwd(allocator: std.mem.Allocator, command: []const u8, cwd: ?[]const u8, expected_stdout: []const u8) !void {
     const result = try std.process.Child.run(.{
         .allocator = allocator,
         .argv = &[_][]const u8{command},

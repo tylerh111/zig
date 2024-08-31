@@ -111,7 +111,7 @@ pub const InstEnc = enum {
     /// extras that have unusual op counts
     system,
 
-    pub fn from_mnemonic(mnem: Mnemonic) InstEnc {
+    pub fn fromMnemonic(mnem: Mnemonic) InstEnc {
         return switch (mnem) {
             .addi,
             .ld,
@@ -161,7 +161,7 @@ pub const InstEnc = enum {
         };
     }
 
-    pub fn ops_list(enc: InstEnc) [3]std.meta.FieldEnum(Operand) {
+    pub fn opsList(enc: InstEnc) [3]std.meta.FieldEnum(Operand) {
         return switch (enc) {
             // zig fmt: off
             .R =>      .{ .reg,  .reg,  .reg,  },
@@ -225,7 +225,7 @@ pub const Data = union(InstEnc) {
     },
     system: void,
 
-    pub fn to_u32(self: Data) u32 {
+    pub fn toU32(self: Data) u32 {
         return switch (self) {
             .R => |v| @as(u32, @bitCast(v)),
             .I => |v| @as(u32, @bitCast(v)),
@@ -367,7 +367,7 @@ pub const Data = union(InstEnc) {
     }
 };
 
-pub fn find_by_mnemonic(mnem: Mnemonic, ops: []const Operand) !?Encoding {
+pub fn findByMnemonic(mnem: Mnemonic, ops: []const Operand) !?Encoding {
     if (!verifyOps(mnem, ops)) return null;
 
     return .{
@@ -383,7 +383,7 @@ const Enc = struct {
     offset: u12 = 0,
 };
 
-fn verify_ops(mnem: Mnemonic, ops: []const Operand) bool {
+fn verifyOps(mnem: Mnemonic, ops: []const Operand) bool {
     const inst_enc = InstEnc.fromMnemonic(mnem);
     const list = std.mem.sliceTo(&inst_enc.opsList(), .none);
     for (list, ops) |l, o| if (l != std.meta.activeTag(o)) return false;

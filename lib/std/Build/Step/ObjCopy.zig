@@ -83,10 +83,10 @@ pub fn create(
 /// deprecated: use getOutput
 pub const getOutputSource = getOutput;
 
-pub fn get_output(objcopy: *const ObjCopy) std.Build.LazyPath {
+pub fn getOutput(objcopy: *const ObjCopy) std.Build.LazyPath {
     return .{ .generated = .{ .file = &objcopy.output_file } };
 }
-pub fn get_output_separated_debug(objcopy: *const ObjCopy) ?std.Build.LazyPath {
+pub fn getOutputSeparatedDebug(objcopy: *const ObjCopy) ?std.Build.LazyPath {
     return if (objcopy.output_file_debug) |*file| .{ .generated = .{ .file = file } } else null;
 }
 

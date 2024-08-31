@@ -24,7 +24,7 @@ pub fn main() !void {
         try names.append(try allocator.dupe(u8, entry.name));
     }
     std.mem.sort([]const u8, names.items, {}, (struct {
-        fn less_than(_: void, a: []const u8, b: []const u8) bool {
+        fn lessThan(_: void, a: []const u8, b: []const u8) bool {
             return std.mem.lessThan(u8, a, b);
         }
     }).lessThan);
@@ -50,7 +50,7 @@ const i_structure_500_nested_arrays = "[" ** 500 ++ "]" ** 500;
 const n_structure_100000_opening_arrays = "[" ** 100000;
 const n_structure_open_array_object = "[{\"\":" ** 50000 ++ "\n";
 
-fn write_string(writer: anytype, s: []const u8) !void {
+fn writeString(writer: anytype, s: []const u8) !void {
     if (s.len > 200) {
         // There are a few of these we can compress with Zig expressions.
         if (std.mem.eql(u8, s, i_structure_500_nested_arrays)) {

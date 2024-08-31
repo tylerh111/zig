@@ -207,7 +207,7 @@ const ArmCpuinfoImpl = struct {
 
     const cpu_models = @import("arm.zig").cpu_models;
 
-    fn add_one(self: *ArmCpuinfoImpl) void {
+    fn addOne(self: *ArmCpuinfoImpl) void {
         if (self.have_fields == 4 and self.core_no < num_cores) {
             if (self.core_no > 0) {
                 // Deduplicate the core info.
@@ -336,7 +336,7 @@ test "cpuinfo: ARM" {
     );
 }
 
-fn test_parser(
+fn testParser(
     parser: anytype,
     arch: Target.Cpu.Arch,
     expected_model: *const Target.Cpu.Model,
@@ -353,7 +353,7 @@ fn test_parser(
 // as first and second parameters. Returning false from the hook function stops
 // the iteration without raising an error.
 // When all the lines have been analyzed the finalize method is called.
-fn cpuinfo_parser(comptime impl: anytype) type {
+fn CpuinfoParser(comptime impl: anytype) type {
     return struct {
         fn parse(arch: Target.Cpu.Arch, reader: anytype) anyerror!?Target.Cpu {
             var line_buf: [1024]u8 = undefined;
@@ -374,13 +374,13 @@ fn cpuinfo_parser(comptime impl: anytype) type {
     };
 }
 
-inline fn get_aarch64_cpu_feature(comptime feat_reg: []const u8) u64 {
+inline fn getAArch64CpuFeature(comptime feat_reg: []const u8) u64 {
     return asm ("mrs %[ret], " ++ feat_reg
         : [ret] "=r" (-> u64),
     );
 }
 
-pub fn detect_native_cpu_and_features() ?Target.Cpu {
+pub fn detectNativeCpuAndFeatures() ?Target.Cpu {
     var f = fs.openFileAbsolute("/proc/cpuinfo", .{}) catch |err| switch (err) {
         else => return null,
     };

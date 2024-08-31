@@ -56,7 +56,7 @@ pub const Context = struct {
 
     pattern_list: PatternList,
 
-    fn get_mangle(c: *Context) u32 {
+    fn getMangle(c: *Context) u32 {
         c.mangle_count += 1;
         return c.mangle_count;
     }
@@ -67,7 +67,7 @@ pub const Context = struct {
     }
 
     /// Convert a clang source location to a file:line:column string
-    fn loc_str(c: *Context, loc: clang.SourceLocation) ![]u8 {
+    fn locStr(c: *Context, loc: clang.SourceLocation) ![]u8 {
         const spelling_loc = c.source_manager.getSpellingLoc(loc);
         const filename_c = c.source_manager.getFilename(spelling_loc);
         const filename = if (filename_c) |s| try c.str(s) else @as([]const u8, "(no file)");
@@ -187,7 +187,7 @@ pub fn translate(
 
 /// Determines whether macro is of the form: `#define FOO FOO` (Possibly with trailing tokens)
 /// Macros of this form will not be translated.
-fn is_self_defined_macro(unit: *const clang.ASTUnit, c: *const Context, macro: *const clang.MacroDefinitionRecord) !bool {
+fn isSelfDefinedMacro(unit: *const clang.ASTUnit, c: *const Context, macro: *const clang.MacroDefinitionRecord) !bool {
     const source = try getMacroText(unit, c, macro);
     var tokenizer: aro.Tokenizer = .{
         .buf = source,
@@ -205,7 +205,7 @@ fn is_self_defined_macro(unit: *const clang.ASTUnit, c: *const Context, macro: *
     return mem.eql(u8, name, source[first_tok.start..first_tok.end]);
 }
 
-fn prepopulate_global_name_table(ast_unit: *clang.ASTUnit, c: *Context) !void {
+fn prepopulateGlobalNameTable(ast_unit: *clang.ASTUnit, c: *Context) !void {
     if (!ast_unit.visitLocalTopLevelDecls(c, declVisitorNamesOnlyC)) {
         return error.OutOfMemory;
     }
@@ -231,19 +231,19 @@ fn prepopulate_global_name_table(ast_unit: *clang.ASTUnit, c: *Context) !void {
     }
 }
 
-fn decl_visitor_names_only_c(context: ?*anyopaque, decl: *const clang.Decl) callconv(.C) bool {
+fn declVisitorNamesOnlyC(context: ?*anyopaque, decl: *const clang.Decl) callconv(.C) bool {
     const c: *Context = @ptrCast(@alignCast(context));
     declVisitorNamesOnly(c, decl) catch return false;
     return true;
 }
 
-fn decl_visitor_c(context: ?*anyopaque, decl: *const clang.Decl) callconv(.C) bool {
+fn declVisitorC(context: ?*anyopaque, decl: *const clang.Decl) callconv(.C) bool {
     const c: *Context = @ptrCast(@alignCast(context));
     declVisitor(c, decl) catch return false;
     return true;
 }
 
-fn decl_visitor_names_only(c: *Context, decl: *const clang.Decl) Error!void {
+fn declVisitorNamesOnly(c: *Context, decl: *const clang.Decl) Error!void {
     if (decl.castToNamedDecl()) |named_decl| {
         const decl_name = try c.str(named_decl.getName_bytes_begin());
 
@@ -322,7 +322,7 @@ fn decl_visitor_names_only(c: *Context, decl: *const clang.Decl) Error!void {
     }
 }
 
-fn decl_visitor(c: *Context, decl: *const clang.Decl) Error!void {
+fn declVisitor(c: *Context, decl: *const clang.Decl) Error!void {
     switch (decl.getKind()) {
         .Function => {
             return visitFnDecl(c, @as(*const clang.FunctionDecl, @ptrCast(decl)));
@@ -352,7 +352,7 @@ fn decl_visitor(c: *Context, decl: *const clang.Decl) Error!void {
     }
 }
 
-fn trans_file_scope_asm(c: *Context, scope: *Scope, file_scope_asm: *const clang.FileScopeAsmDecl) Error!void {
+fn transFileScopeAsm(c: *Context, scope: *Scope, file_scope_asm: *const clang.FileScopeAsmDecl) Error!void {
     const asm_string = file_scope_asm.getAsmString();
     var len: usize = undefined;
     const bytes_ptr = asm_string.getString_bytes_begin_size(&len);
@@ -367,7 +367,7 @@ fn trans_file_scope_asm(c: *Context, scope: *Scope, file_scope_asm: *const clang
     try scope.appendNode(comptime_node);
 }
 
-fn visit_fn_decl(c: *Context, fn_decl: *const clang.FunctionDecl) Error!void {
+fn visitFnDecl(c: *Context, fn_decl: *const clang.FunctionDecl) Error!void {
     const fn_name = try c.str(@as(*const clang.NamedDecl, @ptrCast(fn_decl)).getName_bytes_begin());
     if (c.global_scope.sym_table.contains(fn_name))
         return; // Avoid processing this decl twice
@@ -528,7 +528,7 @@ fn visit_fn_decl(c: *Context, fn_decl: *const clang.FunctionDecl) Error!void {
     return addTopLevelDecl(c, fn_name, Node.initPayload(&proto_node.base));
 }
 
-fn trans_qual_type_maybe_initialized(c: *Context, scope: *Scope, qt: clang.QualType, decl_init: ?*const clang.Expr, loc: clang.SourceLocation) TransError!Node {
+fn transQualTypeMaybeInitialized(c: *Context, scope: *Scope, qt: clang.QualType, decl_init: ?*const clang.Expr, loc: clang.SourceLocation) TransError!Node {
     return if (decl_init) |init_expr|
         transQualTypeInitialized(c, scope, qt, init_expr, loc)
     else
@@ -539,7 +539,7 @@ fn trans_qual_type_maybe_initialized(c: *Context, scope: *Scope, qt: clang.QualT
 /// &(struct {
 ///     var static = S.*;
 /// }).static;
-fn string_literal_to_char_star(c: *Context, str: Node) Error!Node {
+fn stringLiteralToCharStar(c: *Context, str: Node) Error!Node {
     const var_name = Scope.Block.static_inner_name;
 
     const variables = try c.arena.alloc(Node, 1);
@@ -560,7 +560,7 @@ fn string_literal_to_char_star(c: *Context, str: Node) Error!Node {
 }
 
 /// if mangled_name is not null, this var decl was declared in a block scope.
-fn visit_var_decl(c: *Context, var_decl: *const clang.VarDecl, mangled_name: ?[]const u8) Error!void {
+fn visitVarDecl(c: *Context, var_decl: *const clang.VarDecl, mangled_name: ?[]const u8) Error!void {
     const var_name = mangled_name orelse try c.str(@as(*const clang.NamedDecl, @ptrCast(var_decl)).getName_bytes_begin());
     if (c.global_scope.sym_table.contains(var_name))
         return; // Avoid processing this decl twice
@@ -685,7 +685,7 @@ const builtin_typedef_map = std.StaticStringMap([]const u8).initComptime(.{
     .{ "size_t", "usize" },
 });
 
-fn trans_type_def(c: *Context, scope: *Scope, typedef_decl: *const clang.TypedefNameDecl) Error!void {
+fn transTypeDef(c: *Context, scope: *Scope, typedef_decl: *const clang.TypedefNameDecl) Error!void {
     if (c.decl_table.get(@intFromPtr(typedef_decl.getCanonicalDecl()))) |_|
         return; // Avoid processing this decl twice
     const toplevel = scope.id == .root;
@@ -732,7 +732,7 @@ fn trans_type_def(c: *Context, scope: *Scope, typedef_decl: *const clang.Typedef
 /// Build a getter function for a flexible array member at the end of a C struct
 /// e.g. `T items[]` or `T items[0]`. The generated function returns a [*c] pointer
 /// to the flexible array with the correct const and volatile qualifiers
-fn build_flexible_array_fn(
+fn buildFlexibleArrayFn(
     c: *Context,
     scope: *Scope,
     layout: *const clang.ASTRecordLayout,
@@ -826,7 +826,7 @@ fn build_flexible_array_fn(
 }
 
 /// Return true if `field_decl` is the flexible array field for its parent record
-fn is_flexible_array_field_decl(c: *Context, field_decl: *const clang.FieldDecl) bool {
+fn isFlexibleArrayFieldDecl(c: *Context, field_decl: *const clang.FieldDecl) bool {
     const record_decl = field_decl.getParent() orelse return false;
     const record_flexible_field = flexibleArrayField(c, record_decl) orelse return false;
     return field_decl == record_flexible_field;
@@ -837,7 +837,7 @@ fn is_flexible_array_field_decl(c: *Context, field_decl: *const clang.FieldDecl)
 /// clang's RecordDecl::hasFlexibleArrayMember is not suitable for determining
 /// this because it returns false for a record that ends with a zero-length
 /// array, but we consider those to be flexible arrays
-fn flexible_array_field(c: *Context, record_def: *const clang.RecordDecl) ?*const clang.FieldDecl {
+fn flexibleArrayField(c: *Context, record_def: *const clang.RecordDecl) ?*const clang.FieldDecl {
     var it = record_def.field_begin();
     const end_it = record_def.field_end();
     var flexible_field: ?*const clang.FieldDecl = null;
@@ -854,7 +854,7 @@ fn flexible_array_field(c: *Context, record_def: *const clang.RecordDecl) ?*cons
     return flexible_field;
 }
 
-fn mangle_weak_global_name(c: *Context, want_name: []const u8) ![]const u8 {
+fn mangleWeakGlobalName(c: *Context, want_name: []const u8) ![]const u8 {
     var cur_name = want_name;
 
     if (!c.weak_global_names.contains(want_name)) {
@@ -869,7 +869,7 @@ fn mangle_weak_global_name(c: *Context, want_name: []const u8) ![]const u8 {
     return cur_name;
 }
 
-fn trans_record_decl(c: *Context, scope: *Scope, record_decl: *const clang.RecordDecl) Error!void {
+fn transRecordDecl(c: *Context, scope: *Scope, record_decl: *const clang.RecordDecl) Error!void {
     if (c.decl_table.get(@intFromPtr(record_decl.getCanonicalDecl()))) |_|
         return; // Avoid processing this decl twice
     const record_loc = record_decl.getLocation();
@@ -1032,7 +1032,7 @@ fn trans_record_decl(c: *Context, scope: *Scope, record_decl: *const clang.Recor
     }
 }
 
-fn trans_enum_decl(c: *Context, scope: *Scope, enum_decl: *const clang.EnumDecl) Error!void {
+fn transEnumDecl(c: *Context, scope: *Scope, enum_decl: *const clang.EnumDecl) Error!void {
     if (c.decl_table.get(@intFromPtr(enum_decl.getCanonicalDecl()))) |_|
         return; // Avoid processing this decl twice
     const enum_loc = enum_decl.getLocation();
@@ -1136,7 +1136,7 @@ fn trans_enum_decl(c: *Context, scope: *Scope, enum_decl: *const clang.EnumDecl)
     }
 }
 
-fn trans_stmt(
+fn transStmt(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.Stmt,
@@ -1235,7 +1235,7 @@ fn trans_stmt(
 }
 
 /// See https://clang.llvm.org/docs/LanguageExtensions.html#langext-builtin-convertvector
-fn trans_convert_vector_expr(
+fn transConvertVectorExpr(
     c: *Context,
     scope: *Scope,
     expr: *const clang.ConvertVectorExpr,
@@ -1296,7 +1296,7 @@ fn trans_convert_vector_expr(
     return block_scope.complete(c);
 }
 
-fn make_shuffle_mask(c: *Context, scope: *Scope, expr: *const clang.ShuffleVectorExpr, vector_len: Node) TransError!Node {
+fn makeShuffleMask(c: *Context, scope: *Scope, expr: *const clang.ShuffleVectorExpr, vector_len: Node) TransError!Node {
     const num_subexprs = expr.getNumSubExprs();
     assert(num_subexprs >= 3); // two source vectors + at least 1 index expression
     const mask_len = num_subexprs - 2;
@@ -1321,14 +1321,14 @@ fn make_shuffle_mask(c: *Context, scope: *Scope, expr: *const clang.ShuffleVecto
 }
 
 /// @typeInfo(@TypeOf(vec_node)).Vector.<field>
-fn vector_type_info(arena: mem.Allocator, vec_node: Node, field: []const u8) TransError!Node {
+fn vectorTypeInfo(arena: mem.Allocator, vec_node: Node, field: []const u8) TransError!Node {
     const typeof_call = try Tag.typeof.create(arena, vec_node);
     const typeinfo_call = try Tag.typeinfo.create(arena, typeof_call);
     const vector_type_info = try Tag.field_access.create(arena, .{ .lhs = typeinfo_call, .field_name = "Vector" });
     return Tag.field_access.create(arena, .{ .lhs = vector_type_info, .field_name = field });
 }
 
-fn trans_shuffle_vector_expr(
+fn transShuffleVectorExpr(
     c: *Context,
     scope: *Scope,
     expr: *const clang.ShuffleVectorExpr,
@@ -1355,7 +1355,7 @@ fn trans_shuffle_vector_expr(
 
 /// Translate a "simple" offsetof expression containing exactly one component,
 /// when that component is of kind .Field - e.g. offsetof(mytype, myfield)
-fn trans_simple_offset_of_expr(c: *Context, expr: *const clang.OffsetOfExpr) TransError!Node {
+fn transSimpleOffsetOfExpr(c: *Context, expr: *const clang.OffsetOfExpr) TransError!Node {
     assert(expr.getNumComponents() == 1);
     const component = expr.getComponent(0);
     if (component.getKind() == .Field) {
@@ -1378,7 +1378,7 @@ fn trans_simple_offset_of_expr(c: *Context, expr: *const clang.OffsetOfExpr) Tra
     return fail(c, error.UnsupportedTranslation, expr.getBeginLoc(), "failed to translate simple OffsetOfExpr", .{});
 }
 
-fn trans_offset_of_expr(
+fn transOffsetOfExpr(
     c: *Context,
     expr: *const clang.OffsetOfExpr,
     result_used: ResultUsed,
@@ -1403,7 +1403,7 @@ fn trans_offset_of_expr(
 /// will become very large positive numbers but that is ok since we only use this in
 /// pointer arithmetic expressions, where wraparound will ensure we get the correct value.
 /// node -> @bitCast(usize, @intCast(isize, node))
-fn usize_cast_for_wrapping_ptr_arithmetic(gpa: mem.Allocator, node: Node) TransError!Node {
+fn usizeCastForWrappingPtrArithmetic(gpa: mem.Allocator, node: Node) TransError!Node {
     const intcast_node = try Tag.as.create(gpa, .{
         .lhs = try Tag.type.create(gpa, "isize"),
         .rhs = try Tag.int_cast.create(gpa, node),
@@ -1420,7 +1420,7 @@ fn usize_cast_for_wrapping_ptr_arithmetic(gpa: mem.Allocator, node: Node) TransE
 /// bitcast to usize; pointer wraparound make the math work.
 /// Zig pointer addition is not commutative (unlike C); the pointer operand needs to be on the left.
 /// The + operator in C is not a sequence point so it should be safe to switch the order if necessary.
-fn trans_create_pointer_arithmetic_signed_op(
+fn transCreatePointerArithmeticSignedOp(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.BinaryOperator,
@@ -1448,7 +1448,7 @@ fn trans_create_pointer_arithmetic_signed_op(
     );
 }
 
-fn trans_binary_operator(
+fn transBinaryOperator(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.BinaryOperator,
@@ -1619,7 +1619,7 @@ fn trans_binary_operator(
     return infixOpNode;
 }
 
-fn trans_compound_stmt_inline(
+fn transCompoundStmtInline(
     c: *Context,
     stmt: *const clang.CompoundStmt,
     block: *Scope.Block,
@@ -1635,14 +1635,14 @@ fn trans_compound_stmt_inline(
     }
 }
 
-fn trans_compound_stmt(c: *Context, scope: *Scope, stmt: *const clang.CompoundStmt) TransError!Node {
+fn transCompoundStmt(c: *Context, scope: *Scope, stmt: *const clang.CompoundStmt) TransError!Node {
     var block_scope = try Scope.Block.init(c, scope, false);
     defer block_scope.deinit();
     try transCompoundStmtInline(c, stmt, &block_scope);
     return try block_scope.complete(c);
 }
 
-fn trans_cstyle_cast_expr_class(
+fn transCStyleCastExprClass(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.CStyleCastExpr,
@@ -1697,7 +1697,7 @@ const ClangAlignment = struct {
     is_packed: ?bool,
 
     /// Get the alignment for a field, optionally taking into account the parent record
-    pub fn for_field(c: *const Context, field: *const clang.FieldDecl, parent: ?*const clang.RecordDecl) ClangAlignment {
+    pub fn forField(c: *const Context, field: *const clang.FieldDecl, parent: ?*const clang.RecordDecl) ClangAlignment {
         const parent_packed = if (parent) |record| record.getPackedAttribute() else false;
         // NOTE: According to GCC docs, parent attribute packed implies child attribute packed
         return ClangAlignment{
@@ -1706,14 +1706,14 @@ const ClangAlignment = struct {
         };
     }
 
-    pub fn for_var(c: *const Context, var_decl: *const clang.VarDecl) ClangAlignment {
+    pub fn forVar(c: *const Context, var_decl: *const clang.VarDecl) ClangAlignment {
         return ClangAlignment{
             .bit_alignment = var_decl.getAlignedAttribute(c.clang_context),
             .is_packed = var_decl.getPackedAttribute(),
         };
     }
 
-    pub fn for_func(c: *const Context, fun: *const clang.FunctionDecl) ClangAlignment {
+    pub fn forFunc(c: *const Context, fun: *const clang.FunctionDecl) ClangAlignment {
         return ClangAlignment{
             .bit_alignment = fun.getAlignedAttribute(c.clang_context),
             .is_packed = null, // not supported by GCC/clang (or meaningful),
@@ -1723,7 +1723,7 @@ const ClangAlignment = struct {
     /// Translate the clang alignment info into a zig alignment
     ///
     /// Returns null if there is no special alignment info
-    pub fn zig_alignment(self: ClangAlignment) ?c_uint {
+    pub fn zigAlignment(self: ClangAlignment) ?c_uint {
         if (self.bit_alignment != 0) {
             return self.bit_alignment / 8;
         } else if (self.is_packed orelse false) {
@@ -1734,7 +1734,7 @@ const ClangAlignment = struct {
     }
 };
 
-fn trans_decl_stmt_one(
+fn transDeclStmtOne(
     c: *Context,
     scope: *Scope,
     decl: *const clang.Decl,
@@ -1832,7 +1832,7 @@ fn trans_decl_stmt_one(
     }
 }
 
-fn trans_decl_stmt(c: *Context, scope: *Scope, stmt: *const clang.DeclStmt) TransError!Node {
+fn transDeclStmt(c: *Context, scope: *Scope, stmt: *const clang.DeclStmt) TransError!Node {
     const block_scope = try scope.findBlockScope(c);
 
     var it = stmt.decl_begin();
@@ -1843,7 +1843,7 @@ fn trans_decl_stmt(c: *Context, scope: *Scope, stmt: *const clang.DeclStmt) Tran
     return Tag.declaration.init();
 }
 
-fn trans_decl_ref_expr(
+fn transDeclRefExpr(
     c: *Context,
     scope: *Scope,
     expr: *const clang.DeclRefExpr,
@@ -1869,7 +1869,7 @@ fn trans_decl_ref_expr(
     return ref_expr;
 }
 
-fn trans_implicit_cast_expr(
+fn transImplicitCastExpr(
     c: *Context,
     scope: *Scope,
     expr: *const clang.ImplicitCastExpr,
@@ -1937,14 +1937,14 @@ fn trans_implicit_cast_expr(
     }
 }
 
-fn is_builtin_defined(name: []const u8) bool {
+fn isBuiltinDefined(name: []const u8) bool {
     inline for (@typeInfo(std.zig.c_builtins).Struct.decls) |decl| {
         if (std.mem.eql(u8, name, decl.name)) return true;
     }
     return false;
 }
 
-fn trans_builtin_fn_expr(c: *Context, scope: *Scope, expr: *const clang.Expr, used: ResultUsed) TransError!Node {
+fn transBuiltinFnExpr(c: *Context, scope: *Scope, expr: *const clang.Expr, used: ResultUsed) TransError!Node {
     const node = try transExpr(c, scope, expr, used);
     if (node.castTag(.fn_identifier)) |ident| {
         const name = ident.data;
@@ -1953,7 +1953,7 @@ fn trans_builtin_fn_expr(c: *Context, scope: *Scope, expr: *const clang.Expr, us
     return node;
 }
 
-fn trans_bool_expr(
+fn transBoolExpr(
     c: *Context,
     scope: *Scope,
     expr: *const clang.Expr,
@@ -1979,11 +1979,11 @@ fn trans_bool_expr(
     return maybeSuppressResult(c, used, node);
 }
 
-fn expr_is_boolean_type(expr: *const clang.Expr) bool {
+fn exprIsBooleanType(expr: *const clang.Expr) bool {
     return qualTypeIsBoolean(expr.getType());
 }
 
-fn expr_is_narrow_string_literal(expr: *const clang.Expr) bool {
+fn exprIsNarrowStringLiteral(expr: *const clang.Expr) bool {
     switch (expr.getStmtClass()) {
         .StringLiteralClass => {
             const string_lit = @as(*const clang.StringLiteral, @ptrCast(expr));
@@ -2006,7 +2006,7 @@ fn expr_is_narrow_string_literal(expr: *const clang.Expr) bool {
     }
 }
 
-fn expr_is_flexible_array_ref(c: *Context, expr: *const clang.Expr) bool {
+fn exprIsFlexibleArrayRef(c: *Context, expr: *const clang.Expr) bool {
     if (expr.getStmtClass() == .MemberExprClass) {
         const member_expr = @as(*const clang.MemberExpr, @ptrCast(expr));
         const member_decl = member_expr.getMemberDecl();
@@ -2019,7 +2019,7 @@ fn expr_is_flexible_array_ref(c: *Context, expr: *const clang.Expr) bool {
     return false;
 }
 
-fn is_bool_res(res: Node) bool {
+fn isBoolRes(res: Node) bool {
     switch (res.tag()) {
         .@"or",
         .@"and",
@@ -2037,7 +2037,7 @@ fn is_bool_res(res: Node) bool {
     }
 }
 
-fn finish_bool_expr(
+fn finishBoolExpr(
     c: *Context,
     scope: *Scope,
     loc: clang.SourceLocation,
@@ -2119,7 +2119,7 @@ const SuppressCast = enum {
     with_as,
     no_as,
 };
-fn trans_integer_literal(
+fn transIntegerLiteral(
     c: *Context,
     scope: *Scope,
     expr: *const clang.IntegerLiteral,
@@ -2155,7 +2155,7 @@ fn trans_integer_literal(
     return maybeSuppressResult(c, result_used, as);
 }
 
-fn trans_return_stmt(
+fn transReturnStmt(
     c: *Context,
     scope: *Scope,
     expr: *const clang.ReturnStmt,
@@ -2171,7 +2171,7 @@ fn trans_return_stmt(
     return Tag.@"return".create(c.arena, rhs);
 }
 
-fn trans_narrow_string_literal(
+fn transNarrowStringLiteral(
     c: *Context,
     stmt: *const clang.StringLiteral,
     result_used: ResultUsed,
@@ -2184,7 +2184,7 @@ fn trans_narrow_string_literal(
     return maybeSuppressResult(c, result_used, node);
 }
 
-fn trans_string_literal(
+fn transStringLiteral(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.StringLiteral,
@@ -2208,7 +2208,7 @@ fn trans_string_literal(
     }
 }
 
-fn get_array_payload(array_type: Node) ast.Payload.Array.ArrayTypeInfo {
+fn getArrayPayload(array_type: Node) ast.Payload.Array.ArrayTypeInfo {
     return (array_type.castTag(.array_type) orelse array_type.castTag(.null_sentinel_array_type).?).data;
 }
 
@@ -2216,7 +2216,7 @@ fn get_array_payload(array_type: Node) ast.Payload.Array.ArrayTypeInfo {
 /// literals become `"<string>".*` or `"<string>"[0..<size>].*` if they need truncation.
 /// Wide string literals become an array of integers. zero-fillers pad out the array to
 /// the appropriate length, if necessary.
-fn trans_string_literal_initializer(
+fn transStringLiteralInitializer(
     c: *Context,
     stmt: *const clang.StringLiteral,
     array_type: Node,
@@ -2273,7 +2273,7 @@ fn trans_string_literal_initializer(
 /// determine whether `stmt` is a "pointer subtraction expression" - a subtraction where
 /// both operands resolve to addresses. The C standard requires that both operands
 /// point to elements of the same array object, but we do not verify that here.
-fn c_is_pointer_diff_expr(stmt: *const clang.BinaryOperator) bool {
+fn cIsPointerDiffExpr(stmt: *const clang.BinaryOperator) bool {
     const lhs = @as(*const clang.Stmt, @ptrCast(stmt.getLHS()));
     const rhs = @as(*const clang.Stmt, @ptrCast(stmt.getRHS()));
     return stmt.getOpcode() == .Sub and
@@ -2281,18 +2281,18 @@ fn c_is_pointer_diff_expr(stmt: *const clang.BinaryOperator) bool {
         qualTypeIsPtr(@as(*const clang.Expr, @ptrCast(rhs)).getType());
 }
 
-fn c_is_enum(qt: clang.QualType) bool {
+fn cIsEnum(qt: clang.QualType) bool {
     return qt.getCanonicalType().getTypeClass() == .Enum;
 }
 
-fn c_is_vector(qt: clang.QualType) bool {
+fn cIsVector(qt: clang.QualType) bool {
     return qt.getCanonicalType().getTypeClass() == .Vector;
 }
 
 /// Get the underlying int type of an enum. The C compiler chooses a signed int
 /// type that is large enough to hold all of the enum's values. It is not required
 /// to be the smallest possible type that can hold all the values.
-fn c_int_type_for_enum(enum_qt: clang.QualType) clang.QualType {
+fn cIntTypeForEnum(enum_qt: clang.QualType) clang.QualType {
     assert(cIsEnum(enum_qt));
     const ty = enum_qt.getCanonicalType().getTypePtr();
     const enum_ty = @as(*const clang.EnumType, @ptrCast(ty));
@@ -2301,7 +2301,7 @@ fn c_int_type_for_enum(enum_qt: clang.QualType) clang.QualType {
 }
 
 // when modifying this function, make sure to also update std.zig.c_translation.cast
-fn trans_ccast(
+fn transCCast(
     c: *Context,
     scope: *Scope,
     loc: clang.SourceLocation,
@@ -2418,13 +2418,13 @@ fn trans_ccast(
     return Tag.as.create(c.arena, .{ .lhs = dst_node, .rhs = expr });
 }
 
-fn trans_expr(c: *Context, scope: *Scope, expr: *const clang.Expr, used: ResultUsed) TransError!Node {
+fn transExpr(c: *Context, scope: *Scope, expr: *const clang.Expr, used: ResultUsed) TransError!Node {
     return transStmt(c, scope, @as(*const clang.Stmt, @ptrCast(expr)), used);
 }
 
 /// Same as `transExpr` but with the knowledge that the operand will be type coerced, and therefore
 /// an `@as` would be redundant. This is used to prevent redundant `@as` in integer literals.
-fn trans_expr_coercing(c: *Context, scope: *Scope, expr: *const clang.Expr, used: ResultUsed) TransError!Node {
+fn transExprCoercing(c: *Context, scope: *Scope, expr: *const clang.Expr, used: ResultUsed) TransError!Node {
     switch (@as(*const clang.Stmt, @ptrCast(expr)).getStmtClass()) {
         .IntegerLiteralClass => {
             return transIntegerLiteral(c, scope, @as(*const clang.IntegerLiteral, @ptrCast(expr)), .used, .no_as);
@@ -2459,7 +2459,7 @@ fn trans_expr_coercing(c: *Context, scope: *Scope, expr: *const clang.Expr, used
     return transExpr(c, scope, expr, .used);
 }
 
-fn literal_fits_in_type(c: *Context, expr: *const clang.Expr, qt: clang.QualType) bool {
+fn literalFitsInType(c: *Context, expr: *const clang.Expr, qt: clang.QualType) bool {
     var width = qualTypeIntBitWidth(c, qt) catch 8;
     if (width == 0) width = 8; // Byte is the smallest type.
     const is_signed = cIsSignedInteger(qt);
@@ -2486,7 +2486,7 @@ fn literal_fits_in_type(c: *Context, expr: *const clang.Expr, qt: clang.QualType
     }
 }
 
-fn trans_init_list_expr_record(
+fn transInitListExprRecord(
     c: *Context,
     scope: *Scope,
     loc: clang.SourceLocation,
@@ -2561,7 +2561,7 @@ fn trans_init_list_expr_record(
     });
 }
 
-fn trans_init_list_expr_array(
+fn transInitListExprArray(
     c: *Context,
     scope: *Scope,
     loc: clang.SourceLocation,
@@ -2621,7 +2621,7 @@ fn trans_init_list_expr_array(
     }
 }
 
-fn trans_init_list_expr_vector(
+fn transInitListExprVector(
     c: *Context,
     scope: *Scope,
     loc: clang.SourceLocation,
@@ -2690,7 +2690,7 @@ fn trans_init_list_expr_vector(
     return block_scope.complete(c);
 }
 
-fn trans_init_list_expr(
+fn transInitListExpr(
     c: *Context,
     scope: *Scope,
     expr: *const clang.InitListExpr,
@@ -2728,7 +2728,7 @@ fn trans_init_list_expr(
     }
 }
 
-fn trans_zero_init_expr(
+fn transZeroInitExpr(
     c: *Context,
     scope: *Scope,
     source_loc: clang.SourceLocation,
@@ -2778,7 +2778,7 @@ fn trans_zero_init_expr(
     }
 }
 
-fn trans_implicit_value_init_expr(
+fn transImplicitValueInitExpr(
     c: *Context,
     scope: *Scope,
     expr: *const clang.Expr,
@@ -2794,7 +2794,7 @@ fn trans_implicit_value_init_expr(
 /// in the body of an if statement or loop, then we need to put the statement into its own block.
 /// The `else` case here corresponds to statements that could result in an assignment. If a statement
 /// class never needs a block, add its enum to the top prong.
-fn maybe_blockify(c: *Context, scope: *Scope, stmt: *const clang.Stmt) TransError!Node {
+fn maybeBlockify(c: *Context, scope: *Scope, stmt: *const clang.Stmt) TransError!Node {
     switch (stmt.getStmtClass()) {
         .BreakStmtClass,
         .CompoundStmtClass,
@@ -2820,7 +2820,7 @@ fn blockify(c: *Context, scope: *Scope, stmt: *const clang.Stmt) TransError!Node
     return block_scope.complete(c);
 }
 
-fn trans_if_stmt(
+fn transIfStmt(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.IfStmt,
@@ -2858,7 +2858,7 @@ fn trans_if_stmt(
     return Tag.@"if".create(c.arena, .{ .cond = cond, .then = then_body, .@"else" = else_body });
 }
 
-fn trans_while_loop(
+fn transWhileLoop(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.WhileStmt,
@@ -2881,7 +2881,7 @@ fn trans_while_loop(
     return Tag.@"while".create(c.arena, .{ .cond = cond, .body = body, .cont_expr = null });
 }
 
-fn trans_do_while_loop(
+fn transDoWhileLoop(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.DoStmt,
@@ -2943,7 +2943,7 @@ fn trans_do_while_loop(
     return Tag.while_true.create(c.arena, body_node);
 }
 
-fn trans_for_loop(
+fn transForLoop(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.ForStmt,
@@ -2990,7 +2990,7 @@ fn trans_for_loop(
     }
 }
 
-fn trans_switch(
+fn transSwitch(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.SwitchStmt,
@@ -3083,7 +3083,7 @@ fn trans_switch(
 
 /// Collects all items for this case, returns the first statement after the labels.
 /// If items ends up empty, the prong should be translated as an else.
-fn trans_case_stmt(c: *Context, scope: *Scope, stmt: *const clang.Stmt, items: *std.ArrayList(Node)) TransError!*const clang.Stmt {
+fn transCaseStmt(c: *Context, scope: *Scope, stmt: *const clang.Stmt, items: *std.ArrayList(Node)) TransError!*const clang.Stmt {
     var sub = stmt;
     var seen_default = false;
     while (true) {
@@ -3120,7 +3120,7 @@ fn trans_case_stmt(c: *Context, scope: *Scope, stmt: *const clang.Stmt, items: *
 
 /// Collects all statements seen by this case into a block.
 /// Avoids creating a block if the first statement is a break or return.
-fn trans_switch_prong_stmt(
+fn transSwitchProngStmt(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.Stmt,
@@ -3143,7 +3143,7 @@ fn trans_switch_prong_stmt(
 }
 
 /// Collects all statements seen by this case into a block.
-fn trans_switch_prong_stmt_inline(
+fn transSwitchProngStmtInline(
     c: *Context,
     block: *Scope.Block,
     start_it: clang.CompoundStmt.ConstBodyIterator,
@@ -3208,7 +3208,7 @@ fn trans_switch_prong_stmt_inline(
     return;
 }
 
-fn trans_constant_expr(c: *Context, scope: *Scope, expr: *const clang.Expr, used: ResultUsed) TransError!Node {
+fn transConstantExpr(c: *Context, scope: *Scope, expr: *const clang.Expr, used: ResultUsed) TransError!Node {
     var result: clang.ExprEvalResult = undefined;
     if (!expr.evaluateAsConstantExpr(&result, .Normal, c.clang_context))
         return fail(c, error.UnsupportedTranslation, expr.getBeginLoc(), "invalid constant expression", .{});
@@ -3230,18 +3230,18 @@ fn trans_constant_expr(c: *Context, scope: *Scope, expr: *const clang.Expr, used
     }
 }
 
-fn trans_predefined_expr(c: *Context, scope: *Scope, expr: *const clang.PredefinedExpr, used: ResultUsed) TransError!Node {
+fn transPredefinedExpr(c: *Context, scope: *Scope, expr: *const clang.PredefinedExpr, used: ResultUsed) TransError!Node {
     return transStringLiteral(c, scope, expr.getFunctionName(), used);
 }
 
-fn trans_create_char_lit_node(c: *Context, narrow: bool, val: u32) TransError!Node {
+fn transCreateCharLitNode(c: *Context, narrow: bool, val: u32) TransError!Node {
     return Tag.char_literal.create(c.arena, if (narrow)
         try std.fmt.allocPrint(c.arena, "'{'}'", .{std.zig.fmtEscapes(&.{@as(u8, @intCast(val))})})
     else
         try std.fmt.allocPrint(c.arena, "'\\u{{{x}}}'", .{val}));
 }
 
-fn trans_char_literal(
+fn transCharLiteral(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.CharacterLiteral,
@@ -3271,7 +3271,7 @@ fn trans_char_literal(
     return maybeSuppressResult(c, result_used, as_node);
 }
 
-fn trans_stmt_expr(c: *Context, scope: *Scope, stmt: *const clang.StmtExpr, used: ResultUsed) TransError!Node {
+fn transStmtExpr(c: *Context, scope: *Scope, stmt: *const clang.StmtExpr, used: ResultUsed) TransError!Node {
     const comp = stmt.getSubStmt();
     if (used == .unused) {
         return transCompoundStmt(c, scope, comp);
@@ -3304,7 +3304,7 @@ fn trans_stmt_expr(c: *Context, scope: *Scope, stmt: *const clang.StmtExpr, used
     return maybeSuppressResult(c, used, res);
 }
 
-fn trans_member_expr(c: *Context, scope: *Scope, stmt: *const clang.MemberExpr, result_used: ResultUsed) TransError!Node {
+fn transMemberExpr(c: *Context, scope: *Scope, stmt: *const clang.MemberExpr, result_used: ResultUsed) TransError!Node {
     var container_node = try transExpr(c, scope, stmt.getBase(), .used);
     if (stmt.isArrow()) {
         container_node = try Tag.deref.create(c.arena, container_node);
@@ -3339,7 +3339,7 @@ fn trans_member_expr(c: *Context, scope: *Scope, stmt: *const clang.MemberExpr, 
 ///     if (tmp >= 0) break :blk ptr + @intCast(usize, tmp) else break :blk ptr - ~@bitCast(usize, @intCast(isize, tmp) +% -1);
 /// }).*
 /// Todo: rip this out once `[*]T + isize` becomes valid.
-fn trans_signed_array_access(
+fn transSignedArrayAccess(
     c: *Context,
     scope: *Scope,
     container_expr: *const clang.Expr,
@@ -3411,7 +3411,7 @@ fn trans_signed_array_access(
     return maybeSuppressResult(c, result_used, derefed);
 }
 
-fn trans_array_access(c: *Context, scope: *Scope, stmt: *const clang.ArraySubscriptExpr, result_used: ResultUsed) TransError!Node {
+fn transArrayAccess(c: *Context, scope: *Scope, stmt: *const clang.ArraySubscriptExpr, result_used: ResultUsed) TransError!Node {
     const base_stmt = stmt.getBase();
     const base_qt = getExprQualType(c, base_stmt);
     const is_vector = cIsVector(base_qt);
@@ -3460,7 +3460,7 @@ fn trans_array_access(c: *Context, scope: *Scope, stmt: *const clang.ArraySubscr
 
 /// Check if an expression is ultimately a reference to a function declaration
 /// (which means it should not be unwrapped with `.?` in translated code)
-fn c_is_function_decl_ref(expr: *const clang.Expr) bool {
+fn cIsFunctionDeclRef(expr: *const clang.Expr) bool {
     switch (expr.getStmtClass()) {
         .ParenExprClass => {
             const op_expr = @as(*const clang.ParenExpr, @ptrCast(expr)).getSubExpr();
@@ -3494,7 +3494,7 @@ fn c_is_function_decl_ref(expr: *const clang.Expr) bool {
     }
 }
 
-fn trans_call_expr(c: *Context, scope: *Scope, stmt: *const clang.CallExpr, result_used: ResultUsed) TransError!Node {
+fn transCallExpr(c: *Context, scope: *Scope, stmt: *const clang.CallExpr, result_used: ResultUsed) TransError!Node {
     const callee = stmt.getCallee();
     const raw_fn_expr = try transExpr(c, scope, callee, .used);
 
@@ -3553,7 +3553,7 @@ const ClangFunctionType = union(enum) {
     Proto: *const clang.FunctionProtoType,
     NoProto: *const clang.FunctionType,
 
-    fn get_return_type(self: @This()) clang.QualType {
+    fn getReturnType(self: @This()) clang.QualType {
         switch (@as(meta.Tag(@This()), self)) {
             .Proto => return self.Proto.getReturnType(),
             .NoProto => return self.NoProto.getReturnType(),
@@ -3561,7 +3561,7 @@ const ClangFunctionType = union(enum) {
     }
 };
 
-fn qual_type_get_fn_proto(qt: clang.QualType, is_ptr: *bool) ?ClangFunctionType {
+fn qualTypeGetFnProto(qt: clang.QualType, is_ptr: *bool) ?ClangFunctionType {
     const canon = qt.getCanonicalType();
     var ty = canon.getTypePtr();
     is_ptr.* = false;
@@ -3580,7 +3580,7 @@ fn qual_type_get_fn_proto(qt: clang.QualType, is_ptr: *bool) ?ClangFunctionType 
     return null;
 }
 
-fn trans_unary_expr_or_type_trait_expr(
+fn transUnaryExprOrTypeTraitExpr(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.UnaryExprOrTypeTraitExpr,
@@ -3608,7 +3608,7 @@ fn trans_unary_expr_or_type_trait_expr(
     return maybeSuppressResult(c, result_used, node);
 }
 
-fn qual_type_has_wrapping_overflow(qt: clang.QualType) bool {
+fn qualTypeHasWrappingOverflow(qt: clang.QualType) bool {
     if (cIsUnsignedInteger(qt)) {
         // unsigned integer overflow wraps around.
         return true;
@@ -3618,7 +3618,7 @@ fn qual_type_has_wrapping_overflow(qt: clang.QualType) bool {
     }
 }
 
-fn trans_unary_operator(c: *Context, scope: *Scope, stmt: *const clang.UnaryOperator, used: ResultUsed) TransError!Node {
+fn transUnaryOperator(c: *Context, scope: *Scope, stmt: *const clang.UnaryOperator, used: ResultUsed) TransError!Node {
     const op_expr = stmt.getSubExpr();
     switch (stmt.getOpcode()) {
         .PostInc => if (qualTypeHasWrappingOverflow(stmt.getType()))
@@ -3679,7 +3679,7 @@ fn trans_unary_operator(c: *Context, scope: *Scope, stmt: *const clang.UnaryOper
     }
 }
 
-fn trans_create_pre_crement(
+fn transCreatePreCrement(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.UnaryOperator,
@@ -3725,7 +3725,7 @@ fn trans_create_pre_crement(
     return block_scope.complete(c);
 }
 
-fn trans_create_post_crement(
+fn transCreatePostCrement(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.UnaryOperator,
@@ -3777,7 +3777,7 @@ fn trans_create_post_crement(
     return block_scope.complete(c);
 }
 
-fn trans_compound_assign_operator(c: *Context, scope: *Scope, stmt: *const clang.CompoundAssignOperator, used: ResultUsed) TransError!Node {
+fn transCompoundAssignOperator(c: *Context, scope: *Scope, stmt: *const clang.CompoundAssignOperator, used: ResultUsed) TransError!Node {
     switch (stmt.getOpcode()) {
         .MulAssign => if (qualTypeHasWrappingOverflow(stmt.getType()))
             return transCreateCompoundAssign(c, scope, stmt, .mul_wrap_assign, used)
@@ -3808,7 +3808,7 @@ fn trans_compound_assign_operator(c: *Context, scope: *Scope, stmt: *const clang
     }
 }
 
-fn trans_create_compound_assign(
+fn transCreateCompoundAssign(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.CompoundAssignOperator,
@@ -3903,7 +3903,7 @@ fn trans_create_compound_assign(
     return block_scope.complete(c);
 }
 
-fn remove_cvqualifiers(c: *Context, dst_type_node: Node, expr: Node) Error!Node {
+fn removeCVQualifiers(c: *Context, dst_type_node: Node, expr: Node) Error!Node {
     const const_casted = try Tag.const_cast.create(c.arena, expr);
     const volatile_casted = try Tag.volatile_cast.create(c.arena, const_casted);
     return Tag.as.create(c.arena, .{
@@ -3912,7 +3912,7 @@ fn remove_cvqualifiers(c: *Context, dst_type_node: Node, expr: Node) Error!Node 
     });
 }
 
-fn trans_cptr_cast(
+fn transCPtrCast(
     c: *Context,
     scope: *Scope,
     loc: clang.SourceLocation,
@@ -3951,7 +3951,7 @@ fn trans_cptr_cast(
     }
 }
 
-fn trans_floating_literal(c: *Context, expr: *const clang.FloatingLiteral, used: ResultUsed) TransError!Node {
+fn transFloatingLiteral(c: *Context, expr: *const clang.FloatingLiteral, used: ResultUsed) TransError!Node {
     // TODO use something more accurate than widening to a larger float type and printing that result
     switch (expr.getRawSemantics()) {
         .IEEEhalf, // f16
@@ -3982,7 +3982,7 @@ fn trans_floating_literal(c: *Context, expr: *const clang.FloatingLiteral, used:
     }
 }
 
-fn trans_floating_literal_quad(c: *Context, expr: *const clang.FloatingLiteral, used: ResultUsed) TransError!Node {
+fn transFloatingLiteralQuad(c: *Context, expr: *const clang.FloatingLiteral, used: ResultUsed) TransError!Node {
     assert(switch (expr.getRawSemantics()) {
         .x87DoubleExtended, .IEEEquad => true,
         else => false,
@@ -4023,7 +4023,7 @@ fn trans_floating_literal_quad(c: *Context, expr: *const clang.FloatingLiteral, 
     return maybeSuppressResult(c, used, node);
 }
 
-fn trans_binary_conditional_operator(c: *Context, scope: *Scope, stmt: *const clang.BinaryConditionalOperator, used: ResultUsed) TransError!Node {
+fn transBinaryConditionalOperator(c: *Context, scope: *Scope, stmt: *const clang.BinaryConditionalOperator, used: ResultUsed) TransError!Node {
     // GNU extension of the ternary operator where the middle expression is
     // omitted, the condition itself is returned if it evaluates to true
     const qt = @as(*const clang.Expr, @ptrCast(stmt)).getType();
@@ -4079,7 +4079,7 @@ fn trans_binary_conditional_operator(c: *Context, scope: *Scope, stmt: *const cl
     return maybeSuppressResult(c, used, res);
 }
 
-fn trans_conditional_operator(c: *Context, scope: *Scope, stmt: *const clang.ConditionalOperator, used: ResultUsed) TransError!Node {
+fn transConditionalOperator(c: *Context, scope: *Scope, stmt: *const clang.ConditionalOperator, used: ResultUsed) TransError!Node {
     var cond_scope = Scope.Condition{
         .base = .{
             .parent = scope,
@@ -4116,12 +4116,12 @@ fn trans_conditional_operator(c: *Context, scope: *Scope, stmt: *const clang.Con
     return if_node;
 }
 
-fn maybe_suppress_result(c: *Context, used: ResultUsed, result: Node) TransError!Node {
+fn maybeSuppressResult(c: *Context, used: ResultUsed, result: Node) TransError!Node {
     if (used == .used) return result;
     return Tag.discard.create(c.arena, .{ .should_skip = false, .value = result });
 }
 
-fn add_top_level_decl(c: *Context, name: []const u8, decl_node: Node) !void {
+fn addTopLevelDecl(c: *Context, name: []const u8, decl_node: Node) !void {
     const gop = try c.global_scope.sym_table.getOrPut(name);
     if (!gop.found_existing) {
         gop.value_ptr.* = decl_node;
@@ -4129,7 +4129,7 @@ fn add_top_level_decl(c: *Context, name: []const u8, decl_node: Node) !void {
     }
 }
 
-fn trans_qual_type_initialized_string_literal(c: *Context, elem_ty: Node, string_lit: *const clang.StringLiteral) TypeError!Node {
+fn transQualTypeInitializedStringLiteral(c: *Context, elem_ty: Node, string_lit: *const clang.StringLiteral) TypeError!Node {
     const string_lit_size = string_lit.getLength();
     const array_size = @as(usize, @intCast(string_lit_size));
 
@@ -4142,7 +4142,7 @@ fn trans_qual_type_initialized_string_literal(c: *Context, elem_ty: Node, string
 
 /// Translate a qualtype for a variable with an initializer. This only matters
 /// for incomplete arrays, since the initializer determines the size of the array.
-fn trans_qual_type_initialized(
+fn transQualTypeInitialized(
     c: *Context,
     scope: *Scope,
     qt: clang.QualType,
@@ -4177,19 +4177,19 @@ fn trans_qual_type_initialized(
     return transQualType(c, scope, qt, source_loc);
 }
 
-fn trans_qual_type(c: *Context, scope: *Scope, qt: clang.QualType, source_loc: clang.SourceLocation) TypeError!Node {
+fn transQualType(c: *Context, scope: *Scope, qt: clang.QualType, source_loc: clang.SourceLocation) TypeError!Node {
     return transType(c, scope, qt.getTypePtr(), source_loc);
 }
 
 /// Produces a Zig AST node by translating a Clang QualType, respecting the width, but modifying the signed-ness.
 /// Asserts the type is an integer.
-fn trans_qual_type_int_width_of(c: *Context, ty: clang.QualType, is_signed: bool) TypeError!Node {
+fn transQualTypeIntWidthOf(c: *Context, ty: clang.QualType, is_signed: bool) TypeError!Node {
     return transTypeIntWidthOf(c, qualTypeCanon(ty), is_signed);
 }
 
 /// Produces a Zig AST node by translating a Clang Type, respecting the width, but modifying the signed-ness.
 /// Asserts the type is an integer.
-fn trans_type_int_width_of(c: *Context, ty: *const clang.Type, is_signed: bool) TypeError!Node {
+fn transTypeIntWidthOf(c: *Context, ty: *const clang.Type, is_signed: bool) TypeError!Node {
     assert(ty.getTypeClass() == .Builtin);
     const builtin_ty = @as(*const clang.BuiltinType, @ptrCast(ty));
     return Tag.type.create(c.arena, switch (builtin_ty.getKind()) {
@@ -4205,7 +4205,7 @@ fn trans_type_int_width_of(c: *Context, ty: *const clang.Type, is_signed: bool) 
     });
 }
 
-fn is_cbuiltin_type(qt: clang.QualType, kind: clang.BuiltinTypeKind) bool {
+fn isCBuiltinType(qt: clang.QualType, kind: clang.BuiltinTypeKind) bool {
     const c_type = qualTypeCanon(qt);
     if (c_type.getTypeClass() != .Builtin)
         return false;
@@ -4213,15 +4213,15 @@ fn is_cbuiltin_type(qt: clang.QualType, kind: clang.BuiltinTypeKind) bool {
     return builtin_ty.getKind() == kind;
 }
 
-fn qual_type_is_ptr(qt: clang.QualType) bool {
+fn qualTypeIsPtr(qt: clang.QualType) bool {
     return qualTypeCanon(qt).getTypeClass() == .Pointer;
 }
 
-fn qual_type_is_boolean(qt: clang.QualType) bool {
+fn qualTypeIsBoolean(qt: clang.QualType) bool {
     return qualTypeCanon(qt).isBooleanType();
 }
 
-fn qual_type_int_bit_width(c: *Context, qt: clang.QualType) !u32 {
+fn qualTypeIntBitWidth(c: *Context, qt: clang.QualType) !u32 {
     const ty = qt.getTypePtr();
 
     switch (ty.getTypeClass()) {
@@ -4263,7 +4263,7 @@ fn qual_type_int_bit_width(c: *Context, qt: clang.QualType) !u32 {
     }
 }
 
-fn qual_type_child_is_fn_proto(qt: clang.QualType) bool {
+fn qualTypeChildIsFnProto(qt: clang.QualType) bool {
     const ty = qualTypeCanon(qt);
 
     switch (ty.getTypeClass()) {
@@ -4272,12 +4272,12 @@ fn qual_type_child_is_fn_proto(qt: clang.QualType) bool {
     }
 }
 
-fn qual_type_canon(qt: clang.QualType) *const clang.Type {
+fn qualTypeCanon(qt: clang.QualType) *const clang.Type {
     const canon = qt.getCanonicalType();
     return canon.getTypePtr();
 }
 
-fn get_expr_qual_type(c: *Context, expr: *const clang.Expr) clang.QualType {
+fn getExprQualType(c: *Context, expr: *const clang.Expr) clang.QualType {
     blk: {
         // If this is a C `char *`, turn it into a `const char *`
         if (expr.getStmtClass() != .ImplicitCastExprClass) break :blk;
@@ -4294,7 +4294,7 @@ fn get_expr_qual_type(c: *Context, expr: *const clang.Expr) clang.QualType {
     return expr.getType();
 }
 
-fn type_is_opaque(c: *Context, ty: *const clang.Type, loc: clang.SourceLocation) bool {
+fn typeIsOpaque(c: *Context, ty: *const clang.Type, loc: clang.SourceLocation) bool {
     switch (ty.getTypeClass()) {
         .Builtin => {
             const builtin_ty = @as(*const clang.BuiltinType, @ptrCast(ty));
@@ -4332,7 +4332,7 @@ fn type_is_opaque(c: *Context, ty: *const clang.Type, loc: clang.SourceLocation)
 }
 
 /// plain `char *` (not const; not explicitly signed or unsigned)
-fn qual_type_is_char_star(qt: clang.QualType) bool {
+fn qualTypeIsCharStar(qt: clang.QualType) bool {
     if (qualTypeIsPtr(qt)) {
         const child_qt = qualTypeCanon(qt).getPointeeType();
         return cIsUnqualifiedChar(child_qt) and !child_qt.isConstQualified();
@@ -4341,7 +4341,7 @@ fn qual_type_is_char_star(qt: clang.QualType) bool {
 }
 
 /// C `char` without explicit signed or unsigned qualifier
-fn c_is_unqualified_char(qt: clang.QualType) bool {
+fn cIsUnqualifiedChar(qt: clang.QualType) bool {
     const c_type = qualTypeCanon(qt);
     if (c_type.getTypeClass() != .Builtin) return false;
     const builtin_ty = @as(*const clang.BuiltinType, @ptrCast(c_type));
@@ -4351,11 +4351,11 @@ fn c_is_unqualified_char(qt: clang.QualType) bool {
     };
 }
 
-fn c_is_integer(qt: clang.QualType) bool {
+fn cIsInteger(qt: clang.QualType) bool {
     return cIsSignedInteger(qt) or cIsUnsignedInteger(qt);
 }
 
-fn c_is_unsigned_integer(qt: clang.QualType) bool {
+fn cIsUnsignedInteger(qt: clang.QualType) bool {
     const c_type = qualTypeCanon(qt);
     if (c_type.getTypeClass() != .Builtin) return false;
     const builtin_ty = @as(*const clang.BuiltinType, @ptrCast(c_type));
@@ -4374,7 +4374,7 @@ fn c_is_unsigned_integer(qt: clang.QualType) bool {
     };
 }
 
-fn c_int_type_to_index(qt: clang.QualType) u8 {
+fn cIntTypeToIndex(qt: clang.QualType) u8 {
     const c_type = qualTypeCanon(qt);
     assert(c_type.getTypeClass() == .Builtin);
     const builtin_ty = @as(*const clang.BuiltinType, @ptrCast(c_type));
@@ -4390,14 +4390,14 @@ fn c_int_type_to_index(qt: clang.QualType) u8 {
     };
 }
 
-fn c_int_type_cmp(a: clang.QualType, b: clang.QualType) math.Order {
+fn cIntTypeCmp(a: clang.QualType, b: clang.QualType) math.Order {
     const a_index = cIntTypeToIndex(a);
     const b_index = cIntTypeToIndex(b);
     return math.order(a_index, b_index);
 }
 
 /// Checks if expr is an integer literal >= 0
-fn c_is_non_negative_int_literal(c: *Context, expr: *const clang.Expr) bool {
+fn cIsNonNegativeIntLiteral(c: *Context, expr: *const clang.Expr) bool {
     if (@as(*const clang.Stmt, @ptrCast(expr)).getStmtClass() == .IntegerLiteralClass) {
         var signum: c_int = undefined;
         if (!(@as(*const clang.IntegerLiteral, @ptrCast(expr)).getSignum(&signum, c.clang_context))) {
@@ -4408,7 +4408,7 @@ fn c_is_non_negative_int_literal(c: *Context, expr: *const clang.Expr) bool {
     return false;
 }
 
-fn c_is_signed_integer(qt: clang.QualType) bool {
+fn cIsSignedInteger(qt: clang.QualType) bool {
     const c_type = qualTypeCanon(qt);
     if (c_type.getTypeClass() != .Builtin) return false;
     const builtin_ty = @as(*const clang.BuiltinType, @ptrCast(c_type));
@@ -4425,14 +4425,14 @@ fn c_is_signed_integer(qt: clang.QualType) bool {
     };
 }
 
-fn c_is_native_int(qt: clang.QualType) bool {
+fn cIsNativeInt(qt: clang.QualType) bool {
     const c_type = qualTypeCanon(qt);
     if (c_type.getTypeClass() != .Builtin) return false;
     const builtin_ty = @as(*const clang.BuiltinType, @ptrCast(c_type));
     return builtin_ty.getKind() == .Int;
 }
 
-fn c_is_floating(qt: clang.QualType) bool {
+fn cIsFloating(qt: clang.QualType) bool {
     const c_type = qualTypeCanon(qt);
     if (c_type.getTypeClass() != .Builtin) return false;
     const builtin_ty = @as(*const clang.BuiltinType, @ptrCast(c_type));
@@ -4446,7 +4446,7 @@ fn c_is_floating(qt: clang.QualType) bool {
     };
 }
 
-fn c_is_long_long_integer(qt: clang.QualType) bool {
+fn cIsLongLongInteger(qt: clang.QualType) bool {
     const c_type = qualTypeCanon(qt);
     if (c_type.getTypeClass() != .Builtin) return false;
     const builtin_ty = @as(*const clang.BuiltinType, @ptrCast(c_type));
@@ -4455,7 +4455,7 @@ fn c_is_long_long_integer(qt: clang.QualType) bool {
         else => false,
     };
 }
-fn trans_create_node_assign(
+fn transCreateNodeAssign(
     c: *Context,
     scope: *Scope,
     result_used: ResultUsed,
@@ -4506,7 +4506,7 @@ fn trans_create_node_assign(
     return block_scope.complete(c);
 }
 
-fn trans_create_node_infix_op(
+fn transCreateNodeInfixOp(
     c: *Context,
     op: Tag,
     lhs: Node,
@@ -4524,7 +4524,7 @@ fn trans_create_node_infix_op(
     return maybeSuppressResult(c, used, Node.initPayload(&payload.base));
 }
 
-fn trans_create_node_bool_infix_op(
+fn transCreateNodeBoolInfixOp(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.BinaryOperator,
@@ -4539,7 +4539,7 @@ fn trans_create_node_bool_infix_op(
     return transCreateNodeInfixOp(c, op, lhs, rhs, used);
 }
 
-fn trans_create_node_apint(c: *Context, int: *const clang.APSInt) !Node {
+fn transCreateNodeAPInt(c: *Context, int: *const clang.APSInt) !Node {
     const num_limbs = math.cast(usize, int.getNumWords()) orelse return error.OutOfMemory;
     var aps_int = int;
     const is_negative = int.isSigned() and int.isNegative();
@@ -4582,7 +4582,7 @@ fn trans_create_node_apint(c: *Context, int: *const clang.APSInt) !Node {
     return res;
 }
 
-fn trans_create_node_number(c: *Context, num: anytype, num_kind: enum { int, float }) !Node {
+fn transCreateNodeNumber(c: *Context, num: anytype, num_kind: enum { int, float }) !Node {
     const fmt_s = switch (@typeInfo(@TypeOf(num))) {
         .Int, .ComptimeInt => "{d}",
         else => "{s}",
@@ -4594,7 +4594,7 @@ fn trans_create_node_number(c: *Context, num: anytype, num_kind: enum { int, flo
         return Tag.integer_literal.create(c.arena, str);
 }
 
-fn trans_create_node_macro_fn(c: *Context, name: []const u8, ref: Node, proto_alias: *ast.Payload.Func) !Node {
+fn transCreateNodeMacroFn(c: *Context, name: []const u8, ref: Node, proto_alias: *ast.Payload.Func) !Node {
     var fn_params = std.ArrayList(ast.Payload.Param).init(c.gpa);
     defer fn_params.deinit();
 
@@ -4636,7 +4636,7 @@ fn trans_create_node_macro_fn(c: *Context, name: []const u8, ref: Node, proto_al
     });
 }
 
-fn trans_create_node_shift_op(
+fn transCreateNodeShiftOp(
     c: *Context,
     scope: *Scope,
     stmt: *const clang.BinaryOperator,
@@ -4657,7 +4657,7 @@ fn trans_create_node_shift_op(
     return transCreateNodeInfixOp(c, op, lhs, rhs_casted, used);
 }
 
-fn trans_type(c: *Context, scope: *Scope, ty: *const clang.Type, source_loc: clang.SourceLocation) TypeError!Node {
+fn transType(c: *Context, scope: *Scope, ty: *const clang.Type, source_loc: clang.SourceLocation) TypeError!Node {
     switch (ty.getTypeClass()) {
         .Builtin => {
             const builtin_ty = @as(*const clang.BuiltinType, @ptrCast(ty));
@@ -4828,7 +4828,7 @@ fn trans_type(c: *Context, scope: *Scope, ty: *const clang.Type, source_loc: cla
     }
 }
 
-fn qual_type_was_demoted_to_opaque(c: *Context, qt: clang.QualType) bool {
+fn qualTypeWasDemotedToOpaque(c: *Context, qt: clang.QualType) bool {
     const ty = qt.getTypePtr();
     switch (qt.getTypeClass()) {
         .Typedef => {
@@ -4881,7 +4881,7 @@ fn qual_type_was_demoted_to_opaque(c: *Context, qt: clang.QualType) bool {
     }
 }
 
-fn is_anyopaque(qt: clang.QualType) bool {
+fn isAnyopaque(qt: clang.QualType) bool {
     const ty = qt.getTypePtr();
     switch (ty.getTypeClass()) {
         .Builtin => {
@@ -4921,7 +4921,7 @@ const FnDeclContext = struct {
     is_export: bool,
 };
 
-fn trans_cc(
+fn transCC(
     c: *Context,
     fn_ty: *const clang.FunctionType,
     source_loc: clang.SourceLocation,
@@ -4946,7 +4946,7 @@ fn trans_cc(
     }
 }
 
-fn trans_fn_proto(
+fn transFnProto(
     c: *Context,
     fn_decl: ?*const clang.FunctionDecl,
     fn_proto_ty: *const clang.FunctionProtoType,
@@ -4960,7 +4960,7 @@ fn trans_fn_proto(
     return finishTransFnProto(c, fn_decl, fn_proto_ty, fn_ty, source_loc, fn_decl_context, is_var_args, cc, is_pub);
 }
 
-fn trans_fn_no_proto(
+fn transFnNoProto(
     c: *Context,
     fn_ty: *const clang.FunctionType,
     source_loc: clang.SourceLocation,
@@ -4972,7 +4972,7 @@ fn trans_fn_no_proto(
     return finishTransFnProto(c, null, null, fn_ty, source_loc, fn_decl_context, is_var_args, cc, is_pub);
 }
 
-fn finish_trans_fn_proto(
+fn finishTransFnProto(
     c: *Context,
     fn_decl: ?*const clang.FunctionDecl,
     fn_proto_ty: ?*const clang.FunctionProtoType,
@@ -5088,7 +5088,7 @@ fn fail(
     return err;
 }
 
-pub fn fail_decl(c: *Context, loc: clang.SourceLocation, name: []const u8, comptime format: []const u8, args: anytype) Error!void {
+pub fn failDecl(c: *Context, loc: clang.SourceLocation, name: []const u8, comptime format: []const u8, args: anytype) Error!void {
     // location
     // pub const name = @compileError(msg);
     const fail_msg = try std.fmt.allocPrint(c.arena, format, args);
@@ -5138,7 +5138,7 @@ const MacroCtx = struct {
         return failDecl(c, self.loc, self.name, fmt, args);
     }
 
-    fn make_slicer(self: *const MacroCtx) MacroSlicer {
+    fn makeSlicer(self: *const MacroCtx) MacroSlicer {
         return .{ .source = self.source, .tokens = self.list };
     }
 
@@ -5147,7 +5147,7 @@ const MacroCtx = struct {
         invalid_arg_usage: []const u8,
     };
 
-    fn check_translatable_macro(self: *MacroCtx, scope: *Scope, params: []const ast.Payload.Param) ?MacroTranslateError {
+    fn checkTranslatableMacro(self: *MacroCtx, scope: *Scope, params: []const ast.Payload.Param) ?MacroTranslateError {
         const slicer = self.makeSlicer();
         var last_is_type_kw = false;
         var i: usize = 1; // index 0 is the macro name
@@ -5179,7 +5179,7 @@ const MacroCtx = struct {
     }
 };
 
-fn get_macro_text(unit: *const clang.ASTUnit, c: *const Context, macro: *const clang.MacroDefinitionRecord) ![]const u8 {
+fn getMacroText(unit: *const clang.ASTUnit, c: *const Context, macro: *const clang.MacroDefinitionRecord) ![]const u8 {
     const begin_loc = macro.getSourceRange_getBegin();
     const end_loc = clang.Lexer.getLocForEndOfToken(macro.getSourceRange_getEnd(), c.source_manager, unit);
 
@@ -5194,7 +5194,7 @@ fn get_macro_text(unit: *const clang.ASTUnit, c: *const Context, macro: *const c
     return c.arena.dupe(u8, result.buf);
 }
 
-fn trans_preprocessor_entities(c: *Context, unit: *clang.ASTUnit) Error!void {
+fn transPreprocessorEntities(c: *Context, unit: *clang.ASTUnit) Error!void {
     // TODO if we see #undef, delete it from the table
     var it = unit.getLocalPreprocessingEntities_begin();
     const it_end = unit.getLocalPreprocessingEntities_end();
@@ -5268,7 +5268,7 @@ fn trans_preprocessor_entities(c: *Context, unit: *clang.ASTUnit) Error!void {
     }
 }
 
-fn trans_macro_define(c: *Context, m: *MacroCtx) ParseError!void {
+fn transMacroDefine(c: *Context, m: *MacroCtx) ParseError!void {
     const scope = &c.global_scope.base;
 
     if (m.checkTranslatableMacro(scope, &.{})) |err| switch (err) {
@@ -5332,7 +5332,7 @@ fn trans_macro_define(c: *Context, m: *MacroCtx) ParseError!void {
     try addTopLevelDecl(c, m.name, node);
 }
 
-fn trans_macro_fn_define(c: *Context, m: *MacroCtx) ParseError!void {
+fn transMacroFnDefine(c: *Context, m: *MacroCtx) ParseError!void {
     const macro_slicer = m.makeSlicer();
     if (try c.pattern_list.match(c.gpa, macro_slicer)) |pattern| {
         const decl = try Tag.pub_var_simple.create(c.arena, .{
@@ -5409,7 +5409,7 @@ fn trans_macro_fn_define(c: *Context, m: *MacroCtx) ParseError!void {
 
 const ParseError = Error || error{ParseError};
 
-fn parse_cexpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     // TODO parseCAssignExpr here
     var block_scope = try Scope.Block.init(c, scope, true);
     defer block_scope.deinit();
@@ -5441,7 +5441,7 @@ fn parse_cexpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     return try block_scope.complete(c);
 }
 
-fn parse_cnum_lit(ctx: *Context, m: *MacroCtx) ParseError!Node {
+fn parseCNumLit(ctx: *Context, m: *MacroCtx) ParseError!Node {
     const lit_bytes = m.slice();
     var bytes = try std.ArrayListUnmanaged(u8).initCapacity(ctx.arena, lit_bytes.len + 3);
 
@@ -5573,7 +5573,7 @@ fn parse_cnum_lit(ctx: *Context, m: *MacroCtx) ParseError!Node {
     }
 }
 
-fn zigify_escape_sequences(ctx: *Context, m: *MacroCtx) ![]const u8 {
+fn zigifyEscapeSequences(ctx: *Context, m: *MacroCtx) ![]const u8 {
     var source = m.slice();
     for (source, 0..) |c, i| {
         if (c == '\"' or c == '\'') {
@@ -5743,7 +5743,7 @@ fn zigify_escape_sequences(ctx: *Context, m: *MacroCtx) ![]const u8 {
 /// non-ASCII characters (c > 127) are also treated as non-printable by fmtSliceEscapeLower.
 /// If a C string literal or char literal in a macro is not valid UTF-8, we need to escape
 /// non-ASCII characters so that the Zig source we output will itself be UTF-8.
-fn escape_unprintables(ctx: *Context, m: *MacroCtx) ![]const u8 {
+fn escapeUnprintables(ctx: *Context, m: *MacroCtx) ![]const u8 {
     const zigified = try zigifyEscapeSequences(ctx, m);
     if (std.unicode.utf8ValidateSlice(zigified)) return zigified;
 
@@ -5756,7 +5756,7 @@ fn escape_unprintables(ctx: *Context, m: *MacroCtx) ![]const u8 {
     };
 }
 
-fn parse_cprimary_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCPrimaryExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     const tok = m.next().?;
     const slice = m.slice();
     switch (tok) {
@@ -5818,7 +5818,7 @@ fn parse_cprimary_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node
     }
 }
 
-fn macro_int_from_bool(c: *Context, node: Node) !Node {
+fn macroIntFromBool(c: *Context, node: Node) !Node {
     if (!isBoolRes(node)) {
         return node;
     }
@@ -5826,7 +5826,7 @@ fn macro_int_from_bool(c: *Context, node: Node) !Node {
     return Tag.int_from_bool.create(c.arena, node);
 }
 
-fn macro_int_to_bool(c: *Context, node: Node) !Node {
+fn macroIntToBool(c: *Context, node: Node) !Node {
     if (isBoolRes(node)) {
         return node;
     }
@@ -5839,7 +5839,7 @@ fn macro_int_to_bool(c: *Context, node: Node) !Node {
     return Tag.not_equal.create(c.arena, .{ .lhs = node, .rhs = Tag.zero_literal.init() });
 }
 
-fn parse_ccond_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCCondExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     const node = try parseCOrExpr(c, m, scope);
     if (m.peek().? != .question_mark) {
         return node;
@@ -5852,7 +5852,7 @@ fn parse_ccond_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     return Tag.@"if".create(c.arena, .{ .cond = node, .then = then_body, .@"else" = else_body });
 }
 
-fn parse_cor_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCOrExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     var node = try parseCAndExpr(c, m, scope);
     while (m.next().? == .pipe_pipe) {
         const lhs = try macroIntToBool(c, node);
@@ -5863,7 +5863,7 @@ fn parse_cor_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     return node;
 }
 
-fn parse_cand_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCAndExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     var node = try parseCBitOrExpr(c, m, scope);
     while (m.next().? == .ampersand_ampersand) {
         const lhs = try macroIntToBool(c, node);
@@ -5874,7 +5874,7 @@ fn parse_cand_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     return node;
 }
 
-fn parse_cbit_or_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCBitOrExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     var node = try parseCBitXorExpr(c, m, scope);
     while (m.next().? == .pipe) {
         const lhs = try macroIntFromBool(c, node);
@@ -5885,7 +5885,7 @@ fn parse_cbit_or_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node 
     return node;
 }
 
-fn parse_cbit_xor_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCBitXorExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     var node = try parseCBitAndExpr(c, m, scope);
     while (m.next().? == .caret) {
         const lhs = try macroIntFromBool(c, node);
@@ -5896,7 +5896,7 @@ fn parse_cbit_xor_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node
     return node;
 }
 
-fn parse_cbit_and_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCBitAndExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     var node = try parseCEqExpr(c, m, scope);
     while (m.next().? == .ampersand) {
         const lhs = try macroIntFromBool(c, node);
@@ -5907,7 +5907,7 @@ fn parse_cbit_and_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node
     return node;
 }
 
-fn parse_ceq_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCEqExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     var node = try parseCRelExpr(c, m, scope);
     while (true) {
         switch (m.peek().?) {
@@ -5928,7 +5928,7 @@ fn parse_ceq_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     }
 }
 
-fn parse_crel_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCRelExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     var node = try parseCShiftExpr(c, m, scope);
     while (true) {
         switch (m.peek().?) {
@@ -5961,7 +5961,7 @@ fn parse_crel_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     }
 }
 
-fn parse_cshift_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCShiftExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     var node = try parseCAddSubExpr(c, m, scope);
     while (true) {
         switch (m.peek().?) {
@@ -5982,7 +5982,7 @@ fn parse_cshift_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     }
 }
 
-fn parse_cadd_sub_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCAddSubExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     var node = try parseCMulExpr(c, m, scope);
     while (true) {
         switch (m.peek().?) {
@@ -6003,7 +6003,7 @@ fn parse_cadd_sub_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node
     }
 }
 
-fn parse_cmul_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCMulExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     var node = try parseCCastExpr(c, m, scope);
     while (true) {
         switch (m.next().?) {
@@ -6030,7 +6030,7 @@ fn parse_cmul_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     }
 }
 
-fn parse_ccast_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCCastExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     switch (m.next().?) {
         .l_paren => {
             if (try parseCTypeName(c, m, scope, true)) |type_name| {
@@ -6068,7 +6068,7 @@ fn parse_ccast_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
 }
 
 // allow_fail is set when unsure if we are parsing a type-name
-fn parse_ctype_name(c: *Context, m: *MacroCtx, scope: *Scope, allow_fail: bool) ParseError!?Node {
+fn parseCTypeName(c: *Context, m: *MacroCtx, scope: *Scope, allow_fail: bool) ParseError!?Node {
     if (try parseCSpecifierQualifierList(c, m, scope, allow_fail)) |node| {
         return try parseCAbstractDeclarator(c, m, node);
     } else {
@@ -6076,7 +6076,7 @@ fn parse_ctype_name(c: *Context, m: *MacroCtx, scope: *Scope, allow_fail: bool) 
     }
 }
 
-fn parse_cspecifier_qualifier_list(c: *Context, m: *MacroCtx, scope: *Scope, allow_fail: bool) ParseError!?Node {
+fn parseCSpecifierQualifierList(c: *Context, m: *MacroCtx, scope: *Scope, allow_fail: bool) ParseError!?Node {
     const tok = m.next().?;
     switch (tok) {
         .identifier, .extended_identifier => {
@@ -6124,7 +6124,7 @@ fn parse_cspecifier_qualifier_list(c: *Context, m: *MacroCtx, scope: *Scope, all
     }
 }
 
-fn parse_cnumeric_type(c: *Context, m: *MacroCtx) ParseError!Node {
+fn parseCNumericType(c: *Context, m: *MacroCtx) ParseError!Node {
     const KwCounter = struct {
         double: u8 = 0,
         long: u8 = 0,
@@ -6225,7 +6225,7 @@ fn parse_cnumeric_type(c: *Context, m: *MacroCtx) ParseError!Node {
     return error.ParseError;
 }
 
-fn parse_cabstract_declarator(c: *Context, m: *MacroCtx, node: Node) ParseError!Node {
+fn parseCAbstractDeclarator(c: *Context, m: *MacroCtx, node: Node) ParseError!Node {
     switch (m.next().?) {
         .asterisk => {
             // last token of `node`
@@ -6253,7 +6253,7 @@ fn parse_cabstract_declarator(c: *Context, m: *MacroCtx, node: Node) ParseError!
     }
 }
 
-fn parse_cpostfix_expr(c: *Context, m: *MacroCtx, scope: *Scope, type_name: ?Node) ParseError!Node {
+fn parseCPostfixExpr(c: *Context, m: *MacroCtx, scope: *Scope, type_name: ?Node) ParseError!Node {
     var node = try parseCPostfixExprInner(c, m, scope, type_name);
     // In C the preprocessor would handle concatting strings while expanding macros.
     // This should do approximately the same by concatting any strings and identifiers
@@ -6282,7 +6282,7 @@ fn parse_cpostfix_expr(c: *Context, m: *MacroCtx, scope: *Scope, type_name: ?Nod
     return node;
 }
 
-fn parse_cpostfix_expr_inner(c: *Context, m: *MacroCtx, scope: *Scope, type_name: ?Node) ParseError!Node {
+fn parseCPostfixExprInner(c: *Context, m: *MacroCtx, scope: *Scope, type_name: ?Node) ParseError!Node {
     var node = type_name orelse try parseCPrimaryExpr(c, m, scope);
     while (true) {
         switch (m.next().?) {
@@ -6389,7 +6389,7 @@ fn parse_cpostfix_expr_inner(c: *Context, m: *MacroCtx, scope: *Scope, type_name
     }
 }
 
-fn parse_cunary_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
+fn parseCUnaryExpr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     switch (m.next().?) {
         .bang => {
             const operand = try macroIntToBool(c, try parseCCastExpr(c, m, scope));
@@ -6442,7 +6442,7 @@ fn parse_cunary_expr(c: *Context, m: *MacroCtx, scope: *Scope) ParseError!Node {
     }
 }
 
-fn get_container(c: *Context, node: Node) ?Node {
+fn getContainer(c: *Context, node: Node) ?Node {
     switch (node.tag()) {
         .@"union",
         .@"struct",
@@ -6486,7 +6486,7 @@ fn get_container(c: *Context, node: Node) ?Node {
     return null;
 }
 
-fn get_container_type_of(c: *Context, ref: Node) ?Node {
+fn getContainerTypeOf(c: *Context, ref: Node) ?Node {
     if (ref.castTag(.identifier)) |ident| {
         if (c.global_scope.sym_table.get(ident.data)) |value| {
             if (value.castTag(.var_decl)) |var_decl| {
@@ -6507,7 +6507,7 @@ fn get_container_type_of(c: *Context, ref: Node) ?Node {
     return null;
 }
 
-fn get_fn_proto(c: *Context, ref: Node) ?*ast.Payload.Func {
+fn getFnProto(c: *Context, ref: Node) ?*ast.Payload.Func {
     const init = if (ref.castTag(.var_decl)) |v|
         v.data.init orelse return null
     else if (ref.castTag(.var_simple) orelse ref.castTag(.pub_var_simple)) |v|

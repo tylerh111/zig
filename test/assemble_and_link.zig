@@ -2,7 +2,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const tests = @import("tests.zig");
 
-pub fn add_cases(cases: *tests.CompareOutputContext) void {
+pub fn addCases(cases: *tests.CompareOutputContext) void {
     if (builtin.os.tag == .linux and builtin.cpu.arch == .x86_64) {
         cases.addAsm("hello world linux x86_64",
             \\.text

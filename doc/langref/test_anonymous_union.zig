@@ -13,7 +13,7 @@ test "anonymous union literal syntax" {
     try expect(f.float == 12.34);
 }
 
-fn make_number() Number {
+fn makeNumber() Number {
     return .{ .float = 12.34 };
 }
 

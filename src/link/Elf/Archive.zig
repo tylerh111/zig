@@ -1,7 +1,7 @@
 objects: std.ArrayListUnmanaged(Object) = .{},
 strtab: std.ArrayListUnmanaged(u8) = .{},
 
-pub fn is_archive(path: []const u8) !bool {
+pub fn isArchive(path: []const u8) !bool {
     const file = try std.fs.cwd().openFile(path, .{});
     defer file.close();
     const reader = file.reader();
@@ -78,13 +78,13 @@ pub fn parse(self: *Archive, elf_file: *Elf, path: []const u8, handle_index: Fil
     }
 }
 
-fn get_string(self: Archive, off: u32) []const u8 {
+fn getString(self: Archive, off: u32) []const u8 {
     assert(off < self.strtab.items.len);
     const name = mem.sliceTo(@as([*:'\n']const u8, @ptrCast(self.strtab.items.ptr + off)), 0);
     return name[0 .. name.len - 1];
 }
 
-pub fn set_ar_hdr(opts: struct {
+pub fn setArHdr(opts: struct {
     name: union(enum) {
         symtab: void,
         strtab: void,
@@ -232,7 +232,7 @@ pub const ArSymtab = struct {
         /// Index of the file defining the global.
         file_index: File.Index,
 
-        pub fn less_than(ctx: void, lhs: Entry, rhs: Entry) bool {
+        pub fn lessThan(ctx: void, lhs: Entry, rhs: Entry) bool {
             _ = ctx;
             if (lhs.off == rhs.off) return lhs.file_index < rhs.file_index;
             return lhs.off < rhs.off;

@@ -59,7 +59,7 @@ pub fn render(base: *BaseRenderer) !void {
     if (renderer.base.errors.entries.len != 0) return error.LowerFail;
 }
 
-fn render_fn(r: *Renderer, name: []const u8, decl: Ir.Decl) !void {
+fn renderFn(r: *Renderer, name: []const u8, decl: Ir.Decl) !void {
     _ = decl;
     return r.base.fail(name, "TODO implement lowering functions", .{});
 }

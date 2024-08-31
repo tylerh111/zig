@@ -19,7 +19,7 @@ pub fn deinit(self: *GCCDetector) void {
     if (!self.is_valid) return;
 }
 
-pub fn append_tool_path(self: *const GCCDetector, tc: *Toolchain) !void {
+pub fn appendToolPath(self: *const GCCDetector, tc: *Toolchain) !void {
     if (!self.is_valid) return;
     return tc.addPathFromComponents(&.{
         self.parent_lib_path,
@@ -29,7 +29,7 @@ pub fn append_tool_path(self: *const GCCDetector, tc: *Toolchain) !void {
     }, .program);
 }
 
-fn add_default_gccprefixes(prefixes: *std.ArrayListUnmanaged([]const u8), tc: *const Toolchain) !void {
+fn addDefaultGCCPrefixes(prefixes: *std.ArrayListUnmanaged([]const u8), tc: *const Toolchain) !void {
     const sysroot = tc.getSysroot();
     const target = tc.getTarget();
     if (sysroot.len == 0 and target.os.tag == .linux and tc.filesystem.exists("/opt/rh")) {
@@ -57,7 +57,7 @@ fn add_default_gccprefixes(prefixes: *std.ArrayListUnmanaged([]const u8), tc: *c
     }
 }
 
-fn collect_lib_dirs_and_triples(
+fn collectLibDirsAndTriples(
     tc: *Toolchain,
     lib_dirs: *std.ArrayListUnmanaged([]const u8),
     triple_aliases: *std.ArrayListUnmanaged([]const u8),
@@ -492,7 +492,7 @@ pub fn discover(self: *GCCDetector, tc: *Toolchain) !void {
     }
 }
 
-fn find_biarch_multilibs(
+fn findBiarchMultilibs(
     tc: *const Toolchain,
     result: *Multilib.Detected,
     target: std.Target,
@@ -553,7 +553,7 @@ fn find_biarch_multilibs(
     return result.select(flags);
 }
 
-fn scan_gccfor_multilibs(
+fn scanGCCForMultilibs(
     self: *GCCDetector,
     tc: *const Toolchain,
     target: std.Target,
@@ -579,7 +579,7 @@ fn scan_gccfor_multilibs(
     return true;
 }
 
-fn scan_lib_dir_for_gcctriple(
+fn scanLibDirForGCCTriple(
     self: *GCCDetector,
     tc: *const Toolchain,
     target: std.Target,
@@ -631,7 +631,7 @@ fn scan_lib_dir_for_gcctriple(
     }
 }
 
-fn gcc_toolchain_dir(tc: *const Toolchain) []const u8 {
+fn gccToolchainDir(tc: *const Toolchain) []const u8 {
     const sysroot = tc.getSysroot();
     if (sysroot.len != 0) return "";
     return system_defaults.gcc_install_prefix;

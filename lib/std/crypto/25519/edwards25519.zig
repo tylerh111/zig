@@ -28,7 +28,7 @@ pub const Edwards25519 = struct {
     is_base: bool = false,
 
     /// Decode an Edwards25519 point from its compressed (Y+sign) coordinates.
-    pub fn from_bytes(s: [encoded_length]u8) EncodingError!Edwards25519 {
+    pub fn fromBytes(s: [encoded_length]u8) EncodingError!Edwards25519 {
         const z = Fe.one;
         const y = Fe.fromBytes(s);
         var u = y.sq();
@@ -49,7 +49,7 @@ pub const Edwards25519 = struct {
     }
 
     /// Encode an Edwards25519 point.
-    pub fn to_bytes(p: Edwards25519) [encoded_length]u8 {
+    pub fn toBytes(p: Edwards25519) [encoded_length]u8 {
         const zi = p.z.invert();
         var s = p.y.mul(zi).toBytes();
         s[31] ^= @as(u8, @intFromBool(p.x.mul(zi).isNegative())) << 7;
@@ -57,7 +57,7 @@ pub const Edwards25519 = struct {
     }
 
     /// Check that the encoding of a point is canonical.
-    pub fn reject_non_canonical(s: [32]u8) NonCanonicalError!void {
+    pub fn rejectNonCanonical(s: [32]u8) NonCanonicalError!void {
         return Fe.rejectNonCanonical(s, true);
     }
 
@@ -73,7 +73,7 @@ pub const Edwards25519 = struct {
     pub const identityElement = Edwards25519{ .x = Fe.zero, .y = Fe.one, .z = Fe.one, .t = Fe.zero };
 
     /// Reject the neutral element.
-    pub fn reject_identity(p: Edwards25519) IdentityElementError!void {
+    pub fn rejectIdentity(p: Edwards25519) IdentityElementError!void {
         if (p.x.isZero()) {
             return error.IdentityElement;
         }
@@ -85,7 +85,7 @@ pub const Edwards25519 = struct {
     ///
     /// - `WeakPublicKeyError` is returned if the point belongs to a low-order subgroup.
     /// - `UnexpectedSubgroupError` is returned otherwise.
-    pub fn reject_unexpected_subgroup(p: Edwards25519) (WeakPublicKeyError || UnexpectedSubgroupError)!void {
+    pub fn rejectUnexpectedSubgroup(p: Edwards25519) (WeakPublicKeyError || UnexpectedSubgroupError)!void {
         try p.rejectLowOrder();
 
         // Multiply p by the order of subgroup - This is a prime order group, so the result should be the neutral element.
@@ -120,13 +120,13 @@ pub const Edwards25519 = struct {
     }
 
     /// Multiply a point by the cofactor
-    pub fn clear_cofactor(p: Edwards25519) Edwards25519 {
+    pub fn clearCofactor(p: Edwards25519) Edwards25519 {
         return p.dbl().dbl().dbl();
     }
 
     /// Check that the point does not generate a low-order group.
     /// Return a `WeakPublicKey` error if it does.
-    pub fn reject_low_order(p: Edwards25519) WeakPublicKeyError!void {
+    pub fn rejectLowOrder(p: Edwards25519) WeakPublicKeyError!void {
         const zi = p.z.invert();
         const x = p.x.mul(zi);
         const y = p.y.mul(zi);
@@ -190,14 +190,14 @@ pub const Edwards25519 = struct {
         return q;
     }
 
-    inline fn c_mov(p: *Edwards25519, a: Edwards25519, c: u64) void {
+    inline fn cMov(p: *Edwards25519, a: Edwards25519, c: u64) void {
         p.x.cMov(a.x, c);
         p.y.cMov(a.y, c);
         p.z.cMov(a.z, c);
         p.t.cMov(a.t, c);
     }
 
-    inline fn pc_select(comptime n: usize, pc: *const [n]Edwards25519, b: u8) Edwards25519 {
+    inline fn pcSelect(comptime n: usize, pc: *const [n]Edwards25519, b: u8) Edwards25519 {
         var t = Edwards25519.identityElement;
         comptime var i: u8 = 1;
         inline while (i < pc.len) : (i += 1) {
@@ -230,7 +230,7 @@ pub const Edwards25519 = struct {
     // Based on real-world benchmarks, we only use this for multi-scalar multiplication.
     // NAF could be useful to half the size of precomputation tables, but we intentionally
     // avoid these to keep the standard library lightweight.
-    fn pc_mul(pc: *const [9]Edwards25519, s: [32]u8, comptime vartime: bool) IdentityElementError!Edwards25519 {
+    fn pcMul(pc: *const [9]Edwards25519, s: [32]u8, comptime vartime: bool) IdentityElementError!Edwards25519 {
         std.debug.assert(vartime);
         const e = slide(s);
         var q = Edwards25519.identityElement;
@@ -250,7 +250,7 @@ pub const Edwards25519 = struct {
     }
 
     // Scalar multiplication with a 4-bit window and the first 15 multiples.
-    fn pc_mul16(pc: *const [16]Edwards25519, s: [32]u8, comptime vartime: bool) IdentityElementError!Edwards25519 {
+    fn pcMul16(pc: *const [16]Edwards25519, s: [32]u8, comptime vartime: bool) IdentityElementError!Edwards25519 {
         var q = Edwards25519.identityElement;
         var pos: usize = 252;
         while (true) : (pos -= 4) {
@@ -299,7 +299,7 @@ pub const Edwards25519 = struct {
 
     /// Multiply an Edwards25519 point by a *PUBLIC* scalar *IN VARIABLE TIME*
     /// This can be used for signature verification.
-    pub fn mul_public(p: Edwards25519, s: [32]u8) (IdentityElementError || WeakPublicKeyError)!Edwards25519 {
+    pub fn mulPublic(p: Edwards25519, s: [32]u8) (IdentityElementError || WeakPublicKeyError)!Edwards25519 {
         if (p.is_base) {
             return pcMul16(&basePointPc, s, true);
         } else {
@@ -311,7 +311,7 @@ pub const Edwards25519 = struct {
 
     /// Double-base multiplication of public parameters - Compute (p1*s1)+(p2*s2) *IN VARIABLE TIME*
     /// This can be used for signature verification.
-    pub fn mul_double_base_public(p1: Edwards25519, s1: [32]u8, p2: Edwards25519, s2: [32]u8) (IdentityElementError || WeakPublicKeyError)!Edwards25519 {
+    pub fn mulDoubleBasePublic(p1: Edwards25519, s1: [32]u8, p2: Edwards25519, s2: [32]u8) (IdentityElementError || WeakPublicKeyError)!Edwards25519 {
         var pc1_array: [9]Edwards25519 = undefined;
         const pc1 = if (p1.is_base) basePointPc[0..9] else pc: {
             pc1_array = precompute(p1, 8);
@@ -350,7 +350,7 @@ pub const Edwards25519 = struct {
 
     /// Multiscalar multiplication *IN VARIABLE TIME* for public data
     /// Computes ps0*ss0 + ps1*ss1 + ps2*ss2... faster than doing many of these operations individually
-    pub fn mul_multi(comptime count: usize, ps: [count]Edwards25519, ss: [count][32]u8) (IdentityElementError || WeakPublicKeyError)!Edwards25519 {
+    pub fn mulMulti(comptime count: usize, ps: [count]Edwards25519, ss: [count][32]u8) (IdentityElementError || WeakPublicKeyError)!Edwards25519 {
         var pcs: [count][9]Edwards25519 = undefined;
 
         var bpc: [9]Edwards25519 = undefined;
@@ -392,14 +392,14 @@ pub const Edwards25519 = struct {
     /// This is strongly recommended for DH operations.
     /// Return error.WeakPublicKey if the resulting point is
     /// the identity element.
-    pub fn clamped_mul(p: Edwards25519, s: [32]u8) (IdentityElementError || WeakPublicKeyError)!Edwards25519 {
+    pub fn clampedMul(p: Edwards25519, s: [32]u8) (IdentityElementError || WeakPublicKeyError)!Edwards25519 {
         var t: [32]u8 = s;
         scalar.clamp(&t);
         return mul(p, t);
     }
 
     // montgomery -- recover y = sqrt(x^3 + A*x^2 + x)
-    fn xmont_to_ymont(x: Fe) NotSquareError!Fe {
+    fn xmontToYmont(x: Fe) NotSquareError!Fe {
         var x2 = x.sq();
         const x3 = x.mul(x2);
         x2 = x2.mul32(Fe.edwards25519a_32);
@@ -407,7 +407,7 @@ pub const Edwards25519 = struct {
     }
 
     // montgomery affine coordinates to edwards extended coordinates
-    fn mont_to_ed(x: Fe, y: Fe) Edwards25519 {
+    fn montToEd(x: Fe, y: Fe) Edwards25519 {
         const x_plus_one = x.add(Fe.one);
         const x_minus_one = x.sub(Fe.one);
         const x_plus_one_y_inv = x_plus_one.mul(y).invert(); // 1/((x+1)*y)
@@ -450,7 +450,7 @@ pub const Edwards25519 = struct {
     }
 
     /// Map a 64-bit hash into an Edwards25519 point
-    pub fn from_hash(h: [64]u8) Edwards25519 {
+    pub fn fromHash(h: [64]u8) Edwards25519 {
         const fe_f = Fe.fromBytes64(h);
         var elr = elligator2(fe_f);
 
@@ -460,7 +460,7 @@ pub const Edwards25519 = struct {
         return montToEd(elr.x, elr.y).clearCofactor();
     }
 
-    fn string_to_points(comptime n: usize, ctx: []const u8, s: []const u8) [n]Edwards25519 {
+    fn stringToPoints(comptime n: usize, ctx: []const u8, s: []const u8) [n]Edwards25519 {
         debug.assert(n <= 2);
         const H = crypto.hash.sha2.Sha512;
         const h_l: usize = 48;
@@ -517,7 +517,7 @@ pub const Edwards25519 = struct {
     ///
     /// Although not strictly required by the standard, it is recommended to avoid NUL characters in
     /// the context in order to be compatible with other implementations.
-    pub fn from_string(comptime random_oracle: bool, ctx: []const u8, s: []const u8) Edwards25519 {
+    pub fn fromString(comptime random_oracle: bool, ctx: []const u8, s: []const u8) Edwards25519 {
         if (random_oracle) {
             const px = stringToPoints(2, ctx, s);
             return px[0].add(px[1]);
@@ -527,7 +527,7 @@ pub const Edwards25519 = struct {
     }
 
     /// Map a 32 bit uniform bit string into an edwards25519 point
-    pub fn from_uniform(r: [32]u8) Edwards25519 {
+    pub fn fromUniform(r: [32]u8) Edwards25519 {
         var s = r;
         const x_sign = s[31] >> 7;
         s[31] &= 0x7f;

@@ -3397,7 +3397,7 @@ const SocketTestHarness = struct {
     }
 };
 
-fn create_socket_test_harness(ring: *IoUring) !SocketTestHarness {
+fn createSocketTestHarness(ring: *IoUring) !SocketTestHarness {
     // Create a TCP server socket
     var address = try net.Address.parseIp4("127.0.0.1", 0);
     const listener_socket = try createListenerSocket(&address);
@@ -3447,7 +3447,7 @@ fn create_socket_test_harness(ring: *IoUring) !SocketTestHarness {
     };
 }
 
-fn create_listener_socket(address: *net.Address) !posix.socket_t {
+fn createListenerSocket(address: *net.Address) !posix.socket_t {
     const kernel_backlog = 1;
     const listener_socket = try posix.socket(address.any.family, posix.SOCK.STREAM | posix.SOCK.CLOEXEC, 0);
     errdefer posix.close(listener_socket);
@@ -3876,7 +3876,7 @@ test "waitid" {
 }
 
 /// For use in tests. Returns SkipZigTest if kernel version is less than required.
-inline fn skip_kernel_less_than(required: std.SemanticVersion) !void {
+inline fn skipKernelLessThan(required: std.SemanticVersion) !void {
     if (!is_linux) return error.SkipZigTest;
 
     var uts: linux.utsname = undefined;

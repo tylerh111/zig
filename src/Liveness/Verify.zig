@@ -27,7 +27,7 @@ pub fn verify(self: *Verify) Error!void {
 
 const LiveMap = std.AutoHashMapUnmanaged(Air.Inst.Index, void);
 
-fn verify_body(self: *Verify, body: []const Air.Inst.Index) Error!void {
+fn verifyBody(self: *Verify, body: []const Air.Inst.Index) Error!void {
     const ip = self.intern_pool;
     const tags = self.air.instructions.items(.tag);
     const data = self.air.instructions.items(.data);
@@ -555,11 +555,11 @@ fn verify_body(self: *Verify, body: []const Air.Inst.Index) Error!void {
     }
 }
 
-fn verify_death(self: *Verify, inst: Air.Inst.Index, operand: Air.Inst.Index) Error!void {
+fn verifyDeath(self: *Verify, inst: Air.Inst.Index, operand: Air.Inst.Index) Error!void {
     try self.verifyOperand(inst, operand.toRef(), true);
 }
 
-fn verify_operand(self: *Verify, inst: Air.Inst.Index, op_ref: Air.Inst.Ref, dies: bool) Error!void {
+fn verifyOperand(self: *Verify, inst: Air.Inst.Index, op_ref: Air.Inst.Ref, dies: bool) Error!void {
     const operand = op_ref.toIndexAllowNone() orelse {
         assert(!dies);
         return;
@@ -571,7 +571,7 @@ fn verify_operand(self: *Verify, inst: Air.Inst.Index, op_ref: Air.Inst.Ref, die
     }
 }
 
-fn verify_inst_operands(
+fn verifyInstOperands(
     self: *Verify,
     inst: Air.Inst.Index,
     operands: [Liveness.bpi - 1]Air.Inst.Ref,
@@ -583,7 +583,7 @@ fn verify_inst_operands(
     try self.verifyInst(inst);
 }
 
-fn verify_inst(self: *Verify, inst: Air.Inst.Index) Error!void {
+fn verifyInst(self: *Verify, inst: Air.Inst.Index) Error!void {
     if (self.liveness.isUnused(inst)) {
         assert(!self.live.contains(inst));
     } else {
@@ -591,7 +591,7 @@ fn verify_inst(self: *Verify, inst: Air.Inst.Index) Error!void {
     }
 }
 
-fn verify_matching_liveness(self: *Verify, block: Air.Inst.Index, live: LiveMap) Error!void {
+fn verifyMatchingLiveness(self: *Verify, block: Air.Inst.Index, live: LiveMap) Error!void {
     if (self.live.count() != live.count()) return invalid("%{}: different deaths across branches", .{block});
     var live_it = self.live.keyIterator();
     while (live_it.next()) |live_inst| if (!live.contains(live_inst.*)) return invalid("%{}: different deaths across branches", .{block});

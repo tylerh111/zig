@@ -28,7 +28,7 @@ buffer: [buffer_len]u8 = undefined,
 wp: usize = 0, // write position
 rp: usize = 0, // read position
 
-fn write_all(self: *Self, buf: []const u8) void {
+fn writeAll(self: *Self, buf: []const u8) void {
     for (buf) |c| self.write(c);
 }
 
@@ -41,7 +41,7 @@ pub fn write(self: *Self, b: u8) void {
 
 /// Write match (back-reference to the same data slice) starting at `distance`
 /// back from current write position, and `length` of bytes.
-pub fn write_match(self: *Self, length: u16, distance: u16) !void {
+pub fn writeMatch(self: *Self, length: u16, distance: u16) !void {
     if (self.wp < distance or
         length < consts.base_length or length > consts.max_length or
         distance < consts.min_distance or distance > consts.max_distance)
@@ -82,7 +82,7 @@ pub fn write_match(self: *Self, length: u16, distance: u16) !void {
 
 /// Returns writable part of the internal buffer of size `n` at most. Advances
 /// write pointer, assumes that returned buffer will be filled with data.
-pub fn get_writable(self: *Self, n: usize) []u8 {
+pub fn getWritable(self: *Self, n: usize) []u8 {
     const wp = self.wp & mask;
     const len = @min(n, buffer_len - wp);
     self.wp += len;
@@ -97,7 +97,7 @@ pub fn read(self: *Self) []const u8 {
 
 /// Read part of available data. Can return less than max even if there are
 /// more than max decoded data.
-pub fn read_at_most(self: *Self, limit: usize) []const u8 {
+pub fn readAtMost(self: *Self, limit: usize) []const u8 {
     const rb = self.readBlock(if (limit == 0) buffer_len else limit);
     defer self.rp += rb.len;
     return self.buffer[rb.head..rb.tail];
@@ -110,7 +110,7 @@ const ReadBlock = struct {
 };
 
 /// Returns position of continous read block data.
-fn read_block(self: *Self, max: usize) ReadBlock {
+fn readBlock(self: *Self, max: usize) ReadBlock {
     const r = self.rp & mask;
     const w = self.wp & mask;
     const n = @min(

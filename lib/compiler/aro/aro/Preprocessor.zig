@@ -58,7 +58,7 @@ const Macro = struct {
         return true;
     }
 
-    fn tok_eql(pp: *Preprocessor, a: RawToken, b: RawToken) bool {
+    fn tokEql(pp: *Preprocessor, a: RawToken, b: RawToken) bool {
         return mem.eql(u8, pp.tokSlice(a), pp.tokSlice(b));
     }
 };
@@ -136,7 +136,7 @@ pub fn init(comp: *Compilation) Preprocessor {
 }
 
 /// Initialize Preprocessor with builtin macros.
-pub fn init_default(comp: *Compilation) !Preprocessor {
+pub fn initDefault(comp: *Compilation) !Preprocessor {
     var pp = init(comp);
     errdefer pp.deinit();
     try pp.addBuiltinMacros();
@@ -211,7 +211,7 @@ const builtin_macros = struct {
     }};
 };
 
-fn add_builtin_macro(pp: *Preprocessor, name: []const u8, is_func: bool, tokens: []const RawToken) !void {
+fn addBuiltinMacro(pp: *Preprocessor, name: []const u8, is_func: bool, tokens: []const RawToken) !void {
     try pp.defines.putNoClobber(pp.gpa, name, .{
         .params = &builtin_macros.args,
         .tokens = tokens,
@@ -222,7 +222,7 @@ fn add_builtin_macro(pp: *Preprocessor, name: []const u8, is_func: bool, tokens:
     });
 }
 
-pub fn add_builtin_macros(pp: *Preprocessor) !void {
+pub fn addBuiltinMacros(pp: *Preprocessor) !void {
     try pp.addBuiltinMacro("__has_attribute", true, &builtin_macros.has_attribute);
     try pp.addBuiltinMacro("__has_c_attribute", true, &builtin_macros.has_c_attribute);
     try pp.addBuiltinMacro("__has_declspec_attribute", true, &builtin_macros.has_declspec_attribute);
@@ -256,14 +256,14 @@ pub fn deinit(pp: *Preprocessor) void {
 }
 
 /// Free buffers that are not needed after preprocessing
-fn clear_buffers(pp: *Preprocessor) void {
+fn clearBuffers(pp: *Preprocessor) void {
     pp.token_buf.clearAndFree();
     pp.char_buf.clearAndFree();
     pp.top_expansion_buf.clearAndFree();
     pp.hideset.clearAndFree();
 }
 
-pub fn expansion_slice(pp: *Preprocessor, tok: Tree.TokenIndex) []Source.Location {
+pub fn expansionSlice(pp: *Preprocessor, tok: Tree.TokenIndex) []Source.Location {
     const S = struct {
         fn order_token_index(context: void, lhs: Tree.TokenIndex, rhs: Tree.TokenIndex) std.math.Order {
             _ = context;
@@ -280,7 +280,7 @@ pub fn expansion_slice(pp: *Preprocessor, tok: Tree.TokenIndex) []Source.Locatio
 }
 
 /// Preprocess a compilation unit of sources into a parsable list of tokens.
-pub fn preprocess_sources(pp: *Preprocessor, sources: []const Source) Error!void {
+pub fn preprocessSources(pp: *Preprocessor, sources: []const Source) Error!void {
     assert(sources.len > 1);
     const first = sources[0];
     try pp.addIncludeStart(first);
@@ -326,7 +326,7 @@ pub fn tokenize(pp: *Preprocessor, source: Source) Error!Token {
     }
 }
 
-pub fn add_include_start(pp: *Preprocessor, source: Source) !void {
+pub fn addIncludeStart(pp: *Preprocessor, source: Source) !void {
     if (pp.linemarkers == .none) return;
     try pp.addToken(.{ .id = .include_start, .loc = .{
         .id = source.id,
@@ -335,7 +335,7 @@ pub fn add_include_start(pp: *Preprocessor, source: Source) !void {
     } });
 }
 
-pub fn add_include_resume(pp: *Preprocessor, source: Source.Id, offset: u32, line: u32) !void {
+pub fn addIncludeResume(pp: *Preprocessor, source: Source.Id, offset: u32, line: u32) !void {
     if (pp.linemarkers == .none) return;
     try pp.addToken(.{ .id = .include_resume, .loc = .{
         .id = source,
@@ -344,7 +344,7 @@ pub fn add_include_resume(pp: *Preprocessor, source: Source.Id, offset: u32, lin
     } });
 }
 
-fn invalid_token_diagnostic(tok_id: Token.Id) Diagnostics.Tag {
+fn invalidTokenDiagnostic(tok_id: Token.Id) Diagnostics.Tag {
     return switch (tok_id) {
         .unterminated_string_literal => .unterminated_string_literal_warning,
         .empty_char_literal => .empty_char_literal_warning,
@@ -354,7 +354,7 @@ fn invalid_token_diagnostic(tok_id: Token.Id) Diagnostics.Tag {
 }
 
 /// Return the name of the #ifndef guard macro that starts a source, if any.
-fn find_include_guard(pp: *Preprocessor, source: Source) ?[]const u8 {
+fn findIncludeGuard(pp: *Preprocessor, source: Source) ?[]const u8 {
     var tokenizer = Tokenizer{
         .buf = source.buf,
         .langopts = pp.comp.langopts,
@@ -370,7 +370,7 @@ fn find_include_guard(pp: *Preprocessor, source: Source) ?[]const u8 {
     return pp.tokSlice(guard);
 }
 
-fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpansionLocs {
+fn preprocessExtra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpansionLocs {
     var guard_name = pp.findIncludeGuard(source);
 
     pp.preprocess_count += 1;
@@ -738,14 +738,14 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
 
 /// Get raw token source string.
 /// Returned slice is invalidated when comp.generated_buf is updated.
-pub fn tok_slice(pp: *Preprocessor, token: anytype) []const u8 {
+pub fn tokSlice(pp: *Preprocessor, token: anytype) []const u8 {
     if (token.id.lexeme()) |some| return some;
     const source = pp.comp.getSource(token.source);
     return source.buf[token.start..token.end];
 }
 
 /// Convert a token from the Tokenizer into a token used by the parser.
-fn tok_from_raw(raw: RawToken) TokenWithExpansionLocs {
+fn tokFromRaw(raw: RawToken) TokenWithExpansionLocs {
     return .{
         .id = raw.id,
         .loc = .{
@@ -767,7 +767,7 @@ fn err(pp: *Preprocessor, raw: RawToken, tag: Diagnostics.Tag) !void {
     }, &.{});
 }
 
-fn err_str(pp: *Preprocessor, tok: TokenWithExpansionLocs, tag: Diagnostics.Tag, str: []const u8) !void {
+fn errStr(pp: *Preprocessor, tok: TokenWithExpansionLocs, tag: Diagnostics.Tag, str: []const u8) !void {
     try pp.comp.addDiagnostic(.{
         .tag = tag,
         .loc = tok.loc,
@@ -789,7 +789,7 @@ fn fatal(pp: *Preprocessor, raw: RawToken, comptime fmt: []const u8, args: anyty
     return error.FatalError;
 }
 
-fn fatal_not_found(pp: *Preprocessor, tok: TokenWithExpansionLocs, filename: []const u8) Compilation.Error {
+fn fatalNotFound(pp: *Preprocessor, tok: TokenWithExpansionLocs, filename: []const u8) Compilation.Error {
     const old = pp.comp.diagnostics.fatal_errors;
     pp.comp.diagnostics.fatal_errors = true;
     defer pp.comp.diagnostics.fatal_errors = old;
@@ -800,7 +800,7 @@ fn fatal_not_found(pp: *Preprocessor, tok: TokenWithExpansionLocs, filename: []c
     unreachable; // addExtra should've returned FatalError
 }
 
-fn verbose_log(pp: *Preprocessor, raw: RawToken, comptime fmt: []const u8, args: anytype) void {
+fn verboseLog(pp: *Preprocessor, raw: RawToken, comptime fmt: []const u8, args: anytype) void {
     const source = pp.comp.getSource(raw.source);
     const line_col = source.lineCol(.{ .id = raw.source, .line = raw.line, .byte_offset = raw.start });
 
@@ -816,7 +816,7 @@ fn verbose_log(pp: *Preprocessor, raw: RawToken, comptime fmt: []const u8, args:
 }
 
 /// Consume next token, error if it is not an identifier.
-fn expect_macro_name(pp: *Preprocessor, tokenizer: *Tokenizer) Error!?[]const u8 {
+fn expectMacroName(pp: *Preprocessor, tokenizer: *Tokenizer) Error!?[]const u8 {
     const macro_name = tokenizer.nextNoWS();
     if (!macro_name.id.isMacroIdentifier()) {
         try pp.err(macro_name, .macro_name_missing);
@@ -827,7 +827,7 @@ fn expect_macro_name(pp: *Preprocessor, tokenizer: *Tokenizer) Error!?[]const u8
 }
 
 /// Skip until after a newline, error if extra tokens before it.
-fn expect_nl(pp: *Preprocessor, tokenizer: *Tokenizer) Error!void {
+fn expectNl(pp: *Preprocessor, tokenizer: *Tokenizer) Error!void {
     var sent_err = false;
     while (true) {
         const tok = tokenizer.next();
@@ -840,14 +840,14 @@ fn expect_nl(pp: *Preprocessor, tokenizer: *Tokenizer) Error!void {
     }
 }
 
-fn get_token_state(pp: *const Preprocessor) TokenState {
+fn getTokenState(pp: *const Preprocessor) TokenState {
     return .{
         .tokens_len = pp.tokens.len,
         .expansion_entries_len = pp.expansion_entries.len,
     };
 }
 
-fn restore_token_state(pp: *Preprocessor, state: TokenState) void {
+fn restoreTokenState(pp: *Preprocessor, state: TokenState) void {
     pp.tokens.len = state.tokens_len;
     pp.expansion_entries.len = state.expansion_entries_len;
 }
@@ -996,7 +996,7 @@ fn expr(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!bool {
 
 /// Turns macro_tok from .keyword_defined into .zero or .one depending on whether the argument is defined
 /// Returns the number of tokens consumed
-fn handle_keyword_defined(pp: *Preprocessor, macro_tok: *TokenWithExpansionLocs, tokens: []const TokenWithExpansionLocs, eof: RawToken) !usize {
+fn handleKeywordDefined(pp: *Preprocessor, macro_tok: *TokenWithExpansionLocs, tokens: []const TokenWithExpansionLocs, eof: RawToken) !usize {
     std.debug.assert(macro_tok.id == .keyword_defined);
     var it = TokenIterator.init(tokens);
     const first = it.nextNoWS() orelse {
@@ -1127,7 +1127,7 @@ fn skip(
 }
 
 // Skip until newline, ignore other tokens.
-fn skip_to_nl(tokenizer: *Tokenizer) void {
+fn skipToNl(tokenizer: *Tokenizer) void {
     while (true) {
         const tok = tokenizer.next();
         if (tok.id == .nl or tok.id == .eof) return;
@@ -1135,7 +1135,7 @@ fn skip_to_nl(tokenizer: *Tokenizer) void {
 }
 
 const ExpandBuf = std.ArrayList(TokenWithExpansionLocs);
-fn remove_placemarkers(buf: *ExpandBuf) void {
+fn removePlacemarkers(buf: *ExpandBuf) void {
     var i: usize = buf.items.len -% 1;
     while (i < buf.items.len) : (i -%= 1) {
         if (buf.items[i].id == .placemarker) {
@@ -1146,7 +1146,7 @@ fn remove_placemarkers(buf: *ExpandBuf) void {
 }
 
 const MacroArguments = std.ArrayList([]const TokenWithExpansionLocs);
-fn deinit_macro_arguments(allocator: Allocator, args: *const MacroArguments) void {
+fn deinitMacroArguments(allocator: Allocator, args: *const MacroArguments) void {
     for (args.items) |item| {
         for (item) |tok| TokenWithExpansionLocs.free(tok.expansion_locs, allocator);
         allocator.free(item);
@@ -1154,7 +1154,7 @@ fn deinit_macro_arguments(allocator: Allocator, args: *const MacroArguments) voi
     args.deinit();
 }
 
-fn expand_obj_macro(pp: *Preprocessor, simple_macro: *const Macro) Error!ExpandBuf {
+fn expandObjMacro(pp: *Preprocessor, simple_macro: *const Macro) Error!ExpandBuf {
     var buf = ExpandBuf.init(pp.gpa);
     errdefer buf.deinit();
     if (simple_macro.tokens.len == 0) {
@@ -1220,7 +1220,7 @@ fn expand_obj_macro(pp: *Preprocessor, simple_macro: *const Macro) Error!ExpandB
 /// Returns error.ExpectedStringLiteral if parentheses are not balanced, a non-string-literal
 /// is encountered, or if no string literals are encountered
 /// TODO: destringize (replace all '\\' with a single `\` and all '\"' with a '"')
-fn paste_strings_unsafe(pp: *Preprocessor, toks: []const TokenWithExpansionLocs) ![]const u8 {
+fn pasteStringsUnsafe(pp: *Preprocessor, toks: []const TokenWithExpansionLocs) ![]const u8 {
     const char_top = pp.char_buf.items.len;
     defer pp.char_buf.items.len = char_top;
     var unwrapped = toks;
@@ -1239,7 +1239,7 @@ fn paste_strings_unsafe(pp: *Preprocessor, toks: []const TokenWithExpansionLocs)
 }
 
 /// Handle the _Pragma operator (implemented as a builtin macro)
-fn pragma_operator(pp: *Preprocessor, arg_tok: TokenWithExpansionLocs, operator_loc: Source.Location) !void {
+fn pragmaOperator(pp: *Preprocessor, arg_tok: TokenWithExpansionLocs, operator_loc: Source.Location) !void {
     const arg_slice = pp.expandedSlice(arg_tok);
     const content = arg_slice[1 .. arg_slice.len - 1];
     const directive = "#pragma ";
@@ -1340,7 +1340,7 @@ fn stringify(pp: *Preprocessor, tokens: []const TokenWithExpansionLocs) !void {
     try pp.char_buf.appendSlice("\"\n");
 }
 
-fn reconstruct_include_string(pp: *Preprocessor, param_toks: []const TokenWithExpansionLocs, embed_args: ?*[]const TokenWithExpansionLocs, first: TokenWithExpansionLocs) !?[]const u8 {
+fn reconstructIncludeString(pp: *Preprocessor, param_toks: []const TokenWithExpansionLocs, embed_args: ?*[]const TokenWithExpansionLocs, first: TokenWithExpansionLocs) !?[]const u8 {
     assert(param_toks.len != 0);
     const char_top = pp.char_buf.items.len;
     defer pp.char_buf.items.len = char_top;
@@ -1423,7 +1423,7 @@ fn reconstruct_include_string(pp: *Preprocessor, param_toks: []const TokenWithEx
     }
 }
 
-fn handle_builtin_macro(pp: *Preprocessor, builtin: RawToken.Id, param_toks: []const TokenWithExpansionLocs, src_loc: Source.Location) Error!bool {
+fn handleBuiltinMacro(pp: *Preprocessor, builtin: RawToken.Id, param_toks: []const TokenWithExpansionLocs, src_loc: Source.Location) Error!bool {
     switch (builtin) {
         .macro_param_has_attribute,
         .macro_param_has_declspec_attribute,
@@ -1528,7 +1528,7 @@ fn handle_builtin_macro(pp: *Preprocessor, builtin: RawToken.Id, param_toks: []c
 }
 
 /// Treat whitespace-only paste arguments as empty
-fn get_paste_args(args: []const TokenWithExpansionLocs) []const TokenWithExpansionLocs {
+fn getPasteArgs(args: []const TokenWithExpansionLocs) []const TokenWithExpansionLocs {
     for (args) |tok| {
         if (tok.id != .macro_ws) return args;
     }
@@ -1538,7 +1538,7 @@ fn get_paste_args(args: []const TokenWithExpansionLocs) []const TokenWithExpansi
     }};
 }
 
-fn expand_func_macro(
+fn expandFuncMacro(
     pp: *Preprocessor,
     loc: Source.Location,
     func_macro: *const Macro,
@@ -1934,7 +1934,7 @@ fn expand_func_macro(
     return buf;
 }
 
-fn expand_va_opt(
+fn expandVaOpt(
     pp: *Preprocessor,
     buf: *ExpandBuf,
     raw: RawToken,
@@ -1956,7 +1956,7 @@ fn expand_va_opt(
     }
 }
 
-fn buf_copy_tokens(buf: *ExpandBuf, tokens: []const TokenWithExpansionLocs, src: []const Source.Location) !void {
+fn bufCopyTokens(buf: *ExpandBuf, tokens: []const TokenWithExpansionLocs, src: []const Source.Location) !void {
     try buf.ensureUnusedCapacity(tokens.len);
     for (tokens) |tok| {
         var copy = try tok.dupe(buf.allocator);
@@ -1966,7 +1966,7 @@ fn buf_copy_tokens(buf: *ExpandBuf, tokens: []const TokenWithExpansionLocs, src:
     }
 }
 
-fn next_buf_token(
+fn nextBufToken(
     pp: *Preprocessor,
     tokenizer: *Tokenizer,
     buf: *ExpandBuf,
@@ -1996,7 +1996,7 @@ fn next_buf_token(
     }
 }
 
-fn collect_macro_func_arguments(
+fn collectMacroFuncArguments(
     pp: *Preprocessor,
     tokenizer: *Tokenizer,
     buf: *ExpandBuf,
@@ -2095,7 +2095,7 @@ fn collect_macro_func_arguments(
     return args;
 }
 
-fn remove_expanded_tokens(pp: *Preprocessor, buf: *ExpandBuf, start: usize, len: usize, moving_end_idx: *usize) !void {
+fn removeExpandedTokens(pp: *Preprocessor, buf: *ExpandBuf, start: usize, len: usize, moving_end_idx: *usize) !void {
     for (buf.items[start .. start + len]) |tok| TokenWithExpansionLocs.free(tok.expansion_locs, pp.gpa);
     try buf.replaceRange(start, len, &.{});
     moving_end_idx.* -|= len;
@@ -2119,7 +2119,7 @@ const TokenIterator = struct {
         return .{ .toks = toks, .i = 0 };
     }
 
-    fn next_no_ws(self: *TokenIterator) ?TokenWithExpansionLocs {
+    fn nextNoWS(self: *TokenIterator) ?TokenWithExpansionLocs {
         while (self.i < self.toks.len) : (self.i += 1) {
             const tok = self.toks[self.i];
             if (tok.id == .whitespace or tok.id == .macro_ws) continue;
@@ -2131,7 +2131,7 @@ const TokenIterator = struct {
     }
 };
 
-fn expand_macro_exhaustive(
+fn expandMacroExhaustive(
     pp: *Preprocessor,
     tokenizer: *Tokenizer,
     buf: *ExpandBuf,
@@ -2340,7 +2340,7 @@ fn expand_macro_exhaustive(
 
 /// Try to expand a macro after a possible candidate has been read from the `tokenizer`
 /// into the `raw` token passed as argument
-fn expand_macro(pp: *Preprocessor, tokenizer: *Tokenizer, raw: RawToken) MacroError!void {
+fn expandMacro(pp: *Preprocessor, tokenizer: *Tokenizer, raw: RawToken) MacroError!void {
     var source_tok = tokFromRaw(raw);
     if (!raw.id.isMacroIdentifier()) {
         source_tok.id.simplifyMacroKeyword();
@@ -2380,7 +2380,7 @@ fn expand_macro(pp: *Preprocessor, tokenizer: *Tokenizer, raw: RawToken) MacroEr
     }
 }
 
-fn expanded_slice_extra(pp: *const Preprocessor, tok: anytype, macro_ws_handling: enum { single_macro_ws, preserve_macro_ws }) []const u8 {
+fn expandedSliceExtra(pp: *const Preprocessor, tok: anytype, macro_ws_handling: enum { single_macro_ws, preserve_macro_ws }) []const u8 {
     if (tok.id.lexeme()) |some| {
         if (!tok.id.allowsDigraphs(pp.comp.langopts) and !(tok.id == .macro_ws and macro_ws_handling == .preserve_macro_ws)) return some;
     }
@@ -2401,12 +2401,12 @@ fn expanded_slice_extra(pp: *const Preprocessor, tok: anytype, macro_ws_handling
 }
 
 /// Get expanded token source string.
-pub fn expanded_slice(pp: *const Preprocessor, tok: anytype) []const u8 {
+pub fn expandedSlice(pp: *const Preprocessor, tok: anytype) []const u8 {
     return pp.expandedSliceExtra(tok, .single_macro_ws);
 }
 
 /// Concat two tokens and add the result to pp.generated
-fn paste_tokens(pp: *Preprocessor, lhs_toks: *ExpandBuf, rhs_toks: []const TokenWithExpansionLocs) Error!void {
+fn pasteTokens(pp: *Preprocessor, lhs_toks: *ExpandBuf, rhs_toks: []const TokenWithExpansionLocs) Error!void {
     const lhs = while (lhs_toks.popOrNull()) |lhs| {
         if ((pp.comp.langopts.preserve_comments_in_macros and lhs.id == .comment) or
             (lhs.id != .macro_ws and lhs.id != .comment))
@@ -2464,7 +2464,7 @@ fn paste_tokens(pp: *Preprocessor, lhs_toks: *ExpandBuf, rhs_toks: []const Token
     try bufCopyTokens(lhs_toks, rhs_toks[rhs_rest..], &.{});
 }
 
-fn make_generated_token(pp: *Preprocessor, start: usize, id: Token.Id, source: TokenWithExpansionLocs) !TokenWithExpansionLocs {
+fn makeGeneratedToken(pp: *Preprocessor, start: usize, id: Token.Id, source: TokenWithExpansionLocs) !TokenWithExpansionLocs {
     var pasted_token = TokenWithExpansionLocs{ .id = id, .loc = .{
         .id = .generated,
         .byte_offset = @intCast(start),
@@ -2477,7 +2477,7 @@ fn make_generated_token(pp: *Preprocessor, start: usize, id: Token.Id, source: T
 }
 
 /// Defines a new macro and warns if it is a duplicate
-fn define_macro(pp: *Preprocessor, name_tok: RawToken, macro: Macro) Error!void {
+fn defineMacro(pp: *Preprocessor, name_tok: RawToken, macro: Macro) Error!void {
     const name_str = pp.tokSlice(name_tok);
     const gop = try pp.defines.getOrPut(pp.gpa, name_str);
     if (gop.found_existing and !gop.value_ptr.eql(macro, pp)) {
@@ -2602,7 +2602,7 @@ fn define(pp: *Preprocessor, tokenizer: *Tokenizer) Error!void {
 }
 
 /// Handle a function like #define directive.
-fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_paren: RawToken) Error!void {
+fn defineFn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_paren: RawToken) Error!void {
     assert(macro_name.id.isMacroIdentifier());
     var params = std.ArrayList([]const u8).init(pp.gpa);
     defer params.deinit();
@@ -3028,7 +3028,7 @@ fn include(pp: *Preprocessor, tokenizer: *Tokenizer, which: Compilation.WhichInc
 ///     3. Via a stringified macro argument which is used as an argument to `_Pragma`
 /// operator_loc: Location of `_Pragma`; null if this is from #pragma
 /// arg_locs: expansion locations of the argument to _Pragma. empty if #pragma or a raw string literal was used
-fn make_pragma_token(pp: *Preprocessor, raw: RawToken, operator_loc: ?Source.Location, arg_locs: []const Source.Location) !TokenWithExpansionLocs {
+fn makePragmaToken(pp: *Preprocessor, raw: RawToken, operator_loc: ?Source.Location, arg_locs: []const Source.Location) !TokenWithExpansionLocs {
     var tok = tokFromRaw(raw);
     if (operator_loc) |loc| {
         try tok.addExpansionLocation(pp.gpa, &.{loc});
@@ -3037,26 +3037,26 @@ fn make_pragma_token(pp: *Preprocessor, raw: RawToken, operator_loc: ?Source.Loc
     return tok;
 }
 
-pub fn add_token(pp: *Preprocessor, tok: TokenWithExpansionLocs) !void {
+pub fn addToken(pp: *Preprocessor, tok: TokenWithExpansionLocs) !void {
     if (tok.expansion_locs) |expansion_locs| {
         try pp.expansion_entries.append(pp.gpa, .{ .idx = @intCast(pp.tokens.len), .locs = expansion_locs });
     }
     try pp.tokens.append(pp.gpa, .{ .id = tok.id, .loc = tok.loc });
 }
 
-pub fn add_token_assume_capacity(pp: *Preprocessor, tok: TokenWithExpansionLocs) void {
+pub fn addTokenAssumeCapacity(pp: *Preprocessor, tok: TokenWithExpansionLocs) void {
     if (tok.expansion_locs) |expansion_locs| {
         pp.expansion_entries.appendAssumeCapacity(.{ .idx = @intCast(pp.tokens.len), .locs = expansion_locs });
     }
     pp.tokens.appendAssumeCapacity(.{ .id = tok.id, .loc = tok.loc });
 }
 
-pub fn ensure_total_token_capacity(pp: *Preprocessor, capacity: usize) !void {
+pub fn ensureTotalTokenCapacity(pp: *Preprocessor, capacity: usize) !void {
     try pp.tokens.ensureTotalCapacity(pp.gpa, capacity);
     try pp.expansion_entries.ensureTotalCapacity(pp.gpa, capacity);
 }
 
-pub fn ensure_unused_token_capacity(pp: *Preprocessor, capacity: usize) !void {
+pub fn ensureUnusedTokenCapacity(pp: *Preprocessor, capacity: usize) !void {
     try pp.tokens.ensureUnusedCapacity(pp.gpa, capacity);
     try pp.expansion_entries.ensureUnusedCapacity(pp.gpa, capacity);
 }
@@ -3097,7 +3097,7 @@ fn pragma(pp: *Preprocessor, tokenizer: *Tokenizer, pragma_tok: RawToken, operat
     }, pragma_name_tok.expansionSlice());
 }
 
-fn find_include_filename_token(
+fn findIncludeFilenameToken(
     pp: *Preprocessor,
     first_token: RawToken,
     tokenizer: *Tokenizer,
@@ -3175,7 +3175,7 @@ fn find_include_filename_token(
     return filename_tok;
 }
 
-fn find_include_source(pp: *Preprocessor, tokenizer: *Tokenizer, first: RawToken, which: Compilation.WhichInclude) !Source {
+fn findIncludeSource(pp: *Preprocessor, tokenizer: *Tokenizer, first: RawToken, which: Compilation.WhichInclude) !Source {
     const filename_tok = try pp.findIncludeFilenameToken(first, tokenizer, .expect_nl_eof);
     defer TokenWithExpansionLocs.free(filename_tok.expansion_locs, pp.gpa);
 
@@ -3198,7 +3198,7 @@ fn find_include_source(pp: *Preprocessor, tokenizer: *Tokenizer, first: RawToken
         return pp.fatalNotFound(filename_tok, filename);
 }
 
-fn print_linemarker(
+fn printLinemarker(
     pp: *Preprocessor,
     w: anytype,
     line_no: u32,
@@ -3243,7 +3243,7 @@ fn print_linemarker(
 const collapse_newlines = 8;
 
 /// Pretty print tokens and try to preserve whitespace.
-pub fn pretty_print_tokens(pp: *Preprocessor, w: anytype) !void {
+pub fn prettyPrintTokens(pp: *Preprocessor, w: anytype) !void {
     const tok_ids = pp.tokens.items(.id);
 
     var i: u32 = 0;
@@ -3347,7 +3347,7 @@ pub fn pretty_print_tokens(pp: *Preprocessor, w: anytype) !void {
 test "Preserve pragma tokens sometimes" {
     const allocator = std.testing.allocator;
     const Test = struct {
-        fn run_preprocessor(source_text: []const u8) ![]const u8 {
+        fn runPreprocessor(source_text: []const u8) ![]const u8 {
             var buf = std.ArrayList(u8).init(allocator);
             defer buf.deinit();
 
@@ -3404,7 +3404,7 @@ test "Preserve pragma tokens sometimes" {
 test "destringify" {
     const allocator = std.testing.allocator;
     const Test = struct {
-        fn test_destringify(pp: *Preprocessor, stringified: []const u8, destringified: []const u8) !void {
+        fn testDestringify(pp: *Preprocessor, stringified: []const u8, destringified: []const u8) !void {
             pp.char_buf.clearRetainingCapacity();
             try pp.char_buf.ensureUnusedCapacity(stringified.len);
             pp.destringify(stringified);
@@ -3435,7 +3435,7 @@ test "Include guards" {
     const Test = struct {
         /// This is here so that when #elifdef / #elifndef are added we don't forget
         /// to test that they don't accidentally break include guard detection
-        fn pairs_with_ifndef(tok_id: RawToken.Id) bool {
+        fn pairsWithIfndef(tok_id: RawToken.Id) bool {
             return switch (tok_id) {
                 .keyword_elif,
                 .keyword_elifdef,
@@ -3468,7 +3468,7 @@ test "Include guards" {
             };
         }
 
-        fn test_include_guard(allocator: std.mem.Allocator, comptime template: []const u8, tok_id: RawToken.Id, expected_guards: u32) !void {
+        fn testIncludeGuard(allocator: std.mem.Allocator, comptime template: []const u8, tok_id: RawToken.Id, expected_guards: u32) !void {
             var comp = Compilation.init(allocator);
             defer comp.deinit();
             var pp = Preprocessor.init(&comp);

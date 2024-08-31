@@ -304,7 +304,7 @@ const Contents = struct {
     hash: []const u8,
     is_generic: bool,
 
-    fn hit_count_less_than(context: void, lhs: *const Contents, rhs: *const Contents) bool {
+    fn hitCountLessThan(context: void, lhs: *const Contents, rhs: *const Contents) bool {
         _ = context;
         return lhs.hit_count < rhs.hit_count;
     }
@@ -522,7 +522,7 @@ pub fn main() !void {
     }
 }
 
-fn usage_and_exit(arg0: []const u8) noreturn {
+fn usageAndExit(arg0: []const u8) noreturn {
     std.debug.print("Usage: {s} [--search-path <dir>] --out <dir> --abi <name>\n", .{arg0});
     std.debug.print("--search-path can be used any number of times.\n", .{});
     std.debug.print("    subdirectories of search paths look like, e.g. x86_64-linux-gnu\n", .{});

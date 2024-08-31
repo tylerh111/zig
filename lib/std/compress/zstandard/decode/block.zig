@@ -43,7 +43,7 @@ pub const DecodeState = struct {
     literal_written_count: usize,
     written_count: usize = 0,
 
-    fn state_data(comptime max_accuracy_log: comptime_int) type {
+    fn StateData(comptime max_accuracy_log: comptime_int) type {
         return struct {
             state: State,
             table: Table,
@@ -140,19 +140,19 @@ pub const DecodeState = struct {
     ///
     /// Errors returned:
     ///   - `error.EndOfStream` if `bit_reader` does not contain enough bits.
-    pub fn read_initial_fse_state(self: *DecodeState, bit_reader: *readers.ReverseBitReader) error{EndOfStream}!void {
+    pub fn readInitialFseState(self: *DecodeState, bit_reader: *readers.ReverseBitReader) error{EndOfStream}!void {
         self.literal.state = try bit_reader.readBitsNoEof(u9, self.literal.accuracy_log);
         self.offset.state = try bit_reader.readBitsNoEof(u8, self.offset.accuracy_log);
         self.match.state = try bit_reader.readBitsNoEof(u9, self.match.accuracy_log);
     }
 
-    fn update_repeat_offset(self: *DecodeState, offset: u32) void {
+    fn updateRepeatOffset(self: *DecodeState, offset: u32) void {
         self.repeat_offsets[2] = self.repeat_offsets[1];
         self.repeat_offsets[1] = self.repeat_offsets[0];
         self.repeat_offsets[0] = offset;
     }
 
-    fn use_repeat_offset(self: *DecodeState, index: usize) u32 {
+    fn useRepeatOffset(self: *DecodeState, index: usize) u32 {
         if (index == 1)
             std.mem.swap(u32, &self.repeat_offsets[0], &self.repeat_offsets[1])
         else if (index == 2) {
@@ -164,7 +164,7 @@ pub const DecodeState = struct {
 
     const DataType = enum { offset, match, literal };
 
-    fn update_state(
+    fn updateState(
         self: *DecodeState,
         comptime choice: DataType,
         bit_reader: *readers.ReverseBitReader,
@@ -191,7 +191,7 @@ pub const DecodeState = struct {
         EndOfStream,
     };
 
-    fn update_fse_table(
+    fn updateFseTable(
         self: *DecodeState,
         source: anytype,
         comptime choice: DataType,
@@ -234,7 +234,7 @@ pub const DecodeState = struct {
         offset: u32,
     };
 
-    fn next_sequence(
+    fn nextSequence(
         self: *DecodeState,
         bit_reader: *readers.ReverseBitReader,
     ) error{ InvalidBitStream, EndOfStream }!Sequence {
@@ -281,7 +281,7 @@ pub const DecodeState = struct {
         };
     }
 
-    fn execute_sequence_slice(
+    fn executeSequenceSlice(
         self: *DecodeState,
         dest: []u8,
         write_pos: usize,
@@ -298,7 +298,7 @@ pub const DecodeState = struct {
         self.written_count += sequence.match_length;
     }
 
-    fn execute_sequence_ring_buffer(
+    fn executeSequenceRingBuffer(
         self: *DecodeState,
         dest: *RingBuffer,
         sequence: Sequence,
@@ -337,7 +337,7 @@ pub const DecodeState = struct {
     ///   - `error.EndOfStream` if `bit_reader` does not contain enough bits
     ///   - `error.DestTooSmall` if `dest` is not large enough to holde the
     ///     decompressed sequence
-    pub fn decode_sequence_slice(
+    pub fn decodeSequenceSlice(
         self: *DecodeState,
         dest: []u8,
         write_pos: usize,
@@ -361,7 +361,7 @@ pub const DecodeState = struct {
 
     /// Decode one sequence from `bit_reader` into `dest`; see
     /// `decodeSequenceSlice`.
-    pub fn decode_sequence_ring_buffer(
+    pub fn decodeSequenceRingBuffer(
         self: *DecodeState,
         dest: *RingBuffer,
         bit_reader: anytype,
@@ -381,18 +381,18 @@ pub const DecodeState = struct {
         return sequence_length;
     }
 
-    fn next_literal_multi_stream(
+    fn nextLiteralMultiStream(
         self: *DecodeState,
     ) error{BitStreamHasNoStartBit}!void {
         self.literal_stream_index += 1;
         try self.initLiteralStream(self.literal_streams.four[self.literal_stream_index]);
     }
 
-    fn init_literal_stream(self: *DecodeState, bytes: []const u8) error{BitStreamHasNoStartBit}!void {
+    fn initLiteralStream(self: *DecodeState, bytes: []const u8) error{BitStreamHasNoStartBit}!void {
         try self.literal_stream_reader.init(bytes);
     }
 
-    fn is_literal_stream_empty(self: *DecodeState) bool {
+    fn isLiteralStreamEmpty(self: *DecodeState) bool {
         switch (self.literal_streams) {
             .one => return self.literal_stream_reader.isEmpty(),
             .four => return self.literal_stream_index == 3 and self.literal_stream_reader.isEmpty(),
@@ -403,7 +403,7 @@ pub const DecodeState = struct {
         BitStreamHasNoStartBit,
         UnexpectedEndOfLiteralStream,
     };
-    fn read_literals_bits(
+    fn readLiteralsBits(
         self: *DecodeState,
         bit_count_to_read: usize,
     ) LiteralBitsError!u16 {
@@ -431,7 +431,7 @@ pub const DecodeState = struct {
     ///     `literals`
     ///   - `error.UnexpectedEndOfLiteralStream` and `error.NotFound` if there
     ///     are problems decoding Huffman compressed literals
-    pub fn decode_literals_slice(
+    pub fn decodeLiteralsSlice(
         self: *DecodeState,
         dest: []u8,
         len: usize,
@@ -503,7 +503,7 @@ pub const DecodeState = struct {
     }
 
     /// Decode literals into `dest`; see `decodeLiteralsSlice()`.
-    pub fn decode_literals_ring_buffer(
+    pub fn decodeLiteralsRingBuffer(
         self: *DecodeState,
         dest: *RingBuffer,
         len: usize,
@@ -571,7 +571,7 @@ pub const DecodeState = struct {
         }
     }
 
-    fn get_code(self: *DecodeState, comptime choice: DataType) u32 {
+    fn getCode(self: *DecodeState, comptime choice: DataType) u32 {
         return switch (@field(self, @tagName(choice)).table) {
             .rle => |value| value,
             .fse => |table| table[@field(self, @tagName(choice)).state].symbol,
@@ -596,7 +596,7 @@ pub const DecodeState = struct {
 ///     compressed block
 ///   - `error.DestTooSmall` is `dest` is not large enough to hold the
 ///     decompressed block
-pub fn decode_block(
+pub fn decodeBlock(
     dest: []u8,
     src: []const u8,
     block_header: frame.Zstandard.Block.Header,
@@ -700,7 +700,7 @@ pub fn decode_block(
 /// the size of the decompressed block, which can be used with `dest.sliceLast()`
 /// to get the decompressed bytes. `error.BlockSizeOverMaximum` is returned if
 /// the block's compressed or decompressed size is larger than `block_size_max`.
-pub fn decode_block_ring_buffer(
+pub fn decodeBlockRingBuffer(
     dest: *RingBuffer,
     src: []const u8,
     block_header: frame.Zstandard.Block.Header,
@@ -805,7 +805,7 @@ pub fn decode_block_ring_buffer(
 /// and `decodeBlockRingBuffer` for function that can decode a block without
 /// these extra copies. `error.EndOfStream` is returned if `source` does not
 /// contain enough bytes.
-pub fn decode_block_reader(
+pub fn decodeBlockReader(
     dest: *RingBuffer,
     source: anytype,
     block_header: frame.Zstandard.Block.Header,
@@ -894,7 +894,7 @@ pub fn decode_block_reader(
 }
 
 /// Decode the header of a block.
-pub fn decode_block_header(src: *const [3]u8) frame.Zstandard.Block.Header {
+pub fn decodeBlockHeader(src: *const [3]u8) frame.Zstandard.Block.Header {
     const last_block = src[0] & 1 == 1;
     const block_type = @as(frame.Zstandard.Block.Type, @enumFromInt((src[0] & 0b110) >> 1));
     const block_size = ((src[0] & 0b11111000) >> 3) + (@as(u21, src[1]) << 5) + (@as(u21, src[2]) << 13);
@@ -909,7 +909,7 @@ pub fn decode_block_header(src: *const [3]u8) frame.Zstandard.Block.Header {
 ///
 /// Errors returned:
 ///   - `error.EndOfStream` if `src.len < 3`
-pub fn decode_block_header_slice(src: []const u8) error{EndOfStream}!frame.Zstandard.Block.Header {
+pub fn decodeBlockHeaderSlice(src: []const u8) error{EndOfStream}!frame.Zstandard.Block.Header {
     if (src.len < 3) return error.EndOfStream;
     return decodeBlockHeader(src[0..3]);
 }
@@ -925,7 +925,7 @@ pub fn decode_block_header_slice(src: []const u8) error{EndOfStream}!frame.Zstan
 ///   - `error.MalformedFseTable` if compressed literals have invalid FSE table
 ///   - `error.MalformedHuffmanTree` if there are errors decoding a Huffamn tree
 ///   - `error.EndOfStream` if there are not enough bytes in `src`
-pub fn decode_literals_section_slice(
+pub fn decodeLiteralsSectionSlice(
     src: []const u8,
     consumed_count: *usize,
 ) (error{ MalformedLiteralsHeader, MalformedLiteralsSection, EndOfStream } || huffman.Error)!LiteralsSection {
@@ -982,7 +982,7 @@ pub fn decode_literals_section_slice(
 
 /// Decode a `LiteralsSection` from `src`, incrementing `consumed_count` by the
 /// number of bytes the section uses. See `decodeLiterasSectionSlice()`.
-pub fn decode_literals_section(
+pub fn decodeLiteralsSection(
     source: anytype,
     buffer: []u8,
 ) !LiteralsSection {
@@ -1028,7 +1028,7 @@ pub fn decode_literals_section(
     }
 }
 
-fn decode_streams(size_format: u2, stream_data: []const u8) !LiteralsSection.Streams {
+fn decodeStreams(size_format: u2, stream_data: []const u8) !LiteralsSection.Streams {
     if (size_format == 0) {
         return .{ .one = stream_data };
     }
@@ -1058,7 +1058,7 @@ fn decode_streams(size_format: u2, stream_data: []const u8) !LiteralsSection.Str
 ///
 /// Errors returned:
 ///   - `error.EndOfStream` if there are not enough bytes in `source`
-pub fn decode_literals_header(source: anytype) !LiteralsSection.Header {
+pub fn decodeLiteralsHeader(source: anytype) !LiteralsSection.Header {
     const byte0 = try source.readByte();
     const block_type = @as(LiteralsSection.BlockType, @enumFromInt(byte0 & 0b11));
     const size_format = @as(u2, @intCast((byte0 & 0b1100) >> 2));
@@ -1111,7 +1111,7 @@ pub fn decode_literals_header(source: anytype) !LiteralsSection.Header {
 /// Errors returned:
 ///   - `error.ReservedBitSet` if the reserved bit is set
 ///   - `error.EndOfStream` if there are not enough bytes in `source`
-pub fn decode_sequences_header(
+pub fn decodeSequencesHeader(
     source: anytype,
 ) !SequencesSection.Header {
     var sequence_count: u24 = undefined;

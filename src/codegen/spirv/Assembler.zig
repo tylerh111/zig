@@ -131,7 +131,7 @@ const AsmValue = union(enum) {
     /// Retrieve the result-id of this AsmValue. Asserts that this AsmValue
     /// is of a variant that allows the result to be obtained (not an unresolved
     /// forward declaration, not in the process of being declared, etc).
-    pub fn result_id(self: AsmValue) IdRef {
+    pub fn resultId(self: AsmValue) IdRef {
         return switch (self) {
             .just_declared, .unresolved_forward_reference => unreachable,
             .value => |result| result,
@@ -231,7 +231,7 @@ pub fn assemble(self: *Assembler) Error!void {
         return error.AssembleFail;
 }
 
-fn add_error(self: *Assembler, offset: u32, comptime fmt: []const u8, args: anytype) !void {
+fn addError(self: *Assembler, offset: u32, comptime fmt: []const u8, args: anytype) !void {
     const msg = try std.fmt.allocPrint(self.gpa, fmt, args);
     errdefer self.gpa.free(msg);
     try self.errors.append(self.gpa, .{
@@ -254,7 +254,7 @@ fn todo(self: *Assembler, comptime fmt: []const u8, args: anytype) Error {
 /// records type definitions.
 /// If this function returns `error.AssembleFail`, an explanatory
 /// error message has already been emitted into `self.errors`.
-fn process_instruction(self: *Assembler) !void {
+fn processInstruction(self: *Assembler) !void {
     const result: AsmValue = switch (self.inst.opcode) {
         .OpEntryPoint => {
             return self.fail(0, "cannot export entry points via OpEntryPoint, export the kernel using callconv(.Kernel)", .{});
@@ -289,7 +289,7 @@ fn process_instruction(self: *Assembler) !void {
 
 /// Record `self.inst` into the module's type system, and return the AsmValue that
 /// refers to the result.
-fn process_type_instruction(self: *Assembler) !AsmValue {
+fn processTypeInstruction(self: *Assembler) !AsmValue {
     const operands = self.inst.operands.items;
     const section = &self.spv.sections.types_globals_constants;
     const id = switch (self.inst.opcode) {
@@ -367,7 +367,7 @@ fn process_type_instruction(self: *Assembler) !AsmValue {
 /// - No forward references are allowed in operands.
 /// - Target section is determined from instruction type.
 /// - Function-local instructions are emitted in `self.func`.
-fn process_generic_instruction(self: *Assembler) !?AsmValue {
+fn processGenericInstruction(self: *Assembler) !?AsmValue {
     const operands = self.inst.operands.items;
     const section = switch (self.inst.opcode.class()) {
         .ConstantCreation => &self.spv.sections.types_globals_constants,
@@ -438,7 +438,7 @@ fn process_generic_instruction(self: *Assembler) !?AsmValue {
 
 /// Resolve a value reference. This function makes sure that the reference is
 /// not self-referential, but it does allow the result to be forward declared.
-fn resolve_maybe_forward_ref(self: *Assembler, ref: AsmValue.Ref) !AsmValue {
+fn resolveMaybeForwardRef(self: *Assembler, ref: AsmValue.Ref) !AsmValue {
     const value = self.value_map.values()[ref];
     switch (value) {
         .just_declared => {
@@ -452,7 +452,7 @@ fn resolve_maybe_forward_ref(self: *Assembler, ref: AsmValue.Ref) !AsmValue {
 
 /// Resolve a value reference. This function
 /// makes sure that the result is not self-referential, nor that it is forward declared.
-fn resolve_ref(self: *Assembler, ref: AsmValue.Ref) !AsmValue {
+fn resolveRef(self: *Assembler, ref: AsmValue.Ref) !AsmValue {
     const value = try self.resolveMaybeForwardRef(ref);
     switch (value) {
         .just_declared => unreachable,
@@ -465,7 +465,7 @@ fn resolve_ref(self: *Assembler, ref: AsmValue.Ref) !AsmValue {
     }
 }
 
-fn resolve_ref_id(self: *Assembler, ref: AsmValue.Ref) !IdRef {
+fn resolveRefId(self: *Assembler, ref: AsmValue.Ref) !IdRef {
     const value = try self.resolveRef(ref);
     return value.resultId();
 }
@@ -473,7 +473,7 @@ fn resolve_ref_id(self: *Assembler, ref: AsmValue.Ref) !IdRef {
 /// Attempt to parse an instruction into `self.inst`.
 /// If this function returns `error.AssembleFail`, an explanatory
 /// error message has been emitted into `self.errors`.
-fn parse_instruction(self: *Assembler) !void {
+fn parseInstruction(self: *Assembler) !void {
     self.inst.opcode = undefined;
     self.inst.operands.shrinkRetainingCapacity(0);
     self.inst.string_bytes.shrinkRetainingCapacity(0);
@@ -547,7 +547,7 @@ fn parse_instruction(self: *Assembler) !void {
 }
 
 /// Parse a single operand of a particular type.
-fn parse_operand(self: *Assembler, kind: spec.OperandKind) Error!void {
+fn parseOperand(self: *Assembler, kind: spec.OperandKind) Error!void {
     switch (kind.category()) {
         .bit_enum => try self.parseBitEnum(kind),
         .value_enum => try self.parseValueEnum(kind),
@@ -564,7 +564,7 @@ fn parse_operand(self: *Assembler, kind: spec.OperandKind) Error!void {
 }
 
 /// Also handles parsing any required extra operands.
-fn parse_bit_enum(self: *Assembler, kind: spec.OperandKind) !void {
+fn parseBitEnum(self: *Assembler, kind: spec.OperandKind) !void {
     var tok = self.currentToken();
     try self.expectToken(.value);
 
@@ -611,7 +611,7 @@ fn parse_bit_enum(self: *Assembler, kind: spec.OperandKind) !void {
 }
 
 /// Also handles parsing any required extra operands.
-fn parse_value_enum(self: *Assembler, kind: spec.OperandKind) !void {
+fn parseValueEnum(self: *Assembler, kind: spec.OperandKind) !void {
     const tok = self.currentToken();
     try self.expectToken(.value);
 
@@ -638,7 +638,7 @@ fn parse_value_enum(self: *Assembler, kind: spec.OperandKind) !void {
     }
 }
 
-fn parse_ref_id(self: *Assembler) !void {
+fn parseRefId(self: *Assembler) !void {
     const tok = self.currentToken();
     try self.expectToken(.result_id);
 
@@ -652,7 +652,7 @@ fn parse_ref_id(self: *Assembler) !void {
     try self.inst.operands.append(self.gpa, .{ .ref_id = index });
 }
 
-fn parse_literal_integer(self: *Assembler) !void {
+fn parseLiteralInteger(self: *Assembler) !void {
     const tok = self.currentToken();
     try self.expectToken(.value);
     // According to the SPIR-V machine readable grammar, a LiteralInteger
@@ -667,7 +667,7 @@ fn parse_literal_integer(self: *Assembler) !void {
     try self.inst.operands.append(self.gpa, .{ .literal32 = value });
 }
 
-fn parse_literal_ext_inst_integer(self: *Assembler) !void {
+fn parseLiteralExtInstInteger(self: *Assembler) !void {
     const tok = self.currentToken();
     try self.expectToken(.value);
     const text = self.tokenText(tok);
@@ -677,7 +677,7 @@ fn parse_literal_ext_inst_integer(self: *Assembler) !void {
     try self.inst.operands.append(self.gpa, .{ .literal32 = value });
 }
 
-fn parse_string(self: *Assembler) !void {
+fn parseString(self: *Assembler) !void {
     const tok = self.currentToken();
     try self.expectToken(.string);
     // Note, the string might not have a closing quote. In this case,
@@ -698,7 +698,7 @@ fn parse_string(self: *Assembler) !void {
     try self.inst.operands.append(self.gpa, .{ .string = string_offset });
 }
 
-fn parse_context_dependent_number(self: *Assembler) !void {
+fn parseContextDependentNumber(self: *Assembler) !void {
     // For context dependent numbers, the actual type to parse is determined by the instruction.
     // Currently, this operand appears in OpConstant and OpSpecConstant, where the too-be-parsed type
     // is determined by the result type. That means that in this instructions we have to resolve the
@@ -743,7 +743,7 @@ fn parse_context_dependent_number(self: *Assembler) !void {
     return self.fail(tok.start, "cannot parse literal constant", .{});
 }
 
-fn parse_context_dependent_int(self: *Assembler, signedness: std.builtin.Signedness, width: u32) !void {
+fn parseContextDependentInt(self: *Assembler, signedness: std.builtin.Signedness, width: u32) !void {
     const tok = self.currentToken();
     try self.expectToken(.value);
 
@@ -776,7 +776,7 @@ fn parse_context_dependent_int(self: *Assembler, signedness: std.builtin.Signedn
     return self.fail(tok.start, "'{s}' is not a valid {s} {}-bit int literal", .{ text, @tagName(signedness), width });
 }
 
-fn parse_context_dependent_float(self: *Assembler, comptime width: u16) !void {
+fn parseContextDependentFloat(self: *Assembler, comptime width: u16) !void {
     const Float = std.meta.Float(width);
     const Int = std.meta.Int(.unsigned, width);
 
@@ -798,7 +798,7 @@ fn parse_context_dependent_float(self: *Assembler, comptime width: u16) !void {
     }
 }
 
-fn parse_phi_source(self: *Assembler) !void {
+fn parsePhiSource(self: *Assembler) !void {
     try self.parseRefId();
     if (self.isAtInstructionBoundary()) {
         return self.fail(self.currentToken().start, "missing phi block parent", .{});
@@ -808,14 +808,14 @@ fn parse_phi_source(self: *Assembler) !void {
 
 /// Returns whether the `current_token` cursor is currently pointing
 /// at the start of a new instruction.
-fn is_at_instruction_boundary(self: Assembler) bool {
+fn isAtInstructionBoundary(self: Assembler) bool {
     return switch (self.currentToken().tag) {
         .opcode, .result_id_assign, .eof => true,
         else => false,
     };
 }
 
-fn expect_token(self: *Assembler, tag: Token.Tag) !void {
+fn expectToken(self: *Assembler, tag: Token.Tag) !void {
     if (self.eatToken(tag))
         return;
 
@@ -825,7 +825,7 @@ fn expect_token(self: *Assembler, tag: Token.Tag) !void {
     });
 }
 
-fn eat_token(self: *Assembler, tag: Token.Tag) bool {
+fn eatToken(self: *Assembler, tag: Token.Tag) bool {
     if (self.testToken(tag)) {
         self.current_token += 1;
         return true;
@@ -833,15 +833,15 @@ fn eat_token(self: *Assembler, tag: Token.Tag) bool {
     return false;
 }
 
-fn test_token(self: Assembler, tag: Token.Tag) bool {
+fn testToken(self: Assembler, tag: Token.Tag) bool {
     return self.currentToken().tag == tag;
 }
 
-fn current_token(self: Assembler) Token {
+fn currentToken(self: Assembler) Token {
     return self.tokens.items[self.current_token];
 }
 
-fn token_text(self: Assembler, tok: Token) []const u8 {
+fn tokenText(self: Assembler, tok: Token) []const u8 {
     return self.src[tok.start..tok.end];
 }
 
@@ -869,7 +869,7 @@ fn tokenize(self: *Assembler) !void {
 /// interpret the token yet.
 /// Note: This function doesn't handle .result_id_assign - this is handled in
 /// tokenize().
-fn next_token(self: *Assembler, start_offset: u32) !Token {
+fn nextToken(self: *Assembler, start_offset: u32) !Token {
     // We generally separate the input into the following types:
     // - Whitespace. Generally ignored, but also used as delimiter for some
     //   tokens.

@@ -24,7 +24,7 @@ comptime {
 // a == b => 1
 // a >  b => 2
 
-inline fn xcmp_xi2(comptime T: type, a: T, b: T) i32 {
+inline fn XcmpXi2(comptime T: type, a: T, b: T) i32 {
     var cmp1: i32 = 0;
     var cmp2: i32 = 0;
     if (a > b)

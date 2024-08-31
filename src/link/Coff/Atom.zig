@@ -29,13 +29,13 @@ next_index: ?Index,
 
 pub const Index = u32;
 
-pub fn get_symbol_index(self: Atom) ?u32 {
+pub fn getSymbolIndex(self: Atom) ?u32 {
     if (self.sym_index == 0) return null;
     return self.sym_index;
 }
 
 /// Returns symbol referencing this atom.
-pub fn get_symbol(self: Atom, coff_file: *const Coff) *const coff.Symbol {
+pub fn getSymbol(self: Atom, coff_file: *const Coff) *const coff.Symbol {
     const sym_index = self.getSymbolIndex().?;
     return coff_file.getSymbol(.{
         .sym_index = sym_index,
@@ -44,7 +44,7 @@ pub fn get_symbol(self: Atom, coff_file: *const Coff) *const coff.Symbol {
 }
 
 /// Returns pointer-to-symbol referencing this atom.
-pub fn get_symbol_ptr(self: Atom, coff_file: *Coff) *coff.Symbol {
+pub fn getSymbolPtr(self: Atom, coff_file: *Coff) *coff.Symbol {
     const sym_index = self.getSymbolIndex().?;
     return coff_file.getSymbolPtr(.{
         .sym_index = sym_index,
@@ -52,13 +52,13 @@ pub fn get_symbol_ptr(self: Atom, coff_file: *Coff) *coff.Symbol {
     });
 }
 
-pub fn get_symbol_with_loc(self: Atom) SymbolWithLoc {
+pub fn getSymbolWithLoc(self: Atom) SymbolWithLoc {
     const sym_index = self.getSymbolIndex().?;
     return .{ .sym_index = sym_index, .file = self.file };
 }
 
 /// Returns the name of this atom.
-pub fn get_name(self: Atom, coff_file: *const Coff) []const u8 {
+pub fn getName(self: Atom, coff_file: *const Coff) []const u8 {
     const sym_index = self.getSymbolIndex().?;
     return coff_file.getSymbolName(.{
         .sym_index = sym_index,
@@ -80,7 +80,7 @@ pub fn capacity(self: Atom, coff_file: *const Coff) u32 {
     }
 }
 
-pub fn free_list_eligible(self: Atom, coff_file: *const Coff) bool {
+pub fn freeListEligible(self: Atom, coff_file: *const Coff) bool {
     // No need to keep a free list node for the last atom.
     const next_index = self.next_index orelse return false;
     const next = coff_file.getAtom(next_index);
@@ -93,7 +93,7 @@ pub fn free_list_eligible(self: Atom, coff_file: *const Coff) bool {
     return surplus >= Coff.min_text_capacity;
 }
 
-pub fn add_relocation(coff_file: *Coff, atom_index: Index, reloc: Relocation) !void {
+pub fn addRelocation(coff_file: *Coff, atom_index: Index, reloc: Relocation) !void {
     const comp = coff_file.base.comp;
     const gpa = comp.gpa;
     log.debug("  (adding reloc of type {s} to target %{d})", .{ @tagName(reloc.type), reloc.target.sym_index });
@@ -104,7 +104,7 @@ pub fn add_relocation(coff_file: *Coff, atom_index: Index, reloc: Relocation) !v
     try gop.value_ptr.append(gpa, reloc);
 }
 
-pub fn add_base_relocation(coff_file: *Coff, atom_index: Index, offset: u32) !void {
+pub fn addBaseRelocation(coff_file: *Coff, atom_index: Index, offset: u32) !void {
     const comp = coff_file.base.comp;
     const gpa = comp.gpa;
     log.debug("  (adding base relocation at offset 0x{x} in %{d})", .{
@@ -118,7 +118,7 @@ pub fn add_base_relocation(coff_file: *Coff, atom_index: Index, offset: u32) !vo
     try gop.value_ptr.append(gpa, offset);
 }
 
-pub fn free_relocations(coff_file: *Coff, atom_index: Index) void {
+pub fn freeRelocations(coff_file: *Coff, atom_index: Index) void {
     const comp = coff_file.base.comp;
     const gpa = comp.gpa;
     var removed_relocs = coff_file.relocs.fetchOrderedRemove(atom_index);

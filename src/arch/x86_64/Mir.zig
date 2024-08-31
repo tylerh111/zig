@@ -264,7 +264,7 @@ pub const Inst = struct {
         /// Mask ___ Quadword
         k_q,
 
-        pub fn from_condition(cc: bits.Condition) Fixes {
+        pub fn fromCondition(cc: bits.Condition) Fixes {
             return switch (cc) {
                 inline else => |cc_tag| @field(Fixes, "_" ++ @tagName(cc_tag)),
                 .z_and_np, .nz_or_p => unreachable,
@@ -1027,7 +1027,7 @@ pub const RegisterList = struct {
     const BitSet = IntegerBitSet(32);
     const Self = @This();
 
-    fn get_index_for_reg(registers: []const Register, reg: Register) BitSet.MaskInt {
+    fn getIndexForReg(registers: []const Register, reg: Register) BitSet.MaskInt {
         for (registers, 0..) |cpreg, i| {
             if (reg.id() == cpreg.id()) return @intCast(i);
         }
@@ -1039,7 +1039,7 @@ pub const RegisterList = struct {
         self.bitset.set(index);
     }
 
-    pub fn is_set(self: Self, registers: []const Register, reg: Register) bool {
+    pub fn isSet(self: Self, registers: []const Register, reg: Register) bool {
         const index = getIndexForReg(registers, reg);
         return self.bitset.isSet(index);
     }
@@ -1178,7 +1178,7 @@ pub fn deinit(mir: *Mir, gpa: std.mem.Allocator) void {
     mir.* = undefined;
 }
 
-pub fn extra_data(mir: Mir, comptime T: type, index: u32) struct { data: T, end: u32 } {
+pub fn extraData(mir: Mir, comptime T: type, index: u32) struct { data: T, end: u32 } {
     const fields = std.meta.fields(T);
     var i: u32 = index;
     var result: T = undefined;
@@ -1201,7 +1201,7 @@ pub const FrameLoc = struct {
     disp: i32,
 };
 
-pub fn resolve_frame_loc(mir: Mir, mem: Memory) Memory {
+pub fn resolveFrameLoc(mir: Mir, mem: Memory) Memory {
     return switch (mem.info.base) {
         .none, .reg, .reloc => mem,
         .frame => if (mir.frame_locs.len > 0) Memory{

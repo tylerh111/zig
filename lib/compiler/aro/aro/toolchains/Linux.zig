@@ -24,7 +24,7 @@ pub fn discover(self: *Linux, tc: *Toolchain) !void {
     try self.findPaths(tc);
 }
 
-fn build_extra_opts(self: *Linux, tc: *const Toolchain) !void {
+fn buildExtraOpts(self: *Linux, tc: *const Toolchain) !void {
     const gpa = tc.driver.comp.gpa;
     const target = tc.getTarget();
     const is_android = target.isAndroid();
@@ -62,7 +62,7 @@ fn build_extra_opts(self: *Linux, tc: *const Toolchain) !void {
     }
 }
 
-fn add_multi_lib_paths(self: *Linux, tc: *Toolchain, sysroot: []const u8, os_lib_dir: []const u8) !void {
+fn addMultiLibPaths(self: *Linux, tc: *Toolchain, sysroot: []const u8, os_lib_dir: []const u8) !void {
     if (!self.gcc_detector.is_valid) return;
     const gcc_triple = self.gcc_detector.gcc_triple;
     const lib_path = self.gcc_detector.parent_lib_path;
@@ -90,7 +90,7 @@ fn add_multi_lib_paths(self: *Linux, tc: *Toolchain, sysroot: []const u8, os_lib
     }
 }
 
-fn add_multi_arch_paths(self: *Linux, tc: *Toolchain) !void {
+fn addMultiArchPaths(self: *Linux, tc: *Toolchain) !void {
     if (!self.gcc_detector.is_valid) return;
     const lib_path = self.gcc_detector.parent_lib_path;
     const gcc_triple = self.gcc_detector.gcc_triple;
@@ -99,7 +99,7 @@ fn add_multi_arch_paths(self: *Linux, tc: *Toolchain) !void {
 }
 
 /// TODO: Very incomplete
-fn find_paths(self: *Linux, tc: *Toolchain) !void {
+fn findPaths(self: *Linux, tc: *Toolchain) !void {
     const target = tc.getTarget();
     const sysroot = tc.getSysroot();
 
@@ -129,19 +129,19 @@ pub fn deinit(self: *Linux, allocator: std.mem.Allocator) void {
     self.extra_opts.deinit(allocator);
 }
 
-fn is_piedefault(self: *const Linux) bool {
+fn isPIEDefault(self: *const Linux) bool {
     _ = self;
     return false;
 }
 
-fn get_pie(self: *const Linux, d: *const Driver) bool {
+fn getPIE(self: *const Linux, d: *const Driver) bool {
     if (d.shared or d.static or d.relocatable or d.static_pie) {
         return false;
     }
     return d.pie orelse self.isPIEDefault();
 }
 
-fn get_static_pie(self: *const Linux, d: *Driver) !bool {
+fn getStaticPIE(self: *const Linux, d: *Driver) !bool {
     _ = self;
     if (d.static_pie and d.pie != null) {
         try d.err("cannot specify 'nopie' along with 'static-pie'");
@@ -149,12 +149,12 @@ fn get_static_pie(self: *const Linux, d: *Driver) !bool {
     return d.static_pie;
 }
 
-fn get_static(self: *const Linux, d: *const Driver) bool {
+fn getStatic(self: *const Linux, d: *const Driver) bool {
     _ = self;
     return d.static and !d.static_pie;
 }
 
-pub fn get_default_linker(self: *const Linux, target: std.Target) []const u8 {
+pub fn getDefaultLinker(self: *const Linux, target: std.Target) []const u8 {
     _ = self;
     if (target.isAndroid()) {
         return "ld.lld";
@@ -162,7 +162,7 @@ pub fn get_default_linker(self: *const Linux, target: std.Target) []const u8 {
     return "ld";
 }
 
-pub fn build_linker_args(self: *const Linux, tc: *const Toolchain, argv: *std.ArrayList([]const u8)) Compilation.Error!void {
+pub fn buildLinkerArgs(self: *const Linux, tc: *const Toolchain, argv: *std.ArrayList([]const u8)) Compilation.Error!void {
     const d = tc.driver;
     const target = tc.getTarget();
 
@@ -325,7 +325,7 @@ pub fn build_linker_args(self: *const Linux, tc: *const Toolchain, argv: *std.Ar
     // TODO add -T args
 }
 
-fn get_multiarch_triple(target: std.Target) ?[]const u8 {
+fn getMultiarchTriple(target: std.Target) ?[]const u8 {
     const is_android = target.isAndroid();
     const is_mips_r6 = std.Target.mips.featureSetHas(target.cpu.features, .mips32r6);
     return switch (target.cpu.arch) {
@@ -351,7 +351,7 @@ fn get_multiarch_triple(target: std.Target) ?[]const u8 {
     };
 }
 
-fn get_oslib_dir(target: std.Target) []const u8 {
+fn getOSLibDir(target: std.Target) []const u8 {
     switch (target.cpu.arch) {
         .x86,
         .powerpc,
@@ -373,7 +373,7 @@ fn get_oslib_dir(target: std.Target) []const u8 {
     return "lib64";
 }
 
-pub fn define_system_includes(self: *const Linux, tc: *const Toolchain) !void {
+pub fn defineSystemIncludes(self: *const Linux, tc: *const Toolchain) !void {
     if (tc.driver.nostdinc) return;
 
     const comp = tc.driver.comp;

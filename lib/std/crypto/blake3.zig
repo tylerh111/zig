@@ -205,11 +205,11 @@ const compress = if (builtin.cpu.arch == .x86_64)
 else
     CompressGeneric.compress;
 
-fn first8_words(words: [16]u32) [8]u32 {
+fn first8Words(words: [16]u32) [8]u32 {
     return @as(*const [8]u32, @ptrCast(&words)).*;
 }
 
-fn words_from_little_endian_bytes(comptime count: usize, bytes: [count * 4]u8) [count]u32 {
+fn wordsFromLittleEndianBytes(comptime count: usize, bytes: [count * 4]u8) [count]u32 {
     var words: [count]u32 = undefined;
     for (&words, 0..) |*word, i| {
         word.* = mem.readInt(u32, bytes[4 * i ..][0..4], .little);
@@ -227,7 +227,7 @@ const Output = struct {
     counter: u64,
     flags: u8,
 
-    fn chaining_value(self: *const Output) [8]u32 {
+    fn chainingValue(self: *const Output) [8]u32 {
         return first8Words(compress(
             self.input_chaining_value,
             self.block_words,
@@ -237,7 +237,7 @@ const Output = struct {
         ));
     }
 
-    fn root_output_bytes(self: *const Output, output: []u8) void {
+    fn rootOutputBytes(self: *const Output, output: []u8) void {
         var out_block_it = ChunkIterator.init(output, 2 * OUT_LEN);
         var output_block_counter: usize = 0;
         while (out_block_it.next()) |out_block| {
@@ -281,7 +281,7 @@ const ChunkState = struct {
         return BLOCK_LEN * @as(usize, self.blocks_compressed) + @as(usize, self.block_len);
     }
 
-    fn fill_block_buf(self: *ChunkState, input: []const u8) []const u8 {
+    fn fillBlockBuf(self: *ChunkState, input: []const u8) []const u8 {
         const want = BLOCK_LEN - self.block_len;
         const take = @min(want, input.len);
         @memcpy(self.block[self.block_len..][0..take], input[0..take]);
@@ -289,7 +289,7 @@ const ChunkState = struct {
         return input[take..];
     }
 
-    fn start_flag(self: *const ChunkState) u8 {
+    fn startFlag(self: *const ChunkState) u8 {
         return if (self.blocks_compressed == 0) CHUNK_START else 0;
     }
 
@@ -329,7 +329,7 @@ const ChunkState = struct {
     }
 };
 
-fn parent_output(
+fn parentOutput(
     left_child_cv: [8]u32,
     right_child_cv: [8]u32,
     key: [8]u32,
@@ -347,7 +347,7 @@ fn parent_output(
     };
 }
 
-fn parent_cv(
+fn parentCv(
     left_child_cv: [8]u32,
     right_child_cv: [8]u32,
     key: [8]u32,
@@ -391,7 +391,7 @@ pub const Blake3 = struct {
 
     /// Construct a new `Blake3` for the key derivation function. The context
     /// string should be hardcoded, globally unique, and application-specific.
-    pub fn init_kdf(context: []const u8, options: KdfOptions) Blake3 {
+    pub fn initKdf(context: []const u8, options: KdfOptions) Blake3 {
         _ = options;
         var context_hasher = Blake3.init_internal(IV, DERIVE_KEY_CONTEXT);
         context_hasher.update(context);
@@ -407,18 +407,18 @@ pub const Blake3 = struct {
         d.final(out);
     }
 
-    fn push_cv(self: *Blake3, cv: [8]u32) void {
+    fn pushCv(self: *Blake3, cv: [8]u32) void {
         self.cv_stack[self.cv_stack_len] = cv;
         self.cv_stack_len += 1;
     }
 
-    fn pop_cv(self: *Blake3) [8]u32 {
+    fn popCv(self: *Blake3) [8]u32 {
         self.cv_stack_len -= 1;
         return self.cv_stack[self.cv_stack_len];
     }
 
     // Section 5.1.2 of the BLAKE3 spec explains this algorithm in more detail.
-    fn add_chunk_chaining_value(self: *Blake3, first_cv: [8]u32, total_chunks: u64) void {
+    fn addChunkChainingValue(self: *Blake3, first_cv: [8]u32, total_chunks: u64) void {
         // This chunk might complete some subtrees. For each completed subtree,
         // its left child will be the current top entry in the CV stack, and
         // its right child will be the current value of `new_cv`. Pop each left
@@ -652,7 +652,7 @@ const reference_test = ReferenceTest{
     },
 };
 
-fn test_blake3(hasher: *Blake3, input_len: usize, expected_hex: [262]u8) !void {
+fn testBlake3(hasher: *Blake3, input_len: usize, expected_hex: [262]u8) !void {
     // Save initial state
     const initial_state = hasher.*;
 

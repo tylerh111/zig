@@ -13,7 +13,7 @@ pub fn main() !void {
     if (x.len == 0) return error.Whatever;
     return error.TestFailed;
 }
-fn widen_slice(slice: []align(1) const u8) []align(1) const i32 {
+fn widenSlice(slice: []align(1) const u8) []align(1) const i32 {
     return std.mem.bytesAsSlice(i32, slice);
 }
 // run

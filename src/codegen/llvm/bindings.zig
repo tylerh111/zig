@@ -7,11 +7,11 @@ pub const Bool = enum(c_int) {
     True,
     _,
 
-    pub fn from_bool(b: bool) Bool {
+    pub fn fromBool(b: bool) Bool {
         return @as(Bool, @enumFromInt(@intFromBool(b)));
     }
 
-    pub fn to_bool(b: Bool) bool {
+    pub fn toBool(b: Bool) bool {
         return b != .False;
     }
 };
@@ -20,54 +20,54 @@ pub const MemoryBuffer = opaque {
     pub const createMemoryBufferWithMemoryRange = LLVMCreateMemoryBufferWithMemoryRange;
     pub const dispose = LLVMDisposeMemoryBuffer;
 
-    extern fn llvmcreate_memory_buffer_with_memory_range(InputData: [*]const u8, InputDataLength: usize, BufferName: ?[*:0]const u8, RequiresNullTerminator: Bool) *MemoryBuffer;
-    extern fn llvmdispose_memory_buffer(MemBuf: *MemoryBuffer) void;
+    extern fn LLVMCreateMemoryBufferWithMemoryRange(InputData: [*]const u8, InputDataLength: usize, BufferName: ?[*:0]const u8, RequiresNullTerminator: Bool) *MemoryBuffer;
+    extern fn LLVMDisposeMemoryBuffer(MemBuf: *MemoryBuffer) void;
 };
 
 /// Make sure to use the *InContext functions instead of the global ones.
 pub const Context = opaque {
     pub const create = LLVMContextCreate;
-    extern fn llvmcontext_create() *Context;
+    extern fn LLVMContextCreate() *Context;
 
     pub const dispose = LLVMContextDispose;
-    extern fn llvmcontext_dispose(C: *Context) void;
+    extern fn LLVMContextDispose(C: *Context) void;
 
     pub const parseBitcodeInContext2 = LLVMParseBitcodeInContext2;
-    extern fn llvmparse_bitcode_in_context2(C: *Context, MemBuf: *MemoryBuffer, OutModule: **Module) Bool;
+    extern fn LLVMParseBitcodeInContext2(C: *Context, MemBuf: *MemoryBuffer, OutModule: **Module) Bool;
 
     pub const setOptBisectLimit = ZigLLVMSetOptBisectLimit;
-    extern fn zig_llvmset_opt_bisect_limit(C: *Context, limit: c_int) void;
+    extern fn ZigLLVMSetOptBisectLimit(C: *Context, limit: c_int) void;
 
     pub const enableBrokenDebugInfoCheck = ZigLLVMEnableBrokenDebugInfoCheck;
-    extern fn zig_llvmenable_broken_debug_info_check(C: *Context) void;
+    extern fn ZigLLVMEnableBrokenDebugInfoCheck(C: *Context) void;
 
     pub const getBrokenDebugInfo = ZigLLVMGetBrokenDebugInfo;
-    extern fn zig_llvmget_broken_debug_info(C: *Context) bool;
+    extern fn ZigLLVMGetBrokenDebugInfo(C: *Context) bool;
 
     pub const intType = LLVMIntTypeInContext;
-    extern fn llvmint_type_in_context(C: *Context, NumBits: c_uint) *Type;
+    extern fn LLVMIntTypeInContext(C: *Context, NumBits: c_uint) *Type;
 };
 
 pub const Module = opaque {
     pub const dispose = LLVMDisposeModule;
-    extern fn llvmdispose_module(*Module) void;
+    extern fn LLVMDisposeModule(*Module) void;
 
     pub const setModulePICLevel = ZigLLVMSetModulePICLevel;
-    extern fn zig_llvmset_module_piclevel(module: *Module) void;
+    extern fn ZigLLVMSetModulePICLevel(module: *Module) void;
 
     pub const setModulePIELevel = ZigLLVMSetModulePIELevel;
-    extern fn zig_llvmset_module_pielevel(module: *Module) void;
+    extern fn ZigLLVMSetModulePIELevel(module: *Module) void;
 
     pub const setModuleCodeModel = ZigLLVMSetModuleCodeModel;
-    extern fn zig_llvmset_module_code_model(module: *Module, code_model: CodeModel) void;
+    extern fn ZigLLVMSetModuleCodeModel(module: *Module, code_model: CodeModel) void;
 };
 
 pub const disposeMessage = LLVMDisposeMessage;
-extern fn llvmdispose_message(Message: [*:0]const u8) void;
+extern fn LLVMDisposeMessage(Message: [*:0]const u8) void;
 
 pub const TargetMachine = opaque {
     pub const create = ZigLLVMCreateTargetMachine;
-    extern fn zig_llvmcreate_target_machine(
+    extern fn ZigLLVMCreateTargetMachine(
         T: *Target,
         Triple: [*:0]const u8,
         CPU: ?[*:0]const u8,
@@ -82,10 +82,10 @@ pub const TargetMachine = opaque {
     ) *TargetMachine;
 
     pub const dispose = LLVMDisposeTargetMachine;
-    extern fn llvmdispose_target_machine(T: *TargetMachine) void;
+    extern fn LLVMDisposeTargetMachine(T: *TargetMachine) void;
 
     pub const emitToFile = ZigLLVMTargetMachineEmitToFile;
-    extern fn zig_llvmtarget_machine_emit_to_file(
+    extern fn ZigLLVMTargetMachineEmitToFile(
         T: *TargetMachine,
         M: *Module,
         ErrorMessage: *[*:0]const u8,
@@ -101,15 +101,15 @@ pub const TargetMachine = opaque {
     ) bool;
 
     pub const createTargetDataLayout = LLVMCreateTargetDataLayout;
-    extern fn llvmcreate_target_data_layout(*TargetMachine) *TargetData;
+    extern fn LLVMCreateTargetDataLayout(*TargetMachine) *TargetData;
 };
 
 pub const TargetData = opaque {
     pub const dispose = LLVMDisposeTargetData;
-    extern fn llvmdispose_target_data(*TargetData) void;
+    extern fn LLVMDisposeTargetData(*TargetData) void;
 
     pub const abiAlignmentOfType = LLVMABIAlignmentOfType;
-    extern fn llvmabialignment_of_type(TD: *TargetData, Ty: *Type) c_uint;
+    extern fn LLVMABIAlignmentOfType(TD: *TargetData, Ty: *Type) c_uint;
 };
 
 pub const Type = opaque {};
@@ -152,127 +152,127 @@ pub const ABIType = enum(c_int) {
 
 pub const Target = opaque {
     pub const getFromTriple = LLVMGetTargetFromTriple;
-    extern fn llvmget_target_from_triple(Triple: [*:0]const u8, T: **Target, ErrorMessage: *[*:0]const u8) Bool;
+    extern fn LLVMGetTargetFromTriple(Triple: [*:0]const u8, T: **Target, ErrorMessage: *[*:0]const u8) Bool;
 };
 
-pub extern fn llvminitialize_aarch64_target_info() void;
-pub extern fn llvminitialize_amdgputarget_info() void;
-pub extern fn llvminitialize_armtarget_info() void;
-pub extern fn llvminitialize_avrtarget_info() void;
-pub extern fn llvminitialize_bpftarget_info() void;
-pub extern fn llvminitialize_hexagon_target_info() void;
-pub extern fn llvminitialize_lanai_target_info() void;
-pub extern fn llvminitialize_mips_target_info() void;
-pub extern fn llvminitialize_msp430_target_info() void;
-pub extern fn llvminitialize_nvptxtarget_info() void;
-pub extern fn llvminitialize_power_pctarget_info() void;
-pub extern fn llvminitialize_riscvtarget_info() void;
-pub extern fn llvminitialize_sparc_target_info() void;
-pub extern fn llvminitialize_system_ztarget_info() void;
-pub extern fn llvminitialize_web_assembly_target_info() void;
-pub extern fn llvminitialize_x86_target_info() void;
-pub extern fn llvminitialize_xcore_target_info() void;
-pub extern fn llvminitialize_xtensa_target_info() void;
-pub extern fn llvminitialize_m68k_target_info() void;
-pub extern fn llvminitialize_cskytarget_info() void;
-pub extern fn llvminitialize_vetarget_info() void;
-pub extern fn llvminitialize_arctarget_info() void;
-pub extern fn llvminitialize_loong_arch_target_info() void;
+pub extern fn LLVMInitializeAArch64TargetInfo() void;
+pub extern fn LLVMInitializeAMDGPUTargetInfo() void;
+pub extern fn LLVMInitializeARMTargetInfo() void;
+pub extern fn LLVMInitializeAVRTargetInfo() void;
+pub extern fn LLVMInitializeBPFTargetInfo() void;
+pub extern fn LLVMInitializeHexagonTargetInfo() void;
+pub extern fn LLVMInitializeLanaiTargetInfo() void;
+pub extern fn LLVMInitializeMipsTargetInfo() void;
+pub extern fn LLVMInitializeMSP430TargetInfo() void;
+pub extern fn LLVMInitializeNVPTXTargetInfo() void;
+pub extern fn LLVMInitializePowerPCTargetInfo() void;
+pub extern fn LLVMInitializeRISCVTargetInfo() void;
+pub extern fn LLVMInitializeSparcTargetInfo() void;
+pub extern fn LLVMInitializeSystemZTargetInfo() void;
+pub extern fn LLVMInitializeWebAssemblyTargetInfo() void;
+pub extern fn LLVMInitializeX86TargetInfo() void;
+pub extern fn LLVMInitializeXCoreTargetInfo() void;
+pub extern fn LLVMInitializeXtensaTargetInfo() void;
+pub extern fn LLVMInitializeM68kTargetInfo() void;
+pub extern fn LLVMInitializeCSKYTargetInfo() void;
+pub extern fn LLVMInitializeVETargetInfo() void;
+pub extern fn LLVMInitializeARCTargetInfo() void;
+pub extern fn LLVMInitializeLoongArchTargetInfo() void;
 
-pub extern fn llvminitialize_aarch64_target() void;
-pub extern fn llvminitialize_amdgputarget() void;
-pub extern fn llvminitialize_armtarget() void;
-pub extern fn llvminitialize_avrtarget() void;
-pub extern fn llvminitialize_bpftarget() void;
-pub extern fn llvminitialize_hexagon_target() void;
-pub extern fn llvminitialize_lanai_target() void;
-pub extern fn llvminitialize_mips_target() void;
-pub extern fn llvminitialize_msp430_target() void;
-pub extern fn llvminitialize_nvptxtarget() void;
-pub extern fn llvminitialize_power_pctarget() void;
-pub extern fn llvminitialize_riscvtarget() void;
-pub extern fn llvminitialize_sparc_target() void;
-pub extern fn llvminitialize_system_ztarget() void;
-pub extern fn llvminitialize_web_assembly_target() void;
-pub extern fn llvminitialize_x86_target() void;
-pub extern fn llvminitialize_xcore_target() void;
-pub extern fn llvminitialize_xtensa_target() void;
-pub extern fn llvminitialize_m68k_target() void;
-pub extern fn llvminitialize_vetarget() void;
-pub extern fn llvminitialize_cskytarget() void;
-pub extern fn llvminitialize_arctarget() void;
-pub extern fn llvminitialize_loong_arch_target() void;
+pub extern fn LLVMInitializeAArch64Target() void;
+pub extern fn LLVMInitializeAMDGPUTarget() void;
+pub extern fn LLVMInitializeARMTarget() void;
+pub extern fn LLVMInitializeAVRTarget() void;
+pub extern fn LLVMInitializeBPFTarget() void;
+pub extern fn LLVMInitializeHexagonTarget() void;
+pub extern fn LLVMInitializeLanaiTarget() void;
+pub extern fn LLVMInitializeMipsTarget() void;
+pub extern fn LLVMInitializeMSP430Target() void;
+pub extern fn LLVMInitializeNVPTXTarget() void;
+pub extern fn LLVMInitializePowerPCTarget() void;
+pub extern fn LLVMInitializeRISCVTarget() void;
+pub extern fn LLVMInitializeSparcTarget() void;
+pub extern fn LLVMInitializeSystemZTarget() void;
+pub extern fn LLVMInitializeWebAssemblyTarget() void;
+pub extern fn LLVMInitializeX86Target() void;
+pub extern fn LLVMInitializeXCoreTarget() void;
+pub extern fn LLVMInitializeXtensaTarget() void;
+pub extern fn LLVMInitializeM68kTarget() void;
+pub extern fn LLVMInitializeVETarget() void;
+pub extern fn LLVMInitializeCSKYTarget() void;
+pub extern fn LLVMInitializeARCTarget() void;
+pub extern fn LLVMInitializeLoongArchTarget() void;
 
-pub extern fn llvminitialize_aarch64_target_mc() void;
-pub extern fn llvminitialize_amdgputarget_mc() void;
-pub extern fn llvminitialize_armtarget_mc() void;
-pub extern fn llvminitialize_avrtarget_mc() void;
-pub extern fn llvminitialize_bpftarget_mc() void;
-pub extern fn llvminitialize_hexagon_target_mc() void;
-pub extern fn llvminitialize_lanai_target_mc() void;
-pub extern fn llvminitialize_mips_target_mc() void;
-pub extern fn llvminitialize_msp430_target_mc() void;
-pub extern fn llvminitialize_nvptxtarget_mc() void;
-pub extern fn llvminitialize_power_pctarget_mc() void;
-pub extern fn llvminitialize_riscvtarget_mc() void;
-pub extern fn llvminitialize_sparc_target_mc() void;
-pub extern fn llvminitialize_system_ztarget_mc() void;
-pub extern fn llvminitialize_web_assembly_target_mc() void;
-pub extern fn llvminitialize_x86_target_mc() void;
-pub extern fn llvminitialize_xcore_target_mc() void;
-pub extern fn llvminitialize_xtensa_target_mc() void;
-pub extern fn llvminitialize_m68k_target_mc() void;
-pub extern fn llvminitialize_cskytarget_mc() void;
-pub extern fn llvminitialize_vetarget_mc() void;
-pub extern fn llvminitialize_arctarget_mc() void;
-pub extern fn llvminitialize_loong_arch_target_mc() void;
+pub extern fn LLVMInitializeAArch64TargetMC() void;
+pub extern fn LLVMInitializeAMDGPUTargetMC() void;
+pub extern fn LLVMInitializeARMTargetMC() void;
+pub extern fn LLVMInitializeAVRTargetMC() void;
+pub extern fn LLVMInitializeBPFTargetMC() void;
+pub extern fn LLVMInitializeHexagonTargetMC() void;
+pub extern fn LLVMInitializeLanaiTargetMC() void;
+pub extern fn LLVMInitializeMipsTargetMC() void;
+pub extern fn LLVMInitializeMSP430TargetMC() void;
+pub extern fn LLVMInitializeNVPTXTargetMC() void;
+pub extern fn LLVMInitializePowerPCTargetMC() void;
+pub extern fn LLVMInitializeRISCVTargetMC() void;
+pub extern fn LLVMInitializeSparcTargetMC() void;
+pub extern fn LLVMInitializeSystemZTargetMC() void;
+pub extern fn LLVMInitializeWebAssemblyTargetMC() void;
+pub extern fn LLVMInitializeX86TargetMC() void;
+pub extern fn LLVMInitializeXCoreTargetMC() void;
+pub extern fn LLVMInitializeXtensaTargetMC() void;
+pub extern fn LLVMInitializeM68kTargetMC() void;
+pub extern fn LLVMInitializeCSKYTargetMC() void;
+pub extern fn LLVMInitializeVETargetMC() void;
+pub extern fn LLVMInitializeARCTargetMC() void;
+pub extern fn LLVMInitializeLoongArchTargetMC() void;
 
-pub extern fn llvminitialize_aarch64_asm_printer() void;
-pub extern fn llvminitialize_amdgpuasm_printer() void;
-pub extern fn llvminitialize_armasm_printer() void;
-pub extern fn llvminitialize_avrasm_printer() void;
-pub extern fn llvminitialize_bpfasm_printer() void;
-pub extern fn llvminitialize_hexagon_asm_printer() void;
-pub extern fn llvminitialize_lanai_asm_printer() void;
-pub extern fn llvminitialize_mips_asm_printer() void;
-pub extern fn llvminitialize_msp430_asm_printer() void;
-pub extern fn llvminitialize_nvptxasm_printer() void;
-pub extern fn llvminitialize_power_pcasm_printer() void;
-pub extern fn llvminitialize_riscvasm_printer() void;
-pub extern fn llvminitialize_sparc_asm_printer() void;
-pub extern fn llvminitialize_system_zasm_printer() void;
-pub extern fn llvminitialize_web_assembly_asm_printer() void;
-pub extern fn llvminitialize_x86_asm_printer() void;
-pub extern fn llvminitialize_xcore_asm_printer() void;
-pub extern fn llvminitialize_m68k_asm_printer() void;
-pub extern fn llvminitialize_veasm_printer() void;
-pub extern fn llvminitialize_arcasm_printer() void;
-pub extern fn llvminitialize_loong_arch_asm_printer() void;
+pub extern fn LLVMInitializeAArch64AsmPrinter() void;
+pub extern fn LLVMInitializeAMDGPUAsmPrinter() void;
+pub extern fn LLVMInitializeARMAsmPrinter() void;
+pub extern fn LLVMInitializeAVRAsmPrinter() void;
+pub extern fn LLVMInitializeBPFAsmPrinter() void;
+pub extern fn LLVMInitializeHexagonAsmPrinter() void;
+pub extern fn LLVMInitializeLanaiAsmPrinter() void;
+pub extern fn LLVMInitializeMipsAsmPrinter() void;
+pub extern fn LLVMInitializeMSP430AsmPrinter() void;
+pub extern fn LLVMInitializeNVPTXAsmPrinter() void;
+pub extern fn LLVMInitializePowerPCAsmPrinter() void;
+pub extern fn LLVMInitializeRISCVAsmPrinter() void;
+pub extern fn LLVMInitializeSparcAsmPrinter() void;
+pub extern fn LLVMInitializeSystemZAsmPrinter() void;
+pub extern fn LLVMInitializeWebAssemblyAsmPrinter() void;
+pub extern fn LLVMInitializeX86AsmPrinter() void;
+pub extern fn LLVMInitializeXCoreAsmPrinter() void;
+pub extern fn LLVMInitializeM68kAsmPrinter() void;
+pub extern fn LLVMInitializeVEAsmPrinter() void;
+pub extern fn LLVMInitializeARCAsmPrinter() void;
+pub extern fn LLVMInitializeLoongArchAsmPrinter() void;
 
-pub extern fn llvminitialize_aarch64_asm_parser() void;
-pub extern fn llvminitialize_amdgpuasm_parser() void;
-pub extern fn llvminitialize_armasm_parser() void;
-pub extern fn llvminitialize_avrasm_parser() void;
-pub extern fn llvminitialize_bpfasm_parser() void;
-pub extern fn llvminitialize_hexagon_asm_parser() void;
-pub extern fn llvminitialize_lanai_asm_parser() void;
-pub extern fn llvminitialize_mips_asm_parser() void;
-pub extern fn llvminitialize_msp430_asm_parser() void;
-pub extern fn llvminitialize_power_pcasm_parser() void;
-pub extern fn llvminitialize_riscvasm_parser() void;
-pub extern fn llvminitialize_sparc_asm_parser() void;
-pub extern fn llvminitialize_system_zasm_parser() void;
-pub extern fn llvminitialize_web_assembly_asm_parser() void;
-pub extern fn llvminitialize_x86_asm_parser() void;
-pub extern fn llvminitialize_xtensa_asm_parser() void;
-pub extern fn llvminitialize_m68k_asm_parser() void;
-pub extern fn llvminitialize_cskyasm_parser() void;
-pub extern fn llvminitialize_veasm_parser() void;
-pub extern fn llvminitialize_loong_arch_asm_parser() void;
+pub extern fn LLVMInitializeAArch64AsmParser() void;
+pub extern fn LLVMInitializeAMDGPUAsmParser() void;
+pub extern fn LLVMInitializeARMAsmParser() void;
+pub extern fn LLVMInitializeAVRAsmParser() void;
+pub extern fn LLVMInitializeBPFAsmParser() void;
+pub extern fn LLVMInitializeHexagonAsmParser() void;
+pub extern fn LLVMInitializeLanaiAsmParser() void;
+pub extern fn LLVMInitializeMipsAsmParser() void;
+pub extern fn LLVMInitializeMSP430AsmParser() void;
+pub extern fn LLVMInitializePowerPCAsmParser() void;
+pub extern fn LLVMInitializeRISCVAsmParser() void;
+pub extern fn LLVMInitializeSparcAsmParser() void;
+pub extern fn LLVMInitializeSystemZAsmParser() void;
+pub extern fn LLVMInitializeWebAssemblyAsmParser() void;
+pub extern fn LLVMInitializeX86AsmParser() void;
+pub extern fn LLVMInitializeXtensaAsmParser() void;
+pub extern fn LLVMInitializeM68kAsmParser() void;
+pub extern fn LLVMInitializeCSKYAsmParser() void;
+pub extern fn LLVMInitializeVEAsmParser() void;
+pub extern fn LLVMInitializeLoongArchAsmParser() void;
 
-extern fn zig_lldlink_coff(argc: c_int, argv: [*:null]const ?[*:0]const u8, can_exit_early: bool, disable_output: bool) bool;
-extern fn zig_lldlink_elf(argc: c_int, argv: [*:null]const ?[*:0]const u8, can_exit_early: bool, disable_output: bool) bool;
-extern fn zig_lldlink_wasm(argc: c_int, argv: [*:null]const ?[*:0]const u8, can_exit_early: bool, disable_output: bool) bool;
+extern fn ZigLLDLinkCOFF(argc: c_int, argv: [*:null]const ?[*:0]const u8, can_exit_early: bool, disable_output: bool) bool;
+extern fn ZigLLDLinkELF(argc: c_int, argv: [*:null]const ?[*:0]const u8, can_exit_early: bool, disable_output: bool) bool;
+extern fn ZigLLDLinkWasm(argc: c_int, argv: [*:null]const ?[*:0]const u8, can_exit_early: bool, disable_output: bool) bool;
 
 pub const LinkCOFF = ZigLLDLinkCOFF;
 pub const LinkELF = ZigLLDLinkELF;
@@ -291,7 +291,7 @@ pub const ObjectFormatType = enum(c_int) {
 };
 
 pub const WriteArchive = ZigLLVMWriteArchive;
-extern fn zig_llvmwrite_archive(
+extern fn ZigLLVMWriteArchive(
     archive_name: [*:0]const u8,
     file_names_ptr: [*]const [*:0]const u8,
     file_names_len: usize,
@@ -407,10 +407,10 @@ pub const ArchType = enum(c_int) {
 };
 
 pub const ParseCommandLineOptions = ZigLLVMParseCommandLineOptions;
-extern fn zig_llvmparse_command_line_options(argc: usize, argv: [*]const [*:0]const u8) void;
+extern fn ZigLLVMParseCommandLineOptions(argc: usize, argv: [*]const [*:0]const u8) void;
 
 pub const WriteImportLibrary = ZigLLVMWriteImportLibrary;
-extern fn zig_llvmwrite_import_library(
+extern fn ZigLLVMWriteImportLibrary(
     def_path: [*:0]const u8,
     arch: ArchType,
     output_lib_path: [*:0]const u8,
@@ -418,7 +418,7 @@ extern fn zig_llvmwrite_import_library(
 ) bool;
 
 pub const GetHostCPUName = LLVMGetHostCPUName;
-extern fn llvmget_host_cpuname() ?[*:0]u8;
+extern fn LLVMGetHostCPUName() ?[*:0]u8;
 
 pub const GetHostCPUFeatures = LLVMGetHostCPUFeatures;
-extern fn llvmget_host_cpufeatures() ?[*:0]u8;
+extern fn LLVMGetHostCPUFeatures() ?[*:0]u8;

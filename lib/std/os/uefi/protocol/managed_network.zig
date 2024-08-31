@@ -21,7 +21,7 @@ pub const ManagedNetwork = extern struct {
 
     /// Returns the operational parameters for the current MNP child driver.
     /// May also support returning the underlying SNP driver mode data.
-    pub fn get_mode_data(self: *const ManagedNetwork, mnp_config_data: ?*Config, snp_mode_data: ?*SimpleNetwork) Status {
+    pub fn getModeData(self: *const ManagedNetwork, mnp_config_data: ?*Config, snp_mode_data: ?*SimpleNetwork) Status {
         return self._get_mode_data(self, mnp_config_data, snp_mode_data);
     }
 
@@ -32,7 +32,7 @@ pub const ManagedNetwork = extern struct {
 
     /// Translates an IP multicast address to a hardware (MAC) multicast address.
     /// This function may be unsupported in some MNP implementations.
-    pub fn mcast_ip_to_mac(self: *const ManagedNetwork, ipv6flag: bool, ipaddress: *const anyopaque, mac_address: *MacAddress) Status {
+    pub fn mcastIpToMac(self: *const ManagedNetwork, ipv6flag: bool, ipaddress: *const anyopaque, mac_address: *MacAddress) Status {
         return self._mcast_ip_to_mac(self, ipv6flag, ipaddress, mac_address);
     }
 
@@ -75,11 +75,11 @@ pub const ManagedNetwork = extern struct {
         _create_child: *const fn (*const ServiceBinding, *?Handle) callconv(cc) Status,
         _destroy_child: *const fn (*const ServiceBinding, Handle) callconv(cc) Status,
 
-        pub fn create_child(self: *const ServiceBinding, handle: *?Handle) Status {
+        pub fn createChild(self: *const ServiceBinding, handle: *?Handle) Status {
             return self._create_child(self, handle);
         }
 
-        pub fn destroy_child(self: *const ServiceBinding, handle: Handle) Status {
+        pub fn destroyChild(self: *const ServiceBinding, handle: Handle) Status {
             return self._destroy_child(self, handle);
         }
 
@@ -140,7 +140,7 @@ pub const ManagedNetwork = extern struct {
         header_length: u16,
         fragment_count: u16,
 
-        pub fn get_fragments(self: *TransmitData) []Fragment {
+        pub fn getFragments(self: *TransmitData) []Fragment {
             return @as([*]Fragment, @ptrCast(@alignCast(@as([*]u8, @ptrCast(self)) + @sizeOf(TransmitData))))[0..self.fragment_count];
         }
     };

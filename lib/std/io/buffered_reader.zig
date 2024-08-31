@@ -4,7 +4,7 @@ const mem = std.mem;
 const assert = std.debug.assert;
 const testing = std.testing;
 
-pub fn buffered_reader(comptime buffer_size: usize, comptime ReaderType: type) type {
+pub fn BufferedReader(comptime buffer_size: usize, comptime ReaderType: type) type {
     return struct {
         unbuffered_reader: ReaderType,
         buf: [buffer_size]u8 = undefined,
@@ -45,11 +45,11 @@ pub fn buffered_reader(comptime buffer_size: usize, comptime ReaderType: type) t
     };
 }
 
-pub fn buffered_reader(reader: anytype) BufferedReader(4096, @TypeOf(reader)) {
+pub fn bufferedReader(reader: anytype) BufferedReader(4096, @TypeOf(reader)) {
     return .{ .unbuffered_reader = reader };
 }
 
-pub fn buffered_reader_size(comptime size: usize, reader: anytype) BufferedReader(size, @TypeOf(reader)) {
+pub fn bufferedReaderSize(comptime size: usize, reader: anytype) BufferedReader(size, @TypeOf(reader)) {
     return .{ .unbuffered_reader = reader };
 }
 
@@ -93,7 +93,7 @@ test "OneByte" {
     try testing.expectEqualSlices(u8, str, res);
 }
 
-fn small_buffered_reader(underlying_stream: anytype) BufferedReader(8, @TypeOf(underlying_stream)) {
+fn smallBufferedReader(underlying_stream: anytype) BufferedReader(8, @TypeOf(underlying_stream)) {
     return .{ .unbuffered_reader = underlying_stream };
 }
 test "Block" {

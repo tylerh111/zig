@@ -81,7 +81,7 @@ pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, _: ?
 /// need for extending them to wider fp types.
 /// TODO remove this; do this type selection in the language rather than
 /// here in compiler-rt.
-pub fn f16_t(comptime OtherType: type) type {
+pub fn F16T(comptime OtherType: type) type {
     return switch (builtin.cpu.arch) {
         .arm, .armeb, .thumb, .thumbeb => if (std.Target.arm.featureSetHas(builtin.cpu.features, .has_v8))
             switch (builtin.abi.floatAbi()) {
@@ -103,7 +103,7 @@ pub fn f16_t(comptime OtherType: type) type {
     };
 }
 
-pub fn wide_multiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
+pub fn wideMultiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
     switch (Z) {
         u16 => {
             // 16x16 --> 32 bit multiply
@@ -119,10 +119,10 @@ pub fn wide_multiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
         },
         u64 => {
             const S = struct {
-                fn lo_word(x: u64) u64 {
+                fn loWord(x: u64) u64 {
                     return @as(u32, @truncate(x));
                 }
-                fn hi_word(x: u64) u64 {
+                fn hiWord(x: u64) u64 {
                     return @as(u32, @truncate(x >> 32));
                 }
             };
@@ -146,16 +146,16 @@ pub fn wide_multiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
             const Word_HiMask: u64 = 0xffffffff00000000;
             const Word_FullMask: u64 = 0xffffffffffffffff;
             const S = struct {
-                fn word_1(x: u128) u64 {
+                fn Word_1(x: u128) u64 {
                     return @as(u32, @truncate(x >> 96));
                 }
-                fn word_2(x: u128) u64 {
+                fn Word_2(x: u128) u64 {
                     return @as(u32, @truncate(x >> 64));
                 }
-                fn word_3(x: u128) u64 {
+                fn Word_3(x: u128) u64 {
                     return @as(u32, @truncate(x >> 32));
                 }
-                fn word_4(x: u128) u64 {
+                fn Word_4(x: u128) u64 {
                     return @as(u32, @truncate(x));
                 }
             };
@@ -240,7 +240,7 @@ pub inline fn fneg(a: anytype) @TypeOf(a) {
 
 /// Allows to access underlying bits as two equally sized lower and higher
 /// signed or unsigned integers.
-pub fn halve_int(comptime T: type, comptime signed_half: bool) type {
+pub fn HalveInt(comptime T: type, comptime signed_half: bool) type {
     return extern union {
         pub const bits = @divExact(@typeInfo(T).Int.bits, 2);
         pub const HalfTU = std.meta.Int(.unsigned, bits);

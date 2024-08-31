@@ -113,7 +113,7 @@ pub const BuildError = error{
     ZigCompilerNotBuiltWithLLVMExtensions,
 };
 
-pub fn build_lib_cxx(comp: *Compilation, prog_node: std.Progress.Node) BuildError!void {
+pub fn buildLibCXX(comp: *Compilation, prog_node: std.Progress.Node) BuildError!void {
     if (!build_options.have_llvm) {
         return error.ZigCompilerNotBuiltWithLLVMExtensions;
     }
@@ -357,7 +357,7 @@ pub fn build_lib_cxx(comp: *Compilation, prog_node: std.Progress.Node) BuildErro
     comp.libcxx_static_lib = try sub_compilation.toCrtFile();
 }
 
-pub fn build_lib_cxxabi(comp: *Compilation, prog_node: std.Progress.Node) BuildError!void {
+pub fn buildLibCXXABI(comp: *Compilation, prog_node: std.Progress.Node) BuildError!void {
     if (!build_options.have_llvm) {
         return error.ZigCompilerNotBuiltWithLLVMExtensions;
     }
@@ -587,7 +587,7 @@ pub fn build_lib_cxxabi(comp: *Compilation, prog_node: std.Progress.Node) BuildE
     comp.libcxxabi_static_lib = try sub_compilation.toCrtFile();
 }
 
-pub fn hardening_mode_flag(optimize_mode: std.builtin.OptimizeMode) []const u8 {
+pub fn hardeningModeFlag(optimize_mode: std.builtin.OptimizeMode) []const u8 {
     return switch (optimize_mode) {
         .Debug => "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG",
         .ReleaseFast, .ReleaseSmall => "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE",

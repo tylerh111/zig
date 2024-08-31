@@ -355,15 +355,15 @@ pub const SC = struct {
     pub const sendmmsg = 20;
 };
 
-fn gp_register_offset(comptime reg_index: comptime_int) usize {
+fn gpRegisterOffset(comptime reg_index: comptime_int) usize {
     return @offsetOf(ucontext_t, "mcontext") + @offsetOf(mcontext_t, "gregs") + @sizeOf(usize) * reg_index;
 }
 
-noinline fn get_context_return_address() usize {
+noinline fn getContextReturnAddress() usize {
     return @returnAddress();
 }
 
-pub fn get_context_internal() callconv(.Naked) usize {
+pub fn getContextInternal() callconv(.Naked) usize {
     asm volatile (
         \\ movl $0, %[flags_offset:c](%%edx)
         \\ movl $0, %[link_offset:c](%%edx)

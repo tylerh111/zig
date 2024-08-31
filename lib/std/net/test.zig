@@ -185,7 +185,7 @@ test "listen on a port, send bytes, receive bytes" {
     defer server.deinit();
 
     const S = struct {
-        fn client_fn(server_address: net.Address) !void {
+        fn clientFn(server_address: net.Address) !void {
             const socket = try net.tcpConnectToAddress(server_address);
             defer socket.close();
 
@@ -220,7 +220,7 @@ test "listen on an in use port" {
     defer server2.deinit();
 }
 
-fn test_client_to_host(allocator: mem.Allocator, name: []const u8, port: u16) anyerror!void {
+fn testClientToHost(allocator: mem.Allocator, name: []const u8, port: u16) anyerror!void {
     if (builtin.os.tag == .wasi) return error.SkipZigTest;
 
     const connection = try net.tcpConnectToHost(allocator, name, port);
@@ -232,7 +232,7 @@ fn test_client_to_host(allocator: mem.Allocator, name: []const u8, port: u16) an
     try testing.expect(mem.eql(u8, msg, "hello from server\n"));
 }
 
-fn test_client(addr: net.Address) anyerror!void {
+fn testClient(addr: net.Address) anyerror!void {
     if (builtin.os.tag == .wasi) return error.SkipZigTest;
 
     const socket_file = try net.tcpConnectToAddress(addr);
@@ -244,7 +244,7 @@ fn test_client(addr: net.Address) anyerror!void {
     try testing.expect(mem.eql(u8, msg, "hello from server\n"));
 }
 
-fn test_server(server: *net.Server) anyerror!void {
+fn testServer(server: *net.Server) anyerror!void {
     if (builtin.os.tag == .wasi) return error.SkipZigTest;
 
     var client = try server.accept();
@@ -276,7 +276,7 @@ test "listen on a unix socket, send bytes, receive bytes" {
     defer server.deinit();
 
     const S = struct {
-        fn client_fn(path: []const u8) !void {
+        fn clientFn(path: []const u8) !void {
             const socket = try net.connectUnixSocket(path);
             defer socket.close();
 
@@ -296,7 +296,7 @@ test "listen on a unix socket, send bytes, receive bytes" {
     try testing.expectEqualSlices(u8, "Hello world!", buf[0..n]);
 }
 
-fn generate_file_name(base_name: []const u8) ![]const u8 {
+fn generateFileName(base_name: []const u8) ![]const u8 {
     const random_bytes_count = 12;
     const sub_path_len = comptime std.fs.base64_encoder.calcSize(random_bytes_count);
     var random_bytes: [12]u8 = undefined;

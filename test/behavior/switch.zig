@@ -12,7 +12,7 @@ test "switch with numbers" {
     try testSwitchWithNumbers(13);
 }
 
-fn test_switch_with_numbers(x: u32) !void {
+fn testSwitchWithNumbers(x: u32) !void {
     const result = switch (x) {
         1, 2, 3, 4...8 => false,
         13 => true,
@@ -31,7 +31,7 @@ test "switch with all ranges" {
     try expect(testSwitchWithAllRanges(301, 6) == 6);
 }
 
-fn test_switch_with_all_ranges(x: u32, y: u32) u32 {
+fn testSwitchWithAllRanges(x: u32, y: u32) u32 {
     return switch (x) {
         0...100 => 1,
         101...200 => 2,
@@ -67,7 +67,7 @@ const Fruit = enum {
     Orange,
     Banana,
 };
-fn non_const_switch_on_enum(fruit: Fruit) void {
+fn nonConstSwitchOnEnum(fruit: Fruit) void {
     switch (fruit) {
         Fruit.Apple => unreachable,
         Fruit.Orange => {},
@@ -81,7 +81,7 @@ test "switch statement" {
 
     try nonConstSwitch(SwitchStatementFoo.C);
 }
-fn non_const_switch(foo: SwitchStatementFoo) !void {
+fn nonConstSwitch(foo: SwitchStatementFoo) !void {
     const val = switch (foo) {
         SwitchStatementFoo.A => @as(i32, 1),
         SwitchStatementFoo.B => 2,
@@ -103,7 +103,7 @@ test "switch with multiple expressions" {
     };
     try expect(x == 2);
 }
-fn returns_five() i32 {
+fn returnsFive() i32 {
     return 5;
 }
 
@@ -114,7 +114,7 @@ test "switch on type" {
     try expect(!trueIfBoolFalseOtherwise(i32));
 }
 
-fn true_if_bool_false_otherwise(comptime T: type) bool {
+fn trueIfBoolFalseOtherwise(comptime T: type) bool {
     return switch (T) {
         bool => true,
         else => false,
@@ -129,7 +129,7 @@ test "switching on booleans" {
     try comptime testSwitchOnBools();
 }
 
-fn test_switch_on_bools() !void {
+fn testSwitchOnBools() !void {
     try expect(testSwitchOnBoolsTrueAndFalse(true) == false);
     try expect(testSwitchOnBoolsTrueAndFalse(false) == true);
 
@@ -140,21 +140,21 @@ fn test_switch_on_bools() !void {
     try expect(testSwitchOnBoolsFalseWithElse(false) == true);
 }
 
-fn test_switch_on_bools_true_and_false(x: bool) bool {
+fn testSwitchOnBoolsTrueAndFalse(x: bool) bool {
     return switch (x) {
         true => false,
         false => true,
     };
 }
 
-fn test_switch_on_bools_true_with_else(x: bool) bool {
+fn testSwitchOnBoolsTrueWithElse(x: bool) bool {
     return switch (x) {
         true => false,
         else => true,
     };
 }
 
-fn test_switch_on_bools_false_with_else(x: bool) bool {
+fn testSwitchOnBoolsFalseWithElse(x: bool) bool {
     return switch (x) {
         false => true,
         else => false,
@@ -194,11 +194,11 @@ test "switch variable for range and multiple prongs" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try doTheSwitch(16);
             try doTheSwitch(42);
         }
-        fn do_the_switch(q: u8) !void {
+        fn doTheSwitch(q: u8) !void {
             switch (q) {
                 0...40 => |x| try expect(x == 16),
                 41, 42, 43 => |x| try expect(x == 42),
@@ -247,7 +247,7 @@ test "switch prong with variable" {
     try switchProngWithVarFn(SwitchProngWithVarEnum{ .Two = 13.0 });
     try switchProngWithVarFn(SwitchProngWithVarEnum{ .Meh = {} });
 }
-fn switch_prong_with_var_fn(a: SwitchProngWithVarEnum) !void {
+fn switchProngWithVarFn(a: SwitchProngWithVarEnum) !void {
     switch (a) {
         SwitchProngWithVarEnum.One => |x| {
             try expect(x == 13);
@@ -272,7 +272,7 @@ test "switch on enum using pointer capture" {
     try comptime testSwitchEnumPtrCapture();
 }
 
-fn test_switch_enum_ptr_capture() !void {
+fn testSwitchEnumPtrCapture() !void {
     var value = SwitchProngWithVarEnum{ .One = 1234 };
     switch (value) {
         SwitchProngWithVarEnum.One => |*x| x.* += 1,
@@ -292,7 +292,7 @@ test "switch handles all cases of number" {
     try comptime testSwitchHandleAllCases();
 }
 
-fn test_switch_handle_all_cases() !void {
+fn testSwitchHandleAllCases() !void {
     try expect(testSwitchHandleAllCasesExhaustive(0) == 3);
     try expect(testSwitchHandleAllCasesExhaustive(1) == 2);
     try expect(testSwitchHandleAllCasesExhaustive(2) == 1);
@@ -305,7 +305,7 @@ fn test_switch_handle_all_cases() !void {
     try expect(testSwitchHandleAllCasesRange(230) == 3);
 }
 
-fn test_switch_handle_all_cases_exhaustive(x: u2) u2 {
+fn testSwitchHandleAllCasesExhaustive(x: u2) u2 {
     return switch (x) {
         0 => @as(u2, 3),
         1 => 2,
@@ -314,7 +314,7 @@ fn test_switch_handle_all_cases_exhaustive(x: u2) u2 {
     };
 }
 
-fn test_switch_handle_all_cases_range(x: u8) u8 {
+fn testSwitchHandleAllCasesRange(x: u8) u8 {
     return switch (x) {
         0...100 => @as(u8, 0),
         101...200 => 1,
@@ -352,7 +352,7 @@ const Number = union(enum) {
 
 const number = Number{ .Three = 1.23 };
 
-fn returns_false() bool {
+fn returnsFalse() bool {
     switch (number) {
         Number.One => |x| return x > 1234,
         Number.Two => |x| return x == 'a',
@@ -388,12 +388,12 @@ test "switch all prongs unreachable" {
     try comptime testAllProngsUnreachable();
 }
 
-fn test_all_prongs_unreachable() !void {
+fn testAllProngsUnreachable() !void {
     try expect(switchWithUnreachable(1) == 2);
     try expect(switchWithUnreachable(2) == 10);
 }
 
-fn switch_with_unreachable(x: i32) i32 {
+fn switchWithUnreachable(x: i32) i32 {
     while (true) {
         switch (x) {
             1 => return 2,
@@ -423,7 +423,7 @@ test "switch on integer with else capturing expr" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var x: i32 = 5;
             _ = &x;
             switch (x + 10) {
@@ -445,7 +445,7 @@ test "else prong of switch on error set excludes other cases" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try expectError(error.C, bar());
         }
         const E = error{
@@ -481,7 +481,7 @@ test "switch prongs with error set cases make a new error set type for capture v
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try expectError(error.B, bar());
         }
         const E = E1 || E2;
@@ -516,7 +516,7 @@ test "return result loc and then switch with range implicit casted to error unio
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try expect((func(0xb) catch unreachable) == 0xb);
         }
         fn func(d: u8) anyerror!u8 {
@@ -537,7 +537,7 @@ test "switch with null and T peer types and inferred result location type" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test(c: u8) !void {
+        fn doTheTest(c: u8) !void {
             if (switch (c) {
                 0 => true,
                 else => null,
@@ -563,11 +563,11 @@ test "switch prongs with cases with identical payload types" {
         C: usize,
     };
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             try doTheSwitch1(Union{ .A = 8 });
             try doTheSwitch2(Union{ .B = -8 });
         }
-        fn do_the_switch1(u: Union) !void {
+        fn doTheSwitch1(u: Union) !void {
             switch (u) {
                 .A, .C => |e| {
                     comptime assert(@TypeOf(e) == usize);
@@ -579,7 +579,7 @@ test "switch prongs with cases with identical payload types" {
                 },
             }
         }
-        fn do_the_switch2(u: Union) !void {
+        fn doTheSwitch2(u: Union) !void {
             switch (u) {
                 .A, .C => |e| {
                     _ = e;
@@ -604,7 +604,7 @@ test "switch prong pointer capture alignment" {
     };
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             const u = U{ .a = 1 };
             switch (u) {
                 .a => |*a| comptime assert(@TypeOf(a) == *align(8) const u8),
@@ -631,7 +631,7 @@ test "switch prong pointer capture alignment" {
             }
         }
 
-        fn do_the_test2() !void {
+        fn doTheTest2() !void {
             const un1 = U{ .b = 1 };
             switch (un1) {
                 .b => |*b| comptime assert(@TypeOf(b) == *align(4) const u8),
@@ -673,7 +673,7 @@ test "switch on pointer type" {
         const P2 = @as(*X, @ptrFromInt(0x800));
         const P3 = @as(*X, @ptrFromInt(0xC00));
 
-        fn do_the_test(arg: *X) i32 {
+        fn doTheTest(arg: *X) i32 {
             switch (arg) {
                 P1 => return 1,
                 P2 => return 2,
@@ -692,7 +692,7 @@ test "switch on pointer type" {
 
 test "switch on error set with single else" {
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var some: error{Foo} = error.Foo;
             _ = &some;
             try expect(switch (some) {
@@ -714,7 +714,7 @@ test "switch capture copies its payload" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var tmp: union(enum) {
                 A: u8,
                 B: u32,
@@ -778,7 +778,7 @@ test "switch item sizeof" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn do_the_test() !void {
+        fn doTheTest() !void {
             var a: usize = 0;
             _ = &a;
             switch (a) {
@@ -810,7 +810,7 @@ test "switch capture peer type resolution" {
     const U = union(enum) {
         a: u32,
         b: u64,
-        fn inner_val(u: @This()) u64 {
+        fn innerVal(u: @This()) u64 {
             switch (u) {
                 .a, .b => |x| return x,
             }
@@ -832,7 +832,7 @@ test "switch capture peer type resolution for in-memory coercible payloads" {
     const U = union(enum) {
         a: T1,
         b: T2,
-        fn inner_val(u: @This()) c_int {
+        fn innerVal(u: @This()) c_int {
             switch (u) {
                 .a, .b => |x| return x,
             }
@@ -855,7 +855,7 @@ test "switch pointer capture peer type resolution" {
     const U = union(enum) {
         a: T1,
         b: T2,
-        fn inner_val(u: *@This()) *c_int {
+        fn innerVal(u: *@This()) *c_int {
             switch (u.*) {
                 .a, .b => |*ptr| return ptr,
             }
@@ -973,7 +973,7 @@ test "block error return trace index is reset between prongs" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
-        fn return_error() error{TestFailed} {
+        fn returnError() error{TestFailed} {
             return error.TestFailed;
         }
     };

@@ -15,7 +15,7 @@ pub const Error = error{
     EndOfStream,
 };
 
-fn decode_fse_huffman_tree(
+fn decodeFseHuffmanTree(
     source: anytype,
     compressed_size: usize,
     buffer: []u8,
@@ -39,7 +39,7 @@ fn decode_fse_huffman_tree(
     return assignWeights(&huff_bits, accuracy_log, &entries, weights);
 }
 
-fn decode_fse_huffman_tree_slice(src: []const u8, compressed_size: usize, weights: *[256]u4) !usize {
+fn decodeFseHuffmanTreeSlice(src: []const u8, compressed_size: usize, weights: *[256]u4) !usize {
     if (src.len < compressed_size) return error.MalformedHuffmanTree;
     var stream = std.io.fixedBufferStream(src[0..compressed_size]);
     var counting_reader = std.io.countingReader(stream.reader());
@@ -61,7 +61,7 @@ fn decode_fse_huffman_tree_slice(src: []const u8, compressed_size: usize, weight
     return assignWeights(&huff_bits, accuracy_log, &entries, weights);
 }
 
-fn assign_weights(
+fn assignWeights(
     huff_bits: *readers.ReverseBitReader,
     accuracy_log: usize,
     entries: *[1 << 6]Table.Fse,
@@ -105,7 +105,7 @@ fn assign_weights(
     return i + 1; // stream contains all but the last symbol
 }
 
-fn decode_direct_huffman_tree(source: anytype, encoded_symbol_count: usize, weights: *[256]u4) !usize {
+fn decodeDirectHuffmanTree(source: anytype, encoded_symbol_count: usize, weights: *[256]u4) !usize {
     const weights_byte_count = (encoded_symbol_count + 1) / 2;
     for (0..weights_byte_count) |i| {
         const byte = try source.readByte();
@@ -115,7 +115,7 @@ fn decode_direct_huffman_tree(source: anytype, encoded_symbol_count: usize, weig
     return encoded_symbol_count + 1;
 }
 
-fn assign_symbols(weight_sorted_prefixed_symbols: []LiteralsSection.HuffmanTree.PrefixedSymbol, weights: [256]u4) usize {
+fn assignSymbols(weight_sorted_prefixed_symbols: []LiteralsSection.HuffmanTree.PrefixedSymbol, weights: [256]u4) usize {
     for (0..weight_sorted_prefixed_symbols.len) |i| {
         weight_sorted_prefixed_symbols[i] = .{
             .symbol = @as(u8, @intCast(i)),
@@ -161,7 +161,7 @@ fn assign_symbols(weight_sorted_prefixed_symbols: []LiteralsSection.HuffmanTree.
     return prefixed_symbol_count;
 }
 
-fn build_huffman_tree(weights: *[256]u4, symbol_count: usize) error{MalformedHuffmanTree}!LiteralsSection.HuffmanTree {
+fn buildHuffmanTree(weights: *[256]u4, symbol_count: usize) error{MalformedHuffmanTree}!LiteralsSection.HuffmanTree {
     var weight_power_sum_big: u32 = 0;
     for (weights[0 .. symbol_count - 1]) |value| {
         weight_power_sum_big += (@as(u16, 1) << value) >> 1;
@@ -185,7 +185,7 @@ fn build_huffman_tree(weights: *[256]u4, symbol_count: usize) error{MalformedHuf
     return tree;
 }
 
-pub fn decode_huffman_tree(
+pub fn decodeHuffmanTree(
     source: anytype,
     buffer: []u8,
 ) (@TypeOf(source).Error || Error)!LiteralsSection.HuffmanTree {
@@ -200,7 +200,7 @@ pub fn decode_huffman_tree(
     return buildHuffmanTree(&weights, symbol_count);
 }
 
-pub fn decode_huffman_tree_slice(
+pub fn decodeHuffmanTreeSlice(
     src: []const u8,
     consumed_count: *usize,
 ) Error!LiteralsSection.HuffmanTree {
@@ -222,7 +222,7 @@ pub fn decode_huffman_tree_slice(
     return buildHuffmanTree(&weights, symbol_count);
 }
 
-fn less_than_by_weight(
+fn lessThanByWeight(
     weights: [256]u4,
     lhs: LiteralsSection.HuffmanTree.PrefixedSymbol,
     rhs: LiteralsSection.HuffmanTree.PrefixedSymbol,

@@ -75,7 +75,7 @@ pub const available_libcs = [_]ArchOsAbi{
     .{ .arch = .x86_64, .os = .macos, .abi = .none, .os_ver = .{ .major = 10, .minor = 7, .patch = 0 } },
 };
 
-pub fn can_build_lib_c(target: std.Target) bool {
+pub fn canBuildLibC(target: std.Target) bool {
     for (available_libcs) |libc| {
         if (target.cpu.arch == libc.arch and target.os.tag == libc.os and target.abi == libc.abi) {
             if (target.os.tag == .macos) {
@@ -94,14 +94,14 @@ pub fn can_build_lib_c(target: std.Target) bool {
     return false;
 }
 
-pub fn musl_arch_name_headers(arch: std.Target.Cpu.Arch) [:0]const u8 {
+pub fn muslArchNameHeaders(arch: std.Target.Cpu.Arch) [:0]const u8 {
     return switch (arch) {
         .x86 => return "x86",
         else => muslArchName(arch),
     };
 }
 
-pub fn musl_arch_name(arch: std.Target.Cpu.Arch) [:0]const u8 {
+pub fn muslArchName(arch: std.Target.Cpu.Arch) [:0]const u8 {
     switch (arch) {
         .aarch64, .aarch64_be => return "aarch64",
         .arm, .armeb, .thumb, .thumbeb => return "arm",

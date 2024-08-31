@@ -1,7 +1,7 @@
-fn undeclared() type {
+fn Undeclared() type {
     return T;
 }
-fn gen() type {
+fn Gen() type {
     const X = Undeclared();
     return struct {
         x: X,

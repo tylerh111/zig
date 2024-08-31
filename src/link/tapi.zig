@@ -105,21 +105,21 @@ pub const Tbd = union(enum) {
         return out.toOwnedSlice();
     }
 
-    pub fn current_version(self: Tbd) ?VersionField {
+    pub fn currentVersion(self: Tbd) ?VersionField {
         return switch (self) {
             .v3 => |v3| v3.current_version,
             .v4 => |v4| v4.current_version,
         };
     }
 
-    pub fn compatibility_version(self: Tbd) ?VersionField {
+    pub fn compatibilityVersion(self: Tbd) ?VersionField {
         return switch (self) {
             .v3 => |v3| v3.compatibility_version,
             .v4 => |v4| v4.compatibility_version,
         };
     }
 
-    pub fn install_name(self: Tbd) []const u8 {
+    pub fn installName(self: Tbd) []const u8 {
         return switch (self) {
             .v3 => |v3| v3.install_name,
             .v4 => |v4| v4.install_name,
@@ -139,7 +139,7 @@ pub const LibStub = struct {
     /// Typed contents of the tbd file.
     inner: []Tbd,
 
-    pub fn load_from_file(allocator: Allocator, file: fs.File) TapiError!LibStub {
+    pub fn loadFromFile(allocator: Allocator, file: fs.File) TapiError!LibStub {
         const source = try file.readToEndAlloc(allocator, std.math.maxInt(u32));
         defer allocator.free(source);
 

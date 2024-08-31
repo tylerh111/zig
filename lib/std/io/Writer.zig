@@ -13,7 +13,7 @@ pub fn write(self: Self, bytes: []const u8) anyerror!usize {
     return self.writeFn(self.context, bytes);
 }
 
-pub fn write_all(self: Self, bytes: []const u8) anyerror!void {
+pub fn writeAll(self: Self, bytes: []const u8) anyerror!void {
     var index: usize = 0;
     while (index != bytes.len) {
         index += try self.write(bytes[index..]);
@@ -24,12 +24,12 @@ pub fn print(self: Self, comptime format: []const u8, args: anytype) anyerror!vo
     return std.fmt.format(self, format, args);
 }
 
-pub fn write_byte(self: Self, byte: u8) anyerror!void {
+pub fn writeByte(self: Self, byte: u8) anyerror!void {
     const array = [1]u8{byte};
     return self.writeAll(&array);
 }
 
-pub fn write_byte_ntimes(self: Self, byte: u8, n: usize) anyerror!void {
+pub fn writeByteNTimes(self: Self, byte: u8, n: usize) anyerror!void {
     var bytes: [256]u8 = undefined;
     @memset(bytes[0..], byte);
 
@@ -41,26 +41,26 @@ pub fn write_byte_ntimes(self: Self, byte: u8, n: usize) anyerror!void {
     }
 }
 
-pub fn write_bytes_ntimes(self: Self, bytes: []const u8, n: usize) anyerror!void {
+pub fn writeBytesNTimes(self: Self, bytes: []const u8, n: usize) anyerror!void {
     var i: usize = 0;
     while (i < n) : (i += 1) {
         try self.writeAll(bytes);
     }
 }
 
-pub inline fn write_int(self: Self, comptime T: type, value: T, endian: std.builtin.Endian) anyerror!void {
+pub inline fn writeInt(self: Self, comptime T: type, value: T, endian: std.builtin.Endian) anyerror!void {
     var bytes: [@divExact(@typeInfo(T).Int.bits, 8)]u8 = undefined;
     mem.writeInt(std.math.ByteAlignedInt(@TypeOf(value)), &bytes, value, endian);
     return self.writeAll(&bytes);
 }
 
-pub fn write_struct(self: Self, value: anytype) anyerror!void {
+pub fn writeStruct(self: Self, value: anytype) anyerror!void {
     // Only extern and packed structs have defined in-memory layout.
     comptime assert(@typeInfo(@TypeOf(value)).Struct.layout != .auto);
     return self.writeAll(mem.asBytes(&value));
 }
 
-pub fn write_struct_endian(self: Self, value: anytype, endian: std.builtin.Endian) anyerror!void {
+pub fn writeStructEndian(self: Self, value: anytype, endian: std.builtin.Endian) anyerror!void {
     // TODO: make sure this value is not a reference type
     if (native_endian == endian) {
         return self.writeStruct(value);
@@ -71,7 +71,7 @@ pub fn write_struct_endian(self: Self, value: anytype, endian: std.builtin.Endia
     }
 }
 
-pub fn write_file(self: Self, file: std.fs.File) anyerror!void {
+pub fn writeFile(self: Self, file: std.fs.File) anyerror!void {
     // TODO: figure out how to adjust std lib abstractions so that this ends up
     // doing sendfile or maybe even copy_file_range under the right conditions.
     var buf: [4000]u8 = undefined;

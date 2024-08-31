@@ -44,7 +44,7 @@ pub const ParseOptions = struct {
     allocate: ?AllocWhen = null,
 };
 
-pub fn parsed(comptime T: type) type {
+pub fn Parsed(comptime T: type) type {
     return struct {
         arena: *ArenaAllocator,
         value: T,
@@ -61,7 +61,7 @@ pub fn parsed(comptime T: type) type {
 /// You must call `deinit()` of the returned object to clean up allocated resources.
 /// If you are using a `std.heap.ArenaAllocator` or similar, consider calling `parseFromSliceLeaky` instead.
 /// Note that `error.BufferUnderrun` is not actually possible to return from this function.
-pub fn parse_from_slice(
+pub fn parseFromSlice(
     comptime T: type,
     allocator: Allocator,
     s: []const u8,
@@ -76,7 +76,7 @@ pub fn parse_from_slice(
 /// Parses the json document from `s` and returns the result.
 /// Allocations made during this operation are not carefully tracked and may not be possible to individually clean up.
 /// It is recommended to use a `std.heap.ArenaAllocator` or similar.
-pub fn parse_from_slice_leaky(
+pub fn parseFromSliceLeaky(
     comptime T: type,
     allocator: Allocator,
     s: []const u8,
@@ -90,7 +90,7 @@ pub fn parse_from_slice_leaky(
 
 /// `scanner_or_reader` must be either a `*std.json.Scanner` with complete input or a `*std.json.Reader`.
 /// Note that `error.BufferUnderrun` is not actually possible to return from this function.
-pub fn parse_from_token_source(
+pub fn parseFromTokenSource(
     comptime T: type,
     allocator: Allocator,
     scanner_or_reader: anytype,
@@ -112,7 +112,7 @@ pub fn parse_from_token_source(
 /// `scanner_or_reader` must be either a `*std.json.Scanner` with complete input or a `*std.json.Reader`.
 /// Allocations made during this operation are not carefully tracked and may not be possible to individually clean up.
 /// It is recommended to use a `std.heap.ArenaAllocator` or similar.
-pub fn parse_from_token_source_leaky(
+pub fn parseFromTokenSourceLeaky(
     comptime T: type,
     allocator: Allocator,
     scanner_or_reader: anytype,
@@ -146,7 +146,7 @@ pub fn parse_from_token_source_leaky(
 
 /// Like `parseFromSlice`, but the input is an already-parsed `std.json.Value` object.
 /// Only `options.ignore_unknown_fields` is used from `options`.
-pub fn parse_from_value(
+pub fn parseFromValue(
     comptime T: type,
     allocator: Allocator,
     source: Value,
@@ -165,7 +165,7 @@ pub fn parse_from_value(
     return parsed;
 }
 
-pub fn parse_from_value_leaky(
+pub fn parseFromValueLeaky(
     comptime T: type,
     allocator: Allocator,
     source: Value,
@@ -179,7 +179,7 @@ pub fn parse_from_value_leaky(
 
 /// The error set that will be returned when parsing from `*Source`.
 /// Note that this may contain `error.BufferUnderrun`, but that error will never actually be returned.
-pub fn parse_error(comptime Source: type) type {
+pub fn ParseError(comptime Source: type) type {
     // A few of these will either always be present or present enough of the time that
     // omitting them is more confusing than always including them.
     return ParseFromValueError || Source.NextError || Source.PeekError || Source.AllocError;
@@ -203,7 +203,7 @@ pub const ParseFromValueError = std.fmt.ParseIntError || std.fmt.ParseFloatError
 /// you can call `innerParse(T, ...)` for each of the container's items.
 /// Note that `null` fields are not allowed on the `options` when calling this function.
 /// (The `options` you get in your `jsonParse` method has no `null` fields.)
-pub fn inner_parse(
+pub fn innerParse(
     comptime T: type,
     allocator: Allocator,
     source: anytype,
@@ -508,7 +508,7 @@ pub fn inner_parse(
     unreachable;
 }
 
-fn internal_parse_array(
+fn internalParseArray(
     comptime T: type,
     comptime Child: type,
     comptime len: comptime_int,
@@ -534,7 +534,7 @@ fn internal_parse_array(
 /// It is exposed primarily to enable custom `jsonParseFromValue()` methods to call back into the `parseFromValue*` system,
 /// such as if you're implementing a custom container of type `T`;
 /// you can call `innerParseFromValue(T, ...)` for each of the container's items.
-pub fn inner_parse_from_value(
+pub fn innerParseFromValue(
     comptime T: type,
     allocator: Allocator,
     source: Value,
@@ -738,7 +738,7 @@ pub fn inner_parse_from_value(
     }
 }
 
-fn inner_parse_array_from_array_value(
+fn innerParseArrayFromArrayValue(
     comptime T: type,
     comptime Child: type,
     comptime len: comptime_int,
@@ -756,7 +756,7 @@ fn inner_parse_array_from_array_value(
     return r;
 }
 
-fn slice_to_int(comptime T: type, slice: []const u8) !T {
+fn sliceToInt(comptime T: type, slice: []const u8) !T {
     if (isNumberFormattedLikeAnInteger(slice))
         return std.fmt.parseInt(T, slice, 10);
     // Try to coerce a float to an integer.
@@ -766,7 +766,7 @@ fn slice_to_int(comptime T: type, slice: []const u8) !T {
     return @as(T, @intCast(@as(i128, @intFromFloat(float))));
 }
 
-fn slice_to_enum(comptime T: type, slice: []const u8) !T {
+fn sliceToEnum(comptime T: type, slice: []const u8) !T {
     // Check for a named value.
     if (std.meta.stringToEnum(T, slice)) |value| return value;
     // Check for a numeric value.
@@ -775,7 +775,7 @@ fn slice_to_enum(comptime T: type, slice: []const u8) !T {
     return std.meta.intToEnum(T, n);
 }
 
-fn fill_default_struct_values(comptime T: type, r: *T, fields_seen: *[@typeInfo(T).Struct.fields.len]bool) !void {
+fn fillDefaultStructValues(comptime T: type, r: *T, fields_seen: *[@typeInfo(T).Struct.fields.len]bool) !void {
     inline for (@typeInfo(T).Struct.fields, 0..) |field, i| {
         if (!fields_seen[i]) {
             if (field.default_value) |default_ptr| {
@@ -788,7 +788,7 @@ fn fill_default_struct_values(comptime T: type, r: *T, fields_seen: *[@typeInfo(
     }
 }
 
-fn free_allocated(allocator: Allocator, token: Token) void {
+fn freeAllocated(allocator: Allocator, token: Token) void {
     switch (token) {
         .allocated_number, .allocated_string => |slice| {
             allocator.free(slice);

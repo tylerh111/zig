@@ -81,14 +81,14 @@ pub const StreamInterface = struct {
     /// space provided, indicating end-of-stream.
     /// The `iovecs` parameter is mutable in case this function needs to mutate
     /// the fields in order to handle partial writes from the underlying layer.
-    pub fn writev_all(this: @This(), iovecs: []std.posix.iovec_const) WriteError!usize {
+    pub fn writevAll(this: @This(), iovecs: []std.posix.iovec_const) WriteError!usize {
         // This can be implemented in terms of writev, or specialized if desired.
         _ = .{ this, iovecs };
         @panic("unimplemented");
     }
 };
 
-pub fn init_error(comptime Stream: type) type {
+pub fn InitError(comptime Stream: type) type {
     return std.mem.Allocator.Error || Stream.WriteError || Stream.ReadError || tls.AlertDescription.Error || error{
         InsufficientEntropy,
         DiskQuota,
@@ -730,7 +730,7 @@ pub fn write(c: *Client, stream: anytype, bytes: []const u8) !usize {
 }
 
 /// Sends TLS-encrypted data to `stream`, which must conform to `StreamInterface`.
-pub fn write_all(c: *Client, stream: anytype, bytes: []const u8) !void {
+pub fn writeAll(c: *Client, stream: anytype, bytes: []const u8) !void {
     var index: usize = 0;
     while (index < bytes.len) {
         index += try c.write(stream, bytes[index..]);
@@ -741,7 +741,7 @@ pub fn write_all(c: *Client, stream: anytype, bytes: []const u8) !void {
 /// If `end` is true, then this function additionally sends a `close_notify` alert,
 /// which is necessary for the server to distinguish between a properly finished
 /// TLS session, or a truncation attack.
-pub fn write_all_end(c: *Client, stream: anytype, bytes: []const u8, end: bool) !void {
+pub fn writeAllEnd(c: *Client, stream: anytype, bytes: []const u8, end: bool) !void {
     var index: usize = 0;
     while (index < bytes.len) {
         index += try c.writeEnd(stream, bytes[index..], end);
@@ -753,7 +753,7 @@ pub fn write_all_end(c: *Client, stream: anytype, bytes: []const u8, end: bool) 
 /// If `end` is true, then this function additionally sends a `close_notify` alert,
 /// which is necessary for the server to distinguish between a properly finished
 /// TLS session, or a truncation attack.
-pub fn write_end(c: *Client, stream: anytype, bytes: []const u8, end: bool) !usize {
+pub fn writeEnd(c: *Client, stream: anytype, bytes: []const u8, end: bool) !usize {
     var ciphertext_buf: [tls.max_ciphertext_record_len * 4]u8 = undefined;
     var iovecs_buf: [6]std.posix.iovec_const = undefined;
     var prepared = prepareCiphertextRecord(c, &iovecs_buf, &ciphertext_buf, bytes, .application_data);
@@ -794,7 +794,7 @@ pub fn write_end(c: *Client, stream: anytype, bytes: []const u8, end: bool) !usi
     }
 }
 
-fn prepare_ciphertext_record(
+fn prepareCiphertextRecord(
     c: *Client,
     iovecs: []std.posix.iovec_const,
     ciphertext_buf: []u8,
@@ -884,7 +884,7 @@ pub fn eof(c: Client) bool {
 /// minimal number of times until the buffer has at least `len` bytes filled.
 /// If the number read is less than `len` it means the stream reached the end.
 /// Reaching the end of the stream is not an error condition.
-pub fn read_at_least(c: *Client, stream: anytype, buffer: []u8, len: usize) !usize {
+pub fn readAtLeast(c: *Client, stream: anytype, buffer: []u8, len: usize) !usize {
     var iovecs = [1]std.posix.iovec{.{ .base = buffer.ptr, .len = buffer.len }};
     return readvAtLeast(c, stream, &iovecs, len);
 }
@@ -898,7 +898,7 @@ pub fn read(c: *Client, stream: anytype, buffer: []u8) !usize {
 /// Returns the number of bytes read. If the number read is smaller than
 /// `buffer.len`, it means the stream reached the end. Reaching the end of the
 /// stream is not an error condition.
-pub fn read_all(c: *Client, stream: anytype, buffer: []u8) !usize {
+pub fn readAll(c: *Client, stream: anytype, buffer: []u8) !usize {
     return readAtLeast(c, stream, buffer, buffer.len);
 }
 
@@ -919,7 +919,7 @@ pub fn readv(c: *Client, stream: anytype, iovecs: []std.posix.iovec) !usize {
 /// Reaching the end of the stream is not an error condition.
 /// The `iovecs` parameter is mutable because this function needs to mutate the fields in
 /// order to handle partial reads from the underlying stream layer.
-pub fn readv_at_least(c: *Client, stream: anytype, iovecs: []std.posix.iovec, len: usize) !usize {
+pub fn readvAtLeast(c: *Client, stream: anytype, iovecs: []std.posix.iovec, len: usize) !usize {
     if (c.eof()) return 0;
 
     var off_i: usize = 0;
@@ -945,7 +945,7 @@ pub fn readv_at_least(c: *Client, stream: anytype, iovecs: []std.posix.iovec, le
 /// function asserts that `eof()` is `false`.
 /// See `readv` for a higher level function that has the same, familiar API as
 /// other read functions, such as `std.fs.File.read`.
-pub fn readv_advanced(c: *Client, stream: anytype, iovecs: []const std.posix.iovec) !usize {
+pub fn readvAdvanced(c: *Client, stream: anytype, iovecs: []const std.posix.iovec) !usize {
     var vp: VecPut = .{ .iovecs = iovecs };
 
     // Give away the buffered cleartext we have, if any.
@@ -1263,7 +1263,7 @@ pub fn readv_advanced(c: *Client, stream: anytype, iovecs: []const std.posix.iov
     }
 }
 
-fn finish_read(c: *Client, frag: []const u8, in: usize, out: usize) usize {
+fn finishRead(c: *Client, frag: []const u8, in: usize, out: usize) usize {
     const saved_buf = frag[in..];
     if (c.partial_ciphertext_idx > c.partial_cleartext_idx) {
         // There is cleartext at the beginning already which we need to preserve.
@@ -1279,7 +1279,7 @@ fn finish_read(c: *Client, frag: []const u8, in: usize, out: usize) usize {
 }
 
 /// Note that `first` usually overlaps with `c.partially_read_buffer`.
-fn finish_read2(c: *Client, first: []const u8, frag1: []const u8, out: usize) usize {
+fn finishRead2(c: *Client, first: []const u8, frag1: []const u8, out: usize) usize {
     if (c.partial_ciphertext_idx > c.partial_cleartext_idx) {
         // There is cleartext at the beginning already which we need to preserve.
         c.partial_ciphertext_end = @intCast(c.partial_ciphertext_idx + first.len + frag1.len);
@@ -1297,7 +1297,7 @@ fn finish_read2(c: *Client, first: []const u8, frag1: []const u8, out: usize) us
     return out;
 }
 
-fn limited_overlap_copy(frag: []u8, in: usize) void {
+fn limitedOverlapCopy(frag: []u8, in: usize) void {
     const first = frag[in..];
     if (first.len <= in) {
         // A single, non-overlapping memcpy suffices.
@@ -1308,7 +1308,7 @@ fn limited_overlap_copy(frag: []u8, in: usize) void {
     }
 }
 
-fn straddle_byte(s1: []const u8, s2: []const u8, index: usize) u8 {
+fn straddleByte(s1: []const u8, s2: []const u8, index: usize) u8 {
     if (index < s1.len) {
         return s1[index];
     } else {
@@ -1326,7 +1326,7 @@ inline fn big(x: anytype) @TypeOf(x) {
     };
 }
 
-fn scheme_ecdsa(comptime scheme: tls.SignatureScheme) type {
+fn SchemeEcdsa(comptime scheme: tls.SignatureScheme) type {
     return switch (scheme) {
         .ecdsa_secp256r1_sha256 => crypto.sign.ecdsa.EcdsaP256Sha256,
         .ecdsa_secp384r1_sha384 => crypto.sign.ecdsa.EcdsaP384Sha384,
@@ -1334,7 +1334,7 @@ fn scheme_ecdsa(comptime scheme: tls.SignatureScheme) type {
     };
 }
 
-fn scheme_hash(comptime scheme: tls.SignatureScheme) type {
+fn SchemeHash(comptime scheme: tls.SignatureScheme) type {
     return switch (scheme) {
         .rsa_pss_rsae_sha256 => crypto.hash.sha2.Sha256,
         .rsa_pss_rsae_sha384 => crypto.hash.sha2.Sha384,
@@ -1343,7 +1343,7 @@ fn scheme_hash(comptime scheme: tls.SignatureScheme) type {
     };
 }
 
-fn scheme_eddsa(comptime scheme: tls.SignatureScheme) type {
+fn SchemeEddsa(comptime scheme: tls.SignatureScheme) type {
     return switch (scheme) {
         .ed25519 => crypto.sign.Ed25519,
         else => @compileError("bad scheme"),
@@ -1402,7 +1402,7 @@ const VecPut = struct {
         }
     }
 
-    fn free_size(vp: VecPut) usize {
+    fn freeSize(vp: VecPut) usize {
         if (vp.idx >= vp.iovecs.len) return 0;
         var total: usize = 0;
         total += vp.iovecs[vp.idx].len - vp.off;
@@ -1413,7 +1413,7 @@ const VecPut = struct {
 };
 
 /// Limit iovecs to a specific byte size.
-fn limit_vecs(iovecs: []std.posix.iovec, len: usize) []std.posix.iovec {
+fn limitVecs(iovecs: []std.posix.iovec, len: usize) []std.posix.iovec {
     var bytes_left: usize = len;
     for (iovecs, 0..) |*iovec, vec_i| {
         if (bytes_left <= iovec.len) {

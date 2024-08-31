@@ -10,7 +10,7 @@ const sha2 = std.crypto.hash.sha2;
 /// The composition of two hash functions is a common defense against such attacks.
 ///
 /// This is not necessary with modern hash functions, such as SHA-3, BLAKE2 and BLAKE3.
-pub fn composition(comptime H1: type, comptime H2: type) type {
+pub fn Composition(comptime H1: type, comptime H2: type) type {
     return struct {
         const Self = @This();
 

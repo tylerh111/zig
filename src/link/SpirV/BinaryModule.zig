@@ -44,15 +44,15 @@ pub fn deinit(self: *BinaryModule, a: Allocator) void {
     self.* = undefined;
 }
 
-pub fn iterate_instructions(self: BinaryModule) Instruction.Iterator {
+pub fn iterateInstructions(self: BinaryModule) Instruction.Iterator {
     return Instruction.Iterator.init(self.instructions, 0);
 }
 
-pub fn iterate_instructions_from(self: BinaryModule, offset: usize) Instruction.Iterator {
+pub fn iterateInstructionsFrom(self: BinaryModule, offset: usize) Instruction.Iterator {
     return Instruction.Iterator.init(self.instructions, offset);
 }
 
-pub fn instruction_at(self: BinaryModule, offset: usize) Instruction {
+pub fn instructionAt(self: BinaryModule, offset: usize) Instruction {
     var it = self.iterateInstructionsFrom(offset);
     return it.next().?;
 }
@@ -177,11 +177,11 @@ pub const Parser = struct {
         self.opcode_table.deinit(self.a);
     }
 
-    fn map_set_and_opcode(set: InstructionSet, opcode: u16) u32 {
+    fn mapSetAndOpcode(set: InstructionSet, opcode: u16) u32 {
         return (@as(u32, @intFromEnum(set)) << 16) | opcode;
     }
 
-    pub fn get_inst_spec(self: Parser, opcode: Opcode) ?spec.Instruction {
+    pub fn getInstSpec(self: Parser, opcode: Opcode) ?spec.Instruction {
         const index = self.opcode_table.get(mapSetAndOpcode(.core, @intFromEnum(opcode))) orelse return null;
         return InstructionSet.core.instructions()[index];
     }
@@ -276,7 +276,7 @@ pub const Parser = struct {
     /// Parse offsets in the instruction that contain result-ids.
     /// Returned offsets are relative to inst.operands.
     /// Returns in an arraylist to armortize allocations.
-    pub fn parse_instruction_result_ids(
+    pub fn parseInstructionResultIds(
         self: *Parser,
         binary: BinaryModule,
         inst: Instruction,
@@ -327,7 +327,7 @@ pub const Parser = struct {
         if (offset != inst.operands.len) return error.InvalidPhysicalFormat;
     }
 
-    fn parse_operands_result_ids(
+    fn parseOperandsResultIds(
         self: *Parser,
         binary: BinaryModule,
         inst: Instruction,
@@ -342,7 +342,7 @@ pub const Parser = struct {
         return offset;
     }
 
-    fn parse_operand_result_ids(
+    fn parseOperandResultIds(
         self: *Parser,
         binary: BinaryModule,
         inst: Instruction,
@@ -365,7 +365,7 @@ pub const Parser = struct {
         return offset;
     }
 
-    fn parse_operand_kind_result_ids(
+    fn parseOperandKindResultIds(
         self: *Parser,
         binary: BinaryModule,
         inst: Instruction,
