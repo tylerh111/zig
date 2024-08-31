@@ -1,5 +1,5 @@
 comptime {
-    _ = @mulAdd(@Vector(1, u32), .{0}, .{0}, .{0});
+    _ = @mul_add(@Vector(1, u32), .{0}, .{0}, .{0});
 }
 
 // error

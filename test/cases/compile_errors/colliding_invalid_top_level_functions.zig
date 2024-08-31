@@ -1,7 +1,7 @@
 fn func() bogus {}
 fn func() bogus {}
 export fn entry() usize {
-    return @sizeOf(@TypeOf(func));
+    return @size_of(@TypeOf(func));
 }
 
 // error

@@ -131,13 +131,13 @@ pub const Document = @import("markdown/Document.zig");
 pub const Parser = @import("markdown/Parser.zig");
 pub const Renderer = @import("markdown/renderer.zig").Renderer;
 pub const renderNodeInlineText = @import("markdown/renderer.zig").renderNodeInlineText;
-pub const fmtHtml = @import("markdown/renderer.zig").fmtHtml;
+pub const fmt_html = @import("markdown/renderer.zig").fmt_html;
 
 // Avoid exposing main to other files merely importing this one.
 pub const main = if (@import("root") == @This())
-    mainImpl
+    main_impl
 else
-    @compileError("only available as root source file");
+    @compile_error("only available as root source file");
 
 fn main_impl() !void {
     const gpa = std.heap.c_allocator;
@@ -145,34 +145,34 @@ fn main_impl() !void {
     var parser = try Parser.init(gpa);
     defer parser.deinit();
 
-    var stdin_buf = std.io.bufferedReader(std.io.getStdIn().reader());
+    var stdin_buf = std.io.buffered_reader(std.io.get_std_in().reader());
     var line_buf = std.ArrayList(u8).init(gpa);
     defer line_buf.deinit();
-    while (stdin_buf.reader().streamUntilDelimiter(line_buf.writer(), '\n', null)) {
-        if (line_buf.getLastOrNull() == '\r') _ = line_buf.pop();
-        try parser.feedLine(line_buf.items);
-        line_buf.clearRetainingCapacity();
+    while (stdin_buf.reader().stream_until_delimiter(line_buf.writer(), '\n', null)) {
+        if (line_buf.get_last_or_null() == '\r') _ = line_buf.pop();
+        try parser.feed_line(line_buf.items);
+        line_buf.clear_retaining_capacity();
     } else |err| switch (err) {
         error.EndOfStream => {},
         else => |e| return e,
     }
 
-    var doc = try parser.endInput();
+    var doc = try parser.end_input();
     defer doc.deinit(gpa);
 
-    var stdout_buf = std.io.bufferedWriter(std.io.getStdOut().writer());
+    var stdout_buf = std.io.buffered_writer(std.io.get_std_out().writer());
     try doc.render(stdout_buf.writer());
     try stdout_buf.flush();
 }
 
 test "empty document" {
-    try testRender("", "");
-    try testRender("   ", "");
-    try testRender("\n \n\t\n   \n", "");
+    try test_render("", "");
+    try test_render("   ", "");
+    try test_render("\n \n\t\n   \n", "");
 }
 
 test "unordered lists" {
-    try testRender(
+    try test_render(
         \\- Spam
         \\- Spam
         \\- Spam
@@ -224,7 +224,7 @@ test "unordered lists" {
 }
 
 test "ordered lists" {
-    try testRender(
+    try test_render(
         \\1. Breakfast
         \\2. Second breakfast
         \\3. Lunch
@@ -299,7 +299,7 @@ test "ordered lists" {
 }
 
 test "nested lists" {
-    try testRender(
+    try test_render(
         \\- - Item 1.
         \\  - Item 2.
         \\Item 2 continued.
@@ -322,7 +322,7 @@ test "nested lists" {
 }
 
 test "lists with block content" {
-    try testRender(
+    try test_render(
         \\1. Item 1.
         \\2. Item 2.
         \\
@@ -377,7 +377,7 @@ test "lists with block content" {
 }
 
 test "indented lists" {
-    try testRender(
+    try test_render(
         \\Test:
         \\ * a1
         \\ * a2
@@ -477,7 +477,7 @@ test "indented lists" {
 }
 
 test "tables" {
-    try testRender(
+    try test_render(
         \\| Operator | Meaning          |
         \\| :------: | ---------------- |
         \\| `+`      | Add              |
@@ -569,7 +569,7 @@ test "tables" {
 }
 
 test "table with uneven number of columns" {
-    try testRender(
+    try test_render(
         \\| One |
         \\| :-- | :--: |
         \\| One | Two | Three |
@@ -590,7 +590,7 @@ test "table with uneven number of columns" {
 }
 
 test "table with escaped pipes" {
-    try testRender(
+    try test_render(
         \\| One \| Two |
         \\| --- | --- |
         \\| One \| Two |
@@ -609,7 +609,7 @@ test "table with escaped pipes" {
 }
 
 test "table with pipes in code spans" {
-    try testRender(
+    try test_render(
         \\| `|` | Bitwise _OR_ |
         \\| `||` | Combines error sets |
         \\| `` `||` `` | Escaped version |
@@ -641,7 +641,7 @@ test "table with pipes in code spans" {
 }
 
 test "tables require leading and trailing pipes" {
-    try testRender(
+    try test_render(
         \\Not | a | table
         \\
         \\| But | this | is |
@@ -667,7 +667,7 @@ test "tables require leading and trailing pipes" {
 }
 
 test "headings" {
-    try testRender(
+    try test_render(
         \\# Level one
         \\## Level two
         \\### Level three
@@ -689,7 +689,7 @@ test "headings" {
 }
 
 test "headings with inline content" {
-    try testRender(
+    try test_render(
         \\# Outline of `std.zig`
         \\## **Important** notes
         \\### ***Nested* inline content**
@@ -703,7 +703,7 @@ test "headings with inline content" {
 }
 
 test "code blocks" {
-    try testRender(
+    try test_render(
         \\```
         \\Hello, world!
         \\This is some code.
@@ -745,7 +745,7 @@ test "code blocks" {
 }
 
 test "blockquotes" {
-    try testRender(
+    try test_render(
         \\> > You miss 100% of the shots you don't take.
         \\> >
         \\> > ~ Wayne Gretzky
@@ -765,7 +765,7 @@ test "blockquotes" {
 }
 
 test "blockquote lazy continuation lines" {
-    try testRender(
+    try test_render(
         \\>>>>Deeply nested blockquote
         \\>>which continues on another line
         \\and then yet another one.
@@ -793,7 +793,7 @@ test "blockquote lazy continuation lines" {
 }
 
 test "paragraphs" {
-    try testRender(
+    try test_render(
         \\Paragraph one.
         \\
         \\Paragraph two.
@@ -816,7 +816,7 @@ test "paragraphs" {
 }
 
 test "thematic breaks" {
-    try testRender(
+    try test_render(
         \\---
         \\***
         \\___
@@ -834,7 +834,7 @@ test "thematic breaks" {
 }
 
 test "links" {
-    try testRender(
+    try test_render(
         \\[Link](https://example.com)
         \\[Link *with inlines*](https://example.com)
         \\[Nested parens](https://example.com/nested(parens(inside)))
@@ -854,7 +854,7 @@ test "links" {
 }
 
 test "autolinks" {
-    try testRender(
+    try test_render(
         \\<https://example.com>
         \\**This is important: <https://example.com/strong>**
         \\<https://example.com?query=abc.123#page(parens)>
@@ -878,7 +878,7 @@ test "autolinks" {
 }
 
 test "text autolinks" {
-    try testRender(
+    try test_render(
         \\Text autolinks must start with http:// or https://.
         \\This doesn't count: ftp://example.com.
         \\Example: https://ziglang.org.
@@ -898,7 +898,7 @@ test "text autolinks" {
 }
 
 test "images" {
-    try testRender(
+    try test_render(
         \\![Alt text](https://example.com/image.png)
         \\![Alt text *with inlines*](https://example.com/image.png)
         \\![Nested parens](https://example.com/nested(parens(inside)).png)
@@ -918,7 +918,7 @@ test "images" {
 }
 
 test "emphasis" {
-    try testRender(
+    try test_render(
         \\*Emphasis.*
         \\**Strong.**
         \\***Strong emphasis.***
@@ -937,7 +937,7 @@ test "emphasis" {
         \\<em><strong><em><strong><em>OK, this is enough.</em></strong></em></strong></em></p>
         \\
     );
-    try testRender(
+    try test_render(
         \\_Emphasis._
         \\__Strong.__
         \\___Strong emphasis.___
@@ -959,7 +959,7 @@ test "emphasis" {
 }
 
 test "nested emphasis" {
-    try testRender(
+    try test_render(
         \\**Hello, *world!***
         \\*Hello, **world!***
         \\**Hello, _world!_**
@@ -989,7 +989,7 @@ test "nested emphasis" {
 }
 
 test "emphasis precedence" {
-    try testRender(
+    try test_render(
         \\*First one _wins*_.
         \\_*No other __rule matters.*_
         \\
@@ -1001,7 +1001,7 @@ test "emphasis precedence" {
 }
 
 test "emphasis open and close" {
-    try testRender(
+    try test_render(
         \\Cannot open: *
         \\Cannot open: _
         \\*Cannot close: *
@@ -1026,7 +1026,7 @@ test "emphasis open and close" {
 }
 
 test "code spans" {
-    try testRender(
+    try test_render(
         \\`Hello, world!`
         \\```Multiple `backticks` can be used.```
         \\`**This** does not produce emphasis.`
@@ -1053,7 +1053,7 @@ test "code spans" {
 }
 
 test "backslash escapes" {
-    try testRender(
+    try test_render(
         \\Not \*emphasized\*.
         \\Literal \\backslashes\\.
         \\Not code: \`hi\`.
@@ -1083,7 +1083,7 @@ test "backslash escapes" {
 }
 
 test "hard line breaks" {
-    try testRender(
+    try test_render(
         \\The iguana sits\
         \\Perched atop a short desk chair\
         \\Writing code in Zig
@@ -1098,14 +1098,14 @@ test "hard line breaks" {
 
 test "Unicode handling" {
     // Null bytes must be replaced.
-    try testRender("\x00\x00\x00", "<p>\u{FFFD}\u{FFFD}\u{FFFD}</p>\n");
+    try test_render("\x00\x00\x00", "<p>\u{FFFD}\u{FFFD}\u{FFFD}</p>\n");
 
     // Invalid UTF-8 must be replaced.
-    try testRender("\xC0\x80\xE0\x80\x80\xF0\x80\x80\x80", "<p>\u{FFFD}\u{FFFD}\u{FFFD}</p>\n");
-    try testRender("\xED\xA0\x80\xED\xBF\xBF", "<p>\u{FFFD}\u{FFFD}</p>\n");
+    try test_render("\xC0\x80\xE0\x80\x80\xF0\x80\x80\x80", "<p>\u{FFFD}\u{FFFD}\u{FFFD}</p>\n");
+    try test_render("\xED\xA0\x80\xED\xBF\xBF", "<p>\u{FFFD}\u{FFFD}</p>\n");
 
     // Incomplete UTF-8 must be replaced.
-    try testRender("\xE2\x82", "<p>\u{FFFD}</p>\n");
+    try test_render("\xE2\x82", "<p>\u{FFFD}</p>\n");
 }
 
 fn test_render(input: []const u8, expected: []const u8) !void {
@@ -1114,14 +1114,14 @@ fn test_render(input: []const u8, expected: []const u8) !void {
 
     var lines = std.mem.split(u8, input, "\n");
     while (lines.next()) |line| {
-        try parser.feedLine(line);
+        try parser.feed_line(line);
     }
-    var doc = try parser.endInput();
+    var doc = try parser.end_input();
     defer doc.deinit(testing.allocator);
 
     var actual = std.ArrayList(u8).init(testing.allocator);
     defer actual.deinit();
     try doc.render(actual.writer());
 
-    try testing.expectEqualStrings(expected, actual.items);
+    try testing.expect_equal_strings(expected, actual.items);
 }

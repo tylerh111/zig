@@ -46,16 +46,16 @@ test {
 pub var environ: [][*:0]u8 = undefined;
 
 /// Populated by startup code before main().
-/// Not available on WASI or Windows without libc. See `std.process.argsAlloc`
-/// or `std.process.argsWithAllocator` for a cross-platform alternative.
+/// Not available on WASI or Windows without libc. See `std.process.args_alloc`
+/// or `std.process.args_with_allocator` for a cross-platform alternative.
 pub var argv: [][*:0]u8 = if (builtin.link_libc) undefined else switch (builtin.os.tag) {
-    .windows => @compileError("argv isn't supported on Windows: use std.process.argsAlloc instead"),
-    .wasi => @compileError("argv isn't supported on WASI: use std.process.argsAlloc instead"),
+    .windows => @compile_error("argv isn't supported on Windows: use std.process.args_alloc instead"),
+    .wasi => @compile_error("argv isn't supported on WASI: use std.process.args_alloc instead"),
     else => undefined,
 };
 
 /// Call from Windows-specific code if you already have a WTF-16LE encoded, null terminated string.
-/// Otherwise use `access` or `accessZ`.
+/// Otherwise use `access` or `access_z`.
 pub fn access_w(path: [*:0]const u16) windows.GetFileAttributesError!void {
     const ret = try windows.GetFileAttributesW(path);
     if (ret != windows.INVALID_FILE_ATTRIBUTES) {
@@ -65,7 +65,7 @@ pub fn access_w(path: [*:0]const u16) windows.GetFileAttributesError!void {
         .FILE_NOT_FOUND => return error.FileNotFound,
         .PATH_NOT_FOUND => return error.FileNotFound,
         .ACCESS_DENIED => return error.PermissionDenied,
-        else => |err| return windows.unexpectedError(err),
+        else => |err| return windows.unexpected_error(err),
     }
 }
 
@@ -100,15 +100,15 @@ pub fn is_get_fd_path_supported_on_target(os: std.Target.Os) bool {
 ///
 /// Calling this function is usually a bug.
 pub fn get_fd_path(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posix.RealPathError![]u8 {
-    if (!comptime isGetFdPathSupportedOnTarget(builtin.os)) {
-        @compileError("querying for canonical path of a handle is unsupported on this host");
+    if (!comptime is_get_fd_path_supported_on_target(builtin.os)) {
+        @compile_error("querying for canonical path of a handle is unsupported on this host");
     }
     switch (builtin.os.tag) {
         .windows => {
             var wide_buf: [windows.PATH_MAX_WIDE]u16 = undefined;
             const wide_slice = try windows.GetFinalPathNameByHandle(fd, .{}, wide_buf[0..]);
 
-            const end_index = std.unicode.wtf16LeToWtf8(out_buffer, wide_slice);
+            const end_index = std.unicode.wtf16_le_to_wtf8(out_buffer, wide_slice);
             return out_buffer[0..end_index];
         },
         .macos, .ios, .watchos, .tvos, .visionos => {
@@ -121,16 +121,16 @@ pub fn get_fd_path(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posi
                 .NOSPC => return error.NameTooLong,
                 // TODO man pages for fcntl on macOS don't really tell you what
                 // errno values to expect when command is F.GETPATH...
-                else => |err| return posix.unexpectedErrno(err),
+                else => |err| return posix.unexpected_errno(err),
             }
-            const len = mem.indexOfScalar(u8, out_buffer[0..], 0) orelse MAX_PATH_BYTES;
+            const len = mem.index_of_scalar(u8, out_buffer[0..], 0) orelse MAX_PATH_BYTES;
             return out_buffer[0..len];
         },
         .linux => {
             var procfs_buf: ["/proc/self/fd/-2147483648\x00".len]u8 = undefined;
-            const proc_path = std.fmt.bufPrintZ(procfs_buf[0..], "/proc/self/fd/{d}", .{fd}) catch unreachable;
+            const proc_path = std.fmt.buf_print_z(procfs_buf[0..], "/proc/self/fd/{d}", .{fd}) catch unreachable;
 
-            const target = posix.readlinkZ(proc_path, out_buffer) catch |err| {
+            const target = posix.readlink_z(proc_path, out_buffer) catch |err| {
                 switch (err) {
                     error.NotLink => unreachable,
                     error.BadPathName => unreachable,
@@ -145,9 +145,9 @@ pub fn get_fd_path(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posi
         },
         .solaris, .illumos => {
             var procfs_buf: ["/proc/self/path/-2147483648\x00".len]u8 = undefined;
-            const proc_path = std.fmt.bufPrintZ(procfs_buf[0..], "/proc/self/path/{d}", .{fd}) catch unreachable;
+            const proc_path = std.fmt.buf_print_z(procfs_buf[0..], "/proc/self/path/{d}", .{fd}) catch unreachable;
 
-            const target = posix.readlinkZ(proc_path, out_buffer) catch |err| switch (err) {
+            const target = posix.readlink_z(proc_path, out_buffer) catch |err| switch (err) {
                 error.UnsupportedReparsePointType => unreachable,
                 error.NotLink => unreachable,
                 else => |e| return e,
@@ -155,15 +155,15 @@ pub fn get_fd_path(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posi
             return target;
         },
         .freebsd => {
-            if (comptime builtin.os.isAtLeast(.freebsd, .{ .major = 13, .minor = 0, .patch = 0 }) orelse false) {
+            if (comptime builtin.os.is_at_least(.freebsd, .{ .major = 13, .minor = 0, .patch = 0 }) orelse false) {
                 var kfile: std.c.kinfo_file = undefined;
                 kfile.structsize = std.c.KINFO_FILE_SIZE;
-                switch (posix.errno(std.c.fcntl(fd, std.c.F.KINFO, @intFromPtr(&kfile)))) {
+                switch (posix.errno(std.c.fcntl(fd, std.c.F.KINFO, @int_from_ptr(&kfile)))) {
                     .SUCCESS => {},
                     .BADF => return error.FileNotFound,
-                    else => |err| return posix.unexpectedErrno(err),
+                    else => |err| return posix.unexpected_errno(err),
                 }
-                const len = mem.indexOfScalar(u8, &kfile.path, 0) orelse MAX_PATH_BYTES;
+                const len = mem.index_of_scalar(u8, &kfile.path, 0) orelse MAX_PATH_BYTES;
                 if (len == 0) return error.NameTooLong;
                 const result = out_buffer[0..len];
                 @memcpy(result, kfile.path[0..len]);
@@ -194,15 +194,15 @@ pub fn get_fd_path(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posi
                 };
                 var i: usize = 0;
                 while (i < len) {
-                    const kf: *align(1) std.c.kinfo_file = @ptrCast(&buf[i]);
+                    const kf: *align(1) std.c.kinfo_file = @ptr_cast(&buf[i]);
                     if (kf.fd == fd) {
-                        len = mem.indexOfScalar(u8, &kf.path, 0) orelse MAX_PATH_BYTES;
+                        len = mem.index_of_scalar(u8, &kf.path, 0) orelse MAX_PATH_BYTES;
                         if (len == 0) return error.NameTooLong;
                         const result = out_buffer[0..len];
                         @memcpy(result, kf.path[0..len]);
                         return result;
                     }
-                    i += @intCast(kf.structsize);
+                    i += @int_cast(kf.structsize);
                 }
                 return error.FileNotFound;
             }
@@ -213,9 +213,9 @@ pub fn get_fd_path(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posi
                 .SUCCESS => {},
                 .BADF => return error.FileNotFound,
                 .RANGE => return error.NameTooLong,
-                else => |err| return posix.unexpectedErrno(err),
+                else => |err| return posix.unexpected_errno(err),
             }
-            const len = mem.indexOfScalar(u8, out_buffer[0..], 0) orelse MAX_PATH_BYTES;
+            const len = mem.index_of_scalar(u8, out_buffer[0..], 0) orelse MAX_PATH_BYTES;
             return out_buffer[0..len];
         },
         .netbsd => {
@@ -227,12 +227,12 @@ pub fn get_fd_path(fd: std.posix.fd_t, out_buffer: *[MAX_PATH_BYTES]u8) std.posi
                 .NOENT => return error.FileNotFound,
                 .NOMEM => return error.SystemResources,
                 .RANGE => return error.NameTooLong,
-                else => |err| return posix.unexpectedErrno(err),
+                else => |err| return posix.unexpected_errno(err),
             }
-            const len = mem.indexOfScalar(u8, out_buffer[0..], 0) orelse MAX_PATH_BYTES;
+            const len = mem.index_of_scalar(u8, out_buffer[0..], 0) orelse MAX_PATH_BYTES;
             return out_buffer[0..len];
         },
-        else => unreachable, // made unreachable by isGetFdPathSupportedOnTarget above
+        else => unreachable, // made unreachable by is_get_fd_path_supported_on_target above
     }
 }
 
@@ -253,7 +253,7 @@ pub fn fstatat_wasi(dirfd: posix.fd_t, pathname: []const u8, flags: wasi.lookupf
         .NOTDIR => return error.FileNotFound,
         .NOTCAPABLE => return error.AccessDenied,
         .ILSEQ => return error.InvalidUtf8,
-        else => |err| return posix.unexpectedErrno(err),
+        else => |err| return posix.unexpected_errno(err),
     }
 }
 
@@ -266,6 +266,6 @@ pub fn fstat_wasi(fd: posix.fd_t) posix.FStatError!wasi.filestat_t {
         .NOMEM => return error.SystemResources,
         .ACCES => return error.AccessDenied,
         .NOTCAPABLE => return error.AccessDenied,
-        else => |err| return posix.unexpectedErrno(err),
+        else => |err| return posix.unexpected_errno(err),
     }
 }

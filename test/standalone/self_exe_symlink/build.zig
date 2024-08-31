@@ -9,35 +9,35 @@ pub fn build(b: *std.Build) void {
     const optimize: std.builtin.OptimizeMode = .Debug;
     const target = b.host;
 
-    // The test requires getFdPath in order to to get the path of the
-    // File returned by openSelfExe
-    if (!std.os.isGetFdPathSupportedOnTarget(target.result.os)) return;
+    // The test requires get_fd_path in order to to get the path of the
+    // File returned by open_self_exe
+    if (!std.os.is_get_fd_path_supported_on_target(target.result.os)) return;
 
-    const main = b.addExecutable(.{
+    const main = b.add_executable(.{
         .name = "main",
         .root_source_file = b.path("main.zig"),
         .optimize = optimize,
         .target = target,
     });
 
-    const create_symlink_exe = b.addExecutable(.{
+    const create_symlink_exe = b.add_executable(.{
         .name = "create-symlink",
         .root_source_file = b.path("create-symlink.zig"),
         .optimize = optimize,
         .target = target,
     });
 
-    var run_create_symlink = b.addRunArtifact(create_symlink_exe);
-    run_create_symlink.addArtifactArg(main);
-    const symlink_path = run_create_symlink.addOutputFileArg("main-symlink");
-    run_create_symlink.expectExitCode(0);
+    var run_create_symlink = b.add_run_artifact(create_symlink_exe);
+    run_create_symlink.add_artifact_arg(main);
+    const symlink_path = run_create_symlink.add_output_file_arg("main-symlink");
+    run_create_symlink.expect_exit_code(0);
     run_create_symlink.skip_foreign_checks = true;
 
     var run_from_symlink = std.Build.Step.Run.create(b, "run symlink");
-    run_from_symlink.addFileArg(symlink_path);
-    run_from_symlink.expectExitCode(0);
+    run_from_symlink.add_file_arg(symlink_path);
+    run_from_symlink.expect_exit_code(0);
     run_from_symlink.skip_foreign_checks = true;
-    run_from_symlink.step.dependOn(&run_create_symlink.step);
+    run_from_symlink.step.depend_on(&run_create_symlink.step);
 
-    test_step.dependOn(&run_from_symlink.step);
+    test_step.depend_on(&run_from_symlink.step);
 }

@@ -2,7 +2,7 @@ pub export fn entry() void {
     var buf: [5]u8 = .{ 1, 2, 3, 4, 5 };
     const slice: []u8 = &buf;
     const a: u32 = 1234;
-    @memcpy(slice.ptr, @as([*]const u8, @ptrCast(&a)));
+    @memcpy(slice.ptr, @as([*]const u8, @ptr_cast(&a)));
 }
 pub export fn entry1() void {
     var buf: [5]u8 = .{ 1, 2, 3, 4, 5 };

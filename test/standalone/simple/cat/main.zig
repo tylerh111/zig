@@ -10,33 +10,33 @@ pub fn main() !void {
     defer arena_instance.deinit();
     const arena = arena_instance.allocator();
 
-    const args = try process.argsAlloc(arena);
+    const args = try process.args_alloc(arena);
 
     const exe = args[0];
     var catted_anything = false;
-    const stdout_file = io.getStdOut();
+    const stdout_file = io.get_std_out();
 
     const cwd = fs.cwd();
 
     for (args[1..]) |arg| {
         if (mem.eql(u8, arg, "-")) {
             catted_anything = true;
-            try stdout_file.writeFileAll(io.getStdIn(), .{});
-        } else if (mem.startsWith(u8, arg, "-")) {
+            try stdout_file.write_file_all(io.get_std_in(), .{});
+        } else if (mem.starts_with(u8, arg, "-")) {
             return usage(exe);
         } else {
-            const file = cwd.openFile(arg, .{}) catch |err| {
+            const file = cwd.open_file(arg, .{}) catch |err| {
                 warn("Unable to open file: {s}\n", .{@errorName(err)});
                 return err;
             };
             defer file.close();
 
             catted_anything = true;
-            try stdout_file.writeFileAll(file, .{});
+            try stdout_file.write_file_all(file, .{});
         }
     }
     if (!catted_anything) {
-        try stdout_file.writeFileAll(io.getStdIn(), .{});
+        try stdout_file.write_file_all(io.get_std_in(), .{});
     }
 }
 

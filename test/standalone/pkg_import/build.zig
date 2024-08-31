@@ -6,14 +6,14 @@ pub fn build(b: *std.Build) void {
 
     const optimize: std.builtin.OptimizeMode = .Debug;
 
-    const exe = b.addExecutable(.{
+    const exe = b.add_executable(.{
         .name = "test",
         .root_source_file = b.path("test.zig"),
         .optimize = optimize,
         .target = b.host,
     });
-    exe.root_module.addAnonymousImport("my_pkg", .{ .root_source_file = b.path("pkg.zig") });
+    exe.root_module.add_anonymous_import("my_pkg", .{ .root_source_file = b.path("pkg.zig") });
 
-    const run = b.addRunArtifact(exe);
-    test_step.dependOn(&run.step);
+    const run = b.add_run_artifact(exe);
+    test_step.depend_on(&run.step);
 }

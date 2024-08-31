@@ -21,11 +21,11 @@ fn divwide_generic(comptime T: type, _u1: T, _u0: T, v_: T, r: *T) T {
     var un64: T = undefined;
     var un10: T = undefined;
 
-    const s: Log2Int(T) = @intCast(@clz(v));
+    const s: Log2Int(T) = @int_cast(@clz(v));
     if (s > 0) {
         // Normalize divisor
         v <<= s;
-        un64 = (_u1 << s) | (_u0 >> @intCast((@bitSizeOf(T) - @as(T, @intCast(s)))));
+        un64 = (_u1 << s) | (_u0 >> @int_cast((@bitSizeOf(T) - @as(T, @int_cast(s)))));
         un10 = _u0 << s;
     } else {
         // Avoid undefined behavior of (u0 >> @bitSizeOf(T))
@@ -35,11 +35,11 @@ fn divwide_generic(comptime T: type, _u1: T, _u0: T, v_: T, r: *T) T {
 
     // Break divisor up into two 32-bit digits
     const vn1 = v >> (@bitSizeOf(T) / 2);
-    const vn0 = v & std.math.maxInt(HalfT);
+    const vn0 = v & std.math.max_int(HalfT);
 
     // Break right half of dividend into two digits
     const un1 = un10 >> (@bitSizeOf(T) / 2);
-    const un0 = un10 & std.math.maxInt(HalfT);
+    const un0 = un10 & std.math.max_int(HalfT);
 
     // Compute the first quotient digit, q1
     var q1 = un64 / vn1;
@@ -101,8 +101,8 @@ pub fn udivmod(comptime T: type, a_: T, b_: T, maybe_rem: ?*T) T {
         return 0;
     }
 
-    const a: [2]HalfT = @bitCast(a_);
-    const b: [2]HalfT = @bitCast(b_);
+    const a: [2]HalfT = @bit_cast(a_);
+    const b: [2]HalfT = @bit_cast(b_);
     var q: [2]HalfT = undefined;
     var r: [2]HalfT = undefined;
 
@@ -119,16 +119,16 @@ pub fn udivmod(comptime T: type, a_: T, b_: T, maybe_rem: ?*T) T {
             q[lo] = divwide(HalfT, a[hi] % b[lo], a[lo], b[lo], &r[lo]);
         }
         if (maybe_rem) |rem| {
-            rem.* = @bitCast(r);
+            rem.* = @bit_cast(r);
         }
-        return @bitCast(q);
+        return @bit_cast(q);
     }
 
     // 0 <= shift <= 63
     const shift: Log2Int(T) = @clz(b[hi]) - @clz(a[hi]);
-    var af: T = @bitCast(a);
-    var bf = @as(T, @bitCast(b)) << shift;
-    q = @bitCast(@as(T, 0));
+    var af: T = @bit_cast(a);
+    var bf = @as(T, @bit_cast(b)) << shift;
+    q = @bit_cast(@as(T, 0));
 
     for (0..shift + 1) |_| {
         q[lo] <<= 1;
@@ -137,13 +137,13 @@ pub fn udivmod(comptime T: type, a_: T, b_: T, maybe_rem: ?*T) T {
         //     af -= bf;
         //     q[lo] |= 1;
         // }
-        const s = @as(SignedT, @bitCast(bf -% af -% 1)) >> (@bitSizeOf(T) - 1);
-        q[lo] |= @intCast(s & 1);
-        af -= bf & @as(T, @bitCast(s));
+        const s = @as(SignedT, @bit_cast(bf -% af -% 1)) >> (@bitSizeOf(T) - 1);
+        q[lo] |= @int_cast(s & 1);
+        af -= bf & @as(T, @bit_cast(s));
         bf >>= 1;
     }
     if (maybe_rem) |rem| {
-        rem.* = @bitCast(af);
+        rem.* = @bit_cast(af);
     }
-    return @bitCast(q);
+    return @bit_cast(q);
 }

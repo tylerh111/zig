@@ -544,12 +544,12 @@ pub const Inst = struct {
 
         /// From a given wasm opcode, returns a MIR tag.
         pub fn from_opcode(opcode: std.wasm.Opcode) Tag {
-            return @as(Tag, @enumFromInt(@intFromEnum(opcode))); // Given `Opcode` is not present as a tag for MIR yet
+            return @as(Tag, @enumFromInt(@int_from_enum(opcode))); // Given `Opcode` is not present as a tag for MIR yet
         }
 
         /// Returns a wasm opcode from a given MIR tag.
         pub fn to_opcode(self: Tag) std.wasm.Opcode {
-            return @as(std.wasm.Opcode, @enumFromInt(@intFromEnum(self)));
+            return @as(std.wasm.Opcode, @enumFromInt(@int_from_enum(self)));
         }
     };
 
@@ -596,7 +596,7 @@ pub fn extra_data(self: *const Mir, comptime T: type, index: usize) struct { dat
     inline for (fields) |field| {
         @field(result, field.name) = switch (field.type) {
             u32 => self.extra[i],
-            else => |field_type| @compileError("Unsupported field type " ++ @typeName(field_type)),
+            else => |field_type| @compile_error("Unsupported field type " ++ @type_name(field_type)),
         };
         i += 1;
     }
@@ -639,7 +639,7 @@ pub const Float64 = struct {
     lsb: u32,
 
     pub fn from_float64(float: f64) Float64 {
-        const tmp = @as(u64, @bitCast(float));
+        const tmp = @as(u64, @bit_cast(float));
         return .{
             .msb = @as(u32, @truncate(tmp >> 32)),
             .lsb = @as(u32, @truncate(tmp)),
@@ -647,7 +647,7 @@ pub const Float64 = struct {
     }
 
     pub fn to_f64(self: Float64) f64 {
-        @as(f64, @bitCast(self.toU64()));
+        @as(f64, @bit_cast(self.to_u64()));
     }
 
     pub fn to_u64(self: Float64) u64 {

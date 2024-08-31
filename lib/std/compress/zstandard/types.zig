@@ -399,5 +399,5 @@ pub const compressed_block = struct {
 
 test {
     const testing = @import("std").testing;
-    testing.refAllDeclsRecursive(@This());
+    testing.ref_all_decls_recursive(@This());
 }

@@ -12,9 +12,9 @@ comptime {
 }
 
 pub fn __truncdfhf2(a: f64) callconv(.C) common.F16T(f64) {
-    return @bitCast(truncf(f16, f64, a));
+    return @bit_cast(truncf(f16, f64, a));
 }
 
 fn __aeabi_d2h(a: f64) callconv(.AAPCS) u16 {
-    return @bitCast(truncf(f16, f64, a));
+    return @bit_cast(truncf(f16, f64, a));
 }

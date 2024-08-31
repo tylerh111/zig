@@ -3,7 +3,7 @@ const testing = @import("std").testing;
 
 fn test__bswapti2(a: u128, expected: u128) !void {
     const result = bswap.__bswapti2(a);
-    try testing.expectEqual(expected, result);
+    try testing.expect_equal(expected, result);
 }
 
 test "bswapti2" {

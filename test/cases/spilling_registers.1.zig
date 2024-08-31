@@ -1,5 +1,5 @@
 pub fn main() void {
-    assert(addMul(3, 4) == 357747496);
+    assert(add_mul(3, 4) == 357747496);
 }
 
 fn add_mul(a: u32, b: u32) u32 {

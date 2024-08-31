@@ -32,7 +32,7 @@ fn standard_base64_decoder_with_ignore(ignore: []const u8) Base64DecoderWithIgno
 pub const standard = Codecs{
     .alphabet_chars = standard_alphabet_chars,
     .pad_char = '=',
-    .decoderWithIgnore = standardBase64DecoderWithIgnore,
+    .decoderWithIgnore = standard_base64_decoder_with_ignore,
     .Encoder = Base64Encoder.init(standard_alphabet_chars, '='),
     .Decoder = Base64Decoder.init(standard_alphabet_chars, '='),
 };
@@ -41,7 +41,7 @@ pub const standard = Codecs{
 pub const standard_no_pad = Codecs{
     .alphabet_chars = standard_alphabet_chars,
     .pad_char = null,
-    .decoderWithIgnore = standardBase64DecoderWithIgnore,
+    .decoderWithIgnore = standard_base64_decoder_with_ignore,
     .Encoder = Base64Encoder.init(standard_alphabet_chars, null),
     .Decoder = Base64Decoder.init(standard_alphabet_chars, null),
 };
@@ -55,7 +55,7 @@ fn url_safe_base64_decoder_with_ignore(ignore: []const u8) Base64DecoderWithIgno
 pub const url_safe = Codecs{
     .alphabet_chars = url_safe_alphabet_chars,
     .pad_char = '=',
-    .decoderWithIgnore = urlSafeBase64DecoderWithIgnore,
+    .decoderWithIgnore = url_safe_base64_decoder_with_ignore,
     .Encoder = Base64Encoder.init(url_safe_alphabet_chars, '='),
     .Decoder = Base64Decoder.init(url_safe_alphabet_chars, '='),
 };
@@ -64,7 +64,7 @@ pub const url_safe = Codecs{
 pub const url_safe_no_pad = Codecs{
     .alphabet_chars = url_safe_alphabet_chars,
     .pad_char = null,
-    .decoderWithIgnore = urlSafeBase64DecoderWithIgnore,
+    .decoderWithIgnore = url_safe_base64_decoder_with_ignore,
     .Encoder = Base64Encoder.init(url_safe_alphabet_chars, null),
     .Decoder = Base64Decoder.init(url_safe_alphabet_chars, null),
 };
@@ -91,29 +91,29 @@ pub const Base64Encoder = struct {
     /// Compute the encoded length
     pub fn calc_size(encoder: *const Base64Encoder, source_len: usize) usize {
         if (encoder.pad_char != null) {
-            return @divTrunc(source_len + 2, 3) * 4;
+            return @div_trunc(source_len + 2, 3) * 4;
         } else {
             const leftover = source_len % 3;
-            return @divTrunc(source_len, 3) * 4 + @divTrunc(leftover * 4 + 2, 3);
+            return @div_trunc(source_len, 3) * 4 + @div_trunc(leftover * 4 + 2, 3);
         }
     }
 
-    /// dest.len must at least be what you get from ::calcSize.
+    /// dest.len must at least be what you get from ::calc_size.
     pub fn encode(encoder: *const Base64Encoder, dest: []u8, source: []const u8) []const u8 {
-        const out_len = encoder.calcSize(source.len);
+        const out_len = encoder.calc_size(source.len);
         assert(dest.len >= out_len);
 
         var idx: usize = 0;
         var out_idx: usize = 0;
         while (idx + 15 < source.len) : (idx += 12) {
-            const bits = std.mem.readInt(u128, source[idx..][0..16], .big);
+            const bits = std.mem.read_int(u128, source[idx..][0..16], .big);
             inline for (0..16) |i| {
                 dest[out_idx + i] = encoder.alphabet_chars[@truncate((bits >> (122 - i * 6)) & 0x3f)];
             }
             out_idx += 16;
         }
         while (idx + 3 < source.len) : (idx += 3) {
-            const bits = std.mem.readInt(u32, source[idx..][0..4], .big);
+            const bits = std.mem.read_int(u32, source[idx..][0..4], .big);
             dest[out_idx] = encoder.alphabet_chars[(bits >> 26) & 0x3f];
             dest[out_idx + 1] = encoder.alphabet_chars[(bits >> 20) & 0x3f];
             dest[out_idx + 2] = encoder.alphabet_chars[(bits >> 14) & 0x3f];
@@ -167,13 +167,13 @@ pub const Base64Decoder = struct {
             assert(!char_in_alphabet[c]);
             assert(pad_char == null or c != pad_char.?);
 
-            const ci = @as(u32, @intCast(i));
+            const ci = @as(u32, @int_cast(i));
             result.fast_char_to_index[0][c] = ci << 2;
             result.fast_char_to_index[1][c] = (ci >> 4) | ((ci & 0x0f) << 12);
             result.fast_char_to_index[2][c] = ((ci & 0x3) << 22) | ((ci & 0x3c) << 6);
             result.fast_char_to_index[3][c] = ci << 16;
 
-            result.char_to_index[c] = @as(u8, @intCast(i));
+            result.char_to_index[c] = @as(u8, @int_cast(i));
             char_in_alphabet[c] = true;
         }
         return result;
@@ -197,7 +197,7 @@ pub const Base64Decoder = struct {
     /// `InvalidPadding` is returned if the input length is not valid.
     pub fn calc_size_for_slice(decoder: *const Base64Decoder, source: []const u8) Error!usize {
         const source_len = source.len;
-        var result = try decoder.calcSizeUpperBound(source_len);
+        var result = try decoder.calc_size_upper_bound(source_len);
         if (decoder.pad_char) |pad_char| {
             if (source_len >= 1 and source[source_len - 1] == pad_char) result -= 1;
             if (source_len >= 2 and source[source_len - 2] == pad_char) result -= 1;
@@ -205,7 +205,7 @@ pub const Base64Decoder = struct {
         return result;
     }
 
-    /// dest.len must be what you get from ::calcSize.
+    /// dest.len must be what you get from ::calc_size.
     /// Invalid characters result in `error.InvalidCharacter`.
     /// Invalid padding results in `error.InvalidPadding`.
     pub fn decode(decoder: *const Base64Decoder, dest: []u8, source: []const u8) Error!void {
@@ -228,7 +228,7 @@ pub const Base64Decoder = struct {
                 if ((new_bits & invalid_char_tst) != 0) return error.InvalidCharacter;
                 bits |= (new_bits << (24 * i));
             }
-            std.mem.writeInt(u128, dest[dest_idx..][0..16], bits, .little);
+            std.mem.write_int(u128, dest[dest_idx..][0..16], bits, .little);
         }
         while (fast_src_idx + 4 < source.len and dest_idx + 3 < dest.len) : ({
             fast_src_idx += 4;
@@ -239,7 +239,7 @@ pub const Base64Decoder = struct {
             bits |= decoder.fast_char_to_index[2][source[fast_src_idx + 2]];
             bits |= decoder.fast_char_to_index[3][source[fast_src_idx + 3]];
             if ((bits & invalid_char_tst) != 0) return error.InvalidCharacter;
-            std.mem.writeInt(u32, dest[dest_idx..][0..4], bits, .little);
+            std.mem.write_int(u32, dest[dest_idx..][0..4], bits, .little);
         }
         const remaining = source[fast_src_idx..];
         for (remaining, fast_src_idx..) |c, src_idx| {
@@ -307,7 +307,7 @@ pub const Base64DecoderWithIgnore = struct {
 
     /// Invalid characters that are not ignored result in error.InvalidCharacter.
     /// Invalid padding results in error.InvalidPadding.
-    /// Decoding more data than can fit in dest results in error.NoSpaceLeft. See also ::calcSizeUpperBound.
+    /// Decoding more data than can fit in dest results in error.NoSpaceLeft. See also ::calc_size_upper_bound.
     /// Returns the number of bytes written to dest.
     pub fn decode(decoder_with_ignore: *const Base64DecoderWithIgnore, dest: []u8, source: []const u8) Error!usize {
         const decoder = &decoder_with_ignore.decoder;
@@ -358,8 +358,8 @@ pub const Base64DecoderWithIgnore = struct {
 
 test "base64" {
     @setEvalBranchQuota(8000);
-    try testBase64();
-    try comptime testAllApis(standard, "comptime", "Y29tcHRpbWU=");
+    try test_base64();
+    try comptime test_all_apis(standard, "comptime", "Y29tcHRpbWU=");
 }
 
 test "base64 padding dest overflow" {
@@ -367,111 +367,111 @@ test "base64 padding dest overflow" {
 
     var expect: [128]u8 = undefined;
     @memset(&expect, 0);
-    _ = url_safe.Encoder.encode(expect[0..url_safe.Encoder.calcSize(input.len)], input);
+    _ = url_safe.Encoder.encode(expect[0..url_safe.Encoder.calc_size(input.len)], input);
 
     var got: [128]u8 = undefined;
     @memset(&got, 0);
     _ = url_safe.Encoder.encode(&got, input);
 
-    try std.testing.expectEqualSlices(u8, &expect, &got);
+    try std.testing.expect_equal_slices(u8, &expect, &got);
 }
 
 test "base64 url_safe_no_pad" {
     @setEvalBranchQuota(8000);
-    try testBase64UrlSafeNoPad();
-    try comptime testAllApis(url_safe_no_pad, "comptime", "Y29tcHRpbWU");
+    try test_base64_url_safe_no_pad();
+    try comptime test_all_apis(url_safe_no_pad, "comptime", "Y29tcHRpbWU");
 }
 
 fn test_base64() !void {
     const codecs = standard;
 
-    try testAllApis(codecs, "", "");
-    try testAllApis(codecs, "f", "Zg==");
-    try testAllApis(codecs, "fo", "Zm8=");
-    try testAllApis(codecs, "foo", "Zm9v");
-    try testAllApis(codecs, "foob", "Zm9vYg==");
-    try testAllApis(codecs, "fooba", "Zm9vYmE=");
-    try testAllApis(codecs, "foobar", "Zm9vYmFy");
-    try testAllApis(codecs, "foobarfoobarfoo", "Zm9vYmFyZm9vYmFyZm9v");
-    try testAllApis(codecs, "foobarfoobarfoob", "Zm9vYmFyZm9vYmFyZm9vYg==");
-    try testAllApis(codecs, "foobarfoobarfooba", "Zm9vYmFyZm9vYmFyZm9vYmE=");
-    try testAllApis(codecs, "foobarfoobarfoobar", "Zm9vYmFyZm9vYmFyZm9vYmFy");
+    try test_all_apis(codecs, "", "");
+    try test_all_apis(codecs, "f", "Zg==");
+    try test_all_apis(codecs, "fo", "Zm8=");
+    try test_all_apis(codecs, "foo", "Zm9v");
+    try test_all_apis(codecs, "foob", "Zm9vYg==");
+    try test_all_apis(codecs, "fooba", "Zm9vYmE=");
+    try test_all_apis(codecs, "foobar", "Zm9vYmFy");
+    try test_all_apis(codecs, "foobarfoobarfoo", "Zm9vYmFyZm9vYmFyZm9v");
+    try test_all_apis(codecs, "foobarfoobarfoob", "Zm9vYmFyZm9vYmFyZm9vYg==");
+    try test_all_apis(codecs, "foobarfoobarfooba", "Zm9vYmFyZm9vYmFyZm9vYmE=");
+    try test_all_apis(codecs, "foobarfoobarfoobar", "Zm9vYmFyZm9vYmFyZm9vYmFy");
 
-    try testDecodeIgnoreSpace(codecs, "", " ");
-    try testDecodeIgnoreSpace(codecs, "f", "Z g= =");
-    try testDecodeIgnoreSpace(codecs, "fo", "    Zm8=");
-    try testDecodeIgnoreSpace(codecs, "foo", "Zm9v    ");
-    try testDecodeIgnoreSpace(codecs, "foob", "Zm9vYg = = ");
-    try testDecodeIgnoreSpace(codecs, "fooba", "Zm9v YmE=");
-    try testDecodeIgnoreSpace(codecs, "foobar", " Z m 9 v Y m F y ");
+    try test_decode_ignore_space(codecs, "", " ");
+    try test_decode_ignore_space(codecs, "f", "Z g= =");
+    try test_decode_ignore_space(codecs, "fo", "    Zm8=");
+    try test_decode_ignore_space(codecs, "foo", "Zm9v    ");
+    try test_decode_ignore_space(codecs, "foob", "Zm9vYg = = ");
+    try test_decode_ignore_space(codecs, "fooba", "Zm9v YmE=");
+    try test_decode_ignore_space(codecs, "foobar", " Z m 9 v Y m F y ");
 
     // test getting some api errors
-    try testError(codecs, "A", error.InvalidPadding);
-    try testError(codecs, "AA", error.InvalidPadding);
-    try testError(codecs, "AAA", error.InvalidPadding);
-    try testError(codecs, "A..A", error.InvalidCharacter);
-    try testError(codecs, "AA=A", error.InvalidPadding);
-    try testError(codecs, "AA/=", error.InvalidPadding);
-    try testError(codecs, "A/==", error.InvalidPadding);
-    try testError(codecs, "A===", error.InvalidPadding);
-    try testError(codecs, "====", error.InvalidPadding);
-    try testError(codecs, "Zm9vYmFyZm9vYmFyA..A", error.InvalidCharacter);
-    try testError(codecs, "Zm9vYmFyZm9vYmFyAA=A", error.InvalidPadding);
-    try testError(codecs, "Zm9vYmFyZm9vYmFyAA/=", error.InvalidPadding);
-    try testError(codecs, "Zm9vYmFyZm9vYmFyA/==", error.InvalidPadding);
-    try testError(codecs, "Zm9vYmFyZm9vYmFyA===", error.InvalidPadding);
-    try testError(codecs, "A..AZm9vYmFyZm9vYmFy", error.InvalidCharacter);
-    try testError(codecs, "Zm9vYmFyZm9vAA=A", error.InvalidPadding);
-    try testError(codecs, "Zm9vYmFyZm9vAA/=", error.InvalidPadding);
-    try testError(codecs, "Zm9vYmFyZm9vA/==", error.InvalidPadding);
-    try testError(codecs, "Zm9vYmFyZm9vA===", error.InvalidPadding);
+    try test_error(codecs, "A", error.InvalidPadding);
+    try test_error(codecs, "AA", error.InvalidPadding);
+    try test_error(codecs, "AAA", error.InvalidPadding);
+    try test_error(codecs, "A..A", error.InvalidCharacter);
+    try test_error(codecs, "AA=A", error.InvalidPadding);
+    try test_error(codecs, "AA/=", error.InvalidPadding);
+    try test_error(codecs, "A/==", error.InvalidPadding);
+    try test_error(codecs, "A===", error.InvalidPadding);
+    try test_error(codecs, "====", error.InvalidPadding);
+    try test_error(codecs, "Zm9vYmFyZm9vYmFyA..A", error.InvalidCharacter);
+    try test_error(codecs, "Zm9vYmFyZm9vYmFyAA=A", error.InvalidPadding);
+    try test_error(codecs, "Zm9vYmFyZm9vYmFyAA/=", error.InvalidPadding);
+    try test_error(codecs, "Zm9vYmFyZm9vYmFyA/==", error.InvalidPadding);
+    try test_error(codecs, "Zm9vYmFyZm9vYmFyA===", error.InvalidPadding);
+    try test_error(codecs, "A..AZm9vYmFyZm9vYmFy", error.InvalidCharacter);
+    try test_error(codecs, "Zm9vYmFyZm9vAA=A", error.InvalidPadding);
+    try test_error(codecs, "Zm9vYmFyZm9vAA/=", error.InvalidPadding);
+    try test_error(codecs, "Zm9vYmFyZm9vA/==", error.InvalidPadding);
+    try test_error(codecs, "Zm9vYmFyZm9vA===", error.InvalidPadding);
 
-    try testNoSpaceLeftError(codecs, "AA==");
-    try testNoSpaceLeftError(codecs, "AAA=");
-    try testNoSpaceLeftError(codecs, "AAAA");
-    try testNoSpaceLeftError(codecs, "AAAAAA==");
+    try test_no_space_left_error(codecs, "AA==");
+    try test_no_space_left_error(codecs, "AAA=");
+    try test_no_space_left_error(codecs, "AAAA");
+    try test_no_space_left_error(codecs, "AAAAAA==");
 
-    try testFourBytesDestNoSpaceLeftError(codecs, "AAAAAAAAAAAAAAAA");
+    try test_four_bytes_dest_no_space_left_error(codecs, "AAAAAAAAAAAAAAAA");
 }
 
 fn test_base64_url_safe_no_pad() !void {
     const codecs = url_safe_no_pad;
 
-    try testAllApis(codecs, "", "");
-    try testAllApis(codecs, "f", "Zg");
-    try testAllApis(codecs, "fo", "Zm8");
-    try testAllApis(codecs, "foo", "Zm9v");
-    try testAllApis(codecs, "foob", "Zm9vYg");
-    try testAllApis(codecs, "fooba", "Zm9vYmE");
-    try testAllApis(codecs, "foobar", "Zm9vYmFy");
-    try testAllApis(codecs, "foobarfoobarfoobar", "Zm9vYmFyZm9vYmFyZm9vYmFy");
+    try test_all_apis(codecs, "", "");
+    try test_all_apis(codecs, "f", "Zg");
+    try test_all_apis(codecs, "fo", "Zm8");
+    try test_all_apis(codecs, "foo", "Zm9v");
+    try test_all_apis(codecs, "foob", "Zm9vYg");
+    try test_all_apis(codecs, "fooba", "Zm9vYmE");
+    try test_all_apis(codecs, "foobar", "Zm9vYmFy");
+    try test_all_apis(codecs, "foobarfoobarfoobar", "Zm9vYmFyZm9vYmFyZm9vYmFy");
 
-    try testDecodeIgnoreSpace(codecs, "", " ");
-    try testDecodeIgnoreSpace(codecs, "f", "Z g ");
-    try testDecodeIgnoreSpace(codecs, "fo", "    Zm8");
-    try testDecodeIgnoreSpace(codecs, "foo", "Zm9v    ");
-    try testDecodeIgnoreSpace(codecs, "foob", "Zm9vYg   ");
-    try testDecodeIgnoreSpace(codecs, "fooba", "Zm9v YmE");
-    try testDecodeIgnoreSpace(codecs, "foobar", " Z m 9 v Y m F y ");
+    try test_decode_ignore_space(codecs, "", " ");
+    try test_decode_ignore_space(codecs, "f", "Z g ");
+    try test_decode_ignore_space(codecs, "fo", "    Zm8");
+    try test_decode_ignore_space(codecs, "foo", "Zm9v    ");
+    try test_decode_ignore_space(codecs, "foob", "Zm9vYg   ");
+    try test_decode_ignore_space(codecs, "fooba", "Zm9v YmE");
+    try test_decode_ignore_space(codecs, "foobar", " Z m 9 v Y m F y ");
 
     // test getting some api errors
-    try testError(codecs, "A", error.InvalidPadding);
-    try testError(codecs, "AAA=", error.InvalidCharacter);
-    try testError(codecs, "A..A", error.InvalidCharacter);
-    try testError(codecs, "AA=A", error.InvalidCharacter);
-    try testError(codecs, "AA/=", error.InvalidCharacter);
-    try testError(codecs, "A/==", error.InvalidCharacter);
-    try testError(codecs, "A===", error.InvalidCharacter);
-    try testError(codecs, "====", error.InvalidCharacter);
-    try testError(codecs, "Zm9vYmFyZm9vYmFyA..A", error.InvalidCharacter);
-    try testError(codecs, "A..AZm9vYmFyZm9vYmFy", error.InvalidCharacter);
+    try test_error(codecs, "A", error.InvalidPadding);
+    try test_error(codecs, "AAA=", error.InvalidCharacter);
+    try test_error(codecs, "A..A", error.InvalidCharacter);
+    try test_error(codecs, "AA=A", error.InvalidCharacter);
+    try test_error(codecs, "AA/=", error.InvalidCharacter);
+    try test_error(codecs, "A/==", error.InvalidCharacter);
+    try test_error(codecs, "A===", error.InvalidCharacter);
+    try test_error(codecs, "====", error.InvalidCharacter);
+    try test_error(codecs, "Zm9vYmFyZm9vYmFyA..A", error.InvalidCharacter);
+    try test_error(codecs, "A..AZm9vYmFyZm9vYmFy", error.InvalidCharacter);
 
-    try testNoSpaceLeftError(codecs, "AA");
-    try testNoSpaceLeftError(codecs, "AAA");
-    try testNoSpaceLeftError(codecs, "AAAA");
-    try testNoSpaceLeftError(codecs, "AAAAAA");
+    try test_no_space_left_error(codecs, "AA");
+    try test_no_space_left_error(codecs, "AAA");
+    try test_no_space_left_error(codecs, "AAAA");
+    try test_no_space_left_error(codecs, "AAAAAA");
 
-    try testFourBytesDestNoSpaceLeftError(codecs, "AAAAAAAAAAAAAAAA");
+    try test_four_bytes_dest_no_space_left_error(codecs, "AAAAAAAAAAAAAAAA");
 }
 
 fn test_all_apis(codecs: Codecs, expected_decoded: []const u8, expected_encoded: []const u8) !void {
@@ -479,40 +479,40 @@ fn test_all_apis(codecs: Codecs, expected_decoded: []const u8, expected_encoded:
     {
         var buffer: [0x100]u8 = undefined;
         const encoded = codecs.Encoder.encode(&buffer, expected_decoded);
-        try testing.expectEqualSlices(u8, expected_encoded, encoded);
+        try testing.expect_equal_slices(u8, expected_encoded, encoded);
     }
 
     // Base64Decoder
     {
         var buffer: [0x100]u8 = undefined;
-        const decoded = buffer[0..try codecs.Decoder.calcSizeForSlice(expected_encoded)];
+        const decoded = buffer[0..try codecs.Decoder.calc_size_for_slice(expected_encoded)];
         try codecs.Decoder.decode(decoded, expected_encoded);
-        try testing.expectEqualSlices(u8, expected_decoded, decoded);
+        try testing.expect_equal_slices(u8, expected_decoded, decoded);
     }
 
     // Base64DecoderWithIgnore
     {
         const decoder_ignore_nothing = codecs.decoderWithIgnore("");
         var buffer: [0x100]u8 = undefined;
-        const decoded = buffer[0..try decoder_ignore_nothing.calcSizeUpperBound(expected_encoded.len)];
+        const decoded = buffer[0..try decoder_ignore_nothing.calc_size_upper_bound(expected_encoded.len)];
         const written = try decoder_ignore_nothing.decode(decoded, expected_encoded);
         try testing.expect(written <= decoded.len);
-        try testing.expectEqualSlices(u8, expected_decoded, decoded[0..written]);
+        try testing.expect_equal_slices(u8, expected_decoded, decoded[0..written]);
     }
 }
 
 fn test_decode_ignore_space(codecs: Codecs, expected_decoded: []const u8, encoded: []const u8) !void {
     const decoder_ignore_space = codecs.decoderWithIgnore(" ");
     var buffer: [0x100]u8 = undefined;
-    const decoded = buffer[0..try decoder_ignore_space.calcSizeUpperBound(encoded.len)];
+    const decoded = buffer[0..try decoder_ignore_space.calc_size_upper_bound(encoded.len)];
     const written = try decoder_ignore_space.decode(decoded, encoded);
-    try testing.expectEqualSlices(u8, expected_decoded, decoded[0..written]);
+    try testing.expect_equal_slices(u8, expected_decoded, decoded[0..written]);
 }
 
 fn test_error(codecs: Codecs, encoded: []const u8, expected_err: anyerror) !void {
     const decoder_ignore_space = codecs.decoderWithIgnore(" ");
     var buffer: [0x100]u8 = undefined;
-    if (codecs.Decoder.calcSizeForSlice(encoded)) |decoded_size| {
+    if (codecs.Decoder.calc_size_for_slice(encoded)) |decoded_size| {
         const decoded = buffer[0..decoded_size];
         if (codecs.Decoder.decode(decoded, encoded)) |_| {
             return error.ExpectedError;
@@ -527,7 +527,7 @@ fn test_error(codecs: Codecs, encoded: []const u8, expected_err: anyerror) !void
 fn test_no_space_left_error(codecs: Codecs, encoded: []const u8) !void {
     const decoder_ignore_space = codecs.decoderWithIgnore(" ");
     var buffer: [0x100]u8 = undefined;
-    const decoded = buffer[0 .. (try codecs.Decoder.calcSizeForSlice(encoded)) - 1];
+    const decoded = buffer[0 .. (try codecs.Decoder.calc_size_for_slice(encoded)) - 1];
     if (decoder_ignore_space.decode(decoded, encoded)) |_| {
         return error.ExpectedError;
     } else |err| if (err != error.NoSpaceLeft) return err;

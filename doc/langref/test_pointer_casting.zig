@@ -3,16 +3,16 @@ const expect = std.testing.expect;
 
 test "pointer casting" {
     const bytes align(@alignOf(u32)) = [_]u8{ 0x12, 0x12, 0x12, 0x12 };
-    const u32_ptr: *const u32 = @ptrCast(&bytes);
+    const u32_ptr: *const u32 = @ptr_cast(&bytes);
     try expect(u32_ptr.* == 0x12121212);
 
     // Even this example is contrived - there are better ways to do the above than
     // pointer casting. For example, using a slice narrowing cast:
-    const u32_value = std.mem.bytesAsSlice(u32, bytes[0..])[0];
+    const u32_value = std.mem.bytes_as_slice(u32, bytes[0..])[0];
     try expect(u32_value == 0x12121212);
 
     // And even another way, the most straightforward way to do it:
-    try expect(@as(u32, @bitCast(bytes)) == 0x12121212);
+    try expect(@as(u32, @bit_cast(bytes)) == 0x12121212);
 }
 
 test "pointer child type" {

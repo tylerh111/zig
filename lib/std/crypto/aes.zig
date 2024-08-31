@@ -2,9 +2,9 @@ const std = @import("../std.zig");
 const builtin = @import("builtin");
 const testing = std.testing;
 
-const has_aesni = std.Target.x86.featureSetHas(builtin.cpu.features, .aes);
-const has_avx = std.Target.x86.featureSetHas(builtin.cpu.features, .avx);
-const has_armaes = std.Target.aarch64.featureSetHas(builtin.cpu.features, .aes);
+const has_aesni = std.Target.x86.feature_set_has(builtin.cpu.features, .aes);
+const has_avx = std.Target.x86.feature_set_has(builtin.cpu.features, .avx);
+const has_armaes = std.Target.aarch64.feature_set_has(builtin.cpu.features, .aes);
 // C backend doesn't currently support passing vectors to inline asm.
 const impl = if (builtin.cpu.arch == .x86_64 and builtin.zig_backend != .stage2_c and has_aesni and has_avx) impl: {
     break :impl @import("aes/aesni.zig");
@@ -47,9 +47,9 @@ test "ctr" {
     };
 
     var out: [exp_out.len]u8 = undefined;
-    const ctx = Aes128.initEnc(key);
+    const ctx = Aes128.init_enc(key);
     ctr(AesEncryptCtx(Aes128), ctx, out[0..], in[0..], iv, std.builtin.Endian.big);
-    try testing.expectEqualSlices(u8, exp_out[0..], out[0..]);
+    try testing.expect_equal_slices(u8, exp_out[0..], out[0..]);
 }
 
 test "encrypt" {
@@ -60,9 +60,9 @@ test "encrypt" {
         const exp_out = [_]u8{ 0x39, 0x25, 0x84, 0x1d, 0x02, 0xdc, 0x09, 0xfb, 0xdc, 0x11, 0x85, 0x97, 0x19, 0x6a, 0x0b, 0x32 };
 
         var out: [exp_out.len]u8 = undefined;
-        var ctx = Aes128.initEnc(key);
+        var ctx = Aes128.init_enc(key);
         ctx.encrypt(out[0..], in[0..]);
-        try testing.expectEqualSlices(u8, exp_out[0..], out[0..]);
+        try testing.expect_equal_slices(u8, exp_out[0..], out[0..]);
     }
 
     // Appendix C.3
@@ -75,9 +75,9 @@ test "encrypt" {
         const exp_out = [_]u8{ 0x8e, 0xa2, 0xb7, 0xca, 0x51, 0x67, 0x45, 0xbf, 0xea, 0xfc, 0x49, 0x90, 0x4b, 0x49, 0x60, 0x89 };
 
         var out: [exp_out.len]u8 = undefined;
-        var ctx = Aes256.initEnc(key);
+        var ctx = Aes256.init_enc(key);
         ctx.encrypt(out[0..], in[0..]);
-        try testing.expectEqualSlices(u8, exp_out[0..], out[0..]);
+        try testing.expect_equal_slices(u8, exp_out[0..], out[0..]);
     }
 }
 
@@ -89,9 +89,9 @@ test "decrypt" {
         const exp_out = [_]u8{ 0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d, 0x31, 0x31, 0x98, 0xa2, 0xe0, 0x37, 0x07, 0x34 };
 
         var out: [exp_out.len]u8 = undefined;
-        var ctx = Aes128.initDec(key);
+        var ctx = Aes128.init_dec(key);
         ctx.decrypt(out[0..], in[0..]);
-        try testing.expectEqualSlices(u8, exp_out[0..], out[0..]);
+        try testing.expect_equal_slices(u8, exp_out[0..], out[0..]);
     }
 
     // Appendix C.3
@@ -104,9 +104,9 @@ test "decrypt" {
         const exp_out = [_]u8{ 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
 
         var out: [exp_out.len]u8 = undefined;
-        var ctx = Aes256.initDec(key);
+        var ctx = Aes256.init_dec(key);
         ctx.decrypt(out[0..], in[0..]);
-        try testing.expectEqualSlices(u8, exp_out[0..], out[0..]);
+        try testing.expect_equal_slices(u8, exp_out[0..], out[0..]);
     }
 }
 
@@ -118,17 +118,17 @@ test "expand 128-bit key" {
     const exp_dec = [_]*const [32:0]u8{
         "d014f9a8c9ee2589e13f0cc8b6630ca6", "0c7b5a631319eafeb0398890664cfbb4", "df7d925a1f62b09da320626ed6757324", "12c07647c01f22c7bc42d2f37555114a", "6efcd876d2df54807c5df034c917c3b9", "6ea30afcbc238cf6ae82a4b4b54a338d", "90884413d280860a12a128421bc89739", "7c1f13f74208c219c021ae480969bf7b", "cc7505eb3e17d1ee82296c51c9481133", "2b3708a7f262d405bc3ebdbf4b617d62", "2b7e151628aed2a6abf7158809cf4f3c",
     };
-    const enc = Aes128.initEnc(key);
-    const dec = Aes128.initDec(key);
+    const enc = Aes128.init_enc(key);
+    const dec = Aes128.init_dec(key);
     var exp: [16]u8 = undefined;
 
     for (enc.key_schedule.round_keys, 0..) |round_key, i| {
-        _ = try std.fmt.hexToBytes(&exp, exp_enc[i]);
-        try testing.expectEqualSlices(u8, &exp, &round_key.toBytes());
+        _ = try std.fmt.hex_to_bytes(&exp, exp_enc[i]);
+        try testing.expect_equal_slices(u8, &exp, &round_key.to_bytes());
     }
     for (dec.key_schedule.round_keys, 0..) |round_key, i| {
-        _ = try std.fmt.hexToBytes(&exp, exp_dec[i]);
-        try testing.expectEqualSlices(u8, &exp, &round_key.toBytes());
+        _ = try std.fmt.hex_to_bytes(&exp, exp_dec[i]);
+        try testing.expect_equal_slices(u8, &exp, &round_key.to_bytes());
     }
 }
 
@@ -157,16 +157,16 @@ test "expand 256-bit key" {
         "54fb808b9c137949cab22ff547ba186c", "6c3d632985d1fbd9e3e36578701be0f3", "4a7459f9c8e8f9c256a156bc8d083799",
         "42107758e9ec98f066329ea193f8858b", "8ec6bff6829ca03b9e49af7edba96125", "603deb1015ca71be2b73aef0857d7781",
     };
-    const enc = Aes256.initEnc(key);
-    const dec = Aes256.initDec(key);
+    const enc = Aes256.init_enc(key);
+    const dec = Aes256.init_dec(key);
     var exp: [16]u8 = undefined;
 
     for (enc.key_schedule.round_keys, 0..) |round_key, i| {
-        _ = try std.fmt.hexToBytes(&exp, exp_enc[i]);
-        try testing.expectEqualSlices(u8, &exp, &round_key.toBytes());
+        _ = try std.fmt.hex_to_bytes(&exp, exp_enc[i]);
+        try testing.expect_equal_slices(u8, &exp, &round_key.to_bytes());
     }
     for (dec.key_schedule.round_keys, 0..) |round_key, i| {
-        _ = try std.fmt.hexToBytes(&exp, exp_dec[i]);
-        try testing.expectEqualSlices(u8, &exp, &round_key.toBytes());
+        _ = try std.fmt.hex_to_bytes(&exp, exp_dec[i]);
+        try testing.expect_equal_slices(u8, &exp, &round_key.to_bytes());
     }
 }

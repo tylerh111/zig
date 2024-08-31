@@ -3,7 +3,7 @@ const testing = @import("std").testing;
 
 fn test__negvsi2(a: i32, expected: i32) !void {
     const result = negv.__negvsi2(a);
-    try testing.expectEqual(expected, result);
+    try testing.expect_equal(expected, result);
 }
 
 test "negvsi2" {

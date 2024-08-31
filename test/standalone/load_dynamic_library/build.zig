@@ -15,7 +15,7 @@ pub fn build(b: *std.Build) void {
         return;
     }
 
-    const lib = b.addSharedLibrary(.{
+    const lib = b.add_shared_library(.{
         .name = "add",
         .root_source_file = b.path("add.zig"),
         .version = .{ .major = 1, .minor = 0, .patch = 0 },
@@ -23,17 +23,17 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
-    const main = b.addExecutable(.{
+    const main = b.add_executable(.{
         .name = "main",
         .root_source_file = b.path("main.zig"),
         .optimize = optimize,
         .target = target,
     });
 
-    const run = b.addRunArtifact(main);
-    run.addArtifactArg(lib);
+    const run = b.add_run_artifact(main);
+    run.add_artifact_arg(lib);
     run.skip_foreign_checks = true;
-    run.expectExitCode(0);
+    run.expect_exit_code(0);
 
-    test_step.dependOn(&run.step);
+    test_step.depend_on(&run.step);
 }

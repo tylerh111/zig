@@ -8,8 +8,8 @@ test "@abs integers" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try comptime testAbsIntegers();
-    try testAbsIntegers();
+    try comptime test_abs_integers();
+    try test_abs_integers();
 }
 
 fn test_abs_integers() !void {
@@ -29,9 +29,9 @@ fn test_abs_integers() !void {
         try expect(@abs(x) == 1000);
     }
     {
-        var x: i64 = std.math.minInt(i64);
+        var x: i64 = std.math.min_int(i64);
         _ = &x;
-        try expect(@abs(x) == @as(u64, -std.math.minInt(i64)));
+        try expect(@abs(x) == @as(u64, -std.math.min_int(i64)));
     }
     {
         var x: i5 = -1;
@@ -53,8 +53,8 @@ test "@abs unsigned integers" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
-    try comptime testAbsUnsignedIntegers();
-    try testAbsUnsignedIntegers();
+    try comptime test_abs_unsigned_integers();
+    try test_abs_unsigned_integers();
 }
 
 fn test_abs_unsigned_integers() !void {
@@ -95,16 +95,16 @@ test "@abs floats" {
     if (builtin.zig_backend == .stage2_x86_64 and builtin.target.ofmt != .elf and builtin.target.ofmt != .macho) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try comptime testAbsFloats(f16);
-    try testAbsFloats(f16);
-    try comptime testAbsFloats(f32);
-    try testAbsFloats(f32);
-    try comptime testAbsFloats(f64);
-    try testAbsFloats(f64);
-    try comptime testAbsFloats(f80);
-    if (builtin.zig_backend != .stage2_wasm and builtin.zig_backend != .stage2_spirv64) try testAbsFloats(f80);
-    try comptime testAbsFloats(f128);
-    if (builtin.zig_backend != .stage2_wasm and builtin.zig_backend != .stage2_spirv64) try testAbsFloats(f128);
+    try comptime test_abs_floats(f16);
+    try test_abs_floats(f16);
+    try comptime test_abs_floats(f32);
+    try test_abs_floats(f32);
+    try comptime test_abs_floats(f64);
+    try test_abs_floats(f64);
+    try comptime test_abs_floats(f80);
+    if (builtin.zig_backend != .stage2_wasm and builtin.zig_backend != .stage2_spirv64) try test_abs_floats(f80);
+    try comptime test_abs_floats(f128);
+    if (builtin.zig_backend != .stage2_wasm and builtin.zig_backend != .stage2_spirv64) try test_abs_floats(f128);
 }
 
 fn test_abs_floats(comptime T: type) !void {
@@ -153,20 +153,20 @@ test "@abs int vectors" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try comptime testAbsIntVectors(1);
-    try testAbsIntVectors(1);
-    try comptime testAbsIntVectors(2);
-    try testAbsIntVectors(2);
-    try comptime testAbsIntVectors(3);
-    try testAbsIntVectors(3);
-    try comptime testAbsIntVectors(4);
-    try testAbsIntVectors(4);
-    try comptime testAbsIntVectors(8);
-    try testAbsIntVectors(8);
-    try comptime testAbsIntVectors(16);
-    try testAbsIntVectors(16);
-    try comptime testAbsIntVectors(17);
-    try testAbsIntVectors(17);
+    try comptime test_abs_int_vectors(1);
+    try test_abs_int_vectors(1);
+    try comptime test_abs_int_vectors(2);
+    try test_abs_int_vectors(2);
+    try comptime test_abs_int_vectors(3);
+    try test_abs_int_vectors(3);
+    try comptime test_abs_int_vectors(4);
+    try test_abs_int_vectors(4);
+    try comptime test_abs_int_vectors(8);
+    try test_abs_int_vectors(8);
+    try comptime test_abs_int_vectors(16);
+    try test_abs_int_vectors(16);
+    try comptime test_abs_int_vectors(17);
+    try test_abs_int_vectors(17);
 }
 
 fn test_abs_int_vectors(comptime len: comptime_int) !void {
@@ -199,14 +199,14 @@ fn test_abs_int_vectors(comptime len: comptime_int) !void {
         try expect(std.mem.eql(u64, &@as([len]u64, y), &@as([len]u64, @abs(x))));
     }
     {
-        var x: I64 = @splat(std.math.minInt(i64));
-        var y: U64 = @splat(-std.math.minInt(i64));
+        var x: I64 = @splat(std.math.min_int(i64));
+        var y: U64 = @splat(-std.math.min_int(i64));
         _ = .{ &x, &y };
         try expect(std.mem.eql(u64, &@as([len]u64, y), &@as([len]u64, @abs(x))));
     }
     {
-        var x = std.simd.repeat(len, @Vector(4, i32){ -2, 5, std.math.minInt(i32), -7 });
-        var y = std.simd.repeat(len, @Vector(4, u32){ 2, 5, -std.math.minInt(i32), 7 });
+        var x = std.simd.repeat(len, @Vector(4, i32){ -2, 5, std.math.min_int(i32), -7 });
+        var y = std.simd.repeat(len, @Vector(4, u32){ 2, 5, -std.math.min_int(i32), 7 });
         _ = .{ &x, &y };
         try expect(std.mem.eql(u32, &@as([len]u32, y), &@as([len]u32, @abs(x))));
     }
@@ -220,20 +220,20 @@ test "@abs unsigned int vectors" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try comptime testAbsUnsignedIntVectors(1);
-    try testAbsUnsignedIntVectors(1);
-    try comptime testAbsUnsignedIntVectors(2);
-    try testAbsUnsignedIntVectors(2);
-    try comptime testAbsUnsignedIntVectors(3);
-    try testAbsUnsignedIntVectors(3);
-    try comptime testAbsUnsignedIntVectors(4);
-    try testAbsUnsignedIntVectors(4);
-    try comptime testAbsUnsignedIntVectors(8);
-    try testAbsUnsignedIntVectors(8);
-    try comptime testAbsUnsignedIntVectors(16);
-    try testAbsUnsignedIntVectors(16);
-    try comptime testAbsUnsignedIntVectors(17);
-    try testAbsUnsignedIntVectors(17);
+    try comptime test_abs_unsigned_int_vectors(1);
+    try test_abs_unsigned_int_vectors(1);
+    try comptime test_abs_unsigned_int_vectors(2);
+    try test_abs_unsigned_int_vectors(2);
+    try comptime test_abs_unsigned_int_vectors(3);
+    try test_abs_unsigned_int_vectors(3);
+    try comptime test_abs_unsigned_int_vectors(4);
+    try test_abs_unsigned_int_vectors(4);
+    try comptime test_abs_unsigned_int_vectors(8);
+    try test_abs_unsigned_int_vectors(8);
+    try comptime test_abs_unsigned_int_vectors(16);
+    try test_abs_unsigned_int_vectors(16);
+    try comptime test_abs_unsigned_int_vectors(17);
+    try test_abs_unsigned_int_vectors(17);
 }
 
 fn test_abs_unsigned_int_vectors(comptime len: comptime_int) !void {
@@ -286,80 +286,80 @@ test "@abs float vectors" {
         builtin.target.cpu.arch == .x86_64) return error.SkipZigTest;
 
     @setEvalBranchQuota(2000);
-    try comptime testAbsFloatVectors(f16, 1);
-    try testAbsFloatVectors(f16, 1);
-    try comptime testAbsFloatVectors(f16, 2);
-    try testAbsFloatVectors(f16, 2);
-    try comptime testAbsFloatVectors(f16, 3);
-    try testAbsFloatVectors(f16, 3);
-    try comptime testAbsFloatVectors(f16, 4);
-    try testAbsFloatVectors(f16, 4);
-    try comptime testAbsFloatVectors(f16, 8);
-    try testAbsFloatVectors(f16, 8);
-    try comptime testAbsFloatVectors(f16, 16);
-    try testAbsFloatVectors(f16, 16);
-    try comptime testAbsFloatVectors(f16, 17);
+    try comptime test_abs_float_vectors(f16, 1);
+    try test_abs_float_vectors(f16, 1);
+    try comptime test_abs_float_vectors(f16, 2);
+    try test_abs_float_vectors(f16, 2);
+    try comptime test_abs_float_vectors(f16, 3);
+    try test_abs_float_vectors(f16, 3);
+    try comptime test_abs_float_vectors(f16, 4);
+    try test_abs_float_vectors(f16, 4);
+    try comptime test_abs_float_vectors(f16, 8);
+    try test_abs_float_vectors(f16, 8);
+    try comptime test_abs_float_vectors(f16, 16);
+    try test_abs_float_vectors(f16, 16);
+    try comptime test_abs_float_vectors(f16, 17);
 
-    try testAbsFloatVectors(f32, 1);
-    try comptime testAbsFloatVectors(f32, 1);
-    try testAbsFloatVectors(f32, 1);
-    try comptime testAbsFloatVectors(f32, 2);
-    try testAbsFloatVectors(f32, 2);
-    try comptime testAbsFloatVectors(f32, 3);
-    try testAbsFloatVectors(f32, 3);
-    try comptime testAbsFloatVectors(f32, 4);
-    try testAbsFloatVectors(f32, 4);
-    try comptime testAbsFloatVectors(f32, 8);
-    try testAbsFloatVectors(f32, 8);
-    try comptime testAbsFloatVectors(f32, 16);
-    try testAbsFloatVectors(f32, 16);
-    try comptime testAbsFloatVectors(f32, 17);
-    try testAbsFloatVectors(f32, 17);
+    try test_abs_float_vectors(f32, 1);
+    try comptime test_abs_float_vectors(f32, 1);
+    try test_abs_float_vectors(f32, 1);
+    try comptime test_abs_float_vectors(f32, 2);
+    try test_abs_float_vectors(f32, 2);
+    try comptime test_abs_float_vectors(f32, 3);
+    try test_abs_float_vectors(f32, 3);
+    try comptime test_abs_float_vectors(f32, 4);
+    try test_abs_float_vectors(f32, 4);
+    try comptime test_abs_float_vectors(f32, 8);
+    try test_abs_float_vectors(f32, 8);
+    try comptime test_abs_float_vectors(f32, 16);
+    try test_abs_float_vectors(f32, 16);
+    try comptime test_abs_float_vectors(f32, 17);
+    try test_abs_float_vectors(f32, 17);
 
-    try comptime testAbsFloatVectors(f64, 1);
-    try testAbsFloatVectors(f64, 1);
-    try comptime testAbsFloatVectors(f64, 2);
-    try testAbsFloatVectors(f64, 2);
-    try comptime testAbsFloatVectors(f64, 3);
-    try testAbsFloatVectors(f64, 3);
-    try comptime testAbsFloatVectors(f64, 4);
-    try testAbsFloatVectors(f64, 4);
-    try comptime testAbsFloatVectors(f64, 8);
-    try testAbsFloatVectors(f64, 8);
-    try comptime testAbsFloatVectors(f64, 16);
-    try testAbsFloatVectors(f64, 16);
-    try comptime testAbsFloatVectors(f64, 17);
-    try testAbsFloatVectors(f64, 17);
+    try comptime test_abs_float_vectors(f64, 1);
+    try test_abs_float_vectors(f64, 1);
+    try comptime test_abs_float_vectors(f64, 2);
+    try test_abs_float_vectors(f64, 2);
+    try comptime test_abs_float_vectors(f64, 3);
+    try test_abs_float_vectors(f64, 3);
+    try comptime test_abs_float_vectors(f64, 4);
+    try test_abs_float_vectors(f64, 4);
+    try comptime test_abs_float_vectors(f64, 8);
+    try test_abs_float_vectors(f64, 8);
+    try comptime test_abs_float_vectors(f64, 16);
+    try test_abs_float_vectors(f64, 16);
+    try comptime test_abs_float_vectors(f64, 17);
+    try test_abs_float_vectors(f64, 17);
 
-    try comptime testAbsFloatVectors(f80, 1);
-    try testAbsFloatVectors(f80, 1);
-    try comptime testAbsFloatVectors(f80, 2);
-    try testAbsFloatVectors(f80, 2);
-    try comptime testAbsFloatVectors(f80, 3);
-    try testAbsFloatVectors(f80, 3);
-    try comptime testAbsFloatVectors(f80, 4);
-    try testAbsFloatVectors(f80, 4);
-    try comptime testAbsFloatVectors(f80, 8);
-    try testAbsFloatVectors(f80, 8);
-    try comptime testAbsFloatVectors(f80, 16);
-    try testAbsFloatVectors(f80, 16);
-    try comptime testAbsFloatVectors(f80, 17);
-    try testAbsFloatVectors(f80, 17);
+    try comptime test_abs_float_vectors(f80, 1);
+    try test_abs_float_vectors(f80, 1);
+    try comptime test_abs_float_vectors(f80, 2);
+    try test_abs_float_vectors(f80, 2);
+    try comptime test_abs_float_vectors(f80, 3);
+    try test_abs_float_vectors(f80, 3);
+    try comptime test_abs_float_vectors(f80, 4);
+    try test_abs_float_vectors(f80, 4);
+    try comptime test_abs_float_vectors(f80, 8);
+    try test_abs_float_vectors(f80, 8);
+    try comptime test_abs_float_vectors(f80, 16);
+    try test_abs_float_vectors(f80, 16);
+    try comptime test_abs_float_vectors(f80, 17);
+    try test_abs_float_vectors(f80, 17);
 
-    try comptime testAbsFloatVectors(f128, 1);
-    try testAbsFloatVectors(f128, 1);
-    try comptime testAbsFloatVectors(f128, 2);
-    try testAbsFloatVectors(f128, 2);
-    try comptime testAbsFloatVectors(f128, 3);
-    try testAbsFloatVectors(f128, 3);
-    try comptime testAbsFloatVectors(f128, 4);
-    try testAbsFloatVectors(f128, 4);
-    try comptime testAbsFloatVectors(f128, 8);
-    try testAbsFloatVectors(f128, 8);
-    try comptime testAbsFloatVectors(f128, 16);
-    try testAbsFloatVectors(f128, 16);
-    try comptime testAbsFloatVectors(f128, 17);
-    try testAbsFloatVectors(f128, 17);
+    try comptime test_abs_float_vectors(f128, 1);
+    try test_abs_float_vectors(f128, 1);
+    try comptime test_abs_float_vectors(f128, 2);
+    try test_abs_float_vectors(f128, 2);
+    try comptime test_abs_float_vectors(f128, 3);
+    try test_abs_float_vectors(f128, 3);
+    try comptime test_abs_float_vectors(f128, 4);
+    try test_abs_float_vectors(f128, 4);
+    try comptime test_abs_float_vectors(f128, 8);
+    try test_abs_float_vectors(f128, 8);
+    try comptime test_abs_float_vectors(f128, 16);
+    try test_abs_float_vectors(f128, 16);
+    try comptime test_abs_float_vectors(f128, 17);
+    try test_abs_float_vectors(f128, 17);
 }
 
 fn test_abs_float_vectors(comptime T: type, comptime len: comptime_int) !void {

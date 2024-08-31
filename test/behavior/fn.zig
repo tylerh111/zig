@@ -3,17 +3,17 @@ const builtin = @import("builtin");
 const testing = std.testing;
 const assert = std.debug.assert;
 const expect = testing.expect;
-const expectEqual = testing.expectEqual;
+const expect_equal = testing.expect_equal;
 
 test "params" {
-    try expect(testParamsAdd(22, 11) == 33);
+    try expect(test_params_add(22, 11) == 33);
 }
 fn test_params_add(a: i32, b: i32) i32 {
     return a + b;
 }
 
 test "local variables" {
-    testLocVars(2);
+    test_loc_vars(2);
 }
 fn test_loc_vars(b: i32) void {
     const a: i32 = 1;
@@ -53,7 +53,7 @@ test "weird function name" {
 }
 
 test "assign inline fn to const variable" {
-    const a = inlineFn;
+    const a = inline_fn;
     a();
 }
 
@@ -63,7 +63,7 @@ fn outer(y: u32) *const fn (u32) u32 {
     const Y = @TypeOf(y);
     const st = struct {
         fn get(z: u32) u32 {
-            return z + @sizeOf(Y);
+            return z + @size_of(Y);
         }
     };
     return st.get;
@@ -112,7 +112,7 @@ test "inline function call that calls optional function pointer, return pointer 
         field: u32,
 
         fn do_the_test() !void {
-            bar2 = actualFn;
+            bar2 = actual_fn;
             const result = try foo();
             try expect(result.field == 1234);
         }
@@ -135,11 +135,11 @@ test "inline function call that calls optional function pointer, return pointer 
             return 1234;
         }
     };
-    try S.doTheTest();
+    try S.do_the_test();
 }
 
 test "implicit cast function unreachable return" {
-    wantsFnWithVoid(fnWithUnreachable);
+    wants_fn_with_void(fn_with_unreachable);
 }
 
 fn wants_fn_with_void(comptime f: fn () void) void {
@@ -186,14 +186,14 @@ test "function with complex callconv and return type expressions" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(fComplexCallconvRet(3).x == 9);
+    try expect(f_complex_callconv_ret(3).x == 9);
 }
 
 test "pass by non-copying value" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(addPointCoords(Point{ .x = 1, .y = 2 }) == 3);
+    try expect(add_point_coords(Point{ .x = 1, .y = 2 }) == 3);
 }
 
 const Point = struct {
@@ -209,7 +209,7 @@ test "pass by non-copying value through var arg" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect((try addPointCoordsVar(Point{ .x = 1, .y = 2 })) == 3);
+    try expect((try add_point_coords_var(Point{ .x = 1, .y = 2 })) == 3);
 }
 
 fn add_point_coords_var(pt: anytype) !i32 {
@@ -222,7 +222,7 @@ test "pass by non-copying value as method" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     var pt = Point2{ .x = 1, .y = 2 };
-    try expect(pt.addPointCoords() == 3);
+    try expect(pt.add_point_coords() == 3);
 }
 
 const Point2 = struct {
@@ -239,7 +239,7 @@ test "pass by non-copying value as method, which is generic" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     var pt = Point3{ .x = 1, .y = 2 };
-    try expect(pt.addPointCoords(i32) == 3);
+    try expect(pt.add_point_coords(i32) == 3);
 }
 
 const Point3 = struct {
@@ -257,7 +257,7 @@ test "pass by non-copying value as method, at comptime" {
 
     comptime {
         var pt = Point2{ .x = 1, .y = 2 };
-        try expect(pt.addPointCoords() == 3);
+        try expect(pt.add_point_coords() == 3);
     }
 }
 
@@ -270,7 +270,7 @@ test "implicit cast fn call result to optional in field result" {
     const S = struct {
         fn entry() !void {
             const x = Foo{
-                .field = optionalPtr(),
+                .field = optional_ptr(),
             };
             try expect(x.field.?.* == 999);
         }
@@ -294,7 +294,7 @@ test "void parameters" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try voidFun(1, void{}, 2, {});
+    try void_fun(1, void{}, 2, {});
 }
 fn void_fun(a: i32, b: void, c: i32, d: void) !void {
     _ = d;
@@ -307,7 +307,7 @@ fn void_fun(a: i32, b: void, c: i32, d: void) !void {
 test "call function with empty string" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
-    acceptsString("");
+    accepts_string("");
 }
 
 fn accepts_string(foo: []u8) void {
@@ -327,7 +327,7 @@ test "function pointers" {
         &fn4,
     };
     for (fns, 0..) |f, i| {
-        try expect(f() == @as(u32, @intCast(i)) + 5);
+        try expect(f() == @as(u32, @int_cast(i)) + 5);
     }
 }
 fn fn1() u32 {
@@ -344,8 +344,8 @@ fn fn4() u32 {
 }
 
 test "number literal as an argument" {
-    try numberLiteralArg(3);
-    try comptime numberLiteralArg(3);
+    try number_literal_arg(3);
+    try comptime number_literal_arg(3);
 }
 
 fn number_literal_arg(a: anytype) !void {
@@ -360,7 +360,7 @@ test "function call with anon list literal" {
 
     const S = struct {
         fn do_the_test() !void {
-            try consumeVec(.{ 9, 8, 7 });
+            try consume_vec(.{ 9, 8, 7 });
         }
 
         fn consume_vec(vec: [3]f32) !void {
@@ -369,8 +369,8 @@ test "function call with anon list literal" {
             try expect(vec[2] == 7);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "function call with anon list literal - 2D" {
@@ -381,7 +381,7 @@ test "function call with anon list literal - 2D" {
 
     const S = struct {
         fn do_the_test() !void {
-            try consumeVec(.{ .{ 9, 8 }, .{ 7, 6 } });
+            try consume_vec(.{ .{ 9, 8 }, .{ 7, 6 } });
         }
 
         fn consume_vec(vec: [2][2]f32) !void {
@@ -391,8 +391,8 @@ test "function call with anon list literal - 2D" {
             try expect(vec[1][1] == 6);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "ability to give comptime types and non comptime types to same parameter" {
@@ -409,8 +409,8 @@ test "ability to give comptime types and non comptime types to same parameter" {
             return 9 + arg;
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "function with inferred error set but returning no error" {
@@ -421,7 +421,7 @@ test "function with inferred error set but returning no error" {
     };
 
     const return_ty = @typeInfo(@TypeOf(S.foo)).Fn.return_type.?;
-    try expectEqual(0, @typeInfo(@typeInfo(return_ty).ErrorUnion.error_set).ErrorSet.?.len);
+    try expect_equal(0, @typeInfo(@typeInfo(return_ty).ErrorUnion.error_set).ErrorSet.?.len);
 }
 
 test "import passed byref to function in return type" {
@@ -451,13 +451,13 @@ test "implicit cast function to function ptr" {
             return 123;
         }
     };
-    var fnPtr1: *const fn () callconv(.C) c_int = S1.someFunctionThatReturnsAValue;
+    var fnPtr1: *const fn () callconv(.C) c_int = S1.some_function_that_returns_avalue;
     _ = &fnPtr1;
     try expect(fnPtr1() == 123);
     const S2 = struct {
         extern fn some_function_that_returns_avalue() c_int;
     };
-    var fnPtr2: *const fn () callconv(.C) c_int = S2.someFunctionThatReturnsAValue;
+    var fnPtr2: *const fn () callconv(.C) c_int = S2.some_function_that_returns_avalue;
     _ = &fnPtr2;
     try expect(fnPtr2() == 123);
 }
@@ -479,7 +479,7 @@ test "method call with optional and error union first param" {
     };
     var s: S = .{};
     try s.opt();
-    try s.errUnion();
+    try s.err_union();
 }
 
 test "method call with optional pointer first param" {
@@ -500,7 +500,7 @@ test "method call with optional pointer first param" {
     try s_ptr.method();
 }
 
-test "using @ptrCast on function pointers" {
+test "using @ptr_cast on function pointers" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -516,8 +516,8 @@ test "using @ptrCast on function pointers" {
 
         fn run() !void {
             const a = A{ .data = "abcd".* };
-            const casted_fn = @as(*const fn (*const anyopaque, usize) *const u8, @ptrCast(&at));
-            const casted_impl = @as(*const anyopaque, @ptrCast(&a));
+            const casted_fn = @as(*const fn (*const anyopaque, usize) *const u8, @ptr_cast(&at));
+            const casted_impl = @as(*const anyopaque, @ptr_cast(&a));
             const ptr = casted_fn(casted_impl, 2);
             try expect(ptr.* == 'c');
         }
@@ -559,30 +559,30 @@ test "peer type resolution of inferred error set with non-void payload" {
             return 2;
         }
     };
-    try expect(try S.openDataFile(.read) == 1);
+    try expect(try S.open_data_file(.read) == 1);
 }
 
 test "lazy values passed to anytype parameter" {
     const A = struct {
         a: u32,
         fn foo(comptime a: anytype) !void {
-            try expect(a[0][0] == @sizeOf(@This()));
+            try expect(a[0][0] == @size_of(@This()));
         }
     };
-    try A.foo(.{[_]usize{@sizeOf(A)}});
+    try A.foo(.{[_]usize{@size_of(A)}});
 
     const B = struct {
         fn foo(comptime a: anytype) !void {
             try expect(a.x == 0);
         }
     };
-    try B.foo(.{ .x = @sizeOf(B) });
+    try B.foo(.{ .x = @size_of(B) });
 
     const C = struct {};
-    try expect(@as(u32, @truncate(@sizeOf(C))) == 0);
+    try expect(@as(u32, @truncate(@size_of(C))) == 0);
 
     const D = struct {};
-    try expect(@sizeOf(D) << 1 == 0);
+    try expect(@size_of(D) << 1 == 0);
 }
 
 test "pass and return comptime-only types" {
@@ -597,8 +597,8 @@ test "pass and return comptime-only types" {
         }
     };
 
-    try expectEqual(null, S.returnNull(null));
-    try expectEqual(@as(u0, 0), S.returnUndefined(undefined));
+    try expect_equal(null, S.return_null(null));
+    try expect_equal(@as(u0, 0), S.return_undefined(undefined));
 }
 
 test "pointer to alias behaves same as pointer to function" {
@@ -636,6 +636,6 @@ test "inline function with comptime-known comptime-only return type called at ru
     var a: i32 = 0;
     const b: i32 = 111;
     const T = S.foo(&a, &b);
-    try expectEqual(111, a);
-    try expectEqual(f32, T);
+    try expect_equal(111, a);
+    try expect_equal(f32, T);
 }

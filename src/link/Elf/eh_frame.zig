@@ -21,7 +21,7 @@ pub const Fde = struct {
 
     pub fn data(fde: Fde, elf_file: *Elf) []u8 {
         const object = elf_file.file(fde.file_index).?.object;
-        return object.eh_frame_data.items[fde.offset..][0..fde.calcSize()];
+        return object.eh_frame_data.items[fde.offset..][0..fde.calc_size()];
     }
 
     pub fn cie(fde: Fde, elf_file: *Elf) Cie {
@@ -31,7 +31,7 @@ pub const Fde = struct {
 
     pub fn cie_pointer(fde: Fde, elf_file: *Elf) u32 {
         const fde_data = fde.data(elf_file);
-        return std.mem.readInt(u32, fde_data[4..8], .little);
+        return std.mem.read_int(u32, fde_data[4..8], .little);
     }
 
     pub fn calc_size(fde: Fde) usize {
@@ -61,7 +61,7 @@ pub const Fde = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format FDEs directly");
+        @compile_error("do not format FDEs directly");
     }
 
     pub fn fmt(fde: Fde, elf_file: *Elf) std.fmt.Formatter(format2) {
@@ -90,11 +90,11 @@ pub const Fde = struct {
         const atom_name = fde.atom(elf_file).name(elf_file);
         try writer.print("@{x} : size({x}) : cie({d}) : {s}", .{
             base_addr + fde.out_offset,
-            fde.calcSize(),
+            fde.calc_size(),
             fde.cie_index,
             atom_name,
         });
-        if (!fde.alive) try writer.writeAll(" : [*]");
+        if (!fde.alive) try writer.write_all(" : [*]");
     }
 };
 
@@ -120,7 +120,7 @@ pub const Cie = struct {
 
     pub fn data(cie: Cie, elf_file: *Elf) []u8 {
         const object = elf_file.file(cie.file_index).?.object;
-        return object.eh_frame_data.items[cie.offset..][0..cie.calcSize()];
+        return object.eh_frame_data.items[cie.offset..][0..cie.calc_size()];
     }
 
     pub fn calc_size(cie: Cie) usize {
@@ -148,7 +148,7 @@ pub const Cie = struct {
             const other_object = elf_file.file(other.file_index).?.object;
             const cie_sym = cie_object.symbols.items[cie_rel.r_sym()];
             const other_sym = other_object.symbols.items[other_rel.r_sym()];
-            if (!std.mem.eql(u8, std.mem.asBytes(&cie_sym), std.mem.asBytes(&other_sym))) return false;
+            if (!std.mem.eql(u8, std.mem.as_bytes(&cie_sym), std.mem.as_bytes(&other_sym))) return false;
         }
         return true;
     }
@@ -163,7 +163,7 @@ pub const Cie = struct {
         _ = unused_fmt_string;
         _ = options;
         _ = writer;
-        @compileError("do not format CIEs directly");
+        @compile_error("do not format CIEs directly");
     }
 
     pub fn fmt(cie: Cie, elf_file: *Elf) std.fmt.Formatter(format2) {
@@ -191,9 +191,9 @@ pub const Cie = struct {
         const base_addr = cie.address(elf_file);
         try writer.print("@{x} : size({x})", .{
             base_addr + cie.out_offset,
-            cie.calcSize(),
+            cie.calc_size(),
         });
-        if (!cie.alive) try writer.writeAll(" : [*]");
+        if (!cie.alive) try writer.write_all(" : [*]");
     }
 };
 
@@ -210,14 +210,14 @@ pub const Iterator = struct {
     pub fn next(it: *Iterator) !?Record {
         if (it.pos >= it.data.len) return null;
 
-        var stream = std.io.fixedBufferStream(it.data[it.pos..]);
+        var stream = std.io.fixed_buffer_stream(it.data[it.pos..]);
         const reader = stream.reader();
 
-        const size = try reader.readInt(u32, .little);
+        const size = try reader.read_int(u32, .little);
         if (size == 0) return null;
         if (size == 0xFFFFFFFF) @panic("TODO");
 
-        const id = try reader.readInt(u32, .little);
+        const id = try reader.read_int(u32, .little);
         const record = Record{
             .tag = if (id == 0) .cie else .fde,
             .offset = it.pos,
@@ -254,7 +254,7 @@ pub fn calc_eh_frame_size(elf_file: *Elf) !usize {
             }
             cie.alive = true;
             cie.out_offset = offset;
-            offset += cie.calcSize();
+            offset += cie.calc_size();
             try cies.append(cie.*);
         }
     }
@@ -264,11 +264,11 @@ pub fn calc_eh_frame_size(elf_file: *Elf) !usize {
         for (object.fdes.items) |*fde| {
             if (!fde.alive) continue;
             fde.out_offset = offset;
-            offset += fde.calcSize();
+            offset += fde.calc_size();
         }
     }
 
-    if (!elf_file.base.isRelocatable()) {
+    if (!elf_file.base.is_relocatable()) {
         offset += 4; // NULL terminator
     }
 
@@ -303,14 +303,14 @@ pub fn calc_eh_frame_relocs(elf_file: *Elf) usize {
 }
 
 fn resolve_reloc(rec: anytype, sym: *const Symbol, rel: elf.Elf64_Rela, elf_file: *Elf, contents: []u8) !void {
-    const cpu_arch = elf_file.getTarget().cpu.arch;
+    const cpu_arch = elf_file.get_target().cpu.arch;
     const offset = std.math.cast(usize, rel.r_offset - rec.offset) orelse return error.Overflow;
     const P = math.cast(i64, rec.address(elf_file) + offset) orelse return error.Overflow;
     const S = math.cast(i64, sym.address(.{}, elf_file)) orelse return error.Overflow;
     const A = rel.r_addend;
 
     relocs_log.debug("  {s}: {x}: [{x} => {x}] ({s})", .{
-        relocation.fmtRelocType(rel.r_type(), cpu_arch),
+        relocation.fmt_reloc_type(rel.r_type(), cpu_arch),
         offset,
         P,
         S + A,
@@ -318,9 +318,9 @@ fn resolve_reloc(rec: anytype, sym: *const Symbol, rel: elf.Elf64_Rela, elf_file
     });
 
     switch (cpu_arch) {
-        .x86_64 => try x86_64.resolveReloc(rec, elf_file, rel, P, S + A, contents[offset..]),
-        .aarch64 => try aarch64.resolveReloc(rec, elf_file, rel, P, S + A, contents[offset..]),
-        .riscv64 => try riscv.resolveReloc(rec, elf_file, rel, P, S + A, contents[offset..]),
+        .x86_64 => try x86_64.resolve_reloc(rec, elf_file, rel, P, S + A, contents[offset..]),
+        .aarch64 => try aarch64.resolve_reloc(rec, elf_file, rel, P, S + A, contents[offset..]),
+        .riscv64 => try riscv.resolve_reloc(rec, elf_file, rel, P, S + A, contents[offset..]),
         else => return error.UnsupportedCpuArch,
     }
 }
@@ -340,13 +340,13 @@ pub fn write_eh_frame(elf_file: *Elf, writer: anytype) !void {
 
             for (cie.relocs(elf_file)) |rel| {
                 const sym = elf_file.symbol(object.symbols.items[rel.r_sym()]);
-                resolveReloc(cie, sym, rel, elf_file, contents) catch |err| switch (err) {
+                resolve_reloc(cie, sym, rel, elf_file, contents) catch |err| switch (err) {
                     error.RelocFailure => has_reloc_errors = true,
                     else => |e| return e,
                 };
             }
 
-            try writer.writeAll(contents);
+            try writer.write_all(contents);
         }
     }
 
@@ -358,26 +358,26 @@ pub fn write_eh_frame(elf_file: *Elf, writer: anytype) !void {
 
             const contents = fde.data(elf_file);
 
-            std.mem.writeInt(
+            std.mem.write_int(
                 i32,
                 contents[4..8],
-                @truncate(@as(i64, @intCast(fde.out_offset + 4)) - @as(i64, @intCast(fde.cie(elf_file).out_offset))),
+                @truncate(@as(i64, @int_cast(fde.out_offset + 4)) - @as(i64, @int_cast(fde.cie(elf_file).out_offset))),
                 .little,
             );
 
             for (fde.relocs(elf_file)) |rel| {
                 const sym = elf_file.symbol(object.symbols.items[rel.r_sym()]);
-                resolveReloc(fde, sym, rel, elf_file, contents) catch |err| switch (err) {
+                resolve_reloc(fde, sym, rel, elf_file, contents) catch |err| switch (err) {
                     error.RelocFailure => has_reloc_errors = true,
                     else => |e| return e,
                 };
             }
 
-            try writer.writeAll(contents);
+            try writer.write_all(contents);
         }
     }
 
-    try writer.writeInt(u32, 0, .little);
+    try writer.write_int(u32, 0, .little);
 
     if (has_reloc_errors) return error.RelocFailure;
 }
@@ -388,7 +388,7 @@ pub fn write_eh_frame_object(elf_file: *Elf, writer: anytype) !void {
 
         for (object.cies.items) |cie| {
             if (!cie.alive) continue;
-            try writer.writeAll(cie.data(elf_file));
+            try writer.write_all(cie.data(elf_file));
         }
     }
 
@@ -400,36 +400,36 @@ pub fn write_eh_frame_object(elf_file: *Elf, writer: anytype) !void {
 
             const contents = fde.data(elf_file);
 
-            std.mem.writeInt(
+            std.mem.write_int(
                 i32,
                 contents[4..8],
-                @truncate(@as(i64, @intCast(fde.out_offset + 4)) - @as(i64, @intCast(fde.cie(elf_file).out_offset))),
+                @truncate(@as(i64, @int_cast(fde.out_offset + 4)) - @as(i64, @int_cast(fde.cie(elf_file).out_offset))),
                 .little,
             );
 
-            try writer.writeAll(contents);
+            try writer.write_all(contents);
         }
     }
 }
 
 fn emit_reloc(elf_file: *Elf, rec: anytype, sym: *const Symbol, rel: elf.Elf64_Rela) elf.Elf64_Rela {
-    const cpu_arch = elf_file.getTarget().cpu.arch;
+    const cpu_arch = elf_file.get_target().cpu.arch;
     const r_offset = rec.address(elf_file) + rel.r_offset - rec.offset;
     const r_type = rel.r_type();
     var r_addend = rel.r_addend;
     var r_sym: u32 = 0;
     switch (sym.type(elf_file)) {
         elf.STT_SECTION => {
-            r_addend += @intCast(sym.address(.{}, elf_file));
-            r_sym = elf_file.sectionSymbolOutputSymtabIndex(sym.outputShndx().?);
+            r_addend += @int_cast(sym.address(.{}, elf_file));
+            r_sym = elf_file.section_symbol_output_symtab_index(sym.output_shndx().?);
         },
         else => {
-            r_sym = sym.outputSymtabIndex(elf_file) orelse 0;
+            r_sym = sym.output_symtab_index(elf_file) orelse 0;
         },
     }
 
     relocs_log.debug("  {s}: [{x} => {d}({s})] + {x}", .{
-        relocation.fmtRelocType(r_type, cpu_arch),
+        relocation.fmt_reloc_type(r_type, cpu_arch),
         r_offset,
         r_sym,
         sym.name(elf_file),
@@ -439,7 +439,7 @@ fn emit_reloc(elf_file: *Elf, rec: anytype, sym: *const Symbol, rel: elf.Elf64_R
     return .{
         .r_offset = r_offset,
         .r_addend = r_addend,
-        .r_info = (@as(u64, @intCast(r_sym)) << 32) | r_type,
+        .r_info = (@as(u64, @int_cast(r_sym)) << 32) | r_type,
     };
 }
 
@@ -453,8 +453,8 @@ pub fn write_eh_frame_relocs(elf_file: *Elf, writer: anytype) !void {
             if (!cie.alive) continue;
             for (cie.relocs(elf_file)) |rel| {
                 const sym = elf_file.symbol(object.symbols.items[rel.r_sym()]);
-                const out_rel = emitReloc(elf_file, cie, sym, rel);
-                try writer.writeStruct(out_rel);
+                const out_rel = emit_reloc(elf_file, cie, sym, rel);
+                try writer.write_struct(out_rel);
             }
         }
 
@@ -462,8 +462,8 @@ pub fn write_eh_frame_relocs(elf_file: *Elf, writer: anytype) !void {
             if (!fde.alive) continue;
             for (fde.relocs(elf_file)) |rel| {
                 const sym = elf_file.symbol(object.symbols.items[rel.r_sym()]);
-                const out_rel = emitReloc(elf_file, fde, sym, rel);
-                try writer.writeStruct(out_rel);
+                const out_rel = emit_reloc(elf_file, fde, sym, rel);
+                try writer.write_struct(out_rel);
             }
         }
     }
@@ -473,23 +473,23 @@ pub fn write_eh_frame_hdr(elf_file: *Elf, writer: anytype) !void {
     const comp = elf_file.base.comp;
     const gpa = comp.gpa;
 
-    try writer.writeByte(1); // version
-    try writer.writeByte(EH_PE.pcrel | EH_PE.sdata4);
-    try writer.writeByte(EH_PE.udata4);
-    try writer.writeByte(EH_PE.datarel | EH_PE.sdata4);
+    try writer.write_byte(1); // version
+    try writer.write_byte(EH_PE.pcrel | EH_PE.sdata4);
+    try writer.write_byte(EH_PE.udata4);
+    try writer.write_byte(EH_PE.datarel | EH_PE.sdata4);
 
     const eh_frame_shdr = elf_file.shdrs.items[elf_file.eh_frame_section_index.?];
     const eh_frame_hdr_shdr = elf_file.shdrs.items[elf_file.eh_frame_hdr_section_index.?];
-    const num_fdes = @as(u32, @intCast(@divExact(eh_frame_hdr_shdr.sh_size - eh_frame_hdr_header_size, 8)));
-    try writer.writeInt(
+    const num_fdes = @as(u32, @int_cast(@div_exact(eh_frame_hdr_shdr.sh_size - eh_frame_hdr_header_size, 8)));
+    try writer.write_int(
         u32,
-        @as(u32, @bitCast(@as(
+        @as(u32, @bit_cast(@as(
             i32,
-            @truncate(@as(i64, @intCast(eh_frame_shdr.sh_addr)) - @as(i64, @intCast(eh_frame_hdr_shdr.sh_addr)) - 4),
+            @truncate(@as(i64, @int_cast(eh_frame_shdr.sh_addr)) - @as(i64, @int_cast(eh_frame_hdr_shdr.sh_addr)) - 4),
         ))),
         .little,
     );
-    try writer.writeInt(u32, num_fdes, .little);
+    try writer.write_int(u32, num_fdes, .little);
 
     const Entry = struct {
         init_addr: u32,
@@ -503,7 +503,7 @@ pub fn write_eh_frame_hdr(elf_file: *Elf, writer: anytype) !void {
 
     var entries = std.ArrayList(Entry).init(gpa);
     defer entries.deinit();
-    try entries.ensureTotalCapacityPrecise(num_fdes);
+    try entries.ensure_total_capacity_precise(num_fdes);
 
     for (elf_file.objects.items) |index| {
         const object = elf_file.file(index).?.object;
@@ -514,21 +514,21 @@ pub fn write_eh_frame_hdr(elf_file: *Elf, writer: anytype) !void {
             assert(relocs.len > 0); // Should this be an error? Things are completely broken anyhow if this trips...
             const rel = relocs[0];
             const sym = elf_file.symbol(object.symbols.items[rel.r_sym()]);
-            const P = @as(i64, @intCast(fde.address(elf_file)));
-            const S = @as(i64, @intCast(sym.address(.{}, elf_file)));
+            const P = @as(i64, @int_cast(fde.address(elf_file)));
+            const S = @as(i64, @int_cast(sym.address(.{}, elf_file)));
             const A = rel.r_addend;
-            entries.appendAssumeCapacity(.{
-                .init_addr = @bitCast(@as(i32, @truncate(S + A - @as(i64, @intCast(eh_frame_hdr_shdr.sh_addr))))),
+            entries.append_assume_capacity(.{
+                .init_addr = @bit_cast(@as(i32, @truncate(S + A - @as(i64, @int_cast(eh_frame_hdr_shdr.sh_addr))))),
                 .fde_addr = @as(
                     u32,
-                    @bitCast(@as(i32, @truncate(P - @as(i64, @intCast(eh_frame_hdr_shdr.sh_addr))))),
+                    @bit_cast(@as(i32, @truncate(P - @as(i64, @int_cast(eh_frame_hdr_shdr.sh_addr))))),
                 ),
             });
         }
     }
 
-    std.mem.sort(Entry, entries.items, {}, Entry.lessThan);
-    try writer.writeAll(std.mem.sliceAsBytes(entries.items));
+    std.mem.sort(Entry, entries.items, {}, Entry.less_than);
+    try writer.write_all(std.mem.slice_as_bytes(entries.items));
 }
 
 const eh_frame_hdr_header_size: usize = 12;
@@ -557,11 +557,11 @@ const x86_64 = struct {
         const r_type: elf.R_X86_64 = @enumFromInt(rel.r_type());
         switch (r_type) {
             .NONE => {},
-            .@"32" => std.mem.writeInt(i32, data[0..4], @as(i32, @truncate(target)), .little),
-            .@"64" => std.mem.writeInt(i64, data[0..8], target, .little),
-            .PC32 => std.mem.writeInt(i32, data[0..4], @as(i32, @intCast(target - source)), .little),
-            .PC64 => std.mem.writeInt(i64, data[0..8], target - source, .little),
-            else => try reportInvalidReloc(rec, elf_file, rel),
+            .@"32" => std.mem.write_int(i32, data[0..4], @as(i32, @truncate(target)), .little),
+            .@"64" => std.mem.write_int(i64, data[0..8], target, .little),
+            .PC32 => std.mem.write_int(i32, data[0..4], @as(i32, @int_cast(target - source)), .little),
+            .PC64 => std.mem.write_int(i64, data[0..8], target - source, .little),
+            else => try report_invalid_reloc(rec, elf_file, rel),
         }
     }
 };
@@ -571,10 +571,10 @@ const aarch64 = struct {
         const r_type: elf.R_AARCH64 = @enumFromInt(rel.r_type());
         switch (r_type) {
             .NONE => {},
-            .ABS64 => std.mem.writeInt(i64, data[0..8], target, .little),
-            .PREL32 => std.mem.writeInt(i32, data[0..4], @as(i32, @intCast(target - source)), .little),
-            .PREL64 => std.mem.writeInt(i64, data[0..8], target - source, .little),
-            else => try reportInvalidReloc(rec, elf_file, rel),
+            .ABS64 => std.mem.write_int(i64, data[0..8], target, .little),
+            .PREL32 => std.mem.write_int(i32, data[0..4], @as(i32, @int_cast(target - source)), .little),
+            .PREL64 => std.mem.write_int(i64, data[0..8], target - source, .little),
+            else => try report_invalid_reloc(rec, elf_file, rel),
         }
     }
 };
@@ -584,19 +584,19 @@ const riscv = struct {
         const r_type: elf.R_RISCV = @enumFromInt(rel.r_type());
         switch (r_type) {
             .NONE => {},
-            .@"32_PCREL" => std.mem.writeInt(i32, data[0..4], @as(i32, @intCast(target - source)), .little),
-            else => try reportInvalidReloc(rec, elf_file, rel),
+            .@"32_PCREL" => std.mem.write_int(i32, data[0..4], @as(i32, @int_cast(target - source)), .little),
+            else => try report_invalid_reloc(rec, elf_file, rel),
         }
     }
 };
 
 fn report_invalid_reloc(rec: anytype, elf_file: *Elf, rel: elf.Elf64_Rela) !void {
-    var err = try elf_file.addErrorWithNotes(1);
-    try err.addMsg(elf_file, "invalid relocation type {} at offset 0x{x}", .{
-        relocation.fmtRelocType(rel.r_type(), elf_file.getTarget().cpu.arch),
+    var err = try elf_file.add_error_with_notes(1);
+    try err.add_msg(elf_file, "invalid relocation type {} at offset 0x{x}", .{
+        relocation.fmt_reloc_type(rel.r_type(), elf_file.get_target().cpu.arch),
         rel.r_offset,
     });
-    try err.addNote(elf_file, "in {}:.eh_frame", .{elf_file.file(rec.file_index).?.fmtPath()});
+    try err.add_note(elf_file, "in {}:.eh_frame", .{elf_file.file(rec.file_index).?.fmt_path()});
     return error.RelocFailure;
 }
 

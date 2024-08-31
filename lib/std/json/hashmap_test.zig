@@ -3,11 +3,11 @@ const testing = std.testing;
 
 const ArrayHashMap = @import("hashmap.zig").ArrayHashMap;
 
-const parseFromSlice = @import("static.zig").parseFromSlice;
-const parseFromSliceLeaky = @import("static.zig").parseFromSliceLeaky;
-const parseFromTokenSource = @import("static.zig").parseFromTokenSource;
-const parseFromValue = @import("static.zig").parseFromValue;
-const stringifyAlloc = @import("stringify.zig").stringifyAlloc;
+const parse_from_slice = @import("static.zig").parse_from_slice;
+const parse_from_slice_leaky = @import("static.zig").parse_from_slice_leaky;
+const parse_from_token_source = @import("static.zig").parse_from_token_source;
+const parse_from_value = @import("static.zig").parse_from_value;
+const stringify_alloc = @import("stringify.zig").stringify_alloc;
 const Value = @import("dynamic.zig").Value;
 
 const jsonReader = @import("./scanner.zig").reader;
@@ -24,12 +24,12 @@ test "parse json hashmap" {
         \\  "xyz": {"i": 1, "s": "w"}
         \\}
     ;
-    const parsed = try parseFromSlice(ArrayHashMap(T), testing.allocator, doc, .{});
+    const parsed = try parse_from_slice(ArrayHashMap(T), testing.allocator, doc, .{});
     defer parsed.deinit();
 
-    try testing.expectEqual(@as(usize, 2), parsed.value.map.count());
-    try testing.expectEqualStrings("d", parsed.value.map.get("abc").?.s);
-    try testing.expectEqual(@as(i32, 1), parsed.value.map.get("xyz").?.i);
+    try testing.expect_equal(@as(usize, 2), parsed.value.map.count());
+    try testing.expect_equal_strings("d", parsed.value.map.get("abc").?.s);
+    try testing.expect_equal(@as(i32, 1), parsed.value.map.get("xyz").?.i);
 }
 
 test "parse json hashmap while streaming" {
@@ -39,10 +39,10 @@ test "parse json hashmap while streaming" {
         \\  "xyz": {"i": 1, "s": "w"}
         \\}
     ;
-    var stream = std.io.fixedBufferStream(doc);
+    var stream = std.io.fixed_buffer_stream(doc);
     var json_reader = jsonReader(testing.allocator, stream.reader());
 
-    var parsed = try parseFromTokenSource(
+    var parsed = try parse_from_token_source(
         ArrayHashMap(T),
         testing.allocator,
         &json_reader,
@@ -52,9 +52,9 @@ test "parse json hashmap while streaming" {
     // Deinit our reader to invalidate its buffer
     json_reader.deinit();
 
-    try testing.expectEqual(@as(usize, 2), parsed.value.map.count());
-    try testing.expectEqualStrings("d", parsed.value.map.get("abc").?.s);
-    try testing.expectEqual(@as(i32, 1), parsed.value.map.get("xyz").?.i);
+    try testing.expect_equal(@as(usize, 2), parsed.value.map.count());
+    try testing.expect_equal_strings("d", parsed.value.map.get("abc").?.s);
+    try testing.expect_equal(@as(i32, 1), parsed.value.map.get("xyz").?.i);
 }
 
 test "parse json hashmap duplicate fields" {
@@ -68,57 +68,57 @@ test "parse json hashmap duplicate fields" {
         \\}
     ;
 
-    try testing.expectError(error.DuplicateField, parseFromSliceLeaky(ArrayHashMap(T), arena.allocator(), doc, .{
+    try testing.expect_error(error.DuplicateField, parse_from_slice_leaky(ArrayHashMap(T), arena.allocator(), doc, .{
         .duplicate_field_behavior = .@"error",
     }));
 
-    const first = try parseFromSliceLeaky(ArrayHashMap(T), arena.allocator(), doc, .{
+    const first = try parse_from_slice_leaky(ArrayHashMap(T), arena.allocator(), doc, .{
         .duplicate_field_behavior = .use_first,
     });
-    try testing.expectEqual(@as(usize, 1), first.map.count());
-    try testing.expectEqual(@as(i32, 0), first.map.get("abc").?.i);
+    try testing.expect_equal(@as(usize, 1), first.map.count());
+    try testing.expect_equal(@as(i32, 0), first.map.get("abc").?.i);
 
-    const last = try parseFromSliceLeaky(ArrayHashMap(T), arena.allocator(), doc, .{
+    const last = try parse_from_slice_leaky(ArrayHashMap(T), arena.allocator(), doc, .{
         .duplicate_field_behavior = .use_last,
     });
-    try testing.expectEqual(@as(usize, 1), last.map.count());
-    try testing.expectEqual(@as(i32, 1), last.map.get("abc").?.i);
+    try testing.expect_equal(@as(usize, 1), last.map.count());
+    try testing.expect_equal(@as(i32, 1), last.map.get("abc").?.i);
 }
 
 test "stringify json hashmap" {
     var value = ArrayHashMap(T){};
     defer value.deinit(testing.allocator);
     {
-        const doc = try stringifyAlloc(testing.allocator, value, .{});
+        const doc = try stringify_alloc(testing.allocator, value, .{});
         defer testing.allocator.free(doc);
-        try testing.expectEqualStrings("{}", doc);
+        try testing.expect_equal_strings("{}", doc);
     }
 
     try value.map.put(testing.allocator, "abc", .{ .i = 0, .s = "d" });
     try value.map.put(testing.allocator, "xyz", .{ .i = 1, .s = "w" });
 
     {
-        const doc = try stringifyAlloc(testing.allocator, value, .{});
+        const doc = try stringify_alloc(testing.allocator, value, .{});
         defer testing.allocator.free(doc);
-        try testing.expectEqualStrings(
+        try testing.expect_equal_strings(
             \\{"abc":{"i":0,"s":"d"},"xyz":{"i":1,"s":"w"}}
         , doc);
     }
 
-    try testing.expect(value.map.swapRemove("abc"));
+    try testing.expect(value.map.swap_remove("abc"));
     {
-        const doc = try stringifyAlloc(testing.allocator, value, .{});
+        const doc = try stringify_alloc(testing.allocator, value, .{});
         defer testing.allocator.free(doc);
-        try testing.expectEqualStrings(
+        try testing.expect_equal_strings(
             \\{"xyz":{"i":1,"s":"w"}}
         , doc);
     }
 
-    try testing.expect(value.map.swapRemove("xyz"));
+    try testing.expect(value.map.swap_remove("xyz"));
     {
-        const doc = try stringifyAlloc(testing.allocator, value, .{});
+        const doc = try stringify_alloc(testing.allocator, value, .{});
         defer testing.allocator.free(doc);
-        try testing.expectEqualStrings("{}", doc);
+        try testing.expect_equal_strings("{}", doc);
     }
 }
 
@@ -129,9 +129,9 @@ test "stringify json hashmap whitespace" {
     try value.map.put(testing.allocator, "xyz", .{ .i = 1, .s = "w" });
 
     {
-        const doc = try stringifyAlloc(testing.allocator, value, .{ .whitespace = .indent_2 });
+        const doc = try stringify_alloc(testing.allocator, value, .{ .whitespace = .indent_2 });
         defer testing.allocator.free(doc);
-        try testing.expectEqualStrings(
+        try testing.expect_equal_strings(
             \\{
             \\  "abc": {
             \\    "i": 0,
@@ -153,11 +153,11 @@ test "json parse from value hashmap" {
         \\  "xyz": {"i": 1, "s": "w"}
         \\}
     ;
-    const parsed1 = try parseFromSlice(Value, testing.allocator, doc, .{});
+    const parsed1 = try parse_from_slice(Value, testing.allocator, doc, .{});
     defer parsed1.deinit();
 
-    const parsed2 = try parseFromValue(ArrayHashMap(T), testing.allocator, parsed1.value, .{});
+    const parsed2 = try parse_from_value(ArrayHashMap(T), testing.allocator, parsed1.value, .{});
     defer parsed2.deinit();
 
-    try testing.expectEqualStrings("d", parsed2.value.map.get("abc").?.s);
+    try testing.expect_equal_strings("d", parsed2.value.map.get("abc").?.s);
 }

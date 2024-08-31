@@ -26,7 +26,7 @@ comptime {
 /// Note that this matches the definition of `__ledf2`, `__eqdf2`, `__nedf2`, `__cmpdf2`,
 /// and `__ltdf2`.
 fn __cmpdf2(a: f64, b: f64) callconv(.C) i32 {
-    return @intFromEnum(comparef.cmpf2(f64, comparef.LE, a, b));
+    return @int_from_enum(comparef.cmpf2(f64, comparef.LE, a, b));
 }
 
 /// "These functions return a value less than or equal to zero if neither argument is NaN,
@@ -56,13 +56,13 @@ pub fn __ltdf2(a: f64, b: f64) callconv(.C) i32 {
 }
 
 fn __aeabi_dcmpeq(a: f64, b: f64) callconv(.AAPCS) i32 {
-    return @intFromBool(comparef.cmpf2(f64, comparef.LE, a, b) == .Equal);
+    return @int_from_bool(comparef.cmpf2(f64, comparef.LE, a, b) == .Equal);
 }
 
 fn __aeabi_dcmplt(a: f64, b: f64) callconv(.AAPCS) i32 {
-    return @intFromBool(comparef.cmpf2(f64, comparef.LE, a, b) == .Less);
+    return @int_from_bool(comparef.cmpf2(f64, comparef.LE, a, b) == .Less);
 }
 
 fn __aeabi_dcmple(a: f64, b: f64) callconv(.AAPCS) i32 {
-    return @intFromBool(comparef.cmpf2(f64, comparef.LE, a, b) != .Greater);
+    return @int_from_bool(comparef.cmpf2(f64, comparef.LE, a, b) != .Greater);
 }

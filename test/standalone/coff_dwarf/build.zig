@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
     b.default_step = test_step;
 
     const optimize: std.builtin.OptimizeMode = .Debug;
-    const target = b.standardTargetOptions(.{});
+    const target = b.standard_target_options(.{});
 
     if (builtin.os.tag != .windows) return;
 
@@ -16,25 +16,25 @@ pub fn build(b: *std.Build) void {
         return;
     }
 
-    const exe = b.addExecutable(.{
+    const exe = b.add_executable(.{
         .name = "main",
         .root_source_file = b.path("main.zig"),
         .optimize = optimize,
         .target = target,
     });
 
-    const lib = b.addSharedLibrary(.{
+    const lib = b.add_shared_library(.{
         .name = "shared_lib",
         .optimize = optimize,
         .target = target,
     });
-    lib.addCSourceFile(.{ .file = b.path("shared_lib.c"), .flags = &.{"-gdwarf"} });
-    lib.linkLibC();
-    exe.linkLibrary(lib);
+    lib.add_csource_file(.{ .file = b.path("shared_lib.c"), .flags = &.{"-gdwarf"} });
+    lib.link_lib_c();
+    exe.link_library(lib);
 
-    const run = b.addRunArtifact(exe);
-    run.expectExitCode(0);
+    const run = b.add_run_artifact(exe);
+    run.expect_exit_code(0);
     run.skip_foreign_checks = true;
 
-    test_step.dependOn(&run.step);
+    test_step.depend_on(&run.step);
 }

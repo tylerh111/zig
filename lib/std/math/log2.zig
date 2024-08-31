@@ -19,7 +19,7 @@ pub fn log2(x: anytype) @TypeOf(x) {
         .Float => return @log2(x),
         .ComptimeInt => comptime {
             var x_shifted = x;
-            // First, calculate floorPowerOfTwo(x)
+            // First, calculate floor_power_of_two(x)
             var shift_amt = 1;
             while (x_shifted >> (shift_amt << 1) != 0) shift_amt <<= 1;
 
@@ -35,10 +35,10 @@ pub fn log2(x: anytype) @TypeOf(x) {
             return result;
         },
         .Int => |IntType| switch (IntType.signedness) {
-            .signed => @compileError("log2 not implemented for signed integers"),
+            .signed => @compile_error("log2 not implemented for signed integers"),
             .unsigned => return math.log2_int(T, x),
         },
-        else => @compileError("log2 not implemented for " ++ @typeName(T)),
+        else => @compile_error("log2 not implemented for " ++ @type_name(T)),
     }
 }
 

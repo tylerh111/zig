@@ -8,7 +8,7 @@ var result_len: [7]usize = undefined;
 var result_index: usize = 0;
 
 noinline fn insertion_sort(data: []u64) void {
-    result_off[result_index] = @intFromPtr(data.ptr) - base;
+    result_off[result_index] = @int_from_ptr(data.ptr) - base;
     result_len[result_index] = data.len;
     result_index += 1;
     if (data.len > 1) {
@@ -26,7 +26,7 @@ noinline fn insertion_sort(data: []u64) void {
         // then stack is invalidated by the tailcall and
         // overwritten by callee
         // https://github.com/ziglang/zig/issues/9703
-        return @call(.always_tail, insertionSort, .{data[1..]});
+        return @call(.always_tail, insertion_sort, .{data[1..]});
     }
 }
 
@@ -52,8 +52,8 @@ test "arguments pointed to on stack into tailcall" {
     if (builtin.zig_backend == .stage2_c and builtin.os.tag == .windows) return error.SkipZigTest; // MSVC doesn't support always tail calls
 
     var data = [_]u64{ 1, 6, 2, 7, 1, 9, 3 };
-    base = @intFromPtr(&data);
-    insertionSort(data[0..]);
+    base = @int_from_ptr(&data);
+    insertion_sort(data[0..]);
     try expect(result_len[0] == 7);
     try expect(result_len[1] == 6);
     try expect(result_len[2] == 5);

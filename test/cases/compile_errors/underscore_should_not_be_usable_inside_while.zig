@@ -1,6 +1,6 @@
 export fn returns() void {
-    while (optionalReturn()) |_| {
-        while (optionalReturn()) |_| {
+    while (optional_return()) |_| {
+        while (optional_return()) |_| {
             return _;
         }
     }

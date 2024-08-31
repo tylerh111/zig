@@ -19,7 +19,7 @@ const supports_atomic_ops = switch (arch) {
     // operations (unless we're targeting Linux, the kernel provides a way to
     // perform CAS operations).
     // XXX: The Linux code path is not implemented yet.
-    !std.Target.arm.featureSetHas(builtin.cpu.features, .has_v6m),
+    !std.Target.arm.feature_set_has(builtin.cpu.features, .has_v6m),
     else => true,
 };
 
@@ -30,11 +30,11 @@ const largest_atomic_size = switch (arch) {
     // On SPARC systems that lacks CAS and/or swap instructions, the only
     // available atomic operation is a test-and-set (`ldstub`), so we force
     // every atomic memory access to go through the lock.
-    .sparc, .sparcel => if (cpu.features.featureSetHas(.hasleoncasa)) @sizeOf(usize) else 0,
+    .sparc, .sparcel => if (cpu.features.feature_set_has(.hasleoncasa)) @size_of(usize) else 0,
 
     // XXX: On x86/x86_64 we could check the presence of cmpxchg8b/cmpxchg16b
     // and set this parameter accordingly.
-    else => @sizeOf(usize),
+    else => @size_of(usize),
 };
 
 // The size (in bytes) of the smallest atomic object that the architecture can
@@ -44,8 +44,8 @@ const largest_atomic_size = switch (arch) {
 const smallest_atomic_fetch_exch_size = switch (arch) {
     // On AMDGPU, there are no instructions for atomic operations other than load and store
     // (as of LLVM 15), and so these need to be implemented in terms of atomic CAS.
-    .amdgcn => @sizeOf(u32),
-    else => @sizeOf(u8),
+    .amdgcn => @size_of(u32),
+    else => @size_of(u8),
 };
 
 const cache_line_size = 64;
@@ -63,11 +63,11 @@ const SpinlockTable = struct {
 
         // Prevent false sharing by providing enough padding between two
         // consecutive spinlock elements
-        v: if (arch.isSPARC()) sparc_lock else other_lock align(cache_line_size) = .Unlocked,
+        v: if (arch.is_sparc()) sparc_lock else other_lock align(cache_line_size) = .Unlocked,
 
         fn acquire(self: *@This()) void {
             while (true) {
-                const flag = if (comptime arch.isSPARC()) flag: {
+                const flag = if (comptime arch.is_sparc()) flag: {
                     break :flag asm volatile ("ldstub [%[addr]], %[flag]"
                         : [flag] "=r" (-> @TypeOf(self.v)),
                         : [addr] "r" (&self.v),
@@ -84,7 +84,7 @@ const SpinlockTable = struct {
             }
         }
         fn release(self: *@This()) void {
-            if (comptime arch.isSPARC()) {
+            if (comptime arch.is_sparc()) {
                 _ = asm volatile ("clrb [%[addr]]"
                     :
                     : [addr] "r" (&self.v),
@@ -119,21 +119,21 @@ var spinlocks: SpinlockTable = SpinlockTable{};
 
 fn __atomic_load(size: u32, src: [*]u8, dest: [*]u8, model: i32) callconv(.C) void {
     _ = model;
-    var sl = spinlocks.get(@intFromPtr(src));
+    var sl = spinlocks.get(@int_from_ptr(src));
     defer sl.release();
     @memcpy(dest[0..size], src);
 }
 
 fn __atomic_store(size: u32, dest: [*]u8, src: [*]u8, model: i32) callconv(.C) void {
     _ = model;
-    var sl = spinlocks.get(@intFromPtr(dest));
+    var sl = spinlocks.get(@int_from_ptr(dest));
     defer sl.release();
     @memcpy(dest[0..size], src);
 }
 
 fn __atomic_exchange(size: u32, ptr: [*]u8, val: [*]u8, old: [*]u8, model: i32) callconv(.C) void {
     _ = model;
-    var sl = spinlocks.get(@intFromPtr(ptr));
+    var sl = spinlocks.get(@int_from_ptr(ptr));
     defer sl.release();
     @memcpy(old[0..size], ptr);
     @memcpy(ptr[0..size], val);
@@ -149,7 +149,7 @@ fn __atomic_compare_exchange(
 ) callconv(.C) i32 {
     _ = success;
     _ = failure;
-    var sl = spinlocks.get(@intFromPtr(ptr));
+    var sl = spinlocks.get(@int_from_ptr(ptr));
     defer sl.release();
     for (ptr[0..size], 0..) |b, i| {
         if (expected[i] != b) break;
@@ -167,8 +167,8 @@ fn __atomic_compare_exchange(
 // aligned.
 inline fn atomic_load_n(comptime T: type, src: *T, model: i32) T {
     _ = model;
-    if (@sizeOf(T) > largest_atomic_size) {
-        var sl = spinlocks.get(@intFromPtr(src));
+    if (@size_of(T) > largest_atomic_size) {
+        var sl = spinlocks.get(@int_from_ptr(src));
         defer sl.release();
         return src.*;
     } else {
@@ -177,29 +177,29 @@ inline fn atomic_load_n(comptime T: type, src: *T, model: i32) T {
 }
 
 fn __atomic_load_1(src: *u8, model: i32) callconv(.C) u8 {
-    return atomic_load_N(u8, src, model);
+    return atomic_load_n(u8, src, model);
 }
 
 fn __atomic_load_2(src: *u16, model: i32) callconv(.C) u16 {
-    return atomic_load_N(u16, src, model);
+    return atomic_load_n(u16, src, model);
 }
 
 fn __atomic_load_4(src: *u32, model: i32) callconv(.C) u32 {
-    return atomic_load_N(u32, src, model);
+    return atomic_load_n(u32, src, model);
 }
 
 fn __atomic_load_8(src: *u64, model: i32) callconv(.C) u64 {
-    return atomic_load_N(u64, src, model);
+    return atomic_load_n(u64, src, model);
 }
 
 fn __atomic_load_16(src: *u128, model: i32) callconv(.C) u128 {
-    return atomic_load_N(u128, src, model);
+    return atomic_load_n(u128, src, model);
 }
 
 inline fn atomic_store_n(comptime T: type, dst: *T, value: T, model: i32) void {
     _ = model;
-    if (@sizeOf(T) > largest_atomic_size) {
-        var sl = spinlocks.get(@intFromPtr(dst));
+    if (@size_of(T) > largest_atomic_size) {
+        var sl = spinlocks.get(@int_from_ptr(dst));
         defer sl.release();
         dst.* = value;
     } else {
@@ -208,43 +208,43 @@ inline fn atomic_store_n(comptime T: type, dst: *T, value: T, model: i32) void {
 }
 
 fn __atomic_store_1(dst: *u8, value: u8, model: i32) callconv(.C) void {
-    return atomic_store_N(u8, dst, value, model);
+    return atomic_store_n(u8, dst, value, model);
 }
 
 fn __atomic_store_2(dst: *u16, value: u16, model: i32) callconv(.C) void {
-    return atomic_store_N(u16, dst, value, model);
+    return atomic_store_n(u16, dst, value, model);
 }
 
 fn __atomic_store_4(dst: *u32, value: u32, model: i32) callconv(.C) void {
-    return atomic_store_N(u32, dst, value, model);
+    return atomic_store_n(u32, dst, value, model);
 }
 
 fn __atomic_store_8(dst: *u64, value: u64, model: i32) callconv(.C) void {
-    return atomic_store_N(u64, dst, value, model);
+    return atomic_store_n(u64, dst, value, model);
 }
 
 fn __atomic_store_16(dst: *u128, value: u128, model: i32) callconv(.C) void {
-    return atomic_store_N(u128, dst, value, model);
+    return atomic_store_n(u128, dst, value, model);
 }
 
 fn wide_update(comptime T: type, ptr: *T, val: T, update: anytype) T {
     const WideAtomic = std.meta.Int(.unsigned, smallest_atomic_fetch_exch_size * 8);
 
-    const addr = @intFromPtr(ptr);
+    const addr = @int_from_ptr(ptr);
     const wide_addr = addr & ~(@as(T, smallest_atomic_fetch_exch_size) - 1);
-    const wide_ptr: *align(smallest_atomic_fetch_exch_size) WideAtomic = @alignCast(@as(*WideAtomic, @ptrFromInt(wide_addr)));
+    const wide_ptr: *align(smallest_atomic_fetch_exch_size) WideAtomic = @align_cast(@as(*WideAtomic, @ptrFromInt(wide_addr)));
 
     const inner_offset = addr & (@as(T, smallest_atomic_fetch_exch_size) - 1);
-    const inner_shift = @as(std.math.Log2Int(T), @intCast(inner_offset * 8));
+    const inner_shift = @as(std.math.Log2Int(T), @int_cast(inner_offset * 8));
 
-    const mask = @as(WideAtomic, std.math.maxInt(T)) << inner_shift;
+    const mask = @as(WideAtomic, std.math.max_int(T)) << inner_shift;
 
     var wide_old = @atomicLoad(WideAtomic, wide_ptr, .seq_cst);
     while (true) {
         const old = @as(T, @truncate((wide_old & mask) >> inner_shift));
         const new = update(val, old);
         const wide_new = wide_old & ~mask | (@as(WideAtomic, new) << inner_shift);
-        if (@cmpxchgWeak(WideAtomic, wide_ptr, wide_old, wide_new, .seq_cst, .seq_cst)) |new_wide_old| {
+        if (@cmpxchg_weak(WideAtomic, wide_ptr, wide_old, wide_new, .seq_cst, .seq_cst)) |new_wide_old| {
             wide_old = new_wide_old;
         } else {
             return old;
@@ -254,13 +254,13 @@ fn wide_update(comptime T: type, ptr: *T, val: T, update: anytype) T {
 
 inline fn atomic_exchange_n(comptime T: type, ptr: *T, val: T, model: i32) T {
     _ = model;
-    if (@sizeOf(T) > largest_atomic_size) {
-        var sl = spinlocks.get(@intFromPtr(ptr));
+    if (@size_of(T) > largest_atomic_size) {
+        var sl = spinlocks.get(@int_from_ptr(ptr));
         defer sl.release();
         const value = ptr.*;
         ptr.* = val;
         return value;
-    } else if (@sizeOf(T) < smallest_atomic_fetch_exch_size) {
+    } else if (@size_of(T) < smallest_atomic_fetch_exch_size) {
         // Machine does not support this type, but it does support a larger type.
         const Updater = struct {
             fn update(new: T, old: T) T {
@@ -268,30 +268,30 @@ inline fn atomic_exchange_n(comptime T: type, ptr: *T, val: T, model: i32) T {
                 return new;
             }
         };
-        return wideUpdate(T, ptr, val, Updater.update);
+        return wide_update(T, ptr, val, Updater.update);
     } else {
         return @atomicRmw(T, ptr, .Xchg, val, .seq_cst);
     }
 }
 
 fn __atomic_exchange_1(ptr: *u8, val: u8, model: i32) callconv(.C) u8 {
-    return atomic_exchange_N(u8, ptr, val, model);
+    return atomic_exchange_n(u8, ptr, val, model);
 }
 
 fn __atomic_exchange_2(ptr: *u16, val: u16, model: i32) callconv(.C) u16 {
-    return atomic_exchange_N(u16, ptr, val, model);
+    return atomic_exchange_n(u16, ptr, val, model);
 }
 
 fn __atomic_exchange_4(ptr: *u32, val: u32, model: i32) callconv(.C) u32 {
-    return atomic_exchange_N(u32, ptr, val, model);
+    return atomic_exchange_n(u32, ptr, val, model);
 }
 
 fn __atomic_exchange_8(ptr: *u64, val: u64, model: i32) callconv(.C) u64 {
-    return atomic_exchange_N(u64, ptr, val, model);
+    return atomic_exchange_n(u64, ptr, val, model);
 }
 
 fn __atomic_exchange_16(ptr: *u128, val: u128, model: i32) callconv(.C) u128 {
-    return atomic_exchange_N(u128, ptr, val, model);
+    return atomic_exchange_n(u128, ptr, val, model);
 }
 
 inline fn atomic_compare_exchange_n(
@@ -304,8 +304,8 @@ inline fn atomic_compare_exchange_n(
 ) i32 {
     _ = success;
     _ = failure;
-    if (@sizeOf(T) > largest_atomic_size) {
-        var sl = spinlocks.get(@intFromPtr(ptr));
+    if (@size_of(T) > largest_atomic_size) {
+        var sl = spinlocks.get(@int_from_ptr(ptr));
         defer sl.release();
         const value = ptr.*;
         if (value == expected.*) {
@@ -315,7 +315,7 @@ inline fn atomic_compare_exchange_n(
         expected.* = value;
         return 0;
     } else {
-        if (@cmpxchgStrong(T, ptr, expected.*, desired, .seq_cst, .seq_cst)) |old_value| {
+        if (@cmpxchg_strong(T, ptr, expected.*, desired, .seq_cst, .seq_cst)) |old_value| {
             expected.* = old_value;
             return 0;
         }
@@ -324,23 +324,23 @@ inline fn atomic_compare_exchange_n(
 }
 
 fn __atomic_compare_exchange_1(ptr: *u8, expected: *u8, desired: u8, success: i32, failure: i32) callconv(.C) i32 {
-    return atomic_compare_exchange_N(u8, ptr, expected, desired, success, failure);
+    return atomic_compare_exchange_n(u8, ptr, expected, desired, success, failure);
 }
 
 fn __atomic_compare_exchange_2(ptr: *u16, expected: *u16, desired: u16, success: i32, failure: i32) callconv(.C) i32 {
-    return atomic_compare_exchange_N(u16, ptr, expected, desired, success, failure);
+    return atomic_compare_exchange_n(u16, ptr, expected, desired, success, failure);
 }
 
 fn __atomic_compare_exchange_4(ptr: *u32, expected: *u32, desired: u32, success: i32, failure: i32) callconv(.C) i32 {
-    return atomic_compare_exchange_N(u32, ptr, expected, desired, success, failure);
+    return atomic_compare_exchange_n(u32, ptr, expected, desired, success, failure);
 }
 
 fn __atomic_compare_exchange_8(ptr: *u64, expected: *u64, desired: u64, success: i32, failure: i32) callconv(.C) i32 {
-    return atomic_compare_exchange_N(u64, ptr, expected, desired, success, failure);
+    return atomic_compare_exchange_n(u64, ptr, expected, desired, success, failure);
 }
 
 fn __atomic_compare_exchange_16(ptr: *u128, expected: *u128, desired: u128, success: i32, failure: i32) callconv(.C) i32 {
-    return atomic_compare_exchange_N(u128, ptr, expected, desired, success, failure);
+    return atomic_compare_exchange_n(u128, ptr, expected, desired, success, failure);
 }
 
 inline fn fetch_op_n(comptime T: type, comptime op: std.builtin.AtomicRmwOp, ptr: *T, val: T, model: i32) T {
@@ -356,184 +356,184 @@ inline fn fetch_op_n(comptime T: type, comptime op: std.builtin.AtomicRmwOp, ptr
                 .Xor => old ^ new,
                 .Max => @max(old, new),
                 .Min => @min(old, new),
-                else => @compileError("unsupported atomic op"),
+                else => @compile_error("unsupported atomic op"),
             };
         }
     };
 
-    if (@sizeOf(T) > largest_atomic_size) {
-        var sl = spinlocks.get(@intFromPtr(ptr));
+    if (@size_of(T) > largest_atomic_size) {
+        var sl = spinlocks.get(@int_from_ptr(ptr));
         defer sl.release();
 
         const value = ptr.*;
         ptr.* = Updater.update(val, value);
         return value;
-    } else if (@sizeOf(T) < smallest_atomic_fetch_exch_size) {
+    } else if (@size_of(T) < smallest_atomic_fetch_exch_size) {
         // Machine does not support this type, but it does support a larger type.
-        return wideUpdate(T, ptr, val, Updater.update);
+        return wide_update(T, ptr, val, Updater.update);
     }
 
     return @atomicRmw(T, ptr, op, val, .seq_cst);
 }
 
 fn __atomic_fetch_add_1(ptr: *u8, val: u8, model: i32) callconv(.C) u8 {
-    return fetch_op_N(u8, .Add, ptr, val, model);
+    return fetch_op_n(u8, .Add, ptr, val, model);
 }
 
 fn __atomic_fetch_add_2(ptr: *u16, val: u16, model: i32) callconv(.C) u16 {
-    return fetch_op_N(u16, .Add, ptr, val, model);
+    return fetch_op_n(u16, .Add, ptr, val, model);
 }
 
 fn __atomic_fetch_add_4(ptr: *u32, val: u32, model: i32) callconv(.C) u32 {
-    return fetch_op_N(u32, .Add, ptr, val, model);
+    return fetch_op_n(u32, .Add, ptr, val, model);
 }
 
 fn __atomic_fetch_add_8(ptr: *u64, val: u64, model: i32) callconv(.C) u64 {
-    return fetch_op_N(u64, .Add, ptr, val, model);
+    return fetch_op_n(u64, .Add, ptr, val, model);
 }
 
 fn __atomic_fetch_add_16(ptr: *u128, val: u128, model: i32) callconv(.C) u128 {
-    return fetch_op_N(u128, .Add, ptr, val, model);
+    return fetch_op_n(u128, .Add, ptr, val, model);
 }
 
 fn __atomic_fetch_sub_1(ptr: *u8, val: u8, model: i32) callconv(.C) u8 {
-    return fetch_op_N(u8, .Sub, ptr, val, model);
+    return fetch_op_n(u8, .Sub, ptr, val, model);
 }
 
 fn __atomic_fetch_sub_2(ptr: *u16, val: u16, model: i32) callconv(.C) u16 {
-    return fetch_op_N(u16, .Sub, ptr, val, model);
+    return fetch_op_n(u16, .Sub, ptr, val, model);
 }
 
 fn __atomic_fetch_sub_4(ptr: *u32, val: u32, model: i32) callconv(.C) u32 {
-    return fetch_op_N(u32, .Sub, ptr, val, model);
+    return fetch_op_n(u32, .Sub, ptr, val, model);
 }
 
 fn __atomic_fetch_sub_8(ptr: *u64, val: u64, model: i32) callconv(.C) u64 {
-    return fetch_op_N(u64, .Sub, ptr, val, model);
+    return fetch_op_n(u64, .Sub, ptr, val, model);
 }
 
 fn __atomic_fetch_sub_16(ptr: *u128, val: u128, model: i32) callconv(.C) u128 {
-    return fetch_op_N(u128, .Sub, ptr, val, model);
+    return fetch_op_n(u128, .Sub, ptr, val, model);
 }
 
 fn __atomic_fetch_and_1(ptr: *u8, val: u8, model: i32) callconv(.C) u8 {
-    return fetch_op_N(u8, .And, ptr, val, model);
+    return fetch_op_n(u8, .And, ptr, val, model);
 }
 
 fn __atomic_fetch_and_2(ptr: *u16, val: u16, model: i32) callconv(.C) u16 {
-    return fetch_op_N(u16, .And, ptr, val, model);
+    return fetch_op_n(u16, .And, ptr, val, model);
 }
 
 fn __atomic_fetch_and_4(ptr: *u32, val: u32, model: i32) callconv(.C) u32 {
-    return fetch_op_N(u32, .And, ptr, val, model);
+    return fetch_op_n(u32, .And, ptr, val, model);
 }
 
 fn __atomic_fetch_and_8(ptr: *u64, val: u64, model: i32) callconv(.C) u64 {
-    return fetch_op_N(u64, .And, ptr, val, model);
+    return fetch_op_n(u64, .And, ptr, val, model);
 }
 
 fn __atomic_fetch_and_16(ptr: *u128, val: u128, model: i32) callconv(.C) u128 {
-    return fetch_op_N(u128, .And, ptr, val, model);
+    return fetch_op_n(u128, .And, ptr, val, model);
 }
 
 fn __atomic_fetch_or_1(ptr: *u8, val: u8, model: i32) callconv(.C) u8 {
-    return fetch_op_N(u8, .Or, ptr, val, model);
+    return fetch_op_n(u8, .Or, ptr, val, model);
 }
 
 fn __atomic_fetch_or_2(ptr: *u16, val: u16, model: i32) callconv(.C) u16 {
-    return fetch_op_N(u16, .Or, ptr, val, model);
+    return fetch_op_n(u16, .Or, ptr, val, model);
 }
 
 fn __atomic_fetch_or_4(ptr: *u32, val: u32, model: i32) callconv(.C) u32 {
-    return fetch_op_N(u32, .Or, ptr, val, model);
+    return fetch_op_n(u32, .Or, ptr, val, model);
 }
 
 fn __atomic_fetch_or_8(ptr: *u64, val: u64, model: i32) callconv(.C) u64 {
-    return fetch_op_N(u64, .Or, ptr, val, model);
+    return fetch_op_n(u64, .Or, ptr, val, model);
 }
 
 fn __atomic_fetch_or_16(ptr: *u128, val: u128, model: i32) callconv(.C) u128 {
-    return fetch_op_N(u128, .Or, ptr, val, model);
+    return fetch_op_n(u128, .Or, ptr, val, model);
 }
 
 fn __atomic_fetch_xor_1(ptr: *u8, val: u8, model: i32) callconv(.C) u8 {
-    return fetch_op_N(u8, .Xor, ptr, val, model);
+    return fetch_op_n(u8, .Xor, ptr, val, model);
 }
 
 fn __atomic_fetch_xor_2(ptr: *u16, val: u16, model: i32) callconv(.C) u16 {
-    return fetch_op_N(u16, .Xor, ptr, val, model);
+    return fetch_op_n(u16, .Xor, ptr, val, model);
 }
 
 fn __atomic_fetch_xor_4(ptr: *u32, val: u32, model: i32) callconv(.C) u32 {
-    return fetch_op_N(u32, .Xor, ptr, val, model);
+    return fetch_op_n(u32, .Xor, ptr, val, model);
 }
 
 fn __atomic_fetch_xor_8(ptr: *u64, val: u64, model: i32) callconv(.C) u64 {
-    return fetch_op_N(u64, .Xor, ptr, val, model);
+    return fetch_op_n(u64, .Xor, ptr, val, model);
 }
 
 fn __atomic_fetch_xor_16(ptr: *u128, val: u128, model: i32) callconv(.C) u128 {
-    return fetch_op_N(u128, .Xor, ptr, val, model);
+    return fetch_op_n(u128, .Xor, ptr, val, model);
 }
 
 fn __atomic_fetch_nand_1(ptr: *u8, val: u8, model: i32) callconv(.C) u8 {
-    return fetch_op_N(u8, .Nand, ptr, val, model);
+    return fetch_op_n(u8, .Nand, ptr, val, model);
 }
 
 fn __atomic_fetch_nand_2(ptr: *u16, val: u16, model: i32) callconv(.C) u16 {
-    return fetch_op_N(u16, .Nand, ptr, val, model);
+    return fetch_op_n(u16, .Nand, ptr, val, model);
 }
 
 fn __atomic_fetch_nand_4(ptr: *u32, val: u32, model: i32) callconv(.C) u32 {
-    return fetch_op_N(u32, .Nand, ptr, val, model);
+    return fetch_op_n(u32, .Nand, ptr, val, model);
 }
 
 fn __atomic_fetch_nand_8(ptr: *u64, val: u64, model: i32) callconv(.C) u64 {
-    return fetch_op_N(u64, .Nand, ptr, val, model);
+    return fetch_op_n(u64, .Nand, ptr, val, model);
 }
 
 fn __atomic_fetch_nand_16(ptr: *u128, val: u128, model: i32) callconv(.C) u128 {
-    return fetch_op_N(u128, .Nand, ptr, val, model);
+    return fetch_op_n(u128, .Nand, ptr, val, model);
 }
 
 fn __atomic_fetch_umax_1(ptr: *u8, val: u8, model: i32) callconv(.C) u8 {
-    return fetch_op_N(u8, .Max, ptr, val, model);
+    return fetch_op_n(u8, .Max, ptr, val, model);
 }
 
 fn __atomic_fetch_umax_2(ptr: *u16, val: u16, model: i32) callconv(.C) u16 {
-    return fetch_op_N(u16, .Max, ptr, val, model);
+    return fetch_op_n(u16, .Max, ptr, val, model);
 }
 
 fn __atomic_fetch_umax_4(ptr: *u32, val: u32, model: i32) callconv(.C) u32 {
-    return fetch_op_N(u32, .Max, ptr, val, model);
+    return fetch_op_n(u32, .Max, ptr, val, model);
 }
 
 fn __atomic_fetch_umax_8(ptr: *u64, val: u64, model: i32) callconv(.C) u64 {
-    return fetch_op_N(u64, .Max, ptr, val, model);
+    return fetch_op_n(u64, .Max, ptr, val, model);
 }
 
 fn __atomic_fetch_umax_16(ptr: *u128, val: u128, model: i32) callconv(.C) u128 {
-    return fetch_op_N(u128, .Max, ptr, val, model);
+    return fetch_op_n(u128, .Max, ptr, val, model);
 }
 
 fn __atomic_fetch_umin_1(ptr: *u8, val: u8, model: i32) callconv(.C) u8 {
-    return fetch_op_N(u8, .Min, ptr, val, model);
+    return fetch_op_n(u8, .Min, ptr, val, model);
 }
 
 fn __atomic_fetch_umin_2(ptr: *u16, val: u16, model: i32) callconv(.C) u16 {
-    return fetch_op_N(u16, .Min, ptr, val, model);
+    return fetch_op_n(u16, .Min, ptr, val, model);
 }
 
 fn __atomic_fetch_umin_4(ptr: *u32, val: u32, model: i32) callconv(.C) u32 {
-    return fetch_op_N(u32, .Min, ptr, val, model);
+    return fetch_op_n(u32, .Min, ptr, val, model);
 }
 
 fn __atomic_fetch_umin_8(ptr: *u64, val: u64, model: i32) callconv(.C) u64 {
-    return fetch_op_N(u64, .Min, ptr, val, model);
+    return fetch_op_n(u64, .Min, ptr, val, model);
 }
 
 fn __atomic_fetch_umin_16(ptr: *u128, val: u128, model: i32) callconv(.C) u128 {
-    return fetch_op_N(u128, .Min, ptr, val, model);
+    return fetch_op_n(u128, .Min, ptr, val, model);
 }
 
 comptime {

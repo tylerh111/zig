@@ -11,7 +11,7 @@ test "global variable alignment" {
     try expect(as_unaligned_slice[0] == 100);
 }
 
-fn derp() align(@sizeOf(usize) * 2) i32 {
+fn derp() align(@size_of(usize) * 2) i32 {
     return 1234;
 }
 fn noop1() align(1) void {}
@@ -20,7 +20,7 @@ fn noop4() align(4) void {}
 test "function alignment" {
     try expect(derp() == 1234);
     try expect(@TypeOf(derp) == fn () i32);
-    try expect(@TypeOf(&derp) == *align(@sizeOf(usize) * 2) const fn () i32);
+    try expect(@TypeOf(&derp) == *align(@size_of(usize) * 2) const fn () i32);
 
     noop1();
     try expect(@TypeOf(noop1) == fn () void);

@@ -45,64 +45,64 @@ pub fn KeccakF(comptime f: u11) type {
         pub fn init(bytes: [block_bytes]u8) Self {
             var self: Self = undefined;
             inline for (&self.st, 0..) |*r, i| {
-                r.* = mem.readInt(T, bytes[@sizeOf(T) * i ..][0..@sizeOf(T)], .little);
+                r.* = mem.read_int(T, bytes[@size_of(T) * i ..][0..@size_of(T)], .little);
             }
             return self;
         }
 
         /// A representation of the state as bytes. The byte order is architecture-dependent.
         pub fn as_bytes(self: *Self) *[block_bytes]u8 {
-            return mem.asBytes(&self.st);
+            return mem.as_bytes(&self.st);
         }
 
         /// Byte-swap the entire state if the architecture doesn't match the required endianness.
         pub fn endian_swap(self: *Self) void {
             for (&self.st) |*w| {
-                w.* = mem.littleToNative(T, w.*);
+                w.* = mem.little_to_native(T, w.*);
             }
         }
 
         /// Set bytes starting at the beginning of the state.
         pub fn set_bytes(self: *Self, bytes: []const u8) void {
             var i: usize = 0;
-            while (i + @sizeOf(T) <= bytes.len) : (i += @sizeOf(T)) {
-                self.st[i / @sizeOf(T)] = mem.readInt(T, bytes[i..][0..@sizeOf(T)], .little);
+            while (i + @size_of(T) <= bytes.len) : (i += @size_of(T)) {
+                self.st[i / @size_of(T)] = mem.read_int(T, bytes[i..][0..@size_of(T)], .little);
             }
             if (i < bytes.len) {
-                var padded = [_]u8{0} ** @sizeOf(T);
+                var padded = [_]u8{0} ** @size_of(T);
                 @memcpy(padded[0 .. bytes.len - i], bytes[i..]);
-                self.st[i / @sizeOf(T)] = mem.readInt(T, padded[0..], .little);
+                self.st[i / @size_of(T)] = mem.read_int(T, padded[0..], .little);
             }
         }
 
         /// XOR a byte into the state at a given offset.
         pub fn add_byte(self: *Self, byte: u8, offset: usize) void {
-            const z = @sizeOf(T) * @as(math.Log2Int(T), @truncate(offset % @sizeOf(T)));
-            self.st[offset / @sizeOf(T)] ^= @as(T, byte) << z;
+            const z = @size_of(T) * @as(math.Log2Int(T), @truncate(offset % @size_of(T)));
+            self.st[offset / @size_of(T)] ^= @as(T, byte) << z;
         }
 
         /// XOR bytes into the beginning of the state.
         pub fn add_bytes(self: *Self, bytes: []const u8) void {
             var i: usize = 0;
-            while (i + @sizeOf(T) <= bytes.len) : (i += @sizeOf(T)) {
-                self.st[i / @sizeOf(T)] ^= mem.readInt(T, bytes[i..][0..@sizeOf(T)], .little);
+            while (i + @size_of(T) <= bytes.len) : (i += @size_of(T)) {
+                self.st[i / @size_of(T)] ^= mem.read_int(T, bytes[i..][0..@size_of(T)], .little);
             }
             if (i < bytes.len) {
-                var padded = [_]u8{0} ** @sizeOf(T);
+                var padded = [_]u8{0} ** @size_of(T);
                 @memcpy(padded[0 .. bytes.len - i], bytes[i..]);
-                self.st[i / @sizeOf(T)] ^= mem.readInt(T, padded[0..], .little);
+                self.st[i / @size_of(T)] ^= mem.read_int(T, padded[0..], .little);
             }
         }
 
         /// Extract the first bytes of the state.
         pub fn extract_bytes(self: *Self, out: []u8) void {
             var i: usize = 0;
-            while (i + @sizeOf(T) <= out.len) : (i += @sizeOf(T)) {
-                mem.writeInt(T, out[i..][0..@sizeOf(T)], self.st[i / @sizeOf(T)], .little);
+            while (i + @size_of(T) <= out.len) : (i += @size_of(T)) {
+                mem.write_int(T, out[i..][0..@size_of(T)], self.st[i / @size_of(T)], .little);
             }
             if (i < out.len) {
-                var padded = [_]u8{0} ** @sizeOf(T);
-                mem.writeInt(T, padded[0..], self.st[i / @sizeOf(T)], .little);
+                var padded = [_]u8{0} ** @size_of(T);
+                mem.write_int(T, padded[0..], self.st[i / @size_of(T)], .little);
                 @memcpy(out[i..], padded[0 .. out.len - i]);
             }
         }
@@ -112,27 +112,27 @@ pub fn KeccakF(comptime f: u11) type {
             assert(out.len == in.len);
 
             var i: usize = 0;
-            while (i + @sizeOf(T) <= in.len) : (i += @sizeOf(T)) {
-                const x = mem.readInt(T, in[i..][0..@sizeOf(T)], native_endian) ^ mem.nativeToLittle(T, self.st[i / @sizeOf(T)]);
-                mem.writeInt(T, out[i..][0..@sizeOf(T)], x, native_endian);
+            while (i + @size_of(T) <= in.len) : (i += @size_of(T)) {
+                const x = mem.read_int(T, in[i..][0..@size_of(T)], native_endian) ^ mem.native_to_little(T, self.st[i / @size_of(T)]);
+                mem.write_int(T, out[i..][0..@size_of(T)], x, native_endian);
             }
             if (i < in.len) {
-                var padded = [_]u8{0} ** @sizeOf(T);
+                var padded = [_]u8{0} ** @size_of(T);
                 @memcpy(padded[0 .. in.len - i], in[i..]);
-                const x = mem.readInt(T, &padded, native_endian) ^ mem.nativeToLittle(T, self.st[i / @sizeOf(T)]);
-                mem.writeInt(T, &padded, x, native_endian);
+                const x = mem.read_int(T, &padded, native_endian) ^ mem.native_to_little(T, self.st[i / @size_of(T)]);
+                mem.write_int(T, &padded, x, native_endian);
                 @memcpy(out[i..], padded[0 .. in.len - i]);
             }
         }
 
         /// Set the words storing the bytes of a given range to zero.
         pub fn clear(self: *Self, from: usize, to: usize) void {
-            @memset(self.st[from / @sizeOf(T) .. (to + @sizeOf(T) - 1) / @sizeOf(T)], 0);
+            @memset(self.st[from / @size_of(T) .. (to + @size_of(T) - 1) / @size_of(T)], 0);
         }
 
         /// Clear the entire state, disabling compiler optimizations.
         pub fn secure_zero(self: *Self) void {
-            std.crypto.utils.secureZero(T, &self.st);
+            std.crypto.utils.secure_zero(T, &self.st);
         }
 
         inline fn round(self: *Self, rc: T) void {
@@ -189,7 +189,7 @@ pub fn KeccakF(comptime f: u11) type {
 
         /// Apply a full-round permutation to the state.
         pub fn permute(self: *Self) void {
-            self.permuteR(max_rounds);
+            self.permute_r(max_rounds);
         }
     };
 }
@@ -224,15 +224,15 @@ pub fn State(comptime f: u11, comptime capacity: u11, comptime rounds: u5) type 
                 self.offset += left;
                 if (self.offset == rate) {
                     self.offset = 0;
-                    self.st.addBytes(self.buf[0..]);
-                    self.st.permuteR(rounds);
+                    self.st.add_bytes(self.buf[0..]);
+                    self.st.permute_r(rounds);
                 }
                 if (left == bytes.len) return;
                 bytes = bytes[left..];
             }
             while (bytes.len >= rate) {
-                self.st.addBytes(bytes[0..rate]);
-                self.st.permuteR(rounds);
+                self.st.add_bytes(bytes[0..rate]);
+                self.st.permute_r(rounds);
                 bytes = bytes[rate..];
             }
             if (bytes.len > 0) {
@@ -248,23 +248,23 @@ pub fn State(comptime f: u11, comptime capacity: u11, comptime rounds: u5) type 
 
         /// Permute the state
         pub fn permute(self: *Self) void {
-            self.st.permuteR(rounds);
+            self.st.permute_r(rounds);
             self.offset = 0;
         }
 
         /// Align the input to the rate boundary.
         pub fn fill_block(self: *Self) void {
-            self.st.addBytes(self.buf[0..self.offset]);
-            self.st.permuteR(rounds);
+            self.st.add_bytes(self.buf[0..self.offset]);
+            self.st.permute_r(rounds);
             self.offset = 0;
         }
 
         /// Mark the end of the input.
         pub fn pad(self: *Self) void {
-            self.st.addBytes(self.buf[0..self.offset]);
-            self.st.addByte(self.delim, self.offset);
-            self.st.addByte(0x80, rate - 1);
-            self.st.permuteR(rounds);
+            self.st.add_bytes(self.buf[0..self.offset]);
+            self.st.add_byte(self.delim, self.offset);
+            self.st.add_byte(0x80, rate - 1);
+            self.st.permute_r(rounds);
             self.offset = 0;
         }
 
@@ -273,8 +273,8 @@ pub fn State(comptime f: u11, comptime capacity: u11, comptime rounds: u5) type 
             var i: usize = 0;
             while (i < out.len) : (i += rate) {
                 const left = @min(rate, out.len - i);
-                self.st.extractBytes(out[i..][0..left]);
-                self.st.permuteR(rounds);
+                self.st.extract_bytes(out[i..][0..left]);
+                self.st.permute_r(rounds);
             }
         }
     };
@@ -296,5 +296,5 @@ test "Keccak-f800" {
         0x6C19AA16, 0xA2913EEE, 0x60754E9A, 0x9819063C, 0xF4709254, 0xD09F9084, 0x772DA259,
         0x1DB35DF7, 0x5AA60162, 0x358825D5, 0xB3783BAB,
     };
-    try std.testing.expectEqualSlices(u32, &st.st, &expected);
+    try std.testing.expect_equal_slices(u32, &st.st, &expected);
 }

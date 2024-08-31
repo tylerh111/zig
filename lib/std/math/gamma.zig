@@ -17,7 +17,7 @@ const std = @import("../std.zig");
 ///  - gamma(+inf)  = +inf
 pub fn gamma(comptime T: type, x: T) T {
     if (T != f32 and T != f64) {
-        @compileError("gamma not implemented for " ++ @typeName(T));
+        @compile_error("gamma not implemented for " ++ @type_name(T));
     }
     // common integer case first
     if (x == @trunc(x)) {
@@ -32,8 +32,8 @@ pub fn gamma(comptime T: type, x: T) T {
             return 1 / x;
         }
         if (x < integer_result_table.len) {
-            const i = @as(u8, @intFromFloat(x));
-            return @floatCast(integer_result_table[i]);
+            const i = @as(u8, @int_from_float(x));
+            return @float_cast(integer_result_table[i]);
         }
     }
     // below this, result underflows, but has a sign
@@ -93,7 +93,7 @@ pub fn gamma(comptime T: type, x: T) T {
 ///  - lgamma(2)     = +0.0
 pub fn lgamma(comptime T: type, x: T) T {
     if (T != f32 and T != f64) {
-        @compileError("gamma not implemented for " ++ @typeName(T));
+        @compile_error("gamma not implemented for " ++ @type_name(T));
     }
     // common integer case first
     if (x == @trunc(x)) {
@@ -106,11 +106,11 @@ pub fn lgamma(comptime T: type, x: T) T {
         // lgamma(1) = +0.0
         // lgamma(2) = +0.0
         if (x < integer_result_table.len) {
-            const i = @as(u8, @intFromFloat(x));
-            return @log(@as(T, @floatCast(integer_result_table[i])));
+            const i = @as(u8, @int_from_float(x));
+            return @log(@as(T, @float_cast(integer_result_table[i])));
         }
         // lgamma(+inf) = +inf
-        if (std.math.isPositiveInf(x)) {
+        if (std.math.is_positive_inf(x)) {
             return x;
         }
     }
@@ -225,8 +225,8 @@ fn series(comptime T: type, abs: T) T {
 // but not for integer x or |x| < 2^-54, we handle those already
 fn sinpi(comptime T: type, x: T) T {
     const xmod2 = @mod(x, 2); // [0, 2]
-    const n = (@as(u8, @intFromFloat(4 * xmod2)) + 1) / 2; // {0, 1, 2, 3, 4}
-    const y = xmod2 - 0.5 * @as(T, @floatFromInt(n)); // [-0.25, 0.25]
+    const n = (@as(u8, @int_from_float(4 * xmod2)) + 1) / 2; // {0, 1, 2, 3, 4}
+    const y = xmod2 - 0.5 * @as(T, @float_from_int(n)); // [-0.25, 0.25]
     return switch (n) {
         0, 4 => @sin(std.math.pi * y),
         1 => @cos(std.math.pi * y),
@@ -237,92 +237,92 @@ fn sinpi(comptime T: type, x: T) T {
 }
 
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
-const expectApproxEqRel = std.testing.expectApproxEqRel;
+const expect_equal = std.testing.expect_equal;
+const expect_approx_eq_rel = std.testing.expect_approx_eq_rel;
 
 test gamma {
     inline for (&.{ f32, f64 }) |T| {
-        const eps = @sqrt(std.math.floatEps(T));
-        try expectApproxEqRel(@as(T, 120), gamma(T, 6), eps);
-        try expectApproxEqRel(@as(T, 362880), gamma(T, 10), eps);
-        try expectApproxEqRel(@as(T, 6402373705728000), gamma(T, 19), eps);
+        const eps = @sqrt(std.math.float_eps(T));
+        try expect_approx_eq_rel(@as(T, 120), gamma(T, 6), eps);
+        try expect_approx_eq_rel(@as(T, 362880), gamma(T, 10), eps);
+        try expect_approx_eq_rel(@as(T, 6402373705728000), gamma(T, 19), eps);
 
-        try expectApproxEqRel(@as(T, 332.7590766955334570), gamma(T, 0.003), eps);
-        try expectApproxEqRel(@as(T, 1.377260301981044573), gamma(T, 0.654), eps);
-        try expectApproxEqRel(@as(T, 1.025393882573518478), gamma(T, 0.959), eps);
+        try expect_approx_eq_rel(@as(T, 332.7590766955334570), gamma(T, 0.003), eps);
+        try expect_approx_eq_rel(@as(T, 1.377260301981044573), gamma(T, 0.654), eps);
+        try expect_approx_eq_rel(@as(T, 1.025393882573518478), gamma(T, 0.959), eps);
 
-        try expectApproxEqRel(@as(T, 7.361898021467681690), gamma(T, 4.16), eps);
-        try expectApproxEqRel(@as(T, 198337.2940287730753), gamma(T, 9.73), eps);
-        try expectApproxEqRel(@as(T, 113718145797241.1666), gamma(T, 17.6), eps);
+        try expect_approx_eq_rel(@as(T, 7.361898021467681690), gamma(T, 4.16), eps);
+        try expect_approx_eq_rel(@as(T, 198337.2940287730753), gamma(T, 9.73), eps);
+        try expect_approx_eq_rel(@as(T, 113718145797241.1666), gamma(T, 17.6), eps);
 
-        try expectApproxEqRel(@as(T, -1.13860211111081424930673), gamma(T, -2.80), eps);
-        try expectApproxEqRel(@as(T, 0.00018573407931875070158), gamma(T, -7.74), eps);
-        try expectApproxEqRel(@as(T, -0.00000001647990903942825), gamma(T, -12.1), eps);
+        try expect_approx_eq_rel(@as(T, -1.13860211111081424930673), gamma(T, -2.80), eps);
+        try expect_approx_eq_rel(@as(T, 0.00018573407931875070158), gamma(T, -7.74), eps);
+        try expect_approx_eq_rel(@as(T, -0.00000001647990903942825), gamma(T, -12.1), eps);
     }
 }
 
 test "gamma.special" {
     inline for (&.{ f32, f64 }) |T| {
-        try expect(std.math.isNan(gamma(T, -std.math.nan(T))));
-        try expect(std.math.isNan(gamma(T, std.math.nan(T))));
-        try expect(std.math.isNan(gamma(T, -std.math.inf(T))));
+        try expect(std.math.is_nan(gamma(T, -std.math.nan(T))));
+        try expect(std.math.is_nan(gamma(T, std.math.nan(T))));
+        try expect(std.math.is_nan(gamma(T, -std.math.inf(T))));
 
-        try expect(std.math.isNan(gamma(T, -4)));
-        try expect(std.math.isNan(gamma(T, -11)));
-        try expect(std.math.isNan(gamma(T, -78)));
+        try expect(std.math.is_nan(gamma(T, -4)));
+        try expect(std.math.is_nan(gamma(T, -11)));
+        try expect(std.math.is_nan(gamma(T, -78)));
 
-        try expectEqual(-std.math.inf(T), gamma(T, -0.0));
-        try expectEqual(std.math.inf(T), gamma(T, 0.0));
+        try expect_equal(-std.math.inf(T), gamma(T, -0.0));
+        try expect_equal(std.math.inf(T), gamma(T, 0.0));
 
-        try expect(std.math.isNegativeZero(gamma(T, -200.5)));
-        try expect(std.math.isPositiveZero(gamma(T, -201.5)));
-        try expect(std.math.isNegativeZero(gamma(T, -202.5)));
+        try expect(std.math.is_negative_zero(gamma(T, -200.5)));
+        try expect(std.math.is_positive_zero(gamma(T, -201.5)));
+        try expect(std.math.is_negative_zero(gamma(T, -202.5)));
 
-        try expectEqual(std.math.inf(T), gamma(T, 200));
-        try expectEqual(std.math.inf(T), gamma(T, 201));
-        try expectEqual(std.math.inf(T), gamma(T, 202));
+        try expect_equal(std.math.inf(T), gamma(T, 200));
+        try expect_equal(std.math.inf(T), gamma(T, 201));
+        try expect_equal(std.math.inf(T), gamma(T, 202));
 
-        try expectEqual(std.math.inf(T), gamma(T, std.math.inf(T)));
+        try expect_equal(std.math.inf(T), gamma(T, std.math.inf(T)));
     }
 }
 
 test lgamma {
     inline for (&.{ f32, f64 }) |T| {
-        const eps = @sqrt(std.math.floatEps(T));
-        try expectApproxEqRel(@as(T, @log(24.0)), lgamma(T, 5), eps);
-        try expectApproxEqRel(@as(T, @log(20922789888000.0)), lgamma(T, 17), eps);
-        try expectApproxEqRel(@as(T, @log(2432902008176640000.0)), lgamma(T, 21), eps);
+        const eps = @sqrt(std.math.float_eps(T));
+        try expect_approx_eq_rel(@as(T, @log(24.0)), lgamma(T, 5), eps);
+        try expect_approx_eq_rel(@as(T, @log(20922789888000.0)), lgamma(T, 17), eps);
+        try expect_approx_eq_rel(@as(T, @log(2432902008176640000.0)), lgamma(T, 21), eps);
 
-        try expectApproxEqRel(@as(T, 2.201821590438859327), lgamma(T, 0.105), eps);
-        try expectApproxEqRel(@as(T, 1.275416975248413231), lgamma(T, 0.253), eps);
-        try expectApproxEqRel(@as(T, 0.130463884049976732), lgamma(T, 0.823), eps);
+        try expect_approx_eq_rel(@as(T, 2.201821590438859327), lgamma(T, 0.105), eps);
+        try expect_approx_eq_rel(@as(T, 1.275416975248413231), lgamma(T, 0.253), eps);
+        try expect_approx_eq_rel(@as(T, 0.130463884049976732), lgamma(T, 0.823), eps);
 
-        try expectApproxEqRel(@as(T, 43.24395772148497989), lgamma(T, 21.3), eps);
-        try expectApproxEqRel(@as(T, 110.6908958012102623), lgamma(T, 41.1), eps);
-        try expectApproxEqRel(@as(T, 215.2123266224689711), lgamma(T, 67.4), eps);
+        try expect_approx_eq_rel(@as(T, 43.24395772148497989), lgamma(T, 21.3), eps);
+        try expect_approx_eq_rel(@as(T, 110.6908958012102623), lgamma(T, 41.1), eps);
+        try expect_approx_eq_rel(@as(T, 215.2123266224689711), lgamma(T, 67.4), eps);
 
-        try expectApproxEqRel(@as(T, -122.605958469563489), lgamma(T, -43.6), eps);
-        try expectApproxEqRel(@as(T, -278.633885462703133), lgamma(T, -81.4), eps);
-        try expectApproxEqRel(@as(T, -333.247676253238363), lgamma(T, -93.6), eps);
+        try expect_approx_eq_rel(@as(T, -122.605958469563489), lgamma(T, -43.6), eps);
+        try expect_approx_eq_rel(@as(T, -278.633885462703133), lgamma(T, -81.4), eps);
+        try expect_approx_eq_rel(@as(T, -333.247676253238363), lgamma(T, -93.6), eps);
     }
 }
 
 test "lgamma.special" {
     inline for (&.{ f32, f64 }) |T| {
-        try expect(std.math.isNan(lgamma(T, -std.math.nan(T))));
-        try expect(std.math.isNan(lgamma(T, std.math.nan(T))));
+        try expect(std.math.is_nan(lgamma(T, -std.math.nan(T))));
+        try expect(std.math.is_nan(lgamma(T, std.math.nan(T))));
 
-        try expectEqual(std.math.inf(T), lgamma(T, -std.math.inf(T)));
-        try expectEqual(std.math.inf(T), lgamma(T, std.math.inf(T)));
+        try expect_equal(std.math.inf(T), lgamma(T, -std.math.inf(T)));
+        try expect_equal(std.math.inf(T), lgamma(T, std.math.inf(T)));
 
-        try expectEqual(std.math.inf(T), lgamma(T, -5));
-        try expectEqual(std.math.inf(T), lgamma(T, -8));
-        try expectEqual(std.math.inf(T), lgamma(T, -15));
+        try expect_equal(std.math.inf(T), lgamma(T, -5));
+        try expect_equal(std.math.inf(T), lgamma(T, -8));
+        try expect_equal(std.math.inf(T), lgamma(T, -15));
 
-        try expectEqual(std.math.inf(T), lgamma(T, -0.0));
-        try expectEqual(std.math.inf(T), lgamma(T, 0.0));
+        try expect_equal(std.math.inf(T), lgamma(T, -0.0));
+        try expect_equal(std.math.inf(T), lgamma(T, 0.0));
 
-        try expect(std.math.isPositiveZero(lgamma(T, 1)));
-        try expect(std.math.isPositiveZero(lgamma(T, 2)));
+        try expect(std.math.is_positive_zero(lgamma(T, 1)));
+        try expect(std.math.is_positive_zero(lgamma(T, 2)));
     }
 }

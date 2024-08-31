@@ -37,7 +37,7 @@ var some_integers: [100]i32 = undefined;
 
 test "modify an array" {
     for (&some_integers, 0..) |*item, i| {
-        item.* = @intCast(i);
+        item.* = @int_cast(i);
     }
     try expect(some_integers[10] == 10);
     try expect(some_integers[99] == 99);
@@ -79,8 +79,8 @@ var fancy_array = init: {
     var initial_value: [10]Point = undefined;
     for (&initial_value, 0..) |*pt, i| {
         pt.* = Point{
-            .x = @intCast(i),
-            .y = @intCast(i * 2),
+            .x = @int_cast(i),
+            .y = @int_cast(i * 2),
         };
     }
     break :init initial_value;
@@ -96,7 +96,7 @@ test "compile-time array initialization" {
 }
 
 // call a function to initialize an array
-var more_points = [_]Point{makePoint(3)} ** 10;
+var more_points = [_]Point{make_point(3)} ** 10;
 fn make_point(x: i32) Point {
     return Point{
         .x = x,

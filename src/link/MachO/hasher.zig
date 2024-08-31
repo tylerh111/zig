@@ -15,7 +15,7 @@ pub fn ParallelHasher(comptime Hasher: type) type {
             var wg: WaitGroup = .{};
 
             const file_size = blk: {
-                const file_size = opts.max_file_size orelse try file.getEndPos();
+                const file_size = opts.max_file_size orelse try file.get_end_pos();
                 break :blk std.math.cast(usize, file_size) orelse return error.Overflow;
             };
             const chunk_size = std.math.cast(usize, opts.chunk_size) orelse return error.Overflow;
@@ -36,7 +36,7 @@ pub fn ParallelHasher(comptime Hasher: type) type {
                         file_size - fstart
                     else
                         chunk_size;
-                    self.thread_pool.spawnWg(&wg, worker, .{
+                    self.thread_pool.spawn_wg(&wg, worker, .{
                         file,
                         fstart,
                         buffer[fstart..][0..fsize],
@@ -55,7 +55,7 @@ pub fn ParallelHasher(comptime Hasher: type) type {
             out: *[hash_size]u8,
             err: *fs.File.PReadError!usize,
         ) void {
-            err.* = file.preadAll(buffer, fstart);
+            err.* = file.pread_all(buffer, fstart);
             Hasher.hash(buffer, out, .{});
         }
 

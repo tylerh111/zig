@@ -15,7 +15,7 @@ pub fn BufferedWriter(comptime buffer_size: usize, comptime WriterType: type) ty
         const Self = @This();
 
         pub fn flush(self: *Self) !void {
-            try self.unbuffered_writer.writeAll(self.buf[0..self.end]);
+            try self.unbuffered_writer.write_all(self.buf[0..self.end]);
             self.end = 0;
         }
 

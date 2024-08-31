@@ -1,6 +1,6 @@
 test "enum" {
     const E = enum(u8) { A, B, _ };
-    _ = @tagName(@as(E, @enumFromInt(5)));
+    _ = @tag_name(@as(E, @enumFromInt(5)));
 }
 
 // error

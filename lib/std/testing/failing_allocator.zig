@@ -8,11 +8,11 @@ pub const Config = struct {
     ///
     /// var a = try failing_alloc.create(i32);
     /// var b = try failing_alloc.create(i32);
-    /// testing.expectError(error.OutOfMemory, failing_alloc.create(i32));
-    fail_index: usize = std.math.maxInt(usize),
+    /// testing.expect_error(error.OutOfMemory, failing_alloc.create(i32));
+    fail_index: usize = std.math.max_int(usize),
 
     /// Number of successful resizes to expect from this allocator. The next resize will fail.
-    resize_fail_index: usize = std.math.maxInt(usize),
+    resize_fail_index: usize = std.math.max_int(usize),
 };
 
 /// Allocator that fails after N allocations, useful for making sure out of
@@ -73,7 +73,7 @@ pub const FailingAllocator = struct {
         log2_ptr_align: u8,
         return_address: usize,
     ) ?[*]u8 {
-        const self: *FailingAllocator = @ptrCast(@alignCast(ctx));
+        const self: *FailingAllocator = @ptr_cast(@align_cast(ctx));
         if (self.alloc_index == self.fail_index) {
             if (!self.has_induced_failure) {
                 @memset(&self.stack_addresses, 0);
@@ -81,12 +81,12 @@ pub const FailingAllocator = struct {
                     .instruction_addresses = &self.stack_addresses,
                     .index = 0,
                 };
-                std.debug.captureStackTrace(return_address, &stack_trace);
+                std.debug.capture_stack_trace(return_address, &stack_trace);
                 self.has_induced_failure = true;
             }
             return null;
         }
-        const result = self.internal_allocator.rawAlloc(len, log2_ptr_align, return_address) orelse
+        const result = self.internal_allocator.raw_alloc(len, log2_ptr_align, return_address) orelse
             return null;
         self.allocated_bytes += len;
         self.allocations += 1;
@@ -101,10 +101,10 @@ pub const FailingAllocator = struct {
         new_len: usize,
         ra: usize,
     ) bool {
-        const self: *FailingAllocator = @ptrCast(@alignCast(ctx));
+        const self: *FailingAllocator = @ptr_cast(@align_cast(ctx));
         if (self.resize_index == self.resize_fail_index)
             return false;
-        if (!self.internal_allocator.rawResize(old_mem, log2_old_align, new_len, ra))
+        if (!self.internal_allocator.raw_resize(old_mem, log2_old_align, new_len, ra))
             return false;
         if (new_len < old_mem.len) {
             self.freed_bytes += old_mem.len - new_len;
@@ -121,8 +121,8 @@ pub const FailingAllocator = struct {
         log2_old_align: u8,
         ra: usize,
     ) void {
-        const self: *FailingAllocator = @ptrCast(@alignCast(ctx));
-        self.internal_allocator.rawFree(old_mem, log2_old_align, ra);
+        const self: *FailingAllocator = @ptr_cast(@align_cast(ctx));
+        self.internal_allocator.raw_free(old_mem, log2_old_align, ra);
         self.deallocations += 1;
         self.freed_bytes += old_mem.len;
     }

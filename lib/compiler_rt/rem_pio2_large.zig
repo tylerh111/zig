@@ -279,7 +279,7 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
 
     // determine jx,jv,q0, note that 3>q0
     jx = nx - 1;
-    jv = @divFloor(e0 - 3, 24);
+    jv = @div_floor(e0 - 3, 24);
     if (jv < 0) jv = 0;
     q0 = e0 - 24 * (jv + 1);
 
@@ -291,7 +291,7 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
         i += 1;
         j += 1;
     }) {
-        f[@intCast(i)] = if (j < 0) 0.0 else @floatFromInt(ipio2[@intCast(j)]);
+        f[@int_cast(i)] = if (j < 0) 0.0 else @float_from_int(ipio2[@int_cast(j)]);
     }
 
     // compute q[0],q[1],...q[jk]
@@ -300,9 +300,9 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
         j = 0;
         fw = 0;
         while (j <= jx) : (j += 1) {
-            fw += x[@intCast(j)] * f[@intCast(jx + i - j)];
+            fw += x[@int_cast(j)] * f[@int_cast(jx + i - j)];
         }
-        q[@intCast(i)] = fw;
+        q[@int_cast(i)] = fw;
     }
 
     jz = jk;
@@ -313,29 +313,29 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
         // distill q[] into iq[] reversingly
         i = 0;
         j = jz;
-        z = q[@intCast(jz)];
+        z = q[@int_cast(jz)];
         while (j > 0) : ({
             i += 1;
             j -= 1;
         }) {
-            fw = @floatFromInt(@as(i32, @intFromFloat(0x1p-24 * z)));
-            iq[@intCast(i)] = @intFromFloat(z - 0x1p24 * fw);
-            z = q[@intCast(j - 1)] + fw;
+            fw = @float_from_int(@as(i32, @int_from_float(0x1p-24 * z)));
+            iq[@int_cast(i)] = @int_from_float(z - 0x1p24 * fw);
+            z = q[@int_cast(j - 1)] + fw;
         }
 
         // compute n
         z = math.scalbn(z, q0); // actual value of z
         z -= 8.0 * @floor(z * 0.125); // trim off integer >= 8
-        n = @intFromFloat(z);
-        z -= @floatFromInt(n);
+        n = @int_from_float(z);
+        z -= @float_from_int(n);
         ih = 0;
         if (q0 > 0) { // need iq[jz-1] to determine n
-            i = iq[@intCast(jz - 1)] >> @intCast(24 - q0);
+            i = iq[@int_cast(jz - 1)] >> @int_cast(24 - q0);
             n += i;
-            iq[@intCast(jz - 1)] -= i << @intCast(24 - q0);
-            ih = iq[@intCast(jz - 1)] >> @intCast(23 - q0);
+            iq[@int_cast(jz - 1)] -= i << @int_cast(24 - q0);
+            ih = iq[@int_cast(jz - 1)] >> @int_cast(23 - q0);
         } else if (q0 == 0) {
-            ih = iq[@intCast(jz - 1)] >> 23;
+            ih = iq[@int_cast(jz - 1)] >> 23;
         } else if (z >= 0.5) {
             ih = 2;
         }
@@ -345,20 +345,20 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
             carry = 0;
             i = 0;
             while (i < jz) : (i += 1) { // compute 1-q
-                j = iq[@intCast(i)];
+                j = iq[@int_cast(i)];
                 if (carry == 0) {
                     if (j != 0) {
                         carry = 1;
-                        iq[@intCast(i)] = 0x1000000 - j;
+                        iq[@int_cast(i)] = 0x1000000 - j;
                     }
                 } else {
-                    iq[@intCast(i)] = 0xffffff - j;
+                    iq[@int_cast(i)] = 0xffffff - j;
                 }
             }
             if (q0 > 0) { // rare case: chance is 1 in 12
                 switch (q0) {
-                    1 => iq[@intCast(jz - 1)] &= 0x7fffff,
-                    2 => iq[@intCast(jz - 1)] &= 0x3fffff,
+                    1 => iq[@int_cast(jz - 1)] &= 0x7fffff,
+                    2 => iq[@int_cast(jz - 1)] &= 0x3fffff,
                     else => unreachable,
                 }
             }
@@ -375,24 +375,24 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
             j = 0;
             i = jz - 1;
             while (i >= jk) : (i -= 1) {
-                j |= iq[@intCast(i)];
+                j |= iq[@int_cast(i)];
             }
 
             if (j == 0) { // need recomputation
                 k = 1;
-                while (iq[@intCast(jk - k)] == 0) : (k += 1) {
+                while (iq[@int_cast(jk - k)] == 0) : (k += 1) {
                     // k = no. of terms needed
                 }
 
                 i = jz + 1;
                 while (i <= jz + k) : (i += 1) { // add q[jz+1] to q[jz+k]
-                    f[@intCast(jx + i)] = @floatFromInt(ipio2[@intCast(jv + i)]);
+                    f[@int_cast(jx + i)] = @float_from_int(ipio2[@int_cast(jv + i)]);
                     j = 0;
                     fw = 0;
                     while (j <= jx) : (j += 1) {
-                        fw += x[@intCast(j)] * f[@intCast(jx + i - j)];
+                        fw += x[@int_cast(j)] * f[@int_cast(jx + i - j)];
                     }
-                    q[@intCast(i)] = fw;
+                    q[@int_cast(i)] = fw;
                 }
                 jz += k;
                 continue :recompute; // mimic goto recompute
@@ -403,20 +403,20 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
         if (z == 0.0) {
             jz -= 1;
             q0 -= 24;
-            while (iq[@intCast(jz)] == 0) {
+            while (iq[@int_cast(jz)] == 0) {
                 jz -= 1;
                 q0 -= 24;
             }
         } else { // break z into 24-bit if necessary
             z = math.scalbn(z, -q0);
             if (z >= 0x1p24) {
-                fw = @floatFromInt(@as(i32, @intFromFloat(0x1p-24 * z)));
-                iq[@intCast(jz)] = @intFromFloat(z - 0x1p24 * fw);
+                fw = @float_from_int(@as(i32, @int_from_float(0x1p-24 * z)));
+                iq[@int_cast(jz)] = @int_from_float(z - 0x1p24 * fw);
                 jz += 1;
                 q0 += 24;
-                iq[@intCast(jz)] = @intFromFloat(fw);
+                iq[@int_cast(jz)] = @int_from_float(fw);
             } else {
-                iq[@intCast(jz)] = @intFromFloat(z);
+                iq[@int_cast(jz)] = @int_from_float(z);
             }
         }
 
@@ -424,7 +424,7 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
         fw = math.scalbn(@as(f64, 1.0), q0);
         i = jz;
         while (i >= 0) : (i -= 1) {
-            q[@intCast(i)] = fw * @as(f64, @floatFromInt(iq[@intCast(i)]));
+            q[@int_cast(i)] = fw * @as(f64, @float_from_int(iq[@int_cast(i)]));
             fw *= 0x1p-24;
         }
 
@@ -434,9 +434,9 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
             fw = 0;
             k = 0;
             while (k <= jp and k <= jz - i) : (k += 1) {
-                fw += PIo2[@intCast(k)] * q[@intCast(i + k)];
+                fw += PIo2[@int_cast(k)] * q[@int_cast(i + k)];
             }
-            fq[@intCast(jz - i)] = fw;
+            fq[@int_cast(jz - i)] = fw;
         }
 
         // compress fq[] into y[]
@@ -445,7 +445,7 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
                 fw = 0.0;
                 i = jz;
                 while (i >= 0) : (i -= 1) {
-                    fw += fq[@intCast(i)];
+                    fw += fq[@int_cast(i)];
                 }
                 y[0] = if (ih == 0) fw else -fw;
             },
@@ -454,7 +454,7 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
                 fw = 0.0;
                 i = jz;
                 while (i >= 0) : (i -= 1) {
-                    fw += fq[@intCast(i)];
+                    fw += fq[@int_cast(i)];
                 }
                 // TODO: drop excess precision here once double_t is used
                 fw = fw;
@@ -462,27 +462,27 @@ pub fn rem_pio2_large(x: []f64, y: []f64, e0: i32, nx: i32, prec: usize) i32 {
                 fw = fq[0] - fw;
                 i = 1;
                 while (i <= jz) : (i += 1) {
-                    fw += fq[@intCast(i)];
+                    fw += fq[@int_cast(i)];
                 }
                 y[1] = if (ih == 0) fw else -fw;
             },
             3 => { // painful
                 i = jz;
                 while (i > 0) : (i -= 1) {
-                    fw = fq[@intCast(i - 1)] + fq[@intCast(i)];
-                    fq[@intCast(i)] += fq[@intCast(i - 1)] - fw;
-                    fq[@intCast(i - 1)] = fw;
+                    fw = fq[@int_cast(i - 1)] + fq[@int_cast(i)];
+                    fq[@int_cast(i)] += fq[@int_cast(i - 1)] - fw;
+                    fq[@int_cast(i - 1)] = fw;
                 }
                 i = jz;
                 while (i > 1) : (i -= 1) {
-                    fw = fq[@intCast(i - 1)] + fq[@intCast(i)];
-                    fq[@intCast(i)] += fq[@intCast(i - 1)] - fw;
-                    fq[@intCast(i - 1)] = fw;
+                    fw = fq[@int_cast(i - 1)] + fq[@int_cast(i)];
+                    fq[@int_cast(i)] += fq[@int_cast(i - 1)] - fw;
+                    fq[@int_cast(i - 1)] = fw;
                 }
                 fw = 0;
                 i = jz;
                 while (i >= 2) : (i -= 1) {
-                    fw += fq[@intCast(i)];
+                    fw += fq[@int_cast(i)];
                 }
                 if (ih == 0) {
                     y[0] = fq[0];

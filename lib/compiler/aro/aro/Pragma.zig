@@ -9,13 +9,13 @@ pub const Error = Compilation.Error || error{ UnknownPragma, StopPreprocessing }
 const Pragma = @This();
 
 /// Called during Preprocessor.init
-beforePreprocess: ?*const fn (*Pragma, *Compilation) void = null,
+before_preprocess: ?*const fn (*Pragma, *Compilation) void = null,
 
 /// Called at the beginning of Parser.parse
-beforeParse: ?*const fn (*Pragma, *Compilation) void = null,
+before_parse: ?*const fn (*Pragma, *Compilation) void = null,
 
 /// Called at the end of Parser.parse if a Tree was successfully parsed
-afterParse: ?*const fn (*Pragma, *Compilation) void = null,
+after_parse: ?*const fn (*Pragma, *Compilation) void = null,
 
 /// Called during Compilation.deinit
 deinit: *const fn (*Pragma, *Compilation) void,
@@ -28,15 +28,15 @@ deinit: *const fn (*Pragma, *Compilation) void,
 /// Then pp.tokens.get(start_idx) will return the `GCC` token.
 /// Return error.UnknownPragma to emit an `unknown_pragma` diagnostic
 /// Return error.StopPreprocessing to stop preprocessing the current file (see once.zig)
-preprocessorHandler: ?*const fn (*Pragma, *Preprocessor, start_idx: TokenIndex) Error!void = null,
+preprocessor_handler: ?*const fn (*Pragma, *Preprocessor, start_idx: TokenIndex) Error!void = null,
 
 /// Called during token pretty-printing (`-E` option). If this returns true, the pragma will
 /// be printed; otherwise it will be omitted. start_idx is the index of the pragma name token
-preserveTokens: ?*const fn (*Pragma, *Preprocessor, start_idx: TokenIndex) bool = null,
+preserve_tokens: ?*const fn (*Pragma, *Preprocessor, start_idx: TokenIndex) bool = null,
 
-/// Same as preprocessorHandler except called during parsing
+/// Same as preprocessor_handler except called during parsing
 /// The parser's `p.tok_i` field must not be changed
-parserHandler: ?*const fn (*Pragma, *Parser, start_idx: TokenIndex) Compilation.Error!void = null,
+parser_handler: ?*const fn (*Pragma, *Parser, start_idx: TokenIndex) Compilation.Error!void = null,
 
 pub fn paste_tokens(pp: *Preprocessor, start_idx: TokenIndex) ![]const u8 {
     if (pp.tokens.get(start_idx).id == .nl) return error.ExpectedStringLiteral;
@@ -57,8 +57,8 @@ pub fn paste_tokens(pp: *Preprocessor, start_idx: TokenIndex) ![]const u8 {
             .r_paren => rparen_count += 1,
             .string_literal => {
                 if (rparen_count != 0) return error.ExpectedStringLiteral;
-                const str = pp.expandedSlice(tok);
-                try pp.char_buf.appendSlice(str[1 .. str.len - 1]);
+                const str = pp.expanded_slice(tok);
+                try pp.char_buf.append_slice(str[1 .. str.len - 1]);
             },
             else => return error.ExpectedStringLiteral,
         }
@@ -68,16 +68,16 @@ pub fn paste_tokens(pp: *Preprocessor, start_idx: TokenIndex) ![]const u8 {
 }
 
 pub fn should_preserve_tokens(self: *Pragma, pp: *Preprocessor, start_idx: TokenIndex) bool {
-    if (self.preserveTokens) |func| return func(self, pp, start_idx);
+    if (self.preserve_tokens) |func| return func(self, pp, start_idx);
     return false;
 }
 
 pub fn preprocessor_cb(self: *Pragma, pp: *Preprocessor, start_idx: TokenIndex) Error!void {
-    if (self.preprocessorHandler) |func| return func(self, pp, start_idx);
+    if (self.preprocessor_handler) |func| return func(self, pp, start_idx);
 }
 
 pub fn parser_cb(self: *Pragma, p: *Parser, start_idx: TokenIndex) Compilation.Error!void {
     const tok_index = p.tok_i;
     defer std.debug.assert(tok_index == p.tok_i);
-    if (self.parserHandler) |func| return func(self, p, start_idx);
+    if (self.parser_handler) |func| return func(self, p, start_idx);
 }

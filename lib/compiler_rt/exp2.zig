@@ -28,18 +28,18 @@ comptime {
 
 pub fn __exp2h(x: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(exp2f(x));
+    return @float_cast(exp2f(x));
 }
 
 pub fn exp2f(x: f32) callconv(.C) f32 {
-    const tblsiz: u32 = @intCast(exp2ft.len);
-    const redux: f32 = 0x1.8p23 / @as(f32, @floatFromInt(tblsiz));
+    const tblsiz: u32 = @int_cast(exp2ft.len);
+    const redux: f32 = 0x1.8p23 / @as(f32, @float_from_int(tblsiz));
     const P1: f32 = 0x1.62e430p-1;
     const P2: f32 = 0x1.ebfbe0p-3;
     const P3: f32 = 0x1.c6b348p-5;
     const P4: f32 = 0x1.3b2c9cp-7;
 
-    const u: u32 = @bitCast(x);
+    const u: u32 = @bit_cast(x);
     const ix = u & 0x7FFFFFFF;
 
     // |x| > 126
@@ -55,7 +55,7 @@ pub fn exp2f(x: f32) callconv(.C) f32 {
         // x < -126
         if (u >= 0x80000000) {
             if (u >= 0xC3160000 or u & 0x000FFFF != 0) {
-                mem.doNotOptimizeAway(-0x1.0p-149 / x);
+                mem.do_not_optimize_away(-0x1.0p-149 / x);
             }
             // x <= -150
             if (u >= 0x3160000) {
@@ -73,35 +73,35 @@ pub fn exp2f(x: f32) callconv(.C) f32 {
     // intended result but should confirm how GCC/Clang handle this to ensure.
 
     var uf = x + redux;
-    var i_0: u32 = @bitCast(uf);
+    var i_0: u32 = @bit_cast(uf);
     i_0 +%= tblsiz / 2;
 
     const k = i_0 / tblsiz;
-    const uk: f64 = @bitCast(@as(u64, 0x3FF + k) << 52);
+    const uk: f64 = @bit_cast(@as(u64, 0x3FF + k) << 52);
     i_0 &= tblsiz - 1;
     uf -= redux;
 
     const z: f64 = x - uf;
-    var r: f64 = exp2ft[@intCast(i_0)];
+    var r: f64 = exp2ft[@int_cast(i_0)];
     const t: f64 = r * z;
     r = r + t * (P1 + z * P2) + t * (z * z) * (P3 + z * P4);
-    return @floatCast(r * uk);
+    return @float_cast(r * uk);
 }
 
 pub fn exp2(x: f64) callconv(.C) f64 {
-    const tblsiz: u32 = @intCast(exp2dt.len / 2);
-    const redux: f64 = 0x1.8p52 / @as(f64, @floatFromInt(tblsiz));
+    const tblsiz: u32 = @int_cast(exp2dt.len / 2);
+    const redux: f64 = 0x1.8p52 / @as(f64, @float_from_int(tblsiz));
     const P1: f64 = 0x1.62e42fefa39efp-1;
     const P2: f64 = 0x1.ebfbdff82c575p-3;
     const P3: f64 = 0x1.c6b08d704a0a6p-5;
     const P4: f64 = 0x1.3b2ab88f70400p-7;
     const P5: f64 = 0x1.5d88003875c74p-10;
 
-    const ux: u64 = @bitCast(x);
-    const ix = @as(u32, @intCast(ux >> 32)) & 0x7FFFFFFF;
+    const ux: u64 = @bit_cast(x);
+    const ix = @as(u32, @int_cast(ux >> 32)) & 0x7FFFFFFF;
 
     // TODO: This should be handled beneath.
-    if (math.isNan(x)) {
+    if (math.is_nan(x)) {
         return math.nan(f64);
     }
 
@@ -109,7 +109,7 @@ pub fn exp2(x: f64) callconv(.C) f64 {
     if (ix >= 0x408FF000) {
         // x >= 1024 or nan
         if (ix >= 0x40900000 and ux >> 63 == 0) {
-            math.raiseOverflow();
+            math.raise_overflow();
             return math.inf(f64);
         }
         // -inf or -nan
@@ -120,7 +120,7 @@ pub fn exp2(x: f64) callconv(.C) f64 {
         if (ux >> 63 != 0) {
             // underflow
             if (x <= -1075 or x - 0x1.0p52 + 0x1.0p52 != x) {
-                mem.doNotOptimizeAway(@as(f32, @floatCast(-0x1.0p-149 / x)));
+                mem.do_not_optimize_away(@as(f32, @float_cast(-0x1.0p-149 / x)));
             }
             if (x <= -1075) {
                 return 0;
@@ -140,18 +140,18 @@ pub fn exp2(x: f64) callconv(.C) f64 {
     // reduce x
     var uf: f64 = x + redux;
     // NOTE: musl performs an implicit 64-bit to 32-bit u32 truncation here
-    var i_0: u32 = @truncate(@as(u64, @bitCast(uf)));
+    var i_0: u32 = @truncate(@as(u64, @bit_cast(uf)));
     i_0 +%= tblsiz / 2;
 
     const k: u32 = i_0 / tblsiz * tblsiz;
-    const ik: i32 = @divTrunc(@as(i32, @bitCast(k)), tblsiz);
+    const ik: i32 = @div_trunc(@as(i32, @bit_cast(k)), tblsiz);
     i_0 %= tblsiz;
     uf -= redux;
 
     // r = exp2(y) = exp2t[i_0] * p(z - eps[i])
     var z: f64 = x - uf;
-    const t: f64 = exp2dt[@intCast(2 * i_0)];
-    z -= exp2dt[@intCast(2 * i_0 + 1)];
+    const t: f64 = exp2dt[@int_cast(2 * i_0)];
+    z -= exp2dt[@int_cast(2 * i_0 + 1)];
     const r: f64 = t + t * z * (P1 + z * (P2 + z * (P3 + z * (P4 + z * P5))));
 
     return math.scalbn(r, ik);
@@ -159,12 +159,12 @@ pub fn exp2(x: f64) callconv(.C) f64 {
 
 pub fn __exp2x(x: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(exp2q(x));
+    return @float_cast(exp2q(x));
 }
 
 pub fn exp2q(x: f128) callconv(.C) f128 {
     // TODO: more correct implementation
-    return exp2(@floatCast(x));
+    return exp2(@float_cast(x));
 }
 
 pub fn exp2l(x: c_longdouble) callconv(.C) c_longdouble {
@@ -174,7 +174,7 @@ pub fn exp2l(x: c_longdouble) callconv(.C) c_longdouble {
         64 => return exp2(x),
         80 => return __exp2x(x),
         128 => return exp2q(x),
-        else => @compileError("unreachable"),
+        else => @compile_error("unreachable"),
     }
 }
 
@@ -461,30 +461,30 @@ test "exp2_32" {
     const epsilon = 0.000001;
 
     try expect(exp2f(0.0) == 1.0);
-    try expect(math.approxEqAbs(f32, exp2f(0.2), 1.148698, epsilon));
-    try expect(math.approxEqAbs(f32, exp2f(0.8923), 1.856133, epsilon));
-    try expect(math.approxEqAbs(f32, exp2f(1.5), 2.828427, epsilon));
-    try expect(math.approxEqAbs(f32, exp2f(37.45), 187747237888, epsilon));
-    try expect(math.approxEqAbs(f32, exp2f(-1), 0.5, epsilon));
+    try expect(math.approx_eq_abs(f32, exp2f(0.2), 1.148698, epsilon));
+    try expect(math.approx_eq_abs(f32, exp2f(0.8923), 1.856133, epsilon));
+    try expect(math.approx_eq_abs(f32, exp2f(1.5), 2.828427, epsilon));
+    try expect(math.approx_eq_abs(f32, exp2f(37.45), 187747237888, epsilon));
+    try expect(math.approx_eq_abs(f32, exp2f(-1), 0.5, epsilon));
 }
 
 test "exp2_64" {
     const epsilon = 0.000001;
 
     try expect(exp2(0.0) == 1.0);
-    try expect(math.approxEqAbs(f64, exp2(0.2), 1.148698, epsilon));
-    try expect(math.approxEqAbs(f64, exp2(0.8923), 1.856133, epsilon));
-    try expect(math.approxEqAbs(f64, exp2(1.5), 2.828427, epsilon));
-    try expect(math.approxEqAbs(f64, exp2(-1), 0.5, epsilon));
-    try expect(math.approxEqAbs(f64, exp2(-0x1.a05cc754481d1p-2), 0x1.824056efc687cp-1, epsilon));
+    try expect(math.approx_eq_abs(f64, exp2(0.2), 1.148698, epsilon));
+    try expect(math.approx_eq_abs(f64, exp2(0.8923), 1.856133, epsilon));
+    try expect(math.approx_eq_abs(f64, exp2(1.5), 2.828427, epsilon));
+    try expect(math.approx_eq_abs(f64, exp2(-1), 0.5, epsilon));
+    try expect(math.approx_eq_abs(f64, exp2(-0x1.a05cc754481d1p-2), 0x1.824056efc687cp-1, epsilon));
 }
 
 test "exp2_32.special" {
-    try expect(math.isPositiveInf(exp2f(math.inf(f32))));
-    try expect(math.isNan(exp2f(math.nan(f32))));
+    try expect(math.is_positive_inf(exp2f(math.inf(f32))));
+    try expect(math.is_nan(exp2f(math.nan(f32))));
 }
 
 test "exp2_64.special" {
-    try expect(math.isPositiveInf(exp2(math.inf(f64))));
-    try expect(math.isNan(exp2(math.nan(f64))));
+    try expect(math.is_positive_inf(exp2(math.inf(f64))));
+    try expect(math.is_nan(exp2(math.nan(f64))));
 }

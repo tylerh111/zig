@@ -65,7 +65,7 @@ pub const Tag = enum {
     unknown,
 
     pub fn get_hash_style(self: Tag) HashStyle {
-        if (self.isOpenSUSE()) return .both;
+        if (self.is_open_suse()) return .both;
         return switch (self) {
             .ubuntu_lucid,
             .ubuntu_jaunty,
@@ -152,9 +152,9 @@ pub const Tag = enum {
 };
 
 fn scan_for_os_release(buf: []const u8) ?Tag {
-    var it = mem.splitScalar(u8, buf, '\n');
+    var it = mem.split_scalar(u8, buf, '\n');
     while (it.next()) |line| {
-        if (mem.startsWith(u8, line, "ID=")) {
+        if (mem.starts_with(u8, line, "ID=")) {
             const rest = line["ID=".len..];
             if (mem.eql(u8, rest, "alpine")) return .alpine;
             if (mem.eql(u8, rest, "fedora")) return .fedora;
@@ -170,14 +170,14 @@ fn scan_for_os_release(buf: []const u8) ?Tag {
 
 fn detect_os_release(fs: Filesystem) ?Tag {
     var buf: [MAX_BYTES]u8 = undefined;
-    const data = fs.readFile("/etc/os-release", &buf) orelse fs.readFile("/usr/lib/os-release", &buf) orelse return null;
-    return scanForOsRelease(data);
+    const data = fs.read_file("/etc/os-release", &buf) orelse fs.read_file("/usr/lib/os-release", &buf) orelse return null;
+    return scan_for_os_release(data);
 }
 
 fn scan_for_lsbrelease(buf: []const u8) ?Tag {
-    var it = mem.splitScalar(u8, buf, '\n');
+    var it = mem.split_scalar(u8, buf, '\n');
     while (it.next()) |line| {
-        if (mem.startsWith(u8, line, "DISTRIB_CODENAME=")) {
+        if (mem.starts_with(u8, line, "DISTRIB_CODENAME=")) {
             const rest = line["DISTRIB_CODENAME=".len..];
             if (mem.eql(u8, rest, "hardy")) return .ubuntu_hardy;
             if (mem.eql(u8, rest, "intrepid")) return .ubuntu_intrepid;
@@ -217,17 +217,17 @@ fn scan_for_lsbrelease(buf: []const u8) ?Tag {
 
 fn detect_lsbrelease(fs: Filesystem) ?Tag {
     var buf: [MAX_BYTES]u8 = undefined;
-    const data = fs.readFile("/etc/lsb-release", &buf) orelse return null;
+    const data = fs.read_file("/etc/lsb-release", &buf) orelse return null;
 
-    return scanForLSBRelease(data);
+    return scan_for_lsbrelease(data);
 }
 
 fn scan_for_red_hat(buf: []const u8) Tag {
-    if (mem.startsWith(u8, buf, "Fedora release")) return .fedora;
-    if (mem.startsWith(u8, buf, "Red Hat Enterprise Linux") or mem.startsWith(u8, buf, "CentOS") or mem.startsWith(u8, buf, "Scientific Linux")) {
-        if (mem.indexOfPos(u8, buf, 0, "release 7") != null) return .rhel7;
-        if (mem.indexOfPos(u8, buf, 0, "release 6") != null) return .rhel6;
-        if (mem.indexOfPos(u8, buf, 0, "release 5") != null) return .rhel5;
+    if (mem.starts_with(u8, buf, "Fedora release")) return .fedora;
+    if (mem.starts_with(u8, buf, "Red Hat Enterprise Linux") or mem.starts_with(u8, buf, "CentOS") or mem.starts_with(u8, buf, "Scientific Linux")) {
+        if (mem.index_of_pos(u8, buf, 0, "release 7") != null) return .rhel7;
+        if (mem.index_of_pos(u8, buf, 0, "release 6") != null) return .rhel6;
+        if (mem.index_of_pos(u8, buf, 0, "release 5") != null) return .rhel5;
     }
 
     return .unknown;
@@ -235,13 +235,13 @@ fn scan_for_red_hat(buf: []const u8) Tag {
 
 fn detect_redhat(fs: Filesystem) ?Tag {
     var buf: [MAX_BYTES]u8 = undefined;
-    const data = fs.readFile("/etc/redhat-release", &buf) orelse return null;
-    return scanForRedHat(data);
+    const data = fs.read_file("/etc/redhat-release", &buf) orelse return null;
+    return scan_for_red_hat(data);
 }
 
 fn scan_for_debian(buf: []const u8) Tag {
-    var it = mem.splitScalar(u8, buf, '.');
-    if (std.fmt.parseInt(u8, it.next().?, 10)) |major| {
+    var it = mem.split_scalar(u8, buf, '.');
+    if (std.fmt.parse_int(u8, it.next().?, 10)) |major| {
         return switch (major) {
             5 => .debian_lenny,
             6 => .debian_squeeze,
@@ -256,7 +256,7 @@ fn scan_for_debian(buf: []const u8) Tag {
         };
     } else |_| {}
 
-    it = mem.splitScalar(u8, buf, '\n');
+    it = mem.split_scalar(u8, buf, '\n');
     const name = it.next().?;
     if (mem.eql(u8, name, "squeeze/sid")) return .debian_squeeze;
     if (mem.eql(u8, name, "wheezy/sid")) return .debian_wheezy;
@@ -271,39 +271,39 @@ fn scan_for_debian(buf: []const u8) Tag {
 
 fn detect_debian(fs: Filesystem) ?Tag {
     var buf: [MAX_BYTES]u8 = undefined;
-    const data = fs.readFile("/etc/debian_version", &buf) orelse return null;
-    return scanForDebian(data);
+    const data = fs.read_file("/etc/debian_version", &buf) orelse return null;
+    return scan_for_debian(data);
 }
 
 pub fn detect(target: std.Target, fs: Filesystem) Tag {
     if (target.os.tag != .linux) return .unknown;
 
-    if (detectOsRelease(fs)) |tag| return tag;
-    if (detectLSBRelease(fs)) |tag| return tag;
-    if (detectRedhat(fs)) |tag| return tag;
-    if (detectDebian(fs)) |tag| return tag;
+    if (detect_os_release(fs)) |tag| return tag;
+    if (detect_lsbrelease(fs)) |tag| return tag;
+    if (detect_redhat(fs)) |tag| return tag;
+    if (detect_debian(fs)) |tag| return tag;
 
     if (fs.exists("/etc/gentoo-release")) return .gentoo;
 
     return .unknown;
 }
 
-test scanForDebian {
-    try std.testing.expectEqual(Tag.debian_squeeze, scanForDebian("squeeze/sid"));
-    try std.testing.expectEqual(Tag.debian_bullseye, scanForDebian("11.1.2"));
-    try std.testing.expectEqual(Tag.unknown, scanForDebian("None"));
-    try std.testing.expectEqual(Tag.unknown, scanForDebian(""));
+test scan_for_debian {
+    try std.testing.expect_equal(Tag.debian_squeeze, scan_for_debian("squeeze/sid"));
+    try std.testing.expect_equal(Tag.debian_bullseye, scan_for_debian("11.1.2"));
+    try std.testing.expect_equal(Tag.unknown, scan_for_debian("None"));
+    try std.testing.expect_equal(Tag.unknown, scan_for_debian(""));
 }
 
-test scanForRedHat {
-    try std.testing.expectEqual(Tag.fedora, scanForRedHat("Fedora release 7"));
-    try std.testing.expectEqual(Tag.rhel7, scanForRedHat("Red Hat Enterprise Linux release 7"));
-    try std.testing.expectEqual(Tag.rhel5, scanForRedHat("CentOS release 5"));
-    try std.testing.expectEqual(Tag.unknown, scanForRedHat("CentOS release 4"));
-    try std.testing.expectEqual(Tag.unknown, scanForRedHat(""));
+test scan_for_red_hat {
+    try std.testing.expect_equal(Tag.fedora, scan_for_red_hat("Fedora release 7"));
+    try std.testing.expect_equal(Tag.rhel7, scan_for_red_hat("Red Hat Enterprise Linux release 7"));
+    try std.testing.expect_equal(Tag.rhel5, scan_for_red_hat("CentOS release 5"));
+    try std.testing.expect_equal(Tag.unknown, scan_for_red_hat("CentOS release 4"));
+    try std.testing.expect_equal(Tag.unknown, scan_for_red_hat(""));
 }
 
-test scanForLSBRelease {
+test scan_for_lsbrelease {
     const text =
         \\DISTRIB_ID=Ubuntu
         \\DISTRIB_RELEASE=20.04
@@ -311,10 +311,10 @@ test scanForLSBRelease {
         \\DISTRIB_DESCRIPTION="Ubuntu 20.04.6 LTS"
         \\
     ;
-    try std.testing.expectEqual(Tag.ubuntu_focal, scanForLSBRelease(text).?);
+    try std.testing.expect_equal(Tag.ubuntu_focal, scan_for_lsbrelease(text).?);
 }
 
-test scanForOsRelease {
+test scan_for_os_release {
     const text =
         \\NAME="Alpine Linux"
         \\ID=alpine
@@ -324,5 +324,5 @@ test scanForOsRelease {
         \\BUG_REPORT_URL="https://gitlab.alpinelinux.org/alpine/aports/-/issues"
         \\
     ;
-    try std.testing.expectEqual(Tag.alpine, scanForOsRelease(text).?);
+    try std.testing.expect_equal(Tag.alpine, scan_for_os_release(text).?);
 }

@@ -19,10 +19,10 @@ const InternPool = @import("InternPool.zig");
 const Type = @import("type.zig").Type;
 const Value = @import("Value.zig");
 const LlvmObject = @import("codegen/llvm.zig").Object;
-const lldMain = @import("main.zig").lldMain;
+const lld_main = @import("main.zig").lld_main;
 const Package = @import("Package.zig");
 
-/// When adding a new field, remember to update `hashAddSystemLibs`.
+/// When adding a new field, remember to update `hash_add_system_libs`.
 /// These are *always* dynamically linked. Static libraries will be
 /// provided as positional arguments.
 pub const SystemLib = struct {
@@ -40,11 +40,11 @@ pub fn hash_add_system_libs(
     hm: std.StringArrayHashMapUnmanaged(SystemLib),
 ) !void {
     const keys = hm.keys();
-    man.hash.addListOfBytes(keys);
+    man.hash.add_list_of_bytes(keys);
     for (hm.values()) |value| {
         man.hash.add(value.needed);
         man.hash.add(value.weak);
-        if (value.path) |p| _ = try man.addFile(p, null);
+        if (value.path) |p| _ = try man.add_file(p, null);
     }
 }
 
@@ -190,7 +190,7 @@ pub const File = struct {
         emit: Compilation.Emit,
         options: OpenOptions,
     ) !*File {
-        switch (Tag.fromObjectFormat(comp.root_mod.resolved_target.result.ofmt)) {
+        switch (Tag.from_object_format(comp.root_mod.resolved_target.result.ofmt)) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
                 const ptr = try tag.Type().open(arena, comp, emit, options);
@@ -205,10 +205,10 @@ pub const File = struct {
         emit: Compilation.Emit,
         options: OpenOptions,
     ) !*File {
-        switch (Tag.fromObjectFormat(comp.root_mod.resolved_target.result.ofmt)) {
+        switch (Tag.from_object_format(comp.root_mod.resolved_target.result.ofmt)) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                const ptr = try tag.Type().createEmpty(arena, comp, emit, options);
+                const ptr = try tag.Type().create_empty(arena, comp, emit, options);
                 return &ptr.base;
             },
         }
@@ -228,7 +228,7 @@ pub const File = struct {
                 const emit = base.emit;
                 if (base.child_pid) |pid| {
                     if (builtin.os.tag == .windows) {
-                        base.cast(Coff).?.ptraceAttach(pid) catch |err| {
+                        base.cast(Coff).?.ptrace_attach(pid) catch |err| {
                             log.warn("attaching failed with error: {s}", .{@errorName(err)});
                         };
                     } else {
@@ -236,17 +236,17 @@ pub const File = struct {
                         // it will return ETXTBSY. So instead, we copy the file, atomically rename it
                         // over top of the exe path, and then proceed normally. This changes the inode,
                         // avoiding the error.
-                        const tmp_sub_path = try std.fmt.allocPrint(gpa, "{s}-{x}", .{
+                        const tmp_sub_path = try std.fmt.alloc_print(gpa, "{s}-{x}", .{
                             emit.sub_path, std.crypto.random.int(u32),
                         });
                         defer gpa.free(tmp_sub_path);
-                        try emit.directory.handle.copyFile(emit.sub_path, emit.directory.handle, tmp_sub_path, .{});
+                        try emit.directory.handle.copy_file(emit.sub_path, emit.directory.handle, tmp_sub_path, .{});
                         try emit.directory.handle.rename(tmp_sub_path, emit.sub_path);
                         switch (builtin.os.tag) {
                             .linux => std.posix.ptrace(std.os.linux.PTRACE.ATTACH, pid, 0, 0) catch |err| {
                                 log.warn("ptrace failure: {s}", .{@errorName(err)});
                             },
-                            .macos => base.cast(MachO).?.ptraceAttach(pid) catch |err| {
+                            .macos => base.cast(MachO).?.ptrace_attach(pid) catch |err| {
                                 log.warn("attaching failed with error: {s}", .{@errorName(err)});
                             },
                             .windows => unreachable,
@@ -257,10 +257,10 @@ pub const File = struct {
                 const use_lld = build_options.have_llvm and comp.config.use_lld;
                 const output_mode = comp.config.output_mode;
                 const link_mode = comp.config.link_mode;
-                base.file = try emit.directory.handle.createFile(emit.sub_path, .{
+                base.file = try emit.directory.handle.create_file(emit.sub_path, .{
                     .truncate = false,
                     .read = true,
-                    .mode = determineMode(use_lld, output_mode, link_mode),
+                    .mode = determine_mode(use_lld, output_mode, link_mode),
                 });
             },
             .c, .spirv, .nvptx => {},
@@ -313,10 +313,10 @@ pub const File = struct {
 
                 if (base.child_pid) |pid| {
                     switch (builtin.os.tag) {
-                        .macos => base.cast(MachO).?.ptraceDetach(pid) catch |err| {
+                        .macos => base.cast(MachO).?.ptrace_detach(pid) catch |err| {
                             log.warn("detaching failed with error: {s}", .{@errorName(err)});
                         },
-                        .windows => base.cast(Coff).?.ptraceDetach(pid),
+                        .windows => base.cast(Coff).?.ptrace_detach(pid),
                         else => return error.HotSwapUnavailableOnHostOperatingSystem,
                     }
                 }
@@ -366,13 +366,13 @@ pub const File = struct {
     /// constant. Returns the symbol index of the lowered constant in the read-only section
     /// of the final binary.
     pub fn lower_unnamed_const(base: *File, val: Value, decl_index: InternPool.DeclIndex) UpdateDeclError!u32 {
-        if (build_options.only_c) @compileError("unreachable");
+        if (build_options.only_c) @compile_error("unreachable");
         switch (base.tag) {
             .spirv => unreachable,
             .c => unreachable,
             .nvptx => unreachable,
             inline else => |t| {
-                return @as(*t.Type(), @fieldParentPtr("base", base)).lowerUnnamedConst(val, decl_index);
+                return @as(*t.Type(), @fieldParentPtr("base", base)).lower_unnamed_const(val, decl_index);
             },
         }
     }
@@ -383,32 +383,32 @@ pub const File = struct {
     /// Optionally, it is possible to specify where to expect the symbol defined if it
     /// is an import.
     pub fn get_global_symbol(base: *File, name: []const u8, lib_name: ?[]const u8) UpdateDeclError!u32 {
-        if (build_options.only_c) @compileError("unreachable");
-        log.debug("getGlobalSymbol '{s}' (expected in '{?s}')", .{ name, lib_name });
+        if (build_options.only_c) @compile_error("unreachable");
+        log.debug("get_global_symbol '{s}' (expected in '{?s}')", .{ name, lib_name });
         switch (base.tag) {
             .plan9 => unreachable,
             .spirv => unreachable,
             .c => unreachable,
             .nvptx => unreachable,
             inline else => |t| {
-                return @as(*t.Type(), @fieldParentPtr("base", base)).getGlobalSymbol(name, lib_name);
+                return @as(*t.Type(), @fieldParentPtr("base", base)).get_global_symbol(name, lib_name);
             },
         }
     }
 
-    /// May be called before or after updateExports for any given Decl.
+    /// May be called before or after update_exports for any given Decl.
     pub fn update_decl(base: *File, module: *Module, decl_index: InternPool.DeclIndex) UpdateDeclError!void {
-        const decl = module.declPtr(decl_index);
+        const decl = module.decl_ptr(decl_index);
         assert(decl.has_tv);
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).updateDecl(module, decl_index);
+                return @as(*tag.Type(), @fieldParentPtr("base", base)).update_decl(module, decl_index);
             },
         }
     }
 
-    /// May be called before or after updateExports for any given Decl.
+    /// May be called before or after update_exports for any given Decl.
     pub fn update_func(
         base: *File,
         module: *Module,
@@ -419,19 +419,19 @@ pub const File = struct {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).updateFunc(module, func_index, air, liveness);
+                return @as(*tag.Type(), @fieldParentPtr("base", base)).update_func(module, func_index, air, liveness);
             },
         }
     }
 
     pub fn update_decl_line_number(base: *File, module: *Module, decl_index: InternPool.DeclIndex) UpdateDeclError!void {
-        const decl = module.declPtr(decl_index);
+        const decl = module.decl_ptr(decl_index);
         assert(decl.has_tv);
         switch (base.tag) {
             .spirv, .nvptx => {},
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).updateDeclLineNumber(module, decl_index);
+                return @as(*tag.Type(), @fieldParentPtr("base", base)).update_decl_line_number(module, decl_index);
             },
         }
     }
@@ -450,7 +450,7 @@ pub const File = struct {
     }
 
     pub fn destroy(base: *File) void {
-        base.releaseLock();
+        base.release_lock();
         if (base.file) |f| f.close();
         switch (base.tag) {
             inline else => |tag| {
@@ -533,7 +533,7 @@ pub const File = struct {
         fs.Dir.CopyFileError;
 
     /// Commit pending changes and write headers. Takes into account final output mode
-    /// and `use_lld`, not only `effectiveOutputMode`.
+    /// and `use_lld`, not only `effective_output_mode`.
     /// `arena` has the lifetime of the call to `Compilation.update`.
     pub fn flush(base: *File, arena: Allocator, prog_node: std.Progress.Node) FlushError!void {
         if (build_options.only_c) {
@@ -553,7 +553,7 @@ pub const File = struct {
             assert(comp.c_object_table.count() == 1);
             const the_key = comp.c_object_table.keys()[0];
             const cached_pp_file_path = the_key.status.success.object_path;
-            try fs.cwd().copyFile(cached_pp_file_path, fs.cwd(), full_out_path, .{});
+            try fs.cwd().copy_file(cached_pp_file_path, fs.cwd(), full_out_path, .{});
             return;
         }
 
@@ -561,7 +561,7 @@ pub const File = struct {
         const output_mode = comp.config.output_mode;
         const link_mode = comp.config.link_mode;
         if (use_lld and output_mode == .Lib and link_mode == .static) {
-            return base.linkAsArchive(arena, prog_node);
+            return base.link_as_archive(arena, prog_node);
         }
         switch (base.tag) {
             inline else => |tag| {
@@ -570,13 +570,13 @@ pub const File = struct {
         }
     }
 
-    /// Commit pending changes and write headers. Works based on `effectiveOutputMode`
+    /// Commit pending changes and write headers. Works based on `effective_output_mode`
     /// rather than final output mode.
     pub fn flush_module(base: *File, arena: Allocator, prog_node: std.Progress.Node) FlushError!void {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).flushModule(arena, prog_node);
+                return @as(*tag.Type(), @fieldParentPtr("base", base)).flush_module(arena, prog_node);
             },
         }
     }
@@ -586,7 +586,7 @@ pub const File = struct {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                @as(*tag.Type(), @fieldParentPtr("base", base)).freeDecl(decl_index);
+                @as(*tag.Type(), @fieldParentPtr("base", base)).free_decl(decl_index);
             },
         }
     }
@@ -599,7 +599,7 @@ pub const File = struct {
     /// This is called for every exported thing. `exports` is almost always
     /// a list of size 1, meaning that `exported` is exported once. However, it is possible
     /// to export the same thing with multiple different symbol names (aliases).
-    /// May be called before or after updateDecl for any given Decl.
+    /// May be called before or after update_decl for any given Decl.
     pub fn update_exports(
         base: *File,
         module: *Module,
@@ -609,7 +609,7 @@ pub const File = struct {
         switch (base.tag) {
             inline else => |tag| {
                 if (tag != .c and build_options.only_c) unreachable;
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).updateExports(module, exported, exports);
+                return @as(*tag.Type(), @fieldParentPtr("base", base)).update_exports(module, exported, exports);
             },
         }
     }
@@ -624,16 +624,16 @@ pub const File = struct {
     /// The linker is passed information about the containing atom, `parent_atom_index`, and offset within it's
     /// memory buffer, `offset`, so that it can make a note of potential relocation sites, should the
     /// `Decl`'s address was not yet resolved, or the containing atom gets moved in virtual memory.
-    /// May be called before or after updateFunc/updateDecl therefore it is up to the linker to allocate
+    /// May be called before or after update_func/update_decl therefore it is up to the linker to allocate
     /// the block/atom.
     pub fn get_decl_vaddr(base: *File, decl_index: InternPool.DeclIndex, reloc_info: RelocInfo) !u64 {
-        if (build_options.only_c) @compileError("unreachable");
+        if (build_options.only_c) @compile_error("unreachable");
         switch (base.tag) {
             .c => unreachable,
             .spirv => unreachable,
             .nvptx => unreachable,
             inline else => |tag| {
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).getDeclVAddr(decl_index, reloc_info);
+                return @as(*tag.Type(), @fieldParentPtr("base", base)).get_decl_vaddr(decl_index, reloc_info);
             },
         }
     }
@@ -646,25 +646,25 @@ pub const File = struct {
         decl_align: InternPool.Alignment,
         src_loc: Module.SrcLoc,
     ) !LowerResult {
-        if (build_options.only_c) @compileError("unreachable");
+        if (build_options.only_c) @compile_error("unreachable");
         switch (base.tag) {
             .c => unreachable,
             .spirv => unreachable,
             .nvptx => unreachable,
             inline else => |tag| {
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).lowerAnonDecl(decl_val, decl_align, src_loc);
+                return @as(*tag.Type(), @fieldParentPtr("base", base)).lower_anon_decl(decl_val, decl_align, src_loc);
             },
         }
     }
 
     pub fn get_anon_decl_vaddr(base: *File, decl_val: InternPool.Index, reloc_info: RelocInfo) !u64 {
-        if (build_options.only_c) @compileError("unreachable");
+        if (build_options.only_c) @compile_error("unreachable");
         switch (base.tag) {
             .c => unreachable,
             .spirv => unreachable,
             .nvptx => unreachable,
             inline else => |tag| {
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).getAnonDeclVAddr(decl_val, reloc_info);
+                return @as(*tag.Type(), @fieldParentPtr("base", base)).get_anon_decl_vaddr(decl_val, reloc_info);
             },
         }
     }
@@ -674,7 +674,7 @@ pub const File = struct {
         decl_index: InternPool.DeclIndex,
         name: InternPool.NullTerminatedString,
     ) !void {
-        if (build_options.only_c) @compileError("unreachable");
+        if (build_options.only_c) @compile_error("unreachable");
         switch (base.tag) {
             .plan9,
             .c,
@@ -683,7 +683,7 @@ pub const File = struct {
             => {},
 
             inline else => |tag| {
-                return @as(*tag.Type(), @fieldParentPtr("base", base)).deleteDeclExport(decl_index, name);
+                return @as(*tag.Type(), @fieldParentPtr("base", base)).delete_decl_export(decl_index, name);
             },
         }
     }
@@ -697,13 +697,13 @@ pub const File = struct {
 
         const directory = base.emit.directory; // Just an alias to make it shorter to type.
         const full_out_path = try directory.join(arena, &[_][]const u8{base.emit.sub_path});
-        const full_out_path_z = try arena.dupeZ(u8, full_out_path);
+        const full_out_path_z = try arena.dupe_z(u8, full_out_path);
         const opt_zcu = comp.module;
 
         // If there is no Zig code to compile, then we should skip flushing the output file
         // because it will not be part of the linker line anyway.
         const zcu_obj_path: ?[]const u8 = if (opt_zcu != null) blk: {
-            try base.flushModule(arena, prog_node);
+            try base.flush_module(arena, prog_node);
 
             const dirname = fs.path.dirname(full_out_path_z) orelse ".";
             break :blk try fs.path.join(arena, &.{ dirname, base.zcu_object_sub_path.? });
@@ -716,7 +716,7 @@ pub const File = struct {
         else
             null;
 
-        // This function follows the same pattern as link.Elf.linkWithLLD so if you want some
+        // This function follows the same pattern as link.Elf.link_with_lld so if you want some
         // insight as to what's going on here you can read that function body which is more
         // well-commented.
 
@@ -733,45 +733,45 @@ pub const File = struct {
             man = comp.cache_parent.obtain();
 
             // We are about to obtain this lock, so here we give other processes a chance first.
-            base.releaseLock();
+            base.release_lock();
 
             for (objects) |obj| {
-                _ = try man.addFile(obj.path, null);
+                _ = try man.add_file(obj.path, null);
                 man.hash.add(obj.must_link);
                 man.hash.add(obj.loption);
             }
             for (comp.c_object_table.keys()) |key| {
-                _ = try man.addFile(key.status.success.object_path, null);
+                _ = try man.add_file(key.status.success.object_path, null);
             }
             if (!build_options.only_core_functionality) {
                 for (comp.win32_resource_table.keys()) |key| {
-                    _ = try man.addFile(key.status.success.res_path, null);
+                    _ = try man.add_file(key.status.success.res_path, null);
                 }
             }
-            try man.addOptionalFile(zcu_obj_path);
-            try man.addOptionalFile(compiler_rt_path);
+            try man.add_optional_file(zcu_obj_path);
+            try man.add_optional_file(compiler_rt_path);
 
             // We don't actually care whether it's a cache hit or miss; we just need the digest and the lock.
             _ = try man.hit();
             digest = man.final();
 
             var prev_digest_buf: [digest.len]u8 = undefined;
-            const prev_digest: []u8 = Cache.readSmallFile(
+            const prev_digest: []u8 = Cache.read_small_file(
                 directory.handle,
                 id_symlink_basename,
                 &prev_digest_buf,
             ) catch |err| b: {
-                log.debug("archive new_digest={s} readFile error: {s}", .{ std.fmt.fmtSliceHexLower(&digest), @errorName(err) });
+                log.debug("archive new_digest={s} read_file error: {s}", .{ std.fmt.fmt_slice_hex_lower(&digest), @errorName(err) });
                 break :b prev_digest_buf[0..0];
             };
             if (mem.eql(u8, prev_digest, &digest)) {
-                log.debug("archive digest={s} match - skipping invocation", .{std.fmt.fmtSliceHexLower(&digest)});
-                base.lock = man.toOwnedLock();
+                log.debug("archive digest={s} match - skipping invocation", .{std.fmt.fmt_slice_hex_lower(&digest)});
+                base.lock = man.to_owned_lock();
                 return;
             }
 
             // We are about to change the output file to be different, so we invalidate the build hash now.
-            directory.handle.deleteFile(id_symlink_basename) catch |err| switch (err) {
+            directory.handle.delete_file(id_symlink_basename) catch |err| switch (err) {
                 error.FileNotFound => {},
                 else => |e| return e,
             };
@@ -779,25 +779,25 @@ pub const File = struct {
 
         const win32_resource_table_len = if (build_options.only_core_functionality) 0 else comp.win32_resource_table.count();
         const num_object_files = objects.len + comp.c_object_table.count() + win32_resource_table_len + 2;
-        var object_files = try std.ArrayList([*:0]const u8).initCapacity(gpa, num_object_files);
+        var object_files = try std.ArrayList([*:0]const u8).init_capacity(gpa, num_object_files);
         defer object_files.deinit();
 
         for (objects) |obj| {
-            object_files.appendAssumeCapacity(try arena.dupeZ(u8, obj.path));
+            object_files.append_assume_capacity(try arena.dupe_z(u8, obj.path));
         }
         for (comp.c_object_table.keys()) |key| {
-            object_files.appendAssumeCapacity(try arena.dupeZ(u8, key.status.success.object_path));
+            object_files.append_assume_capacity(try arena.dupe_z(u8, key.status.success.object_path));
         }
         if (!build_options.only_core_functionality) {
             for (comp.win32_resource_table.keys()) |key| {
-                object_files.appendAssumeCapacity(try arena.dupeZ(u8, key.status.success.res_path));
+                object_files.append_assume_capacity(try arena.dupe_z(u8, key.status.success.res_path));
             }
         }
         if (zcu_obj_path) |p| {
-            object_files.appendAssumeCapacity(try arena.dupeZ(u8, p));
+            object_files.append_assume_capacity(try arena.dupe_z(u8, p));
         }
         if (compiler_rt_path) |p| {
-            object_files.appendAssumeCapacity(try arena.dupeZ(u8, p));
+            object_files.append_assume_capacity(try arena.dupe_z(u8, p));
         }
 
         if (comp.verbose_link) {
@@ -811,23 +811,23 @@ pub const File = struct {
         const llvm_bindings = @import("codegen/llvm/bindings.zig");
         const llvm = @import("codegen/llvm.zig");
         const target = comp.root_mod.resolved_target.result;
-        llvm.initializeLLVMTarget(target.cpu.arch);
-        const os_tag = llvm.targetOs(target.os.tag);
+        llvm.initialize_llvmtarget(target.cpu.arch);
+        const os_tag = llvm.target_os(target.os.tag);
         const bad = llvm_bindings.WriteArchive(full_out_path_z, object_files.items.ptr, object_files.items.len, os_tag);
         if (bad) return error.UnableToWriteArchive;
 
         if (!base.disable_lld_caching) {
-            Cache.writeSmallFile(directory.handle, id_symlink_basename, &digest) catch |err| {
+            Cache.write_small_file(directory.handle, id_symlink_basename, &digest) catch |err| {
                 log.warn("failed to save archive hash digest file: {s}", .{@errorName(err)});
             };
 
             if (man.have_exclusive_lock) {
-                man.writeManifest() catch |err| {
+                man.write_manifest() catch |err| {
                     log.warn("failed to write cache manifest when archiving: {s}", .{@errorName(err)});
                 };
             }
 
-            base.lock = man.toOwnedLock();
+            base.lock = man.to_owned_lock();
         }
     }
 
@@ -897,13 +897,13 @@ pub const File = struct {
 
         pub fn init_decl(kind: Kind, decl: ?InternPool.DeclIndex, mod: *Module) LazySymbol {
             return .{ .kind = kind, .ty = if (decl) |decl_index|
-                mod.declPtr(decl_index).val.toType()
+                mod.decl_ptr(decl_index).val.to_type()
             else
                 Type.anyerror };
         }
 
         pub fn get_decl(self: LazySymbol, mod: *Module) InternPool.OptionalDeclIndex {
-            return InternPool.OptionalDeclIndex.init(self.ty.getOwnerDeclOrNull(mod));
+            return InternPool.OptionalDeclIndex.init(self.ty.get_owner_decl_or_null(mod));
         }
     };
 
@@ -924,7 +924,7 @@ pub const File = struct {
         // more leniently. As another data point, C's fopen seems to open files with the
         // 666 mode.
         const executable_mode = if (builtin.target.os.tag == .windows) 0 else 0o777;
-        switch (effectiveOutputMode(use_lld, output_mode)) {
+        switch (effective_output_mode(use_lld, output_mode)) {
             .Lib => return switch (link_mode) {
                 .dynamic => executable_mode,
                 .static => fs.File.default_mode,
@@ -950,16 +950,16 @@ pub const File = struct {
 
     pub fn is_static_lib(self: File) bool {
         const output_mode = self.comp.config.output_mode;
-        return output_mode == .Lib and self.isStatic();
+        return output_mode == .Lib and self.is_static();
     }
 
     pub fn is_relocatable(self: File) bool {
-        return self.isObject() or self.isStaticLib();
+        return self.is_object() or self.is_static_lib();
     }
 
     pub fn is_dyn_lib(self: File) bool {
         const output_mode = self.comp.config.output_mode;
-        return output_mode == .Lib and !self.isStatic();
+        return output_mode == .Lib and !self.is_static();
     }
 
     pub fn emit_llvm_object(
@@ -968,7 +968,7 @@ pub const File = struct {
         llvm_object: *LlvmObject,
         prog_node: std.Progress.Node,
     ) !void {
-        return base.comp.emitLlvmObject(arena, base.emit, .{
+        return base.comp.emit_llvm_object(arena, base.emit, .{
             .directory = null,
             .basename = base.zcu_object_sub_path.?,
         }, llvm_object, prog_node);
@@ -999,7 +999,7 @@ pub fn spawn_lld(
     // behave properly as a library, unfortunately.
     // https://github.com/ziglang/zig/issues/3825
     if (!std.process.can_spawn) {
-        const exit_code = try lldMain(arena, argv, false);
+        const exit_code = try lld_main(arena, argv, false);
         if (exit_code == 0) return;
         if (comp.clang_passthrough_mode) std.process.exit(exit_code);
         return error.LLDReportedFailure;
@@ -1014,14 +1014,14 @@ pub fn spawn_lld(
         child.stdout_behavior = .Inherit;
         child.stderr_behavior = .Inherit;
 
-        break :term child.spawnAndWait();
+        break :term child.spawn_and_wait();
     } else term: {
         child.stdin_behavior = .Ignore;
         child.stdout_behavior = .Ignore;
         child.stderr_behavior = .Pipe;
 
         child.spawn() catch |err| break :term err;
-        stderr = try child.stderr.?.reader().readAllAlloc(comp.gpa, std.math.maxInt(usize));
+        stderr = try child.stderr.?.reader().read_all_alloc(comp.gpa, std.math.max_int(usize));
         break :term child.wait();
     }) catch |first_err| term: {
         const err = switch (first_err) {
@@ -1030,29 +1030,29 @@ pub fn spawn_lld(
                 const rand_int = std.crypto.random.int(u64);
                 const rsp_path = "tmp" ++ s ++ Package.Manifest.hex64(rand_int) ++ ".rsp";
 
-                const rsp_file = try comp.local_cache_directory.handle.createFileZ(rsp_path, .{});
-                defer comp.local_cache_directory.handle.deleteFileZ(rsp_path) catch |err|
+                const rsp_file = try comp.local_cache_directory.handle.create_file_z(rsp_path, .{});
+                defer comp.local_cache_directory.handle.delete_file_z(rsp_path) catch |err|
                     log.warn("failed to delete response file {s}: {s}", .{ rsp_path, @errorName(err) });
                 {
                     defer rsp_file.close();
-                    var rsp_buf = std.io.bufferedWriter(rsp_file.writer());
+                    var rsp_buf = std.io.buffered_writer(rsp_file.writer());
                     const rsp_writer = rsp_buf.writer();
                     for (argv[2..]) |arg| {
-                        try rsp_writer.writeByte('"');
+                        try rsp_writer.write_byte('"');
                         for (arg) |c| {
                             switch (c) {
-                                '\"', '\\' => try rsp_writer.writeByte('\\'),
+                                '\"', '\\' => try rsp_writer.write_byte('\\'),
                                 else => {},
                             }
-                            try rsp_writer.writeByte(c);
+                            try rsp_writer.write_byte(c);
                         }
-                        try rsp_writer.writeByte('"');
-                        try rsp_writer.writeByte('\n');
+                        try rsp_writer.write_byte('"');
+                        try rsp_writer.write_byte('\n');
                     }
                     try rsp_buf.flush();
                 }
 
-                var rsp_child = std.process.Child.init(&.{ argv[0], argv[1], try std.fmt.allocPrint(
+                var rsp_child = std.process.Child.init(&.{ argv[0], argv[1], try std.fmt.alloc_print(
                     arena,
                     "@{s}",
                     .{try comp.local_cache_directory.join(arena, &.{rsp_path})},
@@ -1062,14 +1062,14 @@ pub fn spawn_lld(
                     rsp_child.stdout_behavior = .Inherit;
                     rsp_child.stderr_behavior = .Inherit;
 
-                    break :term rsp_child.spawnAndWait() catch |err| break :err err;
+                    break :term rsp_child.spawn_and_wait() catch |err| break :err err;
                 } else {
                     rsp_child.stdin_behavior = .Ignore;
                     rsp_child.stdout_behavior = .Ignore;
                     rsp_child.stderr_behavior = .Pipe;
 
                     rsp_child.spawn() catch |err| break :err err;
-                    stderr = try rsp_child.stderr.?.reader().readAllAlloc(comp.gpa, std.math.maxInt(usize));
+                    stderr = try rsp_child.stderr.?.reader().read_all_alloc(comp.gpa, std.math.max_int(usize));
                     break :term rsp_child.wait() catch |err| break :err err;
                 }
             },
@@ -1082,7 +1082,7 @@ pub fn spawn_lld(
     switch (term) {
         .Exited => |code| if (code != 0) {
             if (comp.clang_passthrough_mode) std.process.exit(code);
-            comp.lockAndParseLldStderr(argv[1], stderr);
+            comp.lock_and_parse_lld_stderr(argv[1], stderr);
             return error.LLDReportedFailure;
         },
         else => {

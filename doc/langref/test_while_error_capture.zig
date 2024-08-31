@@ -3,7 +3,7 @@ const expect = @import("std").testing.expect;
 test "while error union capture" {
     var sum1: u32 = 0;
     numbers_left = 3;
-    while (eventuallyErrorSequence()) |value| {
+    while (eventually_error_sequence()) |value| {
         sum1 += value;
     } else |err| {
         try expect(err == error.ReachedZero);

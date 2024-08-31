@@ -20,13 +20,13 @@ comptime {
 
 pub fn __sqrth(x: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(sqrtf(x));
+    return @float_cast(sqrtf(x));
 }
 
 pub fn sqrtf(x: f32) callconv(.C) f32 {
     const tiny: f32 = 1.0e-30;
-    const sign: i32 = @bitCast(@as(u32, 0x80000000));
-    var ix: i32 = @bitCast(x);
+    const sign: i32 = @bit_cast(@as(u32, 0x80000000));
+    var ix: i32 = @bit_cast(x);
 
     if ((ix & 0x7F800000) == 0x7F800000) {
         return x * x + x; // sqrt(nan) = nan, sqrt(+inf) = +inf, sqrt(-inf) = nan
@@ -96,7 +96,7 @@ pub fn sqrtf(x: f32) callconv(.C) f32 {
 
     ix = (q >> 1) + 0x3f000000;
     ix += m << 23;
-    return @bitCast(ix);
+    return @bit_cast(ix);
 }
 
 /// NOTE: The original code is full of implicit signed -> unsigned assumptions and u32 wraparound
@@ -105,10 +105,10 @@ pub fn sqrtf(x: f32) callconv(.C) f32 {
 pub fn sqrt(x: f64) callconv(.C) f64 {
     const tiny: f64 = 1.0e-300;
     const sign: u32 = 0x80000000;
-    const u: u64 = @bitCast(x);
+    const u: u64 = @bit_cast(x);
 
-    var ix0: u32 = @intCast(u >> 32);
-    var ix1: u32 = @intCast(u & 0xFFFFFFFF);
+    var ix0: u32 = @int_cast(u >> 32);
+    var ix1: u32 = @int_cast(u & 0xFFFFFFFF);
 
     // sqrt(nan) = nan, sqrt(+inf) = +inf, sqrt(-inf) = nan
     if (ix0 & 0x7FF00000 == 0x7FF00000) {
@@ -125,7 +125,7 @@ pub fn sqrt(x: f64) callconv(.C) f64 {
     }
 
     // normalize x
-    var m: i32 = @intCast(ix0 >> 20);
+    var m: i32 = @int_cast(ix0 >> 20);
     if (m == 0) {
         // subnormal
         while (ix0 == 0) {
@@ -139,9 +139,9 @@ pub fn sqrt(x: f64) callconv(.C) f64 {
         while (ix0 & 0x00100000 == 0) : (i += 1) {
             ix0 <<= 1;
         }
-        m -= @as(i32, @intCast(i)) - 1;
-        ix0 |= ix1 >> @intCast(32 - i);
-        ix1 <<= @intCast(i);
+        m -= @as(i32, @int_cast(i)) - 1;
+        ix0 |= ix1 >> @int_cast(32 - i);
+        ix1 <<= @int_cast(i);
     }
 
     // unbias exponent
@@ -225,21 +225,21 @@ pub fn sqrt(x: f64) callconv(.C) f64 {
 
     // NOTE: musl here appears to rely on signed twos-complement wraparound. +% has the same
     // behaviour at least.
-    var iix0: i32 = @intCast(ix0);
+    var iix0: i32 = @int_cast(ix0);
     iix0 = iix0 +% (m << 20);
 
-    const uz = (@as(u64, @intCast(iix0)) << 32) | ix1;
-    return @bitCast(uz);
+    const uz = (@as(u64, @int_cast(iix0)) << 32) | ix1;
+    return @bit_cast(uz);
 }
 
 pub fn __sqrtx(x: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(sqrtq(x));
+    return @float_cast(sqrtq(x));
 }
 
 pub fn sqrtq(x: f128) callconv(.C) f128 {
     // TODO: more correct implementation
-    return sqrt(@floatCast(x));
+    return sqrt(@float_cast(x));
 }
 
 pub fn sqrtl(x: c_longdouble) callconv(.C) c_longdouble {
@@ -249,7 +249,7 @@ pub fn sqrtl(x: c_longdouble) callconv(.C) c_longdouble {
         64 => return sqrt(x),
         80 => return __sqrtx(x),
         128 => return sqrtq(x),
-        else => @compileError("unreachable"),
+        else => @compile_error("unreachable"),
     }
 }
 
@@ -271,15 +271,15 @@ test "sqrtf" {
     // Note that @sqrt will either generate the sqrt opcode (if supported by the
     // target ISA) or a call to `sqrtf` otherwise.
     for (V) |val|
-        try std.testing.expectEqual(@sqrt(val), sqrtf(val));
+        try std.testing.expect_equal(@sqrt(val), sqrtf(val));
 }
 
 test "sqrtf special" {
-    try std.testing.expect(math.isPositiveInf(sqrtf(math.inf(f32))));
+    try std.testing.expect(math.is_positive_inf(sqrtf(math.inf(f32))));
     try std.testing.expect(sqrtf(0.0) == 0.0);
     try std.testing.expect(sqrtf(-0.0) == -0.0);
-    try std.testing.expect(math.isNan(sqrtf(-1.0)));
-    try std.testing.expect(math.isNan(sqrtf(math.nan(f32))));
+    try std.testing.expect(math.is_nan(sqrtf(-1.0)));
+    try std.testing.expect(math.is_nan(sqrtf(math.nan(f32))));
 }
 
 test "sqrt" {
@@ -300,13 +300,13 @@ test "sqrt" {
     // Note that @sqrt will either generate the sqrt opcode (if supported by the
     // target ISA) or a call to `sqrtf` otherwise.
     for (V) |val|
-        try std.testing.expectEqual(@sqrt(val), sqrt(val));
+        try std.testing.expect_equal(@sqrt(val), sqrt(val));
 }
 
 test "sqrt special" {
-    try std.testing.expect(math.isPositiveInf(sqrt(math.inf(f64))));
+    try std.testing.expect(math.is_positive_inf(sqrt(math.inf(f64))));
     try std.testing.expect(sqrt(0.0) == 0.0);
     try std.testing.expect(sqrt(-0.0) == -0.0);
-    try std.testing.expect(math.isNan(sqrt(-1.0)));
-    try std.testing.expect(math.isNan(sqrt(math.nan(f64))));
+    try std.testing.expect(math.is_nan(sqrt(-1.0)));
+    try std.testing.expect(math.is_nan(sqrt(math.nan(f64))));
 }

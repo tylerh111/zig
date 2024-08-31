@@ -6,7 +6,7 @@ pub fn panic(message: []const u8, stack_trace: ?*std.builtin.StackTrace, _: ?usi
     std.process.exit(0);
 }
 pub fn main() !void {
-    var p = async suspendOnce();
+    var p = async suspend_once();
     resume p; //ok
     resume p; //bad
     return error.TestFailed;

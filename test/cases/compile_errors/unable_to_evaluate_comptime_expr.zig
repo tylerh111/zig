@@ -19,7 +19,7 @@ pub export fn entry2() void {
 const Int = @typeInfo(bar).Struct.backing_integer.?;
 
 const foo = enum(Int) {
-    c = @bitCast(bar{
+    c = @bit_cast(bar{
         .name = "test",
     }),
 };

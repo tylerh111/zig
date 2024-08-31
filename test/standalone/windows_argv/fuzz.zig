@@ -8,18 +8,18 @@ pub fn main() !void {
     defer std.debug.assert(gpa.deinit() == .ok);
     const allocator = gpa.allocator();
 
-    const args = try std.process.argsAlloc(allocator);
-    defer std.process.argsFree(allocator, args);
+    const args = try std.process.args_alloc(allocator);
+    defer std.process.args_free(allocator, args);
 
     if (args.len < 2) return error.MissingArgs;
 
     const verify_path_wtf8 = args[1];
-    const verify_path_w = try std.unicode.wtf8ToWtf16LeAllocZ(allocator, verify_path_wtf8);
+    const verify_path_w = try std.unicode.wtf8_to_wtf16_le_alloc_z(allocator, verify_path_wtf8);
     defer allocator.free(verify_path_w);
 
     const iterations: u64 = iterations: {
         if (args.len < 3) break :iterations 0;
-        break :iterations try std.fmt.parseUnsigned(u64, args[2], 10);
+        break :iterations try std.fmt.parse_unsigned(u64, args[2], 10);
     };
 
     var rand_seed = false;
@@ -28,9 +28,9 @@ pub fn main() !void {
             rand_seed = true;
             var buf: [8]u8 = undefined;
             try std.posix.getrandom(&buf);
-            break :seed std.mem.readInt(u64, &buf, builtin.cpu.arch.endian());
+            break :seed std.mem.read_int(u64, &buf, builtin.cpu.arch.endian());
         }
-        break :seed try std.fmt.parseUnsigned(u64, args[3], 10);
+        break :seed try std.fmt.parse_unsigned(u64, args[3], 10);
     };
     var random = std.rand.DefaultPrng.init(seed);
     const rand = random.random();
@@ -47,18 +47,18 @@ pub fn main() !void {
     var i: u64 = 0;
     var errors: u64 = 0;
     while (iterations == 0 or i < iterations) {
-        const cmd_line_w = try randomCommandLineW(allocator, rand);
+        const cmd_line_w = try random_command_line_w(allocator, rand);
         defer allocator.free(cmd_line_w);
 
         // avoid known difference for 0-length command lines
         if (cmd_line_w.len == 0 or cmd_line_w[0] == '\x00') continue;
 
-        const exit_code = try spawnVerify(verify_path_w, cmd_line_w);
+        const exit_code = try spawn_verify(verify_path_w, cmd_line_w);
         if (exit_code != 0) {
             std.debug.print(">>> found discrepancy <<<\n", .{});
-            const cmd_line_wtf8 = try std.unicode.wtf16LeToWtf8Alloc(allocator, cmd_line_w);
+            const cmd_line_wtf8 = try std.unicode.wtf16_le_to_wtf8_alloc(allocator, cmd_line_w);
             defer allocator.free(cmd_line_wtf8);
-            std.debug.print("\"{}\"\n\n", .{std.zig.fmtEscapes(cmd_line_wtf8)});
+            std.debug.print("\"{}\"\n\n", .{std.zig.fmt_escapes(cmd_line_wtf8)});
 
             errors += 1;
         }
@@ -83,35 +83,35 @@ fn random_command_line_w(allocator: Allocator, rand: std.rand.Random) ![:0]const
         non_ascii,
     };
 
-    const choices = rand.uintAtMostBiased(u16, 256);
-    var buf = try std.ArrayList(u16).initCapacity(allocator, choices);
+    const choices = rand.uint_at_most_biased(u16, 256);
+    var buf = try std.ArrayList(u16).init_capacity(allocator, choices);
     errdefer buf.deinit();
 
     for (0..choices) |_| {
-        const choice = rand.enumValue(Choice);
+        const choice = rand.enum_value(Choice);
         const code_unit = switch (choice) {
             .backslash => '\\',
             .quote => '"',
             .space => ' ',
             .tab => '\t',
-            .control => switch (rand.uintAtMostBiased(u8, 0x21)) {
+            .control => switch (rand.uint_at_most_biased(u8, 0x21)) {
                 0x21 => '\x7F',
                 else => |b| b,
             },
-            .printable => '!' + rand.uintAtMostBiased(u8, '~' - '!'),
-            .non_ascii => rand.intRangeAtMostBiased(u16, 0x80, 0xFFFF),
+            .printable => '!' + rand.uint_at_most_biased(u8, '~' - '!'),
+            .non_ascii => rand.int_range_at_most_biased(u16, 0x80, 0xFFFF),
         };
-        try buf.append(std.mem.nativeToLittle(u16, code_unit));
+        try buf.append(std.mem.native_to_little(u16, code_unit));
     }
 
-    return buf.toOwnedSliceSentinel(0);
+    return buf.to_owned_slice_sentinel(0);
 }
 
 /// Returns the exit code of the verify process
 fn spawn_verify(verify_path: [:0]const u16, cmd_line: [:0]const u16) !windows.DWORD {
     const child_proc = spawn: {
         var startup_info: windows.STARTUPINFOW = .{
-            .cb = @sizeOf(windows.STARTUPINFOW),
+            .cb = @size_of(windows.STARTUPINFOW),
             .lpReserved = null,
             .lpDesktop = null,
             .lpTitle = null,

@@ -126,14 +126,14 @@ pub fn benchmark_hash(comptime H: anytype, bytes: usize, allocator: std.mem.Allo
     for (0..block_count) |i| {
         h.update(blocks[i * block_size ..][0..block_size]);
     }
-    const final = if (H.has_crypto_api) @as(u64, @truncate(h.finalInt())) else h.final();
-    std.mem.doNotOptimizeAway(final);
+    const final = if (H.has_crypto_api) @as(u64, @truncate(h.final_int())) else h.final();
+    std.mem.do_not_optimize_away(final);
 
     const elapsed_ns = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(elapsed_ns)) / time.ns_per_s;
-    const size_float: f64 = @floatFromInt(block_size * block_count);
-    const throughput: u64 = @intFromFloat(size_float / elapsed_s);
+    const elapsed_s = @as(f64, @float_from_int(elapsed_ns)) / time.ns_per_s;
+    const size_float: f64 = @float_from_int(block_size * block_count);
+    const throughput: u64 = @int_from_float(size_float / elapsed_s);
 
     return Result{
         .hash = final,
@@ -156,7 +156,7 @@ pub fn benchmark_hash_small_keys(comptime H: anytype, key_size: usize, bytes: us
         const final = blk: {
             if (H.init_u8s) |init| {
                 if (H.has_crypto_api) {
-                    break :blk @as(u64, @truncate(H.ty.toInt(small_key, init[0..H.ty.key_length])));
+                    break :blk @as(u64, @truncate(H.ty.to_int(small_key, init[0..H.ty.key_length])));
                 } else {
                     break :blk H.ty.hash(init, small_key);
                 }
@@ -170,11 +170,11 @@ pub fn benchmark_hash_small_keys(comptime H: anytype, key_size: usize, bytes: us
     }
     const elapsed_ns = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(elapsed_ns)) / time.ns_per_s;
-    const size_float: f64 = @floatFromInt(key_count * key_size);
-    const throughput: u64 = @intFromFloat(size_float / elapsed_s);
+    const elapsed_s = @as(f64, @float_from_int(elapsed_ns)) / time.ns_per_s;
+    const size_float: f64 = @float_from_int(key_count * key_size);
+    const throughput: u64 = @int_from_float(size_float / elapsed_s);
 
-    std.mem.doNotOptimizeAway(sum);
+    std.mem.do_not_optimize_away(sum);
 
     return Result{
         .hash = sum,
@@ -205,7 +205,7 @@ pub fn benchmark_hash_small_keys_array_ptr(
         const final: u64 = blk: {
             if (H.init_u8s) |init| {
                 if (H.has_crypto_api) {
-                    break :blk @truncate(H.ty.toInt(small_key, init[0..H.ty.key_length]));
+                    break :blk @truncate(H.ty.to_int(small_key, init[0..H.ty.key_length]));
                 } else {
                     break :blk H.ty.hash(init, small_key);
                 }
@@ -219,10 +219,10 @@ pub fn benchmark_hash_small_keys_array_ptr(
     }
     const elapsed_ns = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(elapsed_ns)) / time.ns_per_s;
-    const throughput: u64 = @intFromFloat(@as(f64, @floatFromInt(bytes)) / elapsed_s);
+    const elapsed_s = @as(f64, @float_from_int(elapsed_ns)) / time.ns_per_s;
+    const throughput: u64 = @int_from_float(@as(f64, @float_from_int(bytes)) / elapsed_s);
 
-    std.mem.doNotOptimizeAway(sum);
+    std.mem.do_not_optimize_away(sum);
 
     return Result{
         .hash = sum,
@@ -254,7 +254,7 @@ pub fn benchmark_hash_small_keys_array(
         const final: u64 = blk: {
             if (H.init_u8s) |init| {
                 if (H.has_crypto_api) {
-                    break :blk @truncate(H.ty.toInt(small_key, init[0..H.ty.key_length]));
+                    break :blk @truncate(H.ty.to_int(small_key, init[0..H.ty.key_length]));
                 } else {
                     break :blk H.ty.hash(init, small_key.*);
                 }
@@ -268,10 +268,10 @@ pub fn benchmark_hash_small_keys_array(
     }
     const elapsed_ns = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(elapsed_ns)) / time.ns_per_s;
-    const throughput: u64 = @intFromFloat(@as(f64, @floatFromInt(bytes)) / elapsed_s);
+    const elapsed_s = @as(f64, @float_from_int(elapsed_ns)) / time.ns_per_s;
+    const throughput: u64 = @int_from_float(@as(f64, @float_from_int(bytes)) / elapsed_s);
 
-    std.mem.doNotOptimizeAway(sum);
+    std.mem.do_not_optimize_away(sum);
 
     return Result{
         .hash = sum,
@@ -294,7 +294,7 @@ pub fn benchmark_hash_small_api(comptime H: anytype, key_size: usize, bytes: usi
         const final: u64 = blk: {
             if (H.init_u8s) |init| {
                 if (H.has_crypto_api) {
-                    break :blk @truncate(H.ty.toInt(small_key, init[0..H.ty.key_length]));
+                    break :blk @truncate(H.ty.to_int(small_key, init[0..H.ty.key_length]));
                 } else {
                     break :blk H.ty.hashSmall(init, small_key);
                 }
@@ -308,10 +308,10 @@ pub fn benchmark_hash_small_api(comptime H: anytype, key_size: usize, bytes: usi
     }
     const elapsed_ns = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(elapsed_ns)) / time.ns_per_s;
-    const throughput: u64 = @intFromFloat(@as(f64, @floatFromInt(bytes)) / elapsed_s);
+    const elapsed_s = @as(f64, @float_from_int(elapsed_ns)) / time.ns_per_s;
+    const throughput: u64 = @int_from_float(@as(f64, @float_from_int(bytes)) / elapsed_s);
 
-    std.mem.doNotOptimizeAway(sum);
+    std.mem.do_not_optimize_away(sum);
 
     return Result{
         .throughput = throughput,
@@ -339,11 +339,11 @@ fn mode(comptime x: comptime_int) comptime_int {
 }
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    const stdout = std.io.get_std_out().writer();
 
     var buffer: [1024]u8 = undefined;
     var fixed = std.heap.FixedBufferAllocator.init(buffer[0..]);
-    const args = try std.process.argsAlloc(fixed.allocator());
+    const args = try std.process.args_alloc(fixed.allocator());
 
     var filter: ?[]u8 = "";
     var count: usize = mode(128 * MiB);
@@ -366,7 +366,7 @@ pub fn main() !void {
                 std.process.exit(1);
             }
 
-            seed = try std.fmt.parseUnsigned(u32, args[i], 10);
+            seed = try std.fmt.parse_unsigned(u32, args[i], 10);
             // we seed later
         } else if (std.mem.eql(u8, args[i], "--filter")) {
             i += 1;
@@ -383,7 +383,7 @@ pub fn main() !void {
                 std.process.exit(1);
             }
 
-            const c = try std.fmt.parseUnsigned(usize, args[i], 10);
+            const c = try std.fmt.parse_unsigned(usize, args[i], 10);
             count = c * MiB;
         } else if (std.mem.eql(u8, args[i], "--key-size")) {
             i += 1;
@@ -392,7 +392,7 @@ pub fn main() !void {
                 std.process.exit(1);
             }
 
-            key_size = try std.fmt.parseUnsigned(usize, args[i], 10);
+            key_size = try std.fmt.parse_unsigned(usize, args[i], 10);
             if (key_size.? > block_size) {
                 try stdout.print("key_size cannot exceed block size of {}\n", .{block_size});
                 std.process.exit(1);
@@ -415,7 +415,7 @@ pub fn main() !void {
     const allocator = gpa.allocator();
 
     inline for (hashes) |H| {
-        if (filter == null or std.mem.indexOf(u8, H.name, filter.?) != null) hash: {
+        if (filter == null or std.mem.index_of(u8, H.name, filter.?) != null) hash: {
             if (!test_iterative_only or H.has_iterative_api) {
                 try stdout.print("{s}\n", .{H.name});
 
@@ -423,14 +423,14 @@ pub fn main() !void {
                 // This allows easier comparison between different implementations.
                 if (H.has_iterative_api) {
                     prng.seed(seed);
-                    const result = try benchmarkHash(H, count, allocator);
+                    const result = try benchmark_hash(H, count, allocator);
                     try stdout.print("   iterative: {:5} MiB/s [{x:0<16}]\n", .{ result.throughput / (1 * MiB), result.hash });
                 }
 
                 if (!test_iterative_only) {
                     if (key_size) |size| {
                         prng.seed(seed);
-                        const result_small = try benchmarkHashSmallKeys(H, size, count, allocator);
+                        const result_small = try benchmark_hash_small_keys(H, size, count, allocator);
                         try stdout.print("  small keys: {:3}B {:5} MiB/s {} Hashes/s [{x:0<16}]\n", .{
                             size,
                             result_small.throughput / (1 * MiB),
@@ -443,9 +443,9 @@ pub fn main() !void {
                             inline for (sizes) |exact_size| {
                                 if (size == exact_size) {
                                     prng.seed(seed);
-                                    const result_array = try benchmarkHashSmallKeysArray(H, exact_size, count, allocator);
+                                    const result_array = try benchmark_hash_small_keys_array(H, exact_size, count, allocator);
                                     prng.seed(seed);
-                                    const result_ptr = try benchmarkHashSmallKeysArrayPtr(H, exact_size, count, allocator);
+                                    const result_ptr = try benchmark_hash_small_keys_array_ptr(H, exact_size, count, allocator);
                                     try stdout.print("       array: {:5} MiB/s [{x:0<16}]\n", .{
                                         result_array.throughput / (1 * MiB),
                                         result_array.hash,
@@ -459,7 +459,7 @@ pub fn main() !void {
                         }
                     } else {
                         prng.seed(seed);
-                        const result_small = try benchmarkHashSmallKeys(H, default_small_key_size, count, allocator);
+                        const result_small = try benchmark_hash_small_keys(H, default_small_key_size, count, allocator);
                         try stdout.print("  small keys: {:3}B {:5} MiB/s {} Hashes/s [{x:0<16}]\n", .{
                             default_small_key_size,
                             result_small.throughput / (1 * MiB),
@@ -472,7 +472,7 @@ pub fn main() !void {
                             try stdout.print("       array:\n", .{});
                             inline for (sizes) |exact_size| {
                                 prng.seed(seed);
-                                const result = try benchmarkHashSmallKeysArray(H, exact_size, count, allocator);
+                                const result = try benchmark_hash_small_keys_array(H, exact_size, count, allocator);
                                 try stdout.print("       {d: >3}B {:5} MiB/s [{x:0<16}]\n", .{
                                     exact_size,
                                     result.throughput / (1 * MiB),
@@ -482,7 +482,7 @@ pub fn main() !void {
                             try stdout.print("   array ptr: \n", .{});
                             inline for (sizes) |exact_size| {
                                 prng.seed(seed);
-                                const result = try benchmarkHashSmallKeysArrayPtr(H, exact_size, count, allocator);
+                                const result = try benchmark_hash_small_keys_array_ptr(H, exact_size, count, allocator);
                                 try stdout.print("       {d: >3}B {:5} MiB/s [{x:0<16}]\n", .{
                                     exact_size,
                                     result.throughput / (1 * MiB),

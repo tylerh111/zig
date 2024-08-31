@@ -24,12 +24,12 @@ const B64Encoder = std.base64.standard_no_pad.Encoder;
 /// This type must be used whenever a binary value is encoded in a PHC-formatted string.
 /// This includes `salt`, `hash`, and any other binary parameters such as keys.
 ///
-/// Once initialized, the actual value can be read with the `constSlice()` function.
+/// Once initialized, the actual value can be read with the `const_slice()` function.
 pub fn BinValue(comptime max_len: usize) type {
     return struct {
         const Self = @This();
         const capacity = max_len;
-        const max_encoded_length = B64Encoder.calcSize(max_len);
+        const max_encoded_length = B64Encoder.calc_size(max_len);
 
         buf: [max_len]u8 = undefined,
         len: usize = 0,
@@ -49,15 +49,15 @@ pub fn BinValue(comptime max_len: usize) type {
         }
 
         fn from_b64(self: *Self, str: []const u8) !void {
-            const len = B64Decoder.calcSizeForSlice(str) catch return Error.InvalidEncoding;
+            const len = B64Decoder.calc_size_for_slice(str) catch return Error.InvalidEncoding;
             if (len > self.buf.len) return Error.NoSpaceLeft;
             B64Decoder.decode(&self.buf, str) catch return Error.InvalidEncoding;
             self.len = len;
         }
 
         fn to_b64(self: *const Self, buf: []u8) ![]const u8 {
-            const value = self.constSlice();
-            const len = B64Encoder.calcSize(value.len);
+            const value = self.const_slice();
+            const len = B64Encoder.calc_size(value.len);
             if (len > buf.len) return Error.NoSpaceLeft;
             return B64Encoder.encode(buf, value);
         }
@@ -76,7 +76,7 @@ pub fn BinValue(comptime max_len: usize) type {
 /// Other fields will also be deserialized from the function parameters section.
 pub fn deserialize(comptime HashResult: type, str: []const u8) Error!HashResult {
     var out = mem.zeroes(HashResult);
-    var it = mem.splitScalar(u8, str, fields_delimiter_scalar);
+    var it = mem.split_scalar(u8, str, fields_delimiter_scalar);
     var set_fields: usize = 0;
 
     while (true) {
@@ -87,14 +87,14 @@ pub fn deserialize(comptime HashResult: type, str: []const u8) Error!HashResult 
 
         // Read the optional version number
         var field = it.next() orelse break;
-        if (kvSplit(field)) |opt_version| {
+        if (kv_split(field)) |opt_version| {
             if (mem.eql(u8, opt_version.key, version_param_name)) {
-                if (@hasField(HashResult, "alg_version")) {
+                if (@has_field(HashResult, "alg_version")) {
                     const value_type_info = switch (@typeInfo(@TypeOf(out.alg_version))) {
                         .Optional => |opt| comptime @typeInfo(opt.child),
                         else => |t| t,
                     };
-                    out.alg_version = fmt.parseUnsigned(
+                    out.alg_version = fmt.parse_unsigned(
                         @Type(value_type_info),
                         opt_version.value,
                         10,
@@ -107,23 +107,23 @@ pub fn deserialize(comptime HashResult: type, str: []const u8) Error!HashResult 
 
         // Read optional parameters
         var has_params = false;
-        var it_params = mem.splitScalar(u8, field, params_delimiter_scalar);
+        var it_params = mem.split_scalar(u8, field, params_delimiter_scalar);
         while (it_params.next()) |params| {
-            const param = kvSplit(params) catch break;
+            const param = kv_split(params) catch break;
             var found = false;
             inline for (comptime meta.fields(HashResult)) |p| {
                 if (mem.eql(u8, p.name, param.key)) {
                     switch (@typeInfo(p.type)) {
-                        .Int => @field(out, p.name) = fmt.parseUnsigned(
+                        .Int => @field(out, p.name) = fmt.parse_unsigned(
                             p.type,
                             param.value,
                             10,
                         ) catch return Error.InvalidEncoding,
                         .Pointer => |ptr| {
-                            if (!ptr.is_const) @compileError("Value slice must be constant");
+                            if (!ptr.is_const) @compile_error("Value slice must be constant");
                             @field(out, p.name) = param.value;
                         },
-                        .Struct => try @field(out, p.name).fromB64(param.value),
+                        .Struct => try @field(out, p.name).from_b64(param.value),
                         else => std.debug.panic(
                             "Value for [{s}] must be an integer, a constant slice or a BinValue",
                             .{p.name},
@@ -142,8 +142,8 @@ pub fn deserialize(comptime HashResult: type, str: []const u8) Error!HashResult 
         if (has_params) field = it.next() orelse break;
 
         // Read an optional salt
-        if (@hasField(HashResult, "salt")) {
-            try out.salt.fromB64(field);
+        if (@has_field(HashResult, "salt")) {
+            try out.salt.from_b64(field);
             set_fields += 1;
         } else {
             return Error.InvalidEncoding;
@@ -151,8 +151,8 @@ pub fn deserialize(comptime HashResult: type, str: []const u8) Error!HashResult 
 
         // Read an optional hash
         field = it.next() orelse break;
-        if (@hasField(HashResult, "hash")) {
-            try out.hash.fromB64(field);
+        if (@has_field(HashResult, "hash")) {
+            try out.hash.from_b64(field);
             set_fields += 1;
         } else {
             return Error.InvalidEncoding;
@@ -184,24 +184,24 @@ pub fn deserialize(comptime HashResult: type, str: []const u8) Error!HashResult 
 ///
 /// `params` can also include any additional parameters.
 pub fn serialize(params: anytype, str: []u8) Error![]const u8 {
-    var buf = io.fixedBufferStream(str);
-    try serializeTo(params, buf.writer());
-    return buf.getWritten();
+    var buf = io.fixed_buffer_stream(str);
+    try serialize_to(params, buf.writer());
+    return buf.get_written();
 }
 
 /// Compute the number of bytes required to serialize `params`
 pub fn calc_size(params: anytype) usize {
-    var buf = io.countingWriter(io.null_writer);
-    serializeTo(params, buf.writer()) catch unreachable;
-    return @as(usize, @intCast(buf.bytes_written));
+    var buf = io.counting_writer(io.null_writer);
+    serialize_to(params, buf.writer()) catch unreachable;
+    return @as(usize, @int_cast(buf.bytes_written));
 }
 
 fn serialize_to(params: anytype, out: anytype) !void {
     const HashResult = @TypeOf(params);
-    try out.writeAll(fields_delimiter);
-    try out.writeAll(params.alg_id);
+    try out.write_all(fields_delimiter);
+    try out.write_all(params.alg_id);
 
-    if (@hasField(HashResult, "alg_version")) {
+    if (@has_field(HashResult, "alg_version")) {
         if (@typeInfo(@TypeOf(params.alg_version)) == .Optional) {
             if (params.alg_version) |alg_version| {
                 try out.print(
@@ -225,10 +225,10 @@ fn serialize_to(params: anytype, out: anytype) !void {
             mem.eql(u8, p.name, "salt")))
         {
             const value = @field(params, p.name);
-            try out.writeAll(if (has_params) params_delimiter else fields_delimiter);
+            try out.write_all(if (has_params) params_delimiter else fields_delimiter);
             if (@typeInfo(p.type) == .Struct) {
                 var buf: [@TypeOf(value).max_encoded_length]u8 = undefined;
-                try out.print("{s}{s}{s}", .{ p.name, kv_delimiter, try value.toB64(&buf) });
+                try out.print("{s}{s}{s}", .{ p.name, kv_delimiter, try value.to_b64(&buf) });
             } else {
                 try out.print(
                     if (@typeInfo(@TypeOf(value)) == .Pointer) "{s}{s}{s}" else "{s}{s}{}",
@@ -240,22 +240,22 @@ fn serialize_to(params: anytype, out: anytype) !void {
     }
 
     var has_salt = false;
-    if (@hasField(HashResult, "salt")) {
+    if (@has_field(HashResult, "salt")) {
         var buf: [@TypeOf(params.salt).max_encoded_length]u8 = undefined;
-        try out.print("{s}{s}", .{ fields_delimiter, try params.salt.toB64(&buf) });
+        try out.print("{s}{s}", .{ fields_delimiter, try params.salt.to_b64(&buf) });
         has_salt = true;
     }
 
-    if (@hasField(HashResult, "hash")) {
+    if (@has_field(HashResult, "hash")) {
         var buf: [@TypeOf(params.hash).max_encoded_length]u8 = undefined;
-        if (!has_salt) try out.writeAll(fields_delimiter);
-        try out.print("{s}{s}", .{ fields_delimiter, try params.hash.toB64(&buf) });
+        if (!has_salt) try out.write_all(fields_delimiter);
+        try out.print("{s}{s}", .{ fields_delimiter, try params.hash.to_b64(&buf) });
     }
 }
 
 // Split a `key=value` string into `key` and `value`
 fn kv_split(str: []const u8) !struct { key: []const u8, value: []const u8 } {
-    var it = mem.splitScalar(u8, str, kv_delimiter_scalar);
+    var it = mem.split_scalar(u8, str, kv_delimiter_scalar);
     const key = it.first();
     const value = it.next() orelse return Error.InvalidEncoding;
     const ret = .{ .key = key, .value = value };
@@ -343,23 +343,23 @@ test "phc format - encoding/decoding" {
         const v = try deserialize(input.HashResult, input.str);
         var buf: [input.str.len]u8 = undefined;
         const s1 = try serialize(v, &buf);
-        try std.testing.expectEqualSlices(u8, input.str, s1);
+        try std.testing.expect_equal_slices(u8, input.str, s1);
     }
 }
 
 test "phc format - empty input string" {
     const s = "";
     const v = deserialize(struct { alg_id: []const u8 }, s);
-    try std.testing.expectError(Error.InvalidEncoding, v);
+    try std.testing.expect_error(Error.InvalidEncoding, v);
 }
 
 test "phc format - hash without salt" {
     const s = "$scrypt";
     const v = deserialize(struct { alg_id: []const u8, hash: BinValue(16) }, s);
-    try std.testing.expectError(Error.InvalidEncoding, v);
+    try std.testing.expect_error(Error.InvalidEncoding, v);
 }
 
-test "phc format - calcSize" {
+test "phc format - calc_size" {
     const s = "$scrypt$v=1$ln=15,r=8,p=1$c2FsdHNhbHQ$dGVzdHBhc3M";
     const v = try deserialize(struct {
         alg_id: []const u8,
@@ -370,5 +370,5 @@ test "phc format - calcSize" {
         salt: BinValue(8),
         hash: BinValue(8),
     }, s);
-    try std.testing.expectEqual(calcSize(v), s.len);
+    try std.testing.expect_equal(calc_size(v), s.len);
 }

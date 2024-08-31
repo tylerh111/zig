@@ -1,5 +1,5 @@
 export fn entry() void {
-    @compileLog(@as(*const anyopaque, @ptrCast(&entry)));
+    @compileLog(@as(*const anyopaque, @ptr_cast(&entry)));
 }
 
 // error
@@ -9,4 +9,4 @@ export fn entry() void {
 // :2:5: error: found compile log statement
 //
 // Compile Log Output:
-// @as(*const anyopaque, @as(*const anyopaque, @ptrCast(tmp.entry)))
+// @as(*const anyopaque, @as(*const anyopaque, @ptr_cast(tmp.entry)))

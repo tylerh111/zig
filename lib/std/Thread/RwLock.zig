@@ -21,7 +21,7 @@ else
 /// Attempts to obtain exclusive lock ownership.
 /// Returns `true` if the lock is obtained, `false` otherwise.
 pub fn try_lock(rwl: *RwLock) bool {
-    return rwl.impl.tryLock();
+    return rwl.impl.try_lock();
 }
 
 /// Blocks until exclusive lock ownership is acquired.
@@ -38,19 +38,19 @@ pub fn unlock(rwl: *RwLock) void {
 /// Attempts to obtain shared lock ownership.
 /// Returns `true` if the lock is obtained, `false` otherwise.
 pub fn try_lock_shared(rwl: *RwLock) bool {
-    return rwl.impl.tryLockShared();
+    return rwl.impl.try_lock_shared();
 }
 
 /// Obtains shared lock ownership.
 /// Blocks if another thread has exclusive ownership.
 /// May block if another thread is attempting to get exclusive ownership.
 pub fn lock_shared(rwl: *RwLock) void {
-    return rwl.impl.lockShared();
+    return rwl.impl.lock_shared();
 }
 
 /// Releases a held shared lock.
 pub fn unlock_shared(rwl: *RwLock) void {
-    return rwl.impl.unlockShared();
+    return rwl.impl.unlock_shared();
 }
 
 /// Single-threaded applications use this for deadlock checks in
@@ -123,7 +123,7 @@ pub const SingleThreadedRwLock = struct {
     /// Releases a held shared lock.
     pub fn unlock_shared(rwl: *SingleThreadedRwLock) void {
         switch (rwl.state) {
-            .unlocked => unreachable, // too many calls to `unlockShared`
+            .unlocked => unreachable, // too many calls to `unlock_shared`
             .locked_exclusive => unreachable, // exclusively held lock
             .locked_shared => {
                 rwl.shared_count -= 1;
@@ -175,12 +175,12 @@ pub const DefaultRwLock = struct {
     const IS_WRITING: usize = 1;
     const WRITER: usize = 1 << 1;
     const READER: usize = 1 << (1 + @bitSizeOf(Count));
-    const WRITER_MASK: usize = std.math.maxInt(Count) << @ctz(WRITER);
-    const READER_MASK: usize = std.math.maxInt(Count) << @ctz(READER);
-    const Count = std.meta.Int(.unsigned, @divFloor(@bitSizeOf(usize) - 1, 2));
+    const WRITER_MASK: usize = std.math.max_int(Count) << @ctz(WRITER);
+    const READER_MASK: usize = std.math.max_int(Count) << @ctz(READER);
+    const Count = std.meta.Int(.unsigned, @div_floor(@bitSizeOf(usize) - 1, 2));
 
     pub fn try_lock(rwl: *DefaultRwLock) bool {
-        if (rwl.mutex.tryLock()) {
+        if (rwl.mutex.try_lock()) {
             const state = @atomicLoad(usize, &rwl.state, .seq_cst);
             if (state & READER_MASK == 0) {
                 _ = @atomicRmw(usize, &rwl.state, .Or, IS_WRITING, .seq_cst);
@@ -210,7 +210,7 @@ pub const DefaultRwLock = struct {
     pub fn try_lock_shared(rwl: *DefaultRwLock) bool {
         const state = @atomicLoad(usize, &rwl.state, .seq_cst);
         if (state & (IS_WRITING | WRITER_MASK) == 0) {
-            _ = @cmpxchgStrong(
+            _ = @cmpxchg_strong(
                 usize,
                 &rwl.state,
                 state,
@@ -220,7 +220,7 @@ pub const DefaultRwLock = struct {
             ) orelse return true;
         }
 
-        if (rwl.mutex.tryLock()) {
+        if (rwl.mutex.try_lock()) {
             _ = @atomicRmw(usize, &rwl.state, .Add, READER, .seq_cst);
             rwl.mutex.unlock();
             return true;
@@ -232,7 +232,7 @@ pub const DefaultRwLock = struct {
     pub fn lock_shared(rwl: *DefaultRwLock) void {
         var state = @atomicLoad(usize, &rwl.state, .seq_cst);
         while (state & (IS_WRITING | WRITER_MASK) == 0) {
-            state = @cmpxchgWeak(
+            state = @cmpxchg_weak(
                 usize,
                 &rwl.state,
                 state,
@@ -263,33 +263,33 @@ test "DefaultRwLock - internal state" {
 
     rwl.lock();
     rwl.unlock();
-    try testing.expectEqual(rwl, DefaultRwLock{});
+    try testing.expect_equal(rwl, DefaultRwLock{});
 }
 
 test "smoke test" {
     var rwl = RwLock{};
 
     rwl.lock();
-    try testing.expect(!rwl.tryLock());
-    try testing.expect(!rwl.tryLockShared());
+    try testing.expect(!rwl.try_lock());
+    try testing.expect(!rwl.try_lock_shared());
     rwl.unlock();
 
-    try testing.expect(rwl.tryLock());
-    try testing.expect(!rwl.tryLock());
-    try testing.expect(!rwl.tryLockShared());
+    try testing.expect(rwl.try_lock());
+    try testing.expect(!rwl.try_lock());
+    try testing.expect(!rwl.try_lock_shared());
     rwl.unlock();
 
-    rwl.lockShared();
-    try testing.expect(!rwl.tryLock());
-    try testing.expect(rwl.tryLockShared());
-    rwl.unlockShared();
-    rwl.unlockShared();
+    rwl.lock_shared();
+    try testing.expect(!rwl.try_lock());
+    try testing.expect(rwl.try_lock_shared());
+    rwl.unlock_shared();
+    rwl.unlock_shared();
 
-    try testing.expect(rwl.tryLockShared());
-    try testing.expect(!rwl.tryLock());
-    try testing.expect(rwl.tryLockShared());
-    rwl.unlockShared();
-    rwl.unlockShared();
+    try testing.expect(rwl.try_lock_shared());
+    try testing.expect(!rwl.try_lock());
+    try testing.expect(rwl.try_lock_shared());
+    rwl.unlock_shared();
+    rwl.unlock_shared();
 
     rwl.lock();
     rwl.unlock();
@@ -317,15 +317,15 @@ test "concurrent access" {
 
         fn reader(self: *Self) !void {
             while (true) {
-                self.rwl.lockShared();
-                defer self.rwl.unlockShared();
+                self.rwl.lock_shared();
+                defer self.rwl.unlock_shared();
 
                 if (self.writes >= num_writes or self.reads.load(.unordered) >= num_reads)
                     break;
 
                 try self.check();
 
-                _ = self.reads.fetchAdd(1, .monotonic);
+                _ = self.reads.fetch_add(1, .monotonic);
             }
         }
 
@@ -363,7 +363,7 @@ test "concurrent access" {
             try std.Thread.yield();
 
             const term1 = self.term1;
-            try testing.expectEqual(term_sum, term1 +% term2);
+            try testing.expect_equal(term_sum, term1 +% term2);
         }
     };
 
@@ -375,7 +375,7 @@ test "concurrent access" {
 
     for (threads) |t| t.join();
 
-    try testing.expectEqual(num_writes, runner.writes);
+    try testing.expect_equal(num_writes, runner.writes);
 
     //std.debug.print("reads={}\n", .{ runner.reads.load(.unordered)});
 }

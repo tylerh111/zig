@@ -8,15 +8,15 @@ const std = @import("std");
 const builtin = @import("builtin");
 const assert = std.debug.assert;
 
-const c_malloc = @cImport(
+const c_malloc = @c_import(
     @cInclude("malloc.h"), // for reallocarray
 );
 
-const c_stdlib = @cImport(
+const c_stdlib = @c_import(
     @cInclude("stdlib.h"), // for atexit
 );
 
-const c_string = @cImport(
+const c_string = @c_import(
     @cInclude("string.h"), // for strlcpy
 );
 
@@ -42,10 +42,10 @@ fn check_reallocarray() !void {
     // reallocarray was introduced in v2.26
     if (comptime glibc_ver.order(.{ .major = 2, .minor = 26, .patch = 0 }) == .lt) {
         if (@hasDecl(c_malloc, "reallocarray")) {
-            @compileError("Before v2.26 'malloc.h' does not define 'reallocarray'");
+            @compile_error("Before v2.26 'malloc.h' does not define 'reallocarray'");
         }
     } else {
-        return try checkReallocarray_v2_26();
+        return try check_reallocarray_v2_26();
     }
 }
 
@@ -62,10 +62,10 @@ fn check_reallocarray_v2_26() !void {
 fn check_get_aux_val() !void {
     if (comptime glibc_ver.order(.{ .major = 2, .minor = 16, .patch = 0 }) == .lt) {
         if (@hasDecl(std.c, "getauxval")) {
-            @compileError("Before v2.16 glibc does not define 'getauxval'");
+            @compile_error("Before v2.16 glibc does not define 'getauxval'");
         }
     } else {
-        try checkGetAuxVal_v2_16();
+        try check_get_aux_val_v2_16();
     }
 }
 
@@ -81,10 +81,10 @@ fn check_get_aux_val_v2_16() !void {
 fn check_strlcpy() !void {
     if (comptime glibc_ver.order(.{ .major = 2, .minor = 38, .patch = 0 }) == .lt) {
         if (@hasDecl(c_string, "strlcpy")) {
-            @compileError("Before v2.38 glibc does not define 'strlcpy'");
+            @compile_error("Before v2.38 glibc does not define 'strlcpy'");
         }
     } else {
-        try checkStrlcpy_v2_38();
+        try check_strlcpy_v2_38();
     }
 }
 
@@ -100,17 +100,17 @@ fn force_exit0_callback() callconv(.C) void {
 }
 
 fn check_at_exit() !void {
-    const result = c_stdlib.atexit(forceExit0Callback);
+    const result = c_stdlib.atexit(force_exit0_callback);
     assert(result == 0);
 }
 
 pub fn main() !u8 {
-    try checkStat();
-    try checkReallocarray();
-    try checkStrlcpy();
+    try check_stat();
+    try check_reallocarray();
+    try check_strlcpy();
 
-    try checkGetAuxVal();
-    try checkAtExit();
+    try check_get_aux_val();
+    try check_at_exit();
 
     std.c.exit(1); // overridden by atexit() callback
 }

@@ -4,7 +4,7 @@ const builtin = @import("builtin");
 const linkage: std.builtin.GlobalLinkage = if (builtin.is_test) .internal else .weak;
 const panic = @import("common.zig").panic;
 
-const have_availability_version_check = builtin.os.tag.isDarwin() and
+const have_availability_version_check = builtin.os.tag.is_darwin() and
     builtin.os.version_range.semver.min.order(.{ .major = 10, .minor = 15, .patch = 0 }).compare(.gte);
 
 comptime {
@@ -37,9 +37,9 @@ const __isPlatformVersionAtLeast = if (have_availability_version_check) struct {
     fn __isPlatformVersionAtLeast(platform: u32, major: u32, minor: u32, subminor: u32) callconv(.C) i32 {
         const build_version = dyld_build_version_t{
             .platform = platform,
-            .version = constructVersion(major, minor, subminor),
+            .version = construct_version(major, minor, subminor),
         };
-        return @intFromBool(_availability_version_check(1, &[_]dyld_build_version_t{build_version}));
+        return @int_from_bool(_availability_version_check(1, &[_]dyld_build_version_t{build_version}));
     }
 
     // _availability_version_check darwin API support.

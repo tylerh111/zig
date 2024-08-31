@@ -1,4 +1,4 @@
-const c = @cImport({
+const c = @c_import({
     @cDefine("FOO", "FOO");
     @cDefine("BAR", "FOO");
 

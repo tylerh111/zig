@@ -219,7 +219,7 @@ const common_shared_key_size: usize = 32;
 fn Kyber(comptime p: Params) type {
     return struct {
         // Size of a ciphertext, in bytes.
-        pub const ciphertext_length = Poly.compressedSize(p.du) * p.k + Poly.compressedSize(p.dv);
+        pub const ciphertext_length = Poly.compressed_size(p.du) * p.k + Poly.compressed_size(p.dv);
 
         const Self = @This();
         const V = Vec(p.k);
@@ -297,13 +297,13 @@ fn Kyber(comptime p: Params) type {
 
             /// Serializes the key into a byte array.
             pub fn to_bytes(pk: PublicKey) [bytes_length]u8 {
-                return pk.pk.toBytes();
+                return pk.pk.to_bytes();
             }
 
             /// Deserializes the key from a byte array.
             pub fn from_bytes(buf: *const [bytes_length]u8) errors.NonCanonicalError!PublicKey {
                 var ret: PublicKey = undefined;
-                ret.pk = try InnerPk.fromBytes(buf[0..InnerPk.bytes_length]);
+                ret.pk = try InnerPk.from_bytes(buf[0..InnerPk.bytes_length]);
                 sha3.Sha3_256.hash(buf, &ret.hpk, .{});
                 return ret;
             }
@@ -354,16 +354,16 @@ fn Kyber(comptime p: Params) type {
 
             /// Serializes the key into a byte array.
             pub fn to_bytes(sk: SecretKey) [bytes_length]u8 {
-                return sk.sk.toBytes() ++ sk.pk.toBytes() ++ sk.hpk ++ sk.z;
+                return sk.sk.to_bytes() ++ sk.pk.to_bytes() ++ sk.hpk ++ sk.z;
             }
 
             /// Deserializes the key from a byte array.
             pub fn from_bytes(buf: *const [bytes_length]u8) errors.NonCanonicalError!SecretKey {
                 var ret: SecretKey = undefined;
                 comptime var s: usize = 0;
-                ret.sk = InnerSk.fromBytes(buf[s .. s + InnerSk.bytes_length]);
+                ret.sk = InnerSk.from_bytes(buf[s .. s + InnerSk.bytes_length]);
                 s += InnerSk.bytes_length;
-                ret.pk = try InnerPk.fromBytes(buf[s .. s + InnerPk.bytes_length]);
+                ret.pk = try InnerPk.from_bytes(buf[s .. s + InnerPk.bytes_length]);
                 s += InnerPk.bytes_length;
                 ret.hpk = buf[s..][0..h_length].*;
                 s += h_length;
@@ -390,7 +390,7 @@ fn Kyber(comptime p: Params) type {
                 ret.secret_key.z = seed[inner_seed_length..seed_length].*;
 
                 // Generate inner key
-                innerKeyFromSeed(
+                inner_key_from_seed(
                     seed[0..inner_seed_length].*,
                     &ret.public_key.pk,
                     &ret.secret_key.sk,
@@ -401,7 +401,7 @@ fn Kyber(comptime p: Params) type {
                 ret.secret_key.z = seed[inner_seed_length..seed_length].*;
 
                 // Compute H(pk)
-                sha3.Sha3_256.hash(&ret.public_key.pk.toBytes(), &ret.secret_key.hpk, .{});
+                sha3.Sha3_256.hash(&ret.public_key.pk.to_bytes(), &ret.secret_key.hpk, .{});
                 ret.public_key.hpk = ret.secret_key.hpk;
 
                 return ret;
@@ -409,7 +409,7 @@ fn Kyber(comptime p: Params) type {
         };
 
         // Size of plaintexts of the in
-        const inner_plaintext_length: usize = Poly.compressedSize(1);
+        const inner_plaintext_length: usize = Poly.compressed_size(1);
 
         const InnerPk = struct {
             rho: [32]u8, // ρ, the seed for the matrix A
@@ -426,7 +426,7 @@ fn Kyber(comptime p: Params) type {
                 seed: *const [32]u8,
             ) [ciphertext_length]u8 {
                 // Sample r, e₁ and e₂ appropriately
-                const rh = V.noise(p.eta1, 0, seed).ntt().barrettReduce();
+                const rh = V.noise(p.eta1, 0, seed).ntt().barrett_reduce();
                 const e1 = V.noise(eta2, p.k, seed);
                 const e2 = Poly.noise(eta2, 2 * p.k, seed);
 
@@ -436,34 +436,34 @@ fn Kyber(comptime p: Params) type {
                     // Note that coefficients of r are bounded by q and those of Aᵀ
                     // are bounded by 4.5q and so their product is bounded by 2¹⁵q
                     // as required for multiplication.
-                    u.ps[i] = pk.aT.vs[i].dotHat(rh);
+                    u.ps[i] = pk.aT.vs[i].dot_hat(rh);
                 }
 
                 // Aᵀ and r were not in Montgomery form, so the Montgomery
                 // multiplications in the inner product added a factor R⁻¹ which
                 // the InvNTT cancels out.
-                u = u.barrettReduce().invNTT().add(e1).normalize();
+                u = u.barrett_reduce().inv_ntt().add(e1).normalize();
 
                 // Next, compute v = <t, r> + e₂ + Decompress_q(m, 1)
-                const v = pk.th.dotHat(rh).barrettReduce().invNTT()
+                const v = pk.th.dot_hat(rh).barrett_reduce().inv_ntt()
                     .add(Poly.decompress(1, pt)).add(e2).normalize();
 
                 return u.compress(p.du) ++ v.compress(p.dv);
             }
 
             fn to_bytes(pk: InnerPk) [bytes_length]u8 {
-                return pk.th.toBytes() ++ pk.rho;
+                return pk.th.to_bytes() ++ pk.rho;
             }
 
             fn from_bytes(buf: *const [bytes_length]u8) errors.NonCanonicalError!InnerPk {
                 var ret: InnerPk = undefined;
 
                 const th_bytes = buf[0..V.bytes_length];
-                ret.th = V.fromBytes(th_bytes).normalize();
+                ret.th = V.from_bytes(th_bytes).normalize();
 
                 if (p.ml_kem) {
                     // Verify that the coefficients used a canonical representation.
-                    if (!mem.eql(u8, &ret.th.toBytes(), th_bytes)) {
+                    if (!mem.eql(u8, &ret.th.to_bytes(), th_bytes)) {
                         return error.NonCanonical;
                     }
                 }
@@ -480,24 +480,24 @@ fn Kyber(comptime p: Params) type {
             const bytes_length = V.bytes_length;
 
             fn decrypt(sk: InnerSk, ct: *const [ciphertext_length]u8) [inner_plaintext_length]u8 {
-                const u = V.decompress(p.du, ct[0..comptime V.compressedSize(p.du)]);
+                const u = V.decompress(p.du, ct[0..comptime V.compressed_size(p.du)]);
                 const v = Poly.decompress(
                     p.dv,
-                    ct[comptime V.compressedSize(p.du)..ciphertext_length],
+                    ct[comptime V.compressed_size(p.du)..ciphertext_length],
                 );
 
                 // Compute m = v - <s, u>
-                return v.sub(sk.sh.dotHat(u.ntt()).barrettReduce().invNTT())
+                return v.sub(sk.sh.dot_hat(u.ntt()).barrett_reduce().inv_ntt())
                     .normalize().compress(1);
             }
 
             fn to_bytes(sk: InnerSk) [bytes_length]u8 {
-                return sk.sh.toBytes();
+                return sk.sh.to_bytes();
             }
 
             fn from_bytes(buf: *const [bytes_length]u8) InnerSk {
                 var ret: InnerSk = undefined;
-                ret.sh = V.fromBytes(buf).normalize();
+                ret.sh = V.from_bytes(buf).normalize();
                 return ret;
             }
         };
@@ -523,9 +523,9 @@ fn Kyber(comptime p: Params) type {
                 // as required for multiplication.
                 // A and s were not in Montgomery form, so the Montgomery
                 // multiplications in the inner product added a factor R⁻¹ which
-                // we'll cancel out with toMont().  This will also ensure the
+                // we'll cancel out with to_mont().  This will also ensure the
                 // coefficients of th are bounded in absolute value by q.
-                th.ps[i] = pk.aT.vs[i].dotHat(sk.sh).toMont();
+                th.ps[i] = pk.aT.vs[i].dot_hat(sk.sh).to_mont();
             }
 
             pk.th = th.add(eh).normalize(); // bounded by 8q
@@ -544,7 +544,7 @@ const r2_mod_q: i32 = @rem(r_mod_q * r_mod_q, Q);
 const zeta: i16 = 17;
 
 // (128)⁻¹ R². Used in inverse NTT.
-const r2_over_128: i32 = @mod(invertMod(128, Q) * r2_mod_q, Q);
+const r2_over_128: i32 = @mod(invert_mod(128, Q) * r2_mod_q, Q);
 
 // zetas lists precomputed powers of the primitive root of unity in
 // Montgomery representation used for the NTT:
@@ -552,10 +552,10 @@ const r2_over_128: i32 = @mod(invertMod(128, Q) * r2_mod_q, Q);
 //  zetas[i] = ζᵇʳᵛ⁽ⁱ⁾ R mod q
 //
 // where ζ = 17, brv(i) is the bitreversal of a 7-bit number and R=2¹⁶ mod q.
-const zetas = computeZetas();
+const zetas = compute_zetas();
 
 // invNTTReductions keeps track of which coefficients to apply Barrett
-// reduction to in Poly.invNTT().
+// reduction to in Poly.inv_ntt().
 //
 // Generated lazily: once a butterfly is computed which is about to
 // overflow the i16, the largest coefficient is reduced.  If that is
@@ -601,7 +601,7 @@ const inv_ntt_reductions = [_]i16{
 
 test "invNTTReductions bounds" {
     // Checks whether the reductions proposed by invNTTReductions
-    // don't overflow during invNTT().
+    // don't overflow during inv_ntt().
     var xs = [_]i32{1} ** 256; // start at |x| ≤ q
 
     var r: usize = 0;
@@ -626,7 +626,7 @@ test "invNTTReductions bounds" {
             if (j < 0) {
                 break;
             }
-            xs[@as(usize, @intCast(j))] = 1;
+            xs[@as(usize, @int_cast(j))] = 1;
         }
     }
 }
@@ -640,7 +640,7 @@ fn eea(a: anytype, b: @TypeOf(a)) EeaResult(@TypeOf(a)) {
         return .{ .gcd = b, .x = 0, .y = 1 };
     }
     const r = eea(@rem(b, a), a);
-    return .{ .gcd = r.gcd, .x = r.y - @divTrunc(b, a) * r.x, .y = r.x };
+    return .{ .gcd = r.gcd, .x = r.y - @div_trunc(b, a) * r.x, .y = r.x };
 }
 
 fn EeaResult(comptime T: type) type {
@@ -662,7 +662,7 @@ fn invert_mod(a: anytype, p: @TypeOf(a)) @TypeOf(a) {
 
 // Reduce mod q for testing.
 fn mod_q32(x: i32) i16 {
-    var y = @as(i16, @intCast(@rem(x, @as(i32, Q))));
+    var y = @as(i16, @int_cast(@rem(x, @as(i32, Q))));
     if (y < 0) {
         y += Q;
     }
@@ -671,7 +671,7 @@ fn mod_q32(x: i32) i16 {
 
 // Given -2¹⁵ q ≤ x < 2¹⁵ q, returns -q < y < q with x 2⁻¹⁶ = y (mod q).
 fn mont_reduce(x: i32) i16 {
-    const qInv = comptime invertMod(@as(i32, Q), R);
+    const qInv = comptime invert_mod(@as(i32, Q), R);
     // This is Montgomery reduction with R=2¹⁶.
     //
     // Note gcd(2¹⁶, q) = 1 as q is prime.  Write q' := 62209 = q⁻¹ mod R.
@@ -699,38 +699,38 @@ fn mont_reduce(x: i32) i16 {
     // and as both 2¹⁵ q ≤ m q, x < 2¹⁵ q, we have
     // 2¹⁶ q ≤ x - m q < 2¹⁶ and so q ≤ (x - m q) / R < q as desired.
     const yR = x - @as(i32, m) * @as(i32, Q);
-    return @bitCast(@as(u16, @truncate(@as(u32, @bitCast(yR)) >> 16)));
+    return @bit_cast(@as(u16, @truncate(@as(u32, @bit_cast(yR)) >> 16)));
 }
 
-test "Test montReduce" {
+test "Test mont_reduce" {
     var rnd = RndGen.init(0);
     for (0..1000) |_| {
         const bound = comptime @as(i32, Q) * (1 << 15);
-        const x = rnd.random().intRangeLessThan(i32, -bound, bound);
-        const y = montReduce(x);
+        const x = rnd.random().int_range_less_than(i32, -bound, bound);
+        const y = mont_reduce(x);
         try testing.expect(-Q < y and y < Q);
-        try testing.expectEqual(modQ32(x), modQ32(@as(i32, y) * R));
+        try testing.expect_equal(mod_q32(x), mod_q32(@as(i32, y) * R));
     }
 }
 
 // Given any x, return x R mod q where R=2¹⁶.
 fn fe_to_mont(x: i16) i16 {
     // Note |1353 x| ≤ 1353 2¹⁵ ≤ 13318 q ≤ 2¹⁵ q and so we're within
-    // the bounds of montReduce.
-    return montReduce(@as(i32, x) * r2_mod_q);
+    // the bounds of mont_reduce.
+    return mont_reduce(@as(i32, x) * r2_mod_q);
 }
 
-test "Test feToMont" {
+test "Test fe_to_mont" {
     var x: i32 = -(1 << 15);
     while (x < 1 << 15) : (x += 1) {
-        const y = feToMont(@as(i16, @intCast(x)));
-        try testing.expectEqual(modQ32(@as(i32, y)), modQ32(x * r_mod_q));
+        const y = fe_to_mont(@as(i16, @int_cast(x)));
+        try testing.expect_equal(mod_q32(@as(i32, y)), mod_q32(x * r_mod_q));
     }
 }
 
 // Given any x, compute 0 ≤ y ≤ q with x = y (mod q).
 //
-// Beware: we might have feBarrettReduce(x) = q ≠ 0 for some x.  In fact,
+// Beware: we might have fe_barrett_reduce(x) = q ≠ 0 for some x.  In fact,
 // this happens if and only if x = -nq for some positive integer n.
 fn fe_barrett_reduce(x: i16) i16 {
     // This is standard Barrett reduction.
@@ -750,18 +750,18 @@ fn fe_barrett_reduce(x: i16) i16 {
     // To actually compute this, note that
     //
     //  ⌊x 20156/2²⁶⌋ = (20159 x) >> 26.
-    return x -% @as(i16, @intCast((@as(i32, x) * 20159) >> 26)) *% Q;
+    return x -% @as(i16, @int_cast((@as(i32, x) * 20159) >> 26)) *% Q;
 }
 
 test "Test Barrett reduction" {
     var x: i32 = -(1 << 15);
     while (x < 1 << 15) : (x += 1) {
-        var y1 = feBarrettReduce(@as(i16, @intCast(x)));
-        const y2 = @mod(@as(i16, @intCast(x)), Q);
+        var y1 = fe_barrett_reduce(@as(i16, @int_cast(x)));
+        const y2 = @mod(@as(i16, @int_cast(x)), Q);
         if (x < 0 and @rem(-x, Q) == 0) {
             y1 -= Q;
         }
-        try testing.expectEqual(y1, y2);
+        try testing.expect_equal(y1, y2);
     }
 }
 
@@ -776,12 +776,12 @@ fn csubq(x: i16) i16 {
 test "Test csubq" {
     var x: i32 = -29439;
     while (x < 1 << 15) : (x += 1) {
-        const y1 = csubq(@as(i16, @intCast(x)));
-        var y2 = @as(i16, @intCast(x));
-        if (@as(i16, @intCast(x)) >= Q) {
+        const y1 = csubq(@as(i16, @int_cast(x)));
+        var y2 = @as(i16, @int_cast(x));
+        if (@as(i16, @int_cast(x)) >= Q) {
             y2 -= Q;
         }
-        try testing.expectEqual(y1, y2);
+        try testing.expect_equal(y1, y2);
     }
 }
 
@@ -804,13 +804,13 @@ fn mpow(a: anytype, s: @TypeOf(a), p: @TypeOf(a)) @TypeOf(a) {
     return ret;
 }
 
-// Computes zetas table used by ntt and invNTT.
+// Computes zetas table used by ntt and inv_ntt.
 fn compute_zetas() [128]i16 {
     @setEvalBranchQuota(10000);
     var ret: [128]i16 = undefined;
     for (&ret, 0..) |*r, i| {
-        const t = @as(i16, @intCast(mpow(@as(i32, zeta), @bitReverse(@as(u7, @intCast(i))), Q)));
-        r.* = csubq(feBarrettReduce(feToMont(t)));
+        const t = @as(i16, @int_cast(mpow(@as(i32, zeta), @bit_reverse(@as(u7, @int_cast(i))), Q)));
+        r.* = csubq(fe_barrett_reduce(fe_to_mont(t)));
     }
     return ret;
 }
@@ -849,7 +849,7 @@ const Poly = struct {
     fn rand_abs_leq_q(rnd: anytype) Poly {
         var ret: Poly = undefined;
         for (0..N) |i| {
-            ret.cs[i] = rnd.random().intRangeAtMost(i16, -Q, Q);
+            ret.cs[i] = rnd.random().int_range_at_most(i16, -Q, Q);
         }
         return ret;
     }
@@ -858,7 +858,7 @@ const Poly = struct {
     fn rand_normalized(rnd: anytype) Poly {
         var ret: Poly = undefined;
         for (0..N) |i| {
-            ret.cs[i] = rnd.random().intRangeLessThan(i16, 0, Q);
+            ret.cs[i] = rnd.random().int_range_less_than(i16, 0, Q);
         }
         return ret;
     }
@@ -936,7 +936,7 @@ const Poly = struct {
 
                 // j loops over each butterfly in the row group.
                 for (offset..offset + l) |j| {
-                    const t = montReduce(z * @as(i32, p.cs[j + l]));
+                    const t = mont_reduce(z * @as(i32, p.cs[j + l]));
                     p.cs[j + l] = p.cs[j] - t;
                     p.cs[j] += t;
                 }
@@ -977,7 +977,7 @@ const Poly = struct {
                     // Gentleman-Sande butterfly: (a, b) ↦ (a + b, ζ(a-b))
                     const t = p.cs[j + l] - p.cs[j];
                     p.cs[j] += p.cs[j + l];
-                    p.cs[j + l] = montReduce(minZeta * @as(i32, t));
+                    p.cs[j + l] = mont_reduce(minZeta * @as(i32, t));
 
                     // Note that if we had |a| < αq and |b| < βq before the
                     // butterfly, then now we have |a| < (α+β)q and |b| < q.
@@ -992,15 +992,15 @@ const Poly = struct {
                 if (i < 0) {
                     break;
                 }
-                p.cs[@as(usize, @intCast(i))] = feBarrettReduce(p.cs[@as(usize, @intCast(i))]);
+                p.cs[@as(usize, @int_cast(i))] = fe_barrett_reduce(p.cs[@as(usize, @int_cast(i))]);
             }
         }
 
         for (0..N) |j| {
             // Note 1441 = (128)⁻¹ R².  The coefficients are bounded by 9q, so
             // as 1441 * 9 ≈ 2¹⁴ < 2¹⁵, we're within the required bounds
-            // for montReduce().
-            p.cs[j] = montReduce(r2_over_128 * @as(i32, p.cs[j]));
+            // for mont_reduce().
+            p.cs[j] = mont_reduce(r2_over_128 * @as(i32, p.cs[j]));
         }
 
         return p;
@@ -1012,7 +1012,7 @@ const Poly = struct {
     fn normalize(a: Poly) Poly {
         var ret: Poly = undefined;
         for (0..N) |i| {
-            ret.cs[i] = csubq(feBarrettReduce(a.cs[i]));
+            ret.cs[i] = csubq(fe_barrett_reduce(a.cs[i]));
         }
         return ret;
     }
@@ -1021,7 +1021,7 @@ const Poly = struct {
     fn to_mont(a: Poly) Poly {
         var ret: Poly = undefined;
         for (0..N) |i| {
-            ret.cs[i] = feToMont(a.cs[i]);
+            ret.cs[i] = fe_to_mont(a.cs[i]);
         }
         return ret;
     }
@@ -1032,21 +1032,21 @@ const Poly = struct {
     fn barrett_reduce(a: Poly) Poly {
         var ret: Poly = undefined;
         for (0..N) |i| {
-            ret.cs[i] = feBarrettReduce(a.cs[i]);
+            ret.cs[i] = fe_barrett_reduce(a.cs[i]);
         }
         return ret;
     }
 
     fn compressed_size(comptime d: u8) usize {
-        return @divTrunc(N * d, 8);
+        return @div_trunc(N * d, 8);
     }
 
     // Returns packed Compress_q(p, d).
     //
     // Assumes p is normalized.
-    fn compress(p: Poly, comptime d: u8) [compressedSize(d)]u8 {
+    fn compress(p: Poly, comptime d: u8) [compressed_size(d)]u8 {
         @setEvalBranchQuota(10000);
-        const q_over_2: u32 = comptime @divTrunc(Q, 2); // (q-1)/2
+        const q_over_2: u32 = comptime @div_trunc(Q, 2); // (q-1)/2
         const two_d_min_1: u32 = comptime (1 << d) - 1; // 2ᵈ-1
         var in_off: usize = 0;
         var out_off: usize = 0;
@@ -1055,7 +1055,7 @@ const Poly = struct {
         const in_batch_size: usize = comptime batch_size / d;
         const out_batch_size: usize = comptime batch_size / 8;
 
-        const out_length: usize = comptime @divTrunc(N * d, 8);
+        const out_length: usize = comptime @div_trunc(N * d, 8);
         comptime assert(out_length * 8 == d * N);
         var out = [_]u8{0} ** out_length;
 
@@ -1067,15 +1067,15 @@ const Poly = struct {
                 //                  = ⌊(2ᵈ/q)x+½⌋ mod⁺ 2ᵈ
                 //                  = ⌊((x << d) + q/2) / q⌋ mod⁺ 2ᵈ
                 //                  = DIV((x << d) + q/2, q) & ((1<<d) - 1)
-                const t = @as(u24, @intCast(p.cs[in_off + i])) << d;
+                const t = @as(u24, @int_cast(p.cs[in_off + i])) << d;
                 // Division by invariant multiplication, equivalent to DIV(t + q/2, q).
                 // A division may not be a constant-time operation, even with a constant denominator.
                 // Here, side channels would leak information about the shared secret, see https://kyberslash.cr.yp.to
                 // Multiplication, on the other hand, is a constant-time operation on the CPUs we currently support.
                 comptime assert(d <= 11);
                 comptime assert(((20642679 * @as(u64, Q)) >> 36) == 1);
-                const u: u32 = @intCast((@as(u64, t + q_over_2) * 20642679) >> 36);
-                in[i] = @intCast(u & two_d_min_1);
+                const u: u32 = @int_cast((@as(u64, t + q_over_2) * 20642679) >> 36);
+                in[i] = @int_cast(u & two_d_min_1);
             }
 
             // Now we pack the d-bit integers from `in' into out as bytes.
@@ -1107,9 +1107,9 @@ const Poly = struct {
     }
 
     // Set p to Decompress_q(m, d).
-    fn decompress(comptime d: u8, in: *const [compressedSize(d)]u8) Poly {
+    fn decompress(comptime d: u8, in: *const [compressed_size(d)]u8) Poly {
         @setEvalBranchQuota(10000);
-        const in_len = comptime @divTrunc(N * d, 8);
+        const in_len = comptime @div_trunc(N * d, 8);
         comptime assert(in_len * 8 == d * N);
         var ret: Poly = undefined;
         var in_off: usize = 0;
@@ -1148,7 +1148,7 @@ const Poly = struct {
                 //                    = ⌊(qx + 2ᵈ⁻¹)/2ᵈ⌋
                 //                    = (qx + (1<<(d-1))) >> d
                 const qx = @as(u32, out) * @as(u32, Q);
-                ret.cs[out_off + i] = @as(i16, @intCast((qx + (1 << (d - 1))) >> d));
+                ret.cs[out_off + i] = @as(i16, @int_cast((qx + (1 << (d - 1))) >> d));
             }
 
             in_off += in_batch_size;
@@ -1160,7 +1160,7 @@ const Poly = struct {
 
     // Returns the "pointwise" multiplication a o b.
     //
-    // That is: invNTT(a o b) = invNTT(a) * invNTT(b).  Assumes a and b are in
+    // That is: inv_ntt(a o b) = inv_ntt(a) * inv_ntt(b).  Assumes a and b are in
     // Montgomery form.  Products between coefficients of a and b must be strictly
     // bounded in absolute value by 2¹⁵q.  a o b will be in Montgomery form and
     // bounded in absolute value by 2q.
@@ -1183,20 +1183,20 @@ const Poly = struct {
             const z = @as(i32, zetas[k]);
             k += 1;
 
-            const a1b1 = montReduce(@as(i32, a.cs[i + 1]) * @as(i32, b.cs[i + 1]));
-            const a0b0 = montReduce(@as(i32, a.cs[i]) * @as(i32, b.cs[i]));
-            const a1b0 = montReduce(@as(i32, a.cs[i + 1]) * @as(i32, b.cs[i]));
-            const a0b1 = montReduce(@as(i32, a.cs[i]) * @as(i32, b.cs[i + 1]));
+            const a1b1 = mont_reduce(@as(i32, a.cs[i + 1]) * @as(i32, b.cs[i + 1]));
+            const a0b0 = mont_reduce(@as(i32, a.cs[i]) * @as(i32, b.cs[i]));
+            const a1b0 = mont_reduce(@as(i32, a.cs[i + 1]) * @as(i32, b.cs[i]));
+            const a0b1 = mont_reduce(@as(i32, a.cs[i]) * @as(i32, b.cs[i + 1]));
 
-            p.cs[i] = montReduce(a1b1 * z) + a0b0;
+            p.cs[i] = mont_reduce(a1b1 * z) + a0b0;
             p.cs[i + 1] = a0b1 + a1b0;
 
-            const a3b3 = montReduce(@as(i32, a.cs[i + 3]) * @as(i32, b.cs[i + 3]));
-            const a2b2 = montReduce(@as(i32, a.cs[i + 2]) * @as(i32, b.cs[i + 2]));
-            const a3b2 = montReduce(@as(i32, a.cs[i + 3]) * @as(i32, b.cs[i + 2]));
-            const a2b3 = montReduce(@as(i32, a.cs[i + 2]) * @as(i32, b.cs[i + 3]));
+            const a3b3 = mont_reduce(@as(i32, a.cs[i + 3]) * @as(i32, b.cs[i + 3]));
+            const a2b2 = mont_reduce(@as(i32, a.cs[i + 2]) * @as(i32, b.cs[i + 2]));
+            const a3b2 = mont_reduce(@as(i32, a.cs[i + 3]) * @as(i32, b.cs[i + 2]));
+            const a2b3 = mont_reduce(@as(i32, a.cs[i + 2]) * @as(i32, b.cs[i + 3]));
 
-            p.cs[i + 2] = a2b2 - montReduce(a3b3 * z);
+            p.cs[i + 2] = a2b2 - mont_reduce(a3b3 * z);
             p.cs[i + 3] = a2b3 + a3b2;
         }
 
@@ -1263,8 +1263,8 @@ const Poly = struct {
             // Extract each a and b separately and set coefficient in polynomial.
             inline for (0..batch_count) |j| {
                 const mask2 = comptime (1 << eta) - 1;
-                const a = @as(i16, @intCast((d >> (comptime (2 * j * eta))) & mask2));
-                const b = @as(i16, @intCast((d >> (comptime ((2 * j + 1) * eta))) & mask2));
+                const a = @as(i16, @int_cast((d >> (comptime (2 * j * eta))) & mask2));
+                const b = @as(i16, @int_cast((d >> (comptime ((2 * j + 1) * eta))) & mask2));
                 ret.cs[batch_count * i + j] = a - b;
             }
         }
@@ -1300,7 +1300,7 @@ const Poly = struct {
 
                 inline for (ts) |t| {
                     if (t < Q) {
-                        ret.cs[i] = @as(i16, @intCast(t));
+                        ret.cs[i] = @as(i16, @int_cast(t));
                         i += 1;
 
                         if (i == N) {
@@ -1320,8 +1320,8 @@ const Poly = struct {
     fn to_bytes(p: Poly) [bytes_length]u8 {
         var ret: [bytes_length]u8 = undefined;
         for (0..comptime N / 2) |i| {
-            const t0 = @as(u16, @intCast(p.cs[2 * i]));
-            const t1 = @as(u16, @intCast(p.cs[2 * i + 1]));
+            const t0 = @as(u16, @int_cast(p.cs[2 * i]));
+            const t1 = @as(u16, @int_cast(p.cs[2 * i + 1]));
             ret[3 * i] = @as(u8, @truncate(t0));
             ret[3 * i + 1] = @as(u8, @truncate((t0 >> 8) | (t1 << 4)));
             ret[3 * i + 2] = @as(u8, @truncate(t1 >> 4));
@@ -1354,7 +1354,7 @@ fn Vec(comptime K: u8) type {
         const bytes_length = K * Poly.bytes_length;
 
         fn compressed_size(comptime d: u8) usize {
-            return Poly.compressedSize(d) * K;
+            return Poly.compressed_size(d) * K;
         }
 
         fn ntt(a: Self) Self {
@@ -1368,7 +1368,7 @@ fn Vec(comptime K: u8) type {
         fn inv_ntt(a: Self) Self {
             var ret: Self = undefined;
             for (0..K) |i| {
-                ret.ps[i] = a.ps[i].invNTT();
+                ret.ps[i] = a.ps[i].inv_ntt();
             }
             return ret;
         }
@@ -1384,7 +1384,7 @@ fn Vec(comptime K: u8) type {
         fn barrett_reduce(a: Self) Self {
             var ret: Self = undefined;
             for (0..K) |i| {
-                ret.ps[i] = a.ps[i].barrettReduce();
+                ret.ps[i] = a.ps[i].barrett_reduce();
             }
             return ret;
         }
@@ -1410,7 +1410,7 @@ fn Vec(comptime K: u8) type {
         fn noise(comptime eta: u8, nonce: u8, seed: *const [32]u8) Self {
             var ret: Self = undefined;
             for (0..K) |i| {
-                ret.ps[i] = Poly.noise(eta, nonce + @as(u8, @intCast(i)), seed);
+                ret.ps[i] = Poly.noise(eta, nonce + @as(u8, @int_cast(i)), seed);
             }
             return ret;
         }
@@ -1426,22 +1426,22 @@ fn Vec(comptime K: u8) type {
         fn dot_hat(a: Self, b: Self) Poly {
             var ret: Poly = Poly.zero;
             for (0..K) |i| {
-                ret = ret.add(a.ps[i].mulHat(b.ps[i]));
+                ret = ret.add(a.ps[i].mul_hat(b.ps[i]));
             }
             return ret;
         }
 
-        fn compress(v: Self, comptime d: u8) [compressedSize(d)]u8 {
-            const cs = comptime Poly.compressedSize(d);
-            var ret: [compressedSize(d)]u8 = undefined;
+        fn compress(v: Self, comptime d: u8) [compressed_size(d)]u8 {
+            const cs = comptime Poly.compressed_size(d);
+            var ret: [compressed_size(d)]u8 = undefined;
             inline for (0..K) |i| {
                 ret[i * cs .. (i + 1) * cs].* = v.ps[i].compress(d);
             }
             return ret;
         }
 
-        fn decompress(comptime d: u8, buf: *const [compressedSize(d)]u8) Self {
-            const cs = comptime Poly.compressedSize(d);
+        fn decompress(comptime d: u8, buf: *const [compressed_size(d)]u8) Self {
+            const cs = comptime Poly.compressed_size(d);
             var ret: Self = undefined;
             inline for (0..K) |i| {
                 ret.ps[i] = Poly.decompress(d, buf[i * cs .. (i + 1) * cs]);
@@ -1453,7 +1453,7 @@ fn Vec(comptime K: u8) type {
         fn to_bytes(v: Self) [bytes_length]u8 {
             var ret: [bytes_length]u8 = undefined;
             inline for (0..K) |i| {
-                ret[i * Poly.bytes_length .. (i + 1) * Poly.bytes_length].* = v.ps[i].toBytes();
+                ret[i * Poly.bytes_length .. (i + 1) * Poly.bytes_length].* = v.ps[i].to_bytes();
             }
             return ret;
         }
@@ -1462,7 +1462,7 @@ fn Vec(comptime K: u8) type {
         fn from_bytes(buf: *const [bytes_length]u8) Self {
             var ret: Self = undefined;
             inline for (0..K) |i| {
-                ret.ps[i] = Poly.fromBytes(
+                ret.ps[i] = Poly.from_bytes(
                     buf[i * Poly.bytes_length .. (i + 1) * Poly.bytes_length],
                 );
             }
@@ -1508,7 +1508,7 @@ fn Mat(comptime K: u8) type {
 
 // Returns `true` if a ≠ b.
 fn ctneq(comptime len: usize, a: [len]u8, b: [len]u8) u1 {
-    return 1 - @intFromBool(crypto.utils.timingSafeEql([len]u8, a, b));
+    return 1 - @int_from_bool(crypto.utils.timing_safe_eql([len]u8, a, b));
 }
 
 // Copy src into dst given b = 1.
@@ -1523,30 +1523,30 @@ test "MulHat" {
     var rnd = RndGen.init(0);
 
     for (0..100) |_| {
-        const a = Poly.randAbsLeqQ(&rnd);
-        const b = Poly.randAbsLeqQ(&rnd);
+        const a = Poly.rand_abs_leq_q(&rnd);
+        const b = Poly.rand_abs_leq_q(&rnd);
 
-        const p2 = a.ntt().mulHat(b.ntt()).barrettReduce().invNTT().normalize();
+        const p2 = a.ntt().mul_hat(b.ntt()).barrett_reduce().inv_ntt().normalize();
         var p: Poly = undefined;
 
         @memset(&p.cs, 0);
 
         for (0..N) |i| {
             for (0..N) |j| {
-                var v = montReduce(@as(i32, a.cs[i]) * @as(i32, b.cs[j]));
+                var v = mont_reduce(@as(i32, a.cs[i]) * @as(i32, b.cs[j]));
                 var k = i + j;
                 if (k >= N) {
                     // Recall Xᴺ = -1.
                     k -= N;
                     v = -v;
                 }
-                p.cs[k] = feBarrettReduce(v + p.cs[k]);
+                p.cs[k] = fe_barrett_reduce(v + p.cs[k]);
             }
         }
 
-        p = p.toMont().normalize();
+        p = p.to_mont().normalize();
 
-        try testing.expectEqual(p, p2);
+        try testing.expect_equal(p, p2);
     }
 }
 
@@ -1554,22 +1554,22 @@ test "NTT" {
     var rnd = RndGen.init(0);
 
     for (0..1000) |_| {
-        var p = Poly.randAbsLeqQ(&rnd);
-        const q = p.toMont().normalize();
+        var p = Poly.rand_abs_leq_q(&rnd);
+        const q = p.to_mont().normalize();
         p = p.ntt();
 
         for (0..N) |i| {
             try testing.expect(p.cs[i] <= 7 * Q and -7 * Q <= p.cs[i]);
         }
 
-        p = p.normalize().invNTT();
+        p = p.normalize().inv_ntt();
         for (0..N) |i| {
             try testing.expect(p.cs[i] <= Q and -Q <= p.cs[i]);
         }
 
         p = p.normalize();
 
-        try testing.expectEqual(p, q);
+        try testing.expect_equal(p, q);
     }
 }
 
@@ -1577,10 +1577,10 @@ test "Compression" {
     var rnd = RndGen.init(0);
     inline for (.{ 1, 4, 5, 10, 11 }) |d| {
         for (0..1000) |_| {
-            const p = Poly.randNormalized(&rnd);
+            const p = Poly.rand_normalized(&rnd);
             const pp = p.compress(d);
             const pq = Poly.decompress(d, &pp).compress(d);
-            try testing.expectEqual(pp, pq);
+            try testing.expect_equal(pp, pq);
         }
     }
 }
@@ -1588,9 +1588,9 @@ test "Compression" {
 test "noise" {
     var seed: [32]u8 = undefined;
     for (&seed, 0..) |*s, i| {
-        s.* = @as(u8, @intCast(i));
+        s.* = @as(u8, @int_cast(i));
     }
-    try testing.expectEqual(Poly.noise(3, 37, &seed).cs, .{
+    try testing.expect_equal(Poly.noise(3, 37, &seed).cs, .{
         0,  0,  1,  -1, 0,  2,  0,  -1, -1, 3,  0,  1,  -2, -2, 0,  1,  -2,
         1,  0,  -2, 3,  0,  0,  0,  1,  3,  1,  1,  2,  1,  -1, -1, -1, 0,
         1,  0,  1,  0,  2,  0,  1,  -2, 0,  -1, -1, -2, 1,  -1, -1, 2,  -1,
@@ -1608,7 +1608,7 @@ test "noise" {
         1,  1,  1,  0,  0,  -2, 0,  -1, 1,  2,  0,  0,  1,  1,  -1, 1,  0,
         1,
     });
-    try testing.expectEqual(Poly.noise(2, 37, &seed).cs, .{
+    try testing.expect_equal(Poly.noise(2, 37, &seed).cs, .{
         1,  0,  1,  -1, -1, -2, -1, -1, 2,  0,  -1, 0,  0,  -1,
         1,  1,  -1, 1,  0,  2,  -2, 0,  1,  2,  0,  0,  -1, 1,
         0,  -1, 1,  -1, 1,  2,  1,  1,  0,  -1, 1,  -1, -2, -1,
@@ -1634,9 +1634,9 @@ test "noise" {
 test "uniform sampling" {
     var seed: [32]u8 = undefined;
     for (&seed, 0..) |*s, i| {
-        s.* = @as(u8, @intCast(i));
+        s.* = @as(u8, @int_cast(i));
     }
-    try testing.expectEqual(Poly.uniform(seed, 1, 0).cs, .{
+    try testing.expect_equal(Poly.uniform(seed, 1, 0).cs, .{
         797,  993,  161,  6,    2608, 2385, 2096, 2661, 1676, 247,  2440,
         342,  634,  194,  1570, 2848, 986,  684,  3148, 3208, 2018, 351,
         2288, 612,  1394, 170,  1521, 3119, 58,   596,  2093, 1549, 409,
@@ -1668,8 +1668,8 @@ test "Polynomial packing" {
     var rnd = RndGen.init(0);
 
     for (0..1000) |_| {
-        const p = Poly.randNormalized(&rnd);
-        try testing.expectEqual(Poly.fromBytes(&p.toBytes()), p);
+        const p = Poly.rand_normalized(&rnd);
+        try testing.expect_equal(Poly.from_bytes(&p.to_bytes()), p);
     }
 }
 
@@ -1677,18 +1677,18 @@ test "Test inner PKE" {
     var seed: [32]u8 = undefined;
     var pt: [32]u8 = undefined;
     for (&seed, &pt, 0..) |*s, *p, i| {
-        s.* = @as(u8, @intCast(i));
-        p.* = @as(u8, @intCast(i + 32));
+        s.* = @as(u8, @int_cast(i));
+        p.* = @as(u8, @int_cast(i + 32));
     }
     inline for (modes) |mode| {
         for (0..100) |i| {
             var pk: mode.InnerPk = undefined;
             var sk: mode.InnerSk = undefined;
-            seed[0] = @as(u8, @intCast(i));
-            mode.innerKeyFromSeed(seed, &pk, &sk);
+            seed[0] = @as(u8, @int_cast(i));
+            mode.inner_key_from_seed(seed, &pk, &sk);
             for (0..10) |j| {
-                seed[1] = @as(u8, @intCast(j));
-                try testing.expectEqual(sk.decrypt(&pk.encrypt(&pt, &seed)), pt);
+                seed[1] = @as(u8, @int_cast(j));
+                try testing.expect_equal(sk.decrypt(&pk.encrypt(&pt, &seed)), pt);
             }
         }
     }
@@ -1697,20 +1697,20 @@ test "Test inner PKE" {
 test "Test happy flow" {
     var seed: [64]u8 = undefined;
     for (&seed, 0..) |*s, i| {
-        s.* = @as(u8, @intCast(i));
+        s.* = @as(u8, @int_cast(i));
     }
     inline for (modes) |mode| {
         for (0..100) |i| {
-            seed[0] = @as(u8, @intCast(i));
+            seed[0] = @as(u8, @int_cast(i));
             const kp = try mode.KeyPair.create(seed);
-            const sk = try mode.SecretKey.fromBytes(&kp.secret_key.toBytes());
-            try testing.expectEqual(sk, kp.secret_key);
-            const pk = try mode.PublicKey.fromBytes(&kp.public_key.toBytes());
-            try testing.expectEqual(pk, kp.public_key);
+            const sk = try mode.SecretKey.from_bytes(&kp.secret_key.to_bytes());
+            try testing.expect_equal(sk, kp.secret_key);
+            const pk = try mode.PublicKey.from_bytes(&kp.public_key.to_bytes());
+            try testing.expect_equal(pk, kp.public_key);
             for (0..10) |j| {
-                seed[1] = @as(u8, @intCast(j));
+                seed[1] = @as(u8, @int_cast(j));
                 const e = pk.encaps(seed[0..32].*);
-                try testing.expectEqual(e.shared_secret, try sk.decaps(&e.ciphertext));
+                try testing.expect_equal(e.shared_secret, try sk.decaps(&e.ciphertext));
             }
         }
     }
@@ -1729,7 +1729,7 @@ test "NIST KAT test" {
         const mode = modeHash[0];
         var seed: [48]u8 = undefined;
         for (&seed, 0..) |*s, i| {
-            s.* = @as(u8, @intCast(i));
+            s.* = @as(u8, @int_cast(i));
         }
         var f = sha2.Sha256.init(.{});
         const fw = f.writer();
@@ -1738,7 +1738,7 @@ test "NIST KAT test" {
         for (0..100) |i| {
             g.fill(&seed);
             try std.fmt.format(fw, "count = {}\n", .{i});
-            try std.fmt.format(fw, "seed = {s}\n", .{std.fmt.fmtSliceHexUpper(&seed)});
+            try std.fmt.format(fw, "seed = {s}\n", .{std.fmt.fmt_slice_hex_upper(&seed)});
             var g2 = NistDRBG.init(seed);
 
             // This is not equivalent to g2.fill(kseed[:]). As the reference
@@ -1752,18 +1752,18 @@ test "NIST KAT test" {
             const kp = try mode.KeyPair.create(kseed);
             const e = kp.public_key.encaps(eseed);
             const ss2 = try kp.secret_key.decaps(&e.ciphertext);
-            try testing.expectEqual(ss2, e.shared_secret);
-            try std.fmt.format(fw, "pk = {s}\n", .{std.fmt.fmtSliceHexUpper(&kp.public_key.toBytes())});
-            try std.fmt.format(fw, "sk = {s}\n", .{std.fmt.fmtSliceHexUpper(&kp.secret_key.toBytes())});
-            try std.fmt.format(fw, "ct = {s}\n", .{std.fmt.fmtSliceHexUpper(&e.ciphertext)});
-            try std.fmt.format(fw, "ss = {s}\n\n", .{std.fmt.fmtSliceHexUpper(&e.shared_secret)});
+            try testing.expect_equal(ss2, e.shared_secret);
+            try std.fmt.format(fw, "pk = {s}\n", .{std.fmt.fmt_slice_hex_upper(&kp.public_key.to_bytes())});
+            try std.fmt.format(fw, "sk = {s}\n", .{std.fmt.fmt_slice_hex_upper(&kp.secret_key.to_bytes())});
+            try std.fmt.format(fw, "ct = {s}\n", .{std.fmt.fmt_slice_hex_upper(&e.ciphertext)});
+            try std.fmt.format(fw, "ss = {s}\n\n", .{std.fmt.fmt_slice_hex_upper(&e.shared_secret)});
         }
 
         var out: [32]u8 = undefined;
         f.final(&out);
         var outHex: [64]u8 = undefined;
-        _ = try std.fmt.bufPrint(&outHex, "{s}", .{std.fmt.fmtSliceHexLower(&out)});
-        try testing.expectEqual(outHex, modeHash[1].*);
+        _ = try std.fmt.buf_print(&outHex, "{s}", .{std.fmt.fmt_slice_hex_lower(&out)});
+        try testing.expect_equal(outHex, modeHash[1].*);
     }
 }
 
@@ -1786,10 +1786,10 @@ const NistDRBG = struct {
     // AES256_CTR_DRBG_Update(pd, &g.key, &g.v).
     fn update(g: *NistDRBG, pd: ?[48]u8) void {
         var buf: [48]u8 = undefined;
-        const ctx = crypto.core.aes.Aes256.initEnc(g.key);
+        const ctx = crypto.core.aes.Aes256.init_enc(g.key);
         var i: usize = 0;
         while (i < 3) : (i += 1) {
-            g.incV();
+            g.inc_v();
             var block: [16]u8 = undefined;
             ctx.encrypt(&block, &g.v);
             buf[i * 16 ..][0..16].* = block;
@@ -1808,9 +1808,9 @@ const NistDRBG = struct {
         var block: [16]u8 = undefined;
         var dst = out;
 
-        const ctx = crypto.core.aes.Aes256.initEnc(g.key);
+        const ctx = crypto.core.aes.Aes256.init_enc(g.key);
         while (dst.len > 0) {
-            g.incV();
+            g.inc_v();
             ctx.encrypt(&block, &g.v);
             if (dst.len < 16) {
                 @memcpy(dst, block[0..dst.len]);

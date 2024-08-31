@@ -35,7 +35,7 @@ pub const Rational = struct {
         errdefer p.deinit();
         return Rational{
             .p = p,
-            .q = try Int.initSet(a, 1),
+            .q = try Int.init_set(a, 1),
         };
     }
 
@@ -102,20 +102,20 @@ pub const Rational = struct {
 
         // TODO: batch the multiplies by 10
         if (point) |i| {
-            try self.p.setString(10, str[0..i]);
+            try self.p.set_string(10, str[0..i]);
 
             const base = IntConst{ .limbs = &[_]Limb{10}, .positive = true };
-            var local_buf: [@sizeOf(Limb) * Int.default_capacity]u8 align(@alignOf(Limb)) = undefined;
+            var local_buf: [@size_of(Limb) * Int.default_capacity]u8 align(@alignOf(Limb)) = undefined;
             var fba = std.heap.FixedBufferAllocator.init(&local_buf);
-            const base_managed = try base.toManaged(fba.allocator());
+            const base_managed = try base.to_managed(fba.allocator());
 
             var j: usize = start;
             while (j < str.len - i - 1) : (j += 1) {
-                try self.p.ensureMulCapacity(self.p.toConst(), base);
+                try self.p.ensure_mul_capacity(self.p.to_const(), base);
                 try self.p.mul(&self.p, &base_managed);
             }
 
-            try self.q.setString(10, str[i + 1 ..]);
+            try self.q.set_string(10, str[i + 1 ..]);
             try self.p.add(&self.p, &self.q);
 
             try self.q.set(1);
@@ -126,7 +126,7 @@ pub const Rational = struct {
 
             try self.reduce();
         } else {
-            try self.p.setString(10, str[0..]);
+            try self.p.set_string(10, str[0..]);
             try self.q.set(1);
         }
     }
@@ -138,16 +138,16 @@ pub const Rational = struct {
         debug.assert(@typeInfo(T) == .Float);
 
         const UnsignedInt = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
-        const f_bits = @as(UnsignedInt, @bitCast(f));
+        const f_bits = @as(UnsignedInt, @bit_cast(f));
 
-        const exponent_bits = math.floatExponentBits(T);
+        const exponent_bits = math.float_exponent_bits(T);
         const exponent_bias = (1 << (exponent_bits - 1)) - 1;
-        const mantissa_bits = math.floatMantissaBits(T);
+        const mantissa_bits = math.float_mantissa_bits(T);
 
         const exponent_mask = (1 << exponent_bits) - 1;
         const mantissa_mask = (1 << mantissa_bits) - 1;
 
-        var exponent = @as(i16, @intCast((f_bits >> mantissa_bits) & exponent_mask));
+        var exponent = @as(i16, @int_cast((f_bits >> mantissa_bits) & exponent_mask));
         var mantissa = f_bits & mantissa_mask;
 
         switch (exponent) {
@@ -174,13 +174,13 @@ pub const Rational = struct {
         }
 
         try self.p.set(mantissa);
-        self.p.setSign(f >= 0);
+        self.p.set_sign(f >= 0);
 
         try self.q.set(1);
         if (shift >= 0) {
-            try self.q.shiftLeft(&self.q, @as(usize, @intCast(shift)));
+            try self.q.shift_left(&self.q, @as(usize, @int_cast(shift)));
         } else {
-            try self.p.shiftLeft(&self.p, @as(usize, @intCast(-shift)));
+            try self.p.shift_left(&self.p, @as(usize, @int_cast(-shift)));
         }
 
         try self.reduce();
@@ -198,20 +198,20 @@ pub const Rational = struct {
         const fsize = @typeInfo(T).Float.bits;
         const BitReprType = std.meta.Int(.unsigned, fsize);
 
-        const msize = math.floatMantissaBits(T);
+        const msize = math.float_mantissa_bits(T);
         const msize1 = msize + 1;
         const msize2 = msize1 + 1;
 
-        const esize = math.floatExponentBits(T);
+        const esize = math.float_exponent_bits(T);
         const ebias = (1 << (esize - 1)) - 1;
         const emin = 1 - ebias;
 
-        if (self.p.eqlZero()) {
+        if (self.p.eql_zero()) {
             return 0;
         }
 
         // 1. left-shift a or sub so that a/b is in [1 << msize1, 1 << (msize2 + 1)]
-        var exp = @as(isize, @intCast(self.p.bitCountTwosComp())) - @as(isize, @intCast(self.q.bitCountTwosComp()));
+        var exp = @as(isize, @int_cast(self.p.bit_count_twos_comp())) - @as(isize, @int_cast(self.q.bit_count_twos_comp()));
 
         var a2 = try self.p.clone();
         defer a2.deinit();
@@ -221,9 +221,9 @@ pub const Rational = struct {
 
         const shift = msize2 - exp;
         if (shift >= 0) {
-            try a2.shiftLeft(&a2, @as(usize, @intCast(shift)));
+            try a2.shift_left(&a2, @as(usize, @int_cast(shift)));
         } else {
-            try b2.shiftLeft(&b2, @as(usize, @intCast(-shift)));
+            try b2.shift_left(&b2, @as(usize, @int_cast(-shift)));
         }
 
         // 2. compute quotient and remainder
@@ -234,9 +234,9 @@ pub const Rational = struct {
         var r = try Int.init(self.p.allocator);
         defer r.deinit();
 
-        try Int.divTrunc(&q, &r, &a2, &b2);
+        try Int.div_trunc(&q, &r, &a2, &b2);
 
-        var mantissa = extractLowBits(q, BitReprType);
+        var mantissa = extract_low_bits(q, BitReprType);
         var have_rem = r.len() > 0;
 
         // 3. q didn't fit in msize2 bits, redo division b2 << 1
@@ -255,8 +255,8 @@ pub const Rational = struct {
         // 4. Rounding
         if (emin - msize <= exp and exp <= emin) {
             // denormal
-            const shift1 = @as(math.Log2Int(BitReprType), @intCast(emin - (exp - 1)));
-            const lost_bits = mantissa & ((@as(BitReprType, @intCast(1)) << shift1) - 1);
+            const shift1 = @as(math.Log2Int(BitReprType), @int_cast(emin - (exp - 1)));
+            const lost_bits = mantissa & ((@as(BitReprType, @int_cast(1)) << shift1) - 1);
             have_rem = have_rem or lost_bits != 0;
             mantissa >>= shift1;
             exp = 2 - ebias;
@@ -277,12 +277,12 @@ pub const Rational = struct {
         }
         mantissa >>= 1;
 
-        const f = math.scalbn(@as(T, @floatFromInt(mantissa)), @as(i32, @intCast(exp - msize1)));
-        if (math.isInf(f)) {
+        const f = math.scalbn(@as(T, @float_from_int(mantissa)), @as(i32, @int_cast(exp - msize1)));
+        if (math.is_inf(f)) {
             exact = false;
         }
 
-        return if (self.p.isPositive()) f else -f;
+        return if (self.p.is_positive()) f else -f;
     }
 
     /// Set a rational from an integer ratio.
@@ -290,29 +290,29 @@ pub const Rational = struct {
         try self.p.set(p);
         try self.q.set(q);
 
-        self.p.setSign(@intFromBool(self.p.isPositive()) ^ @intFromBool(self.q.isPositive()) == 0);
-        self.q.setSign(true);
+        self.p.set_sign(@int_from_bool(self.p.is_positive()) ^ @int_from_bool(self.q.is_positive()) == 0);
+        self.q.set_sign(true);
 
         try self.reduce();
 
-        if (self.q.eqlZero()) {
+        if (self.q.eql_zero()) {
             @panic("cannot set rational with denominator = 0");
         }
     }
 
     /// Set a Rational directly from an Int.
     pub fn copy_int(self: *Rational, a: Int) !void {
-        try self.p.copy(a.toConst());
+        try self.p.copy(a.to_const());
         try self.q.set(1);
     }
 
     /// Set a Rational directly from a ratio of two Int's.
     pub fn copy_ratio(self: *Rational, a: Int, b: Int) !void {
-        try self.p.copy(a.toConst());
-        try self.q.copy(b.toConst());
+        try self.p.copy(a.to_const());
+        try self.q.copy(b.to_const());
 
-        self.p.setSign(@intFromBool(self.p.isPositive()) ^ @intFromBool(self.q.isPositive()) == 0);
-        self.q.setSign(true);
+        self.p.set_sign(@int_from_bool(self.p.is_positive()) ^ @int_from_bool(self.q.is_positive()) == 0);
+        self.q.set_sign(true);
 
         try self.reduce();
     }
@@ -337,13 +337,13 @@ pub const Rational = struct {
     /// Returns math.Order.lt, math.Order.eq, math.Order.gt if a < b, a == b or
     /// a > b respectively.
     pub fn order(a: Rational, b: Rational) !math.Order {
-        return cmpInternal(a, b, false);
+        return cmp_internal(a, b, false);
     }
 
     /// Returns math.Order.lt, math.Order.eq, math.Order.gt if |a| < |b|, |a| ==
     /// |b| or |a| > |b| respectively.
     pub fn order_abs(a: Rational, b: Rational) !math.Order {
-        return cmpInternal(a, b, true);
+        return cmp_internal(a, b, true);
     }
 
     // p/q > x/y iff p*y > x*q
@@ -359,7 +359,7 @@ pub const Rational = struct {
         try q.mul(&a.p, &b.q);
         try p.mul(&b.p, &a.q);
 
-        return if (is_abs) q.orderAbs(p) else q.order(p);
+        return if (is_abs) q.order_abs(p) else q.order(p);
     }
 
     /// rma = a + b.
@@ -435,7 +435,7 @@ pub const Rational = struct {
     ///
     /// Returns an error if memory could not be allocated.
     pub fn div(r: *Rational, a: Rational, b: Rational) !void {
-        if (b.p.eqlZero()) {
+        if (b.p.eql_zero()) {
             @panic("division by zero");
         }
 
@@ -454,20 +454,20 @@ pub const Rational = struct {
         var a = try Int.init(r.p.allocator);
         defer a.deinit();
 
-        const sign = r.p.isPositive();
+        const sign = r.p.is_positive();
         r.p.abs();
         try a.gcd(&r.p, &r.q);
-        r.p.setSign(sign);
+        r.p.set_sign(sign);
 
         const one = IntConst{ .limbs = &[_]Limb{1}, .positive = true };
-        if (a.toConst().order(one) != .eq) {
+        if (a.to_const().order(one) != .eq) {
             var unused = try Int.init(r.p.allocator);
             defer unused.deinit();
 
             // TODO: divexact would be useful here
             // TODO: don't copy r.q for div
-            try Int.divTrunc(&r.p, &unused, &r.p, &a);
-            try Int.divTrunc(&r.q, &unused, &r.q, &a);
+            try Int.div_trunc(&r.p, &unused, &r.p, &a);
+            try Int.div_trunc(&r.q, &unused, &r.q, &a);
         }
     }
 };
@@ -493,23 +493,23 @@ fn extract_low_bits(a: Int, comptime T: type) T {
     }
 }
 
-test extractLowBits {
-    var a = try Int.initSet(testing.allocator, 0x11112222333344441234567887654321);
+test extract_low_bits {
+    var a = try Int.init_set(testing.allocator, 0x11112222333344441234567887654321);
     defer a.deinit();
 
-    const a1 = extractLowBits(a, u8);
+    const a1 = extract_low_bits(a, u8);
     try testing.expect(a1 == 0x21);
 
-    const a2 = extractLowBits(a, u16);
+    const a2 = extract_low_bits(a, u16);
     try testing.expect(a2 == 0x4321);
 
-    const a3 = extractLowBits(a, u32);
+    const a3 = extract_low_bits(a, u32);
     try testing.expect(a3 == 0x87654321);
 
-    const a4 = extractLowBits(a, u64);
+    const a4 = extract_low_bits(a, u64);
     try testing.expect(a4 == 0x1234567887654321);
 
-    const a5 = extractLowBits(a, u128);
+    const a5 = extract_low_bits(a, u128);
     try testing.expect(a5 == 0x11112222333344441234567887654321);
 }
 
@@ -517,78 +517,78 @@ test "set" {
     var a = try Rational.init(testing.allocator);
     defer a.deinit();
 
-    try a.setInt(5);
+    try a.set_int(5);
     try testing.expect((try a.p.to(u32)) == 5);
     try testing.expect((try a.q.to(u32)) == 1);
 
-    try a.setRatio(7, 3);
+    try a.set_ratio(7, 3);
     try testing.expect((try a.p.to(u32)) == 7);
     try testing.expect((try a.q.to(u32)) == 3);
 
-    try a.setRatio(9, 3);
+    try a.set_ratio(9, 3);
     try testing.expect((try a.p.to(i32)) == 3);
     try testing.expect((try a.q.to(i32)) == 1);
 
-    try a.setRatio(-9, 3);
+    try a.set_ratio(-9, 3);
     try testing.expect((try a.p.to(i32)) == -3);
     try testing.expect((try a.q.to(i32)) == 1);
 
-    try a.setRatio(9, -3);
+    try a.set_ratio(9, -3);
     try testing.expect((try a.p.to(i32)) == -3);
     try testing.expect((try a.q.to(i32)) == 1);
 
-    try a.setRatio(-9, -3);
+    try a.set_ratio(-9, -3);
     try testing.expect((try a.p.to(i32)) == 3);
     try testing.expect((try a.q.to(i32)) == 1);
 }
 
-test "setFloat" {
+test "set_float" {
     var a = try Rational.init(testing.allocator);
     defer a.deinit();
 
-    try a.setFloat(f64, 2.5);
+    try a.set_float(f64, 2.5);
     try testing.expect((try a.p.to(i32)) == 5);
     try testing.expect((try a.q.to(i32)) == 2);
 
-    try a.setFloat(f32, -2.5);
+    try a.set_float(f32, -2.5);
     try testing.expect((try a.p.to(i32)) == -5);
     try testing.expect((try a.q.to(i32)) == 2);
 
-    try a.setFloat(f32, 3.141593);
+    try a.set_float(f32, 3.141593);
 
     //                = 3.14159297943115234375
     try testing.expect((try a.p.to(u32)) == 3294199);
     try testing.expect((try a.q.to(u32)) == 1048576);
 
-    try a.setFloat(f64, 72.141593120712409172417410926841290461290467124);
+    try a.set_float(f64, 72.141593120712409172417410926841290461290467124);
 
     //                = 72.1415931207124145885245525278151035308837890625
     try testing.expect((try a.p.to(u128)) == 5076513310880537);
     try testing.expect((try a.q.to(u128)) == 70368744177664);
 }
 
-test "setFloatString" {
+test "set_float_string" {
     var a = try Rational.init(testing.allocator);
     defer a.deinit();
 
-    try a.setFloatString("72.14159312071241458852455252781510353");
+    try a.set_float_string("72.14159312071241458852455252781510353");
 
     //                  = 72.1415931207124145885245525278151035308837890625
     try testing.expect((try a.p.to(u128)) == 7214159312071241458852455252781510353);
     try testing.expect((try a.q.to(u128)) == 100000000000000000000000000000000000);
 }
 
-test "toFloat" {
+test "to_float" {
     var a = try Rational.init(testing.allocator);
     defer a.deinit();
 
     // = 3.14159297943115234375
-    try a.setRatio(3294199, 1048576);
-    try testing.expect((try a.toFloat(f64)) == 3.14159297943115234375);
+    try a.set_ratio(3294199, 1048576);
+    try testing.expect((try a.to_float(f64)) == 3.14159297943115234375);
 
     // = 72.1415931207124145885245525278151035308837890625
-    try a.setRatio(5076513310880537, 70368744177664);
-    try testing.expect((try a.toFloat(f64)) == 72.141593120712409172417410926841290461290467124);
+    try a.set_ratio(5076513310880537, 70368744177664);
+    try testing.expect((try a.to_float(f64)) == 72.141593120712409172417410926841290461290467124);
 }
 
 test "set/to Float round-trip" {
@@ -599,8 +599,8 @@ test "set/to Float round-trip" {
     var i: usize = 0;
     while (i < 512) : (i += 1) {
         const r = random.float(f64);
-        try a.setFloat(f64, r);
-        try testing.expect((try a.toFloat(f64)) == r);
+        try a.set_float(f64, r);
+        try testing.expect((try a.to_float(f64)) == r);
     }
 }
 
@@ -608,28 +608,28 @@ test "copy" {
     var a = try Rational.init(testing.allocator);
     defer a.deinit();
 
-    var b = try Int.initSet(testing.allocator, 5);
+    var b = try Int.init_set(testing.allocator, 5);
     defer b.deinit();
 
-    try a.copyInt(b);
+    try a.copy_int(b);
     try testing.expect((try a.p.to(u32)) == 5);
     try testing.expect((try a.q.to(u32)) == 1);
 
-    var c = try Int.initSet(testing.allocator, 7);
+    var c = try Int.init_set(testing.allocator, 7);
     defer c.deinit();
-    var d = try Int.initSet(testing.allocator, 3);
+    var d = try Int.init_set(testing.allocator, 3);
     defer d.deinit();
 
-    try a.copyRatio(c, d);
+    try a.copy_ratio(c, d);
     try testing.expect((try a.p.to(u32)) == 7);
     try testing.expect((try a.q.to(u32)) == 3);
 
-    var e = try Int.initSet(testing.allocator, 9);
+    var e = try Int.init_set(testing.allocator, 9);
     defer e.deinit();
-    var f = try Int.initSet(testing.allocator, 3);
+    var f = try Int.init_set(testing.allocator, 3);
     defer f.deinit();
 
-    try a.copyRatio(e, f);
+    try a.copy_ratio(e, f);
     try testing.expect((try a.p.to(u32)) == 3);
     try testing.expect((try a.q.to(u32)) == 1);
 }
@@ -638,7 +638,7 @@ test "negate" {
     var a = try Rational.init(testing.allocator);
     defer a.deinit();
 
-    try a.setInt(-50);
+    try a.set_int(-50);
     try testing.expect((try a.p.to(i32)) == -50);
     try testing.expect((try a.q.to(i32)) == 1);
 
@@ -655,7 +655,7 @@ test "abs" {
     var a = try Rational.init(testing.allocator);
     defer a.deinit();
 
-    try a.setInt(-50);
+    try a.set_int(-50);
     try testing.expect((try a.p.to(i32)) == -50);
     try testing.expect((try a.q.to(i32)) == 1);
 
@@ -674,8 +674,8 @@ test "swap" {
     var b = try Rational.init(testing.allocator);
     defer b.deinit();
 
-    try a.setRatio(50, 23);
-    try b.setRatio(17, 3);
+    try a.set_ratio(50, 23);
+    try b.set_ratio(17, 3);
 
     try testing.expect((try a.p.to(u32)) == 50);
     try testing.expect((try a.q.to(u32)) == 23);
@@ -698,25 +698,25 @@ test "order" {
     var b = try Rational.init(testing.allocator);
     defer b.deinit();
 
-    try a.setRatio(500, 231);
-    try b.setRatio(18903, 8584);
+    try a.set_ratio(500, 231);
+    try b.set_ratio(18903, 8584);
     try testing.expect((try a.order(b)) == .lt);
 
-    try a.setRatio(890, 10);
-    try b.setRatio(89, 1);
+    try a.set_ratio(890, 10);
+    try b.set_ratio(89, 1);
     try testing.expect((try a.order(b)) == .eq);
 }
 
-test "order/orderAbs with negative" {
+test "order/order_abs with negative" {
     var a = try Rational.init(testing.allocator);
     defer a.deinit();
     var b = try Rational.init(testing.allocator);
     defer b.deinit();
 
-    try a.setRatio(1, 1);
-    try b.setRatio(-2, 1);
+    try a.set_ratio(1, 1);
+    try b.set_ratio(-2, 1);
     try testing.expect((try a.order(b)) == .gt);
-    try testing.expect((try a.orderAbs(b)) == .lt);
+    try testing.expect((try a.order_abs(b)) == .lt);
 }
 
 test "add single-limb" {
@@ -725,12 +725,12 @@ test "add single-limb" {
     var b = try Rational.init(testing.allocator);
     defer b.deinit();
 
-    try a.setRatio(500, 231);
-    try b.setRatio(18903, 8584);
+    try a.set_ratio(500, 231);
+    try b.set_ratio(18903, 8584);
     try testing.expect((try a.order(b)) == .lt);
 
-    try a.setRatio(890, 10);
-    try b.setRatio(89, 1);
+    try a.set_ratio(890, 10);
+    try b.set_ratio(89, 1);
     try testing.expect((try a.order(b)) == .eq);
 }
 
@@ -742,11 +742,11 @@ test "add" {
     var r = try Rational.init(testing.allocator);
     defer r.deinit();
 
-    try a.setRatio(78923, 23341);
-    try b.setRatio(123097, 12441414);
+    try a.set_ratio(78923, 23341);
+    try b.set_ratio(123097, 12441414);
     try a.add(a, b);
 
-    try r.setRatio(984786924199, 290395044174);
+    try r.set_ratio(984786924199, 290395044174);
     try testing.expect((try a.order(r)) == .eq);
 }
 
@@ -758,11 +758,11 @@ test "sub" {
     var r = try Rational.init(testing.allocator);
     defer r.deinit();
 
-    try a.setRatio(78923, 23341);
-    try b.setRatio(123097, 12441414);
+    try a.set_ratio(78923, 23341);
+    try b.set_ratio(123097, 12441414);
     try a.sub(a, b);
 
-    try r.setRatio(979040510045, 290395044174);
+    try r.set_ratio(979040510045, 290395044174);
     try testing.expect((try a.order(r)) == .eq);
 }
 
@@ -774,11 +774,11 @@ test "mul" {
     var r = try Rational.init(testing.allocator);
     defer r.deinit();
 
-    try a.setRatio(78923, 23341);
-    try b.setRatio(123097, 12441414);
+    try a.set_ratio(78923, 23341);
+    try b.set_ratio(123097, 12441414);
     try a.mul(a, b);
 
-    try r.setRatio(571481443, 17082061422);
+    try r.set_ratio(571481443, 17082061422);
     try testing.expect((try a.order(r)) == .eq);
 }
 
@@ -791,11 +791,11 @@ test "div" {
         var r = try Rational.init(testing.allocator);
         defer r.deinit();
 
-        try a.setRatio(78923, 23341);
-        try b.setRatio(123097, 12441414);
+        try a.set_ratio(78923, 23341);
+        try b.set_ratio(123097, 12441414);
         try a.div(a, b);
 
-        try r.setRatio(75531824394, 221015929);
+        try r.set_ratio(75531824394, 221015929);
         try testing.expect((try a.order(r)) == .eq);
     }
 
@@ -805,16 +805,16 @@ test "div" {
         var r = try Rational.init(testing.allocator);
         defer r.deinit();
 
-        try a.setRatio(78923, 23341);
+        try a.set_ratio(78923, 23341);
         a.invert();
 
-        try r.setRatio(23341, 78923);
+        try r.set_ratio(23341, 78923);
         try testing.expect((try a.order(r)) == .eq);
 
-        try a.setRatio(-78923, 23341);
+        try a.set_ratio(-78923, 23341);
         a.invert();
 
-        try r.setRatio(-23341, 78923);
+        try r.set_ratio(-23341, 78923);
         try testing.expect((try a.order(r)) == .eq);
     }
 }

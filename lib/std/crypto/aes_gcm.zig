@@ -25,29 +25,29 @@ fn AesGcm(comptime Aes: anytype) type {
             debug.assert(c.len == m.len);
             debug.assert(m.len <= 16 * ((1 << 32) - 2));
 
-            const aes = Aes.initEnc(key);
+            const aes = Aes.init_enc(key);
             var h: [16]u8 = undefined;
             aes.encrypt(&h, &zeros);
 
             var t: [16]u8 = undefined;
             var j: [16]u8 = undefined;
             j[0..nonce_length].* = npub;
-            mem.writeInt(u32, j[nonce_length..][0..4], 1, .big);
+            mem.write_int(u32, j[nonce_length..][0..4], 1, .big);
             aes.encrypt(&t, &j);
 
-            const block_count = (math.divCeil(usize, ad.len, Ghash.block_length) catch unreachable) + (math.divCeil(usize, c.len, Ghash.block_length) catch unreachable) + 1;
-            var mac = Ghash.initForBlockCount(&h, block_count);
+            const block_count = (math.div_ceil(usize, ad.len, Ghash.block_length) catch unreachable) + (math.div_ceil(usize, c.len, Ghash.block_length) catch unreachable) + 1;
+            var mac = Ghash.init_for_block_count(&h, block_count);
             mac.update(ad);
             mac.pad();
 
-            mem.writeInt(u32, j[nonce_length..][0..4], 2, .big);
+            mem.write_int(u32, j[nonce_length..][0..4], 2, .big);
             modes.ctr(@TypeOf(aes), aes, c, m, j, .big);
             mac.update(c[0..m.len][0..]);
             mac.pad();
 
             var final_block = h;
-            mem.writeInt(u64, final_block[0..8], @as(u64, ad.len) * 8, .big);
-            mem.writeInt(u64, final_block[8..16], @as(u64, m.len) * 8, .big);
+            mem.write_int(u64, final_block[0..8], @as(u64, ad.len) * 8, .big);
+            mem.write_int(u64, final_block[8..16], @as(u64, m.len) * 8, .big);
             mac.update(&final_block);
             mac.final(tag);
             for (t, 0..) |x, i| {
@@ -67,18 +67,18 @@ fn AesGcm(comptime Aes: anytype) type {
         pub fn decrypt(m: []u8, c: []const u8, tag: [tag_length]u8, ad: []const u8, npub: [nonce_length]u8, key: [key_length]u8) AuthenticationError!void {
             assert(c.len == m.len);
 
-            const aes = Aes.initEnc(key);
+            const aes = Aes.init_enc(key);
             var h: [16]u8 = undefined;
             aes.encrypt(&h, &zeros);
 
             var t: [16]u8 = undefined;
             var j: [16]u8 = undefined;
             j[0..nonce_length].* = npub;
-            mem.writeInt(u32, j[nonce_length..][0..4], 1, .big);
+            mem.write_int(u32, j[nonce_length..][0..4], 1, .big);
             aes.encrypt(&t, &j);
 
-            const block_count = (math.divCeil(usize, ad.len, Ghash.block_length) catch unreachable) + (math.divCeil(usize, c.len, Ghash.block_length) catch unreachable) + 1;
-            var mac = Ghash.initForBlockCount(&h, block_count);
+            const block_count = (math.div_ceil(usize, ad.len, Ghash.block_length) catch unreachable) + (math.div_ceil(usize, c.len, Ghash.block_length) catch unreachable) + 1;
+            var mac = Ghash.init_for_block_count(&h, block_count);
             mac.update(ad);
             mac.pad();
 
@@ -86,8 +86,8 @@ fn AesGcm(comptime Aes: anytype) type {
             mac.pad();
 
             var final_block = h;
-            mem.writeInt(u64, final_block[0..8], @as(u64, ad.len) * 8, .big);
-            mem.writeInt(u64, final_block[8..16], @as(u64, m.len) * 8, .big);
+            mem.write_int(u64, final_block[0..8], @as(u64, ad.len) * 8, .big);
+            mem.write_int(u64, final_block[8..16], @as(u64, m.len) * 8, .big);
             mac.update(&final_block);
             var computed_tag: [Ghash.mac_length]u8 = undefined;
             mac.final(&computed_tag);
@@ -95,14 +95,14 @@ fn AesGcm(comptime Aes: anytype) type {
                 computed_tag[i] ^= x;
             }
 
-            const verify = crypto.utils.timingSafeEql([tag_length]u8, computed_tag, tag);
+            const verify = crypto.utils.timing_safe_eql([tag_length]u8, computed_tag, tag);
             if (!verify) {
-                crypto.utils.secureZero(u8, &computed_tag);
+                crypto.utils.secure_zero(u8, &computed_tag);
                 @memset(m, undefined);
                 return error.AuthenticationFailed;
             }
 
-            mem.writeInt(u32, j[nonce_length..][0..4], 2, .big);
+            mem.write_int(u32, j[nonce_length..][0..4], 2, .big);
             modes.ctr(@TypeOf(aes), aes, m, c, j, .big);
         }
     };
@@ -120,7 +120,7 @@ test "Aes256Gcm - Empty message and no associated data" {
     var tag: [Aes256Gcm.tag_length]u8 = undefined;
 
     Aes256Gcm.encrypt(&c, &tag, m, ad, nonce, key);
-    try htest.assertEqual("6b6ff610a16fa4cd59f1fb7903154e92", &tag);
+    try htest.assert_equal("6b6ff610a16fa4cd59f1fb7903154e92", &tag);
 }
 
 test "Aes256Gcm - Associated data only" {
@@ -132,7 +132,7 @@ test "Aes256Gcm - Associated data only" {
     var tag: [Aes256Gcm.tag_length]u8 = undefined;
 
     Aes256Gcm.encrypt(&c, &tag, m, ad, nonce, key);
-    try htest.assertEqual("262ed164c2dfb26e080a9d108dd9dd4c", &tag);
+    try htest.assert_equal("262ed164c2dfb26e080a9d108dd9dd4c", &tag);
 }
 
 test "Aes256Gcm - Message only" {
@@ -146,10 +146,10 @@ test "Aes256Gcm - Message only" {
 
     Aes256Gcm.encrypt(&c, &tag, m, ad, nonce, key);
     try Aes256Gcm.decrypt(&m2, &c, tag, ad, nonce, key);
-    try testing.expectEqualSlices(u8, m[0..], m2[0..]);
+    try testing.expect_equal_slices(u8, m[0..], m2[0..]);
 
-    try htest.assertEqual("5ca1642d90009fea33d01f78cf6eefaf01d539472f7c", &c);
-    try htest.assertEqual("07cd7fc9103e2f9e9bf2dfaa319caff4", &tag);
+    try htest.assert_equal("5ca1642d90009fea33d01f78cf6eefaf01d539472f7c", &c);
+    try htest.assert_equal("07cd7fc9103e2f9e9bf2dfaa319caff4", &tag);
 }
 
 test "Aes256Gcm - Message and associated data" {
@@ -163,8 +163,8 @@ test "Aes256Gcm - Message and associated data" {
 
     Aes256Gcm.encrypt(&c, &tag, m, ad, nonce, key);
     try Aes256Gcm.decrypt(&m2, &c, tag, ad, nonce, key);
-    try testing.expectEqualSlices(u8, m[0..], m2[0..]);
+    try testing.expect_equal_slices(u8, m[0..], m2[0..]);
 
-    try htest.assertEqual("5ca1642d90009fea33d01f78cf6eefaf01", &c);
-    try htest.assertEqual("64accec679d444e2373bd9f6796c0d2c", &tag);
+    try htest.assert_equal("5ca1642d90009fea33d01f78cf6eefaf01", &c);
+    try htest.assert_equal("64accec679d444e2373bd9f6796c0d2c", &tag);
 }

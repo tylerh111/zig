@@ -33,26 +33,26 @@ pub const Options = struct {
             .source_dir = opts.source_dir.dupe(b),
             .install_dir = opts.install_dir.dupe(b),
             .install_subdir = b.dupe(opts.install_subdir),
-            .exclude_extensions = b.dupeStrings(opts.exclude_extensions),
-            .include_extensions = if (opts.include_extensions) |incs| b.dupeStrings(incs) else null,
-            .blank_extensions = b.dupeStrings(opts.blank_extensions),
+            .exclude_extensions = b.dupe_strings(opts.exclude_extensions),
+            .include_extensions = if (opts.include_extensions) |incs| b.dupe_strings(incs) else null,
+            .blank_extensions = b.dupe_strings(opts.blank_extensions),
         };
     }
 };
 
 pub fn create(owner: *std.Build, options: Options) *InstallDir {
-    owner.pushInstalledFile(options.install_dir, options.install_subdir);
+    owner.push_installed_file(options.install_dir, options.install_subdir);
     const install_dir = owner.allocator.create(InstallDir) catch @panic("OOM");
     install_dir.* = .{
         .step = Step.init(.{
             .id = base_id,
-            .name = owner.fmt("install {s}/", .{options.source_dir.getDisplayName()}),
+            .name = owner.fmt("install {s}/", .{options.source_dir.get_display_name()}),
             .owner = owner,
             .makeFn = make,
         }),
         .options = options.dupe(owner),
     };
-    options.source_dir.addStepDependencies(&install_dir.step);
+    options.source_dir.add_step_dependencies(&install_dir.step);
     return install_dir;
 }
 
@@ -61,9 +61,9 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     const b = step.owner;
     const install_dir: *InstallDir = @fieldParentPtr("step", step);
     const arena = b.allocator;
-    const dest_prefix = b.getInstallPath(install_dir.options.install_dir, install_dir.options.install_subdir);
-    const src_dir_path = install_dir.options.source_dir.getPath2(b, step);
-    var src_dir = b.build_root.handle.openDir(src_dir_path, .{ .iterate = true }) catch |err| {
+    const dest_prefix = b.get_install_path(install_dir.options.install_dir, install_dir.options.install_subdir);
+    const src_dir_path = install_dir.options.source_dir.get_path2(b, step);
+    var src_dir = b.build_root.handle.open_dir(src_dir_path, .{ .iterate = true }) catch |err| {
         return step.fail("unable to open source directory '{}{s}': {s}", .{
             b.build_root, src_dir_path, @errorName(err),
         });
@@ -73,14 +73,14 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     var all_cached = true;
     next_entry: while (try it.next()) |entry| {
         for (install_dir.options.exclude_extensions) |ext| {
-            if (mem.endsWith(u8, entry.path, ext)) {
+            if (mem.ends_with(u8, entry.path, ext)) {
                 continue :next_entry;
             }
         }
         if (install_dir.options.include_extensions) |incs| {
             var found = false;
             for (incs) |inc| {
-                if (mem.endsWith(u8, entry.path, inc)) {
+                if (mem.ends_with(u8, entry.path, inc)) {
                     found = true;
                     break;
                 }
@@ -89,21 +89,21 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         }
 
         // relative to src build root
-        const src_sub_path = b.pathJoin(&.{ src_dir_path, entry.path });
-        const dest_path = b.pathJoin(&.{ dest_prefix, entry.path });
+        const src_sub_path = b.path_join(&.{ src_dir_path, entry.path });
+        const dest_path = b.path_join(&.{ dest_prefix, entry.path });
         const cwd = fs.cwd();
 
         switch (entry.kind) {
-            .directory => try cwd.makePath(dest_path),
+            .directory => try cwd.make_path(dest_path),
             .file => {
                 for (install_dir.options.blank_extensions) |ext| {
-                    if (mem.endsWith(u8, entry.path, ext)) {
-                        try b.truncateFile(dest_path);
+                    if (mem.ends_with(u8, entry.path, ext)) {
+                        try b.truncate_file(dest_path);
                         continue :next_entry;
                     }
                 }
 
-                const prev_status = fs.Dir.updateFile(
+                const prev_status = fs.Dir.update_file(
                     b.build_root.handle,
                     src_sub_path,
                     cwd,

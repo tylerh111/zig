@@ -6,12 +6,12 @@ test "try on error union" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try tryOnErrorUnionImpl();
-    try comptime tryOnErrorUnionImpl();
+    try try_on_error_union_impl();
+    try comptime try_on_error_union_impl();
 }
 
 fn try_on_error_union_impl() !void {
-    const x = if (returnsTen()) |val| val + 1 else |err| switch (err) {
+    const x = if (returns_ten()) |val| val + 1 else |err| switch (err) {
         error.ItBroke, error.NoMem => 1,
         error.CrappedOut => @as(i32, 2),
         else => unreachable,
@@ -24,10 +24,10 @@ fn returns_ten() anyerror!i32 {
 }
 
 test "try without vars" {
-    const result1 = if (failIfTrue(true)) 1 else |_| @as(i32, 2);
+    const result1 = if (fail_if_true(true)) 1 else |_| @as(i32, 2);
     try expect(result1 == 2);
 
-    const result2 = if (failIfTrue(false)) 1 else |_| @as(i32, 2);
+    const result2 = if (fail_if_true(false)) 1 else |_| @as(i32, 2);
     try expect(result2 == 1);
 }
 
@@ -40,7 +40,7 @@ fn fail_if_true(ok: bool) anyerror!void {
 }
 
 test "try then not executed with assignment" {
-    if (failIfTrue(true)) {
+    if (fail_if_true(true)) {
         unreachable;
     } else |err| {
         try expect(err == error.ItBroke);
@@ -62,9 +62,9 @@ test "`try`ing an if/else expression" {
         fn get_error2() !void {
             var a: u8 = 'c';
             _ = &a;
-            try if (a == 'a') getError() else if (a == 'b') getError() else getError();
+            try if (a == 'a') get_error() else if (a == 'b') get_error() else get_error();
         }
     };
 
-    try std.testing.expectError(error.Test, S.getError2());
+    try std.testing.expect_error(error.Test, S.get_error2());
 }

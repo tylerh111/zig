@@ -54,8 +54,8 @@ pub fn detect(target_os: *Target.Os) !void {
         // approx. 4 times historical file size
         var buf: [2048]u8 = undefined;
 
-        if (std.fs.cwd().readFile(path, &buf)) |bytes| {
-            if (parseSystemVersion(bytes)) |ver| {
+        if (std.fs.cwd().read_file(path, &buf)) |bytes| {
+            if (parse_system_version(bytes)) |ver| {
                 // never return non-canonical `10.(16+)`
                 if (!(ver.major == 10 and ver.minor >= 16)) {
                     target_os.version_range.semver.min = ver;
@@ -75,18 +75,18 @@ pub fn detect(target_os: *Target.Os) !void {
 
 fn parse_system_version(buf: []const u8) !std.SemanticVersion {
     var svt = SystemVersionTokenizer{ .bytes = buf };
-    try svt.skipUntilTag(.start, "dict");
+    try svt.skip_until_tag(.start, "dict");
     while (true) {
-        try svt.skipUntilTag(.start, "key");
-        const content = try svt.expectContent();
-        try svt.skipUntilTag(.end, "key");
+        try svt.skip_until_tag(.start, "key");
+        const content = try svt.expect_content();
+        try svt.skip_until_tag(.end, "key");
         if (mem.eql(u8, content, "ProductVersion")) break;
     }
-    try svt.skipUntilTag(.start, "string");
-    const ver = try svt.expectContent();
-    try svt.skipUntilTag(.end, "string");
+    try svt.skip_until_tag(.start, "string");
+    const ver = try svt.expect_content();
+    try svt.skip_until_tag(.end, "string");
 
-    return try std.Target.Query.parseVersion(ver);
+    return try std.Target.Query.parse_version(ver);
 }
 
 const SystemVersionTokenizer = struct {
@@ -387,16 +387,16 @@ test "detect" {
     };
 
     inline for (cases) |case| {
-        const ver0 = try parseSystemVersion(case[0]);
+        const ver0 = try parse_system_version(case[0]);
         const ver1: std.SemanticVersion = case[1];
-        try testing.expectEqual(@as(std.math.Order, .eq), ver0.order(ver1));
+        try testing.expect_equal(@as(std.math.Order, .eq), ver0.order(ver1));
     }
 }
 
 pub fn detect_native_cpu_and_features() ?Target.Cpu {
     var cpu_family: std.c.CPUFAMILY = undefined;
-    var len: usize = @sizeOf(std.c.CPUFAMILY);
-    std.posix.sysctlbynameZ("hw.cpufamily", &cpu_family, &len, null, 0) catch |err| switch (err) {
+    var len: usize = @size_of(std.c.CPUFAMILY);
+    std.posix.sysctlbyname_z("hw.cpufamily", &cpu_family, &len, null, 0) catch |err| switch (err) {
         error.NameTooLong => unreachable, // constant, known good value
         error.PermissionDenied => unreachable, // only when setting values,
         error.SystemResources => unreachable, // memory already on the stack

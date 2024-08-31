@@ -1,5 +1,5 @@
 const std = @import("../../std.zig");
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const linux = std.os.linux;
 const SYS = linux.SYS;
 const iovec = std.posix.iovec;
@@ -18,7 +18,7 @@ const timespec = linux.timespec;
 pub fn syscall0(number: SYS) usize {
     return asm volatile ("syscall"
         : [ret] "={rax}" (-> usize),
-        : [number] "{rax}" (@intFromEnum(number)),
+        : [number] "{rax}" (@int_from_enum(number)),
         : "rcx", "r11", "memory"
     );
 }
@@ -26,7 +26,7 @@ pub fn syscall0(number: SYS) usize {
 pub fn syscall1(number: SYS, arg1: usize) usize {
     return asm volatile ("syscall"
         : [ret] "={rax}" (-> usize),
-        : [number] "{rax}" (@intFromEnum(number)),
+        : [number] "{rax}" (@int_from_enum(number)),
           [arg1] "{rdi}" (arg1),
         : "rcx", "r11", "memory"
     );
@@ -35,7 +35,7 @@ pub fn syscall1(number: SYS, arg1: usize) usize {
 pub fn syscall2(number: SYS, arg1: usize, arg2: usize) usize {
     return asm volatile ("syscall"
         : [ret] "={rax}" (-> usize),
-        : [number] "{rax}" (@intFromEnum(number)),
+        : [number] "{rax}" (@int_from_enum(number)),
           [arg1] "{rdi}" (arg1),
           [arg2] "{rsi}" (arg2),
         : "rcx", "r11", "memory"
@@ -45,7 +45,7 @@ pub fn syscall2(number: SYS, arg1: usize, arg2: usize) usize {
 pub fn syscall3(number: SYS, arg1: usize, arg2: usize, arg3: usize) usize {
     return asm volatile ("syscall"
         : [ret] "={rax}" (-> usize),
-        : [number] "{rax}" (@intFromEnum(number)),
+        : [number] "{rax}" (@int_from_enum(number)),
           [arg1] "{rdi}" (arg1),
           [arg2] "{rsi}" (arg2),
           [arg3] "{rdx}" (arg3),
@@ -56,7 +56,7 @@ pub fn syscall3(number: SYS, arg1: usize, arg2: usize, arg3: usize) usize {
 pub fn syscall4(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize) usize {
     return asm volatile ("syscall"
         : [ret] "={rax}" (-> usize),
-        : [number] "{rax}" (@intFromEnum(number)),
+        : [number] "{rax}" (@int_from_enum(number)),
           [arg1] "{rdi}" (arg1),
           [arg2] "{rsi}" (arg2),
           [arg3] "{rdx}" (arg3),
@@ -68,7 +68,7 @@ pub fn syscall4(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize)
 pub fn syscall5(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg5: usize) usize {
     return asm volatile ("syscall"
         : [ret] "={rax}" (-> usize),
-        : [number] "{rax}" (@intFromEnum(number)),
+        : [number] "{rax}" (@int_from_enum(number)),
           [arg1] "{rdi}" (arg1),
           [arg2] "{rsi}" (arg2),
           [arg3] "{rdx}" (arg3),
@@ -89,7 +89,7 @@ pub fn syscall6(
 ) usize {
     return asm volatile ("syscall"
         : [ret] "={rax}" (-> usize),
-        : [number] "{rax}" (@intFromEnum(number)),
+        : [number] "{rax}" (@int_from_enum(number)),
           [arg1] "{rdi}" (arg1),
           [arg2] "{rsi}" (arg2),
           [arg3] "{rdx}" (arg3),
@@ -113,13 +113,13 @@ pub fn restore_rt() callconv(.Naked) noreturn {
             \\ movl %[number], %%eax
             \\ syscall
             :
-            : [number] "i" (@intFromEnum(SYS.rt_sigreturn)),
+            : [number] "i" (@int_from_enum(SYS.rt_sigreturn)),
             : "rcx", "r11", "memory"
         ),
         else => asm volatile (
             \\ syscall
             :
-            : [number] "{rax}" (@intFromEnum(SYS.rt_sigreturn)),
+            : [number] "{rax}" (@int_from_enum(SYS.rt_sigreturn)),
             : "rcx", "r11", "memory"
         ),
     }
@@ -356,7 +356,7 @@ pub const ucontext_t = extern struct {
 };
 
 fn gp_register_offset(comptime reg_index: comptime_int) usize {
-    return @offsetOf(ucontext_t, "mcontext") + @offsetOf(mcontext_t, "gregs") + @sizeOf(usize) * reg_index;
+    return @offset_of(ucontext_t, "mcontext") + @offset_of(mcontext_t, "gregs") + @size_of(usize) * reg_index;
 }
 
 fn get_context_internal() callconv(.Naked) usize {
@@ -405,49 +405,49 @@ fn get_context_internal() callconv(.Naked) usize {
         \\0:
         \\ retq
         :
-        : [flags_offset] "i" (@offsetOf(ucontext_t, "flags")),
-          [link_offset] "i" (@offsetOf(ucontext_t, "link")),
-          [r8_offset] "i" (comptime gpRegisterOffset(REG.R8)),
-          [r9_offset] "i" (comptime gpRegisterOffset(REG.R9)),
-          [r10_offset] "i" (comptime gpRegisterOffset(REG.R10)),
-          [r11_offset] "i" (comptime gpRegisterOffset(REG.R11)),
-          [r12_offset] "i" (comptime gpRegisterOffset(REG.R12)),
-          [r13_offset] "i" (comptime gpRegisterOffset(REG.R13)),
-          [r14_offset] "i" (comptime gpRegisterOffset(REG.R14)),
-          [r15_offset] "i" (comptime gpRegisterOffset(REG.R15)),
-          [rdi_offset] "i" (comptime gpRegisterOffset(REG.RDI)),
-          [rsi_offset] "i" (comptime gpRegisterOffset(REG.RSI)),
-          [rbp_offset] "i" (comptime gpRegisterOffset(REG.RBP)),
-          [rbx_offset] "i" (comptime gpRegisterOffset(REG.RBX)),
-          [rdx_offset] "i" (comptime gpRegisterOffset(REG.RDX)),
-          [rax_offset] "i" (comptime gpRegisterOffset(REG.RAX)),
-          [rcx_offset] "i" (comptime gpRegisterOffset(REG.RCX)),
-          [rsp_offset] "i" (comptime gpRegisterOffset(REG.RSP)),
-          [rip_offset] "i" (comptime gpRegisterOffset(REG.RIP)),
-          [efl_offset] "i" (comptime gpRegisterOffset(REG.EFL)),
-          [fpstate_offset] "i" (@offsetOf(ucontext_t, "mcontext") + @offsetOf(mcontext_t, "fpregs")),
-          [fpmem_offset] "i" (@offsetOf(ucontext_t, "fpregs_mem")),
-          [mxcsr_offset] "i" (@offsetOf(ucontext_t, "fpregs_mem") + @offsetOf(fpstate, "mxcsr")),
-          [sigaltstack] "i" (@intFromEnum(linux.SYS.sigaltstack)),
-          [stack_offset] "i" (@offsetOf(ucontext_t, "stack")),
-          [sigprocmask] "i" (@intFromEnum(linux.SYS.rt_sigprocmask)),
-          [sigmask_offset] "i" (@offsetOf(ucontext_t, "sigmask")),
+        : [flags_offset] "i" (@offset_of(ucontext_t, "flags")),
+          [link_offset] "i" (@offset_of(ucontext_t, "link")),
+          [r8_offset] "i" (comptime gp_register_offset(REG.R8)),
+          [r9_offset] "i" (comptime gp_register_offset(REG.R9)),
+          [r10_offset] "i" (comptime gp_register_offset(REG.R10)),
+          [r11_offset] "i" (comptime gp_register_offset(REG.R11)),
+          [r12_offset] "i" (comptime gp_register_offset(REG.R12)),
+          [r13_offset] "i" (comptime gp_register_offset(REG.R13)),
+          [r14_offset] "i" (comptime gp_register_offset(REG.R14)),
+          [r15_offset] "i" (comptime gp_register_offset(REG.R15)),
+          [rdi_offset] "i" (comptime gp_register_offset(REG.RDI)),
+          [rsi_offset] "i" (comptime gp_register_offset(REG.RSI)),
+          [rbp_offset] "i" (comptime gp_register_offset(REG.RBP)),
+          [rbx_offset] "i" (comptime gp_register_offset(REG.RBX)),
+          [rdx_offset] "i" (comptime gp_register_offset(REG.RDX)),
+          [rax_offset] "i" (comptime gp_register_offset(REG.RAX)),
+          [rcx_offset] "i" (comptime gp_register_offset(REG.RCX)),
+          [rsp_offset] "i" (comptime gp_register_offset(REG.RSP)),
+          [rip_offset] "i" (comptime gp_register_offset(REG.RIP)),
+          [efl_offset] "i" (comptime gp_register_offset(REG.EFL)),
+          [fpstate_offset] "i" (@offset_of(ucontext_t, "mcontext") + @offset_of(mcontext_t, "fpregs")),
+          [fpmem_offset] "i" (@offset_of(ucontext_t, "fpregs_mem")),
+          [mxcsr_offset] "i" (@offset_of(ucontext_t, "fpregs_mem") + @offset_of(fpstate, "mxcsr")),
+          [sigaltstack] "i" (@int_from_enum(linux.SYS.sigaltstack)),
+          [stack_offset] "i" (@offset_of(ucontext_t, "stack")),
+          [sigprocmask] "i" (@int_from_enum(linux.SYS.rt_sigprocmask)),
+          [sigmask_offset] "i" (@offset_of(ucontext_t, "sigmask")),
           [sigset_size] "i" (linux.NSIG / 8),
         : "cc", "memory", "rax", "rcx", "rdx", "rdi", "rsi", "r8", "r10", "r11"
     );
 }
 
 pub inline fn getcontext(context: *ucontext_t) usize {
-    // This method is used so that getContextInternal can control
+    // This method is used so that get_context_internal can control
     // its prologue in order to read RSP from a constant offset
-    // An aligned stack is not needed for getContextInternal.
+    // An aligned stack is not needed for get_context_internal.
     var clobber_rdi: usize = undefined;
     return asm volatile (
-        \\ callq %[getContextInternal:P]
+        \\ callq %[get_context_internal:P]
         : [_] "={rax}" (-> usize),
           [_] "={rdi}" (clobber_rdi),
         : [_] "{rdi}" (context),
-          [getContextInternal] "X" (&getContextInternal),
+          [get_context_internal] "X" (&get_context_internal),
         : "cc", "memory", "rcx", "rdx", "rsi", "r8", "r10", "r11"
     );
 }

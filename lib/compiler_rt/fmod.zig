@@ -22,7 +22,7 @@ comptime {
 
 pub fn __fmodh(x: f16, y: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(fmodf(x, y));
+    return @float_cast(fmodf(x, y));
 }
 
 pub fn fmodf(x: f32, y: f32) callconv(.C) f32 {
@@ -39,19 +39,19 @@ pub fn __fmodx(a: f80, b: f80) callconv(.C) f80 {
     const T = f80;
     const Z = std.meta.Int(.unsigned, @bitSizeOf(T));
 
-    const significandBits = math.floatMantissaBits(T);
-    const fractionalBits = math.floatFractionalBits(T);
-    const exponentBits = math.floatExponentBits(T);
+    const significandBits = math.float_mantissa_bits(T);
+    const fractionalBits = math.float_fractional_bits(T);
+    const exponentBits = math.float_exponent_bits(T);
 
     const signBit = (@as(Z, 1) << (significandBits + exponentBits));
     const maxExponent = ((1 << exponentBits) - 1);
 
-    var aRep: Z = @bitCast(a);
-    var bRep: Z = @bitCast(b);
+    var aRep: Z = @bit_cast(a);
+    var bRep: Z = @bit_cast(b);
 
     const signA = aRep & signBit;
-    var expA: i32 = @intCast((@as(Z, @bitCast(a)) >> significandBits) & maxExponent);
-    var expB: i32 = @intCast((@as(Z, @bitCast(b)) >> significandBits) & maxExponent);
+    var expA: i32 = @int_cast((@as(Z, @bit_cast(a)) >> significandBits) & maxExponent);
+    var expB: i32 = @int_cast((@as(Z, @bit_cast(b)) >> significandBits) & maxExponent);
 
     // There are 3 cases where the answer is undefined, check for:
     //   - fmodx(val, 0)
@@ -63,7 +63,7 @@ pub fn __fmodx(a: f80, b: f80) callconv(.C) f80 {
     //   - 0 / 0
     //   - val * NaN
     //   - inf / inf
-    if (b == 0 or math.isNan(b) or expA == maxExponent) {
+    if (b == 0 or math.is_nan(b) or expA == maxExponent) {
         return (a * b) / (a * b);
     }
 
@@ -123,11 +123,11 @@ pub fn __fmodx(a: f80, b: f80) callconv(.C) f80 {
 
     // Combine the exponent with the sign and significand, normalize if happened to be denormalized
     if (expA < -fractionalBits) {
-        return @bitCast(signA);
+        return @bit_cast(signA);
     } else if (expA <= 0) {
-        return @bitCast((lowA >> @intCast(1 - expA)) | signA);
+        return @bit_cast((lowA >> @int_cast(1 - expA)) | signA);
     } else {
-        return @bitCast(lowA | (@as(Z, @as(u16, @intCast(expA))) << significandBits) | signA);
+        return @bit_cast(lowA | (@as(Z, @as(u16, @int_cast(expA))) << significandBits) | signA);
     }
 }
 
@@ -136,10 +136,10 @@ pub fn __fmodx(a: f80, b: f80) callconv(.C) f80 {
 pub fn fmodq(a: f128, b: f128) callconv(.C) f128 {
     var amod = a;
     var bmod = b;
-    const aPtr_u64: [*]u64 = @ptrCast(&amod);
-    const bPtr_u64: [*]u64 = @ptrCast(&bmod);
-    const aPtr_u16: [*]u16 = @ptrCast(&amod);
-    const bPtr_u16: [*]u16 = @ptrCast(&bmod);
+    const aPtr_u64: [*]u64 = @ptr_cast(&amod);
+    const bPtr_u64: [*]u64 = @ptr_cast(&bmod);
+    const aPtr_u16: [*]u16 = @ptr_cast(&amod);
+    const bPtr_u16: [*]u16 = @ptr_cast(&bmod);
 
     const exp_and_sign_index = comptime switch (builtin.target.cpu.arch.endian()) {
         .little => 7,
@@ -155,8 +155,8 @@ pub fn fmodq(a: f128, b: f128) callconv(.C) f128 {
     };
 
     const signA = aPtr_u16[exp_and_sign_index] & 0x8000;
-    var expA: i32 = @intCast((aPtr_u16[exp_and_sign_index] & 0x7fff));
-    var expB: i32 = @intCast((bPtr_u16[exp_and_sign_index] & 0x7fff));
+    var expA: i32 = @int_cast((aPtr_u16[exp_and_sign_index] & 0x7fff));
+    var expB: i32 = @int_cast((bPtr_u16[exp_and_sign_index] & 0x7fff));
 
     // There are 3 cases where the answer is undefined, check for:
     //   - fmodq(val, 0)
@@ -168,13 +168,13 @@ pub fn fmodq(a: f128, b: f128) callconv(.C) f128 {
     //   - 0 / 0
     //   - val * NaN
     //   - inf / inf
-    if (b == 0 or std.math.isNan(b) or expA == 0x7fff) {
+    if (b == 0 or std.math.is_nan(b) or expA == 0x7fff) {
         return (a * b) / (a * b);
     }
 
     // Remove the sign from both
-    aPtr_u16[exp_and_sign_index] = @bitCast(@as(i16, @intCast(expA)));
-    bPtr_u16[exp_and_sign_index] = @bitCast(@as(i16, @intCast(expB)));
+    aPtr_u16[exp_and_sign_index] = @bit_cast(@as(i16, @int_cast(expA)));
+    bPtr_u16[exp_and_sign_index] = @bit_cast(@as(i16, @int_cast(expB)));
     if (amod <= bmod) {
         if (amod == bmod) {
             return 0 * a;
@@ -193,8 +193,8 @@ pub fn fmodq(a: f128, b: f128) callconv(.C) f128 {
     }
 
     // OR in extra non-stored mantissa digit
-    var highA: u64 = (aPtr_u64[high_index] & (std.math.maxInt(u64) >> 16)) | 1 << 48;
-    const highB: u64 = (bPtr_u64[high_index] & (std.math.maxInt(u64) >> 16)) | 1 << 48;
+    var highA: u64 = (aPtr_u64[high_index] & (std.math.max_int(u64) >> 16)) | 1 << 48;
+    const highB: u64 = (bPtr_u64[high_index] & (std.math.max_int(u64) >> 16)) | 1 << 48;
     var lowA: u64 = aPtr_u64[low_index];
     const lowB: u64 = bPtr_u64[low_index];
 
@@ -241,10 +241,10 @@ pub fn fmodq(a: f128, b: f128) callconv(.C) f128 {
 
     // Combine the exponent with the sign, normalize if happened to be denormalized
     if (expA <= 0) {
-        aPtr_u16[exp_and_sign_index] = @as(u16, @truncate(@as(u32, @bitCast((expA +% 120))))) | signA;
+        aPtr_u16[exp_and_sign_index] = @as(u16, @truncate(@as(u32, @bit_cast((expA +% 120))))) | signA;
         amod *= 0x1p-120;
     } else {
-        aPtr_u16[exp_and_sign_index] = @as(u16, @truncate(@as(u32, @bitCast(expA)))) | signA;
+        aPtr_u16[exp_and_sign_index] = @as(u16, @truncate(@as(u32, @bit_cast(expA)))) | signA;
     }
 
     return amod;
@@ -257,7 +257,7 @@ pub fn fmodl(a: c_longdouble, b: c_longdouble) callconv(.C) c_longdouble {
         64 => return fmod(a, b),
         80 => return __fmodx(a, b),
         128 => return fmodq(a, b),
-        else => @compileError("unreachable"),
+        else => @compile_error("unreachable"),
     }
 }
 
@@ -269,14 +269,14 @@ inline fn generic_fmod(comptime T: type, x: T, y: T) T {
     const exp_bits = if (T == f32) 9 else 12;
     const bits_minus_1 = bits - 1;
     const mask = if (T == f32) 0xff else 0x7ff;
-    var ux: uint = @bitCast(x);
-    var uy: uint = @bitCast(y);
-    var ex: i32 = @intCast((ux >> digits) & mask);
-    var ey: i32 = @intCast((uy >> digits) & mask);
-    const sx = if (T == f32) @as(u32, @intCast(ux & 0x80000000)) else @as(i32, @intCast(ux >> bits_minus_1));
+    var ux: uint = @bit_cast(x);
+    var uy: uint = @bit_cast(y);
+    var ex: i32 = @int_cast((ux >> digits) & mask);
+    var ey: i32 = @int_cast((uy >> digits) & mask);
+    const sx = if (T == f32) @as(u32, @int_cast(ux & 0x80000000)) else @as(i32, @int_cast(ux >> bits_minus_1));
     var i: uint = undefined;
 
-    if (uy << 1 == 0 or math.isNan(@as(T, @bitCast(uy))) or ex == mask)
+    if (uy << 1 == 0 or math.is_nan(@as(T, @bit_cast(uy))) or ex == mask)
         return (x * y) / (x * y);
 
     if (ux << 1 <= uy << 1) {
@@ -292,9 +292,9 @@ inline fn generic_fmod(comptime T: type, x: T, y: T) T {
             ex -= 1;
             i <<= 1;
         }) {}
-        ux <<= @intCast(@as(u32, @bitCast(-ex + 1)));
+        ux <<= @int_cast(@as(u32, @bit_cast(-ex + 1)));
     } else {
-        ux &= math.maxInt(uint) >> exp_bits;
+        ux &= math.max_int(uint) >> exp_bits;
         ux |= 1 << digits;
     }
     if (ey == 0) {
@@ -303,9 +303,9 @@ inline fn generic_fmod(comptime T: type, x: T, y: T) T {
             ey -= 1;
             i <<= 1;
         }) {}
-        uy <<= @intCast(@as(u32, @bitCast(-ey + 1)));
+        uy <<= @int_cast(@as(u32, @bit_cast(-ey + 1)));
     } else {
-        uy &= math.maxInt(uint) >> exp_bits;
+        uy &= math.max_int(uint) >> exp_bits;
         uy |= 1 << digits;
     }
 
@@ -333,54 +333,54 @@ inline fn generic_fmod(comptime T: type, x: T, y: T) T {
     // scale result up
     if (ex > 0) {
         ux -%= 1 << digits;
-        ux |= @as(uint, @as(u32, @bitCast(ex))) << digits;
+        ux |= @as(uint, @as(u32, @bit_cast(ex))) << digits;
     } else {
-        ux >>= @intCast(@as(u32, @bitCast(-ex + 1)));
+        ux >>= @int_cast(@as(u32, @bit_cast(-ex + 1)));
     }
     if (T == f32) {
         ux |= sx;
     } else {
-        ux |= @as(uint, @intCast(sx)) << bits_minus_1;
+        ux |= @as(uint, @int_cast(sx)) << bits_minus_1;
     }
-    return @bitCast(ux);
+    return @bit_cast(ux);
 }
 
 test "fmodf" {
     const nan_val = math.nan(f32);
     const inf_val = math.inf(f32);
 
-    try std.testing.expect(math.isNan(fmodf(nan_val, 1.0)));
-    try std.testing.expect(math.isNan(fmodf(1.0, nan_val)));
-    try std.testing.expect(math.isNan(fmodf(inf_val, 1.0)));
-    try std.testing.expect(math.isNan(fmodf(0.0, 0.0)));
-    try std.testing.expect(math.isNan(fmodf(1.0, 0.0)));
+    try std.testing.expect(math.is_nan(fmodf(nan_val, 1.0)));
+    try std.testing.expect(math.is_nan(fmodf(1.0, nan_val)));
+    try std.testing.expect(math.is_nan(fmodf(inf_val, 1.0)));
+    try std.testing.expect(math.is_nan(fmodf(0.0, 0.0)));
+    try std.testing.expect(math.is_nan(fmodf(1.0, 0.0)));
 
-    try std.testing.expectEqual(@as(f32, 0.0), fmodf(0.0, 2.0));
-    try std.testing.expectEqual(@as(f32, -0.0), fmodf(-0.0, 2.0));
+    try std.testing.expect_equal(@as(f32, 0.0), fmodf(0.0, 2.0));
+    try std.testing.expect_equal(@as(f32, -0.0), fmodf(-0.0, 2.0));
 
-    try std.testing.expectEqual(@as(f32, -2.0), fmodf(-32.0, 10.0));
-    try std.testing.expectEqual(@as(f32, -2.0), fmodf(-32.0, -10.0));
-    try std.testing.expectEqual(@as(f32, 2.0), fmodf(32.0, 10.0));
-    try std.testing.expectEqual(@as(f32, 2.0), fmodf(32.0, -10.0));
+    try std.testing.expect_equal(@as(f32, -2.0), fmodf(-32.0, 10.0));
+    try std.testing.expect_equal(@as(f32, -2.0), fmodf(-32.0, -10.0));
+    try std.testing.expect_equal(@as(f32, 2.0), fmodf(32.0, 10.0));
+    try std.testing.expect_equal(@as(f32, 2.0), fmodf(32.0, -10.0));
 }
 
 test "fmod" {
     const nan_val = math.nan(f64);
     const inf_val = math.inf(f64);
 
-    try std.testing.expect(math.isNan(fmod(nan_val, 1.0)));
-    try std.testing.expect(math.isNan(fmod(1.0, nan_val)));
-    try std.testing.expect(math.isNan(fmod(inf_val, 1.0)));
-    try std.testing.expect(math.isNan(fmod(0.0, 0.0)));
-    try std.testing.expect(math.isNan(fmod(1.0, 0.0)));
+    try std.testing.expect(math.is_nan(fmod(nan_val, 1.0)));
+    try std.testing.expect(math.is_nan(fmod(1.0, nan_val)));
+    try std.testing.expect(math.is_nan(fmod(inf_val, 1.0)));
+    try std.testing.expect(math.is_nan(fmod(0.0, 0.0)));
+    try std.testing.expect(math.is_nan(fmod(1.0, 0.0)));
 
-    try std.testing.expectEqual(@as(f64, 0.0), fmod(0.0, 2.0));
-    try std.testing.expectEqual(@as(f64, -0.0), fmod(-0.0, 2.0));
+    try std.testing.expect_equal(@as(f64, 0.0), fmod(0.0, 2.0));
+    try std.testing.expect_equal(@as(f64, -0.0), fmod(-0.0, 2.0));
 
-    try std.testing.expectEqual(@as(f64, -2.0), fmod(-32.0, 10.0));
-    try std.testing.expectEqual(@as(f64, -2.0), fmod(-32.0, -10.0));
-    try std.testing.expectEqual(@as(f64, 2.0), fmod(32.0, 10.0));
-    try std.testing.expectEqual(@as(f64, 2.0), fmod(32.0, -10.0));
+    try std.testing.expect_equal(@as(f64, -2.0), fmod(-32.0, 10.0));
+    try std.testing.expect_equal(@as(f64, -2.0), fmod(-32.0, -10.0));
+    try std.testing.expect_equal(@as(f64, 2.0), fmod(32.0, 10.0));
+    try std.testing.expect_equal(@as(f64, 2.0), fmod(32.0, -10.0));
 }
 
 test {

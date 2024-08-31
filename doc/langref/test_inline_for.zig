@@ -10,13 +10,13 @@ test "inline for loop" {
             6 => bool,
             else => unreachable,
         };
-        sum += typeNameLength(T);
+        sum += type_name_length(T);
     }
     try expect(sum == 9);
 }
 
 fn type_name_length(comptime T: type) usize {
-    return @typeName(T).len;
+    return @type_name(T).len;
 }
 
 // test

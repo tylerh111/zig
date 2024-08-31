@@ -9,7 +9,7 @@ const literals = @import("literals.zig");
 const SourceBytes = literals.SourceBytes;
 const Codepoint = @import("code_pages.zig").Codepoint;
 const lang = @import("lang.zig");
-const isNonAsciiDigit = @import("utils.zig").isNonAsciiDigit;
+const is_non_ascii_digit = @import("utils.zig").is_non_ascii_digit;
 
 /// https://learn.microsoft.com/en-us/windows/win32/menurc/resource-types
 pub const RT = enum(u8) {
@@ -153,14 +153,14 @@ pub const Language = packed struct(u16) {
     sublanguage_id: u6 = lang.SUBLANG_ENGLISH_US,
 
     /// Default language ID as a u16
-    pub const default: u16 = (Language{}).asInt();
+    pub const default: u16 = (Language{}).as_int();
 
     pub fn from_int(int: u16) Language {
-        return @bitCast(int);
+        return @bit_cast(int);
     }
 
     pub fn as_int(self: Language) u16 {
-        return @bitCast(self);
+        return @bit_cast(self);
     }
 };
 
@@ -237,7 +237,7 @@ pub const NameOrOrdinal = union(enum) {
         switch (self) {
             .name => |name| {
                 // + 1 for 0-terminated
-                return (name.len + 1) * @sizeOf(u16);
+                return (name.len + 1) * @size_of(u16);
             },
             .ordinal => return 4,
         }
@@ -246,63 +246,63 @@ pub const NameOrOrdinal = union(enum) {
     pub fn write(self: NameOrOrdinal, writer: anytype) !void {
         switch (self) {
             .name => |name| {
-                try writer.writeAll(std.mem.sliceAsBytes(name[0 .. name.len + 1]));
+                try writer.write_all(std.mem.slice_as_bytes(name[0 .. name.len + 1]));
             },
             .ordinal => |ordinal| {
-                try writer.writeInt(u16, 0xffff, .little);
-                try writer.writeInt(u16, ordinal, .little);
+                try writer.write_int(u16, 0xffff, .little);
+                try writer.write_int(u16, ordinal, .little);
             },
         }
     }
 
     pub fn write_empty(writer: anytype) !void {
-        try writer.writeInt(u16, 0, .little);
+        try writer.write_int(u16, 0, .little);
     }
 
     pub fn from_string(allocator: Allocator, bytes: SourceBytes) !NameOrOrdinal {
-        if (maybeOrdinalFromString(bytes)) |ordinal| {
+        if (maybe_ordinal_from_string(bytes)) |ordinal| {
             return ordinal;
         }
-        return nameFromString(allocator, bytes);
+        return name_from_string(allocator, bytes);
     }
 
     pub fn name_from_string(allocator: Allocator, bytes: SourceBytes) !NameOrOrdinal {
         // Names have a limit of 256 UTF-16 code units + null terminator
-        var buf = try std.ArrayList(u16).initCapacity(allocator, @min(257, bytes.slice.len));
+        var buf = try std.ArrayList(u16).init_capacity(allocator, @min(257, bytes.slice.len));
         errdefer buf.deinit();
 
         var i: usize = 0;
-        while (bytes.code_page.codepointAt(i, bytes.slice)) |codepoint| : (i += codepoint.byte_len) {
+        while (bytes.code_page.codepoint_at(i, bytes.slice)) |codepoint| : (i += codepoint.byte_len) {
             if (buf.items.len == 256) break;
 
             const c = codepoint.value;
             if (c == Codepoint.invalid) {
-                try buf.append(std.mem.nativeToLittle(u16, '�'));
+                try buf.append(std.mem.native_to_little(u16, '�'));
             } else if (c < 0x7F) {
                 // ASCII chars in names are always converted to uppercase
-                try buf.append(std.mem.nativeToLittle(u16, std.ascii.toUpper(@intCast(c))));
+                try buf.append(std.mem.native_to_little(u16, std.ascii.to_upper(@int_cast(c))));
             } else if (c < 0x10000) {
-                const short: u16 = @intCast(c);
-                try buf.append(std.mem.nativeToLittle(u16, short));
+                const short: u16 = @int_cast(c);
+                try buf.append(std.mem.native_to_little(u16, short));
             } else {
-                const high = @as(u16, @intCast((c - 0x10000) >> 10)) + 0xD800;
-                try buf.append(std.mem.nativeToLittle(u16, high));
+                const high = @as(u16, @int_cast((c - 0x10000) >> 10)) + 0xD800;
+                try buf.append(std.mem.native_to_little(u16, high));
 
                 // Note: This can cut-off in the middle of a UTF-16 surrogate pair,
                 //       i.e. it can make the string end with an unpaired high surrogate
                 if (buf.items.len == 256) break;
 
-                const low = @as(u16, @intCast(c & 0x3FF)) + 0xDC00;
-                try buf.append(std.mem.nativeToLittle(u16, low));
+                const low = @as(u16, @int_cast(c & 0x3FF)) + 0xDC00;
+                try buf.append(std.mem.native_to_little(u16, low));
             }
         }
 
-        return NameOrOrdinal{ .name = try buf.toOwnedSliceSentinel(0) };
+        return NameOrOrdinal{ .name = try buf.to_owned_slice_sentinel(0) };
     }
 
     /// Returns `null` if the bytes do not form a valid number.
     /// Does not allow non-ASCII digits (which the Win32 RC compiler does allow
-    /// in base 10 numbers, see `maybeNonAsciiOrdinalFromString`).
+    /// in base 10 numbers, see `maybe_non_ascii_ordinal_from_string`).
     pub fn maybe_ordinal_from_string(bytes: SourceBytes) ?NameOrOrdinal {
         var buf = bytes.slice;
         var radix: u8 = 10;
@@ -322,10 +322,10 @@ pub const NameOrOrdinal = union(enum) {
 
         var i: usize = 0;
         var result: u16 = 0;
-        while (bytes.code_page.codepointAt(i, buf)) |codepoint| : (i += codepoint.byte_len) {
+        while (bytes.code_page.codepoint_at(i, buf)) |codepoint| : (i += codepoint.byte_len) {
             const c = codepoint.value;
             const digit: u8 = switch (c) {
-                0x00...0x7F => std.fmt.charToDigit(@intCast(c), radix) catch switch (radix) {
+                0x00...0x7F => std.fmt.char_to_digit(@int_cast(c), radix) catch switch (radix) {
                     10 => return null,
                     // non-hex-digits are treated as a terminator rather than invalidating
                     // the number (note: if there are no valid hex digits then the result
@@ -369,12 +369,12 @@ pub const NameOrOrdinal = union(enum) {
 
         var i: usize = 0;
         var result: u16 = 0;
-        while (bytes.code_page.codepointAt(i, buf)) |codepoint| : (i += codepoint.byte_len) {
+        while (bytes.code_page.codepoint_at(i, buf)) |codepoint| : (i += codepoint.byte_len) {
             const c = codepoint.value;
             const digit: u16 = digit: {
-                const is_digit = (c >= '0' and c <= '9') or isNonAsciiDigit(c);
+                const is_digit = (c >= '0' and c <= '9') or is_non_ascii_digit(c);
                 if (!is_digit) return null;
-                break :digit @intCast(c - '0');
+                break :digit @int_cast(c - '0');
             };
 
             if (result != 0) {
@@ -429,11 +429,11 @@ fn expect_name_or_ordinal(expected: NameOrOrdinal, actual: NameOrOrdinal) !void 
     switch (expected) {
         .name => {
             if (actual != .name) return error.TestExpectedEqual;
-            try std.testing.expectEqualSlices(u16, expected.name, actual.name);
+            try std.testing.expect_equal_slices(u16, expected.name, actual.name);
         },
         .ordinal => {
             if (actual != .ordinal) return error.TestExpectedEqual;
-            try std.testing.expectEqual(expected.ordinal, actual.ordinal);
+            try std.testing.expect_equal(expected.ordinal, actual.ordinal);
         },
     }
 }
@@ -445,70 +445,70 @@ test "NameOrOrdinal" {
     const allocator = arena.allocator();
 
     // zero is treated as a string
-    try expectNameOrOrdinal(
-        NameOrOrdinal{ .name = std.unicode.utf8ToUtf16LeStringLiteral("0") },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "0", .code_page = .windows1252 }),
+    try expect_name_or_ordinal(
+        NameOrOrdinal{ .name = std.unicode.utf8_to_utf16_le_string_literal("0") },
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "0", .code_page = .windows1252 }),
     );
     // any non-digit byte invalidates the number
-    try expectNameOrOrdinal(
-        NameOrOrdinal{ .name = std.unicode.utf8ToUtf16LeStringLiteral("1A") },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "1a", .code_page = .windows1252 }),
+    try expect_name_or_ordinal(
+        NameOrOrdinal{ .name = std.unicode.utf8_to_utf16_le_string_literal("1A") },
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "1a", .code_page = .windows1252 }),
     );
-    try expectNameOrOrdinal(
-        NameOrOrdinal{ .name = std.unicode.utf8ToUtf16LeStringLiteral("1ÿ") },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "1\xff", .code_page = .windows1252 }),
+    try expect_name_or_ordinal(
+        NameOrOrdinal{ .name = std.unicode.utf8_to_utf16_le_string_literal("1ÿ") },
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "1\xff", .code_page = .windows1252 }),
     );
-    try expectNameOrOrdinal(
-        NameOrOrdinal{ .name = std.unicode.utf8ToUtf16LeStringLiteral("1€") },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "1€", .code_page = .utf8 }),
+    try expect_name_or_ordinal(
+        NameOrOrdinal{ .name = std.unicode.utf8_to_utf16_le_string_literal("1€") },
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "1€", .code_page = .utf8 }),
     );
-    try expectNameOrOrdinal(
-        NameOrOrdinal{ .name = std.unicode.utf8ToUtf16LeStringLiteral("1�") },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "1\x80", .code_page = .utf8 }),
+    try expect_name_or_ordinal(
+        NameOrOrdinal{ .name = std.unicode.utf8_to_utf16_le_string_literal("1�") },
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "1\x80", .code_page = .utf8 }),
     );
     // same with overflow that resolves to 0
-    try expectNameOrOrdinal(
-        NameOrOrdinal{ .name = std.unicode.utf8ToUtf16LeStringLiteral("65536") },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "65536", .code_page = .windows1252 }),
+    try expect_name_or_ordinal(
+        NameOrOrdinal{ .name = std.unicode.utf8_to_utf16_le_string_literal("65536") },
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "65536", .code_page = .windows1252 }),
     );
     // hex zero is also treated as a string
-    try expectNameOrOrdinal(
-        NameOrOrdinal{ .name = std.unicode.utf8ToUtf16LeStringLiteral("0X0") },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "0x0", .code_page = .windows1252 }),
+    try expect_name_or_ordinal(
+        NameOrOrdinal{ .name = std.unicode.utf8_to_utf16_le_string_literal("0X0") },
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "0x0", .code_page = .windows1252 }),
     );
     // hex numbers work
-    try expectNameOrOrdinal(
+    try expect_name_or_ordinal(
         NameOrOrdinal{ .ordinal = 0x100 },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "0x100", .code_page = .windows1252 }),
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "0x100", .code_page = .windows1252 }),
     );
     // only the first 4 hex digits matter
-    try expectNameOrOrdinal(
+    try expect_name_or_ordinal(
         NameOrOrdinal{ .ordinal = 0x1234 },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "0X12345", .code_page = .windows1252 }),
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "0X12345", .code_page = .windows1252 }),
     );
     // octal is not supported so it gets treated as a string
-    try expectNameOrOrdinal(
-        NameOrOrdinal{ .name = std.unicode.utf8ToUtf16LeStringLiteral("0O1234") },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "0o1234", .code_page = .windows1252 }),
+    try expect_name_or_ordinal(
+        NameOrOrdinal{ .name = std.unicode.utf8_to_utf16_le_string_literal("0O1234") },
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "0o1234", .code_page = .windows1252 }),
     );
     // overflow wraps
-    try expectNameOrOrdinal(
+    try expect_name_or_ordinal(
         NameOrOrdinal{ .ordinal = @truncate(65635) },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "65635", .code_page = .windows1252 }),
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "65635", .code_page = .windows1252 }),
     );
     // non-hex-digits in a hex literal are treated as a terminator
-    try expectNameOrOrdinal(
+    try expect_name_or_ordinal(
         NameOrOrdinal{ .ordinal = 0x4 },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "0x4n", .code_page = .windows1252 }),
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "0x4n", .code_page = .windows1252 }),
     );
-    try expectNameOrOrdinal(
+    try expect_name_or_ordinal(
         NameOrOrdinal{ .ordinal = 0xFA },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "0xFAZ92348", .code_page = .windows1252 }),
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "0xFAZ92348", .code_page = .windows1252 }),
     );
     // 0 at the start is allowed
-    try expectNameOrOrdinal(
+    try expect_name_or_ordinal(
         NameOrOrdinal{ .ordinal = 50 },
-        try NameOrOrdinal.fromString(allocator, .{ .slice = "050", .code_page = .windows1252 }),
+        try NameOrOrdinal.from_string(allocator, .{ .slice = "050", .code_page = .windows1252 }),
     );
     // limit of 256 UTF-16 code units, can cut off between a surrogate pair
     {
@@ -517,15 +517,15 @@ test "NameOrOrdinal" {
             const expected_u8_bytes = "00614982008907933748980730280674788429543776231864944218790698304852300002973622122844631429099469274282385299397783838528QFFL7SHNSIETG0QKLR1UYPBTUV1PMFQRRA0VJDG354GQEDJMUPGPP1W1EXVNTZVEIZ6K3IPQM1AWGEYALMEODYVEZGOD3MFMGEY8FNR4JUETTB1PZDEWSNDRGZUA8SNXP3NGO";
             var buf: [256:0]u16 = undefined;
             for (expected_u8_bytes, 0..) |byte, i| {
-                buf[i] = std.mem.nativeToLittle(u16, byte);
+                buf[i] = std.mem.native_to_little(u16, byte);
             }
             // surrogate pair that is now orphaned
-            buf[255] = std.mem.nativeToLittle(u16, 0xD801);
+            buf[255] = std.mem.native_to_little(u16, 0xD801);
             break :blk buf;
         };
-        try expectNameOrOrdinal(
+        try expect_name_or_ordinal(
             NameOrOrdinal{ .name = &expected },
-            try NameOrOrdinal.fromString(allocator, .{
+            try NameOrOrdinal.from_string(allocator, .{
                 .slice = "00614982008907933748980730280674788429543776231864944218790698304852300002973622122844631429099469274282385299397783838528qffL7ShnSIETg0qkLr1UYpbtuv1PMFQRRa0VjDG354GQedJmUPgpp1w1ExVnTzVEiz6K3iPqM1AWGeYALmeODyvEZGOD3MfmGey8fnR4jUeTtB1PzdeWsNDrGzuA8Snxp3NGO𐐷",
                 .code_page = .utf8,
             }),
@@ -539,20 +539,20 @@ test "NameOrOrdinal code page awareness" {
 
     const allocator = arena.allocator();
 
-    try expectNameOrOrdinal(
-        NameOrOrdinal{ .name = std.unicode.utf8ToUtf16LeStringLiteral("��𐐷") },
-        try NameOrOrdinal.fromString(allocator, .{
+    try expect_name_or_ordinal(
+        NameOrOrdinal{ .name = std.unicode.utf8_to_utf16_le_string_literal("��𐐷") },
+        try NameOrOrdinal.from_string(allocator, .{
             .slice = "\xF0\x80\x80𐐷",
             .code_page = .utf8,
         }),
     );
-    try expectNameOrOrdinal(
+    try expect_name_or_ordinal(
         // The UTF-8 representation of 𐐷 is 0xF0 0x90 0x90 0xB7. In order to provide valid
-        // UTF-8 to utf8ToUtf16LeStringLiteral, it uses the UTF-8 representation of the codepoint
+        // UTF-8 to utf8_to_utf16_le_string_literal, it uses the UTF-8 representation of the codepoint
         // <U+0x90> which is 0xC2 0x90. The code units in the expected UTF-16 string are:
         // { 0x00F0, 0x20AC, 0x20AC, 0x00F0, 0x0090, 0x0090, 0x00B7 }
-        NameOrOrdinal{ .name = std.unicode.utf8ToUtf16LeStringLiteral("ð€€ð\xC2\x90\xC2\x90·") },
-        try NameOrOrdinal.fromString(allocator, .{
+        NameOrOrdinal{ .name = std.unicode.utf8_to_utf16_le_string_literal("ð€€ð\xC2\x90\xC2\x90·") },
+        try NameOrOrdinal.from_string(allocator, .{
             .slice = "\xF0\x80\x80𐐷",
             .code_page = .windows1252,
         }),
@@ -576,13 +576,13 @@ pub const AcceleratorModifiers = struct {
 
     pub fn apply(self: *AcceleratorModifiers, modifier: rc.AcceleratorTypeAndOptions) void {
         if (modifier == .ascii or modifier == .virtkey) self.explicit_ascii_or_virtkey = true;
-        self.value |= modifierValue(modifier);
+        self.value |= modifier_value(modifier);
     }
 
     pub fn is_set(self: AcceleratorModifiers, modifier: rc.AcceleratorTypeAndOptions) bool {
         // ASCII is set whenever VIRTKEY is not
-        if (modifier == .ascii) return self.value & modifierValue(.virtkey) == 0;
-        return self.value & modifierValue(modifier) != 0;
+        if (modifier == .ascii) return self.value & modifier_value(.virtkey) == 0;
+        return self.value & modifier_value(modifier) != 0;
     }
 
     fn modifier_value(modifier: rc.AcceleratorTypeAndOptions) u8 {
@@ -608,7 +608,7 @@ const AcceleratorKeyCodepointTranslator = struct {
         const parsed = maybe_parsed orelse return null;
         if (parsed.codepoint == Codepoint.invalid) return 0xFFFD;
         if (parsed.from_escaped_integer and self.string_type == .ascii) {
-            return windows1252.toCodepoint(@truncate(parsed.codepoint));
+            return windows1252.to_codepoint(@truncate(parsed.codepoint));
         }
         return parsed.codepoint;
     }
@@ -645,7 +645,7 @@ pub fn parse_accelerator_key_string(bytes: SourceBytes, is_virt: bool, options: 
         const c = translator.translate(try parser.next()) orelse return error.InvalidControlCharacter;
         switch (c) {
             '^' => return '^', // special case
-            'a'...'z', 'A'...'Z' => return std.ascii.toUpper(@intCast(c)) - 0x40,
+            'a'...'z', 'A'...'Z' => return std.ascii.to_upper(@int_cast(c)) - 0x40,
             // Note: The Windows RC compiler allows more than just A-Z, but what it allows
             //       seems to be tied to some sort of Unicode-aware 'is character' function or something.
             //       The full list of codepoints that trigger an out-of-range error can be found here:
@@ -657,7 +657,7 @@ pub fn parse_accelerator_key_string(bytes: SourceBytes, is_virt: bool, options: 
             //       Windows RC compiler.
             else => return error.ControlCharacterOutOfRange,
         }
-        @compileError("this should be unreachable");
+        @compile_error("this should be unreachable");
     }
 
     const second_codepoint = translator.translate(try parser.next());
@@ -667,7 +667,7 @@ pub fn parse_accelerator_key_string(bytes: SourceBytes, is_virt: bool, options: 
             if (second_codepoint != null and second_codepoint.? != 0) return error.AcceleratorTooLong;
             // No idea why it works this way, but this seems to match the Windows RC
             // behavior for codepoints >= 0x10000
-            const low = @as(u16, @intCast(first_codepoint & 0x3FF)) + 0xDC00;
+            const low = @as(u16, @int_cast(first_codepoint & 0x3FF)) + 0xDC00;
             const extra = (first_codepoint - 0x10000) / 0x400;
             break :initial_value low + extra * 0x100;
         }
@@ -688,7 +688,7 @@ pub fn parse_accelerator_key_string(bytes: SourceBytes, is_virt: bool, options: 
         result += c;
     } else if (is_virt) {
         switch (result) {
-            'a'...'z' => result -= 0x20, // toUpper
+            'a'...'z' => result -= 0x20, // to_upper
             else => {},
         }
     }
@@ -696,44 +696,44 @@ pub fn parse_accelerator_key_string(bytes: SourceBytes, is_virt: bool, options: 
 }
 
 test "accelerator keys" {
-    try std.testing.expectEqual(@as(u16, 1), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 1), try parse_accelerator_key_string(
         .{ .slice = "\"^a\"", .code_page = .windows1252 },
         false,
         .{},
     ));
-    try std.testing.expectEqual(@as(u16, 1), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 1), try parse_accelerator_key_string(
         .{ .slice = "\"^A\"", .code_page = .windows1252 },
         false,
         .{},
     ));
-    try std.testing.expectEqual(@as(u16, 26), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 26), try parse_accelerator_key_string(
         .{ .slice = "\"^Z\"", .code_page = .windows1252 },
         false,
         .{},
     ));
-    try std.testing.expectEqual(@as(u16, '^'), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, '^'), try parse_accelerator_key_string(
         .{ .slice = "\"^^\"", .code_page = .windows1252 },
         false,
         .{},
     ));
 
-    try std.testing.expectEqual(@as(u16, 'a'), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 'a'), try parse_accelerator_key_string(
         .{ .slice = "\"a\"", .code_page = .windows1252 },
         false,
         .{},
     ));
-    try std.testing.expectEqual(@as(u16, 0x6162), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0x6162), try parse_accelerator_key_string(
         .{ .slice = "\"ab\"", .code_page = .windows1252 },
         false,
         .{},
     ));
 
-    try std.testing.expectEqual(@as(u16, 'C'), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 'C'), try parse_accelerator_key_string(
         .{ .slice = "\"c\"", .code_page = .windows1252 },
         true,
         .{},
     ));
-    try std.testing.expectEqual(@as(u16, 0x6363), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0x6363), try parse_accelerator_key_string(
         .{ .slice = "\"cc\"", .code_page = .windows1252 },
         true,
         .{},
@@ -741,93 +741,93 @@ test "accelerator keys" {
 
     // \x00 or any escape that evaluates to zero acts as a terminator, everything past it
     // is ignored
-    try std.testing.expectEqual(@as(u16, 'a'), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 'a'), try parse_accelerator_key_string(
         .{ .slice = "\"a\\0bcdef\"", .code_page = .windows1252 },
         false,
         .{},
     ));
 
     // \x80 is € in Windows-1252, which is Unicode codepoint 20AC
-    try std.testing.expectEqual(@as(u16, 0x20AC), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0x20AC), try parse_accelerator_key_string(
         .{ .slice = "\"\x80\"", .code_page = .windows1252 },
         false,
         .{},
     ));
     // This depends on the code page, though, with codepage 65001, \x80
     // on its own is invalid UTF-8 so it gets converted to the replacement character
-    try std.testing.expectEqual(@as(u16, 0xFFFD), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0xFFFD), try parse_accelerator_key_string(
         .{ .slice = "\"\x80\"", .code_page = .utf8 },
         false,
         .{},
     ));
-    try std.testing.expectEqual(@as(u16, 0xCCAC), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0xCCAC), try parse_accelerator_key_string(
         .{ .slice = "\"\x80\x80\"", .code_page = .windows1252 },
         false,
         .{},
     ));
     // This also behaves the same with escaped characters
-    try std.testing.expectEqual(@as(u16, 0x20AC), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0x20AC), try parse_accelerator_key_string(
         .{ .slice = "\"\\x80\"", .code_page = .windows1252 },
         false,
         .{},
     ));
     // Even with utf8 code page
-    try std.testing.expectEqual(@as(u16, 0x20AC), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0x20AC), try parse_accelerator_key_string(
         .{ .slice = "\"\\x80\"", .code_page = .utf8 },
         false,
         .{},
     ));
-    try std.testing.expectEqual(@as(u16, 0xCCAC), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0xCCAC), try parse_accelerator_key_string(
         .{ .slice = "\"\\x80\\x80\"", .code_page = .windows1252 },
         false,
         .{},
     ));
     // Wide string with the actual characters behaves like the ASCII string version
-    try std.testing.expectEqual(@as(u16, 0xCCAC), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0xCCAC), try parse_accelerator_key_string(
         .{ .slice = "L\"\x80\x80\"", .code_page = .windows1252 },
         false,
         .{},
     ));
     // But wide string with escapes behaves differently
-    try std.testing.expectEqual(@as(u16, 0x8080), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0x8080), try parse_accelerator_key_string(
         .{ .slice = "L\"\\x80\\x80\"", .code_page = .windows1252 },
         false,
         .{},
     ));
     // and invalid escapes within wide strings get skipped
-    try std.testing.expectEqual(@as(u16, 'z'), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 'z'), try parse_accelerator_key_string(
         .{ .slice = "L\"\\Hz\"", .code_page = .windows1252 },
         false,
         .{},
     ));
 
     // any non-A-Z codepoints are illegal
-    try std.testing.expectError(error.ControlCharacterOutOfRange, parseAcceleratorKeyString(
+    try std.testing.expect_error(error.ControlCharacterOutOfRange, parse_accelerator_key_string(
         .{ .slice = "\"^\x83\"", .code_page = .windows1252 },
         false,
         .{},
     ));
-    try std.testing.expectError(error.ControlCharacterOutOfRange, parseAcceleratorKeyString(
+    try std.testing.expect_error(error.ControlCharacterOutOfRange, parse_accelerator_key_string(
         .{ .slice = "\"^1\"", .code_page = .windows1252 },
         false,
         .{},
     ));
-    try std.testing.expectError(error.InvalidControlCharacter, parseAcceleratorKeyString(
+    try std.testing.expect_error(error.InvalidControlCharacter, parse_accelerator_key_string(
         .{ .slice = "\"^\"", .code_page = .windows1252 },
         false,
         .{},
     ));
-    try std.testing.expectError(error.EmptyAccelerator, parseAcceleratorKeyString(
+    try std.testing.expect_error(error.EmptyAccelerator, parse_accelerator_key_string(
         .{ .slice = "\"\"", .code_page = .windows1252 },
         false,
         .{},
     ));
-    try std.testing.expectError(error.AcceleratorTooLong, parseAcceleratorKeyString(
+    try std.testing.expect_error(error.AcceleratorTooLong, parse_accelerator_key_string(
         .{ .slice = "\"hello\"", .code_page = .windows1252 },
         false,
         .{},
     ));
-    try std.testing.expectError(error.ControlCharacterOutOfRange, parseAcceleratorKeyString(
+    try std.testing.expect_error(error.ControlCharacterOutOfRange, parse_accelerator_key_string(
         .{ .slice = "\"^\x80\"", .code_page = .windows1252 },
         false,
         .{},
@@ -835,40 +835,40 @@ test "accelerator keys" {
 
     // Invalid UTF-8 gets converted to 0xFFFD, multiple invalids get shifted and added together
     // The behavior is the same for ascii and wide strings
-    try std.testing.expectEqual(@as(u16, 0xFCFD), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0xFCFD), try parse_accelerator_key_string(
         .{ .slice = "\"\x80\x80\"", .code_page = .utf8 },
         false,
         .{},
     ));
-    try std.testing.expectEqual(@as(u16, 0xFCFD), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0xFCFD), try parse_accelerator_key_string(
         .{ .slice = "L\"\x80\x80\"", .code_page = .utf8 },
         false,
         .{},
     ));
 
     // Codepoints >= 0x10000
-    try std.testing.expectEqual(@as(u16, 0xDD00), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0xDD00), try parse_accelerator_key_string(
         .{ .slice = "\"\xF0\x90\x84\x80\"", .code_page = .utf8 },
         false,
         .{},
     ));
-    try std.testing.expectEqual(@as(u16, 0xDD00), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0xDD00), try parse_accelerator_key_string(
         .{ .slice = "L\"\xF0\x90\x84\x80\"", .code_page = .utf8 },
         false,
         .{},
     ));
-    try std.testing.expectEqual(@as(u16, 0x9C01), try parseAcceleratorKeyString(
+    try std.testing.expect_equal(@as(u16, 0x9C01), try parse_accelerator_key_string(
         .{ .slice = "\"\xF4\x80\x80\x81\"", .code_page = .utf8 },
         false,
         .{},
     ));
     // anything before or after a codepoint >= 0x10000 causes an error
-    try std.testing.expectError(error.AcceleratorTooLong, parseAcceleratorKeyString(
+    try std.testing.expect_error(error.AcceleratorTooLong, parse_accelerator_key_string(
         .{ .slice = "\"a\xF0\x90\x80\x80\"", .code_page = .utf8 },
         false,
         .{},
     ));
-    try std.testing.expectError(error.AcceleratorTooLong, parseAcceleratorKeyString(
+    try std.testing.expect_error(error.AcceleratorTooLong, parse_accelerator_key_string(
         .{ .slice = "\"\xF0\x90\x80\x80a\"", .code_page = .utf8 },
         false,
         .{},
@@ -879,17 +879,17 @@ pub const ForcedOrdinal = struct {
     pub fn from_bytes(bytes: SourceBytes) u16 {
         var i: usize = 0;
         var result: u21 = 0;
-        while (bytes.code_page.codepointAt(i, bytes.slice)) |codepoint| : (i += codepoint.byte_len) {
+        while (bytes.code_page.codepoint_at(i, bytes.slice)) |codepoint| : (i += codepoint.byte_len) {
             const c = switch (codepoint.value) {
                 // Codepoints that would need a surrogate pair in UTF-16 are
                 // broken up into their UTF-16 code units and each code unit
                 // is interpreted as a digit.
                 0x10000...0x10FFFF => {
-                    const high = @as(u16, @intCast((codepoint.value - 0x10000) >> 10)) + 0xD800;
+                    const high = @as(u16, @int_cast((codepoint.value - 0x10000) >> 10)) + 0xD800;
                     if (result != 0) result *%= 10;
                     result +%= high -% '0';
 
-                    const low = @as(u16, @intCast(codepoint.value & 0x3FF)) + 0xDC00;
+                    const low = @as(u16, @int_cast(codepoint.value & 0x3FF)) + 0xDC00;
                     if (result != 0) result *%= 10;
                     result +%= low -% '0';
                     continue;
@@ -907,29 +907,29 @@ pub const ForcedOrdinal = struct {
         var result: u16 = 0;
         for (utf16) |code_unit| {
             if (result != 0) result *%= 10;
-            result +%= std.mem.littleToNative(u16, code_unit) -% '0';
+            result +%= std.mem.little_to_native(u16, code_unit) -% '0';
         }
         return result;
     }
 };
 
 test "forced ordinal" {
-    try std.testing.expectEqual(@as(u16, 3200), ForcedOrdinal.fromBytes(.{ .slice = "3200", .code_page = .windows1252 }));
-    try std.testing.expectEqual(@as(u16, 0x33), ForcedOrdinal.fromBytes(.{ .slice = "1+1", .code_page = .windows1252 }));
-    try std.testing.expectEqual(@as(u16, 65531), ForcedOrdinal.fromBytes(.{ .slice = "1!", .code_page = .windows1252 }));
+    try std.testing.expect_equal(@as(u16, 3200), ForcedOrdinal.from_bytes(.{ .slice = "3200", .code_page = .windows1252 }));
+    try std.testing.expect_equal(@as(u16, 0x33), ForcedOrdinal.from_bytes(.{ .slice = "1+1", .code_page = .windows1252 }));
+    try std.testing.expect_equal(@as(u16, 65531), ForcedOrdinal.from_bytes(.{ .slice = "1!", .code_page = .windows1252 }));
 
-    try std.testing.expectEqual(@as(u16, 0x122), ForcedOrdinal.fromBytes(.{ .slice = "0\x8C", .code_page = .windows1252 }));
-    try std.testing.expectEqual(@as(u16, 0x122), ForcedOrdinal.fromBytes(.{ .slice = "0Œ", .code_page = .utf8 }));
+    try std.testing.expect_equal(@as(u16, 0x122), ForcedOrdinal.from_bytes(.{ .slice = "0\x8C", .code_page = .windows1252 }));
+    try std.testing.expect_equal(@as(u16, 0x122), ForcedOrdinal.from_bytes(.{ .slice = "0Œ", .code_page = .utf8 }));
 
     // invalid UTF-8 gets converted to 0xFFFD (replacement char) and then interpreted as a digit
-    try std.testing.expectEqual(@as(u16, 0xFFCD), ForcedOrdinal.fromBytes(.{ .slice = "0\x81", .code_page = .utf8 }));
+    try std.testing.expect_equal(@as(u16, 0xFFCD), ForcedOrdinal.from_bytes(.{ .slice = "0\x81", .code_page = .utf8 }));
     // codepoints >= 0x10000
-    try std.testing.expectEqual(@as(u16, 0x49F2), ForcedOrdinal.fromBytes(.{ .slice = "0\u{10002}", .code_page = .utf8 }));
-    try std.testing.expectEqual(@as(u16, 0x4AF0), ForcedOrdinal.fromBytes(.{ .slice = "0\u{10100}", .code_page = .utf8 }));
+    try std.testing.expect_equal(@as(u16, 0x49F2), ForcedOrdinal.from_bytes(.{ .slice = "0\u{10002}", .code_page = .utf8 }));
+    try std.testing.expect_equal(@as(u16, 0x4AF0), ForcedOrdinal.from_bytes(.{ .slice = "0\u{10100}", .code_page = .utf8 }));
 
     // From UTF-16
-    try std.testing.expectEqual(@as(u16, 0x122), ForcedOrdinal.fromUtf16Le(&[_:0]u16{ std.mem.nativeToLittle(u16, '0'), std.mem.nativeToLittle(u16, 'Œ') }));
-    try std.testing.expectEqual(@as(u16, 0x4AF0), ForcedOrdinal.fromUtf16Le(std.unicode.utf8ToUtf16LeStringLiteral("0\u{10100}")));
+    try std.testing.expect_equal(@as(u16, 0x122), ForcedOrdinal.from_utf16_le(&[_:0]u16{ std.mem.native_to_little(u16, '0'), std.mem.native_to_little(u16, 'Œ') }));
+    try std.testing.expect_equal(@as(u16, 0x4AF0), ForcedOrdinal.from_utf16_le(std.unicode.utf8_to_utf16_le_string_literal("0\u{10100}")));
 }
 
 /// https://learn.microsoft.com/en-us/windows/win32/api/verrsrc/ns-verrsrc-vs_fixedfileinfo
@@ -948,7 +948,7 @@ pub const FixedFileInfo = struct {
     pub const version = 0x00010000;
 
     pub const byte_len = 0x34;
-    pub const key = std.unicode.utf8ToUtf16LeStringLiteral("VS_VERSION_INFO");
+    pub const key = std.unicode.utf8_to_utf16_le_string_literal("VS_VERSION_INFO");
 
     pub const Version = struct {
         parts: [4]u16 = [_]u16{0} ** 4,
@@ -963,19 +963,19 @@ pub const FixedFileInfo = struct {
     };
 
     pub fn write(self: FixedFileInfo, writer: anytype) !void {
-        try writer.writeInt(u32, signature, .little);
-        try writer.writeInt(u32, version, .little);
-        try writer.writeInt(u32, self.file_version.mostSignificantCombinedParts(), .little);
-        try writer.writeInt(u32, self.file_version.leastSignificantCombinedParts(), .little);
-        try writer.writeInt(u32, self.product_version.mostSignificantCombinedParts(), .little);
-        try writer.writeInt(u32, self.product_version.leastSignificantCombinedParts(), .little);
-        try writer.writeInt(u32, self.file_flags_mask, .little);
-        try writer.writeInt(u32, self.file_flags, .little);
-        try writer.writeInt(u32, self.file_os, .little);
-        try writer.writeInt(u32, self.file_type, .little);
-        try writer.writeInt(u32, self.file_subtype, .little);
-        try writer.writeInt(u32, self.file_date.mostSignificantCombinedParts(), .little);
-        try writer.writeInt(u32, self.file_date.leastSignificantCombinedParts(), .little);
+        try writer.write_int(u32, signature, .little);
+        try writer.write_int(u32, version, .little);
+        try writer.write_int(u32, self.file_version.most_significant_combined_parts(), .little);
+        try writer.write_int(u32, self.file_version.least_significant_combined_parts(), .little);
+        try writer.write_int(u32, self.product_version.most_significant_combined_parts(), .little);
+        try writer.write_int(u32, self.product_version.least_significant_combined_parts(), .little);
+        try writer.write_int(u32, self.file_flags_mask, .little);
+        try writer.write_int(u32, self.file_flags, .little);
+        try writer.write_int(u32, self.file_os, .little);
+        try writer.write_int(u32, self.file_type, .little);
+        try writer.write_int(u32, self.file_subtype, .little);
+        try writer.write_int(u32, self.file_date.most_significant_combined_parts(), .little);
+        try writer.write_int(u32, self.file_date.least_significant_combined_parts(), .little);
     }
 };
 
@@ -983,8 +983,8 @@ test "FixedFileInfo.Version" {
     const version = FixedFileInfo.Version{
         .parts = .{ 1, 2, 3, 4 },
     };
-    try std.testing.expectEqual(@as(u32, 0x00010002), version.mostSignificantCombinedParts());
-    try std.testing.expectEqual(@as(u32, 0x00030004), version.leastSignificantCombinedParts());
+    try std.testing.expect_equal(@as(u32, 0x00010002), version.most_significant_combined_parts());
+    try std.testing.expect_equal(@as(u32, 0x00030004), version.least_significant_combined_parts());
 }
 
 pub const VersionNode = struct {
@@ -996,15 +996,15 @@ pub const MenuItemFlags = struct {
     value: u16 = 0,
 
     pub fn apply(self: *MenuItemFlags, option: rc.MenuItem.Option) void {
-        self.value |= optionValue(option);
+        self.value |= option_value(option);
     }
 
     pub fn is_set(self: MenuItemFlags, option: rc.MenuItem.Option) bool {
-        return self.value & optionValue(option) != 0;
+        return self.value & option_value(option) != 0;
     }
 
     fn option_value(option: rc.MenuItem.Option) u16 {
-        return @intCast(switch (option) {
+        return @int_cast(switch (option) {
             .checked => MF.CHECKED,
             .grayed => MF.GRAYED,
             .help => MF.HELP,
@@ -1015,7 +1015,7 @@ pub const MenuItemFlags = struct {
     }
 
     pub fn mark_last(self: *MenuItemFlags) void {
-        self.value |= @intCast(MF.END);
+        self.value |= @int_cast(MF.END);
     }
 };
 

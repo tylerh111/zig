@@ -64,17 +64,17 @@ pub fn Ecdsa(comptime Curve: type, comptime Hash: type) type {
 
             /// Create a public key from a SEC-1 representation.
             pub fn from_sec1(sec1: []const u8) !PublicKey {
-                return PublicKey{ .p = try Curve.fromSec1(sec1) };
+                return PublicKey{ .p = try Curve.from_sec1(sec1) };
             }
 
             /// Encode the public key using the compressed SEC-1 format.
             pub fn to_compressed_sec1(pk: PublicKey) [compressed_sec1_encoded_length]u8 {
-                return pk.p.toCompressedSec1();
+                return pk.p.to_compressed_sec1();
             }
 
             /// Encoding the public key using the uncompressed SEC-1 format.
             pub fn to_uncompressed_sec1(pk: PublicKey) [uncompressed_sec1_encoded_length]u8 {
-                return pk.p.toUncompressedSec1();
+                return pk.p.to_uncompressed_sec1();
             }
         };
 
@@ -125,57 +125,57 @@ pub fn Ecdsa(comptime Curve: type, comptime Hash: type) type {
             /// The maximum length of the DER encoding is der_encoded_length_max.
             /// The function returns a slice, that can be shorter than der_encoded_length_max.
             pub fn to_der(self: Signature, buf: *[der_encoded_length_max]u8) []u8 {
-                var fb = io.fixedBufferStream(buf);
+                var fb = io.fixed_buffer_stream(buf);
                 const w = fb.writer();
-                const r_len = @as(u8, @intCast(self.r.len + (self.r[0] >> 7)));
-                const s_len = @as(u8, @intCast(self.s.len + (self.s[0] >> 7)));
-                const seq_len = @as(u8, @intCast(2 + r_len + 2 + s_len));
-                w.writeAll(&[_]u8{ 0x30, seq_len }) catch unreachable;
-                w.writeAll(&[_]u8{ 0x02, r_len }) catch unreachable;
+                const r_len = @as(u8, @int_cast(self.r.len + (self.r[0] >> 7)));
+                const s_len = @as(u8, @int_cast(self.s.len + (self.s[0] >> 7)));
+                const seq_len = @as(u8, @int_cast(2 + r_len + 2 + s_len));
+                w.write_all(&[_]u8{ 0x30, seq_len }) catch unreachable;
+                w.write_all(&[_]u8{ 0x02, r_len }) catch unreachable;
                 if (self.r[0] >> 7 != 0) {
-                    w.writeByte(0x00) catch unreachable;
+                    w.write_byte(0x00) catch unreachable;
                 }
-                w.writeAll(&self.r) catch unreachable;
-                w.writeAll(&[_]u8{ 0x02, s_len }) catch unreachable;
+                w.write_all(&self.r) catch unreachable;
+                w.write_all(&[_]u8{ 0x02, s_len }) catch unreachable;
                 if (self.s[0] >> 7 != 0) {
-                    w.writeByte(0x00) catch unreachable;
+                    w.write_byte(0x00) catch unreachable;
                 }
-                w.writeAll(&self.s) catch unreachable;
-                return fb.getWritten();
+                w.write_all(&self.s) catch unreachable;
+                return fb.get_written();
             }
 
             // Read a DER-encoded integer.
             fn read_der_int(out: []u8, reader: anytype) EncodingError!void {
                 var buf: [2]u8 = undefined;
-                _ = reader.readNoEof(&buf) catch return error.InvalidEncoding;
+                _ = reader.read_no_eof(&buf) catch return error.InvalidEncoding;
                 if (buf[0] != 0x02) return error.InvalidEncoding;
                 var expected_len = @as(usize, buf[1]);
                 if (expected_len == 0 or expected_len > 1 + out.len) return error.InvalidEncoding;
                 var has_top_bit = false;
                 if (expected_len == 1 + out.len) {
-                    if ((reader.readByte() catch return error.InvalidEncoding) != 0) return error.InvalidEncoding;
+                    if ((reader.read_byte() catch return error.InvalidEncoding) != 0) return error.InvalidEncoding;
                     expected_len -= 1;
                     has_top_bit = true;
                 }
                 const out_slice = out[out.len - expected_len ..];
-                reader.readNoEof(out_slice) catch return error.InvalidEncoding;
+                reader.read_no_eof(out_slice) catch return error.InvalidEncoding;
                 if (has_top_bit and out[0] >> 7 == 0) return error.InvalidEncoding;
             }
 
             /// Create a signature from a DER representation.
             /// Returns InvalidEncoding if the DER encoding is invalid.
             pub fn from_der(der: []const u8) EncodingError!Signature {
-                var sig: Signature = mem.zeroInit(Signature, .{});
-                var fb = io.fixedBufferStream(der);
+                var sig: Signature = mem.zero_init(Signature, .{});
+                var fb = io.fixed_buffer_stream(der);
                 const reader = fb.reader();
                 var buf: [2]u8 = undefined;
-                _ = reader.readNoEof(&buf) catch return error.InvalidEncoding;
+                _ = reader.read_no_eof(&buf) catch return error.InvalidEncoding;
                 if (buf[0] != 0x30 or @as(usize, buf[1]) + 2 != der.len) {
                     return error.InvalidEncoding;
                 }
-                try readDerInt(&sig.r, reader);
-                try readDerInt(&sig.s, reader);
-                if (fb.getPos() catch unreachable != der.len) return error.InvalidEncoding;
+                try read_der_int(&sig.r, reader);
+                try read_der_int(&sig.s, reader);
+                if (fb.get_pos() catch unreachable != der.len) return error.InvalidEncoding;
 
                 return sig;
             }
@@ -210,21 +210,21 @@ pub fn Ecdsa(comptime Curve: type, comptime Hash: type) type {
                 self.h.final(h_slice);
 
                 std.debug.assert(h.len >= scalar_encoded_length);
-                const z = reduceToScalar(scalar_encoded_length, h[0..scalar_encoded_length].*);
+                const z = reduce_to_scalar(scalar_encoded_length, h[0..scalar_encoded_length].*);
 
-                const k = deterministicScalar(h_slice.*, self.secret_key.bytes, self.noise);
+                const k = deterministic_scalar(h_slice.*, self.secret_key.bytes, self.noise);
 
-                const p = try Curve.basePoint.mul(k.toBytes(.big), .big);
-                const xs = p.affineCoordinates().x.toBytes(.big);
-                const r = reduceToScalar(Curve.Fe.encoded_length, xs);
-                if (r.isZero()) return error.IdentityElement;
+                const p = try Curve.basePoint.mul(k.to_bytes(.big), .big);
+                const xs = p.affine_coordinates().x.to_bytes(.big);
+                const r = reduce_to_scalar(Curve.Fe.encoded_length, xs);
+                if (r.is_zero()) return error.IdentityElement;
 
                 const k_inv = k.invert();
-                const zrs = z.add(r.mul(try Curve.scalar.Scalar.fromBytes(self.secret_key.bytes, .big)));
+                const zrs = z.add(r.mul(try Curve.scalar.Scalar.from_bytes(self.secret_key.bytes, .big)));
                 const s = k_inv.mul(zrs);
-                if (s.isZero()) return error.IdentityElement;
+                if (s.is_zero()) return error.IdentityElement;
 
-                return Signature{ .r = r.toBytes(.big), .s = s.toBytes(.big) };
+                return Signature{ .r = r.to_bytes(.big), .s = s.to_bytes(.big) };
             }
         };
 
@@ -237,9 +237,9 @@ pub fn Ecdsa(comptime Curve: type, comptime Hash: type) type {
             public_key: PublicKey,
 
             fn init(sig: Signature, public_key: PublicKey) (IdentityElementError || NonCanonicalError)!Verifier {
-                const r = try Curve.scalar.Scalar.fromBytes(sig.r, .big);
-                const s = try Curve.scalar.Scalar.fromBytes(sig.s, .big);
-                if (r.isZero() or s.isZero()) return error.IdentityElement;
+                const r = try Curve.scalar.Scalar.from_bytes(sig.r, .big);
+                const s = try Curve.scalar.Scalar.from_bytes(sig.s, .big);
+                if (r.is_zero() or s.is_zero()) return error.IdentityElement;
 
                 return Verifier{
                     .h = Hash.init(.{}),
@@ -261,18 +261,18 @@ pub fn Ecdsa(comptime Curve: type, comptime Hash: type) type {
                 var h: [h_len]u8 = [_]u8{0} ** h_len;
                 self.h.final(h[h_len - Hash.digest_length .. h_len]);
 
-                const z = reduceToScalar(ht, h[0..ht].*);
-                if (z.isZero()) {
+                const z = reduce_to_scalar(ht, h[0..ht].*);
+                if (z.is_zero()) {
                     return error.SignatureVerificationFailed;
                 }
 
                 const s_inv = self.s.invert();
-                const v1 = z.mul(s_inv).toBytes(.little);
-                const v2 = self.r.mul(s_inv).toBytes(.little);
-                const v1g = try Curve.basePoint.mulPublic(v1, .little);
-                const v2pk = try self.public_key.p.mulPublic(v2, .little);
-                const vxs = v1g.add(v2pk).affineCoordinates().x.toBytes(.big);
-                const vr = reduceToScalar(Curve.Fe.encoded_length, vxs);
+                const v1 = z.mul(s_inv).to_bytes(.little);
+                const v2 = self.r.mul(s_inv).to_bytes(.little);
+                const v1g = try Curve.basePoint.mul_public(v1, .little);
+                const v2pk = try self.public_key.p.mul_public(v2, .little);
+                const vxs = v1g.add(v2pk).affine_coordinates().x.to_bytes(.big);
+                const vr = reduce_to_scalar(Curve.Fe.encoded_length, vxs);
                 if (!self.r.equivalent(vr)) {
                     return error.SignatureVerificationFailed;
                 }
@@ -300,8 +300,8 @@ pub fn Ecdsa(comptime Curve: type, comptime Hash: type) type {
                 }
                 const h = [_]u8{0x00} ** Hash.digest_length;
                 const k0 = [_]u8{0x01} ** SecretKey.encoded_length;
-                const secret_key = deterministicScalar(h, k0, seed_).toBytes(.big);
-                return fromSecretKey(SecretKey{ .bytes = secret_key });
+                const secret_key = deterministic_scalar(h, k0, seed_).to_bytes(.big);
+                return from_secret_key(SecretKey{ .bytes = secret_key });
             }
 
             /// Return the public key corresponding to the secret key.
@@ -331,11 +331,11 @@ pub fn Ecdsa(comptime Curve: type, comptime Hash: type) type {
             if (unreduced_len >= 48) {
                 var xs = [_]u8{0} ** 64;
                 @memcpy(xs[xs.len - s.len ..], s[0..]);
-                return Curve.scalar.Scalar.fromBytes64(xs, .big);
+                return Curve.scalar.Scalar.from_bytes64(xs, .big);
             }
             var xs = [_]u8{0} ** 48;
             @memcpy(xs[xs.len - s.len ..], s[0..]);
-            return Curve.scalar.Scalar.fromBytes48(xs, .big);
+            return Curve.scalar.Scalar.from_bytes48(xs, .big);
         }
 
         // Create a deterministic scalar according to a secret key and optional noise.
@@ -367,7 +367,7 @@ pub fn Ecdsa(comptime Curve: type, comptime Hash: type) type {
                     Prf.create(m_v, m_v, &k);
                     @memcpy(t[t_off..t_end], m_v[0 .. t_end - t_off]);
                 }
-                if (Curve.scalar.Scalar.fromBytes(t, .big)) |s| return s else |_| {}
+                if (Curve.scalar.Scalar.from_bytes(t, .big)) |s| return s else |_| {}
                 m_i.* = 0x00;
                 Prf.create(&k, m[0 .. m_v.len + 1], &k);
                 Prf.create(m_v, m_v, &k);
@@ -451,10 +451,10 @@ test "Verifying a existing signature with EcdsaP384Sha256" {
     };
     // zig fmt: on
 
-    const sk = try Scheme.SecretKey.fromBytes(sk_bytes);
-    const kp = try Scheme.KeyPair.fromSecretKey(sk);
+    const sk = try Scheme.SecretKey.from_bytes(sk_bytes);
+    const kp = try Scheme.KeyPair.from_secret_key(sk);
 
-    const sig_ans = try Scheme.Signature.fromDer(&sig_ans_bytes);
+    const sig_ans = try Scheme.Signature.from_der(&sig_ans_bytes);
     try sig_ans.verify(&msg, kp.public_key);
 
     const sig = try kp.sign(&msg, null);
@@ -861,10 +861,10 @@ test "Test vectors from Project Wycheproof" {
         .{ .key = "04bcbb2914c79f045eaa6ecbbc612816b3be5d2d6796707d8125e9f851c18af015fffffffeecad44b6f05d15b33146549c2297b522a5eed8430cff596758e6c43d", .msg = "4d657373616765", .sig = "3045022070bebe684cdcb5ca72a42f0d873879359bd1781a591809947628d313a3814f67022100aec03aca8f5587a4d535fa31027bbe9cc0e464b1c3577f4c2dcde6b2094798a9", .result = .valid },
     };
     for (vectors) |vector| {
-        if (tvTry(vector)) {
+        if (tv_try(vector)) {
             try std.testing.expect(vector.result == .valid or vector.result == .acceptable);
         } else |_| {
-            try std.testing.expectEqual(vector.result, .invalid);
+            try std.testing.expect_equal(vector.result, .invalid);
         }
     }
 }
@@ -872,13 +872,13 @@ test "Test vectors from Project Wycheproof" {
 fn tv_try(vector: TestVector) !void {
     const Scheme = EcdsaP256Sha256;
     var key_sec1_: [Scheme.PublicKey.uncompressed_sec1_encoded_length]u8 = undefined;
-    const key_sec1 = try fmt.hexToBytes(&key_sec1_, vector.key);
-    const pk = try Scheme.PublicKey.fromSec1(key_sec1);
+    const key_sec1 = try fmt.hex_to_bytes(&key_sec1_, vector.key);
+    const pk = try Scheme.PublicKey.from_sec1(key_sec1);
     var msg_: [20]u8 = undefined;
-    const msg = try fmt.hexToBytes(&msg_, vector.msg);
+    const msg = try fmt.hex_to_bytes(&msg_, vector.msg);
     var sig_der_: [152]u8 = undefined;
-    const sig_der = try fmt.hexToBytes(&sig_der_, vector.sig);
-    const sig = try Scheme.Signature.fromDer(sig_der);
+    const sig_der = try fmt.hex_to_bytes(&sig_der_, vector.sig);
+    const sig = try Scheme.Signature.from_der(sig_der);
     try sig.verify(msg, pk);
 }
 
@@ -888,10 +888,10 @@ test "Sec1 encoding/decoding" {
     const Scheme = EcdsaP384Sha384;
     const kp = try Scheme.KeyPair.create(null);
     const pk = kp.public_key;
-    const pk_compressed_sec1 = pk.toCompressedSec1();
-    const pk_recovered1 = try Scheme.PublicKey.fromSec1(&pk_compressed_sec1);
-    try testing.expectEqualSlices(u8, &pk_recovered1.toCompressedSec1(), &pk_compressed_sec1);
-    const pk_uncompressed_sec1 = pk.toUncompressedSec1();
-    const pk_recovered2 = try Scheme.PublicKey.fromSec1(&pk_uncompressed_sec1);
-    try testing.expectEqualSlices(u8, &pk_recovered2.toUncompressedSec1(), &pk_uncompressed_sec1);
+    const pk_compressed_sec1 = pk.to_compressed_sec1();
+    const pk_recovered1 = try Scheme.PublicKey.from_sec1(&pk_compressed_sec1);
+    try testing.expect_equal_slices(u8, &pk_recovered1.to_compressed_sec1(), &pk_compressed_sec1);
+    const pk_uncompressed_sec1 = pk.to_uncompressed_sec1();
+    const pk_recovered2 = try Scheme.PublicKey.from_sec1(&pk_uncompressed_sec1);
+    try testing.expect_equal_slices(u8, &pk_recovered2.to_uncompressed_sec1(), &pk_uncompressed_sec1);
 }

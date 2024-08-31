@@ -11,7 +11,7 @@ pub fn panic(message: []const u8, stack_trace: ?*std.builtin.StackTrace, _: ?usi
 pub fn main() !void {
     var x: @Vector(4, u32) = @splat(0xdeadbeef);
     _ = &x;
-    const y: @Vector(4, u16) = @intCast(x);
+    const y: @Vector(4, u16) = @int_cast(x);
     _ = y;
     return error.TestFailed;
 }

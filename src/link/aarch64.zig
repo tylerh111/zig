@@ -5,24 +5,24 @@ pub inline fn is_arithmetic_op(inst: *const [4]u8) bool {
 
 pub fn write_add_imm_inst(value: u12, code: *[4]u8) void {
     var inst = Instruction{
-        .add_subtract_immediate = mem.bytesToValue(std.meta.TagPayload(
+        .add_subtract_immediate = mem.bytes_to_value(std.meta.TagPayload(
             Instruction,
             Instruction.add_subtract_immediate,
         ), code),
     };
     inst.add_subtract_immediate.imm12 = value;
-    mem.writeInt(u32, code, inst.toU32(), .little);
+    mem.write_int(u32, code, inst.to_u32(), .little);
 }
 
 pub fn write_load_store_reg_inst(value: u12, code: *[4]u8) void {
     var inst: Instruction = .{
-        .load_store_register = mem.bytesToValue(std.meta.TagPayload(
+        .load_store_register = mem.bytes_to_value(std.meta.TagPayload(
             Instruction,
             Instruction.load_store_register,
         ), code),
     };
     inst.load_store_register.offset = value;
-    mem.writeInt(u32, code, inst.toU32(), .little);
+    mem.write_int(u32, code, inst.to_u32(), .little);
 }
 
 pub fn calc_number_of_pages(saddr: i64, taddr: i64) error{Overflow}!i21 {
@@ -34,25 +34,25 @@ pub fn calc_number_of_pages(saddr: i64, taddr: i64) error{Overflow}!i21 {
 
 pub fn write_adrp_inst(pages: u21, code: *[4]u8) void {
     var inst = Instruction{
-        .pc_relative_address = mem.bytesToValue(std.meta.TagPayload(
+        .pc_relative_address = mem.bytes_to_value(std.meta.TagPayload(
             Instruction,
             Instruction.pc_relative_address,
         ), code),
     };
     inst.pc_relative_address.immhi = @as(u19, @truncate(pages >> 2));
     inst.pc_relative_address.immlo = @as(u2, @truncate(pages));
-    mem.writeInt(u32, code, inst.toU32(), .little);
+    mem.write_int(u32, code, inst.to_u32(), .little);
 }
 
 pub fn write_branch_imm(disp: i28, code: *[4]u8) void {
     var inst = Instruction{
-        .unconditional_branch_immediate = mem.bytesToValue(std.meta.TagPayload(
+        .unconditional_branch_immediate = mem.bytes_to_value(std.meta.TagPayload(
             Instruction,
             Instruction.unconditional_branch_immediate,
         ), code),
     };
-    inst.unconditional_branch_immediate.imm26 = @as(u26, @truncate(@as(u28, @bitCast(disp >> 2))));
-    mem.writeInt(u32, code, inst.toU32(), .little);
+    inst.unconditional_branch_immediate.imm26 = @as(u26, @truncate(@as(u28, @bit_cast(disp >> 2))));
+    mem.write_int(u32, code, inst.to_u32(), .little);
 }
 
 const assert = std.debug.assert;

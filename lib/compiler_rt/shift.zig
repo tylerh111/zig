@@ -36,13 +36,13 @@ inline fn ashl_xi3(comptime T: type, a: T, b: i32) T {
 
     if (b >= word_t.bits) {
         output.s.low = 0;
-        output.s.high = input.s.low << @intCast(b - word_t.bits);
+        output.s.high = input.s.low << @int_cast(b - word_t.bits);
     } else if (b == 0) {
         return a;
     } else {
-        output.s.low = input.s.low << @intCast(b);
-        output.s.high = input.s.high << @intCast(b);
-        output.s.high |= input.s.low >> @intCast(word_t.bits - b);
+        output.s.low = input.s.low << @int_cast(b);
+        output.s.high = input.s.high << @int_cast(b);
+        output.s.high |= input.s.low >> @int_cast(word_t.bits - b);
     }
 
     return output.all;
@@ -58,14 +58,14 @@ inline fn ashr_xi3(comptime T: type, a: T, b: i32) T {
 
     if (b >= word_t.bits) {
         output.s.high = input.s.high >> (word_t.bits - 1);
-        output.s.low = input.s.high >> @intCast(b - word_t.bits);
+        output.s.low = input.s.high >> @int_cast(b - word_t.bits);
     } else if (b == 0) {
         return a;
     } else {
-        output.s.high = input.s.high >> @intCast(b);
-        output.s.low = input.s.high << @intCast(word_t.bits - b);
+        output.s.high = input.s.high >> @int_cast(b);
+        output.s.low = input.s.high << @int_cast(word_t.bits - b);
         // Avoid sign-extension here
-        output.s.low |= @bitCast(@as(word_t.HalfTU, @bitCast(input.s.low)) >> @intCast(b));
+        output.s.low |= @bit_cast(@as(word_t.HalfTU, @bit_cast(input.s.low)) >> @int_cast(b));
     }
 
     return output.all;
@@ -81,61 +81,61 @@ inline fn lshr_xi3(comptime T: type, a: T, b: i32) T {
 
     if (b >= word_t.bits) {
         output.s.high = 0;
-        output.s.low = input.s.high >> @intCast(b - word_t.bits);
+        output.s.low = input.s.high >> @int_cast(b - word_t.bits);
     } else if (b == 0) {
         return a;
     } else {
-        output.s.high = input.s.high >> @intCast(b);
-        output.s.low = input.s.high << @intCast(word_t.bits - b);
-        output.s.low |= input.s.low >> @intCast(b);
+        output.s.high = input.s.high >> @int_cast(b);
+        output.s.low = input.s.high << @int_cast(word_t.bits - b);
+        output.s.low |= input.s.low >> @int_cast(b);
     }
 
     return output.all;
 }
 
 pub fn __ashlsi3(a: i32, b: i32) callconv(.C) i32 {
-    return ashlXi3(i32, a, b);
+    return ashl_xi3(i32, a, b);
 }
 
 pub fn __ashrsi3(a: i32, b: i32) callconv(.C) i32 {
-    return ashrXi3(i32, a, b);
+    return ashr_xi3(i32, a, b);
 }
 
 pub fn __lshrsi3(a: i32, b: i32) callconv(.C) i32 {
-    return lshrXi3(i32, a, b);
+    return lshr_xi3(i32, a, b);
 }
 
 pub fn __ashldi3(a: i64, b: i32) callconv(.C) i64 {
-    return ashlXi3(i64, a, b);
+    return ashl_xi3(i64, a, b);
 }
 fn __aeabi_llsl(a: i64, b: i32) callconv(.AAPCS) i64 {
-    return ashlXi3(i64, a, b);
+    return ashl_xi3(i64, a, b);
 }
 
 pub fn __ashlti3(a: i128, b: i32) callconv(.C) i128 {
-    return ashlXi3(i128, a, b);
+    return ashl_xi3(i128, a, b);
 }
 
 pub fn __ashrdi3(a: i64, b: i32) callconv(.C) i64 {
-    return ashrXi3(i64, a, b);
+    return ashr_xi3(i64, a, b);
 }
 fn __aeabi_lasr(a: i64, b: i32) callconv(.AAPCS) i64 {
-    return ashrXi3(i64, a, b);
+    return ashr_xi3(i64, a, b);
 }
 
 pub fn __ashrti3(a: i128, b: i32) callconv(.C) i128 {
-    return ashrXi3(i128, a, b);
+    return ashr_xi3(i128, a, b);
 }
 
 pub fn __lshrdi3(a: i64, b: i32) callconv(.C) i64 {
-    return lshrXi3(i64, a, b);
+    return lshr_xi3(i64, a, b);
 }
 fn __aeabi_llsr(a: i64, b: i32) callconv(.AAPCS) i64 {
-    return lshrXi3(i64, a, b);
+    return lshr_xi3(i64, a, b);
 }
 
 pub fn __lshrti3(a: i128, b: i32) callconv(.C) i128 {
-    return lshrXi3(i128, a, b);
+    return lshr_xi3(i128, a, b);
 }
 
 test {

@@ -57,43 +57,43 @@ pub const MutableValue = union(enum) {
     pub fn intern(mv: MutableValue, zcu: *Zcu, arena: Allocator) Allocator.Error!Value {
         const ip = &zcu.intern_pool;
         const gpa = zcu.gpa;
-        return Value.fromInterned(switch (mv) {
+        return Value.from_interned(switch (mv) {
             .interned => |ip_index| ip_index,
             .eu_payload => |sv| try ip.get(gpa, .{ .error_union = .{
                 .ty = sv.ty,
-                .val = .{ .payload = (try sv.child.intern(zcu, arena)).toIntern() },
+                .val = .{ .payload = (try sv.child.intern(zcu, arena)).to_intern() },
             } }),
             .opt_payload => |sv| try ip.get(gpa, .{ .opt = .{
                 .ty = sv.ty,
-                .val = (try sv.child.intern(zcu, arena)).toIntern(),
+                .val = (try sv.child.intern(zcu, arena)).to_intern(),
             } }),
             .repeated => |sv| try ip.get(gpa, .{ .aggregate = .{
                 .ty = sv.ty,
-                .storage = .{ .repeated_elem = (try sv.child.intern(zcu, arena)).toIntern() },
+                .storage = .{ .repeated_elem = (try sv.child.intern(zcu, arena)).to_intern() },
             } }),
             .bytes => |b| try ip.get(gpa, .{ .aggregate = .{
                 .ty = b.ty,
-                .storage = .{ .bytes = try ip.getOrPutString(gpa, b.data, .maybe_embedded_nulls) },
+                .storage = .{ .bytes = try ip.get_or_put_string(gpa, b.data, .maybe_embedded_nulls) },
             } }),
             .aggregate => |a| {
                 const elems = try arena.alloc(InternPool.Index, a.elems.len);
                 for (a.elems, elems) |mut_elem, *interned_elem| {
-                    interned_elem.* = (try mut_elem.intern(zcu, arena)).toIntern();
+                    interned_elem.* = (try mut_elem.intern(zcu, arena)).to_intern();
                 }
-                return Value.fromInterned(try ip.get(gpa, .{ .aggregate = .{
+                return Value.from_interned(try ip.get(gpa, .{ .aggregate = .{
                     .ty = a.ty,
                     .storage = .{ .elems = elems },
                 } }));
             },
             .slice => |s| try ip.get(gpa, .{ .slice = .{
                 .ty = s.ty,
-                .ptr = (try s.ptr.intern(zcu, arena)).toIntern(),
-                .len = (try s.len.intern(zcu, arena)).toIntern(),
+                .ptr = (try s.ptr.intern(zcu, arena)).to_intern(),
+                .len = (try s.len.intern(zcu, arena)).to_intern(),
             } }),
             .un => |u| try ip.get(gpa, .{ .un = .{
                 .ty = u.ty,
                 .tag = u.tag,
-                .val = (try u.payload.intern(zcu, arena)).toIntern(),
+                .val = (try u.payload.intern(zcu, arena)).to_intern(),
             } }),
         });
     }
@@ -116,7 +116,7 @@ pub const MutableValue = union(enum) {
         const ip = &zcu.intern_pool;
         const gpa = zcu.gpa;
         switch (mv.*) {
-            .interned => |ip_index| switch (ip.indexToKey(ip_index)) {
+            .interned => |ip_index| switch (ip.index_to_key(ip_index)) {
                 .opt => |opt| if (opt.val != .none) {
                     const mut_payload = try arena.create(MutableValue);
                     mut_payload.* = .{ .interned = opt.val };
@@ -158,18 +158,18 @@ pub const MutableValue = union(enum) {
                 },
                 .aggregate => |agg| switch (agg.storage) {
                     .bytes => |bytes| {
-                        const len: usize = @intCast(ip.aggregateTypeLenIncludingSentinel(agg.ty));
-                        assert(ip.childType(agg.ty) == .u8_type);
+                        const len: usize = @int_cast(ip.aggregate_type_len_including_sentinel(agg.ty));
+                        assert(ip.child_type(agg.ty) == .u8_type);
                         if (allow_bytes) {
                             const arena_bytes = try arena.alloc(u8, len);
-                            @memcpy(arena_bytes, bytes.toSlice(len, ip));
+                            @memcpy(arena_bytes, bytes.to_slice(len, ip));
                             mv.* = .{ .bytes = .{
                                 .ty = agg.ty,
                                 .data = arena_bytes,
                             } };
                         } else {
                             const mut_elems = try arena.alloc(MutableValue, len);
-                            for (bytes.toSlice(len, ip), mut_elems) |b, *mut_elem| {
+                            for (bytes.to_slice(len, ip), mut_elems) |b, *mut_elem| {
                                 mut_elem.* = .{ .interned = try ip.get(gpa, .{ .int = .{
                                     .ty = .u8_type,
                                     .storage = .{ .u64 = b },
@@ -182,7 +182,7 @@ pub const MutableValue = union(enum) {
                         }
                     },
                     .elems => |elems| {
-                        assert(elems.len == ip.aggregateTypeLenIncludingSentinel(agg.ty));
+                        assert(elems.len == ip.aggregate_type_len_including_sentinel(agg.ty));
                         const mut_elems = try arena.alloc(MutableValue, elems.len);
                         for (elems, mut_elems) |interned_elem, *mut_elem| {
                             mut_elem.* = .{ .interned = interned_elem };
@@ -201,8 +201,8 @@ pub const MutableValue = union(enum) {
                                 .child = repeated_val,
                             } };
                         } else {
-                            const len = ip.aggregateTypeLenIncludingSentinel(agg.ty);
-                            const mut_elems = try arena.alloc(MutableValue, @intCast(len));
+                            const len = ip.aggregate_type_len_including_sentinel(agg.ty);
+                            const mut_elems = try arena.alloc(MutableValue, @int_cast(len));
                             @memset(mut_elems, .{ .interned = val });
                             mv.* = .{ .aggregate = .{
                                 .ty = agg.ty,
@@ -211,26 +211,26 @@ pub const MutableValue = union(enum) {
                         }
                     },
                 },
-                .undef => |ty_ip| switch (Type.fromInterned(ty_ip).zigTypeTag(zcu)) {
+                .undef => |ty_ip| switch (Type.from_interned(ty_ip).zig_type_tag(zcu)) {
                     .Struct, .Array, .Vector => |type_tag| {
-                        const ty = Type.fromInterned(ty_ip);
+                        const ty = Type.from_interned(ty_ip);
                         const opt_sent = ty.sentinel(zcu);
                         if (type_tag == .Struct or opt_sent != null or !allow_repeated) {
-                            const len_no_sent = ip.aggregateTypeLen(ty_ip);
-                            const elems = try arena.alloc(MutableValue, @intCast(len_no_sent + @intFromBool(opt_sent != null)));
+                            const len_no_sent = ip.aggregate_type_len(ty_ip);
+                            const elems = try arena.alloc(MutableValue, @int_cast(len_no_sent + @int_from_bool(opt_sent != null)));
                             switch (type_tag) {
                                 .Array, .Vector => {
-                                    const elem_ty = ip.childType(ty_ip);
+                                    const elem_ty = ip.child_type(ty_ip);
                                     const undef_elem = try ip.get(gpa, .{ .undef = elem_ty });
-                                    @memset(elems[0..@intCast(len_no_sent)], .{ .interned = undef_elem });
+                                    @memset(elems[0..@int_cast(len_no_sent)], .{ .interned = undef_elem });
                                 },
-                                .Struct => for (elems[0..@intCast(len_no_sent)], 0..) |*mut_elem, i| {
-                                    const field_ty = ty.structFieldType(i, zcu).toIntern();
+                                .Struct => for (elems[0..@int_cast(len_no_sent)], 0..) |*mut_elem, i| {
+                                    const field_ty = ty.struct_field_type(i, zcu).to_intern();
                                     mut_elem.* = .{ .interned = try ip.get(gpa, .{ .undef = field_ty }) };
                                 },
                                 else => unreachable,
                             }
-                            if (opt_sent) |s| elems[@intCast(len_no_sent)] = .{ .interned = s.toIntern() };
+                            if (opt_sent) |s| elems[@int_cast(len_no_sent)] = .{ .interned = s.to_intern() };
                             mv.* = .{ .aggregate = .{
                                 .ty = ty_ip,
                                 .elems = elems,
@@ -238,7 +238,7 @@ pub const MutableValue = union(enum) {
                         } else {
                             const repeated_val = try arena.create(MutableValue);
                             repeated_val.* = .{
-                                .interned = try ip.get(gpa, .{ .undef = ip.childType(ty_ip) }),
+                                .interned = try ip.get(gpa, .{ .undef = ip.child_type(ty_ip) }),
                             };
                             mv.* = .{ .repeated = .{
                                 .ty = ty_ip,
@@ -248,10 +248,10 @@ pub const MutableValue = union(enum) {
                     },
                     .Union => {
                         const payload = try arena.create(MutableValue);
-                        const backing_ty = try Type.fromInterned(ty_ip).unionBackingType(zcu);
+                        const backing_ty = try Type.from_interned(ty_ip).union_backing_type(zcu);
                         payload.* = .{ .interned = try ip.get(
                             gpa,
-                            .{ .undef = backing_ty.toIntern() },
+                            .{ .undef = backing_ty.to_intern() },
                         ) };
                         mv.* = .{ .un = .{
                             .ty = ty_ip,
@@ -260,11 +260,11 @@ pub const MutableValue = union(enum) {
                         } };
                     },
                     .Pointer => {
-                        const ptr_ty = ip.indexToKey(ty_ip).ptr_type;
+                        const ptr_ty = ip.index_to_key(ty_ip).ptr_type;
                         if (ptr_ty.flags.size != .Slice) return;
                         const ptr = try arena.create(MutableValue);
                         const len = try arena.create(MutableValue);
-                        ptr.* = .{ .interned = try ip.get(gpa, .{ .undef = ip.slicePtrType(ty_ip) }) };
+                        ptr.* = .{ .interned = try ip.get(gpa, .{ .undef = ip.slice_ptr_type(ty_ip) }) };
                         len.* = .{ .interned = try ip.get(gpa, .{ .undef = .usize_type }) };
                         mv.* = .{ .slice = .{
                             .ty = ty_ip,
@@ -324,8 +324,8 @@ pub const MutableValue = union(enum) {
                 } };
             },
             .repeated => |repeated| {
-                const len = ip.aggregateTypeLenIncludingSentinel(repeated.ty);
-                const elems = try arena.alloc(MutableValue, @intCast(len));
+                const len = ip.aggregate_type_len_including_sentinel(repeated.ty);
+                const elems = try arena.alloc(MutableValue, @int_cast(len));
                 @memset(elems, repeated.child.*);
                 mv.* = .{ .aggregate = .{
                     .ty = repeated.ty,
@@ -346,7 +346,7 @@ pub const MutableValue = union(enum) {
     }
 
     /// Modify a single field of a `MutableValue` which represents an aggregate or slice, leaving others
-    /// untouched. When an entire field must be modified, this should be used in preference to `elemPtr`
+    /// untouched. When an entire field must be modified, this should be used in preference to `elem_ptr`
     /// to allow for an optimal representation.
     /// For slices, uses `Value.slice_ptr_index` and `Value.slice_len_index`.
     pub fn set_elem(
@@ -357,7 +357,7 @@ pub const MutableValue = union(enum) {
         field_val: MutableValue,
     ) Allocator.Error!void {
         const ip = &zcu.intern_pool;
-        const is_trivial_int = field_val.isTrivialInt(zcu);
+        const is_trivial_int = field_val.is_trivial_int(zcu);
         try mv.unintern(zcu, arena, is_trivial_int, true);
         switch (mv.*) {
             .interned,
@@ -372,30 +372,30 @@ pub const MutableValue = union(enum) {
             },
             .bytes => |b| {
                 assert(is_trivial_int);
-                assert(field_val.typeOf(zcu).toIntern() == .u8_type);
-                b.data[field_idx] = @intCast(Value.fromInterned(field_val.interned).toUnsignedInt(zcu));
+                assert(field_val.type_of(zcu).to_intern() == .u8_type);
+                b.data[field_idx] = @int_cast(Value.from_interned(field_val.interned).to_unsigned_int(zcu));
             },
             .repeated => |r| {
-                if (field_val.eqlTrivial(r.child.*)) return;
+                if (field_val.eql_trivial(r.child.*)) return;
                 // We must switch to either the `aggregate` or the `bytes` representation.
-                const len_inc_sent = ip.aggregateTypeLenIncludingSentinel(r.ty);
-                if (Type.fromInterned(r.ty).zigTypeTag(zcu) != .Struct and
+                const len_inc_sent = ip.aggregate_type_len_including_sentinel(r.ty);
+                if (Type.from_interned(r.ty).zig_type_tag(zcu) != .Struct and
                     is_trivial_int and
-                    Type.fromInterned(r.ty).childType(zcu).toIntern() == .u8_type and
-                    r.child.isTrivialInt(zcu))
+                    Type.from_interned(r.ty).child_type(zcu).to_intern() == .u8_type and
+                    r.child.is_trivial_int(zcu))
                 {
                     // We can use the `bytes` representation.
-                    const bytes = try arena.alloc(u8, @intCast(len_inc_sent));
-                    const repeated_byte = Value.fromInterned(r.child.interned).toUnsignedInt(zcu);
-                    @memset(bytes, @intCast(repeated_byte));
-                    bytes[field_idx] = @intCast(Value.fromInterned(field_val.interned).toUnsignedInt(zcu));
+                    const bytes = try arena.alloc(u8, @int_cast(len_inc_sent));
+                    const repeated_byte = Value.from_interned(r.child.interned).to_unsigned_int(zcu);
+                    @memset(bytes, @int_cast(repeated_byte));
+                    bytes[field_idx] = @int_cast(Value.from_interned(field_val.interned).to_unsigned_int(zcu));
                     mv.* = .{ .bytes = .{
                         .ty = r.ty,
                         .data = bytes,
                     } };
                 } else {
                     // We must use the `aggregate` representation.
-                    const mut_elems = try arena.alloc(MutableValue, @intCast(len_inc_sent));
+                    const mut_elems = try arena.alloc(MutableValue, @int_cast(len_inc_sent));
                     @memset(mut_elems, r.child.*);
                     mut_elems[field_idx] = field_val;
                     mv.* = .{ .aggregate = .{
@@ -406,10 +406,10 @@ pub const MutableValue = union(enum) {
             },
             .aggregate => |a| {
                 a.elems[field_idx] = field_val;
-                const is_struct = Type.fromInterned(a.ty).zigTypeTag(zcu) == .Struct;
+                const is_struct = Type.from_interned(a.ty).zig_type_tag(zcu) == .Struct;
                 // Attempt to switch to a more efficient representation.
                 const is_repeated = for (a.elems) |e| {
-                    if (!e.eqlTrivial(field_val)) break false;
+                    if (!e.eql_trivial(field_val)) break false;
                 } else true;
                 if (!is_struct and is_repeated) {
                     // Switch to `repeated` repr
@@ -419,12 +419,12 @@ pub const MutableValue = union(enum) {
                         .ty = a.ty,
                         .child = mut_repeated,
                     } };
-                } else if (!is_struct and is_trivial_int and Type.fromInterned(a.ty).childType(zcu).toIntern() == .u8_type) {
+                } else if (!is_struct and is_trivial_int and Type.from_interned(a.ty).child_type(zcu).to_intern() == .u8_type) {
                     // See if we can switch to `bytes` repr
                     for (a.elems) |e| {
                         switch (e) {
                             else => break,
-                            .interned => |ip_index| switch (ip.indexToKey(ip_index)) {
+                            .interned => |ip_index| switch (ip.index_to_key(ip_index)) {
                                 else => break,
                                 .int => |int| switch (int.storage) {
                                     .u64, .i64, .big_int => {},
@@ -435,7 +435,7 @@ pub const MutableValue = union(enum) {
                     } else {
                         const bytes = try arena.alloc(u8, a.elems.len);
                         for (a.elems, bytes) |elem_val, *b| {
-                            b.* = @intCast(Value.fromInterned(elem_val.interned).toUnsignedInt(zcu));
+                            b.* = @int_cast(Value.from_interned(elem_val.interned).to_unsigned_int(zcu));
                         }
                         mv.* = .{ .bytes = .{
                             .ty = a.ty,
@@ -459,15 +459,15 @@ pub const MutableValue = union(enum) {
             .opt_payload,
             => unreachable,
             .interned => |ip_index| {
-                const ty = Type.fromInterned(zcu.intern_pool.typeOf(ip_index));
-                switch (ty.zigTypeTag(zcu)) {
-                    .Array, .Vector => return .{ .interned = (try Value.fromInterned(ip_index).elemValue(zcu, field_idx)).toIntern() },
-                    .Struct, .Union => return .{ .interned = (try Value.fromInterned(ip_index).fieldValue(zcu, field_idx)).toIntern() },
+                const ty = Type.from_interned(zcu.intern_pool.type_of(ip_index));
+                switch (ty.zig_type_tag(zcu)) {
+                    .Array, .Vector => return .{ .interned = (try Value.from_interned(ip_index).elem_value(zcu, field_idx)).to_intern() },
+                    .Struct, .Union => return .{ .interned = (try Value.from_interned(ip_index).field_value(zcu, field_idx)).to_intern() },
                     .Pointer => {
-                        assert(ty.isSlice(zcu));
+                        assert(ty.is_slice(zcu));
                         return switch (field_idx) {
-                            Value.slice_ptr_index => .{ .interned = Value.fromInterned(ip_index).slicePtr(zcu).toIntern() },
-                            Value.slice_len_index => .{ .interned = switch (zcu.intern_pool.indexToKey(ip_index)) {
+                            Value.slice_ptr_index => .{ .interned = Value.from_interned(ip_index).slice_ptr(zcu).to_intern() },
+                            Value.slice_len_index => .{ .interned = switch (zcu.intern_pool.index_to_key(ip_index)) {
                                 .undef => try zcu.intern(.{ .undef = .usize_type }),
                                 .slice => |s| s.len,
                                 else => unreachable,
@@ -499,7 +499,7 @@ pub const MutableValue = union(enum) {
     fn is_trivial_int(mv: MutableValue, zcu: *Zcu) bool {
         return switch (mv) {
             else => false,
-            .interned => |ip_index| switch (zcu.intern_pool.indexToKey(ip_index)) {
+            .interned => |ip_index| switch (zcu.intern_pool.index_to_key(ip_index)) {
                 else => false,
                 .int => |int| switch (int.storage) {
                     .u64, .i64, .big_int => true,
@@ -511,8 +511,8 @@ pub const MutableValue = union(enum) {
 
     pub fn type_of(mv: MutableValue, zcu: *Zcu) Type {
         return switch (mv) {
-            .interned => |ip_index| Type.fromInterned(zcu.intern_pool.typeOf(ip_index)),
-            inline else => |x| Type.fromInterned(x.ty),
+            .interned => |ip_index| Type.from_interned(zcu.intern_pool.type_of(ip_index)),
+            inline else => |x| Type.from_interned(x.ty),
         };
     }
 
@@ -523,7 +523,7 @@ pub const MutableValue = union(enum) {
     } {
         return switch (mv) {
             .opt_payload => |pl| return .{ .payload = pl.child.* },
-            .interned => |ip_index| switch (zcu.intern_pool.indexToKey(ip_index)) {
+            .interned => |ip_index| switch (zcu.intern_pool.index_to_key(ip_index)) {
                 .undef => return .undef,
                 .opt => |opt| if (opt.val == .none) .null else .{ .payload = .{ .interned = opt.val } },
                 else => unreachable,
@@ -539,7 +539,7 @@ pub const MutableValue = union(enum) {
     } {
         return switch (mv) {
             .eu_payload => |pl| return .{ .payload = pl.child.* },
-            .interned => |ip_index| switch (zcu.intern_pool.indexToKey(ip_index)) {
+            .interned => |ip_index| switch (zcu.intern_pool.index_to_key(ip_index)) {
                 .undef => return .undef,
                 .error_union => |eu| switch (eu.val) {
                     .err_name => |name| .{ .err = name },
@@ -559,23 +559,23 @@ pub const MutableValue = union(enum) {
         if (@as(Tag, a) != @as(Tag, b)) return false;
         return switch (a) {
             .interned => |a_ip| a_ip == b.interned,
-            .eu_payload => |a_pl| a_pl.ty == b.eu_payload.ty and a_pl.child.eqlTrivial(b.eu_payload.child.*),
-            .opt_payload => |a_pl| a_pl.ty == b.opt_payload.ty and a_pl.child.eqlTrivial(b.opt_payload.child.*),
-            .repeated => |a_rep| a_rep.ty == b.repeated.ty and a_rep.child.eqlTrivial(b.repeated.child.*),
+            .eu_payload => |a_pl| a_pl.ty == b.eu_payload.ty and a_pl.child.eql_trivial(b.eu_payload.child.*),
+            .opt_payload => |a_pl| a_pl.ty == b.opt_payload.ty and a_pl.child.eql_trivial(b.opt_payload.child.*),
+            .repeated => |a_rep| a_rep.ty == b.repeated.ty and a_rep.child.eql_trivial(b.repeated.child.*),
             .bytes => |a_bytes| a_bytes.ty == b.bytes.ty and std.mem.eql(u8, a_bytes.data, b.bytes.data),
             .aggregate => |a_agg| {
                 const b_agg = b.aggregate;
                 if (a_agg.ty != b_agg.ty) return false;
                 if (a_agg.elems.len != b_agg.elems.len) return false;
                 for (a_agg.elems, b_agg.elems) |a_elem, b_elem| {
-                    if (!a_elem.eqlTrivial(b_elem)) return false;
+                    if (!a_elem.eql_trivial(b_elem)) return false;
                 }
                 return true;
             },
             .slice => |a_slice| a_slice.ty == b.slice.ty and
                 a_slice.ptr.interned == b.slice.ptr.interned and
                 a_slice.len.interned == b.slice.len.interned,
-            .un => |a_un| a_un.ty == b.un.ty and a_un.tag == b.un.tag and a_un.payload.eqlTrivial(b.un.payload.*),
+            .un => |a_un| a_un.ty == b.un.ty and a_un.tag == b.un.tag and a_un.payload.eql_trivial(b.un.payload.*),
         };
     }
 };

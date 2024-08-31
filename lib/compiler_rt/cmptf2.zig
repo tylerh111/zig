@@ -34,7 +34,7 @@ comptime {
 /// Note that this matches the definition of `__letf2`, `__eqtf2`, `__netf2`, `__cmptf2`,
 /// and `__lttf2`.
 fn __cmptf2(a: f128, b: f128) callconv(.C) i32 {
-    return @intFromEnum(comparef.cmpf2(f128, comparef.LE, a, b));
+    return @int_from_enum(comparef.cmpf2(f128, comparef.LE, a, b));
 }
 
 /// "These functions return a value less than or equal to zero if neither argument is NaN,
@@ -71,7 +71,7 @@ const SparcFCMP = enum(i32) {
 };
 
 fn _Qp_cmp(a: *const f128, b: *const f128) callconv(.C) i32 {
-    return @intFromEnum(comparef.cmpf2(f128, SparcFCMP, a.*, b.*));
+    return @int_from_enum(comparef.cmpf2(f128, SparcFCMP, a.*, b.*));
 }
 
 fn _Qp_feq(a: *const f128, b: *const f128) callconv(.C) bool {

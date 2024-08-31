@@ -2,10 +2,10 @@ const std = @import("std");
 const builtin = @import("builtin");
 
 const TestEnum = enum { TestEnumValue };
-const tag_name = @tagName(TestEnum.TestEnumValue);
+const tag_name = @tag_name(TestEnum.TestEnumValue);
 const ptr_tag_name: [*:0]const u8 = tag_name;
 
-test "@tagName() returns a string literal" {
+test "@tag_name() returns a string literal" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
@@ -28,10 +28,10 @@ test "@errorName() returns a string literal" {
 }
 
 const TestType = struct {};
-const type_name = @typeName(TestType);
+const type_name = @type_name(TestType);
 const ptr_type_name: [*:0]const u8 = type_name;
 
-test "@typeName() returns a string literal" {
+test "@type_name() returns a string literal" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
@@ -41,11 +41,11 @@ test "@typeName() returns a string literal" {
     try std.testing.expect(std.mem.eql(u8, "behavior.string_literals.TestType", ptr_type_name[0..type_name.len]));
 }
 
-const actual_contents = @embedFile("file_to_embed.txt");
+const actual_contents = @embed_file("file_to_embed.txt");
 const ptr_actual_contents: [*:0]const u8 = actual_contents;
 const expected_contents = "hello zig\n";
 
-test "@embedFile() returns a string literal" {
+test "@embed_file() returns a string literal" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
@@ -65,11 +65,11 @@ test "@src() returns a struct containing 0-terminated string slices" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    const src = testFnForSrc();
+    const src = test_fn_for_src();
     try std.testing.expect([:0]const u8 == @TypeOf(src.file));
-    try std.testing.expect(std.mem.endsWith(u8, src.file, "string_literals.zig"));
+    try std.testing.expect(std.mem.ends_with(u8, src.file, "string_literals.zig"));
     try std.testing.expect([:0]const u8 == @TypeOf(src.fn_name));
-    try std.testing.expect(std.mem.endsWith(u8, src.fn_name, "testFnForSrc"));
+    try std.testing.expect(std.mem.ends_with(u8, src.fn_name, "test_fn_for_src"));
 
     const ptr_src_file: [*:0]const u8 = src.file;
     _ = ptr_src_file; // unused

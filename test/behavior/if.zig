@@ -1,11 +1,11 @@
 const builtin = @import("builtin");
 const std = @import("std");
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 
 test "if statements" {
-    shouldBeEqual(1, 1);
-    firstEqlThird(2, 1, 2);
+    should_be_equal(1, 1);
+    first_eql_third(2, 1, 2);
 }
 fn should_be_equal(a: i32, b: i32) void {
     if (a != b) {
@@ -27,7 +27,7 @@ fn first_eql_third(a: i32, b: i32, c: i32) void {
 }
 
 test "else if expression" {
-    try expect(elseIfExpressionF(1) == 1);
+    try expect(else_if_expression_f(1) == 1);
 }
 fn else_if_expression_f(c: u8) u8 {
     if (c == 0) {
@@ -95,8 +95,8 @@ test "if copies its payload" {
             } else unreachable;
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "if prongs cast to expected type instead of peer type resolution" {
@@ -112,8 +112,8 @@ test "if prongs cast to expected type instead of peer type resolution" {
             try expect(y == 1);
         }
     };
-    try S.doTheTest(false);
-    try comptime S.doTheTest(false);
+    try S.do_the_test(false);
+    try comptime S.do_the_test(false);
 }
 
 test "if peer expressions inferred optional type" {
@@ -184,7 +184,7 @@ test "if value shouldn't be load-elided if used later (structs)" {
     var a = Foo{ .x = 1 };
     var b = Foo{ .x = 1 };
 
-    const c = if (@call(.never_inline, returnTrue, .{})) a else b;
+    const c = if (@call(.never_inline, return_true, .{})) a else b;
     // The second variable is superfluous with the current
     // state of codegen optimizations, but in future
     // "if (smthg) a else a" may be optimized simply into "a".
@@ -192,7 +192,7 @@ test "if value shouldn't be load-elided if used later (structs)" {
     a.x = 2;
     b.x = 3;
 
-    try std.testing.expectEqual(c.x, 1);
+    try std.testing.expect_equal(c.x, 1);
 }
 
 test "if value shouldn't be load-elided if used later (optionals)" {
@@ -201,12 +201,12 @@ test "if value shouldn't be load-elided if used later (optionals)" {
     var a: ?i32 = 1;
     var b: ?i32 = 1;
 
-    const c = if (@call(.never_inline, returnTrue, .{})) a else b;
+    const c = if (@call(.never_inline, return_true, .{})) a else b;
 
     a = 2;
     b = 3;
 
-    try std.testing.expectEqual(c, 1);
+    try std.testing.expect_equal(c, 1);
 }
 
 test "variable type inferred from if expression" {

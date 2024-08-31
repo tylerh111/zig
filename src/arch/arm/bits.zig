@@ -89,19 +89,19 @@ pub const Condition = enum(u4) {
 };
 
 test "condition from CompareOperator" {
-    try testing.expectEqual(@as(Condition, .eq), Condition.fromCompareOperatorSigned(.eq));
-    try testing.expectEqual(@as(Condition, .eq), Condition.fromCompareOperatorUnsigned(.eq));
+    try testing.expect_equal(@as(Condition, .eq), Condition.from_compare_operator_signed(.eq));
+    try testing.expect_equal(@as(Condition, .eq), Condition.from_compare_operator_unsigned(.eq));
 
-    try testing.expectEqual(@as(Condition, .gt), Condition.fromCompareOperatorSigned(.gt));
-    try testing.expectEqual(@as(Condition, .hi), Condition.fromCompareOperatorUnsigned(.gt));
+    try testing.expect_equal(@as(Condition, .gt), Condition.from_compare_operator_signed(.gt));
+    try testing.expect_equal(@as(Condition, .hi), Condition.from_compare_operator_unsigned(.gt));
 
-    try testing.expectEqual(@as(Condition, .le), Condition.fromCompareOperatorSigned(.lte));
-    try testing.expectEqual(@as(Condition, .ls), Condition.fromCompareOperatorUnsigned(.lte));
+    try testing.expect_equal(@as(Condition, .le), Condition.from_compare_operator_signed(.lte));
+    try testing.expect_equal(@as(Condition, .ls), Condition.from_compare_operator_unsigned(.lte));
 }
 
 test "negate condition" {
-    try testing.expectEqual(@as(Condition, .eq), Condition.ne.negate());
-    try testing.expectEqual(@as(Condition, .ne), Condition.eq.negate());
+    try testing.expect_equal(@as(Condition, .eq), Condition.ne.negate());
+    try testing.expect_equal(@as(Condition, .ne), Condition.eq.negate());
 }
 
 /// Represents a register in the ARM instruction set architecture
@@ -159,7 +159,7 @@ pub const Register = enum(u5) {
     /// Returns the unique 4-bit ID of this register which is used in
     /// the machine code
     pub fn id(self: Register) u4 {
-        return @as(u4, @truncate(@intFromEnum(self)));
+        return @as(u4, @truncate(@int_from_enum(self)));
     }
 
     pub fn dwarf_loc_op(self: Register) u8 {
@@ -168,8 +168,8 @@ pub const Register = enum(u5) {
 };
 
 test "Register.id" {
-    try testing.expectEqual(@as(u4, 15), Register.r15.id());
-    try testing.expectEqual(@as(u4, 15), Register.pc.id());
+    try testing.expect_equal(@as(u4, 15), Register.r15.id());
+    try testing.expect_equal(@as(u4, 15), Register.pc.id());
 }
 
 /// Program status registers containing flags, mode bits and other
@@ -399,8 +399,8 @@ pub const Instruction = union(enum) {
 
             pub fn to_u8(self: Shift) u8 {
                 return switch (self) {
-                    .register => |v| @as(u8, @bitCast(v)),
-                    .immediate => |v| @as(u8, @bitCast(v)),
+                    .register => |v| @as(u8, @bit_cast(v)),
+                    .immediate => |v| @as(u8, @bit_cast(v)),
                 };
             }
 
@@ -408,7 +408,7 @@ pub const Instruction = union(enum) {
                 return Shift{
                     .register = .{
                         .rs = rs.id(),
-                        .typ = @intFromEnum(typ),
+                        .typ = @int_from_enum(typ),
                     },
                 };
             }
@@ -417,7 +417,7 @@ pub const Instruction = union(enum) {
                 return Shift{
                     .immediate = .{
                         .amount = amount,
-                        .typ = @intFromEnum(typ),
+                        .typ = @int_from_enum(typ),
                     },
                 };
             }
@@ -425,8 +425,8 @@ pub const Instruction = union(enum) {
 
         pub fn to_u12(self: Operand) u12 {
             return switch (self) {
-                .register => |v| @as(u12, @bitCast(v)),
-                .immediate => |v| @as(u12, @bitCast(v)),
+                .register => |v| @as(u12, @bit_cast(v)),
+                .immediate => |v| @as(u12, @bit_cast(v)),
             };
         }
 
@@ -434,7 +434,7 @@ pub const Instruction = union(enum) {
             return Operand{
                 .register = .{
                     .rm = rm.id(),
-                    .shift = shift.toU8(),
+                    .shift = shift.to_u8(),
                 },
             };
         }
@@ -453,7 +453,7 @@ pub const Instruction = union(enum) {
         /// is no conversion
         pub fn from_u32(x: u32) ?Operand {
             const masks = comptime blk: {
-                const base_mask: u32 = std.math.maxInt(u8);
+                const base_mask: u32 = std.math.max_int(u8);
                 var result = [_]u32{0} ** 16;
                 for (&result, 0..) |*mask, i| mask.* = std.math.rotr(u32, base_mask, 2 * i);
                 break :blk result;
@@ -463,8 +463,8 @@ pub const Instruction = union(enum) {
                 if (x & mask == x) {
                     break Operand{
                         .immediate = .{
-                            .imm = @as(u8, @intCast(std.math.rotl(u32, x, 2 * i))),
-                            .rotate = @as(u4, @intCast(i)),
+                            .imm = @as(u8, @int_cast(std.math.rotl(u32, x, 2 * i))),
+                            .rotate = @as(u4, @int_cast(i)),
                         },
                     };
                 }
@@ -522,7 +522,7 @@ pub const Instruction = union(enum) {
 
         pub fn to_u12(self: Offset) u12 {
             return switch (self) {
-                .register => |v| @as(u12, @bitCast(v)),
+                .register => |v| @as(u12, @bit_cast(v)),
                 .immediate => |v| v,
             };
         }
@@ -604,20 +604,20 @@ pub const Instruction = union(enum) {
 
     pub fn to_u32(self: Instruction) u32 {
         return switch (self) {
-            .data_processing => |v| @as(u32, @bitCast(v)),
-            .multiply => |v| @as(u32, @bitCast(v)),
-            .multiply_long => |v| @as(u32, @bitCast(v)),
-            .signed_multiply_halfwords => |v| @as(u32, @bitCast(v)),
-            .integer_saturating_arithmetic => |v| @as(u32, @bitCast(v)),
-            .bit_field_extract => |v| @as(u32, @bitCast(v)),
-            .single_data_transfer => |v| @as(u32, @bitCast(v)),
-            .extra_load_store => |v| @as(u32, @bitCast(v)),
-            .block_data_transfer => |v| @as(u32, @bitCast(v)),
-            .branch => |v| @as(u32, @bitCast(v)),
-            .branch_exchange => |v| @as(u32, @bitCast(v)),
-            .supervisor_call => |v| @as(u32, @bitCast(v)),
+            .data_processing => |v| @as(u32, @bit_cast(v)),
+            .multiply => |v| @as(u32, @bit_cast(v)),
+            .multiply_long => |v| @as(u32, @bit_cast(v)),
+            .signed_multiply_halfwords => |v| @as(u32, @bit_cast(v)),
+            .integer_saturating_arithmetic => |v| @as(u32, @bit_cast(v)),
+            .bit_field_extract => |v| @as(u32, @bit_cast(v)),
+            .single_data_transfer => |v| @as(u32, @bit_cast(v)),
+            .extra_load_store => |v| @as(u32, @bit_cast(v)),
+            .block_data_transfer => |v| @as(u32, @bit_cast(v)),
+            .branch => |v| @as(u32, @bit_cast(v)),
+            .branch_exchange => |v| @as(u32, @bit_cast(v)),
+            .supervisor_call => |v| @as(u32, @bit_cast(v)),
             .undefined_instruction => |v| v.imm32,
-            .breakpoint => |v| @as(u32, @intCast(v.imm4)) | (@as(u32, @intCast(v.fixed_1)) << 4) | (@as(u32, @intCast(v.imm12)) << 8) | (@as(u32, @intCast(v.fixed_2_and_cond)) << 20),
+            .breakpoint => |v| @as(u32, @int_cast(v.imm4)) | (@as(u32, @int_cast(v.fixed_1)) << 4) | (@as(u32, @int_cast(v.imm12)) << 8) | (@as(u32, @int_cast(v.fixed_2_and_cond)) << 20),
         };
     }
 
@@ -633,13 +633,13 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .data_processing = .{
-                .cond = @intFromEnum(cond),
-                .i = @intFromBool(op2 == .immediate),
-                .opcode = @intFromEnum(opcode),
+                .cond = @int_from_enum(cond),
+                .i = @int_from_bool(op2 == .immediate),
+                .opcode = @int_from_enum(opcode),
                 .s = s,
                 .rn = rn.id(),
                 .rd = rd.id(),
-                .op2 = op2.toU12(),
+                .op2 = op2.to_u12(),
             },
         };
     }
@@ -652,7 +652,7 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .data_processing = .{
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
                 .i = 1,
                 .opcode = if (top) 0b1010 else 0b1000,
                 .s = 0,
@@ -673,8 +673,8 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .multiply = .{
-                .cond = @intFromEnum(cond),
-                .accumulate = @intFromBool(ra != null),
+                .cond = @int_from_enum(cond),
+                .accumulate = @int_from_bool(ra != null),
                 .set_cond = set_cond,
                 .rd = rd.id(),
                 .rn = rn.id(),
@@ -696,7 +696,7 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .multiply_long = .{
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
                 .unsigned = signed,
                 .accumulate = accumulate,
                 .set_cond = set_cond,
@@ -723,7 +723,7 @@ pub const Instruction = union(enum) {
                 .m = m,
                 .rm = rm.id(),
                 .rd = rd.id(),
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
             },
         };
     }
@@ -741,7 +741,7 @@ pub const Instruction = union(enum) {
                 .rd = rd.id(),
                 .rn = rn.id(),
                 .opc = opc,
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
             },
         };
     }
@@ -760,9 +760,9 @@ pub const Instruction = union(enum) {
                 .rn = rn.id(),
                 .lsb = lsb,
                 .rd = rd.id(),
-                .widthm1 = @as(u5, @intCast(width - 1)),
+                .widthm1 = @as(u5, @int_cast(width - 1)),
                 .unsigned = unsigned,
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
             },
         };
     }
@@ -779,22 +779,22 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .single_data_transfer = .{
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
                 .rn = rn.id(),
                 .rd = rd.id(),
-                .offset = offset.toU12(),
+                .offset = offset.to_u12(),
                 .load_store = load_store,
                 .write_back = switch (mode) {
                     .offset => 0b0,
                     .pre_index, .post_index => 0b1,
                 },
                 .byte_word = byte_word,
-                .up_down = @intFromBool(positive),
+                .up_down = @int_from_bool(positive),
                 .pre_post = switch (mode) {
                     .offset, .pre_index => 0b1,
                     .post_index => 0b0,
                 },
-                .imm = @intFromBool(offset != .immediate),
+                .imm = @int_from_bool(offset != .immediate),
             },
         };
     }
@@ -830,13 +830,13 @@ pub const Instruction = union(enum) {
                     .offset => 0b0,
                     .pre_index, .post_index => 0b1,
                 },
-                .imm = @intFromBool(offset == .immediate),
-                .up_down = @intFromBool(positive),
+                .imm = @int_from_bool(offset == .immediate),
+                .up_down = @int_from_bool(positive),
                 .pre_index = switch (mode) {
                     .offset, .pre_index => 0b1,
                     .post_index => 0b0,
                 },
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
             },
         };
     }
@@ -853,14 +853,14 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .block_data_transfer = .{
-                .register_list = @as(u16, @bitCast(reg_list)),
+                .register_list = @as(u16, @bit_cast(reg_list)),
                 .rn = rn.id(),
                 .load_store = load_store,
-                .write_back = @intFromBool(write_back),
+                .write_back = @int_from_bool(write_back),
                 .psr_or_user = psr_or_user,
                 .up_down = up_down,
                 .pre_post = pre_post,
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
             },
         };
     }
@@ -868,9 +868,9 @@ pub const Instruction = union(enum) {
     fn branch(cond: Condition, offset: i26, link: u1) Instruction {
         return Instruction{
             .branch = .{
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
                 .link = link,
-                .offset = @as(u24, @bitCast(@as(i24, @intCast(offset >> 2)))),
+                .offset = @as(u24, @bit_cast(@as(i24, @int_cast(offset >> 2)))),
             },
         };
     }
@@ -878,7 +878,7 @@ pub const Instruction = union(enum) {
     fn branch_exchange(cond: Condition, rn: Register, link: u1) Instruction {
         return Instruction{
             .branch_exchange = .{
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
                 .link = link,
                 .rn = rn.id(),
             },
@@ -888,7 +888,7 @@ pub const Instruction = union(enum) {
     fn supervisor_call(cond: Condition, comment: u24) Instruction {
         return Instruction{
             .supervisor_call = .{
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
                 .comment = comment,
             },
         };
@@ -916,143 +916,143 @@ pub const Instruction = union(enum) {
     // Data processing
 
     pub fn @"and"(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .@"and", 0, rd, rn, op2);
+        return data_processing(cond, .@"and", 0, rd, rn, op2);
     }
 
     pub fn ands(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .@"and", 1, rd, rn, op2);
+        return data_processing(cond, .@"and", 1, rd, rn, op2);
     }
 
     pub fn eor(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .eor, 0, rd, rn, op2);
+        return data_processing(cond, .eor, 0, rd, rn, op2);
     }
 
     pub fn eors(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .eor, 1, rd, rn, op2);
+        return data_processing(cond, .eor, 1, rd, rn, op2);
     }
 
     pub fn sub(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .sub, 0, rd, rn, op2);
+        return data_processing(cond, .sub, 0, rd, rn, op2);
     }
 
     pub fn subs(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .sub, 1, rd, rn, op2);
+        return data_processing(cond, .sub, 1, rd, rn, op2);
     }
 
     pub fn rsb(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .rsb, 0, rd, rn, op2);
+        return data_processing(cond, .rsb, 0, rd, rn, op2);
     }
 
     pub fn rsbs(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .rsb, 1, rd, rn, op2);
+        return data_processing(cond, .rsb, 1, rd, rn, op2);
     }
 
     pub fn add(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .add, 0, rd, rn, op2);
+        return data_processing(cond, .add, 0, rd, rn, op2);
     }
 
     pub fn adds(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .add, 1, rd, rn, op2);
+        return data_processing(cond, .add, 1, rd, rn, op2);
     }
 
     pub fn adc(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .adc, 0, rd, rn, op2);
+        return data_processing(cond, .adc, 0, rd, rn, op2);
     }
 
     pub fn adcs(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .adc, 1, rd, rn, op2);
+        return data_processing(cond, .adc, 1, rd, rn, op2);
     }
 
     pub fn sbc(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .sbc, 0, rd, rn, op2);
+        return data_processing(cond, .sbc, 0, rd, rn, op2);
     }
 
     pub fn sbcs(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .sbc, 1, rd, rn, op2);
+        return data_processing(cond, .sbc, 1, rd, rn, op2);
     }
 
     pub fn rsc(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .rsc, 0, rd, rn, op2);
+        return data_processing(cond, .rsc, 0, rd, rn, op2);
     }
 
     pub fn rscs(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .rsc, 1, rd, rn, op2);
+        return data_processing(cond, .rsc, 1, rd, rn, op2);
     }
 
     pub fn tst(cond: Condition, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .tst, 1, .r0, rn, op2);
+        return data_processing(cond, .tst, 1, .r0, rn, op2);
     }
 
     pub fn teq(cond: Condition, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .teq, 1, .r0, rn, op2);
+        return data_processing(cond, .teq, 1, .r0, rn, op2);
     }
 
     pub fn cmp(cond: Condition, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .cmp, 1, .r0, rn, op2);
+        return data_processing(cond, .cmp, 1, .r0, rn, op2);
     }
 
     pub fn cmn(cond: Condition, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .cmn, 1, .r0, rn, op2);
+        return data_processing(cond, .cmn, 1, .r0, rn, op2);
     }
 
     pub fn orr(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .orr, 0, rd, rn, op2);
+        return data_processing(cond, .orr, 0, rd, rn, op2);
     }
 
     pub fn orrs(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .orr, 1, rd, rn, op2);
+        return data_processing(cond, .orr, 1, rd, rn, op2);
     }
 
     pub fn mov(cond: Condition, rd: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .mov, 0, rd, .r0, op2);
+        return data_processing(cond, .mov, 0, rd, .r0, op2);
     }
 
     pub fn movs(cond: Condition, rd: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .mov, 1, rd, .r0, op2);
+        return data_processing(cond, .mov, 1, rd, .r0, op2);
     }
 
     pub fn bic(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .bic, 0, rd, rn, op2);
+        return data_processing(cond, .bic, 0, rd, rn, op2);
     }
 
     pub fn bics(cond: Condition, rd: Register, rn: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .bic, 1, rd, rn, op2);
+        return data_processing(cond, .bic, 1, rd, rn, op2);
     }
 
     pub fn mvn(cond: Condition, rd: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .mvn, 0, rd, .r0, op2);
+        return data_processing(cond, .mvn, 0, rd, .r0, op2);
     }
 
     pub fn mvns(cond: Condition, rd: Register, op2: Operand) Instruction {
-        return dataProcessing(cond, .mvn, 1, rd, .r0, op2);
+        return data_processing(cond, .mvn, 1, rd, .r0, op2);
     }
 
     // Integer Saturating Arithmetic
 
     pub fn qadd(cond: Condition, rd: Register, rm: Register, rn: Register) Instruction {
-        return integerSaturationArithmetic(cond, rd, rm, rn, 0b00);
+        return integer_saturation_arithmetic(cond, rd, rm, rn, 0b00);
     }
 
     pub fn qsub(cond: Condition, rd: Register, rm: Register, rn: Register) Instruction {
-        return integerSaturationArithmetic(cond, rd, rm, rn, 0b01);
+        return integer_saturation_arithmetic(cond, rd, rm, rn, 0b01);
     }
 
     pub fn qdadd(cond: Condition, rd: Register, rm: Register, rn: Register) Instruction {
-        return integerSaturationArithmetic(cond, rd, rm, rn, 0b10);
+        return integer_saturation_arithmetic(cond, rd, rm, rn, 0b10);
     }
 
     pub fn qdsub(cond: Condition, rd: Register, rm: Register, rn: Register) Instruction {
-        return integerSaturationArithmetic(cond, rd, rm, rn, 0b11);
+        return integer_saturation_arithmetic(cond, rd, rm, rn, 0b11);
     }
 
     // movw and movt
 
     pub fn movw(cond: Condition, rd: Register, imm: u16) Instruction {
-        return specialMov(cond, rd, imm, false);
+        return special_mov(cond, rd, imm, false);
     }
 
     pub fn movt(cond: Condition, rd: Register, imm: u16) Instruction {
-        return specialMov(cond, rd, imm, true);
+        return special_mov(cond, rd, imm, true);
     }
 
     // PSR transfer
@@ -1060,7 +1060,7 @@ pub const Instruction = union(enum) {
     pub fn mrs(cond: Condition, rd: Register, psr: Psr) Instruction {
         return Instruction{
             .data_processing = .{
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
                 .i = 0,
                 .opcode = if (psr == .spsr) 0b1010 else 0b1000,
                 .s = 0,
@@ -1074,13 +1074,13 @@ pub const Instruction = union(enum) {
     pub fn msr(cond: Condition, psr: Psr, op: Operand) Instruction {
         return Instruction{
             .data_processing = .{
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
                 .i = 0,
                 .opcode = if (psr == .spsr) 0b1011 else 0b1001,
                 .s = 0,
                 .rn = 0b1111,
                 .rd = 0b1111,
-                .op2 = op.toU12(),
+                .op2 = op.to_u12(),
             },
         };
     }
@@ -1106,63 +1106,63 @@ pub const Instruction = union(enum) {
     // Multiply long
 
     pub fn umull(cond: Condition, rdlo: Register, rdhi: Register, rn: Register, rm: Register) Instruction {
-        return multiplyLong(cond, 0, 0, 0, rdhi, rdlo, rm, rn);
+        return multiply_long(cond, 0, 0, 0, rdhi, rdlo, rm, rn);
     }
 
     pub fn umulls(cond: Condition, rdlo: Register, rdhi: Register, rn: Register, rm: Register) Instruction {
-        return multiplyLong(cond, 0, 0, 1, rdhi, rdlo, rm, rn);
+        return multiply_long(cond, 0, 0, 1, rdhi, rdlo, rm, rn);
     }
 
     pub fn umlal(cond: Condition, rdlo: Register, rdhi: Register, rn: Register, rm: Register) Instruction {
-        return multiplyLong(cond, 0, 1, 0, rdhi, rdlo, rm, rn);
+        return multiply_long(cond, 0, 1, 0, rdhi, rdlo, rm, rn);
     }
 
     pub fn umlals(cond: Condition, rdlo: Register, rdhi: Register, rn: Register, rm: Register) Instruction {
-        return multiplyLong(cond, 0, 1, 1, rdhi, rdlo, rm, rn);
+        return multiply_long(cond, 0, 1, 1, rdhi, rdlo, rm, rn);
     }
 
     pub fn smull(cond: Condition, rdlo: Register, rdhi: Register, rn: Register, rm: Register) Instruction {
-        return multiplyLong(cond, 1, 0, 0, rdhi, rdlo, rm, rn);
+        return multiply_long(cond, 1, 0, 0, rdhi, rdlo, rm, rn);
     }
 
     pub fn smulls(cond: Condition, rdlo: Register, rdhi: Register, rn: Register, rm: Register) Instruction {
-        return multiplyLong(cond, 1, 0, 1, rdhi, rdlo, rm, rn);
+        return multiply_long(cond, 1, 0, 1, rdhi, rdlo, rm, rn);
     }
 
     pub fn smlal(cond: Condition, rdlo: Register, rdhi: Register, rn: Register, rm: Register) Instruction {
-        return multiplyLong(cond, 1, 1, 0, rdhi, rdlo, rm, rn);
+        return multiply_long(cond, 1, 1, 0, rdhi, rdlo, rm, rn);
     }
 
     pub fn smlals(cond: Condition, rdlo: Register, rdhi: Register, rn: Register, rm: Register) Instruction {
-        return multiplyLong(cond, 1, 1, 1, rdhi, rdlo, rm, rn);
+        return multiply_long(cond, 1, 1, 1, rdhi, rdlo, rm, rn);
     }
 
     // Signed Multiply (halfwords)
 
     pub fn smulbb(cond: Condition, rd: Register, rn: Register, rm: Register) Instruction {
-        return signedMultiplyHalfwords(0, 0, cond, rd, rn, rm);
+        return signed_multiply_halfwords(0, 0, cond, rd, rn, rm);
     }
 
     pub fn smulbt(cond: Condition, rd: Register, rn: Register, rm: Register) Instruction {
-        return signedMultiplyHalfwords(0, 1, cond, rd, rn, rm);
+        return signed_multiply_halfwords(0, 1, cond, rd, rn, rm);
     }
 
     pub fn smultb(cond: Condition, rd: Register, rn: Register, rm: Register) Instruction {
-        return signedMultiplyHalfwords(1, 0, cond, rd, rn, rm);
+        return signed_multiply_halfwords(1, 0, cond, rd, rn, rm);
     }
 
     pub fn smultt(cond: Condition, rd: Register, rn: Register, rm: Register) Instruction {
-        return signedMultiplyHalfwords(1, 1, cond, rd, rn, rm);
+        return signed_multiply_halfwords(1, 1, cond, rd, rn, rm);
     }
 
     // Bit field extract
 
     pub fn ubfx(cond: Condition, rd: Register, rn: Register, lsb: u5, width: u6) Instruction {
-        return bitFieldExtract(0b1, cond, rd, rn, lsb, width);
+        return bit_field_extract(0b1, cond, rd, rn, lsb, width);
     }
 
     pub fn sbfx(cond: Condition, rd: Register, rn: Register, lsb: u5, width: u6) Instruction {
-        return bitFieldExtract(0b0, cond, rd, rn, lsb, width);
+        return bit_field_extract(0b0, cond, rd, rn, lsb, width);
     }
 
     // Single data transfer
@@ -1174,19 +1174,19 @@ pub const Instruction = union(enum) {
     };
 
     pub fn ldr(cond: Condition, rd: Register, rn: Register, args: OffsetArgs) Instruction {
-        return singleDataTransfer(cond, rd, rn, args.offset, args.mode, args.positive, 0, 1);
+        return single_data_transfer(cond, rd, rn, args.offset, args.mode, args.positive, 0, 1);
     }
 
     pub fn ldrb(cond: Condition, rd: Register, rn: Register, args: OffsetArgs) Instruction {
-        return singleDataTransfer(cond, rd, rn, args.offset, args.mode, args.positive, 1, 1);
+        return single_data_transfer(cond, rd, rn, args.offset, args.mode, args.positive, 1, 1);
     }
 
     pub fn str(cond: Condition, rd: Register, rn: Register, args: OffsetArgs) Instruction {
-        return singleDataTransfer(cond, rd, rn, args.offset, args.mode, args.positive, 0, 0);
+        return single_data_transfer(cond, rd, rn, args.offset, args.mode, args.positive, 0, 0);
     }
 
     pub fn strb(cond: Condition, rd: Register, rn: Register, args: OffsetArgs) Instruction {
-        return singleDataTransfer(cond, rd, rn, args.offset, args.mode, args.positive, 1, 0);
+        return single_data_transfer(cond, rd, rn, args.offset, args.mode, args.positive, 1, 0);
     }
 
     // Extra load/store
@@ -1198,37 +1198,37 @@ pub const Instruction = union(enum) {
     };
 
     pub fn strh(cond: Condition, rt: Register, rn: Register, args: ExtraLoadStoreOffsetArgs) Instruction {
-        return extraLoadStore(cond, args.mode, args.positive, 0b0, 0b01, rn, rt, args.offset);
+        return extra_load_store(cond, args.mode, args.positive, 0b0, 0b01, rn, rt, args.offset);
     }
 
     pub fn ldrh(cond: Condition, rt: Register, rn: Register, args: ExtraLoadStoreOffsetArgs) Instruction {
-        return extraLoadStore(cond, args.mode, args.positive, 0b1, 0b01, rn, rt, args.offset);
+        return extra_load_store(cond, args.mode, args.positive, 0b1, 0b01, rn, rt, args.offset);
     }
 
     pub fn ldrsh(cond: Condition, rt: Register, rn: Register, args: ExtraLoadStoreOffsetArgs) Instruction {
-        return extraLoadStore(cond, args.mode, args.positive, 0b1, 0b11, rn, rt, args.offset);
+        return extra_load_store(cond, args.mode, args.positive, 0b1, 0b11, rn, rt, args.offset);
     }
 
     pub fn ldrsb(cond: Condition, rt: Register, rn: Register, args: ExtraLoadStoreOffsetArgs) Instruction {
-        return extraLoadStore(cond, args.mode, args.positive, 0b1, 0b10, rn, rt, args.offset);
+        return extra_load_store(cond, args.mode, args.positive, 0b1, 0b10, rn, rt, args.offset);
     }
 
     // Block data transfer
 
     pub fn ldmda(cond: Condition, rn: Register, write_back: bool, reg_list: RegisterList) Instruction {
-        return blockDataTransfer(cond, rn, reg_list, 0, 0, 0, write_back, 1);
+        return block_data_transfer(cond, rn, reg_list, 0, 0, 0, write_back, 1);
     }
 
     pub fn ldmdb(cond: Condition, rn: Register, write_back: bool, reg_list: RegisterList) Instruction {
-        return blockDataTransfer(cond, rn, reg_list, 1, 0, 0, write_back, 1);
+        return block_data_transfer(cond, rn, reg_list, 1, 0, 0, write_back, 1);
     }
 
     pub fn ldmib(cond: Condition, rn: Register, write_back: bool, reg_list: RegisterList) Instruction {
-        return blockDataTransfer(cond, rn, reg_list, 1, 1, 0, write_back, 1);
+        return block_data_transfer(cond, rn, reg_list, 1, 1, 0, write_back, 1);
     }
 
     pub fn ldmia(cond: Condition, rn: Register, write_back: bool, reg_list: RegisterList) Instruction {
-        return blockDataTransfer(cond, rn, reg_list, 0, 1, 0, write_back, 1);
+        return block_data_transfer(cond, rn, reg_list, 0, 1, 0, write_back, 1);
     }
 
     pub const ldmfa = ldmda;
@@ -1238,19 +1238,19 @@ pub const Instruction = union(enum) {
     pub const ldm = ldmia;
 
     pub fn stmda(cond: Condition, rn: Register, write_back: bool, reg_list: RegisterList) Instruction {
-        return blockDataTransfer(cond, rn, reg_list, 0, 0, 0, write_back, 0);
+        return block_data_transfer(cond, rn, reg_list, 0, 0, 0, write_back, 0);
     }
 
     pub fn stmdb(cond: Condition, rn: Register, write_back: bool, reg_list: RegisterList) Instruction {
-        return blockDataTransfer(cond, rn, reg_list, 1, 0, 0, write_back, 0);
+        return block_data_transfer(cond, rn, reg_list, 1, 0, 0, write_back, 0);
     }
 
     pub fn stmib(cond: Condition, rn: Register, write_back: bool, reg_list: RegisterList) Instruction {
-        return blockDataTransfer(cond, rn, reg_list, 1, 1, 0, write_back, 0);
+        return block_data_transfer(cond, rn, reg_list, 1, 1, 0, write_back, 0);
     }
 
     pub fn stmia(cond: Condition, rn: Register, write_back: bool, reg_list: RegisterList) Instruction {
-        return blockDataTransfer(cond, rn, reg_list, 0, 1, 0, write_back, 0);
+        return block_data_transfer(cond, rn, reg_list, 0, 1, 0, write_back, 0);
     }
 
     pub const stmed = stmda;
@@ -1272,11 +1272,11 @@ pub const Instruction = union(enum) {
     // Branch and exchange
 
     pub fn bx(cond: Condition, rn: Register) Instruction {
-        return branchExchange(cond, rn, 0);
+        return branch_exchange(cond, rn, 0);
     }
 
     pub fn blx(cond: Condition, rn: Register) Instruction {
-        return branchExchange(cond, rn, 1);
+        return branch_exchange(cond, rn, 1);
     }
 
     // Supervisor Call
@@ -1284,7 +1284,7 @@ pub const Instruction = union(enum) {
     pub const swi = svc;
 
     pub fn svc(cond: Condition, comment: u24) Instruction {
-        return supervisorCall(cond, comment);
+        return supervisor_call(cond, comment);
     }
 
     // Breakpoint
@@ -1301,11 +1301,11 @@ pub const Instruction = union(enum) {
 
     pub fn pop(cond: Condition, args: anytype) Instruction {
         if (@typeInfo(@TypeOf(args)) != .Struct) {
-            @compileError("Expected tuple or struct argument, found " ++ @typeName(@TypeOf(args)));
+            @compile_error("Expected tuple or struct argument, found " ++ @type_name(@TypeOf(args)));
         }
 
         if (args.len < 1) {
-            @compileError("Expected at least one register");
+            @compile_error("Expected at least one register");
         } else if (args.len == 1) {
             const reg = args[0];
             return ldr(cond, reg, .sp, .{
@@ -1319,17 +1319,17 @@ pub const Instruction = union(enum) {
                 const reg = @as(Register, arg);
                 register_list |= @as(u16, 1) << reg.id();
             }
-            return ldm(cond, .sp, true, @as(RegisterList, @bitCast(register_list)));
+            return ldm(cond, .sp, true, @as(RegisterList, @bit_cast(register_list)));
         }
     }
 
     pub fn push(cond: Condition, args: anytype) Instruction {
         if (@typeInfo(@TypeOf(args)) != .Struct) {
-            @compileError("Expected tuple or struct argument, found " ++ @typeName(@TypeOf(args)));
+            @compile_error("Expected tuple or struct argument, found " ++ @type_name(@TypeOf(args)));
         }
 
         if (args.len < 1) {
-            @compileError("Expected at least one register");
+            @compile_error("Expected at least one register");
         } else if (args.len == 1) {
             const reg = args[0];
             return str(cond, reg, .sp, .{
@@ -1343,7 +1343,7 @@ pub const Instruction = union(enum) {
                 const reg = @as(Register, arg);
                 register_list |= @as(u16, 1) << reg.id();
             }
-            return stmdb(cond, .sp, true, @as(RegisterList, @bitCast(register_list)));
+            return stmdb(cond, .sp, true, @as(RegisterList, @bit_cast(register_list)));
         }
     }
 
@@ -1509,8 +1509,8 @@ test "serialize instructions" {
     };
 
     for (testcases) |case| {
-        const actual = case.inst.toU32();
-        try testing.expectEqual(case.expected, actual);
+        const actual = case.inst.to_u32();
+        try testing.expect_equal(case.expected, actual);
     }
 }
 
@@ -1562,6 +1562,6 @@ test "aliases" {
     };
 
     for (testcases) |case| {
-        try testing.expectEqual(case.expected.toU32(), case.actual.toU32());
+        try testing.expect_equal(case.expected.to_u32(), case.actual.to_u32());
     }
 }

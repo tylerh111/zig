@@ -1,10 +1,10 @@
 const std = @import("std");
 
 pub fn main() void {
-    printNumberHex(0x00000000);
-    printNumberHex(0xaaaaaaaa);
-    printNumberHex(0xdeadbeef);
-    printNumberHex(0x31415926);
+    print_number_hex(0x00000000);
+    print_number_hex(0xaaaaaaaa);
+    print_number_hex(0xdeadbeef);
+    print_number_hex(0x31415926);
 }
 
 fn print_number_hex(x: u32) void {

@@ -3,7 +3,7 @@ const math = std.math;
 const common = @import("common.zig");
 const BiasedFp = common.BiasedFp;
 const Decimal = @import("decimal.zig").Decimal;
-const mantissaType = common.mantissaType;
+const mantissa_type = common.mantissa_type;
 
 const max_shift = 60;
 const num_powers = 19;
@@ -38,10 +38,10 @@ pub fn get_shift(n: usize) usize {
 pub fn convert_slow(comptime T: type, s: []const u8) BiasedFp(T) {
     @setCold(true);
 
-    const MantissaT = mantissaType(T);
-    const min_exponent = -(1 << (math.floatExponentBits(T) - 1)) + 1;
-    const infinite_power = (1 << math.floatExponentBits(T)) - 1;
-    const mantissa_explicit_bits = math.floatMantissaBits(T);
+    const MantissaT = mantissa_type(T);
+    const min_exponent = -(1 << (math.float_exponent_bits(T) - 1)) + 1;
+    const infinite_power = (1 << math.float_exponent_bits(T)) - 1;
+    const mantissa_explicit_bits = math.float_mantissa_bits(T);
 
     var d = Decimal(T).parse(s); // no need to recheck underscores
     if (d.num_digits == 0 or d.decimal_point < Decimal(T).min_exponent) {
@@ -53,13 +53,13 @@ pub fn convert_slow(comptime T: type, s: []const u8) BiasedFp(T) {
     var exp2: i32 = 0;
     // Shift right toward (1/2 .. 1]
     while (d.decimal_point > 0) {
-        const n = @as(usize, @intCast(d.decimal_point));
-        const shift = getShift(n);
-        d.rightShift(shift);
+        const n = @as(usize, @int_cast(d.decimal_point));
+        const shift = get_shift(n);
+        d.right_shift(shift);
         if (d.decimal_point < -Decimal(T).decimal_point_range) {
             return BiasedFp(T).zero();
         }
-        exp2 += @as(i32, @intCast(shift));
+        exp2 += @as(i32, @int_cast(shift));
     }
     //  Shift left toward (1/2 .. 1]
     while (d.decimal_point <= 0) {
@@ -71,25 +71,25 @@ pub fn convert_slow(comptime T: type, s: []const u8) BiasedFp(T) {
                     else => 1,
                 };
             } else {
-                const n = @as(usize, @intCast(-d.decimal_point));
-                break :blk getShift(n);
+                const n = @as(usize, @int_cast(-d.decimal_point));
+                break :blk get_shift(n);
             }
         };
-        d.leftShift(shift);
+        d.left_shift(shift);
         if (d.decimal_point > Decimal(T).decimal_point_range) {
             return BiasedFp(T).inf(T);
         }
-        exp2 -= @as(i32, @intCast(shift));
+        exp2 -= @as(i32, @int_cast(shift));
     }
     // We are now in the range [1/2 .. 1] but the binary format uses [1 .. 2]
     exp2 -= 1;
     while (min_exponent + 1 > exp2) {
-        var n = @as(usize, @intCast((min_exponent + 1) - exp2));
+        var n = @as(usize, @int_cast((min_exponent + 1) - exp2));
         if (n > max_shift) {
             n = max_shift;
         }
-        d.rightShift(n);
-        exp2 += @as(i32, @intCast(n));
+        d.right_shift(n);
+        exp2 += @as(i32, @int_cast(n));
     }
     if (exp2 - min_exponent >= infinite_power) {
         return BiasedFp(T).inf(T);
@@ -97,12 +97,12 @@ pub fn convert_slow(comptime T: type, s: []const u8) BiasedFp(T) {
 
     // Shift the decimal to the hidden bit, and then round the value
     // to get the high mantissa+1 bits.
-    d.leftShift(mantissa_explicit_bits + 1);
+    d.left_shift(mantissa_explicit_bits + 1);
     var mantissa = d.round();
     if (mantissa >= (@as(MantissaT, 1) << (mantissa_explicit_bits + 1))) {
         // Rounding up overflowed to the carry bit, need to
         // shift back to the hidden bit.
-        d.rightShift(1);
+        d.right_shift(1);
         exp2 += 1;
         mantissa = d.round();
         if ((exp2 - min_exponent) >= infinite_power) {

@@ -2,9 +2,9 @@ const clz = @import("count0bits.zig");
 const testing = @import("std").testing;
 
 fn test__clzdi2(a: u64, expected: i64) !void {
-    const x: i64 = @bitCast(a);
+    const x: i64 = @bit_cast(a);
     const result = clz.__clzdi2(x);
-    try testing.expectEqual(expected, result);
+    try testing.expect_equal(expected, result);
 }
 
 test "clzdi2" {

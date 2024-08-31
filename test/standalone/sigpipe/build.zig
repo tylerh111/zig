@@ -25,20 +25,20 @@ pub fn build(b: *std.build.Builder) !void {
     }
 
     for ([_]bool{ false, true }) |keep_sigpipe| {
-        const options = b.addOptions();
-        options.addOption(bool, "keep_sigpipe", keep_sigpipe);
-        const exe = b.addExecutable(.{
+        const options = b.add_options();
+        options.add_option(bool, "keep_sigpipe", keep_sigpipe);
+        const exe = b.add_executable(.{
             .name = "breakpipe",
             .root_source_file = b.path("breakpipe.zig"),
         });
-        exe.addOptions("build_options", options);
-        const run = b.addRunArtifact(exe);
+        exe.add_options("build_options", options);
+        const run = b.add_run_artifact(exe);
         if (keep_sigpipe) {
-            run.addCheck(.{ .expect_term = .{ .Signal = std.posix.SIG.PIPE } });
+            run.add_check(.{ .expect_term = .{ .Signal = std.posix.SIG.PIPE } });
         } else {
-            run.addCheck(.{ .expect_stdout_exact = "BrokenPipe\n" });
-            run.addCheck(.{ .expect_term = .{ .Exited = 123 } });
+            run.add_check(.{ .expect_stdout_exact = "BrokenPipe\n" });
+            run.add_check(.{ .expect_term = .{ .Exited = 123 } });
         }
-        test_step.dependOn(&run.step);
+        test_step.depend_on(&run.step);
     }
 }

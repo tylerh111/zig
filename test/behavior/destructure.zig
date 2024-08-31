@@ -18,8 +18,8 @@ test "simple destructure" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "destructure with comptime syntax" {
@@ -73,8 +73,8 @@ test "destructure with comptime syntax" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "destructure from labeled block" {
@@ -91,8 +91,8 @@ test "destructure from labeled block" {
         }
     };
 
-    try S.doTheTest(true);
-    try comptime S.doTheTest(true);
+    try S.do_the_test(true);
+    try comptime S.do_the_test(true);
 }
 
 test "destructure tuple value" {

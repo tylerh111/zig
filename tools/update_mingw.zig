@@ -5,7 +5,7 @@ pub fn main() !void {
     defer arena_instance.deinit();
     const arena = arena_instance.allocator();
 
-    const args = try std.process.argsAlloc(arena);
+    const args = try std.process.args_alloc(arena);
     const zig_src_lib_path = args[1];
     const mingw_src_path = args[2];
 
@@ -24,13 +24,13 @@ pub fn main() !void {
     // Update only the set of existing files we have already chosen to include
     // in zig's installation.
 
-    var dest_crt_dir = std.fs.cwd().openDir(dest_mingw_crt_path, .{ .iterate = true }) catch |err| {
+    var dest_crt_dir = std.fs.cwd().open_dir(dest_mingw_crt_path, .{ .iterate = true }) catch |err| {
         std.log.err("unable to open directory '{s}': {s}", .{ dest_mingw_crt_path, @errorName(err) });
         std.process.exit(1);
     };
     defer dest_crt_dir.close();
 
-    var src_crt_dir = std.fs.cwd().openDir(src_mingw_crt_path, .{ .iterate = true }) catch |err| {
+    var src_crt_dir = std.fs.cwd().open_dir(src_mingw_crt_path, .{ .iterate = true }) catch |err| {
         std.log.err("unable to open directory '{s}': {s}", .{ src_mingw_crt_path, @errorName(err) });
         std.process.exit(1);
     };
@@ -45,7 +45,7 @@ pub fn main() !void {
         while (try walker.next()) |entry| {
             if (entry.kind != .file) continue;
 
-            src_crt_dir.copyFile(entry.path, dest_crt_dir, entry.path, .{}) catch |err| switch (err) {
+            src_crt_dir.copy_file(entry.path, dest_crt_dir, entry.path, .{}) catch |err| switch (err) {
                 error.FileNotFound => {
                     const whitelisted = for (whitelist) |item| {
                         if (std.mem.eql(u8, entry.path, item)) break true;
@@ -53,7 +53,7 @@ pub fn main() !void {
 
                     if (!whitelisted) {
                         std.log.warn("deleting {s}", .{entry.path});
-                        try dest_crt_dir.deleteFile(entry.path);
+                        try dest_crt_dir.delete_file(entry.path);
                     }
                 },
                 else => {
@@ -77,13 +77,13 @@ pub fn main() !void {
             if (entry.kind != .file) continue;
 
             const ok_ext = for (ok_exts) |ext| {
-                if (std.mem.endsWith(u8, entry.path, ext)) break true;
+                if (std.mem.ends_with(u8, entry.path, ext)) break true;
             } else false;
 
             if (!ok_ext) continue;
 
             const ok_prefix = for (ok_prefixes) |p| {
-                if (std.mem.startsWith(u8, entry.path, p)) break true;
+                if (std.mem.starts_with(u8, entry.path, p)) break true;
             } else false;
 
             if (!ok_prefix) continue;
@@ -94,13 +94,13 @@ pub fn main() !void {
 
             if (blacklisted) continue;
 
-            if (std.mem.endsWith(u8, entry.basename, "_windowsapp.def"))
+            if (std.mem.ends_with(u8, entry.basename, "_windowsapp.def"))
                 continue;
 
-            if (std.mem.endsWith(u8, entry.basename, "_onecore.def"))
+            if (std.mem.ends_with(u8, entry.basename, "_onecore.def"))
                 continue;
 
-            src_crt_dir.copyFile(entry.path, dest_crt_dir, entry.path, .{}) catch |err| {
+            src_crt_dir.copy_file(entry.path, dest_crt_dir, entry.path, .{}) catch |err| {
                 std.log.err("unable to copy {s}: {s}", .{ entry.path, @errorName(err) });
                 fail = true;
             };
@@ -108,7 +108,7 @@ pub fn main() !void {
         if (fail) std.process.exit(1);
     }
 
-    return std.process.cleanExit();
+    return std.process.clean_exit();
 }
 
 const whitelist = [_][]const u8{

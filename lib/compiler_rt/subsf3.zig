@@ -20,6 +20,6 @@ fn __aeabi_fsub(a: f32, b: f32) callconv(.AAPCS) f32 {
 }
 
 inline fn sub(a: f32, b: f32) f32 {
-    const neg_b = @as(f32, @bitCast(@as(u32, @bitCast(b)) ^ (@as(u32, 1) << 31)));
+    const neg_b = @as(f32, @bit_cast(@as(u32, @bit_cast(b)) ^ (@as(u32, 1) << 31)));
     return addf3(f32, a, neg_b);
 }

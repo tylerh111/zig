@@ -1,13 +1,13 @@
 fn S(comptime PtrTy: type) type {
     return struct {
-        fnPtr: PtrTy,
+        fn_ptr: PtrTy,
         a: u8,
     };
 }
 fn bar() void {}
 
 fn foo(a: u8, comptime PtrTy: type) S(PtrTy) {
-    return .{ .fnPtr = bar, .a = a };
+    return .{ .fn_ptr = bar, .a = a };
 }
 pub export fn entry() void {
     var a: u8 = 1;

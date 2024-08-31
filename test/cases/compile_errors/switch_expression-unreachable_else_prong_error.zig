@@ -21,7 +21,7 @@ fn bar(x: u2) void {
 const Error = error{ Foo, Bar, Baz };
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&foo)) + @sizeOf(@TypeOf(&bar));
+    return @size_of(@TypeOf(&foo)) + @size_of(@TypeOf(&bar));
 }
 
 // error

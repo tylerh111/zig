@@ -5,7 +5,7 @@ const Foo = struct {
 var foo: Foo = undefined;
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(foo.x));
+    return @size_of(@TypeOf(foo.x));
 }
 
 // error

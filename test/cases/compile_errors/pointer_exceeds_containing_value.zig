@@ -1,6 +1,6 @@
 export fn entry1() void {
     const x: u32 = 123;
-    const ptr: [*]const u32 = @ptrCast(&x);
+    const ptr: [*]const u32 = @ptr_cast(&x);
     _ = ptr - 1;
 }
 

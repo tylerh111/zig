@@ -18,7 +18,7 @@ pub fn sinh(z: anytype) Complex(@TypeOf(z.re, z.im)) {
     return switch (T) {
         f32 => sinh32(z),
         f64 => sinh64(z),
-        else => @compileError("tan not implemented for " ++ @typeName(z)),
+        else => @compile_error("tan not implemented for " ++ @type_name(z)),
     };
 }
 
@@ -26,10 +26,10 @@ fn sinh32(z: Complex(f32)) Complex(f32) {
     const x = z.re;
     const y = z.im;
 
-    const hx = @as(u32, @bitCast(x));
+    const hx = @as(u32, @bit_cast(x));
     const ix = hx & 0x7fffffff;
 
-    const hy = @as(u32, @bitCast(y));
+    const hy = @as(u32, @bit_cast(y));
     const iy = hy & 0x7fffffff;
 
     if (ix < 0x7f800000 and iy < 0x7f800000) {
@@ -89,13 +89,13 @@ fn sinh64(z: Complex(f64)) Complex(f64) {
     const x = z.re;
     const y = z.im;
 
-    const fx: u64 = @bitCast(x);
-    const hx: u32 = @intCast(fx >> 32);
+    const fx: u64 = @bit_cast(x);
+    const hx: u32 = @int_cast(fx >> 32);
     const lx: u32 = @truncate(fx);
     const ix = hx & 0x7fffffff;
 
-    const fy: u64 = @bitCast(y);
-    const hy: u32 = @intCast(fy >> 32);
+    const fy: u64 = @bit_cast(y);
+    const hy: u32 = @int_cast(fy >> 32);
     const ly: u32 = @truncate(fy);
     const iy = hy & 0x7fffffff;
 
@@ -158,14 +158,14 @@ test sinh32 {
     const a = Complex(f32).init(5, 3);
     const c = sinh(a);
 
-    try testing.expect(math.approxEqAbs(f32, c.re, -73.460617, epsilon));
-    try testing.expect(math.approxEqAbs(f32, c.im, 10.472508, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.re, -73.460617, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.im, 10.472508, epsilon));
 }
 
 test sinh64 {
     const a = Complex(f64).init(5, 3);
     const c = sinh(a);
 
-    try testing.expect(math.approxEqAbs(f64, c.re, -73.460617, epsilon));
-    try testing.expect(math.approxEqAbs(f64, c.im, 10.472508, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, c.re, -73.460617, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, c.im, 10.472508, epsilon));
 }

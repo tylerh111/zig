@@ -82,8 +82,8 @@ test "cast small unsigned to larger signed" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(castSmallUnsignedToLargerSigned1(200) == @as(i16, 200));
-    try expect(castSmallUnsignedToLargerSigned2(9999) == @as(i64, 9999));
+    try expect(cast_small_unsigned_to_larger_signed1(200) == @as(i16, 200));
+    try expect(cast_small_unsigned_to_larger_signed2(9999) == @as(i64, 9999));
 }
 fn cast_small_unsigned_to_larger_signed1(x: u8) i16 {
     return x;

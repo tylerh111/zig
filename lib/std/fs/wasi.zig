@@ -16,7 +16,7 @@ pub const Preopens = struct {
     pub fn find(p: Preopens, name: []const u8) ?std.posix.fd_t {
         for (p.names, 0..) |elem_name, i| {
             if (mem.eql(u8, elem_name, name)) {
-                return @intCast(i);
+                return @int_cast(i);
             }
         }
         return null;
@@ -27,20 +27,20 @@ pub fn preopens_alloc(gpa: Allocator) Allocator.Error!Preopens {
     var names: std.ArrayListUnmanaged([]const u8) = .{};
     defer names.deinit(gpa);
 
-    try names.ensureUnusedCapacity(gpa, 3);
+    try names.ensure_unused_capacity(gpa, 3);
 
-    names.appendAssumeCapacity("stdin"); // 0
-    names.appendAssumeCapacity("stdout"); // 1
-    names.appendAssumeCapacity("stderr"); // 2
+    names.append_assume_capacity("stdin"); // 0
+    names.append_assume_capacity("stdout"); // 1
+    names.append_assume_capacity("stderr"); // 2
     while (true) {
-        const fd = @as(wasi.fd_t, @intCast(names.items.len));
+        const fd = @as(wasi.fd_t, @int_cast(names.items.len));
         var prestat: prestat_t = undefined;
         switch (wasi.fd_prestat_get(fd, &prestat)) {
             .SUCCESS => {},
-            .OPNOTSUPP, .BADF => return .{ .names = try names.toOwnedSlice(gpa) },
+            .OPNOTSUPP, .BADF => return .{ .names = try names.to_owned_slice(gpa) },
             else => @panic("fd_prestat_get: unexpected error"),
         }
-        try names.ensureUnusedCapacity(gpa, 1);
+        try names.ensure_unused_capacity(gpa, 1);
         // This length does not include a null byte. Let's keep it this way to
         // gently encourage WASI implementations to behave properly.
         const name_len = prestat.u.dir.pr_name_len;
@@ -50,6 +50,6 @@ pub fn preopens_alloc(gpa: Allocator) Allocator.Error!Preopens {
             .SUCCESS => {},
             else => @panic("fd_prestat_dir_name: unexpected error"),
         }
-        names.appendAssumeCapacity(name);
+        names.append_assume_capacity(name);
     }
 }

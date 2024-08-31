@@ -109,7 +109,7 @@ pub const Node = struct {
             // included for safety checks. Without such safety checks enabled,
             // we always want this union to be 8 bytes.
             if (builtin.mode != .Debug and builtin.mode != .ReleaseSafe) {
-                assert(@sizeOf(Data) == 8);
+                assert(@size_of(Data) == 8);
             }
         }
     };
@@ -121,13 +121,13 @@ pub const Node = struct {
         // type can be more naturally expressed as ?u30. As it is, we want
         // values to fit within 4 bytes, so ?u30 does not yet suffice for
         // storage.
-        unordered = std.math.maxInt(u30),
+        unordered = std.math.max_int(u30),
         _,
 
         pub fn as_number(start: ListStart) ?u30 {
             if (start == .unordered) return null;
-            assert(@intFromEnum(start) <= 999_999_999);
-            return @intFromEnum(start);
+            assert(@int_from_enum(start) <= 999_999_999);
+            return @int_from_enum(start);
         }
     };
 
@@ -171,12 +171,12 @@ pub fn ExtraData(comptime T: type) type {
 
 pub fn extra_data(doc: Document, comptime T: type, index: ExtraIndex) ExtraData(T) {
     const fields = @typeInfo(T).Struct.fields;
-    var i: usize = @intFromEnum(index);
+    var i: usize = @int_from_enum(index);
     var result: T = undefined;
     inline for (fields) |field| {
         @field(result, field.name) = switch (field.type) {
             u32 => doc.extra[i],
-            else => @compileError("bad field type"),
+            else => @compile_error("bad field type"),
         };
         i += 1;
     }
@@ -184,11 +184,11 @@ pub fn extra_data(doc: Document, comptime T: type, index: ExtraIndex) ExtraData(
 }
 
 pub fn extra_children(doc: Document, index: ExtraIndex) []const Node.Index {
-    const children = doc.extraData(Node.Children, index);
-    return @ptrCast(doc.extra[children.end..][0..children.data.len]);
+    const children = doc.extra_data(Node.Children, index);
+    return @ptr_cast(doc.extra[children.end..][0..children.data.len]);
 }
 
 pub fn string(doc: Document, index: StringIndex) [:0]const u8 {
-    const start = @intFromEnum(index);
-    return std.mem.span(@as([*:0]u8, @ptrCast(doc.string_bytes[start..].ptr)));
+    const start = @int_from_enum(index);
+    return std.mem.span(@as([*:0]u8, @ptr_cast(doc.string_bytes[start..].ptr)));
 }

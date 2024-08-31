@@ -30,7 +30,7 @@ const TestTarget = struct {
 };
 
 const test_targets = blk: {
-    // getBaselineCpuFeatures calls populateDependencies which has a O(N ^ 2) algorithm
+    // getBaselineCpuFeatures calls populate_dependencies which has a O(N ^ 2) algorithm
     // (where N is roughly 160, which technically makes it O(1), but it adds up to a
     // lot of branches)
     @setEvalBranchQuota(50000);
@@ -645,7 +645,7 @@ pub fn add_compare_output_tests(
         .optimize_modes = optimize_modes,
     };
 
-    compare_output.addCases(cases);
+    compare_output.add_cases(cases);
 
     return cases.step;
 }
@@ -655,7 +655,7 @@ pub fn add_stack_trace_tests(
     test_filters: []const []const u8,
     optimize_modes: []const OptimizeMode,
 ) *Step {
-    const check_exe = b.addExecutable(.{
+    const check_exe = b.add_executable(.{
         .name = "check-stack-trace",
         .root_source_file = b.path("test/src/check-stack-trace.zig"),
         .target = b.host,
@@ -672,7 +672,7 @@ pub fn add_stack_trace_tests(
         .check_exe = check_exe,
     };
 
-    stack_traces.addCases(cases);
+    stack_traces.add_cases(cases);
 
     return cases.step;
 }
@@ -691,20 +691,20 @@ pub fn add_standalone_tests(
     enable_symlinks_windows: bool,
 ) *Step {
     const step = b.step("test-standalone", "Run the standalone tests");
-    if (compilerHasPackageManager(b)) {
+    if (compiler_has_package_manager(b)) {
         const test_cases_dep_name = "standalone_test_cases";
         const test_cases_dep = b.dependency(test_cases_dep_name, .{
             .enable_ios_sdk = enable_ios_sdk,
             .enable_macos_sdk = enable_macos_sdk,
             .enable_symlinks_windows = enable_symlinks_windows,
-            .simple_skip_debug = mem.indexOfScalar(OptimizeMode, optimize_modes, .Debug) == null,
-            .simple_skip_release_safe = mem.indexOfScalar(OptimizeMode, optimize_modes, .ReleaseSafe) == null,
-            .simple_skip_release_fast = mem.indexOfScalar(OptimizeMode, optimize_modes, .ReleaseFast) == null,
-            .simple_skip_release_small = mem.indexOfScalar(OptimizeMode, optimize_modes, .ReleaseSmall) == null,
+            .simple_skip_debug = mem.index_of_scalar(OptimizeMode, optimize_modes, .Debug) == null,
+            .simple_skip_release_safe = mem.index_of_scalar(OptimizeMode, optimize_modes, .ReleaseSafe) == null,
+            .simple_skip_release_fast = mem.index_of_scalar(OptimizeMode, optimize_modes, .ReleaseFast) == null,
+            .simple_skip_release_small = mem.index_of_scalar(OptimizeMode, optimize_modes, .ReleaseSmall) == null,
         });
         const test_cases_dep_step = test_cases_dep.builder.default_step;
         test_cases_dep_step.name = b.dupe(test_cases_dep_name);
-        step.dependOn(test_cases_dep.builder.default_step);
+        step.depend_on(test_cases_dep.builder.default_step);
     }
     return step;
 }
@@ -716,7 +716,7 @@ pub fn add_link_tests(
     enable_symlinks_windows: bool,
 ) *Step {
     const step = b.step("test-link", "Run the linker tests");
-    if (compilerHasPackageManager(b)) {
+    if (compiler_has_package_manager(b)) {
         const test_cases_dep_name = "link_test_cases";
         const test_cases_dep = b.dependency(test_cases_dep_name, .{
             .enable_ios_sdk = enable_ios_sdk,
@@ -725,7 +725,7 @@ pub fn add_link_tests(
         });
         const test_cases_dep_step = test_cases_dep.builder.default_step;
         test_cases_dep_step.name = b.dupe(test_cases_dep_name);
-        step.dependOn(test_cases_dep.builder.default_step);
+        step.depend_on(test_cases_dep.builder.default_step);
     }
     return step;
 }
@@ -736,12 +736,12 @@ pub fn add_cli_tests(b: *std.Build) *Step {
 
     {
         // Test `zig init`.
-        const tmp_path = b.makeTempPath();
-        const init_exe = b.addSystemCommand(&.{ b.graph.zig_exe, "init" });
-        init_exe.setCwd(.{ .cwd_relative = tmp_path });
-        init_exe.setName("zig init");
-        init_exe.expectStdOutEqual("");
-        init_exe.expectStdErrEqual("info: created build.zig\n" ++
+        const tmp_path = b.make_temp_path();
+        const init_exe = b.add_system_command(&.{ b.graph.zig_exe, "init" });
+        init_exe.set_cwd(.{ .cwd_relative = tmp_path });
+        init_exe.set_name("zig init");
+        init_exe.expect_std_out_equal("");
+        init_exe.expect_std_err_equal("info: created build.zig\n" ++
             "info: created build.zig.zon\n" ++
             "info: created src" ++ s ++ "main.zig\n" ++
             "info: created src" ++ s ++ "root.zig\n" ++
@@ -751,39 +751,39 @@ pub fn add_cli_tests(b: *std.Build) *Step {
         const bad_out_arg = "-femit-bin=does" ++ s ++ "not" ++ s ++ "exist" ++ s ++ "foo.exe";
         const ok_src_arg = "src" ++ s ++ "main.zig";
         const expected = "error: unable to open output directory 'does" ++ s ++ "not" ++ s ++ "exist': FileNotFound\n";
-        const run_bad = b.addSystemCommand(&.{ b.graph.zig_exe, "build-exe", ok_src_arg, bad_out_arg });
-        run_bad.setName("zig build-exe error message for bad -femit-bin arg");
-        run_bad.expectExitCode(1);
-        run_bad.expectStdErrEqual(expected);
-        run_bad.expectStdOutEqual("");
-        run_bad.step.dependOn(&init_exe.step);
+        const run_bad = b.add_system_command(&.{ b.graph.zig_exe, "build-exe", ok_src_arg, bad_out_arg });
+        run_bad.set_name("zig build-exe error message for bad -femit-bin arg");
+        run_bad.expect_exit_code(1);
+        run_bad.expect_std_err_equal(expected);
+        run_bad.expect_std_out_equal("");
+        run_bad.step.depend_on(&init_exe.step);
 
-        const run_test = b.addSystemCommand(&.{ b.graph.zig_exe, "build", "test" });
-        run_test.setCwd(.{ .cwd_relative = tmp_path });
-        run_test.setName("zig build test");
-        run_test.expectStdOutEqual("");
-        run_test.step.dependOn(&init_exe.step);
+        const run_test = b.add_system_command(&.{ b.graph.zig_exe, "build", "test" });
+        run_test.set_cwd(.{ .cwd_relative = tmp_path });
+        run_test.set_name("zig build test");
+        run_test.expect_std_out_equal("");
+        run_test.step.depend_on(&init_exe.step);
 
-        const run_run = b.addSystemCommand(&.{ b.graph.zig_exe, "build", "run" });
-        run_run.setCwd(.{ .cwd_relative = tmp_path });
-        run_run.setName("zig build run");
-        run_run.expectStdOutEqual("Run `zig build test` to run the tests.\n");
-        run_run.expectStdErrEqual("All your codebase are belong to us.\n");
-        run_run.step.dependOn(&init_exe.step);
+        const run_run = b.add_system_command(&.{ b.graph.zig_exe, "build", "run" });
+        run_run.set_cwd(.{ .cwd_relative = tmp_path });
+        run_run.set_name("zig build run");
+        run_run.expect_std_out_equal("Run `zig build test` to run the tests.\n");
+        run_run.expect_std_err_equal("All your codebase are belong to us.\n");
+        run_run.step.depend_on(&init_exe.step);
 
-        const cleanup = b.addRemoveDirTree(tmp_path);
-        cleanup.step.dependOn(&run_test.step);
-        cleanup.step.dependOn(&run_run.step);
-        cleanup.step.dependOn(&run_bad.step);
+        const cleanup = b.add_remove_dir_tree(tmp_path);
+        cleanup.step.depend_on(&run_test.step);
+        cleanup.step.depend_on(&run_run.step);
+        cleanup.step.depend_on(&run_bad.step);
 
-        step.dependOn(&cleanup.step);
+        step.depend_on(&cleanup.step);
     }
 
     // Test Godbolt API
     if (builtin.os.tag == .linux and builtin.cpu.arch == .x86_64) {
-        const tmp_path = b.makeTempPath();
+        const tmp_path = b.make_temp_path();
 
-        const writefile = b.addWriteFile("example.zig",
+        const writefile = b.add_write_file("example.zig",
             \\// Type your code here, or load an example.
             \\export fn square(num: i32) i32 {
             \\    return num * num;
@@ -797,29 +797,29 @@ pub fn add_cli_tests(b: *std.Build) *Step {
         );
 
         // This is intended to be the exact CLI usage used by godbolt.org.
-        const run = b.addSystemCommand(&.{
+        const run = b.add_system_command(&.{
             b.graph.zig_exe, "build-obj",
             "--cache-dir",   tmp_path,
             "--name",        "example",
             "-fno-emit-bin", "-fno-emit-h",
             "-fstrip",       "-OReleaseFast",
         });
-        run.addFileArg(writefile.files.items[0].getPath());
-        const example_s = run.addPrefixedOutputFileArg("-femit-asm=", "example.s");
+        run.add_file_arg(writefile.files.items[0].get_path());
+        const example_s = run.add_prefixed_output_file_arg("-femit-asm=", "example.s");
 
-        const checkfile = b.addCheckFile(example_s, .{
+        const checkfile = b.add_check_file(example_s, .{
             .expected_matches = &.{
                 "square:",
                 "mov\teax, edi",
                 "imul\teax, edi",
             },
         });
-        checkfile.setName("check godbolt.org CLI usage generating valid asm");
+        checkfile.set_name("check godbolt.org CLI usage generating valid asm");
 
-        const cleanup = b.addRemoveDirTree(tmp_path);
-        cleanup.step.dependOn(&checkfile.step);
+        const cleanup = b.add_remove_dir_tree(tmp_path);
+        cleanup.step.depend_on(&checkfile.step);
 
-        step.dependOn(&cleanup.step);
+        step.depend_on(&cleanup.step);
     }
 
     {
@@ -828,84 +828,84 @@ pub fn add_cli_tests(b: *std.Build) *Step {
         // directory because this test will be mutating the files. The cache
         // system relies on cache directories being mutated only by their
         // owners.
-        const tmp_path = b.makeTempPath();
+        const tmp_path = b.make_temp_path();
         const unformatted_code = "    // no reason for indent";
 
-        var dir = std.fs.cwd().openDir(tmp_path, .{}) catch @panic("unhandled");
+        var dir = std.fs.cwd().open_dir(tmp_path, .{}) catch @panic("unhandled");
         defer dir.close();
-        dir.writeFile(.{ .sub_path = "fmt1.zig", .data = unformatted_code }) catch @panic("unhandled");
-        dir.writeFile(.{ .sub_path = "fmt2.zig", .data = unformatted_code }) catch @panic("unhandled");
-        dir.makeDir("subdir") catch @panic("unhandled");
-        var subdir = dir.openDir("subdir", .{}) catch @panic("unhandled");
+        dir.write_file(.{ .sub_path = "fmt1.zig", .data = unformatted_code }) catch @panic("unhandled");
+        dir.write_file(.{ .sub_path = "fmt2.zig", .data = unformatted_code }) catch @panic("unhandled");
+        dir.make_dir("subdir") catch @panic("unhandled");
+        var subdir = dir.open_dir("subdir", .{}) catch @panic("unhandled");
         defer subdir.close();
-        subdir.writeFile(.{ .sub_path = "fmt3.zig", .data = unformatted_code }) catch @panic("unhandled");
+        subdir.write_file(.{ .sub_path = "fmt3.zig", .data = unformatted_code }) catch @panic("unhandled");
 
         // Test zig fmt affecting only the appropriate files.
-        const run1 = b.addSystemCommand(&.{ b.graph.zig_exe, "fmt", "fmt1.zig" });
-        run1.setName("run zig fmt one file");
-        run1.setCwd(.{ .cwd_relative = tmp_path });
+        const run1 = b.add_system_command(&.{ b.graph.zig_exe, "fmt", "fmt1.zig" });
+        run1.set_name("run zig fmt one file");
+        run1.set_cwd(.{ .cwd_relative = tmp_path });
         run1.has_side_effects = true;
         // stdout should be file path + \n
-        run1.expectStdOutEqual("fmt1.zig\n");
+        run1.expect_std_out_equal("fmt1.zig\n");
 
         // Test excluding files and directories from a run
-        const run2 = b.addSystemCommand(&.{ b.graph.zig_exe, "fmt", "--exclude", "fmt2.zig", "--exclude", "subdir", "." });
-        run2.setName("run zig fmt on directory with exclusions");
-        run2.setCwd(.{ .cwd_relative = tmp_path });
+        const run2 = b.add_system_command(&.{ b.graph.zig_exe, "fmt", "--exclude", "fmt2.zig", "--exclude", "subdir", "." });
+        run2.set_name("run zig fmt on directory with exclusions");
+        run2.set_cwd(.{ .cwd_relative = tmp_path });
         run2.has_side_effects = true;
-        run2.expectStdOutEqual("");
-        run2.step.dependOn(&run1.step);
+        run2.expect_std_out_equal("");
+        run2.step.depend_on(&run1.step);
 
         // Test excluding non-existent file
-        const run3 = b.addSystemCommand(&.{ b.graph.zig_exe, "fmt", "--exclude", "fmt2.zig", "--exclude", "nonexistent.zig", "." });
-        run3.setName("run zig fmt on directory with non-existent exclusion");
-        run3.setCwd(.{ .cwd_relative = tmp_path });
+        const run3 = b.add_system_command(&.{ b.graph.zig_exe, "fmt", "--exclude", "fmt2.zig", "--exclude", "nonexistent.zig", "." });
+        run3.set_name("run zig fmt on directory with non-existent exclusion");
+        run3.set_cwd(.{ .cwd_relative = tmp_path });
         run3.has_side_effects = true;
-        run3.expectStdOutEqual("." ++ s ++ "subdir" ++ s ++ "fmt3.zig\n");
-        run3.step.dependOn(&run2.step);
+        run3.expect_std_out_equal("." ++ s ++ "subdir" ++ s ++ "fmt3.zig\n");
+        run3.step.depend_on(&run2.step);
 
         // running it on the dir, only the new file should be changed
-        const run4 = b.addSystemCommand(&.{ b.graph.zig_exe, "fmt", "." });
-        run4.setName("run zig fmt the directory");
-        run4.setCwd(.{ .cwd_relative = tmp_path });
+        const run4 = b.add_system_command(&.{ b.graph.zig_exe, "fmt", "." });
+        run4.set_name("run zig fmt the directory");
+        run4.set_cwd(.{ .cwd_relative = tmp_path });
         run4.has_side_effects = true;
-        run4.expectStdOutEqual("." ++ s ++ "fmt2.zig\n");
-        run4.step.dependOn(&run3.step);
+        run4.expect_std_out_equal("." ++ s ++ "fmt2.zig\n");
+        run4.step.depend_on(&run3.step);
 
         // both files have been formatted, nothing should change now
-        const run5 = b.addSystemCommand(&.{ b.graph.zig_exe, "fmt", "." });
-        run5.setName("run zig fmt with nothing to do");
-        run5.setCwd(.{ .cwd_relative = tmp_path });
+        const run5 = b.add_system_command(&.{ b.graph.zig_exe, "fmt", "." });
+        run5.set_name("run zig fmt with nothing to do");
+        run5.set_cwd(.{ .cwd_relative = tmp_path });
         run5.has_side_effects = true;
-        run5.expectStdOutEqual("");
-        run5.step.dependOn(&run4.step);
+        run5.expect_std_out_equal("");
+        run5.step.depend_on(&run4.step);
 
         const unformatted_code_utf16 = "\xff\xfe \x00 \x00 \x00 \x00/\x00/\x00 \x00n\x00o\x00 \x00r\x00e\x00a\x00s\x00o\x00n\x00";
         const fmt6_path = std.fs.path.join(b.allocator, &.{ tmp_path, "fmt6.zig" }) catch @panic("OOM");
-        const write6 = b.addWriteFiles();
-        write6.addBytesToSource(unformatted_code_utf16, fmt6_path);
-        write6.step.dependOn(&run5.step);
+        const write6 = b.add_write_files();
+        write6.add_bytes_to_source(unformatted_code_utf16, fmt6_path);
+        write6.step.depend_on(&run5.step);
 
         // Test `zig fmt` handling UTF-16 decoding.
-        const run6 = b.addSystemCommand(&.{ b.graph.zig_exe, "fmt", "." });
-        run6.setName("run zig fmt convert UTF-16 to UTF-8");
-        run6.setCwd(.{ .cwd_relative = tmp_path });
+        const run6 = b.add_system_command(&.{ b.graph.zig_exe, "fmt", "." });
+        run6.set_name("run zig fmt convert UTF-16 to UTF-8");
+        run6.set_cwd(.{ .cwd_relative = tmp_path });
         run6.has_side_effects = true;
-        run6.expectStdOutEqual("." ++ s ++ "fmt6.zig\n");
-        run6.step.dependOn(&write6.step);
+        run6.expect_std_out_equal("." ++ s ++ "fmt6.zig\n");
+        run6.step.depend_on(&write6.step);
 
         // TODO change this to an exact match
-        const check6 = b.addCheckFile(.{ .cwd_relative = fmt6_path }, .{
+        const check6 = b.add_check_file(.{ .cwd_relative = fmt6_path }, .{
             .expected_matches = &.{
                 "// no reason",
             },
         });
-        check6.step.dependOn(&run6.step);
+        check6.step.depend_on(&run6.step);
 
-        const cleanup = b.addRemoveDirTree(tmp_path);
-        cleanup.step.dependOn(&check6.step);
+        const cleanup = b.add_remove_dir_tree(tmp_path);
+        cleanup.step.depend_on(&check6.step);
 
-        step.dependOn(&cleanup.step);
+        step.depend_on(&cleanup.step);
     }
 
     {
@@ -934,7 +934,7 @@ pub fn add_assemble_and_link_tests(b: *std.Build, test_filters: []const []const 
         .optimize_modes = optimize_modes,
     };
 
-    assemble_and_link.addCases(cases);
+    assemble_and_link.add_cases(cases);
 
     return cases.step;
 }
@@ -948,7 +948,7 @@ pub fn add_translate_ctests(b: *std.Build, parent_step: *std.Build.Step, test_fi
         .test_filters = test_filters,
     };
 
-    translate_c.addCases(cases);
+    translate_c.add_cases(cases);
 
     return;
 }
@@ -968,7 +968,7 @@ pub fn add_run_translated_ctests(
         .target = target,
     };
 
-    run_translated_c.addCases(cases);
+    run_translated_c.add_cases(cases);
 
     return;
 }
@@ -991,14 +991,14 @@ pub fn add_module_tests(b: *std.Build, options: ModuleTestOptions) *Step {
     const step = b.step(b.fmt("test-{s}", .{options.name}), options.desc);
 
     for (test_targets) |test_target| {
-        const is_native = test_target.target.isNative() or
+        const is_native = test_target.target.is_native() or
             (test_target.target.os_tag == builtin.os.tag and
             test_target.target.cpu_arch == builtin.cpu.arch);
 
         if (options.skip_non_native and !is_native)
             continue;
 
-        const resolved_target = b.resolveTargetQuery(test_target.target);
+        const resolved_target = b.resolve_target_query(test_target.target);
         const target = resolved_target.result;
 
         if (options.skip_libc and test_target.link_libc == true)
@@ -1048,7 +1048,7 @@ pub fn add_module_tests(b: *std.Build, options: ModuleTestOptions) *Step {
         if (!want_this_mode) continue;
 
         const libc_suffix = if (test_target.link_libc == true) "-libc" else "";
-        const triple_txt = target.zigTriple(b.allocator) catch @panic("OOM");
+        const triple_txt = target.zig_triple(b.allocator) catch @panic("OOM");
         const model_txt = target.cpu.model.name;
 
         // wasm32-wasi builds need more RAM, idk why
@@ -1057,7 +1057,7 @@ pub fn add_module_tests(b: *std.Build, options: ModuleTestOptions) *Step {
         else
             options.max_rss;
 
-        const these_tests = b.addTest(.{
+        const these_tests = b.add_test(.{
             .root_source_file = b.path(options.root_src),
             .optimize = test_target.optimize_mode,
             .target = resolved_target,
@@ -1084,13 +1084,13 @@ pub fn add_module_tests(b: *std.Build, options: ModuleTestOptions) *Step {
         const use_lld = if (test_target.use_lld == false) "-no-lld" else "";
         const use_pic = if (test_target.pic == true) "-pic" else "";
 
-        for (options.include_paths) |include_path| these_tests.addIncludePath(b.path(include_path));
+        for (options.include_paths) |include_path| these_tests.add_include_path(b.path(include_path));
 
         const qualified_name = b.fmt("{s}-{s}-{s}-{s}{s}{s}{s}{s}{s}", .{
             options.name,
             triple_txt,
             model_txt,
-            @tagName(test_target.optimize_mode),
+            @tag_name(test_target.optimize_mode),
             libc_suffix,
             single_threaded_suffix,
             backend_suffix,
@@ -1102,14 +1102,14 @@ pub fn add_module_tests(b: *std.Build, options: ModuleTestOptions) *Step {
             var altered_query = test_target.target;
             altered_query.ofmt = null;
 
-            const compile_c = b.addExecutable(.{
+            const compile_c = b.add_executable(.{
                 .name = qualified_name,
                 .link_libc = test_target.link_libc,
-                .target = b.resolveTargetQuery(altered_query),
+                .target = b.resolve_target_query(altered_query),
                 .zig_lib_dir = b.path("lib"),
             });
-            compile_c.addCSourceFile(.{
-                .file = these_tests.getEmittedBin(),
+            compile_c.add_csource_file(.{
+                .file = these_tests.get_emitted_bin(),
                 .flags = &.{
                     // Tracking issue for making the C backend generate C89 compatible code:
                     // https://github.com/ziglang/zig/issues/19468
@@ -1143,42 +1143,42 @@ pub fn add_module_tests(b: *std.Build, options: ModuleTestOptions) *Step {
                     "-Wno-incompatible-pointer-types",
                 },
             });
-            compile_c.addIncludePath(b.path("lib")); // for zig.h
+            compile_c.add_include_path(b.path("lib")); // for zig.h
             if (target.os.tag == .windows) {
                 if (true) {
                     // Unfortunately this requires about 8G of RAM for clang to compile
                     // and our Windows CI runners do not have this much.
-                    step.dependOn(&these_tests.step);
+                    step.depend_on(&these_tests.step);
                     continue;
                 }
                 if (test_target.link_libc == false) {
                     compile_c.subsystem = .Console;
-                    compile_c.linkSystemLibrary("kernel32");
-                    compile_c.linkSystemLibrary("ntdll");
+                    compile_c.link_system_library("kernel32");
+                    compile_c.link_system_library("ntdll");
                 }
                 if (mem.eql(u8, options.name, "std")) {
                     if (test_target.link_libc == false) {
-                        compile_c.linkSystemLibrary("shell32");
-                        compile_c.linkSystemLibrary("advapi32");
+                        compile_c.link_system_library("shell32");
+                        compile_c.link_system_library("advapi32");
                     }
-                    compile_c.linkSystemLibrary("crypt32");
-                    compile_c.linkSystemLibrary("ws2_32");
-                    compile_c.linkSystemLibrary("ole32");
+                    compile_c.link_system_library("crypt32");
+                    compile_c.link_system_library("ws2_32");
+                    compile_c.link_system_library("ole32");
                 }
             }
 
-            const run = b.addRunArtifact(compile_c);
+            const run = b.add_run_artifact(compile_c);
             run.skip_foreign_checks = true;
-            run.enableTestRunnerMode();
-            run.setName(b.fmt("run test {s}", .{qualified_name}));
+            run.enable_test_runner_mode();
+            run.set_name(b.fmt("run test {s}", .{qualified_name}));
 
-            step.dependOn(&run.step);
+            step.depend_on(&run.step);
         } else {
-            const run = b.addRunArtifact(these_tests);
+            const run = b.add_run_artifact(these_tests);
             run.skip_foreign_checks = true;
-            run.setName(b.fmt("run test {s}", .{qualified_name}));
+            run.set_name(b.fmt("run test {s}", .{qualified_name}));
 
-            step.dependOn(&run.step);
+            step.depend_on(&run.step);
         }
     }
     return step;
@@ -1193,9 +1193,9 @@ pub fn add_cabi_tests(b: *std.Build, skip_non_native: bool, skip_release: bool) 
         if (optimize_mode != .Debug and skip_release) continue;
 
         for (c_abi_targets) |c_abi_target| {
-            if (skip_non_native and !c_abi_target.target.isNative()) continue;
+            if (skip_non_native and !c_abi_target.target.is_native()) continue;
 
-            const resolved_target = b.resolveTargetQuery(c_abi_target.target);
+            const resolved_target = b.resolve_target_query(c_abi_target.target);
             const target = resolved_target.result;
 
             if (target.os.tag == .windows and target.cpu.arch == .aarch64) {
@@ -1203,11 +1203,11 @@ pub fn add_cabi_tests(b: *std.Build, skip_non_native: bool, skip_release: bool) 
                 continue;
             }
 
-            const test_step = b.addTest(.{
+            const test_step = b.add_test(.{
                 .name = b.fmt("test-c-abi-{s}-{s}-{s}{s}{s}{s}", .{
-                    target.zigTriple(b.allocator) catch @panic("OOM"),
+                    target.zig_triple(b.allocator) catch @panic("OOM"),
                     target.cpu.model.name,
-                    @tagName(optimize_mode),
+                    @tag_name(optimize_mode),
                     if (c_abi_target.use_llvm == true)
                         "-llvm"
                     else if (target.ofmt == .c)
@@ -1228,19 +1228,19 @@ pub fn add_cabi_tests(b: *std.Build, skip_non_native: bool, skip_release: bool) 
                 .pic = c_abi_target.pic,
                 .strip = c_abi_target.strip,
             });
-            test_step.addCSourceFile(.{
+            test_step.add_csource_file(.{
                 .file = b.path("test/c_abi/cfuncs.c"),
                 .flags = &.{"-std=c99"},
             });
-            for (c_abi_target.c_defines) |define| test_step.defineCMacro(define, null);
+            for (c_abi_target.c_defines) |define| test_step.define_cmacro(define, null);
 
             // This test is intentionally trying to check if the external ABI is
             // done properly. LTO would be a hindrance to this.
             test_step.want_lto = false;
 
-            const run = b.addRunArtifact(test_step);
+            const run = b.add_run_artifact(test_step);
             run.skip_foreign_checks = true;
-            step.dependOn(&run.step);
+            step.depend_on(&run.step);
         }
     }
     return step;
@@ -1260,16 +1260,16 @@ pub fn add_cases(
 
     var cases = @import("src/Cases.zig").init(gpa, arena);
 
-    var dir = try b.build_root.handle.openDir("test/cases", .{ .iterate = true });
+    var dir = try b.build_root.handle.open_dir("test/cases", .{ .iterate = true });
     defer dir.close();
 
-    cases.addFromDir(dir, b);
-    try @import("cases.zig").addCases(&cases, build_options, b);
+    cases.add_from_dir(dir, b);
+    try @import("cases.zig").add_cases(&cases, build_options, b);
 
-    cases.lowerToTranslateCSteps(b, parent_step, test_filters, target, translate_c_options);
+    cases.lower_to_translate_csteps(b, parent_step, test_filters, target, translate_c_options);
 
     const cases_dir_path = try b.build_root.join(b.allocator, &.{ "test", "cases" });
-    cases.lowerToBuildSteps(
+    cases.lower_to_build_steps(
         b,
         parent_step,
         test_filters,

@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 const io = std.io;
 const testing = std.testing;
 
-pub const CWriter = io.Writer(*std.c.FILE, std.fs.File.WriteError, cWriterWrite);
+pub const CWriter = io.Writer(*std.c.FILE, std.fs.File.WriteError, c_writer_write);
 
 pub fn c_writer(c_file: *std.c.FILE) CWriter {
     return .{ .context = c_file };
@@ -25,20 +25,20 @@ fn c_writer_write(c_file: *std.c.FILE, bytes: []const u8) std.fs.File.WriteError
         .NOSPC => return error.NoSpaceLeft,
         .PERM => return error.AccessDenied,
         .PIPE => return error.BrokenPipe,
-        else => |err| return std.posix.unexpectedErrno(err),
+        else => |err| return std.posix.unexpected_errno(err),
     }
 }
 
-test cWriter {
+test c_writer {
     if (!builtin.link_libc or builtin.os.tag == .wasi) return error.SkipZigTest;
 
     const filename = "tmp_io_test_file.txt";
     const out_file = std.c.fopen(filename, "w") orelse return error.UnableToOpenTestFile;
     defer {
         _ = std.c.fclose(out_file);
-        std.fs.cwd().deleteFileZ(filename) catch {};
+        std.fs.cwd().delete_file_z(filename) catch {};
     }
 
-    const writer = cWriter(out_file);
+    const writer = c_writer(out_file);
     try writer.print("hi: {}\n", .{@as(i32, 123)});
 }

@@ -28,14 +28,14 @@ comptime {
 
 pub fn __roundh(x: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(roundf(x));
+    return @float_cast(roundf(x));
 }
 
 pub fn roundf(x_: f32) callconv(.C) f32 {
-    const f32_toint = 1.0 / math.floatEps(f32);
+    const f32_toint = 1.0 / math.float_eps(f32);
 
     var x = x_;
-    const u: u32 = @bitCast(x);
+    const u: u32 = @bit_cast(x);
     const e = (u >> 23) & 0xFF;
     var y: f32 = undefined;
 
@@ -46,8 +46,8 @@ pub fn roundf(x_: f32) callconv(.C) f32 {
         x = -x;
     }
     if (e < 0x7F - 1) {
-        mem.doNotOptimizeAway(x + f32_toint);
-        return 0 * @as(f32, @bitCast(u));
+        mem.do_not_optimize_away(x + f32_toint);
+        return 0 * @as(f32, @bit_cast(u));
     }
 
     y = x + f32_toint - f32_toint - x;
@@ -67,10 +67,10 @@ pub fn roundf(x_: f32) callconv(.C) f32 {
 }
 
 pub fn round(x_: f64) callconv(.C) f64 {
-    const f64_toint = 1.0 / math.floatEps(f64);
+    const f64_toint = 1.0 / math.float_eps(f64);
 
     var x = x_;
-    const u: u64 = @bitCast(x);
+    const u: u64 = @bit_cast(x);
     const e = (u >> 52) & 0x7FF;
     var y: f64 = undefined;
 
@@ -81,8 +81,8 @@ pub fn round(x_: f64) callconv(.C) f64 {
         x = -x;
     }
     if (e < 0x3ff - 1) {
-        mem.doNotOptimizeAway(x + f64_toint);
-        return 0 * @as(f64, @bitCast(u));
+        mem.do_not_optimize_away(x + f64_toint);
+        return 0 * @as(f64, @bit_cast(u));
     }
 
     y = x + f64_toint - f64_toint - x;
@@ -103,14 +103,14 @@ pub fn round(x_: f64) callconv(.C) f64 {
 
 pub fn __roundx(x: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(roundq(x));
+    return @float_cast(roundq(x));
 }
 
 pub fn roundq(x_: f128) callconv(.C) f128 {
-    const f128_toint = 1.0 / math.floatEps(f128);
+    const f128_toint = 1.0 / math.float_eps(f128);
 
     var x = x_;
-    const u: u128 = @bitCast(x);
+    const u: u128 = @bit_cast(x);
     const e = (u >> 112) & 0x7FFF;
     var y: f128 = undefined;
 
@@ -121,8 +121,8 @@ pub fn roundq(x_: f128) callconv(.C) f128 {
         x = -x;
     }
     if (e < 0x3FFF - 1) {
-        mem.doNotOptimizeAway(x + f128_toint);
-        return 0 * @as(f128, @bitCast(u));
+        mem.do_not_optimize_away(x + f128_toint);
+        return 0 * @as(f128, @bit_cast(u));
     }
 
     y = x + f128_toint - f128_toint - x;
@@ -148,7 +148,7 @@ pub fn roundl(x: c_longdouble) callconv(.C) c_longdouble {
         64 => return round(x),
         80 => return __roundx(x),
         128 => return roundq(x),
-        else => @compileError("unreachable"),
+        else => @compile_error("unreachable"),
     }
 }
 
@@ -176,23 +176,23 @@ test "round128" {
 test "round32.special" {
     try expect(roundf(0.0) == 0.0);
     try expect(roundf(-0.0) == -0.0);
-    try expect(math.isPositiveInf(roundf(math.inf(f32))));
-    try expect(math.isNegativeInf(roundf(-math.inf(f32))));
-    try expect(math.isNan(roundf(math.nan(f32))));
+    try expect(math.is_positive_inf(roundf(math.inf(f32))));
+    try expect(math.is_negative_inf(roundf(-math.inf(f32))));
+    try expect(math.is_nan(roundf(math.nan(f32))));
 }
 
 test "round64.special" {
     try expect(round(0.0) == 0.0);
     try expect(round(-0.0) == -0.0);
-    try expect(math.isPositiveInf(round(math.inf(f64))));
-    try expect(math.isNegativeInf(round(-math.inf(f64))));
-    try expect(math.isNan(round(math.nan(f64))));
+    try expect(math.is_positive_inf(round(math.inf(f64))));
+    try expect(math.is_negative_inf(round(-math.inf(f64))));
+    try expect(math.is_nan(round(math.nan(f64))));
 }
 
 test "round128.special" {
     try expect(roundq(0.0) == 0.0);
     try expect(roundq(-0.0) == -0.0);
-    try expect(math.isPositiveInf(roundq(math.inf(f128))));
-    try expect(math.isNegativeInf(roundq(-math.inf(f128))));
-    try expect(math.isNan(roundq(math.nan(f128))));
+    try expect(math.is_positive_inf(roundq(math.inf(f128))));
+    try expect(math.is_negative_inf(roundq(-math.inf(f128))));
+    try expect(math.is_nan(roundq(math.nan(f128))));
 }

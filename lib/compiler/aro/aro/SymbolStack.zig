@@ -48,8 +48,8 @@ const Scope = struct {
     }
 
     fn clear_retaining_capacity(self: *Scope) void {
-        self.vars.clearRetainingCapacity();
-        self.tags.clearRetainingCapacity();
+        self.vars.clear_retaining_capacity();
+        self.tags.clear_retaining_capacity();
     }
 };
 
@@ -67,7 +67,7 @@ pub fn push_scope(s: *SymbolStack, p: *Parser) !void {
         try s.scopes.append(p.gpa, .{});
         s.active_len = s.scopes.items.len;
     } else {
-        s.scopes.items[s.active_len].clearRetainingCapacity();
+        s.scopes.items[s.active_len].clear_retaining_capacity();
         s.active_len += 1;
     }
 }
@@ -82,17 +82,17 @@ pub fn find_typedef(s: *SymbolStack, p: *Parser, name: StringId, name_tok: Token
         .typedef => return prev,
         .@"struct" => {
             if (no_type_yet) return null;
-            try p.errStr(.must_use_struct, name_tok, p.tokSlice(name_tok));
+            try p.err_str(.must_use_struct, name_tok, p.tok_slice(name_tok));
             return prev;
         },
         .@"union" => {
             if (no_type_yet) return null;
-            try p.errStr(.must_use_union, name_tok, p.tokSlice(name_tok));
+            try p.err_str(.must_use_union, name_tok, p.tok_slice(name_tok));
             return prev;
         },
         .@"enum" => {
             if (no_type_yet) return null;
-            try p.errStr(.must_use_enum, name_tok, p.tokSlice(name_tok));
+            try p.err_str(.must_use_enum, name_tok, p.tok_slice(name_tok));
             return prev;
         },
         else => return null,
@@ -120,8 +120,8 @@ pub fn find_tag(
         else => unreachable,
     }
     if (s.get(name, .tags) == null) return null;
-    try p.errStr(.wrong_tag, name_tok, p.tokSlice(name_tok));
-    try p.errTok(.previous_definition, prev.tok);
+    try p.err_str(.wrong_tag, name_tok, p.tok_slice(name_tok));
+    try p.err_tok(.previous_definition, prev.tok);
     return null;
 }
 
@@ -179,13 +179,13 @@ pub fn define_typedef(
         switch (prev.kind) {
             .typedef => {
                 if (!ty.eql(prev.ty, p.comp, true)) {
-                    try p.errStr(.redefinition_of_typedef, tok, try p.typePairStrExtra(ty, " vs ", prev.ty));
-                    if (prev.tok != 0) try p.errTok(.previous_definition, prev.tok);
+                    try p.err_str(.redefinition_of_typedef, tok, try p.type_pair_str_extra(ty, " vs ", prev.ty));
+                    if (prev.tok != 0) try p.err_tok(.previous_definition, prev.tok);
                 }
             },
             .enumeration, .decl, .def, .constexpr => {
-                try p.errStr(.redefinition_different_sym, tok, p.tokSlice(tok));
-                try p.errTok(.previous_definition, prev.tok);
+                try p.err_str(.redefinition_different_sym, tok, p.tok_slice(tok));
+                try p.err_tok(.previous_definition, prev.tok);
             },
             else => unreachable,
         }
@@ -213,22 +213,22 @@ pub fn define_symbol(
     if (s.get(name, .vars)) |prev| {
         switch (prev.kind) {
             .enumeration => {
-                try p.errStr(.redefinition_different_sym, tok, p.tokSlice(tok));
-                try p.errTok(.previous_definition, prev.tok);
+                try p.err_str(.redefinition_different_sym, tok, p.tok_slice(tok));
+                try p.err_tok(.previous_definition, prev.tok);
             },
             .decl => {
                 if (!ty.eql(prev.ty, p.comp, true)) {
-                    try p.errStr(.redefinition_incompatible, tok, p.tokSlice(tok));
-                    try p.errTok(.previous_definition, prev.tok);
+                    try p.err_str(.redefinition_incompatible, tok, p.tok_slice(tok));
+                    try p.err_tok(.previous_definition, prev.tok);
                 }
             },
             .def, .constexpr => {
-                try p.errStr(.redefinition, tok, p.tokSlice(tok));
-                try p.errTok(.previous_definition, prev.tok);
+                try p.err_str(.redefinition, tok, p.tok_slice(tok));
+                try p.err_tok(.previous_definition, prev.tok);
             },
             .typedef => {
-                try p.errStr(.redefinition_different_sym, tok, p.tokSlice(tok));
-                try p.errTok(.previous_definition, prev.tok);
+                try p.err_str(.redefinition_different_sym, tok, p.tok_slice(tok));
+                try p.err_tok(.previous_definition, prev.tok);
             },
             else => unreachable,
         }
@@ -248,8 +248,8 @@ pub fn define_symbol(
 /// Asserts that a symbol with the name exists.
 pub fn get_ptr(s: *SymbolStack, name: StringId, kind: ScopeKind) *Symbol {
     return switch (kind) {
-        .tags => s.scopes.items[s.active_len - 1].tags.getPtr(name).?,
-        .vars => s.scopes.items[s.active_len - 1].vars.getPtr(name).?,
+        .tags => s.scopes.items[s.active_len - 1].tags.get_ptr(name).?,
+        .vars => s.scopes.items[s.active_len - 1].vars.get_ptr(name).?,
     };
 }
 
@@ -264,26 +264,26 @@ pub fn declare_symbol(
     if (s.get(name, .vars)) |prev| {
         switch (prev.kind) {
             .enumeration => {
-                try p.errStr(.redefinition_different_sym, tok, p.tokSlice(tok));
-                try p.errTok(.previous_definition, prev.tok);
+                try p.err_str(.redefinition_different_sym, tok, p.tok_slice(tok));
+                try p.err_tok(.previous_definition, prev.tok);
             },
             .decl => {
                 if (!ty.eql(prev.ty, p.comp, true)) {
-                    try p.errStr(.redefinition_incompatible, tok, p.tokSlice(tok));
-                    try p.errTok(.previous_definition, prev.tok);
+                    try p.err_str(.redefinition_incompatible, tok, p.tok_slice(tok));
+                    try p.err_tok(.previous_definition, prev.tok);
                 }
             },
             .def, .constexpr => {
                 if (!ty.eql(prev.ty, p.comp, true)) {
-                    try p.errStr(.redefinition_incompatible, tok, p.tokSlice(tok));
-                    try p.errTok(.previous_definition, prev.tok);
+                    try p.err_str(.redefinition_incompatible, tok, p.tok_slice(tok));
+                    try p.err_tok(.previous_definition, prev.tok);
                 } else {
                     return;
                 }
             },
             .typedef => {
-                try p.errStr(.redefinition_different_sym, tok, p.tokSlice(tok));
-                try p.errTok(.previous_definition, prev.tok);
+                try p.err_str(.redefinition_different_sym, tok, p.tok_slice(tok));
+                try p.err_tok(.previous_definition, prev.tok);
             },
             else => unreachable,
         }
@@ -302,18 +302,18 @@ pub fn define_param(s: *SymbolStack, p: *Parser, name: StringId, ty: Type, tok: 
     if (s.get(name, .vars)) |prev| {
         switch (prev.kind) {
             .enumeration, .decl, .def, .constexpr => {
-                try p.errStr(.redefinition_of_parameter, tok, p.tokSlice(tok));
-                try p.errTok(.previous_definition, prev.tok);
+                try p.err_str(.redefinition_of_parameter, tok, p.tok_slice(tok));
+                try p.err_tok(.previous_definition, prev.tok);
             },
             .typedef => {
-                try p.errStr(.redefinition_different_sym, tok, p.tokSlice(tok));
-                try p.errTok(.previous_definition, prev.tok);
+                try p.err_str(.redefinition_different_sym, tok, p.tok_slice(tok));
+                try p.err_tok(.previous_definition, prev.tok);
             },
             else => unreachable,
         }
     }
-    if (ty.is(.fp16) and !p.comp.hasHalfPrecisionFloatABI()) {
-        try p.errStr(.suggest_pointer_for_invalid_fp16, tok, "parameters");
+    if (ty.is(.fp16) and !p.comp.has_half_precision_float_abi()) {
+        try p.err_str(.suggest_pointer_for_invalid_fp16, tok, "parameters");
     }
     try s.define(p.gpa, .{
         .kind = .def,
@@ -335,20 +335,20 @@ pub fn define_tag(
     switch (prev.kind) {
         .@"enum" => {
             if (kind == .keyword_enum) return prev;
-            try p.errStr(.wrong_tag, tok, p.tokSlice(tok));
-            try p.errTok(.previous_definition, prev.tok);
+            try p.err_str(.wrong_tag, tok, p.tok_slice(tok));
+            try p.err_tok(.previous_definition, prev.tok);
             return null;
         },
         .@"struct" => {
             if (kind == .keyword_struct) return prev;
-            try p.errStr(.wrong_tag, tok, p.tokSlice(tok));
-            try p.errTok(.previous_definition, prev.tok);
+            try p.err_str(.wrong_tag, tok, p.tok_slice(tok));
+            try p.err_tok(.previous_definition, prev.tok);
             return null;
         },
         .@"union" => {
             if (kind == .keyword_union) return prev;
-            try p.errStr(.wrong_tag, tok, p.tokSlice(tok));
-            try p.errTok(.previous_definition, prev.tok);
+            try p.err_str(.wrong_tag, tok, p.tok_slice(tok));
+            try p.err_tok(.previous_definition, prev.tok);
             return null;
         },
         else => unreachable,
@@ -366,18 +366,18 @@ pub fn define_enumeration(
     if (s.get(name, .vars)) |prev| {
         switch (prev.kind) {
             .enumeration => {
-                try p.errStr(.redefinition, tok, p.tokSlice(tok));
-                try p.errTok(.previous_definition, prev.tok);
+                try p.err_str(.redefinition, tok, p.tok_slice(tok));
+                try p.err_tok(.previous_definition, prev.tok);
                 return;
             },
             .decl, .def, .constexpr => {
-                try p.errStr(.redefinition_different_sym, tok, p.tokSlice(tok));
-                try p.errTok(.previous_definition, prev.tok);
+                try p.err_str(.redefinition_different_sym, tok, p.tok_slice(tok));
+                try p.err_tok(.previous_definition, prev.tok);
                 return;
             },
             .typedef => {
-                try p.errStr(.redefinition_different_sym, tok, p.tokSlice(tok));
-                try p.errTok(.previous_definition, prev.tok);
+                try p.err_str(.redefinition_different_sym, tok, p.tok_slice(tok));
+                try p.err_tok(.previous_definition, prev.tok);
             },
             else => unreachable,
         }

@@ -17,7 +17,7 @@ pub const subsystem: ?std.Target.SubSystem = blk: {
                 @hasDecl(root, "WinMain") or
                 @hasDecl(root, "wWinMain") or
                 @hasDecl(root, "WinMainCRTStartup") or
-                @hasDecl(root, "wWinMainCRTStartup"))
+                @hasDecl(root, "w_win_main_crtstartup"))
             {
                 break :blk std.Target.SubSystem.Windows;
             } else {
@@ -40,7 +40,7 @@ pub const StackTrace = struct {
         options: std.fmt.FormatOptions,
         writer: anytype,
     ) !void {
-        if (fmt.len != 0) std.fmt.invalidFmtError(fmt, self);
+        if (fmt.len != 0) std.fmt.invalid_fmt_error(fmt, self);
 
         // TODO: re-evaluate whether to use format() methods at all.
         // Until then, avoid an error when using GeneralPurposeAllocator with WebAssembly
@@ -50,12 +50,12 @@ pub const StackTrace = struct {
         _ = options;
         var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
         defer arena.deinit();
-        const debug_info = std.debug.getSelfDebugInfo() catch |err| {
+        const debug_info = std.debug.get_self_debug_info() catch |err| {
             return writer.print("\nUnable to print stack trace: Unable to open debug info: {s}\n", .{@errorName(err)});
         };
-        const tty_config = std.io.tty.detectConfig(std.io.getStdErr());
-        try writer.writeAll("\n");
-        std.debug.writeStackTrace(self, writer, arena.allocator(), debug_info, tty_config) catch |err| {
+        const tty_config = std.io.tty.detect_config(std.io.get_std_err());
+        try writer.write_all("\n");
+        std.debug.write_stack_trace(self, writer, arena.allocator(), debug_info, tty_config) catch |err| {
             try writer.print("Unable to print stack trace: {s}\n", .{@errorName(err)});
         };
     }
@@ -598,7 +598,7 @@ pub const VaList = switch (builtin.cpu.arch) {
     .aarch64, .aarch64_be => switch (builtin.os.tag) {
         .windows => *u8,
         .ios, .macos, .tvos, .watchos, .visionos => *u8,
-        else => @compileError("disabled due to miscompilations"), // VaListAarch64,
+        else => @compile_error("disabled due to miscompilations"), // VaListAarch64,
     },
     .arm => switch (builtin.os.tag) {
         .ios, .macos, .tvos, .watchos, .visionos => *u8,
@@ -607,7 +607,7 @@ pub const VaList = switch (builtin.cpu.arch) {
     .amdgcn => *u8,
     .avr => *anyopaque,
     .bpfel, .bpfeb => *anyopaque,
-    .hexagon => if (builtin.target.isMusl()) VaListHexagon else *u8,
+    .hexagon => if (builtin.target.is_musl()) VaListHexagon else *u8,
     .mips, .mipsel, .mips64, .mips64el => *anyopaque,
     .riscv32, .riscv64 => *anyopaque,
     .powerpc, .powerpcle => switch (builtin.os.tag) {
@@ -621,10 +621,10 @@ pub const VaList = switch (builtin.cpu.arch) {
     .wasm32, .wasm64 => *anyopaque,
     .x86 => *u8,
     .x86_64 => switch (builtin.os.tag) {
-        .windows => @compileError("disabled due to miscompilations"), // *u8,
+        .windows => @compile_error("disabled due to miscompilations"), // *u8,
         else => VaListX86_64,
     },
-    else => @compileError("VaList not supported for this target yet"),
+    else => @compile_error("VaList not supported for this target yet"),
 };
 
 /// This data structure is used by the Zig language code generation and
@@ -779,7 +779,7 @@ pub fn default_panic(msg: []const u8, error_return_trace: ?*StackTrace, ret_addr
             :
             : [number] "{a7}" (64),
               [arg1] "{a0}" (1),
-              [arg2] "{a1}" (@intFromPtr(msg.ptr)),
+              [arg2] "{a1}" (@int_from_ptr(msg.ptr)),
               [arg3] "{a2}" (msg.len),
             : "memory"
         );
@@ -815,14 +815,14 @@ pub fn default_panic(msg: []const u8, error_return_trace: ?*StackTrace, ret_addr
                     }
 
                     var fmt: [256]u8 = undefined;
-                    const slice = try std.fmt.bufPrint(&fmt, "\r\nerr: {s}\r\n", .{exit_msg});
-                    const len = try std.unicode.utf8ToUtf16Le(utf16, slice);
+                    const slice = try std.fmt.buf_print(&fmt, "\r\nerr: {s}\r\n", .{exit_msg});
+                    const len = try std.unicode.utf8_to_utf16_le(utf16, slice);
 
                     utf16[len] = 0;
 
                     exit_size.* = 256;
 
-                    return @as([*:0]u16, @ptrCast(utf16.ptr));
+                    return @as([*:0]u16, @ptr_cast(utf16.ptr));
                 }
             };
 
@@ -831,9 +831,9 @@ pub fn default_panic(msg: []const u8, error_return_trace: ?*StackTrace, ret_addr
 
             if (exit_data) |data| {
                 if (uefi.system_table.std_err) |out| {
-                    _ = out.setAttribute(uefi.protocol.SimpleTextOutput.red);
-                    _ = out.outputString(data);
-                    _ = out.setAttribute(uefi.protocol.SimpleTextOutput.white);
+                    _ = out.set_attribute(uefi.protocol.SimpleTextOutput.red);
+                    _ = out.output_string(data);
+                    _ = out.set_attribute(uefi.protocol.SimpleTextOutput.white);
                 }
             }
 
@@ -854,40 +854,40 @@ pub fn default_panic(msg: []const u8, error_return_trace: ?*StackTrace, ret_addr
         },
         else => {
             const first_trace_addr = ret_addr orelse @returnAddress();
-            std.debug.panicImpl(error_return_trace, first_trace_addr, msg);
+            std.debug.panic_impl(error_return_trace, first_trace_addr, msg);
         },
     }
 }
 
 pub fn check_non_scalar_sentinel(expected: anytype, actual: @TypeOf(expected)) void {
     if (!std.meta.eql(expected, actual)) {
-        panicSentinelMismatch(expected, actual);
+        panic_sentinel_mismatch(expected, actual);
     }
 }
 
 pub fn panic_sentinel_mismatch(expected: anytype, actual: @TypeOf(expected)) noreturn {
     @setCold(true);
-    std.debug.panicExtra(null, @returnAddress(), "sentinel mismatch: expected {any}, found {any}", .{ expected, actual });
+    std.debug.panic_extra(null, @returnAddress(), "sentinel mismatch: expected {any}, found {any}", .{ expected, actual });
 }
 
 pub fn panic_unwrap_error(st: ?*StackTrace, err: anyerror) noreturn {
     @setCold(true);
-    std.debug.panicExtra(st, @returnAddress(), "attempt to unwrap error: {s}", .{@errorName(err)});
+    std.debug.panic_extra(st, @returnAddress(), "attempt to unwrap error: {s}", .{@errorName(err)});
 }
 
 pub fn panic_out_of_bounds(index: usize, len: usize) noreturn {
     @setCold(true);
-    std.debug.panicExtra(null, @returnAddress(), "index out of bounds: index {d}, len {d}", .{ index, len });
+    std.debug.panic_extra(null, @returnAddress(), "index out of bounds: index {d}, len {d}", .{ index, len });
 }
 
 pub fn panic_start_greater_than_end(start: usize, end: usize) noreturn {
     @setCold(true);
-    std.debug.panicExtra(null, @returnAddress(), "start index {d} is larger than end index {d}", .{ start, end });
+    std.debug.panic_extra(null, @returnAddress(), "start index {d} is larger than end index {d}", .{ start, end });
 }
 
 pub fn panic_inactive_union_field(active: anytype, wanted: @TypeOf(active)) noreturn {
     @setCold(true);
-    std.debug.panicExtra(null, @returnAddress(), "access of union field '{s}' while field '{s}' is active", .{ @tagName(wanted), @tagName(active) });
+    std.debug.panic_extra(null, @returnAddress(), "access of union field '{s}' while field '{s}' is active", .{ @tag_name(wanted), @tag_name(active) });
 }
 
 pub const panic_messages = struct {
@@ -921,7 +921,7 @@ pub const panic_messages = struct {
 pub noinline fn return_error(st: *StackTrace) void {
     @setCold(true);
     @setRuntimeSafety(false);
-    addErrRetTraceAddr(st, @returnAddress());
+    add_err_ret_trace_addr(st, @returnAddress());
 }
 
 pub inline fn add_err_ret_trace_addr(st: *StackTrace, addr: usize) void {

@@ -7,8 +7,8 @@ fn test_compile_log(x: Bar) void {
 }
 
 pub export fn entry() void {
-    comptime testCompileLog(Bar{ .X = 123 });
-    _ = &testCompileLog;
+    comptime test_compile_log(Bar{ .X = 123 });
+    _ = &test_compile_log;
 }
 
 // error

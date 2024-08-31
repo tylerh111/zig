@@ -18,7 +18,7 @@ pub fn asin(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => asin32(x),
         f64 => asin64(x),
-        else => @compileError("asin not implemented for " ++ @typeName(T)),
+        else => @compile_error("asin not implemented for " ++ @type_name(T)),
     };
 }
 
@@ -36,7 +36,7 @@ fn r32(z: f32) f32 {
 fn asin32(x: f32) f32 {
     const pio2 = 1.570796326794896558e+00;
 
-    const hx: u32 = @as(u32, @bitCast(x));
+    const hx: u32 = @as(u32, @bit_cast(x));
     const ix: u32 = hx & 0x7FFFFFFF;
 
     // |x| >= 1
@@ -92,13 +92,13 @@ fn asin64(x: f64) f64 {
     const pio2_hi: f64 = 1.57079632679489655800e+00;
     const pio2_lo: f64 = 6.12323399573676603587e-17;
 
-    const ux = @as(u64, @bitCast(x));
-    const hx = @as(u32, @intCast(ux >> 32));
+    const ux = @as(u64, @bit_cast(x));
+    const hx = @as(u32, @int_cast(ux >> 32));
     const ix = hx & 0x7FFFFFFF;
 
     // |x| >= 1 or nan
     if (ix >= 0x3FF00000) {
-        const lx = @as(u32, @intCast(ux & 0xFFFFFFFF));
+        const lx = @as(u32, @int_cast(ux & 0xFFFFFFFF));
 
         // asin(1) = +-pi/2 with inexact
         if ((ix - 0x3FF00000) | lx == 0) {
@@ -128,8 +128,8 @@ fn asin64(x: f64) f64 {
     if (ix >= 0x3FEF3333) {
         fx = pio2_hi - 2 * (s + s * r);
     } else {
-        const jx = @as(u64, @bitCast(s));
-        const df = @as(f64, @bitCast(jx & 0xFFFFFFFF00000000));
+        const jx = @as(u64, @bit_cast(s));
+        const df = @as(f64, @bit_cast(jx & 0xFFFFFFFF00000000));
         const c = (z - df * df) / (s + df);
         fx = 0.5 * pio2_hi - (2 * s * r - (pio2_lo - 2 * c) - (0.5 * pio2_hi - 2 * df));
     }
@@ -149,35 +149,35 @@ test asin {
 test asin32 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f32, asin32(0.0), 0.0, epsilon));
-    try expect(math.approxEqAbs(f32, asin32(0.2), 0.201358, epsilon));
-    try expect(math.approxEqAbs(f32, asin32(-0.2), -0.201358, epsilon));
-    try expect(math.approxEqAbs(f32, asin32(0.3434), 0.350535, epsilon));
-    try expect(math.approxEqAbs(f32, asin32(0.5), 0.523599, epsilon));
-    try expect(math.approxEqAbs(f32, asin32(0.8923), 1.102415, epsilon));
+    try expect(math.approx_eq_abs(f32, asin32(0.0), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f32, asin32(0.2), 0.201358, epsilon));
+    try expect(math.approx_eq_abs(f32, asin32(-0.2), -0.201358, epsilon));
+    try expect(math.approx_eq_abs(f32, asin32(0.3434), 0.350535, epsilon));
+    try expect(math.approx_eq_abs(f32, asin32(0.5), 0.523599, epsilon));
+    try expect(math.approx_eq_abs(f32, asin32(0.8923), 1.102415, epsilon));
 }
 
 test asin64 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f64, asin64(0.0), 0.0, epsilon));
-    try expect(math.approxEqAbs(f64, asin64(0.2), 0.201358, epsilon));
-    try expect(math.approxEqAbs(f64, asin64(-0.2), -0.201358, epsilon));
-    try expect(math.approxEqAbs(f64, asin64(0.3434), 0.350535, epsilon));
-    try expect(math.approxEqAbs(f64, asin64(0.5), 0.523599, epsilon));
-    try expect(math.approxEqAbs(f64, asin64(0.8923), 1.102415, epsilon));
+    try expect(math.approx_eq_abs(f64, asin64(0.0), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f64, asin64(0.2), 0.201358, epsilon));
+    try expect(math.approx_eq_abs(f64, asin64(-0.2), -0.201358, epsilon));
+    try expect(math.approx_eq_abs(f64, asin64(0.3434), 0.350535, epsilon));
+    try expect(math.approx_eq_abs(f64, asin64(0.5), 0.523599, epsilon));
+    try expect(math.approx_eq_abs(f64, asin64(0.8923), 1.102415, epsilon));
 }
 
 test "asin32.special" {
-    try expect(math.isPositiveZero(asin32(0.0)));
-    try expect(math.isNegativeZero(asin32(-0.0)));
-    try expect(math.isNan(asin32(-2)));
-    try expect(math.isNan(asin32(1.5)));
+    try expect(math.is_positive_zero(asin32(0.0)));
+    try expect(math.is_negative_zero(asin32(-0.0)));
+    try expect(math.is_nan(asin32(-2)));
+    try expect(math.is_nan(asin32(1.5)));
 }
 
 test "asin64.special" {
-    try expect(math.isPositiveZero(asin64(0.0)));
-    try expect(math.isNegativeZero(asin64(-0.0)));
-    try expect(math.isNan(asin64(-2)));
-    try expect(math.isNan(asin64(1.5)));
+    try expect(math.is_positive_zero(asin64(0.0)));
+    try expect(math.is_negative_zero(asin64(-0.0)));
+    try expect(math.is_nan(asin64(-2)));
+    try expect(math.is_nan(asin64(1.5)));
 }

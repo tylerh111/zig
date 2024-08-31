@@ -39,12 +39,12 @@ const Opcode = enum(u8) {
     val_expression = 0x16,
 
     // These opcodes encode an operand in the lower 6 bits of the opcode itself
-    pub const lo_inline = @intFromEnum(Opcode.advance_loc);
-    pub const hi_inline = @intFromEnum(Opcode.restore) | 0b111111;
+    pub const lo_inline = @int_from_enum(Opcode.advance_loc);
+    pub const hi_inline = @int_from_enum(Opcode.restore) | 0b111111;
 
     // These opcodes are trailed by zero or more operands
-    pub const lo_reserved = @intFromEnum(Opcode.nop);
-    pub const hi_reserved = @intFromEnum(Opcode.val_expression);
+    pub const lo_reserved = @int_from_enum(Opcode.nop);
+    pub const hi_reserved = @int_from_enum(Opcode.val_expression);
 
     // Vendor-specific opcodes
     pub const lo_user = 0x1c;
@@ -53,7 +53,7 @@ const Opcode = enum(u8) {
 
 fn read_block(stream: *std.io.FixedBufferStream([]const u8)) ![]const u8 {
     const reader = stream.reader();
-    const block_len = try leb.readULEB128(usize, reader);
+    const block_len = try leb.read_uleb128(usize, reader);
     if (stream.pos + block_len > stream.buffer.len) return error.InvalidOperand;
 
     const block = stream.buffer[stream.pos..][0..block_len];
@@ -152,10 +152,10 @@ pub const Instruction = union(Opcode) {
         endian: std.builtin.Endian,
     ) !Instruction {
         const reader = stream.reader();
-        switch (try reader.readByte()) {
+        switch (try reader.read_byte()) {
             Opcode.lo_inline...Opcode.hi_inline => |opcode| {
                 const e: Opcode = @enumFromInt(opcode & 0b11000000);
-                const value: u6 = @intCast(opcode & 0b111111);
+                const value: u6 = @int_cast(opcode & 0b111111);
                 return switch (e) {
                     .advance_loc => .{
                         .advance_loc = .{ .delta = value },
@@ -163,7 +163,7 @@ pub const Instruction = union(Opcode) {
                     .offset => .{
                         .offset = .{
                             .register = value,
-                            .offset = try leb.readULEB128(u64, reader),
+                            .offset = try leb.read_uleb128(u64, reader),
                         },
                     },
                     .restore => .{
@@ -183,111 +183,111 @@ pub const Instruction = union(Opcode) {
                     .set_loc => .{
                         .set_loc = .{
                             .address = switch (addr_size_bytes) {
-                                2 => try reader.readInt(u16, endian),
-                                4 => try reader.readInt(u32, endian),
-                                8 => try reader.readInt(u64, endian),
+                                2 => try reader.read_int(u16, endian),
+                                4 => try reader.read_int(u32, endian),
+                                8 => try reader.read_int(u64, endian),
                                 else => return error.InvalidAddrSize,
                             },
                         },
                     },
                     .advance_loc1 => .{
-                        .advance_loc1 = .{ .delta = try reader.readByte() },
+                        .advance_loc1 = .{ .delta = try reader.read_byte() },
                     },
                     .advance_loc2 => .{
-                        .advance_loc2 = .{ .delta = try reader.readInt(u16, endian) },
+                        .advance_loc2 = .{ .delta = try reader.read_int(u16, endian) },
                     },
                     .advance_loc4 => .{
-                        .advance_loc4 = .{ .delta = try reader.readInt(u32, endian) },
+                        .advance_loc4 = .{ .delta = try reader.read_int(u32, endian) },
                     },
                     .offset_extended => .{
                         .offset_extended = .{
-                            .register = try leb.readULEB128(u8, reader),
-                            .offset = try leb.readULEB128(u64, reader),
+                            .register = try leb.read_uleb128(u8, reader),
+                            .offset = try leb.read_uleb128(u64, reader),
                         },
                     },
                     .restore_extended => .{
                         .restore_extended = .{
-                            .register = try leb.readULEB128(u8, reader),
+                            .register = try leb.read_uleb128(u8, reader),
                         },
                     },
                     .undefined => .{
                         .undefined = .{
-                            .register = try leb.readULEB128(u8, reader),
+                            .register = try leb.read_uleb128(u8, reader),
                         },
                     },
                     .same_value => .{
                         .same_value = .{
-                            .register = try leb.readULEB128(u8, reader),
+                            .register = try leb.read_uleb128(u8, reader),
                         },
                     },
                     .register => .{
                         .register = .{
-                            .register = try leb.readULEB128(u8, reader),
-                            .target_register = try leb.readULEB128(u8, reader),
+                            .register = try leb.read_uleb128(u8, reader),
+                            .target_register = try leb.read_uleb128(u8, reader),
                         },
                     },
                     .remember_state => .{ .remember_state = {} },
                     .restore_state => .{ .restore_state = {} },
                     .def_cfa => .{
                         .def_cfa = .{
-                            .register = try leb.readULEB128(u8, reader),
-                            .offset = try leb.readULEB128(u64, reader),
+                            .register = try leb.read_uleb128(u8, reader),
+                            .offset = try leb.read_uleb128(u64, reader),
                         },
                     },
                     .def_cfa_register => .{
                         .def_cfa_register = .{
-                            .register = try leb.readULEB128(u8, reader),
+                            .register = try leb.read_uleb128(u8, reader),
                         },
                     },
                     .def_cfa_offset => .{
                         .def_cfa_offset = .{
-                            .offset = try leb.readULEB128(u64, reader),
+                            .offset = try leb.read_uleb128(u64, reader),
                         },
                     },
                     .def_cfa_expression => .{
                         .def_cfa_expression = .{
-                            .block = try readBlock(stream),
+                            .block = try read_block(stream),
                         },
                     },
                     .expression => .{
                         .expression = .{
-                            .register = try leb.readULEB128(u8, reader),
-                            .block = try readBlock(stream),
+                            .register = try leb.read_uleb128(u8, reader),
+                            .block = try read_block(stream),
                         },
                     },
                     .offset_extended_sf => .{
                         .offset_extended_sf = .{
-                            .register = try leb.readULEB128(u8, reader),
-                            .offset = try leb.readILEB128(i64, reader),
+                            .register = try leb.read_uleb128(u8, reader),
+                            .offset = try leb.read_ileb128(i64, reader),
                         },
                     },
                     .def_cfa_sf => .{
                         .def_cfa_sf = .{
-                            .register = try leb.readULEB128(u8, reader),
-                            .offset = try leb.readILEB128(i64, reader),
+                            .register = try leb.read_uleb128(u8, reader),
+                            .offset = try leb.read_ileb128(i64, reader),
                         },
                     },
                     .def_cfa_offset_sf => .{
                         .def_cfa_offset_sf = .{
-                            .offset = try leb.readILEB128(i64, reader),
+                            .offset = try leb.read_ileb128(i64, reader),
                         },
                     },
                     .val_offset => .{
                         .val_offset = .{
-                            .register = try leb.readULEB128(u8, reader),
-                            .offset = try leb.readULEB128(u64, reader),
+                            .register = try leb.read_uleb128(u8, reader),
+                            .offset = try leb.read_uleb128(u64, reader),
                         },
                     },
                     .val_offset_sf => .{
                         .val_offset_sf = .{
-                            .register = try leb.readULEB128(u8, reader),
-                            .offset = try leb.readILEB128(i64, reader),
+                            .register = try leb.read_uleb128(u8, reader),
+                            .offset = try leb.read_ileb128(i64, reader),
                         },
                     },
                     .val_expression => .{
                         .val_expression = .{
-                            .register = try leb.readULEB128(u8, reader),
-                            .block = try readBlock(stream),
+                            .register = try leb.read_uleb128(u8, reader),
+                            .block = try read_block(stream),
                         },
                     },
                 };
@@ -303,9 +303,9 @@ pub const Instruction = union(Opcode) {
 /// an error and fall back to FP-based unwinding.
 pub fn apply_offset(base: usize, offset: i64) !usize {
     return if (offset >= 0)
-        try std.math.add(usize, base, @as(usize, @intCast(offset)))
+        try std.math.add(usize, base, @as(usize, @int_cast(offset)))
     else
-        try std.math.sub(usize, base, @as(usize, @intCast(-offset)));
+        try std.math.sub(usize, base, @as(usize, @int_cast(-offset)));
 }
 
 /// This is a virtual machine that runs DWARF call frame instructions.
@@ -360,7 +360,7 @@ pub const VirtualMachine = struct {
         register: ?u8 = null,
         rule: RegisterRule = .{ .default = {} },
 
-        /// Resolves the register rule and places the result into `out` (see dwarf.abi.regBytes)
+        /// Resolves the register rule and places the result into `out` (see dwarf.abi.reg_bytes)
         pub fn resolve_value(
             self: Column,
             context: *dwarf.UnwindContext,
@@ -370,7 +370,7 @@ pub const VirtualMachine = struct {
             switch (self.rule) {
                 .default => {
                     const register = self.register orelse return error.InvalidRegister;
-                    try abi.getRegDefaultValue(register, context, out);
+                    try abi.get_reg_default_value(register, context, out);
                 },
                 .undefined => {
                     @memset(out, undefined);
@@ -378,27 +378,27 @@ pub const VirtualMachine = struct {
                 .same_value => {
                     // TODO: This copy could be eliminated if callers always copy the state then call this function to update it
                     const register = self.register orelse return error.InvalidRegister;
-                    const src = try abi.regBytes(context.thread_context, register, context.reg_context);
+                    const src = try abi.reg_bytes(context.thread_context, register, context.reg_context);
                     if (src.len != out.len) return error.RegisterSizeMismatch;
                     @memcpy(out, src);
                 },
                 .offset => |offset| {
                     if (context.cfa) |cfa| {
-                        const addr = try applyOffset(cfa, offset);
-                        if (expression_context.isValidMemory) |isValidMemory| if (!isValidMemory(addr)) return error.InvalidAddress;
+                        const addr = try apply_offset(cfa, offset);
+                        if (expression_context.is_valid_memory) |is_valid_memory| if (!is_valid_memory(addr)) return error.InvalidAddress;
                         const ptr: *const usize = @ptrFromInt(addr);
-                        mem.writeInt(usize, out[0..@sizeOf(usize)], ptr.*, native_endian);
+                        mem.write_int(usize, out[0..@size_of(usize)], ptr.*, native_endian);
                     } else return error.InvalidCFA;
                 },
                 .val_offset => |offset| {
                     if (context.cfa) |cfa| {
-                        mem.writeInt(usize, out[0..@sizeOf(usize)], try applyOffset(cfa, offset), native_endian);
+                        mem.write_int(usize, out[0..@size_of(usize)], try apply_offset(cfa, offset), native_endian);
                     } else return error.InvalidCFA;
                 },
                 .register => |register| {
-                    const src = try abi.regBytes(context.thread_context, register, context.reg_context);
+                    const src = try abi.reg_bytes(context.thread_context, register, context.reg_context);
                     if (src.len != out.len) return error.RegisterSizeMismatch;
-                    @memcpy(out, try abi.regBytes(context.thread_context, register, context.reg_context));
+                    @memcpy(out, try abi.reg_bytes(context.thread_context, register, context.reg_context));
                 },
                 .expression => |expression| {
                     context.stack_machine.reset();
@@ -408,16 +408,16 @@ pub const VirtualMachine = struct {
                         break :blk v.generic;
                     } else return error.NoExpressionValue;
 
-                    if (!context.isValidMemory(addr)) return error.InvalidExpressionAddress;
+                    if (!context.is_valid_memory(addr)) return error.InvalidExpressionAddress;
                     const ptr: *usize = @ptrFromInt(addr);
-                    mem.writeInt(usize, out[0..@sizeOf(usize)], ptr.*, native_endian);
+                    mem.write_int(usize, out[0..@size_of(usize)], ptr.*, native_endian);
                 },
                 .val_expression => |expression| {
                     context.stack_machine.reset();
                     const value = try context.stack_machine.run(expression, context.allocator, expression_context, context.cfa.?);
                     if (value) |v| {
                         if (v != .generic) return error.InvalidExpressionValue;
-                        mem.writeInt(usize, out[0..@sizeOf(usize)], v.generic, native_endian);
+                        mem.write_int(usize, out[0..@size_of(usize)], v.generic, native_endian);
                     } else return error.NoExpressionValue;
                 },
                 .architectural => return error.UnimplementedRegisterRule,
@@ -445,8 +445,8 @@ pub const VirtualMachine = struct {
     }
 
     pub fn reset(self: *VirtualMachine) void {
-        self.stack.clearRetainingCapacity();
-        self.columns.clearRetainingCapacity();
+        self.stack.clear_retaining_capacity();
+        self.columns.clear_retaining_capacity();
         self.current_row = .{};
         self.cie_row = null;
     }
@@ -459,7 +459,7 @@ pub const VirtualMachine = struct {
 
     /// Either retrieves or adds a column for `register` (non-CFA) in the current row.
     fn get_or_add_column(self: *VirtualMachine, allocator: std.mem.Allocator, register: u8) !*Column {
-        for (self.rowColumns(self.current_row)) |*c| {
+        for (self.row_columns(self.current_row)) |*c| {
             if (c.register == register) return c;
         }
 
@@ -468,7 +468,7 @@ pub const VirtualMachine = struct {
         }
         self.current_row.columns.len += 1;
 
-        const column = try self.columns.addOne(allocator);
+        const column = try self.columns.add_one(allocator);
         column.* = .{
             .register = register,
         };
@@ -492,8 +492,8 @@ pub const VirtualMachine = struct {
 
         var prev_row: Row = self.current_row;
 
-        var cie_stream = std.io.fixedBufferStream(cie.initial_instructions);
-        var fde_stream = std.io.fixedBufferStream(fde.instructions);
+        var cie_stream = std.io.fixed_buffer_stream(cie.initial_instructions);
+        var fde_stream = std.io.fixed_buffer_stream(fde.instructions);
         var streams = [_]*std.io.FixedBufferStream([]const u8){
             &cie_stream,
             &fde_stream,
@@ -517,7 +517,7 @@ pub const VirtualMachine = struct {
         cie: dwarf.CommonInformationEntry,
         fde: dwarf.FrameDescriptionEntry,
     ) !Row {
-        return self.runTo(allocator, pc, cie, fde, @sizeOf(usize), builtin.target.cpu.arch.endian());
+        return self.run_to(allocator, pc, cie, fde, @size_of(usize), builtin.target.cpu.arch.endian());
     }
 
     fn resolve_copy_on_write(self: *VirtualMachine, allocator: std.mem.Allocator) !void {
@@ -525,8 +525,8 @@ pub const VirtualMachine = struct {
 
         const new_start = self.columns.items.len;
         if (self.current_row.columns.len > 0) {
-            try self.columns.ensureUnusedCapacity(allocator, self.current_row.columns.len);
-            self.columns.appendSliceAssumeCapacity(self.rowColumns(self.current_row));
+            try self.columns.ensure_unused_capacity(allocator, self.current_row.columns.len);
+            self.columns.append_slice_assume_capacity(self.row_columns(self.current_row));
             self.current_row.columns.start = new_start;
         }
     }
@@ -567,35 +567,35 @@ pub const VirtualMachine = struct {
             .offset_extended,
             .offset_extended_sf,
             => |i| {
-                try self.resolveCopyOnWrite(allocator);
-                const column = try self.getOrAddColumn(allocator, i.register);
-                column.rule = .{ .offset = @as(i64, @intCast(i.offset)) * cie.data_alignment_factor };
+                try self.resolve_copy_on_write(allocator);
+                const column = try self.get_or_add_column(allocator, i.register);
+                column.rule = .{ .offset = @as(i64, @int_cast(i.offset)) * cie.data_alignment_factor };
             },
             inline .restore,
             .restore_extended,
             => |i| {
-                try self.resolveCopyOnWrite(allocator);
+                try self.resolve_copy_on_write(allocator);
                 if (self.cie_row) |cie_row| {
-                    const column = try self.getOrAddColumn(allocator, i.register);
-                    column.rule = for (self.rowColumns(cie_row)) |cie_column| {
+                    const column = try self.get_or_add_column(allocator, i.register);
+                    column.rule = for (self.row_columns(cie_row)) |cie_column| {
                         if (cie_column.register == i.register) break cie_column.rule;
                     } else .{ .default = {} };
                 } else return error.InvalidOperation;
             },
             .nop => {},
             .undefined => |i| {
-                try self.resolveCopyOnWrite(allocator);
-                const column = try self.getOrAddColumn(allocator, i.register);
+                try self.resolve_copy_on_write(allocator);
+                const column = try self.get_or_add_column(allocator, i.register);
                 column.rule = .{ .undefined = {} };
             },
             .same_value => |i| {
-                try self.resolveCopyOnWrite(allocator);
-                const column = try self.getOrAddColumn(allocator, i.register);
+                try self.resolve_copy_on_write(allocator);
+                const column = try self.get_or_add_column(allocator, i.register);
                 column.rule = .{ .same_value = {} };
             },
             .register => |i| {
-                try self.resolveCopyOnWrite(allocator);
-                const column = try self.getOrAddColumn(allocator, i.register);
+                try self.resolve_copy_on_write(allocator);
+                const column = try self.get_or_add_column(allocator, i.register);
                 column.rule = .{ .register = i.target_register };
             },
             .remember_state => {
@@ -603,78 +603,78 @@ pub const VirtualMachine = struct {
                 self.current_row.copy_on_write = true;
             },
             .restore_state => {
-                const restored_columns = self.stack.popOrNull() orelse return error.InvalidOperation;
-                self.columns.shrinkRetainingCapacity(self.columns.items.len - self.current_row.columns.len);
-                try self.columns.ensureUnusedCapacity(allocator, restored_columns.len);
+                const restored_columns = self.stack.pop_or_null() orelse return error.InvalidOperation;
+                self.columns.shrink_retaining_capacity(self.columns.items.len - self.current_row.columns.len);
+                try self.columns.ensure_unused_capacity(allocator, restored_columns.len);
 
                 self.current_row.columns.start = self.columns.items.len;
                 self.current_row.columns.len = restored_columns.len;
-                self.columns.appendSliceAssumeCapacity(self.columns.items[restored_columns.start..][0..restored_columns.len]);
+                self.columns.append_slice_assume_capacity(self.columns.items[restored_columns.start..][0..restored_columns.len]);
             },
             .def_cfa => |i| {
-                try self.resolveCopyOnWrite(allocator);
+                try self.resolve_copy_on_write(allocator);
                 self.current_row.cfa = .{
                     .register = i.register,
-                    .rule = .{ .val_offset = @intCast(i.offset) },
+                    .rule = .{ .val_offset = @int_cast(i.offset) },
                 };
             },
             .def_cfa_sf => |i| {
-                try self.resolveCopyOnWrite(allocator);
+                try self.resolve_copy_on_write(allocator);
                 self.current_row.cfa = .{
                     .register = i.register,
                     .rule = .{ .val_offset = i.offset * cie.data_alignment_factor },
                 };
             },
             .def_cfa_register => |i| {
-                try self.resolveCopyOnWrite(allocator);
+                try self.resolve_copy_on_write(allocator);
                 if (self.current_row.cfa.register == null or self.current_row.cfa.rule != .val_offset) return error.InvalidOperation;
                 self.current_row.cfa.register = i.register;
             },
             .def_cfa_offset => |i| {
-                try self.resolveCopyOnWrite(allocator);
+                try self.resolve_copy_on_write(allocator);
                 if (self.current_row.cfa.register == null or self.current_row.cfa.rule != .val_offset) return error.InvalidOperation;
                 self.current_row.cfa.rule = .{
-                    .val_offset = @intCast(i.offset),
+                    .val_offset = @int_cast(i.offset),
                 };
             },
             .def_cfa_offset_sf => |i| {
-                try self.resolveCopyOnWrite(allocator);
+                try self.resolve_copy_on_write(allocator);
                 if (self.current_row.cfa.register == null or self.current_row.cfa.rule != .val_offset) return error.InvalidOperation;
                 self.current_row.cfa.rule = .{
                     .val_offset = i.offset * cie.data_alignment_factor,
                 };
             },
             .def_cfa_expression => |i| {
-                try self.resolveCopyOnWrite(allocator);
+                try self.resolve_copy_on_write(allocator);
                 self.current_row.cfa.register = undefined;
                 self.current_row.cfa.rule = .{
                     .expression = i.block,
                 };
             },
             .expression => |i| {
-                try self.resolveCopyOnWrite(allocator);
-                const column = try self.getOrAddColumn(allocator, i.register);
+                try self.resolve_copy_on_write(allocator);
+                const column = try self.get_or_add_column(allocator, i.register);
                 column.rule = .{
                     .expression = i.block,
                 };
             },
             .val_offset => |i| {
-                try self.resolveCopyOnWrite(allocator);
-                const column = try self.getOrAddColumn(allocator, i.register);
+                try self.resolve_copy_on_write(allocator);
+                const column = try self.get_or_add_column(allocator, i.register);
                 column.rule = .{
-                    .val_offset = @as(i64, @intCast(i.offset)) * cie.data_alignment_factor,
+                    .val_offset = @as(i64, @int_cast(i.offset)) * cie.data_alignment_factor,
                 };
             },
             .val_offset_sf => |i| {
-                try self.resolveCopyOnWrite(allocator);
-                const column = try self.getOrAddColumn(allocator, i.register);
+                try self.resolve_copy_on_write(allocator);
+                const column = try self.get_or_add_column(allocator, i.register);
                 column.rule = .{
                     .val_offset = i.offset * cie.data_alignment_factor,
                 };
             },
             .val_expression => |i| {
-                try self.resolveCopyOnWrite(allocator);
-                const column = try self.getOrAddColumn(allocator, i.register);
+                try self.resolve_copy_on_write(allocator);
+                const column = try self.get_or_add_column(allocator, i.register);
                 column.rule = .{
                     .val_expression = i.block,
                 };

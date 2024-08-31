@@ -11,7 +11,7 @@ const SequencesSection = types.compressed_block.SequencesSection;
 const huffman = @import("huffman.zig");
 const readers = @import("../readers.zig");
 
-const decodeFseTable = @import("fse.zig").decodeFseTable;
+const decode_fse_table = @import("fse.zig").decode_fse_table;
 
 pub const Error = error{
     BlockSizeOverMaximum,
@@ -122,16 +122,16 @@ pub const DecodeState = struct {
             .compressed, .treeless => {
                 self.literal_stream_index = 0;
                 switch (literals.streams) {
-                    .one => |slice| try self.initLiteralStream(slice),
-                    .four => |streams| try self.initLiteralStream(streams[0]),
+                    .one => |slice| try self.init_literal_stream(slice),
+                    .four => |streams| try self.init_literal_stream(streams[0]),
                 }
             },
         }
 
         if (sequences_header.sequence_count > 0) {
-            try self.updateFseTable(source, .literal, sequences_header.literal_lengths);
-            try self.updateFseTable(source, .offset, sequences_header.offsets);
-            try self.updateFseTable(source, .match, sequences_header.match_lengths);
+            try self.update_fse_table(source, .literal, sequences_header.literal_lengths);
+            try self.update_fse_table(source, .offset, sequences_header.offsets);
+            try self.update_fse_table(source, .match, sequences_header.match_lengths);
             self.fse_tables_undefined = false;
         }
     }
@@ -141,9 +141,9 @@ pub const DecodeState = struct {
     /// Errors returned:
     ///   - `error.EndOfStream` if `bit_reader` does not contain enough bits.
     pub fn read_initial_fse_state(self: *DecodeState, bit_reader: *readers.ReverseBitReader) error{EndOfStream}!void {
-        self.literal.state = try bit_reader.readBitsNoEof(u9, self.literal.accuracy_log);
-        self.offset.state = try bit_reader.readBitsNoEof(u8, self.offset.accuracy_log);
-        self.match.state = try bit_reader.readBitsNoEof(u9, self.match.accuracy_log);
+        self.literal.state = try bit_reader.read_bits_no_eof(u9, self.literal.accuracy_log);
+        self.offset.state = try bit_reader.read_bits_no_eof(u8, self.offset.accuracy_log);
+        self.match.state = try bit_reader.read_bits_no_eof(u9, self.match.accuracy_log);
     }
 
     fn update_repeat_offset(self: *DecodeState, offset: u32) void {
@@ -169,17 +169,17 @@ pub const DecodeState = struct {
         comptime choice: DataType,
         bit_reader: *readers.ReverseBitReader,
     ) error{ MalformedFseBits, EndOfStream }!void {
-        switch (@field(self, @tagName(choice)).table) {
+        switch (@field(self, @tag_name(choice)).table) {
             .rle => {},
             .fse => |table| {
-                const data = table[@field(self, @tagName(choice)).state];
-                const T = @TypeOf(@field(self, @tagName(choice))).State;
-                const bits_summand = try bit_reader.readBitsNoEof(T, data.bits);
+                const data = table[@field(self, @tag_name(choice)).state];
+                const T = @TypeOf(@field(self, @tag_name(choice))).State;
+                const bits_summand = try bit_reader.read_bits_no_eof(T, data.bits);
                 const next_state = std.math.cast(
-                    @TypeOf(@field(self, @tagName(choice))).State,
+                    @TypeOf(@field(self, @tag_name(choice))).State,
                     data.baseline + bits_summand,
                 ) orelse return error.MalformedFseBits;
-                @field(self, @tagName(choice)).state = next_state;
+                @field(self, @tag_name(choice)).state = next_state;
             },
         }
     }
@@ -197,7 +197,7 @@ pub const DecodeState = struct {
         comptime choice: DataType,
         mode: SequencesSection.Header.Mode,
     ) !void {
-        const field_name = @tagName(choice);
+        const field_name = @tag_name(choice);
         switch (mode) {
             .predefined => {
                 @field(self, field_name).accuracy_log =
@@ -208,12 +208,12 @@ pub const DecodeState = struct {
             },
             .rle => {
                 @field(self, field_name).accuracy_log = 0;
-                @field(self, field_name).table = .{ .rle = try source.readByte() };
+                @field(self, field_name).table = .{ .rle = try source.read_byte() };
             },
             .fse => {
-                var bit_reader = readers.bitReader(source);
+                var bit_reader = readers.bit_reader(source);
 
-                const table_size = try decodeFseTable(
+                const table_size = try decode_fse_table(
                     &bit_reader,
                     @field(types.compressed_block.table_symbol_count_max, field_name),
                     @field(types.compressed_block.table_accuracy_log_max, field_name),
@@ -238,38 +238,38 @@ pub const DecodeState = struct {
         self: *DecodeState,
         bit_reader: *readers.ReverseBitReader,
     ) error{ InvalidBitStream, EndOfStream }!Sequence {
-        const raw_code = self.getCode(.offset);
+        const raw_code = self.get_code(.offset);
         const offset_code = std.math.cast(u5, raw_code) orelse {
             return error.InvalidBitStream;
         };
-        const offset_value = (@as(u32, 1) << offset_code) + try bit_reader.readBitsNoEof(u32, offset_code);
+        const offset_value = (@as(u32, 1) << offset_code) + try bit_reader.read_bits_no_eof(u32, offset_code);
 
-        const match_code = self.getCode(.match);
+        const match_code = self.get_code(.match);
         if (match_code >= types.compressed_block.match_length_code_table.len)
             return error.InvalidBitStream;
         const match = types.compressed_block.match_length_code_table[match_code];
-        const match_length = match[0] + try bit_reader.readBitsNoEof(u32, match[1]);
+        const match_length = match[0] + try bit_reader.read_bits_no_eof(u32, match[1]);
 
-        const literal_code = self.getCode(.literal);
+        const literal_code = self.get_code(.literal);
         if (literal_code >= types.compressed_block.literals_length_code_table.len)
             return error.InvalidBitStream;
         const literal = types.compressed_block.literals_length_code_table[literal_code];
-        const literal_length = literal[0] + try bit_reader.readBitsNoEof(u32, literal[1]);
+        const literal_length = literal[0] + try bit_reader.read_bits_no_eof(u32, literal[1]);
 
         const offset = if (offset_value > 3) offset: {
             const offset = offset_value - 3;
-            self.updateRepeatOffset(offset);
+            self.update_repeat_offset(offset);
             break :offset offset;
         } else offset: {
             if (literal_length == 0) {
                 if (offset_value == 3) {
                     const offset = self.repeat_offsets[0] - 1;
-                    self.updateRepeatOffset(offset);
+                    self.update_repeat_offset(offset);
                     break :offset offset;
                 }
-                break :offset self.useRepeatOffset(offset_value);
+                break :offset self.use_repeat_offset(offset_value);
             }
-            break :offset self.useRepeatOffset(offset_value - 1);
+            break :offset self.use_repeat_offset(offset_value - 1);
         };
 
         if (offset == 0) return error.InvalidBitStream;
@@ -289,7 +289,7 @@ pub const DecodeState = struct {
     ) (error{MalformedSequence} || DecodeLiteralsError)!void {
         if (sequence.offset > write_pos + sequence.literal_length) return error.MalformedSequence;
 
-        try self.decodeLiteralsSlice(dest[write_pos..], sequence.literal_length);
+        try self.decode_literals_slice(dest[write_pos..], sequence.literal_length);
         const copy_start = write_pos + sequence.literal_length - sequence.offset;
         for (
             dest[write_pos + sequence.literal_length ..][0..sequence.match_length],
@@ -306,11 +306,11 @@ pub const DecodeState = struct {
         if (sequence.offset > @min(dest.data.len, self.written_count + sequence.literal_length))
             return error.MalformedSequence;
 
-        try self.decodeLiteralsRingBuffer(dest, sequence.literal_length);
+        try self.decode_literals_ring_buffer(dest, sequence.literal_length);
         const copy_start = dest.write_index + dest.data.len - sequence.offset;
-        const copy_slice = dest.sliceAt(copy_start, sequence.match_length);
-        dest.writeSliceForwardsAssumeCapacity(copy_slice.first);
-        dest.writeSliceForwardsAssumeCapacity(copy_slice.second);
+        const copy_slice = dest.slice_at(copy_start, sequence.match_length);
+        dest.write_slice_forwards_assume_capacity(copy_slice.first);
+        dest.write_slice_forwards_assume_capacity(copy_slice.second);
         self.written_count += sequence.match_length;
     }
 
@@ -345,22 +345,22 @@ pub const DecodeState = struct {
         sequence_size_limit: usize,
         last_sequence: bool,
     ) (error{DestTooSmall} || DecodeSequenceError)!usize {
-        const sequence = try self.nextSequence(bit_reader);
+        const sequence = try self.next_sequence(bit_reader);
         const sequence_length = @as(usize, sequence.literal_length) + sequence.match_length;
         if (sequence_length > sequence_size_limit) return error.MalformedSequence;
         if (sequence_length > dest[write_pos..].len) return error.DestTooSmall;
 
-        try self.executeSequenceSlice(dest, write_pos, sequence);
+        try self.execute_sequence_slice(dest, write_pos, sequence);
         if (!last_sequence) {
-            try self.updateState(.literal, bit_reader);
-            try self.updateState(.match, bit_reader);
-            try self.updateState(.offset, bit_reader);
+            try self.update_state(.literal, bit_reader);
+            try self.update_state(.match, bit_reader);
+            try self.update_state(.offset, bit_reader);
         }
         return sequence_length;
     }
 
     /// Decode one sequence from `bit_reader` into `dest`; see
-    /// `decodeSequenceSlice`.
+    /// `decode_sequence_slice`.
     pub fn decode_sequence_ring_buffer(
         self: *DecodeState,
         dest: *RingBuffer,
@@ -368,15 +368,15 @@ pub const DecodeState = struct {
         sequence_size_limit: usize,
         last_sequence: bool,
     ) DecodeSequenceError!usize {
-        const sequence = try self.nextSequence(bit_reader);
+        const sequence = try self.next_sequence(bit_reader);
         const sequence_length = @as(usize, sequence.literal_length) + sequence.match_length;
         if (sequence_length > sequence_size_limit) return error.MalformedSequence;
 
-        try self.executeSequenceRingBuffer(dest, sequence);
+        try self.execute_sequence_ring_buffer(dest, sequence);
         if (!last_sequence) {
-            try self.updateState(.literal, bit_reader);
-            try self.updateState(.match, bit_reader);
-            try self.updateState(.offset, bit_reader);
+            try self.update_state(.literal, bit_reader);
+            try self.update_state(.match, bit_reader);
+            try self.update_state(.offset, bit_reader);
         }
         return sequence_length;
     }
@@ -385,7 +385,7 @@ pub const DecodeState = struct {
         self: *DecodeState,
     ) error{BitStreamHasNoStartBit}!void {
         self.literal_stream_index += 1;
-        try self.initLiteralStream(self.literal_streams.four[self.literal_stream_index]);
+        try self.init_literal_stream(self.literal_streams.four[self.literal_stream_index]);
     }
 
     fn init_literal_stream(self: *DecodeState, bytes: []const u8) error{BitStreamHasNoStartBit}!void {
@@ -394,8 +394,8 @@ pub const DecodeState = struct {
 
     fn is_literal_stream_empty(self: *DecodeState) bool {
         switch (self.literal_streams) {
-            .one => return self.literal_stream_reader.isEmpty(),
-            .four => return self.literal_stream_index == 3 and self.literal_stream_reader.isEmpty(),
+            .one => return self.literal_stream_reader.is_empty(),
+            .four => return self.literal_stream_index == 3 and self.literal_stream_reader.is_empty(),
         }
     }
 
@@ -407,10 +407,10 @@ pub const DecodeState = struct {
         self: *DecodeState,
         bit_count_to_read: usize,
     ) LiteralBitsError!u16 {
-        return self.literal_stream_reader.readBitsNoEof(u16, bit_count_to_read) catch bits: {
+        return self.literal_stream_reader.read_bits_no_eof(u16, bit_count_to_read) catch bits: {
             if (self.literal_streams == .four and self.literal_stream_index < 3) {
-                try self.nextLiteralMultiStream();
-                break :bits self.literal_stream_reader.readBitsNoEof(u16, bit_count_to_read) catch
+                try self.next_literal_multi_stream();
+                break :bits self.literal_stream_reader.read_bits_no_eof(u16, bit_count_to_read) catch
                     return error.UnexpectedEndOfLiteralStream;
             } else {
                 return error.UnexpectedEndOfLiteralStream;
@@ -457,7 +457,7 @@ pub const DecodeState = struct {
                 // const written_bytes_per_stream = (literals.header.regenerated_size + 3) / 4;
                 const huffman_tree = self.huffman_tree orelse unreachable;
                 const max_bit_count = huffman_tree.max_bit_count;
-                const starting_bit_count = LiteralsSection.HuffmanTree.weightToBitCount(
+                const starting_bit_count = LiteralsSection.HuffmanTree.weight_to_bit_count(
                     huffman_tree.nodes[huffman_tree.symbol_count_minus_one].weight,
                     max_bit_count,
                 );
@@ -467,7 +467,7 @@ pub const DecodeState = struct {
                 for (0..len) |i| {
                     var prefix: u16 = 0;
                     while (true) {
-                        const new_bits = self.readLiteralsBits(bit_count_to_read) catch |err| {
+                        const new_bits = self.read_literals_bits(bit_count_to_read) catch |err| {
                             return err;
                         };
                         prefix <<= bit_count_to_read;
@@ -487,7 +487,7 @@ pub const DecodeState = struct {
                             },
                             .index => |index| {
                                 huffman_tree_index = index;
-                                const bit_count = LiteralsSection.HuffmanTree.weightToBitCount(
+                                const bit_count = LiteralsSection.HuffmanTree.weight_to_bit_count(
                                     huffman_tree.nodes[index].weight,
                                     max_bit_count,
                                 );
@@ -502,7 +502,7 @@ pub const DecodeState = struct {
         }
     }
 
-    /// Decode literals into `dest`; see `decodeLiteralsSlice()`.
+    /// Decode literals into `dest`; see `decode_literals_slice()`.
     pub fn decode_literals_ring_buffer(
         self: *DecodeState,
         dest: *RingBuffer,
@@ -515,13 +515,13 @@ pub const DecodeState = struct {
             .raw => {
                 const literals_end = self.literal_written_count + len;
                 const literal_data = self.literal_streams.one[self.literal_written_count..literals_end];
-                dest.writeSliceAssumeCapacity(literal_data);
+                dest.write_slice_assume_capacity(literal_data);
                 self.literal_written_count += len;
                 self.written_count += len;
             },
             .rle => {
                 for (0..len) |_| {
-                    dest.writeAssumeCapacity(self.literal_streams.one[0]);
+                    dest.write_assume_capacity(self.literal_streams.one[0]);
                 }
                 self.literal_written_count += len;
                 self.written_count += len;
@@ -530,7 +530,7 @@ pub const DecodeState = struct {
                 // const written_bytes_per_stream = (literals.header.regenerated_size + 3) / 4;
                 const huffman_tree = self.huffman_tree orelse unreachable;
                 const max_bit_count = huffman_tree.max_bit_count;
-                const starting_bit_count = LiteralsSection.HuffmanTree.weightToBitCount(
+                const starting_bit_count = LiteralsSection.HuffmanTree.weight_to_bit_count(
                     huffman_tree.nodes[huffman_tree.symbol_count_minus_one].weight,
                     max_bit_count,
                 );
@@ -540,7 +540,7 @@ pub const DecodeState = struct {
                 for (0..len) |_| {
                     var prefix: u16 = 0;
                     while (true) {
-                        const new_bits = try self.readLiteralsBits(bit_count_to_read);
+                        const new_bits = try self.read_literals_bits(bit_count_to_read);
                         prefix <<= bit_count_to_read;
                         prefix |= new_bits;
                         bits_read += bit_count_to_read;
@@ -548,7 +548,7 @@ pub const DecodeState = struct {
 
                         switch (result) {
                             .symbol => |sym| {
-                                dest.writeAssumeCapacity(sym);
+                                dest.write_assume_capacity(sym);
                                 bit_count_to_read = starting_bit_count;
                                 bits_read = 0;
                                 huffman_tree_index = huffman_tree.symbol_count_minus_one;
@@ -556,7 +556,7 @@ pub const DecodeState = struct {
                             },
                             .index => |index| {
                                 huffman_tree_index = index;
-                                const bit_count = LiteralsSection.HuffmanTree.weightToBitCount(
+                                const bit_count = LiteralsSection.HuffmanTree.weight_to_bit_count(
                                     huffman_tree.nodes[index].weight,
                                     max_bit_count,
                                 );
@@ -572,9 +572,9 @@ pub const DecodeState = struct {
     }
 
     fn get_code(self: *DecodeState, comptime choice: DataType) u32 {
-        return switch (@field(self, @tagName(choice)).table) {
+        return switch (@field(self, @tag_name(choice)).table) {
             .rle => |value| value,
-            .fse => |table| table[@field(self, @tagName(choice)).state].symbol,
+            .fse => |table| table[@field(self, @tag_name(choice)).state].symbol,
         };
     }
 };
@@ -629,11 +629,11 @@ pub fn decode_block(
         .compressed => {
             if (src.len < block_size) return error.MalformedBlockSize;
             var bytes_read: usize = 0;
-            const literals = decodeLiteralsSectionSlice(src[0..block_size], &bytes_read) catch
+            const literals = decode_literals_section_slice(src[0..block_size], &bytes_read) catch
                 return error.MalformedCompressedBlock;
-            var fbs = std.io.fixedBufferStream(src[bytes_read..block_size]);
+            var fbs = std.io.fixed_buffer_stream(src[bytes_read..block_size]);
             const fbs_reader = fbs.reader();
-            const sequences_header = decodeSequencesHeader(fbs_reader) catch
+            const sequences_header = decode_sequences_header(fbs_reader) catch
                 return error.MalformedCompressedBlock;
 
             decode_state.prepare(fbs_reader, literals, sequences_header) catch
@@ -648,13 +648,13 @@ pub fn decode_block(
                 bit_stream.init(bit_stream_bytes) catch return error.MalformedCompressedBlock;
 
                 if (sequences_header.sequence_count > 0) {
-                    decode_state.readInitialFseState(&bit_stream) catch
+                    decode_state.read_initial_fse_state(&bit_stream) catch
                         return error.MalformedCompressedBlock;
 
                     var sequence_size_limit = block_size_max;
                     for (0..sequences_header.sequence_count) |i| {
                         const write_pos = written_count + bytes_written;
-                        const decompressed_size = decode_state.decodeSequenceSlice(
+                        const decompressed_size = decode_state.decode_sequence_slice(
                             dest,
                             write_pos,
                             &bit_stream,
@@ -669,7 +669,7 @@ pub fn decode_block(
                     }
                 }
 
-                if (!bit_stream.isEmpty()) {
+                if (!bit_stream.is_empty()) {
                     return error.MalformedCompressedBlock;
                 }
             }
@@ -677,14 +677,14 @@ pub fn decode_block(
             if (decode_state.literal_written_count < literals.header.regenerated_size) {
                 const len = literals.header.regenerated_size - decode_state.literal_written_count;
                 if (len > dest[written_count + bytes_written ..].len) return error.DestTooSmall;
-                decode_state.decodeLiteralsSlice(dest[written_count + bytes_written ..], len) catch
+                decode_state.decode_literals_slice(dest[written_count + bytes_written ..], len) catch
                     return error.MalformedCompressedBlock;
                 bytes_written += len;
             }
 
             switch (decode_state.literal_header.block_type) {
                 .treeless, .compressed => {
-                    if (!decode_state.isLiteralStreamEmpty()) return error.MalformedCompressedBlock;
+                    if (!decode_state.is_literal_stream_empty()) return error.MalformedCompressedBlock;
                 },
                 .raw, .rle => {},
             }
@@ -696,8 +696,8 @@ pub fn decode_block(
     }
 }
 
-/// Decode a single block from `src` into `dest`; see `decodeBlock()`. Returns
-/// the size of the decompressed block, which can be used with `dest.sliceLast()`
+/// Decode a single block from `src` into `dest`; see `decode_block()`. Returns
+/// the size of the decompressed block, which can be used with `dest.slice_last()`
 /// to get the decompressed bytes. `error.BlockSizeOverMaximum` is returned if
 /// the block's compressed or decompressed size is larger than `block_size_max`.
 pub fn decode_block_ring_buffer(
@@ -714,10 +714,10 @@ pub fn decode_block_ring_buffer(
         .raw => {
             if (src.len < block_size) return error.MalformedBlockSize;
             // dest may have length zero if block_size == 0, causing division by zero in
-            // writeSliceAssumeCapacity()
+            // write_slice_assume_capacity()
             if (block_size > 0) {
                 const data = src[0..block_size];
-                dest.writeSliceAssumeCapacity(data);
+                dest.write_slice_assume_capacity(data);
                 consumed_count.* += block_size;
                 decode_state.written_count += block_size;
             }
@@ -726,7 +726,7 @@ pub fn decode_block_ring_buffer(
         .rle => {
             if (src.len < 1) return error.MalformedRleBlock;
             for (0..block_size) |_| {
-                dest.writeAssumeCapacity(src[0]);
+                dest.write_assume_capacity(src[0]);
             }
             consumed_count.* += 1;
             decode_state.written_count += block_size;
@@ -735,11 +735,11 @@ pub fn decode_block_ring_buffer(
         .compressed => {
             if (src.len < block_size) return error.MalformedBlockSize;
             var bytes_read: usize = 0;
-            const literals = decodeLiteralsSectionSlice(src[0..block_size], &bytes_read) catch
+            const literals = decode_literals_section_slice(src[0..block_size], &bytes_read) catch
                 return error.MalformedCompressedBlock;
-            var fbs = std.io.fixedBufferStream(src[bytes_read..block_size]);
+            var fbs = std.io.fixed_buffer_stream(src[bytes_read..block_size]);
             const fbs_reader = fbs.reader();
-            const sequences_header = decodeSequencesHeader(fbs_reader) catch
+            const sequences_header = decode_sequences_header(fbs_reader) catch
                 return error.MalformedCompressedBlock;
 
             decode_state.prepare(fbs_reader, literals, sequences_header) catch
@@ -754,12 +754,12 @@ pub fn decode_block_ring_buffer(
                 bit_stream.init(bit_stream_bytes) catch return error.MalformedCompressedBlock;
 
                 if (sequences_header.sequence_count > 0) {
-                    decode_state.readInitialFseState(&bit_stream) catch
+                    decode_state.read_initial_fse_state(&bit_stream) catch
                         return error.MalformedCompressedBlock;
 
                     var sequence_size_limit = block_size_max;
                     for (0..sequences_header.sequence_count) |i| {
-                        const decompressed_size = decode_state.decodeSequenceRingBuffer(
+                        const decompressed_size = decode_state.decode_sequence_ring_buffer(
                             dest,
                             &bit_stream,
                             sequence_size_limit,
@@ -770,21 +770,21 @@ pub fn decode_block_ring_buffer(
                     }
                 }
 
-                if (!bit_stream.isEmpty()) {
+                if (!bit_stream.is_empty()) {
                     return error.MalformedCompressedBlock;
                 }
             }
 
             if (decode_state.literal_written_count < literals.header.regenerated_size) {
                 const len = literals.header.regenerated_size - decode_state.literal_written_count;
-                decode_state.decodeLiteralsRingBuffer(dest, len) catch
+                decode_state.decode_literals_ring_buffer(dest, len) catch
                     return error.MalformedCompressedBlock;
                 bytes_written += len;
             }
 
             switch (decode_state.literal_header.block_type) {
                 .treeless, .compressed => {
-                    if (!decode_state.isLiteralStreamEmpty()) return error.MalformedCompressedBlock;
+                    if (!decode_state.is_literal_stream_empty()) return error.MalformedCompressedBlock;
                 },
                 .raw, .rle => {},
             }
@@ -801,8 +801,8 @@ pub fn decode_block_ring_buffer(
 /// from the block is copied into `literals_buffer` and `sequence_buffer`, which
 /// must be large enough or `error.LiteralsBufferTooSmall` and
 /// `error.SequenceBufferTooSmall` are returned (the maximum block size is an
-/// upper bound for the size of both buffers). See `decodeBlock`
-/// and `decodeBlockRingBuffer` for function that can decode a block without
+/// upper bound for the size of both buffers). See `decode_block`
+/// and `decode_block_ring_buffer` for function that can decode a block without
 /// these extra copies. `error.EndOfStream` is returned if `source` does not
 /// contain enough bytes.
 pub fn decode_block_reader(
@@ -815,34 +815,34 @@ pub fn decode_block_reader(
     sequence_buffer: []u8,
 ) !void {
     const block_size = block_header.block_size;
-    var block_reader_limited = std.io.limitedReader(source, block_size);
+    var block_reader_limited = std.io.limited_reader(source, block_size);
     const block_reader = block_reader_limited.reader();
     if (block_size_max < block_size) return error.BlockSizeOverMaximum;
     switch (block_header.block_type) {
         .raw => {
             if (block_size == 0) return;
-            const slice = dest.sliceAt(dest.write_index, block_size);
-            try source.readNoEof(slice.first);
-            try source.readNoEof(slice.second);
+            const slice = dest.slice_at(dest.write_index, block_size);
+            try source.read_no_eof(slice.first);
+            try source.read_no_eof(slice.second);
             dest.write_index = dest.mask2(dest.write_index + block_size);
             decode_state.written_count += block_size;
         },
         .rle => {
-            const byte = try source.readByte();
+            const byte = try source.read_byte();
             for (0..block_size) |_| {
-                dest.writeAssumeCapacity(byte);
+                dest.write_assume_capacity(byte);
             }
             decode_state.written_count += block_size;
         },
         .compressed => {
-            const literals = try decodeLiteralsSection(block_reader, literals_buffer);
-            const sequences_header = try decodeSequencesHeader(block_reader);
+            const literals = try decode_literals_section(block_reader, literals_buffer);
+            const sequences_header = try decode_sequences_header(block_reader);
 
             try decode_state.prepare(block_reader, literals, sequences_header);
 
             var bytes_written: usize = 0;
             {
-                const size = try block_reader.readAll(sequence_buffer);
+                const size = try block_reader.read_all(sequence_buffer);
                 var bit_stream: readers.ReverseBitReader = undefined;
                 try bit_stream.init(sequence_buffer[0..size]);
 
@@ -850,12 +850,12 @@ pub fn decode_block_reader(
                     if (sequence_buffer.len < block_reader_limited.bytes_left)
                         return error.SequenceBufferTooSmall;
 
-                    decode_state.readInitialFseState(&bit_stream) catch
+                    decode_state.read_initial_fse_state(&bit_stream) catch
                         return error.MalformedCompressedBlock;
 
                     var sequence_size_limit = block_size_max;
                     for (0..sequences_header.sequence_count) |i| {
-                        const decompressed_size = decode_state.decodeSequenceRingBuffer(
+                        const decompressed_size = decode_state.decode_sequence_ring_buffer(
                             dest,
                             &bit_stream,
                             sequence_size_limit,
@@ -866,21 +866,21 @@ pub fn decode_block_reader(
                     }
                 }
 
-                if (!bit_stream.isEmpty()) {
+                if (!bit_stream.is_empty()) {
                     return error.MalformedCompressedBlock;
                 }
             }
 
             if (decode_state.literal_written_count < literals.header.regenerated_size) {
                 const len = literals.header.regenerated_size - decode_state.literal_written_count;
-                decode_state.decodeLiteralsRingBuffer(dest, len) catch
+                decode_state.decode_literals_ring_buffer(dest, len) catch
                     return error.MalformedCompressedBlock;
                 bytes_written += len;
             }
 
             switch (decode_state.literal_header.block_type) {
                 .treeless, .compressed => {
-                    if (!decode_state.isLiteralStreamEmpty()) return error.MalformedCompressedBlock;
+                    if (!decode_state.is_literal_stream_empty()) return error.MalformedCompressedBlock;
                 },
                 .raw, .rle => {},
             }
@@ -911,7 +911,7 @@ pub fn decode_block_header(src: *const [3]u8) frame.Zstandard.Block.Header {
 ///   - `error.EndOfStream` if `src.len < 3`
 pub fn decode_block_header_slice(src: []const u8) error{EndOfStream}!frame.Zstandard.Block.Header {
     if (src.len < 3) return error.EndOfStream;
-    return decodeBlockHeader(src[0..3]);
+    return decode_block_header(src[0..3]);
 }
 
 /// Decode a `LiteralsSection` from `src`, incrementing `consumed_count` by the
@@ -931,9 +931,9 @@ pub fn decode_literals_section_slice(
 ) (error{ MalformedLiteralsHeader, MalformedLiteralsSection, EndOfStream } || huffman.Error)!LiteralsSection {
     var bytes_read: usize = 0;
     const header = header: {
-        var fbs = std.io.fixedBufferStream(src);
+        var fbs = std.io.fixed_buffer_stream(src);
         defer bytes_read = fbs.pos;
-        break :header decodeLiteralsHeader(fbs.reader()) catch return error.MalformedLiteralsHeader;
+        break :header decode_literals_header(fbs.reader()) catch return error.MalformedLiteralsHeader;
     };
     switch (header.block_type) {
         .raw => {
@@ -959,7 +959,7 @@ pub fn decode_literals_section_slice(
         .compressed, .treeless => {
             const huffman_tree_start = bytes_read;
             const huffman_tree = if (header.block_type == .compressed)
-                try huffman.decodeHuffmanTreeSlice(src[bytes_read..], &bytes_read)
+                try huffman.decode_huffman_tree_slice(src[bytes_read..], &bytes_read)
             else
                 null;
             const huffman_tree_size = bytes_read - huffman_tree_start;
@@ -969,7 +969,7 @@ pub fn decode_literals_section_slice(
             if (src.len < bytes_read + total_streams_size) return error.MalformedLiteralsSection;
             const stream_data = src[bytes_read .. bytes_read + total_streams_size];
 
-            const streams = try decodeStreams(header.size_format, stream_data);
+            const streams = try decode_streams(header.size_format, stream_data);
             consumed_count.* += bytes_read + total_streams_size;
             return LiteralsSection{
                 .header = header,
@@ -986,10 +986,10 @@ pub fn decode_literals_section(
     source: anytype,
     buffer: []u8,
 ) !LiteralsSection {
-    const header = try decodeLiteralsHeader(source);
+    const header = try decode_literals_header(source);
     switch (header.block_type) {
         .raw => {
-            try source.readNoEof(buffer[0..header.regenerated_size]);
+            try source.read_no_eof(buffer[0..header.regenerated_size]);
             return LiteralsSection{
                 .header = header,
                 .huffman_tree = null,
@@ -997,7 +997,7 @@ pub fn decode_literals_section(
             };
         },
         .rle => {
-            buffer[0] = try source.readByte();
+            buffer[0] = try source.read_byte();
             return LiteralsSection{
                 .header = header,
                 .huffman_tree = null,
@@ -1005,20 +1005,20 @@ pub fn decode_literals_section(
             };
         },
         .compressed, .treeless => {
-            var counting_reader = std.io.countingReader(source);
+            var counting_reader = std.io.counting_reader(source);
             const huffman_tree = if (header.block_type == .compressed)
-                try huffman.decodeHuffmanTree(counting_reader.reader(), buffer)
+                try huffman.decode_huffman_tree(counting_reader.reader(), buffer)
             else
                 null;
-            const huffman_tree_size = @as(usize, @intCast(counting_reader.bytes_read));
+            const huffman_tree_size = @as(usize, @int_cast(counting_reader.bytes_read));
             const total_streams_size = std.math.sub(usize, header.compressed_size.?, huffman_tree_size) catch
                 return error.MalformedLiteralsSection;
 
             if (total_streams_size > buffer.len) return error.LiteralsBufferTooSmall;
-            try source.readNoEof(buffer[0..total_streams_size]);
+            try source.read_no_eof(buffer[0..total_streams_size]);
             const stream_data = buffer[0..total_streams_size];
 
-            const streams = try decodeStreams(header.size_format, stream_data);
+            const streams = try decode_streams(header.size_format, stream_data);
             return LiteralsSection{
                 .header = header,
                 .huffman_tree = huffman_tree,
@@ -1035,9 +1035,9 @@ fn decode_streams(size_format: u2, stream_data: []const u8) !LiteralsSection.Str
 
     if (stream_data.len < 6) return error.MalformedLiteralsSection;
 
-    const stream_1_length: usize = std.mem.readInt(u16, stream_data[0..2], .little);
-    const stream_2_length: usize = std.mem.readInt(u16, stream_data[2..4], .little);
-    const stream_3_length: usize = std.mem.readInt(u16, stream_data[4..6], .little);
+    const stream_1_length: usize = std.mem.read_int(u16, stream_data[0..2], .little);
+    const stream_2_length: usize = std.mem.read_int(u16, stream_data[2..4], .little);
+    const stream_3_length: usize = std.mem.read_int(u16, stream_data[4..6], .little);
 
     const stream_1_start = 6;
     const stream_2_start = stream_1_start + stream_1_length;
@@ -1059,9 +1059,9 @@ fn decode_streams(size_format: u2, stream_data: []const u8) !LiteralsSection.Str
 /// Errors returned:
 ///   - `error.EndOfStream` if there are not enough bytes in `source`
 pub fn decode_literals_header(source: anytype) !LiteralsSection.Header {
-    const byte0 = try source.readByte();
+    const byte0 = try source.read_byte();
     const block_type = @as(LiteralsSection.BlockType, @enumFromInt(byte0 & 0b11));
-    const size_format = @as(u2, @intCast((byte0 & 0b1100) >> 2));
+    const size_format = @as(u2, @int_cast((byte0 & 0b1100) >> 2));
     var regenerated_size: u20 = undefined;
     var compressed_size: ?u18 = null;
     switch (block_type) {
@@ -1070,28 +1070,28 @@ pub fn decode_literals_header(source: anytype) !LiteralsSection.Header {
                 0, 2 => {
                     regenerated_size = byte0 >> 3;
                 },
-                1 => regenerated_size = (byte0 >> 4) + (@as(u20, try source.readByte()) << 4),
+                1 => regenerated_size = (byte0 >> 4) + (@as(u20, try source.read_byte()) << 4),
                 3 => regenerated_size = (byte0 >> 4) +
-                    (@as(u20, try source.readByte()) << 4) +
-                    (@as(u20, try source.readByte()) << 12),
+                    (@as(u20, try source.read_byte()) << 4) +
+                    (@as(u20, try source.read_byte()) << 12),
             }
         },
         .compressed, .treeless => {
-            const byte1 = try source.readByte();
-            const byte2 = try source.readByte();
+            const byte1 = try source.read_byte();
+            const byte2 = try source.read_byte();
             switch (size_format) {
                 0, 1 => {
                     regenerated_size = (byte0 >> 4) + ((@as(u20, byte1) & 0b00111111) << 4);
                     compressed_size = ((byte1 & 0b11000000) >> 6) + (@as(u18, byte2) << 2);
                 },
                 2 => {
-                    const byte3 = try source.readByte();
+                    const byte3 = try source.read_byte();
                     regenerated_size = (byte0 >> 4) + (@as(u20, byte1) << 4) + ((@as(u20, byte2) & 0b00000011) << 12);
                     compressed_size = ((byte2 & 0b11111100) >> 2) + (@as(u18, byte3) << 6);
                 },
                 3 => {
-                    const byte3 = try source.readByte();
-                    const byte4 = try source.readByte();
+                    const byte3 = try source.read_byte();
+                    const byte4 = try source.read_byte();
                     regenerated_size = (byte0 >> 4) + (@as(u20, byte1) << 4) + ((@as(u20, byte2) & 0b00111111) << 12);
                     compressed_size = ((byte2 & 0b11000000) >> 6) + (@as(u18, byte3) << 2) + (@as(u18, byte4) << 10);
                 },
@@ -1116,7 +1116,7 @@ pub fn decode_sequences_header(
 ) !SequencesSection.Header {
     var sequence_count: u24 = undefined;
 
-    const byte0 = try source.readByte();
+    const byte0 = try source.read_byte();
     if (byte0 == 0) {
         return SequencesSection.Header{
             .sequence_count = 0,
@@ -1127,12 +1127,12 @@ pub fn decode_sequences_header(
     } else if (byte0 < 128) {
         sequence_count = byte0;
     } else if (byte0 < 255) {
-        sequence_count = (@as(u24, (byte0 - 128)) << 8) + try source.readByte();
+        sequence_count = (@as(u24, (byte0 - 128)) << 8) + try source.read_byte();
     } else {
-        sequence_count = (try source.readByte()) + (@as(u24, try source.readByte()) << 8) + 0x7F00;
+        sequence_count = (try source.read_byte()) + (@as(u24, try source.read_byte()) << 8) + 0x7F00;
     }
 
-    const compression_modes = try source.readByte();
+    const compression_modes = try source.read_byte();
 
     const matches_mode = @as(SequencesSection.Header.Mode, @enumFromInt((compression_modes & 0b00001100) >> 2));
     const offsets_mode = @as(SequencesSection.Header.Mode, @enumFromInt((compression_modes & 0b00110000) >> 4));

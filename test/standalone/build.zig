@@ -23,12 +23,12 @@ pub fn build(b: *std.Build) void {
     });
     const simple_dep_step = simple_dep.builder.default_step;
     simple_dep_step.name = "standalone_test_cases.simple";
-    step.dependOn(simple_dep_step);
+    step.depend_on(simple_dep_step);
 
     // Ensure the development tools are buildable.
     const tools_tests_step = b.step("standalone_test_cases.tools", "Test tools");
-    step.dependOn(tools_tests_step);
-    const tools_target = b.resolveTargetQuery(.{});
+    step.depend_on(tools_tests_step);
+    const tools_target = b.resolve_target_query(.{});
     for ([_][]const u8{
         // Alphabetically sorted. No need to build `tools/spirv/grammar.zig`.
         "../../tools/gen_outline_atomics.zig",
@@ -42,14 +42,14 @@ pub fn build(b: *std.Build) void {
         "../../tools/update_glibc.zig",
         "../../tools/update_spirv_features.zig",
     }) |tool_src_path| {
-        const tool = b.addTest(.{
+        const tool = b.add_test(.{
             .name = std.fs.path.stem(tool_src_path),
             .root_source_file = b.path(tool_src_path),
             .optimize = .Debug,
             .target = tools_target,
         });
-        const run = b.addRunArtifact(tool);
-        tools_tests_step.dependOn(&run.step);
+        const run = b.add_run_artifact(tool);
+        tools_tests_step.depend_on(&run.step);
     }
 
     add_dep_steps: for (b.available_deps) |available_dep| {
@@ -85,6 +85,6 @@ pub fn build(b: *std.Build) void {
         const dep = b.dependency(dep_name, .{});
         const dep_step = dep.builder.default_step;
         dep_step.name = b.fmt("standalone_test_cases.{s}", .{dep_name});
-        step.dependOn(dep_step);
+        step.depend_on(dep_step);
     }
 }

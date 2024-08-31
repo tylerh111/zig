@@ -320,7 +320,7 @@ pub const State = struct {
         var i: usize = 0;
         var j: usize = 0;
         while (i < state.subkeys.len) : (i += 1) {
-            state.subkeys[i] ^= toWord(key, &j);
+            state.subkeys[i] ^= to_word(key, &j);
         }
 
         var halves = Halves{ .l = 0, .r = 0 };
@@ -346,15 +346,15 @@ pub const State = struct {
         var i: usize = 0;
         var j: usize = 0;
         while (i < state.subkeys.len) : (i += 1) {
-            state.subkeys[i] ^= toWord(key, &j);
+            state.subkeys[i] ^= to_word(key, &j);
         }
 
         var halves = Halves{ .l = 0, .r = 0 };
         i = 0;
         j = 0;
         while (i < 18) : (i += 2) {
-            halves.l ^= toWord(data, &j);
-            halves.r ^= toWord(data, &j);
+            halves.l ^= to_word(data, &j);
+            halves.r ^= to_word(data, &j);
             state.encipher(&halves);
             state.subkeys[i] = halves.l;
             state.subkeys[i + 1] = halves.r;
@@ -364,8 +364,8 @@ pub const State = struct {
         while (i < 4) : (i += 1) {
             var k: usize = 0;
             while (k < 256) : (k += 2) {
-                halves.l ^= toWord(data, &j);
-                halves.r ^= toWord(data, &j);
+                halves.l ^= to_word(data, &j);
+                halves.r ^= to_word(data, &j);
                 state.encipher(&halves);
                 state.sboxes[i][k] = halves.l;
                 state.sboxes[i][k + 1] = halves.r;
@@ -387,8 +387,8 @@ pub const State = struct {
         halves.l ^= state.subkeys[0];
         comptime var i = 1;
         inline while (i < 16) : (i += 2) {
-            halves.r = state.halfRound(halves.r, halves.l, i);
-            halves.l = state.halfRound(halves.l, halves.r, i + 1);
+            halves.r = state.half_round(halves.r, halves.l, i);
+            halves.l = state.half_round(halves.l, halves.r, i + 1);
         }
         const halves_last = Halves{ .l = halves.r ^ state.subkeys[i], .r = halves.l };
         halves.* = halves_last;
@@ -420,7 +420,7 @@ pub const Params = struct {
 /// For a generic key-derivation function, use `bcrypt.pbkdf()` instead.
 ///
 /// IMPORTANT: by design, bcrypt silently truncates passwords to 72 bytes.
-/// If this is an issue for your application, use `bcryptWithoutTruncation` instead.
+/// If this is an issue for your application, use `bcrypt_without_truncation` instead.
 pub fn bcrypt(
     password: []const u8,
     salt: [salt_length]u8,
@@ -440,7 +440,7 @@ pub fn bcrypt(
         state.expand0(passwordZ);
         state.expand0(salt[0..]);
     }
-    utils.secureZero(u8, &password_buf);
+    utils.secure_zero(u8, &password_buf);
 
     var cdata = [6]u32{ 0x4f727068, 0x65616e42, 0x65686f6c, 0x64657253, 0x63727944, 0x6f756274 }; // "OrpheanBeholderScryDoubt"
     k = 0;
@@ -450,7 +450,7 @@ pub fn bcrypt(
 
     var ct: [ct_length]u8 = undefined;
     for (cdata, 0..) |c, i| {
-        mem.writeInt(u32, ct[i * 4 ..][0..4], c, .big);
+        mem.write_int(u32, ct[i * 4 ..][0..4], c, .big);
     }
     return ct[0..dk_length].*;
 }
@@ -477,7 +477,7 @@ pub fn bcrypt_without_truncation(
     HmacSha512.create(&pre_hash, password, &salt);
 
     const Encoder = crypt_format.Codec.Encoder;
-    var pre_hash_b64: [Encoder.calcSize(pre_hash.len)]u8 = undefined;
+    var pre_hash_b64: [Encoder.calc_size(pre_hash.len)]u8 = undefined;
     _ = Encoder.encode(&pre_hash_b64, &pre_hash);
 
     return bcrypt(&pre_hash_b64, salt, params);
@@ -521,7 +521,7 @@ const pbkdf_prf = struct {
             const ciphertext = "OxychromaticBlowfishSwatDynamite";
             var j: usize = 0;
             for (cdata) |*v| {
-                v.* = State.toWord(ciphertext, &j);
+                v.* = State.to_word(ciphertext, &j);
             }
         }
 
@@ -546,12 +546,12 @@ const pbkdf_prf = struct {
         // copy out
         var out: [32]u8 = undefined;
         for (cdata, 0..) |v, i| {
-            std.mem.writeInt(u32, out[4 * i ..][0..4], v, .little);
+            std.mem.write_int(u32, out[4 * i ..][0..4], v, .little);
         }
 
         // zap
-        crypto.utils.secureZero(u32, &cdata);
-        crypto.utils.secureZero(State, @as(*[1]State, &state));
+        crypto.utils.secure_zero(u32, &cdata);
+        crypto.utils.secure_zero(State, @as(*[1]State, &state));
 
         return out;
     }
@@ -584,7 +584,7 @@ const crypt_format = struct {
         params: Params,
         silently_truncate_password: bool,
     ) [hash_length]u8 {
-        var dk = if (silently_truncate_password) bcrypt(password, salt, params) else bcryptWithoutTruncation(password, salt, params);
+        var dk = if (silently_truncate_password) bcrypt(password, salt, params) else bcrypt_without_truncation(password, salt, params);
 
         var salt_str: [salt_str_length]u8 = undefined;
         _ = Codec.Encoder.encode(salt_str[0..], salt[0..]);
@@ -593,7 +593,7 @@ const crypt_format = struct {
         _ = Codec.Encoder.encode(ct_str[0..], dk[0..]);
 
         var s_buf: [hash_length]u8 = undefined;
-        const s = fmt.bufPrint(
+        const s = fmt.buf_print(
             s_buf[0..],
             "{s}b${d}{d}${s}{s}",
             .{ prefix, params.rounds_log / 10, params.rounds_log % 10, salt_str, ct_str },
@@ -625,13 +625,13 @@ const PhcFormatHasher = struct {
         var salt: [salt_length]u8 = undefined;
         crypto.random.bytes(&salt);
 
-        const hash = if (silently_truncate_password) bcrypt(password, salt, params) else bcryptWithoutTruncation(password, salt, params);
+        const hash = if (silently_truncate_password) bcrypt(password, salt, params) else bcrypt_without_truncation(password, salt, params);
 
         return phc_format.serialize(HashResult{
             .alg_id = alg_id,
             .r = params.rounds_log,
-            .salt = try BinValue(salt_length).fromSlice(&salt),
-            .hash = try BinValue(dk_length).fromSlice(&hash),
+            .salt = try BinValue(salt_length).from_slice(&salt),
+            .hash = try BinValue(dk_length).from_slice(&hash),
         }, buf);
     }
 
@@ -648,8 +648,8 @@ const PhcFormatHasher = struct {
             return HasherError.InvalidEncoding;
 
         const params = Params{ .rounds_log = hash_result.r };
-        const hash = if (silently_truncate_password) bcrypt(password, hash_result.salt.buf, params) else bcryptWithoutTruncation(password, hash_result.salt.buf, params);
-        const expected_hash = hash_result.hash.constSlice();
+        const hash = if (silently_truncate_password) bcrypt(password, hash_result.salt.buf, params) else bcrypt_without_truncation(password, hash_result.salt.buf, params);
+        const expected_hash = hash_result.hash.const_slice();
 
         if (!mem.eql(u8, &hash, expected_hash)) return HasherError.PasswordVerificationFailed;
     }
@@ -672,7 +672,7 @@ const CryptFormatHasher = struct {
         var salt: [salt_length]u8 = undefined;
         crypto.random.bytes(&salt);
 
-        const hash = crypt_format.strHashInternal(password, salt, params, silently_truncate_password);
+        const hash = crypt_format.str_hash_internal(password, salt, params, silently_truncate_password);
         @memcpy(buf[0..hash.len], &hash);
 
         return buf[0..pwhash_str_length];
@@ -688,14 +688,14 @@ const CryptFormatHasher = struct {
             return HasherError.InvalidEncoding;
 
         const rounds_log_str = str[4..][0..2];
-        const rounds_log = fmt.parseInt(u6, rounds_log_str[0..], 10) catch
+        const rounds_log = fmt.parse_int(u6, rounds_log_str[0..], 10) catch
             return HasherError.InvalidEncoding;
 
         const salt_str = str[7..][0..salt_str_length];
         var salt: [salt_length]u8 = undefined;
         crypt_format.Codec.Decoder.decode(salt[0..], salt_str[0..]) catch return HasherError.InvalidEncoding;
 
-        const wanted_s = crypt_format.strHashInternal(password, salt, .{ .rounds_log = rounds_log }, silently_truncate_password);
+        const wanted_s = crypt_format.str_hash_internal(password, salt, .{ .rounds_log = rounds_log }, silently_truncate_password);
         if (!mem.eql(u8, wanted_s[0..], str[0..])) return HasherError.PasswordVerificationFailed;
     }
 };
@@ -745,7 +745,7 @@ pub fn str_verify(
     password: []const u8,
     options: VerifyOptions,
 ) Error!void {
-    if (mem.startsWith(u8, str, crypt_format.prefix)) {
+    if (mem.starts_with(u8, str, crypt_format.prefix)) {
         return CryptFormatHasher.verify(str, password, options.silently_truncate_password);
     } else {
         return PhcFormatHasher.verify(str, password, options.silently_truncate_password);
@@ -759,7 +759,7 @@ test "bcrypt codec" {
     _ = crypt_format.Codec.Encoder.encode(salt_str[0..], salt[0..]);
     var salt2: [salt_length]u8 = undefined;
     try crypt_format.Codec.Decoder.decode(salt2[0..], salt_str[0..]);
-    try testing.expectEqualSlices(u8, salt[0..], salt2[0..]);
+    try testing.expect_equal_slices(u8, salt[0..], salt2[0..]);
 }
 
 test "bcrypt crypt format" {
@@ -771,31 +771,31 @@ test "bcrypt crypt format" {
     var verify_options = VerifyOptions{};
 
     var buf: [hash_length]u8 = undefined;
-    const s = try strHash("password", hash_options, &buf);
+    const s = try str_hash("password", hash_options, &buf);
 
-    try testing.expect(mem.startsWith(u8, s, crypt_format.prefix));
-    try strVerify(s, "password", verify_options);
-    try testing.expectError(
+    try testing.expect(mem.starts_with(u8, s, crypt_format.prefix));
+    try str_verify(s, "password", verify_options);
+    try testing.expect_error(
         error.PasswordVerificationFailed,
-        strVerify(s, "invalid password", verify_options),
+        str_verify(s, "invalid password", verify_options),
     );
 
     var long_buf: [hash_length]u8 = undefined;
-    var long_s = try strHash("password" ** 100, hash_options, &long_buf);
+    var long_s = try str_hash("password" ** 100, hash_options, &long_buf);
 
-    try testing.expect(mem.startsWith(u8, long_s, crypt_format.prefix));
-    try strVerify(long_s, "password" ** 100, verify_options);
-    try testing.expectError(
+    try testing.expect(mem.starts_with(u8, long_s, crypt_format.prefix));
+    try str_verify(long_s, "password" ** 100, verify_options);
+    try testing.expect_error(
         error.PasswordVerificationFailed,
-        strVerify(long_s, "password" ** 101, verify_options),
+        str_verify(long_s, "password" ** 101, verify_options),
     );
 
     hash_options.silently_truncate_password = true;
     verify_options.silently_truncate_password = true;
-    long_s = try strHash("password" ** 100, hash_options, &long_buf);
-    try strVerify(long_s, "password" ** 101, verify_options);
+    long_s = try str_hash("password" ** 100, hash_options, &long_buf);
+    try str_verify(long_s, "password" ** 101, verify_options);
 
-    try strVerify(
+    try str_verify(
         "$2b$08$WUQKyBCaKpziCwUXHiMVvu40dYVjkTxtWJlftl0PpjY2BxWSvFIEe",
         "The devil himself",
         verify_options,
@@ -812,31 +812,31 @@ test "bcrypt phc format" {
     const prefix = "$bcrypt$";
 
     var buf: [hash_length * 2]u8 = undefined;
-    const s = try strHash("password", hash_options, &buf);
+    const s = try str_hash("password", hash_options, &buf);
 
-    try testing.expect(mem.startsWith(u8, s, prefix));
-    try strVerify(s, "password", verify_options);
-    try testing.expectError(
+    try testing.expect(mem.starts_with(u8, s, prefix));
+    try str_verify(s, "password", verify_options);
+    try testing.expect_error(
         error.PasswordVerificationFailed,
-        strVerify(s, "invalid password", verify_options),
+        str_verify(s, "invalid password", verify_options),
     );
 
     var long_buf: [hash_length * 2]u8 = undefined;
-    var long_s = try strHash("password" ** 100, hash_options, &long_buf);
+    var long_s = try str_hash("password" ** 100, hash_options, &long_buf);
 
-    try testing.expect(mem.startsWith(u8, long_s, prefix));
-    try strVerify(long_s, "password" ** 100, verify_options);
-    try testing.expectError(
+    try testing.expect(mem.starts_with(u8, long_s, prefix));
+    try str_verify(long_s, "password" ** 100, verify_options);
+    try testing.expect_error(
         error.PasswordVerificationFailed,
-        strVerify(long_s, "password" ** 101, verify_options),
+        str_verify(long_s, "password" ** 101, verify_options),
     );
 
     hash_options.silently_truncate_password = true;
     verify_options.silently_truncate_password = true;
-    long_s = try strHash("password" ** 100, hash_options, &long_buf);
-    try strVerify(long_s, "password" ** 101, verify_options);
+    long_s = try str_hash("password" ** 100, hash_options, &long_buf);
+    try str_verify(long_s, "password" ** 101, verify_options);
 
-    try strVerify(
+    try str_verify(
         "$bcrypt$r=5$2NopntlgE2lX3cTwr4qz8A$r3T7iKYQNnY4hAhGjk9RmuyvgrYJZwc",
         "The devil himself",
         verify_options,

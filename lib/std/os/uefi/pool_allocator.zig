@@ -9,7 +9,7 @@ const Allocator = mem.Allocator;
 
 const UefiPoolAllocator = struct {
     fn get_header(ptr: [*]u8) *[*]align(8) u8 {
-        return @as(*[*]align(8) u8, @ptrFromInt(@intFromPtr(ptr) - @sizeOf(usize)));
+        return @as(*[*]align(8) u8, @ptrFromInt(@int_from_ptr(ptr) - @size_of(usize)));
     }
 
     fn alloc(
@@ -22,20 +22,20 @@ const UefiPoolAllocator = struct {
 
         assert(len > 0);
 
-        const ptr_align = @as(usize, 1) << @as(Allocator.Log2Align, @intCast(log2_ptr_align));
+        const ptr_align = @as(usize, 1) << @as(Allocator.Log2Align, @int_cast(log2_ptr_align));
 
-        const metadata_len = mem.alignForward(usize, @sizeOf(usize), ptr_align);
+        const metadata_len = mem.align_forward(usize, @size_of(usize), ptr_align);
 
         const full_len = metadata_len + len;
 
         var unaligned_ptr: [*]align(8) u8 = undefined;
         if (uefi.system_table.boot_services.?.allocatePool(uefi.efi_pool_memory_type, full_len, &unaligned_ptr) != .Success) return null;
 
-        const unaligned_addr = @intFromPtr(unaligned_ptr);
-        const aligned_addr = mem.alignForward(usize, unaligned_addr + @sizeOf(usize), ptr_align);
+        const unaligned_addr = @int_from_ptr(unaligned_ptr);
+        const aligned_addr = mem.align_forward(usize, unaligned_addr + @size_of(usize), ptr_align);
 
         const aligned_ptr = unaligned_ptr + (aligned_addr - unaligned_addr);
-        getHeader(aligned_ptr).* = unaligned_ptr;
+        get_header(aligned_ptr).* = unaligned_ptr;
 
         return aligned_ptr;
     }
@@ -51,7 +51,7 @@ const UefiPoolAllocator = struct {
 
         if (new_len > buf.len) return false;
 
-        _ = mem.alignAllocLen(buf.len, new_len, log2_old_ptr_align);
+        _ = mem.align_alloc_len(buf.len, new_len, log2_old_ptr_align);
 
         return true;
     }
@@ -64,7 +64,7 @@ const UefiPoolAllocator = struct {
     ) void {
         _ = log2_old_ptr_align;
         _ = ret_addr;
-        _ = uefi.system_table.boot_services.?.freePool(getHeader(buf.ptr).*);
+        _ = uefi.system_table.boot_services.?.freePool(get_header(buf.ptr).*);
     }
 };
 
@@ -122,7 +122,7 @@ fn uefi_resize(
 
     if (new_len > buf.len) return false;
 
-    _ = mem.alignAllocLen(buf.len, new_len, 8);
+    _ = mem.align_alloc_len(buf.len, new_len, 8);
 
     return true;
 }
@@ -135,5 +135,5 @@ fn uefi_free(
 ) void {
     _ = log2_old_ptr_align;
     _ = ret_addr;
-    _ = uefi.system_table.boot_services.?.freePool(@alignCast(buf.ptr));
+    _ = uefi.system_table.boot_services.?.freePool(@align_cast(buf.ptr));
 }

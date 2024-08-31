@@ -1,6 +1,6 @@
 comptime {
     const value: i32 = -1;
-    const unsigned: u32 = @intCast(value);
+    const unsigned: u32 = @int_cast(value);
     _ = unsigned;
 }
 

@@ -18,25 +18,25 @@ fn get_foo_data() !u32 {
 }
 
 fn create_foo(allocator: Allocator, param: i32) !*Foo {
-    const foo = getFoo: {
-        var foo = try tryToAllocateFoo(allocator);
-        errdefer deallocateFoo(allocator, foo); // Only lasts until the end of getFoo
+    const foo = get_foo: {
+        var foo = try try_to_allocate_foo(allocator);
+        errdefer deallocate_foo(allocator, foo); // Only lasts until the end of get_foo
 
-        // Calls deallocateFoo on error
-        foo.data = try getFooData();
+        // Calls deallocate_foo on error
+        foo.data = try get_foo_data();
 
-        break :getFoo foo;
+        break :get_foo foo;
     };
 
     // Outside of the scope of the errdefer, so
-    // deallocateFoo will not be called here
+    // deallocate_foo will not be called here
     if (param > 1337) return error.InvalidParam;
 
     return foo;
 }
 
-test "createFoo" {
-    try std.testing.expectError(error.InvalidParam, createFoo(std.testing.allocator, 2468));
+test "create_foo" {
+    try std.testing.expect_error(error.InvalidParam, create_foo(std.testing.allocator, 2468));
 }
 
 // test_error=1 tests leaked memory

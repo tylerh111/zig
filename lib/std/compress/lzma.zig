@@ -9,7 +9,7 @@ pub fn decompress(
     allocator: Allocator,
     reader: anytype,
 ) !Decompress(@TypeOf(reader)) {
-    return decompressWithOptions(allocator, reader, .{});
+    return decompress_with_options(allocator, reader, .{});
 }
 
 pub fn decompress_with_options(
@@ -17,7 +17,7 @@ pub fn decompress_with_options(
     reader: anytype,
     options: decode.Options,
 ) !Decompress(@TypeOf(reader)) {
-    const params = try decode.Params.readHeader(reader, options);
+    const params = try decode.Params.read_header(reader, options);
     return Decompress(@TypeOf(reader)).init(allocator, reader, params, options.memlimit);
 }
 
@@ -46,7 +46,7 @@ pub fn Decompress(comptime ReaderType: type) type {
                 .in_reader = source,
                 .to_read = .{},
 
-                .buffer = decode.lzbuffer.LzCircularBuffer.init(params.dict_size, memlimit orelse math.maxInt(usize)),
+                .buffer = decode.lzbuffer.LzCircularBuffer.init(params.dict_size, memlimit orelse math.max_int(usize)),
                 .decoder = try decode.rangecoder.RangeDecoder.init(source),
                 .state = try decode.DecoderState.init(allocator, params.properties, params.unpacked_size),
             };
@@ -78,7 +78,7 @@ pub fn Decompress(comptime ReaderType: type) type {
             const n = @min(input.len, output.len);
             @memcpy(output[0..n], input[0..n]);
             @memcpy(input[0 .. input.len - n], input[n..]);
-            self.to_read.shrinkRetainingCapacity(input.len - n);
+            self.to_read.shrink_retaining_capacity(input.len - n);
             return n;
         }
     };

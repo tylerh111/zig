@@ -55,8 +55,8 @@ test "maybe return" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try maybeReturnImpl();
-    try comptime maybeReturnImpl();
+    try maybe_return_impl();
+    try comptime maybe_return_impl();
 }
 
 fn maybe_return_impl() !void {
@@ -75,7 +75,7 @@ test "test null runtime" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testTestNullRuntime(null);
+    try test_test_null_runtime(null);
 }
 fn test_test_null_runtime(x: ?i32) !void {
     try expect(x == null);
@@ -87,8 +87,8 @@ test "optional void" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try optionalVoidImpl();
-    try comptime optionalVoidImpl();
+    try optional_void_impl();
+    try comptime optional_void_impl();
 }
 
 fn optional_void_impl() !void {
@@ -111,8 +111,8 @@ test "optional struct{}" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    _ = try optionalEmptyStructImpl();
-    _ = try comptime optionalEmptyStructImpl();
+    _ = try optional_empty_struct_impl();
+    _ = try comptime optional_empty_struct_impl();
 }
 
 fn optional_empty_struct_impl() !void {
@@ -149,7 +149,7 @@ test "if var maybe pointer" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(shouldBeAPlus1(Particle{
+    try expect(should_be_aplus1(Particle{
         .a = 14,
         .b = 1,
         .c = 1,

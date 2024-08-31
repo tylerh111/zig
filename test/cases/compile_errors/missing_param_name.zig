@@ -1,6 +1,6 @@
 fn f(i32) void {}
 export fn entry() usize {
-    return @sizeOf(@TypeOf(f));
+    return @size_of(@TypeOf(f));
 }
 
 // error

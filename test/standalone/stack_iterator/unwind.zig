@@ -7,10 +7,10 @@ noinline fn frame3(expected: *[4]usize, unwound: *[4]usize) void {
     expected[0] = @returnAddress();
 
     var context: debug.ThreadContext = undefined;
-    testing.expect(debug.getContext(&context)) catch @panic("failed to getContext");
+    testing.expect(debug.get_context(&context)) catch @panic("failed to get_context");
 
-    const debug_info = debug.getSelfDebugInfo() catch @panic("failed to openSelfDebugInfo");
-    var it = debug.StackIterator.initWithContext(expected[0], debug_info, &context) catch @panic("failed to initWithContext");
+    const debug_info = debug.get_self_debug_info() catch @panic("failed to open_self_debug_info");
+    var it = debug.StackIterator.init_with_context(expected[0], debug_info, &context) catch @panic("failed to init_with_context");
     defer it.deinit();
 
     for (unwound) |*addr| {
@@ -75,8 +75,8 @@ noinline fn frame1(expected: *[4]usize, unwound: *[4]usize) void {
 
     // Use a stack frame that is too big to encode in __unwind_info's stack-immediate encoding
     // to exercise the stack-indirect encoding path
-    var pad: [std.math.maxInt(u8) * @sizeOf(usize) + 1]u8 = undefined;
-    _ = std.mem.doNotOptimizeAway(&pad);
+    var pad: [std.math.max_int(u8) * @size_of(usize) + 1]u8 = undefined;
+    _ = std.mem.do_not_optimize_away(&pad);
 
     frame2(expected, unwound);
 }
@@ -88,12 +88,12 @@ noinline fn frame0(expected: *[4]usize, unwound: *[4]usize) void {
 
 pub fn main() !void {
     // Disabled until the DWARF unwinder bugs on .aarch64 are solved
-    if (builtin.omit_frame_pointer and comptime builtin.target.isDarwin() and builtin.cpu.arch == .aarch64) return;
+    if (builtin.omit_frame_pointer and comptime builtin.target.is_darwin() and builtin.cpu.arch == .aarch64) return;
 
     if (!std.debug.have_ucontext or !std.debug.have_getcontext) return;
 
     var expected: [4]usize = undefined;
     var unwound: [4]usize = undefined;
     frame0(&expected, &unwound);
-    try testing.expectEqual(expected, unwound);
+    try testing.expect_equal(expected, unwound);
 }

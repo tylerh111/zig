@@ -66,34 +66,34 @@ pub fn set_name(self: Thread, name: []const u8) SetNameError!void {
 
     switch (native_os) {
         .linux => if (use_pthreads) {
-            if (self.getHandle() == std.c.pthread_self()) {
+            if (self.get_handle() == std.c.pthread_self()) {
                 // Set the name of the calling thread (no thread id required).
-                const err = try posix.prctl(.SET_NAME, .{@intFromPtr(name_with_terminator.ptr)});
+                const err = try posix.prctl(.SET_NAME, .{@int_from_ptr(name_with_terminator.ptr)});
                 switch (@as(posix.E, @enumFromInt(err))) {
                     .SUCCESS => return,
-                    else => |e| return posix.unexpectedErrno(e),
+                    else => |e| return posix.unexpected_errno(e),
                 }
             } else {
-                const err = std.c.pthread_setname_np(self.getHandle(), name_with_terminator.ptr);
+                const err = std.c.pthread_setname_np(self.get_handle(), name_with_terminator.ptr);
                 switch (err) {
                     .SUCCESS => return,
                     .RANGE => unreachable,
-                    else => |e| return posix.unexpectedErrno(e),
+                    else => |e| return posix.unexpected_errno(e),
                 }
             }
         } else {
             var buf: [32]u8 = undefined;
-            const path = try std.fmt.bufPrint(&buf, "/proc/self/task/{d}/comm", .{self.getHandle()});
+            const path = try std.fmt.buf_print(&buf, "/proc/self/task/{d}/comm", .{self.get_handle()});
 
-            const file = try std.fs.cwd().openFile(path, .{ .mode = .write_only });
+            const file = try std.fs.cwd().open_file(path, .{ .mode = .write_only });
             defer file.close();
 
-            try file.writer().writeAll(name);
+            try file.writer().write_all(name);
             return;
         },
         .windows => {
             var buf: [max_name_len]u16 = undefined;
-            const len = try std.unicode.wtf8ToWtf16Le(&buf, name);
+            const len = try std.unicode.wtf8_to_wtf16_le(&buf, name);
             const byte_len = math.cast(c_ushort, len * 2) orelse return error.NameTooLong;
 
             // Note: NT allocates its own copy, no use-after-free here.
@@ -104,34 +104,34 @@ pub fn set_name(self: Thread, name: []const u8) SetNameError!void {
             };
 
             switch (windows.ntdll.NtSetInformationThread(
-                self.getHandle(),
+                self.get_handle(),
                 .ThreadNameInformation,
                 &unicode_string,
-                @sizeOf(windows.UNICODE_STRING),
+                @size_of(windows.UNICODE_STRING),
             )) {
                 .SUCCESS => return,
                 .NOT_IMPLEMENTED => return error.Unsupported,
-                else => |err| return windows.unexpectedStatus(err),
+                else => |err| return windows.unexpected_status(err),
             }
         },
         .macos, .ios, .watchos, .tvos, .visionos => if (use_pthreads) {
             // There doesn't seem to be a way to set the name for an arbitrary thread, only the current one.
-            if (self.getHandle() != std.c.pthread_self()) return error.Unsupported;
+            if (self.get_handle() != std.c.pthread_self()) return error.Unsupported;
 
             const err = std.c.pthread_setname_np(name_with_terminator.ptr);
             switch (err) {
                 .SUCCESS => return,
-                else => |e| return posix.unexpectedErrno(e),
+                else => |e| return posix.unexpected_errno(e),
             }
         },
         .netbsd, .solaris, .illumos => if (use_pthreads) {
-            const err = std.c.pthread_setname_np(self.getHandle(), name_with_terminator.ptr, null);
+            const err = std.c.pthread_setname_np(self.get_handle(), name_with_terminator.ptr, null);
             switch (err) {
                 .SUCCESS => return,
                 .INVAL => unreachable,
                 .SRCH => unreachable,
                 .NOMEM => unreachable,
-                else => |e| return posix.unexpectedErrno(e),
+                else => |e| return posix.unexpected_errno(e),
             }
         },
         .freebsd, .openbsd => if (use_pthreads) {
@@ -139,18 +139,18 @@ pub fn set_name(self: Thread, name: []const u8) SetNameError!void {
             // TODO maybe revisit this if depending on FreeBSD 12.2+ is acceptable because
             // pthread_setname_np can return an error.
 
-            std.c.pthread_set_name_np(self.getHandle(), name_with_terminator.ptr);
+            std.c.pthread_set_name_np(self.get_handle(), name_with_terminator.ptr);
             return;
         },
         .dragonfly => if (use_pthreads) {
-            const err = std.c.pthread_setname_np(self.getHandle(), name_with_terminator.ptr);
+            const err = std.c.pthread_setname_np(self.get_handle(), name_with_terminator.ptr);
             switch (err) {
                 .SUCCESS => return,
                 .INVAL => unreachable,
                 .FAULT => unreachable,
                 .NAMETOOLONG => unreachable, // already checked
                 .SRCH => unreachable,
-                else => |e| return posix.unexpectedErrno(e),
+                else => |e| return posix.unexpected_errno(e),
             }
         },
         else => {},
@@ -171,84 +171,84 @@ pub fn get_name(self: Thread, buffer_ptr: *[max_name_len:0]u8) GetNameError!?[]c
 
     switch (native_os) {
         .linux => if (use_pthreads) {
-            if (self.getHandle() == std.c.pthread_self()) {
+            if (self.get_handle() == std.c.pthread_self()) {
                 // Get the name of the calling thread (no thread id required).
-                const err = try posix.prctl(.GET_NAME, .{@intFromPtr(buffer.ptr)});
+                const err = try posix.prctl(.GET_NAME, .{@int_from_ptr(buffer.ptr)});
                 switch (@as(posix.E, @enumFromInt(err))) {
-                    .SUCCESS => return std.mem.sliceTo(buffer, 0),
-                    else => |e| return posix.unexpectedErrno(e),
+                    .SUCCESS => return std.mem.slice_to(buffer, 0),
+                    else => |e| return posix.unexpected_errno(e),
                 }
             } else {
-                const err = std.c.pthread_getname_np(self.getHandle(), buffer.ptr, max_name_len + 1);
+                const err = std.c.pthread_getname_np(self.get_handle(), buffer.ptr, max_name_len + 1);
                 switch (err) {
-                    .SUCCESS => return std.mem.sliceTo(buffer, 0),
+                    .SUCCESS => return std.mem.slice_to(buffer, 0),
                     .RANGE => unreachable,
-                    else => |e| return posix.unexpectedErrno(e),
+                    else => |e| return posix.unexpected_errno(e),
                 }
             }
         } else {
             var buf: [32]u8 = undefined;
-            const path = try std.fmt.bufPrint(&buf, "/proc/self/task/{d}/comm", .{self.getHandle()});
+            const path = try std.fmt.buf_print(&buf, "/proc/self/task/{d}/comm", .{self.get_handle()});
 
-            const file = try std.fs.cwd().openFile(path, .{});
+            const file = try std.fs.cwd().open_file(path, .{});
             defer file.close();
 
-            const data_len = try file.reader().readAll(buffer_ptr[0 .. max_name_len + 1]);
+            const data_len = try file.reader().read_all(buffer_ptr[0 .. max_name_len + 1]);
 
             return if (data_len >= 1) buffer[0 .. data_len - 1] else null;
         },
         .windows => {
-            const buf_capacity = @sizeOf(windows.UNICODE_STRING) + (@sizeOf(u16) * max_name_len);
+            const buf_capacity = @size_of(windows.UNICODE_STRING) + (@size_of(u16) * max_name_len);
             var buf: [buf_capacity]u8 align(@alignOf(windows.UNICODE_STRING)) = undefined;
 
             switch (windows.ntdll.NtQueryInformationThread(
-                self.getHandle(),
+                self.get_handle(),
                 .ThreadNameInformation,
                 &buf,
                 buf_capacity,
                 null,
             )) {
                 .SUCCESS => {
-                    const string = @as(*const windows.UNICODE_STRING, @ptrCast(&buf));
-                    const len = std.unicode.wtf16LeToWtf8(buffer, string.Buffer.?[0 .. string.Length / 2]);
+                    const string = @as(*const windows.UNICODE_STRING, @ptr_cast(&buf));
+                    const len = std.unicode.wtf16_le_to_wtf8(buffer, string.Buffer.?[0 .. string.Length / 2]);
                     return if (len > 0) buffer[0..len] else null;
                 },
                 .NOT_IMPLEMENTED => return error.Unsupported,
-                else => |err| return windows.unexpectedStatus(err),
+                else => |err| return windows.unexpected_status(err),
             }
         },
         .macos, .ios, .watchos, .tvos, .visionos => if (use_pthreads) {
-            const err = std.c.pthread_getname_np(self.getHandle(), buffer.ptr, max_name_len + 1);
+            const err = std.c.pthread_getname_np(self.get_handle(), buffer.ptr, max_name_len + 1);
             switch (err) {
-                .SUCCESS => return std.mem.sliceTo(buffer, 0),
+                .SUCCESS => return std.mem.slice_to(buffer, 0),
                 .SRCH => unreachable,
-                else => |e| return posix.unexpectedErrno(e),
+                else => |e| return posix.unexpected_errno(e),
             }
         },
         .netbsd, .solaris, .illumos => if (use_pthreads) {
-            const err = std.c.pthread_getname_np(self.getHandle(), buffer.ptr, max_name_len + 1);
+            const err = std.c.pthread_getname_np(self.get_handle(), buffer.ptr, max_name_len + 1);
             switch (err) {
-                .SUCCESS => return std.mem.sliceTo(buffer, 0),
+                .SUCCESS => return std.mem.slice_to(buffer, 0),
                 .INVAL => unreachable,
                 .SRCH => unreachable,
-                else => |e| return posix.unexpectedErrno(e),
+                else => |e| return posix.unexpected_errno(e),
             }
         },
         .freebsd, .openbsd => if (use_pthreads) {
             // Use pthread_get_name_np for FreeBSD because pthread_getname_np is FreeBSD 12.2+ only.
             // TODO maybe revisit this if depending on FreeBSD 12.2+ is acceptable because pthread_getname_np can return an error.
 
-            std.c.pthread_get_name_np(self.getHandle(), buffer.ptr, max_name_len + 1);
-            return std.mem.sliceTo(buffer, 0);
+            std.c.pthread_get_name_np(self.get_handle(), buffer.ptr, max_name_len + 1);
+            return std.mem.slice_to(buffer, 0);
         },
         .dragonfly => if (use_pthreads) {
-            const err = std.c.pthread_getname_np(self.getHandle(), buffer.ptr, max_name_len + 1);
+            const err = std.c.pthread_getname_np(self.get_handle(), buffer.ptr, max_name_len + 1);
             switch (err) {
-                .SUCCESS => return std.mem.sliceTo(buffer, 0),
+                .SUCCESS => return std.mem.slice_to(buffer, 0),
                 .INVAL => unreachable,
                 .FAULT => unreachable,
                 .SRCH => unreachable,
-                else => |e| return posix.unexpectedErrno(e),
+                else => |e| return posix.unexpected_errno(e),
             }
         },
         else => {},
@@ -274,7 +274,7 @@ pub const Id = switch (native_os) {
 /// Returns the platform ID of the callers thread.
 /// Attempts to use thread locals and avoid syscalls when possible.
 pub fn get_current_id() Id {
-    return Impl.getCurrentId();
+    return Impl.get_current_id();
 }
 
 pub const CpuCountError = error{
@@ -285,7 +285,7 @@ pub const CpuCountError = error{
 
 /// Returns the platforms view on the number of logical CPU cores available.
 pub fn get_cpu_count() CpuCountError!usize {
-    return Impl.getCpuCount();
+    return Impl.get_cpu_count();
 }
 
 /// Configuration options for hints on how to spawn threads.
@@ -335,7 +335,7 @@ pub const SpawnError = error{
 /// or call `detach()` to excuse the caller from calling `join()` and have the thread clean up its resources on completion.
 pub fn spawn(config: SpawnConfig, comptime function: anytype, args: anytype) SpawnError!Thread {
     if (builtin.single_threaded) {
-        @compileError("Cannot spawn thread when building in single-threaded mode");
+        @compile_error("Cannot spawn thread when building in single-threaded mode");
     }
 
     const impl = try Impl.spawn(config, function, args);
@@ -348,7 +348,7 @@ pub const Handle = Impl.ThreadHandle;
 
 /// Returns the handle of this thread
 pub fn get_handle(self: Thread) Handle {
-    return self.impl.getHandle();
+    return self.impl.get_handle();
 }
 
 /// Release the obligation of the caller to call `join()` and have the thread clean up its own resources on completion.
@@ -398,7 +398,7 @@ fn call_fn(comptime f: anytype, args: anytype) switch (Impl) {
     else => unreachable,
 } {
     const default_value = if (Impl == PosixThreadImpl) null else 0;
-    const bad_fn_ret = "expected return type of startFn to be 'u8', 'noreturn', 'void', or '!void'";
+    const bad_fn_ret = "expected return type of start_fn to be 'u8', 'noreturn', 'void', or '!void'";
 
     switch (@typeInfo(@typeInfo(@TypeOf(f)).Fn.return_type.?)) {
         .NoReturn => {
@@ -410,7 +410,7 @@ fn call_fn(comptime f: anytype, args: anytype) switch (Impl) {
         },
         .Int => |info| {
             if (info.bits != 8) {
-                @compileError(bad_fn_ret);
+                @compile_error(bad_fn_ret);
             }
 
             const status = @call(.auto, f, args);
@@ -423,20 +423,20 @@ fn call_fn(comptime f: anytype, args: anytype) switch (Impl) {
         },
         .ErrorUnion => |info| {
             if (info.payload != void) {
-                @compileError(bad_fn_ret);
+                @compile_error(bad_fn_ret);
             }
 
             @call(.auto, f, args) catch |err| {
                 std.debug.print("error: {s}\n", .{@errorName(err)});
                 if (@errorReturnTrace()) |trace| {
-                    std.debug.dumpStackTrace(trace.*);
+                    std.debug.dump_stack_trace(trace.*);
                 }
             };
 
             return default_value;
         },
         else => {
-            @compileError(bad_fn_ret);
+            @compile_error(bad_fn_ret);
         },
     }
 }
@@ -472,7 +472,7 @@ const UnsupportedImpl = struct {
 
     fn unsupported(unused: anytype) noreturn {
         _ = unused;
-        @compileError("Unsupported operating system " ++ @tagName(native_os));
+        @compile_error("Unsupported operating system " ++ @tag_name(native_os));
     }
 };
 
@@ -509,22 +509,22 @@ const WindowsThreadImpl = struct {
             thread: ThreadCompletion,
 
             fn entry_fn(raw_ptr: windows.PVOID) callconv(.C) windows.DWORD {
-                const self: *@This() = @ptrCast(@alignCast(raw_ptr));
+                const self: *@This() = @ptr_cast(@align_cast(raw_ptr));
                 defer switch (self.thread.completion.swap(.completed, .seq_cst)) {
                     .running => {},
                     .completed => unreachable,
                     .detached => self.thread.free(),
                 };
-                return callFn(f, self.fn_args);
+                return call_fn(f, self.fn_args);
             }
         };
 
         const heap_handle = windows.kernel32.GetProcessHeap() orelse return error.OutOfMemory;
-        const alloc_bytes = @alignOf(Instance) + @sizeOf(Instance);
+        const alloc_bytes = @alignOf(Instance) + @size_of(Instance);
         const alloc_ptr = windows.kernel32.HeapAlloc(heap_handle, 0, alloc_bytes) orelse return error.OutOfMemory;
         errdefer assert(windows.kernel32.HeapFree(heap_handle, 0, alloc_ptr) != 0);
 
-        const instance_bytes = @as([*]u8, @ptrCast(alloc_ptr))[0..alloc_bytes];
+        const instance_bytes = @as([*]u8, @ptr_cast(alloc_ptr))[0..alloc_bytes];
         var fba = std.heap.FixedBufferAllocator.init(instance_bytes);
         const instance = fba.allocator().create(Instance) catch unreachable;
         instance.* = .{
@@ -539,19 +539,19 @@ const WindowsThreadImpl = struct {
         // Windows appears to only support SYSTEM_INFO.dwAllocationGranularity minimum stack size.
         // Going lower makes it default to that specified in the executable (~1mb).
         // Its also fine if the limit here is incorrect as stack size is only a hint.
-        var stack_size = std.math.cast(u32, config.stack_size) orelse std.math.maxInt(u32);
+        var stack_size = std.math.cast(u32, config.stack_size) orelse std.math.max_int(u32);
         stack_size = @max(64 * 1024, stack_size);
 
         instance.thread.thread_handle = windows.kernel32.CreateThread(
             null,
             stack_size,
-            Instance.entryFn,
+            Instance.entry_fn,
             instance,
             0,
             null,
         ) orelse {
             const errno = windows.kernel32.GetLastError();
-            return windows.unexpectedError(errno);
+            return windows.unexpected_error(errno);
         };
 
         return Impl{ .thread = &instance.thread };
@@ -586,7 +586,7 @@ const PosixThreadImpl = struct {
     fn get_current_id() Id {
         switch (native_os) {
             .linux => {
-                return LinuxThreadImpl.getCurrentId();
+                return LinuxThreadImpl.get_current_id();
             },
             .macos, .ios, .watchos, .tvos, .visionos => {
                 var thread_id: u64 = undefined;
@@ -595,22 +595,22 @@ const PosixThreadImpl = struct {
                 return thread_id;
             },
             .dragonfly => {
-                return @as(u32, @bitCast(c.lwp_gettid()));
+                return @as(u32, @bit_cast(c.lwp_gettid()));
             },
             .netbsd => {
-                return @as(u32, @bitCast(c._lwp_self()));
+                return @as(u32, @bit_cast(c._lwp_self()));
             },
             .freebsd => {
-                return @as(u32, @bitCast(c.pthread_getthreadid_np()));
+                return @as(u32, @bit_cast(c.pthread_getthreadid_np()));
             },
             .openbsd => {
-                return @as(u32, @bitCast(c.getthrid()));
+                return @as(u32, @bit_cast(c.getthrid()));
             },
             .haiku => {
-                return @as(u32, @bitCast(c.find_thread(null)));
+                return @as(u32, @bit_cast(c.find_thread(null)));
             },
             else => {
-                return @intFromPtr(c.pthread_self());
+                return @int_from_ptr(c.pthread_self());
             },
         }
     }
@@ -618,17 +618,17 @@ const PosixThreadImpl = struct {
     fn get_cpu_count() !usize {
         switch (native_os) {
             .linux => {
-                return LinuxThreadImpl.getCpuCount();
+                return LinuxThreadImpl.get_cpu_count();
             },
             .openbsd => {
                 var count: c_int = undefined;
-                var count_size: usize = @sizeOf(c_int);
+                var count_size: usize = @size_of(c_int);
                 const mib = [_]c_int{ std.c.CTL.HW, std.c.HW.NCPUONLINE };
                 posix.sysctl(&mib, &count, &count_size, null, 0) catch |err| switch (err) {
                     error.NameTooLong, error.UnknownName => unreachable,
                     else => |e| return e,
                 };
-                return @as(usize, @intCast(count));
+                return @as(usize, @int_cast(count));
             },
             .solaris, .illumos => {
                 // The "proper" way to get the cpu count would be to query
@@ -636,27 +636,27 @@ const PosixThreadImpl = struct {
                 // cpu.
                 const rc = c.sysconf(std.c._SC.NPROCESSORS_ONLN);
                 return switch (posix.errno(rc)) {
-                    .SUCCESS => @as(usize, @intCast(rc)),
-                    else => |err| posix.unexpectedErrno(err),
+                    .SUCCESS => @as(usize, @int_cast(rc)),
+                    else => |err| posix.unexpected_errno(err),
                 };
             },
             .haiku => {
                 var system_info: std.c.system_info = undefined;
                 const rc = std.c.get_system_info(&system_info); // always returns B_OK
                 return switch (posix.errno(rc)) {
-                    .SUCCESS => @as(usize, @intCast(system_info.cpu_count)),
-                    else => |err| posix.unexpectedErrno(err),
+                    .SUCCESS => @as(usize, @int_cast(system_info.cpu_count)),
+                    else => |err| posix.unexpected_errno(err),
                 };
             },
             else => {
                 var count: c_int = undefined;
-                var count_len: usize = @sizeOf(c_int);
-                const name = if (comptime target.isDarwin()) "hw.logicalcpu" else "hw.ncpu";
-                posix.sysctlbynameZ(name, &count, &count_len, null, 0) catch |err| switch (err) {
+                var count_len: usize = @size_of(c_int);
+                const name = if (comptime target.is_darwin()) "hw.logicalcpu" else "hw.ncpu";
+                posix.sysctlbyname_z(name, &count, &count_len, null, 0) catch |err| switch (err) {
                     error.NameTooLong, error.UnknownName => unreachable,
                     else => |e| return e,
                 };
-                return @as(usize, @intCast(count));
+                return @as(usize, @int_cast(count));
             },
         }
     }
@@ -669,9 +669,9 @@ const PosixThreadImpl = struct {
 
         const Instance = struct {
             fn entry_fn(raw_arg: ?*anyopaque) callconv(.C) ?*anyopaque {
-                const args_ptr: *Args = @ptrCast(@alignCast(raw_arg));
+                const args_ptr: *Args = @ptr_cast(@align_cast(raw_arg));
                 defer allocator.destroy(args_ptr);
-                return callFn(f, args_ptr.*);
+                return call_fn(f, args_ptr.*);
             }
         };
 
@@ -692,14 +692,14 @@ const PosixThreadImpl = struct {
         switch (c.pthread_create(
             &handle,
             &attr,
-            Instance.entryFn,
-            @ptrCast(args_ptr),
+            Instance.entry_fn,
+            @ptr_cast(args_ptr),
         )) {
             .SUCCESS => return Impl{ .handle = handle },
             .AGAIN => return error.SystemResources,
             .PERM => unreachable,
             .INVAL => unreachable,
-            else => |err| return posix.unexpectedErrno(err),
+            else => |err| return posix.unexpected_errno(err),
         }
     }
 
@@ -808,7 +808,7 @@ const WasiThreadImpl = struct {
 
             if (spin > 0) {
                 spin -= 1;
-                std.atomic.spinLoopHint();
+                std.atomic.spin_loop_hint();
                 continue;
             }
 
@@ -841,30 +841,30 @@ const WasiThreadImpl = struct {
             args: @TypeOf(args),
             fn entry(ptr: usize) void {
                 const w: *@This() = @ptrFromInt(ptr);
-                const bad_fn_ret = "expected return type of startFn to be 'u8', 'noreturn', 'void', or '!void'";
+                const bad_fn_ret = "expected return type of start_fn to be 'u8', 'noreturn', 'void', or '!void'";
                 switch (@typeInfo(@typeInfo(@TypeOf(f)).Fn.return_type.?)) {
                     .NoReturn, .Void => {
                         @call(.auto, f, w.args);
                     },
                     .Int => |info| {
                         if (info.bits != 8) {
-                            @compileError(bad_fn_ret);
+                            @compile_error(bad_fn_ret);
                         }
                         _ = @call(.auto, f, w.args); // WASI threads don't support exit status, ignore value
                     },
                     .ErrorUnion => |info| {
                         if (info.payload != void) {
-                            @compileError(bad_fn_ret);
+                            @compile_error(bad_fn_ret);
                         }
                         @call(.auto, f, w.args) catch |err| {
                             std.debug.print("error: {s}\n", .{@errorName(err)});
                             if (@errorReturnTrace()) |trace| {
-                                std.debug.dumpStackTrace(trace.*);
+                                std.debug.dump_stack_trace(trace.*);
                             }
                         };
                     },
                     else => {
-                        @compileError(bad_fn_ret);
+                        @compile_error(bad_fn_ret);
                     },
                 }
             }
@@ -886,38 +886,38 @@ const WasiThreadImpl = struct {
             // is only a best effort.
             var bytes: usize = std.wasm.page_size;
 
-            bytes = std.mem.alignForward(usize, bytes, 16); // align stack to 16 bytes
+            bytes = std.mem.align_forward(usize, bytes, 16); // align stack to 16 bytes
             stack_offset = bytes;
             bytes += @max(std.wasm.page_size, config.stack_size);
 
-            bytes = std.mem.alignForward(usize, bytes, __tls_align());
+            bytes = std.mem.align_forward(usize, bytes, __tls_align());
             tls_offset = bytes;
             bytes += __tls_size();
 
-            bytes = std.mem.alignForward(usize, bytes, @alignOf(Wrapper));
+            bytes = std.mem.align_forward(usize, bytes, @alignOf(Wrapper));
             wrapper_offset = bytes;
-            bytes += @sizeOf(Wrapper);
+            bytes += @size_of(Wrapper);
 
-            bytes = std.mem.alignForward(usize, bytes, @alignOf(Instance));
+            bytes = std.mem.align_forward(usize, bytes, @alignOf(Instance));
             instance_offset = bytes;
-            bytes += @sizeOf(Instance);
+            bytes += @size_of(Instance);
 
-            bytes = std.mem.alignForward(usize, bytes, std.wasm.page_size);
+            bytes = std.mem.align_forward(usize, bytes, std.wasm.page_size);
             break :blk bytes;
         };
 
         // Allocate the amount of memory required for all meta data.
         const allocated_memory = try config.allocator.?.alloc(u8, map_bytes);
 
-        const wrapper: *Wrapper = @ptrCast(@alignCast(&allocated_memory[wrapper_offset]));
+        const wrapper: *Wrapper = @ptr_cast(@align_cast(&allocated_memory[wrapper_offset]));
         wrapper.* = .{ .args = args };
 
-        const instance: *Instance = @ptrCast(@alignCast(&allocated_memory[instance_offset]));
+        const instance: *Instance = @ptr_cast(@align_cast(&allocated_memory[instance_offset]));
         instance.* = .{
             .thread = .{ .memory = allocated_memory, .allocator = config.allocator.? },
             .tls_offset = tls_offset,
             .stack_offset = stack_offset,
-            .raw_ptr = @intFromPtr(wrapper),
+            .raw_ptr = @int_from_ptr(wrapper),
             .call_back = &Wrapper.entry,
             .original_stack_pointer = __get_stack_pointer(),
         };
@@ -941,7 +941,7 @@ const WasiThreadImpl = struct {
         }
         __set_stack_pointer(arg.thread.memory.ptr + arg.stack_offset);
         __wasm_init_tls(arg.thread.memory.ptr + arg.tls_offset);
-        @atomicStore(u32, &WasiThreadImpl.tls_thread_id, @intCast(tid), .seq_cst);
+        @atomicStore(u32, &WasiThreadImpl.tls_thread_id, @int_cast(tid), .seq_cst);
 
         // Finished bootstrapping, call user's procedure.
         arg.call_back(arg.raw_ptr);
@@ -1048,7 +1048,7 @@ const LinuxThreadImpl = struct {
 
     fn get_current_id() Id {
         return tls_thread_id orelse {
-            const tid = @as(u32, @bitCast(linux.gettid()));
+            const tid = @as(u32, @bit_cast(linux.gettid()));
             tls_thread_id = tid;
             return tid;
         };
@@ -1082,7 +1082,7 @@ const LinuxThreadImpl = struct {
                     \\  movl $0, %%ebx
                     \\  int $128
                     :
-                    : [ptr] "r" (@intFromPtr(self.mapped.ptr)),
+                    : [ptr] "r" (@int_from_ptr(self.mapped.ptr)),
                       [len] "r" (self.mapped.len),
                     : "memory"
                 ),
@@ -1093,7 +1093,7 @@ const LinuxThreadImpl = struct {
                     \\  movq $1, %%rdi
                     \\  syscall
                     :
-                    : [ptr] "{rdi}" (@intFromPtr(self.mapped.ptr)),
+                    : [ptr] "{rdi}" (@int_from_ptr(self.mapped.ptr)),
                       [len] "{rsi}" (self.mapped.len),
                 ),
                 .arm, .armeb, .thumb, .thumbeb => asm volatile (
@@ -1105,7 +1105,7 @@ const LinuxThreadImpl = struct {
                     \\  mov r0, #0
                     \\  svc 0
                     :
-                    : [ptr] "r" (@intFromPtr(self.mapped.ptr)),
+                    : [ptr] "r" (@int_from_ptr(self.mapped.ptr)),
                       [len] "r" (self.mapped.len),
                     : "memory"
                 ),
@@ -1118,7 +1118,7 @@ const LinuxThreadImpl = struct {
                     \\  mov x0, #0
                     \\  svc 0
                     :
-                    : [ptr] "r" (@intFromPtr(self.mapped.ptr)),
+                    : [ptr] "r" (@int_from_ptr(self.mapped.ptr)),
                       [len] "r" (self.mapped.len),
                     : "memory"
                 ),
@@ -1132,7 +1132,7 @@ const LinuxThreadImpl = struct {
                     \\  li $4, 0
                     \\  syscall
                     :
-                    : [ptr] "r" (@intFromPtr(self.mapped.ptr)),
+                    : [ptr] "r" (@int_from_ptr(self.mapped.ptr)),
                       [len] "r" (self.mapped.len),
                     : "memory"
                 ),
@@ -1145,7 +1145,7 @@ const LinuxThreadImpl = struct {
                     \\  li $4, 0
                     \\  syscall
                     :
-                    : [ptr] "r" (@intFromPtr(self.mapped.ptr)),
+                    : [ptr] "r" (@int_from_ptr(self.mapped.ptr)),
                       [len] "r" (self.mapped.len),
                     : "memory"
                 ),
@@ -1159,7 +1159,7 @@ const LinuxThreadImpl = struct {
                     \\  sc
                     \\  blr
                     :
-                    : [ptr] "r" (@intFromPtr(self.mapped.ptr)),
+                    : [ptr] "r" (@int_from_ptr(self.mapped.ptr)),
                       [len] "r" (self.mapped.len),
                     : "memory"
                 ),
@@ -1172,7 +1172,7 @@ const LinuxThreadImpl = struct {
                     \\  mv a0, zero
                     \\  ecall
                     :
-                    : [ptr] "r" (@intFromPtr(self.mapped.ptr)),
+                    : [ptr] "r" (@int_from_ptr(self.mapped.ptr)),
                       [len] "r" (self.mapped.len),
                     : "memory"
                 ),
@@ -1199,11 +1199,11 @@ const LinuxThreadImpl = struct {
                     \\  mov 1, %%o0
                     \\  t 0x6d
                     :
-                    : [ptr] "r" (@intFromPtr(self.mapped.ptr)),
+                    : [ptr] "r" (@int_from_ptr(self.mapped.ptr)),
                       [len] "r" (self.mapped.len),
                     : "memory"
                 ),
-                else => |cpu_arch| @compileError("Unsupported linux arch: " ++ @tagName(cpu_arch)),
+                else => |cpu_arch| @compile_error("Unsupported linux arch: " ++ @tag_name(cpu_arch)),
             }
             unreachable;
         }
@@ -1221,9 +1221,9 @@ const LinuxThreadImpl = struct {
                 defer switch (self.thread.completion.swap(.completed, .seq_cst)) {
                     .running => {},
                     .completed => unreachable,
-                    .detached => self.thread.freeAndExit(),
+                    .detached => self.thread.free_and_exit(),
                 };
-                return callFn(f, self.fn_args);
+                return call_fn(f, self.fn_args);
             }
         };
 
@@ -1237,18 +1237,18 @@ const LinuxThreadImpl = struct {
             guard_offset = bytes;
 
             bytes += @max(page_size, config.stack_size);
-            bytes = std.mem.alignForward(usize, bytes, page_size);
+            bytes = std.mem.align_forward(usize, bytes, page_size);
             stack_offset = bytes;
 
-            bytes = std.mem.alignForward(usize, bytes, linux.tls.tls_image.alloc_align);
+            bytes = std.mem.align_forward(usize, bytes, linux.tls.tls_image.alloc_align);
             tls_offset = bytes;
             bytes += linux.tls.tls_image.alloc_size;
 
-            bytes = std.mem.alignForward(usize, bytes, @alignOf(Instance));
+            bytes = std.mem.align_forward(usize, bytes, @alignOf(Instance));
             instance_offset = bytes;
-            bytes += @sizeOf(Instance);
+            bytes += @size_of(Instance);
 
-            bytes = std.mem.alignForward(usize, bytes, page_size);
+            bytes = std.mem.align_forward(usize, bytes, page_size);
             break :blk bytes;
         };
 
@@ -1275,7 +1275,7 @@ const LinuxThreadImpl = struct {
 
         // map everything but the guard page as read/write
         posix.mprotect(
-            @alignCast(mapped[guard_offset..]),
+            @align_cast(mapped[guard_offset..]),
             posix.PROT.READ | posix.PROT.WRITE,
         ) catch |err| switch (err) {
             error.AccessDenied => unreachable,
@@ -1283,10 +1283,10 @@ const LinuxThreadImpl = struct {
         };
 
         // Prepare the TLS segment and prepare a user_desc struct when needed on x86
-        var tls_ptr = linux.tls.prepareTLS(mapped[tls_offset..]);
+        var tls_ptr = linux.tls.prepare_tls(mapped[tls_offset..]);
         var user_desc: if (target.cpu.arch == .x86) linux.user_desc else void = undefined;
         if (target.cpu.arch == .x86) {
-            defer tls_ptr = @intFromPtr(&user_desc);
+            defer tls_ptr = @int_from_ptr(&user_desc);
             user_desc = .{
                 .entry_number = linux.tls.tls_image.gdt_entry_number,
                 .base_addr = tls_ptr,
@@ -1302,7 +1302,7 @@ const LinuxThreadImpl = struct {
             };
         }
 
-        const instance: *Instance = @ptrCast(@alignCast(&mapped[instance_offset]));
+        const instance: *Instance = @ptr_cast(@align_cast(&mapped[instance_offset]));
         instance.* = .{
             .fn_args = args,
             .thread = .{ .mapped = mapped },
@@ -1314,10 +1314,10 @@ const LinuxThreadImpl = struct {
             linux.CLONE.SIGHAND | linux.CLONE.SYSVSEM | linux.CLONE.SETTLS;
 
         switch (linux.E.init(linux.clone(
-            Instance.entryFn,
-            @intFromPtr(&mapped[stack_offset]),
+            Instance.entry_fn,
+            @int_from_ptr(&mapped[stack_offset]),
             flags,
-            @intFromPtr(instance),
+            @int_from_ptr(instance),
             &instance.thread.parent_tid,
             tls_ptr,
             &instance.thread.child_tid.raw,
@@ -1329,7 +1329,7 @@ const LinuxThreadImpl = struct {
             .NOSPC => unreachable,
             .PERM => unreachable,
             .USERS => unreachable,
-            else => |err| return posix.unexpectedErrno(err),
+            else => |err| return posix.unexpected_errno(err),
         }
     }
 
@@ -1357,7 +1357,7 @@ const LinuxThreadImpl = struct {
 
             if (spin > 0) {
                 spin -= 1;
-                std.atomic.spinLoopHint();
+                std.atomic.spin_loop_hint();
                 continue;
             }
 
@@ -1383,19 +1383,19 @@ fn test_thread_name(thread: *Thread) !void {
     };
 
     inline for (testCases) |tc| {
-        try thread.setName(tc);
+        try thread.set_name(tc);
 
         var name_buffer: [max_name_len:0]u8 = undefined;
 
-        const name = try thread.getName(&name_buffer);
+        const name = try thread.get_name(&name_buffer);
         if (name) |value| {
-            try std.testing.expectEqual(tc.len, value.len);
-            try std.testing.expectEqualStrings(tc, value);
+            try std.testing.expect_equal(tc.len, value.len);
+            try std.testing.expect_equal_strings(tc, value);
         }
     }
 }
 
-test "setName, getName" {
+test "set_name, get_name" {
     if (builtin.single_threaded) return error.SkipZigTest;
 
     const Context = struct {
@@ -1411,11 +1411,11 @@ test "setName, getName" {
             ctx.start_wait_event.wait();
 
             switch (native_os) {
-                .windows => testThreadName(&ctx.thread) catch |err| switch (err) {
+                .windows => test_thread_name(&ctx.thread) catch |err| switch (err) {
                     error.Unsupported => return error.SkipZigTest,
                     else => return err,
                 },
-                else => try testThreadName(&ctx.thread),
+                else => try test_thread_name(&ctx.thread),
             }
 
             // Signal our test is done
@@ -1435,14 +1435,14 @@ test "setName, getName" {
 
     switch (native_os) {
         .macos, .ios, .watchos, .tvos, .visionos => {
-            const res = thread.setName("foobar");
-            try std.testing.expectError(error.Unsupported, res);
+            const res = thread.set_name("foobar");
+            try std.testing.expect_error(error.Unsupported, res);
         },
-        .windows => testThreadName(&thread) catch |err| switch (err) {
+        .windows => test_thread_name(&thread) catch |err| switch (err) {
             error.Unsupported => return error.SkipZigTest,
             else => return err,
         },
-        else => try testThreadName(&thread),
+        else => try test_thread_name(&thread),
     }
 
     context.thread_done_event.set();
@@ -1450,7 +1450,7 @@ test "setName, getName" {
 }
 
 test {
-    // Doesn't use testing.refAllDecls() since that would pull in the compileError spinLoopHint.
+    // Doesn't use testing.ref_all_decls() since that would pull in the compile_error spin_loop_hint.
     _ = Futex;
     _ = ResetEvent;
     _ = Mutex;
@@ -1470,10 +1470,10 @@ test join {
     var value: usize = 0;
     var event = ResetEvent{};
 
-    const thread = try Thread.spawn(.{}, testIncrementNotify, .{ &value, &event });
+    const thread = try Thread.spawn(.{}, test_increment_notify, .{ &value, &event });
     thread.join();
 
-    try std.testing.expectEqual(value, 1);
+    try std.testing.expect_equal(value, 1);
 }
 
 test detach {
@@ -1482,9 +1482,9 @@ test detach {
     var value: usize = 0;
     var event = ResetEvent{};
 
-    const thread = try Thread.spawn(.{}, testIncrementNotify, .{ &value, &event });
+    const thread = try Thread.spawn(.{}, test_increment_notify, .{ &value, &event });
     thread.detach();
 
     event.wait();
-    try std.testing.expectEqual(value, 1);
+    try std.testing.expect_equal(value, 1);
 }

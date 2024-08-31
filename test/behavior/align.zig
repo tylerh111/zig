@@ -22,7 +22,7 @@ test "large alignment of local constant" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest; // flaky
 
     const x: f32 align(128) = 12.34;
-    try std.testing.expect(@intFromPtr(&x) % 128 == 0);
+    try std.testing.expect(@int_from_ptr(&x) % 128 == 0);
 }
 
 test "slicing array of length 1 can not assume runtime index is always zero" {
@@ -36,7 +36,7 @@ test "slicing array of length 1 can not assume runtime index is always zero" {
     const slice = @as(*align(4) [1]u8, &foo)[runtime_index..];
     try expect(@TypeOf(slice) == []u8);
     try expect(slice.len == 0);
-    try expect(@as(u2, @truncate(@intFromPtr(slice.ptr) - 1)) == 0);
+    try expect(@as(u2, @truncate(@int_from_ptr(slice.ptr) - 1)) == 0);
 }
 
 test "default alignment allows unspecified in type syntax" {
@@ -46,21 +46,21 @@ test "default alignment allows unspecified in type syntax" {
 test "implicitly decreasing pointer alignment" {
     const a: u32 align(4) = 3;
     const b: u32 align(8) = 4;
-    try expect(addUnaligned(&a, &b) == 7);
+    try expect(add_unaligned(&a, &b) == 7);
 }
 
 fn add_unaligned(a: *align(1) const u32, b: *align(1) const u32) u32 {
     return a.* + b.*;
 }
 
-test "@alignCast pointers" {
+test "@align_cast pointers" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest; // TODO
     var x: u32 align(4) = 1;
-    expectsOnly1(&x);
+    expects_only1(&x);
     try expect(x == 2);
 }
 fn expects_only1(x: *align(1) u32) void {
-    expects4(@alignCast(x));
+    expects4(@align_cast(x));
 }
 fn expects4(x: *align(4) u32) void {
     x.* += 1;
@@ -203,21 +203,21 @@ test "alignment and size of structs with 128-bit fields" {
     const min_struct_align = if (builtin.zig_backend == .stage2_c) 16 else 0;
     comptime {
         assert(@alignOf(A) == @max(expected.a_align, min_struct_align));
-        assert(@sizeOf(A) == expected.a_size);
+        assert(@size_of(A) == expected.a_size);
 
         assert(@alignOf(B) == @max(expected.b_align, min_struct_align));
-        assert(@sizeOf(B) == expected.b_size);
+        assert(@size_of(B) == expected.b_size);
 
         assert(@alignOf(u128) == expected.u128_align);
-        assert(@sizeOf(u128) == expected.u128_size);
+        assert(@size_of(u128) == expected.u128_size);
 
         assert(@alignOf(u129) == expected.u129_align);
-        assert(@sizeOf(u129) == expected.u129_size);
+        assert(@size_of(u129) == expected.u129_size);
     }
 }
 
 test "alignstack" {
-    try expect(fnWithAlignedStack() == 1234);
+    try expect(fn_with_aligned_stack() == 1234);
 }
 
 fn fn_with_aligned_stack() i32 {
@@ -231,7 +231,7 @@ test "implicitly decreasing slice alignment" {
 
     const a: u32 align(4) = 3;
     const b: u32 align(8) = 4;
-    try expect(addUnalignedSlice(@as(*const [1]u32, &a)[0..], @as(*const [1]u32, &b)[0..]) == 7);
+    try expect(add_unaligned_slice(@as(*const [1]u32, &a)[0..], @as(*const [1]u32, &b)[0..]) == 7);
 }
 fn add_unaligned_slice(a: []align(1) const u32, b: []align(1) const u32) u32 {
     return a[0] + b[0];
@@ -242,15 +242,15 @@ test "specifying alignment allows pointer cast" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
-    try testBytesAlign(0x33);
+    try test_bytes_align(0x33);
 }
 fn test_bytes_align(b: u8) !void {
     var bytes align(4) = [_]u8{ b, b, b, b };
-    const ptr = @as(*u32, @ptrCast(&bytes[0]));
+    const ptr = @as(*u32, @ptr_cast(&bytes[0]));
     try expect(ptr.* == 0x33333333);
 }
 
-test "@alignCast slices" {
+test "@align_cast slices" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest;
@@ -259,11 +259,11 @@ test "@alignCast slices" {
 
     var array align(4) = [_]u32{ 1, 1 };
     const slice = array[0..];
-    sliceExpectsOnly1(slice);
+    slice_expects_only1(slice);
     try expect(slice[0] == 2);
 }
 fn slice_expects_only1(slice: []align(1) u32) void {
-    sliceExpects4(@alignCast(slice));
+    slice_expects4(@align_cast(slice));
 }
 fn slice_expects4(slice: []align(4) u32) void {
     slice[0] += 1;
@@ -299,11 +299,11 @@ test "page aligned array on stack" {
     var number1: u8 align(16) = 42;
     var number2: u8 align(16) = 43;
 
-    try expect(@intFromPtr(&array[0]) & 0xFFF == 0);
+    try expect(@int_from_ptr(&array[0]) & 0xFFF == 0);
     try expect(array[3] == 4);
 
-    try expect(@as(u4, @truncate(@intFromPtr(&number1))) == 0);
-    try expect(@as(u4, @truncate(@intFromPtr(&number2))) == 0);
+    try expect(@as(u4, @truncate(@int_from_ptr(&number1))) == 0);
+    try expect(@as(u4, @truncate(@int_from_ptr(&number2))) == 0);
     try expect(number1 == 42);
     try expect(number2 == 43);
 }
@@ -318,16 +318,16 @@ test "function alignment" {
     if (native_arch == .wasm32 or native_arch == .wasm64) return error.SkipZigTest;
 
     const S = struct {
-        fn align_expr() align(@sizeOf(usize) * 2) i32 {
+        fn align_expr() align(@size_of(usize) * 2) i32 {
             return 1234;
         }
         fn align1() align(1) void {}
         fn align4() align(4) void {}
     };
 
-    try expect(S.alignExpr() == 1234);
-    try expect(@TypeOf(S.alignExpr) == fn () i32);
-    try expect(@TypeOf(&S.alignExpr) == *align(@sizeOf(usize) * 2) const fn () i32);
+    try expect(S.align_expr() == 1234);
+    try expect(@TypeOf(S.align_expr) == fn () i32);
+    try expect(@TypeOf(&S.align_expr) == *align(@size_of(usize) * 2) const fn () i32);
 
     S.align1();
     try expect(@TypeOf(S.align1) == fn () void);
@@ -347,8 +347,8 @@ test "implicitly decreasing fn alignment" {
     // function alignment is a compile error on wasm32/wasm64
     if (native_arch == .wasm32 or native_arch == .wasm64) return error.SkipZigTest;
 
-    try testImplicitlyDecreaseFnAlign(alignedSmall, 1234);
-    try testImplicitlyDecreaseFnAlign(alignedBig, 5678);
+    try test_implicitly_decrease_fn_align(aligned_small, 1234);
+    try test_implicitly_decrease_fn_align(aligned_big, 5678);
 }
 
 fn test_implicitly_decrease_fn_align(ptr: *align(1) const fn () i32, answer: i32) !void {
@@ -362,7 +362,7 @@ fn aligned_big() align(16) i32 {
     return 5678;
 }
 
-test "@alignCast functions" {
+test "@align_cast functions" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -372,10 +372,10 @@ test "@alignCast functions" {
     if (native_arch == .wasm32 or native_arch == .wasm64) return error.SkipZigTest;
     if (native_arch == .thumb) return error.SkipZigTest;
 
-    try expect(fnExpectsOnly1(simple4) == 0x19);
+    try expect(fn_expects_only1(simple4) == 0x19);
 }
 fn fn_expects_only1(ptr: *align(1) const fn () i32) i32 {
-    return fnExpects4(@alignCast(ptr));
+    return fn_expects4(@align_cast(ptr));
 }
 fn fn_expects4(ptr: *align(4) const fn () i32) i32 {
     return ptr();
@@ -404,8 +404,8 @@ test "function align expression depends on generic parameter" {
             return align_bytes + 1;
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "function callconv expression depends on generic parameter" {
@@ -421,8 +421,8 @@ test "function callconv expression depends on generic parameter" {
             return arg + 1;
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "runtime-known array index has best alignment possible" {
@@ -449,16 +449,16 @@ test "runtime-known array index has best alignment possible" {
     _ = &runtime_zero;
     comptime assert(@TypeOf(smaller[runtime_zero..]) == []align(2) u32);
     comptime assert(@TypeOf(smaller[runtime_zero..].ptr) == [*]align(2) u32);
-    try testIndex(smaller[runtime_zero..].ptr, 0, *align(2) u32);
-    try testIndex(smaller[runtime_zero..].ptr, 1, *align(2) u32);
-    try testIndex(smaller[runtime_zero..].ptr, 2, *align(2) u32);
-    try testIndex(smaller[runtime_zero..].ptr, 3, *align(2) u32);
+    try test_index(smaller[runtime_zero..].ptr, 0, *align(2) u32);
+    try test_index(smaller[runtime_zero..].ptr, 1, *align(2) u32);
+    try test_index(smaller[runtime_zero..].ptr, 2, *align(2) u32);
+    try test_index(smaller[runtime_zero..].ptr, 3, *align(2) u32);
 
     // has to use ABI alignment because index known at runtime only
-    try testIndex2(&array, 0, *u8);
-    try testIndex2(&array, 1, *u8);
-    try testIndex2(&array, 2, *u8);
-    try testIndex2(&array, 3, *u8);
+    try test_index2(&array, 0, *u8);
+    try test_index2(&array, 1, *u8);
+    try test_index2(&array, 2, *u8);
+    try test_index2(&array, 3, *u8);
 }
 fn test_index(smaller: [*]align(2) u32, index: usize, comptime T: type) !void {
     comptime assert(@TypeOf(&smaller[index]) == T);
@@ -474,8 +474,8 @@ test "alignment of function with c calling convention" {
 
     var runtime_nothing = &nothing;
     _ = &runtime_nothing;
-    const casted1: *align(a) const u8 = @ptrCast(runtime_nothing);
-    const casted2: *const fn () callconv(.C) void = @ptrCast(casted1);
+    const casted1: *align(a) const u8 = @ptr_cast(runtime_nothing);
+    const casted2: *const fn () callconv(.C) void = @ptr_cast(casted1);
     casted2();
 }
 
@@ -534,7 +534,7 @@ test "struct field explicit alignment" {
     node.massive_byte = 100;
     try expect(node.massive_byte == 100);
     comptime assert(@TypeOf(&node.massive_byte) == *align(64) u8);
-    try expect(@intFromPtr(&node.massive_byte) % 64 == 0);
+    try expect(@int_from_ptr(&node.massive_byte) % 64 == 0);
 }
 
 test "align(@alignOf(T)) T does not force resolution of T" {
@@ -548,7 +548,7 @@ test "align(@alignOf(T)) T does not force resolution of T" {
             suspend {
                 resume @frame();
             }
-            _ = bar(@Frame(doTheTest));
+            _ = bar(@Frame(do_the_test));
         }
         fn bar(comptime T: type) *align(@alignOf(T)) T {
             ok = true;
@@ -557,7 +557,7 @@ test "align(@alignOf(T)) T does not force resolution of T" {
 
         var ok = false;
     };
-    _ = async S.doTheTest();
+    _ = async S.do_the_test();
     try expect(S.ok);
 }
 
@@ -581,7 +581,7 @@ test "align(N) on functions" {
     if (native_arch == .wasm32 or native_arch == .wasm64) return error.SkipZigTest;
     if (native_arch == .thumb) return error.SkipZigTest;
 
-    try expect((@intFromPtr(&overaligned_fn) & (0x1000 - 1)) == 0);
+    try expect((@int_from_ptr(&overaligned_fn) & (0x1000 - 1)) == 0);
 }
 fn overaligned_fn() align(0x1000) i32 {
     return 42;
@@ -603,18 +603,18 @@ test "comptime alloc alignment" {
     _ = &bytes1;
 
     comptime var bytes2 align(256) = [_]u8{0};
-    const bytes2_addr = @intFromPtr(&bytes2);
+    const bytes2_addr = @int_from_ptr(&bytes2);
     try expect(bytes2_addr & 0xff == 0);
 }
 
-test "@alignCast null" {
+test "@align_cast null" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     var ptr: ?*anyopaque = null;
     _ = &ptr;
-    const aligned: ?*anyopaque = @alignCast(ptr);
+    const aligned: ?*anyopaque = @align_cast(ptr);
     try expect(aligned == null);
 }
 
@@ -636,7 +636,7 @@ test "sub-aligned pointer field access" {
         bytes_len: u32,
     };
     var buf: [9]u8 align(4) = .{ 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-    const ptr: *align(1) Header = @ptrCast(buf[1..][0..8]);
+    const ptr: *align(1) Header = @ptr_cast(buf[1..][0..8]);
     const x = ptr.bytes_len;
     switch (builtin.cpu.arch.endian()) {
         .big => try expect(x == 0x06070809),
@@ -662,14 +662,14 @@ test "alignment of zero-bit types is respected" {
     var zero: usize = 0;
     _ = &zero;
 
-    try expect(@intFromPtr(&s) % @alignOf(usize) == 0);
-    try expect(@intFromPtr(&s.arr) % @alignOf(usize) == 0);
-    try expect(@intFromPtr(s.arr[zero..zero].ptr) % @alignOf(usize) == 0);
-    try expect(@intFromPtr(&v32) % 32 == 0);
-    try expect(@intFromPtr(&x32) % 32 == 0);
-    try expect(@intFromPtr(&s32) % 32 == 0);
-    try expect(@intFromPtr(&s32.arr) % 32 == 0);
-    try expect(@intFromPtr(s32.arr[zero..zero].ptr) % 32 == 0);
+    try expect(@int_from_ptr(&s) % @alignOf(usize) == 0);
+    try expect(@int_from_ptr(&s.arr) % @alignOf(usize) == 0);
+    try expect(@int_from_ptr(s.arr[zero..zero].ptr) % @alignOf(usize) == 0);
+    try expect(@int_from_ptr(&v32) % 32 == 0);
+    try expect(@int_from_ptr(&x32) % 32 == 0);
+    try expect(@int_from_ptr(&s32) % 32 == 0);
+    try expect(@int_from_ptr(&s32.arr) % 32 == 0);
+    try expect(@int_from_ptr(s32.arr[zero..zero].ptr) % 32 == 0);
 }
 
 test "zero-bit fields in extern struct pad fields appropriately" {
@@ -688,15 +688,15 @@ test "zero-bit fields in extern struct pad fields appropriately" {
 
     // `a` should give `S` alignment 2, and pad the `arr` field.
     comptime assert(@alignOf(S) == 2);
-    comptime assert(@sizeOf(S) == 4);
-    comptime assert(@offsetOf(S, "x") == 0);
-    comptime assert(@offsetOf(S, "a") == 2);
-    comptime assert(@offsetOf(S, "y") == 2);
+    comptime assert(@size_of(S) == 4);
+    comptime assert(@offset_of(S, "x") == 0);
+    comptime assert(@offset_of(S, "a") == 2);
+    comptime assert(@offset_of(S, "y") == 2);
 
     var s: S = .{ .x = 100, .y = 200 };
 
-    try expect(@intFromPtr(&s) % 2 == 0);
-    try expect(@intFromPtr(&s.y) - @intFromPtr(&s.x) == 2);
-    try expect(@intFromPtr(&s.y) == @intFromPtr(&s.a));
+    try expect(@int_from_ptr(&s) % 2 == 0);
+    try expect(@int_from_ptr(&s.y) - @int_from_ptr(&s.x) == 2);
+    try expect(@int_from_ptr(&s.y) == @int_from_ptr(&s.a));
     try expect(@as(*S, @fieldParentPtr("a", &s.a)) == &s);
 }

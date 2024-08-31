@@ -1,7 +1,7 @@
 const ContextAllocator = MemoryPool(usize);
 
 pub fn MemoryPool(comptime T: type) type {
-    const free_list_t = @compileError("aoeu");
+    const free_list_t = @compile_error("aoeu");
     _ = T;
 
     return struct {

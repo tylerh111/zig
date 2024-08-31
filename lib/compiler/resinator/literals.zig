@@ -98,7 +98,7 @@ pub const IterativeStringParser = struct {
 
     pub const ParsedCodepoint = struct {
         codepoint: u21,
-        /// Note: If this is true, `codepoint` will be a value with a max of maxInt(u16).
+        /// Note: If this is true, `codepoint` will be a value with a max of max_int(u16).
         /// This is enforced by using saturating arithmetic, so in e.g. a wide string literal the
         /// octal escape sequence \7777777 (2,097,151) will be parsed into the value 0xFFFF (65,535).
         /// If the value needs to be truncated to a smaller integer (for ASCII string literals), then that
@@ -107,7 +107,7 @@ pub const IterativeStringParser = struct {
     };
 
     pub fn next(self: *IterativeStringParser) std.mem.Allocator.Error!?ParsedCodepoint {
-        const result = try self.nextUnchecked();
+        const result = try self.next_unchecked();
         if (self.diagnostics != null and result != null and !result.?.from_escaped_integer) {
             switch (result.?.codepoint) {
                 0x900, 0xA00, 0xA0D, 0x2000, 0xFFFE, 0xD00 => {
@@ -162,7 +162,7 @@ pub const IterativeStringParser = struct {
         };
 
         var backtrack: bool = undefined;
-        while (self.code_page.codepointAt(self.index, self.source)) |codepoint| : ({
+        while (self.code_page.codepoint_at(self.index, self.source)) |codepoint| : ({
             if (!backtrack) self.index += codepoint.byte_len;
         }) {
             backtrack = false;
@@ -170,7 +170,7 @@ pub const IterativeStringParser = struct {
             defer {
                 if (!backtrack) {
                     if (c == '\t') {
-                        self.column += columnsUntilTabStop(self.column, 8);
+                        self.column += columns_until_tab_stop(self.column, 8);
                     } else {
                         self.column += codepoint.byte_len;
                     }
@@ -198,8 +198,8 @@ pub const IterativeStringParser = struct {
                             });
                             self.seen_tab = true;
                         }
-                        const cols = columnsUntilTabStop(self.column, 8);
-                        self.num_pending_spaces = @intCast(cols - 1);
+                        const cols = columns_until_tab_stop(self.column, 8);
+                        self.num_pending_spaces = @int_cast(cols - 1);
                         self.index += codepoint.byte_len;
                         return .{ .codepoint = ' ' };
                     },
@@ -233,7 +233,7 @@ pub const IterativeStringParser = struct {
                     '\r' => state = .escaped_cr,
                     '\n' => state = .escaped_newlines,
                     '0'...'7' => {
-                        string_escape_n = std.fmt.charToDigit(@intCast(c), 8) catch unreachable;
+                        string_escape_n = std.fmt.char_to_digit(@int_cast(c), 8) catch unreachable;
                         string_escape_i = 1;
                         state = .escaped_octal;
                     },
@@ -304,7 +304,7 @@ pub const IterativeStringParser = struct {
                 .escaped_octal => switch (c) {
                     '0'...'7' => {
                         string_escape_n *%= 8;
-                        string_escape_n +%= std.fmt.charToDigit(@intCast(c), 8) catch unreachable;
+                        string_escape_n +%= std.fmt.char_to_digit(@int_cast(c), 8) catch unreachable;
                         string_escape_i += 1;
                         if (string_escape_i == max_octal_escape_digits) {
                             self.index += codepoint.byte_len;
@@ -324,7 +324,7 @@ pub const IterativeStringParser = struct {
                 .escaped_hex => switch (c) {
                     '0'...'9', 'a'...'f', 'A'...'F' => {
                         string_escape_n *= 16;
-                        string_escape_n += std.fmt.charToDigit(@intCast(c), 16) catch unreachable;
+                        string_escape_n += std.fmt.char_to_digit(@int_cast(c), 16) catch unreachable;
                         string_escape_i += 1;
                         if (string_escape_i == max_hex_escape_digits) {
                             self.index += codepoint.byte_len;
@@ -382,7 +382,7 @@ pub fn parse_quoted_string(
     const T = if (literal_type == .ascii) u8 else u16;
     std.debug.assert(bytes.slice.len >= 2); // must at least have 2 double quote chars
 
-    var buf = try std.ArrayList(T).initCapacity(allocator, bytes.slice.len);
+    var buf = try std.ArrayList(T).init_capacity(allocator, bytes.slice.len);
     errdefer buf.deinit();
 
     var iterative_parser = IterativeStringParser.init(bytes, options);
@@ -391,17 +391,17 @@ pub fn parse_quoted_string(
         const c = parsed.codepoint;
         if (parsed.from_escaped_integer) {
             // We truncate here to get the correct behavior for ascii strings
-            try buf.append(std.mem.nativeToLittle(T, @truncate(c)));
+            try buf.append(std.mem.native_to_little(T, @truncate(c)));
         } else {
             switch (literal_type) {
                 .ascii => switch (options.output_code_page) {
                     .windows1252 => {
-                        if (windows1252.bestFitFromCodepoint(c)) |best_fit| {
+                        if (windows1252.best_fit_from_codepoint(c)) |best_fit| {
                             try buf.append(best_fit);
                         } else if (c < 0x10000 or c == code_pages.Codepoint.invalid) {
                             try buf.append('?');
                         } else {
-                            try buf.appendSlice("??");
+                            try buf.append_slice("??");
                         }
                     },
                     .utf8 => {
@@ -410,22 +410,22 @@ pub fn parse_quoted_string(
                             codepoint_to_encode = '�';
                         }
                         var utf8_buf: [4]u8 = undefined;
-                        const utf8_len = std.unicode.utf8Encode(codepoint_to_encode, &utf8_buf) catch unreachable;
-                        try buf.appendSlice(utf8_buf[0..utf8_len]);
+                        const utf8_len = std.unicode.utf8_encode(codepoint_to_encode, &utf8_buf) catch unreachable;
+                        try buf.append_slice(utf8_buf[0..utf8_len]);
                     },
                     else => unreachable, // Unsupported code page
                 },
                 .wide => {
                     if (c == code_pages.Codepoint.invalid) {
-                        try buf.append(std.mem.nativeToLittle(u16, '�'));
+                        try buf.append(std.mem.native_to_little(u16, '�'));
                     } else if (c < 0x10000) {
-                        const short: u16 = @intCast(c);
-                        try buf.append(std.mem.nativeToLittle(u16, short));
+                        const short: u16 = @int_cast(c);
+                        try buf.append(std.mem.native_to_little(u16, short));
                     } else {
-                        const high = @as(u16, @intCast((c - 0x10000) >> 10)) + 0xD800;
-                        try buf.append(std.mem.nativeToLittle(u16, high));
-                        const low = @as(u16, @intCast(c & 0x3FF)) + 0xDC00;
-                        try buf.append(std.mem.nativeToLittle(u16, low));
+                        const high = @as(u16, @int_cast((c - 0x10000) >> 10)) + 0xD800;
+                        try buf.append(std.mem.native_to_little(u16, high));
+                        const low = @as(u16, @int_cast(c & 0x3FF)) + 0xDC00;
+                        try buf.append(std.mem.native_to_little(u16, low));
                     }
                 },
             }
@@ -433,25 +433,25 @@ pub fn parse_quoted_string(
     }
 
     if (literal_type == .wide) {
-        return buf.toOwnedSliceSentinel(0);
+        return buf.to_owned_slice_sentinel(0);
     } else {
-        return buf.toOwnedSlice();
+        return buf.to_owned_slice();
     }
 }
 
 pub fn parse_quoted_ascii_string(allocator: std.mem.Allocator, bytes: SourceBytes, options: StringParseOptions) ![]u8 {
     std.debug.assert(bytes.slice.len >= 2); // ""
-    return parseQuotedString(.ascii, allocator, bytes, options);
+    return parse_quoted_string(.ascii, allocator, bytes, options);
 }
 
 pub fn parse_quoted_wide_string(allocator: std.mem.Allocator, bytes: SourceBytes, options: StringParseOptions) ![:0]u16 {
     std.debug.assert(bytes.slice.len >= 3); // L""
-    return parseQuotedString(.wide, allocator, bytes, options);
+    return parse_quoted_string(.wide, allocator, bytes, options);
 }
 
 pub fn parse_quoted_string_as_wide_string(allocator: std.mem.Allocator, bytes: SourceBytes, options: StringParseOptions) ![:0]u16 {
     std.debug.assert(bytes.slice.len >= 2); // ""
-    return parseQuotedString(.wide, allocator, bytes, options);
+    return parse_quoted_string(.wide, allocator, bytes, options);
 }
 
 test "parse quoted ascii string" {
@@ -459,135 +459,135 @@ test "parse quoted ascii string" {
     defer arena_allocator.deinit();
     const arena = arena_allocator.allocator();
 
-    try std.testing.expectEqualSlices(u8, "hello", try parseQuotedAsciiString(arena, .{
+    try std.testing.expect_equal_slices(u8, "hello", try parse_quoted_ascii_string(arena, .{
         .slice =
         \\"hello"
         ,
         .code_page = .windows1252,
     }, .{}));
     // hex with 0 digits
-    try std.testing.expectEqualSlices(u8, "\x00", try parseQuotedAsciiString(arena, .{
+    try std.testing.expect_equal_slices(u8, "\x00", try parse_quoted_ascii_string(arena, .{
         .slice =
         \\"\x"
         ,
         .code_page = .windows1252,
     }, .{}));
     // hex max of 2 digits
-    try std.testing.expectEqualSlices(u8, "\xFFf", try parseQuotedAsciiString(arena, .{
+    try std.testing.expect_equal_slices(u8, "\xFFf", try parse_quoted_ascii_string(arena, .{
         .slice =
         \\"\XfFf"
         ,
         .code_page = .windows1252,
     }, .{}));
     // octal with invalid octal digit
-    try std.testing.expectEqualSlices(u8, "\x019", try parseQuotedAsciiString(arena, .{
+    try std.testing.expect_equal_slices(u8, "\x019", try parse_quoted_ascii_string(arena, .{
         .slice =
         \\"\19"
         ,
         .code_page = .windows1252,
     }, .{}));
     // escaped quotes
-    try std.testing.expectEqualSlices(u8, " \" ", try parseQuotedAsciiString(arena, .{
+    try std.testing.expect_equal_slices(u8, " \" ", try parse_quoted_ascii_string(arena, .{
         .slice =
         \\" "" "
         ,
         .code_page = .windows1252,
     }, .{}));
     // backslash right before escaped quotes
-    try std.testing.expectEqualSlices(u8, "\"", try parseQuotedAsciiString(arena, .{
+    try std.testing.expect_equal_slices(u8, "\"", try parse_quoted_ascii_string(arena, .{
         .slice =
         \\"\"""
         ,
         .code_page = .windows1252,
     }, .{}));
     // octal overflow
-    try std.testing.expectEqualSlices(u8, "\x01", try parseQuotedAsciiString(arena, .{
+    try std.testing.expect_equal_slices(u8, "\x01", try parse_quoted_ascii_string(arena, .{
         .slice =
         \\"\401"
         ,
         .code_page = .windows1252,
     }, .{}));
     // escapes
-    try std.testing.expectEqualSlices(u8, "\x08\n\r\t\\", try parseQuotedAsciiString(arena, .{
+    try std.testing.expect_equal_slices(u8, "\x08\n\r\t\\", try parse_quoted_ascii_string(arena, .{
         .slice =
         \\"\a\n\r\t\\"
         ,
         .code_page = .windows1252,
     }, .{}));
     // uppercase escapes
-    try std.testing.expectEqualSlices(u8, "\x08\\N\\R\t\\", try parseQuotedAsciiString(arena, .{
+    try std.testing.expect_equal_slices(u8, "\x08\\N\\R\t\\", try parse_quoted_ascii_string(arena, .{
         .slice =
         \\"\A\N\R\T\\"
         ,
         .code_page = .windows1252,
     }, .{}));
     // backslash on its own
-    try std.testing.expectEqualSlices(u8, "\\", try parseQuotedAsciiString(arena, .{
+    try std.testing.expect_equal_slices(u8, "\\", try parse_quoted_ascii_string(arena, .{
         .slice =
         \\"\"
         ,
         .code_page = .windows1252,
     }, .{}));
     // unrecognized escapes
-    try std.testing.expectEqualSlices(u8, "\\b", try parseQuotedAsciiString(arena, .{
+    try std.testing.expect_equal_slices(u8, "\\b", try parse_quoted_ascii_string(arena, .{
         .slice =
         \\"\b"
         ,
         .code_page = .windows1252,
     }, .{}));
     // escaped carriage returns
-    try std.testing.expectEqualSlices(u8, "\\", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "\\", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\\\r\r\r\r\r\"", .code_page = .windows1252 },
         .{},
     ));
     // escaped newlines
-    try std.testing.expectEqualSlices(u8, "", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\\\n\n\n\n\n\"", .code_page = .windows1252 },
         .{},
     ));
     // escaped CRLF pairs
-    try std.testing.expectEqualSlices(u8, "", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\\\r\n\r\n\r\n\r\n\r\n\"", .code_page = .windows1252 },
         .{},
     ));
     // escaped newlines with other whitespace
-    try std.testing.expectEqualSlices(u8, "", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\\\n    \t\r\n \r\t\n  \t\"", .code_page = .windows1252 },
         .{},
     ));
     // literal tab characters get converted to spaces (dependent on source file columns)
-    try std.testing.expectEqualSlices(u8, "       ", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "       ", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\t\"", .code_page = .windows1252 },
         .{},
     ));
-    try std.testing.expectEqualSlices(u8, "abc    ", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "abc    ", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"abc\t\"", .code_page = .windows1252 },
         .{},
     ));
-    try std.testing.expectEqualSlices(u8, "abcdefg        ", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "abcdefg        ", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"abcdefg\t\"", .code_page = .windows1252 },
         .{},
     ));
-    try std.testing.expectEqualSlices(u8, "\\      ", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "\\      ", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\\\t\"", .code_page = .windows1252 },
         .{},
     ));
     // literal CR's get dropped
-    try std.testing.expectEqualSlices(u8, "", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\r\r\r\r\r\"", .code_page = .windows1252 },
         .{},
     ));
     // contiguous newlines and whitespace get collapsed to <space><newline>
-    try std.testing.expectEqualSlices(u8, " \n", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, " \n", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\n\r\r  \r\n \t  \"", .code_page = .windows1252 },
         .{},
@@ -599,32 +599,32 @@ test "parse quoted ascii string with utf8 code page" {
     defer arena_allocator.deinit();
     const arena = arena_allocator.allocator();
 
-    try std.testing.expectEqualSlices(u8, "", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\"", .code_page = .utf8 },
         .{},
     ));
     // Codepoints that don't have a Windows-1252 representation get converted to ?
-    try std.testing.expectEqualSlices(u8, "?????????", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "?????????", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"кириллица\"", .code_page = .utf8 },
         .{},
     ));
     // Codepoints that have a best fit mapping get converted accordingly,
     // these are box drawing codepoints
-    try std.testing.expectEqualSlices(u8, "\x2b\x2d\x2b", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "\x2b\x2d\x2b", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"┌─┐\"", .code_page = .utf8 },
         .{},
     ));
     // Invalid UTF-8 gets converted to ? depending on well-formedness
-    try std.testing.expectEqualSlices(u8, "????", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "????", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\xf0\xf0\x80\x80\x80\"", .code_page = .utf8 },
         .{},
     ));
     // Codepoints that would require a UTF-16 surrogate pair get converted to ??
-    try std.testing.expectEqualSlices(u8, "??", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "??", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\xF2\xAF\xBA\xB4\"", .code_page = .utf8 },
         .{},
@@ -632,12 +632,12 @@ test "parse quoted ascii string with utf8 code page" {
 
     // Output code page changes how invalid UTF-8 gets converted, since it
     // now encodes the result as UTF-8 so it can write replacement characters.
-    try std.testing.expectEqualSlices(u8, "����", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "����", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\xf0\xf0\x80\x80\x80\"", .code_page = .utf8 },
         .{ .output_code_page = .utf8 },
     ));
-    try std.testing.expectEqualSlices(u8, "\xF2\xAF\xBA\xB4", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "\xF2\xAF\xBA\xB4", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\xF2\xAF\xBA\xB4\"", .code_page = .utf8 },
         .{ .output_code_page = .utf8 },
@@ -645,7 +645,7 @@ test "parse quoted ascii string with utf8 code page" {
 
     // This used to cause integer overflow when reconsuming the 4-byte long codepoint
     // after the escaped CRLF pair.
-    try std.testing.expectEqualSlices(u8, "\u{10348}", try parseQuotedAsciiString(
+    try std.testing.expect_equal_slices(u8, "\u{10348}", try parse_quoted_ascii_string(
         arena,
         .{ .slice = "\"\\\r\n\u{10348}\"", .code_page = .utf8 },
         .{ .output_code_page = .utf8 },
@@ -657,54 +657,54 @@ test "parse quoted wide string" {
     defer arena_allocator.deinit();
     const arena = arena_allocator.allocator();
 
-    try std.testing.expectEqualSentinel(u16, 0, std.unicode.utf8ToUtf16LeStringLiteral("hello"), try parseQuotedWideString(arena, .{
+    try std.testing.expect_equal_sentinel(u16, 0, std.unicode.utf8_to_utf16_le_string_literal("hello"), try parse_quoted_wide_string(arena, .{
         .slice =
         \\L"hello"
         ,
         .code_page = .windows1252,
     }, .{}));
     // hex with 0 digits
-    try std.testing.expectEqualSentinel(u16, 0, &[_:0]u16{0x0}, try parseQuotedWideString(arena, .{
+    try std.testing.expect_equal_sentinel(u16, 0, &[_:0]u16{0x0}, try parse_quoted_wide_string(arena, .{
         .slice =
         \\L"\x"
         ,
         .code_page = .windows1252,
     }, .{}));
     // hex max of 4 digits
-    try std.testing.expectEqualSentinel(u16, 0, &[_:0]u16{ std.mem.nativeToLittle(u16, 0xFFFF), std.mem.nativeToLittle(u16, 'f') }, try parseQuotedWideString(arena, .{
+    try std.testing.expect_equal_sentinel(u16, 0, &[_:0]u16{ std.mem.native_to_little(u16, 0xFFFF), std.mem.native_to_little(u16, 'f') }, try parse_quoted_wide_string(arena, .{
         .slice =
         \\L"\XfFfFf"
         ,
         .code_page = .windows1252,
     }, .{}));
     // octal max of 7 digits
-    try std.testing.expectEqualSentinel(u16, 0, &[_:0]u16{ std.mem.nativeToLittle(u16, 0x9493), std.mem.nativeToLittle(u16, '3'), std.mem.nativeToLittle(u16, '3') }, try parseQuotedWideString(arena, .{
+    try std.testing.expect_equal_sentinel(u16, 0, &[_:0]u16{ std.mem.native_to_little(u16, 0x9493), std.mem.native_to_little(u16, '3'), std.mem.native_to_little(u16, '3') }, try parse_quoted_wide_string(arena, .{
         .slice =
         \\L"\111222333"
         ,
         .code_page = .windows1252,
     }, .{}));
     // octal overflow
-    try std.testing.expectEqualSentinel(u16, 0, &[_:0]u16{std.mem.nativeToLittle(u16, 0xFF01)}, try parseQuotedWideString(arena, .{
+    try std.testing.expect_equal_sentinel(u16, 0, &[_:0]u16{std.mem.native_to_little(u16, 0xFF01)}, try parse_quoted_wide_string(arena, .{
         .slice =
         \\L"\777401"
         ,
         .code_page = .windows1252,
     }, .{}));
     // literal tab characters get converted to spaces (dependent on source file columns)
-    try std.testing.expectEqualSentinel(u16, 0, std.unicode.utf8ToUtf16LeStringLiteral("abcdefg       "), try parseQuotedWideString(
+    try std.testing.expect_equal_sentinel(u16, 0, std.unicode.utf8_to_utf16_le_string_literal("abcdefg       "), try parse_quoted_wide_string(
         arena,
         .{ .slice = "L\"abcdefg\t\"", .code_page = .windows1252 },
         .{},
     ));
     // Windows-1252 conversion
-    try std.testing.expectEqualSentinel(u16, 0, std.unicode.utf8ToUtf16LeStringLiteral("ðð€€€"), try parseQuotedWideString(
+    try std.testing.expect_equal_sentinel(u16, 0, std.unicode.utf8_to_utf16_le_string_literal("ðð€€€"), try parse_quoted_wide_string(
         arena,
         .{ .slice = "L\"\xf0\xf0\x80\x80\x80\"", .code_page = .windows1252 },
         .{},
     ));
     // Invalid escape sequences are skipped
-    try std.testing.expectEqualSentinel(u16, 0, std.unicode.utf8ToUtf16LeStringLiteral(""), try parseQuotedWideString(
+    try std.testing.expect_equal_sentinel(u16, 0, std.unicode.utf8_to_utf16_le_string_literal(""), try parse_quoted_wide_string(
         arena,
         .{ .slice = "L\"\\H\"", .code_page = .windows1252 },
         .{},
@@ -716,18 +716,18 @@ test "parse quoted wide string with utf8 code page" {
     defer arena_allocator.deinit();
     const arena = arena_allocator.allocator();
 
-    try std.testing.expectEqualSentinel(u16, 0, &[_:0]u16{}, try parseQuotedWideString(
+    try std.testing.expect_equal_sentinel(u16, 0, &[_:0]u16{}, try parse_quoted_wide_string(
         arena,
         .{ .slice = "L\"\"", .code_page = .utf8 },
         .{},
     ));
-    try std.testing.expectEqualSentinel(u16, 0, std.unicode.utf8ToUtf16LeStringLiteral("кириллица"), try parseQuotedWideString(
+    try std.testing.expect_equal_sentinel(u16, 0, std.unicode.utf8_to_utf16_le_string_literal("кириллица"), try parse_quoted_wide_string(
         arena,
         .{ .slice = "L\"кириллица\"", .code_page = .utf8 },
         .{},
     ));
     // Invalid UTF-8 gets converted to � depending on well-formedness
-    try std.testing.expectEqualSentinel(u16, 0, std.unicode.utf8ToUtf16LeStringLiteral("����"), try parseQuotedWideString(
+    try std.testing.expect_equal_sentinel(u16, 0, std.unicode.utf8_to_utf16_le_string_literal("����"), try parse_quoted_wide_string(
         arena,
         .{ .slice = "L\"\xf0\xf0\x80\x80\x80\"", .code_page = .utf8 },
         .{},
@@ -739,29 +739,29 @@ test "parse quoted ascii string as wide string" {
     defer arena_allocator.deinit();
     const arena = arena_allocator.allocator();
 
-    try std.testing.expectEqualSentinel(u16, 0, std.unicode.utf8ToUtf16LeStringLiteral("кириллица"), try parseQuotedStringAsWideString(
+    try std.testing.expect_equal_sentinel(u16, 0, std.unicode.utf8_to_utf16_le_string_literal("кириллица"), try parse_quoted_string_as_wide_string(
         arena,
         .{ .slice = "\"кириллица\"", .code_page = .utf8 },
         .{},
     ));
     // Whether or not invalid escapes are skipped is still determined by the L prefix
-    try std.testing.expectEqualSentinel(u16, 0, std.unicode.utf8ToUtf16LeStringLiteral("\\H"), try parseQuotedStringAsWideString(
+    try std.testing.expect_equal_sentinel(u16, 0, std.unicode.utf8_to_utf16_le_string_literal("\\H"), try parse_quoted_string_as_wide_string(
         arena,
         .{ .slice = "\"\\H\"", .code_page = .windows1252 },
         .{},
     ));
-    try std.testing.expectEqualSentinel(u16, 0, std.unicode.utf8ToUtf16LeStringLiteral(""), try parseQuotedStringAsWideString(
+    try std.testing.expect_equal_sentinel(u16, 0, std.unicode.utf8_to_utf16_le_string_literal(""), try parse_quoted_string_as_wide_string(
         arena,
         .{ .slice = "L\"\\H\"", .code_page = .windows1252 },
         .{},
     ));
     // Maximum escape sequence value is also determined by the L prefix
-    try std.testing.expectEqualSentinel(u16, 0, &[_:0]u16{ std.mem.nativeToLittle(u16, 0x12), std.mem.nativeToLittle(u16, '3'), std.mem.nativeToLittle(u16, '4') }, try parseQuotedStringAsWideString(
+    try std.testing.expect_equal_sentinel(u16, 0, &[_:0]u16{ std.mem.native_to_little(u16, 0x12), std.mem.native_to_little(u16, '3'), std.mem.native_to_little(u16, '4') }, try parse_quoted_string_as_wide_string(
         arena,
         .{ .slice = "\"\\x1234\"", .code_page = .windows1252 },
         .{},
     ));
-    try std.testing.expectEqualSentinel(u16, 0, &[_:0]u16{std.mem.nativeToLittle(u16, 0x1234)}, try parseQuotedStringAsWideString(
+    try std.testing.expect_equal_sentinel(u16, 0, &[_:0]u16{std.mem.native_to_little(u16, 0x1234)}, try parse_quoted_string_as_wide_string(
         arena,
         .{ .slice = "L\"\\x1234\"", .code_page = .windows1252 },
         .{},
@@ -776,7 +776,7 @@ pub fn columns_until_tab_stop(column: usize, tab_columns: usize) usize {
 
 pub fn column_width(cur_column: usize, c: u8, tab_columns: usize) usize {
     return switch (c) {
-        '\t' => columnsUntilTabStop(cur_column, tab_columns),
+        '\t' => columns_until_tab_stop(cur_column, tab_columns),
         else => 1,
     };
 }
@@ -847,7 +847,7 @@ pub fn parse_number_literal(bytes: SourceBytes) Number {
     }
 
     var i: usize = 0;
-    while (bytes.code_page.codepointAt(i, buf)) |codepoint| : (i += codepoint.byte_len) {
+    while (bytes.code_page.codepoint_at(i, buf)) |codepoint| : (i += codepoint.byte_len) {
         const c = codepoint.value;
         if (c == 'L' or c == 'l') {
             result.is_long = true;
@@ -855,7 +855,7 @@ pub fn parse_number_literal(bytes: SourceBytes) Number {
         }
         const digit = switch (c) {
             // On invalid digit for the radix, just stop parsing but don't fail
-            0x00...0x7F => std.fmt.charToDigit(@intCast(c), radix) catch break,
+            0x00...0x7F => std.fmt.char_to_digit(@int_cast(c), radix) catch break,
             else => break,
         };
 
@@ -875,36 +875,36 @@ pub fn parse_number_literal(bytes: SourceBytes) Number {
 }
 
 test "parse number literal" {
-    try std.testing.expectEqual(Number{ .value = 0, .is_long = false }, parseNumberLiteral(.{ .slice = "0", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 1, .is_long = false }, parseNumberLiteral(.{ .slice = "1", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 1, .is_long = true }, parseNumberLiteral(.{ .slice = "1L", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 1, .is_long = true }, parseNumberLiteral(.{ .slice = "1l", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 1, .is_long = false }, parseNumberLiteral(.{ .slice = "1garbageL", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 4294967295, .is_long = false }, parseNumberLiteral(.{ .slice = "4294967295", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 0, .is_long = false }, parseNumberLiteral(.{ .slice = "4294967296", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 1, .is_long = true }, parseNumberLiteral(.{ .slice = "4294967297L", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0, .is_long = false }, parse_number_literal(.{ .slice = "0", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 1, .is_long = false }, parse_number_literal(.{ .slice = "1", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 1, .is_long = true }, parse_number_literal(.{ .slice = "1L", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 1, .is_long = true }, parse_number_literal(.{ .slice = "1l", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 1, .is_long = false }, parse_number_literal(.{ .slice = "1garbageL", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 4294967295, .is_long = false }, parse_number_literal(.{ .slice = "4294967295", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0, .is_long = false }, parse_number_literal(.{ .slice = "4294967296", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 1, .is_long = true }, parse_number_literal(.{ .slice = "4294967297L", .code_page = .windows1252 }));
 
     // can handle any length of number, wraps on overflow appropriately
-    const big_overflow = parseNumberLiteral(.{ .slice = "1000000000000000000000000000000000000000000000000000000000000000000000000000000090000000001", .code_page = .windows1252 });
-    try std.testing.expectEqual(Number{ .value = 4100654081, .is_long = false }, big_overflow);
-    try std.testing.expectEqual(@as(u16, 1025), big_overflow.asWord());
+    const big_overflow = parse_number_literal(.{ .slice = "1000000000000000000000000000000000000000000000000000000000000000000000000000000090000000001", .code_page = .windows1252 });
+    try std.testing.expect_equal(Number{ .value = 4100654081, .is_long = false }, big_overflow);
+    try std.testing.expect_equal(@as(u16, 1025), big_overflow.as_word());
 
-    try std.testing.expectEqual(Number{ .value = 0x20, .is_long = false }, parseNumberLiteral(.{ .slice = "0x20", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 0x2A, .is_long = true }, parseNumberLiteral(.{ .slice = "0x2AL", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 0x2A, .is_long = true }, parseNumberLiteral(.{ .slice = "0x2aL", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 0x2A, .is_long = true }, parseNumberLiteral(.{ .slice = "0x2aL", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0x20, .is_long = false }, parse_number_literal(.{ .slice = "0x20", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0x2A, .is_long = true }, parse_number_literal(.{ .slice = "0x2AL", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0x2A, .is_long = true }, parse_number_literal(.{ .slice = "0x2aL", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0x2A, .is_long = true }, parse_number_literal(.{ .slice = "0x2aL", .code_page = .windows1252 }));
 
-    try std.testing.expectEqual(Number{ .value = 0o20, .is_long = false }, parseNumberLiteral(.{ .slice = "0o20", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 0o20, .is_long = true }, parseNumberLiteral(.{ .slice = "0o20L", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 0o2, .is_long = false }, parseNumberLiteral(.{ .slice = "0o29", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 0, .is_long = false }, parseNumberLiteral(.{ .slice = "0O29", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0o20, .is_long = false }, parse_number_literal(.{ .slice = "0o20", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0o20, .is_long = true }, parse_number_literal(.{ .slice = "0o20L", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0o2, .is_long = false }, parse_number_literal(.{ .slice = "0o29", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0, .is_long = false }, parse_number_literal(.{ .slice = "0O29", .code_page = .windows1252 }));
 
-    try std.testing.expectEqual(Number{ .value = 0xFFFFFFFF, .is_long = false }, parseNumberLiteral(.{ .slice = "-1", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 0xFFFFFFFE, .is_long = false }, parseNumberLiteral(.{ .slice = "~1", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 0xFFFFFFFF, .is_long = true }, parseNumberLiteral(.{ .slice = "-4294967297L", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 0xFFFFFFFE, .is_long = true }, parseNumberLiteral(.{ .slice = "~4294967297L", .code_page = .windows1252 }));
-    try std.testing.expectEqual(Number{ .value = 0xFFFFFFFD, .is_long = false }, parseNumberLiteral(.{ .slice = "-0X3", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0xFFFFFFFF, .is_long = false }, parse_number_literal(.{ .slice = "-1", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0xFFFFFFFE, .is_long = false }, parse_number_literal(.{ .slice = "~1", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0xFFFFFFFF, .is_long = true }, parse_number_literal(.{ .slice = "-4294967297L", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0xFFFFFFFE, .is_long = true }, parse_number_literal(.{ .slice = "~4294967297L", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0xFFFFFFFD, .is_long = false }, parse_number_literal(.{ .slice = "-0X3", .code_page = .windows1252 }));
 
     // anything after L is ignored
-    try std.testing.expectEqual(Number{ .value = 0x2A, .is_long = true }, parseNumberLiteral(.{ .slice = "0x2aL5", .code_page = .windows1252 }));
+    try std.testing.expect_equal(Number{ .value = 0x2A, .is_long = true }, parse_number_literal(.{ .slice = "0x2aL5", .code_page = .windows1252 }));
 }

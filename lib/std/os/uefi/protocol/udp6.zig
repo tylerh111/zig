@@ -86,7 +86,7 @@ pub const Udp6 = extern struct {
         fragment_count: u32,
 
         pub fn get_fragments(self: *ReceiveData) []Fragment {
-            return @as([*]Fragment, @ptrCast(@alignCast(@as([*]u8, @ptrCast(self)) + @sizeOf(ReceiveData))))[0..self.fragment_count];
+            return @as([*]Fragment, @ptr_cast(@align_cast(@as([*]u8, @ptr_cast(self)) + @size_of(ReceiveData))))[0..self.fragment_count];
         }
     };
 
@@ -96,7 +96,7 @@ pub const Udp6 = extern struct {
         fragment_count: u32,
 
         pub fn get_fragments(self: *TransmitData) []Fragment {
-            return @as([*]Fragment, @ptrCast(@alignCast(@as([*]u8, @ptrCast(self)) + @sizeOf(TransmitData))))[0..self.fragment_count];
+            return @as([*]Fragment, @ptr_cast(@align_cast(@as([*]u8, @ptr_cast(self)) + @size_of(TransmitData))))[0..self.fragment_count];
         }
     };
 

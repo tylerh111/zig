@@ -33,8 +33,8 @@
 //!    syscall data shares the endianness of the target machine. A filter
 //!    compiled on a little-endian machine will not work on a big-endian one,
 //!    and vice-versa. For example: Checking the upper 32-bits of `data.arg1`
-//!    requires a load at `@offsetOf(data, "arg1") + 4` on big-endian systems
-//!    and `@offsetOf(data, "arg1")` on little-endian systems. Endian-portable
+//!    requires a load at `@offset_of(data, "arg1") + 4` on big-endian systems
+//!    and `@offset_of(data, "arg1")` on little-endian systems. Endian-portable
 //!    filters require adjusting these offsets at compile time, similar to how
 //!    e.g. OpenSSH does[1].
 //! 4. Syscalls with userspace implementations via the vDSO cannot be traced or
@@ -56,9 +56,9 @@
 //! ```zig
 //! const offset = if (native_endian == .little) struct {
 //!     pub const low = 0;
-//!     pub const high = @sizeOf(u32);
+//!     pub const high = @size_of(u32);
 //! } else struct {
-//!     pub const low = @sizeOf(u32);
+//!     pub const low = @size_of(u32);
 //!     pub const high = 0;
 //! };
 //! ```

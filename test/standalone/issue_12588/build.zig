@@ -6,15 +6,15 @@ pub fn build(b: *std.Build) void {
 
     const optimize: std.builtin.OptimizeMode = .Debug;
 
-    const obj = b.addObject(.{
+    const obj = b.add_object(.{
         .name = "main",
         .root_source_file = b.path("main.zig"),
         .optimize = optimize,
         .target = b.host,
     });
-    _ = obj.getEmittedLlvmIr();
-    _ = obj.getEmittedLlvmBc();
-    b.default_step.dependOn(&obj.step);
+    _ = obj.get_emitted_llvm_ir();
+    _ = obj.get_emitted_llvm_bc();
+    b.default_step.depend_on(&obj.step);
 
-    test_step.dependOn(&obj.step);
+    test_step.depend_on(&obj.step);
 }

@@ -18,10 +18,10 @@ test "p256 point from affine coordinates" {
     const xh = "6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296";
     const yh = "4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5";
     var xs: [32]u8 = undefined;
-    _ = try fmt.hexToBytes(&xs, xh);
+    _ = try fmt.hex_to_bytes(&xs, xh);
     var ys: [32]u8 = undefined;
-    _ = try fmt.hexToBytes(&ys, yh);
-    var p = try P256.fromSerializedAffineCoordinates(xs, ys, .big);
+    _ = try fmt.hex_to_bytes(&ys, yh);
+    var p = try P256.from_serialized_affine_coordinates(xs, ys, .big);
     try testing.expect(p.equivalent(P256.basePoint));
 }
 
@@ -40,11 +40,11 @@ test "p256 test vectors" {
     };
     var p = P256.identityElement;
     for (expected) |xh| {
-        const x = p.affineCoordinates().x;
+        const x = p.affine_coordinates().x;
         p = p.add(P256.basePoint);
         var xs: [32]u8 = undefined;
-        _ = try fmt.hexToBytes(&xs, xh);
-        try testing.expectEqualSlices(u8, &x.toBytes(.big), &xs);
+        _ = try fmt.hex_to_bytes(&xs, xh);
+        try testing.expect_equal_slices(u8, &x.to_bytes(.big), &xs);
     }
 }
 
@@ -57,49 +57,49 @@ test "p256 test vectors - doubling" {
     };
     var p = P256.basePoint;
     for (expected) |xh| {
-        const x = p.affineCoordinates().x;
+        const x = p.affine_coordinates().x;
         p = p.dbl();
         var xs: [32]u8 = undefined;
-        _ = try fmt.hexToBytes(&xs, xh);
-        try testing.expectEqualSlices(u8, &x.toBytes(.big), &xs);
+        _ = try fmt.hex_to_bytes(&xs, xh);
+        try testing.expect_equal_slices(u8, &x.to_bytes(.big), &xs);
     }
 }
 
 test "p256 compressed sec1 encoding/decoding" {
     const p = P256.random();
-    const s = p.toCompressedSec1();
-    const q = try P256.fromSec1(&s);
+    const s = p.to_compressed_sec1();
+    const q = try P256.from_sec1(&s);
     try testing.expect(p.equivalent(q));
 }
 
 test "p256 uncompressed sec1 encoding/decoding" {
     const p = P256.random();
-    const s = p.toUncompressedSec1();
-    const q = try P256.fromSec1(&s);
+    const s = p.to_uncompressed_sec1();
+    const q = try P256.from_sec1(&s);
     try testing.expect(p.equivalent(q));
 }
 
 test "p256 public key is the neutral element" {
-    const n = P256.scalar.Scalar.zero.toBytes(.little);
+    const n = P256.scalar.Scalar.zero.to_bytes(.little);
     const p = P256.random();
-    try testing.expectError(error.IdentityElement, p.mul(n, .little));
+    try testing.expect_error(error.IdentityElement, p.mul(n, .little));
 }
 
 test "p256 public key is the neutral element (public verification)" {
-    const n = P256.scalar.Scalar.zero.toBytes(.little);
+    const n = P256.scalar.Scalar.zero.to_bytes(.little);
     const p = P256.random();
-    try testing.expectError(error.IdentityElement, p.mulPublic(n, .little));
+    try testing.expect_error(error.IdentityElement, p.mul_public(n, .little));
 }
 
 test "p256 field element non-canonical encoding" {
     const s = [_]u8{0xff} ** 32;
-    try testing.expectError(error.NonCanonical, P256.Fe.fromBytes(s, .little));
+    try testing.expect_error(error.NonCanonical, P256.Fe.from_bytes(s, .little));
 }
 
 test "p256 neutral element decoding" {
-    try testing.expectError(error.InvalidEncoding, P256.fromAffineCoordinates(.{ .x = P256.Fe.zero, .y = P256.Fe.zero }));
-    const p = try P256.fromAffineCoordinates(.{ .x = P256.Fe.zero, .y = P256.Fe.one });
-    try testing.expectError(error.IdentityElement, p.rejectIdentity());
+    try testing.expect_error(error.InvalidEncoding, P256.from_affine_coordinates(.{ .x = P256.Fe.zero, .y = P256.Fe.zero }));
+    const p = try P256.from_affine_coordinates(.{ .x = P256.Fe.zero, .y = P256.Fe.one });
+    try testing.expect_error(error.IdentityElement, p.reject_identity());
 }
 
 test "p256 double base multiplication" {
@@ -107,7 +107,7 @@ test "p256 double base multiplication" {
     const p2 = P256.basePoint.dbl();
     const s1 = [_]u8{0x01} ** 32;
     const s2 = [_]u8{0x02} ** 32;
-    const pr1 = try P256.mulDoubleBasePublic(p1, s1, p2, s2, .little);
+    const pr1 = try P256.mul_double_base_public(p1, s1, p2, s2, .little);
     const pr2 = (try p1.mul(s1, .little)).add(try p2.mul(s2, .little));
     try testing.expect(pr1.equivalent(pr2));
 }
@@ -117,7 +117,7 @@ test "p256 double base multiplication with large scalars" {
     const p2 = P256.basePoint.dbl();
     const s1 = [_]u8{0xee} ** 32;
     const s2 = [_]u8{0xdd} ** 32;
-    const pr1 = try P256.mulDoubleBasePublic(p1, s1, p2, s2, .little);
+    const pr1 = try P256.mul_double_base_public(p1, s1, p2, s2, .little);
     const pr2 = (try p1.mul(s1, .little)).add(try p2.mul(s2, .little));
     try testing.expect(pr1.equivalent(pr2));
 }
@@ -125,18 +125,18 @@ test "p256 double base multiplication with large scalars" {
 test "p256 scalar inverse" {
     const expected = "3b549196a13c898a6f6e84dfb3a22c40a8b9b17fb88e408ea674e451cd01d0a6";
     var out: [32]u8 = undefined;
-    _ = try std.fmt.hexToBytes(&out, expected);
+    _ = try std.fmt.hex_to_bytes(&out, expected);
 
-    const scalar = try P256.scalar.Scalar.fromBytes(.{
+    const scalar = try P256.scalar.Scalar.from_bytes(.{
         0x94, 0xa1, 0xbb, 0xb1, 0x4b, 0x90, 0x6a, 0x61, 0xa2, 0x80, 0xf2, 0x45, 0xf9, 0xe9, 0x3c, 0x7f,
         0x3b, 0x4a, 0x62, 0x47, 0x82, 0x4f, 0x5d, 0x33, 0xb9, 0x67, 0x07, 0x87, 0x64, 0x2a, 0x68, 0xde,
     }, .big);
     const inverse = scalar.invert();
-    try std.testing.expectEqualSlices(u8, &out, &inverse.toBytes(.big));
+    try std.testing.expect_equal_slices(u8, &out, &inverse.to_bytes(.big));
 }
 
 test "p256 scalar parity" {
-    try std.testing.expect(P256.scalar.Scalar.zero.isOdd() == false);
-    try std.testing.expect(P256.scalar.Scalar.one.isOdd());
-    try std.testing.expect(P256.scalar.Scalar.one.dbl().isOdd() == false);
+    try std.testing.expect(P256.scalar.Scalar.zero.is_odd() == false);
+    try std.testing.expect(P256.scalar.Scalar.one.is_odd());
+    try std.testing.expect(P256.scalar.Scalar.one.dbl().is_odd() == false);
 }

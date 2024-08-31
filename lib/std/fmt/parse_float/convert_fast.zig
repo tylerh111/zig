@@ -96,9 +96,9 @@ fn fast_int_pow10(comptime T: type, i: usize) T {
 }
 
 pub fn convert_fast(comptime T: type, n: Number(T)) ?T {
-    const MantissaT = common.mantissaType(T);
+    const MantissaT = common.mantissa_type(T);
 
-    if (!isFastPath(T, n)) {
+    if (!is_fast_path(T, n)) {
         return null;
     }
 
@@ -108,19 +108,19 @@ pub fn convert_fast(comptime T: type, n: Number(T)) ?T {
     var value: T = 0;
     if (n.exponent <= info.max_exponent_fast_path) {
         // normal fast path
-        value = @as(T, @floatFromInt(n.mantissa));
+        value = @as(T, @float_from_int(n.mantissa));
         value = if (n.exponent < 0)
-            value / fastPow10(T, @as(usize, @intCast(-n.exponent)))
+            value / fast_pow10(T, @as(usize, @int_cast(-n.exponent)))
         else
-            value * fastPow10(T, @as(usize, @intCast(n.exponent)));
+            value * fast_pow10(T, @as(usize, @int_cast(n.exponent)));
     } else {
         // disguised fast path
         const shift = n.exponent - info.max_exponent_fast_path;
-        const mantissa = math.mul(MantissaT, n.mantissa, fastIntPow10(MantissaT, @as(usize, @intCast(shift)))) catch return null;
+        const mantissa = math.mul(MantissaT, n.mantissa, fast_int_pow10(MantissaT, @as(usize, @int_cast(shift)))) catch return null;
         if (mantissa > info.max_mantissa_fast_path) {
             return null;
         }
-        value = @as(T, @floatFromInt(mantissa)) * fastPow10(T, info.max_exponent_fast_path);
+        value = @as(T, @float_from_int(mantissa)) * fast_pow10(T, info.max_exponent_fast_path);
     }
 
     if (n.negative) {

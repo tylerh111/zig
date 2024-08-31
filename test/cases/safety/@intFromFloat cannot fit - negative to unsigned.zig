@@ -12,7 +12,7 @@ pub fn main() !void {
     return error.TestFailed;
 }
 fn bar(a: f32) u8 {
-    return @intFromFloat(a);
+    return @int_from_float(a);
 }
 fn baz(_: u8) void {}
 // run

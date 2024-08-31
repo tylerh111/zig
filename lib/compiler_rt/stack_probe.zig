@@ -5,7 +5,7 @@ const arch = builtin.cpu.arch;
 const abi = builtin.abi;
 const is_test = builtin.is_test;
 
-const is_gnu = abi.isGnu();
+const is_gnu = abi.is_gnu();
 const is_mingw = os_tag == .windows and is_gnu;
 
 const linkage: std.builtin.GlobalLinkage = if (builtin.is_test) .internal else .weak;
@@ -19,7 +19,7 @@ comptime {
             @export(_chkstk, .{ .name = "_alloca", .linkage = strong_linkage });
             @export(___chkstk_ms, .{ .name = "___chkstk_ms", .linkage = strong_linkage });
 
-            if (arch.isAARCH64()) {
+            if (arch.is_aarch64()) {
                 @export(__chkstk, .{ .name = "__chkstk", .linkage = strong_linkage });
             }
         } else if (!builtin.link_libc) {
@@ -144,7 +144,7 @@ fn win_probe_stack_only() void {
         },
         else => {},
     }
-    if (comptime arch.isAARCH64()) {
+    if (comptime arch.is_aarch64()) {
         // NOTE: page size hardcoded to 4096 for now
         asm volatile (
             \\        lsl    x16, x15, #4
@@ -240,7 +240,7 @@ pub fn _chkstk() callconv(.Naked) void {
 }
 pub fn __chkstk() callconv(.Naked) void {
     @setRuntimeSafety(false);
-    if (comptime arch.isAARCH64()) {
+    if (comptime arch.is_aarch64()) {
         @call(.always_inline, win_probe_stack_only, .{});
     } else switch (arch) {
         .x86 => @call(.always_inline, win_probe_stack_adjust_sp, .{}),

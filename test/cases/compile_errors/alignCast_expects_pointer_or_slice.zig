@@ -1,5 +1,5 @@
 export fn entry() void {
-    const x: *align(8) u32 = @alignCast(@as(u32, 3));
+    const x: *align(8) u32 = @align_cast(@as(u32, 3));
     _ = x;
 }
 

@@ -70,7 +70,7 @@ pub fn load_meta_data(gpa: Allocator, contents: []const u8) LoadMetaDataError!*A
 
         var i: u8 = 0;
         while (i < libs_len) : (i += 1) {
-            const lib_name = mem.sliceTo(contents[index..], 0);
+            const lib_name = mem.slice_to(contents[index..], 0);
             index += lib_name.len + 1;
 
             if (i >= libs.len or !mem.eql(u8, libs[i].name, lib_name)) {
@@ -105,10 +105,10 @@ pub fn load_meta_data(gpa: Allocator, contents: []const u8) LoadMetaDataError!*A
         const targets = try arena.alloc(std.zig.target.ArchOsAbi, targets_len);
         var i: u8 = 0;
         while (i < targets.len) : (i += 1) {
-            const target_name = mem.sliceTo(contents[index..], 0);
+            const target_name = mem.slice_to(contents[index..], 0);
             index += target_name.len + 1;
 
-            var component_it = mem.tokenizeScalar(u8, target_name, '-');
+            var component_it = mem.tokenize_scalar(u8, target_name, '-');
             const arch_name = component_it.next() orelse {
                 log.err("abilists: expected arch name", .{});
                 return error.ZigInstallationCorrupt;
@@ -121,7 +121,7 @@ pub fn load_meta_data(gpa: Allocator, contents: []const u8) LoadMetaDataError!*A
                 log.err("abilists: expected ABI name", .{});
                 return error.ZigInstallationCorrupt;
             };
-            const arch_tag = std.meta.stringToEnum(std.Target.Cpu.Arch, arch_name) orelse {
+            const arch_tag = std.meta.string_to_enum(std.Target.Cpu.Arch, arch_name) orelse {
                 log.err("abilists: unrecognized arch: '{s}'", .{arch_name});
                 return error.ZigInstallationCorrupt;
             };
@@ -129,7 +129,7 @@ pub fn load_meta_data(gpa: Allocator, contents: []const u8) LoadMetaDataError!*A
                 log.err("abilists: expected OS 'linux', found '{s}'", .{os_name});
                 return error.ZigInstallationCorrupt;
             }
-            const abi_tag = std.meta.stringToEnum(std.Target.Abi, abi_name) orelse {
+            const abi_tag = std.meta.string_to_enum(std.Target.Abi, abi_name) orelse {
                 log.err("abilists: unrecognized ABI: '{s}'", .{abi_name});
                 return error.ZigInstallationCorrupt;
             };
@@ -184,7 +184,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
         .crti_o => {
             var args = std.ArrayList([]const u8).init(arena);
             try add_include_dirs(comp, arena, &args);
-            try args.appendSlice(&[_][]const u8{
+            try args.append_slice(&[_][]const u8{
                 "-D_LIBC_REENTRANT",
                 "-include",
                 try lib_path(comp, arena, lib_libc_glibc ++ "include" ++ path.sep_str ++ "libc-modules.h"),
@@ -208,7 +208,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
         .crtn_o => {
             var args = std.ArrayList([]const u8).init(arena);
             try add_include_dirs(comp, arena, &args);
-            try args.appendSlice(&[_][]const u8{
+            try args.append_slice(&[_][]const u8{
                 "-D_LIBC_REENTRANT",
                 "-DMODULE_NAME=libc",
                 "-include",
@@ -230,7 +230,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
             const start_o: Compilation.CSourceFile = blk: {
                 var args = std.ArrayList([]const u8).init(arena);
                 try add_include_dirs(comp, arena, &args);
-                try args.appendSlice(&[_][]const u8{
+                try args.append_slice(&[_][]const u8{
                     "-D_LIBC_REENTRANT",
                     "-include",
                     try lib_path(comp, arena, lib_libc_glibc ++ "include" ++ path.sep_str ++ "libc-modules.h"),
@@ -253,12 +253,12 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
             };
             const abi_note_o: Compilation.CSourceFile = blk: {
                 var args = std.ArrayList([]const u8).init(arena);
-                try args.appendSlice(&[_][]const u8{
+                try args.append_slice(&[_][]const u8{
                     "-I",
                     try lib_path(comp, arena, lib_libc_glibc ++ "csu"),
                 });
                 try add_include_dirs(comp, arena, &args);
-                try args.appendSlice(&[_][]const u8{
+                try args.append_slice(&[_][]const u8{
                     "-D_LIBC_REENTRANT",
                     "-DMODULE_NAME=libc",
                     "-DTOP_NAMESPACE=glibc",
@@ -344,7 +344,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
                 if (!dep.include) continue;
 
                 var args = std.ArrayList([]const u8).init(arena);
-                try args.appendSlice(&[_][]const u8{
+                try args.append_slice(&[_][]const u8{
                     "-std=gnu11",
                     "-fgnu89-inline",
                     "-fmerge-all-constants",
@@ -365,7 +365,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
                     try args.append("-DCAN_USE_REGISTER_ASM_EBP");
                 }
 
-                try args.appendSlice(&[_][]const u8{
+                try args.append_slice(&[_][]const u8{
                     "-D_LIBC_REENTRANT",
                     "-include",
                     try lib_path(comp, arena, lib_libc_glibc ++ "include" ++ path.sep_str ++ "libc-modules.h"),
@@ -391,67 +391,67 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
 }
 
 fn start_asm_path(comp: *Compilation, arena: Allocator, basename: []const u8) ![]const u8 {
-    const arch = comp.getTarget().cpu.arch;
+    const arch = comp.get_target().cpu.arch;
     const is_ppc = arch == .powerpc or arch == .powerpc64 or arch == .powerpc64le;
     const is_aarch64 = arch == .aarch64 or arch == .aarch64_be;
     const is_sparc = arch == .sparc or arch == .sparcel or arch == .sparc64;
-    const is_64 = comp.getTarget().ptrBitWidth() == 64;
+    const is_64 = comp.get_target().ptr_bit_width() == 64;
 
     const s = path.sep_str;
 
     var result = std.ArrayList(u8).init(arena);
-    try result.appendSlice(comp.zig_lib_directory.path.?);
-    try result.appendSlice(s ++ "libc" ++ s ++ "glibc" ++ s ++ "sysdeps" ++ s);
+    try result.append_slice(comp.zig_lib_directory.path.?);
+    try result.append_slice(s ++ "libc" ++ s ++ "glibc" ++ s ++ "sysdeps" ++ s);
     if (is_sparc) {
         if (mem.eql(u8, basename, "crti.S") or mem.eql(u8, basename, "crtn.S")) {
-            try result.appendSlice("sparc");
+            try result.append_slice("sparc");
         } else {
             if (is_64) {
-                try result.appendSlice("sparc" ++ s ++ "sparc64");
+                try result.append_slice("sparc" ++ s ++ "sparc64");
             } else {
-                try result.appendSlice("sparc" ++ s ++ "sparc32");
+                try result.append_slice("sparc" ++ s ++ "sparc32");
             }
         }
-    } else if (arch.isARM()) {
-        try result.appendSlice("arm");
-    } else if (arch.isMIPS()) {
+    } else if (arch.is_arm()) {
+        try result.append_slice("arm");
+    } else if (arch.is_mips()) {
         if (!mem.eql(u8, basename, "crti.S") and !mem.eql(u8, basename, "crtn.S")) {
-            try result.appendSlice("mips");
+            try result.append_slice("mips");
         } else {
             if (is_64) {
-                const abi_dir = if (comp.getTarget().abi == .gnuabin32)
+                const abi_dir = if (comp.get_target().abi == .gnuabin32)
                     "n32"
                 else
                     "n64";
-                try result.appendSlice("mips" ++ s ++ "mips64" ++ s);
-                try result.appendSlice(abi_dir);
+                try result.append_slice("mips" ++ s ++ "mips64" ++ s);
+                try result.append_slice(abi_dir);
             } else {
-                try result.appendSlice("mips" ++ s ++ "mips32");
+                try result.append_slice("mips" ++ s ++ "mips32");
             }
         }
     } else if (arch == .x86_64) {
-        try result.appendSlice("x86_64");
+        try result.append_slice("x86_64");
     } else if (arch == .x86) {
-        try result.appendSlice("i386");
+        try result.append_slice("i386");
     } else if (is_aarch64) {
-        try result.appendSlice("aarch64");
-    } else if (arch.isRISCV()) {
-        try result.appendSlice("riscv");
+        try result.append_slice("aarch64");
+    } else if (arch.is_riscv()) {
+        try result.append_slice("riscv");
     } else if (is_ppc) {
         if (is_64) {
-            try result.appendSlice("powerpc" ++ s ++ "powerpc64");
+            try result.append_slice("powerpc" ++ s ++ "powerpc64");
         } else {
-            try result.appendSlice("powerpc" ++ s ++ "powerpc32");
+            try result.append_slice("powerpc" ++ s ++ "powerpc32");
         }
     }
 
-    try result.appendSlice(s);
-    try result.appendSlice(basename);
+    try result.append_slice(s);
+    try result.append_slice(basename);
     return result.items;
 }
 
 fn add_include_dirs(comp: *Compilation, arena: Allocator, args: *std.ArrayList([]const u8)) error{OutOfMemory}!void {
-    const target = comp.getTarget();
+    const target = comp.get_target();
     const opt_nptl: ?[]const u8 = if (target.os.tag == .linux) "nptl" else "htl";
 
     const s = path.sep_str;
@@ -504,16 +504,16 @@ fn add_include_dirs(comp: *Compilation, arena: Allocator, args: *std.ArrayList([
     try args.append(try path.join(arena, &[_][]const u8{ comp.zig_lib_directory.path.?, lib_libc ++ "glibc" }));
 
     try args.append("-I");
-    try args.append(try std.fmt.allocPrint(arena, "{s}" ++ s ++ "libc" ++ s ++ "include" ++ s ++ "{s}-{s}-{s}", .{
-        comp.zig_lib_directory.path.?, @tagName(target.cpu.arch), @tagName(target.os.tag), @tagName(target.abi),
+    try args.append(try std.fmt.alloc_print(arena, "{s}" ++ s ++ "libc" ++ s ++ "include" ++ s ++ "{s}-{s}-{s}", .{
+        comp.zig_lib_directory.path.?, @tag_name(target.cpu.arch), @tag_name(target.os.tag), @tag_name(target.abi),
     }));
 
     try args.append("-I");
     try args.append(try lib_path(comp, arena, lib_libc ++ "include" ++ s ++ "generic-glibc"));
 
-    const arch_name = target.osArchName();
+    const arch_name = target.os_arch_name();
     try args.append("-I");
-    try args.append(try std.fmt.allocPrint(arena, "{s}" ++ s ++ "libc" ++ s ++ "include" ++ s ++ "{s}-linux-any", .{
+    try args.append(try std.fmt.alloc_print(arena, "{s}" ++ s ++ "libc" ++ s ++ "include" ++ s ++ "{s}-linux-any", .{
         comp.zig_lib_directory.path.?, arch_name,
     }));
 
@@ -533,7 +533,7 @@ fn add_include_dirs_arch(
     const is_aarch64 = arch == .aarch64 or arch == .aarch64_be;
     const is_ppc = arch == .powerpc or arch == .powerpc64 or arch == .powerpc64le;
     const is_sparc = arch == .sparc or arch == .sparcel or arch == .sparc64;
-    const is_64 = target.ptrBitWidth() == 64;
+    const is_64 = target.ptr_bit_width() == 64;
 
     const s = path.sep_str;
 
@@ -562,7 +562,7 @@ fn add_include_dirs_arch(
             try args.append("-I");
             try args.append(try path.join(arena, &[_][]const u8{ dir, "x86" }));
         }
-    } else if (arch.isARM()) {
+    } else if (arch.is_arm()) {
         if (opt_nptl) |nptl| {
             try args.append("-I");
             try args.append(try path.join(arena, &[_][]const u8{ dir, "arm", nptl }));
@@ -570,7 +570,7 @@ fn add_include_dirs_arch(
             try args.append("-I");
             try args.append(try path.join(arena, &[_][]const u8{ dir, "arm" }));
         }
-    } else if (arch.isMIPS()) {
+    } else if (arch.is_mips()) {
         if (opt_nptl) |nptl| {
             try args.append("-I");
             try args.append(try path.join(arena, &[_][]const u8{ dir, "mips", nptl }));
@@ -623,7 +623,7 @@ fn add_include_dirs_arch(
             try args.append("-I");
             try args.append(try path.join(arena, &[_][]const u8{ dir, "powerpc" }));
         }
-    } else if (arch.isRISCV()) {
+    } else if (arch.is_riscv()) {
         if (opt_nptl) |nptl| {
             try args.append("-I");
             try args.append(try path.join(arena, &[_][]const u8{ dir, "riscv", nptl }));
@@ -670,35 +670,35 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
     defer arena_allocator.deinit();
     const arena = arena_allocator.allocator();
 
-    const target = comp.getTarget();
+    const target = comp.get_target();
     const target_version = target.os.version_range.linux.glibc;
 
     // Use the global cache directory.
     var cache: Cache = .{
         .gpa = comp.gpa,
-        .manifest_dir = try comp.global_cache_directory.handle.makeOpenPath("h", .{}),
+        .manifest_dir = try comp.global_cache_directory.handle.make_open_path("h", .{}),
     };
-    cache.addPrefix(.{ .path = null, .handle = fs.cwd() });
-    cache.addPrefix(comp.zig_lib_directory);
-    cache.addPrefix(comp.global_cache_directory);
+    cache.add_prefix(.{ .path = null, .handle = fs.cwd() });
+    cache.add_prefix(comp.zig_lib_directory);
+    cache.add_prefix(comp.global_cache_directory);
     defer cache.manifest_dir.close();
 
     var man = cache.obtain();
     defer man.deinit();
-    man.hash.addBytes(build_options.version);
+    man.hash.add_bytes(build_options.version);
     man.hash.add(target.cpu.arch);
     man.hash.add(target.abi);
     man.hash.add(target_version);
 
     const full_abilists_path = try comp.zig_lib_directory.join(arena, &.{abilists_path});
-    const abilists_index = try man.addFile(full_abilists_path, abilists_max_size);
+    const abilists_index = try man.add_file(full_abilists_path, abilists_max_size);
 
     if (try man.hit()) {
         const digest = man.final();
 
         assert(comp.glibc_so_files == null);
         comp.glibc_so_files = BuiltSharedObjects{
-            .lock = man.toOwnedLock(),
+            .lock = man.to_owned_lock(),
             .dir_path = try comp.global_cache_directory.join(comp.gpa, &.{ "o", &digest }),
         };
         return;
@@ -708,13 +708,13 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
     const o_sub_path = try path.join(arena, &[_][]const u8{ "o", &digest });
 
     var o_directory: Compilation.Directory = .{
-        .handle = try comp.global_cache_directory.handle.makeOpenPath(o_sub_path, .{}),
+        .handle = try comp.global_cache_directory.handle.make_open_path(o_sub_path, .{}),
         .path = try comp.global_cache_directory.join(arena, &.{o_sub_path}),
     };
     defer o_directory.handle.close();
 
     const abilists_contents = man.files.keys()[abilists_index].contents.?;
-    const metadata = try loadMetaData(comp.gpa, abilists_contents);
+    const metadata = try load_meta_data(comp.gpa, abilists_contents);
     defer metadata.destroy(comp.gpa);
 
     const target_targ_index = for (metadata.all_targets, 0..) |targ, i| {
@@ -755,7 +755,7 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
                 try map_contents.writer().print("GLIBC_{d}.{d}.{d} {{ }};\n", .{ ver.major, ver.minor, ver.patch });
             }
         }
-        try o_directory.handle.writeFile(.{ .sub_path = all_map_basename, .data = map_contents.items });
+        try o_directory.handle.write_file(.{ .sub_path = all_map_basename, .data = map_contents.items });
         map_contents.deinit(); // The most recent allocation of an arena can be freed :)
     }
 
@@ -763,12 +763,12 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
     defer stubs_asm.deinit();
 
     for (libs, 0..) |lib, lib_i| {
-        stubs_asm.shrinkRetainingCapacity(0);
-        try stubs_asm.appendSlice(".text\n");
+        stubs_asm.shrink_retaining_capacity(0);
+        try stubs_asm.append_slice(".text\n");
 
         var inc_i: usize = 0;
 
-        const fn_inclusions_len = mem.readInt(u16, metadata.inclusions[inc_i..][0..2], .little);
+        const fn_inclusions_len = mem.read_int(u16, metadata.inclusions[inc_i..][0..2], .little);
         inc_i += 2;
 
         var sym_i: usize = 0;
@@ -777,7 +777,7 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
         var versions_len: usize = undefined;
         while (sym_i < fn_inclusions_len) : (sym_i += 1) {
             const sym_name = opt_symbol_name orelse n: {
-                const name = mem.sliceTo(metadata.inclusions[inc_i..], 0);
+                const name = mem.slice_to(metadata.inclusions[inc_i..], 0);
                 inc_i += name.len + 1;
 
                 opt_symbol_name = name;
@@ -785,7 +785,7 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
                 versions_len = 0;
                 break :n name;
             };
-            const targets = mem.readInt(u32, metadata.inclusions[inc_i..][0..4], .little);
+            const targets = mem.read_int(u32, metadata.inclusions[inc_i..][0..4], .little);
             inc_i += 4;
 
             const lib_index = metadata.inclusions[inc_i];
@@ -796,7 +796,7 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
             // Test whether the inclusion applies to our current library and target.
             const ok_lib_and_target =
                 (lib_index == lib_i) and
-                ((targets & (@as(u32, 1) << @as(u5, @intCast(target_targ_index)))) != 0);
+                ((targets & (@as(u32, 1) << @as(u5, @int_cast(target_targ_index)))) != 0);
 
             while (true) {
                 const byte = metadata.inclusions[inc_i];
@@ -845,7 +845,7 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
                         const sym_plus_ver = if (want_default)
                             sym_name
                         else
-                            try std.fmt.allocPrint(
+                            try std.fmt.alloc_print(
                                 arena,
                                 "{s}_GLIBC_{d}_{d}",
                                 .{ sym_name, ver.major, ver.minor },
@@ -870,7 +870,7 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
                         const sym_plus_ver = if (want_default)
                             sym_name
                         else
-                            try std.fmt.allocPrint(
+                            try std.fmt.alloc_print(
                                 arena,
                                 "{s}_GLIBC_{d}_{d}_{d}",
                                 .{ sym_name, ver.major, ver.minor, ver.patch },
@@ -897,9 +897,9 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
             }
         }
 
-        try stubs_asm.appendSlice(".data\n");
+        try stubs_asm.append_slice(".data\n");
 
-        const obj_inclusions_len = mem.readInt(u16, metadata.inclusions[inc_i..][0..2], .little);
+        const obj_inclusions_len = mem.read_int(u16, metadata.inclusions[inc_i..][0..2], .little);
         inc_i += 2;
 
         sym_i = 0;
@@ -908,7 +908,7 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
         versions_len = undefined;
         while (sym_i < obj_inclusions_len) : (sym_i += 1) {
             const sym_name = opt_symbol_name orelse n: {
-                const name = mem.sliceTo(metadata.inclusions[inc_i..], 0);
+                const name = mem.slice_to(metadata.inclusions[inc_i..], 0);
                 inc_i += name.len + 1;
 
                 opt_symbol_name = name;
@@ -916,10 +916,10 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
                 versions_len = 0;
                 break :n name;
             };
-            const targets = mem.readInt(u32, metadata.inclusions[inc_i..][0..4], .little);
+            const targets = mem.read_int(u32, metadata.inclusions[inc_i..][0..4], .little);
             inc_i += 4;
 
-            const size = mem.readInt(u16, metadata.inclusions[inc_i..][0..2], .little);
+            const size = mem.read_int(u16, metadata.inclusions[inc_i..][0..2], .little);
             inc_i += 2;
 
             const lib_index = metadata.inclusions[inc_i];
@@ -930,7 +930,7 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
             // Test whether the inclusion applies to our current library and target.
             const ok_lib_and_target =
                 (lib_index == lib_i) and
-                ((targets & (@as(u32, 1) << @as(u5, @intCast(target_targ_index)))) != 0);
+                ((targets & (@as(u32, 1) << @as(u5, @int_cast(target_targ_index)))) != 0);
 
             while (true) {
                 const byte = metadata.inclusions[inc_i];
@@ -980,7 +980,7 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
                         const sym_plus_ver = if (want_default)
                             sym_name
                         else
-                            try std.fmt.allocPrint(
+                            try std.fmt.alloc_print(
                                 arena,
                                 "{s}_GLIBC_{d}_{d}",
                                 .{ sym_name, ver.major, ver.minor },
@@ -1008,7 +1008,7 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
                         const sym_plus_ver = if (want_default)
                             sym_name
                         else
-                            try std.fmt.allocPrint(
+                            try std.fmt.alloc_print(
                                 arena,
                                 "{s}_GLIBC_{d}_{d}_{d}",
                                 .{ sym_name, ver.major, ver.minor, ver.patch },
@@ -1039,19 +1039,19 @@ pub fn build_shared_objects(comp: *Compilation, prog_node: std.Progress.Node) !v
         }
 
         var lib_name_buf: [32]u8 = undefined; // Larger than each of the names "c", "pthread", etc.
-        const asm_file_basename = std.fmt.bufPrint(&lib_name_buf, "{s}.s", .{lib.name}) catch unreachable;
-        try o_directory.handle.writeFile(.{ .sub_path = asm_file_basename, .data = stubs_asm.items });
+        const asm_file_basename = std.fmt.buf_print(&lib_name_buf, "{s}.s", .{lib.name}) catch unreachable;
+        try o_directory.handle.write_file(.{ .sub_path = asm_file_basename, .data = stubs_asm.items });
 
-        try buildSharedLib(comp, arena, comp.global_cache_directory, o_directory, asm_file_basename, lib, prog_node);
+        try build_shared_lib(comp, arena, comp.global_cache_directory, o_directory, asm_file_basename, lib, prog_node);
     }
 
-    man.writeManifest() catch |err| {
+    man.write_manifest() catch |err| {
         log.warn("failed to write cache manifest for glibc stubs: {s}", .{@errorName(err)});
     };
 
     assert(comp.glibc_so_files == null);
     comp.glibc_so_files = BuiltSharedObjects{
-        .lock = man.toOwnedLock(),
+        .lock = man.to_owned_lock(),
         .dir_path = try comp.global_cache_directory.join(comp.gpa, &.{ "o", &digest }),
     };
 }
@@ -1070,18 +1070,18 @@ fn build_shared_lib(
     const tracy = trace(@src());
     defer tracy.end();
 
-    const basename = try std.fmt.allocPrint(arena, "lib{s}.so.{d}", .{ lib.name, lib.sover });
+    const basename = try std.fmt.alloc_print(arena, "lib{s}.so.{d}", .{ lib.name, lib.sover });
     const emit_bin = Compilation.EmitLoc{
         .directory = bin_directory,
         .basename = basename,
     };
     const version: Version = .{ .major = lib.sover, .minor = 0, .patch = 0 };
-    const ld_basename = path.basename(comp.getTarget().standardDynamicLinkerPath().get().?);
+    const ld_basename = path.basename(comp.get_target().standard_dynamic_linker_path().get().?);
     const soname = if (mem.eql(u8, lib.name, "ld")) ld_basename else basename;
     const map_file_path = try path.join(arena, &.{ bin_directory.path.?, all_map_basename });
 
-    const optimize_mode = comp.compilerRtOptMode();
-    const strip = comp.compilerRtStrip();
+    const optimize_mode = comp.compiler_rt_opt_mode();
+    const strip = comp.compiler_rt_strip();
     const config = try Compilation.Config.resolve(.{
         .output_mode = .Lib,
         .link_mode = .dynamic,
@@ -1157,7 +1157,7 @@ fn build_shared_lib(
     });
     defer sub_compilation.destroy();
 
-    try comp.updateSubCompilation(sub_compilation, .@"glibc shared object", prog_node);
+    try comp.update_sub_compilation(sub_compilation, .@"glibc shared object", prog_node);
 }
 
 // Return true if glibc has crti/crtn sources for that architecture.

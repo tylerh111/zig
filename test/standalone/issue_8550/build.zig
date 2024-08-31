@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) !void {
     b.default_step = test_step;
 
     const optimize: std.builtin.OptimizeMode = .Debug;
-    const target = b.resolveTargetQuery(.{
+    const target = b.resolve_target_query(.{
         .os_tag = .freestanding,
         .cpu_arch = .arm,
         .cpu_model = .{
@@ -13,15 +13,15 @@ pub fn build(b: *std.Build) !void {
         },
     });
 
-    const kernel = b.addExecutable(.{
+    const kernel = b.add_executable(.{
         .name = "kernel",
         .root_source_file = b.path("./main.zig"),
         .optimize = optimize,
         .target = target,
     });
-    kernel.addObjectFile(b.path("./boot.S"));
-    kernel.setLinkerScript(b.path("./linker.ld"));
-    b.installArtifact(kernel);
+    kernel.add_object_file(b.path("./boot.S"));
+    kernel.set_linker_script(b.path("./linker.ld"));
+    b.install_artifact(kernel);
 
-    test_step.dependOn(&kernel.step);
+    test_step.depend_on(&kernel.step);
 }

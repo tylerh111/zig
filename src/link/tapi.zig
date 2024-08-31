@@ -88,21 +88,21 @@ pub const Tbd = union(enum) {
 
         switch (self) {
             .v3 => |v3| {
-                try out.ensureTotalCapacityPrecise(v3.archs.len);
+                try out.ensure_total_capacity_precise(v3.archs.len);
                 for (v3.archs) |arch| {
-                    const target = try std.fmt.allocPrint(gpa, "{s}-{s}", .{ arch, v3.platform });
-                    out.appendAssumeCapacity(target);
+                    const target = try std.fmt.alloc_print(gpa, "{s}-{s}", .{ arch, v3.platform });
+                    out.append_assume_capacity(target);
                 }
             },
             .v4 => |v4| {
-                try out.ensureTotalCapacityPrecise(v4.targets.len);
+                try out.ensure_total_capacity_precise(v4.targets.len);
                 for (v4.targets) |t| {
-                    out.appendAssumeCapacity(try gpa.dupe(u8, t));
+                    out.append_assume_capacity(try gpa.dupe(u8, t));
                 }
             },
         }
 
-        return out.toOwnedSlice();
+        return out.to_owned_slice();
     }
 
     pub fn current_version(self: Tbd) ?VersionField {
@@ -140,7 +140,7 @@ pub const LibStub = struct {
     inner: []Tbd,
 
     pub fn load_from_file(allocator: Allocator, file: fs.File) TapiError!LibStub {
-        const source = try file.readToEndAlloc(allocator, std.math.maxInt(u32));
+        const source = try file.read_to_end_alloc(allocator, std.math.max_int(u32));
         defer allocator.free(source);
 
         var lib_stub = LibStub{

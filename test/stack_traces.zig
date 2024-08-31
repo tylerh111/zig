@@ -3,7 +3,7 @@ const os = std.os;
 const tests = @import("tests.zig");
 
 pub fn add_cases(cases: *tests.StackTracesContext) void {
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "return",
         .source =
         \\pub fn main() !void {
@@ -47,7 +47,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "try return",
         .source =
         \\fn foo() !void {
@@ -99,7 +99,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
             ,
         },
     });
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "non-error return pops error trace",
         .source =
         \\fn bar() !void {
@@ -154,7 +154,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "continue in while loop",
         .source =
         \\fn foo() !void {
@@ -206,7 +206,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "try return + handled catch/if-else",
         .source =
         \\fn foo() !void {
@@ -264,7 +264,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "break from inline loop pops error return trace",
         .source =
         \\fn foo() !void { return error.FooBar; }
@@ -318,7 +318,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "catch and re-throw error",
         .source =
         \\fn foo() !void {
@@ -372,7 +372,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "errors stored in var do not contribute to error trace",
         .source =
         \\fn foo() !void {
@@ -425,7 +425,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "error stored in const has trace preserved for duration of block",
         .source =
         \\fn foo() !void { return error.TheSkyIsFalling; }
@@ -502,7 +502,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "error passed to function has its trace preserved for duration of the call",
         .source =
         \\pub fn expect_error(expected_error: anyerror, actual_error: anyerror!void) !void {
@@ -516,12 +516,12 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         \\fn foo() !void { return error.Foo; }
         \\
         \\pub fn main() !void {
-        \\    try expectError(error.ThisErrorShouldNotAppearInAnyTrace, alwaysErrors());
-        \\    try expectError(error.ThisErrorShouldNotAppearInAnyTrace, alwaysErrors());
-        \\    try expectError(error.Foo, foo());
+        \\    try expect_error(error.ThisErrorShouldNotAppearInAnyTrace, always_errors());
+        \\    try expect_error(error.ThisErrorShouldNotAppearInAnyTrace, always_errors());
+        \\    try expect_error(error.Foo, foo());
         \\
         \\    // Only the error trace for this failing check should appear:
-        \\    try expectError(error.Bar, foo());
+        \\    try expect_error(error.Bar, foo());
         \\}
         ,
         .Debug = .{
@@ -530,11 +530,11 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
             \\source.zig:9:18: [address] in foo (test)
             \\fn foo() !void { return error.Foo; }
             \\                 ^
-            \\source.zig:5:5: [address] in expectError (test)
+            \\source.zig:5:5: [address] in expect_error (test)
             \\    return error.TestExpectedError;
             \\    ^
             \\source.zig:17:5: [address] in main (test)
-            \\    try expectError(error.Bar, foo());
+            \\    try expect_error(error.Bar, foo());
             \\    ^
             \\
             ,
@@ -552,7 +552,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
             \\    return error.TestExpectedError;
             \\    ^
             \\source.zig:17:5: [address] in [function]
-            \\    try expectError(error.Bar, foo());
+            \\    try expect_error(error.Bar, foo());
             \\    ^
             \\
             ,
@@ -572,7 +572,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "try return from within catch",
         .source =
         \\fn foo() !void {
@@ -637,7 +637,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "try return from within if-else",
         .source =
         \\fn foo() !void {
@@ -702,7 +702,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "try try return return",
         .source =
         \\fn foo() !void {
@@ -775,13 +775,13 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
         },
     });
 
-    cases.addCase(.{
-        .name = "dumpCurrentStackTrace",
+    cases.add_case(.{
+        .name = "dump_current_stack_trace",
         .source =
         \\const std = @import("std");
         \\
         \\fn bar() void {
-        \\    std.debug.dumpCurrentStackTrace(@returnAddress());
+        \\    std.debug.dump_current_stack_trace(@returnAddress());
         \\}
         \\fn foo() void {
         \\    bar();
@@ -807,7 +807,7 @@ pub fn add_cases(cases: *tests.StackTracesContext) void {
             ,
         },
     });
-    cases.addCase(.{
+    cases.add_case(.{
         .name = "error union switch with call operand",
         .source =
         \\pub fn main() !void {

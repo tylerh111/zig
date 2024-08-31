@@ -4,7 +4,7 @@ fn mul(a: u16, b: u16) u16 {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&y));
+    return @size_of(@TypeOf(&y));
 }
 
 // error

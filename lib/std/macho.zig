@@ -58,7 +58,7 @@ pub const uuid_command = extern struct {
     cmd: LC = .UUID,
 
     /// sizeof(struct uuid_command)
-    cmdsize: u32 = @sizeOf(uuid_command),
+    cmdsize: u32 = @size_of(uuid_command),
 
     /// the 128-bit uuid
     uuid: [16]u8 = undefined,
@@ -71,7 +71,7 @@ pub const version_min_command = extern struct {
     cmd: LC,
 
     /// sizeof(struct version_min_command)
-    cmdsize: u32 = @sizeOf(version_min_command),
+    cmdsize: u32 = @size_of(version_min_command),
 
     /// X.Y.Z is encoded in nibbles xxxx.yy.zz
     version: u32,
@@ -87,7 +87,7 @@ pub const source_version_command = extern struct {
     cmd: LC = .SOURCE_VERSION,
 
     /// sizeof(source_version_command)
-    cmdsize: u32 = @sizeOf(source_version_command),
+    cmdsize: u32 = @size_of(source_version_command),
 
     /// A.B.C.D.E packed as a24.b10.c10.d10.e10
     version: u64,
@@ -161,7 +161,7 @@ pub const entry_point_command = extern struct {
     cmd: LC = .MAIN,
 
     /// sizeof(struct entry_point_command)
-    cmdsize: u32 = @sizeOf(entry_point_command),
+    cmdsize: u32 = @size_of(entry_point_command),
 
     /// file (__TEXT) offset of main()
     entryoff: u64 = 0,
@@ -178,7 +178,7 @@ pub const symtab_command = extern struct {
     cmd: LC = .SYMTAB,
 
     /// sizeof(struct symtab_command)
-    cmdsize: u32 = @sizeOf(symtab_command),
+    cmdsize: u32 = @size_of(symtab_command),
 
     /// symbol table offset
     symoff: u32 = 0,
@@ -236,7 +236,7 @@ pub const dysymtab_command = extern struct {
     cmd: LC = .DYSYMTAB,
 
     /// sizeof(struct dysymtab_command)
-    cmdsize: u32 = @sizeOf(dysymtab_command),
+    cmdsize: u32 = @size_of(dysymtab_command),
 
     // The symbols indicated by symoff and nsyms of the LC_SYMTAB load command
     // are grouped into the following three groups:
@@ -376,7 +376,7 @@ pub const linkedit_data_command = extern struct {
     cmd: LC,
 
     /// sizeof(struct linkedit_data_command)
-    cmdsize: u32 = @sizeOf(linkedit_data_command),
+    cmdsize: u32 = @size_of(linkedit_data_command),
 
     /// file offset of data in __LINKEDIT segment
     dataoff: u32 = 0,
@@ -396,7 +396,7 @@ pub const dyld_info_command = extern struct {
     cmd: LC = .DYLD_INFO_ONLY,
 
     /// sizeof(struct dyld_info_command)
-    cmdsize: u32 = @sizeOf(dyld_info_command),
+    cmdsize: u32 = @size_of(dyld_info_command),
 
     // Dyld rebases an image whenever dyld loads it at an address different
     // from its preferred address.  The rebase information is a stream
@@ -632,7 +632,7 @@ pub const segment_command_64 = extern struct {
     /// includes sizeof section_64 structs
     cmdsize: u32,
     // TODO lazy values in stage2
-    // cmdsize: u32 = @sizeOf(segment_command_64),
+    // cmdsize: u32 = @size_of(segment_command_64),
 
     /// segment name
     segname: [16]u8,
@@ -660,7 +660,7 @@ pub const segment_command_64 = extern struct {
     flags: u32 = 0,
 
     pub fn seg_name(seg: *const segment_command_64) []const u8 {
-        return parseName(&seg.segname);
+        return parse_name(&seg.segname);
     }
 
     pub fn is_writeable(seg: segment_command_64) bool {
@@ -783,11 +783,11 @@ pub const section_64 = extern struct {
     reserved3: u32 = 0,
 
     pub fn sect_name(sect: *const section_64) []const u8 {
-        return parseName(&sect.sectname);
+        return parse_name(&sect.sectname);
     }
 
     pub fn seg_name(sect: *const section_64) []const u8 {
-        return parseName(&sect.segname);
+        return parse_name(&sect.segname);
     }
 
     pub fn @"type"(sect: section_64) u8 {
@@ -827,7 +827,7 @@ pub const section_64 = extern struct {
 };
 
 fn parse_name(name: *const [16]u8) []const u8 {
-    const len = mem.indexOfScalar(u8, name, @as(u8, 0)) orelse name.len;
+    const len = mem.index_of_scalar(u8, name, @as(u8, 0)) orelse name.len;
     return name[0..len];
 }
 
@@ -1910,16 +1910,16 @@ pub const LoadCommandIterator = struct {
         }
 
         pub fn cast(lc: LoadCommand, comptime Cmd: type) ?Cmd {
-            if (lc.data.len < @sizeOf(Cmd)) return null;
-            return @as(*align(1) const Cmd, @ptrCast(lc.data.ptr)).*;
+            if (lc.data.len < @size_of(Cmd)) return null;
+            return @as(*align(1) const Cmd, @ptr_cast(lc.data.ptr)).*;
         }
 
         /// Asserts LoadCommand is of type segment_command_64.
         pub fn get_sections(lc: LoadCommand) []align(1) const section_64 {
             const segment_lc = lc.cast(segment_command_64).?;
             if (segment_lc.nsects == 0) return &[0]section_64{};
-            const data = lc.data[@sizeOf(segment_command_64)..];
-            const sections = @as([*]align(1) const section_64, @ptrCast(data.ptr))[0..segment_lc.nsects];
+            const data = lc.data[@size_of(segment_command_64)..];
+            const sections = @as([*]align(1) const section_64, @ptr_cast(data.ptr))[0..segment_lc.nsects];
             return sections;
         }
 
@@ -1927,14 +1927,14 @@ pub const LoadCommandIterator = struct {
         pub fn get_dylib_path_name(lc: LoadCommand) []const u8 {
             const dylib_lc = lc.cast(dylib_command).?;
             const data = lc.data[dylib_lc.dylib.name..];
-            return mem.sliceTo(data, 0);
+            return mem.slice_to(data, 0);
         }
 
         /// Asserts LoadCommand is of type rpath_command.
         pub fn get_rpath_path_name(lc: LoadCommand) []const u8 {
             const rpath_lc = lc.cast(rpath_command).?;
             const data = lc.data[rpath_lc.path..];
-            return mem.sliceTo(data, 0);
+            return mem.slice_to(data, 0);
         }
 
         /// Asserts LoadCommand is of type build_version_command.
@@ -1942,8 +1942,8 @@ pub const LoadCommandIterator = struct {
             const build_lc = lc.cast(build_version_command).?;
             const ntools = build_lc.ntools;
             if (ntools == 0) return &[0]build_tool_version{};
-            const data = lc.data[@sizeOf(build_version_command)..];
-            const tools = @as([*]align(1) const build_tool_version, @ptrCast(data.ptr))[0..ntools];
+            const data = lc.data[@size_of(build_version_command)..];
+            const tools = @as([*]align(1) const build_tool_version, @ptr_cast(data.ptr))[0..ntools];
             return tools;
         }
     };
@@ -1951,7 +1951,7 @@ pub const LoadCommandIterator = struct {
     pub fn next(it: *LoadCommandIterator) ?LoadCommand {
         if (it.index >= it.ncmds) return null;
 
-        const hdr = @as(*align(1) const load_command, @ptrCast(it.buffer.ptr)).*;
+        const hdr = @as(*align(1) const load_command, @ptr_cast(it.buffer.ptr)).*;
         const cmd = LoadCommand{
             .hdr = hdr,
             .data = it.buffer[0..hdr.cmdsize],

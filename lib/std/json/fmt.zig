@@ -28,9 +28,9 @@ pub fn Formatter(comptime T: type) type {
 }
 
 test fmt {
-    const expectFmt = std.testing.expectFmt;
-    try expectFmt("123", "{}", .{fmt(@as(u32, 123), .{})});
-    try expectFmt(
+    const expect_fmt = std.testing.expect_fmt;
+    try expect_fmt("123", "{}", .{fmt(@as(u32, 123), .{})});
+    try expect_fmt(
         \\{"num":927,"msg":"hello","sub":{"mybool":true}}
     , "{}", .{fmt(struct {
         num: u32,

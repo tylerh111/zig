@@ -1,6 +1,6 @@
 //! Condition variables are used with a Mutex to efficiently wait for an arbitrary condition to occur.
 //! It does this by atomically unlocking the mutex, blocking the thread until notified, and finally re-locking the mutex.
-//! Condition can be statically initialized and is at most `@sizeOf(u64)` large.
+//! Condition can be statically initialized and is at most `@size_of(u64)` large.
 //!
 //! Example:
 //! ```
@@ -82,25 +82,25 @@ pub fn wait(self: *Condition, mutex: *Mutex) void {
 /// It is undefined behavior for multiple threads to wait ith different mutexes using the same Condition concurrently.
 /// Once threads have finished waiting with one Mutex, the Condition can be used to wait with another Mutex.
 ///
-/// A blocking call to `timedWait()` is unblocked from one of the following conditions:
+/// A blocking call to `timed_wait()` is unblocked from one of the following conditions:
 /// - a spurious ("at random") wake occurs
 /// - the caller was blocked for around `timeout_ns` nanoseconds, in which `error.Timeout` is returned.
-/// - a future call to `signal()` or `broadcast()` which has acquired the Mutex and is sequenced after this `timedWait()`.
+/// - a future call to `signal()` or `broadcast()` which has acquired the Mutex and is sequenced after this `timed_wait()`.
 ///
-/// Given `timedWait()` can be interrupted spuriously, the blocking condition should be checked continuously
+/// Given `timed_wait()` can be interrupted spuriously, the blocking condition should be checked continuously
 /// irrespective of any notifications from `signal()` or `broadcast()`.
 pub fn timed_wait(self: *Condition, mutex: *Mutex, timeout_ns: u64) error{Timeout}!void {
     return self.impl.wait(mutex, timeout_ns);
 }
 
-/// Unblocks at least one thread blocked in a call to `wait()` or `timedWait()` with a given Mutex.
+/// Unblocks at least one thread blocked in a call to `wait()` or `timed_wait()` with a given Mutex.
 /// The blocked thread must be sequenced before this call with respect to acquiring the same Mutex in order to be observable for unblocking.
 /// `signal()` can be called with or without the relevant Mutex being acquired and have no "effect" if there's no observable blocked threads.
 pub fn signal(self: *Condition) void {
     self.impl.wake(.one);
 }
 
-/// Unblocks all threads currently blocked in a call to `wait()` or `timedWait()` with a given Mutex.
+/// Unblocks all threads currently blocked in a call to `wait()` or `timed_wait()` with a given Mutex.
 /// The blocked threads must be sequenced before this call with respect to acquiring the same Mutex in order to be observable for unblocking.
 /// `broadcast()` can be called with or without the relevant Mutex being acquired and have no "effect" if there's no observable blocked threads.
 pub fn broadcast(self: *Condition) void {
@@ -152,7 +152,7 @@ const WindowsImpl = struct {
             // Round the nanoseconds to the nearest millisecond,
             // then saturating cast it to windows DWORD for use in kernel32 call.
             const ms = (timeout_ns +| (std.time.ns_per_ms / 2)) / std.time.ns_per_ms;
-            timeout_ms = std.math.cast(os.windows.DWORD, ms) orelse std.math.maxInt(os.windows.DWORD);
+            timeout_ms = std.math.cast(os.windows.DWORD, ms) orelse std.math.max_int(os.windows.DWORD);
 
             // Track if the timeout overflowed into INFINITE and make sure not to wait forever.
             if (timeout_ms == os.windows.INFINITE) {
@@ -173,7 +173,7 @@ const WindowsImpl = struct {
         );
         if (comptime builtin.mode == .Debug) {
             // The internal state of the DebugMutex needs to be handled here as well.
-            mutex.impl.locking_thread.store(std.Thread.getCurrentId(), .unordered);
+            mutex.impl.locking_thread.store(std.Thread.get_current_id(), .unordered);
         }
 
         // Return error.Timeout if we know the timeout elapsed correctly.
@@ -213,7 +213,7 @@ const FutexImpl = struct {
         //
         // Acquire barrier to ensure the epoch load happens before the state load.
         var epoch = self.epoch.load(.acquire);
-        var state = self.state.fetchAdd(one_waiter, .monotonic);
+        var state = self.state.fetch_add(one_waiter, .monotonic);
         assert(state & waiter_mask != waiter_mask);
         state += one_waiter;
 
@@ -231,12 +231,12 @@ const FutexImpl = struct {
                         // Acquire barrier ensures code before the wake() which added the signal happens before we decrement it and return.
                         while (state & signal_mask != 0) {
                             const new_state = state - one_waiter - one_signal;
-                            state = self.state.cmpxchgWeak(state, new_state, .acquire, .monotonic) orelse return;
+                            state = self.state.cmpxchg_weak(state, new_state, .acquire, .monotonic) orelse return;
                         }
 
                         // Remove the waiter we added and officially return timed out.
                         const new_state = state - one_waiter;
-                        state = self.state.cmpxchgWeak(state, new_state, .monotonic, .monotonic) orelse return err;
+                        state = self.state.cmpxchg_weak(state, new_state, .monotonic, .monotonic) orelse return err;
                     }
                 },
             };
@@ -248,7 +248,7 @@ const FutexImpl = struct {
             // Acquire barrier ensures code before the wake() which added the signal happens before we decrement it and return.
             while (state & signal_mask != 0) {
                 const new_state = state - one_waiter - one_signal;
-                state = self.state.cmpxchgWeak(state, new_state, .acquire, .monotonic) orelse return;
+                state = self.state.cmpxchg_weak(state, new_state, .acquire, .monotonic) orelse return;
             }
         }
     }
@@ -275,7 +275,7 @@ const FutexImpl = struct {
             // Reserve the amount of waiters to wake by incrementing the signals count.
             // Release barrier ensures code before the wake() happens before the signal it posted and consumed by the wait() threads.
             const new_state = state + (one_signal * to_wake);
-            state = self.state.cmpxchgWeak(state, new_state, .release, .monotonic) orelse {
+            state = self.state.cmpxchg_weak(state, new_state, .release, .monotonic) orelse {
                 // Wake up the waiting threads we reserved above by changing the epoch value.
                 // NOTE: a waiting thread could miss a wake up if *exactly* ((1<<32)-1) wake()s happen between it observing the epoch and sleeping on it.
                 // This is very unlikely due to how many precise amount of Futex.wake() calls that would be between the waiting thread's potential preemption.
@@ -288,7 +288,7 @@ const FutexImpl = struct {
                 // - T1: s = LOAD(&state)
                 // - T2: UPDATE(&state, signal) + FUTEX_WAKE(&epoch)
                 // - T1: s & signals == 0 -> FUTEX_WAIT(&epoch, e) (missed both epoch change and state change)
-                _ = self.epoch.fetchAdd(1, .release);
+                _ = self.epoch.fetch_add(1, .release);
                 Futex.wake(&self.epoch, to_wake);
                 return;
             };
@@ -308,8 +308,8 @@ test "smoke test" {
     defer mutex.unlock();
 
     // Try to wait with a timeout (should not deadlock)
-    try testing.expectError(error.Timeout, cond.timedWait(&mutex, 0));
-    try testing.expectError(error.Timeout, cond.timedWait(&mutex, std.time.ns_per_ms));
+    try testing.expect_error(error.Timeout, cond.timed_wait(&mutex, 0));
+    try testing.expect_error(error.Timeout, cond.timed_wait(&mutex, std.time.ns_per_ms));
 
     // Try to wake inside the mutex.
     cond.signal();
@@ -337,7 +337,7 @@ test "wait and signal" {
             self.spawn_count += 1;
 
             self.cond.wait(&self.mutex);
-            self.cond.timedWait(&self.mutex, std.time.ns_per_ms) catch {};
+            self.cond.timed_wait(&self.mutex, std.time.ns_per_ms) catch {};
             self.cond.signal();
         }
     };
@@ -382,12 +382,12 @@ test signal {
             defer self.mutex.unlock();
             self.spawn_count += 1;
 
-            // Use timedWait() a few times before using wait()
+            // Use timed_wait() a few times before using wait()
             // to test multiple threads timing out frequently.
             var i: usize = 0;
             while (!self.notified) : (i +%= 1) {
                 if (i < 5) {
-                    self.cond.timedWait(&self.mutex, 1) catch {};
+                    self.cond.timed_wait(&self.mutex, 1) catch {};
                 } else {
                     self.cond.wait(&self.mutex);
                 }
@@ -464,7 +464,7 @@ test "multi signal" {
                 }
 
                 // hit the next paddle
-                try testing.expectEqual(self.value, current + 1);
+                try testing.expect_equal(self.value, current + 1);
                 hit_to.hit();
             }
         }
@@ -486,8 +486,8 @@ test "multi signal" {
 
     // The first paddle will be hit one last time by the last paddle.
     for (paddles, 0..) |p, i| {
-        const expected = @as(u32, num_iterations) + @intFromBool(i == 0);
-        try testing.expectEqual(p.value, expected);
+        const expected = @as(u32, num_iterations) + @int_from_bool(i == 0);
+        try testing.expect_equal(p.value, expected);
     }
 }
 
@@ -517,11 +517,11 @@ test broadcast {
             }
 
             // Waits for the count to reach zero after the main test thread observes it at num_threads.
-            // Tries to use timedWait() a bit before falling back to wait() to test multiple threads timing out.
+            // Tries to use timed_wait() a bit before falling back to wait() to test multiple threads timing out.
             var i: usize = 0;
             while (self.count != 0) : (i +%= 1) {
                 if (i < 10) {
-                    self.cond.timedWait(&self.mutex, 1) catch {};
+                    self.cond.timed_wait(&self.mutex, 1) catch {};
                 } else {
                     self.cond.wait(&self.mutex);
                 }
@@ -539,9 +539,9 @@ test broadcast {
         defer broadcast_test.mutex.unlock();
 
         // Wait for all the broadcast threads to spawn.
-        // timedWait() to detect any potential deadlocks.
+        // timed_wait() to detect any potential deadlocks.
         while (broadcast_test.count != num_threads) {
-            broadcast_test.completed.timedWait(
+            broadcast_test.completed.timed_wait(
                 &broadcast_test.mutex,
                 1 * std.time.ns_per_s,
             ) catch {};
@@ -588,7 +588,7 @@ test "broadcasting - wake all threads" {
                 }
 
                 while (self.thread_id_to_wake != thread_id) {
-                    self.cond.timedWait(&self.mutex, 1 * std.time.ns_per_s) catch {};
+                    self.cond.timed_wait(&self.mutex, 1 * std.time.ns_per_s) catch {};
                     self.wakeups += 1;
                 }
                 if (self.thread_id_to_wake <= num_threads) {
@@ -611,9 +611,9 @@ test "broadcasting - wake all threads" {
             defer broadcast_test.mutex.unlock();
 
             // Wait for all the broadcast threads to spawn.
-            // timedWait() to detect any potential deadlocks.
+            // timed_wait() to detect any potential deadlocks.
             while (broadcast_test.count != num_threads) {
-                broadcast_test.completed.timedWait(
+                broadcast_test.completed.timed_wait(
                     &broadcast_test.mutex,
                     1 * std.time.ns_per_s,
                 ) catch {};

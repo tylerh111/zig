@@ -96,7 +96,7 @@ pub const Node = struct {
             _ = fmt;
             if (self.directive) |id| {
                 try std.fmt.format(writer, "{{ ", .{});
-                const directive = self.base.tree.getRaw(id, id);
+                const directive = self.base.tree.get_raw(id, id);
                 try std.fmt.format(writer, ".directive = {s}, ", .{directive});
             }
             if (self.value) |node| {
@@ -143,7 +143,7 @@ pub const Node = struct {
             _ = fmt;
             try std.fmt.format(writer, "{{ ", .{});
             for (self.values.items) |entry| {
-                const key = self.base.tree.getRaw(entry.key, entry.key);
+                const key = self.base.tree.get_raw(entry.key, entry.key);
                 if (entry.value) |value| {
                     try std.fmt.format(writer, "{s} => {}, ", .{ key, value });
                 } else {
@@ -211,7 +211,7 @@ pub const Node = struct {
         ) !void {
             _ = options;
             _ = fmt;
-            const raw = self.base.tree.getRaw(self.base.start, self.base.end);
+            const raw = self.base.tree.get_raw(self.base.start, self.base.end);
             return std.fmt.format(writer, "{s}", .{raw});
         }
     };
@@ -251,7 +251,7 @@ pub const Tree = struct {
         assert(doc_index < self.docs.items.len);
         const doc = self.docs.items[doc_index].cast(Node.Doc) orelse return null;
         const id = doc.directive orelse return null;
-        return self.getRaw(id, id);
+        return self.get_raw(id, id);
     }
 
     pub fn get_raw(self: Tree, start: TokenIndex, end: TokenIndex) []const u8 {
@@ -275,7 +275,7 @@ pub const Tree = struct {
             const tok_id = tokens.items.len;
             try tokens.append(token);
 
-            try self.line_cols.putNoClobber(tok_id, .{
+            try self.line_cols.put_no_clobber(tok_id, .{
                 .line = line,
                 .col = token.start - prev_line_last_col,
             });
@@ -291,7 +291,7 @@ pub const Tree = struct {
         }
 
         self.source = source;
-        self.tokens = try tokens.toOwnedSlice();
+        self.tokens = try tokens.to_owned_slice();
 
         var it = TokenIterator{ .buffer = self.tokens };
         var parser = Parser{
@@ -301,18 +301,18 @@ pub const Tree = struct {
             .line_cols = &self.line_cols,
         };
 
-        parser.eatCommentsAndSpace(&.{});
+        parser.eat_comments_and_space(&.{});
 
         while (true) {
-            parser.eatCommentsAndSpace(&.{});
+            parser.eat_comments_and_space(&.{});
             const token = parser.token_it.next() orelse break;
 
-            log.debug("(main) next {s}@{d}", .{ @tagName(token.id), parser.token_it.pos - 1 });
+            log.debug("(main) next {s}@{d}", .{ @tag_name(token.id), parser.token_it.pos - 1 });
 
             switch (token.id) {
                 .eof => break,
                 else => {
-                    parser.token_it.seekBy(-1);
+                    parser.token_it.seek_by(-1);
                     const doc = try parser.doc();
                     try self.docs.append(self.allocator, doc);
                 },
@@ -328,36 +328,36 @@ const Parser = struct {
     line_cols: *const std.AutoHashMap(TokenIndex, LineCol),
 
     fn value(self: *Parser) ParseError!?*Node {
-        self.eatCommentsAndSpace(&.{});
+        self.eat_comments_and_space(&.{});
 
         const pos = self.token_it.pos;
         const token = self.token_it.next() orelse return error.UnexpectedEof;
 
-        log.debug("  next {s}@{d}", .{ @tagName(token.id), pos });
+        log.debug("  next {s}@{d}", .{ @tag_name(token.id), pos });
 
         switch (token.id) {
-            .literal => if (self.eatToken(.map_value_ind, &.{ .new_line, .comment })) |_| {
+            .literal => if (self.eat_token(.map_value_ind, &.{ .new_line, .comment })) |_| {
                 // map
-                self.token_it.seekTo(pos);
+                self.token_it.seek_to(pos);
                 return self.map();
             } else {
                 // leaf value
-                self.token_it.seekTo(pos);
+                self.token_it.seek_to(pos);
                 return self.leaf_value();
             },
             .single_quoted, .double_quoted => {
                 // leaf value
-                self.token_it.seekBy(-1);
+                self.token_it.seek_by(-1);
                 return self.leaf_value();
             },
             .seq_item_ind => {
                 // list
-                self.token_it.seekBy(-1);
+                self.token_it.seek_by(-1);
                 return self.list();
             },
             .flow_seq_start => {
                 // list
-                self.token_it.seekBy(-1);
+                self.token_it.seek_by(-1);
                 return self.list_bracketed();
             },
             else => return null,
@@ -371,13 +371,13 @@ const Parser = struct {
         node.base.tree = self.tree;
         node.base.start = self.token_it.pos;
 
-        log.debug("(doc) begin {s}@{d}", .{ @tagName(self.tree.tokens[node.base.start].id), node.base.start });
+        log.debug("(doc) begin {s}@{d}", .{ @tag_name(self.tree.tokens[node.base.start].id), node.base.start });
 
         // Parse header
-        const explicit_doc: bool = if (self.eatToken(.doc_start, &.{})) |doc_pos| explicit_doc: {
-            if (self.getCol(doc_pos) > 0) return error.MalformedYaml;
-            if (self.eatToken(.tag, &.{ .new_line, .comment })) |_| {
-                node.directive = try self.expectToken(.literal, &.{ .new_line, .comment });
+        const explicit_doc: bool = if (self.eat_token(.doc_start, &.{})) |doc_pos| explicit_doc: {
+            if (self.get_col(doc_pos) > 0) return error.MalformedYaml;
+            if (self.eat_token(.tag, &.{ .new_line, .comment })) |_| {
+                node.directive = try self.expect_token(.literal, &.{ .new_line, .comment });
             }
             break :explicit_doc true;
         } else false;
@@ -385,7 +385,7 @@ const Parser = struct {
         // Parse value
         node.value = try self.value();
         if (node.value == null) {
-            self.token_it.seekBy(-1);
+            self.token_it.seek_by(-1);
         }
         errdefer if (node.value) |val| {
             val.deinit(self.allocator);
@@ -393,27 +393,27 @@ const Parser = struct {
 
         // Parse footer
         footer: {
-            if (self.eatToken(.doc_end, &.{})) |pos| {
+            if (self.eat_token(.doc_end, &.{})) |pos| {
                 if (!explicit_doc) return error.UnexpectedToken;
-                if (self.getCol(pos) > 0) return error.MalformedYaml;
+                if (self.get_col(pos) > 0) return error.MalformedYaml;
                 node.base.end = pos;
                 break :footer;
             }
-            if (self.eatToken(.doc_start, &.{})) |pos| {
+            if (self.eat_token(.doc_start, &.{})) |pos| {
                 if (!explicit_doc) return error.UnexpectedToken;
-                if (self.getCol(pos) > 0) return error.MalformedYaml;
-                self.token_it.seekBy(-1);
+                if (self.get_col(pos) > 0) return error.MalformedYaml;
+                self.token_it.seek_by(-1);
                 node.base.end = pos - 1;
                 break :footer;
             }
-            if (self.eatToken(.eof, &.{})) |pos| {
+            if (self.eat_token(.eof, &.{})) |pos| {
                 node.base.end = pos - 1;
                 break :footer;
             }
             return error.UnexpectedToken;
         }
 
-        log.debug("(doc) end {s}@{d}", .{ @tagName(self.tree.tokens[node.base.end].id), node.base.end });
+        log.debug("(doc) end {s}@{d}", .{ @tag_name(self.tree.tokens[node.base.end].id), node.base.end });
 
         return &node.base;
     }
@@ -433,16 +433,16 @@ const Parser = struct {
             node.values.deinit(self.allocator);
         }
 
-        log.debug("(map) begin {s}@{d}", .{ @tagName(self.tree.tokens[node.base.start].id), node.base.start });
+        log.debug("(map) begin {s}@{d}", .{ @tag_name(self.tree.tokens[node.base.start].id), node.base.start });
 
-        const col = self.getCol(node.base.start);
+        const col = self.get_col(node.base.start);
 
         while (true) {
-            self.eatCommentsAndSpace(&.{});
+            self.eat_comments_and_space(&.{});
 
             // Parse key
             const key_pos = self.token_it.pos;
-            if (self.getCol(key_pos) < col) {
+            if (self.get_col(key_pos) < col) {
                 break;
             }
 
@@ -450,7 +450,7 @@ const Parser = struct {
             switch (key.id) {
                 .literal => {},
                 .doc_start, .doc_end, .eof => {
-                    self.token_it.seekBy(-1);
+                    self.token_it.seek_by(-1);
                     break;
                 },
                 else => {
@@ -459,10 +459,10 @@ const Parser = struct {
                 },
             }
 
-            log.debug("(map) key {s}@{d}", .{ self.tree.getRaw(key_pos, key_pos), key_pos });
+            log.debug("(map) key {s}@{d}", .{ self.tree.get_raw(key_pos, key_pos), key_pos });
 
             // Separator
-            _ = try self.expectToken(.map_value_ind, &.{ .new_line, .comment });
+            _ = try self.expect_token(.map_value_ind, &.{ .new_line, .comment });
 
             // Parse value
             const val = try self.value();
@@ -471,11 +471,11 @@ const Parser = struct {
             };
 
             if (val) |v| {
-                if (self.getCol(v.start) < self.getCol(key_pos)) {
+                if (self.get_col(v.start) < self.get_col(key_pos)) {
                     return error.MalformedYaml;
                 }
                 if (v.cast(Node.Value)) |_| {
-                    if (self.getCol(v.start) == self.getCol(key_pos)) {
+                    if (self.get_col(v.start) == self.get_col(key_pos)) {
                         return error.MalformedYaml;
                     }
                 }
@@ -489,7 +489,7 @@ const Parser = struct {
 
         node.base.end = self.token_it.pos - 1;
 
-        log.debug("(map) end {s}@{d}", .{ @tagName(self.tree.tokens[node.base.end].id), node.base.end });
+        log.debug("(map) end {s}@{d}", .{ @tag_name(self.tree.tokens[node.base.end].id), node.base.end });
 
         return &node.base;
     }
@@ -507,12 +507,12 @@ const Parser = struct {
             node.values.deinit(self.allocator);
         }
 
-        log.debug("(list) begin {s}@{d}", .{ @tagName(self.tree.tokens[node.base.start].id), node.base.start });
+        log.debug("(list) begin {s}@{d}", .{ @tag_name(self.tree.tokens[node.base.start].id), node.base.start });
 
         while (true) {
-            self.eatCommentsAndSpace(&.{});
+            self.eat_comments_and_space(&.{});
 
-            _ = self.eatToken(.seq_item_ind, &.{}) orelse break;
+            _ = self.eat_token(.seq_item_ind, &.{}) orelse break;
 
             const val = (try self.value()) orelse return error.MalformedYaml;
             try node.values.append(self.allocator, val);
@@ -520,7 +520,7 @@ const Parser = struct {
 
         node.base.end = self.token_it.pos - 1;
 
-        log.debug("(list) end {s}@{d}", .{ @tagName(self.tree.tokens[node.base.end].id), node.base.end });
+        log.debug("(list) end {s}@{d}", .{ @tag_name(self.tree.tokens[node.base.end].id), node.base.end });
 
         return &node.base;
     }
@@ -538,24 +538,24 @@ const Parser = struct {
             node.values.deinit(self.allocator);
         }
 
-        log.debug("(list) begin {s}@{d}", .{ @tagName(self.tree.tokens[node.base.start].id), node.base.start });
+        log.debug("(list) begin {s}@{d}", .{ @tag_name(self.tree.tokens[node.base.start].id), node.base.start });
 
-        _ = try self.expectToken(.flow_seq_start, &.{});
+        _ = try self.expect_token(.flow_seq_start, &.{});
 
         while (true) {
-            self.eatCommentsAndSpace(&.{.comment});
+            self.eat_comments_and_space(&.{.comment});
 
-            if (self.eatToken(.flow_seq_end, &.{.comment})) |pos| {
+            if (self.eat_token(.flow_seq_end, &.{.comment})) |pos| {
                 node.base.end = pos;
                 break;
             }
-            _ = self.eatToken(.comma, &.{.comment});
+            _ = self.eat_token(.comma, &.{.comment});
 
             const val = (try self.value()) orelse return error.MalformedYaml;
             try node.values.append(self.allocator, val);
         }
 
-        log.debug("(list) end {s}@{d}", .{ @tagName(self.tree.tokens[node.base.end].id), node.base.end });
+        log.debug("(list) end {s}@{d}", .{ @tag_name(self.tree.tokens[node.base.end].id), node.base.end });
 
         return &node.base;
     }
@@ -573,59 +573,59 @@ const Parser = struct {
             switch (tok.id) {
                 .single_quoted => {
                     node.base.end = self.token_it.pos - 1;
-                    const raw = self.tree.getRaw(node.base.start, node.base.end);
-                    try self.parseSingleQuoted(node, raw);
+                    const raw = self.tree.get_raw(node.base.start, node.base.end);
+                    try self.parse_single_quoted(node, raw);
                     break;
                 },
                 .double_quoted => {
                     node.base.end = self.token_it.pos - 1;
-                    const raw = self.tree.getRaw(node.base.start, node.base.end);
-                    try self.parseDoubleQuoted(node, raw);
+                    const raw = self.tree.get_raw(node.base.start, node.base.end);
+                    try self.parse_double_quoted(node, raw);
                     break;
                 },
                 .literal => {},
                 .space => {
                     const trailing = self.token_it.pos - 2;
-                    self.eatCommentsAndSpace(&.{});
+                    self.eat_comments_and_space(&.{});
                     if (self.token_it.peek()) |peek| {
                         if (peek.id != .literal) {
                             node.base.end = trailing;
-                            const raw = self.tree.getRaw(node.base.start, node.base.end);
-                            try node.string_value.appendSlice(self.allocator, raw);
+                            const raw = self.tree.get_raw(node.base.start, node.base.end);
+                            try node.string_value.append_slice(self.allocator, raw);
                             break;
                         }
                     }
                 },
                 else => {
-                    self.token_it.seekBy(-1);
+                    self.token_it.seek_by(-1);
                     node.base.end = self.token_it.pos - 1;
-                    const raw = self.tree.getRaw(node.base.start, node.base.end);
-                    try node.string_value.appendSlice(self.allocator, raw);
+                    const raw = self.tree.get_raw(node.base.start, node.base.end);
+                    try node.string_value.append_slice(self.allocator, raw);
                     break;
                 },
             }
         }
 
-        log.debug("(leaf) {s}", .{self.tree.getRaw(node.base.start, node.base.end)});
+        log.debug("(leaf) {s}", .{self.tree.get_raw(node.base.start, node.base.end)});
 
         return &node.base;
     }
 
     fn eat_comments_and_space(self: *Parser, comptime exclusions: []const Token.Id) void {
-        log.debug("eatCommentsAndSpace", .{});
+        log.debug("eat_comments_and_space", .{});
         outer: while (self.token_it.next()) |token| {
-            log.debug("  (token '{s}')", .{@tagName(token.id)});
+            log.debug("  (token '{s}')", .{@tag_name(token.id)});
             switch (token.id) {
                 .comment, .space, .new_line => |space| {
                     inline for (exclusions) |excl| {
                         if (excl == space) {
-                            self.token_it.seekBy(-1);
+                            self.token_it.seek_by(-1);
                             break :outer;
                         }
                     } else continue;
                 },
                 else => {
-                    self.token_it.seekBy(-1);
+                    self.token_it.seek_by(-1);
                     break;
                 },
             }
@@ -633,8 +633,8 @@ const Parser = struct {
     }
 
     fn eat_token(self: *Parser, id: Token.Id, comptime exclusions: []const Token.Id) ?TokenIndex {
-        log.debug("eatToken('{s}')", .{@tagName(id)});
-        self.eatCommentsAndSpace(exclusions);
+        log.debug("eat_token('{s}')", .{@tag_name(id)});
+        self.eat_comments_and_space(exclusions);
         const pos = self.token_it.pos;
         const token = self.token_it.next() orelse return null;
         if (token.id == id) {
@@ -642,14 +642,14 @@ const Parser = struct {
             return pos;
         } else {
             log.debug("  (not found)", .{});
-            self.token_it.seekBy(-1);
+            self.token_it.seek_by(-1);
             return null;
         }
     }
 
     fn expect_token(self: *Parser, id: Token.Id, comptime exclusions: []const Token.Id) ParseError!TokenIndex {
-        log.debug("expectToken('{s}')", .{@tagName(id)});
-        return self.eatToken(id, exclusions) orelse error.UnexpectedToken;
+        log.debug("expect_token('{s}')", .{@tag_name(id)});
+        return self.eat_token(id, exclusions) orelse error.UnexpectedToken;
     }
 
     fn get_line(self: *Parser, index: TokenIndex) usize {
@@ -664,7 +664,7 @@ const Parser = struct {
         assert(raw[0] == '\'' and raw[raw.len - 1] == '\'');
 
         const raw_no_quotes = raw[1 .. raw.len - 1];
-        try node.string_value.ensureTotalCapacity(self.allocator, raw_no_quotes.len);
+        try node.string_value.ensure_total_capacity(self.allocator, raw_no_quotes.len);
 
         var state: enum {
             start,
@@ -680,13 +680,13 @@ const Parser = struct {
                         state = .escape;
                     },
                     else => {
-                        node.string_value.appendAssumeCapacity(c);
+                        node.string_value.append_assume_capacity(c);
                     },
                 },
                 .escape => switch (c) {
                     '\'' => {
                         state = .start;
-                        node.string_value.appendAssumeCapacity(c);
+                        node.string_value.append_assume_capacity(c);
                     },
                     else => return error.InvalidEscapeSequence,
                 },
@@ -698,7 +698,7 @@ const Parser = struct {
         assert(raw[0] == '"' and raw[raw.len - 1] == '"');
 
         const raw_no_quotes = raw[1 .. raw.len - 1];
-        try node.string_value.ensureTotalCapacity(self.allocator, raw_no_quotes.len);
+        try node.string_value.ensure_total_capacity(self.allocator, raw_no_quotes.len);
 
         var state: enum {
             start,
@@ -714,21 +714,21 @@ const Parser = struct {
                         state = .escape;
                     },
                     else => {
-                        node.string_value.appendAssumeCapacity(c);
+                        node.string_value.append_assume_capacity(c);
                     },
                 },
                 .escape => switch (c) {
                     'n' => {
                         state = .start;
-                        node.string_value.appendAssumeCapacity('\n');
+                        node.string_value.append_assume_capacity('\n');
                     },
                     't' => {
                         state = .start;
-                        node.string_value.appendAssumeCapacity('\t');
+                        node.string_value.append_assume_capacity('\t');
                     },
                     '"' => {
                         state = .start;
-                        node.string_value.appendAssumeCapacity('"');
+                        node.string_value.append_assume_capacity('"');
                     },
                     else => return error.InvalidEscapeSequence,
                 },
@@ -738,6 +738,6 @@ const Parser = struct {
 };
 
 test {
-    std.testing.refAllDecls(@This());
+    std.testing.ref_all_decls(@This());
     _ = @import("parse/test.zig");
 }

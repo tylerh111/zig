@@ -96,7 +96,7 @@ pub const EfiPhysicalAddress = u64;
 
 pub const CapsuleHeader = extern struct {
     capsuleGuid: Guid align(8),
-    headerSize: u32,
+    header_size: u32,
     flags: u32,
     capsuleImageSize: u32,
 };
@@ -126,7 +126,7 @@ pub const global_variable align(8) = Guid{
 };
 
 test {
-    std.testing.refAllDeclsRecursive(@This());
+    std.testing.ref_all_decls_recursive(@This());
 }
 
 const std = @import("std");

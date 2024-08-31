@@ -10,7 +10,7 @@ pub const File = union(enum) {
         };
     }
 
-    pub fn fmt_path(file: File) std.fmt.Formatter(formatPath) {
+    pub fn fmt_path(file: File) std.fmt.Formatter(format_path) {
         return .{ .data = file };
     }
 
@@ -24,9 +24,9 @@ pub const File = union(enum) {
         _ = options;
         switch (file) {
             .zig_object => |x| try writer.print("{s}", .{x.path}),
-            .linker_defined => try writer.writeAll("(linker defined)"),
-            .object => |x| try writer.print("{}", .{x.fmtPath()}),
-            .shared_object => |x| try writer.writeAll(x.path),
+            .linker_defined => try writer.write_all("(linker defined)"),
+            .object => |x| try writer.print("{}", .{x.fmt_path()}),
+            .shared_object => |x| try writer.write_all(x.path),
         }
     }
 
@@ -63,7 +63,7 @@ pub const File = union(enum) {
 
     pub fn resolve_symbols(file: File, elf_file: *Elf) void {
         switch (file) {
-            inline else => |x| x.resolveSymbols(elf_file),
+            inline else => |x| x.resolve_symbols(elf_file),
         }
     }
 
@@ -87,14 +87,14 @@ pub const File = union(enum) {
     pub fn mark_live(file: File, elf_file: *Elf) void {
         switch (file) {
             .linker_defined => {},
-            inline else => |x| x.markLive(elf_file),
+            inline else => |x| x.mark_live(elf_file),
         }
     }
 
     pub fn scan_relocs(file: File, elf_file: *Elf, undefs: anytype) !void {
         switch (file) {
             .linker_defined, .shared_object => unreachable,
-            inline else => |x| try x.scanRelocs(elf_file, undefs),
+            inline else => |x| try x.scan_relocs(elf_file, undefs),
         }
     }
 
@@ -136,20 +136,20 @@ pub const File = union(enum) {
 
     pub fn update_symtab_size(file: File, elf_file: *Elf) !void {
         return switch (file) {
-            inline else => |x| x.updateSymtabSize(elf_file),
+            inline else => |x| x.update_symtab_size(elf_file),
         };
     }
 
     pub fn write_symtab(file: File, elf_file: *Elf) void {
         return switch (file) {
-            inline else => |x| x.writeSymtab(elf_file),
+            inline else => |x| x.write_symtab(elf_file),
         };
     }
 
     pub fn update_ar_symtab(file: File, ar_symtab: *Archive.ArSymtab, elf_file: *Elf) !void {
         return switch (file) {
-            .zig_object => |x| x.updateArSymtab(ar_symtab, elf_file),
-            .object => |x| x.updateArSymtab(ar_symtab, elf_file),
+            .zig_object => |x| x.update_ar_symtab(ar_symtab, elf_file),
+            .object => |x| x.update_ar_symtab(ar_symtab, elf_file),
             inline else => unreachable,
         };
     }
@@ -171,16 +171,16 @@ pub const File = union(enum) {
 
     pub fn update_ar_size(file: File, elf_file: *Elf) !void {
         return switch (file) {
-            .zig_object => |x| x.updateArSize(),
-            .object => |x| x.updateArSize(elf_file),
+            .zig_object => |x| x.update_ar_size(),
+            .object => |x| x.update_ar_size(elf_file),
             inline else => unreachable,
         };
     }
 
     pub fn write_ar(file: File, elf_file: *Elf, writer: anytype) !void {
         return switch (file) {
-            .zig_object => |x| x.writeAr(writer),
-            .object => |x| x.writeAr(elf_file, writer),
+            .zig_object => |x| x.write_ar(writer),
+            .object => |x| x.write_ar(elf_file, writer),
             inline else => unreachable,
         };
     }

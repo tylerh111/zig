@@ -1,6 +1,6 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
-const fmtIntSizeBin = std.fmt.fmtIntSizeBin;
+const fmt_int_size_bin = std.fmt.fmt_int_size_bin;
 
 const Module = @import("Module.zig");
 const Value = @import("Value.zig");
@@ -11,15 +11,15 @@ const InternPool = @import("InternPool.zig");
 
 pub fn write(stream: anytype, module: *Module, air: Air, liveness: ?Liveness) void {
     const instruction_bytes = air.instructions.len *
-        // Here we don't use @sizeOf(Air.Inst.Data) because it would include
+        // Here we don't use @size_of(Air.Inst.Data) because it would include
         // the debug safety tag but we want to measure release size.
-        (@sizeOf(Air.Inst.Tag) + 8);
-    const extra_bytes = air.extra.len * @sizeOf(u32);
-    const tomb_bytes = if (liveness) |l| l.tomb_bits.len * @sizeOf(usize) else 0;
-    const liveness_extra_bytes = if (liveness) |l| l.extra.len * @sizeOf(u32) else 0;
+        (@size_of(Air.Inst.Tag) + 8);
+    const extra_bytes = air.extra.len * @size_of(u32);
+    const tomb_bytes = if (liveness) |l| l.tomb_bits.len * @size_of(usize) else 0;
+    const liveness_extra_bytes = if (liveness) |l| l.extra.len * @size_of(u32) else 0;
     const liveness_special_bytes = if (liveness) |l| l.special.count() * 8 else 0;
-    const total_bytes = @sizeOf(Air) + instruction_bytes + extra_bytes +
-        @sizeOf(Liveness) + liveness_extra_bytes +
+    const total_bytes = @size_of(Air) + instruction_bytes + extra_bytes +
+        @size_of(Liveness) + liveness_extra_bytes +
         liveness_special_bytes + tomb_bytes;
 
     // zig fmt: off
@@ -32,12 +32,12 @@ pub fn write(stream: anytype, module: *Module, air: Air, liveness: ?Liveness) vo
         \\# Liveness special table:   {d} ({})
         \\
     , .{
-        fmtIntSizeBin(total_bytes),
-        air.instructions.len, fmtIntSizeBin(instruction_bytes),
-        air.extra.len, fmtIntSizeBin(extra_bytes),
-        fmtIntSizeBin(tomb_bytes),
-        if (liveness) |l| l.extra.len else 0, fmtIntSizeBin(liveness_extra_bytes),
-        if (liveness) |l| l.special.count() else 0, fmtIntSizeBin(liveness_special_bytes),
+        fmt_int_size_bin(total_bytes),
+        air.instructions.len, fmt_int_size_bin(instruction_bytes),
+        air.extra.len, fmt_int_size_bin(extra_bytes),
+        fmt_int_size_bin(tomb_bytes),
+        if (liveness) |l| l.extra.len else 0, fmt_int_size_bin(liveness_extra_bytes),
+        if (liveness) |l| l.special.count() else 0, fmt_int_size_bin(liveness_special_bytes),
     }) catch return;
     // zig fmt: on
 
@@ -49,7 +49,7 @@ pub fn write(stream: anytype, module: *Module, air: Air, liveness: ?Liveness) vo
         .indent = 2,
         .skip_body = false,
     };
-    writer.writeBody(stream, air.getMainBody()) catch return;
+    writer.write_body(stream, air.get_main_body()) catch return;
 }
 
 pub fn write_inst(
@@ -67,15 +67,15 @@ pub fn write_inst(
         .indent = 2,
         .skip_body = true,
     };
-    writer.writeInst(stream, inst) catch return;
+    writer.write_inst(stream, inst) catch return;
 }
 
 pub fn dump(module: *Module, air: Air, liveness: ?Liveness) void {
-    write(std.io.getStdErr().writer(), module, air, liveness);
+    write(std.io.get_std_err().writer(), module, air, liveness);
 }
 
 pub fn dump_inst(inst: Air.Inst.Index, module: *Module, air: Air, liveness: ?Liveness) void {
-    writeInst(std.io.getStdErr().writer(), inst, module, air, liveness);
+    write_inst(std.io.get_std_err().writer(), inst, module, air, liveness);
 }
 
 const Writer = struct {
@@ -88,18 +88,18 @@ const Writer = struct {
 
     fn write_body(w: *Writer, s: anytype, body: []const Air.Inst.Index) @TypeOf(s).Error!void {
         for (body) |inst| {
-            try w.writeInst(s, inst);
-            try s.writeByte('\n');
+            try w.write_inst(s, inst);
+            try s.write_byte('\n');
         }
     }
 
     fn write_inst(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const tag = w.air.instructions.items(.tag)[@intFromEnum(inst)];
-        try s.writeByteNTimes(' ', w.indent);
+        const tag = w.air.instructions.items(.tag)[@int_from_enum(inst)];
+        try s.write_byte_ntimes(' ', w.indent);
         try s.print("%{d}{c}= {s}(", .{
-            @intFromEnum(inst),
-            @as(u8, if (if (w.liveness) |liveness| liveness.isUnused(inst) else false) '!' else ' '),
-            @tagName(tag),
+            @int_from_enum(inst),
+            @as(u8, if (if (w.liveness) |liveness| liveness.is_unused(inst) else false) '!' else ' '),
+            @tag_name(tag),
         });
         switch (tag) {
             .add,
@@ -162,7 +162,7 @@ const Writer = struct {
             .memcpy,
             .memset,
             .memset_safe,
-            => try w.writeBinOp(s, inst),
+            => try w.write_bin_op(s, inst),
 
             .is_null,
             .is_non_null,
@@ -198,7 +198,7 @@ const Writer = struct {
             .cmp_lt_errors_len,
             .set_err_return_trace,
             .c_va_end,
-            => try w.writeUnOp(s, inst),
+            => try w.write_un_op(s, inst),
 
             .trap,
             .breakpoint,
@@ -206,15 +206,15 @@ const Writer = struct {
             .ret_addr,
             .frame_addr,
             .save_err_return_trace_index,
-            => try w.writeNoOp(s, inst),
+            => try w.write_no_op(s, inst),
 
             .alloc,
             .ret_ptr,
             .err_return_trace,
             .c_va_start,
-            => try w.writeTy(s, inst),
+            => try w.write_ty(s, inst),
 
-            .arg => try w.writeArg(s, inst),
+            .arg => try w.write_arg(s, inst),
 
             .not,
             .bitcast,
@@ -258,11 +258,11 @@ const Writer = struct {
             .addrspace_cast,
             .c_va_arg,
             .c_va_copy,
-            => try w.writeTyOp(s, inst),
+            => try w.write_ty_op(s, inst),
 
-            .block, .dbg_inline_block => try w.writeBlock(s, tag, inst),
+            .block, .dbg_inline_block => try w.write_block(s, tag, inst),
 
-            .loop => try w.writeLoop(s, inst),
+            .loop => try w.write_loop(s, inst),
 
             .slice,
             .slice_elem_ptr,
@@ -273,69 +273,69 @@ const Writer = struct {
             .sub_with_overflow,
             .mul_with_overflow,
             .shl_with_overflow,
-            => try w.writeTyPlBin(s, inst),
+            => try w.write_ty_pl_bin(s, inst),
 
             .call,
             .call_always_tail,
             .call_never_tail,
             .call_never_inline,
-            => try w.writeCall(s, inst),
+            => try w.write_call(s, inst),
 
             .dbg_var_ptr,
             .dbg_var_val,
-            => try w.writeDbgVar(s, inst),
+            => try w.write_dbg_var(s, inst),
 
-            .struct_field_ptr => try w.writeStructField(s, inst),
-            .struct_field_val => try w.writeStructField(s, inst),
+            .struct_field_ptr => try w.write_struct_field(s, inst),
+            .struct_field_val => try w.write_struct_field(s, inst),
             .inferred_alloc => @panic("TODO"),
             .inferred_alloc_comptime => @panic("TODO"),
-            .assembly => try w.writeAssembly(s, inst),
-            .dbg_stmt => try w.writeDbgStmt(s, inst),
+            .assembly => try w.write_assembly(s, inst),
+            .dbg_stmt => try w.write_dbg_stmt(s, inst),
 
-            .aggregate_init => try w.writeAggregateInit(s, inst),
-            .union_init => try w.writeUnionInit(s, inst),
-            .br => try w.writeBr(s, inst),
-            .cond_br => try w.writeCondBr(s, inst),
-            .@"try" => try w.writeTry(s, inst),
-            .try_ptr => try w.writeTryPtr(s, inst),
-            .switch_br => try w.writeSwitchBr(s, inst),
-            .cmpxchg_weak, .cmpxchg_strong => try w.writeCmpxchg(s, inst),
-            .fence => try w.writeFence(s, inst),
-            .atomic_load => try w.writeAtomicLoad(s, inst),
-            .prefetch => try w.writePrefetch(s, inst),
-            .atomic_store_unordered => try w.writeAtomicStore(s, inst, .unordered),
-            .atomic_store_monotonic => try w.writeAtomicStore(s, inst, .monotonic),
-            .atomic_store_release => try w.writeAtomicStore(s, inst, .release),
-            .atomic_store_seq_cst => try w.writeAtomicStore(s, inst, .seq_cst),
-            .atomic_rmw => try w.writeAtomicRmw(s, inst),
-            .field_parent_ptr => try w.writeFieldParentPtr(s, inst),
-            .wasm_memory_size => try w.writeWasmMemorySize(s, inst),
-            .wasm_memory_grow => try w.writeWasmMemoryGrow(s, inst),
-            .mul_add => try w.writeMulAdd(s, inst),
-            .select => try w.writeSelect(s, inst),
-            .shuffle => try w.writeShuffle(s, inst),
-            .reduce, .reduce_optimized => try w.writeReduce(s, inst),
-            .cmp_vector, .cmp_vector_optimized => try w.writeCmpVector(s, inst),
-            .vector_store_elem => try w.writeVectorStoreElem(s, inst),
+            .aggregate_init => try w.write_aggregate_init(s, inst),
+            .union_init => try w.write_union_init(s, inst),
+            .br => try w.write_br(s, inst),
+            .cond_br => try w.write_cond_br(s, inst),
+            .@"try" => try w.write_try(s, inst),
+            .try_ptr => try w.write_try_ptr(s, inst),
+            .switch_br => try w.write_switch_br(s, inst),
+            .cmpxchg_weak, .cmpxchg_strong => try w.write_cmpxchg(s, inst),
+            .fence => try w.write_fence(s, inst),
+            .atomic_load => try w.write_atomic_load(s, inst),
+            .prefetch => try w.write_prefetch(s, inst),
+            .atomic_store_unordered => try w.write_atomic_store(s, inst, .unordered),
+            .atomic_store_monotonic => try w.write_atomic_store(s, inst, .monotonic),
+            .atomic_store_release => try w.write_atomic_store(s, inst, .release),
+            .atomic_store_seq_cst => try w.write_atomic_store(s, inst, .seq_cst),
+            .atomic_rmw => try w.write_atomic_rmw(s, inst),
+            .field_parent_ptr => try w.write_field_parent_ptr(s, inst),
+            .wasm_memory_size => try w.write_wasm_memory_size(s, inst),
+            .wasm_memory_grow => try w.write_wasm_memory_grow(s, inst),
+            .mul_add => try w.write_mul_add(s, inst),
+            .select => try w.write_select(s, inst),
+            .shuffle => try w.write_shuffle(s, inst),
+            .reduce, .reduce_optimized => try w.write_reduce(s, inst),
+            .cmp_vector, .cmp_vector_optimized => try w.write_cmp_vector(s, inst),
+            .vector_store_elem => try w.write_vector_store_elem(s, inst),
 
             .work_item_id,
             .work_group_size,
             .work_group_id,
-            => try w.writeWorkDimension(s, inst),
+            => try w.write_work_dimension(s, inst),
         }
-        try s.writeByte(')');
+        try s.write_byte(')');
     }
 
     fn write_bin_op(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const bin_op = w.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
-        try w.writeOperand(s, inst, 0, bin_op.lhs);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 1, bin_op.rhs);
+        const bin_op = w.air.instructions.items(.data)[@int_from_enum(inst)].bin_op;
+        try w.write_operand(s, inst, 0, bin_op.lhs);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 1, bin_op.rhs);
     }
 
     fn write_un_op(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const un_op = w.air.instructions.items(.data)[@intFromEnum(inst)].un_op;
-        try w.writeOperand(s, inst, 0, un_op);
+        const un_op = w.air.instructions.items(.data)[@int_from_enum(inst)].un_op;
+        try w.write_operand(s, inst, 0, un_op);
     }
 
     fn write_no_op(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
@@ -349,29 +349,29 @@ const Writer = struct {
     }
 
     fn write_ty(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty = w.air.instructions.items(.data)[@intFromEnum(inst)].ty;
-        try w.writeType(s, ty);
+        const ty = w.air.instructions.items(.data)[@int_from_enum(inst)].ty;
+        try w.write_type(s, ty);
     }
 
     fn write_arg(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const arg = w.air.instructions.items(.data)[@intFromEnum(inst)].arg;
-        try w.writeType(s, arg.ty.toType());
+        const arg = w.air.instructions.items(.data)[@int_from_enum(inst)].arg;
+        try w.write_type(s, arg.ty.to_type());
         try s.print(", {d}", .{arg.src_index});
     }
 
     fn write_ty_op(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_op = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_op;
-        try w.writeType(s, ty_op.ty.toType());
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 0, ty_op.operand);
+        const ty_op = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_op;
+        try w.write_type(s, ty_op.ty.to_type());
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 0, ty_op.operand);
     }
 
     fn write_block(w: *Writer, s: anytype, tag: Air.Inst.Tag, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-        try w.writeType(s, ty_pl.ty.toType());
-        const body: []const Air.Inst.Index = @ptrCast(switch (tag) {
+        const ty_pl = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_pl;
+        try w.write_type(s, ty_pl.ty.to_type());
+        const body: []const Air.Inst.Index = @ptr_cast(switch (tag) {
             inline .block, .dbg_inline_block => |comptime_tag| body: {
-                const extra = w.air.extraData(switch (comptime_tag) {
+                const extra = w.air.extra_data(switch (comptime_tag) {
                     .block => Air.Block,
                     .dbg_inline_block => Air.DbgInlineBlock,
                     else => unreachable,
@@ -379,8 +379,8 @@ const Writer = struct {
                 switch (comptime_tag) {
                     .block => {},
                     .dbg_inline_block => {
-                        try s.writeAll(", ");
-                        try w.writeInstRef(s, Air.internedToRef(extra.data.func), false);
+                        try s.write_all(", ");
+                        try w.write_inst_ref(s, Air.interned_to_ref(extra.data.func), false);
                     },
                     else => unreachable,
                 }
@@ -388,183 +388,183 @@ const Writer = struct {
             },
             else => unreachable,
         });
-        if (w.skip_body) return s.writeAll(", ...");
+        if (w.skip_body) return s.write_all(", ...");
         const liveness_block = if (w.liveness) |liveness|
-            liveness.getBlock(inst)
+            liveness.get_block(inst)
         else
             Liveness.BlockSlices{ .deaths = &.{} };
 
-        try s.writeAll(", {\n");
+        try s.write_all(", {\n");
         const old_indent = w.indent;
         w.indent += 2;
-        try w.writeBody(s, body);
+        try w.write_body(s, body);
         w.indent = old_indent;
-        try s.writeByteNTimes(' ', w.indent);
-        try s.writeAll("}");
+        try s.write_byte_ntimes(' ', w.indent);
+        try s.write_all("}");
 
         for (liveness_block.deaths) |operand| {
-            try s.print(" %{d}!", .{@intFromEnum(operand)});
+            try s.print(" %{d}!", .{@int_from_enum(operand)});
         }
     }
 
     fn write_loop(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-        const extra = w.air.extraData(Air.Block, ty_pl.payload);
-        const body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra.end..][0..extra.data.body_len]);
+        const ty_pl = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_pl;
+        const extra = w.air.extra_data(Air.Block, ty_pl.payload);
+        const body: []const Air.Inst.Index = @ptr_cast(w.air.extra[extra.end..][0..extra.data.body_len]);
 
-        try w.writeType(s, ty_pl.ty.toType());
-        if (w.skip_body) return s.writeAll(", ...");
-        try s.writeAll(", {\n");
+        try w.write_type(s, ty_pl.ty.to_type());
+        if (w.skip_body) return s.write_all(", ...");
+        try s.write_all(", {\n");
         const old_indent = w.indent;
         w.indent += 2;
-        try w.writeBody(s, body);
+        try w.write_body(s, body);
         w.indent = old_indent;
-        try s.writeByteNTimes(' ', w.indent);
-        try s.writeAll("}");
+        try s.write_byte_ntimes(' ', w.indent);
+        try s.write_all("}");
     }
 
     fn write_aggregate_init(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
         const mod = w.module;
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-        const vector_ty = ty_pl.ty.toType();
-        const len = @as(usize, @intCast(vector_ty.arrayLen(mod)));
-        const elements = @as([]const Air.Inst.Ref, @ptrCast(w.air.extra[ty_pl.payload..][0..len]));
+        const ty_pl = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_pl;
+        const vector_ty = ty_pl.ty.to_type();
+        const len = @as(usize, @int_cast(vector_ty.array_len(mod)));
+        const elements = @as([]const Air.Inst.Ref, @ptr_cast(w.air.extra[ty_pl.payload..][0..len]));
 
-        try w.writeType(s, vector_ty);
-        try s.writeAll(", [");
+        try w.write_type(s, vector_ty);
+        try s.write_all(", [");
         for (elements, 0..) |elem, i| {
-            if (i != 0) try s.writeAll(", ");
-            try w.writeOperand(s, inst, i, elem);
+            if (i != 0) try s.write_all(", ");
+            try w.write_operand(s, inst, i, elem);
         }
-        try s.writeAll("]");
+        try s.write_all("]");
     }
 
     fn write_union_init(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-        const extra = w.air.extraData(Air.UnionInit, ty_pl.payload).data;
+        const ty_pl = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_pl;
+        const extra = w.air.extra_data(Air.UnionInit, ty_pl.payload).data;
 
         try s.print("{d}, ", .{extra.field_index});
-        try w.writeOperand(s, inst, 0, extra.init);
+        try w.write_operand(s, inst, 0, extra.init);
     }
 
     fn write_struct_field(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-        const extra = w.air.extraData(Air.StructField, ty_pl.payload).data;
+        const ty_pl = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_pl;
+        const extra = w.air.extra_data(Air.StructField, ty_pl.payload).data;
 
-        try w.writeOperand(s, inst, 0, extra.struct_operand);
+        try w.write_operand(s, inst, 0, extra.struct_operand);
         try s.print(", {d}", .{extra.field_index});
     }
 
     fn write_ty_pl_bin(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
         const data = w.air.instructions.items(.data);
-        const ty_pl = data[@intFromEnum(inst)].ty_pl;
-        const extra = w.air.extraData(Air.Bin, ty_pl.payload).data;
+        const ty_pl = data[@int_from_enum(inst)].ty_pl;
+        const extra = w.air.extra_data(Air.Bin, ty_pl.payload).data;
 
-        const inst_ty = data[@intFromEnum(inst)].ty_pl.ty.toType();
-        try w.writeType(s, inst_ty);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 0, extra.lhs);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 1, extra.rhs);
+        const inst_ty = data[@int_from_enum(inst)].ty_pl.ty.to_type();
+        try w.write_type(s, inst_ty);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 0, extra.lhs);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 1, extra.rhs);
     }
 
     fn write_cmpxchg(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-        const extra = w.air.extraData(Air.Cmpxchg, ty_pl.payload).data;
+        const ty_pl = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_pl;
+        const extra = w.air.extra_data(Air.Cmpxchg, ty_pl.payload).data;
 
-        try w.writeOperand(s, inst, 0, extra.ptr);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 1, extra.expected_value);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 2, extra.new_value);
+        try w.write_operand(s, inst, 0, extra.ptr);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 1, extra.expected_value);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 2, extra.new_value);
         try s.print(", {s}, {s}", .{
-            @tagName(extra.successOrder()), @tagName(extra.failureOrder()),
+            @tag_name(extra.success_order()), @tag_name(extra.failure_order()),
         });
     }
 
     fn write_mul_add(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
-        const extra = w.air.extraData(Air.Bin, pl_op.payload).data;
+        const pl_op = w.air.instructions.items(.data)[@int_from_enum(inst)].pl_op;
+        const extra = w.air.extra_data(Air.Bin, pl_op.payload).data;
 
-        try w.writeOperand(s, inst, 0, extra.lhs);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 1, extra.rhs);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 2, pl_op.operand);
+        try w.write_operand(s, inst, 0, extra.lhs);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 1, extra.rhs);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 2, pl_op.operand);
     }
 
     fn write_shuffle(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-        const extra = w.air.extraData(Air.Shuffle, ty_pl.payload).data;
+        const ty_pl = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_pl;
+        const extra = w.air.extra_data(Air.Shuffle, ty_pl.payload).data;
 
-        try w.writeOperand(s, inst, 0, extra.a);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 1, extra.b);
+        try w.write_operand(s, inst, 0, extra.a);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 1, extra.b);
         try s.print(", mask {d}, len {d}", .{ extra.mask, extra.mask_len });
     }
 
     fn write_select(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
         const mod = w.module;
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
-        const extra = w.air.extraData(Air.Bin, pl_op.payload).data;
+        const pl_op = w.air.instructions.items(.data)[@int_from_enum(inst)].pl_op;
+        const extra = w.air.extra_data(Air.Bin, pl_op.payload).data;
 
-        const elem_ty = w.typeOfIndex(inst).childType(mod);
-        try w.writeType(s, elem_ty);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 0, pl_op.operand);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 1, extra.lhs);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 2, extra.rhs);
+        const elem_ty = w.type_of_index(inst).child_type(mod);
+        try w.write_type(s, elem_ty);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 0, pl_op.operand);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 1, extra.lhs);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 2, extra.rhs);
     }
 
     fn write_reduce(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const reduce = w.air.instructions.items(.data)[@intFromEnum(inst)].reduce;
+        const reduce = w.air.instructions.items(.data)[@int_from_enum(inst)].reduce;
 
-        try w.writeOperand(s, inst, 0, reduce.operand);
-        try s.print(", {s}", .{@tagName(reduce.operation)});
+        try w.write_operand(s, inst, 0, reduce.operand);
+        try s.print(", {s}", .{@tag_name(reduce.operation)});
     }
 
     fn write_cmp_vector(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-        const extra = w.air.extraData(Air.VectorCmp, ty_pl.payload).data;
+        const ty_pl = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_pl;
+        const extra = w.air.extra_data(Air.VectorCmp, ty_pl.payload).data;
 
-        try s.print("{s}, ", .{@tagName(extra.compareOperator())});
-        try w.writeOperand(s, inst, 0, extra.lhs);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 1, extra.rhs);
+        try s.print("{s}, ", .{@tag_name(extra.compare_operator())});
+        try w.write_operand(s, inst, 0, extra.lhs);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 1, extra.rhs);
     }
 
     fn write_vector_store_elem(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const data = w.air.instructions.items(.data)[@intFromEnum(inst)].vector_store_elem;
-        const extra = w.air.extraData(Air.VectorCmp, data.payload).data;
+        const data = w.air.instructions.items(.data)[@int_from_enum(inst)].vector_store_elem;
+        const extra = w.air.extra_data(Air.VectorCmp, data.payload).data;
 
-        try w.writeOperand(s, inst, 0, data.vector_ptr);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 1, extra.lhs);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 2, extra.rhs);
+        try w.write_operand(s, inst, 0, data.vector_ptr);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 1, extra.lhs);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 2, extra.rhs);
     }
 
     fn write_fence(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const atomic_order = w.air.instructions.items(.data)[@intFromEnum(inst)].fence;
+        const atomic_order = w.air.instructions.items(.data)[@int_from_enum(inst)].fence;
 
-        try s.print("{s}", .{@tagName(atomic_order)});
+        try s.print("{s}", .{@tag_name(atomic_order)});
     }
 
     fn write_atomic_load(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const atomic_load = w.air.instructions.items(.data)[@intFromEnum(inst)].atomic_load;
+        const atomic_load = w.air.instructions.items(.data)[@int_from_enum(inst)].atomic_load;
 
-        try w.writeOperand(s, inst, 0, atomic_load.ptr);
-        try s.print(", {s}", .{@tagName(atomic_load.order)});
+        try w.write_operand(s, inst, 0, atomic_load.ptr);
+        try s.print(", {s}", .{@tag_name(atomic_load.order)});
     }
 
     fn write_prefetch(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const prefetch = w.air.instructions.items(.data)[@intFromEnum(inst)].prefetch;
+        const prefetch = w.air.instructions.items(.data)[@int_from_enum(inst)].prefetch;
 
-        try w.writeOperand(s, inst, 0, prefetch.ptr);
+        try w.write_operand(s, inst, 0, prefetch.ptr);
         try s.print(", {s}, {d}, {s}", .{
-            @tagName(prefetch.rw), prefetch.locality, @tagName(prefetch.cache),
+            @tag_name(prefetch.rw), prefetch.locality, @tag_name(prefetch.cache),
         });
     }
 
@@ -574,55 +574,55 @@ const Writer = struct {
         inst: Air.Inst.Index,
         order: std.builtin.AtomicOrder,
     ) @TypeOf(s).Error!void {
-        const bin_op = w.air.instructions.items(.data)[@intFromEnum(inst)].bin_op;
-        try w.writeOperand(s, inst, 0, bin_op.lhs);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 1, bin_op.rhs);
-        try s.print(", {s}", .{@tagName(order)});
+        const bin_op = w.air.instructions.items(.data)[@int_from_enum(inst)].bin_op;
+        try w.write_operand(s, inst, 0, bin_op.lhs);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 1, bin_op.rhs);
+        try s.print(", {s}", .{@tag_name(order)});
     }
 
     fn write_atomic_rmw(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
-        const extra = w.air.extraData(Air.AtomicRmw, pl_op.payload).data;
+        const pl_op = w.air.instructions.items(.data)[@int_from_enum(inst)].pl_op;
+        const extra = w.air.extra_data(Air.AtomicRmw, pl_op.payload).data;
 
-        try w.writeOperand(s, inst, 0, pl_op.operand);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 1, extra.operand);
-        try s.print(", {s}, {s}", .{ @tagName(extra.op()), @tagName(extra.ordering()) });
+        try w.write_operand(s, inst, 0, pl_op.operand);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 1, extra.operand);
+        try s.print(", {s}, {s}", .{ @tag_name(extra.op()), @tag_name(extra.ordering()) });
     }
 
     fn write_field_parent_ptr(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-        const extra = w.air.extraData(Air.FieldParentPtr, ty_pl.payload).data;
+        const ty_pl = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_pl;
+        const extra = w.air.extra_data(Air.FieldParentPtr, ty_pl.payload).data;
 
-        try w.writeOperand(s, inst, 0, extra.field_ptr);
+        try w.write_operand(s, inst, 0, extra.field_ptr);
         try s.print(", {d}", .{extra.field_index});
     }
 
     fn write_assembly(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-        const extra = w.air.extraData(Air.Asm, ty_pl.payload);
+        const ty_pl = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_pl;
+        const extra = w.air.extra_data(Air.Asm, ty_pl.payload);
         const is_volatile = @as(u1, @truncate(extra.data.flags >> 31)) != 0;
         const clobbers_len = @as(u31, @truncate(extra.data.flags));
         var extra_i: usize = extra.end;
         var op_index: usize = 0;
 
-        const ret_ty = w.typeOfIndex(inst);
-        try w.writeType(s, ret_ty);
+        const ret_ty = w.type_of_index(inst);
+        try w.write_type(s, ret_ty);
 
         if (is_volatile) {
-            try s.writeAll(", volatile");
+            try s.write_all(", volatile");
         }
 
-        const outputs = @as([]const Air.Inst.Ref, @ptrCast(w.air.extra[extra_i..][0..extra.data.outputs_len]));
+        const outputs = @as([]const Air.Inst.Ref, @ptr_cast(w.air.extra[extra_i..][0..extra.data.outputs_len]));
         extra_i += outputs.len;
-        const inputs = @as([]const Air.Inst.Ref, @ptrCast(w.air.extra[extra_i..][0..extra.data.inputs_len]));
+        const inputs = @as([]const Air.Inst.Ref, @ptr_cast(w.air.extra[extra_i..][0..extra.data.inputs_len]));
         extra_i += inputs.len;
 
         for (outputs) |output| {
-            const extra_bytes = std.mem.sliceAsBytes(w.air.extra[extra_i..]);
-            const constraint = std.mem.sliceTo(extra_bytes, 0);
-            const name = std.mem.sliceTo(extra_bytes[constraint.len + 1 ..], 0);
+            const extra_bytes = std.mem.slice_as_bytes(w.air.extra[extra_i..]);
+            const constraint = std.mem.slice_to(extra_bytes, 0);
+            const name = std.mem.slice_to(extra_bytes[constraint.len + 1 ..], 0);
 
             // This equation accounts for the fact that even if we have exactly 4 bytes
             // for the strings and their null terminators, we still use the next u32
@@ -633,198 +633,198 @@ const Writer = struct {
                 try s.print(", [{s}] -> {s}", .{ name, constraint });
             } else {
                 try s.print(", [{s}] out {s} = (", .{ name, constraint });
-                try w.writeOperand(s, inst, op_index, output);
+                try w.write_operand(s, inst, op_index, output);
                 op_index += 1;
-                try s.writeByte(')');
+                try s.write_byte(')');
             }
         }
 
         for (inputs) |input| {
-            const extra_bytes = std.mem.sliceAsBytes(w.air.extra[extra_i..]);
-            const constraint = std.mem.sliceTo(extra_bytes, 0);
-            const name = std.mem.sliceTo(extra_bytes[constraint.len + 1 ..], 0);
+            const extra_bytes = std.mem.slice_as_bytes(w.air.extra[extra_i..]);
+            const constraint = std.mem.slice_to(extra_bytes, 0);
+            const name = std.mem.slice_to(extra_bytes[constraint.len + 1 ..], 0);
             // This equation accounts for the fact that even if we have exactly 4 bytes
             // for the strings and their null terminators, we still use the next u32
             // for the null terminator.
             extra_i += (constraint.len + name.len + 1) / 4 + 1;
 
             try s.print(", [{s}] in {s} = (", .{ name, constraint });
-            try w.writeOperand(s, inst, op_index, input);
+            try w.write_operand(s, inst, op_index, input);
             op_index += 1;
-            try s.writeByte(')');
+            try s.write_byte(')');
         }
 
         {
             var clobber_i: u32 = 0;
             while (clobber_i < clobbers_len) : (clobber_i += 1) {
-                const extra_bytes = std.mem.sliceAsBytes(w.air.extra[extra_i..]);
-                const clobber = std.mem.sliceTo(extra_bytes, 0);
+                const extra_bytes = std.mem.slice_as_bytes(w.air.extra[extra_i..]);
+                const clobber = std.mem.slice_to(extra_bytes, 0);
                 // This equation accounts for the fact that even if we have exactly 4 bytes
                 // for the string, we still use the next u32 for the null terminator.
                 extra_i += clobber.len / 4 + 1;
 
-                try s.writeAll(", ~{");
-                try s.writeAll(clobber);
-                try s.writeAll("}");
+                try s.write_all(", ~{");
+                try s.write_all(clobber);
+                try s.write_all("}");
             }
         }
-        const asm_source = std.mem.sliceAsBytes(w.air.extra[extra_i..])[0..extra.data.source_len];
+        const asm_source = std.mem.slice_as_bytes(w.air.extra[extra_i..])[0..extra.data.source_len];
         try s.print(", \"{s}\"", .{asm_source});
     }
 
     fn write_dbg_stmt(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const dbg_stmt = w.air.instructions.items(.data)[@intFromEnum(inst)].dbg_stmt;
+        const dbg_stmt = w.air.instructions.items(.data)[@int_from_enum(inst)].dbg_stmt;
         try s.print("{d}:{d}", .{ dbg_stmt.line + 1, dbg_stmt.column + 1 });
     }
 
     fn write_dbg_var(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
-        try w.writeOperand(s, inst, 0, pl_op.operand);
-        const name = w.air.nullTerminatedString(pl_op.payload);
-        try s.print(", \"{}\"", .{std.zig.fmtEscapes(name)});
+        const pl_op = w.air.instructions.items(.data)[@int_from_enum(inst)].pl_op;
+        try w.write_operand(s, inst, 0, pl_op.operand);
+        const name = w.air.null_terminated_string(pl_op.payload);
+        try s.print(", \"{}\"", .{std.zig.fmt_escapes(name)});
     }
 
     fn write_call(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
-        const extra = w.air.extraData(Air.Call, pl_op.payload);
-        const args = @as([]const Air.Inst.Ref, @ptrCast(w.air.extra[extra.end..][0..extra.data.args_len]));
-        try w.writeOperand(s, inst, 0, pl_op.operand);
-        try s.writeAll(", [");
+        const pl_op = w.air.instructions.items(.data)[@int_from_enum(inst)].pl_op;
+        const extra = w.air.extra_data(Air.Call, pl_op.payload);
+        const args = @as([]const Air.Inst.Ref, @ptr_cast(w.air.extra[extra.end..][0..extra.data.args_len]));
+        try w.write_operand(s, inst, 0, pl_op.operand);
+        try s.write_all(", [");
         for (args, 0..) |arg, i| {
-            if (i != 0) try s.writeAll(", ");
-            try w.writeOperand(s, inst, 1 + i, arg);
+            if (i != 0) try s.write_all(", ");
+            try w.write_operand(s, inst, 1 + i, arg);
         }
-        try s.writeAll("]");
+        try s.write_all("]");
     }
 
     fn write_br(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const br = w.air.instructions.items(.data)[@intFromEnum(inst)].br;
-        try w.writeInstIndex(s, br.block_inst, false);
-        try s.writeAll(", ");
-        try w.writeOperand(s, inst, 0, br.operand);
+        const br = w.air.instructions.items(.data)[@int_from_enum(inst)].br;
+        try w.write_inst_index(s, br.block_inst, false);
+        try s.write_all(", ");
+        try w.write_operand(s, inst, 0, br.operand);
     }
 
     fn write_try(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
-        const extra = w.air.extraData(Air.Try, pl_op.payload);
-        const body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra.end..][0..extra.data.body_len]);
+        const pl_op = w.air.instructions.items(.data)[@int_from_enum(inst)].pl_op;
+        const extra = w.air.extra_data(Air.Try, pl_op.payload);
+        const body: []const Air.Inst.Index = @ptr_cast(w.air.extra[extra.end..][0..extra.data.body_len]);
         const liveness_condbr = if (w.liveness) |liveness|
-            liveness.getCondBr(inst)
+            liveness.get_cond_br(inst)
         else
             Liveness.CondBrSlices{ .then_deaths = &.{}, .else_deaths = &.{} };
 
-        try w.writeOperand(s, inst, 0, pl_op.operand);
-        if (w.skip_body) return s.writeAll(", ...");
-        try s.writeAll(", {\n");
+        try w.write_operand(s, inst, 0, pl_op.operand);
+        if (w.skip_body) return s.write_all(", ...");
+        try s.write_all(", {\n");
         const old_indent = w.indent;
         w.indent += 2;
 
         if (liveness_condbr.else_deaths.len != 0) {
-            try s.writeByteNTimes(' ', w.indent);
+            try s.write_byte_ntimes(' ', w.indent);
             for (liveness_condbr.else_deaths, 0..) |operand, i| {
-                if (i != 0) try s.writeAll(" ");
-                try s.print("%{d}!", .{@intFromEnum(operand)});
+                if (i != 0) try s.write_all(" ");
+                try s.print("%{d}!", .{@int_from_enum(operand)});
             }
-            try s.writeAll("\n");
+            try s.write_all("\n");
         }
-        try w.writeBody(s, body);
+        try w.write_body(s, body);
 
         w.indent = old_indent;
-        try s.writeByteNTimes(' ', w.indent);
-        try s.writeAll("}");
+        try s.write_byte_ntimes(' ', w.indent);
+        try s.write_all("}");
 
         for (liveness_condbr.then_deaths) |operand| {
-            try s.print(" %{d}!", .{@intFromEnum(operand)});
+            try s.print(" %{d}!", .{@int_from_enum(operand)});
         }
     }
 
     fn write_try_ptr(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const ty_pl = w.air.instructions.items(.data)[@intFromEnum(inst)].ty_pl;
-        const extra = w.air.extraData(Air.TryPtr, ty_pl.payload);
-        const body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra.end..][0..extra.data.body_len]);
+        const ty_pl = w.air.instructions.items(.data)[@int_from_enum(inst)].ty_pl;
+        const extra = w.air.extra_data(Air.TryPtr, ty_pl.payload);
+        const body: []const Air.Inst.Index = @ptr_cast(w.air.extra[extra.end..][0..extra.data.body_len]);
         const liveness_condbr = if (w.liveness) |liveness|
-            liveness.getCondBr(inst)
+            liveness.get_cond_br(inst)
         else
             Liveness.CondBrSlices{ .then_deaths = &.{}, .else_deaths = &.{} };
 
-        try w.writeOperand(s, inst, 0, extra.data.ptr);
+        try w.write_operand(s, inst, 0, extra.data.ptr);
 
-        try s.writeAll(", ");
-        try w.writeType(s, ty_pl.ty.toType());
-        if (w.skip_body) return s.writeAll(", ...");
-        try s.writeAll(", {\n");
+        try s.write_all(", ");
+        try w.write_type(s, ty_pl.ty.to_type());
+        if (w.skip_body) return s.write_all(", ...");
+        try s.write_all(", {\n");
         const old_indent = w.indent;
         w.indent += 2;
 
         if (liveness_condbr.else_deaths.len != 0) {
-            try s.writeByteNTimes(' ', w.indent);
+            try s.write_byte_ntimes(' ', w.indent);
             for (liveness_condbr.else_deaths, 0..) |operand, i| {
-                if (i != 0) try s.writeAll(" ");
-                try s.print("%{d}!", .{@intFromEnum(operand)});
+                if (i != 0) try s.write_all(" ");
+                try s.print("%{d}!", .{@int_from_enum(operand)});
             }
-            try s.writeAll("\n");
+            try s.write_all("\n");
         }
-        try w.writeBody(s, body);
+        try w.write_body(s, body);
 
         w.indent = old_indent;
-        try s.writeByteNTimes(' ', w.indent);
-        try s.writeAll("}");
+        try s.write_byte_ntimes(' ', w.indent);
+        try s.write_all("}");
 
         for (liveness_condbr.then_deaths) |operand| {
-            try s.print(" %{d}!", .{@intFromEnum(operand)});
+            try s.print(" %{d}!", .{@int_from_enum(operand)});
         }
     }
 
     fn write_cond_br(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
-        const extra = w.air.extraData(Air.CondBr, pl_op.payload);
-        const then_body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra.end..][0..extra.data.then_body_len]);
-        const else_body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra.end + then_body.len ..][0..extra.data.else_body_len]);
+        const pl_op = w.air.instructions.items(.data)[@int_from_enum(inst)].pl_op;
+        const extra = w.air.extra_data(Air.CondBr, pl_op.payload);
+        const then_body: []const Air.Inst.Index = @ptr_cast(w.air.extra[extra.end..][0..extra.data.then_body_len]);
+        const else_body: []const Air.Inst.Index = @ptr_cast(w.air.extra[extra.end + then_body.len ..][0..extra.data.else_body_len]);
         const liveness_condbr = if (w.liveness) |liveness|
-            liveness.getCondBr(inst)
+            liveness.get_cond_br(inst)
         else
             Liveness.CondBrSlices{ .then_deaths = &.{}, .else_deaths = &.{} };
 
-        try w.writeOperand(s, inst, 0, pl_op.operand);
-        if (w.skip_body) return s.writeAll(", ...");
-        try s.writeAll(", {\n");
+        try w.write_operand(s, inst, 0, pl_op.operand);
+        if (w.skip_body) return s.write_all(", ...");
+        try s.write_all(", {\n");
         const old_indent = w.indent;
         w.indent += 2;
 
         if (liveness_condbr.then_deaths.len != 0) {
-            try s.writeByteNTimes(' ', w.indent);
+            try s.write_byte_ntimes(' ', w.indent);
             for (liveness_condbr.then_deaths, 0..) |operand, i| {
-                if (i != 0) try s.writeAll(" ");
-                try s.print("%{d}!", .{@intFromEnum(operand)});
+                if (i != 0) try s.write_all(" ");
+                try s.print("%{d}!", .{@int_from_enum(operand)});
             }
-            try s.writeAll("\n");
+            try s.write_all("\n");
         }
 
-        try w.writeBody(s, then_body);
-        try s.writeByteNTimes(' ', old_indent);
-        try s.writeAll("}, {\n");
+        try w.write_body(s, then_body);
+        try s.write_byte_ntimes(' ', old_indent);
+        try s.write_all("}, {\n");
 
         if (liveness_condbr.else_deaths.len != 0) {
-            try s.writeByteNTimes(' ', w.indent);
+            try s.write_byte_ntimes(' ', w.indent);
             for (liveness_condbr.else_deaths, 0..) |operand, i| {
-                if (i != 0) try s.writeAll(" ");
-                try s.print("%{d}!", .{@intFromEnum(operand)});
+                if (i != 0) try s.write_all(" ");
+                try s.print("%{d}!", .{@int_from_enum(operand)});
             }
-            try s.writeAll("\n");
+            try s.write_all("\n");
         }
 
-        try w.writeBody(s, else_body);
+        try w.write_body(s, else_body);
         w.indent = old_indent;
 
-        try s.writeByteNTimes(' ', old_indent);
-        try s.writeAll("}");
+        try s.write_byte_ntimes(' ', old_indent);
+        try s.write_all("}");
     }
 
     fn write_switch_br(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
-        const switch_br = w.air.extraData(Air.SwitchBr, pl_op.payload);
+        const pl_op = w.air.instructions.items(.data)[@int_from_enum(inst)].pl_op;
+        const switch_br = w.air.extra_data(Air.SwitchBr, pl_op.payload);
         const liveness = if (w.liveness) |liveness|
-            liveness.getSwitchBr(w.gpa, inst, switch_br.data.cases_len + 1) catch
+            liveness.get_switch_br(w.gpa, inst, switch_br.data.cases_len + 1) catch
                 @panic("out of memory")
         else blk: {
             const slice = w.gpa.alloc([]const Air.Inst.Index, switch_br.data.cases_len + 1) catch
@@ -836,79 +836,79 @@ const Writer = struct {
         var extra_index: usize = switch_br.end;
         var case_i: u32 = 0;
 
-        try w.writeOperand(s, inst, 0, pl_op.operand);
-        if (w.skip_body) return s.writeAll(", ...");
+        try w.write_operand(s, inst, 0, pl_op.operand);
+        if (w.skip_body) return s.write_all(", ...");
         const old_indent = w.indent;
         w.indent += 2;
 
         while (case_i < switch_br.data.cases_len) : (case_i += 1) {
-            const case = w.air.extraData(Air.SwitchBr.Case, extra_index);
-            const items = @as([]const Air.Inst.Ref, @ptrCast(w.air.extra[case.end..][0..case.data.items_len]));
-            const case_body: []const Air.Inst.Index = @ptrCast(w.air.extra[case.end + items.len ..][0..case.data.body_len]);
+            const case = w.air.extra_data(Air.SwitchBr.Case, extra_index);
+            const items = @as([]const Air.Inst.Ref, @ptr_cast(w.air.extra[case.end..][0..case.data.items_len]));
+            const case_body: []const Air.Inst.Index = @ptr_cast(w.air.extra[case.end + items.len ..][0..case.data.body_len]);
             extra_index = case.end + case.data.items_len + case_body.len;
 
-            try s.writeAll(", [");
+            try s.write_all(", [");
             for (items, 0..) |item, item_i| {
-                if (item_i != 0) try s.writeAll(", ");
-                try w.writeInstRef(s, item, false);
+                if (item_i != 0) try s.write_all(", ");
+                try w.write_inst_ref(s, item, false);
             }
-            try s.writeAll("] => {\n");
+            try s.write_all("] => {\n");
             w.indent += 2;
 
             const deaths = liveness.deaths[case_i];
             if (deaths.len != 0) {
-                try s.writeByteNTimes(' ', w.indent);
+                try s.write_byte_ntimes(' ', w.indent);
                 for (deaths, 0..) |operand, i| {
-                    if (i != 0) try s.writeAll(" ");
-                    try s.print("%{d}!", .{@intFromEnum(operand)});
+                    if (i != 0) try s.write_all(" ");
+                    try s.print("%{d}!", .{@int_from_enum(operand)});
                 }
-                try s.writeAll("\n");
+                try s.write_all("\n");
             }
 
-            try w.writeBody(s, case_body);
+            try w.write_body(s, case_body);
             w.indent -= 2;
-            try s.writeByteNTimes(' ', w.indent);
-            try s.writeAll("}");
+            try s.write_byte_ntimes(' ', w.indent);
+            try s.write_all("}");
         }
 
-        const else_body: []const Air.Inst.Index = @ptrCast(w.air.extra[extra_index..][0..switch_br.data.else_body_len]);
+        const else_body: []const Air.Inst.Index = @ptr_cast(w.air.extra[extra_index..][0..switch_br.data.else_body_len]);
         if (else_body.len != 0) {
-            try s.writeAll(", else => {\n");
+            try s.write_all(", else => {\n");
             w.indent += 2;
 
             const deaths = liveness.deaths[liveness.deaths.len - 1];
             if (deaths.len != 0) {
-                try s.writeByteNTimes(' ', w.indent);
+                try s.write_byte_ntimes(' ', w.indent);
                 for (deaths, 0..) |operand, i| {
-                    if (i != 0) try s.writeAll(" ");
-                    try s.print("%{d}!", .{@intFromEnum(operand)});
+                    if (i != 0) try s.write_all(" ");
+                    try s.print("%{d}!", .{@int_from_enum(operand)});
                 }
-                try s.writeAll("\n");
+                try s.write_all("\n");
             }
 
-            try w.writeBody(s, else_body);
+            try w.write_body(s, else_body);
             w.indent -= 2;
-            try s.writeByteNTimes(' ', w.indent);
-            try s.writeAll("}");
+            try s.write_byte_ntimes(' ', w.indent);
+            try s.write_all("}");
         }
 
-        try s.writeAll("\n");
-        try s.writeByteNTimes(' ', old_indent);
+        try s.write_all("\n");
+        try s.write_byte_ntimes(' ', old_indent);
     }
 
     fn write_wasm_memory_size(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@int_from_enum(inst)].pl_op;
         try s.print("{d}", .{pl_op.payload});
     }
 
     fn write_wasm_memory_grow(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@int_from_enum(inst)].pl_op;
         try s.print("{d}, ", .{pl_op.payload});
-        try w.writeOperand(s, inst, 0, pl_op.operand);
+        try w.write_operand(s, inst, 0, pl_op.operand);
     }
 
     fn write_work_dimension(w: *Writer, s: anytype, inst: Air.Inst.Index) @TypeOf(s).Error!void {
-        const pl_op = w.air.instructions.items(.data)[@intFromEnum(inst)].pl_op;
+        const pl_op = w.air.instructions.items(.data)[@int_from_enum(inst)].pl_op;
         try s.print("{d}", .{pl_op.payload});
     }
 
@@ -922,20 +922,20 @@ const Writer = struct {
         const small_tomb_bits = Liveness.bpi - 1;
         const dies = if (w.liveness) |liveness| blk: {
             if (op_index < small_tomb_bits)
-                break :blk liveness.operandDies(inst, @as(Liveness.OperandInt, @intCast(op_index)));
+                break :blk liveness.operand_dies(inst, @as(Liveness.OperandInt, @int_cast(op_index)));
             var extra_index = liveness.special.get(inst).?;
             var tomb_op_index: usize = small_tomb_bits;
             while (true) {
                 const bits = liveness.extra[extra_index];
                 if (op_index < tomb_op_index + 31) {
-                    break :blk @as(u1, @truncate(bits >> @as(u5, @intCast(op_index - tomb_op_index)))) != 0;
+                    break :blk @as(u1, @truncate(bits >> @as(u5, @int_cast(op_index - tomb_op_index)))) != 0;
                 }
                 if ((bits >> 31) != 0) break :blk false;
                 extra_index += 1;
                 tomb_op_index += 31;
             }
         } else false;
-        return w.writeInstRef(s, operand, dies);
+        return w.write_inst_ref(s, operand, dies);
     }
 
     fn write_inst_ref(
@@ -944,17 +944,17 @@ const Writer = struct {
         operand: Air.Inst.Ref,
         dies: bool,
     ) @TypeOf(s).Error!void {
-        if (@intFromEnum(operand) < InternPool.static_len) {
+        if (@int_from_enum(operand) < InternPool.static_len) {
             return s.print("@{}", .{operand});
-        } else if (operand.toInterned()) |ip_index| {
+        } else if (operand.to_interned()) |ip_index| {
             const mod = w.module;
-            const ty = Type.fromInterned(mod.intern_pool.indexToKey(ip_index).typeOf());
+            const ty = Type.from_interned(mod.intern_pool.index_to_key(ip_index).type_of());
             try s.print("<{}, {}>", .{
                 ty.fmt(mod),
-                Value.fromInterned(ip_index).fmtValue(mod, null),
+                Value.from_interned(ip_index).fmt_value(mod, null),
             });
         } else {
-            return w.writeInstIndex(s, operand.toIndex().?, dies);
+            return w.write_inst_index(s, operand.to_index().?, dies);
         }
     }
 
@@ -965,12 +965,12 @@ const Writer = struct {
         dies: bool,
     ) @TypeOf(s).Error!void {
         _ = w;
-        try s.print("%{d}", .{@intFromEnum(inst)});
-        if (dies) try s.writeByte('!');
+        try s.print("%{d}", .{@int_from_enum(inst)});
+        if (dies) try s.write_byte('!');
     }
 
     fn type_of_index(w: *Writer, inst: Air.Inst.Index) Type {
         const mod = w.module;
-        return w.air.typeOfIndex(inst, &mod.intern_pool);
+        return w.air.type_of_index(inst, &mod.intern_pool);
     }
 };

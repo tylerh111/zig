@@ -65,17 +65,17 @@ pub const Fe = struct {
 
     /// Return true if both field elements are equivalent
     pub inline fn equivalent(a: Fe, b: Fe) bool {
-        return a.sub(b).isZero();
+        return a.sub(b).is_zero();
     }
 
     /// Unpack a field element
     pub fn from_bytes(s: [32]u8) Fe {
         var fe: Fe = undefined;
-        fe.limbs[0] = std.mem.readInt(u64, s[0..8], .little) & MASK51;
-        fe.limbs[1] = (std.mem.readInt(u64, s[6..14], .little) >> 3) & MASK51;
-        fe.limbs[2] = (std.mem.readInt(u64, s[12..20], .little) >> 6) & MASK51;
-        fe.limbs[3] = (std.mem.readInt(u64, s[19..27], .little) >> 1) & MASK51;
-        fe.limbs[4] = (std.mem.readInt(u64, s[24..32], .little) >> 12) & MASK51;
+        fe.limbs[0] = std.mem.read_int(u64, s[0..8], .little) & MASK51;
+        fe.limbs[1] = (std.mem.read_int(u64, s[6..14], .little) >> 3) & MASK51;
+        fe.limbs[2] = (std.mem.read_int(u64, s[12..20], .little) >> 6) & MASK51;
+        fe.limbs[3] = (std.mem.read_int(u64, s[19..27], .little) >> 1) & MASK51;
+        fe.limbs[4] = (std.mem.read_int(u64, s[24..32], .little) >> 12) & MASK51;
 
         return fe;
     }
@@ -85,10 +85,10 @@ pub const Fe = struct {
         var reduced = fe;
         reduced.reduce();
         var s: [32]u8 = undefined;
-        std.mem.writeInt(u64, s[0..8], reduced.limbs[0] | (reduced.limbs[1] << 51), .little);
-        std.mem.writeInt(u64, s[8..16], (reduced.limbs[1] >> 13) | (reduced.limbs[2] << 38), .little);
-        std.mem.writeInt(u64, s[16..24], (reduced.limbs[2] >> 26) | (reduced.limbs[3] << 25), .little);
-        std.mem.writeInt(u64, s[24..32], (reduced.limbs[3] >> 39) | (reduced.limbs[4] << 12), .little);
+        std.mem.write_int(u64, s[0..8], reduced.limbs[0] | (reduced.limbs[1] << 51), .little);
+        std.mem.write_int(u64, s[8..16], (reduced.limbs[1] >> 13) | (reduced.limbs[2] << 38), .little);
+        std.mem.write_int(u64, s[16..24], (reduced.limbs[2] >> 26) | (reduced.limbs[3] << 25), .little);
+        std.mem.write_int(u64, s[24..32], (reduced.limbs[3] >> 39) | (reduced.limbs[4] << 12), .little);
 
         return s;
     }
@@ -104,8 +104,8 @@ pub const Fe = struct {
         }
         fl[31] &= 0x7f;
         gl[31] &= 0x7f;
-        var fe_f = fromBytes(fl);
-        const fe_g = fromBytes(gl);
+        var fe_f = from_bytes(fl);
+        const fe_g = from_bytes(gl);
         fe_f.limbs[0] += (s[32] >> 7) * 19 + @as(u10, s[0] >> 7) * 722;
         i = 0;
         while (i < 5) : (i += 1) {
@@ -203,7 +203,7 @@ pub const Fe = struct {
 
     /// Return true if a field element is negative
     pub inline fn is_negative(a: Fe) bool {
-        return (a.toBytes()[0] & 1) != 0;
+        return (a.to_bytes()[0] & 1) != 0;
     }
 
     /// Conditonally replace a field element with `a` if `c` is positive
@@ -253,10 +253,10 @@ pub const Fe = struct {
         comptime var i = 0;
         inline while (i < 4) : (i += 1) {
             rs[i] = @as(u64, @truncate(r[i])) & MASK51;
-            r[i + 1] += @as(u64, @intCast(r[i] >> 51));
+            r[i + 1] += @as(u64, @int_cast(r[i] >> 51));
         }
         rs[4] = @as(u64, @truncate(r[4])) & MASK51;
-        var carry = @as(u64, @intCast(r[4] >> 51));
+        var carry = @as(u64, @int_cast(r[4] >> 51));
         rs[0] += 19 * carry;
         carry = rs[0] >> 51;
         rs[0] &= MASK51;
@@ -276,8 +276,8 @@ pub const Fe = struct {
         var r: [5]u128 = undefined;
         comptime var i = 0;
         inline while (i < 5) : (i += 1) {
-            ax[i] = @as(u128, @intCast(a.limbs[i]));
-            bx[i] = @as(u128, @intCast(b.limbs[i]));
+            ax[i] = @as(u128, @int_cast(a.limbs[i]));
+            bx[i] = @as(u128, @int_cast(b.limbs[i]));
         }
         i = 1;
         inline while (i < 5) : (i += 1) {
@@ -297,7 +297,7 @@ pub const Fe = struct {
         var r: [5]u128 = undefined;
         comptime var i = 0;
         inline while (i < 5) : (i += 1) {
-            ax[i] = @as(u128, @intCast(a.limbs[i]));
+            ax[i] = @as(u128, @int_cast(a.limbs[i]));
         }
         const a0_2 = 2 * ax[0];
         const a1_2 = 2 * ax[1];
@@ -332,7 +332,7 @@ pub const Fe = struct {
 
     /// Multiply a field element with a small (32-bit) integer
     pub inline fn mul32(a: Fe, comptime n: u32) Fe {
-        const sn = @as(u128, @intCast(n));
+        const sn = @as(u128, @int_cast(n));
         var fe: Fe = undefined;
         var x: u128 = 0;
         comptime var i = 0;
@@ -340,7 +340,7 @@ pub const Fe = struct {
             x = a.limbs[i] * sn + (x >> 51);
             fe.limbs[i] = @as(u64, @truncate(x)) & MASK51;
         }
-        fe.limbs[0] += @as(u64, @intCast(x >> 51)) * 19;
+        fe.limbs[0] += @as(u64, @int_cast(x >> 51)) * 19;
 
         return fe;
     }
@@ -385,7 +385,7 @@ pub const Fe = struct {
     /// Return the absolute value of a field element
     pub fn abs(a: Fe) Fe {
         var r = a;
-        r.cMov(a.neg(), @intFromBool(a.isNegative()));
+        r.c_mov(a.neg(), @int_from_bool(a.is_negative()));
         return r;
     }
 
@@ -400,7 +400,7 @@ pub const Fe = struct {
         const t2 = t.sqn(30).mul(t);
         const t3 = t2.sqn(60).mul(t2);
         const t4 = t3.sqn(120).mul(t3).sqn(10).mul(u).sqn(3).mul(_11).sq();
-        return @as(bool, @bitCast(@as(u1, @truncate(~(t4.toBytes()[1] & 1)))));
+        return @as(bool, @bit_cast(@as(u1, @truncate(~(t4.to_bytes()[1] & 1)))));
     }
 
     fn unchecked_sqrt(x2: Fe) Fe {
@@ -410,16 +410,16 @@ pub const Fe = struct {
         const m_root2 = m_root.sq();
         e = x2.sub(m_root2);
         var x = p_root;
-        x.cMov(m_root, @intFromBool(e.isZero()));
+        x.c_mov(m_root, @int_from_bool(e.is_zero()));
         return x;
     }
 
     /// Compute the square root of `x2`, returning `error.NotSquare` if `x2` was not a square
     pub fn sqrt(x2: Fe) NotSquareError!Fe {
         const x2_copy = x2;
-        const x = x2.uncheckedSqrt();
+        const x = x2.unchecked_sqrt();
         const check = x.sq().sub(x2_copy);
-        if (check.isZero()) {
+        if (check.is_zero()) {
             return x;
         }
         return error.NotSquare;

@@ -21,7 +21,7 @@ pub fn Once(comptime f: fn () void) type {
             if (@atomicLoad(bool, &self.done, .acquire))
                 return;
 
-            return self.callSlow();
+            return self.call_slow();
         }
 
         fn call_slow(self: *@This()) void {
@@ -67,5 +67,5 @@ test "Once executes its function just once" {
         }
     }
 
-    try testing.expectEqual(@as(i32, 1), global_number);
+    try testing.expect_equal(@as(i32, 1), global_number);
 }

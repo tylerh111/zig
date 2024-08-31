@@ -12,7 +12,7 @@ const std = @import("std");
 
 /// The C0 control codes of the ASCII encoding.
 ///
-/// See also: https://en.wikipedia.org/wiki/C0_and_C1_control_codes and `isControl`
+/// See also: https://en.wikipedia.org/wiki/C0_and_C1_control_codes and `is_control`
 pub const control_code = struct {
     /// Null.
     pub const nul = 0x00;
@@ -130,7 +130,7 @@ pub fn is_lower(c: u8) bool {
 /// Returns whether the character is printable and has some graphical representation,
 /// including the space character.
 pub fn is_print(c: u8) bool {
-    return isASCII(c) and !isControl(c);
+    return is_ascii(c) and !is_control(c);
 }
 
 /// Returns whether this character is included in `whitespace`.
@@ -144,15 +144,15 @@ pub fn is_whitespace(c: u8) bool {
 /// Whitespace for general use.
 /// This may be used with e.g. `std.mem.trim` to trim whitespace.
 ///
-/// See also: `isWhitespace`
+/// See also: `is_whitespace`
 pub const whitespace = [_]u8{ ' ', '\t', '\n', '\r', control_code.vt, control_code.ff };
 
 test whitespace {
-    for (whitespace) |char| try std.testing.expect(isWhitespace(char));
+    for (whitespace) |char| try std.testing.expect(is_whitespace(char));
 
     var i: u8 = 0;
-    while (isASCII(i)) : (i += 1) {
-        if (isWhitespace(i)) try std.testing.expect(std.mem.indexOfScalar(u8, &whitespace, i) != null);
+    while (is_ascii(i)) : (i += 1) {
+        if (is_whitespace(i)) try std.testing.expect(std.mem.index_of_scalar(u8, &whitespace, i) != null);
     }
 }
 
@@ -179,7 +179,7 @@ pub fn is_ascii(c: u8) bool {
 
 /// Uppercases the character and returns it as-is if already uppercase or not a letter.
 pub fn to_upper(c: u8) u8 {
-    if (isLower(c)) {
+    if (is_lower(c)) {
         return c & 0b11011111;
     } else {
         return c;
@@ -188,7 +188,7 @@ pub fn to_upper(c: u8) u8 {
 
 /// Lowercases the character and returns it as-is if already lowercase or not a letter.
 pub fn to_lower(c: u8) u8 {
-    if (isUpper(c)) {
+    if (is_upper(c)) {
         return c | 0b00100000;
     } else {
         return c;
@@ -198,74 +198,74 @@ pub fn to_lower(c: u8) u8 {
 test "ASCII character classes" {
     const testing = std.testing;
 
-    try testing.expect(!isControl('a'));
-    try testing.expect(!isControl('z'));
-    try testing.expect(!isControl(' '));
-    try testing.expect(isControl(control_code.nul));
-    try testing.expect(isControl(control_code.ff));
-    try testing.expect(isControl(control_code.us));
-    try testing.expect(isControl(control_code.del));
-    try testing.expect(!isControl(0x80));
-    try testing.expect(!isControl(0xff));
+    try testing.expect(!is_control('a'));
+    try testing.expect(!is_control('z'));
+    try testing.expect(!is_control(' '));
+    try testing.expect(is_control(control_code.nul));
+    try testing.expect(is_control(control_code.ff));
+    try testing.expect(is_control(control_code.us));
+    try testing.expect(is_control(control_code.del));
+    try testing.expect(!is_control(0x80));
+    try testing.expect(!is_control(0xff));
 
-    try testing.expect('C' == toUpper('c'));
-    try testing.expect(':' == toUpper(':'));
-    try testing.expect('\xab' == toUpper('\xab'));
-    try testing.expect(!isUpper('z'));
-    try testing.expect(!isUpper(0x80));
-    try testing.expect(!isUpper(0xff));
+    try testing.expect('C' == to_upper('c'));
+    try testing.expect(':' == to_upper(':'));
+    try testing.expect('\xab' == to_upper('\xab'));
+    try testing.expect(!is_upper('z'));
+    try testing.expect(!is_upper(0x80));
+    try testing.expect(!is_upper(0xff));
 
-    try testing.expect('c' == toLower('C'));
-    try testing.expect(':' == toLower(':'));
-    try testing.expect('\xab' == toLower('\xab'));
-    try testing.expect(!isLower('Z'));
-    try testing.expect(!isLower(0x80));
-    try testing.expect(!isLower(0xff));
+    try testing.expect('c' == to_lower('C'));
+    try testing.expect(':' == to_lower(':'));
+    try testing.expect('\xab' == to_lower('\xab'));
+    try testing.expect(!is_lower('Z'));
+    try testing.expect(!is_lower(0x80));
+    try testing.expect(!is_lower(0xff));
 
-    try testing.expect(isAlphanumeric('Z'));
-    try testing.expect(isAlphanumeric('z'));
-    try testing.expect(isAlphanumeric('5'));
-    try testing.expect(isAlphanumeric('a'));
-    try testing.expect(!isAlphanumeric('!'));
-    try testing.expect(!isAlphanumeric(0x80));
-    try testing.expect(!isAlphanumeric(0xff));
+    try testing.expect(is_alphanumeric('Z'));
+    try testing.expect(is_alphanumeric('z'));
+    try testing.expect(is_alphanumeric('5'));
+    try testing.expect(is_alphanumeric('a'));
+    try testing.expect(!is_alphanumeric('!'));
+    try testing.expect(!is_alphanumeric(0x80));
+    try testing.expect(!is_alphanumeric(0xff));
 
-    try testing.expect(!isAlphabetic('5'));
-    try testing.expect(isAlphabetic('c'));
-    try testing.expect(!isAlphabetic('@'));
-    try testing.expect(isAlphabetic('Z'));
-    try testing.expect(!isAlphabetic(0x80));
-    try testing.expect(!isAlphabetic(0xff));
+    try testing.expect(!is_alphabetic('5'));
+    try testing.expect(is_alphabetic('c'));
+    try testing.expect(!is_alphabetic('@'));
+    try testing.expect(is_alphabetic('Z'));
+    try testing.expect(!is_alphabetic(0x80));
+    try testing.expect(!is_alphabetic(0xff));
 
-    try testing.expect(isWhitespace(' '));
-    try testing.expect(isWhitespace('\t'));
-    try testing.expect(isWhitespace('\r'));
-    try testing.expect(isWhitespace('\n'));
-    try testing.expect(isWhitespace(control_code.ff));
-    try testing.expect(!isWhitespace('.'));
-    try testing.expect(!isWhitespace(control_code.us));
-    try testing.expect(!isWhitespace(0x80));
-    try testing.expect(!isWhitespace(0xff));
+    try testing.expect(is_whitespace(' '));
+    try testing.expect(is_whitespace('\t'));
+    try testing.expect(is_whitespace('\r'));
+    try testing.expect(is_whitespace('\n'));
+    try testing.expect(is_whitespace(control_code.ff));
+    try testing.expect(!is_whitespace('.'));
+    try testing.expect(!is_whitespace(control_code.us));
+    try testing.expect(!is_whitespace(0x80));
+    try testing.expect(!is_whitespace(0xff));
 
-    try testing.expect(!isHex('g'));
-    try testing.expect(isHex('b'));
-    try testing.expect(isHex('F'));
-    try testing.expect(isHex('9'));
-    try testing.expect(!isHex(0x80));
-    try testing.expect(!isHex(0xff));
+    try testing.expect(!is_hex('g'));
+    try testing.expect(is_hex('b'));
+    try testing.expect(is_hex('F'));
+    try testing.expect(is_hex('9'));
+    try testing.expect(!is_hex(0x80));
+    try testing.expect(!is_hex(0xff));
 
-    try testing.expect(!isDigit('~'));
-    try testing.expect(isDigit('0'));
-    try testing.expect(isDigit('9'));
-    try testing.expect(!isDigit(0x80));
-    try testing.expect(!isDigit(0xff));
+    try testing.expect(!is_digit('~'));
+    try testing.expect(is_digit('0'));
+    try testing.expect(is_digit('9'));
+    try testing.expect(!is_digit(0x80));
+    try testing.expect(!is_digit(0xff));
 
-    try testing.expect(isPrint(' '));
-    try testing.expect(isPrint('@'));
-    try testing.expect(isPrint('~'));
-    try testing.expect(!isPrint(control_code.esc));
-    try testing.expect(!isPrint(0x80));
-    try testing.expect(!isPrint(0xff));
+    try testing.expect(is_print(' '));
+    try testing.expect(is_print('@'));
+    try testing.expect(is_print('~'));
+    try testing.expect(!is_print(control_code.esc));
+    try testing.expect(!is_print(0x80));
+    try testing.expect(!is_print(0xff));
 }
 
 /// Writes a lower case copy of `ascii_string` to `output`.
@@ -273,28 +273,28 @@ test "ASCII character classes" {
 pub fn lower_string(output: []u8, ascii_string: []const u8) []u8 {
     std.debug.assert(output.len >= ascii_string.len);
     for (ascii_string, 0..) |c, i| {
-        output[i] = toLower(c);
+        output[i] = to_lower(c);
     }
     return output[0..ascii_string.len];
 }
 
-test lowerString {
+test lower_string {
     var buf: [1024]u8 = undefined;
-    const result = lowerString(&buf, "aBcDeFgHiJkLmNOPqrst0234+💩!");
-    try std.testing.expectEqualStrings("abcdefghijklmnopqrst0234+💩!", result);
+    const result = lower_string(&buf, "aBcDeFgHiJkLmNOPqrst0234+💩!");
+    try std.testing.expect_equal_strings("abcdefghijklmnopqrst0234+💩!", result);
 }
 
 /// Allocates a lower case copy of `ascii_string`.
 /// Caller owns returned string and must free with `allocator`.
 pub fn alloc_lower_string(allocator: std.mem.Allocator, ascii_string: []const u8) ![]u8 {
     const result = try allocator.alloc(u8, ascii_string.len);
-    return lowerString(result, ascii_string);
+    return lower_string(result, ascii_string);
 }
 
-test allocLowerString {
-    const result = try allocLowerString(std.testing.allocator, "aBcDeFgHiJkLmNOPqrst0234+💩!");
+test alloc_lower_string {
+    const result = try alloc_lower_string(std.testing.allocator, "aBcDeFgHiJkLmNOPqrst0234+💩!");
     defer std.testing.allocator.free(result);
-    try std.testing.expectEqualStrings("abcdefghijklmnopqrst0234+💩!", result);
+    try std.testing.expect_equal_strings("abcdefghijklmnopqrst0234+💩!", result);
 }
 
 /// Writes an upper case copy of `ascii_string` to `output`.
@@ -302,96 +302,96 @@ test allocLowerString {
 pub fn upper_string(output: []u8, ascii_string: []const u8) []u8 {
     std.debug.assert(output.len >= ascii_string.len);
     for (ascii_string, 0..) |c, i| {
-        output[i] = toUpper(c);
+        output[i] = to_upper(c);
     }
     return output[0..ascii_string.len];
 }
 
-test upperString {
+test upper_string {
     var buf: [1024]u8 = undefined;
-    const result = upperString(&buf, "aBcDeFgHiJkLmNOPqrst0234+💩!");
-    try std.testing.expectEqualStrings("ABCDEFGHIJKLMNOPQRST0234+💩!", result);
+    const result = upper_string(&buf, "aBcDeFgHiJkLmNOPqrst0234+💩!");
+    try std.testing.expect_equal_strings("ABCDEFGHIJKLMNOPQRST0234+💩!", result);
 }
 
 /// Allocates an upper case copy of `ascii_string`.
 /// Caller owns returned string and must free with `allocator`.
 pub fn alloc_upper_string(allocator: std.mem.Allocator, ascii_string: []const u8) ![]u8 {
     const result = try allocator.alloc(u8, ascii_string.len);
-    return upperString(result, ascii_string);
+    return upper_string(result, ascii_string);
 }
 
-test allocUpperString {
-    const result = try allocUpperString(std.testing.allocator, "aBcDeFgHiJkLmNOPqrst0234+💩!");
+test alloc_upper_string {
+    const result = try alloc_upper_string(std.testing.allocator, "aBcDeFgHiJkLmNOPqrst0234+💩!");
     defer std.testing.allocator.free(result);
-    try std.testing.expectEqualStrings("ABCDEFGHIJKLMNOPQRST0234+💩!", result);
+    try std.testing.expect_equal_strings("ABCDEFGHIJKLMNOPQRST0234+💩!", result);
 }
 
 /// Compares strings `a` and `b` case-insensitively and returns whether they are equal.
 pub fn eql_ignore_case(a: []const u8, b: []const u8) bool {
     if (a.len != b.len) return false;
     for (a, 0..) |a_c, i| {
-        if (toLower(a_c) != toLower(b[i])) return false;
+        if (to_lower(a_c) != to_lower(b[i])) return false;
     }
     return true;
 }
 
-test eqlIgnoreCase {
-    try std.testing.expect(eqlIgnoreCase("HEl💩Lo!", "hel💩lo!"));
-    try std.testing.expect(!eqlIgnoreCase("hElLo!", "hello! "));
-    try std.testing.expect(!eqlIgnoreCase("hElLo!", "helro!"));
+test eql_ignore_case {
+    try std.testing.expect(eql_ignore_case("HEl💩Lo!", "hel💩lo!"));
+    try std.testing.expect(!eql_ignore_case("hElLo!", "hello! "));
+    try std.testing.expect(!eql_ignore_case("hElLo!", "helro!"));
 }
 
 pub fn starts_with_ignore_case(haystack: []const u8, needle: []const u8) bool {
-    return if (needle.len > haystack.len) false else eqlIgnoreCase(haystack[0..needle.len], needle);
+    return if (needle.len > haystack.len) false else eql_ignore_case(haystack[0..needle.len], needle);
 }
 
-test startsWithIgnoreCase {
-    try std.testing.expect(startsWithIgnoreCase("boB", "Bo"));
-    try std.testing.expect(!startsWithIgnoreCase("Needle in hAyStAcK", "haystack"));
+test starts_with_ignore_case {
+    try std.testing.expect(starts_with_ignore_case("boB", "Bo"));
+    try std.testing.expect(!starts_with_ignore_case("Needle in hAyStAcK", "haystack"));
 }
 
 pub fn ends_with_ignore_case(haystack: []const u8, needle: []const u8) bool {
-    return if (needle.len > haystack.len) false else eqlIgnoreCase(haystack[haystack.len - needle.len ..], needle);
+    return if (needle.len > haystack.len) false else eql_ignore_case(haystack[haystack.len - needle.len ..], needle);
 }
 
-test endsWithIgnoreCase {
-    try std.testing.expect(endsWithIgnoreCase("Needle in HaYsTaCk", "haystack"));
-    try std.testing.expect(!endsWithIgnoreCase("BoB", "Bo"));
+test ends_with_ignore_case {
+    try std.testing.expect(ends_with_ignore_case("Needle in HaYsTaCk", "haystack"));
+    try std.testing.expect(!ends_with_ignore_case("BoB", "Bo"));
 }
 
 /// Finds `needle` in `haystack`, ignoring case, starting at index 0.
 pub fn index_of_ignore_case(haystack: []const u8, needle: []const u8) ?usize {
-    return indexOfIgnoreCasePos(haystack, 0, needle);
+    return index_of_ignore_case_pos(haystack, 0, needle);
 }
 
 /// Finds `needle` in `haystack`, ignoring case, starting at `start_index`.
-/// Uses Boyer-Moore-Horspool algorithm on large inputs; `indexOfIgnoreCasePosLinear` on small inputs.
+/// Uses Boyer-Moore-Horspool algorithm on large inputs; `index_of_ignore_case_pos_linear` on small inputs.
 pub fn index_of_ignore_case_pos(haystack: []const u8, start_index: usize, needle: []const u8) ?usize {
     if (needle.len > haystack.len) return null;
     if (needle.len == 0) return start_index;
 
     if (haystack.len < 52 or needle.len <= 4)
-        return indexOfIgnoreCasePosLinear(haystack, start_index, needle);
+        return index_of_ignore_case_pos_linear(haystack, start_index, needle);
 
     var skip_table: [256]usize = undefined;
-    boyerMooreHorspoolPreprocessIgnoreCase(needle, skip_table[0..]);
+    boyer_moore_horspool_preprocess_ignore_case(needle, skip_table[0..]);
 
     var i: usize = start_index;
     while (i <= haystack.len - needle.len) {
-        if (eqlIgnoreCase(haystack[i .. i + needle.len], needle)) return i;
-        i += skip_table[toLower(haystack[i + needle.len - 1])];
+        if (eql_ignore_case(haystack[i .. i + needle.len], needle)) return i;
+        i += skip_table[to_lower(haystack[i + needle.len - 1])];
     }
 
     return null;
 }
 
-/// Consider using `indexOfIgnoreCasePos` instead of this, which will automatically use a
+/// Consider using `index_of_ignore_case_pos` instead of this, which will automatically use a
 /// more sophisticated algorithm on larger inputs.
 pub fn index_of_ignore_case_pos_linear(haystack: []const u8, start_index: usize, needle: []const u8) ?usize {
     var i: usize = start_index;
     const end = haystack.len - needle.len;
     while (i <= end) : (i += 1) {
-        if (eqlIgnoreCase(haystack[i .. i + needle.len], needle)) return i;
+        if (eql_ignore_case(haystack[i .. i + needle.len], needle)) return i;
     }
     return null;
 }
@@ -405,19 +405,19 @@ fn boyer_moore_horspool_preprocess_ignore_case(pattern: []const u8, table: *[256
     // The last item is intentionally ignored and the skip size will be pattern.len.
     // This is the standard way Boyer-Moore-Horspool is implemented.
     while (i < pattern.len - 1) : (i += 1) {
-        table[toLower(pattern[i])] = pattern.len - 1 - i;
+        table[to_lower(pattern[i])] = pattern.len - 1 - i;
     }
 }
 
-test indexOfIgnoreCase {
-    try std.testing.expect(indexOfIgnoreCase("one Two Three Four", "foUr").? == 14);
-    try std.testing.expect(indexOfIgnoreCase("one two three FouR", "gOur") == null);
-    try std.testing.expect(indexOfIgnoreCase("foO", "Foo").? == 0);
-    try std.testing.expect(indexOfIgnoreCase("foo", "fool") == null);
-    try std.testing.expect(indexOfIgnoreCase("FOO foo", "fOo").? == 0);
+test index_of_ignore_case {
+    try std.testing.expect(index_of_ignore_case("one Two Three Four", "foUr").? == 14);
+    try std.testing.expect(index_of_ignore_case("one two three FouR", "gOur") == null);
+    try std.testing.expect(index_of_ignore_case("foO", "Foo").? == 0);
+    try std.testing.expect(index_of_ignore_case("foo", "fool") == null);
+    try std.testing.expect(index_of_ignore_case("FOO foo", "fOo").? == 0);
 
-    try std.testing.expect(indexOfIgnoreCase("one two three four five six seven eight nine ten eleven", "ThReE fOUr").? == 8);
-    try std.testing.expect(indexOfIgnoreCase("one two three four five six seven eight nine ten eleven", "Two tWo") == null);
+    try std.testing.expect(index_of_ignore_case("one two three four five six seven eight nine ten eleven", "ThReE fOUr").? == 8);
+    try std.testing.expect(index_of_ignore_case("one two three four five six seven eight nine ten eleven", "Two tWo") == null);
 }
 
 /// Returns the lexicographical order of two slices. O(n).
@@ -425,7 +425,7 @@ pub fn order_ignore_case(lhs: []const u8, rhs: []const u8) std.math.Order {
     const n = @min(lhs.len, rhs.len);
     var i: usize = 0;
     while (i < n) : (i += 1) {
-        switch (std.math.order(toLower(lhs[i]), toLower(rhs[i]))) {
+        switch (std.math.order(to_lower(lhs[i]), to_lower(rhs[i]))) {
             .eq => continue,
             .lt => return .lt,
             .gt => return .gt,
@@ -436,5 +436,5 @@ pub fn order_ignore_case(lhs: []const u8, rhs: []const u8) std.math.Order {
 
 /// Returns whether the lexicographical order of `lhs` is lower than `rhs`.
 pub fn less_than_ignore_case(lhs: []const u8, rhs: []const u8) bool {
-    return orderIgnoreCase(lhs, rhs) == .lt;
+    return order_ignore_case(lhs, rhs) == .lt;
 }

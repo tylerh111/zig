@@ -1,6 +1,6 @@
 export fn entry() void {
-    const llamas1 = makeLlamas(5);
-    const llamas2 = makeLlamas(5);
+    const llamas1 = make_llamas(5);
+    const llamas2 = make_llamas(5);
     _ = llamas1;
     _ = llamas2;
 }

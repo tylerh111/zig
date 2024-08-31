@@ -49,7 +49,7 @@ const ModuleInfo = struct {
 
     /// Fetch the list of callees per function. Guaranteed to contain only unique IDs.
     fn callees(self: ModuleInfo, fn_id: ResultId) []const ResultId {
-        const fn_index = self.functions.getIndex(fn_id).?;
+        const fn_index = self.functions.get_index(fn_id).?;
         const values = self.functions.values();
         const first_callee = values[fn_index].first_callee;
         if (fn_index == values.len - 1) {
@@ -82,15 +82,15 @@ const ModuleInfo = struct {
         var maybe_current_function: ?ResultId = null;
         var fn_ty_id: ResultId = undefined;
 
-        var it = binary.iterateInstructions();
+        var it = binary.iterate_instructions();
         while (it.next()) |inst| {
             result_id_offsets.items.len = 0;
-            try parser.parseInstructionResultIds(binary, inst, &result_id_offsets);
+            try parser.parse_instruction_result_ids(binary, inst, &result_id_offsets);
 
             switch (inst.opcode) {
                 .OpEntryPoint => {
                     const entry_point: ResultId = @enumFromInt(inst.operands[1]);
-                    const entry = try entry_points.getOrPut(entry_point);
+                    const entry = try entry_points.get_or_put(entry_point);
                     if (entry.found_existing) {
                         log.err("Entry point type {} has duplicate definition", .{entry_point});
                         return error.DuplicateId;
@@ -99,9 +99,9 @@ const ModuleInfo = struct {
                 .OpTypeFunction => {
                     const fn_type: ResultId = @enumFromInt(inst.operands[0]);
                     const return_type: ResultId = @enumFromInt(inst.operands[1]);
-                    const param_types: []const ResultId = @ptrCast(inst.operands[2..]);
+                    const param_types: []const ResultId = @ptr_cast(inst.operands[2..]);
 
-                    const entry = try fn_types.getOrPut(fn_type);
+                    const entry = try fn_types.get_or_put(fn_type);
                     if (entry.found_existing) {
                         log.err("Function type {} has duplicate definition", .{fn_type});
                         return error.DuplicateId;
@@ -113,7 +113,7 @@ const ModuleInfo = struct {
                     };
                 },
                 .OpExtInst => {
-                    // Note: format and set are already verified by parseInstructionResultIds().
+                    // Note: format and set are already verified by parse_instruction_result_ids().
                     const global_type: ResultId = @enumFromInt(inst.operands[0]);
                     const result_id: ResultId = @enumFromInt(inst.operands[1]);
                     const set_id: ResultId = @enumFromInt(inst.operands[2]);
@@ -141,7 +141,7 @@ const ModuleInfo = struct {
 
                     maybe_current_function = @enumFromInt(inst.operands[1]);
                     fn_ty_id = @enumFromInt(inst.operands[3]);
-                    function_invocation_globals.clearRetainingCapacity();
+                    function_invocation_globals.clear_retaining_capacity();
                 },
                 .OpFunctionCall => {
                     const callee: ResultId = @enumFromInt(inst.operands[2]);
@@ -152,14 +152,14 @@ const ModuleInfo = struct {
                         log.err("encountered OpFunctionEnd without corresponding OpFunction", .{});
                         return error.InvalidPhysicalFormat;
                     };
-                    const entry = try functions.getOrPut(current_function);
+                    const entry = try functions.get_or_put(current_function);
                     if (entry.found_existing) {
                         log.err("Function {} has duplicate definition", .{current_function});
                         return error.DuplicateId;
                     }
 
                     const first_callee = callee_store.items.len;
-                    try callee_store.appendSlice(calls.keys());
+                    try callee_store.append_slice(calls.keys());
 
                     const fn_type = fn_types.get(fn_ty_id) orelse {
                         log.err("Function {} has invalid OpFunction type", .{current_function});
@@ -173,7 +173,7 @@ const ModuleInfo = struct {
                         .invocation_globals = try function_invocation_globals.unmanaged.clone(arena),
                     };
                     maybe_current_function = null;
-                    calls.clearRetainingCapacity();
+                    calls.clear_retaining_capacity();
                 },
                 else => {},
             }
@@ -201,17 +201,17 @@ const ModuleInfo = struct {
 
     /// Derive the remaining info from the structures filled in by parsing.
     fn resolve(self: *ModuleInfo, arena: Allocator) !void {
-        try self.resolveInvocationGlobalUsage(arena);
-        try self.resolveInvocationGlobalDependencies(arena);
+        try self.resolve_invocation_global_usage(arena);
+        try self.resolve_invocation_global_dependencies(arena);
     }
 
     /// For each function, extend the list of `invocation_globals` with the
     /// invocation globals that ALL of its dependencies use.
     fn resolve_invocation_global_usage(self: *ModuleInfo, arena: Allocator) !void {
-        var seen = try std.DynamicBitSetUnmanaged.initEmpty(arena, self.functions.count());
+        var seen = try std.DynamicBitSetUnmanaged.init_empty(arena, self.functions.count());
 
         for (self.functions.keys()) |id| {
-            try self.resolveInvocationGlobalUsageStep(arena, id, &seen);
+            try self.resolve_invocation_global_usage_step(arena, id, &seen);
         }
     }
 
@@ -221,19 +221,19 @@ const ModuleInfo = struct {
         id: ResultId,
         seen: *std.DynamicBitSetUnmanaged,
     ) !void {
-        const index = self.functions.getIndex(id) orelse {
+        const index = self.functions.get_index(id) orelse {
             log.err("function calls invalid function {}", .{id});
             return error.InvalidId;
         };
 
-        if (seen.isSet(index)) {
+        if (seen.is_set(index)) {
             return;
         }
         seen.set(index);
 
         const info = &self.functions.values()[index];
         for (self.callees(id)) |callee| {
-            try self.resolveInvocationGlobalUsageStep(arena, callee, seen);
+            try self.resolve_invocation_global_usage_step(arena, callee, seen);
             const callee_info = self.functions.get(callee).?;
             for (callee_info.invocation_globals.keys()) |global| {
                 try info.invocation_globals.put(arena, global, {});
@@ -242,15 +242,15 @@ const ModuleInfo = struct {
     }
 
     /// For each invocation global, populate and fully resolve the `dependencies` set.
-    /// This requires `resolveInvocationGlobalUsage()` to be already done.
+    /// This requires `resolve_invocation_global_usage()` to be already done.
     fn resolve_invocation_global_dependencies(
         self: *ModuleInfo,
         arena: Allocator,
     ) !void {
-        var seen = try std.DynamicBitSetUnmanaged.initEmpty(arena, self.invocation_globals.count());
+        var seen = try std.DynamicBitSetUnmanaged.init_empty(arena, self.invocation_globals.count());
 
         for (self.invocation_globals.keys()) |id| {
-            try self.resolveInvocationGlobalDependenciesStep(arena, id, &seen);
+            try self.resolve_invocation_global_dependencies_step(arena, id, &seen);
         }
     }
 
@@ -260,12 +260,12 @@ const ModuleInfo = struct {
         id: ResultId,
         seen: *std.DynamicBitSetUnmanaged,
     ) !void {
-        const index = self.invocation_globals.getIndex(id) orelse {
+        const index = self.invocation_globals.get_index(id) orelse {
             log.err("invalid invocation global {}", .{id});
             return error.InvalidId;
         };
 
-        if (seen.isSet(index)) {
+        if (seen.is_set(index)) {
             return;
         }
         seen.set(index);
@@ -288,9 +288,9 @@ const ModuleInfo = struct {
             }
 
             try info.dependencies.put(arena, dependency, {});
-            try self.resolveInvocationGlobalDependenciesStep(arena, dependency, seen);
+            try self.resolve_invocation_global_dependencies_step(arena, dependency, seen);
 
-            const dep_info = self.invocation_globals.getPtr(dependency).?;
+            const dep_info = self.invocation_globals.get_ptr(dependency).?;
 
             for (dep_info.dependencies.keys()) |global| {
                 try info.dependencies.put(arena, global, {});
@@ -307,8 +307,8 @@ const ModuleBuilder = struct {
         const Context = struct {
             pub fn hash(_: @This(), ty: FunctionType) u32 {
                 var hasher = std.hash.Wyhash.init(0);
-                hasher.update(std.mem.asBytes(&ty.return_type));
-                hasher.update(std.mem.sliceAsBytes(ty.param_types));
+                hasher.update(std.mem.as_bytes(&ty.return_type));
+                hasher.update(std.mem.slice_as_bytes(ty.param_types));
                 return @truncate(hasher.final());
             }
 
@@ -329,7 +329,7 @@ const ModuleBuilder = struct {
         global_id_base: u32,
 
         fn invocation_global_id(self: FunctionNewInfo, index: usize) ResultId {
-            return @enumFromInt(self.global_id_base + @as(u32, @intCast(index)));
+            return @enumFromInt(self.global_id_base + @as(u32, @int_cast(index)));
         }
     };
 
@@ -356,12 +356,12 @@ const ModuleBuilder = struct {
             .entry_point_new_id_base = undefined,
             .new_functions_section = null,
         };
-        self.entry_point_new_id_base = @intFromEnum(self.allocIds(@intCast(info.entry_points.count())));
+        self.entry_point_new_id_base = @int_from_enum(self.alloc_ids(@int_cast(info.entry_points.count())));
         return self;
     }
 
     fn alloc_id(self: *ModuleBuilder) ResultId {
-        return self.allocIds(1);
+        return self.alloc_ids(1);
     }
 
     fn alloc_ids(self: *ModuleBuilder, n: u32) ResultId {
@@ -379,7 +379,7 @@ const ModuleBuilder = struct {
 
     /// Process everything from `binary` up to the first function and emit it into the builder.
     fn process_preamble(self: *ModuleBuilder, binary: BinaryModule, info: ModuleInfo) !void {
-        var it = binary.iterateInstructions();
+        var it = binary.iterate_instructions();
         while (it.next()) |inst| {
             switch (inst.opcode) {
                 .OpExtInst => {
@@ -392,16 +392,16 @@ const ModuleBuilder = struct {
                 },
                 .OpEntryPoint => {
                     const original_id: ResultId = @enumFromInt(inst.operands[1]);
-                    const new_id_index = info.entry_points.getIndex(original_id).?;
+                    const new_id_index = info.entry_points.get_index(original_id).?;
                     const new_id: ResultId = @enumFromInt(self.entry_point_new_id_base + new_id_index);
-                    try self.section.emitRaw(self.arena, .OpEntryPoint, inst.operands.len);
-                    self.section.writeWord(inst.operands[0]);
-                    self.section.writeOperand(ResultId, new_id);
-                    self.section.writeWords(inst.operands[2..]);
+                    try self.section.emit_raw(self.arena, .OpEntryPoint, inst.operands.len);
+                    self.section.write_word(inst.operands[0]);
+                    self.section.write_operand(ResultId, new_id);
+                    self.section.write_words(inst.operands[2..]);
                     continue;
                 },
                 .OpTypeFunction => {
-                    // Re-emitted in `emitFunctionTypes()`. We can do this because
+                    // Re-emitted in `emit_function_types()`. We can do this because
                     // OpTypeFunction's may not currently be used anywhere that is not
                     // directly with an OpFunction. For now we igore Intels function
                     // pointers extension, that is not a problem with a generalized
@@ -412,7 +412,7 @@ const ModuleBuilder = struct {
                 else => {},
             }
 
-            try self.section.emitRawInstruction(self.arena, inst.opcode, inst.operands);
+            try self.section.emit_raw_instruction(self.arena, inst.opcode, inst.operands);
         }
     }
 
@@ -426,10 +426,10 @@ const ModuleBuilder = struct {
             }
             @memcpy(new_param_types[invocation_global_count..], fn_info.param_types);
 
-            const new_type = try self.internFunctionType(fn_info.return_type, new_param_types);
+            const new_type = try self.intern_function_type(fn_info.return_type, new_param_types);
             try self.function_new_info.put(self.arena, func, .{
                 .new_function_type = new_type,
-                .global_id_base = @intFromEnum(self.allocIds(@intCast(invocation_global_count))),
+                .global_id_base = @int_from_enum(self.alloc_ids(@int_cast(invocation_global_count))),
             });
         }
     }
@@ -447,7 +447,7 @@ const ModuleBuilder = struct {
         // those in the `function_types` set.
         for (info.entry_points.keys()) |func| {
             const fn_info = info.functions.get(func).?;
-            _ = try self.internFunctionType(fn_info.return_type, fn_info.param_types);
+            _ = try self.intern_function_type(fn_info.return_type, fn_info.param_types);
         }
 
         for (self.function_types.keys(), self.function_types.values()) |fn_type, result_id| {
@@ -460,13 +460,13 @@ const ModuleBuilder = struct {
     }
 
     fn intern_function_type(self: *ModuleBuilder, return_type: ResultId, param_types: []const ResultId) !ResultId {
-        const entry = try self.function_types.getOrPut(self.arena, .{
+        const entry = try self.function_types.get_or_put(self.arena, .{
             .return_type = return_type,
             .param_types = param_types,
         });
 
         if (!entry.found_existing) {
-            const new_id = self.allocId();
+            const new_id = self.alloc_id();
             entry.value_ptr.* = new_id;
         }
 
@@ -484,14 +484,14 @@ const ModuleBuilder = struct {
         var operands = std.ArrayList(u32).init(self.arena);
 
         var maybe_current_function: ?ResultId = null;
-        var it = binary.iterateInstructionsFrom(binary.sections.functions);
+        var it = binary.iterate_instructions_from(binary.sections.functions);
         self.new_functions_section = self.section.instructions.items.len;
         while (it.next()) |inst| {
             result_id_offsets.items.len = 0;
-            try parser.parseInstructionResultIds(binary, inst, &result_id_offsets);
+            try parser.parse_instruction_result_ids(binary, inst, &result_id_offsets);
 
             operands.items.len = 0;
-            try operands.appendSlice(inst.operands);
+            try operands.append_slice(inst.operands);
 
             // Replace the result-ids with the global's new result-id if required.
             for (result_id_offsets.items) |off| {
@@ -500,8 +500,8 @@ const ModuleBuilder = struct {
                     const func = maybe_current_function.?;
                     const new_info = self.function_new_info.get(func).?;
                     const fn_info = info.functions.get(func).?;
-                    const index = fn_info.invocation_globals.getIndex(result_id).?;
-                    operands.items[off] = @intFromEnum(new_info.invocationGlobalId(index));
+                    const index = fn_info.invocation_globals.get_index(result_id).?;
+                    operands.items[off] = @int_from_enum(new_info.invocation_global_id(index));
                 }
             }
 
@@ -512,11 +512,11 @@ const ModuleBuilder = struct {
                     const fn_info = info.functions.get(func).?;
                     const new_info = self.function_new_info.get(func).?;
 
-                    try self.section.emitRaw(self.arena, .OpFunction, 4);
-                    self.section.writeOperand(ResultId, fn_info.return_type);
-                    self.section.writeOperand(ResultId, func);
-                    self.section.writeWord(operands.items[2]);
-                    self.section.writeOperand(ResultId, new_info.new_function_type);
+                    try self.section.emit_raw(self.arena, .OpFunction, 4);
+                    self.section.write_operand(ResultId, fn_info.return_type);
+                    self.section.write_operand(ResultId, func);
+                    self.section.write_word(operands.items[2]);
+                    self.section.write_operand(ResultId, new_info.new_function_type);
 
                     // Emit the OpFunctionParameters for the invocation globals. The functions
                     // actual parameters are emitted unchanged from their original form, so
@@ -524,7 +524,7 @@ const ModuleBuilder = struct {
 
                     for (fn_info.invocation_globals.keys(), 0..) |global, index| {
                         const ty = info.invocation_globals.get(global).?.ty;
-                        const id = new_info.invocationGlobalId(index);
+                        const id = new_info.invocation_global_id(index);
                         try self.section.emit(self.arena, .OpFunctionParameter, .{
                             .id_result_type = ty,
                             .id_result = id,
@@ -542,23 +542,23 @@ const ModuleBuilder = struct {
                     const caller_new_info = self.function_new_info.get(caller).?;
                     const total_params = callee_info.invocation_globals.count() + callee_info.param_types.len;
 
-                    try self.section.emitRaw(self.arena, .OpFunctionCall, 3 + total_params);
-                    self.section.writeWord(operands.items[0]); // Copy result type-id
-                    self.section.writeWord(operands.items[1]); // Copy result-id
-                    self.section.writeOperand(ResultId, callee);
+                    try self.section.emit_raw(self.arena, .OpFunctionCall, 3 + total_params);
+                    self.section.write_word(operands.items[0]); // Copy result type-id
+                    self.section.write_word(operands.items[1]); // Copy result-id
+                    self.section.write_operand(ResultId, callee);
 
                     // Add the new arguments
                     for (callee_info.invocation_globals.keys()) |global| {
-                        const caller_global_index = caller_info.invocation_globals.getIndex(global).?;
-                        const id = caller_new_info.invocationGlobalId(caller_global_index);
-                        self.section.writeOperand(ResultId, id);
+                        const caller_global_index = caller_info.invocation_globals.get_index(global).?;
+                        const id = caller_new_info.invocation_global_id(caller_global_index);
+                        self.section.write_operand(ResultId, id);
                     }
 
                     // Add the original arguments
-                    self.section.writeWords(operands.items[3..]);
+                    self.section.write_words(operands.items[3..]);
                 },
                 else => {
-                    try self.section.emitRawInstruction(self.arena, inst.opcode, operands.items);
+                    try self.section.emit_raw_instruction(self.arena, inst.opcode, operands.items);
                 },
             }
         }
@@ -569,7 +569,7 @@ const ModuleBuilder = struct {
 
         for (info.entry_points.keys(), 0..) |func, entry_point_index| {
             const fn_info = info.functions.get(func).?;
-            const ep_id: ResultId = @enumFromInt(self.entry_point_new_id_base + @as(u32, @intCast(entry_point_index)));
+            const ep_id: ResultId = @enumFromInt(self.entry_point_new_id_base + @as(u32, @int_cast(entry_point_index)));
             const fn_type = self.function_types.get(.{
                 .return_type = fn_info.return_type,
                 .param_types = fn_info.param_types,
@@ -583,9 +583,9 @@ const ModuleBuilder = struct {
             });
 
             // Emit OpFunctionParameter instructions for the original kernel's parameters.
-            const params_id_base: u32 = @intFromEnum(self.allocIds(@intCast(fn_info.param_types.len)));
+            const params_id_base: u32 = @int_from_enum(self.alloc_ids(@int_cast(fn_info.param_types.len)));
             for (fn_info.param_types, 0..) |param_type, i| {
-                const id: ResultId = @enumFromInt(params_id_base + @as(u32, @intCast(i)));
+                const id: ResultId = @enumFromInt(params_id_base + @as(u32, @int_cast(i)));
                 try self.section.emit(self.arena, .OpFunctionParameter, .{
                     .id_result_type = param_type,
                     .id_result = id,
@@ -593,13 +593,13 @@ const ModuleBuilder = struct {
             }
 
             try self.section.emit(self.arena, .OpLabel, .{
-                .id_result = self.allocId(),
+                .id_result = self.alloc_id(),
             });
 
             // Besides the IDs of the main kernel, we also need the
             // dependencies of the globals.
             // Just quickly construct that set here.
-            all_function_invocation_globals.clearRetainingCapacity();
+            all_function_invocation_globals.clear_retaining_capacity();
             for (fn_info.invocation_globals.keys()) |global| {
                 try all_function_invocation_globals.put(global, {});
                 const global_info = info.invocation_globals.get(global).?;
@@ -609,11 +609,11 @@ const ModuleBuilder = struct {
             }
 
             // Declare the IDs of the invocation globals.
-            const global_id_base: u32 = @intFromEnum(self.allocIds(@intCast(all_function_invocation_globals.count())));
+            const global_id_base: u32 = @int_from_enum(self.alloc_ids(@int_cast(all_function_invocation_globals.count())));
             for (all_function_invocation_globals.keys(), 0..) |global, i| {
                 const global_info = info.invocation_globals.get(global).?;
 
-                const id: ResultId = @enumFromInt(global_id_base + @as(u32, @intCast(i)));
+                const id: ResultId = @enumFromInt(global_id_base + @as(u32, @int_cast(i)));
                 try self.section.emit(self.arena, .OpVariable, .{
                     .id_result_type = global_info.ty,
                     .id_result = id,
@@ -630,7 +630,7 @@ const ModuleBuilder = struct {
                 const initializer_info = info.functions.get(global_info.initializer).?;
                 assert(initializer_info.param_types.len == 0);
 
-                try self.callWithGlobalsAndLinearParams(
+                try self.call_with_globals_and_linear_params(
                     all_function_invocation_globals,
                     global_info.initializer,
                     initializer_info,
@@ -640,7 +640,7 @@ const ModuleBuilder = struct {
             }
 
             // Call the main kernel entry
-            try self.callWithGlobalsAndLinearParams(
+            try self.call_with_globals_and_linear_params(
                 all_function_invocation_globals,
                 func,
                 fn_info,
@@ -662,22 +662,22 @@ const ModuleBuilder = struct {
         params_id_base: u32,
     ) !void {
         const total_arguments = callee_info.invocation_globals.count() + callee_info.param_types.len;
-        try self.section.emitRaw(self.arena, .OpFunctionCall, 3 + total_arguments);
-        self.section.writeOperand(ResultId, callee_info.return_type);
-        self.section.writeOperand(ResultId, self.allocId());
-        self.section.writeOperand(ResultId, func);
+        try self.section.emit_raw(self.arena, .OpFunctionCall, 3 + total_arguments);
+        self.section.write_operand(ResultId, callee_info.return_type);
+        self.section.write_operand(ResultId, self.alloc_id());
+        self.section.write_operand(ResultId, func);
 
         // Add the invocation globals
         for (callee_info.invocation_globals.keys()) |global| {
-            const index = all_globals.getIndex(global).?;
-            const id: ResultId = @enumFromInt(global_id_base + @as(u32, @intCast(index)));
-            self.section.writeOperand(ResultId, id);
+            const index = all_globals.get_index(global).?;
+            const id: ResultId = @enumFromInt(global_id_base + @as(u32, @int_cast(index)));
+            self.section.write_operand(ResultId, id);
         }
 
         // Add the arguments
         for (0..callee_info.param_types.len) |index| {
-            const id: ResultId = @enumFromInt(params_id_base + @as(u32, @intCast(index)));
-            self.section.writeOperand(ResultId, id);
+            const id: ResultId = @enumFromInt(params_id_base + @as(u32, @int_cast(index)));
+            self.section.write_operand(ResultId, id);
         }
     }
 };
@@ -694,16 +694,16 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
     try info.resolve(a);
 
     var builder = try ModuleBuilder.init(a, binary.*, info);
-    sub_node.completeOne();
-    try builder.deriveNewFnInfo(info);
-    sub_node.completeOne();
-    try builder.processPreamble(binary.*, info);
-    sub_node.completeOne();
-    try builder.emitFunctionTypes(info);
-    sub_node.completeOne();
-    try builder.rewriteFunctions(parser, binary.*, info);
-    sub_node.completeOne();
-    try builder.emitNewEntryPoints(info);
-    sub_node.completeOne();
+    sub_node.complete_one();
+    try builder.derive_new_fn_info(info);
+    sub_node.complete_one();
+    try builder.process_preamble(binary.*, info);
+    sub_node.complete_one();
+    try builder.emit_function_types(info);
+    sub_node.complete_one();
+    try builder.rewrite_functions(parser, binary.*, info);
+    sub_node.complete_one();
+    try builder.emit_new_entry_points(info);
+    sub_node.complete_one();
     try builder.finalize(parser.a, binary);
 }

@@ -21,8 +21,8 @@ pub const secret_seed_length = 32;
 
 /// The seed must be uniform, secret and `secret_seed_length` bytes long.
 pub fn init(secret_seed: [secret_seed_length]u8) Self {
-    var self = Self{ .state = Ascon.initXof() };
-    self.addEntropy(&secret_seed);
+    var self = Self{ .state = Ascon.init_xof() };
+    self.add_entropy(&secret_seed);
     return self;
 }
 
@@ -31,10 +31,10 @@ pub fn add_entropy(self: *Self, bytes: []const u8) void {
     comptime std.debug.assert(secret_seed_length % rate == 0);
     var i: usize = 0;
     while (i + rate < bytes.len) : (i += rate) {
-        self.state.addBytes(bytes[i..][0..rate]);
-        self.state.permuteR(8);
+        self.state.add_bytes(bytes[i..][0..rate]);
+        self.state.permute_r(8);
     }
-    if (i != bytes.len) self.state.addBytes(bytes[i..]);
+    if (i != bytes.len) self.state.add_bytes(bytes[i..]);
     self.state.permute();
 }
 
@@ -49,10 +49,10 @@ pub fn fill(self: *Self, buf: []u8) void {
     while (true) {
         const left = buf.len - i;
         const n = @min(left, rate);
-        self.state.extractBytes(buf[i..][0..n]);
+        self.state.extract_bytes(buf[i..][0..n]);
         if (left == 0) break;
-        self.state.permuteR(8);
+        self.state.permute_r(8);
         i += n;
     }
-    self.state.permuteRatchet(6, rate);
+    self.state.permute_ratchet(6, rate);
 }

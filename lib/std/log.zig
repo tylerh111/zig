@@ -1,6 +1,6 @@
 //! std.log is a standardized interface for logging which allows for the logging
 //! of programs and libraries using this interface to be formatted and filtered
-//! by the implementer of the `std.options.logFn` function.
+//! by the implementer of the `std.options.log_fn` function.
 //!
 //! Each log message has an associated scope enum, which can be used to give
 //! context to the logging. The logging functions in std.log implicitly use a
@@ -13,7 +13,7 @@
 //! `const log = std.log.scoped(.libfoo);` to use .libfoo as the scope of its
 //! log messages.
 //!
-//! An example `logFn` might look something like this:
+//! An example `log_fn` might look something like this:
 //!
 //! ```
 //! const std = @import("std");
@@ -22,8 +22,8 @@
 //!     // Set the log level to info
 //!     .log_level = .info,
 //!
-//!     // Define logFn to override the std implementation
-//!     .logFn = myLogFn,
+//!     // Define log_fn to override the std implementation
+//!     .log_fn = my_log_fn,
 //! };
 //!
 //! pub fn my_log_fn(
@@ -35,19 +35,19 @@
 //!     // Ignore all non-error logging from sources other than
 //!     // .my_project, .nice_library and the default
 //!     const scope_prefix = "(" ++ switch (scope) {
-//!         .my_project, .nice_library, std.log.default_log_scope => @tagName(scope),
-//!         else => if (@intFromEnum(level) <= @intFromEnum(std.log.Level.err))
-//!             @tagName(scope)
+//!         .my_project, .nice_library, std.log.default_log_scope => @tag_name(scope),
+//!         else => if (@int_from_enum(level) <= @int_from_enum(std.log.Level.err))
+//!             @tag_name(scope)
 //!         else
 //!             return,
 //!     } ++ "): ";
 //!
-//!     const prefix = "[" ++ comptime level.asText() ++ "] " ++ scope_prefix;
+//!     const prefix = "[" ++ comptime level.as_text() ++ "] " ++ scope_prefix;
 //!
 //!     // Print the message to stderr, silently ignoring any errors
-//!     std.debug.lockStdErr();
-//!     defer std.debug.unlockStdErr();
-//!     const stderr = std.io.getStdErr().writer();
+//!     std.debug.lock_std_err();
+//!     defer std.debug.unlock_std_err();
+//!     const stderr = std.io.get_std_err().writer();
 //!     nosuspend stderr.print(prefix ++ format ++ "\n", args) catch return;
 //! }
 //!
@@ -120,22 +120,22 @@ fn log(
     comptime format: []const u8,
     args: anytype,
 ) void {
-    if (comptime !logEnabled(message_level, scope)) return;
+    if (comptime !log_enabled(message_level, scope)) return;
 
-    std.options.logFn(message_level, scope, format, args);
+    std.options.log_fn(message_level, scope, format, args);
 }
 
 /// Determine if a specific log message level and scope combination are enabled for logging.
 pub fn log_enabled(comptime message_level: Level, comptime scope: @Type(.EnumLiteral)) bool {
     inline for (scope_levels) |scope_level| {
-        if (scope_level.scope == scope) return @intFromEnum(message_level) <= @intFromEnum(scope_level.level);
+        if (scope_level.scope == scope) return @int_from_enum(message_level) <= @int_from_enum(scope_level.level);
     }
-    return @intFromEnum(message_level) <= @intFromEnum(level);
+    return @int_from_enum(message_level) <= @int_from_enum(level);
 }
 
 /// Determine if a specific log message level using the default log scope is enabled for logging.
 pub fn default_log_enabled(comptime message_level: Level) bool {
-    return comptime logEnabled(message_level, default_log_scope);
+    return comptime log_enabled(message_level, default_log_scope);
 }
 
 /// The default implementation for the log function, custom log functions may
@@ -146,14 +146,14 @@ pub fn default_log(
     comptime format: []const u8,
     args: anytype,
 ) void {
-    const level_txt = comptime message_level.asText();
-    const prefix2 = if (scope == .default) ": " else "(" ++ @tagName(scope) ++ "): ";
-    const stderr = std.io.getStdErr().writer();
-    var bw = std.io.bufferedWriter(stderr);
+    const level_txt = comptime message_level.as_text();
+    const prefix2 = if (scope == .default) ": " else "(" ++ @tag_name(scope) ++ "): ";
+    const stderr = std.io.get_std_err().writer();
+    var bw = std.io.buffered_writer(stderr);
     const writer = bw.writer();
 
-    std.debug.lockStdErr();
-    defer std.debug.unlockStdErr();
+    std.debug.lock_std_err();
+    defer std.debug.unlock_std_err();
     nosuspend {
         writer.print(level_txt ++ prefix2 ++ format ++ "\n", args) catch return;
         bw.flush() catch return;

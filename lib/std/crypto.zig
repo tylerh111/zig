@@ -350,6 +350,6 @@ test "issue #4532: no index out of bounds" {
         h.update(block[1..]);
         h.final(&out2);
 
-        try std.testing.expectEqual(out1, out2);
+        try std.testing.expect_equal(out1, out2);
     }
 }

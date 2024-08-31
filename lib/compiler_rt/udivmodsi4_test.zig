@@ -10,14 +10,14 @@ const ARMRes = extern struct {
 };
 
 fn test__aeabi_uidivmod(a: u32, b: u32, expected_q: u32, expected_r: u32) !void {
-    const actualUidivmod = @as(*const fn (a: u32, b: u32) callconv(.AAPCS) ARMRes, @ptrCast(&__aeabi_uidivmod));
+    const actualUidivmod = @as(*const fn (a: u32, b: u32) callconv(.AAPCS) ARMRes, @ptr_cast(&__aeabi_uidivmod));
     const arm_res = actualUidivmod(a, b);
-    try testing.expectEqual(expected_q, arm_res.q);
-    try testing.expectEqual(expected_r, arm_res.r);
+    try testing.expect_equal(expected_q, arm_res.q);
+    try testing.expect_equal(expected_r, arm_res.r);
 }
 
 test "arm.__aeabi_uidivmod" {
-    if (!builtin.cpu.arch.isARM()) return error.SkipZigTest;
+    if (!builtin.cpu.arch.is_arm()) return error.SkipZigTest;
 
     var i: i32 = 0;
     for (cases) |case| {

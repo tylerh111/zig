@@ -9,9 +9,9 @@ pub fn panic(message: []const u8, stack_trace: ?*std.builtin.StackTrace, _: ?usi
 var failing_frame: @Frame(failing) = undefined;
 
 pub fn main() !void {
-    const p = nonFailing();
+    const p = non_failing();
     resume p;
-    const p2 = async printTrace(p);
+    const p2 = async print_trace(p);
     _ = p2;
     return error.TestFailed;
 }

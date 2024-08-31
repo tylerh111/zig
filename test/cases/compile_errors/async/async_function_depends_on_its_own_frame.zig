@@ -2,7 +2,7 @@ export fn entry() void {
     _ = async amain();
 }
 fn amain() callconv(.Async) void {
-    var x: [@sizeOf(@Frame(amain))]u8 = undefined;
+    var x: [@size_of(@Frame(amain))]u8 = undefined;
     _ = &x;
 }
 

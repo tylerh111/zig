@@ -1,6 +1,6 @@
 const std = @import("std");
 const mem = std.mem;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const OutputTooLongError = std.crypto.errors.OutputTooLongError;
 const WeakParametersError = std.crypto.errors.WeakParametersError;
 
@@ -38,7 +38,7 @@ const WeakParametersError = std.crypto.errors.WeakParametersError;
 ///
 /// dk: Slice of appropriate size for generated key. Generally 16 or 32 bytes in length.
 ///             May be uninitialized. All bytes will be overwritten.
-///             Maximum size is `maxInt(u32) * Hash.digest_length`
+///             Maximum size is `max_int(u32) * Hash.digest_length`
 ///             It is a programming error to pass buffer longer than the maximum size.
 ///
 /// password: Arbitrary sequence of bytes of any length, including empty.
@@ -59,10 +59,10 @@ pub fn pbkdf2(dk: []u8, password: []const u8, salt: []const u8, rounds: u32, com
 
     // FromSpec:
     //
-    //   1. If dk_len > maxInt(u32) * h_len, output "derived key too long" and
+    //   1. If dk_len > max_int(u32) * h_len, output "derived key too long" and
     //      stop.
     //
-    if (dk_len / h_len >= maxInt(u32)) {
+    if (dk_len / h_len >= max_int(u32)) {
         // Counter starts at 1 and is 32 bit, so if we have to return more blocks, we would overflow
         return error.OutputTooLong;
     }
@@ -74,7 +74,7 @@ pub fn pbkdf2(dk: []u8, password: []const u8, salt: []const u8, rounds: u32, com
     //      block
     //
 
-    const blocks_count = @as(u32, @intCast(std.math.divCeil(usize, dk_len, h_len) catch unreachable));
+    const blocks_count = @as(u32, @int_cast(std.math.div_ceil(usize, dk_len, h_len) catch unreachable));
     var r = dk_len % h_len;
     if (r == 0) {
         r = h_len;
@@ -119,7 +119,7 @@ pub fn pbkdf2(dk: []u8, password: []const u8, salt: []const u8, rounds: u32, com
         var new_block: [h_len]u8 = undefined;
 
         // U_1 = PRF (P, S || INT (i))
-        const block_index = mem.toBytes(mem.nativeToBig(u32, block + 1)); // Block index starts at 0001
+        const block_index = mem.to_bytes(mem.native_to_big(u32, block + 1)); // Block index starts at 0001
         var ctx = Prf.init(password);
         ctx.update(salt);
         ctx.update(block_index[0..]);
@@ -162,7 +162,7 @@ test "RFC 6070 one iteration" {
 
     const expected = "0c60c80f961f0e71f3a9b524af6012062fe037a6";
 
-    try htest.assertEqual(expected, dk[0..]);
+    try htest.assert_equal(expected, dk[0..]);
 }
 
 test "RFC 6070 two iterations" {
@@ -177,7 +177,7 @@ test "RFC 6070 two iterations" {
 
     const expected = "ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957";
 
-    try htest.assertEqual(expected, dk[0..]);
+    try htest.assert_equal(expected, dk[0..]);
 }
 
 test "RFC 6070 4096 iterations" {
@@ -192,7 +192,7 @@ test "RFC 6070 4096 iterations" {
 
     const expected = "4b007901b765489abead49d926f721d065a429c1";
 
-    try htest.assertEqual(expected, dk[0..]);
+    try htest.assert_equal(expected, dk[0..]);
 }
 
 test "RFC 6070 16,777,216 iterations" {
@@ -212,7 +212,7 @@ test "RFC 6070 16,777,216 iterations" {
 
     const expected = "eefe3d61cd4da4e4e9945b3d6ba2158c2634e984";
 
-    try htest.assertEqual(expected, dk[0..]);
+    try htest.assert_equal(expected, dk[0..]);
 }
 
 test "RFC 6070 multi-block salt and password" {
@@ -227,7 +227,7 @@ test "RFC 6070 multi-block salt and password" {
 
     const expected = "3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038";
 
-    try htest.assertEqual(expected, dk[0..]);
+    try htest.assert_equal(expected, dk[0..]);
 }
 
 test "RFC 6070 embedded NUL" {
@@ -242,7 +242,7 @@ test "RFC 6070 embedded NUL" {
 
     const expected = "56fa6aa75548099dcc37d7f03425e0c3";
 
-    try htest.assertEqual(expected, dk[0..]);
+    try htest.assert_equal(expected, dk[0..]);
 }
 
 test "Very large dk_len" {

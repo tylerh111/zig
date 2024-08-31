@@ -71,17 +71,17 @@ pub const Options = struct {
 };
 
 pub const String = enum(u32) {
-    none = std.math.maxInt(u31),
+    none = std.math.max_int(u31),
     empty,
     _,
 
     pub fn is_anon(self: String) bool {
         assert(self != .none);
-        return self.toIndex() == null;
+        return self.to_index() == null;
     }
 
     pub fn slice(self: String, builder: *const Builder) ?[]const u8 {
-        const index = self.toIndex() orelse return null;
+        const index = self.to_index() orelse return null;
         const start = builder.string_indices.items[index];
         const end = builder.string_indices.items[index + 1];
         return builder.string_bytes.items[start..end];
@@ -97,16 +97,16 @@ pub const String = enum(u32) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (comptime std.mem.indexOfNone(u8, fmt_str, "\"r")) |_|
-            @compileError("invalid format string: '" ++ fmt_str ++ "'");
+        if (comptime std.mem.index_of_none(u8, fmt_str, "\"r")) |_|
+            @compile_error("invalid format string: '" ++ fmt_str ++ "'");
         assert(data.string != .none);
         const string_slice = data.string.slice(data.builder) orelse
-            return writer.print("{d}", .{@intFromEnum(data.string)});
-        if (comptime std.mem.indexOfScalar(u8, fmt_str, 'r')) |_|
-            return writer.writeAll(string_slice);
-        try printEscapedString(
+            return writer.print("{d}", .{@int_from_enum(data.string)});
+        if (comptime std.mem.index_of_scalar(u8, fmt_str, 'r')) |_|
+            return writer.write_all(string_slice);
+        try print_escaped_string(
             string_slice,
-            if (comptime std.mem.indexOfScalar(u8, fmt_str, '"')) |_|
+            if (comptime std.mem.index_of_scalar(u8, fmt_str, '"')) |_|
                 .always_quote
             else
                 .quote_unless_valid_identifier,
@@ -118,12 +118,12 @@ pub const String = enum(u32) {
     }
 
     fn from_index(index: ?usize) String {
-        return @enumFromInt(@as(u32, @intCast((index orelse return .none) +
-            @intFromEnum(String.empty))));
+        return @enumFromInt(@as(u32, @int_cast((index orelse return .none) +
+            @int_from_enum(String.empty))));
     }
 
     fn to_index(self: String) ?usize {
-        return std.math.sub(u32, @intFromEnum(self), @intFromEnum(String.empty)) catch null;
+        return std.math.sub(u32, @int_from_enum(self), @int_from_enum(String.empty)) catch null;
     }
 
     const Adapter = struct {
@@ -132,7 +132,7 @@ pub const String = enum(u32) {
             return @truncate(std.hash.Wyhash.hash(0, key));
         }
         pub fn eql(ctx: Adapter, lhs_key: []const u8, _: void, rhs_index: usize) bool {
-            return std.mem.eql(u8, lhs_key, String.fromIndex(rhs_index).slice(ctx.builder).?);
+            return std.mem.eql(u8, lhs_key, String.from_index(rhs_index).slice(ctx.builder).?);
         }
     };
 };
@@ -224,11 +224,11 @@ pub const Type = enum(u32) {
     ptr,
     @"ptr addrspace(4)",
 
-    none = std.math.maxInt(u32),
+    none = std.math.max_int(u32),
     _,
 
     pub const ptr_amdgpu_constant =
-        @field(Type, std.fmt.comptimePrint("ptr{ }", .{AddrSpace.amdgpu.constant}));
+        @field(Type, std.fmt.comptime_print("ptr{ }", .{AddrSpace.amdgpu.constant}));
 
     pub const Tag = enum(u4) {
         simple,
@@ -319,22 +319,22 @@ pub const Type = enum(u32) {
     };
 
     pub fn tag(self: Type, builder: *const Builder) Tag {
-        return builder.type_items.items[@intFromEnum(self)].tag;
+        return builder.type_items.items[@int_from_enum(self)].tag;
     }
 
     pub fn unnamed_tag(self: Type, builder: *const Builder) Tag {
-        const item = builder.type_items.items[@intFromEnum(self)];
+        const item = builder.type_items.items[@int_from_enum(self)];
         return switch (item.tag) {
-            .named_structure => builder.typeExtraData(Type.NamedStructure, item.data).body
-                .unnamedTag(builder),
+            .named_structure => builder.type_extra_data(Type.NamedStructure, item.data).body
+                .unnamed_tag(builder),
             else => item.tag,
         };
     }
 
     pub fn scalar_tag(self: Type, builder: *const Builder) Tag {
-        const item = builder.type_items.items[@intFromEnum(self)];
+        const item = builder.type_items.items[@int_from_enum(self)];
         return switch (item.tag) {
-            .vector, .scalable_vector => builder.typeExtraData(Type.Vector, item.data)
+            .vector, .scalable_vector => builder.type_extra_data(Type.Vector, item.data)
                 .child.tag(builder),
             else => item.tag,
         };
@@ -371,7 +371,7 @@ pub const Type = enum(u32) {
         switch (self) {
             .ptr => return .default,
             else => {
-                const item = builder.type_items.items[@intFromEnum(self)];
+                const item = builder.type_items.items[@int_from_enum(self)];
                 assert(item.tag == .pointer);
                 return @enumFromInt(item.data);
             },
@@ -394,12 +394,12 @@ pub const Type = enum(u32) {
     }
 
     pub fn function_parameters(self: Type, builder: *const Builder) []const Type {
-        const item = builder.type_items.items[@intFromEnum(self)];
+        const item = builder.type_items.items[@int_from_enum(self)];
         switch (item.tag) {
             .function,
             .vararg_function,
             => {
-                var extra = builder.typeExtraDataTrail(Type.Function, item.data);
+                var extra = builder.type_extra_data_trail(Type.Function, item.data);
                 return extra.trail.next(extra.data.params_len, Type, builder);
             },
             else => unreachable,
@@ -407,11 +407,11 @@ pub const Type = enum(u32) {
     }
 
     pub fn function_return(self: Type, builder: *const Builder) Type {
-        const item = builder.type_items.items[@intFromEnum(self)];
+        const item = builder.type_items.items[@int_from_enum(self)];
         switch (item.tag) {
             .function,
             .vararg_function,
-            => return builder.typeExtraData(Type.Function, item.data).ret,
+            => return builder.type_extra_data(Type.Function, item.data).ret,
             else => unreachable,
         }
     }
@@ -439,7 +439,7 @@ pub const Type = enum(u32) {
     }
 
     pub fn struct_kind(self: Type, builder: *const Builder) Type.Structure.Kind {
-        return switch (self.unnamedTag(builder)) {
+        return switch (self.unnamed_tag(builder)) {
             .structure => .normal,
             .packed_structure => .@"packed",
             else => unreachable,
@@ -466,18 +466,18 @@ pub const Type = enum(u32) {
             .fp128, .ppc_fp128, .i128 => 128,
             .ptr, .@"ptr addrspace(4)" => @panic("TODO: query data layout"),
             _ => {
-                const item = builder.type_items.items[@intFromEnum(self)];
+                const item = builder.type_items.items[@int_from_enum(self)];
                 return switch (item.tag) {
                     .simple,
                     .function,
                     .vararg_function,
                     => unreachable,
-                    .integer => @intCast(item.data),
+                    .integer => @int_cast(item.data),
                     .pointer => @panic("TODO: query data layout"),
                     .target => unreachable,
                     .vector,
                     .scalable_vector,
-                    => builder.typeExtraData(Type.Vector, item.data).child.scalarBits(builder),
+                    => builder.type_extra_data(Type.Vector, item.data).child.scalar_bits(builder),
                     .small_array,
                     .array,
                     .structure,
@@ -490,53 +490,53 @@ pub const Type = enum(u32) {
     }
 
     pub fn child_type(self: Type, builder: *const Builder) Type {
-        const item = builder.type_items.items[@intFromEnum(self)];
+        const item = builder.type_items.items[@int_from_enum(self)];
         return switch (item.tag) {
             .vector,
             .scalable_vector,
             .small_array,
-            => builder.typeExtraData(Type.Vector, item.data).child,
-            .array => builder.typeExtraData(Type.Array, item.data).child,
-            .named_structure => builder.typeExtraData(Type.NamedStructure, item.data).body,
+            => builder.type_extra_data(Type.Vector, item.data).child,
+            .array => builder.type_extra_data(Type.Array, item.data).child,
+            .named_structure => builder.type_extra_data(Type.NamedStructure, item.data).body,
             else => unreachable,
         };
     }
 
     pub fn scalar_type(self: Type, builder: *const Builder) Type {
-        if (self.isFloatingPoint()) return self;
-        const item = builder.type_items.items[@intFromEnum(self)];
+        if (self.is_floating_point()) return self;
+        const item = builder.type_items.items[@int_from_enum(self)];
         return switch (item.tag) {
             .integer,
             .pointer,
             => self,
             .vector,
             .scalable_vector,
-            => builder.typeExtraData(Type.Vector, item.data).child,
+            => builder.type_extra_data(Type.Vector, item.data).child,
             else => unreachable,
         };
     }
 
     pub fn change_scalar(self: Type, scalar: Type, builder: *Builder) Allocator.Error!Type {
-        try builder.ensureUnusedTypeCapacity(1, Type.Vector, 0);
-        return self.changeScalarAssumeCapacity(scalar, builder);
+        try builder.ensure_unused_type_capacity(1, Type.Vector, 0);
+        return self.change_scalar_assume_capacity(scalar, builder);
     }
 
     pub fn change_scalar_assume_capacity(self: Type, scalar: Type, builder: *Builder) Type {
-        if (self.isFloatingPoint()) return scalar;
-        const item = builder.type_items.items[@intFromEnum(self)];
+        if (self.is_floating_point()) return scalar;
+        const item = builder.type_items.items[@int_from_enum(self)];
         return switch (item.tag) {
             .integer,
             .pointer,
             => scalar,
             inline .vector,
             .scalable_vector,
-            => |kind| builder.vectorTypeAssumeCapacity(
+            => |kind| builder.vector_type_assume_capacity(
                 switch (kind) {
                     .vector => .normal,
                     .scalable_vector => .scalable,
                     else => unreachable,
                 },
-                builder.typeExtraData(Type.Vector, item.data).len,
+                builder.type_extra_data(Type.Vector, item.data).len,
                 scalar,
             ),
             else => unreachable,
@@ -544,95 +544,95 @@ pub const Type = enum(u32) {
     }
 
     pub fn vector_len(self: Type, builder: *const Builder) u32 {
-        const item = builder.type_items.items[@intFromEnum(self)];
+        const item = builder.type_items.items[@int_from_enum(self)];
         return switch (item.tag) {
             .vector,
             .scalable_vector,
-            => builder.typeExtraData(Type.Vector, item.data).len,
+            => builder.type_extra_data(Type.Vector, item.data).len,
             else => unreachable,
         };
     }
 
     pub fn change_length(self: Type, len: u32, builder: *Builder) Allocator.Error!Type {
-        try builder.ensureUnusedTypeCapacity(1, Type.Array, 0);
-        return self.changeLengthAssumeCapacity(len, builder);
+        try builder.ensure_unused_type_capacity(1, Type.Array, 0);
+        return self.change_length_assume_capacity(len, builder);
     }
 
     pub fn change_length_assume_capacity(self: Type, len: u32, builder: *Builder) Type {
-        const item = builder.type_items.items[@intFromEnum(self)];
+        const item = builder.type_items.items[@int_from_enum(self)];
         return switch (item.tag) {
             inline .vector,
             .scalable_vector,
-            => |kind| builder.vectorTypeAssumeCapacity(
+            => |kind| builder.vector_type_assume_capacity(
                 switch (kind) {
                     .vector => .normal,
                     .scalable_vector => .scalable,
                     else => unreachable,
                 },
                 len,
-                builder.typeExtraData(Type.Vector, item.data).child,
+                builder.type_extra_data(Type.Vector, item.data).child,
             ),
-            .small_array => builder.arrayTypeAssumeCapacity(
+            .small_array => builder.array_type_assume_capacity(
                 len,
-                builder.typeExtraData(Type.Vector, item.data).child,
+                builder.type_extra_data(Type.Vector, item.data).child,
             ),
-            .array => builder.arrayTypeAssumeCapacity(
+            .array => builder.array_type_assume_capacity(
                 len,
-                builder.typeExtraData(Type.Array, item.data).child,
+                builder.type_extra_data(Type.Array, item.data).child,
             ),
             else => unreachable,
         };
     }
 
     pub fn aggregate_len(self: Type, builder: *const Builder) usize {
-        const item = builder.type_items.items[@intFromEnum(self)];
+        const item = builder.type_items.items[@int_from_enum(self)];
         return switch (item.tag) {
             .vector,
             .scalable_vector,
             .small_array,
-            => builder.typeExtraData(Type.Vector, item.data).len,
-            .array => @intCast(builder.typeExtraData(Type.Array, item.data).length()),
+            => builder.type_extra_data(Type.Vector, item.data).len,
+            .array => @int_cast(builder.type_extra_data(Type.Array, item.data).length()),
             .structure,
             .packed_structure,
-            => builder.typeExtraData(Type.Structure, item.data).fields_len,
-            .named_structure => builder.typeExtraData(Type.NamedStructure, item.data).body
-                .aggregateLen(builder),
+            => builder.type_extra_data(Type.Structure, item.data).fields_len,
+            .named_structure => builder.type_extra_data(Type.NamedStructure, item.data).body
+                .aggregate_len(builder),
             else => unreachable,
         };
     }
 
     pub fn struct_fields(self: Type, builder: *const Builder) []const Type {
-        const item = builder.type_items.items[@intFromEnum(self)];
+        const item = builder.type_items.items[@int_from_enum(self)];
         switch (item.tag) {
             .structure,
             .packed_structure,
             => {
-                var extra = builder.typeExtraDataTrail(Type.Structure, item.data);
+                var extra = builder.type_extra_data_trail(Type.Structure, item.data);
                 return extra.trail.next(extra.data.fields_len, Type, builder);
             },
-            .named_structure => return builder.typeExtraData(Type.NamedStructure, item.data).body
-                .structFields(builder),
+            .named_structure => return builder.type_extra_data(Type.NamedStructure, item.data).body
+                .struct_fields(builder),
             else => unreachable,
         }
     }
 
     pub fn child_type_at(self: Type, indices: []const u32, builder: *const Builder) Type {
         if (indices.len == 0) return self;
-        const item = builder.type_items.items[@intFromEnum(self)];
+        const item = builder.type_items.items[@int_from_enum(self)];
         return switch (item.tag) {
-            .small_array => builder.typeExtraData(Type.Vector, item.data).child
-                .childTypeAt(indices[1..], builder),
-            .array => builder.typeExtraData(Type.Array, item.data).child
-                .childTypeAt(indices[1..], builder),
+            .small_array => builder.type_extra_data(Type.Vector, item.data).child
+                .child_type_at(indices[1..], builder),
+            .array => builder.type_extra_data(Type.Array, item.data).child
+                .child_type_at(indices[1..], builder),
             .structure,
             .packed_structure,
             => {
-                var extra = builder.typeExtraDataTrail(Type.Structure, item.data);
+                var extra = builder.type_extra_data_trail(Type.Structure, item.data);
                 const fields = extra.trail.next(extra.data.fields_len, Type, builder);
-                return fields[indices[0]].childTypeAt(indices[1..], builder);
+                return fields[indices[0]].child_type_at(indices[1..], builder);
             },
-            .named_structure => builder.typeExtraData(Type.NamedStructure, item.data).body
-                .childTypeAt(indices, builder),
+            .named_structure => builder.type_extra_data(Type.NamedStructure, item.data).body
+                .child_type_at(indices, builder),
             else => unreachable,
         };
     }
@@ -640,13 +640,13 @@ pub const Type = enum(u32) {
     pub fn target_layout_type(self: Type, builder: *const Builder) Type {
         _ = self;
         _ = builder;
-        @panic("TODO: implement targetLayoutType");
+        @panic("TODO: implement target_layout_type");
     }
 
     pub fn is_sized(self: Type, builder: *const Builder) Allocator.Error!bool {
         var visited: IsSizedVisited = .{};
         defer visited.deinit(builder.gpa);
-        const result = try self.isSizedVisited(&visited, builder);
+        const result = try self.is_sized_visited(&visited, builder);
         return result;
     }
 
@@ -662,9 +662,9 @@ pub const Type = enum(u32) {
     ) @TypeOf(writer).Error!void {
         assert(data.type != .none);
         if (comptime std.mem.eql(u8, fmt_str, "m")) {
-            const item = data.builder.type_items.items[@intFromEnum(data.type)];
+            const item = data.builder.type_items.items[@int_from_enum(data.type)];
             switch (item.tag) {
-                .simple => try writer.writeAll(switch (@as(Simple, @enumFromInt(item.data))) {
+                .simple => try writer.write_all(switch (@as(Simple, @enumFromInt(item.data))) {
                     .void => "isVoid",
                     .half => "f16",
                     .bfloat => "bf16",
@@ -679,30 +679,30 @@ pub const Type = enum(u32) {
                     .metadata => "Metadata",
                 }),
                 .function, .vararg_function => |kind| {
-                    var extra = data.builder.typeExtraDataTrail(Type.Function, item.data);
+                    var extra = data.builder.type_extra_data_trail(Type.Function, item.data);
                     const params = extra.trail.next(extra.data.params_len, Type, data.builder);
                     try writer.print("f_{m}", .{extra.data.ret.fmt(data.builder)});
                     for (params) |param| try writer.print("{m}", .{param.fmt(data.builder)});
                     switch (kind) {
                         .function => {},
-                        .vararg_function => try writer.writeAll("vararg"),
+                        .vararg_function => try writer.write_all("vararg"),
                         else => unreachable,
                     }
-                    try writer.writeByte('f');
+                    try writer.write_byte('f');
                 },
                 .integer => try writer.print("i{d}", .{item.data}),
                 .pointer => try writer.print("p{d}", .{item.data}),
                 .target => {
-                    var extra = data.builder.typeExtraDataTrail(Type.Target, item.data);
+                    var extra = data.builder.type_extra_data_trail(Type.Target, item.data);
                     const types = extra.trail.next(extra.data.types_len, Type, data.builder);
                     const ints = extra.trail.next(extra.data.ints_len, u32, data.builder);
                     try writer.print("t{s}", .{extra.data.name.slice(data.builder).?});
                     for (types) |ty| try writer.print("_{m}", .{ty.fmt(data.builder)});
                     for (ints) |int| try writer.print("_{d}", .{int});
-                    try writer.writeByte('t');
+                    try writer.write_byte('t');
                 },
                 .vector, .scalable_vector => |kind| {
-                    const extra = data.builder.typeExtraData(Type.Vector, item.data);
+                    const extra = data.builder.type_extra_data(Type.Vector, item.data);
                     try writer.print("{s}v{d}{m}", .{
                         switch (kind) {
                             .vector => "",
@@ -714,7 +714,7 @@ pub const Type = enum(u32) {
                     });
                 },
                 inline .small_array, .array => |kind| {
-                    const extra = data.builder.typeExtraData(switch (kind) {
+                    const extra = data.builder.type_extra_data(switch (kind) {
                         .small_array => Type.Vector,
                         .array => Type.Array,
                         else => unreachable,
@@ -722,50 +722,50 @@ pub const Type = enum(u32) {
                     try writer.print("a{d}{m}", .{ extra.length(), extra.child.fmt(data.builder) });
                 },
                 .structure, .packed_structure => {
-                    var extra = data.builder.typeExtraDataTrail(Type.Structure, item.data);
+                    var extra = data.builder.type_extra_data_trail(Type.Structure, item.data);
                     const fields = extra.trail.next(extra.data.fields_len, Type, data.builder);
-                    try writer.writeAll("sl_");
+                    try writer.write_all("sl_");
                     for (fields) |field| try writer.print("{m}", .{field.fmt(data.builder)});
-                    try writer.writeByte('s');
+                    try writer.write_byte('s');
                 },
                 .named_structure => {
-                    const extra = data.builder.typeExtraData(Type.NamedStructure, item.data);
-                    try writer.writeAll("s_");
-                    if (extra.id.slice(data.builder)) |id| try writer.writeAll(id);
+                    const extra = data.builder.type_extra_data(Type.NamedStructure, item.data);
+                    try writer.write_all("s_");
+                    if (extra.id.slice(data.builder)) |id| try writer.write_all(id);
                 },
             }
             return;
         }
-        if (std.enums.tagName(Type, data.type)) |name| return writer.writeAll(name);
-        const item = data.builder.type_items.items[@intFromEnum(data.type)];
+        if (std.enums.tag_name(Type, data.type)) |name| return writer.write_all(name);
+        const item = data.builder.type_items.items[@int_from_enum(data.type)];
         switch (item.tag) {
             .simple => unreachable,
             .function, .vararg_function => |kind| {
-                var extra = data.builder.typeExtraDataTrail(Type.Function, item.data);
+                var extra = data.builder.type_extra_data_trail(Type.Function, item.data);
                 const params = extra.trail.next(extra.data.params_len, Type, data.builder);
                 if (!comptime std.mem.eql(u8, fmt_str, ">"))
                     try writer.print("{%} ", .{extra.data.ret.fmt(data.builder)});
                 if (!comptime std.mem.eql(u8, fmt_str, "<")) {
-                    try writer.writeByte('(');
+                    try writer.write_byte('(');
                     for (params, 0..) |param, index| {
-                        if (index > 0) try writer.writeAll(", ");
+                        if (index > 0) try writer.write_all(", ");
                         try writer.print("{%}", .{param.fmt(data.builder)});
                     }
                     switch (kind) {
                         .function => {},
                         .vararg_function => {
-                            if (params.len > 0) try writer.writeAll(", ");
-                            try writer.writeAll("...");
+                            if (params.len > 0) try writer.write_all(", ");
+                            try writer.write_all("...");
                         },
                         else => unreachable,
                     }
-                    try writer.writeByte(')');
+                    try writer.write_byte(')');
                 }
             },
             .integer => try writer.print("i{d}", .{item.data}),
             .pointer => try writer.print("ptr{ }", .{@as(AddrSpace, @enumFromInt(item.data))}),
             .target => {
-                var extra = data.builder.typeExtraDataTrail(Type.Target, item.data);
+                var extra = data.builder.type_extra_data_trail(Type.Target, item.data);
                 const types = extra.trail.next(extra.data.types_len, Type, data.builder);
                 const ints = extra.trail.next(extra.data.ints_len, u32, data.builder);
                 try writer.print(
@@ -773,10 +773,10 @@ pub const Type = enum(u32) {
                 , .{extra.data.name.fmt(data.builder)});
                 for (types) |ty| try writer.print(", {%}", .{ty.fmt(data.builder)});
                 for (ints) |int| try writer.print(", {d}", .{int});
-                try writer.writeByte(')');
+                try writer.write_byte(')');
             },
             .vector, .scalable_vector => |kind| {
-                const extra = data.builder.typeExtraData(Type.Vector, item.data);
+                const extra = data.builder.type_extra_data(Type.Vector, item.data);
                 try writer.print("<{s}{d} x {%}>", .{
                     switch (kind) {
                         .vector => "",
@@ -788,7 +788,7 @@ pub const Type = enum(u32) {
                 });
             },
             inline .small_array, .array => |kind| {
-                const extra = data.builder.typeExtraData(switch (kind) {
+                const extra = data.builder.type_extra_data(switch (kind) {
                     .small_array => Type.Vector,
                     .array => Type.Array,
                     else => unreachable,
@@ -796,31 +796,31 @@ pub const Type = enum(u32) {
                 try writer.print("[{d} x {%}]", .{ extra.length(), extra.child.fmt(data.builder) });
             },
             .structure, .packed_structure => |kind| {
-                var extra = data.builder.typeExtraDataTrail(Type.Structure, item.data);
+                var extra = data.builder.type_extra_data_trail(Type.Structure, item.data);
                 const fields = extra.trail.next(extra.data.fields_len, Type, data.builder);
                 switch (kind) {
                     .structure => {},
-                    .packed_structure => try writer.writeByte('<'),
+                    .packed_structure => try writer.write_byte('<'),
                     else => unreachable,
                 }
-                try writer.writeAll("{ ");
+                try writer.write_all("{ ");
                 for (fields, 0..) |field, index| {
-                    if (index > 0) try writer.writeAll(", ");
+                    if (index > 0) try writer.write_all(", ");
                     try writer.print("{%}", .{field.fmt(data.builder)});
                 }
-                try writer.writeAll(" }");
+                try writer.write_all(" }");
                 switch (kind) {
                     .structure => {},
-                    .packed_structure => try writer.writeByte('>'),
+                    .packed_structure => try writer.write_byte('>'),
                     else => unreachable,
                 }
             },
             .named_structure => {
-                const extra = data.builder.typeExtraData(Type.NamedStructure, item.data);
+                const extra = data.builder.type_extra_data(Type.NamedStructure, item.data);
                 if (comptime std.mem.eql(u8, fmt_str, "%")) try writer.print("%{}", .{
                     extra.id.fmt(data.builder),
                 }) else switch (extra.body) {
-                    .none => try writer.writeAll("opaque"),
+                    .none => try writer.write_all("opaque"),
                     else => try format(.{
                         .type = extra.body,
                         .builder = data.builder,
@@ -867,7 +867,7 @@ pub const Type = enum(u32) {
             => true,
             .none => unreachable,
             _ => {
-                const item = builder.type_items.items[@intFromEnum(self)];
+                const item = builder.type_items.items[@int_from_enum(self)];
                 return switch (item.tag) {
                     .simple => unreachable,
                     .function,
@@ -876,32 +876,32 @@ pub const Type = enum(u32) {
                     .integer,
                     .pointer,
                     => true,
-                    .target => self.targetLayoutType(builder).isSizedVisited(visited, builder),
+                    .target => self.target_layout_type(builder).is_sized_visited(visited, builder),
                     .vector,
                     .scalable_vector,
                     .small_array,
-                    => builder.typeExtraData(Type.Vector, item.data)
-                        .child.isSizedVisited(visited, builder),
-                    .array => builder.typeExtraData(Type.Array, item.data)
-                        .child.isSizedVisited(visited, builder),
+                    => builder.type_extra_data(Type.Vector, item.data)
+                        .child.is_sized_visited(visited, builder),
+                    .array => builder.type_extra_data(Type.Array, item.data)
+                        .child.is_sized_visited(visited, builder),
                     .structure,
                     .packed_structure,
                     => {
-                        if (try visited.fetchPut(builder.gpa, self, {})) |_| return false;
+                        if (try visited.fetch_put(builder.gpa, self, {})) |_| return false;
 
-                        var extra = builder.typeExtraDataTrail(Type.Structure, item.data);
+                        var extra = builder.type_extra_data_trail(Type.Structure, item.data);
                         const fields = extra.trail.next(extra.data.fields_len, Type, builder);
                         for (fields) |field| {
-                            if (field.isVector(builder) and field.vectorKind(builder) == .scalable)
+                            if (field.is_vector(builder) and field.vector_kind(builder) == .scalable)
                                 return false;
-                            if (!try field.isSizedVisited(visited, builder))
+                            if (!try field.is_sized_visited(visited, builder))
                                 return false;
                         }
                         return true;
                     },
                     .named_structure => {
-                        const body = builder.typeExtraData(Type.NamedStructure, item.data).body;
-                        return body != .none and try body.isSizedVisited(visited, builder);
+                        const body = builder.type_extra_data(Type.NamedStructure, item.data).body;
+                        return body != .none and try body.is_sized_visited(visited, builder);
                     },
                 };
             },
@@ -1013,13 +1013,13 @@ pub const Attribute = union(Kind) {
         _,
 
         pub fn get_kind(self: Index, builder: *const Builder) Kind {
-            return self.toStorage(builder).kind;
+            return self.to_storage(builder).kind;
         }
 
         pub fn to_attribute(self: Index, builder: *const Builder) Attribute {
             @setEvalBranchQuota(2_000);
-            const storage = self.toStorage(builder);
-            if (storage.kind.toString()) |kind| return .{ .string = .{
+            const storage = self.to_storage(builder);
+            if (storage.kind.to_string()) |kind| return .{ .string = .{
                 .kind = kind,
                 .value = @enumFromInt(storage.value),
             } } else return switch (storage.kind) {
@@ -1116,18 +1116,18 @@ pub const Attribute = union(Kind) {
                     const field = comptime blk: {
                         @setEvalBranchQuota(10_000);
                         for (@typeInfo(Attribute).Union.fields) |field| {
-                            if (std.mem.eql(u8, field.name, @tagName(kind))) break :blk field;
+                            if (std.mem.eql(u8, field.name, @tag_name(kind))) break :blk field;
                         }
                         unreachable;
                     };
-                    comptime assert(std.mem.eql(u8, @tagName(kind), field.name));
-                    return @unionInit(Attribute, field.name, switch (field.type) {
+                    comptime assert(std.mem.eql(u8, @tag_name(kind), field.name));
+                    return @union_init(Attribute, field.name, switch (field.type) {
                         void => {},
                         u32 => storage.value,
                         Alignment, String, Type, UwTable => @enumFromInt(storage.value),
-                        AllocKind, AllocSize, FpClass, Memory, VScaleRange => @bitCast(storage.value),
-                        else => @compileError("bad payload type: " ++ field.name ++ ": " ++
-                            @typeName(field.type)),
+                        AllocKind, AllocSize, FpClass, Memory, VScaleRange => @bit_cast(storage.value),
+                        else => @compile_error("bad payload type: " ++ field.name ++ ": " ++
+                            @type_name(field.type)),
                     });
                 },
                 .string, .none => unreachable,
@@ -1145,9 +1145,9 @@ pub const Attribute = union(Kind) {
             _: std.fmt.FormatOptions,
             writer: anytype,
         ) @TypeOf(writer).Error!void {
-            if (comptime std.mem.indexOfNone(u8, fmt_str, "\"#")) |_|
-                @compileError("invalid format string: '" ++ fmt_str ++ "'");
-            const attribute = data.attribute_index.toAttribute(data.builder);
+            if (comptime std.mem.index_of_none(u8, fmt_str, "\"#")) |_|
+                @compile_error("invalid format string: '" ++ fmt_str ++ "'");
+            const attribute = data.attribute_index.to_attribute(data.builder);
             switch (attribute) {
                 .zeroext,
                 .signext,
@@ -1219,88 +1219,88 @@ pub const Attribute = union(Kind) {
                 .no_sanitize_address,
                 .no_sanitize_hwaddress,
                 .sanitize_address_dyninit,
-                => try writer.print(" {s}", .{@tagName(attribute)}),
+                => try writer.print(" {s}", .{@tag_name(attribute)}),
                 .byval,
                 .byref,
                 .preallocated,
                 .inalloca,
                 .sret,
                 .elementtype,
-                => |ty| try writer.print(" {s}({%})", .{ @tagName(attribute), ty.fmt(data.builder) }),
+                => |ty| try writer.print(" {s}({%})", .{ @tag_name(attribute), ty.fmt(data.builder) }),
                 .@"align" => |alignment| try writer.print("{ }", .{alignment}),
                 .dereferenceable,
                 .dereferenceable_or_null,
-                => |size| try writer.print(" {s}({d})", .{ @tagName(attribute), size }),
+                => |size| try writer.print(" {s}({d})", .{ @tag_name(attribute), size }),
                 .nofpclass => |fpclass| {
                     const Int = @typeInfo(FpClass).Struct.backing_integer.?;
-                    try writer.print(" {s}(", .{@tagName(attribute)});
+                    try writer.print(" {s}(", .{@tag_name(attribute)});
                     var any = false;
-                    var remaining: Int = @bitCast(fpclass);
+                    var remaining: Int = @bit_cast(fpclass);
                     inline for (@typeInfo(FpClass).Struct.decls) |decl| {
-                        const pattern: Int = @bitCast(@field(FpClass, decl.name));
+                        const pattern: Int = @bit_cast(@field(FpClass, decl.name));
                         if (remaining & pattern == pattern) {
                             if (!any) {
-                                try writer.writeByte(' ');
+                                try writer.write_byte(' ');
                                 any = true;
                             }
-                            try writer.writeAll(decl.name);
+                            try writer.write_all(decl.name);
                             remaining &= ~pattern;
                         }
                     }
-                    try writer.writeByte(')');
+                    try writer.write_byte(')');
                 },
                 .alignstack => |alignment| try writer.print(
-                    if (comptime std.mem.indexOfScalar(u8, fmt_str, '#') != null)
+                    if (comptime std.mem.index_of_scalar(u8, fmt_str, '#') != null)
                         " {s}={d}"
                     else
                         " {s}({d})",
-                    .{ @tagName(attribute), alignment.toByteUnits() orelse return },
+                    .{ @tag_name(attribute), alignment.to_byte_units() orelse return },
                 ),
                 .allockind => |allockind| {
-                    try writer.print(" {s}(\"", .{@tagName(attribute)});
+                    try writer.print(" {s}(\"", .{@tag_name(attribute)});
                     var any = false;
                     inline for (@typeInfo(AllocKind).Struct.fields) |field| {
                         if (comptime std.mem.eql(u8, field.name, "_")) continue;
                         if (@field(allockind, field.name)) {
                             if (!any) {
-                                try writer.writeByte(',');
+                                try writer.write_byte(',');
                                 any = true;
                             }
-                            try writer.writeAll(field.name);
+                            try writer.write_all(field.name);
                         }
                     }
-                    try writer.writeAll("\")");
+                    try writer.write_all("\")");
                 },
                 .allocsize => |allocsize| {
-                    try writer.print(" {s}({d}", .{ @tagName(attribute), allocsize.elem_size });
+                    try writer.print(" {s}({d}", .{ @tag_name(attribute), allocsize.elem_size });
                     if (allocsize.num_elems != AllocSize.none)
                         try writer.print(",{d}", .{allocsize.num_elems});
-                    try writer.writeByte(')');
+                    try writer.write_byte(')');
                 },
                 .memory => |memory| {
-                    try writer.print(" {s}(", .{@tagName(attribute)});
+                    try writer.print(" {s}(", .{@tag_name(attribute)});
                     var any = memory.other != .none or
                         (memory.argmem == .none and memory.inaccessiblemem == .none);
-                    if (any) try writer.writeAll(@tagName(memory.other));
+                    if (any) try writer.write_all(@tag_name(memory.other));
                     inline for (.{ "argmem", "inaccessiblemem" }) |kind| {
                         if (@field(memory, kind) != memory.other) {
-                            if (any) try writer.writeAll(", ");
-                            try writer.print("{s}: {s}", .{ kind, @tagName(@field(memory, kind)) });
+                            if (any) try writer.write_all(", ");
+                            try writer.print("{s}: {s}", .{ kind, @tag_name(@field(memory, kind)) });
                             any = true;
                         }
                     }
-                    try writer.writeByte(')');
+                    try writer.write_byte(')');
                 },
                 .uwtable => |uwtable| if (uwtable != .none) {
-                    try writer.print(" {s}", .{@tagName(attribute)});
-                    if (uwtable != UwTable.default) try writer.print("({s})", .{@tagName(uwtable)});
+                    try writer.print(" {s}", .{@tag_name(attribute)});
+                    if (uwtable != UwTable.default) try writer.print("({s})", .{@tag_name(uwtable)});
                 },
                 .vscale_range => |vscale_range| try writer.print(" {s}({d},{d})", .{
-                    @tagName(attribute),
-                    vscale_range.min.toByteUnits().?,
-                    vscale_range.max.toByteUnits() orelse 0,
+                    @tag_name(attribute),
+                    vscale_range.min.to_byte_units().?,
+                    vscale_range.max.to_byte_units() orelse 0,
                 }),
-                .string => |string_attr| if (comptime std.mem.indexOfScalar(u8, fmt_str, '"') != null) {
+                .string => |string_attr| if (comptime std.mem.index_of_scalar(u8, fmt_str, '"') != null) {
                     try writer.print(" {\"}", .{string_attr.kind.fmt(data.builder)});
                     if (string_attr.value != .empty)
                         try writer.print("={\"}", .{string_attr.value.fmt(data.builder)});
@@ -1313,7 +1313,7 @@ pub const Attribute = union(Kind) {
         }
 
         fn to_storage(self: Index, builder: *const Builder) Storage {
-            return builder.attributes.keys()[@intFromEnum(self)];
+            return builder.attributes.keys()[@int_from_enum(self)];
         }
     };
 
@@ -1414,23 +1414,23 @@ pub const Attribute = union(Kind) {
         //sanitize_memtag,
         sanitize_address_dyninit = 102,
 
-        string = std.math.maxInt(u31),
-        none = std.math.maxInt(u32),
+        string = std.math.max_int(u31),
+        none = std.math.max_int(u32),
         _,
 
         pub const len = @typeInfo(Kind).Enum.fields.len - 2;
 
         pub fn from_string(str: String) Kind {
-            assert(!str.isAnon());
-            const kind: Kind = @enumFromInt(@intFromEnum(str));
+            assert(!str.is_anon());
+            const kind: Kind = @enumFromInt(@int_from_enum(str));
             assert(kind != .none);
             return kind;
         }
 
         fn to_string(self: Kind) ?String {
             assert(self != .none);
-            const str: String = @enumFromInt(@intFromEnum(self));
-            return if (str.isAnon()) null else str;
+            const str: String = @enumFromInt(@int_from_enum(self));
+            return if (str.is_anon()) null else str;
         }
     };
 
@@ -1495,12 +1495,12 @@ pub const Attribute = union(Kind) {
         elem_size: u16,
         num_elems: u16,
 
-        pub const none = std.math.maxInt(u16);
+        pub const none = std.math.max_int(u16);
 
         fn to_llvm(self: AllocSize) packed struct(u64) { num_elems: u32, elem_size: u32 } {
             return .{ .num_elems = switch (self.num_elems) {
                 else => self.num_elems,
-                none => std.math.maxInt(u32),
+                none => std.math.max_int(u32),
             }, .elem_size = self.elem_size };
         }
     };
@@ -1533,8 +1533,8 @@ pub const Attribute = union(Kind) {
 
         fn to_llvm(self: VScaleRange) packed struct(u64) { max: u32, min: u32 } {
             return .{
-                .max = @intCast(self.max.toByteUnits() orelse 0),
-                .min = @intCast(self.min.toByteUnits().?),
+                .max = @int_cast(self.max.to_byte_units() orelse 0),
+                .min = @int_cast(self.min.to_byte_units().?),
             };
         }
     };
@@ -1542,7 +1542,7 @@ pub const Attribute = union(Kind) {
     pub fn get_kind(self: Attribute) Kind {
         return switch (self) {
             else => self,
-            .string => |string_attr| Kind.fromString(string_attr.kind),
+            .string => |string_attr| Kind.from_string(string_attr.kind),
         };
     }
 
@@ -1556,13 +1556,13 @@ pub const Attribute = union(Kind) {
             inline else => |value, tag| .{ .kind = @as(Kind, self), .value = switch (@TypeOf(value)) {
                 void => 0,
                 u32 => value,
-                Alignment, String, Type, UwTable => @intFromEnum(value),
-                AllocKind, AllocSize, FpClass, Memory, VScaleRange => @bitCast(value),
-                else => @compileError("bad payload type: " ++ @tagName(tag) ++ @typeName(@TypeOf(value))),
+                Alignment, String, Type, UwTable => @int_from_enum(value),
+                AllocKind, AllocSize, FpClass, Memory, VScaleRange => @bit_cast(value),
+                else => @compile_error("bad payload type: " ++ @tag_name(tag) ++ @type_name(@TypeOf(value))),
             } },
             .string => |string_attr| .{
-                .kind = Kind.fromString(string_attr.kind),
-                .value = @intFromEnum(string_attr.value),
+                .kind = Kind.from_string(string_attr.kind),
+                .value = @int_from_enum(string_attr.value),
             },
             .none => unreachable,
         };
@@ -1574,9 +1574,9 @@ pub const Attributes = enum(u32) {
     _,
 
     pub fn slice(self: Attributes, builder: *const Builder) []const Attribute.Index {
-        const start = builder.attributes_indices.items[@intFromEnum(self)];
-        const end = builder.attributes_indices.items[@intFromEnum(self) + 1];
-        return @ptrCast(builder.attributes_extra.items[start..end]);
+        const start = builder.attributes_indices.items[@int_from_enum(self)];
+        const end = builder.attributes_indices.items[@int_from_enum(self) + 1];
+        return @ptr_cast(builder.attributes_extra.items[start..end]);
     }
 
     const FormatData = struct {
@@ -1620,7 +1620,7 @@ pub const FunctionAttributes = enum(u32) {
         }
 
         pub fn add_fn_attr(self: *Wip, attribute: Attribute, builder: *Builder) Allocator.Error!void {
-            try self.addAttr(function_index, attribute, builder);
+            try self.add_attr(function_index, attribute, builder);
         }
 
         pub fn add_fn_attr_index(
@@ -1628,15 +1628,15 @@ pub const FunctionAttributes = enum(u32) {
             attribute_index: Attribute.Index,
             builder: *const Builder,
         ) Allocator.Error!void {
-            try self.addAttrIndex(function_index, attribute_index, builder);
+            try self.add_attr_index(function_index, attribute_index, builder);
         }
 
         pub fn remove_fn_attr(self: *Wip, attribute_kind: Attribute.Kind) Allocator.Error!bool {
-            return self.removeAttr(function_index, attribute_kind);
+            return self.remove_attr(function_index, attribute_kind);
         }
 
         pub fn add_ret_attr(self: *Wip, attribute: Attribute, builder: *Builder) Allocator.Error!void {
-            try self.addAttr(return_index, attribute, builder);
+            try self.add_attr(return_index, attribute, builder);
         }
 
         pub fn add_ret_attr_index(
@@ -1644,11 +1644,11 @@ pub const FunctionAttributes = enum(u32) {
             attribute_index: Attribute.Index,
             builder: *const Builder,
         ) Allocator.Error!void {
-            try self.addAttrIndex(return_index, attribute_index, builder);
+            try self.add_attr_index(return_index, attribute_index, builder);
         }
 
         pub fn remove_ret_attr(self: *Wip, attribute_kind: Attribute.Kind) Allocator.Error!bool {
-            return self.removeAttr(return_index, attribute_kind);
+            return self.remove_attr(return_index, attribute_kind);
         }
 
         pub fn add_param_attr(
@@ -1657,7 +1657,7 @@ pub const FunctionAttributes = enum(u32) {
             attribute: Attribute,
             builder: *Builder,
         ) Allocator.Error!void {
-            try self.addAttr(params_index + param_index, attribute, builder);
+            try self.add_attr(params_index + param_index, attribute, builder);
         }
 
         pub fn add_param_attr_index(
@@ -1666,7 +1666,7 @@ pub const FunctionAttributes = enum(u32) {
             attribute_index: Attribute.Index,
             builder: *const Builder,
         ) Allocator.Error!void {
-            try self.addAttrIndex(params_index + param_index, attribute_index, builder);
+            try self.add_attr_index(params_index + param_index, attribute_index, builder);
         }
 
         pub fn remove_param_attr(
@@ -1674,7 +1674,7 @@ pub const FunctionAttributes = enum(u32) {
             param_index: usize,
             attribute_kind: Attribute.Kind,
         ) Allocator.Error!bool {
-            return self.removeAttr(params_index + param_index, attribute_kind);
+            return self.remove_attr(params_index + param_index, attribute_kind);
         }
 
         pub fn finish(self: *const Wip, builder: *Builder) Allocator.Error!FunctionAttributes {
@@ -1682,7 +1682,7 @@ pub const FunctionAttributes = enum(u32) {
             defer builder.gpa.free(attributes);
             for (attributes, self.maps.items) |*attribute, map|
                 attribute.* = try builder.attrs(map.values());
-            return builder.fnAttrs(attributes);
+            return builder.fn_attrs(attributes);
         }
 
         fn add_attr(
@@ -1691,8 +1691,8 @@ pub const FunctionAttributes = enum(u32) {
             attribute: Attribute,
             builder: *Builder,
         ) Allocator.Error!void {
-            const map = try self.getOrPutMap(builder.gpa, index);
-            try map.put(builder.gpa, attribute.getKind(), try builder.attr(attribute));
+            const map = try self.get_or_put_map(builder.gpa, index);
+            try map.put(builder.gpa, attribute.get_kind(), try builder.attr(attribute));
         }
 
         fn add_attr_index(
@@ -1701,18 +1701,18 @@ pub const FunctionAttributes = enum(u32) {
             attribute_index: Attribute.Index,
             builder: *const Builder,
         ) Allocator.Error!void {
-            const map = try self.getOrPutMap(builder.gpa, index);
-            try map.put(builder.gpa, attribute_index.getKind(builder), attribute_index);
+            const map = try self.get_or_put_map(builder.gpa, index);
+            try map.put(builder.gpa, attribute_index.get_kind(builder), attribute_index);
         }
 
         fn remove_attr(self: *Wip, index: usize, attribute_kind: Attribute.Kind) Allocator.Error!bool {
-            const map = self.getMap(index) orelse return false;
-            return map.swapRemove(attribute_kind);
+            const map = self.get_map(index) orelse return false;
+            return map.swap_remove(attribute_kind);
         }
 
         fn get_or_put_map(self: *Wip, allocator: Allocator, index: usize) Allocator.Error!*Map {
             if (index >= self.maps.items.len)
-                try self.maps.appendNTimes(allocator, .{}, index + 1 - self.maps.items.len);
+                try self.maps.append_ntimes(allocator, .{}, index + 1 - self.maps.items.len);
             return &self.maps.items[index];
         }
 
@@ -1721,7 +1721,7 @@ pub const FunctionAttributes = enum(u32) {
         }
 
         fn ensure_total_length(self: *Wip, new_len: usize) Allocator.Error!void {
-            try self.maps.appendNTimes(
+            try self.maps.append_ntimes(
                 .{},
                 std.math.sub(usize, new_len, self.maps.items.len) catch return,
             );
@@ -1744,14 +1744,14 @@ pub const FunctionAttributes = enum(u32) {
         var wip: Wip = .{};
         errdefer wip.deinit(builder);
         const attributes_slice = self.slice(builder);
-        try wip.maps.ensureTotalCapacityPrecise(builder.gpa, attributes_slice.len);
+        try wip.maps.ensure_total_capacity_precise(builder.gpa, attributes_slice.len);
         for (attributes_slice) |attributes| {
-            const map = wip.maps.addOneAssumeCapacity();
+            const map = wip.maps.add_one_assume_capacity();
             map.* = .{};
             const attribute_slice = attributes.slice(builder);
-            try map.ensureTotalCapacity(builder.gpa, attribute_slice.len);
+            try map.ensure_total_capacity(builder.gpa, attribute_slice.len);
             for (attributes.slice(builder)) |attribute|
-                map.putAssumeCapacityNoClobber(attribute.getKind(builder), attribute);
+                map.put_assume_capacity_no_clobber(attribute.get_kind(builder), attribute);
         }
         return wip;
     }
@@ -1762,9 +1762,9 @@ pub const FunctionAttributes = enum(u32) {
     }
 
     fn slice(self: FunctionAttributes, builder: *const Builder) []const Attributes {
-        const start = builder.attributes_indices.items[@intFromEnum(self)];
-        const end = builder.attributes_indices.items[@intFromEnum(self) + 1];
-        return @ptrCast(builder.attributes_extra.items[start..end]);
+        const start = builder.attributes_indices.items[@int_from_enum(self)];
+        const end = builder.attributes_indices.items[@int_from_enum(self) + 1];
+        return @ptr_cast(builder.attributes_extra.items[start..end]);
     }
 };
 
@@ -1787,7 +1787,7 @@ pub const Linkage = enum(u4) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (self != .external) try writer.print(" {s}", .{@tagName(self)});
+        if (self != .external) try writer.print(" {s}", .{@tag_name(self)});
     }
 
     fn format_optional(
@@ -1796,9 +1796,9 @@ pub const Linkage = enum(u4) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (data) |linkage| try writer.print(" {s}", .{@tagName(linkage)});
+        if (data) |linkage| try writer.print(" {s}", .{@tag_name(linkage)});
     }
-    pub fn fmt_optional(self: ?Linkage) std.fmt.Formatter(formatOptional) {
+    pub fn fmt_optional(self: ?Linkage) std.fmt.Formatter(format_optional) {
         return .{ .data = self };
     }
 };
@@ -1814,7 +1814,7 @@ pub const Preemption = enum {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (self == .dso_local) try writer.print(" {s}", .{@tagName(self)});
+        if (self == .dso_local) try writer.print(" {s}", .{@tag_name(self)});
     }
 };
 
@@ -1829,7 +1829,7 @@ pub const Visibility = enum(u2) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (self != .default) try writer.print(" {s}", .{@tagName(self)});
+        if (self != .default) try writer.print(" {s}", .{@tag_name(self)});
     }
 };
 
@@ -1844,7 +1844,7 @@ pub const DllStorageClass = enum(u2) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (self != .default) try writer.print(" {s}", .{@tagName(self)});
+        if (self != .default) try writer.print(" {s}", .{@tag_name(self)});
     }
 };
 
@@ -1863,7 +1863,7 @@ pub const ThreadLocal = enum(u3) {
     ) @TypeOf(writer).Error!void {
         if (self == .default) return;
         try writer.print("{s}thread_local", .{prefix});
-        if (self != .generaldynamic) try writer.print("({s})", .{@tagName(self)});
+        if (self != .generaldynamic) try writer.print("({s})", .{@tag_name(self)});
     }
 };
 
@@ -1880,7 +1880,7 @@ pub const UnnamedAddr = enum(u2) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (self != .default) try writer.print(" {s}", .{@tagName(self)});
+        if (self != .default) try writer.print(" {s}", .{@tag_name(self)});
     }
 };
 
@@ -1965,7 +1965,7 @@ pub const AddrSpace = enum(u24) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (self != .default) try writer.print("{s}addrspace({d})", .{ prefix, @intFromEnum(self) });
+        if (self != .default) try writer.print("{s}addrspace({d})", .{ prefix, @int_from_enum(self) });
     }
 };
 
@@ -1980,28 +1980,28 @@ pub const ExternallyInitialized = enum {
         writer: anytype,
     ) @TypeOf(writer).Error!void {
         if (self == .default) return;
-        try writer.writeByte(' ');
-        try writer.writeAll(@tagName(self));
+        try writer.write_byte(' ');
+        try writer.write_all(@tag_name(self));
     }
 };
 
 pub const Alignment = enum(u6) {
-    default = std.math.maxInt(u6),
+    default = std.math.max_int(u6),
     _,
 
     pub fn from_byte_units(bytes: u64) Alignment {
         if (bytes == 0) return .default;
-        assert(std.math.isPowerOfTwo(bytes));
+        assert(std.math.is_power_of_two(bytes));
         assert(bytes <= 1 << 32);
         return @enumFromInt(@ctz(bytes));
     }
 
     pub fn to_byte_units(self: Alignment) ?u64 {
-        return if (self == .default) null else @as(u64, 1) << @intFromEnum(self);
+        return if (self == .default) null else @as(u64, 1) << @int_from_enum(self);
     }
 
     pub fn to_llvm(self: Alignment) u6 {
-        return if (self == .default) 0 else (@intFromEnum(self) + 1);
+        return if (self == .default) 0 else (@int_from_enum(self) + 1);
     }
 
     pub fn format(
@@ -2010,7 +2010,7 @@ pub const Alignment = enum(u6) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        try writer.print("{s}align {d}", .{ prefix, self.toByteUnits() orelse return });
+        try writer.print("{s}align {d}", .{ prefix, self.to_byte_units() orelse return });
     }
 };
 
@@ -2129,24 +2129,24 @@ pub const CallConv = enum(u10) {
             .amdgpu_gfx,
             .aarch64_sme_preservemost_from_x0,
             .aarch64_sme_preservemost_from_x2,
-            => try writer.print(" {s}", .{@tagName(self)}),
-            _ => try writer.print(" cc{d}", .{@intFromEnum(self)}),
+            => try writer.print(" {s}", .{@tag_name(self)}),
+            _ => try writer.print(" cc{d}", .{@int_from_enum(self)}),
         }
     }
 };
 
 pub const StrtabString = enum(u32) {
-    none = std.math.maxInt(u31),
+    none = std.math.max_int(u31),
     empty,
     _,
 
     pub fn is_anon(self: StrtabString) bool {
         assert(self != .none);
-        return self.toIndex() == null;
+        return self.to_index() == null;
     }
 
     pub fn slice(self: StrtabString, builder: *const Builder) ?[]const u8 {
-        const index = self.toIndex() orelse return null;
+        const index = self.to_index() orelse return null;
         const start = builder.strtab_string_indices.items[index];
         const end = builder.strtab_string_indices.items[index + 1];
         return builder.strtab_string_bytes.items[start..end];
@@ -2162,16 +2162,16 @@ pub const StrtabString = enum(u32) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (comptime std.mem.indexOfNone(u8, fmt_str, "\"r")) |_|
-            @compileError("invalid format string: '" ++ fmt_str ++ "'");
+        if (comptime std.mem.index_of_none(u8, fmt_str, "\"r")) |_|
+            @compile_error("invalid format string: '" ++ fmt_str ++ "'");
         assert(data.string != .none);
         const string_slice = data.string.slice(data.builder) orelse
-            return writer.print("{d}", .{@intFromEnum(data.string)});
-        if (comptime std.mem.indexOfScalar(u8, fmt_str, 'r')) |_|
-            return writer.writeAll(string_slice);
-        try printEscapedString(
+            return writer.print("{d}", .{@int_from_enum(data.string)});
+        if (comptime std.mem.index_of_scalar(u8, fmt_str, 'r')) |_|
+            return writer.write_all(string_slice);
+        try print_escaped_string(
             string_slice,
-            if (comptime std.mem.indexOfScalar(u8, fmt_str, '"')) |_|
+            if (comptime std.mem.index_of_scalar(u8, fmt_str, '"')) |_|
                 .always_quote
             else
                 .quote_unless_valid_identifier,
@@ -2183,12 +2183,12 @@ pub const StrtabString = enum(u32) {
     }
 
     fn from_index(index: ?usize) StrtabString {
-        return @enumFromInt(@as(u32, @intCast((index orelse return .none) +
-            @intFromEnum(StrtabString.empty))));
+        return @enumFromInt(@as(u32, @int_cast((index orelse return .none) +
+            @int_from_enum(StrtabString.empty))));
     }
 
     fn to_index(self: StrtabString) ?usize {
-        return std.math.sub(u32, @intFromEnum(self), @intFromEnum(StrtabString.empty)) catch null;
+        return std.math.sub(u32, @int_from_enum(self), @int_from_enum(StrtabString.empty)) catch null;
     }
 
     const Adapter = struct {
@@ -2197,58 +2197,58 @@ pub const StrtabString = enum(u32) {
             return @truncate(std.hash.Wyhash.hash(0, key));
         }
         pub fn eql(ctx: Adapter, lhs_key: []const u8, _: void, rhs_index: usize) bool {
-            return std.mem.eql(u8, lhs_key, StrtabString.fromIndex(rhs_index).slice(ctx.builder).?);
+            return std.mem.eql(u8, lhs_key, StrtabString.from_index(rhs_index).slice(ctx.builder).?);
         }
     };
 };
 
 pub fn strtab_string(self: *Builder, bytes: []const u8) Allocator.Error!StrtabString {
-    try self.strtab_string_bytes.ensureUnusedCapacity(self.gpa, bytes.len);
-    try self.strtab_string_indices.ensureUnusedCapacity(self.gpa, 1);
-    try self.strtab_string_map.ensureUnusedCapacity(self.gpa, 1);
+    try self.strtab_string_bytes.ensure_unused_capacity(self.gpa, bytes.len);
+    try self.strtab_string_indices.ensure_unused_capacity(self.gpa, 1);
+    try self.strtab_string_map.ensure_unused_capacity(self.gpa, 1);
 
-    const gop = self.strtab_string_map.getOrPutAssumeCapacityAdapted(bytes, StrtabString.Adapter{ .builder = self });
+    const gop = self.strtab_string_map.get_or_put_assume_capacity_adapted(bytes, StrtabString.Adapter{ .builder = self });
     if (!gop.found_existing) {
-        self.strtab_string_bytes.appendSliceAssumeCapacity(bytes);
-        self.strtab_string_indices.appendAssumeCapacity(@intCast(self.strtab_string_bytes.items.len));
+        self.strtab_string_bytes.append_slice_assume_capacity(bytes);
+        self.strtab_string_indices.append_assume_capacity(@int_cast(self.strtab_string_bytes.items.len));
     }
-    return StrtabString.fromIndex(gop.index);
+    return StrtabString.from_index(gop.index);
 }
 
 pub fn strtab_string_if_exists(self: *const Builder, bytes: []const u8) ?StrtabString {
-    return StrtabString.fromIndex(
-        self.strtab_string_map.getIndexAdapted(bytes, StrtabString.Adapter{ .builder = self }) orelse return null,
+    return StrtabString.from_index(
+        self.strtab_string_map.get_index_adapted(bytes, StrtabString.Adapter{ .builder = self }) orelse return null,
     );
 }
 
 pub fn strtab_string_fmt(self: *Builder, comptime fmt_str: []const u8, fmt_args: anytype) Allocator.Error!StrtabString {
-    try self.strtab_string_map.ensureUnusedCapacity(self.gpa, 1);
-    try self.strtab_string_bytes.ensureUnusedCapacity(self.gpa, @intCast(std.fmt.count(fmt_str, fmt_args)));
-    try self.strtab_string_indices.ensureUnusedCapacity(self.gpa, 1);
-    return self.strtabStringFmtAssumeCapacity(fmt_str, fmt_args);
+    try self.strtab_string_map.ensure_unused_capacity(self.gpa, 1);
+    try self.strtab_string_bytes.ensure_unused_capacity(self.gpa, @int_cast(std.fmt.count(fmt_str, fmt_args)));
+    try self.strtab_string_indices.ensure_unused_capacity(self.gpa, 1);
+    return self.strtab_string_fmt_assume_capacity(fmt_str, fmt_args);
 }
 
 pub fn strtab_string_fmt_assume_capacity(self: *Builder, comptime fmt_str: []const u8, fmt_args: anytype) StrtabString {
     self.strtab_string_bytes.writer(undefined).print(fmt_str, fmt_args) catch unreachable;
-    return self.trailingStrtabStringAssumeCapacity();
+    return self.trailing_strtab_string_assume_capacity();
 }
 
 pub fn trailing_strtab_string(self: *Builder) Allocator.Error!StrtabString {
-    try self.strtab_string_indices.ensureUnusedCapacity(self.gpa, 1);
-    try self.strtab_string_map.ensureUnusedCapacity(self.gpa, 1);
-    return self.trailingStrtabStringAssumeCapacity();
+    try self.strtab_string_indices.ensure_unused_capacity(self.gpa, 1);
+    try self.strtab_string_map.ensure_unused_capacity(self.gpa, 1);
+    return self.trailing_strtab_string_assume_capacity();
 }
 
 pub fn trailing_strtab_string_assume_capacity(self: *Builder) StrtabString {
-    const start = self.strtab_string_indices.getLast();
+    const start = self.strtab_string_indices.get_last();
     const bytes: []const u8 = self.strtab_string_bytes.items[start..];
-    const gop = self.strtab_string_map.getOrPutAssumeCapacityAdapted(bytes, StrtabString.Adapter{ .builder = self });
+    const gop = self.strtab_string_map.get_or_put_assume_capacity_adapted(bytes, StrtabString.Adapter{ .builder = self });
     if (gop.found_existing) {
-        self.strtab_string_bytes.shrinkRetainingCapacity(start);
+        self.strtab_string_bytes.shrink_retaining_capacity(start);
     } else {
-        self.strtab_string_indices.appendAssumeCapacity(@intCast(self.strtab_string_bytes.items.len));
+        self.strtab_string_indices.append_assume_capacity(@int_cast(self.strtab_string_bytes.items.len));
     }
-    return StrtabString.fromIndex(gop.index);
+    return StrtabString.from_index(gop.index);
 }
 
 pub const Global = struct {
@@ -2270,13 +2270,13 @@ pub const Global = struct {
     },
 
     pub const Index = enum(u32) {
-        none = std.math.maxInt(u32),
+        none = std.math.max_int(u32),
         _,
 
         pub fn unwrap(self: Index, builder: *const Builder) Index {
             var cur = self;
             while (true) {
-                const replacement = cur.getReplacement(builder);
+                const replacement = cur.get_replacement(builder);
                 if (replacement == .none) return cur;
                 cur = replacement;
             }
@@ -2287,22 +2287,22 @@ pub const Global = struct {
         }
 
         pub fn ptr(self: Index, builder: *Builder) *Global {
-            return &builder.globals.values()[@intFromEnum(self.unwrap(builder))];
+            return &builder.globals.values()[@int_from_enum(self.unwrap(builder))];
         }
 
         pub fn ptr_const(self: Index, builder: *const Builder) *const Global {
-            return &builder.globals.values()[@intFromEnum(self.unwrap(builder))];
+            return &builder.globals.values()[@int_from_enum(self.unwrap(builder))];
         }
 
         pub fn name(self: Index, builder: *const Builder) StrtabString {
-            return builder.globals.keys()[@intFromEnum(self.unwrap(builder))];
+            return builder.globals.keys()[@int_from_enum(self.unwrap(builder))];
         }
 
         pub fn strtab(self: Index, builder: *const Builder) struct {
             offset: u32,
             size: u32,
         } {
-            const name_index = self.name(builder).toIndex() orelse return .{
+            const name_index = self.name(builder).to_index() orelse return .{
                 .offset = 0,
                 .size = 0,
             };
@@ -2315,21 +2315,21 @@ pub const Global = struct {
         }
 
         pub fn type_of(self: Index, builder: *const Builder) Type {
-            return self.ptrConst(builder).type;
+            return self.ptr_const(builder).type;
         }
 
         pub fn to_const(self: Index) Constant {
-            return @enumFromInt(@intFromEnum(Constant.first_global) + @intFromEnum(self));
+            return @enumFromInt(@int_from_enum(Constant.first_global) + @int_from_enum(self));
         }
 
         pub fn set_linkage(self: Index, linkage: Linkage, builder: *Builder) void {
             self.ptr(builder).linkage = linkage;
-            self.updateDsoLocal(builder);
+            self.update_dso_local(builder);
         }
 
         pub fn set_visibility(self: Index, visibility: Visibility, builder: *Builder) void {
             self.ptr(builder).visibility = visibility;
-            self.updateDsoLocal(builder);
+            self.update_dso_local(builder);
         }
 
         pub fn set_dll_storage_class(self: Index, class: DllStorageClass, builder: *Builder) void {
@@ -2363,18 +2363,18 @@ pub const Global = struct {
         }
 
         pub fn rename(self: Index, new_name: StrtabString, builder: *Builder) Allocator.Error!void {
-            try builder.ensureUnusedGlobalCapacity(new_name);
-            self.renameAssumeCapacity(new_name, builder);
+            try builder.ensure_unused_global_capacity(new_name);
+            self.rename_assume_capacity(new_name, builder);
         }
 
         pub fn take_name(self: Index, other: Index, builder: *Builder) Allocator.Error!void {
-            try builder.ensureUnusedGlobalCapacity(.empty);
-            self.takeNameAssumeCapacity(other, builder);
+            try builder.ensure_unused_global_capacity(.empty);
+            self.take_name_assume_capacity(other, builder);
         }
 
         pub fn replace(self: Index, other: Index, builder: *Builder) Allocator.Error!void {
-            try builder.ensureUnusedGlobalCapacity(.empty);
-            self.replaceAssumeCapacity(other, builder);
+            try builder.ensure_unused_global_capacity(.empty);
+            self.replace_assume_capacity(other, builder);
         }
 
         pub fn delete(self: Index, builder: *Builder) void {
@@ -2404,30 +2404,30 @@ pub const Global = struct {
         fn rename_assume_capacity(self: Index, new_name: StrtabString, builder: *Builder) void {
             const old_name = self.name(builder);
             if (new_name == old_name) return;
-            const index = @intFromEnum(self.unwrap(builder));
-            _ = builder.addGlobalAssumeCapacity(new_name, builder.globals.values()[index]);
-            builder.globals.swapRemoveAt(index);
-            if (!old_name.isAnon()) return;
-            builder.next_unnamed_global = @enumFromInt(@intFromEnum(builder.next_unnamed_global) - 1);
+            const index = @int_from_enum(self.unwrap(builder));
+            _ = builder.add_global_assume_capacity(new_name, builder.globals.values()[index]);
+            builder.globals.swap_remove_at(index);
+            if (!old_name.is_anon()) return;
+            builder.next_unnamed_global = @enumFromInt(@int_from_enum(builder.next_unnamed_global) - 1);
             if (builder.next_unnamed_global == old_name) return;
-            builder.getGlobal(builder.next_unnamed_global).?.renameAssumeCapacity(old_name, builder);
+            builder.get_global(builder.next_unnamed_global).?.rename_assume_capacity(old_name, builder);
         }
 
         fn take_name_assume_capacity(self: Index, other: Index, builder: *Builder) void {
             const other_name = other.name(builder);
-            other.renameAssumeCapacity(.empty, builder);
-            self.renameAssumeCapacity(other_name, builder);
+            other.rename_assume_capacity(.empty, builder);
+            self.rename_assume_capacity(other_name, builder);
         }
 
         fn replace_assume_capacity(self: Index, other: Index, builder: *Builder) void {
             if (self.eql(other, builder)) return;
-            builder.next_replaced_global = @enumFromInt(@intFromEnum(builder.next_replaced_global) - 1);
-            self.renameAssumeCapacity(builder.next_replaced_global, builder);
+            builder.next_replaced_global = @enumFromInt(@int_from_enum(builder.next_replaced_global) - 1);
+            self.rename_assume_capacity(builder.next_replaced_global, builder);
             self.ptr(builder).kind = .{ .replaced = other.unwrap(builder) };
         }
 
         fn get_replacement(self: Index, builder: *const Builder) Index {
-            return switch (builder.globals.values()[@intFromEnum(self)].kind) {
+            return switch (builder.globals.values()[@int_from_enum(self)].kind) {
                 .replaced => |replacement| replacement,
                 else => .none,
             };
@@ -2441,39 +2441,39 @@ pub const Alias = struct {
     aliasee: Constant = .no_init,
 
     pub const Index = enum(u32) {
-        none = std.math.maxInt(u32),
+        none = std.math.max_int(u32),
         _,
 
         pub fn ptr(self: Index, builder: *Builder) *Alias {
-            return &builder.aliases.items[@intFromEnum(self)];
+            return &builder.aliases.items[@int_from_enum(self)];
         }
 
         pub fn ptr_const(self: Index, builder: *const Builder) *const Alias {
-            return &builder.aliases.items[@intFromEnum(self)];
+            return &builder.aliases.items[@int_from_enum(self)];
         }
 
         pub fn name(self: Index, builder: *const Builder) StrtabString {
-            return self.ptrConst(builder).global.name(builder);
+            return self.ptr_const(builder).global.name(builder);
         }
 
         pub fn rename(self: Index, new_name: StrtabString, builder: *Builder) Allocator.Error!void {
-            return self.ptrConst(builder).global.rename(new_name, builder);
+            return self.ptr_const(builder).global.rename(new_name, builder);
         }
 
         pub fn type_of(self: Index, builder: *const Builder) Type {
-            return self.ptrConst(builder).global.typeOf(builder);
+            return self.ptr_const(builder).global.type_of(builder);
         }
 
         pub fn to_const(self: Index, builder: *const Builder) Constant {
-            return self.ptrConst(builder).global.toConst();
+            return self.ptr_const(builder).global.to_const();
         }
 
         pub fn to_value(self: Index, builder: *const Builder) Value {
-            return self.toConst(builder).toValue();
+            return self.to_const(builder).to_value();
         }
 
         pub fn get_aliasee(self: Index, builder: *const Builder) Global.Index {
-            const aliasee = self.ptrConst(builder).aliasee.getBase(builder);
+            const aliasee = self.ptr_const(builder).aliasee.get_base(builder);
             assert(aliasee != .none);
             return aliasee;
         }
@@ -2493,43 +2493,43 @@ pub const Variable = struct {
     alignment: Alignment = .default,
 
     pub const Index = enum(u32) {
-        none = std.math.maxInt(u32),
+        none = std.math.max_int(u32),
         _,
 
         pub fn ptr(self: Index, builder: *Builder) *Variable {
-            return &builder.variables.items[@intFromEnum(self)];
+            return &builder.variables.items[@int_from_enum(self)];
         }
 
         pub fn ptr_const(self: Index, builder: *const Builder) *const Variable {
-            return &builder.variables.items[@intFromEnum(self)];
+            return &builder.variables.items[@int_from_enum(self)];
         }
 
         pub fn name(self: Index, builder: *const Builder) StrtabString {
-            return self.ptrConst(builder).global.name(builder);
+            return self.ptr_const(builder).global.name(builder);
         }
 
         pub fn rename(self: Index, new_name: StrtabString, builder: *Builder) Allocator.Error!void {
-            return self.ptrConst(builder).global.rename(new_name, builder);
+            return self.ptr_const(builder).global.rename(new_name, builder);
         }
 
         pub fn type_of(self: Index, builder: *const Builder) Type {
-            return self.ptrConst(builder).global.typeOf(builder);
+            return self.ptr_const(builder).global.type_of(builder);
         }
 
         pub fn to_const(self: Index, builder: *const Builder) Constant {
-            return self.ptrConst(builder).global.toConst();
+            return self.ptr_const(builder).global.to_const();
         }
 
         pub fn to_value(self: Index, builder: *const Builder) Value {
-            return self.toConst(builder).toValue();
+            return self.to_const(builder).to_value();
         }
 
         pub fn set_linkage(self: Index, linkage: Linkage, builder: *Builder) void {
-            return self.ptrConst(builder).global.setLinkage(linkage, builder);
+            return self.ptr_const(builder).global.set_linkage(linkage, builder);
         }
 
         pub fn set_unnamed_addr(self: Index, unnamed_addr: UnnamedAddr, builder: *Builder) void {
-            return self.ptrConst(builder).global.setUnnamedAddr(unnamed_addr, builder);
+            return self.ptr_const(builder).global.set_unnamed_addr(unnamed_addr, builder);
         }
 
         pub fn set_thread_local(self: Index, thread_local: ThreadLocal, builder: *Builder) void {
@@ -2546,9 +2546,9 @@ pub const Variable = struct {
             builder: *Builder,
         ) Allocator.Error!void {
             if (initializer != .no_init) {
-                const variable = self.ptrConst(builder);
+                const variable = self.ptr_const(builder);
                 const global = variable.global.ptr(builder);
-                const initializer_type = initializer.typeOf(builder);
+                const initializer_type = initializer.type_of(builder);
                 global.type = initializer_type;
             }
             self.ptr(builder).init = initializer;
@@ -2567,7 +2567,7 @@ pub const Variable = struct {
         }
 
         pub fn set_global_variable_expression(self: Index, expression: Metadata, builder: *Builder) void {
-            self.ptrConst(builder).global.setDebugMetadata(expression, builder);
+            self.ptr_const(builder).global.set_debug_metadata(expression, builder);
         }
     };
 };
@@ -3880,7 +3880,7 @@ pub const Intrinsic = enum {
             .params = &.{
                 .{
                     .kind = .{ .type = Type.ptr_amdgpu_constant },
-                    .attrs = &.{.{ .@"align" = Builder.Alignment.fromByteUnits(4) }},
+                    .attrs = &.{.{ .@"align" = Builder.Alignment.from_byte_units(4) }},
                 },
             },
             .attrs = &.{ .nocallback, .nofree, .nosync, .nounwind, .speculatable, .willreturn, .{ .memory = Attribute.Memory.all(.none) } },
@@ -3922,43 +3922,43 @@ pub const Function = struct {
     extra: []const u32 = &.{},
 
     pub const Index = enum(u32) {
-        none = std.math.maxInt(u32),
+        none = std.math.max_int(u32),
         _,
 
         pub fn ptr(self: Index, builder: *Builder) *Function {
-            return &builder.functions.items[@intFromEnum(self)];
+            return &builder.functions.items[@int_from_enum(self)];
         }
 
         pub fn ptr_const(self: Index, builder: *const Builder) *const Function {
-            return &builder.functions.items[@intFromEnum(self)];
+            return &builder.functions.items[@int_from_enum(self)];
         }
 
         pub fn name(self: Index, builder: *const Builder) StrtabString {
-            return self.ptrConst(builder).global.name(builder);
+            return self.ptr_const(builder).global.name(builder);
         }
 
         pub fn rename(self: Index, new_name: StrtabString, builder: *Builder) Allocator.Error!void {
-            return self.ptrConst(builder).global.rename(new_name, builder);
+            return self.ptr_const(builder).global.rename(new_name, builder);
         }
 
         pub fn type_of(self: Index, builder: *const Builder) Type {
-            return self.ptrConst(builder).global.typeOf(builder);
+            return self.ptr_const(builder).global.type_of(builder);
         }
 
         pub fn to_const(self: Index, builder: *const Builder) Constant {
-            return self.ptrConst(builder).global.toConst();
+            return self.ptr_const(builder).global.to_const();
         }
 
         pub fn to_value(self: Index, builder: *const Builder) Value {
-            return self.toConst(builder).toValue();
+            return self.to_const(builder).to_value();
         }
 
         pub fn set_linkage(self: Index, linkage: Linkage, builder: *Builder) void {
-            return self.ptrConst(builder).global.setLinkage(linkage, builder);
+            return self.ptr_const(builder).global.set_linkage(linkage, builder);
         }
 
         pub fn set_unnamed_addr(self: Index, unnamed_addr: UnnamedAddr, builder: *Builder) void {
-            return self.ptrConst(builder).global.setUnnamedAddr(unnamed_addr, builder);
+            return self.ptr_const(builder).global.set_unnamed_addr(unnamed_addr, builder);
         }
 
         pub fn set_call_conv(self: Index, call_conv: CallConv, builder: *Builder) void {
@@ -3982,7 +3982,7 @@ pub const Function = struct {
         }
 
         pub fn set_subprogram(self: Index, subprogram: Metadata, builder: *Builder) void {
-            self.ptrConst(builder).global.setDebugMetadata(subprogram, builder);
+            self.ptr_const(builder).global.set_debug_metadata(subprogram, builder);
         }
     };
 
@@ -4271,23 +4271,23 @@ pub const Function = struct {
         };
 
         pub const Index = enum(u32) {
-            none = std.math.maxInt(u31),
+            none = std.math.max_int(u31),
             _,
 
             pub fn name(self: Instruction.Index, function: *const Function) String {
-                return function.names[@intFromEnum(self)];
+                return function.names[@int_from_enum(self)];
             }
 
             pub fn value_index(self: Instruction.Index, function: *const Function) u32 {
-                return function.value_indices[@intFromEnum(self)];
+                return function.value_indices[@int_from_enum(self)];
             }
 
             pub fn to_value(self: Instruction.Index) Value {
-                return @enumFromInt(@intFromEnum(self));
+                return @enumFromInt(@int_from_enum(self));
             }
 
             pub fn is_terminator_wip(self: Instruction.Index, wip: *const WipFunction) bool {
-                return switch (wip.instructions.items(.tag)[@intFromEnum(self)]) {
+                return switch (wip.instructions.items(.tag)[@int_from_enum(self)]) {
                     .br,
                     .br_cond,
                     .ret,
@@ -4300,7 +4300,7 @@ pub const Function = struct {
             }
 
             pub fn has_result_wip(self: Instruction.Index, wip: *const WipFunction) bool {
-                return switch (wip.instructions.items(.tag)[@intFromEnum(self)]) {
+                return switch (wip.instructions.items(.tag)[@int_from_enum(self)]) {
                     .br,
                     .br_cond,
                     .fence,
@@ -4320,13 +4320,13 @@ pub const Function = struct {
                     .@"notail call fast",
                     .@"tail call",
                     .@"tail call fast",
-                    => self.typeOfWip(wip) != .void,
+                    => self.type_of_wip(wip) != .void,
                     else => true,
                 };
             }
 
             pub fn type_of_wip(self: Instruction.Index, wip: *const WipFunction) Type {
-                const instruction = wip.instructions.get(@intFromEnum(self));
+                const instruction = wip.instructions.get(@int_from_enum(self));
                 return switch (instruction.tag) {
                     .add,
                     .@"add nsw",
@@ -4367,7 +4367,7 @@ pub const Function = struct {
                     .@"udiv exact",
                     .urem,
                     .xor,
-                    => wip.extraData(Binary, instruction.data).lhs.typeOfWip(wip),
+                    => wip.extra_data(Binary, instruction.data).lhs.type_of_wip(wip),
                     .addrspacecast,
                     .bitcast,
                     .fpext,
@@ -4381,15 +4381,15 @@ pub const Function = struct {
                     .trunc,
                     .uitofp,
                     .zext,
-                    => wip.extraData(Cast, instruction.data).type,
+                    => wip.extra_data(Cast, instruction.data).type,
                     .alloca,
                     .@"alloca inalloca",
-                    => wip.builder.ptrTypeAssumeCapacity(
-                        wip.extraData(Alloca, instruction.data).info.addr_space,
+                    => wip.builder.ptr_type_assume_capacity(
+                        wip.extra_data(Alloca, instruction.data).info.addr_space,
                     ),
-                    .arg => wip.function.typeOf(wip.builder)
-                        .functionParameters(wip.builder)[instruction.data],
-                    .atomicrmw => wip.extraData(AtomicRmw, instruction.data).val.typeOfWip(wip),
+                    .arg => wip.function.type_of(wip.builder)
+                        .function_parameters(wip.builder)[instruction.data],
+                    .atomicrmw => wip.extra_data(AtomicRmw, instruction.data).val.type_of_wip(wip),
                     .block => .label,
                     .br,
                     .br_cond,
@@ -4409,19 +4409,19 @@ pub const Function = struct {
                     .@"notail call fast",
                     .@"tail call",
                     .@"tail call fast",
-                    => wip.extraData(Call, instruction.data).ty.functionReturn(wip.builder),
+                    => wip.extra_data(Call, instruction.data).ty.function_return(wip.builder),
                     .cmpxchg,
                     .@"cmpxchg weak",
-                    => wip.builder.structTypeAssumeCapacity(.normal, &.{
-                        wip.extraData(CmpXchg, instruction.data).cmp.typeOfWip(wip),
+                    => wip.builder.struct_type_assume_capacity(.normal, &.{
+                        wip.extra_data(CmpXchg, instruction.data).cmp.type_of_wip(wip),
                         .i1,
                     }),
-                    .extractelement => wip.extraData(ExtractElement, instruction.data)
-                        .val.typeOfWip(wip).childType(wip.builder),
+                    .extractelement => wip.extra_data(ExtractElement, instruction.data)
+                        .val.type_of_wip(wip).child_type(wip.builder),
                     .extractvalue => {
-                        var extra = wip.extraDataTrail(ExtractValue, instruction.data);
+                        var extra = wip.extra_data_trail(ExtractValue, instruction.data);
                         const indices = extra.trail.next(extra.data.indices_len, u32, wip);
-                        return extra.data.val.typeOfWip(wip).childTypeAt(indices, wip.builder);
+                        return extra.data.val.type_of_wip(wip).child_type_at(indices, wip.builder);
                     },
                     .@"fcmp false",
                     .@"fcmp fast false",
@@ -4465,43 +4465,43 @@ pub const Function = struct {
                     .@"icmp ugt",
                     .@"icmp ule",
                     .@"icmp ult",
-                    => wip.extraData(Binary, instruction.data).lhs.typeOfWip(wip)
-                        .changeScalarAssumeCapacity(.i1, wip.builder),
+                    => wip.extra_data(Binary, instruction.data).lhs.type_of_wip(wip)
+                        .change_scalar_assume_capacity(.i1, wip.builder),
                     .fneg,
                     .@"fneg fast",
-                    => @as(Value, @enumFromInt(instruction.data)).typeOfWip(wip),
+                    => @as(Value, @enumFromInt(instruction.data)).type_of_wip(wip),
                     .getelementptr,
                     .@"getelementptr inbounds",
                     => {
-                        var extra = wip.extraDataTrail(GetElementPtr, instruction.data);
+                        var extra = wip.extra_data_trail(GetElementPtr, instruction.data);
                         const indices = extra.trail.next(extra.data.indices_len, Value, wip);
-                        const base_ty = extra.data.base.typeOfWip(wip);
-                        if (!base_ty.isVector(wip.builder)) for (indices) |index| {
-                            const index_ty = index.typeOfWip(wip);
-                            if (!index_ty.isVector(wip.builder)) continue;
-                            return index_ty.changeScalarAssumeCapacity(base_ty, wip.builder);
+                        const base_ty = extra.data.base.type_of_wip(wip);
+                        if (!base_ty.is_vector(wip.builder)) for (indices) |index| {
+                            const index_ty = index.type_of_wip(wip);
+                            if (!index_ty.is_vector(wip.builder)) continue;
+                            return index_ty.change_scalar_assume_capacity(base_ty, wip.builder);
                         };
                         return base_ty;
                     },
-                    .insertelement => wip.extraData(InsertElement, instruction.data).val.typeOfWip(wip),
-                    .insertvalue => wip.extraData(InsertValue, instruction.data).val.typeOfWip(wip),
+                    .insertelement => wip.extra_data(InsertElement, instruction.data).val.type_of_wip(wip),
+                    .insertvalue => wip.extra_data(InsertValue, instruction.data).val.type_of_wip(wip),
                     .load,
                     .@"load atomic",
-                    => wip.extraData(Load, instruction.data).type,
+                    => wip.extra_data(Load, instruction.data).type,
                     .phi,
                     .@"phi fast",
-                    => wip.extraData(Phi, instruction.data).type,
+                    => wip.extra_data(Phi, instruction.data).type,
                     .select,
                     .@"select fast",
-                    => wip.extraData(Select, instruction.data).lhs.typeOfWip(wip),
+                    => wip.extra_data(Select, instruction.data).lhs.type_of_wip(wip),
                     .shufflevector => {
-                        const extra = wip.extraData(ShuffleVector, instruction.data);
-                        return extra.lhs.typeOfWip(wip).changeLengthAssumeCapacity(
-                            extra.mask.typeOfWip(wip).vectorLen(wip.builder),
+                        const extra = wip.extra_data(ShuffleVector, instruction.data);
+                        return extra.lhs.type_of_wip(wip).change_length_assume_capacity(
+                            extra.mask.type_of_wip(wip).vector_len(wip.builder),
                             wip.builder,
                         );
                     },
-                    .va_arg => wip.extraData(VaArg, instruction.data).type,
+                    .va_arg => wip.extra_data(VaArg, instruction.data).type,
                 };
             }
 
@@ -4510,8 +4510,8 @@ pub const Function = struct {
                 function_index: Function.Index,
                 builder: *Builder,
             ) Type {
-                const function = function_index.ptrConst(builder);
-                const instruction = function.instructions.get(@intFromEnum(self));
+                const function = function_index.ptr_const(builder);
+                const instruction = function.instructions.get(@int_from_enum(self));
                 return switch (instruction.tag) {
                     .add,
                     .@"add nsw",
@@ -4552,7 +4552,7 @@ pub const Function = struct {
                     .@"udiv exact",
                     .urem,
                     .xor,
-                    => function.extraData(Binary, instruction.data).lhs.typeOf(function_index, builder),
+                    => function.extra_data(Binary, instruction.data).lhs.type_of(function_index, builder),
                     .addrspacecast,
                     .bitcast,
                     .fpext,
@@ -4566,16 +4566,16 @@ pub const Function = struct {
                     .trunc,
                     .uitofp,
                     .zext,
-                    => function.extraData(Cast, instruction.data).type,
+                    => function.extra_data(Cast, instruction.data).type,
                     .alloca,
                     .@"alloca inalloca",
-                    => builder.ptrTypeAssumeCapacity(
-                        function.extraData(Alloca, instruction.data).info.addr_space,
+                    => builder.ptr_type_assume_capacity(
+                        function.extra_data(Alloca, instruction.data).info.addr_space,
                     ),
-                    .arg => function.global.typeOf(builder)
-                        .functionParameters(builder)[instruction.data],
-                    .atomicrmw => function.extraData(AtomicRmw, instruction.data)
-                        .val.typeOf(function_index, builder),
+                    .arg => function.global.type_of(builder)
+                        .function_parameters(builder)[instruction.data],
+                    .atomicrmw => function.extra_data(AtomicRmw, instruction.data)
+                        .val.type_of(function_index, builder),
                     .block => .label,
                     .br,
                     .br_cond,
@@ -4595,21 +4595,21 @@ pub const Function = struct {
                     .@"notail call fast",
                     .@"tail call",
                     .@"tail call fast",
-                    => function.extraData(Call, instruction.data).ty.functionReturn(builder),
+                    => function.extra_data(Call, instruction.data).ty.function_return(builder),
                     .cmpxchg,
                     .@"cmpxchg weak",
-                    => builder.structTypeAssumeCapacity(.normal, &.{
-                        function.extraData(CmpXchg, instruction.data)
-                            .cmp.typeOf(function_index, builder),
+                    => builder.struct_type_assume_capacity(.normal, &.{
+                        function.extra_data(CmpXchg, instruction.data)
+                            .cmp.type_of(function_index, builder),
                         .i1,
                     }),
-                    .extractelement => function.extraData(ExtractElement, instruction.data)
-                        .val.typeOf(function_index, builder).childType(builder),
+                    .extractelement => function.extra_data(ExtractElement, instruction.data)
+                        .val.type_of(function_index, builder).child_type(builder),
                     .extractvalue => {
-                        var extra = function.extraDataTrail(ExtractValue, instruction.data);
+                        var extra = function.extra_data_trail(ExtractValue, instruction.data);
                         const indices = extra.trail.next(extra.data.indices_len, u32, function);
-                        return extra.data.val.typeOf(function_index, builder)
-                            .childTypeAt(indices, builder);
+                        return extra.data.val.type_of(function_index, builder)
+                            .child_type_at(indices, builder);
                     },
                     .@"fcmp false",
                     .@"fcmp fast false",
@@ -4653,45 +4653,45 @@ pub const Function = struct {
                     .@"icmp ugt",
                     .@"icmp ule",
                     .@"icmp ult",
-                    => function.extraData(Binary, instruction.data).lhs.typeOf(function_index, builder)
-                        .changeScalarAssumeCapacity(.i1, builder),
+                    => function.extra_data(Binary, instruction.data).lhs.type_of(function_index, builder)
+                        .change_scalar_assume_capacity(.i1, builder),
                     .fneg,
                     .@"fneg fast",
-                    => @as(Value, @enumFromInt(instruction.data)).typeOf(function_index, builder),
+                    => @as(Value, @enumFromInt(instruction.data)).type_of(function_index, builder),
                     .getelementptr,
                     .@"getelementptr inbounds",
                     => {
-                        var extra = function.extraDataTrail(GetElementPtr, instruction.data);
+                        var extra = function.extra_data_trail(GetElementPtr, instruction.data);
                         const indices = extra.trail.next(extra.data.indices_len, Value, function);
-                        const base_ty = extra.data.base.typeOf(function_index, builder);
-                        if (!base_ty.isVector(builder)) for (indices) |index| {
-                            const index_ty = index.typeOf(function_index, builder);
-                            if (!index_ty.isVector(builder)) continue;
-                            return index_ty.changeScalarAssumeCapacity(base_ty, builder);
+                        const base_ty = extra.data.base.type_of(function_index, builder);
+                        if (!base_ty.is_vector(builder)) for (indices) |index| {
+                            const index_ty = index.type_of(function_index, builder);
+                            if (!index_ty.is_vector(builder)) continue;
+                            return index_ty.change_scalar_assume_capacity(base_ty, builder);
                         };
                         return base_ty;
                     },
-                    .insertelement => function.extraData(InsertElement, instruction.data)
-                        .val.typeOf(function_index, builder),
-                    .insertvalue => function.extraData(InsertValue, instruction.data)
-                        .val.typeOf(function_index, builder),
+                    .insertelement => function.extra_data(InsertElement, instruction.data)
+                        .val.type_of(function_index, builder),
+                    .insertvalue => function.extra_data(InsertValue, instruction.data)
+                        .val.type_of(function_index, builder),
                     .load,
                     .@"load atomic",
-                    => function.extraData(Load, instruction.data).type,
+                    => function.extra_data(Load, instruction.data).type,
                     .phi,
                     .@"phi fast",
-                    => function.extraData(Phi, instruction.data).type,
+                    => function.extra_data(Phi, instruction.data).type,
                     .select,
                     .@"select fast",
-                    => function.extraData(Select, instruction.data).lhs.typeOf(function_index, builder),
+                    => function.extra_data(Select, instruction.data).lhs.type_of(function_index, builder),
                     .shufflevector => {
-                        const extra = function.extraData(ShuffleVector, instruction.data);
-                        return extra.lhs.typeOf(function_index, builder).changeLengthAssumeCapacity(
-                            extra.mask.typeOf(function_index, builder).vectorLen(builder),
+                        const extra = function.extra_data(ShuffleVector, instruction.data);
+                        return extra.lhs.type_of(function_index, builder).change_length_assume_capacity(
+                            extra.mask.type_of(function_index, builder).vector_len(builder),
                             builder,
                         );
                     },
-                    .va_arg => function.extraData(VaArg, instruction.data).type,
+                    .va_arg => function.extra_data(VaArg, instruction.data).type,
                 };
             }
 
@@ -4706,23 +4706,23 @@ pub const Function = struct {
                 _: std.fmt.FormatOptions,
                 writer: anytype,
             ) @TypeOf(writer).Error!void {
-                if (comptime std.mem.indexOfNone(u8, fmt_str, ", %")) |_|
-                    @compileError("invalid format string: '" ++ fmt_str ++ "'");
-                if (comptime std.mem.indexOfScalar(u8, fmt_str, ',') != null) {
+                if (comptime std.mem.index_of_none(u8, fmt_str, ", %")) |_|
+                    @compile_error("invalid format string: '" ++ fmt_str ++ "'");
+                if (comptime std.mem.index_of_scalar(u8, fmt_str, ',') != null) {
                     if (data.instruction == .none) return;
-                    try writer.writeByte(',');
+                    try writer.write_byte(',');
                 }
-                if (comptime std.mem.indexOfScalar(u8, fmt_str, ' ') != null) {
+                if (comptime std.mem.index_of_scalar(u8, fmt_str, ' ') != null) {
                     if (data.instruction == .none) return;
-                    try writer.writeByte(' ');
+                    try writer.write_byte(' ');
                 }
-                if (comptime std.mem.indexOfScalar(u8, fmt_str, '%') != null) try writer.print(
+                if (comptime std.mem.index_of_scalar(u8, fmt_str, '%') != null) try writer.print(
                     "{%} ",
-                    .{data.instruction.typeOf(data.function, data.builder).fmt(data.builder)},
+                    .{data.instruction.type_of(data.function, data.builder).fmt(data.builder)},
                 );
                 assert(data.instruction != .none);
                 try writer.print("%{}", .{
-                    data.instruction.name(data.function.ptrConst(data.builder)).fmt(data.builder),
+                    data.instruction.name(data.function.ptr_const(data.builder)).fmt(data.builder),
                 });
             }
             pub fn fmt(
@@ -4840,7 +4840,7 @@ pub const Function = struct {
                 fsub = 12,
                 fmax = 13,
                 fmin = 14,
-                none = std.math.maxInt(u5),
+                none = std.math.max_int(u5),
             };
         };
 
@@ -4919,15 +4919,15 @@ pub const Function = struct {
         assert(argument.data == index);
 
         const argument_index: Instruction.Index = @enumFromInt(index);
-        return argument_index.toValue();
+        return argument_index.to_value();
     }
 
     const ExtraDataTrail = struct {
         index: Instruction.ExtraIndex,
 
         fn next_mut(self: *ExtraDataTrail, len: u32, comptime Item: type, function: *Function) []Item {
-            const items: []Item = @ptrCast(function.extra[self.index..][0..len]);
-            self.index += @intCast(len);
+            const items: []Item = @ptr_cast(function.extra[self.index..][0..len]);
+            self.index += @int_cast(len);
             return items;
         }
 
@@ -4937,8 +4937,8 @@ pub const Function = struct {
             comptime Item: type,
             function: *const Function,
         ) []const Item {
-            const items: []const Item = @ptrCast(function.extra[self.index..][0..len]);
-            self.index += @intCast(len);
+            const items: []const Item = @ptr_cast(function.extra[self.index..][0..len]);
+            self.index += @int_cast(len);
             return items;
         }
     };
@@ -4963,17 +4963,17 @@ pub const Function = struct {
                 MemoryAccessInfo,
                 Instruction.Alloca.Info,
                 Instruction.Call.Info,
-                => @bitCast(value),
-                else => @compileError("bad field type: " ++ field.name ++ ": " ++ @typeName(field.type)),
+                => @bit_cast(value),
+                else => @compile_error("bad field type: " ++ field.name ++ ": " ++ @type_name(field.type)),
             };
         return .{
             .data = result,
-            .trail = .{ .index = index + @as(Type.Item.ExtraIndex, @intCast(fields.len)) },
+            .trail = .{ .index = index + @as(Type.Item.ExtraIndex, @int_cast(fields.len)) },
         };
     }
 
     fn extra_data(self: *const Function, comptime T: type, index: Instruction.ExtraIndex) T {
-        return self.extraDataTrail(T, index).data;
+        return self.extra_data_trail(T, index).data;
     }
 };
 
@@ -4991,7 +4991,7 @@ pub const DebugLocation = union(enum) {
     pub fn to_metadata(self: DebugLocation, builder: *Builder) Allocator.Error!Metadata {
         return switch (self) {
             .no_location => .none,
-            .location => |location| try builder.debugLocation(
+            .location => |location| try builder.debug_location(
                 location.line,
                 location.column,
                 location.scope,
@@ -5028,15 +5028,15 @@ pub const WipFunction = struct {
             _,
 
             pub fn ptr(self: Index, wip: *WipFunction) *Block {
-                return &wip.blocks.items[@intFromEnum(self)];
+                return &wip.blocks.items[@int_from_enum(self)];
             }
 
             pub fn ptr_const(self: Index, wip: *const WipFunction) *const Block {
-                return &wip.blocks.items[@intFromEnum(self)];
+                return &wip.blocks.items[@int_from_enum(self)];
             }
 
             pub fn to_inst(self: Index, function: *const Function) Instruction.Index {
-                return function.blocks[@intFromEnum(self)].instruction;
+                return function.blocks[@int_from_enum(self)].instruction;
             }
         };
     };
@@ -5063,16 +5063,16 @@ pub const WipFunction = struct {
         };
         errdefer self.deinit();
 
-        const params_len = options.function.typeOf(self.builder).functionParameters(self.builder).len;
-        try self.ensureUnusedExtraCapacity(params_len, NoExtra, 0);
-        try self.instructions.ensureUnusedCapacity(self.builder.gpa, params_len);
+        const params_len = options.function.type_of(self.builder).function_parameters(self.builder).len;
+        try self.ensure_unused_extra_capacity(params_len, NoExtra, 0);
+        try self.instructions.ensure_unused_capacity(self.builder.gpa, params_len);
         if (!self.strip) {
-            try self.names.ensureUnusedCapacity(self.builder.gpa, params_len);
+            try self.names.ensure_unused_capacity(self.builder.gpa, params_len);
         }
         for (0..params_len) |param_index| {
-            self.instructions.appendAssumeCapacity(.{ .tag = .arg, .data = @intCast(param_index) });
+            self.instructions.append_assume_capacity(.{ .tag = .arg, .data = @int_cast(param_index) });
             if (!self.strip) {
-                self.names.appendAssumeCapacity(.empty); // TODO: param names
+                self.names.append_assume_capacity(.empty); // TODO: param names
             }
         }
 
@@ -5085,15 +5085,15 @@ pub const WipFunction = struct {
         assert(argument.data == index);
 
         const argument_index: Instruction.Index = @enumFromInt(index);
-        return argument_index.toValue();
+        return argument_index.to_value();
     }
 
     pub fn block(self: *WipFunction, incoming: u32, name: []const u8) Allocator.Error!Block.Index {
-        try self.blocks.ensureUnusedCapacity(self.builder.gpa, 1);
+        try self.blocks.ensure_unused_capacity(self.builder.gpa, 1);
 
         const index: Block.Index = @enumFromInt(self.blocks.items.len);
         const final_name = if (self.strip) .empty else try self.builder.string(name);
-        self.blocks.appendAssumeCapacity(.{
+        self.blocks.append_assume_capacity(.{
             .name = final_name,
             .incoming = incoming,
             .instructions = .{},
@@ -5102,19 +5102,19 @@ pub const WipFunction = struct {
     }
 
     pub fn ret(self: *WipFunction, val: Value) Allocator.Error!Instruction.Index {
-        assert(val.typeOfWip(self) == self.function.typeOf(self.builder).functionReturn(self.builder));
-        try self.ensureUnusedExtraCapacity(1, NoExtra, 0);
-        return try self.addInst(null, .{ .tag = .ret, .data = @intFromEnum(val) });
+        assert(val.type_of_wip(self) == self.function.type_of(self.builder).function_return(self.builder));
+        try self.ensure_unused_extra_capacity(1, NoExtra, 0);
+        return try self.add_inst(null, .{ .tag = .ret, .data = @int_from_enum(val) });
     }
 
     pub fn ret_void(self: *WipFunction) Allocator.Error!Instruction.Index {
-        try self.ensureUnusedExtraCapacity(1, NoExtra, 0);
-        return try self.addInst(null, .{ .tag = .@"ret void", .data = undefined });
+        try self.ensure_unused_extra_capacity(1, NoExtra, 0);
+        return try self.add_inst(null, .{ .tag = .@"ret void", .data = undefined });
     }
 
     pub fn br(self: *WipFunction, dest: Block.Index) Allocator.Error!Instruction.Index {
-        try self.ensureUnusedExtraCapacity(1, NoExtra, 0);
-        const instruction = try self.addInst(null, .{ .tag = .br, .data = @intFromEnum(dest) });
+        try self.ensure_unused_extra_capacity(1, NoExtra, 0);
+        const instruction = try self.add_inst(null, .{ .tag = .br, .data = @int_from_enum(dest) });
         dest.ptr(self).branches += 1;
         return instruction;
     }
@@ -5125,11 +5125,11 @@ pub const WipFunction = struct {
         then: Block.Index,
         @"else": Block.Index,
     ) Allocator.Error!Instruction.Index {
-        assert(cond.typeOfWip(self) == .i1);
-        try self.ensureUnusedExtraCapacity(1, Instruction.BrCond, 0);
-        const instruction = try self.addInst(null, .{
+        assert(cond.type_of_wip(self) == .i1);
+        try self.ensure_unused_extra_capacity(1, Instruction.BrCond, 0);
+        const instruction = try self.add_inst(null, .{
             .tag = .br_cond,
-            .data = self.addExtraAssumeCapacity(Instruction.BrCond{
+            .data = self.add_extra_assume_capacity(Instruction.BrCond{
                 .cond = cond,
                 .then = then,
                 .@"else" = @"else",
@@ -5150,18 +5150,18 @@ pub const WipFunction = struct {
             dest: Block.Index,
             wip: *WipFunction,
         ) Allocator.Error!void {
-            const instruction = wip.instructions.get(@intFromEnum(self.instruction));
-            var extra = wip.extraDataTrail(Instruction.Switch, instruction.data);
-            assert(val.typeOf(wip.builder) == extra.data.val.typeOfWip(wip));
-            extra.trail.nextMut(extra.data.cases_len, Constant, wip)[self.index] = val;
-            extra.trail.nextMut(extra.data.cases_len, Block.Index, wip)[self.index] = dest;
+            const instruction = wip.instructions.get(@int_from_enum(self.instruction));
+            var extra = wip.extra_data_trail(Instruction.Switch, instruction.data);
+            assert(val.type_of(wip.builder) == extra.data.val.type_of_wip(wip));
+            extra.trail.next_mut(extra.data.cases_len, Constant, wip)[self.index] = val;
+            extra.trail.next_mut(extra.data.cases_len, Block.Index, wip)[self.index] = dest;
             self.index += 1;
             dest.ptr(wip).branches += 1;
         }
 
         pub fn finish(self: WipSwitch, wip: *WipFunction) void {
-            const instruction = wip.instructions.get(@intFromEnum(self.instruction));
-            const extra = wip.extraData(Instruction.Switch, instruction.data);
+            const instruction = wip.instructions.get(@int_from_enum(self.instruction));
+            const extra = wip.extra_data(Instruction.Switch, instruction.data);
             assert(self.index == extra.cases_len);
         }
     };
@@ -5172,23 +5172,23 @@ pub const WipFunction = struct {
         default: Block.Index,
         cases_len: u32,
     ) Allocator.Error!WipSwitch {
-        try self.ensureUnusedExtraCapacity(1, Instruction.Switch, cases_len * 2);
-        const instruction = try self.addInst(null, .{
+        try self.ensure_unused_extra_capacity(1, Instruction.Switch, cases_len * 2);
+        const instruction = try self.add_inst(null, .{
             .tag = .@"switch",
-            .data = self.addExtraAssumeCapacity(Instruction.Switch{
+            .data = self.add_extra_assume_capacity(Instruction.Switch{
                 .val = val,
                 .default = default,
                 .cases_len = cases_len,
             }),
         });
-        _ = self.extra.addManyAsSliceAssumeCapacity(cases_len * 2);
+        _ = self.extra.add_many_as_slice_assume_capacity(cases_len * 2);
         default.ptr(self).branches += 1;
         return .{ .index = 0, .instruction = instruction };
     }
 
     pub fn @"unreachable"(self: *WipFunction) Allocator.Error!Instruction.Index {
-        try self.ensureUnusedExtraCapacity(1, NoExtra, 0);
-        const instruction = try self.addInst(null, .{ .tag = .@"unreachable", .data = undefined });
+        try self.ensure_unused_extra_capacity(1, NoExtra, 0);
+        const instruction = try self.add_inst(null, .{ .tag = .@"unreachable", .data = undefined });
         return instruction;
     }
 
@@ -5201,25 +5201,25 @@ pub const WipFunction = struct {
         switch (tag) {
             .fneg,
             .@"fneg fast",
-            => assert(val.typeOfWip(self).scalarType(self.builder).isFloatingPoint()),
+            => assert(val.type_of_wip(self).scalar_type(self.builder).is_floating_point()),
             else => unreachable,
         }
-        try self.ensureUnusedExtraCapacity(1, NoExtra, 0);
-        const instruction = try self.addInst(name, .{ .tag = tag, .data = @intFromEnum(val) });
-        return instruction.toValue();
+        try self.ensure_unused_extra_capacity(1, NoExtra, 0);
+        const instruction = try self.add_inst(name, .{ .tag = tag, .data = @int_from_enum(val) });
+        return instruction.to_value();
     }
 
     pub fn not(self: *WipFunction, val: Value, name: []const u8) Allocator.Error!Value {
-        const ty = val.typeOfWip(self);
-        const all_ones = try self.builder.splatValue(
+        const ty = val.type_of_wip(self);
+        const all_ones = try self.builder.splat_value(
             ty,
-            try self.builder.intConst(ty.scalarType(self.builder), -1),
+            try self.builder.int_const(ty.scalar_type(self.builder), -1),
         );
         return self.bin(.xor, val, all_ones, name);
     }
 
     pub fn neg(self: *WipFunction, val: Value, name: []const u8) Allocator.Error!Value {
-        return self.bin(.sub, try self.builder.zeroInitValue(val.typeOfWip(self)), val, name);
+        return self.bin(.sub, try self.builder.zero_init_value(val.type_of_wip(self)), val, name);
     }
 
     pub fn bin(
@@ -5265,15 +5265,15 @@ pub const WipFunction = struct {
             .@"udiv exact",
             .urem,
             .xor,
-            => assert(lhs.typeOfWip(self) == rhs.typeOfWip(self)),
+            => assert(lhs.type_of_wip(self) == rhs.type_of_wip(self)),
             else => unreachable,
         }
-        try self.ensureUnusedExtraCapacity(1, Instruction.Binary, 0);
-        const instruction = try self.addInst(name, .{
+        try self.ensure_unused_extra_capacity(1, Instruction.Binary, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = tag,
-            .data = self.addExtraAssumeCapacity(Instruction.Binary{ .lhs = lhs, .rhs = rhs }),
+            .data = self.add_extra_assume_capacity(Instruction.Binary{ .lhs = lhs, .rhs = rhs }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     pub fn extract_element(
@@ -5282,17 +5282,17 @@ pub const WipFunction = struct {
         index: Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        assert(val.typeOfWip(self).isVector(self.builder));
-        assert(index.typeOfWip(self).isInteger(self.builder));
-        try self.ensureUnusedExtraCapacity(1, Instruction.ExtractElement, 0);
-        const instruction = try self.addInst(name, .{
+        assert(val.type_of_wip(self).is_vector(self.builder));
+        assert(index.type_of_wip(self).is_integer(self.builder));
+        try self.ensure_unused_extra_capacity(1, Instruction.ExtractElement, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = .extractelement,
-            .data = self.addExtraAssumeCapacity(Instruction.ExtractElement{
+            .data = self.add_extra_assume_capacity(Instruction.ExtractElement{
                 .val = val,
                 .index = index,
             }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     pub fn insert_element(
@@ -5302,18 +5302,18 @@ pub const WipFunction = struct {
         index: Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        assert(val.typeOfWip(self).scalarType(self.builder) == elem.typeOfWip(self));
-        assert(index.typeOfWip(self).isInteger(self.builder));
-        try self.ensureUnusedExtraCapacity(1, Instruction.InsertElement, 0);
-        const instruction = try self.addInst(name, .{
+        assert(val.type_of_wip(self).scalar_type(self.builder) == elem.type_of_wip(self));
+        assert(index.type_of_wip(self).is_integer(self.builder));
+        try self.ensure_unused_extra_capacity(1, Instruction.InsertElement, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = .insertelement,
-            .data = self.addExtraAssumeCapacity(Instruction.InsertElement{
+            .data = self.add_extra_assume_capacity(Instruction.InsertElement{
                 .val = val,
                 .elem = elem,
                 .index = index,
             }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     pub fn shuffle_vector(
@@ -5323,19 +5323,19 @@ pub const WipFunction = struct {
         mask: Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        assert(lhs.typeOfWip(self).isVector(self.builder));
-        assert(lhs.typeOfWip(self) == rhs.typeOfWip(self));
-        assert(mask.typeOfWip(self).scalarType(self.builder).isInteger(self.builder));
-        _ = try self.ensureUnusedExtraCapacity(1, Instruction.ShuffleVector, 0);
-        const instruction = try self.addInst(name, .{
+        assert(lhs.type_of_wip(self).is_vector(self.builder));
+        assert(lhs.type_of_wip(self) == rhs.type_of_wip(self));
+        assert(mask.type_of_wip(self).scalar_type(self.builder).is_integer(self.builder));
+        _ = try self.ensure_unused_extra_capacity(1, Instruction.ShuffleVector, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = .shufflevector,
-            .data = self.addExtraAssumeCapacity(Instruction.ShuffleVector{
+            .data = self.add_extra_assume_capacity(Instruction.ShuffleVector{
                 .lhs = lhs,
                 .rhs = rhs,
                 .mask = mask,
             }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     pub fn splat_vector(
@@ -5344,12 +5344,12 @@ pub const WipFunction = struct {
         elem: Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        const scalar_ty = try ty.changeLength(1, self.builder);
-        const mask_ty = try ty.changeScalar(.i32, self.builder);
-        const poison = try self.builder.poisonValue(scalar_ty);
-        const mask = try self.builder.splatValue(mask_ty, .@"0");
-        const scalar = try self.insertElement(poison, elem, .@"0", name);
-        return self.shuffleVector(scalar, poison, mask, name);
+        const scalar_ty = try ty.change_length(1, self.builder);
+        const mask_ty = try ty.change_scalar(.i32, self.builder);
+        const poison = try self.builder.poison_value(scalar_ty);
+        const mask = try self.builder.splat_value(mask_ty, .@"0");
+        const scalar = try self.insert_element(poison, elem, .@"0", name);
+        return self.shuffle_vector(scalar, poison, mask, name);
     }
 
     pub fn extract_value(
@@ -5359,17 +5359,17 @@ pub const WipFunction = struct {
         name: []const u8,
     ) Allocator.Error!Value {
         assert(indices.len > 0);
-        _ = val.typeOfWip(self).childTypeAt(indices, self.builder);
-        try self.ensureUnusedExtraCapacity(1, Instruction.ExtractValue, indices.len);
-        const instruction = try self.addInst(name, .{
+        _ = val.type_of_wip(self).child_type_at(indices, self.builder);
+        try self.ensure_unused_extra_capacity(1, Instruction.ExtractValue, indices.len);
+        const instruction = try self.add_inst(name, .{
             .tag = .extractvalue,
-            .data = self.addExtraAssumeCapacity(Instruction.ExtractValue{
+            .data = self.add_extra_assume_capacity(Instruction.ExtractValue{
                 .val = val,
-                .indices_len = @intCast(indices.len),
+                .indices_len = @int_cast(indices.len),
             }),
         });
-        self.extra.appendSliceAssumeCapacity(indices);
-        return instruction.toValue();
+        self.extra.append_slice_assume_capacity(indices);
+        return instruction.to_value();
     }
 
     pub fn insert_value(
@@ -5380,18 +5380,18 @@ pub const WipFunction = struct {
         name: []const u8,
     ) Allocator.Error!Value {
         assert(indices.len > 0);
-        assert(val.typeOfWip(self).childTypeAt(indices, self.builder) == elem.typeOfWip(self));
-        try self.ensureUnusedExtraCapacity(1, Instruction.InsertValue, indices.len);
-        const instruction = try self.addInst(name, .{
+        assert(val.type_of_wip(self).child_type_at(indices, self.builder) == elem.type_of_wip(self));
+        try self.ensure_unused_extra_capacity(1, Instruction.InsertValue, indices.len);
+        const instruction = try self.add_inst(name, .{
             .tag = .insertvalue,
-            .data = self.addExtraAssumeCapacity(Instruction.InsertValue{
+            .data = self.add_extra_assume_capacity(Instruction.InsertValue{
                 .val = val,
                 .elem = elem,
-                .indices_len = @intCast(indices.len),
+                .indices_len = @int_cast(indices.len),
             }),
         });
-        self.extra.appendSliceAssumeCapacity(indices);
-        return instruction.toValue();
+        self.extra.append_slice_assume_capacity(indices);
+        return instruction.to_value();
     }
 
     pub fn build_aggregate(
@@ -5400,10 +5400,10 @@ pub const WipFunction = struct {
         elems: []const Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        assert(ty.aggregateLen(self.builder) == elems.len);
-        var cur = try self.builder.poisonValue(ty);
+        assert(ty.aggregate_len(self.builder) == elems.len);
+        var cur = try self.builder.poison_value(ty);
         for (elems, 0..) |elem, index|
-            cur = try self.insertValue(cur, elem, &[_]u32{@intCast(index)}, name);
+            cur = try self.insert_value(cur, elem, &[_]u32{@int_cast(index)}, name);
         return cur;
     }
 
@@ -5416,15 +5416,15 @@ pub const WipFunction = struct {
         addr_space: AddrSpace,
         name: []const u8,
     ) Allocator.Error!Value {
-        assert(len == .none or len.typeOfWip(self).isInteger(self.builder));
-        _ = try self.builder.ptrType(addr_space);
-        try self.ensureUnusedExtraCapacity(1, Instruction.Alloca, 0);
-        const instruction = try self.addInst(name, .{
+        assert(len == .none or len.type_of_wip(self).is_integer(self.builder));
+        _ = try self.builder.ptr_type(addr_space);
+        try self.ensure_unused_extra_capacity(1, Instruction.Alloca, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = switch (kind) {
                 .normal => .alloca,
                 .inalloca => .@"alloca inalloca",
             },
-            .data = self.addExtraAssumeCapacity(Instruction.Alloca{
+            .data = self.add_extra_assume_capacity(Instruction.Alloca{
                 .type = ty,
                 .len = switch (len) {
                     .none => .@"1",
@@ -5433,7 +5433,7 @@ pub const WipFunction = struct {
                 .info = .{ .alignment = alignment, .addr_space = addr_space },
             }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     pub fn load(
@@ -5444,7 +5444,7 @@ pub const WipFunction = struct {
         alignment: Alignment,
         name: []const u8,
     ) Allocator.Error!Value {
-        return self.loadAtomic(access_kind, ty, ptr, .system, .none, alignment, name);
+        return self.load_atomic(access_kind, ty, ptr, .system, .none, alignment, name);
     }
 
     pub fn load_atomic(
@@ -5457,14 +5457,14 @@ pub const WipFunction = struct {
         alignment: Alignment,
         name: []const u8,
     ) Allocator.Error!Value {
-        assert(ptr.typeOfWip(self).isPointer(self.builder));
-        try self.ensureUnusedExtraCapacity(1, Instruction.Load, 0);
-        const instruction = try self.addInst(name, .{
+        assert(ptr.type_of_wip(self).is_pointer(self.builder));
+        try self.ensure_unused_extra_capacity(1, Instruction.Load, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = switch (ordering) {
                 .none => .load,
                 else => .@"load atomic",
             },
-            .data = self.addExtraAssumeCapacity(Instruction.Load{
+            .data = self.add_extra_assume_capacity(Instruction.Load{
                 .info = .{
                     .access_kind = access_kind,
                     .sync_scope = switch (ordering) {
@@ -5478,7 +5478,7 @@ pub const WipFunction = struct {
                 .ptr = ptr,
             }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     pub fn store(
@@ -5488,7 +5488,7 @@ pub const WipFunction = struct {
         ptr: Value,
         alignment: Alignment,
     ) Allocator.Error!Instruction.Index {
-        return self.storeAtomic(kind, val, ptr, .system, .none, alignment);
+        return self.store_atomic(kind, val, ptr, .system, .none, alignment);
     }
 
     pub fn store_atomic(
@@ -5500,14 +5500,14 @@ pub const WipFunction = struct {
         ordering: AtomicOrdering,
         alignment: Alignment,
     ) Allocator.Error!Instruction.Index {
-        assert(ptr.typeOfWip(self).isPointer(self.builder));
-        try self.ensureUnusedExtraCapacity(1, Instruction.Store, 0);
-        const instruction = try self.addInst(null, .{
+        assert(ptr.type_of_wip(self).is_pointer(self.builder));
+        try self.ensure_unused_extra_capacity(1, Instruction.Store, 0);
+        const instruction = try self.add_inst(null, .{
             .tag = switch (ordering) {
                 .none => .store,
                 else => .@"store atomic",
             },
-            .data = self.addExtraAssumeCapacity(Instruction.Store{
+            .data = self.add_extra_assume_capacity(Instruction.Store{
                 .info = .{
                     .access_kind = access_kind,
                     .sync_scope = switch (ordering) {
@@ -5530,10 +5530,10 @@ pub const WipFunction = struct {
         ordering: AtomicOrdering,
     ) Allocator.Error!Instruction.Index {
         assert(ordering != .none);
-        try self.ensureUnusedExtraCapacity(1, NoExtra, 0);
-        const instruction = try self.addInst(null, .{
+        try self.ensure_unused_extra_capacity(1, NoExtra, 0);
+        const instruction = try self.add_inst(null, .{
             .tag = .fence,
-            .data = @bitCast(MemoryAccessInfo{
+            .data = @bit_cast(MemoryAccessInfo{
                 .sync_scope = sync_scope,
                 .success_ordering = ordering,
             }),
@@ -5554,20 +5554,20 @@ pub const WipFunction = struct {
         alignment: Alignment,
         name: []const u8,
     ) Allocator.Error!Value {
-        assert(ptr.typeOfWip(self).isPointer(self.builder));
-        const ty = cmp.typeOfWip(self);
-        assert(ty == new.typeOfWip(self));
+        assert(ptr.type_of_wip(self).is_pointer(self.builder));
+        const ty = cmp.type_of_wip(self);
+        assert(ty == new.type_of_wip(self));
         assert(success_ordering != .none);
         assert(failure_ordering != .none);
 
-        _ = try self.builder.structType(.normal, &.{ ty, .i1 });
-        try self.ensureUnusedExtraCapacity(1, Instruction.CmpXchg, 0);
-        const instruction = try self.addInst(name, .{
+        _ = try self.builder.struct_type(.normal, &.{ ty, .i1 });
+        try self.ensure_unused_extra_capacity(1, Instruction.CmpXchg, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = switch (kind) {
                 .strong => .cmpxchg,
                 .weak => .@"cmpxchg weak",
             },
-            .data = self.addExtraAssumeCapacity(Instruction.CmpXchg{
+            .data = self.add_extra_assume_capacity(Instruction.CmpXchg{
                 .info = .{
                     .access_kind = access_kind,
                     .sync_scope = sync_scope,
@@ -5580,7 +5580,7 @@ pub const WipFunction = struct {
                 .new = new,
             }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     pub fn atomicrmw(
@@ -5594,13 +5594,13 @@ pub const WipFunction = struct {
         alignment: Alignment,
         name: []const u8,
     ) Allocator.Error!Value {
-        assert(ptr.typeOfWip(self).isPointer(self.builder));
+        assert(ptr.type_of_wip(self).is_pointer(self.builder));
         assert(ordering != .none);
 
-        try self.ensureUnusedExtraCapacity(1, Instruction.AtomicRmw, 0);
-        const instruction = try self.addInst(name, .{
+        try self.ensure_unused_extra_capacity(1, Instruction.AtomicRmw, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = .atomicrmw,
-            .data = self.addExtraAssumeCapacity(Instruction.AtomicRmw{
+            .data = self.add_extra_assume_capacity(Instruction.AtomicRmw{
                 .info = .{
                     .access_kind = access_kind,
                     .atomic_rmw_operation = operation,
@@ -5612,7 +5612,7 @@ pub const WipFunction = struct {
                 .val = val,
             }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     pub fn gep(
@@ -5623,21 +5623,21 @@ pub const WipFunction = struct {
         indices: []const Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        const base_ty = base.typeOfWip(self);
-        const base_is_vector = base_ty.isVector(self.builder);
+        const base_ty = base.type_of_wip(self);
+        const base_is_vector = base_ty.is_vector(self.builder);
 
         const VectorInfo = struct {
             kind: Type.Vector.Kind,
             len: u32,
 
             fn init(vector_ty: Type, builder: *const Builder) @This() {
-                return .{ .kind = vector_ty.vectorKind(builder), .len = vector_ty.vectorLen(builder) };
+                return .{ .kind = vector_ty.vector_kind(builder), .len = vector_ty.vector_len(builder) };
             }
         };
         var vector_info: ?VectorInfo =
             if (base_is_vector) VectorInfo.init(base_ty, self.builder) else null;
         for (indices) |index| {
-            const index_ty = index.typeOfWip(self);
+            const index_ty = index.type_of_wip(self);
             switch (index_ty.tag(self.builder)) {
                 .integer => {},
                 .vector, .scalable_vector => {
@@ -5651,27 +5651,27 @@ pub const WipFunction = struct {
             }
         }
         if (!base_is_vector) if (vector_info) |info| switch (info.kind) {
-            inline else => |vector_kind| _ = try self.builder.vectorType(
+            inline else => |vector_kind| _ = try self.builder.vector_type(
                 vector_kind,
                 info.len,
                 base_ty,
             ),
         };
 
-        try self.ensureUnusedExtraCapacity(1, Instruction.GetElementPtr, indices.len);
-        const instruction = try self.addInst(name, .{
+        try self.ensure_unused_extra_capacity(1, Instruction.GetElementPtr, indices.len);
+        const instruction = try self.add_inst(name, .{
             .tag = switch (kind) {
                 .normal => .getelementptr,
                 .inbounds => .@"getelementptr inbounds",
             },
-            .data = self.addExtraAssumeCapacity(Instruction.GetElementPtr{
+            .data = self.add_extra_assume_capacity(Instruction.GetElementPtr{
                 .type = ty,
                 .base = base,
-                .indices_len = @intCast(indices.len),
+                .indices_len = @int_cast(indices.len),
             }),
         });
-        self.extra.appendSliceAssumeCapacity(@ptrCast(indices));
-        return instruction.toValue();
+        self.extra.append_slice_assume_capacity(@ptr_cast(indices));
+        return instruction.to_value();
     }
 
     pub fn gep_struct(
@@ -5681,8 +5681,8 @@ pub const WipFunction = struct {
         index: usize,
         name: []const u8,
     ) Allocator.Error!Value {
-        assert(ty.isStruct(self.builder));
-        return self.gep(.inbounds, ty, base, &.{ .@"0", try self.builder.intValue(.i32, index) }, name);
+        assert(ty.is_struct(self.builder));
+        return self.gep(.inbounds, ty, base, &.{ .@"0", try self.builder.int_value(.i32, index) }, name);
     }
 
     pub fn conv(
@@ -5692,9 +5692,9 @@ pub const WipFunction = struct {
         ty: Type,
         name: []const u8,
     ) Allocator.Error!Value {
-        const val_ty = val.typeOfWip(self);
+        const val_ty = val.type_of_wip(self);
         if (val_ty == ty) return val;
-        return self.cast(self.builder.convTag(signedness, val_ty, ty), val, ty, name);
+        return self.cast(self.builder.conv_tag(signedness, val_ty, ty), val, ty, name);
     }
 
     pub fn cast(
@@ -5721,16 +5721,16 @@ pub const WipFunction = struct {
             => {},
             else => unreachable,
         }
-        if (val.typeOfWip(self) == ty) return val;
-        try self.ensureUnusedExtraCapacity(1, Instruction.Cast, 0);
-        const instruction = try self.addInst(name, .{
+        if (val.type_of_wip(self) == ty) return val;
+        try self.ensure_unused_extra_capacity(1, Instruction.Cast, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = tag,
-            .data = self.addExtraAssumeCapacity(Instruction.Cast{
+            .data = self.add_extra_assume_capacity(Instruction.Cast{
                 .val = val,
                 .type = ty,
             }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     pub fn icmp(
@@ -5740,8 +5740,8 @@ pub const WipFunction = struct {
         rhs: Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        return self.cmpTag(switch (cond) {
-            inline else => |tag| @field(Instruction.Tag, "icmp " ++ @tagName(tag)),
+        return self.cmp_tag(switch (cond) {
+            inline else => |tag| @field(Instruction.Tag, "icmp " ++ @tag_name(tag)),
         }, lhs, rhs, name);
     }
 
@@ -5753,12 +5753,12 @@ pub const WipFunction = struct {
         rhs: Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        return self.cmpTag(switch (fast) {
+        return self.cmp_tag(switch (fast) {
             inline else => |fast_tag| switch (cond) {
                 inline else => |cond_tag| @field(Instruction.Tag, "fcmp " ++ switch (fast_tag) {
                     .normal => "",
                     .fast => "fast ",
-                } ++ @tagName(cond_tag)),
+                } ++ @tag_name(cond_tag)),
             },
         }, lhs, rhs, name);
     }
@@ -5768,7 +5768,7 @@ pub const WipFunction = struct {
         instruction: Instruction.Index,
 
         pub fn to_value(self: WipPhi) Value {
-            return self.instruction.toValue();
+            return self.instruction.to_value();
         }
 
         pub fn finish(
@@ -5777,22 +5777,22 @@ pub const WipFunction = struct {
             blocks: []const Block.Index,
             wip: *WipFunction,
         ) void {
-            const incoming_len = self.block.ptrConst(wip).incoming;
+            const incoming_len = self.block.ptr_const(wip).incoming;
             assert(vals.len == incoming_len and blocks.len == incoming_len);
-            const instruction = wip.instructions.get(@intFromEnum(self.instruction));
-            var extra = wip.extraDataTrail(Instruction.Phi, instruction.data);
-            for (vals) |val| assert(val.typeOfWip(wip) == extra.data.type);
-            @memcpy(extra.trail.nextMut(incoming_len, Value, wip), vals);
-            @memcpy(extra.trail.nextMut(incoming_len, Block.Index, wip), blocks);
+            const instruction = wip.instructions.get(@int_from_enum(self.instruction));
+            var extra = wip.extra_data_trail(Instruction.Phi, instruction.data);
+            for (vals) |val| assert(val.type_of_wip(wip) == extra.data.type);
+            @memcpy(extra.trail.next_mut(incoming_len, Value, wip), vals);
+            @memcpy(extra.trail.next_mut(incoming_len, Block.Index, wip), blocks);
         }
     };
 
     pub fn phi(self: *WipFunction, ty: Type, name: []const u8) Allocator.Error!WipPhi {
-        return self.phiTag(.phi, ty, name);
+        return self.phi_tag(.phi, ty, name);
     }
 
     pub fn phi_fast(self: *WipFunction, ty: Type, name: []const u8) Allocator.Error!WipPhi {
-        return self.phiTag(.@"phi fast", ty, name);
+        return self.phi_tag(.@"phi fast", ty, name);
     }
 
     pub fn select(
@@ -5803,7 +5803,7 @@ pub const WipFunction = struct {
         rhs: Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        return self.selectTag(switch (fast) {
+        return self.select_tag(switch (fast) {
             .normal => .select,
             .fast => .@"select fast",
         }, cond, lhs, rhs, name);
@@ -5819,14 +5819,14 @@ pub const WipFunction = struct {
         args: []const Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        const ret_ty = ty.functionReturn(self.builder);
-        assert(ty.isFunction(self.builder));
-        assert(callee.typeOfWip(self).isPointer(self.builder));
-        const params = ty.functionParameters(self.builder);
-        for (params, args[0..params.len]) |param, arg_val| assert(param == arg_val.typeOfWip(self));
+        const ret_ty = ty.function_return(self.builder);
+        assert(ty.is_function(self.builder));
+        assert(callee.type_of_wip(self).is_pointer(self.builder));
+        const params = ty.function_parameters(self.builder);
+        for (params, args[0..params.len]) |param, arg_val| assert(param == arg_val.type_of_wip(self));
 
-        try self.ensureUnusedExtraCapacity(1, Instruction.Call, args.len);
-        const instruction = try self.addInst(switch (ret_ty) {
+        try self.ensure_unused_extra_capacity(1, Instruction.Call, args.len);
+        const instruction = try self.add_inst(switch (ret_ty) {
             .void => null,
             else => name,
         }, .{
@@ -5840,16 +5840,16 @@ pub const WipFunction = struct {
                 .tail => .@"tail call",
                 .tail_fast => .@"tail call fast",
             },
-            .data = self.addExtraAssumeCapacity(Instruction.Call{
+            .data = self.add_extra_assume_capacity(Instruction.Call{
                 .info = .{ .call_conv = call_conv },
                 .attributes = function_attributes,
                 .ty = ty,
                 .callee = callee,
-                .args_len = @intCast(args.len),
+                .args_len = @int_cast(args.len),
             }),
         });
-        self.extra.appendSliceAssumeCapacity(@ptrCast(args));
-        return instruction.toValue();
+        self.extra.append_slice_assume_capacity(@ptr_cast(args));
+        return instruction.to_value();
     }
 
     pub fn call_asm(
@@ -5862,7 +5862,7 @@ pub const WipFunction = struct {
         args: []const Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        const callee = try self.builder.asmValue(ty, kind, assembly, constraints);
+        const callee = try self.builder.asm_value(ty, kind, assembly, constraints);
         return self.call(.normal, CallConv.default, function_attributes, ty, callee, args, name);
     }
 
@@ -5875,13 +5875,13 @@ pub const WipFunction = struct {
         args: []const Value,
         name: []const u8,
     ) Allocator.Error!Value {
-        const intrinsic = try self.builder.getIntrinsic(id, overload);
+        const intrinsic = try self.builder.get_intrinsic(id, overload);
         return self.call(
-            fast.toCallKind(),
+            fast.to_call_kind(),
             CallConv.default,
             function_attributes,
-            intrinsic.typeOf(self.builder),
-            intrinsic.toValue(self.builder),
+            intrinsic.type_of(self.builder),
+            intrinsic.to_value(self.builder),
             args,
             name,
         );
@@ -5898,16 +5898,16 @@ pub const WipFunction = struct {
     ) Allocator.Error!Instruction.Index {
         var dst_attrs = [_]Attribute.Index{try self.builder.attr(.{ .@"align" = dst_align })};
         var src_attrs = [_]Attribute.Index{try self.builder.attr(.{ .@"align" = src_align })};
-        const value = try self.callIntrinsic(
+        const value = try self.call_intrinsic(
             .normal,
-            try self.builder.fnAttrs(&.{
+            try self.builder.fn_attrs(&.{
                 .none,
                 .none,
                 try self.builder.attrs(&dst_attrs),
                 try self.builder.attrs(&src_attrs),
             }),
             .memcpy,
-            &.{ dst.typeOfWip(self), src.typeOfWip(self), len.typeOfWip(self) },
+            &.{ dst.type_of_wip(self), src.type_of_wip(self), len.type_of_wip(self) },
             &.{ dst, src, len, switch (kind) {
                 .normal => Value.false,
                 .@"volatile" => Value.true,
@@ -5926,11 +5926,11 @@ pub const WipFunction = struct {
         kind: MemoryAccessKind,
     ) Allocator.Error!Instruction.Index {
         var dst_attrs = [_]Attribute.Index{try self.builder.attr(.{ .@"align" = dst_align })};
-        const value = try self.callIntrinsic(
+        const value = try self.call_intrinsic(
             .normal,
-            try self.builder.fnAttrs(&.{ .none, .none, try self.builder.attrs(&dst_attrs) }),
+            try self.builder.fn_attrs(&.{ .none, .none, try self.builder.attrs(&dst_attrs) }),
             .memset,
-            &.{ dst.typeOfWip(self), len.typeOfWip(self) },
+            &.{ dst.type_of_wip(self), len.type_of_wip(self) },
             &.{ dst, val, len, switch (kind) {
                 .normal => Value.false,
                 .@"volatile" => Value.true,
@@ -5941,29 +5941,29 @@ pub const WipFunction = struct {
     }
 
     pub fn va_arg(self: *WipFunction, list: Value, ty: Type, name: []const u8) Allocator.Error!Value {
-        try self.ensureUnusedExtraCapacity(1, Instruction.VaArg, 0);
-        const instruction = try self.addInst(name, .{
+        try self.ensure_unused_extra_capacity(1, Instruction.VaArg, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = .va_arg,
-            .data = self.addExtraAssumeCapacity(Instruction.VaArg{
+            .data = self.add_extra_assume_capacity(Instruction.VaArg{
                 .list = list,
                 .type = ty,
             }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     pub fn debug_value(self: *WipFunction, value: Value) Allocator.Error!Metadata {
         if (self.strip) return .none;
         return switch (value.unwrap()) {
             .instruction => |instr_index| blk: {
-                const gop = try self.debug_values.getOrPut(self.builder.gpa, instr_index);
+                const gop = try self.debug_values.get_or_put(self.builder.gpa, instr_index);
 
                 const metadata: Metadata = @enumFromInt(Metadata.first_local_metadata + gop.index);
                 if (!gop.found_existing) gop.key_ptr.* = instr_index;
 
                 break :blk metadata;
             },
-            .constant => |constant| try self.builder.debugConstant(constant),
+            .constant => |constant| try self.builder.debug_constant(constant),
             .metadata => |metadata| metadata,
         };
     }
@@ -5971,7 +5971,7 @@ pub const WipFunction = struct {
     pub fn finish(self: *WipFunction) Allocator.Error!void {
         const gpa = self.builder.gpa;
         const function = self.function.ptr(self.builder);
-        const params_len = self.function.typeOf(self.builder).functionParameters(self.builder).len;
+        const params_len = self.function.type_of(self.builder).function_parameters(self.builder).len;
         const final_instructions_len = self.blocks.items.len + self.instructions.len;
 
         const blocks = try gpa.alloc(Function.Block, self.blocks.items.len);
@@ -5984,10 +5984,10 @@ pub const WipFunction = struct {
                 if (val == .none) return .none;
                 return switch (val.unwrap()) {
                     .instruction => |instruction| instructions.items[
-                        @intFromEnum(instruction)
-                    ].toValue(),
-                    .constant => |constant| constant.toValue(),
-                    .metadata => |metadata| metadata.toValue(),
+                        @int_from_enum(instruction)
+                    ].to_value(),
+                    .constant => |constant| constant.to_value(),
+                    .metadata => |metadata| metadata.to_value(),
                 };
             }
         } = .{ .items = try gpa.alloc(Instruction.Index, self.instructions.len) };
@@ -6001,7 +6001,7 @@ pub const WipFunction = struct {
 
         var debug_locations: std.AutoHashMapUnmanaged(Instruction.Index, DebugLocation) = .{};
         errdefer debug_locations.deinit(gpa);
-        try debug_locations.ensureUnusedCapacity(gpa, @intCast(self.debug_locations.count()));
+        try debug_locations.ensure_unused_capacity(gpa, @int_cast(self.debug_locations.count()));
 
         const debug_values = try gpa.alloc(Instruction.Index, self.debug_values.count());
         errdefer gpa.free(debug_values);
@@ -6022,12 +6022,12 @@ pub const WipFunction = struct {
                         FunctionAttributes,
                         Type,
                         Value,
-                        => @intFromEnum(value),
+                        => @int_from_enum(value),
                         MemoryAccessInfo,
                         Instruction.Alloca.Info,
                         Instruction.Call.Info,
-                        => @bitCast(value),
-                        else => @compileError("bad field type: " ++ field.name ++ ": " ++ @typeName(field.type)),
+                        => @bit_cast(value),
+                        else => @compile_error("bad field type: " ++ field.name ++ ": " ++ @type_name(field.type)),
                     };
                     wip_extra.index += 1;
                 }
@@ -6036,16 +6036,16 @@ pub const WipFunction = struct {
 
             fn append_slice(wip_extra: *@This(), slice: anytype) void {
                 if (@typeInfo(@TypeOf(slice)).Pointer.child == Value)
-                    @compileError("use appendMappedValues");
-                const data: []const u32 = @ptrCast(slice);
+                    @compile_error("use append_mapped_values");
+                const data: []const u32 = @ptr_cast(slice);
                 @memcpy(wip_extra.items[wip_extra.index..][0..data.len], data);
-                wip_extra.index += @intCast(data.len);
+                wip_extra.index += @int_cast(data.len);
             }
 
             fn append_mapped_values(wip_extra: *@This(), vals: []const Value, ctx: anytype) void {
                 for (wip_extra.items[wip_extra.index..][0..vals.len], vals) |*extra, val|
-                    extra.* = @intFromEnum(ctx.map(val));
-                wip_extra.index += @intCast(vals.len);
+                    extra.* = @int_from_enum(ctx.map(val));
+                wip_extra.index += @int_cast(vals.len);
             }
 
             fn finish(wip_extra: *const @This()) []const u32 {
@@ -6065,23 +6065,23 @@ pub const WipFunction = struct {
         gpa.free(function.extra);
         function.extra = &.{};
 
-        function.instructions.shrinkRetainingCapacity(0);
-        try function.instructions.setCapacity(gpa, final_instructions_len);
-        errdefer function.instructions.shrinkRetainingCapacity(0);
+        function.instructions.shrink_retaining_capacity(0);
+        try function.instructions.set_capacity(gpa, final_instructions_len);
+        errdefer function.instructions.shrink_retaining_capacity(0);
 
         {
             var final_instruction_index: Instruction.Index = @enumFromInt(0);
             for (0..params_len) |param_index| {
                 instructions.items[param_index] = final_instruction_index;
-                final_instruction_index = @enumFromInt(@intFromEnum(final_instruction_index) + 1);
+                final_instruction_index = @enumFromInt(@int_from_enum(final_instruction_index) + 1);
             }
             for (blocks, self.blocks.items) |*final_block, current_block| {
                 assert(current_block.incoming == current_block.branches);
                 final_block.instruction = final_instruction_index;
-                final_instruction_index = @enumFromInt(@intFromEnum(final_instruction_index) + 1);
+                final_instruction_index = @enumFromInt(@int_from_enum(final_instruction_index) + 1);
                 for (current_block.instructions.items) |instruction| {
-                    instructions.items[@intFromEnum(instruction)] = final_instruction_index;
-                    final_instruction_index = @enumFromInt(@intFromEnum(final_instruction_index) + 1);
+                    instructions.items[@int_from_enum(instruction)] = final_instruction_index;
+                    final_instruction_index = @enumFromInt(@int_from_enum(final_instruction_index) + 1);
                 }
             }
         }
@@ -6096,25 +6096,25 @@ pub const WipFunction = struct {
                     .none => return .none,
                     .empty => {
                         assert(wip_name.next_name != .none);
-                        defer wip_name.next_name = @enumFromInt(@intFromEnum(wip_name.next_name) + 1);
+                        defer wip_name.next_name = @enumFromInt(@int_from_enum(wip_name.next_name) + 1);
                         return wip_name.next_name;
                     },
                     _ => {
-                        assert(!name.isAnon());
-                        const gop = try wip_name.next_unique_name.getOrPut(name);
+                        assert(!name.is_anon());
+                        const gop = try wip_name.next_unique_name.get_or_put(name);
                         if (!gop.found_existing) {
                             gop.value_ptr.* = @enumFromInt(0);
                             return name;
                         }
 
                         while (true) {
-                            gop.value_ptr.* = @enumFromInt(@intFromEnum(gop.value_ptr.*) + 1);
+                            gop.value_ptr.* = @enumFromInt(@int_from_enum(gop.value_ptr.*) + 1);
                             const unique_name = try wip_name.builder.fmt("{r}{s}{r}", .{
                                 name.fmt(wip_name.builder),
                                 sep,
                                 gop.value_ptr.fmt(wip_name.builder),
                             });
-                            const unique_gop = try wip_name.next_unique_name.getOrPut(unique_name);
+                            const unique_gop = try wip_name.next_unique_name.get_or_put(unique_name);
                             if (!unique_gop.found_existing) {
                                 unique_gop.value_ptr.* = @enumFromInt(0);
                                 return unique_name;
@@ -6133,35 +6133,35 @@ pub const WipFunction = struct {
         for (0..params_len) |param_index| {
             const old_argument_index: Instruction.Index = @enumFromInt(param_index);
             const new_argument_index: Instruction.Index = @enumFromInt(function.instructions.len);
-            const argument = self.instructions.get(@intFromEnum(old_argument_index));
+            const argument = self.instructions.get(@int_from_enum(old_argument_index));
             assert(argument.tag == .arg);
             assert(argument.data == param_index);
             value_indices[function.instructions.len] = value_index;
             value_index += 1;
-            function.instructions.appendAssumeCapacity(argument);
-            names[@intFromEnum(new_argument_index)] = try wip_name.map(
-                if (self.strip) .empty else self.names.items[@intFromEnum(old_argument_index)],
+            function.instructions.append_assume_capacity(argument);
+            names[@int_from_enum(new_argument_index)] = try wip_name.map(
+                if (self.strip) .empty else self.names.items[@int_from_enum(old_argument_index)],
                 ".",
             );
             if (self.debug_locations.get(old_argument_index)) |location| {
-                debug_locations.putAssumeCapacity(new_argument_index, location);
+                debug_locations.put_assume_capacity(new_argument_index, location);
             }
-            if (self.debug_values.getIndex(old_argument_index)) |index| {
+            if (self.debug_values.get_index(old_argument_index)) |index| {
                 debug_values[index] = new_argument_index;
             }
         }
         for (self.blocks.items) |current_block| {
             const new_block_index: Instruction.Index = @enumFromInt(function.instructions.len);
             value_indices[function.instructions.len] = value_index;
-            function.instructions.appendAssumeCapacity(.{
+            function.instructions.append_assume_capacity(.{
                 .tag = .block,
                 .data = current_block.incoming,
             });
-            names[@intFromEnum(new_block_index)] = try wip_name.map(current_block.name, "");
+            names[@int_from_enum(new_block_index)] = try wip_name.map(current_block.name, "");
             for (current_block.instructions.items) |old_instruction_index| {
                 const new_instruction_index: Instruction.Index =
                     @enumFromInt(function.instructions.len);
-                var instruction = self.instructions.get(@intFromEnum(old_instruction_index));
+                var instruction = self.instructions.get(@int_from_enum(old_instruction_index));
                 switch (instruction.tag) {
                     .add,
                     .@"add nsw",
@@ -6245,8 +6245,8 @@ pub const WipFunction = struct {
                     .urem,
                     .xor,
                     => {
-                        const extra = self.extraData(Instruction.Binary, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.Binary{
+                        const extra = self.extra_data(Instruction.Binary, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.Binary{
                             .lhs = instructions.map(extra.lhs),
                             .rhs = instructions.map(extra.rhs),
                         });
@@ -6265,8 +6265,8 @@ pub const WipFunction = struct {
                     .uitofp,
                     .zext,
                     => {
-                        const extra = self.extraData(Instruction.Cast, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.Cast{
+                        const extra = self.extra_data(Instruction.Cast, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.Cast{
                             .val = instructions.map(extra.val),
                             .type = extra.type,
                         });
@@ -6274,8 +6274,8 @@ pub const WipFunction = struct {
                     .alloca,
                     .@"alloca inalloca",
                     => {
-                        const extra = self.extraData(Instruction.Alloca, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.Alloca{
+                        const extra = self.extra_data(Instruction.Alloca, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.Alloca{
                             .type = extra.type,
                             .len = instructions.map(extra.len),
                             .info = extra.info,
@@ -6285,8 +6285,8 @@ pub const WipFunction = struct {
                     .block,
                     => unreachable,
                     .atomicrmw => {
-                        const extra = self.extraData(Instruction.AtomicRmw, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.AtomicRmw{
+                        const extra = self.extra_data(Instruction.AtomicRmw, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.AtomicRmw{
                             .info = extra.info,
                             .ptr = instructions.map(extra.ptr),
                             .val = instructions.map(extra.val),
@@ -6298,8 +6298,8 @@ pub const WipFunction = struct {
                     .@"unreachable",
                     => {},
                     .br_cond => {
-                        const extra = self.extraData(Instruction.BrCond, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.BrCond{
+                        const extra = self.extra_data(Instruction.BrCond, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.BrCond{
                             .cond = instructions.map(extra.cond),
                             .then = extra.then,
                             .@"else" = extra.@"else",
@@ -6314,22 +6314,22 @@ pub const WipFunction = struct {
                     .@"tail call",
                     .@"tail call fast",
                     => {
-                        var extra = self.extraDataTrail(Instruction.Call, instruction.data);
+                        var extra = self.extra_data_trail(Instruction.Call, instruction.data);
                         const args = extra.trail.next(extra.data.args_len, Value, self);
-                        instruction.data = wip_extra.addExtra(Instruction.Call{
+                        instruction.data = wip_extra.add_extra(Instruction.Call{
                             .info = extra.data.info,
                             .attributes = extra.data.attributes,
                             .ty = extra.data.ty,
                             .callee = instructions.map(extra.data.callee),
                             .args_len = extra.data.args_len,
                         });
-                        wip_extra.appendMappedValues(args, instructions);
+                        wip_extra.append_mapped_values(args, instructions);
                     },
                     .cmpxchg,
                     .@"cmpxchg weak",
                     => {
-                        const extra = self.extraData(Instruction.CmpXchg, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.CmpXchg{
+                        const extra = self.extra_data(Instruction.CmpXchg, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.CmpXchg{
                             .info = extra.info,
                             .ptr = instructions.map(extra.ptr),
                             .cmp = instructions.map(extra.cmp),
@@ -6337,60 +6337,60 @@ pub const WipFunction = struct {
                         });
                     },
                     .extractelement => {
-                        const extra = self.extraData(Instruction.ExtractElement, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.ExtractElement{
+                        const extra = self.extra_data(Instruction.ExtractElement, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.ExtractElement{
                             .val = instructions.map(extra.val),
                             .index = instructions.map(extra.index),
                         });
                     },
                     .extractvalue => {
-                        var extra = self.extraDataTrail(Instruction.ExtractValue, instruction.data);
+                        var extra = self.extra_data_trail(Instruction.ExtractValue, instruction.data);
                         const indices = extra.trail.next(extra.data.indices_len, u32, self);
-                        instruction.data = wip_extra.addExtra(Instruction.ExtractValue{
+                        instruction.data = wip_extra.add_extra(Instruction.ExtractValue{
                             .val = instructions.map(extra.data.val),
                             .indices_len = extra.data.indices_len,
                         });
-                        wip_extra.appendSlice(indices);
+                        wip_extra.append_slice(indices);
                     },
                     .fneg,
                     .@"fneg fast",
                     .ret,
-                    => instruction.data = @intFromEnum(instructions.map(@enumFromInt(instruction.data))),
+                    => instruction.data = @int_from_enum(instructions.map(@enumFromInt(instruction.data))),
                     .getelementptr,
                     .@"getelementptr inbounds",
                     => {
-                        var extra = self.extraDataTrail(Instruction.GetElementPtr, instruction.data);
+                        var extra = self.extra_data_trail(Instruction.GetElementPtr, instruction.data);
                         const indices = extra.trail.next(extra.data.indices_len, Value, self);
-                        instruction.data = wip_extra.addExtra(Instruction.GetElementPtr{
+                        instruction.data = wip_extra.add_extra(Instruction.GetElementPtr{
                             .type = extra.data.type,
                             .base = instructions.map(extra.data.base),
                             .indices_len = extra.data.indices_len,
                         });
-                        wip_extra.appendMappedValues(indices, instructions);
+                        wip_extra.append_mapped_values(indices, instructions);
                     },
                     .insertelement => {
-                        const extra = self.extraData(Instruction.InsertElement, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.InsertElement{
+                        const extra = self.extra_data(Instruction.InsertElement, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.InsertElement{
                             .val = instructions.map(extra.val),
                             .elem = instructions.map(extra.elem),
                             .index = instructions.map(extra.index),
                         });
                     },
                     .insertvalue => {
-                        var extra = self.extraDataTrail(Instruction.InsertValue, instruction.data);
+                        var extra = self.extra_data_trail(Instruction.InsertValue, instruction.data);
                         const indices = extra.trail.next(extra.data.indices_len, u32, self);
-                        instruction.data = wip_extra.addExtra(Instruction.InsertValue{
+                        instruction.data = wip_extra.add_extra(Instruction.InsertValue{
                             .val = instructions.map(extra.data.val),
                             .elem = instructions.map(extra.data.elem),
                             .indices_len = extra.data.indices_len,
                         });
-                        wip_extra.appendSlice(indices);
+                        wip_extra.append_slice(indices);
                     },
                     .load,
                     .@"load atomic",
                     => {
-                        const extra = self.extraData(Instruction.Load, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.Load{
+                        const extra = self.extra_data(Instruction.Load, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.Load{
                             .type = extra.type,
                             .ptr = instructions.map(extra.ptr),
                             .info = extra.info,
@@ -6400,28 +6400,28 @@ pub const WipFunction = struct {
                     .@"phi fast",
                     => {
                         const incoming_len = current_block.incoming;
-                        var extra = self.extraDataTrail(Instruction.Phi, instruction.data);
+                        var extra = self.extra_data_trail(Instruction.Phi, instruction.data);
                         const incoming_vals = extra.trail.next(incoming_len, Value, self);
                         const incoming_blocks = extra.trail.next(incoming_len, Block.Index, self);
-                        instruction.data = wip_extra.addExtra(Instruction.Phi{
+                        instruction.data = wip_extra.add_extra(Instruction.Phi{
                             .type = extra.data.type,
                         });
-                        wip_extra.appendMappedValues(incoming_vals, instructions);
-                        wip_extra.appendSlice(incoming_blocks);
+                        wip_extra.append_mapped_values(incoming_vals, instructions);
+                        wip_extra.append_slice(incoming_blocks);
                     },
                     .select,
                     .@"select fast",
                     => {
-                        const extra = self.extraData(Instruction.Select, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.Select{
+                        const extra = self.extra_data(Instruction.Select, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.Select{
                             .cond = instructions.map(extra.cond),
                             .lhs = instructions.map(extra.lhs),
                             .rhs = instructions.map(extra.rhs),
                         });
                     },
                     .shufflevector => {
-                        const extra = self.extraData(Instruction.ShuffleVector, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.ShuffleVector{
+                        const extra = self.extra_data(Instruction.ShuffleVector, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.ShuffleVector{
                             .lhs = instructions.map(extra.lhs),
                             .rhs = instructions.map(extra.rhs),
                             .mask = instructions.map(extra.mask),
@@ -6430,49 +6430,49 @@ pub const WipFunction = struct {
                     .store,
                     .@"store atomic",
                     => {
-                        const extra = self.extraData(Instruction.Store, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.Store{
+                        const extra = self.extra_data(Instruction.Store, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.Store{
                             .val = instructions.map(extra.val),
                             .ptr = instructions.map(extra.ptr),
                             .info = extra.info,
                         });
                     },
                     .@"switch" => {
-                        var extra = self.extraDataTrail(Instruction.Switch, instruction.data);
+                        var extra = self.extra_data_trail(Instruction.Switch, instruction.data);
                         const case_vals = extra.trail.next(extra.data.cases_len, Constant, self);
                         const case_blocks = extra.trail.next(extra.data.cases_len, Block.Index, self);
-                        instruction.data = wip_extra.addExtra(Instruction.Switch{
+                        instruction.data = wip_extra.add_extra(Instruction.Switch{
                             .val = instructions.map(extra.data.val),
                             .default = extra.data.default,
                             .cases_len = extra.data.cases_len,
                         });
-                        wip_extra.appendSlice(case_vals);
-                        wip_extra.appendSlice(case_blocks);
+                        wip_extra.append_slice(case_vals);
+                        wip_extra.append_slice(case_blocks);
                     },
                     .va_arg => {
-                        const extra = self.extraData(Instruction.VaArg, instruction.data);
-                        instruction.data = wip_extra.addExtra(Instruction.VaArg{
+                        const extra = self.extra_data(Instruction.VaArg, instruction.data);
+                        instruction.data = wip_extra.add_extra(Instruction.VaArg{
                             .list = instructions.map(extra.list),
                             .type = extra.type,
                         });
                     },
                 }
-                function.instructions.appendAssumeCapacity(instruction);
-                names[@intFromEnum(new_instruction_index)] = try wip_name.map(if (self.strip)
-                    if (old_instruction_index.hasResultWip(self)) .empty else .none
+                function.instructions.append_assume_capacity(instruction);
+                names[@int_from_enum(new_instruction_index)] = try wip_name.map(if (self.strip)
+                    if (old_instruction_index.has_result_wip(self)) .empty else .none
                 else
-                    self.names.items[@intFromEnum(old_instruction_index)], ".");
+                    self.names.items[@int_from_enum(old_instruction_index)], ".");
 
                 if (self.debug_locations.get(old_instruction_index)) |location| {
-                    debug_locations.putAssumeCapacity(new_instruction_index, location);
+                    debug_locations.put_assume_capacity(new_instruction_index, location);
                 }
 
-                if (self.debug_values.getIndex(old_instruction_index)) |index| {
+                if (self.debug_values.get_index(old_instruction_index)) |index| {
                     debug_values[index] = new_instruction_index;
                 }
 
-                value_indices[@intFromEnum(new_instruction_index)] = value_index;
-                if (old_instruction_index.hasResultWip(self)) value_index += 1;
+                value_indices[@int_from_enum(new_instruction_index)] = value_index;
+                if (old_instruction_index.has_result_wip(self)) value_index += 1;
             }
         }
 
@@ -6547,19 +6547,19 @@ pub const WipFunction = struct {
             .@"icmp ugt",
             .@"icmp ule",
             .@"icmp ult",
-            => assert(lhs.typeOfWip(self) == rhs.typeOfWip(self)),
+            => assert(lhs.type_of_wip(self) == rhs.type_of_wip(self)),
             else => unreachable,
         }
-        _ = try lhs.typeOfWip(self).changeScalar(.i1, self.builder);
-        try self.ensureUnusedExtraCapacity(1, Instruction.Binary, 0);
-        const instruction = try self.addInst(name, .{
+        _ = try lhs.type_of_wip(self).change_scalar(.i1, self.builder);
+        try self.ensure_unused_extra_capacity(1, Instruction.Binary, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = tag,
-            .data = self.addExtraAssumeCapacity(Instruction.Binary{
+            .data = self.add_extra_assume_capacity(Instruction.Binary{
                 .lhs = lhs,
                 .rhs = rhs,
             }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     fn phi_tag(
@@ -6569,17 +6569,17 @@ pub const WipFunction = struct {
         name: []const u8,
     ) Allocator.Error!WipPhi {
         switch (tag) {
-            .phi, .@"phi fast" => assert(try ty.isSized(self.builder)),
+            .phi, .@"phi fast" => assert(try ty.is_sized(self.builder)),
             else => unreachable,
         }
-        const incoming = self.cursor.block.ptrConst(self).incoming;
+        const incoming = self.cursor.block.ptr_const(self).incoming;
         assert(incoming > 0);
-        try self.ensureUnusedExtraCapacity(1, Instruction.Phi, incoming * 2);
-        const instruction = try self.addInst(name, .{
+        try self.ensure_unused_extra_capacity(1, Instruction.Phi, incoming * 2);
+        const instruction = try self.add_inst(name, .{
             .tag = tag,
-            .data = self.addExtraAssumeCapacity(Instruction.Phi{ .type = ty }),
+            .data = self.add_extra_assume_capacity(Instruction.Phi{ .type = ty }),
         });
-        _ = self.extra.addManyAsSliceAssumeCapacity(incoming * 2);
+        _ = self.extra.add_many_as_slice_assume_capacity(incoming * 2);
         return .{ .block = self.cursor.block, .instruction = instruction };
     }
 
@@ -6593,21 +6593,21 @@ pub const WipFunction = struct {
     ) Allocator.Error!Value {
         switch (tag) {
             .select, .@"select fast" => {
-                assert(cond.typeOfWip(self).scalarType(self.builder) == .i1);
-                assert(lhs.typeOfWip(self) == rhs.typeOfWip(self));
+                assert(cond.type_of_wip(self).scalar_type(self.builder) == .i1);
+                assert(lhs.type_of_wip(self) == rhs.type_of_wip(self));
             },
             else => unreachable,
         }
-        try self.ensureUnusedExtraCapacity(1, Instruction.Select, 0);
-        const instruction = try self.addInst(name, .{
+        try self.ensure_unused_extra_capacity(1, Instruction.Select, 0);
+        const instruction = try self.add_inst(name, .{
             .tag = tag,
-            .data = self.addExtraAssumeCapacity(Instruction.Select{
+            .data = self.add_extra_assume_capacity(Instruction.Select{
                 .cond = cond,
                 .lhs = lhs,
                 .rhs = rhs,
             }),
         });
-        return instruction.toValue();
+        return instruction.to_value();
     }
 
     fn ensure_unused_extra_capacity(
@@ -6616,7 +6616,7 @@ pub const WipFunction = struct {
         comptime Extra: type,
         trail_len: usize,
     ) Allocator.Error!void {
-        try self.extra.ensureUnusedCapacity(
+        try self.extra.ensure_unused_capacity(
             self.builder.gpa,
             count * (@typeInfo(Extra).Struct.fields.len + trail_len),
         );
@@ -6628,38 +6628,38 @@ pub const WipFunction = struct {
         instruction: Instruction,
     ) Allocator.Error!Instruction.Index {
         const block_instructions = &self.cursor.block.ptr(self).instructions;
-        try self.instructions.ensureUnusedCapacity(self.builder.gpa, 1);
+        try self.instructions.ensure_unused_capacity(self.builder.gpa, 1);
         if (!self.strip) {
-            try self.names.ensureUnusedCapacity(self.builder.gpa, 1);
-            try self.debug_locations.ensureUnusedCapacity(self.builder.gpa, 1);
+            try self.names.ensure_unused_capacity(self.builder.gpa, 1);
+            try self.debug_locations.ensure_unused_capacity(self.builder.gpa, 1);
         }
-        try block_instructions.ensureUnusedCapacity(self.builder.gpa, 1);
+        try block_instructions.ensure_unused_capacity(self.builder.gpa, 1);
         const final_name = if (name) |n|
             if (self.strip) .empty else try self.builder.string(n)
         else
             .none;
 
         const index: Instruction.Index = @enumFromInt(self.instructions.len);
-        self.instructions.appendAssumeCapacity(instruction);
+        self.instructions.append_assume_capacity(instruction);
         if (!self.strip) {
-            self.names.appendAssumeCapacity(final_name);
+            self.names.append_assume_capacity(final_name);
             if (block_instructions.items.len == 0 or
                 !std.meta.eql(self.debug_location, self.prev_debug_location))
             {
-                self.debug_locations.putAssumeCapacity(index, self.debug_location);
+                self.debug_locations.put_assume_capacity(index, self.debug_location);
                 self.prev_debug_location = self.debug_location;
             }
         }
-        block_instructions.insertAssumeCapacity(self.cursor.instruction, index);
+        block_instructions.insert_assume_capacity(self.cursor.instruction, index);
         self.cursor.instruction += 1;
         return index;
     }
 
     fn add_extra_assume_capacity(self: *WipFunction, extra: anytype) Instruction.ExtraIndex {
-        const result: Instruction.ExtraIndex = @intCast(self.extra.items.len);
+        const result: Instruction.ExtraIndex = @int_cast(self.extra.items.len);
         inline for (@typeInfo(@TypeOf(extra)).Struct.fields) |field| {
             const value = @field(extra, field.name);
-            self.extra.appendAssumeCapacity(switch (field.type) {
+            self.extra.append_assume_capacity(switch (field.type) {
                 u32 => value,
                 Alignment,
                 AtomicOrdering,
@@ -6667,12 +6667,12 @@ pub const WipFunction = struct {
                 FunctionAttributes,
                 Type,
                 Value,
-                => @intFromEnum(value),
+                => @int_from_enum(value),
                 MemoryAccessInfo,
                 Instruction.Alloca.Info,
                 Instruction.Call.Info,
-                => @bitCast(value),
-                else => @compileError("bad field type: " ++ field.name ++ ": " ++ @typeName(field.type)),
+                => @bit_cast(value),
+                else => @compile_error("bad field type: " ++ field.name ++ ": " ++ @type_name(field.type)),
             });
         }
         return result;
@@ -6682,8 +6682,8 @@ pub const WipFunction = struct {
         index: Instruction.ExtraIndex,
 
         fn next_mut(self: *ExtraDataTrail, len: u32, comptime Item: type, wip: *WipFunction) []Item {
-            const items: []Item = @ptrCast(wip.extra.items[self.index..][0..len]);
-            self.index += @intCast(len);
+            const items: []Item = @ptr_cast(wip.extra.items[self.index..][0..len]);
+            self.index += @int_cast(len);
             return items;
         }
 
@@ -6693,8 +6693,8 @@ pub const WipFunction = struct {
             comptime Item: type,
             wip: *const WipFunction,
         ) []const Item {
-            const items: []const Item = @ptrCast(wip.extra.items[self.index..][0..len]);
-            self.index += @intCast(len);
+            const items: []const Item = @ptr_cast(wip.extra.items[self.index..][0..len]);
+            self.index += @int_cast(len);
             return items;
         }
     };
@@ -6719,17 +6719,17 @@ pub const WipFunction = struct {
                 MemoryAccessInfo,
                 Instruction.Alloca.Info,
                 Instruction.Call.Info,
-                => @bitCast(value),
-                else => @compileError("bad field type: " ++ field.name ++ ": " ++ @typeName(field.type)),
+                => @bit_cast(value),
+                else => @compile_error("bad field type: " ++ field.name ++ ": " ++ @type_name(field.type)),
             };
         return .{
             .data = result,
-            .trail = .{ .index = index + @as(Type.Item.ExtraIndex, @intCast(fields.len)) },
+            .trail = .{ .index = index + @as(Type.Item.ExtraIndex, @int_cast(fields.len)) },
         };
     }
 
     fn extra_data(self: *const WipFunction, comptime T: type, index: Instruction.ExtraIndex) T {
-        return self.extraDataTrail(T, index).data;
+        return self.extra_data_trail(T, index).data;
     }
 };
 
@@ -6773,7 +6773,7 @@ pub const MemoryAccessKind = enum(u1) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (self != .normal) try writer.print("{s}{s}", .{ prefix, @tagName(self) });
+        if (self != .normal) try writer.print("{s}{s}", .{ prefix, @tag_name(self) });
     }
 };
 
@@ -6789,7 +6789,7 @@ pub const SyncScope = enum(u1) {
     ) @TypeOf(writer).Error!void {
         if (self != .system) try writer.print(
             \\{s}syncscope("{s}")
-        , .{ prefix, @tagName(self) });
+        , .{ prefix, @tag_name(self) });
     }
 };
 
@@ -6808,7 +6808,7 @@ pub const AtomicOrdering = enum(u3) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (self != .none) try writer.print("{s}{s}", .{ prefix, @tagName(self) });
+        if (self != .none) try writer.print("{s}{s}", .{ prefix, @tag_name(self) });
     }
 };
 
@@ -6961,7 +6961,7 @@ pub const Constant = enum(u32) {
         type: Type,
         limbs_len: u32,
 
-        pub const limbs = @divExact(@bitSizeOf(Integer), @bitSizeOf(std.math.big.Limb));
+        pub const limbs = @div_exact(@bitSizeOf(Integer), @bitSizeOf(std.math.big.Limb));
     };
 
     pub const Double = struct {
@@ -6984,7 +6984,7 @@ pub const Constant = enum(u32) {
 
     pub const Aggregate = struct {
         type: Type,
-        //fields: [type.aggregateLen(builder)]Constant,
+        //fields: [type.aggregate_len(builder)]Constant,
     };
 
     pub const Splat = extern struct {
@@ -7011,7 +7011,7 @@ pub const Constant = enum(u32) {
         //indices: [info.indices_len]Constant,
 
         pub const Kind = enum { normal, inbounds };
-        pub const InRangeIndex = enum(u16) { none = std.math.maxInt(u16), _ };
+        pub const InRangeIndex = enum(u16) { none = std.math.max_int(u16), _ };
         pub const Info = packed struct(u32) { indices_len: u16, inrange: InRangeIndex };
     };
 
@@ -7037,14 +7037,14 @@ pub const Constant = enum(u32) {
         constant: u30,
         global: Global.Index,
     } {
-        return if (@intFromEnum(self) < @intFromEnum(first_global))
-            .{ .constant = @intCast(@intFromEnum(self)) }
+        return if (@int_from_enum(self) < @int_from_enum(first_global))
+            .{ .constant = @int_cast(@int_from_enum(self)) }
         else
-            .{ .global = @enumFromInt(@intFromEnum(self) - @intFromEnum(first_global)) };
+            .{ .global = @enumFromInt(@int_from_enum(self) - @int_from_enum(first_global)) };
     }
 
     pub fn to_value(self: Constant) Value {
-        return @enumFromInt(Value.first_constant + @intFromEnum(self));
+        return @enumFromInt(Value.first_constant + @int_from_enum(self));
     }
 
     pub fn type_of(self: Constant, builder: *Builder) Type {
@@ -7056,7 +7056,7 @@ pub const Constant = enum(u32) {
                     .negative_integer,
                     => @as(
                         *align(@alignOf(std.math.big.Limb)) Integer,
-                        @ptrCast(builder.constant_limbs.items[item.data..][0..Integer.limbs]),
+                        @ptr_cast(builder.constant_limbs.items[item.data..][0..Integer.limbs]),
                     ).type,
                     .half => .half,
                     .bfloat => .bfloat,
@@ -7075,37 +7075,37 @@ pub const Constant = enum(u32) {
                     .packed_structure,
                     .array,
                     .vector,
-                    => builder.constantExtraData(Aggregate, item.data).type,
-                    .splat => builder.constantExtraData(Splat, item.data).type,
-                    .string => builder.arrayTypeAssumeCapacity(
+                    => builder.constant_extra_data(Aggregate, item.data).type,
+                    .splat => builder.constant_extra_data(Splat, item.data).type,
+                    .string => builder.array_type_assume_capacity(
                         @as(String, @enumFromInt(item.data)).slice(builder).?.len,
                         .i8,
                     ),
-                    .blockaddress => builder.ptrTypeAssumeCapacity(
-                        builder.constantExtraData(BlockAddress, item.data)
-                            .function.ptrConst(builder).global.ptrConst(builder).addr_space,
+                    .blockaddress => builder.ptr_type_assume_capacity(
+                        builder.constant_extra_data(BlockAddress, item.data)
+                            .function.ptr_const(builder).global.ptr_const(builder).addr_space,
                     ),
                     .dso_local_equivalent,
                     .no_cfi,
-                    => builder.ptrTypeAssumeCapacity(@as(Function.Index, @enumFromInt(item.data))
-                        .ptrConst(builder).global.ptrConst(builder).addr_space),
+                    => builder.ptr_type_assume_capacity(@as(Function.Index, @enumFromInt(item.data))
+                        .ptr_const(builder).global.ptr_const(builder).addr_space),
                     .trunc,
                     .ptrtoint,
                     .inttoptr,
                     .bitcast,
                     .addrspacecast,
-                    => builder.constantExtraData(Cast, item.data).type,
+                    => builder.constant_extra_data(Cast, item.data).type,
                     .getelementptr,
                     .@"getelementptr inbounds",
                     => {
-                        var extra = builder.constantExtraDataTrail(GetElementPtr, item.data);
+                        var extra = builder.constant_extra_data_trail(GetElementPtr, item.data);
                         const indices =
                             extra.trail.next(extra.data.info.indices_len, Constant, builder);
-                        const base_ty = extra.data.base.typeOf(builder);
-                        if (!base_ty.isVector(builder)) for (indices) |index| {
-                            const index_ty = index.typeOf(builder);
-                            if (!index_ty.isVector(builder)) continue;
-                            return index_ty.changeScalarAssumeCapacity(base_ty, builder);
+                        const base_ty = extra.data.base.type_of(builder);
+                        if (!base_ty.is_vector(builder)) for (indices) |index| {
+                            const index_ty = index.type_of(builder);
+                            if (!index_ty.is_vector(builder)) continue;
+                            return index_ty.change_scalar_assume_capacity(base_ty, builder);
                         };
                         return base_ty;
                     },
@@ -7117,7 +7117,7 @@ pub const Constant = enum(u32) {
                     .@"sub nuw",
                     .shl,
                     .xor,
-                    => builder.constantExtraData(Binary, item.data).lhs.typeOf(builder),
+                    => builder.constant_extra_data(Binary, item.data).lhs.type_of(builder),
                     .@"asm",
                     .@"asm sideeffect",
                     .@"asm alignstack",
@@ -7137,8 +7137,8 @@ pub const Constant = enum(u32) {
                     => .ptr,
                 };
             },
-            .global => |global| return builder.ptrTypeAssumeCapacity(
-                global.ptrConst(builder).addr_space,
+            .global => |global| return builder.ptr_type_assume_capacity(
+                global.ptr_const(builder).addr_space,
             ),
         }
     }
@@ -7150,30 +7150,30 @@ pub const Constant = enum(u32) {
                 return switch (item.tag) {
                     .positive_integer => {
                         const extra: *align(@alignOf(std.math.big.Limb)) Integer =
-                            @ptrCast(builder.constant_limbs.items[item.data..][0..Integer.limbs]);
+                            @ptr_cast(builder.constant_limbs.items[item.data..][0..Integer.limbs]);
                         const limbs = builder.constant_limbs
                             .items[item.data + Integer.limbs ..][0..extra.limbs_len];
                         return std.mem.eql(std.math.big.Limb, limbs, &.{0});
                     },
                     .half, .bfloat, .float => item.data == 0,
                     .double => {
-                        const extra = builder.constantExtraData(Constant.Double, item.data);
+                        const extra = builder.constant_extra_data(Constant.Double, item.data);
                         return extra.lo == 0 and extra.hi == 0;
                     },
                     .fp128, .ppc_fp128 => {
-                        const extra = builder.constantExtraData(Constant.Fp128, item.data);
+                        const extra = builder.constant_extra_data(Constant.Fp128, item.data);
                         return extra.lo_lo == 0 and extra.lo_hi == 0 and
                             extra.hi_lo == 0 and extra.hi_hi == 0;
                     },
                     .x86_fp80 => {
-                        const extra = builder.constantExtraData(Constant.Fp80, item.data);
+                        const extra = builder.constant_extra_data(Constant.Fp80, item.data);
                         return extra.lo_lo == 0 and extra.lo_hi == 0 and extra.hi == 0;
                     },
                     .vector => {
-                        var extra = builder.constantExtraDataTrail(Aggregate, item.data);
-                        const len: u32 = @intCast(extra.data.type.aggregateLen(builder));
+                        var extra = builder.constant_extra_data_trail(Aggregate, item.data);
+                        const len: u32 = @int_cast(extra.data.type.aggregate_len(builder));
                         const vals = extra.trail.next(len, Constant, builder);
-                        for (vals) |val| if (!val.isZeroInit(builder)) return false;
+                        for (vals) |val| if (!val.is_zero_init(builder)) return false;
                         return true;
                     },
                     .null, .zeroinitializer => true,
@@ -7193,26 +7193,26 @@ pub const Constant = enum(u32) {
                     .ptrtoint,
                     .inttoptr,
                     .bitcast,
-                    => cur = builder.constantExtraData(Cast, item.data).val,
-                    .getelementptr => cur = builder.constantExtraData(GetElementPtr, item.data).base,
+                    => cur = builder.constant_extra_data(Cast, item.data).val,
+                    .getelementptr => cur = builder.constant_extra_data(GetElementPtr, item.data).base,
                     .add => {
-                        const extra = builder.constantExtraData(Binary, item.data);
-                        const lhs_base = extra.lhs.getBase(builder);
-                        const rhs_base = extra.rhs.getBase(builder);
+                        const extra = builder.constant_extra_data(Binary, item.data);
+                        const lhs_base = extra.lhs.get_base(builder);
+                        const rhs_base = extra.rhs.get_base(builder);
                         return if (lhs_base != .none and rhs_base != .none)
                             .none
                         else if (lhs_base != .none) lhs_base else rhs_base;
                     },
                     .sub => {
-                        const extra = builder.constantExtraData(Binary, item.data);
-                        if (extra.rhs.getBase(builder) != .none) return .none;
+                        const extra = builder.constant_extra_data(Binary, item.data);
+                        if (extra.rhs.get_base(builder) != .none) return .none;
                         cur = extra.lhs;
                     },
                     else => return .none,
                 }
             },
-            .global => |global| switch (global.ptrConst(builder).kind) {
-                .alias => |alias| cur = alias.ptrConst(builder).aliasee,
+            .global => |global| switch (global.ptr_const(builder).kind) {
+                .alias => |alias| cur = alias.ptr_const(builder).aliasee,
                 .variable, .function => return global,
                 .replaced => unreachable,
             },
@@ -7229,20 +7229,20 @@ pub const Constant = enum(u32) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        if (comptime std.mem.indexOfNone(u8, fmt_str, ", %")) |_|
-            @compileError("invalid format string: '" ++ fmt_str ++ "'");
-        if (comptime std.mem.indexOfScalar(u8, fmt_str, ',') != null) {
+        if (comptime std.mem.index_of_none(u8, fmt_str, ", %")) |_|
+            @compile_error("invalid format string: '" ++ fmt_str ++ "'");
+        if (comptime std.mem.index_of_scalar(u8, fmt_str, ',') != null) {
             if (data.constant == .no_init) return;
-            try writer.writeByte(',');
+            try writer.write_byte(',');
         }
-        if (comptime std.mem.indexOfScalar(u8, fmt_str, ' ') != null) {
+        if (comptime std.mem.index_of_scalar(u8, fmt_str, ' ') != null) {
             if (data.constant == .no_init) return;
-            try writer.writeByte(' ');
+            try writer.write_byte(' ');
         }
-        if (comptime std.mem.indexOfScalar(u8, fmt_str, '%') != null)
-            try writer.print("{%} ", .{data.constant.typeOf(data.builder).fmt(data.builder)});
+        if (comptime std.mem.index_of_scalar(u8, fmt_str, '%') != null)
+            try writer.print("{%} ", .{data.constant.type_of(data.builder).fmt(data.builder)});
         assert(data.constant != .no_init);
-        if (std.enums.tagName(Constant, data.constant)) |name| return writer.writeAll(name);
+        if (std.enums.tag_name(Constant, data.constant)) |name| return writer.write_all(name);
         switch (data.constant.unwrap()) {
             .constant => |constant| {
                 const item = data.builder.constant_items.get(constant);
@@ -7251,7 +7251,7 @@ pub const Constant = enum(u32) {
                     .negative_integer,
                     => |tag| {
                         const extra: *align(@alignOf(std.math.big.Limb)) const Integer =
-                            @ptrCast(data.builder.constant_limbs.items[item.data..][0..Integer.limbs]);
+                            @ptr_cast(data.builder.constant_limbs.items[item.data..][0..Integer.limbs]);
                         const limbs = data.builder.constant_limbs
                             .items[item.data + Integer.limbs ..][0..extra.limbs_len];
                         const bigint: std.math.big.int.Const = .{
@@ -7263,25 +7263,25 @@ pub const Constant = enum(u32) {
                             },
                         };
                         const ExpectedContents = extern struct {
-                            const expected_limbs = @divExact(512, @bitSizeOf(std.math.big.Limb));
+                            const expected_limbs = @div_exact(512, @bitSizeOf(std.math.big.Limb));
                             string: [
                                 (std.math.big.int.Const{
                                     .limbs = &([1]std.math.big.Limb{
-                                        std.math.maxInt(std.math.big.Limb),
+                                        std.math.max_int(std.math.big.Limb),
                                     } ** expected_limbs),
                                     .positive = false,
-                                }).sizeInBaseUpperBound(10)
+                                }).size_in_base_upper_bound(10)
                             ]u8,
                             limbs: [
-                                std.math.big.int.calcToStringLimbsBufferLen(expected_limbs, 10)
+                                std.math.big.int.calc_to_string_limbs_buffer_len(expected_limbs, 10)
                             ]std.math.big.Limb,
                         };
                         var stack align(@alignOf(ExpectedContents)) =
-                            std.heap.stackFallback(@sizeOf(ExpectedContents), data.builder.gpa);
+                            std.heap.stack_fallback(@size_of(ExpectedContents), data.builder.gpa);
                         const allocator = stack.get();
-                        const str = try bigint.toStringAlloc(allocator, 10, undefined);
+                        const str = try bigint.to_string_alloc(allocator, 10, undefined);
                         defer allocator.free(str);
-                        try writer.writeAll(str);
+                        try writer.write_all(str);
                     },
                     .half,
                     .bfloat,
@@ -7298,8 +7298,8 @@ pub const Constant = enum(u32) {
                         const Float = struct {
                             fn Repr(comptime T: type) type {
                                 return packed struct(std.meta.Int(.unsigned, @bitSizeOf(T))) {
-                                    mantissa: std.meta.Int(.unsigned, std.math.floatMantissaBits(T)),
-                                    exponent: std.meta.Int(.unsigned, std.math.floatExponentBits(T)),
+                                    mantissa: std.meta.Int(.unsigned, std.math.float_mantissa_bits(T)),
+                                    exponent: std.meta.Int(.unsigned, std.math.float_exponent_bits(T)),
                                     sign: u1,
                                 };
                             }
@@ -7308,42 +7308,42 @@ pub const Constant = enum(u32) {
                         const Exponent32 = std.meta.FieldType(Float.Repr(f32), .exponent);
                         const Exponent64 = std.meta.FieldType(Float.Repr(f64), .exponent);
 
-                        const repr: Float.Repr(f32) = @bitCast(item.data);
+                        const repr: Float.Repr(f32) = @bit_cast(item.data);
                         const denormal_shift = switch (repr.exponent) {
-                            std.math.minInt(Exponent32) => @as(
+                            std.math.min_int(Exponent32) => @as(
                                 std.math.Log2Int(Mantissa64),
                                 @clz(repr.mantissa),
                             ) + 1,
                             else => 0,
                         };
-                        try writer.print("0x{X:0>16}", .{@as(u64, @bitCast(Float.Repr(f64){
+                        try writer.print("0x{X:0>16}", .{@as(u64, @bit_cast(Float.Repr(f64){
                             .mantissa = std.math.shl(
                                 Mantissa64,
                                 repr.mantissa,
-                                std.math.floatMantissaBits(f64) - std.math.floatMantissaBits(f32) +
+                                std.math.float_mantissa_bits(f64) - std.math.float_mantissa_bits(f32) +
                                     denormal_shift,
                             ),
                             .exponent = switch (repr.exponent) {
-                                std.math.minInt(Exponent32) => if (repr.mantissa > 0)
-                                    @as(Exponent64, std.math.floatExponentMin(f32) +
-                                        std.math.floatExponentMax(f64)) - denormal_shift
+                                std.math.min_int(Exponent32) => if (repr.mantissa > 0)
+                                    @as(Exponent64, std.math.float_exponent_min(f32) +
+                                        std.math.float_exponent_max(f64)) - denormal_shift
                                 else
-                                    std.math.minInt(Exponent64),
+                                    std.math.min_int(Exponent64),
                                 else => @as(Exponent64, repr.exponent) +
-                                    (std.math.floatExponentMax(f64) - std.math.floatExponentMax(f32)),
-                                std.math.maxInt(Exponent32) => std.math.maxInt(Exponent64),
+                                    (std.math.float_exponent_max(f64) - std.math.float_exponent_max(f32)),
+                                std.math.max_int(Exponent32) => std.math.max_int(Exponent64),
                             },
                             .sign = repr.sign,
                         }))});
                     },
                     .double => {
-                        const extra = data.builder.constantExtraData(Double, item.data);
+                        const extra = data.builder.constant_extra_data(Double, item.data);
                         try writer.print("0x{X:0>8}{X:0>8}", .{ extra.hi, extra.lo });
                     },
                     .fp128,
                     .ppc_fp128,
                     => |tag| {
-                        const extra = data.builder.constantExtraData(Fp128, item.data);
+                        const extra = data.builder.constant_extra_data(Fp128, item.data);
                         try writer.print("0x{c}{X:0>8}{X:0>8}{X:0>8}{X:0>8}", .{
                             @as(u8, switch (tag) {
                                 .fp128 => 'L',
@@ -7357,7 +7357,7 @@ pub const Constant = enum(u32) {
                         });
                     },
                     .x86_fp80 => {
-                        const extra = data.builder.constantExtraData(Fp80, item.data);
+                        const extra = data.builder.constant_extra_data(Fp80, item.data);
                         try writer.print("0xK{X:0>4}{X:0>8}{X:0>8}", .{
                             extra.hi, extra.lo_hi, extra.lo_lo,
                         });
@@ -7367,16 +7367,16 @@ pub const Constant = enum(u32) {
                     .zeroinitializer,
                     .undef,
                     .poison,
-                    => |tag| try writer.writeAll(@tagName(tag)),
+                    => |tag| try writer.write_all(@tag_name(tag)),
                     .structure,
                     .packed_structure,
                     .array,
                     .vector,
                     => |tag| {
-                        var extra = data.builder.constantExtraDataTrail(Aggregate, item.data);
-                        const len: u32 = @intCast(extra.data.type.aggregateLen(data.builder));
+                        var extra = data.builder.constant_extra_data_trail(Aggregate, item.data);
+                        const len: u32 = @int_cast(extra.data.type.aggregate_len(data.builder));
                         const vals = extra.trail.next(len, Constant, data.builder);
-                        try writer.writeAll(switch (tag) {
+                        try writer.write_all(switch (tag) {
                             .structure => "{ ",
                             .packed_structure => "<{ ",
                             .array => "[",
@@ -7384,10 +7384,10 @@ pub const Constant = enum(u32) {
                             else => unreachable,
                         });
                         for (vals, 0..) |val, index| {
-                            if (index > 0) try writer.writeAll(", ");
+                            if (index > 0) try writer.write_all(", ");
                             try writer.print("{%}", .{val.fmt(data.builder)});
                         }
-                        try writer.writeAll(switch (tag) {
+                        try writer.write_all(switch (tag) {
                             .structure => " }",
                             .packed_structure => " }>",
                             .array => "]",
@@ -7396,25 +7396,25 @@ pub const Constant = enum(u32) {
                         });
                     },
                     .splat => {
-                        const extra = data.builder.constantExtraData(Splat, item.data);
-                        const len = extra.type.vectorLen(data.builder);
-                        try writer.writeByte('<');
+                        const extra = data.builder.constant_extra_data(Splat, item.data);
+                        const len = extra.type.vector_len(data.builder);
+                        try writer.write_byte('<');
                         for (0..len) |index| {
-                            if (index > 0) try writer.writeAll(", ");
+                            if (index > 0) try writer.write_all(", ");
                             try writer.print("{%}", .{extra.value.fmt(data.builder)});
                         }
-                        try writer.writeByte('>');
+                        try writer.write_byte('>');
                     },
                     .string => try writer.print("c{\"}", .{
                         @as(String, @enumFromInt(item.data)).fmt(data.builder),
                     }),
                     .blockaddress => |tag| {
-                        const extra = data.builder.constantExtraData(BlockAddress, item.data);
-                        const function = extra.function.ptrConst(data.builder);
+                        const extra = data.builder.constant_extra_data(BlockAddress, item.data);
+                        const function = extra.function.ptr_const(data.builder);
                         try writer.print("{s}({}, %{d})", .{
-                            @tagName(tag),
+                            @tag_name(tag),
                             function.global.fmt(data.builder),
-                            @intFromEnum(extra.block), // TODO
+                            @int_from_enum(extra.block), // TODO
                         });
                     },
                     .dso_local_equivalent,
@@ -7422,8 +7422,8 @@ pub const Constant = enum(u32) {
                     => |tag| {
                         const function: Function.Index = @enumFromInt(item.data);
                         try writer.print("{s} {}", .{
-                            @tagName(tag),
-                            function.ptrConst(data.builder).global.fmt(data.builder),
+                            @tag_name(tag),
+                            function.ptr_const(data.builder).global.fmt(data.builder),
                         });
                     },
                     .trunc,
@@ -7432,9 +7432,9 @@ pub const Constant = enum(u32) {
                     .bitcast,
                     .addrspacecast,
                     => |tag| {
-                        const extra = data.builder.constantExtraData(Cast, item.data);
+                        const extra = data.builder.constant_extra_data(Cast, item.data);
                         try writer.print("{s} ({%} to {%})", .{
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.val.fmt(data.builder),
                             extra.type.fmt(data.builder),
                         });
@@ -7442,16 +7442,16 @@ pub const Constant = enum(u32) {
                     .getelementptr,
                     .@"getelementptr inbounds",
                     => |tag| {
-                        var extra = data.builder.constantExtraDataTrail(GetElementPtr, item.data);
+                        var extra = data.builder.constant_extra_data_trail(GetElementPtr, item.data);
                         const indices =
                             extra.trail.next(extra.data.info.indices_len, Constant, data.builder);
                         try writer.print("{s} ({%}, {%}", .{
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.data.type.fmt(data.builder),
                             extra.data.base.fmt(data.builder),
                         });
                         for (indices) |index| try writer.print(", {%}", .{index.fmt(data.builder)});
-                        try writer.writeByte(')');
+                        try writer.write_byte(')');
                     },
                     .add,
                     .@"add nsw",
@@ -7462,9 +7462,9 @@ pub const Constant = enum(u32) {
                     .shl,
                     .xor,
                     => |tag| {
-                        const extra = data.builder.constantExtraData(Binary, item.data);
+                        const extra = data.builder.constant_extra_data(Binary, item.data);
                         try writer.print("{s} ({%}, {%})", .{
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.lhs.fmt(data.builder),
                             extra.rhs.fmt(data.builder),
                         });
@@ -7486,9 +7486,9 @@ pub const Constant = enum(u32) {
                     .@"asm alignstack inteldialect unwind",
                     .@"asm sideeffect alignstack inteldialect unwind",
                     => |tag| {
-                        const extra = data.builder.constantExtraData(Assembly, item.data);
+                        const extra = data.builder.constant_extra_data(Assembly, item.data);
                         try writer.print("{s} {\"}, {\"}", .{
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.assembly.fmt(data.builder),
                             extra.constraints.fmt(data.builder),
                         });
@@ -7504,11 +7504,11 @@ pub const Constant = enum(u32) {
 };
 
 pub const Value = enum(u32) {
-    none = std.math.maxInt(u31),
-    false = first_constant + @intFromEnum(Constant.false),
-    true = first_constant + @intFromEnum(Constant.true),
-    @"0" = first_constant + @intFromEnum(Constant.@"0"),
-    @"1" = first_constant + @intFromEnum(Constant.@"1"),
+    none = std.math.max_int(u31),
+    false = first_constant + @int_from_enum(Constant.false),
+    true = first_constant + @int_from_enum(Constant.true),
+    @"0" = first_constant + @int_from_enum(Constant.@"0"),
+    @"1" = first_constant + @int_from_enum(Constant.@"1"),
     _,
 
     const first_constant = 1 << 30;
@@ -7519,26 +7519,26 @@ pub const Value = enum(u32) {
         constant: Constant,
         metadata: Metadata,
     } {
-        return if (@intFromEnum(self) < first_constant)
-            .{ .instruction = @enumFromInt(@intFromEnum(self)) }
-        else if (@intFromEnum(self) < first_metadata)
-            .{ .constant = @enumFromInt(@intFromEnum(self) - first_constant) }
+        return if (@int_from_enum(self) < first_constant)
+            .{ .instruction = @enumFromInt(@int_from_enum(self)) }
+        else if (@int_from_enum(self) < first_metadata)
+            .{ .constant = @enumFromInt(@int_from_enum(self) - first_constant) }
         else
-            .{ .metadata = @enumFromInt(@intFromEnum(self) - first_metadata) };
+            .{ .metadata = @enumFromInt(@int_from_enum(self) - first_metadata) };
     }
 
     pub fn type_of_wip(self: Value, wip: *const WipFunction) Type {
         return switch (self.unwrap()) {
-            .instruction => |instruction| instruction.typeOfWip(wip),
-            .constant => |constant| constant.typeOf(wip.builder),
+            .instruction => |instruction| instruction.type_of_wip(wip),
+            .constant => |constant| constant.type_of(wip.builder),
             .metadata => .metadata,
         };
     }
 
     pub fn type_of(self: Value, function: Function.Index, builder: *Builder) Type {
         return switch (self.unwrap()) {
-            .instruction => |instruction| instruction.typeOf(function, builder),
-            .constant => |constant| constant.typeOf(builder),
+            .instruction => |instruction| instruction.type_of(function, builder),
+            .constant => |constant| constant.type_of(builder),
             .metadata => .metadata,
         };
     }
@@ -7584,7 +7584,7 @@ pub const MetadataString = enum(u32) {
     _,
 
     pub fn slice(self: MetadataString, builder: *const Builder) []const u8 {
-        const index = @intFromEnum(self);
+        const index = @int_from_enum(self);
         const start = builder.metadata_string_indices.items[index];
         const end = builder.metadata_string_indices.items[index + 1];
         return builder.metadata_string_bytes.items[start..end];
@@ -7611,7 +7611,7 @@ pub const MetadataString = enum(u32) {
         _: std.fmt.FormatOptions,
         writer: anytype,
     ) @TypeOf(writer).Error!void {
-        try printEscapedString(data.metadata_string.slice(data.builder), .always_quote, writer);
+        try print_escaped_string(data.metadata_string.slice(data.builder), .always_quote, writer);
     }
     fn fmt(self: MetadataString, builder: *const Builder) std.fmt.Formatter(format) {
         return .{ .data = .{ .metadata_string = self, .builder = builder } };
@@ -7714,15 +7714,15 @@ pub const Metadata = enum(u32) {
     };
 
     pub fn is_inline(self: Metadata, builder: *const Builder) bool {
-        return builder.metadata_items.items(.tag)[@intFromEnum(self)].isInline();
+        return builder.metadata_items.items(.tag)[@int_from_enum(self)].is_inline();
     }
 
     pub fn unwrap(self: Metadata, builder: *const Builder) Metadata {
         var metadata = self;
-        while (@intFromEnum(metadata) >= Metadata.first_forward_reference and
-            @intFromEnum(metadata) < Metadata.first_local_metadata)
+        while (@int_from_enum(metadata) >= Metadata.first_forward_reference and
+            @int_from_enum(metadata) < Metadata.first_local_metadata)
         {
-            const index = @intFromEnum(metadata) - Metadata.first_forward_reference;
+            const index = @int_from_enum(metadata) - Metadata.first_forward_reference;
             metadata = builder.metadata_forward_references.items[index];
             assert(metadata != .none);
         }
@@ -7782,19 +7782,19 @@ pub const Metadata = enum(u32) {
             inline for (@typeInfo(DIFlags).Struct.fields) |field| {
                 switch (@typeInfo(field.type)) {
                     .Bool => if (@field(self, field.name)) {
-                        if (need_pipe) try writer.writeAll(" | ") else need_pipe = true;
+                        if (need_pipe) try writer.write_all(" | ") else need_pipe = true;
                         try writer.print("DIFlag{s}", .{field.name});
                     },
                     .Enum => if (@field(self, field.name) != .Zero) {
-                        if (need_pipe) try writer.writeAll(" | ") else need_pipe = true;
-                        try writer.print("DIFlag{s}", .{@tagName(@field(self, field.name))});
+                        if (need_pipe) try writer.write_all(" | ") else need_pipe = true;
+                        try writer.print("DIFlag{s}", .{@tag_name(@field(self, field.name))});
                     },
                     .Int => assert(@field(self, field.name) == 0),
-                    else => @compileError("bad field type: " ++ field.name ++ ": " ++
-                        @typeName(field.type)),
+                    else => @compile_error("bad field type: " ++ field.name ++ ": " ++
+                        @type_name(field.type)),
                 }
             }
-            if (!need_pipe) try writer.writeByte('0');
+            if (!need_pipe) try writer.write_byte('0');
         }
     };
 
@@ -7844,19 +7844,19 @@ pub const Metadata = enum(u32) {
                 inline for (@typeInfo(DISPFlags).Struct.fields) |field| {
                     switch (@typeInfo(field.type)) {
                         .Bool => if (@field(self, field.name)) {
-                            if (need_pipe) try writer.writeAll(" | ") else need_pipe = true;
+                            if (need_pipe) try writer.write_all(" | ") else need_pipe = true;
                             try writer.print("DISPFlag{s}", .{field.name});
                         },
                         .Enum => if (@field(self, field.name) != .Zero) {
-                            if (need_pipe) try writer.writeAll(" | ") else need_pipe = true;
-                            try writer.print("DISPFlag{s}", .{@tagName(@field(self, field.name))});
+                            if (need_pipe) try writer.write_all(" | ") else need_pipe = true;
+                            try writer.print("DISPFlag{s}", .{@tag_name(@field(self, field.name))});
                         },
                         .Int => assert(@field(self, field.name) == 0),
-                        else => @compileError("bad field type: " ++ field.name ++ ": " ++
-                            @typeName(field.type)),
+                        else => @compile_error("bad field type: " ++ field.name ++ ": " ++
+                            @type_name(field.type)),
                     }
                 }
-                if (!need_pipe) try writer.writeByte('0');
+                if (!need_pipe) try writer.write_byte('0');
             }
         };
 
@@ -8009,7 +8009,7 @@ pub const Metadata = enum(u32) {
     };
 
     pub fn to_value(self: Metadata) Value {
-        return @enumFromInt(Value.first_metadata + @intFromEnum(self));
+        return @enumFromInt(Value.first_metadata + @int_from_enum(self));
     }
 
     const Formatter = struct {
@@ -8060,9 +8060,9 @@ pub const Metadata = enum(u32) {
             const is_specialized = fmt_str.len > 0 and fmt_str[0] == 'S';
             const recurse_fmt_str = if (is_specialized) fmt_str[1..] else fmt_str;
 
-            if (data.formatter.need_comma) try writer.writeAll(", ");
+            if (data.formatter.need_comma) try writer.write_all(", ");
             defer data.formatter.need_comma = true;
-            try writer.writeAll(data.prefix);
+            try writer.write_all(data.prefix);
 
             const builder = data.formatter.builder;
             switch (data.node) {
@@ -8072,17 +8072,17 @@ pub const Metadata = enum(u32) {
                     defer data.formatter.need_comma = needed_comma;
                     data.formatter.need_comma = false;
 
-                    const item = builder.metadata_items.get(@intFromEnum(node));
+                    const item = builder.metadata_items.get(@int_from_enum(node));
                     switch (item.tag) {
                         .expression => {
-                            var extra = builder.metadataExtraDataTrail(Expression, item.data);
+                            var extra = builder.metadata_extra_data_trail(Expression, item.data);
                             const elements = extra.trail.next(extra.data.elements_len, u32, builder);
-                            try writer.writeAll("!DIExpression(");
+                            try writer.write_all("!DIExpression(");
                             for (elements) |element| try format(.{
                                 .formatter = data.formatter,
                                 .node = .{ .u64 = element },
                             }, "%", fmt_opts, writer);
-                            try writer.writeByte(')');
+                            try writer.write_byte(')');
                         },
                         .constant => try Constant.format(.{
                             .constant = @enumFromInt(item.data),
@@ -8106,7 +8106,7 @@ pub const Metadata = enum(u32) {
                         try writer.print("{%} ", .{Type.metadata.fmt(builder)});
                     try format(.{
                         .formatter = data.formatter,
-                        .node = @unionInit(FormatData.Node, @tagName(tag)["local_".len..], node),
+                        .node = @union_init(FormatData.Node, @tag_name(tag)["local_".len..], node),
                     }, "%", fmt_opts, writer);
                 },
                 .string => |node| try writer.print((if (is_specialized) "" else "!") ++ "{}", .{
@@ -8118,7 +8118,7 @@ pub const Metadata = enum(u32) {
                 .di_flags,
                 .sp_flags,
                 => |node| try writer.print("{}", .{node}),
-                .raw => |node| try writer.writeAll(node),
+                .raw => |node| try writer.write_all(node),
             }
         }
         inline fn fmt(formatter: *Formatter, prefix: []const u8, node: anytype) switch (@TypeOf(node)) {
@@ -8139,24 +8139,24 @@ pub const Metadata = enum(u32) {
                     .Enum => |enum_info| switch (Some) {
                         Metadata => switch (some) {
                             .none => .none,
-                            else => try formatter.refUnwrapped(some.unwrap(formatter.builder)),
+                            else => try formatter.ref_unwrapped(some.unwrap(formatter.builder)),
                         },
                         MetadataString => .{ .string = some },
                         else => if (enum_info.is_exhaustive)
-                            .{ .raw = @tagName(some) }
+                            .{ .raw = @tag_name(some) }
                         else
-                            @compileError("unknown type to format: " ++ @typeName(Node)),
+                            @compile_error("unknown type to format: " ++ @type_name(Node)),
                     },
-                    .EnumLiteral => .{ .raw = @tagName(some) },
+                    .EnumLiteral => .{ .raw = @tag_name(some) },
                     .Bool => .{ .bool = some },
                     .Struct => switch (Some) {
                         DIFlags => .{ .di_flags = some },
                         Subprogram.DISPFlags => .{ .sp_flags = some },
-                        else => @compileError("unknown type to format: " ++ @typeName(Node)),
+                        else => @compile_error("unknown type to format: " ++ @type_name(Node)),
                     },
                     .Int, .ComptimeInt => .{ .u64 = some },
                     .Pointer => .{ .raw = some },
-                    else => @compileError("unknown type to format: " ++ @typeName(Node)),
+                    else => @compile_error("unknown type to format: " ++ @type_name(Node)),
                 } else switch (@typeInfo(Node)) {
                     .Optional, .Null => .none,
                     else => unreachable,
@@ -8179,14 +8179,14 @@ pub const Metadata = enum(u32) {
                     } },
                     .metadata => |metadata| if (value == .none) .none else node: {
                         const unwrapped = metadata.unwrap(formatter.builder);
-                        break :node if (@intFromEnum(unwrapped) >= first_local_metadata)
+                        break :node if (@int_from_enum(unwrapped) >= first_local_metadata)
                             .{ .local_metadata = .{
-                                .value = function.ptrConst(formatter.builder).debug_values[
-                                    @intFromEnum(unwrapped) - first_local_metadata
-                                ].toValue(),
+                                .value = function.ptr_const(formatter.builder).debug_values[
+                                    @int_from_enum(unwrapped) - first_local_metadata
+                                ].to_value(),
                                 .function = function,
                             } }
-                        else switch (try formatter.refUnwrapped(unwrapped)) {
+                        else switch (try formatter.ref_unwrapped(unwrapped)) {
                             .@"inline" => |node| .{ .local_inline = node },
                             .index => |node| .{ .local_index = node },
                             else => unreachable,
@@ -8197,17 +8197,17 @@ pub const Metadata = enum(u32) {
         }
         fn ref_unwrapped(formatter: *Formatter, node: Metadata) Allocator.Error!FormatData.Node {
             assert(node != .none);
-            assert(@intFromEnum(node) < first_forward_reference);
+            assert(@int_from_enum(node) < first_forward_reference);
             const builder = formatter.builder;
             const unwrapped_metadata = node.unwrap(builder);
-            const tag = formatter.builder.metadata_items.items(.tag)[@intFromEnum(unwrapped_metadata)];
+            const tag = formatter.builder.metadata_items.items(.tag)[@int_from_enum(unwrapped_metadata)];
             switch (tag) {
                 .none => unreachable,
                 .expression, .constant => return .{ .@"inline" = unwrapped_metadata },
                 else => {
-                    assert(!tag.isInline());
-                    const gop = try formatter.map.getOrPut(builder.gpa, .{ .metadata = unwrapped_metadata });
-                    return .{ .index = @intCast(gop.index) };
+                    assert(!tag.is_inline());
+                    const gop = try formatter.map.get_or_put(builder.gpa, .{ .metadata = unwrapped_metadata });
+                    return .{ .index = @int_cast(gop.index) };
                 },
             }
         }
@@ -8235,7 +8235,7 @@ pub const Metadata = enum(u32) {
             writer: anytype,
         ) !void {
             comptime var fmt_str: []const u8 = "";
-            const names = comptime std.meta.fieldNames(@TypeOf(nodes));
+            const names = comptime std.meta.field_names(@TypeOf(nodes));
             comptime var fields: [2 + names.len]std.builtin.Type.StructField = undefined;
             inline for (fields[0..2], .{ "distinct", "node" }) |*field, name| {
                 fmt_str = fmt_str ++ "{[" ++ name ++ "]s}";
@@ -8266,8 +8266,8 @@ pub const Metadata = enum(u32) {
                 .decls = &.{},
                 .is_tuple = false,
             } }) = undefined;
-            fmt_args.distinct = @tagName(distinct);
-            fmt_args.node = @tagName(node);
+            fmt_args.distinct = @tag_name(distinct);
+            fmt_args.node = @tag_name(node);
             inline for (names) |name| @field(fmt_args, name) = try formatter.fmt(
                 name ++ ": ",
                 @field(nodes, name),
@@ -8338,7 +8338,7 @@ pub fn init(options: Options) Allocator.Error!Builder {
     assert(try self.string("") == .empty);
 
     try self.strtab_string_indices.append(self.gpa, 0);
-    assert(try self.strtabString("") == .empty);
+    assert(try self.strtab_string("") == .empty);
 
     if (options.name.len > 0) self.source_filename = try self.string(options.name);
 
@@ -8348,89 +8348,89 @@ pub fn init(options: Options) Allocator.Error!Builder {
 
     {
         const static_len = @typeInfo(Type).Enum.fields.len - 1;
-        try self.type_map.ensureTotalCapacity(self.gpa, static_len);
-        try self.type_items.ensureTotalCapacity(self.gpa, static_len);
+        try self.type_map.ensure_total_capacity(self.gpa, static_len);
+        try self.type_items.ensure_total_capacity(self.gpa, static_len);
         inline for (@typeInfo(Type.Simple).Enum.fields) |simple_field| {
-            const result = self.getOrPutTypeNoExtraAssumeCapacity(
+            const result = self.get_or_put_type_no_extra_assume_capacity(
                 .{ .tag = .simple, .data = simple_field.value },
             );
             assert(result.new and result.type == @field(Type, simple_field.name));
         }
         inline for (.{ 1, 8, 16, 29, 32, 64, 80, 128 }) |bits|
-            assert(self.intTypeAssumeCapacity(bits) ==
-                @field(Type, std.fmt.comptimePrint("i{d}", .{bits})));
+            assert(self.int_type_assume_capacity(bits) ==
+                @field(Type, std.fmt.comptime_print("i{d}", .{bits})));
         inline for (.{ 0, 4 }) |addr_space_index| {
             const addr_space: AddrSpace = @enumFromInt(addr_space_index);
-            assert(self.ptrTypeAssumeCapacity(addr_space) ==
-                @field(Type, std.fmt.comptimePrint("ptr{ }", .{addr_space})));
+            assert(self.ptr_type_assume_capacity(addr_space) ==
+                @field(Type, std.fmt.comptime_print("ptr{ }", .{addr_space})));
         }
     }
 
     {
         try self.attributes_indices.append(self.gpa, 0);
         assert(try self.attrs(&.{}) == .none);
-        assert(try self.fnAttrs(&.{}) == .none);
+        assert(try self.fn_attrs(&.{}) == .none);
     }
 
-    assert(try self.intConst(.i1, 0) == .false);
-    assert(try self.intConst(.i1, 1) == .true);
-    assert(try self.intConst(.i32, 0) == .@"0");
-    assert(try self.intConst(.i32, 1) == .@"1");
-    assert(try self.noneConst(.token) == .none);
-    if (!self.strip) assert(try self.debugNone() == .none);
+    assert(try self.int_const(.i1, 0) == .false);
+    assert(try self.int_const(.i1, 1) == .true);
+    assert(try self.int_const(.i32, 0) == .@"0");
+    assert(try self.int_const(.i32, 1) == .@"1");
+    assert(try self.none_const(.token) == .none);
+    if (!self.strip) assert(try self.debug_none() == .none);
 
     try self.metadata_string_indices.append(self.gpa, 0);
-    assert(try self.metadataString("") == .none);
+    assert(try self.metadata_string("") == .none);
 
     return self;
 }
 
 pub fn clear_and_free(self: *Builder) void {
-    self.module_asm.clearAndFree(self.gpa);
+    self.module_asm.clear_and_free(self.gpa);
 
-    self.string_map.clearAndFree(self.gpa);
-    self.string_indices.clearAndFree(self.gpa);
-    self.string_bytes.clearAndFree(self.gpa);
+    self.string_map.clear_and_free(self.gpa);
+    self.string_indices.clear_and_free(self.gpa);
+    self.string_bytes.clear_and_free(self.gpa);
 
-    self.types.clearAndFree(self.gpa);
-    self.next_unique_type_id.clearAndFree(self.gpa);
-    self.type_map.clearAndFree(self.gpa);
-    self.type_items.clearAndFree(self.gpa);
-    self.type_extra.clearAndFree(self.gpa);
+    self.types.clear_and_free(self.gpa);
+    self.next_unique_type_id.clear_and_free(self.gpa);
+    self.type_map.clear_and_free(self.gpa);
+    self.type_items.clear_and_free(self.gpa);
+    self.type_extra.clear_and_free(self.gpa);
 
-    self.attributes.clearAndFree(self.gpa);
-    self.attributes_map.clearAndFree(self.gpa);
-    self.attributes_indices.clearAndFree(self.gpa);
-    self.attributes_extra.clearAndFree(self.gpa);
+    self.attributes.clear_and_free(self.gpa);
+    self.attributes_map.clear_and_free(self.gpa);
+    self.attributes_indices.clear_and_free(self.gpa);
+    self.attributes_extra.clear_and_free(self.gpa);
 
-    self.function_attributes_set.clearAndFree(self.gpa);
+    self.function_attributes_set.clear_and_free(self.gpa);
 
-    self.globals.clearAndFree(self.gpa);
-    self.next_unique_global_id.clearAndFree(self.gpa);
-    self.aliases.clearAndFree(self.gpa);
-    self.variables.clearAndFree(self.gpa);
+    self.globals.clear_and_free(self.gpa);
+    self.next_unique_global_id.clear_and_free(self.gpa);
+    self.aliases.clear_and_free(self.gpa);
+    self.variables.clear_and_free(self.gpa);
     for (self.functions.items) |*function| function.deinit(self.gpa);
-    self.functions.clearAndFree(self.gpa);
+    self.functions.clear_and_free(self.gpa);
 
-    self.strtab_string_map.clearAndFree(self.gpa);
-    self.strtab_string_indices.clearAndFree(self.gpa);
-    self.strtab_string_bytes.clearAndFree(self.gpa);
+    self.strtab_string_map.clear_and_free(self.gpa);
+    self.strtab_string_indices.clear_and_free(self.gpa);
+    self.strtab_string_bytes.clear_and_free(self.gpa);
 
-    self.constant_map.clearAndFree(self.gpa);
-    self.constant_items.shrinkAndFree(self.gpa, 0);
-    self.constant_extra.clearAndFree(self.gpa);
-    self.constant_limbs.clearAndFree(self.gpa);
+    self.constant_map.clear_and_free(self.gpa);
+    self.constant_items.shrink_and_free(self.gpa, 0);
+    self.constant_extra.clear_and_free(self.gpa);
+    self.constant_limbs.clear_and_free(self.gpa);
 
-    self.metadata_map.clearAndFree(self.gpa);
-    self.metadata_items.shrinkAndFree(self.gpa, 0);
-    self.metadata_extra.clearAndFree(self.gpa);
-    self.metadata_limbs.clearAndFree(self.gpa);
-    self.metadata_forward_references.clearAndFree(self.gpa);
-    self.metadata_named.clearAndFree(self.gpa);
+    self.metadata_map.clear_and_free(self.gpa);
+    self.metadata_items.shrink_and_free(self.gpa, 0);
+    self.metadata_extra.clear_and_free(self.gpa);
+    self.metadata_limbs.clear_and_free(self.gpa);
+    self.metadata_forward_references.clear_and_free(self.gpa);
+    self.metadata_named.clear_and_free(self.gpa);
 
-    self.metadata_string_map.clearAndFree(self.gpa);
-    self.metadata_string_indices.clearAndFree(self.gpa);
-    self.metadata_string_bytes.clearAndFree(self.gpa);
+    self.metadata_string_map.clear_and_free(self.gpa);
+    self.metadata_string_indices.clear_and_free(self.gpa);
+    self.metadata_string_bytes.clear_and_free(self.gpa);
 }
 
 pub fn deinit(self: *Builder) void {
@@ -8484,8 +8484,8 @@ pub fn deinit(self: *Builder) void {
 }
 
 pub fn set_module_asm(self: *Builder) std.ArrayListUnmanaged(u8).Writer {
-    self.module_asm.clearRetainingCapacity();
-    return self.appendModuleAsm();
+    self.module_asm.clear_retaining_capacity();
+    return self.append_module_asm();
 }
 
 pub fn append_module_asm(self: *Builder) std.ArrayListUnmanaged(u8).Writer {
@@ -8493,21 +8493,21 @@ pub fn append_module_asm(self: *Builder) std.ArrayListUnmanaged(u8).Writer {
 }
 
 pub fn finish_module_asm(self: *Builder) Allocator.Error!void {
-    if (self.module_asm.getLastOrNull()) |last| if (last != '\n')
+    if (self.module_asm.get_last_or_null()) |last| if (last != '\n')
         try self.module_asm.append(self.gpa, '\n');
 }
 
 pub fn string(self: *Builder, bytes: []const u8) Allocator.Error!String {
-    try self.string_bytes.ensureUnusedCapacity(self.gpa, bytes.len);
-    try self.string_indices.ensureUnusedCapacity(self.gpa, 1);
-    try self.string_map.ensureUnusedCapacity(self.gpa, 1);
+    try self.string_bytes.ensure_unused_capacity(self.gpa, bytes.len);
+    try self.string_indices.ensure_unused_capacity(self.gpa, 1);
+    try self.string_map.ensure_unused_capacity(self.gpa, 1);
 
-    const gop = self.string_map.getOrPutAssumeCapacityAdapted(bytes, String.Adapter{ .builder = self });
+    const gop = self.string_map.get_or_put_assume_capacity_adapted(bytes, String.Adapter{ .builder = self });
     if (!gop.found_existing) {
-        self.string_bytes.appendSliceAssumeCapacity(bytes);
-        self.string_indices.appendAssumeCapacity(@intCast(self.string_bytes.items.len));
+        self.string_bytes.append_slice_assume_capacity(bytes);
+        self.string_indices.append_assume_capacity(@int_cast(self.string_bytes.items.len));
     }
-    return String.fromIndex(gop.index);
+    return String.from_index(gop.index);
 }
 
 pub fn string_null(self: *Builder, bytes: [:0]const u8) Allocator.Error!String {
@@ -8515,39 +8515,39 @@ pub fn string_null(self: *Builder, bytes: [:0]const u8) Allocator.Error!String {
 }
 
 pub fn string_if_exists(self: *const Builder, bytes: []const u8) ?String {
-    return String.fromIndex(
-        self.string_map.getIndexAdapted(bytes, String.Adapter{ .builder = self }) orelse return null,
+    return String.from_index(
+        self.string_map.get_index_adapted(bytes, String.Adapter{ .builder = self }) orelse return null,
     );
 }
 
 pub fn fmt(self: *Builder, comptime fmt_str: []const u8, fmt_args: anytype) Allocator.Error!String {
-    try self.string_map.ensureUnusedCapacity(self.gpa, 1);
-    try self.string_bytes.ensureUnusedCapacity(self.gpa, @intCast(std.fmt.count(fmt_str, fmt_args)));
-    try self.string_indices.ensureUnusedCapacity(self.gpa, 1);
-    return self.fmtAssumeCapacity(fmt_str, fmt_args);
+    try self.string_map.ensure_unused_capacity(self.gpa, 1);
+    try self.string_bytes.ensure_unused_capacity(self.gpa, @int_cast(std.fmt.count(fmt_str, fmt_args)));
+    try self.string_indices.ensure_unused_capacity(self.gpa, 1);
+    return self.fmt_assume_capacity(fmt_str, fmt_args);
 }
 
 pub fn fmt_assume_capacity(self: *Builder, comptime fmt_str: []const u8, fmt_args: anytype) String {
     self.string_bytes.writer(undefined).print(fmt_str, fmt_args) catch unreachable;
-    return self.trailingStringAssumeCapacity();
+    return self.trailing_string_assume_capacity();
 }
 
 pub fn trailing_string(self: *Builder) Allocator.Error!String {
-    try self.string_indices.ensureUnusedCapacity(self.gpa, 1);
-    try self.string_map.ensureUnusedCapacity(self.gpa, 1);
-    return self.trailingStringAssumeCapacity();
+    try self.string_indices.ensure_unused_capacity(self.gpa, 1);
+    try self.string_map.ensure_unused_capacity(self.gpa, 1);
+    return self.trailing_string_assume_capacity();
 }
 
 pub fn trailing_string_assume_capacity(self: *Builder) String {
-    const start = self.string_indices.getLast();
+    const start = self.string_indices.get_last();
     const bytes: []const u8 = self.string_bytes.items[start..];
-    const gop = self.string_map.getOrPutAssumeCapacityAdapted(bytes, String.Adapter{ .builder = self });
+    const gop = self.string_map.get_or_put_assume_capacity_adapted(bytes, String.Adapter{ .builder = self });
     if (gop.found_existing) {
-        self.string_bytes.shrinkRetainingCapacity(start);
+        self.string_bytes.shrink_retaining_capacity(start);
     } else {
-        self.string_indices.appendAssumeCapacity(@intCast(self.string_bytes.items.len));
+        self.string_indices.append_assume_capacity(@int_cast(self.string_bytes.items.len));
     }
-    return String.fromIndex(gop.index);
+    return String.from_index(gop.index);
 }
 
 pub fn fn_type(
@@ -8556,20 +8556,20 @@ pub fn fn_type(
     params: []const Type,
     kind: Type.Function.Kind,
 ) Allocator.Error!Type {
-    try self.ensureUnusedTypeCapacity(1, Type.Function, params.len);
+    try self.ensure_unused_type_capacity(1, Type.Function, params.len);
     switch (kind) {
-        inline else => |comptime_kind| return self.fnTypeAssumeCapacity(ret, params, comptime_kind),
+        inline else => |comptime_kind| return self.fn_type_assume_capacity(ret, params, comptime_kind),
     }
 }
 
 pub fn int_type(self: *Builder, bits: u24) Allocator.Error!Type {
-    try self.ensureUnusedTypeCapacity(1, NoExtra, 0);
-    return self.intTypeAssumeCapacity(bits);
+    try self.ensure_unused_type_capacity(1, NoExtra, 0);
+    return self.int_type_assume_capacity(bits);
 }
 
 pub fn ptr_type(self: *Builder, addr_space: AddrSpace) Allocator.Error!Type {
-    try self.ensureUnusedTypeCapacity(1, NoExtra, 0);
-    return self.ptrTypeAssumeCapacity(addr_space);
+    try self.ensure_unused_type_capacity(1, NoExtra, 0);
+    return self.ptr_type_assume_capacity(addr_space);
 }
 
 pub fn vector_type(
@@ -8578,16 +8578,16 @@ pub fn vector_type(
     len: u32,
     child: Type,
 ) Allocator.Error!Type {
-    try self.ensureUnusedTypeCapacity(1, Type.Vector, 0);
+    try self.ensure_unused_type_capacity(1, Type.Vector, 0);
     switch (kind) {
-        inline else => |comptime_kind| return self.vectorTypeAssumeCapacity(comptime_kind, len, child),
+        inline else => |comptime_kind| return self.vector_type_assume_capacity(comptime_kind, len, child),
     }
 }
 
 pub fn array_type(self: *Builder, len: u64, child: Type) Allocator.Error!Type {
-    comptime assert(@sizeOf(Type.Array) >= @sizeOf(Type.Vector));
-    try self.ensureUnusedTypeCapacity(1, Type.Array, 0);
-    return self.arrayTypeAssumeCapacity(len, child);
+    comptime assert(@size_of(Type.Array) >= @size_of(Type.Vector));
+    try self.ensure_unused_type_capacity(1, Type.Array, 0);
+    return self.array_type_assume_capacity(len, child);
 }
 
 pub fn struct_type(
@@ -8595,23 +8595,23 @@ pub fn struct_type(
     kind: Type.Structure.Kind,
     fields: []const Type,
 ) Allocator.Error!Type {
-    try self.ensureUnusedTypeCapacity(1, Type.Structure, fields.len);
+    try self.ensure_unused_type_capacity(1, Type.Structure, fields.len);
     switch (kind) {
-        inline else => |comptime_kind| return self.structTypeAssumeCapacity(comptime_kind, fields),
+        inline else => |comptime_kind| return self.struct_type_assume_capacity(comptime_kind, fields),
     }
 }
 
 pub fn opaque_type(self: *Builder, name: String) Allocator.Error!Type {
-    try self.string_map.ensureUnusedCapacity(self.gpa, 1);
+    try self.string_map.ensure_unused_capacity(self.gpa, 1);
     if (name.slice(self)) |id| {
-        const count: usize = comptime std.fmt.count("{d}", .{std.math.maxInt(u32)});
-        try self.string_bytes.ensureUnusedCapacity(self.gpa, id.len + count);
+        const count: usize = comptime std.fmt.count("{d}", .{std.math.max_int(u32)});
+        try self.string_bytes.ensure_unused_capacity(self.gpa, id.len + count);
     }
-    try self.string_indices.ensureUnusedCapacity(self.gpa, 1);
-    try self.types.ensureUnusedCapacity(self.gpa, 1);
-    try self.next_unique_type_id.ensureUnusedCapacity(self.gpa, 1);
-    try self.ensureUnusedTypeCapacity(1, Type.NamedStructure, 0);
-    return self.opaqueTypeAssumeCapacity(name);
+    try self.string_indices.ensure_unused_capacity(self.gpa, 1);
+    try self.types.ensure_unused_capacity(self.gpa, 1);
+    try self.next_unique_type_id.ensure_unused_capacity(self.gpa, 1);
+    try self.ensure_unused_type_capacity(1, Type.NamedStructure, 0);
+    return self.opaque_type_assume_capacity(name);
 }
 
 pub fn named_type_set_body(
@@ -8619,15 +8619,15 @@ pub fn named_type_set_body(
     named_type: Type,
     body_type: Type,
 ) void {
-    const named_item = self.type_items.items[@intFromEnum(named_type)];
-    self.type_extra.items[named_item.data + std.meta.fieldIndex(Type.NamedStructure, "body").?] =
-        @intFromEnum(body_type);
+    const named_item = self.type_items.items[@int_from_enum(named_type)];
+    self.type_extra.items[named_item.data + std.meta.field_index(Type.NamedStructure, "body").?] =
+        @int_from_enum(body_type);
 }
 
 pub fn attr(self: *Builder, attribute: Attribute) Allocator.Error!Attribute.Index {
-    try self.attributes.ensureUnusedCapacity(self.gpa, 1);
+    try self.attributes.ensure_unused_capacity(self.gpa, 1);
 
-    const gop = self.attributes.getOrPutAssumeCapacity(attribute.toStorage());
+    const gop = self.attributes.get_or_put_assume_capacity(attribute.to_storage());
     if (!gop.found_existing) gop.value_ptr.* = {};
     return @enumFromInt(gop.index);
 }
@@ -8635,61 +8635,61 @@ pub fn attr(self: *Builder, attribute: Attribute) Allocator.Error!Attribute.Inde
 pub fn attrs(self: *Builder, attributes: []Attribute.Index) Allocator.Error!Attributes {
     std.sort.heap(Attribute.Index, attributes, self, struct {
         pub fn less_than(builder: *const Builder, lhs: Attribute.Index, rhs: Attribute.Index) bool {
-            const lhs_kind = lhs.getKind(builder);
-            const rhs_kind = rhs.getKind(builder);
+            const lhs_kind = lhs.get_kind(builder);
+            const rhs_kind = rhs.get_kind(builder);
             assert(lhs_kind != rhs_kind);
-            return @intFromEnum(lhs_kind) < @intFromEnum(rhs_kind);
+            return @int_from_enum(lhs_kind) < @int_from_enum(rhs_kind);
         }
-    }.lessThan);
-    return @enumFromInt(try self.attrGeneric(@ptrCast(attributes)));
+    }.less_than);
+    return @enumFromInt(try self.attr_generic(@ptr_cast(attributes)));
 }
 
 pub fn fn_attrs(self: *Builder, fn_attributes: []const Attributes) Allocator.Error!FunctionAttributes {
-    try self.function_attributes_set.ensureUnusedCapacity(self.gpa, 1);
-    const function_attributes: FunctionAttributes = @enumFromInt(try self.attrGeneric(@ptrCast(
-        fn_attributes[0..if (std.mem.lastIndexOfNone(Attributes, fn_attributes, &.{.none})) |last|
+    try self.function_attributes_set.ensure_unused_capacity(self.gpa, 1);
+    const function_attributes: FunctionAttributes = @enumFromInt(try self.attr_generic(@ptr_cast(
+        fn_attributes[0..if (std.mem.last_index_of_none(Attributes, fn_attributes, &.{.none})) |last|
             last + 1
         else
             0],
     )));
 
-    _ = self.function_attributes_set.getOrPutAssumeCapacity(function_attributes);
+    _ = self.function_attributes_set.get_or_put_assume_capacity(function_attributes);
     return function_attributes;
 }
 
 pub fn add_global(self: *Builder, name: StrtabString, global: Global) Allocator.Error!Global.Index {
-    assert(!name.isAnon());
-    try self.ensureUnusedTypeCapacity(1, NoExtra, 0);
-    try self.ensureUnusedGlobalCapacity(name);
-    return self.addGlobalAssumeCapacity(name, global);
+    assert(!name.is_anon());
+    try self.ensure_unused_type_capacity(1, NoExtra, 0);
+    try self.ensure_unused_global_capacity(name);
+    return self.add_global_assume_capacity(name, global);
 }
 
 pub fn add_global_assume_capacity(self: *Builder, name: StrtabString, global: Global) Global.Index {
-    _ = self.ptrTypeAssumeCapacity(global.addr_space);
+    _ = self.ptr_type_assume_capacity(global.addr_space);
     var id = name;
     if (name == .empty) {
         id = self.next_unnamed_global;
         assert(id != self.next_replaced_global);
-        self.next_unnamed_global = @enumFromInt(@intFromEnum(id) + 1);
+        self.next_unnamed_global = @enumFromInt(@int_from_enum(id) + 1);
     }
     while (true) {
-        const global_gop = self.globals.getOrPutAssumeCapacity(id);
+        const global_gop = self.globals.get_or_put_assume_capacity(id);
         if (!global_gop.found_existing) {
             global_gop.value_ptr.* = global;
             const global_index: Global.Index = @enumFromInt(global_gop.index);
-            global_index.updateDsoLocal(self);
+            global_index.update_dso_local(self);
             return global_index;
         }
 
-        const unique_gop = self.next_unique_global_id.getOrPutAssumeCapacity(name);
+        const unique_gop = self.next_unique_global_id.get_or_put_assume_capacity(name);
         if (!unique_gop.found_existing) unique_gop.value_ptr.* = 2;
-        id = self.strtabStringFmtAssumeCapacity("{s}.{d}", .{ name.slice(self).?, unique_gop.value_ptr.* });
+        id = self.strtab_string_fmt_assume_capacity("{s}.{d}", .{ name.slice(self).?, unique_gop.value_ptr.* });
         unique_gop.value_ptr.* += 1;
     }
 }
 
 pub fn get_global(self: *const Builder, name: StrtabString) ?Global.Index {
-    return @enumFromInt(self.globals.getIndex(name) orelse return null);
+    return @enumFromInt(self.globals.get_index(name) orelse return null);
 }
 
 pub fn add_alias(
@@ -8699,11 +8699,11 @@ pub fn add_alias(
     addr_space: AddrSpace,
     aliasee: Constant,
 ) Allocator.Error!Alias.Index {
-    assert(!name.isAnon());
-    try self.ensureUnusedTypeCapacity(1, NoExtra, 0);
-    try self.ensureUnusedGlobalCapacity(name);
-    try self.aliases.ensureUnusedCapacity(self.gpa, 1);
-    return self.addAliasAssumeCapacity(name, ty, addr_space, aliasee);
+    assert(!name.is_anon());
+    try self.ensure_unused_type_capacity(1, NoExtra, 0);
+    try self.ensure_unused_global_capacity(name);
+    try self.aliases.ensure_unused_capacity(self.gpa, 1);
+    return self.add_alias_assume_capacity(name, ty, addr_space, aliasee);
 }
 
 pub fn add_alias_assume_capacity(
@@ -8714,7 +8714,7 @@ pub fn add_alias_assume_capacity(
     aliasee: Constant,
 ) Alias.Index {
     const alias_index: Alias.Index = @enumFromInt(self.aliases.items.len);
-    self.aliases.appendAssumeCapacity(.{ .global = self.addGlobalAssumeCapacity(name, .{
+    self.aliases.append_assume_capacity(.{ .global = self.add_global_assume_capacity(name, .{
         .addr_space = addr_space,
         .type = ty,
         .kind = .{ .alias = alias_index },
@@ -8728,11 +8728,11 @@ pub fn add_variable(
     ty: Type,
     addr_space: AddrSpace,
 ) Allocator.Error!Variable.Index {
-    assert(!name.isAnon());
-    try self.ensureUnusedTypeCapacity(1, NoExtra, 0);
-    try self.ensureUnusedGlobalCapacity(name);
-    try self.variables.ensureUnusedCapacity(self.gpa, 1);
-    return self.addVariableAssumeCapacity(ty, name, addr_space);
+    assert(!name.is_anon());
+    try self.ensure_unused_type_capacity(1, NoExtra, 0);
+    try self.ensure_unused_global_capacity(name);
+    try self.variables.ensure_unused_capacity(self.gpa, 1);
+    return self.add_variable_assume_capacity(ty, name, addr_space);
 }
 
 pub fn add_variable_assume_capacity(
@@ -8742,7 +8742,7 @@ pub fn add_variable_assume_capacity(
     addr_space: AddrSpace,
 ) Variable.Index {
     const variable_index: Variable.Index = @enumFromInt(self.variables.items.len);
-    self.variables.appendAssumeCapacity(.{ .global = self.addGlobalAssumeCapacity(name, .{
+    self.variables.append_assume_capacity(.{ .global = self.add_global_assume_capacity(name, .{
         .addr_space = addr_space,
         .type = ty,
         .kind = .{ .variable = variable_index },
@@ -8756,11 +8756,11 @@ pub fn add_function(
     name: StrtabString,
     addr_space: AddrSpace,
 ) Allocator.Error!Function.Index {
-    assert(!name.isAnon());
-    try self.ensureUnusedTypeCapacity(1, NoExtra, 0);
-    try self.ensureUnusedGlobalCapacity(name);
-    try self.functions.ensureUnusedCapacity(self.gpa, 1);
-    return self.addFunctionAssumeCapacity(ty, name, addr_space);
+    assert(!name.is_anon());
+    try self.ensure_unused_type_capacity(1, NoExtra, 0);
+    try self.ensure_unused_global_capacity(name);
+    try self.functions.ensure_unused_capacity(self.gpa, 1);
+    return self.add_function_assume_capacity(ty, name, addr_space);
 }
 
 pub fn add_function_assume_capacity(
@@ -8769,10 +8769,10 @@ pub fn add_function_assume_capacity(
     name: StrtabString,
     addr_space: AddrSpace,
 ) Function.Index {
-    assert(ty.isFunction(self));
+    assert(ty.is_function(self));
     const function_index: Function.Index = @enumFromInt(self.functions.items.len);
-    self.functions.appendAssumeCapacity(.{
-        .global = self.addGlobalAssumeCapacity(name, .{
+    self.functions.append_assume_capacity(.{
+        .global = self.add_global_assume_capacity(name, .{
             .addr_space = addr_space,
             .type = ty,
             .kind = .{ .function = function_index },
@@ -8796,16 +8796,16 @@ pub fn get_intrinsic(
         },
     };
     var stack align(@max(@alignOf(std.heap.StackFallbackAllocator(0)), @alignOf(ExpectedContents))) =
-        std.heap.stackFallback(@sizeOf(ExpectedContents), self.gpa);
+        std.heap.stack_fallback(@size_of(ExpectedContents), self.gpa);
     const allocator = stack.get();
 
     const name = name: {
         const writer = self.strtab_string_bytes.writer(self.gpa);
-        try writer.print("llvm.{s}", .{@tagName(id)});
+        try writer.print("llvm.{s}", .{@tag_name(id)});
         for (overload) |ty| try writer.print(".{m}", .{ty.fmt(self)});
-        break :name try self.trailingStrtabString();
+        break :name try self.trailing_strtab_string();
     };
-    if (self.getGlobal(name)) |global| return global.ptrConst(self).kind.function;
+    if (self.get_global(name)) |global| return global.ptr_const(self).kind.function;
 
     const signature = Intrinsic.signatures.get(id);
     const param_types = try allocator.alloc(Type, signature.params.len);
@@ -8858,242 +8858,242 @@ pub fn get_intrinsic(
         param_type.* = switch (signature_param.kind) {
             .type, .overloaded => continue,
             .matches => |param_index| param_types[param_index],
-            .matches_scalar => |param_index| param_types[param_index].scalarType(self),
+            .matches_scalar => |param_index| param_types[param_index].scalar_type(self),
             .matches_changed_scalar => |info| try param_types[info.index]
-                .changeScalar(info.scalar, self),
+                .change_scalar(info.scalar, self),
         };
     }
 
-    const function_index = try self.addFunction(try self.fnType(switch (signature.ret_len) {
+    const function_index = try self.add_function(try self.fn_type(switch (signature.ret_len) {
         0 => .void,
         1 => param_types[0],
-        else => try self.structType(.normal, param_types[0..signature.ret_len]),
+        else => try self.struct_type(.normal, param_types[0..signature.ret_len]),
     }, param_types[signature.ret_len..], .normal), name, .default);
-    function_index.ptr(self).attributes = try self.fnAttrs(function_attributes);
+    function_index.ptr(self).attributes = try self.fn_attrs(function_attributes);
     return function_index;
 }
 
 pub fn int_const(self: *Builder, ty: Type, value: anytype) Allocator.Error!Constant {
     const int_value = switch (@typeInfo(@TypeOf(value))) {
         .Int, .ComptimeInt => value,
-        .Enum => @intFromEnum(value),
-        else => @compileError("intConst expected an integral value, got " ++ @typeName(@TypeOf(value))),
+        .Enum => @int_from_enum(value),
+        else => @compile_error("int_const expected an integral value, got " ++ @type_name(@TypeOf(value))),
     };
     var limbs: [
         switch (@typeInfo(@TypeOf(int_value))) {
-            .Int => |info| std.math.big.int.calcTwosCompLimbCount(info.bits),
-            .ComptimeInt => std.math.big.int.calcLimbLen(int_value),
+            .Int => |info| std.math.big.int.calc_twos_comp_limb_count(info.bits),
+            .ComptimeInt => std.math.big.int.calc_limb_len(int_value),
             else => unreachable,
         }
     ]std.math.big.Limb = undefined;
-    return self.bigIntConst(ty, std.math.big.int.Mutable.init(&limbs, int_value).toConst());
+    return self.big_int_const(ty, std.math.big.int.Mutable.init(&limbs, int_value).to_const());
 }
 
 pub fn int_value(self: *Builder, ty: Type, value: anytype) Allocator.Error!Value {
-    return (try self.intConst(ty, value)).toValue();
+    return (try self.int_const(ty, value)).to_value();
 }
 
 pub fn big_int_const(self: *Builder, ty: Type, value: std.math.big.int.Const) Allocator.Error!Constant {
-    try self.constant_map.ensureUnusedCapacity(self.gpa, 1);
-    try self.constant_items.ensureUnusedCapacity(self.gpa, 1);
-    try self.constant_limbs.ensureUnusedCapacity(self.gpa, Constant.Integer.limbs + value.limbs.len);
-    return self.bigIntConstAssumeCapacity(ty, value);
+    try self.constant_map.ensure_unused_capacity(self.gpa, 1);
+    try self.constant_items.ensure_unused_capacity(self.gpa, 1);
+    try self.constant_limbs.ensure_unused_capacity(self.gpa, Constant.Integer.limbs + value.limbs.len);
+    return self.big_int_const_assume_capacity(ty, value);
 }
 
 pub fn big_int_value(self: *Builder, ty: Type, value: std.math.big.int.Const) Allocator.Error!Value {
-    return (try self.bigIntConst(ty, value)).toValue();
+    return (try self.big_int_const(ty, value)).to_value();
 }
 
 pub fn fp_const(self: *Builder, ty: Type, comptime val: comptime_float) Allocator.Error!Constant {
     return switch (ty) {
-        .half => try self.halfConst(val),
-        .bfloat => try self.bfloatConst(val),
-        .float => try self.floatConst(val),
-        .double => try self.doubleConst(val),
-        .fp128 => try self.fp128Const(val),
-        .x86_fp80 => try self.x86_fp80Const(val),
-        .ppc_fp128 => try self.ppc_fp128Const(.{ val, -0.0 }),
+        .half => try self.half_const(val),
+        .bfloat => try self.bfloat_const(val),
+        .float => try self.float_const(val),
+        .double => try self.double_const(val),
+        .fp128 => try self.fp128_const(val),
+        .x86_fp80 => try self.x86_fp80_const(val),
+        .ppc_fp128 => try self.ppc_fp128_const(.{ val, -0.0 }),
         else => unreachable,
     };
 }
 
 pub fn fp_value(self: *Builder, ty: Type, comptime value: comptime_float) Allocator.Error!Value {
-    return (try self.fpConst(ty, value)).toValue();
+    return (try self.fp_const(ty, value)).to_value();
 }
 
 pub fn nan_const(self: *Builder, ty: Type) Allocator.Error!Constant {
     return switch (ty) {
-        .half => try self.halfConst(std.math.nan(f16)),
-        .bfloat => try self.bfloatConst(std.math.nan(f32)),
-        .float => try self.floatConst(std.math.nan(f32)),
-        .double => try self.doubleConst(std.math.nan(f64)),
-        .fp128 => try self.fp128Const(std.math.nan(f128)),
-        .x86_fp80 => try self.x86_fp80Const(std.math.nan(f80)),
-        .ppc_fp128 => try self.ppc_fp128Const(.{std.math.nan(f64)} ** 2),
+        .half => try self.half_const(std.math.nan(f16)),
+        .bfloat => try self.bfloat_const(std.math.nan(f32)),
+        .float => try self.float_const(std.math.nan(f32)),
+        .double => try self.double_const(std.math.nan(f64)),
+        .fp128 => try self.fp128_const(std.math.nan(f128)),
+        .x86_fp80 => try self.x86_fp80_const(std.math.nan(f80)),
+        .ppc_fp128 => try self.ppc_fp128_const(.{std.math.nan(f64)} ** 2),
         else => unreachable,
     };
 }
 
 pub fn nan_value(self: *Builder, ty: Type) Allocator.Error!Value {
-    return (try self.nanConst(ty)).toValue();
+    return (try self.nan_const(ty)).to_value();
 }
 
 pub fn half_const(self: *Builder, val: f16) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, NoExtra, 0);
-    return self.halfConstAssumeCapacity(val);
+    try self.ensure_unused_constant_capacity(1, NoExtra, 0);
+    return self.half_const_assume_capacity(val);
 }
 
 pub fn half_value(self: *Builder, ty: Type, value: f16) Allocator.Error!Value {
-    return (try self.halfConst(ty, value)).toValue();
+    return (try self.half_const(ty, value)).to_value();
 }
 
 pub fn bfloat_const(self: *Builder, val: f32) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, NoExtra, 0);
-    return self.bfloatConstAssumeCapacity(val);
+    try self.ensure_unused_constant_capacity(1, NoExtra, 0);
+    return self.bfloat_const_assume_capacity(val);
 }
 
 pub fn bfloat_value(self: *Builder, ty: Type, value: f32) Allocator.Error!Value {
-    return (try self.bfloatConst(ty, value)).toValue();
+    return (try self.bfloat_const(ty, value)).to_value();
 }
 
 pub fn float_const(self: *Builder, val: f32) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, NoExtra, 0);
-    return self.floatConstAssumeCapacity(val);
+    try self.ensure_unused_constant_capacity(1, NoExtra, 0);
+    return self.float_const_assume_capacity(val);
 }
 
 pub fn float_value(self: *Builder, ty: Type, value: f32) Allocator.Error!Value {
-    return (try self.floatConst(ty, value)).toValue();
+    return (try self.float_const(ty, value)).to_value();
 }
 
 pub fn double_const(self: *Builder, val: f64) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Double, 0);
-    return self.doubleConstAssumeCapacity(val);
+    try self.ensure_unused_constant_capacity(1, Constant.Double, 0);
+    return self.double_const_assume_capacity(val);
 }
 
 pub fn double_value(self: *Builder, ty: Type, value: f64) Allocator.Error!Value {
-    return (try self.doubleConst(ty, value)).toValue();
+    return (try self.double_const(ty, value)).to_value();
 }
 
 pub fn fp128_const(self: *Builder, val: f128) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Fp128, 0);
-    return self.fp128ConstAssumeCapacity(val);
+    try self.ensure_unused_constant_capacity(1, Constant.Fp128, 0);
+    return self.fp128_const_assume_capacity(val);
 }
 
 pub fn fp128_value(self: *Builder, ty: Type, value: f128) Allocator.Error!Value {
-    return (try self.fp128Const(ty, value)).toValue();
+    return (try self.fp128_const(ty, value)).to_value();
 }
 
 pub fn x86_fp80_const(self: *Builder, val: f80) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Fp80, 0);
-    return self.x86_fp80ConstAssumeCapacity(val);
+    try self.ensure_unused_constant_capacity(1, Constant.Fp80, 0);
+    return self.x86_fp80_const_assume_capacity(val);
 }
 
 pub fn x86_fp80_value(self: *Builder, ty: Type, value: f80) Allocator.Error!Value {
-    return (try self.x86_fp80Const(ty, value)).toValue();
+    return (try self.x86_fp80_const(ty, value)).to_value();
 }
 
 pub fn ppc_fp128_const(self: *Builder, val: [2]f64) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Fp128, 0);
-    return self.ppc_fp128ConstAssumeCapacity(val);
+    try self.ensure_unused_constant_capacity(1, Constant.Fp128, 0);
+    return self.ppc_fp128_const_assume_capacity(val);
 }
 
 pub fn ppc_fp128_value(self: *Builder, ty: Type, value: [2]f64) Allocator.Error!Value {
-    return (try self.ppc_fp128Const(ty, value)).toValue();
+    return (try self.ppc_fp128_const(ty, value)).to_value();
 }
 
 pub fn null_const(self: *Builder, ty: Type) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, NoExtra, 0);
-    return self.nullConstAssumeCapacity(ty);
+    try self.ensure_unused_constant_capacity(1, NoExtra, 0);
+    return self.null_const_assume_capacity(ty);
 }
 
 pub fn null_value(self: *Builder, ty: Type) Allocator.Error!Value {
-    return (try self.nullConst(ty)).toValue();
+    return (try self.null_const(ty)).to_value();
 }
 
 pub fn none_const(self: *Builder, ty: Type) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, NoExtra, 0);
-    return self.noneConstAssumeCapacity(ty);
+    try self.ensure_unused_constant_capacity(1, NoExtra, 0);
+    return self.none_const_assume_capacity(ty);
 }
 
 pub fn none_value(self: *Builder, ty: Type) Allocator.Error!Value {
-    return (try self.noneConst(ty)).toValue();
+    return (try self.none_const(ty)).to_value();
 }
 
 pub fn struct_const(self: *Builder, ty: Type, vals: []const Constant) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Aggregate, vals.len);
-    return self.structConstAssumeCapacity(ty, vals);
+    try self.ensure_unused_constant_capacity(1, Constant.Aggregate, vals.len);
+    return self.struct_const_assume_capacity(ty, vals);
 }
 
 pub fn struct_value(self: *Builder, ty: Type, vals: []const Constant) Allocator.Error!Value {
-    return (try self.structConst(ty, vals)).toValue();
+    return (try self.struct_const(ty, vals)).to_value();
 }
 
 pub fn array_const(self: *Builder, ty: Type, vals: []const Constant) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Aggregate, vals.len);
-    return self.arrayConstAssumeCapacity(ty, vals);
+    try self.ensure_unused_constant_capacity(1, Constant.Aggregate, vals.len);
+    return self.array_const_assume_capacity(ty, vals);
 }
 
 pub fn array_value(self: *Builder, ty: Type, vals: []const Constant) Allocator.Error!Value {
-    return (try self.arrayConst(ty, vals)).toValue();
+    return (try self.array_const(ty, vals)).to_value();
 }
 
 pub fn string_const(self: *Builder, val: String) Allocator.Error!Constant {
-    try self.ensureUnusedTypeCapacity(1, Type.Array, 0);
-    try self.ensureUnusedConstantCapacity(1, NoExtra, 0);
-    return self.stringConstAssumeCapacity(val);
+    try self.ensure_unused_type_capacity(1, Type.Array, 0);
+    try self.ensure_unused_constant_capacity(1, NoExtra, 0);
+    return self.string_const_assume_capacity(val);
 }
 
 pub fn string_value(self: *Builder, val: String) Allocator.Error!Value {
-    return (try self.stringConst(val)).toValue();
+    return (try self.string_const(val)).to_value();
 }
 
 pub fn vector_const(self: *Builder, ty: Type, vals: []const Constant) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Aggregate, vals.len);
-    return self.vectorConstAssumeCapacity(ty, vals);
+    try self.ensure_unused_constant_capacity(1, Constant.Aggregate, vals.len);
+    return self.vector_const_assume_capacity(ty, vals);
 }
 
 pub fn vector_value(self: *Builder, ty: Type, vals: []const Constant) Allocator.Error!Value {
-    return (try self.vectorConst(ty, vals)).toValue();
+    return (try self.vector_const(ty, vals)).to_value();
 }
 
 pub fn splat_const(self: *Builder, ty: Type, val: Constant) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Splat, 0);
-    return self.splatConstAssumeCapacity(ty, val);
+    try self.ensure_unused_constant_capacity(1, Constant.Splat, 0);
+    return self.splat_const_assume_capacity(ty, val);
 }
 
 pub fn splat_value(self: *Builder, ty: Type, val: Constant) Allocator.Error!Value {
-    return (try self.splatConst(ty, val)).toValue();
+    return (try self.splat_const(ty, val)).to_value();
 }
 
 pub fn zero_init_const(self: *Builder, ty: Type) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Fp128, 0);
-    try self.constant_limbs.ensureUnusedCapacity(
+    try self.ensure_unused_constant_capacity(1, Constant.Fp128, 0);
+    try self.constant_limbs.ensure_unused_capacity(
         self.gpa,
-        Constant.Integer.limbs + comptime std.math.big.int.calcLimbLen(0),
+        Constant.Integer.limbs + comptime std.math.big.int.calc_limb_len(0),
     );
-    return self.zeroInitConstAssumeCapacity(ty);
+    return self.zero_init_const_assume_capacity(ty);
 }
 
 pub fn zero_init_value(self: *Builder, ty: Type) Allocator.Error!Value {
-    return (try self.zeroInitConst(ty)).toValue();
+    return (try self.zero_init_const(ty)).to_value();
 }
 
 pub fn undef_const(self: *Builder, ty: Type) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, NoExtra, 0);
-    return self.undefConstAssumeCapacity(ty);
+    try self.ensure_unused_constant_capacity(1, NoExtra, 0);
+    return self.undef_const_assume_capacity(ty);
 }
 
 pub fn undef_value(self: *Builder, ty: Type) Allocator.Error!Value {
-    return (try self.undefConst(ty)).toValue();
+    return (try self.undef_const(ty)).to_value();
 }
 
 pub fn poison_const(self: *Builder, ty: Type) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, NoExtra, 0);
-    return self.poisonConstAssumeCapacity(ty);
+    try self.ensure_unused_constant_capacity(1, NoExtra, 0);
+    return self.poison_const_assume_capacity(ty);
 }
 
 pub fn poison_value(self: *Builder, ty: Type) Allocator.Error!Value {
-    return (try self.poisonConst(ty)).toValue();
+    return (try self.poison_const(ty)).to_value();
 }
 
 pub fn block_addr_const(
@@ -9101,8 +9101,8 @@ pub fn block_addr_const(
     function: Function.Index,
     block: Function.Block.Index,
 ) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.BlockAddress, 0);
-    return self.blockAddrConstAssumeCapacity(function, block);
+    try self.ensure_unused_constant_capacity(1, Constant.BlockAddress, 0);
+    return self.block_addr_const_assume_capacity(function, block);
 }
 
 pub fn block_addr_value(
@@ -9110,25 +9110,25 @@ pub fn block_addr_value(
     function: Function.Index,
     block: Function.Block.Index,
 ) Allocator.Error!Value {
-    return (try self.blockAddrConst(function, block)).toValue();
+    return (try self.block_addr_const(function, block)).to_value();
 }
 
 pub fn dso_local_equivalent_const(self: *Builder, function: Function.Index) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, NoExtra, 0);
-    return self.dsoLocalEquivalentConstAssumeCapacity(function);
+    try self.ensure_unused_constant_capacity(1, NoExtra, 0);
+    return self.dso_local_equivalent_const_assume_capacity(function);
 }
 
 pub fn dso_local_equivalent_value(self: *Builder, function: Function.Index) Allocator.Error!Value {
-    return (try self.dsoLocalEquivalentConst(function)).toValue();
+    return (try self.dso_local_equivalent_const(function)).to_value();
 }
 
 pub fn no_cfi_const(self: *Builder, function: Function.Index) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, NoExtra, 0);
-    return self.noCfiConstAssumeCapacity(function);
+    try self.ensure_unused_constant_capacity(1, NoExtra, 0);
+    return self.no_cfi_const_assume_capacity(function);
 }
 
 pub fn no_cfi_value(self: *Builder, function: Function.Index) Allocator.Error!Value {
-    return (try self.noCfiConst(function)).toValue();
+    return (try self.no_cfi_const(function)).to_value();
 }
 
 pub fn conv_const(
@@ -9136,8 +9136,8 @@ pub fn conv_const(
     val: Constant,
     ty: Type,
 ) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Cast, 0);
-    return self.convConstAssumeCapacity(val, ty);
+    try self.ensure_unused_constant_capacity(1, Constant.Cast, 0);
+    return self.conv_const_assume_capacity(val, ty);
 }
 
 pub fn conv_value(
@@ -9145,16 +9145,16 @@ pub fn conv_value(
     val: Constant,
     ty: Type,
 ) Allocator.Error!Value {
-    return (try self.convConst(val, ty)).toValue();
+    return (try self.conv_const(val, ty)).to_value();
 }
 
 pub fn cast_const(self: *Builder, tag: Constant.Tag, val: Constant, ty: Type) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Cast, 0);
-    return self.castConstAssumeCapacity(tag, val, ty);
+    try self.ensure_unused_constant_capacity(1, Constant.Cast, 0);
+    return self.cast_const_assume_capacity(tag, val, ty);
 }
 
 pub fn cast_value(self: *Builder, tag: Constant.Tag, val: Constant, ty: Type) Allocator.Error!Value {
-    return (try self.castConst(tag, val, ty)).toValue();
+    return (try self.cast_const(tag, val, ty)).to_value();
 }
 
 pub fn gep_const(
@@ -9165,9 +9165,9 @@ pub fn gep_const(
     inrange: ?u16,
     indices: []const Constant,
 ) Allocator.Error!Constant {
-    try self.ensureUnusedTypeCapacity(1, Type.Vector, 0);
-    try self.ensureUnusedConstantCapacity(1, Constant.GetElementPtr, indices.len);
-    return self.gepConstAssumeCapacity(kind, ty, base, inrange, indices);
+    try self.ensure_unused_type_capacity(1, Type.Vector, 0);
+    try self.ensure_unused_constant_capacity(1, Constant.GetElementPtr, indices.len);
+    return self.gep_const_assume_capacity(kind, ty, base, inrange, indices);
 }
 
 pub fn gep_value(
@@ -9178,7 +9178,7 @@ pub fn gep_value(
     inrange: ?u16,
     indices: []const Constant,
 ) Allocator.Error!Value {
-    return (try self.gepConst(kind, ty, base, inrange, indices)).toValue();
+    return (try self.gep_const(kind, ty, base, inrange, indices)).to_value();
 }
 
 pub fn bin_const(
@@ -9187,12 +9187,12 @@ pub fn bin_const(
     lhs: Constant,
     rhs: Constant,
 ) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Binary, 0);
-    return self.binConstAssumeCapacity(tag, lhs, rhs);
+    try self.ensure_unused_constant_capacity(1, Constant.Binary, 0);
+    return self.bin_const_assume_capacity(tag, lhs, rhs);
 }
 
 pub fn bin_value(self: *Builder, tag: Constant.Tag, lhs: Constant, rhs: Constant) Allocator.Error!Value {
-    return (try self.binConst(tag, lhs, rhs)).toValue();
+    return (try self.bin_const(tag, lhs, rhs)).to_value();
 }
 
 pub fn asm_const(
@@ -9202,8 +9202,8 @@ pub fn asm_const(
     assembly: String,
     constraints: String,
 ) Allocator.Error!Constant {
-    try self.ensureUnusedConstantCapacity(1, Constant.Assembly, 0);
-    return self.asmConstAssumeCapacity(ty, info, assembly, constraints);
+    try self.ensure_unused_constant_capacity(1, Constant.Assembly, 0);
+    return self.asm_const_assume_capacity(ty, info, assembly, constraints);
 }
 
 pub fn asm_value(
@@ -9213,15 +9213,15 @@ pub fn asm_value(
     assembly: String,
     constraints: String,
 ) Allocator.Error!Value {
-    return (try self.asmConst(ty, info, assembly, constraints)).toValue();
+    return (try self.asm_const(ty, info, assembly, constraints)).to_value();
 }
 
 pub fn dump(self: *Builder) void {
-    self.print(std.io.getStdErr().writer()) catch {};
+    self.print(std.io.get_std_err().writer()) catch {};
 }
 
 pub fn print_to_file(self: *Builder, path: []const u8) Allocator.Error!bool {
-    var file = std.fs.cwd().createFile(path, .{}) catch |err| {
+    var file = std.fs.cwd().create_file(path, .{}) catch |err| {
         log.err("failed printing LLVM module to \"{s}\": {s}", .{ path, @errorName(err) });
         return false;
     };
@@ -9234,8 +9234,8 @@ pub fn print_to_file(self: *Builder, path: []const u8) Allocator.Error!bool {
 }
 
 pub fn print(self: *Builder, writer: anytype) (@TypeOf(writer).Error || Allocator.Error)!void {
-    var bw = std.io.bufferedWriter(writer);
-    try self.printUnbuffered(bw.writer());
+    var bw = std.io.buffered_writer(writer);
+    try self.print_unbuffered(bw.writer());
     try bw.flush();
 }
 
@@ -9268,7 +9268,7 @@ pub fn print_unbuffered(
     self: *Builder,
     backing_writer: anytype,
 ) (@TypeOf(backing_writer).Error || Allocator.Error)!void {
-    const writer_with_errors = writerWithErrors(backing_writer, Allocator.Error);
+    const writer_with_errors = writer_with_errors(backing_writer, Allocator.Error);
     const writer = writer_with_errors.writer();
 
     var need_newline = false;
@@ -9276,7 +9276,7 @@ pub fn print_unbuffered(
     defer metadata_formatter.map.deinit(self.gpa);
 
     if (self.source_filename != .none or self.data_layout != .none or self.target_triple != .none) {
-        if (need_newline) try writer.writeByte('\n') else need_newline = true;
+        if (need_newline) try writer.write_byte('\n') else need_newline = true;
         if (self.source_filename != .none) try writer.print(
             \\; ModuleID = '{s}'
             \\source_filename = {"}
@@ -9293,17 +9293,17 @@ pub fn print_unbuffered(
     }
 
     if (self.module_asm.items.len > 0) {
-        if (need_newline) try writer.writeByte('\n') else need_newline = true;
-        var line_it = std.mem.tokenizeScalar(u8, self.module_asm.items, '\n');
+        if (need_newline) try writer.write_byte('\n') else need_newline = true;
+        var line_it = std.mem.tokenize_scalar(u8, self.module_asm.items, '\n');
         while (line_it.next()) |line| {
-            try writer.writeAll("module asm ");
-            try printEscapedString(line, .always_quote, writer);
-            try writer.writeByte('\n');
+            try writer.write_all("module asm ");
+            try print_escaped_string(line, .always_quote, writer);
+            try writer.write_byte('\n');
         }
     }
 
     if (self.types.count() > 0) {
-        if (need_newline) try writer.writeByte('\n') else need_newline = true;
+        if (need_newline) try writer.write_byte('\n') else need_newline = true;
         for (self.types.keys(), self.types.values()) |id, ty| try writer.print(
             \\%{} = type {}
             \\
@@ -9311,10 +9311,10 @@ pub fn print_unbuffered(
     }
 
     if (self.variables.items.len > 0) {
-        if (need_newline) try writer.writeByte('\n') else need_newline = true;
+        if (need_newline) try writer.write_byte('\n') else need_newline = true;
         for (self.variables.items) |variable| {
-            if (variable.global.getReplacement(self) != .none) continue;
-            const global = variable.global.ptrConst(self);
+            if (variable.global.get_replacement(self) != .none) continue;
+            const global = variable.global.ptr_const(self);
             metadata_formatter.need_comma = true;
             defer metadata_formatter.need_comma = undefined;
             try writer.print(
@@ -9322,7 +9322,7 @@ pub fn print_unbuffered(
                 \\
             , .{
                 variable.global.fmt(self),
-                Linkage.fmtOptional(if (global.linkage == .external and
+                Linkage.fmt_optional(if (global.linkage == .external and
                     variable.init != .no_init) null else global.linkage),
                 global.preemption,
                 global.visibility,
@@ -9331,7 +9331,7 @@ pub fn print_unbuffered(
                 global.unnamed_addr,
                 global.addr_space,
                 global.externally_initialized,
-                @tagName(variable.mutability),
+                @tag_name(variable.mutability),
                 global.type.fmt(self),
                 variable.init.fmt(self),
                 variable.alignment,
@@ -9341,10 +9341,10 @@ pub fn print_unbuffered(
     }
 
     if (self.aliases.items.len > 0) {
-        if (need_newline) try writer.writeByte('\n') else need_newline = true;
+        if (need_newline) try writer.write_byte('\n') else need_newline = true;
         for (self.aliases.items) |alias| {
-            if (alias.global.getReplacement(self) != .none) continue;
-            const global = alias.global.ptrConst(self);
+            if (alias.global.get_replacement(self) != .none) continue;
+            const global = alias.global.ptr_const(self);
             metadata_formatter.need_comma = true;
             defer metadata_formatter.need_comma = undefined;
             try writer.print(
@@ -9369,11 +9369,11 @@ pub fn print_unbuffered(
     defer attribute_groups.deinit(self.gpa);
 
     for (0.., self.functions.items) |function_i, function| {
-        if (function.global.getReplacement(self) != .none) continue;
-        if (need_newline) try writer.writeByte('\n') else need_newline = true;
+        if (function.global.get_replacement(self) != .none) continue;
+        if (need_newline) try writer.write_byte('\n') else need_newline = true;
         const function_index: Function.Index = @enumFromInt(function_i);
-        const global = function.global.ptrConst(self);
-        const params_len = global.type.functionParameters(self).len;
+        const global = function.global.ptr_const(self);
+        const params_len = global.type.function_parameters(self).len;
         const function_attributes = function.attributes.func(self);
         if (function_attributes != .none) try writer.print(
             \\; Function Attrs:{}
@@ -9389,32 +9389,32 @@ pub fn print_unbuffered(
             global.dll_storage_class,
             function.call_conv,
             function.attributes.ret(self).fmt(self),
-            global.type.functionReturn(self).fmt(self),
+            global.type.function_return(self).fmt(self),
             function.global.fmt(self),
         });
         for (0..params_len) |arg| {
-            if (arg > 0) try writer.writeAll(", ");
+            if (arg > 0) try writer.write_all(", ");
             try writer.print(
                 \\{%}{"}
             , .{
-                global.type.functionParameters(self)[arg].fmt(self),
+                global.type.function_parameters(self)[arg].fmt(self),
                 function.attributes.param(arg, self).fmt(self),
             });
             if (function.instructions.len > 0)
-                try writer.print(" {}", .{function.arg(@intCast(arg)).fmt(function_index, self)})
+                try writer.print(" {}", .{function.arg(@int_cast(arg)).fmt(function_index, self)})
             else
                 try writer.print(" %{d}", .{arg});
         }
-        switch (global.type.functionKind(self)) {
+        switch (global.type.function_kind(self)) {
             .normal => {},
             .vararg => {
-                if (params_len > 0) try writer.writeAll(", ");
-                try writer.writeAll("...");
+                if (params_len > 0) try writer.write_all(", ");
+                try writer.write_all("...");
             },
         }
         try writer.print("){}{ }", .{ global.unnamed_addr, global.addr_space });
         if (function_attributes != .none) try writer.print(" #{d}", .{
-            (try attribute_groups.getOrPutValue(self.gpa, function_attributes, {})).index,
+            (try attribute_groups.get_or_put_value(self.gpa, function_attributes, {})).index,
         });
         {
             metadata_formatter.need_comma = false;
@@ -9426,18 +9426,18 @@ pub fn print_unbuffered(
         }
         if (function.instructions.len > 0) {
             var block_incoming_len: u32 = undefined;
-            try writer.writeAll(" {\n");
+            try writer.write_all(" {\n");
             var maybe_dbg_index: ?u32 = null;
             for (params_len..function.instructions.len) |instruction_i| {
                 const instruction_index: Function.Instruction.Index = @enumFromInt(instruction_i);
-                const instruction = function.instructions.get(@intFromEnum(instruction_index));
+                const instruction = function.instructions.get(@int_from_enum(instruction_index));
                 if (function.debug_locations.get(instruction_index)) |debug_location| switch (debug_location) {
                     .no_location => maybe_dbg_index = null,
                     .location => |location| {
-                        const gop = try metadata_formatter.map.getOrPut(self.gpa, .{
+                        const gop = try metadata_formatter.map.get_or_put(self.gpa, .{
                             .debug_location = location,
                         });
-                        maybe_dbg_index = @intCast(gop.index);
+                        maybe_dbg_index = @int_cast(gop.index);
                     },
                 };
                 switch (instruction.tag) {
@@ -9523,10 +9523,10 @@ pub fn print_unbuffered(
                     .urem,
                     .xor,
                     => |tag| {
-                        const extra = function.extraData(Function.Instruction.Binary, instruction.data);
+                        const extra = function.extra_data(Function.Instruction.Binary, instruction.data);
                         try writer.print("  %{} = {s} {%}, {}", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.lhs.fmt(function_index, self),
                             extra.rhs.fmt(function_index, self),
                         });
@@ -9545,10 +9545,10 @@ pub fn print_unbuffered(
                     .uitofp,
                     .zext,
                     => |tag| {
-                        const extra = function.extraData(Function.Instruction.Cast, instruction.data);
+                        const extra = function.extra_data(Function.Instruction.Cast, instruction.data);
                         try writer.print("  %{} = {s} {%} to {%}", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.val.fmt(function_index, self),
                             extra.type.fmt(self),
                         });
@@ -9556,10 +9556,10 @@ pub fn print_unbuffered(
                     .alloca,
                     .@"alloca inalloca",
                     => |tag| {
-                        const extra = function.extraData(Function.Instruction.Alloca, instruction.data);
+                        const extra = function.extra_data(Function.Instruction.Alloca, instruction.data);
                         try writer.print("  %{} = {s} {%}{,%}{, }{, }", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.type.fmt(self),
                             Value.fmt(switch (extra.len) {
                                 .@"1" => .none,
@@ -9572,12 +9572,12 @@ pub fn print_unbuffered(
                     .arg => unreachable,
                     .atomicrmw => |tag| {
                         const extra =
-                            function.extraData(Function.Instruction.AtomicRmw, instruction.data);
+                            function.extra_data(Function.Instruction.AtomicRmw, instruction.data);
                         try writer.print("  %{} = {s}{ } {s} {%}, {%}{ }{ }{, }", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.info.access_kind,
-                            @tagName(extra.info.atomic_rmw_operation),
+                            @tag_name(extra.info.atomic_rmw_operation),
                             extra.ptr.fmt(function_index, self),
                             extra.val.fmt(function_index, self),
                             extra.info.sync_scope,
@@ -9588,23 +9588,23 @@ pub fn print_unbuffered(
                     .block => {
                         block_incoming_len = instruction.data;
                         const name = instruction_index.name(&function);
-                        if (@intFromEnum(instruction_index) > params_len)
-                            try writer.writeByte('\n');
+                        if (@int_from_enum(instruction_index) > params_len)
+                            try writer.write_byte('\n');
                         try writer.print("{}:\n", .{name.fmt(self)});
                         continue;
                     },
                     .br => |tag| {
                         const target: Function.Block.Index = @enumFromInt(instruction.data);
                         try writer.print("  {s} {%}", .{
-                            @tagName(tag), target.toInst(&function).fmt(function_index, self),
+                            @tag_name(tag), target.to_inst(&function).fmt(function_index, self),
                         });
                     },
                     .br_cond => {
-                        const extra = function.extraData(Function.Instruction.BrCond, instruction.data);
+                        const extra = function.extra_data(Function.Instruction.BrCond, instruction.data);
                         try writer.print("  br {%}, {%}, {%}", .{
                             extra.cond.fmt(function_index, self),
-                            extra.then.toInst(&function).fmt(function_index, self),
-                            extra.@"else".toInst(&function).fmt(function_index, self),
+                            extra.then.to_inst(&function).fmt(function_index, self),
+                            extra.@"else".to_inst(&function).fmt(function_index, self),
                         });
                     },
                     .call,
@@ -9617,10 +9617,10 @@ pub fn print_unbuffered(
                     .@"tail call fast",
                     => |tag| {
                         var extra =
-                            function.extraDataTrail(Function.Instruction.Call, instruction.data);
+                            function.extra_data_trail(Function.Instruction.Call, instruction.data);
                         const args = extra.trail.next(extra.data.args_len, Value, &function);
-                        try writer.writeAll("  ");
-                        const ret_ty = extra.data.ty.functionReturn(self);
+                        try writer.write_all("  ");
+                        const ret_ty = extra.data.ty.function_return(self);
                         switch (ret_ty) {
                             .void => {},
                             else => try writer.print("%{} = ", .{
@@ -9629,30 +9629,30 @@ pub fn print_unbuffered(
                             .none => unreachable,
                         }
                         try writer.print("{s}{}{}{} {%} {}(", .{
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.data.info.call_conv,
                             extra.data.attributes.ret(self).fmt(self),
-                            extra.data.callee.typeOf(function_index, self).pointerAddrSpace(self),
-                            switch (extra.data.ty.functionKind(self)) {
+                            extra.data.callee.type_of(function_index, self).pointer_addr_space(self),
+                            switch (extra.data.ty.function_kind(self)) {
                                 .normal => ret_ty,
                                 .vararg => extra.data.ty,
                             }.fmt(self),
                             extra.data.callee.fmt(function_index, self),
                         });
                         for (0.., args) |arg_index, arg| {
-                            if (arg_index > 0) try writer.writeAll(", ");
+                            if (arg_index > 0) try writer.write_all(", ");
                             metadata_formatter.need_comma = false;
                             defer metadata_formatter.need_comma = undefined;
                             try writer.print("{%}{}{}", .{
-                                arg.typeOf(function_index, self).fmt(self),
+                                arg.type_of(function_index, self).fmt(self),
                                 extra.data.attributes.param(arg_index, self).fmt(self),
-                                try metadata_formatter.fmtLocal(" ", arg, function_index),
+                                try metadata_formatter.fmt_local(" ", arg, function_index),
                             });
                         }
-                        try writer.writeByte(')');
+                        try writer.write_byte(')');
                         const call_function_attributes = extra.data.attributes.func(self);
                         if (call_function_attributes != .none) try writer.print(" #{d}", .{
-                            (try attribute_groups.getOrPutValue(
+                            (try attribute_groups.get_or_put_value(
                                 self.gpa,
                                 call_function_attributes,
                                 {},
@@ -9663,10 +9663,10 @@ pub fn print_unbuffered(
                     .@"cmpxchg weak",
                     => |tag| {
                         const extra =
-                            function.extraData(Function.Instruction.CmpXchg, instruction.data);
+                            function.extra_data(Function.Instruction.CmpXchg, instruction.data);
                         try writer.print("  %{} = {s}{ } {%}, {%}, {%}{ }{ }{ }{, }", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.info.access_kind,
                             extra.ptr.fmt(function_index, self),
                             extra.cmp.fmt(function_index, self),
@@ -9679,31 +9679,31 @@ pub fn print_unbuffered(
                     },
                     .extractelement => |tag| {
                         const extra =
-                            function.extraData(Function.Instruction.ExtractElement, instruction.data);
+                            function.extra_data(Function.Instruction.ExtractElement, instruction.data);
                         try writer.print("  %{} = {s} {%}, {%}", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.val.fmt(function_index, self),
                             extra.index.fmt(function_index, self),
                         });
                     },
                     .extractvalue => |tag| {
-                        var extra = function.extraDataTrail(
+                        var extra = function.extra_data_trail(
                             Function.Instruction.ExtractValue,
                             instruction.data,
                         );
                         const indices = extra.trail.next(extra.data.indices_len, u32, &function);
                         try writer.print("  %{} = {s} {%}", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.data.val.fmt(function_index, self),
                         });
                         for (indices) |index| try writer.print(", {d}", .{index});
                     },
                     .fence => |tag| {
-                        const info: MemoryAccessInfo = @bitCast(instruction.data);
+                        const info: MemoryAccessInfo = @bit_cast(instruction.data);
                         try writer.print("  {s}{ }{ }", .{
-                            @tagName(tag),
+                            @tag_name(tag),
                             info.sync_scope,
                             info.success_ordering,
                         });
@@ -9714,21 +9714,21 @@ pub fn print_unbuffered(
                         const val: Value = @enumFromInt(instruction.data);
                         try writer.print("  %{} = {s} {%}", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             val.fmt(function_index, self),
                         });
                     },
                     .getelementptr,
                     .@"getelementptr inbounds",
                     => |tag| {
-                        var extra = function.extraDataTrail(
+                        var extra = function.extra_data_trail(
                             Function.Instruction.GetElementPtr,
                             instruction.data,
                         );
                         const indices = extra.trail.next(extra.data.indices_len, Value, &function);
                         try writer.print("  %{} = {s} {%}, {%}", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.data.type.fmt(self),
                             extra.data.base.fmt(function_index, self),
                         });
@@ -9738,10 +9738,10 @@ pub fn print_unbuffered(
                     },
                     .insertelement => |tag| {
                         const extra =
-                            function.extraData(Function.Instruction.InsertElement, instruction.data);
+                            function.extra_data(Function.Instruction.InsertElement, instruction.data);
                         try writer.print("  %{} = {s} {%}, {%}, {%}", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.val.fmt(function_index, self),
                             extra.elem.fmt(function_index, self),
                             extra.index.fmt(function_index, self),
@@ -9749,11 +9749,11 @@ pub fn print_unbuffered(
                     },
                     .insertvalue => |tag| {
                         var extra =
-                            function.extraDataTrail(Function.Instruction.InsertValue, instruction.data);
+                            function.extra_data_trail(Function.Instruction.InsertValue, instruction.data);
                         const indices = extra.trail.next(extra.data.indices_len, u32, &function);
                         try writer.print("  %{} = {s} {%}, {%}", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.data.val.fmt(function_index, self),
                             extra.data.elem.fmt(function_index, self),
                         });
@@ -9762,10 +9762,10 @@ pub fn print_unbuffered(
                     .load,
                     .@"load atomic",
                     => |tag| {
-                        const extra = function.extraData(Function.Instruction.Load, instruction.data);
+                        const extra = function.extra_data(Function.Instruction.Load, instruction.data);
                         try writer.print("  %{} = {s}{ } {%}, {%}{ }{ }{, }", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.info.access_kind,
                             extra.type.fmt(self),
                             extra.ptr.fmt(function_index, self),
@@ -9777,40 +9777,40 @@ pub fn print_unbuffered(
                     .phi,
                     .@"phi fast",
                     => |tag| {
-                        var extra = function.extraDataTrail(Function.Instruction.Phi, instruction.data);
+                        var extra = function.extra_data_trail(Function.Instruction.Phi, instruction.data);
                         const vals = extra.trail.next(block_incoming_len, Value, &function);
                         const blocks =
                             extra.trail.next(block_incoming_len, Function.Block.Index, &function);
                         try writer.print("  %{} = {s} {%} ", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
-                            vals[0].typeOf(function_index, self).fmt(self),
+                            @tag_name(tag),
+                            vals[0].type_of(function_index, self).fmt(self),
                         });
                         for (0.., vals, blocks) |incoming_index, incoming_val, incoming_block| {
-                            if (incoming_index > 0) try writer.writeAll(", ");
+                            if (incoming_index > 0) try writer.write_all(", ");
                             try writer.print("[ {}, {} ]", .{
                                 incoming_val.fmt(function_index, self),
-                                incoming_block.toInst(&function).fmt(function_index, self),
+                                incoming_block.to_inst(&function).fmt(function_index, self),
                             });
                         }
                     },
                     .ret => |tag| {
                         const val: Value = @enumFromInt(instruction.data);
                         try writer.print("  {s} {%}", .{
-                            @tagName(tag),
+                            @tag_name(tag),
                             val.fmt(function_index, self),
                         });
                     },
                     .@"ret void",
                     .@"unreachable",
-                    => |tag| try writer.print("  {s}", .{@tagName(tag)}),
+                    => |tag| try writer.print("  {s}", .{@tag_name(tag)}),
                     .select,
                     .@"select fast",
                     => |tag| {
-                        const extra = function.extraData(Function.Instruction.Select, instruction.data);
+                        const extra = function.extra_data(Function.Instruction.Select, instruction.data);
                         try writer.print("  %{} = {s} {%}, {%}, {%}", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.cond.fmt(function_index, self),
                             extra.lhs.fmt(function_index, self),
                             extra.rhs.fmt(function_index, self),
@@ -9818,10 +9818,10 @@ pub fn print_unbuffered(
                     },
                     .shufflevector => |tag| {
                         const extra =
-                            function.extraData(Function.Instruction.ShuffleVector, instruction.data);
+                            function.extra_data(Function.Instruction.ShuffleVector, instruction.data);
                         try writer.print("  %{} = {s} {%}, {%}, {%}", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.lhs.fmt(function_index, self),
                             extra.rhs.fmt(function_index, self),
                             extra.mask.fmt(function_index, self),
@@ -9830,9 +9830,9 @@ pub fn print_unbuffered(
                     .store,
                     .@"store atomic",
                     => |tag| {
-                        const extra = function.extraData(Function.Instruction.Store, instruction.data);
+                        const extra = function.extra_data(Function.Instruction.Store, instruction.data);
                         try writer.print("  {s}{ } {%}, {%}{ }{ }{, }", .{
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.info.access_kind,
                             extra.val.fmt(function_index, self),
                             extra.ptr.fmt(function_index, self),
@@ -9843,29 +9843,29 @@ pub fn print_unbuffered(
                     },
                     .@"switch" => |tag| {
                         var extra =
-                            function.extraDataTrail(Function.Instruction.Switch, instruction.data);
+                            function.extra_data_trail(Function.Instruction.Switch, instruction.data);
                         const vals = extra.trail.next(extra.data.cases_len, Constant, &function);
                         const blocks =
                             extra.trail.next(extra.data.cases_len, Function.Block.Index, &function);
                         try writer.print("  {s} {%}, {%} [\n", .{
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.data.val.fmt(function_index, self),
-                            extra.data.default.toInst(&function).fmt(function_index, self),
+                            extra.data.default.to_inst(&function).fmt(function_index, self),
                         });
                         for (vals, blocks) |case_val, case_block| try writer.print(
                             "    {%}, {%}\n",
                             .{
                                 case_val.fmt(self),
-                                case_block.toInst(&function).fmt(function_index, self),
+                                case_block.to_inst(&function).fmt(function_index, self),
                             },
                         );
-                        try writer.writeAll("  ]");
+                        try writer.write_all("  ]");
                     },
                     .va_arg => |tag| {
-                        const extra = function.extraData(Function.Instruction.VaArg, instruction.data);
+                        const extra = function.extra_data(Function.Instruction.VaArg, instruction.data);
                         try writer.print("  %{} = {s} {%}, {%}", .{
                             instruction_index.name(&function).fmt(self),
-                            @tagName(tag),
+                            @tag_name(tag),
                             extra.list.fmt(function_index, self),
                             extra.type.fmt(self),
                         });
@@ -9874,15 +9874,15 @@ pub fn print_unbuffered(
 
                 if (maybe_dbg_index) |dbg_index| {
                     try writer.print(", !dbg !{}\n", .{dbg_index});
-                } else try writer.writeByte('\n');
+                } else try writer.write_byte('\n');
             }
-            try writer.writeByte('}');
+            try writer.write_byte('}');
         }
-        try writer.writeByte('\n');
+        try writer.write_byte('\n');
     }
 
     if (attribute_groups.count() > 0) {
-        if (need_newline) try writer.writeByte('\n') else need_newline = true;
+        if (need_newline) try writer.write_byte('\n') else need_newline = true;
         for (0.., attribute_groups.keys()) |attribute_group_index, attribute_group|
             try writer.print(
                 \\attributes #{d} = {{{#"} }}
@@ -9891,22 +9891,22 @@ pub fn print_unbuffered(
     }
 
     if (self.metadata_named.count() > 0) {
-        if (need_newline) try writer.writeByte('\n') else need_newline = true;
+        if (need_newline) try writer.write_byte('\n') else need_newline = true;
         for (self.metadata_named.keys(), self.metadata_named.values()) |name, data| {
             const elements: []const Metadata =
-                @ptrCast(self.metadata_extra.items[data.index..][0..data.len]);
-            try writer.writeByte('!');
-            try printEscapedString(name.slice(self), .quote_unless_valid_identifier, writer);
-            try writer.writeAll(" = !{");
+                @ptr_cast(self.metadata_extra.items[data.index..][0..data.len]);
+            try writer.write_byte('!');
+            try print_escaped_string(name.slice(self), .quote_unless_valid_identifier, writer);
+            try writer.write_all(" = !{");
             metadata_formatter.need_comma = false;
             defer metadata_formatter.need_comma = undefined;
             for (elements) |element| try writer.print("{}", .{try metadata_formatter.fmt("", element)});
-            try writer.writeAll("}\n");
+            try writer.write_all("}\n");
         }
     }
 
     if (metadata_formatter.map.count() > 0) {
-        if (need_newline) try writer.writeByte('\n') else need_newline = true;
+        if (need_newline) try writer.write_byte('\n') else need_newline = true;
         var metadata_index: usize = 0;
         while (metadata_index < metadata_formatter.map.count()) : (metadata_index += 1) {
             @setEvalBranchQuota(10_000);
@@ -9926,13 +9926,13 @@ pub fn print_unbuffered(
                     }, writer);
                     continue;
                 },
-                .metadata => |metadata| self.metadata_items.get(@intFromEnum(metadata)),
+                .metadata => |metadata| self.metadata_items.get(@int_from_enum(metadata)),
             };
 
             switch (metadata_item.tag) {
                 .none, .expression, .constant => unreachable,
                 .file => {
-                    const extra = self.metadataExtraData(Metadata.File, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.File, metadata_item.data);
                     try metadata_formatter.specialized(.@"!", .DIFile, .{
                         .filename = extra.filename,
                         .directory = extra.directory,
@@ -9944,7 +9944,7 @@ pub fn print_unbuffered(
                 .compile_unit,
                 .@"compile_unit optimized",
                 => |kind| {
-                    const extra = self.metadataExtraData(Metadata.CompileUnit, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.CompileUnit, metadata_item.data);
                     try metadata_formatter.specialized(.@"distinct !", .DICompileUnit, .{
                         .language = .DW_LANG_C99,
                         .file = extra.file,
@@ -9981,7 +9981,7 @@ pub fn print_unbuffered(
                 .@"subprogram optimized definition",
                 .@"subprogram optimized local definition",
                 => |kind| {
-                    const extra = self.metadataExtraData(Metadata.Subprogram, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.Subprogram, metadata_item.data);
                     try metadata_formatter.specialized(.@"distinct !", .DISubprogram, .{
                         .name = extra.name,
                         .linkageName = extra.linkage_name,
@@ -9994,8 +9994,8 @@ pub fn print_unbuffered(
                         .virtualIndex = null,
                         .thisAdjustment = null,
                         .flags = extra.di_flags,
-                        .spFlags = @as(Metadata.Subprogram.DISPFlags, @bitCast(@as(u32, @as(u3, @intCast(
-                            @intFromEnum(kind) - @intFromEnum(Metadata.Tag.subprogram),
+                        .spFlags = @as(Metadata.Subprogram.DISPFlags, @bit_cast(@as(u32, @as(u3, @int_cast(
+                            @int_from_enum(kind) - @int_from_enum(Metadata.Tag.subprogram),
                         ))) << 2)),
                         .unit = extra.compile_unit,
                         .templateParams = null,
@@ -10007,7 +10007,7 @@ pub fn print_unbuffered(
                     }, writer);
                 },
                 .lexical_block => {
-                    const extra = self.metadataExtraData(Metadata.LexicalBlock, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.LexicalBlock, metadata_item.data);
                     try metadata_formatter.specialized(.@"distinct !", .DILexicalBlock, .{
                         .scope = extra.scope,
                         .file = extra.file,
@@ -10016,7 +10016,7 @@ pub fn print_unbuffered(
                     }, writer);
                 },
                 .location => {
-                    const extra = self.metadataExtraData(Metadata.Location, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.Location, metadata_item.data);
                     try metadata_formatter.specialized(.@"!", .DILocation, .{
                         .line = extra.line,
                         .column = extra.column,
@@ -10030,14 +10030,14 @@ pub fn print_unbuffered(
                 .basic_signed_type,
                 .basic_float_type,
                 => |kind| {
-                    const extra = self.metadataExtraData(Metadata.BasicType, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.BasicType, metadata_item.data);
                     try metadata_formatter.specialized(.@"!", .DIBasicType, .{
                         .tag = null,
                         .name = switch (extra.name) {
                             .none => null,
                             else => extra.name,
                         },
-                        .size = extra.bitSize(),
+                        .size = extra.bit_size(),
                         .@"align" = null,
                         .encoding = @as(enum {
                             DW_ATE_boolean,
@@ -10060,7 +10060,7 @@ pub fn print_unbuffered(
                 .composite_array_type,
                 .composite_vector_type,
                 => |kind| {
-                    const extra = self.metadataExtraData(Metadata.CompositeType, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.CompositeType, metadata_item.data);
                     try metadata_formatter.specialized(.@"!", .DICompositeType, .{
                         .tag = @as(enum {
                             DW_TAG_structure_type,
@@ -10082,8 +10082,8 @@ pub fn print_unbuffered(
                         .file = null,
                         .line = null,
                         .baseType = extra.underlying_type,
-                        .size = extra.bitSize(),
-                        .@"align" = extra.bitAlign(),
+                        .size = extra.bit_size(),
+                        .@"align" = extra.bit_align(),
                         .offset = null,
                         .flags = null,
                         .elements = extra.fields_tuple,
@@ -10102,7 +10102,7 @@ pub fn print_unbuffered(
                 .derived_pointer_type,
                 .derived_member_type,
                 => |kind| {
-                    const extra = self.metadataExtraData(Metadata.DerivedType, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.DerivedType, metadata_item.data);
                     try metadata_formatter.specialized(.@"!", .DIDerivedType, .{
                         .tag = @as(enum {
                             DW_TAG_pointer_type,
@@ -10120,20 +10120,20 @@ pub fn print_unbuffered(
                         .file = null,
                         .line = null,
                         .baseType = extra.underlying_type,
-                        .size = extra.bitSize(),
-                        .@"align" = extra.bitAlign(),
-                        .offset = switch (extra.bitOffset()) {
+                        .size = extra.bit_size(),
+                        .@"align" = extra.bit_align(),
+                        .offset = switch (extra.bit_offset()) {
                             0 => null,
                             else => |bit_offset| bit_offset,
                         },
                         .flags = null,
-                        .extraData = null,
+                        .extra_data = null,
                         .dwarfAddressSpace = null,
                         .annotations = null,
                     }, writer);
                 },
                 .subroutine_type => {
-                    const extra = self.metadataExtraData(Metadata.SubroutineType, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.SubroutineType, metadata_item.data);
                     try metadata_formatter.specialized(.@"!", .DISubroutineType, .{
                         .flags = null,
                         .cc = null,
@@ -10144,24 +10144,24 @@ pub fn print_unbuffered(
                 .enumerator_signed_positive,
                 .enumerator_signed_negative,
                 => |kind| {
-                    const extra = self.metadataExtraData(Metadata.Enumerator, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.Enumerator, metadata_item.data);
 
                     const ExpectedContents = extern struct {
-                        const expected_limbs = @divExact(512, @bitSizeOf(std.math.big.Limb));
+                        const expected_limbs = @div_exact(512, @bitSizeOf(std.math.big.Limb));
                         string: [
                             (std.math.big.int.Const{
                                 .limbs = &([1]std.math.big.Limb{
-                                    std.math.maxInt(std.math.big.Limb),
+                                    std.math.max_int(std.math.big.Limb),
                                 } ** expected_limbs),
                                 .positive = false,
-                            }).sizeInBaseUpperBound(10)
+                            }).size_in_base_upper_bound(10)
                         ]u8,
                         limbs: [
-                            std.math.big.int.calcToStringLimbsBufferLen(expected_limbs, 10)
+                            std.math.big.int.calc_to_string_limbs_buffer_len(expected_limbs, 10)
                         ]std.math.big.Limb,
                     };
                     var stack align(@alignOf(ExpectedContents)) =
-                        std.heap.stackFallback(@sizeOf(ExpectedContents), self.gpa);
+                        std.heap.stack_fallback(@size_of(ExpectedContents), self.gpa);
                     const allocator = stack.get();
 
                     const limbs = self.metadata_limbs.items[extra.limbs_index..][0..extra.limbs_len];
@@ -10175,13 +10175,13 @@ pub fn print_unbuffered(
                             else => unreachable,
                         },
                     };
-                    const str = try bigint.toStringAlloc(allocator, 10, undefined);
+                    const str = try bigint.to_string_alloc(allocator, 10, undefined);
                     defer allocator.free(str);
 
                     try metadata_formatter.specialized(.@"!", .DIEnumerator, .{
                         .name = extra.name,
                         .value = str,
-                        .isUnsigned = switch (kind) {
+                        .is_unsigned = switch (kind) {
                             .enumerator_unsigned => true,
                             .enumerator_signed_positive,
                             .enumerator_signed_negative,
@@ -10191,25 +10191,25 @@ pub fn print_unbuffered(
                     }, writer);
                 },
                 .subrange => {
-                    const extra = self.metadataExtraData(Metadata.Subrange, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.Subrange, metadata_item.data);
                     try metadata_formatter.specialized(.@"!", .DISubrange, .{
                         .count = extra.count,
-                        .lowerBound = extra.lower_bound,
-                        .upperBound = null,
+                        .lower_bound = extra.lower_bound,
+                        .upper_bound = null,
                         .stride = null,
                     }, writer);
                 },
                 .tuple => {
-                    var extra = self.metadataExtraDataTrail(Metadata.Tuple, metadata_item.data);
+                    var extra = self.metadata_extra_data_trail(Metadata.Tuple, metadata_item.data);
                     const elements = extra.trail.next(extra.data.elements_len, Metadata, self);
-                    try writer.writeAll("!{");
+                    try writer.write_all("!{");
                     for (elements) |element| try writer.print("{[element]%}", .{
                         .element = try metadata_formatter.fmt("", element),
                     });
-                    try writer.writeAll("}\n");
+                    try writer.write_all("}\n");
                 },
                 .module_flag => {
-                    const extra = self.metadataExtraData(Metadata.ModuleFlag, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.ModuleFlag, metadata_item.data);
                     try writer.print("!{{{[behavior]%}{[name]%}{[constant]%}}}\n", .{
                         .behavior = try metadata_formatter.fmt("", extra.behavior),
                         .name = try metadata_formatter.fmt("", extra.name),
@@ -10217,7 +10217,7 @@ pub fn print_unbuffered(
                     });
                 },
                 .local_var => {
-                    const extra = self.metadataExtraData(Metadata.LocalVar, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.LocalVar, metadata_item.data);
                     try metadata_formatter.specialized(.@"!", .DILocalVariable, .{
                         .name = extra.name,
                         .arg = null,
@@ -10231,7 +10231,7 @@ pub fn print_unbuffered(
                     }, writer);
                 },
                 .parameter => {
-                    const extra = self.metadataExtraData(Metadata.Parameter, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.Parameter, metadata_item.data);
                     try metadata_formatter.specialized(.@"!", .DILocalVariable, .{
                         .name = extra.name,
                         .arg = extra.arg_no,
@@ -10247,7 +10247,7 @@ pub fn print_unbuffered(
                 .global_var,
                 .@"global_var local",
                 => |kind| {
-                    const extra = self.metadataExtraData(Metadata.GlobalVar, metadata_item.data);
+                    const extra = self.metadata_extra_data(Metadata.GlobalVar, metadata_item.data);
                     try metadata_formatter.specialized(.@"distinct !", .DIGlobalVariable, .{
                         .name = extra.name,
                         .linkageName = extra.linkage_name,
@@ -10255,7 +10255,7 @@ pub fn print_unbuffered(
                         .file = extra.file,
                         .line = extra.line,
                         .type = extra.ty,
-                        .isLocal = switch (kind) {
+                        .is_local = switch (kind) {
                             .global_var => false,
                             .@"global_var local" => true,
                             else => unreachable,
@@ -10269,7 +10269,7 @@ pub fn print_unbuffered(
                 },
                 .global_var_expression => {
                     const extra =
-                        self.metadataExtraData(Metadata.GlobalVarExpression, metadata_item.data);
+                        self.metadata_extra_data(Metadata.GlobalVarExpression, metadata_item.data);
                     try metadata_formatter.specialized(.@"!", .DIGlobalVariableExpression, .{
                         .@"var" = extra.variable,
                         .expr = extra.expression,
@@ -10299,26 +10299,26 @@ fn print_escaped_string(
 ) @TypeOf(writer).Error!void {
     const need_quotes = switch (quotes) {
         .always_quote => true,
-        .quote_unless_valid_identifier => !isValidIdentifier(slice),
+        .quote_unless_valid_identifier => !is_valid_identifier(slice),
     };
-    if (need_quotes) try writer.writeByte('"');
+    if (need_quotes) try writer.write_byte('"');
     for (slice) |byte| switch (byte) {
-        '\\' => try writer.writeAll("\\\\"),
-        ' '...'"' - 1, '"' + 1...'\\' - 1, '\\' + 1...'~' => try writer.writeByte(byte),
+        '\\' => try writer.write_all("\\\\"),
+        ' '...'"' - 1, '"' + 1...'\\' - 1, '\\' + 1...'~' => try writer.write_byte(byte),
         else => try writer.print("\\{X:0>2}", .{byte}),
     };
-    if (need_quotes) try writer.writeByte('"');
+    if (need_quotes) try writer.write_byte('"');
 }
 
 fn ensure_unused_global_capacity(self: *Builder, name: StrtabString) Allocator.Error!void {
-    try self.strtab_string_map.ensureUnusedCapacity(self.gpa, 1);
+    try self.strtab_string_map.ensure_unused_capacity(self.gpa, 1);
     if (name.slice(self)) |id| {
-        const count: usize = comptime std.fmt.count("{d}", .{std.math.maxInt(u32)});
-        try self.strtab_string_bytes.ensureUnusedCapacity(self.gpa, id.len + count);
+        const count: usize = comptime std.fmt.count("{d}", .{std.math.max_int(u32)});
+        try self.strtab_string_bytes.ensure_unused_capacity(self.gpa, id.len + count);
     }
-    try self.strtab_string_indices.ensureUnusedCapacity(self.gpa, 1);
-    try self.globals.ensureUnusedCapacity(self.gpa, 1);
-    try self.next_unique_global_id.ensureUnusedCapacity(self.gpa, 1);
+    try self.strtab_string_indices.ensure_unused_capacity(self.gpa, 1);
+    try self.globals.ensure_unused_capacity(self.gpa, 1);
+    try self.next_unique_global_id.ensure_unused_capacity(self.gpa, 1);
 }
 
 fn fn_type_assume_capacity(
@@ -10335,47 +10335,47 @@ fn fn_type_assume_capacity(
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: Key) u32 {
-            var hasher = std.hash.Wyhash.init(comptime std.hash.uint32(@intFromEnum(tag)));
-            hasher.update(std.mem.asBytes(&key.ret));
-            hasher.update(std.mem.sliceAsBytes(key.params));
+            var hasher = std.hash.Wyhash.init(comptime std.hash.uint32(@int_from_enum(tag)));
+            hasher.update(std.mem.as_bytes(&key.ret));
+            hasher.update(std.mem.slice_as_bytes(key.params));
             return @truncate(hasher.final());
         }
         pub fn eql(ctx: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
             const rhs_data = ctx.builder.type_items.items[rhs_index];
             if (rhs_data.tag != tag) return false;
-            var rhs_extra = ctx.builder.typeExtraDataTrail(Type.Function, rhs_data.data);
+            var rhs_extra = ctx.builder.type_extra_data_trail(Type.Function, rhs_data.data);
             const rhs_params = rhs_extra.trail.next(rhs_extra.data.params_len, Type, ctx.builder);
             return lhs_key.ret == rhs_extra.data.ret and std.mem.eql(Type, lhs_key.params, rhs_params);
         }
     };
-    const gop = self.type_map.getOrPutAssumeCapacityAdapted(
+    const gop = self.type_map.get_or_put_assume_capacity_adapted(
         Key{ .ret = ret, .params = params },
         Adapter{ .builder = self },
     );
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.type_items.appendAssumeCapacity(.{
+        self.type_items.append_assume_capacity(.{
             .tag = tag,
-            .data = self.addTypeExtraAssumeCapacity(Type.Function{
+            .data = self.add_type_extra_assume_capacity(Type.Function{
                 .ret = ret,
-                .params_len = @intCast(params.len),
+                .params_len = @int_cast(params.len),
             }),
         });
-        self.type_extra.appendSliceAssumeCapacity(@ptrCast(params));
+        self.type_extra.append_slice_assume_capacity(@ptr_cast(params));
     }
     return @enumFromInt(gop.index);
 }
 
 fn int_type_assume_capacity(self: *Builder, bits: u24) Type {
     assert(bits > 0);
-    const result = self.getOrPutTypeNoExtraAssumeCapacity(.{ .tag = .integer, .data = bits });
+    const result = self.get_or_put_type_no_extra_assume_capacity(.{ .tag = .integer, .data = bits });
     return result.type;
 }
 
 fn ptr_type_assume_capacity(self: *Builder, addr_space: AddrSpace) Type {
-    const result = self.getOrPutTypeNoExtraAssumeCapacity(
-        .{ .tag = .pointer, .data = @intFromEnum(addr_space) },
+    const result = self.get_or_put_type_no_extra_assume_capacity(
+        .{ .tag = .pointer, .data = @int_from_enum(addr_space) },
     );
     return result.type;
 }
@@ -10386,7 +10386,7 @@ fn vector_type_assume_capacity(
     len: u32,
     child: Type,
 ) Type {
-    assert(child.isFloatingPoint() or child.isInteger(self) or child.isPointer(self));
+    assert(child.is_floating_point() or child.is_integer(self) or child.is_pointer(self));
     const tag: Type.Tag = switch (kind) {
         .normal => .vector,
         .scalable => .scalable_vector,
@@ -10395,24 +10395,24 @@ fn vector_type_assume_capacity(
         builder: *const Builder,
         pub fn hash(_: @This(), key: Type.Vector) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                comptime std.hash.uint32(@intFromEnum(tag)),
-                std.mem.asBytes(&key),
+                comptime std.hash.uint32(@int_from_enum(tag)),
+                std.mem.as_bytes(&key),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: Type.Vector, _: void, rhs_index: usize) bool {
             const rhs_data = ctx.builder.type_items.items[rhs_index];
             return rhs_data.tag == tag and
-                std.meta.eql(lhs_key, ctx.builder.typeExtraData(Type.Vector, rhs_data.data));
+                std.meta.eql(lhs_key, ctx.builder.type_extra_data(Type.Vector, rhs_data.data));
         }
     };
     const data = Type.Vector{ .len = len, .child = child };
-    const gop = self.type_map.getOrPutAssumeCapacityAdapted(data, Adapter{ .builder = self });
+    const gop = self.type_map.get_or_put_assume_capacity_adapted(data, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.type_items.appendAssumeCapacity(.{
+        self.type_items.append_assume_capacity(.{
             .tag = tag,
-            .data = self.addTypeExtraAssumeCapacity(data),
+            .data = self.add_type_extra_assume_capacity(data),
         });
     }
     return @enumFromInt(gop.index);
@@ -10424,24 +10424,24 @@ fn array_type_assume_capacity(self: *Builder, len: u64, child: Type) Type {
             builder: *const Builder,
             pub fn hash(_: @This(), key: Type.Vector) u32 {
                 return @truncate(std.hash.Wyhash.hash(
-                    comptime std.hash.uint32(@intFromEnum(Type.Tag.small_array)),
-                    std.mem.asBytes(&key),
+                    comptime std.hash.uint32(@int_from_enum(Type.Tag.small_array)),
+                    std.mem.as_bytes(&key),
                 ));
             }
             pub fn eql(ctx: @This(), lhs_key: Type.Vector, _: void, rhs_index: usize) bool {
                 const rhs_data = ctx.builder.type_items.items[rhs_index];
                 return rhs_data.tag == .small_array and
-                    std.meta.eql(lhs_key, ctx.builder.typeExtraData(Type.Vector, rhs_data.data));
+                    std.meta.eql(lhs_key, ctx.builder.type_extra_data(Type.Vector, rhs_data.data));
             }
         };
         const data = Type.Vector{ .len = small_len, .child = child };
-        const gop = self.type_map.getOrPutAssumeCapacityAdapted(data, Adapter{ .builder = self });
+        const gop = self.type_map.get_or_put_assume_capacity_adapted(data, Adapter{ .builder = self });
         if (!gop.found_existing) {
             gop.key_ptr.* = {};
             gop.value_ptr.* = {};
-            self.type_items.appendAssumeCapacity(.{
+            self.type_items.append_assume_capacity(.{
                 .tag = .small_array,
-                .data = self.addTypeExtraAssumeCapacity(data),
+                .data = self.add_type_extra_assume_capacity(data),
             });
         }
         return @enumFromInt(gop.index);
@@ -10450,28 +10450,28 @@ fn array_type_assume_capacity(self: *Builder, len: u64, child: Type) Type {
             builder: *const Builder,
             pub fn hash(_: @This(), key: Type.Array) u32 {
                 return @truncate(std.hash.Wyhash.hash(
-                    comptime std.hash.uint32(@intFromEnum(Type.Tag.array)),
-                    std.mem.asBytes(&key),
+                    comptime std.hash.uint32(@int_from_enum(Type.Tag.array)),
+                    std.mem.as_bytes(&key),
                 ));
             }
             pub fn eql(ctx: @This(), lhs_key: Type.Array, _: void, rhs_index: usize) bool {
                 const rhs_data = ctx.builder.type_items.items[rhs_index];
                 return rhs_data.tag == .array and
-                    std.meta.eql(lhs_key, ctx.builder.typeExtraData(Type.Array, rhs_data.data));
+                    std.meta.eql(lhs_key, ctx.builder.type_extra_data(Type.Array, rhs_data.data));
             }
         };
         const data = Type.Array{
             .len_lo = @truncate(len),
-            .len_hi = @intCast(len >> 32),
+            .len_hi = @int_cast(len >> 32),
             .child = child,
         };
-        const gop = self.type_map.getOrPutAssumeCapacityAdapted(data, Adapter{ .builder = self });
+        const gop = self.type_map.get_or_put_assume_capacity_adapted(data, Adapter{ .builder = self });
         if (!gop.found_existing) {
             gop.key_ptr.* = {};
             gop.value_ptr.* = {};
-            self.type_items.appendAssumeCapacity(.{
+            self.type_items.append_assume_capacity(.{
                 .tag = .array,
-                .data = self.addTypeExtraAssumeCapacity(data),
+                .data = self.add_type_extra_assume_capacity(data),
             });
         }
         return @enumFromInt(gop.index);
@@ -10491,29 +10491,29 @@ fn struct_type_assume_capacity(
         builder: *const Builder,
         pub fn hash(_: @This(), key: []const Type) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                comptime std.hash.uint32(@intFromEnum(tag)),
-                std.mem.sliceAsBytes(key),
+                comptime std.hash.uint32(@int_from_enum(tag)),
+                std.mem.slice_as_bytes(key),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: []const Type, _: void, rhs_index: usize) bool {
             const rhs_data = ctx.builder.type_items.items[rhs_index];
             if (rhs_data.tag != tag) return false;
-            var rhs_extra = ctx.builder.typeExtraDataTrail(Type.Structure, rhs_data.data);
+            var rhs_extra = ctx.builder.type_extra_data_trail(Type.Structure, rhs_data.data);
             const rhs_fields = rhs_extra.trail.next(rhs_extra.data.fields_len, Type, ctx.builder);
             return std.mem.eql(Type, lhs_key, rhs_fields);
         }
     };
-    const gop = self.type_map.getOrPutAssumeCapacityAdapted(fields, Adapter{ .builder = self });
+    const gop = self.type_map.get_or_put_assume_capacity_adapted(fields, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.type_items.appendAssumeCapacity(.{
+        self.type_items.append_assume_capacity(.{
             .tag = tag,
-            .data = self.addTypeExtraAssumeCapacity(Type.Structure{
-                .fields_len = @intCast(fields.len),
+            .data = self.add_type_extra_assume_capacity(Type.Structure{
+                .fields_len = @int_cast(fields.len),
             }),
         });
-        self.type_extra.appendSliceAssumeCapacity(@ptrCast(fields));
+        self.type_extra.append_slice_assume_capacity(@ptr_cast(fields));
     }
     return @enumFromInt(gop.index);
 }
@@ -10523,32 +10523,32 @@ fn opaque_type_assume_capacity(self: *Builder, name: String) Type {
         builder: *const Builder,
         pub fn hash(_: @This(), key: String) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                comptime std.hash.uint32(@intFromEnum(Type.Tag.named_structure)),
-                std.mem.asBytes(&key),
+                comptime std.hash.uint32(@int_from_enum(Type.Tag.named_structure)),
+                std.mem.as_bytes(&key),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: String, _: void, rhs_index: usize) bool {
             const rhs_data = ctx.builder.type_items.items[rhs_index];
             return rhs_data.tag == .named_structure and
-                lhs_key == ctx.builder.typeExtraData(Type.NamedStructure, rhs_data.data).id;
+                lhs_key == ctx.builder.type_extra_data(Type.NamedStructure, rhs_data.data).id;
         }
     };
     var id = name;
     if (name == .empty) {
         id = self.next_unnamed_type;
         assert(id != .none);
-        self.next_unnamed_type = @enumFromInt(@intFromEnum(id) + 1);
-    } else assert(!name.isAnon());
+        self.next_unnamed_type = @enumFromInt(@int_from_enum(id) + 1);
+    } else assert(!name.is_anon());
     while (true) {
-        const type_gop = self.types.getOrPutAssumeCapacity(id);
+        const type_gop = self.types.get_or_put_assume_capacity(id);
         if (!type_gop.found_existing) {
-            const gop = self.type_map.getOrPutAssumeCapacityAdapted(id, Adapter{ .builder = self });
+            const gop = self.type_map.get_or_put_assume_capacity_adapted(id, Adapter{ .builder = self });
             assert(!gop.found_existing);
             gop.key_ptr.* = {};
             gop.value_ptr.* = {};
-            self.type_items.appendAssumeCapacity(.{
+            self.type_items.append_assume_capacity(.{
                 .tag = .named_structure,
-                .data = self.addTypeExtraAssumeCapacity(Type.NamedStructure{
+                .data = self.add_type_extra_assume_capacity(Type.NamedStructure{
                     .id = id,
                     .body = .none,
                 }),
@@ -10558,9 +10558,9 @@ fn opaque_type_assume_capacity(self: *Builder, name: String) Type {
             return result;
         }
 
-        const unique_gop = self.next_unique_type_id.getOrPutAssumeCapacity(name);
+        const unique_gop = self.next_unique_type_id.get_or_put_assume_capacity(name);
         if (!unique_gop.found_existing) unique_gop.value_ptr.* = 2;
-        id = self.fmtAssumeCapacity("{s}.{d}", .{ name.slice(self).?, unique_gop.value_ptr.* });
+        id = self.fmt_assume_capacity("{s}.{d}", .{ name.slice(self).?, unique_gop.value_ptr.* });
         unique_gop.value_ptr.* += 1;
     }
 }
@@ -10571,9 +10571,9 @@ fn ensure_unused_type_capacity(
     comptime Extra: type,
     trail_len: usize,
 ) Allocator.Error!void {
-    try self.type_map.ensureUnusedCapacity(self.gpa, count);
-    try self.type_items.ensureUnusedCapacity(self.gpa, count);
-    try self.type_extra.ensureUnusedCapacity(
+    try self.type_map.ensure_unused_capacity(self.gpa, count);
+    try self.type_items.ensure_unused_capacity(self.gpa, count);
+    try self.type_extra.ensure_unused_capacity(
         self.gpa,
         count * (@typeInfo(Extra).Struct.fields.len + trail_len),
     );
@@ -10584,33 +10584,33 @@ fn get_or_put_type_no_extra_assume_capacity(self: *Builder, item: Type.Item) str
         builder: *const Builder,
         pub fn hash(_: @This(), key: Type.Item) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                comptime std.hash.uint32(@intFromEnum(Type.Tag.simple)),
-                std.mem.asBytes(&key),
+                comptime std.hash.uint32(@int_from_enum(Type.Tag.simple)),
+                std.mem.as_bytes(&key),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: Type.Item, _: void, rhs_index: usize) bool {
-            const lhs_bits: u32 = @bitCast(lhs_key);
-            const rhs_bits: u32 = @bitCast(ctx.builder.type_items.items[rhs_index]);
+            const lhs_bits: u32 = @bit_cast(lhs_key);
+            const rhs_bits: u32 = @bit_cast(ctx.builder.type_items.items[rhs_index]);
             return lhs_bits == rhs_bits;
         }
     };
-    const gop = self.type_map.getOrPutAssumeCapacityAdapted(item, Adapter{ .builder = self });
+    const gop = self.type_map.get_or_put_assume_capacity_adapted(item, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.type_items.appendAssumeCapacity(item);
+        self.type_items.append_assume_capacity(item);
     }
     return .{ .new = !gop.found_existing, .type = @enumFromInt(gop.index) };
 }
 
 fn add_type_extra_assume_capacity(self: *Builder, extra: anytype) Type.Item.ExtraIndex {
-    const result: Type.Item.ExtraIndex = @intCast(self.type_extra.items.len);
+    const result: Type.Item.ExtraIndex = @int_cast(self.type_extra.items.len);
     inline for (@typeInfo(@TypeOf(extra)).Struct.fields) |field| {
         const value = @field(extra, field.name);
-        self.type_extra.appendAssumeCapacity(switch (field.type) {
+        self.type_extra.append_assume_capacity(switch (field.type) {
             u32 => value,
-            String, Type => @intFromEnum(value),
-            else => @compileError("bad field type: " ++ field.name ++ ": " ++ @typeName(field.type)),
+            String, Type => @int_from_enum(value),
+            else => @compile_error("bad field type: " ++ field.name ++ ": " ++ @type_name(field.type)),
         });
     }
     return result;
@@ -10620,8 +10620,8 @@ const TypeExtraDataTrail = struct {
     index: Type.Item.ExtraIndex,
 
     fn next_mut(self: *TypeExtraDataTrail, len: u32, comptime Item: type, builder: *Builder) []Item {
-        const items: []Item = @ptrCast(builder.type_extra.items[self.index..][0..len]);
-        self.index += @intCast(len);
+        const items: []Item = @ptr_cast(builder.type_extra.items[self.index..][0..len]);
+        self.index += @int_cast(len);
         return items;
     }
 
@@ -10631,8 +10631,8 @@ const TypeExtraDataTrail = struct {
         comptime Item: type,
         builder: *const Builder,
     ) []const Item {
-        const items: []const Item = @ptrCast(builder.type_extra.items[self.index..][0..len]);
-        self.index += @intCast(len);
+        const items: []const Item = @ptr_cast(builder.type_extra.items[self.index..][0..len]);
+        self.index += @int_cast(len);
         return items;
     }
 };
@@ -10648,27 +10648,27 @@ fn type_extra_data_trail(
         @field(result, field.name) = switch (field.type) {
             u32 => value,
             String, Type => @enumFromInt(value),
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            else => @compile_error("bad field type: " ++ @type_name(field.type)),
         };
     return .{
         .data = result,
-        .trail = .{ .index = index + @as(Type.Item.ExtraIndex, @intCast(fields.len)) },
+        .trail = .{ .index = index + @as(Type.Item.ExtraIndex, @int_cast(fields.len)) },
     };
 }
 
 fn type_extra_data(self: *const Builder, comptime T: type, index: Type.Item.ExtraIndex) T {
-    return self.typeExtraDataTrail(T, index).data;
+    return self.type_extra_data_trail(T, index).data;
 }
 
 fn attr_generic(self: *Builder, data: []const u32) Allocator.Error!u32 {
-    try self.attributes_map.ensureUnusedCapacity(self.gpa, 1);
-    try self.attributes_indices.ensureUnusedCapacity(self.gpa, 1);
-    try self.attributes_extra.ensureUnusedCapacity(self.gpa, data.len);
+    try self.attributes_map.ensure_unused_capacity(self.gpa, 1);
+    try self.attributes_indices.ensure_unused_capacity(self.gpa, 1);
+    try self.attributes_extra.ensure_unused_capacity(self.gpa, data.len);
 
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: []const u32) u32 {
-            return @truncate(std.hash.Wyhash.hash(1, std.mem.sliceAsBytes(key)));
+            return @truncate(std.hash.Wyhash.hash(1, std.mem.slice_as_bytes(key)));
         }
         pub fn eql(ctx: @This(), lhs_key: []const u32, _: void, rhs_index: usize) bool {
             const start = ctx.builder.attributes_indices.items[rhs_index];
@@ -10676,12 +10676,12 @@ fn attr_generic(self: *Builder, data: []const u32) Allocator.Error!u32 {
             return std.mem.eql(u32, lhs_key, ctx.builder.attributes_extra.items[start..end]);
         }
     };
-    const gop = self.attributes_map.getOrPutAssumeCapacityAdapted(data, Adapter{ .builder = self });
+    const gop = self.attributes_map.get_or_put_assume_capacity_adapted(data, Adapter{ .builder = self });
     if (!gop.found_existing) {
-        self.attributes_extra.appendSliceAssumeCapacity(data);
-        self.attributes_indices.appendAssumeCapacity(@intCast(self.attributes_extra.items.len));
+        self.attributes_extra.append_slice_assume_capacity(data);
+        self.attributes_indices.append_assume_capacity(@int_cast(self.attributes_extra.items.len));
     }
-    return @intCast(gop.index);
+    return @int_cast(gop.index);
 }
 
 fn big_int_const_assume_capacity(
@@ -10689,25 +10689,25 @@ fn big_int_const_assume_capacity(
     ty: Type,
     value: std.math.big.int.Const,
 ) Allocator.Error!Constant {
-    const type_item = self.type_items.items[@intFromEnum(ty)];
+    const type_item = self.type_items.items[@int_from_enum(ty)];
     assert(type_item.tag == .integer);
     const bits = type_item.data;
 
-    const ExpectedContents = [64 / @sizeOf(std.math.big.Limb)]std.math.big.Limb;
+    const ExpectedContents = [64 / @size_of(std.math.big.Limb)]std.math.big.Limb;
     var stack align(@alignOf(ExpectedContents)) =
-        std.heap.stackFallback(@sizeOf(ExpectedContents), self.gpa);
+        std.heap.stack_fallback(@size_of(ExpectedContents), self.gpa);
     const allocator = stack.get();
 
     var limbs: []std.math.big.Limb = &.{};
     defer allocator.free(limbs);
-    const canonical_value = if (value.fitsInTwosComp(.signed, bits)) value else canon: {
-        assert(value.fitsInTwosComp(.unsigned, bits));
-        limbs = try allocator.alloc(std.math.big.Limb, std.math.big.int.calcTwosCompLimbCount(bits));
+    const canonical_value = if (value.fits_in_twos_comp(.signed, bits)) value else canon: {
+        assert(value.fits_in_twos_comp(.unsigned, bits));
+        limbs = try allocator.alloc(std.math.big.Limb, std.math.big.int.calc_twos_comp_limb_count(bits));
         var temp_value = std.math.big.int.Mutable.init(limbs, 0);
         temp_value.truncate(value, .signed, bits);
-        break :canon temp_value.toConst();
+        break :canon temp_value.to_const();
     };
-    assert(canonical_value.fitsInTwosComp(.signed, bits));
+    assert(canonical_value.fits_in_twos_comp(.signed, bits));
 
     const ExtraPtr = *align(@alignOf(std.math.big.Limb)) Constant.Integer;
     const Key = struct { tag: Constant.Tag, type: Type, limbs: []const std.math.big.Limb };
@@ -10718,16 +10718,16 @@ fn big_int_const_assume_capacity(
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: Key) u32 {
-            var hasher = std.hash.Wyhash.init(std.hash.uint32(@intFromEnum(key.tag)));
-            hasher.update(std.mem.asBytes(&key.type));
-            hasher.update(std.mem.sliceAsBytes(key.limbs));
+            var hasher = std.hash.Wyhash.init(std.hash.uint32(@int_from_enum(key.tag)));
+            hasher.update(std.mem.as_bytes(&key.type));
+            hasher.update(std.mem.slice_as_bytes(key.limbs));
             return @truncate(hasher.final());
         }
         pub fn eql(ctx: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
             if (lhs_key.tag != ctx.builder.constant_items.items(.tag)[rhs_index]) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
             const rhs_extra: ExtraPtr =
-                @ptrCast(ctx.builder.constant_limbs.items[rhs_data..][0..Constant.Integer.limbs]);
+                @ptr_cast(ctx.builder.constant_limbs.items[rhs_data..][0..Constant.Integer.limbs]);
             const rhs_limbs = ctx.builder.constant_limbs
                 .items[rhs_data + Constant.Integer.limbs ..][0..rhs_extra.limbs_len];
             return lhs_key.type == rhs_extra.type and
@@ -10735,43 +10735,43 @@ fn big_int_const_assume_capacity(
         }
     };
 
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(
         Key{ .tag = tag, .type = ty, .limbs = canonical_value.limbs },
         Adapter{ .builder = self },
     );
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = tag,
-            .data = @intCast(self.constant_limbs.items.len),
+            .data = @int_cast(self.constant_limbs.items.len),
         });
         const extra: ExtraPtr =
-            @ptrCast(self.constant_limbs.addManyAsArrayAssumeCapacity(Constant.Integer.limbs));
-        extra.* = .{ .type = ty, .limbs_len = @intCast(canonical_value.limbs.len) };
-        self.constant_limbs.appendSliceAssumeCapacity(canonical_value.limbs);
+            @ptr_cast(self.constant_limbs.add_many_as_array_assume_capacity(Constant.Integer.limbs));
+        extra.* = .{ .type = ty, .limbs_len = @int_cast(canonical_value.limbs.len) };
+        self.constant_limbs.append_slice_assume_capacity(canonical_value.limbs);
     }
     return @enumFromInt(gop.index);
 }
 
 fn half_const_assume_capacity(self: *Builder, val: f16) Constant {
-    const result = self.getOrPutConstantNoExtraAssumeCapacity(
-        .{ .tag = .half, .data = @as(u16, @bitCast(val)) },
+    const result = self.get_or_put_constant_no_extra_assume_capacity(
+        .{ .tag = .half, .data = @as(u16, @bit_cast(val)) },
     );
     return result.constant;
 }
 
 fn bfloat_const_assume_capacity(self: *Builder, val: f32) Constant {
-    assert(@as(u16, @truncate(@as(u32, @bitCast(val)))) == 0);
-    const result = self.getOrPutConstantNoExtraAssumeCapacity(
-        .{ .tag = .bfloat, .data = @bitCast(val) },
+    assert(@as(u16, @truncate(@as(u32, @bit_cast(val)))) == 0);
+    const result = self.get_or_put_constant_no_extra_assume_capacity(
+        .{ .tag = .bfloat, .data = @bit_cast(val) },
     );
     return result.constant;
 }
 
 fn float_const_assume_capacity(self: *Builder, val: f32) Constant {
-    const result = self.getOrPutConstantNoExtraAssumeCapacity(
-        .{ .tag = .float, .data = @bitCast(val) },
+    const result = self.get_or_put_constant_no_extra_assume_capacity(
+        .{ .tag = .float, .data = @bit_cast(val) },
     );
     return result.constant;
 }
@@ -10781,26 +10781,26 @@ fn double_const_assume_capacity(self: *Builder, val: f64) Constant {
         builder: *const Builder,
         pub fn hash(_: @This(), key: f64) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                comptime std.hash.uint32(@intFromEnum(Constant.Tag.double)),
-                std.mem.asBytes(&key),
+                comptime std.hash.uint32(@int_from_enum(Constant.Tag.double)),
+                std.mem.as_bytes(&key),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: f64, _: void, rhs_index: usize) bool {
             if (ctx.builder.constant_items.items(.tag)[rhs_index] != .double) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
-            const rhs_extra = ctx.builder.constantExtraData(Constant.Double, rhs_data);
-            return @as(u64, @bitCast(lhs_key)) == @as(u64, rhs_extra.hi) << 32 | rhs_extra.lo;
+            const rhs_extra = ctx.builder.constant_extra_data(Constant.Double, rhs_data);
+            return @as(u64, @bit_cast(lhs_key)) == @as(u64, rhs_extra.hi) << 32 | rhs_extra.lo;
         }
     };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(val, Adapter{ .builder = self });
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(val, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = .double,
-            .data = self.addConstantExtraAssumeCapacity(Constant.Double{
-                .lo = @truncate(@as(u64, @bitCast(val))),
-                .hi = @intCast(@as(u64, @bitCast(val)) >> 32),
+            .data = self.add_constant_extra_assume_capacity(Constant.Double{
+                .lo = @truncate(@as(u64, @bit_cast(val))),
+                .hi = @int_cast(@as(u64, @bit_cast(val)) >> 32),
             }),
         });
     }
@@ -10812,29 +10812,29 @@ fn fp128_const_assume_capacity(self: *Builder, val: f128) Constant {
         builder: *const Builder,
         pub fn hash(_: @This(), key: f128) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                comptime std.hash.uint32(@intFromEnum(Constant.Tag.fp128)),
-                std.mem.asBytes(&key),
+                comptime std.hash.uint32(@int_from_enum(Constant.Tag.fp128)),
+                std.mem.as_bytes(&key),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: f128, _: void, rhs_index: usize) bool {
             if (ctx.builder.constant_items.items(.tag)[rhs_index] != .fp128) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
-            const rhs_extra = ctx.builder.constantExtraData(Constant.Fp128, rhs_data);
-            return @as(u128, @bitCast(lhs_key)) == @as(u128, rhs_extra.hi_hi) << 96 |
+            const rhs_extra = ctx.builder.constant_extra_data(Constant.Fp128, rhs_data);
+            return @as(u128, @bit_cast(lhs_key)) == @as(u128, rhs_extra.hi_hi) << 96 |
                 @as(u128, rhs_extra.hi_lo) << 64 | @as(u128, rhs_extra.lo_hi) << 32 | rhs_extra.lo_lo;
         }
     };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(val, Adapter{ .builder = self });
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(val, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = .fp128,
-            .data = self.addConstantExtraAssumeCapacity(Constant.Fp128{
-                .lo_lo = @truncate(@as(u128, @bitCast(val))),
-                .lo_hi = @truncate(@as(u128, @bitCast(val)) >> 32),
-                .hi_lo = @truncate(@as(u128, @bitCast(val)) >> 64),
-                .hi_hi = @intCast(@as(u128, @bitCast(val)) >> 96),
+            .data = self.add_constant_extra_assume_capacity(Constant.Fp128{
+                .lo_lo = @truncate(@as(u128, @bit_cast(val))),
+                .lo_hi = @truncate(@as(u128, @bit_cast(val)) >> 32),
+                .hi_lo = @truncate(@as(u128, @bit_cast(val)) >> 64),
+                .hi_hi = @int_cast(@as(u128, @bit_cast(val)) >> 96),
             }),
         });
     }
@@ -10846,28 +10846,28 @@ fn x86_fp80_const_assume_capacity(self: *Builder, val: f80) Constant {
         builder: *const Builder,
         pub fn hash(_: @This(), key: f80) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                comptime std.hash.uint32(@intFromEnum(Constant.Tag.x86_fp80)),
-                std.mem.asBytes(&key)[0..10],
+                comptime std.hash.uint32(@int_from_enum(Constant.Tag.x86_fp80)),
+                std.mem.as_bytes(&key)[0..10],
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: f80, _: void, rhs_index: usize) bool {
             if (ctx.builder.constant_items.items(.tag)[rhs_index] != .x86_fp80) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
-            const rhs_extra = ctx.builder.constantExtraData(Constant.Fp80, rhs_data);
-            return @as(u80, @bitCast(lhs_key)) == @as(u80, rhs_extra.hi) << 64 |
+            const rhs_extra = ctx.builder.constant_extra_data(Constant.Fp80, rhs_data);
+            return @as(u80, @bit_cast(lhs_key)) == @as(u80, rhs_extra.hi) << 64 |
                 @as(u80, rhs_extra.lo_hi) << 32 | rhs_extra.lo_lo;
         }
     };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(val, Adapter{ .builder = self });
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(val, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = .x86_fp80,
-            .data = self.addConstantExtraAssumeCapacity(Constant.Fp80{
-                .lo_lo = @truncate(@as(u80, @bitCast(val))),
-                .lo_hi = @truncate(@as(u80, @bitCast(val)) >> 32),
-                .hi = @intCast(@as(u80, @bitCast(val)) >> 64),
+            .data = self.add_constant_extra_assume_capacity(Constant.Fp80{
+                .lo_lo = @truncate(@as(u80, @bit_cast(val))),
+                .lo_hi = @truncate(@as(u80, @bit_cast(val)) >> 32),
+                .hi = @int_cast(@as(u80, @bit_cast(val)) >> 64),
             }),
         });
     }
@@ -10879,29 +10879,29 @@ fn ppc_fp128_const_assume_capacity(self: *Builder, val: [2]f64) Constant {
         builder: *const Builder,
         pub fn hash(_: @This(), key: [2]f64) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                comptime std.hash.uint32(@intFromEnum(Constant.Tag.ppc_fp128)),
-                std.mem.asBytes(&key),
+                comptime std.hash.uint32(@int_from_enum(Constant.Tag.ppc_fp128)),
+                std.mem.as_bytes(&key),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: [2]f64, _: void, rhs_index: usize) bool {
             if (ctx.builder.constant_items.items(.tag)[rhs_index] != .ppc_fp128) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
-            const rhs_extra = ctx.builder.constantExtraData(Constant.Fp128, rhs_data);
-            return @as(u64, @bitCast(lhs_key[0])) == @as(u64, rhs_extra.lo_hi) << 32 | rhs_extra.lo_lo and
-                @as(u64, @bitCast(lhs_key[1])) == @as(u64, rhs_extra.hi_hi) << 32 | rhs_extra.hi_lo;
+            const rhs_extra = ctx.builder.constant_extra_data(Constant.Fp128, rhs_data);
+            return @as(u64, @bit_cast(lhs_key[0])) == @as(u64, rhs_extra.lo_hi) << 32 | rhs_extra.lo_lo and
+                @as(u64, @bit_cast(lhs_key[1])) == @as(u64, rhs_extra.hi_hi) << 32 | rhs_extra.hi_lo;
         }
     };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(val, Adapter{ .builder = self });
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(val, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = .ppc_fp128,
-            .data = self.addConstantExtraAssumeCapacity(Constant.Fp128{
-                .lo_lo = @truncate(@as(u64, @bitCast(val[0]))),
-                .lo_hi = @intCast(@as(u64, @bitCast(val[0])) >> 32),
-                .hi_lo = @truncate(@as(u64, @bitCast(val[1]))),
-                .hi_hi = @intCast(@as(u64, @bitCast(val[1])) >> 32),
+            .data = self.add_constant_extra_assume_capacity(Constant.Fp128{
+                .lo_lo = @truncate(@as(u64, @bit_cast(val[0]))),
+                .lo_hi = @int_cast(@as(u64, @bit_cast(val[0])) >> 32),
+                .hi_lo = @truncate(@as(u64, @bit_cast(val[1]))),
+                .hi_hi = @int_cast(@as(u64, @bit_cast(val[1])) >> 32),
             }),
         });
     }
@@ -10909,28 +10909,28 @@ fn ppc_fp128_const_assume_capacity(self: *Builder, val: [2]f64) Constant {
 }
 
 fn null_const_assume_capacity(self: *Builder, ty: Type) Constant {
-    assert(self.type_items.items[@intFromEnum(ty)].tag == .pointer);
-    const result = self.getOrPutConstantNoExtraAssumeCapacity(
-        .{ .tag = .null, .data = @intFromEnum(ty) },
+    assert(self.type_items.items[@int_from_enum(ty)].tag == .pointer);
+    const result = self.get_or_put_constant_no_extra_assume_capacity(
+        .{ .tag = .null, .data = @int_from_enum(ty) },
     );
     return result.constant;
 }
 
 fn none_const_assume_capacity(self: *Builder, ty: Type) Constant {
     assert(ty == .token);
-    const result = self.getOrPutConstantNoExtraAssumeCapacity(
-        .{ .tag = .none, .data = @intFromEnum(ty) },
+    const result = self.get_or_put_constant_no_extra_assume_capacity(
+        .{ .tag = .none, .data = @int_from_enum(ty) },
     );
     return result.constant;
 }
 
 fn struct_const_assume_capacity(self: *Builder, ty: Type, vals: []const Constant) Constant {
-    const type_item = self.type_items.items[@intFromEnum(ty)];
-    var extra = self.typeExtraDataTrail(Type.Structure, switch (type_item.tag) {
+    const type_item = self.type_items.items[@int_from_enum(ty)];
+    var extra = self.type_extra_data_trail(Type.Structure, switch (type_item.tag) {
         .structure, .packed_structure => type_item.data,
         .named_structure => data: {
-            const body_ty = self.typeExtraData(Type.NamedStructure, type_item.data).body;
-            const body_item = self.type_items.items[@intFromEnum(body_ty)];
+            const body_ty = self.type_extra_data(Type.NamedStructure, type_item.data).body;
+            const body_item = self.type_items.items[@int_from_enum(body_ty)];
             switch (body_item.tag) {
                 .structure, .packed_structure => break :data body_item.data,
                 else => unreachable,
@@ -10939,26 +10939,26 @@ fn struct_const_assume_capacity(self: *Builder, ty: Type, vals: []const Constant
         else => unreachable,
     });
     const fields = extra.trail.next(extra.data.fields_len, Type, self);
-    for (fields, vals) |field, val| assert(field == val.typeOf(self));
+    for (fields, vals) |field, val| assert(field == val.type_of(self));
 
     for (vals) |val| {
-        if (!val.isZeroInit(self)) break;
-    } else return self.zeroInitConstAssumeCapacity(ty);
+        if (!val.is_zero_init(self)) break;
+    } else return self.zero_init_const_assume_capacity(ty);
 
-    const tag: Constant.Tag = switch (ty.unnamedTag(self)) {
+    const tag: Constant.Tag = switch (ty.unnamed_tag(self)) {
         .structure => .structure,
         .packed_structure => .packed_structure,
         else => unreachable,
     };
-    const result = self.getOrPutConstantAggregateAssumeCapacity(tag, ty, vals);
+    const result = self.get_or_put_constant_aggregate_assume_capacity(tag, ty, vals);
     return result.constant;
 }
 
 fn array_const_assume_capacity(self: *Builder, ty: Type, vals: []const Constant) Constant {
-    const type_item = self.type_items.items[@intFromEnum(ty)];
+    const type_item = self.type_items.items[@int_from_enum(ty)];
     const type_extra: struct { len: u64, child: Type } = switch (type_item.tag) {
         inline .small_array, .array => |kind| extra: {
-            const extra = self.typeExtraData(switch (kind) {
+            const extra = self.type_extra_data(switch (kind) {
                 .small_array => Type.Vector,
                 .array => Type.Array,
                 else => unreachable,
@@ -10968,71 +10968,71 @@ fn array_const_assume_capacity(self: *Builder, ty: Type, vals: []const Constant)
         else => unreachable,
     };
     assert(type_extra.len == vals.len);
-    for (vals) |val| assert(type_extra.child == val.typeOf(self));
+    for (vals) |val| assert(type_extra.child == val.type_of(self));
 
     for (vals) |val| {
-        if (!val.isZeroInit(self)) break;
-    } else return self.zeroInitConstAssumeCapacity(ty);
+        if (!val.is_zero_init(self)) break;
+    } else return self.zero_init_const_assume_capacity(ty);
 
-    const result = self.getOrPutConstantAggregateAssumeCapacity(.array, ty, vals);
+    const result = self.get_or_put_constant_aggregate_assume_capacity(.array, ty, vals);
     return result.constant;
 }
 
 fn string_const_assume_capacity(self: *Builder, val: String) Constant {
     const slice = val.slice(self).?;
-    const ty = self.arrayTypeAssumeCapacity(slice.len, .i8);
-    if (std.mem.allEqual(u8, slice, 0)) return self.zeroInitConstAssumeCapacity(ty);
-    const result = self.getOrPutConstantNoExtraAssumeCapacity(
-        .{ .tag = .string, .data = @intFromEnum(val) },
+    const ty = self.array_type_assume_capacity(slice.len, .i8);
+    if (std.mem.all_equal(u8, slice, 0)) return self.zero_init_const_assume_capacity(ty);
+    const result = self.get_or_put_constant_no_extra_assume_capacity(
+        .{ .tag = .string, .data = @int_from_enum(val) },
     );
     return result.constant;
 }
 
 fn vector_const_assume_capacity(self: *Builder, ty: Type, vals: []const Constant) Constant {
-    assert(ty.isVector(self));
-    assert(ty.vectorLen(self) == vals.len);
-    for (vals) |val| assert(ty.childType(self) == val.typeOf(self));
+    assert(ty.is_vector(self));
+    assert(ty.vector_len(self) == vals.len);
+    for (vals) |val| assert(ty.child_type(self) == val.type_of(self));
 
     for (vals[1..]) |val| {
         if (vals[0] != val) break;
-    } else return self.splatConstAssumeCapacity(ty, vals[0]);
+    } else return self.splat_const_assume_capacity(ty, vals[0]);
     for (vals) |val| {
-        if (!val.isZeroInit(self)) break;
-    } else return self.zeroInitConstAssumeCapacity(ty);
+        if (!val.is_zero_init(self)) break;
+    } else return self.zero_init_const_assume_capacity(ty);
 
-    const result = self.getOrPutConstantAggregateAssumeCapacity(.vector, ty, vals);
+    const result = self.get_or_put_constant_aggregate_assume_capacity(.vector, ty, vals);
     return result.constant;
 }
 
 fn splat_const_assume_capacity(self: *Builder, ty: Type, val: Constant) Constant {
-    assert(ty.scalarType(self) == val.typeOf(self));
+    assert(ty.scalar_type(self) == val.type_of(self));
 
-    if (!ty.isVector(self)) return val;
-    if (val.isZeroInit(self)) return self.zeroInitConstAssumeCapacity(ty);
+    if (!ty.is_vector(self)) return val;
+    if (val.is_zero_init(self)) return self.zero_init_const_assume_capacity(ty);
 
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: Constant.Splat) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                comptime std.hash.uint32(@intFromEnum(Constant.Tag.splat)),
-                std.mem.asBytes(&key),
+                comptime std.hash.uint32(@int_from_enum(Constant.Tag.splat)),
+                std.mem.as_bytes(&key),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: Constant.Splat, _: void, rhs_index: usize) bool {
             if (ctx.builder.constant_items.items(.tag)[rhs_index] != .splat) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
-            const rhs_extra = ctx.builder.constantExtraData(Constant.Splat, rhs_data);
+            const rhs_extra = ctx.builder.constant_extra_data(Constant.Splat, rhs_data);
             return std.meta.eql(lhs_key, rhs_extra);
         }
     };
     const data = Constant.Splat{ .type = ty, .value = val };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(data, Adapter{ .builder = self });
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(data, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = .splat,
-            .data = self.addConstantExtraAssumeCapacity(data),
+            .data = self.add_constant_extra_assume_capacity(data),
         });
     }
     return @enumFromInt(gop.index);
@@ -11046,21 +11046,21 @@ fn zero_init_const_assume_capacity(self: *Builder, ty: Type) Constant {
         .double,
         .fp128,
         .x86_fp80,
-        => |tag| return @field(Builder, @tagName(tag) ++ "ConstAssumeCapacity")(self, 0.0),
-        .ppc_fp128 => return self.ppc_fp128ConstAssumeCapacity(.{ 0.0, 0.0 }),
+        => |tag| return @field(Builder, @tag_name(tag) ++ "ConstAssumeCapacity")(self, 0.0),
+        .ppc_fp128 => return self.ppc_fp128_const_assume_capacity(.{ 0.0, 0.0 }),
         .token => return .none,
         .i1 => return .false,
-        else => switch (self.type_items.items[@intFromEnum(ty)].tag) {
+        else => switch (self.type_items.items[@int_from_enum(ty)].tag) {
             .simple,
             .function,
             .vararg_function,
             => unreachable,
             .integer => {
-                var limbs: [std.math.big.int.calcLimbLen(0)]std.math.big.Limb = undefined;
+                var limbs: [std.math.big.int.calc_limb_len(0)]std.math.big.Limb = undefined;
                 const bigint = std.math.big.int.Mutable.init(&limbs, 0);
-                return self.bigIntConstAssumeCapacity(ty, bigint.toConst()) catch unreachable;
+                return self.big_int_const_assume_capacity(ty, bigint.to_const()) catch unreachable;
             },
-            .pointer => return self.nullConstAssumeCapacity(ty),
+            .pointer => return self.null_const_assume_capacity(ty),
             .target,
             .vector,
             .scalable_vector,
@@ -11072,14 +11072,14 @@ fn zero_init_const_assume_capacity(self: *Builder, ty: Type) Constant {
             => {},
         },
     }
-    const result = self.getOrPutConstantNoExtraAssumeCapacity(
-        .{ .tag = .zeroinitializer, .data = @intFromEnum(ty) },
+    const result = self.get_or_put_constant_no_extra_assume_capacity(
+        .{ .tag = .zeroinitializer, .data = @int_from_enum(ty) },
     );
     return result.constant;
 }
 
 fn undef_const_assume_capacity(self: *Builder, ty: Type) Constant {
-    switch (self.type_items.items[@intFromEnum(ty)].tag) {
+    switch (self.type_items.items[@int_from_enum(ty)].tag) {
         .simple => switch (ty) {
             .void, .label => unreachable,
             else => {},
@@ -11087,14 +11087,14 @@ fn undef_const_assume_capacity(self: *Builder, ty: Type) Constant {
         .function, .vararg_function => unreachable,
         else => {},
     }
-    const result = self.getOrPutConstantNoExtraAssumeCapacity(
-        .{ .tag = .undef, .data = @intFromEnum(ty) },
+    const result = self.get_or_put_constant_no_extra_assume_capacity(
+        .{ .tag = .undef, .data = @int_from_enum(ty) },
     );
     return result.constant;
 }
 
 fn poison_const_assume_capacity(self: *Builder, ty: Type) Constant {
-    switch (self.type_items.items[@intFromEnum(ty)].tag) {
+    switch (self.type_items.items[@int_from_enum(ty)].tag) {
         .simple => switch (ty) {
             .void, .label => unreachable,
             else => {},
@@ -11102,8 +11102,8 @@ fn poison_const_assume_capacity(self: *Builder, ty: Type) Constant {
         .function, .vararg_function => unreachable,
         else => {},
     }
-    const result = self.getOrPutConstantNoExtraAssumeCapacity(
-        .{ .tag = .poison, .data = @intFromEnum(ty) },
+    const result = self.get_or_put_constant_no_extra_assume_capacity(
+        .{ .tag = .poison, .data = @int_from_enum(ty) },
     );
     return result.constant;
 }
@@ -11117,40 +11117,40 @@ fn block_addr_const_assume_capacity(
         builder: *const Builder,
         pub fn hash(_: @This(), key: Constant.BlockAddress) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                comptime std.hash.uint32(@intFromEnum(Constant.Tag.blockaddress)),
-                std.mem.asBytes(&key),
+                comptime std.hash.uint32(@int_from_enum(Constant.Tag.blockaddress)),
+                std.mem.as_bytes(&key),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: Constant.BlockAddress, _: void, rhs_index: usize) bool {
             if (ctx.builder.constant_items.items(.tag)[rhs_index] != .blockaddress) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
-            const rhs_extra = ctx.builder.constantExtraData(Constant.BlockAddress, rhs_data);
+            const rhs_extra = ctx.builder.constant_extra_data(Constant.BlockAddress, rhs_data);
             return std.meta.eql(lhs_key, rhs_extra);
         }
     };
     const data = Constant.BlockAddress{ .function = function, .block = block };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(data, Adapter{ .builder = self });
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(data, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = .blockaddress,
-            .data = self.addConstantExtraAssumeCapacity(data),
+            .data = self.add_constant_extra_assume_capacity(data),
         });
     }
     return @enumFromInt(gop.index);
 }
 
 fn dso_local_equivalent_const_assume_capacity(self: *Builder, function: Function.Index) Constant {
-    const result = self.getOrPutConstantNoExtraAssumeCapacity(
-        .{ .tag = .dso_local_equivalent, .data = @intFromEnum(function) },
+    const result = self.get_or_put_constant_no_extra_assume_capacity(
+        .{ .tag = .dso_local_equivalent, .data = @int_from_enum(function) },
     );
     return result.constant;
 }
 
 fn no_cfi_const_assume_capacity(self: *Builder, function: Function.Index) Constant {
-    const result = self.getOrPutConstantNoExtraAssumeCapacity(
-        .{ .tag = .no_cfi, .data = @intFromEnum(function) },
+    const result = self.get_or_put_constant_no_extra_assume_capacity(
+        .{ .tag = .no_cfi, .data = @int_from_enum(function) },
     );
     return result.constant;
 }
@@ -11162,9 +11162,9 @@ fn conv_tag(
     ty: Type,
 ) Function.Instruction.Tag {
     assert(val_ty != ty);
-    return switch (val_ty.scalarTag(self)) {
-        .simple => switch (ty.scalarTag(self)) {
-            .simple => switch (std.math.order(val_ty.scalarBits(self), ty.scalarBits(self))) {
+    return switch (val_ty.scalar_tag(self)) {
+        .simple => switch (ty.scalar_tag(self)) {
+            .simple => switch (std.math.order(val_ty.scalar_bits(self), ty.scalar_bits(self))) {
                 .lt => .fpext,
                 .eq => unreachable,
                 .gt => .fptrunc,
@@ -11176,13 +11176,13 @@ fn conv_tag(
             },
             else => unreachable,
         },
-        .integer => switch (ty.scalarTag(self)) {
+        .integer => switch (ty.scalar_tag(self)) {
             .simple => switch (signedness) {
                 .unsigned => .uitofp,
                 .signed => .sitofp,
                 .unneeded => unreachable,
             },
-            .integer => switch (std.math.order(val_ty.scalarBits(self), ty.scalarBits(self))) {
+            .integer => switch (std.math.order(val_ty.scalar_bits(self), ty.scalar_bits(self))) {
                 .lt => switch (signedness) {
                     .unsigned => .zext,
                     .signed => .sext,
@@ -11194,7 +11194,7 @@ fn conv_tag(
             .pointer => .inttoptr,
             else => unreachable,
         },
-        .pointer => switch (ty.scalarTag(self)) {
+        .pointer => switch (ty.scalar_tag(self)) {
             .integer => .ptrtoint,
             .pointer => .addrspacecast,
             else => unreachable,
@@ -11209,16 +11209,16 @@ fn conv_const_tag(
     ty: Type,
 ) Constant.Tag {
     assert(val_ty != ty);
-    return switch (val_ty.scalarTag(self)) {
-        .integer => switch (ty.scalarTag(self)) {
-            .integer => switch (std.math.order(val_ty.scalarBits(self), ty.scalarBits(self))) {
+    return switch (val_ty.scalar_tag(self)) {
+        .integer => switch (ty.scalar_tag(self)) {
+            .integer => switch (std.math.order(val_ty.scalar_bits(self), ty.scalar_bits(self))) {
                 .gt => .trunc,
                 else => unreachable,
             },
             .pointer => .inttoptr,
             else => unreachable,
         },
-        .pointer => switch (ty.scalarTag(self)) {
+        .pointer => switch (ty.scalar_tag(self)) {
             .integer => .ptrtoint,
             .pointer => .addrspacecast,
             else => unreachable,
@@ -11232,9 +11232,9 @@ fn conv_const_assume_capacity(
     val: Constant,
     ty: Type,
 ) Constant {
-    const val_ty = val.typeOf(self);
+    const val_ty = val.type_of(self);
     if (val_ty == ty) return val;
-    return self.castConstAssumeCapacity(self.convConstTag(val_ty, ty), val, ty);
+    return self.cast_const_assume_capacity(self.conv_const_tag(val_ty, ty), val, ty);
 }
 
 fn cast_const_assume_capacity(self: *Builder, tag: Constant.Tag, val: Constant, ty: Type) Constant {
@@ -11243,25 +11243,25 @@ fn cast_const_assume_capacity(self: *Builder, tag: Constant.Tag, val: Constant, 
         builder: *const Builder,
         pub fn hash(_: @This(), key: Key) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                std.hash.uint32(@intFromEnum(key.tag)),
-                std.mem.asBytes(&key.cast),
+                std.hash.uint32(@int_from_enum(key.tag)),
+                std.mem.as_bytes(&key.cast),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
             if (lhs_key.tag != ctx.builder.constant_items.items(.tag)[rhs_index]) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
-            const rhs_extra = ctx.builder.constantExtraData(Constant.Cast, rhs_data);
+            const rhs_extra = ctx.builder.constant_extra_data(Constant.Cast, rhs_data);
             return std.meta.eql(lhs_key.cast, rhs_extra);
         }
     };
     const data = Key{ .tag = tag, .cast = .{ .val = val, .type = ty } };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(data, Adapter{ .builder = self });
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(data, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = tag,
-            .data = self.addConstantExtraAssumeCapacity(data.cast),
+            .data = self.add_constant_extra_assume_capacity(data.cast),
         });
     }
     return @enumFromInt(gop.index);
@@ -11279,20 +11279,20 @@ fn gep_const_assume_capacity(
         .normal => .getelementptr,
         .inbounds => .@"getelementptr inbounds",
     };
-    const base_ty = base.typeOf(self);
-    const base_is_vector = base_ty.isVector(self);
+    const base_ty = base.type_of(self);
+    const base_is_vector = base_ty.is_vector(self);
 
     const VectorInfo = struct {
         kind: Type.Vector.Kind,
         len: u32,
 
         fn init(vector_ty: Type, builder: *const Builder) @This() {
-            return .{ .kind = vector_ty.vectorKind(builder), .len = vector_ty.vectorLen(builder) };
+            return .{ .kind = vector_ty.vector_kind(builder), .len = vector_ty.vector_len(builder) };
         }
     };
     var vector_info: ?VectorInfo = if (base_is_vector) VectorInfo.init(base_ty, self) else null;
     for (indices) |index| {
-        const index_ty = index.typeOf(self);
+        const index_ty = index.type_of(self);
         switch (index_ty.tag(self)) {
             .integer => {},
             .vector, .scalable_vector => {
@@ -11306,7 +11306,7 @@ fn gep_const_assume_capacity(
         }
     }
     if (!base_is_vector) if (vector_info) |info| switch (info.kind) {
-        inline else => |vector_kind| _ = self.vectorTypeAssumeCapacity(vector_kind, info.len, base_ty),
+        inline else => |vector_kind| _ = self.vector_type_assume_capacity(vector_kind, info.len, base_ty),
     };
 
     const Key = struct {
@@ -11318,17 +11318,17 @@ fn gep_const_assume_capacity(
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: Key) u32 {
-            var hasher = std.hash.Wyhash.init(comptime std.hash.uint32(@intFromEnum(tag)));
-            hasher.update(std.mem.asBytes(&key.type));
-            hasher.update(std.mem.asBytes(&key.base));
-            hasher.update(std.mem.asBytes(&key.inrange));
-            hasher.update(std.mem.sliceAsBytes(key.indices));
+            var hasher = std.hash.Wyhash.init(comptime std.hash.uint32(@int_from_enum(tag)));
+            hasher.update(std.mem.as_bytes(&key.type));
+            hasher.update(std.mem.as_bytes(&key.base));
+            hasher.update(std.mem.as_bytes(&key.inrange));
+            hasher.update(std.mem.slice_as_bytes(key.indices));
             return @truncate(hasher.final());
         }
         pub fn eql(ctx: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
             if (ctx.builder.constant_items.items(.tag)[rhs_index] != tag) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
-            var rhs_extra = ctx.builder.constantExtraDataTrail(Constant.GetElementPtr, rhs_data);
+            var rhs_extra = ctx.builder.constant_extra_data_trail(Constant.GetElementPtr, rhs_data);
             const rhs_indices =
                 rhs_extra.trail.next(rhs_extra.data.info.indices_len, Constant, ctx.builder);
             return lhs_key.type == rhs_extra.data.type and lhs_key.base == rhs_extra.data.base and
@@ -11342,19 +11342,19 @@ fn gep_const_assume_capacity(
         .inrange = if (inrange) |index| @enumFromInt(index) else .none,
         .indices = indices,
     };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(data, Adapter{ .builder = self });
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(data, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = tag,
-            .data = self.addConstantExtraAssumeCapacity(Constant.GetElementPtr{
+            .data = self.add_constant_extra_assume_capacity(Constant.GetElementPtr{
                 .type = ty,
                 .base = base,
-                .info = .{ .indices_len = @intCast(indices.len), .inrange = data.inrange },
+                .info = .{ .indices_len = @int_cast(indices.len), .inrange = data.inrange },
             }),
         });
-        self.constant_extra.appendSliceAssumeCapacity(@ptrCast(indices));
+        self.constant_extra.append_slice_assume_capacity(@ptr_cast(indices));
     }
     return @enumFromInt(gop.index);
 }
@@ -11382,25 +11382,25 @@ fn bin_const_assume_capacity(
         builder: *const Builder,
         pub fn hash(_: @This(), key: Key) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                std.hash.uint32(@intFromEnum(key.tag)),
-                std.mem.asBytes(&key.extra),
+                std.hash.uint32(@int_from_enum(key.tag)),
+                std.mem.as_bytes(&key.extra),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
             if (lhs_key.tag != ctx.builder.constant_items.items(.tag)[rhs_index]) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
-            const rhs_extra = ctx.builder.constantExtraData(Constant.Binary, rhs_data);
+            const rhs_extra = ctx.builder.constant_extra_data(Constant.Binary, rhs_data);
             return std.meta.eql(lhs_key.extra, rhs_extra);
         }
     };
     const data = Key{ .tag = tag, .extra = .{ .lhs = lhs, .rhs = rhs } };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(data, Adapter{ .builder = self });
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(data, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = tag,
-            .data = self.addConstantExtraAssumeCapacity(data.extra),
+            .data = self.add_constant_extra_assume_capacity(data.extra),
         });
     }
     return @enumFromInt(gop.index);
@@ -11413,36 +11413,36 @@ fn asm_const_assume_capacity(
     assembly: String,
     constraints: String,
 ) Constant {
-    assert(ty.functionKind(self) == .normal);
+    assert(ty.function_kind(self) == .normal);
 
     const Key = struct { tag: Constant.Tag, extra: Constant.Assembly };
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: Key) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                std.hash.uint32(@intFromEnum(key.tag)),
-                std.mem.asBytes(&key.extra),
+                std.hash.uint32(@int_from_enum(key.tag)),
+                std.mem.as_bytes(&key.extra),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
             if (lhs_key.tag != ctx.builder.constant_items.items(.tag)[rhs_index]) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
-            const rhs_extra = ctx.builder.constantExtraData(Constant.Assembly, rhs_data);
+            const rhs_extra = ctx.builder.constant_extra_data(Constant.Assembly, rhs_data);
             return std.meta.eql(lhs_key.extra, rhs_extra);
         }
     };
 
     const data = Key{
-        .tag = @enumFromInt(@intFromEnum(Constant.Tag.@"asm") + @as(u4, @bitCast(info))),
+        .tag = @enumFromInt(@int_from_enum(Constant.Tag.@"asm") + @as(u4, @bit_cast(info))),
         .extra = .{ .type = ty, .assembly = assembly, .constraints = constraints },
     };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(data, Adapter{ .builder = self });
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(data, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = data.tag,
-            .data = self.addConstantExtraAssumeCapacity(data.extra),
+            .data = self.add_constant_extra_assume_capacity(data.extra),
         });
     }
     return @enumFromInt(gop.index);
@@ -11454,9 +11454,9 @@ fn ensure_unused_constant_capacity(
     comptime Extra: type,
     trail_len: usize,
 ) Allocator.Error!void {
-    try self.constant_map.ensureUnusedCapacity(self.gpa, count);
-    try self.constant_items.ensureUnusedCapacity(self.gpa, count);
-    try self.constant_extra.ensureUnusedCapacity(
+    try self.constant_map.ensure_unused_capacity(self.gpa, count);
+    try self.constant_items.ensure_unused_capacity(self.gpa, count);
+    try self.constant_extra.ensure_unused_capacity(
         self.gpa,
         count * (@typeInfo(Extra).Struct.fields.len + trail_len),
     );
@@ -11470,19 +11470,19 @@ fn get_or_put_constant_no_extra_assume_capacity(
         builder: *const Builder,
         pub fn hash(_: @This(), key: Constant.Item) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                std.hash.uint32(@intFromEnum(key.tag)),
-                std.mem.asBytes(&key.data),
+                std.hash.uint32(@int_from_enum(key.tag)),
+                std.mem.as_bytes(&key.data),
             ));
         }
         pub fn eql(ctx: @This(), lhs_key: Constant.Item, _: void, rhs_index: usize) bool {
             return std.meta.eql(lhs_key, ctx.builder.constant_items.get(rhs_index));
         }
     };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(item, Adapter{ .builder = self });
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(item, Adapter{ .builder = self });
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(item);
+        self.constant_items.append_assume_capacity(item);
     }
     return .{ .new = !gop.found_existing, .constant = @enumFromInt(gop.index) };
 }
@@ -11501,45 +11501,45 @@ fn get_or_put_constant_aggregate_assume_capacity(
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: Key) u32 {
-            var hasher = std.hash.Wyhash.init(std.hash.uint32(@intFromEnum(key.tag)));
-            hasher.update(std.mem.asBytes(&key.type));
-            hasher.update(std.mem.sliceAsBytes(key.vals));
+            var hasher = std.hash.Wyhash.init(std.hash.uint32(@int_from_enum(key.tag)));
+            hasher.update(std.mem.as_bytes(&key.type));
+            hasher.update(std.mem.slice_as_bytes(key.vals));
             return @truncate(hasher.final());
         }
         pub fn eql(ctx: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
             if (lhs_key.tag != ctx.builder.constant_items.items(.tag)[rhs_index]) return false;
             const rhs_data = ctx.builder.constant_items.items(.data)[rhs_index];
-            var rhs_extra = ctx.builder.constantExtraDataTrail(Constant.Aggregate, rhs_data);
+            var rhs_extra = ctx.builder.constant_extra_data_trail(Constant.Aggregate, rhs_data);
             if (lhs_key.type != rhs_extra.data.type) return false;
-            const rhs_vals = rhs_extra.trail.next(@intCast(lhs_key.vals.len), Constant, ctx.builder);
+            const rhs_vals = rhs_extra.trail.next(@int_cast(lhs_key.vals.len), Constant, ctx.builder);
             return std.mem.eql(Constant, lhs_key.vals, rhs_vals);
         }
     };
-    const gop = self.constant_map.getOrPutAssumeCapacityAdapted(
+    const gop = self.constant_map.get_or_put_assume_capacity_adapted(
         Key{ .tag = tag, .type = ty, .vals = vals },
         Adapter{ .builder = self },
     );
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.constant_items.appendAssumeCapacity(.{
+        self.constant_items.append_assume_capacity(.{
             .tag = tag,
-            .data = self.addConstantExtraAssumeCapacity(Constant.Aggregate{ .type = ty }),
+            .data = self.add_constant_extra_assume_capacity(Constant.Aggregate{ .type = ty }),
         });
-        self.constant_extra.appendSliceAssumeCapacity(@ptrCast(vals));
+        self.constant_extra.append_slice_assume_capacity(@ptr_cast(vals));
     }
     return .{ .new = !gop.found_existing, .constant = @enumFromInt(gop.index) };
 }
 
 fn add_constant_extra_assume_capacity(self: *Builder, extra: anytype) Constant.Item.ExtraIndex {
-    const result: Constant.Item.ExtraIndex = @intCast(self.constant_extra.items.len);
+    const result: Constant.Item.ExtraIndex = @int_cast(self.constant_extra.items.len);
     inline for (@typeInfo(@TypeOf(extra)).Struct.fields) |field| {
         const value = @field(extra, field.name);
-        self.constant_extra.appendAssumeCapacity(switch (field.type) {
+        self.constant_extra.append_assume_capacity(switch (field.type) {
             u32 => value,
-            String, Type, Constant, Function.Index, Function.Block.Index => @intFromEnum(value),
-            Constant.GetElementPtr.Info => @bitCast(value),
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            String, Type, Constant, Function.Index, Function.Block.Index => @int_from_enum(value),
+            Constant.GetElementPtr.Info => @bit_cast(value),
+            else => @compile_error("bad field type: " ++ @type_name(field.type)),
         });
     }
     return result;
@@ -11549,8 +11549,8 @@ const ConstantExtraDataTrail = struct {
     index: Constant.Item.ExtraIndex,
 
     fn next_mut(self: *ConstantExtraDataTrail, len: u32, comptime Item: type, builder: *Builder) []Item {
-        const items: []Item = @ptrCast(builder.constant_extra.items[self.index..][0..len]);
-        self.index += @intCast(len);
+        const items: []Item = @ptr_cast(builder.constant_extra.items[self.index..][0..len]);
+        self.index += @int_cast(len);
         return items;
     }
 
@@ -11560,8 +11560,8 @@ const ConstantExtraDataTrail = struct {
         comptime Item: type,
         builder: *const Builder,
     ) []const Item {
-        const items: []const Item = @ptrCast(builder.constant_extra.items[self.index..][0..len]);
-        self.index += @intCast(len);
+        const items: []const Item = @ptr_cast(builder.constant_extra.items[self.index..][0..len]);
+        self.index += @int_cast(len);
         return items;
     }
 };
@@ -11577,17 +11577,17 @@ fn constant_extra_data_trail(
         @field(result, field.name) = switch (field.type) {
             u32 => value,
             String, Type, Constant, Function.Index, Function.Block.Index => @enumFromInt(value),
-            Constant.GetElementPtr.Info => @bitCast(value),
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            Constant.GetElementPtr.Info => @bit_cast(value),
+            else => @compile_error("bad field type: " ++ @type_name(field.type)),
         };
     return .{
         .data = result,
-        .trail = .{ .index = index + @as(Constant.Item.ExtraIndex, @intCast(fields.len)) },
+        .trail = .{ .index = index + @as(Constant.Item.ExtraIndex, @int_cast(fields.len)) },
     };
 }
 
 fn constant_extra_data(self: *const Builder, comptime T: type, index: Constant.Item.ExtraIndex) T {
-    return self.constantExtraDataTrail(T, index).data;
+    return self.constant_extra_data_trail(T, index).data;
 }
 
 fn ensure_unused_metadata_capacity(
@@ -11596,23 +11596,23 @@ fn ensure_unused_metadata_capacity(
     comptime Extra: type,
     trail_len: usize,
 ) Allocator.Error!void {
-    try self.metadata_map.ensureUnusedCapacity(self.gpa, count);
-    try self.metadata_items.ensureUnusedCapacity(self.gpa, count);
-    try self.metadata_extra.ensureUnusedCapacity(
+    try self.metadata_map.ensure_unused_capacity(self.gpa, count);
+    try self.metadata_items.ensure_unused_capacity(self.gpa, count);
+    try self.metadata_extra.ensure_unused_capacity(
         self.gpa,
         count * (@typeInfo(Extra).Struct.fields.len + trail_len),
     );
 }
 
 fn add_metadata_extra_assume_capacity(self: *Builder, extra: anytype) Metadata.Item.ExtraIndex {
-    const result: Metadata.Item.ExtraIndex = @intCast(self.metadata_extra.items.len);
+    const result: Metadata.Item.ExtraIndex = @int_cast(self.metadata_extra.items.len);
     inline for (@typeInfo(@TypeOf(extra)).Struct.fields) |field| {
         const value = @field(extra, field.name);
-        self.metadata_extra.appendAssumeCapacity(switch (field.type) {
+        self.metadata_extra.append_assume_capacity(switch (field.type) {
             u32 => value,
-            MetadataString, Metadata, Variable.Index, Value => @intFromEnum(value),
-            Metadata.DIFlags => @bitCast(value),
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            MetadataString, Metadata, Variable.Index, Value => @int_from_enum(value),
+            Metadata.DIFlags => @bit_cast(value),
+            else => @compile_error("bad field type: " ++ @type_name(field.type)),
         });
     }
     return result;
@@ -11622,8 +11622,8 @@ const MetadataExtraDataTrail = struct {
     index: Metadata.Item.ExtraIndex,
 
     fn next_mut(self: *MetadataExtraDataTrail, len: u32, comptime Item: type, builder: *Builder) []Item {
-        const items: []Item = @ptrCast(builder.metadata_extra.items[self.index..][0..len]);
-        self.index += @intCast(len);
+        const items: []Item = @ptr_cast(builder.metadata_extra.items[self.index..][0..len]);
+        self.index += @int_cast(len);
         return items;
     }
 
@@ -11633,8 +11633,8 @@ const MetadataExtraDataTrail = struct {
         comptime Item: type,
         builder: *const Builder,
     ) []const Item {
-        const items: []const Item = @ptrCast(builder.metadata_extra.items[self.index..][0..len]);
-        self.index += @intCast(len);
+        const items: []const Item = @ptr_cast(builder.metadata_extra.items[self.index..][0..len]);
+        self.index += @int_cast(len);
         return items;
     }
 };
@@ -11650,79 +11650,79 @@ fn metadata_extra_data_trail(
         @field(result, field.name) = switch (field.type) {
             u32 => value,
             MetadataString, Metadata, Variable.Index, Value => @enumFromInt(value),
-            Metadata.DIFlags => @bitCast(value),
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            Metadata.DIFlags => @bit_cast(value),
+            else => @compile_error("bad field type: " ++ @type_name(field.type)),
         };
     return .{
         .data = result,
-        .trail = .{ .index = index + @as(Metadata.Item.ExtraIndex, @intCast(fields.len)) },
+        .trail = .{ .index = index + @as(Metadata.Item.ExtraIndex, @int_cast(fields.len)) },
     };
 }
 
 fn metadata_extra_data(self: *const Builder, comptime T: type, index: Metadata.Item.ExtraIndex) T {
-    return self.metadataExtraDataTrail(T, index).data;
+    return self.metadata_extra_data_trail(T, index).data;
 }
 
 pub fn metadata_string(self: *Builder, bytes: []const u8) Allocator.Error!MetadataString {
-    try self.metadata_string_bytes.ensureUnusedCapacity(self.gpa, bytes.len);
-    try self.metadata_string_indices.ensureUnusedCapacity(self.gpa, 1);
-    try self.metadata_string_map.ensureUnusedCapacity(self.gpa, 1);
+    try self.metadata_string_bytes.ensure_unused_capacity(self.gpa, bytes.len);
+    try self.metadata_string_indices.ensure_unused_capacity(self.gpa, 1);
+    try self.metadata_string_map.ensure_unused_capacity(self.gpa, 1);
 
-    const gop = self.metadata_string_map.getOrPutAssumeCapacityAdapted(
+    const gop = self.metadata_string_map.get_or_put_assume_capacity_adapted(
         bytes,
         MetadataString.Adapter{ .builder = self },
     );
     if (!gop.found_existing) {
-        self.metadata_string_bytes.appendSliceAssumeCapacity(bytes);
-        self.metadata_string_indices.appendAssumeCapacity(@intCast(self.metadata_string_bytes.items.len));
+        self.metadata_string_bytes.append_slice_assume_capacity(bytes);
+        self.metadata_string_indices.append_assume_capacity(@int_cast(self.metadata_string_bytes.items.len));
     }
     return @enumFromInt(gop.index);
 }
 
 pub fn metadata_string_from_strtab_string(self: *Builder, str: StrtabString) Allocator.Error!MetadataString {
     if (str == .none or str == .empty) return MetadataString.none;
-    return try self.metadataString(str.slice(self).?);
+    return try self.metadata_string(str.slice(self).?);
 }
 
 pub fn metadata_string_fmt(self: *Builder, comptime fmt_str: []const u8, fmt_args: anytype) Allocator.Error!MetadataString {
-    try self.metadata_string_map.ensureUnusedCapacity(self.gpa, 1);
-    try self.metadata_string_bytes.ensureUnusedCapacity(self.gpa, @intCast(std.fmt.count(fmt_str, fmt_args)));
-    try self.metadata_string_indices.ensureUnusedCapacity(self.gpa, 1);
-    return self.metadataStringFmtAssumeCapacity(fmt_str, fmt_args);
+    try self.metadata_string_map.ensure_unused_capacity(self.gpa, 1);
+    try self.metadata_string_bytes.ensure_unused_capacity(self.gpa, @int_cast(std.fmt.count(fmt_str, fmt_args)));
+    try self.metadata_string_indices.ensure_unused_capacity(self.gpa, 1);
+    return self.metadata_string_fmt_assume_capacity(fmt_str, fmt_args);
 }
 
 pub fn metadata_string_fmt_assume_capacity(self: *Builder, comptime fmt_str: []const u8, fmt_args: anytype) MetadataString {
     self.metadata_string_bytes.writer(undefined).print(fmt_str, fmt_args) catch unreachable;
-    return self.trailingMetadataStringAssumeCapacity();
+    return self.trailing_metadata_string_assume_capacity();
 }
 
 pub fn trailing_metadata_string(self: *Builder) Allocator.Error!MetadataString {
-    try self.metadata_string_indices.ensureUnusedCapacity(self.gpa, 1);
-    try self.metadata_string_map.ensureUnusedCapacity(self.gpa, 1);
-    return self.trailingMetadataStringAssumeCapacity();
+    try self.metadata_string_indices.ensure_unused_capacity(self.gpa, 1);
+    try self.metadata_string_map.ensure_unused_capacity(self.gpa, 1);
+    return self.trailing_metadata_string_assume_capacity();
 }
 
 pub fn trailing_metadata_string_assume_capacity(self: *Builder) MetadataString {
-    const start = self.metadata_string_indices.getLast();
+    const start = self.metadata_string_indices.get_last();
     const bytes: []const u8 = self.metadata_string_bytes.items[start..];
-    const gop = self.metadata_string_map.getOrPutAssumeCapacityAdapted(bytes, String.Adapter{ .builder = self });
+    const gop = self.metadata_string_map.get_or_put_assume_capacity_adapted(bytes, String.Adapter{ .builder = self });
     if (gop.found_existing) {
-        self.metadata_string_bytes.shrinkRetainingCapacity(start);
+        self.metadata_string_bytes.shrink_retaining_capacity(start);
     } else {
-        self.metadata_string_indices.appendAssumeCapacity(@intCast(self.metadata_string_bytes.items.len));
+        self.metadata_string_indices.append_assume_capacity(@int_cast(self.metadata_string_bytes.items.len));
     }
     return @enumFromInt(gop.index);
 }
 
 pub fn debug_named(self: *Builder, name: MetadataString, operands: []const Metadata) Allocator.Error!void {
-    try self.metadata_extra.ensureUnusedCapacity(self.gpa, operands.len);
-    try self.metadata_named.ensureUnusedCapacity(self.gpa, 1);
-    self.debugNamedAssumeCapacity(name, operands);
+    try self.metadata_extra.ensure_unused_capacity(self.gpa, operands.len);
+    try self.metadata_named.ensure_unused_capacity(self.gpa, 1);
+    self.debug_named_assume_capacity(name, operands);
 }
 
 fn debug_none(self: *Builder) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, NoExtra, 0);
-    return self.debugNoneAssumeCapacity();
+    try self.ensure_unused_metadata_capacity(1, NoExtra, 0);
+    return self.debug_none_assume_capacity();
 }
 
 pub fn debug_file(
@@ -11730,8 +11730,8 @@ pub fn debug_file(
     filename: MetadataString,
     directory: MetadataString,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.File, 0);
-    return self.debugFileAssumeCapacity(filename, directory);
+    try self.ensure_unused_metadata_capacity(1, Metadata.File, 0);
+    return self.debug_file_assume_capacity(filename, directory);
 }
 
 pub fn debug_compile_unit(
@@ -11742,8 +11742,8 @@ pub fn debug_compile_unit(
     globals: Metadata,
     options: Metadata.CompileUnit.Options,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.CompileUnit, 0);
-    return self.debugCompileUnitAssumeCapacity(file, producer, enums, globals, options);
+    try self.ensure_unused_metadata_capacity(1, Metadata.CompileUnit, 0);
+    return self.debug_compile_unit_assume_capacity(file, producer, enums, globals, options);
 }
 
 pub fn debug_subprogram(
@@ -11757,8 +11757,8 @@ pub fn debug_subprogram(
     options: Metadata.Subprogram.Options,
     compile_unit: Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.Subprogram, 0);
-    return self.debugSubprogramAssumeCapacity(
+    try self.ensure_unused_metadata_capacity(1, Metadata.Subprogram, 0);
+    return self.debug_subprogram_assume_capacity(
         file,
         name,
         linkage_name,
@@ -11771,38 +11771,38 @@ pub fn debug_subprogram(
 }
 
 pub fn debug_lexical_block(self: *Builder, scope: Metadata, file: Metadata, line: u32, column: u32) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.LexicalBlock, 0);
-    return self.debugLexicalBlockAssumeCapacity(scope, file, line, column);
+    try self.ensure_unused_metadata_capacity(1, Metadata.LexicalBlock, 0);
+    return self.debug_lexical_block_assume_capacity(scope, file, line, column);
 }
 
 pub fn debug_location(self: *Builder, line: u32, column: u32, scope: Metadata, inlined_at: Metadata) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.Location, 0);
-    return self.debugLocationAssumeCapacity(line, column, scope, inlined_at);
+    try self.ensure_unused_metadata_capacity(1, Metadata.Location, 0);
+    return self.debug_location_assume_capacity(line, column, scope, inlined_at);
 }
 
 pub fn debug_bool_type(self: *Builder, name: MetadataString, size_in_bits: u64) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.BasicType, 0);
-    return self.debugBoolTypeAssumeCapacity(name, size_in_bits);
+    try self.ensure_unused_metadata_capacity(1, Metadata.BasicType, 0);
+    return self.debug_bool_type_assume_capacity(name, size_in_bits);
 }
 
 pub fn debug_unsigned_type(self: *Builder, name: MetadataString, size_in_bits: u64) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.BasicType, 0);
-    return self.debugUnsignedTypeAssumeCapacity(name, size_in_bits);
+    try self.ensure_unused_metadata_capacity(1, Metadata.BasicType, 0);
+    return self.debug_unsigned_type_assume_capacity(name, size_in_bits);
 }
 
 pub fn debug_signed_type(self: *Builder, name: MetadataString, size_in_bits: u64) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.BasicType, 0);
-    return self.debugSignedTypeAssumeCapacity(name, size_in_bits);
+    try self.ensure_unused_metadata_capacity(1, Metadata.BasicType, 0);
+    return self.debug_signed_type_assume_capacity(name, size_in_bits);
 }
 
 pub fn debug_float_type(self: *Builder, name: MetadataString, size_in_bits: u64) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.BasicType, 0);
-    return self.debugFloatTypeAssumeCapacity(name, size_in_bits);
+    try self.ensure_unused_metadata_capacity(1, Metadata.BasicType, 0);
+    return self.debug_float_type_assume_capacity(name, size_in_bits);
 }
 
 pub fn debug_forward_reference(self: *Builder) Allocator.Error!Metadata {
-    try self.metadata_forward_references.ensureUnusedCapacity(self.gpa, 1);
-    return self.debugForwardReferenceAssumeCapacity();
+    try self.metadata_forward_references.ensure_unused_capacity(self.gpa, 1);
+    return self.debug_forward_reference_assume_capacity();
 }
 
 pub fn debug_struct_type(
@@ -11816,8 +11816,8 @@ pub fn debug_struct_type(
     align_in_bits: u64,
     fields_tuple: Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.CompositeType, 0);
-    return self.debugStructTypeAssumeCapacity(
+    try self.ensure_unused_metadata_capacity(1, Metadata.CompositeType, 0);
+    return self.debug_struct_type_assume_capacity(
         name,
         file,
         scope,
@@ -11840,8 +11840,8 @@ pub fn debug_union_type(
     align_in_bits: u64,
     fields_tuple: Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.CompositeType, 0);
-    return self.debugUnionTypeAssumeCapacity(
+    try self.ensure_unused_metadata_capacity(1, Metadata.CompositeType, 0);
+    return self.debug_union_type_assume_capacity(
         name,
         file,
         scope,
@@ -11864,8 +11864,8 @@ pub fn debug_enumeration_type(
     align_in_bits: u64,
     fields_tuple: Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.CompositeType, 0);
-    return self.debugEnumerationTypeAssumeCapacity(
+    try self.ensure_unused_metadata_capacity(1, Metadata.CompositeType, 0);
+    return self.debug_enumeration_type_assume_capacity(
         name,
         file,
         scope,
@@ -11888,8 +11888,8 @@ pub fn debug_array_type(
     align_in_bits: u64,
     fields_tuple: Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.CompositeType, 0);
-    return self.debugArrayTypeAssumeCapacity(
+    try self.ensure_unused_metadata_capacity(1, Metadata.CompositeType, 0);
+    return self.debug_array_type_assume_capacity(
         name,
         file,
         scope,
@@ -11912,8 +11912,8 @@ pub fn debug_vector_type(
     align_in_bits: u64,
     fields_tuple: Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.CompositeType, 0);
-    return self.debugVectorTypeAssumeCapacity(
+    try self.ensure_unused_metadata_capacity(1, Metadata.CompositeType, 0);
+    return self.debug_vector_type_assume_capacity(
         name,
         file,
         scope,
@@ -11936,8 +11936,8 @@ pub fn debug_pointer_type(
     align_in_bits: u64,
     offset_in_bits: u64,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.DerivedType, 0);
-    return self.debugPointerTypeAssumeCapacity(
+    try self.ensure_unused_metadata_capacity(1, Metadata.DerivedType, 0);
+    return self.debug_pointer_type_assume_capacity(
         name,
         file,
         scope,
@@ -11960,8 +11960,8 @@ pub fn debug_member_type(
     align_in_bits: u64,
     offset_in_bits: u64,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.DerivedType, 0);
-    return self.debugMemberTypeAssumeCapacity(
+    try self.ensure_unused_metadata_capacity(1, Metadata.DerivedType, 0);
+    return self.debug_member_type_assume_capacity(
         name,
         file,
         scope,
@@ -11977,8 +11977,8 @@ pub fn debug_subroutine_type(
     self: *Builder,
     types_tuple: Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.SubroutineType, 0);
-    return self.debugSubroutineTypeAssumeCapacity(types_tuple);
+    try self.ensure_unused_metadata_capacity(1, Metadata.SubroutineType, 0);
+    return self.debug_subroutine_type_assume_capacity(types_tuple);
 }
 
 pub fn debug_enumerator(
@@ -11989,9 +11989,9 @@ pub fn debug_enumerator(
     value: std.math.big.int.Const,
 ) Allocator.Error!Metadata {
     assert(!(unsigned and !value.positive));
-    try self.ensureUnusedMetadataCapacity(1, Metadata.Enumerator, 0);
-    try self.metadata_limbs.ensureUnusedCapacity(self.gpa, value.limbs.len);
-    return self.debugEnumeratorAssumeCapacity(name, unsigned, bit_width, value);
+    try self.ensure_unused_metadata_capacity(1, Metadata.Enumerator, 0);
+    try self.metadata_limbs.ensure_unused_capacity(self.gpa, value.limbs.len);
+    return self.debug_enumerator_assume_capacity(name, unsigned, bit_width, value);
 }
 
 pub fn debug_subrange(
@@ -11999,24 +11999,24 @@ pub fn debug_subrange(
     lower_bound: Metadata,
     count: Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.Subrange, 0);
-    return self.debugSubrangeAssumeCapacity(lower_bound, count);
+    try self.ensure_unused_metadata_capacity(1, Metadata.Subrange, 0);
+    return self.debug_subrange_assume_capacity(lower_bound, count);
 }
 
 pub fn debug_expression(
     self: *Builder,
     elements: []const u32,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.Expression, elements.len * @sizeOf(u32));
-    return self.debugExpressionAssumeCapacity(elements);
+    try self.ensure_unused_metadata_capacity(1, Metadata.Expression, elements.len * @size_of(u32));
+    return self.debug_expression_assume_capacity(elements);
 }
 
 pub fn debug_tuple(
     self: *Builder,
     elements: []const Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.Tuple, elements.len * @sizeOf(Metadata));
-    return self.debugTupleAssumeCapacity(elements);
+    try self.ensure_unused_metadata_capacity(1, Metadata.Tuple, elements.len * @size_of(Metadata));
+    return self.debug_tuple_assume_capacity(elements);
 }
 
 pub fn debug_module_flag(
@@ -12025,8 +12025,8 @@ pub fn debug_module_flag(
     name: MetadataString,
     constant: Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.ModuleFlag, 0);
-    return self.debugModuleFlagAssumeCapacity(behavior, name, constant);
+    try self.ensure_unused_metadata_capacity(1, Metadata.ModuleFlag, 0);
+    return self.debug_module_flag_assume_capacity(behavior, name, constant);
 }
 
 pub fn debug_local_var(
@@ -12037,8 +12037,8 @@ pub fn debug_local_var(
     line: u32,
     ty: Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.LocalVar, 0);
-    return self.debugLocalVarAssumeCapacity(name, file, scope, line, ty);
+    try self.ensure_unused_metadata_capacity(1, Metadata.LocalVar, 0);
+    return self.debug_local_var_assume_capacity(name, file, scope, line, ty);
 }
 
 pub fn debug_parameter(
@@ -12050,8 +12050,8 @@ pub fn debug_parameter(
     ty: Metadata,
     arg_no: u32,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.Parameter, 0);
-    return self.debugParameterAssumeCapacity(name, file, scope, line, ty, arg_no);
+    try self.ensure_unused_metadata_capacity(1, Metadata.Parameter, 0);
+    return self.debug_parameter_assume_capacity(name, file, scope, line, ty, arg_no);
 }
 
 pub fn debug_global_var(
@@ -12065,8 +12065,8 @@ pub fn debug_global_var(
     variable: Variable.Index,
     options: Metadata.GlobalVar.Options,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.GlobalVar, 0);
-    return self.debugGlobalVarAssumeCapacity(
+    try self.ensure_unused_metadata_capacity(1, Metadata.GlobalVar, 0);
+    return self.debug_global_var_assume_capacity(
         name,
         linkage_name,
         file,
@@ -12083,21 +12083,21 @@ pub fn debug_global_var_expression(
     variable: Metadata,
     expression: Metadata,
 ) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, Metadata.GlobalVarExpression, 0);
-    return self.debugGlobalVarExpressionAssumeCapacity(variable, expression);
+    try self.ensure_unused_metadata_capacity(1, Metadata.GlobalVarExpression, 0);
+    return self.debug_global_var_expression_assume_capacity(variable, expression);
 }
 
 pub fn debug_constant(self: *Builder, value: Constant) Allocator.Error!Metadata {
-    try self.ensureUnusedMetadataCapacity(1, NoExtra, 0);
-    return self.debugConstantAssumeCapacity(value);
+    try self.ensure_unused_metadata_capacity(1, NoExtra, 0);
+    return self.debug_constant_assume_capacity(value);
 }
 
 pub fn debug_forward_reference_set_type(self: *Builder, fwd_ref: Metadata, ty: Metadata) void {
     assert(
-        @intFromEnum(fwd_ref) >= Metadata.first_forward_reference and
-            @intFromEnum(fwd_ref) <= Metadata.first_local_metadata,
+        @int_from_enum(fwd_ref) >= Metadata.first_forward_reference and
+            @int_from_enum(fwd_ref) <= Metadata.first_local_metadata,
     );
-    const index = @intFromEnum(fwd_ref) - Metadata.first_forward_reference;
+    const index = @int_from_enum(fwd_ref) - Metadata.first_forward_reference;
     self.metadata_forward_references.items[index] = ty;
 }
 
@@ -12109,9 +12109,9 @@ fn metadata_simple_assume_capacity(self: *Builder, tag: Metadata.Tag, value: any
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: Key) u32 {
-            var hasher = std.hash.Wyhash.init(std.hash.uint32(@intFromEnum(key.tag)));
+            var hasher = std.hash.Wyhash.init(std.hash.uint32(@int_from_enum(key.tag)));
             inline for (std.meta.fields(@TypeOf(value))) |field| {
-                hasher.update(std.mem.asBytes(&@field(key.value, field.name)));
+                hasher.update(std.mem.as_bytes(&@field(key.value, field.name)));
             }
             return @truncate(hasher.final());
         }
@@ -12119,12 +12119,12 @@ fn metadata_simple_assume_capacity(self: *Builder, tag: Metadata.Tag, value: any
         pub fn eql(ctx: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
             if (lhs_key.tag != ctx.builder.metadata_items.items(.tag)[rhs_index]) return false;
             const rhs_data = ctx.builder.metadata_items.items(.data)[rhs_index];
-            const rhs_extra = ctx.builder.metadataExtraData(@TypeOf(value), rhs_data);
+            const rhs_extra = ctx.builder.metadata_extra_data(@TypeOf(value), rhs_data);
             return std.meta.eql(lhs_key.value, rhs_extra);
         }
     };
 
-    const gop = self.metadata_map.getOrPutAssumeCapacityAdapted(
+    const gop = self.metadata_map.get_or_put_assume_capacity_adapted(
         Key{ .tag = tag, .value = value },
         Adapter{ .builder = self },
     );
@@ -12132,9 +12132,9 @@ fn metadata_simple_assume_capacity(self: *Builder, tag: Metadata.Tag, value: any
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.metadata_items.appendAssumeCapacity(.{
+        self.metadata_items.append_assume_capacity(.{
             .tag = tag,
-            .data = self.addMetadataExtraAssumeCapacity(value),
+            .data = self.add_metadata_extra_assume_capacity(value),
         });
     }
     return @enumFromInt(gop.index);
@@ -12145,17 +12145,17 @@ fn metadata_distinct_assume_capacity(self: *Builder, tag: Metadata.Tag, value: a
     const Adapter = struct {
         pub fn hash(_: @This(), key: Key) u32 {
             return @truncate(std.hash.Wyhash.hash(
-                std.hash.uint32(@intFromEnum(key.tag)),
-                std.mem.asBytes(&key.index),
+                std.hash.uint32(@int_from_enum(key.tag)),
+                std.mem.as_bytes(&key.index),
             ));
         }
 
         pub fn eql(_: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
-            return @intFromEnum(lhs_key.index) == rhs_index;
+            return @int_from_enum(lhs_key.index) == rhs_index;
         }
     };
 
-    const gop = self.metadata_map.getOrPutAssumeCapacityAdapted(
+    const gop = self.metadata_map.get_or_put_assume_capacity_adapted(
         Key{ .tag = tag, .index = @enumFromInt(self.metadata_map.count()) },
         Adapter{},
     );
@@ -12163,9 +12163,9 @@ fn metadata_distinct_assume_capacity(self: *Builder, tag: Metadata.Tag, value: a
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.metadata_items.appendAssumeCapacity(.{
+        self.metadata_items.append_assume_capacity(.{
             .tag = tag,
-            .data = self.addMetadataExtraAssumeCapacity(value),
+            .data = self.add_metadata_extra_assume_capacity(value),
         });
     }
     return @enumFromInt(gop.index);
@@ -12174,19 +12174,19 @@ fn metadata_distinct_assume_capacity(self: *Builder, tag: Metadata.Tag, value: a
 fn debug_named_assume_capacity(self: *Builder, name: MetadataString, operands: []const Metadata) void {
     assert(!self.strip);
     assert(name != .none);
-    const extra_index: u32 = @intCast(self.metadata_extra.items.len);
-    self.metadata_extra.appendSliceAssumeCapacity(@ptrCast(operands));
+    const extra_index: u32 = @int_cast(self.metadata_extra.items.len);
+    self.metadata_extra.append_slice_assume_capacity(@ptr_cast(operands));
 
-    const gop = self.metadata_named.getOrPutAssumeCapacity(name);
+    const gop = self.metadata_named.get_or_put_assume_capacity(name);
     gop.value_ptr.* = .{
         .index = extra_index,
-        .len = @intCast(operands.len),
+        .len = @int_cast(operands.len),
     };
 }
 
 pub fn debug_none_assume_capacity(self: *Builder) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.none, .{});
+    return self.metadata_simple_assume_capacity(.none, .{});
 }
 
 fn debug_file_assume_capacity(
@@ -12195,7 +12195,7 @@ fn debug_file_assume_capacity(
     directory: MetadataString,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.file, Metadata.File{
+    return self.metadata_simple_assume_capacity(.file, Metadata.File{
         .filename = filename,
         .directory = directory,
     });
@@ -12210,7 +12210,7 @@ pub fn debug_compile_unit_assume_capacity(
     options: Metadata.CompileUnit.Options,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataDistinctAssumeCapacity(
+    return self.metadata_distinct_assume_capacity(
         if (options.optimized) .@"compile_unit optimized" else .compile_unit,
         Metadata.CompileUnit{
             .file = file,
@@ -12233,9 +12233,9 @@ fn debug_subprogram_assume_capacity(
     compile_unit: Metadata,
 ) Metadata {
     assert(!self.strip);
-    const tag: Metadata.Tag = @enumFromInt(@intFromEnum(Metadata.Tag.subprogram) +
-        @as(u3, @truncate(@as(u32, @bitCast(options.sp_flags)) >> 2)));
-    return self.metadataDistinctAssumeCapacity(tag, Metadata.Subprogram{
+    const tag: Metadata.Tag = @enumFromInt(@int_from_enum(Metadata.Tag.subprogram) +
+        @as(u3, @truncate(@as(u32, @bit_cast(options.sp_flags)) >> 2)));
+    return self.metadata_distinct_assume_capacity(tag, Metadata.Subprogram{
         .file = file,
         .name = name,
         .linkage_name = linkage_name,
@@ -12249,7 +12249,7 @@ fn debug_subprogram_assume_capacity(
 
 fn debug_lexical_block_assume_capacity(self: *Builder, scope: Metadata, file: Metadata, line: u32, column: u32) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.lexical_block, Metadata.LexicalBlock{
+    return self.metadata_simple_assume_capacity(.lexical_block, Metadata.LexicalBlock{
         .scope = scope,
         .file = file,
         .line = line,
@@ -12259,7 +12259,7 @@ fn debug_lexical_block_assume_capacity(self: *Builder, scope: Metadata, file: Me
 
 fn debug_location_assume_capacity(self: *Builder, line: u32, column: u32, scope: Metadata, inlined_at: Metadata) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.location, Metadata.Location{
+    return self.metadata_simple_assume_capacity(.location, Metadata.Location{
         .line = line,
         .column = column,
         .scope = scope,
@@ -12269,7 +12269,7 @@ fn debug_location_assume_capacity(self: *Builder, line: u32, column: u32, scope:
 
 fn debug_bool_type_assume_capacity(self: *Builder, name: MetadataString, size_in_bits: u64) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.basic_bool_type, Metadata.BasicType{
+    return self.metadata_simple_assume_capacity(.basic_bool_type, Metadata.BasicType{
         .name = name,
         .size_in_bits_lo = @truncate(size_in_bits),
         .size_in_bits_hi = @truncate(size_in_bits >> 32),
@@ -12278,7 +12278,7 @@ fn debug_bool_type_assume_capacity(self: *Builder, name: MetadataString, size_in
 
 fn debug_unsigned_type_assume_capacity(self: *Builder, name: MetadataString, size_in_bits: u64) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.basic_unsigned_type, Metadata.BasicType{
+    return self.metadata_simple_assume_capacity(.basic_unsigned_type, Metadata.BasicType{
         .name = name,
         .size_in_bits_lo = @truncate(size_in_bits),
         .size_in_bits_hi = @truncate(size_in_bits >> 32),
@@ -12287,7 +12287,7 @@ fn debug_unsigned_type_assume_capacity(self: *Builder, name: MetadataString, siz
 
 fn debug_signed_type_assume_capacity(self: *Builder, name: MetadataString, size_in_bits: u64) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.basic_signed_type, Metadata.BasicType{
+    return self.metadata_simple_assume_capacity(.basic_signed_type, Metadata.BasicType{
         .name = name,
         .size_in_bits_lo = @truncate(size_in_bits),
         .size_in_bits_hi = @truncate(size_in_bits >> 32),
@@ -12296,7 +12296,7 @@ fn debug_signed_type_assume_capacity(self: *Builder, name: MetadataString, size_
 
 fn debug_float_type_assume_capacity(self: *Builder, name: MetadataString, size_in_bits: u64) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.basic_float_type, Metadata.BasicType{
+    return self.metadata_simple_assume_capacity(.basic_float_type, Metadata.BasicType{
         .name = name,
         .size_in_bits_lo = @truncate(size_in_bits),
         .size_in_bits_hi = @truncate(size_in_bits >> 32),
@@ -12306,7 +12306,7 @@ fn debug_float_type_assume_capacity(self: *Builder, name: MetadataString, size_i
 fn debug_forward_reference_assume_capacity(self: *Builder) Metadata {
     assert(!self.strip);
     const index = Metadata.first_forward_reference + self.metadata_forward_references.items.len;
-    self.metadata_forward_references.appendAssumeCapacity(.none);
+    self.metadata_forward_references.append_assume_capacity(.none);
     return @enumFromInt(index);
 }
 
@@ -12322,7 +12322,7 @@ fn debug_struct_type_assume_capacity(
     fields_tuple: Metadata,
 ) Metadata {
     assert(!self.strip);
-    return self.debugCompositeTypeAssumeCapacity(
+    return self.debug_composite_type_assume_capacity(
         .composite_struct_type,
         name,
         file,
@@ -12347,7 +12347,7 @@ fn debug_union_type_assume_capacity(
     fields_tuple: Metadata,
 ) Metadata {
     assert(!self.strip);
-    return self.debugCompositeTypeAssumeCapacity(
+    return self.debug_composite_type_assume_capacity(
         .composite_union_type,
         name,
         file,
@@ -12372,7 +12372,7 @@ fn debug_enumeration_type_assume_capacity(
     fields_tuple: Metadata,
 ) Metadata {
     assert(!self.strip);
-    return self.debugCompositeTypeAssumeCapacity(
+    return self.debug_composite_type_assume_capacity(
         .composite_enumeration_type,
         name,
         file,
@@ -12397,7 +12397,7 @@ fn debug_array_type_assume_capacity(
     fields_tuple: Metadata,
 ) Metadata {
     assert(!self.strip);
-    return self.debugCompositeTypeAssumeCapacity(
+    return self.debug_composite_type_assume_capacity(
         .composite_array_type,
         name,
         file,
@@ -12422,7 +12422,7 @@ fn debug_vector_type_assume_capacity(
     fields_tuple: Metadata,
 ) Metadata {
     assert(!self.strip);
-    return self.debugCompositeTypeAssumeCapacity(
+    return self.debug_composite_type_assume_capacity(
         .composite_vector_type,
         name,
         file,
@@ -12448,7 +12448,7 @@ fn debug_composite_type_assume_capacity(
     fields_tuple: Metadata,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(tag, Metadata.CompositeType{
+    return self.metadata_simple_assume_capacity(tag, Metadata.CompositeType{
         .name = name,
         .file = file,
         .scope = scope,
@@ -12474,7 +12474,7 @@ fn debug_pointer_type_assume_capacity(
     offset_in_bits: u64,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.derived_pointer_type, Metadata.DerivedType{
+    return self.metadata_simple_assume_capacity(.derived_pointer_type, Metadata.DerivedType{
         .name = name,
         .file = file,
         .scope = scope,
@@ -12501,7 +12501,7 @@ fn debug_member_type_assume_capacity(
     offset_in_bits: u64,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.derived_member_type, Metadata.DerivedType{
+    return self.metadata_simple_assume_capacity(.derived_member_type, Metadata.DerivedType{
         .name = name,
         .file = file,
         .scope = scope,
@@ -12521,7 +12521,7 @@ fn debug_subroutine_type_assume_capacity(
     types_tuple: Metadata,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.subroutine_type, Metadata.SubroutineType{
+    return self.metadata_simple_assume_capacity(.subroutine_type, Metadata.SubroutineType{
         .types_tuple = types_tuple,
     });
 }
@@ -12543,17 +12543,17 @@ fn debug_enumerator_assume_capacity(
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: Key) u32 {
-            var hasher = std.hash.Wyhash.init(std.hash.uint32(@intFromEnum(key.tag)));
-            hasher.update(std.mem.asBytes(&key.name));
-            hasher.update(std.mem.asBytes(&key.bit_width));
-            hasher.update(std.mem.sliceAsBytes(key.value.limbs));
+            var hasher = std.hash.Wyhash.init(std.hash.uint32(@int_from_enum(key.tag)));
+            hasher.update(std.mem.as_bytes(&key.name));
+            hasher.update(std.mem.as_bytes(&key.bit_width));
+            hasher.update(std.mem.slice_as_bytes(key.value.limbs));
             return @truncate(hasher.final());
         }
 
         pub fn eql(ctx: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
             if (lhs_key.tag != ctx.builder.metadata_items.items(.tag)[rhs_index]) return false;
             const rhs_data = ctx.builder.metadata_items.items(.data)[rhs_index];
-            const rhs_extra = ctx.builder.metadataExtraData(Metadata.Enumerator, rhs_data);
+            const rhs_extra = ctx.builder.metadata_extra_data(Metadata.Enumerator, rhs_data);
             const limbs = ctx.builder.metadata_limbs
                 .items[rhs_extra.limbs_index..][0..rhs_extra.limbs_len];
             const rhs_value = std.math.big.int.Const{
@@ -12575,7 +12575,7 @@ fn debug_enumerator_assume_capacity(
 
     assert(!(tag == .enumerator_unsigned and !value.positive));
 
-    const gop = self.metadata_map.getOrPutAssumeCapacityAdapted(
+    const gop = self.metadata_map.get_or_put_assume_capacity_adapted(
         Key{
             .tag = tag,
             .name = name,
@@ -12588,16 +12588,16 @@ fn debug_enumerator_assume_capacity(
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.metadata_items.appendAssumeCapacity(.{
+        self.metadata_items.append_assume_capacity(.{
             .tag = tag,
-            .data = self.addMetadataExtraAssumeCapacity(Metadata.Enumerator{
+            .data = self.add_metadata_extra_assume_capacity(Metadata.Enumerator{
                 .name = name,
                 .bit_width = bit_width,
-                .limbs_index = @intCast(self.metadata_limbs.items.len),
-                .limbs_len = @intCast(value.limbs.len),
+                .limbs_index = @int_cast(self.metadata_limbs.items.len),
+                .limbs_len = @int_cast(value.limbs.len),
             }),
         });
-        self.metadata_limbs.appendSliceAssumeCapacity(value.limbs);
+        self.metadata_limbs.append_slice_assume_capacity(value.limbs);
     }
     return @enumFromInt(gop.index);
 }
@@ -12608,7 +12608,7 @@ fn debug_subrange_assume_capacity(
     count: Metadata,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.subrange, Metadata.Subrange{
+    return self.metadata_simple_assume_capacity(.subrange, Metadata.Subrange{
         .lower_bound = lower_bound,
         .count = count,
     });
@@ -12625,15 +12625,15 @@ fn debug_expression_assume_capacity(
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: Key) u32 {
-            var hasher = comptime std.hash.Wyhash.init(std.hash.uint32(@intFromEnum(Metadata.Tag.expression)));
-            hasher.update(std.mem.sliceAsBytes(key.elements));
+            var hasher = comptime std.hash.Wyhash.init(std.hash.uint32(@int_from_enum(Metadata.Tag.expression)));
+            hasher.update(std.mem.slice_as_bytes(key.elements));
             return @truncate(hasher.final());
         }
 
         pub fn eql(ctx: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
             if (Metadata.Tag.expression != ctx.builder.metadata_items.items(.tag)[rhs_index]) return false;
             const rhs_data = ctx.builder.metadata_items.items(.data)[rhs_index];
-            var rhs_extra = ctx.builder.metadataExtraDataTrail(Metadata.Expression, rhs_data);
+            var rhs_extra = ctx.builder.metadata_extra_data_trail(Metadata.Expression, rhs_data);
             return std.mem.eql(
                 u32,
                 lhs_key.elements,
@@ -12642,7 +12642,7 @@ fn debug_expression_assume_capacity(
         }
     };
 
-    const gop = self.metadata_map.getOrPutAssumeCapacityAdapted(
+    const gop = self.metadata_map.get_or_put_assume_capacity_adapted(
         Key{ .elements = elements },
         Adapter{ .builder = self },
     );
@@ -12650,13 +12650,13 @@ fn debug_expression_assume_capacity(
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.metadata_items.appendAssumeCapacity(.{
+        self.metadata_items.append_assume_capacity(.{
             .tag = .expression,
-            .data = self.addMetadataExtraAssumeCapacity(Metadata.Expression{
-                .elements_len = @intCast(elements.len),
+            .data = self.add_metadata_extra_assume_capacity(Metadata.Expression{
+                .elements_len = @int_cast(elements.len),
             }),
         });
-        self.metadata_extra.appendSliceAssumeCapacity(@ptrCast(elements));
+        self.metadata_extra.append_slice_assume_capacity(@ptr_cast(elements));
     }
     return @enumFromInt(gop.index);
 }
@@ -12672,15 +12672,15 @@ fn debug_tuple_assume_capacity(
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: Key) u32 {
-            var hasher = comptime std.hash.Wyhash.init(std.hash.uint32(@intFromEnum(Metadata.Tag.tuple)));
-            hasher.update(std.mem.sliceAsBytes(key.elements));
+            var hasher = comptime std.hash.Wyhash.init(std.hash.uint32(@int_from_enum(Metadata.Tag.tuple)));
+            hasher.update(std.mem.slice_as_bytes(key.elements));
             return @truncate(hasher.final());
         }
 
         pub fn eql(ctx: @This(), lhs_key: Key, _: void, rhs_index: usize) bool {
             if (Metadata.Tag.tuple != ctx.builder.metadata_items.items(.tag)[rhs_index]) return false;
             const rhs_data = ctx.builder.metadata_items.items(.data)[rhs_index];
-            var rhs_extra = ctx.builder.metadataExtraDataTrail(Metadata.Tuple, rhs_data);
+            var rhs_extra = ctx.builder.metadata_extra_data_trail(Metadata.Tuple, rhs_data);
             return std.mem.eql(
                 Metadata,
                 lhs_key.elements,
@@ -12689,7 +12689,7 @@ fn debug_tuple_assume_capacity(
         }
     };
 
-    const gop = self.metadata_map.getOrPutAssumeCapacityAdapted(
+    const gop = self.metadata_map.get_or_put_assume_capacity_adapted(
         Key{ .elements = elements },
         Adapter{ .builder = self },
     );
@@ -12697,13 +12697,13 @@ fn debug_tuple_assume_capacity(
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.metadata_items.appendAssumeCapacity(.{
+        self.metadata_items.append_assume_capacity(.{
             .tag = .tuple,
-            .data = self.addMetadataExtraAssumeCapacity(Metadata.Tuple{
-                .elements_len = @intCast(elements.len),
+            .data = self.add_metadata_extra_assume_capacity(Metadata.Tuple{
+                .elements_len = @int_cast(elements.len),
             }),
         });
-        self.metadata_extra.appendSliceAssumeCapacity(@ptrCast(elements));
+        self.metadata_extra.append_slice_assume_capacity(@ptr_cast(elements));
     }
     return @enumFromInt(gop.index);
 }
@@ -12715,7 +12715,7 @@ fn debug_module_flag_assume_capacity(
     constant: Metadata,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.module_flag, Metadata.ModuleFlag{
+    return self.metadata_simple_assume_capacity(.module_flag, Metadata.ModuleFlag{
         .behavior = behavior,
         .name = name,
         .constant = constant,
@@ -12731,7 +12731,7 @@ fn debug_local_var_assume_capacity(
     ty: Metadata,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.local_var, Metadata.LocalVar{
+    return self.metadata_simple_assume_capacity(.local_var, Metadata.LocalVar{
         .name = name,
         .file = file,
         .scope = scope,
@@ -12750,7 +12750,7 @@ fn debug_parameter_assume_capacity(
     arg_no: u32,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.parameter, Metadata.Parameter{
+    return self.metadata_simple_assume_capacity(.parameter, Metadata.Parameter{
         .name = name,
         .file = file,
         .scope = scope,
@@ -12772,7 +12772,7 @@ fn debug_global_var_assume_capacity(
     options: Metadata.GlobalVar.Options,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataDistinctAssumeCapacity(
+    return self.metadata_distinct_assume_capacity(
         if (options.local) .@"global_var local" else .global_var,
         Metadata.GlobalVar{
             .name = name,
@@ -12792,7 +12792,7 @@ fn debug_global_var_expression_assume_capacity(
     expression: Metadata,
 ) Metadata {
     assert(!self.strip);
-    return self.metadataSimpleAssumeCapacity(.global_var_expression, Metadata.GlobalVarExpression{
+    return self.metadata_simple_assume_capacity(.global_var_expression, Metadata.GlobalVarExpression{
         .variable = variable,
         .expression = expression,
     });
@@ -12803,8 +12803,8 @@ fn debug_constant_assume_capacity(self: *Builder, constant: Constant) Metadata {
     const Adapter = struct {
         builder: *const Builder,
         pub fn hash(_: @This(), key: Constant) u32 {
-            var hasher = comptime std.hash.Wyhash.init(std.hash.uint32(@intFromEnum(Metadata.Tag.constant)));
-            hasher.update(std.mem.asBytes(&key));
+            var hasher = comptime std.hash.Wyhash.init(std.hash.uint32(@int_from_enum(Metadata.Tag.constant)));
+            hasher.update(std.mem.as_bytes(&key));
             return @truncate(hasher.final());
         }
 
@@ -12815,7 +12815,7 @@ fn debug_constant_assume_capacity(self: *Builder, constant: Constant) Metadata {
         }
     };
 
-    const gop = self.metadata_map.getOrPutAssumeCapacityAdapted(
+    const gop = self.metadata_map.get_or_put_assume_capacity_adapted(
         constant,
         Adapter{ .builder = self },
     );
@@ -12823,9 +12823,9 @@ fn debug_constant_assume_capacity(self: *Builder, constant: Constant) Metadata {
     if (!gop.found_existing) {
         gop.key_ptr.* = {};
         gop.value_ptr.* = {};
-        self.metadata_items.appendAssumeCapacity(.{
+        self.metadata_items.append_assume_capacity(.{
             .tag = .constant,
-            .data = @intFromEnum(constant),
+            .data = @int_from_enum(constant),
         });
     }
     return @enumFromInt(gop.index);
@@ -12840,7 +12840,7 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
     errdefer bitcode.deinit();
 
     // Write LLVM IR magic
-    try bitcode.writeBits(ir.MAGIC, 32);
+    try bitcode.write_bits(ir.MAGIC, 32);
 
     var record: std.ArrayListUnmanaged(u64) = .{};
     defer record.deinit(self.gpa);
@@ -12848,17 +12848,17 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
     // IDENTIFICATION_BLOCK
     {
         const Identification = ir.Identification;
-        var identification_block = try bitcode.enterTopBlock(Identification);
+        var identification_block = try bitcode.enter_top_block(Identification);
 
-        const producer = try std.fmt.allocPrint(self.gpa, "zig {d}.{d}.{d}", .{
+        const producer = try std.fmt.alloc_print(self.gpa, "zig {d}.{d}.{d}", .{
             build_options.semver.major,
             build_options.semver.minor,
             build_options.semver.patch,
         });
         defer self.gpa.free(producer);
 
-        try identification_block.writeAbbrev(Identification.Version{ .string = producer });
-        try identification_block.writeAbbrev(Identification.Epoch{ .epoch = 0 });
+        try identification_block.write_abbrev(Identification.Version{ .string = producer });
+        try identification_block.write_abbrev(Identification.Epoch{ .epoch = 0 });
 
         try identification_block.end();
     }
@@ -12866,33 +12866,33 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
     // MODULE_BLOCK
     {
         const Module = ir.Module;
-        var module_block = try bitcode.enterTopBlock(Module);
+        var module_block = try bitcode.enter_top_block(Module);
 
-        try module_block.writeAbbrev(Module.Version{});
+        try module_block.write_abbrev(Module.Version{});
 
         if (self.target_triple.slice(self)) |triple| {
-            try module_block.writeAbbrev(Module.String{
+            try module_block.write_abbrev(Module.String{
                 .code = 2,
                 .string = triple,
             });
         }
 
         if (self.data_layout.slice(self)) |data_layout| {
-            try module_block.writeAbbrev(Module.String{
+            try module_block.write_abbrev(Module.String{
                 .code = 3,
                 .string = data_layout,
             });
         }
 
         if (self.source_filename.slice(self)) |source_filename| {
-            try module_block.writeAbbrev(Module.String{
+            try module_block.write_abbrev(Module.String{
                 .code = 16,
                 .string = source_filename,
             });
         }
 
         if (self.module_asm.items.len != 0) {
-            try module_block.writeAbbrev(Module.String{
+            try module_block.write_abbrev(Module.String{
                 .code = 4,
                 .string = self.module_asm.items,
             });
@@ -12900,16 +12900,16 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
 
         // TYPE_BLOCK
         {
-            var type_block = try module_block.enterSubBlock(ir.Type, true);
+            var type_block = try module_block.enter_sub_block(ir.Type, true);
 
-            try type_block.writeAbbrev(ir.Type.NumEntry{ .num = @intCast(self.type_items.items.len) });
+            try type_block.write_abbrev(ir.Type.NumEntry{ .num = @int_cast(self.type_items.items.len) });
 
             for (self.type_items.items, 0..) |item, i| {
                 const ty: Type = @enumFromInt(i);
 
                 switch (item.tag) {
-                    .simple => try type_block.writeAbbrev(ir.Type.Simple{ .code = @truncate(item.data) }),
-                    .integer => try type_block.writeAbbrev(ir.Type.Integer{ .width = item.data }),
+                    .simple => try type_block.write_abbrev(ir.Type.Simple{ .code = @truncate(item.data) }),
+                    .integer => try type_block.write_abbrev(ir.Type.Integer{ .width = item.data }),
                     .structure,
                     .packed_structure,
                     => |kind| {
@@ -12918,30 +12918,30 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                             .packed_structure => true,
                             else => unreachable,
                         };
-                        var extra = self.typeExtraDataTrail(Type.Structure, item.data);
-                        try type_block.writeAbbrev(ir.Type.StructAnon{
+                        var extra = self.type_extra_data_trail(Type.Structure, item.data);
+                        try type_block.write_abbrev(ir.Type.StructAnon{
                             .is_packed = is_packed,
                             .types = extra.trail.next(extra.data.fields_len, Type, self),
                         });
                     },
                     .named_structure => {
-                        const extra = self.typeExtraData(Type.NamedStructure, item.data);
-                        try type_block.writeAbbrev(ir.Type.StructName{
+                        const extra = self.type_extra_data(Type.NamedStructure, item.data);
+                        try type_block.write_abbrev(ir.Type.StructName{
                             .string = extra.id.slice(self).?,
                         });
 
                         switch (extra.body) {
-                            .none => try type_block.writeAbbrev(ir.Type.Opaque{}),
+                            .none => try type_block.write_abbrev(ir.Type.Opaque{}),
                             else => {
-                                const real_struct = self.type_items.items[@intFromEnum(extra.body)];
+                                const real_struct = self.type_items.items[@int_from_enum(extra.body)];
                                 const is_packed: bool = switch (real_struct.tag) {
                                     .structure => false,
                                     .packed_structure => true,
                                     else => unreachable,
                                 };
 
-                                var real_extra = self.typeExtraDataTrail(Type.Structure, real_struct.data);
-                                try type_block.writeAbbrev(ir.Type.StructNamed{
+                                var real_extra = self.type_extra_data_trail(Type.Structure, real_struct.data);
+                                try type_block.write_abbrev(ir.Type.StructNamed{
                                     .is_packed = is_packed,
                                     .types = real_extra.trail.next(real_extra.data.fields_len, Type, self),
                                 });
@@ -12950,29 +12950,29 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     },
                     .array,
                     .small_array,
-                    => try type_block.writeAbbrev(ir.Type.Array{
-                        .len = ty.aggregateLen(self),
-                        .child = ty.childType(self),
+                    => try type_block.write_abbrev(ir.Type.Array{
+                        .len = ty.aggregate_len(self),
+                        .child = ty.child_type(self),
                     }),
                     .vector,
                     .scalable_vector,
-                    => try type_block.writeAbbrev(ir.Type.Vector{
-                        .len = ty.aggregateLen(self),
-                        .child = ty.childType(self),
+                    => try type_block.write_abbrev(ir.Type.Vector{
+                        .len = ty.aggregate_len(self),
+                        .child = ty.child_type(self),
                     }),
-                    .pointer => try type_block.writeAbbrev(ir.Type.Pointer{
-                        .addr_space = ty.pointerAddrSpace(self),
+                    .pointer => try type_block.write_abbrev(ir.Type.Pointer{
+                        .addr_space = ty.pointer_addr_space(self),
                     }),
                     .target => {
-                        var extra = self.typeExtraDataTrail(Type.Target, item.data);
-                        try type_block.writeAbbrev(ir.Type.StructName{
+                        var extra = self.type_extra_data_trail(Type.Target, item.data);
+                        try type_block.write_abbrev(ir.Type.StructName{
                             .string = extra.data.name.slice(self).?,
                         });
 
                         const types = extra.trail.next(extra.data.types_len, Type, self);
                         const ints = extra.trail.next(extra.data.ints_len, u32, self);
 
-                        try type_block.writeAbbrev(ir.Type.Target{
+                        try type_block.write_abbrev(ir.Type.Target{
                             .num_types = extra.data.types_len,
                             .types = types,
                             .ints = ints,
@@ -12984,8 +12984,8 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                             .vararg_function => true,
                             else => unreachable,
                         };
-                        var extra = self.typeExtraDataTrail(Type.Function, item.data);
-                        try type_block.writeAbbrev(ir.Type.Function{
+                        var extra = self.type_extra_data_trail(Type.Function, item.data);
+                        try type_block.write_abbrev(ir.Type.Function{
                             .is_vararg = is_vararg,
                             .return_type = extra.data.ret,
                             .param_types = extra.trail.next(extra.data.params_len, Type, self),
@@ -13007,32 +13007,32 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
         {
             const ParamattrGroup = ir.ParamattrGroup;
 
-            var paramattr_group_block = try module_block.enterSubBlock(ParamattrGroup, true);
+            var paramattr_group_block = try module_block.enter_sub_block(ParamattrGroup, true);
 
             for (self.function_attributes_set.keys()) |func_attributes| {
                 for (func_attributes.slice(self), 0..) |attributes, i| {
                     const attributes_slice = attributes.slice(self);
                     if (attributes_slice.len == 0) continue;
 
-                    const attr_gop = try attributes_set.getOrPut(self.gpa, .{
+                    const attr_gop = try attributes_set.get_or_put(self.gpa, .{
                         .attributes = attributes,
-                        .index = @intCast(i),
+                        .index = @int_cast(i),
                     });
 
                     if (attr_gop.found_existing) continue;
 
-                    record.clearRetainingCapacity();
-                    try record.ensureUnusedCapacity(self.gpa, 2);
+                    record.clear_retaining_capacity();
+                    try record.ensure_unused_capacity(self.gpa, 2);
 
-                    record.appendAssumeCapacity(attr_gop.index);
-                    record.appendAssumeCapacity(switch (i) {
+                    record.append_assume_capacity(attr_gop.index);
+                    record.append_assume_capacity(switch (i) {
                         0 => 0xffffffff,
                         else => i - 1,
                     });
 
                     for (attributes_slice) |attr_index| {
-                        const kind = attr_index.getKind(self);
-                        switch (attr_index.toAttribute(self)) {
+                        const kind = attr_index.get_kind(self);
+                        switch (attr_index.to_attribute(self)) {
                             .zeroext,
                             .signext,
                             .inreg,
@@ -13104,9 +13104,9 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                             .no_sanitize_hwaddress,
                             .sanitize_address_dyninit,
                             => {
-                                try record.ensureUnusedCapacity(self.gpa, 2);
-                                record.appendAssumeCapacity(0);
-                                record.appendAssumeCapacity(@intFromEnum(kind));
+                                try record.ensure_unused_capacity(self.gpa, 2);
+                                record.append_assume_capacity(0);
+                                record.append_assume_capacity(@int_from_enum(kind));
                             },
                             .byval,
                             .byref,
@@ -13115,63 +13115,63 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                             .sret,
                             .elementtype,
                             => |ty| {
-                                try record.ensureUnusedCapacity(self.gpa, 3);
-                                record.appendAssumeCapacity(6);
-                                record.appendAssumeCapacity(@intFromEnum(kind));
-                                record.appendAssumeCapacity(@intFromEnum(ty));
+                                try record.ensure_unused_capacity(self.gpa, 3);
+                                record.append_assume_capacity(6);
+                                record.append_assume_capacity(@int_from_enum(kind));
+                                record.append_assume_capacity(@int_from_enum(ty));
                             },
                             .@"align",
                             .alignstack,
                             => |alignment| {
-                                try record.ensureUnusedCapacity(self.gpa, 3);
-                                record.appendAssumeCapacity(1);
-                                record.appendAssumeCapacity(@intFromEnum(kind));
-                                record.appendAssumeCapacity(alignment.toByteUnits() orelse 0);
+                                try record.ensure_unused_capacity(self.gpa, 3);
+                                record.append_assume_capacity(1);
+                                record.append_assume_capacity(@int_from_enum(kind));
+                                record.append_assume_capacity(alignment.to_byte_units() orelse 0);
                             },
                             .dereferenceable,
                             .dereferenceable_or_null,
                             => |size| {
-                                try record.ensureUnusedCapacity(self.gpa, 3);
-                                record.appendAssumeCapacity(1);
-                                record.appendAssumeCapacity(@intFromEnum(kind));
-                                record.appendAssumeCapacity(size);
+                                try record.ensure_unused_capacity(self.gpa, 3);
+                                record.append_assume_capacity(1);
+                                record.append_assume_capacity(@int_from_enum(kind));
+                                record.append_assume_capacity(size);
                             },
                             .nofpclass => |fpclass| {
-                                try record.ensureUnusedCapacity(self.gpa, 3);
-                                record.appendAssumeCapacity(1);
-                                record.appendAssumeCapacity(@intFromEnum(kind));
-                                record.appendAssumeCapacity(@as(u32, @bitCast(fpclass)));
+                                try record.ensure_unused_capacity(self.gpa, 3);
+                                record.append_assume_capacity(1);
+                                record.append_assume_capacity(@int_from_enum(kind));
+                                record.append_assume_capacity(@as(u32, @bit_cast(fpclass)));
                             },
                             .allockind => |allockind| {
-                                try record.ensureUnusedCapacity(self.gpa, 3);
-                                record.appendAssumeCapacity(1);
-                                record.appendAssumeCapacity(@intFromEnum(kind));
-                                record.appendAssumeCapacity(@as(u32, @bitCast(allockind)));
+                                try record.ensure_unused_capacity(self.gpa, 3);
+                                record.append_assume_capacity(1);
+                                record.append_assume_capacity(@int_from_enum(kind));
+                                record.append_assume_capacity(@as(u32, @bit_cast(allockind)));
                             },
 
                             .allocsize => |allocsize| {
-                                try record.ensureUnusedCapacity(self.gpa, 3);
-                                record.appendAssumeCapacity(1);
-                                record.appendAssumeCapacity(@intFromEnum(kind));
-                                record.appendAssumeCapacity(@bitCast(allocsize.toLlvm()));
+                                try record.ensure_unused_capacity(self.gpa, 3);
+                                record.append_assume_capacity(1);
+                                record.append_assume_capacity(@int_from_enum(kind));
+                                record.append_assume_capacity(@bit_cast(allocsize.to_llvm()));
                             },
                             .memory => |memory| {
-                                try record.ensureUnusedCapacity(self.gpa, 3);
-                                record.appendAssumeCapacity(1);
-                                record.appendAssumeCapacity(@intFromEnum(kind));
-                                record.appendAssumeCapacity(@as(u32, @bitCast(memory)));
+                                try record.ensure_unused_capacity(self.gpa, 3);
+                                record.append_assume_capacity(1);
+                                record.append_assume_capacity(@int_from_enum(kind));
+                                record.append_assume_capacity(@as(u32, @bit_cast(memory)));
                             },
                             .uwtable => |uwtable| if (uwtable != .none) {
-                                try record.ensureUnusedCapacity(self.gpa, 3);
-                                record.appendAssumeCapacity(1);
-                                record.appendAssumeCapacity(@intFromEnum(kind));
-                                record.appendAssumeCapacity(@intFromEnum(uwtable));
+                                try record.ensure_unused_capacity(self.gpa, 3);
+                                record.append_assume_capacity(1);
+                                record.append_assume_capacity(@int_from_enum(kind));
+                                record.append_assume_capacity(@int_from_enum(uwtable));
                             },
                             .vscale_range => |vscale_range| {
-                                try record.ensureUnusedCapacity(self.gpa, 3);
-                                record.appendAssumeCapacity(1);
-                                record.appendAssumeCapacity(@intFromEnum(kind));
-                                record.appendAssumeCapacity(@bitCast(vscale_range.toLlvm()));
+                                try record.ensure_unused_capacity(self.gpa, 3);
+                                record.append_assume_capacity(1);
+                                record.append_assume_capacity(@int_from_enum(kind));
+                                record.append_assume_capacity(@bit_cast(vscale_range.to_llvm()));
                             },
                             .string => |string_attr| {
                                 const string_attr_kind_slice = string_attr.kind.slice(self).?;
@@ -13180,27 +13180,27 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                                 else
                                     null;
 
-                                try record.ensureUnusedCapacity(
+                                try record.ensure_unused_capacity(
                                     self.gpa,
                                     2 + string_attr_kind_slice.len + if (string_attr_value_slice) |slice| slice.len + 1 else 0,
                                 );
-                                record.appendAssumeCapacity(if (string_attr.value == .none) 3 else 4);
+                                record.append_assume_capacity(if (string_attr.value == .none) 3 else 4);
                                 for (string_attr.kind.slice(self).?) |c| {
-                                    record.appendAssumeCapacity(c);
+                                    record.append_assume_capacity(c);
                                 }
-                                record.appendAssumeCapacity(0);
+                                record.append_assume_capacity(0);
                                 if (string_attr_value_slice) |slice| {
                                     for (slice) |c| {
-                                        record.appendAssumeCapacity(c);
+                                        record.append_assume_capacity(c);
                                     }
-                                    record.appendAssumeCapacity(0);
+                                    record.append_assume_capacity(0);
                                 }
                             },
                             .none => unreachable,
                         }
                     }
 
-                    try paramattr_group_block.writeUnabbrev(3, record.items);
+                    try paramattr_group_block.write_unabbrev(3, record.items);
                 }
             }
 
@@ -13210,24 +13210,24 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
         // PARAMATTR_BLOCK
         {
             const Paramattr = ir.Paramattr;
-            var paramattr_block = try module_block.enterSubBlock(Paramattr, true);
+            var paramattr_block = try module_block.enter_sub_block(Paramattr, true);
 
             for (self.function_attributes_set.keys()) |func_attributes| {
                 const func_attributes_slice = func_attributes.slice(self);
-                record.clearRetainingCapacity();
-                try record.ensureUnusedCapacity(self.gpa, func_attributes_slice.len);
+                record.clear_retaining_capacity();
+                try record.ensure_unused_capacity(self.gpa, func_attributes_slice.len);
                 for (func_attributes_slice, 0..) |attributes, i| {
                     const attributes_slice = attributes.slice(self);
                     if (attributes_slice.len == 0) continue;
 
-                    const group_index = attributes_set.getIndex(.{
+                    const group_index = attributes_set.get_index(.{
                         .attributes = attributes,
-                        .index = @intCast(i),
+                        .index = @int_cast(i),
                     }).?;
-                    record.appendAssumeCapacity(@intCast(group_index));
+                    record.append_assume_capacity(@int_cast(group_index));
                 }
 
-                try paramattr_block.writeAbbrev(Paramattr.Entry{ .group_indices = record.items });
+                try paramattr_block.write_abbrev(Paramattr.Entry{ .group_indices = record.items });
             }
 
             try paramattr_block.end();
@@ -13235,7 +13235,7 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
 
         var globals: std.AutoArrayHashMapUnmanaged(Global.Index, void) = .{};
         defer globals.deinit(self.gpa);
-        try globals.ensureUnusedCapacity(
+        try globals.ensure_unused_capacity(
             self.gpa,
             self.variables.items.len +
                 self.functions.items.len +
@@ -13243,21 +13243,21 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
         );
 
         for (self.variables.items) |variable| {
-            if (variable.global.getReplacement(self) != .none) continue;
+            if (variable.global.get_replacement(self) != .none) continue;
 
-            globals.putAssumeCapacity(variable.global, {});
+            globals.put_assume_capacity(variable.global, {});
         }
 
         for (self.functions.items) |function| {
-            if (function.global.getReplacement(self) != .none) continue;
+            if (function.global.get_replacement(self) != .none) continue;
 
-            globals.putAssumeCapacity(function.global, {});
+            globals.put_assume_capacity(function.global, {});
         }
 
         for (self.aliases.items) |alias| {
-            if (alias.global.getReplacement(self) != .none) continue;
+            if (alias.global.get_replacement(self) != .none) continue;
 
-            globals.putAssumeCapacity(alias.global, {});
+            globals.put_assume_capacity(alias.global, {});
         }
 
         const ConstantAdapter = struct {
@@ -13268,24 +13268,24 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
             pub fn get(adapter: @This(), param: anytype, comptime field_name: []const u8) @TypeOf(param) {
                 _ = field_name;
                 return switch (@TypeOf(param)) {
-                    Constant => @enumFromInt(adapter.getConstantIndex(param)),
+                    Constant => @enumFromInt(adapter.get_constant_index(param)),
                     else => param,
                 };
             }
 
             pub fn get_constant_index(adapter: ConstantAdapter, constant: Constant) u32 {
                 return switch (constant.unwrap()) {
-                    .constant => |c| c + adapter.numGlobals(),
-                    .global => |global| @intCast(adapter.globals.getIndex(global.unwrap(adapter.builder)).?),
+                    .constant => |c| c + adapter.num_globals(),
+                    .global => |global| @int_cast(adapter.globals.get_index(global.unwrap(adapter.builder)).?),
                 };
             }
 
             pub fn num_constants(adapter: ConstantAdapter) u32 {
-                return @intCast(adapter.globals.count() + adapter.builder.constant_items.len);
+                return @int_cast(adapter.globals.count() + adapter.builder.constant_items.len);
             }
 
             pub fn num_globals(adapter: ConstantAdapter) u32 {
-                return @intCast(adapter.globals.count());
+                return @int_cast(adapter.globals.count());
             }
         };
 
@@ -13298,16 +13298,16 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
         {
             var section_map: std.AutoArrayHashMapUnmanaged(String, void) = .{};
             defer section_map.deinit(self.gpa);
-            try section_map.ensureUnusedCapacity(self.gpa, globals.count());
+            try section_map.ensure_unused_capacity(self.gpa, globals.count());
 
             for (self.variables.items) |variable| {
-                if (variable.global.getReplacement(self) != .none) continue;
+                if (variable.global.get_replacement(self) != .none) continue;
 
                 const section = blk: {
                     if (variable.section == .none) break :blk 0;
-                    const gop = section_map.getOrPutAssumeCapacity(variable.section);
+                    const gop = section_map.get_or_put_assume_capacity(variable.section);
                     if (!gop.found_existing) {
-                        try module_block.writeAbbrev(Module.String{
+                        try module_block.write_abbrev(Module.String{
                             .code = 5,
                             .string = variable.section.slice(self).?,
                         });
@@ -13318,12 +13318,12 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                 const initid = if (variable.init == .no_init)
                     0
                 else
-                    (constant_adapter.getConstantIndex(variable.init) + 1);
+                    (constant_adapter.get_constant_index(variable.init) + 1);
 
                 const strtab = variable.global.strtab(self);
 
-                const global = variable.global.ptrConst(self);
-                try module_block.writeAbbrev(Module.Variable{
+                const global = variable.global.ptr_const(self);
+                try module_block.write_abbrev(Module.Variable{
                     .strtab_offset = strtab.offset,
                     .strtab_size = strtab.size,
                     .type_index = global.type,
@@ -13336,7 +13336,7 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     },
                     .initid = initid,
                     .linkage = global.linkage,
-                    .alignment = variable.alignment.toLlvm(),
+                    .alignment = variable.alignment.to_llvm(),
                     .section = section,
                     .visibility = global.visibility,
                     .thread_local = variable.thread_local,
@@ -13348,13 +13348,13 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
             }
 
             for (self.functions.items) |func| {
-                if (func.global.getReplacement(self) != .none) continue;
+                if (func.global.get_replacement(self) != .none) continue;
 
                 const section = blk: {
                     if (func.section == .none) break :blk 0;
-                    const gop = section_map.getOrPutAssumeCapacity(func.section);
+                    const gop = section_map.get_or_put_assume_capacity(func.section);
                     if (!gop.found_existing) {
-                        try module_block.writeAbbrev(Module.String{
+                        try module_block.write_abbrev(Module.String{
                             .code = 5,
                             .string = func.section.slice(self).?,
                         });
@@ -13362,15 +13362,15 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     break :blk gop.index + 1;
                 };
 
-                const paramattr_index = if (self.function_attributes_set.getIndex(func.attributes)) |index|
+                const paramattr_index = if (self.function_attributes_set.get_index(func.attributes)) |index|
                     index + 1
                 else
                     0;
 
                 const strtab = func.global.strtab(self);
 
-                const global = func.global.ptrConst(self);
-                try module_block.writeAbbrev(Module.Function{
+                const global = func.global.ptr_const(self);
+                try module_block.write_abbrev(Module.Function{
                     .strtab_offset = strtab.offset,
                     .strtab_size = strtab.size,
                     .type_index = global.type,
@@ -13378,7 +13378,7 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .is_proto = func.instructions.len == 0,
                     .linkage = global.linkage,
                     .paramattr = paramattr_index,
-                    .alignment = func.alignment.toLlvm(),
+                    .alignment = func.alignment.to_llvm(),
                     .section = section,
                     .visibility = global.visibility,
                     .unnamed_addr = global.unnamed_addr,
@@ -13389,17 +13389,17 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
             }
 
             for (self.aliases.items) |alias| {
-                if (alias.global.getReplacement(self) != .none) continue;
+                if (alias.global.get_replacement(self) != .none) continue;
 
                 const strtab = alias.global.strtab(self);
 
-                const global = alias.global.ptrConst(self);
-                try module_block.writeAbbrev(Module.Alias{
+                const global = alias.global.ptr_const(self);
+                try module_block.write_abbrev(Module.Alias{
                     .strtab_offset = strtab.offset,
                     .strtab_size = strtab.size,
                     .type_index = global.type,
                     .addr_space = global.addr_space,
-                    .aliasee = constant_adapter.getConstantIndex(alias.aliasee),
+                    .aliasee = constant_adapter.get_constant_index(alias.aliasee),
                     .linkage = global.linkage,
                     .visibility = global.visibility,
                     .thread_local = alias.thread_local,
@@ -13413,17 +13413,17 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
         // CONSTANTS_BLOCK
         {
             const Constants = ir.Constants;
-            var constants_block = try module_block.enterSubBlock(Constants, true);
+            var constants_block = try module_block.enter_sub_block(Constants, true);
 
             var current_type: Type = .none;
             const tags = self.constant_items.items(.tag);
             const datas = self.constant_items.items(.data);
             for (0..self.constant_items.len) |index| {
-                record.clearRetainingCapacity();
+                record.clear_retaining_capacity();
                 const constant: Constant = @enumFromInt(index);
-                const constant_type = constant.typeOf(self);
+                const constant_type = constant.type_of(self);
                 if (constant_type != current_type) {
-                    try constants_block.writeAbbrev(Constants.SetType{ .type_id = constant_type });
+                    try constants_block.write_abbrev(Constants.SetType{ .type_id = constant_type });
                     current_type = constant_type;
                 }
                 const data = datas[index];
@@ -13431,14 +13431,14 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .null,
                     .zeroinitializer,
                     .none,
-                    => try constants_block.writeAbbrev(Constants.Null{}),
-                    .undef => try constants_block.writeAbbrev(Constants.Undef{}),
-                    .poison => try constants_block.writeAbbrev(Constants.Poison{}),
+                    => try constants_block.write_abbrev(Constants.Null{}),
+                    .undef => try constants_block.write_abbrev(Constants.Undef{}),
+                    .poison => try constants_block.write_abbrev(Constants.Poison{}),
                     .positive_integer,
                     .negative_integer,
                     => |tag| {
                         const extra: *align(@alignOf(std.math.big.Limb)) Constant.Integer =
-                            @ptrCast(self.constant_limbs.items[data..][0..Constant.Integer.limbs]);
+                            @ptr_cast(self.constant_limbs.items[data..][0..Constant.Integer.limbs]);
                         const bigint: std.math.big.int.Const = .{
                             .limbs = self.constant_limbs
                                 .items[data + Constant.Integer.limbs ..][0..extra.limbs_len],
@@ -13448,29 +13448,29 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                                 else => unreachable,
                             },
                         };
-                        const bit_count = extra.type.scalarBits(self);
+                        const bit_count = extra.type.scalar_bits(self);
                         const val: i64 = if (bit_count <= 64)
                             bigint.to(i64) catch unreachable
                         else if (bigint.to(u64)) |val|
-                            @bitCast(val)
+                            @bit_cast(val)
                         else |_| {
-                            const limbs = try record.addManyAsSlice(
+                            const limbs = try record.add_many_as_slice(
                                 self.gpa,
-                                std.math.divCeil(u24, bit_count, 64) catch unreachable,
+                                std.math.div_ceil(u24, bit_count, 64) catch unreachable,
                             );
-                            bigint.writeTwosComplement(std.mem.sliceAsBytes(limbs), .little);
+                            bigint.write_twos_complement(std.mem.slice_as_bytes(limbs), .little);
                             for (limbs) |*limb| {
-                                const val = std.mem.littleToNative(i64, @bitCast(limb.*));
-                                limb.* = @bitCast(if (val >= 0)
+                                const val = std.mem.little_to_native(i64, @bit_cast(limb.*));
+                                limb.* = @bit_cast(if (val >= 0)
                                     val << 1 | 0
                                 else
                                     -%val << 1 | 1);
                             }
-                            try constants_block.writeUnabbrev(5, record.items);
+                            try constants_block.write_unabbrev(5, record.items);
                             continue;
                         };
-                        try constants_block.writeAbbrev(Constants.Integer{
-                            .value = @bitCast(if (val >= 0)
+                        try constants_block.write_abbrev(Constants.Integer{
+                            .value = @bit_cast(if (val >= 0)
                                 val << 1 | 0
                             else
                                 -%val << 1 | 1),
@@ -13478,17 +13478,17 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     },
                     .half,
                     .bfloat,
-                    => try constants_block.writeAbbrev(Constants.Half{ .value = @truncate(data) }),
-                    .float => try constants_block.writeAbbrev(Constants.Float{ .value = data }),
+                    => try constants_block.write_abbrev(Constants.Half{ .value = @truncate(data) }),
+                    .float => try constants_block.write_abbrev(Constants.Float{ .value = data }),
                     .double => {
-                        const extra = self.constantExtraData(Constant.Double, data);
-                        try constants_block.writeAbbrev(Constants.Double{
+                        const extra = self.constant_extra_data(Constant.Double, data);
+                        try constants_block.write_abbrev(Constants.Double{
                             .value = (@as(u64, extra.hi) << 32) | extra.lo,
                         });
                     },
                     .x86_fp80 => {
-                        const extra = self.constantExtraData(Constant.Fp80, data);
-                        try constants_block.writeAbbrev(Constants.Fp80{
+                        const extra = self.constant_extra_data(Constant.Fp80, data);
+                        try constants_block.write_abbrev(Constants.Fp80{
                             .hi = @as(u64, extra.hi) << 48 | @as(u64, extra.lo_hi) << 16 |
                                 extra.lo_lo >> 16,
                             .lo = @truncate(extra.lo_lo),
@@ -13497,8 +13497,8 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .fp128,
                     .ppc_fp128,
                     => {
-                        const extra = self.constantExtraData(Constant.Fp128, data);
-                        try constants_block.writeAbbrev(Constants.Fp128{
+                        const extra = self.constant_extra_data(Constant.Fp128, data);
+                        try constants_block.write_abbrev(Constants.Fp128{
                             .lo = @as(u64, extra.lo_hi) << 32 | @as(u64, extra.lo_lo),
                             .hi = @as(u64, extra.hi_hi) << 32 | @as(u64, extra.hi_lo),
                         });
@@ -13508,40 +13508,40 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .structure,
                     .packed_structure,
                     => {
-                        var extra = self.constantExtraDataTrail(Constant.Aggregate, data);
-                        const len: u32 = @intCast(extra.data.type.aggregateLen(self));
+                        var extra = self.constant_extra_data_trail(Constant.Aggregate, data);
+                        const len: u32 = @int_cast(extra.data.type.aggregate_len(self));
                         const values = extra.trail.next(len, Constant, self);
 
-                        try constants_block.writeAbbrevAdapted(
+                        try constants_block.write_abbrev_adapted(
                             Constants.Aggregate{ .values = values },
                             constant_adapter,
                         );
                     },
                     .splat => {
                         const ConstantsWriter = @TypeOf(constants_block);
-                        const extra = self.constantExtraData(Constant.Splat, data);
-                        const vector_len = extra.type.vectorLen(self);
-                        const c = constant_adapter.getConstantIndex(extra.value);
+                        const extra = self.constant_extra_data(Constant.Splat, data);
+                        const vector_len = extra.type.vector_len(self);
+                        const c = constant_adapter.get_constant_index(extra.value);
 
-                        try bitcode.writeBits(
-                            ConstantsWriter.abbrevId(Constants.Aggregate),
+                        try bitcode.write_bits(
+                            ConstantsWriter.abbrev_id(Constants.Aggregate),
                             ConstantsWriter.abbrev_len,
                         );
-                        try bitcode.writeVBR(vector_len, 6);
+                        try bitcode.write_vbr(vector_len, 6);
                         for (0..vector_len) |_| {
-                            try bitcode.writeBits(c, Constants.Aggregate.ops[1].array_fixed);
+                            try bitcode.write_bits(c, Constants.Aggregate.ops[1].array_fixed);
                         }
                     },
                     .string => {
                         const str: String = @enumFromInt(data);
                         if (str == .none) {
-                            try constants_block.writeAbbrev(Constants.Null{});
+                            try constants_block.write_abbrev(Constants.Null{});
                         } else {
                             const slice = str.slice(self).?;
                             if (slice.len > 0 and slice[slice.len - 1] == 0)
-                                try constants_block.writeAbbrev(Constants.CString{ .string = slice[0 .. slice.len - 1] })
+                                try constants_block.write_abbrev(Constants.CString{ .string = slice[0 .. slice.len - 1] })
                             else
-                                try constants_block.writeAbbrev(Constants.String{ .string = slice });
+                                try constants_block.write_abbrev(Constants.String{ .string = slice });
                         }
                     },
                     .bitcast,
@@ -13550,11 +13550,11 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .addrspacecast,
                     .trunc,
                     => |tag| {
-                        const extra = self.constantExtraData(Constant.Cast, data);
-                        try constants_block.writeAbbrevAdapted(Constants.Cast{
+                        const extra = self.constant_extra_data(Constant.Cast, data);
+                        try constants_block.write_abbrev_adapted(Constants.Cast{
                             .type_index = extra.type,
                             .val = extra.val,
-                            .opcode = tag.toCastOpcode(),
+                            .opcode = tag.to_cast_opcode(),
                         }, constant_adapter);
                     },
                     .add,
@@ -13566,9 +13566,9 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .shl,
                     .xor,
                     => |tag| {
-                        const extra = self.constantExtraData(Constant.Binary, data);
-                        try constants_block.writeAbbrevAdapted(Constants.Binary{
-                            .opcode = tag.toBinaryOpcode(),
+                        const extra = self.constant_extra_data(Constant.Binary, data);
+                        try constants_block.write_abbrev_adapted(Constants.Binary{
+                            .opcode = tag.to_binary_opcode(),
                             .lhs = extra.lhs,
                             .rhs = extra.rhs,
                         }, constant_adapter);
@@ -13576,21 +13576,21 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .getelementptr,
                     .@"getelementptr inbounds",
                     => |tag| {
-                        var extra = self.constantExtraDataTrail(Constant.GetElementPtr, data);
+                        var extra = self.constant_extra_data_trail(Constant.GetElementPtr, data);
                         const indices = extra.trail.next(extra.data.info.indices_len, Constant, self);
-                        try record.ensureUnusedCapacity(self.gpa, 1 + 2 + 2 * indices.len);
+                        try record.ensure_unused_capacity(self.gpa, 1 + 2 + 2 * indices.len);
 
-                        record.appendAssumeCapacity(@intFromEnum(extra.data.type));
+                        record.append_assume_capacity(@int_from_enum(extra.data.type));
 
-                        record.appendAssumeCapacity(@intFromEnum(extra.data.base.typeOf(self)));
-                        record.appendAssumeCapacity(constant_adapter.getConstantIndex(extra.data.base));
+                        record.append_assume_capacity(@int_from_enum(extra.data.base.type_of(self)));
+                        record.append_assume_capacity(constant_adapter.get_constant_index(extra.data.base));
 
                         for (indices) |i| {
-                            record.appendAssumeCapacity(@intFromEnum(i.typeOf(self)));
-                            record.appendAssumeCapacity(constant_adapter.getConstantIndex(i));
+                            record.append_assume_capacity(@int_from_enum(i.type_of(self)));
+                            record.append_assume_capacity(constant_adapter.get_constant_index(i));
                         }
 
-                        try constants_block.writeUnabbrev(switch (tag) {
+                        try constants_block.write_unabbrev(switch (tag) {
                             .getelementptr => 12,
                             .@"getelementptr inbounds" => 20,
                             else => unreachable,
@@ -13613,15 +13613,15 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .@"asm alignstack inteldialect unwind",
                     .@"asm sideeffect alignstack inteldialect unwind",
                     => |tag| {
-                        const extra = self.constantExtraData(Constant.Assembly, data);
+                        const extra = self.constant_extra_data(Constant.Assembly, data);
 
                         const assembly_slice = extra.assembly.slice(self).?;
                         const constraints_slice = extra.constraints.slice(self).?;
 
-                        try record.ensureUnusedCapacity(self.gpa, 4 + assembly_slice.len + constraints_slice.len);
+                        try record.ensure_unused_capacity(self.gpa, 4 + assembly_slice.len + constraints_slice.len);
 
-                        record.appendAssumeCapacity(@intFromEnum(extra.type));
-                        record.appendAssumeCapacity(switch (tag) {
+                        record.append_assume_capacity(@int_from_enum(extra.type));
+                        record.append_assume_capacity(switch (tag) {
                             .@"asm" => 0,
                             .@"asm sideeffect" => 0b0001,
                             .@"asm sideeffect alignstack" => 0b0011,
@@ -13641,34 +13641,34 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                             else => unreachable,
                         });
 
-                        record.appendAssumeCapacity(assembly_slice.len);
-                        for (assembly_slice) |c| record.appendAssumeCapacity(c);
+                        record.append_assume_capacity(assembly_slice.len);
+                        for (assembly_slice) |c| record.append_assume_capacity(c);
 
-                        record.appendAssumeCapacity(constraints_slice.len);
-                        for (constraints_slice) |c| record.appendAssumeCapacity(c);
+                        record.append_assume_capacity(constraints_slice.len);
+                        for (constraints_slice) |c| record.append_assume_capacity(c);
 
-                        try constants_block.writeUnabbrev(30, record.items);
+                        try constants_block.write_unabbrev(30, record.items);
                     },
                     .blockaddress => {
-                        const extra = self.constantExtraData(Constant.BlockAddress, data);
-                        try constants_block.writeAbbrev(Constants.BlockAddress{
-                            .type_id = extra.function.typeOf(self),
-                            .function = constant_adapter.getConstantIndex(extra.function.toConst(self)),
-                            .block = @intFromEnum(extra.block),
+                        const extra = self.constant_extra_data(Constant.BlockAddress, data);
+                        try constants_block.write_abbrev(Constants.BlockAddress{
+                            .type_id = extra.function.type_of(self),
+                            .function = constant_adapter.get_constant_index(extra.function.to_const(self)),
+                            .block = @int_from_enum(extra.block),
                         });
                     },
                     .dso_local_equivalent,
                     .no_cfi,
                     => |tag| {
                         const function: Function.Index = @enumFromInt(data);
-                        try constants_block.writeAbbrev(Constants.DsoLocalEquivalentOrNoCfi{
+                        try constants_block.write_abbrev(Constants.DsoLocalEquivalentOrNoCfi{
                             .code = switch (tag) {
                                 .dso_local_equivalent => 27,
                                 .no_cfi => 29,
                                 else => unreachable,
                             },
-                            .type_id = function.typeOf(self),
-                            .function = constant_adapter.getConstantIndex(function.toConst(self)),
+                            .type_id = function.type_of(self),
+                            .function = constant_adapter.get_constant_index(function.to_const(self)),
                         });
                     },
                 }
@@ -13680,10 +13680,10 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
         // METADATA_KIND_BLOCK
         if (!self.strip) {
             const MetadataKindBlock = ir.MetadataKindBlock;
-            var metadata_kind_block = try module_block.enterSubBlock(MetadataKindBlock, true);
+            var metadata_kind_block = try module_block.enter_sub_block(MetadataKindBlock, true);
 
             inline for (@typeInfo(ir.MetadataKind).Enum.fields) |field| {
-                try metadata_kind_block.writeAbbrev(MetadataKindBlock.Kind{
+                try metadata_kind_block.write_abbrev(MetadataKindBlock.Kind{
                     .id = field.value,
                     .name = field.name,
                 });
@@ -13710,21 +13710,21 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                 _ = field_name;
                 const Ty = @TypeOf(value);
                 return switch (Ty) {
-                    Metadata => @enumFromInt(adapter.getMetadataIndex(value)),
-                    MetadataString => @enumFromInt(adapter.getMetadataStringIndex(value)),
-                    Constant => @enumFromInt(adapter.constant_adapter.getConstantIndex(value)),
+                    Metadata => @enumFromInt(adapter.get_metadata_index(value)),
+                    MetadataString => @enumFromInt(adapter.get_metadata_string_index(value)),
+                    Constant => @enumFromInt(adapter.constant_adapter.get_constant_index(value)),
                     else => value,
                 };
             }
 
             pub fn get_metadata_index(adapter: @This(), metadata: Metadata) u32 {
                 if (metadata == .none) return 0;
-                return @intCast(adapter.builder.metadata_string_map.count() +
-                    @intFromEnum(metadata.unwrap(adapter.builder)) - 1);
+                return @int_cast(adapter.builder.metadata_string_map.count() +
+                    @int_from_enum(metadata.unwrap(adapter.builder)) - 1);
             }
 
             pub fn get_metadata_string_index(_: @This(), metadata_string: MetadataString) u32 {
-                return @intFromEnum(metadata_string);
+                return @int_from_enum(metadata_string);
             }
         };
 
@@ -13733,7 +13733,7 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
         // METADATA_BLOCK
         if (!self.strip) {
             const MetadataBlock = ir.MetadataBlock;
-            var metadata_block = try module_block.enterSubBlock(MetadataBlock, true);
+            var metadata_block = try module_block.enter_sub_block(MetadataBlock, true);
 
             const MetadataBlockWriter = @TypeOf(metadata_block);
 
@@ -13745,47 +13745,47 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     for (1..self.metadata_string_map.count()) |metadata_string_index| {
                         const metadata_string: MetadataString = @enumFromInt(metadata_string_index);
                         const slice = metadata_string.slice(self);
-                        strings_offset += bitcode.bitsVBR(@as(u32, @intCast(slice.len)), 6);
-                        strings_size += @intCast(slice.len * 8);
+                        strings_offset += bitcode.bits_vbr(@as(u32, @int_cast(slice.len)), 6);
+                        strings_size += @int_cast(slice.len * 8);
                     }
                     break :blk .{
-                        std.mem.alignForward(u32, strings_offset, 32) / 8,
-                        std.mem.alignForward(u32, strings_size, 32) / 8,
+                        std.mem.align_forward(u32, strings_offset, 32) / 8,
+                        std.mem.align_forward(u32, strings_size, 32) / 8,
                     };
                 };
 
-                try bitcode.writeBits(
-                    comptime MetadataBlockWriter.abbrevId(MetadataBlock.Strings),
+                try bitcode.write_bits(
+                    comptime MetadataBlockWriter.abbrev_id(MetadataBlock.Strings),
                     MetadataBlockWriter.abbrev_len,
                 );
 
-                try bitcode.writeVBR(@as(u32, @intCast(self.metadata_string_map.count() - 1)), 6);
-                try bitcode.writeVBR(strings_offset, 6);
+                try bitcode.write_vbr(@as(u32, @int_cast(self.metadata_string_map.count() - 1)), 6);
+                try bitcode.write_vbr(strings_offset, 6);
 
-                try bitcode.writeVBR(strings_size + strings_offset, 6);
+                try bitcode.write_vbr(strings_size + strings_offset, 6);
 
-                try bitcode.alignTo32();
+                try bitcode.align_to32();
 
                 for (1..self.metadata_string_map.count()) |metadata_string_index| {
                     const metadata_string: MetadataString = @enumFromInt(metadata_string_index);
                     const slice = metadata_string.slice(self);
-                    try bitcode.writeVBR(@as(u32, @intCast(slice.len)), 6);
+                    try bitcode.write_vbr(@as(u32, @int_cast(slice.len)), 6);
                 }
 
-                try bitcode.writeBlob(self.metadata_string_bytes.items);
+                try bitcode.write_blob(self.metadata_string_bytes.items);
             }
 
             for (
                 self.metadata_items.items(.tag)[1..],
                 self.metadata_items.items(.data)[1..],
             ) |tag, data| {
-                record.clearRetainingCapacity();
+                record.clear_retaining_capacity();
                 switch (tag) {
                     .none => unreachable,
                     .file => {
-                        const extra = self.metadataExtraData(Metadata.File, data);
+                        const extra = self.metadata_extra_data(Metadata.File, data);
 
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.File{
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.File{
                             .filename = extra.filename,
                             .directory = extra.directory,
                         }, metadata_adapter);
@@ -13793,8 +13793,8 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .compile_unit,
                     .@"compile_unit optimized",
                     => |kind| {
-                        const extra = self.metadataExtraData(Metadata.CompileUnit, data);
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.CompileUnit{
+                        const extra = self.metadata_extra_data(Metadata.CompileUnit, data);
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.CompileUnit{
                             .file = extra.file,
                             .producer = extra.producer,
                             .is_optimized = switch (kind) {
@@ -13815,9 +13815,9 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .@"subprogram optimized definition",
                     .@"subprogram optimized local definition",
                     => |kind| {
-                        const extra = self.metadataExtraData(Metadata.Subprogram, data);
+                        const extra = self.metadata_extra_data(Metadata.Subprogram, data);
 
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.Subprogram{
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.Subprogram{
                             .scope = extra.file,
                             .name = extra.name,
                             .linkage_name = extra.linkage_name,
@@ -13825,16 +13825,16 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                             .line = extra.line,
                             .ty = extra.ty,
                             .scope_line = extra.scope_line,
-                            .sp_flags = @bitCast(@as(u32, @as(u3, @intCast(
-                                @intFromEnum(kind) - @intFromEnum(Metadata.Tag.subprogram),
+                            .sp_flags = @bit_cast(@as(u32, @as(u3, @int_cast(
+                                @int_from_enum(kind) - @int_from_enum(Metadata.Tag.subprogram),
                             ))) << 2),
                             .flags = extra.di_flags,
                             .compile_unit = extra.compile_unit,
                         }, metadata_adapter);
                     },
                     .lexical_block => {
-                        const extra = self.metadataExtraData(Metadata.LexicalBlock, data);
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.LexicalBlock{
+                        const extra = self.metadata_extra_data(Metadata.LexicalBlock, data);
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.LexicalBlock{
                             .scope = extra.scope,
                             .file = extra.file,
                             .line = extra.line,
@@ -13842,13 +13842,13 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         }, metadata_adapter);
                     },
                     .location => {
-                        const extra = self.metadataExtraData(Metadata.Location, data);
+                        const extra = self.metadata_extra_data(Metadata.Location, data);
                         assert(extra.scope != .none);
-                        try metadata_block.writeAbbrev(MetadataBlock.Location{
+                        try metadata_block.write_abbrev(MetadataBlock.Location{
                             .line = extra.line,
                             .column = extra.column,
-                            .scope = metadata_adapter.getMetadataIndex(extra.scope) - 1,
-                            .inlined_at = @enumFromInt(metadata_adapter.getMetadataIndex(extra.inlined_at)),
+                            .scope = metadata_adapter.get_metadata_index(extra.scope) - 1,
+                            .inlined_at = @enumFromInt(metadata_adapter.get_metadata_index(extra.inlined_at)),
                         });
                     },
                     .basic_bool_type,
@@ -13856,10 +13856,10 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .basic_signed_type,
                     .basic_float_type,
                     => |kind| {
-                        const extra = self.metadataExtraData(Metadata.BasicType, data);
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.BasicType{
+                        const extra = self.metadata_extra_data(Metadata.BasicType, data);
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.BasicType{
                             .name = extra.name,
-                            .size_in_bits = extra.bitSize(),
+                            .size_in_bits = extra.bit_size(),
                             .encoding = switch (kind) {
                                 .basic_bool_type => DW.ATE.boolean,
                                 .basic_unsigned_type => DW.ATE.unsigned,
@@ -13875,9 +13875,9 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .composite_array_type,
                     .composite_vector_type,
                     => |kind| {
-                        const extra = self.metadataExtraData(Metadata.CompositeType, data);
+                        const extra = self.metadata_extra_data(Metadata.CompositeType, data);
 
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.CompositeType{
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.CompositeType{
                             .tag = switch (kind) {
                                 .composite_struct_type => DW.TAG.structure_type,
                                 .composite_union_type => DW.TAG.union_type,
@@ -13890,8 +13890,8 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                             .line = extra.line,
                             .scope = extra.scope,
                             .underlying_type = extra.underlying_type,
-                            .size_in_bits = extra.bitSize(),
-                            .align_in_bits = extra.bitAlign(),
+                            .size_in_bits = extra.bit_size(),
+                            .align_in_bits = extra.bit_align(),
                             .flags = if (kind == .composite_vector_type) .{ .Vector = true } else .{},
                             .elements = extra.fields_tuple,
                         }, metadata_adapter);
@@ -13899,8 +13899,8 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .derived_pointer_type,
                     .derived_member_type,
                     => |kind| {
-                        const extra = self.metadataExtraData(Metadata.DerivedType, data);
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.DerivedType{
+                        const extra = self.metadata_extra_data(Metadata.DerivedType, data);
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.DerivedType{
                             .tag = switch (kind) {
                                 .derived_pointer_type => DW.TAG.pointer_type,
                                 .derived_member_type => DW.TAG.member,
@@ -13911,15 +13911,15 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                             .line = extra.line,
                             .scope = extra.scope,
                             .underlying_type = extra.underlying_type,
-                            .size_in_bits = extra.bitSize(),
-                            .align_in_bits = extra.bitAlign(),
-                            .offset_in_bits = extra.bitOffset(),
+                            .size_in_bits = extra.bit_size(),
+                            .align_in_bits = extra.bit_align(),
+                            .offset_in_bits = extra.bit_offset(),
                         }, metadata_adapter);
                     },
                     .subroutine_type => {
-                        const extra = self.metadataExtraData(Metadata.SubroutineType, data);
+                        const extra = self.metadata_extra_data(Metadata.SubroutineType, data);
 
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.SubroutineType{
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.SubroutineType{
                             .types = extra.types_tuple,
                         }, metadata_adapter);
                     },
@@ -13927,7 +13927,7 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .enumerator_signed_positive,
                     .enumerator_signed_negative,
                     => |kind| {
-                        const extra = self.metadataExtraData(Metadata.Enumerator, data);
+                        const extra = self.metadata_extra_data(Metadata.Enumerator, data);
                         const bigint: std.math.big.int.Const = .{
                             .limbs = self.metadata_limbs.items[extra.limbs_index..][0..extra.limbs_len],
                             .positive = switch (kind) {
@@ -13950,77 +13950,77 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         const val: i64 = if (bigint.to(i64)) |val|
                             val
                         else |_| if (bigint.to(u64)) |val|
-                            @bitCast(val)
+                            @bit_cast(val)
                         else |_| {
-                            const limbs_len = std.math.divCeil(u32, extra.bit_width, 64) catch unreachable;
-                            try record.ensureTotalCapacity(self.gpa, 3 + limbs_len);
-                            record.appendAssumeCapacity(@as(
+                            const limbs_len = std.math.div_ceil(u32, extra.bit_width, 64) catch unreachable;
+                            try record.ensure_total_capacity(self.gpa, 3 + limbs_len);
+                            record.append_assume_capacity(@as(
                                 @typeInfo(MetadataBlock.Enumerator.Flags).Struct.backing_integer.?,
-                                @bitCast(flags),
+                                @bit_cast(flags),
                             ));
-                            record.appendAssumeCapacity(extra.bit_width);
-                            record.appendAssumeCapacity(metadata_adapter.getMetadataStringIndex(extra.name));
-                            const limbs = record.addManyAsSliceAssumeCapacity(limbs_len);
-                            bigint.writeTwosComplement(std.mem.sliceAsBytes(limbs), .little);
+                            record.append_assume_capacity(extra.bit_width);
+                            record.append_assume_capacity(metadata_adapter.get_metadata_string_index(extra.name));
+                            const limbs = record.add_many_as_slice_assume_capacity(limbs_len);
+                            bigint.write_twos_complement(std.mem.slice_as_bytes(limbs), .little);
                             for (limbs) |*limb| {
-                                const val = std.mem.littleToNative(i64, @bitCast(limb.*));
-                                limb.* = @bitCast(if (val >= 0)
+                                const val = std.mem.little_to_native(i64, @bit_cast(limb.*));
+                                limb.* = @bit_cast(if (val >= 0)
                                     val << 1 | 0
                                 else
                                     -%val << 1 | 1);
                             }
-                            try metadata_block.writeUnabbrev(MetadataBlock.Enumerator.id, record.items);
+                            try metadata_block.write_unabbrev(MetadataBlock.Enumerator.id, record.items);
                             continue;
                         };
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.Enumerator{
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.Enumerator{
                             .flags = flags,
                             .bit_width = extra.bit_width,
                             .name = extra.name,
-                            .value = @bitCast(if (val >= 0)
+                            .value = @bit_cast(if (val >= 0)
                                 val << 1 | 0
                             else
                                 -%val << 1 | 1),
                         }, metadata_adapter);
                     },
                     .subrange => {
-                        const extra = self.metadataExtraData(Metadata.Subrange, data);
+                        const extra = self.metadata_extra_data(Metadata.Subrange, data);
 
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.Subrange{
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.Subrange{
                             .count = extra.count,
                             .lower_bound = extra.lower_bound,
                         }, metadata_adapter);
                     },
                     .expression => {
-                        var extra = self.metadataExtraDataTrail(Metadata.Expression, data);
+                        var extra = self.metadata_extra_data_trail(Metadata.Expression, data);
 
                         const elements = extra.trail.next(extra.data.elements_len, u32, self);
 
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.Expression{
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.Expression{
                             .elements = elements,
                         }, metadata_adapter);
                     },
                     .tuple => {
-                        var extra = self.metadataExtraDataTrail(Metadata.Tuple, data);
+                        var extra = self.metadata_extra_data_trail(Metadata.Tuple, data);
 
                         const elements = extra.trail.next(extra.data.elements_len, Metadata, self);
 
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.Node{
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.Node{
                             .elements = elements,
                         }, metadata_adapter);
                     },
                     .module_flag => {
-                        const extra = self.metadataExtraData(Metadata.ModuleFlag, data);
-                        try metadata_block.writeAbbrev(MetadataBlock.Node{
+                        const extra = self.metadata_extra_data(Metadata.ModuleFlag, data);
+                        try metadata_block.write_abbrev(MetadataBlock.Node{
                             .elements = &.{
-                                @enumFromInt(metadata_adapter.getMetadataIndex(extra.behavior)),
-                                @enumFromInt(metadata_adapter.getMetadataStringIndex(extra.name)),
-                                @enumFromInt(metadata_adapter.getMetadataIndex(extra.constant)),
+                                @enumFromInt(metadata_adapter.get_metadata_index(extra.behavior)),
+                                @enumFromInt(metadata_adapter.get_metadata_string_index(extra.name)),
+                                @enumFromInt(metadata_adapter.get_metadata_index(extra.constant)),
                             },
                         });
                     },
                     .local_var => {
-                        const extra = self.metadataExtraData(Metadata.LocalVar, data);
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.LocalVar{
+                        const extra = self.metadata_extra_data(Metadata.LocalVar, data);
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.LocalVar{
                             .scope = extra.scope,
                             .name = extra.name,
                             .file = extra.file,
@@ -14029,8 +14029,8 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         }, metadata_adapter);
                     },
                     .parameter => {
-                        const extra = self.metadataExtraData(Metadata.Parameter, data);
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.Parameter{
+                        const extra = self.metadata_extra_data(Metadata.Parameter, data);
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.Parameter{
                             .scope = extra.scope,
                             .name = extra.name,
                             .file = extra.file,
@@ -14042,8 +14042,8 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     .global_var,
                     .@"global_var local",
                     => |kind| {
-                        const extra = self.metadataExtraData(Metadata.GlobalVar, data);
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.GlobalVar{
+                        const extra = self.metadata_extra_data(Metadata.GlobalVar, data);
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.GlobalVar{
                             .scope = extra.scope,
                             .name = extra.name,
                             .linkage_name = extra.linkage_name,
@@ -14054,16 +14054,16 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         }, metadata_adapter);
                     },
                     .global_var_expression => {
-                        const extra = self.metadataExtraData(Metadata.GlobalVarExpression, data);
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.GlobalVarExpression{
+                        const extra = self.metadata_extra_data(Metadata.GlobalVarExpression, data);
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.GlobalVarExpression{
                             .variable = extra.variable,
                             .expression = extra.expression,
                         }, metadata_adapter);
                     },
                     .constant => {
                         const constant: Constant = @enumFromInt(data);
-                        try metadata_block.writeAbbrevAdapted(MetadataBlock.Constant{
-                            .ty = constant.typeOf(self),
+                        try metadata_block.write_abbrev_adapted(MetadataBlock.Constant{
+                            .ty = constant.type_of(self),
                             .constant = constant,
                         }, metadata_adapter);
                     },
@@ -14073,35 +14073,35 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
             // Write named metadata
             for (self.metadata_named.keys(), self.metadata_named.values()) |name, operands| {
                 const slice = name.slice(self);
-                try metadata_block.writeAbbrev(MetadataBlock.Name{
+                try metadata_block.write_abbrev(MetadataBlock.Name{
                     .name = slice,
                 });
 
                 const elements = self.metadata_extra.items[operands.index..][0..operands.len];
                 for (elements) |*e| {
-                    e.* = metadata_adapter.getMetadataIndex(@enumFromInt(e.*)) - 1;
+                    e.* = metadata_adapter.get_metadata_index(@enumFromInt(e.*)) - 1;
                 }
 
-                try metadata_block.writeAbbrev(MetadataBlock.NamedNode{
-                    .elements = @ptrCast(elements),
+                try metadata_block.write_abbrev(MetadataBlock.NamedNode{
+                    .elements = @ptr_cast(elements),
                 });
             }
 
             // Write global attached metadata
             {
                 for (globals.keys()) |global| {
-                    const global_ptr = global.ptrConst(self);
+                    const global_ptr = global.ptr_const(self);
                     if (global_ptr.dbg == .none) continue;
 
                     switch (global_ptr.kind) {
-                        .function => |f| if (f.ptrConst(self).instructions.len != 0) continue,
+                        .function => |f| if (f.ptr_const(self).instructions.len != 0) continue,
                         else => {},
                     }
 
-                    try metadata_block.writeAbbrev(MetadataBlock.GlobalDeclAttachment{
-                        .value = @enumFromInt(constant_adapter.getConstantIndex(global.toConst())),
+                    try metadata_block.write_abbrev(MetadataBlock.GlobalDeclAttachment{
+                        .value = @enumFromInt(constant_adapter.get_constant_index(global.to_const())),
                         .kind = ir.MetadataKind.dbg,
-                        .metadata = @enumFromInt(metadata_adapter.getMetadataIndex(global_ptr.dbg) - 1),
+                        .metadata = @enumFromInt(metadata_adapter.get_metadata_index(global_ptr.dbg) - 1),
                     });
                 }
             }
@@ -14112,26 +14112,26 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
         // Block info
         {
             const BlockInfo = ir.BlockInfo;
-            var block_info_block = try module_block.enterSubBlock(BlockInfo, true);
+            var block_info_block = try module_block.enter_sub_block(BlockInfo, true);
 
-            try block_info_block.writeUnabbrev(BlockInfo.set_block_id, &.{ir.FunctionBlock.id});
+            try block_info_block.write_unabbrev(BlockInfo.set_block_id, &.{ir.FunctionBlock.id});
             inline for (ir.FunctionBlock.abbrevs) |abbrev| {
-                try block_info_block.defineAbbrev(&abbrev.ops);
+                try block_info_block.define_abbrev(&abbrev.ops);
             }
 
-            try block_info_block.writeUnabbrev(BlockInfo.set_block_id, &.{ir.FunctionValueSymbolTable.id});
+            try block_info_block.write_unabbrev(BlockInfo.set_block_id, &.{ir.FunctionValueSymbolTable.id});
             inline for (ir.FunctionValueSymbolTable.abbrevs) |abbrev| {
-                try block_info_block.defineAbbrev(&abbrev.ops);
+                try block_info_block.define_abbrev(&abbrev.ops);
             }
 
-            try block_info_block.writeUnabbrev(BlockInfo.set_block_id, &.{ir.FunctionMetadataBlock.id});
+            try block_info_block.write_unabbrev(BlockInfo.set_block_id, &.{ir.FunctionMetadataBlock.id});
             inline for (ir.FunctionMetadataBlock.abbrevs) |abbrev| {
-                try block_info_block.defineAbbrev(&abbrev.ops);
+                try block_info_block.define_abbrev(&abbrev.ops);
             }
 
-            try block_info_block.writeUnabbrev(BlockInfo.set_block_id, &.{ir.MetadataAttachmentBlock.id});
+            try block_info_block.write_unabbrev(BlockInfo.set_block_id, &.{ir.MetadataAttachmentBlock.id});
             inline for (ir.MetadataAttachmentBlock.abbrevs) |abbrev| {
-                try block_info_block.defineAbbrev(&abbrev.ops);
+                try block_info_block.define_abbrev(&abbrev.ops);
             }
 
             try block_info_block.end();
@@ -14162,27 +14162,27 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                     _ = field_name;
                     const Ty = @TypeOf(value);
                     return switch (Ty) {
-                        Value => @enumFromInt(adapter.getOffsetValueIndex(value)),
-                        Constant => @enumFromInt(adapter.getOffsetConstantIndex(value)),
+                        Value => @enumFromInt(adapter.get_offset_value_index(value)),
+                        Constant => @enumFromInt(adapter.get_offset_constant_index(value)),
                         FunctionAttributes => @enumFromInt(switch (value) {
                             .none => 0,
-                            else => 1 + adapter.constant_adapter.builder.function_attributes_set.getIndex(value).?,
+                            else => 1 + adapter.constant_adapter.builder.function_attributes_set.get_index(value).?,
                         }),
                         else => value,
                     };
                 }
 
                 pub fn get_value_index(adapter: @This(), value: Value) u32 {
-                    return @intCast(switch (value.unwrap()) {
-                        .instruction => |instruction| instruction.valueIndex(adapter.func) + adapter.firstInstr(),
-                        .constant => |constant| adapter.constant_adapter.getConstantIndex(constant),
+                    return @int_cast(switch (value.unwrap()) {
+                        .instruction => |instruction| instruction.value_index(adapter.func) + adapter.first_instr(),
+                        .constant => |constant| adapter.constant_adapter.get_constant_index(constant),
                         .metadata => |metadata| {
                             assert(!adapter.func.strip);
                             const real_metadata = metadata.unwrap(adapter.metadata_adapter.builder);
-                            if (@intFromEnum(real_metadata) < Metadata.first_local_metadata)
-                                return adapter.metadata_adapter.getMetadataIndex(real_metadata) - 1;
+                            if (@int_from_enum(real_metadata) < Metadata.first_local_metadata)
+                                return adapter.metadata_adapter.get_metadata_index(real_metadata) - 1;
 
-                            return @intCast(@intFromEnum(metadata) -
+                            return @int_cast(@int_from_enum(metadata) -
                                 Metadata.first_local_metadata +
                                 adapter.metadata_adapter.builder.metadata_string_map.count() - 1 +
                                 adapter.metadata_adapter.builder.metadata_map.count() - 1);
@@ -14191,28 +14191,28 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                 }
 
                 pub fn get_offset_value_index(adapter: @This(), value: Value) u32 {
-                    return adapter.offset() -% adapter.getValueIndex(value);
+                    return adapter.offset() -% adapter.get_value_index(value);
                 }
 
                 pub fn get_offset_value_signed_index(adapter: @This(), value: Value) i32 {
-                    const signed_offset: i32 = @intCast(adapter.offset());
-                    const signed_value: i32 = @intCast(adapter.getValueIndex(value));
+                    const signed_offset: i32 = @int_cast(adapter.offset());
+                    const signed_value: i32 = @int_cast(adapter.get_value_index(value));
                     return signed_offset - signed_value;
                 }
 
                 pub fn get_offset_constant_index(adapter: @This(), constant: Constant) u32 {
-                    return adapter.offset() - adapter.constant_adapter.getConstantIndex(constant);
+                    return adapter.offset() - adapter.constant_adapter.get_constant_index(constant);
                 }
 
                 pub fn offset(adapter: @This()) u32 {
                     return @as(
                         Function.Instruction.Index,
                         @enumFromInt(adapter.instruction_index),
-                    ).valueIndex(adapter.func) + adapter.firstInstr();
+                    ).value_index(adapter.func) + adapter.first_instr();
                 }
 
                 fn first_instr(adapter: @This()) u32 {
-                    return adapter.constant_adapter.numConstants();
+                    return adapter.constant_adapter.num_constants();
                 }
 
                 pub fn next(adapter: *@This()) void {
@@ -14222,25 +14222,25 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
 
             for (self.functions.items, 0..) |func, func_index| {
                 const FunctionBlock = ir.FunctionBlock;
-                if (func.global.getReplacement(self) != .none) continue;
+                if (func.global.get_replacement(self) != .none) continue;
 
                 if (func.instructions.len == 0) continue;
 
-                var function_block = try module_block.enterSubBlock(FunctionBlock, false);
+                var function_block = try module_block.enter_sub_block(FunctionBlock, false);
 
-                try function_block.writeAbbrev(FunctionBlock.DeclareBlocks{ .num_blocks = func.blocks.len });
+                try function_block.write_abbrev(FunctionBlock.DeclareBlocks{ .num_blocks = func.blocks.len });
 
                 var adapter = FunctionAdapter.init(constant_adapter, metadata_adapter, &func);
 
                 // Emit function level metadata block
                 if (!func.strip and func.debug_values.len > 0) {
                     const MetadataBlock = ir.FunctionMetadataBlock;
-                    var metadata_block = try function_block.enterSubBlock(MetadataBlock, false);
+                    var metadata_block = try function_block.enter_sub_block(MetadataBlock, false);
 
                     for (func.debug_values) |value| {
-                        try metadata_block.writeAbbrev(MetadataBlock.Value{
-                            .ty = value.typeOf(@enumFromInt(func_index), self),
-                            .value = @enumFromInt(adapter.getValueIndex(value.toValue())),
+                        try metadata_block.write_abbrev(MetadataBlock.Value{
+                            .ty = value.type_of(@enumFromInt(func_index), self),
+                            .value = @enumFromInt(adapter.get_value_index(value.to_value())),
                         });
                     }
 
@@ -14256,22 +14256,22 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                 for (0..func.instructions.len) |instr_index| {
                     const tag = tags[instr_index];
 
-                    record.clearRetainingCapacity();
+                    record.clear_retaining_capacity();
 
                     switch (tag) {
                         .block => block_incoming_len = datas[instr_index],
                         .arg => {},
-                        .@"unreachable" => try function_block.writeAbbrev(FunctionBlock.Unreachable{}),
+                        .@"unreachable" => try function_block.write_abbrev(FunctionBlock.Unreachable{}),
                         .call,
                         .@"musttail call",
                         .@"notail call",
                         .@"tail call",
                         => |kind| {
-                            var extra = func.extraDataTrail(Function.Instruction.Call, datas[instr_index]);
+                            var extra = func.extra_data_trail(Function.Instruction.Call, datas[instr_index]);
 
                             const call_conv = extra.data.info.call_conv;
                             const args = extra.trail.next(extra.data.args_len, Value, &func);
-                            try function_block.writeAbbrevAdapted(FunctionBlock.Call{
+                            try function_block.write_abbrev_adapted(FunctionBlock.Call{
                                 .attributes = extra.data.attributes,
                                 .call_type = switch (kind) {
                                     .call => .{ .call_conv = call_conv },
@@ -14290,11 +14290,11 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         .@"notail call fast",
                         .@"tail call fast",
                         => |kind| {
-                            var extra = func.extraDataTrail(Function.Instruction.Call, datas[instr_index]);
+                            var extra = func.extra_data_trail(Function.Instruction.Call, datas[instr_index]);
 
                             const call_conv = extra.data.info.call_conv;
                             const args = extra.trail.next(extra.data.args_len, Value, &func);
-                            try function_block.writeAbbrevAdapted(FunctionBlock.CallFast{
+                            try function_block.write_abbrev_adapted(FunctionBlock.CallFast{
                                 .attributes = extra.data.attributes,
                                 .call_type = switch (kind) {
                                     .@"call fast" => .{ .call_conv = call_conv },
@@ -14328,11 +14328,11 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         .srem,
                         .ashr,
                         => |kind| {
-                            const extra = func.extraData(Function.Instruction.Binary, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.Binary{
-                                .opcode = kind.toBinaryOpcode(),
-                                .lhs = adapter.getOffsetValueIndex(extra.lhs),
-                                .rhs = adapter.getOffsetValueIndex(extra.rhs),
+                            const extra = func.extra_data(Function.Instruction.Binary, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.Binary{
+                                .opcode = kind.to_binary_opcode(),
+                                .lhs = adapter.get_offset_value_index(extra.lhs),
+                                .rhs = adapter.get_offset_value_index(extra.rhs),
                             });
                         },
                         .@"sdiv exact",
@@ -14340,11 +14340,11 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         .@"lshr exact",
                         .@"ashr exact",
                         => |kind| {
-                            const extra = func.extraData(Function.Instruction.Binary, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.BinaryExact{
-                                .opcode = kind.toBinaryOpcode(),
-                                .lhs = adapter.getOffsetValueIndex(extra.lhs),
-                                .rhs = adapter.getOffsetValueIndex(extra.rhs),
+                            const extra = func.extra_data(Function.Instruction.Binary, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.BinaryExact{
+                                .opcode = kind.to_binary_opcode(),
+                                .lhs = adapter.get_offset_value_index(extra.lhs),
+                                .rhs = adapter.get_offset_value_index(extra.rhs),
                             });
                         },
                         .@"add nsw",
@@ -14360,11 +14360,11 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         .@"shl nuw",
                         .@"shl nuw nsw",
                         => |kind| {
-                            const extra = func.extraData(Function.Instruction.Binary, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.BinaryNoWrap{
-                                .opcode = kind.toBinaryOpcode(),
-                                .lhs = adapter.getOffsetValueIndex(extra.lhs),
-                                .rhs = adapter.getOffsetValueIndex(extra.rhs),
+                            const extra = func.extra_data(Function.Instruction.Binary, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.BinaryNoWrap{
+                                .opcode = kind.to_binary_opcode(),
+                                .lhs = adapter.get_offset_value_index(extra.lhs),
+                                .rhs = adapter.get_offset_value_index(extra.rhs),
                                 .flags = switch (kind) {
                                     .@"add nsw",
                                     .@"mul nsw",
@@ -14391,23 +14391,23 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         .@"frem fast",
                         .@"fsub fast",
                         => |kind| {
-                            const extra = func.extraData(Function.Instruction.Binary, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.BinaryFast{
-                                .opcode = kind.toBinaryOpcode(),
-                                .lhs = adapter.getOffsetValueIndex(extra.lhs),
-                                .rhs = adapter.getOffsetValueIndex(extra.rhs),
+                            const extra = func.extra_data(Function.Instruction.Binary, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.BinaryFast{
+                                .opcode = kind.to_binary_opcode(),
+                                .lhs = adapter.get_offset_value_index(extra.lhs),
+                                .rhs = adapter.get_offset_value_index(extra.rhs),
                                 .fast_math = FastMath.fast,
                             });
                         },
                         .alloca,
                         .@"alloca inalloca",
                         => |kind| {
-                            const extra = func.extraData(Function.Instruction.Alloca, datas[instr_index]);
-                            const alignment = extra.info.alignment.toLlvm();
-                            try function_block.writeAbbrev(FunctionBlock.Alloca{
+                            const extra = func.extra_data(Function.Instruction.Alloca, datas[instr_index]);
+                            const alignment = extra.info.alignment.to_llvm();
+                            try function_block.write_abbrev(FunctionBlock.Alloca{
                                 .inst_type = extra.type,
-                                .len_type = extra.len.typeOf(@enumFromInt(func_index), self),
-                                .len_value = adapter.getValueIndex(extra.len),
+                                .len_type = extra.len.type_of(@enumFromInt(func_index), self),
+                                .len_value = adapter.get_value_index(extra.len),
                                 .flags = .{
                                     .align_lower = @truncate(alignment),
                                     .inalloca = kind == .@"alloca inalloca",
@@ -14431,11 +14431,11 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         .sext,
                         .zext,
                         => |kind| {
-                            const extra = func.extraData(Function.Instruction.Cast, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.Cast{
-                                .val = adapter.getOffsetValueIndex(extra.val),
+                            const extra = func.extra_data(Function.Instruction.Cast, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.Cast{
+                                .val = adapter.get_offset_value_index(extra.val),
                                 .type_index = extra.type,
-                                .opcode = kind.toCastOpcode(),
+                                .opcode = kind.to_cast_opcode(),
                             });
                         },
                         .@"fcmp false",
@@ -14465,11 +14465,11 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         .@"icmp ule",
                         .@"icmp ult",
                         => |kind| {
-                            const extra = func.extraData(Function.Instruction.Binary, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.Cmp{
-                                .lhs = adapter.getOffsetValueIndex(extra.lhs),
-                                .rhs = adapter.getOffsetValueIndex(extra.rhs),
-                                .pred = kind.toCmpPredicate(),
+                            const extra = func.extra_data(Function.Instruction.Binary, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.Cmp{
+                                .lhs = adapter.get_offset_value_index(extra.lhs),
+                                .rhs = adapter.get_offset_value_index(extra.rhs),
+                                .pred = kind.to_cmp_predicate(),
                             });
                         },
                         .@"fcmp fast false",
@@ -14489,84 +14489,84 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                         .@"fcmp fast une",
                         .@"fcmp fast uno",
                         => |kind| {
-                            const extra = func.extraData(Function.Instruction.Binary, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.CmpFast{
-                                .lhs = adapter.getOffsetValueIndex(extra.lhs),
-                                .rhs = adapter.getOffsetValueIndex(extra.rhs),
-                                .pred = kind.toCmpPredicate(),
+                            const extra = func.extra_data(Function.Instruction.Binary, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.CmpFast{
+                                .lhs = adapter.get_offset_value_index(extra.lhs),
+                                .rhs = adapter.get_offset_value_index(extra.rhs),
+                                .pred = kind.to_cmp_predicate(),
                                 .fast_math = FastMath.fast,
                             });
                         },
-                        .fneg => try function_block.writeAbbrev(FunctionBlock.FNeg{
-                            .val = adapter.getOffsetValueIndex(@enumFromInt(datas[instr_index])),
+                        .fneg => try function_block.write_abbrev(FunctionBlock.FNeg{
+                            .val = adapter.get_offset_value_index(@enumFromInt(datas[instr_index])),
                         }),
-                        .@"fneg fast" => try function_block.writeAbbrev(FunctionBlock.FNegFast{
-                            .val = adapter.getOffsetValueIndex(@enumFromInt(datas[instr_index])),
+                        .@"fneg fast" => try function_block.write_abbrev(FunctionBlock.FNegFast{
+                            .val = adapter.get_offset_value_index(@enumFromInt(datas[instr_index])),
                             .fast_math = FastMath.fast,
                         }),
                         .extractvalue => {
-                            var extra = func.extraDataTrail(Function.Instruction.ExtractValue, datas[instr_index]);
+                            var extra = func.extra_data_trail(Function.Instruction.ExtractValue, datas[instr_index]);
                             const indices = extra.trail.next(extra.data.indices_len, u32, &func);
-                            try function_block.writeAbbrev(FunctionBlock.ExtractValue{
-                                .val = adapter.getOffsetValueIndex(extra.data.val),
+                            try function_block.write_abbrev(FunctionBlock.ExtractValue{
+                                .val = adapter.get_offset_value_index(extra.data.val),
                                 .indices = indices,
                             });
                         },
                         .insertvalue => {
-                            var extra = func.extraDataTrail(Function.Instruction.InsertValue, datas[instr_index]);
+                            var extra = func.extra_data_trail(Function.Instruction.InsertValue, datas[instr_index]);
                             const indices = extra.trail.next(extra.data.indices_len, u32, &func);
-                            try function_block.writeAbbrev(FunctionBlock.InsertValue{
-                                .val = adapter.getOffsetValueIndex(extra.data.val),
-                                .elem = adapter.getOffsetValueIndex(extra.data.elem),
+                            try function_block.write_abbrev(FunctionBlock.InsertValue{
+                                .val = adapter.get_offset_value_index(extra.data.val),
+                                .elem = adapter.get_offset_value_index(extra.data.elem),
                                 .indices = indices,
                             });
                         },
                         .extractelement => {
-                            const extra = func.extraData(Function.Instruction.ExtractElement, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.ExtractElement{
-                                .val = adapter.getOffsetValueIndex(extra.val),
-                                .index = adapter.getOffsetValueIndex(extra.index),
+                            const extra = func.extra_data(Function.Instruction.ExtractElement, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.ExtractElement{
+                                .val = adapter.get_offset_value_index(extra.val),
+                                .index = adapter.get_offset_value_index(extra.index),
                             });
                         },
                         .insertelement => {
-                            const extra = func.extraData(Function.Instruction.InsertElement, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.InsertElement{
-                                .val = adapter.getOffsetValueIndex(extra.val),
-                                .elem = adapter.getOffsetValueIndex(extra.elem),
-                                .index = adapter.getOffsetValueIndex(extra.index),
+                            const extra = func.extra_data(Function.Instruction.InsertElement, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.InsertElement{
+                                .val = adapter.get_offset_value_index(extra.val),
+                                .elem = adapter.get_offset_value_index(extra.elem),
+                                .index = adapter.get_offset_value_index(extra.index),
                             });
                         },
                         .select => {
-                            const extra = func.extraData(Function.Instruction.Select, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.Select{
-                                .lhs = adapter.getOffsetValueIndex(extra.lhs),
-                                .rhs = adapter.getOffsetValueIndex(extra.rhs),
-                                .cond = adapter.getOffsetValueIndex(extra.cond),
+                            const extra = func.extra_data(Function.Instruction.Select, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.Select{
+                                .lhs = adapter.get_offset_value_index(extra.lhs),
+                                .rhs = adapter.get_offset_value_index(extra.rhs),
+                                .cond = adapter.get_offset_value_index(extra.cond),
                             });
                         },
                         .@"select fast" => {
-                            const extra = func.extraData(Function.Instruction.Select, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.SelectFast{
-                                .lhs = adapter.getOffsetValueIndex(extra.lhs),
-                                .rhs = adapter.getOffsetValueIndex(extra.rhs),
-                                .cond = adapter.getOffsetValueIndex(extra.cond),
+                            const extra = func.extra_data(Function.Instruction.Select, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.SelectFast{
+                                .lhs = adapter.get_offset_value_index(extra.lhs),
+                                .rhs = adapter.get_offset_value_index(extra.rhs),
+                                .cond = adapter.get_offset_value_index(extra.cond),
                                 .fast_math = FastMath.fast,
                             });
                         },
                         .shufflevector => {
-                            const extra = func.extraData(Function.Instruction.ShuffleVector, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.ShuffleVector{
-                                .lhs = adapter.getOffsetValueIndex(extra.lhs),
-                                .rhs = adapter.getOffsetValueIndex(extra.rhs),
-                                .mask = adapter.getOffsetValueIndex(extra.mask),
+                            const extra = func.extra_data(Function.Instruction.ShuffleVector, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.ShuffleVector{
+                                .lhs = adapter.get_offset_value_index(extra.lhs),
+                                .rhs = adapter.get_offset_value_index(extra.rhs),
+                                .mask = adapter.get_offset_value_index(extra.mask),
                             });
                         },
                         .getelementptr,
                         .@"getelementptr inbounds",
                         => |kind| {
-                            var extra = func.extraDataTrail(Function.Instruction.GetElementPtr, datas[instr_index]);
+                            var extra = func.extra_data_trail(Function.Instruction.GetElementPtr, datas[instr_index]);
                             const indices = extra.trail.next(extra.data.indices_len, Value, &func);
-                            try function_block.writeAbbrevAdapted(
+                            try function_block.write_abbrev_adapted(
                                 FunctionBlock.GetElementPtr{
                                     .is_inbounds = kind == .@"getelementptr inbounds",
                                     .type_index = extra.data.type,
@@ -14577,151 +14577,151 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                             );
                         },
                         .load => {
-                            const extra = func.extraData(Function.Instruction.Load, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.Load{
-                                .ptr = adapter.getOffsetValueIndex(extra.ptr),
+                            const extra = func.extra_data(Function.Instruction.Load, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.Load{
+                                .ptr = adapter.get_offset_value_index(extra.ptr),
                                 .ty = extra.type,
-                                .alignment = extra.info.alignment.toLlvm(),
+                                .alignment = extra.info.alignment.to_llvm(),
                                 .is_volatile = extra.info.access_kind == .@"volatile",
                             });
                         },
                         .@"load atomic" => {
-                            const extra = func.extraData(Function.Instruction.Load, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.LoadAtomic{
-                                .ptr = adapter.getOffsetValueIndex(extra.ptr),
+                            const extra = func.extra_data(Function.Instruction.Load, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.LoadAtomic{
+                                .ptr = adapter.get_offset_value_index(extra.ptr),
                                 .ty = extra.type,
-                                .alignment = extra.info.alignment.toLlvm(),
+                                .alignment = extra.info.alignment.to_llvm(),
                                 .is_volatile = extra.info.access_kind == .@"volatile",
                                 .success_ordering = extra.info.success_ordering,
                                 .sync_scope = extra.info.sync_scope,
                             });
                         },
                         .store => {
-                            const extra = func.extraData(Function.Instruction.Store, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.Store{
-                                .ptr = adapter.getOffsetValueIndex(extra.ptr),
-                                .val = adapter.getOffsetValueIndex(extra.val),
-                                .alignment = extra.info.alignment.toLlvm(),
+                            const extra = func.extra_data(Function.Instruction.Store, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.Store{
+                                .ptr = adapter.get_offset_value_index(extra.ptr),
+                                .val = adapter.get_offset_value_index(extra.val),
+                                .alignment = extra.info.alignment.to_llvm(),
                                 .is_volatile = extra.info.access_kind == .@"volatile",
                             });
                         },
                         .@"store atomic" => {
-                            const extra = func.extraData(Function.Instruction.Store, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.StoreAtomic{
-                                .ptr = adapter.getOffsetValueIndex(extra.ptr),
-                                .val = adapter.getOffsetValueIndex(extra.val),
-                                .alignment = extra.info.alignment.toLlvm(),
+                            const extra = func.extra_data(Function.Instruction.Store, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.StoreAtomic{
+                                .ptr = adapter.get_offset_value_index(extra.ptr),
+                                .val = adapter.get_offset_value_index(extra.val),
+                                .alignment = extra.info.alignment.to_llvm(),
                                 .is_volatile = extra.info.access_kind == .@"volatile",
                                 .success_ordering = extra.info.success_ordering,
                                 .sync_scope = extra.info.sync_scope,
                             });
                         },
                         .br => {
-                            try function_block.writeAbbrev(FunctionBlock.BrUnconditional{
+                            try function_block.write_abbrev(FunctionBlock.BrUnconditional{
                                 .block = datas[instr_index],
                             });
                         },
                         .br_cond => {
-                            const extra = func.extraData(Function.Instruction.BrCond, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.BrConditional{
-                                .then_block = @intFromEnum(extra.then),
-                                .else_block = @intFromEnum(extra.@"else"),
-                                .condition = adapter.getOffsetValueIndex(extra.cond),
+                            const extra = func.extra_data(Function.Instruction.BrCond, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.BrConditional{
+                                .then_block = @int_from_enum(extra.then),
+                                .else_block = @int_from_enum(extra.@"else"),
+                                .condition = adapter.get_offset_value_index(extra.cond),
                             });
                         },
                         .@"switch" => {
-                            var extra = func.extraDataTrail(Function.Instruction.Switch, datas[instr_index]);
+                            var extra = func.extra_data_trail(Function.Instruction.Switch, datas[instr_index]);
 
-                            try record.ensureUnusedCapacity(self.gpa, 3 + extra.data.cases_len * 2);
+                            try record.ensure_unused_capacity(self.gpa, 3 + extra.data.cases_len * 2);
 
                             // Conditional type
-                            record.appendAssumeCapacity(@intFromEnum(extra.data.val.typeOf(@enumFromInt(func_index), self)));
+                            record.append_assume_capacity(@int_from_enum(extra.data.val.type_of(@enumFromInt(func_index), self)));
 
                             // Conditional
-                            record.appendAssumeCapacity(adapter.getOffsetValueIndex(extra.data.val));
+                            record.append_assume_capacity(adapter.get_offset_value_index(extra.data.val));
 
                             // Default block
-                            record.appendAssumeCapacity(@intFromEnum(extra.data.default));
+                            record.append_assume_capacity(@int_from_enum(extra.data.default));
 
                             const vals = extra.trail.next(extra.data.cases_len, Constant, &func);
                             const blocks = extra.trail.next(extra.data.cases_len, Function.Block.Index, &func);
                             for (vals, blocks) |val, block| {
-                                record.appendAssumeCapacity(adapter.constant_adapter.getConstantIndex(val));
-                                record.appendAssumeCapacity(@intFromEnum(block));
+                                record.append_assume_capacity(adapter.constant_adapter.get_constant_index(val));
+                                record.append_assume_capacity(@int_from_enum(block));
                             }
 
-                            try function_block.writeUnabbrev(12, record.items);
+                            try function_block.write_unabbrev(12, record.items);
                         },
                         .va_arg => {
-                            const extra = func.extraData(Function.Instruction.VaArg, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.VaArg{
-                                .list_type = extra.list.typeOf(@enumFromInt(func_index), self),
-                                .list = adapter.getOffsetValueIndex(extra.list),
+                            const extra = func.extra_data(Function.Instruction.VaArg, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.VaArg{
+                                .list_type = extra.list.type_of(@enumFromInt(func_index), self),
+                                .list = adapter.get_offset_value_index(extra.list),
                                 .type = extra.type,
                             });
                         },
                         .phi,
                         .@"phi fast",
                         => |kind| {
-                            var extra = func.extraDataTrail(Function.Instruction.Phi, datas[instr_index]);
+                            var extra = func.extra_data_trail(Function.Instruction.Phi, datas[instr_index]);
                             const vals = extra.trail.next(block_incoming_len, Value, &func);
                             const blocks = extra.trail.next(block_incoming_len, Function.Block.Index, &func);
 
-                            try record.ensureUnusedCapacity(
+                            try record.ensure_unused_capacity(
                                 self.gpa,
-                                1 + block_incoming_len * 2 + @intFromBool(kind == .@"phi fast"),
+                                1 + block_incoming_len * 2 + @int_from_bool(kind == .@"phi fast"),
                             );
 
-                            record.appendAssumeCapacity(@intFromEnum(extra.data.type));
+                            record.append_assume_capacity(@int_from_enum(extra.data.type));
 
                             for (vals, blocks) |val, block| {
-                                const offset_value = adapter.getOffsetValueSignedIndex(val);
-                                const abs_value: u32 = @intCast(@abs(offset_value));
+                                const offset_value = adapter.get_offset_value_signed_index(val);
+                                const abs_value: u32 = @int_cast(@abs(offset_value));
                                 const signed_vbr = if (offset_value > 0) abs_value << 1 else ((abs_value << 1) | 1);
-                                record.appendAssumeCapacity(signed_vbr);
-                                record.appendAssumeCapacity(@intFromEnum(block));
+                                record.append_assume_capacity(signed_vbr);
+                                record.append_assume_capacity(@int_from_enum(block));
                             }
 
-                            if (kind == .@"phi fast") record.appendAssumeCapacity(@as(u8, @bitCast(FastMath{})));
+                            if (kind == .@"phi fast") record.append_assume_capacity(@as(u8, @bit_cast(FastMath{})));
 
-                            try function_block.writeUnabbrev(16, record.items);
+                            try function_block.write_unabbrev(16, record.items);
                         },
-                        .ret => try function_block.writeAbbrev(FunctionBlock.Ret{
-                            .val = adapter.getOffsetValueIndex(@enumFromInt(datas[instr_index])),
+                        .ret => try function_block.write_abbrev(FunctionBlock.Ret{
+                            .val = adapter.get_offset_value_index(@enumFromInt(datas[instr_index])),
                         }),
-                        .@"ret void" => try function_block.writeAbbrev(FunctionBlock.RetVoid{}),
+                        .@"ret void" => try function_block.write_abbrev(FunctionBlock.RetVoid{}),
                         .atomicrmw => {
-                            const extra = func.extraData(Function.Instruction.AtomicRmw, datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.AtomicRmw{
-                                .ptr = adapter.getOffsetValueIndex(extra.ptr),
-                                .val = adapter.getOffsetValueIndex(extra.val),
+                            const extra = func.extra_data(Function.Instruction.AtomicRmw, datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.AtomicRmw{
+                                .ptr = adapter.get_offset_value_index(extra.ptr),
+                                .val = adapter.get_offset_value_index(extra.val),
                                 .operation = extra.info.atomic_rmw_operation,
                                 .is_volatile = extra.info.access_kind == .@"volatile",
                                 .success_ordering = extra.info.success_ordering,
                                 .sync_scope = extra.info.sync_scope,
-                                .alignment = extra.info.alignment.toLlvm(),
+                                .alignment = extra.info.alignment.to_llvm(),
                             });
                         },
                         .cmpxchg,
                         .@"cmpxchg weak",
                         => |kind| {
-                            const extra = func.extraData(Function.Instruction.CmpXchg, datas[instr_index]);
+                            const extra = func.extra_data(Function.Instruction.CmpXchg, datas[instr_index]);
 
-                            try function_block.writeAbbrev(FunctionBlock.CmpXchg{
-                                .ptr = adapter.getOffsetValueIndex(extra.ptr),
-                                .cmp = adapter.getOffsetValueIndex(extra.cmp),
-                                .new = adapter.getOffsetValueIndex(extra.new),
+                            try function_block.write_abbrev(FunctionBlock.CmpXchg{
+                                .ptr = adapter.get_offset_value_index(extra.ptr),
+                                .cmp = adapter.get_offset_value_index(extra.cmp),
+                                .new = adapter.get_offset_value_index(extra.new),
                                 .is_volatile = extra.info.access_kind == .@"volatile",
                                 .success_ordering = extra.info.success_ordering,
                                 .sync_scope = extra.info.sync_scope,
                                 .failure_ordering = extra.info.failure_ordering,
                                 .is_weak = kind == .@"cmpxchg weak",
-                                .alignment = extra.info.alignment.toLlvm(),
+                                .alignment = extra.info.alignment.to_llvm(),
                             });
                         },
                         .fence => {
-                            const info: MemoryAccessInfo = @bitCast(datas[instr_index]);
-                            try function_block.writeAbbrev(FunctionBlock.Fence{
+                            const info: MemoryAccessInfo = @bit_cast(datas[instr_index]);
+                            try function_block.write_abbrev(FunctionBlock.Fence{
                                 .ordering = info.success_ordering,
                                 .sync_scope = info.sync_scope,
                             });
@@ -14733,17 +14733,17 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                             switch (debug_location) {
                                 .no_location => has_location = false,
                                 .location => |location| {
-                                    try function_block.writeAbbrev(FunctionBlock.DebugLoc{
+                                    try function_block.write_abbrev(FunctionBlock.DebugLoc{
                                         .line = location.line,
                                         .column = location.column,
-                                        .scope = @enumFromInt(metadata_adapter.getMetadataIndex(location.scope)),
-                                        .inlined_at = @enumFromInt(metadata_adapter.getMetadataIndex(location.inlined_at)),
+                                        .scope = @enumFromInt(metadata_adapter.get_metadata_index(location.scope)),
+                                        .inlined_at = @enumFromInt(metadata_adapter.get_metadata_index(location.inlined_at)),
                                     });
                                     has_location = true;
                                 },
                             }
                         } else if (has_location) {
-                            try function_block.writeAbbrev(FunctionBlock.DebugLocAgain{});
+                            try function_block.write_abbrev(FunctionBlock.DebugLocAgain{});
                         }
                     }
 
@@ -14754,15 +14754,15 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
                 if (!func.strip) {
                     const ValueSymbolTable = ir.FunctionValueSymbolTable;
 
-                    var value_symtab_block = try function_block.enterSubBlock(ValueSymbolTable, false);
+                    var value_symtab_block = try function_block.enter_sub_block(ValueSymbolTable, false);
 
                     for (func.blocks, 0..) |block, block_index| {
                         const name = block.instruction.name(&func);
 
                         if (name == .none or name == .empty) continue;
 
-                        try value_symtab_block.writeAbbrev(ValueSymbolTable.BlockEntry{
-                            .value_id = @intCast(block_index),
+                        try value_symtab_block.write_abbrev(ValueSymbolTable.BlockEntry{
+                            .value_id = @int_cast(block_index),
                             .string = name.slice(self).?,
                         });
                     }
@@ -14774,16 +14774,16 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
 
                 // METADATA_ATTACHMENT_BLOCK
                 if (!func.strip) blk: {
-                    const dbg = func.global.ptrConst(self).dbg;
+                    const dbg = func.global.ptr_const(self).dbg;
 
                     if (dbg == .none) break :blk;
 
                     const MetadataAttachmentBlock = ir.MetadataAttachmentBlock;
-                    var metadata_attach_block = try function_block.enterSubBlock(MetadataAttachmentBlock, false);
+                    var metadata_attach_block = try function_block.enter_sub_block(MetadataAttachmentBlock, false);
 
-                    try metadata_attach_block.writeAbbrev(MetadataAttachmentBlock.AttachmentSingle{
+                    try metadata_attach_block.write_abbrev(MetadataAttachmentBlock.AttachmentSingle{
                         .kind = ir.MetadataKind.dbg,
-                        .metadata = @enumFromInt(metadata_adapter.getMetadataIndex(dbg) - 1),
+                        .metadata = @enumFromInt(metadata_adapter.get_metadata_index(dbg) - 1),
                     });
 
                     try metadata_attach_block.end();
@@ -14799,14 +14799,14 @@ pub fn to_bitcode(self: *Builder, allocator: Allocator) bitcode_writer.Error![]c
     // STRTAB_BLOCK
     {
         const Strtab = ir.Strtab;
-        var strtab_block = try bitcode.enterTopBlock(Strtab);
+        var strtab_block = try bitcode.enter_top_block(Strtab);
 
-        try strtab_block.writeAbbrev(Strtab.Blob{ .blob = self.strtab_string_bytes.items });
+        try strtab_block.write_abbrev(Strtab.Blob{ .blob = self.strtab_string_bytes.items });
 
         try strtab_block.end();
     }
 
-    return bitcode.toOwnedSlice();
+    return bitcode.to_owned_slice();
 }
 
 const Allocator = std.mem.Allocator;

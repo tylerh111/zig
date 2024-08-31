@@ -1,6 +1,6 @@
 test "inline function call" {
     if (foo(1200, 34) != 1234) {
-        @compileError("bad");
+        @compile_error("bad");
     }
 }
 

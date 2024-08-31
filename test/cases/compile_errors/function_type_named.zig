@@ -1,4 +1,4 @@
-const aFunc = fn some_func(x: i32) void;
+const a_func = fn some_func(x: i32) void;
 
 // error
 // backend=stage2

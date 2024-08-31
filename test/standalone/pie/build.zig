@@ -5,20 +5,20 @@ pub fn build(b: *std.Build) void {
     b.default_step = test_step;
 
     const optimize: std.builtin.OptimizeMode = .Debug;
-    const target = b.resolveTargetQuery(.{
+    const target = b.resolve_target_query(.{
         .os_tag = .linux,
         .cpu_arch = .x86_64,
     });
 
-    const main = b.addTest(.{
+    const main = b.add_test(.{
         .root_source_file = b.path("main.zig"),
         .optimize = optimize,
         .target = target,
     });
     main.pie = true;
 
-    const run = b.addRunArtifact(main);
+    const run = b.add_run_artifact(main);
     run.skip_foreign_checks = true;
 
-    test_step.dependOn(&run.step);
+    test_step.depend_on(&run.step);
 }

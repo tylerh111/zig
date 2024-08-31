@@ -18,23 +18,23 @@ comptime {
 }
 
 // clz - count leading zeroes
-// - clzXi2 for unoptimized little and big endian
+// - clz_xi2 for unoptimized little and big endian
 // - __clzsi2_thumb1: assume a != 0
 // - __clzsi2_arm32: assume a != 0
 
 // ctz - count trailing zeroes
-// - ctzXi2 for unoptimized little and big endian
+// - ctz_xi2 for unoptimized little and big endian
 
 // ffs - find first set
 // * ffs = (a == 0) => 0, (a != 0) => ctz + 1
 // * dont pay for `if (x == 0) return shift;` inside ctz
-// - ffsXi2 for unoptimized little and big endian
+// - ffs_xi2 for unoptimized little and big endian
 
 inline fn clz_xi2(comptime T: type, a: T) i32 {
     var x = switch (@bitSizeOf(T)) {
-        32 => @as(u32, @bitCast(a)),
-        64 => @as(u64, @bitCast(a)),
-        128 => @as(u128, @bitCast(a)),
+        32 => @as(u32, @bit_cast(a)),
+        64 => @as(u64, @bit_cast(a)),
+        128 => @as(u128, @bit_cast(a)),
         else => unreachable,
     };
     var n: T = @bitSizeOf(T);
@@ -49,7 +49,7 @@ inline fn clz_xi2(comptime T: type, a: T) i32 {
             x = y;
         }
     }
-    return @intCast(n - @as(T, @bitCast(x)));
+    return @int_cast(n - @as(T, @bit_cast(x)));
 }
 
 fn __clzsi2_thumb1() callconv(.Naked) void {
@@ -136,21 +136,21 @@ fn __clzsi2_arm32() callconv(.Naked) void {
 }
 
 fn clzsi2_generic(a: i32) callconv(.C) i32 {
-    return clzXi2(i32, a);
+    return clz_xi2(i32, a);
 }
 
 pub const __clzsi2 = switch (builtin.cpu.arch) {
     .arm, .armeb, .thumb, .thumbeb => impl: {
         const use_thumb1 =
-            (builtin.cpu.arch.isThumb() or
-            std.Target.arm.featureSetHas(builtin.cpu.features, .noarm)) and
-            !std.Target.arm.featureSetHas(builtin.cpu.features, .thumb2);
+            (builtin.cpu.arch.is_thumb() or
+            std.Target.arm.feature_set_has(builtin.cpu.features, .noarm)) and
+            !std.Target.arm.feature_set_has(builtin.cpu.features, .thumb2);
 
         if (use_thumb1) {
             break :impl __clzsi2_thumb1;
         }
         // From here on we're either targeting Thumb2 or ARM.
-        else if (!builtin.cpu.arch.isThumb()) {
+        else if (!builtin.cpu.arch.is_thumb()) {
             break :impl __clzsi2_arm32;
         }
         // Use the generic implementation otherwise.
@@ -160,23 +160,23 @@ pub const __clzsi2 = switch (builtin.cpu.arch) {
 };
 
 pub fn __clzdi2(a: i64) callconv(.C) i32 {
-    return clzXi2(i64, a);
+    return clz_xi2(i64, a);
 }
 
 pub fn __clzti2(a: i128) callconv(.C) i32 {
-    return clzXi2(i128, a);
+    return clz_xi2(i128, a);
 }
 
 inline fn ctz_xi2(comptime T: type, a: T) i32 {
     var x = switch (@bitSizeOf(T)) {
-        32 => @as(u32, @bitCast(a)),
-        64 => @as(u64, @bitCast(a)),
-        128 => @as(u128, @bitCast(a)),
+        32 => @as(u32, @bit_cast(a)),
+        64 => @as(u64, @bit_cast(a)),
+        128 => @as(u128, @bit_cast(a)),
         else => unreachable,
     };
     var n: T = 1;
     // Number of trailing zeroes as binary search, from Hacker's Delight
-    var mask: @TypeOf(x) = std.math.maxInt(@TypeOf(x));
+    var mask: @TypeOf(x) = std.math.max_int(@TypeOf(x));
     comptime var shift = @bitSizeOf(T);
     if (x == 0) return shift;
     inline while (shift > 1) {
@@ -187,26 +187,26 @@ inline fn ctz_xi2(comptime T: type, a: T) i32 {
             x = x >> shift;
         }
     }
-    return @intCast(n - @as(T, @bitCast((x & 1))));
+    return @int_cast(n - @as(T, @bit_cast((x & 1))));
 }
 
 pub fn __ctzsi2(a: i32) callconv(.C) i32 {
-    return ctzXi2(i32, a);
+    return ctz_xi2(i32, a);
 }
 
 pub fn __ctzdi2(a: i64) callconv(.C) i32 {
-    return ctzXi2(i64, a);
+    return ctz_xi2(i64, a);
 }
 
 pub fn __ctzti2(a: i128) callconv(.C) i32 {
-    return ctzXi2(i128, a);
+    return ctz_xi2(i128, a);
 }
 
 inline fn ffs_xi2(comptime T: type, a: T) i32 {
-    var x: std.meta.Int(.unsigned, @typeInfo(T).Int.bits) = @bitCast(a);
+    var x: std.meta.Int(.unsigned, @typeInfo(T).Int.bits) = @bit_cast(a);
     var n: T = 1;
-    // adapted from Number of trailing zeroes (see ctzXi2)
-    var mask: @TypeOf(x) = std.math.maxInt(@TypeOf(x));
+    // adapted from Number of trailing zeroes (see ctz_xi2)
+    var mask: @TypeOf(x) = std.math.max_int(@TypeOf(x));
     comptime var shift = @bitSizeOf(T);
     // In contrast to ctz return 0
     if (x == 0) return 0;
@@ -219,19 +219,19 @@ inline fn ffs_xi2(comptime T: type, a: T) i32 {
         }
     }
     // return ctz + 1
-    return @as(i32, @intCast(n - @as(T, @bitCast((x & 1))))) + 1;
+    return @as(i32, @int_cast(n - @as(T, @bit_cast((x & 1))))) + 1;
 }
 
 pub fn __ffssi2(a: i32) callconv(.C) i32 {
-    return ffsXi2(i32, a);
+    return ffs_xi2(i32, a);
 }
 
 pub fn __ffsdi2(a: i64) callconv(.C) i32 {
-    return ffsXi2(i64, a);
+    return ffs_xi2(i64, a);
 }
 
 pub fn __ffsti2(a: i128) callconv(.C) i32 {
-    return ffsXi2(i128, a);
+    return ffs_xi2(i128, a);
 }
 
 test {

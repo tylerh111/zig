@@ -24,11 +24,11 @@ pub const UncheckedSliceWriter = struct {
     }
 };
 
-/// Cross-platform 'std.fs.Dir.openFile' wrapper that will always return IsDir if
+/// Cross-platform 'std.fs.Dir.open_file' wrapper that will always return IsDir if
 /// a directory is attempted to be opened.
 /// TODO: Remove once https://github.com/ziglang/zig/issues/5732 is addressed.
 pub fn open_file_not_dir(cwd: std.fs.Dir, path: []const u8, flags: std.fs.File.OpenFlags) std.fs.File.OpenError!std.fs.File {
-    const file = try cwd.openFile(path, flags);
+    const file = try cwd.open_file(path, flags);
     errdefer file.close();
     // https://github.com/ziglang/zig/issues/5732
     if (builtin.os.tag != .windows) {
@@ -89,28 +89,28 @@ pub const ErrorMessageType = enum { err, warning, note };
 pub fn render_error_message(writer: anytype, config: std.io.tty.Config, msg_type: ErrorMessageType, comptime format: []const u8, args: anytype) !void {
     switch (msg_type) {
         .err => {
-            try config.setColor(writer, .bold);
-            try config.setColor(writer, .red);
-            try writer.writeAll("error: ");
+            try config.set_color(writer, .bold);
+            try config.set_color(writer, .red);
+            try writer.write_all("error: ");
         },
         .warning => {
-            try config.setColor(writer, .bold);
-            try config.setColor(writer, .yellow);
-            try writer.writeAll("warning: ");
+            try config.set_color(writer, .bold);
+            try config.set_color(writer, .yellow);
+            try writer.write_all("warning: ");
         },
         .note => {
-            try config.setColor(writer, .reset);
-            try config.setColor(writer, .cyan);
-            try writer.writeAll("note: ");
+            try config.set_color(writer, .reset);
+            try config.set_color(writer, .cyan);
+            try writer.write_all("note: ");
         },
     }
-    try config.setColor(writer, .reset);
+    try config.set_color(writer, .reset);
     if (msg_type == .err) {
-        try config.setColor(writer, .bold);
+        try config.set_color(writer, .bold);
     }
     try writer.print(format, args);
-    try writer.writeByte('\n');
-    try config.setColor(writer, .reset);
+    try writer.write_byte('\n');
+    try config.set_color(writer, .reset);
 }
 
 pub fn is_line_ending_pair(first: u8, second: u8) bool {

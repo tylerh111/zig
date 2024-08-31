@@ -9,9 +9,9 @@ const native_endian = builtin.target.cpu.arch.endian();
 const MachO = @import("../MachO.zig");
 
 pub fn is_fat_library(path: []const u8) !bool {
-    const file = try std.fs.cwd().openFile(path, .{});
+    const file = try std.fs.cwd().open_file(path, .{});
     defer file.close();
-    const hdr = file.reader().readStructEndian(macho.fat_header, .big) catch return false;
+    const hdr = file.reader().read_struct_endian(macho.fat_header, .big) catch return false;
     return hdr.magic == macho.FAT_MAGIC;
 }
 
@@ -22,16 +22,16 @@ pub const Arch = struct {
 };
 
 pub fn parse_archs(path: []const u8, buffer: *[2]Arch) ![]const Arch {
-    const file = try std.fs.cwd().openFile(path, .{});
+    const file = try std.fs.cwd().open_file(path, .{});
     defer file.close();
     const reader = file.reader();
-    const fat_header = try reader.readStructEndian(macho.fat_header, .big);
+    const fat_header = try reader.read_struct_endian(macho.fat_header, .big);
     assert(fat_header.magic == macho.FAT_MAGIC);
 
     var count: usize = 0;
     var fat_arch_index: u32 = 0;
     while (fat_arch_index < fat_header.nfat_arch) : (fat_arch_index += 1) {
-        const fat_arch = try reader.readStructEndian(macho.fat_arch, .big);
+        const fat_arch = try reader.read_struct_endian(macho.fat_arch, .big);
         // If we come across an architecture that we do not know how to handle, that's
         // fine because we can keep looking for one that might match.
         const arch: std.Target.Cpu.Arch = switch (fat_arch.cputype) {

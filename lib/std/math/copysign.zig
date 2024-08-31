@@ -7,9 +7,9 @@ pub fn copysign(magnitude: anytype, sign: @TypeOf(magnitude)) @TypeOf(magnitude)
     const T = @TypeOf(magnitude);
     const TBits = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
     const sign_bit_mask = @as(TBits, 1) << (@bitSizeOf(T) - 1);
-    const mag = @as(TBits, @bitCast(magnitude)) & ~sign_bit_mask;
-    const sgn = @as(TBits, @bitCast(sign)) & sign_bit_mask;
-    return @as(T, @bitCast(mag | sgn));
+    const mag = @as(TBits, @bit_cast(magnitude)) & ~sign_bit_mask;
+    const sgn = @as(TBits, @bit_cast(sign)) & sign_bit_mask;
+    return @as(T, @bit_cast(mag | sgn));
 }
 
 test copysign {

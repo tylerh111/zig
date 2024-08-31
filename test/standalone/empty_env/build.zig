@@ -12,16 +12,16 @@ pub fn build(b: *std.Build) void {
         return;
     }
 
-    const main = b.addExecutable(.{
+    const main = b.add_executable(.{
         .name = "main",
         .root_source_file = b.path("main.zig"),
         .target = b.host,
         .optimize = optimize,
     });
 
-    const run = b.addRunArtifact(main);
-    run.clearEnvironment();
+    const run = b.add_run_artifact(main);
+    run.clear_environment();
     run.disable_zig_progress = true;
 
-    test_step.dependOn(&run.step);
+    test_step.depend_on(&run.step);
 }

@@ -2,13 +2,13 @@
 const builtin = @import("builtin");
 const std = @import("std");
 const linkage = @import("./common.zig").linkage;
-const always_has_lse = std.Target.aarch64.featureSetHas(builtin.cpu.features, .lse);
+const always_has_lse = std.Target.aarch64.feature_set_has(builtin.cpu.features, .lse);
 
 /// This default is overridden at runtime after inspecting CPU properties.
 /// It is intentionally not exported in order to make the machine code that
 /// uses it a statically predicted direct branch rather than using the PLT,
 /// which ARM is concerned would have too much overhead.
-var __aarch64_have_lse_atomics: u8 = @intFromBool(always_has_lse);
+var __aarch64_have_lse_atomics: u8 = @int_from_bool(always_has_lse);
 
 fn __aarch64_cas1_relax() align(16) callconv(.Naked) void {
     @setRuntimeSafety(false);

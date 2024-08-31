@@ -7,7 +7,7 @@ pub fn main() void {
     }
 }
 fn print(len: usize) void {
-    _ = write(1, @intFromPtr("Hello"), len);
+    _ = write(1, @int_from_ptr("Hello"), len);
 }
 
 // run

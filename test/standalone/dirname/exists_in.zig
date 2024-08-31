@@ -20,7 +20,7 @@ pub fn main() !void {
 }
 
 fn run(allocator: std.mem.Allocator) !void {
-    var args = try std.process.argsWithAllocator(allocator);
+    var args = try std.process.args_with_allocator(allocator);
     defer args.deinit();
     _ = args.next() orelse unreachable; // skip binary name
 
@@ -29,7 +29,7 @@ fn run(allocator: std.mem.Allocator) !void {
         return error.BadUsage;
     };
 
-    if (!std.fs.path.isAbsolute(dir_path)) {
+    if (!std.fs.path.is_absolute(dir_path)) {
         std.log.err("expected <dir> to be an absolute path", .{});
         return error.BadUsage;
     }
@@ -39,8 +39,8 @@ fn run(allocator: std.mem.Allocator) !void {
         return error.BadUsage;
     };
 
-    var dir = try std.fs.openDirAbsolute(dir_path, .{});
+    var dir = try std.fs.open_dir_absolute(dir_path, .{});
     defer dir.close();
 
-    _ = try dir.statFile(relpath);
+    _ = try dir.stat_file(relpath);
 }

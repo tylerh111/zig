@@ -8,7 +8,7 @@ pub const CmacAes128 = Cmac(crypto.core.aes.Aes128);
 /// NIST Special Publication 800-38B - The CMAC Mode for Authentication
 /// https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-38b.pdf
 pub fn Cmac(comptime BlockCipher: type) type {
-    const BlockCipherCtx = @typeInfo(@TypeOf(BlockCipher.initEnc)).Fn.return_type.?;
+    const BlockCipherCtx = @typeInfo(@TypeOf(BlockCipher.init_enc)).Fn.return_type.?;
     const Block = [BlockCipher.block.block_length]u8;
 
     return struct {
@@ -30,7 +30,7 @@ pub fn Cmac(comptime BlockCipher: type) type {
         }
 
         pub fn init(key: *const [key_length]u8) Self {
-            const cipher_ctx = BlockCipher.initEnc(key.*);
+            const cipher_ctx = BlockCipher.init_enc(key.*);
             const zeros = [_]u8{0} ** block_length;
             var k1: Block = undefined;
             cipher_ctx.encrypt(&k1, &zeros);
@@ -75,16 +75,16 @@ pub fn Cmac(comptime BlockCipher: type) type {
 
         fn double(l: Block) Block {
             const Int = std.meta.Int(.unsigned, block_length * 8);
-            const l_ = mem.readInt(Int, &l, .big);
+            const l_ = mem.read_int(Int, &l, .big);
             const l_2 = switch (block_length) {
                 8 => (l_ << 1) ^ (0x1b & -%(l_ >> 63)), // mod x^64 + x^4 + x^3 + x + 1
                 16 => (l_ << 1) ^ (0x87 & -%(l_ >> 127)), // mod x^128 + x^7 + x^2 + x + 1
                 32 => (l_ << 1) ^ (0x0425 & -%(l_ >> 255)), // mod x^256 + x^10 + x^5 + x^2 + 1
                 64 => (l_ << 1) ^ (0x0125 & -%(l_ >> 511)), // mod x^512 + x^8 + x^5 + x^2 + 1
-                else => @compileError("unsupported block length"),
+                else => @compile_error("unsupported block length"),
             };
             var l2: Block = undefined;
-            mem.writeInt(Int, &l2, l_2, .big);
+            mem.write_int(Int, &l2, l_2, .big);
             return l2;
         }
     };
@@ -102,7 +102,7 @@ test "CmacAes128 - Example 1: len = 0" {
     };
     var out: [CmacAes128.mac_length]u8 = undefined;
     CmacAes128.create(&out, &msg, &key);
-    try testing.expectEqualSlices(u8, &out, &exp);
+    try testing.expect_equal_slices(u8, &out, &exp);
 }
 
 test "CmacAes128 - Example 2: len = 16" {
@@ -117,7 +117,7 @@ test "CmacAes128 - Example 2: len = 16" {
     };
     var out: [CmacAes128.mac_length]u8 = undefined;
     CmacAes128.create(&out, &msg, &key);
-    try testing.expectEqualSlices(u8, &out, &exp);
+    try testing.expect_equal_slices(u8, &out, &exp);
 }
 
 test "CmacAes128 - Example 3: len = 40" {
@@ -134,7 +134,7 @@ test "CmacAes128 - Example 3: len = 40" {
     };
     var out: [CmacAes128.mac_length]u8 = undefined;
     CmacAes128.create(&out, &msg, &key);
-    try testing.expectEqualSlices(u8, &out, &exp);
+    try testing.expect_equal_slices(u8, &out, &exp);
 }
 
 test "CmacAes128 - Example 4: len = 64" {
@@ -152,5 +152,5 @@ test "CmacAes128 - Example 4: len = 64" {
     };
     var out: [CmacAes128.mac_length]u8 = undefined;
     CmacAes128.create(&out, &msg, &key);
-    try testing.expectEqualSlices(u8, &out, &exp);
+    try testing.expect_equal_slices(u8, &out, &exp);
 }

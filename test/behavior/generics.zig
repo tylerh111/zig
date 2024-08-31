@@ -2,18 +2,18 @@ const std = @import("std");
 const builtin = @import("builtin");
 const testing = std.testing;
 const expect = testing.expect;
-const expectEqual = testing.expectEqual;
+const expect_equal = testing.expect_equal;
 
 test "one param, explicit comptime" {
     var x: usize = 0;
-    x += checkSize(i32);
-    x += checkSize(bool);
-    x += checkSize(bool);
+    x += check_size(i32);
+    x += check_size(bool);
+    x += check_size(bool);
     try expect(x == 6);
 }
 
 fn check_size(comptime T: type) usize {
-    return @sizeOf(T);
+    return @size_of(T);
 }
 
 test "simple generic fn" {
@@ -58,9 +58,9 @@ test "fn with comptime args" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(gimmeTheBigOne(1234, 5678) == 5678);
-    try expect(shouldCallSameInstance(34, 12) == 34);
-    try expect(sameButWithFloats(0.43, 0.49) == 0.49);
+    try expect(gimme_the_big_one(1234, 5678) == 5678);
+    try expect(should_call_same_instance(34, 12) == 34);
+    try expect(same_but_with_floats(0.43, 0.49) == 0.49);
 }
 
 test "anytype params" {
@@ -98,7 +98,7 @@ test "type constructed by comptime function call" {
     l.array[0] = 10;
     l.array[1] = 11;
     l.array[2] = 12;
-    const ptr = @as([*]u8, @ptrCast(&l.array));
+    const ptr = @as([*]u8, @ptr_cast(&l.array));
     try expect(ptr[0] == 10);
     try expect(ptr[1] == 11);
     try expect(ptr[2] == 12);
@@ -149,7 +149,7 @@ fn GenericDataThing(comptime count: isize) type {
 }
 
 test "use generic param in generic param" {
-    try expect(aGenericFn(i32, 3, 4) == 7);
+    try expect(a_generic_fn(i32, 3, 4) == 7);
 }
 fn a_generic_fn(comptime T: type, comptime a: T, b: T) T {
     return a + b;
@@ -161,8 +161,8 @@ test "generic fn with implicit cast" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(getFirstByte(u8, &[_]u8{13}) == 13);
-    try expect(getFirstByte(u16, &[_]u16{
+    try expect(get_first_byte(u8, &[_]u8{13}) == 13);
+    try expect(get_first_byte(u16, &[_]u16{
         0,
         13,
     }) == 0);
@@ -171,7 +171,7 @@ fn get_byte(ptr: ?*const u8) u8 {
     return ptr.?.*;
 }
 fn get_first_byte(comptime T: type, mem: []const T) u8 {
-    return getByte(@as(*const u8, @ptrCast(&mem[0])));
+    return get_byte(@as(*const u8, @ptr_cast(&mem[0])));
 }
 
 test "generic fn keeps non-generic parameter types" {
@@ -223,8 +223,8 @@ test "generic struct" {
         .next = null,
     };
     try expect(a1.value == 13);
-    try expect(a1.value == a1.getVal());
-    try expect(b1.getVal());
+    try expect(a1.value == a1.get_val());
+    try expect(b1.get_val());
 }
 fn GenNode(comptime T: type) type {
     return struct {
@@ -258,7 +258,7 @@ test "generic function instantiation turns into comptime call" {
     const S = struct {
         fn do_the_test() !void {
             const E1 = enum { A };
-            const e1f = fieldInfo(E1, .A);
+            const e1f = field_info(E1, .A);
             try expect(std.mem.eql(u8, e1f.name, "A"));
         }
 
@@ -266,23 +266,23 @@ test "generic function instantiation turns into comptime call" {
             .Enum => std.builtin.Type.EnumField,
             else => void,
         } {
-            return @typeInfo(T).Enum.fields[@intFromEnum(field)];
+            return @typeInfo(T).Enum.fields[@int_from_enum(field)];
         }
 
         pub fn FieldEnum(comptime T: type) type {
             _ = T;
-            var enumFields: [1]std.builtin.Type.EnumField = .{.{ .name = "A", .value = 0 }};
+            var enum_fields: [1]std.builtin.Type.EnumField = .{.{ .name = "A", .value = 0 }};
             return @Type(.{
                 .Enum = .{
                     .tag_type = u0,
-                    .fields = &enumFields,
+                    .fields = &enum_fields,
                     .decls = &.{},
                     .is_exhaustive = true,
                 },
             });
         }
     };
-    try S.doTheTest();
+    try S.do_the_test();
 }
 
 test "generic function with void and comptime parameter" {
@@ -314,7 +314,7 @@ test "anonymous struct return type referencing comptime parameter" {
             };
         }
     };
-    const s = S.extraData(i32, 5678);
+    const s = S.extra_data(i32, 5678);
     try expect(s.data == 1234);
     try expect(s.end == 5678);
 }
@@ -389,8 +389,8 @@ test "extern function used as generic parameter" {
             };
         }
     };
-    try expect(S.usedAsGenericParameterBaz(S.usedAsGenericParameterFoo) !=
-        S.usedAsGenericParameterBaz(S.usedAsGenericParameterBar));
+    try expect(S.used_as_generic_parameter_baz(S.used_as_generic_parameter_foo) !=
+        S.used_as_generic_parameter_baz(S.used_as_generic_parameter_bar));
 }
 
 test "generic struct as parameter type" {
@@ -405,8 +405,8 @@ test "generic struct as parameter type" {
             try expect(thing.int == 456);
         }
     };
-    try S.doTheTest(u32, .{ .int = 123 });
-    try S.doTheTest2(i32, .{ .int = 456 });
+    try S.do_the_test(u32, .{ .int = 123 });
+    try S.do_the_test2(i32, .{ .int = 456 });
 }
 
 test "slice as parameter type" {
@@ -421,17 +421,17 @@ test "slice as parameter type" {
     };
 
     const source_a = "this is a string";
-    try expect(S.internComptimeString(source_a[1..2]) == S.internComptimeString(source_a[1..2]));
-    try expect(S.internComptimeString(source_a[2..4]) != S.internComptimeString(source_a[5..7]));
+    try expect(S.intern_comptime_string(source_a[1..2]) == S.intern_comptime_string(source_a[1..2]));
+    try expect(S.intern_comptime_string(source_a[2..4]) != S.intern_comptime_string(source_a[5..7]));
 }
 
 test "null sentinel pointer passed as generic argument" {
     const S = struct {
         fn do_the_test(a: anytype) !void {
-            try std.testing.expect(@intFromPtr(a) == 8);
+            try std.testing.expect(@int_from_ptr(a) == 8);
         }
     };
-    try S.doTheTest((@as([*:null]const [*c]const u8, @ptrFromInt(8))));
+    try S.do_the_test((@as([*:null]const [*c]const u8, @ptrFromInt(8))));
 }
 
 test "generic function passed as comptime argument" {
@@ -444,7 +444,7 @@ test "generic function passed as comptime argument" {
             try expect(result == 11);
         }
     };
-    try S.doMath(std.math.add, 5, 6);
+    try S.do_math(std.math.add, 5, 6);
 }
 
 test "return type of generic function is function pointer" {
@@ -491,7 +491,7 @@ test "generic function returns value from callconv(.C) function" {
         }
     };
 
-    try testing.expect(S.getGeneric(u8, S.getU8) == 123);
+    try testing.expect(S.get_generic(u8, S.get_u8) == 123);
 }
 
 test "union in struct captures argument" {
@@ -557,7 +557,7 @@ test "call generic function with from function called by the generic function" {
         const Redis = struct {
             const Command = struct {
                 fn serialize(self: GET, comptime RootSerializer: type) void {
-                    return RootSerializer.serializeCommand(.{ "GET", self.key });
+                    return RootSerializer.serialize_command(.{ "GET", self.key });
                 }
             };
         };
@@ -571,13 +571,13 @@ test "call generic function with from function called by the generic function" {
         fn serialize_command(command: anytype) void {
             const CmdT = @TypeOf(command);
 
-            if (comptime isCommand(CmdT)) {
+            if (comptime is_command(CmdT)) {
                 return CmdT.Redis.Command.serialize(command, @This());
             }
         }
     };
 
-    ArgSerializer.serializeCommand(GET{ .key = "banana" });
+    ArgSerializer.serialize_command(GET{ .key = "banana" });
 }
 
 fn StructCapture(comptime T: type) type {
@@ -594,7 +594,7 @@ test "call generic function that uses capture from function declaration's scope"
 
     const S = StructCapture(f64);
     const s = S.foo(123);
-    try expectEqual(123.0, s[0]);
+    try expect_equal(123.0, s[0]);
 }
 
 comptime {

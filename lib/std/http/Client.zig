@@ -74,9 +74,9 @@ pub const ConnectionPool = struct {
             if (node.data.port != criteria.port) continue;
 
             // Domain names are case-insensitive (RFC 5890, Section 2.3.2.4)
-            if (!std.ascii.eqlIgnoreCase(node.data.host, criteria.host)) continue;
+            if (!std.ascii.eql_ignore_case(node.data.host, criteria.host)) continue;
 
-            pool.acquireUnsafe(node);
+            pool.acquire_unsafe(node);
             return &node.data;
         }
 
@@ -96,7 +96,7 @@ pub const ConnectionPool = struct {
         pool.mutex.lock();
         defer pool.mutex.unlock();
 
-        return pool.acquireUnsafe(node);
+        return pool.acquire_unsafe(node);
     }
 
     /// Tries to release a connection back to the connection pool. This function is threadsafe.
@@ -118,7 +118,7 @@ pub const ConnectionPool = struct {
         }
 
         if (pool.free_len >= pool.free_size) {
-            const popped = pool.free.popFirst() orelse unreachable;
+            const popped = pool.free.pop_first() orelse unreachable;
             pool.free_len -= 1;
 
             popped.data.close(allocator);
@@ -152,7 +152,7 @@ pub const ConnectionPool = struct {
         const next = pool.free.first;
         _ = next;
         while (pool.free_len > new_size) {
-            const popped = pool.free.popFirst() orelse unreachable;
+            const popped = pool.free.pop_first() orelse unreachable;
             pool.free_len -= 1;
 
             popped.data.close(allocator);
@@ -223,7 +223,7 @@ pub const Connection = struct {
     pub fn readv_direct_tls(conn: *Connection, buffers: []std.posix.iovec) ReadError!usize {
         return conn.tls_client.readv(conn.stream, buffers) catch |err| {
             // https://github.com/ziglang/zig/issues/2473
-            if (mem.startsWith(u8, @errorName(err), "TlsAlert")) return error.TlsAlert;
+            if (mem.starts_with(u8, @errorName(err), "TlsAlert")) return error.TlsAlert;
 
             switch (err) {
                 error.TlsConnectionTruncated, error.TlsRecordOverflow, error.TlsDecodeError, error.TlsBadRecordMac, error.TlsBadLength, error.TlsIllegalParameter, error.TlsUnexpectedMessage => return error.TlsFailure,
@@ -238,7 +238,7 @@ pub const Connection = struct {
         if (conn.protocol == .tls) {
             if (disable_tls) unreachable;
 
-            return conn.readvDirectTls(buffers);
+            return conn.readv_direct_tls(buffers);
         }
 
         return conn.stream.readv(buffers) catch |err| switch (err) {
@@ -255,10 +255,10 @@ pub const Connection = struct {
         var iovecs = [1]std.posix.iovec{
             .{ .base = &conn.read_buf, .len = conn.read_buf.len },
         };
-        const nread = try conn.readvDirect(&iovecs);
+        const nread = try conn.readv_direct(&iovecs);
         if (nread == 0) return error.EndOfStream;
         conn.read_start = 0;
-        conn.read_end = @intCast(nread);
+        conn.read_end = @int_cast(nread);
     }
 
     /// Returns the current slice of buffered data.
@@ -278,7 +278,7 @@ pub const Connection = struct {
 
         if (available_read > available_buffer) { // partially read buffered data
             @memcpy(buffer[0..available_buffer], conn.read_buf[conn.read_start..conn.read_end][0..available_buffer]);
-            conn.read_start += @intCast(available_buffer);
+            conn.read_start += @int_cast(available_buffer);
 
             return available_buffer;
         } else if (available_read > 0) { // fully read buffered data
@@ -292,11 +292,11 @@ pub const Connection = struct {
             .{ .base = buffer.ptr, .len = buffer.len },
             .{ .base = &conn.read_buf, .len = conn.read_buf.len },
         };
-        const nread = try conn.readvDirect(&iovecs);
+        const nread = try conn.readv_direct(&iovecs);
 
         if (nread > buffer.len) {
             conn.read_start = 0;
-            conn.read_end = @intCast(nread - buffer.len);
+            conn.read_end = @int_cast(nread - buffer.len);
             return buffer.len;
         }
 
@@ -319,7 +319,7 @@ pub const Connection = struct {
     }
 
     pub fn write_all_direct_tls(conn: *Connection, buffer: []const u8) WriteError!void {
-        return conn.tls_client.writeAll(conn.stream, buffer) catch |err| switch (err) {
+        return conn.tls_client.write_all(conn.stream, buffer) catch |err| switch (err) {
             error.BrokenPipe, error.ConnectionResetByPeer => return error.ConnectionResetByPeer,
             else => return error.UnexpectedWriteFailure,
         };
@@ -329,10 +329,10 @@ pub const Connection = struct {
         if (conn.protocol == .tls) {
             if (disable_tls) unreachable;
 
-            return conn.writeAllDirectTls(buffer);
+            return conn.write_all_direct_tls(buffer);
         }
 
-        return conn.stream.writeAll(buffer) catch |err| switch (err) {
+        return conn.stream.write_all(buffer) catch |err| switch (err) {
             error.BrokenPipe, error.ConnectionResetByPeer => return error.ConnectionResetByPeer,
             else => return error.UnexpectedWriteFailure,
         };
@@ -344,13 +344,13 @@ pub const Connection = struct {
             try conn.flush();
 
             if (buffer.len > conn.write_buf.len) {
-                try conn.writeAllDirect(buffer);
+                try conn.write_all_direct(buffer);
                 return buffer.len;
             }
         }
 
         @memcpy(conn.write_buf[conn.write_end..][0..buffer.len], buffer);
-        conn.write_end += @intCast(buffer.len);
+        conn.write_end += @int_cast(buffer.len);
 
         return buffer.len;
     }
@@ -366,7 +366,7 @@ pub const Connection = struct {
     pub fn flush(conn: *Connection) WriteError!void {
         if (conn.write_end == 0) return;
 
-        try conn.writeAllDirect(conn.write_buf[0..conn.write_end]);
+        try conn.write_all_direct(conn.write_buf[0..conn.write_end]);
         conn.write_end = 0;
     }
 
@@ -387,7 +387,7 @@ pub const Connection = struct {
             if (disable_tls) unreachable;
 
             // try to cleanly close the TLS connection, for any server that cares.
-            _ = conn.tls_client.writeEnd(conn.stream, "", true) catch {};
+            _ = conn.tls_client.write_end(conn.stream, "", true) catch {};
             allocator.destroy(conn.tls_client);
         }
 
@@ -458,7 +458,7 @@ pub const Response = struct {
     };
 
     pub fn parse(res: *Response, bytes: []const u8) ParseError!void {
-        var it = mem.splitSequence(u8, bytes, "\r\n");
+        var it = mem.split_sequence(u8, bytes, "\r\n");
 
         const first_line = it.next().?;
         if (first_line.len < 12) {
@@ -471,8 +471,8 @@ pub const Response = struct {
             else => return error.HttpHeadersInvalid,
         };
         if (first_line[8] != ' ') return error.HttpHeadersInvalid;
-        const status: http.Status = @enumFromInt(parseInt3(first_line[9..12]));
-        const reason = mem.trimLeft(u8, first_line[12..], " ");
+        const status: http.Status = @enumFromInt(parse_int3(first_line[9..12]));
+        const reason = mem.trim_left(u8, first_line[12..], " ");
 
         res.version = version;
         res.status = status;
@@ -489,29 +489,29 @@ pub const Response = struct {
                 else => {},
             }
 
-            var line_it = mem.splitScalar(u8, line, ':');
+            var line_it = mem.split_scalar(u8, line, ':');
             const header_name = line_it.next().?;
             const header_value = mem.trim(u8, line_it.rest(), " \t");
             if (header_name.len == 0) return error.HttpHeadersInvalid;
 
-            if (std.ascii.eqlIgnoreCase(header_name, "connection")) {
-                res.keep_alive = !std.ascii.eqlIgnoreCase(header_value, "close");
-            } else if (std.ascii.eqlIgnoreCase(header_name, "content-type")) {
+            if (std.ascii.eql_ignore_case(header_name, "connection")) {
+                res.keep_alive = !std.ascii.eql_ignore_case(header_value, "close");
+            } else if (std.ascii.eql_ignore_case(header_name, "content-type")) {
                 res.content_type = header_value;
-            } else if (std.ascii.eqlIgnoreCase(header_name, "location")) {
+            } else if (std.ascii.eql_ignore_case(header_name, "location")) {
                 res.location = header_value;
-            } else if (std.ascii.eqlIgnoreCase(header_name, "content-disposition")) {
+            } else if (std.ascii.eql_ignore_case(header_name, "content-disposition")) {
                 res.content_disposition = header_value;
-            } else if (std.ascii.eqlIgnoreCase(header_name, "transfer-encoding")) {
+            } else if (std.ascii.eql_ignore_case(header_name, "transfer-encoding")) {
                 // Transfer-Encoding: second, first
                 // Transfer-Encoding: deflate, chunked
-                var iter = mem.splitBackwardsScalar(u8, header_value, ',');
+                var iter = mem.split_backwards_scalar(u8, header_value, ',');
 
                 const first = iter.first();
                 const trimmed_first = mem.trim(u8, first, " ");
 
                 var next: ?[]const u8 = first;
-                if (std.meta.stringToEnum(http.TransferEncoding, trimmed_first)) |transfer| {
+                if (std.meta.string_to_enum(http.TransferEncoding, trimmed_first)) |transfer| {
                     if (res.transfer_encoding != .none) return error.HttpHeadersInvalid; // we already have a transfer encoding
                     res.transfer_encoding = transfer;
 
@@ -521,7 +521,7 @@ pub const Response = struct {
                 if (next) |second| {
                     const trimmed_second = mem.trim(u8, second, " ");
 
-                    if (std.meta.stringToEnum(http.ContentEncoding, trimmed_second)) |transfer| {
+                    if (std.meta.string_to_enum(http.ContentEncoding, trimmed_second)) |transfer| {
                         if (res.transfer_compression != .identity) return error.HttpHeadersInvalid; // double compression is not supported
                         res.transfer_compression = transfer;
                     } else {
@@ -530,18 +530,18 @@ pub const Response = struct {
                 }
 
                 if (iter.next()) |_| return error.HttpTransferEncodingUnsupported;
-            } else if (std.ascii.eqlIgnoreCase(header_name, "content-length")) {
-                const content_length = std.fmt.parseInt(u64, header_value, 10) catch return error.InvalidContentLength;
+            } else if (std.ascii.eql_ignore_case(header_name, "content-length")) {
+                const content_length = std.fmt.parse_int(u64, header_value, 10) catch return error.InvalidContentLength;
 
                 if (res.content_length != null and res.content_length != content_length) return error.HttpHeadersInvalid;
 
                 res.content_length = content_length;
-            } else if (std.ascii.eqlIgnoreCase(header_name, "content-encoding")) {
+            } else if (std.ascii.eql_ignore_case(header_name, "content-encoding")) {
                 if (res.transfer_compression != .identity) return error.HttpHeadersInvalid;
 
                 const trimmed = mem.trim(u8, header_value, " ");
 
-                if (std.meta.stringToEnum(http.ContentEncoding, trimmed)) |ce| {
+                if (std.meta.string_to_enum(http.ContentEncoding, trimmed)) |ce| {
                     res.transfer_compression = ce;
                 } else {
                     return error.HttpTransferEncodingUnsupported;
@@ -574,22 +574,22 @@ pub const Response = struct {
 
         try res.parse(response_bytes);
 
-        try testing.expectEqual(.@"HTTP/1.1", res.version);
-        try testing.expectEqualStrings("OK", res.reason);
-        try testing.expectEqual(.ok, res.status);
+        try testing.expect_equal(.@"HTTP/1.1", res.version);
+        try testing.expect_equal_strings("OK", res.reason);
+        try testing.expect_equal(.ok, res.status);
 
-        try testing.expectEqualStrings("url", res.location.?);
-        try testing.expectEqualStrings("text/plain", res.content_type.?);
-        try testing.expectEqualStrings("attachment; filename=example.txt", res.content_disposition.?);
+        try testing.expect_equal_strings("url", res.location.?);
+        try testing.expect_equal_strings("text/plain", res.content_type.?);
+        try testing.expect_equal_strings("attachment; filename=example.txt", res.content_disposition.?);
 
-        try testing.expectEqual(true, res.keep_alive);
-        try testing.expectEqual(10, res.content_length.?);
-        try testing.expectEqual(.chunked, res.transfer_encoding);
-        try testing.expectEqual(.deflate, res.transfer_compression);
+        try testing.expect_equal(true, res.keep_alive);
+        try testing.expect_equal(10, res.content_length.?);
+        try testing.expect_equal(.chunked, res.transfer_encoding);
+        try testing.expect_equal(.deflate, res.transfer_compression);
     }
 
     inline fn int64(array: *const [8]u8) u64 {
-        return @bitCast(array.*);
+        return @bit_cast(array.*);
     }
 
     fn parse_int3(text: *const [3]u8) u10 {
@@ -599,21 +599,21 @@ pub const Response = struct {
             const mmm: @Vector(3, u10) = .{ 100, 10, 1 };
             return @reduce(.Add, @as(@Vector(3, u10), nnn -% zero) *% mmm);
         }
-        return std.fmt.parseInt(u10, text, 10) catch unreachable;
+        return std.fmt.parse_int(u10, text, 10) catch unreachable;
     }
 
-    test parseInt3 {
-        const expectEqual = testing.expectEqual;
-        try expectEqual(@as(u10, 0), parseInt3("000"));
-        try expectEqual(@as(u10, 418), parseInt3("418"));
-        try expectEqual(@as(u10, 999), parseInt3("999"));
+    test parse_int3 {
+        const expect_equal = testing.expect_equal;
+        try expect_equal(@as(u10, 0), parse_int3("000"));
+        try expect_equal(@as(u10, 418), parse_int3("418"));
+        try expect_equal(@as(u10, 999), parse_int3("999"));
     }
 
     pub fn iterate_headers(r: Response) http.HeaderIterator {
         return http.HeaderIterator.init(r.parser.get());
     }
 
-    test iterateHeaders {
+    test iterate_headers {
         const response_bytes = "HTTP/1.1 200 OK\r\n" ++
             "LOcation:url\r\n" ++
             "content-tYpe: text/plain\r\n" ++
@@ -634,44 +634,44 @@ pub const Response = struct {
         @memcpy(header_buffer[0..response_bytes.len], response_bytes);
         res.parser.header_bytes_len = response_bytes.len;
 
-        var it = res.iterateHeaders();
+        var it = res.iterate_headers();
         {
             const header = it.next().?;
-            try testing.expectEqualStrings("LOcation", header.name);
-            try testing.expectEqualStrings("url", header.value);
+            try testing.expect_equal_strings("LOcation", header.name);
+            try testing.expect_equal_strings("url", header.value);
             try testing.expect(!it.is_trailer);
         }
         {
             const header = it.next().?;
-            try testing.expectEqualStrings("content-tYpe", header.name);
-            try testing.expectEqualStrings("text/plain", header.value);
+            try testing.expect_equal_strings("content-tYpe", header.name);
+            try testing.expect_equal_strings("text/plain", header.value);
             try testing.expect(!it.is_trailer);
         }
         {
             const header = it.next().?;
-            try testing.expectEqualStrings("content-disposition", header.name);
-            try testing.expectEqualStrings("attachment; filename=example.txt", header.value);
+            try testing.expect_equal_strings("content-disposition", header.name);
+            try testing.expect_equal_strings("attachment; filename=example.txt", header.value);
             try testing.expect(!it.is_trailer);
         }
         {
             const header = it.next().?;
-            try testing.expectEqualStrings("content-Length", header.name);
-            try testing.expectEqualStrings("10", header.value);
+            try testing.expect_equal_strings("content-Length", header.name);
+            try testing.expect_equal_strings("10", header.value);
             try testing.expect(!it.is_trailer);
         }
         {
             const header = it.next().?;
-            try testing.expectEqualStrings("TRansfer-encoding", header.name);
-            try testing.expectEqualStrings("deflate, chunked", header.value);
+            try testing.expect_equal_strings("TRansfer-encoding", header.name);
+            try testing.expect_equal_strings("deflate, chunked", header.value);
             try testing.expect(!it.is_trailer);
         }
         {
             const header = it.next().?;
-            try testing.expectEqualStrings("connectioN", header.name);
-            try testing.expectEqualStrings("keep-alive", header.value);
+            try testing.expect_equal_strings("connectioN", header.name);
+            try testing.expect_equal_strings("keep-alive", header.value);
             try testing.expect(!it.is_trailer);
         }
-        try testing.expectEqual(null, it.next());
+        try testing.expect_equal(null, it.next());
     }
 };
 
@@ -733,20 +733,20 @@ pub const Request = struct {
         not_allowed = 0,
         /// Redirects are passed to the client to analyze the redirect response
         /// directly.
-        unhandled = std.math.maxInt(u16),
+        unhandled = std.math.max_int(u16),
         _,
 
         pub fn subtract_one(rb: *RedirectBehavior) void {
             switch (rb.*) {
                 .not_allowed => unreachable,
                 .unhandled => unreachable,
-                _ => rb.* = @enumFromInt(@intFromEnum(rb.*) - 1),
+                _ => rb.* = @enumFromInt(@int_from_enum(rb.*) - 1),
             }
         }
 
         pub fn remaining(rb: RedirectBehavior) u16 {
             assert(rb != .unhandled);
-            return @intFromEnum(rb);
+            return @int_from_enum(rb);
         }
     };
 
@@ -773,13 +773,13 @@ pub const Request = struct {
 
         var server_header = std.heap.FixedBufferAllocator.init(req.response.parser.header_bytes_buffer);
         defer req.response.parser.header_bytes_buffer = server_header.buffer[server_header.end_index..];
-        const protocol, const valid_uri = try validateUri(uri, server_header.allocator());
+        const protocol, const valid_uri = try validate_uri(uri, server_header.allocator());
 
         const new_host = valid_uri.host.?.raw;
         const prev_host = req.uri.host.?.raw;
         const keep_privileged_headers =
-            std.ascii.eqlIgnoreCase(valid_uri.scheme, req.uri.scheme) and
-            std.ascii.endsWithIgnoreCase(new_host, prev_host) and
+            std.ascii.eql_ignore_case(valid_uri.scheme, req.uri.scheme) and
+            std.ascii.ends_with_ignore_case(new_host, prev_host) and
             (new_host.len == prev_host.len or new_host[new_host.len - prev_host.len - 1] == '.');
         if (!keep_privileged_headers) {
             // When redirecting to a different domain, strip privileged headers.
@@ -805,8 +805,8 @@ pub const Request = struct {
         }
 
         req.uri = valid_uri;
-        req.connection = try req.client.connect(new_host, uriPort(valid_uri, protocol), protocol);
-        req.redirect_behavior.subtractOne();
+        req.connection = try req.client.connect(new_host, uri_port(valid_uri, protocol), protocol);
+        req.redirect_behavior.subtract_one();
         req.response.parser.reset();
 
         req.response = .{
@@ -822,19 +822,19 @@ pub const Request = struct {
 
     /// Send the HTTP request headers to the server.
     pub fn send(req: *Request) SendError!void {
-        if (!req.method.requestHasBody() and req.transfer_encoding != .none)
+        if (!req.method.request_has_body() and req.transfer_encoding != .none)
             return error.UnsupportedTransferEncoding;
 
         const connection = req.connection.?;
         const w = connection.writer();
 
         try req.method.write(w);
-        try w.writeByte(' ');
+        try w.write_byte(' ');
 
         if (req.method == .CONNECT) {
-            try req.uri.writeToStream(.{ .authority = true }, w);
+            try req.uri.write_to_stream(.{ .authority = true }, w);
         } else {
-            try req.uri.writeToStream(.{
+            try req.uri.write_to_stream(.{
                 .scheme = connection.proxied,
                 .authentication = connection.proxied,
                 .authority = connection.proxied,
@@ -842,54 +842,54 @@ pub const Request = struct {
                 .query = true,
             }, w);
         }
-        try w.writeByte(' ');
-        try w.writeAll(@tagName(req.version));
-        try w.writeAll("\r\n");
+        try w.write_byte(' ');
+        try w.write_all(@tag_name(req.version));
+        try w.write_all("\r\n");
 
-        if (try emitOverridableHeader("host: ", req.headers.host, w)) {
-            try w.writeAll("host: ");
-            try req.uri.writeToStream(.{ .authority = true }, w);
-            try w.writeAll("\r\n");
+        if (try emit_overridable_header("host: ", req.headers.host, w)) {
+            try w.write_all("host: ");
+            try req.uri.write_to_stream(.{ .authority = true }, w);
+            try w.write_all("\r\n");
         }
 
-        if (try emitOverridableHeader("authorization: ", req.headers.authorization, w)) {
+        if (try emit_overridable_header("authorization: ", req.headers.authorization, w)) {
             if (req.uri.user != null or req.uri.password != null) {
-                try w.writeAll("authorization: ");
-                const authorization = try connection.allocWriteBuffer(
-                    @intCast(basic_authorization.valueLengthFromUri(req.uri)),
+                try w.write_all("authorization: ");
+                const authorization = try connection.alloc_write_buffer(
+                    @int_cast(basic_authorization.value_length_from_uri(req.uri)),
                 );
                 assert(basic_authorization.value(req.uri, authorization).len == authorization.len);
-                try w.writeAll("\r\n");
+                try w.write_all("\r\n");
             }
         }
 
-        if (try emitOverridableHeader("user-agent: ", req.headers.user_agent, w)) {
-            try w.writeAll("user-agent: zig/");
-            try w.writeAll(builtin.zig_version_string);
-            try w.writeAll(" (std.http)\r\n");
+        if (try emit_overridable_header("user-agent: ", req.headers.user_agent, w)) {
+            try w.write_all("user-agent: zig/");
+            try w.write_all(builtin.zig_version_string);
+            try w.write_all(" (std.http)\r\n");
         }
 
-        if (try emitOverridableHeader("connection: ", req.headers.connection, w)) {
+        if (try emit_overridable_header("connection: ", req.headers.connection, w)) {
             if (req.keep_alive) {
-                try w.writeAll("connection: keep-alive\r\n");
+                try w.write_all("connection: keep-alive\r\n");
             } else {
-                try w.writeAll("connection: close\r\n");
+                try w.write_all("connection: close\r\n");
             }
         }
 
-        if (try emitOverridableHeader("accept-encoding: ", req.headers.accept_encoding, w)) {
+        if (try emit_overridable_header("accept-encoding: ", req.headers.accept_encoding, w)) {
             // https://github.com/ziglang/zig/issues/18937
-            //try w.writeAll("accept-encoding: gzip, deflate, zstd\r\n");
-            try w.writeAll("accept-encoding: gzip, deflate\r\n");
+            //try w.write_all("accept-encoding: gzip, deflate, zstd\r\n");
+            try w.write_all("accept-encoding: gzip, deflate\r\n");
         }
 
         switch (req.transfer_encoding) {
-            .chunked => try w.writeAll("transfer-encoding: chunked\r\n"),
+            .chunked => try w.write_all("transfer-encoding: chunked\r\n"),
             .content_length => |len| try w.print("content-length: {d}\r\n", .{len}),
             .none => {},
         }
 
-        if (try emitOverridableHeader("content-type: ", req.headers.content_type, w)) {
+        if (try emit_overridable_header("content-type: ", req.headers.content_type, w)) {
             // The default is to omit content-type if not provided because
             // "application/octet-stream" is redundant.
         }
@@ -897,10 +897,10 @@ pub const Request = struct {
         for (req.extra_headers) |header| {
             assert(header.name.len != 0);
 
-            try w.writeAll(header.name);
-            try w.writeAll(": ");
-            try w.writeAll(header.value);
-            try w.writeAll("\r\n");
+            try w.write_all(header.name);
+            try w.write_all(": ");
+            try w.write_all(header.value);
+            try w.write_all("\r\n");
         }
 
         if (connection.proxied) proxy: {
@@ -910,12 +910,12 @@ pub const Request = struct {
             } orelse break :proxy;
 
             const authorization = proxy.authorization orelse break :proxy;
-            try w.writeAll("proxy-authorization: ");
-            try w.writeAll(authorization);
-            try w.writeAll("\r\n");
+            try w.write_all("proxy-authorization: ");
+            try w.write_all(authorization);
+            try w.write_all("\r\n");
         }
 
-        try w.writeAll("\r\n");
+        try w.write_all("\r\n");
 
         try connection.flush();
     }
@@ -927,9 +927,9 @@ pub const Request = struct {
             .default => return true,
             .omit => return false,
             .override => |x| {
-                try w.writeAll(prefix);
-                try w.writeAll(x);
-                try w.writeAll("\r\n");
+                try w.write_all(prefix);
+                try w.write_all(x);
+                try w.write_all("\r\n");
                 return false;
             },
         }
@@ -937,7 +937,7 @@ pub const Request = struct {
 
     const TransferReadError = Connection.ReadError || proto.HeadersParser.ReadError;
 
-    const TransferReader = std.io.Reader(*Request, TransferReadError, transferRead);
+    const TransferReader = std.io.Reader(*Request, TransferReadError, transfer_read);
 
     fn transfer_reader(req: *Request) TransferReader {
         return .{ .context = req };
@@ -987,10 +987,10 @@ pub const Request = struct {
             while (true) { // read headers
                 try connection.fill();
 
-                const nchecked = try req.response.parser.checkCompleteHead(connection.peek());
-                connection.drop(@intCast(nchecked));
+                const nchecked = try req.response.parser.check_complete_head(connection.peek());
+                connection.drop(@int_cast(nchecked));
 
-                if (req.response.parser.state.isContent()) break;
+                if (req.response.parser.state.is_content()) break;
             }
 
             try req.response.parse(req.response.parser.get());
@@ -1036,7 +1036,7 @@ pub const Request = struct {
                         if (cl == 0) req.response.parser.done = true;
                     } else {
                         // read until the connection is closed
-                        req.response.parser.next_chunk_length = std.math.maxInt(u64);
+                        req.response.parser.next_chunk_length = std.math.max_int(u64);
                     }
                 },
                 .chunked => {
@@ -1049,7 +1049,7 @@ pub const Request = struct {
                 // skip the body of the redirect response, this will at least
                 // leave the connection in a known good state.
                 req.response.skip = true;
-                assert(try req.transferRead(&.{}) == 0); // we're skipping, no buffer is necessary
+                assert(try req.transfer_read(&.{}) == 0); // we're skipping, no buffer is necessary
 
                 if (req.redirect_behavior == .not_allowed) return error.TooManyHttpRedirects;
 
@@ -1076,14 +1076,14 @@ pub const Request = struct {
                         .identity => req.response.compression = .none,
                         .compress, .@"x-compress" => return error.CompressionUnsupported,
                         .deflate => req.response.compression = .{
-                            .deflate = std.compress.zlib.decompressor(req.transferReader()),
+                            .deflate = std.compress.zlib.decompressor(req.transfer_reader()),
                         },
                         .gzip, .@"x-gzip" => req.response.compression = .{
-                            .gzip = std.compress.gzip.decompressor(req.transferReader()),
+                            .gzip = std.compress.gzip.decompressor(req.transfer_reader()),
                         },
                         // https://github.com/ziglang/zig/issues/18937
                         //.zstd => req.response.compression = .{
-                        //    .zstd = std.compress.zstd.decompressStream(req.client.allocator, req.transferReader()),
+                        //    .zstd = std.compress.zstd.decompressStream(req.client.allocator, req.transfer_reader()),
                         //},
                         .zstd => return error.CompressionUnsupported,
                     }
@@ -1110,15 +1110,15 @@ pub const Request = struct {
             .gzip => |*gzip| gzip.read(buffer) catch return error.DecompressionFailure,
             // https://github.com/ziglang/zig/issues/18937
             //.zstd => |*zstd| zstd.read(buffer) catch return error.DecompressionFailure,
-            else => try req.transferRead(buffer),
+            else => try req.transfer_read(buffer),
         };
         if (out_index > 0) return out_index;
 
-        while (!req.response.parser.state.isContent()) { // read trailing headers
+        while (!req.response.parser.state.is_content()) { // read trailing headers
             try req.connection.?.fill();
 
-            const nchecked = try req.response.parser.checkCompleteHead(req.connection.?.peek());
-            req.connection.?.drop(@intCast(nchecked));
+            const nchecked = try req.response.parser.check_complete_head(req.connection.?.peek());
+            req.connection.?.drop(@int_cast(nchecked));
         }
 
         return 0;
@@ -1150,8 +1150,8 @@ pub const Request = struct {
             .chunked => {
                 if (bytes.len > 0) {
                     try req.connection.?.writer().print("{x}\r\n", .{bytes.len});
-                    try req.connection.?.writer().writeAll(bytes);
-                    try req.connection.?.writer().writeAll("\r\n");
+                    try req.connection.?.writer().write_all(bytes);
+                    try req.connection.?.writer().write_all("\r\n");
                 }
 
                 return bytes.len;
@@ -1182,7 +1182,7 @@ pub const Request = struct {
     /// Must be called after `send`.
     pub fn finish(req: *Request) FinishError!void {
         switch (req.transfer_encoding) {
-            .chunked => try req.connection.?.writer().writeAll("0\r\n\r\n"),
+            .chunked => try req.connection.?.writer().write_all("0\r\n\r\n"),
             .content_length => |len| if (len != 0) return error.MessageNotCompleted,
             .none => {},
         }
@@ -1226,13 +1226,13 @@ pub fn init_default_proxies(client: *Client, arena: Allocator) !void {
     assert(client.connection_pool.used.first == null); // There are active requests.
 
     if (client.http_proxy == null) {
-        client.http_proxy = try createProxyFromEnvVar(arena, &.{
+        client.http_proxy = try create_proxy_from_env_var(arena, &.{
             "http_proxy", "HTTP_PROXY", "all_proxy", "ALL_PROXY",
         });
     }
 
     if (client.https_proxy == null) {
-        client.https_proxy = try createProxyFromEnvVar(arena, &.{
+        client.https_proxy = try create_proxy_from_env_var(arena, &.{
             "https_proxy", "HTTPS_PROXY", "all_proxy", "ALL_PROXY",
         });
     }
@@ -1240,21 +1240,21 @@ pub fn init_default_proxies(client: *Client, arena: Allocator) !void {
 
 fn create_proxy_from_env_var(arena: Allocator, env_var_names: []const []const u8) !?*Proxy {
     const content = for (env_var_names) |name| {
-        break std.process.getEnvVarOwned(arena, name) catch |err| switch (err) {
+        break std.process.get_env_var_owned(arena, name) catch |err| switch (err) {
             error.EnvironmentVariableNotFound => continue,
             else => |e| return e,
         };
     } else return null;
 
-    const uri = Uri.parse(content) catch try Uri.parseAfterScheme("http", content);
-    const protocol, const valid_uri = validateUri(uri, arena) catch |err| switch (err) {
+    const uri = Uri.parse(content) catch try Uri.parse_after_scheme("http", content);
+    const protocol, const valid_uri = validate_uri(uri, arena) catch |err| switch (err) {
         error.UnsupportedUriScheme => return null,
         error.UriMissingHost => return error.HttpProxyMissingHost,
         error.OutOfMemory => |e| return e,
     };
 
     const authorization: ?[]const u8 = if (valid_uri.user != null or valid_uri.password != null) a: {
-        const authorization = try arena.alloc(u8, basic_authorization.valueLengthFromUri(valid_uri));
+        const authorization = try arena.alloc(u8, basic_authorization.value_length_from_uri(valid_uri));
         assert(basic_authorization.value(valid_uri, authorization).len == authorization.len);
         break :a authorization;
     } else null;
@@ -1264,7 +1264,7 @@ fn create_proxy_from_env_var(arena: Allocator, env_var_names: []const []const u8
         .protocol = protocol,
         .host = valid_uri.host.?.raw,
         .authorization = authorization,
-        .port = uriPort(valid_uri, protocol),
+        .port = uri_port(valid_uri, protocol),
         .supports_connect = true,
     };
     return proxy;
@@ -1273,27 +1273,27 @@ fn create_proxy_from_env_var(arena: Allocator, env_var_names: []const []const u8
 pub const basic_authorization = struct {
     pub const max_user_len = 255;
     pub const max_password_len = 255;
-    pub const max_value_len = valueLength(max_user_len, max_password_len);
+    pub const max_value_len = value_length(max_user_len, max_password_len);
 
     const prefix = "Basic ";
 
     pub fn value_length(user_len: usize, password_len: usize) usize {
-        return prefix.len + std.base64.standard.Encoder.calcSize(user_len + 1 + password_len);
+        return prefix.len + std.base64.standard.Encoder.calc_size(user_len + 1 + password_len);
     }
 
     pub fn value_length_from_uri(uri: Uri) usize {
-        var stream = std.io.countingWriter(std.io.null_writer);
+        var stream = std.io.counting_writer(std.io.null_writer);
         try stream.writer().print("{user}", .{uri.user orelse Uri.Component.empty});
         const user_len = stream.bytes_written;
         stream.bytes_written = 0;
         try stream.writer().print("{password}", .{uri.password orelse Uri.Component.empty});
         const password_len = stream.bytes_written;
-        return valueLength(@intCast(user_len), @intCast(password_len));
+        return value_length(@int_cast(user_len), @int_cast(password_len));
     }
 
     pub fn value(uri: Uri, out: []u8) []u8 {
         var buf: [max_user_len + ":".len + max_password_len]u8 = undefined;
-        var stream = std.io.fixedBufferStream(&buf);
+        var stream = std.io.fixed_buffer_stream(&buf);
         stream.writer().print("{user}", .{uri.user orelse Uri.Component.empty}) catch
             unreachable;
         assert(stream.pos <= max_user_len);
@@ -1301,7 +1301,7 @@ pub const basic_authorization = struct {
             unreachable;
 
         @memcpy(out[0..prefix.len], prefix);
-        const base64 = std.base64.standard.Encoder.encode(out[prefix.len..], stream.getWritten());
+        const base64 = std.base64.standard.Encoder.encode(out[prefix.len..], stream.get_written());
         return out[0 .. prefix.len + base64.len];
     }
 };
@@ -1312,7 +1312,7 @@ pub const ConnectTcpError = Allocator.Error || error{ ConnectionRefused, Network
 ///
 /// This function is threadsafe.
 pub fn connect_tcp(client: *Client, host: []const u8, port: u16, protocol: Connection.Protocol) ConnectTcpError!*Connection {
-    if (client.connection_pool.findConnection(.{
+    if (client.connection_pool.find_connection(.{
         .host = host,
         .port = port,
         .protocol = protocol,
@@ -1325,7 +1325,7 @@ pub fn connect_tcp(client: *Client, host: []const u8, port: u16, protocol: Conne
     errdefer client.allocator.destroy(conn);
     conn.* = .{ .data = undefined };
 
-    const stream = net.tcpConnectToHost(client.allocator, host, port) catch |err| switch (err) {
+    const stream = net.tcp_connect_to_host(client.allocator, host, port) catch |err| switch (err) {
         error.ConnectionRefused => return error.ConnectionRefused,
         error.NetworkUnreachable => return error.NetworkUnreachable,
         error.ConnectionTimedOut => return error.ConnectionTimedOut,
@@ -1360,7 +1360,7 @@ pub fn connect_tcp(client: *Client, host: []const u8, port: u16, protocol: Conne
         conn.data.tls_client.allow_truncation_attacks = true;
     }
 
-    client.connection_pool.addUsed(conn);
+    client.connection_pool.add_used(conn);
 
     return &conn.data;
 }
@@ -1371,7 +1371,7 @@ pub const ConnectUnixError = Allocator.Error || std.posix.SocketError || error{N
 ///
 /// This function is threadsafe.
 pub fn connect_unix(client: *Client, path: []const u8) ConnectUnixError!*Connection {
-    if (client.connection_pool.findConnection(.{
+    if (client.connection_pool.find_connection(.{
         .host = path,
         .port = 0,
         .protocol = .plain,
@@ -1382,7 +1382,7 @@ pub fn connect_unix(client: *Client, path: []const u8) ConnectUnixError!*Connect
     errdefer client.allocator.destroy(conn);
     conn.* = .{ .data = undefined };
 
-    const stream = try std.net.connectUnixSocket(path);
+    const stream = try std.net.connect_unix_socket(path);
     errdefer stream.close();
 
     conn.data = .{
@@ -1395,7 +1395,7 @@ pub fn connect_unix(client: *Client, path: []const u8) ConnectUnixError!*Connect
     };
     errdefer client.allocator.free(conn.data.host);
 
-    client.connection_pool.addUsed(conn);
+    client.connection_pool.add_used(conn);
 
     return &conn.data;
 }
@@ -1412,7 +1412,7 @@ pub fn connect_tunnel(
 ) !*Connection {
     if (!proxy.supports_connect) return error.TunnelNotSupported;
 
-    if (client.connection_pool.findConnection(.{
+    if (client.connection_pool.find_connection(.{
         .host = tunnel_host,
         .port = tunnel_port,
         .protocol = proxy.protocol,
@@ -1421,7 +1421,7 @@ pub fn connect_tunnel(
 
     var maybe_valid = false;
     (tunnel: {
-        const conn = try client.connectTcp(proxy.host, proxy.port, proxy.protocol);
+        const conn = try client.connect_tcp(proxy.host, proxy.port, proxy.protocol);
         errdefer {
             conn.closing = true;
             client.connection_pool.release(client.allocator, conn);
@@ -1489,24 +1489,24 @@ pub fn connect(
     const proxy = switch (protocol) {
         .plain => client.http_proxy,
         .tls => client.https_proxy,
-    } orelse return client.connectTcp(host, port, protocol);
+    } orelse return client.connect_tcp(host, port, protocol);
 
     // Prevent proxying through itself.
-    if (std.ascii.eqlIgnoreCase(proxy.host, host) and
+    if (std.ascii.eql_ignore_case(proxy.host, host) and
         proxy.port == port and proxy.protocol == protocol)
     {
-        return client.connectTcp(host, port, protocol);
+        return client.connect_tcp(host, port, protocol);
     }
 
     if (proxy.supports_connect) tunnel: {
-        return connectTunnel(client, proxy, host, port) catch |err| switch (err) {
+        return connect_tunnel(client, proxy, host, port) catch |err| switch (err) {
             error.TunnelNotSupported => break :tunnel,
             else => |e| return e,
         };
     }
 
     // fall back to using the proxy as a normal http proxy
-    const conn = try client.connectTcp(proxy.host, proxy.port, proxy.protocol);
+    const conn = try client.connect_tcp(proxy.host, proxy.port, proxy.protocol);
     errdefer {
         conn.closing = true;
         client.connection_pool.release(conn);
@@ -1570,7 +1570,7 @@ pub const RequestOptions = struct {
 };
 
 fn validate_uri(uri: Uri, arena: Allocator) !struct { Connection.Protocol, Uri } {
-    const protocol_map = std.StaticStringMap(Connection.Protocol).initComptime(.{
+    const protocol_map = std.StaticStringMap(Connection.Protocol).init_comptime(.{
         .{ "http", .plain },
         .{ "ws", .plain },
         .{ "https", .tls },
@@ -1580,7 +1580,7 @@ fn validate_uri(uri: Uri, arena: Allocator) !struct { Connection.Protocol, Uri }
     var valid_uri = uri;
     // The host is always going to be needed as a raw string for hostname resolution anyway.
     valid_uri.host = .{
-        .raw = try (uri.host orelse return error.UriMissingHost).toRawMaybeAlloc(arena),
+        .raw = try (uri.host orelse return error.UriMissingHost).to_raw_maybe_alloc(arena),
     };
     return .{ protocol, valid_uri };
 }
@@ -1609,19 +1609,19 @@ pub fn open(
     if (std.debug.runtime_safety) {
         for (options.extra_headers) |header| {
             assert(header.name.len != 0);
-            assert(std.mem.indexOfScalar(u8, header.name, ':') == null);
-            assert(std.mem.indexOfPosLinear(u8, header.name, 0, "\r\n") == null);
-            assert(std.mem.indexOfPosLinear(u8, header.value, 0, "\r\n") == null);
+            assert(std.mem.index_of_scalar(u8, header.name, ':') == null);
+            assert(std.mem.index_of_pos_linear(u8, header.name, 0, "\r\n") == null);
+            assert(std.mem.index_of_pos_linear(u8, header.value, 0, "\r\n") == null);
         }
         for (options.privileged_headers) |header| {
             assert(header.name.len != 0);
-            assert(std.mem.indexOfPosLinear(u8, header.name, 0, "\r\n") == null);
-            assert(std.mem.indexOfPosLinear(u8, header.value, 0, "\r\n") == null);
+            assert(std.mem.index_of_pos_linear(u8, header.name, 0, "\r\n") == null);
+            assert(std.mem.index_of_pos_linear(u8, header.value, 0, "\r\n") == null);
         }
     }
 
     var server_header = std.heap.FixedBufferAllocator.init(options.server_header_buffer);
-    const protocol, const valid_uri = try validateUri(uri, server_header.allocator());
+    const protocol, const valid_uri = try validate_uri(uri, server_header.allocator());
 
     if (protocol == .tls and @atomicLoad(bool, &client.next_https_rescan_certs, .acquire)) {
         if (disable_tls) unreachable;
@@ -1637,7 +1637,7 @@ pub fn open(
     }
 
     const conn = options.connection orelse
-        try client.connect(valid_uri.host.?.raw, uriPort(valid_uri, protocol), protocol);
+        try client.connect(valid_uri.host.?.raw, uri_port(valid_uri, protocol), protocol);
 
     var req: Request = .{
         .uri = valid_uri,
@@ -1736,7 +1736,7 @@ pub fn fetch(client: *Client, options: FetchOptions) !FetchResult {
 
     try req.send();
 
-    if (options.payload) |payload| try req.writeAll(payload);
+    if (options.payload) |payload| try req.write_all(payload);
 
     try req.finish();
     try req.wait();
@@ -1746,21 +1746,21 @@ pub fn fetch(client: *Client, options: FetchOptions) !FetchResult {
             // Take advantage of request internals to discard the response body
             // and make the connection available for another request.
             req.response.skip = true;
-            assert(try req.transferRead(&.{}) == 0); // No buffer is necessary when skipping.
+            assert(try req.transfer_read(&.{}) == 0); // No buffer is necessary when skipping.
         },
         .dynamic => |list| {
             const max_append_size = options.max_append_size orelse 2 * 1024 * 1024;
-            try req.reader().readAllArrayList(list, max_append_size);
+            try req.reader().read_all_array_list(list, max_append_size);
         },
         .static => |list| {
             const buf = b: {
-                const buf = list.unusedCapacitySlice();
+                const buf = list.unused_capacity_slice();
                 if (options.max_append_size) |len| {
                     if (len < buf.len) break :b buf[0..len];
                 }
                 break :b buf;
             };
-            list.items.len += try req.reader().readAll(buf);
+            list.items.len += try req.reader().read_all(buf);
         },
     }
 
@@ -1770,5 +1770,5 @@ pub fn fetch(client: *Client, options: FetchOptions) !FetchResult {
 }
 
 test {
-    _ = &initDefaultProxies;
+    _ = &init_default_proxies;
 }

@@ -1,5 +1,5 @@
 export fn entry(x: f32) u32 {
-    return @popCount(x);
+    return @pop_count(x);
 }
 
 // error

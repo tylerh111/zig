@@ -18,10 +18,10 @@ test "p384 point from affine coordinates" {
     const xh = "aa87ca22be8b05378eb1c71ef320ad746e1d3b628ba79b9859f741e082542a385502f25dbf55296c3a545e3872760ab7";
     const yh = "3617de4a96262c6f5d9e98bf9292dc29f8f41dbd289a147ce9da3113b5f0b8c00a60b1ce1d7e819d7a431d7c90ea0e5f";
     var xs: [48]u8 = undefined;
-    _ = try fmt.hexToBytes(&xs, xh);
+    _ = try fmt.hex_to_bytes(&xs, xh);
     var ys: [48]u8 = undefined;
-    _ = try fmt.hexToBytes(&ys, yh);
-    var p = try P384.fromSerializedAffineCoordinates(xs, ys, .big);
+    _ = try fmt.hex_to_bytes(&ys, yh);
+    var p = try P384.from_serialized_affine_coordinates(xs, ys, .big);
     try testing.expect(p.equivalent(P384.basePoint));
 }
 
@@ -41,11 +41,11 @@ test "p384 test vectors" {
     };
     var p = P384.identityElement;
     for (expected) |xh| {
-        const x = p.affineCoordinates().x;
+        const x = p.affine_coordinates().x;
         p = p.add(P384.basePoint);
         var xs: [48]u8 = undefined;
-        _ = try fmt.hexToBytes(&xs, xh);
-        try testing.expectEqualSlices(u8, &x.toBytes(.big), &xs);
+        _ = try fmt.hex_to_bytes(&xs, xh);
+        try testing.expect_equal_slices(u8, &x.to_bytes(.big), &xs);
     }
 }
 
@@ -58,51 +58,51 @@ test "p384 test vectors - doubling" {
     };
     var p = P384.basePoint;
     for (expected) |xh| {
-        const x = p.affineCoordinates().x;
+        const x = p.affine_coordinates().x;
         p = p.dbl();
         var xs: [48]u8 = undefined;
-        _ = try fmt.hexToBytes(&xs, xh);
-        try testing.expectEqualSlices(u8, &x.toBytes(.big), &xs);
+        _ = try fmt.hex_to_bytes(&xs, xh);
+        try testing.expect_equal_slices(u8, &x.to_bytes(.big), &xs);
     }
 }
 
 test "p384 compressed sec1 encoding/decoding" {
     const p = P384.random();
-    const s0 = p.toUncompressedSec1();
-    const s = p.toCompressedSec1();
-    try testing.expectEqualSlices(u8, s0[1..49], s[1..49]);
-    const q = try P384.fromSec1(&s);
+    const s0 = p.to_uncompressed_sec1();
+    const s = p.to_compressed_sec1();
+    try testing.expect_equal_slices(u8, s0[1..49], s[1..49]);
+    const q = try P384.from_sec1(&s);
     try testing.expect(p.equivalent(q));
 }
 
 test "p384 uncompressed sec1 encoding/decoding" {
     const p = P384.random();
-    const s = p.toUncompressedSec1();
-    const q = try P384.fromSec1(&s);
+    const s = p.to_uncompressed_sec1();
+    const q = try P384.from_sec1(&s);
     try testing.expect(p.equivalent(q));
 }
 
 test "p384 public key is the neutral element" {
-    const n = P384.scalar.Scalar.zero.toBytes(.little);
+    const n = P384.scalar.Scalar.zero.to_bytes(.little);
     const p = P384.random();
-    try testing.expectError(error.IdentityElement, p.mul(n, .little));
+    try testing.expect_error(error.IdentityElement, p.mul(n, .little));
 }
 
 test "p384 public key is the neutral element (public verification)" {
-    const n = P384.scalar.Scalar.zero.toBytes(.little);
+    const n = P384.scalar.Scalar.zero.to_bytes(.little);
     const p = P384.random();
-    try testing.expectError(error.IdentityElement, p.mulPublic(n, .little));
+    try testing.expect_error(error.IdentityElement, p.mul_public(n, .little));
 }
 
 test "p384 field element non-canonical encoding" {
     const s = [_]u8{0xff} ** 48;
-    try testing.expectError(error.NonCanonical, P384.Fe.fromBytes(s, .little));
+    try testing.expect_error(error.NonCanonical, P384.Fe.from_bytes(s, .little));
 }
 
 test "p384 neutral element decoding" {
-    try testing.expectError(error.InvalidEncoding, P384.fromAffineCoordinates(.{ .x = P384.Fe.zero, .y = P384.Fe.zero }));
-    const p = try P384.fromAffineCoordinates(.{ .x = P384.Fe.zero, .y = P384.Fe.one });
-    try testing.expectError(error.IdentityElement, p.rejectIdentity());
+    try testing.expect_error(error.InvalidEncoding, P384.from_affine_coordinates(.{ .x = P384.Fe.zero, .y = P384.Fe.zero }));
+    const p = try P384.from_affine_coordinates(.{ .x = P384.Fe.zero, .y = P384.Fe.one });
+    try testing.expect_error(error.IdentityElement, p.reject_identity());
 }
 
 test "p384 double base multiplication" {
@@ -110,7 +110,7 @@ test "p384 double base multiplication" {
     const p2 = P384.basePoint.dbl();
     const s1 = [_]u8{0x01} ** 48;
     const s2 = [_]u8{0x02} ** 48;
-    const pr1 = try P384.mulDoubleBasePublic(p1, s1, p2, s2, .little);
+    const pr1 = try P384.mul_double_base_public(p1, s1, p2, s2, .little);
     const pr2 = (try p1.mul(s1, .little)).add(try p2.mul(s2, .little));
     try testing.expect(pr1.equivalent(pr2));
 }
@@ -120,7 +120,7 @@ test "p384 double base multiplication with large scalars" {
     const p2 = P384.basePoint.dbl();
     const s1 = [_]u8{0xee} ** 48;
     const s2 = [_]u8{0xdd} ** 48;
-    const pr1 = try P384.mulDoubleBasePublic(p1, s1, p2, s2, .little);
+    const pr1 = try P384.mul_double_base_public(p1, s1, p2, s2, .little);
     const pr2 = (try p1.mul(s1, .little)).add(try p2.mul(s2, .little));
     try testing.expect(pr1.equivalent(pr2));
 }
@@ -128,16 +128,16 @@ test "p384 double base multiplication with large scalars" {
 test "p384 scalar inverse" {
     const expected = "a3cc705f33b5679a66e76ce66e68055c927c5dba531b2837b18fe86119511091b54d733f26b2e7a0f6fa2e7ea21ca806";
     var out: [48]u8 = undefined;
-    _ = try std.fmt.hexToBytes(&out, expected);
+    _ = try std.fmt.hex_to_bytes(&out, expected);
 
-    const scalar = try P384.scalar.Scalar.fromBytes(.{
+    const scalar = try P384.scalar.Scalar.from_bytes(.{
         0x94, 0xa1, 0xbb, 0xb1, 0x4b, 0x90, 0x6a, 0x61, 0xa2, 0x80, 0xf2, 0x45, 0xf9, 0xe9, 0x3c, 0x7f,
         0x3b, 0x4a, 0x62, 0x47, 0x82, 0x4f, 0x5d, 0x33, 0xb9, 0x67, 0x07, 0x87, 0x64, 0x2a, 0x68, 0xde,
         0x38, 0x36, 0xe8, 0x0f, 0xa2, 0x84, 0x6b, 0x4e, 0xf3, 0x9a, 0x02, 0x31, 0x24, 0x41, 0x22, 0xca,
     }, .big);
     const inverse = scalar.invert();
     const inverse2 = inverse.invert();
-    try testing.expectEqualSlices(u8, &out, &inverse.toBytes(.big));
+    try testing.expect_equal_slices(u8, &out, &inverse.to_bytes(.big));
     try testing.expect(inverse2.equivalent(scalar));
 
     const sq = scalar.sq();
@@ -146,7 +146,7 @@ test "p384 scalar inverse" {
 }
 
 test "p384 scalar parity" {
-    try std.testing.expect(P384.scalar.Scalar.zero.isOdd() == false);
-    try std.testing.expect(P384.scalar.Scalar.one.isOdd());
-    try std.testing.expect(P384.scalar.Scalar.one.dbl().isOdd() == false);
+    try std.testing.expect(P384.scalar.Scalar.zero.is_odd() == false);
+    try std.testing.expect(P384.scalar.Scalar.one.is_odd());
+    try std.testing.expect(P384.scalar.Scalar.one.dbl().is_odd() == false);
 }

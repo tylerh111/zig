@@ -1,7 +1,7 @@
 const std = @import("std");
 const testing = std.testing;
 const zip = @import("../zip.zig");
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 
 pub const File = struct {
     name: []const u8,
@@ -22,19 +22,19 @@ pub fn expect_files(
         const name = blk: {
             if (opt.strip_prefix) |strip_prefix| {
                 try testing.expect(test_file.name.len >= strip_prefix.len);
-                try testing.expectEqualStrings(strip_prefix, test_file.name[0..strip_prefix.len]);
+                try testing.expect_equal_strings(strip_prefix, test_file.name[0..strip_prefix.len]);
                 break :blk test_file.name[strip_prefix.len..];
             }
             break :blk test_file.name;
         };
         const normalized_sub_path = normalized_sub_path_buf[0..name.len];
         @memcpy(normalized_sub_path, name);
-        std.mem.replaceScalar(u8, normalized_sub_path, '\\', '/');
-        var file = try dir.openFile(normalized_sub_path, .{});
+        std.mem.replace_scalar(u8, normalized_sub_path, '\\', '/');
+        var file = try dir.open_file(normalized_sub_path, .{});
         defer file.close();
         var content_buf: [4096]u8 = undefined;
-        const n = try file.reader().readAll(&content_buf);
-        try testing.expectEqualStrings(test_file.content, content_buf[0..n]);
+        const n = try file.reader().read_all(&content_buf);
+        try testing.expect_equal_strings(test_file.content, content_buf[0..n]);
     }
 }
 
@@ -54,7 +54,7 @@ pub fn make_zip(
     options: WriteZipOptions,
 ) !std.io.FixedBufferStream([]u8) {
     var store: [files.len]FileStore = undefined;
-    return try makeZipWithStore(buf, files, options, &store);
+    return try make_zip_with_store(buf, files, options, &store);
 }
 
 pub fn make_zip_with_store(
@@ -63,9 +63,9 @@ pub fn make_zip_with_store(
     options: WriteZipOptions,
     store: []FileStore,
 ) !std.io.FixedBufferStream([]u8) {
-    var fbs = std.io.fixedBufferStream(buf);
-    try writeZip(fbs.writer(), files, store, options);
-    return std.io.fixedBufferStream(buf[0..fbs.pos]);
+    var fbs = std.io.fixed_buffer_stream(buf);
+    try write_zip(fbs.writer(), files, store, options);
+    return std.io.fixed_buffer_stream(buf[0..fbs.pos]);
 }
 
 pub const WriteZipOptions = struct {
@@ -99,24 +99,24 @@ pub fn write_zip(
     options: WriteZipOptions,
 ) !void {
     if (store.len < files.len) return error.FileStoreTooSmall;
-    var zipper = initZipper(writer);
+    var zipper = init_zipper(writer);
     for (files, 0..) |file, i| {
-        store[i] = try zipper.writeFile(.{
+        store[i] = try zipper.write_file(.{
             .name = file.name,
             .content = file.content,
             .compression = file.compression,
         });
     }
     for (files, 0..) |file, i| {
-        try zipper.writeCentralRecord(store[i], .{
+        try zipper.write_central_record(store[i], .{
             .name = file.name,
         });
     }
-    try zipper.writeEndRecord(if (options.end) |e| e else .{});
+    try zipper.write_end_record(if (options.end) |e| e else .{});
 }
 
 pub fn init_zipper(writer: anytype) Zipper(@TypeOf(writer)) {
-    return .{ .counting_writer = std.io.countingWriter(writer) };
+    return .{ .counting_writer = std.io.counting_writer(writer) };
 }
 
 /// Provides methods to format and write the contents of a zip archive
@@ -140,7 +140,7 @@ pub fn Zipper(comptime Writer: type) type {
         ) !FileStore {
             const writer = self.counting_writer.writer();
 
-            const file_offset: u64 = @intCast(self.counting_writer.bytes_written);
+            const file_offset: u64 = @int_cast(self.counting_writer.bytes_written);
             const crc32 = std.hash.Crc32.hash(opt.content);
 
             {
@@ -153,26 +153,26 @@ pub fn Zipper(comptime Writer: type) type {
                     .last_modification_date = 0,
                     .crc32 = crc32,
                     .compressed_size = 0,
-                    .uncompressed_size = @intCast(opt.content.len),
-                    .filename_len = @intCast(opt.name.len),
+                    .uncompressed_size = @int_cast(opt.content.len),
+                    .filename_len = @int_cast(opt.name.len),
                     .extra_len = 0,
                 };
-                try writer.writeStructEndian(hdr, .little);
+                try writer.write_struct_endian(hdr, .little);
             }
-            try writer.writeAll(opt.name);
+            try writer.write_all(opt.name);
 
             var compressed_size: u32 = undefined;
             switch (opt.compression) {
                 .store => {
-                    try writer.writeAll(opt.content);
-                    compressed_size = @intCast(opt.content.len);
+                    try writer.write_all(opt.content);
+                    compressed_size = @int_cast(opt.content.len);
                 },
                 .deflate => {
                     const offset = self.counting_writer.bytes_written;
-                    var fbs = std.io.fixedBufferStream(opt.content);
+                    var fbs = std.io.fixed_buffer_stream(opt.content);
                     try std.compress.flate.deflate.compress(.raw, fbs.reader(), writer, .{});
                     std.debug.assert(fbs.pos == opt.content.len);
-                    compressed_size = @intCast(self.counting_writer.bytes_written - offset);
+                    compressed_size = @int_cast(self.counting_writer.bytes_written - offset);
                 },
                 else => unreachable,
             }
@@ -208,17 +208,17 @@ pub fn Zipper(comptime Writer: type) type {
                 .last_modification_date = 0,
                 .crc32 = store.crc32,
                 .compressed_size = store.compressed_size,
-                .uncompressed_size = @intCast(store.uncompressed_size),
-                .filename_len = @intCast(opt.name.len),
+                .uncompressed_size = @int_cast(store.uncompressed_size),
+                .filename_len = @int_cast(opt.name.len),
                 .extra_len = 0,
                 .comment_len = 0,
                 .disk_number = 0,
                 .internal_file_attributes = 0,
                 .external_file_attributes = 0,
-                .local_file_header_offset = @intCast(store.file_offset),
+                .local_file_header_offset = @int_cast(store.file_offset),
             };
-            try self.counting_writer.writer().writeStructEndian(hdr, .little);
-            try self.counting_writer.writer().writeAll(opt.name);
+            try self.counting_writer.writer().write_struct_endian(hdr, .little);
+            try self.counting_writer.writer().write_all(opt.name);
             self.last_central_limit = self.counting_writer.bytes_written;
         }
 
@@ -230,38 +230,38 @@ pub fn Zipper(comptime Writer: type) type {
                 const end64_off = cd_end;
                 const fixed: zip.EndRecord64 = .{
                     .signature = zip.end_record64_sig,
-                    .end_record_size = @sizeOf(zip.EndRecord64) - 12,
+                    .end_record_size = @size_of(zip.EndRecord64) - 12,
                     .version_made_by = 0,
                     .version_needed_to_extract = 45,
                     .disk_number = 0,
                     .central_directory_disk_number = 0,
-                    .record_count_disk = @intCast(self.central_count),
-                    .record_count_total = @intCast(self.central_count),
-                    .central_directory_size = @intCast(cd_end - cd_offset),
-                    .central_directory_offset = @intCast(cd_offset),
+                    .record_count_disk = @int_cast(self.central_count),
+                    .record_count_total = @int_cast(self.central_count),
+                    .central_directory_size = @int_cast(cd_end - cd_offset),
+                    .central_directory_offset = @int_cast(cd_offset),
                 };
-                try self.counting_writer.writer().writeStructEndian(fixed, .little);
+                try self.counting_writer.writer().write_struct_endian(fixed, .little);
                 const locator: zip.EndLocator64 = .{
                     .signature = if (zip64.locator_sig) |s| s else zip.end_locator64_sig,
                     .zip64_disk_count = if (zip64.locator_zip64_disk_count) |c| c else 0,
-                    .record_file_offset = if (zip64.locator_record_file_offset) |o| o else @intCast(end64_off),
+                    .record_file_offset = if (zip64.locator_record_file_offset) |o| o else @int_cast(end64_off),
                     .total_disk_count = if (zip64.locator_total_disk_count) |c| c else 1,
                 };
-                try self.counting_writer.writer().writeStructEndian(locator, .little);
+                try self.counting_writer.writer().write_struct_endian(locator, .little);
             }
             const hdr: zip.EndRecord = .{
                 .signature = if (opt.sig) |s| s else zip.end_record_sig,
                 .disk_number = if (opt.disk_number) |n| n else 0,
                 .central_directory_disk_number = if (opt.central_directory_disk_number) |n| n else 0,
-                .record_count_disk = if (opt.record_count_disk) |c| c else @intCast(self.central_count),
-                .record_count_total = if (opt.record_count_total) |c| c else @intCast(self.central_count),
-                .central_directory_size = if (opt.central_directory_size) |s| s else @intCast(cd_end - cd_offset),
-                .central_directory_offset = if (opt.central_directory_offset) |o| o else @intCast(cd_offset),
-                .comment_len = if (opt.comment_len) |l| l else (if (opt.comment) |c| @as(u16, @intCast(c.len)) else 0),
+                .record_count_disk = if (opt.record_count_disk) |c| c else @int_cast(self.central_count),
+                .record_count_total = if (opt.record_count_total) |c| c else @int_cast(self.central_count),
+                .central_directory_size = if (opt.central_directory_size) |s| s else @int_cast(cd_end - cd_offset),
+                .central_directory_offset = if (opt.central_directory_offset) |o| o else @int_cast(cd_offset),
+                .comment_len = if (opt.comment_len) |l| l else (if (opt.comment) |c| @as(u16, @int_cast(c.len)) else 0),
             };
-            try self.counting_writer.writer().writeStructEndian(hdr, .little);
+            try self.counting_writer.writer().write_struct_endian(hdr, .little);
             if (opt.comment) |c|
-                try self.counting_writer.writer().writeAll(c);
+                try self.counting_writer.writer().write_all(c);
         }
     };
 }

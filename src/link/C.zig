@@ -39,10 +39,10 @@ anon_decls: std.AutoArrayHashMapUnmanaged(InternPool.Index, DeclBlock) = .{},
 /// the keys of `anon_decls`.
 aligned_anon_decls: std.AutoArrayHashMapUnmanaged(InternPool.Index, Alignment) = .{},
 
-/// Optimization, `updateDecl` reuses this buffer rather than creating a new
+/// Optimization, `update_decl` reuses this buffer rather than creating a new
 /// one with every call.
 fwd_decl_buf: std.ArrayListUnmanaged(u8) = .{},
-/// Optimization, `updateDecl` reuses this buffer rather than creating a new
+/// Optimization, `update_decl` reuses this buffer rather than creating a new
 /// one with every call.
 code_buf: std.ArrayListUnmanaged(u8) = .{},
 /// Optimization, `flush` reuses this buffer rather than creating a new
@@ -87,10 +87,10 @@ pub fn get_string(this: C, s: String) []const u8 {
 pub fn add_string(this: *C, s: []const u8) Allocator.Error!String {
     const comp = this.base.comp;
     const gpa = comp.gpa;
-    try this.string_bytes.appendSlice(gpa, s);
+    try this.string_bytes.append_slice(gpa, s);
     return .{
-        .start = @intCast(this.string_bytes.items.len - s.len),
-        .len = @intCast(s.len),
+        .start = @int_cast(this.string_bytes.items.len - s.len),
+        .len = @int_cast(s.len),
     };
 }
 
@@ -100,7 +100,7 @@ pub fn open(
     emit: Compilation.Emit,
     options: link.File.OpenOptions,
 ) !*C {
-    return createEmpty(arena, comp, emit, options);
+    return create_empty(arena, comp, emit, options);
 }
 
 pub fn create_empty(
@@ -120,7 +120,7 @@ pub fn create_empty(
     assert(!use_lld);
     assert(!use_llvm);
 
-    const file = try emit.directory.handle.createFile(emit.sub_path, .{
+    const file = try emit.directory.handle.create_file(emit.sub_path, .{
         // Truncation is done on `flush`.
         .truncate = false,
     });
@@ -170,7 +170,7 @@ pub fn deinit(self: *C) void {
 
 pub fn free_decl(self: *C, decl_index: InternPool.DeclIndex) void {
     const gpa = self.base.comp.gpa;
-    if (self.decl_table.fetchSwapRemove(decl_index)) |kv| {
+    if (self.decl_table.fetch_swap_remove(decl_index)) |kv| {
         var decl_block = kv.value;
         decl_block.deinit(gpa);
     }
@@ -185,20 +185,20 @@ pub fn update_func(
 ) !void {
     const gpa = self.base.comp.gpa;
 
-    const func = zcu.funcInfo(func_index);
+    const func = zcu.func_info(func_index);
     const decl_index = func.owner_decl;
-    const decl = zcu.declPtr(decl_index);
-    const gop = try self.decl_table.getOrPut(gpa, decl_index);
+    const decl = zcu.decl_ptr(decl_index);
+    const gop = try self.decl_table.get_or_put(gpa, decl_index);
     if (!gop.found_existing) gop.value_ptr.* = .{};
     const ctype_pool = &gop.value_ptr.ctype_pool;
     const lazy_fns = &gop.value_ptr.lazy_fns;
     const fwd_decl = &self.fwd_decl_buf;
     const code = &self.code_buf;
     try ctype_pool.init(gpa);
-    ctype_pool.clearRetainingCapacity();
-    lazy_fns.clearRetainingCapacity();
-    fwd_decl.clearRetainingCapacity();
-    code.clearRetainingCapacity();
+    ctype_pool.clear_retaining_capacity();
+    lazy_fns.clear_retaining_capacity();
+    fwd_decl.clear_retaining_capacity();
+    code.clear_retaining_capacity();
 
     var function: codegen.Function = .{
         .value_map = codegen.CValueMap.init(gpa),
@@ -209,17 +209,17 @@ pub fn update_func(
             .dg = .{
                 .gpa = gpa,
                 .zcu = zcu,
-                .mod = zcu.namespacePtr(decl.src_namespace).file_scope.mod,
+                .mod = zcu.namespace_ptr(decl.src_namespace).file_scope.mod,
                 .error_msg = null,
                 .pass = .{ .decl = decl_index },
-                .is_naked_fn = decl.typeOf(zcu).fnCallingConvention(zcu) == .Naked,
-                .fwd_decl = fwd_decl.toManaged(gpa),
+                .is_naked_fn = decl.type_of(zcu).fn_calling_convention(zcu) == .Naked,
+                .fwd_decl = fwd_decl.to_managed(gpa),
                 .ctype_pool = ctype_pool.*,
                 .scratch = .{},
                 .anon_decl_deps = self.anon_decls,
                 .aligned_anon_decls = self.aligned_anon_decls,
             },
-            .code = code.toManaged(gpa),
+            .code = code.to_managed(gpa),
             .indent_writer = undefined, // set later so we can get a pointer to object.code
         },
         .lazy_fns = lazy_fns.*,
@@ -228,25 +228,25 @@ pub fn update_func(
     defer {
         self.anon_decls = function.object.dg.anon_decl_deps;
         self.aligned_anon_decls = function.object.dg.aligned_anon_decls;
-        fwd_decl.* = function.object.dg.fwd_decl.moveToUnmanaged();
+        fwd_decl.* = function.object.dg.fwd_decl.move_to_unmanaged();
         ctype_pool.* = function.object.dg.ctype_pool.move();
-        ctype_pool.freeUnusedCapacity(gpa);
+        ctype_pool.free_unused_capacity(gpa);
         function.object.dg.scratch.deinit(gpa);
         lazy_fns.* = function.lazy_fns.move();
-        lazy_fns.shrinkAndFree(gpa, lazy_fns.count());
-        code.* = function.object.code.moveToUnmanaged();
+        lazy_fns.shrink_and_free(gpa, lazy_fns.count());
+        code.* = function.object.code.move_to_unmanaged();
         function.deinit();
     }
 
-    codegen.genFunc(&function) catch |err| switch (err) {
+    codegen.gen_func(&function) catch |err| switch (err) {
         error.AnalysisFail => {
             try zcu.failed_decls.put(gpa, decl_index, function.object.dg.error_msg.?);
             return;
         },
         else => |e| return e,
     };
-    gop.value_ptr.fwd_decl = try self.addString(function.object.dg.fwd_decl.items);
-    gop.value_ptr.code = try self.addString(function.object.code.items);
+    gop.value_ptr.fwd_decl = try self.add_string(function.object.dg.fwd_decl.items);
+    gop.value_ptr.code = try self.add_string(function.object.code.items);
 }
 
 fn update_anon_decl(self: *C, zcu: *Zcu, i: usize) !void {
@@ -255,8 +255,8 @@ fn update_anon_decl(self: *C, zcu: *Zcu, i: usize) !void {
 
     const fwd_decl = &self.fwd_decl_buf;
     const code = &self.code_buf;
-    fwd_decl.clearRetainingCapacity();
-    code.clearRetainingCapacity();
+    fwd_decl.clear_retaining_capacity();
+    code.clear_retaining_capacity();
 
     var object: codegen.Object = .{
         .dg = .{
@@ -266,29 +266,29 @@ fn update_anon_decl(self: *C, zcu: *Zcu, i: usize) !void {
             .error_msg = null,
             .pass = .{ .anon = anon_decl },
             .is_naked_fn = false,
-            .fwd_decl = fwd_decl.toManaged(gpa),
+            .fwd_decl = fwd_decl.to_managed(gpa),
             .ctype_pool = codegen.CType.Pool.empty,
             .scratch = .{},
             .anon_decl_deps = self.anon_decls,
             .aligned_anon_decls = self.aligned_anon_decls,
         },
-        .code = code.toManaged(gpa),
+        .code = code.to_managed(gpa),
         .indent_writer = undefined, // set later so we can get a pointer to object.code
     };
     object.indent_writer = .{ .underlying_writer = object.code.writer() };
     defer {
         self.anon_decls = object.dg.anon_decl_deps;
         self.aligned_anon_decls = object.dg.aligned_anon_decls;
-        fwd_decl.* = object.dg.fwd_decl.moveToUnmanaged();
+        fwd_decl.* = object.dg.fwd_decl.move_to_unmanaged();
         object.dg.ctype_pool.deinit(object.dg.gpa);
         object.dg.scratch.deinit(gpa);
-        code.* = object.code.moveToUnmanaged();
+        code.* = object.code.move_to_unmanaged();
     }
     try object.dg.ctype_pool.init(gpa);
 
-    const c_value: codegen.CValue = .{ .constant = Value.fromInterned(anon_decl) };
+    const c_value: codegen.CValue = .{ .constant = Value.from_interned(anon_decl) };
     const alignment: Alignment = self.aligned_anon_decls.get(anon_decl) orelse .none;
-    codegen.genDeclValue(&object, c_value.constant, false, c_value, alignment, .none) catch |err| switch (err) {
+    codegen.gen_decl_value(&object, c_value.constant, false, c_value, alignment, .none) catch |err| switch (err) {
         error.AnalysisFail => {
             @panic("TODO: C backend AnalysisFail on anonymous decl");
             //try zcu.failed_decls.put(gpa, decl_index, object.dg.error_msg.?);
@@ -297,10 +297,10 @@ fn update_anon_decl(self: *C, zcu: *Zcu, i: usize) !void {
         else => |e| return e,
     };
 
-    object.dg.ctype_pool.freeUnusedCapacity(gpa);
+    object.dg.ctype_pool.free_unused_capacity(gpa);
     object.dg.anon_decl_deps.values()[i] = .{
-        .code = try self.addString(object.code.items),
-        .fwd_decl = try self.addString(object.dg.fwd_decl.items),
+        .code = try self.add_string(object.code.items),
+        .fwd_decl = try self.add_string(object.dg.fwd_decl.items),
         .ctype_pool = object.dg.ctype_pool.move(),
     };
 }
@@ -311,55 +311,55 @@ pub fn update_decl(self: *C, zcu: *Zcu, decl_index: InternPool.DeclIndex) !void 
 
     const gpa = self.base.comp.gpa;
 
-    const decl = zcu.declPtr(decl_index);
-    const gop = try self.decl_table.getOrPut(gpa, decl_index);
+    const decl = zcu.decl_ptr(decl_index);
+    const gop = try self.decl_table.get_or_put(gpa, decl_index);
     errdefer _ = self.decl_table.pop();
     if (!gop.found_existing) gop.value_ptr.* = .{};
     const ctype_pool = &gop.value_ptr.ctype_pool;
     const fwd_decl = &self.fwd_decl_buf;
     const code = &self.code_buf;
     try ctype_pool.init(gpa);
-    ctype_pool.clearRetainingCapacity();
-    fwd_decl.clearRetainingCapacity();
-    code.clearRetainingCapacity();
+    ctype_pool.clear_retaining_capacity();
+    fwd_decl.clear_retaining_capacity();
+    code.clear_retaining_capacity();
 
     var object: codegen.Object = .{
         .dg = .{
             .gpa = gpa,
             .zcu = zcu,
-            .mod = zcu.namespacePtr(decl.src_namespace).file_scope.mod,
+            .mod = zcu.namespace_ptr(decl.src_namespace).file_scope.mod,
             .error_msg = null,
             .pass = .{ .decl = decl_index },
             .is_naked_fn = false,
-            .fwd_decl = fwd_decl.toManaged(gpa),
+            .fwd_decl = fwd_decl.to_managed(gpa),
             .ctype_pool = ctype_pool.*,
             .scratch = .{},
             .anon_decl_deps = self.anon_decls,
             .aligned_anon_decls = self.aligned_anon_decls,
         },
-        .code = code.toManaged(gpa),
+        .code = code.to_managed(gpa),
         .indent_writer = undefined, // set later so we can get a pointer to object.code
     };
     object.indent_writer = .{ .underlying_writer = object.code.writer() };
     defer {
         self.anon_decls = object.dg.anon_decl_deps;
         self.aligned_anon_decls = object.dg.aligned_anon_decls;
-        fwd_decl.* = object.dg.fwd_decl.moveToUnmanaged();
+        fwd_decl.* = object.dg.fwd_decl.move_to_unmanaged();
         ctype_pool.* = object.dg.ctype_pool.move();
-        ctype_pool.freeUnusedCapacity(gpa);
+        ctype_pool.free_unused_capacity(gpa);
         object.dg.scratch.deinit(gpa);
-        code.* = object.code.moveToUnmanaged();
+        code.* = object.code.move_to_unmanaged();
     }
 
-    codegen.genDecl(&object) catch |err| switch (err) {
+    codegen.gen_decl(&object) catch |err| switch (err) {
         error.AnalysisFail => {
             try zcu.failed_decls.put(gpa, decl_index, object.dg.error_msg.?);
             return;
         },
         else => |e| return e,
     };
-    gop.value_ptr.code = try self.addString(object.code.items);
-    gop.value_ptr.fwd_decl = try self.addString(object.dg.fwd_decl.items);
+    gop.value_ptr.code = try self.add_string(object.code.items);
+    gop.value_ptr.fwd_decl = try self.add_string(object.dg.fwd_decl.items);
 }
 
 pub fn update_decl_line_number(self: *C, zcu: *Zcu, decl_index: InternPool.DeclIndex) !void {
@@ -371,7 +371,7 @@ pub fn update_decl_line_number(self: *C, zcu: *Zcu, decl_index: InternPool.DeclI
 }
 
 pub fn flush(self: *C, arena: Allocator, prog_node: std.Progress.Node) !void {
-    return self.flushModule(arena, prog_node);
+    return self.flush_module(arena, prog_node);
 }
 
 fn abi_defines(self: *C, target: std.Target) !std.ArrayList(u8) {
@@ -380,11 +380,11 @@ fn abi_defines(self: *C, target: std.Target) !std.ArrayList(u8) {
     errdefer defines.deinit();
     const writer = defines.writer();
     switch (target.abi) {
-        .msvc => try writer.writeAll("#define ZIG_TARGET_ABI_MSVC\n"),
+        .msvc => try writer.write_all("#define ZIG_TARGET_ABI_MSVC\n"),
         else => {},
     }
     try writer.print("#define ZIG_TARGET_MAX_INT_ALIGNMENT {d}\n", .{
-        Type.maxIntAlignment(target, false),
+        Type.max_int_alignment(target, false),
     });
     return defines;
 }
@@ -405,12 +405,12 @@ pub fn flush_module(self: *C, arena: Allocator, prog_node: std.Progress.Node) !v
     {
         var i: usize = 0;
         while (i < self.anon_decls.count()) : (i += 1) {
-            try updateAnonDecl(self, zcu, i);
+            try update_anon_decl(self, zcu, i);
         }
     }
 
     // This code path happens exclusively with -ofmt=c. The flush logic for
-    // emit-h is in `flushEmitH` below.
+    // emit-h is in `flush_emit_h` below.
 
     var f: Flush = .{
         .ctype_pool = codegen.CType.Pool.empty,
@@ -418,32 +418,32 @@ pub fn flush_module(self: *C, arena: Allocator, prog_node: std.Progress.Node) !v
     };
     defer f.deinit(gpa);
 
-    const abi_defines = try self.abiDefines(zcu.getTarget());
+    const abi_defines = try self.abi_defines(zcu.get_target());
     defer abi_defines.deinit();
 
     // Covers defines, zig.h, ctypes, asm, lazy fwd.
-    try f.all_buffers.ensureUnusedCapacity(gpa, 5);
+    try f.all_buffers.ensure_unused_capacity(gpa, 5);
 
-    f.appendBufAssumeCapacity(abi_defines.items);
-    f.appendBufAssumeCapacity(zig_h);
+    f.append_buf_assume_capacity(abi_defines.items);
+    f.append_buf_assume_capacity(zig_h);
 
     const ctypes_index = f.all_buffers.items.len;
     f.all_buffers.items.len += 1;
 
     {
-        var asm_buf = f.asm_buf.toManaged(gpa);
-        defer f.asm_buf = asm_buf.moveToUnmanaged();
-        try codegen.genGlobalAsm(zcu, asm_buf.writer());
-        f.appendBufAssumeCapacity(asm_buf.items);
+        var asm_buf = f.asm_buf.to_managed(gpa);
+        defer f.asm_buf = asm_buf.move_to_unmanaged();
+        try codegen.gen_global_asm(zcu, asm_buf.writer());
+        f.append_buf_assume_capacity(asm_buf.items);
     }
 
     const lazy_index = f.all_buffers.items.len;
     f.all_buffers.items.len += 1;
 
-    self.lazy_fwd_decl_buf.clearRetainingCapacity();
-    self.lazy_code_buf.clearRetainingCapacity();
+    self.lazy_fwd_decl_buf.clear_retaining_capacity();
+    self.lazy_code_buf.clear_retaining_capacity();
     try f.lazy_ctype_pool.init(gpa);
-    try self.flushErrDecls(zcu, &f.lazy_ctype_pool);
+    try self.flush_err_decls(zcu, &f.lazy_ctype_pool);
 
     // Unlike other backends, the .c code we are emitting has order-dependent decls.
     // `CType`s, forward decls, and non-functions first.
@@ -451,20 +451,20 @@ pub fn flush_module(self: *C, arena: Allocator, prog_node: std.Progress.Node) !v
     {
         var export_names: std.AutoHashMapUnmanaged(InternPool.NullTerminatedString, void) = .{};
         defer export_names.deinit(gpa);
-        try export_names.ensureTotalCapacity(gpa, @intCast(zcu.decl_exports.entries.len));
+        try export_names.ensure_total_capacity(gpa, @int_cast(zcu.decl_exports.entries.len));
         for (zcu.decl_exports.values()) |exports| for (exports.items) |@"export"|
             try export_names.put(gpa, @"export".opts.name, {});
 
         for (self.anon_decls.values()) |*decl_block| {
-            try self.flushDeclBlock(zcu, zcu.root_mod, &f, decl_block, export_names, .none);
+            try self.flush_decl_block(zcu, zcu.root_mod, &f, decl_block, export_names, .none);
         }
 
         for (self.decl_table.keys(), self.decl_table.values()) |decl_index, *decl_block| {
-            const decl = zcu.declPtr(decl_index);
+            const decl = zcu.decl_ptr(decl_index);
             assert(decl.has_tv);
-            const extern_symbol_name = if (decl.isExtern(zcu)) decl.name.toOptional() else .none;
-            const mod = zcu.namespacePtr(decl.src_namespace).file_scope.mod;
-            try self.flushDeclBlock(zcu, mod, &f, decl_block, export_names, extern_symbol_name);
+            const extern_symbol_name = if (decl.is_extern(zcu)) decl.name.to_optional() else .none;
+            const mod = zcu.namespace_ptr(decl.src_namespace).file_scope.mod;
+            try self.flush_decl_block(zcu, mod, &f, decl_block, export_names, extern_symbol_name);
         }
     }
 
@@ -472,14 +472,14 @@ pub fn flush_module(self: *C, arena: Allocator, prog_node: std.Progress.Node) !v
         // We need to flush lazy ctypes after flushing all decls but before flushing any decl ctypes.
         // This ensures that every lazy CType.Index exactly matches the global CType.Index.
         try f.ctype_pool.init(gpa);
-        try self.flushCTypes(zcu, &f, .flush, &f.lazy_ctype_pool);
+        try self.flush_ctypes(zcu, &f, .flush, &f.lazy_ctype_pool);
 
         for (self.anon_decls.keys(), self.anon_decls.values()) |anon_decl, decl_block| {
-            try self.flushCTypes(zcu, &f, .{ .anon = anon_decl }, &decl_block.ctype_pool);
+            try self.flush_ctypes(zcu, &f, .{ .anon = anon_decl }, &decl_block.ctype_pool);
         }
 
         for (self.decl_table.keys(), self.decl_table.values()) |decl_index, decl_block| {
-            try self.flushCTypes(zcu, &f, .{ .decl = decl_index }, &decl_block.ctype_pool);
+            try self.flush_ctypes(zcu, &f, .{ .decl = decl_index }, &decl_block.ctype_pool);
         }
     }
 
@@ -499,14 +499,14 @@ pub fn flush_module(self: *C, arena: Allocator, prog_node: std.Progress.Node) !v
     // Now the code.
     const anon_decl_values = self.anon_decls.values();
     const decl_values = self.decl_table.values();
-    try f.all_buffers.ensureUnusedCapacity(gpa, 1 + anon_decl_values.len + decl_values.len);
-    f.appendBufAssumeCapacity(self.lazy_code_buf.items);
-    for (anon_decl_values) |db| f.appendBufAssumeCapacity(self.getString(db.code));
-    for (decl_values) |db| f.appendBufAssumeCapacity(self.getString(db.code));
+    try f.all_buffers.ensure_unused_capacity(gpa, 1 + anon_decl_values.len + decl_values.len);
+    f.append_buf_assume_capacity(self.lazy_code_buf.items);
+    for (anon_decl_values) |db| f.append_buf_assume_capacity(self.get_string(db.code));
+    for (decl_values) |db| f.append_buf_assume_capacity(self.get_string(db.code));
 
     const file = self.base.file.?;
-    try file.setEndPos(f.file_size);
-    try file.pwritevAll(f.all_buffers.items, 0);
+    try file.set_end_pos(f.file_size);
+    try file.pwritev_all(f.all_buffers.items, 0);
 }
 
 const Flush = struct {
@@ -528,7 +528,7 @@ const Flush = struct {
 
     fn append_buf_assume_capacity(f: *Flush, buf: []const u8) void {
         if (buf.len == 0) return;
-        f.all_buffers.appendAssumeCapacity(.{ .base = buf.ptr, .len = buf.len });
+        f.all_buffers.append_assume_capacity(.{ .base = buf.ptr, .len = buf.len });
         f.file_size += buf.len;
     }
 
@@ -560,39 +560,39 @@ fn flush_ctypes(
 
     const global_from_decl_map = &f.ctype_global_from_decl_map;
     assert(global_from_decl_map.items.len == 0);
-    try global_from_decl_map.ensureTotalCapacity(gpa, decl_ctype_pool.items.len);
-    defer global_from_decl_map.clearRetainingCapacity();
+    try global_from_decl_map.ensure_total_capacity(gpa, decl_ctype_pool.items.len);
+    defer global_from_decl_map.clear_retaining_capacity();
 
-    var ctypes_buf = f.ctypes_buf.toManaged(gpa);
-    defer f.ctypes_buf = ctypes_buf.moveToUnmanaged();
+    var ctypes_buf = f.ctypes_buf.to_managed(gpa);
+    defer f.ctypes_buf = ctypes_buf.move_to_unmanaged();
     const writer = ctypes_buf.writer();
 
     for (0..decl_ctype_pool.items.len) |decl_ctype_pool_index| {
         const PoolAdapter = struct {
             global_from_decl_map: []const codegen.CType,
             pub fn eql(pool_adapter: @This(), decl_ctype: codegen.CType, global_ctype: codegen.CType) bool {
-                return if (decl_ctype.toPoolIndex()) |decl_pool_index|
+                return if (decl_ctype.to_pool_index()) |decl_pool_index|
                     decl_pool_index < pool_adapter.global_from_decl_map.len and
                         pool_adapter.global_from_decl_map[decl_pool_index].eql(global_ctype)
                 else
                     decl_ctype.index == global_ctype.index;
             }
             pub fn copy(pool_adapter: @This(), decl_ctype: codegen.CType) codegen.CType {
-                return if (decl_ctype.toPoolIndex()) |decl_pool_index|
+                return if (decl_ctype.to_pool_index()) |decl_pool_index|
                     pool_adapter.global_from_decl_map[decl_pool_index]
                 else
                     decl_ctype;
             }
         };
-        const decl_ctype = codegen.CType.fromPoolIndex(decl_ctype_pool_index);
-        const global_ctype, const found_existing = try global_ctype_pool.getOrPutAdapted(
+        const decl_ctype = codegen.CType.from_pool_index(decl_ctype_pool_index);
+        const global_ctype, const found_existing = try global_ctype_pool.get_or_put_adapted(
             gpa,
             decl_ctype_pool,
             decl_ctype,
             PoolAdapter{ .global_from_decl_map = global_from_decl_map.items },
         );
-        global_from_decl_map.appendAssumeCapacity(global_ctype);
-        try codegen.genTypeDecl(
+        global_from_decl_map.append_assume_capacity(global_ctype);
+        try codegen.gen_type_decl(
             zcu,
             writer,
             global_ctype_pool,
@@ -619,27 +619,27 @@ fn flush_err_decls(self: *C, zcu: *Zcu, ctype_pool: *codegen.CType.Pool) FlushDe
             .error_msg = null,
             .pass = .flush,
             .is_naked_fn = false,
-            .fwd_decl = fwd_decl.toManaged(gpa),
+            .fwd_decl = fwd_decl.to_managed(gpa),
             .ctype_pool = ctype_pool.*,
             .scratch = .{},
             .anon_decl_deps = self.anon_decls,
             .aligned_anon_decls = self.aligned_anon_decls,
         },
-        .code = code.toManaged(gpa),
+        .code = code.to_managed(gpa),
         .indent_writer = undefined, // set later so we can get a pointer to object.code
     };
     object.indent_writer = .{ .underlying_writer = object.code.writer() };
     defer {
         self.anon_decls = object.dg.anon_decl_deps;
         self.aligned_anon_decls = object.dg.aligned_anon_decls;
-        fwd_decl.* = object.dg.fwd_decl.moveToUnmanaged();
+        fwd_decl.* = object.dg.fwd_decl.move_to_unmanaged();
         ctype_pool.* = object.dg.ctype_pool.move();
-        ctype_pool.freeUnusedCapacity(gpa);
+        ctype_pool.free_unused_capacity(gpa);
         object.dg.scratch.deinit(gpa);
-        code.* = object.code.moveToUnmanaged();
+        code.* = object.code.move_to_unmanaged();
     }
 
-    codegen.genErrDecls(&object) catch |err| switch (err) {
+    codegen.gen_err_decls(&object) catch |err| switch (err) {
         error.AnalysisFail => unreachable,
         else => |e| return e,
     };
@@ -666,29 +666,29 @@ fn flush_lazy_fn(
             .error_msg = null,
             .pass = .flush,
             .is_naked_fn = false,
-            .fwd_decl = fwd_decl.toManaged(gpa),
+            .fwd_decl = fwd_decl.to_managed(gpa),
             .ctype_pool = ctype_pool.*,
             .scratch = .{},
             .anon_decl_deps = .{},
             .aligned_anon_decls = .{},
         },
-        .code = code.toManaged(gpa),
+        .code = code.to_managed(gpa),
         .indent_writer = undefined, // set later so we can get a pointer to object.code
     };
     object.indent_writer = .{ .underlying_writer = object.code.writer() };
     defer {
         // If this assert trips just handle the anon_decl_deps the same as
-        // `updateFunc()` does.
+        // `update_func()` does.
         assert(object.dg.anon_decl_deps.count() == 0);
         assert(object.dg.aligned_anon_decls.count() == 0);
-        fwd_decl.* = object.dg.fwd_decl.moveToUnmanaged();
+        fwd_decl.* = object.dg.fwd_decl.move_to_unmanaged();
         ctype_pool.* = object.dg.ctype_pool.move();
-        ctype_pool.freeUnusedCapacity(gpa);
+        ctype_pool.free_unused_capacity(gpa);
         object.dg.scratch.deinit(gpa);
-        code.* = object.code.moveToUnmanaged();
+        code.* = object.code.move_to_unmanaged();
     }
 
-    codegen.genLazyFn(&object, lazy_ctype_pool, lazy_fn) catch |err| switch (err) {
+    codegen.gen_lazy_fn(&object, lazy_ctype_pool, lazy_fn) catch |err| switch (err) {
         error.AnalysisFail => unreachable,
         else => |e| return e,
     };
@@ -703,14 +703,14 @@ fn flush_lazy_fns(
     lazy_fns: codegen.LazyFnMap,
 ) FlushDeclError!void {
     const gpa = self.base.comp.gpa;
-    try f.lazy_fns.ensureUnusedCapacity(gpa, @intCast(lazy_fns.count()));
+    try f.lazy_fns.ensure_unused_capacity(gpa, @int_cast(lazy_fns.count()));
 
     var it = lazy_fns.iterator();
     while (it.next()) |entry| {
-        const gop = f.lazy_fns.getOrPutAssumeCapacity(entry.key_ptr.*);
+        const gop = f.lazy_fns.get_or_put_assume_capacity(entry.key_ptr.*);
         if (gop.found_existing) continue;
         gop.value_ptr.* = {};
-        try self.flushLazyFn(zcu, mod, &f.lazy_ctype_pool, lazy_ctype_pool, entry);
+        try self.flush_lazy_fn(zcu, mod, &f.lazy_ctype_pool, lazy_ctype_pool, entry);
     }
 }
 
@@ -724,13 +724,13 @@ fn flush_decl_block(
     extern_symbol_name: InternPool.OptionalNullTerminatedString,
 ) FlushDeclError!void {
     const gpa = self.base.comp.gpa;
-    try self.flushLazyFns(zcu, mod, f, &decl_block.ctype_pool, decl_block.lazy_fns);
-    try f.all_buffers.ensureUnusedCapacity(gpa, 1);
+    try self.flush_lazy_fns(zcu, mod, f, &decl_block.ctype_pool, decl_block.lazy_fns);
+    try f.all_buffers.ensure_unused_capacity(gpa, 1);
     fwd_decl: {
         if (extern_symbol_name.unwrap()) |name| {
             if (export_names.contains(name)) break :fwd_decl;
         }
-        f.appendBufAssumeCapacity(self.getString(decl_block.fwd_decl));
+        f.append_buf_assume_capacity(self.get_string(decl_block.fwd_decl));
     }
 }
 
@@ -742,22 +742,22 @@ pub fn flush_emit_h(zcu: *Zcu) !void {
 
     // We collect a list of buffers to write, and write them all at once with pwritev 😎
     const num_buffers = emit_h.decl_table.count() + 1;
-    var all_buffers = try std.ArrayList(std.posix.iovec_const).initCapacity(zcu.gpa, num_buffers);
+    var all_buffers = try std.ArrayList(std.posix.iovec_const).init_capacity(zcu.gpa, num_buffers);
     defer all_buffers.deinit();
 
     var file_size: u64 = zig_h.len;
     if (zig_h.len != 0) {
-        all_buffers.appendAssumeCapacity(.{
+        all_buffers.append_assume_capacity(.{
             .base = zig_h,
             .len = zig_h.len,
         });
     }
 
     for (emit_h.decl_table.keys()) |decl_index| {
-        const decl_emit_h = emit_h.declPtr(decl_index);
+        const decl_emit_h = emit_h.decl_ptr(decl_index);
         const buf = decl_emit_h.fwd_decl.items;
         if (buf.len != 0) {
-            all_buffers.appendAssumeCapacity(.{
+            all_buffers.append_assume_capacity(.{
                 .base = buf.ptr,
                 .len = buf.len,
             });
@@ -766,15 +766,15 @@ pub fn flush_emit_h(zcu: *Zcu) !void {
     }
 
     const directory = emit_h.loc.directory orelse zcu.comp.local_cache_directory;
-    const file = try directory.handle.createFile(emit_h.loc.basename, .{
+    const file = try directory.handle.create_file(emit_h.loc.basename, .{
         // We set the end position explicitly below; by not truncating the file, we possibly
         // make it easier on the file system by doing 1 reallocation instead of two.
         .truncate = false,
     });
     defer file.close();
 
-    try file.setEndPos(file_size);
-    try file.pwritevAll(all_buffers.items, 0);
+    try file.set_end_pos(file_size);
+    try file.pwritev_all(all_buffers.items, 0);
 }
 
 pub fn update_exports(

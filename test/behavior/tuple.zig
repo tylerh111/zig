@@ -3,8 +3,8 @@ const std = @import("std");
 const testing = std.testing;
 const assert = std.debug.assert;
 const expect = testing.expect;
-const expectEqualStrings = std.testing.expectEqualStrings;
-const expectEqual = std.testing.expectEqual;
+const expect_equal_strings = std.testing.expect_equal_strings;
+const expect_equal = std.testing.expect_equal;
 
 test "tuple concatenation" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
@@ -24,8 +24,8 @@ test "tuple concatenation" {
             try expect(@as(i32, 2) == c[1]);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "tuple multiplication" {
@@ -47,8 +47,8 @@ test "tuple multiplication" {
             }
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "more tuple concatenation" {
@@ -93,8 +93,8 @@ test "more tuple concatenation" {
         }
     };
 
-    try T.doTheTest();
-    try comptime T.doTheTest();
+    try T.do_the_test();
+    try comptime T.do_the_test();
 }
 
 test "pass tuple to comptime var parameter" {
@@ -107,8 +107,8 @@ test "pass tuple to comptime var parameter" {
             try Foo(.{1});
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "tuple initializer for var" {
@@ -126,8 +126,8 @@ test "tuple initializer for var" {
         }
     };
 
-    S.doTheTest();
-    comptime S.doTheTest();
+    S.do_the_test();
+    comptime S.do_the_test();
 }
 
 test "array-like initializer for tuple types" {
@@ -167,8 +167,8 @@ test "array-like initializer for tuple types" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "anon struct as the result from a labeled block" {
@@ -185,8 +185,8 @@ test "anon struct as the result from a labeled block" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "tuple as the result from a labeled block" {
@@ -201,8 +201,8 @@ test "tuple as the result from a labeled block" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "initializing tuple with explicit type" {
@@ -241,18 +241,18 @@ test "fieldParentPtr of anon struct" {
     try testing.expect(&anon_st == @as(@TypeOf(&anon_st), @fieldParentPtr("bar", &anon_st.bar)));
 }
 
-test "offsetOf tuple" {
+test "offset_of tuple" {
     var x: u32 = 0;
     _ = &x;
     const T = @TypeOf(.{ x, x });
-    try expect(@offsetOf(T, "1") == @sizeOf(u32));
+    try expect(@offset_of(T, "1") == @size_of(u32));
 }
 
-test "offsetOf anon struct" {
+test "offset_of anon struct" {
     var x: u32 = 0;
     _ = &x;
     const T = @TypeOf(.{ .foo = x, .bar = x });
-    try expect(@offsetOf(T, "bar") == @sizeOf(u32));
+    try expect(@offset_of(T, "bar") == @size_of(u32));
 }
 
 test "initializing tuple with mixed comptime-runtime fields" {
@@ -346,7 +346,7 @@ test "zero sized struct in tuple handled correctly" {
         }),
 
         pub fn do(this: Self) usize {
-            return @sizeOf(@TypeOf(this));
+            return @size_of(@TypeOf(this));
         }
     };
 
@@ -392,7 +392,7 @@ test "tuple initialized with a runtime known value" {
     var e = E{ .e = "test" };
     _ = &e;
     const w = .{W{ .w = e }};
-    try expectEqualStrings(w[0].w.e, "test");
+    try expect_equal_strings(w[0].w.e, "test");
 }
 
 test "tuple of struct concatenation and coercion to array" {
@@ -408,7 +408,7 @@ test "tuple of struct concatenation and coercion to array" {
     const value1 = SomeStruct{ .array = .{StructWithDefault{}} ++ [_]StructWithDefault{.{}} ** 3 };
     const value2 = SomeStruct{ .array = .{.{}} ++ [_]StructWithDefault{.{}} ** 3 };
 
-    try expectEqual(value1, value2);
+    try expect_equal(value1, value2);
 }
 
 test "nested runtime conditionals in tuple initializer" {
@@ -425,7 +425,7 @@ test "nested runtime conditionals in tuple initializer" {
             1 => "down",
         },
     };
-    try expectEqualStrings("up", x[0]);
+    try expect_equal_strings("up", x[0]);
 }
 
 test "sentinel slice in tuple with other fields" {
@@ -456,18 +456,18 @@ test "tuple pointer is indexable" {
 
     const x: S = .{ 123, true };
     comptime assert(@TypeOf(&(&x)[0]) == *const u32); // validate constness
-    try expectEqual(@as(u32, 123), (&x)[0]);
-    try expectEqual(true, (&x)[1]);
+    try expect_equal(@as(u32, 123), (&x)[0]);
+    try expect_equal(true, (&x)[1]);
 
     var y: S = .{ 123, true };
     comptime assert(@TypeOf(&(&y)[0]) == *u32); // validate constness
-    try expectEqual(@as(u32, 123), (&y)[0]);
-    try expectEqual(true, (&y)[1]);
+    try expect_equal(@as(u32, 123), (&y)[0]);
+    try expect_equal(true, (&y)[1]);
 
     (&y)[0] = 100;
     (&y)[1] = false;
-    try expectEqual(@as(u32, 100), (&y)[0]);
-    try expectEqual(false, (&y)[1]);
+    try expect_equal(@as(u32, 100), (&y)[0]);
+    try expect_equal(false, (&y)[1]);
 }
 
 test "coerce anon tuple to tuple" {
@@ -481,8 +481,8 @@ test "coerce anon tuple to tuple" {
     _ = .{ &x, &y };
     const t = .{ x, y };
     const s: struct { u8, u16 } = t;
-    try expectEqual(x, s[0]);
-    try expectEqual(y, s[1]);
+    try expect_equal(x, s[0]);
+    try expect_equal(y, s[1]);
 }
 
 test "empty tuple type" {
@@ -589,7 +589,7 @@ test "tuple default values" {
 
     const t: T = .{1};
 
-    try expectEqual(1, t[0]);
-    try expectEqual(123, t[1]);
-    try expectEqual(456, t[2]);
+    try expect_equal(1, t[0]);
+    try expect_equal(123, t[1]);
+    try expect_equal(456, t[2]);
 }

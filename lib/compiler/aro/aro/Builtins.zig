@@ -64,7 +64,7 @@ fn create_type(desc: TypeDescription, it: *TypeDescription.TypeIterator, comp: *
             .W => require_native_int64 = true,
             .N => {
                 std.debug.assert(desc.spec == .i);
-                if (!target_util.isLP64(comp.target)) {
+                if (!target_util.is_lp64(comp.target)) {
                     builder.combine(undefined, .long, 0) catch unreachable;
                 }
             },
@@ -88,9 +88,9 @@ fn create_type(desc: TypeDescription, it: *TypeDescription.TypeIterator, comp: *
         .s => builder.combine(undefined, .short, 0) catch unreachable,
         .i => {
             if (require_native_int32) {
-                builder.specifier = specForSize(comp, 32);
+                builder.specifier = spec_for_size(comp, 32);
             } else if (require_native_int64) {
-                builder.specifier = specForSize(comp, 64);
+                builder.specifier = spec_for_size(comp, 64);
             } else {
                 switch (builder.specifier) {
                     .int128, .sint128, .uint128 => {},
@@ -114,15 +114,15 @@ fn create_type(desc: TypeDescription, it: *TypeDescription.TypeIterator, comp: *
         },
         .z => {
             std.debug.assert(builder.specifier == .none);
-            builder.specifier = Type.Builder.fromType(comp.types.size);
+            builder.specifier = Type.Builder.from_type(comp.types.size);
         },
         .w => {
             std.debug.assert(builder.specifier == .none);
-            builder.specifier = Type.Builder.fromType(comp.types.wchar);
+            builder.specifier = Type.Builder.from_type(comp.types.wchar);
         },
         .F => {
             std.debug.assert(builder.specifier == .none);
-            builder.specifier = Type.Builder.fromType(comp.types.ns_constant_string.ty);
+            builder.specifier = Type.Builder.from_type(comp.types.ns_constant_string.ty);
         },
         .G => {
             // Todo: id
@@ -139,26 +139,26 @@ fn create_type(desc: TypeDescription, it: *TypeDescription.TypeIterator, comp: *
         .a => {
             std.debug.assert(builder.specifier == .none);
             std.debug.assert(desc.suffix.len == 0);
-            builder.specifier = Type.Builder.fromType(comp.types.va_list);
+            builder.specifier = Type.Builder.from_type(comp.types.va_list);
         },
         .A => {
             std.debug.assert(builder.specifier == .none);
             std.debug.assert(desc.suffix.len == 0);
             var va_list = comp.types.va_list;
-            if (va_list.isArray()) va_list.decayArray();
-            builder.specifier = Type.Builder.fromType(va_list);
+            if (va_list.is_array()) va_list.decay_array();
+            builder.specifier = Type.Builder.from_type(va_list);
         },
         .V => |element_count| {
             std.debug.assert(desc.suffix.len == 0);
             const child_desc = it.next().?;
-            const child_ty = try createType(child_desc, undefined, comp, allocator);
+            const child_ty = try create_type(child_desc, undefined, comp, allocator);
             const arr_ty = try allocator.create(Type.Array);
             arr_ty.* = .{
                 .len = element_count,
                 .elem = child_ty,
             };
             const vector_ty = .{ .specifier = .vector, .data = .{ .array = arr_ty } };
-            builder.specifier = Type.Builder.fromType(vector_ty);
+            builder.specifier = Type.Builder.from_type(vector_ty);
         },
         .q => {
             // Todo: scalable vector
@@ -182,14 +182,14 @@ fn create_type(desc: TypeDescription, it: *TypeDescription.TypeIterator, comp: *
         .Y => {
             std.debug.assert(builder.specifier == .none);
             std.debug.assert(desc.suffix.len == 0);
-            builder.specifier = Type.Builder.fromType(comp.types.ptrdiff);
+            builder.specifier = Type.Builder.from_type(comp.types.ptrdiff);
         },
         .P => {
             std.debug.assert(builder.specifier == .none);
             if (comp.types.file.specifier == .invalid) {
                 return comp.types.file;
             }
-            builder.specifier = Type.Builder.fromType(comp.types.file);
+            builder.specifier = Type.Builder.from_type(comp.types.file);
         },
         .J => {
             std.debug.assert(builder.specifier == .none);
@@ -197,7 +197,7 @@ fn create_type(desc: TypeDescription, it: *TypeDescription.TypeIterator, comp: *
             if (comp.types.jmp_buf.specifier == .invalid) {
                 return comp.types.jmp_buf;
             }
-            builder.specifier = Type.Builder.fromType(comp.types.jmp_buf);
+            builder.specifier = Type.Builder.from_type(comp.types.jmp_buf);
         },
         .SJ => {
             std.debug.assert(builder.specifier == .none);
@@ -205,19 +205,19 @@ fn create_type(desc: TypeDescription, it: *TypeDescription.TypeIterator, comp: *
             if (comp.types.sigjmp_buf.specifier == .invalid) {
                 return comp.types.sigjmp_buf;
             }
-            builder.specifier = Type.Builder.fromType(comp.types.sigjmp_buf);
+            builder.specifier = Type.Builder.from_type(comp.types.sigjmp_buf);
         },
         .K => {
             std.debug.assert(builder.specifier == .none);
             if (comp.types.ucontext_t.specifier == .invalid) {
                 return comp.types.ucontext_t;
             }
-            builder.specifier = Type.Builder.fromType(comp.types.ucontext_t);
+            builder.specifier = Type.Builder.from_type(comp.types.ucontext_t);
         },
         .p => {
             std.debug.assert(builder.specifier == .none);
             std.debug.assert(desc.suffix.len == 0);
-            builder.specifier = Type.Builder.fromType(comp.types.pid_t);
+            builder.specifier = Type.Builder.from_type(comp.types.pid_t);
         },
         .@"!" => return .{ .specifier = .invalid },
     }
@@ -232,7 +232,7 @@ fn create_type(desc: TypeDescription, it: *TypeDescription.TypeIterator, comp: *
                     .data = .{ .sub_type = elem_ty },
                 };
                 builder.qual = .{};
-                builder.specifier = Type.Builder.fromType(ty);
+                builder.specifier = Type.Builder.from_type(ty);
             },
             .C => builder.qual.@"const" = 0,
             .D => builder.qual.@"volatile" = 0,
@@ -249,11 +249,11 @@ fn create_builtin(comp: *const Compilation, builtin: Builtin, type_arena: std.me
     if (ret_ty_desc.spec == .@"!") {
         // Todo: handle target-dependent definition
     }
-    const ret_ty = try createType(ret_ty_desc, &it, comp, type_arena);
+    const ret_ty = try create_type(ret_ty_desc, &it, comp, type_arena);
     var param_count: usize = 0;
     var params: [Builtin.max_param_count]Type.Func.Param = undefined;
     while (it.next()) |desc| : (param_count += 1) {
-        params[param_count] = .{ .name_tok = 0, .ty = try createType(desc, &it, comp, type_arena), .name = .empty };
+        params[param_count] = .{ .name_tok = 0, .ty = try create_type(desc, &it, comp, type_arena), .name = .empty };
     }
 
     const duped_params = try type_arena.dupe(Type.Func.Param, params[0..param_count]);
@@ -264,14 +264,14 @@ fn create_builtin(comp: *const Compilation, builtin: Builtin, type_arena: std.me
         .params = duped_params,
     };
     return .{
-        .specifier = if (builtin.properties.isVarArgs()) .var_args_func else .func,
+        .specifier = if (builtin.properties.is_var_args()) .var_args_func else .func,
         .data = .{ .func = func },
     };
 }
 
 /// Asserts that the builtin has already been created
 pub fn lookup(b: *const Builtins, name: []const u8) Expanded {
-    const builtin = Builtin.fromName(name).?;
+    const builtin = Builtin.from_name(name).?;
     const ty = b._name_to_type_map.get(name).?;
     return .{
         .builtin = builtin,
@@ -281,19 +281,19 @@ pub fn lookup(b: *const Builtins, name: []const u8) Expanded {
 
 pub fn get_or_create(b: *Builtins, comp: *Compilation, name: []const u8, type_arena: std.mem.Allocator) !?Expanded {
     const ty = b._name_to_type_map.get(name) orelse {
-        const builtin = Builtin.fromName(name) orelse return null;
-        if (!comp.hasBuiltinFunction(builtin)) return null;
+        const builtin = Builtin.from_name(name) orelse return null;
+        if (!comp.has_builtin_function(builtin)) return null;
 
-        try b._name_to_type_map.ensureUnusedCapacity(comp.gpa, 1);
-        const ty = try createBuiltin(comp, builtin, type_arena);
-        b._name_to_type_map.putAssumeCapacity(name, ty);
+        try b._name_to_type_map.ensure_unused_capacity(comp.gpa, 1);
+        const ty = try create_builtin(comp, builtin, type_arena);
+        b._name_to_type_map.put_assume_capacity(name, ty);
 
         return .{
             .builtin = builtin,
             .ty = ty,
         };
     };
-    const builtin = Builtin.fromName(name).?;
+    const builtin = Builtin.from_name(name).?;
     return .{
         .builtin = builtin,
         .ty = ty,
@@ -316,7 +316,7 @@ pub const Iterator = struct {
         const data_index = index - 1;
         self.index += 1;
         return .{
-            .name = Builtin.nameFromUniqueIndex(index, &self.name_buf),
+            .name = Builtin.name_from_unique_index(index, &self.name_buf),
             .builtin = Builtin.data[data_index],
         };
     }
@@ -333,10 +333,10 @@ test Iterator {
     const arena = arena_state.allocator();
 
     while (it.next()) |entry| {
-        const index = Builtin.uniqueIndex(entry.name).?;
+        const index = Builtin.unique_index(entry.name).?;
         var buf: [Builtin.longest_name]u8 = undefined;
-        const name_from_index = Builtin.nameFromUniqueIndex(index, &buf);
-        try std.testing.expectEqualStrings(entry.name, name_from_index);
+        const name_from_index = Builtin.name_from_unique_index(index, &buf);
+        try std.testing.expect_equal_strings(entry.name, name_from_index);
 
         if (seen.contains(entry.name)) {
             std.debug.print("iterated over {s} twice\n", .{entry.name});
@@ -346,13 +346,13 @@ test Iterator {
         }
         try seen.put(try arena.dupe(u8, entry.name), entry.builtin);
     }
-    try std.testing.expectEqual(@as(usize, Builtin.data.len), seen.count());
+    try std.testing.expect_equal(@as(usize, Builtin.data.len), seen.count());
 }
 
 test "All builtins" {
     var comp = Compilation.init(std.testing.allocator);
     defer comp.deinit();
-    _ = try comp.generateBuiltinMacros(.include_system_defines);
+    _ = try comp.generate_builtin_macros(.include_system_defines);
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
 
@@ -361,11 +361,11 @@ test "All builtins" {
     var builtin_it = Iterator{};
     while (builtin_it.next()) |entry| {
         const name = try type_arena.dupe(u8, entry.name);
-        if (try comp.builtins.getOrCreate(&comp, name, type_arena)) |func_ty| {
-            const get_again = (try comp.builtins.getOrCreate(&comp, name, std.testing.failing_allocator)).?;
+        if (try comp.builtins.get_or_create(&comp, name, type_arena)) |func_ty| {
+            const get_again = (try comp.builtins.get_or_create(&comp, name, std.testing.failing_allocator)).?;
             const found_by_lookup = comp.builtins.lookup(name);
-            try std.testing.expectEqual(func_ty.builtin.tag, get_again.builtin.tag);
-            try std.testing.expectEqual(func_ty.builtin.tag, found_by_lookup.builtin.tag);
+            try std.testing.expect_equal(func_ty.builtin.tag, get_again.builtin.tag);
+            try std.testing.expect_equal(func_ty.builtin.tag, found_by_lookup.builtin.tag);
         }
     }
 }
@@ -375,7 +375,7 @@ test "Allocation failures" {
         fn test_one(allocator: std.mem.Allocator) !void {
             var comp = Compilation.init(allocator);
             defer comp.deinit();
-            _ = try comp.generateBuiltinMacros(.include_system_defines);
+            _ = try comp.generate_builtin_macros(.include_system_defines);
             var arena = std.heap.ArenaAllocator.init(comp.gpa);
             defer arena.deinit();
 
@@ -385,10 +385,10 @@ test "Allocation failures" {
             var builtin_it = Iterator{};
             for (0..num_builtins) |_| {
                 const entry = builtin_it.next().?;
-                _ = try comp.builtins.getOrCreate(&comp, entry.name, type_arena);
+                _ = try comp.builtins.get_or_create(&comp, entry.name, type_arena);
             }
         }
     };
 
-    try std.testing.checkAllAllocationFailures(std.testing.allocator, Test.testOne, .{});
+    try std.testing.check_all_allocation_failures(std.testing.allocator, Test.test_one, .{});
 }

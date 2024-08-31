@@ -3,8 +3,8 @@ const std = @import("std");
 const testing = std.testing;
 const assert = std.debug.assert;
 const expect = testing.expect;
-const expectEqual = testing.expectEqual;
-const expectEqualStrings = std.testing.expectEqualStrings;
+const expect_equal = testing.expect_equal;
+const expect_equal_strings = std.testing.expect_equal_strings;
 
 test "passing an optional integer as a parameter" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
@@ -37,8 +37,8 @@ test "optional pointer to size zero struct" {
 }
 
 test "equality compare optional pointers" {
-    try testNullPtrsEql();
-    try comptime testNullPtrsEql();
+    try test_null_ptrs_eql();
+    try comptime test_null_ptrs_eql();
 }
 
 fn test_null_ptrs_eql() !void {
@@ -103,10 +103,10 @@ test "optional with zero-bit type" {
         }
     };
 
-    try S.doTheTest(void, {});
-    try comptime S.doTheTest(void, {});
-    try S.doTheTest(enum { only }, .only);
-    try comptime S.doTheTest(enum { only }, .only);
+    try S.do_the_test(void, {});
+    try comptime S.do_the_test(void, {});
+    try S.do_the_test(enum { only }, .only);
+    try comptime S.do_the_test(enum { only }, .only);
 }
 
 test "address of unwrap optional" {
@@ -127,7 +127,7 @@ test "address of unwrap optional" {
         }
     };
     S.global = S.Foo{ .a = 1234 };
-    const foo = S.getFoo() catch unreachable;
+    const foo = S.get_foo() catch unreachable;
     try expect(foo.a == 1234);
 }
 
@@ -206,8 +206,8 @@ test "equality compare optionals and non-optionals" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "compare optionals with modified payloads" {
@@ -315,7 +315,7 @@ test "assigning to an unwrapped optional field in an inline loop" {
         _ = x;
         maybe_pos_arg = 0;
         if (maybe_pos_arg.? != 0) {
-            @compileError("bad");
+            @compile_error("bad");
         }
         maybe_pos_arg.? = 10;
     }
@@ -338,8 +338,8 @@ test "coerce an anon struct literal to optional struct" {
             try expect(maybe_dims.?.field == 1);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "0-bit child type coerced to optional return ptr result location" {
@@ -365,8 +365,8 @@ test "0-bit child type coerced to optional return ptr result location" {
             }
         };
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "0-bit child type coerced to optional" {
@@ -392,8 +392,8 @@ test "0-bit child type coerced to optional" {
             }
         };
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "array of optional unaligned types" {
@@ -480,12 +480,12 @@ const NoReturn = struct {
     }
     fn loop() ?noreturn {
         while (true) {
-            if (someData()) return null;
+            if (some_data()) return null;
         }
     }
     fn test_orelse() u32 {
         loop() orelse return 123;
-        @compileError("bad");
+        @compile_error("bad");
     }
 };
 
@@ -495,7 +495,7 @@ test "optional of noreturn used with if" {
 
     NoReturn.a = 64;
     if (NoReturn.loop()) |_| {
-        @compileError("bad");
+        @compile_error("bad");
     } else {
         try expect(true);
     }
@@ -506,7 +506,7 @@ test "optional of noreturn used with orelse" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     NoReturn.a = 64;
-    const val = NoReturn.testOrelse();
+    const val = NoReturn.test_orelse();
     try expect(val == 123);
 }
 
@@ -514,8 +514,8 @@ test "orelse on C pointer" {
 
     // TODO https://github.com/ziglang/zig/issues/6597
     const foo: [*c]const u8 = "hey";
-    const d = foo orelse @compileError("bad");
-    try expectEqual([*c]const u8, @TypeOf(d));
+    const d = foo orelse @compile_error("bad");
+    try expect_equal([*c]const u8, @TypeOf(d));
 }
 
 test "alignment of wrapping an optional payload" {
@@ -543,11 +543,11 @@ test "Optional slice size is optimized" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(@sizeOf(?[]u8) == @sizeOf([]u8));
+    try expect(@size_of(?[]u8) == @size_of([]u8));
     var a: ?[]const u8 = null;
     try expect(a == null);
     a = "hello";
-    try expectEqualStrings(a.?, "hello");
+    try expect_equal_strings(a.?, "hello");
 }
 
 test "Optional slice passed to function" {
@@ -559,10 +559,10 @@ test "Optional slice passed to function" {
 
     const S = struct {
         fn foo(a: ?[]const u8) !void {
-            try std.testing.expectEqualStrings(a.?, "foo");
+            try std.testing.expect_equal_strings(a.?, "foo");
         }
         fn bar(a: ?[]allowzero const u8) !void {
-            try std.testing.expectEqualStrings(@ptrCast(a.?), "bar");
+            try std.testing.expect_equal_strings(@ptr_cast(a.?), "bar");
         }
     };
     try S.foo("foo");
@@ -610,7 +610,7 @@ test "cast slice to const slice nested in error union and optional" {
             return inner();
         }
     };
-    try std.testing.expectError(error.Foo, S.outer());
+    try std.testing.expect_error(error.Foo, S.outer());
 }
 
 test "variable of optional of noreturn" {
@@ -618,7 +618,7 @@ test "variable of optional of noreturn" {
 
     var null_opv: ?noreturn = null;
     _ = &null_opv;
-    try std.testing.expectEqual(@as(?noreturn, null), null_opv);
+    try std.testing.expect_equal(@as(?noreturn, null), null_opv);
 }
 
 test "copied optional doesn't alias source" {
@@ -657,5 +657,5 @@ test "result location initialization of optional with OPV payload" {
 
     var c: ?S = .{ .x = 0 };
     _ = &c;
-    try expectEqual(0, (c orelse return error.TestFailed).x);
+    try expect_equal(0, (c orelse return error.TestFailed).x);
 }

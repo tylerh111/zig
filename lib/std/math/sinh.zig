@@ -8,7 +8,7 @@ const std = @import("../std.zig");
 const math = std.math;
 const expect = std.testing.expect;
 const expo2 = @import("expo2.zig").expo2;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 
 /// Returns the hyperbolic sine of x.
 ///
@@ -21,7 +21,7 @@ pub fn sinh(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => sinh32(x),
         f64 => sinh64(x),
-        else => @compileError("sinh not implemented for " ++ @typeName(T)),
+        else => @compile_error("sinh not implemented for " ++ @type_name(T)),
     };
 }
 
@@ -29,11 +29,11 @@ pub fn sinh(x: anytype) @TypeOf(x) {
 //         = (exp(x) - 1 + (exp(x) - 1) / exp(x)) / 2
 //         = x + x^3 / 6 + o(x^5)
 fn sinh32(x: f32) f32 {
-    const u = @as(u32, @bitCast(x));
+    const u = @as(u32, @bit_cast(x));
     const ux = u & 0x7FFFFFFF;
-    const ax = @as(f32, @bitCast(ux));
+    const ax = @as(f32, @bit_cast(ux));
 
-    if (x == 0.0 or math.isNan(x)) {
+    if (x == 0.0 or math.is_nan(x)) {
         return x;
     }
 
@@ -60,11 +60,11 @@ fn sinh32(x: f32) f32 {
 }
 
 fn sinh64(x: f64) f64 {
-    const u = @as(u64, @bitCast(x));
-    const w = @as(u32, @intCast(u >> 32)) & (maxInt(u32) >> 1);
-    const ax = @as(f64, @bitCast(u & (maxInt(u64) >> 1)));
+    const u = @as(u64, @bit_cast(x));
+    const w = @as(u32, @int_cast(u >> 32)) & (max_int(u32) >> 1);
+    const ax = @as(f64, @bit_cast(u & (max_int(u64) >> 1)));
 
-    if (x == 0.0 or math.isNan(x)) {
+    if (x == 0.0 or math.is_nan(x)) {
         return x;
     }
 
@@ -99,41 +99,41 @@ test sinh {
 test sinh32 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f32, sinh32(0.0), 0.0, epsilon));
-    try expect(math.approxEqAbs(f32, sinh32(0.2), 0.201336, epsilon));
-    try expect(math.approxEqAbs(f32, sinh32(0.8923), 1.015512, epsilon));
-    try expect(math.approxEqAbs(f32, sinh32(1.5), 2.129279, epsilon));
-    try expect(math.approxEqAbs(f32, sinh32(-0.0), -0.0, epsilon));
-    try expect(math.approxEqAbs(f32, sinh32(-0.2), -0.201336, epsilon));
-    try expect(math.approxEqAbs(f32, sinh32(-0.8923), -1.015512, epsilon));
-    try expect(math.approxEqAbs(f32, sinh32(-1.5), -2.129279, epsilon));
+    try expect(math.approx_eq_abs(f32, sinh32(0.0), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f32, sinh32(0.2), 0.201336, epsilon));
+    try expect(math.approx_eq_abs(f32, sinh32(0.8923), 1.015512, epsilon));
+    try expect(math.approx_eq_abs(f32, sinh32(1.5), 2.129279, epsilon));
+    try expect(math.approx_eq_abs(f32, sinh32(-0.0), -0.0, epsilon));
+    try expect(math.approx_eq_abs(f32, sinh32(-0.2), -0.201336, epsilon));
+    try expect(math.approx_eq_abs(f32, sinh32(-0.8923), -1.015512, epsilon));
+    try expect(math.approx_eq_abs(f32, sinh32(-1.5), -2.129279, epsilon));
 }
 
 test sinh64 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f64, sinh64(0.0), 0.0, epsilon));
-    try expect(math.approxEqAbs(f64, sinh64(0.2), 0.201336, epsilon));
-    try expect(math.approxEqAbs(f64, sinh64(0.8923), 1.015512, epsilon));
-    try expect(math.approxEqAbs(f64, sinh64(1.5), 2.129279, epsilon));
-    try expect(math.approxEqAbs(f64, sinh64(-0.0), -0.0, epsilon));
-    try expect(math.approxEqAbs(f64, sinh64(-0.2), -0.201336, epsilon));
-    try expect(math.approxEqAbs(f64, sinh64(-0.8923), -1.015512, epsilon));
-    try expect(math.approxEqAbs(f64, sinh64(-1.5), -2.129279, epsilon));
+    try expect(math.approx_eq_abs(f64, sinh64(0.0), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f64, sinh64(0.2), 0.201336, epsilon));
+    try expect(math.approx_eq_abs(f64, sinh64(0.8923), 1.015512, epsilon));
+    try expect(math.approx_eq_abs(f64, sinh64(1.5), 2.129279, epsilon));
+    try expect(math.approx_eq_abs(f64, sinh64(-0.0), -0.0, epsilon));
+    try expect(math.approx_eq_abs(f64, sinh64(-0.2), -0.201336, epsilon));
+    try expect(math.approx_eq_abs(f64, sinh64(-0.8923), -1.015512, epsilon));
+    try expect(math.approx_eq_abs(f64, sinh64(-1.5), -2.129279, epsilon));
 }
 
 test "sinh32.special" {
-    try expect(math.isPositiveZero(sinh32(0.0)));
-    try expect(math.isNegativeZero(sinh32(-0.0)));
-    try expect(math.isPositiveInf(sinh32(math.inf(f32))));
-    try expect(math.isNegativeInf(sinh32(-math.inf(f32))));
-    try expect(math.isNan(sinh32(math.nan(f32))));
+    try expect(math.is_positive_zero(sinh32(0.0)));
+    try expect(math.is_negative_zero(sinh32(-0.0)));
+    try expect(math.is_positive_inf(sinh32(math.inf(f32))));
+    try expect(math.is_negative_inf(sinh32(-math.inf(f32))));
+    try expect(math.is_nan(sinh32(math.nan(f32))));
 }
 
 test "sinh64.special" {
-    try expect(math.isPositiveZero(sinh64(0.0)));
-    try expect(math.isNegativeZero(sinh64(-0.0)));
-    try expect(math.isPositiveInf(sinh64(math.inf(f64))));
-    try expect(math.isNegativeInf(sinh64(-math.inf(f64))));
-    try expect(math.isNan(sinh64(math.nan(f64))));
+    try expect(math.is_positive_zero(sinh64(0.0)));
+    try expect(math.is_negative_zero(sinh64(-0.0)));
+    try expect(math.is_positive_inf(sinh64(math.inf(f64))));
+    try expect(math.is_negative_inf(sinh64(-math.inf(f64))));
+    try expect(math.is_nan(sinh64(math.nan(f64))));
 }

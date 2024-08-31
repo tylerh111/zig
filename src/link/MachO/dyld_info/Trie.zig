@@ -86,7 +86,7 @@ pub const Node = struct {
     fn put(self: *Node, allocator: Allocator, label: []const u8) !*Node {
         // Check for match with edges from this node.
         for (self.edges.items) |*edge| {
-            const match = mem.indexOfDiff(u8, edge.label, label) orelse return edge.to;
+            const match = mem.index_of_diff(u8, edge.label, label) orelse return edge.to;
             if (match == 0) continue;
             if (match == edge.label.len) return edge.to.put(allocator, label[match..]);
 
@@ -128,19 +128,19 @@ pub const Node = struct {
     /// Recursively parses the node from the input byte stream.
     fn read(self: *Node, allocator: Allocator, reader: anytype) Trie.ReadError!usize {
         self.node_dirty = true;
-        const trie_offset = try reader.context.getPos();
+        const trie_offset = try reader.context.get_pos();
         self.trie_offset = trie_offset;
 
         var nread: usize = 0;
 
-        const node_size = try leb.readULEB128(u64, reader);
+        const node_size = try leb.read_uleb128(u64, reader);
         if (node_size > 0) {
-            const export_flags = try leb.readULEB128(u64, reader);
+            const export_flags = try leb.read_uleb128(u64, reader);
             // TODO Parse special flags.
             assert(export_flags & macho.EXPORT_SYMBOL_FLAGS_REEXPORT == 0 and
                 export_flags & macho.EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER == 0);
 
-            const vmaddr_offset = try leb.readULEB128(u64, reader);
+            const vmaddr_offset = try leb.read_uleb128(u64, reader);
 
             self.terminal_info = .{
                 .export_flags = export_flags,
@@ -148,31 +148,31 @@ pub const Node = struct {
             };
         }
 
-        const nedges = try reader.readByte();
+        const nedges = try reader.read_byte();
         self.base.node_count += nedges;
 
-        nread += (try reader.context.getPos()) - trie_offset;
+        nread += (try reader.context.get_pos()) - trie_offset;
 
         var i: usize = 0;
         while (i < nedges) : (i += 1) {
-            const edge_start_pos = try reader.context.getPos();
+            const edge_start_pos = try reader.context.get_pos();
 
             const label = blk: {
                 var label_buf = std.ArrayList(u8).init(allocator);
                 while (true) {
-                    const next = try reader.readByte();
+                    const next = try reader.read_byte();
                     if (next == @as(u8, 0))
                         break;
                     try label_buf.append(next);
                 }
-                break :blk try label_buf.toOwnedSlice();
+                break :blk try label_buf.to_owned_slice();
             };
 
-            const seek_to = try leb.readULEB128(u64, reader);
-            const return_pos = try reader.context.getPos();
+            const seek_to = try leb.read_uleb128(u64, reader);
+            const return_pos = try reader.context.get_pos();
 
             nread += return_pos - edge_start_pos;
-            try reader.context.seekTo(seek_to);
+            try reader.context.seek_to(seek_to);
 
             const node = try allocator.create(Node);
             node.* = .{ .base = self.base };
@@ -183,7 +183,7 @@ pub const Node = struct {
                 .to = node,
                 .label = label,
             });
-            try reader.context.seekTo(return_pos);
+            try reader.context.seek_to(return_pos);
         }
 
         return nread;
@@ -199,34 +199,34 @@ pub const Node = struct {
         assert(!self.node_dirty);
         if (self.terminal_info) |info| {
             // Terminal node info: encode export flags and vmaddr offset of this symbol.
-            var info_buf: [@sizeOf(u64) * 2]u8 = undefined;
-            var info_stream = std.io.fixedBufferStream(&info_buf);
+            var info_buf: [@size_of(u64) * 2]u8 = undefined;
+            var info_stream = std.io.fixed_buffer_stream(&info_buf);
             // TODO Implement for special flags.
             assert(info.export_flags & macho.EXPORT_SYMBOL_FLAGS_REEXPORT == 0 and
                 info.export_flags & macho.EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER == 0);
-            try leb.writeULEB128(info_stream.writer(), info.export_flags);
-            try leb.writeULEB128(info_stream.writer(), info.vmaddr_offset);
+            try leb.write_uleb128(info_stream.writer(), info.export_flags);
+            try leb.write_uleb128(info_stream.writer(), info.vmaddr_offset);
 
             // Encode the size of the terminal node info.
-            var size_buf: [@sizeOf(u64)]u8 = undefined;
-            var size_stream = std.io.fixedBufferStream(&size_buf);
-            try leb.writeULEB128(size_stream.writer(), info_stream.pos);
+            var size_buf: [@size_of(u64)]u8 = undefined;
+            var size_stream = std.io.fixed_buffer_stream(&size_buf);
+            try leb.write_uleb128(size_stream.writer(), info_stream.pos);
 
             // Now, write them to the output stream.
-            try writer.writeAll(size_buf[0..size_stream.pos]);
-            try writer.writeAll(info_buf[0..info_stream.pos]);
+            try writer.write_all(size_buf[0..size_stream.pos]);
+            try writer.write_all(info_buf[0..info_stream.pos]);
         } else {
             // Non-terminal node is delimited by 0 byte.
-            try writer.writeByte(0);
+            try writer.write_byte(0);
         }
         // Write number of edges (max legal number of edges is 256).
-        try writer.writeByte(@as(u8, @intCast(self.edges.items.len)));
+        try writer.write_byte(@as(u8, @int_cast(self.edges.items.len)));
 
         for (self.edges.items) |edge| {
             // Write edge label and offset to next node in trie.
-            try writer.writeAll(edge.label);
-            try writer.writeByte(0);
-            try leb.writeULEB128(writer, edge.to.trie_offset.?);
+            try writer.write_all(edge.label);
+            try writer.write_byte(0);
+            try leb.write_uleb128(writer, edge.to.trie_offset.?);
         }
     }
 
@@ -241,14 +241,14 @@ pub const Node = struct {
 
     /// Updates offset of this node in the output byte stream.
     fn finalize(self: *Node, offset_in_trie: u64) !FinalizeResult {
-        var stream = std.io.countingWriter(std.io.null_writer);
+        var stream = std.io.counting_writer(std.io.null_writer);
         const writer = stream.writer();
 
         var node_size: u64 = 0;
         if (self.terminal_info) |info| {
-            try leb.writeULEB128(writer, info.export_flags);
-            try leb.writeULEB128(writer, info.vmaddr_offset);
-            try leb.writeULEB128(writer, stream.bytes_written);
+            try leb.write_uleb128(writer, info.export_flags);
+            try leb.write_uleb128(writer, info.vmaddr_offset);
+            try leb.write_uleb128(writer, stream.bytes_written);
         } else {
             node_size += 1; // 0x0 for non-terminal nodes
         }
@@ -257,7 +257,7 @@ pub const Node = struct {
         for (self.edges.items) |edge| {
             const next_node_offset = edge.to.trie_offset orelse 0;
             node_size += edge.label.len + 1;
-            try leb.writeULEB128(writer, next_node_offset);
+            try leb.write_uleb128(writer, next_node_offset);
         }
 
         const trie_offset = self.trie_offset orelse 0;
@@ -324,19 +324,19 @@ pub fn put(self: *Trie, allocator: Allocator, symbol: ExportSymbol) !void {
 pub fn finalize(self: *Trie, allocator: Allocator) !void {
     if (!self.trie_dirty) return;
 
-    self.ordered_nodes.shrinkRetainingCapacity(0);
-    try self.ordered_nodes.ensureTotalCapacity(allocator, self.node_count);
+    self.ordered_nodes.shrink_retaining_capacity(0);
+    try self.ordered_nodes.ensure_total_capacity(allocator, self.node_count);
 
     var fifo = std.fifo.LinearFifo(*Node, .Dynamic).init(allocator);
     defer fifo.deinit();
 
-    try fifo.writeItem(self.root.?);
+    try fifo.write_item(self.root.?);
 
-    while (fifo.readItem()) |next| {
+    while (fifo.read_item()) |next| {
         for (next.edges.items) |*edge| {
-            try fifo.writeItem(edge.to);
+            try fifo.write_item(edge.to);
         }
-        self.ordered_nodes.appendAssumeCapacity(next);
+        self.ordered_nodes.append_assume_capacity(next);
     }
 
     var more: bool = true;
@@ -395,7 +395,7 @@ test "Trie node count" {
     defer trie.deinit(gpa);
     try trie.init(gpa);
 
-    try testing.expectEqual(@as(usize, 1), trie.node_count);
+    try testing.expect_equal(@as(usize, 1), trie.node_count);
     try testing.expect(trie.root != null);
 
     try trie.put(gpa, .{
@@ -403,7 +403,7 @@ test "Trie node count" {
         .vmaddr_offset = 0,
         .export_flags = 0,
     });
-    try testing.expectEqual(@as(usize, 2), trie.node_count);
+    try testing.expect_equal(@as(usize, 2), trie.node_count);
 
     // Inserting the same node shouldn't update the trie.
     try trie.put(gpa, .{
@@ -411,14 +411,14 @@ test "Trie node count" {
         .vmaddr_offset = 0,
         .export_flags = 0,
     });
-    try testing.expectEqual(@as(usize, 2), trie.node_count);
+    try testing.expect_equal(@as(usize, 2), trie.node_count);
 
     try trie.put(gpa, .{
         .name = "__mh_execute_header",
         .vmaddr_offset = 0x1000,
         .export_flags = 0,
     });
-    try testing.expectEqual(@as(usize, 4), trie.node_count);
+    try testing.expect_equal(@as(usize, 4), trie.node_count);
 
     // Inserting the same node shouldn't update the trie.
     try trie.put(gpa, .{
@@ -426,13 +426,13 @@ test "Trie node count" {
         .vmaddr_offset = 0x1000,
         .export_flags = 0,
     });
-    try testing.expectEqual(@as(usize, 4), trie.node_count);
+    try testing.expect_equal(@as(usize, 4), trie.node_count);
     try trie.put(gpa, .{
         .name = "_main",
         .vmaddr_offset = 0,
         .export_flags = 0,
     });
-    try testing.expectEqual(@as(usize, 4), trie.node_count);
+    try testing.expect_equal(@as(usize, 4), trie.node_count);
 }
 
 test "Trie basic" {
@@ -489,11 +489,11 @@ test "Trie basic" {
 fn expect_equal_hex_strings(expected: []const u8, given: []const u8) !void {
     assert(expected.len > 0);
     if (mem.eql(u8, expected, given)) return;
-    const expected_fmt = try std.fmt.allocPrint(testing.allocator, "{x}", .{std.fmt.fmtSliceHexLower(expected)});
+    const expected_fmt = try std.fmt.alloc_print(testing.allocator, "{x}", .{std.fmt.fmt_slice_hex_lower(expected)});
     defer testing.allocator.free(expected_fmt);
-    const given_fmt = try std.fmt.allocPrint(testing.allocator, "{x}", .{std.fmt.fmtSliceHexLower(given)});
+    const given_fmt = try std.fmt.alloc_print(testing.allocator, "{x}", .{std.fmt.fmt_slice_hex_lower(given)});
     defer testing.allocator.free(given_fmt);
-    const idx = mem.indexOfDiff(u8, expected_fmt, given_fmt).?;
+    const idx = mem.index_of_diff(u8, expected_fmt, given_fmt).?;
     const padding = try testing.allocator.alloc(u8, idx + 5);
     defer testing.allocator.free(padding);
     @memset(padding, ' ');
@@ -534,16 +534,16 @@ test "write Trie to a byte stream" {
 
     const buffer = try gpa.alloc(u8, trie.size);
     defer gpa.free(buffer);
-    var stream = std.io.fixedBufferStream(buffer);
+    var stream = std.io.fixed_buffer_stream(buffer);
     {
         _ = try trie.write(stream.writer());
-        try expectEqualHexStrings(&exp_buffer, buffer);
+        try expect_equal_hex_strings(&exp_buffer, buffer);
     }
     {
         // Writing finalized trie again should yield the same result.
-        try stream.seekTo(0);
+        try stream.seek_to(0);
         _ = try trie.write(stream.writer());
-        try expectEqualHexStrings(&exp_buffer, buffer);
+        try expect_equal_hex_strings(&exp_buffer, buffer);
     }
 }
 
@@ -561,7 +561,7 @@ test "parse Trie from byte stream" {
         0x3, 0x0, 0x80, 0x20, 0x0, // terminal node
     };
 
-    var in_stream = std.io.fixedBufferStream(&in_buffer);
+    var in_stream = std.io.fixed_buffer_stream(&in_buffer);
     var trie: Trie = .{};
     defer trie.deinit(gpa);
     try trie.init(gpa);
@@ -573,9 +573,9 @@ test "parse Trie from byte stream" {
 
     const out_buffer = try gpa.alloc(u8, trie.size);
     defer gpa.free(out_buffer);
-    var out_stream = std.io.fixedBufferStream(out_buffer);
+    var out_stream = std.io.fixed_buffer_stream(out_buffer);
     _ = try trie.write(out_stream.writer());
-    try expectEqualHexStrings(&in_buffer, out_buffer);
+    try expect_equal_hex_strings(&in_buffer, out_buffer);
 }
 
 test "ordering bug" {
@@ -605,8 +605,8 @@ test "ordering bug" {
 
     const buffer = try gpa.alloc(u8, trie.size);
     defer gpa.free(buffer);
-    var stream = std.io.fixedBufferStream(buffer);
+    var stream = std.io.fixed_buffer_stream(buffer);
     // Writing finalized trie again should yield the same result.
     _ = try trie.write(stream.writer());
-    try expectEqualHexStrings(&exp_buffer, buffer);
+    try expect_equal_hex_strings(&exp_buffer, buffer);
 }

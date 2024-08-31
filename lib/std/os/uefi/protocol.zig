@@ -33,5 +33,5 @@ pub const HiiPopup = @import("protocol/hii_popup.zig").HiiPopup;
 
 test {
     @setEvalBranchQuota(2000);
-    @import("std").testing.refAllDeclsRecursive(@This());
+    @import("std").testing.ref_all_decls_recursive(@This());
 }

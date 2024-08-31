@@ -13,7 +13,7 @@ pub fn main() !void {
     return error.TestFailed;
 }
 fn div0(a: i32, b: i32) i32 {
-    return @divTrunc(a, b);
+    return @div_trunc(a, b);
 }
 // run
 // backend=llvm

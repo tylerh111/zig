@@ -23,6 +23,6 @@ test asin {
     const a = Complex(f32).init(5, 3);
     const c = asin(a);
 
-    try testing.expect(math.approxEqAbs(f32, c.re, 1.023822, epsilon));
-    try testing.expect(math.approxEqAbs(f32, c.im, 2.452914, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.re, 1.023822, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.im, 2.452914, epsilon));
 }

@@ -80,7 +80,7 @@ fn hash(b: *const [4]u8) u32 {
 }
 
 fn hashu(v: u32) u32 {
-    return @intCast((v *% prime4) >> consts.lookup.shift);
+    return @int_cast((v *% prime4) >> consts.lookup.shift);
 }
 
 test add {
@@ -93,7 +93,7 @@ test add {
 
     var h: Self = .{};
     for (data, 0..) |_, i| {
-        const p = h.add(data[i..], @intCast(i));
+        const p = h.add(data[i..], @int_cast(i));
         if (i >= 8 and i < 24) {
             try expect(p == i - 8);
         } else {
@@ -107,19 +107,19 @@ test add {
     try expect(h.chain[2 + 8] == 2);
 }
 
-test bulkAdd {
+test bulk_add {
     const data = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
 
     // one by one
     var h: Self = .{};
     for (data, 0..) |_, i| {
-        _ = h.add(data[i..], @intCast(i));
+        _ = h.add(data[i..], @int_cast(i));
     }
 
     // in bulk
     var bh: Self = .{};
-    bh.bulkAdd(data, data.len, 0);
+    bh.bulk_add(data, data.len, 0);
 
-    try testing.expectEqualSlices(u16, &h.head, &bh.head);
-    try testing.expectEqualSlices(u16, &h.chain, &bh.chain);
+    try testing.expect_equal_slices(u16, &h.head, &bh.head);
+    try testing.expect_equal_slices(u16, &h.chain, &bh.chain);
 }

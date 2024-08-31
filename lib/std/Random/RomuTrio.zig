@@ -33,7 +33,7 @@ fn next(self: *RomuTrio) u64 {
 }
 
 pub fn seed_with_buf(self: *RomuTrio, buf: [24]u8) void {
-    const seed_buf = @as([3]u64, @bitCast(buf));
+    const seed_buf = @as([3]u64, @bit_cast(buf));
     self.x_state = seed_buf[0];
     self.y_state = seed_buf[1];
     self.z_state = seed_buf[2];
@@ -90,7 +90,7 @@ test "sequence" {
     };
 
     for (seq) |s| {
-        try std.testing.expectEqual(s, r.next());
+        try std.testing.expect_equal(s, r.next());
     }
 }
 
@@ -114,17 +114,17 @@ test fill {
     for (seq) |s| {
         var buf0: [8]u8 = undefined;
         var buf1: [7]u8 = undefined;
-        std.mem.writeInt(u64, &buf0, s, .little);
+        std.mem.write_int(u64, &buf0, s, .little);
         r.fill(&buf1);
         try std.testing.expect(std.mem.eql(u8, buf0[0..7], buf1[0..]));
     }
 }
 
 test "buf seeding test" {
-    const buf0 = @as([24]u8, @bitCast([3]u64{ 16294208416658607535, 13964609475759908645, 4703697494102998476 }));
+    const buf0 = @as([24]u8, @bit_cast([3]u64{ 16294208416658607535, 13964609475759908645, 4703697494102998476 }));
     const resulting_state = .{ .x = 16294208416658607535, .y = 13964609475759908645, .z = 4703697494102998476 };
     var r = RomuTrio.init(0);
-    r.seedWithBuf(buf0);
+    r.seed_with_buf(buf0);
     try std.testing.expect(r.x_state == resulting_state.x);
     try std.testing.expect(r.y_state == resulting_state.y);
     try std.testing.expect(r.z_state == resulting_state.z);

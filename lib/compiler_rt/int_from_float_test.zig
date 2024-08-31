@@ -41,9 +41,9 @@ fn test__fixunssfsi(a: f32, expected: u32) !void {
 }
 
 test "fixsfsi" {
-    try test__fixsfsi(-math.floatMax(f32), math.minInt(i32));
+    try test__fixsfsi(-math.float_max(f32), math.min_int(i32));
 
-    try test__fixsfsi(-0x1.FFFFFFFFFFFFFp+1023, math.minInt(i32));
+    try test__fixsfsi(-0x1.FFFFFFFFFFFFFp+1023, math.min_int(i32));
     try test__fixsfsi(-0x1.FFFFFFFFFFFFFp+1023, -0x80000000);
 
     try test__fixsfsi(-0x1.0000000000000p+127, -0x80000000);
@@ -70,9 +70,9 @@ test "fixsfsi" {
     try test__fixsfsi(-0.99, 0);
     try test__fixsfsi(-0.5, 0);
 
-    try test__fixsfsi(-math.floatMin(f32), 0);
+    try test__fixsfsi(-math.float_min(f32), 0);
     try test__fixsfsi(0.0, 0);
-    try test__fixsfsi(math.floatMin(f32), 0);
+    try test__fixsfsi(math.float_min(f32), 0);
     try test__fixsfsi(0.5, 0);
     try test__fixsfsi(0.99, 0);
     try test__fixsfsi(1.0, 1);
@@ -99,9 +99,9 @@ test "fixsfsi" {
     try test__fixsfsi(0x1.0000000000000p+127, 0x7FFFFFFF);
 
     try test__fixsfsi(0x1.FFFFFFFFFFFFFp+1023, 0x7FFFFFFF);
-    try test__fixsfsi(0x1.FFFFFFFFFFFFFp+1023, math.maxInt(i32));
+    try test__fixsfsi(0x1.FFFFFFFFFFFFFp+1023, math.max_int(i32));
 
-    try test__fixsfsi(math.floatMax(f32), math.maxInt(i32));
+    try test__fixsfsi(math.float_max(f32), math.max_int(i32));
 }
 
 test "fixunssfsi" {
@@ -144,9 +144,9 @@ fn test__fixunssfdi(a: f32, expected: u64) !void {
 }
 
 test "fixsfdi" {
-    try test__fixsfdi(-math.floatMax(f32), math.minInt(i64));
+    try test__fixsfdi(-math.float_max(f32), math.min_int(i64));
 
-    try test__fixsfdi(-0x1.FFFFFFFFFFFFFp+1023, math.minInt(i64));
+    try test__fixsfdi(-0x1.FFFFFFFFFFFFFp+1023, math.min_int(i64));
     try test__fixsfdi(-0x1.FFFFFFFFFFFFFp+1023, -0x8000000000000000);
 
     try test__fixsfdi(-0x1.0000000000000p+127, -0x8000000000000000);
@@ -168,9 +168,9 @@ test "fixsfdi" {
     try test__fixsfdi(-1.0, -1);
     try test__fixsfdi(-0.99, 0);
     try test__fixsfdi(-0.5, 0);
-    try test__fixsfdi(-math.floatMin(f32), 0);
+    try test__fixsfdi(-math.float_min(f32), 0);
     try test__fixsfdi(0.0, 0);
-    try test__fixsfdi(math.floatMin(f32), 0);
+    try test__fixsfdi(math.float_min(f32), 0);
     try test__fixsfdi(0.5, 0);
     try test__fixsfdi(0.99, 0);
     try test__fixsfdi(1.0, 1);
@@ -193,9 +193,9 @@ test "fixsfdi" {
     try test__fixsfdi(0x1.0000000000000p+127, 0x7FFFFFFFFFFFFFFF);
 
     try test__fixsfdi(0x1.FFFFFFFFFFFFFp+1023, 0x7FFFFFFFFFFFFFFF);
-    try test__fixsfdi(0x1.FFFFFFFFFFFFFp+1023, math.maxInt(i64));
+    try test__fixsfdi(0x1.FFFFFFFFFFFFFp+1023, math.max_int(i64));
 
-    try test__fixsfdi(math.floatMax(f32), math.maxInt(i64));
+    try test__fixsfdi(math.float_max(f32), math.max_int(i64));
 }
 
 test "fixunssfdi" {
@@ -237,9 +237,9 @@ fn test__fixunssfti(a: f32, expected: u128) !void {
 }
 
 test "fixsfti" {
-    try test__fixsfti(-math.floatMax(f32), math.minInt(i128));
+    try test__fixsfti(-math.float_max(f32), math.min_int(i128));
 
-    try test__fixsfti(-0x1.FFFFFFFFFFFFFp+1023, math.minInt(i128));
+    try test__fixsfti(-0x1.FFFFFFFFFFFFFp+1023, math.min_int(i128));
     try test__fixsfti(-0x1.FFFFFFFFFFFFFp+1023, -0x80000000000000000000000000000000);
 
     try test__fixsfti(-0x1.0000000000000p+127, -0x80000000000000000000000000000000);
@@ -269,9 +269,9 @@ test "fixsfti" {
     try test__fixsfti(-1.0, -1);
     try test__fixsfti(-0.99, 0);
     try test__fixsfti(-0.5, 0);
-    try test__fixsfti(-math.floatMin(f32), 0);
+    try test__fixsfti(-math.float_min(f32), 0);
     try test__fixsfti(0.0, 0);
-    try test__fixsfti(math.floatMin(f32), 0);
+    try test__fixsfti(math.float_min(f32), 0);
     try test__fixsfti(0.5, 0);
     try test__fixsfti(0.99, 0);
     try test__fixsfti(1.0, 1);
@@ -302,9 +302,9 @@ test "fixsfti" {
     try test__fixsfti(0x1.0000000000000p+127, 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
 
     try test__fixsfti(0x1.FFFFFFFFFFFFFp+1023, 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
-    try test__fixsfti(0x1.FFFFFFFFFFFFFp+1023, math.maxInt(i128));
+    try test__fixsfti(0x1.FFFFFFFFFFFFFp+1023, math.max_int(i128));
 
-    try test__fixsfti(math.floatMax(f32), math.maxInt(i128));
+    try test__fixsfti(math.float_max(f32), math.max_int(i128));
 }
 
 test "fixunssfti" {
@@ -339,8 +339,8 @@ test "fixunssfti" {
     try test__fixunssfti(-0x1.FFFFFCp+62, 0x0000000000000000);
     try test__fixunssfti(-0x1.FFFFFEp+126, 0x0000000000000000);
     try test__fixunssfti(-0x1.FFFFFCp+126, 0x0000000000000000);
-    try test__fixunssfti(math.floatMax(f32), 0xffffff00000000000000000000000000);
-    try test__fixunssfti(math.inf(f32), math.maxInt(u128));
+    try test__fixunssfti(math.float_max(f32), 0xffffff00000000000000000000000000);
+    try test__fixunssfti(math.inf(f32), math.max_int(u128));
 }
 
 fn test__fixdfsi(a: f64, expected: i32) !void {
@@ -354,9 +354,9 @@ fn test__fixunsdfsi(a: f64, expected: u32) !void {
 }
 
 test "fixdfsi" {
-    try test__fixdfsi(-math.floatMax(f64), math.minInt(i32));
+    try test__fixdfsi(-math.float_max(f64), math.min_int(i32));
 
-    try test__fixdfsi(-0x1.FFFFFFFFFFFFFp+1023, math.minInt(i32));
+    try test__fixdfsi(-0x1.FFFFFFFFFFFFFp+1023, math.min_int(i32));
     try test__fixdfsi(-0x1.FFFFFFFFFFFFFp+1023, -0x80000000);
 
     try test__fixdfsi(-0x1.0000000000000p+127, -0x80000000);
@@ -381,9 +381,9 @@ test "fixdfsi" {
     try test__fixdfsi(-1.0, -1);
     try test__fixdfsi(-0.99, 0);
     try test__fixdfsi(-0.5, 0);
-    try test__fixdfsi(-math.floatMin(f64), 0);
+    try test__fixdfsi(-math.float_min(f64), 0);
     try test__fixdfsi(0.0, 0);
-    try test__fixdfsi(math.floatMin(f64), 0);
+    try test__fixdfsi(math.float_min(f64), 0);
     try test__fixdfsi(0.5, 0);
     try test__fixdfsi(0.99, 0);
     try test__fixdfsi(1.0, 1);
@@ -409,9 +409,9 @@ test "fixdfsi" {
     try test__fixdfsi(0x1.0000000000000p+127, 0x7FFFFFFF);
 
     try test__fixdfsi(0x1.FFFFFFFFFFFFFp+1023, 0x7FFFFFFF);
-    try test__fixdfsi(0x1.FFFFFFFFFFFFFp+1023, math.maxInt(i32));
+    try test__fixdfsi(0x1.FFFFFFFFFFFFFp+1023, math.max_int(i32));
 
-    try test__fixdfsi(math.floatMax(f64), math.maxInt(i32));
+    try test__fixdfsi(math.float_max(f64), math.max_int(i32));
 }
 
 test "fixunsdfsi" {
@@ -457,9 +457,9 @@ fn test__fixunsdfdi(a: f64, expected: u64) !void {
 }
 
 test "fixdfdi" {
-    try test__fixdfdi(-math.floatMax(f64), math.minInt(i64));
+    try test__fixdfdi(-math.float_max(f64), math.min_int(i64));
 
-    try test__fixdfdi(-0x1.FFFFFFFFFFFFFp+1023, math.minInt(i64));
+    try test__fixdfdi(-0x1.FFFFFFFFFFFFFp+1023, math.min_int(i64));
     try test__fixdfdi(-0x1.FFFFFFFFFFFFFp+1023, -0x8000000000000000);
 
     try test__fixdfdi(-0x1.0000000000000p+127, -0x8000000000000000);
@@ -480,9 +480,9 @@ test "fixdfdi" {
     try test__fixdfdi(-1.0, -1);
     try test__fixdfdi(-0.99, 0);
     try test__fixdfdi(-0.5, 0);
-    try test__fixdfdi(-math.floatMin(f64), 0);
+    try test__fixdfdi(-math.float_min(f64), 0);
     try test__fixdfdi(0.0, 0);
-    try test__fixdfdi(math.floatMin(f64), 0);
+    try test__fixdfdi(math.float_min(f64), 0);
     try test__fixdfdi(0.5, 0);
     try test__fixdfdi(0.99, 0);
     try test__fixdfdi(1.0, 1);
@@ -504,9 +504,9 @@ test "fixdfdi" {
     try test__fixdfdi(0x1.0000000000000p+127, 0x7FFFFFFFFFFFFFFF);
 
     try test__fixdfdi(0x1.FFFFFFFFFFFFFp+1023, 0x7FFFFFFFFFFFFFFF);
-    try test__fixdfdi(0x1.FFFFFFFFFFFFFp+1023, math.maxInt(i64));
+    try test__fixdfdi(0x1.FFFFFFFFFFFFFp+1023, math.max_int(i64));
 
-    try test__fixdfdi(math.floatMax(f64), math.maxInt(i64));
+    try test__fixdfdi(math.float_max(f64), math.max_int(i64));
 }
 
 test "fixunsdfdi" {
@@ -552,9 +552,9 @@ fn test__fixunsdfti(a: f64, expected: u128) !void {
 }
 
 test "fixdfti" {
-    try test__fixdfti(-math.floatMax(f64), math.minInt(i128));
+    try test__fixdfti(-math.float_max(f64), math.min_int(i128));
 
-    try test__fixdfti(-0x1.FFFFFFFFFFFFFp+1023, math.minInt(i128));
+    try test__fixdfti(-0x1.FFFFFFFFFFFFFp+1023, math.min_int(i128));
     try test__fixdfti(-0x1.FFFFFFFFFFFFFp+1023, -0x80000000000000000000000000000000);
 
     try test__fixdfti(-0x1.0000000000000p+127, -0x80000000000000000000000000000000);
@@ -575,9 +575,9 @@ test "fixdfti" {
     try test__fixdfti(-1.0, -1);
     try test__fixdfti(-0.99, 0);
     try test__fixdfti(-0.5, 0);
-    try test__fixdfti(-math.floatMin(f64), 0);
+    try test__fixdfti(-math.float_min(f64), 0);
     try test__fixdfti(0.0, 0);
-    try test__fixdfti(math.floatMin(f64), 0);
+    try test__fixdfti(math.float_min(f64), 0);
     try test__fixdfti(0.5, 0);
     try test__fixdfti(0.99, 0);
     try test__fixdfti(1.0, 1);
@@ -599,9 +599,9 @@ test "fixdfti" {
     try test__fixdfti(0x1.0000000000000p+127, 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
 
     try test__fixdfti(0x1.FFFFFFFFFFFFFp+1023, 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
-    try test__fixdfti(0x1.FFFFFFFFFFFFFp+1023, math.maxInt(i128));
+    try test__fixdfti(0x1.FFFFFFFFFFFFFp+1023, math.max_int(i128));
 
-    try test__fixdfti(math.floatMax(f64), math.maxInt(i128));
+    try test__fixdfti(math.float_max(f64), math.max_int(i128));
 }
 
 test "fixunsdfti" {
@@ -654,9 +654,9 @@ fn test__fixunstfsi(a: f128, expected: u32) !void {
 }
 
 test "fixtfsi" {
-    try test__fixtfsi(-math.floatMax(f128), math.minInt(i32));
+    try test__fixtfsi(-math.float_max(f128), math.min_int(i32));
 
-    try test__fixtfsi(-0x1.FFFFFFFFFFFFFp+1023, math.minInt(i32));
+    try test__fixtfsi(-0x1.FFFFFFFFFFFFFp+1023, math.min_int(i32));
     try test__fixtfsi(-0x1.FFFFFFFFFFFFFp+1023, -0x80000000);
 
     try test__fixtfsi(-0x1.0000000000000p+127, -0x80000000);
@@ -682,9 +682,9 @@ test "fixtfsi" {
     try test__fixtfsi(-1.0, -1);
     try test__fixtfsi(-0.99, 0);
     try test__fixtfsi(-0.5, 0);
-    try test__fixtfsi(-math.floatMin(f32), 0);
+    try test__fixtfsi(-math.float_min(f32), 0);
     try test__fixtfsi(0.0, 0);
-    try test__fixtfsi(math.floatMin(f32), 0);
+    try test__fixtfsi(math.float_min(f32), 0);
     try test__fixtfsi(0.5, 0);
     try test__fixtfsi(0.99, 0);
     try test__fixtfsi(1.0, 1);
@@ -711,9 +711,9 @@ test "fixtfsi" {
     try test__fixtfsi(0x1.0000000000000p+127, 0x7FFFFFFF);
 
     try test__fixtfsi(0x1.FFFFFFFFFFFFFp+1023, 0x7FFFFFFF);
-    try test__fixtfsi(0x1.FFFFFFFFFFFFFp+1023, math.maxInt(i32));
+    try test__fixtfsi(0x1.FFFFFFFFFFFFFp+1023, math.max_int(i32));
 
-    try test__fixtfsi(math.floatMax(f128), math.maxInt(i32));
+    try test__fixtfsi(math.float_max(f128), math.max_int(i32));
 }
 
 test "fixunstfsi" {
@@ -740,9 +740,9 @@ fn test__fixunstfdi(a: f128, expected: u64) !void {
 }
 
 test "fixtfdi" {
-    try test__fixtfdi(-math.floatMax(f128), math.minInt(i64));
+    try test__fixtfdi(-math.float_max(f128), math.min_int(i64));
 
-    try test__fixtfdi(-0x1.FFFFFFFFFFFFFp+1023, math.minInt(i64));
+    try test__fixtfdi(-0x1.FFFFFFFFFFFFFp+1023, math.min_int(i64));
     try test__fixtfdi(-0x1.FFFFFFFFFFFFFp+1023, -0x8000000000000000);
 
     try test__fixtfdi(-0x1.0000000000000p+127, -0x8000000000000000);
@@ -768,9 +768,9 @@ test "fixtfdi" {
     try test__fixtfdi(-1.0, -1);
     try test__fixtfdi(-0.99, 0);
     try test__fixtfdi(-0.5, 0);
-    try test__fixtfdi(-math.floatMin(f64), 0);
+    try test__fixtfdi(-math.float_min(f64), 0);
     try test__fixtfdi(0.0, 0);
-    try test__fixtfdi(math.floatMin(f64), 0);
+    try test__fixtfdi(math.float_min(f64), 0);
     try test__fixtfdi(0.5, 0);
     try test__fixtfdi(0.99, 0);
     try test__fixtfdi(1.0, 1);
@@ -797,9 +797,9 @@ test "fixtfdi" {
     try test__fixtfdi(0x1.0000000000000p+127, 0x7FFFFFFFFFFFFFFF);
 
     try test__fixtfdi(0x1.FFFFFFFFFFFFFp+1023, 0x7FFFFFFFFFFFFFFF);
-    try test__fixtfdi(0x1.FFFFFFFFFFFFFp+1023, math.maxInt(i64));
+    try test__fixtfdi(0x1.FFFFFFFFFFFFFp+1023, math.max_int(i64));
 
-    try test__fixtfdi(math.floatMax(f128), math.maxInt(i64));
+    try test__fixtfdi(math.float_max(f128), math.max_int(i64));
 }
 
 test "fixunstfdi" {
@@ -855,9 +855,9 @@ fn test__fixunstfti(a: f128, expected: u128) !void {
 }
 
 test "fixtfti" {
-    try test__fixtfti(-math.floatMax(f128), math.minInt(i128));
+    try test__fixtfti(-math.float_max(f128), math.min_int(i128));
 
-    try test__fixtfti(-0x1.FFFFFFFFFFFFFp+1023, math.minInt(i128));
+    try test__fixtfti(-0x1.FFFFFFFFFFFFFp+1023, math.min_int(i128));
     try test__fixtfti(-0x1.FFFFFFFFFFFFFp+1023, -0x80000000000000000000000000000000);
 
     try test__fixtfti(-0x1.0000000000000p+127, -0x80000000000000000000000000000000);
@@ -878,9 +878,9 @@ test "fixtfti" {
     try test__fixtfti(-1.0, -1);
     try test__fixtfti(-0.99, 0);
     try test__fixtfti(-0.5, 0);
-    try test__fixtfti(-math.floatMin(f128), 0);
+    try test__fixtfti(-math.float_min(f128), 0);
     try test__fixtfti(0.0, 0);
-    try test__fixtfti(math.floatMin(f128), 0);
+    try test__fixtfti(math.float_min(f128), 0);
     try test__fixtfti(0.5, 0);
     try test__fixtfti(0.99, 0);
     try test__fixtfti(1.0, 1);
@@ -902,9 +902,9 @@ test "fixtfti" {
     try test__fixtfti(0x1.0000000000000p+127, 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
 
     try test__fixtfti(0x1.FFFFFFFFFFFFFp+1023, 0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);
-    try test__fixtfti(0x1.FFFFFFFFFFFFFp+1023, math.maxInt(i128));
+    try test__fixtfti(0x1.FFFFFFFFFFFFFp+1023, math.max_int(i128));
 
-    try test__fixtfti(math.floatMax(f128), math.maxInt(i128));
+    try test__fixtfti(math.float_max(f128), math.max_int(i128));
 }
 
 test "fixunstfti" {
@@ -936,8 +936,8 @@ fn test__fixunshfti(a: f16, expected: u128) !void {
 }
 
 test "fixunshfti for f16" {
-    try test__fixunshfti(math.inf(f16), math.maxInt(u128));
-    try test__fixunshfti(math.floatMax(f16), 65504);
+    try test__fixunshfti(math.inf(f16), math.max_int(u128));
+    try test__fixunshfti(math.float_max(f16), 65504);
 }
 
 fn test__fixunsxfti(a: f80, expected: u128) !void {
@@ -946,7 +946,7 @@ fn test__fixunsxfti(a: f80, expected: u128) !void {
 }
 
 test "fixunsxfti for f80" {
-    try test__fixunsxfti(math.inf(f80), math.maxInt(u128));
-    try test__fixunsxfti(math.floatMax(f80), math.maxInt(u128));
-    try test__fixunsxfti(math.maxInt(u64), math.maxInt(u64));
+    try test__fixunsxfti(math.inf(f80), math.max_int(u128));
+    try test__fixunsxfti(math.float_max(f80), math.max_int(u128));
+    try test__fixunsxfti(math.max_int(u64), math.max_int(u64));
 }

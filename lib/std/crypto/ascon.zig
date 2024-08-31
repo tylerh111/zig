@@ -35,8 +35,8 @@ pub fn State(comptime endian: std.builtin.Endian) type {
         /// Initialize the state from a slice of bytes.
         pub fn init(initial_state: [block_bytes]u8) Self {
             var state = Self{ .st = undefined };
-            @memcpy(state.asBytes(), &initial_state);
-            state.endianSwap();
+            @memcpy(state.as_bytes(), &initial_state);
+            state.endian_swap();
             return state;
         }
 
@@ -69,13 +69,13 @@ pub fn State(comptime endian: std.builtin.Endian) type {
 
         /// A representation of the state as bytes. The byte order is architecture-dependent.
         pub fn as_bytes(self: *Self) *[block_bytes]u8 {
-            return mem.asBytes(&self.st);
+            return mem.as_bytes(&self.st);
         }
 
         /// Byte-swap the entire state if the architecture doesn't match the required endianness.
         pub fn endian_swap(self: *Self) void {
             for (&self.st) |*w| {
-                w.* = mem.toNative(u64, w.*, endian);
+                w.* = mem.to_native(u64, w.*, endian);
             }
         }
 
@@ -83,12 +83,12 @@ pub fn State(comptime endian: std.builtin.Endian) type {
         pub fn set_bytes(self: *Self, bytes: []const u8) void {
             var i: usize = 0;
             while (i + 8 <= bytes.len) : (i += 8) {
-                self.st[i / 8] = mem.readInt(u64, bytes[i..][0..8], endian);
+                self.st[i / 8] = mem.read_int(u64, bytes[i..][0..8], endian);
             }
             if (i < bytes.len) {
                 var padded = [_]u8{0} ** 8;
                 @memcpy(padded[0 .. bytes.len - i], bytes[i..]);
-                self.st[i / 8] = mem.readInt(u64, padded[0..], endian);
+                self.st[i / 8] = mem.read_int(u64, padded[0..], endian);
             }
         }
 
@@ -105,12 +105,12 @@ pub fn State(comptime endian: std.builtin.Endian) type {
         pub fn add_bytes(self: *Self, bytes: []const u8) void {
             var i: usize = 0;
             while (i + 8 <= bytes.len) : (i += 8) {
-                self.st[i / 8] ^= mem.readInt(u64, bytes[i..][0..8], endian);
+                self.st[i / 8] ^= mem.read_int(u64, bytes[i..][0..8], endian);
             }
             if (i < bytes.len) {
                 var padded = [_]u8{0} ** 8;
                 @memcpy(padded[0 .. bytes.len - i], bytes[i..]);
-                self.st[i / 8] ^= mem.readInt(u64, padded[0..], endian);
+                self.st[i / 8] ^= mem.read_int(u64, padded[0..], endian);
             }
         }
 
@@ -118,11 +118,11 @@ pub fn State(comptime endian: std.builtin.Endian) type {
         pub fn extract_bytes(self: *Self, out: []u8) void {
             var i: usize = 0;
             while (i + 8 <= out.len) : (i += 8) {
-                mem.writeInt(u64, out[i..][0..8], self.st[i / 8], endian);
+                mem.write_int(u64, out[i..][0..8], self.st[i / 8], endian);
             }
             if (i < out.len) {
                 var padded = [_]u8{0} ** 8;
-                mem.writeInt(u64, padded[0..], self.st[i / 8], endian);
+                mem.write_int(u64, padded[0..], self.st[i / 8], endian);
                 @memcpy(out[i..], padded[0 .. out.len - i]);
             }
         }
@@ -133,14 +133,14 @@ pub fn State(comptime endian: std.builtin.Endian) type {
 
             var i: usize = 0;
             while (i + 8 <= in.len) : (i += 8) {
-                const x = mem.readInt(u64, in[i..][0..8], native_endian) ^ mem.nativeTo(u64, self.st[i / 8], endian);
-                mem.writeInt(u64, out[i..][0..8], x, native_endian);
+                const x = mem.read_int(u64, in[i..][0..8], native_endian) ^ mem.native_to(u64, self.st[i / 8], endian);
+                mem.write_int(u64, out[i..][0..8], x, native_endian);
             }
             if (i < in.len) {
                 var padded = [_]u8{0} ** 8;
                 @memcpy(padded[0 .. in.len - i], in[i..]);
-                const x = mem.readInt(u64, &padded, native_endian) ^ mem.nativeTo(u64, self.st[i / 8], endian);
-                mem.writeInt(u64, &padded, x, native_endian);
+                const x = mem.read_int(u64, &padded, native_endian) ^ mem.native_to(u64, self.st[i / 8], endian);
+                mem.write_int(u64, &padded, x, native_endian);
                 @memcpy(out[i..], padded[0 .. in.len - i]);
             }
         }
@@ -152,7 +152,7 @@ pub fn State(comptime endian: std.builtin.Endian) type {
 
         /// Clear the entire state, disabling compiler optimizations.
         pub fn secure_zero(self: *Self) void {
-            std.crypto.utils.secureZero(u64, &self.st);
+            std.crypto.utils.secure_zero(u64, &self.st);
         }
 
         /// Apply a reduced-round permutation to the state.
@@ -165,7 +165,7 @@ pub fn State(comptime endian: std.builtin.Endian) type {
 
         /// Apply a full-round permutation to the state.
         pub inline fn permute(state: *Self) void {
-            state.permuteR(12);
+            state.permute_r(12);
         }
 
         /// Apply a permutation to the state and prevent backtracking.
@@ -175,7 +175,7 @@ pub fn State(comptime endian: std.builtin.Endian) type {
             debug.assert(capacity > 0 and capacity % 8 == 0); // capacity must be a multiple of 64 bits
             var mask: [capacity / 8]u64 = undefined;
             inline for (&mask, state.st[state.st.len - mask.len ..]) |*m, x| m.* = x;
-            state.permuteR(rounds);
+            state.permute_r(rounds);
             inline for (mask, state.st[state.st.len - mask.len ..]) |m, *x| x.* ^= m;
         }
 
@@ -219,20 +219,20 @@ test "ascon" {
     var st = Ascon.init(bytes);
     var out: [Ascon.block_bytes]u8 = undefined;
     st.permute();
-    st.extractBytes(&out);
+    st.extract_bytes(&out);
     const expected1 = [_]u8{ 148, 147, 49, 226, 218, 221, 208, 113, 186, 94, 96, 10, 183, 219, 119, 150, 169, 206, 65, 18, 215, 97, 78, 106, 118, 81, 211, 150, 52, 17, 117, 64, 216, 45, 148, 240, 65, 181, 90, 180 };
-    try testing.expectEqualSlices(u8, &expected1, &out);
+    try testing.expect_equal_slices(u8, &expected1, &out);
     st.clear(0, 10);
-    st.extractBytes(&out);
+    st.extract_bytes(&out);
     const expected2 = [_]u8{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 169, 206, 65, 18, 215, 97, 78, 106, 118, 81, 211, 150, 52, 17, 117, 64, 216, 45, 148, 240, 65, 181, 90, 180 };
-    try testing.expectEqualSlices(u8, &expected2, &out);
-    st.addByte(1, 5);
-    st.addByte(2, 5);
-    st.extractBytes(&out);
+    try testing.expect_equal_slices(u8, &expected2, &out);
+    st.add_byte(1, 5);
+    st.add_byte(2, 5);
+    st.extract_bytes(&out);
     const expected3 = [_]u8{ 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 169, 206, 65, 18, 215, 97, 78, 106, 118, 81, 211, 150, 52, 17, 117, 64, 216, 45, 148, 240, 65, 181, 90, 180 };
-    try testing.expectEqualSlices(u8, &expected3, &out);
-    st.addBytes(&bytes);
-    st.extractBytes(&out);
+    try testing.expect_equal_slices(u8, &expected3, &out);
+    st.add_bytes(&bytes);
+    st.extract_bytes(&out);
     const expected4 = [_]u8{ 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 168, 207, 64, 19, 214, 96, 79, 107, 119, 80, 210, 151, 53, 16, 116, 65, 217, 44, 149, 241, 64, 180, 91, 181 };
-    try testing.expectEqualSlices(u8, &expected4, &out);
+    try testing.expect_equal_slices(u8, &expected4, &out);
 }

@@ -1,14 +1,14 @@
-//! We do this instead of @cImport because the self-hosted compiler is easier
+//! We do this instead of @c_import because the self-hosted compiler is easier
 //! to bootstrap if it does not depend on translate-c.
 
-/// Do not compare directly to .True, use toBool() instead.
+/// Do not compare directly to .True, use to_bool() instead.
 pub const Bool = enum(c_int) {
     False,
     True,
     _,
 
     pub fn from_bool(b: bool) Bool {
-        return @as(Bool, @enumFromInt(@intFromBool(b)));
+        return @as(Bool, @enumFromInt(@int_from_bool(b)));
     }
 
     pub fn to_bool(b: Bool) bool {
@@ -44,7 +44,7 @@ pub const Context = opaque {
     pub const getBrokenDebugInfo = ZigLLVMGetBrokenDebugInfo;
     extern fn ZigLLVMGetBrokenDebugInfo(C: *Context) bool;
 
-    pub const intType = LLVMIntTypeInContext;
+    pub const int_type = LLVMIntTypeInContext;
     extern fn LLVMIntTypeInContext(C: *Context, NumBits: c_uint) *Type;
 };
 

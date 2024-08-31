@@ -1,7 +1,7 @@
 //! subo - subtract overflow
 //! * return a-%b.
 //! * return if a-b overflows => 1 else => 0
-//! - suboXi4_generic as default
+//! - subo_xi4_generic as default
 
 const std = @import("std");
 const builtin = @import("builtin");
@@ -16,13 +16,13 @@ comptime {
 }
 
 pub fn __subosi4(a: i32, b: i32, overflow: *c_int) callconv(.C) i32 {
-    return suboXi4_generic(i32, a, b, overflow);
+    return subo_xi4_generic(i32, a, b, overflow);
 }
 pub fn __subodi4(a: i64, b: i64, overflow: *c_int) callconv(.C) i64 {
-    return suboXi4_generic(i64, a, b, overflow);
+    return subo_xi4_generic(i64, a, b, overflow);
 }
 pub fn __suboti4(a: i128, b: i128, overflow: *c_int) callconv(.C) i128 {
-    return suboXi4_generic(i128, a, b, overflow);
+    return subo_xi4_generic(i128, a, b, overflow);
 }
 
 inline fn subo_xi4_generic(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST {

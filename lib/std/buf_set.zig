@@ -22,7 +22,7 @@ pub const BufSet = struct {
 
     /// Free a BufSet along with all stored keys.
     pub fn deinit(self: *BufSet) void {
-        var it = self.hash_map.keyIterator();
+        var it = self.hash_map.key_iterator();
         while (it.next()) |key_ptr| {
             self.free(key_ptr.*);
         }
@@ -34,7 +34,7 @@ pub const BufSet = struct {
     /// copied, so the caller may delete or reuse the
     /// passed string immediately.
     pub fn insert(self: *BufSet, value: []const u8) !void {
-        const gop = try self.hash_map.getOrPut(value);
+        const gop = try self.hash_map.get_or_put(value);
         if (!gop.found_existing) {
             gop.key_ptr.* = self.copy(value) catch |err| {
                 _ = self.hash_map.remove(value);
@@ -50,7 +50,7 @@ pub const BufSet = struct {
 
     /// Remove an item from the set.
     pub fn remove(self: *BufSet, value: []const u8) void {
-        const kv = self.hash_map.fetchRemove(value) orelse return;
+        const kv = self.hash_map.fetch_remove(value) orelse return;
         self.free(kv.key);
     }
 
@@ -62,7 +62,7 @@ pub const BufSet = struct {
     /// Returns an iterator over the items stored in the set.
     /// Iteration order is arbitrary.
     pub fn iterator(self: *const BufSet) Iterator {
-        return self.hash_map.keyIterator();
+        return self.hash_map.key_iterator();
     }
 
     /// Get the allocator used by this set
@@ -75,9 +75,9 @@ pub const BufSet = struct {
         self: *const BufSet,
         new_allocator: Allocator,
     ) Allocator.Error!BufSet {
-        const cloned_hashmap = try self.hash_map.cloneWithAllocator(new_allocator);
+        const cloned_hashmap = try self.hash_map.clone_with_allocator(new_allocator);
         const cloned = BufSet{ .hash_map = cloned_hashmap };
-        var it = cloned.hash_map.keyIterator();
+        var it = cloned.hash_map.key_iterator();
         while (it.next()) |key_ptr| {
             key_ptr.* = try cloned.copy(key_ptr.*);
         }
@@ -87,7 +87,7 @@ pub const BufSet = struct {
 
     /// Creates a copy of this BufSet, using the same allocator.
     pub fn clone(self: *const BufSet) Allocator.Error!BufSet {
-        return self.cloneWithAllocator(self.allocator());
+        return self.clone_with_allocator(self.allocator());
     }
 
     test clone {
@@ -101,9 +101,9 @@ pub const BufSet = struct {
         try testing.expect(original.count() == 1);
         try testing.expect(cloned.count() == 0);
 
-        try testing.expectError(
+        try testing.expect_error(
             error.OutOfMemory,
-            original.cloneWithAllocator(testing.failing_allocator),
+            original.clone_with_allocator(testing.failing_allocator),
         );
     }
 
@@ -142,5 +142,5 @@ test "clone with arena" {
     try buf.insert("member1");
     try buf.insert("member2");
 
-    _ = try buf.cloneWithAllocator(arena.allocator());
+    _ = try buf.clone_with_allocator(arena.allocator());
 }

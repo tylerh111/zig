@@ -12,7 +12,7 @@ fn foo(comptime T: type, x: T) u8 {
     };
 }
 export fn entry() usize {
-    return @sizeOf(@TypeOf(foo(u32, 0)));
+    return @size_of(@TypeOf(foo(u32, 0)));
 }
 
 // error

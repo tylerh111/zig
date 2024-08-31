@@ -18,7 +18,7 @@ pub const State = enum {
 /// content state and the first byte of content is located at
 /// `bytes[result]`.
 pub fn feed(p: *HeadParser, bytes: []const u8) usize {
-    const vector_len: comptime_int = @max(std.simd.suggestVectorLength(u8) orelse 1, 8);
+    const vector_len: comptime_int = @max(std.simd.suggest_vector_length(u8) orelse 1, 8);
     var index: usize = 0;
 
     while (true) {
@@ -37,7 +37,7 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                 },
                 2 => {
                     const b16 = int16(bytes[index..][0..2]);
-                    const b8 = intShift(u8, b16);
+                    const b8 = int_shift(u8, b16);
 
                     switch (b8) {
                         '\r' => p.state = .seen_r,
@@ -55,8 +55,8 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                 },
                 3 => {
                     const b24 = int24(bytes[index..][0..3]);
-                    const b16 = intShift(u16, b24);
-                    const b8 = intShift(u8, b24);
+                    const b16 = int_shift(u16, b24);
+                    const b8 = int_shift(u8, b24);
 
                     switch (b8) {
                         '\r' => p.state = .seen_r,
@@ -79,9 +79,9 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                 },
                 4...vector_len - 1 => {
                     const b32 = int32(bytes[index..][0..4]);
-                    const b24 = intShift(u24, b32);
-                    const b16 = intShift(u16, b32);
-                    const b8 = intShift(u8, b32);
+                    const b24 = int_shift(u24, b32);
+                    const b16 = int_shift(u16, b32);
+                    const b8 = int_shift(u8, b32);
 
                     switch (b8) {
                         '\r' => p.state = .seen_r,
@@ -117,8 +117,8 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                         const SizeVector = @Vector(vector_len, u8);
 
                         const v: Vector = chunk.*;
-                        const matches_r: BitVector = @bitCast(v == @as(Vector, @splat('\r')));
-                        const matches_n: BitVector = @bitCast(v == @as(Vector, @splat('\n')));
+                        const matches_r: BitVector = @bit_cast(v == @as(Vector, @splat('\r')));
+                        const matches_n: BitVector = @bit_cast(v == @as(Vector, @splat('\n')));
                         const matches_or: SizeVector = matches_r | matches_n;
 
                         break :matches @reduce(.Add, matches_or);
@@ -139,7 +139,7 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                         },
                         2 => {
                             const b16 = int16(chunk[vector_len - 2 ..][0..2]);
-                            const b8 = intShift(u8, b16);
+                            const b8 = int_shift(u8, b16);
 
                             switch (b8) {
                                 '\r' => p.state = .seen_r,
@@ -155,8 +155,8 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                         },
                         3 => {
                             const b24 = int24(chunk[vector_len - 3 ..][0..3]);
-                            const b16 = intShift(u16, b24);
-                            const b8 = intShift(u8, b24);
+                            const b16 = int_shift(u16, b24);
+                            const b8 = int_shift(u8, b24);
 
                             switch (b8) {
                                 '\r' => p.state = .seen_r,
@@ -180,7 +180,7 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                                 const i = @as(u32, @truncate(i_usize));
 
                                 const b32 = int32(chunk[i..][0..4]);
-                                const b16 = intShift(u16, b32);
+                                const b16 = int_shift(u16, b32);
 
                                 if (b32 == int32("\r\n\r\n")) {
                                     p.state = .finished;
@@ -192,8 +192,8 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                             }
 
                             const b24 = int24(chunk[vector_len - 3 ..][0..3]);
-                            const b16 = intShift(u16, b24);
-                            const b8 = intShift(u8, b24);
+                            const b16 = int_shift(u16, b24);
+                            const b8 = int_shift(u8, b24);
 
                             switch (b8) {
                                 '\r' => p.state = .seen_r,
@@ -244,7 +244,7 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                 },
                 2 => {
                     const b16 = int16(bytes[index..][0..2]);
-                    const b8 = intShift(u8, b16);
+                    const b8 = int_shift(u8, b16);
 
                     switch (b8) {
                         '\r' => p.state = .seen_r,
@@ -263,8 +263,8 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                 },
                 else => {
                     const b24 = int24(bytes[index..][0..3]);
-                    const b16 = intShift(u16, b24);
-                    const b8 = intShift(u8, b24);
+                    const b16 = int_shift(u16, b24);
+                    const b8 = int_shift(u8, b24);
 
                     switch (b8) {
                         '\r' => p.state = .seen_r,
@@ -300,7 +300,7 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
                 },
                 else => {
                     const b16 = int16(bytes[index..][0..2]);
-                    const b8 = intShift(u8, b16);
+                    const b8 = int_shift(u8, b16);
 
                     switch (b8) {
                         '\r' => p.state = .seen_rnr,
@@ -337,15 +337,15 @@ pub fn feed(p: *HeadParser, bytes: []const u8) usize {
 }
 
 inline fn int16(array: *const [2]u8) u16 {
-    return @bitCast(array.*);
+    return @bit_cast(array.*);
 }
 
 inline fn int24(array: *const [3]u8) u24 {
-    return @bitCast(array.*);
+    return @bit_cast(array.*);
 }
 
 inline fn int32(array: *const [4]u8) u32 {
-    return @bitCast(array.*);
+    return @bit_cast(array.*);
 }
 
 inline fn int_shift(comptime T: type, x: anytype) T {
@@ -365,7 +365,7 @@ test feed {
 
     for (0..36) |i| {
         var p: HeadParser = .{};
-        try std.testing.expectEqual(i, p.feed(data[0..i]));
-        try std.testing.expectEqual(35 - i, p.feed(data[i..]));
+        try std.testing.expect_equal(i, p.feed(data[0..i]));
+        try std.testing.expect_equal(35 - i, p.feed(data[i..]));
     }
 }

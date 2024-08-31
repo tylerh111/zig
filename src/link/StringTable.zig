@@ -7,18 +7,18 @@ pub fn deinit(self: *Self, gpa: Allocator) void {
 }
 
 pub fn insert(self: *Self, gpa: Allocator, string: []const u8) !u32 {
-    const gop = try self.table.getOrPutContextAdapted(gpa, @as([]const u8, string), StringIndexAdapter{
+    const gop = try self.table.get_or_put_context_adapted(gpa, @as([]const u8, string), StringIndexAdapter{
         .bytes = &self.buffer,
     }, StringIndexContext{
         .bytes = &self.buffer,
     });
     if (gop.found_existing) return gop.key_ptr.*;
 
-    try self.buffer.ensureUnusedCapacity(gpa, string.len + 1);
-    const new_off = @as(u32, @intCast(self.buffer.items.len));
+    try self.buffer.ensure_unused_capacity(gpa, string.len + 1);
+    const new_off = @as(u32, @int_cast(self.buffer.items.len));
 
-    self.buffer.appendSliceAssumeCapacity(string);
-    self.buffer.appendAssumeCapacity(0);
+    self.buffer.append_slice_assume_capacity(string);
+    self.buffer.append_assume_capacity(0);
 
     gop.key_ptr.* = new_off;
 
@@ -26,14 +26,14 @@ pub fn insert(self: *Self, gpa: Allocator, string: []const u8) !u32 {
 }
 
 pub fn get_offset(self: *Self, string: []const u8) ?u32 {
-    return self.table.getKeyAdapted(string, StringIndexAdapter{
+    return self.table.get_key_adapted(string, StringIndexAdapter{
         .bytes = &self.buffer,
     });
 }
 
 pub fn get(self: Self, off: u32) ?[:0]const u8 {
     if (off >= self.buffer.items.len) return null;
-    return mem.sliceTo(@as([*:0]const u8, @ptrCast(self.buffer.items.ptr + off)), 0);
+    return mem.slice_to(@as([*:0]const u8, @ptr_cast(self.buffer.items.ptr + off)), 0);
 }
 
 pub fn get_assume_exists(self: Self, off: u32) [:0]const u8 {

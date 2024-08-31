@@ -93,7 +93,7 @@ pub const IntInfo = packed struct(u32) {
 };
 
 test "IntInfo is 32 bits" {
-    try std.testing.expectEqual(@bitSizeOf(IntInfo), 32);
+    try std.testing.expect_equal(@bitSizeOf(IntInfo), 32);
 }
 
 /// enum kind is followed by this struct

@@ -46,31 +46,31 @@ pub const Diagnostics = struct {
     ));
 
     /// Returns the index of the added string as the SmallestStringIndexType
-    /// in order to avoid needing to `@intCast` it at callsites of putString.
+    /// in order to avoid needing to `@int_cast` it at callsites of put_string.
     /// Instead, this function will error if the index would ever exceed the
     /// smallest FilenameStringIndex of an ErrorDetails type.
     pub fn put_string(self: *Diagnostics, str: []const u8) !SmallestStringIndexType {
-        if (self.strings.items.len >= std.math.maxInt(SmallestStringIndexType)) {
+        if (self.strings.items.len >= std.math.max_int(SmallestStringIndexType)) {
             return error.OutOfMemory; // ran out of string indexes
         }
         const dupe = try self.allocator.dupe(u8, str);
         const index = self.strings.items.len;
         try self.strings.append(self.allocator, dupe);
-        return @intCast(index);
+        return @int_cast(index);
     }
 
     pub fn render_to_std_err(self: *Diagnostics, cwd: std.fs.Dir, source: []const u8, tty_config: std.io.tty.Config, source_mappings: ?SourceMappings) void {
-        std.debug.lockStdErr();
-        defer std.debug.unlockStdErr();
-        const stderr = std.io.getStdErr().writer();
+        std.debug.lock_std_err();
+        defer std.debug.unlock_std_err();
+        const stderr = std.io.get_std_err().writer();
         for (self.errors.items) |err_details| {
-            renderErrorMessage(self.allocator, stderr, tty_config, cwd, err_details, source, self.strings.items, source_mappings) catch return;
+            render_error_message(self.allocator, stderr, tty_config, cwd, err_details, source, self.strings.items, source_mappings) catch return;
         }
     }
 
     pub fn render_to_std_err_detect_tty(self: *Diagnostics, cwd: std.fs.Dir, source: []const u8, source_mappings: ?SourceMappings) void {
-        const tty_config = std.io.tty.detectConfig(std.io.getStdErr());
-        return self.renderToStdErr(cwd, source, tty_config, source_mappings);
+        const tty_config = std.io.tty.detect_config(std.io.get_std_err());
+        return self.render_to_std_err(cwd, source, tty_config, source_mappings);
     }
 
     pub fn contains(self: *const Diagnostics, err: ErrorDetails.Error) bool {
@@ -139,7 +139,7 @@ pub const ErrorDetails = struct {
 
     comptime {
         // all fields in the extra union should be 32 bits or less
-        for (std.meta.fields(std.meta.fieldInfo(ErrorDetails, .extra).type)) |field| {
+        for (std.meta.fields(std.meta.field_info(ErrorDetails, .extra).type)) |field| {
             std.debug.assert(@bitSizeOf(field.type) <= 32);
         }
     }
@@ -240,7 +240,7 @@ pub const ErrorDetails = struct {
         //       see https://github.com/ziglang/zig/issues/15395
         _: u26 = 0,
 
-        pub const strings = std.StaticStringMap([]const u8).initComptime(.{
+        pub const strings = std.StaticStringMap([]const u8).init_comptime(.{
             .{ "number", "number" },
             .{ "number_expression", "number expression" },
             .{ "string_literal", "quoted string literal" },
@@ -253,24 +253,24 @@ pub const ErrorDetails = struct {
             const struct_info = @typeInfo(ExpectedTypes).Struct;
             const num_real_fields = struct_info.fields.len - 1;
             const num_padding_bits = @bitSizeOf(ExpectedTypes) - num_real_fields;
-            const mask = std.math.maxInt(struct_info.backing_integer.?) >> num_padding_bits;
-            const relevant_bits_only = @as(struct_info.backing_integer.?, @bitCast(self)) & mask;
-            const num_set_bits = @popCount(relevant_bits_only);
+            const mask = std.math.max_int(struct_info.backing_integer.?) >> num_padding_bits;
+            const relevant_bits_only = @as(struct_info.backing_integer.?, @bit_cast(self)) & mask;
+            const num_set_bits = @pop_count(relevant_bits_only);
 
             var i: usize = 0;
             inline for (struct_info.fields) |field_info| {
                 if (field_info.type != bool) continue;
                 if (i == num_set_bits) return;
                 if (@field(self, field_info.name)) {
-                    try writer.writeAll(strings.get(field_info.name).?);
+                    try writer.write_all(strings.get(field_info.name).?);
                     i += 1;
                     if (num_set_bits > 2 and i != num_set_bits) {
-                        try writer.writeAll(", ");
+                        try writer.write_all(", ");
                     } else if (i != num_set_bits) {
-                        try writer.writeByte(' ');
+                        try writer.write_byte(' ');
                     }
                     if (num_set_bits > 1 and i == num_set_bits - 1) {
-                        try writer.writeAll("or ");
+                        try writer.write_all("or ");
                     }
                 }
             }
@@ -406,7 +406,7 @@ pub const ErrorDetails = struct {
     pub fn render(self: ErrorDetails, writer: anytype, source: []const u8, strings: []const []const u8) !void {
         switch (self.err) {
             .unfinished_string_literal => {
-                return writer.print("unfinished string literal at '{s}', expected closing '\"'", .{self.token.nameForErrorDisplay(source)});
+                return writer.print("unfinished string literal at '{s}', expected closing '\"'", .{self.token.name_for_error_display(source)});
             },
             .string_literal_too_long => {
                 return writer.print("string literal too long (max is currently {} characters)", .{self.extra.number});
@@ -415,15 +415,15 @@ pub const ErrorDetails = struct {
                 return writer.print("base 10 number literal with exponent is not allowed: {s}", .{self.token.slice(source)});
             },
             .invalid_digit_character_in_number_literal => switch (self.type) {
-                .err, .warning => return writer.writeAll("non-ASCII digit characters are not allowed in number literals"),
-                .note => return writer.writeAll("the Win32 RC compiler allows non-ASCII digit characters, but will miscompile them"),
+                .err, .warning => return writer.write_all("non-ASCII digit characters are not allowed in number literals"),
+                .note => return writer.write_all("the Win32 RC compiler allows non-ASCII digit characters, but will miscompile them"),
                 .hint => return,
             },
             .illegal_byte => {
-                return writer.print("character '{s}' is not allowed", .{std.fmt.fmtSliceEscapeUpper(self.token.slice(source))});
+                return writer.print("character '{s}' is not allowed", .{std.fmt.fmt_slice_escape_upper(self.token.slice(source))});
             },
             .illegal_byte_outside_string_literals => {
-                return writer.print("character '{s}' is not allowed outside of string literals", .{std.fmt.fmtSliceEscapeUpper(self.token.slice(source))});
+                return writer.print("character '{s}' is not allowed outside of string literals", .{std.fmt.fmt_slice_escape_upper(self.token.slice(source))});
             },
             .illegal_codepoint_outside_string_literals => {
                 // This is somewhat hacky, but we know that:
@@ -434,89 +434,89 @@ pub const ErrorDetails = struct {
                 //
                 // FIXME: Support other code pages if they become relevant
                 const bytes = self.token.slice(source);
-                const codepoint = std.unicode.utf8Decode(bytes) catch unreachable;
+                const codepoint = std.unicode.utf8_decode(bytes) catch unreachable;
                 return writer.print("codepoint <U+{X:0>4}> is not allowed outside of string literals", .{codepoint});
             },
             .illegal_byte_order_mark => {
-                return writer.writeAll("byte order mark <U+FEFF> is not allowed");
+                return writer.write_all("byte order mark <U+FEFF> is not allowed");
             },
             .illegal_private_use_character => {
-                return writer.writeAll("private use character <U+E000> is not allowed");
+                return writer.write_all("private use character <U+E000> is not allowed");
             },
             .found_c_style_escaped_quote => {
-                return writer.writeAll("escaping quotes with \\\" is not allowed (use \"\" instead)");
+                return writer.write_all("escaping quotes with \\\" is not allowed (use \"\" instead)");
             },
             .code_page_pragma_missing_left_paren => {
-                return writer.writeAll("expected left parenthesis after 'code_page' in #pragma code_page");
+                return writer.write_all("expected left parenthesis after 'code_page' in #pragma code_page");
             },
             .code_page_pragma_missing_right_paren => {
-                return writer.writeAll("expected right parenthesis after '<number>' in #pragma code_page");
+                return writer.write_all("expected right parenthesis after '<number>' in #pragma code_page");
             },
             .code_page_pragma_invalid_code_page => {
-                return writer.writeAll("invalid or unknown code page in #pragma code_page");
+                return writer.write_all("invalid or unknown code page in #pragma code_page");
             },
             .code_page_pragma_not_integer => {
-                return writer.writeAll("code page is not a valid integer in #pragma code_page");
+                return writer.write_all("code page is not a valid integer in #pragma code_page");
             },
             .code_page_pragma_overflow => {
-                return writer.writeAll("code page too large in #pragma code_page");
+                return writer.write_all("code page too large in #pragma code_page");
             },
             .code_page_pragma_unsupported_code_page => {
                 // We know that the token slice is a well-formed #pragma code_page(N), so
                 // we can skip to the first ( and then get the number that follows
                 const token_slice = self.token.slice(source);
-                var number_start = std.mem.indexOfScalar(u8, token_slice, '(').? + 1;
-                while (std.ascii.isWhitespace(token_slice[number_start])) {
+                var number_start = std.mem.index_of_scalar(u8, token_slice, '(').? + 1;
+                while (std.ascii.is_whitespace(token_slice[number_start])) {
                     number_start += 1;
                 }
                 var number_slice = token_slice[number_start..number_start];
-                while (std.ascii.isDigit(token_slice[number_start + number_slice.len])) {
+                while (std.ascii.is_digit(token_slice[number_start + number_slice.len])) {
                     number_slice.len += 1;
                 }
-                const number = std.fmt.parseUnsigned(u16, number_slice, 10) catch unreachable;
-                const code_page = CodePage.getByIdentifier(number) catch unreachable;
+                const number = std.fmt.parse_unsigned(u16, number_slice, 10) catch unreachable;
+                const code_page = CodePage.get_by_identifier(number) catch unreachable;
                 // TODO: Improve or maybe add a note making it more clear that the code page
                 //       is valid and that the code page is unsupported purely due to a limitation
                 //       in this compiler.
-                return writer.print("unsupported code page '{s} (id={})' in #pragma code_page", .{ @tagName(code_page), number });
+                return writer.print("unsupported code page '{s} (id={})' in #pragma code_page", .{ @tag_name(code_page), number });
             },
             .unfinished_raw_data_block => {
-                return writer.print("unfinished raw data block at '{s}', expected closing '}}' or 'END'", .{self.token.nameForErrorDisplay(source)});
+                return writer.print("unfinished raw data block at '{s}', expected closing '}}' or 'END'", .{self.token.name_for_error_display(source)});
             },
             .unfinished_string_table_block => {
-                return writer.print("unfinished STRINGTABLE block at '{s}', expected closing '}}' or 'END'", .{self.token.nameForErrorDisplay(source)});
+                return writer.print("unfinished STRINGTABLE block at '{s}', expected closing '}}' or 'END'", .{self.token.name_for_error_display(source)});
             },
             .expected_token => {
-                return writer.print("expected '{s}', got '{s}'", .{ self.extra.expected.nameForErrorDisplay(), self.token.nameForErrorDisplay(source) });
+                return writer.print("expected '{s}', got '{s}'", .{ self.extra.expected.name_for_error_display(), self.token.name_for_error_display(source) });
             },
             .expected_something_else => {
-                try writer.writeAll("expected ");
-                try self.extra.expected_types.writeCommaSeparated(writer);
-                return writer.print("; got '{s}'", .{self.token.nameForErrorDisplay(source)});
+                try writer.write_all("expected ");
+                try self.extra.expected_types.write_comma_separated(writer);
+                return writer.print("; got '{s}'", .{self.token.name_for_error_display(source)});
             },
             .resource_type_cant_use_raw_data => switch (self.type) {
-                .err, .warning => try writer.print("expected '<filename>', found '{s}' (resource type '{s}' can't use raw data)", .{ self.token.nameForErrorDisplay(source), self.extra.resource.nameForErrorDisplay() }),
-                .note => try writer.print("if '{s}' is intended to be a filename, it must be specified as a quoted string literal", .{self.token.nameForErrorDisplay(source)}),
+                .err, .warning => try writer.print("expected '<filename>', found '{s}' (resource type '{s}' can't use raw data)", .{ self.token.name_for_error_display(source), self.extra.resource.name_for_error_display() }),
+                .note => try writer.print("if '{s}' is intended to be a filename, it must be specified as a quoted string literal", .{self.token.name_for_error_display(source)}),
                 .hint => return,
             },
             .id_must_be_ordinal => {
-                try writer.print("id of resource type '{s}' must be an ordinal (u16), got '{s}'", .{ self.extra.resource.nameForErrorDisplay(), self.token.nameForErrorDisplay(source) });
+                try writer.print("id of resource type '{s}' must be an ordinal (u16), got '{s}'", .{ self.extra.resource.name_for_error_display(), self.token.name_for_error_display(source) });
             },
             .name_or_id_not_allowed => {
-                try writer.print("name or id is not allowed for resource type '{s}'", .{self.extra.resource.nameForErrorDisplay()});
+                try writer.print("name or id is not allowed for resource type '{s}'", .{self.extra.resource.name_for_error_display()});
             },
             .string_resource_as_numeric_type => switch (self.type) {
-                .err, .warning => try writer.writeAll("the number 6 (RT_STRING) cannot be used as a resource type"),
-                .note => try writer.writeAll("using RT_STRING directly likely results in an invalid .res file, use a STRINGTABLE instead"),
+                .err, .warning => try writer.write_all("the number 6 (RT_STRING) cannot be used as a resource type"),
+                .note => try writer.write_all("using RT_STRING directly likely results in an invalid .res file, use a STRINGTABLE instead"),
                 .hint => return,
             },
             .ascii_character_not_equivalent_to_virtual_key_code => {
                 // TODO: Better wording? This is what the Win32 RC compiler emits.
                 //       This occurs when VIRTKEY and a control code is specified ("^c", etc)
-                try writer.writeAll("ASCII character not equivalent to virtual key code");
+                try writer.write_all("ASCII character not equivalent to virtual key code");
             },
             .empty_menu_not_allowed => {
-                try writer.print("empty menu of type '{s}' not allowed", .{self.token.nameForErrorDisplay(source)});
+                try writer.print("empty menu of type '{s}' not allowed", .{self.token.name_for_error_display(source)});
             },
             .rc_would_miscompile_version_value_padding => switch (self.type) {
                 .err, .warning => return writer.print("the padding before this quoted string value would be miscompiled by the Win32 RC compiler", .{}),
@@ -538,16 +538,16 @@ pub const ErrorDetails = struct {
                         .menu, .menuex => parse.max_nested_menu_level,
                         else => unreachable,
                     };
-                    return writer.print("{s} contains too many nested children (max is {})", .{ self.extra.resource.nameForErrorDisplay(), max });
+                    return writer.print("{s} contains too many nested children (max is {})", .{ self.extra.resource.name_for_error_display(), max });
                 },
-                .note => return writer.print("max {s} nesting level exceeded here", .{self.extra.resource.nameForErrorDisplay()}),
+                .note => return writer.print("max {s} nesting level exceeded here", .{self.extra.resource.name_for_error_display()}),
                 .hint => return,
             },
             .too_many_dialog_controls_or_toolbar_buttons => switch (self.type) {
-                .err, .warning => return writer.print("{s} contains too many {s} (max is {})", .{ self.extra.resource.nameForErrorDisplay(), switch (self.extra.resource) {
+                .err, .warning => return writer.print("{s} contains too many {s} (max is {})", .{ self.extra.resource.name_for_error_display(), switch (self.extra.resource) {
                     .toolbar => "buttons",
                     else => "controls",
-                }, std.math.maxInt(u16) }),
+                }, std.math.max_int(u16) }),
                 .note => return writer.print("maximum number of {s} exceeded here", .{switch (self.extra.resource) {
                     .toolbar => "buttons",
                     else => "controls",
@@ -560,10 +560,10 @@ pub const ErrorDetails = struct {
                 .hint => return,
             },
             .close_paren_expression => {
-                try writer.writeAll("the Win32 RC compiler would accept ')' as a valid expression, but it would be skipped over and potentially lead to unexpected outcomes");
+                try writer.write_all("the Win32 RC compiler would accept ')' as a valid expression, but it would be skipped over and potentially lead to unexpected outcomes");
             },
             .unary_plus_expression => {
-                try writer.writeAll("the Win32 RC compiler may accept '+' as a unary operator here, but it is not supported in this implementation; consider omitting the unary +");
+                try writer.write_all("the Win32 RC compiler may accept '+' as a unary operator here, but it is not supported in this implementation; consider omitting the unary +");
             },
             .rc_could_miscompile_control_params => switch (self.type) {
                 .err, .warning => return writer.print("this token could be erroneously skipped over by the Win32 RC compiler", .{}),
@@ -572,10 +572,10 @@ pub const ErrorDetails = struct {
             },
             .string_already_defined => switch (self.type) {
                 .err, .warning => {
-                    const language_id = self.extra.string_and_language.language.asInt();
+                    const language_id = self.extra.string_and_language.language.as_int();
                     const language_name = language_name: {
-                        if (std.meta.intToEnum(lang.LanguageId, language_id)) |lang_enum_val| {
-                            break :language_name @tagName(lang_enum_val);
+                        if (std.meta.int_to_enum(lang.LanguageId, language_id)) |lang_enum_val| {
+                            break :language_name @tag_name(lang_enum_val);
                         } else |_| {}
                         if (language_id == lang.LOCALE_CUSTOM_UNSPECIFIED) {
                             break :language_name "LOCALE_CUSTOM_UNSPECIFIED";
@@ -594,10 +594,10 @@ pub const ErrorDetails = struct {
                 .hint => return,
             },
             .file_open_error => {
-                try writer.print("unable to open file '{s}': {s}", .{ strings[self.extra.file_open_error.filename_string_index], @tagName(self.extra.file_open_error.err) });
+                try writer.print("unable to open file '{s}': {s}", .{ strings[self.extra.file_open_error.filename_string_index], @tag_name(self.extra.file_open_error.err) });
             },
             .invalid_accelerator_key => {
-                try writer.print("invalid accelerator key '{s}': {s}", .{ self.token.nameForErrorDisplay(source), @tagName(self.extra.accelerator_error.err) });
+                try writer.print("invalid accelerator key '{s}': {s}", .{ self.token.name_for_error_display(source), @tag_name(self.extra.accelerator_error.err) });
             },
             .accelerator_type_required => {
                 try writer.print("accelerator type [ASCII or VIRTKEY] required when key is an integer", .{});
@@ -613,7 +613,7 @@ pub const ErrorDetails = struct {
                 .hint => return,
             },
             .rc_would_error_on_icon_dir => switch (self.type) {
-                .err, .warning => return writer.print("the resource at index {} of this {s} has the format '{s}'; this would be an error in the Win32 RC compiler", .{ self.extra.icon_dir.index, @tagName(self.extra.icon_dir.icon_type), @tagName(self.extra.icon_dir.icon_format) }),
+                .err, .warning => return writer.print("the resource at index {} of this {s} has the format '{s}'; this would be an error in the Win32 RC compiler", .{ self.extra.icon_dir.index, @tag_name(self.extra.icon_dir.icon_type), @tag_name(self.extra.icon_dir.icon_format) }),
                 .note => {
                     // The only note supported is one specific to exactly this combination
                     if (!(self.extra.icon_dir.icon_type == .icon and self.extra.icon_dir.icon_format == .riff)) unreachable;
@@ -622,90 +622,90 @@ pub const ErrorDetails = struct {
                 .hint => return,
             },
             .format_not_supported_in_icon_dir => {
-                try writer.print("resource with format '{s}' (at index {}) is not allowed in {s} resource groups", .{ @tagName(self.extra.icon_dir.icon_format), self.extra.icon_dir.index, @tagName(self.extra.icon_dir.icon_type) });
+                try writer.print("resource with format '{s}' (at index {}) is not allowed in {s} resource groups", .{ @tag_name(self.extra.icon_dir.icon_format), self.extra.icon_dir.index, @tag_name(self.extra.icon_dir.icon_type) });
             },
             .icon_dir_and_resource_type_mismatch => {
                 const unexpected_type: rc.Resource = if (self.extra.resource == .icon) .cursor else .icon;
                 // TODO: Better wording
-                try writer.print("resource type '{s}' does not match type '{s}' specified in the file", .{ self.extra.resource.nameForErrorDisplay(), unexpected_type.nameForErrorDisplay() });
+                try writer.print("resource type '{s}' does not match type '{s}' specified in the file", .{ self.extra.resource.name_for_error_display(), unexpected_type.name_for_error_display() });
             },
             .icon_read_error => {
-                try writer.print("unable to read {s} file '{s}': {s}", .{ @tagName(self.extra.icon_read_error.icon_type), strings[self.extra.icon_read_error.filename_string_index], @tagName(self.extra.icon_read_error.err) });
+                try writer.print("unable to read {s} file '{s}': {s}", .{ @tag_name(self.extra.icon_read_error.icon_type), strings[self.extra.icon_read_error.filename_string_index], @tag_name(self.extra.icon_read_error.err) });
             },
             .rc_would_error_on_bitmap_version => switch (self.type) {
                 .err => try writer.print("the DIB at index {} of this {s} is of version '{s}'; this version is no longer allowed and should be upgraded to '{s}'", .{
                     self.extra.icon_dir.index,
-                    @tagName(self.extra.icon_dir.icon_type),
-                    self.extra.icon_dir.bitmap_version.nameForErrorDisplay(),
-                    ico.BitmapHeader.Version.@"nt3.1".nameForErrorDisplay(),
+                    @tag_name(self.extra.icon_dir.icon_type),
+                    self.extra.icon_dir.bitmap_version.name_for_error_display(),
+                    ico.BitmapHeader.Version.@"nt3.1".name_for_error_display(),
                 }),
                 .warning => try writer.print("the DIB at index {} of this {s} is of version '{s}'; this would be an error in the Win32 RC compiler", .{
                     self.extra.icon_dir.index,
-                    @tagName(self.extra.icon_dir.icon_type),
-                    self.extra.icon_dir.bitmap_version.nameForErrorDisplay(),
+                    @tag_name(self.extra.icon_dir.icon_type),
+                    self.extra.icon_dir.bitmap_version.name_for_error_display(),
                 }),
                 .note => unreachable,
                 .hint => return,
             },
             .max_icon_ids_exhausted => switch (self.type) {
-                .err, .warning => try writer.print("maximum global icon/cursor ids exhausted (max is {})", .{std.math.maxInt(u16) - 1}),
-                .note => try writer.print("maximum icon/cursor id exceeded at index {} of this {s}", .{ self.extra.icon_dir.index, @tagName(self.extra.icon_dir.icon_type) }),
+                .err, .warning => try writer.print("maximum global icon/cursor ids exhausted (max is {})", .{std.math.max_int(u16) - 1}),
+                .note => try writer.print("maximum icon/cursor id exceeded at index {} of this {s}", .{ self.extra.icon_dir.index, @tag_name(self.extra.icon_dir.icon_type) }),
                 .hint => return,
             },
             .bmp_read_error => {
-                try writer.print("invalid bitmap file '{s}': {s}", .{ strings[self.extra.bmp_read_error.filename_string_index], @tagName(self.extra.bmp_read_error.err) });
+                try writer.print("invalid bitmap file '{s}': {s}", .{ strings[self.extra.bmp_read_error.filename_string_index], @tag_name(self.extra.bmp_read_error.err) });
             },
             .bmp_ignored_palette_bytes => {
                 const bytes = strings[self.extra.number];
-                const ignored_bytes = std.mem.readInt(u64, bytes[0..8], native_endian);
+                const ignored_bytes = std.mem.read_int(u64, bytes[0..8], native_endian);
                 try writer.print("bitmap has {d} extra bytes preceding the pixel data which will be ignored", .{ignored_bytes});
             },
             .bmp_missing_palette_bytes => {
                 const bytes = strings[self.extra.number];
-                const missing_bytes = std.mem.readInt(u64, bytes[0..8], native_endian);
+                const missing_bytes = std.mem.read_int(u64, bytes[0..8], native_endian);
                 try writer.print("bitmap has {d} missing color palette bytes which will be padded with zeroes", .{missing_bytes});
             },
             .rc_would_miscompile_bmp_palette_padding => {
                 const bytes = strings[self.extra.number];
-                const miscompiled_bytes = std.mem.readInt(u64, bytes[0..8], native_endian);
+                const miscompiled_bytes = std.mem.read_int(u64, bytes[0..8], native_endian);
                 try writer.print("the missing color palette bytes would be miscompiled by the Win32 RC compiler (the added padding bytes would include {d} bytes of the pixel data)", .{miscompiled_bytes});
             },
             .bmp_too_many_missing_palette_bytes => switch (self.type) {
                 .err, .warning => {
                     const bytes = strings[self.extra.number];
-                    const missing_bytes = std.mem.readInt(u64, bytes[0..8], native_endian);
-                    const max_missing_bytes = std.mem.readInt(u64, bytes[8..16], native_endian);
+                    const missing_bytes = std.mem.read_int(u64, bytes[0..8], native_endian);
+                    const max_missing_bytes = std.mem.read_int(u64, bytes[8..16], native_endian);
                     try writer.print("bitmap has {} missing color palette bytes which exceeds the maximum of {}", .{ missing_bytes, max_missing_bytes });
                 },
                 // TODO: command line option
-                .note => try writer.writeAll("the maximum number of missing color palette bytes is configurable via <<TODO command line option>>"),
+                .note => try writer.write_all("the maximum number of missing color palette bytes is configurable via <<TODO command line option>>"),
                 .hint => return,
             },
             .resource_header_size_exceeds_max => {
-                try writer.print("resource's header length exceeds maximum of {} bytes", .{std.math.maxInt(u32)});
+                try writer.print("resource's header length exceeds maximum of {} bytes", .{std.math.max_int(u32)});
             },
             .resource_data_size_exceeds_max => switch (self.type) {
-                .err, .warning => return writer.print("resource's data length exceeds maximum of {} bytes", .{std.math.maxInt(u32)}),
+                .err, .warning => return writer.print("resource's data length exceeds maximum of {} bytes", .{std.math.max_int(u32)}),
                 .note => return writer.print("maximum data length exceeded here", .{}),
                 .hint => return,
             },
             .control_extra_data_size_exceeds_max => switch (self.type) {
-                .err, .warning => try writer.print("control data length exceeds maximum of {} bytes", .{std.math.maxInt(u16)}),
+                .err, .warning => try writer.print("control data length exceeds maximum of {} bytes", .{std.math.max_int(u16)}),
                 .note => return writer.print("maximum control data length exceeded here", .{}),
                 .hint => return,
             },
             .version_node_size_exceeds_max => switch (self.type) {
-                .err, .warning => return writer.print("version node tree size exceeds maximum of {} bytes", .{std.math.maxInt(u16)}),
+                .err, .warning => return writer.print("version node tree size exceeds maximum of {} bytes", .{std.math.max_int(u16)}),
                 .note => return writer.print("maximum tree size exceeded while writing this child", .{}),
                 .hint => return,
             },
             .fontdir_size_exceeds_max => switch (self.type) {
-                .err, .warning => return writer.print("FONTDIR data length exceeds maximum of {} bytes", .{std.math.maxInt(u32)}),
-                .note => return writer.writeAll("this is likely due to the size of the combined lengths of the device/face names of all FONT resources"),
+                .err, .warning => return writer.print("FONTDIR data length exceeds maximum of {} bytes", .{std.math.max_int(u32)}),
+                .note => return writer.write_all("this is likely due to the size of the combined lengths of the device/face names of all FONT resources"),
                 .hint => return,
             },
             .number_expression_as_filename => switch (self.type) {
-                .err, .warning => return writer.writeAll("filename cannot be specified using a number expression, consider using a quoted string instead"),
+                .err, .warning => return writer.write_all("filename cannot be specified using a number expression, consider using a quoted string instead"),
                 .note => return writer.print("the Win32 RC compiler would evaluate this number expression as the filename '{s}'", .{strings[self.extra.number]}),
                 .hint => return,
             },
@@ -716,15 +716,15 @@ pub const ErrorDetails = struct {
             },
             .invalid_filename => {
                 const disallowed_codepoint = self.extra.number;
-                if (disallowed_codepoint < 128 and std.ascii.isPrint(@intCast(disallowed_codepoint))) {
-                    try writer.print("evaluated filename contains a disallowed character: '{c}'", .{@as(u8, @intCast(disallowed_codepoint))});
+                if (disallowed_codepoint < 128 and std.ascii.is_print(@int_cast(disallowed_codepoint))) {
+                    try writer.print("evaluated filename contains a disallowed character: '{c}'", .{@as(u8, @int_cast(disallowed_codepoint))});
                 } else {
                     try writer.print("evaluated filename contains a disallowed codepoint: <U+{X:0>4}>", .{disallowed_codepoint});
                 }
             },
             .rc_would_error_u16_with_l_suffix => switch (self.type) {
-                .err, .warning => return writer.print("this {s} parameter would be an error in the Win32 RC compiler", .{@tagName(self.extra.statement_with_u16_param)}),
-                .note => return writer.writeAll("to avoid the error, remove any L suffixes from numbers within the parameter"),
+                .err, .warning => return writer.print("this {s} parameter would be an error in the Win32 RC compiler", .{@tag_name(self.extra.statement_with_u16_param)}),
+                .note => return writer.write_all("to avoid the error, remove any L suffixes from numbers within the parameter"),
                 .hint => return,
             },
             .result_contains_fontdir => return,
@@ -740,23 +740,23 @@ pub const ErrorDetails = struct {
             },
             .rc_would_miscompile_dialog_menu_or_class_id_forced_ordinal => switch (self.type) {
                 .err, .warning => return,
-                .note => return writer.print("to avoid the potential miscompilation, only specify one {s} per dialog resource", .{@tagName(self.extra.menu_or_class)}),
+                .note => return writer.print("to avoid the potential miscompilation, only specify one {s} per dialog resource", .{@tag_name(self.extra.menu_or_class)}),
                 .hint => return,
             },
             .rc_would_miscompile_dialog_menu_id_starts_with_digit => switch (self.type) {
                 .err, .warning => return,
-                .note => return writer.writeAll("to avoid the potential miscompilation, the first character of the id should not be a digit"),
+                .note => return writer.write_all("to avoid the potential miscompilation, the first character of the id should not be a digit"),
                 .hint => return,
             },
             .dialog_menu_id_was_uppercased => return,
             .duplicate_menu_or_class_skipped => {
                 return writer.print("this {s} was ignored; when multiple {s} statements are specified, only the last takes precedence", .{
-                    @tagName(self.extra.menu_or_class),
-                    @tagName(self.extra.menu_or_class),
+                    @tag_name(self.extra.menu_or_class),
+                    @tag_name(self.extra.menu_or_class),
                 });
             },
             .invalid_digit_character_in_ordinal => {
-                return writer.writeAll("non-ASCII digit characters are not allowed in ordinal (number) values");
+                return writer.write_all("non-ASCII digit characters are not allowed in ordinal (number) values");
             },
             .rc_would_miscompile_codepoint_byte_swap => switch (self.type) {
                 .err, .warning => return writer.print("codepoint U+{X} within a string literal would be miscompiled by the Win32 RC compiler (the bytes of the UTF-16 code unit would be swapped)", .{self.extra.number}),
@@ -769,8 +769,8 @@ pub const ErrorDetails = struct {
                 .hint => return,
             },
             .tab_converted_to_spaces => switch (self.type) {
-                .err, .warning => return writer.writeAll("the tab character(s) in this string will be converted into a variable number of spaces (determined by the column of the tab character in the .rc file)"),
-                .note => return writer.writeAll("to include the tab character itself in a string, the escape sequence \\t should be used"),
+                .err, .warning => return writer.write_all("the tab character(s) in this string will be converted into a variable number of spaces (determined by the column of the tab character in the .rc file)"),
+                .note => return writer.write_all("to include the tab character itself in a string, the escape sequence \\t should be used"),
                 .hint => return,
             },
             .win32_non_ascii_ordinal => switch (self.type) {
@@ -779,7 +779,7 @@ pub const ErrorDetails = struct {
                 .hint => return,
             },
             .failed_to_open_cwd => {
-                try writer.print("failed to open CWD for compilation: {s}", .{@tagName(self.extra.file_open_error.err)});
+                try writer.print("failed to open CWD for compilation: {s}", .{@tag_name(self.extra.file_open_error.err)});
             },
         }
     }
@@ -831,13 +831,13 @@ pub const ErrorDetails = struct {
 pub fn render_error_message(allocator: std.mem.Allocator, writer: anytype, tty_config: std.io.tty.Config, cwd: std.fs.Dir, err_details: ErrorDetails, source: []const u8, strings: []const []const u8, source_mappings: ?SourceMappings) !void {
     if (err_details.type == .hint) return;
 
-    const source_line_start = err_details.token.getLineStartForErrorDisplay(source);
+    const source_line_start = err_details.token.get_line_start_for_error_display(source);
     // Treat tab stops as 1 column wide for error display purposes,
     // and add one to get a 1-based column
-    const column = err_details.token.calculateColumn(source, 1, source_line_start) + 1;
+    const column = err_details.token.calculate_column(source, 1, source_line_start) + 1;
 
     const corresponding_span: ?SourceMappings.CorrespondingSpan = if (source_mappings) |mappings|
-        mappings.getCorrespondingSpan(err_details.token.line_number)
+        mappings.get_corresponding_span(err_details.token.line_number)
     else
         null;
     const corresponding_file: ?[]const u8 = if (source_mappings != null and corresponding_span != null)
@@ -847,76 +847,76 @@ pub fn render_error_message(allocator: std.mem.Allocator, writer: anytype, tty_c
 
     const err_line = if (corresponding_span) |span| span.start_line else err_details.token.line_number;
 
-    try tty_config.setColor(writer, .bold);
+    try tty_config.set_color(writer, .bold);
     if (corresponding_file) |file| {
-        try writer.writeAll(file);
+        try writer.write_all(file);
     } else {
-        try tty_config.setColor(writer, .dim);
-        try writer.writeAll("<after preprocessor>");
-        try tty_config.setColor(writer, .reset);
-        try tty_config.setColor(writer, .bold);
+        try tty_config.set_color(writer, .dim);
+        try writer.write_all("<after preprocessor>");
+        try tty_config.set_color(writer, .reset);
+        try tty_config.set_color(writer, .bold);
     }
     try writer.print(":{d}:{d}: ", .{ err_line, column });
     switch (err_details.type) {
         .err => {
-            try tty_config.setColor(writer, .red);
-            try writer.writeAll("error: ");
+            try tty_config.set_color(writer, .red);
+            try writer.write_all("error: ");
         },
         .warning => {
-            try tty_config.setColor(writer, .yellow);
-            try writer.writeAll("warning: ");
+            try tty_config.set_color(writer, .yellow);
+            try writer.write_all("warning: ");
         },
         .note => {
-            try tty_config.setColor(writer, .cyan);
-            try writer.writeAll("note: ");
+            try tty_config.set_color(writer, .cyan);
+            try writer.write_all("note: ");
         },
         .hint => unreachable,
     }
-    try tty_config.setColor(writer, .reset);
-    try tty_config.setColor(writer, .bold);
+    try tty_config.set_color(writer, .reset);
+    try tty_config.set_color(writer, .bold);
     try err_details.render(writer, source, strings);
-    try writer.writeByte('\n');
-    try tty_config.setColor(writer, .reset);
+    try writer.write_byte('\n');
+    try tty_config.set_color(writer, .reset);
 
     if (!err_details.print_source_line) {
-        try writer.writeByte('\n');
+        try writer.write_byte('\n');
         return;
     }
 
-    const source_line = err_details.token.getLineForErrorDisplay(source, source_line_start);
-    const visual_info = err_details.visualTokenInfo(source_line_start, source_line_start + source_line.len);
+    const source_line = err_details.token.get_line_for_error_display(source, source_line_start);
+    const visual_info = err_details.visual_token_info(source_line_start, source_line_start + source_line.len);
 
     // Need this to determine if the 'line originated from' note is worth printing
-    var source_line_for_display_buf = try std.ArrayList(u8).initCapacity(allocator, source_line.len);
+    var source_line_for_display_buf = try std.ArrayList(u8).init_capacity(allocator, source_line.len);
     defer source_line_for_display_buf.deinit();
-    try writeSourceSlice(source_line_for_display_buf.writer(), source_line);
+    try write_source_slice(source_line_for_display_buf.writer(), source_line);
 
     // TODO: General handling of long lines, not tied to this specific error
     if (err_details.err == .string_literal_too_long) {
         const before_slice = source_line[0..@min(source_line.len, visual_info.point_offset + 16)];
-        try writeSourceSlice(writer, before_slice);
-        try tty_config.setColor(writer, .dim);
-        try writer.writeAll("<...truncated...>");
-        try tty_config.setColor(writer, .reset);
+        try write_source_slice(writer, before_slice);
+        try tty_config.set_color(writer, .dim);
+        try writer.write_all("<...truncated...>");
+        try tty_config.set_color(writer, .reset);
     } else {
-        try writer.writeAll(source_line_for_display_buf.items);
+        try writer.write_all(source_line_for_display_buf.items);
     }
-    try writer.writeByte('\n');
+    try writer.write_byte('\n');
 
-    try tty_config.setColor(writer, .green);
+    try tty_config.set_color(writer, .green);
     const num_spaces = visual_info.point_offset - visual_info.before_len;
-    try writer.writeByteNTimes(' ', num_spaces);
-    try writer.writeByteNTimes('~', visual_info.before_len);
-    try writer.writeByte('^');
+    try writer.write_byte_ntimes(' ', num_spaces);
+    try writer.write_byte_ntimes('~', visual_info.before_len);
+    try writer.write_byte('^');
     if (visual_info.after_len > 0) {
         var num_squiggles = visual_info.after_len;
         if (err_details.err == .string_literal_too_long) {
             num_squiggles = @min(num_squiggles, 15);
         }
-        try writer.writeByteNTimes('~', num_squiggles);
+        try writer.write_byte_ntimes('~', num_squiggles);
     }
-    try writer.writeByte('\n');
-    try tty_config.setColor(writer, .reset);
+    try writer.write_byte('\n');
+    try tty_config.set_color(writer, .reset);
 
     if (corresponding_span != null and corresponding_file != null) {
         var corresponding_lines = try CorrespondingLines.init(allocator, cwd, err_details, source_line_for_display_buf.items, corresponding_span.?, corresponding_file.?);
@@ -924,44 +924,44 @@ pub fn render_error_message(allocator: std.mem.Allocator, writer: anytype, tty_c
 
         if (!corresponding_lines.worth_printing_note) return;
 
-        try tty_config.setColor(writer, .bold);
+        try tty_config.set_color(writer, .bold);
         if (corresponding_file) |file| {
-            try writer.writeAll(file);
+            try writer.write_all(file);
         } else {
-            try tty_config.setColor(writer, .dim);
-            try writer.writeAll("<after preprocessor>");
-            try tty_config.setColor(writer, .reset);
-            try tty_config.setColor(writer, .bold);
+            try tty_config.set_color(writer, .dim);
+            try writer.write_all("<after preprocessor>");
+            try tty_config.set_color(writer, .reset);
+            try tty_config.set_color(writer, .bold);
         }
         try writer.print(":{d}:{d}: ", .{ err_line, column });
-        try tty_config.setColor(writer, .cyan);
-        try writer.writeAll("note: ");
-        try tty_config.setColor(writer, .reset);
-        try tty_config.setColor(writer, .bold);
-        try writer.writeAll("this line originated from line");
+        try tty_config.set_color(writer, .cyan);
+        try writer.write_all("note: ");
+        try tty_config.set_color(writer, .reset);
+        try tty_config.set_color(writer, .bold);
+        try writer.write_all("this line originated from line");
         if (corresponding_span.?.start_line != corresponding_span.?.end_line) {
             try writer.print("s {}-{}", .{ corresponding_span.?.start_line, corresponding_span.?.end_line });
         } else {
             try writer.print(" {}", .{corresponding_span.?.start_line});
         }
         try writer.print(" of file '{s}'\n", .{corresponding_file.?});
-        try tty_config.setColor(writer, .reset);
+        try tty_config.set_color(writer, .reset);
 
         if (!corresponding_lines.worth_printing_lines) return;
 
         if (corresponding_lines.lines_is_error_message) {
-            try tty_config.setColor(writer, .red);
-            try writer.writeAll(" | ");
-            try tty_config.setColor(writer, .reset);
-            try tty_config.setColor(writer, .dim);
-            try writer.writeAll(corresponding_lines.lines.items);
-            try tty_config.setColor(writer, .reset);
-            try writer.writeAll("\n\n");
+            try tty_config.set_color(writer, .red);
+            try writer.write_all(" | ");
+            try tty_config.set_color(writer, .reset);
+            try tty_config.set_color(writer, .dim);
+            try writer.write_all(corresponding_lines.lines.items);
+            try tty_config.set_color(writer, .reset);
+            try writer.write_all("\n\n");
             return;
         }
 
-        try writer.writeAll(corresponding_lines.lines.items);
-        try writer.writeAll("\n\n");
+        try writer.write_all(corresponding_lines.lines.items);
+        try writer.write_all("\n\n");
     }
 }
 
@@ -988,12 +988,12 @@ const CorrespondingLines = struct {
         }
 
         var writer = corresponding_lines.lines.writer(allocator);
-        if (utils.openFileNotDir(cwd, corresponding_file, .{})) |file| {
+        if (utils.open_file_not_dir(cwd, corresponding_file, .{})) |file| {
             defer file.close();
-            var buffered_reader = std.io.bufferedReader(file.reader());
-            writeLinesFromStream(writer, buffered_reader.reader(), corresponding_span.start_line, corresponding_span.end_line) catch |err| switch (err) {
+            var buffered_reader = std.io.buffered_reader(file.reader());
+            write_lines_from_stream(writer, buffered_reader.reader(), corresponding_span.start_line, corresponding_span.end_line) catch |err| switch (err) {
                 error.LinesNotFound => {
-                    corresponding_lines.lines.clearRetainingCapacity();
+                    corresponding_lines.lines.clear_retaining_capacity();
                     try writer.print("unable to print line(s) from file: {s}", .{@errorName(err)});
                     corresponding_lines.lines_is_error_message = true;
                     return corresponding_lines;
@@ -1001,7 +1001,7 @@ const CorrespondingLines = struct {
                 else => |e| return e,
             };
         } else |err| {
-            corresponding_lines.lines.clearRetainingCapacity();
+            corresponding_lines.lines.clear_retaining_capacity();
             try writer.print("unable to print line(s) from file: {s}", .{@errorName(err)});
             corresponding_lines.lines_is_error_message = true;
             return corresponding_lines;
@@ -1020,12 +1020,12 @@ const CorrespondingLines = struct {
 };
 
 fn write_source_slice(writer: anytype, slice: []const u8) !void {
-    for (slice) |c| try writeSourceByte(writer, c);
+    for (slice) |c| try write_source_byte(writer, c);
 }
 
 inline fn write_source_byte(writer: anytype, byte: u8) !void {
     switch (byte) {
-        '\x00'...'\x08', '\x0E'...'\x1F', '\x7F' => try writer.writeAll("�"),
+        '\x00'...'\x08', '\x0E'...'\x1F', '\x7F' => try writer.write_all("�"),
         // \r is seemingly ignored by the RC compiler so skipping it when printing source lines
         // could help avoid confusing output (e.g. RC\rDATA if printed verbatim would show up
         // in the console as DATA but the compiler reads it as RCDATA)
@@ -1034,20 +1034,20 @@ inline fn write_source_byte(writer: anytype, byte: u8) !void {
         //       characters get converted to \n, but may become relevant if another
         //       preprocessor is used instead.
         '\r' => {},
-        '\t', '\x0B', '\x0C' => try writer.writeByte(' '),
-        else => try writer.writeByte(byte),
+        '\t', '\x0B', '\x0C' => try writer.write_byte(' '),
+        else => try writer.write_byte(byte),
     }
 }
 
 pub fn write_lines_from_stream(writer: anytype, input: anytype, start_line: usize, end_line: usize) !void {
     var line_num: usize = 1;
     var last_byte: u8 = 0;
-    while (try readByteOrEof(input)) |byte| {
+    while (try read_byte_or_eof(input)) |byte| {
         switch (byte) {
             '\n', '\r' => {
-                if (!utils.isLineEndingPair(last_byte, byte)) {
+                if (!utils.is_line_ending_pair(last_byte, byte)) {
                     if (line_num == end_line) return;
-                    if (line_num >= start_line) try writeSourceByte(writer, byte);
+                    if (line_num >= start_line) try write_source_byte(writer, byte);
                     line_num += 1;
                 } else {
                     // reset last_byte to a non-line ending so that
@@ -1058,7 +1058,7 @@ pub fn write_lines_from_stream(writer: anytype, input: anytype, start_line: usiz
                 }
             },
             else => {
-                if (line_num >= start_line) try writeSourceByte(writer, byte);
+                if (line_num >= start_line) try write_source_byte(writer, byte);
             },
         }
         last_byte = byte;
@@ -1069,7 +1069,7 @@ pub fn write_lines_from_stream(writer: anytype, input: anytype, start_line: usiz
 }
 
 pub fn read_byte_or_eof(reader: anytype) !?u8 {
-    return reader.readByte() catch |err| switch (err) {
+    return reader.read_byte() catch |err| switch (err) {
         error.EndOfStream => return null,
         else => |e| return e,
     };

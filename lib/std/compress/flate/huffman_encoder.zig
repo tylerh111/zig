@@ -66,7 +66,7 @@ pub fn HuffmanEncoder(comptime size: usize) type {
             // Set list to be the set of all non-zero literals and their frequencies
             for (freq, 0..) |f, i| {
                 if (f != 0) {
-                    list[count] = LiteralNode{ .literal = @as(u16, @intCast(i)), .freq = f };
+                    list[count] = LiteralNode{ .literal = @as(u16, @int_cast(i)), .freq = f };
                     count += 1;
                 } else {
                     list[count] = LiteralNode{ .literal = 0x00, .freq = 0 };
@@ -81,24 +81,24 @@ pub fn HuffmanEncoder(comptime size: usize) type {
                 // two or fewer literals, everything has bit length 1.
                 for (list, 0..) |node, i| {
                     // "list" is in order of increasing literal value.
-                    self.codes[node.literal].set(@as(u16, @intCast(i)), 1);
+                    self.codes[node.literal].set(@as(u16, @int_cast(i)), 1);
                 }
                 return;
             }
             self.lfs = list;
-            mem.sort(LiteralNode, self.lfs, {}, byFreq);
+            mem.sort(LiteralNode, self.lfs, {}, by_freq);
 
             // Get the number of literals for each bit count
-            const bit_count = self.bitCounts(list, max_bits);
+            const bit_count = self.bit_counts(list, max_bits);
             // And do the assignment
-            self.assignEncodingAndSize(bit_count, list);
+            self.assign_encoding_and_size(bit_count, list);
         }
 
         pub fn bit_length(self: *Self, freq: []u16) u32 {
             var total: u32 = 0;
             for (freq, 0..) |f, i| {
                 if (f != 0) {
-                    total += @as(u32, @intCast(f)) * @as(u32, @intCast(self.codes[i].len));
+                    total += @as(u32, @int_cast(f)) * @as(u32, @int_cast(self.codes[i].len));
                 }
             }
             return total;
@@ -112,7 +112,7 @@ pub fn HuffmanEncoder(comptime size: usize) type {
         // list: An array of the literals with non-zero frequencies
         // and their associated frequencies. The array is in order of increasing
         // frequency, and has as its last element a special element with frequency
-        // std.math.maxInt(i32)
+        // std.math.max_int(i32)
         //
         // max_bits: The maximum number of bits that should be used to encode any literal.
         // Must be less than 16.
@@ -155,25 +155,25 @@ pub fn HuffmanEncoder(comptime size: usize) type {
                     };
                     leaf_counts[level][level] = 2;
                     if (level == 1) {
-                        levels[level].next_pair_freq = math.maxInt(i32);
+                        levels[level].next_pair_freq = math.max_int(i32);
                     }
                 }
             }
 
             // We need a total of 2*n - 2 items at top level and have already generated 2.
-            levels[max_bits].needed = 2 * @as(u32, @intCast(n)) - 4;
+            levels[max_bits].needed = 2 * @as(u32, @int_cast(n)) - 4;
 
             {
                 var level = max_bits;
                 while (true) {
                     var l = &levels[level];
-                    if (l.next_pair_freq == math.maxInt(i32) and l.next_char_freq == math.maxInt(i32)) {
+                    if (l.next_pair_freq == math.max_int(i32) and l.next_char_freq == math.max_int(i32)) {
                         // We've run out of both leafs and pairs.
                         // End all calculations for this level.
                         // To make sure we never come back to this level or any lower level,
                         // set next_pair_freq impossibly large.
                         l.needed = 0;
-                        levels[level + 1].next_pair_freq = math.maxInt(i32);
+                        levels[level + 1].next_pair_freq = math.max_int(i32);
                         level += 1;
                         continue;
                     }
@@ -186,7 +186,7 @@ pub fn HuffmanEncoder(comptime size: usize) type {
                         // Lower leaf_counts are the same of the previous node.
                         leaf_counts[level][level] = next;
                         if (next >= list.len) {
-                            l.next_char_freq = maxNode().freq;
+                            l.next_char_freq = max_node().freq;
                         } else {
                             l.next_char_freq = list[next].freq;
                         }
@@ -261,19 +261,19 @@ pub fn HuffmanEncoder(comptime size: usize) type {
                 // are encoded using "bits" bits, and get the values
                 // code, code + 1, ....  The code values are
                 // assigned in literal order (not frequency order).
-                const chunk = list[list.len - @as(u32, @intCast(bits)) ..];
+                const chunk = list[list.len - @as(u32, @int_cast(bits)) ..];
 
                 self.lns = chunk;
-                mem.sort(LiteralNode, self.lns, {}, byLiteral);
+                mem.sort(LiteralNode, self.lns, {}, by_literal);
 
                 for (chunk) |node| {
                     self.codes[node.literal] = HuffCode{
-                        .code = bitReverse(u16, code, @as(u5, @intCast(n))),
-                        .len = @as(u16, @intCast(n)),
+                        .code = bit_reverse(u16, code, @as(u5, @int_cast(n))),
+                        .len = @as(u16, @int_cast(n)),
                     };
                     code += 1;
                 }
-                list = list[0 .. list.len - @as(u32, @intCast(bits))];
+                list = list[0 .. list.len - @as(u32, @int_cast(bits))];
             }
         }
     };
@@ -281,8 +281,8 @@ pub fn HuffmanEncoder(comptime size: usize) type {
 
 fn max_node() LiteralNode {
     return LiteralNode{
-        .literal = math.maxInt(u16),
-        .freq = math.maxInt(u16),
+        .literal = math.max_int(u16),
+        .freq = math.max_int(u16),
     };
 }
 
@@ -324,7 +324,7 @@ pub fn fixed_literal_encoder() LiteralEncoder {
                 size = 8;
             },
         }
-        h.codes[ch] = HuffCode{ .code = bitReverse(u16, bits, @as(u5, @intCast(size))), .len = size };
+        h.codes[ch] = HuffCode{ .code = bit_reverse(u16, bits, @as(u5, @int_cast(size))), .len = size };
     }
     return h;
 }
@@ -332,7 +332,7 @@ pub fn fixed_literal_encoder() LiteralEncoder {
 pub fn fixed_distance_encoder() DistanceEncoder {
     var h: DistanceEncoder = undefined;
     for (h.codes, 0..) |_, ch| {
-        h.codes[ch] = HuffCode{ .code = bitReverse(u16, @as(u16, @intCast(ch)), 5), .len = 5 };
+        h.codes[ch] = HuffCode{ .code = bit_reverse(u16, @as(u16, @int_cast(ch)), 5), .len = 5 };
     }
     return h;
 }
@@ -383,59 +383,59 @@ test "generate a Huffman code from an array of frequencies" {
         5, // 18
     };
 
-    var enc = huffmanEncoder(19);
+    var enc = huffman_encoder(19);
     enc.generate(freqs[0..], 7);
 
-    try testing.expectEqual(@as(u32, 141), enc.bitLength(freqs[0..]));
+    try testing.expect_equal(@as(u32, 141), enc.bit_length(freqs[0..]));
 
-    try testing.expectEqual(@as(usize, 3), enc.codes[0].len);
-    try testing.expectEqual(@as(usize, 6), enc.codes[1].len);
-    try testing.expectEqual(@as(usize, 6), enc.codes[2].len);
-    try testing.expectEqual(@as(usize, 5), enc.codes[3].len);
-    try testing.expectEqual(@as(usize, 3), enc.codes[4].len);
-    try testing.expectEqual(@as(usize, 2), enc.codes[5].len);
-    try testing.expectEqual(@as(usize, 2), enc.codes[6].len);
-    try testing.expectEqual(@as(usize, 6), enc.codes[7].len);
-    try testing.expectEqual(@as(usize, 0), enc.codes[8].len);
-    try testing.expectEqual(@as(usize, 0), enc.codes[9].len);
-    try testing.expectEqual(@as(usize, 0), enc.codes[10].len);
-    try testing.expectEqual(@as(usize, 0), enc.codes[11].len);
-    try testing.expectEqual(@as(usize, 0), enc.codes[12].len);
-    try testing.expectEqual(@as(usize, 0), enc.codes[13].len);
-    try testing.expectEqual(@as(usize, 0), enc.codes[14].len);
-    try testing.expectEqual(@as(usize, 0), enc.codes[15].len);
-    try testing.expectEqual(@as(usize, 6), enc.codes[16].len);
-    try testing.expectEqual(@as(usize, 5), enc.codes[17].len);
-    try testing.expectEqual(@as(usize, 3), enc.codes[18].len);
+    try testing.expect_equal(@as(usize, 3), enc.codes[0].len);
+    try testing.expect_equal(@as(usize, 6), enc.codes[1].len);
+    try testing.expect_equal(@as(usize, 6), enc.codes[2].len);
+    try testing.expect_equal(@as(usize, 5), enc.codes[3].len);
+    try testing.expect_equal(@as(usize, 3), enc.codes[4].len);
+    try testing.expect_equal(@as(usize, 2), enc.codes[5].len);
+    try testing.expect_equal(@as(usize, 2), enc.codes[6].len);
+    try testing.expect_equal(@as(usize, 6), enc.codes[7].len);
+    try testing.expect_equal(@as(usize, 0), enc.codes[8].len);
+    try testing.expect_equal(@as(usize, 0), enc.codes[9].len);
+    try testing.expect_equal(@as(usize, 0), enc.codes[10].len);
+    try testing.expect_equal(@as(usize, 0), enc.codes[11].len);
+    try testing.expect_equal(@as(usize, 0), enc.codes[12].len);
+    try testing.expect_equal(@as(usize, 0), enc.codes[13].len);
+    try testing.expect_equal(@as(usize, 0), enc.codes[14].len);
+    try testing.expect_equal(@as(usize, 0), enc.codes[15].len);
+    try testing.expect_equal(@as(usize, 6), enc.codes[16].len);
+    try testing.expect_equal(@as(usize, 5), enc.codes[17].len);
+    try testing.expect_equal(@as(usize, 3), enc.codes[18].len);
 
-    try testing.expectEqual(@as(u16, 0x0), enc.codes[5].code);
-    try testing.expectEqual(@as(u16, 0x2), enc.codes[6].code);
-    try testing.expectEqual(@as(u16, 0x1), enc.codes[0].code);
-    try testing.expectEqual(@as(u16, 0x5), enc.codes[4].code);
-    try testing.expectEqual(@as(u16, 0x3), enc.codes[18].code);
-    try testing.expectEqual(@as(u16, 0x7), enc.codes[3].code);
-    try testing.expectEqual(@as(u16, 0x17), enc.codes[17].code);
-    try testing.expectEqual(@as(u16, 0x0f), enc.codes[1].code);
-    try testing.expectEqual(@as(u16, 0x2f), enc.codes[2].code);
-    try testing.expectEqual(@as(u16, 0x1f), enc.codes[7].code);
-    try testing.expectEqual(@as(u16, 0x3f), enc.codes[16].code);
+    try testing.expect_equal(@as(u16, 0x0), enc.codes[5].code);
+    try testing.expect_equal(@as(u16, 0x2), enc.codes[6].code);
+    try testing.expect_equal(@as(u16, 0x1), enc.codes[0].code);
+    try testing.expect_equal(@as(u16, 0x5), enc.codes[4].code);
+    try testing.expect_equal(@as(u16, 0x3), enc.codes[18].code);
+    try testing.expect_equal(@as(u16, 0x7), enc.codes[3].code);
+    try testing.expect_equal(@as(u16, 0x17), enc.codes[17].code);
+    try testing.expect_equal(@as(u16, 0x0f), enc.codes[1].code);
+    try testing.expect_equal(@as(u16, 0x2f), enc.codes[2].code);
+    try testing.expect_equal(@as(u16, 0x1f), enc.codes[7].code);
+    try testing.expect_equal(@as(u16, 0x3f), enc.codes[16].code);
 }
 
 test "generate a Huffman code for the fixed literal table specific to Deflate" {
-    const enc = fixedLiteralEncoder();
+    const enc = fixed_literal_encoder();
     for (enc.codes) |c| {
         switch (c.len) {
             7 => {
-                const v = @bitReverse(@as(u7, @intCast(c.code)));
+                const v = @bit_reverse(@as(u7, @int_cast(c.code)));
                 try testing.expect(v <= 0b0010111);
             },
             8 => {
-                const v = @bitReverse(@as(u8, @intCast(c.code)));
+                const v = @bit_reverse(@as(u8, @int_cast(c.code)));
                 try testing.expect((v >= 0b000110000 and v <= 0b10111111) or
                     (v >= 0b11000000 and v <= 11000111));
             },
             9 => {
-                const v = @bitReverse(@as(u9, @intCast(c.code)));
+                const v = @bit_reverse(@as(u9, @int_cast(c.code)));
                 try testing.expect(v >= 0b110010000 and v <= 0b111111111);
             },
             else => unreachable,
@@ -444,9 +444,9 @@ test "generate a Huffman code for the fixed literal table specific to Deflate" {
 }
 
 test "generate a Huffman code for the 30 possible relative distances (LZ77 distances) of Deflate" {
-    const enc = fixedDistanceEncoder();
+    const enc = fixed_distance_encoder();
     for (enc.codes) |c| {
-        const v = @bitReverse(@as(u5, @intCast(c.code)));
+        const v = @bit_reverse(@as(u5, @int_cast(c.code)));
         try testing.expect(v <= 29);
         try testing.expect(c.len == 5);
     }
@@ -454,11 +454,11 @@ test "generate a Huffman code for the 30 possible relative distances (LZ77 dista
 
 // Reverse bit-by-bit a N-bit code.
 fn bit_reverse(comptime T: type, value: T, n: usize) T {
-    const r = @bitReverse(value);
-    return r >> @as(math.Log2Int(T), @intCast(@typeInfo(T).Int.bits - n));
+    const r = @bit_reverse(value);
+    return r >> @as(math.Log2Int(T), @int_cast(@typeInfo(T).Int.bits - n));
 }
 
-test bitReverse {
+test bit_reverse {
     const ReverseBitsTest = struct {
         in: u16,
         bit_count: u5,
@@ -477,21 +477,21 @@ test bitReverse {
     };
 
     for (reverse_bits_tests) |h| {
-        const v = bitReverse(u16, h.in, h.bit_count);
-        try std.testing.expectEqual(h.out, v);
+        const v = bit_reverse(u16, h.in, h.bit_count);
+        try std.testing.expect_equal(h.out, v);
     }
 }
 
-test "fixedLiteralEncoder codes" {
+test "fixed_literal_encoder codes" {
     var al = std.ArrayList(u8).init(testing.allocator);
     defer al.deinit();
-    var bw = std.io.bitWriter(.little, al.writer());
+    var bw = std.io.bit_writer(.little, al.writer());
 
-    const f = fixedLiteralEncoder();
+    const f = fixed_literal_encoder();
     for (f.codes) |c| {
-        try bw.writeBits(c.code, c.len);
+        try bw.write_bits(c.code, c.len);
     }
-    try testing.expectEqualSlices(u8, &fixed_codes, al.items);
+    try testing.expect_equal_slices(u8, &fixed_codes, al.items);
 }
 
 pub const fixed_codes = [_]u8{

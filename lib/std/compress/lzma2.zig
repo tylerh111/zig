@@ -20,7 +20,7 @@ test {
     const allocator = std.testing.allocator;
     var decomp = std.ArrayList(u8).init(allocator);
     defer decomp.deinit();
-    var stream = std.io.fixedBufferStream(compressed);
+    var stream = std.io.fixed_buffer_stream(compressed);
     try decompress(allocator, stream.reader(), decomp.writer());
-    try std.testing.expectEqualSlices(u8, expected, decomp.items);
+    try std.testing.expect_equal_slices(u8, expected, decomp.items);
 }

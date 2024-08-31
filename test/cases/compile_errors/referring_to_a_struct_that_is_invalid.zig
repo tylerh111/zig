@@ -3,7 +3,7 @@ const UsbDeviceRequest = struct {
 };
 
 export fn foo() void {
-    comptime assert(@sizeOf(UsbDeviceRequest) == 0x8);
+    comptime assert(@size_of(UsbDeviceRequest) == 0x8);
 }
 
 fn assert(ok: bool) void {

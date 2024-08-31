@@ -16,43 +16,43 @@ pub const Class = union(enum) {
 
 /// For `float_array` the second element will be the amount of floats.
 pub fn classify_type(ty: Type, mod: *Module) Class {
-    std.debug.assert(ty.hasRuntimeBitsIgnoreComptime(mod));
+    std.debug.assert(ty.has_runtime_bits_ignore_comptime(mod));
 
     var maybe_float_bits: ?u16 = null;
-    switch (ty.zigTypeTag(mod)) {
+    switch (ty.zig_type_tag(mod)) {
         .Struct => {
-            if (ty.containerLayout(mod) == .@"packed") return .byval;
-            const float_count = countFloats(ty, mod, &maybe_float_bits);
+            if (ty.container_layout(mod) == .@"packed") return .byval;
+            const float_count = count_floats(ty, mod, &maybe_float_bits);
             if (float_count <= sret_float_count) return .{ .float_array = float_count };
 
-            const bit_size = ty.bitSize(mod);
+            const bit_size = ty.bit_size(mod);
             if (bit_size > 128) return .memory;
             if (bit_size > 64) return .double_integer;
             return .integer;
         },
         .Union => {
-            if (ty.containerLayout(mod) == .@"packed") return .byval;
-            const float_count = countFloats(ty, mod, &maybe_float_bits);
+            if (ty.container_layout(mod) == .@"packed") return .byval;
+            const float_count = count_floats(ty, mod, &maybe_float_bits);
             if (float_count <= sret_float_count) return .{ .float_array = float_count };
 
-            const bit_size = ty.bitSize(mod);
+            const bit_size = ty.bit_size(mod);
             if (bit_size > 128) return .memory;
             if (bit_size > 64) return .double_integer;
             return .integer;
         },
         .Int, .Enum, .ErrorSet, .Float, .Bool => return .byval,
         .Vector => {
-            const bit_size = ty.bitSize(mod);
+            const bit_size = ty.bit_size(mod);
             // TODO is this controlled by a cpu feature?
             if (bit_size > 128) return .memory;
             return .byval;
         },
         .Optional => {
-            std.debug.assert(ty.isPtrLikeOptional(mod));
+            std.debug.assert(ty.is_ptr_like_optional(mod));
             return .byval;
         },
         .Pointer => {
-            std.debug.assert(!ty.isSlice(mod));
+            std.debug.assert(!ty.is_slice(mod));
             return .byval;
         },
         .ErrorUnion,
@@ -76,14 +76,14 @@ pub fn classify_type(ty: Type, mod: *Module) Class {
 const sret_float_count = 4;
 fn count_floats(ty: Type, mod: *Module, maybe_float_bits: *?u16) u8 {
     const ip = &mod.intern_pool;
-    const target = mod.getTarget();
-    const invalid = std.math.maxInt(u8);
-    switch (ty.zigTypeTag(mod)) {
+    const target = mod.get_target();
+    const invalid = std.math.max_int(u8);
+    switch (ty.zig_type_tag(mod)) {
         .Union => {
-            const union_obj = mod.typeToUnion(ty).?;
+            const union_obj = mod.type_to_union(ty).?;
             var max_count: u8 = 0;
             for (union_obj.field_types.get(ip)) |field_ty| {
-                const field_count = countFloats(Type.fromInterned(field_ty), mod, maybe_float_bits);
+                const field_count = count_floats(Type.from_interned(field_ty), mod, maybe_float_bits);
                 if (field_count == invalid) return invalid;
                 if (field_count > max_count) max_count = field_count;
                 if (max_count > sret_float_count) return invalid;
@@ -91,12 +91,12 @@ fn count_floats(ty: Type, mod: *Module, maybe_float_bits: *?u16) u8 {
             return max_count;
         },
         .Struct => {
-            const fields_len = ty.structFieldCount(mod);
+            const fields_len = ty.struct_field_count(mod);
             var count: u8 = 0;
             var i: u32 = 0;
             while (i < fields_len) : (i += 1) {
-                const field_ty = ty.structFieldType(i, mod);
-                const field_count = countFloats(field_ty, mod, maybe_float_bits);
+                const field_ty = ty.struct_field_type(i, mod);
+                const field_count = count_floats(field_ty, mod, maybe_float_bits);
                 if (field_count == invalid) return invalid;
                 count += field_count;
                 if (count > sret_float_count) return invalid;
@@ -105,10 +105,10 @@ fn count_floats(ty: Type, mod: *Module, maybe_float_bits: *?u16) u8 {
         },
         .Float => {
             const float_bits = maybe_float_bits.* orelse {
-                maybe_float_bits.* = ty.floatBits(target);
+                maybe_float_bits.* = ty.float_bits(target);
                 return 1;
             };
-            if (ty.floatBits(target) == float_bits) return 1;
+            if (ty.float_bits(target) == float_bits) return 1;
             return invalid;
         },
         .Void => return 0,
@@ -118,20 +118,20 @@ fn count_floats(ty: Type, mod: *Module, maybe_float_bits: *?u16) u8 {
 
 pub fn get_float_array_type(ty: Type, mod: *Module) ?Type {
     const ip = &mod.intern_pool;
-    switch (ty.zigTypeTag(mod)) {
+    switch (ty.zig_type_tag(mod)) {
         .Union => {
-            const union_obj = mod.typeToUnion(ty).?;
+            const union_obj = mod.type_to_union(ty).?;
             for (union_obj.field_types.get(ip)) |field_ty| {
-                if (getFloatArrayType(Type.fromInterned(field_ty), mod)) |some| return some;
+                if (get_float_array_type(Type.from_interned(field_ty), mod)) |some| return some;
             }
             return null;
         },
         .Struct => {
-            const fields_len = ty.structFieldCount(mod);
+            const fields_len = ty.struct_field_count(mod);
             var i: u32 = 0;
             while (i < fields_len) : (i += 1) {
-                const field_ty = ty.structFieldType(i, mod);
-                if (getFloatArrayType(field_ty, mod)) |some| return some;
+                const field_ty = ty.struct_field_type(i, mod);
+                if (get_float_array_type(field_ty, mod)) |some| return some;
             }
             return null;
         },
@@ -155,9 +155,9 @@ pub const RegisterManager = RegisterManagerFn(@import("CodeGen.zig"), Register, 
 const RegisterBitSet = RegisterManager.RegisterBitSet;
 pub const RegisterClass = struct {
     pub const gp: RegisterBitSet = blk: {
-        var set = RegisterBitSet.initEmpty();
+        var set = RegisterBitSet.init_empty();
         for (callee_preserved_regs) |reg| {
-            const index = RegisterManager.indexOfRegIntoTracked(reg).?;
+            const index = RegisterManager.index_of_reg_into_tracked(reg).?;
             set.set(index);
         }
         break :blk set;

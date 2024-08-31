@@ -2,8 +2,8 @@ const std = @import("std");
 const math = std.math;
 const common = @import("common.zig");
 const FloatStream = @import("FloatStream.zig");
-const isEightDigits = @import("common.zig").isEightDigits;
-const mantissaType = common.mantissaType;
+const is_eight_digits = @import("common.zig").is_eight_digits;
+const mantissa_type = common.mantissa_type;
 
 // Arbitrary-precision decimal class for fallback algorithms.
 //
@@ -23,7 +23,7 @@ const mantissaType = common.mantissaType;
 // the input with sufficient accuracy. Internally this means either a u64 mantissa (f16, f32 or f64)
 // or a u128 mantissa (f128).
 pub fn Decimal(comptime T: type) type {
-    const MantissaT = mantissaType(T);
+    const MantissaT = mantissa_type(T);
     std.debug.assert(MantissaT == u64 or MantissaT == u128);
 
     return struct {
@@ -111,10 +111,10 @@ pub fn Decimal(comptime T: type) type {
             if (self.num_digits == 0 or self.decimal_point < 0) {
                 return 0;
             } else if (self.decimal_point > max_decimal_digits) {
-                return math.maxInt(MantissaT);
+                return math.max_int(MantissaT);
             }
 
-            const dp = @as(usize, @intCast(self.decimal_point));
+            const dp = @as(usize, @int_cast(self.decimal_point));
             var n: MantissaT = 0;
 
             var i: usize = 0;
@@ -143,7 +143,7 @@ pub fn Decimal(comptime T: type) type {
             if (self.num_digits == 0) {
                 return;
             }
-            const num_new_digits = self.numberOfDigitsLeftShift(shift);
+            const num_new_digits = self.number_of_digits_left_shift(shift);
             var read_index = self.num_digits;
             var write_index = self.num_digits + num_new_digits;
             var n: MantissaT = 0;
@@ -155,7 +155,7 @@ pub fn Decimal(comptime T: type) type {
                 const quotient = n / 10;
                 const remainder = n - (10 * quotient);
                 if (write_index < max_digits) {
-                    self.digits[write_index] = @as(u8, @intCast(remainder));
+                    self.digits[write_index] = @as(u8, @int_cast(remainder));
                 } else if (remainder > 0) {
                     self.truncated = true;
                 }
@@ -167,7 +167,7 @@ pub fn Decimal(comptime T: type) type {
                 const quotient = n / 10;
                 const remainder = n - (10 * quotient);
                 if (write_index < max_digits) {
-                    self.digits[write_index] = @as(u8, @intCast(remainder));
+                    self.digits[write_index] = @as(u8, @int_cast(remainder));
                 } else if (remainder > 0) {
                     self.truncated = true;
                 }
@@ -178,7 +178,7 @@ pub fn Decimal(comptime T: type) type {
             if (self.num_digits > max_digits) {
                 self.num_digits = max_digits;
             }
-            self.decimal_point += @as(i32, @intCast(num_new_digits));
+            self.decimal_point += @as(i32, @int_cast(num_new_digits));
             self.trim();
         }
 
@@ -202,7 +202,7 @@ pub fn Decimal(comptime T: type) type {
                 }
             }
 
-            self.decimal_point -= @as(i32, @intCast(read_index)) - 1;
+            self.decimal_point -= @as(i32, @int_cast(read_index)) - 1;
             if (self.decimal_point < -decimal_point_range) {
                 self.num_digits = 0;
                 self.decimal_point = 0;
@@ -212,14 +212,14 @@ pub fn Decimal(comptime T: type) type {
 
             const mask = math.shl(MantissaT, 1, shift) - 1;
             while (read_index < self.num_digits) {
-                const new_digit = @as(u8, @intCast(math.shr(MantissaT, n, shift)));
+                const new_digit = @as(u8, @int_cast(math.shr(MantissaT, n, shift)));
                 n = (10 * (n & mask)) + self.digits[read_index];
                 read_index += 1;
                 self.digits[write_index] = new_digit;
                 write_index += 1;
             }
             while (n > 0) {
-                const new_digit = @as(u8, @intCast(math.shr(MantissaT, n, shift)));
+                const new_digit = @as(u8, @int_cast(math.shr(MantissaT, n, shift)));
                 n = 10 * (n & mask);
                 if (write_index < max_digits) {
                     self.digits[write_index] = new_digit;
@@ -234,46 +234,46 @@ pub fn Decimal(comptime T: type) type {
 
         /// Parse a bit integer representation of the float as a decimal.
         // We do not verify underscores in this path since these will have been verified
-        // via parse.parseNumber so can assume the number is well-formed.
+        // via parse.parse_number so can assume the number is well-formed.
         // This code-path does not have to handle hex-floats since these will always be handled via another
         // function prior to this.
         pub fn parse(s: []const u8) Self {
             var d = Self.new();
             var stream = FloatStream.init(s);
 
-            stream.skipChars2('0', '_');
-            while (stream.scanDigit(10)) |digit| {
-                d.tryAddDigit(digit);
+            stream.skip_chars2('0', '_');
+            while (stream.scan_digit(10)) |digit| {
+                d.try_add_digit(digit);
             }
 
-            if (stream.firstIs('.')) {
+            if (stream.first_is('.')) {
                 stream.advance(1);
-                const marker = stream.offsetTrue();
+                const marker = stream.offset_true();
 
                 // Skip leading zeroes
                 if (d.num_digits == 0) {
-                    stream.skipChars('0');
+                    stream.skip_chars('0');
                 }
 
-                while (stream.hasLen(8) and d.num_digits + 8 < max_digits) {
-                    const v = stream.readU64Unchecked();
-                    if (!isEightDigits(v)) {
+                while (stream.has_len(8) and d.num_digits + 8 < max_digits) {
+                    const v = stream.read_u64_unchecked();
+                    if (!is_eight_digits(v)) {
                         break;
                     }
-                    std.mem.writeInt(u64, d.digits[d.num_digits..][0..8], v - 0x3030_3030_3030_3030, .little);
+                    std.mem.write_int(u64, d.digits[d.num_digits..][0..8], v - 0x3030_3030_3030_3030, .little);
                     d.num_digits += 8;
                     stream.advance(8);
                 }
 
-                while (stream.scanDigit(10)) |digit| {
-                    d.tryAddDigit(digit);
+                while (stream.scan_digit(10)) |digit| {
+                    d.try_add_digit(digit);
                 }
-                d.decimal_point = @as(i32, @intCast(marker)) - @as(i32, @intCast(stream.offsetTrue()));
+                d.decimal_point = @as(i32, @int_cast(marker)) - @as(i32, @int_cast(stream.offset_true()));
             }
             if (d.num_digits != 0) {
                 // Ignore trailing zeros if any
                 var n_trailing_zeros: usize = 0;
-                var i = stream.offsetTrue() - 1;
+                var i = stream.offset_true() - 1;
                 while (true) {
                     if (s[i] == '0') {
                         n_trailing_zeros += 1;
@@ -284,25 +284,25 @@ pub fn Decimal(comptime T: type) type {
                     i -= 1;
                     if (i == 0) break;
                 }
-                d.decimal_point += @as(i32, @intCast(n_trailing_zeros));
+                d.decimal_point += @as(i32, @int_cast(n_trailing_zeros));
                 d.num_digits -= n_trailing_zeros;
-                d.decimal_point += @as(i32, @intCast(d.num_digits));
+                d.decimal_point += @as(i32, @int_cast(d.num_digits));
                 if (d.num_digits > max_digits) {
                     d.truncated = true;
                     d.num_digits = max_digits;
                 }
             }
-            if (stream.firstIsLower('e')) {
+            if (stream.first_is_lower('e')) {
                 stream.advance(1);
                 var neg_exp = false;
-                if (stream.firstIs('-')) {
+                if (stream.first_is('-')) {
                     neg_exp = true;
                     stream.advance(1);
-                } else if (stream.firstIs('+')) {
+                } else if (stream.first_is('+')) {
                     stream.advance(1);
                 }
                 var exp_num: i32 = 0;
-                while (stream.scanDigit(10)) |digit| {
+                while (stream.scan_digit(10)) |digit| {
                     if (exp_num < 0x10000) {
                         exp_num = 10 * exp_num + digit;
                     }

@@ -143,97 +143,97 @@ pub const CLOCK = struct {
 };
 
 pub const CPU_SETSIZE = 128;
-pub const cpu_set_t = [CPU_SETSIZE / @sizeOf(usize)]usize;
+pub const cpu_set_t = [CPU_SETSIZE / @size_of(usize)]usize;
 pub const cpu_count_t = std.meta.Int(.unsigned, std.math.log2(CPU_SETSIZE * 8));
 
 pub fn CPU_COUNT(set: cpu_set_t) cpu_count_t {
     var sum: cpu_count_t = 0;
     for (set) |x| {
-        sum += @popCount(x);
+        sum += @pop_count(x);
     }
     return sum;
 }
 
 pub const E = enum(u16) {
-    SUCCESS = @intFromEnum(wasi.errno_t.SUCCESS),
-    @"2BIG" = @intFromEnum(wasi.errno_t.@"2BIG"),
-    ACCES = @intFromEnum(wasi.errno_t.ACCES),
-    ADDRINUSE = @intFromEnum(wasi.errno_t.ADDRINUSE),
-    ADDRNOTAVAIL = @intFromEnum(wasi.errno_t.ADDRNOTAVAIL),
-    AFNOSUPPORT = @intFromEnum(wasi.errno_t.AFNOSUPPORT),
+    SUCCESS = @int_from_enum(wasi.errno_t.SUCCESS),
+    @"2BIG" = @int_from_enum(wasi.errno_t.@"2BIG"),
+    ACCES = @int_from_enum(wasi.errno_t.ACCES),
+    ADDRINUSE = @int_from_enum(wasi.errno_t.ADDRINUSE),
+    ADDRNOTAVAIL = @int_from_enum(wasi.errno_t.ADDRNOTAVAIL),
+    AFNOSUPPORT = @int_from_enum(wasi.errno_t.AFNOSUPPORT),
     /// This is also the error code used for `WOULDBLOCK`.
-    AGAIN = @intFromEnum(wasi.errno_t.AGAIN),
-    ALREADY = @intFromEnum(wasi.errno_t.ALREADY),
-    BADF = @intFromEnum(wasi.errno_t.BADF),
-    BADMSG = @intFromEnum(wasi.errno_t.BADMSG),
-    BUSY = @intFromEnum(wasi.errno_t.BUSY),
-    CANCELED = @intFromEnum(wasi.errno_t.CANCELED),
-    CHILD = @intFromEnum(wasi.errno_t.CHILD),
-    CONNABORTED = @intFromEnum(wasi.errno_t.CONNABORTED),
-    CONNREFUSED = @intFromEnum(wasi.errno_t.CONNREFUSED),
-    CONNRESET = @intFromEnum(wasi.errno_t.CONNRESET),
-    DEADLK = @intFromEnum(wasi.errno_t.DEADLK),
-    DESTADDRREQ = @intFromEnum(wasi.errno_t.DESTADDRREQ),
-    DOM = @intFromEnum(wasi.errno_t.DOM),
-    DQUOT = @intFromEnum(wasi.errno_t.DQUOT),
-    EXIST = @intFromEnum(wasi.errno_t.EXIST),
-    FAULT = @intFromEnum(wasi.errno_t.FAULT),
-    FBIG = @intFromEnum(wasi.errno_t.FBIG),
-    HOSTUNREACH = @intFromEnum(wasi.errno_t.HOSTUNREACH),
-    IDRM = @intFromEnum(wasi.errno_t.IDRM),
-    ILSEQ = @intFromEnum(wasi.errno_t.ILSEQ),
-    INPROGRESS = @intFromEnum(wasi.errno_t.INPROGRESS),
-    INTR = @intFromEnum(wasi.errno_t.INTR),
-    INVAL = @intFromEnum(wasi.errno_t.INVAL),
-    IO = @intFromEnum(wasi.errno_t.IO),
-    ISCONN = @intFromEnum(wasi.errno_t.ISCONN),
-    ISDIR = @intFromEnum(wasi.errno_t.ISDIR),
-    LOOP = @intFromEnum(wasi.errno_t.LOOP),
-    MFILE = @intFromEnum(wasi.errno_t.MFILE),
-    MLINK = @intFromEnum(wasi.errno_t.MLINK),
-    MSGSIZE = @intFromEnum(wasi.errno_t.MSGSIZE),
-    MULTIHOP = @intFromEnum(wasi.errno_t.MULTIHOP),
-    NAMETOOLONG = @intFromEnum(wasi.errno_t.NAMETOOLONG),
-    NETDOWN = @intFromEnum(wasi.errno_t.NETDOWN),
-    NETRESET = @intFromEnum(wasi.errno_t.NETRESET),
-    NETUNREACH = @intFromEnum(wasi.errno_t.NETUNREACH),
-    NFILE = @intFromEnum(wasi.errno_t.NFILE),
-    NOBUFS = @intFromEnum(wasi.errno_t.NOBUFS),
-    NODEV = @intFromEnum(wasi.errno_t.NODEV),
-    NOENT = @intFromEnum(wasi.errno_t.NOENT),
-    NOEXEC = @intFromEnum(wasi.errno_t.NOEXEC),
-    NOLCK = @intFromEnum(wasi.errno_t.NOLCK),
-    NOLINK = @intFromEnum(wasi.errno_t.NOLINK),
-    NOMEM = @intFromEnum(wasi.errno_t.NOMEM),
-    NOMSG = @intFromEnum(wasi.errno_t.NOMSG),
-    NOPROTOOPT = @intFromEnum(wasi.errno_t.NOPROTOOPT),
-    NOSPC = @intFromEnum(wasi.errno_t.NOSPC),
-    NOSYS = @intFromEnum(wasi.errno_t.NOSYS),
-    NOTCONN = @intFromEnum(wasi.errno_t.NOTCONN),
-    NOTDIR = @intFromEnum(wasi.errno_t.NOTDIR),
-    NOTEMPTY = @intFromEnum(wasi.errno_t.NOTEMPTY),
-    NOTRECOVERABLE = @intFromEnum(wasi.errno_t.NOTRECOVERABLE),
-    NOTSOCK = @intFromEnum(wasi.errno_t.NOTSOCK),
+    AGAIN = @int_from_enum(wasi.errno_t.AGAIN),
+    ALREADY = @int_from_enum(wasi.errno_t.ALREADY),
+    BADF = @int_from_enum(wasi.errno_t.BADF),
+    BADMSG = @int_from_enum(wasi.errno_t.BADMSG),
+    BUSY = @int_from_enum(wasi.errno_t.BUSY),
+    CANCELED = @int_from_enum(wasi.errno_t.CANCELED),
+    CHILD = @int_from_enum(wasi.errno_t.CHILD),
+    CONNABORTED = @int_from_enum(wasi.errno_t.CONNABORTED),
+    CONNREFUSED = @int_from_enum(wasi.errno_t.CONNREFUSED),
+    CONNRESET = @int_from_enum(wasi.errno_t.CONNRESET),
+    DEADLK = @int_from_enum(wasi.errno_t.DEADLK),
+    DESTADDRREQ = @int_from_enum(wasi.errno_t.DESTADDRREQ),
+    DOM = @int_from_enum(wasi.errno_t.DOM),
+    DQUOT = @int_from_enum(wasi.errno_t.DQUOT),
+    EXIST = @int_from_enum(wasi.errno_t.EXIST),
+    FAULT = @int_from_enum(wasi.errno_t.FAULT),
+    FBIG = @int_from_enum(wasi.errno_t.FBIG),
+    HOSTUNREACH = @int_from_enum(wasi.errno_t.HOSTUNREACH),
+    IDRM = @int_from_enum(wasi.errno_t.IDRM),
+    ILSEQ = @int_from_enum(wasi.errno_t.ILSEQ),
+    INPROGRESS = @int_from_enum(wasi.errno_t.INPROGRESS),
+    INTR = @int_from_enum(wasi.errno_t.INTR),
+    INVAL = @int_from_enum(wasi.errno_t.INVAL),
+    IO = @int_from_enum(wasi.errno_t.IO),
+    ISCONN = @int_from_enum(wasi.errno_t.ISCONN),
+    ISDIR = @int_from_enum(wasi.errno_t.ISDIR),
+    LOOP = @int_from_enum(wasi.errno_t.LOOP),
+    MFILE = @int_from_enum(wasi.errno_t.MFILE),
+    MLINK = @int_from_enum(wasi.errno_t.MLINK),
+    MSGSIZE = @int_from_enum(wasi.errno_t.MSGSIZE),
+    MULTIHOP = @int_from_enum(wasi.errno_t.MULTIHOP),
+    NAMETOOLONG = @int_from_enum(wasi.errno_t.NAMETOOLONG),
+    NETDOWN = @int_from_enum(wasi.errno_t.NETDOWN),
+    NETRESET = @int_from_enum(wasi.errno_t.NETRESET),
+    NETUNREACH = @int_from_enum(wasi.errno_t.NETUNREACH),
+    NFILE = @int_from_enum(wasi.errno_t.NFILE),
+    NOBUFS = @int_from_enum(wasi.errno_t.NOBUFS),
+    NODEV = @int_from_enum(wasi.errno_t.NODEV),
+    NOENT = @int_from_enum(wasi.errno_t.NOENT),
+    NOEXEC = @int_from_enum(wasi.errno_t.NOEXEC),
+    NOLCK = @int_from_enum(wasi.errno_t.NOLCK),
+    NOLINK = @int_from_enum(wasi.errno_t.NOLINK),
+    NOMEM = @int_from_enum(wasi.errno_t.NOMEM),
+    NOMSG = @int_from_enum(wasi.errno_t.NOMSG),
+    NOPROTOOPT = @int_from_enum(wasi.errno_t.NOPROTOOPT),
+    NOSPC = @int_from_enum(wasi.errno_t.NOSPC),
+    NOSYS = @int_from_enum(wasi.errno_t.NOSYS),
+    NOTCONN = @int_from_enum(wasi.errno_t.NOTCONN),
+    NOTDIR = @int_from_enum(wasi.errno_t.NOTDIR),
+    NOTEMPTY = @int_from_enum(wasi.errno_t.NOTEMPTY),
+    NOTRECOVERABLE = @int_from_enum(wasi.errno_t.NOTRECOVERABLE),
+    NOTSOCK = @int_from_enum(wasi.errno_t.NOTSOCK),
     /// This is also the code used for `NOTSUP`.
-    OPNOTSUPP = @intFromEnum(wasi.errno_t.OPNOTSUPP),
-    NOTTY = @intFromEnum(wasi.errno_t.NOTTY),
-    NXIO = @intFromEnum(wasi.errno_t.NXIO),
-    OVERFLOW = @intFromEnum(wasi.errno_t.OVERFLOW),
-    OWNERDEAD = @intFromEnum(wasi.errno_t.OWNERDEAD),
-    PERM = @intFromEnum(wasi.errno_t.PERM),
-    PIPE = @intFromEnum(wasi.errno_t.PIPE),
-    PROTO = @intFromEnum(wasi.errno_t.PROTO),
-    PROTONOSUPPORT = @intFromEnum(wasi.errno_t.PROTONOSUPPORT),
-    PROTOTYPE = @intFromEnum(wasi.errno_t.PROTOTYPE),
-    RANGE = @intFromEnum(wasi.errno_t.RANGE),
-    ROFS = @intFromEnum(wasi.errno_t.ROFS),
-    SPIPE = @intFromEnum(wasi.errno_t.SPIPE),
-    SRCH = @intFromEnum(wasi.errno_t.SRCH),
-    STALE = @intFromEnum(wasi.errno_t.STALE),
-    TIMEDOUT = @intFromEnum(wasi.errno_t.TIMEDOUT),
-    TXTBSY = @intFromEnum(wasi.errno_t.TXTBSY),
-    XDEV = @intFromEnum(wasi.errno_t.XDEV),
-    NOTCAPABLE = @intFromEnum(wasi.errno_t.NOTCAPABLE),
+    OPNOTSUPP = @int_from_enum(wasi.errno_t.OPNOTSUPP),
+    NOTTY = @int_from_enum(wasi.errno_t.NOTTY),
+    NXIO = @int_from_enum(wasi.errno_t.NXIO),
+    OVERFLOW = @int_from_enum(wasi.errno_t.OVERFLOW),
+    OWNERDEAD = @int_from_enum(wasi.errno_t.OWNERDEAD),
+    PERM = @int_from_enum(wasi.errno_t.PERM),
+    PIPE = @int_from_enum(wasi.errno_t.PIPE),
+    PROTO = @int_from_enum(wasi.errno_t.PROTO),
+    PROTONOSUPPORT = @int_from_enum(wasi.errno_t.PROTONOSUPPORT),
+    PROTOTYPE = @int_from_enum(wasi.errno_t.PROTOTYPE),
+    RANGE = @int_from_enum(wasi.errno_t.RANGE),
+    ROFS = @int_from_enum(wasi.errno_t.ROFS),
+    SPIPE = @int_from_enum(wasi.errno_t.SPIPE),
+    SRCH = @int_from_enum(wasi.errno_t.SRCH),
+    STALE = @int_from_enum(wasi.errno_t.STALE),
+    TIMEDOUT = @int_from_enum(wasi.errno_t.TIMEDOUT),
+    TXTBSY = @int_from_enum(wasi.errno_t.TXTBSY),
+    XDEV = @int_from_enum(wasi.errno_t.XDEV),
+    NOTCAPABLE = @int_from_enum(wasi.errno_t.NOTCAPABLE),
 
     ENOSTR = 100,
     EBFONT = 101,
@@ -333,7 +333,7 @@ pub const W = struct {
     pub const NOWAIT = 0x1000000;
 
     pub fn EXITSTATUS(s: u32) u8 {
-        return @as(u8, @intCast((s & 0xff00) >> 8));
+        return @as(u8, @int_cast((s & 0xff00) >> 8));
     }
     pub fn TERMSIG(s: u32) u32 {
         return s & 0x7f;
@@ -689,7 +689,7 @@ pub const SIG = struct {
     pub const SYS = 31;
     pub const UNUSED = SIG.SYS;
 
-    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(std.math.maxInt(usize));
+    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(std.math.max_int(usize));
     pub const DFL: ?Sigaction.handler_fn = @ptrFromInt(0);
     pub const IGN: ?Sigaction.handler_fn = @ptrFromInt(1);
 };
@@ -716,7 +716,7 @@ pub const siginfo_t = extern struct {
     fields: siginfo_fields_union,
 };
 const siginfo_fields_union = extern union {
-    pad: [128 - 2 * @sizeOf(c_int) - @sizeOf(c_long)]u8,
+    pad: [128 - 2 * @size_of(c_int) - @size_of(c_long)]u8,
     common: extern struct {
         first: extern union {
             piduid: extern struct {
@@ -958,10 +958,10 @@ pub const sockaddr = extern struct {
     pub const SS_MAXSIZE = 128;
     pub const storage = extern struct {
         family: sa_family_t align(8),
-        padding: [SS_MAXSIZE - @sizeOf(sa_family_t)]u8 = undefined,
+        padding: [SS_MAXSIZE - @size_of(sa_family_t)]u8 = undefined,
 
         comptime {
-            std.debug.assert(@sizeOf(storage) == SS_MAXSIZE);
+            std.debug.assert(@size_of(storage) == SS_MAXSIZE);
             std.debug.assert(@alignOf(storage) == 8);
         }
     };
@@ -1031,7 +1031,7 @@ pub const sockaddr = extern struct {
         /// The total size of this structure should be exactly the same as that of struct sockaddr.
         zero: [3]u8 = [_]u8{0} ** 3,
         comptime {
-            std.debug.assert(@sizeOf(vm) == @sizeOf(sockaddr));
+            std.debug.assert(@size_of(vm) == @size_of(sockaddr));
         }
     };
 };

@@ -7,7 +7,7 @@ pub fn pass(in: []u8) []u8 {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&pass));
+    return @size_of(@TypeOf(&pass));
 }
 
 // error

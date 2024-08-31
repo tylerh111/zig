@@ -92,13 +92,13 @@ pub fn get_writable(self: *Self, n: usize) []u8 {
 /// Read available data. Can return part of the available data if it is
 /// spread across two circles. So read until this returns zero length.
 pub fn read(self: *Self) []const u8 {
-    return self.readAtMost(buffer_len);
+    return self.read_at_most(buffer_len);
 }
 
 /// Read part of available data. Can return less than max even if there are
 /// more than max decoded data.
 pub fn read_at_most(self: *Self, limit: usize) []const u8 {
-    const rb = self.readBlock(if (limit == 0) buffer_len else limit);
+    const rb = self.read_block(if (limit == 0) buffer_len else limit);
     defer self.rp += rb.len;
     return self.buffer[rb.head..rb.tail];
 }
@@ -136,75 +136,75 @@ pub fn full(self: *Self) bool {
 }
 
 // example from: https://youtu.be/SJPvNi4HrWQ?t=3558
-test writeMatch {
+test write_match {
     var cb: Self = .{};
 
-    cb.writeAll("a salad; ");
-    try cb.writeMatch(5, 9);
-    try cb.writeMatch(3, 3);
+    cb.write_all("a salad; ");
+    try cb.write_match(5, 9);
+    try cb.write_match(3, 3);
 
-    try testing.expectEqualStrings("a salad; a salsal", cb.read());
+    try testing.expect_equal_strings("a salad; a salsal", cb.read());
 }
 
-test "writeMatch overlap" {
+test "write_match overlap" {
     var cb: Self = .{};
 
-    cb.writeAll("a b c ");
-    try cb.writeMatch(8, 4);
+    cb.write_all("a b c ");
+    try cb.write_match(8, 4);
     cb.write('d');
 
-    try testing.expectEqualStrings("a b c b c b c d", cb.read());
+    try testing.expect_equal_strings("a b c b c b c d", cb.read());
 }
 
-test readAtMost {
+test read_at_most {
     var cb: Self = .{};
 
-    cb.writeAll("0123456789");
-    try cb.writeMatch(50, 10);
+    cb.write_all("0123456789");
+    try cb.write_match(50, 10);
 
-    try testing.expectEqualStrings("0123456789" ** 6, cb.buffer[cb.rp..cb.wp]);
+    try testing.expect_equal_strings("0123456789" ** 6, cb.buffer[cb.rp..cb.wp]);
     for (0..6) |i| {
-        try testing.expectEqual(i * 10, cb.rp);
-        try testing.expectEqualStrings("0123456789", cb.readAtMost(10));
+        try testing.expect_equal(i * 10, cb.rp);
+        try testing.expect_equal_strings("0123456789", cb.read_at_most(10));
     }
-    try testing.expectEqualStrings("", cb.readAtMost(10));
-    try testing.expectEqualStrings("", cb.read());
+    try testing.expect_equal_strings("", cb.read_at_most(10));
+    try testing.expect_equal_strings("", cb.read());
 }
 
 test Self {
     var cb: Self = .{};
 
     const data = "0123456789abcdef" ** (1024 / 16);
-    cb.writeAll(data);
-    try testing.expectEqual(@as(usize, 0), cb.rp);
-    try testing.expectEqual(@as(usize, 1024), cb.wp);
-    try testing.expectEqual(@as(usize, 1024 * 63), cb.free());
+    cb.write_all(data);
+    try testing.expect_equal(@as(usize, 0), cb.rp);
+    try testing.expect_equal(@as(usize, 1024), cb.wp);
+    try testing.expect_equal(@as(usize, 1024 * 63), cb.free());
 
     for (0..62 * 4) |_|
-        try cb.writeMatch(256, 1024); // write 62K
+        try cb.write_match(256, 1024); // write 62K
 
-    try testing.expectEqual(@as(usize, 0), cb.rp);
-    try testing.expectEqual(@as(usize, 63 * 1024), cb.wp);
-    try testing.expectEqual(@as(usize, 1024), cb.free());
+    try testing.expect_equal(@as(usize, 0), cb.rp);
+    try testing.expect_equal(@as(usize, 63 * 1024), cb.wp);
+    try testing.expect_equal(@as(usize, 1024), cb.free());
 
-    cb.writeAll(data[0..200]);
-    _ = cb.readAtMost(1024); // make some space
-    cb.writeAll(data); // overflows write position
-    try testing.expectEqual(@as(usize, 200 + 65536), cb.wp);
-    try testing.expectEqual(@as(usize, 1024), cb.rp);
-    try testing.expectEqual(@as(usize, 1024 - 200), cb.free());
+    cb.write_all(data[0..200]);
+    _ = cb.read_at_most(1024); // make some space
+    cb.write_all(data); // overflows write position
+    try testing.expect_equal(@as(usize, 200 + 65536), cb.wp);
+    try testing.expect_equal(@as(usize, 1024), cb.rp);
+    try testing.expect_equal(@as(usize, 1024 - 200), cb.free());
 
-    const rb = cb.readBlock(Self.buffer_len);
-    try testing.expectEqual(@as(usize, 65536 - 1024), rb.len);
-    try testing.expectEqual(@as(usize, 1024), rb.head);
-    try testing.expectEqual(@as(usize, 65536), rb.tail);
+    const rb = cb.read_block(Self.buffer_len);
+    try testing.expect_equal(@as(usize, 65536 - 1024), rb.len);
+    try testing.expect_equal(@as(usize, 1024), rb.head);
+    try testing.expect_equal(@as(usize, 65536), rb.tail);
 
-    try testing.expectEqual(@as(usize, 65536 - 1024), cb.read().len); // read to the end of the buffer
-    try testing.expectEqual(@as(usize, 200 + 65536), cb.wp);
-    try testing.expectEqual(@as(usize, 65536), cb.rp);
-    try testing.expectEqual(@as(usize, 65536 - 200), cb.free());
+    try testing.expect_equal(@as(usize, 65536 - 1024), cb.read().len); // read to the end of the buffer
+    try testing.expect_equal(@as(usize, 200 + 65536), cb.wp);
+    try testing.expect_equal(@as(usize, 65536), cb.rp);
+    try testing.expect_equal(@as(usize, 65536 - 200), cb.free());
 
-    try testing.expectEqual(@as(usize, 200), cb.read().len); // read the rest
+    try testing.expect_equal(@as(usize, 200), cb.read().len); // read the rest
 }
 
 test "write overlap" {
@@ -212,29 +212,29 @@ test "write overlap" {
     cb.wp = cb.buffer.len - 15;
     cb.rp = cb.wp;
 
-    cb.writeAll("0123456789");
-    cb.writeAll("abcdefghij");
+    cb.write_all("0123456789");
+    cb.write_all("abcdefghij");
 
-    try testing.expectEqual(cb.buffer.len + 5, cb.wp);
-    try testing.expectEqual(cb.buffer.len - 15, cb.rp);
+    try testing.expect_equal(cb.buffer.len + 5, cb.wp);
+    try testing.expect_equal(cb.buffer.len - 15, cb.rp);
 
-    try testing.expectEqualStrings("0123456789abcde", cb.read());
-    try testing.expectEqualStrings("fghij", cb.read());
+    try testing.expect_equal_strings("0123456789abcde", cb.read());
+    try testing.expect_equal_strings("fghij", cb.read());
 
     try testing.expect(cb.wp == cb.rp);
 }
 
-test "writeMatch/read overlap" {
+test "write_match/read overlap" {
     var cb: Self = .{};
     cb.wp = cb.buffer.len - 15;
     cb.rp = cb.wp;
 
-    cb.writeAll("0123456789");
-    try cb.writeMatch(15, 5);
+    cb.write_all("0123456789");
+    try cb.write_match(15, 5);
 
-    try testing.expectEqualStrings("012345678956789", cb.read());
-    try testing.expectEqualStrings("5678956789", cb.read());
+    try testing.expect_equal_strings("012345678956789", cb.read());
+    try testing.expect_equal_strings("5678956789", cb.read());
 
-    try cb.writeMatch(20, 25);
-    try testing.expectEqualStrings("01234567895678956789", cb.read());
+    try cb.write_match(20, 25);
+    try testing.expect_equal_strings("01234567895678956789", cb.read());
 }

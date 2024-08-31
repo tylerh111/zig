@@ -10,8 +10,8 @@ pub const TestCase = struct {
 pub const testCases = blk: {
     @setEvalBranchQuota(4096 * 2);
 
-    const L = Token.initLiteral;
-    const M = Token.initMatch;
+    const L = Token.init_literal;
+    const M = Token.init_match;
     const ml = M(1, 258); // Maximum length token. Used to reduce the size of writeBlockTests
 
     break :blk &[_]TestCase{

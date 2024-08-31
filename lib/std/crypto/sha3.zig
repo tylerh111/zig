@@ -189,7 +189,7 @@ fn ShakeLike(comptime security_level: u11, comptime default_delim: u8, comptime 
 
         /// Align the input to a block boundary.
         pub fn fill_block(self: *Self) void {
-            self.st.fillBlock();
+            self.st.fill_block();
         }
 
         pub const Error = error{};
@@ -251,7 +251,7 @@ fn CShakeLike(comptime security_level: u11, comptime default_delim: u8, comptime
             } else {
                 shaker.update(encoded_zero.slice());
             }
-            shaker.st.fillBlock();
+            shaker.st.fill_block();
             return Self{ .shaker = shaker };
         }
 
@@ -282,7 +282,7 @@ fn CShakeLike(comptime security_level: u11, comptime default_delim: u8, comptime
 
         /// Align the input to a block boundary.
         pub fn fill_block(self: *Self) void {
-            self.shaker.fillBlock();
+            self.shaker.fill_block();
         }
 
         pub const Error = error{};
@@ -341,7 +341,7 @@ fn KMacLike(comptime security_level: u11, comptime default_delim: u8, comptime r
             const encoded_key_len = NistLengthEncoding.encode(.left, key.len);
             cshaker.update(encoded_key_len.slice());
             cshaker.update(key);
-            cshaker.fillBlock();
+            cshaker.fill_block();
             return Self{
                 .cshaker = cshaker,
             };
@@ -351,7 +351,7 @@ fn KMacLike(comptime security_level: u11, comptime default_delim: u8, comptime r
         /// If the context and key are going to be reused, the structure can be initialized once, and cloned for each message.
         /// This is more efficient than reinitializing the state for each message at the cost of a small amount of memory.
         pub fn init(key: []const u8) Self {
-            return initWithOptions(key, .{});
+            return init_with_options(key, .{});
         }
 
         /// Add data to the state.
@@ -379,7 +379,7 @@ fn KMacLike(comptime security_level: u11, comptime default_delim: u8, comptime r
 
         /// Return an authentication tag for a message and a key, with an optional context.
         pub fn create_with_options(out: []u8, msg: []const u8, key: []const u8, options: Options) void {
-            var ctx = Self.initWithOptions(key, options);
+            var ctx = Self.init_with_options(key, options);
             ctx.update(msg);
             ctx.final(out);
         }
@@ -450,7 +450,7 @@ fn TupleHashLike(comptime security_level: u11, comptime default_delim: u8, compt
 
         /// Initialize a state for the MAC function.
         pub fn init() Self {
-            return initWithOptions(.{});
+            return init_with_options(.{});
         }
 
         /// Add data to the state, separated from previous updates.
@@ -469,7 +469,7 @@ fn TupleHashLike(comptime security_level: u11, comptime default_delim: u8, compt
 
         /// Align the input to a block boundary.
         pub fn fill_block(self: *Self) void {
-            self.cshaker.fillBlock();
+            self.cshaker.fill_block();
         }
 
         /// Squeeze a slice of bytes from the state.
@@ -507,7 +507,7 @@ pub const NistLengthEncoding = enum {
         /// The size of the encoded value, in bytes.
         len: usize = 0,
         /// A buffer to store the encoded length.
-        buf: [@sizeOf(usize) + 1]u8 = undefined,
+        buf: [@size_of(usize) + 1]u8 = undefined,
 
         /// Return the encoded length as a slice.
         pub fn slice(self: *const Length) []const u8 {
@@ -518,11 +518,11 @@ pub const NistLengthEncoding = enum {
     /// Encode a length according to NIST SP 800-185.
     pub fn encode(comptime encoding: NistLengthEncoding, len: usize) Length {
         const len_bits = @bitSizeOf(@TypeOf(len)) - @clz(len) + 3;
-        const len_bytes = std.math.divCeil(usize, len_bits, 8) catch unreachable;
+        const len_bytes = std.math.div_ceil(usize, len_bits, 8) catch unreachable;
 
         var res = Length{ .len = len_bytes + 1 };
         if (encoding == .right) {
-            res.buf[len_bytes] = @intCast(len_bytes);
+            res.buf[len_bytes] = @int_cast(len_bytes);
         }
         const end = if (encoding == .right) len_bytes - 1 else len_bytes;
         res.buf[end] = @truncate(len << 3);
@@ -532,7 +532,7 @@ pub const NistLengthEncoding = enum {
             len_ >>= 8;
         }
         if (encoding == .left) {
-            res.buf[0] = @intCast(len_bytes);
+            res.buf[0] = @int_cast(len_bytes);
         }
         return res;
     }
@@ -541,9 +541,9 @@ pub const NistLengthEncoding = enum {
 const htest = @import("test.zig");
 
 test "sha3-224 single" {
-    try htest.assertEqualHash(Sha3_224, "6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7", "");
-    try htest.assertEqualHash(Sha3_224, "e642824c3f8cf24ad09234ee7d3c766fc9a3a5168d0c94ad73b46fdf", "abc");
-    try htest.assertEqualHash(Sha3_224, "543e6868e1666c1a643630df77367ae5a62a85070a51c14cbf665cbc", "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
+    try htest.assert_equal_hash(Sha3_224, "6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7", "");
+    try htest.assert_equal_hash(Sha3_224, "e642824c3f8cf24ad09234ee7d3c766fc9a3a5168d0c94ad73b46fdf", "abc");
+    try htest.assert_equal_hash(Sha3_224, "543e6868e1666c1a643630df77367ae5a62a85070a51c14cbf665cbc", "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
 }
 
 test "sha3-224 streaming" {
@@ -551,25 +551,25 @@ test "sha3-224 streaming" {
     var out: [28]u8 = undefined;
 
     h.final(out[0..]);
-    try htest.assertEqual("6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7", out[0..]);
+    try htest.assert_equal("6b4e03423667dbb73b6e15454f0eb1abd4597f9a1b078e3f5b5a6bc7", out[0..]);
 
     h = Sha3_224.init(.{});
     h.update("abc");
     h.final(out[0..]);
-    try htest.assertEqual("e642824c3f8cf24ad09234ee7d3c766fc9a3a5168d0c94ad73b46fdf", out[0..]);
+    try htest.assert_equal("e642824c3f8cf24ad09234ee7d3c766fc9a3a5168d0c94ad73b46fdf", out[0..]);
 
     h = Sha3_224.init(.{});
     h.update("a");
     h.update("b");
     h.update("c");
     h.final(out[0..]);
-    try htest.assertEqual("e642824c3f8cf24ad09234ee7d3c766fc9a3a5168d0c94ad73b46fdf", out[0..]);
+    try htest.assert_equal("e642824c3f8cf24ad09234ee7d3c766fc9a3a5168d0c94ad73b46fdf", out[0..]);
 }
 
 test "sha3-256 single" {
-    try htest.assertEqualHash(Sha3_256, "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a", "");
-    try htest.assertEqualHash(Sha3_256, "3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532", "abc");
-    try htest.assertEqualHash(Sha3_256, "916f6061fe879741ca6469b43971dfdb28b1a32dc36cb3254e812be27aad1d18", "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
+    try htest.assert_equal_hash(Sha3_256, "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a", "");
+    try htest.assert_equal_hash(Sha3_256, "3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532", "abc");
+    try htest.assert_equal_hash(Sha3_256, "916f6061fe879741ca6469b43971dfdb28b1a32dc36cb3254e812be27aad1d18", "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
 }
 
 test "sha3-256 streaming" {
@@ -577,19 +577,19 @@ test "sha3-256 streaming" {
     var out: [32]u8 = undefined;
 
     h.final(out[0..]);
-    try htest.assertEqual("a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a", out[0..]);
+    try htest.assert_equal("a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a", out[0..]);
 
     h = Sha3_256.init(.{});
     h.update("abc");
     h.final(out[0..]);
-    try htest.assertEqual("3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532", out[0..]);
+    try htest.assert_equal("3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532", out[0..]);
 
     h = Sha3_256.init(.{});
     h.update("a");
     h.update("b");
     h.update("c");
     h.final(out[0..]);
-    try htest.assertEqual("3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532", out[0..]);
+    try htest.assert_equal("3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532", out[0..]);
 }
 
 test "sha3-256 aligned final" {
@@ -603,11 +603,11 @@ test "sha3-256 aligned final" {
 
 test "sha3-384 single" {
     const h1 = "0c63a75b845e4f7d01107d852e4c2485c51a50aaaa94fc61995e71bbee983a2ac3713831264adb47fb6bd1e058d5f004";
-    try htest.assertEqualHash(Sha3_384, h1, "");
+    try htest.assert_equal_hash(Sha3_384, h1, "");
     const h2 = "ec01498288516fc926459f58e2c6ad8df9b473cb0fc08c2596da7cf0e49be4b298d88cea927ac7f539f1edf228376d25";
-    try htest.assertEqualHash(Sha3_384, h2, "abc");
+    try htest.assert_equal_hash(Sha3_384, h2, "abc");
     const h3 = "79407d3b5916b59c3e30b09822974791c313fb9ecc849e406f23592d04f625dc8c709b98b43b3852b337216179aa7fc7";
-    try htest.assertEqualHash(Sha3_384, h3, "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
+    try htest.assert_equal_hash(Sha3_384, h3, "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
 }
 
 test "sha3-384 streaming" {
@@ -616,29 +616,29 @@ test "sha3-384 streaming" {
 
     const h1 = "0c63a75b845e4f7d01107d852e4c2485c51a50aaaa94fc61995e71bbee983a2ac3713831264adb47fb6bd1e058d5f004";
     h.final(out[0..]);
-    try htest.assertEqual(h1, out[0..]);
+    try htest.assert_equal(h1, out[0..]);
 
     const h2 = "ec01498288516fc926459f58e2c6ad8df9b473cb0fc08c2596da7cf0e49be4b298d88cea927ac7f539f1edf228376d25";
     h = Sha3_384.init(.{});
     h.update("abc");
     h.final(out[0..]);
-    try htest.assertEqual(h2, out[0..]);
+    try htest.assert_equal(h2, out[0..]);
 
     h = Sha3_384.init(.{});
     h.update("a");
     h.update("b");
     h.update("c");
     h.final(out[0..]);
-    try htest.assertEqual(h2, out[0..]);
+    try htest.assert_equal(h2, out[0..]);
 }
 
 test "sha3-512 single" {
     const h1 = "a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26";
-    try htest.assertEqualHash(Sha3_512, h1, "");
+    try htest.assert_equal_hash(Sha3_512, h1, "");
     const h2 = "b751850b1a57168a5693cd924b6b096e08f621827444f70d884f5d0240d2712e10e116e9192af3c91a7ec57647e3934057340b4cf408d5a56592f8274eec53f0";
-    try htest.assertEqualHash(Sha3_512, h2, "abc");
+    try htest.assert_equal_hash(Sha3_512, h2, "abc");
     const h3 = "afebb2ef542e6579c50cad06d2e578f9f8dd6881d7dc824d26360feebf18a4fa73e3261122948efcfd492e74e82e2189ed0fb440d187f382270cb455f21dd185";
-    try htest.assertEqualHash(Sha3_512, h3, "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
+    try htest.assert_equal_hash(Sha3_512, h3, "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
 }
 
 test "sha3-512 streaming" {
@@ -647,20 +647,20 @@ test "sha3-512 streaming" {
 
     const h1 = "a69f73cca23a9ac5c8b567dc185a756e97c982164fe25859e0d1dcc1475c80a615b2123af1f5f94c11e3e9402c3ac558f500199d95b6d3e301758586281dcd26";
     h.final(out[0..]);
-    try htest.assertEqual(h1, out[0..]);
+    try htest.assert_equal(h1, out[0..]);
 
     const h2 = "b751850b1a57168a5693cd924b6b096e08f621827444f70d884f5d0240d2712e10e116e9192af3c91a7ec57647e3934057340b4cf408d5a56592f8274eec53f0";
     h = Sha3_512.init(.{});
     h.update("abc");
     h.final(out[0..]);
-    try htest.assertEqual(h2, out[0..]);
+    try htest.assert_equal(h2, out[0..]);
 
     h = Sha3_512.init(.{});
     h.update("a");
     h.update("b");
     h.update("c");
     h.final(out[0..]);
-    try htest.assertEqual(h2, out[0..]);
+    try htest.assert_equal(h2, out[0..]);
 }
 
 test "sha3-512 aligned final" {
@@ -673,21 +673,21 @@ test "sha3-512 aligned final" {
 }
 
 test "keccak-256 single" {
-    try htest.assertEqualHash(Keccak256, "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470", "");
-    try htest.assertEqualHash(Keccak256, "4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45", "abc");
-    try htest.assertEqualHash(Keccak256, "f519747ed599024f3882238e5ab43960132572b7345fbeb9a90769dafd21ad67", "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
+    try htest.assert_equal_hash(Keccak256, "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470", "");
+    try htest.assert_equal_hash(Keccak256, "4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45", "abc");
+    try htest.assert_equal_hash(Keccak256, "f519747ed599024f3882238e5ab43960132572b7345fbeb9a90769dafd21ad67", "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
 }
 
 test "keccak-512 single" {
-    try htest.assertEqualHash(Keccak512, "0eab42de4c3ceb9235fc91acffe746b29c29a8c366b7c60e4e67c466f36a4304c00fa9caf9d87976ba469bcbe06713b435f091ef2769fb160cdab33d3670680e", "");
-    try htest.assertEqualHash(Keccak512, "18587dc2ea106b9a1563e32b3312421ca164c7f1f07bc922a9c83d77cea3a1e5d0c69910739025372dc14ac9642629379540c17e2a65b19d77aa511a9d00bb96", "abc");
-    try htest.assertEqualHash(Keccak512, "ac2fb35251825d3aa48468a9948c0a91b8256f6d97d8fa4160faff2dd9dfcc24f3f1db7a983dad13d53439ccac0b37e24037e7b95f80f59f37a2f683c4ba4682", "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
+    try htest.assert_equal_hash(Keccak512, "0eab42de4c3ceb9235fc91acffe746b29c29a8c366b7c60e4e67c466f36a4304c00fa9caf9d87976ba469bcbe06713b435f091ef2769fb160cdab33d3670680e", "");
+    try htest.assert_equal_hash(Keccak512, "18587dc2ea106b9a1563e32b3312421ca164c7f1f07bc922a9c83d77cea3a1e5d0c69910739025372dc14ac9642629379540c17e2a65b19d77aa511a9d00bb96", "abc");
+    try htest.assert_equal_hash(Keccak512, "ac2fb35251825d3aa48468a9948c0a91b8256f6d97d8fa4160faff2dd9dfcc24f3f1db7a983dad13d53439ccac0b37e24037e7b95f80f59f37a2f683c4ba4682", "abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu");
 }
 
 test "SHAKE-128 single" {
     var out: [10]u8 = undefined;
     Shake128.hash("hello123", &out, .{});
-    try htest.assertEqual("1b85861510bc4d8e467d", &out);
+    try htest.assert_equal("1b85861510bc4d8e467d", &out);
 }
 
 test "SHAKE-128 multisqueeze" {
@@ -696,7 +696,7 @@ test "SHAKE-128 multisqueeze" {
     h.update("hello123");
     h.squeeze(out[0..4]);
     h.squeeze(out[4..]);
-    try htest.assertEqual("1b85861510bc4d8e467d", &out);
+    try htest.assert_equal("1b85861510bc4d8e467d", &out);
 }
 
 test "SHAKE-128 multisqueeze with multiple blocks" {
@@ -711,19 +711,19 @@ test "SHAKE-128 multisqueeze with multiple blocks" {
     var h2 = Shake128.init(.{});
     h2.update("hello123");
     h2.squeeze(&out2);
-    try std.testing.expectEqualSlices(u8, &out, &out2);
+    try std.testing.expect_equal_slices(u8, &out, &out2);
 }
 
 test "SHAKE-256 single" {
     var out: [10]u8 = undefined;
     Shake256.hash("hello123", &out, .{});
-    try htest.assertEqual("ade612ba265f92de4a37", &out);
+    try htest.assert_equal("ade612ba265f92de4a37", &out);
 }
 
 test "TurboSHAKE-128" {
     var out: [32]u8 = undefined;
     TurboShake(128, 0x06).hash("\xff", &out, .{});
-    try htest.assertEqual("8ec9c66465ed0d4a6c35d13506718d687a25cb05c74cca1e42501abd83874a67", &out);
+    try htest.assert_equal("8ec9c66465ed0d4a6c35d13506718d687a25cb05c74cca1e42501abd83874a67", &out);
 }
 
 test "SHA-3 with streaming" {
@@ -731,58 +731,58 @@ test "SHA-3 with streaming" {
     var out: [Sha3_256.digest_length]u8 = undefined;
 
     Sha3_256.hash(&msg, &out, .{});
-    try htest.assertEqual("5780048dfa381a1d01c747906e4a08711dd34fd712ecd7c6801dd2b38fd81a89", &out);
+    try htest.assert_equal("5780048dfa381a1d01c747906e4a08711dd34fd712ecd7c6801dd2b38fd81a89", &out);
 
     var h = Sha3_256.init(.{});
     h.update(msg[0..64]);
     h.update(msg[64..613]);
     h.final(&out);
-    try htest.assertEqual("5780048dfa381a1d01c747906e4a08711dd34fd712ecd7c6801dd2b38fd81a89", &out);
+    try htest.assert_equal("5780048dfa381a1d01c747906e4a08711dd34fd712ecd7c6801dd2b38fd81a89", &out);
 }
 
 test "cSHAKE-128 with no context nor function name" {
     var out: [32]u8 = undefined;
     CShake128.hash("hello123", &out, .{});
-    try htest.assertEqual("1b85861510bc4d8e467d6f8a92270533cbaa7ba5e06c2d2a502854bac468b8b9", &out);
+    try htest.assert_equal("1b85861510bc4d8e467d6f8a92270533cbaa7ba5e06c2d2a502854bac468b8b9", &out);
 }
 
 test "cSHAKE-128 with context" {
     var out: [32]u8 = undefined;
     CShake128.hash("hello123", &out, .{ .context = "custom" });
-    try htest.assertEqual("7509fa13a6bd3e38ad5c6fac042142c233996e40ebffc86c276f108b3b19cc6a", &out);
+    try htest.assert_equal("7509fa13a6bd3e38ad5c6fac042142c233996e40ebffc86c276f108b3b19cc6a", &out);
 }
 
 test "cSHAKE-128 with context and function" {
     var out: [32]u8 = undefined;
     CShake(128, "function").hash("hello123", &out, .{ .context = "custom" });
-    try htest.assertEqual("ad7f4d7db2d96587fcd5047c65d37c368f5366e3afac60bb9b66b0bb95dfb675", &out);
+    try htest.assert_equal("ad7f4d7db2d96587fcd5047c65d37c368f5366e3afac60bb9b66b0bb95dfb675", &out);
 }
 
 test "cSHAKE-256" {
     var out: [32]u8 = undefined;
     CShake256.hash("hello123", &out, .{ .context = "custom" });
-    try htest.assertEqual("dabe027eb1a6cbe3a0542d0560eb4e6b39146dd72ae1bf89c970a61bd93b1813", &out);
+    try htest.assert_equal("dabe027eb1a6cbe3a0542d0560eb4e6b39146dd72ae1bf89c970a61bd93b1813", &out);
 }
 
 test "KMAC-128 with empty key and message" {
     var out: [KMac128.mac_length]u8 = undefined;
     const key = "";
     KMac128.create(&out, "", key);
-    try htest.assertEqual("5c135c615152fb4d9784dd1155f9b6034e013fd77165c327dfa4d36701983ef7", &out);
+    try htest.assert_equal("5c135c615152fb4d9784dd1155f9b6034e013fd77165c327dfa4d36701983ef7", &out);
 }
 
 test "KMAC-128" {
     var out: [KMac128.mac_length]u8 = undefined;
     const key = "A KMAC secret key";
     KMac128.create(&out, "hello123", key);
-    try htest.assertEqual("1fa1c0d761129a83f9a4299ca137674de8373a3cc437799ae4c129e651627f8e", &out);
+    try htest.assert_equal("1fa1c0d761129a83f9a4299ca137674de8373a3cc437799ae4c129e651627f8e", &out);
 }
 
 test "KMAC-128 with a customization string" {
     var out: [KMac128.mac_length]u8 = undefined;
     const key = "A KMAC secret key";
-    KMac128.createWithOptions(&out, "hello123", key, .{ .context = "custom" });
-    try htest.assertEqual("c58c6d42dc00a27dfa8e7e08f8c9307cecb5d662ddb11b6c36057fc2e0e068ba", &out);
+    KMac128.create_with_options(&out, "hello123", key, .{ .context = "custom" });
+    try htest.assert_equal("c58c6d42dc00a27dfa8e7e08f8c9307cecb5d662ddb11b6c36057fc2e0e068ba", &out);
 }
 
 test "KMACXOF-128" {
@@ -791,9 +791,9 @@ test "KMACXOF-128" {
     xof.update("hello123");
     var out: [50]u8 = undefined;
     xof.squeeze(&out);
-    try htest.assertEqual("628c2fb870d294b3673ac82d9f0d651aae6a5bb8084ea8cd8343cb888d075b9053173200a71f301141069c3c0322527981f7", &out);
+    try htest.assert_equal("628c2fb870d294b3673ac82d9f0d651aae6a5bb8084ea8cd8343cb888d075b9053173200a71f301141069c3c0322527981f7", &out);
     xof.squeeze(&out);
-    try htest.assertEqual("7b638e178cfdac5727a4ea7694efaa967a65a1d0034501855acff506b4158d187d5a18d668e67b43f2abf61144b20ed4c09f", &out);
+    try htest.assert_equal("7b638e178cfdac5727a4ea7694efaa967a65a1d0034501855acff506b4158d187d5a18d668e67b43f2abf61144b20ed4c09f", &out);
 }
 
 test "KMACXOF-256" {
@@ -802,9 +802,9 @@ test "KMACXOF-256" {
     xof.update("hello123");
     var out: [50]u8 = undefined;
     xof.squeeze(&out);
-    try htest.assertEqual("23fc644bc2655ba6fde7b7c11f2804f22e8d8c6bd7db856268bf3370ce2362703f6c7e91916a1b8c116e60edfbcb25613054", &out);
+    try htest.assert_equal("23fc644bc2655ba6fde7b7c11f2804f22e8d8c6bd7db856268bf3370ce2362703f6c7e91916a1b8c116e60edfbcb25613054", &out);
     xof.squeeze(&out);
-    try htest.assertEqual("ff97251020ff255ee65a1c1f5f78ebe904f61211c39f973f82fbce2b196b9f51c2cb12afe51549a0f1eaf7954e657ba11af3", &out);
+    try htest.assert_equal("ff97251020ff255ee65a1c1f5f78ebe904f61211c39f973f82fbce2b196b9f51c2cb12afe51549a0f1eaf7954e657ba11af3", &out);
 }
 
 test "TupleHash-128" {
@@ -813,7 +813,7 @@ test "TupleHash-128" {
     st.update("123");
     var out: [32]u8 = undefined;
     st.final(&out);
-    try htest.assertEqual("3938d49ade8ec0f0c305ac63497b2d2e8b2f650714f9667cc41816b1c11ffd20", &out);
+    try htest.assert_equal("3938d49ade8ec0f0c305ac63497b2d2e8b2f650714f9667cc41816b1c11ffd20", &out);
 }
 
 test "TupleHash-256" {
@@ -822,5 +822,5 @@ test "TupleHash-256" {
     st.update("123");
     var out: [64]u8 = undefined;
     st.final(&out);
-    try htest.assertEqual("2dca563c2882f2ba4f46a441a4c5e13fb97150d1436fe99c7e4e43a2d20d0f1cd3d38483bde4a966930606dfa6c61c4ca6400aeedfb474d1bf0d7f6a70968289", &out);
+    try htest.assert_equal("2dca563c2882f2ba4f46a441a4c5e13fb97150d1436fe99c7e4e43a2d20d0f1cd3d38483bde4a966930606dfa6c61c4ca6400aeedfb474d1bf0d7f6a70968289", &out);
 }

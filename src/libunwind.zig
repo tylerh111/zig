@@ -33,13 +33,13 @@ pub fn build_static_lib(comp: *Compilation, prog_node: std.Progress.Node) BuildE
         .is_test = false,
         .have_zcu = false,
         .emit_bin = true,
-        .root_optimize_mode = comp.compilerRtOptMode(),
-        .root_strip = comp.compilerRtStrip(),
+        .root_optimize_mode = comp.compiler_rt_opt_mode(),
+        .root_strip = comp.compiler_rt_strip(),
         .link_libc = true,
         // Disable LTO to avoid https://github.com/llvm/llvm-project/issues/56825
         .lto = false,
     }) catch |err| {
-        comp.setMiscFailure(
+        comp.set_misc_failure(
             .libunwind,
             "unable to build libunwind: resolving configuration failed: {s}",
             .{@errorName(err)},
@@ -55,7 +55,7 @@ pub fn build_static_lib(comp: *Compilation, prog_node: std.Progress.Node) BuildE
         .fully_qualified_name = "root",
         .inherited = .{
             .resolved_target = comp.root_mod.resolved_target,
-            .strip = comp.compilerRtStrip(),
+            .strip = comp.compiler_rt_strip(),
             .stack_check = false,
             .stack_protector = 0,
             .red_zone = comp.root_mod.red_zone,
@@ -65,7 +65,7 @@ pub fn build_static_lib(comp: *Compilation, prog_node: std.Progress.Node) BuildE
             .sanitize_thread = false,
             .unwind_tables = false,
             .pic = comp.root_mod.pic,
-            .optimize_mode = comp.compilerRtOptMode(),
+            .optimize_mode = comp.compiler_rt_opt_mode(),
         },
         .global = config,
         .cc_argv = &.{},
@@ -73,7 +73,7 @@ pub fn build_static_lib(comp: *Compilation, prog_node: std.Progress.Node) BuildE
         .builtin_mod = null,
         .builtin_modules = null, // there is only one module in this compilation
     }) catch |err| {
-        comp.setMiscFailure(
+        comp.set_misc_failure(
             .libunwind,
             "unable to build libunwind: creating module failed: {s}",
             .{@errorName(err)},
@@ -84,7 +84,7 @@ pub fn build_static_lib(comp: *Compilation, prog_node: std.Progress.Node) BuildE
     const root_name = "unwind";
     const link_mode = .static;
     const target = comp.root_mod.resolved_target.result;
-    const basename = try std.zig.binNameAlloc(arena, .{
+    const basename = try std.zig.bin_name_alloc(arena, .{
         .root_name = root_name,
         .target = target,
         .output_mode = output_mode,
@@ -98,12 +98,12 @@ pub fn build_static_lib(comp: *Compilation, prog_node: std.Progress.Node) BuildE
     for (unwind_src_list, 0..) |unwind_src, i| {
         var cflags = std.ArrayList([]const u8).init(arena);
 
-        switch (Compilation.classifyFileExt(unwind_src)) {
+        switch (Compilation.classify_file_ext(unwind_src)) {
             .c => {
                 try cflags.append("-std=c11");
             },
             .cpp => {
-                try cflags.appendSlice(&[_][]const u8{"-fno-rtti"});
+                try cflags.append_slice(&[_][]const u8{"-fno-rtti"});
             },
             .assembly_with_cpp => {},
             else => unreachable, // You can see the entire list of files just above.
@@ -131,7 +131,7 @@ pub fn build_static_lib(comp: *Compilation, prog_node: std.Progress.Node) BuildE
         if (!comp.config.any_non_single_threaded) {
             try cflags.append("-D_LIBUNWIND_HAS_NO_THREADS");
         }
-        if (target.cpu.arch.isARM() and target.abi.floatAbi() == .hard) {
+        if (target.cpu.arch.is_arm() and target.abi.float_abi() == .hard) {
             try cflags.append("-DCOMPILER_RT_ARMHF_TARGET");
         }
         try cflags.append("-Wno-bitwise-conditional-parentheses");
@@ -169,7 +169,7 @@ pub fn build_static_lib(comp: *Compilation, prog_node: std.Progress.Node) BuildE
         .clang_passthrough_mode = comp.clang_passthrough_mode,
         .skip_linker_dependencies = true,
     }) catch |err| {
-        comp.setMiscFailure(
+        comp.set_misc_failure(
             .libunwind,
             "unable to build libunwind: create compilation failed: {s}",
             .{@errorName(err)},
@@ -178,10 +178,10 @@ pub fn build_static_lib(comp: *Compilation, prog_node: std.Progress.Node) BuildE
     };
     defer sub_compilation.destroy();
 
-    comp.updateSubCompilation(sub_compilation, .libunwind, prog_node) catch |err| switch (err) {
+    comp.update_sub_compilation(sub_compilation, .libunwind, prog_node) catch |err| switch (err) {
         error.SubCompilationFailed => return error.SubCompilationFailed,
         else => |e| {
-            comp.setMiscFailure(
+            comp.set_misc_failure(
                 .libunwind,
                 "unable to build libunwind: compilation failed: {s}",
                 .{@errorName(e)},
@@ -191,7 +191,7 @@ pub fn build_static_lib(comp: *Compilation, prog_node: std.Progress.Node) BuildE
     };
 
     assert(comp.libunwind_static_lib == null);
-    comp.libunwind_static_lib = try sub_compilation.toCrtFile();
+    comp.libunwind_static_lib = try sub_compilation.to_crt_file();
 }
 
 const unwind_src_list = [_][]const u8{

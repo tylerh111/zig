@@ -4,7 +4,7 @@ const mem = std.mem;
 const path = std.fs.path;
 const assert = std.debug.assert;
 const Module = @import("Package/Module.zig");
-const archName = std.zig.target.muslArchName;
+const arch_name = std.zig.target.musl_arch_name;
 
 const Compilation = @import("Compilation.zig");
 const build_options = @import("build_options");
@@ -31,8 +31,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
     switch (crt_file) {
         .crti_o => {
             var args = std.ArrayList([]const u8).init(arena);
-            try addCcArgs(comp, arena, &args, false);
-            try args.appendSlice(&[_][]const u8{
+            try add_cc_args(comp, arena, &args, false);
+            try args.append_slice(&[_][]const u8{
                 "-Qunused-arguments",
             });
             var files = [_]Compilation.CSourceFile{
@@ -46,8 +46,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
         },
         .crtn_o => {
             var args = std.ArrayList([]const u8).init(arena);
-            try addCcArgs(comp, arena, &args, false);
-            try args.appendSlice(&[_][]const u8{
+            try add_cc_args(comp, arena, &args, false);
+            try args.append_slice(&[_][]const u8{
                 "-Qunused-arguments",
             });
             var files = [_]Compilation.CSourceFile{
@@ -61,8 +61,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
         },
         .crt1_o => {
             var args = std.ArrayList([]const u8).init(arena);
-            try addCcArgs(comp, arena, &args, false);
-            try args.appendSlice(&[_][]const u8{
+            try add_cc_args(comp, arena, &args, false);
+            try args.append_slice(&[_][]const u8{
                 "-fno-stack-protector",
                 "-DCRT",
             });
@@ -79,8 +79,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
         },
         .rcrt1_o => {
             var args = std.ArrayList([]const u8).init(arena);
-            try addCcArgs(comp, arena, &args, false);
-            try args.appendSlice(&[_][]const u8{
+            try add_cc_args(comp, arena, &args, false);
+            try args.append_slice(&[_][]const u8{
                 "-fPIC",
                 "-fno-stack-protector",
                 "-DCRT",
@@ -98,8 +98,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
         },
         .scrt1_o => {
             var args = std.ArrayList([]const u8).init(arena);
-            try addCcArgs(comp, arena, &args, false);
-            try args.appendSlice(&[_][]const u8{
+            try add_cc_args(comp, arena, &args, false);
+            try args.append_slice(&[_][]const u8{
                 "-fPIC",
                 "-fno-stack-protector",
                 "-DCRT",
@@ -118,22 +118,22 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
         .libc_a => {
             // When there is a src/<arch>/foo.* then it should substitute for src/foo.*
             // Even a .s file can substitute for a .c file.
-            const target = comp.getTarget();
-            const arch_name = archName(target.cpu.arch);
+            const target = comp.get_target();
+            const arch_name = arch_name(target.cpu.arch);
             var source_table = std.StringArrayHashMap(Ext).init(comp.gpa);
             defer source_table.deinit();
 
-            try source_table.ensureTotalCapacity(compat_time32_files.len + src_files.len);
+            try source_table.ensure_total_capacity(compat_time32_files.len + src_files.len);
 
             for (src_files) |src_file| {
-                try addSrcFile(arena, &source_table, src_file);
+                try add_src_file(arena, &source_table, src_file);
             }
 
             const time32_compat_arch_list = [_][]const u8{ "arm", "i386", "mips", "powerpc", "m68k" };
             for (time32_compat_arch_list) |time32_compat_arch| {
                 if (mem.eql(u8, arch_name, time32_compat_arch)) {
                     for (compat_time32_files) |compat_time32_file| {
-                        try addSrcFile(arena, &source_table, compat_time32_file);
+                        try add_src_file(arena, &source_table, compat_time32_file);
                     }
                 }
             }
@@ -158,28 +158,28 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
 
                 var is_arch_specific = false;
                 // Architecture-specific implementations are under a <arch>/ folder.
-                if (isMuslArchName(dirbasename)) {
+                if (is_musl_arch_name(dirbasename)) {
                     if (!mem.eql(u8, dirbasename, arch_name))
                         continue; // Not the architecture we're compiling for.
                     is_arch_specific = true;
                 }
                 if (!is_arch_specific) {
                     // Look for an arch specific override.
-                    override_path.shrinkRetainingCapacity(0);
+                    override_path.shrink_retaining_capacity(0);
                     try override_path.writer().print("{s}" ++ s ++ "{s}" ++ s ++ "{s}.s", .{
                         dirname, arch_name, noextbasename,
                     });
                     if (source_table.contains(override_path.items))
                         continue;
 
-                    override_path.shrinkRetainingCapacity(0);
+                    override_path.shrink_retaining_capacity(0);
                     try override_path.writer().print("{s}" ++ s ++ "{s}" ++ s ++ "{s}.S", .{
                         dirname, arch_name, noextbasename,
                     });
                     if (source_table.contains(override_path.items))
                         continue;
 
-                    override_path.shrinkRetainingCapacity(0);
+                    override_path.shrink_retaining_capacity(0);
                     try override_path.writer().print("{s}" ++ s ++ "{s}" ++ s ++ "{s}.c", .{
                         dirname, arch_name, noextbasename,
                     });
@@ -188,12 +188,12 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
                 }
 
                 var args = std.ArrayList([]const u8).init(arena);
-                try addCcArgs(comp, arena, &args, ext == .o3);
-                try args.appendSlice(&[_][]const u8{
+                try add_cc_args(comp, arena, &args, ext == .o3);
+                try args.append_slice(&[_][]const u8{
                     "-Qunused-arguments",
                     "-w", // disable all warnings
                 });
-                const c_source_file = try c_source_files.addOne();
+                const c_source_file = try c_source_files.add_one();
                 c_source_file.* = .{
                     .src_path = try comp.zig_lib_directory.join(arena, &[_][]const u8{ "libc", src_file }),
                     .extra_flags = args.items,
@@ -203,8 +203,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
             return comp.build_crt_file("c", .Lib, .@"musl libc.a", prog_node, c_source_files.items);
         },
         .libc_so => {
-            const optimize_mode = comp.compilerRtOptMode();
-            const strip = comp.compilerRtStrip();
+            const optimize_mode = comp.compiler_rt_opt_mode();
+            const strip = comp.compiler_rt_strip();
             const config = try Compilation.Config.resolve(.{
                 .output_mode = .Lib,
                 .link_mode = .dynamic,
@@ -218,10 +218,10 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
             });
 
             const target = comp.root_mod.resolved_target.result;
-            const arch_define = try std.fmt.allocPrint(arena, "-DARCH_{s}", .{
-                @tagName(target.cpu.arch),
+            const arch_define = try std.fmt.alloc_print(arena, "-DARCH_{s}", .{
+                @tag_name(target.cpu.arch),
             });
-            const cc_argv: []const []const u8 = if (target.ptrBitWidth() == 64)
+            const cc_argv: []const []const u8 = if (target.ptr_bit_width() == 64)
                 &.{ "-DPTR64", arch_define }
             else
                 &.{arch_define};
@@ -284,14 +284,14 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
             });
             defer sub_compilation.destroy();
 
-            try comp.updateSubCompilation(sub_compilation, .@"musl libc.so", prog_node);
+            try comp.update_sub_compilation(sub_compilation, .@"musl libc.so", prog_node);
 
-            try comp.crt_files.ensureUnusedCapacity(comp.gpa, 1);
+            try comp.crt_files.ensure_unused_capacity(comp.gpa, 1);
 
             const basename = try comp.gpa.dupe(u8, "libc.so");
             errdefer comp.gpa.free(basename);
 
-            comp.crt_files.putAssumeCapacityNoClobber(basename, try sub_compilation.toCrtFile());
+            comp.crt_files.put_assume_capacity_no_clobber(basename, try sub_compilation.to_crt_file());
         },
     }
 }
@@ -345,16 +345,16 @@ const Ext = enum {
 
 fn add_src_file(arena: Allocator, source_table: *std.StringArrayHashMap(Ext), file_path: []const u8) !void {
     const ext: Ext = ext: {
-        if (mem.endsWith(u8, file_path, ".c")) {
-            if (mem.startsWith(u8, file_path, "musl/src/malloc/") or
-                mem.startsWith(u8, file_path, "musl/src/string/") or
-                mem.startsWith(u8, file_path, "musl/src/internal/"))
+        if (mem.ends_with(u8, file_path, ".c")) {
+            if (mem.starts_with(u8, file_path, "musl/src/malloc/") or
+                mem.starts_with(u8, file_path, "musl/src/string/") or
+                mem.starts_with(u8, file_path, "musl/src/internal/"))
             {
                 break :ext .o3;
             } else {
                 break :ext .assembly;
             }
-        } else if (mem.endsWith(u8, file_path, ".s") or mem.endsWith(u8, file_path, ".S")) {
+        } else if (mem.ends_with(u8, file_path, ".s") or mem.ends_with(u8, file_path, ".S")) {
             break :ext .assembly;
         } else {
             unreachable;
@@ -372,7 +372,7 @@ fn add_src_file(arena: Allocator, source_table: *std.StringArrayHashMap(Ext), fi
         }
         break :blk mutable_file_path;
     } else file_path;
-    source_table.putAssumeCapacityNoClobber(key, ext);
+    source_table.put_assume_capacity_no_clobber(key, ext);
 }
 
 fn add_cc_args(
@@ -381,15 +381,15 @@ fn add_cc_args(
     args: *std.ArrayList([]const u8),
     want_O3: bool,
 ) error{OutOfMemory}!void {
-    const target = comp.getTarget();
-    const arch_name = archName(target.cpu.arch);
-    const os_name = @tagName(target.os.tag);
-    const triple = try std.fmt.allocPrint(arena, "{s}-{s}-musl", .{
-        std.zig.target.muslArchNameHeaders(target.cpu.arch), os_name,
+    const target = comp.get_target();
+    const arch_name = arch_name(target.cpu.arch);
+    const os_name = @tag_name(target.os.tag);
+    const triple = try std.fmt.alloc_print(arena, "{s}-{s}-musl", .{
+        std.zig.target.musl_arch_name_headers(target.cpu.arch), os_name,
     });
     const o_arg = if (want_O3) "-O3" else "-Os";
 
-    try args.appendSlice(&[_][]const u8{
+    try args.append_slice(&[_][]const u8{
         "-std=c99",
         "-ffreestanding",
         // Musl adds these args to builds with gcc but clang does not support them.
@@ -430,9 +430,9 @@ fn add_cc_args(
 }
 
 fn start_asm_path(comp: *Compilation, arena: Allocator, basename: []const u8) ![]const u8 {
-    const target = comp.getTarget();
+    const target = comp.get_target();
     return comp.zig_lib_directory.join(arena, &[_][]const u8{
-        "libc", "musl", "crt", archName(target.cpu.arch), basename,
+        "libc", "musl", "crt", arch_name(target.cpu.arch), basename,
     });
 }
 

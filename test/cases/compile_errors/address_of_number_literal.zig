@@ -4,7 +4,7 @@ fn foo() *const i32 {
     return y;
 }
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&foo));
+    return @size_of(@TypeOf(&foo));
 }
 
 // error

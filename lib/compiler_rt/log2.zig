@@ -8,7 +8,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const math = std.math;
 const expect = std.testing.expect;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const arch = builtin.cpu.arch;
 const common = @import("common.zig");
 
@@ -28,7 +28,7 @@ comptime {
 
 pub fn __log2h(a: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(log2f(a));
+    return @float_cast(log2f(a));
 }
 
 pub fn log2f(x_: f32) callconv(.C) f32 {
@@ -40,7 +40,7 @@ pub fn log2f(x_: f32) callconv(.C) f32 {
     const Lg4: f32 = 0xf89e26.0p-26;
 
     var x = x_;
-    var u: u32 = @bitCast(x);
+    var u: u32 = @bit_cast(x);
     var ix = u;
     var k: i32 = 0;
 
@@ -57,7 +57,7 @@ pub fn log2f(x_: f32) callconv(.C) f32 {
 
         k -= 25;
         x *= 0x1.0p25;
-        ix = @bitCast(x);
+        ix = @bit_cast(x);
     } else if (ix >= 0x7F800000) {
         return x;
     } else if (ix == 0x3F800000) {
@@ -66,9 +66,9 @@ pub fn log2f(x_: f32) callconv(.C) f32 {
 
     // x into [sqrt(2) / 2, sqrt(2)]
     ix += 0x3F800000 - 0x3F3504F3;
-    k += @as(i32, @intCast(ix >> 23)) - 0x7F;
+    k += @as(i32, @int_cast(ix >> 23)) - 0x7F;
     ix = (ix & 0x007FFFFF) + 0x3F3504F3;
-    x = @bitCast(ix);
+    x = @bit_cast(ix);
 
     const f = x - 1.0;
     const s = f / (2.0 + f);
@@ -80,11 +80,11 @@ pub fn log2f(x_: f32) callconv(.C) f32 {
     const hfsq = 0.5 * f * f;
 
     var hi = f - hfsq;
-    u = @bitCast(hi);
+    u = @bit_cast(hi);
     u &= 0xFFFFF000;
-    hi = @bitCast(u);
+    hi = @bit_cast(u);
     const lo = f - hi - hfsq + s * (hfsq + R);
-    return (lo + hi) * ivln2lo + lo * ivln2hi + hi * ivln2hi + @as(f32, @floatFromInt(k));
+    return (lo + hi) * ivln2lo + lo * ivln2hi + hi * ivln2hi + @as(f32, @float_from_int(k));
 }
 
 pub fn log2(x_: f64) callconv(.C) f64 {
@@ -99,8 +99,8 @@ pub fn log2(x_: f64) callconv(.C) f64 {
     const Lg7: f64 = 1.479819860511658591e-01;
 
     var x = x_;
-    var ix: u64 = @bitCast(x);
-    var hx: u32 = @intCast(ix >> 32);
+    var ix: u64 = @bit_cast(x);
+    var hx: u32 = @int_cast(ix >> 32);
     var k: i32 = 0;
 
     if (hx < 0x00100000 or hx >> 31 != 0) {
@@ -116,7 +116,7 @@ pub fn log2(x_: f64) callconv(.C) f64 {
         // subnormal, scale x
         k -= 54;
         x *= 0x1.0p54;
-        hx = @intCast(@as(u64, @bitCast(x)) >> 32);
+        hx = @int_cast(@as(u64, @bit_cast(x)) >> 32);
     } else if (hx >= 0x7FF00000) {
         return x;
     } else if (hx == 0x3FF00000 and ix << 32 == 0) {
@@ -125,10 +125,10 @@ pub fn log2(x_: f64) callconv(.C) f64 {
 
     // x into [sqrt(2) / 2, sqrt(2)]
     hx += 0x3FF00000 - 0x3FE6A09E;
-    k += @as(i32, @intCast(hx >> 20)) - 0x3FF;
+    k += @as(i32, @int_cast(hx >> 20)) - 0x3FF;
     hx = (hx & 0x000FFFFF) + 0x3FE6A09E;
     ix = (@as(u64, hx) << 32) | (ix & 0xFFFFFFFF);
-    x = @bitCast(ix);
+    x = @bit_cast(ix);
 
     const f = x - 1.0;
     const hfsq = 0.5 * f * f;
@@ -141,16 +141,16 @@ pub fn log2(x_: f64) callconv(.C) f64 {
 
     // hi + lo = f - hfsq + s * (hfsq + R) ~ log(1 + f)
     var hi = f - hfsq;
-    var hii = @as(u64, @bitCast(hi));
-    hii &= @as(u64, maxInt(u64)) << 32;
-    hi = @bitCast(hii);
+    var hii = @as(u64, @bit_cast(hi));
+    hii &= @as(u64, max_int(u64)) << 32;
+    hi = @bit_cast(hii);
     const lo = f - hi - hfsq + s * (hfsq + R);
 
     var val_hi = hi * ivln2hi;
     var val_lo = (lo + hi) * ivln2lo + lo * ivln2hi;
 
     // spadd(val_hi, val_lo, y)
-    const y: f64 = @floatFromInt(k);
+    const y: f64 = @float_from_int(k);
     const ww = y + val_hi;
     val_lo += (y - ww) + val_hi;
     val_hi = ww;
@@ -160,12 +160,12 @@ pub fn log2(x_: f64) callconv(.C) f64 {
 
 pub fn __log2x(a: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(log2q(a));
+    return @float_cast(log2q(a));
 }
 
 pub fn log2q(a: f128) callconv(.C) f128 {
     // TODO: more correct implementation
-    return log2(@floatCast(a));
+    return log2(@float_cast(a));
 }
 
 pub fn log2l(x: c_longdouble) callconv(.C) c_longdouble {
@@ -175,40 +175,40 @@ pub fn log2l(x: c_longdouble) callconv(.C) c_longdouble {
         64 => return log2(x),
         80 => return __log2x(x),
         128 => return log2q(x),
-        else => @compileError("unreachable"),
+        else => @compile_error("unreachable"),
     }
 }
 
 test "log2_32" {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f32, log2f(0.2), -2.321928, epsilon));
-    try expect(math.approxEqAbs(f32, log2f(0.8923), -0.164399, epsilon));
-    try expect(math.approxEqAbs(f32, log2f(1.5), 0.584962, epsilon));
-    try expect(math.approxEqAbs(f32, log2f(37.45), 5.226894, epsilon));
-    try expect(math.approxEqAbs(f32, log2f(123123.234375), 16.909744, epsilon));
+    try expect(math.approx_eq_abs(f32, log2f(0.2), -2.321928, epsilon));
+    try expect(math.approx_eq_abs(f32, log2f(0.8923), -0.164399, epsilon));
+    try expect(math.approx_eq_abs(f32, log2f(1.5), 0.584962, epsilon));
+    try expect(math.approx_eq_abs(f32, log2f(37.45), 5.226894, epsilon));
+    try expect(math.approx_eq_abs(f32, log2f(123123.234375), 16.909744, epsilon));
 }
 
 test "log2_64" {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f64, log2(0.2), -2.321928, epsilon));
-    try expect(math.approxEqAbs(f64, log2(0.8923), -0.164399, epsilon));
-    try expect(math.approxEqAbs(f64, log2(1.5), 0.584962, epsilon));
-    try expect(math.approxEqAbs(f64, log2(37.45), 5.226894, epsilon));
-    try expect(math.approxEqAbs(f64, log2(123123.234375), 16.909744, epsilon));
+    try expect(math.approx_eq_abs(f64, log2(0.2), -2.321928, epsilon));
+    try expect(math.approx_eq_abs(f64, log2(0.8923), -0.164399, epsilon));
+    try expect(math.approx_eq_abs(f64, log2(1.5), 0.584962, epsilon));
+    try expect(math.approx_eq_abs(f64, log2(37.45), 5.226894, epsilon));
+    try expect(math.approx_eq_abs(f64, log2(123123.234375), 16.909744, epsilon));
 }
 
 test "log2_32.special" {
-    try expect(math.isPositiveInf(log2f(math.inf(f32))));
-    try expect(math.isNegativeInf(log2f(0.0)));
-    try expect(math.isNan(log2f(-1.0)));
-    try expect(math.isNan(log2f(math.nan(f32))));
+    try expect(math.is_positive_inf(log2f(math.inf(f32))));
+    try expect(math.is_negative_inf(log2f(0.0)));
+    try expect(math.is_nan(log2f(-1.0)));
+    try expect(math.is_nan(log2f(math.nan(f32))));
 }
 
 test "log2_64.special" {
-    try expect(math.isPositiveInf(log2(math.inf(f64))));
-    try expect(math.isNegativeInf(log2(0.0)));
-    try expect(math.isNan(log2(-1.0)));
-    try expect(math.isNan(log2(math.nan(f64))));
+    try expect(math.is_positive_inf(log2(math.inf(f64))));
+    try expect(math.is_negative_inf(log2(0.0)));
+    try expect(math.is_nan(log2(-1.0)));
+    try expect(math.is_nan(log2(math.nan(f64))));
 }

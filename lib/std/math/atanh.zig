@@ -8,7 +8,7 @@ const std = @import("../std.zig");
 const math = std.math;
 const mem = std.mem;
 const expect = std.testing.expect;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 
 /// Returns the hyperbolic arc-tangent of x.
 ///
@@ -21,17 +21,17 @@ pub fn atanh(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => atanh_32(x),
         f64 => atanh_64(x),
-        else => @compileError("atanh not implemented for " ++ @typeName(T)),
+        else => @compile_error("atanh not implemented for " ++ @type_name(T)),
     };
 }
 
 // atanh(x) = log((1 + x) / (1 - x)) / 2 = log1p(2x / (1 - x)) / 2 ~= x + x^3 / 3 + o(x^5)
 fn atanh_32(x: f32) f32 {
-    const u = @as(u32, @bitCast(x));
+    const u = @as(u32, @bit_cast(x));
     const i = u & 0x7FFFFFFF;
     const s = u >> 31;
 
-    var y = @as(f32, @bitCast(i)); // |x|
+    var y = @as(f32, @bit_cast(i)); // |x|
 
     if (y == 1.0) {
         return math.copysign(math.inf(f32), x);
@@ -41,7 +41,7 @@ fn atanh_32(x: f32) f32 {
         if (u < 0x3F800000 - (32 << 23)) {
             // underflow
             if (u < (1 << 23)) {
-                mem.doNotOptimizeAway(y * y);
+                mem.do_not_optimize_away(y * y);
             }
         }
         // |x| < 0.5
@@ -56,11 +56,11 @@ fn atanh_32(x: f32) f32 {
 }
 
 fn atanh_64(x: f64) f64 {
-    const u: u64 = @bitCast(x);
+    const u: u64 = @bit_cast(x);
     const e = (u >> 52) & 0x7FF;
     const s = u >> 63;
 
-    var y: f64 = @bitCast(u & (maxInt(u64) >> 1)); // |x|
+    var y: f64 = @bit_cast(u & (max_int(u64) >> 1)); // |x|
 
     if (y == 1.0) {
         return math.copysign(math.inf(f64), x);
@@ -70,7 +70,7 @@ fn atanh_64(x: f64) f64 {
         if (e < 0x3FF - 32) {
             // underflow
             if (e == 0) {
-                mem.doNotOptimizeAway(@as(f32, @floatCast(y)));
+                mem.do_not_optimize_away(@as(f32, @float_cast(y)));
             }
         }
         // |x| < 0.5
@@ -92,31 +92,31 @@ test atanh {
 test atanh_32 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f32, atanh_32(0.0), 0.0, epsilon));
-    try expect(math.approxEqAbs(f32, atanh_32(0.2), 0.202733, epsilon));
-    try expect(math.approxEqAbs(f32, atanh_32(0.8923), 1.433099, epsilon));
+    try expect(math.approx_eq_abs(f32, atanh_32(0.0), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f32, atanh_32(0.2), 0.202733, epsilon));
+    try expect(math.approx_eq_abs(f32, atanh_32(0.8923), 1.433099, epsilon));
 }
 
 test atanh_64 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f64, atanh_64(0.0), 0.0, epsilon));
-    try expect(math.approxEqAbs(f64, atanh_64(0.2), 0.202733, epsilon));
-    try expect(math.approxEqAbs(f64, atanh_64(0.8923), 1.433099, epsilon));
+    try expect(math.approx_eq_abs(f64, atanh_64(0.0), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f64, atanh_64(0.2), 0.202733, epsilon));
+    try expect(math.approx_eq_abs(f64, atanh_64(0.8923), 1.433099, epsilon));
 }
 
 test "atanh32.special" {
-    try expect(math.isPositiveInf(atanh_32(1)));
-    try expect(math.isNegativeInf(atanh_32(-1)));
-    try expect(math.isNan(atanh_32(1.5)));
-    try expect(math.isNan(atanh_32(-1.5)));
-    try expect(math.isNan(atanh_32(math.nan(f32))));
+    try expect(math.is_positive_inf(atanh_32(1)));
+    try expect(math.is_negative_inf(atanh_32(-1)));
+    try expect(math.is_nan(atanh_32(1.5)));
+    try expect(math.is_nan(atanh_32(-1.5)));
+    try expect(math.is_nan(atanh_32(math.nan(f32))));
 }
 
 test "atanh64.special" {
-    try expect(math.isPositiveInf(atanh_64(1)));
-    try expect(math.isNegativeInf(atanh_64(-1)));
-    try expect(math.isNan(atanh_64(1.5)));
-    try expect(math.isNan(atanh_64(-1.5)));
-    try expect(math.isNan(atanh_64(math.nan(f64))));
+    try expect(math.is_positive_inf(atanh_64(1)));
+    try expect(math.is_negative_inf(atanh_64(-1)));
+    try expect(math.is_nan(atanh_64(1.5)));
+    try expect(math.is_nan(atanh_64(-1.5)));
+    try expect(math.is_nan(atanh_64(math.nan(f64))));
 }

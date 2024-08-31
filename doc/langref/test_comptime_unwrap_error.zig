@@ -1,5 +1,5 @@
 comptime {
-    const number = getNumberOrFail() catch unreachable;
+    const number = get_number_or_fail() catch unreachable;
     _ = number;
 }
 

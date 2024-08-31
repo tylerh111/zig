@@ -1,5 +1,5 @@
 const std = @import("std");
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 
 test "aligned struct fields" {
     const S = struct {
@@ -8,9 +8,9 @@ test "aligned struct fields" {
     };
     var foo = S{ .a = 1, .b = 2 };
 
-    try expectEqual(64, @alignOf(S));
-    try expectEqual(*align(2) u32, @TypeOf(&foo.a));
-    try expectEqual(*align(64) u32, @TypeOf(&foo.b));
+    try expect_equal(64, @alignOf(S));
+    try expect_equal(*align(2) u32, @TypeOf(&foo.a));
+    try expect_equal(*align(64) u32, @TypeOf(&foo.b));
 }
 
 // test

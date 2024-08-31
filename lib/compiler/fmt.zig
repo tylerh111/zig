@@ -43,7 +43,7 @@ pub fn main() !void {
     const arena = arena_instance.allocator();
     const gpa = arena;
 
-    const args = try process.argsAlloc(arena);
+    const args = try process.args_alloc(arena);
 
     var color: Color = .auto;
     var stdin_flag: bool = false;
@@ -58,18 +58,18 @@ pub fn main() !void {
         var i: usize = 1;
         while (i < args.len) : (i += 1) {
             const arg = args[i];
-            if (mem.startsWith(u8, arg, "-")) {
+            if (mem.starts_with(u8, arg, "-")) {
                 if (mem.eql(u8, arg, "-h") or mem.eql(u8, arg, "--help")) {
-                    const stdout = std.io.getStdOut().writer();
-                    try stdout.writeAll(usage_fmt);
-                    return process.cleanExit();
+                    const stdout = std.io.get_std_out().writer();
+                    try stdout.write_all(usage_fmt);
+                    return process.clean_exit();
                 } else if (mem.eql(u8, arg, "--color")) {
                     if (i + 1 >= args.len) {
                         fatal("expected [auto|on|off] after --color", .{});
                     }
                     i += 1;
                     const next_arg = args[i];
-                    color = std.meta.stringToEnum(Color, next_arg) orelse {
+                    color = std.meta.string_to_enum(Color, next_arg) orelse {
                         fatal("expected [auto|on|off] after --color, found '{s}'", .{next_arg});
                     };
                 } else if (mem.eql(u8, arg, "--stdin")) {
@@ -99,8 +99,8 @@ pub fn main() !void {
             fatal("cannot use --stdin with positional arguments", .{});
         }
 
-        const stdin = std.io.getStdIn();
-        const source_code = std.zig.readSourceFileToEndAlloc(gpa, stdin, null) catch |err| {
+        const stdin = std.io.get_std_in();
+        const source_code = std.zig.read_source_file_to_end_alloc(gpa, stdin, null) catch |err| {
             fatal("unable to read stdin: {}", .{err});
         };
         defer gpa.free(source_code);
@@ -113,29 +113,29 @@ pub fn main() !void {
         if (check_ast_flag) {
             var zir = try std.zig.AstGen.generate(gpa, tree);
 
-            if (zir.hasCompileErrors()) {
+            if (zir.has_compile_errors()) {
                 var wip_errors: std.zig.ErrorBundle.Wip = undefined;
                 try wip_errors.init(gpa);
                 defer wip_errors.deinit();
-                try wip_errors.addZirErrorMessages(zir, tree, source_code, "<stdin>");
-                var error_bundle = try wip_errors.toOwnedBundle("");
+                try wip_errors.add_zir_error_messages(zir, tree, source_code, "<stdin>");
+                var error_bundle = try wip_errors.to_owned_bundle("");
                 defer error_bundle.deinit(gpa);
-                error_bundle.renderToStdErr(color.renderOptions());
+                error_bundle.render_to_std_err(color.render_options());
                 process.exit(2);
             }
         } else if (tree.errors.len != 0) {
-            try std.zig.printAstErrorsToStderr(gpa, tree, "<stdin>", color);
+            try std.zig.print_ast_errors_to_stderr(gpa, tree, "<stdin>", color);
             process.exit(2);
         }
         const formatted = try tree.render(gpa);
         defer gpa.free(formatted);
 
         if (check_flag) {
-            const code: u8 = @intFromBool(mem.eql(u8, formatted, source_code));
+            const code: u8 = @int_from_bool(mem.eql(u8, formatted, source_code));
             process.exit(code);
         }
 
-        return std.io.getStdOut().writeAll(formatted);
+        return std.io.get_std_out().write_all(formatted);
     }
 
     if (input_files.items.len == 0) {
@@ -157,11 +157,11 @@ pub fn main() !void {
     // Mark any excluded files/directories as already seen,
     // so that they are skipped later during actual processing
     for (excluded_files.items) |file_path| {
-        const stat = fs.cwd().statFile(file_path) catch |err| switch (err) {
+        const stat = fs.cwd().stat_file(file_path) catch |err| switch (err) {
             error.FileNotFound => continue,
-            // On Windows, statFile does not work for directories
+            // On Windows, stat_file does not work for directories
             error.IsDir => dir: {
-                var dir = try fs.cwd().openDir(file_path, .{});
+                var dir = try fs.cwd().open_dir(file_path, .{});
                 defer dir.close();
                 break :dir try dir.stat();
             },
@@ -171,7 +171,7 @@ pub fn main() !void {
     }
 
     for (input_files.items) |file_path| {
-        try fmtPath(&fmt, file_path, check_flag, fs.cwd(), file_path);
+        try fmt_path(&fmt, file_path, check_flag, fs.cwd(), file_path);
     }
     if (fmt.any_error) {
         process.exit(1);
@@ -209,8 +209,8 @@ const FmtError = error{
 } || fs.File.OpenError;
 
 fn fmt_path(fmt: *Fmt, file_path: []const u8, check_mode: bool, dir: fs.Dir, sub_path: []const u8) FmtError!void {
-    fmtPathFile(fmt, file_path, check_mode, dir, sub_path) catch |err| switch (err) {
-        error.IsDir, error.AccessDenied => return fmtPathDir(fmt, file_path, check_mode, dir, sub_path),
+    fmt_path_file(fmt, file_path, check_mode, dir, sub_path) catch |err| switch (err) {
+        error.IsDir, error.AccessDenied => return fmt_path_dir(fmt, file_path, check_mode, dir, sub_path),
         else => {
             warn("unable to format '{s}': {s}", .{ file_path, @errorName(err) });
             fmt.any_error = true;
@@ -226,26 +226,26 @@ fn fmt_path_dir(
     parent_dir: fs.Dir,
     parent_sub_path: []const u8,
 ) FmtError!void {
-    var dir = try parent_dir.openDir(parent_sub_path, .{ .iterate = true });
+    var dir = try parent_dir.open_dir(parent_sub_path, .{ .iterate = true });
     defer dir.close();
 
     const stat = try dir.stat();
-    if (try fmt.seen.fetchPut(stat.inode, {})) |_| return;
+    if (try fmt.seen.fetch_put(stat.inode, {})) |_| return;
 
     var dir_it = dir.iterate();
     while (try dir_it.next()) |entry| {
         const is_dir = entry.kind == .directory;
 
-        if (mem.startsWith(u8, entry.name, ".")) continue;
+        if (mem.starts_with(u8, entry.name, ".")) continue;
 
-        if (is_dir or entry.kind == .file and (mem.endsWith(u8, entry.name, ".zig") or mem.endsWith(u8, entry.name, ".zon"))) {
+        if (is_dir or entry.kind == .file and (mem.ends_with(u8, entry.name, ".zig") or mem.ends_with(u8, entry.name, ".zon"))) {
             const full_path = try fs.path.join(fmt.gpa, &[_][]const u8{ file_path, entry.name });
             defer fmt.gpa.free(full_path);
 
             if (is_dir) {
-                try fmtPathDir(fmt, full_path, check_mode, dir, entry.name);
+                try fmt_path_dir(fmt, full_path, check_mode, dir, entry.name);
             } else {
-                fmtPathFile(fmt, full_path, check_mode, dir, entry.name) catch |err| {
+                fmt_path_file(fmt, full_path, check_mode, dir, entry.name) catch |err| {
                     warn("unable to format '{s}': {s}", .{ full_path, @errorName(err) });
                     fmt.any_error = true;
                     return;
@@ -262,7 +262,7 @@ fn fmt_path_file(
     dir: fs.Dir,
     sub_path: []const u8,
 ) FmtError!void {
-    const source_file = try dir.openFile(sub_path, .{});
+    const source_file = try dir.open_file(sub_path, .{});
     var file_closed = false;
     errdefer if (!file_closed) source_file.close();
 
@@ -272,7 +272,7 @@ fn fmt_path_file(
         return error.IsDir;
 
     const gpa = fmt.gpa;
-    const source_code = try std.zig.readSourceFileToEndAlloc(
+    const source_code = try std.zig.read_source_file_to_end_alloc(
         gpa,
         source_file,
         std.math.cast(usize, stat.size) orelse return error.FileTooBig,
@@ -283,13 +283,13 @@ fn fmt_path_file(
     file_closed = true;
 
     // Add to set after no longer possible to get error.IsDir.
-    if (try fmt.seen.fetchPut(stat.inode, {})) |_| return;
+    if (try fmt.seen.fetch_put(stat.inode, {})) |_| return;
 
     var tree = try std.zig.Ast.parse(gpa, source_code, .zig);
     defer tree.deinit(gpa);
 
     if (tree.errors.len != 0) {
-        try std.zig.printAstErrorsToStderr(gpa, tree, file_path, fmt.color);
+        try std.zig.print_ast_errors_to_stderr(gpa, tree, file_path, fmt.color);
         fmt.any_error = true;
         return;
     }
@@ -301,37 +301,37 @@ fn fmt_path_file(
         var zir = try std.zig.AstGen.generate(gpa, tree);
         defer zir.deinit(gpa);
 
-        if (zir.hasCompileErrors()) {
+        if (zir.has_compile_errors()) {
             var wip_errors: std.zig.ErrorBundle.Wip = undefined;
             try wip_errors.init(gpa);
             defer wip_errors.deinit();
-            try wip_errors.addZirErrorMessages(zir, tree, source_code, file_path);
-            var error_bundle = try wip_errors.toOwnedBundle("");
+            try wip_errors.add_zir_error_messages(zir, tree, source_code, file_path);
+            var error_bundle = try wip_errors.to_owned_bundle("");
             defer error_bundle.deinit(gpa);
-            error_bundle.renderToStdErr(fmt.color.renderOptions());
+            error_bundle.render_to_std_err(fmt.color.render_options());
             fmt.any_error = true;
         }
     }
 
     // As a heuristic, we make enough capacity for the same as the input source.
-    fmt.out_buffer.shrinkRetainingCapacity(0);
-    try fmt.out_buffer.ensureTotalCapacity(source_code.len);
+    fmt.out_buffer.shrink_retaining_capacity(0);
+    try fmt.out_buffer.ensure_total_capacity(source_code.len);
 
-    try tree.renderToArrayList(&fmt.out_buffer, .{});
+    try tree.render_to_array_list(&fmt.out_buffer, .{});
     if (mem.eql(u8, fmt.out_buffer.items, source_code))
         return;
 
     if (check_mode) {
-        const stdout = std.io.getStdOut().writer();
+        const stdout = std.io.get_std_out().writer();
         try stdout.print("{s}\n", .{file_path});
         fmt.any_error = true;
     } else {
-        var af = try dir.atomicFile(sub_path, .{ .mode = stat.mode });
+        var af = try dir.atomic_file(sub_path, .{ .mode = stat.mode });
         defer af.deinit();
 
-        try af.file.writeAll(fmt.out_buffer.items);
+        try af.file.write_all(fmt.out_buffer.items);
         try af.finish();
-        const stdout = std.io.getStdOut().writer();
+        const stdout = std.io.get_std_out().writer();
         try stdout.print("{s}\n", .{file_path});
     }
 }

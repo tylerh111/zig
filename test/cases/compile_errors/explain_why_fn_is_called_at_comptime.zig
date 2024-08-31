@@ -1,11 +1,11 @@
 const S = struct {
-    fnPtr: fn () void,
+    fn_ptr: fn () void,
     a: u8,
 };
 fn bar() void {}
 
 fn foo(comptime a: *u8) S {
-    return .{ .fnPtr = bar, .a = a.* };
+    return .{ .fn_ptr = bar, .a = a.* };
 }
 pub export fn entry() void {
     var a: u8 = 1;

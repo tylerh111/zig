@@ -38,15 +38,15 @@ pub fn add(
     const mod = self.module;
     const ip = &mod.intern_pool;
 
-    const ty = ip.typeOf(first);
-    assert(ty == ip.typeOf(last));
+    const ty = ip.type_of(first);
+    assert(ty == ip.type_of(last));
 
     for (self.ranges.items) |range| {
-        assert(ty == ip.typeOf(range.first));
-        assert(ty == ip.typeOf(range.last));
+        assert(ty == ip.type_of(range.first));
+        assert(ty == ip.type_of(range.last));
 
-        if (Value.fromInterned(last).compareScalar(.gte, Value.fromInterned(range.first), Type.fromInterned(ty), mod) and
-            Value.fromInterned(first).compareScalar(.lte, Value.fromInterned(range.last), Type.fromInterned(ty), mod))
+        if (Value.from_interned(last).compare_scalar(.gte, Value.from_interned(range.first), Type.from_interned(ty), mod) and
+            Value.from_interned(first).compare_scalar(.lte, Value.from_interned(range.last), Type.from_interned(ty), mod))
         {
             return range.src; // They overlap.
         }
@@ -62,19 +62,19 @@ pub fn add(
 
 /// Assumes a and b do not overlap
 fn less_than(mod: *Module, a: Range, b: Range) bool {
-    const ty = Type.fromInterned(mod.intern_pool.typeOf(a.first));
-    return Value.fromInterned(a.first).compareScalar(.lt, Value.fromInterned(b.first), ty, mod);
+    const ty = Type.from_interned(mod.intern_pool.type_of(a.first));
+    return Value.from_interned(a.first).compare_scalar(.lt, Value.from_interned(b.first), ty, mod);
 }
 
 pub fn spans(self: *RangeSet, first: InternPool.Index, last: InternPool.Index) !bool {
     const mod = self.module;
     const ip = &mod.intern_pool;
-    assert(ip.typeOf(first) == ip.typeOf(last));
+    assert(ip.type_of(first) == ip.type_of(last));
 
     if (self.ranges.items.len == 0)
         return false;
 
-    std.mem.sort(Range, self.ranges.items, mod, lessThan);
+    std.mem.sort(Range, self.ranges.items, mod, less_than);
 
     if (self.ranges.items[0].first != first or
         self.ranges.items[self.ranges.items.len - 1].last != last)
@@ -93,11 +93,11 @@ pub fn spans(self: *RangeSet, first: InternPool.Index, last: InternPool.Index) !
         const prev = self.ranges.items[i];
 
         // prev.last + 1 == cur.first
-        try counter.copy(Value.fromInterned(prev.last).toBigInt(&space, mod));
-        try counter.addScalar(&counter, 1);
+        try counter.copy(Value.from_interned(prev.last).to_big_int(&space, mod));
+        try counter.add_scalar(&counter, 1);
 
-        const cur_start_int = Value.fromInterned(cur.first).toBigInt(&space, mod);
-        if (!cur_start_int.eql(counter.toConst())) {
+        const cur_start_int = Value.from_interned(cur.first).to_big_int(&space, mod);
+        if (!cur_start_int.eql(counter.to_const())) {
             return false;
         }
     }

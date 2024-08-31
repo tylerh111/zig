@@ -198,7 +198,7 @@ pub const Opcode = enum(u8) {
 /// Returns the integer value of an `Opcode`. Used by the Zig compiler
 /// to write instructions to the wasm binary file
 pub fn opcode(op: Opcode) u8 {
-    return @intFromEnum(op);
+    return @int_from_enum(op);
 }
 
 test "opcodes" {
@@ -209,11 +209,11 @@ test "opcodes" {
     const local_get = opcode(.local_get);
     const i64_extend32_s = opcode(.i64_extend32_s);
 
-    try testing.expectEqual(@as(u16, 0x41), i32_const);
-    try testing.expectEqual(@as(u16, 0x0B), end);
-    try testing.expectEqual(@as(u16, 0x1A), drop);
-    try testing.expectEqual(@as(u16, 0x20), local_get);
-    try testing.expectEqual(@as(u16, 0xC4), i64_extend32_s);
+    try testing.expect_equal(@as(u16, 0x41), i32_const);
+    try testing.expect_equal(@as(u16, 0x0B), end);
+    try testing.expect_equal(@as(u16, 0x1A), drop);
+    try testing.expect_equal(@as(u16, 0x20), local_get);
+    try testing.expect_equal(@as(u16, 0xC4), i64_extend32_s);
 }
 
 /// Opcodes that require a prefix `0xFC`.
@@ -244,7 +244,7 @@ pub const MiscOpcode = enum(u32) {
 /// Returns the integer value of an `MiscOpcode`. Used by the Zig compiler
 /// to write instructions to the wasm binary file
 pub fn misc_opcode(op: MiscOpcode) u32 {
-    return @intFromEnum(op);
+    return @int_from_enum(op);
 }
 
 /// Simd opcodes that require a prefix `0xFD`.
@@ -515,7 +515,7 @@ pub const SimdOpcode = enum(u32) {
 /// Returns the integer value of an `SimdOpcode`. Used by the Zig compiler
 /// to write instructions to the wasm binary file
 pub fn simd_opcode(op: SimdOpcode) u32 {
-    return @intFromEnum(op);
+    return @int_from_enum(op);
 }
 
 /// Atomic opcodes that require a prefix `0xFE`.
@@ -595,7 +595,7 @@ pub const AtomicsOpcode = enum(u32) {
 /// Returns the integer value of an `AtomicsOpcode`. Used by the Zig compiler
 /// to write instructions to the wasm binary file
 pub fn atomics_opcode(op: AtomicsOpcode) u32 {
-    return @intFromEnum(op);
+    return @int_from_enum(op);
 }
 
 /// Enum representing all Wasm value types as per spec:
@@ -610,7 +610,7 @@ pub const Valtype = enum(u8) {
 
 /// Returns the integer value of a `Valtype`
 pub fn valtype(value: Valtype) u8 {
-    return @intFromEnum(value);
+    return @int_from_enum(value);
 }
 
 /// Reference types, where the funcref references to a function regardless of its type
@@ -622,7 +622,7 @@ pub const RefType = enum(u8) {
 
 /// Returns the integer value of a `Reftype`
 pub fn reftype(value: RefType) u8 {
-    return @intFromEnum(value);
+    return @int_from_enum(value);
 }
 
 test "valtypes" {
@@ -631,10 +631,10 @@ test "valtypes" {
     const _f32 = valtype(.f32);
     const _f64 = valtype(.f64);
 
-    try testing.expectEqual(@as(u8, 0x7F), _i32);
-    try testing.expectEqual(@as(u8, 0x7E), _i64);
-    try testing.expectEqual(@as(u8, 0x7D), _f32);
-    try testing.expectEqual(@as(u8, 0x7C), _f64);
+    try testing.expect_equal(@as(u8, 0x7F), _i32);
+    try testing.expect_equal(@as(u8, 0x7E), _i64);
+    try testing.expect_equal(@as(u8, 0x7D), _f32);
+    try testing.expect_equal(@as(u8, 0x7C), _f64);
 }
 
 /// Limits classify the size range of resizeable storage associated with memory types and table types.
@@ -649,11 +649,11 @@ pub const Limits = struct {
     };
 
     pub fn has_flag(limits: Limits, flag: Flags) bool {
-        return limits.flags & @intFromEnum(flag) != 0;
+        return limits.flags & @int_from_enum(flag) != 0;
     }
 
     pub fn set_flag(limits: *Limits, flag: Flags) void {
-        limits.flags |= @intFromEnum(flag);
+        limits.flags |= @int_from_enum(flag);
     }
 };
 
@@ -735,23 +735,23 @@ pub const Type = struct {
     returns: []const Valtype,
 
     pub fn format(self: Type, comptime fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
-        if (fmt.len != 0) std.fmt.invalidFmtError(fmt, self);
+        if (fmt.len != 0) std.fmt.invalid_fmt_error(fmt, self);
         _ = opt;
-        try writer.writeByte('(');
+        try writer.write_byte('(');
         for (self.params, 0..) |param, i| {
-            try writer.print("{s}", .{@tagName(param)});
+            try writer.print("{s}", .{@tag_name(param)});
             if (i + 1 != self.params.len) {
-                try writer.writeAll(", ");
+                try writer.write_all(", ");
             }
         }
-        try writer.writeAll(") -> ");
+        try writer.write_all(") -> ");
         if (self.returns.len == 0) {
-            try writer.writeAll("nil");
+            try writer.write_all("nil");
         } else {
             for (self.returns, 0..) |return_ty, i| {
-                try writer.print("{s}", .{@tagName(return_ty)});
+                try writer.print("{s}", .{@tag_name(return_ty)});
                 if (i + 1 != self.returns.len) {
-                    try writer.writeAll(", ");
+                    try writer.write_all(", ");
                 }
             }
         }
@@ -790,7 +790,7 @@ pub const Section = enum(u8) {
 
 /// Returns the integer value of a given `Section`
 pub fn section(val: Section) u8 {
-    return @intFromEnum(val);
+    return @int_from_enum(val);
 }
 
 /// The kind of the type when importing or exporting to/from the host environment.
@@ -804,7 +804,7 @@ pub const ExternalKind = enum(u8) {
 
 /// Returns the integer value of a given `ExternalKind`
 pub fn external_kind(val: ExternalKind) u8 {
-    return @intFromEnum(val);
+    return @int_from_enum(val);
 }
 
 /// Defines the enum values for each subsection id for the "Names" custom section

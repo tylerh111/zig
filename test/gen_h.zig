@@ -137,7 +137,7 @@ pub fn add_cases(cases: *tests.GenHContext) void {
         \\};
         \\
         \\export fn a(s: *E) u8 {
-        \\    return @intFromEnum(s.*);
+        \\    return @int_from_enum(s.*);
         \\}
     , &[_][]const u8{
         \\enum E;

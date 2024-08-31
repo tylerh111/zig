@@ -7,7 +7,7 @@ const TokenType = @import("./scanner.zig").TokenType;
 const Diagnostics = @import("./scanner.zig").Diagnostics;
 const Error = @import("./scanner.zig").Error;
 const validate = @import("./scanner.zig").validate;
-const isNumberFormattedLikeAnInteger = @import("./scanner.zig").isNumberFormattedLikeAnInteger;
+const is_number_formatted_like_an_integer = @import("./scanner.zig").is_number_formatted_like_an_integer;
 
 const example_document_str =
     \\{
@@ -27,48 +27,48 @@ const example_document_str =
 ;
 
 fn expect_next(scanner_or_reader: anytype, expected_token: Token) !void {
-    return expectEqualTokens(expected_token, try scanner_or_reader.next());
+    return expect_equal_tokens(expected_token, try scanner_or_reader.next());
 }
 
 fn expect_peek_next(scanner_or_reader: anytype, expected_token_type: TokenType, expected_token: Token) !void {
-    try std.testing.expectEqual(expected_token_type, try scanner_or_reader.peekNextTokenType());
-    try expectEqualTokens(expected_token, try scanner_or_reader.next());
+    try std.testing.expect_equal(expected_token_type, try scanner_or_reader.peek_next_token_type());
+    try expect_equal_tokens(expected_token, try scanner_or_reader.next());
 }
 
 test "token" {
-    var scanner = JsonScanner.initCompleteInput(std.testing.allocator, example_document_str);
+    var scanner = JsonScanner.init_complete_input(std.testing.allocator, example_document_str);
     defer scanner.deinit();
 
-    try expectNext(&scanner, .object_begin);
-    try expectNext(&scanner, Token{ .string = "Image" });
-    try expectNext(&scanner, .object_begin);
-    try expectNext(&scanner, Token{ .string = "Width" });
-    try expectNext(&scanner, Token{ .number = "800" });
-    try expectNext(&scanner, Token{ .string = "Height" });
-    try expectNext(&scanner, Token{ .number = "600" });
-    try expectNext(&scanner, Token{ .string = "Title" });
-    try expectNext(&scanner, Token{ .string = "View from 15th Floor" });
-    try expectNext(&scanner, Token{ .string = "Thumbnail" });
-    try expectNext(&scanner, .object_begin);
-    try expectNext(&scanner, Token{ .string = "Url" });
-    try expectNext(&scanner, Token{ .string = "http://www.example.com/image/481989943" });
-    try expectNext(&scanner, Token{ .string = "Height" });
-    try expectNext(&scanner, Token{ .number = "125" });
-    try expectNext(&scanner, Token{ .string = "Width" });
-    try expectNext(&scanner, Token{ .number = "100" });
-    try expectNext(&scanner, .object_end);
-    try expectNext(&scanner, Token{ .string = "Animated" });
-    try expectNext(&scanner, .false);
-    try expectNext(&scanner, Token{ .string = "IDs" });
-    try expectNext(&scanner, .array_begin);
-    try expectNext(&scanner, Token{ .number = "116" });
-    try expectNext(&scanner, Token{ .number = "943" });
-    try expectNext(&scanner, Token{ .number = "234" });
-    try expectNext(&scanner, Token{ .number = "38793" });
-    try expectNext(&scanner, .array_end);
-    try expectNext(&scanner, .object_end);
-    try expectNext(&scanner, .object_end);
-    try expectNext(&scanner, .end_of_document);
+    try expect_next(&scanner, .object_begin);
+    try expect_next(&scanner, Token{ .string = "Image" });
+    try expect_next(&scanner, .object_begin);
+    try expect_next(&scanner, Token{ .string = "Width" });
+    try expect_next(&scanner, Token{ .number = "800" });
+    try expect_next(&scanner, Token{ .string = "Height" });
+    try expect_next(&scanner, Token{ .number = "600" });
+    try expect_next(&scanner, Token{ .string = "Title" });
+    try expect_next(&scanner, Token{ .string = "View from 15th Floor" });
+    try expect_next(&scanner, Token{ .string = "Thumbnail" });
+    try expect_next(&scanner, .object_begin);
+    try expect_next(&scanner, Token{ .string = "Url" });
+    try expect_next(&scanner, Token{ .string = "http://www.example.com/image/481989943" });
+    try expect_next(&scanner, Token{ .string = "Height" });
+    try expect_next(&scanner, Token{ .number = "125" });
+    try expect_next(&scanner, Token{ .string = "Width" });
+    try expect_next(&scanner, Token{ .number = "100" });
+    try expect_next(&scanner, .object_end);
+    try expect_next(&scanner, Token{ .string = "Animated" });
+    try expect_next(&scanner, .false);
+    try expect_next(&scanner, Token{ .string = "IDs" });
+    try expect_next(&scanner, .array_begin);
+    try expect_next(&scanner, Token{ .number = "116" });
+    try expect_next(&scanner, Token{ .number = "943" });
+    try expect_next(&scanner, Token{ .number = "234" });
+    try expect_next(&scanner, Token{ .number = "38793" });
+    try expect_next(&scanner, .array_end);
+    try expect_next(&scanner, .object_end);
+    try expect_next(&scanner, .object_end);
+    try expect_next(&scanner, .end_of_document);
 }
 
 const all_types_test_case =
@@ -82,97 +82,97 @@ const all_types_test_case =
 ;
 
 fn test_all_types(source: anytype, large_buffer: bool) !void {
-    try expectPeekNext(source, .array_begin, .array_begin);
-    try expectPeekNext(source, .string, Token{ .string = "" });
-    try expectPeekNext(source, .string, Token{ .partial_string = "a" });
-    try expectPeekNext(source, .string, Token{ .partial_string_escaped_1 = "\n".* });
+    try expect_peek_next(source, .array_begin, .array_begin);
+    try expect_peek_next(source, .string, Token{ .string = "" });
+    try expect_peek_next(source, .string, Token{ .partial_string = "a" });
+    try expect_peek_next(source, .string, Token{ .partial_string_escaped_1 = "\n".* });
     if (large_buffer) {
-        try expectPeekNext(source, .string, Token{ .string = "b" });
+        try expect_peek_next(source, .string, Token{ .string = "b" });
     } else {
-        try expectPeekNext(source, .string, Token{ .partial_string = "b" });
-        try expectPeekNext(source, .string, Token{ .string = "" });
+        try expect_peek_next(source, .string, Token{ .partial_string = "b" });
+        try expect_peek_next(source, .string, Token{ .string = "" });
     }
     if (large_buffer) {
-        try expectPeekNext(source, .number, Token{ .number = "0" });
+        try expect_peek_next(source, .number, Token{ .number = "0" });
     } else {
-        try expectPeekNext(source, .number, Token{ .partial_number = "0" });
-        try expectPeekNext(source, .number, Token{ .number = "" });
+        try expect_peek_next(source, .number, Token{ .partial_number = "0" });
+        try expect_peek_next(source, .number, Token{ .number = "" });
     }
     if (large_buffer) {
-        try expectPeekNext(source, .number, Token{ .number = "0.0" });
+        try expect_peek_next(source, .number, Token{ .number = "0.0" });
     } else {
-        try expectPeekNext(source, .number, Token{ .partial_number = "0" });
-        try expectPeekNext(source, .number, Token{ .partial_number = "." });
-        try expectPeekNext(source, .number, Token{ .partial_number = "0" });
-        try expectPeekNext(source, .number, Token{ .number = "" });
+        try expect_peek_next(source, .number, Token{ .partial_number = "0" });
+        try expect_peek_next(source, .number, Token{ .partial_number = "." });
+        try expect_peek_next(source, .number, Token{ .partial_number = "0" });
+        try expect_peek_next(source, .number, Token{ .number = "" });
     }
     if (large_buffer) {
-        try expectPeekNext(source, .number, Token{ .number = "-1.1e-1" });
+        try expect_peek_next(source, .number, Token{ .number = "-1.1e-1" });
     } else {
-        try expectPeekNext(source, .number, Token{ .partial_number = "-" });
-        try expectPeekNext(source, .number, Token{ .partial_number = "1" });
-        try expectPeekNext(source, .number, Token{ .partial_number = "." });
-        try expectPeekNext(source, .number, Token{ .partial_number = "1" });
-        try expectPeekNext(source, .number, Token{ .partial_number = "e" });
-        try expectPeekNext(source, .number, Token{ .partial_number = "-" });
-        try expectPeekNext(source, .number, Token{ .partial_number = "1" });
-        try expectPeekNext(source, .number, Token{ .number = "" });
+        try expect_peek_next(source, .number, Token{ .partial_number = "-" });
+        try expect_peek_next(source, .number, Token{ .partial_number = "1" });
+        try expect_peek_next(source, .number, Token{ .partial_number = "." });
+        try expect_peek_next(source, .number, Token{ .partial_number = "1" });
+        try expect_peek_next(source, .number, Token{ .partial_number = "e" });
+        try expect_peek_next(source, .number, Token{ .partial_number = "-" });
+        try expect_peek_next(source, .number, Token{ .partial_number = "1" });
+        try expect_peek_next(source, .number, Token{ .number = "" });
     }
-    try expectPeekNext(source, .true, .true);
-    try expectPeekNext(source, .false, .false);
-    try expectPeekNext(source, .null, .null);
-    try expectPeekNext(source, .object_begin, .object_begin);
+    try expect_peek_next(source, .true, .true);
+    try expect_peek_next(source, .false, .false);
+    try expect_peek_next(source, .null, .null);
+    try expect_peek_next(source, .object_begin, .object_begin);
     if (large_buffer) {
-        try expectPeekNext(source, .string, Token{ .string = "a" });
+        try expect_peek_next(source, .string, Token{ .string = "a" });
     } else {
-        try expectPeekNext(source, .string, Token{ .partial_string = "a" });
-        try expectPeekNext(source, .string, Token{ .string = "" });
+        try expect_peek_next(source, .string, Token{ .partial_string = "a" });
+        try expect_peek_next(source, .string, Token{ .string = "" });
     }
-    try expectPeekNext(source, .object_begin, .object_begin);
-    try expectPeekNext(source, .object_end, .object_end);
-    try expectPeekNext(source, .object_end, .object_end);
-    try expectPeekNext(source, .array_begin, .array_begin);
-    try expectPeekNext(source, .array_end, .array_end);
-    try expectPeekNext(source, .array_end, .array_end);
-    try expectPeekNext(source, .end_of_document, .end_of_document);
+    try expect_peek_next(source, .object_begin, .object_begin);
+    try expect_peek_next(source, .object_end, .object_end);
+    try expect_peek_next(source, .object_end, .object_end);
+    try expect_peek_next(source, .array_begin, .array_begin);
+    try expect_peek_next(source, .array_end, .array_end);
+    try expect_peek_next(source, .array_end, .array_end);
+    try expect_peek_next(source, .end_of_document, .end_of_document);
 }
 
 test "peek all types" {
-    var scanner = JsonScanner.initCompleteInput(std.testing.allocator, all_types_test_case);
+    var scanner = JsonScanner.init_complete_input(std.testing.allocator, all_types_test_case);
     defer scanner.deinit();
-    try testAllTypes(&scanner, true);
+    try test_all_types(&scanner, true);
 
-    var stream = std.io.fixedBufferStream(all_types_test_case);
+    var stream = std.io.fixed_buffer_stream(all_types_test_case);
     var json_reader = jsonReader(std.testing.allocator, stream.reader());
     defer json_reader.deinit();
-    try testAllTypes(&json_reader, true);
+    try test_all_types(&json_reader, true);
 
-    var tiny_stream = std.io.fixedBufferStream(all_types_test_case);
+    var tiny_stream = std.io.fixed_buffer_stream(all_types_test_case);
     var tiny_json_reader = JsonReader(1, @TypeOf(tiny_stream.reader())).init(std.testing.allocator, tiny_stream.reader());
     defer tiny_json_reader.deinit();
-    try testAllTypes(&tiny_json_reader, false);
+    try test_all_types(&tiny_json_reader, false);
 }
 
 test "token mismatched close" {
-    var scanner = JsonScanner.initCompleteInput(std.testing.allocator, "[102, 111, 111 }");
+    var scanner = JsonScanner.init_complete_input(std.testing.allocator, "[102, 111, 111 }");
     defer scanner.deinit();
-    try expectNext(&scanner, .array_begin);
-    try expectNext(&scanner, Token{ .number = "102" });
-    try expectNext(&scanner, Token{ .number = "111" });
-    try expectNext(&scanner, Token{ .number = "111" });
-    try std.testing.expectError(error.SyntaxError, scanner.next());
+    try expect_next(&scanner, .array_begin);
+    try expect_next(&scanner, Token{ .number = "102" });
+    try expect_next(&scanner, Token{ .number = "111" });
+    try expect_next(&scanner, Token{ .number = "111" });
+    try std.testing.expect_error(error.SyntaxError, scanner.next());
 }
 
 test "token premature object close" {
-    var scanner = JsonScanner.initCompleteInput(std.testing.allocator, "{ \"key\": }");
+    var scanner = JsonScanner.init_complete_input(std.testing.allocator, "{ \"key\": }");
     defer scanner.deinit();
-    try expectNext(&scanner, .object_begin);
-    try expectNext(&scanner, Token{ .string = "key" });
-    try std.testing.expectError(error.SyntaxError, scanner.next());
+    try expect_next(&scanner, .object_begin);
+    try expect_next(&scanner, Token{ .string = "key" });
+    try std.testing.expect_error(error.SyntaxError, scanner.next());
 }
 
 test "JsonScanner basic" {
-    var scanner = JsonScanner.initCompleteInput(std.testing.allocator, example_document_str);
+    var scanner = JsonScanner.init_complete_input(std.testing.allocator, example_document_str);
     defer scanner.deinit();
 
     while (true) {
@@ -182,7 +182,7 @@ test "JsonScanner basic" {
 }
 
 test "JsonReader basic" {
-    var stream = std.io.fixedBufferStream(example_document_str);
+    var stream = std.io.fixed_buffer_stream(example_document_str);
 
     var json_reader = jsonReader(std.testing.allocator, stream.reader());
     defer json_reader.deinit();
@@ -215,14 +215,14 @@ const number_test_items = blk: {
 
 test "numbers" {
     for (number_test_items) |number_str| {
-        var scanner = JsonScanner.initCompleteInput(std.testing.allocator, number_str);
+        var scanner = JsonScanner.init_complete_input(std.testing.allocator, number_str);
         defer scanner.deinit();
 
         const token = try scanner.next();
         const value = token.number; // assert this is a number
-        try std.testing.expectEqualStrings(number_str, value);
+        try std.testing.expect_equal_strings(number_str, value);
 
-        try std.testing.expectEqual(Token.end_of_document, try scanner.next());
+        try std.testing.expect_equal(Token.end_of_document, try scanner.next());
     }
 }
 
@@ -243,21 +243,21 @@ const string_test_cases = .{
 
 test "strings" {
     inline for (string_test_cases) |tuple| {
-        var stream = std.io.fixedBufferStream("\"" ++ tuple[0] ++ "\"");
+        var stream = std.io.fixed_buffer_stream("\"" ++ tuple[0] ++ "\"");
         var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
         defer arena.deinit();
         var json_reader = jsonReader(std.testing.allocator, stream.reader());
         defer json_reader.deinit();
 
-        const token = try json_reader.nextAlloc(arena.allocator(), .alloc_if_needed);
+        const token = try json_reader.next_alloc(arena.allocator(), .alloc_if_needed);
         const value = switch (token) {
             .string => |value| value,
             .allocated_string => |value| value,
             else => return error.ExpectedString,
         };
-        try std.testing.expectEqualStrings(tuple[1], value);
+        try std.testing.expect_equal_strings(tuple[1], value);
 
-        try std.testing.expectEqual(Token.end_of_document, try json_reader.next());
+        try std.testing.expect_equal(Token.end_of_document, try json_reader.next());
     }
 }
 
@@ -281,7 +281,7 @@ test "nesting" {
         const maybe_error = tuple[0];
         const document_str = tuple[1];
 
-        expectMaybeError(document_str, maybe_error) catch |err| {
+        expect_maybe_error(document_str, maybe_error) catch |err| {
             std.debug.print("in json document: {s}\n", .{document_str});
             return err;
         };
@@ -289,7 +289,7 @@ test "nesting" {
 }
 
 fn expect_maybe_error(document_str: []const u8, maybe_error: ?Error) !void {
-    var scanner = JsonScanner.initCompleteInput(std.testing.allocator, document_str);
+    var scanner = JsonScanner.init_complete_input(std.testing.allocator, document_str);
     defer scanner.deinit();
 
     while (true) {
@@ -305,28 +305,28 @@ fn expect_maybe_error(document_str: []const u8, maybe_error: ?Error) !void {
 }
 
 fn expect_equal_tokens(expected_token: Token, actual_token: Token) !void {
-    try std.testing.expectEqual(std.meta.activeTag(expected_token), std.meta.activeTag(actual_token));
+    try std.testing.expect_equal(std.meta.active_tag(expected_token), std.meta.active_tag(actual_token));
     switch (expected_token) {
         .number => |expected_value| {
-            try std.testing.expectEqualStrings(expected_value, actual_token.number);
+            try std.testing.expect_equal_strings(expected_value, actual_token.number);
         },
         .string => |expected_value| {
-            try std.testing.expectEqualStrings(expected_value, actual_token.string);
+            try std.testing.expect_equal_strings(expected_value, actual_token.string);
         },
         else => {},
     }
 }
 
 fn test_tiny_buffer_size(document_str: []const u8) !void {
-    var tiny_stream = std.io.fixedBufferStream(document_str);
-    var normal_stream = std.io.fixedBufferStream(document_str);
+    var tiny_stream = std.io.fixed_buffer_stream(document_str);
+    var normal_stream = std.io.fixed_buffer_stream(document_str);
 
     var tiny_json_reader = JsonReader(1, @TypeOf(tiny_stream.reader())).init(std.testing.allocator, tiny_stream.reader());
     defer tiny_json_reader.deinit();
     var normal_json_reader = JsonReader(0x1000, @TypeOf(normal_stream.reader())).init(std.testing.allocator, normal_stream.reader());
     defer normal_json_reader.deinit();
 
-    expectEqualStreamOfTokens(&normal_json_reader, &tiny_json_reader) catch |err| {
+    expect_equal_stream_of_tokens(&normal_json_reader, &tiny_json_reader) catch |err| {
         std.debug.print("in json document: {s}\n", .{document_str});
         return err;
     };
@@ -335,66 +335,66 @@ fn expect_equal_stream_of_tokens(control_json_reader: anytype, test_json_reader:
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena.deinit();
     while (true) {
-        const control_token = try control_json_reader.nextAlloc(arena.allocator(), .alloc_always);
-        const test_token = try test_json_reader.nextAlloc(arena.allocator(), .alloc_always);
-        try expectEqualTokens(control_token, test_token);
+        const control_token = try control_json_reader.next_alloc(arena.allocator(), .alloc_always);
+        const test_token = try test_json_reader.next_alloc(arena.allocator(), .alloc_always);
+        try expect_equal_tokens(control_token, test_token);
         if (control_token == .end_of_document) break;
         _ = arena.reset(.retain_capacity);
     }
 }
 
 test "BufferUnderrun" {
-    try testTinyBufferSize(example_document_str);
+    try test_tiny_buffer_size(example_document_str);
     for (number_test_items) |number_str| {
-        try testTinyBufferSize(number_str);
+        try test_tiny_buffer_size(number_str);
     }
     inline for (string_test_cases) |tuple| {
-        try testTinyBufferSize("\"" ++ tuple[0] ++ "\"");
+        try test_tiny_buffer_size("\"" ++ tuple[0] ++ "\"");
     }
 }
 
 test "validate" {
-    try std.testing.expectEqual(true, try validate(std.testing.allocator, "{}"));
-    try std.testing.expectEqual(true, try validate(std.testing.allocator, "[]"));
-    try std.testing.expectEqual(false, try validate(std.testing.allocator, "[{[[[[{}]]]]}]"));
-    try std.testing.expectEqual(false, try validate(std.testing.allocator, "{]"));
-    try std.testing.expectEqual(false, try validate(std.testing.allocator, "[}"));
-    try std.testing.expectEqual(false, try validate(std.testing.allocator, "{{{{[]}}}]"));
+    try std.testing.expect_equal(true, try validate(std.testing.allocator, "{}"));
+    try std.testing.expect_equal(true, try validate(std.testing.allocator, "[]"));
+    try std.testing.expect_equal(false, try validate(std.testing.allocator, "[{[[[[{}]]]]}]"));
+    try std.testing.expect_equal(false, try validate(std.testing.allocator, "{]"));
+    try std.testing.expect_equal(false, try validate(std.testing.allocator, "[}"));
+    try std.testing.expect_equal(false, try validate(std.testing.allocator, "{{{{[]}}}]"));
 }
 
 fn test_skip_value(s: []const u8) !void {
-    var scanner = JsonScanner.initCompleteInput(std.testing.allocator, s);
+    var scanner = JsonScanner.init_complete_input(std.testing.allocator, s);
     defer scanner.deinit();
-    try scanner.skipValue();
-    try expectEqualTokens(.end_of_document, try scanner.next());
+    try scanner.skip_value();
+    try expect_equal_tokens(.end_of_document, try scanner.next());
 
-    var stream = std.io.fixedBufferStream(s);
+    var stream = std.io.fixed_buffer_stream(s);
     var json_reader = jsonReader(std.testing.allocator, stream.reader());
     defer json_reader.deinit();
-    try json_reader.skipValue();
-    try expectEqualTokens(.end_of_document, try json_reader.next());
+    try json_reader.skip_value();
+    try expect_equal_tokens(.end_of_document, try json_reader.next());
 }
 
-test "skipValue" {
-    try testSkipValue("false");
-    try testSkipValue("true");
-    try testSkipValue("null");
-    try testSkipValue("42");
-    try testSkipValue("42.0");
-    try testSkipValue("\"foo\"");
-    try testSkipValue("[101, 111, 121]");
-    try testSkipValue("{}");
-    try testSkipValue("{\"foo\": \"bar\\nbaz\"}");
+test "skip_value" {
+    try test_skip_value("false");
+    try test_skip_value("true");
+    try test_skip_value("null");
+    try test_skip_value("42");
+    try test_skip_value("42.0");
+    try test_skip_value("\"foo\"");
+    try test_skip_value("[101, 111, 121]");
+    try test_skip_value("{}");
+    try test_skip_value("{\"foo\": \"bar\\nbaz\"}");
 
     // An absurd number of nestings
     const nestings = 1000;
-    try testSkipValue("[" ** nestings ++ "]" ** nestings);
+    try test_skip_value("[" ** nestings ++ "]" ** nestings);
 
     // Would a number token cause problems in a deeply-nested array?
-    try testSkipValue("[" ** nestings ++ "0.118, 999, 881.99, 911.9, 725, 3" ++ "]" ** nestings);
+    try test_skip_value("[" ** nestings ++ "0.118, 999, 881.99, 911.9, 725, 3" ++ "]" ** nestings);
 
     // Mismatched brace/square bracket
-    try std.testing.expectError(error.SyntaxError, testSkipValue("[102, 111, 111}"));
+    try std.testing.expect_error(error.SyntaxError, test_skip_value("[102, 111, 111}"));
 }
 
 fn test_ensure_stack_capacity(do_ensure: bool) !void {
@@ -402,59 +402,59 @@ fn test_ensure_stack_capacity(do_ensure: bool) !void {
     const failing_allocator = fail_alloc.allocator();
 
     const nestings = 999; // intentionally not a power of 2.
-    var scanner = JsonScanner.initCompleteInput(failing_allocator, "[" ** nestings ++ "]" ** nestings);
+    var scanner = JsonScanner.init_complete_input(failing_allocator, "[" ** nestings ++ "]" ** nestings);
     defer scanner.deinit();
 
     if (do_ensure) {
-        try scanner.ensureTotalStackCapacity(nestings);
+        try scanner.ensure_total_stack_capacity(nestings);
     }
 
-    try scanner.skipValue();
-    try std.testing.expectEqual(Token.end_of_document, try scanner.next());
+    try scanner.skip_value();
+    try std.testing.expect_equal(Token.end_of_document, try scanner.next());
 }
-test "ensureTotalStackCapacity" {
+test "ensure_total_stack_capacity" {
     // Once to demonstrate failure.
-    try std.testing.expectError(error.OutOfMemory, testEnsureStackCapacity(false));
+    try std.testing.expect_error(error.OutOfMemory, test_ensure_stack_capacity(false));
     // Then to demonstrate it works.
-    try testEnsureStackCapacity(true);
+    try test_ensure_stack_capacity(true);
 }
 
 fn test_diagnostics_from_source(expected_error: ?anyerror, line: u64, col: u64, byte_offset: u64, source: anytype) !void {
     var diagnostics = Diagnostics{};
-    source.enableDiagnostics(&diagnostics);
+    source.enable_diagnostics(&diagnostics);
 
     if (expected_error) |expected_err| {
-        try std.testing.expectError(expected_err, source.skipValue());
+        try std.testing.expect_error(expected_err, source.skip_value());
     } else {
-        try source.skipValue();
-        try std.testing.expectEqual(Token.end_of_document, try source.next());
+        try source.skip_value();
+        try std.testing.expect_equal(Token.end_of_document, try source.next());
     }
-    try std.testing.expectEqual(line, diagnostics.getLine());
-    try std.testing.expectEqual(col, diagnostics.getColumn());
-    try std.testing.expectEqual(byte_offset, diagnostics.getByteOffset());
+    try std.testing.expect_equal(line, diagnostics.get_line());
+    try std.testing.expect_equal(col, diagnostics.get_column());
+    try std.testing.expect_equal(byte_offset, diagnostics.get_byte_offset());
 }
 fn test_diagnostics(expected_error: ?anyerror, line: u64, col: u64, byte_offset: u64, s: []const u8) !void {
-    var scanner = JsonScanner.initCompleteInput(std.testing.allocator, s);
+    var scanner = JsonScanner.init_complete_input(std.testing.allocator, s);
     defer scanner.deinit();
-    try testDiagnosticsFromSource(expected_error, line, col, byte_offset, &scanner);
+    try test_diagnostics_from_source(expected_error, line, col, byte_offset, &scanner);
 
-    var tiny_stream = std.io.fixedBufferStream(s);
+    var tiny_stream = std.io.fixed_buffer_stream(s);
     var tiny_json_reader = JsonReader(1, @TypeOf(tiny_stream.reader())).init(std.testing.allocator, tiny_stream.reader());
     defer tiny_json_reader.deinit();
-    try testDiagnosticsFromSource(expected_error, line, col, byte_offset, &tiny_json_reader);
+    try test_diagnostics_from_source(expected_error, line, col, byte_offset, &tiny_json_reader);
 
-    var medium_stream = std.io.fixedBufferStream(s);
+    var medium_stream = std.io.fixed_buffer_stream(s);
     var medium_json_reader = JsonReader(5, @TypeOf(medium_stream.reader())).init(std.testing.allocator, medium_stream.reader());
     defer medium_json_reader.deinit();
-    try testDiagnosticsFromSource(expected_error, line, col, byte_offset, &medium_json_reader);
+    try test_diagnostics_from_source(expected_error, line, col, byte_offset, &medium_json_reader);
 }
-test "enableDiagnostics" {
-    try testDiagnostics(error.UnexpectedEndOfInput, 1, 1, 0, "");
-    try testDiagnostics(null, 1, 3, 2, "[]");
-    try testDiagnostics(null, 2, 2, 3, "[\n]");
-    try testDiagnostics(null, 14, 2, example_document_str.len, example_document_str);
+test "enable_diagnostics" {
+    try test_diagnostics(error.UnexpectedEndOfInput, 1, 1, 0, "");
+    try test_diagnostics(null, 1, 3, 2, "[]");
+    try test_diagnostics(null, 2, 2, 3, "[\n]");
+    try test_diagnostics(null, 14, 2, example_document_str.len, example_document_str);
 
-    try testDiagnostics(error.SyntaxError, 3, 1, 25,
+    try test_diagnostics(error.SyntaxError, 3, 1, 25,
         \\{
         \\  "common": "mistake",
         \\}
@@ -463,18 +463,18 @@ test "enableDiagnostics" {
     inline for ([_]comptime_int{ 5, 6, 7, 99 }) |reps| {
         // The error happens 1 byte before the end.
         const s = "[" ** reps ++ "}";
-        try testDiagnostics(error.SyntaxError, 1, s.len, s.len - 1, s);
+        try test_diagnostics(error.SyntaxError, 1, s.len, s.len - 1, s);
     }
 }
 
-test isNumberFormattedLikeAnInteger {
-    try std.testing.expect(isNumberFormattedLikeAnInteger("0"));
-    try std.testing.expect(isNumberFormattedLikeAnInteger("1"));
-    try std.testing.expect(isNumberFormattedLikeAnInteger("123"));
-    try std.testing.expect(!isNumberFormattedLikeAnInteger("-0"));
-    try std.testing.expect(!isNumberFormattedLikeAnInteger("0.0"));
-    try std.testing.expect(!isNumberFormattedLikeAnInteger("1.0"));
-    try std.testing.expect(!isNumberFormattedLikeAnInteger("1.23"));
-    try std.testing.expect(!isNumberFormattedLikeAnInteger("1e10"));
-    try std.testing.expect(!isNumberFormattedLikeAnInteger("1E10"));
+test is_number_formatted_like_an_integer {
+    try std.testing.expect(is_number_formatted_like_an_integer("0"));
+    try std.testing.expect(is_number_formatted_like_an_integer("1"));
+    try std.testing.expect(is_number_formatted_like_an_integer("123"));
+    try std.testing.expect(!is_number_formatted_like_an_integer("-0"));
+    try std.testing.expect(!is_number_formatted_like_an_integer("0.0"));
+    try std.testing.expect(!is_number_formatted_like_an_integer("1.0"));
+    try std.testing.expect(!is_number_formatted_like_an_integer("1.23"));
+    try std.testing.expect(!is_number_formatted_like_an_integer("1e10"));
+    try std.testing.expect(!is_number_formatted_like_an_integer("1E10"));
 }

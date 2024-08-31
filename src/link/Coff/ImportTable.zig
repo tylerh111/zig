@@ -38,24 +38,24 @@ pub fn deinit(itab: *ImportTable, allocator: Allocator) void {
 
 /// Size of the import table does not include the sentinel.
 pub fn size(itab: ImportTable) u32 {
-    return @as(u32, @intCast(itab.entries.items.len)) * @sizeOf(u64);
+    return @as(u32, @int_cast(itab.entries.items.len)) * @size_of(u64);
 }
 
 pub fn add_import(itab: *ImportTable, allocator: Allocator, target: SymbolWithLoc) !ImportIndex {
-    try itab.entries.ensureUnusedCapacity(allocator, 1);
+    try itab.entries.ensure_unused_capacity(allocator, 1);
     const index: u32 = blk: {
-        if (itab.free_list.popOrNull()) |index| {
+        if (itab.free_list.pop_or_null()) |index| {
             log.debug("  (reusing import entry index {d})", .{index});
             break :blk index;
         } else {
             log.debug("  (allocating import entry at index {d})", .{itab.entries.items.len});
-            const index = @as(u32, @intCast(itab.entries.items.len));
-            _ = itab.entries.addOneAssumeCapacity();
+            const index = @as(u32, @int_cast(itab.entries.items.len));
+            _ = itab.entries.add_one_assume_capacity();
             break :blk index;
         }
     };
     itab.entries.items[index] = target;
-    try itab.lookup.putNoClobber(allocator, target, index);
+    try itab.lookup.put_no_clobber(allocator, target, index);
     return index;
 }
 
@@ -73,15 +73,15 @@ fn get_base_address(ctx: Context) u32 {
     var addr = header.virtual_address;
     for (ctx.coff_file.import_tables.values(), 0..) |other_itab, i| {
         if (ctx.index == i) break;
-        addr += @as(u32, @intCast(other_itab.entries.items.len * @sizeOf(u64))) + 8;
+        addr += @as(u32, @int_cast(other_itab.entries.items.len * @size_of(u64))) + 8;
     }
     return addr;
 }
 
 pub fn get_import_address(itab: *const ImportTable, target: SymbolWithLoc, ctx: Context) ?u32 {
     const index = itab.lookup.get(target) orelse return null;
-    const base_vaddr = getBaseAddress(ctx);
-    return base_vaddr + index * @sizeOf(u64);
+    const base_vaddr = get_base_address(ctx);
+    return base_vaddr + index * @size_of(u64);
 }
 
 const FormatContext = struct {
@@ -97,14 +97,14 @@ fn fmt(
 ) @TypeOf(writer).Error!void {
     _ = options;
     comptime assert(unused_format_string.len == 0);
-    const lib_name = fmt_ctx.ctx.coff_file.temp_strtab.getAssumeExists(fmt_ctx.ctx.name_off);
-    const base_vaddr = getBaseAddress(fmt_ctx.ctx);
+    const lib_name = fmt_ctx.ctx.coff_file.temp_strtab.get_assume_exists(fmt_ctx.ctx.name_off);
+    const base_vaddr = get_base_address(fmt_ctx.ctx);
     try writer.print("IAT({s}.dll) @{x}:", .{ lib_name, base_vaddr });
     for (fmt_ctx.itab.entries.items, 0..) |entry, i| {
         try writer.print("\n  {d}@{?x} => {s}", .{
             i,
-            fmt_ctx.itab.getImportAddress(entry, fmt_ctx.ctx),
-            fmt_ctx.ctx.coff_file.getSymbolName(entry),
+            fmt_ctx.itab.get_import_address(entry, fmt_ctx.ctx),
+            fmt_ctx.ctx.coff_file.get_symbol_name(entry),
         });
     }
 }
@@ -114,7 +114,7 @@ fn format(itab: ImportTable, comptime unused_format_string: []const u8, options:
     _ = unused_format_string;
     _ = options;
     _ = writer;
-    @compileError("do not format ImportTable directly; use itab.fmtDebug()");
+    @compile_error("do not format ImportTable directly; use itab.fmt_debug()");
 }
 
 pub fn fmt_debug(itab: ImportTable, ctx: Context) std.fmt.Formatter(fmt) {

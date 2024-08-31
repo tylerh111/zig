@@ -75,8 +75,8 @@ pub const ComponentIterator = struct {
             'A' => return .{ .spec = .A },
             'V', 'q', 'E' => {
                 const start = self.idx;
-                while (std.ascii.isDigit(self.str[self.idx])) : (self.idx += 1) {}
-                const count = std.fmt.parseUnsigned(u32, self.str[start..self.idx], 10) catch unreachable;
+                while (std.ascii.is_digit(self.str[self.idx])) : (self.idx += 1) {}
+                const count = std.fmt.parse_unsigned(u32, self.str[start..self.idx], 10) catch unreachable;
                 return switch (c) {
                     'V' => .{ .spec = .{ .V = count } },
                     'q' => .{ .spec = .{ .q = count } },
@@ -112,7 +112,7 @@ pub const ComponentIterator = struct {
             },
 
             '*' => {
-                if (self.idx < self.str.len and std.ascii.isDigit(self.str[self.idx])) {
+                if (self.idx < self.str.len and std.ascii.is_digit(self.str[self.idx])) {
                     defer self.idx += 1;
                     const addr_space = self.str[self.idx] - '0';
                     return .{ .suffix = .{ .@"*" = addr_space } };

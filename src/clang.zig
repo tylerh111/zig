@@ -66,7 +66,7 @@ pub const APValue = extern struct {
     Kind: APValueKind,
     Data: if (builtin.os.tag == .windows and builtin.abi == .msvc) [52]u8 else [68]u8,
 
-    pub const getKind = ZigClangAPValue_getKind;
+    pub const get_kind = ZigClangAPValue_getKind;
     extern fn ZigClangAPValue_getKind(*const APValue) APValueKind;
 
     pub const getInt = ZigClangAPValue_getInt;
@@ -101,7 +101,7 @@ pub const AbstractConditionalOperator = opaque {
 };
 
 pub const APFloat = opaque {
-    pub const toString = ZigClangAPFloat_toString;
+    pub const to_string = ZigClangAPFloat_toString;
     extern fn ZigClangAPFloat_toString(*const APFloat, precision: c_uint, maxPadding: c_uint, truncateZero: bool) [*:0]const u8;
 };
 
@@ -123,16 +123,16 @@ pub const APFloatBaseSemantics = enum(c_int) {
 
 pub const APInt = opaque {
     pub fn get_limited_value(self: *const APInt, comptime T: type) T {
-        return @as(T, @truncate(ZigClangAPInt_getLimitedValue(self, std.math.maxInt(T))));
+        return @as(T, @truncate(ZigClangAPInt_getLimitedValue(self, std.math.max_int(T))));
     }
     extern fn ZigClangAPInt_getLimitedValue(*const APInt, limit: u64) u64;
 };
 
 pub const APSInt = opaque {
-    pub const isSigned = ZigClangAPSInt_isSigned;
+    pub const is_signed = ZigClangAPSInt_isSigned;
     extern fn ZigClangAPSInt_isSigned(*const APSInt) bool;
 
-    pub const isNegative = ZigClangAPSInt_isNegative;
+    pub const is_negative = ZigClangAPSInt_isNegative;
     extern fn ZigClangAPSInt_isNegative(*const APSInt) bool;
 
     pub const negate = ZigClangAPSInt_negate;
@@ -181,7 +181,7 @@ pub const ASTUnit = opaque {
 };
 
 pub const ArraySubscriptExpr = opaque {
-    pub const getBase = ZigClangArraySubscriptExpr_getBase;
+    pub const get_base = ZigClangArraySubscriptExpr_getBase;
     extern fn ZigClangArraySubscriptExpr_getBase(*const ArraySubscriptExpr) *const Expr;
 
     pub const getIdx = ZigClangArraySubscriptExpr_getIdx;
@@ -197,7 +197,7 @@ pub const ASTRecordLayout = opaque {
     pub const getFieldOffset = ZigClangASTRecordLayout_getFieldOffset;
     extern fn ZigClangASTRecordLayout_getFieldOffset(*const ASTRecordLayout, c_uint) u64;
 
-    pub const getAlignment = ZigClangASTRecordLayout_getAlignment;
+    pub const get_alignment = ZigClangASTRecordLayout_getAlignment;
     extern fn ZigClangASTRecordLayout_getAlignment(*const ASTRecordLayout) i64;
 };
 
@@ -219,7 +219,7 @@ pub const BinaryOperator = opaque {
     pub const getRHS = ZigClangBinaryOperator_getRHS;
     extern fn ZigClangBinaryOperator_getRHS(*const BinaryOperator) *const Expr;
 
-    pub const getType = ZigClangBinaryOperator_getType;
+    pub const get_type = ZigClangBinaryOperator_getType;
     extern fn ZigClangBinaryOperator_getType(*const BinaryOperator) QualType;
 };
 
@@ -228,7 +228,7 @@ pub const BinaryConditionalOperator = opaque {};
 pub const BreakStmt = opaque {};
 
 pub const BuiltinType = opaque {
-    pub const getKind = ZigClangBuiltinType_getKind;
+    pub const get_kind = ZigClangBuiltinType_getKind;
     extern fn ZigClangBuiltinType_getKind(*const BuiltinType) BuiltinTypeKind;
 };
 
@@ -239,7 +239,7 @@ pub const CStyleCastExpr = opaque {
     pub const getSubExpr = ZigClangCStyleCastExpr_getSubExpr;
     extern fn ZigClangCStyleCastExpr_getSubExpr(*const CStyleCastExpr) *const Expr;
 
-    pub const getType = ZigClangCStyleCastExpr_getType;
+    pub const get_type = ZigClangCStyleCastExpr_getType;
     extern fn ZigClangCStyleCastExpr_getType(*const CStyleCastExpr) QualType;
 };
 
@@ -280,10 +280,10 @@ pub const CharacterLiteral = opaque {
     pub const getBeginLoc = ZigClangCharacterLiteral_getBeginLoc;
     extern fn ZigClangCharacterLiteral_getBeginLoc(*const CharacterLiteral) SourceLocation;
 
-    pub const getKind = ZigClangCharacterLiteral_getKind;
+    pub const get_kind = ZigClangCharacterLiteral_getKind;
     extern fn ZigClangCharacterLiteral_getKind(*const CharacterLiteral) CharacterLiteralKind;
 
-    pub const getValue = ZigClangCharacterLiteral_getValue;
+    pub const get_value = ZigClangCharacterLiteral_getValue;
     extern fn ZigClangCharacterLiteral_getValue(*const CharacterLiteral) c_uint;
 };
 
@@ -293,7 +293,7 @@ pub const ChooseExpr = opaque {
 };
 
 pub const CompoundAssignOperator = opaque {
-    pub const getType = ZigClangCompoundAssignOperator_getType;
+    pub const get_type = ZigClangCompoundAssignOperator_getType;
     extern fn ZigClangCompoundAssignOperator_getType(*const CompoundAssignOperator) QualType;
 
     pub const getComputationLHSType = ZigClangCompoundAssignOperator_getComputationLHSType;
@@ -336,7 +336,7 @@ pub const ConstantArrayType = opaque {
     pub const getElementType = ZigClangConstantArrayType_getElementType;
     extern fn ZigClangConstantArrayType_getElementType(*const ConstantArrayType) QualType;
 
-    pub const getSize = ZigClangConstantArrayType_getSize;
+    pub const get_size = ZigClangConstantArrayType_getSize;
     extern fn ZigClangConstantArrayType_getSize(*const ConstantArrayType) *const APInt;
 };
 
@@ -364,7 +364,7 @@ pub const Decl = opaque {
     pub const castToNamedDecl = ZigClangDecl_castToNamedDecl;
     extern fn ZigClangDecl_castToNamedDecl(decl: *const Decl) ?*const NamedDecl;
 
-    pub const getKind = ZigClangDecl_getKind;
+    pub const get_kind = ZigClangDecl_getKind;
     extern fn ZigClangDecl_getKind(decl: *const Decl) DeclKind;
 
     pub const getDeclKindName = ZigClangDecl_getDeclKindName;
@@ -372,7 +372,7 @@ pub const Decl = opaque {
 };
 
 pub const DeclRefExpr = opaque {
-    pub const getDecl = ZigClangDeclRefExpr_getDecl;
+    pub const get_decl = ZigClangDeclRefExpr_getDecl;
     extern fn ZigClangDeclRefExpr_getDecl(*const DeclRefExpr) *const ValueDecl;
 
     pub const getFoundDecl = ZigClangDeclRefExpr_getFoundDecl;
@@ -450,7 +450,7 @@ pub const EnumDecl = opaque {
 };
 
 pub const EnumType = opaque {
-    pub const getDecl = ZigClangEnumType_getDecl;
+    pub const get_decl = ZigClangEnumType_getDecl;
     extern fn ZigClangEnumType_getDecl(*const EnumType) *const EnumDecl;
 };
 
@@ -458,7 +458,7 @@ pub const Expr = opaque {
     pub const getStmtClass = ZigClangExpr_getStmtClass;
     extern fn ZigClangExpr_getStmtClass(*const Expr) StmtClass;
 
-    pub const getType = ZigClangExpr_getType;
+    pub const get_type = ZigClangExpr_getType;
     extern fn ZigClangExpr_getType(*const Expr) QualType;
 
     pub const getBeginLoc = ZigClangExpr_getBeginLoc;
@@ -487,7 +487,7 @@ pub const FieldDecl = opaque {
     pub const isBitField = ZigClangFieldDecl_isBitField;
     extern fn ZigClangFieldDecl_isBitField(*const FieldDecl) bool;
 
-    pub const getType = ZigClangFieldDecl_getType;
+    pub const get_type = ZigClangFieldDecl_getType;
     extern fn ZigClangFieldDecl_getType(*const FieldDecl) QualType;
 
     pub const getLocation = ZigClangFieldDecl_getLocation;
@@ -533,7 +533,7 @@ pub const ForStmt = opaque {
 pub const FullSourceLoc = opaque {};
 
 pub const FunctionDecl = opaque {
-    pub const getType = ZigClangFunctionDecl_getType;
+    pub const get_type = ZigClangFunctionDecl_getType;
     extern fn ZigClangFunctionDecl_getType(*const FunctionDecl) QualType;
 
     pub const getLocation = ZigClangFunctionDecl_getLocation;
@@ -566,7 +566,7 @@ pub const FunctionDecl = opaque {
     pub const hasAlwaysInlineAttr = ZigClangFunctionDecl_hasAlwaysInlineAttr;
     extern fn ZigClangFunctionDecl_hasAlwaysInlineAttr(*const FunctionDecl) bool;
 
-    pub const isDefined = ZigClangFunctionDecl_isDefined;
+    pub const is_defined = ZigClangFunctionDecl_isDefined;
     extern fn ZigClangFunctionDecl_isDefined(*const FunctionDecl) bool;
 
     pub const getDefinition = ZigClangFunctionDecl_getDefinition;
@@ -592,7 +592,7 @@ pub const FunctionProtoType = opaque {
     pub const getParamType = ZigClangFunctionProtoType_getParamType;
     extern fn ZigClangFunctionProtoType_getParamType(*const FunctionProtoType, i: c_uint) QualType;
 
-    pub const getReturnType = ZigClangFunctionProtoType_getReturnType;
+    pub const get_return_type = ZigClangFunctionProtoType_getReturnType;
     extern fn ZigClangFunctionProtoType_getReturnType(*const FunctionProtoType) QualType;
 };
 
@@ -603,7 +603,7 @@ pub const FunctionType = opaque {
     pub const getCallConv = ZigClangFunctionType_getCallConv;
     extern fn ZigClangFunctionType_getCallConv(*const FunctionType) CallingConv;
 
-    pub const getReturnType = ZigClangFunctionType_getReturnType;
+    pub const get_return_type = ZigClangFunctionType_getReturnType;
     extern fn ZigClangFunctionType_getReturnType(*const FunctionType) QualType;
 };
 
@@ -684,7 +684,7 @@ pub const TypeOfExprType = opaque {
 };
 
 pub const OffsetOfNode = opaque {
-    pub const getKind = ZigClangOffsetOfNode_getKind;
+    pub const get_kind = ZigClangOffsetOfNode_getKind;
     extern fn ZigClangOffsetOfNode_getKind(*const OffsetOfNode) OffsetOfNode_Kind;
 
     pub const getArrayExprIndex = ZigClangOffsetOfNode_getArrayExprIndex;
@@ -712,7 +712,7 @@ pub const OffsetOfExpr = opaque {
 };
 
 pub const MemberExpr = opaque {
-    pub const getBase = ZigClangMemberExpr_getBase;
+    pub const get_base = ZigClangMemberExpr_getBase;
     extern fn ZigClangMemberExpr_getBase(*const MemberExpr) *const Expr;
 
     pub const isArrow = ZigClangMemberExpr_isArrow;
@@ -759,7 +759,7 @@ pub const PredefinedExpr = opaque {
 };
 
 pub const PreprocessedEntity = opaque {
-    pub const getKind = ZigClangPreprocessedEntity_getKind;
+    pub const get_kind = ZigClangPreprocessedEntity_getKind;
     extern fn ZigClangPreprocessedEntity_getKind(*const PreprocessedEntity) PreprocessedEntity_EntityKind;
 };
 
@@ -777,10 +777,10 @@ pub const RecordDecl = opaque {
     pub const getCanonicalDecl = ZigClangRecordDecl_getCanonicalDecl;
     extern fn ZigClangRecordDecl_getCanonicalDecl(*const RecordDecl) ?*const TagDecl;
 
-    pub const isUnion = ZigClangRecordDecl_isUnion;
+    pub const is_union = ZigClangRecordDecl_isUnion;
     extern fn ZigClangRecordDecl_isUnion(*const RecordDecl) bool;
 
-    pub const isStruct = ZigClangRecordDecl_isStruct;
+    pub const is_struct = ZigClangRecordDecl_isStruct;
     extern fn ZigClangRecordDecl_isStruct(*const RecordDecl) bool;
 
     pub const isAnonymousStructOrUnion = ZigClangRecordDecl_isAnonymousStructOrUnion;
@@ -819,7 +819,7 @@ pub const RecordDecl = opaque {
 };
 
 pub const RecordType = opaque {
-    pub const getDecl = ZigClangRecordType_getDecl;
+    pub const get_decl = ZigClangRecordType_getDecl;
     extern fn ZigClangRecordType_getDecl(*const RecordType) *const RecordDecl;
 };
 
@@ -872,13 +872,13 @@ pub const StmtExpr = opaque {
 };
 
 pub const StringLiteral = opaque {
-    pub const getKind = ZigClangStringLiteral_getKind;
+    pub const get_kind = ZigClangStringLiteral_getKind;
     extern fn ZigClangStringLiteral_getKind(*const StringLiteral) CharacterLiteralKind;
 
     pub const getCodeUnit = ZigClangStringLiteral_getCodeUnit;
     extern fn ZigClangStringLiteral_getCodeUnit(*const StringLiteral, usize) u32;
 
-    pub const getLength = ZigClangStringLiteral_getLength;
+    pub const get_length = ZigClangStringLiteral_getLength;
     extern fn ZigClangStringLiteral_getLength(*const StringLiteral) c_uint;
 
     pub const getCharByteWidth = ZigClangStringLiteral_getCharByteWidth;
@@ -967,7 +967,7 @@ pub const FileScopeAsmDecl = opaque {
 };
 
 pub const TypedefType = opaque {
-    pub const getDecl = ZigClangTypedefType_getDecl;
+    pub const get_decl = ZigClangTypedefType_getDecl;
     extern fn ZigClangTypedefType_getDecl(*const TypedefType) *const TypedefNameDecl;
 };
 
@@ -978,7 +978,7 @@ pub const UnaryExprOrTypeTraitExpr = opaque {
     pub const getBeginLoc = ZigClangUnaryExprOrTypeTraitExpr_getBeginLoc;
     extern fn ZigClangUnaryExprOrTypeTraitExpr_getBeginLoc(*const UnaryExprOrTypeTraitExpr) SourceLocation;
 
-    pub const getKind = ZigClangUnaryExprOrTypeTraitExpr_getKind;
+    pub const get_kind = ZigClangUnaryExprOrTypeTraitExpr_getKind;
     extern fn ZigClangUnaryExprOrTypeTraitExpr_getKind(*const UnaryExprOrTypeTraitExpr) UnaryExprOrTypeTrait_Kind;
 };
 
@@ -986,7 +986,7 @@ pub const UnaryOperator = opaque {
     pub const getOpcode = ZigClangUnaryOperator_getOpcode;
     extern fn ZigClangUnaryOperator_getOpcode(*const UnaryOperator) UO;
 
-    pub const getType = ZigClangUnaryOperator_getType;
+    pub const get_type = ZigClangUnaryOperator_getType;
     extern fn ZigClangUnaryOperator_getType(*const UnaryOperator) QualType;
 
     pub const getSubExpr = ZigClangUnaryOperator_getSubExpr;
@@ -997,7 +997,7 @@ pub const UnaryOperator = opaque {
 };
 
 pub const ValueDecl = opaque {
-    pub const getType = ZigClangValueDecl_getType;
+    pub const get_type = ZigClangValueDecl_getType;
     extern fn ZigClangValueDecl_getType(*const ValueDecl) QualType;
 };
 
@@ -1011,7 +1011,7 @@ pub const VarDecl = opaque {
     pub const getStorageClass = ZigClangVarDecl_getStorageClass;
     extern fn ZigClangVarDecl_getStorageClass(*const VarDecl) StorageClass;
 
-    pub const getType = ZigClangVarDecl_getType;
+    pub const get_type = ZigClangVarDecl_getType;
     extern fn ZigClangVarDecl_getType(*const VarDecl) QualType;
 
     pub const getInit = ZigClangVarDecl_getInit;

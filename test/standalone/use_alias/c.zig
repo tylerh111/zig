@@ -1,1 +1,1 @@
-pub usingnamespace @cImport(@cInclude("foo.h"));
+pub usingnamespace @c_import(@cInclude("foo.h"));

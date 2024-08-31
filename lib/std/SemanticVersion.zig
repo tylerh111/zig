@@ -42,8 +42,8 @@ pub fn order(lhs: Version, rhs: Version) std.math.Order {
     if (lhs.pre == null and rhs.pre != null) return .gt;
 
     // Iterate over pre-release identifiers until a difference is found.
-    var lhs_pre_it = std.mem.splitScalar(u8, lhs.pre.?, '.');
-    var rhs_pre_it = std.mem.splitScalar(u8, rhs.pre.?, '.');
+    var lhs_pre_it = std.mem.split_scalar(u8, lhs.pre.?, '.');
+    var rhs_pre_it = std.mem.split_scalar(u8, rhs.pre.?, '.');
     while (true) {
         const next_lid = lhs_pre_it.next();
         const next_rid = rhs_pre_it.next();
@@ -57,11 +57,11 @@ pub fn order(lhs: Version, rhs: Version) std.math.Order {
         const rid = next_rid.?; // Right identifier
 
         // Attempt to parse identifiers as numbers. Overflows are checked by parse.
-        const lnum: ?usize = std.fmt.parseUnsigned(usize, lid, 10) catch |err| switch (err) {
+        const lnum: ?usize = std.fmt.parse_unsigned(usize, lid, 10) catch |err| switch (err) {
             error.InvalidCharacter => null,
             error.Overflow => unreachable,
         };
-        const rnum: ?usize = std.fmt.parseUnsigned(usize, rid, 10) catch |err| switch (err) {
+        const rnum: ?usize = std.fmt.parse_unsigned(usize, rid, 10) catch |err| switch (err) {
             error.InvalidCharacter => null,
             error.Overflow => unreachable,
         };
@@ -84,13 +84,13 @@ pub fn order(lhs: Version, rhs: Version) std.math.Order {
 
 pub fn parse(text: []const u8) !Version {
     // Parse the required major, minor, and patch numbers.
-    const extra_index = std.mem.indexOfAny(u8, text, "-+");
+    const extra_index = std.mem.index_of_any(u8, text, "-+");
     const required = text[0..(extra_index orelse text.len)];
-    var it = std.mem.splitScalar(u8, required, '.');
+    var it = std.mem.split_scalar(u8, required, '.');
     var ver = Version{
-        .major = try parseNum(it.first()),
-        .minor = try parseNum(it.next() orelse return error.InvalidVersion),
-        .patch = try parseNum(it.next() orelse return error.InvalidVersion),
+        .major = try parse_num(it.first()),
+        .minor = try parse_num(it.next() orelse return error.InvalidVersion),
+        .patch = try parse_num(it.next() orelse return error.InvalidVersion),
     };
     if (it.next() != null) return error.InvalidVersion;
     if (extra_index == null) return ver;
@@ -98,7 +98,7 @@ pub fn parse(text: []const u8) !Version {
     // Slice optional pre-release or build metadata components.
     const extra: []const u8 = text[extra_index.?..text.len];
     if (extra[0] == '-') {
-        const build_index = std.mem.indexOfScalar(u8, extra, '+');
+        const build_index = std.mem.index_of_scalar(u8, extra, '+');
         ver.pre = extra[1..(build_index orelse extra.len)];
         if (build_index) |idx| ver.build = extra[(idx + 1)..];
     } else {
@@ -108,32 +108,32 @@ pub fn parse(text: []const u8) !Version {
     // Check validity of optional pre-release identifiers.
     // See: https://semver.org/#spec-item-9
     if (ver.pre) |pre| {
-        it = std.mem.splitScalar(u8, pre, '.');
+        it = std.mem.split_scalar(u8, pre, '.');
         while (it.next()) |id| {
             // Identifiers MUST NOT be empty.
             if (id.len == 0) return error.InvalidVersion;
 
             // Identifiers MUST comprise only ASCII alphanumerics and hyphens [0-9A-Za-z-].
-            for (id) |c| if (!std.ascii.isAlphanumeric(c) and c != '-') return error.InvalidVersion;
+            for (id) |c| if (!std.ascii.is_alphanumeric(c) and c != '-') return error.InvalidVersion;
 
             // Numeric identifiers MUST NOT include leading zeroes.
             const is_num = for (id) |c| {
-                if (!std.ascii.isDigit(c)) break false;
+                if (!std.ascii.is_digit(c)) break false;
             } else true;
-            if (is_num) _ = try parseNum(id);
+            if (is_num) _ = try parse_num(id);
         }
     }
 
     // Check validity of optional build metadata identifiers.
     // See: https://semver.org/#spec-item-10
     if (ver.build) |build| {
-        it = std.mem.splitScalar(u8, build, '.');
+        it = std.mem.split_scalar(u8, build, '.');
         while (it.next()) |id| {
             // Identifiers MUST NOT be empty.
             if (id.len == 0) return error.InvalidVersion;
 
             // Identifiers MUST comprise only ASCII alphanumerics and hyphens [0-9A-Za-z-].
-            for (id) |c| if (!std.ascii.isAlphanumeric(c) and c != '-') return error.InvalidVersion;
+            for (id) |c| if (!std.ascii.is_alphanumeric(c) and c != '-') return error.InvalidVersion;
         }
     }
 
@@ -144,7 +144,7 @@ fn parse_num(text: []const u8) error{ InvalidVersion, Overflow }!usize {
     // Leading zeroes are not allowed.
     if (text.len > 1 and text[0] == '0') return error.InvalidVersion;
 
-    return std.fmt.parseUnsigned(usize, text, 10) catch |err| switch (err) {
+    return std.fmt.parse_unsigned(usize, text, 10) catch |err| switch (err) {
         error.InvalidCharacter => return error.InvalidVersion,
         error.Overflow => return error.Overflow,
     };
@@ -157,14 +157,14 @@ pub fn format(
     out_stream: anytype,
 ) !void {
     _ = options;
-    if (fmt.len != 0) std.fmt.invalidFmtError(fmt, self);
+    if (fmt.len != 0) std.fmt.invalid_fmt_error(fmt, self);
     try std.fmt.format(out_stream, "{d}.{d}.{d}", .{ self.major, self.minor, self.patch });
     if (self.pre) |pre| try std.fmt.format(out_stream, "-{s}", .{pre});
     if (self.build) |build| try std.fmt.format(out_stream, "+{s}", .{build});
 }
 
 const expect = std.testing.expect;
-const expectError = std.testing.expectError;
+const expect_error = std.testing.expect_error;
 
 test format {
     // Many of these test strings are from https://github.com/semver/semver.org/issues/59#issuecomment-390854010.
@@ -202,7 +202,7 @@ test format {
         "1.0.0+0.build.1-rc.10000aaa-kk-0.1",
         "5.4.0-1018-raspi",
         "5.7.123",
-    }) |valid| try std.testing.expectFmt(valid, "{}", .{try parse(valid)});
+    }) |valid| try std.testing.expect_fmt(valid, "{}", .{try parse(valid)});
 
     // Invalid version strings should be rejected.
     for ([_][]const u8{
@@ -264,12 +264,12 @@ test format {
         "+4",
         ".",
         "....3",
-    }) |invalid| try expectError(error.InvalidVersion, parse(invalid));
+    }) |invalid| try expect_error(error.InvalidVersion, parse(invalid));
 
     // Valid version string that may overflow.
     const big_valid = "99999999999999999999999.999999999999999999.99999999999999999";
     if (parse(big_valid)) |ver| {
-        try std.testing.expectFmt(big_valid, "{}", .{ver});
+        try std.testing.expect_fmt(big_valid, "{}", .{ver});
     } else |err| try expect(err == error.Overflow);
 
     // Invalid version string that may overflow.
@@ -303,5 +303,5 @@ test "zig_version" {
 
     // Simulated compatibility check using Zig version.
     const compatible = comptime @import("builtin").zig_version.order(older_version) == .gt;
-    if (!compatible) @compileError("zig_version test failed");
+    if (!compatible) @compile_error("zig_version test failed");
 }

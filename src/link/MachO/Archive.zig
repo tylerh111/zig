@@ -1,12 +1,12 @@
 objects: std.ArrayListUnmanaged(Object) = .{},
 
 pub fn is_archive(path: []const u8, fat_arch: ?fat.Arch) !bool {
-    const file = try std.fs.cwd().openFile(path, .{});
+    const file = try std.fs.cwd().open_file(path, .{});
     defer file.close();
     if (fat_arch) |arch| {
-        try file.seekTo(arch.offset);
+        try file.seek_to(arch.offset);
     }
-    const magic = file.reader().readBytesNoEof(SARMAG) catch return false;
+    const magic = file.reader().read_bytes_no_eof(SARMAG) catch return false;
     if (!mem.eql(u8, &magic, ARMAG)) return false;
     return true;
 }
@@ -21,26 +21,26 @@ pub fn parse(self: *Archive, macho_file: *MachO, path: []const u8, handle_index:
     var arena = std.heap.ArenaAllocator.init(gpa);
     defer arena.deinit();
 
-    const handle = macho_file.getFileHandle(handle_index);
+    const handle = macho_file.get_file_handle(handle_index);
     const offset = if (fat_arch) |ar| ar.offset else 0;
     const end_pos = if (fat_arch) |ar| offset + ar.size else (try handle.stat()).size;
 
     var pos: usize = offset + SARMAG;
     while (true) {
         if (pos >= end_pos) break;
-        if (!mem.isAligned(pos, 2)) pos += 1;
+        if (!mem.is_aligned(pos, 2)) pos += 1;
 
-        var hdr_buffer: [@sizeOf(ar_hdr)]u8 = undefined;
+        var hdr_buffer: [@size_of(ar_hdr)]u8 = undefined;
         {
-            const amt = try handle.preadAll(&hdr_buffer, pos);
-            if (amt != @sizeOf(ar_hdr)) return error.InputOutput;
+            const amt = try handle.pread_all(&hdr_buffer, pos);
+            if (amt != @size_of(ar_hdr)) return error.InputOutput;
         }
-        const hdr = @as(*align(1) const ar_hdr, @ptrCast(&hdr_buffer)).*;
-        pos += @sizeOf(ar_hdr);
+        const hdr = @as(*align(1) const ar_hdr, @ptr_cast(&hdr_buffer)).*;
+        pos += @size_of(ar_hdr);
 
         if (!mem.eql(u8, &hdr.ar_fmag, ARFMAG)) {
-            try macho_file.reportParseError(path, "invalid header delimiter: expected '{s}', found '{s}'", .{
-                std.fmt.fmtSliceEscapeLower(ARFMAG), std.fmt.fmtSliceEscapeLower(&hdr.ar_fmag),
+            try macho_file.report_parse_error(path, "invalid header delimiter: expected '{s}', found '{s}'", .{
+                std.fmt.fmt_slice_escape_lower(ARFMAG), std.fmt.fmt_slice_escape_lower(&hdr.ar_fmag),
             });
             return error.MalformedArchive;
         }
@@ -48,13 +48,13 @@ pub fn parse(self: *Archive, macho_file: *MachO, path: []const u8, handle_index:
         var hdr_size = try hdr.size();
         const name = name: {
             if (hdr.name()) |n| break :name n;
-            if (try hdr.nameLength()) |len| {
+            if (try hdr.name_length()) |len| {
                 hdr_size -= len;
                 const buf = try arena.allocator().alloc(u8, len);
-                const amt = try handle.preadAll(buf, pos);
+                const amt = try handle.pread_all(buf, pos);
                 if (amt != len) return error.InputOutput;
                 pos += len;
-                const actual_len = mem.indexOfScalar(u8, buf, @as(u8, 0)) orelse len;
+                const actual_len = mem.index_of_scalar(u8, buf, @as(u8, 0)) orelse len;
                 break :name buf[0..actual_len];
             }
             unreachable;
@@ -100,31 +100,31 @@ pub fn write_header(
         .ar_size = undefined,
         .ar_fmag = undefined,
     };
-    @memset(mem.asBytes(&hdr), 0x20);
+    @memset(mem.as_bytes(&hdr), 0x20);
     inline for (@typeInfo(ar_hdr).Struct.fields) |field| {
-        var stream = std.io.fixedBufferStream(&@field(hdr, field.name));
+        var stream = std.io.fixed_buffer_stream(&@field(hdr, field.name));
         stream.writer().print("0", .{}) catch unreachable;
     }
     @memcpy(&hdr.ar_fmag, ARFMAG);
 
-    const object_name_len = mem.alignForward(usize, object_name.len + 1, ptrWidth(format));
+    const object_name_len = mem.align_forward(usize, object_name.len + 1, ptr_width(format));
     const total_object_size = object_size + object_name_len;
 
     {
-        var stream = std.io.fixedBufferStream(&hdr.ar_name);
+        var stream = std.io.fixed_buffer_stream(&hdr.ar_name);
         stream.writer().print("#1/{d}", .{object_name_len}) catch unreachable;
     }
     {
-        var stream = std.io.fixedBufferStream(&hdr.ar_size);
+        var stream = std.io.fixed_buffer_stream(&hdr.ar_size);
         stream.writer().print("{d}", .{total_object_size}) catch unreachable;
     }
 
-    try writer.writeAll(mem.asBytes(&hdr));
+    try writer.write_all(mem.as_bytes(&hdr));
     try writer.print("{s}\x00", .{object_name});
 
     const padding = object_name_len - object_name.len - 1;
     if (padding > 0) {
-        try writer.writeByteNTimes(0, padding);
+        try writer.write_byte_ntimes(0, padding);
     }
 }
 
@@ -167,27 +167,27 @@ pub const ar_hdr = extern struct {
     ar_fmag: [2]u8,
 
     fn date(self: ar_hdr) !u64 {
-        const value = mem.trimRight(u8, &self.ar_date, &[_]u8{@as(u8, 0x20)});
-        return std.fmt.parseInt(u64, value, 10);
+        const value = mem.trim_right(u8, &self.ar_date, &[_]u8{@as(u8, 0x20)});
+        return std.fmt.parse_int(u64, value, 10);
     }
 
     fn size(self: ar_hdr) !u32 {
-        const value = mem.trimRight(u8, &self.ar_size, &[_]u8{@as(u8, 0x20)});
-        return std.fmt.parseInt(u32, value, 10);
+        const value = mem.trim_right(u8, &self.ar_size, &[_]u8{@as(u8, 0x20)});
+        return std.fmt.parse_int(u32, value, 10);
     }
 
     fn name(self: *const ar_hdr) ?[]const u8 {
         const value = &self.ar_name;
-        if (mem.startsWith(u8, value, "#1/")) return null;
-        const sentinel = mem.indexOfScalar(u8, value, '/') orelse value.len;
+        if (mem.starts_with(u8, value, "#1/")) return null;
+        const sentinel = mem.index_of_scalar(u8, value, '/') orelse value.len;
         return value[0..sentinel];
     }
 
     fn name_length(self: ar_hdr) !?u32 {
         const value = &self.ar_name;
-        if (!mem.startsWith(u8, value, "#1/")) return null;
-        const trimmed = mem.trimRight(u8, self.ar_name["#1/".len..], &[_]u8{0x20});
-        return try std.fmt.parseInt(u32, trimmed, 10);
+        if (!mem.starts_with(u8, value, "#1/")) return null;
+        const trimmed = mem.trim_right(u8, self.ar_name["#1/".len..], &[_]u8{0x20});
+        return try std.fmt.parse_int(u32, trimmed, 10);
     }
 };
 
@@ -201,40 +201,40 @@ pub const ArSymtab = struct {
     }
 
     pub fn sort(ar: *ArSymtab) void {
-        mem.sort(Entry, ar.entries.items, {}, Entry.lessThan);
+        mem.sort(Entry, ar.entries.items, {}, Entry.less_than);
     }
 
     pub fn size(ar: ArSymtab, format: Format) usize {
-        const ptr_width = ptrWidth(format);
-        return ptr_width + ar.entries.items.len * 2 * ptr_width + ptr_width + mem.alignForward(usize, ar.strtab.buffer.items.len, ptr_width);
+        const ptr_width = ptr_width(format);
+        return ptr_width + ar.entries.items.len * 2 * ptr_width + ptr_width + mem.align_forward(usize, ar.strtab.buffer.items.len, ptr_width);
     }
 
     pub fn write(ar: ArSymtab, format: Format, macho_file: *MachO, writer: anytype) !void {
-        const ptr_width = ptrWidth(format);
+        const ptr_width = ptr_width(format);
         // Header
-        try writeHeader(SYMDEF, ar.size(format), format, writer);
+        try write_header(SYMDEF, ar.size(format), format, writer);
         // Symtab size
-        try writeInt(format, ar.entries.items.len * 2 * ptr_width, writer);
+        try write_int(format, ar.entries.items.len * 2 * ptr_width, writer);
         // Symtab entries
         for (ar.entries.items) |entry| {
-            const file_off = switch (macho_file.getFile(entry.file).?) {
+            const file_off = switch (macho_file.get_file(entry.file).?) {
                 .zig_object => |x| x.output_ar_state.file_off,
                 .object => |x| x.output_ar_state.file_off,
                 else => unreachable,
             };
             // Name offset
-            try writeInt(format, entry.off, writer);
+            try write_int(format, entry.off, writer);
             // File offset
-            try writeInt(format, file_off, writer);
+            try write_int(format, file_off, writer);
         }
         // Strtab size
-        const strtab_size = mem.alignForward(usize, ar.strtab.buffer.items.len, ptr_width);
+        const strtab_size = mem.align_forward(usize, ar.strtab.buffer.items.len, ptr_width);
         const padding = strtab_size - ar.strtab.buffer.items.len;
-        try writeInt(format, strtab_size, writer);
+        try write_int(format, strtab_size, writer);
         // Strtab
-        try writer.writeAll(ar.strtab.buffer.items);
+        try writer.write_all(ar.strtab.buffer.items);
         if (padding > 0) {
-            try writer.writeByteNTimes(0, padding);
+            try writer.write_byte_ntimes(0, padding);
         }
     }
 
@@ -258,9 +258,9 @@ pub const ArSymtab = struct {
         const ar = ctx.ar;
         const macho_file = ctx.macho_file;
         for (ar.entries.items, 0..) |entry, i| {
-            const name = ar.strtab.getAssumeExists(entry.off);
-            const file = macho_file.getFile(entry.file).?;
-            try writer.print("  {d}: {s} in file({d})({})\n", .{ i, name, entry.file, file.fmtPath() });
+            const name = ar.strtab.get_assume_exists(entry.off);
+            const file = macho_file.get_file(entry.file).?;
+            try writer.print("  {d}: {s} in file({d})({})\n", .{ i, name, entry.file, file.fmt_path() });
         }
     }
 
@@ -292,8 +292,8 @@ pub fn ptr_width(format: Format) usize {
 
 pub fn write_int(format: Format, value: u64, writer: anytype) !void {
     switch (format) {
-        .p32 => try writer.writeInt(u32, std.math.cast(u32, value) orelse return error.Overflow, .little),
-        .p64 => try writer.writeInt(u64, value, .little),
+        .p32 => try writer.write_int(u32, std.math.cast(u32, value) orelse return error.Overflow, .little),
+        .p64 => try writer.write_int(u64, value, .little),
     }
 }
 

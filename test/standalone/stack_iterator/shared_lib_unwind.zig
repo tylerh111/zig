@@ -7,10 +7,10 @@ noinline fn frame4(expected: *[5]usize, unwound: *[5]usize) void {
     expected[0] = @returnAddress();
 
     var context: debug.ThreadContext = undefined;
-    testing.expect(debug.getContext(&context)) catch @panic("failed to getContext");
+    testing.expect(debug.get_context(&context)) catch @panic("failed to get_context");
 
-    const debug_info = debug.getSelfDebugInfo() catch @panic("failed to openSelfDebugInfo");
-    var it = debug.StackIterator.initWithContext(expected[0], debug_info, &context) catch @panic("failed to initWithContext");
+    const debug_info = debug.get_self_debug_info() catch @panic("failed to open_self_debug_info");
+    var it = debug.StackIterator.init_with_context(expected[0], debug_info, &context) catch @panic("failed to init_with_context");
     defer it.deinit();
 
     for (unwound) |*addr| {
@@ -36,12 +36,12 @@ extern fn frame0(
 
 pub fn main() !void {
     // Disabled until the DWARF unwinder bugs on .aarch64 are solved
-    if (builtin.omit_frame_pointer and comptime builtin.target.isDarwin() and builtin.cpu.arch == .aarch64) return;
+    if (builtin.omit_frame_pointer and comptime builtin.target.is_darwin() and builtin.cpu.arch == .aarch64) return;
 
     if (!std.debug.have_ucontext or !std.debug.have_getcontext) return;
 
     var expected: [5]usize = undefined;
     var unwound: [5]usize = undefined;
     frame0(&expected, &unwound, &frame2);
-    try testing.expectEqual(expected, unwound);
+    try testing.expect_equal(expected, unwound);
 }

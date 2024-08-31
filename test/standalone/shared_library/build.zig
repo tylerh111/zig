@@ -11,7 +11,7 @@ pub fn build(b: *std.Build) void {
 
     const optimize: std.builtin.OptimizeMode = .Debug;
     const target = b.host;
-    const lib = b.addSharedLibrary(.{
+    const lib = b.add_shared_library(.{
         .name = "mathtest",
         .root_source_file = b.path("mathtest.zig"),
         .version = .{ .major = 1, .minor = 0, .patch = 0 },
@@ -19,18 +19,18 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const exe = b.addExecutable(.{
+    const exe = b.add_executable(.{
         .name = "test",
         .target = target,
         .optimize = optimize,
     });
-    exe.addCSourceFile(.{
+    exe.add_csource_file(.{
         .file = b.path("test.c"),
         .flags = &[_][]const u8{"-std=c99"},
     });
-    exe.linkLibrary(lib);
-    exe.linkSystemLibrary("c");
+    exe.link_library(lib);
+    exe.link_system_library("c");
 
-    const run_cmd = b.addRunArtifact(exe);
-    test_step.dependOn(&run_cmd.step);
+    const run_cmd = b.add_run_artifact(exe);
+    test_step.depend_on(&run_cmd.step);
 }

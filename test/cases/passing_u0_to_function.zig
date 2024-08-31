@@ -1,5 +1,5 @@
 pub fn main() void {
-    doNothing(0);
+    do_nothing(0);
 }
 fn do_nothing(arg: u0) void {
     _ = arg;

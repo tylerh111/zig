@@ -61,13 +61,13 @@ pub fn BitWriter(comptime WriterType: type) type {
         }
 
         pub fn write_bits(self: *Self, b: u32, nb: u32) Error!void {
-            self.bits |= @as(u64, @intCast(b)) << @as(u6, @intCast(self.nbits));
+            self.bits |= @as(u64, @int_cast(b)) << @as(u6, @int_cast(self.nbits));
             self.nbits += nb;
             if (self.nbits < 48)
                 return;
 
             var n = self.nbytes;
-            std.mem.writeInt(u64, self.bytes[n..][0..8], self.bits, .little);
+            std.mem.write_int(u64, self.bytes[n..][0..8], self.bits, .little);
             n += 6;
             if (n >= buffer_flush_size) {
                 _ = try self.inner_writer.write(self.bytes[0..n]);

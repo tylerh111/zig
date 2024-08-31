@@ -47,8 +47,8 @@ test "usingnamespace omits mixing in private functions" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(@This().privateFunction());
-    try expect(!@This().printText());
+    try expect(@This().private_function());
+    try expect(!@This().print_text());
 }
 fn private_function() bool {
     return true;

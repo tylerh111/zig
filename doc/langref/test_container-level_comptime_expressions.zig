@@ -1,4 +1,4 @@
-const first_25_primes = firstNPrimes(25);
+const first_25_primes = first_nprimes(25);
 const sum_of_first_25_primes = sum(&first_25_primes);
 
 fn first_nprimes(comptime n: usize) [n]i32 {

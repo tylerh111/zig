@@ -5,34 +5,34 @@ const testing = std.testing;
 const __divxf3 = @import("divxf3.zig").__divxf3;
 
 fn compare_result(result: f80, expected: u80) bool {
-    const rep: u80 = @bitCast(result);
+    const rep: u80 = @bit_cast(result);
 
     if (rep == expected) return true;
     // test other possible NaN representations (signal NaN)
-    if (math.isNan(result) and math.isNan(@as(f80, @bitCast(expected)))) return true;
+    if (math.is_nan(result) and math.is_nan(@as(f80, @bit_cast(expected)))) return true;
 
     return false;
 }
 
 fn expect__divxf3_result(a: f80, b: f80, expected: u80) !void {
     const x = __divxf3(a, b);
-    const ret = compareResult(x, expected);
+    const ret = compare_result(x, expected);
     try testing.expect(ret == true);
 }
 
 fn test__divxf3(a: f80, b: f80) !void {
-    const integerBit = 1 << math.floatFractionalBits(f80);
+    const integerBit = 1 << math.float_fractional_bits(f80);
     const x = __divxf3(a, b);
 
     // Next float (assuming normal, non-zero result)
-    const x_plus_eps: f80 = @bitCast((@as(u80, @bitCast(x)) + 1) | integerBit);
+    const x_plus_eps: f80 = @bit_cast((@as(u80, @bit_cast(x)) + 1) | integerBit);
     // Prev float (assuming normal, non-zero result)
-    const x_minus_eps: f80 = @bitCast((@as(u80, @bitCast(x)) - 1) | integerBit);
+    const x_minus_eps: f80 = @bit_cast((@as(u80, @bit_cast(x)) - 1) | integerBit);
 
     // Make sure result is more accurate than the adjacent floats
-    const err_x = @abs(@mulAdd(f80, x, b, -a));
-    const err_x_plus_eps = @abs(@mulAdd(f80, x_plus_eps, b, -a));
-    const err_x_minus_eps = @abs(@mulAdd(f80, x_minus_eps, b, -a));
+    const err_x = @abs(@mul_add(f80, x, b, -a));
+    const err_x_plus_eps = @abs(@mul_add(f80, x_plus_eps, b, -a));
+    const err_x_minus_eps = @abs(@mul_add(f80, x_minus_eps, b, -a));
 
     try testing.expect(err_x_minus_eps > err_x);
     try testing.expect(err_x_plus_eps > err_x);

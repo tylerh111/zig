@@ -23,9 +23,9 @@ test "defining a variadic function" {
         return error.SkipZigTest;
     }
 
-    try std.testing.expectEqual(@as(c_int, 0), add(0));
-    try std.testing.expectEqual(@as(c_int, 1), add(1, @as(c_int, 1)));
-    try std.testing.expectEqual(@as(c_int, 3), add(2, @as(c_int, 1), @as(c_int, 2)));
+    try std.testing.expect_equal(@as(c_int, 0), add(0));
+    try std.testing.expect_equal(@as(c_int, 1), add(1, @as(c_int, 1)));
+    try std.testing.expect_equal(@as(c_int, 3), add(2, @as(c_int, 1), @as(c_int, 2)));
 }
 
 // test

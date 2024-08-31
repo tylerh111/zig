@@ -4,7 +4,7 @@ const std = @import("std");
 /// e is biased, so it be directly shifted into the exponent bits.
 /// Negative exponent indicates an invalid result.
 pub fn BiasedFp(comptime T: type) type {
-    const MantissaT = mantissaType(T);
+    const MantissaT = mantissa_type(T);
 
     return struct {
         const Self = @This();
@@ -23,7 +23,7 @@ pub fn BiasedFp(comptime T: type) type {
         }
 
         pub fn inf(comptime FloatT: type) Self {
-            return .{ .f = 0, .e = (1 << std.math.floatExponentBits(FloatT)) - 1 };
+            return .{ .f = 0, .e = (1 << std.math.float_exponent_bits(FloatT)) - 1 };
         }
 
         pub fn eql(self: Self, other: Self) bool {
@@ -32,8 +32,8 @@ pub fn BiasedFp(comptime T: type) type {
 
         pub fn to_float(self: Self, comptime FloatT: type, negative: bool) FloatT {
             var word = self.f;
-            word |= @as(MantissaT, @intCast(self.e)) << std.math.floatMantissaBits(FloatT);
-            var f = floatFromUnsigned(FloatT, MantissaT, word);
+            word |= @as(MantissaT, @int_cast(self.e)) << std.math.float_mantissa_bits(FloatT);
+            var f = float_from_unsigned(FloatT, MantissaT, word);
             if (negative) f = -f;
             return f;
         }
@@ -42,10 +42,10 @@ pub fn BiasedFp(comptime T: type) type {
 
 pub fn float_from_unsigned(comptime T: type, comptime MantissaT: type, v: MantissaT) T {
     return switch (T) {
-        f16 => @as(f16, @bitCast(@as(u16, @truncate(v)))),
-        f32 => @as(f32, @bitCast(@as(u32, @truncate(v)))),
-        f64 => @as(f64, @bitCast(@as(u64, @truncate(v)))),
-        f128 => @as(f128, @bitCast(v)),
+        f16 => @as(f16, @bit_cast(@as(u16, @truncate(v)))),
+        f32 => @as(f32, @bit_cast(@as(u32, @truncate(v)))),
+        f64 => @as(f64, @bit_cast(@as(u64, @truncate(v)))),
+        f128 => @as(f128, @bit_cast(v)),
         else => unreachable,
     };
 }
@@ -54,7 +54,7 @@ pub fn float_from_unsigned(comptime T: type, comptime MantissaT: type, v: Mantis
 pub fn Number(comptime T: type) type {
     return struct {
         exponent: i64,
-        mantissa: mantissaType(T),
+        mantissa: mantissa_type(T),
         negative: bool,
         /// More than max_mantissa digits were found during parse
         many_digits: bool,

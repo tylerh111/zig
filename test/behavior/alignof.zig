@@ -3,7 +3,7 @@ const assert = std.debug.assert;
 const expect = std.testing.expect;
 const builtin = @import("builtin");
 const native_arch = builtin.target.cpu.arch;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 
 const Foo = struct {
     x: u32,
@@ -12,7 +12,7 @@ const Foo = struct {
 };
 
 test "@alignOf(T) before referencing T" {
-    comptime assert(@alignOf(Foo) != maxInt(usize));
+    comptime assert(@alignOf(Foo) != max_int(usize));
     if (native_arch == .x86_64) {
         comptime assert(@alignOf(Foo) == 4);
     }

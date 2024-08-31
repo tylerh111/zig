@@ -46,23 +46,23 @@ pub fn Vec2D(comptime T: type) type {
 }
 
 const testing = std.testing;
-const expectEqualSlices = std.testing.expectEqualSlices;
-const expectError = std.testing.expectError;
+const expect_equal_slices = std.testing.expect_equal_slices;
+const expect_error = std.testing.expect_error;
 
 test "init" {
     const allocator = testing.allocator;
     var vec2d = try Vec2D(i32).init(allocator, 1, .{ 2, 3 });
     defer vec2d.deinit(allocator);
 
-    try expectEqualSlices(i32, &.{ 1, 1, 1 }, try vec2d.get(0));
-    try expectEqualSlices(i32, &.{ 1, 1, 1 }, try vec2d.get(1));
+    try expect_equal_slices(i32, &.{ 1, 1, 1 }, try vec2d.get(0));
+    try expect_equal_slices(i32, &.{ 1, 1, 1 }, try vec2d.get(1));
 }
 
 test "init overflow" {
     const allocator = testing.allocator;
-    try expectError(
+    try expect_error(
         error.Overflow,
-        Vec2D(i32).init(allocator, 1, .{ math.maxInt(usize), math.maxInt(usize) }),
+        Vec2D(i32).init(allocator, 1, .{ math.max_int(usize), math.max_int(usize) }),
     );
 }
 
@@ -73,8 +73,8 @@ test "fill" {
 
     vec2d.fill(7);
 
-    try expectEqualSlices(i32, &.{ 7, 7, 7 }, try vec2d.get(0));
-    try expectEqualSlices(i32, &.{ 7, 7, 7 }, try vec2d.get(1));
+    try expect_equal_slices(i32, &.{ 7, 7, 7 }, try vec2d.get(0));
+    try expect_equal_slices(i32, &.{ 7, 7, 7 }, try vec2d.get(1));
 }
 
 test "get" {
@@ -84,27 +84,27 @@ test "get" {
         .cols = 2,
     };
 
-    try expectEqualSlices(i32, &.{ 0, 1 }, try vec2d.get(0));
-    try expectEqualSlices(i32, &.{ 2, 3 }, try vec2d.get(1));
-    try expectEqualSlices(i32, &.{ 4, 5 }, try vec2d.get(2));
-    try expectEqualSlices(i32, &.{ 6, 7 }, try vec2d.get(3));
+    try expect_equal_slices(i32, &.{ 0, 1 }, try vec2d.get(0));
+    try expect_equal_slices(i32, &.{ 2, 3 }, try vec2d.get(1));
+    try expect_equal_slices(i32, &.{ 4, 5 }, try vec2d.get(2));
+    try expect_equal_slices(i32, &.{ 6, 7 }, try vec2d.get(3));
 }
 
-test "getMut" {
+test "get_mut" {
     var data = [_]i32{ 0, 1, 2, 3, 4, 5, 6, 7 };
     var vec2d = Vec2D(i32){
         .data = &data,
         .cols = 2,
     };
 
-    const row = try vec2d.getMut(1);
+    const row = try vec2d.get_mut(1);
     row[1] = 9;
 
-    try expectEqualSlices(i32, &.{ 0, 1 }, try vec2d.get(0));
+    try expect_equal_slices(i32, &.{ 0, 1 }, try vec2d.get(0));
     // (1, 1) should be 9.
-    try expectEqualSlices(i32, &.{ 2, 9 }, try vec2d.get(1));
-    try expectEqualSlices(i32, &.{ 4, 5 }, try vec2d.get(2));
-    try expectEqualSlices(i32, &.{ 6, 7 }, try vec2d.get(3));
+    try expect_equal_slices(i32, &.{ 2, 9 }, try vec2d.get(1));
+    try expect_equal_slices(i32, &.{ 4, 5 }, try vec2d.get(2));
+    try expect_equal_slices(i32, &.{ 6, 7 }, try vec2d.get(3));
 }
 
 test "get multiplication overflow" {
@@ -112,9 +112,9 @@ test "get multiplication overflow" {
     var matrix = try Vec2D(i32).init(allocator, 0, .{ 3, 4 });
     defer matrix.deinit(allocator);
 
-    const row = (math.maxInt(usize) / 4) + 1;
-    try expectError(error.Overflow, matrix.get(row));
-    try expectError(error.Overflow, matrix.getMut(row));
+    const row = (math.max_int(usize) / 4) + 1;
+    try expect_error(error.Overflow, matrix.get(row));
+    try expect_error(error.Overflow, matrix.get_mut(row));
 }
 
 test "get addition overflow" {
@@ -122,7 +122,7 @@ test "get addition overflow" {
     var matrix = try Vec2D(i32).init(allocator, 0, .{ 3, 5 });
     defer matrix.deinit(allocator);
 
-    const row = math.maxInt(usize) / 5;
-    try expectError(error.Overflow, matrix.get(row));
-    try expectError(error.Overflow, matrix.getMut(row));
+    const row = math.max_int(usize) / 5;
+    try expect_error(error.Overflow, matrix.get(row));
+    try expect_error(error.Overflow, matrix.get_mut(row));
 }

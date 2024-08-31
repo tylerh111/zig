@@ -54,7 +54,7 @@ pub fn main() !void {
     var general_purpose_allocator: std.heap.GeneralPurposeAllocator(.{}) = .{};
     const gpa = general_purpose_allocator.allocator();
 
-    const args = try std.process.argsAlloc(arena);
+    const args = try std.process.args_alloc(arena);
 
     var opt_checker_path: ?[]const u8 = null;
     var opt_root_source_file_path: ?[]const u8 = null;
@@ -66,11 +66,11 @@ pub fn main() !void {
         var i: usize = 1;
         while (i < args.len) : (i += 1) {
             const arg = args[i];
-            if (mem.startsWith(u8, arg, "-")) {
+            if (mem.starts_with(u8, arg, "-")) {
                 if (mem.eql(u8, arg, "-h") or mem.eql(u8, arg, "--help")) {
-                    const stdout = std.io.getStdOut().writer();
-                    try stdout.writeAll(usage);
-                    return std.process.cleanExit();
+                    const stdout = std.io.get_std_out().writer();
+                    try stdout.write_all(usage);
+                    return std.process.clean_exit();
                 } else if (mem.eql(u8, arg, "--")) {
                     argv = args[i + 1 ..];
                     break;
@@ -86,7 +86,7 @@ pub fn main() !void {
                     i += 1;
                     if (i >= args.len) fatal("expected 32-bit integer after {s}", .{arg});
                     const next_arg = args[i];
-                    seed = std.fmt.parseUnsigned(u32, next_arg, 0) catch |err| {
+                    seed = std.fmt.parse_unsigned(u32, next_arg, 0) catch |err| {
                         fatal("unable to parse seed '{s}' as 32-bit integer: {s}", .{
                             next_arg, @errorName(err),
                         });
@@ -110,9 +110,9 @@ pub fn main() !void {
         fatal("missing root source file path argument; see -h for usage", .{});
 
     var interestingness_argv: std.ArrayListUnmanaged([]const u8) = .{};
-    try interestingness_argv.ensureUnusedCapacity(arena, argv.len + 1);
-    interestingness_argv.appendAssumeCapacity(checker_path);
-    interestingness_argv.appendSliceAssumeCapacity(argv);
+    try interestingness_argv.ensure_unused_capacity(arena, argv.len + 1);
+    interestingness_argv.append_assume_capacity(checker_path);
+    interestingness_argv.append_slice_assume_capacity(argv);
 
     var rendered = std.ArrayList(u8).init(gpa);
     defer rendered.deinit();
@@ -128,11 +128,11 @@ pub fn main() !void {
 
     if (!skip_smoke_test) {
         std.debug.print("smoke testing the interestingness check...\n", .{});
-        switch (try runCheck(arena, interestingness_argv.items)) {
+        switch (try run_check(arena, interestingness_argv.items)) {
             .interesting => {},
             .boring, .unknown => |t| {
                 fatal("interestingness check returned {s} for unmodified input\n", .{
-                    @tagName(t),
+                    @tag_name(t),
                 });
             },
         }
@@ -163,8 +163,8 @@ pub fn main() !void {
 
     var transformations = std.ArrayList(Walk.Transformation).init(gpa);
     defer transformations.deinit();
-    try Walk.findTransformations(arena, &tree, &transformations);
-    sortTransformations(transformations.items, rng.random());
+    try Walk.find_transformations(arena, &tree, &transformations);
+    sort_transformations(transformations.items, rng.random());
 
     fresh: while (transformations.items.len > 0) {
         std.debug.print("found {d} possible transformations\n", .{
@@ -182,13 +182,13 @@ pub fn main() !void {
             const this_set = transformations.items[start_index..][0..subset_size];
             std.debug.print("trying {d} random transformations: ", .{subset_size});
             for (this_set[0..@min(this_set.len, 20)]) |t| {
-                std.debug.print("{s} ", .{@tagName(t)});
+                std.debug.print("{s} ", .{@tag_name(t)});
             }
             std.debug.print("\n", .{});
-            try transformationsToFixups(gpa, arena, root_source_file_path, this_set, &fixups);
+            try transformations_to_fixups(gpa, arena, root_source_file_path, this_set, &fixups);
 
-            rendered.clearRetainingCapacity();
-            try tree.renderToArrayList(&rendered, fixups);
+            rendered.clear_retaining_capacity();
+            try tree.render_to_array_list(&rendered, fixups);
 
             // The transformations we applied may have resulted in unused locals,
             // in which case we would like to add the respective discards.
@@ -205,16 +205,16 @@ pub fn main() !void {
                 var zir = try AstGen.generate(gpa, astgen_tree);
                 defer zir.deinit(gpa);
 
-                if (zir.hasCompileErrors()) {
-                    more_fixups.clearRetainingCapacity();
-                    const payload_index = zir.extra[@intFromEnum(Zir.ExtraIndex.compile_errors)];
+                if (zir.has_compile_errors()) {
+                    more_fixups.clear_retaining_capacity();
+                    const payload_index = zir.extra[@int_from_enum(Zir.ExtraIndex.compile_errors)];
                     assert(payload_index != 0);
-                    const header = zir.extraData(Zir.Inst.CompileErrors, payload_index);
+                    const header = zir.extra_data(Zir.Inst.CompileErrors, payload_index);
                     var extra_index = header.end;
                     for (0..header.data.items_len) |_| {
-                        const item = zir.extraData(Zir.Inst.CompileErrors.Item, extra_index);
+                        const item = zir.extra_data(Zir.Inst.CompileErrors.Item, extra_index);
                         extra_index = item.end;
-                        const msg = zir.nullTerminatedString(item.data.msg);
+                        const msg = zir.null_terminated_string(item.data.msg);
                         if (mem.eql(u8, msg, "unused local constant") or
                             mem.eql(u8, msg, "unused local variable") or
                             mem.eql(u8, msg, "unused function parameter") or
@@ -227,18 +227,18 @@ pub fn main() !void {
                         }
                     }
                     if (more_fixups.count() != 0) {
-                        rendered.clearRetainingCapacity();
-                        try astgen_tree.renderToArrayList(&rendered, more_fixups);
+                        rendered.clear_retaining_capacity();
+                        try astgen_tree.render_to_array_list(&rendered, more_fixups);
                     }
                 }
             }
 
-            try std.fs.cwd().writeFile(.{ .sub_path = root_source_file_path, .data = rendered.items });
+            try std.fs.cwd().write_file(.{ .sub_path = root_source_file_path, .data = rendered.items });
             // std.debug.print("trying this code:\n{s}\n", .{rendered.items});
 
-            const interestingness = try runCheck(arena, interestingness_argv.items);
+            const interestingness = try run_check(arena, interestingness_argv.items);
             std.debug.print("{d} random transformations: {s}. {d}/{d}\n", .{
-                subset_size, @tagName(interestingness), start_index, transformations.items.len,
+                subset_size, @tag_name(interestingness), start_index, transformations.items.len,
             });
             switch (interestingness) {
                 .interesting => {
@@ -247,8 +247,8 @@ pub fn main() !void {
                     tree.deinit(gpa);
                     tree = new_tree;
 
-                    try Walk.findTransformations(arena, &tree, &transformations);
-                    sortTransformations(transformations.items, rng.random());
+                    try Walk.find_transformations(arena, &tree, &transformations);
+                    sort_transformations(transformations.items, rng.random());
 
                     continue :fresh;
                 },
@@ -271,15 +271,15 @@ pub fn main() !void {
         });
 
         // Revert the source back to not be transformed.
-        fixups.clearRetainingCapacity();
-        rendered.clearRetainingCapacity();
-        try tree.renderToArrayList(&rendered, fixups);
-        try std.fs.cwd().writeFile(.{ .sub_path = root_source_file_path, .data = rendered.items });
+        fixups.clear_retaining_capacity();
+        rendered.clear_retaining_capacity();
+        try tree.render_to_array_list(&rendered, fixups);
+        try std.fs.cwd().write_file(.{ .sub_path = root_source_file_path, .data = rendered.items });
 
-        return std.process.cleanExit();
+        return std.process.clean_exit();
     }
     std.debug.print("no more transformations found\n", .{});
-    return std.process.cleanExit();
+    return std.process.clean_exit();
 }
 
 fn sort_transformations(transformations: []Walk.Transformation, rng: std.Random) void {
@@ -310,7 +310,7 @@ fn run_check(arena: std.mem.Allocator, argv: []const []const u8) !Interestingnes
     });
     if (result.stderr.len != 0)
         std.debug.print("{s}", .{result.stderr});
-    return termToInteresting(result.term);
+    return term_to_interesting(result.term);
 }
 
 fn transformations_to_fixups(
@@ -320,7 +320,7 @@ fn transformations_to_fixups(
     transforms: []const Walk.Transformation,
     fixups: *Ast.Fixups,
 ) !void {
-    fixups.clearRetainingCapacity();
+    fixups.clear_retaining_capacity();
 
     for (transforms) |t| switch (t) {
         .gut_function => |fn_decl_node| {
@@ -369,7 +369,7 @@ fn transformations_to_fixups(
                 // ambiguous reference error.
                 var i: u32 = 2;
                 const mangled = while (true) : (i += 1) {
-                    const mangled = try std.fmt.allocPrint(gpa, "{s}{d}", .{ name, i });
+                    const mangled = try std.fmt.alloc_print(gpa, "{s}{d}", .{ name, i });
                     if (!inline_imported_file.in_scope_names.contains(mangled))
                         break mangled;
                     gpa.free(mangled);
@@ -384,9 +384,9 @@ fn transformations_to_fixups(
 
             var other_source = std.ArrayList(u8).init(gpa);
             defer other_source.deinit();
-            try other_source.appendSlice("struct {\n");
-            try other_file_ast.renderToArrayList(&other_source, inlined_fixups);
-            try other_source.appendSlice("}");
+            try other_source.append_slice("struct {\n");
+            try other_file_ast.render_to_array_list(&other_source, inlined_fixups);
+            try other_source.append_slice("}");
 
             try fixups.replace_nodes_with_string.put(
                 gpa,
@@ -398,10 +398,10 @@ fn transformations_to_fixups(
 }
 
 fn parse(gpa: Allocator, file_path: []const u8) !Ast {
-    const source_code = std.fs.cwd().readFileAllocOptions(
+    const source_code = std.fs.cwd().read_file_alloc_options(
         gpa,
         file_path,
-        std.math.maxInt(u32),
+        std.math.max_int(u32),
         null,
         1,
         0,

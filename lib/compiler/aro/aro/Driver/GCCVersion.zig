@@ -56,12 +56,12 @@ pub fn parse(text: []const u8) GCCVersion {
     const bad = GCCVersion{ .major = -1 };
     var good = bad;
 
-    var it = mem.splitScalar(u8, text, '.');
+    var it = mem.split_scalar(u8, text, '.');
     const first = it.next().?;
     const second = it.next() orelse "";
     const rest = it.next() orelse "";
 
-    good.major = std.fmt.parseInt(i32, first, 10) catch return bad;
+    good.major = std.fmt.parse_int(i32, first, 10) catch return bad;
     if (good.major < 0) return bad;
     good.major_str = first;
 
@@ -69,21 +69,21 @@ pub fn parse(text: []const u8) GCCVersion {
     var minor_str = second;
 
     if (rest.len == 0) {
-        const end = mem.indexOfNone(u8, minor_str, "0123456789") orelse minor_str.len;
+        const end = mem.index_of_none(u8, minor_str, "0123456789") orelse minor_str.len;
         if (end > 0) {
             good.suffix = minor_str[end..];
             minor_str = minor_str[0..end];
         }
     }
-    good.minor = std.fmt.parseInt(i32, minor_str, 10) catch return bad;
+    good.minor = std.fmt.parse_int(i32, minor_str, 10) catch return bad;
     if (good.minor < 0) return bad;
     good.minor_str = minor_str;
 
     if (rest.len > 0) {
-        const end = mem.indexOfNone(u8, rest, "0123456789") orelse rest.len;
+        const end = mem.index_of_none(u8, rest, "0123456789") orelse rest.len;
         if (end > 0) {
             const patch_num_text = rest[0..end];
-            good.patch = std.fmt.parseInt(i32, patch_num_text, 10) catch return bad;
+            good.patch = std.fmt.parse_int(i32, patch_num_text, 10) catch return bad;
             if (good.patch < 0) return bad;
             good.suffix = rest[end..];
         }
@@ -93,8 +93,8 @@ pub fn parse(text: []const u8) GCCVersion {
 }
 
 pub fn order(a: GCCVersion, b: GCCVersion) Order {
-    if (a.isLessThan(b.major, b.minor, b.patch, b.suffix)) return .lt;
-    if (b.isLessThan(a.major, a.minor, a.patch, a.suffix)) return .gt;
+    if (a.is_less_than(b.major, b.minor, b.patch, b.suffix)) return .lt;
+    if (b.is_less_than(a.major, a.minor, a.patch, a.suffix)) return .gt;
     return .eq;
 }
 
@@ -102,9 +102,9 @@ pub fn order(a: GCCVersion, b: GCCVersion) Order {
 /// This matches clang's logic for overflowing values
 pub fn to_unsigned(self: GCCVersion) u32 {
     var result: u32 = 0;
-    if (self.major > 0) result = @as(u32, @intCast(self.major)) *% 10_000;
-    if (self.minor > 0) result +%= @as(u32, @intCast(self.minor)) *% 100;
-    if (self.patch > 0) result +%= @as(u32, @intCast(self.patch));
+    if (self.major > 0) result = @as(u32, @int_cast(self.major)) *% 10_000;
+    if (self.minor > 0) result +%= @as(u32, @int_cast(self.minor)) *% 100;
+    if (self.patch > 0) result +%= @as(u32, @int_cast(self.patch));
     return result;
 }
 
@@ -123,10 +123,10 @@ test parse {
     };
 
     for (versions[0 .. versions.len - 1], versions[1..versions.len]) |first, second| {
-        try std.testing.expectEqual(Order.eq, first.order(first));
-        try std.testing.expectEqual(Order.gt, first.order(second));
-        try std.testing.expectEqual(Order.lt, second.order(first));
+        try std.testing.expect_equal(Order.eq, first.order(first));
+        try std.testing.expect_equal(Order.gt, first.order(second));
+        try std.testing.expect_equal(Order.lt, second.order(first));
     }
     const last = versions[versions.len - 1];
-    try std.testing.expectEqual(Order.eq, last.order(last));
+    try std.testing.expect_equal(Order.eq, last.order(last));
 }

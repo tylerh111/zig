@@ -19,9 +19,9 @@ pub fn EnumFieldStruct(comptime E: type, comptime Data: type, comptime field_def
         struct_field.* = .{
             .name = enum_field.name ++ "",
             .type = Data,
-            .default_value = if (field_default) |d| @as(?*const anyopaque, @ptrCast(&d)) else null,
+            .default_value = if (field_default) |d| @as(?*const anyopaque, @ptr_cast(&d)) else null,
             .is_comptime = false,
-            .alignment = if (@sizeOf(Data) > 0) @alignOf(Data) else 0,
+            .alignment = if (@size_of(Data) > 0) @alignOf(Data) else 0,
         };
     }
     return @Type(.{ .Struct = .{
@@ -49,27 +49,27 @@ pub inline fn values_from_fields(comptime E: type, comptime fields: []const Enum
 /// Returns the set of all named values in the given enum, in
 /// declaration order.
 pub fn values(comptime E: type) []const E {
-    return comptime valuesFromFields(E, @typeInfo(E).Enum.fields);
+    return comptime values_from_fields(E, @typeInfo(E).Enum.fields);
 }
 
-/// A safe alternative to @tagName() for non-exhaustive enums that doesn't
+/// A safe alternative to @tag_name() for non-exhaustive enums that doesn't
 /// panic when `e` has no tagged value.
 /// Returns the tag name for `e` or null if no tag exists.
 pub fn tag_name(comptime E: type, e: E) ?[]const u8 {
     return inline for (@typeInfo(E).Enum.fields) |f| {
-        if (@intFromEnum(e) == f.value) break f.name;
+        if (@int_from_enum(e) == f.value) break f.name;
     } else null;
 }
 
-test tagName {
+test tag_name {
     const E = enum(u8) { a, b, _ };
-    try testing.expect(tagName(E, .a) != null);
-    try testing.expectEqualStrings("a", tagName(E, .a).?);
-    try testing.expect(tagName(E, @as(E, @enumFromInt(42))) == null);
+    try testing.expect(tag_name(E, .a) != null);
+    try testing.expect_equal_strings("a", tag_name(E, .a).?);
+    try testing.expect(tag_name(E, @as(E, @enumFromInt(42))) == null);
 }
 
 /// Determines the length of a direct-mapped enum array, indexed by
-/// @intCast(usize, @intFromEnum(enum_value)).
+/// @int_cast(usize, @int_from_enum(enum_value)).
 /// If the enum is non-exhaustive, the resulting length will only be enough
 /// to hold all explicit fields.
 /// If the enum contains any fields with values that cannot be represented
@@ -83,11 +83,11 @@ pub fn direct_enum_array_len(comptime E: type, comptime max_unused_slots: compti
     const fields = @typeInfo(E).Enum.fields;
     for (fields) |f| {
         if (f.value < 0) {
-            @compileError("Cannot create a direct enum array for " ++ @typeName(E) ++ ", field ." ++ f.name ++ " has a negative value.");
+            @compile_error("Cannot create a direct enum array for " ++ @type_name(E) ++ ", field ." ++ f.name ++ " has a negative value.");
         }
         if (f.value > max_value) {
             if (f.value > max_usize) {
-                @compileError("Cannot create a direct enum array for " ++ @typeName(E) ++ ", field ." ++ f.name ++ " is larger than the max value of usize.");
+                @compile_error("Cannot create a direct enum array for " ++ @type_name(E) ++ ", field ." ++ f.name ++ " is larger than the max value of usize.");
             }
             max_value = f.value;
         }
@@ -95,16 +95,16 @@ pub fn direct_enum_array_len(comptime E: type, comptime max_unused_slots: compti
 
     const unused_slots = max_value + 1 - fields.len;
     if (unused_slots > max_unused_slots) {
-        const unused_str = std.fmt.comptimePrint("{d}", .{unused_slots});
-        const allowed_str = std.fmt.comptimePrint("{d}", .{max_unused_slots});
-        @compileError("Cannot create a direct enum array for " ++ @typeName(E) ++ ". It would have " ++ unused_str ++ " unused slots, but only " ++ allowed_str ++ " are allowed.");
+        const unused_str = std.fmt.comptime_print("{d}", .{unused_slots});
+        const allowed_str = std.fmt.comptime_print("{d}", .{max_unused_slots});
+        @compile_error("Cannot create a direct enum array for " ++ @type_name(E) ++ ". It would have " ++ unused_str ++ " unused slots, but only " ++ allowed_str ++ " are allowed.");
     }
 
     return max_value + 1;
 }
 
 /// Initializes an array of Data which can be indexed by
-/// @intCast(usize, @intFromEnum(enum_value)).
+/// @int_cast(usize, @int_from_enum(enum_value)).
 /// If the enum is non-exhaustive, the resulting array will only be large enough
 /// to hold all explicit fields.
 /// If the enum contains any fields with values that cannot be represented
@@ -120,28 +120,28 @@ pub fn direct_enum_array(
     comptime Data: type,
     comptime max_unused_slots: comptime_int,
     init_values: EnumFieldStruct(E, Data, null),
-) [directEnumArrayLen(E, max_unused_slots)]Data {
-    return directEnumArrayDefault(E, Data, null, max_unused_slots, init_values);
+) [direct_enum_array_len(E, max_unused_slots)]Data {
+    return direct_enum_array_default(E, Data, null, max_unused_slots, init_values);
 }
 
-test directEnumArray {
+test direct_enum_array {
     const E = enum(i4) { a = 4, b = 6, c = 2 };
     var runtime_false: bool = false;
     _ = &runtime_false;
-    const array = directEnumArray(E, bool, 4, .{
+    const array = direct_enum_array(E, bool, 4, .{
         .a = true,
         .b = runtime_false,
         .c = true,
     });
 
-    try testing.expectEqual([7]bool, @TypeOf(array));
-    try testing.expectEqual(true, array[4]);
-    try testing.expectEqual(false, array[6]);
-    try testing.expectEqual(true, array[2]);
+    try testing.expect_equal([7]bool, @TypeOf(array));
+    try testing.expect_equal(true, array[4]);
+    try testing.expect_equal(false, array[6]);
+    try testing.expect_equal(true, array[2]);
 }
 
 /// Initializes an array of Data which can be indexed by
-/// @intCast(usize, @intFromEnum(enum_value)).  The enum must be exhaustive.
+/// @int_cast(usize, @int_from_enum(enum_value)).  The enum must be exhaustive.
 /// If the enum contains any fields with values that cannot be represented
 /// by usize, a compile error is issued.  The max_unused_slots parameter limits
 /// the total number of items which have no matching enum key (holes in the enum
@@ -156,45 +156,45 @@ pub fn direct_enum_array_default(
     comptime default: ?Data,
     comptime max_unused_slots: comptime_int,
     init_values: EnumFieldStruct(E, Data, default),
-) [directEnumArrayLen(E, max_unused_slots)]Data {
-    const len = comptime directEnumArrayLen(E, max_unused_slots);
+) [direct_enum_array_len(E, max_unused_slots)]Data {
+    const len = comptime direct_enum_array_len(E, max_unused_slots);
     var result: [len]Data = if (default) |d| [_]Data{d} ** len else undefined;
     inline for (@typeInfo(@TypeOf(init_values)).Struct.fields) |f| {
         const enum_value = @field(E, f.name);
-        const index = @as(usize, @intCast(@intFromEnum(enum_value)));
+        const index = @as(usize, @int_cast(@int_from_enum(enum_value)));
         result[index] = @field(init_values, f.name);
     }
     return result;
 }
 
-test directEnumArrayDefault {
+test direct_enum_array_default {
     const E = enum(i4) { a = 4, b = 6, c = 2 };
     var runtime_false: bool = false;
     _ = &runtime_false;
-    const array = directEnumArrayDefault(E, bool, false, 4, .{
+    const array = direct_enum_array_default(E, bool, false, 4, .{
         .a = true,
         .b = runtime_false,
     });
 
-    try testing.expectEqual([7]bool, @TypeOf(array));
-    try testing.expectEqual(true, array[4]);
-    try testing.expectEqual(false, array[6]);
-    try testing.expectEqual(false, array[2]);
+    try testing.expect_equal([7]bool, @TypeOf(array));
+    try testing.expect_equal(true, array[4]);
+    try testing.expect_equal(false, array[6]);
+    try testing.expect_equal(false, array[2]);
 }
 
-test "directEnumArrayDefault slice" {
+test "direct_enum_array_default slice" {
     const E = enum(i4) { a = 4, b = 6, c = 2 };
     var runtime_b = "b";
     _ = &runtime_b;
-    const array = directEnumArrayDefault(E, []const u8, "default", 4, .{
+    const array = direct_enum_array_default(E, []const u8, "default", 4, .{
         .a = "a",
         .b = runtime_b,
     });
 
-    try testing.expectEqual([7][]const u8, @TypeOf(array));
-    try testing.expectEqualSlices(u8, "a", array[4]);
-    try testing.expectEqualSlices(u8, "b", array[6]);
-    try testing.expectEqualSlices(u8, "default", array[2]);
+    try testing.expect_equal([7][]const u8, @TypeOf(array));
+    try testing.expect_equal_slices(u8, "a", array[4]);
+    try testing.expect_equal_slices(u8, "b", array[6]);
+    try testing.expect_equal_slices(u8, "default", array[2]);
 }
 
 /// Cast an enum literal, value, or string to the enum value of type E
@@ -204,40 +204,40 @@ pub fn name_cast(comptime E: type, comptime value: anytype) E {
         const V = @TypeOf(value);
         if (V == E) break :blk value;
         const name: ?[]const u8 = switch (@typeInfo(V)) {
-            .EnumLiteral, .Enum => @tagName(value),
+            .EnumLiteral, .Enum => @tag_name(value),
             .Pointer => value,
             else => null,
         };
         if (name) |n| {
-            if (@hasField(E, n)) {
+            if (@has_field(E, n)) {
                 break :blk @field(E, n);
             }
-            @compileError("Enum " ++ @typeName(E) ++ " has no field named " ++ n);
+            @compile_error("Enum " ++ @type_name(E) ++ " has no field named " ++ n);
         }
-        @compileError("Cannot cast from " ++ @typeName(@TypeOf(value)) ++ " to " ++ @typeName(E));
+        @compile_error("Cannot cast from " ++ @type_name(@TypeOf(value)) ++ " to " ++ @type_name(E));
     };
 }
 
-test nameCast {
+test name_cast {
     const A = enum(u1) { a = 0, b = 1 };
     const B = enum(u1) { a = 1, b = 0 };
-    try testing.expectEqual(A.a, nameCast(A, .a));
-    try testing.expectEqual(A.a, nameCast(A, A.a));
-    try testing.expectEqual(A.a, nameCast(A, B.a));
-    try testing.expectEqual(A.a, nameCast(A, "a"));
-    try testing.expectEqual(A.a, nameCast(A, @as(*const [1]u8, "a")));
-    try testing.expectEqual(A.a, nameCast(A, @as([:0]const u8, "a")));
-    try testing.expectEqual(A.a, nameCast(A, @as([]const u8, "a")));
+    try testing.expect_equal(A.a, name_cast(A, .a));
+    try testing.expect_equal(A.a, name_cast(A, A.a));
+    try testing.expect_equal(A.a, name_cast(A, B.a));
+    try testing.expect_equal(A.a, name_cast(A, "a"));
+    try testing.expect_equal(A.a, name_cast(A, @as(*const [1]u8, "a")));
+    try testing.expect_equal(A.a, name_cast(A, @as([:0]const u8, "a")));
+    try testing.expect_equal(A.a, name_cast(A, @as([]const u8, "a")));
 
-    try testing.expectEqual(B.a, nameCast(B, .a));
-    try testing.expectEqual(B.a, nameCast(B, A.a));
-    try testing.expectEqual(B.a, nameCast(B, B.a));
-    try testing.expectEqual(B.a, nameCast(B, "a"));
+    try testing.expect_equal(B.a, name_cast(B, .a));
+    try testing.expect_equal(B.a, name_cast(B, A.a));
+    try testing.expect_equal(B.a, name_cast(B, B.a));
+    try testing.expect_equal(B.a, name_cast(B, "a"));
 
-    try testing.expectEqual(B.b, nameCast(B, .b));
-    try testing.expectEqual(B.b, nameCast(B, A.b));
-    try testing.expectEqual(B.b, nameCast(B, B.b));
-    try testing.expectEqual(B.b, nameCast(B, "b"));
+    try testing.expect_equal(B.b, name_cast(B, .b));
+    try testing.expect_equal(B.b, name_cast(B, A.b));
+    try testing.expect_equal(B.b, name_cast(B, B.b));
+    try testing.expect_equal(B.b, name_cast(B, "b"));
 }
 
 /// A set of enum elements, backed by a bitfield.  If the enum
@@ -258,7 +258,7 @@ pub fn EnumSet(comptime E: type) type {
         /// The maximum number of items in this set.
         pub const len = Indexer.count;
 
-        bits: BitSet = BitSet.initEmpty(),
+        bits: BitSet = BitSet.init_empty(),
 
         /// Initializes the set using a struct of bools
         pub fn init(init_values: EnumFieldStruct(E, bool, false)) Self {
@@ -266,8 +266,8 @@ pub fn EnumSet(comptime E: type) type {
             var result: Self = .{};
             if (@typeInfo(E).Enum.is_exhaustive) {
                 inline for (0..Self.len) |i| {
-                    const key = comptime Indexer.keyForIndex(i);
-                    const tag = @tagName(key);
+                    const key = comptime Indexer.key_for_index(i);
+                    const tag = @tag_name(key);
                     if (@field(init_values, tag)) {
                         result.bits.set(i);
                     }
@@ -276,7 +276,7 @@ pub fn EnumSet(comptime E: type) type {
                 inline for (std.meta.fields(E)) |field| {
                     const key = @field(E, field.name);
                     if (@field(init_values, field.name)) {
-                        const i = comptime Indexer.indexOf(key);
+                        const i = comptime Indexer.index_of(key);
                         result.bits.set(i);
                     }
                 }
@@ -286,24 +286,24 @@ pub fn EnumSet(comptime E: type) type {
 
         /// Returns a set containing no keys.
         pub fn init_empty() Self {
-            return .{ .bits = BitSet.initEmpty() };
+            return .{ .bits = BitSet.init_empty() };
         }
 
         /// Returns a set containing all possible keys.
         pub fn init_full() Self {
-            return .{ .bits = BitSet.initFull() };
+            return .{ .bits = BitSet.init_full() };
         }
 
         /// Returns a set containing multiple keys.
         pub fn init_many(keys: []const Key) Self {
-            var set = initEmpty();
+            var set = init_empty();
             for (keys) |key| set.insert(key);
             return set;
         }
 
         /// Returns a set containing a single key.
         pub fn init_one(key: Key) Self {
-            return initMany(&[_]Key{key});
+            return init_many(&[_]Key{key});
         }
 
         /// Returns the number of keys in the set.
@@ -313,48 +313,48 @@ pub fn EnumSet(comptime E: type) type {
 
         /// Checks if a key is in the set.
         pub fn contains(self: Self, key: Key) bool {
-            return self.bits.isSet(Indexer.indexOf(key));
+            return self.bits.is_set(Indexer.index_of(key));
         }
 
         /// Puts a key in the set.
         pub fn insert(self: *Self, key: Key) void {
-            self.bits.set(Indexer.indexOf(key));
+            self.bits.set(Indexer.index_of(key));
         }
 
         /// Removes a key from the set.
         pub fn remove(self: *Self, key: Key) void {
-            self.bits.unset(Indexer.indexOf(key));
+            self.bits.unset(Indexer.index_of(key));
         }
 
         /// Changes the presence of a key in the set to match the passed bool.
         pub fn set_present(self: *Self, key: Key, present: bool) void {
-            self.bits.setValue(Indexer.indexOf(key), present);
+            self.bits.set_value(Indexer.index_of(key), present);
         }
 
         /// Toggles the presence of a key in the set.  If the key is in
         /// the set, removes it.  Otherwise adds it.
         pub fn toggle(self: *Self, key: Key) void {
-            self.bits.toggle(Indexer.indexOf(key));
+            self.bits.toggle(Indexer.index_of(key));
         }
 
         /// Toggles the presence of all keys in the passed set.
         pub fn toggle_set(self: *Self, other: Self) void {
-            self.bits.toggleSet(other.bits);
+            self.bits.toggle_set(other.bits);
         }
 
         /// Toggles all possible keys in the set.
         pub fn toggle_all(self: *Self) void {
-            self.bits.toggleAll();
+            self.bits.toggle_all();
         }
 
         /// Adds all keys in the passed set to this set.
         pub fn set_union(self: *Self, other: Self) void {
-            self.bits.setUnion(other.bits);
+            self.bits.set_union(other.bits);
         }
 
         /// Removes all keys which are not in the passed set.
         pub fn set_intersection(self: *Self, other: Self) void {
-            self.bits.setIntersection(other.bits);
+            self.bits.set_intersection(other.bits);
         }
 
         /// Returns true iff both sets have the same keys.
@@ -366,14 +366,14 @@ pub fn EnumSet(comptime E: type) type {
         /// in the other set. The other set may have keys
         /// not found in this set.
         pub fn subset_of(self: Self, other: Self) bool {
-            return self.bits.subsetOf(other.bits);
+            return self.bits.subset_of(other.bits);
         }
 
         /// Returns true iff this set contains all the keys
         /// in the other set. This set may have keys not
         /// found in the other set.
         pub fn superset_of(self: Self, other: Self) bool {
-            return self.bits.supersetOf(other.bits);
+            return self.bits.superset_of(other.bits);
         }
 
         /// Returns a set with all the keys not in this set.
@@ -384,25 +384,25 @@ pub fn EnumSet(comptime E: type) type {
         /// Returns a set with keys that are in either this
         /// set or the other set.
         pub fn union_with(self: Self, other: Self) Self {
-            return .{ .bits = self.bits.unionWith(other.bits) };
+            return .{ .bits = self.bits.union_with(other.bits) };
         }
 
         /// Returns a set with keys that are in both this
         /// set and the other set.
         pub fn intersect_with(self: Self, other: Self) Self {
-            return .{ .bits = self.bits.intersectWith(other.bits) };
+            return .{ .bits = self.bits.intersect_with(other.bits) };
         }
 
         /// Returns a set with keys that are in either this
         /// set or the other set, but not both.
         pub fn xor_with(self: Self, other: Self) Self {
-            return .{ .bits = self.bits.xorWith(other.bits) };
+            return .{ .bits = self.bits.xor_with(other.bits) };
         }
 
         /// Returns a set with keys that are in this set
         /// except for keys in the other set.
         pub fn difference_with(self: Self, other: Self) Self {
-            return .{ .bits = self.bits.differenceWith(other.bits) };
+            return .{ .bits = self.bits.difference_with(other.bits) };
         }
 
         /// Returns an iterator over this set, which iterates in
@@ -418,7 +418,7 @@ pub fn EnumSet(comptime E: type) type {
 
             pub fn next(self: *Iterator) ?Key {
                 return if (self.inner.next()) |index|
-                    Indexer.keyForIndex(index)
+                    Indexer.key_for_index(index)
                 else
                     null;
             }
@@ -446,7 +446,7 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
         const BitSet = std.StaticBitSet(Indexer.count);
 
         /// Bits determining whether items are in the map
-        bits: BitSet = BitSet.initEmpty(),
+        bits: BitSet = BitSet.init_empty(),
         /// Values of items in the map.  If the associated
         /// bit is zero, the value is undefined.
         values: [Indexer.count]Value = undefined,
@@ -457,8 +457,8 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
             var result: Self = .{};
             if (@typeInfo(E).Enum.is_exhaustive) {
                 inline for (0..Self.len) |i| {
-                    const key = comptime Indexer.keyForIndex(i);
-                    const tag = @tagName(key);
+                    const key = comptime Indexer.key_for_index(i);
+                    const tag = @tag_name(key);
                     if (@field(init_values, tag)) |*v| {
                         result.bits.set(i);
                         result.values[i] = v.*;
@@ -468,7 +468,7 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
                 inline for (std.meta.fields(E)) |field| {
                     const key = @field(E, field.name);
                     if (@field(init_values, field.name)) |*v| {
-                        const i = comptime Indexer.indexOf(key);
+                        const i = comptime Indexer.index_of(key);
                         result.bits.set(i);
                         result.values[i] = v.*;
                     }
@@ -481,7 +481,7 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
         /// Consider using EnumArray instead if the map will remain full.
         pub fn init_full(value: Value) Self {
             var result: Self = .{
-                .bits = Self.BitSet.initFull(),
+                .bits = Self.BitSet.init_full(),
                 .values = undefined,
             };
             @memset(&result.values, value);
@@ -491,7 +491,7 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
         /// Initializes a full mapping with supplied values.
         /// Consider using EnumArray instead if the map will remain full.
         pub fn init_full_with(init_values: EnumFieldStruct(E, Value, null)) Self {
-            return initFullWithDefault(null, init_values);
+            return init_full_with_default(null, init_values);
         }
 
         /// Initializes a full mapping with a provided default.
@@ -499,12 +499,12 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
         pub fn init_full_with_default(comptime default: ?Value, init_values: EnumFieldStruct(E, Value, default)) Self {
             @setEvalBranchQuota(2 * @typeInfo(E).Enum.fields.len);
             var result: Self = .{
-                .bits = Self.BitSet.initFull(),
+                .bits = Self.BitSet.init_full(),
                 .values = undefined,
             };
             inline for (0..Self.len) |i| {
-                const key = comptime Indexer.keyForIndex(i);
-                const tag = @tagName(key);
+                const key = comptime Indexer.key_for_index(i);
+                const tag = @tag_name(key);
                 result.values[i] = @field(init_values, tag);
             }
             return result;
@@ -517,58 +517,58 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
 
         /// Checks if the map contains an item.
         pub fn contains(self: Self, key: Key) bool {
-            return self.bits.isSet(Indexer.indexOf(key));
+            return self.bits.is_set(Indexer.index_of(key));
         }
 
         /// Gets the value associated with a key.
         /// If the key is not in the map, returns null.
         pub fn get(self: Self, key: Key) ?Value {
-            const index = Indexer.indexOf(key);
-            return if (self.bits.isSet(index)) self.values[index] else null;
+            const index = Indexer.index_of(key);
+            return if (self.bits.is_set(index)) self.values[index] else null;
         }
 
         /// Gets the value associated with a key, which must
         /// exist in the map.
         pub fn get_assert_contains(self: Self, key: Key) Value {
-            const index = Indexer.indexOf(key);
-            assert(self.bits.isSet(index));
+            const index = Indexer.index_of(key);
+            assert(self.bits.is_set(index));
             return self.values[index];
         }
 
         /// Gets the address of the value associated with a key.
         /// If the key is not in the map, returns null.
         pub fn get_ptr(self: *Self, key: Key) ?*Value {
-            const index = Indexer.indexOf(key);
-            return if (self.bits.isSet(index)) &self.values[index] else null;
+            const index = Indexer.index_of(key);
+            return if (self.bits.is_set(index)) &self.values[index] else null;
         }
 
         /// Gets the address of the const value associated with a key.
         /// If the key is not in the map, returns null.
         pub fn get_ptr_const(self: *const Self, key: Key) ?*const Value {
-            const index = Indexer.indexOf(key);
-            return if (self.bits.isSet(index)) &self.values[index] else null;
+            const index = Indexer.index_of(key);
+            return if (self.bits.is_set(index)) &self.values[index] else null;
         }
 
         /// Gets the address of the value associated with a key.
         /// The key must be present in the map.
         pub fn get_ptr_assert_contains(self: *Self, key: Key) *Value {
-            const index = Indexer.indexOf(key);
-            assert(self.bits.isSet(index));
+            const index = Indexer.index_of(key);
+            assert(self.bits.is_set(index));
             return &self.values[index];
         }
 
         /// Gets the address of the const value associated with a key.
         /// The key must be present in the map.
         pub fn get_ptr_const_assert_contains(self: *const Self, key: Key) *const Value {
-            const index = Indexer.indexOf(key);
-            assert(self.bits.isSet(index));
+            const index = Indexer.index_of(key);
+            assert(self.bits.is_set(index));
             return &self.values[index];
         }
 
         /// Adds the key to the map with the supplied value.
         /// If the key is already in the map, overwrites the value.
         pub fn put(self: *Self, key: Key, value: Value) void {
-            const index = Indexer.indexOf(key);
+            const index = Indexer.index_of(key);
             self.bits.set(index);
             self.values[index] = value;
         }
@@ -578,7 +578,7 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
         /// A pointer to the value is returned, which should be
         /// used to initialize the value.
         pub fn put_uninitialized(self: *Self, key: Key) *Value {
-            const index = Indexer.indexOf(key);
+            const index = Indexer.index_of(key);
             self.bits.set(index);
             self.values[index] = undefined;
             return &self.values[index];
@@ -588,8 +588,8 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
         /// and returns the old value.  If the key was not in
         /// the map, returns null.
         pub fn fetch_put(self: *Self, key: Key, value: Value) ?Value {
-            const index = Indexer.indexOf(key);
-            const result: ?Value = if (self.bits.isSet(index)) self.values[index] else null;
+            const index = Indexer.index_of(key);
+            const result: ?Value = if (self.bits.is_set(index)) self.values[index] else null;
             self.bits.set(index);
             self.values[index] = value;
             return result;
@@ -598,7 +598,7 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
         /// Removes a key from the map.  If the key was not in the map,
         /// does nothing.
         pub fn remove(self: *Self, key: Key) void {
-            const index = Indexer.indexOf(key);
+            const index = Indexer.index_of(key);
             self.bits.unset(index);
             self.values[index] = undefined;
         }
@@ -606,8 +606,8 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
         /// Removes a key from the map, and returns the old value.
         /// If the key was not in the map, returns null.
         pub fn fetch_remove(self: *Self, key: Key) ?Value {
-            const index = Indexer.indexOf(key);
-            const result: ?Value = if (self.bits.isSet(index)) self.values[index] else null;
+            const index = Indexer.index_of(key);
+            const result: ?Value = if (self.bits.is_set(index)) self.values[index] else null;
             self.bits.unset(index);
             self.values[index] = undefined;
             return result;
@@ -642,7 +642,7 @@ pub fn EnumMap(comptime E: type, comptime V: type) type {
             pub fn next(self: *Iterator) ?Entry {
                 return if (self.inner.next()) |index|
                     Entry{
-                        .key = Indexer.keyForIndex(index),
+                        .key = Indexer.key_for_index(index),
                         .value = &self.values[index],
                     }
                 else
@@ -659,10 +659,10 @@ test EnumMap {
         .green = 0xff,
         .blue = 0x80,
     });
-    try testing.expectEqual(2, some.count());
-    try testing.expectEqual(null, some.get(.red));
-    try testing.expectEqual(0xff, some.get(.green));
-    try testing.expectEqual(0x80, some.get(.blue));
+    try testing.expect_equal(2, some.count());
+    try testing.expect_equal(null, some.get(.red));
+    try testing.expect_equal(0xff, some.get(.green));
+    try testing.expect_equal(0x80, some.get(.blue));
 }
 
 /// A multiset of enum elements up to a count of usize. Backed
@@ -684,7 +684,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         /// Initializes the multiset using a struct of counts.
         pub fn init(init_counts: EnumFieldStruct(E, CountSize, 0)) Self {
             @setEvalBranchQuota(2 * @typeInfo(E).Enum.fields.len);
-            var self = initWithCount(0);
+            var self = init_with_count(0);
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const c = @field(init_counts, field.name);
                 const key = @as(E, @enumFromInt(field.value));
@@ -695,14 +695,14 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
 
         /// Initializes the multiset with a count of zero.
         pub fn init_empty() Self {
-            return initWithCount(0);
+            return init_with_count(0);
         }
 
         /// Initializes the multiset with all keys at the
         /// same count.
         pub fn init_with_count(comptime c: CountSize) Self {
             return .{
-                .counts = EnumArray(E, CountSize).initDefault(c, .{}),
+                .counts = EnumArray(E, CountSize).init_default(c, .{}),
             };
         }
 
@@ -721,7 +721,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         }
 
         /// Removes all instance of a key from multiset. Same as
-        /// setCount(key, 0).
+        /// set_count(key, 0).
         pub fn remove_all(self: *Self, key: E) void {
             return self.counts.set(key, 0);
         }
@@ -729,7 +729,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         /// Increases the key count by given amount. Caller asserts
         /// operation will not overflow.
         pub fn add_assert_safe(self: *Self, key: E, c: CountSize) void {
-            self.counts.getPtr(key).* += c;
+            self.counts.get_ptr(key).* += c;
         }
 
         /// Increases the key count by given amount.
@@ -741,7 +741,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         /// greater than the number of keys in multset, then key count
         /// will be set to zero.
         pub fn remove(self: *Self, key: E, c: CountSize) void {
-            self.counts.getPtr(key).* -= @min(self.getCount(key), c);
+            self.counts.get_ptr(key).* -= @min(self.get_count(key), c);
         }
 
         /// Returns the count for a key.
@@ -759,7 +759,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         pub fn add_set_assert_safe(self: *Self, other: Self) void {
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const key = @as(E, @enumFromInt(field.value));
-                self.addAssertSafe(key, other.getCount(key));
+                self.add_assert_safe(key, other.get_count(key));
             }
         }
 
@@ -767,7 +767,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         pub fn add_set(self: *Self, other: Self) error{Overflow}!void {
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const key = @as(E, @enumFromInt(field.value));
-                try self.add(key, other.getCount(key));
+                try self.add(key, other.get_count(key));
             }
         }
 
@@ -777,7 +777,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         pub fn remove_set(self: *Self, other: Self) void {
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const key = @as(E, @enumFromInt(field.value));
-                self.remove(key, other.getCount(key));
+                self.remove(key, other.get_count(key));
             }
         }
 
@@ -786,7 +786,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         pub fn eql(self: Self, other: Self) bool {
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const key = @as(E, @enumFromInt(field.value));
-                if (self.getCount(key) != other.getCount(key)) {
+                if (self.get_count(key) != other.get_count(key)) {
                     return false;
                 }
             }
@@ -798,7 +798,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         pub fn subset_of(self: Self, other: Self) bool {
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const key = @as(E, @enumFromInt(field.value));
-                if (self.getCount(key) > other.getCount(key)) {
+                if (self.get_count(key) > other.get_count(key)) {
                     return false;
                 }
             }
@@ -810,7 +810,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         pub fn superset_of(self: Self, other: Self) bool {
             inline for (@typeInfo(E).Enum.fields) |field| {
                 const key = @as(E, @enumFromInt(field.value));
-                if (self.getCount(key) < other.getCount(key)) {
+                if (self.get_count(key) < other.get_count(key)) {
                     return false;
                 }
             }
@@ -822,7 +822,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         /// operation will not overflow any key.
         pub fn plus_assert_safe(self: Self, other: Self) Self {
             var result = self;
-            result.addSetAssertSafe(other);
+            result.add_set_assert_safe(other);
             return result;
         }
 
@@ -830,7 +830,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         /// multiset and the other multiset.
         pub fn plus(self: Self, other: Self) error{Overflow}!Self {
             var result = self;
-            try result.addSet(other);
+            try result.add_set(other);
             return result;
         }
 
@@ -841,7 +841,7 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
         /// a count of zero.
         pub fn minus(self: Self, other: Self) Self {
             var result = self;
-            result.removeSet(other);
+            result.remove_set(other);
             return result;
         }
 
@@ -861,17 +861,17 @@ pub fn BoundedEnumMultiset(comptime E: type, comptime CountSize: type) type {
 test EnumMultiset {
     const Ball = enum { red, green, blue };
 
-    const empty = EnumMultiset(Ball).initEmpty();
+    const empty = EnumMultiset(Ball).init_empty();
     const r0_g1_b2 = EnumMultiset(Ball).init(.{
         .red = 0,
         .green = 1,
         .blue = 2,
     });
-    const ten_of_each = EnumMultiset(Ball).initWithCount(10);
+    const ten_of_each = EnumMultiset(Ball).init_with_count(10);
 
-    try testing.expectEqual(empty.count(), 0);
-    try testing.expectEqual(r0_g1_b2.count(), 3);
-    try testing.expectEqual(ten_of_each.count(), 30);
+    try testing.expect_equal(empty.count(), 0);
+    try testing.expect_equal(r0_g1_b2.count(), 3);
+    try testing.expect_equal(ten_of_each.count(), 30);
 
     try testing.expect(!empty.contains(.red));
     try testing.expect(!empty.contains(.green));
@@ -887,78 +887,78 @@ test EnumMultiset {
 
     {
         var copy = ten_of_each;
-        copy.removeAll(.red);
+        copy.remove_all(.red);
         try testing.expect(!copy.contains(.red));
 
-        // removeAll second time does nothing
-        copy.removeAll(.red);
+        // remove_all second time does nothing
+        copy.remove_all(.red);
         try testing.expect(!copy.contains(.red));
     }
 
     {
         var copy = ten_of_each;
-        copy.addAssertSafe(.red, 6);
-        try testing.expectEqual(copy.getCount(.red), 16);
+        copy.add_assert_safe(.red, 6);
+        try testing.expect_equal(copy.get_count(.red), 16);
     }
 
     {
         var copy = ten_of_each;
         try copy.add(.red, 6);
-        try testing.expectEqual(copy.getCount(.red), 16);
+        try testing.expect_equal(copy.get_count(.red), 16);
 
-        try testing.expectError(error.Overflow, copy.add(.red, std.math.maxInt(usize)));
+        try testing.expect_error(error.Overflow, copy.add(.red, std.math.max_int(usize)));
     }
 
     {
         var copy = ten_of_each;
         copy.remove(.red, 4);
-        try testing.expectEqual(copy.getCount(.red), 6);
+        try testing.expect_equal(copy.get_count(.red), 6);
 
         // subtracting more it contains does not underflow
         copy.remove(.green, 14);
-        try testing.expectEqual(copy.getCount(.green), 0);
+        try testing.expect_equal(copy.get_count(.green), 0);
     }
 
-    try testing.expectEqual(empty.getCount(.green), 0);
-    try testing.expectEqual(r0_g1_b2.getCount(.green), 1);
-    try testing.expectEqual(ten_of_each.getCount(.green), 10);
+    try testing.expect_equal(empty.get_count(.green), 0);
+    try testing.expect_equal(r0_g1_b2.get_count(.green), 1);
+    try testing.expect_equal(ten_of_each.get_count(.green), 10);
 
     {
         var copy = empty;
-        copy.setCount(.red, 6);
-        try testing.expectEqual(copy.getCount(.red), 6);
+        copy.set_count(.red, 6);
+        try testing.expect_equal(copy.get_count(.red), 6);
     }
 
     {
         var copy = r0_g1_b2;
-        copy.addSetAssertSafe(ten_of_each);
-        try testing.expectEqual(copy.getCount(.red), 10);
-        try testing.expectEqual(copy.getCount(.green), 11);
-        try testing.expectEqual(copy.getCount(.blue), 12);
+        copy.add_set_assert_safe(ten_of_each);
+        try testing.expect_equal(copy.get_count(.red), 10);
+        try testing.expect_equal(copy.get_count(.green), 11);
+        try testing.expect_equal(copy.get_count(.blue), 12);
     }
 
     {
         var copy = r0_g1_b2;
-        try copy.addSet(ten_of_each);
-        try testing.expectEqual(copy.getCount(.red), 10);
-        try testing.expectEqual(copy.getCount(.green), 11);
-        try testing.expectEqual(copy.getCount(.blue), 12);
+        try copy.add_set(ten_of_each);
+        try testing.expect_equal(copy.get_count(.red), 10);
+        try testing.expect_equal(copy.get_count(.green), 11);
+        try testing.expect_equal(copy.get_count(.blue), 12);
 
-        const full = EnumMultiset(Ball).initWithCount(std.math.maxInt(usize));
-        try testing.expectError(error.Overflow, copy.addSet(full));
+        const full = EnumMultiset(Ball).init_with_count(std.math.max_int(usize));
+        try testing.expect_error(error.Overflow, copy.add_set(full));
     }
 
     {
         var copy = ten_of_each;
-        copy.removeSet(r0_g1_b2);
-        try testing.expectEqual(copy.getCount(.red), 10);
-        try testing.expectEqual(copy.getCount(.green), 9);
-        try testing.expectEqual(copy.getCount(.blue), 8);
+        copy.remove_set(r0_g1_b2);
+        try testing.expect_equal(copy.get_count(.red), 10);
+        try testing.expect_equal(copy.get_count(.green), 9);
+        try testing.expect_equal(copy.get_count(.blue), 8);
 
-        copy.removeSet(ten_of_each);
-        try testing.expectEqual(copy.getCount(.red), 0);
-        try testing.expectEqual(copy.getCount(.green), 0);
-        try testing.expectEqual(copy.getCount(.blue), 0);
+        copy.remove_set(ten_of_each);
+        try testing.expect_equal(copy.get_count(.red), 0);
+        try testing.expect_equal(copy.get_count(.green), 0);
+        try testing.expect_equal(copy.get_count(.blue), 0);
     }
 
     try testing.expect(empty.eql(empty));
@@ -968,19 +968,19 @@ test EnumMultiset {
     try testing.expect(!r0_g1_b2.eql(ten_of_each));
     try testing.expect(!ten_of_each.eql(empty));
 
-    try testing.expect(empty.subsetOf(empty));
-    try testing.expect(r0_g1_b2.subsetOf(r0_g1_b2));
-    try testing.expect(empty.subsetOf(r0_g1_b2));
-    try testing.expect(r0_g1_b2.subsetOf(ten_of_each));
-    try testing.expect(!ten_of_each.subsetOf(r0_g1_b2));
-    try testing.expect(!r0_g1_b2.subsetOf(empty));
+    try testing.expect(empty.subset_of(empty));
+    try testing.expect(r0_g1_b2.subset_of(r0_g1_b2));
+    try testing.expect(empty.subset_of(r0_g1_b2));
+    try testing.expect(r0_g1_b2.subset_of(ten_of_each));
+    try testing.expect(!ten_of_each.subset_of(r0_g1_b2));
+    try testing.expect(!r0_g1_b2.subset_of(empty));
 
-    try testing.expect(empty.supersetOf(empty));
-    try testing.expect(r0_g1_b2.supersetOf(r0_g1_b2));
-    try testing.expect(r0_g1_b2.supersetOf(empty));
-    try testing.expect(ten_of_each.supersetOf(r0_g1_b2));
-    try testing.expect(!r0_g1_b2.supersetOf(ten_of_each));
-    try testing.expect(!empty.supersetOf(r0_g1_b2));
+    try testing.expect(empty.superset_of(empty));
+    try testing.expect(r0_g1_b2.superset_of(r0_g1_b2));
+    try testing.expect(r0_g1_b2.superset_of(empty));
+    try testing.expect(ten_of_each.superset_of(r0_g1_b2));
+    try testing.expect(!r0_g1_b2.superset_of(ten_of_each));
+    try testing.expect(!empty.superset_of(r0_g1_b2));
 
     {
         // with multisets it could be the case where two
@@ -994,71 +994,71 @@ test EnumMultiset {
             .blue = 10,
         });
 
-        try testing.expect(!r10.subsetOf(b10));
-        try testing.expect(!b10.subsetOf(r10));
-        try testing.expect(!r10.supersetOf(b10));
-        try testing.expect(!b10.supersetOf(r10));
+        try testing.expect(!r10.subset_of(b10));
+        try testing.expect(!b10.subset_of(r10));
+        try testing.expect(!r10.superset_of(b10));
+        try testing.expect(!b10.superset_of(r10));
     }
 
     {
-        const result = r0_g1_b2.plusAssertSafe(ten_of_each);
-        try testing.expectEqual(result.getCount(.red), 10);
-        try testing.expectEqual(result.getCount(.green), 11);
-        try testing.expectEqual(result.getCount(.blue), 12);
+        const result = r0_g1_b2.plus_assert_safe(ten_of_each);
+        try testing.expect_equal(result.get_count(.red), 10);
+        try testing.expect_equal(result.get_count(.green), 11);
+        try testing.expect_equal(result.get_count(.blue), 12);
     }
 
     {
         const result = try r0_g1_b2.plus(ten_of_each);
-        try testing.expectEqual(result.getCount(.red), 10);
-        try testing.expectEqual(result.getCount(.green), 11);
-        try testing.expectEqual(result.getCount(.blue), 12);
+        try testing.expect_equal(result.get_count(.red), 10);
+        try testing.expect_equal(result.get_count(.green), 11);
+        try testing.expect_equal(result.get_count(.blue), 12);
 
-        const full = EnumMultiset(Ball).initWithCount(std.math.maxInt(usize));
-        try testing.expectError(error.Overflow, result.plus(full));
+        const full = EnumMultiset(Ball).init_with_count(std.math.max_int(usize));
+        try testing.expect_error(error.Overflow, result.plus(full));
     }
 
     {
         const result = ten_of_each.minus(r0_g1_b2);
-        try testing.expectEqual(result.getCount(.red), 10);
-        try testing.expectEqual(result.getCount(.green), 9);
-        try testing.expectEqual(result.getCount(.blue), 8);
+        try testing.expect_equal(result.get_count(.red), 10);
+        try testing.expect_equal(result.get_count(.green), 9);
+        try testing.expect_equal(result.get_count(.blue), 8);
     }
 
     {
         const result = ten_of_each.minus(r0_g1_b2).minus(ten_of_each);
-        try testing.expectEqual(result.getCount(.red), 0);
-        try testing.expectEqual(result.getCount(.green), 0);
-        try testing.expectEqual(result.getCount(.blue), 0);
+        try testing.expect_equal(result.get_count(.red), 0);
+        try testing.expect_equal(result.get_count(.green), 0);
+        try testing.expect_equal(result.get_count(.blue), 0);
     }
 
     {
         var copy = empty;
         var it = copy.iterator();
         var entry = it.next().?;
-        try testing.expectEqual(entry.key, .red);
-        try testing.expectEqual(entry.value.*, 0);
+        try testing.expect_equal(entry.key, .red);
+        try testing.expect_equal(entry.value.*, 0);
         entry = it.next().?;
-        try testing.expectEqual(entry.key, .green);
-        try testing.expectEqual(entry.value.*, 0);
+        try testing.expect_equal(entry.key, .green);
+        try testing.expect_equal(entry.value.*, 0);
         entry = it.next().?;
-        try testing.expectEqual(entry.key, .blue);
-        try testing.expectEqual(entry.value.*, 0);
-        try testing.expectEqual(it.next(), null);
+        try testing.expect_equal(entry.key, .blue);
+        try testing.expect_equal(entry.value.*, 0);
+        try testing.expect_equal(it.next(), null);
     }
 
     {
         var copy = r0_g1_b2;
         var it = copy.iterator();
         var entry = it.next().?;
-        try testing.expectEqual(entry.key, .red);
-        try testing.expectEqual(entry.value.*, 0);
+        try testing.expect_equal(entry.key, .red);
+        try testing.expect_equal(entry.value.*, 0);
         entry = it.next().?;
-        try testing.expectEqual(entry.key, .green);
-        try testing.expectEqual(entry.value.*, 1);
+        try testing.expect_equal(entry.key, .green);
+        try testing.expect_equal(entry.value.*, 1);
         entry = it.next().?;
-        try testing.expectEqual(entry.key, .blue);
-        try testing.expectEqual(entry.value.*, 2);
-        try testing.expectEqual(it.next(), null);
+        try testing.expect_equal(entry.key, .blue);
+        try testing.expect_equal(entry.value.*, 2);
+        try testing.expect_equal(it.next(), null);
     }
 }
 
@@ -1082,7 +1082,7 @@ pub fn EnumArray(comptime E: type, comptime V: type) type {
         values: [Indexer.count]Value,
 
         pub fn init(init_values: EnumFieldStruct(E, Value, null)) Self {
-            return initDefault(null, init_values);
+            return init_default(null, init_values);
         }
 
         /// Initializes values in the enum array, with the specified default.
@@ -1090,8 +1090,8 @@ pub fn EnumArray(comptime E: type, comptime V: type) type {
             @setEvalBranchQuota(2 * @typeInfo(E).Enum.fields.len);
             var result: Self = .{ .values = undefined };
             inline for (0..Self.len) |i| {
-                const key = comptime Indexer.keyForIndex(i);
-                const tag = @tagName(key);
+                const key = comptime Indexer.key_for_index(i);
+                const tag = @tag_name(key);
                 result.values[i] = @field(init_values, tag);
             }
             return result;
@@ -1109,22 +1109,22 @@ pub fn EnumArray(comptime E: type, comptime V: type) type {
 
         /// Returns the value in the array associated with a key.
         pub fn get(self: Self, key: Key) Value {
-            return self.values[Indexer.indexOf(key)];
+            return self.values[Indexer.index_of(key)];
         }
 
         /// Returns a pointer to the slot in the array associated with a key.
         pub fn get_ptr(self: *Self, key: Key) *Value {
-            return &self.values[Indexer.indexOf(key)];
+            return &self.values[Indexer.index_of(key)];
         }
 
         /// Returns a const pointer to the slot in the array associated with a key.
         pub fn get_ptr_const(self: *const Self, key: Key) *const Value {
-            return &self.values[Indexer.indexOf(key)];
+            return &self.values[Indexer.index_of(key)];
         }
 
         /// Sets the value in the slot associated with a key.
         pub fn set(self: *Self, key: Key, value: Value) void {
-            self.values[Indexer.indexOf(key)] = value;
+            self.values[Indexer.index_of(key)] = value;
         }
 
         /// Iterates over the items in the array, in index order.
@@ -1155,7 +1155,7 @@ pub fn EnumArray(comptime E: type, comptime V: type) type {
                 if (index < Indexer.count) {
                     self.index += 1;
                     return Entry{
-                        .key = Indexer.keyForIndex(index),
+                        .key = Indexer.key_for_index(index),
                         .value = &self.values[index],
                     };
                 }
@@ -1168,10 +1168,10 @@ pub fn EnumArray(comptime E: type, comptime V: type) type {
 test "pure EnumSet fns" {
     const Suit = enum { spades, hearts, clubs, diamonds };
 
-    const empty = EnumSet(Suit).initEmpty();
-    const full = EnumSet(Suit).initFull();
-    const black = EnumSet(Suit).initMany(&[_]Suit{ .spades, .clubs });
-    const red = EnumSet(Suit).initMany(&[_]Suit{ .hearts, .diamonds });
+    const empty = EnumSet(Suit).init_empty();
+    const full = EnumSet(Suit).init_full();
+    const black = EnumSet(Suit).init_many(&[_]Suit{ .spades, .clubs });
+    const red = EnumSet(Suit).init_many(&[_]Suit{ .hearts, .diamonds });
 
     try testing.expect(empty.eql(empty));
     try testing.expect(full.eql(full));
@@ -1182,56 +1182,56 @@ test "pure EnumSet fns" {
     try testing.expect(!red.eql(empty));
     try testing.expect(!black.eql(full));
 
-    try testing.expect(empty.subsetOf(empty));
-    try testing.expect(empty.subsetOf(full));
-    try testing.expect(full.subsetOf(full));
-    try testing.expect(!black.subsetOf(red));
-    try testing.expect(!red.subsetOf(black));
+    try testing.expect(empty.subset_of(empty));
+    try testing.expect(empty.subset_of(full));
+    try testing.expect(full.subset_of(full));
+    try testing.expect(!black.subset_of(red));
+    try testing.expect(!red.subset_of(black));
 
-    try testing.expect(full.supersetOf(full));
-    try testing.expect(full.supersetOf(empty));
-    try testing.expect(empty.supersetOf(empty));
-    try testing.expect(!black.supersetOf(red));
-    try testing.expect(!red.supersetOf(black));
+    try testing.expect(full.superset_of(full));
+    try testing.expect(full.superset_of(empty));
+    try testing.expect(empty.superset_of(empty));
+    try testing.expect(!black.superset_of(red));
+    try testing.expect(!red.superset_of(black));
 
     try testing.expect(empty.complement().eql(full));
     try testing.expect(full.complement().eql(empty));
     try testing.expect(black.complement().eql(red));
     try testing.expect(red.complement().eql(black));
 
-    try testing.expect(empty.unionWith(empty).eql(empty));
-    try testing.expect(empty.unionWith(full).eql(full));
-    try testing.expect(full.unionWith(full).eql(full));
-    try testing.expect(full.unionWith(empty).eql(full));
-    try testing.expect(black.unionWith(red).eql(full));
-    try testing.expect(red.unionWith(black).eql(full));
+    try testing.expect(empty.union_with(empty).eql(empty));
+    try testing.expect(empty.union_with(full).eql(full));
+    try testing.expect(full.union_with(full).eql(full));
+    try testing.expect(full.union_with(empty).eql(full));
+    try testing.expect(black.union_with(red).eql(full));
+    try testing.expect(red.union_with(black).eql(full));
 
-    try testing.expect(empty.intersectWith(empty).eql(empty));
-    try testing.expect(empty.intersectWith(full).eql(empty));
-    try testing.expect(full.intersectWith(full).eql(full));
-    try testing.expect(full.intersectWith(empty).eql(empty));
-    try testing.expect(black.intersectWith(red).eql(empty));
-    try testing.expect(red.intersectWith(black).eql(empty));
+    try testing.expect(empty.intersect_with(empty).eql(empty));
+    try testing.expect(empty.intersect_with(full).eql(empty));
+    try testing.expect(full.intersect_with(full).eql(full));
+    try testing.expect(full.intersect_with(empty).eql(empty));
+    try testing.expect(black.intersect_with(red).eql(empty));
+    try testing.expect(red.intersect_with(black).eql(empty));
 
-    try testing.expect(empty.xorWith(empty).eql(empty));
-    try testing.expect(empty.xorWith(full).eql(full));
-    try testing.expect(full.xorWith(full).eql(empty));
-    try testing.expect(full.xorWith(empty).eql(full));
-    try testing.expect(black.xorWith(red).eql(full));
-    try testing.expect(red.xorWith(black).eql(full));
+    try testing.expect(empty.xor_with(empty).eql(empty));
+    try testing.expect(empty.xor_with(full).eql(full));
+    try testing.expect(full.xor_with(full).eql(empty));
+    try testing.expect(full.xor_with(empty).eql(full));
+    try testing.expect(black.xor_with(red).eql(full));
+    try testing.expect(red.xor_with(black).eql(full));
 
-    try testing.expect(empty.differenceWith(empty).eql(empty));
-    try testing.expect(empty.differenceWith(full).eql(empty));
-    try testing.expect(full.differenceWith(full).eql(empty));
-    try testing.expect(full.differenceWith(empty).eql(full));
-    try testing.expect(full.differenceWith(red).eql(black));
-    try testing.expect(full.differenceWith(black).eql(red));
+    try testing.expect(empty.difference_with(empty).eql(empty));
+    try testing.expect(empty.difference_with(full).eql(empty));
+    try testing.expect(full.difference_with(full).eql(empty));
+    try testing.expect(full.difference_with(empty).eql(full));
+    try testing.expect(full.difference_with(red).eql(black));
+    try testing.expect(full.difference_with(black).eql(red));
 }
 
 test "EnumSet empty" {
     const E = enum {};
-    const empty = EnumSet(E).initEmpty();
-    const full = EnumSet(E).initFull();
+    const empty = EnumSet(E).init_empty();
+    const full = EnumSet(E).init_full();
 
     try std.testing.expect(empty.eql(full));
     try std.testing.expect(empty.complement().eql(full));
@@ -1242,13 +1242,13 @@ test "EnumSet empty" {
 test "EnumSet const iterator" {
     const Direction = enum { up, down, left, right };
     const diag_move = init: {
-        var move = EnumSet(Direction).initEmpty();
+        var move = EnumSet(Direction).init_empty();
         move.insert(.right);
         move.insert(.up);
         break :init move;
     };
 
-    var result = EnumSet(Direction).initEmpty();
+    var result = EnumSet(Direction).init_empty();
     var it = diag_move.iterator();
     while (it.next()) |dir| {
         result.insert(dir);
@@ -1282,32 +1282,32 @@ pub fn EnumIndexer(comptime E: type) type {
     if (!@typeInfo(E).Enum.is_exhaustive) {
         const BackingInt = @typeInfo(E).Enum.tag_type;
         if (@bitSizeOf(BackingInt) > @bitSizeOf(usize))
-            @compileError("Cannot create an enum indexer for a given non-exhaustive enum, tag_type is larger than usize.");
+            @compile_error("Cannot create an enum indexer for a given non-exhaustive enum, tag_type is larger than usize.");
 
         return struct {
             pub const Key: type = E;
 
             const backing_int_sign = @typeInfo(BackingInt).Int.signedness;
-            const min_value = std.math.minInt(BackingInt);
-            const max_value = std.math.maxInt(BackingInt);
+            const min_value = std.math.min_int(BackingInt);
+            const max_value = std.math.max_int(BackingInt);
 
             const RangeType = std.meta.Int(.unsigned, @bitSizeOf(BackingInt));
-            pub const count: comptime_int = std.math.maxInt(RangeType) + 1;
+            pub const count: comptime_int = std.math.max_int(RangeType) + 1;
 
             pub fn index_of(e: E) usize {
                 if (backing_int_sign == .unsigned)
-                    return @intFromEnum(e);
+                    return @int_from_enum(e);
 
-                return if (@intFromEnum(e) < 0)
-                    @intCast(@intFromEnum(e) - min_value)
+                return if (@int_from_enum(e) < 0)
+                    @int_cast(@int_from_enum(e) - min_value)
                 else
-                    @as(RangeType, -min_value) + @as(RangeType, @intCast(@intFromEnum(e)));
+                    @as(RangeType, -min_value) + @as(RangeType, @int_cast(@int_from_enum(e)));
             }
             pub fn key_for_index(i: usize) E {
                 if (backing_int_sign == .unsigned)
                     return @enumFromInt(i);
 
-                return @enumFromInt(@as(std.meta.Int(.signed, @bitSizeOf(RangeType) + 1), @intCast(i)) + min_value);
+                return @enumFromInt(@as(std.meta.Int(.signed, @bitSizeOf(RangeType) + 1), @int_cast(i)) + min_value);
             }
         };
     }
@@ -1345,26 +1345,26 @@ pub fn EnumIndexer(comptime E: type) type {
             return std.mem.swap(EnumField, &ctx.fields[a], &ctx.fields[b]);
         }
     };
-    std.sort.insertionContext(0, fields_len, SortContext{ .fields = &fields });
+    std.sort.insertion_context(0, fields_len, SortContext{ .fields = &fields });
 
     if (max - min == fields.len - 1) {
         return struct {
             pub const Key = E;
             pub const count: comptime_int = fields_len;
             pub fn index_of(e: E) usize {
-                return @as(usize, @intCast(@intFromEnum(e) - min));
+                return @as(usize, @int_cast(@int_from_enum(e) - min));
             }
             pub fn key_for_index(i: usize) E {
                 // TODO fix addition semantics.  This calculation
                 // gives up some safety to avoid artificially limiting
                 // the range of signed enum values to max_isize.
-                const enum_value = if (min < 0) @as(isize, @bitCast(i)) +% min else i + min;
-                return @as(E, @enumFromInt(@as(@typeInfo(E).Enum.tag_type, @intCast(enum_value))));
+                const enum_value = if (min < 0) @as(isize, @bit_cast(i)) +% min else i + min;
+                return @as(E, @enumFromInt(@as(@typeInfo(E).Enum.tag_type, @int_cast(enum_value))));
             }
         };
     }
 
-    const keys = valuesFromFields(E, &fields);
+    const keys = values_from_fields(E, &fields);
 
     return struct {
         pub const Key = E;
@@ -1406,94 +1406,94 @@ test "EnumIndexer non-exhaustive" {
         };
         const Indexer = EnumIndexer(E);
 
-        const min_tag: E = @enumFromInt(std.math.minInt(BackingInt));
-        const max_tag: E = @enumFromInt(std.math.maxInt(BackingInt));
+        const min_tag: E = @enumFromInt(std.math.min_int(BackingInt));
+        const max_tag: E = @enumFromInt(std.math.max_int(BackingInt));
 
         const RangedType = std.meta.Int(.unsigned, @bitSizeOf(BackingInt));
-        const max_index: comptime_int = std.math.maxInt(RangedType);
+        const max_index: comptime_int = std.math.max_int(RangedType);
         const number_zero_tag_index: usize = switch (@typeInfo(BackingInt).Int.signedness) {
             .unsigned => 0,
-            .signed => std.math.divCeil(comptime_int, max_index, 2) catch unreachable,
+            .signed => std.math.div_ceil(comptime_int, max_index, 2) catch unreachable,
         };
 
-        try testing.expectEqual(E, Indexer.Key);
-        try testing.expectEqual(max_index + 1, Indexer.count);
+        try testing.expect_equal(E, Indexer.Key);
+        try testing.expect_equal(max_index + 1, Indexer.count);
 
-        try testing.expectEqual(@as(usize, 0), Indexer.indexOf(min_tag));
-        try testing.expectEqual(number_zero_tag_index, Indexer.indexOf(E.number_zero_tag));
-        try testing.expectEqual(@as(usize, max_index), Indexer.indexOf(max_tag));
+        try testing.expect_equal(@as(usize, 0), Indexer.index_of(min_tag));
+        try testing.expect_equal(number_zero_tag_index, Indexer.index_of(E.number_zero_tag));
+        try testing.expect_equal(@as(usize, max_index), Indexer.index_of(max_tag));
 
-        try testing.expectEqual(min_tag, Indexer.keyForIndex(0));
-        try testing.expectEqual(E.number_zero_tag, Indexer.keyForIndex(number_zero_tag_index));
-        try testing.expectEqual(max_tag, Indexer.keyForIndex(max_index));
+        try testing.expect_equal(min_tag, Indexer.key_for_index(0));
+        try testing.expect_equal(E.number_zero_tag, Indexer.key_for_index(number_zero_tag_index));
+        try testing.expect_equal(max_tag, Indexer.key_for_index(max_index));
     }
 }
 
 test "EnumIndexer dense zeroed" {
     const E = enum(u2) { b = 1, a = 0, c = 2 };
     const Indexer = EnumIndexer(E);
-    try testing.expectEqual(E, Indexer.Key);
-    try testing.expectEqual(3, Indexer.count);
+    try testing.expect_equal(E, Indexer.Key);
+    try testing.expect_equal(3, Indexer.count);
 
-    try testing.expectEqual(@as(usize, 0), Indexer.indexOf(.a));
-    try testing.expectEqual(@as(usize, 1), Indexer.indexOf(.b));
-    try testing.expectEqual(@as(usize, 2), Indexer.indexOf(.c));
+    try testing.expect_equal(@as(usize, 0), Indexer.index_of(.a));
+    try testing.expect_equal(@as(usize, 1), Indexer.index_of(.b));
+    try testing.expect_equal(@as(usize, 2), Indexer.index_of(.c));
 
-    try testing.expectEqual(E.a, Indexer.keyForIndex(0));
-    try testing.expectEqual(E.b, Indexer.keyForIndex(1));
-    try testing.expectEqual(E.c, Indexer.keyForIndex(2));
+    try testing.expect_equal(E.a, Indexer.key_for_index(0));
+    try testing.expect_equal(E.b, Indexer.key_for_index(1));
+    try testing.expect_equal(E.c, Indexer.key_for_index(2));
 }
 
 test "EnumIndexer dense positive" {
     const E = enum(u4) { c = 6, a = 4, b = 5 };
     const Indexer = EnumIndexer(E);
-    try testing.expectEqual(E, Indexer.Key);
-    try testing.expectEqual(3, Indexer.count);
+    try testing.expect_equal(E, Indexer.Key);
+    try testing.expect_equal(3, Indexer.count);
 
-    try testing.expectEqual(@as(usize, 0), Indexer.indexOf(.a));
-    try testing.expectEqual(@as(usize, 1), Indexer.indexOf(.b));
-    try testing.expectEqual(@as(usize, 2), Indexer.indexOf(.c));
+    try testing.expect_equal(@as(usize, 0), Indexer.index_of(.a));
+    try testing.expect_equal(@as(usize, 1), Indexer.index_of(.b));
+    try testing.expect_equal(@as(usize, 2), Indexer.index_of(.c));
 
-    try testing.expectEqual(E.a, Indexer.keyForIndex(0));
-    try testing.expectEqual(E.b, Indexer.keyForIndex(1));
-    try testing.expectEqual(E.c, Indexer.keyForIndex(2));
+    try testing.expect_equal(E.a, Indexer.key_for_index(0));
+    try testing.expect_equal(E.b, Indexer.key_for_index(1));
+    try testing.expect_equal(E.c, Indexer.key_for_index(2));
 }
 
 test "EnumIndexer dense negative" {
     const E = enum(i4) { a = -6, c = -4, b = -5 };
     const Indexer = EnumIndexer(E);
-    try testing.expectEqual(E, Indexer.Key);
-    try testing.expectEqual(3, Indexer.count);
+    try testing.expect_equal(E, Indexer.Key);
+    try testing.expect_equal(3, Indexer.count);
 
-    try testing.expectEqual(@as(usize, 0), Indexer.indexOf(.a));
-    try testing.expectEqual(@as(usize, 1), Indexer.indexOf(.b));
-    try testing.expectEqual(@as(usize, 2), Indexer.indexOf(.c));
+    try testing.expect_equal(@as(usize, 0), Indexer.index_of(.a));
+    try testing.expect_equal(@as(usize, 1), Indexer.index_of(.b));
+    try testing.expect_equal(@as(usize, 2), Indexer.index_of(.c));
 
-    try testing.expectEqual(E.a, Indexer.keyForIndex(0));
-    try testing.expectEqual(E.b, Indexer.keyForIndex(1));
-    try testing.expectEqual(E.c, Indexer.keyForIndex(2));
+    try testing.expect_equal(E.a, Indexer.key_for_index(0));
+    try testing.expect_equal(E.b, Indexer.key_for_index(1));
+    try testing.expect_equal(E.c, Indexer.key_for_index(2));
 }
 
 test "EnumIndexer sparse" {
     const E = enum(i4) { a = -2, c = 6, b = 4 };
     const Indexer = EnumIndexer(E);
-    try testing.expectEqual(E, Indexer.Key);
-    try testing.expectEqual(3, Indexer.count);
+    try testing.expect_equal(E, Indexer.Key);
+    try testing.expect_equal(3, Indexer.count);
 
-    try testing.expectEqual(@as(usize, 0), Indexer.indexOf(.a));
-    try testing.expectEqual(@as(usize, 1), Indexer.indexOf(.b));
-    try testing.expectEqual(@as(usize, 2), Indexer.indexOf(.c));
+    try testing.expect_equal(@as(usize, 0), Indexer.index_of(.a));
+    try testing.expect_equal(@as(usize, 1), Indexer.index_of(.b));
+    try testing.expect_equal(@as(usize, 2), Indexer.index_of(.c));
 
-    try testing.expectEqual(E.a, Indexer.keyForIndex(0));
-    try testing.expectEqual(E.b, Indexer.keyForIndex(1));
-    try testing.expectEqual(E.c, Indexer.keyForIndex(2));
+    try testing.expect_equal(E.a, Indexer.key_for_index(0));
+    try testing.expect_equal(E.b, Indexer.key_for_index(1));
+    try testing.expect_equal(E.c, Indexer.key_for_index(2));
 }
 
 test "EnumIndexer empty" {
     const E = enum {};
     const Indexer = EnumIndexer(E);
-    try testing.expectEqual(E, Indexer.Key);
-    try testing.expectEqual(0, Indexer.count);
+    try testing.expect_equal(E, Indexer.Key);
+    try testing.expect_equal(0, Indexer.count);
 }
 
 test values {
@@ -1503,5 +1503,5 @@ test values {
         Z,
         pub const X = 1;
     };
-    try testing.expectEqualSlices(E, &.{ .X, .Y, .Z }, values(E));
+    try testing.expect_equal_slices(E, &.{ .X, .Y, .Z }, values(E));
 }

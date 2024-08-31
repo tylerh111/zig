@@ -5,10 +5,10 @@ pub fn main() !void {
     defer arena_state.deinit();
     const arena = arena_state.allocator();
 
-    const stdout = std.io.getStdOut().writer();
-    var args = try std.process.argsAlloc(arena);
+    const stdout = std.io.get_std_out().writer();
+    var args = try std.process.args_alloc(arena);
     for (args[1..], 1..) |arg, i| {
-        try stdout.writeAll(arg);
-        if (i != args.len - 1) try stdout.writeByte('\x00');
+        try stdout.write_all(arg);
+        if (i != args.len - 1) try stdout.write_byte('\x00');
     }
 }

@@ -16,7 +16,7 @@ pub fn atan(z: anytype) Complex(@TypeOf(z.re, z.im)) {
     return switch (T) {
         f32 => atan32(z),
         f64 => atan64(z),
-        else => @compileError("atan not implemented for " ++ @typeName(z)),
+        else => @compile_error("atan not implemented for " ++ @type_name(z)),
     };
 }
 
@@ -32,7 +32,7 @@ fn redupif32(x: f32) f32 {
         t -= 0.5;
     }
 
-    const u = @as(f32, @floatFromInt(@as(i32, @intFromFloat(t))));
+    const u = @as(f32, @float_from_int(@as(i32, @int_from_float(t))));
     return ((x - u * DP1) - u * DP2) - t * DP3;
 }
 
@@ -81,7 +81,7 @@ fn redupif64(x: f64) f64 {
         t -= 0.5;
     }
 
-    const u = @as(f64, @floatFromInt(@as(i64, @intFromFloat(t))));
+    const u = @as(f64, @float_from_int(@as(i64, @int_from_float(t))));
     return ((x - u * DP1) - u * DP2) - t * DP3;
 }
 
@@ -124,14 +124,14 @@ test atan32 {
     const a = Complex(f32).init(5, 3);
     const c = atan(a);
 
-    try testing.expect(math.approxEqAbs(f32, c.re, 1.423679, epsilon));
-    try testing.expect(math.approxEqAbs(f32, c.im, 0.086569, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.re, 1.423679, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.im, 0.086569, epsilon));
 }
 
 test atan64 {
     const a = Complex(f64).init(5, 3);
     const c = atan(a);
 
-    try testing.expect(math.approxEqAbs(f64, c.re, 1.423679, epsilon));
-    try testing.expect(math.approxEqAbs(f64, c.im, 0.086569, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, c.re, 1.423679, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, c.im, 0.086569, epsilon));
 }

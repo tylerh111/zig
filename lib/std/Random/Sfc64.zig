@@ -94,7 +94,7 @@ test "sequence" {
     };
 
     for (seq) |s| {
-        try std.testing.expectEqual(s, r.next());
+        try std.testing.expect_equal(s, r.next());
     }
 }
 
@@ -124,7 +124,7 @@ test fill {
     for (seq) |s| {
         var buf0: [8]u8 = undefined;
         var buf1: [7]u8 = undefined;
-        std.mem.writeInt(u64, &buf0, s, .little);
+        std.mem.write_int(u64, &buf0, s, .little);
         r.fill(&buf1);
         try std.testing.expect(std.mem.eql(u8, buf0[0..7], buf1[0..]));
     }

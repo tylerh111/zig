@@ -11,8 +11,8 @@ test "@select vectors" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try comptime selectVectors();
-    try selectVectors();
+    try comptime select_vectors();
+    try select_vectors();
 }
 
 fn select_vectors() !void {
@@ -42,10 +42,10 @@ test "@select arrays" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_x86_64 and
-        !comptime std.Target.x86.featureSetHas(builtin.cpu.features, .avx2)) return error.SkipZigTest;
+        !comptime std.Target.x86.feature_set_has(builtin.cpu.features, .avx2)) return error.SkipZigTest;
 
-    try comptime selectArrays();
-    try selectArrays();
+    try comptime select_arrays();
+    try select_arrays();
 }
 
 fn select_arrays() !void {

@@ -12,7 +12,7 @@ test "return address" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    _ = retAddr();
+    _ = ret_addr();
     // TODO: #14938
-    try testing.expectEqual(0, comptime retAddr());
+    try testing.expect_equal(0, comptime ret_addr());
 }

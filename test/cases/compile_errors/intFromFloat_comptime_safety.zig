@@ -1,11 +1,11 @@
 comptime {
-    _ = @as(i8, @intFromFloat(@as(f32, -129.1)));
+    _ = @as(i8, @int_from_float(@as(f32, -129.1)));
 }
 comptime {
-    _ = @as(u8, @intFromFloat(@as(f32, -1.1)));
+    _ = @as(u8, @int_from_float(@as(f32, -1.1)));
 }
 comptime {
-    _ = @as(u8, @intFromFloat(@as(f32, 256.1)));
+    _ = @as(u8, @int_from_float(@as(f32, 256.1)));
 }
 
 // error

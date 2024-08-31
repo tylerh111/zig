@@ -3,14 +3,14 @@ const assert = std.debug.assert;
 const testing = std.testing;
 const Order = std.math.Order;
 
-pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
+pub fn Treap(comptime Key: type, comptime compare_fn: anytype) type {
     return struct {
         const Self = @This();
 
-        // Allow for compareFn to be fn (anytype, anytype) anytype
+        // Allow for compare_fn to be fn (anytype, anytype) anytype
         // which allows the convenient use of std.math.order.
         fn compare(a: Key, b: Key) Order {
-            return compareFn(a, b);
+            return compare_fn(a, b);
         }
 
         root: ?*Node = null,
@@ -33,7 +33,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
                     64 => .{ 13, 7, 17 },
                     32 => .{ 13, 17, 5 },
                     16 => .{ 7, 9, 8 },
-                    else => @compileError("platform not supported"),
+                    else => @compile_error("platform not supported"),
                 };
 
                 self.xorshift ^= self.xorshift >> shifts[0];
@@ -54,7 +54,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
         };
 
         /// Returns the smallest Node by key in the treap if there is one.
-        /// Use `getEntryForExisting()` to replace/remove this Node from the treap.
+        /// Use `get_entry_for_existing()` to replace/remove this Node from the treap.
         pub fn get_min(self: Self) ?*Node {
             var node = self.root;
             while (node) |current| {
@@ -64,7 +64,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
         }
 
         /// Returns the largest Node by key in the treap if there is one.
-        /// Use `getEntryForExisting()` to replace/remove this Node from the treap.
+        /// Use `get_entry_for_existing()` to replace/remove this Node from the treap.
         pub fn get_max(self: Self) ?*Node {
             var node = self.root;
             while (node) |current| {
@@ -159,7 +159,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
                 if (order == .eq) break;
 
                 parent_ref.* = current;
-                node = current.children[@intFromBool(order == .gt)];
+                node = current.children[@int_from_bool(order == .gt)];
             }
 
             return node;
@@ -168,12 +168,12 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
         fn insert(self: *Self, key: Key, parent: ?*Node, node: *Node) void {
             // generate a random priority & prepare the node to be inserted into the tree
             node.key = key;
-            node.priority = self.prng.random(@intFromPtr(node));
+            node.priority = self.prng.random(@int_from_ptr(node));
             node.parent = parent;
             node.children = [_]?*Node{ null, null };
 
             // point the parent at the new node
-            const link = if (parent) |p| &p.children[@intFromBool(compare(key, p.key) == .gt)] else &self.root;
+            const link = if (parent) |p| &p.children[@int_from_bool(compare(key, p.key) == .gt)] else &self.root;
             assert(link.* == null);
             link.* = node;
 
@@ -182,7 +182,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
                 if (p.priority <= node.priority) break;
 
                 const is_right = p.children[1] == node;
-                assert(p.children[@intFromBool(is_right)] == node);
+                assert(p.children[@int_from_bool(is_right)] == node);
 
                 const rotate_right = !is_right;
                 self.rotate(p, rotate_right);
@@ -197,7 +197,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
             new.children = old.children;
 
             // point the parent at the new node
-            const link = if (old.parent) |p| &p.children[@intFromBool(p.children[1] == old)] else &self.root;
+            const link = if (old.parent) |p| &p.children[@int_from_bool(p.children[1] == old)] else &self.root;
             assert(link.* == old);
             link.* = new;
 
@@ -220,7 +220,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
             }
 
             // node is a now a leaf; remove by nulling out the parent's reference to it.
-            const link = if (node.parent) |p| &p.children[@intFromBool(p.children[1] == node)] else &self.root;
+            const link = if (node.parent) |p| &p.children[@int_from_bool(p.children[1] == node)] else &self.root;
             assert(link.* == node);
             link.* = null;
 
@@ -239,12 +239,12 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
             //      parent -> (node (target YY adjacent) XX)
             //      parent -> (target YY (node adjacent XX))
             const parent = node.parent;
-            const target = node.children[@intFromBool(!right)] orelse unreachable;
-            const adjacent = target.children[@intFromBool(right)];
+            const target = node.children[@int_from_bool(!right)] orelse unreachable;
+            const adjacent = target.children[@int_from_bool(right)];
 
             // rotate the children
-            target.children[@intFromBool(right)] = node;
-            node.children[@intFromBool(!right)] = adjacent;
+            target.children[@int_from_bool(right)] = node;
+            node.children[@int_from_bool(!right)] = adjacent;
 
             // rotate the parents
             node.parent = target;
@@ -252,7 +252,7 @@ pub fn Treap(comptime Key: type, comptime compareFn: anytype) type {
             if (adjacent) |adj| adj.parent = node;
 
             // fix the parent link
-            const link = if (parent) |p| &p.children[@intFromBool(p.children[1] == node)] else &self.root;
+            const link = if (parent) |p| &p.children[@int_from_bool(p.children[1] == node)] else &self.root;
             assert(link.* == node);
             link.* = target;
         }
@@ -362,15 +362,15 @@ test "insert, find, replace, remove" {
         const key = prng.random().int(u64);
 
         // make sure the current entry is empty.
-        var entry = treap.getEntryFor(key);
-        try testing.expectEqual(entry.key, key);
-        try testing.expectEqual(entry.node, null);
+        var entry = treap.get_entry_for(key);
+        try testing.expect_equal(entry.key, key);
+        try testing.expect_equal(entry.node, null);
 
         // insert the entry and make sure the fields are correct.
         entry.set(node);
-        try testing.expectEqual(node.key, key);
-        try testing.expectEqual(entry.key, key);
-        try testing.expectEqual(entry.node, node);
+        try testing.expect_equal(node.key, key);
+        try testing.expect_equal(entry.key, key);
+        try testing.expect_equal(entry.node, node);
     }
 
     // find check
@@ -379,15 +379,15 @@ test "insert, find, replace, remove" {
         const key = node.key;
 
         // find the entry by-key and by-node after having been inserted.
-        const entry = treap.getEntryFor(node.key);
-        try testing.expectEqual(entry.key, key);
-        try testing.expectEqual(entry.node, node);
-        try testing.expectEqual(entry.node, treap.getEntryForExisting(node).node);
+        const entry = treap.get_entry_for(node.key);
+        try testing.expect_equal(entry.key, key);
+        try testing.expect_equal(entry.node, node);
+        try testing.expect_equal(entry.node, treap.get_entry_for_existing(node).node);
     }
 
     // in-order iterator check
     {
-        var it = treap.inorderIterator();
+        var it = treap.inorder_iterator();
         var last_key: u64 = 0;
         while (it.next()) |node| {
             try std.testing.expect(node.key >= last_key);
@@ -401,23 +401,23 @@ test "insert, find, replace, remove" {
         const key = node.key;
 
         // find the entry by node since we already know it exists
-        var entry = treap.getEntryForExisting(node);
-        try testing.expectEqual(entry.key, key);
-        try testing.expectEqual(entry.node, node);
+        var entry = treap.get_entry_for_existing(node);
+        try testing.expect_equal(entry.key, key);
+        try testing.expect_equal(entry.node, node);
 
         var stub_node: TestNode = undefined;
 
         // replace the node with a stub_node and ensure future finds point to the stub_node.
         entry.set(&stub_node);
-        try testing.expectEqual(entry.node, &stub_node);
-        try testing.expectEqual(entry.node, treap.getEntryFor(key).node);
-        try testing.expectEqual(entry.node, treap.getEntryForExisting(&stub_node).node);
+        try testing.expect_equal(entry.node, &stub_node);
+        try testing.expect_equal(entry.node, treap.get_entry_for(key).node);
+        try testing.expect_equal(entry.node, treap.get_entry_for_existing(&stub_node).node);
 
         // replace the stub_node back to the node and ensure future finds point to the old node.
         entry.set(node);
-        try testing.expectEqual(entry.node, node);
-        try testing.expectEqual(entry.node, treap.getEntryFor(key).node);
-        try testing.expectEqual(entry.node, treap.getEntryForExisting(node).node);
+        try testing.expect_equal(entry.node, node);
+        try testing.expect_equal(entry.node, treap.get_entry_for(key).node);
+        try testing.expect_equal(entry.node, treap.get_entry_for_existing(node).node);
     }
 
     // remove check
@@ -426,24 +426,24 @@ test "insert, find, replace, remove" {
         const key = node.key;
 
         // find the entry by node since we already know it exists
-        var entry = treap.getEntryForExisting(node);
-        try testing.expectEqual(entry.key, key);
-        try testing.expectEqual(entry.node, node);
+        var entry = treap.get_entry_for_existing(node);
+        try testing.expect_equal(entry.key, key);
+        try testing.expect_equal(entry.node, node);
 
         // remove the node at the entry and ensure future finds point to it being removed.
         entry.set(null);
-        try testing.expectEqual(entry.node, null);
-        try testing.expectEqual(entry.node, treap.getEntryFor(key).node);
+        try testing.expect_equal(entry.node, null);
+        try testing.expect_equal(entry.node, treap.get_entry_for(key).node);
 
         // insert the node back and ensure future finds point to the inserted node
         entry.set(node);
-        try testing.expectEqual(entry.node, node);
-        try testing.expectEqual(entry.node, treap.getEntryFor(key).node);
-        try testing.expectEqual(entry.node, treap.getEntryForExisting(node).node);
+        try testing.expect_equal(entry.node, node);
+        try testing.expect_equal(entry.node, treap.get_entry_for(key).node);
+        try testing.expect_equal(entry.node, treap.get_entry_for_existing(node).node);
 
         // remove the node again and make sure it was cleared after the insert
         entry.set(null);
-        try testing.expectEqual(entry.node, null);
-        try testing.expectEqual(entry.node, treap.getEntryFor(key).node);
+        try testing.expect_equal(entry.node, null);
+        try testing.expect_equal(entry.node, treap.get_entry_for(key).node);
     }
 }

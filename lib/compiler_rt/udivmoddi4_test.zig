@@ -8,8 +8,8 @@ const __aeabi_uldivmod = @import("arm.zig").__aeabi_uldivmod;
 fn test__udivmoddi4(a: u64, b: u64, expected_q: u64, expected_r: u64) !void {
     var r: u64 = undefined;
     const q = __udivmoddi4(a, b, &r);
-    try testing.expectEqual(expected_q, q);
-    try testing.expectEqual(expected_r, r);
+    try testing.expect_equal(expected_q, q);
+    try testing.expect_equal(expected_r, r);
 }
 
 test "udivmoddi4" {
@@ -24,14 +24,14 @@ const ARMRes = extern struct {
 };
 
 fn test__aeabi_uldivmod(a: u64, b: u64, expected_q: u64, expected_r: u64) !void {
-    const actualUldivmod = @as(*const fn (a: u64, b: u64) callconv(.AAPCS) ARMRes, @ptrCast(&__aeabi_uldivmod));
+    const actualUldivmod = @as(*const fn (a: u64, b: u64) callconv(.AAPCS) ARMRes, @ptr_cast(&__aeabi_uldivmod));
     const arm_res = actualUldivmod(a, b);
-    try testing.expectEqual(expected_q, arm_res.q);
-    try testing.expectEqual(expected_r, arm_res.r);
+    try testing.expect_equal(expected_q, arm_res.q);
+    try testing.expect_equal(expected_r, arm_res.r);
 }
 
 test "arm.__aeabi_uldivmod" {
-    if (!builtin.cpu.arch.isARM()) return error.SkipZigTest;
+    if (!builtin.cpu.arch.is_arm()) return error.SkipZigTest;
 
     for (cases) |case| {
         try test__aeabi_uldivmod(case[0], case[1], case[2], case[3]);

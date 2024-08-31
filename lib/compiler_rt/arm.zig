@@ -9,7 +9,7 @@ pub const panic = common.panic;
 
 comptime {
     if (!builtin.is_test) {
-        if (arch.isArmOrThumb()) {
+        if (arch.is_arm_or_thumb()) {
             @export(__aeabi_unwind_cpp_pr0, .{ .name = "__aeabi_unwind_cpp_pr0", .linkage = common.linkage, .visibility = common.visibility });
             @export(__aeabi_unwind_cpp_pr1, .{ .name = "__aeabi_unwind_cpp_pr1", .linkage = common.linkage, .visibility = common.visibility });
             @export(__aeabi_unwind_cpp_pr2, .{ .name = "__aeabi_unwind_cpp_pr2", .linkage = common.linkage, .visibility = common.visibility });
@@ -195,19 +195,19 @@ pub fn __aeabi_ldivmod() callconv(.Naked) void {
 // Float Arithmetic
 
 fn __aeabi_frsub(a: f32, b: f32) callconv(.AAPCS) f32 {
-    const neg_a: f32 = @bitCast(@as(u32, @bitCast(a)) ^ (@as(u32, 1) << 31));
+    const neg_a: f32 = @bit_cast(@as(u32, @bit_cast(a)) ^ (@as(u32, 1) << 31));
     return b + neg_a;
 }
 
 fn __aeabi_drsub(a: f64, b: f64) callconv(.AAPCS) f64 {
-    const neg_a: f64 = @bitCast(@as(u64, @bitCast(a)) ^ (@as(u64, 1) << 63));
+    const neg_a: f64 = @bit_cast(@as(u64, @bit_cast(a)) ^ (@as(u64, 1) << 63));
     return b + neg_a;
 }
 
 test "__aeabi_frsub" {
-    if (!builtin.cpu.arch.isARM()) return error.SkipZigTest;
+    if (!builtin.cpu.arch.is_arm()) return error.SkipZigTest;
     const inf32 = std.math.inf(f32);
-    const maxf32 = std.math.floatMax(f32);
+    const maxf32 = std.math.float_max(f32);
     const frsub_data = [_][3]f32{
         [_]f32{ 0.0, 0.0, -0.0 },
         [_]f32{ 0.0, -0.0, -0.0 },
@@ -225,16 +225,16 @@ test "__aeabi_frsub" {
         [_]f32{ maxf32, -maxf32, -inf32 },
         [_]f32{ -maxf32, maxf32, inf32 },
     };
-    if (!builtin.cpu.arch.isARM()) return error.SkipZigTest;
+    if (!builtin.cpu.arch.is_arm()) return error.SkipZigTest;
     for (frsub_data) |data| {
-        try std.testing.expectApproxEqAbs(data[2], __aeabi_frsub(data[0], data[1]), 0.001);
+        try std.testing.expect_approx_eq_abs(data[2], __aeabi_frsub(data[0], data[1]), 0.001);
     }
 }
 
 test "__aeabi_drsub" {
-    if (!builtin.cpu.arch.isARM()) return error.SkipZigTest;
+    if (!builtin.cpu.arch.is_arm()) return error.SkipZigTest;
     const inf64 = std.math.inf(f64);
-    const maxf64 = std.math.floatMax(f64);
+    const maxf64 = std.math.float_max(f64);
     const frsub_data = [_][3]f64{
         [_]f64{ 0.0, 0.0, -0.0 },
         [_]f64{ 0.0, -0.0, -0.0 },
@@ -252,8 +252,8 @@ test "__aeabi_drsub" {
         [_]f64{ maxf64, -maxf64, -inf64 },
         [_]f64{ -maxf64, maxf64, inf64 },
     };
-    if (!builtin.cpu.arch.isARM()) return error.SkipZigTest;
+    if (!builtin.cpu.arch.is_arm()) return error.SkipZigTest;
     for (frsub_data) |data| {
-        try std.testing.expectApproxEqAbs(data[2], __aeabi_drsub(data[0], data[1]), 0.000001);
+        try std.testing.expect_approx_eq_abs(data[2], __aeabi_drsub(data[0], data[1]), 0.000001);
     }
 }

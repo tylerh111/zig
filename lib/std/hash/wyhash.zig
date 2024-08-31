@@ -67,10 +67,10 @@ pub const Wyhash = struct {
 
     pub fn final(self: *Wyhash) u64 {
         var input: []const u8 = self.buf[0..self.buf_len];
-        var newSelf = self.shallowCopy(); // ensure idempotency
+        var newSelf = self.shallow_copy(); // ensure idempotency
 
         if (self.total_len <= 16) {
-            newSelf.smallKey(input);
+            newSelf.small_key(input);
         } else {
             var offset: usize = 0;
             if (self.buf_len < 16) {
@@ -131,7 +131,7 @@ pub const Wyhash = struct {
     inline fn read(comptime bytes: usize, data: []const u8) u64 {
         std.debug.assert(bytes <= 8);
         const T = std.meta.Int(.unsigned, 8 * bytes);
-        return @as(u64, std.mem.readInt(T, data[0..bytes], .little));
+        return @as(u64, std.mem.read_int(T, data[0..bytes], .little));
     }
 
     inline fn mum(a: *u64, b: *u64) void {
@@ -151,7 +151,7 @@ pub const Wyhash = struct {
         self.state[0] ^= self.state[1] ^ self.state[2];
     }
 
-    // input_lb must be at least 16-bytes long (in shorter key cases the smallKey function will be
+    // input_lb must be at least 16-bytes long (in shorter key cases the small_key function will be
     // used instead). We use an index into a slice to for comptime processing as opposed to if we
     // used pointers.
     inline fn final1(self: *Wyhash, input_lb: []const u8, start_pos: usize) void {
@@ -179,7 +179,7 @@ pub const Wyhash = struct {
         var self = Wyhash.init(seed);
 
         if (input.len <= 16) {
-            self.smallKey(input);
+            self.small_key(input);
         } else {
             var i: usize = 0;
             if (input.len >= 48) {
@@ -197,7 +197,7 @@ pub const Wyhash = struct {
 };
 
 const verify = @import("verify.zig");
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 
 const TestVector = struct {
     expected: u64,
@@ -218,14 +218,14 @@ const vectors = [_]TestVector{
 
 test "test vectors" {
     for (vectors) |e| {
-        try expectEqual(e.expected, Wyhash.hash(e.seed, e.input));
+        try expect_equal(e.expected, Wyhash.hash(e.seed, e.input));
     }
 }
 
 test "test vectors at comptime" {
     comptime {
         for (vectors) |e| {
-            try expectEqual(e.expected, Wyhash.hash(e.seed, e.input));
+            try expect_equal(e.expected, Wyhash.hash(e.seed, e.input));
         }
     }
 }
@@ -233,7 +233,7 @@ test "test vectors at comptime" {
 test "smhasher" {
     const Test = struct {
         fn do() !void {
-            try expectEqual(verify.smhasher(Wyhash.hash), 0xBD5E840C);
+            try expect_equal(verify.smhasher(Wyhash.hash), 0xBD5E840C);
         }
     };
     try Test.do();
@@ -244,7 +244,7 @@ test "smhasher" {
 test "iterative api" {
     const Test = struct {
         fn do() !void {
-            try verify.iterativeApi(Wyhash);
+            try verify.iterative_api(Wyhash);
         }
     };
     try Test.do();
@@ -264,6 +264,6 @@ test "iterative maintains last sixteen" {
         wh.update(payload);
         const iterative_hash = wh.final();
 
-        try expectEqual(non_iterative_hash, iterative_hash);
+        try expect_equal(non_iterative_hash, iterative_hash);
     }
 }

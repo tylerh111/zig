@@ -14,7 +14,7 @@ fn u32_tou64(x: u32) u64 {
 }
 
 pub export fn entry() void {
-    Observable(u32).map(u32, u64, u32Tou64(0));
+    Observable(u32).map(u32, u64, u32_tou64(0));
 }
 
 // error

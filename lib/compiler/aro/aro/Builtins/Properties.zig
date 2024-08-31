@@ -6,7 +6,7 @@ param_str: []const u8,
 language: Language = .all_languages,
 attributes: Attributes = Attributes{},
 header: Header = .none,
-target_set: TargetSet = TargetSet.initOne(.basic),
+target_set: TargetSet = TargetSet.init_one(.basic),
 
 /// Header which must be included for a builtin to be available
 pub const Header = enum {

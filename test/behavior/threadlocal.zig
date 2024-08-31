@@ -38,7 +38,7 @@ test "pointer to thread local array" {
 
     const s = "Hello world";
     @memcpy(buffer[0..s.len], s);
-    try std.testing.expectEqualSlices(u8, buffer[0..], s);
+    try std.testing.expect_equal_slices(u8, buffer[0..], s);
 }
 
 threadlocal var buffer: [11]u8 = undefined;

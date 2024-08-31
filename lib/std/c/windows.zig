@@ -41,14 +41,14 @@ pub const timeval = extern struct {
     tv_usec: c_long,
 };
 
-pub const Stat = @compileError("TODO windows Stat definition");
+pub const Stat = @compile_error("TODO windows Stat definition");
 
 pub const sig_atomic_t = c_int;
 
-pub const sigset_t = @compileError("TODO windows sigset_t definition");
-pub const Sigaction = @compileError("TODO windows Sigaction definition");
-pub const timezone = @compileError("TODO windows timezone definition");
-pub const rusage = @compileError("TODO windows rusage definition");
+pub const sigset_t = @compile_error("TODO windows sigset_t definition");
+pub const Sigaction = @compile_error("TODO windows Sigaction definition");
+pub const timezone = @compile_error("TODO windows timezone definition");
+pub const rusage = @compile_error("TODO windows rusage definition");
 
 /// maximum signal number + 1
 pub const NSIG = 23;

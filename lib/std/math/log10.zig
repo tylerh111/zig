@@ -20,10 +20,10 @@ pub fn log10(x: anytype) @TypeOf(x) {
             return @as(comptime_int, @floor(@log10(@as(f64, x))));
         },
         .Int => |IntType| switch (IntType.signedness) {
-            .signed => @compileError("log10 not implemented for signed integers"),
+            .signed => @compile_error("log10 not implemented for signed integers"),
             .unsigned => return log10_int(x),
         },
-        else => @compileError("log10 not implemented for " ++ @typeName(T)),
+        else => @compile_error("log10 not implemented for " ++ @type_name(T)),
     }
 }
 
@@ -38,16 +38,16 @@ pub fn log10_int(x: anytype) std.math.Log2Int(@TypeOf(x)) {
     const T = @TypeOf(x);
     const OutT = std.math.Log2Int(T);
     if (@typeInfo(T) != .Int or @typeInfo(T).Int.signedness != .unsigned)
-        @compileError("log10_int requires an unsigned integer, found " ++ @typeName(T));
+        @compile_error("log10_int requires an unsigned integer, found " ++ @type_name(T));
 
     std.debug.assert(x != 0);
 
     const bit_size = @typeInfo(T).Int.bits;
 
     if (bit_size <= 8) {
-        return @as(OutT, @intCast(log10_int_u8(x)));
+        return @as(OutT, @int_cast(log10_int_u8(x)));
     } else if (bit_size <= 16) {
-        return @as(OutT, @intCast(less_than_5(x)));
+        return @as(OutT, @int_cast(less_than_5(x)));
     }
 
     var val = x;
@@ -67,7 +67,7 @@ pub fn log10_int(x: anytype) std.math.Log2Int(@TypeOf(x)) {
         log += 5;
     }
 
-    return @as(OutT, @intCast(log + less_than_5(@as(u32, @intCast(val)))));
+    return @as(OutT, @int_cast(log + less_than_5(@as(u32, @int_cast(val)))));
 }
 
 fn pow10(comptime y: comptime_int) comptime_int {
@@ -135,24 +135,24 @@ test log10_int {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
-    if (builtin.zig_backend == .stage2_llvm and comptime builtin.target.isWasm()) return error.SkipZigTest; // TODO
+    if (builtin.zig_backend == .stage2_llvm and comptime builtin.target.is_wasm()) return error.SkipZigTest; // TODO
 
     inline for (
         .{ u8, u16, u32, u64, u128, u256, u512 },
         .{ 2, 4, 9, 19, 38, 77, 154 },
     ) |T, max_exponent| {
         for (0..max_exponent + 1) |exponent_usize| {
-            const exponent: std.math.Log2Int(T) = @intCast(exponent_usize);
+            const exponent: std.math.Log2Int(T) = @int_cast(exponent_usize);
             const power_of_ten = try std.math.powi(T, 10, exponent);
 
             if (exponent > 0) {
-                try testing.expectEqual(exponent - 1, log10_int(power_of_ten - 9));
-                try testing.expectEqual(exponent - 1, log10_int(power_of_ten - 1));
+                try testing.expect_equal(exponent - 1, log10_int(power_of_ten - 9));
+                try testing.expect_equal(exponent - 1, log10_int(power_of_ten - 1));
             }
-            try testing.expectEqual(exponent, log10_int(power_of_ten));
-            try testing.expectEqual(exponent, log10_int(power_of_ten + 1));
-            try testing.expectEqual(exponent, log10_int(power_of_ten + 8));
+            try testing.expect_equal(exponent, log10_int(power_of_ten));
+            try testing.expect_equal(exponent, log10_int(power_of_ten + 1));
+            try testing.expect_equal(exponent, log10_int(power_of_ten + 8));
         }
-        try testing.expectEqual(max_exponent, log10_int(@as(T, std.math.maxInt(T))));
+        try testing.expect_equal(max_exponent, log10_int(@as(T, std.math.max_int(T))));
     }
 }

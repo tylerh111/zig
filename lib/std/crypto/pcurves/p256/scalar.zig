@@ -29,47 +29,47 @@ pub const field_order = Fe.field_order;
 
 /// Reject a scalar whose encoding is not canonical.
 pub fn reject_non_canonical(s: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!void {
-    return Fe.rejectNonCanonical(s, endian);
+    return Fe.reject_non_canonical(s, endian);
 }
 
 /// Reduce a 48-bytes scalar to the field size.
 pub fn reduce48(s: [48]u8, endian: std.builtin.Endian) CompressedScalar {
-    return Scalar.fromBytes48(s, endian).toBytes(endian);
+    return Scalar.from_bytes48(s, endian).to_bytes(endian);
 }
 
 /// Reduce a 64-bytes scalar to the field size.
 pub fn reduce64(s: [64]u8, endian: std.builtin.Endian) CompressedScalar {
-    return Scalar.fromBytes64(s, endian).toBytes(endian);
+    return Scalar.from_bytes64(s, endian).to_bytes(endian);
 }
 
 /// Return a*b (mod L)
 pub fn mul(a: CompressedScalar, b: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!CompressedScalar {
-    return (try Scalar.fromBytes(a, endian)).mul(try Scalar.fromBytes(b, endian)).toBytes(endian);
+    return (try Scalar.from_bytes(a, endian)).mul(try Scalar.from_bytes(b, endian)).to_bytes(endian);
 }
 
 /// Return a*b+c (mod L)
 pub fn mul_add(a: CompressedScalar, b: CompressedScalar, c: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!CompressedScalar {
-    return (try Scalar.fromBytes(a, endian)).mul(try Scalar.fromBytes(b, endian)).add(try Scalar.fromBytes(c, endian)).toBytes(endian);
+    return (try Scalar.from_bytes(a, endian)).mul(try Scalar.from_bytes(b, endian)).add(try Scalar.from_bytes(c, endian)).to_bytes(endian);
 }
 
 /// Return a+b (mod L)
 pub fn add(a: CompressedScalar, b: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!CompressedScalar {
-    return (try Scalar.fromBytes(a, endian)).add(try Scalar.fromBytes(b, endian)).toBytes(endian);
+    return (try Scalar.from_bytes(a, endian)).add(try Scalar.from_bytes(b, endian)).to_bytes(endian);
 }
 
 /// Return -s (mod L)
 pub fn neg(s: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!CompressedScalar {
-    return (try Scalar.fromBytes(s, endian)).neg().toBytes(endian);
+    return (try Scalar.from_bytes(s, endian)).neg().to_bytes(endian);
 }
 
 /// Return (a-b) (mod L)
 pub fn sub(a: CompressedScalar, b: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!CompressedScalar {
-    return (try Scalar.fromBytes(a, endian)).sub(try Scalar.fromBytes(b, endian)).toBytes(endian);
+    return (try Scalar.from_bytes(a, endian)).sub(try Scalar.from_bytes(b, endian)).to_bytes(endian);
 }
 
 /// Return a random scalar
 pub fn random(endian: std.builtin.Endian) CompressedScalar {
-    return Scalar.random().toBytes(endian);
+    return Scalar.random().to_bytes(endian);
 }
 
 /// A scalar in unpacked representation.
@@ -84,34 +84,34 @@ pub const Scalar = struct {
 
     /// Unpack a serialized representation of a scalar.
     pub fn from_bytes(s: CompressedScalar, endian: std.builtin.Endian) NonCanonicalError!Scalar {
-        return Scalar{ .fe = try Fe.fromBytes(s, endian) };
+        return Scalar{ .fe = try Fe.from_bytes(s, endian) };
     }
 
     /// Reduce a 384 bit input to the field size.
     pub fn from_bytes48(s: [48]u8, endian: std.builtin.Endian) Scalar {
-        const t = ScalarDouble.fromBytes(384, s, endian);
+        const t = ScalarDouble.from_bytes(384, s, endian);
         return t.reduce(384);
     }
 
     /// Reduce a 512 bit input to the field size.
     pub fn from_bytes64(s: [64]u8, endian: std.builtin.Endian) Scalar {
-        const t = ScalarDouble.fromBytes(512, s, endian);
+        const t = ScalarDouble.from_bytes(512, s, endian);
         return t.reduce(512);
     }
 
     /// Pack a scalar into bytes.
     pub fn to_bytes(n: Scalar, endian: std.builtin.Endian) CompressedScalar {
-        return n.fe.toBytes(endian);
+        return n.fe.to_bytes(endian);
     }
 
     /// Return true if the scalar is zero..
     pub fn is_zero(n: Scalar) bool {
-        return n.fe.isZero();
+        return n.fe.is_zero();
     }
 
     /// Return true if the scalar is odd.
     pub fn is_odd(n: Scalar) bool {
-        return n.fe.isOdd();
+        return n.fe.is_odd();
     }
 
     /// Return true if a and b are equivalent.
@@ -161,7 +161,7 @@ pub const Scalar = struct {
 
     /// Return true if n is a quadratic residue mod L.
     pub fn is_square(n: Scalar) bool {
-        return n.fe.isSquare();
+        return n.fe.is_square();
     }
 
     /// Return the square root of L, or NotSquare if there isn't any solutions.
@@ -174,8 +174,8 @@ pub const Scalar = struct {
         var s: [48]u8 = undefined;
         while (true) {
             crypto.random.bytes(&s);
-            const n = Scalar.fromBytes48(s, .little);
-            if (!n.isZero()) {
+            const n = Scalar.from_bytes48(s, .little);
+            if (!n.is_zero()) {
                 return n;
             }
         }
@@ -199,19 +199,19 @@ const ScalarDouble = struct {
             var b = [_]u8{0} ** encoded_length;
             const len = @min(s.len, 24);
             b[0..len].* = s[0..len].*;
-            t.x1 = Fe.fromBytes(b, .little) catch unreachable;
+            t.x1 = Fe.from_bytes(b, .little) catch unreachable;
         }
         if (s_.len >= 24) {
             var b = [_]u8{0} ** encoded_length;
             const len = @min(s.len - 24, 24);
             b[0..len].* = s[24..][0..len].*;
-            t.x2 = Fe.fromBytes(b, .little) catch unreachable;
+            t.x2 = Fe.from_bytes(b, .little) catch unreachable;
         }
         if (s_.len >= 48) {
             var b = [_]u8{0} ** encoded_length;
             const len = s.len - 48;
             b[0..len].* = s[48..][0..len].*;
-            t.x3 = Fe.fromBytes(b, .little) catch unreachable;
+            t.x3 = Fe.from_bytes(b, .little) catch unreachable;
         }
         return t;
     }
@@ -220,7 +220,7 @@ const ScalarDouble = struct {
         debug.assert(bits > 0 and bits <= Fe.saturated_bits * 3 and bits <= 512);
         var fe = expanded.x1;
         if (bits >= 192) {
-            const st1 = Fe.fromInt(1 << 192) catch unreachable;
+            const st1 = Fe.from_int(1 << 192) catch unreachable;
             fe = fe.add(expanded.x2.mul(st1));
             if (bits >= 384) {
                 const st2 = st1.sq();

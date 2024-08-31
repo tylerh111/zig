@@ -11,21 +11,21 @@ pub fn build(b: *std.Build) void {
 }
 
 fn add(b: *std.Build, test_step: *std.Build.Step, optimize: std.builtin.OptimizeMode) void {
-    const lib_a = b.addStaticLibrary(.{
+    const lib_a = b.add_static_library(.{
         .name = "a",
         .optimize = optimize,
         .target = b.host,
     });
-    lib_a.addCSourceFiles(.{
+    lib_a.add_csource_files(.{
         .files = &.{ "c.c", "a.c", "b.c" },
         .flags = &.{"-fcommon"},
     });
 
-    const test_exe = b.addTest(.{
+    const test_exe = b.add_test(.{
         .root_source_file = b.path("main.zig"),
         .optimize = optimize,
     });
-    test_exe.linkLibrary(lib_a);
+    test_exe.link_library(lib_a);
 
-    test_step.dependOn(&b.addRunArtifact(test_exe).step);
+    test_step.depend_on(&b.add_run_artifact(test_exe).step);
 }

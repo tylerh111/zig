@@ -75,7 +75,7 @@ pub const Ed25519 = struct {
 
         fn init(scalar: CompressedScalar, nonce: CompressedScalar, public_key: PublicKey) (IdentityElementError || KeyMismatchError || NonCanonicalError || WeakPublicKeyError)!Signer {
             const r = try Curve.basePoint.mul(nonce);
-            const r_bytes = r.toBytes();
+            const r_bytes = r.to_bytes();
 
             var t: [64]u8 = undefined;
             t[0..32].* = r_bytes;
@@ -97,7 +97,7 @@ pub const Ed25519 = struct {
             self.h.final(&hram64);
             const hram = Curve.scalar.reduce64(hram64);
 
-            const s = Curve.scalar.mulAdd(hram, self.scalar, self.nonce);
+            const s = Curve.scalar.mul_add(hram, self.scalar, self.nonce);
 
             return Signature{ .r = self.r_bytes, .s = s };
         }
@@ -112,7 +112,7 @@ pub const Ed25519 = struct {
 
         /// Create a public key from raw bytes.
         pub fn from_bytes(bytes: [encoded_length]u8) NonCanonicalError!PublicKey {
-            try Curve.rejectNonCanonical(bytes);
+            try Curve.reject_non_canonical(bytes);
             return PublicKey{ .bytes = bytes };
         }
 
@@ -139,7 +139,7 @@ pub const Ed25519 = struct {
 
             const nonce = Curve.scalar.reduce64(nonce64);
 
-            return public_key.signWithNonce(msg, scalar, nonce);
+            return public_key.sign_with_nonce(msg, scalar, nonce);
         }
     };
 
@@ -154,12 +154,12 @@ pub const Ed25519 = struct {
         fn init(sig: Signature, public_key: PublicKey) (NonCanonicalError || EncodingError || IdentityElementError)!Verifier {
             const r = sig.r;
             const s = sig.s;
-            try Curve.scalar.rejectNonCanonical(s);
-            const a = try Curve.fromBytes(public_key.bytes);
-            try a.rejectIdentity();
-            try Curve.rejectNonCanonical(r);
-            const expected_r = try Curve.fromBytes(r);
-            try expected_r.rejectIdentity();
+            try Curve.scalar.reject_non_canonical(s);
+            const a = try Curve.from_bytes(public_key.bytes);
+            try a.reject_identity();
+            try Curve.reject_non_canonical(r);
+            const expected_r = try Curve.from_bytes(r);
+            try expected_r.reject_identity();
 
             var h = Sha512.init(.{});
             h.update(&r);
@@ -179,8 +179,8 @@ pub const Ed25519 = struct {
             self.h.final(&hram64);
             const hram = Curve.scalar.reduce64(hram64);
 
-            const sb_ah = try Curve.basePoint.mulDoubleBasePublic(self.s, self.a.neg(), hram);
-            if (self.expected_r.sub(sb_ah).rejectLowOrder()) {
+            const sb_ah = try Curve.basePoint.mul_double_base_public(self.s, self.a.neg(), hram);
+            if (self.expected_r.sub(sb_ah).reject_low_order()) {
                 return error.SignatureVerificationFailed;
             } else |_| {}
         }
@@ -189,7 +189,7 @@ pub const Ed25519 = struct {
     /// An Ed25519 signature.
     pub const Signature = struct {
         /// Length (in bytes) of a raw signature.
-        pub const encoded_length = Curve.encoded_length + @sizeOf(CompressedScalar);
+        pub const encoded_length = Curve.encoded_length + @size_of(CompressedScalar);
 
         /// The R component of an EdDSA signature.
         r: [Curve.encoded_length]u8,
@@ -256,14 +256,14 @@ pub const Ed25519 = struct {
             var h = Sha512.init(.{});
             h.update(&ss);
             h.final(&az);
-            const pk_p = Curve.basePoint.clampedMul(az[0..32].*) catch return error.IdentityElement;
-            const pk_bytes = pk_p.toBytes();
+            const pk_p = Curve.basePoint.clamped_mul(az[0..32].*) catch return error.IdentityElement;
+            const pk_bytes = pk_p.to_bytes();
             var sk_bytes: [SecretKey.encoded_length]u8 = undefined;
             sk_bytes[0..ss.len].* = ss;
             sk_bytes[seed_length..].* = pk_bytes;
             return KeyPair{
-                .public_key = PublicKey.fromBytes(pk_bytes) catch unreachable,
-                .secret_key = try SecretKey.fromBytes(sk_bytes),
+                .public_key = PublicKey.from_bytes(pk_bytes) catch unreachable,
+                .secret_key = try SecretKey.from_bytes(sk_bytes),
             };
         }
 
@@ -277,12 +277,12 @@ pub const Ed25519 = struct {
             // In order to enforce this, a SecretKey implicitly includes a copy of the public key.
             // With runtime safety, we can still afford checking that the public key is correct.
             if (std.debug.runtime_safety) {
-                const pk_p = try Curve.fromBytes(secret_key.publicKeyBytes());
+                const pk_p = try Curve.from_bytes(secret_key.public_key_bytes());
                 const recomputed_kp = try create(secret_key.seed());
-                debug.assert(mem.eql(u8, &recomputed_kp.public_key.toBytes(), &pk_p.toBytes()));
+                debug.assert(mem.eql(u8, &recomputed_kp.public_key.to_bytes(), &pk_p.to_bytes()));
             }
             return KeyPair{
-                .public_key = try PublicKey.fromBytes(secret_key.publicKeyBytes()),
+                .public_key = try PublicKey.from_bytes(secret_key.public_key_bytes()),
                 .secret_key = secret_key,
             };
         }
@@ -292,11 +292,11 @@ pub const Ed25519 = struct {
         /// If deterministic signatures are not required, the noise should be randomly generated instead.
         /// This helps defend against fault attacks.
         pub fn sign(key_pair: KeyPair, msg: []const u8, noise: ?[noise_length]u8) (IdentityElementError || NonCanonicalError || KeyMismatchError || WeakPublicKeyError)!Signature {
-            if (!mem.eql(u8, &key_pair.secret_key.publicKeyBytes(), &key_pair.public_key.toBytes())) {
+            if (!mem.eql(u8, &key_pair.secret_key.public_key_bytes(), &key_pair.public_key.to_bytes())) {
                 return error.KeyMismatch;
             }
-            const scalar_and_prefix = key_pair.secret_key.scalarAndPrefix();
-            return key_pair.public_key.computeNonceAndSign(
+            const scalar_and_prefix = key_pair.secret_key.scalar_and_prefix();
+            return key_pair.public_key.compute_nonce_and_sign(
                 msg,
                 noise,
                 scalar_and_prefix.scalar,
@@ -309,10 +309,10 @@ pub const Ed25519 = struct {
         /// The noise parameter, if set, should be something unique for each message,
         /// such as a random nonce, or a counter.
         pub fn signer(key_pair: KeyPair, noise: ?[noise_length]u8) (IdentityElementError || KeyMismatchError || NonCanonicalError || WeakPublicKeyError)!Signer {
-            if (!mem.eql(u8, &key_pair.secret_key.publicKeyBytes(), &key_pair.public_key.toBytes())) {
+            if (!mem.eql(u8, &key_pair.secret_key.public_key_bytes(), &key_pair.public_key.to_bytes())) {
                 return error.KeyMismatch;
             }
-            const scalar_and_prefix = key_pair.secret_key.scalarAndPrefix();
+            const scalar_and_prefix = key_pair.secret_key.scalar_and_prefix();
             var h = Sha512.init(.{});
             h.update(&scalar_and_prefix.prefix);
             var noise2: [noise_length]u8 = undefined;
@@ -346,12 +346,12 @@ pub const Ed25519 = struct {
         for (signature_batch, 0..) |signature, i| {
             const r = signature.sig.r;
             const s = signature.sig.s;
-            try Curve.scalar.rejectNonCanonical(s);
-            const a = try Curve.fromBytes(signature.public_key.bytes);
-            try a.rejectIdentity();
-            try Curve.rejectNonCanonical(r);
-            const expected_r = try Curve.fromBytes(r);
-            try expected_r.rejectIdentity();
+            try Curve.scalar.reject_non_canonical(s);
+            const a = try Curve.from_bytes(signature.public_key.bytes);
+            try a.reject_identity();
+            try Curve.reject_non_canonical(r);
+            const expected_r = try Curve.from_bytes(r);
+            try expected_r.reject_identity();
             expected_r_batch[i] = expected_r;
             r_batch[i] = r;
             s_batch[i] = s;
@@ -387,11 +387,11 @@ pub const Ed25519 = struct {
             zhs[i] = Curve.scalar.mul(z, hram_batch[i]);
         }
 
-        const zr = (try Curve.mulMulti(count, expected_r_batch, z_batch)).clearCofactor();
-        const zah = (try Curve.mulMulti(count, a_batch, zhs)).clearCofactor();
+        const zr = (try Curve.mul_multi(count, expected_r_batch, z_batch)).clear_cofactor();
+        const zah = (try Curve.mul_multi(count, a_batch, zhs)).clear_cofactor();
 
-        const zsb = try Curve.basePoint.mulPublic(zs_sum);
-        if (zr.add(zah).sub(zsb).rejectIdentity()) |_| {
+        const zsb = try Curve.basePoint.mul_public(zs_sum);
+        if (zr.add(zah).sub(zsb).reject_identity()) |_| {
             return error.SignatureVerificationFailed;
         } else |_| {}
     }
@@ -415,10 +415,10 @@ pub const Ed25519 = struct {
 
             /// Recover a public key from a blind version of it.
             pub fn unblind(blind_public_key: BlindPublicKey, blind_seed: [blind_seed_length]u8, ctx: []const u8) (IdentityElementError || NonCanonicalError || EncodingError || WeakPublicKeyError)!PublicKey {
-                const blind_h = blindCtx(blind_seed, ctx);
-                const inv_blind_factor = Scalar.fromBytes(blind_h[0..32].*).invert().toBytes();
-                const pk_p = try (try Curve.fromBytes(blind_public_key.key.bytes)).mul(inv_blind_factor);
-                return PublicKey.fromBytes(pk_p.toBytes());
+                const blind_h = blind_ctx(blind_seed, ctx);
+                const inv_blind_factor = Scalar.from_bytes(blind_h[0..32].*).invert().to_bytes();
+                const pk_p = try (try Curve.from_bytes(blind_public_key.key.bytes)).mul(inv_blind_factor);
+                return PublicKey.from_bytes(pk_p.to_bytes());
             }
         };
 
@@ -434,12 +434,12 @@ pub const Ed25519 = struct {
                 Curve.scalar.clamp(h[0..32]);
                 const scalar = Curve.scalar.reduce(h[0..32].*);
 
-                const blind_h = blindCtx(blind_seed, ctx);
+                const blind_h = blind_ctx(blind_seed, ctx);
                 const blind_factor = Curve.scalar.reduce(blind_h[0..32].*);
 
                 const blind_scalar = Curve.scalar.mul(scalar, blind_factor);
                 const blind_public_key = BlindPublicKey{
-                    .key = try PublicKey.fromBytes((Curve.basePoint.mul(blind_scalar) catch return error.IdentityElement).toBytes()),
+                    .key = try PublicKey.from_bytes((Curve.basePoint.mul(blind_scalar) catch return error.IdentityElement).to_bytes()),
                 };
 
                 var prefix: [64]u8 = undefined;
@@ -464,8 +464,8 @@ pub const Ed25519 = struct {
                 const scalar = key_pair.blind_secret_key.blind_scalar;
                 const prefix = key_pair.blind_secret_key.prefix;
 
-                return (try PublicKey.fromBytes(key_pair.blind_public_key.key.bytes))
-                    .computeNonceAndSign(msg, noise, scalar, &prefix);
+                return (try PublicKey.from_bytes(key_pair.blind_public_key.key.bytes))
+                    .compute_nonce_and_sign(msg, noise, scalar, &prefix);
             }
         };
 
@@ -484,23 +484,23 @@ pub const Ed25519 = struct {
 
 test "key pair creation" {
     var seed: [32]u8 = undefined;
-    _ = try fmt.hexToBytes(seed[0..], "8052030376d47112be7f73ed7a019293dd12ad910b654455798b4667d73de166");
+    _ = try fmt.hex_to_bytes(seed[0..], "8052030376d47112be7f73ed7a019293dd12ad910b654455798b4667d73de166");
     const key_pair = try Ed25519.KeyPair.create(seed);
     var buf: [256]u8 = undefined;
-    try std.testing.expectEqualStrings(try std.fmt.bufPrint(&buf, "{s}", .{std.fmt.fmtSliceHexUpper(&key_pair.secret_key.toBytes())}), "8052030376D47112BE7F73ED7A019293DD12AD910B654455798B4667D73DE1662D6F7455D97B4A3A10D7293909D1A4F2058CB9A370E43FA8154BB280DB839083");
-    try std.testing.expectEqualStrings(try std.fmt.bufPrint(&buf, "{s}", .{std.fmt.fmtSliceHexUpper(&key_pair.public_key.toBytes())}), "2D6F7455D97B4A3A10D7293909D1A4F2058CB9A370E43FA8154BB280DB839083");
+    try std.testing.expect_equal_strings(try std.fmt.buf_print(&buf, "{s}", .{std.fmt.fmt_slice_hex_upper(&key_pair.secret_key.to_bytes())}), "8052030376D47112BE7F73ED7A019293DD12AD910B654455798B4667D73DE1662D6F7455D97B4A3A10D7293909D1A4F2058CB9A370E43FA8154BB280DB839083");
+    try std.testing.expect_equal_strings(try std.fmt.buf_print(&buf, "{s}", .{std.fmt.fmt_slice_hex_upper(&key_pair.public_key.to_bytes())}), "2D6F7455D97B4A3A10D7293909D1A4F2058CB9A370E43FA8154BB280DB839083");
 }
 
 test "signature" {
     var seed: [32]u8 = undefined;
-    _ = try fmt.hexToBytes(seed[0..], "8052030376d47112be7f73ed7a019293dd12ad910b654455798b4667d73de166");
+    _ = try fmt.hex_to_bytes(seed[0..], "8052030376d47112be7f73ed7a019293dd12ad910b654455798b4667d73de166");
     const key_pair = try Ed25519.KeyPair.create(seed);
 
     const sig = try key_pair.sign("test", null);
     var buf: [128]u8 = undefined;
-    try std.testing.expectEqualStrings(try std.fmt.bufPrint(&buf, "{s}", .{std.fmt.fmtSliceHexUpper(&sig.toBytes())}), "10A442B4A80CC4225B154F43BEF28D2472CA80221951262EB8E0DF9091575E2687CC486E77263C3418C757522D54F84B0359236ABBBD4ACD20DC297FDCA66808");
+    try std.testing.expect_equal_strings(try std.fmt.buf_print(&buf, "{s}", .{std.fmt.fmt_slice_hex_upper(&sig.to_bytes())}), "10A442B4A80CC4225B154F43BEF28D2472CA80221951262EB8E0DF9091575E2687CC486E77263C3418C757522D54F84B0359236ABBBD4ACD20DC297FDCA66808");
     try sig.verify("test", key_pair.public_key);
-    try std.testing.expectError(error.SignatureVerificationFailed, sig.verify("TEST", key_pair.public_key));
+    try std.testing.expect_error(error.SignatureVerificationFailed, sig.verify("TEST", key_pair.public_key));
 }
 
 test "batch verification" {
@@ -525,10 +525,10 @@ test "batch verification" {
                 .public_key = key_pair.public_key,
             },
         };
-        try Ed25519.verifyBatch(2, signature_batch);
+        try Ed25519.verify_batch(2, signature_batch);
 
         signature_batch[1].sig = sig1;
-        try std.testing.expectError(error.SignatureVerificationFailed, Ed25519.verifyBatch(signature_batch.len, signature_batch));
+        try std.testing.expect_error(error.SignatureVerificationFailed, Ed25519.verify_batch(signature_batch.len, signature_batch));
     }
 }
 
@@ -616,18 +616,18 @@ test "test vectors" {
     };
     for (entries) |entry| {
         var msg: [64 / 2]u8 = undefined;
-        _ = try fmt.hexToBytes(&msg, entry.msg_hex);
+        _ = try fmt.hex_to_bytes(&msg, entry.msg_hex);
         var public_key_bytes: [32]u8 = undefined;
-        _ = try fmt.hexToBytes(&public_key_bytes, entry.public_key_hex);
-        const public_key = Ed25519.PublicKey.fromBytes(public_key_bytes) catch |err| {
-            try std.testing.expectEqual(entry.expected.?, err);
+        _ = try fmt.hex_to_bytes(&public_key_bytes, entry.public_key_hex);
+        const public_key = Ed25519.PublicKey.from_bytes(public_key_bytes) catch |err| {
+            try std.testing.expect_equal(entry.expected.?, err);
             continue;
         };
         var sig_bytes: [64]u8 = undefined;
-        _ = try fmt.hexToBytes(&sig_bytes, entry.sig_hex);
-        const sig = Ed25519.Signature.fromBytes(sig_bytes);
+        _ = try fmt.hex_to_bytes(&sig_bytes, entry.sig_hex);
+        const sig = Ed25519.Signature.from_bytes(sig_bytes);
         if (entry.expected) |error_type| {
-            try std.testing.expectError(error_type, sig.verify(&msg, public_key));
+            try std.testing.expect_error(error_type, sig.verify(&msg, public_key));
         } else {
             try sig.verify(&msg, public_key);
         }
@@ -654,7 +654,7 @@ test "with blind keys" {
 
     // Unblind the public key
     const pk = try blind_kp.blind_public_key.unblind(blind, "ctx");
-    try std.testing.expectEqualSlices(u8, &pk.toBytes(), &kp.public_key.toBytes());
+    try std.testing.expect_equal_slices(u8, &pk.to_bytes(), &kp.public_key.to_bytes());
 }
 
 test "signatures with streaming" {
@@ -675,7 +675,7 @@ test "signatures with streaming" {
 
 test "key pair from secret key" {
     const kp = try Ed25519.KeyPair.create(null);
-    const kp2 = try Ed25519.KeyPair.fromSecretKey(kp.secret_key);
-    try std.testing.expectEqualSlices(u8, &kp.secret_key.toBytes(), &kp2.secret_key.toBytes());
-    try std.testing.expectEqualSlices(u8, &kp.public_key.toBytes(), &kp2.public_key.toBytes());
+    const kp2 = try Ed25519.KeyPair.from_secret_key(kp.secret_key);
+    try std.testing.expect_equal_slices(u8, &kp.secret_key.to_bytes(), &kp2.secret_key.to_bytes());
+    try std.testing.expect_equal_slices(u8, &kp.public_key.to_bytes(), &kp2.public_key.to_bytes());
 }

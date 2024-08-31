@@ -1,5 +1,5 @@
 const expect = @import("std").testing.expect;
-const expectEqualSlices = @import("std").testing.expectEqualSlices;
+const expect_equal_slices = @import("std").testing.expect_equal_slices;
 
 test "basic slices" {
     var array = [_]i32{ 1, 2, 3, 4 };
@@ -10,7 +10,7 @@ test "basic slices" {
     // alternative initialization using result location
     const alt_slice: []const i32 = &.{ 1, 2, 3, 4 };
 
-    try expectEqualSlices(i32, slice, alt_slice);
+    try expect_equal_slices(i32, slice, alt_slice);
 
     try expect(@TypeOf(slice) == []i32);
     try expect(&slice[0] == &array[0]);
@@ -34,7 +34,7 @@ test "basic slices" {
     try expect(@TypeOf(&slice[0]) == *i32);
     // Using the `ptr` field gives a many-item pointer.
     try expect(@TypeOf(slice.ptr) == [*]i32);
-    try expect(@intFromPtr(slice.ptr) == @intFromPtr(&slice[0]));
+    try expect(@int_from_ptr(slice.ptr) == @int_from_ptr(&slice[0]));
 
     // Slices have array bounds checking. If you try to access something out
     // of bounds, you'll get a safety check failure:

@@ -49,8 +49,8 @@ pub const RegisterManager = RegisterManagerFn(@import("CodeGen.zig"), Register, 
 const RegisterBitSet = RegisterManager.RegisterBitSet;
 pub const RegisterClass = struct {
     pub const gp: RegisterBitSet = blk: {
-        var set = RegisterBitSet.initEmpty();
-        set.setRangeValue(.{
+        var set = RegisterBitSet.init_empty();
+        set.set_range_value(.{
             .start = 0,
             .end = allocatable_regs.len,
         }, true);

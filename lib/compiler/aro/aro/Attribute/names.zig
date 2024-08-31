@@ -16,30 +16,30 @@ pub const Tag = enum(u16) { _ };
 const Self = @This();
 
 pub fn from_name(name: []const u8) ?@This() {
-    const data_index = tagFromName(name) orelse return null;
-    return data[@intFromEnum(data_index)];
+    const data_index = tag_from_name(name) orelse return null;
+    return data[@int_from_enum(data_index)];
 }
 
 pub fn tag_from_name(name: []const u8) ?Tag {
-    const unique_index = uniqueIndex(name) orelse return null;
+    const unique_index = unique_index(name) orelse return null;
     return @enumFromInt(unique_index - 1);
 }
 
 pub fn from_tag(tag: Tag) @This() {
-    return data[@intFromEnum(tag)];
+    return data[@int_from_enum(tag)];
 }
 
 pub fn name_from_tag_into_buf(tag: Tag, name_buf: []u8) []u8 {
     std.debug.assert(name_buf.len >= longest_name);
-    const unique_index = @intFromEnum(tag) + 1;
-    return nameFromUniqueIndex(unique_index, name_buf);
+    const unique_index = @int_from_enum(tag) + 1;
+    return name_from_unique_index(unique_index, name_buf);
 }
 
 pub fn name_from_tag(tag: Tag) NameBuf {
     var name_buf: NameBuf = undefined;
-    const unique_index = @intFromEnum(tag) + 1;
-    const name = nameFromUniqueIndex(unique_index, &name_buf.buf);
-    name_buf.len = @intCast(name.len);
+    const unique_index = @int_from_enum(tag) + 1;
+    const name = name_from_unique_index(unique_index, &name_buf.buf);
+    name_buf.len = @int_cast(name.len);
     return name_buf;
 }
 
@@ -57,7 +57,7 @@ pub fn exists(name: []const u8) bool {
 
     var index: u16 = 0;
     for (name) |c| {
-        index = findInList(dafsa[index].child_index, c) orelse return false;
+        index = find_in_list(dafsa[index].child_index, c) orelse return false;
     }
     return dafsa[index].end_of_word;
 }
@@ -87,7 +87,7 @@ pub fn unique_index(name: []const u8) ?u16 {
     var node_index: u16 = 0;
 
     for (name) |c| {
-        const child_index = findInList(dafsa[node_index].child_index, c) orelse return null;
+        const child_index = find_in_list(dafsa[node_index].child_index, c) orelse return null;
         var sibling_index = dafsa[node_index].child_index;
         while (true) {
             const sibling_c = dafsa[sibling_index].char;
@@ -110,13 +110,13 @@ pub fn unique_index(name: []const u8) ?u16 {
 /// Returns a slice of `buf` with the name associated with the given `index`.
 /// This function should only be called with an `index` that
 /// is already known to exist within the `dafsa`, e.g. an index
-/// returned from `uniqueIndex`.
+/// returned from `unique_index`.
 pub fn name_from_unique_index(index: u16, buf: []u8) []u8 {
     std.debug.assert(index >= 1 and index <= data.len);
 
     var node_index: u16 = 0;
     var count: u16 = index;
-    var fbs = std.io.fixedBufferStream(buf);
+    var fbs = std.io.fixed_buffer_stream(buf);
     const w = fbs.writer();
 
     while (true) {
@@ -125,7 +125,7 @@ pub fn name_from_unique_index(index: u16, buf: []u8) []u8 {
             if (dafsa[sibling_index].number > 0 and dafsa[sibling_index].number < count) {
                 count -= dafsa[sibling_index].number;
             } else {
-                w.writeByte(dafsa[sibling_index].char) catch unreachable;
+                w.write_byte(dafsa[sibling_index].char) catch unreachable;
                 node_index = sibling_index;
                 if (dafsa[node_index].end_of_word) {
                     count -= 1;
@@ -139,7 +139,7 @@ pub fn name_from_unique_index(index: u16, buf: []u8) []u8 {
         if (count == 0) break;
     }
 
-    return fbs.getWritten();
+    return fbs.get_written();
 }
 
 const Node = packed struct(u32) {

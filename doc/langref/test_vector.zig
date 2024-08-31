@@ -1,5 +1,5 @@
 const std = @import("std");
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 
 test "Basic vector usage" {
     // Vectors have a compile-time known length and base type.
@@ -10,10 +10,10 @@ test "Basic vector usage" {
     const c = a + b;
 
     // Individual vector elements can be accessed using array indexing syntax.
-    try expectEqual(6, c[0]);
-    try expectEqual(8, c[1]);
-    try expectEqual(10, c[2]);
-    try expectEqual(12, c[3]);
+    try expect_equal(6, c[0]);
+    try expect_equal(8, c[1]);
+    try expect_equal(10, c[2]);
+    try expect_equal(12, c[3]);
 }
 
 test "Conversion between vectors, arrays, and slices" {
@@ -21,7 +21,7 @@ test "Conversion between vectors, arrays, and slices" {
     const arr1: [4]f32 = [_]f32{ 1.1, 3.2, 4.5, 5.6 };
     const vec: @Vector(4, f32) = arr1;
     const arr2: [4]f32 = vec;
-    try expectEqual(arr1, arr2);
+    try expect_equal(arr1, arr2);
 
     // You can also assign from a slice with comptime-known length to a vector using .*
     const vec2: @Vector(2, f32) = arr1[1..3].*;
@@ -33,9 +33,9 @@ test "Conversion between vectors, arrays, and slices" {
     // first extract a new slice from the starting offset, then an array of
     // comptime-known length
     const vec3: @Vector(2, f32) = slice[offset..][0..2].*;
-    try expectEqual(slice[offset], vec2[0]);
-    try expectEqual(slice[offset + 1], vec2[1]);
-    try expectEqual(vec2, vec3);
+    try expect_equal(slice[offset], vec2[0]);
+    try expect_equal(slice[offset + 1], vec2[1]);
+    try expect_equal(vec2, vec3);
 }
 
 // test

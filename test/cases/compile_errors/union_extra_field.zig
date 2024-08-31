@@ -10,7 +10,7 @@ const U = union(E) {
     d: f64,
 };
 export fn entry() usize {
-    return @sizeOf(U);
+    return @size_of(U);
 }
 
 // error

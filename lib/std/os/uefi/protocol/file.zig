@@ -24,9 +24,9 @@ pub const File = extern struct {
     pub const ReadError = error{ReadError};
     pub const WriteError = error{WriteError};
 
-    pub const SeekableStream = io.SeekableStream(*const File, SeekError, GetSeekPosError, seekTo, seekBy, getPos, getEndPos);
-    pub const Reader = io.Reader(*const File, ReadError, readFn);
-    pub const Writer = io.Writer(*const File, WriteError, writeFn);
+    pub const SeekableStream = io.SeekableStream(*const File, SeekError, GetSeekPosError, seek_to, seek_by, get_pos, get_end_pos);
+    pub const Reader = io.Reader(*const File, ReadError, read_fn);
+    pub const Writer = io.Writer(*const File, WriteError, write_fn);
 
     pub fn seekable_stream(self: *File) SeekableStream {
         return .{ .context = self };
@@ -78,18 +78,18 @@ pub const File = extern struct {
 
     fn get_pos(self: *const File) GetSeekPosError!u64 {
         var pos: u64 = undefined;
-        if (.Success != self.getPosition(&pos)) return GetSeekPosError.GetSeekPosError;
+        if (.Success != self.get_position(&pos)) return GetSeekPosError.GetSeekPosError;
         return pos;
     }
 
     fn get_end_pos(self: *const File) GetSeekPosError!u64 {
         // preserve the old file position
         var pos: u64 = undefined;
-        if (.Success != self.getPosition(&pos)) return GetSeekPosError.GetSeekPosError;
+        if (.Success != self.get_position(&pos)) return GetSeekPosError.GetSeekPosError;
         // seek to end of file to get position = file size
-        if (.Success != self.setPosition(efi_file_position_end_of_file)) return GetSeekPosError.GetSeekPosError;
+        if (.Success != self.set_position(efi_file_position_end_of_file)) return GetSeekPosError.GetSeekPosError;
         // restore the old position
-        if (.Success != self.setPosition(pos)) return GetSeekPosError.GetSeekPosError;
+        if (.Success != self.set_position(pos)) return GetSeekPosError.GetSeekPosError;
         // return the file size = position
         return pos;
     }
@@ -99,13 +99,13 @@ pub const File = extern struct {
     }
 
     fn seek_to(self: *const File, pos: u64) SeekError!void {
-        if (.Success != self.setPosition(pos)) return SeekError.SeekError;
+        if (.Success != self.set_position(pos)) return SeekError.SeekError;
     }
 
     fn seek_by(self: *const File, offset: i64) SeekError!void {
         // save the old position and calculate the delta
         var pos: u64 = undefined;
-        if (.Success != self.getPosition(&pos)) return SeekError.SeekError;
+        if (.Success != self.get_position(&pos)) return SeekError.SeekError;
         const seek_back = offset < 0;
         const amt = @abs(offset);
         if (seek_back) {
@@ -113,7 +113,7 @@ pub const File = extern struct {
         } else {
             pos -= amt;
         }
-        if (.Success != self.setPosition(pos)) return SeekError.SeekError;
+        if (.Success != self.set_position(pos)) return SeekError.SeekError;
     }
 
     pub fn get_info(self: *const File, information_type: *align(8) const Guid, buffer_size: *usize, buffer: [*]u8) Status {

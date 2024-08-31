@@ -8,6 +8,6 @@ comptime {
 }
 
 fn __subhf3(a: f16, b: f16) callconv(.C) f16 {
-    const neg_b = @as(f16, @bitCast(@as(u16, @bitCast(b)) ^ (@as(u16, 1) << 15)));
+    const neg_b = @as(f16, @bit_cast(@as(u16, @bit_cast(b)) ^ (@as(u16, 1) << 15)));
     return addf3(f16, a, neg_b);
 }

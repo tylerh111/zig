@@ -2,7 +2,7 @@ const MyType = opaque {};
 
 export fn entry() bool {
     var x: i32 = 1;
-    return bar(@ptrCast(&x));
+    return bar(@ptr_cast(&x));
 }
 
 fn bar(x: *MyType) bool {

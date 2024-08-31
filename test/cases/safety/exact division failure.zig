@@ -9,12 +9,12 @@ pub fn panic(message: []const u8, stack_trace: ?*std.builtin.StackTrace, _: ?usi
 }
 
 pub fn main() !void {
-    const x = divExact(10, 3);
+    const x = div_exact(10, 3);
     if (x == 0) return error.Whatever;
     return error.TestFailed;
 }
 fn div_exact(a: i32, b: i32) i32 {
-    return @divExact(a, b);
+    return @div_exact(a, b);
 }
 // run
 // backend=llvm

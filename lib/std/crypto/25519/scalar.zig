@@ -15,7 +15,7 @@ pub const zero = [_]u8{0} ** 32;
 
 const field_order_s = s: {
     var s: [32]u8 = undefined;
-    mem.writeInt(u256, &s, field_order, .little);
+    mem.write_int(u256, &s, field_order, .little);
     break :s s;
 };
 
@@ -27,8 +27,8 @@ pub fn reject_non_canonical(s: CompressedScalar) NonCanonicalError!void {
     while (true) : (i -= 1) {
         const xs = @as(u16, s[i]);
         const xfield_order_s = @as(u16, field_order_s[i]);
-        c |= @as(u8, @intCast(((xs -% xfield_order_s) >> 8) & n));
-        n &= @as(u8, @intCast(((xs ^ xfield_order_s) -% 1) >> 8));
+        c |= @as(u8, @int_cast(((xs -% xfield_order_s) >> 8) & n));
+        n &= @as(u8, @int_cast(((xs ^ xfield_order_s) -% 1) >> 8));
         if (i == 0) break;
     }
     if (c == 0) {
@@ -38,14 +38,14 @@ pub fn reject_non_canonical(s: CompressedScalar) NonCanonicalError!void {
 
 /// Reduce a scalar to the field size.
 pub fn reduce(s: CompressedScalar) CompressedScalar {
-    var scalar = Scalar.fromBytes(s);
-    return scalar.toBytes();
+    var scalar = Scalar.from_bytes(s);
+    return scalar.to_bytes();
 }
 
 /// Reduce a 64-bytes scalar to the field size.
 pub fn reduce64(s: [64]u8) CompressedScalar {
-    var scalar = ScalarDouble.fromBytes64(s);
-    return scalar.toBytes();
+    var scalar = ScalarDouble.from_bytes64(s);
+    return scalar.to_bytes();
 }
 
 /// Perform the X25519 "clamping" operation.
@@ -57,26 +57,26 @@ pub inline fn clamp(s: *CompressedScalar) void {
 
 /// Return a*b (mod L)
 pub fn mul(a: CompressedScalar, b: CompressedScalar) CompressedScalar {
-    return Scalar.fromBytes(a).mul(Scalar.fromBytes(b)).toBytes();
+    return Scalar.from_bytes(a).mul(Scalar.from_bytes(b)).to_bytes();
 }
 
 /// Return a*b+c (mod L)
 pub fn mul_add(a: CompressedScalar, b: CompressedScalar, c: CompressedScalar) CompressedScalar {
-    return Scalar.fromBytes(a).mul(Scalar.fromBytes(b)).add(Scalar.fromBytes(c)).toBytes();
+    return Scalar.from_bytes(a).mul(Scalar.from_bytes(b)).add(Scalar.from_bytes(c)).to_bytes();
 }
 
 /// Return a*8 (mod L)
 pub fn mul8(s: CompressedScalar) CompressedScalar {
-    var x = Scalar.fromBytes(s);
+    var x = Scalar.from_bytes(s);
     x = x.add(x);
     x = x.add(x);
     x = x.add(x);
-    return x.toBytes();
+    return x.to_bytes();
 }
 
 /// Return a+b (mod L)
 pub fn add(a: CompressedScalar, b: CompressedScalar) CompressedScalar {
-    return Scalar.fromBytes(a).add(Scalar.fromBytes(b)).toBytes();
+    return Scalar.from_bytes(a).add(Scalar.from_bytes(b)).to_bytes();
 }
 
 /// Return -s (mod L)
@@ -102,7 +102,7 @@ pub fn sub(a: CompressedScalar, b: CompressedScalar) CompressedScalar {
 
 /// Return a random scalar < L
 pub fn random() CompressedScalar {
-    return Scalar.random().toBytes();
+    return Scalar.random().to_bytes();
 }
 
 /// A scalar in unpacked representation
@@ -112,13 +112,13 @@ pub const Scalar = struct {
 
     /// Unpack a 32-byte representation of a scalar
     pub fn from_bytes(bytes: CompressedScalar) Scalar {
-        var scalar = ScalarDouble.fromBytes32(bytes);
+        var scalar = ScalarDouble.from_bytes32(bytes);
         return scalar.reduce(5);
     }
 
     /// Unpack a 64-byte representation of a scalar
     pub fn from_bytes64(bytes: [64]u8) Scalar {
-        var scalar = ScalarDouble.fromBytes64(bytes);
+        var scalar = ScalarDouble.from_bytes64(bytes);
         return scalar.reduce(5);
     }
 
@@ -127,9 +127,9 @@ pub const Scalar = struct {
         var bytes: CompressedScalar = undefined;
         var i: usize = 0;
         while (i < 4) : (i += 1) {
-            mem.writeInt(u64, bytes[i * 7 ..][0..8], expanded.limbs[i], .little);
+            mem.write_int(u64, bytes[i * 7 ..][0..8], expanded.limbs[i], .little);
         }
-        mem.writeInt(u32, bytes[i * 7 ..][0..4], @intCast(expanded.limbs[i]), .little);
+        mem.write_int(u32, bytes[i * 7 ..][0..4], @int_cast(expanded.limbs[i]), .little);
         return bytes;
     }
 
@@ -498,7 +498,7 @@ pub const Scalar = struct {
         const t = ((b << 56) + s4) -% (y41 + b3);
         const b4 = b;
         const t4 = t;
-        const mask = (b4 -% @as(u64, @intCast(((1)))));
+        const mask = (b4 -% @as(u64, @int_cast(((1)))));
         const z04 = s0 ^ (mask & (s0 ^ t0));
         const z14 = s1 ^ (mask & (s1 ^ t1));
         const z24 = s2 ^ (mask & (s2 ^ t2));
@@ -564,8 +564,8 @@ pub const Scalar = struct {
         var s: [64]u8 = undefined;
         while (true) {
             crypto.random.bytes(&s);
-            const n = Scalar.fromBytes64(s);
-            if (!n.isZero()) {
+            const n = Scalar.from_bytes64(s);
+            if (!n.is_zero()) {
                 return n;
             }
         }
@@ -580,7 +580,7 @@ const ScalarDouble = struct {
         var limbs: Limbs = undefined;
         var i: usize = 0;
         while (i < 9) : (i += 1) {
-            limbs[i] = mem.readInt(u64, bytes[i * 7 ..][0..8], .little) & 0xffffffffffffff;
+            limbs[i] = mem.read_int(u64, bytes[i * 7 ..][0..8], .little) & 0xffffffffffffff;
         }
         limbs[i] = @as(u64, bytes[i * 7]);
         return ScalarDouble{ .limbs = limbs };
@@ -590,15 +590,15 @@ const ScalarDouble = struct {
         var limbs: Limbs = undefined;
         var i: usize = 0;
         while (i < 4) : (i += 1) {
-            limbs[i] = mem.readInt(u64, bytes[i * 7 ..][0..8], .little) & 0xffffffffffffff;
+            limbs[i] = mem.read_int(u64, bytes[i * 7 ..][0..8], .little) & 0xffffffffffffff;
         }
-        limbs[i] = @as(u64, mem.readInt(u32, bytes[i * 7 ..][0..4], .little));
+        limbs[i] = @as(u64, mem.read_int(u32, bytes[i * 7 ..][0..4], .little));
         @memset(limbs[5..], 0);
         return ScalarDouble{ .limbs = limbs };
     }
 
     fn to_bytes(expanded_double: *ScalarDouble) CompressedScalar {
-        return expanded_double.reduce(10).toBytes();
+        return expanded_double.reduce(10).to_bytes();
     }
 
     /// Barrett reduction
@@ -846,36 +846,36 @@ const ScalarDouble = struct {
 
 test "scalar25519" {
     const bytes: [32]u8 = .{ 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 255 };
-    var x = Scalar.fromBytes(bytes);
-    var y = x.toBytes();
-    try rejectNonCanonical(y);
+    var x = Scalar.from_bytes(bytes);
+    var y = x.to_bytes();
+    try reject_non_canonical(y);
     var buf: [128]u8 = undefined;
-    try std.testing.expectEqualStrings(try std.fmt.bufPrint(&buf, "{s}", .{std.fmt.fmtSliceHexUpper(&y)}), "1E979B917937F3DE71D18077F961F6CEFF01030405060708010203040506070F");
+    try std.testing.expect_equal_strings(try std.fmt.buf_print(&buf, "{s}", .{std.fmt.fmt_slice_hex_upper(&y)}), "1E979B917937F3DE71D18077F961F6CEFF01030405060708010203040506070F");
 
     const reduced = reduce(field_order_s);
-    try std.testing.expectEqualStrings(try std.fmt.bufPrint(&buf, "{s}", .{std.fmt.fmtSliceHexUpper(&reduced)}), "0000000000000000000000000000000000000000000000000000000000000000");
+    try std.testing.expect_equal_strings(try std.fmt.buf_print(&buf, "{s}", .{std.fmt.fmt_slice_hex_upper(&reduced)}), "0000000000000000000000000000000000000000000000000000000000000000");
 }
 
 test "non-canonical scalar25519" {
     const too_targe: [32]u8 = .{ 0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10 };
-    try std.testing.expectError(error.NonCanonical, rejectNonCanonical(too_targe));
+    try std.testing.expect_error(error.NonCanonical, reject_non_canonical(too_targe));
 }
 
-test "mulAdd overflow check" {
+test "mul_add overflow check" {
     const a: [32]u8 = [_]u8{0xff} ** 32;
     const b: [32]u8 = [_]u8{0xff} ** 32;
     const c: [32]u8 = [_]u8{0xff} ** 32;
-    const x = mulAdd(a, b, c);
+    const x = mul_add(a, b, c);
     var buf: [128]u8 = undefined;
-    try std.testing.expectEqualStrings(try std.fmt.bufPrint(&buf, "{s}", .{std.fmt.fmtSliceHexUpper(&x)}), "D14DF91389432C25AD60FF9791B9FD1D67BEF517D273ECCE3D9A307C1B419903");
+    try std.testing.expect_equal_strings(try std.fmt.buf_print(&buf, "{s}", .{std.fmt.fmt_slice_hex_upper(&x)}), "D14DF91389432C25AD60FF9791B9FD1D67BEF517D273ECCE3D9A307C1B419903");
 }
 
 test "scalar field inversion" {
     const bytes: [32]u8 = .{ 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8 };
-    const x = Scalar.fromBytes(bytes);
+    const x = Scalar.from_bytes(bytes);
     const inv = x.invert();
     const recovered_x = inv.invert();
-    try std.testing.expectEqualSlices(u8, &bytes, &recovered_x.toBytes());
+    try std.testing.expect_equal_slices(u8, &bytes, &recovered_x.to_bytes());
 }
 
 test "random scalar" {
@@ -886,6 +886,6 @@ test "random scalar" {
 
 test "64-bit reduction" {
     const bytes = field_order_s ++ [_]u8{0} ** 32;
-    const x = Scalar.fromBytes64(bytes);
-    try std.testing.expect(x.isZero());
+    const x = Scalar.from_bytes64(bytes);
+    try std.testing.expect(x.is_zero());
 }

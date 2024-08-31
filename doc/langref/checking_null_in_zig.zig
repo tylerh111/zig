@@ -7,7 +7,7 @@ fn do_athing(optional_foo: ?*Foo) void {
     // do some stuff
 
     if (optional_foo) |foo| {
-        doSomethingWithFoo(foo);
+        do_something_with_foo(foo);
     }
 
     // do some stuff

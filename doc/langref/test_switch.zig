@@ -57,7 +57,7 @@ test "switch inside function" {
             // On an OS other than fuchsia, block is not even analyzed,
             // so this compile error is not triggered.
             // On fuchsia this compile error would be triggered.
-            @compileError("fuchsia not supported");
+            @compile_error("fuchsia not supported");
         },
         else => {},
     }

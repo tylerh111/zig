@@ -10,29 +10,29 @@ pub const Feature = enum {
     dwarfris,
 };
 
-pub const featureSet = CpuFeature.feature_set_fns(Feature).featureSet;
-pub const featureSetHas = CpuFeature.feature_set_fns(Feature).featureSetHas;
-pub const featureSetHasAny = CpuFeature.feature_set_fns(Feature).featureSetHasAny;
-pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
+pub const feature_set = CpuFeature.feature_set_fns(Feature).feature_set;
+pub const feature_set_has = CpuFeature.feature_set_fns(Feature).feature_set_has;
+pub const feature_set_has_any = CpuFeature.feature_set_fns(Feature).feature_set_has_any;
+pub const feature_set_has_all = CpuFeature.feature_set_fns(Feature).feature_set_has_all;
 
 pub const all_features = blk: {
     const len = @typeInfo(Feature).Enum.fields.len;
     std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
     var result: [len]CpuFeature = undefined;
-    result[@intFromEnum(Feature.alu32)] = .{
+    result[@int_from_enum(Feature.alu32)] = .{
         .llvm_name = "alu32",
         .description = "Enable ALU32 instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dummy)] = .{
+    result[@int_from_enum(Feature.dummy)] = .{
         .llvm_name = "dummy",
         .description = "unused feature",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dwarfris)] = .{
+    result[@int_from_enum(Feature.dwarfris)] = .{
         .llvm_name = "dwarfris",
         .description = "Disable MCAsmInfo DwarfUsesRelocationsAcrossSections",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
     const ti = @typeInfo(Feature);
     for (&result, 0..) |*elem, i| {
@@ -46,34 +46,34 @@ pub const cpu = struct {
     pub const generic = CpuModel{
         .name = "generic",
         .llvm_name = "generic",
-        .features = featureSet(&[_]Feature{}),
+        .features = feature_set(&[_]Feature{}),
     };
     pub const probe = CpuModel{
         .name = "probe",
         .llvm_name = "probe",
-        .features = featureSet(&[_]Feature{}),
+        .features = feature_set(&[_]Feature{}),
     };
     pub const v1 = CpuModel{
         .name = "v1",
         .llvm_name = "v1",
-        .features = featureSet(&[_]Feature{}),
+        .features = feature_set(&[_]Feature{}),
     };
     pub const v2 = CpuModel{
         .name = "v2",
         .llvm_name = "v2",
-        .features = featureSet(&[_]Feature{}),
+        .features = feature_set(&[_]Feature{}),
     };
     pub const v3 = CpuModel{
         .name = "v3",
         .llvm_name = "v3",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alu32,
         }),
     };
     pub const v4 = CpuModel{
         .name = "v4",
         .llvm_name = "v4",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alu32,
         }),
     };

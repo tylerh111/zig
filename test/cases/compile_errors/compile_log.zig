@@ -9,7 +9,7 @@ fn bar(a: i32, b: []const u8) void {
 }
 export fn baz() void {
     const S = struct { a: u32 };
-    @compileLog(@sizeOf(S));
+    @compileLog(@size_of(S));
 }
 
 // error

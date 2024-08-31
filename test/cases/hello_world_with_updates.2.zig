@@ -8,7 +8,7 @@ pub export fn main() noreturn {
 }
 
 fn print() void {
-    const msg = @intFromPtr("Hello, World!\n");
+    const msg = @int_from_ptr("Hello, World!\n");
     const len = 14;
     _ = write(1, msg, len);
 }

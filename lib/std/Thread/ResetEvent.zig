@@ -1,6 +1,6 @@
 //! ResetEvent is a thread-safe bool which can be set to true/false ("set"/"unset").
 //! It can also block threads until the "bool" is set with cancellation via timed waits.
-//! ResetEvent can be statically initialized and is at most `@sizeOf(u64)` large.
+//! ResetEvent can be statically initialized and is at most `@size_of(u64)` large.
 
 const std = @import("../std.zig");
 const builtin = @import("builtin");
@@ -15,13 +15,13 @@ impl: Impl = .{},
 
 /// Returns if the ResetEvent was set().
 /// Once reset() is called, this returns false until the next set().
-/// The memory accesses before the set() can be said to happen before isSet() returns true.
+/// The memory accesses before the set() can be said to happen before is_set() returns true.
 pub fn is_set(self: *const ResetEvent) bool {
-    return self.impl.isSet();
+    return self.impl.is_set();
 }
 
 /// Block's the callers thread until the ResetEvent is set().
-/// This is effectively a more efficient version of `while (!isSet()) {}`.
+/// This is effectively a more efficient version of `while (!is_set()) {}`.
 /// The memory accesses before the set() can be said to happen before wait() returns.
 pub fn wait(self: *ResetEvent) void {
     self.impl.wait(null) catch |err| switch (err) {
@@ -31,22 +31,22 @@ pub fn wait(self: *ResetEvent) void {
 
 /// Block's the callers thread until the ResetEvent is set(), or until the corresponding timeout expires.
 /// If the timeout expires before the ResetEvent is set, `error.Timeout` is returned.
-/// This is effectively a more efficient version of `while (!isSet()) {}`.
-/// The memory accesses before the set() can be said to happen before timedWait() returns without error.
+/// This is effectively a more efficient version of `while (!is_set()) {}`.
+/// The memory accesses before the set() can be said to happen before timed_wait() returns without error.
 pub fn timed_wait(self: *ResetEvent, timeout_ns: u64) error{Timeout}!void {
     return self.impl.wait(timeout_ns);
 }
 
-/// Marks the ResetEvent as "set" and unblocks any threads in `wait()` or `timedWait()` to observe the new state.
+/// Marks the ResetEvent as "set" and unblocks any threads in `wait()` or `timed_wait()` to observe the new state.
 /// The ResetEvent says "set" until reset() is called, making future set() calls do nothing semantically.
-/// The memory accesses before set() can be said to happen before isSet() returns true or wait()/timedWait() return successfully.
+/// The memory accesses before set() can be said to happen before is_set() returns true or wait()/timed_wait() return successfully.
 pub fn set(self: *ResetEvent) void {
     self.impl.set();
 }
 
 /// Unmarks the ResetEvent from its "set" state if set() was called previously.
-/// It is undefined behavior is reset() is called while threads are blocked in wait() or timedWait().
-/// Concurrent calls to set(), isSet() and reset() are allowed.
+/// It is undefined behavior is reset() is called while threads are blocked in wait() or timed_wait().
+/// Concurrent calls to set(), is_set() and reset() are allowed.
 pub fn reset(self: *ResetEvent) void {
     self.impl.reset();
 }
@@ -64,7 +64,7 @@ const SingleThreadedImpl = struct {
     }
 
     fn wait(self: *Impl, timeout: ?u64) error{Timeout}!void {
-        if (self.isSet()) {
+        if (self.is_set()) {
             return;
         }
 
@@ -100,9 +100,9 @@ const FutexImpl = struct {
     }
 
     fn wait(self: *Impl, timeout: ?u64) error{Timeout}!void {
-        // Outline the slow path to allow isSet() to be inlined
-        if (!self.isSet()) {
-            return self.waitUntilSet(timeout);
+        // Outline the slow path to allow is_set() to be inlined
+        if (!self.is_set()) {
+            return self.wait_until_set(timeout);
         }
     }
 
@@ -114,7 +114,7 @@ const FutexImpl = struct {
         // We avoid using any strict barriers until the end when we know the ResetEvent is set.
         var state = self.state.load(.monotonic);
         if (state == unset) {
-            state = self.state.cmpxchgStrong(state, waiting, .monotonic, .monotonic) orelse waiting;
+            state = self.state.cmpxchg_strong(state, waiting, .monotonic, .monotonic) orelse waiting;
         }
 
         // Wait until the ResetEvent is set since the state is waiting.
@@ -148,7 +148,7 @@ const FutexImpl = struct {
         // Mark the ResetEvent as set and unblock all waiters waiting on it if any.
         // Release barrier ensures memory accesses before set() happen before the ResetEvent is observed to be "set".
         if (self.state.swap(is_set, .release) == waiting) {
-            Futex.wake(&self.state, std.math.maxInt(u32));
+            Futex.wake(&self.state, std.math.max_int(u32));
         }
     }
 
@@ -160,25 +160,25 @@ const FutexImpl = struct {
 test "smoke test" {
     // make sure the event is unset
     var event = ResetEvent{};
-    try testing.expectEqual(false, event.isSet());
+    try testing.expect_equal(false, event.is_set());
 
     // make sure the event gets set
     event.set();
-    try testing.expectEqual(true, event.isSet());
+    try testing.expect_equal(true, event.is_set());
 
     // make sure the event gets unset again
     event.reset();
-    try testing.expectEqual(false, event.isSet());
+    try testing.expect_equal(false, event.is_set());
 
     // waits should timeout as there's no other thread to set the event
-    try testing.expectError(error.Timeout, event.timedWait(0));
-    try testing.expectError(error.Timeout, event.timedWait(std.time.ns_per_ms));
+    try testing.expect_error(error.Timeout, event.timed_wait(0));
+    try testing.expect_error(error.Timeout, event.timed_wait(std.time.ns_per_ms));
 
     // set the event again and make sure waits complete
     event.set();
     event.wait();
-    try event.timedWait(std.time.ns_per_ms);
-    try testing.expectEqual(true, event.isSet());
+    try event.timed_wait(std.time.ns_per_ms);
+    try testing.expect_equal(true, event.is_set());
 }
 
 test "signaling" {
@@ -196,7 +196,7 @@ test "signaling" {
             // wait for the value to become 1
             self.in.wait();
             self.in.reset();
-            try testing.expectEqual(self.value, 1);
+            try testing.expect_equal(self.value, 1);
 
             // bump the value and wake up output()
             self.value = 2;
@@ -205,7 +205,7 @@ test "signaling" {
             // wait for output to receive 2, bump the value and wake us up with 3
             self.in.wait();
             self.in.reset();
-            try testing.expectEqual(self.value, 3);
+            try testing.expect_equal(self.value, 3);
 
             // bump the value and wake up output() for it to see 4
             self.value = 4;
@@ -214,14 +214,14 @@ test "signaling" {
 
         fn output(self: *@This()) !void {
             // start with 0 and bump the value for input to see 1
-            try testing.expectEqual(self.value, 0);
+            try testing.expect_equal(self.value, 0);
             self.value = 1;
             self.in.set();
 
             // wait for input to receive 1, bump the value to 2 and wake us up
             self.out.wait();
             self.out.reset();
-            try testing.expectEqual(self.value, 2);
+            try testing.expect_equal(self.value, 2);
 
             // bump the value to 3 for input to see (rhymes)
             self.value = 3;
@@ -230,7 +230,7 @@ test "signaling" {
             // wait for input to bump the value to 4 and receive no more (rhymes)
             self.out.wait();
             self.out.reset();
-            try testing.expectEqual(self.value, 4);
+            try testing.expect_equal(self.value, 4);
         }
     };
 
@@ -254,7 +254,7 @@ test "broadcast" {
         counter: std.atomic.Value(usize) = std.atomic.Value(usize).init(num_threads),
 
         fn wait(self: *@This()) void {
-            if (self.counter.fetchSub(1, .acq_rel) == 1) {
+            if (self.counter.fetch_sub(1, .acq_rel) == 1) {
                 self.event.set();
             }
         }

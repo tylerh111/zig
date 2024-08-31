@@ -10,11 +10,11 @@ const __mulxc3 = @import("./mulxc3.zig").__mulxc3;
 const __multc3 = @import("./multc3.zig").__multc3;
 
 test {
-    try testMul(f16, __mulhc3);
-    try testMul(f32, __mulsc3);
-    try testMul(f64, __muldc3);
-    try testMul(f80, __mulxc3);
-    try testMul(f128, __multc3);
+    try test_mul(f16, __mulhc3);
+    try test_mul(f32, __mulsc3);
+    try test_mul(f64, __muldc3);
+    try test_mul(f80, __mulxc3);
+    try test_mul(f128, __multc3);
 }
 
 fn test_mul(comptime T: type, comptime f: fn (T, T, T, T) callconv(.C) Complex(T)) !void {

@@ -20,20 +20,20 @@ pub fn parse_oid(s: []const u8) !Oid {
     if (s.len != fmt_oid_length) return error.InvalidOid;
     var oid: Oid = undefined;
     for (&oid, 0..) |*b, i| {
-        b.* = std.fmt.parseUnsigned(u8, s[2 * i ..][0..2], 16) catch return error.InvalidOid;
+        b.* = std.fmt.parse_unsigned(u8, s[2 * i ..][0..2], 16) catch return error.InvalidOid;
     }
     return oid;
 }
 
-test parseOid {
-    try testing.expectEqualSlices(
+test parse_oid {
+    try testing.expect_equal_slices(
         u8,
         &.{ 0xCE, 0x91, 0x9C, 0xCF, 0x45, 0x95, 0x18, 0x56, 0xA7, 0x62, 0xFF, 0xDB, 0x8E, 0xF8, 0x50, 0x30, 0x1C, 0xD8, 0xC5, 0x88 },
-        &try parseOid("ce919ccf45951856a762ffdb8ef850301cd8c588"),
+        &try parse_oid("ce919ccf45951856a762ffdb8ef850301cd8c588"),
     );
-    try testing.expectError(error.InvalidOid, parseOid("ce919ccf"));
-    try testing.expectError(error.InvalidOid, parseOid("master"));
-    try testing.expectError(error.InvalidOid, parseOid("HEAD"));
+    try testing.expect_error(error.InvalidOid, parse_oid("ce919ccf"));
+    try testing.expect_error(error.InvalidOid, parse_oid("master"));
+    try testing.expect_error(error.InvalidOid, parse_oid("HEAD"));
 }
 
 pub const Diagnostics = struct {
@@ -88,13 +88,13 @@ pub const Repository = struct {
         commit_oid: Oid,
         diagnostics: *Diagnostics,
     ) !void {
-        try repository.odb.seekOid(commit_oid);
+        try repository.odb.seek_oid(commit_oid);
         const tree_oid = tree_oid: {
-            const commit_object = try repository.odb.readObject();
+            const commit_object = try repository.odb.read_object();
             if (commit_object.type != .commit) return error.NotACommit;
-            break :tree_oid try getCommitTree(commit_object.data);
+            break :tree_oid try get_commit_tree(commit_object.data);
         };
-        try repository.checkoutTree(worktree, tree_oid, "", diagnostics);
+        try repository.checkout_tree(worktree, tree_oid, "", diagnostics);
     }
 
     /// Checks out the tree at `tree_oid` to `worktree`.
@@ -105,8 +105,8 @@ pub const Repository = struct {
         current_path: []const u8,
         diagnostics: *Diagnostics,
     ) !void {
-        try repository.odb.seekOid(tree_oid);
-        const tree_object = try repository.odb.readObject();
+        try repository.odb.seek_oid(tree_oid);
+        const tree_object = try repository.odb.read_object();
         if (tree_object.type != .tree) return error.NotATree;
         // The tree object may be evicted from the object cache while we're
         // iterating over it, so we can make a defensive copy here to make sure
@@ -118,18 +118,18 @@ pub const Repository = struct {
         while (try tree_iter.next()) |entry| {
             switch (entry.type) {
                 .directory => {
-                    try dir.makeDir(entry.name);
-                    var subdir = try dir.openDir(entry.name, .{});
+                    try dir.make_dir(entry.name);
+                    var subdir = try dir.open_dir(entry.name, .{});
                     defer subdir.close();
                     const sub_path = try std.fs.path.join(repository.odb.allocator, &.{ current_path, entry.name });
                     defer repository.odb.allocator.free(sub_path);
-                    try repository.checkoutTree(subdir, entry.oid, sub_path, diagnostics);
+                    try repository.checkout_tree(subdir, entry.oid, sub_path, diagnostics);
                 },
                 .file => {
-                    try repository.odb.seekOid(entry.oid);
-                    const file_object = try repository.odb.readObject();
+                    try repository.odb.seek_oid(entry.oid);
+                    const file_object = try repository.odb.read_object();
                     if (file_object.type != .blob) return error.InvalidFile;
-                    var file = dir.createFile(entry.name, .{ .exclusive = true }) catch |e| {
+                    var file = dir.create_file(entry.name, .{ .exclusive = true }) catch |e| {
                         const file_name = try std.fs.path.join(diagnostics.allocator, &.{ current_path, entry.name });
                         errdefer diagnostics.allocator.free(file_name);
                         try diagnostics.errors.append(diagnostics.allocator, .{ .unable_to_create_file = .{
@@ -139,15 +139,15 @@ pub const Repository = struct {
                         continue;
                     };
                     defer file.close();
-                    try file.writeAll(file_object.data);
+                    try file.write_all(file_object.data);
                     try file.sync();
                 },
                 .symlink => {
-                    try repository.odb.seekOid(entry.oid);
-                    const symlink_object = try repository.odb.readObject();
+                    try repository.odb.seek_oid(entry.oid);
+                    const symlink_object = try repository.odb.read_object();
                     if (symlink_object.type != .blob) return error.InvalidFile;
                     const link_name = symlink_object.data;
-                    dir.symLink(link_name, entry.name, .{}) catch |e| {
+                    dir.sym_link(link_name, entry.name, .{}) catch |e| {
                         const file_name = try std.fs.path.join(diagnostics.allocator, &.{ current_path, entry.name });
                         errdefer diagnostics.allocator.free(file_name);
                         const link_name_dup = try diagnostics.allocator.dupe(u8, link_name);
@@ -162,7 +162,7 @@ pub const Repository = struct {
                 .gitlink => {
                     // Consistent with git archive behavior, create the directory but
                     // do nothing else
-                    try dir.makeDir(entry.name);
+                    try dir.make_dir(entry.name);
                 },
             }
         }
@@ -171,13 +171,13 @@ pub const Repository = struct {
     /// Returns the ID of the tree associated with the given commit (provided as
     /// raw object data).
     fn get_commit_tree(commit_data: []const u8) !Oid {
-        if (!mem.startsWith(u8, commit_data, "tree ") or
+        if (!mem.starts_with(u8, commit_data, "tree ") or
             commit_data.len < "tree ".len + fmt_oid_length + "\n".len or
             commit_data["tree ".len + fmt_oid_length] != '\n')
         {
             return error.InvalidCommit;
         }
-        return try parseOid(commit_data["tree ".len..][0..fmt_oid_length]);
+        return try parse_oid(commit_data["tree ".len..][0..fmt_oid_length]);
     }
 
     const TreeIterator = struct {
@@ -201,13 +201,13 @@ pub const Repository = struct {
         fn next(iterator: *TreeIterator) !?Entry {
             if (iterator.pos == iterator.data.len) return null;
 
-            const mode_end = mem.indexOfScalarPos(u8, iterator.data, iterator.pos, ' ') orelse return error.InvalidTree;
+            const mode_end = mem.index_of_scalar_pos(u8, iterator.data, iterator.pos, ' ') orelse return error.InvalidTree;
             const mode: packed struct {
                 permission: u9,
                 unused: u3,
                 type: u4,
-            } = @bitCast(std.fmt.parseUnsigned(u16, iterator.data[iterator.pos..mode_end], 8) catch return error.InvalidTree);
-            const @"type" = std.meta.intToEnum(Entry.Type, mode.type) catch return error.InvalidTree;
+            } = @bit_cast(std.fmt.parse_unsigned(u16, iterator.data[iterator.pos..mode_end], 8) catch return error.InvalidTree);
+            const @"type" = std.meta.int_to_enum(Entry.Type, mode.type) catch return error.InvalidTree;
             const executable = switch (mode.permission) {
                 0 => if (@"type" == .file) return error.InvalidTree else false,
                 0o644 => if (@"type" != .file) return error.InvalidTree else false,
@@ -216,7 +216,7 @@ pub const Repository = struct {
             };
             iterator.pos = mode_end + 1;
 
-            const name_end = mem.indexOfScalarPos(u8, iterator.data, iterator.pos, 0) orelse return error.InvalidTree;
+            const name_end = mem.index_of_scalar_pos(u8, iterator.data, iterator.pos, 0) orelse return error.InvalidTree;
             const name = iterator.data[iterator.pos..name_end :0];
             iterator.pos = name_end + 1;
 
@@ -243,8 +243,8 @@ const Odb = struct {
 
     /// Initializes the database from open pack and index files.
     fn init(allocator: Allocator, pack_file: std.fs.File, index_file: std.fs.File) !Odb {
-        try pack_file.seekTo(0);
-        try index_file.seekTo(0);
+        try pack_file.seek_to(0);
+        try index_file.seek_to(0);
         const index_header = try IndexHeader.read(index_file.reader());
         return .{
             .pack_file = pack_file,
@@ -261,7 +261,7 @@ const Odb = struct {
 
     /// Reads the object at the current position in the database.
     fn read_object(odb: *Odb) !Object {
-        var base_offset = try odb.pack_file.getPos();
+        var base_offset = try odb.pack_file.get_pos();
         var base_header: EntryHeader = undefined;
         var delta_offsets = std.ArrayListUnmanaged(u64){};
         defer delta_offsets.deinit(odb.allocator);
@@ -273,24 +273,24 @@ const Odb = struct {
                 .ofs_delta => |ofs_delta| {
                     try delta_offsets.append(odb.allocator, base_offset);
                     base_offset = std.math.sub(u64, base_offset, ofs_delta.offset) catch return error.InvalidFormat;
-                    try odb.pack_file.seekTo(base_offset);
+                    try odb.pack_file.seek_to(base_offset);
                 },
                 .ref_delta => |ref_delta| {
                     try delta_offsets.append(odb.allocator, base_offset);
-                    try odb.seekOid(ref_delta.base_object);
-                    base_offset = try odb.pack_file.getPos();
+                    try odb.seek_oid(ref_delta.base_object);
+                    base_offset = try odb.pack_file.get_pos();
                 },
                 else => {
-                    const base_data = try readObjectRaw(odb.allocator, odb.pack_file.reader(), base_header.uncompressedLength());
+                    const base_data = try read_object_raw(odb.allocator, odb.pack_file.reader(), base_header.uncompressed_length());
                     errdefer odb.allocator.free(base_data);
-                    const base_object: Object = .{ .type = base_header.objectType(), .data = base_data };
+                    const base_object: Object = .{ .type = base_header.object_type(), .data = base_data };
                     try odb.cache.put(odb.allocator, base_offset, base_object);
                     break base_object;
                 },
             }
         };
 
-        const base_data = try resolveDeltaChain(
+        const base_data = try resolve_delta_chain(
             odb.allocator,
             odb.pack_file,
             base_object,
@@ -308,8 +308,8 @@ const Odb = struct {
         var end_index = odb.index_header.fan_out_table[key];
         const found_index = while (start_index < end_index) {
             const mid_index = start_index + (end_index - start_index) / 2;
-            try odb.index_file.seekTo(IndexHeader.size + mid_index * oid_length);
-            const mid_oid = try odb.index_file.reader().readBytesNoEof(oid_length);
+            try odb.index_file.seek_to(IndexHeader.size + mid_index * oid_length);
+            const mid_oid = try odb.index_file.reader().read_bytes_no_eof(oid_length);
             switch (mem.order(u8, &mid_oid, &oid)) {
                 .lt => start_index = mid_index + 1,
                 .gt => end_index = mid_index,
@@ -319,19 +319,19 @@ const Odb = struct {
 
         const n_objects = odb.index_header.fan_out_table[255];
         const offset_values_start = IndexHeader.size + n_objects * (oid_length + 4);
-        try odb.index_file.seekTo(offset_values_start + found_index * 4);
-        const l1_offset: packed struct { value: u31, big: bool } = @bitCast(try odb.index_file.reader().readInt(u32, .big));
+        try odb.index_file.seek_to(offset_values_start + found_index * 4);
+        const l1_offset: packed struct { value: u31, big: bool } = @bit_cast(try odb.index_file.reader().read_int(u32, .big));
         const pack_offset = pack_offset: {
             if (l1_offset.big) {
                 const l2_offset_values_start = offset_values_start + n_objects * 4;
-                try odb.index_file.seekTo(l2_offset_values_start + l1_offset.value * 4);
-                break :pack_offset try odb.index_file.reader().readInt(u64, .big);
+                try odb.index_file.seek_to(l2_offset_values_start + l1_offset.value * 4);
+                break :pack_offset try odb.index_file.reader().read_int(u64, .big);
             } else {
                 break :pack_offset l1_offset.value;
             }
         };
 
-        try odb.pack_file.seekTo(pack_offset);
+        try odb.pack_file.seek_to(pack_offset);
     }
 };
 
@@ -403,7 +403,7 @@ const ObjectCache = struct {
         errdefer allocator.destroy(lru_node);
         lru_node.data = offset;
 
-        const gop = try cache.objects.getOrPut(allocator, offset);
+        const gop = try cache.objects.get_or_put(allocator, offset);
         if (gop.found_existing) {
             cache.byte_size -= gop.value_ptr.object.data.len;
             cache.lru_nodes.remove(gop.value_ptr.lru_node);
@@ -418,7 +418,7 @@ const ObjectCache = struct {
             // The > 1 check is to make sure that we don't evict the most
             // recently added node, even if it by itself happens to exceed the
             // maximum size of the cache.
-            const evict_node = cache.lru_nodes.popFirst().?;
+            const evict_node = cache.lru_nodes.pop_first().?;
             const evict_offset = evict_node.data;
             allocator.destroy(evict_node);
             const evict_object = cache.objects.get(evict_offset).?.object;
@@ -445,7 +445,7 @@ const Packet = union(enum) {
 
     /// Reads a packet in pkt-line format.
     fn read(reader: anytype, buf: *[max_data_length]u8) !Packet {
-        const length = std.fmt.parseUnsigned(u16, &try reader.readBytesNoEof(4), 16) catch return error.InvalidPacket;
+        const length = std.fmt.parse_unsigned(u16, &try reader.read_bytes_no_eof(4), 16) catch return error.InvalidPacket;
         switch (length) {
             0 => return .flush,
             1 => return .delimiter,
@@ -454,20 +454,20 @@ const Packet = union(enum) {
             else => if (length - 4 > max_data_length) return error.InvalidPacket,
         }
         const data = buf[0 .. length - 4];
-        try reader.readNoEof(data);
+        try reader.read_no_eof(data);
         return .{ .data = data };
     }
 
     /// Writes a packet in pkt-line format.
     fn write(packet: Packet, writer: anytype) !void {
         switch (packet) {
-            .flush => try writer.writeAll("0000"),
-            .delimiter => try writer.writeAll("0001"),
-            .response_end => try writer.writeAll("0002"),
+            .flush => try writer.write_all("0000"),
+            .delimiter => try writer.write_all("0001"),
+            .response_end => try writer.write_all("0002"),
             .data => |data| {
                 assert(data.len <= max_data_length);
                 try writer.print("{x:0>4}", .{data.len + 4});
-                try writer.writeAll(data);
+                try writer.write_all(data);
             },
         }
     }
@@ -480,7 +480,7 @@ const Packet = union(enum) {
     /// non-binary (textual) pkt-line data should contain a trailing '\n', but
     /// is not required to do so (implementations must support both forms).
     fn normalize_text(data: []const u8) []const u8 {
-        return if (mem.endsWith(u8, data, "\n"))
+        return if (mem.ends_with(u8, data, "\n"))
             data[0 .. data.len - 1]
         else
             data;
@@ -497,27 +497,27 @@ pub const Session = struct {
     supports_shallow: bool = false,
 
     const agent = "zig/" ++ @import("builtin").zig_version_string;
-    const agent_capability = std.fmt.comptimePrint("agent={s}\n", .{agent});
+    const agent_capability = std.fmt.comptime_print("agent={s}\n", .{agent});
 
     /// Discovers server capabilities. This should be called before using any
     /// other client functionality, or the client will be forced to default to
     /// the bare minimum server requirements, which may be considerably less
     /// efficient (e.g. no shallow fetches).
     ///
-    /// See the note on `getCapabilities` regarding `redirect_uri`.
+    /// See the note on `get_capabilities` regarding `redirect_uri`.
     pub fn discover_capabilities(
         session: *Session,
         allocator: Allocator,
         redirect_uri: *[]u8,
         http_headers_buffer: []u8,
     ) !void {
-        var capability_iterator = try session.getCapabilities(allocator, redirect_uri, http_headers_buffer);
+        var capability_iterator = try session.get_capabilities(allocator, redirect_uri, http_headers_buffer);
         defer capability_iterator.deinit();
         while (try capability_iterator.next()) |capability| {
             if (mem.eql(u8, capability.key, "agent")) {
                 session.supports_agent = true;
             } else if (mem.eql(u8, capability.key, "fetch")) {
-                var feature_iterator = mem.splitScalar(u8, capability.value orelse continue, ' ');
+                var feature_iterator = mem.split_scalar(u8, capability.value orelse continue, ' ');
                 while (feature_iterator.next()) |feature| {
                     if (mem.eql(u8, feature, "shallow")) {
                         session.supports_shallow = true;
@@ -541,9 +541,9 @@ pub const Session = struct {
     ) !CapabilityIterator {
         var info_refs_uri = session.uri;
         {
-            const session_uri_path = try std.fmt.allocPrint(allocator, "{path}", .{session.uri.path});
+            const session_uri_path = try std.fmt.alloc_print(allocator, "{path}", .{session.uri.path});
             defer allocator.free(session_uri_path);
-            info_refs_uri.path = .{ .percent_encoded = try std.fs.path.resolvePosix(allocator, &.{ "/", session_uri_path, "info/refs" }) };
+            info_refs_uri.path = .{ .percent_encoded = try std.fs.path.resolve_posix(allocator, &.{ "/", session_uri_path, "info/refs" }) };
         }
         defer allocator.free(info_refs_uri.path.percent_encoded);
         info_refs_uri.query = .{ .percent_encoded = "service=git-upload-pack" };
@@ -565,13 +565,13 @@ pub const Session = struct {
         if (request.response.status != .ok) return error.ProtocolError;
         const any_redirects_occurred = request.redirect_behavior.remaining() < max_redirects;
         if (any_redirects_occurred) {
-            const request_uri_path = try std.fmt.allocPrint(allocator, "{path}", .{request.uri.path});
+            const request_uri_path = try std.fmt.alloc_print(allocator, "{path}", .{request.uri.path});
             defer allocator.free(request_uri_path);
-            if (!mem.endsWith(u8, request_uri_path, "/info/refs")) return error.UnparseableRedirect;
+            if (!mem.ends_with(u8, request_uri_path, "/info/refs")) return error.UnparseableRedirect;
             var new_uri = request.uri;
             new_uri.path = .{ .percent_encoded = request_uri_path[0 .. request_uri_path.len - "/info/refs".len] };
             new_uri.query = null;
-            redirect_uri.* = try std.fmt.allocPrint(allocator, "{+/}", .{new_uri});
+            redirect_uri.* = try std.fmt.alloc_print(allocator, "{+/}", .{new_uri});
             return error.Redirected;
         }
 
@@ -593,7 +593,7 @@ pub const Session = struct {
             switch (packet) {
                 .flush => state = .response_start,
                 .data => |data| switch (state) {
-                    .response_start => if (mem.eql(u8, Packet.normalizeText(data), "version 2")) {
+                    .response_start => if (mem.eql(u8, Packet.normalize_text(data), "version 2")) {
                         return .{ .request = request };
                     } else {
                         state = .response_content;
@@ -614,7 +614,7 @@ pub const Session = struct {
             value: ?[]const u8 = null,
 
             fn parse(data: []const u8) Capability {
-                return if (mem.indexOfScalar(u8, data, '=')) |separator_pos|
+                return if (mem.index_of_scalar(u8, data, '=')) |separator_pos|
                     .{ .key = data[0..separator_pos], .value = data[separator_pos + 1 ..] }
                 else
                     .{ .key = data };
@@ -629,7 +629,7 @@ pub const Session = struct {
         fn next(iterator: *CapabilityIterator) !?Capability {
             switch (try Packet.read(iterator.request.reader(), &iterator.buf)) {
                 .flush => return null,
-                .data => |data| return Capability.parse(Packet.normalizeText(data)),
+                .data => |data| return Capability.parse(Packet.normalize_text(data)),
                 else => return error.UnexpectedPacket,
             }
         }
@@ -652,9 +652,9 @@ pub const Session = struct {
     pub fn list_refs(session: Session, allocator: Allocator, options: ListRefsOptions) !RefIterator {
         var upload_pack_uri = session.uri;
         {
-            const session_uri_path = try std.fmt.allocPrint(allocator, "{path}", .{session.uri.path});
+            const session_uri_path = try std.fmt.alloc_print(allocator, "{path}", .{session.uri.path});
             defer allocator.free(session_uri_path);
-            upload_pack_uri.path = .{ .percent_encoded = try std.fs.path.resolvePosix(allocator, &.{ "/", session_uri_path, "git-upload-pack" }) };
+            upload_pack_uri.path = .{ .percent_encoded = try std.fs.path.resolve_posix(allocator, &.{ "/", session_uri_path, "git-upload-pack" }) };
         }
         defer allocator.free(upload_pack_uri.path.percent_encoded);
         upload_pack_uri.query = null;
@@ -669,7 +669,7 @@ pub const Session = struct {
         }
         try Packet.write(.delimiter, body_writer);
         for (options.ref_prefixes) |ref_prefix| {
-            const ref_prefix_packet = try std.fmt.allocPrint(allocator, "ref-prefix {s}\n", .{ref_prefix});
+            const ref_prefix_packet = try std.fmt.alloc_print(allocator, "ref-prefix {s}\n", .{ref_prefix});
             defer allocator.free(ref_prefix_packet);
             try Packet.write(.{ .data = ref_prefix_packet }, body_writer);
         }
@@ -692,7 +692,7 @@ pub const Session = struct {
         errdefer request.deinit();
         request.transfer_encoding = .{ .content_length = body.items.len };
         try request.send();
-        try request.writeAll(body.items);
+        try request.write_all(body.items);
         try request.finish();
 
         try request.wait();
@@ -721,23 +721,23 @@ pub const Session = struct {
             switch (try Packet.read(iterator.request.reader(), &iterator.buf)) {
                 .flush => return null,
                 .data => |data| {
-                    const ref_data = Packet.normalizeText(data);
-                    const oid_sep_pos = mem.indexOfScalar(u8, ref_data, ' ') orelse return error.InvalidRefPacket;
-                    const oid = parseOid(data[0..oid_sep_pos]) catch return error.InvalidRefPacket;
+                    const ref_data = Packet.normalize_text(data);
+                    const oid_sep_pos = mem.index_of_scalar(u8, ref_data, ' ') orelse return error.InvalidRefPacket;
+                    const oid = parse_oid(data[0..oid_sep_pos]) catch return error.InvalidRefPacket;
 
-                    const name_sep_pos = mem.indexOfScalarPos(u8, ref_data, oid_sep_pos + 1, ' ') orelse ref_data.len;
+                    const name_sep_pos = mem.index_of_scalar_pos(u8, ref_data, oid_sep_pos + 1, ' ') orelse ref_data.len;
                     const name = ref_data[oid_sep_pos + 1 .. name_sep_pos];
 
                     var symref_target: ?[]const u8 = null;
                     var peeled: ?Oid = null;
                     var last_sep_pos = name_sep_pos;
                     while (last_sep_pos < ref_data.len) {
-                        const next_sep_pos = mem.indexOfScalarPos(u8, ref_data, last_sep_pos + 1, ' ') orelse ref_data.len;
+                        const next_sep_pos = mem.index_of_scalar_pos(u8, ref_data, last_sep_pos + 1, ' ') orelse ref_data.len;
                         const attribute = ref_data[last_sep_pos + 1 .. next_sep_pos];
-                        if (mem.startsWith(u8, attribute, "symref-target:")) {
+                        if (mem.starts_with(u8, attribute, "symref-target:")) {
                             symref_target = attribute["symref-target:".len..];
-                        } else if (mem.startsWith(u8, attribute, "peeled:")) {
-                            peeled = parseOid(attribute["peeled:".len..]) catch return error.InvalidRefPacket;
+                        } else if (mem.starts_with(u8, attribute, "peeled:")) {
+                            peeled = parse_oid(attribute["peeled:".len..]) catch return error.InvalidRefPacket;
                         }
                         last_sep_pos = next_sep_pos;
                     }
@@ -759,9 +759,9 @@ pub const Session = struct {
     ) !FetchStream {
         var upload_pack_uri = session.uri;
         {
-            const session_uri_path = try std.fmt.allocPrint(allocator, "{path}", .{session.uri.path});
+            const session_uri_path = try std.fmt.alloc_print(allocator, "{path}", .{session.uri.path});
             defer allocator.free(session_uri_path);
-            upload_pack_uri.path = .{ .percent_encoded = try std.fs.path.resolvePosix(allocator, &.{ "/", session_uri_path, "git-upload-pack" }) };
+            upload_pack_uri.path = .{ .percent_encoded = try std.fs.path.resolve_posix(allocator, &.{ "/", session_uri_path, "git-upload-pack" }) };
         }
         defer allocator.free(upload_pack_uri.path.percent_encoded);
         upload_pack_uri.query = null;
@@ -784,7 +784,7 @@ pub const Session = struct {
         }
         for (wants) |want| {
             var buf: [Packet.max_data_length]u8 = undefined;
-            const arg = std.fmt.bufPrint(&buf, "want {s}\n", .{want}) catch unreachable;
+            const arg = std.fmt.buf_print(&buf, "want {s}\n", .{want}) catch unreachable;
             try Packet.write(.{ .data = arg }, body_writer);
         }
         try Packet.write(.{ .data = "done\n" }, body_writer);
@@ -801,7 +801,7 @@ pub const Session = struct {
         errdefer request.deinit();
         request.transfer_encoding = .{ .content_length = body.items.len };
         try request.send();
-        try request.writeAll(body.items);
+        try request.write_all(body.items);
         try request.finish();
 
         try request.wait();
@@ -817,7 +817,7 @@ pub const Session = struct {
             const packet = try Packet.read(reader, &buf);
             switch (state) {
                 .section_start => switch (packet) {
-                    .data => |data| if (mem.eql(u8, Packet.normalizeText(data), "packfile")) {
+                    .data => |data| if (mem.eql(u8, Packet.normalize_text(data), "packfile")) {
                         return .{ .request = request };
                     } else {
                         state = .section_content;
@@ -895,17 +895,17 @@ const PackHeader = struct {
     const supported_version = 2;
 
     fn read(reader: anytype) !PackHeader {
-        const actual_signature = reader.readBytesNoEof(4) catch |e| switch (e) {
+        const actual_signature = reader.read_bytes_no_eof(4) catch |e| switch (e) {
             error.EndOfStream => return error.InvalidHeader,
             else => |other| return other,
         };
         if (!mem.eql(u8, &actual_signature, signature)) return error.InvalidHeader;
-        const version = reader.readInt(u32, .big) catch |e| switch (e) {
+        const version = reader.read_int(u32, .big) catch |e| switch (e) {
             error.EndOfStream => return error.InvalidHeader,
             else => |other| return other,
         };
         if (version != supported_version) return error.UnsupportedVersion;
-        const total_objects = reader.readInt(u32, .big) catch |e| switch (e) {
+        const total_objects = reader.read_int(u32, .big) catch |e| switch (e) {
             error.EndOfStream => return error.InvalidHeader,
             else => |other| return other,
         };
@@ -946,7 +946,7 @@ const EntryHeader = union(Type) {
 
     fn object_type(header: EntryHeader) Object.Type {
         return switch (header) {
-            inline .commit, .tree, .blob, .tag => |_, tag| @field(Object.Type, @tagName(tag)),
+            inline .commit, .tree, .blob, .tag => |_, tag| @field(Object.Type, @tag_name(tag)),
             else => unreachable,
         };
     }
@@ -959,24 +959,24 @@ const EntryHeader = union(Type) {
 
     fn read(reader: anytype) !EntryHeader {
         const InitialByte = packed struct { len: u4, type: u3, has_next: bool };
-        const initial: InitialByte = @bitCast(reader.readByte() catch |e| switch (e) {
+        const initial: InitialByte = @bit_cast(reader.read_byte() catch |e| switch (e) {
             error.EndOfStream => return error.InvalidFormat,
             else => |other| return other,
         });
-        const rest_len = if (initial.has_next) try readSizeVarInt(reader) else 0;
+        const rest_len = if (initial.has_next) try read_size_var_int(reader) else 0;
         var uncompressed_length: u64 = initial.len;
-        uncompressed_length |= std.math.shlExact(u64, rest_len, 4) catch return error.InvalidFormat;
-        const @"type" = std.meta.intToEnum(EntryHeader.Type, initial.type) catch return error.InvalidFormat;
+        uncompressed_length |= std.math.shl_exact(u64, rest_len, 4) catch return error.InvalidFormat;
+        const @"type" = std.meta.int_to_enum(EntryHeader.Type, initial.type) catch return error.InvalidFormat;
         return switch (@"type") {
-            inline .commit, .tree, .blob, .tag => |tag| @unionInit(EntryHeader, @tagName(tag), .{
+            inline .commit, .tree, .blob, .tag => |tag| @union_init(EntryHeader, @tag_name(tag), .{
                 .uncompressed_length = uncompressed_length,
             }),
             .ofs_delta => .{ .ofs_delta = .{
-                .offset = try readOffsetVarInt(reader),
+                .offset = try read_offset_var_int(reader),
                 .uncompressed_length = uncompressed_length,
             } },
             .ref_delta => .{ .ref_delta = .{
-                .base_object = reader.readBytesNoEof(oid_length) catch |e| switch (e) {
+                .base_object = reader.read_bytes_no_eof(oid_length) catch |e| switch (e) {
                     error.EndOfStream => return error.InvalidFormat,
                     else => |other| return other,
                 },
@@ -988,11 +988,11 @@ const EntryHeader = union(Type) {
 
 fn read_size_var_int(r: anytype) !u64 {
     const Byte = packed struct { value: u7, has_next: bool };
-    var b: Byte = @bitCast(try r.readByte());
+    var b: Byte = @bit_cast(try r.read_byte());
     var value: u64 = b.value;
     var shift: u6 = 0;
     while (b.has_next) {
-        b = @bitCast(try r.readByte());
+        b = @bit_cast(try r.read_byte());
         shift = std.math.add(u6, shift, 7) catch return error.InvalidFormat;
         value |= @as(u64, b.value) << shift;
     }
@@ -1001,11 +1001,11 @@ fn read_size_var_int(r: anytype) !u64 {
 
 fn read_offset_var_int(r: anytype) !u64 {
     const Byte = packed struct { value: u7, has_next: bool };
-    var b: Byte = @bitCast(try r.readByte());
+    var b: Byte = @bit_cast(try r.read_byte());
     var value: u64 = b.value;
     while (b.has_next) {
-        b = @bitCast(try r.readByte());
-        value = std.math.shlExact(u64, value + 1, 7) catch return error.InvalidFormat;
+        b = @bit_cast(try r.read_byte());
+        value = std.math.shl_exact(u64, value + 1, 7) catch return error.InvalidFormat;
         value |= b.value;
     }
     return value;
@@ -1016,19 +1016,19 @@ const IndexHeader = struct {
 
     const signature = "\xFFtOc";
     const supported_version = 2;
-    const size = 4 + 4 + @sizeOf([256]u32);
+    const size = 4 + 4 + @size_of([256]u32);
 
     fn read(reader: anytype) !IndexHeader {
-        var header_bytes = try reader.readBytesNoEof(size);
+        var header_bytes = try reader.read_bytes_no_eof(size);
         if (!mem.eql(u8, header_bytes[0..4], signature)) return error.InvalidHeader;
-        const version = mem.readInt(u32, header_bytes[4..8], .big);
+        const version = mem.read_int(u32, header_bytes[4..8], .big);
         if (version != supported_version) return error.UnsupportedVersion;
 
         var fan_out_table: [256]u32 = undefined;
-        var fan_out_table_stream = std.io.fixedBufferStream(header_bytes[8..]);
+        var fan_out_table_stream = std.io.fixed_buffer_stream(header_bytes[8..]);
         const fan_out_table_reader = fan_out_table_stream.reader();
         for (&fan_out_table) |*entry| {
-            entry.* = fan_out_table_reader.readInt(u32, .big) catch unreachable;
+            entry.* = fan_out_table_reader.read_int(u32, .big) catch unreachable;
         }
         return .{ .fan_out_table = fan_out_table };
     }
@@ -1042,14 +1042,14 @@ const IndexEntry = struct {
 /// Writes out a version 2 index for the given packfile, as documented in
 /// [pack-format](https://git-scm.com/docs/pack-format).
 pub fn index_pack(allocator: Allocator, pack: std.fs.File, index_writer: anytype) !void {
-    try pack.seekTo(0);
+    try pack.seek_to(0);
 
     var index_entries = std.AutoHashMapUnmanaged(Oid, IndexEntry){};
     defer index_entries.deinit(allocator);
     var pending_deltas = std.ArrayListUnmanaged(IndexEntry){};
     defer pending_deltas.deinit(allocator);
 
-    const pack_checksum = try indexPackFirstPass(allocator, pack, &index_entries, &pending_deltas);
+    const pack_checksum = try index_pack_first_pass(allocator, pack, &index_entries, &pending_deltas);
 
     var cache: ObjectCache = .{};
     defer cache.deinit(allocator);
@@ -1059,9 +1059,9 @@ pub fn index_pack(allocator: Allocator, pack: std.fs.File, index_writer: anytype
         while (i > 0) {
             i -= 1;
             const delta = pending_deltas.items[i];
-            if (try indexPackHashDelta(allocator, pack, delta, index_entries, &cache)) |oid| {
+            if (try index_pack_hash_delta(allocator, pack, delta, index_entries, &cache)) |oid| {
                 try index_entries.put(allocator, oid, delta);
-                _ = pending_deltas.swapRemove(i);
+                _ = pending_deltas.swap_remove(i);
             }
         }
         if (pending_deltas.items.len == remaining_deltas) return error.IncompletePack;
@@ -1070,16 +1070,16 @@ pub fn index_pack(allocator: Allocator, pack: std.fs.File, index_writer: anytype
 
     var oids = std.ArrayListUnmanaged(Oid){};
     defer oids.deinit(allocator);
-    try oids.ensureTotalCapacityPrecise(allocator, index_entries.count());
+    try oids.ensure_total_capacity_precise(allocator, index_entries.count());
     var index_entries_iter = index_entries.iterator();
     while (index_entries_iter.next()) |entry| {
-        oids.appendAssumeCapacity(entry.key_ptr.*);
+        oids.append_assume_capacity(entry.key_ptr.*);
     }
-    mem.sortUnstable(Oid, oids.items, {}, struct {
+    mem.sort_unstable(Oid, oids.items, {}, struct {
         fn less_than(_: void, o1: Oid, o2: Oid) bool {
-            return mem.lessThan(u8, &o1, &o2);
+            return mem.less_than(u8, &o1, &o2);
         }
-    }.lessThan);
+    }.less_than);
 
     var fan_out_table: [256]u32 = undefined;
     var count: u32 = 0;
@@ -1093,41 +1093,41 @@ pub fn index_pack(allocator: Allocator, pack: std.fs.File, index_writer: anytype
     }
     @memset(fan_out_table[fan_out_index..], count);
 
-    var index_hashed_writer = hashedWriter(index_writer, Sha1.init(.{}));
+    var index_hashed_writer = hashed_writer(index_writer, Sha1.init(.{}));
     const writer = index_hashed_writer.writer();
-    try writer.writeAll(IndexHeader.signature);
-    try writer.writeInt(u32, IndexHeader.supported_version, .big);
+    try writer.write_all(IndexHeader.signature);
+    try writer.write_int(u32, IndexHeader.supported_version, .big);
     for (fan_out_table) |fan_out_entry| {
-        try writer.writeInt(u32, fan_out_entry, .big);
+        try writer.write_int(u32, fan_out_entry, .big);
     }
 
     for (oids.items) |oid| {
-        try writer.writeAll(&oid);
+        try writer.write_all(&oid);
     }
 
     for (oids.items) |oid| {
-        try writer.writeInt(u32, index_entries.get(oid).?.crc32, .big);
+        try writer.write_int(u32, index_entries.get(oid).?.crc32, .big);
     }
 
     var big_offsets = std.ArrayListUnmanaged(u64){};
     defer big_offsets.deinit(allocator);
     for (oids.items) |oid| {
         const offset = index_entries.get(oid).?.offset;
-        if (offset <= std.math.maxInt(u31)) {
-            try writer.writeInt(u32, @intCast(offset), .big);
+        if (offset <= std.math.max_int(u31)) {
+            try writer.write_int(u32, @int_cast(offset), .big);
         } else {
             const index = big_offsets.items.len;
             try big_offsets.append(allocator, offset);
-            try writer.writeInt(u32, @as(u32, @intCast(index)) | (1 << 31), .big);
+            try writer.write_int(u32, @as(u32, @int_cast(index)) | (1 << 31), .big);
         }
     }
     for (big_offsets.items) |offset| {
-        try writer.writeInt(u64, offset, .big);
+        try writer.write_int(u64, offset, .big);
     }
 
-    try writer.writeAll(&pack_checksum);
-    const index_checksum = index_hashed_writer.hasher.finalResult();
-    try index_writer.writeAll(&index_checksum);
+    try writer.write_all(&pack_checksum);
+    const index_checksum = index_hashed_writer.hasher.final_result();
+    try index_writer.write_all(&index_checksum);
 }
 
 /// Performs the first pass over the packfile data for index construction.
@@ -1140,9 +1140,9 @@ fn index_pack_first_pass(
     index_entries: *std.AutoHashMapUnmanaged(Oid, IndexEntry),
     pending_deltas: *std.ArrayListUnmanaged(IndexEntry),
 ) ![Sha1.digest_length]u8 {
-    var pack_buffered_reader = std.io.bufferedReader(pack.reader());
-    var pack_counting_reader = std.io.countingReader(pack_buffered_reader.reader());
-    var pack_hashed_reader = std.compress.hashedReader(pack_counting_reader.reader(), Sha1.init(.{}));
+    var pack_buffered_reader = std.io.buffered_reader(pack.reader());
+    var pack_counting_reader = std.io.counting_reader(pack_buffered_reader.reader());
+    var pack_hashed_reader = std.compress.hashed_reader(pack_counting_reader.reader(), Sha1.init(.{}));
     const pack_reader = pack_hashed_reader.reader();
 
     const pack_header = try PackHeader.read(pack_reader);
@@ -1150,23 +1150,23 @@ fn index_pack_first_pass(
     var current_entry: u32 = 0;
     while (current_entry < pack_header.total_objects) : (current_entry += 1) {
         const entry_offset = pack_counting_reader.bytes_read;
-        var entry_crc32_reader = std.compress.hashedReader(pack_reader, std.hash.Crc32.init());
+        var entry_crc32_reader = std.compress.hashed_reader(pack_reader, std.hash.Crc32.init());
         const entry_header = try EntryHeader.read(entry_crc32_reader.reader());
         switch (entry_header) {
             .commit, .tree, .blob, .tag => |object| {
                 var entry_decompress_stream = std.compress.zlib.decompressor(entry_crc32_reader.reader());
-                var entry_counting_reader = std.io.countingReader(entry_decompress_stream.reader());
-                var entry_hashed_writer = hashedWriter(std.io.null_writer, Sha1.init(.{}));
+                var entry_counting_reader = std.io.counting_reader(entry_decompress_stream.reader());
+                var entry_hashed_writer = hashed_writer(std.io.null_writer, Sha1.init(.{}));
                 const entry_writer = entry_hashed_writer.writer();
                 // The object header is not included in the pack data but is
                 // part of the object's ID
-                try entry_writer.print("{s} {}\x00", .{ @tagName(entry_header), object.uncompressed_length });
+                try entry_writer.print("{s} {}\x00", .{ @tag_name(entry_header), object.uncompressed_length });
                 var fifo = std.fifo.LinearFifo(u8, .{ .Static = 4096 }).init();
                 try fifo.pump(entry_counting_reader.reader(), entry_writer);
                 if (entry_counting_reader.bytes_read != object.uncompressed_length) {
                     return error.InvalidObject;
                 }
-                const oid = entry_hashed_writer.hasher.finalResult();
+                const oid = entry_hashed_writer.hasher.final_result();
                 try index_entries.put(allocator, oid, .{
                     .offset = entry_offset,
                     .crc32 = entry_crc32_reader.hasher.final(),
@@ -1174,7 +1174,7 @@ fn index_pack_first_pass(
             },
             inline .ofs_delta, .ref_delta => |delta| {
                 var entry_decompress_stream = std.compress.zlib.decompressor(entry_crc32_reader.reader());
-                var entry_counting_reader = std.io.countingReader(entry_decompress_stream.reader());
+                var entry_counting_reader = std.io.counting_reader(entry_decompress_stream.reader());
                 var fifo = std.fifo.LinearFifo(u8, .{ .Static = 4096 }).init();
                 try fifo.pump(entry_counting_reader.reader(), std.io.null_writer);
                 if (entry_counting_reader.bytes_read != delta.uncompressed_length) {
@@ -1188,12 +1188,12 @@ fn index_pack_first_pass(
         }
     }
 
-    const pack_checksum = pack_hashed_reader.hasher.finalResult();
-    const recorded_checksum = try pack_buffered_reader.reader().readBytesNoEof(Sha1.digest_length);
+    const pack_checksum = pack_hashed_reader.hasher.final_result();
+    const recorded_checksum = try pack_buffered_reader.reader().read_bytes_no_eof(Sha1.digest_length);
     if (!mem.eql(u8, &pack_checksum, &recorded_checksum)) {
         return error.CorruptedPack;
     }
-    _ = pack_reader.readByte() catch |e| switch (e) {
+    _ = pack_reader.read_byte() catch |e| switch (e) {
         error.EndOfStream => return pack_checksum,
         else => |other| return other,
     };
@@ -1218,7 +1218,7 @@ fn index_pack_hash_delta(
     const base_object = while (true) {
         if (cache.get(base_offset)) |base_object| break base_object;
 
-        try pack.seekTo(base_offset);
+        try pack.seek_to(base_offset);
         base_header = try EntryHeader.read(pack.reader());
         switch (base_header) {
             .ofs_delta => |ofs_delta| {
@@ -1230,22 +1230,22 @@ fn index_pack_hash_delta(
                 base_offset = (index_entries.get(ref_delta.base_object) orelse return null).offset;
             },
             else => {
-                const base_data = try readObjectRaw(allocator, pack.reader(), base_header.uncompressedLength());
+                const base_data = try read_object_raw(allocator, pack.reader(), base_header.uncompressed_length());
                 errdefer allocator.free(base_data);
-                const base_object: Object = .{ .type = base_header.objectType(), .data = base_data };
+                const base_object: Object = .{ .type = base_header.object_type(), .data = base_data };
                 try cache.put(allocator, base_offset, base_object);
                 break base_object;
             },
         }
     };
 
-    const base_data = try resolveDeltaChain(allocator, pack, base_object, delta_offsets.items, cache);
+    const base_data = try resolve_delta_chain(allocator, pack, base_object, delta_offsets.items, cache);
 
     var entry_hasher = Sha1.init(.{});
-    var entry_hashed_writer = hashedWriter(std.io.null_writer, &entry_hasher);
-    try entry_hashed_writer.writer().print("{s} {}\x00", .{ @tagName(base_object.type), base_data.len });
+    var entry_hashed_writer = hashed_writer(std.io.null_writer, &entry_hasher);
+    try entry_hashed_writer.writer().print("{s} {}\x00", .{ @tag_name(base_object.type), base_data.len });
     entry_hasher.update(base_data);
-    return entry_hasher.finalResult();
+    return entry_hasher.final_result();
 }
 
 /// Resolves a chain of deltas, returning the final base object data. `pack` is
@@ -1265,21 +1265,21 @@ fn resolve_delta_chain(
         i -= 1;
 
         const delta_offset = delta_offsets[i];
-        try pack.seekTo(delta_offset);
+        try pack.seek_to(delta_offset);
         const delta_header = try EntryHeader.read(pack.reader());
-        const delta_data = try readObjectRaw(allocator, pack.reader(), delta_header.uncompressedLength());
+        const delta_data = try read_object_raw(allocator, pack.reader(), delta_header.uncompressed_length());
         defer allocator.free(delta_data);
-        var delta_stream = std.io.fixedBufferStream(delta_data);
+        var delta_stream = std.io.fixed_buffer_stream(delta_data);
         const delta_reader = delta_stream.reader();
-        _ = try readSizeVarInt(delta_reader); // base object size
-        const expanded_size = try readSizeVarInt(delta_reader);
+        _ = try read_size_var_int(delta_reader); // base object size
+        const expanded_size = try read_size_var_int(delta_reader);
 
         const expanded_alloc_size = std.math.cast(usize, expanded_size) orelse return error.ObjectTooLarge;
         const expanded_data = try allocator.alloc(u8, expanded_alloc_size);
         errdefer allocator.free(expanded_data);
-        var expanded_delta_stream = std.io.fixedBufferStream(expanded_data);
-        var base_stream = std.io.fixedBufferStream(base_data);
-        try expandDelta(&base_stream, delta_reader, expanded_delta_stream.writer());
+        var expanded_delta_stream = std.io.fixed_buffer_stream(expanded_data);
+        var base_stream = std.io.fixed_buffer_stream(base_data);
+        try expand_delta(&base_stream, delta_reader, expanded_delta_stream.writer());
         if (expanded_delta_stream.pos != expanded_size) return error.InvalidObject;
 
         try cache.put(allocator, delta_offset, .{ .type = base_object.type, .data = expanded_data });
@@ -1293,12 +1293,12 @@ fn resolve_delta_chain(
 /// returning is not reliable.
 fn read_object_raw(allocator: Allocator, reader: anytype, size: u64) ![]u8 {
     const alloc_size = std.math.cast(usize, size) orelse return error.ObjectTooLarge;
-    var buffered_reader = std.io.bufferedReader(reader);
+    var buffered_reader = std.io.buffered_reader(reader);
     var decompress_stream = std.compress.zlib.decompressor(buffered_reader.reader());
     const data = try allocator.alloc(u8, alloc_size);
     errdefer allocator.free(data);
-    try decompress_stream.reader().readNoEof(data);
-    _ = decompress_stream.reader().readByte() catch |e| switch (e) {
+    try decompress_stream.reader().read_no_eof(data);
+    _ = decompress_stream.reader().read_byte() catch |e| switch (e) {
         error.EndOfStream => return data,
         else => |other| return other,
     };
@@ -1306,13 +1306,13 @@ fn read_object_raw(allocator: Allocator, reader: anytype, size: u64) ![]u8 {
 }
 
 /// Expands delta data from `delta_reader` to `writer`. `base_object` must
-/// support `reader` and `seekTo` (such as a `std.io.FixedBufferStream`).
+/// support `reader` and `seek_to` (such as a `std.io.FixedBufferStream`).
 ///
 /// The format of the delta data is documented in
 /// [pack-format](https://git-scm.com/docs/pack-format).
 fn expand_delta(base_object: anytype, delta_reader: anytype, writer: anytype) !void {
     while (true) {
-        const inst: packed struct { value: u7, copy: bool } = @bitCast(delta_reader.readByte() catch |e| switch (e) {
+        const inst: packed struct { value: u7, copy: bool } = @bit_cast(delta_reader.read_byte() catch |e| switch (e) {
             error.EndOfStream => return,
             else => |other| return other,
         });
@@ -1325,27 +1325,27 @@ fn expand_delta(base_object: anytype, delta_reader: anytype, writer: anytype) !v
                 size1: bool,
                 size2: bool,
                 size3: bool,
-            } = @bitCast(inst.value);
+            } = @bit_cast(inst.value);
             const offset_parts: packed struct { offset1: u8, offset2: u8, offset3: u8, offset4: u8 } = .{
-                .offset1 = if (available.offset1) try delta_reader.readByte() else 0,
-                .offset2 = if (available.offset2) try delta_reader.readByte() else 0,
-                .offset3 = if (available.offset3) try delta_reader.readByte() else 0,
-                .offset4 = if (available.offset4) try delta_reader.readByte() else 0,
+                .offset1 = if (available.offset1) try delta_reader.read_byte() else 0,
+                .offset2 = if (available.offset2) try delta_reader.read_byte() else 0,
+                .offset3 = if (available.offset3) try delta_reader.read_byte() else 0,
+                .offset4 = if (available.offset4) try delta_reader.read_byte() else 0,
             };
-            const offset: u32 = @bitCast(offset_parts);
+            const offset: u32 = @bit_cast(offset_parts);
             const size_parts: packed struct { size1: u8, size2: u8, size3: u8 } = .{
-                .size1 = if (available.size1) try delta_reader.readByte() else 0,
-                .size2 = if (available.size2) try delta_reader.readByte() else 0,
-                .size3 = if (available.size3) try delta_reader.readByte() else 0,
+                .size1 = if (available.size1) try delta_reader.read_byte() else 0,
+                .size2 = if (available.size2) try delta_reader.read_byte() else 0,
+                .size3 = if (available.size3) try delta_reader.read_byte() else 0,
             };
-            var size: u24 = @bitCast(size_parts);
+            var size: u24 = @bit_cast(size_parts);
             if (size == 0) size = 0x10000;
-            try base_object.seekTo(offset);
-            var copy_reader = std.io.limitedReader(base_object.reader(), size);
+            try base_object.seek_to(offset);
+            var copy_reader = std.io.limited_reader(base_object.reader(), size);
             var fifo = std.fifo.LinearFifo(u8, .{ .Static = 4096 }).init();
             try fifo.pump(copy_reader.reader(), writer);
         } else if (inst.value != 0) {
-            var data_reader = std.io.limitedReader(delta_reader, inst.value);
+            var data_reader = std.io.limited_reader(delta_reader, inst.value);
             var fifo = std.fifo.LinearFifo(u8, .{ .Static = 4096 }).init();
             try fifo.pump(data_reader.reader(), writer);
         } else {
@@ -1393,37 +1393,37 @@ test "packfile indexing and checkout" {
     // 3. `git fsck` -> note the "dangling commit" ID (which matches the commit
     //    checked out below)
     // 4. `git checkout dd582c0720819ab7130b103635bd7271b9fd4feb`
-    const testrepo_pack = @embedFile("git/testdata/testrepo.pack");
+    const testrepo_pack = @embed_file("git/testdata/testrepo.pack");
 
-    var git_dir = testing.tmpDir(.{});
+    var git_dir = testing.tmp_dir(.{});
     defer git_dir.cleanup();
-    var pack_file = try git_dir.dir.createFile("testrepo.pack", .{ .read = true });
+    var pack_file = try git_dir.dir.create_file("testrepo.pack", .{ .read = true });
     defer pack_file.close();
-    try pack_file.writeAll(testrepo_pack);
+    try pack_file.write_all(testrepo_pack);
 
-    var index_file = try git_dir.dir.createFile("testrepo.idx", .{ .read = true });
+    var index_file = try git_dir.dir.create_file("testrepo.idx", .{ .read = true });
     defer index_file.close();
-    try indexPack(testing.allocator, pack_file, index_file.writer());
+    try index_pack(testing.allocator, pack_file, index_file.writer());
 
     // Arbitrary size limit on files read while checking the repository contents
     // (all files in the test repo are known to be much smaller than this)
     const max_file_size = 4096;
 
-    const index_file_data = try git_dir.dir.readFileAlloc(testing.allocator, "testrepo.idx", max_file_size);
+    const index_file_data = try git_dir.dir.read_file_alloc(testing.allocator, "testrepo.idx", max_file_size);
     defer testing.allocator.free(index_file_data);
     // testrepo.idx is generated by Git. The index created by this file should
     // match it exactly. Running `git verify-pack -v testrepo.pack` can verify
     // this.
-    const testrepo_idx = @embedFile("git/testdata/testrepo.idx");
-    try testing.expectEqualSlices(u8, testrepo_idx, index_file_data);
+    const testrepo_idx = @embed_file("git/testdata/testrepo.idx");
+    try testing.expect_equal_slices(u8, testrepo_idx, index_file_data);
 
     var repository = try Repository.init(testing.allocator, pack_file, index_file);
     defer repository.deinit();
 
-    var worktree = testing.tmpDir(.{ .iterate = true });
+    var worktree = testing.tmp_dir(.{ .iterate = true });
     defer worktree.cleanup();
 
-    const commit_id = try parseOid("dd582c0720819ab7130b103635bd7271b9fd4feb");
+    const commit_id = try parse_oid("dd582c0720819ab7130b103635bd7271b9fd4feb");
 
     var diagnostics: Diagnostics = .{ .allocator = testing.allocator };
     defer diagnostics.deinit();
@@ -1456,15 +1456,15 @@ test "packfile indexing and checkout" {
         if (entry.kind != .file) continue;
         const path = try testing.allocator.dupe(u8, entry.path);
         errdefer testing.allocator.free(path);
-        mem.replaceScalar(u8, path, std.fs.path.sep, '/');
+        mem.replace_scalar(u8, path, std.fs.path.sep, '/');
         try actual_files.append(testing.allocator, path);
     }
-    mem.sortUnstable([]u8, actual_files.items, {}, struct {
+    mem.sort_unstable([]u8, actual_files.items, {}, struct {
         fn less_than(_: void, a: []u8, b: []u8) bool {
-            return mem.lessThan(u8, a, b);
+            return mem.less_than(u8, a, b);
         }
-    }.lessThan);
-    try testing.expectEqualDeep(expected_files, actual_files.items);
+    }.less_than);
+    try testing.expect_equal_deep(expected_files, actual_files.items);
 
     const expected_file_contents =
         \\revision 1
@@ -1482,9 +1482,9 @@ test "packfile indexing and checkout" {
         \\revision 19
         \\
     ;
-    const actual_file_contents = try worktree.dir.readFileAlloc(testing.allocator, "file", max_file_size);
+    const actual_file_contents = try worktree.dir.read_file_alloc(testing.allocator, "file", max_file_size);
     defer testing.allocator.free(actual_file_contents);
-    try testing.expectEqualStrings(expected_file_contents, actual_file_contents);
+    try testing.expect_equal_strings(expected_file_contents, actual_file_contents);
 }
 
 /// Checks out a commit of a packfile. Intended for experimenting with and
@@ -1492,26 +1492,26 @@ test "packfile indexing and checkout" {
 pub fn main() !void {
     const allocator = std.heap.c_allocator;
 
-    const args = try std.process.argsAlloc(allocator);
-    defer std.process.argsFree(allocator, args);
+    const args = try std.process.args_alloc(allocator);
+    defer std.process.args_free(allocator, args);
     if (args.len != 4) {
         return error.InvalidArguments; // Arguments: packfile commit worktree
     }
 
-    var pack_file = try std.fs.cwd().openFile(args[1], .{});
+    var pack_file = try std.fs.cwd().open_file(args[1], .{});
     defer pack_file.close();
-    const commit = try parseOid(args[2]);
-    var worktree = try std.fs.cwd().makeOpenPath(args[3], .{});
+    const commit = try parse_oid(args[2]);
+    var worktree = try std.fs.cwd().make_open_path(args[3], .{});
     defer worktree.close();
 
-    var git_dir = try worktree.makeOpenPath(".git", .{});
+    var git_dir = try worktree.make_open_path(".git", .{});
     defer git_dir.close();
 
     std.debug.print("Starting index...\n", .{});
-    var index_file = try git_dir.createFile("idx", .{ .read = true });
+    var index_file = try git_dir.create_file("idx", .{ .read = true });
     defer index_file.close();
-    var index_buffered_writer = std.io.bufferedWriter(index_file.writer());
-    try indexPack(allocator, pack_file, index_buffered_writer.writer());
+    var index_buffered_writer = std.io.buffered_writer(index_file.writer());
+    try index_pack(allocator, pack_file, index_buffered_writer.writer());
     try index_buffered_writer.flush();
     try index_file.sync();
 

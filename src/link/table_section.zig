@@ -11,20 +11,20 @@ pub fn TableSection(comptime Entry: type) type {
         }
 
         pub fn allocate_entry(self: *Self, allocator: Allocator, entry: Entry) Allocator.Error!Index {
-            try self.entries.ensureUnusedCapacity(allocator, 1);
+            try self.entries.ensure_unused_capacity(allocator, 1);
             const index = blk: {
-                if (self.free_list.popOrNull()) |index| {
+                if (self.free_list.pop_or_null()) |index| {
                     log.debug("  (reusing entry index {d})", .{index});
                     break :blk index;
                 } else {
                     log.debug("  (allocating entry at index {d})", .{self.entries.items.len});
-                    const index = @as(u32, @intCast(self.entries.items.len));
-                    _ = self.entries.addOneAssumeCapacity();
+                    const index = @as(u32, @int_cast(self.entries.items.len));
+                    _ = self.entries.add_one_assume_capacity();
                     break :blk index;
                 }
             };
             self.entries.items[index] = entry;
-            try self.lookup.putNoClobber(allocator, entry, index);
+            try self.lookup.put_no_clobber(allocator, entry, index);
             return index;
         }
 
@@ -47,7 +47,7 @@ pub fn TableSection(comptime Entry: type) type {
         ) !void {
             _ = options;
             comptime assert(unused_format_string.len == 0);
-            try writer.writeAll("TableSection:\n");
+            try writer.write_all("TableSection:\n");
             for (self.entries.items, 0..) |entry, i| {
                 try writer.print("  {d} => {}\n", .{ i, entry });
             }

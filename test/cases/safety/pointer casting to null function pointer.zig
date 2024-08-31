@@ -12,8 +12,8 @@ fn get_null_ptr() ?*const anyopaque {
     return null;
 }
 pub fn main() !void {
-    const null_ptr: ?*const anyopaque = getNullPtr();
-    const required_ptr: *align(1) const fn () void = @ptrCast(null_ptr);
+    const null_ptr: ?*const anyopaque = get_null_ptr();
+    const required_ptr: *align(1) const fn () void = @ptr_cast(null_ptr);
     _ = required_ptr;
     return error.TestFailed;
 }

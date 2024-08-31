@@ -11,7 +11,7 @@ const native_os = builtin.os.tag;
 
 var argc_argv_ptr: [*]usize = undefined;
 
-const start_sym_name = if (native_arch.isMIPS()) "__start" else "_start";
+const start_sym_name = if (native_arch.is_mips()) "__start" else "_start";
 
 // The self-hosted compiler is not fully capable of handling all of this start.zig file.
 // Until then, we have simplified logic here for self-hosted. TODO remove this once
@@ -37,13 +37,13 @@ comptime {
                     @export(main2, .{ .name = "main" });
                 }
             } else if (builtin.os.tag == .windows) {
-                if (!@hasDecl(root, "wWinMainCRTStartup") and !@hasDecl(root, "mainCRTStartup")) {
-                    @export(wWinMainCRTStartup2, .{ .name = "wWinMainCRTStartup" });
+                if (!@hasDecl(root, "w_win_main_crtstartup") and !@hasDecl(root, "mainCRTStartup")) {
+                    @export(w_win_main_crtstartup2, .{ .name = "w_win_main_crtstartup" });
                 }
             } else if (builtin.os.tag == .opencl) {
                 if (@hasDecl(root, "main"))
-                    @export(spirvMain2, .{ .name = "main" });
-            } else if (native_arch.isRISCV()) {
+                    @export(spirv_main2, .{ .name = "main" });
+            } else if (native_arch.is_riscv()) {
                 if (!@hasDecl(root, "_start")) {
                     @export(riscv_start, .{ .name = "_start" });
                 }
@@ -60,24 +60,24 @@ comptime {
             }
         } else if (builtin.output_mode == .Exe or @hasDecl(root, "main")) {
             if (builtin.link_libc and @hasDecl(root, "main")) {
-                if (native_arch.isWasm()) {
-                    @export(mainWithoutEnv, .{ .name = "main" });
+                if (native_arch.is_wasm()) {
+                    @export(main_without_env, .{ .name = "main" });
                 } else if (@typeInfo(@TypeOf(root.main)).Fn.calling_convention != .C) {
                     @export(main, .{ .name = "main" });
                 }
             } else if (native_os == .windows) {
                 if (!@hasDecl(root, "WinMain") and !@hasDecl(root, "WinMainCRTStartup") and
-                    !@hasDecl(root, "wWinMain") and !@hasDecl(root, "wWinMainCRTStartup"))
+                    !@hasDecl(root, "wWinMain") and !@hasDecl(root, "w_win_main_crtstartup"))
                 {
-                    @export(WinStartup, .{ .name = "wWinMainCRTStartup" });
+                    @export(WinStartup, .{ .name = "w_win_main_crtstartup" });
                 } else if (@hasDecl(root, "WinMain") and !@hasDecl(root, "WinMainCRTStartup") and
-                    !@hasDecl(root, "wWinMain") and !@hasDecl(root, "wWinMainCRTStartup"))
+                    !@hasDecl(root, "wWinMain") and !@hasDecl(root, "w_win_main_crtstartup"))
                 {
-                    @compileError("WinMain not supported; declare wWinMain or main instead");
-                } else if (@hasDecl(root, "wWinMain") and !@hasDecl(root, "wWinMainCRTStartup") and
+                    @compile_error("WinMain not supported; declare wWinMain or main instead");
+                } else if (@hasDecl(root, "wWinMain") and !@hasDecl(root, "w_win_main_crtstartup") and
                     !@hasDecl(root, "WinMain") and !@hasDecl(root, "WinMainCRTStartup"))
                 {
-                    @export(wWinMainCRTStartup, .{ .name = "wWinMainCRTStartup" });
+                    @export(w_win_main_crtstartup, .{ .name = "w_win_main_crtstartup" });
                 }
             } else if (native_os == .uefi) {
                 if (!@hasDecl(root, "EfiMain")) @export(EfiMain, .{ .name = "EfiMain" });
@@ -91,7 +91,7 @@ comptime {
                     // case it's not required to provide an entrypoint such as main.
                     @export(wasi_start, .{ .name = wasm_start_sym });
                 }
-            } else if (native_arch.isWasm() and native_os == .freestanding) {
+            } else if (native_arch.is_wasm() and native_os == .freestanding) {
                 // Only call main when defined. For WebAssembly it's allowed to pass `-fno-entry` in which
                 // case it's not required to provide an entrypoint such as main.
                 if (!@hasDecl(root, start_sym_name) and @hasDecl(root, "main")) @export(wasm_freestanding_start, .{ .name = start_sym_name });
@@ -110,7 +110,7 @@ fn main2() callconv(.C) c_int {
 }
 
 fn _start2() callconv(.C) noreturn {
-    callMain2();
+    call_main2();
 }
 
 fn call_main2() noreturn {
@@ -163,14 +163,14 @@ fn exit2(code: usize) noreturn {
                     : "o0", "o1", "o2", "o3", "o4", "o5", "o6", "o7", "memory"
                 );
             },
-            else => @compileError("TODO"),
+            else => @compile_error("TODO"),
         },
         // exits(0)
         .plan9 => std.os.plan9.exits(null),
         .windows => {
             std.os.windows.ntdll.RtlExitUserProcess(@as(u32, @truncate(code)));
         },
-        else => @compileError("TODO"),
+        else => @compile_error("TODO"),
     }
     unreachable;
 }
@@ -196,15 +196,15 @@ fn _DllMainCRTStartup(
 fn wasm_freestanding_start() callconv(.C) void {
     // This is marked inline because for some reason LLVM in
     // release mode fails to inline it, and we want fewer call frames in stack traces.
-    _ = @call(.always_inline, callMain, .{});
+    _ = @call(.always_inline, call_main, .{});
 }
 
 fn wasi_start() callconv(.C) void {
     // The function call is marked inline because for some reason LLVM in
     // release mode fails to inline it, and we want fewer call frames in stack traces.
     switch (builtin.wasi_exec_model) {
-        .reactor => _ = @call(.always_inline, callMain, .{}),
-        .command => std.os.wasi.proc_exit(@call(.always_inline, callMain, .{})),
+        .reactor => _ = @call(.always_inline, call_main, .{}),
+        .command => std.os.wasi.proc_exit(@call(.always_inline, call_main, .{})),
     }
 }
 
@@ -217,11 +217,11 @@ fn riscv_start() callconv(.C) noreturn {
         },
         .Int => |info| ret: {
             if (info.bits != 8 or info.signedness == .signed) {
-                @compileError(bad_main_ret);
+                @compile_error(bad_main_ret);
             }
             break :ret root.main();
         },
-        else => @compileError("expected return type of main to be 'void', 'noreturn', 'u8'"),
+        else => @compile_error("expected return type of main to be 'void', 'noreturn', 'u8'"),
     });
 }
 
@@ -241,9 +241,9 @@ fn EfiMain(handle: uefi.Handle, system_table: *uefi.tables.SystemTable) callconv
             return root.main();
         },
         uefi.Status => {
-            return @intFromEnum(root.main());
+            return @int_from_enum(root.main());
         },
-        else => @compileError("expected return type of main to be 'void', 'noreturn', 'usize', or 'std.os.uefi.Status'"),
+        else => @compile_error("expected return type of main to be 'void', 'noreturn', 'usize', or 'std.os.uefi.Status'"),
     }
 }
 
@@ -268,27 +268,27 @@ fn _start() callconv(.Naked) noreturn {
             \\ xorl %%ebp, %%ebp
             \\ movq %%rsp, %[argc_argv_ptr]
             \\ andq $-16, %%rsp
-            \\ callq %[posixCallMainAndExit:P]
+            \\ callq %[posix_call_main_and_exit:P]
             ,
             .x86 =>
             \\ xorl %%ebp, %%ebp
             \\ movl %%esp, %[argc_argv_ptr]
             \\ andl $-16, %%esp
-            \\ calll %[posixCallMainAndExit:P]
+            \\ calll %[posix_call_main_and_exit:P]
             ,
             .aarch64, .aarch64_be =>
             \\ mov fp, #0
             \\ mov lr, #0
             \\ mov x0, sp
             \\ str x0, %[argc_argv_ptr]
-            \\ b %[posixCallMainAndExit]
+            \\ b %[posix_call_main_and_exit]
             ,
             .arm, .armeb, .thumb, .thumbeb =>
             \\ mov fp, #0
             \\ mov lr, #0
             \\ str sp, %[argc_argv_ptr]
             \\ and sp, #-16
-            \\ b %[posixCallMainAndExit]
+            \\ b %[posix_call_main_and_exit]
             ,
             .riscv64 =>
             \\ li s0, 0
@@ -296,7 +296,7 @@ fn _start() callconv(.Naked) noreturn {
             \\ lui a0, %hi(__zig_argc_argv_ptr)
             \\ sd sp, %lo(__zig_argc_argv_ptr)(a0)
             \\ andi sp, sp, -16
-            \\ tail %[posixCallMainAndExit]@plt
+            \\ tail %[posix_call_main_and_exit]@plt
             ,
             .mips, .mipsel =>
             // The lr is already zeroed on entry, as specified by the ABI.
@@ -307,7 +307,7 @@ fn _start() callconv(.Naked) noreturn {
             \\ addiu $1, $zero, -16
             \\ and $sp, $sp, $1
             \\ .set pop
-            \\ j %[posixCallMainAndExit]
+            \\ j %[posix_call_main_and_exit]
             ,
             .mips64, .mips64el =>
             // The lr is already zeroed on entry, as specified by the ABI.
@@ -318,7 +318,7 @@ fn _start() callconv(.Naked) noreturn {
             \\ daddiu $1, $zero, -16
             \\ and $sp, $sp, $1
             \\ .set pop
-            \\ j %[posixCallMainAndExit]
+            \\ j %[posix_call_main_and_exit]
             ,
             .powerpc, .powerpcle =>
             // Setup the initial stack frame and clear the back chain pointer.
@@ -327,7 +327,7 @@ fn _start() callconv(.Naked) noreturn {
             \\ stwu 1, -16(1)
             \\ stw 0, 0(1)
             \\ mtlr 0
-            \\ b %[posixCallMainAndExit]
+            \\ b %[posix_call_main_and_exit]
             ,
             .powerpc64, .powerpc64le =>
             // Setup the initial stack frame and clear the back chain pointer.
@@ -336,19 +336,19 @@ fn _start() callconv(.Naked) noreturn {
             \\ li 0, 0
             \\ stdu 0, -32(1)
             \\ mtlr 0
-            \\ b %[posixCallMainAndExit]
+            \\ b %[posix_call_main_and_exit]
             ,
             .sparc64 =>
             // argc is stored after a register window (16 registers) plus stack bias
             \\ mov %%g0, %%i6
             \\ add %%o6, 2175, %%l0
-            \\ ba %[posixCallMainAndExit]
+            \\ ba %[posix_call_main_and_exit]
             \\  stx %%l0, %[argc_argv_ptr]
             ,
-            else => @compileError("unsupported arch"),
+            else => @compile_error("unsupported arch"),
         }
         : [argc_argv_ptr] "=m" (argc_argv_ptr),
-        : [posixCallMainAndExit] "X" (&posixCallMainAndExit),
+        : [posix_call_main_and_exit] "X" (&posix_call_main_and_exit),
     );
 }
 
@@ -358,9 +358,9 @@ fn WinStartup() callconv(std.os.windows.WINAPI) noreturn {
         _ = @import("start_windows_tls.zig");
     }
 
-    std.debug.maybeEnableSegfaultHandler();
+    std.debug.maybe_enable_segfault_handler();
 
-    std.os.windows.ntdll.RtlExitUserProcess(callMain());
+    std.os.windows.ntdll.RtlExitUserProcess(call_main());
 }
 
 fn w_win_main_crtstartup() callconv(std.os.windows.WINAPI) noreturn {
@@ -369,24 +369,24 @@ fn w_win_main_crtstartup() callconv(std.os.windows.WINAPI) noreturn {
         _ = @import("start_windows_tls.zig");
     }
 
-    std.debug.maybeEnableSegfaultHandler();
+    std.debug.maybe_enable_segfault_handler();
 
-    const result: std.os.windows.INT = call_wWinMain();
-    std.os.windows.ntdll.RtlExitUserProcess(@as(std.os.windows.UINT, @bitCast(result)));
+    const result: std.os.windows.INT = call_w_win_main();
+    std.os.windows.ntdll.RtlExitUserProcess(@as(std.os.windows.UINT, @bit_cast(result)));
 }
 
 fn posix_call_main_and_exit() callconv(.C) noreturn {
     const argc = argc_argv_ptr[0];
-    const argv = @as([*][*:0]u8, @ptrCast(argc_argv_ptr + 1));
+    const argv = @as([*][*:0]u8, @ptr_cast(argc_argv_ptr + 1));
 
-    const envp_optional: [*:null]?[*:0]u8 = @ptrCast(@alignCast(argv + argc + 1));
+    const envp_optional: [*:null]?[*:0]u8 = @ptr_cast(@align_cast(argv + argc + 1));
     var envp_count: usize = 0;
     while (envp_optional[envp_count]) |_| : (envp_count += 1) {}
-    const envp = @as([*][*:0]u8, @ptrCast(envp_optional))[0..envp_count];
+    const envp = @as([*][*:0]u8, @ptr_cast(envp_optional))[0..envp_count];
 
     if (native_os == .linux) {
         // Find the beginning of the auxiliary vector
-        const auxv: [*]elf.Auxv = @ptrCast(@alignCast(envp.ptr + envp_count + 1));
+        const auxv: [*]elf.Auxv = @ptr_cast(@align_cast(envp.ptr + envp_count + 1));
         std.os.linux.elf_aux_maybe = auxv;
 
         var at_hwcap: usize = 0;
@@ -415,7 +415,7 @@ fn posix_call_main_and_exit() callconv(.C) noreturn {
             // ARMv6 targets (and earlier) have no support for TLS in hardware.
             // FIXME: Elide the check for targets >= ARMv7 when the target feature API
             // becomes less verbose (and more usable).
-            if (comptime native_arch.isARM()) {
+            if (comptime native_arch.is_arm()) {
                 if (at_hwcap & std.os.linux.HWCAP.TLS == 0) {
                     // FIXME: Make __aeabi_read_tp call the kernel helper kuser_get_tls
                     // For the time being use a simple abort instead of a @panic call to
@@ -425,17 +425,17 @@ fn posix_call_main_and_exit() callconv(.C) noreturn {
             }
 
             // Initialize the TLS area.
-            std.os.linux.tls.initStaticTLS(phdrs);
+            std.os.linux.tls.init_static_tls(phdrs);
         }
 
         // The way Linux executables represent stack size is via the PT_GNU_STACK
         // program header. However the kernel does not recognize it; it always gives 8 MiB.
         // Here we look for the stack size in our program headers and use setrlimit
         // to ask for more stack space.
-        expandStackSize(phdrs);
+        expand_stack_size(phdrs);
     }
 
-    std.posix.exit(callMainWithArgs(argc, argv, envp));
+    std.posix.exit(call_main_with_args(argc, argv, envp));
 }
 
 fn expand_stack_size(phdrs: []elf.Phdr) void {
@@ -476,30 +476,30 @@ inline fn call_main_with_args(argc: usize, argv: [*][*:0]u8, envp: [][*:0]u8) u8
     std.os.argv = argv[0..argc];
     std.os.environ = envp;
 
-    std.debug.maybeEnableSegfaultHandler();
-    maybeIgnoreSigpipe();
+    std.debug.maybe_enable_segfault_handler();
+    maybe_ignore_sigpipe();
 
-    return callMain();
+    return call_main();
 }
 
 fn main(c_argc: c_int, c_argv: [*][*:0]c_char, c_envp: [*:null]?[*:0]c_char) callconv(.C) c_int {
     var env_count: usize = 0;
     while (c_envp[env_count] != null) : (env_count += 1) {}
-    const envp = @as([*][*:0]u8, @ptrCast(c_envp))[0..env_count];
+    const envp = @as([*][*:0]u8, @ptr_cast(c_envp))[0..env_count];
 
     if (builtin.os.tag == .linux) {
         const at_phdr = std.c.getauxval(elf.AT_PHDR);
         const at_phnum = std.c.getauxval(elf.AT_PHNUM);
         const phdrs = (@as([*]elf.Phdr, @ptrFromInt(at_phdr)))[0..at_phnum];
-        expandStackSize(phdrs);
+        expand_stack_size(phdrs);
     }
 
-    return callMainWithArgs(@as(usize, @intCast(c_argc)), @as([*][*:0]u8, @ptrCast(c_argv)), envp);
+    return call_main_with_args(@as(usize, @int_cast(c_argc)), @as([*][*:0]u8, @ptr_cast(c_argv)), envp);
 }
 
 fn main_without_env(c_argc: c_int, c_argv: [*][*:0]c_char) callconv(.C) c_int {
-    std.os.argv = @as([*][*:0]u8, @ptrCast(c_argv))[0..@as(usize, @intCast(c_argc))];
-    return callMain();
+    std.os.argv = @as([*][*:0]u8, @ptr_cast(c_argv))[0..@as(usize, @int_cast(c_argc))];
+    return call_main();
 }
 
 // General error message for a malformed return type
@@ -516,7 +516,7 @@ pub inline fn call_main() u8 {
         },
         .Int => |info| {
             if (info.bits != 8 or info.signedness == .signed) {
-                @compileError(bad_main_ret);
+                @compile_error(bad_main_ret);
             }
             return root.main();
         },
@@ -524,7 +524,7 @@ pub inline fn call_main() u8 {
             const result = root.main() catch |err| {
                 std.log.err("{s}", .{@errorName(err)});
                 if (@errorReturnTrace()) |trace| {
-                    std.debug.dumpStackTrace(trace.*);
+                    std.debug.dump_stack_trace(trace.*);
                 }
                 return 1;
             };
@@ -532,22 +532,22 @@ pub inline fn call_main() u8 {
                 .Void => return 0,
                 .Int => |info| {
                     if (info.bits != 8 or info.signedness == .signed) {
-                        @compileError(bad_main_ret);
+                        @compile_error(bad_main_ret);
                     }
                     return result;
                 },
-                else => @compileError(bad_main_ret),
+                else => @compile_error(bad_main_ret),
             }
         },
-        else => @compileError(bad_main_ret),
+        else => @compile_error(bad_main_ret),
     }
 }
 
 pub fn call_w_win_main() std.os.windows.INT {
     const peb = std.os.windows.peb();
     const MAIN_HINSTANCE = @typeInfo(@TypeOf(root.wWinMain)).Fn.params[0].type.?;
-    const hInstance = @as(MAIN_HINSTANCE, @ptrCast(peb.ImageBaseAddress));
-    const lpCmdLine: [*:0]u16 = @ptrCast(peb.ProcessParameters.CommandLine.Buffer);
+    const hInstance = @as(MAIN_HINSTANCE, @ptr_cast(peb.ImageBaseAddress));
+    const lpCmdLine: [*:0]u16 = @ptr_cast(peb.ProcessParameters.CommandLine.Buffer);
 
     // There are various types used for the 'show window' variable through the Win32 APIs:
     // - u16 in STARTUPINFOA.wShowWindow / STARTUPINFOW.wShowWindow
@@ -602,7 +602,7 @@ fn maybe_ignore_sigpipe() void {
         const act: posix.Sigaction = .{
             // Set handler to a noop function instead of `SIG.IGN` to prevent
             // leaking signal disposition to a child process.
-            .handler = .{ .handler = noopSigHandler },
+            .handler = .{ .handler = noop_sig_handler },
             .mask = posix.empty_sigset,
             .flags = 0,
         };

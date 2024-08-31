@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
     const optimize = std.builtin.OptimizeMode.Debug;
     const target = b.host;
 
-    const main = b.addExecutable(.{
+    const main = b.add_executable(.{
         .name = "main",
         .root_source_file = b.path("main.zig"),
         .optimize = optimize,
@@ -16,7 +16,7 @@ pub fn build(b: *std.Build) void {
     });
 
     // TODO: actually check the output
-    _ = main.getEmittedBin();
+    _ = main.get_emitted_bin();
 
-    test_step.dependOn(&main.step);
+    test_step.depend_on(&main.step);
 }

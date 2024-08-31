@@ -85,12 +85,12 @@ test "OneByte" {
 
     const str = "This is a test";
     var one_byte_stream = OneByteReadReader.init(str);
-    var buf_reader = bufferedReader(one_byte_stream.reader());
+    var buf_reader = buffered_reader(one_byte_stream.reader());
     const stream = buf_reader.reader();
 
-    const res = try stream.readAllAlloc(testing.allocator, str.len + 1);
+    const res = try stream.read_all_alloc(testing.allocator, str.len + 1);
     defer testing.allocator.free(res);
-    try testing.expectEqualSlices(u8, str, res);
+    try testing.expect_equal_slices(u8, str, res);
 }
 
 fn small_buffered_reader(underlying_stream: anytype) BufferedReader(8, @TypeOf(underlying_stream)) {
@@ -136,10 +136,10 @@ test "Block" {
         };
         var out_buf: [4]u8 = undefined;
         _ = try test_buf_reader.read(&out_buf);
-        try testing.expectEqualSlices(u8, &out_buf, block);
+        try testing.expect_equal_slices(u8, &out_buf, block);
         _ = try test_buf_reader.read(&out_buf);
-        try testing.expectEqualSlices(u8, &out_buf, block);
-        try testing.expectEqual(try test_buf_reader.read(&out_buf), 0);
+        try testing.expect_equal_slices(u8, &out_buf, block);
+        try testing.expect_equal(try test_buf_reader.read(&out_buf), 0);
     }
 
     // len out < block
@@ -149,12 +149,12 @@ test "Block" {
         };
         var out_buf: [3]u8 = undefined;
         _ = try test_buf_reader.read(&out_buf);
-        try testing.expectEqualSlices(u8, &out_buf, "012");
+        try testing.expect_equal_slices(u8, &out_buf, "012");
         _ = try test_buf_reader.read(&out_buf);
-        try testing.expectEqualSlices(u8, &out_buf, "301");
+        try testing.expect_equal_slices(u8, &out_buf, "301");
         const n = try test_buf_reader.read(&out_buf);
-        try testing.expectEqualSlices(u8, out_buf[0..n], "23");
-        try testing.expectEqual(try test_buf_reader.read(&out_buf), 0);
+        try testing.expect_equal_slices(u8, out_buf[0..n], "23");
+        try testing.expect_equal(try test_buf_reader.read(&out_buf), 0);
     }
 
     // len out > block
@@ -164,10 +164,10 @@ test "Block" {
         };
         var out_buf: [5]u8 = undefined;
         _ = try test_buf_reader.read(&out_buf);
-        try testing.expectEqualSlices(u8, &out_buf, "01230");
+        try testing.expect_equal_slices(u8, &out_buf, "01230");
         const n = try test_buf_reader.read(&out_buf);
-        try testing.expectEqualSlices(u8, out_buf[0..n], "123");
-        try testing.expectEqual(try test_buf_reader.read(&out_buf), 0);
+        try testing.expect_equal_slices(u8, out_buf[0..n], "123");
+        try testing.expect_equal(try test_buf_reader.read(&out_buf), 0);
     }
 
     // len out == 0
@@ -177,7 +177,7 @@ test "Block" {
         };
         var out_buf: [0]u8 = undefined;
         _ = try test_buf_reader.read(&out_buf);
-        try testing.expectEqualSlices(u8, &out_buf, "");
+        try testing.expect_equal_slices(u8, &out_buf, "");
     }
 
     // len bufreader buf > block
@@ -187,9 +187,9 @@ test "Block" {
         };
         var out_buf: [4]u8 = undefined;
         _ = try test_buf_reader.read(&out_buf);
-        try testing.expectEqualSlices(u8, &out_buf, block);
+        try testing.expect_equal_slices(u8, &out_buf, block);
         _ = try test_buf_reader.read(&out_buf);
-        try testing.expectEqualSlices(u8, &out_buf, block);
-        try testing.expectEqual(try test_buf_reader.read(&out_buf), 0);
+        try testing.expect_equal_slices(u8, &out_buf, block);
+        try testing.expect_equal(try test_buf_reader.read(&out_buf), 0);
     }
 }

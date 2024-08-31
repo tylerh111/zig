@@ -32,7 +32,7 @@ pub fn find_by_mnemonic(
     ops: []const Instruction.Operand,
 ) !?Encoding {
     var input_ops = [1]Op{.none} ** 4;
-    for (input_ops[0..ops.len], ops) |*input_op, op| input_op.* = Op.fromOperand(op);
+    for (input_ops[0..ops.len], ops) |*input_op, op| input_op.* = Op.from_operand(op);
 
     const rex_required = for (ops) |op| switch (op) {
         .reg => |r| switch (r) {
@@ -49,26 +49,26 @@ pub fn find_by_mnemonic(
         else => {},
     } else false;
     const rex_extended = for (ops) |op| {
-        if (op.isBaseExtended() or op.isIndexExtended()) break true;
+        if (op.is_base_extended() or op.is_index_extended()) break true;
     } else false;
 
     if ((rex_required or rex_extended) and rex_invalid) return error.CannotEncode;
 
     var shortest_enc: ?Encoding = null;
     var shortest_len: ?usize = null;
-    next: for (mnemonic_to_encodings_map[@intFromEnum(mnemonic)]) |data| {
+    next: for (mnemonic_to_encodings_map[@int_from_enum(mnemonic)]) |data| {
         switch (data.mode) {
             .none, .short => if (rex_required) continue,
             .rex, .rex_short => if (!rex_required) continue,
             else => {},
         }
-        for (input_ops, data.ops) |input_op, data_op| if (!input_op.isSubset(data_op)) continue :next;
+        for (input_ops, data.ops) |input_op, data_op| if (!input_op.is_subset(data_op)) continue :next;
 
         const enc = Encoding{ .mnemonic = mnemonic, .data = data };
         if (shortest_enc) |previous_shortest_enc| {
-            const len = estimateInstructionLength(prefix, enc, ops);
+            const len = estimate_instruction_length(prefix, enc, ops);
             const previous_shortest_len = shortest_len orelse
-                estimateInstructionLength(prefix, previous_shortest_enc, ops);
+                estimate_instruction_length(prefix, previous_shortest_enc, ops);
             if (len < previous_shortest_len) {
                 shortest_enc = enc;
                 shortest_len = len;
@@ -88,13 +88,13 @@ pub fn find_by_opcode(opc: []const u8, prefixes: struct {
         if (modrm_ext) |ext| if (ext != data.modrm_ext) continue;
         if (!std.mem.eql(u8, opc, enc.opcode())) continue;
         if (prefixes.rex.w) {
-            if (!data.mode.isLong()) continue;
-        } else if (prefixes.rex.present and !prefixes.rex.isSet()) {
-            if (!data.mode.isRex()) continue;
+            if (!data.mode.is_long()) continue;
+        } else if (prefixes.rex.present and !prefixes.rex.is_set()) {
+            if (!data.mode.is_rex()) continue;
         } else if (prefixes.legacy.prefix_66) {
-            if (!data.mode.isShort()) continue;
+            if (!data.mode.is_short()) continue;
         } else {
-            if (data.mode.isShort()) continue;
+            if (data.mode.is_short()) continue;
         }
         return enc;
     };
@@ -130,10 +130,10 @@ pub fn format(
     _ = fmt;
 
     var opc = encoding.opcode();
-    if (encoding.data.mode.isVex()) {
-        try writer.writeAll("VEX.");
+    if (encoding.data.mode.is_vex()) {
+        try writer.write_all("VEX.");
 
-        try writer.writeAll(switch (encoding.data.mode) {
+        try writer.write_all(switch (encoding.data.mode) {
             .vex_128_w0, .vex_128_w1, .vex_128_wig => "128",
             .vex_256_w0, .vex_256_w1, .vex_256_wig => "256",
             .vex_lig_w0, .vex_lig_w1, .vex_lig_wig => "LIG",
@@ -149,19 +149,19 @@ pub fn format(
             },
         }
 
-        try writer.print(".{}", .{std.fmt.fmtSliceHexUpper(opc[0 .. opc.len - 1])});
+        try writer.print(".{}", .{std.fmt.fmt_slice_hex_upper(opc[0 .. opc.len - 1])});
         opc = opc[opc.len - 1 ..];
 
-        try writer.writeAll(".W");
-        try writer.writeAll(switch (encoding.data.mode) {
+        try writer.write_all(".W");
+        try writer.write_all(switch (encoding.data.mode) {
             .vex_128_w0, .vex_256_w0, .vex_lig_w0, .vex_lz_w0 => "0",
             .vex_128_w1, .vex_256_w1, .vex_lig_w1, .vex_lz_w1 => "1",
             .vex_128_wig, .vex_256_wig, .vex_lig_wig, .vex_lz_wig => "IG",
             else => unreachable,
         });
 
-        try writer.writeByte(' ');
-    } else if (encoding.data.mode.isLong()) try writer.writeAll("REX.W + ");
+        try writer.write_byte(' ');
+    } else if (encoding.data.mode.is_long()) try writer.write_all("REX.W + ");
     for (opc) |byte| try writer.print("{x:0>2} ", .{byte});
 
     switch (encoding.data.op_en) {
@@ -176,8 +176,8 @@ pub fn format(
             };
             try writer.print("+{s} ", .{tag});
         },
-        .m, .mi, .m1, .mc, .vmi => try writer.print("/{d} ", .{encoding.modRmExt()}),
-        .mr, .rm, .rmi, .mri, .mrc, .rm0, .rvm, .rvmr, .rvmi, .mvr => try writer.writeAll("/r "),
+        .m, .mi, .m1, .mc, .vmi => try writer.print("/{d} ", .{encoding.mod_rm_ext()}),
+        .mr, .rm, .rmi, .mri, .mrc, .rm0, .rvm, .rvmr, .rvmi, .mvr => try writer.write_all("/r "),
     }
 
     switch (encoding.data.op_en) {
@@ -201,22 +201,22 @@ pub fn format(
             };
             try writer.print("{s} ", .{tag});
         },
-        .rvmr => try writer.writeAll("/is4 "),
+        .rvmr => try writer.write_all("/is4 "),
         .zo, .fd, .td, .o, .m, .m1, .mc, .mr, .rm, .mrc, .rm0, .rvm, .mvr => {},
     }
 
-    try writer.print("{s} ", .{@tagName(encoding.mnemonic)});
+    try writer.print("{s} ", .{@tag_name(encoding.mnemonic)});
 
     for (encoding.data.ops) |op| switch (op) {
         .none, .o16, .o32, .o64 => break,
-        else => try writer.print("{s} ", .{@tagName(op)}),
+        else => try writer.print("{s} ", .{@tag_name(op)}),
     };
 
     const op_en = switch (encoding.data.op_en) {
         .zi => .i,
         else => |op_en| op_en,
     };
-    try writer.print("{s}", .{@tagName(op_en)});
+    try writer.print("{s}", .{@tag_name(op_en)});
 }
 
 pub const Mnemonic = enum {
@@ -470,7 +470,7 @@ pub const Op = enum {
                     }
                 else if (reg == .cl)
                     .cl
-                else switch (reg.bitSize()) {
+                else switch (reg.bit_size()) {
                     8 => .r8,
                     16 => .r16,
                     32 => .r32,
@@ -482,7 +482,7 @@ pub const Op = enum {
                 .mmx => .mm,
                 .sse => if (reg == .xmm0)
                     .xmm0
-                else switch (reg.bitSize()) {
+                else switch (reg.bit_size()) {
                     128 => .xmm,
                     256 => .ymm,
                     else => unreachable,
@@ -491,7 +491,7 @@ pub const Op = enum {
 
             .mem => |mem| switch (mem) {
                 .moffs => .moffs,
-                .sib, .rip => switch (mem.bitSize()) {
+                .sib, .rip => switch (mem.bit_size()) {
                     0 => .m,
                     8 => .m8,
                     16 => .m16,
@@ -595,7 +595,7 @@ pub const Op = enum {
     }
 
     pub fn is_unsigned(op: Op) bool {
-        return !op.isSigned();
+        return !op.is_signed();
     }
 
     pub fn is_register(op: Op) bool {
@@ -676,30 +676,30 @@ pub const Op = enum {
                 else => return false,
             },
             else => {
-                if (op.isRegister() and target.isRegister()) {
+                if (op.is_register() and target.is_register()) {
                     return switch (target) {
                         .cl, .al, .ax, .eax, .rax, .xmm0 => op == target,
-                        else => op.class() == target.class() and op.regBitSize() == target.regBitSize(),
+                        else => op.class() == target.class() and op.reg_bit_size() == target.reg_bit_size(),
                     };
                 }
-                if (op.isMemory() and target.isMemory()) {
+                if (op.is_memory() and target.is_memory()) {
                     switch (target) {
                         .m => return true,
-                        else => return op.memBitSize() == target.memBitSize(),
+                        else => return op.mem_bit_size() == target.mem_bit_size(),
                     }
                 }
-                if (op.isImmediate() and target.isImmediate()) {
+                if (op.is_immediate() and target.is_immediate()) {
                     switch (target) {
-                        .imm64 => if (op.immBitSize() <= 64) return true,
-                        .imm32s, .rel32 => if (op.immBitSize() < 32 or (op.immBitSize() == 32 and op.isSigned()))
+                        .imm64 => if (op.imm_bit_size() <= 64) return true,
+                        .imm32s, .rel32 => if (op.imm_bit_size() < 32 or (op.imm_bit_size() == 32 and op.is_signed()))
                             return true,
-                        .imm32 => if (op.immBitSize() <= 32) return true,
-                        .imm16s, .rel16 => if (op.immBitSize() < 16 or (op.immBitSize() == 16 and op.isSigned()))
+                        .imm32 => if (op.imm_bit_size() <= 32) return true,
+                        .imm16s, .rel16 => if (op.imm_bit_size() < 16 or (op.imm_bit_size() == 16 and op.is_signed()))
                             return true,
-                        .imm16 => if (op.immBitSize() <= 16) return true,
-                        .imm8s, .rel8 => if (op.immBitSize() < 8 or (op.immBitSize() == 8 and op.isSigned()))
+                        .imm16 => if (op.imm_bit_size() <= 16) return true,
+                        .imm8s, .rel8 => if (op.imm_bit_size() < 8 or (op.imm_bit_size() == 8 and op.is_signed()))
                             return true,
-                        .imm8 => if (op.immBitSize() <= 8) return true,
+                        .imm8 => if (op.imm_bit_size() <= 8) return true,
                         else => {},
                     }
                     return op == target;
@@ -809,12 +809,12 @@ fn estimate_instruction_length(prefix: Prefix, encoding: Encoding, ops: []const 
     };
     @memcpy(inst.ops[0..ops.len], ops);
 
-    var cwriter = std.io.countingWriter(std.io.null_writer);
+    var cwriter = std.io.counting_writer(std.io.null_writer);
     inst.encode(cwriter.writer(), .{
         .allow_frame_locs = true,
         .allow_symbols = true,
     }) catch unreachable; // Not allowed to fail here unless OOM.
-    return @as(usize, @intCast(cwriter.bytes_written));
+    return @as(usize, @int_cast(cwriter.bytes_written));
 }
 
 const mnemonic_to_encodings_map = init: {
@@ -822,7 +822,7 @@ const mnemonic_to_encodings_map = init: {
     const mnemonic_count = @typeInfo(Mnemonic).Enum.fields.len;
     var mnemonic_map: [mnemonic_count][]Data = .{&.{}} ** mnemonic_count;
     const encodings = @import("encodings.zig");
-    for (encodings.table) |entry| mnemonic_map[@intFromEnum(entry[0])].len += 1;
+    for (encodings.table) |entry| mnemonic_map[@int_from_enum(entry[0])].len += 1;
     var data_storage: [encodings.table.len]Data = undefined;
     var storage_i: usize = 0;
     for (&mnemonic_map) |*value| {
@@ -833,8 +833,8 @@ const mnemonic_to_encodings_map = init: {
     const ops_len = @typeInfo(std.meta.FieldType(Data, .ops)).Array.len;
     const opc_len = @typeInfo(std.meta.FieldType(Data, .opc)).Array.len;
     for (encodings.table) |entry| {
-        const i = &mnemonic_i[@intFromEnum(entry[0])];
-        mnemonic_map[@intFromEnum(entry[0])][i.*] = .{
+        const i = &mnemonic_i[@int_from_enum(entry[0])];
+        mnemonic_map[@int_from_enum(entry[0])][i.*] = .{
             .op_en = entry[1],
             .ops = (entry[2] ++ .{.none} ** (ops_len - entry[2].len)).*,
             .opc_len = entry[3].len,

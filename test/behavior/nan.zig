@@ -29,14 +29,14 @@ test "nan memory equality" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     // signaled
-    try testing.expect(mem.eql(u8, mem.asBytes(&snan_u16), mem.asBytes(&snan_f16)));
-    try testing.expect(mem.eql(u8, mem.asBytes(&snan_u32), mem.asBytes(&snan_f32)));
-    try testing.expect(mem.eql(u8, mem.asBytes(&snan_u64), mem.asBytes(&snan_f64)));
-    try testing.expect(mem.eql(u8, mem.asBytes(&snan_u128), mem.asBytes(&snan_f128)));
+    try testing.expect(mem.eql(u8, mem.as_bytes(&snan_u16), mem.as_bytes(&snan_f16)));
+    try testing.expect(mem.eql(u8, mem.as_bytes(&snan_u32), mem.as_bytes(&snan_f32)));
+    try testing.expect(mem.eql(u8, mem.as_bytes(&snan_u64), mem.as_bytes(&snan_f64)));
+    try testing.expect(mem.eql(u8, mem.as_bytes(&snan_u128), mem.as_bytes(&snan_f128)));
 
     // quiet
-    try testing.expect(mem.eql(u8, mem.asBytes(&qnan_u16), mem.asBytes(&qnan_f16)));
-    try testing.expect(mem.eql(u8, mem.asBytes(&qnan_u32), mem.asBytes(&qnan_f32)));
-    try testing.expect(mem.eql(u8, mem.asBytes(&qnan_u64), mem.asBytes(&qnan_f64)));
-    try testing.expect(mem.eql(u8, mem.asBytes(&qnan_u128), mem.asBytes(&qnan_f128)));
+    try testing.expect(mem.eql(u8, mem.as_bytes(&qnan_u16), mem.as_bytes(&qnan_f16)));
+    try testing.expect(mem.eql(u8, mem.as_bytes(&qnan_u32), mem.as_bytes(&qnan_f32)));
+    try testing.expect(mem.eql(u8, mem.as_bytes(&qnan_u64), mem.as_bytes(&qnan_f64)));
+    try testing.expect(mem.eql(u8, mem.as_bytes(&qnan_u128), mem.as_bytes(&qnan_f128)));
 }

@@ -70,7 +70,7 @@ const Impl = if (builtin.single_threaded)
     SingleThreadedImpl
 else if (builtin.os.tag == .windows)
     WindowsImpl
-else if (builtin.os.tag.isDarwin())
+else if (builtin.os.tag.is_darwin())
     DarwinImpl
 else if (builtin.os.tag == .linux)
     LinuxImpl
@@ -80,15 +80,15 @@ else if (builtin.os.tag == .openbsd)
     OpenbsdImpl
 else if (builtin.os.tag == .dragonfly)
     DragonflyImpl
-else if (builtin.target.isWasm())
+else if (builtin.target.is_wasm())
     WasmImpl
 else if (std.Thread.use_pthreads)
     PosixImpl
 else
     UnsupportedImpl;
 
-/// We can't do @compileError() in the `Impl` switch statement above as its eagerly evaluated.
-/// So instead, we @compileError() on the methods themselves for platforms which don't support futex.
+/// We can't do @compile_error() in the `Impl` switch statement above as its eagerly evaluated.
+/// So instead, we @compile_error() on the methods themselves for platforms which don't support futex.
 const UnsupportedImpl = struct {
     fn wait(ptr: *const atomic.Value(u32), expect: u32, timeout: ?u64) error{Timeout}!void {
         return unsupported(.{ ptr, expect, timeout });
@@ -100,7 +100,7 @@ const UnsupportedImpl = struct {
 
     fn unsupported(unused: anytype) noreturn {
         _ = unused;
-        @compileError("Unsupported operating system " ++ @tagName(builtin.target.os.tag));
+        @compile_error("Unsupported operating system " ++ @tag_name(builtin.target.os.tag));
     }
 };
 
@@ -137,7 +137,7 @@ const WindowsImpl = struct {
         // NTDLL functions work with time in units of 100 nanoseconds.
         // Positive values are absolute deadlines while negative values are relative durations.
         if (timeout) |delay| {
-            timeout_value = @as(windows.LARGE_INTEGER, @intCast(delay / 100));
+            timeout_value = @as(windows.LARGE_INTEGER, @int_cast(delay / 100));
             timeout_value = -timeout_value;
             timeout_ptr = &timeout_value;
         }
@@ -145,7 +145,7 @@ const WindowsImpl = struct {
         const rc = windows.ntdll.RtlWaitOnAddress(
             ptr,
             &expect,
-            @sizeOf(@TypeOf(expect)),
+            @size_of(@TypeOf(expect)),
             timeout_ptr,
         );
 
@@ -184,7 +184,7 @@ const DarwinImpl = struct {
 
         var timeout_ns: u64 = 0;
         if (timeout) |delay| {
-            assert(delay != 0); // handled by timedWait()
+            assert(delay != 0); // handled by timed_wait()
             timeout_ns = delay;
         }
 
@@ -204,7 +204,7 @@ const DarwinImpl = struct {
 
             const timeout_us = std.math.cast(u32, timeout_ns / std.time.ns_per_us) orelse overflow: {
                 timeout_overflowed = true;
-                break :overflow std.math.maxInt(u32);
+                break :overflow std.math.max_int(u32);
             };
 
             break :blk c.__ulock_wait(flags, addr, expect, timeout_us);
@@ -254,14 +254,14 @@ const LinuxImpl = struct {
     fn wait(ptr: *const atomic.Value(u32), expect: u32, timeout: ?u64) error{Timeout}!void {
         var ts: linux.timespec = undefined;
         if (timeout) |timeout_ns| {
-            ts.tv_sec = @as(@TypeOf(ts.tv_sec), @intCast(timeout_ns / std.time.ns_per_s));
-            ts.tv_nsec = @as(@TypeOf(ts.tv_nsec), @intCast(timeout_ns % std.time.ns_per_s));
+            ts.tv_sec = @as(@TypeOf(ts.tv_sec), @int_cast(timeout_ns / std.time.ns_per_s));
+            ts.tv_nsec = @as(@TypeOf(ts.tv_nsec), @int_cast(timeout_ns % std.time.ns_per_s));
         }
 
         const rc = linux.futex_wait(
-            @as(*const i32, @ptrCast(&ptr.raw)),
+            @as(*const i32, @ptr_cast(&ptr.raw)),
             linux.FUTEX.PRIVATE_FLAG | linux.FUTEX.WAIT,
-            @as(i32, @bitCast(expect)),
+            @as(i32, @bit_cast(expect)),
             if (timeout != null) &ts else null,
         );
 
@@ -281,9 +281,9 @@ const LinuxImpl = struct {
 
     fn wake(ptr: *const atomic.Value(u32), max_waiters: u32) void {
         const rc = linux.futex_wake(
-            @as(*const i32, @ptrCast(&ptr.raw)),
+            @as(*const i32, @ptr_cast(&ptr.raw)),
             linux.FUTEX.PRIVATE_FLAG | linux.FUTEX.WAKE,
-            std.math.cast(i32, max_waiters) orelse std.math.maxInt(i32),
+            std.math.cast(i32, max_waiters) orelse std.math.max_int(i32),
         );
 
         switch (linux.E.init(rc)) {
@@ -304,20 +304,20 @@ const FreebsdImpl = struct {
 
         if (timeout) |timeout_ns| {
             tm_ptr = &tm;
-            tm_size = @sizeOf(@TypeOf(tm));
+            tm_size = @size_of(@TypeOf(tm));
 
             tm._flags = 0; // use relative time not UMTX_ABSTIME
             tm._clockid = c.CLOCK.MONOTONIC;
-            tm._timeout.tv_sec = @as(@TypeOf(tm._timeout.tv_sec), @intCast(timeout_ns / std.time.ns_per_s));
-            tm._timeout.tv_nsec = @as(@TypeOf(tm._timeout.tv_nsec), @intCast(timeout_ns % std.time.ns_per_s));
+            tm._timeout.tv_sec = @as(@TypeOf(tm._timeout.tv_sec), @int_cast(timeout_ns / std.time.ns_per_s));
+            tm._timeout.tv_nsec = @as(@TypeOf(tm._timeout.tv_nsec), @int_cast(timeout_ns % std.time.ns_per_s));
         }
 
         const rc = c._umtx_op(
-            @intFromPtr(&ptr.raw),
-            @intFromEnum(c.UMTX_OP.WAIT_UINT_PRIVATE),
+            @int_from_ptr(&ptr.raw),
+            @int_from_enum(c.UMTX_OP.WAIT_UINT_PRIVATE),
             @as(c_ulong, expect),
             tm_size,
-            @intFromPtr(tm_ptr),
+            @int_from_ptr(tm_ptr),
         );
 
         switch (std.posix.errno(rc)) {
@@ -335,8 +335,8 @@ const FreebsdImpl = struct {
 
     fn wake(ptr: *const atomic.Value(u32), max_waiters: u32) void {
         const rc = c._umtx_op(
-            @intFromPtr(&ptr.raw),
-            @intFromEnum(c.UMTX_OP.WAKE_PRIVATE),
+            @int_from_ptr(&ptr.raw),
+            @int_from_enum(c.UMTX_OP.WAKE_PRIVATE),
             @as(c_ulong, max_waiters),
             0, // there is no timeout struct
             0, // there is no timeout struct pointer
@@ -356,14 +356,14 @@ const OpenbsdImpl = struct {
     fn wait(ptr: *const atomic.Value(u32), expect: u32, timeout: ?u64) error{Timeout}!void {
         var ts: c.timespec = undefined;
         if (timeout) |timeout_ns| {
-            ts.tv_sec = @as(@TypeOf(ts.tv_sec), @intCast(timeout_ns / std.time.ns_per_s));
-            ts.tv_nsec = @as(@TypeOf(ts.tv_nsec), @intCast(timeout_ns % std.time.ns_per_s));
+            ts.tv_sec = @as(@TypeOf(ts.tv_sec), @int_cast(timeout_ns / std.time.ns_per_s));
+            ts.tv_nsec = @as(@TypeOf(ts.tv_nsec), @int_cast(timeout_ns % std.time.ns_per_s));
         }
 
         const rc = c.futex(
-            @as(*const volatile u32, @ptrCast(&ptr.raw)),
+            @as(*const volatile u32, @ptr_cast(&ptr.raw)),
             c.FUTEX_WAIT | c.FUTEX_PRIVATE_FLAG,
-            @as(c_int, @bitCast(expect)),
+            @as(c_int, @bit_cast(expect)),
             if (timeout != null) &ts else null,
             null, // FUTEX_WAIT takes no requeue address
         );
@@ -386,9 +386,9 @@ const OpenbsdImpl = struct {
 
     fn wake(ptr: *const atomic.Value(u32), max_waiters: u32) void {
         const rc = c.futex(
-            @as(*const volatile u32, @ptrCast(&ptr.raw)),
+            @as(*const volatile u32, @ptr_cast(&ptr.raw)),
             c.FUTEX_WAKE | c.FUTEX_PRIVATE_FLAG,
-            std.math.cast(c_int, max_waiters) orelse std.math.maxInt(c_int),
+            std.math.cast(c_int, max_waiters) orelse std.math.max_int(c_int),
             null, // FUTEX_WAKE takes no timeout ptr
             null, // FUTEX_WAKE takes no requeue address
         );
@@ -408,10 +408,10 @@ const DragonflyImpl = struct {
         var sleep_timer: std.time.Timer = undefined;
 
         if (timeout) |delay| {
-            assert(delay != 0); // handled by timedWait().
+            assert(delay != 0); // handled by timed_wait().
             timeout_us = std.math.cast(c_int, delay / std.time.ns_per_us) orelse blk: {
                 timeout_overflowed = true;
-                break :blk std.math.maxInt(c_int);
+                break :blk std.math.max_int(c_int);
             };
 
             // Only need to record the start time if we can provide somewhat accurate error.Timeout's
@@ -420,8 +420,8 @@ const DragonflyImpl = struct {
             }
         }
 
-        const value = @as(c_int, @bitCast(expect));
-        const addr = @as(*const volatile c_int, @ptrCast(&ptr.raw));
+        const value = @as(c_int, @bit_cast(expect));
+        const addr = @as(*const volatile c_int, @ptr_cast(&ptr.raw));
         const rc = c.umtx_sleep(addr, value, timeout_us);
 
         switch (std.posix.errno(rc)) {
@@ -450,17 +450,17 @@ const DragonflyImpl = struct {
         // https://man.dragonflybsd.org/?command=umtx&section=2
         // > umtx_wakeup() will generally return 0 unless the address is bad.
         // We are fine with the address being bad (e.g. for Semaphore.post() where Semaphore.wait() frees the Semaphore)
-        const addr = @as(*const volatile c_int, @ptrCast(&ptr.raw));
+        const addr = @as(*const volatile c_int, @ptr_cast(&ptr.raw));
         _ = c.umtx_wakeup(addr, to_wake);
     }
 };
 
 const WasmImpl = struct {
     fn wait(ptr: *const atomic.Value(u32), expect: u32, timeout: ?u64) error{Timeout}!void {
-        if (!comptime std.Target.wasm.featureSetHas(builtin.target.cpu.features, .atomics)) {
-            @compileError("WASI target missing cpu feature 'atomics'");
+        if (!comptime std.Target.wasm.feature_set_has(builtin.target.cpu.features, .atomics)) {
+            @compile_error("WASI target missing cpu feature 'atomics'");
         }
-        const to: i64 = if (timeout) |to| @intCast(to) else -1;
+        const to: i64 = if (timeout) |to| @int_cast(to) else -1;
         const result = asm (
             \\local.get %[ptr]
             \\local.get %[expected]
@@ -469,7 +469,7 @@ const WasmImpl = struct {
             \\local.set %[ret]
             : [ret] "=r" (-> u32),
             : [ptr] "r" (&ptr.raw),
-              [expected] "r" (@as(i32, @bitCast(expect))),
+              [expected] "r" (@as(i32, @bit_cast(expect))),
               [timeout] "r" (to),
         );
         switch (result) {
@@ -481,8 +481,8 @@ const WasmImpl = struct {
     }
 
     fn wake(ptr: *const atomic.Value(u32), max_waiters: u32) void {
-        if (!comptime std.Target.wasm.featureSetHas(builtin.target.cpu.features, .atomics)) {
-            @compileError("WASI target missing cpu feature 'atomics'");
+        if (!comptime std.Target.wasm.feature_set_has(builtin.target.cpu.features, .atomics)) {
+            @compile_error("WASI target missing cpu feature 'atomics'");
         }
         assert(max_waiters != 0);
         const woken_count = asm (
@@ -540,8 +540,8 @@ const PosixImpl = struct {
             var ts: c.timespec = undefined;
             if (timeout) |timeout_ns| {
                 std.posix.clock_gettime(c.CLOCK.REALTIME, &ts) catch unreachable;
-                ts.tv_sec +|= @as(@TypeOf(ts.tv_sec), @intCast(timeout_ns / std.time.ns_per_s));
-                ts.tv_nsec += @as(@TypeOf(ts.tv_nsec), @intCast(timeout_ns % std.time.ns_per_s));
+                ts.tv_sec +|= @as(@TypeOf(ts.tv_sec), @int_cast(timeout_ns / std.time.ns_per_s));
+                ts.tv_nsec += @as(@TypeOf(ts.tv_nsec), @int_cast(timeout_ns % std.time.ns_per_s));
 
                 if (ts.tv_nsec >= std.time.ns_per_s) {
                     ts.tv_sec +|= 1;
@@ -635,7 +635,7 @@ const PosixImpl = struct {
 
             // Find the wait queue entry associated with the address.
             // If there isn't a wait queue on the address, this waiter creates the queue.
-            var entry = treap.getEntryFor(address);
+            var entry = treap.get_entry_for(address);
             const entry_node = entry.node orelse {
                 waiter.prev = null;
                 waiter.tail = waiter;
@@ -655,7 +655,7 @@ const PosixImpl = struct {
 
         fn remove(treap: *Treap, address: usize, max_waiters: usize) WaitList {
             // Find the wait queue associated with this address and get the head/tail if any.
-            var entry = treap.getEntryFor(address);
+            var entry = treap.get_entry_for(address);
             var queue_head: ?*Waiter = if (entry.node) |node| @fieldParentPtr("node", node) else null;
             const queue_tail = if (queue_head) |head| head.tail else null;
 
@@ -674,7 +674,7 @@ const PosixImpl = struct {
                 removed.push(waiter);
 
                 // When dequeueing, we must mark is_queued as false.
-                // This ensures that a waiter which calls tryRemove() returns false.
+                // This ensures that a waiter which calls try_remove() returns false.
                 assert(waiter.is_queued);
                 waiter.is_queued = false;
             }
@@ -693,9 +693,9 @@ const PosixImpl = struct {
                     // A waiter without a previous link means it's the queue head that's in the treap so we can avoid lookup.
                     if (waiter.prev == null) {
                         assert(waiter.node.key == address);
-                        break :blk treap.getEntryForExisting(&waiter.node);
+                        break :blk treap.get_entry_for_existing(&waiter.node);
                     }
-                    break :blk treap.getEntryFor(address);
+                    break :blk treap.get_entry_for(address);
                 };
 
                 // The queue head and tail must exist if we're removing a queued waiter.
@@ -756,7 +756,7 @@ const PosixImpl = struct {
             const fibonacci_multiplier = 0x9E3779B97F4A7C15 >> (64 - max_multiplier_bits);
 
             const max_bucket_bits = @ctz(buckets.len);
-            comptime assert(std.math.isPowerOfTwo(buckets.len));
+            comptime assert(std.math.is_power_of_two(buckets.len));
 
             const index = (address *% fibonacci_multiplier) >> (max_multiplier_bits - max_bucket_bits);
             return &buckets[index];
@@ -767,11 +767,11 @@ const PosixImpl = struct {
         fn from(ptr: *const atomic.Value(u32)) usize {
             // Get the alignment of the pointer.
             const alignment = @alignOf(atomic.Value(u32));
-            comptime assert(std.math.isPowerOfTwo(alignment));
+            comptime assert(std.math.is_power_of_two(alignment));
 
             // Make sure the pointer is aligned,
             // then cut off the zero bits from the alignment to get the unique address.
-            const addr = @intFromPtr(ptr);
+            const addr = @int_from_ptr(ptr);
             assert(addr & (alignment - 1) == 0);
             return addr >> @ctz(@as(usize, alignment));
         }
@@ -792,14 +792,14 @@ const PosixImpl = struct {
         //
         // seq_cst as Acquire barrier to ensure the announcement happens before the ptr check below.
         // seq_cst as shared modification order to form a happens-before edge with the fence(.seq_cst)+load() in wake().
-        var pending = bucket.pending.fetchAdd(1, .seq_cst);
-        assert(pending < std.math.maxInt(usize));
+        var pending = bucket.pending.fetch_add(1, .seq_cst);
+        assert(pending < std.math.max_int(usize));
 
         // If the wait gets cancelled, remove the pending count we previously added.
         // This is done outside the mutex lock to keep the critical section short in case of contention.
         var cancelled = false;
         defer if (cancelled) {
-            pending = bucket.pending.fetchSub(1, .monotonic);
+            pending = bucket.pending.fetch_sub(1, .monotonic);
             assert(pending > 0);
         };
 
@@ -831,7 +831,7 @@ const PosixImpl = struct {
             assert(c.pthread_mutex_lock(&bucket.mutex) == .SUCCESS);
             defer assert(c.pthread_mutex_unlock(&bucket.mutex) == .SUCCESS);
 
-            cancelled = WaitQueue.tryRemove(&bucket.treap, address, &waiter);
+            cancelled = WaitQueue.try_remove(&bucket.treap, address, &waiter);
             if (cancelled) {
                 return error.Timeout;
             }
@@ -853,7 +853,7 @@ const PosixImpl = struct {
         // - T2: p is false from earlier so doesn't wake (T1 missed ptr update and T2 missed T1 sleeping)
         //
         // What we really want here is a Release load, but that doesn't exist under the C11 memory model.
-        // We could instead do `bucket.pending.fetchAdd(0, Release) == 0` which achieves effectively the same thing,
+        // We could instead do `bucket.pending.fetch_add(0, Release) == 0` which achieves effectively the same thing,
         // but the RMW operation unconditionally marks the cache-line as modified for others causing unnecessary fetching/contention.
         //
         // Instead we opt to do a full-fence + load instead which avoids taking ownership of the cache-line.
@@ -869,7 +869,7 @@ const PosixImpl = struct {
         // Keep a list of all the waiters notified and wake then up outside the mutex critical section.
         var notified = WaitList{};
         defer if (notified.len > 0) {
-            const pending = bucket.pending.fetchSub(notified.len, .monotonic);
+            const pending = bucket.pending.fetch_sub(notified.len, .monotonic);
             assert(pending >= notified.len);
 
             while (notified.pop()) |waiter| {
@@ -893,16 +893,16 @@ test "smoke test" {
 
     // Try waits with invalid values.
     Futex.wait(&value, 0xdeadbeef);
-    Futex.timedWait(&value, 0xdeadbeef, 0) catch {};
+    Futex.timed_wait(&value, 0xdeadbeef, 0) catch {};
 
     // Try timeout waits.
-    try testing.expectError(error.Timeout, Futex.timedWait(&value, 0, 0));
-    try testing.expectError(error.Timeout, Futex.timedWait(&value, 0, std.time.ns_per_ms));
+    try testing.expect_error(error.Timeout, Futex.timed_wait(&value, 0, 0));
+    try testing.expect_error(error.Timeout, Futex.timed_wait(&value, 0, std.time.ns_per_ms));
 
     // Try wakes
     Futex.wake(&value, 0);
     Futex.wake(&value, 1);
-    Futex.wake(&value, std.math.maxInt(u32));
+    Futex.wake(&value, std.math.max_int(u32));
 }
 
 test "signaling" {
@@ -919,7 +919,7 @@ test "signaling" {
         current: u32 = 0,
 
         fn hit(self: *@This()) void {
-            _ = self.value.fetchAdd(1, .release);
+            _ = self.value.fetch_add(1, .release);
             Futex.wake(&self.value, 1);
         }
 
@@ -934,7 +934,7 @@ test "signaling" {
                 }
 
                 // change the internal "current" value
-                try testing.expectEqual(new_value, self.current + 1);
+                try testing.expect_equal(new_value, self.current + 1);
                 self.current = new_value;
 
                 // hit the next paddle
@@ -956,7 +956,7 @@ test "signaling" {
     // Hit the first paddle and wait for them all to complete by hitting each other for num_iterations.
     paddles[0].hit();
     for (threads) |t| t.join();
-    for (paddles) |p| try testing.expectEqual(p.current, num_iterations);
+    for (paddles) |p| try testing.expect_equal(p.current, num_iterations);
 }
 
 test "broadcasting" {
@@ -975,7 +975,7 @@ test "broadcasting" {
         fn wait(self: *@This()) !void {
             // Decrement the counter.
             // Release ensures stuff before this barrier.wait() happens before the last one.
-            const count = self.count.fetchSub(1, .release);
+            const count = self.count.fetch_sub(1, .release);
             try testing.expect(count <= num_threads);
             try testing.expect(count > 0);
 
@@ -1015,11 +1015,11 @@ test "broadcasting" {
 
 /// Deadline is used to wait efficiently for a pointer's value to change using Futex and a fixed timeout.
 ///
-/// Futex's timedWait() api uses a relative duration which suffers from over-waiting
+/// Futex's timed_wait() api uses a relative duration which suffers from over-waiting
 /// when used in a loop which is often required due to the possibility of spurious wakeups.
 ///
 /// Deadline instead converts the relative timeout to an absolute one so that multiple calls
-/// to Futex timedWait() can block for and report more accurate error.Timeouts.
+/// to Futex timed_wait() can block for and report more accurate error.Timeouts.
 pub const Deadline = struct {
     timeout: ?u64,
     started: std.time.Timer,
@@ -1057,7 +1057,7 @@ pub const Deadline = struct {
         // Use overflow to detect when we've been waiting longer than the init() timeout.
         const elapsed_ns = self.started.read();
         const until_timeout_ns = std.math.sub(u64, timeout_ns, elapsed_ns) catch 0;
-        return Futex.timedWait(ptr, expect, until_timeout_ns);
+        return Futex.timed_wait(ptr, expect, until_timeout_ns);
     }
 };
 

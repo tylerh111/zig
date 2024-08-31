@@ -1,55 +1,55 @@
 export fn entry1() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: anyerror,
     });
 }
 export fn entry2() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: [2]u24,
     });
 }
 export fn entry3() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: anyerror!u32,
     });
 }
 export fn entry4() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: S,
     });
 }
 export fn entry5() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: U,
     });
 }
 export fn entry6() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: ?anyerror,
     });
 }
 export fn entry7() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: enum(u1) { A, B },
     });
 }
 export fn entry8() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: fn () void,
     });
 }
 export fn entry9() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: *const fn () void,
     });
 }
 export fn entry10() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: packed struct { x: i32 },
     });
 }
 export fn entry11() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: packed union { A: i32, B: u32 },
     });
 }
@@ -61,18 +61,18 @@ const U = extern union {
     B: u32,
 };
 export fn entry12() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: packed struct { a: []u8 },
     });
 }
 export fn entry13() void {
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: *type,
     });
 }
 export fn entry14() void {
     const E = enum { implicit, backing, type };
-    _ = @sizeOf(packed struct {
+    _ = @size_of(packed struct {
         x: E,
     });
 }

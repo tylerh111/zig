@@ -1,7 +1,7 @@
 fn foo() bool {
     const a = @as([]const u8, "a");
     const b = &a;
-    return ptrEql(b, b);
+    return ptr_eql(b, b);
 }
 fn ptr_eql(a: *[]const u8, b: *[]const u8) bool {
     _ = a;
@@ -10,7 +10,7 @@ fn ptr_eql(a: *[]const u8, b: *[]const u8) bool {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&foo));
+    return @size_of(@TypeOf(&foo));
 }
 
 // error

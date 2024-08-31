@@ -1,6 +1,6 @@
 pub export fn entry() void {
     var arr: [100]u8 = undefined;
-    for (arr) |bits| _ = @popCount(u8, bits);
+    for (arr) |bits| _ = @pop_count(u8, bits);
 }
 
 // error

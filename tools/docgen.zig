@@ -9,12 +9,12 @@ const print = std.debug.print;
 const mem = std.mem;
 const testing = std.testing;
 const Allocator = std.mem.Allocator;
-const getExternalExecutor = std.zig.system.getExternalExecutor;
+const get_external_executor = std.zig.system.get_external_executor;
 const fatal = std.zig.fatal;
 
 const max_doc_file_size = 10 * 1024 * 1024;
 
-const obj_ext = builtin.object_format.fileExt(builtin.cpu.arch);
+const obj_ext = builtin.object_format.file_ext(builtin.cpu.arch);
 
 const usage =
     \\Usage: docgen [options] input output
@@ -33,7 +33,7 @@ pub fn main() !void {
 
     const arena = arena_instance.allocator();
 
-    var args_it = try process.argsWithAllocator(arena);
+    var args_it = try process.args_with_allocator(arena);
     if (!args_it.skip()) @panic("expected self arg");
 
     var opt_code_dir: ?[]const u8 = null;
@@ -41,10 +41,10 @@ pub fn main() !void {
     var opt_output: ?[]const u8 = null;
 
     while (args_it.next()) |arg| {
-        if (mem.startsWith(u8, arg, "-")) {
+        if (mem.starts_with(u8, arg, "-")) {
             if (mem.eql(u8, arg, "-h") or mem.eql(u8, arg, "--help")) {
-                const stdout = io.getStdOut().writer();
-                try stdout.writeAll(usage);
+                const stdout = io.get_std_out().writer();
+                try stdout.write_all(usage);
                 process.exit(0);
             } else if (mem.eql(u8, arg, "--code-dir")) {
                 if (args_it.next()) |param| {
@@ -67,23 +67,23 @@ pub fn main() !void {
     const output_path = opt_output orelse fatal("missing output file", .{});
     const code_dir_path = opt_code_dir orelse fatal("missing --code-dir argument", .{});
 
-    var in_file = try fs.cwd().openFile(input_path, .{});
+    var in_file = try fs.cwd().open_file(input_path, .{});
     defer in_file.close();
 
-    var out_file = try fs.cwd().createFile(output_path, .{});
+    var out_file = try fs.cwd().create_file(output_path, .{});
     defer out_file.close();
 
-    var code_dir = try fs.cwd().openDir(code_dir_path, .{});
+    var code_dir = try fs.cwd().open_dir(code_dir_path, .{});
     defer code_dir.close();
 
-    const input_file_bytes = try in_file.reader().readAllAlloc(arena, max_doc_file_size);
+    const input_file_bytes = try in_file.reader().read_all_alloc(arena, max_doc_file_size);
 
-    var buffered_writer = io.bufferedWriter(out_file.writer());
+    var buffered_writer = io.buffered_writer(out_file.writer());
 
     var tokenizer = Tokenizer.init(input_path, input_file_bytes);
-    var toc = try genToc(arena, &tokenizer);
+    var toc = try gen_toc(arena, &tokenizer);
 
-    try genHtml(arena, &tokenizer, &toc, code_dir, buffered_writer.writer());
+    try gen_html(arena, &tokenizer, &toc, code_dir, buffered_writer.writer());
     try buffered_writer.flush();
 }
 
@@ -244,7 +244,7 @@ const Tokenizer = struct {
 };
 
 fn parse_error(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, args: anytype) anyerror {
-    const loc = tokenizer.getTokenLocation(token);
+    const loc = tokenizer.get_token_location(token);
     const args_prefix = .{ tokenizer.source_file_name, loc.line + 1, loc.column + 1 };
     print("{s}:{d}:{d}: error: " ++ fmt ++ "\n", args_prefix ++ args);
     if (loc.line_start <= loc.line_end) {
@@ -269,13 +269,13 @@ fn parse_error(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, ar
 
 fn assert_token(tokenizer: *Tokenizer, token: Token, id: Token.Id) !void {
     if (token.id != id) {
-        return parseError(tokenizer, token, "expected {s}, found {s}", .{ @tagName(id), @tagName(token.id) });
+        return parse_error(tokenizer, token, "expected {s}, found {s}", .{ @tag_name(id), @tag_name(token.id) });
     }
 }
 
 fn eat_token(tokenizer: *Tokenizer, id: Token.Id) !Token {
     const token = tokenizer.next();
-    try assertToken(tokenizer, token, id);
+    try assert_token(tokenizer, token, id);
     return token;
 }
 
@@ -354,35 +354,35 @@ fn gen_toc(allocator: Allocator, tokenizer: *Tokenizer) !Toc {
     var nodes = std.ArrayList(Node).init(allocator);
     defer nodes.deinit();
 
-    try toc.writeByte('\n');
+    try toc.write_byte('\n');
 
     while (true) {
         const token = tokenizer.next();
         switch (token.id) {
             .eof => {
                 if (header_stack_size != 0) {
-                    return parseError(tokenizer, token, "unbalanced headers", .{});
+                    return parse_error(tokenizer, token, "unbalanced headers", .{});
                 }
-                try toc.writeAll("    </ul>\n");
+                try toc.write_all("    </ul>\n");
                 break;
             },
             .content => {
                 try nodes.append(Node{ .Content = tokenizer.buffer[token.start..token.end] });
             },
             .bracket_open => {
-                const tag_token = try eatToken(tokenizer, .tag_content);
+                const tag_token = try eat_token(tokenizer, .tag_content);
                 const tag_name = tokenizer.buffer[tag_token.start..tag_token.end];
 
                 if (mem.eql(u8, tag_name, "nav")) {
-                    _ = try eatToken(tokenizer, .bracket_close);
+                    _ = try eat_token(tokenizer, .bracket_close);
 
                     try nodes.append(Node.Nav);
                 } else if (mem.eql(u8, tag_name, "builtin")) {
-                    _ = try eatToken(tokenizer, .bracket_close);
+                    _ = try eat_token(tokenizer, .bracket_close);
                     try nodes.append(Node{ .Builtin = tag_token });
                 } else if (mem.eql(u8, tag_name, "header_open")) {
-                    _ = try eatToken(tokenizer, .separator);
-                    const content_token = try eatToken(tokenizer, .tag_content);
+                    _ = try eat_token(tokenizer, .separator);
+                    const content_token = try eat_token(tokenizer, .tag_content);
                     const content = tokenizer.buffer[content_token.start..content_token.end];
                     var columns: ?u8 = null;
                     while (true) {
@@ -395,7 +395,7 @@ fn gen_toc(allocator: Allocator, tokenizer: *Tokenizer) !Toc {
                                 if (mem.eql(u8, param, "2col")) {
                                     columns = 2;
                                 } else {
-                                    return parseError(
+                                    return parse_error(
                                         tokenizer,
                                         bracket_tok,
                                         "unrecognized header_open param: {s}",
@@ -403,7 +403,7 @@ fn gen_toc(allocator: Allocator, tokenizer: *Tokenizer) !Toc {
                                     );
                                 }
                             },
-                            else => return parseError(tokenizer, bracket_tok, "invalid header_open token", .{}),
+                            else => return parse_error(tokenizer, bracket_tok, "invalid header_open token", .{}),
                         }
                     }
 
@@ -417,37 +417,37 @@ fn gen_toc(allocator: Allocator, tokenizer: *Tokenizer) !Toc {
                             .n = header_stack_size + 1, // highest-level section headers start at h2
                         },
                     });
-                    if (try urls.fetchPut(urlized, tag_token)) |kv| {
-                        parseError(tokenizer, tag_token, "duplicate header url: #{s}", .{urlized}) catch {};
-                        parseError(tokenizer, kv.value, "other tag here", .{}) catch {};
+                    if (try urls.fetch_put(urlized, tag_token)) |kv| {
+                        parse_error(tokenizer, tag_token, "duplicate header url: #{s}", .{urlized}) catch {};
+                        parse_error(tokenizer, kv.value, "other tag here", .{}) catch {};
                         return error.ParseError;
                     }
                     if (last_action == .open) {
-                        try toc.writeByte('\n');
-                        try toc.writeByteNTimes(' ', header_stack_size * 4);
+                        try toc.write_byte('\n');
+                        try toc.write_byte_ntimes(' ', header_stack_size * 4);
                         if (last_columns) |n| {
                             try toc.print("<ul style=\"columns: {}\">\n", .{n});
                         } else {
-                            try toc.writeAll("<ul>\n");
+                            try toc.write_all("<ul>\n");
                         }
                     } else {
                         last_action = .open;
                     }
                     last_columns = columns;
-                    try toc.writeByteNTimes(' ', 4 + header_stack_size * 4);
+                    try toc.write_byte_ntimes(' ', 4 + header_stack_size * 4);
                     try toc.print("<li><a id=\"toc-{s}\" href=\"#{s}\">{s}</a>", .{ urlized, urlized, content });
                 } else if (mem.eql(u8, tag_name, "header_close")) {
                     if (header_stack_size == 0) {
-                        return parseError(tokenizer, tag_token, "unbalanced close header", .{});
+                        return parse_error(tokenizer, tag_token, "unbalanced close header", .{});
                     }
                     header_stack_size -= 1;
-                    _ = try eatToken(tokenizer, .bracket_close);
+                    _ = try eat_token(tokenizer, .bracket_close);
 
                     if (last_action == .close) {
-                        try toc.writeByteNTimes(' ', 8 + header_stack_size * 4);
-                        try toc.writeAll("</ul></li>\n");
+                        try toc.write_byte_ntimes(' ', 8 + header_stack_size * 4);
+                        try toc.write_all("</ul></li>\n");
                     } else {
-                        try toc.writeAll("</li>\n");
+                        try toc.write_all("</li>\n");
                         last_action = .close;
                     }
                 } else if (mem.eql(u8, tag_name, "see_also")) {
@@ -466,15 +466,15 @@ fn gen_toc(allocator: Allocator, tokenizer: *Tokenizer) !Toc {
                             },
                             .separator => {},
                             .bracket_close => {
-                                try nodes.append(Node{ .SeeAlso = try list.toOwnedSlice() });
+                                try nodes.append(Node{ .SeeAlso = try list.to_owned_slice() });
                                 break;
                             },
-                            else => return parseError(tokenizer, see_also_tok, "invalid see_also token", .{}),
+                            else => return parse_error(tokenizer, see_also_tok, "invalid see_also token", .{}),
                         }
                     }
                 } else if (mem.eql(u8, tag_name, "link")) {
-                    _ = try eatToken(tokenizer, .separator);
-                    const name_tok = try eatToken(tokenizer, .tag_content);
+                    _ = try eat_token(tokenizer, .separator);
+                    const name_tok = try eat_token(tokenizer, .tag_content);
                     const name = tokenizer.buffer[name_tok.start..name_tok.end];
 
                     const url_name = blk: {
@@ -482,11 +482,11 @@ fn gen_toc(allocator: Allocator, tokenizer: *Tokenizer) !Toc {
                         switch (tok.id) {
                             .bracket_close => break :blk name,
                             .separator => {
-                                const explicit_text = try eatToken(tokenizer, .tag_content);
-                                _ = try eatToken(tokenizer, .bracket_close);
+                                const explicit_text = try eat_token(tokenizer, .tag_content);
+                                _ = try eat_token(tokenizer, .bracket_close);
                                 break :blk tokenizer.buffer[explicit_text.start..explicit_text.end];
                             },
-                            else => return parseError(tokenizer, tok, "invalid link token", .{}),
+                            else => return parse_error(tokenizer, tok, "invalid link token", .{}),
                         }
                     };
 
@@ -498,9 +498,9 @@ fn gen_toc(allocator: Allocator, tokenizer: *Tokenizer) !Toc {
                         },
                     });
                 } else if (mem.eql(u8, tag_name, "code")) {
-                    _ = try eatToken(tokenizer, .separator);
-                    const name_tok = try eatToken(tokenizer, .tag_content);
-                    _ = try eatToken(tokenizer, .bracket_close);
+                    _ = try eat_token(tokenizer, .separator);
+                    const name_tok = try eat_token(tokenizer, .tag_content);
+                    _ = try eat_token(tokenizer, .bracket_close);
                     try nodes.append(.{
                         .Code = .{
                             .name = tokenizer.buffer[name_tok.start..name_tok.end],
@@ -508,50 +508,50 @@ fn gen_toc(allocator: Allocator, tokenizer: *Tokenizer) !Toc {
                         },
                     });
                 } else if (mem.eql(u8, tag_name, "syntax")) {
-                    _ = try eatToken(tokenizer, .bracket_close);
-                    const content_tok = try eatToken(tokenizer, .content);
-                    _ = try eatToken(tokenizer, .bracket_open);
-                    const end_syntax_tag = try eatToken(tokenizer, .tag_content);
+                    _ = try eat_token(tokenizer, .bracket_close);
+                    const content_tok = try eat_token(tokenizer, .content);
+                    _ = try eat_token(tokenizer, .bracket_open);
+                    const end_syntax_tag = try eat_token(tokenizer, .tag_content);
                     const end_tag_name = tokenizer.buffer[end_syntax_tag.start..end_syntax_tag.end];
                     if (!mem.eql(u8, end_tag_name, "endsyntax")) {
-                        return parseError(
+                        return parse_error(
                             tokenizer,
                             end_syntax_tag,
                             "invalid token inside syntax: {s}",
                             .{end_tag_name},
                         );
                     }
-                    _ = try eatToken(tokenizer, .bracket_close);
+                    _ = try eat_token(tokenizer, .bracket_close);
                     try nodes.append(Node{ .InlineSyntax = content_tok });
                 } else if (mem.eql(u8, tag_name, "shell_samp")) {
-                    _ = try eatToken(tokenizer, .bracket_close);
-                    const content_tok = try eatToken(tokenizer, .content);
-                    _ = try eatToken(tokenizer, .bracket_open);
-                    const end_syntax_tag = try eatToken(tokenizer, .tag_content);
+                    _ = try eat_token(tokenizer, .bracket_close);
+                    const content_tok = try eat_token(tokenizer, .content);
+                    _ = try eat_token(tokenizer, .bracket_open);
+                    const end_syntax_tag = try eat_token(tokenizer, .tag_content);
                     const end_tag_name = tokenizer.buffer[end_syntax_tag.start..end_syntax_tag.end];
                     if (!mem.eql(u8, end_tag_name, "end_shell_samp")) {
-                        return parseError(
+                        return parse_error(
                             tokenizer,
                             end_syntax_tag,
                             "invalid token inside syntax: {s}",
                             .{end_tag_name},
                         );
                     }
-                    _ = try eatToken(tokenizer, .bracket_close);
+                    _ = try eat_token(tokenizer, .bracket_close);
                     try nodes.append(Node{ .Shell = content_tok });
                 } else if (mem.eql(u8, tag_name, "syntax_block")) {
-                    _ = try eatToken(tokenizer, .separator);
-                    const source_type_tok = try eatToken(tokenizer, .tag_content);
+                    _ = try eat_token(tokenizer, .separator);
+                    const source_type_tok = try eat_token(tokenizer, .tag_content);
                     var name: []const u8 = "sample_code";
                     const maybe_sep = tokenizer.next();
                     switch (maybe_sep.id) {
                         .separator => {
-                            const name_tok = try eatToken(tokenizer, .tag_content);
+                            const name_tok = try eat_token(tokenizer, .tag_content);
                             name = tokenizer.buffer[name_tok.start..name_tok.end];
-                            _ = try eatToken(tokenizer, .bracket_close);
+                            _ = try eat_token(tokenizer, .bracket_close);
                         },
                         .bracket_close => {},
-                        else => return parseError(tokenizer, token, "invalid token", .{}),
+                        else => return parse_error(tokenizer, token, "invalid token", .{}),
                     }
                     const source_type_str = tokenizer.buffer[source_type_tok.start..source_type_tok.end];
                     var source_type: SyntaxBlock.SourceType = undefined;
@@ -564,38 +564,38 @@ fn gen_toc(allocator: Allocator, tokenizer: *Tokenizer) !Toc {
                     } else if (mem.eql(u8, source_type_str, "javascript")) {
                         source_type = SyntaxBlock.SourceType.javascript;
                     } else {
-                        return parseError(tokenizer, source_type_tok, "unrecognized code kind: {s}", .{source_type_str});
+                        return parse_error(tokenizer, source_type_tok, "unrecognized code kind: {s}", .{source_type_str});
                     }
                     const source_token = while (true) {
-                        const content_tok = try eatToken(tokenizer, .content);
-                        _ = try eatToken(tokenizer, .bracket_open);
-                        const end_code_tag = try eatToken(tokenizer, .tag_content);
+                        const content_tok = try eat_token(tokenizer, .content);
+                        _ = try eat_token(tokenizer, .bracket_open);
+                        const end_code_tag = try eat_token(tokenizer, .tag_content);
                         const end_tag_name = tokenizer.buffer[end_code_tag.start..end_code_tag.end];
                         if (mem.eql(u8, end_tag_name, "end_syntax_block")) {
-                            _ = try eatToken(tokenizer, .bracket_close);
+                            _ = try eat_token(tokenizer, .bracket_close);
                             break content_tok;
                         } else {
-                            return parseError(
+                            return parse_error(
                                 tokenizer,
                                 end_code_tag,
                                 "invalid token inside code_begin: {s}",
                                 .{end_tag_name},
                             );
                         }
-                        _ = try eatToken(tokenizer, .bracket_close);
+                        _ = try eat_token(tokenizer, .bracket_close);
                     };
                     try nodes.append(Node{ .SyntaxBlock = SyntaxBlock{ .source_type = source_type, .name = name, .source_token = source_token } });
                 } else {
-                    return parseError(tokenizer, tag_token, "unrecognized tag name: {s}", .{tag_name});
+                    return parse_error(tokenizer, tag_token, "unrecognized tag name: {s}", .{tag_name});
                 }
             },
-            else => return parseError(tokenizer, token, "invalid token", .{}),
+            else => return parse_error(tokenizer, token, "invalid token", .{}),
         }
     }
 
     return Toc{
-        .nodes = try nodes.toOwnedSlice(),
-        .toc = try toc_buf.toOwnedSlice(),
+        .nodes = try nodes.to_owned_slice(),
+        .toc = try toc_buf.to_owned_slice(),
         .urls = urls,
     };
 }
@@ -608,15 +608,15 @@ fn urlize(allocator: Allocator, input: []const u8) ![]u8 {
     for (input) |c| {
         switch (c) {
             'a'...'z', 'A'...'Z', '_', '-', '0'...'9' => {
-                try out.writeByte(c);
+                try out.write_byte(c);
             },
             ' ' => {
-                try out.writeByte('-');
+                try out.write_byte('-');
             },
             else => {},
         }
     }
-    return try buf.toOwnedSlice();
+    return try buf.to_owned_slice();
 }
 
 fn escape_html(allocator: Allocator, input: []const u8) ![]u8 {
@@ -624,18 +624,18 @@ fn escape_html(allocator: Allocator, input: []const u8) ![]u8 {
     defer buf.deinit();
 
     const out = buf.writer();
-    try writeEscaped(out, input);
-    return try buf.toOwnedSlice();
+    try write_escaped(out, input);
+    return try buf.to_owned_slice();
 }
 
 fn write_escaped(out: anytype, input: []const u8) !void {
     for (input) |c| {
         try switch (c) {
-            '&' => out.writeAll("&amp;"),
-            '<' => out.writeAll("&lt;"),
-            '>' => out.writeAll("&gt;"),
-            '"' => out.writeAll("&quot;"),
-            else => out.writeByte(c),
+            '&' => out.write_all("&amp;"),
+            '<' => out.write_all("&lt;"),
+            '>' => out.write_all("&gt;"),
+            '"' => out.write_all("&quot;"),
+            else => out.write_byte(c),
         };
     }
 }
@@ -665,7 +665,7 @@ fn is_type(name: []const u8) bool {
 }
 
 fn write_escaped_lines(out: anytype, text: []const u8) !void {
-    return writeEscaped(out, text);
+    return write_escaped(out, text);
 }
 
 fn tokenize_and_print_raw(
@@ -676,9 +676,9 @@ fn tokenize_and_print_raw(
     raw_src: []const u8,
 ) !void {
     const src_non_terminated = mem.trim(u8, raw_src, " \r\n");
-    const src = try allocator.dupeZ(u8, src_non_terminated);
+    const src = try allocator.dupe_z(u8, src_non_terminated);
 
-    try out.writeAll("<code>");
+    try out.write_all("<code>");
     var tokenizer = std.zig.Tokenizer.init(src);
     var index: usize = 0;
     var next_tok_is_fn = false;
@@ -687,22 +687,22 @@ fn tokenize_and_print_raw(
         next_tok_is_fn = false;
 
         const token = tokenizer.next();
-        if (mem.indexOf(u8, src[index..token.loc.start], "//")) |comment_start_off| {
+        if (mem.index_of(u8, src[index..token.loc.start], "//")) |comment_start_off| {
             // render one comment
             const comment_start = index + comment_start_off;
-            const comment_end_off = mem.indexOf(u8, src[comment_start..token.loc.start], "\n");
+            const comment_end_off = mem.index_of(u8, src[comment_start..token.loc.start], "\n");
             const comment_end = if (comment_end_off) |o| comment_start + o else token.loc.start;
 
-            try writeEscapedLines(out, src[index..comment_start]);
-            try out.writeAll("<span class=\"tok-comment\">");
-            try writeEscaped(out, src[comment_start..comment_end]);
-            try out.writeAll("</span>");
+            try write_escaped_lines(out, src[index..comment_start]);
+            try out.write_all("<span class=\"tok-comment\">");
+            try write_escaped(out, src[comment_start..comment_end]);
+            try out.write_all("</span>");
             index = comment_end;
             tokenizer.index = index;
             continue;
         }
 
-        try writeEscapedLines(out, src[index..token.loc.start]);
+        try write_escaped_lines(out, src[index..token.loc.start]);
         switch (token.tag) {
             .eof => break,
 
@@ -755,15 +755,15 @@ fn tokenize_and_print_raw(
             .keyword_while,
             .keyword_anytype,
             => {
-                try out.writeAll("<span class=\"tok-kw\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-kw\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
             },
 
             .keyword_fn => {
-                try out.writeAll("<span class=\"tok-kw\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-kw\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
                 next_tok_is_fn = true;
             },
 
@@ -771,23 +771,23 @@ fn tokenize_and_print_raw(
             .multiline_string_literal_line,
             .char_literal,
             => {
-                try out.writeAll("<span class=\"tok-str\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-str\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
             },
 
             .builtin => {
-                try out.writeAll("<span class=\"tok-builtin\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-builtin\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
             },
 
             .doc_comment,
             .container_doc_comment,
             => {
-                try out.writeAll("<span class=\"tok-comment\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-comment\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
             },
 
             .identifier => {
@@ -797,13 +797,13 @@ fn tokenize_and_print_raw(
                     mem.eql(u8, tok_bytes, "true") or
                     mem.eql(u8, tok_bytes, "false"))
                 {
-                    try out.writeAll("<span class=\"tok-null\">");
-                    try writeEscaped(out, tok_bytes);
-                    try out.writeAll("</span>");
+                    try out.write_all("<span class=\"tok-null\">");
+                    try write_escaped(out, tok_bytes);
+                    try out.write_all("</span>");
                 } else if (prev_tok_was_fn) {
-                    try out.writeAll("<span class=\"tok-fn\">");
-                    try writeEscaped(out, tok_bytes);
-                    try out.writeAll("</span>");
+                    try out.write_all("<span class=\"tok-fn\">");
+                    try write_escaped(out, tok_bytes);
+                    try out.write_all("</span>");
                 } else {
                     const is_int = blk: {
                         if (src[token.loc.start] != 'i' and src[token.loc.start] != 'u')
@@ -817,20 +817,20 @@ fn tokenize_and_print_raw(
                         }
                         break :blk true;
                     };
-                    if (is_int or isType(tok_bytes)) {
-                        try out.writeAll("<span class=\"tok-type\">");
-                        try writeEscaped(out, tok_bytes);
-                        try out.writeAll("</span>");
+                    if (is_int or is_type(tok_bytes)) {
+                        try out.write_all("<span class=\"tok-type\">");
+                        try write_escaped(out, tok_bytes);
+                        try out.write_all("</span>");
                     } else {
-                        try writeEscaped(out, tok_bytes);
+                        try write_escaped(out, tok_bytes);
                     }
                 }
             },
 
             .number_literal => {
-                try out.writeAll("<span class=\"tok-number\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-number\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
             },
 
             .bang,
@@ -895,9 +895,9 @@ fn tokenize_and_print_raw(
             .angle_bracket_angle_bracket_right,
             .angle_bracket_angle_bracket_right_equal,
             .tilde,
-            => try writeEscaped(out, src[token.loc.start..token.loc.end]),
+            => try write_escaped(out, src[token.loc.start..token.loc.end]),
 
-            .invalid, .invalid_periodasterisks => return parseError(
+            .invalid, .invalid_periodasterisks => return parse_error(
                 docgen_tokenizer,
                 source_token,
                 "syntax error",
@@ -906,7 +906,7 @@ fn tokenize_and_print_raw(
         }
         index = token.loc.end;
     }
-    try out.writeAll("</code>");
+    try out.write_all("</code>");
 }
 
 fn tokenize_and_print(
@@ -916,72 +916,72 @@ fn tokenize_and_print(
     source_token: Token,
 ) !void {
     const raw_src = docgen_tokenizer.buffer[source_token.start..source_token.end];
-    return tokenizeAndPrintRaw(allocator, docgen_tokenizer, out, source_token, raw_src);
+    return tokenize_and_print_raw(allocator, docgen_tokenizer, out, source_token, raw_src);
 }
 
 fn print_source_block(allocator: Allocator, docgen_tokenizer: *Tokenizer, out: anytype, syntax_block: SyntaxBlock) !void {
-    const source_type = @tagName(syntax_block.source_type);
+    const source_type = @tag_name(syntax_block.source_type);
 
     try out.print("<figure><figcaption class=\"{s}-cap\"><cite class=\"file\">{s}</cite></figcaption><pre>", .{ source_type, syntax_block.name });
     switch (syntax_block.source_type) {
-        .zig => try tokenizeAndPrint(allocator, docgen_tokenizer, out, syntax_block.source_token),
+        .zig => try tokenize_and_print(allocator, docgen_tokenizer, out, syntax_block.source_token),
         else => {
             const raw_source = docgen_tokenizer.buffer[syntax_block.source_token.start..syntax_block.source_token.end];
             const trimmed_raw_source = mem.trim(u8, raw_source, " \r\n");
 
-            try out.writeAll("<code>");
-            try writeEscapedLines(out, trimmed_raw_source);
-            try out.writeAll("</code>");
+            try out.write_all("<code>");
+            try write_escaped_lines(out, trimmed_raw_source);
+            try out.write_all("</code>");
         },
     }
-    try out.writeAll("</pre></figure>");
+    try out.write_all("</pre></figure>");
 }
 
 fn print_shell(out: anytype, shell_content: []const u8, escape: bool) !void {
     const trimmed_shell_content = mem.trim(u8, shell_content, " \r\n");
-    try out.writeAll("<figure><figcaption class=\"shell-cap\">Shell</figcaption><pre><samp>");
+    try out.write_all("<figure><figcaption class=\"shell-cap\">Shell</figcaption><pre><samp>");
     var cmd_cont: bool = false;
-    var iter = std.mem.splitScalar(u8, trimmed_shell_content, '\n');
+    var iter = std.mem.split_scalar(u8, trimmed_shell_content, '\n');
     while (iter.next()) |orig_line| {
-        const line = mem.trimRight(u8, orig_line, " \r");
+        const line = mem.trim_right(u8, orig_line, " \r");
         if (!cmd_cont and line.len > 1 and mem.eql(u8, line[0..2], "$ ") and line[line.len - 1] != '\\') {
-            try out.writeAll("$ <kbd>");
-            const s = std.mem.trimLeft(u8, line[1..], " ");
+            try out.write_all("$ <kbd>");
+            const s = std.mem.trim_left(u8, line[1..], " ");
             if (escape) {
-                try writeEscaped(out, s);
+                try write_escaped(out, s);
             } else {
-                try out.writeAll(s);
+                try out.write_all(s);
             }
-            try out.writeAll("</kbd>" ++ "\n");
+            try out.write_all("</kbd>" ++ "\n");
         } else if (!cmd_cont and line.len > 1 and mem.eql(u8, line[0..2], "$ ") and line[line.len - 1] == '\\') {
-            try out.writeAll("$ <kbd>");
-            const s = std.mem.trimLeft(u8, line[1..], " ");
+            try out.write_all("$ <kbd>");
+            const s = std.mem.trim_left(u8, line[1..], " ");
             if (escape) {
-                try writeEscaped(out, s);
+                try write_escaped(out, s);
             } else {
-                try out.writeAll(s);
+                try out.write_all(s);
             }
-            try out.writeAll("\n");
+            try out.write_all("\n");
             cmd_cont = true;
         } else if (line.len > 0 and line[line.len - 1] != '\\' and cmd_cont) {
             if (escape) {
-                try writeEscaped(out, line);
+                try write_escaped(out, line);
             } else {
-                try out.writeAll(line);
+                try out.write_all(line);
             }
-            try out.writeAll("</kbd>" ++ "\n");
+            try out.write_all("</kbd>" ++ "\n");
             cmd_cont = false;
         } else {
             if (escape) {
-                try writeEscaped(out, line);
+                try write_escaped(out, line);
             } else {
-                try out.writeAll(line);
+                try out.write_all(line);
             }
-            try out.writeAll("\n");
+            try out.write_all("\n");
         }
     }
 
-    try out.writeAll("</samp></pre></figure>");
+    try out.write_all("</samp></pre></figure>");
 }
 
 fn gen_html(
@@ -994,22 +994,22 @@ fn gen_html(
     for (toc.nodes) |node| {
         switch (node) {
             .Content => |data| {
-                try out.writeAll(data);
+                try out.write_all(data);
             },
             .Link => |info| {
                 if (!toc.urls.contains(info.url)) {
-                    return parseError(tokenizer, info.token, "url not found: {s}", .{info.url});
+                    return parse_error(tokenizer, info.token, "url not found: {s}", .{info.url});
                 }
                 try out.print("<a href=\"#{s}\">{s}</a>", .{ info.url, info.name });
             },
             .Nav => {
-                try out.writeAll(toc.toc);
+                try out.write_all(toc.toc);
             },
             .Builtin => |tok| {
-                try out.writeAll("<figure><figcaption class=\"zig-cap\"><cite>@import(\"builtin\")</cite></figcaption><pre>");
-                const builtin_code = @embedFile("builtin"); // 😎
-                try tokenizeAndPrintRaw(allocator, tokenizer, out, tok, builtin_code);
-                try out.writeAll("</pre></figure>");
+                try out.write_all("<figure><figcaption class=\"zig-cap\"><cite>@import(\"builtin\")</cite></figcaption><pre>");
+                const builtin_code = @embed_file("builtin"); // 😎
+                try tokenize_and_print_raw(allocator, tokenizer, out, tok, builtin_code);
+                try out.write_all("</pre></figure>");
             },
             .HeaderOpen => |info| {
                 try out.print(
@@ -1018,40 +1018,40 @@ fn gen_html(
                 );
             },
             .SeeAlso => |items| {
-                try out.writeAll("<p>See also:</p><ul>\n");
+                try out.write_all("<p>See also:</p><ul>\n");
                 for (items) |item| {
                     const url = try urlize(allocator, item.name);
                     if (!toc.urls.contains(url)) {
-                        return parseError(tokenizer, item.token, "url not found: {s}", .{url});
+                        return parse_error(tokenizer, item.token, "url not found: {s}", .{url});
                     }
                     try out.print("<li><a href=\"#{s}\">{s}</a></li>\n", .{ url, item.name });
                 }
-                try out.writeAll("</ul>\n");
+                try out.write_all("</ul>\n");
             },
             .InlineSyntax => |content_tok| {
-                try tokenizeAndPrint(allocator, tokenizer, out, content_tok);
+                try tokenize_and_print(allocator, tokenizer, out, content_tok);
             },
             .Shell => |content_tok| {
                 const raw_shell_content = tokenizer.buffer[content_tok.start..content_tok.end];
-                try printShell(out, raw_shell_content, true);
+                try print_shell(out, raw_shell_content, true);
             },
             .SyntaxBlock => |syntax_block| {
-                try printSourceBlock(allocator, tokenizer, out, syntax_block);
+                try print_source_block(allocator, tokenizer, out, syntax_block);
             },
             .Code => |code| {
-                const out_basename = try std.fmt.allocPrint(allocator, "{s}.out", .{
+                const out_basename = try std.fmt.alloc_print(allocator, "{s}.out", .{
                     fs.path.stem(code.name),
                 });
                 defer allocator.free(out_basename);
 
-                const contents = code_dir.readFileAlloc(allocator, out_basename, std.math.maxInt(u32)) catch |err| {
-                    return parseError(tokenizer, code.token, "unable to open '{s}': {s}", .{
+                const contents = code_dir.read_file_alloc(allocator, out_basename, std.math.max_int(u32)) catch |err| {
+                    return parse_error(tokenizer, code.token, "unable to open '{s}': {s}", .{
                         out_basename, @errorName(err),
                     });
                 };
                 defer allocator.free(contents);
 
-                try out.writeAll(contents);
+                try out.write_all(contents);
             },
         }
     }

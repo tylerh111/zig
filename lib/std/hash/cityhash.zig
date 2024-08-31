@@ -2,15 +2,15 @@ const std = @import("std");
 
 inline fn offset_ptr(ptr: [*]const u8, offset: usize) [*]const u8 {
     // ptr + offset doesn't work at comptime so we need this instead.
-    return @as([*]const u8, @ptrCast(&ptr[offset]));
+    return @as([*]const u8, @ptr_cast(&ptr[offset]));
 }
 
 fn fetch32(ptr: [*]const u8, offset: usize) u32 {
-    return std.mem.readInt(u32, offsetPtr(ptr, offset)[0..4], .little);
+    return std.mem.read_int(u32, offset_ptr(ptr, offset)[0..4], .little);
 }
 
 fn fetch64(ptr: [*]const u8, offset: usize) u64 {
-    return std.mem.readInt(u64, offsetPtr(ptr, offset)[0..8], .little);
+    return std.mem.read_int(u64, offset_ptr(ptr, offset)[0..8], .little);
 }
 
 pub const CityHash32 = struct {
@@ -53,7 +53,7 @@ pub const CityHash32 = struct {
         var b: u32 = 0;
         var c: u32 = 9;
         for (str) |v| {
-            b = b *% c1 +% @as(u32, @bitCast(@as(i32, @intCast(@as(i8, @bitCast(v))))));
+            b = b *% c1 +% @as(u32, @bit_cast(@as(i32, @int_cast(@as(i8, @bit_cast(v))))));
             c ^= b;
         }
         return fmix(mur(b, mur(len, c)));
@@ -87,11 +87,11 @@ pub const CityHash32 = struct {
     pub fn hash(str: []const u8) u32 {
         if (str.len <= 24) {
             if (str.len <= 4) {
-                return hash32Len0To4(str);
+                return hash32_len0_to4(str);
             } else {
                 if (str.len <= 12)
-                    return hash32Len5To12(str);
-                return hash32Len13To24(str);
+                    return hash32_len5_to12(str);
+                return hash32_len13_to24(str);
             }
         }
 
@@ -143,15 +143,15 @@ pub const CityHash32 = struct {
             h = rotr32(h, 19);
             h = h *% 5 +% 0xe6546b64;
             g ^= b4;
-            g = @byteSwap(g) *% 5;
+            g = @byte_swap(g) *% 5;
             h +%= b4 *% 5;
-            h = @byteSwap(h);
+            h = @byte_swap(h);
             f +%= b0;
             const t: u32 = h;
             h = f;
             f = g;
             g = t;
-            ptr = offsetPtr(ptr, 20);
+            ptr = offset_ptr(ptr, 20);
         }
         g = rotr32(g, 11) *% c1;
         g = rotr32(g, 17) *% c1;
@@ -185,7 +185,7 @@ pub const CityHash64 = struct {
     }
 
     fn hash_len16(u: u64, v: u64) u64 {
-        return @call(.always_inline, hash128To64, .{ u, v });
+        return @call(.always_inline, hash128_to64, .{ u, v });
     }
 
     fn hash_len16_mul(low: u64, high: u64, mul: u64) u64 {
@@ -198,7 +198,7 @@ pub const CityHash64 = struct {
     }
 
     fn hash128_to64(low: u64, high: u64) u64 {
-        return @call(.always_inline, hashLen16Mul, .{ low, high, 0x9ddfea08eb382d69 });
+        return @call(.always_inline, hash_len16_mul, .{ low, high, 0x9ddfea08eb382d69 });
     }
 
     fn hash_len0_to16(str: []const u8) u64 {
@@ -209,20 +209,20 @@ pub const CityHash64 = struct {
             const b: u64 = fetch64(str.ptr, str.len - 8);
             const c: u64 = rotr64(b, 37) *% mul +% a;
             const d: u64 = (rotr64(a, 25) +% b) *% mul;
-            return hashLen16Mul(c, d, mul);
+            return hash_len16_mul(c, d, mul);
         }
         if (len >= 4) {
             const mul: u64 = k2 +% len *% 2;
             const a: u64 = fetch32(str.ptr, 0);
-            return hashLen16Mul(len +% (a << 3), fetch32(str.ptr, str.len - 4), mul);
+            return hash_len16_mul(len +% (a << 3), fetch32(str.ptr, str.len - 4), mul);
         }
         if (len > 0) {
             const a: u8 = str[0];
             const b: u8 = str[str.len >> 1];
             const c: u8 = str[str.len - 1];
-            const y: u32 = @as(u32, @intCast(a)) +% (@as(u32, @intCast(b)) << 8);
-            const z: u32 = @as(u32, @truncate(str.len)) +% (@as(u32, @intCast(c)) << 2);
-            return shiftmix(@as(u64, @intCast(y)) *% k2 ^ @as(u64, @intCast(z)) *% k0) *% k2;
+            const y: u32 = @as(u32, @int_cast(a)) +% (@as(u32, @int_cast(b)) << 8);
+            const z: u32 = @as(u32, @truncate(str.len)) +% (@as(u32, @int_cast(c)) << 2);
+            return shiftmix(@as(u64, @int_cast(y)) *% k2 ^ @as(u64, @int_cast(z)) *% k0) *% k2;
         }
         return k2;
     }
@@ -235,7 +235,7 @@ pub const CityHash64 = struct {
         const c: u64 = fetch64(str.ptr, str.len - 8) *% mul;
         const d: u64 = fetch64(str.ptr, str.len - 16) *% k2;
 
-        return hashLen16Mul(rotr64(a +% b, 43) +% rotr64(c, 30) +% d, a +% rotr64(b +% k2, 18) +% c, mul);
+        return hash_len16_mul(rotr64(a +% b, 43) +% rotr64(c, 30) +% d, a +% rotr64(b +% k2, 18) +% c, mul);
     }
 
     fn hash_len33_to64(str: []const u8) u64 {
@@ -252,11 +252,11 @@ pub const CityHash64 = struct {
 
         const u: u64 = rotr64(a +% g, 43) +% (rotr64(b, 30) +% c) *% 9;
         const v: u64 = ((a +% g) ^ d) +% f +% 1;
-        const w: u64 = @byteSwap((u +% v) *% mul) +% h;
+        const w: u64 = @byte_swap((u +% v) *% mul) +% h;
         const x: u64 = rotr64(e +% f, 42) +% c;
-        const y: u64 = (@byteSwap((v +% w) *% mul) +% g) *% mul;
+        const y: u64 = (@byte_swap((v +% w) *% mul) +% g) *% mul;
         const z: u64 = e +% f +% c;
-        const a1: u64 = @byteSwap((x +% z) *% mul +% y) +% b;
+        const a1: u64 = @byte_swap((x +% z) *% mul +% y) +% b;
         const b1: u64 = shiftmix((z +% a1) *% mul +% d +% h) *% mul;
         return b1 +% x;
     }
@@ -279,7 +279,7 @@ pub const CityHash64 = struct {
     }
 
     fn weak_hash_len32_with_seeds(ptr: [*]const u8, a: u64, b: u64) WeakPair {
-        return @call(.always_inline, weakHashLen32WithSeedsHelper, .{
+        return @call(.always_inline, weak_hash_len32_with_seeds_helper, .{
             fetch64(ptr, 0),
             fetch64(ptr, 8),
             fetch64(ptr, 16),
@@ -292,24 +292,24 @@ pub const CityHash64 = struct {
     pub fn hash(str: []const u8) u64 {
         if (str.len <= 32) {
             if (str.len <= 16) {
-                return hashLen0To16(str);
+                return hash_len0_to16(str);
             } else {
-                return hashLen17To32(str);
+                return hash_len17_to32(str);
             }
         } else if (str.len <= 64) {
-            return hashLen33To64(str);
+            return hash_len33_to64(str);
         }
 
         var len: u64 = @as(u64, str.len);
 
         var x: u64 = fetch64(str.ptr, str.len - 40);
         var y: u64 = fetch64(str.ptr, str.len - 16) +% fetch64(str.ptr, str.len - 56);
-        var z: u64 = hashLen16(fetch64(str.ptr, str.len - 48) +% len, fetch64(str.ptr, str.len - 24));
-        var v: WeakPair = weakHashLen32WithSeeds(offsetPtr(str.ptr, str.len - 64), len, z);
-        var w: WeakPair = weakHashLen32WithSeeds(offsetPtr(str.ptr, str.len - 32), y +% k1, x);
+        var z: u64 = hash_len16(fetch64(str.ptr, str.len - 48) +% len, fetch64(str.ptr, str.len - 24));
+        var v: WeakPair = weak_hash_len32_with_seeds(offset_ptr(str.ptr, str.len - 64), len, z);
+        var w: WeakPair = weak_hash_len32_with_seeds(offset_ptr(str.ptr, str.len - 32), y +% k1, x);
 
         x = x *% k1 +% fetch64(str.ptr, 0);
-        len = (len - 1) & ~@as(u64, @intCast(63));
+        len = (len - 1) & ~@as(u64, @int_cast(63));
 
         var ptr: [*]const u8 = str.ptr;
         while (true) {
@@ -318,27 +318,27 @@ pub const CityHash64 = struct {
             x ^= w.second;
             y +%= v.first +% fetch64(ptr, 40);
             z = rotr64(z +% w.first, 33) *% k1;
-            v = weakHashLen32WithSeeds(ptr, v.second *% k1, x +% w.first);
-            w = weakHashLen32WithSeeds(offsetPtr(ptr, 32), z +% w.second, y +% fetch64(ptr, 16));
+            v = weak_hash_len32_with_seeds(ptr, v.second *% k1, x +% w.first);
+            w = weak_hash_len32_with_seeds(offset_ptr(ptr, 32), z +% w.second, y +% fetch64(ptr, 16));
             const t: u64 = z;
             z = x;
             x = t;
 
-            ptr = offsetPtr(ptr, 64);
+            ptr = offset_ptr(ptr, 64);
             len -= 64;
             if (len == 0)
                 break;
         }
 
-        return hashLen16(hashLen16(v.first, w.first) +% shiftmix(y) *% k1 +% z, hashLen16(v.second, w.second) +% x);
+        return hash_len16(hash_len16(v.first, w.first) +% shiftmix(y) *% k1 +% z, hash_len16(v.second, w.second) +% x);
     }
 
     pub fn hash_with_seed(str: []const u8, seed: u64) u64 {
-        return @call(.always_inline, Self.hashWithSeeds, .{ str, k2, seed });
+        return @call(.always_inline, Self.hash_with_seeds, .{ str, k2, seed });
     }
 
     pub fn hash_with_seeds(str: []const u8, seed0: u64, seed1: u64) u64 {
-        return hashLen16(hash(str) -% seed0, seed1);
+        return hash_len16(hash(str) -% seed0, seed1);
     }
 };
 
@@ -354,7 +354,7 @@ test "cityhash32" {
         fn do() !void {
             // SMHasher doesn't provide a 32bit version of the algorithm.
             // The implementation was verified against the Google Abseil version.
-            try std.testing.expectEqual(verify.smhasher(CityHash32hashIgnoreSeed), 0x68254F81);
+            try std.testing.expect_equal(verify.smhasher(CityHash32hashIgnoreSeed), 0x68254F81);
         }
     };
     try Test.do();
@@ -367,7 +367,7 @@ test "cityhash64" {
         fn do() !void {
             // This is not compliant with the SMHasher implementation of CityHash64!
             // The implementation was verified against the Google Abseil version.
-            try std.testing.expectEqual(verify.smhasher(CityHash64.hashWithSeed), 0x5FABC5C5);
+            try std.testing.expect_equal(verify.smhasher(CityHash64.hash_with_seed), 0x5FABC5C5);
         }
     };
     try Test.do();

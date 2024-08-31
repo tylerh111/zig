@@ -22,7 +22,7 @@ fn with_for(any: AnySlice) usize {
         // With `inline for` the function gets generated as
         // a series of `if` statements relying on the optimizer
         // to convert it to a switch.
-        if (field.value == @intFromEnum(any)) {
+        if (field.value == @int_from_enum(any)) {
             return @field(any, field.name).len;
         }
     }
@@ -42,8 +42,8 @@ fn with_switch(any: AnySlice) usize {
 
 test "inline for and inline else similarity" {
     const any = AnySlice{ .c = "hello" };
-    try expect(withFor(any) == 5);
-    try expect(withSwitch(any) == 5);
+    try expect(with_for(any) == 5);
+    try expect(with_switch(any) == 5);
 }
 
 // test

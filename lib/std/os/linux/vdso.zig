@@ -2,7 +2,7 @@ const std = @import("../../std.zig");
 const elf = std.elf;
 const linux = std.os.linux;
 const mem = std.mem;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 
 pub fn lookup(vername: []const u8, name: []const u8) usize {
     const vdso_addr = linux.getauxval(std.elf.AT_SYSINFO_EHDR);
@@ -12,7 +12,7 @@ pub fn lookup(vername: []const u8, name: []const u8) usize {
     var ph_addr: usize = vdso_addr + eh.e_phoff;
 
     var maybe_dynv: ?[*]usize = null;
-    var base: usize = maxInt(usize);
+    var base: usize = max_int(usize);
     {
         var i: usize = 0;
         while (i < eh.e_phnum) : ({
@@ -32,7 +32,7 @@ pub fn lookup(vername: []const u8, name: []const u8) usize {
         }
     }
     const dynv = maybe_dynv orelse return 0;
-    if (base == maxInt(usize)) return 0;
+    if (base == max_int(usize)) return 0;
 
     var maybe_strings: ?[*]u8 = null;
     var maybe_syms: ?[*]elf.Sym = null;
@@ -65,11 +65,11 @@ pub fn lookup(vername: []const u8, name: []const u8) usize {
 
     var i: usize = 0;
     while (i < hashtab[1]) : (i += 1) {
-        if (0 == (@as(u32, 1) << @as(u5, @intCast(syms[i].st_info & 0xf)) & OK_TYPES)) continue;
-        if (0 == (@as(u32, 1) << @as(u5, @intCast(syms[i].st_info >> 4)) & OK_BINDS)) continue;
+        if (0 == (@as(u32, 1) << @as(u5, @int_cast(syms[i].st_info & 0xf)) & OK_TYPES)) continue;
+        if (0 == (@as(u32, 1) << @as(u5, @int_cast(syms[i].st_info >> 4)) & OK_BINDS)) continue;
         if (0 == syms[i].st_shndx) continue;
-        const sym_name = @as([*:0]u8, @ptrCast(strings + syms[i].st_name));
-        if (!mem.eql(u8, name, mem.sliceTo(sym_name, 0))) continue;
+        const sym_name = @as([*:0]u8, @ptr_cast(strings + syms[i].st_name));
+        if (!mem.eql(u8, name, mem.slice_to(sym_name, 0))) continue;
         if (maybe_versym) |versym| {
             if (!checkver(maybe_verdef.?, versym[i], vername, strings))
                 continue;
@@ -82,15 +82,15 @@ pub fn lookup(vername: []const u8, name: []const u8) usize {
 
 fn checkver(def_arg: *elf.Verdef, vsym_arg: i32, vername: []const u8, strings: [*]u8) bool {
     var def = def_arg;
-    const vsym = @as(u32, @bitCast(vsym_arg)) & 0x7fff;
+    const vsym = @as(u32, @bit_cast(vsym_arg)) & 0x7fff;
     while (true) {
         if (0 == (def.vd_flags & elf.VER_FLG_BASE) and (def.vd_ndx & 0x7fff) == vsym)
             break;
         if (def.vd_next == 0)
             return false;
-        def = @as(*elf.Verdef, @ptrFromInt(@intFromPtr(def) + def.vd_next));
+        def = @as(*elf.Verdef, @ptrFromInt(@int_from_ptr(def) + def.vd_next));
     }
-    const aux = @as(*elf.Verdaux, @ptrFromInt(@intFromPtr(def) + def.vd_aux));
-    const vda_name = @as([*:0]u8, @ptrCast(strings + aux.vda_name));
-    return mem.eql(u8, vername, mem.sliceTo(vda_name, 0));
+    const aux = @as(*elf.Verdaux, @ptrFromInt(@int_from_ptr(def) + def.vd_aux));
+    const vda_name = @as([*:0]u8, @ptr_cast(strings + aux.vda_name));
+    return mem.eql(u8, vername, mem.slice_to(vda_name, 0));
 }

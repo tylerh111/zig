@@ -118,7 +118,7 @@ pub fn SinglyLinkedList(comptime T: type) type {
         /// This operation is O(N).
         pub fn len(list: Self) usize {
             if (list.first) |n| {
-                return 1 + n.countChildren();
+                return 1 + n.count_children();
             } else {
                 return 0;
             }
@@ -139,10 +139,10 @@ test "basic SinglyLinkedList test" {
     var five = L.Node{ .data = 5 };
 
     list.prepend(&two); // {2}
-    two.insertAfter(&five); // {2, 5}
+    two.insert_after(&five); // {2, 5}
     list.prepend(&one); // {1, 2, 5}
-    two.insertAfter(&three); // {1, 2, 3, 5}
-    three.insertAfter(&four); // {1, 2, 3, 4, 5}
+    two.insert_after(&three); // {1, 2, 3, 5}
+    three.insert_after(&four); // {1, 2, 3, 4, 5}
 
     try testing.expect(list.len() == 5);
 
@@ -156,9 +156,9 @@ test "basic SinglyLinkedList test" {
         }
     }
 
-    _ = list.popFirst(); // {2, 3, 4, 5}
+    _ = list.pop_first(); // {2, 3, 4, 5}
     _ = list.remove(&five); // {2, 3, 4}
-    _ = two.removeNext(); // {2, 4}
+    _ = two.remove_next(); // {2, 4}
 
     try testing.expect(list.first.?.data == 2);
     try testing.expect(list.first.?.next.?.data == 4);
@@ -267,7 +267,7 @@ pub fn DoublyLinkedList(comptime T: type) type {
         pub fn append(list: *Self, new_node: *Node) void {
             if (list.last) |last| {
                 // Insert after last.
-                list.insertAfter(last, new_node);
+                list.insert_after(last, new_node);
             } else {
                 // Empty list.
                 list.prepend(new_node);
@@ -281,7 +281,7 @@ pub fn DoublyLinkedList(comptime T: type) type {
         pub fn prepend(list: *Self, new_node: *Node) void {
             if (list.first) |first| {
                 // Insert before first.
-                list.insertBefore(first, new_node);
+                list.insert_before(first, new_node);
             } else {
                 // Empty list.
                 list.first = new_node;
@@ -353,8 +353,8 @@ test "basic DoublyLinkedList test" {
     list.append(&two); // {2}
     list.append(&five); // {2, 5}
     list.prepend(&one); // {1, 2, 5}
-    list.insertBefore(&five, &four); // {1, 2, 4, 5}
-    list.insertAfter(&two, &three); // {1, 2, 3, 4, 5}
+    list.insert_before(&five, &four); // {1, 2, 4, 5}
+    list.insert_after(&two, &three); // {1, 2, 3, 4, 5}
 
     // Traverse forwards.
     {
@@ -376,7 +376,7 @@ test "basic DoublyLinkedList test" {
         }
     }
 
-    _ = list.popFirst(); // {2, 3, 4, 5}
+    _ = list.pop_first(); // {2, 3, 4, 5}
     _ = list.pop(); // {2, 3, 4}
     list.remove(&three); // {2, 4}
 
@@ -402,7 +402,7 @@ test "DoublyLinkedList concatenation" {
     list2.append(&four);
     list2.append(&five);
 
-    list1.concatByMoving(&list2);
+    list1.concat_by_moving(&list2);
 
     try testing.expect(list1.last == &five);
     try testing.expect(list1.len == 5);
@@ -431,7 +431,7 @@ test "DoublyLinkedList concatenation" {
     }
 
     // Swap them back, this verifies that concatenating to an empty list works.
-    list2.concatByMoving(&list1);
+    list2.concat_by_moving(&list1);
 
     // Traverse forwards.
     {

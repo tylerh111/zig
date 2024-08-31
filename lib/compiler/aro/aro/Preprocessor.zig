@@ -47,7 +47,7 @@ const Macro = struct {
     fn eql(a: Macro, b: Macro, pp: *Preprocessor) bool {
         if (a.tokens.len != b.tokens.len) return false;
         if (a.is_builtin != b.is_builtin) return false;
-        for (a.tokens, b.tokens) |a_tok, b_tok| if (!tokEql(pp, a_tok, b_tok)) return false;
+        for (a.tokens, b.tokens) |a_tok, b_tok| if (!tok_eql(pp, a_tok, b_tok)) return false;
 
         if (a.is_func and b.is_func) {
             if (a.var_args != b.var_args) return false;
@@ -59,7 +59,7 @@ const Macro = struct {
     }
 
     fn tok_eql(pp: *Preprocessor, a: RawToken, b: RawToken) bool {
-        return mem.eql(u8, pp.tokSlice(a), pp.tokSlice(b));
+        return mem.eql(u8, pp.tok_slice(a), pp.tok_slice(b));
     }
 };
 
@@ -79,7 +79,7 @@ comp: *Compilation,
 gpa: mem.Allocator,
 arena: std.heap.ArenaAllocator,
 defines: DefineMap = .{},
-/// Do not directly mutate this; use addToken / addTokenAssumeCapacity / ensureTotalTokenCapacity / ensureUnusedTokenCapacity
+/// Do not directly mutate this; use add_token / add_token_assume_capacity / ensure_total_token_capacity / ensure_unused_token_capacity
 tokens: Token.List = .{},
 /// Do not directly mutate this; must be kept in sync with `tokens`
 expansion_entries: std.MultiArrayList(ExpansionEntry) = .{},
@@ -131,7 +131,7 @@ pub fn init(comp: *Compilation) Preprocessor {
         .top_expansion_buf = ExpandBuf.init(comp.gpa),
         .hideset = .{ .comp = comp },
     };
-    comp.pragmaEvent(.before_preprocess);
+    comp.pragma_event(.before_preprocess);
     return pp;
 }
 
@@ -139,7 +139,7 @@ pub fn init(comp: *Compilation) Preprocessor {
 pub fn init_default(comp: *Compilation) !Preprocessor {
     var pp = init(comp);
     errdefer pp.deinit();
-    try pp.addBuiltinMacros();
+    try pp.add_builtin_macros();
     return pp;
 }
 
@@ -212,7 +212,7 @@ const builtin_macros = struct {
 };
 
 fn add_builtin_macro(pp: *Preprocessor, name: []const u8, is_func: bool, tokens: []const RawToken) !void {
-    try pp.defines.putNoClobber(pp.gpa, name, .{
+    try pp.defines.put_no_clobber(pp.gpa, name, .{
         .params = &builtin_macros.args,
         .tokens = tokens,
         .var_args = false,
@@ -223,22 +223,22 @@ fn add_builtin_macro(pp: *Preprocessor, name: []const u8, is_func: bool, tokens:
 }
 
 pub fn add_builtin_macros(pp: *Preprocessor) !void {
-    try pp.addBuiltinMacro("__has_attribute", true, &builtin_macros.has_attribute);
-    try pp.addBuiltinMacro("__has_c_attribute", true, &builtin_macros.has_c_attribute);
-    try pp.addBuiltinMacro("__has_declspec_attribute", true, &builtin_macros.has_declspec_attribute);
-    try pp.addBuiltinMacro("__has_warning", true, &builtin_macros.has_warning);
-    try pp.addBuiltinMacro("__has_feature", true, &builtin_macros.has_feature);
-    try pp.addBuiltinMacro("__has_extension", true, &builtin_macros.has_extension);
-    try pp.addBuiltinMacro("__has_builtin", true, &builtin_macros.has_builtin);
-    try pp.addBuiltinMacro("__has_include", true, &builtin_macros.has_include);
-    try pp.addBuiltinMacro("__has_include_next", true, &builtin_macros.has_include_next);
-    try pp.addBuiltinMacro("__has_embed", true, &builtin_macros.has_embed);
-    try pp.addBuiltinMacro("__is_identifier", true, &builtin_macros.is_identifier);
-    try pp.addBuiltinMacro("_Pragma", true, &builtin_macros.pragma_operator);
+    try pp.add_builtin_macro("__has_attribute", true, &builtin_macros.has_attribute);
+    try pp.add_builtin_macro("__has_c_attribute", true, &builtin_macros.has_c_attribute);
+    try pp.add_builtin_macro("__has_declspec_attribute", true, &builtin_macros.has_declspec_attribute);
+    try pp.add_builtin_macro("__has_warning", true, &builtin_macros.has_warning);
+    try pp.add_builtin_macro("__has_feature", true, &builtin_macros.has_feature);
+    try pp.add_builtin_macro("__has_extension", true, &builtin_macros.has_extension);
+    try pp.add_builtin_macro("__has_builtin", true, &builtin_macros.has_builtin);
+    try pp.add_builtin_macro("__has_include", true, &builtin_macros.has_include);
+    try pp.add_builtin_macro("__has_include_next", true, &builtin_macros.has_include_next);
+    try pp.add_builtin_macro("__has_embed", true, &builtin_macros.has_embed);
+    try pp.add_builtin_macro("__is_identifier", true, &builtin_macros.is_identifier);
+    try pp.add_builtin_macro("_Pragma", true, &builtin_macros.pragma_operator);
 
-    try pp.addBuiltinMacro("__FILE__", false, &builtin_macros.file);
-    try pp.addBuiltinMacro("__LINE__", false, &builtin_macros.line);
-    try pp.addBuiltinMacro("__COUNTER__", false, &builtin_macros.counter);
+    try pp.add_builtin_macro("__FILE__", false, &builtin_macros.file);
+    try pp.add_builtin_macro("__LINE__", false, &builtin_macros.line);
+    try pp.add_builtin_macro("__COUNTER__", false, &builtin_macros.counter);
 }
 
 pub fn deinit(pp: *Preprocessor) void {
@@ -257,10 +257,10 @@ pub fn deinit(pp: *Preprocessor) void {
 
 /// Free buffers that are not needed after preprocessing
 fn clear_buffers(pp: *Preprocessor) void {
-    pp.token_buf.clearAndFree();
-    pp.char_buf.clearAndFree();
-    pp.top_expansion_buf.clearAndFree();
-    pp.hideset.clearAndFree();
+    pp.token_buf.clear_and_free();
+    pp.char_buf.clear_and_free();
+    pp.top_expansion_buf.clear_and_free();
+    pp.hideset.clear_and_free();
 }
 
 pub fn expansion_slice(pp: *Preprocessor, tok: Tree.TokenIndex) []Source.Location {
@@ -272,7 +272,7 @@ pub fn expansion_slice(pp: *Preprocessor, tok: Tree.TokenIndex) []Source.Locatio
     };
 
     const indices = pp.expansion_entries.items(.idx);
-    const idx = std.sort.binarySearch(Tree.TokenIndex, tok, indices, {}, S.order_token_index) orelse return &.{};
+    const idx = std.sort.binary_search(Tree.TokenIndex, tok, indices, {}, S.order_token_index) orelse return &.{};
     const locs = pp.expansion_entries.items(.locs)[idx];
     var i: usize = 0;
     while (locs[i].id != .unused) : (i += 1) {}
@@ -283,25 +283,25 @@ pub fn expansion_slice(pp: *Preprocessor, tok: Tree.TokenIndex) []Source.Locatio
 pub fn preprocess_sources(pp: *Preprocessor, sources: []const Source) Error!void {
     assert(sources.len > 1);
     const first = sources[0];
-    try pp.addIncludeStart(first);
+    try pp.add_include_start(first);
     for (sources[1..]) |header| {
-        try pp.addIncludeStart(header);
+        try pp.add_include_start(header);
         _ = try pp.preprocess(header);
     }
-    try pp.addIncludeResume(first.id, 0, 1);
+    try pp.add_include_resume(first.id, 0, 1);
     const eof = try pp.preprocess(first);
-    try pp.addToken(eof);
-    pp.clearBuffers();
+    try pp.add_token(eof);
+    pp.clear_buffers();
 }
 
 /// Preprocess a source file, returns eof token.
 pub fn preprocess(pp: *Preprocessor, source: Source) Error!TokenWithExpansionLocs {
-    const eof = pp.preprocessExtra(source) catch |er| switch (er) {
+    const eof = pp.preprocess_extra(source) catch |er| switch (er) {
         // This cannot occur in the main file and is handled in `include`.
         error.StopPreprocessing => unreachable,
         else => |e| return e,
     };
-    try eof.checkMsEof(source, pp.comp);
+    try eof.check_ms_eof(source, pp.comp);
     return eof;
 }
 
@@ -317,27 +317,27 @@ pub fn tokenize(pp: *Preprocessor, source: Source) Error!Token {
 
     // Estimate how many new tokens this source will contain.
     const estimated_token_count = source.buf.len / 8;
-    try pp.ensureTotalTokenCapacity(pp.tokens.len + estimated_token_count);
+    try pp.ensure_total_token_capacity(pp.tokens.len + estimated_token_count);
 
     while (true) {
         const tok = tokenizer.next();
-        if (tok.id == .eof) return tokFromRaw(tok);
-        try pp.addToken(tokFromRaw(tok));
+        if (tok.id == .eof) return tok_from_raw(tok);
+        try pp.add_token(tok_from_raw(tok));
     }
 }
 
 pub fn add_include_start(pp: *Preprocessor, source: Source) !void {
     if (pp.linemarkers == .none) return;
-    try pp.addToken(.{ .id = .include_start, .loc = .{
+    try pp.add_token(.{ .id = .include_start, .loc = .{
         .id = source.id,
-        .byte_offset = std.math.maxInt(u32),
+        .byte_offset = std.math.max_int(u32),
         .line = 1,
     } });
 }
 
 pub fn add_include_resume(pp: *Preprocessor, source: Source.Id, offset: u32, line: u32) !void {
     if (pp.linemarkers == .none) return;
-    try pp.addToken(.{ .id = .include_resume, .loc = .{
+    try pp.add_token(.{ .id = .include_resume, .loc = .{
         .id = source,
         .byte_offset = offset,
         .line = line,
@@ -360,18 +360,18 @@ fn find_include_guard(pp: *Preprocessor, source: Source) ?[]const u8 {
         .langopts = pp.comp.langopts,
         .source = source.id,
     };
-    var hash = tokenizer.nextNoWS();
-    while (hash.id == .nl) hash = tokenizer.nextNoWS();
+    var hash = tokenizer.next_no_ws();
+    while (hash.id == .nl) hash = tokenizer.next_no_ws();
     if (hash.id != .hash) return null;
-    const ifndef = tokenizer.nextNoWS();
+    const ifndef = tokenizer.next_no_ws();
     if (ifndef.id != .keyword_ifndef) return null;
-    const guard = tokenizer.nextNoWS();
+    const guard = tokenizer.next_no_ws();
     if (guard.id != .identifier) return null;
-    return pp.tokSlice(guard);
+    return pp.tok_slice(guard);
 }
 
 fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpansionLocs {
-    var guard_name = pp.findIncludeGuard(source);
+    var guard_name = pp.find_include_guard(source);
 
     pp.preprocess_count += 1;
     var tokenizer = Tokenizer{
@@ -382,7 +382,7 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
 
     // Estimate how many new tokens this source will contain.
     const estimated_token_count = source.buf.len / 8;
-    try pp.ensureTotalTokenCapacity(pp.tokens.len + estimated_token_count);
+    try pp.ensure_total_token_capacity(pp.tokens.len + estimated_token_count);
 
     var if_level: u8 = 0;
     var if_kind = std.PackedIntArray(u2, 256).init([1]u2{0} ** 256);
@@ -394,8 +394,8 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
     while (true) {
         var tok = tokenizer.next();
         switch (tok.id) {
-            .hash => if (!start_of_line) try pp.addToken(tokFromRaw(tok)) else {
-                const directive = tokenizer.nextNoWS();
+            .hash => if (!start_of_line) try pp.add_token(tok_from_raw(tok)) else {
+                const directive = tokenizer.next_no_ws();
                 switch (directive.id) {
                     .keyword_error, .keyword_warning => {
                         // #error tokens..
@@ -407,7 +407,7 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                             tok = tokenizer.next();
                             if (tok.id == .nl or tok.id == .eof) break;
                             if (tok.id == .whitespace) tok.id = .macro_ws;
-                            try pp.top_expansion_buf.append(tokFromRaw(tok));
+                            try pp.top_expansion_buf.append(tok_from_raw(tok));
                         }
                         try pp.stringify(pp.top_expansion_buf.items);
                         const slice = pp.char_buf.items[char_top + 1 .. pp.char_buf.items.len - 2];
@@ -420,7 +420,7 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                         }, &.{});
                     },
                     .keyword_if => {
-                        const sum, const overflowed = @addWithOverflow(if_level, 1);
+                        const sum, const overflowed = @add_with_overflow(if_level, 1);
                         if (overflowed != 0)
                             return pp.fatal(directive, "too many #if nestings", .{});
                         if_level = sum;
@@ -428,45 +428,45 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                         if (try pp.expr(&tokenizer)) {
                             if_kind.set(if_level, until_endif);
                             if (pp.verbose) {
-                                pp.verboseLog(directive, "entering then branch of #if", .{});
+                                pp.verbose_log(directive, "entering then branch of #if", .{});
                             }
                         } else {
                             if_kind.set(if_level, until_else);
                             try pp.skip(&tokenizer, .until_else);
                             if (pp.verbose) {
-                                pp.verboseLog(directive, "entering else branch of #if", .{});
+                                pp.verbose_log(directive, "entering else branch of #if", .{});
                             }
                         }
                     },
                     .keyword_ifdef => {
-                        const sum, const overflowed = @addWithOverflow(if_level, 1);
+                        const sum, const overflowed = @add_with_overflow(if_level, 1);
                         if (overflowed != 0)
                             return pp.fatal(directive, "too many #if nestings", .{});
                         if_level = sum;
 
-                        const macro_name = (try pp.expectMacroName(&tokenizer)) orelse continue;
-                        try pp.expectNl(&tokenizer);
+                        const macro_name = (try pp.expect_macro_name(&tokenizer)) orelse continue;
+                        try pp.expect_nl(&tokenizer);
                         if (pp.defines.get(macro_name) != null) {
                             if_kind.set(if_level, until_endif);
                             if (pp.verbose) {
-                                pp.verboseLog(directive, "entering then branch of #ifdef", .{});
+                                pp.verbose_log(directive, "entering then branch of #ifdef", .{});
                             }
                         } else {
                             if_kind.set(if_level, until_else);
                             try pp.skip(&tokenizer, .until_else);
                             if (pp.verbose) {
-                                pp.verboseLog(directive, "entering else branch of #ifdef", .{});
+                                pp.verbose_log(directive, "entering else branch of #ifdef", .{});
                             }
                         }
                     },
                     .keyword_ifndef => {
-                        const sum, const overflowed = @addWithOverflow(if_level, 1);
+                        const sum, const overflowed = @add_with_overflow(if_level, 1);
                         if (overflowed != 0)
                             return pp.fatal(directive, "too many #if nestings", .{});
                         if_level = sum;
 
-                        const macro_name = (try pp.expectMacroName(&tokenizer)) orelse continue;
-                        try pp.expectNl(&tokenizer);
+                        const macro_name = (try pp.expect_macro_name(&tokenizer)) orelse continue;
+                        try pp.expect_nl(&tokenizer);
                         if (pp.defines.get(macro_name) == null) {
                             if_kind.set(if_level, until_endif);
                         } else {
@@ -486,18 +486,18 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                             until_else => if (try pp.expr(&tokenizer)) {
                                 if_kind.set(if_level, until_endif);
                                 if (pp.verbose) {
-                                    pp.verboseLog(directive, "entering then branch of #elif", .{});
+                                    pp.verbose_log(directive, "entering then branch of #elif", .{});
                                 }
                             } else {
                                 try pp.skip(&tokenizer, .until_else);
                                 if (pp.verbose) {
-                                    pp.verboseLog(directive, "entering else branch of #elif", .{});
+                                    pp.verbose_log(directive, "entering else branch of #elif", .{});
                                 }
                             },
                             until_endif => try pp.skip(&tokenizer, .until_endif),
                             until_endif_seen_else => {
                                 try pp.err(directive, .elif_after_else);
-                                skipToNl(&tokenizer);
+                                skip_to_nl(&tokenizer);
                             },
                             else => unreachable,
                         }
@@ -512,25 +512,25 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                         }
                         switch (if_kind.get(if_level)) {
                             until_else => {
-                                const macro_name = try pp.expectMacroName(&tokenizer);
+                                const macro_name = try pp.expect_macro_name(&tokenizer);
                                 if (macro_name == null) {
                                     if_kind.set(if_level, until_else);
                                     try pp.skip(&tokenizer, .until_else);
                                     if (pp.verbose) {
-                                        pp.verboseLog(directive, "entering else branch of #elifdef", .{});
+                                        pp.verbose_log(directive, "entering else branch of #elifdef", .{});
                                     }
                                 } else {
-                                    try pp.expectNl(&tokenizer);
+                                    try pp.expect_nl(&tokenizer);
                                     if (pp.defines.get(macro_name.?) != null) {
                                         if_kind.set(if_level, until_endif);
                                         if (pp.verbose) {
-                                            pp.verboseLog(directive, "entering then branch of #elifdef", .{});
+                                            pp.verbose_log(directive, "entering then branch of #elifdef", .{});
                                         }
                                     } else {
                                         if_kind.set(if_level, until_else);
                                         try pp.skip(&tokenizer, .until_else);
                                         if (pp.verbose) {
-                                            pp.verboseLog(directive, "entering else branch of #elifdef", .{});
+                                            pp.verbose_log(directive, "entering else branch of #elifdef", .{});
                                         }
                                     }
                                 }
@@ -538,7 +538,7 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                             until_endif => try pp.skip(&tokenizer, .until_endif),
                             until_endif_seen_else => {
                                 try pp.err(directive, .elifdef_after_else);
-                                skipToNl(&tokenizer);
+                                skip_to_nl(&tokenizer);
                             },
                             else => unreachable,
                         }
@@ -553,25 +553,25 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                         }
                         switch (if_kind.get(if_level)) {
                             until_else => {
-                                const macro_name = try pp.expectMacroName(&tokenizer);
+                                const macro_name = try pp.expect_macro_name(&tokenizer);
                                 if (macro_name == null) {
                                     if_kind.set(if_level, until_else);
                                     try pp.skip(&tokenizer, .until_else);
                                     if (pp.verbose) {
-                                        pp.verboseLog(directive, "entering else branch of #elifndef", .{});
+                                        pp.verbose_log(directive, "entering else branch of #elifndef", .{});
                                     }
                                 } else {
-                                    try pp.expectNl(&tokenizer);
+                                    try pp.expect_nl(&tokenizer);
                                     if (pp.defines.get(macro_name.?) == null) {
                                         if_kind.set(if_level, until_endif);
                                         if (pp.verbose) {
-                                            pp.verboseLog(directive, "entering then branch of #elifndef", .{});
+                                            pp.verbose_log(directive, "entering then branch of #elifndef", .{});
                                         }
                                     } else {
                                         if_kind.set(if_level, until_else);
                                         try pp.skip(&tokenizer, .until_else);
                                         if (pp.verbose) {
-                                            pp.verboseLog(directive, "entering else branch of #elifndef", .{});
+                                            pp.verbose_log(directive, "entering else branch of #elifndef", .{});
                                         }
                                     }
                                 }
@@ -579,13 +579,13 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                             until_endif => try pp.skip(&tokenizer, .until_endif),
                             until_endif_seen_else => {
                                 try pp.err(directive, .elifdef_after_else);
-                                skipToNl(&tokenizer);
+                                skip_to_nl(&tokenizer);
                             },
                             else => unreachable,
                         }
                     },
                     .keyword_else => {
-                        try pp.expectNl(&tokenizer);
+                        try pp.expect_nl(&tokenizer);
                         if (if_level == 0) {
                             try pp.err(directive, .else_without_if);
                             continue;
@@ -596,19 +596,19 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                             until_else => {
                                 if_kind.set(if_level, until_endif_seen_else);
                                 if (pp.verbose) {
-                                    pp.verboseLog(directive, "#else branch here", .{});
+                                    pp.verbose_log(directive, "#else branch here", .{});
                                 }
                             },
                             until_endif => try pp.skip(&tokenizer, .until_endif_seen_else),
                             until_endif_seen_else => {
                                 try pp.err(directive, .else_after_else);
-                                skipToNl(&tokenizer);
+                                skip_to_nl(&tokenizer);
                             },
                             else => unreachable,
                         }
                     },
                     .keyword_endif => {
-                        try pp.expectNl(&tokenizer);
+                        try pp.expect_nl(&tokenizer);
                         if (if_level == 0) {
                             guard_name = null;
                             try pp.err(directive, .endif_without_if);
@@ -617,18 +617,18 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                             const saved_tokenizer = tokenizer;
                             defer tokenizer = saved_tokenizer;
 
-                            var next = tokenizer.nextNoWS();
-                            while (next.id == .nl) : (next = tokenizer.nextNoWS()) {}
+                            var next = tokenizer.next_no_ws();
+                            while (next.id == .nl) : (next = tokenizer.next_no_ws()) {}
                             if (next.id != .eof) guard_name = null;
                         }
                         if_level -= 1;
                     },
                     .keyword_define => try pp.define(&tokenizer),
                     .keyword_undef => {
-                        const macro_name = (try pp.expectMacroName(&tokenizer)) orelse continue;
+                        const macro_name = (try pp.expect_macro_name(&tokenizer)) orelse continue;
 
                         _ = pp.defines.remove(macro_name);
-                        try pp.expectNl(&tokenizer);
+                        try pp.expect_nl(&tokenizer);
                     },
                     .keyword_include => {
                         try pp.include(&tokenizer, .first);
@@ -656,53 +656,53 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                     },
                     .keyword_line => {
                         // #line number "file"
-                        const digits = tokenizer.nextNoWS();
+                        const digits = tokenizer.next_no_ws();
                         if (digits.id != .pp_num) try pp.err(digits, .line_simple_digit);
                         // TODO: validate that the pp_num token is solely digits
 
                         if (digits.id == .eof or digits.id == .nl) continue;
-                        const name = tokenizer.nextNoWS();
+                        const name = tokenizer.next_no_ws();
                         if (name.id == .eof or name.id == .nl) continue;
                         if (name.id != .string_literal) try pp.err(name, .line_invalid_filename);
-                        try pp.expectNl(&tokenizer);
+                        try pp.expect_nl(&tokenizer);
                     },
                     .pp_num => {
                         // # number "file" flags
                         // TODO: validate that the pp_num token is solely digits
                         // if not, emit `GNU line marker directive requires a simple digit sequence`
-                        const name = tokenizer.nextNoWS();
+                        const name = tokenizer.next_no_ws();
                         if (name.id == .eof or name.id == .nl) continue;
                         if (name.id != .string_literal) try pp.err(name, .line_invalid_filename);
 
-                        const flag_1 = tokenizer.nextNoWS();
+                        const flag_1 = tokenizer.next_no_ws();
                         if (flag_1.id == .eof or flag_1.id == .nl) continue;
-                        const flag_2 = tokenizer.nextNoWS();
+                        const flag_2 = tokenizer.next_no_ws();
                         if (flag_2.id == .eof or flag_2.id == .nl) continue;
-                        const flag_3 = tokenizer.nextNoWS();
+                        const flag_3 = tokenizer.next_no_ws();
                         if (flag_3.id == .eof or flag_3.id == .nl) continue;
-                        const flag_4 = tokenizer.nextNoWS();
+                        const flag_4 = tokenizer.next_no_ws();
                         if (flag_4.id == .eof or flag_4.id == .nl) continue;
-                        try pp.expectNl(&tokenizer);
+                        try pp.expect_nl(&tokenizer);
                     },
                     .nl => {},
                     .eof => {
                         if (if_level != 0) try pp.err(tok, .unterminated_conditional_directive);
-                        return tokFromRaw(directive);
+                        return tok_from_raw(directive);
                     },
                     else => {
                         try pp.err(tok, .invalid_preprocessing_directive);
-                        skipToNl(&tokenizer);
+                        skip_to_nl(&tokenizer);
                     },
                 }
                 if (pp.preserve_whitespace) {
                     tok.id = .nl;
-                    try pp.addToken(tokFromRaw(tok));
+                    try pp.add_token(tok_from_raw(tok));
                 }
             },
-            .whitespace => if (pp.preserve_whitespace) try pp.addToken(tokFromRaw(tok)),
+            .whitespace => if (pp.preserve_whitespace) try pp.add_token(tok_from_raw(tok)),
             .nl => {
                 start_of_line = true;
-                if (pp.preserve_whitespace) try pp.addToken(tokFromRaw(tok));
+                if (pp.preserve_whitespace) try pp.add_token(tok_from_raw(tok));
             },
             .eof => {
                 if (if_level != 0) try pp.err(tok, .unterminated_conditional_directive);
@@ -712,25 +712,25 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
                     try pp.err(tok, .newline_eof);
                 }
                 if (guard_name) |name| {
-                    if (try pp.include_guards.fetchPut(pp.gpa, source.id, name)) |prev| {
+                    if (try pp.include_guards.fetch_put(pp.gpa, source.id, name)) |prev| {
                         assert(mem.eql(u8, name, prev.value));
                     }
                 }
-                return tokFromRaw(tok);
+                return tok_from_raw(tok);
             },
             .unterminated_string_literal, .unterminated_char_literal, .empty_char_literal => |tag| {
                 start_of_line = false;
-                try pp.err(tok, invalidTokenDiagnostic(tag));
-                try pp.expandMacro(&tokenizer, tok);
+                try pp.err(tok, invalid_token_diagnostic(tag));
+                try pp.expand_macro(&tokenizer, tok);
             },
             .unterminated_comment => try pp.err(tok, .unterminated_comment),
             else => {
-                if (tok.id.isMacroIdentifier() and pp.poisoned_identifiers.get(pp.tokSlice(tok)) != null) {
+                if (tok.id.is_macro_identifier() and pp.poisoned_identifiers.get(pp.tok_slice(tok)) != null) {
                     try pp.err(tok, .poisoned_identifier);
                 }
                 // Add the token to the buffer doing any necessary expansions.
                 start_of_line = false;
-                try pp.expandMacro(&tokenizer, tok);
+                try pp.expand_macro(&tokenizer, tok);
             },
         }
     }
@@ -740,7 +740,7 @@ fn preprocess_extra(pp: *Preprocessor, source: Source) MacroError!TokenWithExpan
 /// Returned slice is invalidated when comp.generated_buf is updated.
 pub fn tok_slice(pp: *Preprocessor, token: anytype) []const u8 {
     if (token.id.lexeme()) |some| return some;
-    const source = pp.comp.getSource(token.source);
+    const source = pp.comp.get_source(token.source);
     return source.buf[token.start..token.end];
 }
 
@@ -772,14 +772,14 @@ fn err_str(pp: *Preprocessor, tok: TokenWithExpansionLocs, tag: Diagnostics.Tag,
         .tag = tag,
         .loc = tok.loc,
         .extra = .{ .str = str },
-    }, tok.expansionSlice());
+    }, tok.expansion_slice());
 }
 
 fn fatal(pp: *Preprocessor, raw: RawToken, comptime fmt: []const u8, args: anytype) Compilation.Error {
     try pp.comp.diagnostics.list.append(pp.gpa, .{
         .tag = .cli_error,
         .kind = .@"fatal error",
-        .extra = .{ .str = try std.fmt.allocPrint(pp.comp.diagnostics.arena.allocator(), fmt, args) },
+        .extra = .{ .str = try std.fmt.alloc_print(pp.comp.diagnostics.arena.allocator(), fmt, args) },
         .loc = .{
             .id = raw.source,
             .byte_offset = raw.start,
@@ -794,36 +794,36 @@ fn fatal_not_found(pp: *Preprocessor, tok: TokenWithExpansionLocs, filename: []c
     pp.comp.diagnostics.fatal_errors = true;
     defer pp.comp.diagnostics.fatal_errors = old;
 
-    try pp.comp.diagnostics.addExtra(pp.comp.langopts, .{ .tag = .cli_error, .loc = tok.loc, .extra = .{
-        .str = try std.fmt.allocPrint(pp.comp.diagnostics.arena.allocator(), "'{s}' not found", .{filename}),
-    } }, tok.expansionSlice(), false);
-    unreachable; // addExtra should've returned FatalError
+    try pp.comp.diagnostics.add_extra(pp.comp.langopts, .{ .tag = .cli_error, .loc = tok.loc, .extra = .{
+        .str = try std.fmt.alloc_print(pp.comp.diagnostics.arena.allocator(), "'{s}' not found", .{filename}),
+    } }, tok.expansion_slice(), false);
+    unreachable; // add_extra should've returned FatalError
 }
 
 fn verbose_log(pp: *Preprocessor, raw: RawToken, comptime fmt: []const u8, args: anytype) void {
-    const source = pp.comp.getSource(raw.source);
-    const line_col = source.lineCol(.{ .id = raw.source, .line = raw.line, .byte_offset = raw.start });
+    const source = pp.comp.get_source(raw.source);
+    const line_col = source.line_col(.{ .id = raw.source, .line = raw.line, .byte_offset = raw.start });
 
-    const stderr = std.io.getStdErr().writer();
-    var buf_writer = std.io.bufferedWriter(stderr);
+    const stderr = std.io.get_std_err().writer();
+    var buf_writer = std.io.buffered_writer(stderr);
     const writer = buf_writer.writer();
     defer buf_writer.flush() catch {};
     writer.print("{s}:{d}:{d}: ", .{ source.path, line_col.line_no, line_col.col }) catch return;
     writer.print(fmt, args) catch return;
-    writer.writeByte('\n') catch return;
-    writer.writeAll(line_col.line) catch return;
-    writer.writeByte('\n') catch return;
+    writer.write_byte('\n') catch return;
+    writer.write_all(line_col.line) catch return;
+    writer.write_byte('\n') catch return;
 }
 
 /// Consume next token, error if it is not an identifier.
 fn expect_macro_name(pp: *Preprocessor, tokenizer: *Tokenizer) Error!?[]const u8 {
-    const macro_name = tokenizer.nextNoWS();
-    if (!macro_name.id.isMacroIdentifier()) {
+    const macro_name = tokenizer.next_no_ws();
+    if (!macro_name.id.is_macro_identifier()) {
         try pp.err(macro_name, .macro_name_missing);
-        skipToNl(tokenizer);
+        skip_to_nl(tokenizer);
         return null;
     }
-    return pp.tokSlice(macro_name);
+    return pp.tok_slice(macro_name);
 }
 
 /// Skip until after a newline, error if extra tokens before it.
@@ -854,10 +854,10 @@ fn restore_token_state(pp: *Preprocessor, state: TokenState) void {
 
 /// Consume all tokens until a newline and parse the result into a boolean.
 fn expr(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!bool {
-    const token_state = pp.getTokenState();
+    const token_state = pp.get_token_state();
     defer {
         for (pp.top_expansion_buf.items) |tok| TokenWithExpansionLocs.free(tok.expansion_locs, pp.gpa);
-        pp.restoreTokenState(token_state);
+        pp.restore_token_state(token_state);
     }
 
     pp.top_expansion_buf.items.len = 0;
@@ -868,20 +868,20 @@ fn expr(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!bool {
             .whitespace => if (pp.top_expansion_buf.items.len == 0) continue,
             else => {},
         }
-        try pp.top_expansion_buf.append(tokFromRaw(tok));
+        try pp.top_expansion_buf.append(tok_from_raw(tok));
     } else unreachable;
     if (pp.top_expansion_buf.items.len != 0) {
         pp.expansion_source_loc = pp.top_expansion_buf.items[0].loc;
-        pp.hideset.clearRetainingCapacity();
-        try pp.expandMacroExhaustive(tokenizer, &pp.top_expansion_buf, 0, pp.top_expansion_buf.items.len, false, .expr);
+        pp.hideset.clear_retaining_capacity();
+        try pp.expand_macro_exhaustive(tokenizer, &pp.top_expansion_buf, 0, pp.top_expansion_buf.items.len, false, .expr);
     }
     for (pp.top_expansion_buf.items) |tok| {
         if (tok.id == .macro_ws) continue;
-        if (!tok.id.validPreprocessorExprStart()) {
+        if (!tok.id.valid_preprocessor_expr_start()) {
             try pp.comp.addDiagnostic(.{
                 .tag = .invalid_preproc_expr_start,
                 .loc = tok.loc,
-            }, tok.expansionSlice());
+            }, tok.expansion_slice());
             return false;
         }
         break;
@@ -891,7 +891,7 @@ fn expr(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!bool {
     }
 
     // validate the tokens in the expression
-    try pp.ensureUnusedTokenCapacity(pp.top_expansion_buf.items.len);
+    try pp.ensure_unused_token_capacity(pp.top_expansion_buf.items.len);
     var i: usize = 0;
     const items = pp.top_expansion_buf.items;
     while (i < items.len) : (i += 1) {
@@ -906,7 +906,7 @@ fn expr(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!bool {
                 try pp.comp.addDiagnostic(.{
                     .tag = .string_literal_in_pp_expr,
                     .loc = tok.loc,
-                }, tok.expansionSlice());
+                }, tok.expansion_slice());
                 return false;
             },
             .plus_plus,
@@ -936,23 +936,23 @@ fn expr(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!bool {
                 try pp.comp.addDiagnostic(.{
                     .tag = .invalid_preproc_operator,
                     .loc = tok.loc,
-                }, tok.expansionSlice());
+                }, tok.expansion_slice());
                 return false;
             },
             .macro_ws, .whitespace => continue,
             .keyword_false => tok.id = .zero,
             .keyword_true => tok.id = .one,
-            else => if (tok.id.isMacroIdentifier()) {
+            else => if (tok.id.is_macro_identifier()) {
                 if (tok.id == .keyword_defined) {
-                    const tokens_consumed = try pp.handleKeywordDefined(&tok, items[i + 1 ..], eof);
+                    const tokens_consumed = try pp.handle_keyword_defined(&tok, items[i + 1 ..], eof);
                     i += tokens_consumed;
                 } else {
-                    try pp.errStr(tok, .undefined_macro, pp.expandedSlice(tok));
+                    try pp.err_str(tok, .undefined_macro, pp.expanded_slice(tok));
 
                     if (i + 1 < pp.top_expansion_buf.items.len and
                         pp.top_expansion_buf.items[i + 1].id == .l_paren)
                     {
-                        try pp.errStr(tok, .fn_macro_undefined, pp.expandedSlice(tok));
+                        try pp.err_str(tok, .fn_macro_undefined, pp.expanded_slice(tok));
                         return false;
                     }
 
@@ -960,11 +960,11 @@ fn expr(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!bool {
                 }
             },
         }
-        pp.addTokenAssumeCapacity(tok);
+        pp.add_token_assume_capacity(tok);
     }
-    try pp.addToken(.{
+    try pp.add_token(.{
         .id = .eof,
-        .loc = tokFromRaw(eof).loc,
+        .loc = tok_from_raw(eof).loc,
     });
 
     // Actually parse it.
@@ -973,7 +973,7 @@ fn expr(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!bool {
         .comp = pp.comp,
         .gpa = pp.gpa,
         .tok_ids = pp.tokens.items(.id),
-        .tok_i = @intCast(token_state.tokens_len),
+        .tok_i = @int_cast(token_state.tokens_len),
         .arena = pp.arena.allocator(),
         .in_macro = true,
         .strings = std.ArrayList(u8).init(pp.comp.gpa),
@@ -991,7 +991,7 @@ fn expr(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!bool {
         .string_ids = undefined,
     };
     defer parser.strings.deinit();
-    return parser.macroExpr();
+    return parser.macro_expr();
 }
 
 /// Turns macro_tok from .keyword_defined into .zero or .one depending on whether the argument is defined
@@ -999,44 +999,44 @@ fn expr(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!bool {
 fn handle_keyword_defined(pp: *Preprocessor, macro_tok: *TokenWithExpansionLocs, tokens: []const TokenWithExpansionLocs, eof: RawToken) !usize {
     std.debug.assert(macro_tok.id == .keyword_defined);
     var it = TokenIterator.init(tokens);
-    const first = it.nextNoWS() orelse {
+    const first = it.next_no_ws() orelse {
         try pp.err(eof, .macro_name_missing);
         return it.i;
     };
     switch (first.id) {
         .l_paren => {},
         else => {
-            if (!first.id.isMacroIdentifier()) {
-                try pp.errStr(first, .macro_name_must_be_identifier, pp.expandedSlice(first));
+            if (!first.id.is_macro_identifier()) {
+                try pp.err_str(first, .macro_name_must_be_identifier, pp.expanded_slice(first));
             }
-            macro_tok.id = if (pp.defines.contains(pp.expandedSlice(first))) .one else .zero;
+            macro_tok.id = if (pp.defines.contains(pp.expanded_slice(first))) .one else .zero;
             return it.i;
         },
     }
-    const second = it.nextNoWS() orelse {
+    const second = it.next_no_ws() orelse {
         try pp.err(eof, .macro_name_missing);
         return it.i;
     };
-    if (!second.id.isMacroIdentifier()) {
+    if (!second.id.is_macro_identifier()) {
         try pp.comp.addDiagnostic(.{
             .tag = .macro_name_must_be_identifier,
             .loc = second.loc,
-        }, second.expansionSlice());
+        }, second.expansion_slice());
         return it.i;
     }
-    macro_tok.id = if (pp.defines.contains(pp.expandedSlice(second))) .one else .zero;
+    macro_tok.id = if (pp.defines.contains(pp.expanded_slice(second))) .one else .zero;
 
-    const last = it.nextNoWS();
+    const last = it.next_no_ws();
     if (last == null or last.?.id != .r_paren) {
-        const tok = last orelse tokFromRaw(eof);
+        const tok = last orelse tok_from_raw(eof);
         try pp.comp.addDiagnostic(.{
             .tag = .closing_paren,
             .loc = tok.loc,
-        }, tok.expansionSlice());
+        }, tok.expansion_slice());
         try pp.comp.addDiagnostic(.{
             .tag = .to_match_paren,
             .loc = first.loc,
-        }, first.expansionSlice());
+        }, first.expansion_slice());
     }
 
     return it.i;
@@ -1054,11 +1054,11 @@ fn skip(
     while (tokenizer.index < tokenizer.buf.len) {
         if (line_start) {
             const saved_tokenizer = tokenizer.*;
-            const hash = tokenizer.nextNoWS();
+            const hash = tokenizer.next_no_ws();
             if (hash.id == .nl) continue;
             line_start = false;
             if (hash.id != .hash) continue;
-            const directive = tokenizer.nextNoWS();
+            const directive = tokenizer.next_no_ws();
             switch (directive.id) {
                 .keyword_else => {
                     if (ifs_seen != 0) continue;
@@ -1111,7 +1111,7 @@ fn skip(
             tokenizer.index += 1;
             tokenizer.line += 1;
             if (pp.preserve_whitespace) {
-                try pp.addToken(.{ .id = .nl, .loc = .{
+                try pp.add_token(.{ .id = .nl, .loc = .{
                     .id = tokenizer.source,
                     .line = tokenizer.line,
                 } });
@@ -1139,7 +1139,7 @@ fn remove_placemarkers(buf: *ExpandBuf) void {
     var i: usize = buf.items.len -% 1;
     while (i < buf.items.len) : (i -%= 1) {
         if (buf.items[i].id == .placemarker) {
-            const placemarker = buf.orderedRemove(i);
+            const placemarker = buf.ordered_remove(i);
             TokenWithExpansionLocs.free(placemarker.expansion_locs, buf.allocator);
         }
     }
@@ -1161,44 +1161,44 @@ fn expand_obj_macro(pp: *Preprocessor, simple_macro: *const Macro) Error!ExpandB
         try buf.append(.{ .id = .placemarker, .loc = .{ .id = .generated } });
         return buf;
     }
-    try buf.ensureTotalCapacity(simple_macro.tokens.len);
+    try buf.ensure_total_capacity(simple_macro.tokens.len);
 
     // Add all of the simple_macros tokens to the new buffer handling any concats.
     var i: usize = 0;
     while (i < simple_macro.tokens.len) : (i += 1) {
         const raw = simple_macro.tokens[i];
-        const tok = tokFromRaw(raw);
+        const tok = tok_from_raw(raw);
         switch (raw.id) {
             .hash_hash => {
-                var rhs = tokFromRaw(simple_macro.tokens[i + 1]);
+                var rhs = tok_from_raw(simple_macro.tokens[i + 1]);
                 i += 1;
                 while (true) {
                     if (rhs.id == .whitespace) {
-                        rhs = tokFromRaw(simple_macro.tokens[i + 1]);
+                        rhs = tok_from_raw(simple_macro.tokens[i + 1]);
                         i += 1;
                     } else if (rhs.id == .comment and !pp.comp.langopts.preserve_comments_in_macros) {
-                        rhs = tokFromRaw(simple_macro.tokens[i + 1]);
+                        rhs = tok_from_raw(simple_macro.tokens[i + 1]);
                         i += 1;
                     } else break;
                 }
-                try pp.pasteTokens(&buf, &.{rhs});
+                try pp.paste_tokens(&buf, &.{rhs});
             },
-            .whitespace => if (pp.preserve_whitespace) buf.appendAssumeCapacity(tok),
+            .whitespace => if (pp.preserve_whitespace) buf.append_assume_capacity(tok),
             .macro_file => {
                 const start = pp.comp.generated_buf.items.len;
-                const source = pp.comp.getSource(pp.expansion_source_loc.id);
+                const source = pp.comp.get_source(pp.expansion_source_loc.id);
                 const w = pp.comp.generated_buf.writer(pp.gpa);
                 try w.print("\"{s}\"\n", .{source.path});
 
-                buf.appendAssumeCapacity(try pp.makeGeneratedToken(start, .string_literal, tok));
+                buf.append_assume_capacity(try pp.make_generated_token(start, .string_literal, tok));
             },
             .macro_line => {
                 const start = pp.comp.generated_buf.items.len;
-                const source = pp.comp.getSource(pp.expansion_source_loc.id);
+                const source = pp.comp.get_source(pp.expansion_source_loc.id);
                 const w = pp.comp.generated_buf.writer(pp.gpa);
-                try w.print("{d}\n", .{source.physicalLine(pp.expansion_source_loc)});
+                try w.print("{d}\n", .{source.physical_line(pp.expansion_source_loc)});
 
-                buf.appendAssumeCapacity(try pp.makeGeneratedToken(start, .pp_num, tok));
+                buf.append_assume_capacity(try pp.make_generated_token(start, .pp_num, tok));
             },
             .macro_counter => {
                 defer pp.counter += 1;
@@ -1206,9 +1206,9 @@ fn expand_obj_macro(pp: *Preprocessor, simple_macro: *const Macro) Error!ExpandB
                 const w = pp.comp.generated_buf.writer(pp.gpa);
                 try w.print("{d}\n", .{pp.counter});
 
-                buf.appendAssumeCapacity(try pp.makeGeneratedToken(start, .pp_num, tok));
+                buf.append_assume_capacity(try pp.make_generated_token(start, .pp_num, tok));
             },
-            else => buf.appendAssumeCapacity(tok),
+            else => buf.append_assume_capacity(tok),
         }
     }
 
@@ -1232,31 +1232,31 @@ fn paste_strings_unsafe(pp: *Preprocessor, toks: []const TokenWithExpansionLocs)
     for (unwrapped) |tok| {
         if (tok.id == .macro_ws) continue;
         if (tok.id != .string_literal) return error.ExpectedStringLiteral;
-        const str = pp.expandedSlice(tok);
-        try pp.char_buf.appendSlice(str[1 .. str.len - 1]);
+        const str = pp.expanded_slice(tok);
+        try pp.char_buf.append_slice(str[1 .. str.len - 1]);
     }
     return pp.char_buf.items[char_top..];
 }
 
 /// Handle the _Pragma operator (implemented as a builtin macro)
 fn pragma_operator(pp: *Preprocessor, arg_tok: TokenWithExpansionLocs, operator_loc: Source.Location) !void {
-    const arg_slice = pp.expandedSlice(arg_tok);
+    const arg_slice = pp.expanded_slice(arg_tok);
     const content = arg_slice[1 .. arg_slice.len - 1];
     const directive = "#pragma ";
 
-    pp.char_buf.clearRetainingCapacity();
+    pp.char_buf.clear_retaining_capacity();
     const total_len = directive.len + content.len + 1; // destringify can never grow the string, + 1 for newline
-    try pp.char_buf.ensureUnusedCapacity(total_len);
-    pp.char_buf.appendSliceAssumeCapacity(directive);
+    try pp.char_buf.ensure_unused_capacity(total_len);
+    pp.char_buf.append_slice_assume_capacity(directive);
     pp.destringify(content);
-    pp.char_buf.appendAssumeCapacity('\n');
+    pp.char_buf.append_assume_capacity('\n');
 
     const start = pp.comp.generated_buf.items.len;
-    try pp.comp.generated_buf.appendSlice(pp.gpa, pp.char_buf.items);
+    try pp.comp.generated_buf.append_slice(pp.gpa, pp.char_buf.items);
     var tmp_tokenizer = Tokenizer{
         .buf = pp.comp.generated_buf.items,
         .langopts = pp.comp.langopts,
-        .index = @intCast(start),
+        .index = @int_cast(start),
         .source = .generated,
         .line = pp.generated_line,
     };
@@ -1265,7 +1265,7 @@ fn pragma_operator(pp: *Preprocessor, arg_tok: TokenWithExpansionLocs, operator_
     assert(hash_tok.id == .hash);
     const pragma_tok = tmp_tokenizer.next();
     assert(pragma_tok.id == .keyword_pragma);
-    try pp.pragma(&tmp_tokenizer, pragma_tok, operator_loc, arg_tok.expansionSlice());
+    try pp.pragma(&tmp_tokenizer, pragma_tok, operator_loc, arg_tok.expansion_slice());
 }
 
 /// Inverts the output of the preprocessor stringify (#) operation
@@ -1279,12 +1279,12 @@ fn destringify(pp: *Preprocessor, str: []const u8) void {
     for (str) |c| {
         switch (c) {
             '\\' => {
-                if (state == .backslash_seen) pp.char_buf.appendAssumeCapacity(c);
+                if (state == .backslash_seen) pp.char_buf.append_assume_capacity(c);
                 state = if (state == .start) .backslash_seen else .start;
             },
             else => {
-                if (state == .backslash_seen and c != '"') pp.char_buf.appendAssumeCapacity('\\');
-                pp.char_buf.appendAssumeCapacity(c);
+                if (state == .backslash_seen and c != '"') pp.char_buf.append_assume_capacity('\\');
+                pp.char_buf.append_assume_capacity(c);
                 state = .start;
             },
         }
@@ -1320,11 +1320,11 @@ fn stringify(pp: *Preprocessor, tokens: []const TokenWithExpansionLocs) !void {
             else => false,
         };
 
-        for (pp.expandedSlice(tok)) |c| {
+        for (pp.expanded_slice(tok)) |c| {
             if (c == '"')
-                try pp.char_buf.appendSlice("\\\"")
+                try pp.char_buf.append_slice("\\\"")
             else if (c == '\\' and is_str)
-                try pp.char_buf.appendSlice("\\\\")
+                try pp.char_buf.append_slice("\\\\")
             else
                 try pp.char_buf.append(c);
         }
@@ -1334,10 +1334,10 @@ fn stringify(pp: *Preprocessor, tokens: []const TokenWithExpansionLocs) !void {
         try pp.comp.addDiagnostic(.{
             .tag = .invalid_pp_stringify_escape,
             .loc = tok.loc,
-        }, tok.expansionSlice());
+        }, tok.expansion_slice());
         pp.char_buf.items.len -= 1;
     }
-    try pp.char_buf.appendSlice("\"\n");
+    try pp.char_buf.append_slice("\"\n");
 }
 
 fn reconstruct_include_string(pp: *Preprocessor, param_toks: []const TokenWithExpansionLocs, embed_args: ?*[]const TokenWithExpansionLocs, first: TokenWithExpansionLocs) !?[]const u8 {
@@ -1356,7 +1356,7 @@ fn reconstruct_include_string(pp: *Preprocessor, param_toks: []const TokenWithEx
         try pp.comp.addDiagnostic(.{
             .tag = .expected_filename,
             .loc = first.loc,
-        }, first.expansionSlice());
+        }, first.expansion_slice());
         return null;
     }
     // no string pasting
@@ -1364,13 +1364,13 @@ fn reconstruct_include_string(pp: *Preprocessor, param_toks: []const TokenWithEx
         try pp.comp.addDiagnostic(.{
             .tag = .closing_paren,
             .loc = params[1].loc,
-        }, params[1].expansionSlice());
+        }, params[1].expansion_slice());
         return null;
     }
 
     for (params, 0..) |tok, i| {
-        const str = pp.expandedSliceExtra(tok, .preserve_macro_ws);
-        try pp.char_buf.appendSlice(str);
+        const str = pp.expanded_slice_extra(tok, .preserve_macro_ws);
+        try pp.char_buf.append_slice(str);
         if (embed_args) |some| {
             if ((i == 0 and tok.id == .string_literal) or tok.id == .angle_bracket_right) {
                 some.* = params[i + 1 ..];
@@ -1385,13 +1385,13 @@ fn reconstruct_include_string(pp: *Preprocessor, param_toks: []const TokenWithEx
             try pp.comp.addDiagnostic(.{
                 .tag = .expected_filename,
                 .loc = first.loc,
-            }, first.expansionSlice());
+            }, first.expansion_slice());
             return null;
         }
         try pp.comp.addDiagnostic(.{
             .tag = .empty_filename,
             .loc = params[0].loc,
-        }, params[0].expansionSlice());
+        }, params[0].expansion_slice());
         return null;
     }
 
@@ -1402,12 +1402,12 @@ fn reconstruct_include_string(pp: *Preprocessor, param_toks: []const TokenWithEx
                 const start = params[0].loc;
                 try pp.comp.addDiagnostic(.{
                     .tag = .header_str_closing,
-                    .loc = .{ .id = start.id, .byte_offset = start.byte_offset + @as(u32, @intCast(include_str.len)) + 1, .line = start.line },
-                }, params[0].expansionSlice());
+                    .loc = .{ .id = start.id, .byte_offset = start.byte_offset + @as(u32, @int_cast(include_str.len)) + 1, .line = start.line },
+                }, params[0].expansion_slice());
                 try pp.comp.addDiagnostic(.{
                     .tag = .header_str_match,
                     .loc = params[0].loc,
-                }, params[0].expansionSlice());
+                }, params[0].expansion_slice());
                 return null;
             }
             return include_str;
@@ -1417,7 +1417,7 @@ fn reconstruct_include_string(pp: *Preprocessor, param_toks: []const TokenWithEx
             try pp.comp.addDiagnostic(.{
                 .tag = .expected_filename,
                 .loc = params[0].loc,
-            }, params[0].expansionSlice());
+            }, params[0].expansion_slice());
             return null;
         },
     }
@@ -1436,7 +1436,7 @@ fn handle_builtin_macro(pp: *Preprocessor, builtin: RawToken.Id, param_toks: []c
             for (param_toks) |tok| {
                 if (tok.id == .macro_ws) continue;
                 if (tok.id == .comment) continue;
-                if (!tok.id.isMacroIdentifier()) {
+                if (!tok.id.is_macro_identifier()) {
                     invalid = tok;
                     break;
                 }
@@ -1446,40 +1446,40 @@ fn handle_builtin_macro(pp: *Preprocessor, builtin: RawToken.Id, param_toks: []c
             if (invalid) |some| {
                 try pp.comp.addDiagnostic(
                     .{ .tag = .feature_check_requires_identifier, .loc = some.loc },
-                    some.expansionSlice(),
+                    some.expansion_slice(),
                 );
                 return false;
             }
 
-            const ident_str = pp.expandedSlice(identifier.?);
+            const ident_str = pp.expanded_slice(identifier.?);
             return switch (builtin) {
-                .macro_param_has_attribute => Attribute.fromString(.gnu, null, ident_str) != null,
+                .macro_param_has_attribute => Attribute.from_string(.gnu, null, ident_str) != null,
                 .macro_param_has_declspec_attribute => {
                     return if (pp.comp.langopts.declspec_attrs)
-                        Attribute.fromString(.declspec, null, ident_str) != null
+                        Attribute.from_string(.declspec, null, ident_str) != null
                     else
                         false;
                 },
-                .macro_param_has_feature => features.hasFeature(pp.comp, ident_str),
-                .macro_param_has_extension => features.hasExtension(pp.comp, ident_str),
-                .macro_param_has_builtin => pp.comp.hasBuiltin(ident_str),
+                .macro_param_has_feature => features.has_feature(pp.comp, ident_str),
+                .macro_param_has_extension => features.has_extension(pp.comp, ident_str),
+                .macro_param_has_builtin => pp.comp.has_builtin(ident_str),
                 else => unreachable,
             };
         },
         .macro_param_has_warning => {
-            const actual_param = pp.pasteStringsUnsafe(param_toks) catch |er| switch (er) {
+            const actual_param = pp.paste_strings_unsafe(param_toks) catch |er| switch (er) {
                 error.ExpectedStringLiteral => {
-                    try pp.errStr(param_toks[0], .expected_str_literal_in, "__has_warning");
+                    try pp.err_str(param_toks[0], .expected_str_literal_in, "__has_warning");
                     return false;
                 },
                 else => |e| return e,
             };
-            if (!mem.startsWith(u8, actual_param, "-W")) {
-                try pp.errStr(param_toks[0], .malformed_warning_check, "__has_warning");
+            if (!mem.starts_with(u8, actual_param, "-W")) {
+                try pp.err_str(param_toks[0], .malformed_warning_check, "__has_warning");
                 return false;
             }
             const warning_name = actual_param[2..];
-            return Diagnostics.warningExists(warning_name);
+            return Diagnostics.warning_exists(warning_name);
         },
         .macro_param_is_identifier => {
             var invalid: ?TokenWithExpansionLocs = null;
@@ -1497,7 +1497,7 @@ fn handle_builtin_macro(pp: *Preprocessor, builtin: RawToken.Id, param_toks: []c
                     .tag = .missing_tok_builtin,
                     .loc = some.loc,
                     .extra = .{ .tok_id_expected = .r_paren },
-                }, some.expansionSlice());
+                }, some.expansion_slice());
                 return false;
             }
 
@@ -1505,7 +1505,7 @@ fn handle_builtin_macro(pp: *Preprocessor, builtin: RawToken.Id, param_toks: []c
             return id == .identifier or id == .extended_identifier;
         },
         .macro_param_has_include, .macro_param_has_include_next => {
-            const include_str = (try pp.reconstructIncludeString(param_toks, null, param_toks[0])) orelse return false;
+            const include_str = (try pp.reconstruct_include_string(param_toks, null, param_toks[0])) orelse return false;
             const include_type: Compilation.IncludeType = switch (include_str[0]) {
                 '"' => .quotes,
                 '<' => .angle_brackets,
@@ -1519,9 +1519,9 @@ fn handle_builtin_macro(pp: *Preprocessor, builtin: RawToken.Id, param_toks: []c
                         .loc = src_loc,
                     }, &.{});
                 }
-                return pp.comp.hasInclude(filename, src_loc.id, include_type, .first);
+                return pp.comp.has_include(filename, src_loc.id, include_type, .first);
             }
-            return pp.comp.hasInclude(filename, src_loc.id, include_type, .next);
+            return pp.comp.has_include(filename, src_loc.id, include_type, .next);
         },
         else => unreachable,
     }
@@ -1546,7 +1546,7 @@ fn expand_func_macro(
     expanded_args: *const MacroArguments,
 ) MacroError!ExpandBuf {
     var buf = ExpandBuf.init(pp.gpa);
-    try buf.ensureTotalCapacity(func_macro.tokens.len);
+    try buf.ensure_total_capacity(func_macro.tokens.len);
     errdefer buf.deinit();
 
     var expanded_variable_arguments = ExpandBuf.init(pp.gpa);
@@ -1557,8 +1557,8 @@ fn expand_func_macro(
     if (func_macro.var_args) {
         var i: usize = func_macro.params.len;
         while (i < expanded_args.items.len) : (i += 1) {
-            try variable_arguments.appendSlice(args.items[i]);
-            try expanded_variable_arguments.appendSlice(expanded_args.items[i]);
+            try variable_arguments.append_slice(args.items[i]);
+            try expanded_variable_arguments.append_slice(expanded_args.items[i]);
             if (i != expanded_args.items.len - 1) {
                 const comma = TokenWithExpansionLocs{ .id = .comma, .loc = .{ .id = .generated } };
                 try variable_arguments.append(comma);
@@ -1585,36 +1585,36 @@ fn expand_func_macro(
                     .comment => if (!pp.comp.langopts.preserve_comments_in_macros)
                         continue
                     else
-                        &[1]TokenWithExpansionLocs{tokFromRaw(raw_next)},
-                    .macro_param, .macro_param_no_expand => getPasteArgs(args.items[raw_next.end]),
+                        &[1]TokenWithExpansionLocs{tok_from_raw(raw_next)},
+                    .macro_param, .macro_param_no_expand => get_paste_args(args.items[raw_next.end]),
                     .keyword_va_args => variable_arguments.items,
                     .keyword_va_opt => blk: {
-                        try pp.expandVaOpt(&va_opt_buf, raw_next, variable_arguments.items.len != 0);
+                        try pp.expand_va_opt(&va_opt_buf, raw_next, variable_arguments.items.len != 0);
                         if (va_opt_buf.items.len == 0) break;
                         break :blk va_opt_buf.items;
                     },
-                    else => &[1]TokenWithExpansionLocs{tokFromRaw(raw_next)},
+                    else => &[1]TokenWithExpansionLocs{tok_from_raw(raw_next)},
                 };
 
-                try pp.pasteTokens(&buf, next);
+                try pp.paste_tokens(&buf, next);
                 if (next.len != 0) break;
             },
             .macro_param_no_expand => {
-                const slice = getPasteArgs(args.items[raw.end]);
+                const slice = get_paste_args(args.items[raw.end]);
                 const raw_loc = Source.Location{ .id = raw.source, .byte_offset = raw.start, .line = raw.line };
-                try bufCopyTokens(&buf, slice, &.{raw_loc});
+                try buf_copy_tokens(&buf, slice, &.{raw_loc});
             },
             .macro_param => {
                 const arg = expanded_args.items[raw.end];
                 const raw_loc = Source.Location{ .id = raw.source, .byte_offset = raw.start, .line = raw.line };
-                try bufCopyTokens(&buf, arg, &.{raw_loc});
+                try buf_copy_tokens(&buf, arg, &.{raw_loc});
             },
             .keyword_va_args => {
                 const raw_loc = Source.Location{ .id = raw.source, .byte_offset = raw.start, .line = raw.line };
-                try bufCopyTokens(&buf, expanded_variable_arguments.items, &.{raw_loc});
+                try buf_copy_tokens(&buf, expanded_variable_arguments.items, &.{raw_loc});
             },
             .keyword_va_opt => {
-                try pp.expandVaOpt(&buf, raw, variable_arguments.items.len != 0);
+                try pp.expand_va_opt(&buf, raw, variable_arguments.items.len != 0);
             },
             .stringify_param, .stringify_va_args => {
                 const arg = if (raw.id == .stringify_va_args)
@@ -1622,13 +1622,13 @@ fn expand_func_macro(
                 else
                     args.items[raw.end];
 
-                pp.char_buf.clearRetainingCapacity();
+                pp.char_buf.clear_retaining_capacity();
                 try pp.stringify(arg);
 
                 const start = pp.comp.generated_buf.items.len;
-                try pp.comp.generated_buf.appendSlice(pp.gpa, pp.char_buf.items);
+                try pp.comp.generated_buf.append_slice(pp.gpa, pp.char_buf.items);
 
-                try buf.append(try pp.makeGeneratedToken(start, .string_literal, tokFromRaw(raw)));
+                try buf.append(try pp.make_generated_token(start, .string_literal, tok_from_raw(raw)));
             },
             .macro_param_has_attribute,
             .macro_param_has_declspec_attribute,
@@ -1645,11 +1645,11 @@ fn expand_func_macro(
                     const extra = Diagnostics.Message.Extra{ .arguments = .{ .expected = 1, .actual = 0 } };
                     try pp.comp.addDiagnostic(.{ .tag = .expected_arguments, .loc = loc, .extra = extra }, &.{});
                     break :blk false;
-                } else try pp.handleBuiltinMacro(raw.id, arg, loc);
+                } else try pp.handle_builtin_macro(raw.id, arg, loc);
                 const start = pp.comp.generated_buf.items.len;
                 const w = pp.comp.generated_buf.writer(pp.gpa);
-                try w.print("{}\n", .{@intFromBool(result)});
-                try buf.append(try pp.makeGeneratedToken(start, .pp_num, tokFromRaw(raw)));
+                try w.print("{}\n", .{@int_from_bool(result)});
+                try buf.append(try pp.make_generated_token(start, .pp_num, tok_from_raw(raw)));
             },
             .macro_param_has_c_attribute => {
                 const arg = expanded_args.items[0];
@@ -1676,7 +1676,7 @@ fn expand_func_macro(
                             colon_colon = tok;
                             continue;
                         }
-                        if (!tok.id.isMacroIdentifier()) {
+                        if (!tok.id.is_macro_identifier()) {
                             invalid = tok;
                             break;
                         }
@@ -1693,23 +1693,23 @@ fn expand_func_macro(
                     if (invalid) |some| {
                         try pp.comp.addDiagnostic(
                             .{ .tag = .feature_check_requires_identifier, .loc = some.loc },
-                            some.expansionSlice(),
+                            some.expansion_slice(),
                         );
                         break :res not_found;
                     }
                     if (vendor_ident) |some| {
-                        const vendor_str = pp.expandedSlice(some);
-                        const attr_str = pp.expandedSlice(attr_ident.?);
-                        const exists = Attribute.fromString(.gnu, vendor_str, attr_str) != null;
+                        const vendor_str = pp.expanded_slice(some);
+                        const attr_str = pp.expanded_slice(attr_ident.?);
+                        const exists = Attribute.from_string(.gnu, vendor_str, attr_str) != null;
 
                         const start = pp.comp.generated_buf.items.len;
-                        try pp.comp.generated_buf.appendSlice(pp.gpa, if (exists) "1\n" else "0\n");
-                        try buf.append(try pp.makeGeneratedToken(start, .pp_num, tokFromRaw(raw)));
+                        try pp.comp.generated_buf.append_slice(pp.gpa, if (exists) "1\n" else "0\n");
+                        try buf.append(try pp.make_generated_token(start, .pp_num, tok_from_raw(raw)));
                         continue;
                     }
-                    if (!pp.comp.langopts.standard.atLeast(.c23)) break :res not_found;
+                    if (!pp.comp.langopts.standard.at_least(.c23)) break :res not_found;
 
-                    const attrs = std.StaticStringMap([]const u8).initComptime(.{
+                    const attrs = std.StaticStringMap([]const u8).init_comptime(.{
                         .{ "deprecated", "201904L\n" },
                         .{ "fallthrough", "201904L\n" },
                         .{ "maybe_unused", "201904L\n" },
@@ -1720,12 +1720,12 @@ fn expand_func_macro(
                         .{ "reproducible", "202207L\n" },
                     });
 
-                    const attr_str = Attribute.normalize(pp.expandedSlice(attr_ident.?));
+                    const attr_str = Attribute.normalize(pp.expanded_slice(attr_ident.?));
                     break :res attrs.get(attr_str) orelse not_found;
                 };
                 const start = pp.comp.generated_buf.items.len;
-                try pp.comp.generated_buf.appendSlice(pp.gpa, result);
-                try buf.append(try pp.makeGeneratedToken(start, .pp_num, tokFromRaw(raw)));
+                try pp.comp.generated_buf.append_slice(pp.gpa, result);
+                try buf.append(try pp.make_generated_token(start, .pp_num, tok_from_raw(raw)));
             },
             .macro_param_has_embed => {
                 const arg = expanded_args.items[0];
@@ -1736,10 +1736,10 @@ fn expand_func_macro(
                     break :blk not_found;
                 } else res: {
                     var embed_args: []const TokenWithExpansionLocs = &.{};
-                    const include_str = (try pp.reconstructIncludeString(arg, &embed_args, arg[0])) orelse
+                    const include_str = (try pp.reconstruct_include_string(arg, &embed_args, arg[0])) orelse
                         break :res not_found;
 
-                    var prev = tokFromRaw(raw);
+                    var prev = tok_from_raw(raw);
                     prev.id = .eof;
                     var it: struct {
                         i: u32 = 0,
@@ -1763,7 +1763,7 @@ fn expand_func_macro(
                         if (param_first.id != .identifier) {
                             try pp.comp.addDiagnostic(
                                 .{ .tag = .malformed_embed_param, .loc = param_first.loc },
-                                param_first.expansionSlice(),
+                                param_first.expansion_slice(),
                             );
                             continue;
                         }
@@ -1779,7 +1779,7 @@ fn expand_func_macro(
                                 if (param.id != .identifier) {
                                     try pp.comp.addDiagnostic(
                                         .{ .tag = .malformed_embed_param, .loc = param.loc },
-                                        param.expansionSlice(),
+                                        param.expansion_slice(),
                                     );
                                     continue;
                                 }
@@ -1787,17 +1787,17 @@ fn expand_func_macro(
                                 if (l_paren.id != .l_paren) {
                                     try pp.comp.addDiagnostic(
                                         .{ .tag = .malformed_embed_param, .loc = l_paren.loc },
-                                        l_paren.expansionSlice(),
+                                        l_paren.expansion_slice(),
                                     );
                                     continue;
                                 }
                                 break :blk "doesn't exist";
                             },
-                            .l_paren => Attribute.normalize(pp.expandedSlice(param_first)),
+                            .l_paren => Attribute.normalize(pp.expanded_slice(param_first)),
                             else => {
                                 try pp.comp.addDiagnostic(
                                     .{ .tag = .malformed_embed_param, .loc = maybe_colon.loc },
-                                    maybe_colon.expansionSlice(),
+                                    maybe_colon.expansion_slice(),
                                 );
                                 continue;
                             },
@@ -1810,7 +1810,7 @@ fn expand_func_macro(
                             if (next.id == .eof) {
                                 try pp.comp.addDiagnostic(
                                     .{ .tag = .malformed_embed_limit, .loc = param_first.loc },
-                                    param_first.expansionSlice(),
+                                    param_first.expansion_slice(),
                                 );
                                 break;
                             }
@@ -1823,18 +1823,18 @@ fn expand_func_macro(
                             if (arg_count != 1) {
                                 try pp.comp.addDiagnostic(
                                     .{ .tag = .malformed_embed_limit, .loc = param_first.loc },
-                                    param_first.expansionSlice(),
+                                    param_first.expansion_slice(),
                                 );
                                 continue;
                             }
                             if (first_arg.id != .pp_num) {
                                 try pp.comp.addDiagnostic(
                                     .{ .tag = .malformed_embed_limit, .loc = param_first.loc },
-                                    param_first.expansionSlice(),
+                                    param_first.expansion_slice(),
                                 );
                                 continue;
                             }
-                            _ = std.fmt.parseInt(u32, pp.expandedSlice(first_arg), 10) catch {
+                            _ = std.fmt.parse_int(u32, pp.expanded_slice(first_arg), 10) catch {
                                 break :res not_found;
                             };
                         } else if (!std.mem.eql(u8, param, "prefix") and !std.mem.eql(u8, param, "suffix") and
@@ -1850,15 +1850,15 @@ fn expand_func_macro(
                         else => unreachable,
                     };
                     const filename = include_str[1 .. include_str.len - 1];
-                    const contents = (try pp.comp.findEmbed(filename, arg[0].loc.id, include_type, 1)) orelse
+                    const contents = (try pp.comp.find_embed(filename, arg[0].loc.id, include_type, 1)) orelse
                         break :res not_found;
 
                     defer pp.comp.gpa.free(contents);
                     break :res if (contents.len != 0) "1\n" else "2\n";
                 };
                 const start = pp.comp.generated_buf.items.len;
-                try pp.comp.generated_buf.appendSlice(pp.comp.gpa, result);
-                try buf.append(try pp.makeGeneratedToken(start, .pp_num, tokFromRaw(raw)));
+                try pp.comp.generated_buf.append_slice(pp.comp.gpa, result);
+                try buf.append(try pp.make_generated_token(start, .pp_num, tok_from_raw(raw)));
             },
             .macro_param_pragma_operator => {
                 const param_toks = expanded_args.items[0];
@@ -1881,8 +1881,8 @@ fn expand_func_macro(
                 if (string == null and invalid == null) invalid = .{ .loc = loc, .id = .eof };
                 if (invalid) |some| try pp.comp.addDiagnostic(
                     .{ .tag = .pragma_operator_string_literal, .loc = some.loc },
-                    some.expansionSlice(),
-                ) else try pp.pragmaOperator(string.?, loc);
+                    some.expansion_slice(),
+                ) else try pp.pragma_operator(string.?, loc);
             },
             .comma => {
                 if (tok_i + 2 < func_macro.tokens.len and func_macro.tokens[tok_i + 1].id == .hash_hash) {
@@ -1901,15 +1901,15 @@ fn expand_func_macro(
                             try pp.err(hash_hash, .comma_deletion_va_args);
                         } else if (func_macro.params.len == 0 and expanded_args.items.len == 1 and expanded_args.items[0].len == 0) {
                             // Ambiguous whether this is "empty __VA_ARGS__" or "__VA_ARGS__ omitted"
-                            if (pp.comp.langopts.standard.isGNU()) {
+                            if (pp.comp.langopts.standard.is_gnu()) {
                                 // GNU standard, drop the comma
                                 try pp.err(hash_hash, .comma_deletion_va_args);
                             } else {
                                 // C standard, retain the comma
-                                try buf.append(tokFromRaw(raw));
+                                try buf.append(tok_from_raw(raw));
                             }
                         } else {
-                            try buf.append(tokFromRaw(raw));
+                            try buf.append(tok_from_raw(raw));
                             if (expanded_variable_arguments.items.len > 0 or variable_arguments.items.len == func_macro.params.len) {
                                 try pp.err(hash_hash, .comma_deletion_va_args);
                             }
@@ -1918,18 +1918,18 @@ fn expand_func_macro(
                                 .byte_offset = maybe_va_args.start,
                                 .line = maybe_va_args.line,
                             };
-                            try bufCopyTokens(&buf, expanded_variable_arguments.items, &.{raw_loc});
+                            try buf_copy_tokens(&buf, expanded_variable_arguments.items, &.{raw_loc});
                         }
                         continue;
                     }
                 }
                 // Regular comma, no token pasting with __VA_ARGS__
-                try buf.append(tokFromRaw(raw));
+                try buf.append(tok_from_raw(raw));
             },
-            else => try buf.append(tokFromRaw(raw)),
+            else => try buf.append(tok_from_raw(raw)),
         }
     }
-    removePlacemarkers(&buf);
+    remove_placemarkers(&buf);
 
     return buf;
 }
@@ -1942,7 +1942,7 @@ fn expand_va_opt(
 ) !void {
     if (!should_expand) return;
 
-    const source = pp.comp.getSource(raw.source);
+    const source = pp.comp.get_source(raw.source);
     var tokenizer: Tokenizer = .{
         .buf = source.buf,
         .index = raw.start,
@@ -1952,17 +1952,17 @@ fn expand_va_opt(
     };
     while (tokenizer.index < raw.end) {
         const tok = tokenizer.next();
-        try buf.append(tokFromRaw(tok));
+        try buf.append(tok_from_raw(tok));
     }
 }
 
 fn buf_copy_tokens(buf: *ExpandBuf, tokens: []const TokenWithExpansionLocs, src: []const Source.Location) !void {
-    try buf.ensureUnusedCapacity(tokens.len);
+    try buf.ensure_unused_capacity(tokens.len);
     for (tokens) |tok| {
         var copy = try tok.dupe(buf.allocator);
         errdefer TokenWithExpansionLocs.free(copy.expansion_locs, buf.allocator);
-        try copy.addExpansionLocation(buf.allocator, src);
-        buf.appendAssumeCapacity(copy);
+        try copy.add_expansion_location(buf.allocator, src);
+        buf.append_assume_capacity(copy);
     }
 }
 
@@ -1978,13 +1978,13 @@ fn next_buf_token(
     if (start_idx.* == buf.items.len and start_idx.* >= end_idx.*) {
         if (extend_buf) {
             const raw_tok = tokenizer.next();
-            if (raw_tok.id.isMacroIdentifier() and
-                pp.poisoned_identifiers.get(pp.tokSlice(raw_tok)) != null)
+            if (raw_tok.id.is_macro_identifier() and
+                pp.poisoned_identifiers.get(pp.tok_slice(raw_tok)) != null)
                 try pp.err(raw_tok, .poisoned_identifier);
 
             if (raw_tok.id == .nl) pp.add_expansion_nl += 1;
 
-            const new_tok = tokFromRaw(raw_tok);
+            const new_tok = tok_from_raw(raw_tok);
             end_idx.* += 1;
             try buf.append(new_tok);
             return new_tok;
@@ -2011,13 +2011,13 @@ fn collect_macro_func_arguments(
     const old_end = end_idx.*;
 
     while (true) {
-        const tok = try nextBufToken(pp, tokenizer, buf, start_idx, end_idx, extend_buf);
+        const tok = try next_buf_token(pp, tokenizer, buf, start_idx, end_idx, extend_buf);
         switch (tok.id) {
             .nl, .whitespace, .macro_ws => {},
             .l_paren => break,
             else => {
                 if (is_builtin) {
-                    try pp.errStr(name_tok, .missing_lparen_after_builtin, pp.expandedSlice(name_tok));
+                    try pp.err_str(name_tok, .missing_lparen_after_builtin, pp.expanded_slice(name_tok));
                 }
                 // Not a macro function call, go over normal identifier, rewind
                 tokenizer.* = saved_tokenizer;
@@ -2030,16 +2030,16 @@ fn collect_macro_func_arguments(
     // collect the arguments.
     var parens: u32 = 0;
     var args = MacroArguments.init(pp.gpa);
-    errdefer deinitMacroArguments(pp.gpa, &args);
+    errdefer deinit_macro_arguments(pp.gpa, &args);
     var curArgument = std.ArrayList(TokenWithExpansionLocs).init(pp.gpa);
     defer curArgument.deinit();
     while (true) {
-        var tok = try nextBufToken(pp, tokenizer, buf, start_idx, end_idx, extend_buf);
+        var tok = try next_buf_token(pp, tokenizer, buf, start_idx, end_idx, extend_buf);
         tok.flags.is_macro_arg = true;
         switch (tok.id) {
             .comma => {
                 if (parens == 0) {
-                    const owned = try curArgument.toOwnedSlice();
+                    const owned = try curArgument.to_owned_slice();
                     errdefer pp.gpa.free(owned);
                     try args.append(owned);
                 } else {
@@ -2056,7 +2056,7 @@ fn collect_macro_func_arguments(
             },
             .r_paren => {
                 if (parens == 0) {
-                    const owned = try curArgument.toOwnedSlice();
+                    const owned = try curArgument.to_owned_slice();
                     errdefer pp.gpa.free(owned);
                     try args.append(owned);
                     r_paren.* = tok;
@@ -2070,14 +2070,14 @@ fn collect_macro_func_arguments(
             },
             .eof => {
                 {
-                    const owned = try curArgument.toOwnedSlice();
+                    const owned = try curArgument.to_owned_slice();
                     errdefer pp.gpa.free(owned);
                     try args.append(owned);
                 }
                 tokenizer.* = saved_tokenizer;
                 try pp.comp.addDiagnostic(
                     .{ .tag = .unterminated_macro_arg_list, .loc = name_tok.loc },
-                    name_tok.expansionSlice(),
+                    name_tok.expansion_slice(),
                 );
                 return error.Unterminated;
             },
@@ -2097,7 +2097,7 @@ fn collect_macro_func_arguments(
 
 fn remove_expanded_tokens(pp: *Preprocessor, buf: *ExpandBuf, start: usize, len: usize, moving_end_idx: *usize) !void {
     for (buf.items[start .. start + len]) |tok| TokenWithExpansionLocs.free(tok.expansion_locs, pp.gpa);
-    try buf.replaceRange(start, len, &.{});
+    try buf.replace_range(start, len, &.{});
     moving_end_idx.* -|= len;
 }
 
@@ -2153,11 +2153,11 @@ fn expand_macro_exhaustive(
             if (macro_tok.id == .keyword_defined and eval_ctx == .expr) {
                 idx += 1;
                 var it = TokenIterator.init(buf.items[idx..moving_end_idx]);
-                if (it.nextNoWS()) |tok| {
+                if (it.next_no_ws()) |tok| {
                     switch (tok.id) {
                         .l_paren => {
-                            _ = it.nextNoWS(); // eat (what should be) identifier
-                            _ = it.nextNoWS(); // eat (what should be) r paren
+                            _ = it.next_no_ws(); // eat (what should be) identifier
+                            _ = it.next_no_ws(); // eat (what should be) r paren
                         },
                         .identifier, .extended_identifier => {},
                         else => {},
@@ -2166,12 +2166,12 @@ fn expand_macro_exhaustive(
                 idx += it.i;
                 continue;
             }
-            if (!macro_tok.id.isMacroIdentifier() or macro_tok.flags.expansion_disabled) {
+            if (!macro_tok.id.is_macro_identifier() or macro_tok.flags.expansion_disabled) {
                 idx += 1;
                 continue;
             }
-            const expanded = pp.expandedSlice(macro_tok);
-            const macro = pp.defines.getPtr(expanded) orelse {
+            const expanded = pp.expanded_slice(macro_tok);
+            const macro = pp.defines.get_ptr(expanded) orelse {
                 idx += 1;
                 continue;
             };
@@ -2186,7 +2186,7 @@ fn expand_macro_exhaustive(
                     var r_paren: TokenWithExpansionLocs = undefined;
                     var macro_scan_idx = idx;
                     // to be saved in case this doesn't turn out to be a call
-                    const args = pp.collectMacroFuncArguments(
+                    const args = pp.collect_macro_func_arguments(
                         tokenizer,
                         buf,
                         &macro_scan_idx,
@@ -2202,7 +2202,7 @@ fn expand_macro_exhaustive(
                         },
                         error.Unterminated => {
                             if (pp.comp.langopts.emulate == .gcc) idx += 1;
-                            try pp.removeExpandedTokens(buf, idx, macro_scan_idx - idx, &moving_end_idx);
+                            try pp.remove_expanded_tokens(buf, idx, macro_scan_idx - idx, &moving_end_idx);
                             break :macro_handler;
                         },
                         else => |e| return e,
@@ -2218,7 +2218,7 @@ fn expand_macro_exhaustive(
                     var hs = try pp.hideset.intersection(macro_hidelist, r_paren_hidelist);
                     hs = try pp.hideset.prepend(macro_tok.loc, hs);
 
-                    var args_count: u32 = @intCast(args.items.len);
+                    var args_count: u32 = @int_cast(args.items.len);
                     // if the macro has zero arguments g() args_count is still 1
                     // an empty token list g() and a whitespace-only token list g(    )
                     // counts as zero arguments for the purposes of argument-count validation
@@ -2232,47 +2232,47 @@ fn expand_macro_exhaustive(
 
                     // Validate argument count.
                     const extra = Diagnostics.Message.Extra{
-                        .arguments = .{ .expected = @intCast(macro.params.len), .actual = args_count },
+                        .arguments = .{ .expected = @int_cast(macro.params.len), .actual = args_count },
                     };
                     if (macro.var_args and args_count < macro.params.len) {
                         try pp.comp.addDiagnostic(
                             .{ .tag = .expected_at_least_arguments, .loc = buf.items[idx].loc, .extra = extra },
-                            buf.items[idx].expansionSlice(),
+                            buf.items[idx].expansion_slice(),
                         );
                         idx += 1;
-                        try pp.removeExpandedTokens(buf, idx, macro_scan_idx - idx + 1, &moving_end_idx);
+                        try pp.remove_expanded_tokens(buf, idx, macro_scan_idx - idx + 1, &moving_end_idx);
                         continue;
                     }
                     if (!macro.var_args and args_count != macro.params.len) {
                         try pp.comp.addDiagnostic(
                             .{ .tag = .expected_arguments, .loc = buf.items[idx].loc, .extra = extra },
-                            buf.items[idx].expansionSlice(),
+                            buf.items[idx].expansion_slice(),
                         );
                         idx += 1;
-                        try pp.removeExpandedTokens(buf, idx, macro_scan_idx - idx + 1, &moving_end_idx);
+                        try pp.remove_expanded_tokens(buf, idx, macro_scan_idx - idx + 1, &moving_end_idx);
                         continue;
                     }
                     var expanded_args = MacroArguments.init(pp.gpa);
-                    defer deinitMacroArguments(pp.gpa, &expanded_args);
-                    try expanded_args.ensureTotalCapacity(args.items.len);
+                    defer deinit_macro_arguments(pp.gpa, &expanded_args);
+                    try expanded_args.ensure_total_capacity(args.items.len);
                     for (args.items) |arg| {
                         var expand_buf = ExpandBuf.init(pp.gpa);
                         errdefer expand_buf.deinit();
-                        try expand_buf.appendSlice(arg);
+                        try expand_buf.append_slice(arg);
 
-                        try pp.expandMacroExhaustive(tokenizer, &expand_buf, 0, expand_buf.items.len, false, eval_ctx);
+                        try pp.expand_macro_exhaustive(tokenizer, &expand_buf, 0, expand_buf.items.len, false, eval_ctx);
 
-                        expanded_args.appendAssumeCapacity(try expand_buf.toOwnedSlice());
+                        expanded_args.append_assume_capacity(try expand_buf.to_owned_slice());
                     }
 
-                    var res = try pp.expandFuncMacro(macro_tok.loc, macro, &args, &expanded_args);
+                    var res = try pp.expand_func_macro(macro_tok.loc, macro, &args, &expanded_args);
                     defer res.deinit();
                     const tokens_added = res.items.len;
 
-                    const macro_expansion_locs = macro_tok.expansionSlice();
+                    const macro_expansion_locs = macro_tok.expansion_slice();
                     for (res.items) |*tok| {
-                        try tok.addExpansionLocation(pp.gpa, &.{macro_tok.loc});
-                        try tok.addExpansionLocation(pp.gpa, macro_expansion_locs);
+                        try tok.add_expansion_location(pp.gpa, &.{macro_tok.loc});
+                        try tok.add_expansion_location(pp.gpa, macro_expansion_locs);
                         const tok_hidelist = pp.hideset.get(tok.loc);
                         const new_hidelist = try pp.hideset.@"union"(tok_hidelist, hs);
                         try pp.hideset.put(tok.loc, new_hidelist);
@@ -2280,7 +2280,7 @@ fn expand_macro_exhaustive(
 
                     const tokens_removed = macro_scan_idx - idx + 1;
                     for (buf.items[idx .. idx + tokens_removed]) |tok| TokenWithExpansionLocs.free(tok.expansion_locs, pp.gpa);
-                    try buf.replaceRange(idx, tokens_removed, res.items);
+                    try buf.replace_range(idx, tokens_removed, res.items);
 
                     moving_end_idx += tokens_added;
                     // Overflow here means that we encountered an unterminated argument list
@@ -2289,17 +2289,17 @@ fn expand_macro_exhaustive(
                     idx += tokens_added;
                     do_rescan = true;
                 } else {
-                    const res = try pp.expandObjMacro(macro);
+                    const res = try pp.expand_obj_macro(macro);
                     defer res.deinit();
 
                     const hs = try pp.hideset.prepend(macro_tok.loc, macro_hidelist);
 
-                    const macro_expansion_locs = macro_tok.expansionSlice();
+                    const macro_expansion_locs = macro_tok.expansion_slice();
                     var increment_idx_by = res.items.len;
                     for (res.items, 0..) |*tok, i| {
                         tok.flags.is_macro_arg = macro_tok.flags.is_macro_arg;
-                        try tok.addExpansionLocation(pp.gpa, &.{macro_tok.loc});
-                        try tok.addExpansionLocation(pp.gpa, macro_expansion_locs);
+                        try tok.add_expansion_location(pp.gpa, &.{macro_tok.loc});
+                        try tok.add_expansion_location(pp.gpa, macro_expansion_locs);
 
                         const tok_hidelist = pp.hideset.get(tok.loc);
                         const new_hidelist = try pp.hideset.@"union"(tok_hidelist, hs);
@@ -2309,16 +2309,16 @@ fn expand_macro_exhaustive(
                             try pp.comp.addDiagnostic(.{
                                 .tag = .expansion_to_defined,
                                 .loc = tok.loc,
-                            }, tok.expansionSlice());
+                            }, tok.expansion_slice());
                         }
 
-                        if (i < increment_idx_by and (tok.id == .keyword_defined or pp.defines.contains(pp.expandedSlice(tok.*)))) {
+                        if (i < increment_idx_by and (tok.id == .keyword_defined or pp.defines.contains(pp.expanded_slice(tok.*)))) {
                             increment_idx_by = i;
                         }
                     }
 
                     TokenWithExpansionLocs.free(buf.items[idx].expansion_locs, pp.gpa);
-                    try buf.replaceRange(idx, 1, res.items);
+                    try buf.replace_range(idx, 1, res.items);
                     idx += increment_idx_by;
                     moving_end_idx = moving_end_idx + res.items.len - 1;
                     do_rescan = true;
@@ -2341,18 +2341,18 @@ fn expand_macro_exhaustive(
 /// Try to expand a macro after a possible candidate has been read from the `tokenizer`
 /// into the `raw` token passed as argument
 fn expand_macro(pp: *Preprocessor, tokenizer: *Tokenizer, raw: RawToken) MacroError!void {
-    var source_tok = tokFromRaw(raw);
-    if (!raw.id.isMacroIdentifier()) {
-        source_tok.id.simplifyMacroKeyword();
-        return pp.addToken(source_tok);
+    var source_tok = tok_from_raw(raw);
+    if (!raw.id.is_macro_identifier()) {
+        source_tok.id.simplify_macro_keyword();
+        return pp.add_token(source_tok);
     }
     pp.top_expansion_buf.items.len = 0;
     try pp.top_expansion_buf.append(source_tok);
     pp.expansion_source_loc = source_tok.loc;
 
-    pp.hideset.clearRetainingCapacity();
-    try pp.expandMacroExhaustive(tokenizer, &pp.top_expansion_buf, 0, 1, true, .non_expr);
-    try pp.ensureUnusedTokenCapacity(pp.top_expansion_buf.items.len);
+    pp.hideset.clear_retaining_capacity();
+    try pp.expand_macro_exhaustive(tokenizer, &pp.top_expansion_buf, 0, 1, true, .non_expr);
+    try pp.ensure_unused_token_capacity(pp.top_expansion_buf.items.len);
     for (pp.top_expansion_buf.items) |*tok| {
         if (tok.id == .macro_ws and !pp.preserve_whitespace) {
             TokenWithExpansionLocs.free(tok.expansion_locs, pp.gpa);
@@ -2366,13 +2366,13 @@ fn expand_macro(pp: *Preprocessor, tokenizer: *Tokenizer, raw: RawToken) MacroEr
             TokenWithExpansionLocs.free(tok.expansion_locs, pp.gpa);
             continue;
         }
-        tok.id.simplifyMacroKeywordExtra(true);
-        pp.addTokenAssumeCapacity(tok.*);
+        tok.id.simplify_macro_keyword_extra(true);
+        pp.add_token_assume_capacity(tok.*);
     }
     if (pp.preserve_whitespace) {
-        try pp.ensureUnusedTokenCapacity(pp.add_expansion_nl);
+        try pp.ensure_unused_token_capacity(pp.add_expansion_nl);
         while (pp.add_expansion_nl > 0) : (pp.add_expansion_nl -= 1) {
-            pp.addTokenAssumeCapacity(.{ .id = .nl, .loc = .{
+            pp.add_token_assume_capacity(.{ .id = .nl, .loc = .{
                 .id = tokenizer.source,
                 .line = tokenizer.line,
             } });
@@ -2382,10 +2382,10 @@ fn expand_macro(pp: *Preprocessor, tokenizer: *Tokenizer, raw: RawToken) MacroEr
 
 fn expanded_slice_extra(pp: *const Preprocessor, tok: anytype, macro_ws_handling: enum { single_macro_ws, preserve_macro_ws }) []const u8 {
     if (tok.id.lexeme()) |some| {
-        if (!tok.id.allowsDigraphs(pp.comp.langopts) and !(tok.id == .macro_ws and macro_ws_handling == .preserve_macro_ws)) return some;
+        if (!tok.id.allows_digraphs(pp.comp.langopts) and !(tok.id == .macro_ws and macro_ws_handling == .preserve_macro_ws)) return some;
     }
     var tmp_tokenizer = Tokenizer{
-        .buf = pp.comp.getSource(tok.loc.id).buf,
+        .buf = pp.comp.get_source(tok.loc.id).buf,
         .langopts = pp.comp.langopts,
         .index = tok.loc.byte_offset,
         .source = .generated,
@@ -2402,19 +2402,19 @@ fn expanded_slice_extra(pp: *const Preprocessor, tok: anytype, macro_ws_handling
 
 /// Get expanded token source string.
 pub fn expanded_slice(pp: *const Preprocessor, tok: anytype) []const u8 {
-    return pp.expandedSliceExtra(tok, .single_macro_ws);
+    return pp.expanded_slice_extra(tok, .single_macro_ws);
 }
 
 /// Concat two tokens and add the result to pp.generated
 fn paste_tokens(pp: *Preprocessor, lhs_toks: *ExpandBuf, rhs_toks: []const TokenWithExpansionLocs) Error!void {
-    const lhs = while (lhs_toks.popOrNull()) |lhs| {
+    const lhs = while (lhs_toks.pop_or_null()) |lhs| {
         if ((pp.comp.langopts.preserve_comments_in_macros and lhs.id == .comment) or
             (lhs.id != .macro_ws and lhs.id != .comment))
             break lhs;
 
         TokenWithExpansionLocs.free(lhs.expansion_locs, pp.gpa);
     } else {
-        return bufCopyTokens(lhs_toks, rhs_toks, &.{});
+        return buf_copy_tokens(lhs_toks, rhs_toks, &.{});
     };
 
     var rhs_rest: u32 = 1;
@@ -2425,61 +2425,61 @@ fn paste_tokens(pp: *Preprocessor, lhs_toks: *ExpandBuf, rhs_toks: []const Token
 
         rhs_rest += 1;
     } else {
-        return lhs_toks.appendAssumeCapacity(lhs);
+        return lhs_toks.append_assume_capacity(lhs);
     };
     defer TokenWithExpansionLocs.free(lhs.expansion_locs, pp.gpa);
 
     const start = pp.comp.generated_buf.items.len;
-    const end = start + pp.expandedSlice(lhs).len + pp.expandedSlice(rhs).len;
-    try pp.comp.generated_buf.ensureTotalCapacity(pp.gpa, end + 1); // +1 for a newline
-    // We cannot use the same slices here since they might be invalidated by `ensureCapacity`
-    pp.comp.generated_buf.appendSliceAssumeCapacity(pp.expandedSlice(lhs));
-    pp.comp.generated_buf.appendSliceAssumeCapacity(pp.expandedSlice(rhs));
-    pp.comp.generated_buf.appendAssumeCapacity('\n');
+    const end = start + pp.expanded_slice(lhs).len + pp.expanded_slice(rhs).len;
+    try pp.comp.generated_buf.ensure_total_capacity(pp.gpa, end + 1); // +1 for a newline
+    // We cannot use the same slices here since they might be invalidated by `ensure_capacity`
+    pp.comp.generated_buf.append_slice_assume_capacity(pp.expanded_slice(lhs));
+    pp.comp.generated_buf.append_slice_assume_capacity(pp.expanded_slice(rhs));
+    pp.comp.generated_buf.append_assume_capacity('\n');
 
     // Try to tokenize the result.
     var tmp_tokenizer = Tokenizer{
         .buf = pp.comp.generated_buf.items,
         .langopts = pp.comp.langopts,
-        .index = @intCast(start),
+        .index = @int_cast(start),
         .source = .generated,
     };
-    const pasted_token = tmp_tokenizer.nextNoWSComments();
-    const next = tmp_tokenizer.nextNoWSComments();
+    const pasted_token = tmp_tokenizer.next_no_wscomments();
+    const next = tmp_tokenizer.next_no_wscomments();
     const pasted_id = if (lhs.id == .placemarker and rhs.id == .placemarker)
         .placemarker
     else
         pasted_token.id;
-    try lhs_toks.append(try pp.makeGeneratedToken(start, pasted_id, lhs));
+    try lhs_toks.append(try pp.make_generated_token(start, pasted_id, lhs));
 
     if (next.id != .nl and next.id != .eof) {
-        try pp.errStr(
+        try pp.err_str(
             lhs,
             .pasting_formed_invalid,
             try pp.comp.diagnostics.arena.allocator().dupe(u8, pp.comp.generated_buf.items[start..end]),
         );
-        try lhs_toks.append(tokFromRaw(next));
+        try lhs_toks.append(tok_from_raw(next));
     }
 
-    try bufCopyTokens(lhs_toks, rhs_toks[rhs_rest..], &.{});
+    try buf_copy_tokens(lhs_toks, rhs_toks[rhs_rest..], &.{});
 }
 
 fn make_generated_token(pp: *Preprocessor, start: usize, id: Token.Id, source: TokenWithExpansionLocs) !TokenWithExpansionLocs {
     var pasted_token = TokenWithExpansionLocs{ .id = id, .loc = .{
         .id = .generated,
-        .byte_offset = @intCast(start),
+        .byte_offset = @int_cast(start),
         .line = pp.generated_line,
     } };
     pp.generated_line += 1;
-    try pasted_token.addExpansionLocation(pp.gpa, &.{source.loc});
-    try pasted_token.addExpansionLocation(pp.gpa, source.expansionSlice());
+    try pasted_token.add_expansion_location(pp.gpa, &.{source.loc});
+    try pasted_token.add_expansion_location(pp.gpa, source.expansion_slice());
     return pasted_token;
 }
 
 /// Defines a new macro and warns if it is a duplicate
 fn define_macro(pp: *Preprocessor, name_tok: RawToken, macro: Macro) Error!void {
-    const name_str = pp.tokSlice(name_tok);
-    const gop = try pp.defines.getOrPut(pp.gpa, name_str);
+    const name_str = pp.tok_slice(name_tok);
+    const gop = try pp.defines.get_or_put(pp.gpa, name_str);
     if (gop.found_existing and !gop.value_ptr.eql(macro, pp)) {
         const tag: Diagnostics.Tag = if (gop.value_ptr.is_builtin) .builtin_macro_redefined else .macro_redefined;
         const start = pp.comp.diagnostics.list.items.len;
@@ -2496,7 +2496,7 @@ fn define_macro(pp: *Preprocessor, name_tok: RawToken, macro: Macro) Error!void 
         }
     }
     if (pp.verbose) {
-        pp.verboseLog(name_tok, "macro {s} defined", .{name_str});
+        pp.verbose_log(name_tok, "macro {s} defined", .{name_str});
     }
     gop.value_ptr.* = macro;
 }
@@ -2504,20 +2504,20 @@ fn define_macro(pp: *Preprocessor, name_tok: RawToken, macro: Macro) Error!void 
 /// Handle a #define directive.
 fn define(pp: *Preprocessor, tokenizer: *Tokenizer) Error!void {
     // Get macro name and validate it.
-    const macro_name = tokenizer.nextNoWS();
+    const macro_name = tokenizer.next_no_ws();
     if (macro_name.id == .keyword_defined) {
         try pp.err(macro_name, .defined_as_macro_name);
-        return skipToNl(tokenizer);
+        return skip_to_nl(tokenizer);
     }
-    if (!macro_name.id.isMacroIdentifier()) {
+    if (!macro_name.id.is_macro_identifier()) {
         try pp.err(macro_name, .macro_name_must_be_identifier);
-        return skipToNl(tokenizer);
+        return skip_to_nl(tokenizer);
     }
     var macro_name_token_id = macro_name.id;
-    macro_name_token_id.simplifyMacroKeyword();
+    macro_name_token_id.simplify_macro_keyword();
     switch (macro_name_token_id) {
         .identifier, .extended_identifier => {},
-        else => if (macro_name_token_id.isMacroIdentifier()) {
+        else => if (macro_name_token_id.is_macro_identifier()) {
             try pp.err(macro_name, .keyword_macro);
         },
     }
@@ -2525,22 +2525,22 @@ fn define(pp: *Preprocessor, tokenizer: *Tokenizer) Error!void {
     // Check for function macros and empty defines.
     var first = tokenizer.next();
     switch (first.id) {
-        .nl, .eof => return pp.defineMacro(macro_name, .{
+        .nl, .eof => return pp.define_macro(macro_name, .{
             .params = &.{},
             .tokens = &.{},
             .var_args = false,
-            .loc = tokFromRaw(macro_name).loc,
+            .loc = tok_from_raw(macro_name).loc,
             .is_func = false,
         }),
         .whitespace => first = tokenizer.next(),
-        .l_paren => return pp.defineFn(tokenizer, macro_name, first),
+        .l_paren => return pp.define_fn(tokenizer, macro_name, first),
         else => try pp.err(first, .whitespace_after_macro_name),
     }
     if (first.id == .hash_hash) {
         try pp.err(first, .hash_hash_at_start);
-        return skipToNl(tokenizer);
+        return skip_to_nl(tokenizer);
     }
-    first.id.simplifyMacroKeyword();
+    first.id.simplify_macro_keyword();
 
     pp.token_buf.items.len = 0; // Safe to use since we can only be in one directive at a time.
 
@@ -2548,10 +2548,10 @@ fn define(pp: *Preprocessor, tokenizer: *Tokenizer) Error!void {
     // Collect the token body and validate any ## found.
     var tok = first;
     while (true) {
-        tok.id.simplifyMacroKeyword();
+        tok.id.simplify_macro_keyword();
         switch (tok.id) {
             .hash_hash => {
-                const next = tokenizer.nextNoWSComments();
+                const next = tokenizer.next_no_wscomments();
                 switch (next.id) {
                     .nl, .eof => {
                         try pp.err(tok, .hash_hash_at_end);
@@ -2576,7 +2576,7 @@ fn define(pp: *Preprocessor, tokenizer: *Tokenizer) Error!void {
             },
             .whitespace => need_ws = true,
             .unterminated_string_literal, .unterminated_char_literal, .empty_char_literal => |tag| {
-                try pp.err(tok, invalidTokenDiagnostic(tag));
+                try pp.err(tok, invalid_token_diagnostic(tag));
                 try pp.token_buf.append(tok);
             },
             .unterminated_comment => try pp.err(tok, .unterminated_comment),
@@ -2592,8 +2592,8 @@ fn define(pp: *Preprocessor, tokenizer: *Tokenizer) Error!void {
     }
 
     const list = try pp.arena.allocator().dupe(RawToken, pp.token_buf.items);
-    try pp.defineMacro(macro_name, .{
-        .loc = tokFromRaw(macro_name).loc,
+    try pp.define_macro(macro_name, .{
+        .loc = tok_from_raw(macro_name).loc,
         .tokens = list,
         .params = undefined,
         .is_func = false,
@@ -2603,7 +2603,7 @@ fn define(pp: *Preprocessor, tokenizer: *Tokenizer) Error!void {
 
 /// Handle a function like #define directive.
 fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_paren: RawToken) Error!void {
-    assert(macro_name.id.isMacroIdentifier());
+    assert(macro_name.id.is_macro_identifier());
     var params = std.ArrayList([]const u8).init(pp.gpa);
     defer params.deinit();
 
@@ -2611,42 +2611,42 @@ fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_p
     var gnu_var_args: []const u8 = "";
     var var_args = false;
     while (true) {
-        var tok = tokenizer.nextNoWS();
+        var tok = tokenizer.next_no_ws();
         if (tok.id == .r_paren) break;
         if (tok.id == .eof) return pp.err(tok, .unterminated_macro_param_list);
         if (tok.id == .ellipsis) {
             var_args = true;
-            const r_paren = tokenizer.nextNoWS();
+            const r_paren = tokenizer.next_no_ws();
             if (r_paren.id != .r_paren) {
                 try pp.err(r_paren, .missing_paren_param_list);
                 try pp.err(l_paren, .to_match_paren);
-                return skipToNl(tokenizer);
+                return skip_to_nl(tokenizer);
             }
             break;
         }
-        if (!tok.id.isMacroIdentifier()) {
+        if (!tok.id.is_macro_identifier()) {
             try pp.err(tok, .invalid_token_param_list);
-            return skipToNl(tokenizer);
+            return skip_to_nl(tokenizer);
         }
 
-        try params.append(pp.tokSlice(tok));
+        try params.append(pp.tok_slice(tok));
 
-        tok = tokenizer.nextNoWS();
+        tok = tokenizer.next_no_ws();
         if (tok.id == .ellipsis) {
             try pp.err(tok, .gnu_va_macro);
             gnu_var_args = params.pop();
-            const r_paren = tokenizer.nextNoWS();
+            const r_paren = tokenizer.next_no_ws();
             if (r_paren.id != .r_paren) {
                 try pp.err(r_paren, .missing_paren_param_list);
                 try pp.err(l_paren, .to_match_paren);
-                return skipToNl(tokenizer);
+                return skip_to_nl(tokenizer);
             }
             break;
         } else if (tok.id == .r_paren) {
             break;
         } else if (tok.id != .comma) {
             try pp.err(tok, .expected_comma_param_list);
-            return skipToNl(tokenizer);
+            return skip_to_nl(tokenizer);
         }
     }
 
@@ -2670,15 +2670,15 @@ fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_p
                     need_ws = false;
                     try pp.token_buf.append(.{ .id = .macro_ws, .source = .generated });
                 }
-                const param = tokenizer.nextNoWS();
+                const param = tokenizer.next_no_ws();
                 blk: {
                     if (var_args and param.id == .keyword_va_args) {
                         tok.id = .stringify_va_args;
                         try pp.token_buf.append(tok);
                         continue :tok_loop;
                     }
-                    if (!param.id.isMacroIdentifier()) break :blk;
-                    const s = pp.tokSlice(param);
+                    if (!param.id.is_macro_identifier()) break :blk;
+                    const s = pp.tok_slice(param);
                     if (mem.eql(u8, s, gnu_var_args)) {
                         tok.id = .stringify_va_args;
                         try pp.token_buf.append(tok);
@@ -2687,14 +2687,14 @@ fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_p
                     for (params.items, 0..) |p, i| {
                         if (mem.eql(u8, p, s)) {
                             tok.id = .stringify_param;
-                            tok.end = @intCast(i);
+                            tok.end = @int_cast(i);
                             try pp.token_buf.append(tok);
                             continue :tok_loop;
                         }
                     }
                 }
                 try pp.err(param, .hash_not_followed_param);
-                return skipToNl(tokenizer);
+                return skip_to_nl(tokenizer);
             },
             .hash_hash => {
                 need_ws = false;
@@ -2702,10 +2702,10 @@ fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_p
                 // in this case, error out
                 if (pp.token_buf.items.len == 0) {
                     try pp.err(tok, .hash_hash_at_start);
-                    return skipToNl(tokenizer);
+                    return skip_to_nl(tokenizer);
                 }
                 const saved_tokenizer = tokenizer.*;
-                const next = tokenizer.nextNoWSComments();
+                const next = tokenizer.next_no_wscomments();
                 if (next.id == .nl or next.id == .eof) {
                     try pp.err(tok, .hash_hash_at_end);
                     return;
@@ -2718,7 +2718,7 @@ fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_p
                 try pp.token_buf.append(tok);
             },
             .unterminated_string_literal, .unterminated_char_literal, .empty_char_literal => |tag| {
-                try pp.err(tok, invalidTokenDiagnostic(tag));
+                try pp.err(tok, invalid_token_diagnostic(tag));
                 try pp.token_buf.append(tok);
             },
             .unterminated_comment => try pp.err(tok, .unterminated_comment),
@@ -2733,7 +2733,7 @@ fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_p
                     const opt_l_paren = tokenizer.next();
                     if (opt_l_paren.id != .l_paren) {
                         try pp.err(opt_l_paren, .va_opt_lparen);
-                        return skipToNl(tokenizer);
+                        return skip_to_nl(tokenizer);
                     }
                     tok.start = opt_l_paren.end;
 
@@ -2750,15 +2750,15 @@ fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_p
                             .nl, .eof => {
                                 try pp.err(opt_tok, .va_opt_rparen);
                                 try pp.err(opt_l_paren, .to_match_paren);
-                                return skipToNl(tokenizer);
+                                return skip_to_nl(tokenizer);
                             },
                             .whitespace => {},
                             else => tok.end = opt_tok.end,
                         }
                     }
-                } else if (tok.id.isMacroIdentifier()) {
-                    tok.id.simplifyMacroKeyword();
-                    const s = pp.tokSlice(tok);
+                } else if (tok.id.is_macro_identifier()) {
+                    tok.id.simplify_macro_keyword();
+                    const s = pp.tok_slice(tok);
                     if (mem.eql(u8, gnu_var_args, s)) {
                         tok.id = .keyword_va_args;
                     } else for (params.items, 0..) |param, i| {
@@ -2767,7 +2767,7 @@ fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_p
                             // here in case a ## was the previous token, because
                             // ## processing will eat this token with the same semantics
                             tok.id = .macro_param;
-                            tok.end = @intCast(i);
+                            tok.end = @int_cast(i);
                             break;
                         }
                     }
@@ -2779,12 +2779,12 @@ fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_p
 
     const param_list = try pp.arena.allocator().dupe([]const u8, params.items);
     const token_list = try pp.arena.allocator().dupe(RawToken, pp.token_buf.items);
-    try pp.defineMacro(macro_name, .{
+    try pp.define_macro(macro_name, .{
         .is_func = true,
         .params = param_list,
         .var_args = var_args or gnu_var_args.len != 0,
         .tokens = token_list,
-        .loc = tokFromRaw(macro_name).loc,
+        .loc = tok_from_raw(macro_name).loc,
     });
 }
 
@@ -2792,15 +2792,15 @@ fn define_fn(pp: *Preprocessor, tokenizer: *Tokenizer, macro_name: RawToken, l_p
 /// embedDirective : ("FILENAME" | <FILENAME>) embedParam*
 /// embedParam : IDENTIFIER (:: IDENTIFIER)? '(' <tokens> ')'
 fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
-    const first = tokenizer.nextNoWS();
-    const filename_tok = pp.findIncludeFilenameToken(first, tokenizer, .ignore_trailing_tokens) catch |er| switch (er) {
+    const first = tokenizer.next_no_ws();
+    const filename_tok = pp.find_include_filename_token(first, tokenizer, .ignore_trailing_tokens) catch |er| switch (er) {
         error.InvalidInclude => return,
         else => |e| return e,
     };
     defer TokenWithExpansionLocs.free(filename_tok.expansion_locs, pp.gpa);
 
     // Check for empty filename.
-    const tok_slice = pp.expandedSliceExtra(filename_tok, .single_macro_ws);
+    const tok_slice = pp.expanded_slice_extra(filename_tok, .single_macro_ws);
     if (tok_slice.len < 3) {
         try pp.err(first, .empty_filename);
         return;
@@ -2821,7 +2821,7 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
             const range = opt_range orelse return;
             const slice = pp_.token_buf.items[range.start..range.end];
             for (slice) |tok| {
-                try pp_.expandMacro(tokenizer_, tok);
+                try pp_.expand_macro(tokenizer_, tok);
             }
         }
     };
@@ -2832,7 +2832,7 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
     var suffix: ?Range = null;
     var if_empty: ?Range = null;
     while (true) {
-        const param_first = tokenizer.nextNoWS();
+        const param_first = tokenizer.next_no_ws();
         switch (param_first.id) {
             .nl, .eof => break,
             .identifier => {},
@@ -2845,35 +2845,35 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
         const char_top = pp.char_buf.items.len;
         defer pp.char_buf.items.len = char_top;
 
-        const maybe_colon = tokenizer.colonColon();
+        const maybe_colon = tokenizer.colon_colon();
         const param = switch (maybe_colon.id) {
             .colon_colon => blk: {
                 // vendor::param
-                const param = tokenizer.nextNoWS();
+                const param = tokenizer.next_no_ws();
                 if (param.id != .identifier) {
                     try pp.err(param, .malformed_embed_param);
                     continue;
                 }
-                const l_paren = tokenizer.nextNoWS();
+                const l_paren = tokenizer.next_no_ws();
                 if (l_paren.id != .l_paren) {
                     try pp.err(l_paren, .malformed_embed_param);
                     continue;
                 }
-                try pp.char_buf.appendSlice(Attribute.normalize(pp.tokSlice(param_first)));
-                try pp.char_buf.appendSlice("::");
-                try pp.char_buf.appendSlice(Attribute.normalize(pp.tokSlice(param)));
+                try pp.char_buf.append_slice(Attribute.normalize(pp.tok_slice(param_first)));
+                try pp.char_buf.append_slice("::");
+                try pp.char_buf.append_slice(Attribute.normalize(pp.tok_slice(param)));
                 break :blk pp.char_buf.items;
             },
-            .l_paren => Attribute.normalize(pp.tokSlice(param_first)),
+            .l_paren => Attribute.normalize(pp.tok_slice(param_first)),
             else => {
                 try pp.err(maybe_colon, .malformed_embed_param);
                 continue;
             },
         };
 
-        const start: u32 = @intCast(pp.token_buf.items.len);
+        const start: u32 = @int_cast(pp.token_buf.items.len);
         while (true) {
-            const next = tokenizer.nextNoWS();
+            const next = tokenizer.next_no_ws();
             if (next.id == .r_paren) break;
             if (next.id == .eof) {
                 try pp.err(maybe_colon, .malformed_embed_param);
@@ -2881,11 +2881,11 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
             }
             try pp.token_buf.append(next);
         }
-        const end: u32 = @intCast(pp.token_buf.items.len);
+        const end: u32 = @int_cast(pp.token_buf.items.len);
 
         if (std.mem.eql(u8, param, "limit")) {
             if (limit != null) {
-                try pp.errStr(tokFromRaw(param_first), .duplicate_embed_param, "limit");
+                try pp.err_str(tok_from_raw(param_first), .duplicate_embed_param, "limit");
                 continue;
             }
             if (start + 1 != end) {
@@ -2897,32 +2897,32 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
                 try pp.err(param_first, .malformed_embed_limit);
                 continue;
             }
-            limit = std.fmt.parseInt(u32, pp.tokSlice(limit_tok), 10) catch {
+            limit = std.fmt.parse_int(u32, pp.tok_slice(limit_tok), 10) catch {
                 try pp.err(limit_tok, .malformed_embed_limit);
                 continue;
             };
             pp.token_buf.items.len = start;
         } else if (std.mem.eql(u8, param, "prefix")) {
             if (prefix != null) {
-                try pp.errStr(tokFromRaw(param_first), .duplicate_embed_param, "prefix");
+                try pp.err_str(tok_from_raw(param_first), .duplicate_embed_param, "prefix");
                 continue;
             }
             prefix = .{ .start = start, .end = end };
         } else if (std.mem.eql(u8, param, "suffix")) {
             if (suffix != null) {
-                try pp.errStr(tokFromRaw(param_first), .duplicate_embed_param, "suffix");
+                try pp.err_str(tok_from_raw(param_first), .duplicate_embed_param, "suffix");
                 continue;
             }
             suffix = .{ .start = start, .end = end };
         } else if (std.mem.eql(u8, param, "if_empty")) {
             if (if_empty != null) {
-                try pp.errStr(tokFromRaw(param_first), .duplicate_embed_param, "if_empty");
+                try pp.err_str(tok_from_raw(param_first), .duplicate_embed_param, "if_empty");
                 continue;
             }
             if_empty = .{ .start = start, .end = end };
         } else {
-            try pp.errStr(
-                tokFromRaw(param_first),
+            try pp.err_str(
+                tok_from_raw(param_first),
                 .unsupported_embed_param,
                 try pp.comp.diagnostics.arena.allocator().dupe(u8, param),
             );
@@ -2930,8 +2930,8 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
         }
     }
 
-    const embed_bytes = (try pp.comp.findEmbed(filename, first.source, include_type, limit)) orelse
-        return pp.fatalNotFound(filename_tok, filename);
+    const embed_bytes = (try pp.comp.find_embed(filename, first.source, include_type, limit)) orelse
+        return pp.fatal_not_found(filename_tok, filename);
     defer pp.comp.gpa.free(embed_bytes);
 
     try Range.expand(prefix, pp, tokenizer);
@@ -2942,7 +2942,7 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
         return;
     }
 
-    try pp.ensureUnusedTokenCapacity(2 * embed_bytes.len - 1); // N bytes and N-1 commas
+    try pp.ensure_unused_token_capacity(2 * embed_bytes.len - 1); // N bytes and N-1 commas
 
     // TODO: We currently only support systems with CHAR_BIT == 8
     // If the target's CHAR_BIT is not 8, we need to write out correctly-sized embed_bytes
@@ -2953,14 +2953,14 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
         const byte = embed_bytes[0];
         const start = pp.comp.generated_buf.items.len;
         try writer.print("{d}", .{byte});
-        pp.addTokenAssumeCapacity(try pp.makeGeneratedToken(start, .embed_byte, filename_tok));
+        pp.add_token_assume_capacity(try pp.make_generated_token(start, .embed_byte, filename_tok));
     }
 
     for (embed_bytes[1..]) |byte| {
         const start = pp.comp.generated_buf.items.len;
         try writer.print(",{d}", .{byte});
-        pp.addTokenAssumeCapacity(.{ .id = .comma, .loc = .{ .id = .generated, .byte_offset = @intCast(start) } });
-        pp.addTokenAssumeCapacity(try pp.makeGeneratedToken(start + 1, .embed_byte, filename_tok));
+        pp.add_token_assume_capacity(.{ .id = .comma, .loc = .{ .id = .generated, .byte_offset = @int_cast(start) } });
+        pp.add_token_assume_capacity(try pp.make_generated_token(start + 1, .embed_byte, filename_tok));
     }
     try pp.comp.generated_buf.append(pp.gpa, '\n');
 
@@ -2969,8 +2969,8 @@ fn embed(pp: *Preprocessor, tokenizer: *Tokenizer) MacroError!void {
 
 // Handle a #include directive.
 fn include(pp: *Preprocessor, tokenizer: *Tokenizer, which: Compilation.WhichInclude) MacroError!void {
-    const first = tokenizer.nextNoWS();
-    const new_source = findIncludeSource(pp, tokenizer, first, which) catch |er| switch (er) {
+    const first = tokenizer.next_no_ws();
+    const new_source = find_include_source(pp, tokenizer, first, which) catch |er| switch (er) {
         error.InvalidInclude => return,
         else => |e| return e,
     };
@@ -2991,22 +2991,22 @@ fn include(pp: *Preprocessor, tokenizer: *Tokenizer, which: Compilation.WhichInc
     }
 
     if (pp.verbose) {
-        pp.verboseLog(first, "include file {s}", .{new_source.path});
+        pp.verbose_log(first, "include file {s}", .{new_source.path});
     }
 
-    const token_state = pp.getTokenState();
-    try pp.addIncludeStart(new_source);
-    const eof = pp.preprocessExtra(new_source) catch |er| switch (er) {
+    const token_state = pp.get_token_state();
+    try pp.add_include_start(new_source);
+    const eof = pp.preprocess_extra(new_source) catch |er| switch (er) {
         error.StopPreprocessing => {
             for (pp.expansion_entries.items(.locs)[token_state.expansion_entries_len..]) |loc| TokenWithExpansionLocs.free(loc, pp.gpa);
-            pp.restoreTokenState(token_state);
+            pp.restore_token_state(token_state);
             return;
         },
         else => |e| return e,
     };
-    try eof.checkMsEof(new_source, pp.comp);
+    try eof.check_ms_eof(new_source, pp.comp);
     if (pp.preserve_whitespace and pp.tokens.items(.id)[pp.tokens.len - 1] != .nl) {
-        try pp.addToken(.{ .id = .nl, .loc = .{
+        try pp.add_token(.{ .id = .nl, .loc = .{
             .id = tokenizer.source,
             .line = tokenizer.line,
         } });
@@ -3015,11 +3015,11 @@ fn include(pp: *Preprocessor, tokenizer: *Tokenizer, which: Compilation.WhichInc
     var next = first;
     while (true) {
         var tmp = tokenizer.*;
-        next = tmp.nextNoWS();
+        next = tmp.next_no_ws();
         if (next.id != .nl) break;
         tokenizer.* = tmp;
     }
-    try pp.addIncludeResume(next.source, next.end, next.line);
+    try pp.add_include_resume(next.source, next.end, next.line);
 }
 
 /// tokens that are part of a pragma directive can happen in 3 ways:
@@ -3029,64 +3029,64 @@ fn include(pp: *Preprocessor, tokenizer: *Tokenizer, which: Compilation.WhichInc
 /// operator_loc: Location of `_Pragma`; null if this is from #pragma
 /// arg_locs: expansion locations of the argument to _Pragma. empty if #pragma or a raw string literal was used
 fn make_pragma_token(pp: *Preprocessor, raw: RawToken, operator_loc: ?Source.Location, arg_locs: []const Source.Location) !TokenWithExpansionLocs {
-    var tok = tokFromRaw(raw);
+    var tok = tok_from_raw(raw);
     if (operator_loc) |loc| {
-        try tok.addExpansionLocation(pp.gpa, &.{loc});
+        try tok.add_expansion_location(pp.gpa, &.{loc});
     }
-    try tok.addExpansionLocation(pp.gpa, arg_locs);
+    try tok.add_expansion_location(pp.gpa, arg_locs);
     return tok;
 }
 
 pub fn add_token(pp: *Preprocessor, tok: TokenWithExpansionLocs) !void {
     if (tok.expansion_locs) |expansion_locs| {
-        try pp.expansion_entries.append(pp.gpa, .{ .idx = @intCast(pp.tokens.len), .locs = expansion_locs });
+        try pp.expansion_entries.append(pp.gpa, .{ .idx = @int_cast(pp.tokens.len), .locs = expansion_locs });
     }
     try pp.tokens.append(pp.gpa, .{ .id = tok.id, .loc = tok.loc });
 }
 
 pub fn add_token_assume_capacity(pp: *Preprocessor, tok: TokenWithExpansionLocs) void {
     if (tok.expansion_locs) |expansion_locs| {
-        pp.expansion_entries.appendAssumeCapacity(.{ .idx = @intCast(pp.tokens.len), .locs = expansion_locs });
+        pp.expansion_entries.append_assume_capacity(.{ .idx = @int_cast(pp.tokens.len), .locs = expansion_locs });
     }
-    pp.tokens.appendAssumeCapacity(.{ .id = tok.id, .loc = tok.loc });
+    pp.tokens.append_assume_capacity(.{ .id = tok.id, .loc = tok.loc });
 }
 
 pub fn ensure_total_token_capacity(pp: *Preprocessor, capacity: usize) !void {
-    try pp.tokens.ensureTotalCapacity(pp.gpa, capacity);
-    try pp.expansion_entries.ensureTotalCapacity(pp.gpa, capacity);
+    try pp.tokens.ensure_total_capacity(pp.gpa, capacity);
+    try pp.expansion_entries.ensure_total_capacity(pp.gpa, capacity);
 }
 
 pub fn ensure_unused_token_capacity(pp: *Preprocessor, capacity: usize) !void {
-    try pp.tokens.ensureUnusedCapacity(pp.gpa, capacity);
-    try pp.expansion_entries.ensureUnusedCapacity(pp.gpa, capacity);
+    try pp.tokens.ensure_unused_capacity(pp.gpa, capacity);
+    try pp.expansion_entries.ensure_unused_capacity(pp.gpa, capacity);
 }
 
 /// Handle a pragma directive
 fn pragma(pp: *Preprocessor, tokenizer: *Tokenizer, pragma_tok: RawToken, operator_loc: ?Source.Location, arg_locs: []const Source.Location) !void {
-    const name_tok = tokenizer.nextNoWS();
+    const name_tok = tokenizer.next_no_ws();
     if (name_tok.id == .nl or name_tok.id == .eof) return;
 
-    const name = pp.tokSlice(name_tok);
-    try pp.addToken(try pp.makePragmaToken(pragma_tok, operator_loc, arg_locs));
-    const pragma_start: u32 = @intCast(pp.tokens.len);
+    const name = pp.tok_slice(name_tok);
+    try pp.add_token(try pp.make_pragma_token(pragma_tok, operator_loc, arg_locs));
+    const pragma_start: u32 = @int_cast(pp.tokens.len);
 
-    const pragma_name_tok = try pp.makePragmaToken(name_tok, operator_loc, arg_locs);
-    try pp.addToken(pragma_name_tok);
+    const pragma_name_tok = try pp.make_pragma_token(name_tok, operator_loc, arg_locs);
+    try pp.add_token(pragma_name_tok);
     while (true) {
         const next_tok = tokenizer.next();
         if (next_tok.id == .whitespace) continue;
         if (next_tok.id == .eof) {
-            try pp.addToken(.{
+            try pp.add_token(.{
                 .id = .nl,
                 .loc = .{ .id = .generated },
             });
             break;
         }
-        try pp.addToken(try pp.makePragmaToken(next_tok, operator_loc, arg_locs));
+        try pp.add_token(try pp.make_pragma_token(next_tok, operator_loc, arg_locs));
         if (next_tok.id == .nl) break;
     }
-    if (pp.comp.getPragma(name)) |prag| unknown: {
-        return prag.preprocessorCB(pp, pragma_start) catch |er| switch (er) {
+    if (pp.comp.get_pragma(name)) |prag| unknown: {
+        return prag.preprocessor_cb(pp, pragma_start) catch |er| switch (er) {
             error.UnknownPragma => break :unknown,
             else => |e| return e,
         };
@@ -3094,7 +3094,7 @@ fn pragma(pp: *Preprocessor, tokenizer: *Tokenizer, pragma_tok: RawToken, operat
     return pp.comp.addDiagnostic(.{
         .tag = .unknown_pragma,
         .loc = pragma_name_tok.loc,
-    }, pragma_name_tok.expansionSlice());
+    }, pragma_name_tok.expansion_slice());
 }
 
 fn find_include_filename_token(
@@ -3126,7 +3126,7 @@ fn find_include_filename_token(
         try pp.err(first, .header_str_match);
     }
 
-    const source_tok = tokFromRaw(first);
+    const source_tok = tok_from_raw(first);
     const filename_tok, const expanded_trailing = switch (source_tok.id) {
         .string_literal, .macro_string => .{ source_tok, false },
         else => expanded: {
@@ -3136,16 +3136,16 @@ fn find_include_filename_token(
             try pp.top_expansion_buf.append(source_tok);
             pp.expansion_source_loc = source_tok.loc;
 
-            try pp.expandMacroExhaustive(tokenizer, &pp.top_expansion_buf, 0, 1, true, .non_expr);
+            try pp.expand_macro_exhaustive(tokenizer, &pp.top_expansion_buf, 0, 1, true, .non_expr);
             var trailing_toks: []const TokenWithExpansionLocs = &.{};
-            const include_str = (try pp.reconstructIncludeString(pp.top_expansion_buf.items, &trailing_toks, tokFromRaw(first))) orelse {
-                try pp.expectNl(tokenizer);
+            const include_str = (try pp.reconstruct_include_string(pp.top_expansion_buf.items, &trailing_toks, tok_from_raw(first))) orelse {
+                try pp.expect_nl(tokenizer);
                 return error.InvalidInclude;
             };
             const start = pp.comp.generated_buf.items.len;
-            try pp.comp.generated_buf.appendSlice(pp.gpa, include_str);
+            try pp.comp.generated_buf.append_slice(pp.gpa, include_str);
 
-            break :expanded .{ try pp.makeGeneratedToken(start, switch (include_str[0]) {
+            break :expanded .{ try pp.make_generated_token(start, switch (include_str[0]) {
                 '"' => .string_literal,
                 '<' => .macro_string,
                 else => unreachable,
@@ -3156,31 +3156,31 @@ fn find_include_filename_token(
     switch (trailing_token_behavior) {
         .expect_nl_eof => {
             // Error on extra tokens.
-            const nl = tokenizer.nextNoWS();
+            const nl = tokenizer.next_no_ws();
             if ((nl.id != .nl and nl.id != .eof) or expanded_trailing) {
-                skipToNl(tokenizer);
-                try pp.comp.diagnostics.addExtra(pp.comp.langopts, .{
+                skip_to_nl(tokenizer);
+                try pp.comp.diagnostics.add_extra(pp.comp.langopts, .{
                     .tag = .extra_tokens_directive_end,
                     .loc = filename_tok.loc,
-                }, filename_tok.expansionSlice(), false);
+                }, filename_tok.expansion_slice(), false);
             }
         },
         .ignore_trailing_tokens => if (expanded_trailing) {
-            try pp.comp.diagnostics.addExtra(pp.comp.langopts, .{
+            try pp.comp.diagnostics.add_extra(pp.comp.langopts, .{
                 .tag = .extra_tokens_directive_end,
                 .loc = filename_tok.loc,
-            }, filename_tok.expansionSlice(), false);
+            }, filename_tok.expansion_slice(), false);
         },
     }
     return filename_tok;
 }
 
 fn find_include_source(pp: *Preprocessor, tokenizer: *Tokenizer, first: RawToken, which: Compilation.WhichInclude) !Source {
-    const filename_tok = try pp.findIncludeFilenameToken(first, tokenizer, .expect_nl_eof);
+    const filename_tok = try pp.find_include_filename_token(first, tokenizer, .expect_nl_eof);
     defer TokenWithExpansionLocs.free(filename_tok.expansion_locs, pp.gpa);
 
     // Check for empty filename.
-    const tok_slice = pp.expandedSliceExtra(filename_tok, .single_macro_ws);
+    const tok_slice = pp.expanded_slice_extra(filename_tok, .single_macro_ws);
     if (tok_slice.len < 3) {
         try pp.err(first, .empty_filename);
         return error.InvalidInclude;
@@ -3194,8 +3194,8 @@ fn find_include_source(pp: *Preprocessor, tokenizer: *Tokenizer, first: RawToken
         else => unreachable,
     };
 
-    return (try pp.comp.findInclude(filename, first, include_type, which)) orelse
-        return pp.fatalNotFound(filename_tok, filename);
+    return (try pp.comp.find_include(filename, first, include_type, which)) orelse
+        return pp.fatal_not_found(filename_tok, filename);
 }
 
 fn print_linemarker(
@@ -3205,38 +3205,38 @@ fn print_linemarker(
     source: Source,
     start_resume: enum(u8) { start, @"resume", none },
 ) !void {
-    try w.writeByte('#');
-    if (pp.linemarkers == .line_directives) try w.writeAll("line");
+    try w.write_byte('#');
+    if (pp.linemarkers == .line_directives) try w.write_all("line");
     try w.print(" {d} \"", .{line_no});
     for (source.path) |byte| switch (byte) {
-        '\n' => try w.writeAll("\\n"),
-        '\r' => try w.writeAll("\\r"),
-        '\t' => try w.writeAll("\\t"),
-        '\\' => try w.writeAll("\\\\"),
-        '"' => try w.writeAll("\\\""),
-        ' ', '!', '#'...'&', '('...'[', ']'...'~' => try w.writeByte(byte),
+        '\n' => try w.write_all("\\n"),
+        '\r' => try w.write_all("\\r"),
+        '\t' => try w.write_all("\\t"),
+        '\\' => try w.write_all("\\\\"),
+        '"' => try w.write_all("\\\""),
+        ' ', '!', '#'...'&', '('...'[', ']'...'~' => try w.write_byte(byte),
         // Use hex escapes for any non-ASCII/unprintable characters.
         // This ensures that the parsed version of this string will end up
         // containing the same bytes as the input regardless of encoding.
         else => {
-            try w.writeAll("\\x");
-            try std.fmt.formatInt(byte, 16, .lower, .{ .width = 2, .fill = '0' }, w);
+            try w.write_all("\\x");
+            try std.fmt.format_int(byte, 16, .lower, .{ .width = 2, .fill = '0' }, w);
         },
     };
-    try w.writeByte('"');
+    try w.write_byte('"');
     if (pp.linemarkers == .numeric_directives) {
         switch (start_resume) {
             .none => {},
-            .start => try w.writeAll(" 1"),
-            .@"resume" => try w.writeAll(" 2"),
+            .start => try w.write_all(" 1"),
+            .@"resume" => try w.write_all(" 2"),
         }
         switch (source.kind) {
             .user => {},
-            .system => try w.writeAll(" 3"),
-            .extern_c_system => try w.writeAll(" 3 4"),
+            .system => try w.write_all(" 3"),
+            .extern_c_system => try w.write_all(" 3 4"),
         }
     }
-    try w.writeByte('\n');
+    try w.write_byte('\n');
 }
 
 // After how many empty lines are needed to replace them with linemarkers.
@@ -3252,7 +3252,7 @@ pub fn pretty_print_tokens(pp: *Preprocessor, w: anytype) !void {
         var cur: Token = pp.tokens.get(i);
         switch (cur.id) {
             .eof => {
-                if (!last_nl) try w.writeByte('\n');
+                if (!last_nl) try w.write_byte('\n');
                 return;
             },
             .nl => {
@@ -3261,7 +3261,7 @@ pub fn pretty_print_tokens(pp: *Preprocessor, w: anytype) !void {
                     if (id == .nl) {
                         newlines += 1;
                     } else if (id == .eof) {
-                        if (!last_nl) try w.writeByte('\n');
+                        if (!last_nl) try w.write_byte('\n');
                         return;
                     } else if (id != .whitespace) {
                         if (pp.linemarkers == .none) {
@@ -3270,74 +3270,74 @@ pub fn pretty_print_tokens(pp: *Preprocessor, w: anytype) !void {
                             break;
                         }
 
-                        i = @intCast((j - 1) - @intFromBool(tok_ids[j - 1] == .whitespace));
-                        if (!last_nl) try w.writeAll("\n");
+                        i = @int_cast((j - 1) - @int_from_bool(tok_ids[j - 1] == .whitespace));
+                        if (!last_nl) try w.write_all("\n");
                         if (pp.linemarkers != .none) {
                             const next = pp.tokens.get(i);
-                            const source = pp.comp.getSource(next.loc.id);
-                            const line_col = source.lineCol(next.loc);
-                            try pp.printLinemarker(w, line_col.line_no, source, .none);
+                            const source = pp.comp.get_source(next.loc.id);
+                            const line_col = source.line_col(next.loc);
+                            try pp.print_linemarker(w, line_col.line_no, source, .none);
                             last_nl = true;
                         }
                         continue :outer;
                     }
                 }
                 last_nl = true;
-                try w.writeAll("\n");
+                try w.write_all("\n");
             },
             .keyword_pragma => {
-                const pragma_name = pp.expandedSlice(pp.tokens.get(i + 1));
-                const end_idx = mem.indexOfScalarPos(Token.Id, tok_ids, i, .nl) orelse i + 1;
-                const pragma_len = @as(u32, @intCast(end_idx)) - i;
+                const pragma_name = pp.expanded_slice(pp.tokens.get(i + 1));
+                const end_idx = mem.index_of_scalar_pos(Token.Id, tok_ids, i, .nl) orelse i + 1;
+                const pragma_len = @as(u32, @int_cast(end_idx)) - i;
 
-                if (pp.comp.getPragma(pragma_name)) |prag| {
-                    if (!prag.shouldPreserveTokens(pp, i + 1)) {
-                        try w.writeByte('\n');
+                if (pp.comp.get_pragma(pragma_name)) |prag| {
+                    if (!prag.should_preserve_tokens(pp, i + 1)) {
+                        try w.write_byte('\n');
                         i += pragma_len;
                         cur = pp.tokens.get(i);
                         continue;
                     }
                 }
-                try w.writeAll("#pragma");
+                try w.write_all("#pragma");
                 i += 1;
                 while (true) : (i += 1) {
                     cur = pp.tokens.get(i);
                     if (cur.id == .nl) {
-                        try w.writeByte('\n');
+                        try w.write_byte('\n');
                         last_nl = true;
                         break;
                     }
-                    try w.writeByte(' ');
-                    const slice = pp.expandedSlice(cur);
-                    try w.writeAll(slice);
+                    try w.write_byte(' ');
+                    const slice = pp.expanded_slice(cur);
+                    try w.write_all(slice);
                 }
             },
             .whitespace => {
-                var slice = pp.expandedSlice(cur);
-                while (mem.indexOfScalar(u8, slice, '\n')) |some| {
-                    if (pp.linemarkers != .none) try w.writeByte('\n');
+                var slice = pp.expanded_slice(cur);
+                while (mem.index_of_scalar(u8, slice, '\n')) |some| {
+                    if (pp.linemarkers != .none) try w.write_byte('\n');
                     slice = slice[some + 1 ..];
                 }
-                for (slice) |_| try w.writeByte(' ');
+                for (slice) |_| try w.write_byte(' ');
                 last_nl = false;
             },
             .include_start => {
-                const source = pp.comp.getSource(cur.loc.id);
+                const source = pp.comp.get_source(cur.loc.id);
 
-                try pp.printLinemarker(w, 1, source, .start);
+                try pp.print_linemarker(w, 1, source, .start);
                 last_nl = true;
             },
             .include_resume => {
-                const source = pp.comp.getSource(cur.loc.id);
-                const line_col = source.lineCol(cur.loc);
-                if (!last_nl) try w.writeAll("\n");
+                const source = pp.comp.get_source(cur.loc.id);
+                const line_col = source.line_col(cur.loc);
+                if (!last_nl) try w.write_all("\n");
 
-                try pp.printLinemarker(w, line_col.line_no, source, .@"resume");
+                try pp.print_linemarker(w, line_col.line_no, source, .@"resume");
                 last_nl = true;
             },
             else => {
-                const slice = pp.expandedSlice(cur);
-                try w.writeAll(slice);
+                const slice = pp.expanded_slice(cur);
+                try w.write_all(slice);
                 last_nl = false;
             },
         }
@@ -3354,7 +3354,7 @@ test "Preserve pragma tokens sometimes" {
             var comp = Compilation.init(allocator);
             defer comp.deinit();
 
-            try comp.addDefaultPragmaHandlers();
+            try comp.add_default_pragma_handlers();
 
             var pp = Preprocessor.init(&comp);
             defer pp.deinit();
@@ -3362,18 +3362,18 @@ test "Preserve pragma tokens sometimes" {
             pp.preserve_whitespace = true;
             assert(pp.linemarkers == .none);
 
-            const test_runner_macros = try comp.addSourceFromBuffer("<test_runner>", source_text);
+            const test_runner_macros = try comp.add_source_from_buffer("<test_runner>", source_text);
             const eof = try pp.preprocess(test_runner_macros);
-            try pp.addToken(eof);
-            try pp.prettyPrintTokens(buf.writer());
+            try pp.add_token(eof);
+            try pp.pretty_print_tokens(buf.writer());
             return allocator.dupe(u8, buf.items);
         }
 
         fn check(source_text: []const u8, expected: []const u8) !void {
-            const output = try runPreprocessor(source_text);
+            const output = try run_preprocessor(source_text);
             defer allocator.free(output);
 
-            try std.testing.expectEqualStrings(expected, output);
+            try std.testing.expect_equal_strings(expected, output);
         }
     };
     const preserve_gcc_diagnostic =
@@ -3405,10 +3405,10 @@ test "destringify" {
     const allocator = std.testing.allocator;
     const Test = struct {
         fn test_destringify(pp: *Preprocessor, stringified: []const u8, destringified: []const u8) !void {
-            pp.char_buf.clearRetainingCapacity();
-            try pp.char_buf.ensureUnusedCapacity(stringified.len);
+            pp.char_buf.clear_retaining_capacity();
+            try pp.char_buf.ensure_unused_capacity(stringified.len);
             pp.destringify(stringified);
-            try std.testing.expectEqualStrings(destringified, pp.char_buf.items);
+            try std.testing.expect_equal_strings(destringified, pp.char_buf.items);
         }
     };
     var comp = Compilation.init(allocator);
@@ -3416,13 +3416,13 @@ test "destringify" {
     var pp = Preprocessor.init(&comp);
     defer pp.deinit();
 
-    try Test.testDestringify(&pp, "hello\tworld\n", "hello\tworld\n");
-    try Test.testDestringify(&pp,
+    try Test.test_destringify(&pp, "hello\tworld\n", "hello\tworld\n");
+    try Test.test_destringify(&pp,
         \\ \"FOO BAR BAZ\"
     ,
         \\ "FOO BAR BAZ"
     );
-    try Test.testDestringify(&pp,
+    try Test.test_destringify(&pp,
         \\ \\t\\n
         \\
     ,
@@ -3477,7 +3477,7 @@ test "Include guards" {
             const path = try std.fs.path.join(allocator, &.{ ".", "bar.h" });
             defer allocator.free(path);
 
-            _ = try comp.addSourceFromBuffer(path, "int bar = 5;\n");
+            _ = try comp.add_source_from_buffer(path, "int bar = 5;\n");
 
             var buf = std.ArrayList(u8).init(allocator);
             defer buf.deinit();
@@ -3493,17 +3493,17 @@ test "Include guards" {
                 => try writer.print(template, .{ tok_id.lexeme().?, " BAR\n#endif" }),
                 else => try writer.print(template, .{ tok_id.lexeme().?, "" }),
             }
-            const source = try comp.addSourceFromBuffer("test.h", buf.items);
+            const source = try comp.add_source_from_buffer("test.h", buf.items);
             _ = try pp.preprocess(source);
 
-            try std.testing.expectEqual(expected_guards, pp.include_guards.count());
+            try std.testing.expect_equal(expected_guards, pp.include_guards.count());
         }
     };
     const tags = std.meta.tags(RawToken.Id);
     for (tags) |tag| {
         if (Test.skippable(tag)) continue;
         var copy = tag;
-        copy.simplifyMacroKeyword();
+        copy.simplify_macro_keyword();
         if (copy != tag or tag == .keyword_else) {
             const inside_ifndef_template =
                 \\//Leading comment (should be ignored)
@@ -3512,15 +3512,15 @@ test "Include guards" {
                 \\#{s}{s}
                 \\#endif
             ;
-            const expected_guards: u32 = if (Test.pairsWithIfndef(tag)) 0 else 1;
-            try Test.testIncludeGuard(std.testing.allocator, inside_ifndef_template, tag, expected_guards);
+            const expected_guards: u32 = if (Test.pairs_with_ifndef(tag)) 0 else 1;
+            try Test.test_include_guard(std.testing.allocator, inside_ifndef_template, tag, expected_guards);
 
             const outside_ifndef_template =
                 \\#ifndef FOO
                 \\#endif
                 \\#{s}{s}
             ;
-            try Test.testIncludeGuard(std.testing.allocator, outside_ifndef_template, tag, 0);
+            try Test.test_include_guard(std.testing.allocator, outside_ifndef_template, tag, 0);
         }
     }
 }

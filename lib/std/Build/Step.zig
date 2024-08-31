@@ -111,7 +111,7 @@ pub const Id = enum {
             .config_header => ConfigHeader,
             .objcopy => ObjCopy,
             .options => Options,
-            .custom => @compileError("no type available for custom step"),
+            .custom => @compile_error("no type available for custom step"),
         };
     }
 };
@@ -135,7 +135,7 @@ pub const StepOptions = struct {
     id: Id,
     name: []const u8,
     owner: *Build,
-    makeFn: MakeFn = makeNoOp,
+    makeFn: MakeFn = make_no_op,
     first_ret_addr: ?usize = null,
     max_rss: usize = 0,
 };
@@ -160,7 +160,7 @@ pub fn init(options: StepOptions) Step {
                 .instruction_addresses = addresses,
                 .index = 0,
             };
-            std.debug.captureStackTrace(first_ret_addr, &stack_trace);
+            std.debug.capture_stack_trace(first_ret_addr, &stack_trace);
             break :blk addresses;
         },
         .result_error_msgs = .{},
@@ -188,12 +188,12 @@ pub fn make(s: *Step, prog_node: std.Progress.Node) error{ MakeFailed, MakeSkipp
         },
     };
 
-    if (!s.test_results.isSuccess()) {
+    if (!s.test_results.is_success()) {
         return error.MakeFailed;
     }
 
     if (s.max_rss != 0 and s.result_peak_rss > s.max_rss) {
-        const msg = std.fmt.allocPrint(arena, "memory usage peaked at {d} bytes, exceeding the declared upper bound of {d}", .{
+        const msg = std.fmt.alloc_print(arena, "memory usage peaked at {d} bytes, exceeding the declared upper bound of {d}", .{
             s.result_peak_rss, s.max_rss,
         }) catch @panic("OOM");
         s.result_error_msgs.append(arena, msg) catch @panic("OOM");
@@ -239,26 +239,26 @@ pub fn cast(step: *Step, comptime T: type) ?*T {
 /// For debugging purposes, prints identifying information about this Step.
 pub fn dump(step: *Step, file: std.fs.File) void {
     const w = file.writer();
-    const tty_config = std.io.tty.detectConfig(file);
-    const debug_info = std.debug.getSelfDebugInfo() catch |err| {
+    const tty_config = std.io.tty.detect_config(file);
+    const debug_info = std.debug.get_self_debug_info() catch |err| {
         w.print("Unable to dump stack trace: Unable to open debug info: {s}\n", .{
             @errorName(err),
         }) catch {};
         return;
     };
     const ally = debug_info.allocator;
-    if (step.getStackTrace()) |stack_trace| {
+    if (step.get_stack_trace()) |stack_trace| {
         w.print("name: '{s}'. creation stack trace:\n", .{step.name}) catch {};
-        std.debug.writeStackTrace(stack_trace, w, ally, debug_info, tty_config) catch |err| {
+        std.debug.write_stack_trace(stack_trace, w, ally, debug_info, tty_config) catch |err| {
             w.print("Unable to dump stack trace: {s}\n", .{@errorName(err)}) catch {};
             return;
         };
     } else {
         const field = "debug_stack_frames_count";
-        comptime assert(@hasField(Build, field));
-        tty_config.setColor(w, .yellow) catch {};
+        comptime assert(@has_field(Build, field));
+        tty_config.set_color(w, .yellow) catch {};
         w.print("name: '{s}'. no stack trace collected for this step, see std.Build." ++ field ++ "\n", .{step.name}) catch {};
-        tty_config.setColor(w, .reset) catch {};
+        tty_config.set_color(w, .reset) catch {};
     }
 }
 
@@ -272,8 +272,8 @@ const builtin = @import("builtin");
 pub fn eval_child_process(s: *Step, argv: []const []const u8) !void {
     const arena = s.owner.allocator;
 
-    try handleChildProcUnsupported(s, null, argv);
-    try handleVerbose(s.owner, null, argv);
+    try handle_child_proc_unsupported(s, null, argv);
+    try handle_verbose(s.owner, null, argv);
 
     const result = std.process.Child.run(.{
         .allocator = arena,
@@ -284,17 +284,17 @@ pub fn eval_child_process(s: *Step, argv: []const []const u8) !void {
         try s.result_error_msgs.append(arena, result.stderr);
     }
 
-    try handleChildProcessTerm(s, result.term, null, argv);
+    try handle_child_process_term(s, result.term, null, argv);
 }
 
 pub fn fail(step: *Step, comptime fmt: []const u8, args: anytype) error{ OutOfMemory, MakeFailed } {
-    try step.addError(fmt, args);
+    try step.add_error(fmt, args);
     return error.MakeFailed;
 }
 
 pub fn add_error(step: *Step, comptime fmt: []const u8, args: anytype) error{OutOfMemory}!void {
     const arena = step.owner.allocator;
-    const msg = try std.fmt.allocPrint(arena, fmt, args);
+    const msg = try std.fmt.alloc_print(arena, fmt, args);
     try step.result_error_msgs.append(arena, msg);
 }
 
@@ -310,8 +310,8 @@ pub fn eval_zig_process(
     const arena = b.allocator;
     const gpa = arena;
 
-    try handleChildProcUnsupported(s, null, argv);
-    try handleVerbose(s.owner, null, argv);
+    try handle_child_proc_unsupported(s, null, argv);
+    try handle_verbose(s.owner, null, argv);
 
     var child = std.process.Child.init(argv, arena);
     child.env_map = &b.graph.env_map;
@@ -332,8 +332,8 @@ pub fn eval_zig_process(
     });
     defer poller.deinit();
 
-    try sendMessage(child.stdin.?, .update);
-    try sendMessage(child.stdin.?, .exit);
+    try send_message(child.stdin.?, .update);
+    try send_message(child.stdin.?, .exit);
 
     const Header = std.zig.Server.Message.Header;
     var result: ?[]const u8 = null;
@@ -341,14 +341,14 @@ pub fn eval_zig_process(
     const stdout = poller.fifo(.stdout);
 
     poll: while (true) {
-        while (stdout.readableLength() < @sizeOf(Header)) {
+        while (stdout.readable_length() < @size_of(Header)) {
             if (!(try poller.poll())) break :poll;
         }
-        const header = stdout.reader().readStruct(Header) catch unreachable;
-        while (stdout.readableLength() < header.bytes_len) {
+        const header = stdout.reader().read_struct(Header) catch unreachable;
+        while (stdout.readable_length() < header.bytes_len) {
             if (!(try poller.poll())) break :poll;
         }
-        const body = stdout.readableSliceOfLen(header.bytes_len);
+        const body = stdout.readable_slice_of_len(header.bytes_len);
 
         switch (header.tag) {
             .zig_version => {
@@ -361,13 +361,13 @@ pub fn eval_zig_process(
             },
             .error_bundle => {
                 const EbHdr = std.zig.Server.Message.ErrorBundle;
-                const eb_hdr = @as(*align(1) const EbHdr, @ptrCast(body));
+                const eb_hdr = @as(*align(1) const EbHdr, @ptr_cast(body));
                 const extra_bytes =
-                    body[@sizeOf(EbHdr)..][0 .. @sizeOf(u32) * eb_hdr.extra_len];
+                    body[@size_of(EbHdr)..][0 .. @size_of(u32) * eb_hdr.extra_len];
                 const string_bytes =
-                    body[@sizeOf(EbHdr) + extra_bytes.len ..][0..eb_hdr.string_bytes_len];
-                // TODO: use @ptrCast when the compiler supports it
-                const unaligned_extra = std.mem.bytesAsSlice(u32, extra_bytes);
+                    body[@size_of(EbHdr) + extra_bytes.len ..][0..eb_hdr.string_bytes_len];
+                // TODO: use @ptr_cast when the compiler supports it
+                const unaligned_extra = std.mem.bytes_as_slice(u32, extra_bytes);
                 const extra_array = try arena.alloc(u32, unaligned_extra.len);
                 @memcpy(extra_array, unaligned_extra);
                 s.result_error_bundle = .{
@@ -377,9 +377,9 @@ pub fn eval_zig_process(
             },
             .emit_bin_path => {
                 const EbpHdr = std.zig.Server.Message.EmitBinPath;
-                const ebp_hdr = @as(*align(1) const EbpHdr, @ptrCast(body));
+                const ebp_hdr = @as(*align(1) const EbpHdr, @ptr_cast(body));
                 s.result_cached = ebp_hdr.flags.cache_hit;
-                result = try arena.dupe(u8, body[@sizeOf(EbpHdr)..]);
+                result = try arena.dupe(u8, body[@size_of(EbpHdr)..]);
             },
             else => {}, // ignore other messages
         }
@@ -388,8 +388,8 @@ pub fn eval_zig_process(
     }
 
     const stderr = poller.fifo(.stderr);
-    if (stderr.readableLength() > 0) {
-        try s.result_error_msgs.append(arena, try stderr.toOwnedSlice());
+    if (stderr.readable_length() > 0) {
+        try s.result_error_msgs.append(arena, try stderr.to_owned_slice());
     }
 
     // Send EOF to stdin.
@@ -400,7 +400,7 @@ pub fn eval_zig_process(
         return s.fail("unable to wait for {s}: {s}", .{ argv[0], @errorName(err) });
     };
     s.result_duration_ns = timer.read();
-    s.result_peak_rss = child.resource_usage_statistics.getMaxRss() orelse 0;
+    s.result_peak_rss = child.resource_usage_statistics.get_max_rss() orelse 0;
 
     // Special handling for Compile step that is expecting compile errors.
     if (s.cast(Compile)) |compile| switch (term) {
@@ -414,12 +414,12 @@ pub fn eval_zig_process(
         else => {},
     };
 
-    try handleChildProcessTerm(s, term, null, argv);
+    try handle_child_process_term(s, term, null, argv);
 
-    if (s.result_error_bundle.errorMessageCount() > 0) {
+    if (s.result_error_bundle.error_message_count() > 0) {
         return s.fail("the following command failed with {d} compilation errors:\n{s}", .{
-            s.result_error_bundle.errorMessageCount(),
-            try allocPrintCmd(arena, null, argv),
+            s.result_error_bundle.error_message_count(),
+            try alloc_print_cmd(arena, null, argv),
         });
     }
 
@@ -431,7 +431,7 @@ fn send_message(file: std.fs.File, tag: std.zig.Client.Message.Tag) !void {
         .tag = tag,
         .bytes_len = 0,
     };
-    try file.writeAll(std.mem.asBytes(&header));
+    try file.write_all(std.mem.as_bytes(&header));
 }
 
 pub fn handle_verbose(
@@ -439,7 +439,7 @@ pub fn handle_verbose(
     opt_cwd: ?[]const u8,
     argv: []const []const u8,
 ) error{OutOfMemory}!void {
-    return handleVerbose2(b, opt_cwd, null, argv);
+    return handle_verbose2(b, opt_cwd, null, argv);
 }
 
 pub fn handle_verbose2(
@@ -451,7 +451,7 @@ pub fn handle_verbose2(
     if (b.verbose) {
         // Intention of verbose is to print all sub-process command lines to
         // stderr before spawning them.
-        const text = try allocPrintCmd2(b.allocator, opt_cwd, opt_env, argv);
+        const text = try alloc_print_cmd2(b.allocator, opt_cwd, opt_env, argv);
         std.debug.print("{s}\n", .{text});
     }
 }
@@ -464,7 +464,7 @@ pub inline fn handle_child_proc_unsupported(
     if (!std.process.can_spawn) {
         return s.fail(
             "unable to execute the following command: host cannot spawn child processes\n{s}",
-            .{try allocPrintCmd(s.owner.allocator, opt_cwd, argv)},
+            .{try alloc_print_cmd(s.owner.allocator, opt_cwd, argv)},
         );
     }
 }
@@ -481,14 +481,14 @@ pub fn handle_child_process_term(
             if (code != 0) {
                 return s.fail(
                     "the following command exited with error code {d}:\n{s}",
-                    .{ code, try allocPrintCmd(arena, opt_cwd, argv) },
+                    .{ code, try alloc_print_cmd(arena, opt_cwd, argv) },
                 );
             }
         },
         .Signal, .Stopped, .Unknown => {
             return s.fail(
                 "the following command terminated unexpectedly:\n{s}",
-                .{try allocPrintCmd(arena, opt_cwd, argv)},
+                .{try alloc_print_cmd(arena, opt_cwd, argv)},
             );
         },
     }
@@ -499,7 +499,7 @@ pub fn alloc_print_cmd(
     opt_cwd: ?[]const u8,
     argv: []const []const u8,
 ) Allocator.Error![]u8 {
-    return allocPrintCmd2(arena, opt_cwd, null, argv);
+    return alloc_print_cmd2(arena, opt_cwd, null, argv);
 }
 
 pub fn alloc_print_cmd2(
@@ -511,7 +511,7 @@ pub fn alloc_print_cmd2(
     var buf: std.ArrayListUnmanaged(u8) = .{};
     if (opt_cwd) |cwd| try buf.writer(arena).print("cd {s} && ", .{cwd});
     if (opt_env) |env| {
-        const process_env_map = std.process.getEnvMap(arena) catch std.process.EnvMap.init(arena);
+        const process_env_map = std.process.get_env_map(arena) catch std.process.EnvMap.init(arena);
         var it = env.iterator();
         while (it.next()) |entry| {
             const key = entry.key_ptr.*;
@@ -525,11 +525,11 @@ pub fn alloc_print_cmd2(
     for (argv) |arg| {
         try buf.writer(arena).print("{s} ", .{arg});
     }
-    return buf.toOwnedSlice(arena);
+    return buf.to_owned_slice(arena);
 }
 
 pub fn cache_hit(s: *Step, man: *std.Build.Cache.Manifest) !bool {
-    s.result_cached = man.hit() catch |err| return failWithCacheError(s, man, err);
+    s.result_cached = man.hit() catch |err| return fail_with_cache_error(s, man, err);
     return s.result_cached;
 }
 
@@ -541,9 +541,9 @@ fn fail_with_cache_error(s: *Step, man: *const std.Build.Cache.Manifest, err: an
 }
 
 pub fn write_manifest(s: *Step, man: *std.Build.Cache.Manifest) !void {
-    if (s.test_results.isSuccess()) {
-        man.writeManifest() catch |err| {
-            try s.addError("unable to write cache manifest: {s}", .{@errorName(err)});
+    if (s.test_results.is_success()) {
+        man.write_manifest() catch |err| {
+            try s.add_error("unable to write cache manifest: {s}", .{@errorName(err)});
         };
     }
 }

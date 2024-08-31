@@ -67,11 +67,11 @@ pub const TokenIterator = struct {
     }
 
     pub fn seek_by(self: *TokenIterator, offset: isize) void {
-        const new_pos = @as(isize, @bitCast(self.pos)) + offset;
+        const new_pos = @as(isize, @bit_cast(self.pos)) + offset;
         if (new_pos < 0) {
             self.pos = 0;
         } else {
-            self.pos = @as(usize, @intCast(new_pos));
+            self.pos = @as(usize, @int_cast(new_pos));
         }
     }
 };
@@ -87,7 +87,7 @@ fn string_matches_pattern(comptime pattern: []const u8, slice: []const u8) bool 
 }
 
 fn matches_pattern(self: Tokenizer, comptime pattern: []const u8) bool {
-    return stringMatchesPattern(pattern, self.buffer[self.index..]);
+    return string_matches_pattern(pattern, self.buffer[self.index..]);
 }
 
 pub fn next(self: *Tokenizer) Token {
@@ -127,11 +127,11 @@ pub fn next(self: *Tokenizer) Token {
                     state = .new_line;
                 },
 
-                '-' => if (self.matchesPattern("---")) {
+                '-' => if (self.matches_pattern("---")) {
                     result.id = .doc_start;
                     self.index += "---".len;
                     break;
-                } else if (self.matchesPattern("- ")) {
+                } else if (self.matches_pattern("- ")) {
                     result.id = .seq_item_ind;
                     self.index += "- ".len;
                     break;
@@ -139,7 +139,7 @@ pub fn next(self: *Tokenizer) Token {
                     state = .literal;
                 },
 
-                '.' => if (self.matchesPattern("...")) {
+                '.' => if (self.matches_pattern("...")) {
                     result.id = .doc_end;
                     self.index += "...".len;
                     break;
@@ -240,7 +240,7 @@ pub fn next(self: *Tokenizer) Token {
             },
 
             .single_quoted => switch (c) {
-                '\'' => if (!self.matchesPattern("''")) {
+                '\'' => if (!self.matches_pattern("''")) {
                     result.id = .single_quoted;
                     self.index += 1;
                     break;
@@ -252,7 +252,7 @@ pub fn next(self: *Tokenizer) Token {
 
             .double_quoted => switch (c) {
                 '"' => {
-                    if (stringMatchesPattern("\\", self.buffer[self.index - 1 ..])) {
+                    if (string_matches_pattern("\\", self.buffer[self.index - 1 ..])) {
                         self.index += 1;
                     } else {
                         result.id = .double_quoted;
@@ -306,19 +306,19 @@ fn test_expected(source: []const u8, expected: []const Token.Id) !void {
         if (token.id == .eof) break;
     }
 
-    try testing.expectEqualSlices(Token.Id, expected, given.items);
+    try testing.expect_equal_slices(Token.Id, expected, given.items);
 }
 
 test {
-    std.testing.refAllDecls(@This());
+    std.testing.ref_all_decls(@This());
 }
 
 test "empty doc" {
-    try testExpected("", &[_]Token.Id{.eof});
+    try test_expected("", &[_]Token.Id{.eof});
 }
 
 test "empty doc with explicit markers" {
-    try testExpected(
+    try test_expected(
         \\---
         \\...
     , &[_]Token.Id{
@@ -327,7 +327,7 @@ test "empty doc with explicit markers" {
 }
 
 test "empty doc with explicit markers and a directive" {
-    try testExpected(
+    try test_expected(
         \\--- !tbd-v1
         \\...
     , &[_]Token.Id{
@@ -342,7 +342,7 @@ test "empty doc with explicit markers and a directive" {
 }
 
 test "sequence of values" {
-    try testExpected(
+    try test_expected(
         \\- 0
         \\- 1
         \\- 2
@@ -360,7 +360,7 @@ test "sequence of values" {
 }
 
 test "sequence of sequences" {
-    try testExpected(
+    try test_expected(
         \\- [ val1, val2]
         \\- [val3, val4 ]
     , &[_]Token.Id{
@@ -386,7 +386,7 @@ test "sequence of sequences" {
 }
 
 test "mappings" {
-    try testExpected(
+    try test_expected(
         \\key1: value1
         \\key2: value2
     , &[_]Token.Id{
@@ -404,7 +404,7 @@ test "mappings" {
 }
 
 test "inline mapped sequence of values" {
-    try testExpected(
+    try test_expected(
         \\key :  [ val1, 
         \\          val2 ]
     , &[_]Token.Id{
@@ -427,7 +427,7 @@ test "inline mapped sequence of values" {
 }
 
 test "part of tbd" {
-    try testExpected(
+    try test_expected(
         \\--- !tapi-tbd
         \\tbd-version:     4
         \\targets:         [ x86_64-macos ]
@@ -487,7 +487,7 @@ test "part of tbd" {
 }
 
 test "Unindented list" {
-    try testExpected(
+    try test_expected(
         \\b:
         \\- foo: 1
         \\c: 1
@@ -510,7 +510,7 @@ test "Unindented list" {
 }
 
 test "escape sequences" {
-    try testExpected(
+    try test_expected(
         \\a: 'here''s an apostrophe'
         \\b: "a newline\nand a\ttab"
         \\c: "\"here\" and there"
@@ -534,7 +534,7 @@ test "escape sequences" {
 }
 
 test "comments" {
-    try testExpected(
+    try test_expected(
         \\key: # some comment about the key
         \\# first value
         \\- val1
@@ -560,7 +560,7 @@ test "comments" {
 }
 
 test "quoted literals" {
-    try testExpected(
+    try test_expected(
         \\'#000000'
         \\'[000000'
         \\"&someString"

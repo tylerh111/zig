@@ -69,11 +69,11 @@ pub const Kind = enum {
     /// For example u8 char literals may only specify 0-127 via literals or
     /// character escapes, but may specify up to \xFF via hex escapes.
     pub fn max_codepoint(kind: Kind, comp: *const Compilation) u21 {
-        return @intCast(switch (kind) {
-            .char => std.math.maxInt(u7),
-            .wide => @min(0x10FFFF, comp.types.wchar.maxInt(comp)),
-            .utf_8 => std.math.maxInt(u7),
-            .utf_16 => std.math.maxInt(u16),
+        return @int_cast(switch (kind) {
+            .char => std.math.max_int(u7),
+            .wide => @min(0x10FFFF, comp.types.wchar.max_int(comp)),
+            .utf_8 => std.math.max_int(u7),
+            .utf_16 => std.math.max_int(u16),
             .utf_32 => 0x10FFFF,
             .unterminated => unreachable,
         });
@@ -81,11 +81,11 @@ pub const Kind = enum {
 
     /// Largest integer that can be represented by this character kind
     pub fn max_int(kind: Kind, comp: *const Compilation) u32 {
-        return @intCast(switch (kind) {
-            .char, .utf_8 => std.math.maxInt(u8),
-            .wide => comp.types.wchar.maxInt(comp),
-            .utf_16 => std.math.maxInt(u16),
-            .utf_32 => std.math.maxInt(u32),
+        return @int_cast(switch (kind) {
+            .char, .utf_8 => std.math.max_int(u8),
+            .wide => comp.types.wchar.max_int(comp),
+            .utf_16 => std.math.max_int(u16),
+            .utf_32 => std.math.max_int(u32),
             .unterminated => unreachable,
         });
     }
@@ -134,7 +134,7 @@ pub const Kind = enum {
 
     /// Required alignment within aro (on compiler host) for writing to Interner.strings.
     pub fn internal_storage_alignment(kind: Kind, comp: *const Compilation) usize {
-        return switch (kind.charUnitSize(comp)) {
+        return switch (kind.char_unit_size(comp)) {
             inline else => |size| @alignOf(size.Type()),
         };
     }
@@ -144,8 +144,8 @@ pub const Kind = enum {
         return switch (kind) {
             .unterminated => unreachable,
             .char => .{ .specifier = .char },
-            .utf_8 => if (comp.langopts.hasChar8_T()) .{ .specifier = .uchar } else .{ .specifier = .char },
-            else => kind.charLiteralType(comp),
+            .utf_8 => if (comp.langopts.has_char8_t()) .{ .specifier = .uchar } else .{ .specifier = .char },
+            else => kind.char_literal_type(comp),
         };
     }
 };
@@ -210,7 +210,7 @@ pub const Parser = struct {
 
         const start = self.i;
         if (self.literal[start] != '\\') {
-            self.i = mem.indexOfScalarPos(u8, self.literal, start + 1, '\\') orelse self.literal.len;
+            self.i = mem.index_of_scalar_pos(u8, self.literal, start + 1, '\\') orelse self.literal.len;
             const unescaped_slice = self.literal[start..self.i];
 
             const view = std.unicode.Utf8View.init(unescaped_slice) catch {
@@ -224,8 +224,8 @@ pub const Parser = struct {
             return .{ .utf8_text = view };
         }
         switch (self.literal[start + 1]) {
-            'u', 'U' => return self.parseUnicodeEscape(),
-            else => return self.parseEscapedChar(),
+            'u', 'U' => return self.parse_unicode_escape(),
+            else => return self.parse_escaped_char(),
         }
     }
 
@@ -238,8 +238,8 @@ pub const Parser = struct {
         std.debug.assert(kind == 'u' or kind == 'U');
 
         self.i += 2;
-        if (self.i >= self.literal.len or !std.ascii.isHex(self.literal[self.i])) {
-            self.err(.missing_hex_escape, .{ .ascii = @intCast(kind) });
+        if (self.i >= self.literal.len or !std.ascii.is_hex(self.literal[self.i])) {
+            self.err(.missing_hex_escape, .{ .ascii = @int_cast(kind) });
             return null;
         }
         const expected_len: usize = if (kind == 'u') 4 else 8;
@@ -250,11 +250,11 @@ pub const Parser = struct {
         for (self.literal[self.i..], 0..) |c, i| {
             if (i == expected_len) break;
 
-            const char = std.fmt.charToDigit(c, 16) catch {
+            const char = std.fmt.char_to_digit(c, 16) catch {
                 break;
             };
 
-            val, const overflow = @shlWithOverflow(val, 4);
+            val, const overflow = @shl_with_overflow(val, 4);
             overflowed = overflowed or overflow != 0;
             val |= char;
             count += 1;
@@ -262,7 +262,7 @@ pub const Parser = struct {
         self.i += expected_len;
 
         if (overflowed) {
-            self.err(.escape_sequence_overflow, .{ .offset = start + self.prefixLen() });
+            self.err(.escape_sequence_overflow, .{ .offset = start + self.prefix_len() });
             return null;
         }
 
@@ -271,8 +271,8 @@ pub const Parser = struct {
             return null;
         }
 
-        if (val > std.math.maxInt(u21) or !std.unicode.utf8ValidCodepoint(@intCast(val))) {
-            self.err(.invalid_universal_character, .{ .offset = start + self.prefixLen() });
+        if (val > std.math.max_int(u21) or !std.unicode.utf8_valid_codepoint(@int_cast(val))) {
+            self.err(.invalid_universal_character, .{ .offset = start + self.prefix_len() });
             return null;
         }
 
@@ -282,12 +282,12 @@ pub const Parser = struct {
         }
 
         if (val < 0xA0 and (val != '$' and val != '@' and val != '`')) {
-            const is_error = !self.comp.langopts.standard.atLeast(.c23);
+            const is_error = !self.comp.langopts.standard.at_least(.c23);
             if (val >= 0x20 and val <= 0x7F) {
                 if (is_error) {
-                    self.err(.ucn_basic_char_error, .{ .ascii = @intCast(val) });
+                    self.err(.ucn_basic_char_error, .{ .ascii = @int_cast(val) });
                 } else {
-                    self.warn(.ucn_basic_char_warning, .{ .ascii = @intCast(val) });
+                    self.warn(.ucn_basic_char_warning, .{ .ascii = @int_cast(val) });
                 }
             } else {
                 if (is_error) {
@@ -299,7 +299,7 @@ pub const Parser = struct {
         }
 
         self.warn(.c89_ucn_in_literal, .{ .none = {} });
-        return .{ .codepoint = @intCast(val) };
+        return .{ .codepoint = @int_cast(val) };
     }
 
     fn parse_escaped_char(self: *Parser) Item {
@@ -319,20 +319,20 @@ pub const Parser = struct {
             'a' => return .{ .value = 0x07 },
             'b' => return .{ .value = 0x08 },
             'e', 'E' => {
-                self.warn(.non_standard_escape_char, .{ .invalid_escape = .{ .char = c, .offset = @intCast(self.i) } });
+                self.warn(.non_standard_escape_char, .{ .invalid_escape = .{ .char = c, .offset = @int_cast(self.i) } });
                 return .{ .value = 0x1B };
             },
             '(', '{', '[', '%' => {
-                self.warn(.non_standard_escape_char, .{ .invalid_escape = .{ .char = c, .offset = @intCast(self.i) } });
+                self.warn(.non_standard_escape_char, .{ .invalid_escape = .{ .char = c, .offset = @int_cast(self.i) } });
                 return .{ .value = c };
             },
             'f' => return .{ .value = 0x0C },
             'v' => return .{ .value = 0x0B },
-            'x' => return .{ .value = self.parseNumberEscape(.hex) },
-            '0'...'7' => return .{ .value = self.parseNumberEscape(.octal) },
-            'u', 'U' => unreachable, // handled by parseUnicodeEscape
+            'x' => return .{ .value = self.parse_number_escape(.hex) },
+            '0'...'7' => return .{ .value = self.parse_number_escape(.octal) },
+            'u', 'U' => unreachable, // handled by parse_unicode_escape
             else => {
-                self.warn(.unknown_escape_sequence, .{ .invalid_escape = .{ .char = c, .offset = @intCast(self.i) } });
+                self.warn(.unknown_escape_sequence, .{ .invalid_escape = .{ .char = c, .offset = @int_cast(self.i) } });
                 return .{ .value = c };
             },
         }
@@ -352,14 +352,14 @@ pub const Parser = struct {
             },
         };
         for (slice) |c| {
-            const char = std.fmt.charToDigit(c, @intFromEnum(base)) catch break;
-            val, const overflow = @shlWithOverflow(val, base.log2());
+            const char = std.fmt.char_to_digit(c, @int_from_enum(base)) catch break;
+            val, const overflow = @shl_with_overflow(val, base.log2());
             if (overflow != 0) overflowed = true;
             val += char;
             count += 1;
         }
-        if (overflowed or val > self.kind.maxInt(self.comp)) {
-            self.err(.escape_sequence_overflow, .{ .offset = start + self.prefixLen() });
+        if (overflowed or val > self.kind.max_int(self.comp)) {
+            self.err(.escape_sequence_overflow, .{ .offset = start + self.prefix_len() });
             return 0;
         }
         if (count == 0) {

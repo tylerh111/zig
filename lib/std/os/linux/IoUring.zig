@@ -21,7 +21,7 @@ features: u32,
 /// see https://github.com/torvalds/linux/blob/v5.8/fs/io_uring.c#L8027-L8050.
 /// Matches the interface of io_uring_queue_init() in liburing.
 pub fn init(entries: u16, flags: u32) !IoUring {
-    var params = mem.zeroInit(linux.io_uring_params, .{
+    var params = mem.zero_init(linux.io_uring_params, .{
         .flags = flags,
         .sq_thread_idle = 1000,
     });
@@ -34,7 +34,7 @@ pub fn init(entries: u16, flags: u32) !IoUring {
 /// Matches the interface of io_uring_queue_init_params() in liburing.
 pub fn init_params(entries: u16, p: *linux.io_uring_params) !IoUring {
     if (entries == 0) return error.EntriesZero;
-    if (!std.math.isPowerOfTwo(entries)) return error.EntriesNotPowerOfTwo;
+    if (!std.math.is_power_of_two(entries)) return error.EntriesNotPowerOfTwo;
 
     assert(p.sq_entries == 0);
     assert(p.cq_entries == 0 or p.flags & linux.IORING_SETUP_CQSIZE != 0);
@@ -59,9 +59,9 @@ pub fn init_params(entries: u16, p: *linux.io_uring_params) !IoUring {
         // or a container seccomp policy prohibits io_uring syscalls:
         .PERM => return error.PermissionDenied,
         .NOSYS => return error.SystemOutdated,
-        else => |errno| return posix.unexpectedErrno(errno),
+        else => |errno| return posix.unexpected_errno(errno),
     }
-    const fd = @as(posix.fd_t, @intCast(res));
+    const fd = @as(posix.fd_t, @int_cast(res));
     assert(fd >= 0);
     errdefer posix.close(fd);
 
@@ -200,9 +200,9 @@ pub fn enter(self: *IoUring, to_submit: u32, min_complete: u32, flags: u32) !u32
         // The operation was interrupted by a delivery of a signal before it could complete.
         // This can happen while waiting for events with IORING_ENTER_GETEVENTS:
         .INTR => return error.SignalInterrupt,
-        else => |errno| return posix.unexpectedErrno(errno),
+        else => |errno| return posix.unexpected_errno(errno),
     }
-    return @as(u32, @intCast(res));
+    return @as(u32, @int_cast(res));
 }
 
 /// Sync internal state with kernel ring state on the SQ side.
@@ -420,10 +420,10 @@ pub fn write(
 
 /// Queues (but does not submit) an SQE to perform a `splice(2)`
 /// Either `fd_in` or `fd_out` must be a pipe.
-/// If `fd_in` refers to a pipe, `off_in` is ignored and must be set to std.math.maxInt(u64).
-/// If `fd_in` does not refer to a pipe and `off_in` is maxInt(u64), then `len` are read
+/// If `fd_in` refers to a pipe, `off_in` is ignored and must be set to std.math.max_int(u64).
+/// If `fd_in` does not refer to a pipe and `off_in` is max_int(u64), then `len` are read
 /// from `fd_in` starting from the file offset, which is incremented by the number of bytes read.
-/// If `fd_in` does not refer to a pipe and `off_in` is not maxInt(u64), then the starting offset of `fd_in` will be `off_in`.
+/// If `fd_in` does not refer to a pipe and `off_in` is not max_int(u64), then the starting offset of `fd_in` will be `off_in`.
 /// This splice operation can be used to implement sendfile by splicing to an intermediate pipe first,
 /// then splice to the final destination. In fact, the implementation of sendfile in kernel uses splice internally.
 ///
@@ -1148,8 +1148,8 @@ pub fn register_files(self: *IoUring, fds: []const posix.fd_t) !void {
     const res = linux.io_uring_register(
         self.fd,
         .REGISTER_FILES,
-        @as(*const anyopaque, @ptrCast(fds.ptr)),
-        @as(u32, @intCast(fds.len)),
+        @as(*const anyopaque, @ptr_cast(fds.ptr)),
+        @as(u32, @int_cast(fds.len)),
     );
     try handle_registration_result(res);
 }
@@ -1173,14 +1173,14 @@ pub fn register_files_update(self: *IoUring, offset: u32, fds: []const posix.fd_
     var update = FilesUpdate{
         .offset = offset,
         .resv = @as(u32, 0),
-        .fds = @as(u64, @intFromPtr(fds.ptr)),
+        .fds = @as(u64, @int_from_ptr(fds.ptr)),
     };
 
     const res = linux.io_uring_register(
         self.fd,
         .REGISTER_FILES_UPDATE,
-        @as(*const anyopaque, @ptrCast(&update)),
-        @as(u32, @intCast(fds.len)),
+        @as(*const anyopaque, @ptr_cast(&update)),
+        @as(u32, @int_cast(fds.len)),
     );
     try handle_registration_result(res);
 }
@@ -1193,7 +1193,7 @@ pub fn register_eventfd(self: *IoUring, fd: posix.fd_t) !void {
     const res = linux.io_uring_register(
         self.fd,
         .REGISTER_EVENTFD,
-        @as(*const anyopaque, @ptrCast(&fd)),
+        @as(*const anyopaque, @ptr_cast(&fd)),
         1,
     );
     try handle_registration_result(res);
@@ -1208,7 +1208,7 @@ pub fn register_eventfd_async(self: *IoUring, fd: posix.fd_t) !void {
     const res = linux.io_uring_register(
         self.fd,
         .REGISTER_EVENTFD_ASYNC,
-        @as(*const anyopaque, @ptrCast(&fd)),
+        @as(*const anyopaque, @ptr_cast(&fd)),
         1,
     );
     try handle_registration_result(res);
@@ -1233,7 +1233,7 @@ pub fn register_buffers(self: *IoUring, buffers: []const posix.iovec) !void {
         self.fd,
         .REGISTER_BUFFERS,
         buffers.ptr,
-        @as(u32, @intCast(buffers.len)),
+        @as(u32, @int_cast(buffers.len)),
     );
     try handle_registration_result(res);
 }
@@ -1245,7 +1245,7 @@ pub fn unregister_buffers(self: *IoUring) !void {
     switch (linux.E.init(res)) {
         .SUCCESS => {},
         .NXIO => return error.BuffersNotRegistered,
-        else => |errno| return posix.unexpectedErrno(errno),
+        else => |errno| return posix.unexpected_errno(errno),
     }
 }
 
@@ -1267,7 +1267,7 @@ fn handle_registration_result(res: usize) !void {
         .NOMEM => return error.SystemResources,
         // Attempt to register files on a ring already registering files or being torn down:
         .NXIO => return error.RingShuttingDownOrAlreadyRegisteringFiles,
-        else => |errno| return posix.unexpectedErrno(errno),
+        else => |errno| return posix.unexpected_errno(errno),
     }
 }
 
@@ -1278,7 +1278,7 @@ pub fn unregister_files(self: *IoUring) !void {
     switch (linux.E.init(res)) {
         .SUCCESS => {},
         .NXIO => return error.FilesNotRegistered,
-        else => |errno| return posix.unexpectedErrno(errno),
+        else => |errno| return posix.unexpected_errno(errno),
     }
 }
 
@@ -1355,8 +1355,8 @@ pub const SubmissionQueue = struct {
         assert(fd >= 0);
         assert((p.features & linux.IORING_FEAT_SINGLE_MMAP) != 0);
         const size = @max(
-            p.sq_off.array + p.sq_entries * @sizeOf(u32),
-            p.cq_off.cqes + p.cq_entries * @sizeOf(linux.io_uring_cqe),
+            p.sq_off.array + p.sq_entries * @size_of(u32),
+            p.cq_off.cqes + p.cq_entries * @size_of(linux.io_uring_cqe),
         );
         const mmap = try posix.mmap(
             null,
@@ -1371,7 +1371,7 @@ pub const SubmissionQueue = struct {
 
         // The motivation for the `sqes` and `array` indirection is to make it possible for the
         // application to preallocate static linux.io_uring_sqe entries and then replay them when needed.
-        const size_sqes = p.sq_entries * @sizeOf(linux.io_uring_sqe);
+        const size_sqes = p.sq_entries * @size_of(linux.io_uring_sqe);
         const mmap_sqes = try posix.mmap(
             null,
             size_sqes,
@@ -1383,17 +1383,17 @@ pub const SubmissionQueue = struct {
         errdefer posix.munmap(mmap_sqes);
         assert(mmap_sqes.len == size_sqes);
 
-        const array: [*]u32 = @ptrCast(@alignCast(&mmap[p.sq_off.array]));
-        const sqes: [*]linux.io_uring_sqe = @ptrCast(@alignCast(&mmap_sqes[0]));
+        const array: [*]u32 = @ptr_cast(@align_cast(&mmap[p.sq_off.array]));
+        const sqes: [*]linux.io_uring_sqe = @ptr_cast(@align_cast(&mmap_sqes[0]));
         // We expect the kernel copies p.sq_entries to the u32 pointed to by p.sq_off.ring_entries,
         // see https://github.com/torvalds/linux/blob/v5.8/fs/io_uring.c#L7843-L7844.
-        assert(p.sq_entries == @as(*u32, @ptrCast(@alignCast(&mmap[p.sq_off.ring_entries]))).*);
+        assert(p.sq_entries == @as(*u32, @ptr_cast(@align_cast(&mmap[p.sq_off.ring_entries]))).*);
         return SubmissionQueue{
-            .head = @ptrCast(@alignCast(&mmap[p.sq_off.head])),
-            .tail = @ptrCast(@alignCast(&mmap[p.sq_off.tail])),
-            .mask = @as(*u32, @ptrCast(@alignCast(&mmap[p.sq_off.ring_mask]))).*,
-            .flags = @ptrCast(@alignCast(&mmap[p.sq_off.flags])),
-            .dropped = @ptrCast(@alignCast(&mmap[p.sq_off.dropped])),
+            .head = @ptr_cast(@align_cast(&mmap[p.sq_off.head])),
+            .tail = @ptr_cast(@align_cast(&mmap[p.sq_off.tail])),
+            .mask = @as(*u32, @ptr_cast(@align_cast(&mmap[p.sq_off.ring_mask]))).*,
+            .flags = @ptr_cast(@align_cast(&mmap[p.sq_off.flags])),
+            .dropped = @ptr_cast(@align_cast(&mmap[p.sq_off.dropped])),
             .array = array[0..p.sq_entries],
             .sqes = sqes[0..p.sq_entries],
             .mmap = mmap,
@@ -1418,13 +1418,13 @@ pub const CompletionQueue = struct {
         assert(fd >= 0);
         assert((p.features & linux.IORING_FEAT_SINGLE_MMAP) != 0);
         const mmap = sq.mmap;
-        const cqes: [*]linux.io_uring_cqe = @ptrCast(@alignCast(&mmap[p.cq_off.cqes]));
-        assert(p.cq_entries == @as(*u32, @ptrCast(@alignCast(&mmap[p.cq_off.ring_entries]))).*);
+        const cqes: [*]linux.io_uring_cqe = @ptr_cast(@align_cast(&mmap[p.cq_off.cqes]));
+        assert(p.cq_entries == @as(*u32, @ptr_cast(@align_cast(&mmap[p.cq_off.ring_entries]))).*);
         return CompletionQueue{
-            .head = @ptrCast(@alignCast(&mmap[p.cq_off.head])),
-            .tail = @ptrCast(@alignCast(&mmap[p.cq_off.tail])),
-            .mask = @as(*u32, @ptrCast(@alignCast(&mmap[p.cq_off.ring_mask]))).*,
-            .overflow = @ptrCast(@alignCast(&mmap[p.cq_off.overflow])),
+            .head = @ptr_cast(@align_cast(&mmap[p.cq_off.head])),
+            .tail = @ptr_cast(@align_cast(&mmap[p.cq_off.tail])),
+            .mask = @as(*u32, @ptr_cast(@align_cast(&mmap[p.cq_off.ring_mask]))).*,
+            .overflow = @ptr_cast(@align_cast(&mmap[p.cq_off.overflow])),
             .cqes = cqes[0..p.cq_entries],
         };
     }
@@ -1528,7 +1528,7 @@ pub const BufferGroup = struct {
     // Get buffer by CQE.
     pub fn get_cqe(self: *BufferGroup, cqe: linux.io_uring_cqe) ![]u8 {
         const buffer_id = try cqe.buffer_id();
-        const used_len = @as(usize, @intCast(cqe.res));
+        const used_len = @as(usize, @int_cast(cqe.res));
         return self.get(buffer_id)[0..used_len];
     }
 
@@ -1557,9 +1557,9 @@ pub const BufferGroup = struct {
 /// `group_id` is the chosen buffer group ID, unique in IO_Uring.
 pub fn setup_buf_ring(fd: posix.fd_t, entries: u16, group_id: u16) !*align(mem.page_size) linux.io_uring_buf_ring {
     if (entries == 0 or entries > 1 << 15) return error.EntriesNotInRange;
-    if (!std.math.isPowerOfTwo(entries)) return error.EntriesNotPowerOfTwo;
+    if (!std.math.is_power_of_two(entries)) return error.EntriesNotPowerOfTwo;
 
-    const mmap_size = @as(usize, entries) * @sizeOf(linux.io_uring_buf);
+    const mmap_size = @as(usize, entries) * @size_of(linux.io_uring_buf);
     const mmap = try posix.mmap(
         null,
         mmap_size,
@@ -1571,13 +1571,13 @@ pub fn setup_buf_ring(fd: posix.fd_t, entries: u16, group_id: u16) !*align(mem.p
     errdefer posix.munmap(mmap);
     assert(mmap.len == mmap_size);
 
-    const br: *align(mem.page_size) linux.io_uring_buf_ring = @ptrCast(mmap.ptr);
-    try register_buf_ring(fd, @intFromPtr(br), entries, group_id);
+    const br: *align(mem.page_size) linux.io_uring_buf_ring = @ptr_cast(mmap.ptr);
+    try register_buf_ring(fd, @int_from_ptr(br), entries, group_id);
     return br;
 }
 
 fn register_buf_ring(fd: posix.fd_t, addr: u64, entries: u32, group_id: u16) !void {
-    var reg = mem.zeroInit(linux.io_uring_buf_reg, .{
+    var reg = mem.zero_init(linux.io_uring_buf_reg, .{
         .ring_addr = addr,
         .ring_entries = entries,
         .bgid = group_id,
@@ -1585,20 +1585,20 @@ fn register_buf_ring(fd: posix.fd_t, addr: u64, entries: u32, group_id: u16) !vo
     const res = linux.io_uring_register(
         fd,
         .REGISTER_PBUF_RING,
-        @as(*const anyopaque, @ptrCast(&reg)),
+        @as(*const anyopaque, @ptr_cast(&reg)),
         1,
     );
     try handle_register_buf_ring_result(res);
 }
 
 fn unregister_buf_ring(fd: posix.fd_t, group_id: u16) !void {
-    var reg = mem.zeroInit(linux.io_uring_buf_reg, .{
+    var reg = mem.zero_init(linux.io_uring_buf_reg, .{
         .bgid = group_id,
     });
     const res = linux.io_uring_register(
         fd,
         .UNREGISTER_PBUF_RING,
-        @as(*const anyopaque, @ptrCast(&reg)),
+        @as(*const anyopaque, @ptr_cast(&reg)),
         1,
     );
     try handle_register_buf_ring_result(res);
@@ -1608,7 +1608,7 @@ fn handle_register_buf_ring_result(res: usize) !void {
     switch (linux.E.init(res)) {
         .SUCCESS => {},
         .INVAL => return error.ArgumentsInvalid,
-        else => |errno| return posix.unexpectedErrno(errno),
+        else => |errno| return posix.unexpected_errno(errno),
     }
 }
 
@@ -1616,8 +1616,8 @@ fn handle_register_buf_ring_result(res: usize) !void {
 pub fn free_buf_ring(fd: posix.fd_t, br: *align(mem.page_size) linux.io_uring_buf_ring, entries: u32, group_id: u16) void {
     unregister_buf_ring(fd, group_id) catch {};
     var mmap: []align(mem.page_size) u8 = undefined;
-    mmap.ptr = @ptrCast(br);
-    mmap.len = entries * @sizeOf(linux.io_uring_buf);
+    mmap.ptr = @ptr_cast(br);
+    mmap.len = entries * @size_of(linux.io_uring_buf);
     posix.munmap(mmap);
 }
 
@@ -1644,11 +1644,11 @@ pub fn buf_ring_add(
     mask: u16,
     buffer_offset: u16,
 ) void {
-    const bufs: [*]linux.io_uring_buf = @ptrCast(br);
+    const bufs: [*]linux.io_uring_buf = @ptr_cast(br);
     const buf: *linux.io_uring_buf = &bufs[(br.tail +% buffer_offset) & mask];
 
-    buf.addr = @intFromPtr(buffer.ptr);
-    buf.len = @intCast(buffer.len);
+    buf.addr = @int_from_ptr(buffer.ptr);
+    buf.len = @int_cast(buffer.len);
     buf.bid = buffer_id;
 }
 
@@ -1662,16 +1662,16 @@ pub fn buf_ring_advance(br: *linux.io_uring_buf_ring, count: u16) void {
 test "structs/offsets/entries" {
     if (!is_linux) return error.SkipZigTest;
 
-    try testing.expectEqual(@as(usize, 120), @sizeOf(linux.io_uring_params));
-    try testing.expectEqual(@as(usize, 64), @sizeOf(linux.io_uring_sqe));
-    try testing.expectEqual(@as(usize, 16), @sizeOf(linux.io_uring_cqe));
+    try testing.expect_equal(@as(usize, 120), @size_of(linux.io_uring_params));
+    try testing.expect_equal(@as(usize, 64), @size_of(linux.io_uring_sqe));
+    try testing.expect_equal(@as(usize, 16), @size_of(linux.io_uring_cqe));
 
-    try testing.expectEqual(0, linux.IORING_OFF_SQ_RING);
-    try testing.expectEqual(0x8000000, linux.IORING_OFF_CQ_RING);
-    try testing.expectEqual(0x10000000, linux.IORING_OFF_SQES);
+    try testing.expect_equal(0, linux.IORING_OFF_SQ_RING);
+    try testing.expect_equal(0x8000000, linux.IORING_OFF_CQ_RING);
+    try testing.expect_equal(0x10000000, linux.IORING_OFF_SQES);
 
-    try testing.expectError(error.EntriesZero, IoUring.init(0, 0));
-    try testing.expectError(error.EntriesNotPowerOfTwo, IoUring.init(3, 0));
+    try testing.expect_error(error.EntriesZero, IoUring.init(0, 0));
+    try testing.expect_error(error.EntriesNotPowerOfTwo, IoUring.init(3, 0));
 }
 
 test "nop" {
@@ -1684,11 +1684,11 @@ test "nop" {
     };
     defer {
         ring.deinit();
-        testing.expectEqual(@as(posix.fd_t, -1), ring.fd) catch @panic("test failed");
+        testing.expect_equal(@as(posix.fd_t, -1), ring.fd) catch @panic("test failed");
     }
 
     const sqe = try ring.nop(0xaaaaaaaa);
-    try testing.expectEqual(linux.io_uring_sqe{
+    try testing.expect_equal(linux.io_uring_sqe{
         .opcode = .NOP,
         .flags = 0,
         .ioprio = 0,
@@ -1705,40 +1705,40 @@ test "nop" {
         .resv = 0,
     }, sqe.*);
 
-    try testing.expectEqual(@as(u32, 0), ring.sq.sqe_head);
-    try testing.expectEqual(@as(u32, 1), ring.sq.sqe_tail);
-    try testing.expectEqual(@as(u32, 0), ring.sq.tail.*);
-    try testing.expectEqual(@as(u32, 0), ring.cq.head.*);
-    try testing.expectEqual(@as(u32, 1), ring.sq_ready());
-    try testing.expectEqual(@as(u32, 0), ring.cq_ready());
+    try testing.expect_equal(@as(u32, 0), ring.sq.sqe_head);
+    try testing.expect_equal(@as(u32, 1), ring.sq.sqe_tail);
+    try testing.expect_equal(@as(u32, 0), ring.sq.tail.*);
+    try testing.expect_equal(@as(u32, 0), ring.cq.head.*);
+    try testing.expect_equal(@as(u32, 1), ring.sq_ready());
+    try testing.expect_equal(@as(u32, 0), ring.cq_ready());
 
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
-    try testing.expectEqual(@as(u32, 1), ring.sq.sqe_head);
-    try testing.expectEqual(@as(u32, 1), ring.sq.sqe_tail);
-    try testing.expectEqual(@as(u32, 1), ring.sq.tail.*);
-    try testing.expectEqual(@as(u32, 0), ring.cq.head.*);
-    try testing.expectEqual(@as(u32, 0), ring.sq_ready());
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(@as(u32, 1), ring.sq.sqe_head);
+    try testing.expect_equal(@as(u32, 1), ring.sq.sqe_tail);
+    try testing.expect_equal(@as(u32, 1), ring.sq.tail.*);
+    try testing.expect_equal(@as(u32, 0), ring.cq.head.*);
+    try testing.expect_equal(@as(u32, 0), ring.sq_ready());
 
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xaaaaaaaa,
         .res = 0,
         .flags = 0,
     }, try ring.copy_cqe());
-    try testing.expectEqual(@as(u32, 1), ring.cq.head.*);
-    try testing.expectEqual(@as(u32, 0), ring.cq_ready());
+    try testing.expect_equal(@as(u32, 1), ring.cq.head.*);
+    try testing.expect_equal(@as(u32, 0), ring.cq_ready());
 
     const sqe_barrier = try ring.nop(0xbbbbbbbb);
     sqe_barrier.flags |= linux.IOSQE_IO_DRAIN;
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xbbbbbbbb,
         .res = 0,
         .flags = 0,
     }, try ring.copy_cqe());
-    try testing.expectEqual(@as(u32, 2), ring.sq.sqe_head);
-    try testing.expectEqual(@as(u32, 2), ring.sq.sqe_tail);
-    try testing.expectEqual(@as(u32, 2), ring.sq.tail.*);
-    try testing.expectEqual(@as(u32, 2), ring.cq.head.*);
+    try testing.expect_equal(@as(u32, 2), ring.sq.sqe_head);
+    try testing.expect_equal(@as(u32, 2), ring.sq.sqe_tail);
+    try testing.expect_equal(@as(u32, 2), ring.sq.tail.*);
+    try testing.expect_equal(@as(u32, 2), ring.cq.head.*);
 }
 
 test "readv" {
@@ -1751,7 +1751,7 @@ test "readv" {
     };
     defer ring.deinit();
 
-    const fd = try posix.openZ("/dev/zero", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
+    const fd = try posix.open_z("/dev/zero", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
     defer posix.close(fd);
 
     // Linux Kernel 5.4 supports IORING_REGISTER_FILES but not sparse fd sets (i.e. an fd of -1).
@@ -1768,17 +1768,17 @@ test "readv" {
     var buffer = [_]u8{42} ** 128;
     var iovecs = [_]posix.iovec{posix.iovec{ .base = &buffer, .len = buffer.len }};
     const sqe = try ring.read(0xcccccccc, fd_index, .{ .iovecs = iovecs[0..] }, 0);
-    try testing.expectEqual(linux.IORING_OP.READV, sqe.opcode);
+    try testing.expect_equal(linux.IORING_OP.READV, sqe.opcode);
     sqe.flags |= linux.IOSQE_FIXED_FILE;
 
-    try testing.expectError(error.SubmissionQueueFull, ring.nop(0));
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_error(error.SubmissionQueueFull, ring.nop(0));
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xcccccccc,
         .res = buffer.len,
         .flags = 0,
     }, try ring.copy_cqe());
-    try testing.expectEqualSlices(u8, &([_]u8{0} ** buffer.len), buffer[0..]);
+    try testing.expect_equal_slices(u8, &([_]u8{0} ** buffer.len), buffer[0..]);
 
     try ring.unregister_files();
 }
@@ -1793,11 +1793,11 @@ test "writev/fsync/readv" {
     };
     defer ring.deinit();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     const path = "test_io_uring_writev_fsync_readv";
-    const file = try tmp.dir.createFile(path, .{ .read = true, .truncate = true });
+    const file = try tmp.dir.create_file(path, .{ .read = true, .truncate = true });
     defer file.close();
     const fd = file.handle;
 
@@ -1811,46 +1811,46 @@ test "writev/fsync/readv" {
     };
 
     const sqe_writev = try ring.writev(0xdddddddd, fd, iovecs_write[0..], 17);
-    try testing.expectEqual(linux.IORING_OP.WRITEV, sqe_writev.opcode);
-    try testing.expectEqual(@as(u64, 17), sqe_writev.off);
+    try testing.expect_equal(linux.IORING_OP.WRITEV, sqe_writev.opcode);
+    try testing.expect_equal(@as(u64, 17), sqe_writev.off);
     sqe_writev.flags |= linux.IOSQE_IO_LINK;
 
     const sqe_fsync = try ring.fsync(0xeeeeeeee, fd, 0);
-    try testing.expectEqual(linux.IORING_OP.FSYNC, sqe_fsync.opcode);
-    try testing.expectEqual(fd, sqe_fsync.fd);
+    try testing.expect_equal(linux.IORING_OP.FSYNC, sqe_fsync.opcode);
+    try testing.expect_equal(fd, sqe_fsync.fd);
     sqe_fsync.flags |= linux.IOSQE_IO_LINK;
 
     const sqe_readv = try ring.read(0xffffffff, fd, .{ .iovecs = iovecs_read[0..] }, 17);
-    try testing.expectEqual(linux.IORING_OP.READV, sqe_readv.opcode);
-    try testing.expectEqual(@as(u64, 17), sqe_readv.off);
+    try testing.expect_equal(linux.IORING_OP.READV, sqe_readv.opcode);
+    try testing.expect_equal(@as(u64, 17), sqe_readv.off);
 
-    try testing.expectEqual(@as(u32, 3), ring.sq_ready());
-    try testing.expectEqual(@as(u32, 3), try ring.submit_and_wait(3));
-    try testing.expectEqual(@as(u32, 0), ring.sq_ready());
-    try testing.expectEqual(@as(u32, 3), ring.cq_ready());
+    try testing.expect_equal(@as(u32, 3), ring.sq_ready());
+    try testing.expect_equal(@as(u32, 3), try ring.submit_and_wait(3));
+    try testing.expect_equal(@as(u32, 0), ring.sq_ready());
+    try testing.expect_equal(@as(u32, 3), ring.cq_ready());
 
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xdddddddd,
         .res = buffer_write.len,
         .flags = 0,
     }, try ring.copy_cqe());
-    try testing.expectEqual(@as(u32, 2), ring.cq_ready());
+    try testing.expect_equal(@as(u32, 2), ring.cq_ready());
 
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xeeeeeeee,
         .res = 0,
         .flags = 0,
     }, try ring.copy_cqe());
-    try testing.expectEqual(@as(u32, 1), ring.cq_ready());
+    try testing.expect_equal(@as(u32, 1), ring.cq_ready());
 
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xffffffff,
         .res = buffer_read.len,
         .flags = 0,
     }, try ring.copy_cqe());
-    try testing.expectEqual(@as(u32, 0), ring.cq_ready());
+    try testing.expect_equal(@as(u32, 0), ring.cq_ready());
 
-    try testing.expectEqualSlices(u8, buffer_write[0..], buffer_read[0..]);
+    try testing.expect_equal_slices(u8, buffer_write[0..], buffer_read[0..]);
 }
 
 test "write/read" {
@@ -1863,23 +1863,23 @@ test "write/read" {
     };
     defer ring.deinit();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
     const path = "test_io_uring_write_read";
-    const file = try tmp.dir.createFile(path, .{ .read = true, .truncate = true });
+    const file = try tmp.dir.create_file(path, .{ .read = true, .truncate = true });
     defer file.close();
     const fd = file.handle;
 
     const buffer_write = [_]u8{97} ** 20;
     var buffer_read = [_]u8{98} ** 20;
     const sqe_write = try ring.write(0x11111111, fd, buffer_write[0..], 10);
-    try testing.expectEqual(linux.IORING_OP.WRITE, sqe_write.opcode);
-    try testing.expectEqual(@as(u64, 10), sqe_write.off);
+    try testing.expect_equal(linux.IORING_OP.WRITE, sqe_write.opcode);
+    try testing.expect_equal(@as(u64, 10), sqe_write.off);
     sqe_write.flags |= linux.IOSQE_IO_LINK;
     const sqe_read = try ring.read(0x22222222, fd, .{ .buffer = buffer_read[0..] }, 10);
-    try testing.expectEqual(linux.IORING_OP.READ, sqe_read.opcode);
-    try testing.expectEqual(@as(u64, 10), sqe_read.off);
-    try testing.expectEqual(@as(u32, 2), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.READ, sqe_read.opcode);
+    try testing.expect_equal(@as(u64, 10), sqe_read.off);
+    try testing.expect_equal(@as(u32, 2), try ring.submit());
 
     const cqe_write = try ring.copy_cqe();
     const cqe_read = try ring.copy_cqe();
@@ -1887,17 +1887,17 @@ test "write/read" {
     // https://lwn.net/Articles/809820/
     if (cqe_write.err() == .INVAL) return error.SkipZigTest;
     if (cqe_read.err() == .INVAL) return error.SkipZigTest;
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x11111111,
         .res = buffer_write.len,
         .flags = 0,
     }, cqe_write);
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x22222222,
         .res = buffer_read.len,
         .flags = 0,
     }, cqe_read);
-    try testing.expectEqualSlices(u8, buffer_write[0..], buffer_read[0..]);
+    try testing.expect_equal_slices(u8, buffer_write[0..], buffer_read[0..]);
 }
 
 test "splice/read" {
@@ -1910,14 +1910,14 @@ test "splice/read" {
     };
     defer ring.deinit();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     const path_src = "test_io_uring_splice_src";
-    const file_src = try tmp.dir.createFile(path_src, .{ .read = true, .truncate = true });
+    const file_src = try tmp.dir.create_file(path_src, .{ .read = true, .truncate = true });
     defer file_src.close();
     const fd_src = file_src.handle;
 
     const path_dst = "test_io_uring_splice_dst";
-    const file_dst = try tmp.dir.createFile(path_dst, .{ .read = true, .truncate = true });
+    const file_dst = try tmp.dir.create_file(path_dst, .{ .read = true, .truncate = true });
     defer file_dst.close();
     const fd_dst = file_dst.handle;
 
@@ -1926,24 +1926,24 @@ test "splice/read" {
     _ = try file_src.write(&buffer_write);
 
     const fds = try posix.pipe();
-    const pipe_offset: u64 = std.math.maxInt(u64);
+    const pipe_offset: u64 = std.math.max_int(u64);
 
     const sqe_splice_to_pipe = try ring.splice(0x11111111, fd_src, 0, fds[1], pipe_offset, buffer_write.len);
-    try testing.expectEqual(linux.IORING_OP.SPLICE, sqe_splice_to_pipe.opcode);
-    try testing.expectEqual(@as(u64, 0), sqe_splice_to_pipe.addr);
-    try testing.expectEqual(pipe_offset, sqe_splice_to_pipe.off);
+    try testing.expect_equal(linux.IORING_OP.SPLICE, sqe_splice_to_pipe.opcode);
+    try testing.expect_equal(@as(u64, 0), sqe_splice_to_pipe.addr);
+    try testing.expect_equal(pipe_offset, sqe_splice_to_pipe.off);
     sqe_splice_to_pipe.flags |= linux.IOSQE_IO_LINK;
 
     const sqe_splice_from_pipe = try ring.splice(0x22222222, fds[0], pipe_offset, fd_dst, 10, buffer_write.len);
-    try testing.expectEqual(linux.IORING_OP.SPLICE, sqe_splice_from_pipe.opcode);
-    try testing.expectEqual(pipe_offset, sqe_splice_from_pipe.addr);
-    try testing.expectEqual(@as(u64, 10), sqe_splice_from_pipe.off);
+    try testing.expect_equal(linux.IORING_OP.SPLICE, sqe_splice_from_pipe.opcode);
+    try testing.expect_equal(pipe_offset, sqe_splice_from_pipe.addr);
+    try testing.expect_equal(@as(u64, 10), sqe_splice_from_pipe.off);
     sqe_splice_from_pipe.flags |= linux.IOSQE_IO_LINK;
 
     const sqe_read = try ring.read(0x33333333, fd_dst, .{ .buffer = buffer_read[0..] }, 10);
-    try testing.expectEqual(linux.IORING_OP.READ, sqe_read.opcode);
-    try testing.expectEqual(@as(u64, 10), sqe_read.off);
-    try testing.expectEqual(@as(u32, 3), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.READ, sqe_read.opcode);
+    try testing.expect_equal(@as(u64, 10), sqe_read.off);
+    try testing.expect_equal(@as(u32, 3), try ring.submit());
 
     const cqe_splice_to_pipe = try ring.copy_cqe();
     const cqe_splice_from_pipe = try ring.copy_cqe();
@@ -1953,22 +1953,22 @@ test "splice/read" {
     if (cqe_splice_to_pipe.err() == .INVAL) return error.SkipZigTest;
     if (cqe_splice_from_pipe.err() == .INVAL) return error.SkipZigTest;
     if (cqe_read.err() == .INVAL) return error.SkipZigTest;
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x11111111,
         .res = buffer_write.len,
         .flags = 0,
     }, cqe_splice_to_pipe);
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x22222222,
         .res = buffer_write.len,
         .flags = 0,
     }, cqe_splice_from_pipe);
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x33333333,
         .res = buffer_read.len,
         .flags = 0,
     }, cqe_read);
-    try testing.expectEqualSlices(u8, buffer_write[0..], buffer_read[0..]);
+    try testing.expect_equal_slices(u8, buffer_write[0..], buffer_read[0..]);
 }
 
 test "write_fixed/read_fixed" {
@@ -1981,11 +1981,11 @@ test "write_fixed/read_fixed" {
     };
     defer ring.deinit();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     const path = "test_io_uring_write_read_fixed";
-    const file = try tmp.dir.createFile(path, .{ .read = true, .truncate = true });
+    const file = try tmp.dir.create_file(path, .{ .read = true, .truncate = true });
     defer file.close();
     const fd = file.handle;
 
@@ -2007,33 +2007,33 @@ test "write_fixed/read_fixed" {
     };
 
     const sqe_write = try ring.write_fixed(0x45454545, fd, &buffers[0], 3, 0);
-    try testing.expectEqual(linux.IORING_OP.WRITE_FIXED, sqe_write.opcode);
-    try testing.expectEqual(@as(u64, 3), sqe_write.off);
+    try testing.expect_equal(linux.IORING_OP.WRITE_FIXED, sqe_write.opcode);
+    try testing.expect_equal(@as(u64, 3), sqe_write.off);
     sqe_write.flags |= linux.IOSQE_IO_LINK;
 
     const sqe_read = try ring.read_fixed(0x12121212, fd, &buffers[1], 0, 1);
-    try testing.expectEqual(linux.IORING_OP.READ_FIXED, sqe_read.opcode);
-    try testing.expectEqual(@as(u64, 0), sqe_read.off);
+    try testing.expect_equal(linux.IORING_OP.READ_FIXED, sqe_read.opcode);
+    try testing.expect_equal(@as(u64, 0), sqe_read.off);
 
-    try testing.expectEqual(@as(u32, 2), try ring.submit());
+    try testing.expect_equal(@as(u32, 2), try ring.submit());
 
     const cqe_write = try ring.copy_cqe();
     const cqe_read = try ring.copy_cqe();
 
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x45454545,
-        .res = @as(i32, @intCast(buffers[0].len)),
+        .res = @as(i32, @int_cast(buffers[0].len)),
         .flags = 0,
     }, cqe_write);
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x12121212,
-        .res = @as(i32, @intCast(buffers[1].len)),
+        .res = @as(i32, @int_cast(buffers[1].len)),
         .flags = 0,
     }, cqe_read);
 
-    try testing.expectEqualSlices(u8, "\x00\x00\x00", buffers[1].base[0..3]);
-    try testing.expectEqualSlices(u8, "foobar", buffers[1].base[3..9]);
-    try testing.expectEqualSlices(u8, "zz", buffers[1].base[9..11]);
+    try testing.expect_equal_slices(u8, "\x00\x00\x00", buffers[1].base[0..3]);
+    try testing.expect_equal_slices(u8, "foobar", buffers[1].base[3..9]);
+    try testing.expect_equal_slices(u8, "zz", buffers[1].base[9..11]);
 }
 
 test "openat" {
@@ -2046,7 +2046,7 @@ test "openat" {
     };
     defer ring.deinit();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     const path = "test_io_uring_openat";
@@ -2055,13 +2055,13 @@ test "openat" {
     const path_addr = if (builtin.zig_backend == .stage2_llvm) p: {
         var workaround = path;
         _ = &workaround;
-        break :p @intFromPtr(workaround);
-    } else @intFromPtr(path);
+        break :p @int_from_ptr(workaround);
+    } else @int_from_ptr(path);
 
     const flags: linux.O = .{ .CLOEXEC = true, .ACCMODE = .RDWR, .CREAT = true };
     const mode: posix.mode_t = 0o666;
     const sqe_openat = try ring.openat(0x33333333, tmp.dir.fd, path, flags, mode);
-    try testing.expectEqual(linux.io_uring_sqe{
+    try testing.expect_equal(linux.io_uring_sqe{
         .opcode = .OPENAT,
         .flags = 0,
         .ioprio = 0,
@@ -2069,7 +2069,7 @@ test "openat" {
         .off = 0,
         .addr = path_addr,
         .len = mode,
-        .rw_flags = @bitCast(flags),
+        .rw_flags = @bit_cast(flags),
         .user_data = 0x33333333,
         .buf_index = 0,
         .personality = 0,
@@ -2077,15 +2077,15 @@ test "openat" {
         .addr3 = 0,
         .resv = 0,
     }, sqe_openat.*);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     const cqe_openat = try ring.copy_cqe();
-    try testing.expectEqual(@as(u64, 0x33333333), cqe_openat.user_data);
+    try testing.expect_equal(@as(u64, 0x33333333), cqe_openat.user_data);
     if (cqe_openat.err() == .INVAL) return error.SkipZigTest;
     if (cqe_openat.err() == .BADF) return error.SkipZigTest;
     if (cqe_openat.res <= 0) std.debug.print("\ncqe_openat.res={}\n", .{cqe_openat.res});
     try testing.expect(cqe_openat.res > 0);
-    try testing.expectEqual(@as(u32, 0), cqe_openat.flags);
+    try testing.expect_equal(@as(u32, 0), cqe_openat.flags);
 
     posix.close(cqe_openat.res);
 }
@@ -2100,21 +2100,21 @@ test "close" {
     };
     defer ring.deinit();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     const path = "test_io_uring_close";
-    const file = try tmp.dir.createFile(path, .{});
+    const file = try tmp.dir.create_file(path, .{});
     errdefer file.close();
 
     const sqe_close = try ring.close(0x44444444, file.handle);
-    try testing.expectEqual(linux.IORING_OP.CLOSE, sqe_close.opcode);
-    try testing.expectEqual(file.handle, sqe_close.fd);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.CLOSE, sqe_close.opcode);
+    try testing.expect_equal(file.handle, sqe_close.fd);
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     const cqe_close = try ring.copy_cqe();
     if (cqe_close.err() == .INVAL) return error.SkipZigTest;
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x44444444,
         .res = 0,
         .flags = 0,
@@ -2131,7 +2131,7 @@ test "accept/connect/send/recv" {
     };
     defer ring.deinit();
 
-    const socket_test_harness = try createSocketTestHarness(&ring);
+    const socket_test_harness = try create_socket_test_harness(&ring);
     defer socket_test_harness.close();
 
     const buffer_send = [_]u8{ 1, 0, 1, 0, 1, 0, 1, 0, 1, 0 };
@@ -2140,11 +2140,11 @@ test "accept/connect/send/recv" {
     const sqe_send = try ring.send(0xeeeeeeee, socket_test_harness.client, buffer_send[0..], 0);
     sqe_send.flags |= linux.IOSQE_IO_LINK;
     _ = try ring.recv(0xffffffff, socket_test_harness.server, .{ .buffer = buffer_recv[0..] }, 0);
-    try testing.expectEqual(@as(u32, 2), try ring.submit());
+    try testing.expect_equal(@as(u32, 2), try ring.submit());
 
     const cqe_send = try ring.copy_cqe();
     if (cqe_send.err() == .INVAL) return error.SkipZigTest;
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xeeeeeeee,
         .res = buffer_send.len,
         .flags = 0,
@@ -2152,14 +2152,14 @@ test "accept/connect/send/recv" {
 
     const cqe_recv = try ring.copy_cqe();
     if (cqe_recv.err() == .INVAL) return error.SkipZigTest;
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xffffffff,
         .res = buffer_recv.len,
         // ignore IORING_CQE_F_SOCK_NONEMPTY since it is only set on some systems
         .flags = cqe_recv.flags & linux.IORING_CQE_F_SOCK_NONEMPTY,
     }, cqe_recv);
 
-    try testing.expectEqualSlices(u8, buffer_send[0..buffer_recv.len], buffer_recv[0..]);
+    try testing.expect_equal_slices(u8, buffer_send[0..buffer_recv.len], buffer_recv[0..]);
 }
 
 test "sendmsg/recvmsg" {
@@ -2172,16 +2172,16 @@ test "sendmsg/recvmsg" {
     };
     defer ring.deinit();
 
-    var address_server = try net.Address.parseIp4("127.0.0.1", 0);
+    var address_server = try net.Address.parse_ip4("127.0.0.1", 0);
 
     const server = try posix.socket(address_server.any.family, posix.SOCK.DGRAM, 0);
     defer posix.close(server);
-    try posix.setsockopt(server, posix.SOL.SOCKET, posix.SO.REUSEPORT, &mem.toBytes(@as(c_int, 1)));
-    try posix.setsockopt(server, posix.SOL.SOCKET, posix.SO.REUSEADDR, &mem.toBytes(@as(c_int, 1)));
-    try posix.bind(server, &address_server.any, address_server.getOsSockLen());
+    try posix.setsockopt(server, posix.SOL.SOCKET, posix.SO.REUSEPORT, &mem.to_bytes(@as(c_int, 1)));
+    try posix.setsockopt(server, posix.SOL.SOCKET, posix.SO.REUSEADDR, &mem.to_bytes(@as(c_int, 1)));
+    try posix.bind(server, &address_server.any, address_server.get_os_sock_len());
 
     // set address_server to the OS-chosen IP/port.
-    var slen: posix.socklen_t = address_server.getOsSockLen();
+    var slen: posix.socklen_t = address_server.get_os_sock_len();
     try posix.getsockname(server, &address_server.any, &slen);
 
     const client = try posix.socket(address_server.any.family, posix.SOCK.DGRAM, 0);
@@ -2193,7 +2193,7 @@ test "sendmsg/recvmsg" {
     };
     const msg_send: posix.msghdr_const = .{
         .name = &address_server.any,
-        .namelen = address_server.getOsSockLen(),
+        .namelen = address_server.get_os_sock_len(),
         .iov = &iovecs_send,
         .iovlen = 1,
         .control = null,
@@ -2202,18 +2202,18 @@ test "sendmsg/recvmsg" {
     };
     const sqe_sendmsg = try ring.sendmsg(0x11111111, client, &msg_send, 0);
     sqe_sendmsg.flags |= linux.IOSQE_IO_LINK;
-    try testing.expectEqual(linux.IORING_OP.SENDMSG, sqe_sendmsg.opcode);
-    try testing.expectEqual(client, sqe_sendmsg.fd);
+    try testing.expect_equal(linux.IORING_OP.SENDMSG, sqe_sendmsg.opcode);
+    try testing.expect_equal(client, sqe_sendmsg.fd);
 
     var buffer_recv = [_]u8{0} ** 128;
     var iovecs_recv = [_]posix.iovec{
         posix.iovec{ .base = &buffer_recv, .len = buffer_recv.len },
     };
     const addr = [_]u8{0} ** 4;
-    var address_recv = net.Address.initIp4(addr, 0);
+    var address_recv = net.Address.init_ip4(addr, 0);
     var msg_recv: posix.msghdr = .{
         .name = &address_recv.any,
-        .namelen = address_recv.getOsSockLen(),
+        .namelen = address_recv.get_os_sock_len(),
         .iov = &iovecs_recv,
         .iovlen = 1,
         .control = null,
@@ -2221,32 +2221,32 @@ test "sendmsg/recvmsg" {
         .flags = 0,
     };
     const sqe_recvmsg = try ring.recvmsg(0x22222222, server, &msg_recv, 0);
-    try testing.expectEqual(linux.IORING_OP.RECVMSG, sqe_recvmsg.opcode);
-    try testing.expectEqual(server, sqe_recvmsg.fd);
+    try testing.expect_equal(linux.IORING_OP.RECVMSG, sqe_recvmsg.opcode);
+    try testing.expect_equal(server, sqe_recvmsg.fd);
 
-    try testing.expectEqual(@as(u32, 2), ring.sq_ready());
-    try testing.expectEqual(@as(u32, 2), try ring.submit_and_wait(2));
-    try testing.expectEqual(@as(u32, 0), ring.sq_ready());
-    try testing.expectEqual(@as(u32, 2), ring.cq_ready());
+    try testing.expect_equal(@as(u32, 2), ring.sq_ready());
+    try testing.expect_equal(@as(u32, 2), try ring.submit_and_wait(2));
+    try testing.expect_equal(@as(u32, 0), ring.sq_ready());
+    try testing.expect_equal(@as(u32, 2), ring.cq_ready());
 
     const cqe_sendmsg = try ring.copy_cqe();
-    if (cqe_sendmsg.res == -@as(i32, @intFromEnum(linux.E.INVAL))) return error.SkipZigTest;
-    try testing.expectEqual(linux.io_uring_cqe{
+    if (cqe_sendmsg.res == -@as(i32, @int_from_enum(linux.E.INVAL))) return error.SkipZigTest;
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x11111111,
         .res = buffer_send.len,
         .flags = 0,
     }, cqe_sendmsg);
 
     const cqe_recvmsg = try ring.copy_cqe();
-    if (cqe_recvmsg.res == -@as(i32, @intFromEnum(linux.E.INVAL))) return error.SkipZigTest;
-    try testing.expectEqual(linux.io_uring_cqe{
+    if (cqe_recvmsg.res == -@as(i32, @int_from_enum(linux.E.INVAL))) return error.SkipZigTest;
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x22222222,
         .res = buffer_recv.len,
         // ignore IORING_CQE_F_SOCK_NONEMPTY since it is set non-deterministically
         .flags = cqe_recvmsg.flags & linux.IORING_CQE_F_SOCK_NONEMPTY,
     }, cqe_recvmsg);
 
-    try testing.expectEqualSlices(u8, buffer_send[0..buffer_recv.len], buffer_recv[0..]);
+    try testing.expect_equal_slices(u8, buffer_send[0..buffer_recv.len], buffer_recv[0..]);
 }
 
 test "timeout (after a relative time)" {
@@ -2263,21 +2263,21 @@ test "timeout (after a relative time)" {
     const margin = 5;
     const ts: linux.kernel_timespec = .{ .tv_sec = 0, .tv_nsec = ms * 1000000 };
 
-    const started = std.time.milliTimestamp();
+    const started = std.time.milli_timestamp();
     const sqe = try ring.timeout(0x55555555, &ts, 0, 0);
-    try testing.expectEqual(linux.IORING_OP.TIMEOUT, sqe.opcode);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.TIMEOUT, sqe.opcode);
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
     const cqe = try ring.copy_cqe();
-    const stopped = std.time.milliTimestamp();
+    const stopped = std.time.milli_timestamp();
 
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x55555555,
-        .res = -@as(i32, @intFromEnum(linux.E.TIME)),
+        .res = -@as(i32, @int_from_enum(linux.E.TIME)),
         .flags = 0,
     }, cqe);
 
     // Tests should not depend on timings: skip test if outside margin.
-    if (!std.math.approxEqAbs(f64, ms, @as(f64, @floatFromInt(stopped - started)), margin)) return error.SkipZigTest;
+    if (!std.math.approx_eq_abs(f64, ms, @as(f64, @float_from_int(stopped - started)), margin)) return error.SkipZigTest;
 }
 
 test "timeout (after a number of completions)" {
@@ -2293,20 +2293,20 @@ test "timeout (after a number of completions)" {
     const ts: linux.kernel_timespec = .{ .tv_sec = 3, .tv_nsec = 0 };
     const count_completions: u64 = 1;
     const sqe_timeout = try ring.timeout(0x66666666, &ts, count_completions, 0);
-    try testing.expectEqual(linux.IORING_OP.TIMEOUT, sqe_timeout.opcode);
-    try testing.expectEqual(count_completions, sqe_timeout.off);
+    try testing.expect_equal(linux.IORING_OP.TIMEOUT, sqe_timeout.opcode);
+    try testing.expect_equal(count_completions, sqe_timeout.off);
     _ = try ring.nop(0x77777777);
-    try testing.expectEqual(@as(u32, 2), try ring.submit());
+    try testing.expect_equal(@as(u32, 2), try ring.submit());
 
     const cqe_nop = try ring.copy_cqe();
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x77777777,
         .res = 0,
         .flags = 0,
     }, cqe_nop);
 
     const cqe_timeout = try ring.copy_cqe();
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x66666666,
         .res = 0,
         .flags = 0,
@@ -2325,15 +2325,15 @@ test "timeout_remove" {
 
     const ts: linux.kernel_timespec = .{ .tv_sec = 3, .tv_nsec = 0 };
     const sqe_timeout = try ring.timeout(0x88888888, &ts, 0, 0);
-    try testing.expectEqual(linux.IORING_OP.TIMEOUT, sqe_timeout.opcode);
-    try testing.expectEqual(@as(u64, 0x88888888), sqe_timeout.user_data);
+    try testing.expect_equal(linux.IORING_OP.TIMEOUT, sqe_timeout.opcode);
+    try testing.expect_equal(@as(u64, 0x88888888), sqe_timeout.user_data);
 
     const sqe_timeout_remove = try ring.timeout_remove(0x99999999, 0x88888888, 0);
-    try testing.expectEqual(linux.IORING_OP.TIMEOUT_REMOVE, sqe_timeout_remove.opcode);
-    try testing.expectEqual(@as(u64, 0x88888888), sqe_timeout_remove.addr);
-    try testing.expectEqual(@as(u64, 0x99999999), sqe_timeout_remove.user_data);
+    try testing.expect_equal(linux.IORING_OP.TIMEOUT_REMOVE, sqe_timeout_remove.opcode);
+    try testing.expect_equal(@as(u64, 0x88888888), sqe_timeout_remove.addr);
+    try testing.expect_equal(@as(u64, 0x99999999), sqe_timeout_remove.user_data);
 
-    try testing.expectEqual(@as(u32, 2), try ring.submit());
+    try testing.expect_equal(@as(u32, 2), try ring.submit());
 
     // The order in which the CQE arrive is not clearly documented and it changed with kernel 5.18:
     // * kernel 5.10 gives user data 0x88888888 first, 0x99999999 second
@@ -2358,13 +2358,13 @@ test "timeout_remove" {
         try testing.expect(cqe.user_data == 0x88888888 or cqe.user_data == 0x99999999);
 
         if (cqe.user_data == 0x88888888) {
-            try testing.expectEqual(linux.io_uring_cqe{
+            try testing.expect_equal(linux.io_uring_cqe{
                 .user_data = 0x88888888,
-                .res = -@as(i32, @intFromEnum(linux.E.CANCELED)),
+                .res = -@as(i32, @int_from_enum(linux.E.CANCELED)),
                 .flags = 0,
             }, cqe);
         } else if (cqe.user_data == 0x99999999) {
-            try testing.expectEqual(linux.io_uring_cqe{
+            try testing.expect_equal(linux.io_uring_cqe{
                 .user_data = 0x99999999,
                 .res = 0,
                 .flags = 0,
@@ -2383,7 +2383,7 @@ test "accept/connect/recv/link_timeout" {
     };
     defer ring.deinit();
 
-    const socket_test_harness = try createSocketTestHarness(&ring);
+    const socket_test_harness = try create_socket_test_harness(&ring);
     defer socket_test_harness.close();
 
     var buffer_recv = [_]u8{ 0, 1, 0, 1, 0 };
@@ -2395,23 +2395,23 @@ test "accept/connect/recv/link_timeout" {
     _ = try ring.link_timeout(0x22222222, &ts, 0);
 
     const nr_wait = try ring.submit();
-    try testing.expectEqual(@as(u32, 2), nr_wait);
+    try testing.expect_equal(@as(u32, 2), nr_wait);
 
     var i: usize = 0;
     while (i < nr_wait) : (i += 1) {
         const cqe = try ring.copy_cqe();
         switch (cqe.user_data) {
             0xffffffff => {
-                if (cqe.res != -@as(i32, @intFromEnum(linux.E.INTR)) and
-                    cqe.res != -@as(i32, @intFromEnum(linux.E.CANCELED)))
+                if (cqe.res != -@as(i32, @int_from_enum(linux.E.INTR)) and
+                    cqe.res != -@as(i32, @int_from_enum(linux.E.CANCELED)))
                 {
                     std.debug.print("Req 0x{x} got {d}\n", .{ cqe.user_data, cqe.res });
                     try testing.expect(false);
                 }
             },
             0x22222222 => {
-                if (cqe.res != -@as(i32, @intFromEnum(linux.E.ALREADY)) and
-                    cqe.res != -@as(i32, @intFromEnum(linux.E.TIME)))
+                if (cqe.res != -@as(i32, @int_from_enum(linux.E.ALREADY)) and
+                    cqe.res != -@as(i32, @int_from_enum(linux.E.TIME)))
                 {
                     std.debug.print("Req 0x{x} got {d}\n", .{ cqe.user_data, cqe.res });
                     try testing.expect(false);
@@ -2432,20 +2432,20 @@ test "fallocate" {
     };
     defer ring.deinit();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     const path = "test_io_uring_fallocate";
-    const file = try tmp.dir.createFile(path, .{ .truncate = true, .mode = 0o666 });
+    const file = try tmp.dir.create_file(path, .{ .truncate = true, .mode = 0o666 });
     defer file.close();
 
-    try testing.expectEqual(@as(u64, 0), (try file.stat()).size);
+    try testing.expect_equal(@as(u64, 0), (try file.stat()).size);
 
     const len: u64 = 65536;
     const sqe = try ring.fallocate(0xaaaaaaaa, file.handle, 0, 0, len);
-    try testing.expectEqual(linux.IORING_OP.FALLOCATE, sqe.opcode);
-    try testing.expectEqual(file.handle, sqe.fd);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.FALLOCATE, sqe.opcode);
+    try testing.expect_equal(file.handle, sqe.fd);
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     const cqe = try ring.copy_cqe();
     switch (cqe.err()) {
@@ -2459,13 +2459,13 @@ test "fallocate" {
         .OPNOTSUPP => return error.SkipZigTest,
         else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
     }
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xaaaaaaaa,
         .res = 0,
         .flags = 0,
     }, cqe);
 
-    try testing.expectEqual(len, (try file.stat()).size);
+    try testing.expect_equal(len, (try file.stat()).size);
 }
 
 test "statx" {
@@ -2478,15 +2478,15 @@ test "statx" {
     };
     defer ring.deinit();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
     const path = "test_io_uring_statx";
-    const file = try tmp.dir.createFile(path, .{ .truncate = true, .mode = 0o666 });
+    const file = try tmp.dir.create_file(path, .{ .truncate = true, .mode = 0o666 });
     defer file.close();
 
-    try testing.expectEqual(@as(u64, 0), (try file.stat()).size);
+    try testing.expect_equal(@as(u64, 0), (try file.stat()).size);
 
-    try file.writeAll("foobar");
+    try file.write_all("foobar");
 
     var buf: linux.Statx = undefined;
     const sqe = try ring.statx(
@@ -2497,9 +2497,9 @@ test "statx" {
         linux.STATX_SIZE,
         &buf,
     );
-    try testing.expectEqual(linux.IORING_OP.STATX, sqe.opcode);
-    try testing.expectEqual(@as(i32, tmp.dir.fd), sqe.fd);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.STATX, sqe.opcode);
+    try testing.expect_equal(@as(i32, tmp.dir.fd), sqe.fd);
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     const cqe = try ring.copy_cqe();
     switch (cqe.err()) {
@@ -2515,14 +2515,14 @@ test "statx" {
         .BADF => return error.SkipZigTest,
         else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
     }
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xaaaaaaaa,
         .res = 0,
         .flags = 0,
     }, cqe);
 
     try testing.expect(buf.mask & linux.STATX_SIZE == linux.STATX_SIZE);
-    try testing.expectEqual(@as(u64, 6), buf.size);
+    try testing.expect_equal(@as(u64, 6), buf.size);
 }
 
 test "accept/connect/recv/cancel" {
@@ -2535,19 +2535,19 @@ test "accept/connect/recv/cancel" {
     };
     defer ring.deinit();
 
-    const socket_test_harness = try createSocketTestHarness(&ring);
+    const socket_test_harness = try create_socket_test_harness(&ring);
     defer socket_test_harness.close();
 
     var buffer_recv = [_]u8{ 0, 1, 0, 1, 0 };
 
     _ = try ring.recv(0xffffffff, socket_test_harness.server, .{ .buffer = buffer_recv[0..] }, 0);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     const sqe_cancel = try ring.cancel(0x99999999, 0xffffffff, 0);
-    try testing.expectEqual(linux.IORING_OP.ASYNC_CANCEL, sqe_cancel.opcode);
-    try testing.expectEqual(@as(u64, 0xffffffff), sqe_cancel.addr);
-    try testing.expectEqual(@as(u64, 0x99999999), sqe_cancel.user_data);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.ASYNC_CANCEL, sqe_cancel.opcode);
+    try testing.expect_equal(@as(u64, 0xffffffff), sqe_cancel.addr);
+    try testing.expect_equal(@as(u64, 0x99999999), sqe_cancel.user_data);
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     var cqe_recv = try ring.copy_cqe();
     if (cqe_recv.err() == .INVAL) return error.SkipZigTest;
@@ -2562,13 +2562,13 @@ test "accept/connect/recv/cancel" {
         cqe_cancel = a;
     }
 
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xffffffff,
-        .res = -@as(i32, @intFromEnum(linux.E.CANCELED)),
+        .res = -@as(i32, @int_from_enum(linux.E.CANCELED)),
         .flags = 0,
     }, cqe_recv);
 
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x99999999,
         .res = 0,
         .flags = 0,
@@ -2585,7 +2585,7 @@ test "register_files_update" {
     };
     defer ring.deinit();
 
-    const fd = try posix.openZ("/dev/zero", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
+    const fd = try posix.open_z("/dev/zero", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
     defer posix.close(fd);
 
     var registered_fds = [_]posix.fd_t{0} ** 2;
@@ -2603,7 +2603,7 @@ test "register_files_update" {
     // Test IORING_REGISTER_FILES_UPDATE
     // Only available since Linux 5.5
 
-    const fd2 = try posix.openZ("/dev/zero", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
+    const fd2 = try posix.open_z("/dev/zero", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
     defer posix.close(fd2);
 
     registered_fds[fd_index] = fd2;
@@ -2613,16 +2613,16 @@ test "register_files_update" {
     var buffer = [_]u8{42} ** 128;
     {
         const sqe = try ring.read(0xcccccccc, fd_index, .{ .buffer = &buffer }, 0);
-        try testing.expectEqual(linux.IORING_OP.READ, sqe.opcode);
+        try testing.expect_equal(linux.IORING_OP.READ, sqe.opcode);
         sqe.flags |= linux.IOSQE_FIXED_FILE;
 
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
-        try testing.expectEqual(linux.io_uring_cqe{
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(linux.io_uring_cqe{
             .user_data = 0xcccccccc,
             .res = buffer.len,
             .flags = 0,
         }, try ring.copy_cqe());
-        try testing.expectEqualSlices(u8, &([_]u8{0} ** buffer.len), buffer[0..]);
+        try testing.expect_equal_slices(u8, &([_]u8{0} ** buffer.len), buffer[0..]);
     }
 
     // Test with a non-zero offset
@@ -2634,16 +2634,16 @@ test "register_files_update" {
     {
         // Next read should still work since fd_index in the registered file descriptors hasn't been updated yet.
         const sqe = try ring.read(0xcccccccc, fd_index, .{ .buffer = &buffer }, 0);
-        try testing.expectEqual(linux.IORING_OP.READ, sqe.opcode);
+        try testing.expect_equal(linux.IORING_OP.READ, sqe.opcode);
         sqe.flags |= linux.IOSQE_FIXED_FILE;
 
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
-        try testing.expectEqual(linux.io_uring_cqe{
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(linux.io_uring_cqe{
             .user_data = 0xcccccccc,
             .res = buffer.len,
             .flags = 0,
         }, try ring.copy_cqe());
-        try testing.expectEqualSlices(u8, &([_]u8{0} ** buffer.len), buffer[0..]);
+        try testing.expect_equal_slices(u8, &([_]u8{0} ** buffer.len), buffer[0..]);
     }
 
     try ring.register_files_update(0, registered_fds[0..]);
@@ -2651,12 +2651,12 @@ test "register_files_update" {
     {
         // Now this should fail since both fds are sparse (-1)
         const sqe = try ring.read(0xcccccccc, fd_index, .{ .buffer = &buffer }, 0);
-        try testing.expectEqual(linux.IORING_OP.READ, sqe.opcode);
+        try testing.expect_equal(linux.IORING_OP.READ, sqe.opcode);
         sqe.flags |= linux.IOSQE_FIXED_FILE;
 
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
         const cqe = try ring.copy_cqe();
-        try testing.expectEqual(linux.E.BADF, cqe.err());
+        try testing.expect_equal(linux.E.BADF, cqe.err());
     }
 
     try ring.unregister_files();
@@ -2672,25 +2672,25 @@ test "shutdown" {
     };
     defer ring.deinit();
 
-    var address = try net.Address.parseIp4("127.0.0.1", 0);
+    var address = try net.Address.parse_ip4("127.0.0.1", 0);
 
     // Socket bound, expect shutdown to work
     {
         const server = try posix.socket(address.any.family, posix.SOCK.STREAM | posix.SOCK.CLOEXEC, 0);
         defer posix.close(server);
-        try posix.setsockopt(server, posix.SOL.SOCKET, posix.SO.REUSEADDR, &mem.toBytes(@as(c_int, 1)));
-        try posix.bind(server, &address.any, address.getOsSockLen());
+        try posix.setsockopt(server, posix.SOL.SOCKET, posix.SO.REUSEADDR, &mem.to_bytes(@as(c_int, 1)));
+        try posix.bind(server, &address.any, address.get_os_sock_len());
         try posix.listen(server, 1);
 
         // set address to the OS-chosen IP/port.
-        var slen: posix.socklen_t = address.getOsSockLen();
+        var slen: posix.socklen_t = address.get_os_sock_len();
         try posix.getsockname(server, &address.any, &slen);
 
         const shutdown_sqe = try ring.shutdown(0x445445445, server, linux.SHUT.RD);
-        try testing.expectEqual(linux.IORING_OP.SHUTDOWN, shutdown_sqe.opcode);
-        try testing.expectEqual(@as(i32, server), shutdown_sqe.fd);
+        try testing.expect_equal(linux.IORING_OP.SHUTDOWN, shutdown_sqe.opcode);
+        try testing.expect_equal(@as(i32, server), shutdown_sqe.fd);
 
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -2700,7 +2700,7 @@ test "shutdown" {
             else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
         }
 
-        try testing.expectEqual(linux.io_uring_cqe{
+        try testing.expect_equal(linux.io_uring_cqe{
             .user_data = 0x445445445,
             .res = 0,
             .flags = 0,
@@ -2715,14 +2715,14 @@ test "shutdown" {
         const shutdown_sqe = ring.shutdown(0x445445445, server, linux.SHUT.RD) catch |err| switch (err) {
             else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
         };
-        try testing.expectEqual(linux.IORING_OP.SHUTDOWN, shutdown_sqe.opcode);
-        try testing.expectEqual(@as(i32, server), shutdown_sqe.fd);
+        try testing.expect_equal(linux.IORING_OP.SHUTDOWN, shutdown_sqe.opcode);
+        try testing.expect_equal(@as(i32, server), shutdown_sqe.fd);
 
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
-        try testing.expectEqual(@as(u64, 0x445445445), cqe.user_data);
-        try testing.expectEqual(linux.E.NOTCONN, cqe.err());
+        try testing.expect_equal(@as(u64, 0x445445445), cqe.user_data);
+        try testing.expect_equal(linux.E.NOTCONN, cqe.err());
     }
 }
 
@@ -2739,14 +2739,14 @@ test "renameat" {
     const old_path = "test_io_uring_renameat_old";
     const new_path = "test_io_uring_renameat_new";
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     // Write old file with data
 
-    const old_file = try tmp.dir.createFile(old_path, .{ .truncate = true, .mode = 0o666 });
+    const old_file = try tmp.dir.create_file(old_path, .{ .truncate = true, .mode = 0o666 });
     defer old_file.close();
-    try old_file.writeAll("hello");
+    try old_file.write_all("hello");
 
     // Submit renameat
 
@@ -2758,10 +2758,10 @@ test "renameat" {
         new_path,
         0,
     );
-    try testing.expectEqual(linux.IORING_OP.RENAMEAT, sqe.opcode);
-    try testing.expectEqual(@as(i32, tmp.dir.fd), sqe.fd);
-    try testing.expectEqual(@as(i32, tmp.dir.fd), @as(i32, @bitCast(sqe.len)));
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.RENAMEAT, sqe.opcode);
+    try testing.expect_equal(@as(i32, tmp.dir.fd), sqe.fd);
+    try testing.expect_equal(@as(i32, tmp.dir.fd), @as(i32, @bit_cast(sqe.len)));
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     const cqe = try ring.copy_cqe();
     switch (cqe.err()) {
@@ -2770,7 +2770,7 @@ test "renameat" {
         .BADF, .INVAL => return error.SkipZigTest,
         else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
     }
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x12121212,
         .res = 0,
         .flags = 0,
@@ -2778,7 +2778,7 @@ test "renameat" {
 
     // Validate that the old file doesn't exist anymore
     {
-        _ = tmp.dir.openFile(old_path, .{}) catch |err| switch (err) {
+        _ = tmp.dir.open_file(old_path, .{}) catch |err| switch (err) {
             error.FileNotFound => {},
             else => std.debug.panic("unexpected error: {}", .{err}),
         };
@@ -2786,12 +2786,12 @@ test "renameat" {
 
     // Validate that the new file exists with the proper content
     {
-        const new_file = try tmp.dir.openFile(new_path, .{});
+        const new_file = try tmp.dir.open_file(new_path, .{});
         defer new_file.close();
 
         var new_file_data: [16]u8 = undefined;
-        const bytes_read = try new_file.readAll(&new_file_data);
-        try testing.expectEqualStrings("hello", new_file_data[0..bytes_read]);
+        const bytes_read = try new_file.read_all(&new_file_data);
+        try testing.expect_equal_strings("hello", new_file_data[0..bytes_read]);
     }
 }
 
@@ -2807,12 +2807,12 @@ test "unlinkat" {
 
     const path = "test_io_uring_unlinkat";
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     // Write old file with data
 
-    const file = try tmp.dir.createFile(path, .{ .truncate = true, .mode = 0o666 });
+    const file = try tmp.dir.create_file(path, .{ .truncate = true, .mode = 0o666 });
     defer file.close();
 
     // Submit unlinkat
@@ -2823,9 +2823,9 @@ test "unlinkat" {
         path,
         0,
     );
-    try testing.expectEqual(linux.IORING_OP.UNLINKAT, sqe.opcode);
-    try testing.expectEqual(@as(i32, tmp.dir.fd), sqe.fd);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.UNLINKAT, sqe.opcode);
+    try testing.expect_equal(@as(i32, tmp.dir.fd), sqe.fd);
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     const cqe = try ring.copy_cqe();
     switch (cqe.err()) {
@@ -2834,14 +2834,14 @@ test "unlinkat" {
         .BADF, .INVAL => return error.SkipZigTest,
         else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
     }
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x12121212,
         .res = 0,
         .flags = 0,
     }, cqe);
 
     // Validate that the file doesn't exist anymore
-    _ = tmp.dir.openFile(path, .{}) catch |err| switch (err) {
+    _ = tmp.dir.open_file(path, .{}) catch |err| switch (err) {
         error.FileNotFound => {},
         else => std.debug.panic("unexpected error: {}", .{err}),
     };
@@ -2857,7 +2857,7 @@ test "mkdirat" {
     };
     defer ring.deinit();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     const path = "test_io_uring_mkdirat";
@@ -2870,9 +2870,9 @@ test "mkdirat" {
         path,
         0o0755,
     );
-    try testing.expectEqual(linux.IORING_OP.MKDIRAT, sqe.opcode);
-    try testing.expectEqual(@as(i32, tmp.dir.fd), sqe.fd);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.MKDIRAT, sqe.opcode);
+    try testing.expect_equal(@as(i32, tmp.dir.fd), sqe.fd);
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     const cqe = try ring.copy_cqe();
     switch (cqe.err()) {
@@ -2881,14 +2881,14 @@ test "mkdirat" {
         .BADF, .INVAL => return error.SkipZigTest,
         else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
     }
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x12121212,
         .res = 0,
         .flags = 0,
     }, cqe);
 
     // Validate that the directory exist
-    _ = try tmp.dir.openDir(path, .{});
+    _ = try tmp.dir.open_dir(path, .{});
 }
 
 test "symlinkat" {
@@ -2901,13 +2901,13 @@ test "symlinkat" {
     };
     defer ring.deinit();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     const path = "test_io_uring_symlinkat";
     const link_path = "test_io_uring_symlinkat_link";
 
-    const file = try tmp.dir.createFile(path, .{ .truncate = true, .mode = 0o666 });
+    const file = try tmp.dir.create_file(path, .{ .truncate = true, .mode = 0o666 });
     defer file.close();
 
     // Submit symlinkat
@@ -2918,9 +2918,9 @@ test "symlinkat" {
         tmp.dir.fd,
         link_path,
     );
-    try testing.expectEqual(linux.IORING_OP.SYMLINKAT, sqe.opcode);
-    try testing.expectEqual(@as(i32, tmp.dir.fd), sqe.fd);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.SYMLINKAT, sqe.opcode);
+    try testing.expect_equal(@as(i32, tmp.dir.fd), sqe.fd);
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     const cqe = try ring.copy_cqe();
     switch (cqe.err()) {
@@ -2929,14 +2929,14 @@ test "symlinkat" {
         .BADF, .INVAL => return error.SkipZigTest,
         else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
     }
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x12121212,
         .res = 0,
         .flags = 0,
     }, cqe);
 
     // Validate that the symlink exist
-    _ = try tmp.dir.openFile(link_path, .{});
+    _ = try tmp.dir.open_file(link_path, .{});
 }
 
 test "linkat" {
@@ -2949,7 +2949,7 @@ test "linkat" {
     };
     defer ring.deinit();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     const first_path = "test_io_uring_linkat_first";
@@ -2957,9 +2957,9 @@ test "linkat" {
 
     // Write file with data
 
-    const first_file = try tmp.dir.createFile(first_path, .{ .truncate = true, .mode = 0o666 });
+    const first_file = try tmp.dir.create_file(first_path, .{ .truncate = true, .mode = 0o666 });
     defer first_file.close();
-    try first_file.writeAll("hello");
+    try first_file.write_all("hello");
 
     // Submit linkat
 
@@ -2971,10 +2971,10 @@ test "linkat" {
         second_path,
         0,
     );
-    try testing.expectEqual(linux.IORING_OP.LINKAT, sqe.opcode);
-    try testing.expectEqual(@as(i32, tmp.dir.fd), sqe.fd);
-    try testing.expectEqual(@as(i32, tmp.dir.fd), @as(i32, @bitCast(sqe.len)));
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(linux.IORING_OP.LINKAT, sqe.opcode);
+    try testing.expect_equal(@as(i32, tmp.dir.fd), sqe.fd);
+    try testing.expect_equal(@as(i32, tmp.dir.fd), @as(i32, @bit_cast(sqe.len)));
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     const cqe = try ring.copy_cqe();
     switch (cqe.err()) {
@@ -2983,19 +2983,19 @@ test "linkat" {
         .BADF, .INVAL => return error.SkipZigTest,
         else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
     }
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0x12121212,
         .res = 0,
         .flags = 0,
     }, cqe);
 
     // Validate the second file
-    const second_file = try tmp.dir.openFile(second_path, .{});
+    const second_file = try tmp.dir.open_file(second_path, .{});
     defer second_file.close();
 
     var second_file_data: [16]u8 = undefined;
-    const bytes_read = try second_file.readAll(&second_file_data);
-    try testing.expectEqualStrings("hello", second_file_data[0..bytes_read]);
+    const bytes_read = try second_file.read_all(&second_file_data);
+    try testing.expect_equal_strings("hello", second_file_data[0..bytes_read]);
 }
 
 test "provide_buffers: read" {
@@ -3008,7 +3008,7 @@ test "provide_buffers: read" {
     };
     defer ring.deinit();
 
-    const fd = try posix.openZ("/dev/zero", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
+    const fd = try posix.open_z("/dev/zero", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
     defer posix.close(fd);
 
     const group_id = 1337;
@@ -3021,12 +3021,12 @@ test "provide_buffers: read" {
     // Provide 4 buffers
 
     {
-        const sqe = try ring.provide_buffers(0xcccccccc, @as([*]u8, @ptrCast(&buffers)), buffer_len, buffers.len, group_id, buffer_id);
-        try testing.expectEqual(linux.IORING_OP.PROVIDE_BUFFERS, sqe.opcode);
-        try testing.expectEqual(@as(i32, buffers.len), sqe.fd);
-        try testing.expectEqual(@as(u32, buffers[0].len), sqe.len);
-        try testing.expectEqual(@as(u16, group_id), sqe.buf_index);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        const sqe = try ring.provide_buffers(0xcccccccc, @as([*]u8, @ptr_cast(&buffers)), buffer_len, buffers.len, group_id, buffer_id);
+        try testing.expect_equal(linux.IORING_OP.PROVIDE_BUFFERS, sqe.opcode);
+        try testing.expect_equal(@as(i32, buffers.len), sqe.fd);
+        try testing.expect_equal(@as(u32, buffers[0].len), sqe.len);
+        try testing.expect_equal(@as(u16, group_id), sqe.buf_index);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3035,7 +3035,7 @@ test "provide_buffers: read" {
             .SUCCESS => {},
             else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
         }
-        try testing.expectEqual(@as(u64, 0xcccccccc), cqe.user_data);
+        try testing.expect_equal(@as(u64, 0xcccccccc), cqe.user_data);
     }
 
     // Do 4 reads which should consume all buffers
@@ -3043,12 +3043,12 @@ test "provide_buffers: read" {
     var i: usize = 0;
     while (i < buffers.len) : (i += 1) {
         const sqe = try ring.read(0xdededede, fd, .{ .buffer_selection = .{ .group_id = group_id, .len = buffer_len } }, 0);
-        try testing.expectEqual(linux.IORING_OP.READ, sqe.opcode);
-        try testing.expectEqual(@as(i32, fd), sqe.fd);
-        try testing.expectEqual(@as(u64, 0), sqe.addr);
-        try testing.expectEqual(@as(u32, buffer_len), sqe.len);
-        try testing.expectEqual(@as(u16, group_id), sqe.buf_index);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(linux.IORING_OP.READ, sqe.opcode);
+        try testing.expect_equal(@as(i32, fd), sqe.fd);
+        try testing.expect_equal(@as(u64, 0), sqe.addr);
+        try testing.expect_equal(@as(u32, buffer_len), sqe.len);
+        try testing.expect_equal(@as(u16, group_id), sqe.buf_index);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3059,22 +3059,22 @@ test "provide_buffers: read" {
         try testing.expect(cqe.flags & linux.IORING_CQE_F_BUFFER == linux.IORING_CQE_F_BUFFER);
         const used_buffer_id = cqe.flags >> 16;
         try testing.expect(used_buffer_id >= 0 and used_buffer_id <= 3);
-        try testing.expectEqual(@as(i32, buffer_len), cqe.res);
+        try testing.expect_equal(@as(i32, buffer_len), cqe.res);
 
-        try testing.expectEqual(@as(u64, 0xdededede), cqe.user_data);
-        try testing.expectEqualSlices(u8, &([_]u8{0} ** buffer_len), buffers[used_buffer_id][0..@as(usize, @intCast(cqe.res))]);
+        try testing.expect_equal(@as(u64, 0xdededede), cqe.user_data);
+        try testing.expect_equal_slices(u8, &([_]u8{0} ** buffer_len), buffers[used_buffer_id][0..@as(usize, @int_cast(cqe.res))]);
     }
 
     // This read should fail
 
     {
         const sqe = try ring.read(0xdfdfdfdf, fd, .{ .buffer_selection = .{ .group_id = group_id, .len = buffer_len } }, 0);
-        try testing.expectEqual(linux.IORING_OP.READ, sqe.opcode);
-        try testing.expectEqual(@as(i32, fd), sqe.fd);
-        try testing.expectEqual(@as(u64, 0), sqe.addr);
-        try testing.expectEqual(@as(u32, buffer_len), sqe.len);
-        try testing.expectEqual(@as(u16, group_id), sqe.buf_index);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(linux.IORING_OP.READ, sqe.opcode);
+        try testing.expect_equal(@as(i32, fd), sqe.fd);
+        try testing.expect_equal(@as(u64, 0), sqe.addr);
+        try testing.expect_equal(@as(u32, buffer_len), sqe.len);
+        try testing.expect_equal(@as(u16, group_id), sqe.buf_index);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3083,19 +3083,19 @@ test "provide_buffers: read" {
             .SUCCESS => std.debug.panic("unexpected success", .{}),
             else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
         }
-        try testing.expectEqual(@as(u64, 0xdfdfdfdf), cqe.user_data);
+        try testing.expect_equal(@as(u64, 0xdfdfdfdf), cqe.user_data);
     }
 
     // Provide 1 buffer again
 
     // Deliberately put something we don't expect in the buffers
-    @memset(mem.sliceAsBytes(&buffers), 42);
+    @memset(mem.slice_as_bytes(&buffers), 42);
 
     const reprovided_buffer_id = 2;
 
     {
-        _ = try ring.provide_buffers(0xabababab, @as([*]u8, @ptrCast(&buffers[reprovided_buffer_id])), buffer_len, 1, group_id, reprovided_buffer_id);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        _ = try ring.provide_buffers(0xabababab, @as([*]u8, @ptr_cast(&buffers[reprovided_buffer_id])), buffer_len, 1, group_id, reprovided_buffer_id);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3108,12 +3108,12 @@ test "provide_buffers: read" {
 
     {
         const sqe = try ring.read(0xdfdfdfdf, fd, .{ .buffer_selection = .{ .group_id = group_id, .len = buffer_len } }, 0);
-        try testing.expectEqual(linux.IORING_OP.READ, sqe.opcode);
-        try testing.expectEqual(@as(i32, fd), sqe.fd);
-        try testing.expectEqual(@as(u64, 0), sqe.addr);
-        try testing.expectEqual(@as(u32, buffer_len), sqe.len);
-        try testing.expectEqual(@as(u16, group_id), sqe.buf_index);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(linux.IORING_OP.READ, sqe.opcode);
+        try testing.expect_equal(@as(i32, fd), sqe.fd);
+        try testing.expect_equal(@as(u64, 0), sqe.addr);
+        try testing.expect_equal(@as(u32, buffer_len), sqe.len);
+        try testing.expect_equal(@as(u16, group_id), sqe.buf_index);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3123,10 +3123,10 @@ test "provide_buffers: read" {
 
         try testing.expect(cqe.flags & linux.IORING_CQE_F_BUFFER == linux.IORING_CQE_F_BUFFER);
         const used_buffer_id = cqe.flags >> 16;
-        try testing.expectEqual(used_buffer_id, reprovided_buffer_id);
-        try testing.expectEqual(@as(i32, buffer_len), cqe.res);
-        try testing.expectEqual(@as(u64, 0xdfdfdfdf), cqe.user_data);
-        try testing.expectEqualSlices(u8, &([_]u8{0} ** buffer_len), buffers[used_buffer_id][0..@as(usize, @intCast(cqe.res))]);
+        try testing.expect_equal(used_buffer_id, reprovided_buffer_id);
+        try testing.expect_equal(@as(i32, buffer_len), cqe.res);
+        try testing.expect_equal(@as(u64, 0xdfdfdfdf), cqe.user_data);
+        try testing.expect_equal_slices(u8, &([_]u8{0} ** buffer_len), buffers[used_buffer_id][0..@as(usize, @int_cast(cqe.res))]);
     }
 }
 
@@ -3140,7 +3140,7 @@ test "remove_buffers" {
     };
     defer ring.deinit();
 
-    const fd = try posix.openZ("/dev/zero", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
+    const fd = try posix.open_z("/dev/zero", .{ .ACCMODE = .RDONLY, .CLOEXEC = true }, 0);
     defer posix.close(fd);
 
     const group_id = 1337;
@@ -3153,8 +3153,8 @@ test "remove_buffers" {
     // Provide 4 buffers
 
     {
-        _ = try ring.provide_buffers(0xcccccccc, @as([*]u8, @ptrCast(&buffers)), buffer_len, buffers.len, group_id, buffer_id);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        _ = try ring.provide_buffers(0xcccccccc, @as([*]u8, @ptr_cast(&buffers)), buffer_len, buffers.len, group_id, buffer_id);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3162,32 +3162,32 @@ test "remove_buffers" {
             .SUCCESS => {},
             else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
         }
-        try testing.expectEqual(@as(u64, 0xcccccccc), cqe.user_data);
+        try testing.expect_equal(@as(u64, 0xcccccccc), cqe.user_data);
     }
 
     // Remove 3 buffers
 
     {
         const sqe = try ring.remove_buffers(0xbababababa, 3, group_id);
-        try testing.expectEqual(linux.IORING_OP.REMOVE_BUFFERS, sqe.opcode);
-        try testing.expectEqual(@as(i32, 3), sqe.fd);
-        try testing.expectEqual(@as(u64, 0), sqe.addr);
-        try testing.expectEqual(@as(u16, group_id), sqe.buf_index);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(linux.IORING_OP.REMOVE_BUFFERS, sqe.opcode);
+        try testing.expect_equal(@as(i32, 3), sqe.fd);
+        try testing.expect_equal(@as(u64, 0), sqe.addr);
+        try testing.expect_equal(@as(u16, group_id), sqe.buf_index);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
             .SUCCESS => {},
             else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
         }
-        try testing.expectEqual(@as(u64, 0xbababababa), cqe.user_data);
+        try testing.expect_equal(@as(u64, 0xbababababa), cqe.user_data);
     }
 
     // This read should work
 
     {
         _ = try ring.read(0xdfdfdfdf, fd, .{ .buffer_selection = .{ .group_id = group_id, .len = buffer_len } }, 0);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3198,16 +3198,16 @@ test "remove_buffers" {
         try testing.expect(cqe.flags & linux.IORING_CQE_F_BUFFER == linux.IORING_CQE_F_BUFFER);
         const used_buffer_id = cqe.flags >> 16;
         try testing.expect(used_buffer_id >= 0 and used_buffer_id < 4);
-        try testing.expectEqual(@as(i32, buffer_len), cqe.res);
-        try testing.expectEqual(@as(u64, 0xdfdfdfdf), cqe.user_data);
-        try testing.expectEqualSlices(u8, &([_]u8{0} ** buffer_len), buffers[used_buffer_id][0..@as(usize, @intCast(cqe.res))]);
+        try testing.expect_equal(@as(i32, buffer_len), cqe.res);
+        try testing.expect_equal(@as(u64, 0xdfdfdfdf), cqe.user_data);
+        try testing.expect_equal_slices(u8, &([_]u8{0} ** buffer_len), buffers[used_buffer_id][0..@as(usize, @int_cast(cqe.res))]);
     }
 
     // Final read should _not_ work
 
     {
         _ = try ring.read(0xdfdfdfdf, fd, .{ .buffer_selection = .{ .group_id = group_id, .len = buffer_len } }, 0);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3238,12 +3238,12 @@ test "provide_buffers: accept/connect/send/recv" {
     // Provide 4 buffers
 
     {
-        const sqe = try ring.provide_buffers(0xcccccccc, @as([*]u8, @ptrCast(&buffers)), buffer_len, buffers.len, group_id, buffer_id);
-        try testing.expectEqual(linux.IORING_OP.PROVIDE_BUFFERS, sqe.opcode);
-        try testing.expectEqual(@as(i32, buffers.len), sqe.fd);
-        try testing.expectEqual(@as(u32, buffer_len), sqe.len);
-        try testing.expectEqual(@as(u16, group_id), sqe.buf_index);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        const sqe = try ring.provide_buffers(0xcccccccc, @as([*]u8, @ptr_cast(&buffers)), buffer_len, buffers.len, group_id, buffer_id);
+        try testing.expect_equal(linux.IORING_OP.PROVIDE_BUFFERS, sqe.opcode);
+        try testing.expect_equal(@as(i32, buffers.len), sqe.fd);
+        try testing.expect_equal(@as(u32, buffer_len), sqe.len);
+        try testing.expect_equal(@as(u16, group_id), sqe.buf_index);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3254,10 +3254,10 @@ test "provide_buffers: accept/connect/send/recv" {
             .SUCCESS => {},
             else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
         }
-        try testing.expectEqual(@as(u64, 0xcccccccc), cqe.user_data);
+        try testing.expect_equal(@as(u64, 0xcccccccc), cqe.user_data);
     }
 
-    const socket_test_harness = try createSocketTestHarness(&ring);
+    const socket_test_harness = try create_socket_test_harness(&ring);
     defer socket_test_harness.close();
 
     // Do 4 send on the socket
@@ -3266,29 +3266,29 @@ test "provide_buffers: accept/connect/send/recv" {
         var i: usize = 0;
         while (i < buffers.len) : (i += 1) {
             _ = try ring.send(0xdeaddead, socket_test_harness.server, &([_]u8{'z'} ** buffer_len), 0);
-            try testing.expectEqual(@as(u32, 1), try ring.submit());
+            try testing.expect_equal(@as(u32, 1), try ring.submit());
         }
 
         var cqes: [4]linux.io_uring_cqe = undefined;
-        try testing.expectEqual(@as(u32, 4), try ring.copy_cqes(&cqes, 4));
+        try testing.expect_equal(@as(u32, 4), try ring.copy_cqes(&cqes, 4));
     }
 
     // Do 4 recv which should consume all buffers
 
     // Deliberately put something we don't expect in the buffers
-    @memset(mem.sliceAsBytes(&buffers), 1);
+    @memset(mem.slice_as_bytes(&buffers), 1);
 
     var i: usize = 0;
     while (i < buffers.len) : (i += 1) {
         const sqe = try ring.recv(0xdededede, socket_test_harness.client, .{ .buffer_selection = .{ .group_id = group_id, .len = buffer_len } }, 0);
-        try testing.expectEqual(linux.IORING_OP.RECV, sqe.opcode);
-        try testing.expectEqual(@as(i32, socket_test_harness.client), sqe.fd);
-        try testing.expectEqual(@as(u64, 0), sqe.addr);
-        try testing.expectEqual(@as(u32, buffer_len), sqe.len);
-        try testing.expectEqual(@as(u16, group_id), sqe.buf_index);
-        try testing.expectEqual(@as(u32, 0), sqe.rw_flags);
-        try testing.expectEqual(@as(u32, linux.IOSQE_BUFFER_SELECT), sqe.flags);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(linux.IORING_OP.RECV, sqe.opcode);
+        try testing.expect_equal(@as(i32, socket_test_harness.client), sqe.fd);
+        try testing.expect_equal(@as(u64, 0), sqe.addr);
+        try testing.expect_equal(@as(u32, buffer_len), sqe.len);
+        try testing.expect_equal(@as(u16, group_id), sqe.buf_index);
+        try testing.expect_equal(@as(u32, 0), sqe.rw_flags);
+        try testing.expect_equal(@as(u32, linux.IOSQE_BUFFER_SELECT), sqe.flags);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3299,25 +3299,25 @@ test "provide_buffers: accept/connect/send/recv" {
         try testing.expect(cqe.flags & linux.IORING_CQE_F_BUFFER == linux.IORING_CQE_F_BUFFER);
         const used_buffer_id = cqe.flags >> 16;
         try testing.expect(used_buffer_id >= 0 and used_buffer_id <= 3);
-        try testing.expectEqual(@as(i32, buffer_len), cqe.res);
+        try testing.expect_equal(@as(i32, buffer_len), cqe.res);
 
-        try testing.expectEqual(@as(u64, 0xdededede), cqe.user_data);
-        const buffer = buffers[used_buffer_id][0..@as(usize, @intCast(cqe.res))];
-        try testing.expectEqualSlices(u8, &([_]u8{'z'} ** buffer_len), buffer);
+        try testing.expect_equal(@as(u64, 0xdededede), cqe.user_data);
+        const buffer = buffers[used_buffer_id][0..@as(usize, @int_cast(cqe.res))];
+        try testing.expect_equal_slices(u8, &([_]u8{'z'} ** buffer_len), buffer);
     }
 
     // This recv should fail
 
     {
         const sqe = try ring.recv(0xdfdfdfdf, socket_test_harness.client, .{ .buffer_selection = .{ .group_id = group_id, .len = buffer_len } }, 0);
-        try testing.expectEqual(linux.IORING_OP.RECV, sqe.opcode);
-        try testing.expectEqual(@as(i32, socket_test_harness.client), sqe.fd);
-        try testing.expectEqual(@as(u64, 0), sqe.addr);
-        try testing.expectEqual(@as(u32, buffer_len), sqe.len);
-        try testing.expectEqual(@as(u16, group_id), sqe.buf_index);
-        try testing.expectEqual(@as(u32, 0), sqe.rw_flags);
-        try testing.expectEqual(@as(u32, linux.IOSQE_BUFFER_SELECT), sqe.flags);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(linux.IORING_OP.RECV, sqe.opcode);
+        try testing.expect_equal(@as(i32, socket_test_harness.client), sqe.fd);
+        try testing.expect_equal(@as(u64, 0), sqe.addr);
+        try testing.expect_equal(@as(u32, buffer_len), sqe.len);
+        try testing.expect_equal(@as(u16, group_id), sqe.buf_index);
+        try testing.expect_equal(@as(u32, 0), sqe.rw_flags);
+        try testing.expect_equal(@as(u32, linux.IOSQE_BUFFER_SELECT), sqe.flags);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3326,7 +3326,7 @@ test "provide_buffers: accept/connect/send/recv" {
             .SUCCESS => std.debug.panic("unexpected success", .{}),
             else => |errno| std.debug.panic("unhandled errno: {}", .{errno}),
         }
-        try testing.expectEqual(@as(u64, 0xdfdfdfdf), cqe.user_data);
+        try testing.expect_equal(@as(u64, 0xdfdfdfdf), cqe.user_data);
     }
 
     // Provide 1 buffer again
@@ -3334,8 +3334,8 @@ test "provide_buffers: accept/connect/send/recv" {
     const reprovided_buffer_id = 2;
 
     {
-        _ = try ring.provide_buffers(0xabababab, @as([*]u8, @ptrCast(&buffers[reprovided_buffer_id])), buffer_len, 1, group_id, reprovided_buffer_id);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        _ = try ring.provide_buffers(0xabababab, @as([*]u8, @ptr_cast(&buffers[reprovided_buffer_id])), buffer_len, 1, group_id, reprovided_buffer_id);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3348,7 +3348,7 @@ test "provide_buffers: accept/connect/send/recv" {
 
     {
         _ = try ring.send(0xdeaddead, socket_test_harness.server, &([_]u8{'w'} ** buffer_len), 0);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         _ = try ring.copy_cqe();
     }
@@ -3356,18 +3356,18 @@ test "provide_buffers: accept/connect/send/recv" {
     // Final recv which should work
 
     // Deliberately put something we don't expect in the buffers
-    @memset(mem.sliceAsBytes(&buffers), 1);
+    @memset(mem.slice_as_bytes(&buffers), 1);
 
     {
         const sqe = try ring.recv(0xdfdfdfdf, socket_test_harness.client, .{ .buffer_selection = .{ .group_id = group_id, .len = buffer_len } }, 0);
-        try testing.expectEqual(linux.IORING_OP.RECV, sqe.opcode);
-        try testing.expectEqual(@as(i32, socket_test_harness.client), sqe.fd);
-        try testing.expectEqual(@as(u64, 0), sqe.addr);
-        try testing.expectEqual(@as(u32, buffer_len), sqe.len);
-        try testing.expectEqual(@as(u16, group_id), sqe.buf_index);
-        try testing.expectEqual(@as(u32, 0), sqe.rw_flags);
-        try testing.expectEqual(@as(u32, linux.IOSQE_BUFFER_SELECT), sqe.flags);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(linux.IORING_OP.RECV, sqe.opcode);
+        try testing.expect_equal(@as(i32, socket_test_harness.client), sqe.fd);
+        try testing.expect_equal(@as(u64, 0), sqe.addr);
+        try testing.expect_equal(@as(u32, buffer_len), sqe.len);
+        try testing.expect_equal(@as(u16, group_id), sqe.buf_index);
+        try testing.expect_equal(@as(u32, 0), sqe.rw_flags);
+        try testing.expect_equal(@as(u32, linux.IOSQE_BUFFER_SELECT), sqe.flags);
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         const cqe = try ring.copy_cqe();
         switch (cqe.err()) {
@@ -3377,11 +3377,11 @@ test "provide_buffers: accept/connect/send/recv" {
 
         try testing.expect(cqe.flags & linux.IORING_CQE_F_BUFFER == linux.IORING_CQE_F_BUFFER);
         const used_buffer_id = cqe.flags >> 16;
-        try testing.expectEqual(used_buffer_id, reprovided_buffer_id);
-        try testing.expectEqual(@as(i32, buffer_len), cqe.res);
-        try testing.expectEqual(@as(u64, 0xdfdfdfdf), cqe.user_data);
-        const buffer = buffers[used_buffer_id][0..@as(usize, @intCast(cqe.res))];
-        try testing.expectEqualSlices(u8, &([_]u8{'w'} ** buffer_len), buffer);
+        try testing.expect_equal(used_buffer_id, reprovided_buffer_id);
+        try testing.expect_equal(@as(i32, buffer_len), cqe.res);
+        try testing.expect_equal(@as(u64, 0xdfdfdfdf), cqe.user_data);
+        const buffer = buffers[used_buffer_id][0..@as(usize, @int_cast(cqe.res))];
+        try testing.expect_equal_slices(u8, &([_]u8{'w'} ** buffer_len), buffer);
     }
 }
 
@@ -3399,21 +3399,21 @@ const SocketTestHarness = struct {
 
 fn create_socket_test_harness(ring: *IoUring) !SocketTestHarness {
     // Create a TCP server socket
-    var address = try net.Address.parseIp4("127.0.0.1", 0);
-    const listener_socket = try createListenerSocket(&address);
+    var address = try net.Address.parse_ip4("127.0.0.1", 0);
+    const listener_socket = try create_listener_socket(&address);
     errdefer posix.close(listener_socket);
 
     // Submit 1 accept
     var accept_addr: posix.sockaddr = undefined;
-    var accept_addr_len: posix.socklen_t = @sizeOf(@TypeOf(accept_addr));
+    var accept_addr_len: posix.socklen_t = @size_of(@TypeOf(accept_addr));
     _ = try ring.accept(0xaaaaaaaa, listener_socket, &accept_addr, &accept_addr_len, 0);
 
     // Create a TCP client socket
     const client = try posix.socket(address.any.family, posix.SOCK.STREAM | posix.SOCK.CLOEXEC, 0);
     errdefer posix.close(client);
-    _ = try ring.connect(0xcccccccc, client, &address.any, address.getOsSockLen());
+    _ = try ring.connect(0xcccccccc, client, &address.any, address.get_os_sock_len());
 
-    try testing.expectEqual(@as(u32, 2), try ring.submit());
+    try testing.expect_equal(@as(u32, 2), try ring.submit());
 
     var cqe_accept = try ring.copy_cqe();
     if (cqe_accept.err() == .INVAL) return error.SkipZigTest;
@@ -3428,11 +3428,11 @@ fn create_socket_test_harness(ring: *IoUring) !SocketTestHarness {
         cqe_connect = a;
     }
 
-    try testing.expectEqual(@as(u64, 0xaaaaaaaa), cqe_accept.user_data);
+    try testing.expect_equal(@as(u64, 0xaaaaaaaa), cqe_accept.user_data);
     if (cqe_accept.res <= 0) std.debug.print("\ncqe_accept.res={}\n", .{cqe_accept.res});
     try testing.expect(cqe_accept.res > 0);
-    try testing.expectEqual(@as(u32, 0), cqe_accept.flags);
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(@as(u32, 0), cqe_accept.flags);
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xcccccccc,
         .res = 0,
         .flags = 0,
@@ -3452,12 +3452,12 @@ fn create_listener_socket(address: *net.Address) !posix.socket_t {
     const listener_socket = try posix.socket(address.any.family, posix.SOCK.STREAM | posix.SOCK.CLOEXEC, 0);
     errdefer posix.close(listener_socket);
 
-    try posix.setsockopt(listener_socket, posix.SOL.SOCKET, posix.SO.REUSEADDR, &mem.toBytes(@as(c_int, 1)));
-    try posix.bind(listener_socket, &address.any, address.getOsSockLen());
+    try posix.setsockopt(listener_socket, posix.SOL.SOCKET, posix.SO.REUSEADDR, &mem.to_bytes(@as(c_int, 1)));
+    try posix.bind(listener_socket, &address.any, address.get_os_sock_len());
     try posix.listen(listener_socket, kernel_backlog);
 
     // set address to the OS-chosen IP/port.
-    var slen: posix.socklen_t = address.getOsSockLen();
+    var slen: posix.socklen_t = address.get_os_sock_len();
     try posix.getsockname(listener_socket, &address.any, &slen);
 
     return listener_socket;
@@ -3473,23 +3473,23 @@ test "accept multishot" {
     };
     defer ring.deinit();
 
-    var address = try net.Address.parseIp4("127.0.0.1", 0);
-    const listener_socket = try createListenerSocket(&address);
+    var address = try net.Address.parse_ip4("127.0.0.1", 0);
+    const listener_socket = try create_listener_socket(&address);
     defer posix.close(listener_socket);
 
     // submit multishot accept operation
     var addr: posix.sockaddr = undefined;
-    var addr_len: posix.socklen_t = @sizeOf(@TypeOf(addr));
+    var addr_len: posix.socklen_t = @size_of(@TypeOf(addr));
     const userdata: u64 = 0xaaaaaaaa;
     _ = try ring.accept_multishot(userdata, listener_socket, &addr, &addr_len, 0);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     var nr: usize = 4; // number of clients to connect
     while (nr > 0) : (nr -= 1) {
         // connect client
         const client = try posix.socket(address.any.family, posix.SOCK.STREAM | posix.SOCK.CLOEXEC, 0);
         errdefer posix.close(client);
-        try posix.connect(client, &address.any, address.getOsSockLen());
+        try posix.connect(client, &address.any, address.get_os_sock_len());
 
         // test accept completion
         var cqe = try ring.copy_cqe();
@@ -3507,7 +3507,7 @@ test "accept/connect/send_zc/recv" {
         // https://github.com/ziglang/zig/issues/20212
         return error.SkipZigTest;
     }
-    try skipKernelLessThan(.{ .major = 6, .minor = 0, .patch = 0 });
+    try skip_kernel_less_than(.{ .major = 6, .minor = 0, .patch = 0 });
 
     var ring = IoUring.init(16, 0) catch |err| switch (err) {
         error.SystemOutdated => return error.SkipZigTest,
@@ -3516,7 +3516,7 @@ test "accept/connect/send_zc/recv" {
     };
     defer ring.deinit();
 
-    const socket_test_harness = try createSocketTestHarness(&ring);
+    const socket_test_harness = try create_socket_test_harness(&ring);
     defer socket_test_harness.close();
 
     const buffer_send = [_]u8{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe };
@@ -3526,7 +3526,7 @@ test "accept/connect/send_zc/recv" {
     const sqe_send = try ring.send_zc(0xeeeeeeee, socket_test_harness.client, buffer_send[0..], 0, 0);
     sqe_send.flags |= linux.IOSQE_IO_LINK;
     _ = try ring.recv(0xffffffff, socket_test_harness.server, .{ .buffer = buffer_recv[0..] }, 0);
-    try testing.expectEqual(@as(u32, 2), try ring.submit());
+    try testing.expect_equal(@as(u32, 2), try ring.submit());
 
     // First completion of zero-copy send.
     // IORING_CQE_F_MORE, means that there
@@ -3534,25 +3534,25 @@ test "accept/connect/send_zc/recv" {
     // request, with the user_data field set to the same value.
     // buffer_send must be keep alive until second cqe.
     var cqe_send = try ring.copy_cqe();
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xeeeeeeee,
         .res = buffer_send.len,
         .flags = linux.IORING_CQE_F_MORE,
     }, cqe_send);
 
     const cqe_recv = try ring.copy_cqe();
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xffffffff,
         .res = buffer_recv.len,
         .flags = cqe_recv.flags & linux.IORING_CQE_F_SOCK_NONEMPTY,
     }, cqe_recv);
 
-    try testing.expectEqualSlices(u8, buffer_send[0..buffer_recv.len], buffer_recv[0..]);
+    try testing.expect_equal_slices(u8, buffer_send[0..buffer_recv.len], buffer_recv[0..]);
 
     // Second completion of zero-copy send.
     // IORING_CQE_F_NOTIF in flags signals that kernel is done with send_buffer
     cqe_send = try ring.copy_cqe();
-    try testing.expectEqual(linux.io_uring_cqe{
+    try testing.expect_equal(linux.io_uring_cqe{
         .user_data = 0xeeeeeeee,
         .res = 0,
         .flags = linux.IORING_CQE_F_NOTIF,
@@ -3560,7 +3560,7 @@ test "accept/connect/send_zc/recv" {
 }
 
 test "accept_direct" {
-    try skipKernelLessThan(.{ .major = 5, .minor = 19, .patch = 0 });
+    try skip_kernel_less_than(.{ .major = 5, .minor = 19, .patch = 0 });
 
     var ring = IoUring.init(1, 0) catch |err| switch (err) {
         error.SystemOutdated => return error.SkipZigTest,
@@ -3568,13 +3568,13 @@ test "accept_direct" {
         else => return err,
     };
     defer ring.deinit();
-    var address = try net.Address.parseIp4("127.0.0.1", 0);
+    var address = try net.Address.parse_ip4("127.0.0.1", 0);
 
     // register direct file descriptors
     var registered_fds = [_]posix.fd_t{-1} ** 2;
     try ring.register_files(registered_fds[0..]);
 
-    const listener_socket = try createListenerSocket(&address);
+    const listener_socket = try create_listener_socket(&address);
     defer posix.close(listener_socket);
 
     const accept_userdata: u64 = 0xaaaaaaaa;
@@ -3588,16 +3588,16 @@ test "accept_direct" {
 
             // submit accept, will chose registered fd and return index in cqe
             _ = try ring.accept_direct(accept_userdata, listener_socket, null, null, 0);
-            try testing.expectEqual(@as(u32, 1), try ring.submit());
+            try testing.expect_equal(@as(u32, 1), try ring.submit());
 
             // connect
             const client = try posix.socket(address.any.family, posix.SOCK.STREAM | posix.SOCK.CLOEXEC, 0);
-            try posix.connect(client, &address.any, address.getOsSockLen());
+            try posix.connect(client, &address.any, address.get_os_sock_len());
             defer posix.close(client);
 
             // accept completion
             const cqe_accept = try ring.copy_cqe();
-            try testing.expectEqual(posix.E.SUCCESS, cqe_accept.err());
+            try testing.expect_equal(posix.E.SUCCESS, cqe_accept.err());
             const fd_index = cqe_accept.res;
             try testing.expect(fd_index < registered_fds.len);
             try testing.expect(cqe_accept.user_data == accept_userdata);
@@ -3611,27 +3611,27 @@ test "accept_direct" {
             // Flag linux.IOSQE_FIXED_FILE must be set.
             const recv_sqe = try ring.recv(read_userdata, fd_index, .{ .buffer = &buffer_recv }, 0);
             recv_sqe.flags |= linux.IOSQE_FIXED_FILE;
-            try testing.expectEqual(@as(u32, 1), try ring.submit());
+            try testing.expect_equal(@as(u32, 1), try ring.submit());
 
             // accept receive
             const recv_cqe = try ring.copy_cqe();
             try testing.expect(recv_cqe.user_data == read_userdata);
             try testing.expect(recv_cqe.res == buffer_send.len);
-            try testing.expectEqualSlices(u8, buffer_send, buffer_recv[0..buffer_send.len]);
+            try testing.expect_equal_slices(u8, buffer_send, buffer_recv[0..buffer_send.len]);
         }
         // no more available fds, accept will get NFILE error
         {
             // submit accept
             _ = try ring.accept_direct(accept_userdata, listener_socket, null, null, 0);
-            try testing.expectEqual(@as(u32, 1), try ring.submit());
+            try testing.expect_equal(@as(u32, 1), try ring.submit());
             // connect
             const client = try posix.socket(address.any.family, posix.SOCK.STREAM | posix.SOCK.CLOEXEC, 0);
-            try posix.connect(client, &address.any, address.getOsSockLen());
+            try posix.connect(client, &address.any, address.get_os_sock_len());
             defer posix.close(client);
             // completion with error
             const cqe_accept = try ring.copy_cqe();
             try testing.expect(cqe_accept.user_data == accept_userdata);
-            try testing.expectEqual(posix.E.NFILE, cqe_accept.err());
+            try testing.expect_equal(posix.E.NFILE, cqe_accept.err());
         }
         // return file descriptors to kernel
         try ring.register_files_update(0, registered_fds[0..]);
@@ -3640,7 +3640,7 @@ test "accept_direct" {
 }
 
 test "accept_multishot_direct" {
-    try skipKernelLessThan(.{ .major = 5, .minor = 19, .patch = 0 });
+    try skip_kernel_less_than(.{ .major = 5, .minor = 19, .patch = 0 });
 
     var ring = IoUring.init(1, 0) catch |err| switch (err) {
         error.SystemOutdated => return error.SkipZigTest,
@@ -3649,12 +3649,12 @@ test "accept_multishot_direct" {
     };
     defer ring.deinit();
 
-    var address = try net.Address.parseIp4("127.0.0.1", 0);
+    var address = try net.Address.parse_ip4("127.0.0.1", 0);
 
     var registered_fds = [_]posix.fd_t{-1} ** 2;
     try ring.register_files(registered_fds[0..]);
 
-    const listener_socket = try createListenerSocket(&address);
+    const listener_socket = try create_listener_socket(&address);
     defer posix.close(listener_socket);
 
     const accept_userdata: u64 = 0xaaaaaaaa;
@@ -3663,12 +3663,12 @@ test "accept_multishot_direct" {
         // submit multishot accept
         // Will chose registered fd and return index of the selected registered file in cqe.
         _ = try ring.accept_multishot_direct(accept_userdata, listener_socket, null, null, 0);
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
 
         for (registered_fds) |_| {
             // connect
             const client = try posix.socket(address.any.family, posix.SOCK.STREAM | posix.SOCK.CLOEXEC, 0);
-            try posix.connect(client, &address.any, address.getOsSockLen());
+            try posix.connect(client, &address.any, address.get_os_sock_len());
             defer posix.close(client);
 
             // accept completion
@@ -3683,12 +3683,12 @@ test "accept_multishot_direct" {
         {
             // connect
             const client = try posix.socket(address.any.family, posix.SOCK.STREAM | posix.SOCK.CLOEXEC, 0);
-            try posix.connect(client, &address.any, address.getOsSockLen());
+            try posix.connect(client, &address.any, address.get_os_sock_len());
             defer posix.close(client);
             // completion with error
             const cqe_accept = try ring.copy_cqe();
             try testing.expect(cqe_accept.user_data == accept_userdata);
-            try testing.expectEqual(posix.E.NFILE, cqe_accept.err());
+            try testing.expect_equal(posix.E.NFILE, cqe_accept.err());
             try testing.expect(cqe_accept.flags & linux.IORING_CQE_F_MORE == 0); // has more is not set
         }
         // return file descriptors to kernel
@@ -3698,7 +3698,7 @@ test "accept_multishot_direct" {
 }
 
 test "socket" {
-    try skipKernelLessThan(.{ .major = 5, .minor = 19, .patch = 0 });
+    try skip_kernel_less_than(.{ .major = 5, .minor = 19, .patch = 0 });
 
     var ring = IoUring.init(1, 0) catch |err| switch (err) {
         error.SystemOutdated => return error.SkipZigTest,
@@ -3709,19 +3709,19 @@ test "socket" {
 
     // prepare, submit socket operation
     _ = try ring.socket(0, linux.AF.INET, posix.SOCK.STREAM, 0, 0);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
 
     // test completion
     var cqe = try ring.copy_cqe();
-    try testing.expectEqual(posix.E.SUCCESS, cqe.err());
-    const fd: posix.fd_t = @intCast(cqe.res);
+    try testing.expect_equal(posix.E.SUCCESS, cqe.err());
+    const fd: posix.fd_t = @int_cast(cqe.res);
     try testing.expect(fd > 2);
 
     posix.close(fd);
 }
 
 test "socket_direct/socket_direct_alloc/close_direct" {
-    try skipKernelLessThan(.{ .major = 5, .minor = 19, .patch = 0 });
+    try skip_kernel_less_than(.{ .major = 5, .minor = 19, .patch = 0 });
 
     var ring = IoUring.init(2, 0) catch |err| switch (err) {
         error.SystemOutdated => return error.SkipZigTest,
@@ -3735,29 +3735,29 @@ test "socket_direct/socket_direct_alloc/close_direct" {
 
     // create socket in registered file descriptor at index 0 (last param)
     _ = try ring.socket_direct(0, linux.AF.INET, posix.SOCK.STREAM, 0, 0, 0);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
     var cqe_socket = try ring.copy_cqe();
-    try testing.expectEqual(posix.E.SUCCESS, cqe_socket.err());
+    try testing.expect_equal(posix.E.SUCCESS, cqe_socket.err());
     try testing.expect(cqe_socket.res == 0);
 
     // create socket in registered file descriptor at index 1 (last param)
     _ = try ring.socket_direct(0, linux.AF.INET, posix.SOCK.STREAM, 0, 0, 1);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
     cqe_socket = try ring.copy_cqe();
-    try testing.expectEqual(posix.E.SUCCESS, cqe_socket.err());
+    try testing.expect_equal(posix.E.SUCCESS, cqe_socket.err());
     try testing.expect(cqe_socket.res == 0); // res is 0 when index is specified
 
     // create socket in kernel chosen file descriptor index (_alloc version)
     // completion res has index from registered files
     _ = try ring.socket_direct_alloc(0, linux.AF.INET, posix.SOCK.STREAM, 0, 0);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
     cqe_socket = try ring.copy_cqe();
-    try testing.expectEqual(posix.E.SUCCESS, cqe_socket.err());
+    try testing.expect_equal(posix.E.SUCCESS, cqe_socket.err());
     try testing.expect(cqe_socket.res == 2); // returns registered file index
 
     // use sockets from registered_fds in connect operation
-    var address = try net.Address.parseIp4("127.0.0.1", 0);
-    const listener_socket = try createListenerSocket(&address);
+    var address = try net.Address.parse_ip4("127.0.0.1", 0);
+    const listener_socket = try create_listener_socket(&address);
     defer posix.close(listener_socket);
     const accept_userdata: u64 = 0xaaaaaaaa;
     const connect_userdata: u64 = 0xbbbbbbbb;
@@ -3766,10 +3766,10 @@ test "socket_direct/socket_direct_alloc/close_direct" {
         // prepare accept
         _ = try ring.accept(accept_userdata, listener_socket, null, null, 0);
         // prepare connect with fixed socket
-        const connect_sqe = try ring.connect(connect_userdata, @intCast(fd_index), &address.any, address.getOsSockLen());
+        const connect_sqe = try ring.connect(connect_userdata, @int_cast(fd_index), &address.any, address.get_os_sock_len());
         connect_sqe.flags |= linux.IOSQE_FIXED_FILE; // fd is fixed file index
         // submit both
-        try testing.expectEqual(@as(u32, 2), try ring.submit());
+        try testing.expect_equal(@as(u32, 2), try ring.submit());
         // get completions
         var cqe_connect = try ring.copy_cqe();
         var cqe_accept = try ring.copy_cqe();
@@ -3782,24 +3782,24 @@ test "socket_direct/socket_direct_alloc/close_direct" {
         }
         // test connect completion
         try testing.expect(cqe_connect.user_data == connect_userdata);
-        try testing.expectEqual(posix.E.SUCCESS, cqe_connect.err());
+        try testing.expect_equal(posix.E.SUCCESS, cqe_connect.err());
         // test accept completion
         try testing.expect(cqe_accept.user_data == accept_userdata);
-        try testing.expectEqual(posix.E.SUCCESS, cqe_accept.err());
+        try testing.expect_equal(posix.E.SUCCESS, cqe_accept.err());
 
         //  submit and test close_direct
-        _ = try ring.close_direct(close_userdata, @intCast(fd_index));
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        _ = try ring.close_direct(close_userdata, @int_cast(fd_index));
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
         var cqe_close = try ring.copy_cqe();
         try testing.expect(cqe_close.user_data == close_userdata);
-        try testing.expectEqual(posix.E.SUCCESS, cqe_close.err());
+        try testing.expect_equal(posix.E.SUCCESS, cqe_close.err());
     }
 
     try ring.unregister_files();
 }
 
 test "openat_direct/close_direct" {
-    try skipKernelLessThan(.{ .major = 5, .minor = 19, .patch = 0 });
+    try skip_kernel_less_than(.{ .major = 5, .minor = 19, .patch = 0 });
 
     var ring = IoUring.init(2, 0) catch |err| switch (err) {
         error.SystemOutdated => return error.SkipZigTest,
@@ -3811,7 +3811,7 @@ test "openat_direct/close_direct" {
     var registered_fds = [_]posix.fd_t{-1} ** 3;
     try ring.register_files(registered_fds[0..]);
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
     const path = "test_io_uring_close_direct";
     const flags: linux.O = .{ .ACCMODE = .RDWR, .CREAT = true };
@@ -3820,37 +3820,37 @@ test "openat_direct/close_direct" {
 
     // use registered file at index 0 (last param)
     _ = try ring.openat_direct(user_data, tmp.dir.fd, path, flags, mode, 0);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
     var cqe = try ring.copy_cqe();
-    try testing.expectEqual(posix.E.SUCCESS, cqe.err());
+    try testing.expect_equal(posix.E.SUCCESS, cqe.err());
     try testing.expect(cqe.res == 0);
 
     // use registered file at index 1
     _ = try ring.openat_direct(user_data, tmp.dir.fd, path, flags, mode, 1);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
     cqe = try ring.copy_cqe();
-    try testing.expectEqual(posix.E.SUCCESS, cqe.err());
+    try testing.expect_equal(posix.E.SUCCESS, cqe.err());
     try testing.expect(cqe.res == 0); // res is 0 when we specify index
 
     // let kernel choose registered file index
     _ = try ring.openat_direct(user_data, tmp.dir.fd, path, flags, mode, linux.IORING_FILE_INDEX_ALLOC);
-    try testing.expectEqual(@as(u32, 1), try ring.submit());
+    try testing.expect_equal(@as(u32, 1), try ring.submit());
     cqe = try ring.copy_cqe();
-    try testing.expectEqual(posix.E.SUCCESS, cqe.err());
+    try testing.expect_equal(posix.E.SUCCESS, cqe.err());
     try testing.expect(cqe.res == 2); // chosen index is in res
 
     // close all open file descriptors
     for (registered_fds, 0..) |_, fd_index| {
-        _ = try ring.close_direct(user_data, @intCast(fd_index));
-        try testing.expectEqual(@as(u32, 1), try ring.submit());
+        _ = try ring.close_direct(user_data, @int_cast(fd_index));
+        try testing.expect_equal(@as(u32, 1), try ring.submit());
         var cqe_close = try ring.copy_cqe();
-        try testing.expectEqual(posix.E.SUCCESS, cqe_close.err());
+        try testing.expect_equal(posix.E.SUCCESS, cqe_close.err());
     }
     try ring.unregister_files();
 }
 
 test "waitid" {
-    try skipKernelLessThan(.{ .major = 6, .minor = 7, .patch = 0 });
+    try skip_kernel_less_than(.{ .major = 6, .minor = 7, .patch = 0 });
 
     var ring = IoUring.init(16, 0) catch |err| switch (err) {
         error.SystemOutdated => return error.SkipZigTest,
@@ -3867,12 +3867,12 @@ test "waitid" {
     var siginfo: posix.siginfo_t = undefined;
     _ = try ring.waitid(0, .PID, pid, &siginfo, posix.W.EXITED, 0);
 
-    try testing.expectEqual(1, try ring.submit());
+    try testing.expect_equal(1, try ring.submit());
 
     const cqe_waitid = try ring.copy_cqe();
-    try testing.expectEqual(0, cqe_waitid.res);
-    try testing.expectEqual(pid, siginfo.fields.common.first.piduid.pid);
-    try testing.expectEqual(7, siginfo.fields.common.second.sigchld.status);
+    try testing.expect_equal(0, cqe_waitid.res);
+    try testing.expect_equal(pid, siginfo.fields.common.first.piduid.pid);
+    try testing.expect_equal(7, siginfo.fields.common.second.sigchld.status);
 }
 
 /// For use in tests. Returns SkipZigTest if kernel version is less than required.
@@ -3883,10 +3883,10 @@ inline fn skip_kernel_less_than(required: std.SemanticVersion) !void {
     const res = linux.uname(&uts);
     switch (linux.E.init(res)) {
         .SUCCESS => {},
-        else => |errno| return posix.unexpectedErrno(errno),
+        else => |errno| return posix.unexpected_errno(errno),
     }
 
-    const release = mem.sliceTo(&uts.release, 0);
+    const release = mem.slice_to(&uts.release, 0);
     var current = try std.SemanticVersion.parse(release);
     current.pre = null; // don't check pre field
     if (required.order(current) == .gt) return error.SkipZigTest;
@@ -3923,7 +3923,7 @@ test BufferGroup {
     defer buf_grp.deinit();
 
     // Create client/server fds
-    const fds = try createSocketTestHarness(&ring);
+    const fds = try create_socket_test_harness(&ring);
     defer fds.close();
     const data = [_]u8{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0xa, 0xb, 0xc, 0xd, 0xe };
 
@@ -3931,10 +3931,10 @@ test BufferGroup {
     {
         _ = try ring.send(1, fds.client, data[0..], 0);
         const submitted = try ring.submit();
-        try testing.expectEqual(1, submitted);
+        try testing.expect_equal(1, submitted);
         const cqe_send = try ring.copy_cqe();
         if (cqe_send.err() == .INVAL) return error.SkipZigTest;
-        try testing.expectEqual(linux.io_uring_cqe{ .user_data = 1, .res = data.len, .flags = 0 }, cqe_send);
+        try testing.expect_equal(linux.io_uring_cqe{ .user_data = 1, .res = data.len, .flags = 0 }, cqe_send);
     }
 
     // Server uses buffer group receive
@@ -3942,21 +3942,21 @@ test BufferGroup {
         // Submit recv operation, buffer will be choosen from buffer group
         _ = try buf_grp.recv(2, fds.server, 0);
         const submitted = try ring.submit();
-        try testing.expectEqual(1, submitted);
+        try testing.expect_equal(1, submitted);
 
         // ... when we have completion for recv operation
         const cqe = try ring.copy_cqe();
-        try testing.expectEqual(2, cqe.user_data); // matches submitted user_data
+        try testing.expect_equal(2, cqe.user_data); // matches submitted user_data
         try testing.expect(cqe.res >= 0); // success
-        try testing.expectEqual(posix.E.SUCCESS, cqe.err());
-        try testing.expectEqual(data.len, @as(usize, @intCast(cqe.res))); // cqe.res holds received data len
+        try testing.expect_equal(posix.E.SUCCESS, cqe.err());
+        try testing.expect_equal(data.len, @as(usize, @int_cast(cqe.res))); // cqe.res holds received data len
 
         // Read buffer_id and used buffer len from cqe
         const buffer_id = try cqe.buffer_id();
-        const len: usize = @intCast(cqe.res);
+        const len: usize = @int_cast(cqe.res);
         // Get buffer from pool
         const buf = buf_grp.get(buffer_id)[0..len];
-        try testing.expectEqualSlices(u8, &data, buf);
+        try testing.expect_equal_slices(u8, &data, buf);
         // Releaase buffer to the kernel when application is done with it
         buf_grp.put(buffer_id);
     }
@@ -3992,7 +3992,7 @@ test "ring mapped buffers recv" {
     defer buf_grp.deinit();
 
     // create client/server fds
-    const fds = try createSocketTestHarness(&ring);
+    const fds = try create_socket_test_harness(&ring);
     defer fds.close();
 
     // for random user_data in sqe/cqe
@@ -4006,10 +4006,10 @@ test "ring mapped buffers recv" {
         {
             const user_data = rnd.int(u64);
             _ = try ring.send(user_data, fds.client, data[0..], 0);
-            try testing.expectEqual(@as(u32, 1), try ring.submit());
+            try testing.expect_equal(@as(u32, 1), try ring.submit());
             const cqe_send = try ring.copy_cqe();
             if (cqe_send.err() == .INVAL) return error.SkipZigTest;
-            try testing.expectEqual(linux.io_uring_cqe{ .user_data = user_data, .res = data.len, .flags = 0 }, cqe_send);
+            try testing.expect_equal(linux.io_uring_cqe{ .user_data = user_data, .res = data.len, .flags = 0 }, cqe_send);
         }
 
         // server reads data into provided buffers
@@ -4025,13 +4025,13 @@ test "ring mapped buffers recv" {
         {
             const user_data = rnd.int(u64);
             _ = try buf_grp.recv(user_data, fds.server, 0);
-            try testing.expectEqual(@as(u32, 1), try ring.submit());
+            try testing.expect_equal(@as(u32, 1), try ring.submit());
             const cqe = try ring.copy_cqe();
-            try testing.expectEqual(user_data, cqe.user_data);
+            try testing.expect_equal(user_data, cqe.user_data);
             try testing.expect(cqe.res < 0); // fail
-            try testing.expectEqual(posix.E.NOBUFS, cqe.err());
+            try testing.expect_equal(posix.E.NOBUFS, cqe.err());
             try testing.expect(cqe.flags & linux.IORING_CQE_F_BUFFER == 0); // IORING_CQE_F_BUFFER flags is set on success only
-            try testing.expectError(error.NoBufferSelected, cqe.buffer_id());
+            try testing.expect_error(error.NoBufferSelected, cqe.buffer_id());
         }
 
         // put buffers back to the kernel
@@ -4078,7 +4078,7 @@ test "ring mapped buffers multishot recv" {
     defer buf_grp.deinit();
 
     // create client/server fds
-    const fds = try createSocketTestHarness(&ring);
+    const fds = try create_socket_test_harness(&ring);
     defer fds.close();
 
     // for random user_data in sqe/cqe
@@ -4092,16 +4092,16 @@ test "ring mapped buffers multishot recv" {
         {
             const user_data = rnd.int(u64);
             _ = try ring.send(user_data, fds.client, data[0..], 0);
-            try testing.expectEqual(@as(u32, 1), try ring.submit());
+            try testing.expect_equal(@as(u32, 1), try ring.submit());
             const cqe_send = try ring.copy_cqe();
             if (cqe_send.err() == .INVAL) return error.SkipZigTest;
-            try testing.expectEqual(linux.io_uring_cqe{ .user_data = user_data, .res = data.len, .flags = 0 }, cqe_send);
+            try testing.expect_equal(linux.io_uring_cqe{ .user_data = user_data, .res = data.len, .flags = 0 }, cqe_send);
         }
 
         // start multishot recv
         var recv_user_data = rnd.int(u64);
         _ = try buf_grp.recv_multishot(recv_user_data, fds.server, 0);
-        try testing.expectEqual(@as(u32, 1), try ring.submit()); // submit
+        try testing.expect_equal(@as(u32, 1), try ring.submit()); // submit
 
         // server reads data into provided buffers
         // there are 2 buffers of size 4, so each read gets only chunk of data
@@ -4118,14 +4118,14 @@ test "ring mapped buffers multishot recv" {
         // 'no more buffers', until we put buffers to the kernel
         {
             const cqe = try ring.copy_cqe();
-            try testing.expectEqual(recv_user_data, cqe.user_data);
+            try testing.expect_equal(recv_user_data, cqe.user_data);
             try testing.expect(cqe.res < 0); // fail
-            try testing.expectEqual(posix.E.NOBUFS, cqe.err());
+            try testing.expect_equal(posix.E.NOBUFS, cqe.err());
             try testing.expect(cqe.flags & linux.IORING_CQE_F_BUFFER == 0); // IORING_CQE_F_BUFFER flags is set on success only
             // has more is not set
             // indicates that multishot is finished
             try testing.expect(cqe.flags & linux.IORING_CQE_F_MORE == 0);
-            try testing.expectError(error.NoBufferSelected, cqe.buffer_id());
+            try testing.expect_error(error.NoBufferSelected, cqe.buffer_id());
         }
 
         // put buffers back to the kernel
@@ -4135,7 +4135,7 @@ test "ring mapped buffers multishot recv" {
         // restart multishot
         recv_user_data = rnd.int(u64);
         _ = try buf_grp.recv_multishot(recv_user_data, fds.server, 0);
-        try testing.expectEqual(@as(u32, 1), try ring.submit()); // submit
+        try testing.expect_equal(@as(u32, 1), try ring.submit()); // submit
 
         chunk = data[buffer_size * 2 .. buffer_size * 3]; // third chunk
         const cqe3 = try expect_buf_grp_cqe(&ring, &buf_grp, recv_user_data, chunk);
@@ -4151,7 +4151,7 @@ test "ring mapped buffers multishot recv" {
         {
             const cancel_user_data = rnd.int(u64);
             _ = try ring.cancel(cancel_user_data, recv_user_data, 0);
-            try testing.expectEqual(@as(u32, 1), try ring.submit());
+            try testing.expect_equal(@as(u32, 1), try ring.submit());
 
             // expect completion of cancel operation and completion of recv operation
             var cqe_cancel = try ring.copy_cqe();
@@ -4177,11 +4177,11 @@ test "ring mapped buffers multishot recv" {
             // Upstream reference: https://github.com/axboe/liburing/issues/984
 
             // cancel operation is success (or NOENT on older kernels)
-            try testing.expectEqual(cancel_user_data, cqe_cancel.user_data);
+            try testing.expect_equal(cancel_user_data, cqe_cancel.user_data);
             try testing.expect(cqe_cancel.err() == .NOENT or cqe_cancel.err() == .SUCCESS);
 
             // recv operation is failed with err CANCELED (or NOBUFS on older kernels)
-            try testing.expectEqual(recv_user_data, cqe_recv.user_data);
+            try testing.expect_equal(recv_user_data, cqe_recv.user_data);
             try testing.expect(cqe_recv.res < 0);
             try testing.expect(cqe_recv.err() == .NOBUFS or cqe_recv.err() == .CANCELED);
             try testing.expect(cqe_recv.flags & linux.IORING_CQE_F_MORE == 0);
@@ -4202,7 +4202,7 @@ fn expect_buf_grp_recv(
     const sqe = try buf_grp.recv(user_data, fd, 0);
     try testing.expect(sqe.flags & linux.IOSQE_BUFFER_SELECT == linux.IOSQE_BUFFER_SELECT);
     try testing.expect(sqe.buf_index == buf_grp.group_id);
-    try testing.expectEqual(@as(u32, 1), try ring.submit()); // submit
+    try testing.expect_equal(@as(u32, 1), try ring.submit()); // submit
 
     const cqe = try expect_buf_grp_cqe(ring, buf_grp, user_data, expected);
     return try cqe.buffer_id();
@@ -4216,17 +4216,17 @@ fn expect_buf_grp_cqe(
 ) !linux.io_uring_cqe {
     // get cqe
     const cqe = try ring.copy_cqe();
-    try testing.expectEqual(user_data, cqe.user_data);
+    try testing.expect_equal(user_data, cqe.user_data);
     try testing.expect(cqe.res >= 0); // success
     try testing.expect(cqe.flags & linux.IORING_CQE_F_BUFFER == linux.IORING_CQE_F_BUFFER); // IORING_CQE_F_BUFFER flag is set
-    try testing.expectEqual(expected.len, @as(usize, @intCast(cqe.res)));
-    try testing.expectEqual(posix.E.SUCCESS, cqe.err());
+    try testing.expect_equal(expected.len, @as(usize, @int_cast(cqe.res)));
+    try testing.expect_equal(posix.E.SUCCESS, cqe.err());
 
     // get buffer from pool
     const buffer_id = try cqe.buffer_id();
-    const len = @as(usize, @intCast(cqe.res));
+    const len = @as(usize, @int_cast(cqe.res));
     const buf = buf_grp.get(buffer_id)[0..len];
-    try testing.expectEqualSlices(u8, expected, buf);
+    try testing.expect_equal_slices(u8, expected, buf);
 
     return cqe;
 }
@@ -4241,8 +4241,8 @@ test "copy_cqes with wrapping sq.cqes buffer" {
     };
     defer ring.deinit();
 
-    try testing.expectEqual(2, ring.sq.sqes.len);
-    try testing.expectEqual(4, ring.cq.cqes.len);
+    try testing.expect_equal(2, ring.sq.sqes.len);
+    try testing.expect_equal(4, ring.cq.cqes.len);
 
     // submit 2 entries, receive 2 completions
     var cqes: [8]linux.io_uring_cqe = undefined;
@@ -4258,7 +4258,7 @@ test "copy_cqes with wrapping sq.cqes buffer" {
         }
     }
 
-    try testing.expectEqual(2, ring.cq.head.*);
+    try testing.expect_equal(2, ring.cq.head.*);
 
     // sq.sqes len is 4, starting at position 2
     // every 4 entries submit wraps completion buffer
@@ -4273,7 +4273,7 @@ test "copy_cqes with wrapping sq.cqes buffer" {
         while (cqe_count < 4) {
             cqe_count += try ring.copy_cqes(&cqes, 4 - cqe_count);
         }
-        try testing.expectEqual(4, cqe_count);
-        try testing.expectEqual(2 + 4 * i, ring.cq.head.*);
+        try testing.expect_equal(4, cqe_count);
+        try testing.expect_equal(2 + 4 * i, ring.cq.head.*);
     }
 }

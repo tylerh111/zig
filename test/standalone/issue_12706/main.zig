@@ -8,5 +8,5 @@ fn func(a: c_int) callconv(.C) void {
 }
 
 pub fn main() void {
-    testFnPtr(2, func, val);
+    test_fn_ptr(2, func, val);
 }

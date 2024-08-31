@@ -11,9 +11,9 @@ const Source = @import("../Source.zig");
 const Once = @This();
 
 pragma: Pragma = .{
-    .afterParse = afterParse,
+    .after_parse = after_parse,
     .deinit = deinit,
-    .preprocessorHandler = preprocessorHandler,
+    .preprocessor_handler = preprocessor_handler,
 },
 pragma_once: std.AutoHashMap(Source.Id, void),
 preprocess_count: u32 = 0,
@@ -28,7 +28,7 @@ pub fn init(allocator: mem.Allocator) !*Pragma {
 
 fn after_parse(pragma: *Pragma, _: *Compilation) void {
     var self: *Once = @fieldParentPtr("pragma", pragma);
-    self.pragma_once.clearRetainingCapacity();
+    self.pragma_once.clear_retaining_capacity();
 }
 
 fn deinit(pragma: *Pragma, comp: *Compilation) void {
@@ -45,10 +45,10 @@ fn preprocessor_handler(pragma: *Pragma, pp: *Preprocessor, start_idx: TokenInde
         try pp.comp.addDiagnostic(.{
             .tag = .extra_tokens_directive_end,
             .loc = name_tok.loc,
-        }, pp.expansionSlice(start_idx + 1));
+        }, pp.expansion_slice(start_idx + 1));
     }
     const seen = self.preprocess_count == pp.preprocess_count;
-    const prev = try self.pragma_once.fetchPut(name_tok.loc.id, {});
+    const prev = try self.pragma_once.fetch_put(name_tok.loc.id, {});
     if (prev != null and !seen) {
         return error.StopPreprocessing;
     }

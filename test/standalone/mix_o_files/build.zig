@@ -7,27 +7,27 @@ pub fn build(b: *std.Build) void {
     const optimize: std.builtin.OptimizeMode = .Debug;
     const target = b.host;
 
-    const obj = b.addObject(.{
+    const obj = b.add_object(.{
         .name = "base64",
         .root_source_file = b.path("base64.zig"),
         .optimize = optimize,
         .target = target,
     });
 
-    const exe = b.addExecutable(.{
+    const exe = b.add_executable(.{
         .name = "test",
         .optimize = optimize,
         .target = target,
     });
-    exe.addCSourceFile(.{
+    exe.add_csource_file(.{
         .file = b.path("test.c"),
         .flags = &[_][]const u8{"-std=c99"},
     });
-    exe.addObject(obj);
-    exe.linkSystemLibrary("c");
+    exe.add_object(obj);
+    exe.link_system_library("c");
 
-    b.default_step.dependOn(&exe.step);
+    b.default_step.depend_on(&exe.step);
 
-    const run_cmd = b.addRunArtifact(exe);
-    test_step.dependOn(&run_cmd.step);
+    const run_cmd = b.add_run_artifact(exe);
+    test_step.depend_on(&run_cmd.step);
 }

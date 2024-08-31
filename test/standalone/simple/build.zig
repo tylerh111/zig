@@ -37,33 +37,33 @@ pub fn build(b: *std.Build) void {
                 if (os_tag != builtin.os.tag) continue;
             }
 
-            const resolved_target = b.resolveTargetQuery(case.target);
+            const resolved_target = b.resolve_target_query(case.target);
 
             if (case.is_exe) {
-                const exe = b.addExecutable(.{
+                const exe = b.add_executable(.{
                     .name = std.fs.path.stem(case.src_path),
                     .root_source_file = b.path(case.src_path),
                     .optimize = optimize,
                     .target = resolved_target,
                 });
-                if (case.link_libc) exe.linkLibC();
+                if (case.link_libc) exe.link_lib_c();
 
-                _ = exe.getEmittedBin();
+                _ = exe.get_emitted_bin();
 
-                step.dependOn(&exe.step);
+                step.depend_on(&exe.step);
             }
 
             if (case.is_test) {
-                const exe = b.addTest(.{
+                const exe = b.add_test(.{
                     .name = std.fs.path.stem(case.src_path),
                     .root_source_file = b.path(case.src_path),
                     .optimize = optimize,
                     .target = resolved_target,
                 });
-                if (case.link_libc) exe.linkLibC();
+                if (case.link_libc) exe.link_lib_c();
 
-                const run = b.addRunArtifact(exe);
-                step.dependOn(&run.step);
+                const run = b.add_run_artifact(exe);
+                step.depend_on(&run.step);
             }
         }
     }

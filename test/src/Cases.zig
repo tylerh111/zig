@@ -111,11 +111,11 @@ pub const Case = struct {
             .name = "update",
             .case = .{ .Execution = result },
         }) catch @panic("out of memory");
-        addSourceFile(self, "tmp.zig", src);
+        add_source_file(self, "tmp.zig", src);
     }
 
     pub fn add_error(self: *Case, src: [:0]const u8, errors: []const []const u8) void {
-        return self.addErrorNamed("update", src, errors);
+        return self.add_error_named("update", src, errors);
     }
 
     /// Adds a subcase in which the module is updated with `src`, which
@@ -134,7 +134,7 @@ pub const Case = struct {
             .name = name,
             .case = .{ .Error = errors },
         }) catch @panic("out of memory");
-        addSourceFile(self, "tmp.zig", src);
+        add_source_file(self, "tmp.zig", src);
     }
 
     /// Adds a subcase in which the module is updated with `src`, and
@@ -145,7 +145,7 @@ pub const Case = struct {
             .name = "compile",
             .case = .{ .Compile = {} },
         }) catch @panic("out of memory");
-        addSourceFile(self, "tmp.zig", src);
+        add_source_file(self, "tmp.zig", src);
     }
 };
 
@@ -185,7 +185,7 @@ pub fn add_exe(
 
 /// Adds a test case for Zig input, producing an executable
 pub fn exe(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Case {
-    return ctx.addExe(name, target);
+    return ctx.add_exe(name, target);
 }
 
 pub fn exe_from_compiled_c(ctx: *Cases, name: []const u8, target_query: std.Target.Query, b: *std.Build) *Case {
@@ -193,7 +193,7 @@ pub fn exe_from_compiled_c(ctx: *Cases, name: []const u8, target_query: std.Targ
     adjusted_query.ofmt = .c;
     ctx.cases.append(Case{
         .name = name,
-        .target = b.resolveTargetQuery(adjusted_query),
+        .target = b.resolve_target_query(adjusted_query),
         .updates = std.ArrayList(Update).init(ctx.cases.allocator),
         .output_mode = .Exe,
         .deps = std.ArrayList(DepModule).init(ctx.arena),
@@ -263,12 +263,12 @@ pub fn add_test(
 
 /// Adds a test case for Zig input, producing an object file.
 pub fn obj(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Case {
-    return ctx.addObj(name, target);
+    return ctx.add_obj(name, target);
 }
 
 /// Adds a test case for ZIR input, producing an object file.
 pub fn obj_zir(ctx: *Cases, name: []const u8, target: std.Build.ResolvedTarget) *Case {
-    return ctx.addObj(name, target, .ZIR);
+    return ctx.add_obj(name, target, .ZIR);
 }
 
 /// Adds a test case for Zig or ZIR input, producing C code.
@@ -291,7 +291,7 @@ pub fn add_compare_output(
     src: [:0]const u8,
     expected_stdout: []const u8,
 ) void {
-    ctx.addExe(name, .{}).addCompareOutput(src, expected_stdout);
+    ctx.add_exe(name, .{}).add_compare_output(src, expected_stdout);
 }
 
 /// Adds a test case that compiles the Zig source given in `src`, executes
@@ -302,7 +302,7 @@ pub fn compare_output(
     src: [:0]const u8,
     expected_stdout: []const u8,
 ) void {
-    return ctx.addCompareOutput(name, src, expected_stdout);
+    return ctx.add_compare_output(name, src, expected_stdout);
 }
 
 pub fn add_transform(
@@ -312,7 +312,7 @@ pub fn add_transform(
     src: [:0]const u8,
     result: [:0]const u8,
 ) void {
-    ctx.addObj(name, target).addTransform(src, result);
+    ctx.add_obj(name, target).add_transform(src, result);
 }
 
 /// Adds a test case that compiles the Zig given in `src` to ZIR and tests
@@ -324,7 +324,7 @@ pub fn transform(
     src: [:0]const u8,
     result: [:0]const u8,
 ) void {
-    ctx.addTransform(name, target, src, result);
+    ctx.add_transform(name, target, src, result);
 }
 
 pub fn add_error(
@@ -334,7 +334,7 @@ pub fn add_error(
     src: [:0]const u8,
     expected_errors: []const []const u8,
 ) void {
-    ctx.addObj(name, target).addError(src, expected_errors);
+    ctx.add_obj(name, target).add_error(src, expected_errors);
 }
 
 /// Adds a test case that ensures that the Zig given in `src` fails to
@@ -347,7 +347,7 @@ pub fn compile_error(
     src: [:0]const u8,
     expected_errors: []const []const u8,
 ) void {
-    ctx.addError(name, target, src, expected_errors);
+    ctx.add_error(name, target, src, expected_errors);
 }
 
 /// Adds a test case that asserts that the Zig given in `src` compiles
@@ -358,7 +358,7 @@ pub fn add_compile(
     target: std.Build.ResolvedTarget,
     src: [:0]const u8,
 ) void {
-    ctx.addObj(name, target).addCompile(src);
+    ctx.add_obj(name, target).add_compile(src);
 }
 
 /// Adds a test for each file in the provided directory.
@@ -370,8 +370,8 @@ pub fn add_compile(
 /// key-value config values, followed by a blank line, then the expected output.
 pub fn add_from_dir(ctx: *Cases, dir: std.fs.Dir, b: *std.Build) void {
     var current_file: []const u8 = "none";
-    ctx.addFromDirInner(dir, &current_file, b) catch |err| {
-        std.debug.panicExtra(
+    ctx.add_from_dir_inner(dir, &current_file, b) catch |err| {
+        std.debug.panic_extra(
             @errorReturnTrace(),
             @returnAddress(),
             "test harness failed to process file '{s}': {s}\n",
@@ -395,7 +395,7 @@ fn add_from_dir_inner(
         if (entry.kind != .file) continue;
 
         // Ignore stuff such as .swp files
-        switch (Compilation.classifyFileExt(entry.basename)) {
+        switch (Compilation.classify_file_ext(entry.basename)) {
             .unknown => continue,
             else => {},
         }
@@ -403,7 +403,7 @@ fn add_from_dir_inner(
     }
 
     // Sort filenames, so that incremental tests are contiguous and in-order
-    sortTestFilenames(filenames.items);
+    sort_test_filenames(filenames.items);
 
     var test_it = TestIterator{ .filenames = filenames.items };
     while (test_it.next()) |maybe_batch| {
@@ -417,26 +417,26 @@ fn add_from_dir_inner(
         }
 
         const max_file_size = 10 * 1024 * 1024;
-        const src = try iterable_dir.readFileAllocOptions(ctx.arena, filename, max_file_size, null, 1, 0);
+        const src = try iterable_dir.read_file_alloc_options(ctx.arena, filename, max_file_size, null, 1, 0);
 
         // Parse the manifest
         var manifest = try TestManifest.parse(ctx.arena, src);
 
-        const backends = try manifest.getConfigForKeyAlloc(ctx.arena, "backend", Backend);
-        const targets = try manifest.getConfigForKeyAlloc(ctx.arena, "target", std.Target.Query);
-        const c_frontends = try manifest.getConfigForKeyAlloc(ctx.arena, "c_frontend", CFrontend);
-        const is_test = try manifest.getConfigForKeyAssertSingle("is_test", bool);
-        const link_libc = try manifest.getConfigForKeyAssertSingle("link_libc", bool);
-        const output_mode = try manifest.getConfigForKeyAssertSingle("output_mode", std.builtin.OutputMode);
+        const backends = try manifest.get_config_for_key_alloc(ctx.arena, "backend", Backend);
+        const targets = try manifest.get_config_for_key_alloc(ctx.arena, "target", std.Target.Query);
+        const c_frontends = try manifest.get_config_for_key_alloc(ctx.arena, "c_frontend", CFrontend);
+        const is_test = try manifest.get_config_for_key_assert_single("is_test", bool);
+        const link_libc = try manifest.get_config_for_key_assert_single("link_libc", bool);
+        const output_mode = try manifest.get_config_for_key_assert_single("output_mode", std.builtin.OutputMode);
 
         if (manifest.type == .translate_c) {
             for (c_frontends) |c_frontend| {
                 for (targets) |target_query| {
-                    const output = try manifest.trailingLinesSplit(ctx.arena);
+                    const output = try manifest.trailing_lines_split(ctx.arena);
                     try ctx.translate.append(.{
                         .name = std.fs.path.stem(filename),
                         .c_frontend = c_frontend,
-                        .target = b.resolveTargetQuery(target_query),
+                        .target = b.resolve_target_query(target_query),
                         .link_libc = link_libc,
                         .input = src,
                         .kind = .{ .translate = output },
@@ -448,11 +448,11 @@ fn add_from_dir_inner(
         if (manifest.type == .run_translated_c) {
             for (c_frontends) |c_frontend| {
                 for (targets) |target_query| {
-                    const output = try manifest.trailingSplit(ctx.arena);
+                    const output = try manifest.trailing_split(ctx.arena);
                     try ctx.translate.append(.{
                         .name = std.fs.path.stem(filename),
                         .c_frontend = c_frontend,
-                        .target = b.resolveTargetQuery(target_query),
+                        .target = b.resolve_target_query(target_query),
                         .link_libc = link_libc,
                         .input = src,
                         .kind = .{ .run = output },
@@ -466,7 +466,7 @@ fn add_from_dir_inner(
 
         // Cross-product to get all possible test combinations
         for (targets) |target_query| {
-            const resolved_target = b.resolveTargetQuery(target_query);
+            const resolved_target = b.resolve_target_query(target_query);
             const target = resolved_target.result;
             for (backends) |backend| {
                 if (backend == .stage2 and
@@ -501,15 +501,15 @@ fn add_from_dir_inner(
             const case = &ctx.cases.items[case_index];
             switch (manifest.type) {
                 .compile => {
-                    case.addCompile(src);
+                    case.add_compile(src);
                 },
                 .@"error" => {
-                    const errors = try manifest.trailingLines(ctx.arena);
-                    case.addError(src, errors);
+                    const errors = try manifest.trailing_lines(ctx.arena);
+                    case.add_error(src, errors);
                 },
                 .run => {
-                    const output = try manifest.trailingSplit(ctx.arena);
-                    case.addCompareOutput(src, output);
+                    const output = try manifest.trailing_split(ctx.arena);
+                    case.add_compare_output(src, output);
                 },
                 .translate_c => @panic("c_frontend specified for compile case"),
                 .run_translated_c => @panic("c_frontend specified for compile case"),
@@ -518,7 +518,7 @@ fn add_from_dir_inner(
         }
     } else |err| {
         // make sure the current file is set to the file that produced an error
-        current_file.* = test_it.currentFilename();
+        current_file.* = test_it.current_filename();
         return err;
     }
 }
@@ -548,14 +548,14 @@ pub fn lower_to_translate_csteps(
     const tests = @import("../tests.zig");
     const test_translate_c_step = b.step("test-translate-c", "Run the C translation tests");
     if (!translate_c_options.skip_translate_c) {
-        tests.addTranslateCTests(b, test_translate_c_step, test_filters);
-        parent_step.dependOn(test_translate_c_step);
+        tests.add_translate_ctests(b, test_translate_c_step, test_filters);
+        parent_step.depend_on(test_translate_c_step);
     }
 
     const test_run_translated_c_step = b.step("test-run-translated-c", "Run the Run-Translated-C tests");
     if (!translate_c_options.skip_run_translated_c) {
-        tests.addRunTranslatedCTests(b, test_run_translated_c_step, test_filters, target);
-        parent_step.dependOn(test_run_translated_c_step);
+        tests.add_run_translated_ctests(b, test_run_translated_c_step, test_filters, target);
+        parent_step.depend_on(test_run_translated_c_step);
     }
 
     for (self.translate.items) |case| switch (case.kind) {
@@ -563,17 +563,17 @@ pub fn lower_to_translate_csteps(
             if (translate_c_options.skip_run_translated_c) continue;
             const annotated_case_name = b.fmt("run-translated-c {s}", .{case.name});
             for (test_filters) |test_filter| {
-                if (std.mem.indexOf(u8, annotated_case_name, test_filter)) |_| break;
+                if (std.mem.index_of(u8, annotated_case_name, test_filter)) |_| break;
             } else if (test_filters.len > 0) continue;
             if (!std.process.can_spawn) {
-                std.debug.print("Unable to spawn child processes on {s}, skipping test.\n", .{@tagName(builtin.os.tag)});
+                std.debug.print("Unable to spawn child processes on {s}, skipping test.\n", .{@tag_name(builtin.os.tag)});
                 continue; // Pass test.
             }
 
-            const write_src = b.addWriteFiles();
+            const write_src = b.add_write_files();
             const file_source = write_src.add("tmp.c", case.input);
 
-            const translate_c = b.addTranslateC(.{
+            const translate_c = b.add_translate_c(.{
                 .root_source_file = file_source,
                 .optimize = .Debug,
                 .target = case.target,
@@ -582,27 +582,27 @@ pub fn lower_to_translate_csteps(
             });
             translate_c.step.name = b.fmt("{s} translate-c", .{annotated_case_name});
 
-            const run_exe = translate_c.addExecutable(.{});
+            const run_exe = translate_c.add_executable(.{});
             run_exe.step.name = b.fmt("{s} build-exe", .{annotated_case_name});
-            run_exe.linkLibC();
-            const run = b.addRunArtifact(run_exe);
+            run_exe.link_lib_c();
+            const run = b.add_run_artifact(run_exe);
             run.step.name = b.fmt("{s} run", .{annotated_case_name});
-            run.expectStdOutEqual(output);
+            run.expect_std_out_equal(output);
             run.skip_foreign_checks = true;
 
-            test_run_translated_c_step.dependOn(&run.step);
+            test_run_translated_c_step.depend_on(&run.step);
         },
         .translate => |output| {
             if (translate_c_options.skip_translate_c) continue;
             const annotated_case_name = b.fmt("zig translate-c {s}", .{case.name});
             for (test_filters) |test_filter| {
-                if (std.mem.indexOf(u8, annotated_case_name, test_filter)) |_| break;
+                if (std.mem.index_of(u8, annotated_case_name, test_filter)) |_| break;
             } else if (test_filters.len > 0) continue;
 
-            const write_src = b.addWriteFiles();
+            const write_src = b.add_write_files();
             const file_source = write_src.add("tmp.c", case.input);
 
-            const translate_c = b.addTranslateC(.{
+            const translate_c = b.add_translate_c(.{
                 .root_source_file = file_source,
                 .optimize = .Debug,
                 .target = case.target,
@@ -611,9 +611,9 @@ pub fn lower_to_translate_csteps(
             });
             translate_c.step.name = b.fmt("{s} translate-c", .{annotated_case_name});
 
-            const check_file = translate_c.addCheckFile(output);
+            const check_file = translate_c.add_check_file(output);
             check_file.step.name = b.fmt("{s} CheckFile", .{annotated_case_name});
-            test_translate_c_step.dependOn(&check_file.step);
+            test_translate_c_step.depend_on(&check_file.step);
         },
     };
 }
@@ -626,7 +626,7 @@ pub fn lower_to_build_steps(
     cases_dir_path: []const u8,
     incremental_exe: *std.Build.Step.Compile,
 ) void {
-    const host = std.zig.system.resolveTargetQuery(.{}) catch |err|
+    const host = std.zig.system.resolve_target_query(.{}) catch |err|
         std.debug.panic("unable to detect native host: {s}\n", .{@errorName(err)});
 
     for (self.incremental_cases.items) |incr_case| {
@@ -638,19 +638,19 @@ pub fn lower_to_build_steps(
             continue;
         }
         for (test_filters) |test_filter| {
-            if (std.mem.indexOf(u8, incr_case.base_path, test_filter)) |_| break;
+            if (std.mem.index_of(u8, incr_case.base_path, test_filter)) |_| break;
         } else if (test_filters.len > 0) continue;
         const case_base_path_with_dir = std.fs.path.join(b.allocator, &.{
             cases_dir_path, incr_case.base_path,
         }) catch @panic("OOM");
-        const run = b.addRunArtifact(incremental_exe);
-        run.setName(incr_case.base_path);
-        run.addArgs(&.{
+        const run = b.add_run_artifact(incremental_exe);
+        run.set_name(incr_case.base_path);
+        run.add_args(&.{
             case_base_path_with_dir,
             b.graph.zig_exe,
         });
-        run.expectStdOutEqual("");
-        parent_step.dependOn(&run.step);
+        run.expect_std_out_equal("");
+        parent_step.depend_on(&run.step);
     }
 
     for (self.cases.items) |case| {
@@ -659,36 +659,36 @@ pub fn lower_to_build_steps(
         const update = case.updates.items[0];
 
         for (test_filters) |test_filter| {
-            if (std.mem.indexOf(u8, case.name, test_filter)) |_| break;
+            if (std.mem.index_of(u8, case.name, test_filter)) |_| break;
         } else if (test_filters.len > 0) continue;
 
-        const writefiles = b.addWriteFiles();
+        const writefiles = b.add_write_files();
         var file_sources = std.StringHashMap(std.Build.LazyPath).init(b.allocator);
         defer file_sources.deinit();
         for (update.files.items) |file| {
             file_sources.put(file.path, writefiles.add(file.path, file.src)) catch @panic("OOM");
         }
-        const root_source_file = writefiles.files.items[0].getPath();
+        const root_source_file = writefiles.files.items[0].get_path();
 
-        const artifact = if (case.is_test) b.addTest(.{
+        const artifact = if (case.is_test) b.add_test(.{
             .root_source_file = root_source_file,
             .name = case.name,
             .target = case.target,
             .optimize = case.optimize_mode,
         }) else switch (case.output_mode) {
-            .Obj => b.addObject(.{
+            .Obj => b.add_object(.{
                 .root_source_file = root_source_file,
                 .name = case.name,
                 .target = case.target,
                 .optimize = case.optimize_mode,
             }),
-            .Lib => b.addStaticLibrary(.{
+            .Lib => b.add_static_library(.{
                 .root_source_file = root_source_file,
                 .name = case.name,
                 .target = case.target,
                 .optimize = case.optimize_mode,
             }),
-            .Exe => b.addExecutable(.{
+            .Exe => b.add_executable(.{
                 .root_source_file = root_source_file,
                 .name = case.name,
                 .target = case.target,
@@ -696,7 +696,7 @@ pub fn lower_to_build_steps(
             }),
         };
 
-        if (case.link_libc) artifact.linkLibC();
+        if (case.link_libc) artifact.link_lib_c();
 
         switch (case.backend) {
             .stage1 => continue,
@@ -710,34 +710,34 @@ pub fn lower_to_build_steps(
         }
 
         for (case.deps.items) |dep| {
-            artifact.root_module.addAnonymousImport(dep.name, .{
+            artifact.root_module.add_anonymous_import(dep.name, .{
                 .root_source_file = file_sources.get(dep.path).?,
             });
         }
 
         switch (update.case) {
             .Compile => {
-                parent_step.dependOn(&artifact.step);
+                parent_step.depend_on(&artifact.step);
             },
             .CompareObjectFile => |expected_output| {
-                const check = b.addCheckFile(artifact.getEmittedBin(), .{
+                const check = b.add_check_file(artifact.get_emitted_bin(), .{
                     .expected_exact = expected_output,
                 });
 
-                parent_step.dependOn(&check.step);
+                parent_step.depend_on(&check.step);
             },
             .Error => |expected_msgs| {
                 assert(expected_msgs.len != 0);
                 artifact.expect_errors = .{ .exact = expected_msgs };
-                parent_step.dependOn(&artifact.step);
+                parent_step.depend_on(&artifact.step);
             },
             .Execution => |expected_stdout| no_exec: {
                 const run = if (case.target.result.ofmt == .c) run_step: {
-                    if (getExternalExecutor(host, &case.target.result, .{ .link_libc = true }) != .native) {
+                    if (get_external_executor(host, &case.target.result, .{ .link_libc = true }) != .native) {
                         // We wouldn't be able to run the compiled C code.
                         break :no_exec;
                     }
-                    const run_c = b.addSystemCommand(&.{
+                    const run_c = b.add_system_command(&.{
                         b.graph.zig_exe,
                         "run",
                         "-cflags",
@@ -752,16 +752,16 @@ pub fn lower_to_build_steps(
                         "--",
                         "-lc",
                         "-target",
-                        case.target.result.zigTriple(b.allocator) catch @panic("OOM"),
+                        case.target.result.zig_triple(b.allocator) catch @panic("OOM"),
                     });
-                    run_c.addArtifactArg(artifact);
+                    run_c.add_artifact_arg(artifact);
                     break :run_step run_c;
-                } else b.addRunArtifact(artifact);
+                } else b.add_run_artifact(artifact);
                 run.skip_foreign_checks = true;
                 if (!case.is_test) {
-                    run.expectStdOutEqual(expected_stdout);
+                    run.expect_std_out_equal(expected_stdout);
                 }
-                parent_step.dependOn(&run.step);
+                parent_step.depend_on(&run.step);
             },
             .Header => @panic("TODO"),
         }
@@ -773,8 +773,8 @@ pub fn lower_to_build_steps(
 fn sort_test_filenames(filenames: [][]const u8) void {
     const Context = struct {
         pub fn less_than(_: @This(), a: []const u8, b: []const u8) bool {
-            const a_parts = getTestFileNameParts(a);
-            const b_parts = getTestFileNameParts(b);
+            const a_parts = get_test_file_name_parts(a);
+            const b_parts = get_test_file_name_parts(b);
 
             // Sort "<base_name>.X.<file_ext>" based on "<base_name>" and "<file_ext>" first
             return switch (std.mem.order(u8, a_parts.base_name, b_parts.base_name)) {
@@ -802,7 +802,7 @@ fn sort_test_filenames(filenames: [][]const u8) void {
             };
         }
     };
-    std.mem.sort([]const u8, filenames, Context{}, Context.lessThan);
+    std.mem.sort([]const u8, filenames, Context{}, Context.less_than);
 }
 
 /// Iterates a set of filenames extracting batches that are either incremental
@@ -818,7 +818,7 @@ const TestIterator = struct {
     const Error = error{InvalidIncrementalTestIndex};
 
     fn next(it: *TestIterator) Error!?[]const []const u8 {
-        try it.nextInner();
+        try it.next_inner();
         if (it.start == it.end) return null;
         return it.filenames[it.start..it.end];
     }
@@ -836,8 +836,8 @@ const TestIterator = struct {
         while (it.index < remaining.len - 1) : (it.index += 1) {
             // First, check if this file is part of an incremental update sequence
             // Split filename into "<base_name>.<index>.<file_ext>"
-            const prev_parts = getTestFileNameParts(remaining[it.index]);
-            const new_parts = getTestFileNameParts(remaining[it.index + 1]);
+            const prev_parts = get_test_file_name_parts(remaining[it.index]);
+            const new_parts = get_test_file_name_parts(remaining[it.index + 1]);
 
             // If base_name and file_ext match, these files are in the same test sequence
             // and the new one should be the incremented version of the previous test
@@ -889,7 +889,7 @@ fn get_test_file_name_parts(name: []const u8) struct {
 
     // Attempt to parse index
     const index: ?usize = if (maybe_index.len > 0)
-        std.fmt.parseInt(usize, maybe_index[1..], 10) catch null
+        std.fmt.parse_int(usize, maybe_index[1..], 10) catch null
     else
         null;
 
@@ -986,7 +986,7 @@ const TestManifest = struct {
     config_map: std.StringHashMap([]const u8),
     trailing_bytes: []const u8 = "",
 
-    const valid_keys = std.StaticStringMap(void).initComptime(.{
+    const valid_keys = std.StaticStringMap(void).init_comptime(.{
         .{ "is_test", {} },
         .{ "output_mode", {} },
         .{ "target", {} },
@@ -1009,7 +1009,7 @@ const TestManifest = struct {
 
         fn next(self: *TrailingIterator) ?[]const u8 {
             const next_inner = self.inner.next() orelse return null;
-            return if (next_inner.len == 2) "" else std.mem.trimRight(u8, next_inner[3..], " \t");
+            return if (next_inner.len == 2) "" else std.mem.trim_right(u8, next_inner[3..], " \t");
         }
     };
 
@@ -1019,7 +1019,7 @@ const TestManifest = struct {
 
             fn next(self: *@This()) !?T {
                 const next_raw = self.inner.next() orelse return null;
-                const parseFn = getDefaultParser(T);
+                const parseFn = get_default_parser(T);
                 return try parseFn(next_raw);
             }
         };
@@ -1036,7 +1036,7 @@ const TestManifest = struct {
                 // Move to beginning of line
                 while (cursor > 0 and bytes[cursor - 1] != '\n') cursor -= 1;
 
-                if (std.mem.startsWith(u8, bytes[cursor..], "//")) {
+                if (std.mem.starts_with(u8, bytes[cursor..], "//")) {
                     start = cursor; // Contiguous comment line, include in manifest
                 } else {
                     if (start != null) break; // Encountered non-comment line, end of manifest
@@ -1056,7 +1056,7 @@ const TestManifest = struct {
         const actual_start = start orelse return error.MissingTestManifest;
         const manifest_bytes = bytes[actual_start..end];
 
-        var it = std.mem.tokenizeAny(u8, manifest_bytes, "\r\n");
+        var it = std.mem.tokenize_any(u8, manifest_bytes, "\r\n");
 
         // First line is the test type
         const tt: Type = blk: {
@@ -1091,10 +1091,10 @@ const TestManifest = struct {
             if (trimmed.len == 0) break;
 
             // Parse key=value(s)
-            var kv_it = std.mem.splitScalar(u8, trimmed, '=');
+            var kv_it = std.mem.split_scalar(u8, trimmed, '=');
             const key = kv_it.first();
             if (!valid_keys.has(key)) return error.InvalidKey;
-            try manifest.config_map.putNoClobber(key, kv_it.next() orelse return error.MissingValuesForConfig);
+            try manifest.config_map.put_no_clobber(key, kv_it.next() orelse return error.MissingValuesForConfig);
         }
 
         // Finally, trailing is expected output
@@ -1110,7 +1110,7 @@ const TestManifest = struct {
     ) ConfigValueIterator(T) {
         const bytes = self.config_map.get(key) orelse TestManifestConfigDefaults.get(self.type, key);
         return ConfigValueIterator(T){
-            .inner = std.mem.splitScalar(u8, bytes, ','),
+            .inner = std.mem.split_scalar(u8, bytes, ','),
         };
     }
 
@@ -1122,15 +1122,15 @@ const TestManifest = struct {
     ) ![]const T {
         var out = std.ArrayList(T).init(allocator);
         defer out.deinit();
-        var it = self.getConfigForKey(key, T);
+        var it = self.get_config_for_key(key, T);
         while (try it.next()) |item| {
             try out.append(item);
         }
-        return try out.toOwnedSlice();
+        return try out.to_owned_slice();
     }
 
     fn get_config_for_key_assert_single(self: TestManifest, key: []const u8, comptime T: type) !T {
-        var it = self.getConfigForKey(key, T);
+        var it = self.get_config_for_key(key, T);
         const res = (try it.next()) orelse unreachable;
         assert((try it.next()) == null);
         return res;
@@ -1138,7 +1138,7 @@ const TestManifest = struct {
 
     fn trailing(self: TestManifest) TrailingIterator {
         return .{
-            .inner = std.mem.tokenizeAny(u8, self.trailing_bytes, "\r\n"),
+            .inner = std.mem.tokenize_any(u8, self.trailing_bytes, "\r\n"),
         };
     }
 
@@ -1147,13 +1147,13 @@ const TestManifest = struct {
         defer out.deinit();
         var trailing_it = self.trailing();
         while (trailing_it.next()) |line| {
-            try out.appendSlice(line);
+            try out.append_slice(line);
             try out.append('\n');
         }
         if (out.items.len > 0) {
             try out.resize(out.items.len - 1);
         }
-        return try out.toOwnedSlice();
+        return try out.to_owned_slice();
     }
 
     fn trailing_lines(self: TestManifest, allocator: Allocator) error{OutOfMemory}![]const []const u8 {
@@ -1163,7 +1163,7 @@ const TestManifest = struct {
         while (it.next()) |line| {
             try out.append(line);
         }
-        return try out.toOwnedSlice();
+        return try out.to_owned_slice();
     }
 
     fn trailing_lines_split(self: TestManifest, allocator: Allocator) error{OutOfMemory}![]const []const u8 {
@@ -1176,16 +1176,16 @@ const TestManifest = struct {
         while (it.next()) |line| {
             if (line.len == 0) {
                 if (buf.items.len != 0) {
-                    try out.append(try buf.toOwnedSlice());
+                    try out.append(try buf.to_owned_slice());
                     buf.items.len = 0;
                 }
                 continue;
             }
-            try buf.appendSlice(line);
+            try buf.append_slice(line);
             try buf.append('\n');
         }
-        try out.append(try buf.toOwnedSlice());
-        return try out.toOwnedSlice();
+        try out.append(try buf.to_owned_slice());
+        return try out.to_owned_slice();
     }
 
     fn ParseFn(comptime T: type) type {
@@ -1202,7 +1202,7 @@ const TestManifest = struct {
         switch (@typeInfo(T)) {
             .Int => return struct {
                 fn parse(str: []const u8) anyerror!T {
-                    return try std.fmt.parseInt(T, str, 0);
+                    return try std.fmt.parse_int(T, str, 0);
                 }
             }.parse,
             .Bool => return struct {
@@ -1215,14 +1215,14 @@ const TestManifest = struct {
             }.parse,
             .Enum => return struct {
                 fn parse(str: []const u8) anyerror!T {
-                    return std.meta.stringToEnum(T, str) orelse {
-                        std.log.err("unknown enum variant for {s}: {s}", .{ @typeName(T), str });
+                    return std.meta.string_to_enum(T, str) orelse {
+                        std.log.err("unknown enum variant for {s}: {s}", .{ @type_name(T), str });
                         return error.UnknownEnumVariant;
                     };
                 }
             }.parse,
-            .Struct => @compileError("no default parser for " ++ @typeName(T)),
-            else => @compileError("no default parser for " ++ @typeName(T)),
+            .Struct => @compile_error("no default parser for " ++ @type_name(T)),
+            else => @compile_error("no default parser for " ++ @type_name(T)),
         }
     }
 };
@@ -1232,7 +1232,7 @@ const builtin = @import("builtin");
 const std = @import("std");
 const assert = std.debug.assert;
 const Allocator = std.mem.Allocator;
-const getExternalExecutor = std.zig.system.getExternalExecutor;
+const get_external_executor = std.zig.system.get_external_executor;
 
 const Compilation = @import("../../src/Compilation.zig");
 const zig_h = @import("../../src/link.zig").File.C.zig_h;
@@ -1274,22 +1274,22 @@ pub fn main() !void {
     };
     const arena = thread_safe_arena.allocator();
 
-    const args = try std.process.argsAlloc(arena);
+    const args = try std.process.args_alloc(arena);
     const case_file_path = args[1];
     const zig_exe_path = args[2];
 
     var filenames = std.ArrayList([]const u8).init(arena);
 
     const case_dirname = std.fs.path.dirname(case_file_path).?;
-    var iterable_dir = try std.fs.cwd().openDir(case_dirname, .{ .iterate = true });
+    var iterable_dir = try std.fs.cwd().open_dir(case_dirname, .{ .iterate = true });
     defer iterable_dir.close();
 
-    if (std.mem.endsWith(u8, case_file_path, ".0.zig")) {
+    if (std.mem.ends_with(u8, case_file_path, ".0.zig")) {
         const stem = case_file_path[case_dirname.len + 1 .. case_file_path.len - "0.zig".len];
         var it = iterable_dir.iterate();
         while (try it.next()) |entry| {
             if (entry.kind != .file) continue;
-            if (!std.mem.startsWith(u8, entry.name, stem)) continue;
+            if (!std.mem.starts_with(u8, entry.name, stem)) continue;
             try filenames.append(try std.fs.path.join(arena, &.{ case_dirname, entry.name }));
         }
     } else {
@@ -1304,7 +1304,7 @@ pub fn main() !void {
     }
 
     // Sort filenames, so that incremental tests are contiguous and in-order
-    sortTestFilenames(filenames.items);
+    sort_test_filenames(filenames.items);
 
     var ctx = Cases.init(gpa, arena);
 
@@ -1315,27 +1315,27 @@ pub fn main() !void {
 
         for (batch) |filename| {
             const max_file_size = 10 * 1024 * 1024;
-            const src = try iterable_dir.readFileAllocOptions(arena, filename, max_file_size, null, 1, 0);
+            const src = try iterable_dir.read_file_alloc_options(arena, filename, max_file_size, null, 1, 0);
 
             // Parse the manifest
             var manifest = try TestManifest.parse(arena, src);
 
             if (cases.items.len == 0) {
-                const backends = try manifest.getConfigForKeyAlloc(arena, "backend", Backend);
-                const targets = try manifest.getConfigForKeyAlloc(arena, "target", std.Target.Query);
-                const c_frontends = try manifest.getConfigForKeyAlloc(ctx.arena, "c_frontend", CFrontend);
-                const is_test = try manifest.getConfigForKeyAssertSingle("is_test", bool);
-                const link_libc = try manifest.getConfigForKeyAssertSingle("link_libc", bool);
-                const output_mode = try manifest.getConfigForKeyAssertSingle("output_mode", std.builtin.OutputMode);
+                const backends = try manifest.get_config_for_key_alloc(arena, "backend", Backend);
+                const targets = try manifest.get_config_for_key_alloc(arena, "target", std.Target.Query);
+                const c_frontends = try manifest.get_config_for_key_alloc(ctx.arena, "c_frontend", CFrontend);
+                const is_test = try manifest.get_config_for_key_assert_single("is_test", bool);
+                const link_libc = try manifest.get_config_for_key_assert_single("link_libc", bool);
+                const output_mode = try manifest.get_config_for_key_assert_single("output_mode", std.builtin.OutputMode);
 
                 if (manifest.type == .translate_c) {
                     for (c_frontends) |c_frontend| {
                         for (targets) |target_query| {
-                            const output = try manifest.trailingLinesSplit(ctx.arena);
+                            const output = try manifest.trailing_lines_split(ctx.arena);
                             try ctx.translate.append(.{
                                 .name = std.fs.path.stem(filename),
                                 .c_frontend = c_frontend,
-                                .target = resolveTargetQuery(target_query),
+                                .target = resolve_target_query(target_query),
                                 .is_test = is_test,
                                 .link_libc = link_libc,
                                 .input = src,
@@ -1348,11 +1348,11 @@ pub fn main() !void {
                 if (manifest.type == .run_translated_c) {
                     for (c_frontends) |c_frontend| {
                         for (targets) |target_query| {
-                            const output = try manifest.trailingSplit(ctx.arena);
+                            const output = try manifest.trailing_split(ctx.arena);
                             try ctx.translate.append(.{
                                 .name = std.fs.path.stem(filename),
                                 .c_frontend = c_frontend,
-                                .target = resolveTargetQuery(target_query),
+                                .target = resolve_target_query(target_query),
                                 .is_test = is_test,
                                 .link_libc = link_libc,
                                 .output = output,
@@ -1392,22 +1392,22 @@ pub fn main() !void {
 
                 switch (manifest.type) {
                     .compile => {
-                        case.addCompile(src);
+                        case.add_compile(src);
                     },
                     .@"error" => {
-                        const errors = try manifest.trailingLines(arena);
+                        const errors = try manifest.trailing_lines(arena);
                         switch (strategy) {
                             .independent => {
-                                case.addError(src, errors);
+                                case.add_error(src, errors);
                             },
                             .incremental => {
-                                case.addErrorNamed("update", src, errors);
+                                case.add_error_named("update", src, errors);
                             },
                         }
                     },
                     .run => {
-                        const output = try manifest.trailingSplit(ctx.arena);
-                        case.addCompareOutput(src, output);
+                        const output = try manifest.trailing_split(ctx.arena);
+                        case.add_compare_output(src, output);
                     },
                     .translate_c => @panic("c_frontend specified for compile case"),
                     .run_translated_c => @panic("c_frontend specified for compile case"),
@@ -1417,26 +1417,26 @@ pub fn main() !void {
         }
     }
 
-    return runCases(&ctx, zig_exe_path);
+    return run_cases(&ctx, zig_exe_path);
 }
 
 fn resolve_target_query(query: std.Target.Query) std.Build.ResolvedTarget {
     return .{
         .query = query,
-        .target = std.zig.system.resolveTargetQuery(query) catch
+        .target = std.zig.system.resolve_target_query(query) catch
             @panic("unable to resolve target query"),
     };
 }
 
 fn run_cases(self: *Cases, zig_exe_path: []const u8) !void {
-    const host = try std.zig.system.resolveTargetQuery(.{});
+    const host = try std.zig.system.resolve_target_query(.{});
 
     var progress = std.Progress{};
     const root_node = progress.start("compiler", self.cases.items.len);
     progress.terminal = null;
     defer root_node.end();
 
-    var zig_lib_directory = try introspect.findZigLibDirFromSelfExe(self.gpa, zig_exe_path);
+    var zig_lib_directory = try introspect.find_zig_lib_dir_from_self_exe(self.gpa, zig_exe_path);
     defer zig_lib_directory.handle.close();
     defer self.gpa.free(zig_lib_directory.path.?);
 
@@ -1446,10 +1446,10 @@ fn run_cases(self: *Cases, zig_exe_path: []const u8) !void {
 
     // Use the same global cache dir for all the tests, such that we for example don't have to
     // rebuild musl libc for every case (when LLVM backend is enabled).
-    var global_tmp = std.testing.tmpDir(.{});
+    var global_tmp = std.testing.tmp_dir(.{});
     defer global_tmp.cleanup();
 
-    var cache_dir = try global_tmp.dir.makeOpenPath(".zig-cache", .{});
+    var cache_dir = try global_tmp.dir.make_open_path(".zig-cache", .{});
     defer cache_dir.close();
     const tmp_dir_path = try std.fs.path.join(self.gpa, &[_][]const u8{ ".", ".zig-cache", "tmp", &global_tmp.sub_path });
     defer self.gpa.free(tmp_dir_path);
@@ -1476,14 +1476,14 @@ fn run_cases(self: *Cases, zig_exe_path: []const u8) !void {
             assert(case.backend != .stage1);
 
             for (build_options.test_filters) |test_filter| {
-                if (std.mem.indexOf(u8, case.name, test_filter)) |_| break;
+                if (std.mem.index_of(u8, case.name, test_filter)) |_| break;
             } else if (build_options.test_filters.len > 0) continue;
 
             var prg_node = root_node.start(case.name, case.updates.items.len);
             prg_node.activate();
             defer prg_node.end();
 
-            try runOneCase(
+            try run_one_case(
                 self.gpa,
                 &prg_node,
                 case.*,
@@ -1520,16 +1520,16 @@ fn run_one_case(
     const enable_darling = build_options.enable_darling;
     const glibc_runtimes_dir: ?[]const u8 = build_options.glibc_runtimes_dir;
 
-    const target = try std.zig.system.resolveTargetQuery(case.target);
+    const target = try std.zig.system.resolve_target_query(case.target);
 
     var arena_allocator = std.heap.ArenaAllocator.init(allocator);
     defer arena_allocator.deinit();
     const arena = arena_allocator.allocator();
 
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
-    var cache_dir = try tmp.dir.makeOpenPath(".zig-cache", .{});
+    var cache_dir = try tmp.dir.make_open_path(".zig-cache", .{});
     defer cache_dir.close();
 
     const tmp_dir_path = try std.fs.path.join(
@@ -1569,7 +1569,7 @@ fn run_one_case(
         try main_pkg.add(allocator, dep.name, pkg);
     }
 
-    const bin_name = try std.zig.binNameAlloc(arena, .{
+    const bin_name = try std.zig.bin_name_alloc(arena, .{
         .root_name = "test_case",
         .target = target,
         .output_mode = case.output_mode,
@@ -1608,8 +1608,8 @@ fn run_one_case(
         .emit_h = emit_h,
         .main_pkg = &main_pkg,
         .keep_source_files_loaded = true,
-        .is_native_os = case.target.isNativeOs(),
-        .is_native_abi = case.target.isNativeAbi(),
+        .is_native_os = case.target.is_native_os(),
+        .is_native_abi = case.target.is_native_abi(),
         .dynamic_linker = target.dynamic_linker.get(),
         .link_libc = case.link_libc,
         .use_llvm = use_llvm,
@@ -1634,22 +1634,22 @@ fn run_one_case(
         var sync_node = update_node.start("write", 0);
         sync_node.activate();
         for (update.files.items) |file| {
-            try tmp.dir.writeFile(.{ .sub_path = file.path, .data = file.src });
+            try tmp.dir.write_file(.{ .sub_path = file.path, .data = file.src });
         }
         sync_node.end();
 
         var module_node = update_node.start("parse/analysis/codegen", 0);
         module_node.activate();
-        try comp.makeBinFileWritable();
+        try comp.make_bin_file_writable();
         try comp.update(&module_node);
         module_node.end();
 
         if (update.case != .Error) {
-            var all_errors = try comp.getAllErrorsAlloc();
+            var all_errors = try comp.get_all_errors_alloc();
             defer all_errors.deinit(allocator);
-            if (all_errors.errorMessageCount() > 0) {
-                all_errors.renderToStdErr(.{
-                    .ttyconf = std.io.tty.detectConfig(std.io.getStdErr()),
+            if (all_errors.error_message_count() > 0) {
+                all_errors.render_to_std_err(.{
+                    .ttyconf = std.io.tty.detect_config(std.io.get_std_err()),
                 });
                 // TODO print generated C code
                 return error.UnexpectedCompileErrors;
@@ -1658,18 +1658,18 @@ fn run_one_case(
 
         switch (update.case) {
             .Header => |expected_output| {
-                var file = try tmp.dir.openFile("test_case.h", .{ .mode = .read_only });
+                var file = try tmp.dir.open_file("test_case.h", .{ .mode = .read_only });
                 defer file.close();
-                const out = try file.reader().readAllAlloc(arena, 5 * 1024 * 1024);
+                const out = try file.reader().read_all_alloc(arena, 5 * 1024 * 1024);
 
-                try std.testing.expectEqualStrings(expected_output, out);
+                try std.testing.expect_equal_strings(expected_output, out);
             },
             .CompareObjectFile => |expected_output| {
-                var file = try tmp.dir.openFile(bin_name, .{ .mode = .read_only });
+                var file = try tmp.dir.open_file(bin_name, .{ .mode = .read_only });
                 defer file.close();
-                const out = try file.reader().readAllAlloc(arena, 5 * 1024 * 1024);
+                const out = try file.reader().read_all_alloc(arena, 5 * 1024 * 1024);
 
-                try std.testing.expectEqualStrings(expected_output, out);
+                try std.testing.expect_equal_strings(expected_output, out);
             },
             .Compile => {},
             .Error => |expected_errors| {
@@ -1677,15 +1677,15 @@ fn run_one_case(
                 test_node.activate();
                 defer test_node.end();
 
-                var error_bundle = try comp.getAllErrorsAlloc();
+                var error_bundle = try comp.get_all_errors_alloc();
                 defer error_bundle.deinit(allocator);
 
-                if (error_bundle.errorMessageCount() == 0) {
+                if (error_bundle.error_message_count() == 0) {
                     return error.ExpectedCompilationErrors;
                 }
 
                 var actual_stderr = std.ArrayList(u8).init(arena);
-                try error_bundle.renderToWriter(.{
+                try error_bundle.render_to_writer(.{
                     .ttyconf = .no_color,
                     .include_reference_trace = false,
                     .include_source_line = false,
@@ -1694,38 +1694,38 @@ fn run_one_case(
                 // Render the expected lines into a string that we can compare verbatim.
                 var expected_generated = std.ArrayList(u8).init(arena);
 
-                var actual_line_it = std.mem.splitScalar(u8, actual_stderr.items, '\n');
+                var actual_line_it = std.mem.split_scalar(u8, actual_stderr.items, '\n');
                 for (expected_errors) |expect_line| {
                     const actual_line = actual_line_it.next() orelse {
-                        try expected_generated.appendSlice(expect_line);
+                        try expected_generated.append_slice(expect_line);
                         try expected_generated.append('\n');
                         continue;
                     };
-                    if (std.mem.endsWith(u8, actual_line, expect_line)) {
-                        try expected_generated.appendSlice(actual_line);
+                    if (std.mem.ends_with(u8, actual_line, expect_line)) {
+                        try expected_generated.append_slice(actual_line);
                         try expected_generated.append('\n');
                         continue;
                     }
-                    if (std.mem.startsWith(u8, expect_line, ":?:?: ")) {
-                        if (std.mem.endsWith(u8, actual_line, expect_line[":?:?: ".len..])) {
-                            try expected_generated.appendSlice(actual_line);
+                    if (std.mem.starts_with(u8, expect_line, ":?:?: ")) {
+                        if (std.mem.ends_with(u8, actual_line, expect_line[":?:?: ".len..])) {
+                            try expected_generated.append_slice(actual_line);
                             try expected_generated.append('\n');
                             continue;
                         }
                     }
-                    try expected_generated.appendSlice(expect_line);
+                    try expected_generated.append_slice(expect_line);
                     try expected_generated.append('\n');
                 }
 
-                try std.testing.expectEqualStrings(expected_generated.items, actual_stderr.items);
+                try std.testing.expect_equal_strings(expected_generated.items, actual_stderr.items);
             },
             .Execution => |expected_stdout| {
                 if (!std.process.can_spawn) {
-                    std.debug.print("Unable to spawn child processes on {s}, skipping test.\n", .{@tagName(builtin.os.tag)});
+                    std.debug.print("Unable to spawn child processes on {s}, skipping test.\n", .{@tag_name(builtin.os.tag)});
                     continue :update; // Pass test.
                 }
 
-                update_node.setEstimatedTotalItems(4);
+                update_node.set_estimated_total_items(4);
 
                 var argv = std.ArrayList([]const u8).init(allocator);
                 defer argv.deinit();
@@ -1740,17 +1740,17 @@ fn run_one_case(
                     // cache collisions from multiple threads doing `zig run` at the same time
                     // on the same test_case.c input filename.
                     const ss = std.fs.path.sep_str;
-                    const exe_path = try std.fmt.allocPrint(
+                    const exe_path = try std.fmt.alloc_print(
                         arena,
                         ".." ++ ss ++ "{s}" ++ ss ++ "{s}",
                         .{ &tmp.sub_path, bin_name },
                     );
                     if (case.target.ofmt != null and case.target.ofmt.? == .c) {
-                        if (getExternalExecutor(host, &target, .{ .link_libc = true }) != .native) {
+                        if (get_external_executor(host, &target, .{ .link_libc = true }) != .native) {
                             // We wouldn't be able to run the compiled C code.
                             continue :update; // Pass test.
                         }
-                        try argv.appendSlice(&[_][]const u8{
+                        try argv.append_slice(&[_][]const u8{
                             zig_exe_path,
                             "run",
                             "-cflags",
@@ -1763,11 +1763,11 @@ fn run_one_case(
                             exe_path,
                         });
                         if (zig_lib_directory.path) |p| {
-                            try argv.appendSlice(&.{ "-I", p });
+                            try argv.append_slice(&.{ "-I", p });
                         }
-                    } else switch (getExternalExecutor(host, &target, .{ .link_libc = case.link_libc })) {
+                    } else switch (get_external_executor(host, &target, .{ .link_libc = case.link_libc })) {
                         .native => {
-                            if (case.backend == .stage2 and case.target.getCpuArch().isArmOrThumb()) {
+                            if (case.backend == .stage2 and case.target.getCpuArch().is_arm_or_thumb()) {
                                 // https://github.com/ziglang/zig/issues/13623
                                 continue :update; // Pass test.
                             }
@@ -1782,14 +1782,14 @@ fn run_one_case(
                         },
 
                         .qemu => |qemu_bin_name| if (enable_qemu) {
-                            const need_cross_glibc = target.isGnuLibC() and case.link_libc;
+                            const need_cross_glibc = target.is_gnu_lib_c() and case.link_libc;
                             const glibc_dir_arg: ?[]const u8 = if (need_cross_glibc)
                                 glibc_runtimes_dir orelse continue :update // glibc dir not available; pass test
                             else
                                 null;
                             try argv.append(qemu_bin_name);
                             if (glibc_dir_arg) |dir| {
-                                const linux_triple = try target.linuxTriple(arena);
+                                const linux_triple = try target.linux_triple(arena);
                                 const full_dir = try std.fs.path.join(arena, &[_][]const u8{
                                     dir,
                                     linux_triple,
@@ -1829,7 +1829,7 @@ fn run_one_case(
                         },
                     }
 
-                    try comp.makeBinFileExecutable();
+                    try comp.make_bin_file_executable();
 
                     while (true) {
                         break :x std.process.Child.run(.{
@@ -1851,7 +1851,7 @@ fn run_one_case(
                                 std.debug.print("\n{s}.{d} The following command failed with {s}:\n", .{
                                     case.name, update_index, @errorName(err),
                                 });
-                                dumpArgs(argv.items);
+                                dump_args(argv.items);
                                 return error.ChildProcessExecution;
                             },
                         };
@@ -1868,7 +1868,7 @@ fn run_one_case(
                             std.debug.print("\n{s}\n{s}: execution exited with code {d}:\n", .{
                                 exec_result.stderr, case.name, code,
                             });
-                            dumpArgs(argv.items);
+                            dump_args(argv.items);
                             return error.ChildProcessExecution;
                         }
                     },
@@ -1876,14 +1876,14 @@ fn run_one_case(
                         std.debug.print("\n{s}\n{s}: execution crashed:\n", .{
                             exec_result.stderr, case.name,
                         });
-                        dumpArgs(argv.items);
+                        dump_args(argv.items);
                         return error.ChildProcessExecution;
                     },
                 }
-                try std.testing.expectEqualStrings(expected_stdout, exec_result.stdout);
+                try std.testing.expect_equal_strings(expected_stdout, exec_result.stdout);
                 // We allow stderr to have garbage in it because wasmtime prints a
                 // warning about --invoke even though we don't pass it.
-                //std.testing.expectEqualStrings("", exec_result.stderr);
+                //std.testing.expect_equal_strings("", exec_result.stderr);
             },
         }
     }

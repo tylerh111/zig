@@ -17,30 +17,30 @@ const std = @import("std");
 const AF_ICON: u32 = 1;
 
 pub fn is_animated_icon(reader: anytype) bool {
-    const flags = getAniheaderFlags(reader) catch return false;
+    const flags = get_aniheader_flags(reader) catch return false;
     return flags & AF_ICON == AF_ICON;
 }
 
 fn get_aniheader_flags(reader: anytype) !u32 {
-    const riff_header = try reader.readBytesNoEof(4);
+    const riff_header = try reader.read_bytes_no_eof(4);
     if (!std.mem.eql(u8, &riff_header, "RIFF")) return error.InvalidFormat;
 
-    _ = try reader.readInt(u32, .little); // size of RIFF chunk
+    _ = try reader.read_int(u32, .little); // size of RIFF chunk
 
-    const form_type = try reader.readBytesNoEof(4);
+    const form_type = try reader.read_bytes_no_eof(4);
     if (!std.mem.eql(u8, &form_type, "ACON")) return error.InvalidFormat;
 
     while (true) {
-        const chunk_id = try reader.readBytesNoEof(4);
-        const chunk_len = try reader.readInt(u32, .little);
+        const chunk_id = try reader.read_bytes_no_eof(4);
+        const chunk_len = try reader.read_int(u32, .little);
         if (!std.mem.eql(u8, &chunk_id, "anih")) {
-            // TODO: Move file cursor instead of skipBytes
-            try reader.skipBytes(chunk_len, .{});
+            // TODO: Move file cursor instead of skip_bytes
+            try reader.skip_bytes(chunk_len, .{});
             continue;
         }
 
-        const aniheader = try reader.readStruct(ANIHEADER);
-        return std.mem.nativeToLittle(u32, aniheader.flags);
+        const aniheader = try reader.read_struct(ANIHEADER);
+        return std.mem.native_to_little(u32, aniheader.flags);
     }
 }
 

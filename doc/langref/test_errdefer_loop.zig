@@ -23,14 +23,14 @@ fn gen_foos(allocator: Allocator, num: usize) ![]Foo {
 
         if (i >= 3) return error.TooManyFoos;
 
-        foo.data.* = try getData();
+        foo.data.* = try get_data();
     }
 
     return foos;
 }
 
-test "genFoos" {
-    try std.testing.expectError(error.TooManyFoos, genFoos(std.testing.allocator, 5));
+test "gen_foos" {
+    try std.testing.expect_error(error.TooManyFoos, gen_foos(std.testing.allocator, 5));
 }
 
 // test

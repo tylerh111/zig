@@ -12,7 +12,7 @@ pub const epoch = @import("time/epoch.zig");
 pub fn sleep(nanoseconds: u64) void {
     if (builtin.os.tag == .windows) {
         const big_ms_from_ns = nanoseconds / ns_per_ms;
-        const ms = math.cast(windows.DWORD, big_ms_from_ns) orelse math.maxInt(windows.DWORD);
+        const ms = math.cast(windows.DWORD, big_ms_from_ns) orelse math.max_int(windows.DWORD);
         windows.kernel32.Sleep(ms);
         return;
     }
@@ -43,7 +43,7 @@ pub fn sleep(nanoseconds: u64) void {
     if (builtin.os.tag == .uefi) {
         const boot_services = std.os.uefi.system_table.boot_services.?;
         const us_from_ns = nanoseconds / ns_per_us;
-        const us = math.cast(usize, us_from_ns) orelse math.maxInt(usize);
+        const us = math.cast(usize, us_from_ns) orelse math.max_int(usize);
         _ = boot_services.stall(us);
         return;
     }
@@ -63,7 +63,7 @@ test sleep {
 /// before the epoch.
 /// See `posix.clock_gettime` for a POSIX timestamp.
 pub fn timestamp() i64 {
-    return @divFloor(milliTimestamp(), ms_per_s);
+    return @div_floor(milli_timestamp(), ms_per_s);
 }
 
 /// Get a calendar timestamp, in milliseconds, relative to UTC 1970-01-01.
@@ -72,7 +72,7 @@ pub fn timestamp() i64 {
 /// before the epoch.
 /// See `posix.clock_gettime` for a POSIX timestamp.
 pub fn milli_timestamp() i64 {
-    return @as(i64, @intCast(@divFloor(nanoTimestamp(), ns_per_ms)));
+    return @as(i64, @int_cast(@div_floor(nano_timestamp(), ns_per_ms)));
 }
 
 /// Get a calendar timestamp, in microseconds, relative to UTC 1970-01-01.
@@ -81,7 +81,7 @@ pub fn milli_timestamp() i64 {
 /// before the epoch.
 /// See `posix.clock_gettime` for a POSIX timestamp.
 pub fn micro_timestamp() i64 {
-    return @as(i64, @intCast(@divFloor(nanoTimestamp(), ns_per_us)));
+    return @as(i64, @int_cast(@div_floor(nano_timestamp(), ns_per_us)));
 }
 
 /// Get a calendar timestamp, in nanoseconds, relative to UTC 1970-01-01.
@@ -99,7 +99,7 @@ pub fn nano_timestamp() i128 {
             var ft: windows.FILETIME = undefined;
             windows.kernel32.GetSystemTimeAsFileTime(&ft);
             const ft64 = (@as(u64, ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
-            return @as(i128, @as(i64, @bitCast(ft64)) + epoch_adj) * 100;
+            return @as(i128, @as(i64, @bit_cast(ft64)) + epoch_adj) * 100;
         },
         .wasi => {
             var ns: std.os.wasi.timestamp_t = undefined;
@@ -111,7 +111,7 @@ pub fn nano_timestamp() i128 {
             var value: std.os.uefi.Time = undefined;
             const status = std.os.uefi.system_table.runtime_services.getTime(&value, null);
             assert(status == .Success);
-            return value.toEpoch();
+            return value.to_epoch();
         },
         else => {
             var ts: posix.timespec = undefined;
@@ -123,12 +123,12 @@ pub fn nano_timestamp() i128 {
     }
 }
 
-test milliTimestamp {
+test milli_timestamp {
     const margin = ns_per_ms * 50;
 
-    const time_0 = milliTimestamp();
+    const time_0 = milli_timestamp();
     sleep(ns_per_ms);
-    const time_1 = milliTimestamp();
+    const time_1 = milli_timestamp();
     const interval = time_1 - time_0;
     try testing.expect(interval > 0);
     // Tests should not depend on timings: skip test if outside margin.
@@ -167,7 +167,7 @@ pub const s_per_week = s_per_day * 7;
 
 /// An Instant represents a timestamp with respect to the currently
 /// executing program that ticks during suspend and can be used to
-/// record elapsed time unlike `nanoTimestamp`.
+/// record elapsed time unlike `nano_timestamp`.
 ///
 /// It tries to sample the system's fastest and most precise timer available.
 /// It also tries to be monotonic, but this is not a guarantee due to OS/hardware bugs.
@@ -201,7 +201,7 @@ pub const Instant = struct {
                 var value: std.os.uefi.Time = undefined;
                 const status = std.os.uefi.system_table.runtime_services.getTime(&value, null);
                 if (status != .Success) return error.Unsupported;
-                return Instant{ .timestamp = value.toEpoch() };
+                return Instant{ .timestamp = value.to_epoch() };
             },
             // On darwin, use UPTIME_RAW instead of MONOTONIC as it ticks while
             // suspended.
@@ -256,7 +256,7 @@ pub const Instant = struct {
             }
 
             // Convert to ns using fixed point.
-            const scale = @as(u64, std.time.ns_per_s << 32) / @as(u32, @intCast(qpf));
+            const scale = @as(u64, std.time.ns_per_s << 32) / @as(u32, @int_cast(qpf));
             const result = (@as(u96, qpc) * scale) >> 32;
             return @as(u64, @truncate(result));
         }
@@ -267,9 +267,9 @@ pub const Instant = struct {
         }
 
         // Convert timespec diff to ns
-        const seconds = @as(u64, @intCast(self.timestamp.tv_sec - earlier.timestamp.tv_sec));
-        const elapsed = (seconds * ns_per_s) + @as(u32, @intCast(self.timestamp.tv_nsec));
-        return elapsed - @as(u32, @intCast(earlier.timestamp.tv_nsec));
+        const seconds = @as(u64, @int_cast(self.timestamp.tv_sec - earlier.timestamp.tv_sec));
+        const elapsed = (seconds * ns_per_s) + @as(u32, @int_cast(self.timestamp.tv_nsec));
+        return elapsed - @as(u32, @int_cast(earlier.timestamp.tv_nsec));
     }
 };
 

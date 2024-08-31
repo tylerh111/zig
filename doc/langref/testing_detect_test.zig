@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 const expect = std.testing.expect;
 
 test "builtin.is_test" {
-    try expect(isATest());
+    try expect(is_atest());
 }
 
 fn is_atest() bool {

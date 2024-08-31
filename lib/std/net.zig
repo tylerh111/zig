@@ -15,7 +15,7 @@ const windows = std.os.windows;
 // Windows 10 added support for unix sockets in build 17063, redstone 4 is the
 // first release to support them.
 pub const has_unix_sockets = switch (native_os) {
-    .windows => builtin.os.version_range.windows.isAtLeast(.win10_rs4) orelse false,
+    .windows => builtin.os.version_range.windows.is_at_least(.win10_rs4) orelse false,
     else => true,
 };
 
@@ -39,10 +39,10 @@ pub const Address = extern union {
     un: if (has_unix_sockets) posix.sockaddr.un else void,
 
     /// Parse the given IP address string into an Address value.
-    /// It is recommended to use `resolveIp` instead, to handle
+    /// It is recommended to use `resolve_ip` instead, to handle
     /// IPv6 link-local unix addresses.
     pub fn parse_ip(name: []const u8, port: u16) !Address {
-        if (parseIp4(name, port)) |ip4| return ip4 else |err| switch (err) {
+        if (parse_ip4(name, port)) |ip4| return ip4 else |err| switch (err) {
             error.Overflow,
             error.InvalidEnd,
             error.InvalidCharacter,
@@ -51,7 +51,7 @@ pub const Address = extern union {
             => {},
         }
 
-        if (parseIp6(name, port)) |ip6| return ip6 else |err| switch (err) {
+        if (parse_ip6(name, port)) |ip6| return ip6 else |err| switch (err) {
             error.Overflow,
             error.InvalidEnd,
             error.InvalidCharacter,
@@ -64,7 +64,7 @@ pub const Address = extern union {
     }
 
     pub fn resolve_ip(name: []const u8, port: u16) !Address {
-        if (parseIp4(name, port)) |ip4| return ip4 else |err| switch (err) {
+        if (parse_ip4(name, port)) |ip4| return ip4 else |err| switch (err) {
             error.Overflow,
             error.InvalidEnd,
             error.InvalidCharacter,
@@ -73,7 +73,7 @@ pub const Address = extern union {
             => {},
         }
 
-        if (resolveIp6(name, port)) |ip6| return ip6 else |err| switch (err) {
+        if (resolve_ip6(name, port)) |ip6| return ip6 else |err| switch (err) {
             error.Overflow,
             error.InvalidEnd,
             error.InvalidCharacter,
@@ -88,9 +88,9 @@ pub const Address = extern union {
 
     pub fn parse_expecting_family(name: []const u8, family: posix.sa_family_t, port: u16) !Address {
         switch (family) {
-            posix.AF.INET => return parseIp4(name, port),
-            posix.AF.INET6 => return parseIp6(name, port),
-            posix.AF.UNSPEC => return parseIp(name, port),
+            posix.AF.INET => return parse_ip4(name, port),
+            posix.AF.INET6 => return parse_ip6(name, port),
+            posix.AF.UNSPEC => return parse_ip(name, port),
             else => unreachable,
         }
     }
@@ -134,8 +134,8 @@ pub const Address = extern union {
     /// Asserts that the address is ip4 or ip6.
     pub fn get_port(self: Address) u16 {
         return switch (self.any.family) {
-            posix.AF.INET => self.in.getPort(),
-            posix.AF.INET6 => self.in6.getPort(),
+            posix.AF.INET => self.in.get_port(),
+            posix.AF.INET6 => self.in6.get_port(),
             else => unreachable,
         };
     }
@@ -144,8 +144,8 @@ pub const Address = extern union {
     /// Asserts that the address is ip4 or ip6.
     pub fn set_port(self: *Address, port: u16) void {
         switch (self.any.family) {
-            posix.AF.INET => self.in.setPort(port),
-            posix.AF.INET6 => self.in6.setPort(port),
+            posix.AF.INET => self.in.set_port(port),
+            posix.AF.INET6 => self.in6.set_port(port),
             else => unreachable,
         }
     }
@@ -155,8 +155,8 @@ pub const Address = extern union {
     /// on the address family.
     pub fn init_posix(addr: *align(4) const posix.sockaddr) Address {
         switch (addr.family) {
-            posix.AF.INET => return Address{ .in = Ip4Address{ .sa = @as(*const posix.sockaddr.in, @ptrCast(addr)).* } },
-            posix.AF.INET6 => return Address{ .in6 = Ip6Address{ .sa = @as(*const posix.sockaddr.in6, @ptrCast(addr)).* } },
+            posix.AF.INET => return Address{ .in = Ip4Address{ .sa = @as(*const posix.sockaddr.in, @ptr_cast(addr)).* } },
+            posix.AF.INET6 => return Address{ .in6 = Ip6Address{ .sa = @as(*const posix.sockaddr.in6, @ptr_cast(addr)).* } },
             else => unreachable,
         }
     }
@@ -167,7 +167,7 @@ pub const Address = extern union {
         options: std.fmt.FormatOptions,
         out_stream: anytype,
     ) !void {
-        if (fmt.len != 0) std.fmt.invalidFmtError(fmt, self);
+        if (fmt.len != 0) std.fmt.invalid_fmt_error(fmt, self);
         switch (self.any.family) {
             posix.AF.INET => try self.in.format(fmt, options, out_stream),
             posix.AF.INET6 => try self.in6.format(fmt, options, out_stream),
@@ -176,22 +176,22 @@ pub const Address = extern union {
                     unreachable;
                 }
 
-                try std.fmt.format(out_stream, "{s}", .{std.mem.sliceTo(&self.un.path, 0)});
+                try std.fmt.format(out_stream, "{s}", .{std.mem.slice_to(&self.un.path, 0)});
             },
             else => unreachable,
         }
     }
 
     pub fn eql(a: Address, b: Address) bool {
-        const a_bytes = @as([*]const u8, @ptrCast(&a.any))[0..a.getOsSockLen()];
-        const b_bytes = @as([*]const u8, @ptrCast(&b.any))[0..b.getOsSockLen()];
+        const a_bytes = @as([*]const u8, @ptr_cast(&a.any))[0..a.get_os_sock_len()];
+        const b_bytes = @as([*]const u8, @ptr_cast(&b.any))[0..b.get_os_sock_len()];
         return mem.eql(u8, a_bytes, b_bytes);
     }
 
     pub fn get_os_sock_len(self: Address) posix.socklen_t {
         switch (self.any.family) {
-            posix.AF.INET => return self.in.getOsSockLen(),
-            posix.AF.INET6 => return self.in6.getOsSockLen(),
+            posix.AF.INET => return self.in.get_os_sock_len(),
+            posix.AF.INET6 => return self.in6.get_os_sock_len(),
             posix.AF.UNIX => {
                 if (!has_unix_sockets) {
                     unreachable;
@@ -201,11 +201,11 @@ pub const Address = extern union {
                 // the number of bytes actually used by the currently stored path.
                 // This also is correct regardless if we are passing a socket address to the kernel
                 // (e.g. in bind, connect, sendto) since we ensure the path is 0 terminated in
-                // initUnix() or if we are receiving a socket address from the kernel and must
+                // init_unix() or if we are receiving a socket address from the kernel and must
                 // provide the full buffer size (e.g. getsockname, getpeername, recvfrom, accept).
                 //
-                // To access the path, std.mem.sliceTo(&address.un.path, 0) should be used.
-                return @as(posix.socklen_t, @intCast(@sizeOf(posix.sockaddr.un)));
+                // To access the path, std.mem.slice_to(&address.un.path, 0) should be used.
+                return @as(posix.socklen_t, @int_cast(@size_of(posix.sockaddr.un)));
             },
 
             else => unreachable,
@@ -246,7 +246,7 @@ pub const Address = extern union {
                 sockfd,
                 posix.SOL.SOCKET,
                 posix.SO.REUSEADDR,
-                &mem.toBytes(@as(c_int, 1)),
+                &mem.to_bytes(@as(c_int, 1)),
             );
             switch (native_os) {
                 .windows => {},
@@ -254,12 +254,12 @@ pub const Address = extern union {
                     sockfd,
                     posix.SOL.SOCKET,
                     posix.SO.REUSEPORT,
-                    &mem.toBytes(@as(c_int, 1)),
+                    &mem.to_bytes(@as(c_int, 1)),
                 ),
             }
         }
 
-        var socklen = address.getOsSockLen();
+        var socklen = address.get_os_sock_len();
         try posix.bind(sockfd, &address.any, socklen);
         try posix.listen(sockfd, options.kernel_backlog);
         try posix.getsockname(sockfd, &s.listen_address.any, &socklen);
@@ -273,11 +273,11 @@ pub const Ip4Address = extern struct {
     pub fn parse(buf: []const u8, port: u16) IPv4ParseError!Ip4Address {
         var result: Ip4Address = .{
             .sa = .{
-                .port = mem.nativeToBig(u16, port),
+                .port = mem.native_to_big(u16, port),
                 .addr = undefined,
             },
         };
-        const out_ptr = mem.asBytes(&result.sa.addr);
+        const out_ptr = mem.as_bytes(&result.sa.addr);
 
         var x: u8 = 0;
         var index: u8 = 0;
@@ -332,8 +332,8 @@ pub const Ip4Address = extern struct {
     pub fn init(addr: [4]u8, port: u16) Ip4Address {
         return Ip4Address{
             .sa = posix.sockaddr.in{
-                .port = mem.nativeToBig(u16, port),
-                .addr = @as(*align(1) const u32, @ptrCast(&addr)).*,
+                .port = mem.native_to_big(u16, port),
+                .addr = @as(*align(1) const u32, @ptr_cast(&addr)).*,
             },
         };
     }
@@ -341,13 +341,13 @@ pub const Ip4Address = extern struct {
     /// Returns the port in native endian.
     /// Asserts that the address is ip4 or ip6.
     pub fn get_port(self: Ip4Address) u16 {
-        return mem.bigToNative(u16, self.sa.port);
+        return mem.big_to_native(u16, self.sa.port);
     }
 
     /// `port` is native-endian.
     /// Asserts that the address is ip4 or ip6.
     pub fn set_port(self: *Ip4Address, port: u16) void {
-        self.sa.port = mem.nativeToBig(u16, port);
+        self.sa.port = mem.native_to_big(u16, port);
     }
 
     pub fn format(
@@ -356,21 +356,21 @@ pub const Ip4Address = extern struct {
         options: std.fmt.FormatOptions,
         out_stream: anytype,
     ) !void {
-        if (fmt.len != 0) std.fmt.invalidFmtError(fmt, self);
+        if (fmt.len != 0) std.fmt.invalid_fmt_error(fmt, self);
         _ = options;
-        const bytes = @as(*const [4]u8, @ptrCast(&self.sa.addr));
+        const bytes = @as(*const [4]u8, @ptr_cast(&self.sa.addr));
         try std.fmt.format(out_stream, "{}.{}.{}.{}:{}", .{
             bytes[0],
             bytes[1],
             bytes[2],
             bytes[3],
-            self.getPort(),
+            self.get_port(),
         });
     }
 
     pub fn get_os_sock_len(self: Ip4Address) posix.socklen_t {
         _ = self;
-        return @sizeOf(posix.sockaddr.in);
+        return @size_of(posix.sockaddr.in);
     }
 };
 
@@ -379,12 +379,12 @@ pub const Ip6Address = extern struct {
 
     /// Parse a given IPv6 address string into an Address.
     /// Assumes the Scope ID of the address is fully numeric.
-    /// For non-numeric addresses, see `resolveIp6`.
+    /// For non-numeric addresses, see `resolve_ip6`.
     pub fn parse(buf: []const u8, port: u16) IPv6ParseError!Ip6Address {
         var result = Ip6Address{
             .sa = posix.sockaddr.in6{
                 .scope_id = 0,
-                .port = mem.nativeToBig(u16, port),
+                .port = mem.native_to_big(u16, port),
                 .flowinfo = 0,
                 .addr = undefined,
             },
@@ -408,7 +408,7 @@ pub const Ip6Address = extern struct {
                         result.sa.scope_id = ov[0];
                     }
                     {
-                        const ov = @addWithOverflow(result.sa.scope_id, digit);
+                        const ov = @add_with_overflow(result.sa.scope_id, digit);
                         if (ov[1] != 0) return error.Overflow;
                         result.sa.scope_id = ov[0];
                     }
@@ -445,7 +445,7 @@ pub const Ip6Address = extern struct {
                     // must start with '::ffff:'
                     return error.InvalidIpv4Mapping;
                 }
-                const start_index = mem.lastIndexOfScalar(u8, buf[0..i], ':').? + 1;
+                const start_index = mem.last_index_of_scalar(u8, buf[0..i], ':').? + 1;
                 const addr = (Ip4Address.parse(buf[start_index..], 0) catch {
                     return error.InvalidIpv4Mapping;
                 }).sa.addr;
@@ -453,7 +453,7 @@ pub const Ip6Address = extern struct {
                 ip_slice[10] = 0xff;
                 ip_slice[11] = 0xff;
 
-                const ptr = mem.sliceAsBytes(@as(*const [1]u32, &addr)[0..]);
+                const ptr = mem.slice_as_bytes(@as(*const [1]u32, &addr)[0..]);
 
                 ip_slice[12] = ptr[0];
                 ip_slice[13] = ptr[1];
@@ -461,14 +461,14 @@ pub const Ip6Address = extern struct {
                 ip_slice[15] = ptr[3];
                 return result;
             } else {
-                const digit = try std.fmt.charToDigit(c, 16);
+                const digit = try std.fmt.char_to_digit(c, 16);
                 {
                     const ov = @mulWithOverflow(x, 16);
                     if (ov[1] != 0) return error.Overflow;
                     x = ov[0];
                 }
                 {
-                    const ov = @addWithOverflow(x, digit);
+                    const ov = @add_with_overflow(x, digit);
                     if (ov[1] != 0) return error.Overflow;
                     x = ov[0];
                 }
@@ -498,11 +498,11 @@ pub const Ip6Address = extern struct {
     }
 
     pub fn resolve(buf: []const u8, port: u16) IPv6ResolveError!Ip6Address {
-        // TODO: Unify the implementations of resolveIp6 and parseIp6.
+        // TODO: Unify the implementations of resolve_ip6 and parse_ip6.
         var result = Ip6Address{
             .sa = posix.sockaddr.in6{
                 .scope_id = 0,
-                .port = mem.nativeToBig(u16, port),
+                .port = mem.native_to_big(u16, port),
                 .flowinfo = 0,
                 .addr = undefined,
             },
@@ -567,7 +567,7 @@ pub const Ip6Address = extern struct {
                     // must start with '::ffff:'
                     return error.InvalidIpv4Mapping;
                 }
-                const start_index = mem.lastIndexOfScalar(u8, buf[0..i], ':').? + 1;
+                const start_index = mem.last_index_of_scalar(u8, buf[0..i], ':').? + 1;
                 const addr = (Ip4Address.parse(buf[start_index..], 0) catch {
                     return error.InvalidIpv4Mapping;
                 }).sa.addr;
@@ -575,7 +575,7 @@ pub const Ip6Address = extern struct {
                 ip_slice[10] = 0xff;
                 ip_slice[11] = 0xff;
 
-                const ptr = mem.sliceAsBytes(@as(*const [1]u32, &addr)[0..]);
+                const ptr = mem.slice_as_bytes(@as(*const [1]u32, &addr)[0..]);
 
                 ip_slice[12] = ptr[0];
                 ip_slice[13] = ptr[1];
@@ -583,14 +583,14 @@ pub const Ip6Address = extern struct {
                 ip_slice[15] = ptr[3];
                 return result;
             } else {
-                const digit = try std.fmt.charToDigit(c, 16);
+                const digit = try std.fmt.char_to_digit(c, 16);
                 {
                     const ov = @mulWithOverflow(x, 16);
                     if (ov[1] != 0) return error.Overflow;
                     x = ov[0];
                 }
                 {
-                    const ov = @addWithOverflow(x, digit);
+                    const ov = @add_with_overflow(x, digit);
                     if (ov[1] != 0) return error.Overflow;
                     x = ov[0];
                 }
@@ -609,7 +609,7 @@ pub const Ip6Address = extern struct {
         var resolved_scope_id: u32 = 0;
         if (scope_id_index > 0) {
             const scope_id_str = scope_id_value[0..scope_id_index];
-            resolved_scope_id = std.fmt.parseInt(u32, scope_id_str, 10) catch |err| blk: {
+            resolved_scope_id = std.fmt.parse_int(u32, scope_id_str, 10) catch |err| blk: {
                 if (err != error.InvalidCharacter) return err;
                 break :blk try if_nametoindex(scope_id_str);
             };
@@ -635,7 +635,7 @@ pub const Ip6Address = extern struct {
         return Ip6Address{
             .sa = posix.sockaddr.in6{
                 .addr = addr,
-                .port = mem.nativeToBig(u16, port),
+                .port = mem.native_to_big(u16, port),
                 .flowinfo = flowinfo,
                 .scope_id = scope_id,
             },
@@ -645,13 +645,13 @@ pub const Ip6Address = extern struct {
     /// Returns the port in native endian.
     /// Asserts that the address is ip4 or ip6.
     pub fn get_port(self: Ip6Address) u16 {
-        return mem.bigToNative(u16, self.sa.port);
+        return mem.big_to_native(u16, self.sa.port);
     }
 
     /// `port` is native-endian.
     /// Asserts that the address is ip4 or ip6.
     pub fn set_port(self: *Ip6Address, port: u16) void {
-        self.sa.port = mem.nativeToBig(u16, port);
+        self.sa.port = mem.native_to_big(u16, port);
     }
 
     pub fn format(
@@ -660,9 +660,9 @@ pub const Ip6Address = extern struct {
         options: std.fmt.FormatOptions,
         out_stream: anytype,
     ) !void {
-        if (fmt.len != 0) std.fmt.invalidFmtError(fmt, self);
+        if (fmt.len != 0) std.fmt.invalid_fmt_error(fmt, self);
         _ = options;
-        const port = mem.bigToNative(u16, self.sa.port);
+        const port = mem.big_to_native(u16, self.sa.port);
         if (mem.eql(u8, self.sa.addr[0..12], &[_]u8{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff })) {
             try std.fmt.format(out_stream, "[::ffff:{}.{}.{}.{}]:{}", .{
                 self.sa.addr[12],
@@ -673,31 +673,31 @@ pub const Ip6Address = extern struct {
             });
             return;
         }
-        const big_endian_parts = @as(*align(1) const [8]u16, @ptrCast(&self.sa.addr));
+        const big_endian_parts = @as(*align(1) const [8]u16, @ptr_cast(&self.sa.addr));
         const native_endian_parts = switch (native_endian) {
             .big => big_endian_parts.*,
             .little => blk: {
                 var buf: [8]u16 = undefined;
                 for (big_endian_parts, 0..) |part, i| {
-                    buf[i] = mem.bigToNative(u16, part);
+                    buf[i] = mem.big_to_native(u16, part);
                 }
                 break :blk buf;
             },
         };
-        try out_stream.writeAll("[");
+        try out_stream.write_all("[");
         var i: usize = 0;
         var abbrv = false;
         while (i < native_endian_parts.len) : (i += 1) {
             if (native_endian_parts[i] == 0) {
                 if (!abbrv) {
-                    try out_stream.writeAll(if (i == 0) "::" else ":");
+                    try out_stream.write_all(if (i == 0) "::" else ":");
                     abbrv = true;
                 }
                 continue;
             }
             try std.fmt.format(out_stream, "{x}", .{native_endian_parts[i]});
             if (i != native_endian_parts.len - 1) {
-                try out_stream.writeAll(":");
+                try out_stream.write_all(":");
             }
         }
         try std.fmt.format(out_stream, "]:{}", .{port});
@@ -705,7 +705,7 @@ pub const Ip6Address = extern struct {
 
     pub fn get_os_sock_len(self: Ip6Address) posix.socklen_t {
         _ = self;
-        return @sizeOf(posix.sockaddr.in6);
+        return @size_of(posix.sockaddr.in6);
     }
 };
 
@@ -718,8 +718,8 @@ pub fn connect_unix_socket(path: []const u8) !Stream {
     );
     errdefer Stream.close(.{ .handle = sockfd });
 
-    var addr = try std.net.Address.initUnix(path);
-    try posix.connect(sockfd, &addr.any, addr.getOsSockLen());
+    var addr = try std.net.Address.init_unix(path);
+    try posix.connect(sockfd, &addr.any, addr.get_os_sock_len());
 
     return .{ .handle = sockfd };
 }
@@ -734,12 +734,12 @@ fn if_nametoindex(name: []const u8) IPv6InterfaceError!u32 {
         ifr.ifrn.name[name.len] = 0;
 
         // TODO investigate if this needs to be integrated with evented I/O.
-        try posix.ioctl_SIOCGIFINDEX(sockfd, &ifr);
+        try posix.ioctl_siocgifindex(sockfd, &ifr);
 
-        return @bitCast(ifr.ifru.ivalue);
+        return @bit_cast(ifr.ifru.ivalue);
     }
 
-    if (native_os.isDarwin()) {
+    if (native_os.is_darwin()) {
         if (name.len >= posix.IFNAMESIZE)
             return error.NameTooLong;
 
@@ -750,10 +750,10 @@ fn if_nametoindex(name: []const u8) IPv6InterfaceError!u32 {
         const index = std.c.if_nametoindex(if_slice);
         if (index == 0)
             return error.InterfaceNotFound;
-        return @as(u32, @bitCast(index));
+        return @as(u32, @bit_cast(index));
     }
 
-    @compileError("std.net.if_nametoindex unimplemented for this OS");
+    @compile_error("std.net.if_nametoindex unimplemented for this OS");
 }
 
 pub const AddressList = struct {
@@ -774,13 +774,13 @@ pub const TcpConnectToHostError = GetAddressListError || TcpConnectToAddressErro
 
 /// All memory allocated with `allocator` will be freed before this function returns.
 pub fn tcp_connect_to_host(allocator: mem.Allocator, name: []const u8, port: u16) TcpConnectToHostError!Stream {
-    const list = try getAddressList(allocator, name, port);
+    const list = try get_address_list(allocator, name, port);
     defer list.deinit();
 
     if (list.addrs.len == 0) return error.UnknownHostName;
 
     for (list.addrs) |addr| {
-        return tcpConnectToAddress(addr) catch |err| switch (err) {
+        return tcp_connect_to_address(addr) catch |err| switch (err) {
             error.ConnectionRefused => {
                 continue;
             },
@@ -799,7 +799,7 @@ pub fn tcp_connect_to_address(address: Address) TcpConnectToAddressError!Stream 
     const sockfd = try posix.socket(address.any.family, sock_flags, posix.IPPROTO.TCP);
     errdefer Stream.close(.{ .handle = sockfd });
 
-    try posix.connect(sockfd, &address.any, address.getOsSockLen());
+    try posix.connect(sockfd, &address.any, address.get_os_sock_len());
 
     return Stream{ .handle = sockfd };
 }
@@ -846,10 +846,10 @@ pub fn get_address_list(allocator: mem.Allocator, name: []const u8, port: u16) G
     errdefer result.deinit();
 
     if (native_os == .windows) {
-        const name_c = try allocator.dupeZ(u8, name);
+        const name_c = try allocator.dupe_z(u8, name);
         defer allocator.free(name_c);
 
-        const port_c = try std.fmt.allocPrintZ(allocator, "{}", .{port});
+        const port_c = try std.fmt.alloc_print_z(allocator, "{}", .{port});
         defer allocator.free(port_c);
 
         const ws2_32 = windows.ws2_32;
@@ -867,7 +867,7 @@ pub fn get_address_list(allocator: mem.Allocator, name: []const u8, port: u16) G
         var first = true;
         while (true) {
             const rc = ws2_32.getaddrinfo(name_c.ptr, port_c.ptr, &hints, &res);
-            switch (@as(windows.ws2_32.WinsockError, @enumFromInt(@as(u16, @intCast(rc))))) {
+            switch (@as(windows.ws2_32.WinsockError, @enumFromInt(@as(u16, @int_cast(rc))))) {
                 @as(windows.ws2_32.WinsockError, @enumFromInt(0)) => break,
                 .WSATRY_AGAIN => return error.TemporaryNameServerFailure,
                 .WSANO_RECOVERY => return error.NameServerFailure,
@@ -880,10 +880,10 @@ pub fn get_address_list(allocator: mem.Allocator, name: []const u8, port: u16) G
                 .WSANOTINITIALISED => {
                     if (!first) return error.Unexpected;
                     first = false;
-                    try windows.callWSAStartup();
+                    try windows.call_wsastartup();
                     continue;
                 },
-                else => |err| return windows.unexpectedWSAError(err),
+                else => |err| return windows.unexpected_wsaerror(err),
             }
         }
         defer ws2_32.freeaddrinfo(res);
@@ -904,11 +904,11 @@ pub fn get_address_list(allocator: mem.Allocator, name: []const u8, port: u16) G
         var i: usize = 0;
         while (it) |info| : (it = info.next) {
             const addr = info.addr orelse continue;
-            result.addrs[i] = Address.initPosix(@alignCast(addr));
+            result.addrs[i] = Address.init_posix(@align_cast(addr));
 
             if (info.canonname) |n| {
                 if (result.canon_name == null) {
-                    result.canon_name = try arena.dupe(u8, mem.sliceTo(n, 0));
+                    result.canon_name = try arena.dupe(u8, mem.slice_to(n, 0));
                 }
             }
             i += 1;
@@ -918,10 +918,10 @@ pub fn get_address_list(allocator: mem.Allocator, name: []const u8, port: u16) G
     }
 
     if (builtin.link_libc) {
-        const name_c = try allocator.dupeZ(u8, name);
+        const name_c = try allocator.dupe_z(u8, name);
         defer allocator.free(name_c);
 
-        const port_c = try std.fmt.allocPrintZ(allocator, "{}", .{port});
+        const port_c = try std.fmt.alloc_print_z(allocator, "{}", .{port});
         defer allocator.free(port_c);
 
         const sys = if (native_os == .windows) windows.ws2_32 else posix.system;
@@ -949,7 +949,7 @@ pub fn get_address_list(allocator: mem.Allocator, name: []const u8, port: u16) G
             .SERVICE => return error.ServiceUnavailable,
             .SOCKTYPE => unreachable, // Invalid socket type requested in hints
             .SYSTEM => switch (posix.errno(-1)) {
-                else => |e| return posix.unexpectedErrno(e),
+                else => |e| return posix.unexpected_errno(e),
             },
             else => unreachable,
         }
@@ -971,11 +971,11 @@ pub fn get_address_list(allocator: mem.Allocator, name: []const u8, port: u16) G
         var i: usize = 0;
         while (it) |info| : (it = info.next) {
             const addr = info.addr orelse continue;
-            result.addrs[i] = Address.initPosix(@alignCast(addr));
+            result.addrs[i] = Address.init_posix(@align_cast(addr));
 
             if (info.canonname) |n| {
                 if (result.canon_name == null) {
-                    result.canon_name = try arena.dupe(u8, mem.sliceTo(n, 0));
+                    result.canon_name = try arena.dupe(u8, mem.slice_to(n, 0));
                 }
             }
             i += 1;
@@ -993,21 +993,21 @@ pub fn get_address_list(allocator: mem.Allocator, name: []const u8, port: u16) G
         var canon = std.ArrayList(u8).init(arena);
         defer canon.deinit();
 
-        try linuxLookupName(&lookup_addrs, &canon, name, family, flags, port);
+        try linux_lookup_name(&lookup_addrs, &canon, name, family, flags, port);
 
         result.addrs = try arena.alloc(Address, lookup_addrs.items.len);
         if (canon.items.len != 0) {
-            result.canon_name = try canon.toOwnedSlice();
+            result.canon_name = try canon.to_owned_slice();
         }
 
         for (lookup_addrs.items, 0..) |lookup_addr, i| {
             result.addrs[i] = lookup_addr.addr;
-            assert(result.addrs[i].getPort() == port);
+            assert(result.addrs[i].get_port() == port);
         }
 
         return result;
     }
-    @compileError("std.net.getAddressList unimplemented for this OS");
+    @compile_error("std.net.get_address_list unimplemented for this OS");
 }
 
 const LookupAddr = struct {
@@ -1034,13 +1034,13 @@ fn linux_lookup_name(
     if (opt_name) |name| {
         // reject empty name and check len so it fits into temp bufs
         canon.items.len = 0;
-        try canon.appendSlice(name);
-        if (Address.parseExpectingFamily(name, family, port)) |addr| {
+        try canon.append_slice(name);
+        if (Address.parse_expecting_family(name, family, port)) |addr| {
             try addrs.append(LookupAddr{ .addr = addr });
         } else |name_err| if ((flags & std.c.AI.NUMERICHOST) != 0) {
             return name_err;
         } else {
-            try linuxLookupNameFromHosts(addrs, canon, name, family, port);
+            try linux_lookup_name_from_hosts(addrs, canon, name, family, port);
             if (addrs.items.len == 0) {
                 // RFC 6761 Section 6.3.3
                 // Name resolution APIs and libraries SHOULD recognize localhost
@@ -1050,18 +1050,18 @@ fn linux_lookup_name(
 
                 // Check for equal to "localhost(.)" or ends in ".localhost(.)"
                 const localhost = if (name[name.len - 1] == '.') "localhost." else "localhost";
-                if (mem.endsWith(u8, name, localhost) and (name.len == localhost.len or name[name.len - localhost.len] == '.')) {
+                if (mem.ends_with(u8, name, localhost) and (name.len == localhost.len or name[name.len - localhost.len] == '.')) {
                     try addrs.append(LookupAddr{ .addr = .{ .in = Ip4Address.parse("127.0.0.1", port) catch unreachable } });
                     try addrs.append(LookupAddr{ .addr = .{ .in6 = Ip6Address.parse("::1", port) catch unreachable } });
                     return;
                 }
 
-                try linuxLookupNameFromDnsSearch(addrs, canon, name, family, port);
+                try linux_lookup_name_from_dns_search(addrs, canon, name, family, port);
             }
         }
     } else {
         try canon.resize(0);
-        try linuxLookupNameFromNull(addrs, family, flags, port);
+        try linux_lookup_name_from_null(addrs, family, flags, port);
     }
     if (addrs.items.len == 0) return error.UnknownHostName;
 
@@ -1083,7 +1083,7 @@ fn linux_lookup_name(
     for (addrs.items, 0..) |*addr, i| {
         var key: i32 = 0;
         var sa6: posix.sockaddr.in6 = undefined;
-        @memset(@as([*]u8, @ptrCast(&sa6))[0..@sizeOf(posix.sockaddr.in6)], 0);
+        @memset(@as([*]u8, @ptr_cast(&sa6))[0..@size_of(posix.sockaddr.in6)], 0);
         var da6 = posix.sockaddr.in6{
             .family = posix.AF.INET6,
             .scope_id = addr.addr.in6.sa.scope_id,
@@ -1092,7 +1092,7 @@ fn linux_lookup_name(
             .addr = [1]u8{0} ** 16,
         };
         var sa4: posix.sockaddr.in = undefined;
-        @memset(@as([*]u8, @ptrCast(&sa4))[0..@sizeOf(posix.sockaddr.in)], 0);
+        @memset(@as([*]u8, @ptr_cast(&sa4))[0..@size_of(posix.sockaddr.in)], 0);
         var da4 = posix.sockaddr.in{
             .family = posix.AF.INET,
             .port = 65535,
@@ -1105,22 +1105,22 @@ fn linux_lookup_name(
         var dalen: posix.socklen_t = undefined;
         if (addr.addr.any.family == posix.AF.INET6) {
             da6.addr = addr.addr.in6.sa.addr;
-            da = @ptrCast(&da6);
-            dalen = @sizeOf(posix.sockaddr.in6);
-            sa = @ptrCast(&sa6);
-            salen = @sizeOf(posix.sockaddr.in6);
+            da = @ptr_cast(&da6);
+            dalen = @size_of(posix.sockaddr.in6);
+            sa = @ptr_cast(&sa6);
+            salen = @size_of(posix.sockaddr.in6);
         } else {
             sa6.addr[0..12].* = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff".*;
             da6.addr[0..12].* = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff".*;
-            mem.writeInt(u32, da6.addr[12..], addr.addr.in.sa.addr, native_endian);
+            mem.write_int(u32, da6.addr[12..], addr.addr.in.sa.addr, native_endian);
             da4.addr = addr.addr.in.sa.addr;
-            da = @ptrCast(&da4);
-            dalen = @sizeOf(posix.sockaddr.in);
-            sa = @ptrCast(&sa4);
-            salen = @sizeOf(posix.sockaddr.in);
+            da = @ptr_cast(&da4);
+            dalen = @size_of(posix.sockaddr.in);
+            sa = @ptr_cast(&sa4);
+            salen = @size_of(posix.sockaddr.in);
         }
-        const dpolicy = policyOf(da6.addr);
-        const dscope: i32 = scopeOf(da6.addr);
+        const dpolicy = policy_of(da6.addr);
+        const dscope: i32 = scope_of(da6.addr);
         const dlabel = dpolicy.label;
         const dprec: i32 = dpolicy.prec;
         const MAXADDRS = 3;
@@ -1132,19 +1132,19 @@ fn linux_lookup_name(
             key |= DAS_USABLE;
             posix.getsockname(fd, sa, &salen) catch break :syscalls;
             if (addr.addr.any.family == posix.AF.INET) {
-                mem.writeInt(u32, sa6.addr[12..16], sa4.addr, native_endian);
+                mem.write_int(u32, sa6.addr[12..16], sa4.addr, native_endian);
             }
-            if (dscope == @as(i32, scopeOf(sa6.addr))) key |= DAS_MATCHINGSCOPE;
-            if (dlabel == labelOf(sa6.addr)) key |= DAS_MATCHINGLABEL;
-            prefixlen = prefixMatch(sa6.addr, da6.addr);
+            if (dscope == @as(i32, scope_of(sa6.addr))) key |= DAS_MATCHINGSCOPE;
+            if (dlabel == label_of(sa6.addr)) key |= DAS_MATCHINGLABEL;
+            prefixlen = prefix_match(sa6.addr, da6.addr);
         } else |_| {}
         key |= dprec << DAS_PREC_SHIFT;
         key |= (15 - dscope) << DAS_SCOPE_SHIFT;
         key |= prefixlen << DAS_PREFIX_SHIFT;
-        key |= (MAXADDRS - @as(i32, @intCast(i))) << DAS_ORDER_SHIFT;
+        key |= (MAXADDRS - @as(i32, @int_cast(i))) << DAS_ORDER_SHIFT;
         addr.sortkey = key;
     }
-    mem.sort(LookupAddr, addrs.items, {}, addrCmpLessThan);
+    mem.sort(LookupAddr, addrs.items, {}, addr_cmp_less_than);
 }
 
 const Policy = struct {
@@ -1233,12 +1233,12 @@ fn prefix_match(s: [16]u8, d: [16]u8) u8 {
     // address. However the definition of the source prefix length is
     // not clear and thus this limiting is not yet implemented.
     var i: u8 = 0;
-    while (i < 128 and ((s[i / 8] ^ d[i / 8]) & (@as(u8, 128) >> @as(u3, @intCast(i % 8)))) == 0) : (i += 1) {}
+    while (i < 128 and ((s[i / 8] ^ d[i / 8]) & (@as(u8, 128) >> @as(u3, @int_cast(i % 8)))) == 0) : (i += 1) {}
     return i;
 }
 
 fn label_of(a: [16]u8) u8 {
-    return policyOf(a).label;
+    return policy_of(a).label;
 }
 
 fn IN6_IS_ADDR_MULTICAST(a: [16]u8) bool {
@@ -1274,24 +1274,24 @@ fn linux_lookup_name_from_null(
 ) !void {
     if ((flags & std.c.AI.PASSIVE) != 0) {
         if (family != posix.AF.INET6) {
-            (try addrs.addOne()).* = LookupAddr{
-                .addr = Address.initIp4([1]u8{0} ** 4, port),
+            (try addrs.add_one()).* = LookupAddr{
+                .addr = Address.init_ip4([1]u8{0} ** 4, port),
             };
         }
         if (family != posix.AF.INET) {
-            (try addrs.addOne()).* = LookupAddr{
-                .addr = Address.initIp6([1]u8{0} ** 16, port, 0, 0),
+            (try addrs.add_one()).* = LookupAddr{
+                .addr = Address.init_ip6([1]u8{0} ** 16, port, 0, 0),
             };
         }
     } else {
         if (family != posix.AF.INET6) {
-            (try addrs.addOne()).* = LookupAddr{
-                .addr = Address.initIp4([4]u8{ 127, 0, 0, 1 }, port),
+            (try addrs.add_one()).* = LookupAddr{
+                .addr = Address.init_ip4([4]u8{ 127, 0, 0, 1 }, port),
             };
         }
         if (family != posix.AF.INET) {
-            (try addrs.addOne()).* = LookupAddr{
-                .addr = Address.initIp6(([1]u8{0} ** 15) ++ [1]u8{1}, port, 0, 0),
+            (try addrs.add_one()).* = LookupAddr{
+                .addr = Address.init_ip6(([1]u8{0} ** 15) ++ [1]u8{1}, port, 0, 0),
             };
         }
     }
@@ -1304,7 +1304,7 @@ fn linux_lookup_name_from_hosts(
     family: posix.sa_family_t,
     port: u16,
 ) !void {
-    const file = fs.openFileAbsoluteZ("/etc/hosts", .{}) catch |err| switch (err) {
+    const file = fs.open_file_absolute_z("/etc/hosts", .{}) catch |err| switch (err) {
         error.FileNotFound,
         error.NotDir,
         error.AccessDenied,
@@ -1313,22 +1313,22 @@ fn linux_lookup_name_from_hosts(
     };
     defer file.close();
 
-    var buffered_reader = std.io.bufferedReader(file.reader());
+    var buffered_reader = std.io.buffered_reader(file.reader());
     const reader = buffered_reader.reader();
     var line_buf: [512]u8 = undefined;
-    while (reader.readUntilDelimiterOrEof(&line_buf, '\n') catch |err| switch (err) {
+    while (reader.read_until_delimiter_or_eof(&line_buf, '\n') catch |err| switch (err) {
         error.StreamTooLong => blk: {
             // Skip to the delimiter in the reader, to fix parsing
-            try reader.skipUntilDelimiterOrEof('\n');
+            try reader.skip_until_delimiter_or_eof('\n');
             // Use the truncated line. A truncated comment or hostname will be handled correctly.
             break :blk &line_buf;
         },
         else => |e| return e,
     }) |line| {
-        var split_it = mem.splitScalar(u8, line, '#');
+        var split_it = mem.split_scalar(u8, line, '#');
         const no_comment_line = split_it.first();
 
-        var line_it = mem.tokenizeAny(u8, no_comment_line, " \t");
+        var line_it = mem.tokenize_any(u8, no_comment_line, " \t");
         const ip_text = line_it.next() orelse continue;
         var first_name_text: ?[]const u8 = null;
         while (line_it.next()) |name_text| {
@@ -1338,7 +1338,7 @@ fn linux_lookup_name_from_hosts(
             }
         } else continue;
 
-        const addr = Address.parseExpectingFamily(ip_text, family, port) catch |err| switch (err) {
+        const addr = Address.parse_expecting_family(ip_text, family, port) catch |err| switch (err) {
             error.Overflow,
             error.InvalidEnd,
             error.InvalidCharacter,
@@ -1352,18 +1352,18 @@ fn linux_lookup_name_from_hosts(
 
         // first name is canonical name
         const name_text = first_name_text.?;
-        if (isValidHostName(name_text)) {
+        if (is_valid_host_name(name_text)) {
             canon.items.len = 0;
-            try canon.appendSlice(name_text);
+            try canon.append_slice(name_text);
         }
     }
 }
 
 pub fn is_valid_host_name(hostname: []const u8) bool {
     if (hostname.len >= 254) return false;
-    if (!std.unicode.utf8ValidateSlice(hostname)) return false;
+    if (!std.unicode.utf8_validate_slice(hostname)) return false;
     for (hostname) |byte| {
-        if (!std.ascii.isASCII(byte) or byte == '.' or byte == '-' or std.ascii.isAlphanumeric(byte)) {
+        if (!std.ascii.is_ascii(byte) or byte == '.' or byte == '-' or std.ascii.is_alphanumeric(byte)) {
             continue;
         }
         return false;
@@ -1379,7 +1379,7 @@ fn linux_lookup_name_from_dns_search(
     port: u16,
 ) !void {
     var rc: ResolvConf = undefined;
-    try getResolvConf(addrs.allocator, &rc);
+    try get_resolv_conf(addrs.allocator, &rc);
     defer rc.deinit();
 
     // Count dots, suppress search when >=ndots or name ends in
@@ -1389,7 +1389,7 @@ fn linux_lookup_name_from_dns_search(
         if (byte == '.') dots += 1;
     }
 
-    const search = if (dots >= rc.ndots or mem.endsWith(u8, name, "."))
+    const search = if (dots >= rc.ndots or mem.ends_with(u8, name, "."))
         ""
     else
         rc.search.items;
@@ -1397,8 +1397,8 @@ fn linux_lookup_name_from_dns_search(
     var canon_name = name;
 
     // Strip final dot for canon, fail if multiple trailing dots.
-    if (mem.endsWith(u8, canon_name, ".")) canon_name.len -= 1;
-    if (mem.endsWith(u8, canon_name, ".")) return error.UnknownHostName;
+    if (mem.ends_with(u8, canon_name, ".")) canon_name.len -= 1;
+    if (mem.ends_with(u8, canon_name, ".")) return error.UnknownHostName;
 
     // Name with search domain appended is setup in canon[]. This both
     // provides the desired default canonical name (if the requested
@@ -1408,16 +1408,16 @@ fn linux_lookup_name_from_dns_search(
     @memcpy(canon.items, canon_name);
     try canon.append('.');
 
-    var tok_it = mem.tokenizeAny(u8, search, " \t");
+    var tok_it = mem.tokenize_any(u8, search, " \t");
     while (tok_it.next()) |tok| {
-        canon.shrinkRetainingCapacity(canon_name.len + 1);
-        try canon.appendSlice(tok);
-        try linuxLookupNameFromDns(addrs, canon, canon.items, family, rc, port);
+        canon.shrink_retaining_capacity(canon_name.len + 1);
+        try canon.append_slice(tok);
+        try linux_lookup_name_from_dns(addrs, canon, canon.items, family, rc, port);
         if (addrs.items.len != 0) return;
     }
 
-    canon.shrinkRetainingCapacity(canon_name.len);
-    return linuxLookupNameFromDns(addrs, canon, name, family, rc, port);
+    canon.shrink_retaining_capacity(canon_name.len);
+    return linux_lookup_name_from_dns(addrs, canon, name, family, rc, port);
 }
 
 const dpc_ctx = struct {
@@ -1465,11 +1465,11 @@ fn linux_lookup_name_from_dns(
     ap[0].len = 0;
     ap[1].len = 0;
 
-    try resMSendRc(qp[0..nq], ap[0..nq], apbuf[0..nq], rc);
+    try res_msend_rc(qp[0..nq], ap[0..nq], apbuf[0..nq], rc);
 
     var i: usize = 0;
     while (i < nq) : (i += 1) {
-        dnsParse(ap[i], ctx, dnsParseCallback) catch {};
+        dns_parse(ap[i], ctx, dns_parse_callback) catch {};
     }
 
     if (addrs.items.len != 0) return;
@@ -1505,40 +1505,40 @@ fn get_resolv_conf(allocator: mem.Allocator, rc: *ResolvConf) !void {
     };
     errdefer rc.deinit();
 
-    const file = fs.openFileAbsoluteZ("/etc/resolv.conf", .{}) catch |err| switch (err) {
+    const file = fs.open_file_absolute_z("/etc/resolv.conf", .{}) catch |err| switch (err) {
         error.FileNotFound,
         error.NotDir,
         error.AccessDenied,
-        => return linuxLookupNameFromNumericUnspec(&rc.ns, "127.0.0.1", 53),
+        => return linux_lookup_name_from_numeric_unspec(&rc.ns, "127.0.0.1", 53),
         else => |e| return e,
     };
     defer file.close();
 
-    var buf_reader = std.io.bufferedReader(file.reader());
+    var buf_reader = std.io.buffered_reader(file.reader());
     const stream = buf_reader.reader();
     var line_buf: [512]u8 = undefined;
-    while (stream.readUntilDelimiterOrEof(&line_buf, '\n') catch |err| switch (err) {
+    while (stream.read_until_delimiter_or_eof(&line_buf, '\n') catch |err| switch (err) {
         error.StreamTooLong => blk: {
             // Skip to the delimiter in the stream, to fix parsing
-            try stream.skipUntilDelimiterOrEof('\n');
+            try stream.skip_until_delimiter_or_eof('\n');
             // Give an empty line to the while loop, which will be skipped.
             break :blk line_buf[0..0];
         },
         else => |e| return e,
     }) |line| {
         const no_comment_line = no_comment_line: {
-            var split = mem.splitScalar(u8, line, '#');
+            var split = mem.split_scalar(u8, line, '#');
             break :no_comment_line split.first();
         };
-        var line_it = mem.tokenizeAny(u8, no_comment_line, " \t");
+        var line_it = mem.tokenize_any(u8, no_comment_line, " \t");
 
         const token = line_it.next() orelse continue;
         if (mem.eql(u8, token, "options")) {
             while (line_it.next()) |sub_tok| {
-                var colon_it = mem.splitScalar(u8, sub_tok, ':');
+                var colon_it = mem.split_scalar(u8, sub_tok, ':');
                 const name = colon_it.first();
                 const value_txt = colon_it.next() orelse continue;
-                const value = std.fmt.parseInt(u8, value_txt, 10) catch |err| switch (err) {
+                const value = std.fmt.parse_int(u8, value_txt, 10) catch |err| switch (err) {
                     // TODO https://github.com/ziglang/zig/issues/11812
                     error.Overflow => @as(u8, 255),
                     error.InvalidCharacter => continue,
@@ -1553,15 +1553,15 @@ fn get_resolv_conf(allocator: mem.Allocator, rc: *ResolvConf) !void {
             }
         } else if (mem.eql(u8, token, "nameserver")) {
             const ip_txt = line_it.next() orelse continue;
-            try linuxLookupNameFromNumericUnspec(&rc.ns, ip_txt, 53);
+            try linux_lookup_name_from_numeric_unspec(&rc.ns, ip_txt, 53);
         } else if (mem.eql(u8, token, "domain") or mem.eql(u8, token, "search")) {
             rc.search.items.len = 0;
-            try rc.search.appendSlice(line_it.rest());
+            try rc.search.append_slice(line_it.rest());
         }
     }
 
     if (rc.ns.items.len == 0) {
-        return linuxLookupNameFromNumericUnspec(&rc.ns, "127.0.0.1", 53);
+        return linux_lookup_name_from_numeric_unspec(&rc.ns, "127.0.0.1", 53);
     }
 }
 
@@ -1570,8 +1570,8 @@ fn linux_lookup_name_from_numeric_unspec(
     name: []const u8,
     port: u16,
 ) !void {
-    const addr = try Address.resolveIp(name, port);
-    (try addrs.addOne()).* = LookupAddr{ .addr = addr };
+    const addr = try Address.resolve_ip(name, port);
+    (try addrs.add_one()).* = LookupAddr{ .addr = addr };
 }
 
 fn res_msend_rc(
@@ -1583,7 +1583,7 @@ fn res_msend_rc(
     const timeout = 1000 * rc.timeout;
     const attempts = rc.attempts;
 
-    var sl: posix.socklen_t = @sizeOf(posix.sockaddr.in);
+    var sl: posix.socklen_t = @size_of(posix.sockaddr.in);
     var family: posix.sa_family_t = posix.AF.INET;
 
     var ns_list = std.ArrayList(Address).init(rc.ns.allocator);
@@ -1594,7 +1594,7 @@ fn res_msend_rc(
 
     for (rc.ns.items, 0..) |iplit, i| {
         ns[i] = iplit.addr;
-        assert(ns[i].getPort() == 53);
+        assert(ns[i].get_port() == 53);
         if (iplit.addr.any.family != posix.AF.INET) {
             family = posix.AF.INET6;
         }
@@ -1624,22 +1624,22 @@ fn res_msend_rc(
             fd,
             posix.SOL.IPV6,
             std.os.linux.IPV6.V6ONLY,
-            &mem.toBytes(@as(c_int, 0)),
+            &mem.to_bytes(@as(c_int, 0)),
         );
         for (0..ns.len) |i| {
             if (ns[i].any.family != posix.AF.INET) continue;
-            mem.writeInt(u32, ns[i].in6.sa.addr[12..], ns[i].in.sa.addr, native_endian);
+            mem.write_int(u32, ns[i].in6.sa.addr[12..], ns[i].in.sa.addr, native_endian);
             ns[i].in6.sa.addr[0..12].* = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff".*;
             ns[i].any.family = posix.AF.INET6;
             ns[i].in6.sa.flowinfo = 0;
             ns[i].in6.sa.scope_id = 0;
         }
-        sl = @sizeOf(posix.sockaddr.in6);
+        sl = @size_of(posix.sockaddr.in6);
     }
 
     // Get local address and open/bind a socket
     var sa: Address = undefined;
-    @memset(@as([*]u8, @ptrCast(&sa))[0..@sizeOf(Address)], 0);
+    @memset(@as([*]u8, @ptr_cast(&sa))[0..@size_of(Address)], 0);
     sa.any.family = family;
     try posix.bind(fd, &sa.any, sl);
 
@@ -1650,13 +1650,13 @@ fn res_msend_rc(
     }};
     const retry_interval = timeout / attempts;
     var next: u32 = 0;
-    var t2: u64 = @bitCast(std.time.milliTimestamp());
+    var t2: u64 = @bit_cast(std.time.milli_timestamp());
     const t0 = t2;
     var t1 = t2 - retry_interval;
 
     var servfail_retry: usize = undefined;
 
-    outer: while (t2 - t0 < timeout) : (t2 = @as(u64, @bitCast(std.time.milliTimestamp()))) {
+    outer: while (t2 - t0 < timeout) : (t2 = @as(u64, @bit_cast(std.time.milli_timestamp()))) {
         if (t2 - t1 >= retry_interval) {
             // Query all configured nameservers in parallel
             var i: usize = 0;
@@ -1673,7 +1673,7 @@ fn res_msend_rc(
         }
 
         // Wait for a response, or until time to retry
-        const clamped_timeout = @min(@as(u31, std.math.maxInt(u31)), t1 + retry_interval - t2);
+        const clamped_timeout = @min(@as(u31, std.math.max_int(u31)), t1 + retry_interval - t2);
         const nevents = posix.poll(&pfd, clamped_timeout) catch 0;
         if (nevents == 0) continue;
 
@@ -1739,19 +1739,19 @@ fn dns_parse(
     if (qdcount + ancount > 64) return error.InvalidDnsPacket;
     while (qdcount != 0) {
         qdcount -= 1;
-        while (@intFromPtr(p) - @intFromPtr(r.ptr) < r.len and p[0] -% 1 < 127) p += 1;
-        if (p[0] > 193 or (p[0] == 193 and p[1] > 254) or @intFromPtr(p) > @intFromPtr(r.ptr) + r.len - 6)
+        while (@int_from_ptr(p) - @int_from_ptr(r.ptr) < r.len and p[0] -% 1 < 127) p += 1;
+        if (p[0] > 193 or (p[0] == 193 and p[1] > 254) or @int_from_ptr(p) > @int_from_ptr(r.ptr) + r.len - 6)
             return error.InvalidDnsPacket;
-        p += @as(usize, 5) + @intFromBool(p[0] != 0);
+        p += @as(usize, 5) + @int_from_bool(p[0] != 0);
     }
     while (ancount != 0) {
         ancount -= 1;
-        while (@intFromPtr(p) - @intFromPtr(r.ptr) < r.len and p[0] -% 1 < 127) p += 1;
-        if (p[0] > 193 or (p[0] == 193 and p[1] > 254) or @intFromPtr(p) > @intFromPtr(r.ptr) + r.len - 6)
+        while (@int_from_ptr(p) - @int_from_ptr(r.ptr) < r.len and p[0] -% 1 < 127) p += 1;
+        if (p[0] > 193 or (p[0] == 193 and p[1] > 254) or @int_from_ptr(p) > @int_from_ptr(r.ptr) + r.len - 6)
             return error.InvalidDnsPacket;
-        p += @as(usize, 1) + @intFromBool(p[0] != 0);
+        p += @as(usize, 1) + @int_from_bool(p[0] != 0);
         const len = p[8] * @as(usize, 256) + p[9];
-        if (@intFromPtr(p) + len > @intFromPtr(r.ptr) + r.len) return error.InvalidDnsPacket;
+        if (@int_from_ptr(p) + len > @int_from_ptr(r.ptr) + r.len) return error.InvalidDnsPacket;
         try callback(ctx, p[1], p[10..][0..len], r);
         p += 10 + len;
     }
@@ -1761,26 +1761,26 @@ fn dns_parse_callback(ctx: dpc_ctx, rr: u8, data: []const u8, packet: []const u8
     switch (rr) {
         posix.RR.A => {
             if (data.len != 4) return error.InvalidDnsARecord;
-            const new_addr = try ctx.addrs.addOne();
+            const new_addr = try ctx.addrs.add_one();
             new_addr.* = LookupAddr{
-                .addr = Address.initIp4(data[0..4].*, ctx.port),
+                .addr = Address.init_ip4(data[0..4].*, ctx.port),
             };
         },
         posix.RR.AAAA => {
             if (data.len != 16) return error.InvalidDnsAAAARecord;
-            const new_addr = try ctx.addrs.addOne();
+            const new_addr = try ctx.addrs.add_one();
             new_addr.* = LookupAddr{
-                .addr = Address.initIp6(data[0..16].*, ctx.port, 0, 0),
+                .addr = Address.init_ip6(data[0..16].*, ctx.port, 0, 0),
             };
         },
         posix.RR.CNAME => {
             var tmp: [256]u8 = undefined;
             // Returns len of compressed name. strlen to get canon name.
             _ = try posix.dn_expand(packet, data, &tmp);
-            const canon_name = mem.sliceTo(&tmp, 0);
-            if (isValidHostName(canon_name)) {
+            const canon_name = mem.slice_to(&tmp, 0);
+            if (is_valid_host_name(canon_name)) {
                 ctx.canon.items.len = 0;
-                try ctx.canon.appendSlice(canon_name);
+                try ctx.canon.append_slice(canon_name);
             }
         },
         else => return,
@@ -1836,7 +1836,7 @@ pub const Stream = struct {
     /// `buffer.len`, it means the stream reached the end. Reaching the end of
     /// a stream is not an error condition.
     pub fn read_all(s: Stream, buffer: []u8) ReadError!usize {
-        return readAtLeast(s, buffer, buffer.len);
+        return read_at_least(s, buffer, buffer.len);
     }
 
     /// Returns the number of bytes read, calling the underlying read function
@@ -1882,7 +1882,7 @@ pub const Stream = struct {
     /// The `iovecs` parameter is mutable because this function needs to mutate the fields in
     /// order to handle partial writes from the underlying OS layer.
     /// See https://github.com/ziglang/zig/issues/7699
-    /// See equivalent function: `std.fs.File.writevAll`.
+    /// See equivalent function: `std.fs.File.writev_all`.
     pub fn writev_all(self: Stream, iovecs: []posix.iovec_const) WriteError!void {
         if (iovecs.len == 0) return;
 
@@ -1920,7 +1920,7 @@ pub const Server = struct {
     /// an open stream.
     pub fn accept(s: *Server) AcceptError!Connection {
         var accepted_addr: Address = undefined;
-        var addr_len: posix.socklen_t = @sizeOf(Address);
+        var addr_len: posix.socklen_t = @size_of(Address);
         const fd = try posix.accept(s.stream.handle, &accepted_addr.any, &addr_len, posix.SOCK.CLOEXEC);
         return .{
             .stream = .{ .handle = fd },

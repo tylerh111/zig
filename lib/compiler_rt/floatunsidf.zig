@@ -1,5 +1,5 @@
 const common = @import("./common.zig");
-const floatFromInt = @import("./float_from_int.zig").floatFromInt;
+const float_from_int = @import("./float_from_int.zig").float_from_int;
 
 pub const panic = common.panic;
 
@@ -12,9 +12,9 @@ comptime {
 }
 
 pub fn __floatunsidf(a: u32) callconv(.C) f64 {
-    return floatFromInt(f64, a);
+    return float_from_int(f64, a);
 }
 
 fn __aeabi_ui2d(a: u32) callconv(.AAPCS) f64 {
-    return floatFromInt(f64, a);
+    return float_from_int(f64, a);
 }

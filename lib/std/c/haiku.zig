@@ -1,7 +1,7 @@
 const std = @import("../std.zig");
 const assert = std.debug.assert;
 const builtin = @import("builtin");
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const iovec = std.posix.iovec;
 const iovec_const = std.posix.iovec_const;
 
@@ -241,13 +241,13 @@ pub const sockaddr = extern struct {
         padding: [126]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
+            assert(@size_of(storage) == SS_MAXSIZE);
             assert(@alignOf(storage) == 8);
         }
     };
 
     pub const in = extern struct {
-        len: u8 = @sizeOf(in),
+        len: u8 = @size_of(in),
         family: sa_family_t = AF.INET,
         port: in_port_t,
         addr: u32,
@@ -255,7 +255,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const in6 = extern struct {
-        len: u8 = @sizeOf(in6),
+        len: u8 = @size_of(in6),
         family: sa_family_t = AF.INET6,
         port: in_port_t,
         flowinfo: u32,
@@ -264,7 +264,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const un = extern struct {
-        len: u8 = @sizeOf(un),
+        len: u8 = @size_of(un),
         family: sa_family_t = AF.UNIX,
         path: [104]u8,
     };
@@ -307,7 +307,7 @@ pub const W = struct {
     pub const NOWAIT = 0x20;
 
     pub fn EXITSTATUS(s: u32) u8 {
-        return @as(u8, @intCast(s & 0xff));
+        return @as(u8, @int_cast(s & 0xff));
     }
 
     pub fn TERMSIG(s: u32) u32 {
@@ -691,7 +691,7 @@ pub const thread_id = i32;
 // /system/develop/headers/os/support/Errors.h
 
 pub const E = enum(i32) {
-    pub const B_GENERAL_ERROR_BASE: i32 = std.math.minInt(i32);
+    pub const B_GENERAL_ERROR_BASE: i32 = std.math.min_int(i32);
     pub const B_OS_ERROR_BASE = B_GENERAL_ERROR_BASE + 0x1000;
     pub const B_APP_ERROR_BASE = B_GENERAL_ERROR_BASE + 0x2000;
     pub const B_INTERFACE_ERROR_BASE = B_GENERAL_ERROR_BASE + 0x3000;
@@ -1132,7 +1132,7 @@ pub const DirEnt = extern struct {
     /// name of the entry (null byte terminated)
     name: [0]u8,
     pub fn get_name(dirent: *const DirEnt) [*:0]const u8 {
-        return @ptrCast(&dirent.name);
+        return @ptr_cast(&dirent.name);
     }
 };
 
@@ -1182,7 +1182,7 @@ pub const filled_sigset = ~@as(sigset_t, 0);
 pub const SIG = struct {
     pub const DFL: ?Sigaction.handler_fn = @ptrFromInt(0);
     pub const IGN: ?Sigaction.handler_fn = @ptrFromInt(1);
-    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(maxInt(usize));
+    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(max_int(usize));
 
     pub const HOLD: ?Sigaction.handler_fn = @ptrFromInt(3);
 
@@ -1388,6 +1388,6 @@ pub const itimerspec = extern struct {
 
 pub extern "root" fn _kern_get_current_team() team_id;
 pub extern "root" fn _kern_open_dir(fd: fd_t, path: [*:0]const u8) fd_t;
-pub extern "root" fn _kern_read_dir(fd: fd_t, buffer: [*]u8, bufferSize: usize, maxCount: u32) isize;
+pub extern "root" fn _kern_read_dir(fd: fd_t, buffer: [*]u8, buffer_size: usize, maxCount: u32) isize;
 pub extern "root" fn _kern_rewind_dir(fd: fd_t) status_t;
 pub extern "root" fn _kern_read_stat(fd: fd_t, path: [*:0]const u8, traverseLink: bool, stat: *Stat, statSize: usize) status_t;

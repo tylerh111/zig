@@ -6,7 +6,7 @@ const Table = types.compressed_block.Table;
 
 const readers = @import("../readers.zig");
 
-const decodeFseTable = @import("fse.zig").decodeFseTable;
+const decode_fse_table = @import("fse.zig").decode_fse_table;
 
 pub const Error = error{
     MalformedHuffmanTree,
@@ -21,32 +21,32 @@ fn decode_fse_huffman_tree(
     buffer: []u8,
     weights: *[256]u4,
 ) !usize {
-    var stream = std.io.limitedReader(source, compressed_size);
-    var bit_reader = readers.bitReader(stream.reader());
+    var stream = std.io.limited_reader(source, compressed_size);
+    var bit_reader = readers.bit_reader(stream.reader());
 
     var entries: [1 << 6]Table.Fse = undefined;
-    const table_size = decodeFseTable(&bit_reader, 256, 6, &entries) catch |err| switch (err) {
+    const table_size = decode_fse_table(&bit_reader, 256, 6, &entries) catch |err| switch (err) {
         error.MalformedAccuracyLog, error.MalformedFseTable => |e| return e,
         error.EndOfStream => return error.MalformedFseTable,
         else => |e| return e,
     };
     const accuracy_log = std.math.log2_int_ceil(usize, table_size);
 
-    const amount = try stream.reader().readAll(buffer);
+    const amount = try stream.reader().read_all(buffer);
     var huff_bits: readers.ReverseBitReader = undefined;
     huff_bits.init(buffer[0..amount]) catch return error.MalformedHuffmanTree;
 
-    return assignWeights(&huff_bits, accuracy_log, &entries, weights);
+    return assign_weights(&huff_bits, accuracy_log, &entries, weights);
 }
 
 fn decode_fse_huffman_tree_slice(src: []const u8, compressed_size: usize, weights: *[256]u4) !usize {
     if (src.len < compressed_size) return error.MalformedHuffmanTree;
-    var stream = std.io.fixedBufferStream(src[0..compressed_size]);
-    var counting_reader = std.io.countingReader(stream.reader());
-    var bit_reader = readers.bitReader(counting_reader.reader());
+    var stream = std.io.fixed_buffer_stream(src[0..compressed_size]);
+    var counting_reader = std.io.counting_reader(stream.reader());
+    var bit_reader = readers.bit_reader(counting_reader.reader());
 
     var entries: [1 << 6]Table.Fse = undefined;
-    const table_size = decodeFseTable(&bit_reader, 256, 6, &entries) catch |err| switch (err) {
+    const table_size = decode_fse_table(&bit_reader, 256, 6, &entries) catch |err| switch (err) {
         error.MalformedAccuracyLog, error.MalformedFseTable => |e| return e,
         error.EndOfStream => return error.MalformedFseTable,
     };
@@ -58,7 +58,7 @@ fn decode_fse_huffman_tree_slice(src: []const u8, compressed_size: usize, weight
     var huff_bits: readers.ReverseBitReader = undefined;
     huff_bits.init(huff_data) catch return error.MalformedHuffmanTree;
 
-    return assignWeights(&huff_bits, accuracy_log, &entries, weights);
+    return assign_weights(&huff_bits, accuracy_log, &entries, weights);
 }
 
 fn assign_weights(
@@ -68,13 +68,13 @@ fn assign_weights(
     weights: *[256]u4,
 ) !usize {
     var i: usize = 0;
-    var even_state: u32 = huff_bits.readBitsNoEof(u32, accuracy_log) catch return error.MalformedHuffmanTree;
-    var odd_state: u32 = huff_bits.readBitsNoEof(u32, accuracy_log) catch return error.MalformedHuffmanTree;
+    var even_state: u32 = huff_bits.read_bits_no_eof(u32, accuracy_log) catch return error.MalformedHuffmanTree;
+    var odd_state: u32 = huff_bits.read_bits_no_eof(u32, accuracy_log) catch return error.MalformedHuffmanTree;
 
     while (i < 254) {
         const even_data = entries[even_state];
         var read_bits: usize = 0;
-        const even_bits = huff_bits.readBits(u32, even_data.bits, &read_bits) catch unreachable;
+        const even_bits = huff_bits.read_bits(u32, even_data.bits, &read_bits) catch unreachable;
         weights[i] = std.math.cast(u4, even_data.symbol) orelse return error.MalformedHuffmanTree;
         i += 1;
         if (read_bits < even_data.bits) {
@@ -86,7 +86,7 @@ fn assign_weights(
 
         read_bits = 0;
         const odd_data = entries[odd_state];
-        const odd_bits = huff_bits.readBits(u32, odd_data.bits, &read_bits) catch unreachable;
+        const odd_bits = huff_bits.read_bits(u32, odd_data.bits, &read_bits) catch unreachable;
         weights[i] = std.math.cast(u4, odd_data.symbol) orelse return error.MalformedHuffmanTree;
         i += 1;
         if (read_bits < odd_data.bits) {
@@ -98,7 +98,7 @@ fn assign_weights(
         odd_state = odd_data.baseline + odd_bits;
     } else return error.MalformedHuffmanTree;
 
-    if (!huff_bits.isEmpty()) {
+    if (!huff_bits.is_empty()) {
         return error.MalformedHuffmanTree;
     }
 
@@ -108,9 +108,9 @@ fn assign_weights(
 fn decode_direct_huffman_tree(source: anytype, encoded_symbol_count: usize, weights: *[256]u4) !usize {
     const weights_byte_count = (encoded_symbol_count + 1) / 2;
     for (0..weights_byte_count) |i| {
-        const byte = try source.readByte();
-        weights[2 * i] = @as(u4, @intCast(byte >> 4));
-        weights[2 * i + 1] = @as(u4, @intCast(byte & 0xF));
+        const byte = try source.read_byte();
+        weights[2 * i] = @as(u4, @int_cast(byte >> 4));
+        weights[2 * i + 1] = @as(u4, @int_cast(byte & 0xF));
     }
     return encoded_symbol_count + 1;
 }
@@ -118,7 +118,7 @@ fn decode_direct_huffman_tree(source: anytype, encoded_symbol_count: usize, weig
 fn assign_symbols(weight_sorted_prefixed_symbols: []LiteralsSection.HuffmanTree.PrefixedSymbol, weights: [256]u4) usize {
     for (0..weight_sorted_prefixed_symbols.len) |i| {
         weight_sorted_prefixed_symbols[i] = .{
-            .symbol = @as(u8, @intCast(i)),
+            .symbol = @as(u8, @int_cast(i)),
             .weight = undefined,
             .prefix = undefined,
         };
@@ -128,7 +128,7 @@ fn assign_symbols(weight_sorted_prefixed_symbols: []LiteralsSection.HuffmanTree.
         LiteralsSection.HuffmanTree.PrefixedSymbol,
         weight_sorted_prefixed_symbols,
         weights,
-        lessThanByWeight,
+        less_than_by_weight,
     );
 
     var prefix: u16 = 0;
@@ -167,7 +167,7 @@ fn build_huffman_tree(weights: *[256]u4, symbol_count: usize) error{MalformedHuf
         weight_power_sum_big += (@as(u16, 1) << value) >> 1;
     }
     if (weight_power_sum_big >= 1 << 11) return error.MalformedHuffmanTree;
-    const weight_power_sum = @as(u16, @intCast(weight_power_sum_big));
+    const weight_power_sum = @as(u16, @int_cast(weight_power_sum_big));
 
     // advance to next power of two (even if weight_power_sum is a power of 2)
     // TODO: is it valid to have weight_power_sum == 0?
@@ -176,10 +176,10 @@ fn build_huffman_tree(weights: *[256]u4, symbol_count: usize) error{MalformedHuf
     weights[symbol_count - 1] = std.math.log2_int(u16, next_power_of_two - weight_power_sum) + 1;
 
     var weight_sorted_prefixed_symbols: [256]LiteralsSection.HuffmanTree.PrefixedSymbol = undefined;
-    const prefixed_symbol_count = assignSymbols(weight_sorted_prefixed_symbols[0..symbol_count], weights.*);
+    const prefixed_symbol_count = assign_symbols(weight_sorted_prefixed_symbols[0..symbol_count], weights.*);
     const tree = LiteralsSection.HuffmanTree{
         .max_bit_count = max_number_of_bits,
-        .symbol_count_minus_one = @as(u8, @intCast(prefixed_symbol_count - 1)),
+        .symbol_count_minus_one = @as(u8, @int_cast(prefixed_symbol_count - 1)),
         .nodes = weight_sorted_prefixed_symbols,
     };
     return tree;
@@ -189,15 +189,15 @@ pub fn decode_huffman_tree(
     source: anytype,
     buffer: []u8,
 ) (@TypeOf(source).Error || Error)!LiteralsSection.HuffmanTree {
-    const header = try source.readByte();
+    const header = try source.read_byte();
     var weights: [256]u4 = undefined;
     const symbol_count = if (header < 128)
         // FSE compressed weights
-        try decodeFseHuffmanTree(source, header, buffer, &weights)
+        try decode_fse_huffman_tree(source, header, buffer, &weights)
     else
-        try decodeDirectHuffmanTree(source, header - 127, &weights);
+        try decode_direct_huffman_tree(source, header - 127, &weights);
 
-    return buildHuffmanTree(&weights, symbol_count);
+    return build_huffman_tree(&weights, symbol_count);
 }
 
 pub fn decode_huffman_tree_slice(
@@ -211,15 +211,15 @@ pub fn decode_huffman_tree_slice(
     const symbol_count = if (header < 128) count: {
         // FSE compressed weights
         bytes_read += header;
-        break :count try decodeFseHuffmanTreeSlice(src[1..], header, &weights);
+        break :count try decode_fse_huffman_tree_slice(src[1..], header, &weights);
     } else count: {
-        var fbs = std.io.fixedBufferStream(src[1..]);
+        var fbs = std.io.fixed_buffer_stream(src[1..]);
         defer bytes_read += fbs.pos;
-        break :count try decodeDirectHuffmanTree(fbs.reader(), header - 127, &weights);
+        break :count try decode_direct_huffman_tree(fbs.reader(), header - 127, &weights);
     };
 
     consumed_count.* += bytes_read;
-    return buildHuffmanTree(&weights, symbol_count);
+    return build_huffman_tree(&weights, symbol_count);
 }
 
 fn less_than_by_weight(

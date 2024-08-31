@@ -3,65 +3,65 @@
 pub fn test_all(b: *Build, build_opts: BuildOptions) *Step {
     const macho_step = b.step("test-macho", "Run MachO tests");
 
-    const x86_64_target = b.resolveTargetQuery(.{
+    const x86_64_target = b.resolve_target_query(.{
         .cpu_arch = .x86_64,
         .os_tag = .macos,
     });
-    const aarch64_target = b.resolveTargetQuery(.{
+    const aarch64_target = b.resolve_target_query(.{
         .cpu_arch = .aarch64,
         .os_tag = .macos,
     });
 
     const default_target = switch (builtin.cpu.arch) {
-        .x86_64, .aarch64 => b.resolveTargetQuery(.{
+        .x86_64, .aarch64 => b.resolve_target_query(.{
             .os_tag = .macos,
         }),
         else => aarch64_target,
     };
 
     // Exercise linker with self-hosted backend (no LLVM)
-    macho_step.dependOn(testEmptyZig(b, .{ .use_llvm = false, .target = x86_64_target }));
-    macho_step.dependOn(testHelloZig(b, .{ .use_llvm = false, .target = x86_64_target }));
-    macho_step.dependOn(testLinkingStaticLib(b, .{ .use_llvm = false, .target = x86_64_target }));
-    macho_step.dependOn(testReexportsZig(b, .{ .use_llvm = false, .target = x86_64_target }));
-    macho_step.dependOn(testRelocatableZig(b, .{ .use_llvm = false, .target = x86_64_target }));
+    macho_step.depend_on(test_empty_zig(b, .{ .use_llvm = false, .target = x86_64_target }));
+    macho_step.depend_on(test_hello_zig(b, .{ .use_llvm = false, .target = x86_64_target }));
+    macho_step.depend_on(test_linking_static_lib(b, .{ .use_llvm = false, .target = x86_64_target }));
+    macho_step.depend_on(test_reexports_zig(b, .{ .use_llvm = false, .target = x86_64_target }));
+    macho_step.depend_on(test_relocatable_zig(b, .{ .use_llvm = false, .target = x86_64_target }));
 
     // Exercise linker with LLVM backend
-    macho_step.dependOn(testDeadStrip(b, .{ .target = default_target }));
-    macho_step.dependOn(testEmptyObject(b, .{ .target = default_target }));
-    macho_step.dependOn(testEmptyZig(b, .{ .target = default_target }));
-    macho_step.dependOn(testEntryPoint(b, .{ .target = default_target }));
-    macho_step.dependOn(testHeaderWeakFlags(b, .{ .target = default_target }));
-    macho_step.dependOn(testHelloC(b, .{ .target = default_target }));
-    macho_step.dependOn(testHelloZig(b, .{ .target = default_target }));
-    macho_step.dependOn(testLargeBss(b, .{ .target = default_target }));
-    macho_step.dependOn(testLayout(b, .{ .target = default_target }));
-    macho_step.dependOn(testLinkingStaticLib(b, .{ .target = default_target }));
-    macho_step.dependOn(testLinksection(b, .{ .target = default_target }));
-    macho_step.dependOn(testMergeLiteralsX64(b, .{ .target = x86_64_target }));
-    macho_step.dependOn(testMergeLiteralsArm64(b, .{ .target = aarch64_target }));
-    macho_step.dependOn(testMergeLiteralsArm642(b, .{ .target = aarch64_target }));
-    macho_step.dependOn(testMergeLiteralsAlignment(b, .{ .target = aarch64_target }));
-    macho_step.dependOn(testMhExecuteHeader(b, .{ .target = default_target }));
-    macho_step.dependOn(testNoDeadStrip(b, .{ .target = default_target }));
-    macho_step.dependOn(testNoExportsDylib(b, .{ .target = default_target }));
-    macho_step.dependOn(testPagezeroSize(b, .{ .target = default_target }));
-    macho_step.dependOn(testReexportsZig(b, .{ .target = default_target }));
-    macho_step.dependOn(testRelocatable(b, .{ .target = default_target }));
-    macho_step.dependOn(testRelocatableZig(b, .{ .target = default_target }));
-    macho_step.dependOn(testSectionBoundarySymbols(b, .{ .target = default_target }));
-    macho_step.dependOn(testSegmentBoundarySymbols(b, .{ .target = default_target }));
-    macho_step.dependOn(testSymbolStabs(b, .{ .target = default_target }));
-    macho_step.dependOn(testStackSize(b, .{ .target = default_target }));
-    macho_step.dependOn(testTentative(b, .{ .target = default_target }));
-    macho_step.dependOn(testThunks(b, .{ .target = aarch64_target }));
-    macho_step.dependOn(testTlsLargeTbss(b, .{ .target = default_target }));
-    macho_step.dependOn(testUndefinedFlag(b, .{ .target = default_target }));
-    macho_step.dependOn(testUnwindInfo(b, .{ .target = default_target }));
-    macho_step.dependOn(testUnwindInfoNoSubsectionsX64(b, .{ .target = x86_64_target }));
-    macho_step.dependOn(testUnwindInfoNoSubsectionsArm64(b, .{ .target = aarch64_target }));
-    macho_step.dependOn(testWeakBind(b, .{ .target = x86_64_target }));
-    macho_step.dependOn(testWeakRef(b, .{ .target = b.resolveTargetQuery(.{
+    macho_step.depend_on(test_dead_strip(b, .{ .target = default_target }));
+    macho_step.depend_on(test_empty_object(b, .{ .target = default_target }));
+    macho_step.depend_on(test_empty_zig(b, .{ .target = default_target }));
+    macho_step.depend_on(test_entry_point(b, .{ .target = default_target }));
+    macho_step.depend_on(test_header_weak_flags(b, .{ .target = default_target }));
+    macho_step.depend_on(test_hello_c(b, .{ .target = default_target }));
+    macho_step.depend_on(test_hello_zig(b, .{ .target = default_target }));
+    macho_step.depend_on(test_large_bss(b, .{ .target = default_target }));
+    macho_step.depend_on(test_layout(b, .{ .target = default_target }));
+    macho_step.depend_on(test_linking_static_lib(b, .{ .target = default_target }));
+    macho_step.depend_on(test_linksection(b, .{ .target = default_target }));
+    macho_step.depend_on(test_merge_literals_x64(b, .{ .target = x86_64_target }));
+    macho_step.depend_on(test_merge_literals_arm64(b, .{ .target = aarch64_target }));
+    macho_step.depend_on(test_merge_literals_arm642(b, .{ .target = aarch64_target }));
+    macho_step.depend_on(test_merge_literals_alignment(b, .{ .target = aarch64_target }));
+    macho_step.depend_on(test_mh_execute_header(b, .{ .target = default_target }));
+    macho_step.depend_on(test_no_dead_strip(b, .{ .target = default_target }));
+    macho_step.depend_on(test_no_exports_dylib(b, .{ .target = default_target }));
+    macho_step.depend_on(test_pagezero_size(b, .{ .target = default_target }));
+    macho_step.depend_on(test_reexports_zig(b, .{ .target = default_target }));
+    macho_step.depend_on(test_relocatable(b, .{ .target = default_target }));
+    macho_step.depend_on(test_relocatable_zig(b, .{ .target = default_target }));
+    macho_step.depend_on(test_section_boundary_symbols(b, .{ .target = default_target }));
+    macho_step.depend_on(test_segment_boundary_symbols(b, .{ .target = default_target }));
+    macho_step.depend_on(test_symbol_stabs(b, .{ .target = default_target }));
+    macho_step.depend_on(test_stack_size(b, .{ .target = default_target }));
+    macho_step.depend_on(test_tentative(b, .{ .target = default_target }));
+    macho_step.depend_on(test_thunks(b, .{ .target = aarch64_target }));
+    macho_step.depend_on(test_tls_large_tbss(b, .{ .target = default_target }));
+    macho_step.depend_on(test_undefined_flag(b, .{ .target = default_target }));
+    macho_step.depend_on(test_unwind_info(b, .{ .target = default_target }));
+    macho_step.depend_on(test_unwind_info_no_subsections_x64(b, .{ .target = x86_64_target }));
+    macho_step.depend_on(test_unwind_info_no_subsections_arm64(b, .{ .target = aarch64_target }));
+    macho_step.depend_on(test_weak_bind(b, .{ .target = x86_64_target }));
+    macho_step.depend_on(test_weak_ref(b, .{ .target = b.resolve_target_query(.{
         .cpu_arch = .x86_64,
         .os_tag = .macos,
         .os_version_min = .{ .semver = .{ .major = 10, .minor = 13, .patch = 0 } },
@@ -69,28 +69,28 @@ pub fn test_all(b: *Build, build_opts: BuildOptions) *Step {
 
     // Tests requiring symlinks
     if (build_opts.has_symlinks) {
-        macho_step.dependOn(testEntryPointArchive(b, .{ .target = default_target }));
-        macho_step.dependOn(testEntryPointDylib(b, .{ .target = default_target }));
-        macho_step.dependOn(testDylib(b, .{ .target = default_target }));
-        macho_step.dependOn(testDylibVersionTbd(b, .{ .target = default_target }));
-        macho_step.dependOn(testNeededLibrary(b, .{ .target = default_target }));
-        macho_step.dependOn(testSearchStrategy(b, .{ .target = default_target }));
-        macho_step.dependOn(testTbdv3(b, .{ .target = default_target }));
-        macho_step.dependOn(testTls(b, .{ .target = default_target }));
-        macho_step.dependOn(testTlsPointers(b, .{ .target = default_target }));
-        macho_step.dependOn(testTwoLevelNamespace(b, .{ .target = default_target }));
-        macho_step.dependOn(testWeakLibrary(b, .{ .target = default_target }));
+        macho_step.depend_on(test_entry_point_archive(b, .{ .target = default_target }));
+        macho_step.depend_on(test_entry_point_dylib(b, .{ .target = default_target }));
+        macho_step.depend_on(test_dylib(b, .{ .target = default_target }));
+        macho_step.depend_on(test_dylib_version_tbd(b, .{ .target = default_target }));
+        macho_step.depend_on(test_needed_library(b, .{ .target = default_target }));
+        macho_step.depend_on(test_search_strategy(b, .{ .target = default_target }));
+        macho_step.depend_on(test_tbdv3(b, .{ .target = default_target }));
+        macho_step.depend_on(test_tls(b, .{ .target = default_target }));
+        macho_step.depend_on(test_tls_pointers(b, .{ .target = default_target }));
+        macho_step.depend_on(test_two_level_namespace(b, .{ .target = default_target }));
+        macho_step.depend_on(test_weak_library(b, .{ .target = default_target }));
 
         // Tests requiring presence of macOS SDK in system path
         if (build_opts.has_macos_sdk) {
-            macho_step.dependOn(testDeadStripDylibs(b, .{ .target = b.host }));
-            macho_step.dependOn(testHeaderpad(b, .{ .target = b.host }));
-            macho_step.dependOn(testLinkDirectlyCppTbd(b, .{ .target = b.host }));
-            macho_step.dependOn(testMergeLiteralsObjc(b, .{ .target = b.host }));
-            macho_step.dependOn(testNeededFramework(b, .{ .target = b.host }));
-            macho_step.dependOn(testObjc(b, .{ .target = b.host }));
-            macho_step.dependOn(testObjcpp(b, .{ .target = b.host }));
-            macho_step.dependOn(testWeakFramework(b, .{ .target = b.host }));
+            macho_step.depend_on(test_dead_strip_dylibs(b, .{ .target = b.host }));
+            macho_step.depend_on(test_headerpad(b, .{ .target = b.host }));
+            macho_step.depend_on(test_link_directly_cpp_tbd(b, .{ .target = b.host }));
+            macho_step.depend_on(test_merge_literals_objc(b, .{ .target = b.host }));
+            macho_step.depend_on(test_needed_framework(b, .{ .target = b.host }));
+            macho_step.depend_on(test_objc(b, .{ .target = b.host }));
+            macho_step.depend_on(test_objcpp(b, .{ .target = b.host }));
+            macho_step.depend_on(test_weak_framework(b, .{ .target = b.host }));
         }
     }
 
@@ -98,9 +98,9 @@ pub fn test_all(b: *Build, build_opts: BuildOptions) *Step {
 }
 
 fn test_dead_strip(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "dead-strip", opts);
+    const test_step = add_test_step(b, "dead-strip", opts);
 
-    const obj = addObject(b, opts, .{ .name = "a", .cpp_source_bytes = 
+    const obj = add_object(b, opts, .{ .name = "a", .cpp_source_bytes = 
     \\#include <stdio.h>
     \\int two() { return 2; }
     \\int live_var1 = 1;
@@ -118,70 +118,70 @@ fn test_dead_strip(b: *Build, opts: Options) *Step {
     });
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "no_dead_strip" });
-        exe.addObject(obj);
+        const exe = add_executable(b, opts, .{ .name = "no_dead_strip" });
+        exe.add_object(obj);
         exe.link_gc_sections = false;
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkContains("live_var1");
-        check.checkInSymtab();
-        check.checkContains("live_var2");
-        check.checkInSymtab();
-        check.checkContains("dead_var1");
-        check.checkInSymtab();
-        check.checkContains("dead_var2");
-        check.checkInSymtab();
-        check.checkContains("live_fn1");
-        check.checkInSymtab();
-        check.checkContains("live_fn2");
-        check.checkInSymtab();
-        check.checkContains("dead_fn1");
-        check.checkInSymtab();
-        check.checkContains("dead_fn2");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_contains("live_var1");
+        check.check_in_symtab();
+        check.check_contains("live_var2");
+        check.check_in_symtab();
+        check.check_contains("dead_var1");
+        check.check_in_symtab();
+        check.check_contains("dead_var2");
+        check.check_in_symtab();
+        check.check_contains("live_fn1");
+        check.check_in_symtab();
+        check.check_contains("live_fn2");
+        check.check_in_symtab();
+        check.check_contains("dead_fn1");
+        check.check_in_symtab();
+        check.check_contains("dead_fn2");
+        test_step.depend_on(&check.step);
 
-        const run = addRunArtifact(exe);
-        run.expectStdOutEqual("1 2\n");
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_std_out_equal("1 2\n");
+        test_step.depend_on(&run.step);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "yes_dead_strip" });
-        exe.addObject(obj);
+        const exe = add_executable(b, opts, .{ .name = "yes_dead_strip" });
+        exe.add_object(obj);
         exe.link_gc_sections = true;
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkContains("live_var1");
-        check.checkInSymtab();
-        check.checkContains("live_var2");
-        check.checkInSymtab();
-        check.checkNotPresent("dead_var1");
-        check.checkInSymtab();
-        check.checkNotPresent("dead_var2");
-        check.checkInSymtab();
-        check.checkContains("live_fn1");
-        check.checkInSymtab();
-        check.checkContains("live_fn2");
-        check.checkInSymtab();
-        check.checkNotPresent("dead_fn1");
-        check.checkInSymtab();
-        check.checkNotPresent("dead_fn2");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_contains("live_var1");
+        check.check_in_symtab();
+        check.check_contains("live_var2");
+        check.check_in_symtab();
+        check.check_not_present("dead_var1");
+        check.check_in_symtab();
+        check.check_not_present("dead_var2");
+        check.check_in_symtab();
+        check.check_contains("live_fn1");
+        check.check_in_symtab();
+        check.check_contains("live_fn2");
+        check.check_in_symtab();
+        check.check_not_present("dead_fn1");
+        check.check_in_symtab();
+        check.check_not_present("dead_fn2");
+        test_step.depend_on(&check.step);
 
-        const run = addRunArtifact(exe);
-        run.expectStdOutEqual("1 2\n");
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_std_out_equal("1 2\n");
+        test_step.depend_on(&run.step);
     }
 
     return test_step;
 }
 
 fn test_dead_strip_dylibs(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "dead-strip-dylibs", opts);
+    const test_step = add_test_step(b, "dead-strip-dylibs", opts);
 
-    const main_o = addObject(b, opts, .{ .name = "main", .c_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <objc/runtime.h>
     \\int main() {
     \\  if (objc_getClass("NSObject") == 0) {
@@ -195,42 +195,42 @@ fn test_dead_strip_dylibs(b: *Build, opts: Options) *Step {
     });
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main1" });
-        exe.addObject(main_o);
-        exe.root_module.linkFramework("Cocoa", .{});
+        const exe = add_executable(b, opts, .{ .name = "main1" });
+        exe.add_object(main_o);
+        exe.root_module.link_framework("Cocoa", .{});
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("cmd LOAD_DYLIB");
-        check.checkContains("Cocoa");
-        check.checkInHeaders();
-        check.checkExact("cmd LOAD_DYLIB");
-        check.checkContains("libobjc");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("cmd LOAD_DYLIB");
+        check.check_contains("Cocoa");
+        check.check_in_headers();
+        check.check_exact("cmd LOAD_DYLIB");
+        check.check_contains("libobjc");
+        test_step.depend_on(&check.step);
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main2" });
-        exe.addObject(main_o);
-        exe.root_module.linkFramework("Cocoa", .{});
+        const exe = add_executable(b, opts, .{ .name = "main2" });
+        exe.add_object(main_o);
+        exe.root_module.link_framework("Cocoa", .{});
         exe.dead_strip_dylibs = true;
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(@as(u8, @bitCast(@as(i8, -2))));
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(@as(u8, @bit_cast(@as(i8, -2))));
+        test_step.depend_on(&run.step);
     }
 
     return test_step;
 }
 
 fn test_dylib(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "dylib", opts);
+    const test_step = add_test_step(b, "dylib", opts);
 
-    const dylib = addSharedLibrary(b, opts, .{ .name = "a", .c_source_bytes = 
+    const dylib = add_shared_library(b, opts, .{ .name = "a", .c_source_bytes = 
     \\#include<stdio.h>
     \\char world[] = "world";
     \\char* hello() {
@@ -238,13 +238,13 @@ fn test_dylib(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const check = dylib.checkObject();
-    check.checkInHeaders();
-    check.checkExact("header");
-    check.checkNotPresent("PIE");
-    test_step.dependOn(&check.step);
+    const check = dylib.check_object();
+    check.check_in_headers();
+    check.check_exact("header");
+    check.check_not_present("PIE");
+    test_step.depend_on(&check.step);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include<stdio.h>
     \\char* hello();
     \\extern char world[];
@@ -253,19 +253,19 @@ fn test_dylib(b: *Build, opts: Options) *Step {
     \\  return 0;
     \\}
     });
-    exe.root_module.linkSystemLibrary("a", .{});
-    exe.root_module.addLibraryPath(dylib.getEmittedBinDirectory());
-    exe.root_module.addRPath(dylib.getEmittedBinDirectory());
+    exe.root_module.link_system_library("a", .{});
+    exe.root_module.add_library_path(dylib.get_emitted_bin_directory());
+    exe.root_module.add_rpath(dylib.get_emitted_bin_directory());
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("Hello world");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("Hello world");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_dylib_version_tbd(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "dylib-version-tbd", opts);
+    const test_step = add_test_step(b, "dylib-version-tbd", opts);
 
     const tbd = tbd: {
         const wf = WriteFile.create(b);
@@ -286,56 +286,56 @@ fn test_dylib_version_tbd(b: *Build, opts: Options) *Step {
         );
     };
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = "int main() {}" });
-    exe.root_module.linkSystemLibrary("a", .{});
-    exe.root_module.addLibraryPath(tbd.dirname());
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = "int main() {}" });
+    exe.root_module.link_system_library("a", .{});
+    exe.root_module.add_library_path(tbd.dirname());
 
-    const check = exe.checkObject();
-    check.checkInHeaders();
-    check.checkExact("cmd LOAD_DYLIB");
-    check.checkExact("name @rpath/liba.dylib");
-    check.checkExact("current version 10200");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_headers();
+    check.check_exact("cmd LOAD_DYLIB");
+    check.check_exact("name @rpath/liba.dylib");
+    check.check_exact("current version 10200");
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_empty_object(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "empty-object", opts);
+    const test_step = add_test_step(b, "empty-object", opts);
 
-    const empty = addObject(b, opts, .{ .name = "empty", .c_source_bytes = "" });
+    const empty = add_object(b, opts, .{ .name = "empty", .c_source_bytes = "" });
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\int main() {
     \\  printf("Hello world!");
     \\}
     });
-    exe.addObject(empty);
+    exe.add_object(empty);
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("Hello world!");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("Hello world!");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_empty_zig(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "empty-zig", opts);
+    const test_step = add_test_step(b, "empty-zig", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "empty", .zig_source_bytes = "pub fn main() void {}" });
+    const exe = add_executable(b, opts, .{ .name = "empty", .zig_source_bytes = "pub fn main() void {}" });
 
-    const run = addRunArtifact(exe);
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_entry_point(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "entry-point", opts);
+    const test_step = add_test_step(b, "entry-point", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include<stdio.h>
     \\int non_main() {
     \\  printf("%d", 42);
@@ -344,59 +344,59 @@ fn test_entry_point(b: *Build, opts: Options) *Step {
     });
     exe.entry = .{ .symbol_name = "_non_main" };
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("42");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("42");
+    test_step.depend_on(&run.step);
 
-    const check = exe.checkObject();
-    check.checkInHeaders();
-    check.checkExact("segname __TEXT");
-    check.checkExtract("vmaddr {vmaddr}");
-    check.checkInHeaders();
-    check.checkExact("cmd MAIN");
-    check.checkExtract("entryoff {entryoff}");
-    check.checkInSymtab();
-    check.checkExtract("{n_value} (__TEXT,__text) external _non_main");
-    check.checkComputeCompare("vmaddr entryoff +", .{ .op = .eq, .value = .{ .variable = "n_value" } });
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_headers();
+    check.check_exact("segname __TEXT");
+    check.check_extract("vmaddr {vmaddr}");
+    check.check_in_headers();
+    check.check_exact("cmd MAIN");
+    check.check_extract("entryoff {entryoff}");
+    check.check_in_symtab();
+    check.check_extract("{n_value} (__TEXT,__text) external _non_main");
+    check.check_compute_compare("vmaddr entryoff +", .{ .op = .eq, .value = .{ .variable = "n_value" } });
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_entry_point_archive(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "entry-point-archive", opts);
+    const test_step = add_test_step(b, "entry-point-archive", opts);
 
-    const lib = addStaticLibrary(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
+    const lib = add_static_library(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = "" });
-        exe.root_module.linkSystemLibrary("main", .{});
-        exe.root_module.addLibraryPath(lib.getEmittedBinDirectory());
+        const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = "" });
+        exe.root_module.link_system_library("main", .{});
+        exe.root_module.add_library_path(lib.get_emitted_bin_directory());
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = "" });
-        exe.root_module.linkSystemLibrary("main", .{});
-        exe.root_module.addLibraryPath(lib.getEmittedBinDirectory());
+        const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = "" });
+        exe.root_module.link_system_library("main", .{});
+        exe.root_module.add_library_path(lib.get_emitted_bin_directory());
         exe.link_gc_sections = true;
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
     }
 
     return test_step;
 }
 
 fn test_entry_point_dylib(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "entry-point-dylib", opts);
+    const test_step = add_test_step(b, "entry-point-dylib", opts);
 
-    const dylib = addSharedLibrary(b, opts, .{ .name = "a" });
-    addCSourceBytes(dylib,
+    const dylib = add_shared_library(b, opts, .{ .name = "a" });
+    add_csource_bytes(dylib,
         \\extern int my_main();
         \\int bootstrap() {
         \\  return my_main();
@@ -404,150 +404,150 @@ fn test_entry_point_dylib(b: *Build, opts: Options) *Step {
     , &.{});
     dylib.linker_allow_shlib_undefined = true;
 
-    const exe = addExecutable(b, opts, .{ .name = "main" });
-    addCSourceBytes(dylib,
+    const exe = add_executable(b, opts, .{ .name = "main" });
+    add_csource_bytes(dylib,
         \\#include<stdio.h>
         \\int my_main() {
         \\  fprintf(stdout, "Hello!\n");
         \\  return 0;
         \\}
     , &.{});
-    exe.linkLibrary(dylib);
+    exe.link_library(dylib);
     exe.entry = .{ .symbol_name = "_bootstrap" };
-    exe.forceUndefinedSymbol("_my_main");
+    exe.force_undefined_symbol("_my_main");
 
-    const check = exe.checkObject();
-    check.checkInHeaders();
-    check.checkExact("segname __TEXT");
-    check.checkExtract("vmaddr {text_vmaddr}");
-    check.checkInHeaders();
-    check.checkExact("sectname __stubs");
-    check.checkExtract("addr {stubs_vmaddr}");
-    check.checkInHeaders();
-    check.checkExact("sectname __stubs");
-    check.checkExtract("size {stubs_vmsize}");
-    check.checkInHeaders();
-    check.checkExact("cmd MAIN");
-    check.checkExtract("entryoff {entryoff}");
-    check.checkComputeCompare("text_vmaddr entryoff +", .{
+    const check = exe.check_object();
+    check.check_in_headers();
+    check.check_exact("segname __TEXT");
+    check.check_extract("vmaddr {text_vmaddr}");
+    check.check_in_headers();
+    check.check_exact("sectname __stubs");
+    check.check_extract("addr {stubs_vmaddr}");
+    check.check_in_headers();
+    check.check_exact("sectname __stubs");
+    check.check_extract("size {stubs_vmsize}");
+    check.check_in_headers();
+    check.check_exact("cmd MAIN");
+    check.check_extract("entryoff {entryoff}");
+    check.check_compute_compare("text_vmaddr entryoff +", .{
         .op = .gte,
         .value = .{ .variable = "stubs_vmaddr" }, // The entrypoint should be a synthetic stub
     });
-    check.checkComputeCompare("text_vmaddr entryoff + stubs_vmaddr -", .{
+    check.check_compute_compare("text_vmaddr entryoff + stubs_vmaddr -", .{
         .op = .lt,
         .value = .{ .variable = "stubs_vmsize" }, // The entrypoint should be a synthetic stub
     });
-    test_step.dependOn(&check.step);
+    test_step.depend_on(&check.step);
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("Hello!\n");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("Hello!\n");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_headerpad(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "headerpad", opts);
+    const test_step = add_test_step(b, "headerpad", opts);
 
-    const addExe = struct {
+    const add_exe = struct {
         fn add_exe(bb: *Build, o: Options, name: []const u8) *Compile {
-            const exe = addExecutable(bb, o, .{
+            const exe = add_executable(bb, o, .{
                 .name = name,
                 .c_source_bytes = "int main() { return 0; }",
             });
-            exe.root_module.linkFramework("CoreFoundation", .{});
-            exe.root_module.linkFramework("Foundation", .{});
-            exe.root_module.linkFramework("Cocoa", .{});
-            exe.root_module.linkFramework("CoreGraphics", .{});
-            exe.root_module.linkFramework("CoreHaptics", .{});
-            exe.root_module.linkFramework("CoreAudio", .{});
-            exe.root_module.linkFramework("AVFoundation", .{});
-            exe.root_module.linkFramework("CoreImage", .{});
-            exe.root_module.linkFramework("CoreLocation", .{});
-            exe.root_module.linkFramework("CoreML", .{});
-            exe.root_module.linkFramework("CoreVideo", .{});
-            exe.root_module.linkFramework("CoreText", .{});
-            exe.root_module.linkFramework("CryptoKit", .{});
-            exe.root_module.linkFramework("GameKit", .{});
-            exe.root_module.linkFramework("SwiftUI", .{});
-            exe.root_module.linkFramework("StoreKit", .{});
-            exe.root_module.linkFramework("SpriteKit", .{});
+            exe.root_module.link_framework("CoreFoundation", .{});
+            exe.root_module.link_framework("Foundation", .{});
+            exe.root_module.link_framework("Cocoa", .{});
+            exe.root_module.link_framework("CoreGraphics", .{});
+            exe.root_module.link_framework("CoreHaptics", .{});
+            exe.root_module.link_framework("CoreAudio", .{});
+            exe.root_module.link_framework("AVFoundation", .{});
+            exe.root_module.link_framework("CoreImage", .{});
+            exe.root_module.link_framework("CoreLocation", .{});
+            exe.root_module.link_framework("CoreML", .{});
+            exe.root_module.link_framework("CoreVideo", .{});
+            exe.root_module.link_framework("CoreText", .{});
+            exe.root_module.link_framework("CryptoKit", .{});
+            exe.root_module.link_framework("GameKit", .{});
+            exe.root_module.link_framework("SwiftUI", .{});
+            exe.root_module.link_framework("StoreKit", .{});
+            exe.root_module.link_framework("SpriteKit", .{});
             return exe;
         }
-    }.addExe;
+    }.add_exe;
 
     {
-        const exe = addExe(b, opts, "main1");
+        const exe = add_exe(b, opts, "main1");
         exe.headerpad_max_install_names = true;
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("sectname __text");
-        check.checkExtract("offset {offset}");
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("sectname __text");
+        check.check_extract("offset {offset}");
         switch (opts.target.result.cpu.arch) {
-            .aarch64 => check.checkComputeCompare("offset", .{ .op = .gte, .value = .{ .literal = 0x4000 } }),
-            .x86_64 => check.checkComputeCompare("offset", .{ .op = .gte, .value = .{ .literal = 0x1000 } }),
+            .aarch64 => check.check_compute_compare("offset", .{ .op = .gte, .value = .{ .literal = 0x4000 } }),
+            .x86_64 => check.check_compute_compare("offset", .{ .op = .gte, .value = .{ .literal = 0x1000 } }),
             else => unreachable,
         }
-        test_step.dependOn(&check.step);
+        test_step.depend_on(&check.step);
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
     }
 
     {
-        const exe = addExe(b, opts, "main2");
+        const exe = add_exe(b, opts, "main2");
         exe.headerpad_size = 0x10000;
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("sectname __text");
-        check.checkExtract("offset {offset}");
-        check.checkComputeCompare("offset", .{ .op = .gte, .value = .{ .literal = 0x10000 } });
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("sectname __text");
+        check.check_extract("offset {offset}");
+        check.check_compute_compare("offset", .{ .op = .gte, .value = .{ .literal = 0x10000 } });
+        test_step.depend_on(&check.step);
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
     }
 
     {
-        const exe = addExe(b, opts, "main3");
+        const exe = add_exe(b, opts, "main3");
         exe.headerpad_max_install_names = true;
         exe.headerpad_size = 0x10000;
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("sectname __text");
-        check.checkExtract("offset {offset}");
-        check.checkComputeCompare("offset", .{ .op = .gte, .value = .{ .literal = 0x10000 } });
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("sectname __text");
+        check.check_extract("offset {offset}");
+        check.check_compute_compare("offset", .{ .op = .gte, .value = .{ .literal = 0x10000 } });
+        test_step.depend_on(&check.step);
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
     }
 
     {
-        const exe = addExe(b, opts, "main4");
+        const exe = add_exe(b, opts, "main4");
         exe.headerpad_max_install_names = true;
         exe.headerpad_size = 0x1000;
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("sectname __text");
-        check.checkExtract("offset {offset}");
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("sectname __text");
+        check.check_extract("offset {offset}");
         switch (opts.target.result.cpu.arch) {
-            .aarch64 => check.checkComputeCompare("offset", .{ .op = .gte, .value = .{ .literal = 0x4000 } }),
-            .x86_64 => check.checkComputeCompare("offset", .{ .op = .gte, .value = .{ .literal = 0x1000 } }),
+            .aarch64 => check.check_compute_compare("offset", .{ .op = .gte, .value = .{ .literal = 0x4000 } }),
+            .x86_64 => check.check_compute_compare("offset", .{ .op = .gte, .value = .{ .literal = 0x1000 } }),
             else => unreachable,
         }
-        test_step.dependOn(&check.step);
+        test_step.depend_on(&check.step);
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
     }
 
     return test_step;
@@ -555,45 +555,45 @@ fn test_headerpad(b: *Build, opts: Options) *Step {
 
 // Adapted from https://github.com/llvm/llvm-project/blob/main/lld/test/MachO/weak-header-flags.s
 fn test_header_weak_flags(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "header-weak-flags", opts);
+    const test_step = add_test_step(b, "header-weak-flags", opts);
 
-    const obj1 = addObject(b, opts, .{ .name = "a", .asm_source_bytes = 
+    const obj1 = add_object(b, opts, .{ .name = "a", .asm_source_bytes = 
     \\.globl _x
     \\.weak_definition _x
     \\_x:
     \\ ret
     });
 
-    const lib = addSharedLibrary(b, opts, .{ .name = "a" });
-    lib.addObject(obj1);
+    const lib = add_shared_library(b, opts, .{ .name = "a" });
+    lib.add_object(obj1);
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main1", .c_source_bytes = "int main() { return 0; }" });
-        exe.addObject(obj1);
+        const exe = add_executable(b, opts, .{ .name = "main1", .c_source_bytes = "int main() { return 0; }" });
+        exe.add_object(obj1);
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("header");
-        check.checkContains("WEAK_DEFINES");
-        check.checkInHeaders();
-        check.checkExact("header");
-        check.checkContains("BINDS_TO_WEAK");
-        check.checkInExports();
-        check.checkExtract("[WEAK] {vmaddr} _x");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("header");
+        check.check_contains("WEAK_DEFINES");
+        check.check_in_headers();
+        check.check_exact("header");
+        check.check_contains("BINDS_TO_WEAK");
+        check.check_in_exports();
+        check.check_extract("[WEAK] {vmaddr} _x");
+        test_step.depend_on(&check.step);
     }
 
     {
-        const obj = addObject(b, opts, .{ .name = "b" });
+        const obj = add_object(b, opts, .{ .name = "b" });
 
         switch (opts.target.result.cpu.arch) {
-            .aarch64 => addAsmSourceBytes(obj,
+            .aarch64 => add_asm_source_bytes(obj,
                 \\.globl _main
                 \\_main:
                 \\  bl _x
                 \\  ret
             ),
-            .x86_64 => addAsmSourceBytes(obj,
+            .x86_64 => add_asm_source_bytes(obj,
                 \\.globl _main
                 \\_main:
                 \\  callq _x
@@ -602,49 +602,49 @@ fn test_header_weak_flags(b: *Build, opts: Options) *Step {
             else => unreachable,
         }
 
-        const exe = addExecutable(b, opts, .{ .name = "main2" });
-        exe.linkLibrary(lib);
-        exe.addObject(obj);
+        const exe = add_executable(b, opts, .{ .name = "main2" });
+        exe.link_library(lib);
+        exe.add_object(obj);
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("header");
-        check.checkNotPresent("WEAK_DEFINES");
-        check.checkInHeaders();
-        check.checkExact("header");
-        check.checkContains("BINDS_TO_WEAK");
-        check.checkInExports();
-        check.checkNotPresent("[WEAK] {vmaddr} _x");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("header");
+        check.check_not_present("WEAK_DEFINES");
+        check.check_in_headers();
+        check.check_exact("header");
+        check.check_contains("BINDS_TO_WEAK");
+        check.check_in_exports();
+        check.check_not_present("[WEAK] {vmaddr} _x");
+        test_step.depend_on(&check.step);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main3", .asm_source_bytes = 
+        const exe = add_executable(b, opts, .{ .name = "main3", .asm_source_bytes = 
         \\.globl _main, _x
         \\_x:
         \\
         \\_main:
         \\  ret
         });
-        exe.linkLibrary(lib);
+        exe.link_library(lib);
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("header");
-        check.checkNotPresent("WEAK_DEFINES");
-        check.checkInHeaders();
-        check.checkExact("header");
-        check.checkNotPresent("BINDS_TO_WEAK");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("header");
+        check.check_not_present("WEAK_DEFINES");
+        check.check_in_headers();
+        check.check_exact("header");
+        check.check_not_present("BINDS_TO_WEAK");
+        test_step.depend_on(&check.step);
     }
 
     return test_step;
 }
 
 fn test_hello_c(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "hello-c", opts);
+    const test_step = add_test_step(b, "hello-c", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\int main() { 
     \\  printf("Hello world!\n");
@@ -652,61 +652,61 @@ fn test_hello_c(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("Hello world!\n");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("Hello world!\n");
+    test_step.depend_on(&run.step);
 
-    const check = exe.checkObject();
-    check.checkInHeaders();
-    check.checkExact("header");
-    check.checkContains("PIE");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_headers();
+    check.check_exact("header");
+    check.check_contains("PIE");
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_hello_zig(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "hello-zig", opts);
+    const test_step = add_test_step(b, "hello-zig", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .zig_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .zig_source_bytes = 
     \\const std = @import("std");
     \\pub fn main() void {
-    \\    std.io.getStdOut().writer().print("Hello world!\n", .{}) catch unreachable;
+    \\    std.io.get_std_out().writer().print("Hello world!\n", .{}) catch unreachable;
     \\}
     });
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("Hello world!\n");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("Hello world!\n");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_large_bss(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "large-bss", opts);
+    const test_step = add_test_step(b, "large-bss", opts);
 
     // TODO this test used use a 4GB zerofill section but this actually fails and causes every
     // linker I tried misbehave in different ways. This only happened on arm64. I thought that
     // maybe S_GB_ZEROFILL section is an answer to this but it doesn't seem supported by dyld
     // anymore. When I get some free time I will re-investigate this.
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\char arr[0x1000000];
     \\int main() {
     \\  return arr[2000];
     \\}
     });
 
-    const run = addRunArtifact(exe);
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_layout(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "layout", opts);
+    const test_step = add_test_step(b, "layout", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\int main() {
     \\  printf("Hello world!");
@@ -714,47 +714,47 @@ fn test_layout(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const check = exe.checkObject();
-    check.checkInHeaders();
-    check.checkExact("cmd SEGMENT_64");
-    check.checkExact("segname __LINKEDIT");
-    check.checkExtract("fileoff {fileoff}");
-    check.checkExtract("filesz {filesz}");
-    check.checkInHeaders();
-    check.checkExact("cmd DYLD_INFO_ONLY");
-    check.checkExtract("rebaseoff {rebaseoff}");
-    check.checkExtract("rebasesize {rebasesize}");
-    check.checkExtract("bindoff {bindoff}");
-    check.checkExtract("bindsize {bindsize}");
-    check.checkExtract("lazybindoff {lazybindoff}");
-    check.checkExtract("lazybindsize {lazybindsize}");
-    check.checkExtract("exportoff {exportoff}");
-    check.checkExtract("exportsize {exportsize}");
-    check.checkInHeaders();
-    check.checkExact("cmd FUNCTION_STARTS");
-    check.checkExtract("dataoff {fstartoff}");
-    check.checkExtract("datasize {fstartsize}");
-    check.checkInHeaders();
-    check.checkExact("cmd DATA_IN_CODE");
-    check.checkExtract("dataoff {diceoff}");
-    check.checkExtract("datasize {dicesize}");
-    check.checkInHeaders();
-    check.checkExact("cmd SYMTAB");
-    check.checkExtract("symoff {symoff}");
-    check.checkExtract("nsyms {symnsyms}");
-    check.checkExtract("stroff {stroff}");
-    check.checkExtract("strsize {strsize}");
-    check.checkInHeaders();
-    check.checkExact("cmd DYSYMTAB");
-    check.checkExtract("indirectsymoff {dysymoff}");
-    check.checkExtract("nindirectsyms {dysymnsyms}");
+    const check = exe.check_object();
+    check.check_in_headers();
+    check.check_exact("cmd SEGMENT_64");
+    check.check_exact("segname __LINKEDIT");
+    check.check_extract("fileoff {fileoff}");
+    check.check_extract("filesz {filesz}");
+    check.check_in_headers();
+    check.check_exact("cmd DYLD_INFO_ONLY");
+    check.check_extract("rebaseoff {rebaseoff}");
+    check.check_extract("rebasesize {rebasesize}");
+    check.check_extract("bindoff {bindoff}");
+    check.check_extract("bindsize {bindsize}");
+    check.check_extract("lazybindoff {lazybindoff}");
+    check.check_extract("lazybindsize {lazybindsize}");
+    check.check_extract("exportoff {exportoff}");
+    check.check_extract("exportsize {exportsize}");
+    check.check_in_headers();
+    check.check_exact("cmd FUNCTION_STARTS");
+    check.check_extract("dataoff {fstartoff}");
+    check.check_extract("datasize {fstartsize}");
+    check.check_in_headers();
+    check.check_exact("cmd DATA_IN_CODE");
+    check.check_extract("dataoff {diceoff}");
+    check.check_extract("datasize {dicesize}");
+    check.check_in_headers();
+    check.check_exact("cmd SYMTAB");
+    check.check_extract("symoff {symoff}");
+    check.check_extract("nsyms {symnsyms}");
+    check.check_extract("stroff {stroff}");
+    check.check_extract("strsize {strsize}");
+    check.check_in_headers();
+    check.check_exact("cmd DYSYMTAB");
+    check.check_extract("indirectsymoff {dysymoff}");
+    check.check_extract("nindirectsyms {dysymnsyms}");
 
     switch (opts.target.result.cpu.arch) {
         .aarch64 => {
-            check.checkInHeaders();
-            check.checkExact("cmd CODE_SIGNATURE");
-            check.checkExtract("dataoff {codesigoff}");
-            check.checkExtract("datasize {codesigsize}");
+            check.check_in_headers();
+            check.check_exact("cmd CODE_SIGNATURE");
+            check.check_extract("dataoff {codesigoff}");
+            check.check_extract("datasize {codesigsize}");
         },
         .x86_64 => {},
         else => unreachable,
@@ -762,50 +762,50 @@ fn test_layout(b: *Build, opts: Options) *Step {
 
     // DYLD_INFO_ONLY subsections are in order: rebase < bind < lazy < export,
     // and there are no gaps between them
-    check.checkComputeCompare("rebaseoff rebasesize +", .{ .op = .eq, .value = .{ .variable = "bindoff" } });
-    check.checkComputeCompare("bindoff bindsize +", .{ .op = .eq, .value = .{ .variable = "lazybindoff" } });
-    check.checkComputeCompare("lazybindoff lazybindsize +", .{ .op = .eq, .value = .{ .variable = "exportoff" } });
+    check.check_compute_compare("rebaseoff rebasesize +", .{ .op = .eq, .value = .{ .variable = "bindoff" } });
+    check.check_compute_compare("bindoff bindsize +", .{ .op = .eq, .value = .{ .variable = "lazybindoff" } });
+    check.check_compute_compare("lazybindoff lazybindsize +", .{ .op = .eq, .value = .{ .variable = "exportoff" } });
 
     // FUNCTION_STARTS directly follows DYLD_INFO_ONLY (no gap)
-    check.checkComputeCompare("exportoff exportsize +", .{ .op = .eq, .value = .{ .variable = "fstartoff" } });
+    check.check_compute_compare("exportoff exportsize +", .{ .op = .eq, .value = .{ .variable = "fstartoff" } });
 
     // DATA_IN_CODE directly follows FUNCTION_STARTS (no gap)
-    check.checkComputeCompare("fstartoff fstartsize +", .{ .op = .eq, .value = .{ .variable = "diceoff" } });
+    check.check_compute_compare("fstartoff fstartsize +", .{ .op = .eq, .value = .{ .variable = "diceoff" } });
 
     // SYMTAB directly follows DATA_IN_CODE (no gap)
-    check.checkComputeCompare("diceoff dicesize +", .{ .op = .eq, .value = .{ .variable = "symoff" } });
+    check.check_compute_compare("diceoff dicesize +", .{ .op = .eq, .value = .{ .variable = "symoff" } });
 
     // DYSYMTAB directly follows SYMTAB (no gap)
-    check.checkComputeCompare("symnsyms 16 symoff * +", .{ .op = .eq, .value = .{ .variable = "dysymoff" } });
+    check.check_compute_compare("symnsyms 16 symoff * +", .{ .op = .eq, .value = .{ .variable = "dysymoff" } });
 
     // STRTAB follows DYSYMTAB with possible gap
-    check.checkComputeCompare("dysymnsyms 4 dysymoff * +", .{ .op = .lte, .value = .{ .variable = "stroff" } });
+    check.check_compute_compare("dysymnsyms 4 dysymoff * +", .{ .op = .lte, .value = .{ .variable = "stroff" } });
 
     // all LINKEDIT sections apart from CODE_SIGNATURE are 8-bytes aligned
-    check.checkComputeCompare("rebaseoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
-    check.checkComputeCompare("bindoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
-    check.checkComputeCompare("lazybindoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
-    check.checkComputeCompare("exportoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
-    check.checkComputeCompare("fstartoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
-    check.checkComputeCompare("diceoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
-    check.checkComputeCompare("symoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
-    check.checkComputeCompare("stroff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
-    check.checkComputeCompare("dysymoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
+    check.check_compute_compare("rebaseoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
+    check.check_compute_compare("bindoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
+    check.check_compute_compare("lazybindoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
+    check.check_compute_compare("exportoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
+    check.check_compute_compare("fstartoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
+    check.check_compute_compare("diceoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
+    check.check_compute_compare("symoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
+    check.check_compute_compare("stroff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
+    check.check_compute_compare("dysymoff 8 %", .{ .op = .eq, .value = .{ .literal = 0 } });
 
     switch (opts.target.result.cpu.arch) {
         .aarch64 => {
             // LINKEDIT segment does not extend beyond, or does not include, CODE_SIGNATURE data
-            check.checkComputeCompare("fileoff filesz codesigoff codesigsize + - -", .{
+            check.check_compute_compare("fileoff filesz codesigoff codesigsize + - -", .{
                 .op = .eq,
                 .value = .{ .literal = 0 },
             });
 
             // CODE_SIGNATURE data offset is 16-bytes aligned
-            check.checkComputeCompare("codesigoff 16 %", .{ .op = .eq, .value = .{ .literal = 0 } });
+            check.check_compute_compare("codesigoff 16 %", .{ .op = .eq, .value = .{ .literal = 0 } });
         },
         .x86_64 => {
             // LINKEDIT segment does not extend beyond, or does not include, strtab data
-            check.checkComputeCompare("fileoff filesz stroff strsize + - -", .{
+            check.check_compute_compare("fileoff filesz stroff strsize + - -", .{
                 .op = .eq,
                 .value = .{ .literal = 0 },
             });
@@ -813,22 +813,22 @@ fn test_layout(b: *Build, opts: Options) *Step {
         else => unreachable,
     }
 
-    test_step.dependOn(&check.step);
+    test_step.depend_on(&check.step);
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("Hello world!");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("Hello world!");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_link_directly_cpp_tbd(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "link-directly-cpp-tbd", opts);
+    const test_step = add_test_step(b, "link-directly-cpp-tbd", opts);
 
-    const sdk = std.zig.system.darwin.getSdk(b.allocator, opts.target.result) orelse
+    const sdk = std.zig.system.darwin.get_sdk(b.allocator, opts.target.result) orelse
         @panic("macOS SDK is required to run the test");
 
-    const exe = addExecutable(b, opts, .{
+    const exe = add_executable(b, opts, .{
         .name = "main",
         .cpp_source_bytes =
         \\#include <new>
@@ -842,28 +842,28 @@ fn test_link_directly_cpp_tbd(b: *Build, opts: Options) *Step {
         ,
         .cpp_source_flags = &.{ "-nostdlib++", "-nostdinc++" },
     });
-    exe.root_module.addSystemIncludePath(.{ .cwd_relative = b.pathJoin(&.{ sdk, "/usr/include" }) });
-    exe.root_module.addIncludePath(.{ .cwd_relative = b.pathJoin(&.{ sdk, "/usr/include/c++/v1" }) });
-    exe.root_module.addObjectFile(.{ .cwd_relative = b.pathJoin(&.{ sdk, "/usr/lib/libc++.tbd" }) });
+    exe.root_module.add_system_include_path(.{ .cwd_relative = b.path_join(&.{ sdk, "/usr/include" }) });
+    exe.root_module.add_include_path(.{ .cwd_relative = b.path_join(&.{ sdk, "/usr/include/c++/v1" }) });
+    exe.root_module.add_object_file(.{ .cwd_relative = b.path_join(&.{ sdk, "/usr/lib/libc++.tbd" }) });
 
-    const check = exe.checkObject();
-    check.checkInSymtab();
-    check.checkContains("[referenced dynamically] external __mh_execute_header");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_symtab();
+    check.check_contains("[referenced dynamically] external __mh_execute_header");
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_linking_static_lib(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "linking-static-lib", opts);
+    const test_step = add_test_step(b, "linking-static-lib", opts);
 
-    const obj = addObject(b, opts, .{
+    const obj = add_object(b, opts, .{
         .name = "bobj",
         .zig_source_bytes = "export var bar: i32 = -42;",
         .strip = true, // TODO for self-hosted, we don't really emit any valid DWARF yet since we only export a global
     });
 
-    const lib = addStaticLibrary(b, opts, .{
+    const lib = add_static_library(b, opts, .{
         .name = "alib",
         .zig_source_bytes =
         \\export fn foo() i32 {
@@ -871,9 +871,9 @@ fn test_linking_static_lib(b: *Build, opts: Options) *Step {
         \\}
         ,
     });
-    lib.addObject(obj);
+    lib.add_object(obj);
 
-    const exe = addExecutable(b, opts, .{
+    const exe = add_executable(b, opts, .{
         .name = "testlib",
         .zig_source_bytes =
         \\const std = @import("std");
@@ -884,46 +884,46 @@ fn test_linking_static_lib(b: *Build, opts: Options) *Step {
         \\}
         ,
     });
-    exe.linkLibrary(lib);
+    exe.link_library(lib);
 
-    const run = addRunArtifact(exe);
-    run.expectStdErrEqual("0\n");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_err_equal("0\n");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_linksection(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "linksection", opts);
+    const test_step = add_test_step(b, "linksection", opts);
 
-    const obj = addObject(b, opts, .{ .name = "main", .zig_source_bytes = 
+    const obj = add_object(b, opts, .{ .name = "main", .zig_source_bytes = 
     \\export var test_global: u32 linksection("__DATA,__TestGlobal") = undefined;
     \\export fn test_fn() linksection("__TEXT,__TestFn") callconv(.C) void {
-    \\    testGenericFn("A");
+    \\    test_generic_fn("A");
     \\}
     \\fn test_generic_fn(comptime suffix: []const u8) linksection("__TEXT,__TestGenFn" ++ suffix) void {}
     });
 
-    const check = obj.checkObject();
-    check.checkInSymtab();
-    check.checkContains("(__DATA,__TestGlobal) external _test_global");
-    check.checkInSymtab();
-    check.checkContains("(__TEXT,__TestFn) external _testFn");
+    const check = obj.check_object();
+    check.check_in_symtab();
+    check.check_contains("(__DATA,__TestGlobal) external _test_global");
+    check.check_in_symtab();
+    check.check_contains("(__TEXT,__TestFn) external _testFn");
 
     if (opts.optimize == .Debug) {
-        check.checkInSymtab();
-        check.checkContains("(__TEXT,__TestGenFnA) _a.testGenericFn__anon_");
+        check.check_in_symtab();
+        check.check_contains("(__TEXT,__TestGenFnA) _a.testGenericFn__anon_");
     }
 
-    test_step.dependOn(&check.step);
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_merge_literals_x64(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "merge-literals-x64", opts);
+    const test_step = add_test_step(b, "merge-literals-x64", opts);
 
-    const a_o = addObject(b, opts, .{ .name = "a", .asm_source_bytes = 
+    const a_o = add_object(b, opts, .{ .name = "a", .asm_source_bytes = 
     \\.globl _q1
     \\.globl _s1
     \\
@@ -948,7 +948,7 @@ fn test_merge_literals_x64(b: *Build, opts: Options) *Step {
     \\  .quad l._s1
     });
 
-    const b_o = addObject(b, opts, .{ .name = "b", .asm_source_bytes = 
+    const b_o = add_object(b, opts, .{ .name = "b", .asm_source_bytes = 
     \\.globl _q2
     \\.globl _s2
     \\.globl _s3
@@ -978,7 +978,7 @@ fn test_merge_literals_x64(b: *Build, opts: Options) *Step {
     \\   .quad l._s3
     });
 
-    const main_o = addObject(b, opts, .{ .name = "main", .c_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\extern double q1();
     \\extern double q2();
@@ -991,55 +991,55 @@ fn test_merge_literals_x64(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const runWithChecks = struct {
+    const run_with_checks = struct {
         fn run_with_checks(step: *Step, exe: *Compile) void {
-            const run = addRunArtifact(exe);
-            run.expectStdOutEqual("hello, hello, world, 1.234500, 1.234500");
-            step.dependOn(&run.step);
+            const run = add_run_artifact(exe);
+            run.expect_std_out_equal("hello, hello, world, 1.234500, 1.234500");
+            step.depend_on(&run.step);
 
-            const check = exe.checkObject();
-            check.dumpSection("__TEXT,__const");
-            check.checkContains("\x8d\x97n\x12\x83\xc0\xf3?");
-            check.dumpSection("__TEXT,__cstring");
-            check.checkContains("hello\x00world\x00%s, %s, %s, %f, %f\x00");
-            step.dependOn(&check.step);
+            const check = exe.check_object();
+            check.dump_section("__TEXT,__const");
+            check.check_contains("\x8d\x97n\x12\x83\xc0\xf3?");
+            check.dump_section("__TEXT,__cstring");
+            check.check_contains("hello\x00world\x00%s, %s, %s, %f, %f\x00");
+            step.depend_on(&check.step);
         }
-    }.runWithChecks;
+    }.run_with_checks;
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main1" });
-        exe.addObject(a_o);
-        exe.addObject(b_o);
-        exe.addObject(main_o);
-        runWithChecks(test_step, exe);
+        const exe = add_executable(b, opts, .{ .name = "main1" });
+        exe.add_object(a_o);
+        exe.add_object(b_o);
+        exe.add_object(main_o);
+        run_with_checks(test_step, exe);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main2" });
-        exe.addObject(b_o);
-        exe.addObject(a_o);
-        exe.addObject(main_o);
-        runWithChecks(test_step, exe);
+        const exe = add_executable(b, opts, .{ .name = "main2" });
+        exe.add_object(b_o);
+        exe.add_object(a_o);
+        exe.add_object(main_o);
+        run_with_checks(test_step, exe);
     }
 
     {
-        const c_o = addObject(b, opts, .{ .name = "c" });
-        c_o.addObject(a_o);
-        c_o.addObject(b_o);
-        c_o.addObject(main_o);
+        const c_o = add_object(b, opts, .{ .name = "c" });
+        c_o.add_object(a_o);
+        c_o.add_object(b_o);
+        c_o.add_object(main_o);
 
-        const exe = addExecutable(b, opts, .{ .name = "main3" });
-        exe.addObject(c_o);
-        runWithChecks(test_step, exe);
+        const exe = add_executable(b, opts, .{ .name = "main3" });
+        exe.add_object(c_o);
+        run_with_checks(test_step, exe);
     }
 
     return test_step;
 }
 
 fn test_merge_literals_arm64(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "merge-literals-arm64", opts);
+    const test_step = add_test_step(b, "merge-literals-arm64", opts);
 
-    const a_o = addObject(b, opts, .{ .name = "a", .asm_source_bytes = 
+    const a_o = add_object(b, opts, .{ .name = "a", .asm_source_bytes = 
     \\.globl _q1
     \\.globl _s1
     \\
@@ -1064,7 +1064,7 @@ fn test_merge_literals_arm64(b: *Build, opts: Options) *Step {
     \\  .quad l._s1
     });
 
-    const b_o = addObject(b, opts, .{ .name = "b", .asm_source_bytes = 
+    const b_o = add_object(b, opts, .{ .name = "b", .asm_source_bytes = 
     \\.globl _q2
     \\.globl _s2
     \\.globl _s3
@@ -1094,7 +1094,7 @@ fn test_merge_literals_arm64(b: *Build, opts: Options) *Step {
     \\   .quad l._s3
     });
 
-    const main_o = addObject(b, opts, .{ .name = "main", .c_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\extern double q1();
     \\extern double q2();
@@ -1107,46 +1107,46 @@ fn test_merge_literals_arm64(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const runWithChecks = struct {
+    const run_with_checks = struct {
         fn run_with_checks(step: *Step, exe: *Compile) void {
-            const run = addRunArtifact(exe);
-            run.expectStdOutEqual("hello, hello, world, 1.234500, 1.234500");
-            step.dependOn(&run.step);
+            const run = add_run_artifact(exe);
+            run.expect_std_out_equal("hello, hello, world, 1.234500, 1.234500");
+            step.depend_on(&run.step);
 
-            const check = exe.checkObject();
-            check.dumpSection("__TEXT,__const");
-            check.checkContains("\x8d\x97n\x12\x83\xc0\xf3?");
-            check.dumpSection("__TEXT,__cstring");
-            check.checkContains("hello\x00world\x00%s, %s, %s, %f, %f\x00");
-            step.dependOn(&check.step);
+            const check = exe.check_object();
+            check.dump_section("__TEXT,__const");
+            check.check_contains("\x8d\x97n\x12\x83\xc0\xf3?");
+            check.dump_section("__TEXT,__cstring");
+            check.check_contains("hello\x00world\x00%s, %s, %s, %f, %f\x00");
+            step.depend_on(&check.step);
         }
-    }.runWithChecks;
+    }.run_with_checks;
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main1" });
-        exe.addObject(a_o);
-        exe.addObject(b_o);
-        exe.addObject(main_o);
-        runWithChecks(test_step, exe);
+        const exe = add_executable(b, opts, .{ .name = "main1" });
+        exe.add_object(a_o);
+        exe.add_object(b_o);
+        exe.add_object(main_o);
+        run_with_checks(test_step, exe);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main2" });
-        exe.addObject(b_o);
-        exe.addObject(a_o);
-        exe.addObject(main_o);
-        runWithChecks(test_step, exe);
+        const exe = add_executable(b, opts, .{ .name = "main2" });
+        exe.add_object(b_o);
+        exe.add_object(a_o);
+        exe.add_object(main_o);
+        run_with_checks(test_step, exe);
     }
 
     {
-        const c_o = addObject(b, opts, .{ .name = "c" });
-        c_o.addObject(a_o);
-        c_o.addObject(b_o);
-        c_o.addObject(main_o);
+        const c_o = add_object(b, opts, .{ .name = "c" });
+        c_o.add_object(a_o);
+        c_o.add_object(b_o);
+        c_o.add_object(main_o);
 
-        const exe = addExecutable(b, opts, .{ .name = "main3" });
-        exe.addObject(c_o);
-        runWithChecks(test_step, exe);
+        const exe = add_executable(b, opts, .{ .name = "main3" });
+        exe.add_object(c_o);
+        run_with_checks(test_step, exe);
     }
 
     return test_step;
@@ -1157,9 +1157,9 @@ fn test_merge_literals_arm64(b: *Build, opts: Options) *Step {
 /// which is also the case for the system linker and lld - linking succeeds, runtime segfaults.
 /// It should also be mentioned that runtime segfault is not due to the linker but faulty input asm.
 fn test_merge_literals_arm642(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "merge-literals-arm64-2", opts);
+    const test_step = add_test_step(b, "merge-literals-arm64-2", opts);
 
-    const a_o = addObject(b, opts, .{ .name = "a", .asm_source_bytes = 
+    const a_o = add_object(b, opts, .{ .name = "a", .asm_source_bytes = 
     \\.globl _q1
     \\.globl _s1
     \\
@@ -1179,7 +1179,7 @@ fn test_merge_literals_arm642(b: *Build, opts: Options) *Step {
     \\  .double 1.2345
     });
 
-    const b_o = addObject(b, opts, .{ .name = "b", .asm_source_bytes = 
+    const b_o = add_object(b, opts, .{ .name = "b", .asm_source_bytes = 
     \\.globl _q2
     \\.globl _s2
     \\.globl _s3
@@ -1202,7 +1202,7 @@ fn test_merge_literals_arm642(b: *Build, opts: Options) *Step {
     \\  .double 1.2345
     });
 
-    const main_o = addObject(b, opts, .{ .name = "main", .c_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\extern double q1();
     \\extern double q2();
@@ -1215,25 +1215,25 @@ fn test_merge_literals_arm642(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const exe = addExecutable(b, opts, .{ .name = "main1" });
-    exe.addObject(a_o);
-    exe.addObject(b_o);
-    exe.addObject(main_o);
+    const exe = add_executable(b, opts, .{ .name = "main1" });
+    exe.add_object(a_o);
+    exe.add_object(b_o);
+    exe.add_object(main_o);
 
-    const check = exe.checkObject();
-    check.dumpSection("__TEXT,__const");
-    check.checkContains("\x8d\x97n\x12\x83\xc0\xf3?");
-    check.dumpSection("__TEXT,__cstring");
-    check.checkContains("hello\x00world\x00%s, %s, %s, %f, %f\x00");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.dump_section("__TEXT,__const");
+    check.check_contains("\x8d\x97n\x12\x83\xc0\xf3?");
+    check.dump_section("__TEXT,__cstring");
+    check.check_contains("hello\x00world\x00%s, %s, %s, %f, %f\x00");
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_merge_literals_alignment(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "merge-literals-alignment", opts);
+    const test_step = add_test_step(b, "merge-literals-alignment", opts);
 
-    const a_o = addObject(b, opts, .{ .name = "a", .asm_source_bytes = 
+    const a_o = add_object(b, opts, .{ .name = "a", .asm_source_bytes = 
     \\.globl _s1
     \\.globl _s2
     \\
@@ -1245,7 +1245,7 @@ fn test_merge_literals_alignment(b: *Build, opts: Options) *Step {
     \\  .asciz "str2"
     });
 
-    const b_o = addObject(b, opts, .{ .name = "b", .asm_source_bytes = 
+    const b_o = add_object(b, opts, .{ .name = "b", .asm_source_bytes = 
     \\.globl _s3
     \\.globl _s4
     \\
@@ -1257,7 +1257,7 @@ fn test_merge_literals_alignment(b: *Build, opts: Options) *Step {
     \\  .asciz "str2"
     });
 
-    const main_o = addObject(b, opts, .{ .name = "main", .c_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <assert.h>
     \\#include <stdint.h>
     \\#include <stdio.h>
@@ -1273,46 +1273,46 @@ fn test_merge_literals_alignment(b: *Build, opts: Options) *Step {
     \\}
     , .c_source_flags = &.{"-Wno-format"} });
 
-    const runWithChecks = struct {
+    const run_with_checks = struct {
         fn run_with_checks(step: *Step, exe: *Compile) void {
-            const run = addRunArtifact(exe);
-            run.expectStdOutEqual("str1str2str1str2");
-            step.dependOn(&run.step);
+            const run = add_run_artifact(exe);
+            run.expect_std_out_equal("str1str2str1str2");
+            step.depend_on(&run.step);
 
-            const check = exe.checkObject();
-            check.dumpSection("__TEXT,__cstring");
-            check.checkContains("str1\x00\x00\x00\x00str2\x00");
-            check.checkInHeaders();
-            check.checkExact("segname __TEXT");
-            check.checkExact("sectname __cstring");
-            check.checkExact("align 3");
-            step.dependOn(&check.step);
+            const check = exe.check_object();
+            check.dump_section("__TEXT,__cstring");
+            check.check_contains("str1\x00\x00\x00\x00str2\x00");
+            check.check_in_headers();
+            check.check_exact("segname __TEXT");
+            check.check_exact("sectname __cstring");
+            check.check_exact("align 3");
+            step.depend_on(&check.step);
         }
-    }.runWithChecks;
+    }.run_with_checks;
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main1" });
-        exe.addObject(a_o);
-        exe.addObject(b_o);
-        exe.addObject(main_o);
-        runWithChecks(test_step, exe);
+        const exe = add_executable(b, opts, .{ .name = "main1" });
+        exe.add_object(a_o);
+        exe.add_object(b_o);
+        exe.add_object(main_o);
+        run_with_checks(test_step, exe);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main2" });
-        exe.addObject(b_o);
-        exe.addObject(a_o);
-        exe.addObject(main_o);
-        runWithChecks(test_step, exe);
+        const exe = add_executable(b, opts, .{ .name = "main2" });
+        exe.add_object(b_o);
+        exe.add_object(a_o);
+        exe.add_object(main_o);
+        run_with_checks(test_step, exe);
     }
 
     return test_step;
 }
 
 fn test_merge_literals_objc(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "merge-literals-objc", opts);
+    const test_step = add_test_step(b, "merge-literals-objc", opts);
 
-    const main_o = addObject(b, opts, .{ .name = "main", .objc_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .objc_source_bytes = 
     \\#import <Foundation/Foundation.h>;
     \\
     \\extern void foo();
@@ -1330,7 +1330,7 @@ fn test_merge_literals_objc(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const a_o = addObject(b, opts, .{ .name = "a", .objc_source_bytes = 
+    const a_o = add_object(b, opts, .{ .name = "a", .objc_source_bytes = 
     \\#import <Foundation/Foundation.h>;
     \\
     \\void foo() {
@@ -1348,74 +1348,74 @@ fn test_merge_literals_objc(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const runWithChecks = struct {
+    const run_with_checks = struct {
         fn run_with_checks(step: *Step, exe: *Compile) void {
             const builder = step.owner;
-            const run = addRunArtifact(exe);
-            run.addCheck(.{ .expect_stderr_match = builder.dupe("Responds to lowercaseString: YES") });
-            run.addCheck(.{ .expect_stderr_match = builder.dupe("lowercaseString is: aaa") });
-            run.addCheck(.{ .expect_stderr_match = builder.dupe("Responds to lowercaseString in foo(): YES") });
-            run.addCheck(.{ .expect_stderr_match = builder.dupe("lowercaseString in foo() is: aaa") });
-            run.addCheck(.{ .expect_stderr_match = builder.dupe("Responds to uppercaseString in foo(): YES") });
-            run.addCheck(.{ .expect_stderr_match = builder.dupe("uppercaseString in foo() is: AAA") });
-            step.dependOn(&run.step);
+            const run = add_run_artifact(exe);
+            run.add_check(.{ .expect_stderr_match = builder.dupe("Responds to lowercaseString: YES") });
+            run.add_check(.{ .expect_stderr_match = builder.dupe("lowercaseString is: aaa") });
+            run.add_check(.{ .expect_stderr_match = builder.dupe("Responds to lowercaseString in foo(): YES") });
+            run.add_check(.{ .expect_stderr_match = builder.dupe("lowercaseString in foo() is: aaa") });
+            run.add_check(.{ .expect_stderr_match = builder.dupe("Responds to uppercaseString in foo(): YES") });
+            run.add_check(.{ .expect_stderr_match = builder.dupe("uppercaseString in foo() is: AAA") });
+            step.depend_on(&run.step);
 
-            const check = exe.checkObject();
-            check.dumpSection("__TEXT,__objc_methname");
-            check.checkContains("lowercaseString\x00");
-            check.dumpSection("__TEXT,__objc_methname");
-            check.checkContains("uppercaseString\x00");
-            step.dependOn(&check.step);
+            const check = exe.check_object();
+            check.dump_section("__TEXT,__objc_methname");
+            check.check_contains("lowercaseString\x00");
+            check.dump_section("__TEXT,__objc_methname");
+            check.check_contains("uppercaseString\x00");
+            step.depend_on(&check.step);
         }
-    }.runWithChecks;
+    }.run_with_checks;
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main1" });
-        exe.addObject(main_o);
-        exe.addObject(a_o);
-        exe.root_module.linkFramework("Foundation", .{});
-        runWithChecks(test_step, exe);
+        const exe = add_executable(b, opts, .{ .name = "main1" });
+        exe.add_object(main_o);
+        exe.add_object(a_o);
+        exe.root_module.link_framework("Foundation", .{});
+        run_with_checks(test_step, exe);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main2" });
-        exe.addObject(a_o);
-        exe.addObject(main_o);
-        exe.root_module.linkFramework("Foundation", .{});
-        runWithChecks(test_step, exe);
+        const exe = add_executable(b, opts, .{ .name = "main2" });
+        exe.add_object(a_o);
+        exe.add_object(main_o);
+        exe.root_module.link_framework("Foundation", .{});
+        run_with_checks(test_step, exe);
     }
 
     {
-        const b_o = addObject(b, opts, .{ .name = "b" });
-        b_o.addObject(a_o);
-        b_o.addObject(main_o);
+        const b_o = add_object(b, opts, .{ .name = "b" });
+        b_o.add_object(a_o);
+        b_o.add_object(main_o);
 
-        const exe = addExecutable(b, opts, .{ .name = "main3" });
-        exe.addObject(b_o);
-        exe.root_module.linkFramework("Foundation", .{});
-        runWithChecks(test_step, exe);
+        const exe = add_executable(b, opts, .{ .name = "main3" });
+        exe.add_object(b_o);
+        exe.root_module.link_framework("Foundation", .{});
+        run_with_checks(test_step, exe);
     }
 
     return test_step;
 }
 
 fn test_mh_execute_header(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "mh-execute-header", opts);
+    const test_step = add_test_step(b, "mh-execute-header", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
 
-    const check = exe.checkObject();
-    check.checkInSymtab();
-    check.checkContains("[referenced dynamically] external __mh_execute_header");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_symtab();
+    check.check_contains("[referenced dynamically] external __mh_execute_header");
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_no_dead_strip(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "no-dead-strip", opts);
+    const test_step = add_test_step(b, "no-dead-strip", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "name", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "name", .c_source_bytes = 
     \\__attribute__((used)) int bogus1 = 0;
     \\int bogus2 = 0;
     \\int foo = 42;
@@ -1425,81 +1425,81 @@ fn test_no_dead_strip(b: *Build, opts: Options) *Step {
     });
     exe.link_gc_sections = true;
 
-    const check = exe.checkObject();
-    check.checkInSymtab();
-    check.checkContains("external _bogus1");
-    check.checkInSymtab();
-    check.checkNotPresent("external _bogus2");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_symtab();
+    check.check_contains("external _bogus1");
+    check.check_in_symtab();
+    check.check_not_present("external _bogus2");
+    test_step.depend_on(&check.step);
 
-    const run = addRunArtifact(exe);
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_no_exports_dylib(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "no-exports-dylib", opts);
+    const test_step = add_test_step(b, "no-exports-dylib", opts);
 
-    const dylib = addSharedLibrary(b, opts, .{ .name = "a", .c_source_bytes = "static void abc() {}" });
+    const dylib = add_shared_library(b, opts, .{ .name = "a", .c_source_bytes = "static void abc() {}" });
 
-    const check = dylib.checkObject();
-    check.checkInSymtab();
-    check.checkNotPresent("external _abc");
-    test_step.dependOn(&check.step);
+    const check = dylib.check_object();
+    check.check_in_symtab();
+    check.check_not_present("external _abc");
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_needed_framework(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "needed-framework", opts);
+    const test_step = add_test_step(b, "needed-framework", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
-    exe.root_module.linkFramework("Cocoa", .{ .needed = true });
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
+    exe.root_module.link_framework("Cocoa", .{ .needed = true });
     exe.dead_strip_dylibs = true;
 
-    const check = exe.checkObject();
-    check.checkInHeaders();
-    check.checkExact("cmd LOAD_DYLIB");
-    check.checkContains("Cocoa");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_headers();
+    check.check_exact("cmd LOAD_DYLIB");
+    check.check_contains("Cocoa");
+    test_step.depend_on(&check.step);
 
-    const run = addRunArtifact(exe);
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_needed_library(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "needed-library", opts);
+    const test_step = add_test_step(b, "needed-library", opts);
 
-    const dylib = addSharedLibrary(b, opts, .{ .name = "a", .c_source_bytes = "int a = 42;" });
+    const dylib = add_shared_library(b, opts, .{ .name = "a", .c_source_bytes = "int a = 42;" });
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
-    exe.root_module.linkSystemLibrary("a", .{ .needed = true });
-    exe.root_module.addLibraryPath(dylib.getEmittedBinDirectory());
-    exe.root_module.addRPath(dylib.getEmittedBinDirectory());
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
+    exe.root_module.link_system_library("a", .{ .needed = true });
+    exe.root_module.add_library_path(dylib.get_emitted_bin_directory());
+    exe.root_module.add_rpath(dylib.get_emitted_bin_directory());
     exe.dead_strip_dylibs = true;
 
-    const check = exe.checkObject();
-    check.checkInHeaders();
-    check.checkExact("cmd LOAD_DYLIB");
-    check.checkContains("liba.dylib");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_headers();
+    check.check_exact("cmd LOAD_DYLIB");
+    check.check_contains("liba.dylib");
+    test_step.depend_on(&check.step);
 
-    const run = addRunArtifact(exe);
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_objc(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "objc", opts);
+    const test_step = add_test_step(b, "objc", opts);
 
-    const lib = addStaticLibrary(b, opts, .{ .name = "a", .objc_source_bytes = 
+    const lib = add_static_library(b, opts, .{ .name = "a", .objc_source_bytes = 
     \\#import <Foundation/Foundation.h>
     \\@interface Foo : NSObject
     \\@end
@@ -1508,43 +1508,43 @@ fn test_objc(b: *Build, opts: Options) *Step {
     });
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
-        exe.root_module.linkSystemLibrary("a", .{});
-        exe.root_module.linkFramework("Foundation", .{});
-        exe.root_module.addLibraryPath(lib.getEmittedBinDirectory());
+        const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
+        exe.root_module.link_system_library("a", .{});
+        exe.root_module.link_framework("Foundation", .{});
+        exe.root_module.add_library_path(lib.get_emitted_bin_directory());
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkNotPresent("_OBJC_");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_not_present("_OBJC_");
+        test_step.depend_on(&check.step);
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main2", .c_source_bytes = "int main() { return 0; }" });
-        exe.root_module.linkSystemLibrary("a", .{});
-        exe.root_module.linkFramework("Foundation", .{});
-        exe.root_module.addLibraryPath(lib.getEmittedBinDirectory());
+        const exe = add_executable(b, opts, .{ .name = "main2", .c_source_bytes = "int main() { return 0; }" });
+        exe.root_module.link_system_library("a", .{});
+        exe.root_module.link_framework("Foundation", .{});
+        exe.root_module.add_library_path(lib.get_emitted_bin_directory());
         exe.force_load_objc = true;
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkContains("_OBJC_");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_contains("_OBJC_");
+        test_step.depend_on(&check.step);
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
     }
 
     return test_step;
 }
 
 fn test_objcpp(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "objcpp", opts);
+    const test_step = add_test_step(b, "objcpp", opts);
 
     const foo_h = foo_h: {
         const wf = WriteFile.create(b);
@@ -1556,7 +1556,7 @@ fn test_objcpp(b: *Build, opts: Options) *Step {
         );
     };
 
-    const foo_o = addObject(b, opts, .{ .name = "foo", .objcpp_source_bytes = 
+    const foo_o = add_object(b, opts, .{ .name = "foo", .objcpp_source_bytes = 
     \\#import "Foo.h"
     \\@implementation Foo
     \\- (NSString *)name
@@ -1566,10 +1566,10 @@ fn test_objcpp(b: *Build, opts: Options) *Step {
     \\}
     \\@end
     });
-    foo_o.root_module.addIncludePath(foo_h.dirname());
-    foo_o.linkLibCpp();
+    foo_o.root_module.add_include_path(foo_h.dirname());
+    foo_o.link_lib_cpp();
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .objcpp_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .objcpp_source_bytes = 
     \\#import "Foo.h"
     \\#import <assert.h>
     \\#include <iostream>
@@ -1584,56 +1584,56 @@ fn test_objcpp(b: *Build, opts: Options) *Step {
     \\  }
     \\}
     });
-    exe.root_module.addIncludePath(foo_h.dirname());
-    exe.addObject(foo_o);
-    exe.linkLibCpp();
-    exe.root_module.linkFramework("Foundation", .{});
+    exe.root_module.add_include_path(foo_h.dirname());
+    exe.add_object(foo_o);
+    exe.link_lib_cpp();
+    exe.root_module.link_framework("Foundation", .{});
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("Hello from C++ and Zig");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("Hello from C++ and Zig");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_pagezero_size(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "pagezero-size", opts);
+    const test_step = add_test_step(b, "pagezero-size", opts);
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = "int main () { return 0; }" });
+        const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = "int main () { return 0; }" });
         exe.pagezero_size = 0x4000;
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("LC 0");
-        check.checkExact("segname __PAGEZERO");
-        check.checkExact("vmaddr 0");
-        check.checkExact("vmsize 4000");
-        check.checkInHeaders();
-        check.checkExact("segname __TEXT");
-        check.checkExact("vmaddr 4000");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("LC 0");
+        check.check_exact("segname __PAGEZERO");
+        check.check_exact("vmaddr 0");
+        check.check_exact("vmsize 4000");
+        check.check_in_headers();
+        check.check_exact("segname __TEXT");
+        check.check_exact("vmaddr 4000");
+        test_step.depend_on(&check.step);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = "int main () { return 0; }" });
+        const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = "int main () { return 0; }" });
         exe.pagezero_size = 0;
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("LC 0");
-        check.checkExact("segname __TEXT");
-        check.checkExact("vmaddr 0");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("LC 0");
+        check.check_exact("segname __TEXT");
+        check.check_exact("vmaddr 0");
+        test_step.depend_on(&check.step);
     }
 
     return test_step;
 }
 
 fn test_reexports_zig(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "reexports-zig", opts);
+    const test_step = add_test_step(b, "reexports-zig", opts);
 
-    const lib = addStaticLibrary(b, opts, .{ .name = "a", .zig_source_bytes = 
+    const lib = add_static_library(b, opts, .{ .name = "a", .zig_source_bytes = 
     \\const x: i32 = 42;
     \\export fn foo() i32 {
     \\    return x;
@@ -1643,41 +1643,41 @@ fn test_reexports_zig(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\extern int foo();
     \\extern int bar();
     \\int main() {
     \\  return bar() - foo();
     \\}
     });
-    exe.linkLibrary(lib);
+    exe.link_library(lib);
 
-    const run = addRunArtifact(exe);
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_relocatable(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "relocatable", opts);
+    const test_step = add_test_step(b, "relocatable", opts);
 
-    const a_o = addObject(b, opts, .{ .name = "a", .cpp_source_bytes = 
+    const a_o = add_object(b, opts, .{ .name = "a", .cpp_source_bytes = 
     \\#include <stdexcept>
     \\int try_me() {
     \\  throw std::runtime_error("Oh no!");
     \\}
     });
-    a_o.linkLibCpp();
+    a_o.link_lib_cpp();
 
-    const b_o = addObject(b, opts, .{ .name = "b", .cpp_source_bytes = 
+    const b_o = add_object(b, opts, .{ .name = "b", .cpp_source_bytes = 
     \\extern int try_me();
     \\int try_again() {
     \\  return try_me();
     \\}
     });
 
-    const main_o = addObject(b, opts, .{ .name = "main", .cpp_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .cpp_source_bytes = 
     \\#include <iostream>
     \\#include <stdexcept>
     \\extern int try_again();
@@ -1690,98 +1690,98 @@ fn test_relocatable(b: *Build, opts: Options) *Step {
     \\  return 0;
     \\}
     });
-    main_o.linkLibCpp();
+    main_o.link_lib_cpp();
 
     const exp_stdout = "exception=Oh no!";
 
     {
-        const c_o = addObject(b, opts, .{ .name = "c" });
-        c_o.addObject(a_o);
-        c_o.addObject(b_o);
+        const c_o = add_object(b, opts, .{ .name = "c" });
+        c_o.add_object(a_o);
+        c_o.add_object(b_o);
 
-        const exe = addExecutable(b, opts, .{ .name = "main1" });
-        exe.addObject(main_o);
-        exe.addObject(c_o);
-        exe.linkLibCpp();
+        const exe = add_executable(b, opts, .{ .name = "main1" });
+        exe.add_object(main_o);
+        exe.add_object(c_o);
+        exe.link_lib_cpp();
 
-        const run = addRunArtifact(exe);
-        run.expectStdOutEqual(exp_stdout);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_std_out_equal(exp_stdout);
+        test_step.depend_on(&run.step);
     }
 
     {
-        const d_o = addObject(b, opts, .{ .name = "d" });
-        d_o.addObject(a_o);
-        d_o.addObject(b_o);
-        d_o.addObject(main_o);
+        const d_o = add_object(b, opts, .{ .name = "d" });
+        d_o.add_object(a_o);
+        d_o.add_object(b_o);
+        d_o.add_object(main_o);
 
-        const exe = addExecutable(b, opts, .{ .name = "main2" });
-        exe.addObject(d_o);
-        exe.linkLibCpp();
+        const exe = add_executable(b, opts, .{ .name = "main2" });
+        exe.add_object(d_o);
+        exe.link_lib_cpp();
 
-        const run = addRunArtifact(exe);
-        run.expectStdOutEqual(exp_stdout);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_std_out_equal(exp_stdout);
+        test_step.depend_on(&run.step);
     }
 
     return test_step;
 }
 
 fn test_relocatable_zig(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "relocatable-zig", opts);
+    const test_step = add_test_step(b, "relocatable-zig", opts);
 
-    const a_o = addObject(b, opts, .{ .name = "a", .zig_source_bytes = 
+    const a_o = add_object(b, opts, .{ .name = "a", .zig_source_bytes = 
     \\const std = @import("std");
     \\export var foo: i32 = 0;
     \\export fn incr_foo() void {
     \\    foo += 1;
-    \\    std.debug.print("incrFoo={d}\n", .{foo});
+    \\    std.debug.print("incr_foo={d}\n", .{foo});
     \\}
     });
 
-    const b_o = addObject(b, opts, .{ .name = "b", .zig_source_bytes = 
+    const b_o = add_object(b, opts, .{ .name = "b", .zig_source_bytes = 
     \\const std = @import("std");
     \\extern var foo: i32;
     \\export fn decr_foo() void {
     \\    foo -= 1;
-    \\    std.debug.print("decrFoo={d}\n", .{foo});
+    \\    std.debug.print("decr_foo={d}\n", .{foo});
     \\}
     });
 
-    const main_o = addObject(b, opts, .{ .name = "main", .zig_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .zig_source_bytes = 
     \\const std = @import("std");
     \\extern var foo: i32;
     \\extern fn incr_foo() void;
     \\extern fn decr_foo() void;
     \\pub fn main() void {
     \\    const init = foo;
-    \\    incrFoo();
-    \\    decrFoo();
+    \\    incr_foo();
+    \\    decr_foo();
     \\    if (init == foo) @panic("Oh no!");
     \\}
     });
 
-    const c_o = addObject(b, opts, .{ .name = "c" });
-    c_o.addObject(a_o);
-    c_o.addObject(b_o);
-    c_o.addObject(main_o);
+    const c_o = add_object(b, opts, .{ .name = "c" });
+    c_o.add_object(a_o);
+    c_o.add_object(b_o);
+    c_o.add_object(main_o);
 
-    const exe = addExecutable(b, opts, .{ .name = "main" });
-    exe.addObject(c_o);
+    const exe = add_executable(b, opts, .{ .name = "main" });
+    exe.add_object(c_o);
 
-    const run = addRunArtifact(exe);
-    run.addCheck(.{ .expect_stderr_match = b.dupe("incrFoo=1") });
-    run.addCheck(.{ .expect_stderr_match = b.dupe("decrFoo=0") });
-    run.addCheck(.{ .expect_stderr_match = b.dupe("panic: Oh no!") });
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.add_check(.{ .expect_stderr_match = b.dupe("incr_foo=1") });
+    run.add_check(.{ .expect_stderr_match = b.dupe("decr_foo=0") });
+    run.add_check(.{ .expect_stderr_match = b.dupe("panic: Oh no!") });
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_search_strategy(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "search-strategy", opts);
+    const test_step = add_test_step(b, "search-strategy", opts);
 
-    const obj = addObject(b, opts, .{ .name = "a", .c_source_bytes = 
+    const obj = add_object(b, opts, .{ .name = "a", .c_source_bytes = 
     \\#include<stdio.h>
     \\char world[] = "world";
     \\char* hello() {
@@ -1789,13 +1789,13 @@ fn test_search_strategy(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const liba = addStaticLibrary(b, opts, .{ .name = "a" });
-    liba.addObject(obj);
+    const liba = add_static_library(b, opts, .{ .name = "a" });
+    liba.add_object(obj);
 
-    const dylib = addSharedLibrary(b, opts, .{ .name = "a" });
-    dylib.addObject(obj);
+    const dylib = add_shared_library(b, opts, .{ .name = "a" });
+    dylib.add_object(obj);
 
-    const main_o = addObject(b, opts, .{ .name = "main", .c_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include<stdio.h>
     \\char* hello();
     \\extern char world[];
@@ -1806,57 +1806,57 @@ fn test_search_strategy(b: *Build, opts: Options) *Step {
     });
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main" });
-        exe.addObject(main_o);
-        exe.root_module.linkSystemLibrary("a", .{ .use_pkg_config = .no, .search_strategy = .mode_first });
-        exe.root_module.addLibraryPath(liba.getEmittedBinDirectory());
-        exe.root_module.addLibraryPath(dylib.getEmittedBinDirectory());
-        exe.root_module.addRPath(dylib.getEmittedBinDirectory());
+        const exe = add_executable(b, opts, .{ .name = "main" });
+        exe.add_object(main_o);
+        exe.root_module.link_system_library("a", .{ .use_pkg_config = .no, .search_strategy = .mode_first });
+        exe.root_module.add_library_path(liba.get_emitted_bin_directory());
+        exe.root_module.add_library_path(dylib.get_emitted_bin_directory());
+        exe.root_module.add_rpath(dylib.get_emitted_bin_directory());
 
-        const run = addRunArtifact(exe);
-        run.expectStdOutEqual("Hello world");
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_std_out_equal("Hello world");
+        test_step.depend_on(&run.step);
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("cmd LOAD_DYLIB");
-        check.checkContains("liba.dylib");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("cmd LOAD_DYLIB");
+        check.check_contains("liba.dylib");
+        test_step.depend_on(&check.step);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main" });
-        exe.addObject(main_o);
-        exe.root_module.linkSystemLibrary("a", .{ .use_pkg_config = .no, .search_strategy = .paths_first });
-        exe.root_module.addLibraryPath(liba.getEmittedBinDirectory());
-        exe.root_module.addLibraryPath(dylib.getEmittedBinDirectory());
-        exe.root_module.addRPath(dylib.getEmittedBinDirectory());
+        const exe = add_executable(b, opts, .{ .name = "main" });
+        exe.add_object(main_o);
+        exe.root_module.link_system_library("a", .{ .use_pkg_config = .no, .search_strategy = .paths_first });
+        exe.root_module.add_library_path(liba.get_emitted_bin_directory());
+        exe.root_module.add_library_path(dylib.get_emitted_bin_directory());
+        exe.root_module.add_rpath(dylib.get_emitted_bin_directory());
 
-        const run = addRunArtifact(exe);
-        run.expectStdOutEqual("Hello world");
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_std_out_equal("Hello world");
+        test_step.depend_on(&run.step);
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("cmd LOAD_DYLIB");
-        check.checkNotPresent("liba.dylib");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("cmd LOAD_DYLIB");
+        check.check_not_present("liba.dylib");
+        test_step.depend_on(&check.step);
     }
 
     return test_step;
 }
 
 fn test_section_boundary_symbols(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "section-boundary-symbols", opts);
+    const test_step = add_test_step(b, "section-boundary-symbols", opts);
 
-    const obj1 = addObject(b, opts, .{
+    const obj1 = add_object(b, opts, .{
         .name = "obj1",
         .cpp_source_bytes =
         \\constexpr const char* MESSAGE __attribute__((used, section("__DATA_CONST,__message_ptr"))) = "codebase";
         ,
     });
 
-    const main_o = addObject(b, opts, .{
+    const main_o = add_object(b, opts, .{
         .name = "main",
         .zig_source_bytes =
         \\const std = @import("std");
@@ -1870,7 +1870,7 @@ fn test_section_boundary_symbols(b: *Build, opts: Options) *Step {
     });
 
     {
-        const obj2 = addObject(b, opts, .{
+        const obj2 = add_object(b, opts, .{
             .name = "obj2",
             .cpp_source_bytes =
             \\extern const char* message_pointer __asm("section$start$__DATA_CONST$__message_ptr");
@@ -1880,24 +1880,24 @@ fn test_section_boundary_symbols(b: *Build, opts: Options) *Step {
             ,
         });
 
-        const exe = addExecutable(b, opts, .{ .name = "test" });
-        exe.addObject(obj1);
-        exe.addObject(obj2);
-        exe.addObject(main_o);
+        const exe = add_executable(b, opts, .{ .name = "test" });
+        exe.add_object(obj1);
+        exe.add_object(obj2);
+        exe.add_object(main_o);
 
-        const run = b.addRunArtifact(exe);
+        const run = b.add_run_artifact(exe);
         run.skip_foreign_checks = true;
-        run.expectStdErrEqual("All your codebase are belong to us.\n");
-        test_step.dependOn(&run.step);
+        run.expect_std_err_equal("All your codebase are belong to us.\n");
+        test_step.depend_on(&run.step);
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkNotPresent("external section$start$__DATA_CONST$__message_ptr");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_not_present("external section$start$__DATA_CONST$__message_ptr");
+        test_step.depend_on(&check.step);
     }
 
     {
-        const obj3 = addObject(b, opts, .{
+        const obj3 = add_object(b, opts, .{
             .name = "obj3",
             .cpp_source_bytes =
             \\extern const char* message_pointer __asm("section$start$__DATA_CONST$__not_present");
@@ -1907,33 +1907,33 @@ fn test_section_boundary_symbols(b: *Build, opts: Options) *Step {
             ,
         });
 
-        const exe = addExecutable(b, opts, .{ .name = "test" });
-        exe.addObject(obj1);
-        exe.addObject(obj3);
-        exe.addObject(main_o);
+        const exe = add_executable(b, opts, .{ .name = "test" });
+        exe.add_object(obj1);
+        exe.add_object(obj3);
+        exe.add_object(main_o);
 
-        const run = b.addRunArtifact(exe);
+        const run = b.add_run_artifact(exe);
         run.skip_foreign_checks = true;
-        run.expectStdErrEqual("All your (null) are belong to us.\n");
-        test_step.dependOn(&run.step);
+        run.expect_std_err_equal("All your (null) are belong to us.\n");
+        test_step.depend_on(&run.step);
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkNotPresent("external section$start$__DATA_CONST$__not_present");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_not_present("external section$start$__DATA_CONST$__not_present");
+        test_step.depend_on(&check.step);
     }
 
     return test_step;
 }
 
 fn test_segment_boundary_symbols(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "segment-boundary-symbols", opts);
+    const test_step = add_test_step(b, "segment-boundary-symbols", opts);
 
-    const obj1 = addObject(b, opts, .{ .name = "a", .cpp_source_bytes = 
+    const obj1 = add_object(b, opts, .{ .name = "a", .cpp_source_bytes = 
     \\constexpr const char* MESSAGE __attribute__((used, section("__DATA_CONST_1,__message_ptr"))) = "codebase";
     });
 
-    const main_o = addObject(b, opts, .{ .name = "main", .c_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\const char* interop();
     \\int main() {
@@ -1943,128 +1943,128 @@ fn test_segment_boundary_symbols(b: *Build, opts: Options) *Step {
     });
 
     {
-        const obj2 = addObject(b, opts, .{ .name = "b", .cpp_source_bytes = 
+        const obj2 = add_object(b, opts, .{ .name = "b", .cpp_source_bytes = 
         \\extern const char* message_pointer __asm("segment$start$__DATA_CONST_1");
         \\extern "C" const char* interop() {
         \\  return message_pointer;
         \\}
         });
 
-        const exe = addExecutable(b, opts, .{ .name = "main" });
-        exe.addObject(obj1);
-        exe.addObject(obj2);
-        exe.addObject(main_o);
+        const exe = add_executable(b, opts, .{ .name = "main" });
+        exe.add_object(obj1);
+        exe.add_object(obj2);
+        exe.add_object(main_o);
 
-        const run = addRunArtifact(exe);
-        run.expectStdOutEqual("All your codebase are belong to us.\n");
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_std_out_equal("All your codebase are belong to us.\n");
+        test_step.depend_on(&run.step);
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkNotPresent("external segment$start$__DATA_CONST_1");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_not_present("external segment$start$__DATA_CONST_1");
+        test_step.depend_on(&check.step);
     }
 
     {
-        const obj2 = addObject(b, opts, .{ .name = "c", .cpp_source_bytes = 
+        const obj2 = add_object(b, opts, .{ .name = "c", .cpp_source_bytes = 
         \\extern const char* message_pointer __asm("segment$start$__DATA_1");
         \\extern "C" const char* interop() {
         \\  return message_pointer;
         \\}
         });
 
-        const exe = addExecutable(b, opts, .{ .name = "main2" });
-        exe.addObject(obj1);
-        exe.addObject(obj2);
-        exe.addObject(main_o);
+        const exe = add_executable(b, opts, .{ .name = "main2" });
+        exe.add_object(obj1);
+        exe.add_object(obj2);
+        exe.add_object(main_o);
 
-        const check = exe.checkObject();
-        check.checkInHeaders();
-        check.checkExact("cmd SEGMENT_64");
-        check.checkExact("segname __DATA_1");
-        check.checkExtract("vmsize {vmsize}");
-        check.checkExtract("filesz {filesz}");
-        check.checkComputeCompare("vmsize", .{ .op = .eq, .value = .{ .literal = 0 } });
-        check.checkComputeCompare("filesz", .{ .op = .eq, .value = .{ .literal = 0 } });
-        check.checkInSymtab();
-        check.checkNotPresent("external segment$start$__DATA_1");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_headers();
+        check.check_exact("cmd SEGMENT_64");
+        check.check_exact("segname __DATA_1");
+        check.check_extract("vmsize {vmsize}");
+        check.check_extract("filesz {filesz}");
+        check.check_compute_compare("vmsize", .{ .op = .eq, .value = .{ .literal = 0 } });
+        check.check_compute_compare("filesz", .{ .op = .eq, .value = .{ .literal = 0 } });
+        check.check_in_symtab();
+        check.check_not_present("external segment$start$__DATA_1");
+        test_step.depend_on(&check.step);
     }
 
     return test_step;
 }
 
 fn test_symbol_stabs(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "symbol-stabs", opts);
+    const test_step = add_test_step(b, "symbol-stabs", opts);
 
-    const a_o = addObject(b, opts, .{ .name = "a", .c_source_bytes = 
+    const a_o = add_object(b, opts, .{ .name = "a", .c_source_bytes = 
     \\int foo = 42;
-    \\int getFoo() {
+    \\int get_foo() {
     \\  return foo;
     \\}
     });
 
-    const b_o = addObject(b, opts, .{ .name = "b", .c_source_bytes = 
+    const b_o = add_object(b, opts, .{ .name = "b", .c_source_bytes = 
     \\int bar = 24;
     \\int getBar() {
     \\  return bar;
     \\}
     });
 
-    const main_o = addObject(b, opts, .{ .name = "main", .c_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
-    \\extern int getFoo();
+    \\extern int get_foo();
     \\extern int getBar();
     \\int main() {
-    \\  printf("foo=%d,bar=%d", getFoo(), getBar());
+    \\  printf("foo=%d,bar=%d", get_foo(), getBar());
     \\  return 0;
     \\}
     });
 
-    const exe = addExecutable(b, opts, .{ .name = "main" });
-    exe.addObject(a_o);
-    exe.addObject(b_o);
-    exe.addObject(main_o);
+    const exe = add_executable(b, opts, .{ .name = "main" });
+    exe.add_object(a_o);
+    exe.add_object(b_o);
+    exe.add_object(main_o);
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("foo=42,bar=24");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("foo=42,bar=24");
+    test_step.depend_on(&run.step);
 
-    const check = exe.checkObject();
-    check.checkInSymtab();
-    check.checkContains("a.o"); // TODO we really should do a fuzzy search like OSO <ignore>/a.o
-    check.checkInSymtab();
-    check.checkContains("b.o");
-    check.checkInSymtab();
-    check.checkContains("main.o");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_symtab();
+    check.check_contains("a.o"); // TODO we really should do a fuzzy search like OSO <ignore>/a.o
+    check.check_in_symtab();
+    check.check_contains("b.o");
+    check.check_in_symtab();
+    check.check_contains("main.o");
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_stack_size(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "stack-size", opts);
+    const test_step = add_test_step(b, "stack-size", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
     exe.stack_size = 0x100000000;
 
-    const run = addRunArtifact(exe);
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
-    const check = exe.checkObject();
-    check.checkInHeaders();
-    check.checkExact("cmd MAIN");
-    check.checkExact("stacksize 100000000");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_headers();
+    check.check_exact("cmd MAIN");
+    check.check_exact("stacksize 100000000");
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_tbdv3(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "tbdv3", opts);
+    const test_step = add_test_step(b, "tbdv3", opts);
 
-    const dylib = addSharedLibrary(b, opts, .{ .name = "a", .c_source_bytes = "int getFoo() { return 42; }" });
+    const dylib = add_shared_library(b, opts, .{ .name = "a", .c_source_bytes = "int get_foo() { return 42; }" });
 
     const tbd = tbd: {
         const wf = WriteFile.create(b);
@@ -2081,34 +2081,34 @@ fn test_tbdv3(b: *Build, opts: Options) *Step {
         );
     };
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
-    \\int getFoo();
+    \\int get_foo();
     \\int main() {
-    \\  return getFoo() - 42;
+    \\  return get_foo() - 42;
     \\}
     });
-    exe.root_module.linkSystemLibrary("a", .{});
-    exe.root_module.addLibraryPath(tbd.dirname());
-    exe.root_module.addRPath(dylib.getEmittedBinDirectory());
+    exe.root_module.link_system_library("a", .{});
+    exe.root_module.add_library_path(tbd.dirname());
+    exe.root_module.add_rpath(dylib.get_emitted_bin_directory());
 
-    const run = addRunArtifact(exe);
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_tentative(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "tentative", opts);
+    const test_step = add_test_step(b, "tentative", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main" });
-    addCSourceBytes(exe,
+    const exe = add_executable(b, opts, .{ .name = "main" });
+    add_csource_bytes(exe,
         \\int foo;
         \\int bar;
         \\int baz = 42;
     , &.{"-fcommon"});
-    addCSourceBytes(exe,
+    add_csource_bytes(exe,
         \\#include<stdio.h>
         \\int foo;
         \\int bar = 5;
@@ -2118,17 +2118,17 @@ fn test_tentative(b: *Build, opts: Options) *Step {
         \\}
     , &.{"-fcommon"});
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("0 5 42\n");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("0 5 42\n");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_thunks(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "thunks", opts);
+    const test_step = add_test_step(b, "thunks", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\__attribute__((aligned(0x8000000))) int bar() {
     \\  return 42;
@@ -2146,51 +2146,51 @@ fn test_thunks(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("bar=42, foo=0, foobar=42");
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("bar=42, foo=0, foobar=42");
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_tls(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "tls", opts);
+    const test_step = add_test_step(b, "tls", opts);
 
-    const dylib = addSharedLibrary(b, opts, .{ .name = "a", .c_source_bytes = 
+    const dylib = add_shared_library(b, opts, .{ .name = "a", .c_source_bytes = 
     \\_Thread_local int a;
-    \\int getA() {
+    \\int get_a() {
     \\  return a;
     \\}
     });
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include<stdio.h>
     \\extern _Thread_local int a;
-    \\extern int getA();
+    \\extern int get_a();
     \\int getA2() {
     \\  return a;
     \\}
     \\int main() {
     \\  a = 2;
-    \\  printf("%d %d %d", a, getA(), getA2());
+    \\  printf("%d %d %d", a, get_a(), getA2());
     \\  return 0;
     \\}
     });
-    exe.root_module.linkSystemLibrary("a", .{});
-    exe.root_module.addLibraryPath(dylib.getEmittedBinDirectory());
-    exe.root_module.addRPath(dylib.getEmittedBinDirectory());
+    exe.root_module.link_system_library("a", .{});
+    exe.root_module.add_library_path(dylib.get_emitted_bin_directory());
+    exe.root_module.add_rpath(dylib.get_emitted_bin_directory());
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("2 2 2");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("2 2 2");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 // https://github.com/ziglang/zig/issues/19221
 fn test_tls_pointers(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "tls-pointers", opts);
+    const test_step = add_test_step(b, "tls-pointers", opts);
 
     const foo_h = foo_h: {
         const wf = WriteFile.create(b);
@@ -2208,27 +2208,27 @@ fn test_tls_pointers(b: *Build, opts: Options) *Step {
         );
     };
 
-    const bar_o = addObject(b, opts, .{ .name = "bar", .cpp_source_bytes = 
+    const bar_o = add_object(b, opts, .{ .name = "bar", .cpp_source_bytes = 
     \\#include "foo.h"
     \\int bar() {
     \\  int v1 = Foo<int>::getVar();
     \\  return v1;
     \\}
     });
-    bar_o.root_module.addIncludePath(foo_h.dirname());
-    bar_o.linkLibCpp();
+    bar_o.root_module.add_include_path(foo_h.dirname());
+    bar_o.link_lib_cpp();
 
-    const baz_o = addObject(b, opts, .{ .name = "baz", .cpp_source_bytes = 
+    const baz_o = add_object(b, opts, .{ .name = "baz", .cpp_source_bytes = 
     \\#include "foo.h"
     \\int baz() {
     \\  int v1 = Foo<unsigned>::getVar();
     \\  return v1;
     \\}
     });
-    baz_o.root_module.addIncludePath(foo_h.dirname());
-    baz_o.linkLibCpp();
+    baz_o.root_module.add_include_path(foo_h.dirname());
+    baz_o.link_lib_cpp();
 
-    const main_o = addObject(b, opts, .{ .name = "main", .cpp_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .cpp_source_bytes = 
     \\extern int bar();
     \\extern int baz();
     \\int main() {
@@ -2237,26 +2237,26 @@ fn test_tls_pointers(b: *Build, opts: Options) *Step {
     \\  return v1 != v2;
     \\}
     });
-    main_o.root_module.addIncludePath(foo_h.dirname());
-    main_o.linkLibCpp();
+    main_o.root_module.add_include_path(foo_h.dirname());
+    main_o.link_lib_cpp();
 
-    const exe = addExecutable(b, opts, .{ .name = "main" });
-    exe.addObject(bar_o);
-    exe.addObject(baz_o);
-    exe.addObject(main_o);
-    exe.linkLibCpp();
+    const exe = add_executable(b, opts, .{ .name = "main" });
+    exe.add_object(bar_o);
+    exe.add_object(baz_o);
+    exe.add_object(main_o);
+    exe.link_lib_cpp();
 
-    const run = addRunArtifact(exe);
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_tls_large_tbss(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "tls-large-tbss", opts);
+    const test_step = add_test_step(b, "tls-large-tbss", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\_Thread_local int x[0x8000];
     \\_Thread_local int y[0x8000];
@@ -2267,66 +2267,66 @@ fn test_tls_large_tbss(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("3 0 5 0 0 0\n");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("3 0 5 0 0 0\n");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_two_level_namespace(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "two-level-namespace", opts);
+    const test_step = add_test_step(b, "two-level-namespace", opts);
 
-    const liba = addSharedLibrary(b, opts, .{ .name = "a", .c_source_bytes = 
+    const liba = add_shared_library(b, opts, .{ .name = "a", .c_source_bytes = 
     \\#include <stdio.h>
     \\int foo = 1;
     \\int* ptr_to_foo = &foo;
-    \\int getFoo() {
+    \\int get_foo() {
     \\  return foo;
     \\}
     \\void printInA() {
-    \\  printf("liba: getFoo()=%d, ptr_to_foo=%d\n", getFoo(), *ptr_to_foo);
+    \\  printf("liba: get_foo()=%d, ptr_to_foo=%d\n", get_foo(), *ptr_to_foo);
     \\}
     });
 
     {
-        const check = liba.checkObject();
-        check.checkInDyldLazyBind();
-        check.checkNotPresent("(flat lookup) _getFoo");
-        check.checkInIndirectSymtab();
-        check.checkNotPresent("_getFoo");
-        test_step.dependOn(&check.step);
+        const check = liba.check_object();
+        check.check_in_dyld_lazy_bind();
+        check.check_not_present("(flat lookup) _getFoo");
+        check.check_in_indirect_symtab();
+        check.check_not_present("_getFoo");
+        test_step.depend_on(&check.step);
     }
 
-    const libb = addSharedLibrary(b, opts, .{ .name = "b", .c_source_bytes = 
+    const libb = add_shared_library(b, opts, .{ .name = "b", .c_source_bytes = 
     \\#include <stdio.h>
     \\int foo = 2;
     \\int* ptr_to_foo = &foo;
-    \\int getFoo() {
+    \\int get_foo() {
     \\  return foo;
     \\}
     \\void printInB() {
-    \\  printf("libb: getFoo()=%d, ptr_to_foo=%d\n", getFoo(), *ptr_to_foo);
+    \\  printf("libb: get_foo()=%d, ptr_to_foo=%d\n", get_foo(), *ptr_to_foo);
     \\}
     });
 
     {
-        const check = libb.checkObject();
-        check.checkInDyldLazyBind();
-        check.checkNotPresent("(flat lookup) _getFoo");
-        check.checkInIndirectSymtab();
-        check.checkNotPresent("_getFoo");
-        test_step.dependOn(&check.step);
+        const check = libb.check_object();
+        check.check_in_dyld_lazy_bind();
+        check.check_not_present("(flat lookup) _getFoo");
+        check.check_in_indirect_symtab();
+        check.check_not_present("_getFoo");
+        test_step.depend_on(&check.step);
     }
 
-    const main_o = addObject(b, opts, .{ .name = "main", .c_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
-    \\int getFoo();
+    \\int get_foo();
     \\extern int* ptr_to_foo;
     \\void printInA();
     \\void printInB();
     \\int main() {
-    \\  printf("main: getFoo()=%d, ptr_to_foo=%d\n", getFoo(), *ptr_to_foo);
+    \\  printf("main: get_foo()=%d, ptr_to_foo=%d\n", get_foo(), *ptr_to_foo);
     \\  printInA();
     \\  printInB();
     \\  return 0;
@@ -2334,145 +2334,145 @@ fn test_two_level_namespace(b: *Build, opts: Options) *Step {
     });
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main1" });
-        exe.addObject(main_o);
-        exe.root_module.linkSystemLibrary("a", .{});
-        exe.root_module.linkSystemLibrary("b", .{});
-        exe.root_module.addLibraryPath(liba.getEmittedBinDirectory());
-        exe.root_module.addLibraryPath(libb.getEmittedBinDirectory());
-        exe.root_module.addRPath(liba.getEmittedBinDirectory());
-        exe.root_module.addRPath(libb.getEmittedBinDirectory());
+        const exe = add_executable(b, opts, .{ .name = "main1" });
+        exe.add_object(main_o);
+        exe.root_module.link_system_library("a", .{});
+        exe.root_module.link_system_library("b", .{});
+        exe.root_module.add_library_path(liba.get_emitted_bin_directory());
+        exe.root_module.add_library_path(libb.get_emitted_bin_directory());
+        exe.root_module.add_rpath(liba.get_emitted_bin_directory());
+        exe.root_module.add_rpath(libb.get_emitted_bin_directory());
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkExact("(undefined) external _getFoo (from liba)");
-        check.checkInSymtab();
-        check.checkExact("(undefined) external _printInA (from liba)");
-        check.checkInSymtab();
-        check.checkExact("(undefined) external _printInB (from libb)");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_exact("(undefined) external _getFoo (from liba)");
+        check.check_in_symtab();
+        check.check_exact("(undefined) external _printInA (from liba)");
+        check.check_in_symtab();
+        check.check_exact("(undefined) external _printInB (from libb)");
+        test_step.depend_on(&check.step);
 
-        const run = addRunArtifact(exe);
-        run.expectStdOutEqual(
-            \\main: getFoo()=1, ptr_to_foo=1
-            \\liba: getFoo()=1, ptr_to_foo=1
-            \\libb: getFoo()=2, ptr_to_foo=2
+        const run = add_run_artifact(exe);
+        run.expect_std_out_equal(
+            \\main: get_foo()=1, ptr_to_foo=1
+            \\liba: get_foo()=1, ptr_to_foo=1
+            \\libb: get_foo()=2, ptr_to_foo=2
             \\
         );
-        test_step.dependOn(&run.step);
+        test_step.depend_on(&run.step);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main2" });
-        exe.addObject(main_o);
-        exe.root_module.linkSystemLibrary("b", .{});
-        exe.root_module.linkSystemLibrary("a", .{});
-        exe.root_module.addLibraryPath(liba.getEmittedBinDirectory());
-        exe.root_module.addLibraryPath(libb.getEmittedBinDirectory());
-        exe.root_module.addRPath(liba.getEmittedBinDirectory());
-        exe.root_module.addRPath(libb.getEmittedBinDirectory());
+        const exe = add_executable(b, opts, .{ .name = "main2" });
+        exe.add_object(main_o);
+        exe.root_module.link_system_library("b", .{});
+        exe.root_module.link_system_library("a", .{});
+        exe.root_module.add_library_path(liba.get_emitted_bin_directory());
+        exe.root_module.add_library_path(libb.get_emitted_bin_directory());
+        exe.root_module.add_rpath(liba.get_emitted_bin_directory());
+        exe.root_module.add_rpath(libb.get_emitted_bin_directory());
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkExact("(undefined) external _getFoo (from libb)");
-        check.checkInSymtab();
-        check.checkExact("(undefined) external _printInA (from liba)");
-        check.checkInSymtab();
-        check.checkExact("(undefined) external _printInB (from libb)");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_exact("(undefined) external _getFoo (from libb)");
+        check.check_in_symtab();
+        check.check_exact("(undefined) external _printInA (from liba)");
+        check.check_in_symtab();
+        check.check_exact("(undefined) external _printInB (from libb)");
+        test_step.depend_on(&check.step);
 
-        const run = addRunArtifact(exe);
-        run.expectStdOutEqual(
-            \\main: getFoo()=2, ptr_to_foo=2
-            \\liba: getFoo()=1, ptr_to_foo=1
-            \\libb: getFoo()=2, ptr_to_foo=2
+        const run = add_run_artifact(exe);
+        run.expect_std_out_equal(
+            \\main: get_foo()=2, ptr_to_foo=2
+            \\liba: get_foo()=1, ptr_to_foo=1
+            \\libb: get_foo()=2, ptr_to_foo=2
             \\
         );
-        test_step.dependOn(&run.step);
+        test_step.depend_on(&run.step);
     }
 
     return test_step;
 }
 
 fn test_undefined_flag(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "undefined-flag", opts);
+    const test_step = add_test_step(b, "undefined-flag", opts);
 
-    const obj = addObject(b, opts, .{ .name = "a", .c_source_bytes = "int foo = 42;" });
+    const obj = add_object(b, opts, .{ .name = "a", .c_source_bytes = "int foo = 42;" });
 
-    const lib = addStaticLibrary(b, opts, .{ .name = "a" });
-    lib.addObject(obj);
+    const lib = add_static_library(b, opts, .{ .name = "a" });
+    lib.add_object(obj);
 
-    const main_o = addObject(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
+    const main_o = add_object(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main1" });
-        exe.addObject(main_o);
-        exe.linkLibrary(lib);
-        exe.forceUndefinedSymbol("_foo");
+        const exe = add_executable(b, opts, .{ .name = "main1" });
+        exe.add_object(main_o);
+        exe.link_library(lib);
+        exe.force_undefined_symbol("_foo");
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkContains("_foo");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_contains("_foo");
+        test_step.depend_on(&check.step);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main2" });
-        exe.addObject(main_o);
-        exe.linkLibrary(lib);
-        exe.forceUndefinedSymbol("_foo");
+        const exe = add_executable(b, opts, .{ .name = "main2" });
+        exe.add_object(main_o);
+        exe.link_library(lib);
+        exe.force_undefined_symbol("_foo");
         exe.link_gc_sections = true;
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkContains("_foo");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_contains("_foo");
+        test_step.depend_on(&check.step);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main3" });
-        exe.addObject(main_o);
-        exe.addObject(obj);
+        const exe = add_executable(b, opts, .{ .name = "main3" });
+        exe.add_object(main_o);
+        exe.add_object(obj);
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkContains("_foo");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_contains("_foo");
+        test_step.depend_on(&check.step);
     }
 
     {
-        const exe = addExecutable(b, opts, .{ .name = "main4" });
-        exe.addObject(main_o);
-        exe.addObject(obj);
+        const exe = add_executable(b, opts, .{ .name = "main4" });
+        exe.add_object(main_o);
+        exe.add_object(obj);
         exe.link_gc_sections = true;
 
-        const run = addRunArtifact(exe);
-        run.expectExitCode(0);
-        test_step.dependOn(&run.step);
+        const run = add_run_artifact(exe);
+        run.expect_exit_code(0);
+        test_step.depend_on(&run.step);
 
-        const check = exe.checkObject();
-        check.checkInSymtab();
-        check.checkNotPresent("_foo");
-        test_step.dependOn(&check.step);
+        const check = exe.check_object();
+        check.check_in_symtab();
+        check.check_not_present("_foo");
+        test_step.depend_on(&check.step);
     }
 
     return test_step;
 }
 
 fn test_unwind_info(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "unwind-info", opts);
+    const test_step = add_test_step(b, "unwind-info", opts);
 
     const all_h = all_h: {
         const wf = WriteFile.create(b);
@@ -2521,7 +2521,7 @@ fn test_unwind_info(b: *Build, opts: Options) *Step {
         );
     };
 
-    const main_o = addObject(b, opts, .{ .name = "main", .cpp_source_bytes = 
+    const main_o = add_object(b, opts, .{ .name = "main", .cpp_source_bytes = 
     \\#include "all.h"
     \\#include <cstdio>
     \\
@@ -2547,10 +2547,10 @@ fn test_unwind_info(b: *Build, opts: Options) *Step {
     \\  return 0;
     \\}
     });
-    main_o.root_module.addIncludePath(all_h.dirname());
-    main_o.linkLibCpp();
+    main_o.root_module.add_include_path(all_h.dirname());
+    main_o.link_lib_cpp();
 
-    const simple_string_o = addObject(b, opts, .{ .name = "simple_string", .cpp_source_bytes = 
+    const simple_string_o = add_object(b, opts, .{ .name = "simple_string", .cpp_source_bytes = 
     \\#include "all.h"
     \\#include <cstdio>
     \\#include <cstring>
@@ -2582,10 +2582,10 @@ fn test_unwind_info(b: *Build, opts: Options) *Step {
     \\  return true;
     \\}
     });
-    simple_string_o.root_module.addIncludePath(all_h.dirname());
-    simple_string_o.linkLibCpp();
+    simple_string_o.root_module.add_include_path(all_h.dirname());
+    simple_string_o.link_lib_cpp();
 
-    const simple_string_owner_o = addObject(b, opts, .{ .name = "simple_string_owner", .cpp_source_bytes = 
+    const simple_string_owner_o = add_object(b, opts, .{ .name = "simple_string_owner", .cpp_source_bytes = 
     \\#include "all.h"
     \\
     \\SimpleStringOwner::SimpleStringOwner(const char* x) : string{ 10 } {
@@ -2599,8 +2599,8 @@ fn test_unwind_info(b: *Build, opts: Options) *Step {
     \\  string.print("About to destroy");
     \\}
     });
-    simple_string_owner_o.root_module.addIncludePath(all_h.dirname());
-    simple_string_owner_o.linkLibCpp();
+    simple_string_owner_o.root_module.add_include_path(all_h.dirname());
+    simple_string_owner_o.link_lib_cpp();
 
     const exp_stdout =
         \\Constructed: a
@@ -2611,28 +2611,28 @@ fn test_unwind_info(b: *Build, opts: Options) *Step {
         \\
     ;
 
-    const exe = addExecutable(b, opts, .{ .name = "main" });
-    exe.addObject(main_o);
-    exe.addObject(simple_string_o);
-    exe.addObject(simple_string_owner_o);
-    exe.linkLibCpp();
+    const exe = add_executable(b, opts, .{ .name = "main" });
+    exe.add_object(main_o);
+    exe.add_object(simple_string_o);
+    exe.add_object(simple_string_owner_o);
+    exe.link_lib_cpp();
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual(exp_stdout);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal(exp_stdout);
+    test_step.depend_on(&run.step);
 
-    const check = exe.checkObject();
-    check.checkInSymtab();
-    check.checkContains("(was private external) ___gxx_personality_v0");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_symtab();
+    check.check_contains("(was private external) ___gxx_personality_v0");
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_unwind_info_no_subsections_arm64(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "unwind-info-no-subsections-arm64", opts);
+    const test_step = add_test_step(b, "unwind-info-no-subsections-arm64", opts);
 
-    const a_o = addObject(b, opts, .{ .name = "a", .asm_source_bytes = 
+    const a_o = add_object(b, opts, .{ .name = "a", .asm_source_bytes = 
     \\.globl _foo
     \\.align 4
     \\_foo:
@@ -2672,7 +2672,7 @@ fn test_unwind_info_no_subsections_arm64(b: *Build, opts: Options) *Step {
     \\  .cfi_endproc
     });
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\int foo();
     \\int main() {
@@ -2680,19 +2680,19 @@ fn test_unwind_info_no_subsections_arm64(b: *Build, opts: Options) *Step {
     \\  return 0;
     \\}
     });
-    exe.addObject(a_o);
+    exe.add_object(a_o);
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("4\n");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("4\n");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_unwind_info_no_subsections_x64(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "unwind-info-no-subsections-x64", opts);
+    const test_step = add_test_step(b, "unwind-info-no-subsections-x64", opts);
 
-    const a_o = addObject(b, opts, .{ .name = "a", .asm_source_bytes = 
+    const a_o = add_object(b, opts, .{ .name = "a", .asm_source_bytes = 
     \\.globl _foo
     \\_foo:
     \\  .cfi_startproc
@@ -2724,7 +2724,7 @@ fn test_unwind_info_no_subsections_x64(b: *Build, opts: Options) *Step {
     \\  .cfi_endproc
     });
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\int foo();
     \\int main() {
@@ -2732,20 +2732,20 @@ fn test_unwind_info_no_subsections_x64(b: *Build, opts: Options) *Step {
     \\  return 0;
     \\}
     });
-    exe.addObject(a_o);
+    exe.add_object(a_o);
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("4\n");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("4\n");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 // Adapted from https://github.com/llvm/llvm-project/blob/main/lld/test/MachO/weak-binding.s
 fn test_weak_bind(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "weak-bind", opts);
+    const test_step = add_test_step(b, "weak-bind", opts);
 
-    const lib = addSharedLibrary(b, opts, .{ .name = "foo", .asm_source_bytes = 
+    const lib = add_shared_library(b, opts, .{ .name = "foo", .asm_source_bytes = 
     \\.globl _weak_dysym
     \\.weak_definition _weak_dysym
     \\_weak_dysym:
@@ -2770,16 +2770,16 @@ fn test_weak_bind(b: *Build, opts: Options) *Step {
     });
 
     {
-        const check = lib.checkObject();
-        check.checkInExports();
-        check.checkExtract("[WEAK] {vmaddr1} _weak_dysym");
-        check.checkExtract("[WEAK] {vmaddr2} _weak_dysym_for_gotpcrel");
-        check.checkExtract("[WEAK] {vmaddr3} _weak_dysym_fn");
-        check.checkExtract("[THREAD_LOCAL, WEAK] {vmaddr4} _weak_dysym_tlv");
-        test_step.dependOn(&check.step);
+        const check = lib.check_object();
+        check.check_in_exports();
+        check.check_extract("[WEAK] {vmaddr1} _weak_dysym");
+        check.check_extract("[WEAK] {vmaddr2} _weak_dysym_for_gotpcrel");
+        check.check_extract("[WEAK] {vmaddr3} _weak_dysym_fn");
+        check.check_extract("[THREAD_LOCAL, WEAK] {vmaddr4} _weak_dysym_tlv");
+        test_step.depend_on(&check.step);
     }
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .asm_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .asm_source_bytes = 
     \\.globl _main, _weak_external, _weak_external_for_gotpcrel, _weak_external_fn
     \\.weak_definition _weak_external, _weak_external_for_gotpcrel, _weak_external_fn, _weak_internal, _weak_internal_for_gotpcrel, _weak_internal_fn
     \\
@@ -2836,66 +2836,66 @@ fn test_weak_bind(b: *Build, opts: Options) *Step {
     \\  .quad 0
     \\  .quad _weak_internal_tlv$tlv$init
     });
-    exe.linkLibrary(lib);
+    exe.link_library(lib);
 
     {
-        const check = exe.checkObject();
+        const check = exe.check_object();
 
-        check.checkInExports();
-        check.checkExtract("[WEAK] {vmaddr1} _weak_external");
-        check.checkExtract("[WEAK] {vmaddr2} _weak_external_for_gotpcrel");
-        check.checkExtract("[WEAK] {vmaddr3} _weak_external_fn");
-        check.checkExtract("[THREAD_LOCAL, WEAK] {vmaddr4} _weak_tlv");
+        check.check_in_exports();
+        check.check_extract("[WEAK] {vmaddr1} _weak_external");
+        check.check_extract("[WEAK] {vmaddr2} _weak_external_for_gotpcrel");
+        check.check_extract("[WEAK] {vmaddr3} _weak_external_fn");
+        check.check_extract("[THREAD_LOCAL, WEAK] {vmaddr4} _weak_tlv");
 
-        check.checkInDyldBind();
-        check.checkContains("(libfoo.dylib) _weak_dysym_for_gotpcrel");
-        check.checkContains("(libfoo.dylib) _weak_dysym_fn");
-        check.checkContains("(libfoo.dylib) _weak_dysym");
-        check.checkContains("(libfoo.dylib) _weak_dysym_tlv");
+        check.check_in_dyld_bind();
+        check.check_contains("(libfoo.dylib) _weak_dysym_for_gotpcrel");
+        check.check_contains("(libfoo.dylib) _weak_dysym_fn");
+        check.check_contains("(libfoo.dylib) _weak_dysym");
+        check.check_contains("(libfoo.dylib) _weak_dysym_tlv");
 
-        check.checkInDyldWeakBind();
-        check.checkContains("_weak_external_for_gotpcrel");
-        check.checkContains("_weak_dysym_for_gotpcrel");
-        check.checkContains("_weak_external_fn");
-        check.checkContains("_weak_dysym_fn");
-        check.checkContains("_weak_dysym");
-        check.checkContains("_weak_external");
-        check.checkContains("_weak_tlv");
-        check.checkContains("_weak_dysym_tlv");
+        check.check_in_dyld_weak_bind();
+        check.check_contains("_weak_external_for_gotpcrel");
+        check.check_contains("_weak_dysym_for_gotpcrel");
+        check.check_contains("_weak_external_fn");
+        check.check_contains("_weak_dysym_fn");
+        check.check_contains("_weak_dysym");
+        check.check_contains("_weak_external");
+        check.check_contains("_weak_tlv");
+        check.check_contains("_weak_dysym_tlv");
 
-        test_step.dependOn(&check.step);
+        test_step.depend_on(&check.step);
     }
 
-    const run = addRunArtifact(exe);
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_weak_framework(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "weak-framework", opts);
+    const test_step = add_test_step(b, "weak-framework", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
-    exe.root_module.linkFramework("Cocoa", .{ .weak = true });
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = "int main() { return 0; }" });
+    exe.root_module.link_framework("Cocoa", .{ .weak = true });
 
-    const run = addRunArtifact(exe);
-    run.expectExitCode(0);
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_exit_code(0);
+    test_step.depend_on(&run.step);
 
-    const check = exe.checkObject();
-    check.checkInHeaders();
-    check.checkExact("cmd LOAD_WEAK_DYLIB");
-    check.checkContains("Cocoa");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_headers();
+    check.check_exact("cmd LOAD_WEAK_DYLIB");
+    check.check_contains("Cocoa");
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn test_weak_library(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "weak-library", opts);
+    const test_step = add_test_step(b, "weak-library", opts);
 
-    const dylib = addSharedLibrary(b, opts, .{ .name = "a", .c_source_bytes = 
+    const dylib = add_shared_library(b, opts, .{ .name = "a", .c_source_bytes = 
     \\#include<stdio.h>
     \\int a = 42;
     \\const char* asStr() {
@@ -2905,7 +2905,7 @@ fn test_weak_library(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include<stdio.h>
     \\extern int a;
     \\extern const char* asStr();
@@ -2914,31 +2914,31 @@ fn test_weak_library(b: *Build, opts: Options) *Step {
     \\  return 0;
     \\}
     });
-    exe.root_module.linkSystemLibrary("a", .{ .weak = true });
-    exe.root_module.addLibraryPath(dylib.getEmittedBinDirectory());
-    exe.root_module.addRPath(dylib.getEmittedBinDirectory());
+    exe.root_module.link_system_library("a", .{ .weak = true });
+    exe.root_module.add_library_path(dylib.get_emitted_bin_directory());
+    exe.root_module.add_rpath(dylib.get_emitted_bin_directory());
 
-    const check = exe.checkObject();
-    check.checkInHeaders();
-    check.checkExact("cmd LOAD_WEAK_DYLIB");
-    check.checkContains("liba.dylib");
-    check.checkInSymtab();
-    check.checkExact("(undefined) weakref external _a (from liba)");
-    check.checkInSymtab();
-    check.checkExact("(undefined) weakref external _asStr (from liba)");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_headers();
+    check.check_exact("cmd LOAD_WEAK_DYLIB");
+    check.check_contains("liba.dylib");
+    check.check_in_symtab();
+    check.check_exact("(undefined) weakref external _a (from liba)");
+    check.check_in_symtab();
+    check.check_exact("(undefined) weakref external _asStr (from liba)");
+    test_step.depend_on(&check.step);
 
-    const run = addRunArtifact(exe);
-    run.expectStdOutEqual("42 42");
-    test_step.dependOn(&run.step);
+    const run = add_run_artifact(exe);
+    run.expect_std_out_equal("42 42");
+    test_step.depend_on(&run.step);
 
     return test_step;
 }
 
 fn test_weak_ref(b: *Build, opts: Options) *Step {
-    const test_step = addTestStep(b, "weak-ref", opts);
+    const test_step = add_test_step(b, "weak-ref", opts);
 
-    const exe = addExecutable(b, opts, .{ .name = "main", .c_source_bytes = 
+    const exe = add_executable(b, opts, .{ .name = "main", .c_source_bytes = 
     \\#include <stdio.h>
     \\#include <sys/_types/_fd_def.h>
     \\int main(int argc, char** argv) {
@@ -2946,27 +2946,27 @@ fn test_weak_ref(b: *Build, opts: Options) *Step {
     \\}
     });
 
-    const check = exe.checkObject();
-    check.checkInSymtab();
-    check.checkExact("(undefined) weakref external ___darwin_check_fd_set_overflow (from libSystem.B)");
-    test_step.dependOn(&check.step);
+    const check = exe.check_object();
+    check.check_in_symtab();
+    check.check_exact("(undefined) weakref external ___darwin_check_fd_set_overflow (from libSystem.B)");
+    test_step.depend_on(&check.step);
 
     return test_step;
 }
 
 fn add_test_step(b: *Build, comptime prefix: []const u8, opts: Options) *Step {
-    return link.addTestStep(b, "" ++ prefix, opts);
+    return link.add_test_step(b, "" ++ prefix, opts);
 }
 
 const builtin = @import("builtin");
-const addAsmSourceBytes = link.addAsmSourceBytes;
-const addCSourceBytes = link.addCSourceBytes;
-const addRunArtifact = link.addRunArtifact;
-const addObject = link.addObject;
-const addExecutable = link.addExecutable;
-const addStaticLibrary = link.addStaticLibrary;
-const addSharedLibrary = link.addSharedLibrary;
-const expectLinkErrors = link.expectLinkErrors;
+const add_asm_source_bytes = link.add_asm_source_bytes;
+const add_csource_bytes = link.add_csource_bytes;
+const add_run_artifact = link.add_run_artifact;
+const add_object = link.add_object;
+const add_executable = link.add_executable;
+const add_static_library = link.add_static_library;
+const add_shared_library = link.add_shared_library;
+const expect_link_errors = link.expect_link_errors;
 const link = @import("link.zig");
 const std = @import("std");
 

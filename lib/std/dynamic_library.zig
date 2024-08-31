@@ -17,7 +17,7 @@ pub const DynLib = struct {
             DlDynLib,
         .windows => WindowsDynLib,
         .macos, .tvos, .watchos, .ios, .visionos, .freebsd, .netbsd, .openbsd, .dragonfly, .solaris, .illumos => DlDynLib,
-        else => @compileError("unsupported platform"),
+        else => @compile_error("unsupported platform"),
     };
 
     inner: InnerType,
@@ -88,7 +88,7 @@ pub fn get_dynamic() ?[*]elf.Dyn {
 
 pub fn linkmap_iterator(phdrs: []elf.Phdr) error{InvalidExe}!LinkMap.Iterator {
     _ = phdrs;
-    const _DYNAMIC = get_DYNAMIC() orelse {
+    const _DYNAMIC = get_dynamic() orelse {
         // No PT_DYNAMIC means this is either a statically-linked program or a
         // badly corrupted dynamically-linked one.
         return .{ .current = null };
@@ -152,7 +152,7 @@ pub const ElfDynLib = struct {
         // corresponding to the actual LOAD sections.
         const file_bytes = try posix.mmap(
             null,
-            mem.alignForward(usize, size, mem.page_size),
+            mem.align_forward(usize, size, mem.page_size),
             posix.PROT.READ,
             .{ .TYPE = .PRIVATE },
             fd,
@@ -160,11 +160,11 @@ pub const ElfDynLib = struct {
         );
         defer posix.munmap(file_bytes);
 
-        const eh = @as(*elf.Ehdr, @ptrCast(file_bytes.ptr));
+        const eh = @as(*elf.Ehdr, @ptr_cast(file_bytes.ptr));
         if (!mem.eql(u8, eh.e_ident[0..4], elf.MAGIC)) return error.NotElfFile;
         if (eh.e_type != elf.ET.DYN) return error.NotDynamicLibrary;
 
-        const elf_addr = @intFromPtr(file_bytes.ptr);
+        const elf_addr = @int_from_ptr(file_bytes.ptr);
 
         // Iterate over the program header entries to find out the
         // dynamic vector as well as the total size of the virtual memory.
@@ -198,7 +198,7 @@ pub const ElfDynLib = struct {
         );
         errdefer posix.munmap(all_loaded_mem);
 
-        const base = @intFromPtr(all_loaded_mem.ptr);
+        const base = @int_from_ptr(all_loaded_mem.ptr);
 
         // Now iterate again and actually load all the program sections.
         {
@@ -215,9 +215,9 @@ pub const ElfDynLib = struct {
                         // extra nonsense mapped before/after the VirtAddr,MemSiz
                         const aligned_addr = (base + ph.p_vaddr) & ~(@as(usize, mem.page_size) - 1);
                         const extra_bytes = (base + ph.p_vaddr) - aligned_addr;
-                        const extended_memsz = mem.alignForward(usize, ph.p_memsz + extra_bytes, mem.page_size);
+                        const extended_memsz = mem.align_forward(usize, ph.p_memsz + extra_bytes, mem.page_size);
                         const ptr = @as([*]align(mem.page_size) u8, @ptrFromInt(aligned_addr));
-                        const prot = elfToMmapProt(ph.p_flags);
+                        const prot = elf_to_mmap_prot(ph.p_flags);
                         if ((ph.p_flags & elf.PF_W) == 0) {
                             // If it does not need write access, it can be mapped from the fd.
                             _ = try posix.mmap(
@@ -278,7 +278,7 @@ pub const ElfDynLib = struct {
 
     /// Trusts the file. Malicious file will be able to execute arbitrary code.
     pub fn open_z(path_c: [*:0]const u8) Error!ElfDynLib {
-        return open(mem.sliceTo(path_c, 0));
+        return open(mem.slice_to(path_c, 0));
     }
 
     /// Trusts the file
@@ -288,7 +288,7 @@ pub const ElfDynLib = struct {
     }
 
     pub fn lookup(self: *const ElfDynLib, comptime T: type, name: [:0]const u8) ?T {
-        if (self.lookupAddress("", name)) |symbol| {
+        if (self.lookup_address("", name)) |symbol| {
             return @as(T, @ptrFromInt(symbol));
         } else {
             return null;
@@ -305,15 +305,15 @@ pub const ElfDynLib = struct {
 
         var i: usize = 0;
         while (i < self.hashtab[1]) : (i += 1) {
-            if (0 == (@as(u32, 1) << @as(u5, @intCast(self.syms[i].st_info & 0xf)) & OK_TYPES)) continue;
-            if (0 == (@as(u32, 1) << @as(u5, @intCast(self.syms[i].st_info >> 4)) & OK_BINDS)) continue;
+            if (0 == (@as(u32, 1) << @as(u5, @int_cast(self.syms[i].st_info & 0xf)) & OK_TYPES)) continue;
+            if (0 == (@as(u32, 1) << @as(u5, @int_cast(self.syms[i].st_info >> 4)) & OK_BINDS)) continue;
             if (0 == self.syms[i].st_shndx) continue;
-            if (!mem.eql(u8, name, mem.sliceTo(self.strings + self.syms[i].st_name, 0))) continue;
+            if (!mem.eql(u8, name, mem.slice_to(self.strings + self.syms[i].st_name, 0))) continue;
             if (maybe_versym) |versym| {
                 if (!checkver(self.verdef.?, versym[i], vername, self.strings))
                     continue;
             }
-            return @intFromPtr(self.memory.ptr) + self.syms[i].st_value;
+            return @int_from_ptr(self.memory.ptr) + self.syms[i].st_value;
         }
 
         return null;
@@ -330,16 +330,16 @@ pub const ElfDynLib = struct {
 
 fn checkver(def_arg: *elf.Verdef, vsym_arg: i32, vername: []const u8, strings: [*:0]u8) bool {
     var def = def_arg;
-    const vsym = @as(u32, @bitCast(vsym_arg)) & 0x7fff;
+    const vsym = @as(u32, @bit_cast(vsym_arg)) & 0x7fff;
     while (true) {
         if (0 == (def.vd_flags & elf.VER_FLG_BASE) and (def.vd_ndx & 0x7fff) == vsym)
             break;
         if (def.vd_next == 0)
             return false;
-        def = @as(*elf.Verdef, @ptrFromInt(@intFromPtr(def) + def.vd_next));
+        def = @as(*elf.Verdef, @ptrFromInt(@int_from_ptr(def) + def.vd_next));
     }
-    const aux = @as(*elf.Verdaux, @ptrFromInt(@intFromPtr(def) + def.vd_aux));
-    return mem.eql(u8, vername, mem.sliceTo(strings + aux.vda_name, 0));
+    const aux = @as(*elf.Verdaux, @ptrFromInt(@int_from_ptr(def) + def.vd_aux));
+    return mem.eql(u8, vername, mem.slice_to(strings + aux.vda_name, 0));
 }
 
 test "ElfDynLib" {
@@ -347,7 +347,7 @@ test "ElfDynLib" {
         return error.SkipZigTest;
     }
 
-    try testing.expectError(error.FileNotFound, ElfDynLib.open("invalid_so.so"));
+    try testing.expect_error(error.FileNotFound, ElfDynLib.open("invalid_so.so"));
 }
 
 pub const WindowsDynLib = struct {
@@ -359,30 +359,30 @@ pub const WindowsDynLib = struct {
     dll: windows.HMODULE,
 
     pub fn open(path: []const u8) Error!WindowsDynLib {
-        return openEx(path, .none);
+        return open_ex(path, .none);
     }
 
     /// WindowsDynLib specific
     /// Opens dynamic library with specified library loading flags.
     pub fn open_ex(path: []const u8, flags: windows.LoadLibraryFlags) Error!WindowsDynLib {
-        const path_w = windows.sliceToPrefixedFileW(null, path) catch return error.InvalidPath;
-        return openExW(path_w.span().ptr, flags);
+        const path_w = windows.slice_to_prefixed_file_w(null, path) catch return error.InvalidPath;
+        return open_ex_w(path_w.span().ptr, flags);
     }
 
     pub fn open_z(path_c: [*:0]const u8) Error!WindowsDynLib {
-        return openExZ(path_c, .none);
+        return open_ex_z(path_c, .none);
     }
 
     /// WindowsDynLib specific
     /// Opens dynamic library with specified library loading flags.
     pub fn open_ex_z(path_c: [*:0]const u8, flags: windows.LoadLibraryFlags) Error!WindowsDynLib {
-        const path_w = try windows.cStrToPrefixedFileW(null, path_c);
-        return openExW(path_w.span().ptr, flags);
+        const path_w = try windows.c_str_to_prefixed_file_w(null, path_c);
+        return open_ex_w(path_w.span().ptr, flags);
     }
 
     /// WindowsDynLib specific
     pub fn open_w(path_w: [*:0]const u16) Error!WindowsDynLib {
-        return openExW(path_w, .none);
+        return open_ex_w(path_w, .none);
     }
 
     /// WindowsDynLib specific
@@ -406,7 +406,7 @@ pub const WindowsDynLib = struct {
 
     pub fn lookup(self: *WindowsDynLib, comptime T: type, name: [:0]const u8) ?T {
         if (windows.kernel32.GetProcAddress(self.dll, name.ptr)) |addr| {
-            return @as(T, @ptrCast(@alignCast(addr)));
+            return @as(T, @ptr_cast(@align_cast(addr)));
         } else {
             return null;
         }
@@ -419,8 +419,8 @@ pub const DlDynLib = struct {
     handle: *anyopaque,
 
     pub fn open(path: []const u8) Error!DlDynLib {
-        const path_c = try posix.toPosixPath(path);
-        return openZ(&path_c);
+        const path_c = try posix.to_posix_path(path);
+        return open_z(&path_c);
     }
 
     pub fn open_z(path_c: [*:0]const u8) Error!DlDynLib {
@@ -443,7 +443,7 @@ pub const DlDynLib = struct {
         // dlsym (and other dl-functions) secretly take shadow parameter - return address on stack
         // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66826
         if (@call(.never_tail, std.c.dlsym, .{ self.handle, name.ptr })) |symbol| {
-            return @as(T, @ptrCast(@alignCast(symbol)));
+            return @as(T, @ptr_cast(@align_cast(symbol)));
         } else {
             return null;
         }
@@ -451,7 +451,7 @@ pub const DlDynLib = struct {
 
     /// DlDynLib specific
     /// Returns human readable string describing most recent error than occurred from `lookup`
-    /// or `null` if no error has occurred since initialization or when `getError` was last called.
+    /// or `null` if no error has occurred since initialization or when `get_error` was last called.
     pub fn get_error() ?[:0]const u8 {
         return mem.span(std.c.dlerror());
     }
@@ -465,5 +465,5 @@ test "dynamic_library" {
         else => return error.SkipZigTest,
     };
 
-    try testing.expectError(error.FileNotFound, DynLib.open(libname));
+    try testing.expect_error(error.FileNotFound, DynLib.open(libname));
 }

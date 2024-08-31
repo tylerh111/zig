@@ -28,7 +28,7 @@ pub const StringifyOptions = struct {
 
     /// Arrays/slices of u8 are typically encoded as JSON strings.
     /// This option emits them as arrays of numbers instead.
-    /// Does not affect calls to `objectField*()`.
+    /// Does not affect calls to `object_field*()`.
     emit_strings_as_arrays: bool = false,
 
     /// Should unicode characters be escaped in strings?
@@ -41,13 +41,13 @@ pub const StringifyOptions = struct {
 /// Writes the given value to the `std.io.Writer` stream.
 /// See `WriteStream` for how the given value is serialized into JSON.
 /// The maximum nesting depth of the output JSON document is 256.
-/// See also `stringifyMaxDepth` and `stringifyArbitraryDepth`.
+/// See also `stringify_max_depth` and `stringify_arbitrary_depth`.
 pub fn stringify(
     value: anytype,
     options: StringifyOptions,
     out_stream: anytype,
 ) @TypeOf(out_stream).Error!void {
-    var jw = writeStream(out_stream, options);
+    var jw = write_stream(out_stream, options);
     defer jw.deinit();
     try jw.write(value);
 }
@@ -55,19 +55,19 @@ pub fn stringify(
 /// Like `stringify` with configurable nesting depth.
 /// `max_depth` is rounded up to the nearest multiple of 8.
 /// Give `null` for `max_depth` to disable some safety checks and allow arbitrary nesting depth.
-/// See `writeStreamMaxDepth` for more info.
+/// See `write_stream_max_depth` for more info.
 pub fn stringify_max_depth(
     value: anytype,
     options: StringifyOptions,
     out_stream: anytype,
     comptime max_depth: ?usize,
 ) @TypeOf(out_stream).Error!void {
-    var jw = writeStreamMaxDepth(out_stream, options, max_depth);
+    var jw = write_stream_max_depth(out_stream, options, max_depth);
     try jw.write(value);
 }
 
 /// Like `stringify` but takes an allocator to facilitate safety checks while allowing arbitrary nesting depth.
-/// These safety checks can be helpful when debugging custom `jsonStringify` implementations;
+/// These safety checks can be helpful when debugging custom `json_stringify` implementations;
 /// See `WriteStream`.
 pub fn stringify_arbitrary_depth(
     allocator: Allocator,
@@ -75,12 +75,12 @@ pub fn stringify_arbitrary_depth(
     options: StringifyOptions,
     out_stream: anytype,
 ) WriteStream(@TypeOf(out_stream), .checked_to_arbitrary_depth).Error!void {
-    var jw = writeStreamArbitraryDepth(allocator, out_stream, options);
+    var jw = write_stream_arbitrary_depth(allocator, out_stream, options);
     defer jw.deinit();
     try jw.write(value);
 }
 
-/// Calls `stringifyArbitraryDepth` and stores the result in dynamically allocated memory
+/// Calls `stringify_arbitrary_depth` and stores the result in dynamically allocated memory
 /// instead of taking a `std.io.Writer`.
 ///
 /// Caller owns returned memory.
@@ -91,19 +91,19 @@ pub fn stringify_alloc(
 ) error{OutOfMemory}![]u8 {
     var list = std.ArrayList(u8).init(allocator);
     errdefer list.deinit();
-    try stringifyArbitraryDepth(allocator, value, options, list.writer());
-    return list.toOwnedSlice();
+    try stringify_arbitrary_depth(allocator, value, options, list.writer());
+    return list.to_owned_slice();
 }
 
 /// See `WriteStream` for documentation.
-/// Equivalent to calling `writeStreamMaxDepth` with a depth of `256`.
+/// Equivalent to calling `write_stream_max_depth` with a depth of `256`.
 ///
 /// The caller does *not* need to call `deinit()` on the returned object.
 pub fn write_stream(
     out_stream: anytype,
     options: StringifyOptions,
 ) WriteStream(@TypeOf(out_stream), .{ .checked_to_fixed_depth = 256 }) {
-    return writeStreamMaxDepth(out_stream, options, 256);
+    return write_stream_max_depth(out_stream, options, 256);
 }
 
 /// See `WriteStream` for documentation.
@@ -113,7 +113,7 @@ pub fn write_stream(
 /// If the nesting depth exceeds `max_depth`, it is detectable illegal behavior.
 /// Give `null` for `max_depth` to disable safety checks for the grammar and allow arbitrary nesting depth.
 /// In `ReleaseFast` and `ReleaseSmall`, `max_depth` is ignored, effectively equivalent to passing `null`.
-/// Alternatively, see `writeStreamArbitraryDepth` to do safety checks to arbitrary depth.
+/// Alternatively, see `write_stream_arbitrary_depth` to do safety checks to arbitrary depth.
 ///
 /// The caller does *not* need to call `deinit()` on the returned object.
 pub fn write_stream_max_depth(
@@ -135,7 +135,7 @@ pub fn write_stream_max_depth(
 /// by using the given allocator.
 /// The caller should call `deinit()` on the returned object to free allocated memory.
 ///
-/// In `ReleaseFast` and `ReleaseSmall` mode, this function is effectively equivalent to calling `writeStreamMaxDepth(..., null)`;
+/// In `ReleaseFast` and `ReleaseSmall` mode, this function is effectively equivalent to calling `write_stream_max_depth(..., null)`;
 /// in those build modes, the allocator is *not used*.
 pub fn write_stream_arbitrary_depth(
     allocator: Allocator,
@@ -156,9 +156,9 @@ pub fn write_stream_arbitrary_depth(
 ///    | <array>
 ///    | write
 ///    | print
-///  <object> = beginObject ( <field> <value> )* endObject
-///  <field> = objectField | objectFieldRaw
-///  <array> = beginArray ( <value> )* endArray
+///  <object> = begin_object ( <field> <value> )* end_object
+///  <field> = object_field | object_field_raw
+///  <array> = begin_array ( <value> )* end_array
 /// ```
 ///
 /// Supported types:
@@ -246,21 +246,21 @@ pub fn WriteStream(
         }
 
         pub fn begin_array(self: *Self) Error!void {
-            try self.valueStart();
-            try self.stream.writeByte('[');
-            try self.pushIndentation(ARRAY_MODE);
+            try self.value_start();
+            try self.stream.write_byte('[');
+            try self.push_indentation(ARRAY_MODE);
             self.next_punctuation = .none;
         }
 
         pub fn begin_object(self: *Self) Error!void {
-            try self.valueStart();
-            try self.stream.writeByte('{');
-            try self.pushIndentation(OBJECT_MODE);
+            try self.value_start();
+            try self.stream.write_byte('{');
+            try self.push_indentation(OBJECT_MODE);
             self.next_punctuation = .none;
         }
 
         pub fn end_array(self: *Self) Error!void {
-            self.popIndentation(ARRAY_MODE);
+            self.pop_indentation(ARRAY_MODE);
             switch (self.next_punctuation) {
                 .none => {},
                 .comma => {
@@ -268,12 +268,12 @@ pub fn WriteStream(
                 },
                 .the_beginning, .colon => unreachable,
             }
-            try self.stream.writeByte(']');
-            self.valueDone();
+            try self.stream.write_byte(']');
+            self.value_done();
         }
 
         pub fn end_object(self: *Self) Error!void {
-            self.popIndentation(OBJECT_MODE);
+            self.pop_indentation(OBJECT_MODE);
             switch (self.next_punctuation) {
                 .none => {},
                 .comma => {
@@ -281,8 +281,8 @@ pub fn WriteStream(
                 },
                 .the_beginning, .colon => unreachable,
             }
-            try self.stream.writeByte('}');
-            self.valueDone();
+            try self.stream.write_byte('}');
+            self.value_done();
         }
 
         fn push_indentation(self: *Self, mode: u1) !void {
@@ -292,7 +292,7 @@ pub fn WriteStream(
                     self.indent_level += 1;
                 },
                 .checked_to_fixed_depth => {
-                    BitStack.pushWithStateAssumeCapacity(&self.nesting_stack, &self.indent_level, mode);
+                    BitStack.push_with_state_assume_capacity(&self.nesting_stack, &self.indent_level, mode);
                 },
                 .assumed_correct => {
                     self.indent_level += 1;
@@ -306,7 +306,7 @@ pub fn WriteStream(
                     self.indent_level -= 1;
                 },
                 .checked_to_fixed_depth => {
-                    assert(BitStack.popWithState(&self.nesting_stack, &self.indent_level) == assert_its_this_one);
+                    assert(BitStack.pop_with_state(&self.nesting_stack, &self.indent_level) == assert_its_this_one);
                 },
                 .assumed_correct => {
                     self.indent_level -= 1;
@@ -328,20 +328,20 @@ pub fn WriteStream(
                     break :blk self.indent_level;
                 },
             };
-            try self.stream.writeByte('\n');
-            try self.stream.writeByteNTimes(char, n_chars);
+            try self.stream.write_byte('\n');
+            try self.stream.write_byte_ntimes(char, n_chars);
         }
 
         fn value_start(self: *Self) !void {
-            if (self.isObjectKeyExpected()) |is_it| assert(!is_it); // Call objectField*(), not write(), for object keys.
-            return self.valueStartAssumeTypeOk();
+            if (self.is_object_key_expected()) |is_it| assert(!is_it); // Call object_field*(), not write(), for object keys.
+            return self.value_start_assume_type_ok();
         }
         fn object_field_start(self: *Self) !void {
-            if (self.isObjectKeyExpected()) |is_it| assert(is_it); // Expected write(), not objectField*().
-            return self.valueStartAssumeTypeOk();
+            if (self.is_object_key_expected()) |is_it| assert(is_it); // Expected write(), not object_field*().
+            return self.value_start_assume_type_ok();
         }
         fn value_start_assume_type_ok(self: *Self) !void {
-            assert(!self.isComplete()); // JSON document already complete.
+            assert(!self.is_complete()); // JSON document already complete.
             switch (self.next_punctuation) {
                 .the_beginning => {
                     // No indentation for the very beginning.
@@ -352,13 +352,13 @@ pub fn WriteStream(
                 },
                 .comma => {
                     // Subsequent item in a container.
-                    try self.stream.writeByte(',');
+                    try self.stream.write_byte(',');
                     try self.indent();
                 },
                 .colon => {
-                    try self.stream.writeByte(':');
+                    try self.stream.write_byte(':');
                     if (self.options.whitespace != .minified) {
-                        try self.stream.writeByte(' ');
+                        try self.stream.write_byte(' ');
                     }
                 },
             }
@@ -374,7 +374,7 @@ pub fn WriteStream(
                     self.nesting_stack.peek() == OBJECT_MODE and
                     self.next_punctuation != .colon,
                 .checked_to_fixed_depth => return self.indent_level > 0 and
-                    BitStack.peekWithState(&self.nesting_stack, self.indent_level) == OBJECT_MODE and
+                    BitStack.peek_with_state(&self.nesting_stack, self.indent_level) == OBJECT_MODE and
                     self.next_punctuation != .colon,
                 .assumed_correct => return null,
             }
@@ -389,28 +389,28 @@ pub fn WriteStream(
         /// e.g. `"1"`, `"[]"`, `"[1,2]"`, not `"1,2"`.
         /// This function may be useful for doing your own number formatting.
         pub fn print(self: *Self, comptime fmt: []const u8, args: anytype) Error!void {
-            try self.valueStart();
+            try self.value_start();
             try self.stream.print(fmt, args);
-            self.valueDone();
+            self.value_done();
         }
 
         /// See `WriteStream` for when to call this method.
         /// `key` is the string content of the property name.
         /// Surrounding quotes will be added and any special characters will be escaped.
-        /// See also `objectFieldRaw`.
+        /// See also `object_field_raw`.
         pub fn object_field(self: *Self, key: []const u8) Error!void {
-            try self.objectFieldStart();
-            try encodeJsonString(key, self.options, self.stream);
+            try self.object_field_start();
+            try encode_json_string(key, self.options, self.stream);
             self.next_punctuation = .colon;
         }
         /// See `WriteStream` for when to call this method.
         /// `quoted_key` is the complete bytes of the key including quotes and any necessary escape sequences.
         /// A few assertions are performed on the given value to ensure that the caller of this function understands the API contract.
-        /// See also `objectField`.
+        /// See also `object_field`.
         pub fn object_field_raw(self: *Self, quoted_key: []const u8) Error!void {
             assert(quoted_key.len >= 2 and quoted_key[0] == '"' and quoted_key[quoted_key.len - 1] == '"'); // quoted_key should be "quoted".
-            try self.objectFieldStart();
-            try self.stream.writeAll(quoted_key);
+            try self.object_field_start();
+            try self.stream.write_all(quoted_key);
             self.next_punctuation = .colon;
         }
 
@@ -419,7 +419,7 @@ pub fn WriteStream(
             const T = @TypeOf(value);
             switch (@typeInfo(T)) {
                 .Int => {
-                    try self.valueStart();
+                    try self.value_start();
                     if (self.options.emit_nonportable_numbers_as_strings and
                         (value <= -(1 << 53) or value >= (1 << 53)))
                     {
@@ -427,35 +427,35 @@ pub fn WriteStream(
                     } else {
                         try self.stream.print("{}", .{value});
                     }
-                    self.valueDone();
+                    self.value_done();
                     return;
                 },
                 .ComptimeInt => {
                     return self.write(@as(std.math.IntFittingRange(value, value), value));
                 },
                 .Float, .ComptimeFloat => {
-                    if (@as(f64, @floatCast(value)) == value) {
-                        try self.valueStart();
-                        try self.stream.print("{}", .{@as(f64, @floatCast(value))});
-                        self.valueDone();
+                    if (@as(f64, @float_cast(value)) == value) {
+                        try self.value_start();
+                        try self.stream.print("{}", .{@as(f64, @float_cast(value))});
+                        self.value_done();
                         return;
                     }
-                    try self.valueStart();
+                    try self.value_start();
                     try self.stream.print("\"{}\"", .{value});
-                    self.valueDone();
+                    self.value_done();
                     return;
                 },
 
                 .Bool => {
-                    try self.valueStart();
-                    try self.stream.writeAll(if (value) "true" else "false");
-                    self.valueDone();
+                    try self.value_start();
+                    try self.stream.write_all(if (value) "true" else "false");
+                    self.value_done();
                     return;
                 },
                 .Null => {
-                    try self.valueStart();
-                    try self.stream.writeAll("null");
-                    self.valueDone();
+                    try self.value_start();
+                    try self.stream.write_all("null");
+                    self.value_done();
                     return;
                 },
                 .Optional => {
@@ -466,27 +466,27 @@ pub fn WriteStream(
                     }
                 },
                 .Enum, .EnumLiteral => {
-                    if (std.meta.hasFn(T, "jsonStringify")) {
-                        return value.jsonStringify(self);
+                    if (std.meta.has_fn(T, "json_stringify")) {
+                        return value.json_stringify(self);
                     }
 
-                    return self.stringValue(@tagName(value));
+                    return self.string_value(@tag_name(value));
                 },
                 .Union => {
-                    if (std.meta.hasFn(T, "jsonStringify")) {
-                        return value.jsonStringify(self);
+                    if (std.meta.has_fn(T, "json_stringify")) {
+                        return value.json_stringify(self);
                     }
 
                     const info = @typeInfo(T).Union;
                     if (info.tag_type) |UnionTagType| {
-                        try self.beginObject();
+                        try self.begin_object();
                         inline for (info.fields) |u_field| {
                             if (value == @field(UnionTagType, u_field.name)) {
-                                try self.objectField(u_field.name);
+                                try self.object_field(u_field.name);
                                 if (u_field.type == void) {
                                     // void value is {}
-                                    try self.beginObject();
-                                    try self.endObject();
+                                    try self.begin_object();
+                                    try self.end_object();
                                 } else {
                                     try self.write(@field(value, u_field.name));
                                 }
@@ -495,21 +495,21 @@ pub fn WriteStream(
                         } else {
                             unreachable; // No active tag?
                         }
-                        try self.endObject();
+                        try self.end_object();
                         return;
                     } else {
-                        @compileError("Unable to stringify untagged union '" ++ @typeName(T) ++ "'");
+                        @compile_error("Unable to stringify untagged union '" ++ @type_name(T) ++ "'");
                     }
                 },
                 .Struct => |S| {
-                    if (std.meta.hasFn(T, "jsonStringify")) {
-                        return value.jsonStringify(self);
+                    if (std.meta.has_fn(T, "json_stringify")) {
+                        return value.json_stringify(self);
                     }
 
                     if (S.is_tuple) {
-                        try self.beginArray();
+                        try self.begin_array();
                     } else {
-                        try self.beginObject();
+                        try self.begin_object();
                     }
                     inline for (S.fields) |Field| {
                         // don't include void fields
@@ -528,19 +528,19 @@ pub fn WriteStream(
 
                         if (emit_field) {
                             if (!S.is_tuple) {
-                                try self.objectField(Field.name);
+                                try self.object_field(Field.name);
                             }
                             try self.write(@field(value, Field.name));
                         }
                     }
                     if (S.is_tuple) {
-                        try self.endArray();
+                        try self.end_array();
                     } else {
-                        try self.endObject();
+                        try self.end_object();
                     }
                     return;
                 },
-                .ErrorSet => return self.stringValue(@errorName(value)),
+                .ErrorSet => return self.string_value(@errorName(value)),
                 .Pointer => |ptr_info| switch (ptr_info.size) {
                     .One => switch (@typeInfo(ptr_info.child)) {
                         .Array => {
@@ -554,24 +554,24 @@ pub fn WriteStream(
                     },
                     .Many, .Slice => {
                         if (ptr_info.size == .Many and ptr_info.sentinel == null)
-                            @compileError("unable to stringify type '" ++ @typeName(T) ++ "' without sentinel");
+                            @compile_error("unable to stringify type '" ++ @type_name(T) ++ "' without sentinel");
                         const slice = if (ptr_info.size == .Many) std.mem.span(value) else value;
 
                         if (ptr_info.child == u8) {
                             // This is a []const u8, or some similar Zig string.
-                            if (!self.options.emit_strings_as_arrays and std.unicode.utf8ValidateSlice(slice)) {
-                                return self.stringValue(slice);
+                            if (!self.options.emit_strings_as_arrays and std.unicode.utf8_validate_slice(slice)) {
+                                return self.string_value(slice);
                             }
                         }
 
-                        try self.beginArray();
+                        try self.begin_array();
                         for (slice) |x| {
                             try self.write(x);
                         }
-                        try self.endArray();
+                        try self.end_array();
                         return;
                     },
-                    else => @compileError("Unable to stringify type '" ++ @typeName(T) ++ "'"),
+                    else => @compile_error("Unable to stringify type '" ++ @type_name(T) ++ "'"),
                 },
                 .Array => {
                     // Coerce `[N]T` to `*const [N]T` (and then to `[]const T`).
@@ -581,15 +581,15 @@ pub fn WriteStream(
                     const array: [info.len]info.child = value;
                     return self.write(&array);
                 },
-                else => @compileError("Unable to stringify type '" ++ @typeName(T) ++ "'"),
+                else => @compile_error("Unable to stringify type '" ++ @type_name(T) ++ "'"),
             }
             unreachable;
         }
 
         fn string_value(self: *Self, s: []const u8) !void {
-            try self.valueStart();
-            try encodeJsonString(s, self.options, self.stream);
-            self.valueDone();
+            try self.value_start();
+            try encode_json_string(s, self.options, self.stream);
+            self.value_done();
         }
     };
 }
@@ -599,39 +599,39 @@ fn output_unicode_escape(codepoint: u21, out_stream: anytype) !void {
         // If the character is in the Basic Multilingual Plane (U+0000 through U+FFFF),
         // then it may be represented as a six-character sequence: a reverse solidus, followed
         // by the lowercase letter u, followed by four hexadecimal digits that encode the character's code point.
-        try out_stream.writeAll("\\u");
-        try std.fmt.formatIntValue(codepoint, "x", std.fmt.FormatOptions{ .width = 4, .fill = '0' }, out_stream);
+        try out_stream.write_all("\\u");
+        try std.fmt.format_int_value(codepoint, "x", std.fmt.FormatOptions{ .width = 4, .fill = '0' }, out_stream);
     } else {
         assert(codepoint <= 0x10FFFF);
         // To escape an extended character that is not in the Basic Multilingual Plane,
         // the character is represented as a 12-character sequence, encoding the UTF-16 surrogate pair.
-        const high = @as(u16, @intCast((codepoint - 0x10000) >> 10)) + 0xD800;
-        const low = @as(u16, @intCast(codepoint & 0x3FF)) + 0xDC00;
-        try out_stream.writeAll("\\u");
-        try std.fmt.formatIntValue(high, "x", std.fmt.FormatOptions{ .width = 4, .fill = '0' }, out_stream);
-        try out_stream.writeAll("\\u");
-        try std.fmt.formatIntValue(low, "x", std.fmt.FormatOptions{ .width = 4, .fill = '0' }, out_stream);
+        const high = @as(u16, @int_cast((codepoint - 0x10000) >> 10)) + 0xD800;
+        const low = @as(u16, @int_cast(codepoint & 0x3FF)) + 0xDC00;
+        try out_stream.write_all("\\u");
+        try std.fmt.format_int_value(high, "x", std.fmt.FormatOptions{ .width = 4, .fill = '0' }, out_stream);
+        try out_stream.write_all("\\u");
+        try std.fmt.format_int_value(low, "x", std.fmt.FormatOptions{ .width = 4, .fill = '0' }, out_stream);
     }
 }
 
 fn output_special_escape(c: u8, writer: anytype) !void {
     switch (c) {
-        '\\' => try writer.writeAll("\\\\"),
-        '\"' => try writer.writeAll("\\\""),
-        0x08 => try writer.writeAll("\\b"),
-        0x0C => try writer.writeAll("\\f"),
-        '\n' => try writer.writeAll("\\n"),
-        '\r' => try writer.writeAll("\\r"),
-        '\t' => try writer.writeAll("\\t"),
-        else => try outputUnicodeEscape(c, writer),
+        '\\' => try writer.write_all("\\\\"),
+        '\"' => try writer.write_all("\\\""),
+        0x08 => try writer.write_all("\\b"),
+        0x0C => try writer.write_all("\\f"),
+        '\n' => try writer.write_all("\\n"),
+        '\r' => try writer.write_all("\\r"),
+        '\t' => try writer.write_all("\\t"),
+        else => try output_unicode_escape(c, writer),
     }
 }
 
 /// Write `string` to `writer` as a JSON encoded string.
 pub fn encode_json_string(string: []const u8, options: StringifyOptions, writer: anytype) !void {
-    try writer.writeByte('\"');
-    try encodeJsonStringChars(string, options, writer);
-    try writer.writeByte('\"');
+    try writer.write_byte('\"');
+    try encode_json_string_chars(string, options, writer);
+    try writer.write_byte('\"');
 }
 
 /// Write `chars` to `writer` as JSON encoded string characters.
@@ -645,15 +645,15 @@ pub fn encode_json_string_chars(chars: []const u8, options: StringifyOptions, wr
                 0x20...0x21, 0x23...0x5B, 0x5D...0x7E => {},
                 0x00...0x1F, '\\', '\"' => {
                     // Always must escape these.
-                    try writer.writeAll(chars[write_cursor..i]);
-                    try outputSpecialEscape(chars[i], writer);
+                    try writer.write_all(chars[write_cursor..i]);
+                    try output_special_escape(chars[i], writer);
                     write_cursor = i + 1;
                 },
                 0x7F...0xFF => {
-                    try writer.writeAll(chars[write_cursor..i]);
-                    const ulen = std.unicode.utf8ByteSequenceLength(chars[i]) catch unreachable;
-                    const codepoint = std.unicode.utf8Decode(chars[i..][0..ulen]) catch unreachable;
-                    try outputUnicodeEscape(codepoint, writer);
+                    try writer.write_all(chars[write_cursor..i]);
+                    const ulen = std.unicode.utf8_byte_sequence_length(chars[i]) catch unreachable;
+                    const codepoint = std.unicode.utf8_decode(chars[i..][0..ulen]) catch unreachable;
+                    try output_unicode_escape(codepoint, writer);
                     i += ulen - 1;
                     write_cursor = i + 1;
                 },
@@ -666,14 +666,14 @@ pub fn encode_json_string_chars(chars: []const u8, options: StringifyOptions, wr
                 0x20...0x21, 0x23...0x5B, 0x5D...0xFF => {},
                 0x00...0x1F, '\\', '\"' => {
                     // Always must escape these.
-                    try writer.writeAll(chars[write_cursor..i]);
-                    try outputSpecialEscape(chars[i], writer);
+                    try writer.write_all(chars[write_cursor..i]);
+                    try output_special_escape(chars[i], writer);
                     write_cursor = i + 1;
                 },
             }
         }
     }
-    try writer.writeAll(chars[write_cursor..chars.len]);
+    try writer.write_all(chars[write_cursor..chars.len]);
 }
 
 test {

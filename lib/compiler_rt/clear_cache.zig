@@ -51,11 +51,11 @@ fn clear_cache(start: usize, end: usize) callconv(.C) void {
     if (x86) {
         // Intel processors have a unified instruction and data cache
         // so there is nothing to do
-        exportIt();
+        export_it();
     } else if (os == .windows and (arm32 or arm64)) {
         // TODO
         // FlushInstructionCache(GetCurrentProcess(), start, end - start);
-        // exportIt();
+        // export_it();
     } else if (arm32 and !apple) {
         switch (os) {
             .freebsd, .netbsd => {
@@ -63,14 +63,14 @@ fn clear_cache(start: usize, end: usize) callconv(.C) void {
                     .addr = start,
                     .len = end - start,
                 };
-                const result = sysarch(ARM_SYNC_ICACHE, @intFromPtr(&arg));
+                const result = sysarch(ARM_SYNC_ICACHE, @int_from_ptr(&arg));
                 std.debug.assert(result == 0);
-                exportIt();
+                export_it();
             },
             .linux => {
                 const result = std.os.linux.syscall3(.cacheflush, start, end, 0);
                 std.debug.assert(result == 0);
-                exportIt();
+                export_it();
             },
             else => {},
         }
@@ -78,15 +78,15 @@ fn clear_cache(start: usize, end: usize) callconv(.C) void {
         const flags = 3; // ICACHE | DCACHE
         const result = std.os.linux.syscall3(.cacheflush, start, end - start, flags);
         std.debug.assert(result == 0);
-        exportIt();
+        export_it();
     } else if (mips and os == .openbsd) {
         // TODO
         //cacheflush(start, (uintptr_t)end - (uintptr_t)start, BCACHE);
-        // exportIt();
+        // export_it();
     } else if (os == .linux and riscv) {
         const result = std.os.linux.syscall3(.riscv_flush_icache, start, end - start, 0);
         std.debug.assert(result == 0);
-        exportIt();
+        export_it();
     } else if (arm64 and !apple) {
         // Get Cache Type Info.
         // TODO memoize this?
@@ -102,7 +102,7 @@ fn clear_cache(start: usize, end: usize) callconv(.C) void {
         // If CTR_EL0.IDC is set, data cache cleaning to the point of unification
         // is not required for instruction to data coherence.
         if (((ctr_el0 >> 28) & 0x1) == 0x0) {
-            const dcache_line_size = @as(usize, 4) << @intCast((ctr_el0 >> 16) & 15);
+            const dcache_line_size = @as(usize, 4) << @int_cast((ctr_el0 >> 16) & 15);
             addr = start & ~(dcache_line_size - 1);
             while (addr < end) : (addr += dcache_line_size) {
                 asm volatile ("dc cvau, %[addr]"
@@ -115,7 +115,7 @@ fn clear_cache(start: usize, end: usize) callconv(.C) void {
         // If CTR_EL0.DIC is set, instruction cache invalidation to the point of
         // unification is not required for instruction to data coherence.
         if (((ctr_el0 >> 29) & 0x1) == 0x0) {
-            const icache_line_size = @as(usize, 4) << @intCast((ctr_el0 >> 0) & 15);
+            const icache_line_size = @as(usize, 4) << @int_cast((ctr_el0 >> 0) & 15);
             addr = start & ~(icache_line_size - 1);
             while (addr < end) : (addr += icache_line_size) {
                 asm volatile ("ic ivau, %[addr]"
@@ -125,7 +125,7 @@ fn clear_cache(start: usize, end: usize) callconv(.C) void {
             }
         }
         asm volatile ("isb sy");
-        exportIt();
+        export_it();
     } else if (powerpc64) {
         // TODO
         //const size_t line_size = 32;
@@ -142,7 +142,7 @@ fn clear_cache(start: usize, end: usize) callconv(.C) void {
         //for (uintptr_t line = start_line; line < end_line; line += line_size)
         //  __asm__ volatile("icbi 0, %0" : : "r"(line));
         //__asm__ volatile("isync");
-        // exportIt();
+        // export_it();
     } else if (sparc) {
         // TODO
         //const size_t dword_size = 8;
@@ -154,11 +154,11 @@ fn clear_cache(start: usize, end: usize) callconv(.C) void {
         //
         //for (uintptr_t dword = start_dword; dword < end_dword; dword += dword_size)
         //  __asm__ volatile("flush %0" : : "r"(dword));
-        // exportIt();
+        // export_it();
     } else if (apple) {
         // On Darwin, sys_icache_invalidate() provides this functionality
         sys_icache_invalidate(start, end - start);
-        exportIt();
+        export_it();
     }
 }
 

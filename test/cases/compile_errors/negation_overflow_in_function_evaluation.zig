@@ -4,7 +4,7 @@ fn neg(x: i8) i8 {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&y));
+    return @size_of(@TypeOf(&y));
 }
 
 // error

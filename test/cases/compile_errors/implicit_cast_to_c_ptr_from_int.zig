@@ -1,9 +1,9 @@
 const std = @import("std");
 export fn entry1() void {
-    _ = @as([*c]u8, @as(u65, std.math.maxInt(u65)));
+    _ = @as([*c]u8, @as(u65, std.math.max_int(u65)));
 }
 export fn entry2() void {
-    _ = @as([*c]u8, std.math.maxInt(u65));
+    _ = @as([*c]u8, std.math.max_int(u65));
 }
 
 // error

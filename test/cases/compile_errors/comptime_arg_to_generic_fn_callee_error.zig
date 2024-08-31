@@ -10,7 +10,7 @@ const MyStruct = struct {
 const List = std.MultiArrayList(MyStruct);
 pub export fn entry() void {
     var list = List{};
-    _ = MyStruct.getA(&list);
+    _ = MyStruct.get_a(&list);
 }
 
 // error

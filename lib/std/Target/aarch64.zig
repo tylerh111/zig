@@ -235,38 +235,38 @@ pub const Feature = enum {
     zcz_gp,
 };
 
-pub const featureSet = CpuFeature.feature_set_fns(Feature).featureSet;
-pub const featureSetHas = CpuFeature.feature_set_fns(Feature).featureSetHas;
-pub const featureSetHasAny = CpuFeature.feature_set_fns(Feature).featureSetHasAny;
-pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
+pub const feature_set = CpuFeature.feature_set_fns(Feature).feature_set;
+pub const feature_set_has = CpuFeature.feature_set_fns(Feature).feature_set_has;
+pub const feature_set_has_any = CpuFeature.feature_set_fns(Feature).feature_set_has_any;
+pub const feature_set_has_all = CpuFeature.feature_set_fns(Feature).feature_set_has_all;
 
 pub const all_features = blk: {
     @setEvalBranchQuota(2000);
     const len = @typeInfo(Feature).Enum.fields.len;
     std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
     var result: [len]CpuFeature = undefined;
-    result[@intFromEnum(Feature.a510)] = .{
+    result[@int_from_enum(Feature.a510)] = .{
         .llvm_name = "a510",
         .description = "Cortex-A510 ARM processors",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .fuse_adrp_add,
             .fuse_aes,
             .use_postra_scheduler,
         }),
     };
-    result[@intFromEnum(Feature.a520)] = .{
+    result[@int_from_enum(Feature.a520)] = .{
         .llvm_name = "a520",
         .description = "Cortex-A520 ARM processors",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .fuse_adrp_add,
             .fuse_aes,
             .use_postra_scheduler,
         }),
     };
-    result[@intFromEnum(Feature.a65)] = .{
+    result[@int_from_enum(Feature.a65)] = .{
         .llvm_name = "a65",
         .description = "Cortex-A65 ARM processors",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .enable_select_opt,
             .fuse_address,
             .fuse_adrp_add,
@@ -275,10 +275,10 @@ pub const all_features = blk: {
             .predictable_select_expensive,
         }),
     };
-    result[@intFromEnum(Feature.a710)] = .{
+    result[@int_from_enum(Feature.a710)] = .{
         .llvm_name = "a710",
         .description = "Cortex-A710 ARM processors",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .cmp_bcc_fusion,
@@ -289,10 +289,10 @@ pub const all_features = blk: {
             .use_postra_scheduler,
         }),
     };
-    result[@intFromEnum(Feature.a720)] = .{
+    result[@int_from_enum(Feature.a720)] = .{
         .llvm_name = "a720",
         .description = "Cortex-A720 ARM processors",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .cmp_bcc_fusion,
@@ -303,10 +303,10 @@ pub const all_features = blk: {
             .use_postra_scheduler,
         }),
     };
-    result[@intFromEnum(Feature.a76)] = .{
+    result[@int_from_enum(Feature.a76)] = .{
         .llvm_name = "a76",
         .description = "Cortex-A76 ARM processors",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .enable_select_opt,
@@ -315,10 +315,10 @@ pub const all_features = blk: {
             .predictable_select_expensive,
         }),
     };
-    result[@intFromEnum(Feature.a78)] = .{
+    result[@int_from_enum(Feature.a78)] = .{
         .llvm_name = "a78",
         .description = "Cortex-A78 ARM processors",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .cmp_bcc_fusion,
@@ -329,10 +329,10 @@ pub const all_features = blk: {
             .use_postra_scheduler,
         }),
     };
-    result[@intFromEnum(Feature.a78c)] = .{
+    result[@int_from_enum(Feature.a78c)] = .{
         .llvm_name = "a78c",
         .description = "Cortex-A78C ARM processors",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .cmp_bcc_fusion,
@@ -343,1087 +343,1087 @@ pub const all_features = blk: {
             .use_postra_scheduler,
         }),
     };
-    result[@intFromEnum(Feature.addr_lsl_fast)] = .{
+    result[@int_from_enum(Feature.addr_lsl_fast)] = .{
         .llvm_name = "addr-lsl-fast",
         .description = "Address operands with logical shift of up to 3 places are cheap",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.aes)] = .{
+    result[@int_from_enum(Feature.aes)] = .{
         .llvm_name = "aes",
         .description = "Enable AES support (FEAT_AES, FEAT_PMULL)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .neon,
         }),
     };
-    result[@intFromEnum(Feature.aggressive_fma)] = .{
+    result[@int_from_enum(Feature.aggressive_fma)] = .{
         .llvm_name = "aggressive-fma",
         .description = "Enable Aggressive FMA for floating-point.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.alternate_sextload_cvt_f32_pattern)] = .{
+    result[@int_from_enum(Feature.alternate_sextload_cvt_f32_pattern)] = .{
         .llvm_name = "alternate-sextload-cvt-f32-pattern",
         .description = "Use alternative pattern for sextload convert to f32",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.altnzcv)] = .{
+    result[@int_from_enum(Feature.altnzcv)] = .{
         .llvm_name = "altnzcv",
         .description = "Enable alternative NZCV format for floating point comparisons (FEAT_FlagM2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.alu_lsl_fast)] = .{
+    result[@int_from_enum(Feature.alu_lsl_fast)] = .{
         .llvm_name = "alu-lsl-fast",
         .description = "Add/Sub operations with lsl shift <= 4 are cheap",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.am)] = .{
+    result[@int_from_enum(Feature.am)] = .{
         .llvm_name = "am",
         .description = "Enable v8.4-A Activity Monitors extension (FEAT_AMUv1)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.amvs)] = .{
+    result[@int_from_enum(Feature.amvs)] = .{
         .llvm_name = "amvs",
         .description = "Enable v8.6-A Activity Monitors Virtualization support (FEAT_AMUv1p1)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .am,
         }),
     };
-    result[@intFromEnum(Feature.arith_bcc_fusion)] = .{
+    result[@int_from_enum(Feature.arith_bcc_fusion)] = .{
         .llvm_name = "arith-bcc-fusion",
         .description = "CPU fuses arithmetic+bcc operations",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.arith_cbz_fusion)] = .{
+    result[@int_from_enum(Feature.arith_cbz_fusion)] = .{
         .llvm_name = "arith-cbz-fusion",
         .description = "CPU fuses arithmetic + cbz/cbnz operations",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ascend_store_address)] = .{
+    result[@int_from_enum(Feature.ascend_store_address)] = .{
         .llvm_name = "ascend-store-address",
         .description = "Schedule vector stores by ascending address",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.b16b16)] = .{
+    result[@int_from_enum(Feature.b16b16)] = .{
         .llvm_name = "b16b16",
         .description = "Enable SVE2.1 or SME2.1 non-widening BFloat16 to BFloat16 instructions (FEAT_B16B16)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .bf16,
         }),
     };
-    result[@intFromEnum(Feature.balance_fp_ops)] = .{
+    result[@int_from_enum(Feature.balance_fp_ops)] = .{
         .llvm_name = "balance-fp-ops",
         .description = "balance mix of odd and even D-registers for fp multiply(-accumulate) ops",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.bf16)] = .{
+    result[@int_from_enum(Feature.bf16)] = .{
         .llvm_name = "bf16",
         .description = "Enable BFloat16 Extension (FEAT_BF16)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.brbe)] = .{
+    result[@int_from_enum(Feature.brbe)] = .{
         .llvm_name = "brbe",
         .description = "Enable Branch Record Buffer Extension (FEAT_BRBE)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.bti)] = .{
+    result[@int_from_enum(Feature.bti)] = .{
         .llvm_name = "bti",
         .description = "Enable Branch Target Identification (FEAT_BTI)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.call_saved_x10)] = .{
+    result[@int_from_enum(Feature.call_saved_x10)] = .{
         .llvm_name = "call-saved-x10",
         .description = "Make X10 callee saved.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.call_saved_x11)] = .{
+    result[@int_from_enum(Feature.call_saved_x11)] = .{
         .llvm_name = "call-saved-x11",
         .description = "Make X11 callee saved.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.call_saved_x12)] = .{
+    result[@int_from_enum(Feature.call_saved_x12)] = .{
         .llvm_name = "call-saved-x12",
         .description = "Make X12 callee saved.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.call_saved_x13)] = .{
+    result[@int_from_enum(Feature.call_saved_x13)] = .{
         .llvm_name = "call-saved-x13",
         .description = "Make X13 callee saved.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.call_saved_x14)] = .{
+    result[@int_from_enum(Feature.call_saved_x14)] = .{
         .llvm_name = "call-saved-x14",
         .description = "Make X14 callee saved.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.call_saved_x15)] = .{
+    result[@int_from_enum(Feature.call_saved_x15)] = .{
         .llvm_name = "call-saved-x15",
         .description = "Make X15 callee saved.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.call_saved_x18)] = .{
+    result[@int_from_enum(Feature.call_saved_x18)] = .{
         .llvm_name = "call-saved-x18",
         .description = "Make X18 callee saved.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.call_saved_x8)] = .{
+    result[@int_from_enum(Feature.call_saved_x8)] = .{
         .llvm_name = "call-saved-x8",
         .description = "Make X8 callee saved.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.call_saved_x9)] = .{
+    result[@int_from_enum(Feature.call_saved_x9)] = .{
         .llvm_name = "call-saved-x9",
         .description = "Make X9 callee saved.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ccdp)] = .{
+    result[@int_from_enum(Feature.ccdp)] = .{
         .llvm_name = "ccdp",
         .description = "Enable v8.5 Cache Clean to Point of Deep Persistence (FEAT_DPB2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ccidx)] = .{
+    result[@int_from_enum(Feature.ccidx)] = .{
         .llvm_name = "ccidx",
         .description = "Enable v8.3-A Extend of the CCSIDR number of sets (FEAT_CCIDX)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ccpp)] = .{
+    result[@int_from_enum(Feature.ccpp)] = .{
         .llvm_name = "ccpp",
         .description = "Enable v8.2 data Cache Clean to Point of Persistence (FEAT_DPB)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.chk)] = .{
+    result[@int_from_enum(Feature.chk)] = .{
         .llvm_name = "chk",
         .description = "Enable Armv8.0-A Check Feature Status Extension (FEAT_CHK)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.clrbhb)] = .{
+    result[@int_from_enum(Feature.clrbhb)] = .{
         .llvm_name = "clrbhb",
         .description = "Enable Clear BHB instruction (FEAT_CLRBHB)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.cmp_bcc_fusion)] = .{
+    result[@int_from_enum(Feature.cmp_bcc_fusion)] = .{
         .llvm_name = "cmp-bcc-fusion",
         .description = "CPU fuses cmp+bcc operations",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.complxnum)] = .{
+    result[@int_from_enum(Feature.complxnum)] = .{
         .llvm_name = "complxnum",
         .description = "Enable v8.3-A Floating-point complex number support (FEAT_FCMA)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .neon,
         }),
     };
-    result[@intFromEnum(Feature.contextidr_el2)] = .{
+    result[@int_from_enum(Feature.contextidr_el2)] = .{
         .llvm_name = "CONTEXTIDREL2",
         .description = "Enable RW operand Context ID Register (EL2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.cortex_r82)] = .{
+    result[@int_from_enum(Feature.cortex_r82)] = .{
         .llvm_name = "cortex-r82",
         .description = "Cortex-R82 ARM processors",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .use_postra_scheduler,
         }),
     };
-    result[@intFromEnum(Feature.cpa)] = .{
+    result[@int_from_enum(Feature.cpa)] = .{
         .llvm_name = "cpa",
         .description = "Enable Armv9.5-A Checked Pointer Arithmetic (FEAT_CPA)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.crc)] = .{
+    result[@int_from_enum(Feature.crc)] = .{
         .llvm_name = "crc",
         .description = "Enable ARMv8 CRC-32 checksum instructions (FEAT_CRC32)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.crypto)] = .{
+    result[@int_from_enum(Feature.crypto)] = .{
         .llvm_name = "crypto",
         .description = "Enable cryptographic instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .aes,
             .sha2,
         }),
     };
-    result[@intFromEnum(Feature.cssc)] = .{
+    result[@int_from_enum(Feature.cssc)] = .{
         .llvm_name = "cssc",
         .description = "Enable Common Short Sequence Compression (CSSC) instructions (FEAT_CSSC)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.d128)] = .{
+    result[@int_from_enum(Feature.d128)] = .{
         .llvm_name = "d128",
         .description = "Enable Armv9.4-A 128-bit Page Table Descriptors, System Registers and Instructions (FEAT_D128, FEAT_LVA3, FEAT_SYSREG128, FEAT_SYSINSTR128)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .lse128,
         }),
     };
-    result[@intFromEnum(Feature.disable_latency_sched_heuristic)] = .{
+    result[@int_from_enum(Feature.disable_latency_sched_heuristic)] = .{
         .llvm_name = "disable-latency-sched-heuristic",
         .description = "Disable latency scheduling heuristic",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.disable_ldp)] = .{
+    result[@int_from_enum(Feature.disable_ldp)] = .{
         .llvm_name = "disable-ldp",
         .description = "Do not emit ldp",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.disable_stp)] = .{
+    result[@int_from_enum(Feature.disable_stp)] = .{
         .llvm_name = "disable-stp",
         .description = "Do not emit stp",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dit)] = .{
+    result[@int_from_enum(Feature.dit)] = .{
         .llvm_name = "dit",
         .description = "Enable v8.4-A Data Independent Timing instructions (FEAT_DIT)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.dotprod)] = .{
+    result[@int_from_enum(Feature.dotprod)] = .{
         .llvm_name = "dotprod",
         .description = "Enable dot product support (FEAT_DotProd)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ecv)] = .{
+    result[@int_from_enum(Feature.ecv)] = .{
         .llvm_name = "ecv",
         .description = "Enable enhanced counter virtualization extension (FEAT_ECV)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.el2vmsa)] = .{
+    result[@int_from_enum(Feature.el2vmsa)] = .{
         .llvm_name = "el2vmsa",
         .description = "Enable Exception Level 2 Virtual Memory System Architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.el3)] = .{
+    result[@int_from_enum(Feature.el3)] = .{
         .llvm_name = "el3",
         .description = "Enable Exception Level 3",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.enable_select_opt)] = .{
+    result[@int_from_enum(Feature.enable_select_opt)] = .{
         .llvm_name = "enable-select-opt",
         .description = "Enable the select optimize pass for select loop heuristics",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ete)] = .{
+    result[@int_from_enum(Feature.ete)] = .{
         .llvm_name = "ete",
         .description = "Enable Embedded Trace Extension (FEAT_ETE)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .trbe,
         }),
     };
-    result[@intFromEnum(Feature.exynos_cheap_as_move)] = .{
+    result[@int_from_enum(Feature.exynos_cheap_as_move)] = .{
         .llvm_name = "exynos-cheap-as-move",
         .description = "Use Exynos specific handling of cheap instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.f32mm)] = .{
+    result[@int_from_enum(Feature.f32mm)] = .{
         .llvm_name = "f32mm",
         .description = "Enable Matrix Multiply FP32 Extension (FEAT_F32MM)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sve,
         }),
     };
-    result[@intFromEnum(Feature.f64mm)] = .{
+    result[@int_from_enum(Feature.f64mm)] = .{
         .llvm_name = "f64mm",
         .description = "Enable Matrix Multiply FP64 Extension (FEAT_F64MM)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sve,
         }),
     };
-    result[@intFromEnum(Feature.faminmax)] = .{
+    result[@int_from_enum(Feature.faminmax)] = .{
         .llvm_name = "faminmax",
         .description = "Enable FAMIN and FAMAX instructions (FEAT_FAMINMAX)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fgt)] = .{
+    result[@int_from_enum(Feature.fgt)] = .{
         .llvm_name = "fgt",
         .description = "Enable fine grained virtualization traps extension (FEAT_FGT)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fix_cortex_a53_835769)] = .{
+    result[@int_from_enum(Feature.fix_cortex_a53_835769)] = .{
         .llvm_name = "fix-cortex-a53-835769",
         .description = "Mitigate Cortex-A53 Erratum 835769",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.flagm)] = .{
+    result[@int_from_enum(Feature.flagm)] = .{
         .llvm_name = "flagm",
         .description = "Enable v8.4-A Flag Manipulation Instructions (FEAT_FlagM)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fmv)] = .{
+    result[@int_from_enum(Feature.fmv)] = .{
         .llvm_name = "fmv",
         .description = "Enable Function Multi Versioning support.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.force_32bit_jump_tables)] = .{
+    result[@int_from_enum(Feature.force_32bit_jump_tables)] = .{
         .llvm_name = "force-32bit-jump-tables",
         .description = "Force jump table entries to be 32-bits wide except at MinSize",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fp16fml)] = .{
+    result[@int_from_enum(Feature.fp16fml)] = .{
         .llvm_name = "fp16fml",
         .description = "Enable FP16 FML instructions (FEAT_FHM)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .fullfp16,
         }),
     };
-    result[@intFromEnum(Feature.fp8)] = .{
+    result[@int_from_enum(Feature.fp8)] = .{
         .llvm_name = "fp8",
         .description = "Enable FP8 instructions (FEAT_FP8)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fp8dot2)] = .{
+    result[@int_from_enum(Feature.fp8dot2)] = .{
         .llvm_name = "fp8dot2",
         .description = "Enable fp8 2-way dot instructions (FEAT_FP8DOT2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fp8dot4)] = .{
+    result[@int_from_enum(Feature.fp8dot4)] = .{
         .llvm_name = "fp8dot4",
         .description = "Enable fp8 4-way dot instructions (FEAT_FP8DOT4)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fp8fma)] = .{
+    result[@int_from_enum(Feature.fp8fma)] = .{
         .llvm_name = "fp8fma",
         .description = "Enable fp8 multiply-add instructions (FEAT_FP8FMA)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fp_armv8)] = .{
+    result[@int_from_enum(Feature.fp_armv8)] = .{
         .llvm_name = "fp-armv8",
         .description = "Enable ARMv8 FP (FEAT_FP)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fpmr)] = .{
+    result[@int_from_enum(Feature.fpmr)] = .{
         .llvm_name = "fpmr",
         .description = "Enable FPMR Register (FEAT_FPMR)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fptoint)] = .{
+    result[@int_from_enum(Feature.fptoint)] = .{
         .llvm_name = "fptoint",
         .description = "Enable FRInt[32|64][Z|X] instructions that round a floating-point number to an integer (in FP format) forcing it to fit into a 32- or 64-bit int (FEAT_FRINTTS)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fullfp16)] = .{
+    result[@int_from_enum(Feature.fullfp16)] = .{
         .llvm_name = "fullfp16",
         .description = "Full FP16 (FEAT_FP16)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .fp_armv8,
         }),
     };
-    result[@intFromEnum(Feature.fuse_address)] = .{
+    result[@int_from_enum(Feature.fuse_address)] = .{
         .llvm_name = "fuse-address",
         .description = "CPU fuses address generation and memory operations",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fuse_addsub_2reg_const1)] = .{
+    result[@int_from_enum(Feature.fuse_addsub_2reg_const1)] = .{
         .llvm_name = "fuse-addsub-2reg-const1",
         .description = "CPU fuses (a + b + 1) and (a - b - 1)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fuse_adrp_add)] = .{
+    result[@int_from_enum(Feature.fuse_adrp_add)] = .{
         .llvm_name = "fuse-adrp-add",
         .description = "CPU fuses adrp+add operations",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fuse_aes)] = .{
+    result[@int_from_enum(Feature.fuse_aes)] = .{
         .llvm_name = "fuse-aes",
         .description = "CPU fuses AES crypto operations",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fuse_arith_logic)] = .{
+    result[@int_from_enum(Feature.fuse_arith_logic)] = .{
         .llvm_name = "fuse-arith-logic",
         .description = "CPU fuses arithmetic and logic operations",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fuse_crypto_eor)] = .{
+    result[@int_from_enum(Feature.fuse_crypto_eor)] = .{
         .llvm_name = "fuse-crypto-eor",
         .description = "CPU fuses AES/PMULL and EOR operations",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fuse_csel)] = .{
+    result[@int_from_enum(Feature.fuse_csel)] = .{
         .llvm_name = "fuse-csel",
         .description = "CPU fuses conditional select operations",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.fuse_literals)] = .{
+    result[@int_from_enum(Feature.fuse_literals)] = .{
         .llvm_name = "fuse-literals",
         .description = "CPU fuses literal generation operations",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.gcs)] = .{
+    result[@int_from_enum(Feature.gcs)] = .{
         .llvm_name = "gcs",
         .description = "Enable Armv9.4-A Guarded Call Stack Extension",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .chk,
         }),
     };
-    result[@intFromEnum(Feature.harden_sls_blr)] = .{
+    result[@int_from_enum(Feature.harden_sls_blr)] = .{
         .llvm_name = "harden-sls-blr",
         .description = "Harden against straight line speculation across BLR instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.harden_sls_nocomdat)] = .{
+    result[@int_from_enum(Feature.harden_sls_nocomdat)] = .{
         .llvm_name = "harden-sls-nocomdat",
         .description = "Generate thunk code for SLS mitigation in the normal text section",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.harden_sls_retbr)] = .{
+    result[@int_from_enum(Feature.harden_sls_retbr)] = .{
         .llvm_name = "harden-sls-retbr",
         .description = "Harden against straight line speculation across RET and BR instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hbc)] = .{
+    result[@int_from_enum(Feature.hbc)] = .{
         .llvm_name = "hbc",
         .description = "Enable Armv8.8-A Hinted Conditional Branches Extension (FEAT_HBC)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hcx)] = .{
+    result[@int_from_enum(Feature.hcx)] = .{
         .llvm_name = "hcx",
         .description = "Enable Armv8.7-A HCRX_EL2 system register (FEAT_HCX)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.i8mm)] = .{
+    result[@int_from_enum(Feature.i8mm)] = .{
         .llvm_name = "i8mm",
         .description = "Enable Matrix Multiply Int8 Extension (FEAT_I8MM)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ite)] = .{
+    result[@int_from_enum(Feature.ite)] = .{
         .llvm_name = "ite",
         .description = "Enable Armv9.4-A Instrumentation Extension FEAT_ITE",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .ete,
         }),
     };
-    result[@intFromEnum(Feature.jsconv)] = .{
+    result[@int_from_enum(Feature.jsconv)] = .{
         .llvm_name = "jsconv",
         .description = "Enable v8.3-A JavaScript FP conversion instructions (FEAT_JSCVT)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .fp_armv8,
         }),
     };
-    result[@intFromEnum(Feature.ldp_aligned_only)] = .{
+    result[@int_from_enum(Feature.ldp_aligned_only)] = .{
         .llvm_name = "ldp-aligned-only",
         .description = "In order to emit ldp, first check if the load will be aligned to 2 * element_size",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lor)] = .{
+    result[@int_from_enum(Feature.lor)] = .{
         .llvm_name = "lor",
         .description = "Enables ARM v8.1 Limited Ordering Regions extension (FEAT_LOR)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ls64)] = .{
+    result[@int_from_enum(Feature.ls64)] = .{
         .llvm_name = "ls64",
         .description = "Enable Armv8.7-A LD64B/ST64B Accelerator Extension (FEAT_LS64, FEAT_LS64_V, FEAT_LS64_ACCDATA)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lse)] = .{
+    result[@int_from_enum(Feature.lse)] = .{
         .llvm_name = "lse",
         .description = "Enable ARMv8.1 Large System Extension (LSE) atomic instructions (FEAT_LSE)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lse128)] = .{
+    result[@int_from_enum(Feature.lse128)] = .{
         .llvm_name = "lse128",
         .description = "Enable Armv9.4-A 128-bit Atomic Instructions (FEAT_LSE128)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .lse,
         }),
     };
-    result[@intFromEnum(Feature.lse2)] = .{
+    result[@int_from_enum(Feature.lse2)] = .{
         .llvm_name = "lse2",
         .description = "Enable ARMv8.4 Large System Extension 2 (LSE2) atomicity rules (FEAT_LSE2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.lut)] = .{
+    result[@int_from_enum(Feature.lut)] = .{
         .llvm_name = "lut",
         .description = "Enable Lookup Table instructions (FEAT_LUT)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mec)] = .{
+    result[@int_from_enum(Feature.mec)] = .{
         .llvm_name = "mec",
         .description = "Enable Memory Encryption Contexts Extension",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .rme,
         }),
     };
-    result[@intFromEnum(Feature.mops)] = .{
+    result[@int_from_enum(Feature.mops)] = .{
         .llvm_name = "mops",
         .description = "Enable Armv8.8-A memcpy and memset acceleration instructions (FEAT_MOPS)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mpam)] = .{
+    result[@int_from_enum(Feature.mpam)] = .{
         .llvm_name = "mpam",
         .description = "Enable v8.4-A Memory system Partitioning and Monitoring extension (FEAT_MPAM)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mte)] = .{
+    result[@int_from_enum(Feature.mte)] = .{
         .llvm_name = "mte",
         .description = "Enable Memory Tagging Extension (FEAT_MTE, FEAT_MTE2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.neon)] = .{
+    result[@int_from_enum(Feature.neon)] = .{
         .llvm_name = "neon",
         .description = "Enable Advanced SIMD instructions (FEAT_AdvSIMD)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .fp_armv8,
         }),
     };
-    result[@intFromEnum(Feature.nmi)] = .{
+    result[@int_from_enum(Feature.nmi)] = .{
         .llvm_name = "nmi",
         .description = "Enable Armv8.8-A Non-maskable Interrupts (FEAT_NMI, FEAT_GICv3_NMI)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.no_bti_at_return_twice)] = .{
+    result[@int_from_enum(Feature.no_bti_at_return_twice)] = .{
         .llvm_name = "no-bti-at-return-twice",
         .description = "Don't place a BTI instruction after a return-twice",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.no_neg_immediates)] = .{
+    result[@int_from_enum(Feature.no_neg_immediates)] = .{
         .llvm_name = "no-neg-immediates",
         .description = "Convert immediates and instructions to their negated or complemented equivalent when the immediate does not fit in the encoding.",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.no_sve_fp_ld1r)] = .{
+    result[@int_from_enum(Feature.no_sve_fp_ld1r)] = .{
         .llvm_name = "no-sve-fp-ld1r",
         .description = "Avoid using LD1RX instructions for FP",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.no_zcz_fp)] = .{
+    result[@int_from_enum(Feature.no_zcz_fp)] = .{
         .llvm_name = "no-zcz-fp",
         .description = "Has no zero-cycle zeroing instructions for FP registers",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.nv)] = .{
+    result[@int_from_enum(Feature.nv)] = .{
         .llvm_name = "nv",
         .description = "Enable v8.4-A Nested Virtualization Enchancement (FEAT_NV, FEAT_NV2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.outline_atomics)] = .{
+    result[@int_from_enum(Feature.outline_atomics)] = .{
         .llvm_name = "outline-atomics",
         .description = "Enable out of line atomics to support LSE instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.pan)] = .{
+    result[@int_from_enum(Feature.pan)] = .{
         .llvm_name = "pan",
         .description = "Enables ARM v8.1 Privileged Access-Never extension (FEAT_PAN)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.pan_rwv)] = .{
+    result[@int_from_enum(Feature.pan_rwv)] = .{
         .llvm_name = "pan-rwv",
         .description = "Enable v8.2 PAN s1e1R and s1e1W Variants (FEAT_PAN2)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .pan,
         }),
     };
-    result[@intFromEnum(Feature.pauth)] = .{
+    result[@int_from_enum(Feature.pauth)] = .{
         .llvm_name = "pauth",
         .description = "Enable v8.3-A Pointer Authentication extension (FEAT_PAuth)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.pauth_lr)] = .{
+    result[@int_from_enum(Feature.pauth_lr)] = .{
         .llvm_name = "pauth-lr",
         .description = "Enable Armv9.5-A PAC enhancements (FEAT_PAuth_LR)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.perfmon)] = .{
+    result[@int_from_enum(Feature.perfmon)] = .{
         .llvm_name = "perfmon",
         .description = "Enable Code Generation for ARMv8 PMUv3 Performance Monitors extension (FEAT_PMUv3)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.predictable_select_expensive)] = .{
+    result[@int_from_enum(Feature.predictable_select_expensive)] = .{
         .llvm_name = "predictable-select-expensive",
         .description = "Prefer likely predicted branches over selects",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.predres)] = .{
+    result[@int_from_enum(Feature.predres)] = .{
         .llvm_name = "predres",
         .description = "Enable v8.5a execution and data prediction invalidation instructions (FEAT_SPECRES)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.prfm_slc_target)] = .{
+    result[@int_from_enum(Feature.prfm_slc_target)] = .{
         .llvm_name = "prfm-slc-target",
         .description = "Enable SLC target for PRFM instruction",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.rand)] = .{
+    result[@int_from_enum(Feature.rand)] = .{
         .llvm_name = "rand",
         .description = "Enable Random Number generation instructions (FEAT_RNG)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ras)] = .{
+    result[@int_from_enum(Feature.ras)] = .{
         .llvm_name = "ras",
         .description = "Enable ARMv8 Reliability, Availability and Serviceability Extensions (FEAT_RAS, FEAT_RASv1p1)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.rasv2)] = .{
+    result[@int_from_enum(Feature.rasv2)] = .{
         .llvm_name = "rasv2",
         .description = "Enable ARMv8.9-A Reliability, Availability and Serviceability Extensions (FEAT_RASv2)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .ras,
         }),
     };
-    result[@intFromEnum(Feature.rcpc)] = .{
+    result[@int_from_enum(Feature.rcpc)] = .{
         .llvm_name = "rcpc",
         .description = "Enable support for RCPC extension (FEAT_LRCPC)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.rcpc3)] = .{
+    result[@int_from_enum(Feature.rcpc3)] = .{
         .llvm_name = "rcpc3",
         .description = "Enable Armv8.9-A RCPC instructions for A64 and Advanced SIMD and floating-point instruction set (FEAT_LRCPC3)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .rcpc_immo,
         }),
     };
-    result[@intFromEnum(Feature.rcpc_immo)] = .{
+    result[@int_from_enum(Feature.rcpc_immo)] = .{
         .llvm_name = "rcpc-immo",
         .description = "Enable v8.4-A RCPC instructions with Immediate Offsets (FEAT_LRCPC2)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .rcpc,
         }),
     };
-    result[@intFromEnum(Feature.rdm)] = .{
+    result[@int_from_enum(Feature.rdm)] = .{
         .llvm_name = "rdm",
         .description = "Enable ARMv8.1 Rounding Double Multiply Add/Subtract instructions (FEAT_RDM)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x1)] = .{
+    result[@int_from_enum(Feature.reserve_x1)] = .{
         .llvm_name = "reserve-x1",
         .description = "Reserve X1, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x10)] = .{
+    result[@int_from_enum(Feature.reserve_x10)] = .{
         .llvm_name = "reserve-x10",
         .description = "Reserve X10, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x11)] = .{
+    result[@int_from_enum(Feature.reserve_x11)] = .{
         .llvm_name = "reserve-x11",
         .description = "Reserve X11, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x12)] = .{
+    result[@int_from_enum(Feature.reserve_x12)] = .{
         .llvm_name = "reserve-x12",
         .description = "Reserve X12, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x13)] = .{
+    result[@int_from_enum(Feature.reserve_x13)] = .{
         .llvm_name = "reserve-x13",
         .description = "Reserve X13, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x14)] = .{
+    result[@int_from_enum(Feature.reserve_x14)] = .{
         .llvm_name = "reserve-x14",
         .description = "Reserve X14, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x15)] = .{
+    result[@int_from_enum(Feature.reserve_x15)] = .{
         .llvm_name = "reserve-x15",
         .description = "Reserve X15, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x18)] = .{
+    result[@int_from_enum(Feature.reserve_x18)] = .{
         .llvm_name = "reserve-x18",
         .description = "Reserve X18, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x2)] = .{
+    result[@int_from_enum(Feature.reserve_x2)] = .{
         .llvm_name = "reserve-x2",
         .description = "Reserve X2, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x20)] = .{
+    result[@int_from_enum(Feature.reserve_x20)] = .{
         .llvm_name = "reserve-x20",
         .description = "Reserve X20, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x21)] = .{
+    result[@int_from_enum(Feature.reserve_x21)] = .{
         .llvm_name = "reserve-x21",
         .description = "Reserve X21, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x22)] = .{
+    result[@int_from_enum(Feature.reserve_x22)] = .{
         .llvm_name = "reserve-x22",
         .description = "Reserve X22, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x23)] = .{
+    result[@int_from_enum(Feature.reserve_x23)] = .{
         .llvm_name = "reserve-x23",
         .description = "Reserve X23, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x24)] = .{
+    result[@int_from_enum(Feature.reserve_x24)] = .{
         .llvm_name = "reserve-x24",
         .description = "Reserve X24, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x25)] = .{
+    result[@int_from_enum(Feature.reserve_x25)] = .{
         .llvm_name = "reserve-x25",
         .description = "Reserve X25, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x26)] = .{
+    result[@int_from_enum(Feature.reserve_x26)] = .{
         .llvm_name = "reserve-x26",
         .description = "Reserve X26, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x27)] = .{
+    result[@int_from_enum(Feature.reserve_x27)] = .{
         .llvm_name = "reserve-x27",
         .description = "Reserve X27, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x28)] = .{
+    result[@int_from_enum(Feature.reserve_x28)] = .{
         .llvm_name = "reserve-x28",
         .description = "Reserve X28, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x3)] = .{
+    result[@int_from_enum(Feature.reserve_x3)] = .{
         .llvm_name = "reserve-x3",
         .description = "Reserve X3, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x30)] = .{
+    result[@int_from_enum(Feature.reserve_x30)] = .{
         .llvm_name = "reserve-x30",
         .description = "Reserve X30, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x4)] = .{
+    result[@int_from_enum(Feature.reserve_x4)] = .{
         .llvm_name = "reserve-x4",
         .description = "Reserve X4, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x5)] = .{
+    result[@int_from_enum(Feature.reserve_x5)] = .{
         .llvm_name = "reserve-x5",
         .description = "Reserve X5, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x6)] = .{
+    result[@int_from_enum(Feature.reserve_x6)] = .{
         .llvm_name = "reserve-x6",
         .description = "Reserve X6, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x7)] = .{
+    result[@int_from_enum(Feature.reserve_x7)] = .{
         .llvm_name = "reserve-x7",
         .description = "Reserve X7, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserve_x9)] = .{
+    result[@int_from_enum(Feature.reserve_x9)] = .{
         .llvm_name = "reserve-x9",
         .description = "Reserve X9, making it unavailable as a GPR",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.rme)] = .{
+    result[@int_from_enum(Feature.rme)] = .{
         .llvm_name = "rme",
         .description = "Enable Realm Management Extension (FEAT_RME)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sb)] = .{
+    result[@int_from_enum(Feature.sb)] = .{
         .llvm_name = "sb",
         .description = "Enable v8.5 Speculation Barrier (FEAT_SB)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sel2)] = .{
+    result[@int_from_enum(Feature.sel2)] = .{
         .llvm_name = "sel2",
         .description = "Enable v8.4-A Secure Exception Level 2 extension (FEAT_SEL2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sha2)] = .{
+    result[@int_from_enum(Feature.sha2)] = .{
         .llvm_name = "sha2",
         .description = "Enable SHA1 and SHA256 support (FEAT_SHA1, FEAT_SHA256)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .neon,
         }),
     };
-    result[@intFromEnum(Feature.sha3)] = .{
+    result[@int_from_enum(Feature.sha3)] = .{
         .llvm_name = "sha3",
         .description = "Enable SHA512 and SHA3 support (FEAT_SHA3, FEAT_SHA512)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sha2,
         }),
     };
-    result[@intFromEnum(Feature.slow_misaligned_128store)] = .{
+    result[@int_from_enum(Feature.slow_misaligned_128store)] = .{
         .llvm_name = "slow-misaligned-128store",
         .description = "Misaligned 128 bit stores are slow",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.slow_paired_128)] = .{
+    result[@int_from_enum(Feature.slow_paired_128)] = .{
         .llvm_name = "slow-paired-128",
         .description = "Paired 128 bit loads and stores are slow",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.slow_strqro_store)] = .{
+    result[@int_from_enum(Feature.slow_strqro_store)] = .{
         .llvm_name = "slow-strqro-store",
         .description = "STR of Q register with register offset is slow",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sm4)] = .{
+    result[@int_from_enum(Feature.sm4)] = .{
         .llvm_name = "sm4",
         .description = "Enable SM3 and SM4 support (FEAT_SM4, FEAT_SM3)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .neon,
         }),
     };
-    result[@intFromEnum(Feature.sme)] = .{
+    result[@int_from_enum(Feature.sme)] = .{
         .llvm_name = "sme",
         .description = "Enable Scalable Matrix Extension (SME) (FEAT_SME)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .bf16,
             .use_scalar_inc_vl,
         }),
     };
-    result[@intFromEnum(Feature.sme2)] = .{
+    result[@int_from_enum(Feature.sme2)] = .{
         .llvm_name = "sme2",
         .description = "Enable Scalable Matrix Extension 2 (SME2) instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sme,
         }),
     };
-    result[@intFromEnum(Feature.sme2p1)] = .{
+    result[@int_from_enum(Feature.sme2p1)] = .{
         .llvm_name = "sme2p1",
         .description = "Enable Scalable Matrix Extension 2.1 (FEAT_SME2p1) instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sme2,
         }),
     };
-    result[@intFromEnum(Feature.sme_f16f16)] = .{
+    result[@int_from_enum(Feature.sme_f16f16)] = .{
         .llvm_name = "sme-f16f16",
         .description = "Enable SME2.1 non-widening Float16 instructions (FEAT_SME_F16F16)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sme_f64f64)] = .{
+    result[@int_from_enum(Feature.sme_f64f64)] = .{
         .llvm_name = "sme-f64f64",
         .description = "Enable Scalable Matrix Extension (SME) F64F64 instructions (FEAT_SME_F64F64)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sme,
         }),
     };
-    result[@intFromEnum(Feature.sme_f8f16)] = .{
+    result[@int_from_enum(Feature.sme_f8f16)] = .{
         .llvm_name = "sme-f8f16",
         .description = "Enable Scalable Matrix Extension (SME) F8F16 instructions(FEAT_SME_F8F16)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .fp8,
             .sme2,
         }),
     };
-    result[@intFromEnum(Feature.sme_f8f32)] = .{
+    result[@int_from_enum(Feature.sme_f8f32)] = .{
         .llvm_name = "sme-f8f32",
         .description = "Enable Scalable Matrix Extension (SME) F8F32 instructions (FEAT_SME_F8F32)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .fp8,
             .sme2,
         }),
     };
-    result[@intFromEnum(Feature.sme_fa64)] = .{
+    result[@int_from_enum(Feature.sme_fa64)] = .{
         .llvm_name = "sme-fa64",
         .description = "Enable the full A64 instruction set in streaming SVE mode (FEAT_SME_FA64)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sme,
             .sve2,
         }),
     };
-    result[@intFromEnum(Feature.sme_i16i64)] = .{
+    result[@int_from_enum(Feature.sme_i16i64)] = .{
         .llvm_name = "sme-i16i64",
         .description = "Enable Scalable Matrix Extension (SME) I16I64 instructions (FEAT_SME_I16I64)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sme,
         }),
     };
-    result[@intFromEnum(Feature.sme_lutv2)] = .{
+    result[@int_from_enum(Feature.sme_lutv2)] = .{
         .llvm_name = "sme-lutv2",
         .description = "Enable Scalable Matrix Extension (SME) LUTv2 instructions (FEAT_SME_LUTv2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.spe)] = .{
+    result[@int_from_enum(Feature.spe)] = .{
         .llvm_name = "spe",
         .description = "Enable Statistical Profiling extension (FEAT_SPE)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.spe_eef)] = .{
+    result[@int_from_enum(Feature.spe_eef)] = .{
         .llvm_name = "spe-eef",
         .description = "Enable extra register in the Statistical Profiling Extension (FEAT_SPEv1p2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.specres2)] = .{
+    result[@int_from_enum(Feature.specres2)] = .{
         .llvm_name = "specres2",
         .description = "Enable Speculation Restriction Instruction (FEAT_SPECRES2)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .predres,
         }),
     };
-    result[@intFromEnum(Feature.specrestrict)] = .{
+    result[@int_from_enum(Feature.specrestrict)] = .{
         .llvm_name = "specrestrict",
         .description = "Enable architectural speculation restriction (FEAT_CSV2_2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ssbs)] = .{
+    result[@int_from_enum(Feature.ssbs)] = .{
         .llvm_name = "ssbs",
         .description = "Enable Speculative Store Bypass Safe bit (FEAT_SSBS, FEAT_SSBS2)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.ssve_fp8dot2)] = .{
+    result[@int_from_enum(Feature.ssve_fp8dot2)] = .{
         .llvm_name = "ssve-fp8dot2",
         .description = "Enable SVE2 fp8 2-way dot product instructions (FEAT_SSVE_FP8DOT2)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sme2,
         }),
     };
-    result[@intFromEnum(Feature.ssve_fp8dot4)] = .{
+    result[@int_from_enum(Feature.ssve_fp8dot4)] = .{
         .llvm_name = "ssve-fp8dot4",
         .description = "Enable SVE2 fp8 4-way dot product instructions (FEAT_SSVE_FP8DOT4)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sme2,
         }),
     };
-    result[@intFromEnum(Feature.ssve_fp8fma)] = .{
+    result[@int_from_enum(Feature.ssve_fp8fma)] = .{
         .llvm_name = "ssve-fp8fma",
         .description = "Enable SVE2 fp8 multiply-add instructions (FEAT_SSVE_FP8FMA)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sme2,
         }),
     };
-    result[@intFromEnum(Feature.store_pair_suppress)] = .{
+    result[@int_from_enum(Feature.store_pair_suppress)] = .{
         .llvm_name = "store-pair-suppress",
         .description = "Enable Store Pair Suppression heuristics",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.stp_aligned_only)] = .{
+    result[@int_from_enum(Feature.stp_aligned_only)] = .{
         .llvm_name = "stp-aligned-only",
         .description = "In order to emit stp, first check if the store will be aligned to 2 * element_size",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.strict_align)] = .{
+    result[@int_from_enum(Feature.strict_align)] = .{
         .llvm_name = "strict-align",
         .description = "Disallow all unaligned memory access",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.sve)] = .{
+    result[@int_from_enum(Feature.sve)] = .{
         .llvm_name = "sve",
         .description = "Enable Scalable Vector Extension (SVE) instructions (FEAT_SVE)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .fullfp16,
         }),
     };
-    result[@intFromEnum(Feature.sve2)] = .{
+    result[@int_from_enum(Feature.sve2)] = .{
         .llvm_name = "sve2",
         .description = "Enable Scalable Vector Extension 2 (SVE2) instructions (FEAT_SVE2)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sve,
             .use_scalar_inc_vl,
         }),
     };
-    result[@intFromEnum(Feature.sve2_aes)] = .{
+    result[@int_from_enum(Feature.sve2_aes)] = .{
         .llvm_name = "sve2-aes",
         .description = "Enable AES SVE2 instructions (FEAT_SVE_AES, FEAT_SVE_PMULL128)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .aes,
             .sve2,
         }),
     };
-    result[@intFromEnum(Feature.sve2_bitperm)] = .{
+    result[@int_from_enum(Feature.sve2_bitperm)] = .{
         .llvm_name = "sve2-bitperm",
         .description = "Enable bit permutation SVE2 instructions (FEAT_SVE_BitPerm)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sve2,
         }),
     };
-    result[@intFromEnum(Feature.sve2_sha3)] = .{
+    result[@int_from_enum(Feature.sve2_sha3)] = .{
         .llvm_name = "sve2-sha3",
         .description = "Enable SHA3 SVE2 instructions (FEAT_SVE_SHA3)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sha3,
             .sve2,
         }),
     };
-    result[@intFromEnum(Feature.sve2_sm4)] = .{
+    result[@int_from_enum(Feature.sve2_sm4)] = .{
         .llvm_name = "sve2-sm4",
         .description = "Enable SM4 SVE2 instructions (FEAT_SVE_SM4)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sm4,
             .sve2,
         }),
     };
-    result[@intFromEnum(Feature.sve2p1)] = .{
+    result[@int_from_enum(Feature.sve2p1)] = .{
         .llvm_name = "sve2p1",
         .description = "Enable Scalable Vector Extension 2.1 instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .sve2,
         }),
     };
-    result[@intFromEnum(Feature.tagged_globals)] = .{
+    result[@int_from_enum(Feature.tagged_globals)] = .{
         .llvm_name = "tagged-globals",
         .description = "Use an instruction sequence for taking the address of a global that allows a memory tag in the upper address bits",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.the)] = .{
+    result[@int_from_enum(Feature.the)] = .{
         .llvm_name = "the",
         .description = "Enable Armv8.9-A Translation Hardening Extension (FEAT_THE)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tlb_rmi)] = .{
+    result[@int_from_enum(Feature.tlb_rmi)] = .{
         .llvm_name = "tlb-rmi",
         .description = "Enable v8.4-A TLB Range and Maintenance Instructions (FEAT_TLBIOS, FEAT_TLBIRANGE)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tlbiw)] = .{
+    result[@int_from_enum(Feature.tlbiw)] = .{
         .llvm_name = "tlbiw",
         .description = "Enable ARMv9.5-A TLBI VMALL for Dirty State (FEAT_TLBIW)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tme)] = .{
+    result[@int_from_enum(Feature.tme)] = .{
         .llvm_name = "tme",
         .description = "Enable Transactional Memory Extension (FEAT_TME)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tpidr_el1)] = .{
+    result[@int_from_enum(Feature.tpidr_el1)] = .{
         .llvm_name = "tpidr-el1",
         .description = "Permit use of TPIDR_EL1 for the TLS base",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tpidr_el2)] = .{
+    result[@int_from_enum(Feature.tpidr_el2)] = .{
         .llvm_name = "tpidr-el2",
         .description = "Permit use of TPIDR_EL2 for the TLS base",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tpidr_el3)] = .{
+    result[@int_from_enum(Feature.tpidr_el3)] = .{
         .llvm_name = "tpidr-el3",
         .description = "Permit use of TPIDR_EL3 for the TLS base",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tpidrro_el0)] = .{
+    result[@int_from_enum(Feature.tpidrro_el0)] = .{
         .llvm_name = "tpidrro-el0",
         .description = "Permit use of TPIDRRO_EL0 for the TLS base",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tracev8_4)] = .{
+    result[@int_from_enum(Feature.tracev8_4)] = .{
         .llvm_name = "tracev8.4",
         .description = "Enable v8.4-A Trace extension (FEAT_TRF)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.trbe)] = .{
+    result[@int_from_enum(Feature.trbe)] = .{
         .llvm_name = "trbe",
         .description = "Enable Trace Buffer Extension (FEAT_TRBE)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.uaops)] = .{
+    result[@int_from_enum(Feature.uaops)] = .{
         .llvm_name = "uaops",
         .description = "Enable v8.2 UAO PState (FEAT_UAO)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.use_experimental_zeroing_pseudos)] = .{
+    result[@int_from_enum(Feature.use_experimental_zeroing_pseudos)] = .{
         .llvm_name = "use-experimental-zeroing-pseudos",
         .description = "Hint to the compiler that the MOVPRFX instruction is merged with destructive operations",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.use_postra_scheduler)] = .{
+    result[@int_from_enum(Feature.use_postra_scheduler)] = .{
         .llvm_name = "use-postra-scheduler",
         .description = "Schedule again after register allocation",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.use_reciprocal_square_root)] = .{
+    result[@int_from_enum(Feature.use_reciprocal_square_root)] = .{
         .llvm_name = "use-reciprocal-square-root",
         .description = "Use the reciprocal square root approximation",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.use_scalar_inc_vl)] = .{
+    result[@int_from_enum(Feature.use_scalar_inc_vl)] = .{
         .llvm_name = "use-scalar-inc-vl",
         .description = "Prefer inc/dec over add+cnt",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v8_1a)] = .{
+    result[@int_from_enum(Feature.v8_1a)] = .{
         .llvm_name = "v8.1a",
         .description = "Support ARM v8.1a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .crc,
             .lor,
             .lse,
@@ -1433,10 +1433,10 @@ pub const all_features = blk: {
             .vh,
         }),
     };
-    result[@intFromEnum(Feature.v8_2a)] = .{
+    result[@int_from_enum(Feature.v8_2a)] = .{
         .llvm_name = "v8.2a",
         .description = "Support ARM v8.2a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .ccpp,
             .pan_rwv,
             .ras,
@@ -1444,10 +1444,10 @@ pub const all_features = blk: {
             .v8_1a,
         }),
     };
-    result[@intFromEnum(Feature.v8_3a)] = .{
+    result[@int_from_enum(Feature.v8_3a)] = .{
         .llvm_name = "v8.3a",
         .description = "Support ARM v8.3a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .ccidx,
             .complxnum,
             .jsconv,
@@ -1456,10 +1456,10 @@ pub const all_features = blk: {
             .v8_2a,
         }),
     };
-    result[@intFromEnum(Feature.v8_4a)] = .{
+    result[@int_from_enum(Feature.v8_4a)] = .{
         .llvm_name = "v8.4a",
         .description = "Support ARM v8.4a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .am,
             .dit,
             .dotprod,
@@ -1474,10 +1474,10 @@ pub const all_features = blk: {
             .v8_3a,
         }),
     };
-    result[@intFromEnum(Feature.v8_5a)] = .{
+    result[@int_from_enum(Feature.v8_5a)] = .{
         .llvm_name = "v8.5a",
         .description = "Support ARM v8.5a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .altnzcv,
             .bti,
             .ccdp,
@@ -1489,10 +1489,10 @@ pub const all_features = blk: {
             .v8_4a,
         }),
     };
-    result[@intFromEnum(Feature.v8_6a)] = .{
+    result[@int_from_enum(Feature.v8_6a)] = .{
         .llvm_name = "v8.6a",
         .description = "Support ARM v8.6a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .amvs,
             .bf16,
             .ecv,
@@ -1501,30 +1501,30 @@ pub const all_features = blk: {
             .v8_5a,
         }),
     };
-    result[@intFromEnum(Feature.v8_7a)] = .{
+    result[@int_from_enum(Feature.v8_7a)] = .{
         .llvm_name = "v8.7a",
         .description = "Support ARM v8.7a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hcx,
             .v8_6a,
             .wfxt,
             .xs,
         }),
     };
-    result[@intFromEnum(Feature.v8_8a)] = .{
+    result[@int_from_enum(Feature.v8_8a)] = .{
         .llvm_name = "v8.8a",
         .description = "Support ARM v8.8a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hbc,
             .mops,
             .nmi,
             .v8_7a,
         }),
     };
-    result[@intFromEnum(Feature.v8_9a)] = .{
+    result[@int_from_enum(Feature.v8_9a)] = .{
         .llvm_name = "v8.9a",
         .description = "Support ARM v8.9a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .chk,
             .clrbhb,
             .cssc,
@@ -1534,19 +1534,19 @@ pub const all_features = blk: {
             .v8_8a,
         }),
     };
-    result[@intFromEnum(Feature.v8a)] = .{
+    result[@int_from_enum(Feature.v8a)] = .{
         .llvm_name = "v8a",
         .description = "Support ARM v8.0a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .el2vmsa,
             .el3,
             .neon,
         }),
     };
-    result[@intFromEnum(Feature.v8r)] = .{
+    result[@int_from_enum(Feature.v8r)] = .{
         .llvm_name = "v8r",
         .description = "Support ARM v8r instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .ccidx,
             .ccpp,
             .complxnum,
@@ -1569,93 +1569,93 @@ pub const all_features = blk: {
             .uaops,
         }),
     };
-    result[@intFromEnum(Feature.v9_1a)] = .{
+    result[@int_from_enum(Feature.v9_1a)] = .{
         .llvm_name = "v9.1a",
         .description = "Support ARM v9.1a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .v8_6a,
             .v9a,
         }),
     };
-    result[@intFromEnum(Feature.v9_2a)] = .{
+    result[@int_from_enum(Feature.v9_2a)] = .{
         .llvm_name = "v9.2a",
         .description = "Support ARM v9.2a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .v8_7a,
             .v9_1a,
         }),
     };
-    result[@intFromEnum(Feature.v9_3a)] = .{
+    result[@int_from_enum(Feature.v9_3a)] = .{
         .llvm_name = "v9.3a",
         .description = "Support ARM v9.3a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .v8_8a,
             .v9_2a,
         }),
     };
-    result[@intFromEnum(Feature.v9_4a)] = .{
+    result[@int_from_enum(Feature.v9_4a)] = .{
         .llvm_name = "v9.4a",
         .description = "Support ARM v9.4a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .v8_9a,
             .v9_3a,
         }),
     };
-    result[@intFromEnum(Feature.v9_5a)] = .{
+    result[@int_from_enum(Feature.v9_5a)] = .{
         .llvm_name = "v9.5a",
         .description = "Support ARM v9.5a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .cpa,
             .v9_4a,
         }),
     };
-    result[@intFromEnum(Feature.v9a)] = .{
+    result[@int_from_enum(Feature.v9a)] = .{
         .llvm_name = "v9a",
         .description = "Support ARM v9a instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .mec,
             .sve2,
             .v8_5a,
         }),
     };
-    result[@intFromEnum(Feature.vh)] = .{
+    result[@int_from_enum(Feature.vh)] = .{
         .llvm_name = "vh",
         .description = "Enables ARM v8.1 Virtual Host extension (FEAT_VHE)",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .contextidr_el2,
         }),
     };
-    result[@intFromEnum(Feature.wfxt)] = .{
+    result[@int_from_enum(Feature.wfxt)] = .{
         .llvm_name = "wfxt",
         .description = "Enable Armv8.7-A WFET and WFIT instruction (FEAT_WFxT)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.xs)] = .{
+    result[@int_from_enum(Feature.xs)] = .{
         .llvm_name = "xs",
         .description = "Enable Armv8.7-A limited-TLB-maintenance instruction (FEAT_XS)",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.zcm)] = .{
+    result[@int_from_enum(Feature.zcm)] = .{
         .llvm_name = "zcm",
         .description = "Has zero-cycle register moves",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.zcz)] = .{
+    result[@int_from_enum(Feature.zcz)] = .{
         .llvm_name = "zcz",
         .description = "Has zero-cycle zeroing instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .zcz_gp,
         }),
     };
-    result[@intFromEnum(Feature.zcz_fp_workaround)] = .{
+    result[@int_from_enum(Feature.zcz_fp_workaround)] = .{
         .llvm_name = "zcz-fp-workaround",
         .description = "The zero-cycle floating-point zeroing instruction has a bug",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.zcz_gp)] = .{
+    result[@int_from_enum(Feature.zcz_gp)] = .{
         .llvm_name = "zcz-gp",
         .description = "Has zero-cycle zeroing instructions for generic registers",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
     const ti = @typeInfo(Feature);
     for (&result, 0..) |*elem, i| {
@@ -1669,7 +1669,7 @@ pub const cpu = struct {
     pub const a64fx = CpuModel{
         .name = "a64fx",
         .llvm_name = "a64fx",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .aggressive_fma,
             .arith_bcc_fusion,
             .complxnum,
@@ -1685,7 +1685,7 @@ pub const cpu = struct {
     pub const ampere1 = CpuModel{
         .name = "ampere1",
         .llvm_name = "ampere1",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .aes,
             .aggressive_fma,
@@ -1708,7 +1708,7 @@ pub const cpu = struct {
     pub const ampere1a = CpuModel{
         .name = "ampere1a",
         .llvm_name = "ampere1a",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .aes,
             .aggressive_fma,
@@ -1733,7 +1733,7 @@ pub const cpu = struct {
     pub const ampere1b = CpuModel{
         .name = "ampere1b",
         .llvm_name = "ampere1b",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .aes,
             .aggressive_fma,
@@ -1763,7 +1763,7 @@ pub const cpu = struct {
     pub const apple_a10 = CpuModel{
         .name = "apple_a10",
         .llvm_name = "apple-a10",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -1786,7 +1786,7 @@ pub const cpu = struct {
     pub const apple_a11 = CpuModel{
         .name = "apple_a11",
         .llvm_name = "apple-a11",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -1805,7 +1805,7 @@ pub const cpu = struct {
     pub const apple_a12 = CpuModel{
         .name = "apple_a12",
         .llvm_name = "apple-a12",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -1824,7 +1824,7 @@ pub const cpu = struct {
     pub const apple_a13 = CpuModel{
         .name = "apple_a13",
         .llvm_name = "apple-a13",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -1844,7 +1844,7 @@ pub const cpu = struct {
     pub const apple_a14 = CpuModel{
         .name = "apple_a14",
         .llvm_name = "apple-a14",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .aggressive_fma,
             .alternate_sextload_cvt_f32_pattern,
             .altnzcv,
@@ -1877,7 +1877,7 @@ pub const cpu = struct {
     pub const apple_a15 = CpuModel{
         .name = "apple_a15",
         .llvm_name = "apple-a15",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -1901,7 +1901,7 @@ pub const cpu = struct {
     pub const apple_a16 = CpuModel{
         .name = "apple_a16",
         .llvm_name = "apple-a16",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -1926,7 +1926,7 @@ pub const cpu = struct {
     pub const apple_a17 = CpuModel{
         .name = "apple_a17",
         .llvm_name = "apple-a17",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -1951,7 +1951,7 @@ pub const cpu = struct {
     pub const apple_a7 = CpuModel{
         .name = "apple_a7",
         .llvm_name = "apple-a7",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -1970,7 +1970,7 @@ pub const cpu = struct {
     pub const apple_a8 = CpuModel{
         .name = "apple_a8",
         .llvm_name = "apple-a8",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -1989,7 +1989,7 @@ pub const cpu = struct {
     pub const apple_a9 = CpuModel{
         .name = "apple_a9",
         .llvm_name = "apple-a9",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -2008,7 +2008,7 @@ pub const cpu = struct {
     pub const apple_latest = CpuModel{
         .name = "apple_latest",
         .llvm_name = "apple-latest",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -2033,7 +2033,7 @@ pub const cpu = struct {
     pub const apple_m1 = CpuModel{
         .name = "apple_m1",
         .llvm_name = "apple-m1",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .aggressive_fma,
             .alternate_sextload_cvt_f32_pattern,
             .altnzcv,
@@ -2066,7 +2066,7 @@ pub const cpu = struct {
     pub const apple_m2 = CpuModel{
         .name = "apple_m2",
         .llvm_name = "apple-m2",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -2090,7 +2090,7 @@ pub const cpu = struct {
     pub const apple_m3 = CpuModel{
         .name = "apple_m3",
         .llvm_name = "apple-m3",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -2115,7 +2115,7 @@ pub const cpu = struct {
     pub const apple_s4 = CpuModel{
         .name = "apple_s4",
         .llvm_name = "apple-s4",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -2134,7 +2134,7 @@ pub const cpu = struct {
     pub const apple_s5 = CpuModel{
         .name = "apple_s5",
         .llvm_name = "apple-s5",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -2153,7 +2153,7 @@ pub const cpu = struct {
     pub const carmel = CpuModel{
         .name = "carmel",
         .llvm_name = "carmel",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crypto,
             .fullfp16,
             .v8_2a,
@@ -2162,7 +2162,7 @@ pub const cpu = struct {
     pub const cortex_a34 = CpuModel{
         .name = "cortex_a34",
         .llvm_name = "cortex-a34",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crc,
             .crypto,
             .perfmon,
@@ -2172,7 +2172,7 @@ pub const cpu = struct {
     pub const cortex_a35 = CpuModel{
         .name = "cortex_a35",
         .llvm_name = "cortex-a35",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crc,
             .crypto,
             .perfmon,
@@ -2182,7 +2182,7 @@ pub const cpu = struct {
     pub const cortex_a510 = CpuModel{
         .name = "cortex_a510",
         .llvm_name = "cortex-a510",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .a510,
             .bf16,
             .ete,
@@ -2197,7 +2197,7 @@ pub const cpu = struct {
     pub const cortex_a520 = CpuModel{
         .name = "cortex_a520",
         .llvm_name = "cortex-a520",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .a520,
             .ete,
             .fp16fml,
@@ -2210,7 +2210,7 @@ pub const cpu = struct {
     pub const cortex_a53 = CpuModel{
         .name = "cortex_a53",
         .llvm_name = "cortex-a53",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .balance_fp_ops,
             .crc,
             .crypto,
@@ -2224,7 +2224,7 @@ pub const cpu = struct {
     pub const cortex_a55 = CpuModel{
         .name = "cortex_a55",
         .llvm_name = "cortex-a55",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crypto,
             .dotprod,
             .fullfp16,
@@ -2240,7 +2240,7 @@ pub const cpu = struct {
     pub const cortex_a57 = CpuModel{
         .name = "cortex_a57",
         .llvm_name = "cortex-a57",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .balance_fp_ops,
             .crc,
             .crypto,
@@ -2257,7 +2257,7 @@ pub const cpu = struct {
     pub const cortex_a65 = CpuModel{
         .name = "cortex_a65",
         .llvm_name = "cortex-a65",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .a65,
             .crypto,
             .dotprod,
@@ -2271,7 +2271,7 @@ pub const cpu = struct {
     pub const cortex_a65ae = CpuModel{
         .name = "cortex_a65ae",
         .llvm_name = "cortex-a65ae",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .a65,
             .crypto,
             .dotprod,
@@ -2285,7 +2285,7 @@ pub const cpu = struct {
     pub const cortex_a710 = CpuModel{
         .name = "cortex_a710",
         .llvm_name = "cortex-a710",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .a710,
             .bf16,
             .ete,
@@ -2300,7 +2300,7 @@ pub const cpu = struct {
     pub const cortex_a715 = CpuModel{
         .name = "cortex_a715",
         .llvm_name = "cortex-a715",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .bf16,
@@ -2323,7 +2323,7 @@ pub const cpu = struct {
     pub const cortex_a72 = CpuModel{
         .name = "cortex_a72",
         .llvm_name = "cortex-a72",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crc,
             .crypto,
             .enable_select_opt,
@@ -2338,7 +2338,7 @@ pub const cpu = struct {
     pub const cortex_a720 = CpuModel{
         .name = "cortex_a720",
         .llvm_name = "cortex-a720",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .a720,
             .ete,
             .fp16fml,
@@ -2353,7 +2353,7 @@ pub const cpu = struct {
     pub const cortex_a73 = CpuModel{
         .name = "cortex_a73",
         .llvm_name = "cortex-a73",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crc,
             .crypto,
             .enable_select_opt,
@@ -2367,7 +2367,7 @@ pub const cpu = struct {
     pub const cortex_a75 = CpuModel{
         .name = "cortex_a75",
         .llvm_name = "cortex-a75",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crypto,
             .dotprod,
             .enable_select_opt,
@@ -2383,7 +2383,7 @@ pub const cpu = struct {
     pub const cortex_a76 = CpuModel{
         .name = "cortex_a76",
         .llvm_name = "cortex-a76",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .a76,
             .crypto,
             .dotprod,
@@ -2397,7 +2397,7 @@ pub const cpu = struct {
     pub const cortex_a76ae = CpuModel{
         .name = "cortex_a76ae",
         .llvm_name = "cortex-a76ae",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .a76,
             .crypto,
             .dotprod,
@@ -2411,7 +2411,7 @@ pub const cpu = struct {
     pub const cortex_a77 = CpuModel{
         .name = "cortex_a77",
         .llvm_name = "cortex-a77",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .cmp_bcc_fusion,
@@ -2431,7 +2431,7 @@ pub const cpu = struct {
     pub const cortex_a78 = CpuModel{
         .name = "cortex_a78",
         .llvm_name = "cortex-a78",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .a78,
             .crypto,
             .dotprod,
@@ -2446,7 +2446,7 @@ pub const cpu = struct {
     pub const cortex_a78c = CpuModel{
         .name = "cortex_a78c",
         .llvm_name = "cortex-a78c",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .a78c,
             .crypto,
             .dotprod,
@@ -2463,7 +2463,7 @@ pub const cpu = struct {
     pub const cortex_r82 = CpuModel{
         .name = "cortex_r82",
         .llvm_name = "cortex-r82",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cortex_r82,
             .fp16fml,
             .perfmon,
@@ -2476,7 +2476,7 @@ pub const cpu = struct {
     pub const cortex_x1 = CpuModel{
         .name = "cortex_x1",
         .llvm_name = "cortex-x1",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .cmp_bcc_fusion,
@@ -2498,7 +2498,7 @@ pub const cpu = struct {
     pub const cortex_x1c = CpuModel{
         .name = "cortex_x1c",
         .llvm_name = "cortex-x1c",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .cmp_bcc_fusion,
@@ -2523,7 +2523,7 @@ pub const cpu = struct {
     pub const cortex_x2 = CpuModel{
         .name = "cortex_x2",
         .llvm_name = "cortex-x2",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .bf16,
@@ -2545,7 +2545,7 @@ pub const cpu = struct {
     pub const cortex_x3 = CpuModel{
         .name = "cortex_x3",
         .llvm_name = "cortex-x3",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .bf16,
@@ -2567,7 +2567,7 @@ pub const cpu = struct {
     pub const cortex_x4 = CpuModel{
         .name = "cortex_x4",
         .llvm_name = "cortex-x4",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .enable_select_opt,
@@ -2588,7 +2588,7 @@ pub const cpu = struct {
     pub const cyclone = CpuModel{
         .name = "cyclone",
         .llvm_name = "cyclone",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .alternate_sextload_cvt_f32_pattern,
             .arith_bcc_fusion,
             .arith_cbz_fusion,
@@ -2607,7 +2607,7 @@ pub const cpu = struct {
     pub const emag = CpuModel{
         .name = "emag",
         .llvm_name = null,
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crc,
             .crypto,
             .perfmon,
@@ -2617,7 +2617,7 @@ pub const cpu = struct {
     pub const exynos_m1 = CpuModel{
         .name = "exynos_m1",
         .llvm_name = null,
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crc,
             .crypto,
             .exynos_cheap_as_move,
@@ -2634,7 +2634,7 @@ pub const cpu = struct {
     pub const exynos_m2 = CpuModel{
         .name = "exynos_m2",
         .llvm_name = null,
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crc,
             .crypto,
             .exynos_cheap_as_move,
@@ -2650,7 +2650,7 @@ pub const cpu = struct {
     pub const exynos_m3 = CpuModel{
         .name = "exynos_m3",
         .llvm_name = "exynos-m3",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .crc,
@@ -2672,7 +2672,7 @@ pub const cpu = struct {
     pub const exynos_m4 = CpuModel{
         .name = "exynos_m4",
         .llvm_name = "exynos-m4",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .arith_bcc_fusion,
@@ -2698,7 +2698,7 @@ pub const cpu = struct {
     pub const exynos_m5 = CpuModel{
         .name = "exynos_m5",
         .llvm_name = "exynos-m5",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .arith_bcc_fusion,
@@ -2724,7 +2724,7 @@ pub const cpu = struct {
     pub const falkor = CpuModel{
         .name = "falkor",
         .llvm_name = "falkor",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .crc,
@@ -2742,7 +2742,7 @@ pub const cpu = struct {
     pub const generic = CpuModel{
         .name = "generic",
         .llvm_name = "generic",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .enable_select_opt,
             .ete,
             .fuse_adrp_add,
@@ -2754,7 +2754,7 @@ pub const cpu = struct {
     pub const kryo = CpuModel{
         .name = "kryo",
         .llvm_name = "kryo",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .crc,
@@ -2770,7 +2770,7 @@ pub const cpu = struct {
     pub const neoverse_512tvb = CpuModel{
         .name = "neoverse_512tvb",
         .llvm_name = "neoverse-512tvb",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .bf16,
@@ -2794,7 +2794,7 @@ pub const cpu = struct {
     pub const neoverse_e1 = CpuModel{
         .name = "neoverse_e1",
         .llvm_name = "neoverse-e1",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crypto,
             .dotprod,
             .fullfp16,
@@ -2810,7 +2810,7 @@ pub const cpu = struct {
     pub const neoverse_n1 = CpuModel{
         .name = "neoverse_n1",
         .llvm_name = "neoverse-n1",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .crypto,
@@ -2831,7 +2831,7 @@ pub const cpu = struct {
     pub const neoverse_n2 = CpuModel{
         .name = "neoverse_n2",
         .llvm_name = "neoverse-n2",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .bf16,
@@ -2851,7 +2851,7 @@ pub const cpu = struct {
     pub const neoverse_v1 = CpuModel{
         .name = "neoverse_v1",
         .llvm_name = "neoverse-v1",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .bf16,
@@ -2876,7 +2876,7 @@ pub const cpu = struct {
     pub const neoverse_v2 = CpuModel{
         .name = "neoverse_v2",
         .llvm_name = "neoverse-v2",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .bf16,
@@ -2899,7 +2899,7 @@ pub const cpu = struct {
     pub const saphira = CpuModel{
         .name = "saphira",
         .llvm_name = "saphira",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .addr_lsl_fast,
             .alu_lsl_fast,
             .crypto,
@@ -2915,7 +2915,7 @@ pub const cpu = struct {
     pub const thunderx = CpuModel{
         .name = "thunderx",
         .llvm_name = "thunderx",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crc,
             .crypto,
             .perfmon,
@@ -2928,7 +2928,7 @@ pub const cpu = struct {
     pub const thunderx2t99 = CpuModel{
         .name = "thunderx2t99",
         .llvm_name = "thunderx2t99",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .aggressive_fma,
             .arith_bcc_fusion,
             .crypto,
@@ -2941,7 +2941,7 @@ pub const cpu = struct {
     pub const thunderx3t110 = CpuModel{
         .name = "thunderx3t110",
         .llvm_name = "thunderx3t110",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .aggressive_fma,
             .arith_bcc_fusion,
             .balance_fp_ops,
@@ -2957,7 +2957,7 @@ pub const cpu = struct {
     pub const thunderxt81 = CpuModel{
         .name = "thunderxt81",
         .llvm_name = "thunderxt81",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crc,
             .crypto,
             .perfmon,
@@ -2970,7 +2970,7 @@ pub const cpu = struct {
     pub const thunderxt83 = CpuModel{
         .name = "thunderxt83",
         .llvm_name = "thunderxt83",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crc,
             .crypto,
             .perfmon,
@@ -2983,7 +2983,7 @@ pub const cpu = struct {
     pub const thunderxt88 = CpuModel{
         .name = "thunderxt88",
         .llvm_name = "thunderxt88",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .crc,
             .crypto,
             .perfmon,
@@ -2996,7 +2996,7 @@ pub const cpu = struct {
     pub const tsv110 = CpuModel{
         .name = "tsv110",
         .llvm_name = "tsv110",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .complxnum,
             .crypto,
             .dotprod,
@@ -3013,7 +3013,7 @@ pub const cpu = struct {
     pub const xgene1 = CpuModel{
         .name = "xgene1",
         .llvm_name = null,
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .perfmon,
             .v8a,
         }),

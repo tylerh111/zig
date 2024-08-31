@@ -44,7 +44,7 @@ pub fn jump(self: *Xoroshiro128) void {
     inline for (table) |entry| {
         var b: usize = 0;
         while (b < 64) : (b += 1) {
-            if ((entry & (@as(u64, 1) << @as(u6, @intCast(b)))) != 0) {
+            if ((entry & (@as(u64, 1) << @as(u6, @int_cast(b)))) != 0) {
                 s0 ^= self.s[0];
                 s1 ^= self.s[1];
             }
@@ -139,7 +139,7 @@ test fill {
     for (seq) |s| {
         var buf0: [8]u8 = undefined;
         var buf1: [7]u8 = undefined;
-        std.mem.writeInt(u64, &buf0, s, .little);
+        std.mem.write_int(u64, &buf0, s, .little);
         r.fill(&buf1);
         try std.testing.expect(std.mem.eql(u8, buf0[0..7], buf1[0..]));
     }

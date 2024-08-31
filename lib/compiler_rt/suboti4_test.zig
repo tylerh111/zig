@@ -8,8 +8,8 @@ fn test__suboti4(a: i128, b: i128) !void {
     var expected_ov: c_int = undefined;
     const result = subo.__suboti4(a, b, &result_ov);
     const expected: i128 = simple_suboti4(a, b, &expected_ov);
-    try testing.expectEqual(expected, result);
-    try testing.expectEqual(expected_ov, result_ov);
+    try testing.expect_equal(expected, result);
+    try testing.expect_equal(expected_ov, result_ov);
 }
 
 // 2 cases on evaluating `a-b`:
@@ -18,8 +18,8 @@ fn test__suboti4(a: i128, b: i128) !void {
 // `-b` evaluation may overflow, iff b==min, but this is handled by the hardware
 pub fn simple_suboti4(a: i128, b: i128, overflow: *c_int) i128 {
     overflow.* = 0;
-    const min: i128 = math.minInt(i128);
-    const max: i128 = math.maxInt(i128);
+    const min: i128 = math.min_int(i128);
+    const max: i128 = math.max_int(i128);
     if (((b > 0) and (a < min + b)) or
         ((b < 0) and (a > max + b)))
         overflow.* = 1;
@@ -27,8 +27,8 @@ pub fn simple_suboti4(a: i128, b: i128, overflow: *c_int) i128 {
 }
 
 test "suboti3" {
-    const min: i128 = math.minInt(i128);
-    const max: i128 = math.maxInt(i128);
+    const min: i128 = math.min_int(i128);
+    const max: i128 = math.max_int(i128);
     var i: i128 = 1;
     while (i < max) : (i *|= 2) {
         try test__suboti4(i, i);

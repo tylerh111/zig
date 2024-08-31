@@ -3,7 +3,7 @@ const builtin = @import("builtin");
 const assert = std.debug.assert;
 const macho = std.macho;
 const native_arch = builtin.target.cpu.arch;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const iovec_const = std.posix.iovec_const;
 
 pub const aarch64 = @import("darwin/aarch64.zig");
@@ -51,19 +51,19 @@ pub const EXC = enum(exception_type_t) {
 
 pub const EXC_SOFT_SIGNAL = 0x10003;
 
-pub const EXC_MASK_BAD_ACCESS = 1 << @intFromEnum(EXC.BAD_ACCESS);
-pub const EXC_MASK_BAD_INSTRUCTION = 1 << @intFromEnum(EXC.BAD_INSTRUCTION);
-pub const EXC_MASK_ARITHMETIC = 1 << @intFromEnum(EXC.ARITHMETIC);
-pub const EXC_MASK_EMULATION = 1 << @intFromEnum(EXC.EMULATION);
-pub const EXC_MASK_SOFTWARE = 1 << @intFromEnum(EXC.SOFTWARE);
-pub const EXC_MASK_BREAKPOINT = 1 << @intFromEnum(EXC.BREAKPOINT);
-pub const EXC_MASK_SYSCALL = 1 << @intFromEnum(EXC.SYSCALL);
-pub const EXC_MASK_MACH_SYSCALL = 1 << @intFromEnum(EXC.MACH_SYSCALL);
-pub const EXC_MASK_RPC_ALERT = 1 << @intFromEnum(EXC.RPC_ALERT);
-pub const EXC_MASK_CRASH = 1 << @intFromEnum(EXC.CRASH);
-pub const EXC_MASK_RESOURCE = 1 << @intFromEnum(EXC.RESOURCE);
-pub const EXC_MASK_GUARD = 1 << @intFromEnum(EXC.GUARD);
-pub const EXC_MASK_CORPSE_NOTIFY = 1 << @intFromEnum(EXC.CORPSE_NOTIFY);
+pub const EXC_MASK_BAD_ACCESS = 1 << @int_from_enum(EXC.BAD_ACCESS);
+pub const EXC_MASK_BAD_INSTRUCTION = 1 << @int_from_enum(EXC.BAD_INSTRUCTION);
+pub const EXC_MASK_ARITHMETIC = 1 << @int_from_enum(EXC.ARITHMETIC);
+pub const EXC_MASK_EMULATION = 1 << @int_from_enum(EXC.EMULATION);
+pub const EXC_MASK_SOFTWARE = 1 << @int_from_enum(EXC.SOFTWARE);
+pub const EXC_MASK_BREAKPOINT = 1 << @int_from_enum(EXC.BREAKPOINT);
+pub const EXC_MASK_SYSCALL = 1 << @int_from_enum(EXC.SYSCALL);
+pub const EXC_MASK_MACH_SYSCALL = 1 << @int_from_enum(EXC.MACH_SYSCALL);
+pub const EXC_MASK_RPC_ALERT = 1 << @int_from_enum(EXC.RPC_ALERT);
+pub const EXC_MASK_CRASH = 1 << @int_from_enum(EXC.CRASH);
+pub const EXC_MASK_RESOURCE = 1 << @int_from_enum(EXC.RESOURCE);
+pub const EXC_MASK_GUARD = 1 << @int_from_enum(EXC.GUARD);
+pub const EXC_MASK_CORPSE_NOTIFY = 1 << @int_from_enum(EXC.CORPSE_NOTIFY);
 pub const EXC_MASK_MACHINE = arch_bits.EXC_MASK_MACHINE;
 
 pub const EXC_MASK_ALL = EXC_MASK_BAD_ACCESS |
@@ -188,7 +188,7 @@ pub extern "c" fn kevent64(
     timeout: ?*const timespec,
 ) c_int;
 
-const mach_hdr = if (@sizeOf(usize) == 8) mach_header_64 else mach_header;
+const mach_hdr = if (@size_of(usize) == 8) mach_header_64 else mach_header;
 
 /// The value of the link editor defined symbol _MH_EXECUTE_SYM is the address
 /// of the mach header in a Mach-O executable file type.  It does not appear in
@@ -201,7 +201,7 @@ const mach_hdr = if (@sizeOf(usize) == 8) mach_header_64 else mach_header;
 var dummy_execute_header: mach_hdr = undefined;
 pub extern var _mh_execute_header: mach_hdr;
 comptime {
-    if (builtin.target.isDarwin()) {
+    if (builtin.target.is_darwin()) {
         @export(dummy_execute_header, .{ .name = "_mh_execute_header", .linkage = .weak });
     }
 }
@@ -404,11 +404,11 @@ pub const VM_BEHAVIOR_PAGEOUT: vm_behavior_t = 11;
 pub const VM_REGION_BASIC_INFO_64 = 9;
 pub const VM_REGION_EXTENDED_INFO = 13;
 pub const VM_REGION_TOP_INFO = 12;
-pub const VM_REGION_SUBMAP_INFO_COUNT_64: mach_msg_type_number_t = @sizeOf(vm_region_submap_info_64) / @sizeOf(natural_t);
-pub const VM_REGION_SUBMAP_SHORT_INFO_COUNT_64: mach_msg_type_number_t = @sizeOf(vm_region_submap_short_info_64) / @sizeOf(natural_t);
-pub const VM_REGION_BASIC_INFO_COUNT: mach_msg_type_number_t = @sizeOf(vm_region_basic_info_64) / @sizeOf(c_int);
-pub const VM_REGION_EXTENDED_INFO_COUNT: mach_msg_type_number_t = @sizeOf(vm_region_extended_info) / @sizeOf(natural_t);
-pub const VM_REGION_TOP_INFO_COUNT: mach_msg_type_number_t = @sizeOf(vm_region_top_info) / @sizeOf(natural_t);
+pub const VM_REGION_SUBMAP_INFO_COUNT_64: mach_msg_type_number_t = @size_of(vm_region_submap_info_64) / @size_of(natural_t);
+pub const VM_REGION_SUBMAP_SHORT_INFO_COUNT_64: mach_msg_type_number_t = @size_of(vm_region_submap_short_info_64) / @size_of(natural_t);
+pub const VM_REGION_BASIC_INFO_COUNT: mach_msg_type_number_t = @size_of(vm_region_basic_info_64) / @size_of(c_int);
+pub const VM_REGION_EXTENDED_INFO_COUNT: mach_msg_type_number_t = @size_of(vm_region_extended_info) / @size_of(natural_t);
+pub const VM_REGION_TOP_INFO_COUNT: mach_msg_type_number_t = @size_of(vm_region_top_info) / @size_of(natural_t);
 
 pub fn VM_MAKE_TAG(tag: u8) u32 {
     return @as(u32, tag) << 24;
@@ -543,10 +543,10 @@ pub extern "c" fn thread_info(
 pub extern "c" fn thread_resume(thread: thread_act_t) kern_return_t;
 
 pub const THREAD_BASIC_INFO = 3;
-pub const THREAD_BASIC_INFO_COUNT: mach_msg_type_number_t = @sizeOf(thread_basic_info) / @sizeOf(natural_t);
+pub const THREAD_BASIC_INFO_COUNT: mach_msg_type_number_t = @size_of(thread_basic_info) / @size_of(natural_t);
 
 pub const THREAD_IDENTIFIER_INFO = 4;
-pub const THREAD_IDENTIFIER_INFO_COUNT: mach_msg_type_number_t = @sizeOf(thread_identifier_info) / @sizeOf(natural_t);
+pub const THREAD_IDENTIFIER_INFO_COUNT: mach_msg_type_number_t = @size_of(thread_identifier_info) / @size_of(natural_t);
 
 pub const thread_flavor_t = natural_t;
 pub const thread_info_t = *integer_t;
@@ -615,7 +615,7 @@ pub const MATTR_VAL_CACHE_SYNC = 9;
 pub const MATTR_VAL_GET_INFO = 10;
 
 pub const TASK_VM_INFO = 22;
-pub const TASK_VM_INFO_COUNT: mach_msg_type_number_t = @sizeOf(task_vm_info_data_t) / @sizeOf(natural_t);
+pub const TASK_VM_INFO_COUNT: mach_msg_type_number_t = @size_of(task_vm_info_data_t) / @size_of(natural_t);
 
 pub const task_vm_info = extern struct {
     // virtual memory size (bytes)
@@ -733,7 +733,7 @@ pub const mach_task_basic_info = extern struct {
 };
 
 pub const MACH_TASK_BASIC_INFO = 20;
-pub const MACH_TASK_BASIC_INFO_COUNT: mach_msg_type_number_t = @sizeOf(mach_task_basic_info) / @sizeOf(natural_t);
+pub const MACH_TASK_BASIC_INFO_COUNT: mach_msg_type_number_t = @size_of(mach_task_basic_info) / @size_of(natural_t);
 
 pub extern "c" fn _host_page_size(task: mach_port_t, size: *vm_size_t) kern_return_t;
 pub extern "c" fn vm_deallocate(target_task: vm_map_t, address: vm_address_t, size: vm_size_t) kern_return_t;
@@ -954,19 +954,19 @@ pub const sockaddr = extern struct {
         padding: [126]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
+            assert(@size_of(storage) == SS_MAXSIZE);
             assert(@alignOf(storage) == 8);
         }
     };
     pub const in = extern struct {
-        len: u8 = @sizeOf(in),
+        len: u8 = @size_of(in),
         family: sa_family_t = AF.INET,
         port: in_port_t,
         addr: u32,
         zero: [8]u8 = [8]u8{ 0, 0, 0, 0, 0, 0, 0, 0 },
     };
     pub const in6 = extern struct {
-        len: u8 = @sizeOf(in6),
+        len: u8 = @size_of(in6),
         family: sa_family_t = AF.INET6,
         port: in_port_t,
         flowinfo: u32,
@@ -976,7 +976,7 @@ pub const sockaddr = extern struct {
 
     /// UNIX domain socket
     pub const un = extern struct {
-        len: u8 = @sizeOf(un),
+        len: u8 = @size_of(un),
         family: sa_family_t = AF.UNIX,
         path: [104]u8,
     };
@@ -1053,7 +1053,7 @@ pub const sigset_t = u32;
 pub const empty_sigset: sigset_t = 0;
 
 pub const SIG = struct {
-    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(maxInt(usize));
+    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(max_int(usize));
     pub const DFL: ?Sigaction.handler_fn = @ptrFromInt(0);
     pub const IGN: ?Sigaction.handler_fn = @ptrFromInt(1);
     pub const HOLD: ?Sigaction.handler_fn = @ptrFromInt(5);
@@ -1184,13 +1184,13 @@ pub const Kevent = extern struct {
 // to make sure the struct is laid out the same. These values were
 // produced from C code using the offsetof macro.
 comptime {
-    if (builtin.target.isDarwin()) {
-        assert(@offsetOf(Kevent, "ident") == 0);
-        assert(@offsetOf(Kevent, "filter") == 8);
-        assert(@offsetOf(Kevent, "flags") == 10);
-        assert(@offsetOf(Kevent, "fflags") == 12);
-        assert(@offsetOf(Kevent, "data") == 16);
-        assert(@offsetOf(Kevent, "udata") == 24);
+    if (builtin.target.is_darwin()) {
+        assert(@offset_of(Kevent, "ident") == 0);
+        assert(@offset_of(Kevent, "filter") == 8);
+        assert(@offset_of(Kevent, "flags") == 10);
+        assert(@offset_of(Kevent, "fflags") == 12);
+        assert(@offset_of(Kevent, "data") == 16);
+        assert(@offset_of(Kevent, "udata") == 24);
     }
 }
 
@@ -1208,14 +1208,14 @@ pub const kevent64_s = extern struct {
 // to make sure the struct is laid out the same. These values were
 // produced from C code using the offsetof macro.
 comptime {
-    if (builtin.target.isDarwin()) {
-        assert(@offsetOf(kevent64_s, "ident") == 0);
-        assert(@offsetOf(kevent64_s, "filter") == 8);
-        assert(@offsetOf(kevent64_s, "flags") == 10);
-        assert(@offsetOf(kevent64_s, "fflags") == 12);
-        assert(@offsetOf(kevent64_s, "data") == 16);
-        assert(@offsetOf(kevent64_s, "udata") == 24);
-        assert(@offsetOf(kevent64_s, "ext") == 32);
+    if (builtin.target.is_darwin()) {
+        assert(@offset_of(kevent64_s, "ident") == 0);
+        assert(@offset_of(kevent64_s, "filter") == 8);
+        assert(@offset_of(kevent64_s, "flags") == 10);
+        assert(@offset_of(kevent64_s, "fflags") == 12);
+        assert(@offset_of(kevent64_s, "data") == 16);
+        assert(@offset_of(kevent64_s, "udata") == 24);
+        assert(@offset_of(kevent64_s, "ext") == 32);
     }
 }
 
@@ -1688,7 +1688,7 @@ pub const W = struct {
     pub const UNTRACED = 0x00000002;
 
     pub fn EXITSTATUS(x: u32) u8 {
-        return @as(u8, @intCast(x >> 8));
+        return @as(u8, @int_cast(x >> 8));
     }
     pub fn TERMSIG(x: u32) u32 {
         return status(x);
@@ -2272,7 +2272,7 @@ pub const KernE = enum(u32) {
 pub const mach_msg_return_t = kern_return_t;
 
 pub fn get_mach_msg_error(err: mach_msg_return_t) MachMsgE {
-    return @as(MachMsgE, @enumFromInt(@as(u32, @truncate(@as(usize, @intCast(err))))));
+    return @as(MachMsgE, @enumFromInt(@as(u32, @truncate(@as(usize, @int_cast(err))))));
 }
 
 /// All special error code bits defined below.
@@ -2462,10 +2462,10 @@ pub const RTLD = struct {
     pub const NODELETE = 0x80;
     pub const FIRST = 0x100;
 
-    pub const NEXT = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -1)))));
-    pub const DEFAULT = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -2)))));
-    pub const SELF = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -3)))));
-    pub const MAIN_ONLY = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -5)))));
+    pub const NEXT = @as(*anyopaque, @ptrFromInt(@as(usize, @bit_cast(@as(isize, -1)))));
+    pub const DEFAULT = @as(*anyopaque, @ptrFromInt(@as(usize, @bit_cast(@as(isize, -2)))));
+    pub const SELF = @as(*anyopaque, @ptrFromInt(@as(usize, @bit_cast(@as(isize, -3)))));
+    pub const MAIN_ONLY = @as(*anyopaque, @ptrFromInt(@as(usize, @bit_cast(@as(isize, -5)))));
 };
 
 pub const F = struct {
@@ -2704,7 +2704,7 @@ pub const winsize = extern struct {
 };
 
 pub const T = struct {
-    pub const IOCGWINSZ = ior(0x40000000, 't', 104, @sizeOf(winsize));
+    pub const IOCGWINSZ = ior(0x40000000, 't', 104, @size_of(winsize));
 };
 pub const IOCPARM_MASK = 0x1fff;
 
@@ -2827,13 +2827,13 @@ pub extern "c" fn posix_spawnp(
 ) c_int;
 
 pub fn get_kern_error(err: kern_return_t) KernE {
-    return @as(KernE, @enumFromInt(@as(u32, @truncate(@as(usize, @intCast(err))))));
+    return @as(KernE, @enumFromInt(@as(u32, @truncate(@as(usize, @int_cast(err))))));
 }
 
 pub fn unexpected_kern_error(err: KernE) std.posix.UnexpectedError {
     if (std.posix.unexpected_error_tracing) {
-        std.debug.print("unexpected error: {d}\n", .{@intFromEnum(err)});
-        std.debug.dumpCurrentStackTrace(null);
+        std.debug.print("unexpected error: {d}\n", .{@int_from_enum(err)});
+        std.debug.dump_current_stack_trace(null);
     }
     return error.Unexpected;
 }
@@ -2853,40 +2853,40 @@ pub const MachTask = extern struct {
 
     pub fn pid_for_task(self: MachTask) MachError!std.c.pid_t {
         var pid: std.c.pid_t = undefined;
-        switch (getKernError(pid_for_task(self.port, &pid))) {
+        switch (get_kern_error(pid_for_task(self.port, &pid))) {
             .SUCCESS => return pid,
             .FAILURE => return error.PermissionDenied,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
     pub fn allocate_port(self: MachTask, right: MACH_PORT_RIGHT) MachError!MachTask {
         var out_port: mach_port_name_t = undefined;
-        switch (getKernError(mach_port_allocate(
+        switch (get_kern_error(mach_port_allocate(
             self.port,
-            @intFromEnum(right),
+            @int_from_enum(right),
             &out_port,
         ))) {
             .SUCCESS => return .{ .port = out_port },
             .FAILURE => return error.PermissionDenied,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
     pub fn deallocate_port(self: MachTask, port: MachTask) void {
-        _ = getKernError(mach_port_deallocate(self.port, port.port));
+        _ = get_kern_error(mach_port_deallocate(self.port, port.port));
     }
 
     pub fn insert_right(self: MachTask, port: MachTask, msg: MACH_MSG_TYPE) !void {
-        switch (getKernError(mach_port_insert_right(
+        switch (get_kern_error(mach_port_insert_right(
             self.port,
             port.port,
             port.port,
-            @intFromEnum(msg),
+            @int_from_enum(msg),
         ))) {
             .SUCCESS => return,
             .FAILURE => return error.PermissionDenied,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
@@ -2908,9 +2908,9 @@ pub const MachTask = extern struct {
             .flavors = undefined,
             .count = 0,
         };
-        info.count = info.ports.len / @sizeOf(mach_port_t);
+        info.count = info.ports.len / @size_of(mach_port_t);
 
-        switch (getKernError(task_get_exception_ports(
+        switch (get_kern_error(task_get_exception_ports(
             self.port,
             info.mask,
             &info.masks,
@@ -2921,7 +2921,7 @@ pub const MachTask = extern struct {
         ))) {
             .SUCCESS => return info,
             .FAILURE => return error.PermissionDenied,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
@@ -2932,7 +2932,7 @@ pub const MachTask = extern struct {
         behavior: exception_behavior_t,
         new_flavor: thread_state_flavor_t,
     ) !void {
-        switch (getKernError(task_set_exception_ports(
+        switch (get_kern_error(task_set_exception_ports(
             self.port,
             mask,
             new_port.port,
@@ -2941,7 +2941,7 @@ pub const MachTask = extern struct {
         ))) {
             .SUCCESS => return,
             .FAILURE => return error.PermissionDenied,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
@@ -2984,7 +2984,7 @@ pub const MachTask = extern struct {
             .extended => VM_REGION_EXTENDED_INFO_COUNT,
             .top => VM_REGION_TOP_INFO_COUNT,
         };
-        switch (getKernError(mach_vm_region(
+        switch (get_kern_error(mach_vm_region(
             task.port,
             &info.base_addr,
             &base_len,
@@ -2994,16 +2994,16 @@ pub const MachTask = extern struct {
                 .top => VM_REGION_TOP_INFO,
             },
             switch (tag) {
-                .basic => @as(vm_region_info_t, @ptrCast(&info.info.basic)),
-                .extended => @as(vm_region_info_t, @ptrCast(&info.info.extended)),
-                .top => @as(vm_region_info_t, @ptrCast(&info.info.top)),
+                .basic => @as(vm_region_info_t, @ptr_cast(&info.info.basic)),
+                .extended => @as(vm_region_info_t, @ptr_cast(&info.info.extended)),
+                .top => @as(vm_region_info_t, @ptr_cast(&info.info.top)),
             },
             &count,
             &objname,
         ))) {
             .SUCCESS => return info,
             .FAILURE => return error.PermissionDenied,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
@@ -3043,41 +3043,41 @@ pub const MachTask = extern struct {
             .short => VM_REGION_SUBMAP_SHORT_INFO_COUNT_64,
             .full => VM_REGION_SUBMAP_INFO_COUNT_64,
         };
-        switch (getKernError(mach_vm_region_recurse(
+        switch (get_kern_error(mach_vm_region_recurse(
             task.port,
             &info.base_addr,
             &base_len,
             &nesting,
             switch (tag) {
-                .short => @as(vm_region_recurse_info_t, @ptrCast(&info.info.short)),
-                .full => @as(vm_region_recurse_info_t, @ptrCast(&info.info.full)),
+                .short => @as(vm_region_recurse_info_t, @ptr_cast(&info.info.short)),
+                .full => @as(vm_region_recurse_info_t, @ptr_cast(&info.info.full)),
             },
             &count,
         ))) {
             .SUCCESS => return info,
             .FAILURE => return error.PermissionDenied,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
     pub fn get_curr_protection(task: MachTask, address: u64, len: usize) MachError!vm_prot_t {
-        const info = try task.getRegionSubmapInfo(address, len, 0, .short);
+        const info = try task.get_region_submap_info(address, len, 0, .short);
         return info.info.short.protection;
     }
 
     pub fn set_max_protection(task: MachTask, address: u64, len: usize, prot: vm_prot_t) MachError!void {
-        return task.setProtectionImpl(address, len, true, prot);
+        return task.set_protection_impl(address, len, true, prot);
     }
 
     pub fn set_curr_protection(task: MachTask, address: u64, len: usize, prot: vm_prot_t) MachError!void {
-        return task.setProtectionImpl(address, len, false, prot);
+        return task.set_protection_impl(address, len, false, prot);
     }
 
     fn set_protection_impl(task: MachTask, address: u64, len: usize, set_max: bool, prot: vm_prot_t) MachError!void {
-        switch (getKernError(mach_vm_protect(task.port, address, len, @intFromBool(set_max), prot))) {
+        switch (get_kern_error(mach_vm_protect(task.port, address, len, @int_from_bool(set_max), prot))) {
             .SUCCESS => return,
             .FAILURE => return error.PermissionDenied,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
@@ -3085,42 +3085,42 @@ pub const MachTask = extern struct {
     /// us from doing so, by temporarily setting protection level to a level with VM_PROT_COPY
     /// variant, and resetting after a successful or unsuccessful write.
     pub fn write_mem_protected(task: MachTask, address: u64, buf: []const u8, arch: std.Target.Cpu.Arch) MachError!usize {
-        const curr_prot = try task.getCurrProtection(address, buf.len);
-        try task.setCurrProtection(
+        const curr_prot = try task.get_curr_protection(address, buf.len);
+        try task.set_curr_protection(
             address,
             buf.len,
             PROT.READ | PROT.WRITE | PROT.COPY,
         );
         defer {
-            task.setCurrProtection(address, buf.len, curr_prot) catch {};
+            task.set_curr_protection(address, buf.len, curr_prot) catch {};
         }
-        return task.writeMem(address, buf, arch);
+        return task.write_mem(address, buf, arch);
     }
 
     pub fn write_mem(task: MachTask, address: u64, buf: []const u8, arch: std.Target.Cpu.Arch) MachError!usize {
         const count = buf.len;
         var total_written: usize = 0;
         var curr_addr = address;
-        const page_size = try getPageSize(task); // TODO we probably can assume value here
+        const page_size = try get_page_size(task); // TODO we probably can assume value here
         var out_buf = buf[0..];
 
         while (total_written < count) {
-            const curr_size = maxBytesLeftInPage(page_size, curr_addr, count - total_written);
-            switch (getKernError(mach_vm_write(
+            const curr_size = max_bytes_left_in_page(page_size, curr_addr, count - total_written);
+            switch (get_kern_error(mach_vm_write(
                 task.port,
                 curr_addr,
-                @intFromPtr(out_buf.ptr),
-                @as(mach_msg_type_number_t, @intCast(curr_size)),
+                @int_from_ptr(out_buf.ptr),
+                @as(mach_msg_type_number_t, @int_cast(curr_size)),
             ))) {
                 .SUCCESS => {},
                 .FAILURE => return error.PermissionDenied,
-                else => |err| return unexpectedKernError(err),
+                else => |err| return unexpected_kern_error(err),
             }
 
             switch (arch) {
                 .aarch64 => {
                     var mattr_value: vm_machine_attribute_val_t = MATTR_VAL_CACHE_FLUSH;
-                    switch (getKernError(vm_machine_attribute(
+                    switch (get_kern_error(vm_machine_attribute(
                         task.port,
                         curr_addr,
                         curr_size,
@@ -3129,7 +3129,7 @@ pub const MachTask = extern struct {
                     ))) {
                         .SUCCESS => {},
                         .FAILURE => return error.PermissionDenied,
-                        else => |err| return unexpectedKernError(err),
+                        else => |err| return unexpected_kern_error(err),
                     }
                 },
                 .x86_64 => {},
@@ -3148,17 +3148,17 @@ pub const MachTask = extern struct {
         const count = buf.len;
         var total_read: usize = 0;
         var curr_addr = address;
-        const page_size = try getPageSize(task); // TODO we probably can assume value here
+        const page_size = try get_page_size(task); // TODO we probably can assume value here
         var out_buf = buf[0..];
 
         while (total_read < count) {
-            const curr_size = maxBytesLeftInPage(page_size, curr_addr, count - total_read);
+            const curr_size = max_bytes_left_in_page(page_size, curr_addr, count - total_read);
             var curr_bytes_read: mach_msg_type_number_t = 0;
             var vm_memory: vm_offset_t = undefined;
-            switch (getKernError(mach_vm_read(task.port, curr_addr, curr_size, &vm_memory, &curr_bytes_read))) {
+            switch (get_kern_error(mach_vm_read(task.port, curr_addr, curr_size, &vm_memory, &curr_bytes_read))) {
                 .SUCCESS => {},
                 .FAILURE => return error.PermissionDenied,
-                else => |err| return unexpectedKernError(err),
+                else => |err| return unexpected_kern_error(err),
             }
 
             @memcpy(out_buf[0..curr_bytes_read], @as([*]const u8, @ptrFromInt(vm_memory)));
@@ -3185,51 +3185,51 @@ pub const MachTask = extern struct {
     }
 
     fn get_page_size(task: MachTask) MachError!usize {
-        if (task.isValid()) {
+        if (task.is_valid()) {
             var info_count = TASK_VM_INFO_COUNT;
             var vm_info: task_vm_info_data_t = undefined;
-            switch (getKernError(task_info(
+            switch (get_kern_error(task_info(
                 task.port,
                 TASK_VM_INFO,
-                @as(task_info_t, @ptrCast(&vm_info)),
+                @as(task_info_t, @ptr_cast(&vm_info)),
                 &info_count,
             ))) {
-                .SUCCESS => return @as(usize, @intCast(vm_info.page_size)),
+                .SUCCESS => return @as(usize, @int_cast(vm_info.page_size)),
                 else => {},
             }
         }
         var page_size: vm_size_t = undefined;
-        switch (getKernError(_host_page_size(mach_host_self(), &page_size))) {
+        switch (get_kern_error(_host_page_size(mach_host_self(), &page_size))) {
             .SUCCESS => return page_size,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
     pub fn basic_task_info(task: MachTask) MachError!mach_task_basic_info {
         var info: mach_task_basic_info = undefined;
         var count = MACH_TASK_BASIC_INFO_COUNT;
-        switch (getKernError(task_info(
+        switch (get_kern_error(task_info(
             task.port,
             MACH_TASK_BASIC_INFO,
-            @as(task_info_t, @ptrCast(&info)),
+            @as(task_info_t, @ptr_cast(&info)),
             &count,
         ))) {
             .SUCCESS => return info,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
     pub fn @"resume"(task: MachTask) MachError!void {
-        switch (getKernError(task_resume(task.port))) {
+        switch (get_kern_error(task_resume(task.port))) {
             .SUCCESS => {},
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
     pub fn @"suspend"(task: MachTask) MachError!void {
-        switch (getKernError(task_suspend(task.port))) {
+        switch (get_kern_error(task_suspend(task.port))) {
             .SUCCESS => {},
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
@@ -3237,11 +3237,11 @@ pub const MachTask = extern struct {
         buf: []MachThread,
 
         pub fn deinit(list: ThreadList) void {
-            const self_task = machTaskForSelf();
+            const self_task = mach_task_for_self();
             _ = vm_deallocate(
                 self_task.port,
-                @intFromPtr(list.buf.ptr),
-                @as(vm_size_t, @intCast(list.buf.len * @sizeOf(mach_port_t))),
+                @int_from_ptr(list.buf.ptr),
+                @as(vm_size_t, @int_cast(list.buf.len * @size_of(mach_port_t))),
             );
         }
     };
@@ -3249,9 +3249,9 @@ pub const MachTask = extern struct {
     pub fn get_threads(task: MachTask) MachError!ThreadList {
         var thread_list: mach_port_array_t = undefined;
         var thread_count: mach_msg_type_number_t = undefined;
-        switch (getKernError(task_threads(task.port, &thread_list, &thread_count))) {
-            .SUCCESS => return ThreadList{ .buf = @as([*]MachThread, @ptrCast(thread_list))[0..thread_count] },
-            else => |err| return unexpectedKernError(err),
+        switch (get_kern_error(task_threads(task.port, &thread_list, &thread_count))) {
+            .SUCCESS => return ThreadList{ .buf = @as([*]MachThread, @ptr_cast(thread_list))[0..thread_count] },
+            else => |err| return unexpected_kern_error(err),
         }
     }
 };
@@ -3266,38 +3266,38 @@ pub const MachThread = extern struct {
     pub fn get_basic_info(thread: MachThread) MachError!thread_basic_info {
         var info: thread_basic_info = undefined;
         var count = THREAD_BASIC_INFO_COUNT;
-        switch (getKernError(thread_info(
+        switch (get_kern_error(thread_info(
             thread.port,
             THREAD_BASIC_INFO,
-            @as(thread_info_t, @ptrCast(&info)),
+            @as(thread_info_t, @ptr_cast(&info)),
             &count,
         ))) {
             .SUCCESS => return info,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 
     pub fn get_identifier_info(thread: MachThread) MachError!thread_identifier_info {
         var info: thread_identifier_info = undefined;
         var count = THREAD_IDENTIFIER_INFO_COUNT;
-        switch (getKernError(thread_info(
+        switch (get_kern_error(thread_info(
             thread.port,
             THREAD_IDENTIFIER_INFO,
-            @as(thread_info_t, @ptrCast(&info)),
+            @as(thread_info_t, @ptr_cast(&info)),
             &count,
         ))) {
             .SUCCESS => return info,
-            else => |err| return unexpectedKernError(err),
+            else => |err| return unexpected_kern_error(err),
         }
     }
 };
 
 pub fn mach_task_for_pid(pid: std.c.pid_t) MachError!MachTask {
     var port: mach_port_name_t = undefined;
-    switch (getKernError(task_for_pid(mach_task_self(), pid, &port))) {
+    switch (get_kern_error(task_for_pid(mach_task_self(), pid, &port))) {
         .SUCCESS => {},
         .FAILURE => return error.PermissionDenied,
-        else => |err| return unexpectedKernError(err),
+        else => |err| return unexpected_kern_error(err),
     }
     return MachTask{ .port = port };
 }

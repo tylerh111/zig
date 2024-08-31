@@ -1,7 +1,7 @@
 const print = @import("std").debug.print;
 
 pub fn main() void {
-    const result = getNumberOrFail();
+    const result = get_number_or_fail();
 
     if (result) |number| {
         print("got number: {}\n", .{number});

@@ -21,8 +21,8 @@ comptime {
 }
 
 pub fn __mulsi3(a: i32, b: i32) callconv(.C) i32 {
-    var ua: u32 = @bitCast(a);
-    var ub: u32 = @bitCast(b);
+    var ua: u32 = @bit_cast(a);
+    var ub: u32 = @bit_cast(b);
     var r: u32 = 0;
 
     while (ua > 0) {
@@ -31,15 +31,15 @@ pub fn __mulsi3(a: i32, b: i32) callconv(.C) i32 {
         ub <<= 1;
     }
 
-    return @bitCast(r);
+    return @bit_cast(r);
 }
 
 pub fn __muldi3(a: i64, b: i64) callconv(.C) i64 {
-    return mulX(i64, a, b);
+    return mul_x(i64, a, b);
 }
 
 fn __aeabi_lmul(a: i64, b: i64) callconv(.AAPCS) i64 {
-    return mulX(i64, a, b);
+    return mul_x(i64, a, b);
 }
 
 inline fn mul_x(comptime T: type, a: T, b: T) T {
@@ -47,7 +47,7 @@ inline fn mul_x(comptime T: type, a: T, b: T) T {
     const x = word_t{ .all = a };
     const y = word_t{ .all = b };
     var r = switch (T) {
-        i64, i128 => word_t{ .all = muldXi(word_t.HalfT, x.s.low, y.s.low) },
+        i64, i128 => word_t{ .all = muld_xi(word_t.HalfT, x.s.low, y.s.low) },
         else => unreachable,
     };
     r.s.high +%= x.s.high *% y.s.low +% x.s.low *% y.s.high;
@@ -67,7 +67,7 @@ fn DoubleInt(comptime T: type) type {
 fn muld_xi(comptime T: type, a: T, b: T) DoubleInt(T) {
     const DT = DoubleInt(T);
     const word_t = common.HalveInt(DT, false);
-    const bits_in_word_2 = @sizeOf(T) * 8 / 2;
+    const bits_in_word_2 = @size_of(T) * 8 / 2;
     const lower_mask = (~@as(T, 0)) >> bits_in_word_2;
 
     var r: word_t = undefined;
@@ -87,13 +87,13 @@ fn muld_xi(comptime T: type, a: T, b: T) DoubleInt(T) {
 }
 
 pub fn __multi3(a: i128, b: i128) callconv(.C) i128 {
-    return mulX(i128, a, b);
+    return mul_x(i128, a, b);
 }
 
 const v2u64 = @Vector(2, u64);
 
 fn __multi3_windows_x86_64(a: v2u64, b: v2u64) callconv(.C) v2u64 {
-    return @bitCast(mulX(i128, @as(i128, @bitCast(a)), @as(i128, @bitCast(b))));
+    return @bit_cast(mul_x(i128, @as(i128, @bit_cast(a)), @as(i128, @bit_cast(b))));
 }
 
 test {

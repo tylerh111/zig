@@ -1,5 +1,5 @@
 const std = @import("../../std.zig");
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const linux = std.os.linux;
 const SYS = linux.SYS;
 const socklen_t = linux.socklen_t;
@@ -18,7 +18,7 @@ pub fn syscall0(number: SYS) usize {
         \\ dsubu $2, $0, $2
         \\ 1:
         : [ret] "={$2}" (-> usize),
-        : [number] "{$2}" (@intFromEnum(number)),
+        : [number] "{$2}" (@int_from_enum(number)),
         : "$1", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", "$25", "hi", "lo", "memory"
     );
 }
@@ -37,7 +37,7 @@ pub fn syscall_pipe(fd: *[2]i32) usize {
         \\ sw $3, 4($4)
         \\ 2:
         : [ret] "={$2}" (-> usize),
-        : [number] "{$2}" (@intFromEnum(SYS.pipe)),
+        : [number] "{$2}" (@int_from_enum(SYS.pipe)),
           [fd] "{$4}" (fd),
         : "$1", "$3", "$5", "$6", "$7", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", "$25", "hi", "lo", "memory"
     );
@@ -50,7 +50,7 @@ pub fn syscall1(number: SYS, arg1: usize) usize {
         \\ dsubu $2, $0, $2
         \\ 1:
         : [ret] "={$2}" (-> usize),
-        : [number] "{$2}" (@intFromEnum(number)),
+        : [number] "{$2}" (@int_from_enum(number)),
           [arg1] "{$4}" (arg1),
         : "$1", "$3", "$5", "$6", "$7", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", "$25", "hi", "lo", "memory"
     );
@@ -63,7 +63,7 @@ pub fn syscall2(number: SYS, arg1: usize, arg2: usize) usize {
         \\ dsubu $2, $0, $2
         \\ 1:
         : [ret] "={$2}" (-> usize),
-        : [number] "{$2}" (@intFromEnum(number)),
+        : [number] "{$2}" (@int_from_enum(number)),
           [arg1] "{$4}" (arg1),
           [arg2] "{$5}" (arg2),
         : "$1", "$3", "$6", "$7", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", "$25", "hi", "lo", "memory"
@@ -77,7 +77,7 @@ pub fn syscall3(number: SYS, arg1: usize, arg2: usize, arg3: usize) usize {
         \\ dsubu $2, $0, $2
         \\ 1:
         : [ret] "={$2}" (-> usize),
-        : [number] "{$2}" (@intFromEnum(number)),
+        : [number] "{$2}" (@int_from_enum(number)),
           [arg1] "{$4}" (arg1),
           [arg2] "{$5}" (arg2),
           [arg3] "{$6}" (arg3),
@@ -92,7 +92,7 @@ pub fn syscall4(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize)
         \\ dsubu $2, $0, $2
         \\ 1:
         : [ret] "={$2}" (-> usize),
-        : [number] "{$2}" (@intFromEnum(number)),
+        : [number] "{$2}" (@int_from_enum(number)),
           [arg1] "{$4}" (arg1),
           [arg2] "{$5}" (arg2),
           [arg3] "{$6}" (arg3),
@@ -108,7 +108,7 @@ pub fn syscall5(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize,
         \\ dsubu $2, $0, $2
         \\ 1:
         : [ret] "={$2}" (-> usize),
-        : [number] "{$2}" (@intFromEnum(number)),
+        : [number] "{$2}" (@int_from_enum(number)),
           [arg1] "{$4}" (arg1),
           [arg2] "{$5}" (arg2),
           [arg3] "{$6}" (arg3),
@@ -136,7 +136,7 @@ pub fn syscall6(
         \\ dsubu $2, $0, $2
         \\ 1:
         : [ret] "={$2}" (-> usize),
-        : [number] "{$2}" (@intFromEnum(number)),
+        : [number] "{$2}" (@int_from_enum(number)),
           [arg1] "{$4}" (arg1),
           [arg2] "{$5}" (arg2),
           [arg3] "{$6}" (arg3),
@@ -163,7 +163,7 @@ pub fn syscall7(
         \\ dsubu $2, $0, $2
         \\ 1:
         : [ret] "={$2}" (-> usize),
-        : [number] "{$2}" (@intFromEnum(number)),
+        : [number] "{$2}" (@int_from_enum(number)),
           [arg1] "{$4}" (arg1),
           [arg2] "{$5}" (arg2),
           [arg3] "{$6}" (arg3),
@@ -184,7 +184,7 @@ pub fn restore() callconv(.Naked) noreturn {
     asm volatile (
         \\ syscall
         :
-        : [number] "{$2}" (@intFromEnum(SYS.rt_sigreturn)),
+        : [number] "{$2}" (@int_from_enum(SYS.rt_sigreturn)),
         : "$1", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", "$25", "hi", "lo", "memory"
     );
 }
@@ -193,7 +193,7 @@ pub fn restore_rt() callconv(.Naked) noreturn {
     asm volatile (
         \\ syscall
         :
-        : [number] "{$2}" (@intFromEnum(SYS.rt_sigreturn)),
+        : [number] "{$2}" (@int_from_enum(SYS.rt_sigreturn)),
         : "$1", "$3", "$4", "$5", "$6", "$7", "$8", "$9", "$10", "$11", "$12", "$13", "$14", "$15", "$24", "$25", "hi", "lo", "memory"
     );
 }

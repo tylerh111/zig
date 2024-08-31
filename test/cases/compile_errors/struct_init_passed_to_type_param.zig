@@ -1,7 +1,7 @@
 const MyStruct = struct { x: i32 };
 
 fn hi(comptime T: type) usize {
-    return @sizeOf(T);
+    return @size_of(T);
 }
 
 export const value = hi(MyStruct{ .x = 12 });

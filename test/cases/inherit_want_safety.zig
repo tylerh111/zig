@@ -1,4 +1,4 @@
-pub const panic = @compileError("");
+pub const panic = @compile_error("");
 
 pub export fn entry() usize {
     @setRuntimeSafety(false);

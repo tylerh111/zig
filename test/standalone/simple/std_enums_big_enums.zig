@@ -9,7 +9,7 @@ pub fn main() void {
                 .fields = make_fields: {
                     var fields: [1001]std.builtin.Type.EnumField = undefined;
                     for (&fields, 0..) |*field, i| {
-                        field.* = .{ .name = std.fmt.comptimePrint("field_{d}", .{i}), .value = i };
+                        field.* = .{ .name = std.fmt.comptime_print("field_{d}", .{i}), .value = i };
                     }
                     fields[1000] = .{ .name = "field_9999", .value = 9999 };
                     break :make_fields &fields;
@@ -24,8 +24,8 @@ pub fn main() void {
     _ = &set;
 
     var map = std.enums.EnumMap(big.Big, u8).init(undefined);
-    map = std.enums.EnumMap(big.Big, u8).initFullWith(undefined);
-    map = std.enums.EnumMap(big.Big, u8).initFullWithDefault(123, .{});
+    map = std.enums.EnumMap(big.Big, u8).init_full_with(undefined);
+    map = std.enums.EnumMap(big.Big, u8).init_full_with_default(123, .{});
 
     var multiset = std.enums.EnumMultiset(big.Big).init(.{});
     _ = &multiset;
@@ -34,5 +34,5 @@ pub fn main() void {
     _ = &bounded_multiset;
 
     var array = std.enums.EnumArray(big.Big, u8).init(undefined);
-    array = std.enums.EnumArray(big.Big, u8).initDefault(123, .{});
+    array = std.enums.EnumArray(big.Big, u8).init_default(123, .{});
 }

@@ -1,9 +1,9 @@
 const std = @import("std.zig");
-const comptimePrint = std.fmt.comptimePrint;
+const comptime_print = std.fmt.comptime_print;
 
 /// Will make `ptr` contain the location of the current invocation within the
 /// global workgroup. Each component is equal to the index of the local workgroup
-/// multiplied by the size of the local workgroup plus `localInvocationId`.
+/// multiplied by the size of the local workgroup plus `local_invocation_id`.
 /// `ptr` must be a reference to variable or struct field.
 pub fn global_invocation_id(comptime ptr: *addrspace(.input) @Vector(3, u32)) void {
     asm volatile (
@@ -70,7 +70,7 @@ pub fn fragment_depth(comptime ptr: *addrspace(.output) f32) void {
 /// Forms the main linkage for `input` and `output` address spaces.
 /// `ptr` must be a reference to variable or struct field.
 pub fn location(comptime ptr: anytype, comptime loc: u32) void {
-    const code = comptimePrint("OpDecorate %ptr Location {}", .{loc});
+    const code = comptime_print("OpDecorate %ptr Location {}", .{loc});
     asm volatile (code
         :
         : [ptr] "" (ptr),
@@ -80,7 +80,7 @@ pub fn location(comptime ptr: anytype, comptime loc: u32) void {
 /// Forms the main linkage for `input` and `output` address spaces.
 /// `ptr` must be a reference to variable or struct field.
 pub fn binding(comptime ptr: anytype, comptime group: u32, comptime bind: u32) void {
-    const code = comptimePrint(
+    const code = comptime_print(
         \\OpDecorate %ptr DescriptorSet {}
         \\OpDecorate %ptr Binding {}
     , .{ group, bind });
@@ -104,7 +104,7 @@ pub fn fragment_origin(comptime entry_point: anytype, comptime origin: Origin) v
         .upper_left => .OriginUpperLeft,
         .lower_left => .OriginLowerLeft,
     };
-    asm volatile ("OpExecutionMode %entry_point " ++ @tagName(origin_enum)
+    asm volatile ("OpExecutionMode %entry_point " ++ @tag_name(origin_enum)
         :
         : [entry_point] "" (entry_point),
     );
@@ -112,25 +112,25 @@ pub fn fragment_origin(comptime entry_point: anytype, comptime origin: Origin) v
 
 pub const DepthMode = enum(u32) {
     /// Declares that this entry point dynamically writes the
-    /// `fragmentDepth` built in-decorated variable.
+    /// `fragment_depth` built in-decorated variable.
     replacing = 12,
     /// Indicates that per-fragment tests may assume that
-    /// any `fragmentDepth` built in-decorated value written by the shader is
+    /// any `fragment_depth` built in-decorated value written by the shader is
     /// greater-than-or-equal to the fragment’s interpolated depth value
     greater = 14,
     /// Indicates that per-fragment tests may assume that
-    /// any `fragmentDepth` built in-decorated value written by the shader is
+    /// any `fragment_depth` built in-decorated value written by the shader is
     /// less-than-or-equal to the fragment’s interpolated depth value
     less = 15,
     /// Indicates that per-fragment tests may assume that
-    /// any `fragmentDepth` built in-decorated value written by the shader is
+    /// any `fragment_depth` built in-decorated value written by the shader is
     /// the same as the fragment’s interpolated depth value
     unchanged = 16,
 };
 
 /// Only valid with the `Fragment` calling convention.
 pub fn depth_mode(comptime entry_point: anytype, comptime mode: DepthMode) void {
-    const code = comptimePrint("OpExecutionMode %entry_point {}", .{@intFromEnum(mode)});
+    const code = comptime_print("OpExecutionMode %entry_point {}", .{@int_from_enum(mode)});
     asm volatile (code
         :
         : [entry_point] "" (entry_point),
@@ -140,7 +140,7 @@ pub fn depth_mode(comptime entry_point: anytype, comptime mode: DepthMode) void 
 /// Indicates the workgroup size in the `x`, `y`, and `z` dimensions.
 /// Only valid with the `GLCompute` or `Kernel` calling conventions.
 pub fn workgroup_size(comptime entry_point: anytype, comptime size: @Vector(3, u32)) void {
-    const code = comptimePrint("OpExecutionMode %entry_point LocalSize {} {} {}", .{
+    const code = comptime_print("OpExecutionMode %entry_point LocalSize {} {} {}", .{
         size[0],
         size[1],
         size[2],
@@ -154,7 +154,7 @@ pub fn workgroup_size(comptime entry_point: anytype, comptime size: @Vector(3, u
 /// A hint to the client, which indicates the workgroup size in the `x`, `y`, and `z` dimensions.
 /// Only valid with the `GLCompute` or `Kernel` calling conventions.
 pub fn workgroup_size_hint(comptime entry_point: anytype, comptime size: @Vector(3, u32)) void {
-    const code = comptimePrint("OpExecutionMode %entry_point LocalSizeHint {} {} {}", .{
+    const code = comptime_print("OpExecutionMode %entry_point LocalSizeHint {} {} {}", .{
         size[0],
         size[1],
         size[2],

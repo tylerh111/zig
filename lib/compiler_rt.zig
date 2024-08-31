@@ -11,7 +11,7 @@ comptime {
     _ = @import("compiler_rt/cmp.zig");
 
     _ = @import("compiler_rt/shift.zig");
-    _ = @import("compiler_rt/negXi2.zig");
+    _ = @import("compiler_rt/neg_xi2.zig");
     _ = @import("compiler_rt/int.zig");
     _ = @import("compiler_rt/mulXi3.zig");
     _ = @import("compiler_rt/divti3.zig");
@@ -171,7 +171,7 @@ comptime {
     _ = @import("compiler_rt/negxf2.zig");
 
     // other
-    _ = @import("compiler_rt/powiXf2.zig");
+    _ = @import("compiler_rt/powi_xf2.zig");
     _ = @import("compiler_rt/mulc3.zig");
     _ = @import("compiler_rt/mulhc3.zig");
     _ = @import("compiler_rt/mulsc3.zig");
@@ -224,7 +224,7 @@ comptime {
         _ = @import("compiler_rt/stack_probe.zig");
 
         // macOS has these functions inside libSystem.
-        if (builtin.cpu.arch.isAARCH64() and !builtin.os.tag.isDarwin()) {
+        if (builtin.cpu.arch.is_aarch64() and !builtin.os.tag.is_darwin()) {
             _ = @import("compiler_rt/aarch64_outline_atomics.zig");
         }
 

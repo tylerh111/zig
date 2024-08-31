@@ -79,6 +79,6 @@ test "truncate on vectors" {
             try expect(std.mem.eql(u8, &@as([4]u8, v2), &[4]u8{ 0xbb, 0xdd, 0xff, 0x22 }));
         }
     };
-    try comptime S.doTheTest();
-    try S.doTheTest();
+    try comptime S.do_the_test();
+    try S.do_the_test();
 }

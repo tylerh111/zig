@@ -78,24 +78,24 @@ pub const Params = struct {
     ad: ?[]const u8 = null,
 
     /// Baseline parameters for interactive logins using argon2i type
-    pub const interactive_2i = Self.fromLimits(4, 33554432);
+    pub const interactive_2i = Self.from_limits(4, 33554432);
     /// Baseline parameters for normal usage using argon2i type
-    pub const moderate_2i = Self.fromLimits(6, 134217728);
+    pub const moderate_2i = Self.from_limits(6, 134217728);
     /// Baseline parameters for offline usage using argon2i type
-    pub const sensitive_2i = Self.fromLimits(8, 536870912);
+    pub const sensitive_2i = Self.from_limits(8, 536870912);
 
     /// Baseline parameters for interactive logins using argon2id type
-    pub const interactive_2id = Self.fromLimits(2, 67108864);
+    pub const interactive_2id = Self.from_limits(2, 67108864);
     /// Baseline parameters for normal usage using argon2id type
-    pub const moderate_2id = Self.fromLimits(3, 268435456);
+    pub const moderate_2id = Self.from_limits(3, 268435456);
     /// Baseline parameters for offline usage using argon2id type
-    pub const sensitive_2id = Self.fromLimits(4, 1073741824);
+    pub const sensitive_2id = Self.from_limits(4, 1073741824);
 
     /// Create parameters from ops and mem limits, where mem_limit given in bytes
     pub fn from_limits(ops_limit: u32, mem_limit: usize) Self {
         const m = mem_limit / 1024;
         std.debug.assert(m <= max_int);
-        return .{ .t = ops_limit, .m = @as(u32, @intCast(m)), .p = 1 };
+        return .{ .t = ops_limit, .m = @as(u32, @int_cast(m)), .p = 1 };
     }
 };
 
@@ -110,27 +110,27 @@ fn init_hash(
     var parameters: [24]u8 = undefined;
     var tmp: [4]u8 = undefined;
     var b2 = Blake2b512.init(.{});
-    mem.writeInt(u32, parameters[0..4], params.p, .little);
-    mem.writeInt(u32, parameters[4..8], @as(u32, @intCast(dk_len)), .little);
-    mem.writeInt(u32, parameters[8..12], params.m, .little);
-    mem.writeInt(u32, parameters[12..16], params.t, .little);
-    mem.writeInt(u32, parameters[16..20], version, .little);
-    mem.writeInt(u32, parameters[20..24], @intFromEnum(mode), .little);
+    mem.write_int(u32, parameters[0..4], params.p, .little);
+    mem.write_int(u32, parameters[4..8], @as(u32, @int_cast(dk_len)), .little);
+    mem.write_int(u32, parameters[8..12], params.m, .little);
+    mem.write_int(u32, parameters[12..16], params.t, .little);
+    mem.write_int(u32, parameters[16..20], version, .little);
+    mem.write_int(u32, parameters[20..24], @int_from_enum(mode), .little);
     b2.update(&parameters);
-    mem.writeInt(u32, &tmp, @as(u32, @intCast(password.len)), .little);
+    mem.write_int(u32, &tmp, @as(u32, @int_cast(password.len)), .little);
     b2.update(&tmp);
     b2.update(password);
-    mem.writeInt(u32, &tmp, @as(u32, @intCast(salt.len)), .little);
+    mem.write_int(u32, &tmp, @as(u32, @int_cast(salt.len)), .little);
     b2.update(&tmp);
     b2.update(salt);
     const secret = params.secret orelse "";
     std.debug.assert(secret.len <= max_int);
-    mem.writeInt(u32, &tmp, @as(u32, @intCast(secret.len)), .little);
+    mem.write_int(u32, &tmp, @as(u32, @int_cast(secret.len)), .little);
     b2.update(&tmp);
     b2.update(secret);
     const ad = params.ad orelse "";
     std.debug.assert(ad.len <= max_int);
-    mem.writeInt(u32, &tmp, @as(u32, @intCast(ad.len)), .little);
+    mem.write_int(u32, &tmp, @as(u32, @int_cast(ad.len)), .little);
     b2.update(&tmp);
     b2.update(ad);
     b2.final(h0[0..Blake2b512.digest_length]);
@@ -140,7 +140,7 @@ fn init_hash(
 fn blake2b_long(out: []u8, in: []const u8) void {
     const H = Blake2b512;
     var outlen_bytes: [4]u8 = undefined;
-    mem.writeInt(u32, &outlen_bytes, @as(u32, @intCast(out.len)), .little);
+    mem.write_int(u32, &outlen_bytes, @as(u32, @int_cast(out.len)), .little);
 
     var out_buf: [H.digest_length]u8 = undefined;
 
@@ -183,18 +183,18 @@ fn init_blocks(
     var lane: u24 = 0;
     while (lane < threads) : (lane += 1) {
         const j = lane * (memory / threads);
-        mem.writeInt(u32, h0[Blake2b512.digest_length + 4 ..][0..4], lane, .little);
+        mem.write_int(u32, h0[Blake2b512.digest_length + 4 ..][0..4], lane, .little);
 
-        mem.writeInt(u32, h0[Blake2b512.digest_length..][0..4], 0, .little);
-        blake2bLong(&block0, h0);
+        mem.write_int(u32, h0[Blake2b512.digest_length..][0..4], 0, .little);
+        blake2b_long(&block0, h0);
         for (&blocks.items[j + 0], 0..) |*v, i| {
-            v.* = mem.readInt(u64, block0[i * 8 ..][0..8], .little);
+            v.* = mem.read_int(u64, block0[i * 8 ..][0..8], .little);
         }
 
-        mem.writeInt(u32, h0[Blake2b512.digest_length..][0..4], 1, .little);
-        blake2bLong(&block0, h0);
+        mem.write_int(u32, h0[Blake2b512.digest_length..][0..4], 1, .little);
+        blake2b_long(&block0, h0);
         for (&blocks.items[j + 1], 0..) |*v, i| {
-            v.* = mem.readInt(u64, block0[i * 8 ..][0..8], .little);
+            v.* = mem.read_int(u64, block0[i * 8 ..][0..8], .little);
         }
     }
 }
@@ -211,9 +211,9 @@ fn process_blocks(
     const segments = lanes / sync_points;
 
     if (builtin.single_threaded or threads == 1) {
-        processBlocksSt(blocks, time, memory, threads, mode, lanes, segments);
+        process_blocks_st(blocks, time, memory, threads, mode, lanes, segments);
     } else {
-        try processBlocksMt(allocator, blocks, time, memory, threads, mode, lanes, segments);
+        try process_blocks_mt(allocator, blocks, time, memory, threads, mode, lanes, segments);
     }
 }
 
@@ -232,7 +232,7 @@ fn process_blocks_st(
         while (slice < sync_points) : (slice += 1) {
             var lane: u24 = 0;
             while (lane < threads) : (lane += 1) {
-                processSegment(blocks, time, memory, threads, mode, lanes, segments, n, slice, lane);
+                process_segment(blocks, time, memory, threads, mode, lanes, segments, n, slice, lane);
             }
         }
     }
@@ -248,7 +248,7 @@ fn process_blocks_mt(
     lanes: u32,
     segments: u32,
 ) KdfError!void {
-    var threads_list = try std.ArrayList(Thread).initCapacity(allocator, threads);
+    var threads_list = try std.ArrayList(Thread).init_capacity(allocator, threads);
     defer threads_list.deinit();
 
     var n: u32 = 0;
@@ -257,16 +257,16 @@ fn process_blocks_mt(
         while (slice < sync_points) : (slice += 1) {
             var lane: u24 = 0;
             while (lane < threads) : (lane += 1) {
-                const thread = try Thread.spawn(.{}, processSegment, .{
+                const thread = try Thread.spawn(.{}, process_segment, .{
                     blocks, time, memory, threads, mode, lanes, segments, n, slice, lane,
                 });
-                threads_list.appendAssumeCapacity(thread);
+                threads_list.append_assume_capacity(thread);
             }
             lane = 0;
             while (lane < threads) : (lane += 1) {
                 threads_list.items[lane].join();
             }
-            threads_list.clearRetainingCapacity();
+            threads_list.clear_retaining_capacity();
         }
     }
 }
@@ -292,15 +292,15 @@ fn process_segment(
         in[2] = slice;
         in[3] = memory;
         in[4] = passes;
-        in[5] = @intFromEnum(mode);
+        in[5] = @int_from_enum(mode);
     }
     var index: u32 = 0;
     if (n == 0 and slice == 0) {
         index = 2;
         if (mode == .argon2i or mode == .argon2id) {
             in[6] += 1;
-            processBlock(&addresses, &in, &zero);
-            processBlock(&addresses, &addresses, &zero);
+            process_block(&addresses, &in, &zero);
+            process_block(&addresses, &addresses, &zero);
         }
     }
     var offset = lane * lanes + slice * segments + index;
@@ -316,15 +316,15 @@ fn process_segment(
         if (mode == .argon2i or (mode == .argon2id and n == 0 and slice < sync_points / 2)) {
             if (index % block_length == 0) {
                 in[6] += 1;
-                processBlock(&addresses, &in, &zero);
-                processBlock(&addresses, &addresses, &zero);
+                process_block(&addresses, &in, &zero);
+                process_block(&addresses, &addresses, &zero);
             }
             random = addresses[index % block_length];
         } else {
             random = blocks.items[prev][0];
         }
-        const new_offset = indexAlpha(random, lanes, segments, threads, n, slice, lane, index);
-        processBlockXor(&blocks.items[offset], &blocks.items[prev], &blocks.items[new_offset]);
+        const new_offset = index_alpha(random, lanes, segments, threads, n, slice, lane, index);
+        process_block_xor(&blocks.items[offset], &blocks.items[prev], &blocks.items[new_offset]);
     }
 }
 
@@ -333,7 +333,7 @@ fn process_block(
     in1: *align(16) const [block_length]u64,
     in2: *align(16) const [block_length]u64,
 ) void {
-    processBlockGeneric(out, in1, in2, false);
+    process_block_generic(out, in1, in2, false);
 }
 
 fn process_block_xor(
@@ -341,7 +341,7 @@ fn process_block_xor(
     in1: *const [block_length]u64,
     in2: *const [block_length]u64,
 ) void {
-    processBlockGeneric(out, in1, in2, true);
+    process_block_generic(out, in1, in2, true);
 }
 
 fn process_block_generic(
@@ -356,7 +356,7 @@ fn process_block_generic(
     }
     var i: usize = 0;
     while (i < block_length) : (i += 16) {
-        blamkaGeneric(t[i..][0..16]);
+        blamka_generic(t[i..][0..16]);
     }
     i = 0;
     var buffer: [16]u64 = undefined;
@@ -366,7 +366,7 @@ fn process_block_generic(
             buffer[j] = t[j * 8 + i];
             buffer[j + 1] = t[j * 8 + i + 1];
         }
-        blamkaGeneric(&buffer);
+        blamka_generic(&buffer);
         j = 0;
         while (j < block_length / 8) : (j += 2) {
             t[j * 8 + i] = buffer[j];
@@ -407,13 +407,13 @@ fn blamka_generic(x: *[16]u64) void {
         Rp(3, 4, 9, 14),
     };
     inline for (rounds) |r| {
-        x[r.a] = fBlaMka(x[r.a], x[r.b]);
+        x[r.a] = f_bla_mka(x[r.a], x[r.b]);
         x[r.d] = math.rotr(u64, x[r.d] ^ x[r.a], 32);
-        x[r.c] = fBlaMka(x[r.c], x[r.d]);
+        x[r.c] = f_bla_mka(x[r.c], x[r.d]);
         x[r.b] = math.rotr(u64, x[r.b] ^ x[r.c], 24);
-        x[r.a] = fBlaMka(x[r.a], x[r.b]);
+        x[r.a] = f_bla_mka(x[r.a], x[r.b]);
         x[r.d] = math.rotr(u64, x[r.d] ^ x[r.a], 16);
-        x[r.c] = fBlaMka(x[r.c], x[r.d]);
+        x[r.c] = f_bla_mka(x[r.c], x[r.d]);
         x[r.b] = math.rotr(u64, x[r.b] ^ x[r.c], 63);
     }
 }
@@ -433,9 +433,9 @@ fn finalize(
     }
     var block: [1024]u8 = undefined;
     for (blocks.items[memory - 1], 0..) |v, i| {
-        mem.writeInt(u64, block[i * 8 ..][0..8], v, .little);
+        mem.write_int(u64, block[i * 8 ..][0..8], v, .little);
     }
-    blake2bLong(out, &block);
+    blake2b_long(out, &block);
 }
 
 fn index_alpha(
@@ -448,7 +448,7 @@ fn index_alpha(
     lane: u24,
     index: u32,
 ) u32 {
-    var ref_lane = @as(u32, @intCast(rand >> 32)) % threads;
+    var ref_lane = @as(u32, @int_cast(rand >> 32)) % threads;
     if (n == 0 and slice == 0) {
         ref_lane = lane;
     }
@@ -470,7 +470,7 @@ fn index_alpha(
     var p = @as(u64, @as(u32, @truncate(rand)));
     p = (p * p) >> 32;
     p = (p * m) >> 32;
-    return ref_lane * lanes + @as(u32, @intCast(((s + m - (p + 1)) % lanes)));
+    return ref_lane * lanes + @as(u32, @int_cast(((s + m - (p + 1)) % lanes)));
 }
 
 /// Derives a key from the password, salt, and argon2 parameters.
@@ -493,19 +493,19 @@ pub fn kdf(
     if (salt.len < 8 or salt.len > max_int) return KdfError.WeakParameters;
     if (params.t < 1 or params.p < 1) return KdfError.WeakParameters;
 
-    var h0 = initHash(password, salt, params, derived_key.len, mode);
+    var h0 = init_hash(password, salt, params, derived_key.len, mode);
     const memory = @max(
         params.m / (sync_points * params.p) * (sync_points * params.p),
         2 * sync_points * params.p,
     );
 
-    var blocks = try Blocks.initCapacity(allocator, memory);
+    var blocks = try Blocks.init_capacity(allocator, memory);
     defer blocks.deinit();
 
-    blocks.appendNTimesAssumeCapacity([_]u64{0} ** block_length, memory);
+    blocks.append_ntimes_assume_capacity([_]u64{0} ** block_length, memory);
 
-    initBlocks(&blocks, &h0, memory, params.p);
-    try processBlocks(allocator, &blocks, params.t, memory, params.p, mode);
+    init_blocks(&blocks, &h0, memory, params.p);
+    try process_blocks(allocator, &blocks, params.t, memory, params.p, mode);
     finalize(&blocks, memory, params.p, derived_key);
 }
 
@@ -538,13 +538,13 @@ const PhcFormatHasher = struct {
         try kdf(allocator, &hash, password, &salt, params, mode);
 
         return phc_format.serialize(HashResult{
-            .alg_id = @tagName(mode),
+            .alg_id = @tag_name(mode),
             .alg_version = version,
             .m = params.m,
             .t = params.t,
             .p = params.p,
-            .salt = try BinValue(max_salt_len).fromSlice(&salt),
-            .hash = try BinValue(max_hash_len).fromSlice(&hash),
+            .salt = try BinValue(max_salt_len).from_slice(&salt),
+            .hash = try BinValue(max_hash_len).from_slice(&hash),
         }, buf);
     }
 
@@ -555,19 +555,19 @@ const PhcFormatHasher = struct {
     ) HasherError!void {
         const hash_result = try phc_format.deserialize(HashResult, str);
 
-        const mode = std.meta.stringToEnum(Mode, hash_result.alg_id) orelse
+        const mode = std.meta.string_to_enum(Mode, hash_result.alg_id) orelse
             return HasherError.PasswordVerificationFailed;
         if (hash_result.alg_version) |v| {
             if (v != version) return HasherError.InvalidEncoding;
         }
         const params = Params{ .t = hash_result.t, .m = hash_result.m, .p = hash_result.p };
 
-        const expected_hash = hash_result.hash.constSlice();
+        const expected_hash = hash_result.hash.const_slice();
         var hash_buf: [max_hash_len]u8 = undefined;
         if (expected_hash.len > hash_buf.len) return HasherError.InvalidEncoding;
         const hash = hash_buf[0..expected_hash.len];
 
-        try kdf(allocator, hash, password, hash_result.salt.constSlice(), params, mode);
+        try kdf(allocator, hash, password, hash_result.salt.const_slice(), params, mode);
         if (!mem.eql(u8, hash, expected_hash)) return HasherError.PasswordVerificationFailed;
     }
 };
@@ -643,7 +643,7 @@ test "argon2d" {
         0xf8, 0x68, 0xe3, 0xbe, 0x39, 0x84, 0xf3, 0xc1,
         0xa1, 0x3a, 0x4d, 0xb9, 0xfa, 0xbe, 0x4a, 0xcb,
     };
-    try std.testing.expectEqualSlices(u8, &dk, &want);
+    try std.testing.expect_equal_slices(u8, &dk, &want);
 }
 
 test "argon2i" {
@@ -668,7 +668,7 @@ test "argon2i" {
         0xc8, 0xde, 0x6b, 0x01, 0x6d, 0xd3, 0x88, 0xd2,
         0x99, 0x52, 0xa4, 0xc4, 0x67, 0x2b, 0x6c, 0xe8,
     };
-    try std.testing.expectEqualSlices(u8, &dk, &want);
+    try std.testing.expect_equal_slices(u8, &dk, &want);
 }
 
 test "argon2id" {
@@ -693,7 +693,7 @@ test "argon2id" {
         0xd0, 0x1e, 0xf0, 0x45, 0x2d, 0x75, 0xb6, 0x5e,
         0xb5, 0x25, 0x20, 0xe9, 0x6b, 0x01, 0xe6, 0x59,
     };
-    try std.testing.expectEqualSlices(u8, &dk, &want);
+    try std.testing.expect_equal_slices(u8, &dk, &want);
 }
 
 test "kdf" {
@@ -879,7 +879,7 @@ test "kdf" {
     };
     for (test_vectors) |v| {
         var want: [24]u8 = undefined;
-        _ = try std.fmt.hexToBytes(&want, v.hash);
+        _ = try std.fmt.hex_to_bytes(&want, v.hash);
 
         var dk: [24]u8 = undefined;
         try kdf(
@@ -891,7 +891,7 @@ test "kdf" {
             v.mode,
         );
 
-        try std.testing.expectEqualSlices(u8, &dk, &want);
+        try std.testing.expect_equal_slices(u8, &dk, &want);
     }
 }
 
@@ -915,12 +915,12 @@ test "password hash and password verify" {
     const password = "testpass";
 
     var buf: [128]u8 = undefined;
-    const hash = try strHash(
+    const hash = try str_hash(
         password,
         .{ .allocator = allocator, .params = .{ .t = 3, .m = 32, .p = 4 } },
         &buf,
     );
-    try strVerify(hash, password, .{ .allocator = allocator });
+    try str_verify(hash, password, .{ .allocator = allocator });
 }
 
 test "kdf derived key length" {

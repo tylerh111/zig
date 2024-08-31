@@ -19,7 +19,7 @@ pub fn exp(z: anytype) Complex(@TypeOf(z.re, z.im)) {
     return switch (T) {
         f32 => exp32(z),
         f64 => exp64(z),
-        else => @compileError("exp not implemented for " ++ @typeName(z)),
+        else => @compile_error("exp not implemented for " ++ @type_name(z)),
     };
 }
 
@@ -30,13 +30,13 @@ fn exp32(z: Complex(f32)) Complex(f32) {
     const x = z.re;
     const y = z.im;
 
-    const hy = @as(u32, @bitCast(y)) & 0x7fffffff;
+    const hy = @as(u32, @bit_cast(y)) & 0x7fffffff;
     // cexp(x + i0) = exp(x) + i0
     if (hy == 0) {
         return Complex(f32).init(@exp(x), y);
     }
 
-    const hx = @as(u32, @bitCast(x));
+    const hx = @as(u32, @bit_cast(x));
     // cexp(0 + iy) = cos(y) + isin(y)
     if ((hx & 0x7fffffff) == 0) {
         return Complex(f32).init(@cos(y), @sin(y));
@@ -75,8 +75,8 @@ fn exp64(z: Complex(f64)) Complex(f64) {
     const x = z.re;
     const y = z.im;
 
-    const fy: u64 = @bitCast(y);
-    const hy: u32 = @intCast((fy >> 32) & 0x7fffffff);
+    const fy: u64 = @bit_cast(y);
+    const hy: u32 = @int_cast((fy >> 32) & 0x7fffffff);
     const ly: u32 = @truncate(fy);
 
     // cexp(x + i0) = exp(x) + i0
@@ -84,8 +84,8 @@ fn exp64(z: Complex(f64)) Complex(f64) {
         return Complex(f64).init(@exp(x), y);
     }
 
-    const fx: u64 = @bitCast(x);
-    const hx: u32 = @intCast(fx >> 32);
+    const fx: u64 = @bit_cast(x);
+    const hx: u32 = @int_cast(fx >> 32);
     const lx: u32 = @truncate(fx);
 
     // cexp(0 + iy) = cos(y) + isin(y)
@@ -120,41 +120,41 @@ fn exp64(z: Complex(f64)) Complex(f64) {
 }
 
 test exp32 {
-    const tolerance_f32 = @sqrt(math.floatEps(f32));
+    const tolerance_f32 = @sqrt(math.float_eps(f32));
 
     {
         const a = Complex(f32).init(5, 3);
         const c = exp(a);
 
-        try testing.expectApproxEqRel(@as(f32, -1.46927917e+02), c.re, tolerance_f32);
-        try testing.expectApproxEqRel(@as(f32, 2.0944065e+01), c.im, tolerance_f32);
+        try testing.expect_approx_eq_rel(@as(f32, -1.46927917e+02), c.re, tolerance_f32);
+        try testing.expect_approx_eq_rel(@as(f32, 2.0944065e+01), c.im, tolerance_f32);
     }
 
     {
         const a = Complex(f32).init(88.8, 0x1p-149);
         const c = exp(a);
 
-        try testing.expectApproxEqAbs(math.inf(f32), c.re, tolerance_f32);
-        try testing.expectApproxEqAbs(@as(f32, 5.15088629e-07), c.im, tolerance_f32);
+        try testing.expect_approx_eq_abs(math.inf(f32), c.re, tolerance_f32);
+        try testing.expect_approx_eq_abs(@as(f32, 5.15088629e-07), c.im, tolerance_f32);
     }
 }
 
 test exp64 {
-    const tolerance_f64 = @sqrt(math.floatEps(f64));
+    const tolerance_f64 = @sqrt(math.float_eps(f64));
 
     {
         const a = Complex(f64).init(5, 3);
         const c = exp(a);
 
-        try testing.expectApproxEqRel(@as(f64, -1.469279139083189e+02), c.re, tolerance_f64);
-        try testing.expectApproxEqRel(@as(f64, 2.094406620874596e+01), c.im, tolerance_f64);
+        try testing.expect_approx_eq_rel(@as(f64, -1.469279139083189e+02), c.re, tolerance_f64);
+        try testing.expect_approx_eq_rel(@as(f64, 2.094406620874596e+01), c.im, tolerance_f64);
     }
 
     {
         const a = Complex(f64).init(709.8, 0x1p-1074);
         const c = exp(a);
 
-        try testing.expectApproxEqAbs(math.inf(f64), c.re, tolerance_f64);
-        try testing.expectApproxEqAbs(@as(f64, 9.036659362159884e-16), c.im, tolerance_f64);
+        try testing.expect_approx_eq_abs(math.inf(f64), c.re, tolerance_f64);
+        try testing.expect_approx_eq_abs(@as(f64, 9.036659362159884e-16), c.im, tolerance_f64);
     }
 }

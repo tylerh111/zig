@@ -7,15 +7,15 @@ pub fn assert_equal_hash(comptime Hasher: anytype, comptime expected_hex: *const
     var h: [Hasher.digest_length]u8 = undefined;
     Hasher.hash(input, &h, .{});
 
-    try assertEqual(expected_hex, &h);
+    try assert_equal(expected_hex, &h);
 }
 
 // Assert `expected` == hex(`input`) where `input` is a bytestring
 pub fn assert_equal(comptime expected_hex: [:0]const u8, input: []const u8) !void {
     var expected_bytes: [expected_hex.len / 2]u8 = undefined;
     for (&expected_bytes, 0..) |*r, i| {
-        r.* = fmt.parseInt(u8, expected_hex[2 * i .. 2 * i + 2], 16) catch unreachable;
+        r.* = fmt.parse_int(u8, expected_hex[2 * i .. 2 * i + 2], 16) catch unreachable;
     }
 
-    try testing.expectEqualSlices(u8, &expected_bytes, input);
+    try testing.expect_equal_slices(u8, &expected_bytes, input);
 }

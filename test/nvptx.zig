@@ -2,15 +2,15 @@ const std = @import("std");
 const Cases = @import("src/Cases.zig");
 
 pub fn add_cases(ctx: *Cases, b: *std.Build) !void {
-    const target = b.resolveTargetQuery(.{
+    const target = b.resolve_target_query(.{
         .cpu_arch = .nvptx64,
         .os_tag = .cuda,
     });
 
     {
-        var case = addPtx(ctx, target, "simple addition and subtraction");
+        var case = add_ptx(ctx, target, "simple addition and subtraction");
 
-        case.addCompile(
+        case.add_compile(
             \\fn add(a: i32, b: i32) i32 {
             \\    return a + b;
             \\}
@@ -25,9 +25,9 @@ pub fn add_cases(ctx: *Cases, b: *std.Build) !void {
     }
 
     {
-        var case = addPtx(ctx, target, "read special registers");
+        var case = add_ptx(ctx, target, "read special registers");
 
-        case.addCompile(
+        case.add_compile(
             \\fn thread_id_x() u32 {
             \\    return asm ("mov.u32 \t%[r], %tid.x;"
             \\       : [r] "=r" (-> u32),
@@ -35,16 +35,16 @@ pub fn add_cases(ctx: *Cases, b: *std.Build) !void {
             \\}
             \\
             \\pub export fn special_reg(a: []const i32, out: []i32) callconv(.Kernel) void {
-            \\    const i = threadIdX();
+            \\    const i = thread_id_x();
             \\    out[i] = a[i] + 7;
             \\}
         );
     }
 
     {
-        var case = addPtx(ctx, target, "address spaces");
+        var case = add_ptx(ctx, target, "address spaces");
 
-        case.addCompile(
+        case.add_compile(
             \\var x: i32 addrspace(.global) = 0;
             \\
             \\pub export fn increment(out: *i32) callconv(.Kernel) void {
@@ -55,8 +55,8 @@ pub fn add_cases(ctx: *Cases, b: *std.Build) !void {
     }
 
     {
-        var case = addPtx(ctx, target, "reduce in shared mem");
-        case.addCompile(
+        var case = add_ptx(ctx, target, "reduce in shared mem");
+        case.add_compile(
             \\fn thread_id_x() u32 {
             \\    return asm ("mov.u32 \t%[r], %tid.x;"
             \\       : [r] "=r" (-> u32),
@@ -66,7 +66,7 @@ pub fn add_cases(ctx: *Cases, b: *std.Build) !void {
             \\ var _sdata: [1024]f32 addrspace(.shared) = undefined;
             \\ pub export fn reduce_sum(d_x: []const f32, out: *f32) callconv(.Kernel) void {
             \\     var sdata: *addrspace(.generic) [1024]f32 = @addrSpaceCast(&_sdata);
-            \\     const tid: u32 = threadIdX();
+            \\     const tid: u32 = thread_id_x();
             \\     var sum = d_x[tid];
             \\     sdata[tid] = sum;
             \\     asm volatile ("bar.sync \t0;");

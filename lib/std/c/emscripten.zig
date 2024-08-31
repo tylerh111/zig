@@ -1,5 +1,5 @@
 const std = @import("../std.zig");
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const emscripten = std.os.emscripten;
 
 pub const AF = emscripten.AF;
@@ -160,7 +160,7 @@ pub const sem_t = extern struct {
     __size: [__SIZEOF_SEM_T]u8 align(@alignOf(usize)),
 };
 
-const __SIZEOF_SEM_T = 4 * @sizeOf(usize);
+const __SIZEOF_SEM_T = 4 * @size_of(usize);
 
 pub const RTLD = struct {
     pub const LAZY = 1;

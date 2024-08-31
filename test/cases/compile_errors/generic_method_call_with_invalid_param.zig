@@ -1,18 +1,18 @@
 export fn call_bool_method_with_void() void {
     const s = S{};
-    s.boolMethod({});
+    s.bool_method({});
 }
 
 export fn call_void_method_with_bool() void {
     const s = S{};
-    s.voidMethod(false);
+    s.void_method(false);
 }
 
 export fn call_comptime_bool_method_with_runtime_bool() void {
     const s = S{};
     var arg = true;
     _ = &arg;
-    s.comptimeBoolMethod(arg);
+    s.comptime_bool_method(arg);
 }
 
 const S = struct {

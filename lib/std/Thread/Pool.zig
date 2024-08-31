@@ -12,7 +12,7 @@ threads: []std.Thread,
 
 const RunQueue = std.SinglyLinkedList(Runnable);
 const Runnable = struct {
-    runFn: RunProto,
+    run_fn: RunProto,
 };
 
 const RunProto = *const fn (*Runnable) void;
@@ -34,7 +34,7 @@ pub fn init(pool: *Pool, options: Options) !void {
         return;
     }
 
-    const thread_count = options.n_jobs orelse @max(1, std.Thread.getCpuCount() catch 1);
+    const thread_count = options.n_jobs orelse @max(1, std.Thread.get_cpu_count() catch 1);
 
     // kill and join any threads we spawned and free memory on error.
     pool.threads = try allocator.alloc(std.Thread, thread_count);
@@ -93,12 +93,12 @@ pub fn spawn_wg(pool: *Pool, wait_group: *WaitGroup, comptime func: anytype, arg
     const Closure = struct {
         arguments: Args,
         pool: *Pool,
-        run_node: RunQueue.Node = .{ .data = .{ .runFn = runFn } },
+        run_node: RunQueue.Node = .{ .data = .{ .run_fn = run_fn } },
         wait_group: *WaitGroup,
 
         fn run_fn(runnable: *Runnable) void {
             const run_node: *RunQueue.Node = @fieldParentPtr("data", runnable);
-            const closure: *@This() = @alignCast(@fieldParentPtr("run_node", run_node));
+            const closure: *@This() = @align_cast(@fieldParentPtr("run_node", run_node));
             @call(.auto, func, closure.arguments);
             closure.wait_group.finish();
 
@@ -144,11 +144,11 @@ pub fn spawn(pool: *Pool, comptime func: anytype, args: anytype) !void {
     const Closure = struct {
         arguments: Args,
         pool: *Pool,
-        run_node: RunQueue.Node = .{ .data = .{ .runFn = runFn } },
+        run_node: RunQueue.Node = .{ .data = .{ .run_fn = run_fn } },
 
         fn run_fn(runnable: *Runnable) void {
             const run_node: *RunQueue.Node = @fieldParentPtr("data", runnable);
-            const closure: *@This() = @alignCast(@fieldParentPtr("run_node", run_node));
+            const closure: *@This() = @align_cast(@fieldParentPtr("run_node", run_node));
             @call(.auto, func, closure.arguments);
 
             // The thread pool's allocator is protected by the mutex.
@@ -182,13 +182,13 @@ fn worker(pool: *Pool) void {
     defer pool.mutex.unlock();
 
     while (true) {
-        while (pool.run_queue.popFirst()) |run_node| {
+        while (pool.run_queue.pop_first()) |run_node| {
             // Temporarily unlock the mutex in order to execute the run_node
             pool.mutex.unlock();
             defer pool.mutex.lock();
 
-            const runFn = run_node.data.runFn;
-            runFn(&run_node.data);
+            const run_fn = run_node.data.run_fn;
+            run_fn(&run_node.data);
         }
 
         // Stop executing instead of waiting if the thread pool is no longer running.
@@ -201,13 +201,13 @@ fn worker(pool: *Pool) void {
 }
 
 pub fn wait_and_work(pool: *Pool, wait_group: *WaitGroup) void {
-    while (!wait_group.isDone()) {
+    while (!wait_group.is_done()) {
         if (blk: {
             pool.mutex.lock();
             defer pool.mutex.unlock();
-            break :blk pool.run_queue.popFirst();
+            break :blk pool.run_queue.pop_first();
         }) |run_node| {
-            run_node.data.runFn(&run_node.data);
+            run_node.data.run_fn(&run_node.data);
             continue;
         }
 

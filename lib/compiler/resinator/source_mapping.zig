@@ -49,7 +49,7 @@ pub fn parse_and_remove_line_commands(allocator: Allocator, source: []const u8, 
     defer current_mapping.filename.deinit(allocator);
 
     if (options.initial_filename) |initial_filename| {
-        try current_mapping.filename.appendSlice(allocator, initial_filename);
+        try current_mapping.filename.append_slice(allocator, initial_filename);
         parse_result.mappings.root_filename_offset = try parse_result.mappings.files.put(allocator, initial_filename);
     }
 
@@ -77,9 +77,9 @@ pub fn parse_and_remove_line_commands(allocator: Allocator, source: []const u8, 
                     }
                 },
                 '\r', '\n' => {
-                    const is_crlf = formsLineEndingPair(source, c, index + 1);
+                    const is_crlf = forms_line_ending_pair(source, c, index + 1);
                     if (!current_mapping.ignore_contents) {
-                        try handleLineEnd(allocator, line_number, &parse_result.mappings, &current_mapping);
+                        try handle_line_end(allocator, line_number, &parse_result.mappings, &current_mapping);
 
                         result.write(c);
                         if (is_crlf) result.write(source[index + 1]);
@@ -97,7 +97,7 @@ pub fn parse_and_remove_line_commands(allocator: Allocator, source: []const u8, 
                     state = .non_preprocessor;
                     if (pending_start != null) {
                         if (!current_mapping.ignore_contents) {
-                            result.writeSlice(source[pending_start.? .. index + 1]);
+                            result.write_slice(source[pending_start.? .. index + 1]);
                         }
                         pending_start = null;
                         continue;
@@ -111,15 +111,15 @@ pub fn parse_and_remove_line_commands(allocator: Allocator, source: []const u8, 
                 '\r', '\n' => {
                     // Now that we have the full line we can decide what to do with it
                     const preprocessor_str = source[preprocessor_start..index];
-                    const is_crlf = formsLineEndingPair(source, c, index + 1);
-                    if (std.mem.startsWith(u8, preprocessor_str, "#line")) {
-                        try handleLineCommand(allocator, preprocessor_str, &current_mapping);
+                    const is_crlf = forms_line_ending_pair(source, c, index + 1);
+                    if (std.mem.starts_with(u8, preprocessor_str, "#line")) {
+                        try handle_line_command(allocator, preprocessor_str, &current_mapping);
                     } else {
                         if (!current_mapping.ignore_contents) {
-                            try handleLineEnd(allocator, line_number, &parse_result.mappings, &current_mapping);
+                            try handle_line_end(allocator, line_number, &parse_result.mappings, &current_mapping);
 
                             const line_ending_len: usize = if (is_crlf) 2 else 1;
-                            result.writeSlice(source[pending_start.? .. index + line_ending_len]);
+                            result.write_slice(source[pending_start.? .. index + line_ending_len]);
                             line_number += 1;
                         }
                     }
@@ -131,9 +131,9 @@ pub fn parse_and_remove_line_commands(allocator: Allocator, source: []const u8, 
             },
             .non_preprocessor => switch (c) {
                 '\r', '\n' => {
-                    const is_crlf = formsLineEndingPair(source, c, index + 1);
+                    const is_crlf = forms_line_ending_pair(source, c, index + 1);
                     if (!current_mapping.ignore_contents) {
-                        try handleLineEnd(allocator, line_number, &parse_result.mappings, &current_mapping);
+                        try handle_line_end(allocator, line_number, &parse_result.mappings, &current_mapping);
 
                         result.write(c);
                         if (is_crlf) result.write(source[index + 1]);
@@ -154,24 +154,24 @@ pub fn parse_and_remove_line_commands(allocator: Allocator, source: []const u8, 
         switch (state) {
             .line_start => {},
             .non_preprocessor => {
-                try handleLineEnd(allocator, line_number, &parse_result.mappings, &current_mapping);
+                try handle_line_end(allocator, line_number, &parse_result.mappings, &current_mapping);
             },
             .preprocessor => {
                 // Now that we have the full line we can decide what to do with it
                 const preprocessor_str = source[preprocessor_start..index];
-                if (std.mem.startsWith(u8, preprocessor_str, "#line")) {
-                    try handleLineCommand(allocator, preprocessor_str, &current_mapping);
+                if (std.mem.starts_with(u8, preprocessor_str, "#line")) {
+                    try handle_line_command(allocator, preprocessor_str, &current_mapping);
                 } else {
-                    try handleLineEnd(allocator, line_number, &parse_result.mappings, &current_mapping);
+                    try handle_line_end(allocator, line_number, &parse_result.mappings, &current_mapping);
                     if (!current_mapping.ignore_contents) {
-                        result.writeSlice(source[pending_start.?..index]);
+                        result.write_slice(source[pending_start.?..index]);
                     }
                 }
             },
         }
     }
 
-    parse_result.result = result.getWritten();
+    parse_result.result = result.get_written();
 
     // Remove whitespace from the end of the result. This avoids issues when the
     // preprocessor adds a newline to the end of the file, since then the
@@ -180,7 +180,7 @@ pub fn parse_and_remove_line_commands(allocator: Allocator, source: []const u8, 
     // There's no way that whitespace at the end of a file can affect the parsing
     // of the RC script so this is okay to do unconditionally.
     // TODO: There might be a better way around this
-    while (parse_result.result.len > 0 and std.ascii.isWhitespace(parse_result.result[parse_result.result.len - 1])) {
+    while (parse_result.result.len > 0 and std.ascii.is_whitespace(parse_result.result[parse_result.result.len - 1])) {
         parse_result.result.len -= 1;
     }
 
@@ -188,18 +188,18 @@ pub fn parse_and_remove_line_commands(allocator: Allocator, source: []const u8, 
     // In this case, we want to fake a line mapping just so that we return something
     // that is useable in the same way that a non-empty mapping would be.
     if (parse_result.mappings.sources.root == null) {
-        try handleLineEnd(allocator, line_number, &parse_result.mappings, &current_mapping);
+        try handle_line_end(allocator, line_number, &parse_result.mappings, &current_mapping);
     }
 
     return parse_result;
 }
 
-/// Note: This should function the same as lex.LineHandler.currentIndexFormsLineEndingPair
+/// Note: This should function the same as lex.LineHandler.current_index_forms_line_ending_pair
 pub fn forms_line_ending_pair(source: []const u8, line_ending: u8, next_index: usize) bool {
     if (next_index >= source.len) return false;
 
     const next_ending = source[next_index];
-    return utils.isLineEndingPair(line_ending, next_ending);
+    return utils.is_line_ending_pair(line_ending, next_ending);
 }
 
 pub fn handle_line_end(allocator: Allocator, post_processed_line_number: usize, mapping: *SourceMappings, current_mapping: *CurrentMapping) !void {
@@ -218,35 +218,35 @@ pub fn handle_line_command(allocator: Allocator, line_command: []const u8, curre
     const line_directive = tokenizer.next() orelse return; // #line
     if (!std.mem.eql(u8, line_directive, "#line")) return;
     const linenum_str = tokenizer.next() orelse return;
-    const linenum = std.fmt.parseUnsigned(usize, linenum_str, 10) catch return;
+    const linenum = std.fmt.parse_unsigned(usize, linenum_str, 10) catch return;
 
     var filename_literal = tokenizer.rest();
-    while (filename_literal.len > 0 and std.ascii.isWhitespace(filename_literal[filename_literal.len - 1])) {
+    while (filename_literal.len > 0 and std.ascii.is_whitespace(filename_literal[filename_literal.len - 1])) {
         filename_literal.len -= 1;
     }
     if (filename_literal.len < 2) return;
     const is_quoted = filename_literal[0] == '"' and filename_literal[filename_literal.len - 1] == '"';
     if (!is_quoted) return;
-    const filename = parseFilename(allocator, filename_literal[1 .. filename_literal.len - 1]) catch |err| switch (err) {
+    const filename = parse_filename(allocator, filename_literal[1 .. filename_literal.len - 1]) catch |err| switch (err) {
         error.OutOfMemory => |e| return e,
         else => return,
     };
     defer allocator.free(filename);
 
     // \x00 bytes in the filename is incompatible with how StringTable works
-    if (std.mem.indexOfScalar(u8, filename, '\x00') != null) return;
+    if (std.mem.index_of_scalar(u8, filename, '\x00') != null) return;
 
     current_mapping.line_num = linenum;
-    current_mapping.filename.clearRetainingCapacity();
-    try current_mapping.filename.appendSlice(allocator, filename);
+    current_mapping.filename.clear_retaining_capacity();
+    try current_mapping.filename.append_slice(allocator, filename);
     current_mapping.pending = true;
-    current_mapping.ignore_contents = std.ascii.endsWithIgnoreCase(filename, ".c") or std.ascii.endsWithIgnoreCase(filename, ".h");
+    current_mapping.ignore_contents = std.ascii.ends_with_ignore_case(filename, ".c") or std.ascii.ends_with_ignore_case(filename, ".h");
 }
 
 pub fn parse_and_remove_line_commands_alloc(allocator: Allocator, source: []const u8, options: ParseAndRemoveLineCommandsOptions) !ParseLineCommandsResult {
     const buf = try allocator.alloc(u8, source.len);
     errdefer allocator.free(buf);
-    var result = try parseAndRemoveLineCommands(allocator, source, buf, options);
+    var result = try parse_and_remove_line_commands(allocator, source, buf, options);
     result.result = try allocator.realloc(buf, result.result.len);
     return result;
 }
@@ -270,7 +270,7 @@ fn parse_filename(allocator: Allocator, str: []const u8) error{ OutOfMemory, Inv
         escape_u,
     };
 
-    var filename = try std.ArrayList(u8).initCapacity(allocator, str.len);
+    var filename = try std.ArrayList(u8).init_capacity(allocator, str.len);
     errdefer filename.deinit();
     var state: State = .string;
     var index: usize = 0;
@@ -283,7 +283,7 @@ fn parse_filename(allocator: Allocator, str: []const u8) error{ OutOfMemory, Inv
             .string => switch (c) {
                 '\\' => state = .escape,
                 '"' => return error.InvalidString,
-                else => filename.appendAssumeCapacity(c),
+                else => filename.append_assume_capacity(c),
             },
             .escape => switch (c) {
                 '\'', '"', '\\', '?', 'n', 'r', 't', 'a', 'b', 'e', 'f', 'v' => {
@@ -299,7 +299,7 @@ fn parse_filename(allocator: Allocator, str: []const u8) error{ OutOfMemory, Inv
                         'v' => '\x0b',
                         else => unreachable,
                     };
-                    filename.appendAssumeCapacity(escaped_c);
+                    filename.append_assume_capacity(escaped_c);
                     state = .string;
                 },
                 'x' => {
@@ -308,7 +308,7 @@ fn parse_filename(allocator: Allocator, str: []const u8) error{ OutOfMemory, Inv
                     state = .escape_hex;
                 },
                 '0'...'7' => {
-                    escape_val = std.fmt.charToDigit(c, 8) catch unreachable;
+                    escape_val = std.fmt.char_to_digit(c, 8) catch unreachable;
                     escape_len = 1;
                     state = .escape_octal;
                 },
@@ -328,46 +328,46 @@ fn parse_filename(allocator: Allocator, str: []const u8) error{ OutOfMemory, Inv
             },
             .escape_hex => switch (c) {
                 '0'...'9', 'a'...'f', 'A'...'F' => {
-                    const digit = std.fmt.charToDigit(c, 16) catch unreachable;
-                    if (escape_val != 0) escape_val = std.math.mul(u8, @as(u8, @intCast(escape_val)), 16) catch return error.InvalidString;
-                    escape_val = std.math.add(u8, @as(u8, @intCast(escape_val)), digit) catch return error.InvalidString;
+                    const digit = std.fmt.char_to_digit(c, 16) catch unreachable;
+                    if (escape_val != 0) escape_val = std.math.mul(u8, @as(u8, @int_cast(escape_val)), 16) catch return error.InvalidString;
+                    escape_val = std.math.add(u8, @as(u8, @int_cast(escape_val)), digit) catch return error.InvalidString;
                     escape_len += 1;
                 },
                 else => {
                     if (escape_len == 0) return error.InvalidString;
-                    filename.appendAssumeCapacity(@intCast(escape_val));
+                    filename.append_assume_capacity(@int_cast(escape_val));
                     state = .string;
                     index -= 1; // reconsume
                 },
             },
             .escape_octal => switch (c) {
                 '0'...'7' => {
-                    const digit = std.fmt.charToDigit(c, 8) catch unreachable;
-                    if (escape_val != 0) escape_val = std.math.mul(u8, @as(u8, @intCast(escape_val)), 8) catch return error.InvalidString;
-                    escape_val = std.math.add(u8, @as(u8, @intCast(escape_val)), digit) catch return error.InvalidString;
+                    const digit = std.fmt.char_to_digit(c, 8) catch unreachable;
+                    if (escape_val != 0) escape_val = std.math.mul(u8, @as(u8, @int_cast(escape_val)), 8) catch return error.InvalidString;
+                    escape_val = std.math.add(u8, @as(u8, @int_cast(escape_val)), digit) catch return error.InvalidString;
                     escape_len += 1;
                     if (escape_len == 3) {
-                        filename.appendAssumeCapacity(@intCast(escape_val));
+                        filename.append_assume_capacity(@int_cast(escape_val));
                         state = .string;
                     }
                 },
                 else => {
                     if (escape_len == 0) return error.InvalidString;
-                    filename.appendAssumeCapacity(@intCast(escape_val));
+                    filename.append_assume_capacity(@int_cast(escape_val));
                     state = .string;
                     index -= 1; // reconsume
                 },
             },
             .escape_u => switch (c) {
                 '0'...'9', 'a'...'f', 'A'...'F' => {
-                    const digit = std.fmt.charToDigit(c, 16) catch unreachable;
-                    if (escape_val != 0) escape_val = std.math.mul(u21, @as(u21, @intCast(escape_val)), 16) catch return error.InvalidString;
-                    escape_val = std.math.add(u21, @as(u21, @intCast(escape_val)), digit) catch return error.InvalidString;
+                    const digit = std.fmt.char_to_digit(c, 16) catch unreachable;
+                    if (escape_val != 0) escape_val = std.math.mul(u21, @as(u21, @int_cast(escape_val)), 16) catch return error.InvalidString;
+                    escape_val = std.math.add(u21, @as(u21, @int_cast(escape_val)), digit) catch return error.InvalidString;
                     escape_len += 1;
                     if (escape_len == escape_expected_len) {
                         var buf: [4]u8 = undefined;
-                        const utf8_len = std.unicode.utf8Encode(@intCast(escape_val), &buf) catch return error.InvalidString;
-                        filename.appendSliceAssumeCapacity(buf[0..utf8_len]);
+                        const utf8_len = std.unicode.utf8_encode(@int_cast(escape_val), &buf) catch return error.InvalidString;
+                        filename.append_slice_assume_capacity(buf[0..utf8_len]);
                         state = .string;
                     }
                 },
@@ -381,36 +381,36 @@ fn parse_filename(allocator: Allocator, str: []const u8) error{ OutOfMemory, Inv
             .escape, .escape_u => return error.InvalidString,
             .escape_hex => {
                 if (escape_len == 0) return error.InvalidString;
-                filename.appendAssumeCapacity(@intCast(escape_val));
+                filename.append_assume_capacity(@int_cast(escape_val));
             },
             .escape_octal => {
-                filename.appendAssumeCapacity(@intCast(escape_val));
+                filename.append_assume_capacity(@int_cast(escape_val));
             },
         }
     }
 
-    return filename.toOwnedSlice();
+    return filename.to_owned_slice();
 }
 
 fn test_parse_filename(expected: []const u8, input: []const u8) !void {
-    const parsed = try parseFilename(std.testing.allocator, input);
+    const parsed = try parse_filename(std.testing.allocator, input);
     defer std.testing.allocator.free(parsed);
 
-    return std.testing.expectEqualSlices(u8, expected, parsed);
+    return std.testing.expect_equal_slices(u8, expected, parsed);
 }
 
-test parseFilename {
-    try testParseFilename("'\"?\\\t\n\r\x11", "\\'\\\"\\?\\\\\\t\\n\\r\\x11");
-    try testParseFilename("\xABz\x53", "\\xABz\\123");
-    try testParseFilename("⚡⚡", "\\u26A1\\U000026A1");
-    try std.testing.expectError(error.InvalidString, parseFilename(std.testing.allocator, "\""));
-    try std.testing.expectError(error.InvalidString, parseFilename(std.testing.allocator, "\\"));
-    try std.testing.expectError(error.InvalidString, parseFilename(std.testing.allocator, "\\u"));
-    try std.testing.expectError(error.InvalidString, parseFilename(std.testing.allocator, "\\U"));
-    try std.testing.expectError(error.InvalidString, parseFilename(std.testing.allocator, "\\x"));
-    try std.testing.expectError(error.InvalidString, parseFilename(std.testing.allocator, "\\xZZ"));
-    try std.testing.expectError(error.InvalidString, parseFilename(std.testing.allocator, "\\xABCDEF"));
-    try std.testing.expectError(error.InvalidString, parseFilename(std.testing.allocator, "\\777"));
+test parse_filename {
+    try test_parse_filename("'\"?\\\t\n\r\x11", "\\'\\\"\\?\\\\\\t\\n\\r\\x11");
+    try test_parse_filename("\xABz\x53", "\\xABz\\123");
+    try test_parse_filename("⚡⚡", "\\u26A1\\U000026A1");
+    try std.testing.expect_error(error.InvalidString, parse_filename(std.testing.allocator, "\""));
+    try std.testing.expect_error(error.InvalidString, parse_filename(std.testing.allocator, "\\"));
+    try std.testing.expect_error(error.InvalidString, parse_filename(std.testing.allocator, "\\u"));
+    try std.testing.expect_error(error.InvalidString, parse_filename(std.testing.allocator, "\\U"));
+    try std.testing.expect_error(error.InvalidString, parse_filename(std.testing.allocator, "\\x"));
+    try std.testing.expect_error(error.InvalidString, parse_filename(std.testing.allocator, "\\xZZ"));
+    try std.testing.expect_error(error.InvalidString, parse_filename(std.testing.allocator, "\\xABCDEF"));
+    try std.testing.expect_error(error.InvalidString, parse_filename(std.testing.allocator, "\\777"));
 }
 
 pub const SourceMappings = struct {
@@ -454,7 +454,7 @@ pub const SourceMappings = struct {
             if (order == .eq) break;
             if (order == .gt) last_gt = current;
 
-            node = current.children[@intFromBool(order == .gt)] orelse {
+            node = current.children[@int_from_bool(order == .gt)] orelse {
                 // Regardless of the current order, last_gt will contain the
                 // the node we want to return.
                 //
@@ -487,15 +487,15 @@ pub const SourceMappings = struct {
 
     /// Note: `line_num` and `corresponding_line_num` start at 1
     pub fn set(self: *SourceMappings, line_num: usize, corresponding_line_num: usize, filename_offset: u32) !void {
-        const maybe_node = self.findNode(line_num);
+        const maybe_node = self.find_node(line_num);
 
         const need_new_node = need_new_node: {
             if (maybe_node) |node| {
                 if (node.key.filename_offset != filename_offset) {
                     break :need_new_node true;
                 }
-                const exist_delta = @as(i64, @intCast(node.key.corresponding_start_line)) - @as(i64, @intCast(node.key.start_line));
-                const cur_delta = @as(i64, @intCast(corresponding_line_num)) - @as(i64, @intCast(line_num));
+                const exist_delta = @as(i64, @int_cast(node.key.corresponding_start_line)) - @as(i64, @int_cast(node.key.start_line));
+                const cur_delta = @as(i64, @int_cast(corresponding_line_num)) - @as(i64, @int_cast(line_num));
                 if (exist_delta != cur_delta) {
                     break :need_new_node true;
                 }
@@ -514,7 +514,7 @@ pub const SourceMappings = struct {
                 .corresponding_start_line = corresponding_line_num,
                 .filename_offset = filename_offset,
             };
-            var entry = self.sources.getEntryFor(key);
+            var entry = self.sources.get_entry_for(key);
             var new_node = try self.source_node_pool.create();
             new_node.key = key;
             entry.set(new_node);
@@ -526,7 +526,7 @@ pub const SourceMappings = struct {
 
     /// Note: `line_num` starts at 1
     pub fn get(self: SourceMappings, line_num: usize) ?Source {
-        const node = self.findNode(line_num) orelse return null;
+        const node = self.find_node(line_num) orelse return null;
         return node.key;
     }
 
@@ -550,7 +550,7 @@ pub const SourceMappings = struct {
 
     pub fn collapse(self: *SourceMappings, line_num: usize, num_following_lines_to_collapse: usize) !void {
         std.debug.assert(num_following_lines_to_collapse > 0);
-        var node = self.findNode(line_num).?;
+        var node = self.find_node(line_num).?;
         const span_diff = num_following_lines_to_collapse;
         if (node.key.start_line != line_num) {
             const offset = line_num - node.key.start_line;
@@ -560,7 +560,7 @@ pub const SourceMappings = struct {
                 .corresponding_start_line = node.key.corresponding_start_line + node.key.span + offset,
                 .filename_offset = node.key.filename_offset,
             };
-            var entry = self.sources.getEntryFor(key);
+            var entry = self.sources.get_entry_for(key);
             var new_node = try self.source_node_pool.create();
             new_node.key = key;
             entry.set(new_node);
@@ -582,10 +582,10 @@ pub const SourceMappings = struct {
 
             // This can only really happen if there are #line commands within
             // a multiline comment, which in theory should be skipped over.
-            // However, currently, parseAndRemoveLineCommands is not aware of
+            // However, currently, parse_and_remove_line_commands is not aware of
             // comments at all.
             //
-            // TODO: Make parseAndRemoveLineCommands aware of comments/strings
+            // TODO: Make parse_and_remove_line_commands aware of comments/strings
             //       and turn this into an assertion
             if (prev.key.start_line > inorder_node.key.start_line) {
                 return error.InvalidSourceMappingCollapse;
@@ -615,16 +615,16 @@ test "SourceMappings collapse" {
 
     try mappings.collapse(2, 2);
 
-    try std.testing.expectEqual(@as(usize, 3), mappings.end_line);
-    const span_1 = mappings.getCorrespondingSpan(1).?;
-    try std.testing.expectEqual(@as(usize, 1), span_1.start_line);
-    try std.testing.expectEqual(@as(usize, 1), span_1.end_line);
-    const span_2 = mappings.getCorrespondingSpan(2).?;
-    try std.testing.expectEqual(@as(usize, 2), span_2.start_line);
-    try std.testing.expectEqual(@as(usize, 4), span_2.end_line);
-    const span_3 = mappings.getCorrespondingSpan(3).?;
-    try std.testing.expectEqual(@as(usize, 5), span_3.start_line);
-    try std.testing.expectEqual(@as(usize, 5), span_3.end_line);
+    try std.testing.expect_equal(@as(usize, 3), mappings.end_line);
+    const span_1 = mappings.get_corresponding_span(1).?;
+    try std.testing.expect_equal(@as(usize, 1), span_1.start_line);
+    try std.testing.expect_equal(@as(usize, 1), span_1.end_line);
+    const span_2 = mappings.get_corresponding_span(2).?;
+    try std.testing.expect_equal(@as(usize, 2), span_2.start_line);
+    try std.testing.expect_equal(@as(usize, 4), span_2.end_line);
+    const span_3 = mappings.get_corresponding_span(3).?;
+    try std.testing.expect_equal(@as(usize, 5), span_3.start_line);
+    try std.testing.expect_equal(@as(usize, 5), span_3.end_line);
 }
 
 /// Same thing as StringTable in Zig's src/Wasm.zig
@@ -638,7 +638,7 @@ pub const StringTable = struct {
     }
 
     pub fn put(self: *StringTable, allocator: Allocator, value: []const u8) !u32 {
-        const result = try self.map.getOrPutContextAdapted(
+        const result = try self.map.get_or_put_context_adapted(
             allocator,
             value,
             std.hash_map.StringIndexAdapter{ .bytes = &self.data },
@@ -648,11 +648,11 @@ pub const StringTable = struct {
             return result.key_ptr.*;
         }
 
-        try self.data.ensureUnusedCapacity(allocator, value.len + 1);
-        const offset: u32 = @intCast(self.data.items.len);
+        try self.data.ensure_unused_capacity(allocator, value.len + 1);
+        const offset: u32 = @int_cast(self.data.items.len);
 
-        self.data.appendSliceAssumeCapacity(value);
-        self.data.appendAssumeCapacity(0);
+        self.data.append_slice_assume_capacity(value);
+        self.data.append_assume_capacity(0);
 
         result.key_ptr.* = offset;
 
@@ -661,11 +661,11 @@ pub const StringTable = struct {
 
     pub fn get(self: StringTable, offset: u32) []const u8 {
         std.debug.assert(offset < self.data.items.len);
-        return std.mem.sliceTo(@as([*:0]const u8, @ptrCast(self.data.items.ptr + offset)), 0);
+        return std.mem.slice_to(@as([*:0]const u8, @ptr_cast(self.data.items.ptr + offset)), 0);
     }
 
     pub fn get_offset(self: *StringTable, value: []const u8) ?u32 {
-        return self.map.getKeyAdapted(
+        return self.map.get_key_adapted(
             value,
             std.hash_map.StringIndexAdapter{ .bytes = &self.data },
         );
@@ -684,13 +684,13 @@ fn test_parse_and_remove_line_commands(
     source: []const u8,
     options: ParseAndRemoveLineCommandsOptions,
 ) !void {
-    var results = try parseAndRemoveLineCommandsAlloc(std.testing.allocator, source, options);
+    var results = try parse_and_remove_line_commands_alloc(std.testing.allocator, source, options);
     defer std.testing.allocator.free(results.result);
     defer results.mappings.deinit(std.testing.allocator);
 
-    try std.testing.expectEqualStrings(expected, results.result);
+    try std.testing.expect_equal_strings(expected, results.result);
 
-    expectEqualMappings(expected_spans, results.mappings) catch |err| {
+    expect_equal_mappings(expected_spans, results.mappings) catch |err| {
         std.debug.print("\nexpected mappings:\n", .{});
         for (expected_spans, 0..) |span, i| {
             const line_num = i + 1;
@@ -699,7 +699,7 @@ fn test_parse_and_remove_line_commands(
         std.debug.print("\nactual mappings:\n", .{});
         var i: usize = 1;
         while (i <= results.mappings.end_line) : (i += 1) {
-            const span = results.mappings.getCorrespondingSpan(i).?;
+            const span = results.mappings.get_corresponding_span(i).?;
             const filename = results.mappings.files.get(span.filename_offset);
             std.debug.print("{}: {s}:{}-{}\n", .{ i, filename, span.start_line, span.end_line });
         }
@@ -709,25 +709,25 @@ fn test_parse_and_remove_line_commands(
 }
 
 fn expect_equal_mappings(expected_spans: []const ExpectedSourceSpan, mappings: SourceMappings) !void {
-    try std.testing.expectEqual(expected_spans.len, mappings.end_line);
+    try std.testing.expect_equal(expected_spans.len, mappings.end_line);
     for (expected_spans, 0..) |expected_span, i| {
         const line_num = i + 1;
-        const span = mappings.getCorrespondingSpan(line_num) orelse return error.MissingLineNum;
+        const span = mappings.get_corresponding_span(line_num) orelse return error.MissingLineNum;
         const filename = mappings.files.get(span.filename_offset);
-        try std.testing.expectEqual(expected_span.start_line, span.start_line);
-        try std.testing.expectEqual(expected_span.end_line, span.end_line);
-        try std.testing.expectEqualStrings(expected_span.filename, filename);
+        try std.testing.expect_equal(expected_span.start_line, span.start_line);
+        try std.testing.expect_equal(expected_span.end_line, span.end_line);
+        try std.testing.expect_equal_strings(expected_span.filename, filename);
     }
 }
 
 test "basic" {
-    try testParseAndRemoveLineCommands("", &[_]ExpectedSourceSpan{
+    try test_parse_and_remove_line_commands("", &[_]ExpectedSourceSpan{
         .{ .start_line = 1, .end_line = 1, .filename = "blah.rc" },
     }, "#line 1 \"blah.rc\"", .{});
 }
 
 test "only removes line commands" {
-    try testParseAndRemoveLineCommands(
+    try test_parse_and_remove_line_commands(
         \\#pragma code_page(65001)
     , &[_]ExpectedSourceSpan{
         .{ .start_line = 1, .end_line = 1, .filename = "blah.rc" },
@@ -738,13 +738,13 @@ test "only removes line commands" {
 }
 
 test "whitespace and line endings" {
-    try testParseAndRemoveLineCommands("", &[_]ExpectedSourceSpan{
+    try test_parse_and_remove_line_commands("", &[_]ExpectedSourceSpan{
         .{ .start_line = 1, .end_line = 1, .filename = "blah.rc" },
     }, "#line  \t 1 \t \"blah.rc\"\r\n", .{});
 }
 
 test "example" {
-    try testParseAndRemoveLineCommands(
+    try test_parse_and_remove_line_commands(
         \\
         \\included RCDATA {"hello"}
     , &[_]ExpectedSourceSpan{
@@ -773,7 +773,7 @@ test "example" {
 }
 
 test "CRLF and other line endings" {
-    try testParseAndRemoveLineCommands(
+    try test_parse_and_remove_line_commands(
         "hello\r\n#pragma code_page(65001)\r\nworld",
         &[_]ExpectedSourceSpan{
             .{ .start_line = 1, .end_line = 1, .filename = "crlf.rc" },
@@ -786,7 +786,7 @@ test "CRLF and other line endings" {
 }
 
 test "no line commands" {
-    try testParseAndRemoveLineCommands(
+    try test_parse_and_remove_line_commands(
         \\1 RCDATA {"blah"}
         \\2 RCDATA {"blah"}
     , &[_]ExpectedSourceSpan{
@@ -800,16 +800,16 @@ test "no line commands" {
 
 test "in place" {
     var mut_source = "#line 1 \"blah.rc\"".*;
-    var result = try parseAndRemoveLineCommands(std.testing.allocator, &mut_source, &mut_source, .{});
+    var result = try parse_and_remove_line_commands(std.testing.allocator, &mut_source, &mut_source, .{});
     defer result.mappings.deinit(std.testing.allocator);
-    try std.testing.expectEqualStrings("", result.result);
+    try std.testing.expect_equal_strings("", result.result);
 }
 
 test "line command within a multiline comment" {
-    // TODO: Enable once parseAndRemoveLineCommands is comment-aware
+    // TODO: Enable once parse_and_remove_line_commands is comment-aware
     if (true) return error.SkipZigTest;
 
-    try testParseAndRemoveLineCommands(
+    try test_parse_and_remove_line_commands(
         \\/*
         \\#line 1 "irrelevant.rc"
         \\

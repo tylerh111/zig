@@ -12,7 +12,7 @@ fn get_num(u: U) u32 {
         // `u.a` or `u.b` and `tag` is `u`'s comptime-known tag value.
         inline else => |num, tag| {
             if (tag == .b) {
-                return @intFromFloat(num);
+                return @int_from_float(num);
             }
             return num;
         },
@@ -21,7 +21,7 @@ fn get_num(u: U) u32 {
 
 test "test" {
     const u = U{ .b = 42 };
-    try expect(getNum(u) == 42);
+    try expect(get_num(u) == 42);
 }
 
 // test

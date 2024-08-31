@@ -65,7 +65,7 @@ const Empty = struct {
 };
 test "struct namespaced variable" {
     try expect(Empty.PI == 3.14);
-    try expect(@sizeOf(Empty) == 0);
+    try expect(@size_of(Empty) == 0);
 
     // you can still instantiate an empty struct
     const does_nothing = Empty{};
@@ -84,7 +84,7 @@ test "field parent pointer" {
         .x = 0.1234,
         .y = 0.5678,
     };
-    setYBasedOnX(&point.x, 0.9);
+    set_ybased_on_x(&point.x, 0.9);
     try expect(point.y == 0.9);
 }
 

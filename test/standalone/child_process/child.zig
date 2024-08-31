@@ -12,7 +12,7 @@ pub fn main() !void {
 }
 
 fn run(allocator: std.mem.Allocator) !void {
-    var args = try std.process.argsWithAllocator(allocator);
+    var args = try std.process.args_with_allocator(allocator);
     defer args.deinit();
     _ = args.next() orelse unreachable; // skip binary name
 
@@ -20,31 +20,31 @@ fn run(allocator: std.mem.Allocator) !void {
     const hello_arg = "hello arg";
     const a1 = args.next() orelse unreachable;
     if (!std.mem.eql(u8, a1, hello_arg)) {
-        testError("first arg: '{s}'; want '{s}'", .{ a1, hello_arg });
+        test_error("first arg: '{s}'; want '{s}'", .{ a1, hello_arg });
     }
     if (args.next()) |a2| {
-        testError("expected only one arg; got more: {s}", .{a2});
+        test_error("expected only one arg; got more: {s}", .{a2});
     }
 
     // test stdout pipe; parent verifies
-    try std.io.getStdOut().writer().writeAll("hello from stdout");
+    try std.io.get_std_out().writer().write_all("hello from stdout");
 
     // test stdin pipe from parent
     const hello_stdin = "hello from stdin";
     var buf: [hello_stdin.len]u8 = undefined;
-    const stdin = std.io.getStdIn().reader();
-    const n = try stdin.readAll(&buf);
+    const stdin = std.io.get_std_in().reader();
+    const n = try stdin.read_all(&buf);
     if (!std.mem.eql(u8, buf[0..n], hello_stdin)) {
-        testError("stdin: '{s}'; want '{s}'", .{ buf[0..n], hello_stdin });
+        test_error("stdin: '{s}'; want '{s}'", .{ buf[0..n], hello_stdin });
     }
 }
 
 fn test_error(comptime fmt: []const u8, args: anytype) void {
-    const stderr = std.io.getStdErr().writer();
+    const stderr = std.io.get_std_err().writer();
     stderr.print("CHILD TEST ERROR: ", .{}) catch {};
     stderr.print(fmt, args) catch {};
     if (fmt[fmt.len - 1] != '\n') {
-        stderr.writeByte('\n') catch {};
+        stderr.write_byte('\n') catch {};
     }
     exit_code = 1;
 }

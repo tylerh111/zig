@@ -18,7 +18,7 @@ export fn entry() void {
         else => unreachable,
     };
     if (ptr.* == 2) {
-        @compileError("wrong compile error");
+        @compile_error("wrong compile error");
     }
 }
 // error

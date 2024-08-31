@@ -1,5 +1,5 @@
 const std = @import("../../std.zig");
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const linux = std.os.linux;
 const SYS = linux.SYS;
 const iovec = std.posix.iovec;
@@ -16,7 +16,7 @@ const timespec = linux.timespec;
 pub fn syscall0(number: SYS) usize {
     return asm volatile ("svc #0"
         : [ret] "={r0}" (-> usize),
-        : [number] "{r7}" (@intFromEnum(number)),
+        : [number] "{r7}" (@int_from_enum(number)),
         : "memory"
     );
 }
@@ -24,7 +24,7 @@ pub fn syscall0(number: SYS) usize {
 pub fn syscall1(number: SYS, arg1: usize) usize {
     return asm volatile ("svc #0"
         : [ret] "={r0}" (-> usize),
-        : [number] "{r7}" (@intFromEnum(number)),
+        : [number] "{r7}" (@int_from_enum(number)),
           [arg1] "{r0}" (arg1),
         : "memory"
     );
@@ -33,7 +33,7 @@ pub fn syscall1(number: SYS, arg1: usize) usize {
 pub fn syscall2(number: SYS, arg1: usize, arg2: usize) usize {
     return asm volatile ("svc #0"
         : [ret] "={r0}" (-> usize),
-        : [number] "{r7}" (@intFromEnum(number)),
+        : [number] "{r7}" (@int_from_enum(number)),
           [arg1] "{r0}" (arg1),
           [arg2] "{r1}" (arg2),
         : "memory"
@@ -43,7 +43,7 @@ pub fn syscall2(number: SYS, arg1: usize, arg2: usize) usize {
 pub fn syscall3(number: SYS, arg1: usize, arg2: usize, arg3: usize) usize {
     return asm volatile ("svc #0"
         : [ret] "={r0}" (-> usize),
-        : [number] "{r7}" (@intFromEnum(number)),
+        : [number] "{r7}" (@int_from_enum(number)),
           [arg1] "{r0}" (arg1),
           [arg2] "{r1}" (arg2),
           [arg3] "{r2}" (arg3),
@@ -54,7 +54,7 @@ pub fn syscall3(number: SYS, arg1: usize, arg2: usize, arg3: usize) usize {
 pub fn syscall4(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize) usize {
     return asm volatile ("svc #0"
         : [ret] "={r0}" (-> usize),
-        : [number] "{r7}" (@intFromEnum(number)),
+        : [number] "{r7}" (@int_from_enum(number)),
           [arg1] "{r0}" (arg1),
           [arg2] "{r1}" (arg2),
           [arg3] "{r2}" (arg3),
@@ -66,7 +66,7 @@ pub fn syscall4(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize)
 pub fn syscall5(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg5: usize) usize {
     return asm volatile ("svc #0"
         : [ret] "={r0}" (-> usize),
-        : [number] "{r7}" (@intFromEnum(number)),
+        : [number] "{r7}" (@int_from_enum(number)),
           [arg1] "{r0}" (arg1),
           [arg2] "{r1}" (arg2),
           [arg3] "{r2}" (arg3),
@@ -87,7 +87,7 @@ pub fn syscall6(
 ) usize {
     return asm volatile ("svc #0"
         : [ret] "={r0}" (-> usize),
-        : [number] "{r7}" (@intFromEnum(number)),
+        : [number] "{r7}" (@int_from_enum(number)),
           [arg1] "{r0}" (arg1),
           [arg2] "{r1}" (arg2),
           [arg3] "{r2}" (arg3),
@@ -109,13 +109,13 @@ pub fn restore() callconv(.Naked) noreturn {
             \\ mov r7, %[number]
             \\ svc #0
             :
-            : [number] "I" (@intFromEnum(SYS.sigreturn)),
+            : [number] "I" (@int_from_enum(SYS.sigreturn)),
             : "memory"
         ),
         else => asm volatile (
             \\ svc #0
             :
-            : [number] "{r7}" (@intFromEnum(SYS.sigreturn)),
+            : [number] "{r7}" (@int_from_enum(SYS.sigreturn)),
             : "memory"
         ),
     }
@@ -127,13 +127,13 @@ pub fn restore_rt() callconv(.Naked) noreturn {
             \\ mov r7, %[number]
             \\ svc #0
             :
-            : [number] "I" (@intFromEnum(SYS.rt_sigreturn)),
+            : [number] "I" (@int_from_enum(SYS.rt_sigreturn)),
             : "memory"
         ),
         else => asm volatile (
             \\ svc #0
             :
-            : [number] "{r7}" (@intFromEnum(SYS.rt_sigreturn)),
+            : [number] "{r7}" (@int_from_enum(SYS.rt_sigreturn)),
             : "memory"
         ),
     }

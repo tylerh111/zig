@@ -3,7 +3,7 @@ pub const File = union(enum) {
     object: *Object,
 
     pub const Index = enum(u16) {
-        null = std.math.maxInt(u16),
+        null = std.math.max_int(u16),
         _,
     };
 
@@ -22,8 +22,8 @@ pub const File = union(enum) {
 
     pub fn symbol(file: File, index: Symbol.Index) *Symbol {
         return switch (file) {
-            .zig_object => |obj| &obj.symbols.items[@intFromEnum(index)],
-            .object => |obj| &obj.symtable[@intFromEnum(index)],
+            .zig_object => |obj| &obj.symbols.items[@int_from_enum(index)],
+            .object => |obj| &obj.symtable[@int_from_enum(index)],
         };
     }
 
@@ -37,11 +37,11 @@ pub const File = union(enum) {
     pub fn symbol_name(file: File, index: Symbol.Index) []const u8 {
         switch (file) {
             .zig_object => |obj| {
-                const sym = obj.symbols.items[@intFromEnum(index)];
+                const sym = obj.symbols.items[@int_from_enum(index)];
                 return obj.string_table.get(sym.name).?;
             },
             .object => |obj| {
-                const sym = obj.symtable[@intFromEnum(index)];
+                const sym = obj.symtable[@int_from_enum(index)];
                 return obj.string_table.get(sym.name);
             },
         }
@@ -49,7 +49,7 @@ pub const File = union(enum) {
 
     pub fn parse_symbol_into_atom(file: File, wasm_file: *Wasm, index: Symbol.Index) !AtomIndex {
         return switch (file) {
-            inline else => |obj| obj.parseSymbolIntoAtom(wasm_file, index),
+            inline else => |obj| obj.parse_symbol_into_atom(wasm_file, index),
         };
     }
 
@@ -58,7 +58,7 @@ pub const File = union(enum) {
     pub fn import(file: File, symbol_index: Symbol.Index) types.Import {
         return switch (file) {
             .zig_object => |obj| obj.imports.get(symbol_index).?,
-            .object => |obj| obj.findImport(obj.symtable[@intFromEnum(symbol_index)]),
+            .object => |obj| obj.find_import(obj.symtable[@int_from_enum(symbol_index)]),
         };
     }
 
@@ -92,11 +92,11 @@ pub const File = union(enum) {
     pub fn function(file: File, sym_index: Symbol.Index) std.wasm.Func {
         switch (file) {
             .zig_object => |obj| {
-                const sym = obj.symbols.items[@intFromEnum(sym_index)];
+                const sym = obj.symbols.items[@int_from_enum(sym_index)];
                 return obj.functions.items[sym.index];
             },
             .object => |obj| {
-                const sym = obj.symtable[@intFromEnum(sym_index)];
+                const sym = obj.symtable[@int_from_enum(sym_index)];
                 return obj.functions[sym.index - obj.imported_functions_count];
             },
         }

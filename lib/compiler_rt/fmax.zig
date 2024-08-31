@@ -45,14 +45,14 @@ pub fn fmaxl(x: c_longdouble, y: c_longdouble) callconv(.C) c_longdouble {
         64 => return fmax(x, y),
         80 => return __fmaxx(x, y),
         128 => return fmaxq(x, y),
-        else => @compileError("unreachable"),
+        else => @compile_error("unreachable"),
     }
 }
 
 inline fn generic_fmax(comptime T: type, x: T, y: T) T {
-    if (math.isNan(x))
+    if (math.is_nan(x))
         return y;
-    if (math.isNan(y))
+    if (math.is_nan(y))
         return x;
     return if (x < y) y else x;
 }
@@ -61,11 +61,11 @@ test "generic_fmax" {
     inline for ([_]type{ f32, f64, c_longdouble, f80, f128 }) |T| {
         const nan_val = math.nan(T);
 
-        try std.testing.expect(math.isNan(generic_fmax(T, nan_val, nan_val)));
-        try std.testing.expectEqual(@as(T, 1.0), generic_fmax(T, nan_val, 1.0));
-        try std.testing.expectEqual(@as(T, 1.0), generic_fmax(T, 1.0, nan_val));
+        try std.testing.expect(math.is_nan(generic_fmax(T, nan_val, nan_val)));
+        try std.testing.expect_equal(@as(T, 1.0), generic_fmax(T, nan_val, 1.0));
+        try std.testing.expect_equal(@as(T, 1.0), generic_fmax(T, 1.0, nan_val));
 
-        try std.testing.expectEqual(@as(T, 10.0), generic_fmax(T, 1.0, 10.0));
-        try std.testing.expectEqual(@as(T, 1.0), generic_fmax(T, 1.0, -1.0));
+        try std.testing.expect_equal(@as(T, 10.0), generic_fmax(T, 1.0, 10.0));
+        try std.testing.expect_equal(@as(T, 1.0), generic_fmax(T, 1.0, -1.0));
     }
 }

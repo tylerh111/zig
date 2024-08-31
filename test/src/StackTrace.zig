@@ -22,16 +22,16 @@ const Config = struct {
 
 pub fn add_case(self: *StackTrace, config: Config) void {
     if (config.Debug) |per_mode|
-        self.addExpect(config.name, config.source, .Debug, per_mode);
+        self.add_expect(config.name, config.source, .Debug, per_mode);
 
     if (config.ReleaseSmall) |per_mode|
-        self.addExpect(config.name, config.source, .ReleaseSmall, per_mode);
+        self.add_expect(config.name, config.source, .ReleaseSmall, per_mode);
 
     if (config.ReleaseFast) |per_mode|
-        self.addExpect(config.name, config.source, .ReleaseFast, per_mode);
+        self.add_expect(config.name, config.source, .ReleaseFast, per_mode);
 
     if (config.ReleaseSafe) |per_mode|
-        self.addExpect(config.name, config.source, .ReleaseSafe, per_mode);
+        self.add_expect(config.name, config.source, .ReleaseSafe, per_mode);
 }
 
 fn add_expect(
@@ -44,37 +44,37 @@ fn add_expect(
     for (mode_config.exclude_os) |tag| if (tag == builtin.os.tag) return;
 
     const b = self.b;
-    const annotated_case_name = fmt.allocPrint(b.allocator, "check {s} ({s})", .{
-        name, @tagName(optimize_mode),
+    const annotated_case_name = fmt.alloc_print(b.allocator, "check {s} ({s})", .{
+        name, @tag_name(optimize_mode),
     }) catch @panic("OOM");
     for (self.test_filters) |test_filter| {
-        if (mem.indexOf(u8, annotated_case_name, test_filter)) |_| break;
+        if (mem.index_of(u8, annotated_case_name, test_filter)) |_| break;
     } else if (self.test_filters.len > 0) return;
 
-    const write_src = b.addWriteFile("source.zig", source);
-    const exe = b.addExecutable(.{
+    const write_src = b.add_write_file("source.zig", source);
+    const exe = b.add_executable(.{
         .name = "test",
-        .root_source_file = write_src.files.items[0].getPath(),
+        .root_source_file = write_src.files.items[0].get_path(),
         .optimize = optimize_mode,
         .target = b.host,
         .error_tracing = mode_config.error_tracing,
     });
 
-    const run = b.addRunArtifact(exe);
-    run.removeEnvironmentVariable("CLICOLOR_FORCE");
-    run.setEnvironmentVariable("NO_COLOR", "1");
-    run.expectExitCode(1);
-    run.expectStdOutEqual("");
+    const run = b.add_run_artifact(exe);
+    run.remove_environment_variable("CLICOLOR_FORCE");
+    run.set_environment_variable("NO_COLOR", "1");
+    run.expect_exit_code(1);
+    run.expect_std_out_equal("");
 
-    const check_run = b.addRunArtifact(self.check_exe);
-    check_run.setName(annotated_case_name);
-    check_run.addFileArg(run.captureStdErr());
-    check_run.addArgs(&.{
-        @tagName(optimize_mode),
+    const check_run = b.add_run_artifact(self.check_exe);
+    check_run.set_name(annotated_case_name);
+    check_run.add_file_arg(run.capture_std_err());
+    check_run.add_args(&.{
+        @tag_name(optimize_mode),
     });
-    check_run.expectStdOutEqual(mode_config.expect);
+    check_run.expect_std_out_equal(mode_config.expect);
 
-    self.step.dependOn(&check_run.step);
+    self.step.depend_on(&check_run.step);
 }
 
 const StackTrace = @This();

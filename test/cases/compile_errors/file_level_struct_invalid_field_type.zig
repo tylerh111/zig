@@ -7,7 +7,7 @@ fn Chunk() type {
 parser_chunk: Chunk,
 
 comptime {
-    _ = @sizeOf(@This()) + 1;
+    _ = @size_of(@This()) + 1;
 }
 
 // error

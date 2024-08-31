@@ -19,15 +19,15 @@ comptime {
 }
 
 pub fn __popcountsi2(a: i32) callconv(.C) i32 {
-    return popcountXi2(i32, a);
+    return popcount_xi2(i32, a);
 }
 
 pub fn __popcountdi2(a: i64) callconv(.C) i32 {
-    return popcountXi2(i64, a);
+    return popcount_xi2(i64, a);
 }
 
 pub fn __popcountti2(a: i128) callconv(.C) i32 {
-    return popcountXi2(i128, a);
+    return popcount_xi2(i128, a);
 }
 
 inline fn popcount_xi2(comptime ST: type, a: ST) i32 {
@@ -37,7 +37,7 @@ inline fn popcount_xi2(comptime ST: type, a: ST) i32 {
         i128 => u128,
         else => unreachable,
     };
-    var x: UT = @bitCast(a);
+    var x: UT = @bit_cast(a);
     x -= (x >> 1) & (~@as(UT, 0) / 3); // 0x55...55, aggregate duos
     x = ((x >> 2) & (~@as(UT, 0) / 5)) // 0x33...33, aggregate nibbles
     + (x & (~@as(UT, 0) / 5));
@@ -46,7 +46,7 @@ inline fn popcount_xi2(comptime ST: type, a: ST) i32 {
     // 8 most significant bits of x + (x<<8) + (x<<16) + ..
     x *%= ~@as(UT, 0) / 255; // 0x01...01
     x >>= (@bitSizeOf(ST) - 8);
-    return @intCast(x);
+    return @int_cast(x);
 }
 
 test {

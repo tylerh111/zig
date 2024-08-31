@@ -5,25 +5,25 @@ const testing = std.testing;
 fn popcountdi2_naive(a: i64) i32 {
     var x = a;
     var r: i32 = 0;
-    while (x != 0) : (x = @as(i64, @bitCast(@as(u64, @bitCast(x)) >> 1))) {
-        r += @as(i32, @intCast(x & 1));
+    while (x != 0) : (x = @as(i64, @bit_cast(@as(u64, @bit_cast(x)) >> 1))) {
+        r += @as(i32, @int_cast(x & 1));
     }
     return r;
 }
 
 fn test__popcountdi2(a: i64) !void {
     const x = popcount.__popcountdi2(a);
-    const expected = popcountdi2Naive(a);
-    try testing.expectEqual(expected, x);
+    const expected = popcountdi2_naive(a);
+    try testing.expect_equal(expected, x);
 }
 
 test "popcountdi2" {
     try test__popcountdi2(0);
     try test__popcountdi2(1);
     try test__popcountdi2(2);
-    try test__popcountdi2(@as(i64, @bitCast(@as(u64, 0xffffffff_fffffffd))));
-    try test__popcountdi2(@as(i64, @bitCast(@as(u64, 0xffffffff_fffffffe))));
-    try test__popcountdi2(@as(i64, @bitCast(@as(u64, 0xffffffff_ffffffff))));
+    try test__popcountdi2(@as(i64, @bit_cast(@as(u64, 0xffffffff_fffffffd))));
+    try test__popcountdi2(@as(i64, @bit_cast(@as(u64, 0xffffffff_fffffffe))));
+    try test__popcountdi2(@as(i64, @bit_cast(@as(u64, 0xffffffff_ffffffff))));
 
     const RndGen = std.Random.DefaultPrng;
     var rnd = RndGen.init(42);

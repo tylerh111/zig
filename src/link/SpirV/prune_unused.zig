@@ -80,7 +80,7 @@ const ModuleInfo = struct {
 
     /// Fetch the list of callees per function. Guaranteed to contain only unique IDs.
     fn callees(self: ModuleInfo, fn_id: ResultId) []const ResultId {
-        const fn_index = self.functions.getIndex(fn_id).?;
+        const fn_index = self.functions.get_index(fn_id).?;
         const values = self.functions.values();
         const first_callee = values[fn_index].first_callee;
         if (fn_index == values.len - 1) {
@@ -104,9 +104,9 @@ const ModuleInfo = struct {
         var callee_store = std.ArrayList(ResultId).init(arena);
         var result_id_to_code_offset = std.AutoArrayHashMap(ResultId, usize).init(arena);
         var maybe_current_function: ?ResultId = null;
-        var it = binary.iterateInstructions();
+        var it = binary.iterate_instructions();
         while (it.next()) |inst| {
-            const inst_spec = parser.getInstSpec(inst.opcode).?;
+            const inst_spec = parser.get_inst_spec(inst.opcode).?;
 
             // Result-id can only be the first or second operand
             const maybe_result_id: ?ResultId = for (0..2) |i| {
@@ -142,20 +142,20 @@ const ModuleInfo = struct {
                         log.err("encountered OpFunctionEnd without corresponding OpFunction", .{});
                         return error.InvalidPhysicalFormat;
                     };
-                    const entry = try functions.getOrPut(current_function);
+                    const entry = try functions.get_or_put(current_function);
                     if (entry.found_existing) {
                         log.err("Function {} has duplicate definition", .{current_function});
                         return error.DuplicateId;
                     }
 
                     const first_callee = callee_store.items.len;
-                    try callee_store.appendSlice(calls.keys());
+                    try callee_store.append_slice(calls.keys());
 
                     entry.value_ptr.* = .{
                         .first_callee = first_callee,
                     };
                     maybe_current_function = null;
-                    calls.clearRetainingCapacity();
+                    calls.clear_retaining_capacity();
                 },
                 else => {},
             }
@@ -182,23 +182,23 @@ const AliveMarker = struct {
     alive: std.DynamicBitSetUnmanaged,
 
     fn mark_alive(self: *AliveMarker, result_id: ResultId) BinaryModule.ParseError!void {
-        const index = self.info.result_id_to_code_offset.getIndex(result_id) orelse {
+        const index = self.info.result_id_to_code_offset.get_index(result_id) orelse {
             log.err("undefined result-id {}", .{result_id});
             return error.InvalidId;
         };
 
-        if (self.alive.isSet(index)) {
+        if (self.alive.is_set(index)) {
             return;
         }
         self.alive.set(index);
 
         const offset = self.info.result_id_to_code_offset.values()[index];
-        const inst = self.binary.instructionAt(offset);
+        const inst = self.binary.instruction_at(offset);
 
         if (inst.opcode == .OpFunction) {
-            try self.markFunctionAlive(inst);
+            try self.mark_function_alive(inst);
         } else {
-            try self.markInstructionAlive(inst);
+            try self.mark_instruction_alive(inst);
         }
     }
 
@@ -208,15 +208,15 @@ const AliveMarker = struct {
     ) !void {
         // Go through the instruction and mark the
         // operands of each instruction alive.
-        var it = self.binary.iterateInstructionsFrom(func_inst.offset);
-        try self.markInstructionAlive(it.next().?);
+        var it = self.binary.iterate_instructions_from(func_inst.offset);
+        try self.mark_instruction_alive(it.next().?);
         while (it.next()) |inst| {
             if (inst.opcode == .OpFunctionEnd) {
                 break;
             }
 
-            if (!canPrune(inst.opcode)) {
-                try self.markInstructionAlive(inst);
+            if (!can_prune(inst.opcode)) {
+                try self.mark_instruction_alive(inst);
             }
         }
     }
@@ -226,15 +226,15 @@ const AliveMarker = struct {
         inst: BinaryModule.Instruction,
     ) !void {
         const start_offset = self.result_id_offsets.items.len;
-        try self.parser.parseInstructionResultIds(self.binary, inst, &self.result_id_offsets);
+        try self.parser.parse_instruction_result_ids(self.binary, inst, &self.result_id_offsets);
         const end_offset = self.result_id_offsets.items.len;
 
-        // Recursive calls to markInstructionAlive() might change the pointer in self.result_id_offsets,
+        // Recursive calls to mark_instruction_alive() might change the pointer in self.result_id_offsets,
         // so we need to iterate it manually.
         var i = start_offset;
         while (i < end_offset) : (i += 1) {
             const offset = self.result_id_offsets.items[i];
-            try self.markAlive(@enumFromInt(inst.operands[offset]));
+            try self.mark_alive(@enumFromInt(inst.operands[offset]));
         }
     }
 };
@@ -244,8 +244,8 @@ fn remove_ids_from_map(a: Allocator, map: anytype, info: ModuleInfo, alive_marke
     var it = map.iterator();
     while (it.next()) |entry| {
         const id = entry.key_ptr.*;
-        const index = info.result_id_to_code_offset.getIndex(id).?;
-        if (!alive_marker.alive.isSet(index)) {
+        const index = info.result_id_to_code_offset.get_index(id).?;
+        if (!alive_marker.alive.is_set(index)) {
             try to_remove.append(id);
         }
     }
@@ -270,35 +270,35 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
         .binary = binary.*,
         .info = info,
         .result_id_offsets = std.ArrayList(u16).init(a),
-        .alive = try std.DynamicBitSetUnmanaged.initEmpty(a, info.result_id_to_code_offset.count()),
+        .alive = try std.DynamicBitSetUnmanaged.init_empty(a, info.result_id_to_code_offset.count()),
     };
 
     // Mark initial stuff as slive
     {
-        var it = binary.iterateInstructions();
+        var it = binary.iterate_instructions();
         while (it.next()) |inst| {
             if (inst.opcode == .OpFunction) {
                 // No need to process further.
                 break;
-            } else if (!canPrune(inst.opcode)) {
-                try alive_marker.markInstructionAlive(inst);
+            } else if (!can_prune(inst.opcode)) {
+                try alive_marker.mark_instruction_alive(inst);
             }
         }
     }
 
     var section = Section{};
 
-    sub_node.setEstimatedTotalItems(binary.instructions.len);
+    sub_node.set_estimated_total_items(binary.instructions.len);
 
     var new_functions_section: ?usize = null;
-    var it = binary.iterateInstructions();
+    var it = binary.iterate_instructions();
     skip: while (it.next()) |inst| {
-        defer sub_node.setCompletedItems(inst.offset);
+        defer sub_node.set_completed_items(inst.offset);
 
-        const inst_spec = parser.getInstSpec(inst.opcode).?;
+        const inst_spec = parser.get_inst_spec(inst.opcode).?;
 
         reemit: {
-            if (!canPrune(inst.opcode)) {
+            if (!can_prune(inst.opcode)) {
                 break :reemit;
             }
 
@@ -311,12 +311,12 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
                 // Instruction can be pruned but doesn't have a result id.
                 // Check all operands to see if they are alive, and emit it only if so.
                 alive_marker.result_id_offsets.items.len = 0;
-                try parser.parseInstructionResultIds(binary.*, inst, &alive_marker.result_id_offsets);
+                try parser.parse_instruction_result_ids(binary.*, inst, &alive_marker.result_id_offsets);
                 for (alive_marker.result_id_offsets.items) |offset| {
                     const id: ResultId = @enumFromInt(inst.operands[offset]);
-                    const index = info.result_id_to_code_offset.getIndex(id).?;
+                    const index = info.result_id_to_code_offset.get_index(id).?;
 
-                    if (!alive_marker.alive.isSet(index)) {
+                    if (!alive_marker.alive.is_set(index)) {
                         continue :skip;
                     }
                 }
@@ -324,8 +324,8 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
                 break :reemit;
             };
 
-            const index = info.result_id_to_code_offset.getIndex(result_id).?;
-            if (alive_marker.alive.isSet(index)) {
+            const index = info.result_id_to_code_offset.get_index(result_id).?;
+            if (alive_marker.alive.is_set(index)) {
                 break :reemit;
             }
 
@@ -348,14 +348,14 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
             new_functions_section = section.instructions.items.len;
         }
 
-        try section.emitRawInstruction(a, inst.opcode, inst.operands);
+        try section.emit_raw_instruction(a, inst.opcode, inst.operands);
     }
 
     // This pass might have pruned ext inst imports or arith types, update
     // those maps to main consistency.
-    try removeIdsFromMap(a, &binary.ext_inst_map, info, alive_marker);
-    try removeIdsFromMap(a, &binary.arith_type_width, info, alive_marker);
+    try remove_ids_from_map(a, &binary.ext_inst_map, info, alive_marker);
+    try remove_ids_from_map(a, &binary.arith_type_width, info, alive_marker);
 
-    binary.instructions = try parser.a.dupe(Word, section.toWords());
+    binary.instructions = try parser.a.dupe(Word, section.to_words());
     binary.sections.functions = new_functions_section orelse binary.instructions.len;
 }

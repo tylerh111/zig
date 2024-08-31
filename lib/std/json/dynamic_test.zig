@@ -8,10 +8,10 @@ const ObjectMap = @import("dynamic.zig").ObjectMap;
 const Array = @import("dynamic.zig").Array;
 const Value = @import("dynamic.zig").Value;
 
-const parseFromSlice = @import("static.zig").parseFromSlice;
-const parseFromSliceLeaky = @import("static.zig").parseFromSliceLeaky;
-const parseFromTokenSource = @import("static.zig").parseFromTokenSource;
-const parseFromValueLeaky = @import("static.zig").parseFromValueLeaky;
+const parse_from_slice = @import("static.zig").parse_from_slice;
+const parse_from_slice_leaky = @import("static.zig").parse_from_slice_leaky;
+const parse_from_token_source = @import("static.zig").parse_from_token_source;
+const parse_from_value_leaky = @import("static.zig").parse_from_value_leaky;
 const ParseOptions = @import("static.zig").ParseOptions;
 
 const jsonReader = @import("scanner.zig").reader;
@@ -38,7 +38,7 @@ test "json.parser.dynamic" {
         \\}
     ;
 
-    var parsed = try parseFromSlice(Value, testing.allocator, s, .{});
+    var parsed = try parse_from_slice(Value, testing.allocator, s, .{});
     defer parsed.deinit();
 
     var root = parsed.value;
@@ -70,41 +70,41 @@ test "json.parser.dynamic" {
     try testing.expect(mem.eql(u8, large_int.number_string, "18446744073709551615"));
 }
 
-const writeStream = @import("./stringify.zig").writeStream;
+const write_stream = @import("./stringify.zig").write_stream;
 test "write json then parse it" {
     var out_buffer: [1000]u8 = undefined;
 
-    var fixed_buffer_stream = std.io.fixedBufferStream(&out_buffer);
+    var fixed_buffer_stream = std.io.fixed_buffer_stream(&out_buffer);
     const out_stream = fixed_buffer_stream.writer();
-    var jw = writeStream(out_stream, .{});
+    var jw = write_stream(out_stream, .{});
     defer jw.deinit();
 
-    try jw.beginObject();
+    try jw.begin_object();
 
-    try jw.objectField("f");
+    try jw.object_field("f");
     try jw.write(false);
 
-    try jw.objectField("t");
+    try jw.object_field("t");
     try jw.write(true);
 
-    try jw.objectField("int");
+    try jw.object_field("int");
     try jw.write(1234);
 
-    try jw.objectField("array");
-    try jw.beginArray();
+    try jw.object_field("array");
+    try jw.begin_array();
     try jw.write(null);
     try jw.write(12.34);
-    try jw.endArray();
+    try jw.end_array();
 
-    try jw.objectField("str");
+    try jw.object_field("str");
     try jw.write("hello");
 
-    try jw.endObject();
+    try jw.end_object();
 
-    fixed_buffer_stream = std.io.fixedBufferStream(fixed_buffer_stream.getWritten());
+    fixed_buffer_stream = std.io.fixed_buffer_stream(fixed_buffer_stream.get_written());
     var json_reader = jsonReader(testing.allocator, fixed_buffer_stream.reader());
     defer json_reader.deinit();
-    var parsed = try parseFromTokenSource(Value, testing.allocator, &json_reader, .{});
+    var parsed = try parse_from_token_source(Value, testing.allocator, &json_reader, .{});
     defer parsed.deinit();
 
     try testing.expect(parsed.value.object.get("f").?.bool == false);
@@ -116,17 +116,17 @@ test "write json then parse it" {
 }
 
 fn test_parse(allocator: std.mem.Allocator, json_str: []const u8) !Value {
-    return parseFromSliceLeaky(Value, allocator, json_str, .{});
+    return parse_from_slice_leaky(Value, allocator, json_str, .{});
 }
 
 test "parsing empty string gives appropriate error" {
     var arena_allocator = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena_allocator.deinit();
-    try testing.expectError(error.UnexpectedEndOfInput, testParse(arena_allocator.allocator(), ""));
+    try testing.expect_error(error.UnexpectedEndOfInput, test_parse(arena_allocator.allocator(), ""));
 }
 
 test "Value.array allocator should still be usable after parsing" {
-    var parsed = try parseFromSlice(Value, std.testing.allocator, "[]", .{});
+    var parsed = try parse_from_slice(Value, std.testing.allocator, "[]", .{});
     defer parsed.deinit();
 
     // Allocation should succeed
@@ -134,13 +134,13 @@ test "Value.array allocator should still be usable after parsing" {
     while (i < 100) : (i += 1) {
         try parsed.value.array.append(Value{ .integer = 100 });
     }
-    try testing.expectEqual(parsed.value.array.items.len, 100);
+    try testing.expect_equal(parsed.value.array.items.len, 100);
 }
 
 test "integer after float has proper type" {
     var arena_allocator = std.heap.ArenaAllocator.init(std.testing.allocator);
     defer arena_allocator.deinit();
-    const parsed = try testParse(arena_allocator.allocator(),
+    const parsed = try test_parse(arena_allocator.allocator(),
         \\{
         \\  "float": 3.14,
         \\  "ints": [1, 2, 3]
@@ -167,21 +167,21 @@ test "escaped characters" {
         \\}
     ;
 
-    const obj = (try testParse(arena_allocator.allocator(), input)).object;
+    const obj = (try test_parse(arena_allocator.allocator(), input)).object;
 
-    try testing.expectEqualSlices(u8, obj.get("backslash").?.string, "\\");
-    try testing.expectEqualSlices(u8, obj.get("forwardslash").?.string, "/");
-    try testing.expectEqualSlices(u8, obj.get("newline").?.string, "\n");
-    try testing.expectEqualSlices(u8, obj.get("carriagereturn").?.string, "\r");
-    try testing.expectEqualSlices(u8, obj.get("tab").?.string, "\t");
-    try testing.expectEqualSlices(u8, obj.get("formfeed").?.string, "\x0C");
-    try testing.expectEqualSlices(u8, obj.get("backspace").?.string, "\x08");
-    try testing.expectEqualSlices(u8, obj.get("doublequote").?.string, "\"");
-    try testing.expectEqualSlices(u8, obj.get("unicode").?.string, "ą");
-    try testing.expectEqualSlices(u8, obj.get("surrogatepair").?.string, "😂");
+    try testing.expect_equal_slices(u8, obj.get("backslash").?.string, "\\");
+    try testing.expect_equal_slices(u8, obj.get("forwardslash").?.string, "/");
+    try testing.expect_equal_slices(u8, obj.get("newline").?.string, "\n");
+    try testing.expect_equal_slices(u8, obj.get("carriagereturn").?.string, "\r");
+    try testing.expect_equal_slices(u8, obj.get("tab").?.string, "\t");
+    try testing.expect_equal_slices(u8, obj.get("formfeed").?.string, "\x0C");
+    try testing.expect_equal_slices(u8, obj.get("backspace").?.string, "\x08");
+    try testing.expect_equal_slices(u8, obj.get("doublequote").?.string, "\"");
+    try testing.expect_equal_slices(u8, obj.get("unicode").?.string, "ą");
+    try testing.expect_equal_slices(u8, obj.get("surrogatepair").?.string, "😂");
 }
 
-test "Value.jsonStringify" {
+test "Value.json_stringify" {
     var vals = [_]Value{
         .{ .integer = 1 },
         .{ .integer = 2 },
@@ -189,7 +189,7 @@ test "Value.jsonStringify" {
     };
     var obj = ObjectMap.init(testing.allocator);
     defer obj.deinit();
-    try obj.putNoClobber("a", .{ .string = "b" });
+    try obj.put_no_clobber("a", .{ .string = "b" });
     const array = [_]Value{
         .null,
         .{ .bool = true },
@@ -197,13 +197,13 @@ test "Value.jsonStringify" {
         .{ .number_string = "43" },
         .{ .float = 42 },
         .{ .string = "weeee" },
-        .{ .array = Array.fromOwnedSlice(undefined, &vals) },
+        .{ .array = Array.from_owned_slice(undefined, &vals) },
         .{ .object = obj },
     };
     var buffer: [0x1000]u8 = undefined;
-    var fbs = std.io.fixedBufferStream(&buffer);
+    var fbs = std.io.fixed_buffer_stream(&buffer);
 
-    var jw = writeStream(fbs.writer(), .{ .whitespace = .indent_1 });
+    var jw = write_stream(fbs.writer(), .{ .whitespace = .indent_1 });
     defer jw.deinit();
     try jw.write(array);
 
@@ -225,10 +225,10 @@ test "Value.jsonStringify" {
         \\ }
         \\]
     ;
-    try testing.expectEqualSlices(u8, expected, fbs.getWritten());
+    try testing.expect_equal_slices(u8, expected, fbs.get_written());
 }
 
-test "parseFromValue(std.json.Value,...)" {
+test "parse_from_value(std.json.Value,...)" {
     const str =
         \\{
         \\  "int": 32,
@@ -239,9 +239,9 @@ test "parseFromValue(std.json.Value,...)" {
         \\}
     ;
 
-    const parsed_tree = try parseFromSlice(Value, testing.allocator, str, .{});
+    const parsed_tree = try parse_from_slice(Value, testing.allocator, str, .{});
     defer parsed_tree.deinit();
-    const tree = try parseFromValueLeaky(Value, parsed_tree.arena.allocator(), parsed_tree.value, .{});
+    const tree = try parse_from_value_leaky(Value, parsed_tree.arena.allocator(), parsed_tree.value, .{});
     try testing.expect(std.meta.eql(parsed_tree.value, tree));
 }
 
@@ -275,31 +275,31 @@ test "polymorphic parsing" {
             const type_str = type_value.string;
             var child_options = options;
             child_options.ignore_unknown_fields = true;
-            if (std.mem.eql(u8, type_str, "div")) return .{ .div = try parseFromValueLeaky(Div, allocator, source, child_options) };
-            if (std.mem.eql(u8, type_str, "button")) return .{ .button = try parseFromValueLeaky(Button, allocator, source, child_options) };
+            if (std.mem.eql(u8, type_str, "div")) return .{ .div = try parse_from_value_leaky(Div, allocator, source, child_options) };
+            if (std.mem.eql(u8, type_str, "button")) return .{ .button = try parse_from_value_leaky(Button, allocator, source, child_options) };
             return error.UnexpectedToken; // unknown type.
         }
     };
 
     var arena = ArenaAllocator.init(testing.allocator);
     defer arena.deinit();
-    const dynamic_tree = try parseFromSliceLeaky(Value, arena.allocator(), doc, .{});
-    const tree = try parseFromValueLeaky(Node, arena.allocator(), dynamic_tree, .{});
+    const dynamic_tree = try parse_from_slice_leaky(Value, arena.allocator(), doc, .{});
+    const tree = try parse_from_value_leaky(Node, arena.allocator(), dynamic_tree, .{});
 
     try testing.expect(tree.div.color == .blue);
-    try testing.expectEqualStrings("Cancel", tree.div.children[1].button.caption);
+    try testing.expect_equal_strings("Cancel", tree.div.children[1].button.caption);
 }
 
 test "long object value" {
     const value = "01234567890123456789";
     const doc = "{\"key\":\"" ++ value ++ "\"}";
-    var fbs = std.io.fixedBufferStream(doc);
-    var reader = smallBufferJsonReader(testing.allocator, fbs.reader());
+    var fbs = std.io.fixed_buffer_stream(doc);
+    var reader = small_buffer_json_reader(testing.allocator, fbs.reader());
     defer reader.deinit();
-    var parsed = try parseFromTokenSource(Value, testing.allocator, &reader, .{});
+    var parsed = try parse_from_token_source(Value, testing.allocator, &reader, .{});
     defer parsed.deinit();
 
-    try testing.expectEqualStrings(value, parsed.value.object.get("key").?.string);
+    try testing.expect_equal_strings(value, parsed.value.object.get("key").?.string);
 }
 
 test "ParseOptions.max_value_len" {
@@ -308,12 +308,12 @@ test "ParseOptions.max_value_len" {
 
     const str = "\"0800fc577294c34e0b28ad2839435945\"";
 
-    const value = try std.json.parseFromSliceLeaky(std.json.Value, arena.allocator(), str, .{ .max_value_len = 32 });
+    const value = try std.json.parse_from_slice_leaky(std.json.Value, arena.allocator(), str, .{ .max_value_len = 32 });
 
     try testing.expect(value == .string);
     try testing.expect(value.string.len == 32);
 
-    try testing.expectError(error.ValueTooLong, std.json.parseFromSliceLeaky(std.json.Value, arena.allocator(), str, .{ .max_value_len = 31 }));
+    try testing.expect_error(error.ValueTooLong, std.json.parse_from_slice_leaky(std.json.Value, arena.allocator(), str, .{ .max_value_len = 31 }));
 }
 
 test "many object keys" {
@@ -326,28 +326,28 @@ test "many object keys" {
         \\  "k5": "v5"
         \\}
     ;
-    var fbs = std.io.fixedBufferStream(doc);
-    var reader = smallBufferJsonReader(testing.allocator, fbs.reader());
+    var fbs = std.io.fixed_buffer_stream(doc);
+    var reader = small_buffer_json_reader(testing.allocator, fbs.reader());
     defer reader.deinit();
-    var parsed = try parseFromTokenSource(Value, testing.allocator, &reader, .{});
+    var parsed = try parse_from_token_source(Value, testing.allocator, &reader, .{});
     defer parsed.deinit();
 
-    try testing.expectEqualStrings("v1", parsed.value.object.get("k1").?.string);
-    try testing.expectEqualStrings("v2", parsed.value.object.get("k2").?.string);
-    try testing.expectEqualStrings("v3", parsed.value.object.get("k3").?.string);
-    try testing.expectEqualStrings("v4", parsed.value.object.get("k4").?.string);
-    try testing.expectEqualStrings("v5", parsed.value.object.get("k5").?.string);
+    try testing.expect_equal_strings("v1", parsed.value.object.get("k1").?.string);
+    try testing.expect_equal_strings("v2", parsed.value.object.get("k2").?.string);
+    try testing.expect_equal_strings("v3", parsed.value.object.get("k3").?.string);
+    try testing.expect_equal_strings("v4", parsed.value.object.get("k4").?.string);
+    try testing.expect_equal_strings("v5", parsed.value.object.get("k5").?.string);
 }
 
 test "negative zero" {
     const doc = "-0";
-    var fbs = std.io.fixedBufferStream(doc);
-    var reader = smallBufferJsonReader(testing.allocator, fbs.reader());
+    var fbs = std.io.fixed_buffer_stream(doc);
+    var reader = small_buffer_json_reader(testing.allocator, fbs.reader());
     defer reader.deinit();
-    var parsed = try parseFromTokenSource(Value, testing.allocator, &reader, .{});
+    var parsed = try parse_from_token_source(Value, testing.allocator, &reader, .{});
     defer parsed.deinit();
 
-    try testing.expect(std.math.isNegativeZero(parsed.value.float));
+    try testing.expect(std.math.is_negative_zero(parsed.value.float));
 }
 
 fn small_buffer_json_reader(allocator: Allocator, io_reader: anytype) JsonReader(16, @TypeOf(io_reader)) {

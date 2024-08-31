@@ -63,7 +63,7 @@ pub const Parser = struct {
             .output_code_page_lookup = CodePageLookup.init(arena.allocator(), self.lexer.default_code_page),
         };
 
-        const parsed_root = try self.parseRoot();
+        const parsed_root = try self.parse_root();
 
         const tree = try self.state.arena.create(Tree);
         tree.* = .{
@@ -81,7 +81,7 @@ pub const Parser = struct {
         var statements = std.ArrayList(*Node).init(self.state.allocator);
         defer statements.deinit();
 
-        try self.parseStatements(&statements);
+        try self.parse_statements(&statements);
         try self.check(.eof);
 
         const node = try self.state.arena.create(Node.Root);
@@ -93,14 +93,14 @@ pub const Parser = struct {
 
     fn parse_statements(self: *Self, statements: *std.ArrayList(*Node)) Error!void {
         while (true) {
-            try self.nextToken(.whitespace_delimiter_only);
+            try self.next_token(.whitespace_delimiter_only);
             if (self.state.token.id == .eof) break;
             // The Win32 compiler will sometimes try to recover from errors
             // and then restart parsing afterwards. We don't ever do this
             // because it almost always leads to unhelpful error messages
             // (usually it will end up with bogus things like 'file
             // not found: {')
-            const statement = try self.parseStatement();
+            const statement = try self.parse_statement();
             try statements.append(statement);
         }
     }
@@ -113,15 +113,15 @@ pub const Parser = struct {
     fn parse_common_resource_attributes(self: *Self) ![]Token {
         var common_resource_attributes = std.ArrayListUnmanaged(Token){};
         while (true) {
-            const maybe_common_resource_attribute = try self.lookaheadToken(.normal);
+            const maybe_common_resource_attribute = try self.lookahead_token(.normal);
             if (maybe_common_resource_attribute.id == .literal and rc.CommonResourceAttributes.map.has(maybe_common_resource_attribute.slice(self.lexer.buffer))) {
                 try common_resource_attributes.append(self.state.arena, maybe_common_resource_attribute);
-                self.nextToken(.normal) catch unreachable;
+                self.next_token(.normal) catch unreachable;
             } else {
                 break;
             }
         }
-        return common_resource_attributes.toOwnedSlice(self.state.arena);
+        return common_resource_attributes.to_owned_slice(self.state.arena);
     }
 
     /// Expects the current token to have already been dealt with, and that the
@@ -133,23 +133,23 @@ pub const Parser = struct {
     fn parse_optional_statements(self: *Self, resource: Resource) ![]*Node {
         var optional_statements = std.ArrayListUnmanaged(*Node){};
         while (true) {
-            const lookahead_token = try self.lookaheadToken(.normal);
+            const lookahead_token = try self.lookahead_token(.normal);
             if (lookahead_token.id != .literal) break;
             const slice = lookahead_token.slice(self.lexer.buffer);
             const optional_statement_type = rc.OptionalStatements.map.get(slice) orelse switch (resource) {
                 .dialog, .dialogex => rc.OptionalStatements.dialog_map.get(slice) orelse break,
                 else => break,
             };
-            self.nextToken(.normal) catch unreachable;
+            self.next_token(.normal) catch unreachable;
             switch (optional_statement_type) {
                 .language => {
-                    const language = try self.parseLanguageStatement();
+                    const language = try self.parse_language_statement();
                     try optional_statements.append(self.state.arena, language);
                 },
                 // Number only
                 .version, .characteristics, .style, .exstyle => {
                     const identifier = self.state.token;
-                    const value = try self.parseExpression(.{
+                    const value = try self.parse_expression(.{
                         .can_contain_not_expressions = optional_statement_type == .style or optional_statement_type == .exstyle,
                         .allowed_types = .{ .number = true },
                     });
@@ -163,10 +163,10 @@ pub const Parser = struct {
                 // String only
                 .caption => {
                     const identifier = self.state.token;
-                    try self.nextToken(.normal);
+                    try self.next_token(.normal);
                     const value = self.state.token;
-                    if (!value.isStringLiteral()) {
-                        return self.addErrorDetailsAndFail(ErrorDetails{
+                    if (!value.is_string_literal()) {
+                        return self.add_error_details_and_fail(ErrorDetails{
                             .err = .expected_something_else,
                             .token = value,
                             .extra = .{ .expected_types = .{
@@ -188,7 +188,7 @@ pub const Parser = struct {
                 // String or number
                 .class => {
                     const identifier = self.state.token;
-                    const value = try self.parseExpression(.{ .allowed_types = .{ .number = true, .string = true } });
+                    const value = try self.parse_expression(.{ .allowed_types = .{ .number = true, .string = true } });
                     const node = try self.state.arena.create(Node.SimpleStatement);
                     node.* = .{
                         .identifier = identifier,
@@ -199,7 +199,7 @@ pub const Parser = struct {
                 // Special case
                 .menu => {
                     const identifier = self.state.token;
-                    try self.nextToken(.whitespace_delimiter_only);
+                    try self.next_token(.whitespace_delimiter_only);
                     try self.check(.literal);
                     const value_node = try self.state.arena.create(Node.Literal);
                     value_node.* = .{
@@ -214,16 +214,16 @@ pub const Parser = struct {
                 },
                 .font => {
                     const identifier = self.state.token;
-                    const point_size = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+                    const point_size = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
                     // The comma between point_size and typeface is both optional and
                     // there can be any number of them
-                    try self.skipAnyCommas();
+                    try self.skip_any_commas();
 
-                    try self.nextToken(.normal);
+                    try self.next_token(.normal);
                     const typeface = self.state.token;
-                    if (!typeface.isStringLiteral()) {
-                        return self.addErrorDetailsAndFail(ErrorDetails{
+                    if (!typeface.is_string_literal()) {
+                        return self.add_error_details_and_fail(ErrorDetails{
                             .err = .expected_something_else,
                             .token = typeface,
                             .extra = .{ .expected_types = .{
@@ -247,8 +247,8 @@ pub const Parser = struct {
                                     if (optional_param_parser.finished) break :ex_specific;
                                 }
                                 {
-                                    if (!(try self.parseOptionalToken(.comma))) break :ex_specific;
-                                    ex_specific.italic = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+                                    if (!(try self.parse_optional_token(.comma))) break :ex_specific;
+                                    ex_specific.italic = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
                                 }
                                 {
                                     ex_specific.char_set = try optional_param_parser.parse(.{});
@@ -273,7 +273,7 @@ pub const Parser = struct {
                 },
             }
         }
-        return optional_statements.toOwnedSlice(self.state.arena);
+        return optional_statements.to_owned_slice(self.state.arena);
     }
 
     /// Expects the current token to be the first token of the statement.
@@ -283,12 +283,12 @@ pub const Parser = struct {
 
         if (rc.TopLevelKeywords.map.get(first_token.slice(self.lexer.buffer))) |keyword| switch (keyword) {
             .language => {
-                const language_statement = try self.parseLanguageStatement();
+                const language_statement = try self.parse_language_statement();
                 return language_statement;
             },
             .version, .characteristics => {
                 const identifier = self.state.token;
-                const value = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+                const value = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
                 const node = try self.state.arena.create(Node.SimpleStatement);
                 node.* = .{
                     .identifier = identifier,
@@ -298,37 +298,37 @@ pub const Parser = struct {
             },
             .stringtable => {
                 // common resource attributes must all be contiguous and come before optional-statements
-                const common_resource_attributes = try self.parseCommonResourceAttributes();
-                const optional_statements = try self.parseOptionalStatements(.stringtable);
+                const common_resource_attributes = try self.parse_common_resource_attributes();
+                const optional_statements = try self.parse_optional_statements(.stringtable);
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const begin_token = self.state.token;
                 try self.check(.begin);
 
                 var strings = std.ArrayList(*Node).init(self.state.allocator);
                 defer strings.deinit();
                 while (true) {
-                    const maybe_end_token = try self.lookaheadToken(.normal);
+                    const maybe_end_token = try self.lookahead_token(.normal);
                     switch (maybe_end_token.id) {
                         .end => {
-                            self.nextToken(.normal) catch unreachable;
+                            self.next_token(.normal) catch unreachable;
                             break;
                         },
                         .eof => {
-                            return self.addErrorDetailsAndFail(ErrorDetails{
+                            return self.add_error_details_and_fail(ErrorDetails{
                                 .err = .unfinished_string_table_block,
                                 .token = maybe_end_token,
                             });
                         },
                         else => {},
                     }
-                    const id_expression = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+                    const id_expression = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
-                    const comma_token: ?Token = if (try self.parseOptionalToken(.comma)) self.state.token else null;
+                    const comma_token: ?Token = if (try self.parse_optional_token(.comma)) self.state.token else null;
 
-                    try self.nextToken(.normal);
+                    try self.next_token(.normal);
                     if (self.state.token.id != .quoted_ascii_string and self.state.token.id != .quoted_wide_string) {
-                        return self.addErrorDetailsAndFail(ErrorDetails{
+                        return self.add_error_details_and_fail(ErrorDetails{
                             .err = .expected_something_else,
                             .token = self.state.token,
                             .extra = .{ .expected_types = .{ .string_literal = true } },
@@ -345,7 +345,7 @@ pub const Parser = struct {
                 }
 
                 if (strings.items.len == 0) {
-                    return self.addErrorDetailsAndFail(ErrorDetails{
+                    return self.add_error_details_and_fail(ErrorDetails{
                         .err = .expected_token, // TODO: probably a more specific error message
                         .token = self.state.token,
                         .extra = .{ .expected = .number },
@@ -372,7 +372,7 @@ pub const Parser = struct {
         // (as long as it's not a valid top-level keyword), and there is actually an
         // .rc file with a such a dangling literal in the Windows-classic-samples set
         // of projects. So, we have special compatibility for this particular case.
-        const maybe_eof = try self.lookaheadToken(.whitespace_delimiter_only);
+        const maybe_eof = try self.lookahead_token(.whitespace_delimiter_only);
         if (maybe_eof.id == .eof) {
             // TODO: emit warning
             var context = try self.state.arena.alloc(Token, 2);
@@ -387,16 +387,16 @@ pub const Parser = struct {
 
         const id_token = first_token;
         const id_code_page = self.lexer.current_code_page;
-        try self.nextToken(.whitespace_delimiter_only);
-        const resource = try self.checkResource();
+        try self.next_token(.whitespace_delimiter_only);
+        const resource = try self.check_resource();
         const type_token = self.state.token;
 
         if (resource == .string_num) {
-            try self.addErrorDetails(.{
+            try self.add_error_details(.{
                 .err = .string_resource_as_numeric_type,
                 .token = type_token,
             });
-            return self.addErrorDetailsAndFail(.{
+            return self.add_error_details_and_fail(.{
                 .err = .string_resource_as_numeric_type,
                 .token = type_token,
                 .type = .note,
@@ -409,16 +409,16 @@ pub const Parser = struct {
                 .slice = id_token.slice(self.lexer.buffer),
                 .code_page = id_code_page,
             };
-            const maybe_ordinal = res.NameOrOrdinal.maybeOrdinalFromString(id_bytes);
+            const maybe_ordinal = res.NameOrOrdinal.maybe_ordinal_from_string(id_bytes);
             if (maybe_ordinal == null) {
-                const would_be_win32_rc_ordinal = res.NameOrOrdinal.maybeNonAsciiOrdinalFromString(id_bytes);
+                const would_be_win32_rc_ordinal = res.NameOrOrdinal.maybe_non_ascii_ordinal_from_string(id_bytes);
                 if (would_be_win32_rc_ordinal) |win32_rc_ordinal| {
-                    try self.addErrorDetails(ErrorDetails{
+                    try self.add_error_details(ErrorDetails{
                         .err = .id_must_be_ordinal,
                         .token = id_token,
                         .extra = .{ .resource = resource },
                     });
-                    return self.addErrorDetailsAndFail(ErrorDetails{
+                    return self.add_error_details_and_fail(ErrorDetails{
                         .err = .win32_non_ascii_ordinal,
                         .token = id_token,
                         .type = .note,
@@ -426,7 +426,7 @@ pub const Parser = struct {
                         .extra = .{ .number = win32_rc_ordinal.ordinal },
                     });
                 } else {
-                    return self.addErrorDetailsAndFail(ErrorDetails{
+                    return self.add_error_details_and_fail(ErrorDetails{
                         .err = .id_must_be_ordinal,
                         .token = id_token,
                         .extra = .{ .resource = resource },
@@ -438,38 +438,38 @@ pub const Parser = struct {
         switch (resource) {
             .accelerators => {
                 // common resource attributes must all be contiguous and come before optional-statements
-                const common_resource_attributes = try self.parseCommonResourceAttributes();
-                const optional_statements = try self.parseOptionalStatements(resource);
+                const common_resource_attributes = try self.parse_common_resource_attributes();
+                const optional_statements = try self.parse_optional_statements(resource);
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const begin_token = self.state.token;
                 try self.check(.begin);
 
                 var accelerators = std.ArrayListUnmanaged(*Node){};
 
                 while (true) {
-                    const lookahead = try self.lookaheadToken(.normal);
+                    const lookahead = try self.lookahead_token(.normal);
                     switch (lookahead.id) {
                         .end, .eof => {
-                            self.nextToken(.normal) catch unreachable;
+                            self.next_token(.normal) catch unreachable;
                             break;
                         },
                         else => {},
                     }
-                    const event = try self.parseExpression(.{ .allowed_types = .{ .number = true, .string = true } });
+                    const event = try self.parse_expression(.{ .allowed_types = .{ .number = true, .string = true } });
 
-                    try self.nextToken(.normal);
+                    try self.next_token(.normal);
                     try self.check(.comma);
 
-                    const idvalue = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+                    const idvalue = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
                     var type_and_options = std.ArrayListUnmanaged(Token){};
                     while (true) {
-                        if (!(try self.parseOptionalToken(.comma))) break;
+                        if (!(try self.parse_optional_token(.comma))) break;
 
-                        try self.nextToken(.normal);
-                        if (!rc.AcceleratorTypeAndOptions.map.has(self.tokenSlice())) {
-                            return self.addErrorDetailsAndFail(.{
+                        try self.next_token(.normal);
+                        if (!rc.AcceleratorTypeAndOptions.map.has(self.token_slice())) {
+                            return self.add_error_details_and_fail(.{
                                 .err = .expected_something_else,
                                 .token = self.state.token,
                                 .extra = .{ .expected_types = .{
@@ -484,7 +484,7 @@ pub const Parser = struct {
                     node.* = .{
                         .event = event,
                         .idvalue = idvalue,
-                        .type_and_options = try type_and_options.toOwnedSlice(self.state.arena),
+                        .type_and_options = try type_and_options.to_owned_slice(self.state.arena),
                     };
                     try accelerators.append(self.state.arena, &node.base);
                 }
@@ -499,51 +499,51 @@ pub const Parser = struct {
                     .common_resource_attributes = common_resource_attributes,
                     .optional_statements = optional_statements,
                     .begin_token = begin_token,
-                    .accelerators = try accelerators.toOwnedSlice(self.state.arena),
+                    .accelerators = try accelerators.to_owned_slice(self.state.arena),
                     .end_token = end_token,
                 };
                 return &node.base;
             },
             .dialog, .dialogex => {
                 // common resource attributes must all be contiguous and come before optional-statements
-                const common_resource_attributes = try self.parseCommonResourceAttributes();
+                const common_resource_attributes = try self.parse_common_resource_attributes();
 
-                const x = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
-                _ = try self.parseOptionalToken(.comma);
+                const x = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
+                _ = try self.parse_optional_token(.comma);
 
-                const y = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
-                _ = try self.parseOptionalToken(.comma);
+                const y = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
+                _ = try self.parse_optional_token(.comma);
 
-                const width = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
-                _ = try self.parseOptionalToken(.comma);
+                const width = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
+                _ = try self.parse_optional_token(.comma);
 
-                const height = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+                const height = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
                 var optional_param_parser = OptionalParamParser{ .parser = self };
                 const help_id: ?*Node = try optional_param_parser.parse(.{});
 
-                const optional_statements = try self.parseOptionalStatements(resource);
+                const optional_statements = try self.parse_optional_statements(resource);
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const begin_token = self.state.token;
                 try self.check(.begin);
 
                 var controls = std.ArrayListUnmanaged(*Node){};
                 defer controls.deinit(self.state.allocator);
-                while (try self.parseControlStatement(resource)) |control_node| {
+                while (try self.parse_control_statement(resource)) |control_node| {
                     // The number of controls must fit in a u16 in order for it to
                     // be able to be written into the relevant field in the .res data.
-                    if (controls.items.len >= std.math.maxInt(u16)) {
-                        try self.addErrorDetails(.{
+                    if (controls.items.len >= std.math.max_int(u16)) {
+                        try self.add_error_details(.{
                             .err = .too_many_dialog_controls_or_toolbar_buttons,
                             .token = id_token,
                             .extra = .{ .resource = resource },
                         });
-                        return self.addErrorDetailsAndFail(.{
+                        return self.add_error_details_and_fail(.{
                             .err = .too_many_dialog_controls_or_toolbar_buttons,
                             .type = .note,
-                            .token = control_node.getFirstToken(),
-                            .token_span_end = control_node.getLastToken(),
+                            .token = control_node.get_first_token(),
+                            .token_span_end = control_node.get_last_token(),
                             .extra = .{ .resource = resource },
                         });
                     }
@@ -551,7 +551,7 @@ pub const Parser = struct {
                     try controls.append(self.state.allocator, control_node);
                 }
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const end_token = self.state.token;
                 try self.check(.end);
 
@@ -574,35 +574,35 @@ pub const Parser = struct {
             },
             .toolbar => {
                 // common resource attributes must all be contiguous and come before optional-statements
-                const common_resource_attributes = try self.parseCommonResourceAttributes();
+                const common_resource_attributes = try self.parse_common_resource_attributes();
 
-                const button_width = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+                const button_width = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 try self.check(.comma);
 
-                const button_height = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+                const button_height = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const begin_token = self.state.token;
                 try self.check(.begin);
 
                 var buttons = std.ArrayListUnmanaged(*Node){};
                 defer buttons.deinit(self.state.allocator);
-                while (try self.parseToolbarButtonStatement()) |button_node| {
+                while (try self.parse_toolbar_button_statement()) |button_node| {
                     // The number of buttons must fit in a u16 in order for it to
                     // be able to be written into the relevant field in the .res data.
-                    if (buttons.items.len >= std.math.maxInt(u16)) {
-                        try self.addErrorDetails(.{
+                    if (buttons.items.len >= std.math.max_int(u16)) {
+                        try self.add_error_details(.{
                             .err = .too_many_dialog_controls_or_toolbar_buttons,
                             .token = id_token,
                             .extra = .{ .resource = resource },
                         });
-                        return self.addErrorDetailsAndFail(.{
+                        return self.add_error_details_and_fail(.{
                             .err = .too_many_dialog_controls_or_toolbar_buttons,
                             .type = .note,
-                            .token = button_node.getFirstToken(),
-                            .token_span_end = button_node.getLastToken(),
+                            .token = button_node.get_first_token(),
+                            .token_span_end = button_node.get_last_token(),
                             .extra = .{ .resource = resource },
                         });
                     }
@@ -610,7 +610,7 @@ pub const Parser = struct {
                     try buttons.append(self.state.allocator, button_node);
                 }
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const end_token = self.state.token;
                 try self.check(.end);
 
@@ -629,34 +629,34 @@ pub const Parser = struct {
             },
             .menu, .menuex => {
                 // common resource attributes must all be contiguous and come before optional-statements
-                const common_resource_attributes = try self.parseCommonResourceAttributes();
+                const common_resource_attributes = try self.parse_common_resource_attributes();
                 // help id is optional but must come between common resource attributes and optional-statements
                 var help_id: ?*Node = null;
                 // Note: No comma is allowed before or after help_id of MENUEX and help_id is not
                 //       a possible field of MENU.
-                if (resource == .menuex and try self.lookaheadCouldBeNumberExpression(.not_disallowed)) {
-                    help_id = try self.parseExpression(.{
+                if (resource == .menuex and try self.lookahead_could_be_number_expression(.not_disallowed)) {
+                    help_id = try self.parse_expression(.{
                         .is_known_to_be_number_expression = true,
                     });
                 }
-                const optional_statements = try self.parseOptionalStatements(.stringtable);
+                const optional_statements = try self.parse_optional_statements(.stringtable);
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const begin_token = self.state.token;
                 try self.check(.begin);
 
                 var items = std.ArrayListUnmanaged(*Node){};
                 defer items.deinit(self.state.allocator);
-                while (try self.parseMenuItemStatement(resource, id_token, 1)) |item_node| {
+                while (try self.parse_menu_item_statement(resource, id_token, 1)) |item_node| {
                     try items.append(self.state.allocator, item_node);
                 }
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const end_token = self.state.token;
                 try self.check(.end);
 
                 if (items.items.len == 0) {
-                    return self.addErrorDetailsAndFail(.{
+                    return self.add_error_details_and_fail(.{
                         .err = .empty_menu_not_allowed,
                         .token = type_token,
                     });
@@ -677,23 +677,23 @@ pub const Parser = struct {
             },
             .versioninfo => {
                 // common resource attributes must all be contiguous and come before optional-statements
-                const common_resource_attributes = try self.parseCommonResourceAttributes();
+                const common_resource_attributes = try self.parse_common_resource_attributes();
 
                 var fixed_info = std.ArrayListUnmanaged(*Node){};
-                while (try self.parseVersionStatement()) |version_statement| {
+                while (try self.parse_version_statement()) |version_statement| {
                     try fixed_info.append(self.state.arena, version_statement);
                 }
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const begin_token = self.state.token;
                 try self.check(.begin);
 
                 var block_statements = std.ArrayListUnmanaged(*Node){};
-                while (try self.parseVersionBlockOrValue(id_token, 1)) |block_node| {
+                while (try self.parse_version_block_or_value(id_token, 1)) |block_node| {
                     try block_statements.append(self.state.arena, block_node);
                 }
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const end_token = self.state.token;
                 try self.check(.end);
 
@@ -702,17 +702,17 @@ pub const Parser = struct {
                     .id = id_token,
                     .versioninfo = type_token,
                     .common_resource_attributes = common_resource_attributes,
-                    .fixed_info = try fixed_info.toOwnedSlice(self.state.arena),
+                    .fixed_info = try fixed_info.to_owned_slice(self.state.arena),
                     .begin_token = begin_token,
-                    .block_statements = try block_statements.toOwnedSlice(self.state.arena),
+                    .block_statements = try block_statements.to_owned_slice(self.state.arena),
                     .end_token = end_token,
                 };
                 return &node.base;
             },
             .dlginclude => {
-                const common_resource_attributes = try self.parseCommonResourceAttributes();
+                const common_resource_attributes = try self.parse_common_resource_attributes();
 
-                const filename_expression = try self.parseExpression(.{
+                const filename_expression = try self.parse_expression(.{
                     .allowed_types = .{ .string = true },
                 });
 
@@ -726,7 +726,7 @@ pub const Parser = struct {
                 return &node.base;
             },
             .stringtable => {
-                return self.addErrorDetailsAndFail(.{
+                return self.add_error_details_and_fail(.{
                     .err = .name_or_id_not_allowed,
                     .token = id_token,
                     .extra = .{ .resource = resource },
@@ -735,19 +735,19 @@ pub const Parser = struct {
             // Just try everything as a 'generic' resource (raw data or external file)
             // TODO: More fine-grained switch cases as necessary
             else => {
-                const common_resource_attributes = try self.parseCommonResourceAttributes();
+                const common_resource_attributes = try self.parse_common_resource_attributes();
 
-                const maybe_begin = try self.lookaheadToken(.normal);
+                const maybe_begin = try self.lookahead_token(.normal);
                 if (maybe_begin.id == .begin) {
-                    self.nextToken(.normal) catch unreachable;
+                    self.next_token(.normal) catch unreachable;
 
-                    if (!resource.canUseRawData()) {
-                        try self.addErrorDetails(ErrorDetails{
+                    if (!resource.can_use_raw_data()) {
+                        try self.add_error_details(ErrorDetails{
                             .err = .resource_type_cant_use_raw_data,
                             .token = maybe_begin,
                             .extra = .{ .resource = resource },
                         });
-                        return self.addErrorDetailsAndFail(ErrorDetails{
+                        return self.add_error_details_and_fail(ErrorDetails{
                             .err = .resource_type_cant_use_raw_data,
                             .type = .note,
                             .print_source_line = false,
@@ -755,7 +755,7 @@ pub const Parser = struct {
                         });
                     }
 
-                    const raw_data = try self.parseRawDataBlock();
+                    const raw_data = try self.parse_raw_data_block();
                     const end_token = self.state.token;
 
                     const node = try self.state.arena.create(Node.ResourceRawData);
@@ -770,7 +770,7 @@ pub const Parser = struct {
                     return &node.base;
                 }
 
-                const filename_expression = try self.parseExpression(.{
+                const filename_expression = try self.parse_expression(.{
                     // Don't tell the user that numbers are accepted since we error on
                     // number expressions and regular number literals are treated as unquoted
                     // literals rather than numbers, so from the users perspective
@@ -799,12 +799,12 @@ pub const Parser = struct {
         var raw_data = std.ArrayList(*Node).init(self.state.allocator);
         defer raw_data.deinit();
         while (true) {
-            const maybe_end_token = try self.lookaheadToken(.normal);
+            const maybe_end_token = try self.lookahead_token(.normal);
             switch (maybe_end_token.id) {
                 .comma => {
                     // comma as the first token in a raw data block is an error
                     if (raw_data.items.len == 0) {
-                        return self.addErrorDetailsAndFail(ErrorDetails{
+                        return self.add_error_details_and_fail(ErrorDetails{
                             .err = .expected_something_else,
                             .token = maybe_end_token,
                             .extra = .{ .expected_types = .{
@@ -815,29 +815,29 @@ pub const Parser = struct {
                         });
                     }
                     // otherwise just skip over commas
-                    self.nextToken(.normal) catch unreachable;
+                    self.next_token(.normal) catch unreachable;
                     continue;
                 },
                 .end => {
-                    self.nextToken(.normal) catch unreachable;
+                    self.next_token(.normal) catch unreachable;
                     break;
                 },
                 .eof => {
-                    return self.addErrorDetailsAndFail(ErrorDetails{
+                    return self.add_error_details_and_fail(ErrorDetails{
                         .err = .unfinished_raw_data_block,
                         .token = maybe_end_token,
                     });
                 },
                 else => {},
             }
-            const expression = try self.parseExpression(.{ .allowed_types = .{ .number = true, .string = true } });
+            const expression = try self.parse_expression(.{ .allowed_types = .{ .number = true, .string = true } });
             try raw_data.append(expression);
 
-            if (expression.isNumberExpression()) {
-                const maybe_close_paren = try self.lookaheadToken(.normal);
+            if (expression.is_number_expression()) {
+                const maybe_close_paren = try self.lookahead_token(.normal);
                 if (maybe_close_paren.id == .close_paren) {
                     // <number expression>) is an error
-                    return self.addErrorDetailsAndFail(ErrorDetails{
+                    return self.add_error_details_and_fail(ErrorDetails{
                         .err = .expected_token,
                         .token = maybe_close_paren,
                         .extra = .{ .expected = .operator },
@@ -853,21 +853,21 @@ pub const Parser = struct {
     /// After return, the current token will be the token immediately before the end of the
     /// control statement (or unchanged if the function returns null).
     fn parse_control_statement(self: *Self, resource: Resource) Error!?*Node {
-        const control_token = try self.lookaheadToken(.normal);
+        const control_token = try self.lookahead_token(.normal);
         const control = rc.Control.map.get(control_token.slice(self.lexer.buffer)) orelse return null;
-        self.nextToken(.normal) catch unreachable;
+        self.next_token(.normal) catch unreachable;
 
-        try self.skipAnyCommas();
+        try self.skip_any_commas();
 
         var text: ?Token = null;
-        if (control.hasTextParam()) {
-            try self.nextToken(.normal);
+        if (control.has_text_param()) {
+            try self.next_token(.normal);
             switch (self.state.token.id) {
                 .quoted_ascii_string, .quoted_wide_string, .number => {
                     text = self.state.token;
                 },
                 else => {
-                    return self.addErrorDetailsAndFail(ErrorDetails{
+                    return self.add_error_details_and_fail(ErrorDetails{
                         .err = .expected_something_else,
                         .token = self.state.token,
                         .extra = .{ .expected_types = .{
@@ -877,22 +877,22 @@ pub const Parser = struct {
                     });
                 },
             }
-            try self.skipAnyCommas();
+            try self.skip_any_commas();
         }
 
-        const id = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+        const id = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
-        try self.skipAnyCommas();
+        try self.skip_any_commas();
 
         var class: ?*Node = null;
         var style: ?*Node = null;
         if (control == .control) {
-            class = try self.parseExpression(.{});
+            class = try self.parse_expression(.{});
             if (class.?.id == .literal) {
-                const class_literal: *Node.Literal = @alignCast(@fieldParentPtr("base", class.?));
+                const class_literal: *Node.Literal = @align_cast(@fieldParentPtr("base", class.?));
                 const is_invalid_control_class = class_literal.token.id == .literal and !rc.ControlClass.map.has(class_literal.token.slice(self.lexer.buffer));
                 if (is_invalid_control_class) {
-                    return self.addErrorDetailsAndFail(.{
+                    return self.add_error_details_and_fail(.{
                         .err = .expected_something_else,
                         .token = self.state.token,
                         .extra = .{ .expected_types = .{
@@ -901,8 +901,8 @@ pub const Parser = struct {
                     });
                 }
             }
-            try self.skipAnyCommas();
-            style = try self.parseExpression(.{
+            try self.skip_any_commas();
+            style = try self.parse_expression(.{
                 .can_contain_not_expressions = true,
                 .allowed_types = .{ .number = true },
             });
@@ -918,30 +918,30 @@ pub const Parser = struct {
             // Instead of emulating this behavior, we just warn about the potential for
             // weird behavior in the Win32 implementation whenever there isn't a comma after
             // the style parameter.
-            const lookahead_token = try self.lookaheadToken(.normal);
+            const lookahead_token = try self.lookahead_token(.normal);
             if (lookahead_token.id != .comma and lookahead_token.id != .eof) {
-                try self.addErrorDetails(.{
+                try self.add_error_details(.{
                     .err = .rc_could_miscompile_control_params,
                     .type = .warning,
                     .token = lookahead_token,
                 });
-                try self.addErrorDetails(.{
+                try self.add_error_details(.{
                     .err = .rc_could_miscompile_control_params,
                     .type = .note,
-                    .token = style.?.getFirstToken(),
-                    .token_span_end = style.?.getLastToken(),
+                    .token = style.?.get_first_token(),
+                    .token_span_end = style.?.get_last_token(),
                 });
             }
-            try self.skipAnyCommas();
+            try self.skip_any_commas();
         }
 
-        const x = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
-        _ = try self.parseOptionalToken(.comma);
-        const y = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
-        _ = try self.parseOptionalToken(.comma);
-        const width = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
-        _ = try self.parseOptionalToken(.comma);
-        const height = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+        const x = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
+        _ = try self.parse_optional_token(.comma);
+        const y = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
+        _ = try self.parse_optional_token(.comma);
+        const width = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
+        _ = try self.parse_optional_token(.comma);
+        const height = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
         var optional_param_parser = OptionalParamParser{ .parser = self };
         if (control != .control) {
@@ -958,9 +958,9 @@ pub const Parser = struct {
         var extra_data_begin: ?Token = null;
         var extra_data_end: ?Token = null;
         // extra data is DIALOGEX-only
-        if (resource == .dialogex and try self.parseOptionalToken(.begin)) {
+        if (resource == .dialogex and try self.parse_optional_token(.begin)) {
             extra_data_begin = self.state.token;
-            extra_data = try self.parseRawDataBlock();
+            extra_data = try self.parse_raw_data_block();
             extra_data_end = self.state.token;
         }
 
@@ -985,9 +985,9 @@ pub const Parser = struct {
     }
 
     fn parse_toolbar_button_statement(self: *Self) Error!?*Node {
-        const keyword_token = try self.lookaheadToken(.normal);
+        const keyword_token = try self.lookahead_token(.normal);
         const button_type = rc.ToolbarButton.map.get(keyword_token.slice(self.lexer.buffer)) orelse return null;
-        self.nextToken(.normal) catch unreachable;
+        self.next_token(.normal) catch unreachable;
 
         switch (button_type) {
             .separator => {
@@ -998,7 +998,7 @@ pub const Parser = struct {
                 return &node.base;
             },
             .button => {
-                const button_id = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+                const button_id = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
                 const node = try self.state.arena.create(Node.SimpleStatement);
                 node.* = .{
@@ -1015,17 +1015,17 @@ pub const Parser = struct {
     /// After return, the current token will be the token immediately before the end of the
     /// menuitem statement (or unchanged if the function returns null).
     fn parse_menu_item_statement(self: *Self, resource: Resource, top_level_menu_id_token: Token, nesting_level: u32) Error!?*Node {
-        const menuitem_token = try self.lookaheadToken(.normal);
+        const menuitem_token = try self.lookahead_token(.normal);
         const menuitem = rc.MenuItem.map.get(menuitem_token.slice(self.lexer.buffer)) orelse return null;
-        self.nextToken(.normal) catch unreachable;
+        self.next_token(.normal) catch unreachable;
 
         if (nesting_level > max_nested_menu_level) {
-            try self.addErrorDetails(.{
+            try self.add_error_details(.{
                 .err = .nested_resource_level_exceeds_max,
                 .token = top_level_menu_id_token,
                 .extra = .{ .resource = resource },
             });
-            return self.addErrorDetailsAndFail(.{
+            return self.add_error_details_and_fail(.{
                 .err = .nested_resource_level_exceeds_max,
                 .type = .note,
                 .token = menuitem_token,
@@ -1036,11 +1036,11 @@ pub const Parser = struct {
         switch (resource) {
             .menu => switch (menuitem) {
                 .menuitem => {
-                    try self.nextToken(.normal);
-                    if (rc.MenuItem.isSeparator(self.state.token.slice(self.lexer.buffer))) {
+                    try self.next_token(.normal);
+                    if (rc.MenuItem.is_separator(self.state.token.slice(self.lexer.buffer))) {
                         const separator_token = self.state.token;
                         // There can be any number of trailing commas after SEPARATOR
-                        try self.skipAnyCommas();
+                        try self.skip_any_commas();
                         const node = try self.state.arena.create(Node.MenuItemSeparator);
                         node.* = .{
                             .menuitem = menuitem_token,
@@ -1049,8 +1049,8 @@ pub const Parser = struct {
                         return &node.base;
                     } else {
                         const text = self.state.token;
-                        if (!text.isStringLiteral()) {
-                            return self.addErrorDetailsAndFail(ErrorDetails{
+                        if (!text.is_string_literal()) {
+                            return self.add_error_details_and_fail(ErrorDetails{
                                 .err = .expected_something_else,
                                 .token = text,
                                 .extra = .{ .expected_types = .{
@@ -1058,21 +1058,21 @@ pub const Parser = struct {
                                 } },
                             });
                         }
-                        try self.skipAnyCommas();
+                        try self.skip_any_commas();
 
-                        const result = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+                        const result = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
-                        _ = try self.parseOptionalToken(.comma);
+                        _ = try self.parse_optional_token(.comma);
 
                         var options = std.ArrayListUnmanaged(Token){};
                         while (true) {
-                            const option_token = try self.lookaheadToken(.normal);
+                            const option_token = try self.lookahead_token(.normal);
                             if (!rc.MenuItem.Option.map.has(option_token.slice(self.lexer.buffer))) {
                                 break;
                             }
-                            self.nextToken(.normal) catch unreachable;
+                            self.next_token(.normal) catch unreachable;
                             try options.append(self.state.arena, option_token);
-                            try self.skipAnyCommas();
+                            try self.skip_any_commas();
                         }
 
                         const node = try self.state.arena.create(Node.MenuItem);
@@ -1080,16 +1080,16 @@ pub const Parser = struct {
                             .menuitem = menuitem_token,
                             .text = text,
                             .result = result,
-                            .option_list = try options.toOwnedSlice(self.state.arena),
+                            .option_list = try options.to_owned_slice(self.state.arena),
                         };
                         return &node.base;
                     }
                 },
                 .popup => {
-                    try self.nextToken(.normal);
+                    try self.next_token(.normal);
                     const text = self.state.token;
-                    if (!text.isStringLiteral()) {
-                        return self.addErrorDetailsAndFail(ErrorDetails{
+                    if (!text.is_string_literal()) {
+                        return self.add_error_details_and_fail(ErrorDetails{
                             .err = .expected_something_else,
                             .token = text,
                             .extra = .{ .expected_types = .{
@@ -1097,34 +1097,34 @@ pub const Parser = struct {
                             } },
                         });
                     }
-                    try self.skipAnyCommas();
+                    try self.skip_any_commas();
 
                     var options = std.ArrayListUnmanaged(Token){};
                     while (true) {
-                        const option_token = try self.lookaheadToken(.normal);
+                        const option_token = try self.lookahead_token(.normal);
                         if (!rc.MenuItem.Option.map.has(option_token.slice(self.lexer.buffer))) {
                             break;
                         }
-                        self.nextToken(.normal) catch unreachable;
+                        self.next_token(.normal) catch unreachable;
                         try options.append(self.state.arena, option_token);
-                        try self.skipAnyCommas();
+                        try self.skip_any_commas();
                     }
 
-                    try self.nextToken(.normal);
+                    try self.next_token(.normal);
                     const begin_token = self.state.token;
                     try self.check(.begin);
 
                     var items = std.ArrayListUnmanaged(*Node){};
-                    while (try self.parseMenuItemStatement(resource, top_level_menu_id_token, nesting_level + 1)) |item_node| {
+                    while (try self.parse_menu_item_statement(resource, top_level_menu_id_token, nesting_level + 1)) |item_node| {
                         try items.append(self.state.arena, item_node);
                     }
 
-                    try self.nextToken(.normal);
+                    try self.next_token(.normal);
                     const end_token = self.state.token;
                     try self.check(.end);
 
                     if (items.items.len == 0) {
-                        return self.addErrorDetailsAndFail(.{
+                        return self.add_error_details_and_fail(.{
                             .err = .empty_menu_not_allowed,
                             .token = menuitem_token,
                         });
@@ -1134,19 +1134,19 @@ pub const Parser = struct {
                     node.* = .{
                         .popup = menuitem_token,
                         .text = text,
-                        .option_list = try options.toOwnedSlice(self.state.arena),
+                        .option_list = try options.to_owned_slice(self.state.arena),
                         .begin_token = begin_token,
-                        .items = try items.toOwnedSlice(self.state.arena),
+                        .items = try items.to_owned_slice(self.state.arena),
                         .end_token = end_token,
                     };
                     return &node.base;
                 },
             },
             .menuex => {
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const text = self.state.token;
-                if (!text.isStringLiteral()) {
-                    return self.addErrorDetailsAndFail(ErrorDetails{
+                if (!text.is_string_literal()) {
+                    return self.add_error_details_and_fail(ErrorDetails{
                         .err = .expected_something_else,
                         .token = text,
                         .extra = .{ .expected_types = .{
@@ -1162,7 +1162,7 @@ pub const Parser = struct {
 
                 if (menuitem == .menuitem) {
                     // trailing comma is allowed, skip it
-                    _ = try self.parseOptionalToken(.comma);
+                    _ = try self.parse_optional_token(.comma);
 
                     const node = try self.state.arena.create(Node.MenuItemEx);
                     node.* = .{
@@ -1178,23 +1178,23 @@ pub const Parser = struct {
                 const help_id = try param_parser.parse(.{});
 
                 // trailing comma is allowed, skip it
-                _ = try self.parseOptionalToken(.comma);
+                _ = try self.parse_optional_token(.comma);
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const begin_token = self.state.token;
                 try self.check(.begin);
 
                 var items = std.ArrayListUnmanaged(*Node){};
-                while (try self.parseMenuItemStatement(resource, top_level_menu_id_token, nesting_level + 1)) |item_node| {
+                while (try self.parse_menu_item_statement(resource, top_level_menu_id_token, nesting_level + 1)) |item_node| {
                     try items.append(self.state.arena, item_node);
                 }
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const end_token = self.state.token;
                 try self.check(.end);
 
                 if (items.items.len == 0) {
-                    return self.addErrorDetailsAndFail(.{
+                    return self.add_error_details_and_fail(.{
                         .err = .empty_menu_not_allowed,
                         .token = menuitem_token,
                     });
@@ -1209,14 +1209,14 @@ pub const Parser = struct {
                     .state = state,
                     .help_id = help_id,
                     .begin_token = begin_token,
-                    .items = try items.toOwnedSlice(self.state.arena),
+                    .items = try items.to_owned_slice(self.state.arena),
                     .end_token = end_token,
                 };
                 return &node.base;
             },
             else => unreachable,
         }
-        @compileError("unreachable");
+        @compile_error("unreachable");
     }
 
     pub const OptionalParamParser = struct {
@@ -1229,18 +1229,18 @@ pub const Parser = struct {
 
         pub fn parse(self: *OptionalParamParser, options: OptionalParamParser.Options) Error!?*Node {
             if (self.finished) return null;
-            if (!(try self.parser.parseOptionalToken(.comma))) {
+            if (!(try self.parser.parse_optional_token(.comma))) {
                 self.finished = true;
                 return null;
             }
             // If the next lookahead token could be part of a number expression,
             // then parse it. Otherwise, treat it as an 'empty' expression and
             // continue parsing, since 'empty' values are allowed.
-            if (try self.parser.lookaheadCouldBeNumberExpression(switch (options.not_expression_allowed) {
+            if (try self.parser.lookahead_could_be_number_expression(switch (options.not_expression_allowed) {
                 true => .not_allowed,
                 false => .not_disallowed,
             })) {
-                const node = try self.parser.parseExpression(.{
+                const node = try self.parser.parse_expression(.{
                     .allowed_types = .{ .number = true },
                     .can_contain_not_expressions = options.not_expression_allowed,
                 });
@@ -1255,20 +1255,20 @@ pub const Parser = struct {
     /// After return, the current token will be the token immediately before the end of the
     /// version statement (or unchanged if the function returns null).
     fn parse_version_statement(self: *Self) Error!?*Node {
-        const type_token = try self.lookaheadToken(.normal);
+        const type_token = try self.lookahead_token(.normal);
         const statement_type = rc.VersionInfo.map.get(type_token.slice(self.lexer.buffer)) orelse return null;
-        self.nextToken(.normal) catch unreachable;
+        self.next_token(.normal) catch unreachable;
         switch (statement_type) {
             .file_version, .product_version => {
                 var parts_buffer: [4]*Node = undefined;
-                var parts = std.ArrayListUnmanaged(*Node).initBuffer(&parts_buffer);
+                var parts = std.ArrayListUnmanaged(*Node).init_buffer(&parts_buffer);
 
                 while (true) {
-                    const value = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
-                    parts.addOneAssumeCapacity().* = value;
+                    const value = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
+                    parts.add_one_assume_capacity().* = value;
 
-                    if (parts.unusedCapacitySlice().len == 0 or
-                        !(try self.parseOptionalToken(.comma)))
+                    if (parts.unused_capacity_slice().len == 0 or
+                        !(try self.parse_optional_token(.comma)))
                     {
                         break;
                     }
@@ -1282,7 +1282,7 @@ pub const Parser = struct {
                 return &node.base;
             },
             else => {
-                const value = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+                const value = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
                 const node = try self.state.arena.create(Node.SimpleStatement);
                 node.* = .{
@@ -1299,17 +1299,17 @@ pub const Parser = struct {
     /// After return, the current token will be the token immediately before the end of the
     /// version BLOCK/VALUE (or unchanged if the function returns null).
     fn parse_version_block_or_value(self: *Self, top_level_version_id_token: Token, nesting_level: u32) Error!?*Node {
-        const keyword_token = try self.lookaheadToken(.normal);
+        const keyword_token = try self.lookahead_token(.normal);
         const keyword = rc.VersionBlock.map.get(keyword_token.slice(self.lexer.buffer)) orelse return null;
-        self.nextToken(.normal) catch unreachable;
+        self.next_token(.normal) catch unreachable;
 
         if (nesting_level > max_nested_version_level) {
-            try self.addErrorDetails(.{
+            try self.add_error_details(.{
                 .err = .nested_resource_level_exceeds_max,
                 .token = top_level_version_id_token,
                 .extra = .{ .resource = .versioninfo },
             });
-            return self.addErrorDetailsAndFail(.{
+            return self.add_error_details_and_fail(.{
                 .err = .nested_resource_level_exceeds_max,
                 .type = .note,
                 .token = keyword_token,
@@ -1317,10 +1317,10 @@ pub const Parser = struct {
             });
         }
 
-        try self.nextToken(.normal);
+        try self.next_token(.normal);
         const key = self.state.token;
-        if (!key.isStringLiteral()) {
-            return self.addErrorDetailsAndFail(.{
+        if (!key.is_string_literal()) {
+            return self.add_error_details_and_fail(.{
                 .err = .expected_something_else,
                 .token = key,
                 .extra = .{ .expected_types = .{
@@ -1330,23 +1330,23 @@ pub const Parser = struct {
         }
         // Need to keep track of this to detect a potential miscompilation when
         // the comma is omitted and the first value is a quoted string.
-        const had_comma_before_first_value = try self.parseOptionalToken(.comma);
-        try self.skipAnyCommas();
+        const had_comma_before_first_value = try self.parse_optional_token(.comma);
+        try self.skip_any_commas();
 
-        const values = try self.parseBlockValuesList(had_comma_before_first_value);
+        const values = try self.parse_block_values_list(had_comma_before_first_value);
 
         switch (keyword) {
             .block => {
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const begin_token = self.state.token;
                 try self.check(.begin);
 
                 var children = std.ArrayListUnmanaged(*Node){};
-                while (try self.parseVersionBlockOrValue(top_level_version_id_token, nesting_level + 1)) |value_node| {
+                while (try self.parse_version_block_or_value(top_level_version_id_token, nesting_level + 1)) |value_node| {
                     try children.append(self.state.arena, value_node);
                 }
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 const end_token = self.state.token;
                 try self.check(.end);
 
@@ -1356,7 +1356,7 @@ pub const Parser = struct {
                     .key = key,
                     .values = values,
                     .begin_token = begin_token,
-                    .children = try children.toOwnedSlice(self.state.arena),
+                    .children = try children.to_owned_slice(self.state.arena),
                     .end_token = end_token,
                 };
                 return &node.base;
@@ -1378,7 +1378,7 @@ pub const Parser = struct {
         var seen_number: bool = false;
         var first_string_value: ?*Node = null;
         while (true) {
-            const lookahead_token = try self.lookaheadToken(.normal);
+            const lookahead_token = try self.lookahead_token(.normal);
             switch (lookahead_token.id) {
                 .operator,
                 .number,
@@ -1388,17 +1388,17 @@ pub const Parser = struct {
                 => {},
                 else => break,
             }
-            const value = try self.parseExpression(.{});
+            const value = try self.parse_expression(.{});
 
-            if (value.isNumberExpression()) {
+            if (value.is_number_expression()) {
                 seen_number = true;
             } else if (first_string_value == null) {
-                std.debug.assert(value.isStringLiteral());
+                std.debug.assert(value.is_string_literal());
                 first_string_value = value;
             }
 
-            const has_trailing_comma = try self.parseOptionalToken(.comma);
-            try self.skipAnyCommas();
+            const has_trailing_comma = try self.parse_optional_token(.comma);
+            try self.skip_any_commas();
 
             const value_value = try self.state.arena.create(Node.BlockValueValue);
             value_value.* = .{
@@ -1417,89 +1417,89 @@ pub const Parser = struct {
             // when the length is read, it will be treated as byte length and will
             // not read the full value. We don't reproduce this behavior, so we warn
             // of the miscompilation here.
-            try self.addErrorDetails(.{
+            try self.add_error_details(.{
                 .err = .rc_would_miscompile_version_value_byte_count,
                 .type = .warning,
-                .token = first_string_value.?.getFirstToken(),
-                .token_span_start = values.items[0].getFirstToken(),
-                .token_span_end = values.items[values.items.len - 1].getLastToken(),
+                .token = first_string_value.?.get_first_token(),
+                .token_span_start = values.items[0].get_first_token(),
+                .token_span_end = values.items[values.items.len - 1].get_last_token(),
             });
-            try self.addErrorDetails(.{
+            try self.add_error_details(.{
                 .err = .rc_would_miscompile_version_value_byte_count,
                 .type = .note,
-                .token = first_string_value.?.getFirstToken(),
-                .token_span_start = values.items[0].getFirstToken(),
-                .token_span_end = values.items[values.items.len - 1].getLastToken(),
+                .token = first_string_value.?.get_first_token(),
+                .token_span_start = values.items[0].get_first_token(),
+                .token_span_end = values.items[values.items.len - 1].get_last_token(),
                 .print_source_line = false,
             });
         }
-        if (!had_comma_before_first_value and values.items.len > 0 and values.items[0].cast(.block_value_value).?.expression.isStringLiteral()) {
+        if (!had_comma_before_first_value and values.items.len > 0 and values.items[0].cast(.block_value_value).?.expression.is_string_literal()) {
             const token = values.items[0].cast(.block_value_value).?.expression.cast(.literal).?.token;
-            try self.addErrorDetails(.{
+            try self.add_error_details(.{
                 .err = .rc_would_miscompile_version_value_padding,
                 .type = .warning,
                 .token = token,
             });
-            try self.addErrorDetails(.{
+            try self.add_error_details(.{
                 .err = .rc_would_miscompile_version_value_padding,
                 .type = .note,
                 .token = token,
                 .print_source_line = false,
             });
         }
-        return values.toOwnedSlice(self.state.arena);
+        return values.to_owned_slice(self.state.arena);
     }
 
     fn number_expression_contains_any_lsuffixes(expression_node: *Node, source: []const u8, code_page_lookup: *const CodePageLookup) bool {
         // TODO: This could probably be done without evaluating the whole expression
-        return Compiler.evaluateNumberExpression(expression_node, source, code_page_lookup).is_long;
+        return Compiler.evaluate_number_expression(expression_node, source, code_page_lookup).is_long;
     }
 
     /// Expects the current token to be a literal token that contains the string LANGUAGE
     fn parse_language_statement(self: *Self) Error!*Node {
         const language_token = self.state.token;
 
-        const primary_language = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+        const primary_language = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
-        try self.nextToken(.normal);
+        try self.next_token(.normal);
         try self.check(.comma);
 
-        const sublanguage = try self.parseExpression(.{ .allowed_types = .{ .number = true } });
+        const sublanguage = try self.parse_expression(.{ .allowed_types = .{ .number = true } });
 
         // The Win32 RC compiler errors if either parameter contains any number with an L
         // suffix. Instead of that, we want to warn and then let the values get truncated.
         // The warning is done here to allow the compiler logic to not have to deal with this.
-        if (numberExpressionContainsAnyLSuffixes(primary_language, self.lexer.buffer, &self.state.input_code_page_lookup)) {
-            try self.addErrorDetails(.{
+        if (number_expression_contains_any_lsuffixes(primary_language, self.lexer.buffer, &self.state.input_code_page_lookup)) {
+            try self.add_error_details(.{
                 .err = .rc_would_error_u16_with_l_suffix,
                 .type = .warning,
-                .token = primary_language.getFirstToken(),
-                .token_span_end = primary_language.getLastToken(),
+                .token = primary_language.get_first_token(),
+                .token_span_end = primary_language.get_last_token(),
                 .extra = .{ .statement_with_u16_param = .language },
             });
-            try self.addErrorDetails(.{
+            try self.add_error_details(.{
                 .err = .rc_would_error_u16_with_l_suffix,
                 .print_source_line = false,
                 .type = .note,
-                .token = primary_language.getFirstToken(),
-                .token_span_end = primary_language.getLastToken(),
+                .token = primary_language.get_first_token(),
+                .token_span_end = primary_language.get_last_token(),
                 .extra = .{ .statement_with_u16_param = .language },
             });
         }
-        if (numberExpressionContainsAnyLSuffixes(sublanguage, self.lexer.buffer, &self.state.input_code_page_lookup)) {
-            try self.addErrorDetails(.{
+        if (number_expression_contains_any_lsuffixes(sublanguage, self.lexer.buffer, &self.state.input_code_page_lookup)) {
+            try self.add_error_details(.{
                 .err = .rc_would_error_u16_with_l_suffix,
                 .type = .warning,
-                .token = sublanguage.getFirstToken(),
-                .token_span_end = sublanguage.getLastToken(),
+                .token = sublanguage.get_first_token(),
+                .token_span_end = sublanguage.get_last_token(),
                 .extra = .{ .statement_with_u16_param = .language },
             });
-            try self.addErrorDetails(.{
+            try self.add_error_details(.{
                 .err = .rc_would_error_u16_with_l_suffix,
                 .print_source_line = false,
                 .type = .note,
-                .token = sublanguage.getFirstToken(),
-                .token_span_end = sublanguage.getLastToken(),
+                .token = sublanguage.get_first_token(),
+                .token_span_end = sublanguage.get_last_token(),
                 .extra = .{ .statement_with_u16_param = .language },
             });
         }
@@ -1560,15 +1560,15 @@ pub const Parser = struct {
     /// Returns true if the next lookahead token is a number or could be the start of a number expression.
     /// Only useful when looking for empty expressions in optional fields.
     fn lookahead_could_be_number_expression(self: *Self, not_allowed: enum { not_allowed, not_disallowed }) Error!bool {
-        var lookahead_token = try self.lookaheadToken(.normal);
+        var lookahead_token = try self.lookahead_token(.normal);
         switch (lookahead_token.id) {
             .literal => if (not_allowed == .not_allowed) {
-                return std.ascii.eqlIgnoreCase("NOT", lookahead_token.slice(self.lexer.buffer));
+                return std.ascii.eql_ignore_case("NOT", lookahead_token.slice(self.lexer.buffer));
             } else return false,
             .number => return true,
             .open_paren => return true,
             .operator => {
-                // + can be a unary operator, see parseExpression's handling of unary +
+                // + can be a unary operator, see parse_expression's handling of unary +
                 const operator_char = lookahead_token.slice(self.lexer.buffer)[0];
                 return operator_char == '+';
             },
@@ -1577,23 +1577,23 @@ pub const Parser = struct {
     }
 
     fn parse_primary(self: *Self, options: ParseExpressionOptions) Error!*Node {
-        try self.nextToken(.normal);
+        try self.next_token(.normal);
         const first_token = self.state.token;
         var is_close_paren_expression = false;
         var is_unary_plus_expression = false;
         switch (self.state.token.id) {
             .quoted_ascii_string, .quoted_wide_string => {
-                if (!options.allowed_types.string) return self.addErrorDetailsAndFail(options.toErrorDetails(self.state.token));
+                if (!options.allowed_types.string) return self.add_error_details_and_fail(options.to_error_details(self.state.token));
                 const node = try self.state.arena.create(Node.Literal);
                 node.* = .{ .token = self.state.token };
                 return &node.base;
             },
             .literal => {
-                if (options.can_contain_not_expressions and std.ascii.eqlIgnoreCase("NOT", self.state.token.slice(self.lexer.buffer))) {
+                if (options.can_contain_not_expressions and std.ascii.eql_ignore_case("NOT", self.state.token.slice(self.lexer.buffer))) {
                     const not_token = self.state.token;
-                    try self.nextToken(.normal);
+                    try self.next_token(.normal);
                     try self.check(.number);
-                    if (!options.allowed_types.number) return self.addErrorDetailsAndFail(options.toErrorDetails(self.state.token));
+                    if (!options.allowed_types.number) return self.add_error_details_and_fail(options.to_error_details(self.state.token));
                     const node = try self.state.arena.create(Node.NotExpression);
                     node.* = .{
                         .not_token = not_token,
@@ -1601,13 +1601,13 @@ pub const Parser = struct {
                     };
                     return &node.base;
                 }
-                if (!options.allowed_types.literal) return self.addErrorDetailsAndFail(options.toErrorDetails(self.state.token));
+                if (!options.allowed_types.literal) return self.add_error_details_and_fail(options.to_error_details(self.state.token));
                 const node = try self.state.arena.create(Node.Literal);
                 node.* = .{ .token = self.state.token };
                 return &node.base;
             },
             .number => {
-                if (!options.allowed_types.number) return self.addErrorDetailsAndFail(options.toErrorDetails(self.state.token));
+                if (!options.allowed_types.number) return self.add_error_details_and_fail(options.to_error_details(self.state.token));
                 const node = try self.state.arena.create(Node.Literal);
                 node.* = .{ .token = self.state.token };
                 return &node.base;
@@ -1615,18 +1615,18 @@ pub const Parser = struct {
             .open_paren => {
                 const open_paren_token = self.state.token;
 
-                const expression = try self.parseExpression(.{
+                const expression = try self.parse_expression(.{
                     .is_known_to_be_number_expression = true,
                     .can_contain_not_expressions = options.can_contain_not_expressions,
                     .nesting_context = options.nesting_context.incremented(first_token, open_paren_token),
                     .allowed_types = .{ .number = true },
                 });
 
-                try self.nextToken(.normal);
+                try self.next_token(.normal);
                 // TODO: Add context to error about where the open paren is
                 try self.check(.close_paren);
 
-                if (!options.allowed_types.number) return self.addErrorDetailsAndFail(options.toErrorDetails(open_paren_token));
+                if (!options.allowed_types.number) return self.add_error_details_and_fail(options.to_error_details(open_paren_token));
                 const node = try self.state.arena.create(Node.GroupedExpression);
                 node.* = .{
                     .open_token = open_paren_token,
@@ -1688,9 +1688,9 @@ pub const Parser = struct {
             else => {},
         }
 
-        try self.addErrorDetails(options.toErrorDetails(self.state.token));
+        try self.add_error_details(options.to_error_details(self.state.token));
         if (is_close_paren_expression) {
-            try self.addErrorDetails(ErrorDetails{
+            try self.add_error_details(ErrorDetails{
                 .err = .close_paren_expression,
                 .type = .note,
                 .token = self.state.token,
@@ -1698,7 +1698,7 @@ pub const Parser = struct {
             });
         }
         if (is_unary_plus_expression) {
-            try self.addErrorDetails(ErrorDetails{
+            try self.add_error_details(ErrorDetails{
                 .err = .unary_plus_expression,
                 .type = .note,
                 .token = self.state.token,
@@ -1713,36 +1713,36 @@ pub const Parser = struct {
     /// After return, the current token will have been dealt with.
     fn parse_expression(self: *Self, options: ParseExpressionOptions) Error!*Node {
         if (options.nesting_context.level > max_nested_expression_level) {
-            try self.addErrorDetails(.{
+            try self.add_error_details(.{
                 .err = .nested_expression_level_exceeds_max,
                 .token = options.nesting_context.first_token.?,
             });
-            return self.addErrorDetailsAndFail(.{
+            return self.add_error_details_and_fail(.{
                 .err = .nested_expression_level_exceeds_max,
                 .type = .note,
                 .token = options.nesting_context.last_token.?,
             });
         }
-        var expr: *Node = try self.parsePrimary(options);
-        const first_token = expr.getFirstToken();
+        var expr: *Node = try self.parse_primary(options);
+        const first_token = expr.get_first_token();
 
         // Non-number expressions can't have operators, so we can just return
-        if (!expr.isNumberExpression()) return expr;
+        if (!expr.is_number_expression()) return expr;
 
-        while (try self.parseOptionalTokenAdvanced(.operator, .normal_expect_operator)) {
+        while (try self.parse_optional_token_advanced(.operator, .normal_expect_operator)) {
             const operator = self.state.token;
-            const rhs_node = try self.parsePrimary(.{
+            const rhs_node = try self.parse_primary(.{
                 .is_known_to_be_number_expression = true,
                 .can_contain_not_expressions = options.can_contain_not_expressions,
                 .nesting_context = options.nesting_context.incremented(first_token, operator),
                 .allowed_types = options.allowed_types,
             });
 
-            if (!rhs_node.isNumberExpression()) {
-                return self.addErrorDetailsAndFail(ErrorDetails{
+            if (!rhs_node.is_number_expression()) {
+                return self.add_error_details_and_fail(ErrorDetails{
                     .err = .expected_something_else,
-                    .token = rhs_node.getFirstToken(),
-                    .token_span_end = rhs_node.getLastToken(),
+                    .token = rhs_node.get_first_token(),
+                    .token_span_end = rhs_node.get_last_token(),
                     .extra = .{ .expected_types = .{
                         .number = true,
                         .number_expression = true,
@@ -1766,22 +1766,22 @@ pub const Parser = struct {
     /// In other words, it will skip the regex `,*`
     /// Assumes the token(s) should be parsed with `.normal` as the method.
     fn skip_any_commas(self: *Self) !void {
-        while (try self.parseOptionalToken(.comma)) {}
+        while (try self.parse_optional_token(.comma)) {}
     }
 
     /// Advances the current token only if the token's id matches the specified `id`.
     /// Assumes the token should be parsed with `.normal` as the method.
     /// Returns true if the token matched, false otherwise.
     fn parse_optional_token(self: *Self, id: Token.Id) Error!bool {
-        return self.parseOptionalTokenAdvanced(id, .normal);
+        return self.parse_optional_token_advanced(id, .normal);
     }
 
     /// Advances the current token only if the token's id matches the specified `id`.
     /// Returns true if the token matched, false otherwise.
     fn parse_optional_token_advanced(self: *Self, id: Token.Id, comptime method: Lexer.LexMethod) Error!bool {
-        const maybe_token = try self.lookaheadToken(method);
+        const maybe_token = try self.lookahead_token(method);
         if (maybe_token.id != id) return false;
-        self.nextToken(method) catch unreachable;
+        self.next_token(method) catch unreachable;
         return true;
     }
 
@@ -1790,7 +1790,7 @@ pub const Parser = struct {
     }
 
     fn add_error_details_and_fail(self: *Self, details: ErrorDetails) Error {
-        try self.addErrorDetails(details);
+        try self.add_error_details(details);
         return error.ParseError;
     }
 
@@ -1800,7 +1800,7 @@ pub const Parser = struct {
                 error.CodePagePragmaInIncludedFile => {
                     // The Win32 RC compiler silently ignores such `#pragma code_point` directives,
                     // but we want to both ignore them *and* emit a warning
-                    try self.addErrorDetails(.{
+                    try self.add_error_details(.{
                         .err = .code_page_pragma_in_included_file,
                         .type = .warning,
                         .token = self.lexer.error_context_token.?,
@@ -1808,35 +1808,35 @@ pub const Parser = struct {
                     continue;
                 },
                 error.CodePagePragmaInvalidCodePage => {
-                    var details = self.lexer.getErrorDetails(err);
+                    var details = self.lexer.get_error_details(err);
                     if (!self.options.warn_instead_of_error_on_invalid_code_page) {
-                        return self.addErrorDetailsAndFail(details);
+                        return self.add_error_details_and_fail(details);
                     }
                     details.type = .warning;
-                    try self.addErrorDetails(details);
+                    try self.add_error_details(details);
                     continue;
                 },
                 error.InvalidDigitCharacterInNumberLiteral => {
-                    const details = self.lexer.getErrorDetails(err);
-                    try self.addErrorDetails(details);
-                    return self.addErrorDetailsAndFail(.{
+                    const details = self.lexer.get_error_details(err);
+                    try self.add_error_details(details);
+                    return self.add_error_details_and_fail(.{
                         .err = details.err,
                         .type = .note,
                         .token = details.token,
                         .print_source_line = false,
                     });
                 },
-                else => return self.addErrorDetailsAndFail(self.lexer.getErrorDetails(err)),
+                else => return self.add_error_details_and_fail(self.lexer.get_error_details(err)),
             };
             break :token token;
         };
         // After every token, set the input code page for its line
-        try self.state.input_code_page_lookup.setForToken(self.state.token, self.lexer.current_code_page);
+        try self.state.input_code_page_lookup.set_for_token(self.state.token, self.lexer.current_code_page);
         // But only set the output code page to the current code page if we are past the first code_page pragma in the file.
         // Otherwise, we want to fill the lookup using the default code page so that lookups still work for lines that
         // don't have an explicit output code page set.
         const output_code_page = if (self.lexer.seen_pragma_code_pages > 1) self.lexer.current_code_page else self.state.output_code_page_lookup.default_code_page;
-        try self.state.output_code_page_lookup.setForToken(self.state.token, output_code_page);
+        try self.state.output_code_page_lookup.set_for_token(self.state.token, output_code_page);
     }
 
     fn lookahead_token(self: *Self, comptime method: Lexer.LexMethod) Error!Token {
@@ -1846,7 +1846,7 @@ pub const Parser = struct {
                 // Ignore this error and get the next valid token, we'll deal with this
                 // properly when getting the token for real
                 error.CodePagePragmaInIncludedFile => continue,
-                else => return self.addErrorDetailsAndFail(self.state.lookahead_lexer.getErrorDetails(err)),
+                else => return self.add_error_details_and_fail(self.state.lookahead_lexer.get_error_details(err)),
             };
         };
     }
@@ -1860,7 +1860,7 @@ pub const Parser = struct {
         switch (self.state.token.id) {
             .literal => {},
             else => {
-                return self.addErrorDetailsAndFail(ErrorDetails{
+                return self.add_error_details_and_fail(ErrorDetails{
                     .err = .expected_token,
                     .token = self.state.token,
                     .extra = .{ .expected = .literal },
@@ -1871,7 +1871,7 @@ pub const Parser = struct {
 
     fn check(self: *Self, expected_token_id: Token.Id) !void {
         if (self.state.token.id != expected_token_id) {
-            return self.addErrorDetailsAndFail(ErrorDetails{
+            return self.add_error_details_and_fail(ErrorDetails{
                 .err = .expected_token,
                 .token = self.state.token,
                 .extra = .{ .expected = expected_token_id },
@@ -1881,12 +1881,12 @@ pub const Parser = struct {
 
     fn check_resource(self: *Self) !Resource {
         switch (self.state.token.id) {
-            .literal => return Resource.fromString(.{
+            .literal => return Resource.from_string(.{
                 .slice = self.state.token.slice(self.lexer.buffer),
                 .code_page = self.lexer.current_code_page,
             }),
             else => {
-                return self.addErrorDetailsAndFail(ErrorDetails{
+                return self.add_error_details_and_fail(ErrorDetails{
                     .err = .expected_token,
                     .token = self.state.token,
                     .extra = .{ .expected = .literal },

@@ -29,15 +29,15 @@ fn next(self: *Pcg) u32 {
     self.s = l *% default_multiplier +% (self.i | 1);
 
     const xor_s: u32 = @truncate(((l >> 18) ^ l) >> 27);
-    const rot: u32 = @intCast(l >> 59);
+    const rot: u32 = @int_cast(l >> 59);
 
-    return (xor_s >> @as(u5, @intCast(rot))) | (xor_s << @as(u5, @intCast((0 -% rot) & 31)));
+    return (xor_s >> @as(u5, @int_cast(rot))) | (xor_s << @as(u5, @int_cast((0 -% rot) & 31)));
 }
 
 fn seed(self: *Pcg, init_s: u64) void {
     // Pcg requires 128-bits of seed.
     var gen = std.Random.SplitMix64.init(init_s);
-    self.seedTwo(gen.next(), gen.next());
+    self.seed_two(gen.next(), gen.next());
 }
 
 fn seed_two(self: *Pcg, init_s: u64, init_i: u64) void {
@@ -76,7 +76,7 @@ test "sequence" {
     var r = Pcg.init(0);
     const s0: u64 = 0x9394bf54ce5d79de;
     const s1: u64 = 0x84e9c579ef59bbf7;
-    r.seedTwo(s0, s1);
+    r.seed_two(s0, s1);
 
     const seq = [_]u32{
         2881561918,
@@ -96,7 +96,7 @@ test fill {
     var r = Pcg.init(0);
     const s0: u64 = 0x9394bf54ce5d79de;
     const s1: u64 = 0x84e9c579ef59bbf7;
-    r.seedTwo(s0, s1);
+    r.seed_two(s0, s1);
 
     const seq = [_]u32{
         2881561918,
@@ -110,8 +110,8 @@ test fill {
     var i: u32 = 0;
     while (i < seq.len) : (i += 2) {
         var buf0: [8]u8 = undefined;
-        std.mem.writeInt(u32, buf0[0..4], seq[i], .little);
-        std.mem.writeInt(u32, buf0[4..8], seq[i + 1], .little);
+        std.mem.write_int(u32, buf0[0..4], seq[i], .little);
+        std.mem.write_int(u32, buf0[4..8], seq[i + 1], .little);
 
         var buf1: [7]u8 = undefined;
         r.fill(&buf1);

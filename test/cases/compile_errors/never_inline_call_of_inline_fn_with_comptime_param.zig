@@ -11,10 +11,10 @@ inline fn five_xwith_arg(v: i32) void {
 }
 
 export fn entry1() void {
-    @call(.never_inline, fiveXwithType, .{i32});
+    @call(.never_inline, five_xwith_type, .{i32});
 }
 export fn entry2() void {
-    @call(.never_inline, fiveXwithArg, .{1});
+    @call(.never_inline, five_xwith_arg, .{1});
 }
 
 // error

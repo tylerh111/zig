@@ -76,26 +76,26 @@ test "should not overshoot" {
         0x03, 0x00, 0x8b, 0x61, 0x0f, 0xa4, 0x52, 0x5a, 0x94, 0x12,
     };
 
-    var stream = std.io.fixedBufferStream(data[0..]);
+    var stream = std.io.fixed_buffer_stream(data[0..]);
     const reader = stream.reader();
 
     var dcp = decompressor(reader);
     var out: [128]u8 = undefined;
 
     // Decompress
-    var n = try dcp.reader().readAll(out[0..]);
+    var n = try dcp.reader().read_all(out[0..]);
 
     // Expected decompressed data
-    try std.testing.expectEqual(46, n);
-    try std.testing.expectEqualStrings("Copyright Willem van Schaik, Singapore 1995-96", out[0..n]);
+    try std.testing.expect_equal(46, n);
+    try std.testing.expect_equal_strings("Copyright Willem van Schaik, Singapore 1995-96", out[0..n]);
 
     // Decompressor don't overshoot underlying reader.
     // It is leaving it at the end of compressed data chunk.
-    try std.testing.expectEqual(data.len - 4, stream.getPos());
-    try std.testing.expectEqual(0, dcp.unreadBytes());
+    try std.testing.expect_equal(data.len - 4, stream.get_pos());
+    try std.testing.expect_equal(0, dcp.unread_bytes());
 
     // 4 bytes after compressed chunk are available in reader.
-    n = try reader.readAll(out[0..]);
-    try std.testing.expectEqual(n, 4);
-    try std.testing.expectEqualSlices(u8, data[data.len - 4 .. data.len], out[0..n]);
+    n = try reader.read_all(out[0..]);
+    try std.testing.expect_equal(n, 4);
+    try std.testing.expect_equal_slices(u8, data[data.len - 4 .. data.len], out[0..n]);
 }

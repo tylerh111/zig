@@ -1,12 +1,12 @@
 inline fn need_comptime(comptime a: u64) void {
-    if (a != 0) @compileError("foo");
+    if (a != 0) @compile_error("foo");
 }
 fn accept_runtime(value: u64) void {
-    needComptime(value);
+    need_comptime(value);
 }
 pub export fn entry() void {
     var value: u64 = 0;
-    acceptRuntime((&value).*);
+    accept_runtime((&value).*);
 }
 
 // error

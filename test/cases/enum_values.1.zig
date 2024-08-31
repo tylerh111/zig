@@ -8,9 +8,9 @@ pub fn main() void {
     const number3: Number = @enumFromInt(2);
     assert(number1 != number2);
     assert(number2 != number3);
-    assert(@intFromEnum(number1) == 0);
-    assert(@intFromEnum(number2) == 1);
-    assert(@intFromEnum(number3) == 2);
+    assert(@int_from_enum(number1) == 0);
+    assert(@int_from_enum(number2) == 1);
+    assert(@int_from_enum(number3) == 2);
     var x: Number = .Two;
     _ = &x;
     assert(number2 == x);

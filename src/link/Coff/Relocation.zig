@@ -47,7 +47,7 @@ dirty: bool = true,
 
 /// Returns true if and only if the reloc can be resolved.
 pub fn is_resolvable(self: Relocation, coff_file: *Coff) bool {
-    _ = self.getTargetAddress(coff_file) orelse return false;
+    _ = self.get_target_address(coff_file) orelse return false;
     return true;
 }
 
@@ -67,36 +67,36 @@ pub fn get_target_address(self: Relocation, coff_file: *const Coff) ?u32 {
             return header.virtual_address + got_index * coff_file.ptr_width.size();
         },
         .import, .import_page, .import_pageoff => {
-            const sym = coff_file.getSymbol(self.target);
-            const index = coff_file.import_tables.getIndex(sym.value) orelse return null;
+            const sym = coff_file.get_symbol(self.target);
+            const index = coff_file.import_tables.get_index(sym.value) orelse return null;
             const itab = coff_file.import_tables.values()[index];
-            return itab.getImportAddress(self.target, .{
+            return itab.get_import_address(self.target, .{
                 .coff_file = coff_file,
                 .index = index,
                 .name_off = sym.value,
             });
         },
         else => {
-            const target_atom_index = coff_file.getAtomIndexForSymbol(self.target) orelse return null;
-            const target_atom = coff_file.getAtom(target_atom_index);
-            return target_atom.getSymbol(coff_file).value;
+            const target_atom_index = coff_file.get_atom_index_for_symbol(self.target) orelse return null;
+            const target_atom = coff_file.get_atom(target_atom_index);
+            return target_atom.get_symbol(coff_file).value;
         },
     }
 }
 
 pub fn resolve(self: Relocation, atom_index: Atom.Index, code: []u8, image_base: u64, coff_file: *Coff) void {
-    const atom = coff_file.getAtom(atom_index);
-    const source_sym = atom.getSymbol(coff_file);
+    const atom = coff_file.get_atom(atom_index);
+    const source_sym = atom.get_symbol(coff_file);
     const source_vaddr = source_sym.value + self.offset;
 
-    const target_vaddr = self.getTargetAddress(coff_file).?; // Oops, you didn't check if the relocation can be resolved with isResolvable().
+    const target_vaddr = self.get_target_address(coff_file).?; // Oops, you didn't check if the relocation can be resolved with is_resolvable().
     const target_vaddr_with_addend = target_vaddr + self.addend;
 
     log.debug("  ({x}: [() => 0x{x} ({s})) ({s}) ", .{
         source_vaddr,
         target_vaddr_with_addend,
-        coff_file.getSymbolName(self.target),
-        @tagName(self.type),
+        coff_file.get_symbol_name(self.target),
+        @tag_name(self.type),
     });
 
     const ctx: Context = .{
@@ -109,8 +109,8 @@ pub fn resolve(self: Relocation, atom_index: Atom.Index, code: []u8, image_base:
 
     const target = coff_file.base.comp.root_mod.resolved_target.result;
     switch (target.cpu.arch) {
-        .aarch64 => self.resolveAarch64(ctx),
-        .x86, .x86_64 => self.resolveX86(ctx),
+        .aarch64 => self.resolve_aarch64(ctx),
+        .x86, .x86_64 => self.resolve_x86(ctx),
         else => unreachable, // unhandled target architecture
     }
 }
@@ -127,35 +127,35 @@ fn resolve_aarch64(self: Relocation, ctx: Context) void {
     var buffer = ctx.code[self.offset..];
     switch (self.type) {
         .got_page, .import_page, .page => {
-            const source_page = @as(i32, @intCast(ctx.source_vaddr >> 12));
-            const target_page = @as(i32, @intCast(ctx.target_vaddr >> 12));
-            const pages = @as(u21, @bitCast(@as(i21, @intCast(target_page - source_page))));
+            const source_page = @as(i32, @int_cast(ctx.source_vaddr >> 12));
+            const target_page = @as(i32, @int_cast(ctx.target_vaddr >> 12));
+            const pages = @as(u21, @bit_cast(@as(i21, @int_cast(target_page - source_page))));
             var inst = aarch64.Instruction{
-                .pc_relative_address = mem.bytesToValue(meta.TagPayload(
+                .pc_relative_address = mem.bytes_to_value(meta.TagPayload(
                     aarch64.Instruction,
                     aarch64.Instruction.pc_relative_address,
                 ), buffer[0..4]),
             };
             inst.pc_relative_address.immhi = @as(u19, @truncate(pages >> 2));
             inst.pc_relative_address.immlo = @as(u2, @truncate(pages));
-            mem.writeInt(u32, buffer[0..4], inst.toU32(), .little);
+            mem.write_int(u32, buffer[0..4], inst.to_u32(), .little);
         },
         .got_pageoff, .import_pageoff, .pageoff => {
             assert(!self.pcrel);
 
-            const narrowed = @as(u12, @truncate(@as(u64, @intCast(ctx.target_vaddr))));
-            if (isArithmeticOp(buffer[0..4])) {
+            const narrowed = @as(u12, @truncate(@as(u64, @int_cast(ctx.target_vaddr))));
+            if (is_arithmetic_op(buffer[0..4])) {
                 var inst = aarch64.Instruction{
-                    .add_subtract_immediate = mem.bytesToValue(meta.TagPayload(
+                    .add_subtract_immediate = mem.bytes_to_value(meta.TagPayload(
                         aarch64.Instruction,
                         aarch64.Instruction.add_subtract_immediate,
                     ), buffer[0..4]),
                 };
                 inst.add_subtract_immediate.imm12 = narrowed;
-                mem.writeInt(u32, buffer[0..4], inst.toU32(), .little);
+                mem.write_int(u32, buffer[0..4], inst.to_u32(), .little);
             } else {
                 var inst = aarch64.Instruction{
-                    .load_store_register = mem.bytesToValue(meta.TagPayload(
+                    .load_store_register = mem.bytes_to_value(meta.TagPayload(
                         aarch64.Instruction,
                         aarch64.Instruction.load_store_register,
                     ), buffer[0..4]),
@@ -164,29 +164,29 @@ fn resolve_aarch64(self: Relocation, ctx: Context) void {
                     if (inst.load_store_register.size == 0) {
                         if (inst.load_store_register.v == 1) {
                             // 128-bit SIMD is scaled by 16.
-                            break :blk @divExact(narrowed, 16);
+                            break :blk @div_exact(narrowed, 16);
                         }
                         // Otherwise, 8-bit SIMD or ldrb.
                         break :blk narrowed;
                     } else {
                         const denom: u4 = math.powi(u4, 2, inst.load_store_register.size) catch unreachable;
-                        break :blk @divExact(narrowed, denom);
+                        break :blk @div_exact(narrowed, denom);
                     }
                 };
                 inst.load_store_register.offset = offset;
-                mem.writeInt(u32, buffer[0..4], inst.toU32(), .little);
+                mem.write_int(u32, buffer[0..4], inst.to_u32(), .little);
             }
         },
         .direct => {
             assert(!self.pcrel);
             switch (self.length) {
-                2 => mem.writeInt(
+                2 => mem.write_int(
                     u32,
                     buffer[0..4],
                     @as(u32, @truncate(ctx.target_vaddr + ctx.image_base)),
                     .little,
                 ),
-                3 => mem.writeInt(u64, buffer[0..8], ctx.target_vaddr + ctx.image_base, .little),
+                3 => mem.write_int(u64, buffer[0..8], ctx.target_vaddr + ctx.image_base, .little),
                 else => unreachable,
             }
         },
@@ -208,18 +208,18 @@ fn resolve_x86(self: Relocation, ctx: Context) void {
 
         .got, .import => {
             assert(self.pcrel);
-            const disp = @as(i32, @intCast(ctx.target_vaddr)) - @as(i32, @intCast(ctx.source_vaddr)) - 4;
-            mem.writeInt(i32, buffer[0..4], disp, .little);
+            const disp = @as(i32, @int_cast(ctx.target_vaddr)) - @as(i32, @int_cast(ctx.source_vaddr)) - 4;
+            mem.write_int(i32, buffer[0..4], disp, .little);
         },
         .direct => {
             if (self.pcrel) {
-                const disp = @as(i32, @intCast(ctx.target_vaddr)) - @as(i32, @intCast(ctx.source_vaddr)) - 4;
-                mem.writeInt(i32, buffer[0..4], disp, .little);
+                const disp = @as(i32, @int_cast(ctx.target_vaddr)) - @as(i32, @int_cast(ctx.source_vaddr)) - 4;
+                mem.write_int(i32, buffer[0..4], disp, .little);
             } else switch (ctx.ptr_width) {
-                .p32 => mem.writeInt(u32, buffer[0..4], @as(u32, @intCast(ctx.target_vaddr + ctx.image_base)), .little),
+                .p32 => mem.write_int(u32, buffer[0..4], @as(u32, @int_cast(ctx.target_vaddr + ctx.image_base)), .little),
                 .p64 => switch (self.length) {
-                    2 => mem.writeInt(u32, buffer[0..4], @as(u32, @truncate(ctx.target_vaddr + ctx.image_base)), .little),
-                    3 => mem.writeInt(u64, buffer[0..8], ctx.target_vaddr + ctx.image_base, .little),
+                    2 => mem.write_int(u32, buffer[0..4], @as(u32, @truncate(ctx.target_vaddr + ctx.image_base)), .little),
+                    3 => mem.write_int(u64, buffer[0..8], ctx.target_vaddr + ctx.image_base, .little),
                     else => unreachable,
                 },
             }

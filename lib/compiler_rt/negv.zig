@@ -14,15 +14,15 @@ comptime {
 }
 
 pub fn __negvsi2(a: i32) callconv(.C) i32 {
-    return negvXi(i32, a);
+    return negv_xi(i32, a);
 }
 
 pub fn __negvdi2(a: i64) callconv(.C) i64 {
-    return negvXi(i64, a);
+    return negv_xi(i64, a);
 }
 
 pub fn __negvti2(a: i128) callconv(.C) i128 {
-    return negvXi(i128, a);
+    return negv_xi(i128, a);
 }
 
 inline fn negv_xi(comptime ST: type, a: ST) ST {
@@ -33,7 +33,7 @@ inline fn negv_xi(comptime ST: type, a: ST) ST {
         else => unreachable,
     };
     const N: UT = @bitSizeOf(ST);
-    const min: ST = @as(ST, @bitCast((@as(UT, 1) << (N - 1))));
+    const min: ST = @as(ST, @bit_cast((@as(UT, 1) << (N - 1))));
     if (a == min)
         @panic("compiler_rt negv: overflow");
     return -a;

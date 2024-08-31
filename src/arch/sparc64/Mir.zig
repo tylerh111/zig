@@ -359,7 +359,7 @@ pub const Inst = struct {
     // Note that in safety builds, Zig is allowed to insert a secret field for safety checks.
     comptime {
         if (!std.debug.runtime_safety) {
-            assert(@sizeOf(Data) == 8);
+            assert(@size_of(Data) == 8);
         }
     }
 };
@@ -379,8 +379,8 @@ pub fn extra_data(mir: Mir, comptime T: type, index: usize) struct { data: T, en
     inline for (fields) |field| {
         @field(result, field.name) = switch (field.type) {
             u32 => mir.extra[i],
-            i32 => @as(i32, @bitCast(mir.extra[i])),
-            else => @compileError("bad field type"),
+            i32 => @as(i32, @bit_cast(mir.extra[i])),
+            else => @compile_error("bad field type"),
         };
         i += 1;
     }

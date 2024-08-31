@@ -27,7 +27,7 @@ test "inline prong ranges" {
     _ = &x;
     switch (x) {
         inline 0...20, 24 => |item| {
-            if (item > 25) @compileError("bad");
+            if (item > 25) @compile_error("bad");
         },
         else => {},
     }
@@ -42,8 +42,8 @@ test "inline switch enums" {
     var x: E = .a;
     _ = &x;
     switch (x) {
-        inline .a, .b => |aorb| if (aorb != .a and aorb != .b) @compileError("bad"),
-        inline .c, .d => |cord| if (cord != .c and cord != .d) @compileError("bad"),
+        inline .a, .b => |aorb| if (aorb != .a and aorb != .b) @compile_error("bad"),
+        inline .c, .d => |cord| if (cord != .c and cord != .d) @compile_error("bad"),
     }
 }
 
@@ -85,7 +85,7 @@ test "inline else bool" {
     _ = &a;
     switch (a) {
         true => {},
-        inline else => |val| if (val != false) @compileError("bad"),
+        inline else => |val| if (val != false) @compile_error("bad"),
     }
 }
 
@@ -99,7 +99,7 @@ test "inline else error" {
     _ = &a;
     switch (a) {
         error.a => {},
-        inline else => |val| comptime if (val == error.a) @compileError("bad"),
+        inline else => |val| comptime if (val == error.a) @compile_error("bad"),
     }
 }
 
@@ -113,7 +113,7 @@ test "inline else enum" {
     _ = &a;
     switch (a) {
         .a, .b => {},
-        inline else => |val| comptime if (@intFromEnum(val) < 4) @compileError("bad"),
+        inline else => |val| comptime if (@int_from_enum(val) < 4) @compile_error("bad"),
     }
 }
 
@@ -131,7 +131,7 @@ test "inline else int with gaps" {
                 val != 126 and
                 val != 127 and
                 val != 255)
-                @compileError("bad");
+                @compile_error("bad");
         },
     }
 }
@@ -149,7 +149,7 @@ test "inline else int all values" {
                 val != 1 and
                 val != 2 and
                 val != 3)
-                @compileError("bad");
+                @compile_error("bad");
         },
     }
 }

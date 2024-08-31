@@ -40,9 +40,9 @@ pub fn join_z(self: Directory, allocator: Allocator, paths: []const []const u8) 
         // TODO clean way to do this with only 1 allocation
         const part2 = try fs.path.join(allocator, paths);
         defer allocator.free(part2);
-        return fs.path.joinZ(allocator, &[_][]const u8{ p, part2 });
+        return fs.path.join_z(allocator, &[_][]const u8{ p, part2 });
     } else {
-        return fs.path.joinZ(allocator, paths);
+        return fs.path.join_z(allocator, paths);
     }
 }
 
@@ -62,10 +62,10 @@ pub fn format(
     writer: anytype,
 ) !void {
     _ = options;
-    if (fmt_string.len != 0) fmt.invalidFmtError(fmt_string, self);
+    if (fmt_string.len != 0) fmt.invalid_fmt_error(fmt_string, self);
     if (self.path) |p| {
-        try writer.writeAll(p);
-        try writer.writeAll(fs.path.sep_str);
+        try writer.write_all(p);
+        try writer.write_all(fs.path.sep_str);
     }
 }
 

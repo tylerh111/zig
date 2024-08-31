@@ -141,7 +141,7 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
                 .block_writer = BlockWriterType.init(wrt),
                 .level = LevelArgs.get(options.level),
             };
-            try container.writeHeader(self.wrt);
+            try container.write_header(self.wrt);
             return self;
         }
 
@@ -156,21 +156,21 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
             const should_flush = (flush_opt != .none);
 
             // While there is data in active lookahead buffer.
-            while (self.win.activeLookahead(should_flush)) |lh| {
+            while (self.win.active_lookahead(should_flush)) |lh| {
                 var step: u16 = 1; // 1 in the case of literal, match length otherwise
                 const pos: u16 = self.win.pos();
                 const literal = lh[0]; // literal at current position
                 const min_len: u16 = if (self.prev_match) |m| m.length() else 0;
 
                 // Try to find match at least min_len long.
-                if (self.findMatch(pos, lh, min_len)) |match| {
+                if (self.find_match(pos, lh, min_len)) |match| {
                     // Found better match than previous.
-                    try self.addPrevLiteral();
+                    try self.add_prev_literal();
 
                     // Is found match length good enough?
                     if (match.length() >= self.level.lazy) {
                         // Don't try to lazy find better match, use this.
-                        step = try self.addMatch(match);
+                        step = try self.add_match(match);
                     } else {
                         // Store this match.
                         self.prev_literal = literal;
@@ -181,44 +181,44 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
                     // Write previous match or literal.
                     if (self.prev_match) |m| {
                         // Write match from previous position.
-                        step = try self.addMatch(m) - 1; // we already advanced 1 from previous position
+                        step = try self.add_match(m) - 1; // we already advanced 1 from previous position
                     } else {
                         // No match at previous postition.
                         // Write previous literal if any, and remember this literal.
-                        try self.addPrevLiteral();
+                        try self.add_prev_literal();
                         self.prev_literal = literal;
                     }
                 }
                 // Advance window and add hashes.
-                self.windowAdvance(step, lh, pos);
+                self.window_advance(step, lh, pos);
             }
 
             if (should_flush) {
                 // In the case of flushing, last few lookahead buffers were smaller then min match len.
                 // So only last literal can be unwritten.
                 assert(self.prev_match == null);
-                try self.addPrevLiteral();
+                try self.add_prev_literal();
                 self.prev_literal = null;
 
-                try self.flushTokens(flush_opt);
+                try self.flush_tokens(flush_opt);
             }
         }
 
         fn window_advance(self: *Self, step: u16, lh: []const u8, pos: u16) void {
-            // current position is already added in findMatch
-            self.lookup.bulkAdd(lh[1..], step - 1, pos + 1);
+            // current position is already added in find_match
+            self.lookup.bulk_add(lh[1..], step - 1, pos + 1);
             self.win.advance(step);
         }
 
         // Add previous literal (if any) to the tokens list.
         fn add_prev_literal(self: *Self) !void {
-            if (self.prev_literal) |l| try self.addToken(Token.initLiteral(l));
+            if (self.prev_literal) |l| try self.add_token(Token.init_literal(l));
         }
 
         // Add match to the tokens list, reset prev pointers.
         // Returns length of the added match.
         fn add_match(self: *Self, m: Token) !u16 {
-            try self.addToken(m);
+            try self.add_token(m);
             self.prev_literal = null;
             self.prev_match = null;
             return m.length();
@@ -226,7 +226,7 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
 
         fn add_token(self: *Self, token: Token) !void {
             self.tokens.add(token);
-            if (self.tokens.full()) try self.flushTokens(.none);
+            if (self.tokens.full()) try self.flush_tokens(.none);
         }
 
         // Finds largest match in the history window with the data at current pos.
@@ -252,7 +252,7 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
 
                 const new_len = self.win.match(prev_pos, pos, len);
                 if (new_len > len) {
-                    match = Token.initMatch(@intCast(distance), new_len);
+                    match = Token.init_match(@int_cast(distance), new_len);
                     if (new_len >= self.level.nice) {
                         // The match is good enough that we don't try to find a better one.
                         return match;
@@ -267,14 +267,14 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
 
         fn flush_tokens(self: *Self, flush_opt: FlushOption) !void {
             // Pass tokens to the token writer
-            try self.block_writer.write(self.tokens.tokens(), flush_opt == .final, self.win.tokensBuffer());
+            try self.block_writer.write(self.tokens.tokens(), flush_opt == .final, self.win.tokens_buffer());
             // Stored block ensures byte aligment.
             // It has 3 bits (final, block_type) and then padding until byte boundary.
             // After that everyting is aligned to the boundary in the stored block.
             // Empty stored block is Ob000 + (0-7) bits of padding + 0x00 0x00 0xFF 0xFF.
             // Last 4 bytes are byte aligned.
             if (flush_opt == .flush) {
-                try self.block_writer.storedBlock("", false);
+                try self.block_writer.stored_block("", false);
             }
             if (flush_opt != .none) {
                 // Safe to call only when byte aligned or it is OK to add
@@ -310,7 +310,7 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
                     self.slide();
                     continue;
                 }
-                const n = try reader.readAll(buf);
+                const n = try reader.read_all(buf);
                 self.hasher.update(buf[0..n]);
                 self.win.written(n);
                 // Process window
@@ -343,13 +343,13 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
         ///
         pub fn finish(self: *Self) !void {
             try self.tokenize(.final);
-            try container.writeFooter(&self.hasher, self.wrt);
+            try container.write_footer(&self.hasher, self.wrt);
         }
 
         /// Use another writer while preserving history. Most probably flush
         /// should be called on old writer before setting new.
         pub fn set_writer(self: *Self, new_writer: WriterType) void {
-            self.block_writer.setWriter(new_writer);
+            self.block_writer.set_writer(new_writer);
             self.wrt = new_writer;
         }
 
@@ -361,7 +361,7 @@ fn Deflate(comptime container: Container, comptime WriterType: type, comptime Bl
         /// Write `input` of uncompressed data.
         /// See compress.
         pub fn write(self: *Self, input: []const u8) !usize {
-            var fbs = io.fixedBufferStream(input);
+            var fbs = io.fixed_buffer_stream(input);
             try self.compress(fbs.reader());
             return input.len;
         }
@@ -467,27 +467,27 @@ fn SimpleCompressor(
                 .wrt = wrt,
                 .block_writer = BlockWriterType.init(wrt),
             };
-            try container.writeHeader(self.wrt);
+            try container.write_header(self.wrt);
             return self;
         }
 
         pub fn flush(self: *Self) !void {
-            try self.flushBuffer(false);
-            try self.block_writer.storedBlock("", false);
+            try self.flush_buffer(false);
+            try self.block_writer.stored_block("", false);
             try self.block_writer.flush();
         }
 
         pub fn finish(self: *Self) !void {
-            try self.flushBuffer(true);
+            try self.flush_buffer(true);
             try self.block_writer.flush();
-            try container.writeFooter(&self.hasher, self.wrt);
+            try container.write_footer(&self.hasher, self.wrt);
         }
 
         fn flush_buffer(self: *Self, final: bool) !void {
             const buf = self.buffer[0..self.wp];
             switch (kind) {
-                .huffman => try self.block_writer.huffmanBlock(buf, final),
-                .store => try self.block_writer.storedBlock(buf, final),
+                .huffman => try self.block_writer.huffman_block(buf, final),
+                .store => try self.block_writer.stored_block(buf, final),
             }
             self.wp = 0;
         }
@@ -500,10 +500,10 @@ fn SimpleCompressor(
                 // read from rdr into buffer
                 const buf = self.buffer[self.wp..];
                 if (buf.len == 0) {
-                    try self.flushBuffer(false);
+                    try self.flush_buffer(false);
                     continue;
                 }
-                const n = try reader.readAll(buf);
+                const n = try reader.read_all(buf);
                 self.hasher.update(buf[0..n]);
                 self.wp += n;
                 if (n < buf.len) break; // no more data in reader
@@ -517,7 +517,7 @@ fn SimpleCompressor(
 
         // Write `input` of uncompressed data.
         pub fn write(self: *Self, input: []const u8) !usize {
-            var fbs = io.fixedBufferStream(input);
+            var fbs = io.fixed_buffer_stream(input);
             try self.compress(fbs.reader());
             return input.len;
         }
@@ -531,8 +531,8 @@ fn SimpleCompressor(
 const builtin = @import("builtin");
 
 test "tokenization" {
-    const L = Token.initLiteral;
-    const M = Token.initMatch;
+    const L = Token.init_literal;
+    const M = Token.init_match;
 
     const cases = [_]struct {
         data: []const u8,
@@ -554,7 +554,7 @@ test "tokenization" {
     for (cases) |c| {
         inline for (Container.list) |container| { // for each wrapping
 
-            var cw = io.countingWriter(io.null_writer);
+            var cw = io.counting_writer(io.null_writer);
             const cww = cw.writer();
             var df = try Deflate(container, @TypeOf(cww), TestTokenWriter).init(cww, .{});
 
@@ -563,11 +563,11 @@ test "tokenization" {
 
             // df.token_writer.show();
             try expect(df.block_writer.pos == c.tokens.len); // number of tokens written
-            try testing.expectEqualSlices(Token, df.block_writer.get(), c.tokens); // tokens match
+            try testing.expect_equal_slices(Token, df.block_writer.get(), c.tokens); // tokens match
 
-            try testing.expectEqual(container.headerSize(), cw.bytes_written);
+            try testing.expect_equal(container.header_size(), cw.bytes_written);
             try df.finish();
-            try testing.expectEqual(container.size(), cw.bytes_written);
+            try testing.expect_equal(container.size(), cw.bytes_written);
         }
     }
 }
@@ -613,28 +613,28 @@ test "file tokenization" {
         tokens_count: [levels.len]usize = .{0} ** levels.len,
     }{
         .{
-            .data = @embedFile("testdata/rfc1951.txt"),
+            .data = @embed_file("testdata/rfc1951.txt"),
             .tokens_count = .{ 7675, 7672, 7599, 7594, 7598, 7599 },
         },
 
         .{
-            .data = @embedFile("testdata/block_writer/huffman-null-max.input"),
+            .data = @embed_file("testdata/block_writer/huffman-null-max.input"),
             .tokens_count = .{ 257, 257, 257, 257, 257, 257 },
         },
         .{
-            .data = @embedFile("testdata/block_writer/huffman-pi.input"),
+            .data = @embed_file("testdata/block_writer/huffman-pi.input"),
             .tokens_count = .{ 2570, 2564, 2564, 2564, 2564, 2564 },
         },
         .{
-            .data = @embedFile("testdata/block_writer/huffman-text.input"),
+            .data = @embed_file("testdata/block_writer/huffman-text.input"),
             .tokens_count = .{ 235, 234, 234, 234, 234, 234 },
         },
         .{
-            .data = @embedFile("testdata/fuzz/roundtrip1.input"),
+            .data = @embed_file("testdata/fuzz/roundtrip1.input"),
             .tokens_count = .{ 333, 331, 331, 331, 331, 331 },
         },
         .{
-            .data = @embedFile("testdata/fuzz/roundtrip2.input"),
+            .data = @embed_file("testdata/fuzz/roundtrip2.input"),
             .tokens_count = .{ 334, 334, 334, 334, 334, 334 },
         },
     };
@@ -643,7 +643,7 @@ test "file tokenization" {
         const data = case.data;
 
         for (levels, 0..) |level, i| { // for each compression level
-            var original = io.fixedBufferStream(data);
+            var original = io.fixed_buffer_stream(data);
 
             // buffer for decompressed data
             var al = std.ArrayList(u8).init(testing.allocator);
@@ -666,11 +666,11 @@ test "file tokenization" {
             if (expected_count == 0) {
                 print("actual token count {d}\n", .{actual});
             } else {
-                try testing.expectEqual(expected_count, actual);
+                try testing.expect_equal(expected_count, actual);
             }
 
-            try testing.expectEqual(data.len, al.items.len);
-            try testing.expectEqualSlices(u8, data, al.items);
+            try testing.expect_equal(data.len, al.items.len);
+            try testing.expect_equal_slices(u8, data, al.items);
         }
     }
 }
@@ -693,11 +693,11 @@ fn TokenDecoder(comptime WriterType: type) type {
             for (tokens) |t| {
                 switch (t.kind) {
                     .literal => self.hist.write(t.literal()),
-                    .match => try self.hist.writeMatch(t.length(), t.distance()),
+                    .match => try self.hist.write_match(t.length(), t.distance()),
                 }
-                if (self.hist.free() < 285) try self.flushWin();
+                if (self.hist.free() < 285) try self.flush_win();
             }
-            try self.flushWin();
+            try self.flush_win();
         }
 
         pub fn stored_block(_: *Self, _: []const u8, _: bool) !void {}
@@ -706,7 +706,7 @@ fn TokenDecoder(comptime WriterType: type) type {
             while (true) {
                 const buf = self.hist.read();
                 if (buf.len == 0) break;
-                try self.wrt.writeAll(buf);
+                try self.wrt.write_all(buf);
             }
         }
 
@@ -724,14 +724,14 @@ test "store simple compressor" {
         //0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0x21,
     };
 
-    var fbs = std.io.fixedBufferStream(data);
+    var fbs = std.io.fixed_buffer_stream(data);
     var al = std.ArrayList(u8).init(testing.allocator);
     defer al.deinit();
 
     var cmp = try store.compressor(.raw, al.writer());
     try cmp.compress(fbs.reader());
     try cmp.finish();
-    try testing.expectEqualSlices(u8, &expected, al.items);
+    try testing.expect_equal_slices(u8, &expected, al.items);
 
     fbs.reset();
     try al.resize(0);
@@ -740,5 +740,5 @@ test "store simple compressor" {
     var hc = try huffman.compressor(.raw, al.writer());
     try hc.compress(fbs.reader());
     try hc.finish();
-    try testing.expectEqualSlices(u8, &expected, al.items);
+    try testing.expect_equal_slices(u8, &expected, al.items);
 }

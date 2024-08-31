@@ -73,29 +73,29 @@ pub const Value = union(enum) {
                 if (len == 0) return;
 
                 const first = list[0];
-                if (first.isCompound()) {
+                if (first.is_compound()) {
                     for (list, 0..) |elem, i| {
-                        try writer.writeByteNTimes(' ', args.indentation);
-                        try writer.writeAll("- ");
+                        try writer.write_byte_ntimes(' ', args.indentation);
+                        try writer.write_all("- ");
                         try elem.stringify(writer, .{
                             .indentation = args.indentation + 2,
                             .should_inline_first_key = true,
                         });
                         if (i < len - 1) {
-                            try writer.writeByte('\n');
+                            try writer.write_byte('\n');
                         }
                     }
                     return;
                 }
 
-                try writer.writeAll("[ ");
+                try writer.write_all("[ ");
                 for (list, 0..) |elem, i| {
                     try elem.stringify(writer, args);
                     if (i < len - 1) {
-                        try writer.writeAll(", ");
+                        try writer.write_all(", ");
                     }
                 }
-                try writer.writeAll(" ]");
+                try writer.write_all(" ]");
             },
             .map => |map| {
                 const len = map.count();
@@ -108,27 +108,27 @@ pub const Value = union(enum) {
                     const value = entry.value_ptr.*;
 
                     if (!args.should_inline_first_key or i != 0) {
-                        try writer.writeByteNTimes(' ', args.indentation);
+                        try writer.write_byte_ntimes(' ', args.indentation);
                     }
                     try writer.print("{s}: ", .{key});
 
                     const should_inline = blk: {
-                        if (!value.isCompound()) break :blk true;
-                        if (value == .list and value.list.len > 0 and !value.list[0].isCompound()) break :blk true;
+                        if (!value.is_compound()) break :blk true;
+                        if (value == .list and value.list.len > 0 and !value.list[0].is_compound()) break :blk true;
                         break :blk false;
                     };
 
                     if (should_inline) {
                         try value.stringify(writer, args);
                     } else {
-                        try writer.writeByte('\n');
+                        try writer.write_byte('\n');
                         try value.stringify(writer, .{
                             .indentation = args.indentation + 4,
                         });
                     }
 
                     if (i < len - 1) {
-                        try writer.writeByte('\n');
+                        try writer.write_byte('\n');
                     }
 
                     i += 1;
@@ -150,21 +150,21 @@ pub const Value = union(enum) {
                 // empty doc
                 return Value{ .empty = {} };
             };
-            return Value.fromNode(arena, tree, inner);
+            return Value.from_node(arena, tree, inner);
         } else if (node.cast(Node.Map)) |map| {
             // TODO use ContextAdapted HashMap and do not duplicate keys, intern
             // in a contiguous string buffer.
             var out_map = std.StringHashMap(Value).init(arena);
-            try out_map.ensureUnusedCapacity(math.cast(u32, map.values.items.len) orelse return error.Overflow);
+            try out_map.ensure_unused_capacity(math.cast(u32, map.values.items.len) orelse return error.Overflow);
 
             for (map.values.items) |entry| {
-                const key = try arena.dupe(u8, tree.getRaw(entry.key, entry.key));
-                const gop = out_map.getOrPutAssumeCapacity(key);
+                const key = try arena.dupe(u8, tree.get_raw(entry.key, entry.key));
+                const gop = out_map.get_or_put_assume_capacity(key);
                 if (gop.found_existing) {
                     return error.DuplicateMapKey;
                 }
                 const value = if (entry.value) |value|
-                    try Value.fromNode(arena, tree, value)
+                    try Value.from_node(arena, tree, value)
                 else
                     .empty;
                 gop.value_ptr.* = value;
@@ -173,25 +173,25 @@ pub const Value = union(enum) {
             return Value{ .map = out_map };
         } else if (node.cast(Node.List)) |list| {
             var out_list = std.ArrayList(Value).init(arena);
-            try out_list.ensureUnusedCapacity(list.values.items.len);
+            try out_list.ensure_unused_capacity(list.values.items.len);
 
             for (list.values.items) |elem| {
-                const value = try Value.fromNode(arena, tree, elem);
-                out_list.appendAssumeCapacity(value);
+                const value = try Value.from_node(arena, tree, elem);
+                out_list.append_assume_capacity(value);
             }
 
-            return Value{ .list = try out_list.toOwnedSlice() };
+            return Value{ .list = try out_list.to_owned_slice() };
         } else if (node.cast(Node.Value)) |value| {
-            const raw = tree.getRaw(node.start, node.end);
+            const raw = tree.get_raw(node.start, node.end);
 
             try_int: {
                 // TODO infer base for int
-                const int = std.fmt.parseInt(i64, raw, 10) catch break :try_int;
+                const int = std.fmt.parse_int(i64, raw, 10) catch break :try_int;
                 return Value{ .int = int };
             }
 
             try_float: {
-                const float = std.fmt.parseFloat(f64, raw) catch break :try_float;
+                const float = std.fmt.parse_float(f64, raw) catch break :try_float;
                 return Value{ .float = float };
             }
 
@@ -208,29 +208,29 @@ pub const Value = union(enum) {
             .Int,
             => return Value{ .int = math.cast(i64, input) orelse return error.Overflow },
 
-            .Float => return Value{ .float = math.lossyCast(f64, input) },
+            .Float => return Value{ .float = math.lossy_cast(f64, input) },
 
             .Struct => |info| if (info.is_tuple) {
                 var list = std.ArrayList(Value).init(arena);
                 errdefer list.deinit();
-                try list.ensureTotalCapacityPrecise(info.fields.len);
+                try list.ensure_total_capacity_precise(info.fields.len);
 
                 inline for (info.fields) |field| {
                     if (try encode(arena, @field(input, field.name))) |value| {
-                        list.appendAssumeCapacity(value);
+                        list.append_assume_capacity(value);
                     }
                 }
 
-                return Value{ .list = try list.toOwnedSlice() };
+                return Value{ .list = try list.to_owned_slice() };
             } else {
                 var map = Map.init(arena);
                 errdefer map.deinit();
-                try map.ensureTotalCapacity(info.fields.len);
+                try map.ensure_total_capacity(info.fields.len);
 
                 inline for (info.fields) |field| {
                     if (try encode(arena, @field(input, field.name))) |value| {
                         const key = try arena.dupe(u8, field.name);
-                        map.putAssumeCapacityNoClobber(key, value);
+                        map.put_assume_capacity_no_clobber(key, value);
                     }
                 }
 
@@ -254,7 +254,7 @@ pub const Value = union(enum) {
                         return encode(arena, @as(Slice, input));
                     },
                     else => {
-                        @compileError("Unhandled type: {s}" ++ @typeName(info.child));
+                        @compile_error("Unhandled type: {s}" ++ @type_name(info.child));
                     },
                 },
                 .Slice => {
@@ -264,21 +264,21 @@ pub const Value = union(enum) {
 
                     var list = std.ArrayList(Value).init(arena);
                     errdefer list.deinit();
-                    try list.ensureTotalCapacityPrecise(input.len);
+                    try list.ensure_total_capacity_precise(input.len);
 
                     for (input) |elem| {
                         if (try encode(arena, elem)) |value| {
-                            list.appendAssumeCapacity(value);
+                            list.append_assume_capacity(value);
                         } else {
                             log.debug("Could not encode value in a list: {any}", .{elem});
                             return error.CannotEncodeValue;
                         }
                     }
 
-                    return Value{ .list = try list.toOwnedSlice() };
+                    return Value{ .list = try list.to_owned_slice() };
                 },
                 else => {
-                    @compileError("Unhandled type: {s}" ++ @typeName(@TypeOf(input)));
+                    @compile_error("Unhandled type: {s}" ++ @type_name(@TypeOf(input)));
                 },
             },
 
@@ -289,7 +289,7 @@ pub const Value = union(enum) {
             .Null => return null,
 
             else => {
-                @compileError("Unhandled type: {s}" ++ @typeName(@TypeOf(input)));
+                @compile_error("Unhandled type: {s}" ++ @type_name(@TypeOf(input)));
             },
         }
     }
@@ -312,11 +312,11 @@ pub const Yaml = struct {
         try tree.parse(source);
 
         var docs = std.ArrayList(Value).init(arena.allocator());
-        try docs.ensureTotalCapacityPrecise(tree.docs.items.len);
+        try docs.ensure_total_capacity_precise(tree.docs.items.len);
 
         for (tree.docs.items) |node| {
-            const value = try Value.fromNode(arena.allocator(), &tree, node);
-            docs.appendAssumeCapacity(value);
+            const value = try Value.from_node(arena.allocator(), &tree, node);
+            docs.append_assume_capacity(value);
         }
 
         return Yaml{
@@ -344,14 +344,14 @@ pub const Yaml = struct {
         }
 
         if (self.docs.items.len == 1) {
-            return self.parseValue(T, self.docs.items[0]);
+            return self.parse_value(T, self.docs.items[0]);
         }
 
         switch (@typeInfo(T)) {
             .Array => |info| {
                 var parsed: T = undefined;
                 for (self.docs.items, 0..) |doc, i| {
-                    parsed[i] = try self.parseValue(info.child, doc);
+                    parsed[i] = try self.parse_value(info.child, doc);
                 }
                 return parsed;
             },
@@ -360,7 +360,7 @@ pub const Yaml = struct {
                     .Slice => {
                         var parsed = try self.arena.allocator().alloc(info.child, self.docs.items.len);
                         for (self.docs.items, 0..) |doc, i| {
-                            parsed[i] = try self.parseValue(info.child, doc);
+                            parsed[i] = try self.parse_value(info.child, doc);
                         }
                         return parsed;
                     },
@@ -374,19 +374,19 @@ pub const Yaml = struct {
 
     fn parse_value(self: *Yaml, comptime T: type, value: Value) Error!T {
         return switch (@typeInfo(T)) {
-            .Int => math.cast(T, try value.asInt()) orelse return error.Overflow,
-            .Float => if (value.asFloat()) |float| {
-                return math.lossyCast(T, float);
+            .Int => math.cast(T, try value.as_int()) orelse return error.Overflow,
+            .Float => if (value.as_float()) |float| {
+                return math.lossy_cast(T, float);
             } else |_| {
-                return math.lossyCast(T, try value.asInt());
+                return math.lossy_cast(T, try value.as_int());
             },
-            .Struct => self.parseStruct(T, try value.asMap()),
-            .Union => self.parseUnion(T, value),
-            .Array => self.parseArray(T, try value.asList()),
-            .Pointer => if (value.asList()) |list| {
-                return self.parsePointer(T, .{ .list = list });
+            .Struct => self.parse_struct(T, try value.as_map()),
+            .Union => self.parse_union(T, value),
+            .Array => self.parse_array(T, try value.as_list()),
+            .Pointer => if (value.as_list()) |list| {
+                return self.parse_pointer(T, .{ .list = list });
             } else |_| {
-                return self.parsePointer(T, .{ .string = try value.asString() });
+                return self.parse_pointer(T, .{ .string = try value.as_string() });
             },
             .Void => error.TypeMismatch,
             .Optional => unreachable,
@@ -399,8 +399,8 @@ pub const Yaml = struct {
 
         if (union_info.tag_type) |_| {
             inline for (union_info.fields) |field| {
-                if (self.parseValue(field.type, value)) |u_value| {
-                    return @unionInit(T, field.name, u_value);
+                if (self.parse_value(field.type, value)) |u_value| {
+                    return @union_init(T, field.name, u_value);
                 } else |err| {
                     if (@as(@TypeOf(err) || error{TypeMismatch}, err) != error.TypeMismatch) return err;
                 }
@@ -413,7 +413,7 @@ pub const Yaml = struct {
     fn parse_optional(self: *Yaml, comptime T: type, value: ?Value) Error!T {
         const unwrapped = value orelse return null;
         const opt_info = @typeInfo(T).Optional;
-        return @as(T, try self.parseValue(opt_info.child, unwrapped));
+        return @as(T, try self.parse_value(opt_info.child, unwrapped));
     }
 
     fn parse_struct(self: *Yaml, comptime T: type, map: Map) Error!T {
@@ -422,20 +422,20 @@ pub const Yaml = struct {
 
         inline for (struct_info.fields) |field| {
             const value: ?Value = map.get(field.name) orelse blk: {
-                const field_name = try mem.replaceOwned(u8, self.arena.allocator(), field.name, "_", "-");
+                const field_name = try mem.replace_owned(u8, self.arena.allocator(), field.name, "_", "-");
                 break :blk map.get(field_name);
             };
 
             if (@typeInfo(field.type) == .Optional) {
-                @field(parsed, field.name) = try self.parseOptional(field.type, value);
+                @field(parsed, field.name) = try self.parse_optional(field.type, value);
                 continue;
             }
 
             const unwrapped = value orelse {
-                log.debug("missing struct field: {s}: {s}", .{ field.name, @typeName(field.type) });
+                log.debug("missing struct field: {s}: {s}", .{ field.name, @type_name(field.type) });
                 return error.StructFieldMissing;
             };
-            @field(parsed, field.name) = try self.parseValue(field.type, unwrapped);
+            @field(parsed, field.name) = try self.parse_value(field.type, unwrapped);
         }
 
         return parsed;
@@ -448,12 +448,12 @@ pub const Yaml = struct {
         switch (ptr_info.size) {
             .Slice => {
                 if (ptr_info.child == u8) {
-                    return value.asString();
+                    return value.as_string();
                 }
 
                 var parsed = try arena.alloc(ptr_info.child, value.list.len);
                 for (value.list, 0..) |elem, i| {
-                    parsed[i] = try self.parseValue(ptr_info.child, elem);
+                    parsed[i] = try self.parse_value(ptr_info.child, elem);
                 }
                 return parsed;
             },
@@ -467,7 +467,7 @@ pub const Yaml = struct {
 
         var parsed: T = undefined;
         for (list, 0..) |elem, i| {
-            parsed[i] = try self.parseValue(array_info.child, elem);
+            parsed[i] = try self.parse_value(array_info.child, elem);
         }
 
         return parsed;
@@ -475,15 +475,15 @@ pub const Yaml = struct {
 
     pub fn stringify(self: Yaml, writer: anytype) !void {
         for (self.docs.items, 0..) |doc, i| {
-            try writer.writeAll("---");
-            if (self.tree.?.getDirective(i)) |directive| {
+            try writer.write_all("---");
+            if (self.tree.?.get_directive(i)) |directive| {
                 try writer.print(" !{s}", .{directive});
             }
-            try writer.writeByte('\n');
+            try writer.write_byte('\n');
             try doc.stringify(writer, .{});
-            try writer.writeByte('\n');
+            try writer.write_byte('\n');
         }
-        try writer.writeAll("...\n");
+        try writer.write_all("...\n");
     }
 };
 
@@ -501,7 +501,7 @@ pub fn stringify(allocator: Allocator, input: anytype, writer: anytype) !void {
 }
 
 test {
-    std.testing.refAllDecls(Tokenizer);
-    std.testing.refAllDecls(parse);
+    std.testing.ref_all_decls(Tokenizer);
+    std.testing.ref_all_decls(parse);
     _ = @import("yaml/test.zig");
 }

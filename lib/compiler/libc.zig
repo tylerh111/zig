@@ -28,7 +28,7 @@ pub fn main() !void {
     const arena = arena_instance.allocator();
     const gpa = arena;
 
-    const args = try std.process.argsAlloc(arena);
+    const args = try std.process.args_alloc(arena);
     const zig_lib_directory = args[1];
 
     var input_file: ?[]const u8 = null;
@@ -38,11 +38,11 @@ pub fn main() !void {
         var i: usize = 2;
         while (i < args.len) : (i += 1) {
             const arg = args[i];
-            if (mem.startsWith(u8, arg, "-")) {
+            if (mem.starts_with(u8, arg, "-")) {
                 if (mem.eql(u8, arg, "-h") or mem.eql(u8, arg, "--help")) {
-                    const stdout = std.io.getStdOut().writer();
-                    try stdout.writeAll(usage_libc);
-                    return std.process.cleanExit();
+                    const stdout = std.io.get_std_out().writer();
+                    try stdout.write_all(usage_libc);
+                    return std.process.clean_exit();
                 } else if (mem.eql(u8, arg, "-target")) {
                     if (i + 1 >= args.len) fatal("expected parameter after {s}", .{arg});
                     i += 1;
@@ -60,10 +60,10 @@ pub fn main() !void {
         }
     }
 
-    const target_query = std.zig.parseTargetQueryOrReportFatalError(gpa, .{
+    const target_query = std.zig.parse_target_query_or_report_fatal_error(gpa, .{
         .arch_os_abi = target_arch_os_abi,
     });
-    const target = std.zig.resolveTargetQueryOrFatal(target_query);
+    const target = std.zig.resolve_target_query_or_fatal(target_query);
 
     if (print_includes) {
         const libc_installation: ?*LibCInstallation = libc: {
@@ -78,7 +78,7 @@ pub fn main() !void {
             }
         };
 
-        const is_native_abi = target_query.isNativeAbi();
+        const is_native_abi = target_query.is_native_abi();
 
         const libc_dirs = std.zig.LibCDirs.detect(
             arena,
@@ -88,23 +88,23 @@ pub fn main() !void {
             true,
             libc_installation,
         ) catch |err| {
-            const zig_target = try target.zigTriple(arena);
+            const zig_target = try target.zig_triple(arena);
             fatal("unable to detect libc for target {s}: {s}", .{ zig_target, @errorName(err) });
         };
 
         if (libc_dirs.libc_include_dir_list.len == 0) {
-            const zig_target = try target.zigTriple(arena);
+            const zig_target = try target.zig_triple(arena);
             fatal("no include dirs detected for target {s}", .{zig_target});
         }
 
-        var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
+        var bw = std.io.buffered_writer(std.io.get_std_out().writer());
         var writer = bw.writer();
         for (libc_dirs.libc_include_dir_list) |include_dir| {
-            try writer.writeAll(include_dir);
-            try writer.writeByte('\n');
+            try writer.write_all(include_dir);
+            try writer.write_byte('\n');
         }
         try bw.flush();
-        return std.process.cleanExit();
+        return std.process.clean_exit();
     }
 
     if (input_file) |libc_file| {
@@ -113,10 +113,10 @@ pub fn main() !void {
         };
         defer libc.deinit(gpa);
     } else {
-        if (!target_query.canDetectLibC()) {
+        if (!target_query.can_detect_lib_c()) {
             fatal("unable to detect libc for non-native target", .{});
         }
-        var libc = LibCInstallation.findNative(.{
+        var libc = LibCInstallation.find_native(.{
             .allocator = gpa,
             .verbose = true,
             .target = target,
@@ -125,7 +125,7 @@ pub fn main() !void {
         };
         defer libc.deinit(gpa);
 
-        var bw = std.io.bufferedWriter(std.io.getStdOut().writer());
+        var bw = std.io.buffered_writer(std.io.get_std_out().writer());
         try libc.render(bw.writer());
         try bw.flush();
     }

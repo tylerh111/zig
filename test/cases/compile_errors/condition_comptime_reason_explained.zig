@@ -1,5 +1,5 @@
 const S = struct {
-    fnPtr: fn () void,
+    fn_ptr: fn () void,
 };
 fn bar() void {}
 fn baz() void {}
@@ -7,29 +7,29 @@ var runtime: bool = true;
 fn if_expr() S {
     if (runtime) {
         return .{
-            .fnPtr = bar,
+            .fn_ptr = bar,
         };
     } else {
         return .{
-            .fnPtr = baz,
+            .fn_ptr = baz,
         };
     }
 }
 pub export fn entry1() void {
-    _ = ifExpr();
+    _ = if_expr();
 }
 fn switch_expr() S {
     switch (runtime) {
         true => return .{
-            .fnPtr = bar,
+            .fn_ptr = bar,
         },
         false => return .{
-            .fnPtr = baz,
+            .fn_ptr = baz,
         },
     }
 }
 pub export fn entry2() void {
-    _ = switchExpr();
+    _ = switch_expr();
 }
 
 // error

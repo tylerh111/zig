@@ -10,7 +10,7 @@ pub fn panic(message: []const u8, stack_trace: ?*std.builtin.StackTrace, _: ?usi
 pub fn main() !void {
     var value: c_short = -1;
     _ = &value;
-    const casted: u32 = @intCast(value);
+    const casted: u32 = @int_cast(value);
     _ = casted;
     return error.TestFailed;
 }

@@ -4,7 +4,7 @@ const __absvsi2 = @import("absvsi2.zig").__absvsi2;
 
 fn test__absvsi2(a: i32, expected: i32) !void {
     const result = __absvsi2(a);
-    try testing.expectEqual(expected, result);
+    try testing.expect_equal(expected, result);
 }
 
 test "absvsi2" {

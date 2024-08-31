@@ -8,11 +8,11 @@ pub fn main() !void {
 
     const arena = arena_state.allocator();
 
-    var arg_it = try std.process.argsWithAllocator(arena);
+    var arg_it = try std.process.args_with_allocator(arena);
     _ = arg_it.next();
 
     const cwd = std.fs.cwd();
-    const cwd_realpath = try cwd.realpathAlloc(arena, ".");
+    const cwd_realpath = try cwd.realpath_alloc(arena, ".");
 
     while (arg_it.next()) |file_path| {
         if (file_path.len > 0 and file_path[0] == '!') {
@@ -20,7 +20,7 @@ pub fn main() !void {
                 "exclusive file check '{s}{c}{s}' failed",
                 .{ cwd_realpath, std.fs.path.sep, file_path[1..] },
             );
-            if (std.fs.cwd().statFile(file_path[1..])) |_| {
+            if (std.fs.cwd().stat_file(file_path[1..])) |_| {
                 return error.FileFound;
             } else |err| switch (err) {
                 error.FileNotFound => {},
@@ -31,7 +31,7 @@ pub fn main() !void {
                 "inclusive file check '{s}{c}{s}' failed",
                 .{ cwd_realpath, std.fs.path.sep, file_path },
             );
-            _ = try std.fs.cwd().statFile(file_path);
+            _ = try std.fs.cwd().stat_file(file_path);
         }
     }
 }

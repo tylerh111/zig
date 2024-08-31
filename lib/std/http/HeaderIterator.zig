@@ -5,20 +5,20 @@ is_trailer: bool,
 pub fn init(bytes: []const u8) HeaderIterator {
     return .{
         .bytes = bytes,
-        .index = std.mem.indexOfPosLinear(u8, bytes, 0, "\r\n").? + 2,
+        .index = std.mem.index_of_pos_linear(u8, bytes, 0, "\r\n").? + 2,
         .is_trailer = false,
     };
 }
 
 pub fn next(it: *HeaderIterator) ?std.http.Header {
-    const end = std.mem.indexOfPosLinear(u8, it.bytes, it.index, "\r\n").?;
+    const end = std.mem.index_of_pos_linear(u8, it.bytes, it.index, "\r\n").?;
     if (it.index == end) { // found the trailer boundary (\r\n\r\n)
         if (it.is_trailer) return null;
 
-        const next_end = std.mem.indexOfPosLinear(u8, it.bytes, end + 2, "\r\n") orelse
+        const next_end = std.mem.index_of_pos_linear(u8, it.bytes, end + 2, "\r\n") orelse
             return null;
 
-        var kv_it = std.mem.splitScalar(u8, it.bytes[end + 2 .. next_end], ':');
+        var kv_it = std.mem.split_scalar(u8, it.bytes[end + 2 .. next_end], ':');
         const name = kv_it.first();
         const value = kv_it.rest();
 
@@ -32,7 +32,7 @@ pub fn next(it: *HeaderIterator) ?std.http.Header {
             .value = std.mem.trim(u8, value, " \t"),
         };
     } else { // normal header
-        var kv_it = std.mem.splitScalar(u8, it.bytes[it.index..end], ':');
+        var kv_it = std.mem.split_scalar(u8, it.bytes[it.index..end], ':');
         const name = kv_it.first();
         const value = kv_it.rest();
 
@@ -53,42 +53,42 @@ test next {
     {
         const header = it.next().?;
         try std.testing.expect(!it.is_trailer);
-        try std.testing.expectEqualStrings("a", header.name);
-        try std.testing.expectEqualStrings("b", header.value);
+        try std.testing.expect_equal_strings("a", header.name);
+        try std.testing.expect_equal_strings("b", header.value);
     }
     {
         const header = it.next().?;
         try std.testing.expect(!it.is_trailer);
-        try std.testing.expectEqualStrings("c", header.name);
-        try std.testing.expectEqualStrings("", header.value);
+        try std.testing.expect_equal_strings("c", header.name);
+        try std.testing.expect_equal_strings("", header.value);
     }
     {
         const header = it.next().?;
         try std.testing.expect(!it.is_trailer);
-        try std.testing.expectEqualStrings("d", header.name);
-        try std.testing.expectEqualStrings("e", header.value);
+        try std.testing.expect_equal_strings("d", header.name);
+        try std.testing.expect_equal_strings("e", header.value);
     }
     {
         const header = it.next().?;
         try std.testing.expect(it.is_trailer);
-        try std.testing.expectEqualStrings("f", header.name);
-        try std.testing.expectEqualStrings("g", header.value);
+        try std.testing.expect_equal_strings("f", header.name);
+        try std.testing.expect_equal_strings("g", header.value);
     }
-    try std.testing.expectEqual(null, it.next());
+    try std.testing.expect_equal(null, it.next());
 
     it = HeaderIterator.init("200 OK\r\n: ss\r\n\r\n");
     try std.testing.expect(!it.is_trailer);
-    try std.testing.expectEqual(null, it.next());
+    try std.testing.expect_equal(null, it.next());
 
     it = HeaderIterator.init("200 OK\r\na:b\r\n\r\n: ss\r\n\r\n");
     try std.testing.expect(!it.is_trailer);
     {
         const header = it.next().?;
         try std.testing.expect(!it.is_trailer);
-        try std.testing.expectEqualStrings("a", header.name);
-        try std.testing.expectEqualStrings("b", header.value);
+        try std.testing.expect_equal_strings("a", header.name);
+        try std.testing.expect_equal_strings("b", header.value);
     }
-    try std.testing.expectEqual(null, it.next());
+    try std.testing.expect_equal(null, it.next());
     try std.testing.expect(it.is_trailer);
 }
 

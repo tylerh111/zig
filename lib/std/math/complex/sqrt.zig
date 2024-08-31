@@ -18,7 +18,7 @@ pub fn sqrt(z: anytype) Complex(@TypeOf(z.re, z.im)) {
     return switch (T) {
         f32 => sqrt32(z),
         f64 => sqrt64(z),
-        else => @compileError("sqrt not implemented for " ++ @typeName(T)),
+        else => @compile_error("sqrt not implemented for " ++ @type_name(T)),
     };
 }
 
@@ -29,15 +29,15 @@ fn sqrt32(z: Complex(f32)) Complex(f32) {
     if (x == 0 and y == 0) {
         return Complex(f32).init(0, y);
     }
-    if (math.isInf(y)) {
+    if (math.is_inf(y)) {
         return Complex(f32).init(math.inf(f32), y);
     }
-    if (math.isNan(x)) {
+    if (math.is_nan(x)) {
         // raise invalid if y is not nan
         const t = (y - y) / (y - y);
         return Complex(f32).init(x, t);
     }
-    if (math.isInf(x)) {
+    if (math.is_inf(x)) {
         // sqrt(inf + i nan)    = inf + nan i
         // sqrt(inf + iy)       = inf + i0
         // sqrt(-inf + i nan)   = nan +- inf i
@@ -58,14 +58,14 @@ fn sqrt32(z: Complex(f32)) Complex(f32) {
     if (dx >= 0) {
         const t = @sqrt((dx + math.hypot(dx, dy)) * 0.5);
         return Complex(f32).init(
-            @as(f32, @floatCast(t)),
-            @as(f32, @floatCast(dy / (2.0 * t))),
+            @as(f32, @float_cast(t)),
+            @as(f32, @float_cast(dy / (2.0 * t))),
         );
     } else {
         const t = @sqrt((-dx + math.hypot(dx, dy)) * 0.5);
         return Complex(f32).init(
-            @as(f32, @floatCast(@abs(y) / (2.0 * t))),
-            @as(f32, @floatCast(math.copysign(t, y))),
+            @as(f32, @float_cast(@abs(y) / (2.0 * t))),
+            @as(f32, @float_cast(math.copysign(t, y))),
         );
     }
 }
@@ -80,15 +80,15 @@ fn sqrt64(z: Complex(f64)) Complex(f64) {
     if (x == 0 and y == 0) {
         return Complex(f64).init(0, y);
     }
-    if (math.isInf(y)) {
+    if (math.is_inf(y)) {
         return Complex(f64).init(math.inf(f64), y);
     }
-    if (math.isNan(x)) {
+    if (math.is_nan(x)) {
         // raise invalid if y is not nan
         const t = (y - y) / (y - y);
         return Complex(f64).init(x, t);
     }
-    if (math.isInf(x)) {
+    if (math.is_inf(x)) {
         // sqrt(inf + i nan)    = inf + nan i
         // sqrt(inf + iy)       = inf + i0
         // sqrt(-inf + i nan)   = nan +- inf i
@@ -133,14 +133,14 @@ test sqrt32 {
     const a = Complex(f32).init(5, 3);
     const c = sqrt(a);
 
-    try testing.expect(math.approxEqAbs(f32, c.re, 2.327117, epsilon));
-    try testing.expect(math.approxEqAbs(f32, c.im, 0.644574, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.re, 2.327117, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.im, 0.644574, epsilon));
 }
 
 test sqrt64 {
     const a = Complex(f64).init(5, 3);
     const c = sqrt(a);
 
-    try testing.expect(math.approxEqAbs(f64, c.re, 2.3271175190399496, epsilon));
-    try testing.expect(math.approxEqAbs(f64, c.im, 0.6445742373246469, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, c.re, 2.3271175190399496, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, c.im, 0.6445742373246469, epsilon));
 }

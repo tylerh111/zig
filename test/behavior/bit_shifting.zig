@@ -28,17 +28,17 @@ fn ShardedTable(comptime Key: type, comptime mask_bit_count: comptime_int, compt
             // TODO: https://github.com/ziglang/zig/issues/1544
             // This cast could be implicit if we teach the compiler that
             // u32 >> 30 -> u2
-            return @as(ShardKey, @intCast(shard_key));
+            return @as(ShardKey, @int_cast(shard_key));
         }
 
         pub fn put(self: *Self, node: *Node) void {
-            const shard_key = Self.getShardKey(node.key);
+            const shard_key = Self.get_shard_key(node.key);
             node.next = self.shards[shard_key];
             self.shards[shard_key] = node;
         }
 
         pub fn get(self: *Self, key: Key) ?*Node {
-            const shard_key = Self.getShardKey(key);
+            const shard_key = Self.get_shard_key(key);
             var maybe_node = self.shards[shard_key];
             while (maybe_node) |node| : (maybe_node = node.next) {
                 if (node.key == key) return node;
@@ -68,16 +68,16 @@ test "sharded table" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     // realistic 16-way sharding
-    try testShardedTable(u32, 4, 8);
+    try test_sharded_table(u32, 4, 8);
 
-    try testShardedTable(u5, 0, 32); // ShardKey == u0
-    try testShardedTable(u5, 2, 32);
-    try testShardedTable(u5, 5, 32);
+    try test_sharded_table(u5, 0, 32); // ShardKey == u0
+    try test_sharded_table(u5, 2, 32);
+    try test_sharded_table(u5, 5, 32);
 
-    try testShardedTable(u1, 0, 2);
-    try testShardedTable(u1, 1, 2); // this does u1 >> u0
+    try test_sharded_table(u1, 0, 2);
+    try test_sharded_table(u1, 1, 2); // this does u1 >> u0
 
-    try testShardedTable(u0, 0, 1);
+    try test_sharded_table(u0, 0, 1);
 }
 
 fn test_sharded_table(comptime Key: type, comptime mask_bit_count: comptime_int, comptime node_count: comptime_int) !void {
@@ -86,14 +86,14 @@ fn test_sharded_table(comptime Key: type, comptime mask_bit_count: comptime_int,
     var table = Table.create();
     var node_buffer: [node_count]Table.Node = undefined;
     for (&node_buffer, 0..) |*node, i| {
-        const key = @as(Key, @intCast(i));
+        const key = @as(Key, @int_cast(i));
         try expect(table.get(key) == null);
         node.init(key, {});
         table.put(node);
     }
 
     for (&node_buffer, 0..) |*node, i| {
-        try expect(table.get(@as(Key, @intCast(i))) == node);
+        try expect(table.get(@as(Key, @int_cast(i))) == node);
     }
 }
 
@@ -108,7 +108,7 @@ test "comptime shr of BigInt" {
 }
 
 test "comptime shift safety check" {
-    _ = @as(usize, 42) << @sizeOf(usize);
+    _ = @as(usize, 42) << @size_of(usize);
 }
 
 test "Saturating Shift Left where lhs is of a computed type" {
@@ -134,7 +134,7 @@ test "Saturating Shift Left where lhs is of a computed type" {
                 value: value_type,
                 exponent: ShiftType,
 
-                const ShiftType: type = getIntShiftType(value_type);
+                const ShiftType: type = get_int_shift_type(value_type);
 
                 pub fn shift_exponent(self: @This(), shift: ShiftType) @This() {
                     const shiftAbs = @abs(shift);
@@ -149,7 +149,7 @@ test "Saturating Shift Left where lhs is of a computed type" {
     const value = (FP{
         .value = 1,
         .exponent = 1,
-    }).shiftExponent(-1);
+    }).shift_exponent(-1);
 
     try expect(value.value == 2);
     try expect(value.exponent == 0);
@@ -158,5 +158,5 @@ test "Saturating Shift Left where lhs is of a computed type" {
 comptime {
     var image: [1]u8 = undefined;
     _ = &image;
-    _ = @shlExact(@as(u16, image[0]), 8);
+    _ = @shl_exact(@as(u16, image[0]), 8);
 }

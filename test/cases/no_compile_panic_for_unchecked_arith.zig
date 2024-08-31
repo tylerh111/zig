@@ -1,4 +1,4 @@
-pub const panic = @compileError("");
+pub const panic = @compile_error("");
 
 export fn entry() usize {
     var x: usize = 0;

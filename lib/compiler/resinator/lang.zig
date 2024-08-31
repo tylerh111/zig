@@ -29,7 +29,7 @@ pub fn parse_int(str: []const u8) error{InvalidLanguageId}!u16 {
     for (buf, 0..) |c, i| {
         const digit = switch (c) {
             // On invalid digit for the radix, just stop parsing but don't fail
-            'a'...'f', 'A'...'F', '0'...'9' => std.fmt.charToDigit(c, radix) catch break,
+            'a'...'f', 'A'...'F', '0'...'9' => std.fmt.char_to_digit(c, radix) catch break,
             else => {
                 // First digit must be valid
                 if (i == 0) {
@@ -53,18 +53,18 @@ pub fn parse_int(str: []const u8) error{InvalidLanguageId}!u16 {
     return result;
 }
 
-test parseInt {
-    try std.testing.expectEqual(@as(u16, 0x16), try parseInt("16"));
-    try std.testing.expectEqual(@as(u16, 0x1a), try parseInt("0x1A"));
-    try std.testing.expectEqual(@as(u16, 0x1a), try parseInt("0x1Azzzz"));
-    try std.testing.expectEqual(@as(u16, 0xffff), try parseInt("-1"));
-    try std.testing.expectEqual(@as(u16, 0xffea), try parseInt("-0x16"));
-    try std.testing.expectEqual(@as(u16, 0x0), try parseInt("0o100"));
-    try std.testing.expectEqual(@as(u16, 0x1), try parseInt("10001"));
-    try std.testing.expectError(error.InvalidLanguageId, parseInt("--1"));
-    try std.testing.expectError(error.InvalidLanguageId, parseInt("0xha"));
-    try std.testing.expectError(error.InvalidLanguageId, parseInt("¹"));
-    try std.testing.expectError(error.InvalidLanguageId, parseInt("~1"));
+test parse_int {
+    try std.testing.expect_equal(@as(u16, 0x16), try parse_int("16"));
+    try std.testing.expect_equal(@as(u16, 0x1a), try parse_int("0x1A"));
+    try std.testing.expect_equal(@as(u16, 0x1a), try parse_int("0x1Azzzz"));
+    try std.testing.expect_equal(@as(u16, 0xffff), try parse_int("-1"));
+    try std.testing.expect_equal(@as(u16, 0xffea), try parse_int("-0x16"));
+    try std.testing.expect_equal(@as(u16, 0x0), try parse_int("0o100"));
+    try std.testing.expect_equal(@as(u16, 0x1), try parse_int("10001"));
+    try std.testing.expect_error(error.InvalidLanguageId, parse_int("--1"));
+    try std.testing.expect_error(error.InvalidLanguageId, parse_int("0xha"));
+    try std.testing.expect_error(error.InvalidLanguageId, parse_int("¹"));
+    try std.testing.expect_error(error.InvalidLanguageId, parse_int("~1"));
 }
 
 /// This function is specific to how the Win32 RC command line interprets
@@ -72,9 +72,9 @@ test parseInt {
 /// a specific assigned ID but are otherwise valid enough will get
 /// converted to an ID of LOCALE_CUSTOM_UNSPECIFIED.
 pub fn tag_to_int(tag: []const u8) error{InvalidLanguageTag}!u16 {
-    const maybe_id = try tagToId(tag);
+    const maybe_id = try tag_to_id(tag);
     if (maybe_id) |id| {
-        return @intFromEnum(id);
+        return @int_from_enum(id);
     } else {
         return LOCALE_CUSTOM_UNSPECIFIED;
     }
@@ -98,9 +98,9 @@ pub fn tag_to_id(tag: []const u8) error{InvalidLanguageTag}!?LanguageId {
     var normalized_buf: [longest_known_tag]u8 = undefined;
     // To allow e.g. `de-de_phoneb` to get looked up as `de-de`, we need to
     // omit the suffix, but only if the tag contains a valid alternate sort order.
-    const tag_to_normalize = if (parsed.isSuffixValidSortOrder()) tag[0 .. tag.len - (parsed.suffix.?.len + 1)] else tag;
-    const normalized_tag = normalizeTag(tag_to_normalize, &normalized_buf);
-    return std.meta.stringToEnum(LanguageId, normalized_tag) orelse {
+    const tag_to_normalize = if (parsed.is_suffix_valid_sort_order()) tag[0 .. tag.len - (parsed.suffix.?.len + 1)] else tag;
+    const normalized_tag = normalize_tag(tag_to_normalize, &normalized_buf);
+    return std.meta.string_to_enum(LanguageId, normalized_tag) orelse {
         // special case for a tag that has been mapped to the same ID
         // twice.
         if (std.mem.eql(u8, "ff_latn_ng", normalized_tag)) {
@@ -110,34 +110,34 @@ pub fn tag_to_id(tag: []const u8) error{InvalidLanguageTag}!?LanguageId {
     };
 }
 
-test tagToId {
-    try std.testing.expectEqual(LanguageId.ar_ae, (try tagToId("ar-ae")).?);
-    try std.testing.expectEqual(LanguageId.ar_ae, (try tagToId("AR_AE")).?);
-    try std.testing.expectEqual(LanguageId.ff_ng, (try tagToId("ff-ng")).?);
+test tag_to_id {
+    try std.testing.expect_equal(LanguageId.ar_ae, (try tag_to_id("ar-ae")).?);
+    try std.testing.expect_equal(LanguageId.ar_ae, (try tag_to_id("AR_AE")).?);
+    try std.testing.expect_equal(LanguageId.ff_ng, (try tag_to_id("ff-ng")).?);
     // Special case
-    try std.testing.expectEqual(LanguageId.ff_ng, (try tagToId("ff-Latn-NG")).?);
+    try std.testing.expect_equal(LanguageId.ff_ng, (try tag_to_id("ff-Latn-NG")).?);
 }
 
-test "exhaustive tagToId" {
+test "exhaustive tag_to_id" {
     inline for (@typeInfo(LanguageId).Enum.fields) |field| {
-        const id = tagToId(field.name) catch |err| {
+        const id = tag_to_id(field.name) catch |err| {
             std.debug.print("tag: {s}\n", .{field.name});
             return err;
         };
-        try std.testing.expectEqual(@field(LanguageId, field.name), id orelse {
+        try std.testing.expect_equal(@field(LanguageId, field.name), id orelse {
             std.debug.print("tag: {s}, got null\n", .{field.name});
             return error.TestExpectedEqual;
         });
     }
     var buf: [32]u8 = undefined;
     inline for (valid_alternate_sorts) |parsed_sort| {
-        var fbs = std.io.fixedBufferStream(&buf);
+        var fbs = std.io.fixed_buffer_stream(&buf);
         const writer = fbs.writer();
-        writer.writeAll(parsed_sort.language_code) catch unreachable;
-        writer.writeAll("-") catch unreachable;
-        writer.writeAll(parsed_sort.country_code.?) catch unreachable;
-        writer.writeAll("-") catch unreachable;
-        writer.writeAll(parsed_sort.suffix.?) catch unreachable;
+        writer.write_all(parsed_sort.language_code) catch unreachable;
+        writer.write_all("-") catch unreachable;
+        writer.write_all(parsed_sort.country_code.?) catch unreachable;
+        writer.write_all("-") catch unreachable;
+        writer.write_all(parsed_sort.suffix.?) catch unreachable;
         const expected_field_name = comptime field: {
             var name_buf: [5]u8 = undefined;
             @memcpy(name_buf[0..parsed_sort.language_code.len], parsed_sort.language_code);
@@ -146,12 +146,12 @@ test "exhaustive tagToId" {
             break :field name_buf;
         };
         const expected = @field(LanguageId, &expected_field_name);
-        const id = tagToId(fbs.getWritten()) catch |err| {
-            std.debug.print("tag: {s}\n", .{fbs.getWritten()});
+        const id = tag_to_id(fbs.get_written()) catch |err| {
+            std.debug.print("tag: {s}\n", .{fbs.get_written()});
             return err;
         };
-        try std.testing.expectEqual(expected, id orelse {
-            std.debug.print("tag: {s}, expected: {}, got null\n", .{ fbs.getWritten(), expected });
+        try std.testing.expect_equal(expected, id orelse {
+            std.debug.print("tag: {s}, expected: {}, got null\n", .{ fbs.get_written(), expected });
             return error.TestExpectedEqual;
         });
     }
@@ -163,7 +163,7 @@ fn normalize_tag(tag: []const u8, buf: []u8) []u8 {
         if (c == '-')
             buf[i] = '_'
         else
-            buf[i] = std.ascii.toLower(c);
+            buf[i] = std.ascii.to_lower(c);
     }
     return buf[0..tag.len];
 }
@@ -215,9 +215,9 @@ pub fn MAKELANGID(primary: u10, sublang: u6) u16 {
 ///      - the suffix is numeric-only and has a length of 3, or
 ///      - the lang is `qps` and the suffix is `ploca` or `plocm`
 pub fn parse(lang_tag: []const u8) error{InvalidLanguageTag}!Parsed {
-    var it = std.mem.splitAny(u8, lang_tag, "-_");
+    var it = std.mem.split_any(u8, lang_tag, "-_");
     const lang_code = it.first();
-    const is_valid_lang_code = lang_code.len >= 1 and lang_code.len <= 3 and isAllAlphabetic(lang_code);
+    const is_valid_lang_code = lang_code.len >= 1 and lang_code.len <= 3 and is_all_alphabetic(lang_code);
     if (!is_valid_lang_code) return error.InvalidLanguageTag;
     var parsed = Parsed{
         .language_code = lang_code,
@@ -233,29 +233,29 @@ pub fn parse(lang_tag: []const u8) error{InvalidLanguageTag}!Parsed {
             // However, because we want to be able to lookup `x-iv-mathan` normally without
             // `multiple_suffixes` being set to true, we need to make sure to treat two-length
             // alphabetic parts as a country code.
-            if (part_str.len == 2 and isAllAlphabetic(part_str)) {
+            if (part_str.len == 2 and is_all_alphabetic(part_str)) {
                 parsed.country_code = part_str;
             }
             // Everything else, though, we can just throw into the suffix as long as the normal
             // rules apply.
-            else if (part_str.len > 0 and part_str.len <= 8 and isAllAlphanumeric(part_str)) {
+            else if (part_str.len > 0 and part_str.len <= 8 and is_all_alphanumeric(part_str)) {
                 parsed.suffix = part_str;
             } else {
                 return error.InvalidLanguageTag;
             }
-        } else if (part_str.len == 4 and isAllAlphabetic(part_str)) {
+        } else if (part_str.len == 4 and is_all_alphabetic(part_str)) {
             parsed.script_tag = part_str;
-        } else if (part_str.len == 2 and isAllAlphabetic(part_str)) {
+        } else if (part_str.len == 2 and is_all_alphabetic(part_str)) {
             parsed.country_code = part_str;
         }
         // Only a 3-len numeric suffix is allowed as the second part of a tag
-        else if (part_str.len == 3 and isAllNumeric(part_str)) {
+        else if (part_str.len == 3 and is_all_numeric(part_str)) {
             parsed.suffix = part_str;
         }
         // Special case for qps-ploca and qps-plocm
-        else if (std.ascii.eqlIgnoreCase(lang_code, "qps") and
-            (std.ascii.eqlIgnoreCase(part_str, "ploca") or
-            std.ascii.eqlIgnoreCase(part_str, "plocm")))
+        else if (std.ascii.eql_ignore_case(lang_code, "qps") and
+            (std.ascii.eql_ignore_case(part_str, "ploca") or
+            std.ascii.eql_ignore_case(part_str, "plocm")))
         {
             parsed.suffix = part_str;
         } else {
@@ -268,7 +268,7 @@ pub fn parse(lang_tag: []const u8) error{InvalidLanguageTag}!Parsed {
     }
     if (parsed.script_tag != null) {
         if (it.next()) |part_str| {
-            if (part_str.len == 2 and isAllAlphabetic(part_str)) {
+            if (part_str.len == 2 and is_all_alphabetic(part_str)) {
                 parsed.country_code = part_str;
             } else {
                 // Suffix is not allowed when a country code is not present.
@@ -281,7 +281,7 @@ pub fn parse(lang_tag: []const u8) error{InvalidLanguageTag}!Parsed {
     // We've now parsed any potential script tag/country codes, so anything remaining
     // is a suffix
     while (it.next()) |part_str| {
-        if (part_str.len == 0 or part_str.len > 8 or !isAllAlphanumeric(part_str)) {
+        if (part_str.len == 0 or part_str.len > 8 or !is_all_alphanumeric(part_str)) {
             return error.InvalidLanguageTag;
         }
         if (parsed.suffix == null) {
@@ -316,9 +316,9 @@ pub const Parsed = struct {
         if (self.script_tag != null) return false;
         if (self.multiple_suffixes) return false;
         for (valid_alternate_sorts) |valid_sort| {
-            if (std.ascii.eqlIgnoreCase(valid_sort.language_code, self.language_code) and
-                std.ascii.eqlIgnoreCase(valid_sort.country_code.?, self.country_code.?) and
-                std.ascii.eqlIgnoreCase(valid_sort.suffix.?, self.suffix.?))
+            if (std.ascii.eql_ignore_case(valid_sort.language_code, self.language_code) and
+                std.ascii.eql_ignore_case(valid_sort.country_code.?, self.country_code.?) and
+                std.ascii.eql_ignore_case(valid_sort.suffix.?, self.suffix.?))
             {
                 return true;
             }
@@ -351,92 +351,92 @@ const valid_alternate_sorts = [_]Parsed{
 };
 
 test "parse" {
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "en",
     }, try parse("en"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "en",
         .country_code = "us",
     }, try parse("en-us"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "en",
         .suffix = "123",
     }, try parse("en-123"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "en",
         .suffix = "123",
         .multiple_suffixes = true,
     }, try parse("en-123-blah"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "en",
         .country_code = "us",
         .suffix = "123",
         .multiple_suffixes = true,
     }, try parse("en-us_123-blah"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "eng",
         .script_tag = "Latn",
     }, try parse("eng-Latn"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "eng",
         .script_tag = "Latn",
     }, try parse("eng-Latn"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "ff",
         .script_tag = "Latn",
         .country_code = "NG",
     }, try parse("ff-Latn-NG"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "qps",
         .suffix = "Plocm",
     }, try parse("qps-Plocm"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "qps",
         .suffix = "ploca",
     }, try parse("qps-ploca"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "x",
         .country_code = "IV",
         .suffix = "mathan",
     }, try parse("x-IV-mathan"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "a",
         .suffix = "a",
     }, try parse("a-a"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "a",
         .suffix = "000",
     }, try parse("a-000"));
-    try std.testing.expectEqualDeep(Parsed{
+    try std.testing.expect_equal_deep(Parsed{
         .language_code = "a",
         .suffix = "00000000",
     }, try parse("a-00000000"));
     // suffix not allowed if script tag is present without country code
-    try std.testing.expectError(error.InvalidLanguageTag, parse("eng-Latn-suffix"));
+    try std.testing.expect_error(error.InvalidLanguageTag, parse("eng-Latn-suffix"));
     // suffix must be 3 numeric digits if neither script tag nor country code is present
-    try std.testing.expectError(error.InvalidLanguageTag, parse("eng-suffix"));
-    try std.testing.expectError(error.InvalidLanguageTag, parse("en-plocm"));
+    try std.testing.expect_error(error.InvalidLanguageTag, parse("eng-suffix"));
+    try std.testing.expect_error(error.InvalidLanguageTag, parse("en-plocm"));
     // 1-len lang code is not allowed if it's the only part
-    try std.testing.expectError(error.InvalidLanguageTag, parse("e"));
+    try std.testing.expect_error(error.InvalidLanguageTag, parse("e"));
 }
 
 fn is_all_alphabetic(str: []const u8) bool {
     for (str) |c| {
-        if (!std.ascii.isAlphabetic(c)) return false;
+        if (!std.ascii.is_alphabetic(c)) return false;
     }
     return true;
 }
 
 fn is_all_alphanumeric(str: []const u8) bool {
     for (str) |c| {
-        if (!std.ascii.isAlphanumeric(c)) return false;
+        if (!std.ascii.is_alphanumeric(c)) return false;
     }
     return true;
 }
 
 fn is_all_numeric(str: []const u8) bool {
     for (str) |c| {
-        if (!std.ascii.isDigit(c)) return false;
+        if (!std.ascii.is_digit(c)) return false;
     }
     return true;
 }

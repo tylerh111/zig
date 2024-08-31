@@ -6,13 +6,13 @@ pub const RangeDecoder = struct {
     code: u32,
 
     pub fn init(reader: anytype) !RangeDecoder {
-        const reserved = try reader.readByte();
+        const reserved = try reader.read_byte();
         if (reserved != 0) {
             return error.CorruptInput;
         }
         return RangeDecoder{
             .range = 0xFFFF_FFFF,
-            .code = try reader.readInt(u32, .big),
+            .code = try reader.read_int(u32, .big),
         };
     }
 
@@ -38,7 +38,7 @@ pub const RangeDecoder = struct {
     inline fn normalize(self: *RangeDecoder, reader: anytype) !void {
         if (self.range < 0x0100_0000) {
             self.range <<= 8;
-            self.code = (self.code << 8) ^ @as(u32, try reader.readByte());
+            self.code = (self.code << 8) ^ @as(u32, try reader.read_byte());
         }
     }
 
@@ -57,7 +57,7 @@ pub const RangeDecoder = struct {
         var result: u32 = 0;
         var i: usize = 0;
         while (i < count) : (i += 1)
-            result = (result << 1) ^ @intFromBool(try self.getBit(reader));
+            result = (result << 1) ^ @int_from_bool(try self.get_bit(reader));
         return result;
     }
 
@@ -92,8 +92,8 @@ pub const RangeDecoder = struct {
         var tmp: u32 = 1;
         var i: @TypeOf(num_bits) = 0;
         while (i < num_bits) : (i += 1) {
-            const bit = try self.decodeBit(reader, &probs[tmp], update);
-            tmp = (tmp << 1) ^ @intFromBool(bit);
+            const bit = try self.decode_bit(reader, &probs[tmp], update);
+            tmp = (tmp << 1) ^ @int_from_bool(bit);
         }
         return tmp - (@as(u32, 1) << num_bits);
     }
@@ -110,7 +110,7 @@ pub const RangeDecoder = struct {
         var tmp: usize = 1;
         var i: @TypeOf(num_bits) = 0;
         while (i < num_bits) : (i += 1) {
-            const bit = @intFromBool(try self.decodeBit(reader, &probs[offset + tmp], update));
+            const bit = @int_from_bool(try self.decode_bit(reader, &probs[offset + tmp], update));
             tmp = (tmp << 1) ^ bit;
             result ^= @as(u32, bit) << i;
         }
@@ -130,7 +130,7 @@ pub fn BitTree(comptime num_bits: usize) type {
             decoder: *RangeDecoder,
             update: bool,
         ) !u32 {
-            return decoder.parseBitTree(reader, num_bits, &self.probs, update);
+            return decoder.parse_bit_tree(reader, num_bits, &self.probs, update);
         }
 
         pub fn parse_reverse(
@@ -139,7 +139,7 @@ pub fn BitTree(comptime num_bits: usize) type {
             decoder: *RangeDecoder,
             update: bool,
         ) !u32 {
-            return decoder.parseReverseBitTree(reader, num_bits, &self.probs, 0, update);
+            return decoder.parse_reverse_bit_tree(reader, num_bits, &self.probs, 0, update);
         }
 
         pub fn reset(self: *Self) void {
@@ -162,9 +162,9 @@ pub const LenDecoder = struct {
         pos_state: usize,
         update: bool,
     ) !usize {
-        if (!try decoder.decodeBit(reader, &self.choice, update)) {
+        if (!try decoder.decode_bit(reader, &self.choice, update)) {
             return @as(usize, try self.low_coder[pos_state].parse(reader, decoder, update));
-        } else if (!try decoder.decodeBit(reader, &self.choice2, update)) {
+        } else if (!try decoder.decode_bit(reader, &self.choice2, update)) {
             return @as(usize, try self.mid_coder[pos_state].parse(reader, decoder, update)) + 8;
         } else {
             return @as(usize, try self.high_coder.parse(reader, decoder, update)) + 16;

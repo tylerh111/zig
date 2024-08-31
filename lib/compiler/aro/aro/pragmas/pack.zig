@@ -12,8 +12,8 @@ const Pack = @This();
 
 pragma: Pragma = .{
     .deinit = deinit,
-    .parserHandler = parserHandler,
-    .preserveTokens = preserveTokens,
+    .parser_handler = parser_handler,
+    .preserve_tokens = preserve_tokens,
 },
 stack: std.ArrayListUnmanaged(struct { label: []const u8, val: u8 }) = .{},
 
@@ -37,7 +37,7 @@ fn parser_handler(pragma: *Pragma, p: *Parser, start_idx: TokenIndex) Compilatio
         return p.comp.addDiagnostic(.{
             .tag = .pragma_pack_lparen,
             .loc = l_paren.loc,
-        }, p.pp.expansionSlice(idx));
+        }, p.pp.expansion_slice(idx));
     }
     idx += 1;
 
@@ -53,12 +53,12 @@ fn parser_handler(pragma: *Pragma, p: *Parser, start_idx: TokenIndex) Compilatio
                 push,
                 pop,
             };
-            const action = std.meta.stringToEnum(Action, p.tokSlice(arg)) orelse {
-                return p.errTok(.pragma_pack_unknown_action, arg);
+            const action = std.meta.string_to_enum(Action, p.tok_slice(arg)) orelse {
+                return p.err_tok(.pragma_pack_unknown_action, arg);
             };
             switch (action) {
                 .show => {
-                    try p.errExtra(.pragma_pack_show, arg, .{ .unsigned = p.pragma_pack orelse 8 });
+                    try p.err_extra(.pragma_pack_show, arg, .{ .unsigned = p.pragma_pack orelse 8 });
                 },
                 .push, .pop => {
                     var new_val: ?u8 = null;
@@ -68,18 +68,18 @@ fn parser_handler(pragma: *Pragma, p: *Parser, start_idx: TokenIndex) Compilatio
                         const next = idx;
                         idx += 1;
                         switch (tok_ids[next]) {
-                            .pp_num => new_val = (try packInt(p, next)) orelse return,
+                            .pp_num => new_val = (try pack_int(p, next)) orelse return,
                             .identifier => {
-                                label = p.tokSlice(next);
+                                label = p.tok_slice(next);
                                 if (tok_ids[idx] == .comma) {
                                     idx += 1;
                                     const int = idx;
                                     idx += 1;
-                                    if (tok_ids[int] != .pp_num) return p.errTok(.pragma_pack_int_ident, int);
-                                    new_val = (try packInt(p, int)) orelse return;
+                                    if (tok_ids[int] != .pp_num) return p.err_tok(.pragma_pack_int_ident, int);
+                                    new_val = (try pack_int(p, int)) orelse return;
                                 }
                             },
-                            else => return p.errTok(.pragma_pack_int_ident, next),
+                            else => return p.err_tok(.pragma_pack_int_ident, next),
                         }
                     }
                     if (action == .push) {
@@ -87,9 +87,9 @@ fn parser_handler(pragma: *Pragma, p: *Parser, start_idx: TokenIndex) Compilatio
                     } else {
                         pack.pop(p, label);
                         if (new_val != null) {
-                            try p.errTok(.pragma_pack_undefined_pop, arg);
+                            try p.err_tok(.pragma_pack_undefined_pop, arg);
                         } else if (pack.stack.items.len == 0) {
-                            try p.errTok(.pragma_pack_empty_stack, arg);
+                            try p.err_tok(.pragma_pack_empty_stack, arg);
                         }
                     }
                     if (new_val) |some| {
@@ -104,7 +104,7 @@ fn parser_handler(pragma: *Pragma, p: *Parser, start_idx: TokenIndex) Compilatio
             p.pragma_pack = null;
         },
         .pp_num => {
-            const new_val = (try packInt(p, arg)) orelse return;
+            const new_val = (try pack_int(p, arg)) orelse return;
             idx += 1;
             if (apple_or_xl) {
                 try pack.stack.append(p.gpa, .{ .label = "", .val = p.pragma_pack });
@@ -115,23 +115,23 @@ fn parser_handler(pragma: *Pragma, p: *Parser, start_idx: TokenIndex) Compilatio
     }
 
     if (tok_ids[idx] != .r_paren) {
-        return p.errTok(.pragma_pack_rparen, idx);
+        return p.err_tok(.pragma_pack_rparen, idx);
     }
 }
 
 fn pack_int(p: *Parser, tok_i: TokenIndex) Compilation.Error!?u8 {
-    const res = p.parseNumberToken(tok_i) catch |err| switch (err) {
+    const res = p.parse_number_token(tok_i) catch |err| switch (err) {
         error.ParsingFailed => {
-            try p.errTok(.pragma_pack_int, tok_i);
+            try p.err_tok(.pragma_pack_int, tok_i);
             return null;
         },
         else => |e| return e,
     };
-    const int = res.val.toInt(u64, p.comp) orelse 99;
+    const int = res.val.to_int(u64, p.comp) orelse 99;
     switch (int) {
-        1, 2, 4, 8, 16 => return @intCast(int),
+        1, 2, 4, 8, 16 => return @int_cast(int),
         else => {
-            try p.errTok(.pragma_pack_int, tok_i);
+            try p.err_tok(.pragma_pack_int, tok_i);
             return null;
         },
     }
@@ -143,13 +143,13 @@ fn pop(pack: *Pack, p: *Parser, maybe_label: ?[]const u8) void {
         while (i > 0) {
             i -= 1;
             if (std.mem.eql(u8, pack.stack.items[i].label, label)) {
-                const prev = pack.stack.orderedRemove(i);
+                const prev = pack.stack.ordered_remove(i);
                 p.pragma_pack = prev.val;
                 return;
             }
         }
     } else {
-        const prev = pack.stack.popOrNull() orelse {
+        const prev = pack.stack.pop_or_null() orelse {
             p.pragma_pack = 2;
             return;
         };

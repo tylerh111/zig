@@ -9,8 +9,8 @@ test "memcpy and memset intrinsics" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testMemcpyMemset();
-    try comptime testMemcpyMemset();
+    try test_memcpy_memset();
+    try comptime test_memcpy_memset();
 }
 
 fn test_memcpy_memset() !void {
@@ -31,8 +31,8 @@ test "@memcpy with both operands single-ptr-to-array, one is null-terminated" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testMemcpyBothSinglePtrArrayOneIsNullTerminated();
-    try comptime testMemcpyBothSinglePtrArrayOneIsNullTerminated();
+    try test_memcpy_both_single_ptr_array_one_is_null_terminated();
+    try comptime test_memcpy_both_single_ptr_array_one_is_null_terminated();
 }
 
 fn test_memcpy_both_single_ptr_array_one_is_null_terminated() !void {
@@ -52,8 +52,8 @@ test "@memcpy dest many pointer" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testMemcpyDestManyPtr();
-    try comptime testMemcpyDestManyPtr();
+    try test_memcpy_dest_many_ptr();
+    try comptime test_memcpy_dest_many_ptr();
 }
 
 fn test_memcpy_dest_many_ptr() !void {
@@ -61,7 +61,7 @@ fn test_memcpy_dest_many_ptr() !void {
     var buf: [5]u8 = undefined;
     var len: usize = 5;
     _ = &len;
-    @memcpy(@as([*]u8, @ptrCast(&buf)), @as([*]const u8, @ptrCast(&str))[0..len]);
+    @memcpy(@as([*]u8, @ptr_cast(&buf)), @as([*]const u8, @ptr_cast(&str))[0..len]);
     try expect(buf[0] == 'h');
     try expect(buf[1] == 'e');
     try expect(buf[2] == 'l');
@@ -75,8 +75,8 @@ test "@memcpy slice" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testMemcpySlice();
-    try comptime testMemcpySlice();
+    try test_memcpy_slice();
+    try comptime test_memcpy_slice();
 }
 
 fn test_memcpy_slice() !void {
@@ -101,5 +101,5 @@ comptime {
 
     var s = S{};
     s.set("hello");
-    if (!std.mem.eql(u8, s.buffer[0..5], "hello")) @compileError("bad");
+    if (!std.mem.eql(u8, s.buffer[0..5], "hello")) @compile_error("bad");
 }

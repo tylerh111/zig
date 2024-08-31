@@ -1,7 +1,7 @@
 const std = @import("../std.zig");
 const assert = std.debug.assert;
 const builtin = @import("builtin");
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const iovec = std.posix.iovec;
 const iovec_const = std.posix.iovec_const;
 const timezone = std.c.timezone;
@@ -34,7 +34,7 @@ pub const pthread_spin_t = switch (builtin.cpu.arch) {
     .arm, .armeb, .thumb, .thumbeb => i32,
     .sparc, .sparcel, .sparc64 => u8,
     .riscv32, .riscv64 => u32,
-    else => @compileError("undefined pthread_spin_t for this arch"),
+    else => @compile_error("undefined pthread_spin_t for this arch"),
 };
 
 pub const padded_pthread_spin_t = switch (builtin.cpu.arch) {
@@ -89,9 +89,9 @@ pub const RTLD = struct {
     pub const NODELETE = 0x01000;
     pub const NOLOAD = 0x02000;
 
-    pub const NEXT = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -1)))));
-    pub const DEFAULT = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -2)))));
-    pub const SELF = @as(*anyopaque, @ptrFromInt(@as(usize, @bitCast(@as(isize, -3)))));
+    pub const NEXT = @as(*anyopaque, @ptrFromInt(@as(usize, @bit_cast(@as(isize, -1)))));
+    pub const DEFAULT = @as(*anyopaque, @ptrFromInt(@as(usize, @bit_cast(@as(isize, -2)))));
+    pub const SELF = @as(*anyopaque, @ptrFromInt(@as(usize, @bit_cast(@as(isize, -3)))));
 };
 
 pub const dl_phdr_info = extern struct {
@@ -416,13 +416,13 @@ pub const sockaddr = extern struct {
         padding: [126]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
+            assert(@size_of(storage) == SS_MAXSIZE);
             assert(@alignOf(storage) == 8);
         }
     };
 
     pub const in = extern struct {
-        len: u8 = @sizeOf(in),
+        len: u8 = @size_of(in),
         family: sa_family_t = AF.INET,
         port: in_port_t,
         addr: u32,
@@ -430,7 +430,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const in6 = extern struct {
-        len: u8 = @sizeOf(in6),
+        len: u8 = @size_of(in6),
         family: sa_family_t = AF.INET6,
         port: in_port_t,
         flowinfo: u32,
@@ -441,7 +441,7 @@ pub const sockaddr = extern struct {
     /// Definitions for UNIX IPC domain.
     pub const un = extern struct {
         /// total sockaddr length
-        len: u8 = @sizeOf(un),
+        len: u8 = @size_of(un),
 
         family: sa_family_t = AF.LOCAL,
 
@@ -516,7 +516,7 @@ pub const W = struct {
     pub const TRAPPED = 0x00000040;
 
     pub fn EXITSTATUS(s: u32) u8 {
-        return @as(u8, @intCast((s >> 8) & 0xff));
+        return @as(u8, @int_cast((s >> 8) & 0xff));
     }
     pub fn TERMSIG(s: u32) u32 {
         return s & 0x7f;
@@ -802,7 +802,7 @@ const NSIG = 32;
 pub const SIG = struct {
     pub const DFL: ?Sigaction.handler_fn = @ptrFromInt(0);
     pub const IGN: ?Sigaction.handler_fn = @ptrFromInt(1);
-    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(maxInt(usize));
+    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(max_int(usize));
 
     pub const WORDS = 4;
     pub const MAXSIG = 128;
@@ -930,7 +930,7 @@ pub const _ksiginfo = extern struct {
                 pe_lwp: lwpid_t,
             },
         },
-    } align(@sizeOf(usize)),
+    } align(@size_of(usize)),
 };
 
 pub const sigset_t = extern struct {
@@ -1006,7 +1006,7 @@ pub const ucontext_t = extern struct {
             .x86 => 4,
             .mips, .mipsel, .mips64, .mips64el => 14,
             .arm, .armeb, .thumb, .thumbeb => 1,
-            .sparc, .sparcel, .sparc64 => if (@sizeOf(usize) == 4) 43 else 8,
+            .sparc, .sparcel, .sparc64 => if (@size_of(usize) == 4) 43 else 8,
             else => 0,
         }
     ]u32,

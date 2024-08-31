@@ -9,8 +9,8 @@ test "@memset on array pointers" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testMemsetArray();
-    try comptime testMemsetArray();
+    try test_memset_array();
+    try comptime test_memset_array();
 }
 
 fn test_memset_array() !void {
@@ -39,8 +39,8 @@ test "@memset on slices" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testMemsetSlice();
-    try comptime testMemsetSlice();
+    try test_memset_slice();
+    try comptime test_memset_slice();
 }
 
 fn test_memset_slice() !void {
@@ -156,10 +156,10 @@ test "@memset provides result type" {
     const S = struct { x: u32 };
 
     var buf1: [5]S = undefined;
-    @memset(&buf1, .{ .x = @intCast(12) });
+    @memset(&buf1, .{ .x = @int_cast(12) });
 
     var buf2: [5]S = undefined;
-    @memset(@as([]S, &buf2), .{ .x = @intCast(34) });
+    @memset(@as([]S, &buf2), .{ .x = @int_cast(34) });
 
     for (buf1) |s| try expect(s.x == 12);
     for (buf2) |s| try expect(s.x == 34);
@@ -179,7 +179,7 @@ test "zero keys with @memset" {
         right: bool,
         var keys: @This() = undefined;
     };
-    @memset(@as([*]u8, @ptrCast(&Keys.keys))[0..@sizeOf(@TypeOf(Keys.keys))], 0);
+    @memset(@as([*]u8, @ptr_cast(&Keys.keys))[0..@size_of(@TypeOf(Keys.keys))], 0);
     try expect(!Keys.keys.up);
     try expect(!Keys.keys.down);
     try expect(!Keys.keys.left);

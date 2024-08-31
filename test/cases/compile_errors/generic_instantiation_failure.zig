@@ -15,7 +15,7 @@ fn make_list(item: anytype) List(@TypeOf(item), void) {
 }
 
 pub export fn entry() void {
-    @TypeOf(makeList(42)).AppendReturnType(64);
+    @TypeOf(make_list(42)).AppendReturnType(64);
 }
 
 // error

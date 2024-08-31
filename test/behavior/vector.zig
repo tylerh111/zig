@@ -4,7 +4,7 @@ const mem = std.mem;
 const math = std.math;
 const assert = std.debug.assert;
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 
 test "implicit cast vector to array - bool" {
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest; // TODO
@@ -19,8 +19,8 @@ test "implicit cast vector to array - bool" {
             try expect(mem.eql(bool, &result_array, &[4]bool{ true, false, true, false }));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector wrap operators" {
@@ -30,7 +30,7 @@ test "vector wrap operators" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_x86_64 and
-        !comptime std.Target.x86.featureSetHas(builtin.cpu.features, .sse4_1)) return error.SkipZigTest;
+        !comptime std.Target.x86.feature_set_has(builtin.cpu.features, .sse4_1)) return error.SkipZigTest;
 
     const S = struct {
         fn do_the_test() !void {
@@ -44,8 +44,8 @@ test "vector wrap operators" {
             _ = .{ &v, &x, &z };
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector bin compares with mem.eql" {
@@ -68,8 +68,8 @@ test "vector bin compares with mem.eql" {
             try expect(mem.eql(bool, &@as([4]bool, v >= x), &[4]bool{ true, false, true, true }));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector int operators" {
@@ -91,8 +91,8 @@ test "vector int operators" {
             try expect(mem.eql(i32, &@as([4]i32, -v), &[4]i32{ -10, -20, -30, -40 }));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector float operators" {
@@ -102,7 +102,7 @@ test "vector float operators" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
-    if (builtin.zig_backend == .stage2_c and comptime builtin.cpu.arch.isArmOrThumb()) return error.SkipZigTest;
+    if (builtin.zig_backend == .stage2_c and comptime builtin.cpu.arch.is_arm_or_thumb()) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     inline for ([_]type{ f16, f32, f64, f80, f128 }) |T| {
@@ -117,8 +117,8 @@ test "vector float operators" {
                 try expect(mem.eql(T, &@as([4]T, -x), &[4]T{ -1, -2, -3, -4 }));
             }
         };
-        try S.doTheTest();
-        try comptime S.doTheTest();
+        try S.do_the_test();
+        try comptime S.do_the_test();
     }
 }
 
@@ -139,8 +139,8 @@ test "vector bit operators" {
             try expect(mem.eql(u8, &@as([4]u8, v & x), &[4]u8{ 0b10100000, 0b00001010, 0b10101010, 0b00000000 }));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "implicit cast vector to array" {
@@ -158,8 +158,8 @@ test "implicit cast vector to array" {
             try expect(mem.eql(i32, &result_array, &[4]i32{ 1, 2, 3, 4 }));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "array to vector" {
@@ -177,8 +177,8 @@ test "array to vector" {
             try expect(mem.eql(f32, &@as([4]f32, vec), &arr));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "array vector coercion - odd sizes" {
@@ -217,8 +217,8 @@ test "array vector coercion - odd sizes" {
             try expect(vec4[0] == foo3 and vec4[1] == foo2 and vec4[2] == 0 and vec4[3] == 1);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "array to vector with element type coercion" {
@@ -238,8 +238,8 @@ test "array to vector with element type coercion" {
             try std.testing.expect(std.mem.eql(f32, &@as([4]f32, vec), &arr32));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "peer type resolution with coercible element types" {
@@ -258,7 +258,7 @@ test "peer type resolution with coercible element types" {
             try std.testing.expect(@TypeOf(c) == @Vector(2, u16));
         }
     };
-    try comptime S.doTheTest();
+    try comptime S.do_the_test();
 }
 
 test "tuple to vector" {
@@ -283,12 +283,12 @@ test "tuple to vector" {
                 v += it;
             }
 
-            try std.testing.expectEqual(v, Vec3{ 1, 1, 1 });
-            try std.testing.expectEqual(v, .{ 1, 1, 1 });
+            try std.testing.expect_equal(v, Vec3{ 1, 1, 1 });
+            try std.testing.expect_equal(v, .{ 1, 1, 1 });
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector casts of sizes not divisible by 8" {
@@ -327,8 +327,8 @@ test "vector casts of sizes not divisible by 8" {
             }
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector @splat" {
@@ -355,28 +355,28 @@ test "vector @splat" {
         }
         fn do_the_test() !void {
             // Splats with multiple-of-8 bit types that fill a 128bit vector.
-            try testForT(16, @as(u8, 0xEE));
-            try testForT(8, @as(u16, 0xBEEF));
-            try testForT(4, @as(u32, 0xDEADBEEF));
-            try testForT(2, @as(u64, 0xCAFEF00DDEADBEEF));
+            try test_for_t(16, @as(u8, 0xEE));
+            try test_for_t(8, @as(u16, 0xBEEF));
+            try test_for_t(4, @as(u32, 0xDEADBEEF));
+            try test_for_t(2, @as(u64, 0xCAFEF00DDEADBEEF));
 
-            try testForT(8, @as(f16, 3.1415));
-            try testForT(4, @as(f32, 3.1415));
-            try testForT(2, @as(f64, 3.1415));
+            try test_for_t(8, @as(f16, 3.1415));
+            try test_for_t(4, @as(f32, 3.1415));
+            try test_for_t(2, @as(f64, 3.1415));
 
             // Same but fill more than 128 bits.
-            try testForT(16 * 2, @as(u8, 0xEE));
-            try testForT(8 * 2, @as(u16, 0xBEEF));
-            try testForT(4 * 2, @as(u32, 0xDEADBEEF));
-            try testForT(2 * 2, @as(u64, 0xCAFEF00DDEADBEEF));
+            try test_for_t(16 * 2, @as(u8, 0xEE));
+            try test_for_t(8 * 2, @as(u16, 0xBEEF));
+            try test_for_t(4 * 2, @as(u32, 0xDEADBEEF));
+            try test_for_t(2 * 2, @as(u64, 0xCAFEF00DDEADBEEF));
 
-            try testForT(8 * 2, @as(f16, 3.1415));
-            try testForT(4 * 2, @as(f32, 3.1415));
-            try testForT(2 * 2, @as(f64, 3.1415));
+            try test_for_t(8 * 2, @as(f16, 3.1415));
+            try test_for_t(4 * 2, @as(f32, 3.1415));
+            try test_for_t(2 * 2, @as(f64, 3.1415));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "load vector elements via comptime index" {
@@ -397,8 +397,8 @@ test "load vector elements via comptime index" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "store vector elements via comptime index" {
@@ -425,8 +425,8 @@ test "store vector elements via comptime index" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "load vector elements via runtime index" {
@@ -447,8 +447,8 @@ test "load vector elements via runtime index" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "store vector elements via runtime index" {
@@ -470,8 +470,8 @@ test "store vector elements via runtime index" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "initialize vector which is a struct field" {
@@ -491,8 +491,8 @@ test "initialize vector which is a struct field" {
             _ = &foo;
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector comparison operators" {
@@ -536,8 +536,8 @@ test "vector comparison operators" {
             }
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector division operators" {
@@ -545,7 +545,7 @@ test "vector division operators" {
     if (builtin.zig_backend == .stage2_x86_64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
-    if (builtin.zig_backend == .stage2_llvm and comptime builtin.cpu.arch.isArmOrThumb()) return error.SkipZigTest;
+    if (builtin.zig_backend == .stage2_llvm and comptime builtin.cpu.arch.is_arm_or_thumb()) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
@@ -562,17 +562,17 @@ test "vector division operators" {
                     try expect(x[i] / y[i] == v);
                 }
             }
-            const d1 = @divExact(x, y);
+            const d1 = @div_exact(x, y);
             for (@as([4]T, d1), 0..) |v, i| {
-                try expect(@divExact(x[i], y[i]) == v);
+                try expect(@div_exact(x[i], y[i]) == v);
             }
-            const d2 = @divFloor(x, y);
+            const d2 = @div_floor(x, y);
             for (@as([4]T, d2), 0..) |v, i| {
-                try expect(@divFloor(x[i], y[i]) == v);
+                try expect(@div_floor(x[i], y[i]) == v);
             }
-            const d3 = @divTrunc(x, y);
+            const d3 = @div_trunc(x, y);
             for (@as([4]T, d3), 0..) |v, i| {
-                try expect(@divTrunc(x[i], y[i]) == v);
+                try expect(@div_trunc(x[i], y[i]) == v);
             }
         }
 
@@ -598,39 +598,39 @@ test "vector division operators" {
         }
 
         fn do_the_test() !void {
-            try doTheTestDiv(f16, [4]f16{ 4.0, -4.0, 4.0, -4.0 }, [4]f16{ 1.0, 2.0, -1.0, -2.0 });
+            try do_the_test_div(f16, [4]f16{ 4.0, -4.0, 4.0, -4.0 }, [4]f16{ 1.0, 2.0, -1.0, -2.0 });
 
-            try doTheTestDiv(f32, [4]f32{ 4.0, -4.0, 4.0, -4.0 }, [4]f32{ 1.0, 2.0, -1.0, -2.0 });
-            try doTheTestDiv(f64, [4]f64{ 4.0, -4.0, 4.0, -4.0 }, [4]f64{ 1.0, 2.0, -1.0, -2.0 });
+            try do_the_test_div(f32, [4]f32{ 4.0, -4.0, 4.0, -4.0 }, [4]f32{ 1.0, 2.0, -1.0, -2.0 });
+            try do_the_test_div(f64, [4]f64{ 4.0, -4.0, 4.0, -4.0 }, [4]f64{ 1.0, 2.0, -1.0, -2.0 });
 
-            try doTheTestMod(f16, [4]f16{ 4.0, -4.0, 4.0, -4.0 }, [4]f16{ 1.0, 2.0, 0.5, 3.0 });
-            try doTheTestMod(f32, [4]f32{ 4.0, -4.0, 4.0, -4.0 }, [4]f32{ 1.0, 2.0, 0.5, 3.0 });
-            try doTheTestMod(f64, [4]f64{ 4.0, -4.0, 4.0, -4.0 }, [4]f64{ 1.0, 2.0, 0.5, 3.0 });
+            try do_the_test_mod(f16, [4]f16{ 4.0, -4.0, 4.0, -4.0 }, [4]f16{ 1.0, 2.0, 0.5, 3.0 });
+            try do_the_test_mod(f32, [4]f32{ 4.0, -4.0, 4.0, -4.0 }, [4]f32{ 1.0, 2.0, 0.5, 3.0 });
+            try do_the_test_mod(f64, [4]f64{ 4.0, -4.0, 4.0, -4.0 }, [4]f64{ 1.0, 2.0, 0.5, 3.0 });
 
-            try doTheTestDiv(i8, [4]i8{ 4, -4, 4, -4 }, [4]i8{ 1, 2, -1, -2 });
-            try doTheTestDiv(i16, [4]i16{ 4, -4, 4, -4 }, [4]i16{ 1, 2, -1, -2 });
-            try doTheTestDiv(i32, [4]i32{ 4, -4, 4, -4 }, [4]i32{ 1, 2, -1, -2 });
-            try doTheTestDiv(i64, [4]i64{ 4, -4, 4, -4 }, [4]i64{ 1, 2, -1, -2 });
+            try do_the_test_div(i8, [4]i8{ 4, -4, 4, -4 }, [4]i8{ 1, 2, -1, -2 });
+            try do_the_test_div(i16, [4]i16{ 4, -4, 4, -4 }, [4]i16{ 1, 2, -1, -2 });
+            try do_the_test_div(i32, [4]i32{ 4, -4, 4, -4 }, [4]i32{ 1, 2, -1, -2 });
+            try do_the_test_div(i64, [4]i64{ 4, -4, 4, -4 }, [4]i64{ 1, 2, -1, -2 });
 
-            try doTheTestMod(i8, [4]i8{ 4, -4, 4, -4 }, [4]i8{ 1, 2, 4, 8 });
-            try doTheTestMod(i16, [4]i16{ 4, -4, 4, -4 }, [4]i16{ 1, 2, 4, 8 });
-            try doTheTestMod(i32, [4]i32{ 4, -4, 4, -4 }, [4]i32{ 1, 2, 4, 8 });
-            try doTheTestMod(i64, [4]i64{ 4, -4, 4, -4 }, [4]i64{ 1, 2, 4, 8 });
+            try do_the_test_mod(i8, [4]i8{ 4, -4, 4, -4 }, [4]i8{ 1, 2, 4, 8 });
+            try do_the_test_mod(i16, [4]i16{ 4, -4, 4, -4 }, [4]i16{ 1, 2, 4, 8 });
+            try do_the_test_mod(i32, [4]i32{ 4, -4, 4, -4 }, [4]i32{ 1, 2, 4, 8 });
+            try do_the_test_mod(i64, [4]i64{ 4, -4, 4, -4 }, [4]i64{ 1, 2, 4, 8 });
 
-            try doTheTestDiv(u8, [4]u8{ 1, 2, 4, 8 }, [4]u8{ 1, 1, 2, 4 });
-            try doTheTestDiv(u16, [4]u16{ 1, 2, 4, 8 }, [4]u16{ 1, 1, 2, 4 });
-            try doTheTestDiv(u32, [4]u32{ 1, 2, 4, 8 }, [4]u32{ 1, 1, 2, 4 });
-            try doTheTestDiv(u64, [4]u64{ 1, 2, 4, 8 }, [4]u64{ 1, 1, 2, 4 });
+            try do_the_test_div(u8, [4]u8{ 1, 2, 4, 8 }, [4]u8{ 1, 1, 2, 4 });
+            try do_the_test_div(u16, [4]u16{ 1, 2, 4, 8 }, [4]u16{ 1, 1, 2, 4 });
+            try do_the_test_div(u32, [4]u32{ 1, 2, 4, 8 }, [4]u32{ 1, 1, 2, 4 });
+            try do_the_test_div(u64, [4]u64{ 1, 2, 4, 8 }, [4]u64{ 1, 1, 2, 4 });
 
-            try doTheTestMod(u8, [4]u8{ 1, 2, 4, 8 }, [4]u8{ 1, 1, 2, 4 });
-            try doTheTestMod(u16, [4]u16{ 1, 2, 4, 8 }, [4]u16{ 1, 1, 2, 4 });
-            try doTheTestMod(u32, [4]u32{ 1, 2, 4, 8 }, [4]u32{ 1, 1, 2, 4 });
-            try doTheTestMod(u64, [4]u64{ 1, 2, 4, 8 }, [4]u64{ 1, 1, 2, 4 });
+            try do_the_test_mod(u8, [4]u8{ 1, 2, 4, 8 }, [4]u8{ 1, 1, 2, 4 });
+            try do_the_test_mod(u16, [4]u16{ 1, 2, 4, 8 }, [4]u16{ 1, 1, 2, 4 });
+            try do_the_test_mod(u32, [4]u32{ 1, 2, 4, 8 }, [4]u32{ 1, 1, 2, 4 });
+            try do_the_test_mod(u64, [4]u64{ 1, 2, 4, 8 }, [4]u64{ 1, 1, 2, 4 });
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector bitwise not operator" {
@@ -649,20 +649,20 @@ test "vector bitwise not operator" {
             }
         }
         fn do_the_test() !void {
-            try doTheTestNot(u8, [_]u8{ 0, 2, 4, 255 });
-            try doTheTestNot(u16, [_]u16{ 0, 2, 4, 255 });
-            try doTheTestNot(u32, [_]u32{ 0, 2, 4, 255 });
-            try doTheTestNot(u64, [_]u64{ 0, 2, 4, 255 });
+            try do_the_test_not(u8, [_]u8{ 0, 2, 4, 255 });
+            try do_the_test_not(u16, [_]u16{ 0, 2, 4, 255 });
+            try do_the_test_not(u32, [_]u32{ 0, 2, 4, 255 });
+            try do_the_test_not(u64, [_]u64{ 0, 2, 4, 255 });
 
-            try doTheTestNot(u8, [_]u8{ 0, 2, 4, 255 });
-            try doTheTestNot(u16, [_]u16{ 0, 2, 4, 255 });
-            try doTheTestNot(u32, [_]u32{ 0, 2, 4, 255 });
-            try doTheTestNot(u64, [_]u64{ 0, 2, 4, 255 });
+            try do_the_test_not(u8, [_]u8{ 0, 2, 4, 255 });
+            try do_the_test_not(u16, [_]u16{ 0, 2, 4, 255 });
+            try do_the_test_not(u32, [_]u32{ 0, 2, 4, 255 });
+            try do_the_test_not(u64, [_]u64{ 0, 2, 4, 255 });
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector shift operators" {
@@ -699,36 +699,36 @@ test "vector shift operators" {
             const xv = @as(@Vector(N, TX), x);
             const yv = @as(@Vector(N, TY), y);
 
-            const z = if (dir == .Left) @shlExact(xv, yv) else @shrExact(xv, yv);
+            const z = if (dir == .Left) @shl_exact(xv, yv) else @shrExact(xv, yv);
             for (@as([N]TX, z), 0..) |v, i| {
                 const check = if (dir == .Left) x[i] << y[i] else x[i] >> y[i];
                 try expect(check == v);
             }
         }
         fn do_the_test() !void {
-            try doTheTestShift([_]u8{ 0, 2, 4, math.maxInt(u8) }, [_]u3{ 2, 0, 2, 7 });
-            try doTheTestShift([_]u16{ 0, 2, 4, math.maxInt(u16) }, [_]u4{ 2, 0, 2, 15 });
-            try doTheTestShift([_]u24{ 0, 2, 4, math.maxInt(u24) }, [_]u5{ 2, 0, 2, 23 });
-            try doTheTestShift([_]u32{ 0, 2, 4, math.maxInt(u32) }, [_]u5{ 2, 0, 2, 31 });
-            try doTheTestShift([_]u64{ 0xfe, math.maxInt(u64) }, [_]u6{ 0, 63 });
+            try do_the_test_shift([_]u8{ 0, 2, 4, math.max_int(u8) }, [_]u3{ 2, 0, 2, 7 });
+            try do_the_test_shift([_]u16{ 0, 2, 4, math.max_int(u16) }, [_]u4{ 2, 0, 2, 15 });
+            try do_the_test_shift([_]u24{ 0, 2, 4, math.max_int(u24) }, [_]u5{ 2, 0, 2, 23 });
+            try do_the_test_shift([_]u32{ 0, 2, 4, math.max_int(u32) }, [_]u5{ 2, 0, 2, 31 });
+            try do_the_test_shift([_]u64{ 0xfe, math.max_int(u64) }, [_]u6{ 0, 63 });
 
-            try doTheTestShift([_]i8{ 0, 2, 4, math.maxInt(i8) }, [_]u3{ 2, 0, 2, 7 });
-            try doTheTestShift([_]i16{ 0, 2, 4, math.maxInt(i16) }, [_]u4{ 2, 0, 2, 7 });
-            try doTheTestShift([_]i24{ 0, 2, 4, math.maxInt(i24) }, [_]u5{ 2, 0, 2, 7 });
-            try doTheTestShift([_]i32{ 0, 2, 4, math.maxInt(i32) }, [_]u5{ 2, 0, 2, 7 });
-            try doTheTestShift([_]i64{ 0xfe, math.maxInt(i64) }, [_]u6{ 0, 63 });
+            try do_the_test_shift([_]i8{ 0, 2, 4, math.max_int(i8) }, [_]u3{ 2, 0, 2, 7 });
+            try do_the_test_shift([_]i16{ 0, 2, 4, math.max_int(i16) }, [_]u4{ 2, 0, 2, 7 });
+            try do_the_test_shift([_]i24{ 0, 2, 4, math.max_int(i24) }, [_]u5{ 2, 0, 2, 7 });
+            try do_the_test_shift([_]i32{ 0, 2, 4, math.max_int(i32) }, [_]u5{ 2, 0, 2, 7 });
+            try do_the_test_shift([_]i64{ 0xfe, math.max_int(i64) }, [_]u6{ 0, 63 });
 
-            try doTheTestShiftExact([_]u8{ 0, 1, 1 << 7, math.maxInt(u8) ^ 1 }, [_]u3{ 4, 0, 7, 1 }, .Right);
-            try doTheTestShiftExact([_]u16{ 0, 1, 1 << 15, math.maxInt(u16) ^ 1 }, [_]u4{ 4, 0, 15, 1 }, .Right);
-            try doTheTestShiftExact([_]u24{ 0, 1, 1 << 23, math.maxInt(u24) ^ 1 }, [_]u5{ 4, 0, 23, 1 }, .Right);
-            try doTheTestShiftExact([_]u32{ 0, 1, 1 << 31, math.maxInt(u32) ^ 1 }, [_]u5{ 4, 0, 31, 1 }, .Right);
-            try doTheTestShiftExact([_]u64{ 1 << 63, 1 }, [_]u6{ 63, 0 }, .Right);
+            try do_the_test_shift_exact([_]u8{ 0, 1, 1 << 7, math.max_int(u8) ^ 1 }, [_]u3{ 4, 0, 7, 1 }, .Right);
+            try do_the_test_shift_exact([_]u16{ 0, 1, 1 << 15, math.max_int(u16) ^ 1 }, [_]u4{ 4, 0, 15, 1 }, .Right);
+            try do_the_test_shift_exact([_]u24{ 0, 1, 1 << 23, math.max_int(u24) ^ 1 }, [_]u5{ 4, 0, 23, 1 }, .Right);
+            try do_the_test_shift_exact([_]u32{ 0, 1, 1 << 31, math.max_int(u32) ^ 1 }, [_]u5{ 4, 0, 31, 1 }, .Right);
+            try do_the_test_shift_exact([_]u64{ 1 << 63, 1 }, [_]u6{ 63, 0 }, .Right);
 
-            try doTheTestShiftExact([_]u8{ 0, 1, 1, math.maxInt(u8) ^ (1 << 7) }, [_]u3{ 4, 0, 7, 1 }, .Left);
-            try doTheTestShiftExact([_]u16{ 0, 1, 1, math.maxInt(u16) ^ (1 << 15) }, [_]u4{ 4, 0, 15, 1 }, .Left);
-            try doTheTestShiftExact([_]u24{ 0, 1, 1, math.maxInt(u24) ^ (1 << 23) }, [_]u5{ 4, 0, 23, 1 }, .Left);
-            try doTheTestShiftExact([_]u32{ 0, 1, 1, math.maxInt(u32) ^ (1 << 31) }, [_]u5{ 4, 0, 31, 1 }, .Left);
-            try doTheTestShiftExact([_]u64{ 1 << 63, 1 }, [_]u6{ 0, 63 }, .Left);
+            try do_the_test_shift_exact([_]u8{ 0, 1, 1, math.max_int(u8) ^ (1 << 7) }, [_]u3{ 4, 0, 7, 1 }, .Left);
+            try do_the_test_shift_exact([_]u16{ 0, 1, 1, math.max_int(u16) ^ (1 << 15) }, [_]u4{ 4, 0, 15, 1 }, .Left);
+            try do_the_test_shift_exact([_]u24{ 0, 1, 1, math.max_int(u24) ^ (1 << 23) }, [_]u5{ 4, 0, 23, 1 }, .Left);
+            try do_the_test_shift_exact([_]u32{ 0, 1, 1, math.max_int(u32) ^ (1 << 31) }, [_]u5{ 4, 0, 31, 1 }, .Left);
+            try do_the_test_shift_exact([_]u64{ 1 << 63, 1 }, [_]u6{ 0, 63 }, .Left);
         }
     };
 
@@ -750,8 +750,8 @@ test "vector shift operators" {
         else => {},
     }
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector reduce operation" {
@@ -761,7 +761,7 @@ test "vector reduce operation" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
-    if (builtin.zig_backend == .stage2_c and comptime builtin.cpu.arch.isArmOrThumb()) return error.SkipZigTest;
+    if (builtin.zig_backend == .stage2_c and comptime builtin.cpu.arch.is_arm_or_thumb()) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const S = struct {
@@ -773,131 +773,131 @@ test "vector reduce operation" {
             switch (@typeInfo(TX)) {
                 .Int, .Bool => try expect(expected == r),
                 .Float => {
-                    const expected_nan = math.isNan(expected);
-                    const got_nan = math.isNan(r);
+                    const expected_nan = math.is_nan(expected);
+                    const got_nan = math.is_nan(r);
 
                     if (expected_nan and got_nan) {
                         // Do this check explicitly as two NaN values are never
                         // equal.
                     } else {
                         const F = @TypeOf(expected);
-                        const tolerance = @sqrt(math.floatEps(TX));
-                        try expect(std.math.approxEqRel(F, expected, r, tolerance));
+                        const tolerance = @sqrt(math.float_eps(TX));
+                        try expect(std.math.approx_eq_rel(F, expected, r, tolerance));
                     }
                 },
                 else => unreachable,
             }
         }
         fn do_the_test() !void {
-            try testReduce(.Add, [4]i16{ -9, -99, -999, -9999 }, @as(i32, -11106));
-            try testReduce(.Add, [4]u16{ 9, 99, 999, 9999 }, @as(u32, 11106));
-            try testReduce(.Add, [4]i32{ -9, -99, -999, -9999 }, @as(i32, -11106));
-            try testReduce(.Add, [4]u32{ 9, 99, 999, 9999 }, @as(u32, 11106));
-            try testReduce(.Add, [4]i64{ -9, -99, -999, -9999 }, @as(i64, -11106));
-            try testReduce(.Add, [4]u64{ 9, 99, 999, 9999 }, @as(u64, 11106));
-            try testReduce(.Add, [4]i128{ -9, -99, -999, -9999 }, @as(i128, -11106));
-            try testReduce(.Add, [4]u128{ 9, 99, 999, 9999 }, @as(u128, 11106));
-            try testReduce(.Add, [4]f16{ -1.9, 5.1, -60.3, 100.0 }, @as(f16, 42.9));
-            try testReduce(.Add, [4]f32{ -1.9, 5.1, -60.3, 100.0 }, @as(f32, 42.9));
-            try testReduce(.Add, [4]f64{ -1.9, 5.1, -60.3, 100.0 }, @as(f64, 42.9));
+            try test_reduce(.Add, [4]i16{ -9, -99, -999, -9999 }, @as(i32, -11106));
+            try test_reduce(.Add, [4]u16{ 9, 99, 999, 9999 }, @as(u32, 11106));
+            try test_reduce(.Add, [4]i32{ -9, -99, -999, -9999 }, @as(i32, -11106));
+            try test_reduce(.Add, [4]u32{ 9, 99, 999, 9999 }, @as(u32, 11106));
+            try test_reduce(.Add, [4]i64{ -9, -99, -999, -9999 }, @as(i64, -11106));
+            try test_reduce(.Add, [4]u64{ 9, 99, 999, 9999 }, @as(u64, 11106));
+            try test_reduce(.Add, [4]i128{ -9, -99, -999, -9999 }, @as(i128, -11106));
+            try test_reduce(.Add, [4]u128{ 9, 99, 999, 9999 }, @as(u128, 11106));
+            try test_reduce(.Add, [4]f16{ -1.9, 5.1, -60.3, 100.0 }, @as(f16, 42.9));
+            try test_reduce(.Add, [4]f32{ -1.9, 5.1, -60.3, 100.0 }, @as(f32, 42.9));
+            try test_reduce(.Add, [4]f64{ -1.9, 5.1, -60.3, 100.0 }, @as(f64, 42.9));
 
-            try testReduce(.And, [4]bool{ true, false, true, true }, @as(bool, false));
-            try testReduce(.And, [4]u1{ 1, 0, 1, 1 }, @as(u1, 0));
-            try testReduce(.And, [4]u16{ 0xffff, 0xff55, 0xaaff, 0x1010 }, @as(u16, 0x10));
-            try testReduce(.And, [4]u32{ 0xffffffff, 0xffff5555, 0xaaaaffff, 0x10101010 }, @as(u32, 0x1010));
-            try testReduce(.And, [4]u64{ 0xffffffff, 0xffff5555, 0xaaaaffff, 0x10101010 }, @as(u64, 0x1010));
+            try test_reduce(.And, [4]bool{ true, false, true, true }, @as(bool, false));
+            try test_reduce(.And, [4]u1{ 1, 0, 1, 1 }, @as(u1, 0));
+            try test_reduce(.And, [4]u16{ 0xffff, 0xff55, 0xaaff, 0x1010 }, @as(u16, 0x10));
+            try test_reduce(.And, [4]u32{ 0xffffffff, 0xffff5555, 0xaaaaffff, 0x10101010 }, @as(u32, 0x1010));
+            try test_reduce(.And, [4]u64{ 0xffffffff, 0xffff5555, 0xaaaaffff, 0x10101010 }, @as(u64, 0x1010));
 
-            try testReduce(.Min, [4]i16{ -1, 2, 3, 4 }, @as(i16, -1));
-            try testReduce(.Min, [4]u16{ 1, 2, 3, 4 }, @as(u16, 1));
-            try testReduce(.Min, [4]i32{ 1234567, -386, 0, 3 }, @as(i32, -386));
-            try testReduce(.Min, [4]u32{ 99, 9999, 9, 99999 }, @as(u32, 9));
-
-            // LLVM 11 ERROR: Cannot select type
-            // https://github.com/ziglang/zig/issues/7138
-            if (builtin.zig_backend != .stage2_llvm or builtin.target.cpu.arch != .aarch64) {
-                try testReduce(.Min, [4]i64{ 1234567, -386, 0, 3 }, @as(i64, -386));
-                try testReduce(.Min, [4]u64{ 99, 9999, 9, 99999 }, @as(u64, 9));
-            }
-
-            try testReduce(.Min, [4]i128{ 1234567, -386, 0, 3 }, @as(i128, -386));
-            try testReduce(.Min, [4]u128{ 99, 9999, 9, 99999 }, @as(u128, 9));
-            try testReduce(.Min, [4]f16{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f16, -100.0));
-            try testReduce(.Min, [4]f32{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f32, -100.0));
-            try testReduce(.Min, [4]f64{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f64, -100.0));
-
-            try testReduce(.Max, [4]i16{ -1, 2, 3, 4 }, @as(i16, 4));
-            try testReduce(.Max, [4]u16{ 1, 2, 3, 4 }, @as(u16, 4));
-            try testReduce(.Max, [4]i32{ 1234567, -386, 0, 3 }, @as(i32, 1234567));
-            try testReduce(.Max, [4]u32{ 99, 9999, 9, 99999 }, @as(u32, 99999));
+            try test_reduce(.Min, [4]i16{ -1, 2, 3, 4 }, @as(i16, -1));
+            try test_reduce(.Min, [4]u16{ 1, 2, 3, 4 }, @as(u16, 1));
+            try test_reduce(.Min, [4]i32{ 1234567, -386, 0, 3 }, @as(i32, -386));
+            try test_reduce(.Min, [4]u32{ 99, 9999, 9, 99999 }, @as(u32, 9));
 
             // LLVM 11 ERROR: Cannot select type
             // https://github.com/ziglang/zig/issues/7138
             if (builtin.zig_backend != .stage2_llvm or builtin.target.cpu.arch != .aarch64) {
-                try testReduce(.Max, [4]i64{ 1234567, -386, 0, 3 }, @as(i64, 1234567));
-                try testReduce(.Max, [4]u64{ 99, 9999, 9, 99999 }, @as(u64, 99999));
+                try test_reduce(.Min, [4]i64{ 1234567, -386, 0, 3 }, @as(i64, -386));
+                try test_reduce(.Min, [4]u64{ 99, 9999, 9, 99999 }, @as(u64, 9));
             }
 
-            try testReduce(.Max, [4]i128{ 1234567, -386, 0, 3 }, @as(i128, 1234567));
-            try testReduce(.Max, [4]u128{ 99, 9999, 9, 99999 }, @as(u128, 99999));
-            try testReduce(.Max, [4]f16{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f16, 10.0e9));
-            try testReduce(.Max, [4]f32{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f32, 10.0e9));
-            try testReduce(.Max, [4]f64{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f64, 10.0e9));
+            try test_reduce(.Min, [4]i128{ 1234567, -386, 0, 3 }, @as(i128, -386));
+            try test_reduce(.Min, [4]u128{ 99, 9999, 9, 99999 }, @as(u128, 9));
+            try test_reduce(.Min, [4]f16{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f16, -100.0));
+            try test_reduce(.Min, [4]f32{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f32, -100.0));
+            try test_reduce(.Min, [4]f64{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f64, -100.0));
 
-            try testReduce(.Mul, [4]i16{ -1, 2, 3, 4 }, @as(i16, -24));
-            try testReduce(.Mul, [4]u16{ 1, 2, 3, 4 }, @as(u16, 24));
-            try testReduce(.Mul, [4]i32{ -9, -99, -999, 999 }, @as(i32, -889218891));
-            try testReduce(.Mul, [4]u32{ 1, 2, 3, 4 }, @as(u32, 24));
-            try testReduce(.Mul, [4]i64{ 9, 99, 999, 9999 }, @as(i64, 8900199891));
-            try testReduce(.Mul, [4]u64{ 9, 99, 999, 9999 }, @as(u64, 8900199891));
-            try testReduce(.Mul, [4]i128{ -9, -99, -999, 9999 }, @as(i128, -8900199891));
-            try testReduce(.Mul, [4]u128{ 9, 99, 999, 9999 }, @as(u128, 8900199891));
-            try testReduce(.Mul, [4]f16{ -1.9, 5.1, -60.3, 100.0 }, @as(f16, 58430.7));
-            try testReduce(.Mul, [4]f32{ -1.9, 5.1, -60.3, 100.0 }, @as(f32, 58430.7));
-            try testReduce(.Mul, [4]f64{ -1.9, 5.1, -60.3, 100.0 }, @as(f64, 58430.7));
+            try test_reduce(.Max, [4]i16{ -1, 2, 3, 4 }, @as(i16, 4));
+            try test_reduce(.Max, [4]u16{ 1, 2, 3, 4 }, @as(u16, 4));
+            try test_reduce(.Max, [4]i32{ 1234567, -386, 0, 3 }, @as(i32, 1234567));
+            try test_reduce(.Max, [4]u32{ 99, 9999, 9, 99999 }, @as(u32, 99999));
 
-            try testReduce(.Or, [4]bool{ false, true, false, false }, @as(bool, true));
-            try testReduce(.Or, [4]u1{ 0, 1, 0, 0 }, @as(u1, 1));
-            try testReduce(.Or, [4]u16{ 0xff00, 0xff00, 0xf0, 0xf }, ~@as(u16, 0));
-            try testReduce(.Or, [4]u32{ 0xffff0000, 0xff00, 0xf0, 0xf }, ~@as(u32, 0));
-            try testReduce(.Or, [4]u64{ 0xffff0000, 0xff00, 0xf0, 0xf }, @as(u64, 0xffffffff));
-            try testReduce(.Or, [4]u128{ 0xffff0000, 0xff00, 0xf0, 0xf }, @as(u128, 0xffffffff));
+            // LLVM 11 ERROR: Cannot select type
+            // https://github.com/ziglang/zig/issues/7138
+            if (builtin.zig_backend != .stage2_llvm or builtin.target.cpu.arch != .aarch64) {
+                try test_reduce(.Max, [4]i64{ 1234567, -386, 0, 3 }, @as(i64, 1234567));
+                try test_reduce(.Max, [4]u64{ 99, 9999, 9, 99999 }, @as(u64, 99999));
+            }
 
-            try testReduce(.Xor, [4]bool{ true, true, true, false }, @as(bool, true));
-            try testReduce(.Xor, [4]u1{ 1, 1, 1, 0 }, @as(u1, 1));
-            try testReduce(.Xor, [4]u16{ 0x0000, 0x3333, 0x8888, 0x4444 }, ~@as(u16, 0));
-            try testReduce(.Xor, [4]u32{ 0x00000000, 0x33333333, 0x88888888, 0x44444444 }, ~@as(u32, 0));
-            try testReduce(.Xor, [4]u64{ 0x00000000, 0x33333333, 0x88888888, 0x44444444 }, @as(u64, 0xffffffff));
-            try testReduce(.Xor, [4]u128{ 0x00000000, 0x33333333, 0x88888888, 0x44444444 }, @as(u128, 0xffffffff));
+            try test_reduce(.Max, [4]i128{ 1234567, -386, 0, 3 }, @as(i128, 1234567));
+            try test_reduce(.Max, [4]u128{ 99, 9999, 9, 99999 }, @as(u128, 99999));
+            try test_reduce(.Max, [4]f16{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f16, 10.0e9));
+            try test_reduce(.Max, [4]f32{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f32, 10.0e9));
+            try test_reduce(.Max, [4]f64{ -10.3, 10.0e9, 13.0, -100.0 }, @as(f64, 10.0e9));
+
+            try test_reduce(.Mul, [4]i16{ -1, 2, 3, 4 }, @as(i16, -24));
+            try test_reduce(.Mul, [4]u16{ 1, 2, 3, 4 }, @as(u16, 24));
+            try test_reduce(.Mul, [4]i32{ -9, -99, -999, 999 }, @as(i32, -889218891));
+            try test_reduce(.Mul, [4]u32{ 1, 2, 3, 4 }, @as(u32, 24));
+            try test_reduce(.Mul, [4]i64{ 9, 99, 999, 9999 }, @as(i64, 8900199891));
+            try test_reduce(.Mul, [4]u64{ 9, 99, 999, 9999 }, @as(u64, 8900199891));
+            try test_reduce(.Mul, [4]i128{ -9, -99, -999, 9999 }, @as(i128, -8900199891));
+            try test_reduce(.Mul, [4]u128{ 9, 99, 999, 9999 }, @as(u128, 8900199891));
+            try test_reduce(.Mul, [4]f16{ -1.9, 5.1, -60.3, 100.0 }, @as(f16, 58430.7));
+            try test_reduce(.Mul, [4]f32{ -1.9, 5.1, -60.3, 100.0 }, @as(f32, 58430.7));
+            try test_reduce(.Mul, [4]f64{ -1.9, 5.1, -60.3, 100.0 }, @as(f64, 58430.7));
+
+            try test_reduce(.Or, [4]bool{ false, true, false, false }, @as(bool, true));
+            try test_reduce(.Or, [4]u1{ 0, 1, 0, 0 }, @as(u1, 1));
+            try test_reduce(.Or, [4]u16{ 0xff00, 0xff00, 0xf0, 0xf }, ~@as(u16, 0));
+            try test_reduce(.Or, [4]u32{ 0xffff0000, 0xff00, 0xf0, 0xf }, ~@as(u32, 0));
+            try test_reduce(.Or, [4]u64{ 0xffff0000, 0xff00, 0xf0, 0xf }, @as(u64, 0xffffffff));
+            try test_reduce(.Or, [4]u128{ 0xffff0000, 0xff00, 0xf0, 0xf }, @as(u128, 0xffffffff));
+
+            try test_reduce(.Xor, [4]bool{ true, true, true, false }, @as(bool, true));
+            try test_reduce(.Xor, [4]u1{ 1, 1, 1, 0 }, @as(u1, 1));
+            try test_reduce(.Xor, [4]u16{ 0x0000, 0x3333, 0x8888, 0x4444 }, ~@as(u16, 0));
+            try test_reduce(.Xor, [4]u32{ 0x00000000, 0x33333333, 0x88888888, 0x44444444 }, ~@as(u32, 0));
+            try test_reduce(.Xor, [4]u64{ 0x00000000, 0x33333333, 0x88888888, 0x44444444 }, @as(u64, 0xffffffff));
+            try test_reduce(.Xor, [4]u128{ 0x00000000, 0x33333333, 0x88888888, 0x44444444 }, @as(u128, 0xffffffff));
 
             // Test the reduction on vectors containing NaNs.
             const f16_nan = math.nan(f16);
             const f32_nan = math.nan(f32);
             const f64_nan = math.nan(f64);
 
-            try testReduce(.Add, [4]f16{ -1.9, 5.1, f16_nan, 100.0 }, f16_nan);
-            try testReduce(.Add, [4]f32{ -1.9, 5.1, f32_nan, 100.0 }, f32_nan);
-            try testReduce(.Add, [4]f64{ -1.9, 5.1, f64_nan, 100.0 }, f64_nan);
+            try test_reduce(.Add, [4]f16{ -1.9, 5.1, f16_nan, 100.0 }, f16_nan);
+            try test_reduce(.Add, [4]f32{ -1.9, 5.1, f32_nan, 100.0 }, f32_nan);
+            try test_reduce(.Add, [4]f64{ -1.9, 5.1, f64_nan, 100.0 }, f64_nan);
 
             // LLVM 11 ERROR: Cannot select type
             // https://github.com/ziglang/zig/issues/7138
             if (builtin.zig_backend != .stage2_llvm) {
-                try testReduce(.Min, [4]f16{ -1.9, 5.1, f16_nan, 100.0 }, @as(f16, -1.9));
-                try testReduce(.Min, [4]f32{ -1.9, 5.1, f32_nan, 100.0 }, @as(f32, -1.9));
-                try testReduce(.Min, [4]f64{ -1.9, 5.1, f64_nan, 100.0 }, @as(f64, -1.9));
+                try test_reduce(.Min, [4]f16{ -1.9, 5.1, f16_nan, 100.0 }, @as(f16, -1.9));
+                try test_reduce(.Min, [4]f32{ -1.9, 5.1, f32_nan, 100.0 }, @as(f32, -1.9));
+                try test_reduce(.Min, [4]f64{ -1.9, 5.1, f64_nan, 100.0 }, @as(f64, -1.9));
 
-                try testReduce(.Max, [4]f16{ -1.9, 5.1, f16_nan, 100.0 }, @as(f16, 100.0));
-                try testReduce(.Max, [4]f32{ -1.9, 5.1, f32_nan, 100.0 }, @as(f32, 100.0));
-                try testReduce(.Max, [4]f64{ -1.9, 5.1, f64_nan, 100.0 }, @as(f64, 100.0));
+                try test_reduce(.Max, [4]f16{ -1.9, 5.1, f16_nan, 100.0 }, @as(f16, 100.0));
+                try test_reduce(.Max, [4]f32{ -1.9, 5.1, f32_nan, 100.0 }, @as(f32, 100.0));
+                try test_reduce(.Max, [4]f64{ -1.9, 5.1, f64_nan, 100.0 }, @as(f64, 100.0));
             }
 
-            try testReduce(.Mul, [4]f16{ -1.9, 5.1, f16_nan, 100.0 }, f16_nan);
-            try testReduce(.Mul, [4]f32{ -1.9, 5.1, f32_nan, 100.0 }, f32_nan);
-            try testReduce(.Mul, [4]f64{ -1.9, 5.1, f64_nan, 100.0 }, f64_nan);
+            try test_reduce(.Mul, [4]f16{ -1.9, 5.1, f16_nan, 100.0 }, f16_nan);
+            try test_reduce(.Mul, [4]f32{ -1.9, 5.1, f32_nan, 100.0 }, f32_nan);
+            try test_reduce(.Mul, [4]f64{ -1.9, 5.1, f64_nan, 100.0 }, f64_nan);
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "vector @reduce comptime" {
@@ -923,17 +923,17 @@ test "mask parameter of @shuffle is comptime scope" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_x86_64 and
-        !comptime std.Target.x86.featureSetHas(builtin.cpu.features, .ssse3)) return error.SkipZigTest;
+        !comptime std.Target.x86.feature_set_has(builtin.cpu.features, .ssse3)) return error.SkipZigTest;
 
     const __v4hi = @Vector(4, i16);
     var v4_a = __v4hi{ 1, 2, 3, 4 };
     var v4_b = __v4hi{ 5, 6, 7, 8 };
     _ = .{ &v4_a, &v4_b };
     const shuffled: __v4hi = @shuffle(i16, v4_a, v4_b, @Vector(4, i32){
-        std.zig.c_translation.shuffleVectorIndex(0, @typeInfo(@TypeOf(v4_a)).Vector.len),
-        std.zig.c_translation.shuffleVectorIndex(2, @typeInfo(@TypeOf(v4_a)).Vector.len),
-        std.zig.c_translation.shuffleVectorIndex(4, @typeInfo(@TypeOf(v4_a)).Vector.len),
-        std.zig.c_translation.shuffleVectorIndex(6, @typeInfo(@TypeOf(v4_a)).Vector.len),
+        std.zig.c_translation.shuffle_vector_index(0, @typeInfo(@TypeOf(v4_a)).Vector.len),
+        std.zig.c_translation.shuffle_vector_index(2, @typeInfo(@TypeOf(v4_a)).Vector.len),
+        std.zig.c_translation.shuffle_vector_index(4, @typeInfo(@TypeOf(v4_a)).Vector.len),
+        std.zig.c_translation.shuffle_vector_index(6, @typeInfo(@TypeOf(v4_a)).Vector.len),
     });
     try expect(shuffled[0] == 1);
     try expect(shuffled[1] == 3);
@@ -972,8 +972,8 @@ test "saturating add" {
             }
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "saturating subtraction" {
@@ -997,8 +997,8 @@ test "saturating subtraction" {
             try expect(mem.eql(u8, &@as([3]u8, expected), &@as([3]u8, result)));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "saturating multiplication" {
@@ -1026,8 +1026,8 @@ test "saturating multiplication" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "saturating shift-left" {
@@ -1051,8 +1051,8 @@ test "saturating shift-left" {
             try expect(mem.eql(u8, &@as([3]u8, expected), &@as([3]u8, result)));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "multiplication-assignment operator with an array operand" {
@@ -1072,11 +1072,11 @@ test "multiplication-assignment operator with an array operand" {
             try expect(x[2] == 18);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
-test "@addWithOverflow" {
+test "@add_with_overflow" {
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_x86_64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
@@ -1090,41 +1090,41 @@ test "@addWithOverflow" {
                 var lhs = @Vector(4, u8){ 250, 250, 250, 250 };
                 var rhs = @Vector(4, u8){ 0, 5, 6, 10 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @addWithOverflow(lhs, rhs)[1];
+                const overflow = @add_with_overflow(lhs, rhs)[1];
                 const expected: @Vector(4, u1) = .{ 0, 0, 1, 1 };
-                try expectEqual(expected, overflow);
+                try expect_equal(expected, overflow);
             }
             {
                 var lhs = @Vector(4, i8){ -125, -125, 125, 125 };
                 var rhs = @Vector(4, i8){ -3, -4, 2, 3 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @addWithOverflow(lhs, rhs)[1];
+                const overflow = @add_with_overflow(lhs, rhs)[1];
                 const expected: @Vector(4, u1) = .{ 0, 1, 0, 1 };
-                try expectEqual(expected, overflow);
+                try expect_equal(expected, overflow);
             }
             {
                 var lhs = @Vector(4, u1){ 0, 0, 1, 1 };
                 var rhs = @Vector(4, u1){ 0, 1, 0, 1 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @addWithOverflow(lhs, rhs)[1];
+                const overflow = @add_with_overflow(lhs, rhs)[1];
                 const expected: @Vector(4, u1) = .{ 0, 0, 0, 1 };
-                try expectEqual(expected, overflow);
+                try expect_equal(expected, overflow);
             }
             {
                 var lhs = @Vector(4, u0){ 0, 0, 0, 0 };
                 var rhs = @Vector(4, u0){ 0, 0, 0, 0 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @addWithOverflow(lhs, rhs)[1];
+                const overflow = @add_with_overflow(lhs, rhs)[1];
                 const expected: @Vector(4, u1) = .{ 0, 0, 0, 0 };
-                try expectEqual(expected, overflow);
+                try expect_equal(expected, overflow);
             }
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
-test "@subWithOverflow" {
+test "@sub_with_overflow" {
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_x86_64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
@@ -1138,22 +1138,22 @@ test "@subWithOverflow" {
                 var lhs = @Vector(2, u8){ 5, 5 };
                 var rhs = @Vector(2, u8){ 5, 6 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @subWithOverflow(lhs, rhs)[1];
+                const overflow = @sub_with_overflow(lhs, rhs)[1];
                 const expected: @Vector(2, u1) = .{ 0, 1 };
-                try expectEqual(expected, overflow);
+                try expect_equal(expected, overflow);
             }
             {
                 var lhs = @Vector(4, i8){ -120, -120, 120, 120 };
                 var rhs = @Vector(4, i8){ 8, 9, -7, -8 };
                 _ = .{ &lhs, &rhs };
-                const overflow = @subWithOverflow(lhs, rhs)[1];
+                const overflow = @sub_with_overflow(lhs, rhs)[1];
                 const expected: @Vector(4, u1) = .{ 0, 1, 0, 1 };
-                try expectEqual(expected, overflow);
+                try expect_equal(expected, overflow);
             }
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "@mulWithOverflow" {
@@ -1171,14 +1171,14 @@ test "@mulWithOverflow" {
             _ = .{ &lhs, &rhs };
             const overflow = @mulWithOverflow(lhs, rhs)[1];
             const expected: @Vector(4, u1) = .{ 0, 1, 0, 1 };
-            try expectEqual(expected, overflow);
+            try expect_equal(expected, overflow);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
-test "@shlWithOverflow" {
+test "@shl_with_overflow" {
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_x86_64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
@@ -1191,13 +1191,13 @@ test "@shlWithOverflow" {
             var lhs = @Vector(4, u8){ 0, 1, 8, 255 };
             var rhs = @Vector(4, u3){ 7, 7, 7, 7 };
             _ = .{ &lhs, &rhs };
-            const overflow = @shlWithOverflow(lhs, rhs)[1];
+            const overflow = @shl_with_overflow(lhs, rhs)[1];
             const expected: @Vector(4, u1) = .{ 0, 0, 1, 1 };
-            try expectEqual(expected, overflow);
+            try expect_equal(expected, overflow);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "alignment of vectors" {
@@ -1261,7 +1261,7 @@ test "array of vectors is copied" {
     _ = &points;
     var points2: [20]Vec3 = undefined;
     points2[0..points.len].* = points;
-    try std.testing.expectEqual(points2[6], Vec3{ -345, -311, 381 });
+    try std.testing.expect_equal(points2[6], Vec3{ -345, -311, 381 });
 }
 
 test "byte vector initialized in inline function" {
@@ -1272,7 +1272,7 @@ test "byte vector initialized in inline function" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     if (comptime builtin.zig_backend == .stage2_llvm and builtin.cpu.arch == .x86_64 and
-        builtin.cpu.features.isEnabled(@intFromEnum(std.Target.x86.Feature.avx512f)))
+        builtin.cpu.features.is_enabled(@int_from_enum(std.Target.x86.Feature.avx512f)))
     {
         // TODO https://github.com/ziglang/zig/issues/13279
         return error.SkipZigTest;
@@ -1301,9 +1301,9 @@ test "zero divisor" {
     const ones = @Vector(2, f32){ 1.0, 1.0 };
 
     const v1 = zeros / ones;
-    const v2 = @divExact(zeros, ones);
-    const v3 = @divTrunc(zeros, ones);
-    const v4 = @divFloor(zeros, ones);
+    const v2 = @div_exact(zeros, ones);
+    const v3 = @div_trunc(zeros, ones);
+    const v4 = @div_floor(zeros, ones);
 
     _ = v1[0];
     _ = v2[0];
@@ -1334,7 +1334,7 @@ test "zero multiplicand" {
     _ = (zeros *% ones)[0];
 }
 
-test "@intCast to u0" {
+test "@int_cast to u0" {
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
@@ -1343,7 +1343,7 @@ test "@intCast to u0" {
 
     var zeros = @Vector(2, u32){ 0, 0 };
     _ = &zeros;
-    const casted = @as(@Vector(2, u0), @intCast(zeros));
+    const casted = @as(@Vector(2, u0), @int_cast(zeros));
 
     _ = casted[0];
 }
@@ -1371,7 +1371,7 @@ test "array operands to shuffle are coerced to vectors" {
     var a = [5]u32{ 3, 5, 7, 9, 0 };
     _ = &a;
     const b = @shuffle(u32, a, @as(@Vector(5, u24), @splat(0)), mask);
-    try expectEqual([_]u32{ 0, 3, 5, 7, 9 }, b);
+    try expect_equal([_]u32{ 0, 3, 5, 7, 9 }, b);
 }
 
 test "load packed vector element" {
@@ -1397,11 +1397,11 @@ test "store packed vector element" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     var v = @Vector(4, u1){ 1, 1, 1, 1 };
-    try expectEqual(@Vector(4, u1){ 1, 1, 1, 1 }, v);
+    try expect_equal(@Vector(4, u1){ 1, 1, 1, 1 }, v);
     var index: usize = 0;
     _ = &index;
     v[index] = 0;
-    try expectEqual(@Vector(4, u1){ 0, 1, 1, 1 }, v);
+    try expect_equal(@Vector(4, u1){ 0, 1, 1, 1 }, v);
 }
 
 test "store to vector in slice" {
@@ -1420,7 +1420,7 @@ test "store to vector in slice" {
     var i: usize = 1;
     _ = &i;
     s[i] = s[0];
-    try expectEqual(v[1], v[0]);
+    try expect_equal(v[1], v[0]);
 }
 
 test "store vector with memset" {
@@ -1467,11 +1467,11 @@ test "store vector with memset" {
     @memset(&c, kc);
     @memset(&d, kd);
     @memset(&e, ke);
-    try std.testing.expectEqual(ka, a[0]);
-    try std.testing.expectEqual(kb, b[1]);
-    try std.testing.expectEqual(kc, c[2]);
-    try std.testing.expectEqual(kd, d[3]);
-    try std.testing.expectEqual(ke, e[4]);
+    try std.testing.expect_equal(ka, a[0]);
+    try std.testing.expect_equal(kb, b[1]);
+    try std.testing.expect_equal(kc, c[2]);
+    try std.testing.expect_equal(kd, d[3]);
+    try std.testing.expect_equal(ke, e[4]);
 }
 
 test "addition of vectors represented as strings" {
@@ -1481,8 +1481,8 @@ test "addition of vectors represented as strings" {
 
     const V = @Vector(3, u8);
     const foo: V = "foo".*;
-    const bar: V = @typeName(u32).*;
-    try expectEqual(V{ 219, 162, 161 }, foo + bar);
+    const bar: V = @type_name(u32).*;
+    try expect_equal(V{ 219, 162, 161 }, foo + bar);
 }
 
 test "compare vectors with different element types" {
@@ -1496,7 +1496,7 @@ test "compare vectors with different element types" {
     var a: @Vector(2, u8) = .{ 1, 2 };
     var b: @Vector(2, u9) = .{ 3, 0 };
     _ = .{ &a, &b };
-    try expectEqual(@Vector(2, bool){ true, false }, a < b);
+    try expect_equal(@Vector(2, bool){ true, false }, a < b);
 }
 
 test "vector pointer is indexable" {
@@ -1510,18 +1510,18 @@ test "vector pointer is indexable" {
 
     const x: V = .{ 123, 456 };
     comptime assert(@TypeOf(&(&x)[0]) == *const u32); // validate constness
-    try expectEqual(@as(u32, 123), (&x)[0]);
-    try expectEqual(@as(u32, 456), (&x)[1]);
+    try expect_equal(@as(u32, 123), (&x)[0]);
+    try expect_equal(@as(u32, 456), (&x)[1]);
 
     var y: V = .{ 123, 456 };
     comptime assert(@TypeOf(&(&y)[0]) == *u32); // validate constness
-    try expectEqual(@as(u32, 123), (&y)[0]);
-    try expectEqual(@as(u32, 456), (&y)[1]);
+    try expect_equal(@as(u32, 123), (&y)[0]);
+    try expect_equal(@as(u32, 456), (&y)[1]);
 
     (&y)[0] = 100;
     (&y)[1] = 200;
-    try expectEqual(@as(u32, 100), (&y)[0]);
-    try expectEqual(@as(u32, 200), (&y)[1]);
+    try expect_equal(@as(u32, 100), (&y)[0]);
+    try expect_equal(@as(u32, 200), (&y)[1]);
 }
 
 test "boolean vector with 2 or more booleans" {
@@ -1554,20 +1554,20 @@ test "bitcast to vector with different child type" {
 
             var vec_a = VecA{ 1, 1, 1, 1, 1, 1, 1, 1 };
             _ = &vec_a;
-            const vec_b: VecB = @bitCast(vec_a);
-            const vec_c: VecA = @bitCast(vec_b);
-            try expectEqual(vec_a, vec_c);
+            const vec_b: VecB = @bit_cast(vec_a);
+            const vec_c: VecA = @bit_cast(vec_b);
+            try expect_equal(vec_a, vec_c);
         }
     };
 
     // Originally reported at https://github.com/ziglang/zig/issues/8184
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "index into comptime-known vector is comptime-known" {
     const vec: @Vector(2, f16) = [2]f16{ 1.5, 3.5 };
-    if (vec[0] != 1.5) @compileError("vec should be comptime");
+    if (vec[0] != 1.5) @compile_error("vec should be comptime");
 }
 
 test "arithmetic on zero-length vectors" {
@@ -1614,13 +1614,13 @@ test "bitcast vector to array of smaller vectors" {
     const u8x64 = @Vector(64, u8);
     const S = struct {
         fn do_the_test(input_vec: u8x64) !void {
-            try compare(@bitCast(input_vec));
+            try compare(@bit_cast(input_vec));
         }
         fn compare(chunks: [2]u8x32) !void {
-            try expectEqual(@as(u8x32, @splat(1)), chunks[0]);
-            try expectEqual(@as(u8x32, @splat(2)), chunks[1]);
+            try expect_equal(@as(u8x32, @splat(1)), chunks[0]);
+            try expect_equal(@as(u8x32, @splat(2)), chunks[1]);
         }
     };
-    const input: u8x64 = @bitCast([2]u8x32{ @splat(1), @splat(2) });
-    try S.doTheTest(input);
+    const input: u8x64 = @bit_cast([2]u8x32{ @splat(1), @splat(2) });
+    try S.do_the_test(input);
 }

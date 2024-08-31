@@ -8,7 +8,7 @@ const Payload = union(Letter) {
     B: f64,
 };
 export fn entry() usize {
-    return @sizeOf(Payload);
+    return @size_of(Payload);
 }
 
 // error

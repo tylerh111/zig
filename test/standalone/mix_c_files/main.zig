@@ -16,15 +16,15 @@ export fn add_may_panic(x: i32) i32 {
 pub fn main() anyerror!void {
     var x: i32 = 0;
     x = add_zig(x);
-    x = add_C(x);
-    x = add_C_zig(x);
+    x = add_c(x);
+    x = add_c_zig(x);
 
     C_k = 200;
     zig_k = 2;
     x = add_zig(x);
-    x = add_C(x);
-    x = add_C_zig(x);
+    x = add_c(x);
+    x = add_c_zig(x);
 
-    const u = @as(u32, @intCast(x));
+    const u = @as(u32, @int_cast(x));
     try std.testing.expect(u / 100 == u % 100);
 }

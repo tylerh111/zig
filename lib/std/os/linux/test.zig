@@ -4,15 +4,15 @@ const linux = std.os.linux;
 const mem = std.mem;
 const elf = std.elf;
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 const fs = std.fs;
 
 test "fallocate" {
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     const path = "test_fallocate";
-    const file = try tmp.dir.createFile(path, .{ .truncate = true, .mode = 0o666 });
+    const file = try tmp.dir.create_file(path, .{ .truncate = true, .mode = 0o666 });
     defer file.close();
 
     try expect((try file.stat()).size == 0);
@@ -50,7 +50,7 @@ test "timer" {
         .it_value = time_interval,
     };
 
-    err = linux.E.init(linux.timerfd_settime(@as(i32, @intCast(timer_fd)), .{}, &new_time, null));
+    err = linux.E.init(linux.timerfd_settime(@as(i32, @int_cast(timer_fd)), .{}, &new_time, null));
     try expect(err == .SUCCESS);
 
     var event = linux.epoll_event{
@@ -58,22 +58,22 @@ test "timer" {
         .data = linux.epoll_data{ .ptr = 0 },
     };
 
-    err = linux.E.init(linux.epoll_ctl(@as(i32, @intCast(epoll_fd)), linux.EPOLL.CTL_ADD, @as(i32, @intCast(timer_fd)), &event));
+    err = linux.E.init(linux.epoll_ctl(@as(i32, @int_cast(epoll_fd)), linux.EPOLL.CTL_ADD, @as(i32, @int_cast(timer_fd)), &event));
     try expect(err == .SUCCESS);
 
     const events_one: linux.epoll_event = undefined;
     var events = [_]linux.epoll_event{events_one} ** 8;
 
-    err = linux.E.init(linux.epoll_wait(@as(i32, @intCast(epoll_fd)), &events, 8, -1));
+    err = linux.E.init(linux.epoll_wait(@as(i32, @int_cast(epoll_fd)), &events, 8, -1));
     try expect(err == .SUCCESS);
 }
 
 test "statx" {
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     const tmp_file_name = "just_a_temporary_file.txt";
-    var file = try tmp.dir.createFile(tmp_file_name, .{});
+    var file = try tmp.dir.create_file(tmp_file_name, .{});
     defer file.close();
 
     var statx_buf: linux.Statx = undefined;
@@ -91,34 +91,34 @@ test "statx" {
     }
 
     try expect(stat_buf.mode == statx_buf.mode);
-    try expect(@as(u32, @bitCast(stat_buf.uid)) == statx_buf.uid);
-    try expect(@as(u32, @bitCast(stat_buf.gid)) == statx_buf.gid);
-    try expect(@as(u64, @bitCast(@as(i64, stat_buf.size))) == statx_buf.size);
-    try expect(@as(u64, @bitCast(@as(i64, stat_buf.blksize))) == statx_buf.blksize);
-    try expect(@as(u64, @bitCast(@as(i64, stat_buf.blocks))) == statx_buf.blocks);
+    try expect(@as(u32, @bit_cast(stat_buf.uid)) == statx_buf.uid);
+    try expect(@as(u32, @bit_cast(stat_buf.gid)) == statx_buf.gid);
+    try expect(@as(u64, @bit_cast(@as(i64, stat_buf.size))) == statx_buf.size);
+    try expect(@as(u64, @bit_cast(@as(i64, stat_buf.blksize))) == statx_buf.blksize);
+    try expect(@as(u64, @bit_cast(@as(i64, stat_buf.blocks))) == statx_buf.blocks);
 }
 
 test "user and group ids" {
     if (builtin.link_libc) return error.SkipZigTest;
-    try expectEqual(linux.getauxval(elf.AT_UID), linux.getuid());
-    try expectEqual(linux.getauxval(elf.AT_GID), linux.getgid());
-    try expectEqual(linux.getauxval(elf.AT_EUID), linux.geteuid());
-    try expectEqual(linux.getauxval(elf.AT_EGID), linux.getegid());
+    try expect_equal(linux.getauxval(elf.AT_UID), linux.getuid());
+    try expect_equal(linux.getauxval(elf.AT_GID), linux.getgid());
+    try expect_equal(linux.getauxval(elf.AT_EUID), linux.geteuid());
+    try expect_equal(linux.getauxval(elf.AT_EGID), linux.getegid());
 }
 
 test "fadvise" {
-    var tmp = std.testing.tmpDir(.{});
+    var tmp = std.testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     const tmp_file_name = "temp_posix_fadvise.txt";
-    var file = try tmp.dir.createFile(tmp_file_name, .{});
+    var file = try tmp.dir.create_file(tmp_file_name, .{});
     defer file.close();
 
     var buf: [2048]u8 = undefined;
-    try file.writeAll(&buf);
+    try file.write_all(&buf);
 
     const ret = linux.fadvise(file.handle, 0, 0, linux.POSIX_FADV.SEQUENTIAL);
-    try expectEqual(@as(usize, 0), ret);
+    try expect_equal(@as(usize, 0), ret);
 }
 
 test {

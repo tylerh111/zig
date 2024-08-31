@@ -6,20 +6,20 @@ pub fn build(b: *std.Build) void {
 
     const optimize: std.builtin.OptimizeMode = .Debug;
 
-    const foo = b.addStaticLibrary(.{
+    const foo = b.add_static_library(.{
         .name = "foo",
         .optimize = optimize,
         .target = b.host,
     });
-    foo.addCSourceFile(.{ .file = b.path("foo.c"), .flags = &[_][]const u8{} });
-    foo.addIncludePath(b.path("."));
+    foo.add_csource_file(.{ .file = b.path("foo.c"), .flags = &[_][]const u8{} });
+    foo.add_include_path(b.path("."));
 
-    const test_exe = b.addTest(.{
+    const test_exe = b.add_test(.{
         .root_source_file = b.path("foo.zig"),
         .optimize = optimize,
     });
-    test_exe.linkLibrary(foo);
-    test_exe.addIncludePath(b.path("."));
+    test_exe.link_library(foo);
+    test_exe.add_include_path(b.path("."));
 
-    test_step.dependOn(&b.addRunArtifact(test_exe).step);
+    test_step.depend_on(&b.add_run_artifact(test_exe).step);
 }

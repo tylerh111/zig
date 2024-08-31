@@ -77,142 +77,142 @@ pub fn emit_mir(
     const mir_tags = emit.mir.instructions.items(.tag);
 
     // Find smallest lowerings for branch instructions
-    try emit.lowerBranches();
+    try emit.lower_branches();
 
     // Emit machine code
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
+        const inst = @as(u32, @int_cast(index));
         switch (tag) {
-            .add_immediate => try emit.mirAddSubtractImmediate(inst),
-            .adds_immediate => try emit.mirAddSubtractImmediate(inst),
-            .cmp_immediate => try emit.mirAddSubtractImmediate(inst),
-            .sub_immediate => try emit.mirAddSubtractImmediate(inst),
-            .subs_immediate => try emit.mirAddSubtractImmediate(inst),
+            .add_immediate => try emit.mir_add_subtract_immediate(inst),
+            .adds_immediate => try emit.mir_add_subtract_immediate(inst),
+            .cmp_immediate => try emit.mir_add_subtract_immediate(inst),
+            .sub_immediate => try emit.mir_add_subtract_immediate(inst),
+            .subs_immediate => try emit.mir_add_subtract_immediate(inst),
 
-            .asr_register => try emit.mirDataProcessing2Source(inst),
-            .lsl_register => try emit.mirDataProcessing2Source(inst),
-            .lsr_register => try emit.mirDataProcessing2Source(inst),
-            .sdiv => try emit.mirDataProcessing2Source(inst),
-            .udiv => try emit.mirDataProcessing2Source(inst),
+            .asr_register => try emit.mir_data_processing2_source(inst),
+            .lsl_register => try emit.mir_data_processing2_source(inst),
+            .lsr_register => try emit.mir_data_processing2_source(inst),
+            .sdiv => try emit.mir_data_processing2_source(inst),
+            .udiv => try emit.mir_data_processing2_source(inst),
 
-            .asr_immediate => try emit.mirShiftImmediate(inst),
-            .lsl_immediate => try emit.mirShiftImmediate(inst),
-            .lsr_immediate => try emit.mirShiftImmediate(inst),
+            .asr_immediate => try emit.mir_shift_immediate(inst),
+            .lsl_immediate => try emit.mir_shift_immediate(inst),
+            .lsr_immediate => try emit.mir_shift_immediate(inst),
 
-            .b_cond => try emit.mirConditionalBranchImmediate(inst),
+            .b_cond => try emit.mir_conditional_branch_immediate(inst),
 
-            .b => try emit.mirBranch(inst),
-            .bl => try emit.mirBranch(inst),
+            .b => try emit.mir_branch(inst),
+            .bl => try emit.mir_branch(inst),
 
-            .cbz => try emit.mirCompareAndBranch(inst),
+            .cbz => try emit.mir_compare_and_branch(inst),
 
-            .blr => try emit.mirUnconditionalBranchRegister(inst),
-            .ret => try emit.mirUnconditionalBranchRegister(inst),
+            .blr => try emit.mir_unconditional_branch_register(inst),
+            .ret => try emit.mir_unconditional_branch_register(inst),
 
-            .brk => try emit.mirExceptionGeneration(inst),
-            .svc => try emit.mirExceptionGeneration(inst),
+            .brk => try emit.mir_exception_generation(inst),
+            .svc => try emit.mir_exception_generation(inst),
 
-            .call_extern => try emit.mirCallExtern(inst),
+            .call_extern => try emit.mir_call_extern(inst),
 
-            .eor_immediate => try emit.mirLogicalImmediate(inst),
-            .tst_immediate => try emit.mirLogicalImmediate(inst),
+            .eor_immediate => try emit.mir_logical_immediate(inst),
+            .tst_immediate => try emit.mir_logical_immediate(inst),
 
-            .add_shifted_register => try emit.mirAddSubtractShiftedRegister(inst),
-            .adds_shifted_register => try emit.mirAddSubtractShiftedRegister(inst),
-            .cmp_shifted_register => try emit.mirAddSubtractShiftedRegister(inst),
-            .sub_shifted_register => try emit.mirAddSubtractShiftedRegister(inst),
-            .subs_shifted_register => try emit.mirAddSubtractShiftedRegister(inst),
+            .add_shifted_register => try emit.mir_add_subtract_shifted_register(inst),
+            .adds_shifted_register => try emit.mir_add_subtract_shifted_register(inst),
+            .cmp_shifted_register => try emit.mir_add_subtract_shifted_register(inst),
+            .sub_shifted_register => try emit.mir_add_subtract_shifted_register(inst),
+            .subs_shifted_register => try emit.mir_add_subtract_shifted_register(inst),
 
-            .add_extended_register => try emit.mirAddSubtractExtendedRegister(inst),
-            .adds_extended_register => try emit.mirAddSubtractExtendedRegister(inst),
-            .sub_extended_register => try emit.mirAddSubtractExtendedRegister(inst),
-            .subs_extended_register => try emit.mirAddSubtractExtendedRegister(inst),
-            .cmp_extended_register => try emit.mirAddSubtractExtendedRegister(inst),
+            .add_extended_register => try emit.mir_add_subtract_extended_register(inst),
+            .adds_extended_register => try emit.mir_add_subtract_extended_register(inst),
+            .sub_extended_register => try emit.mir_add_subtract_extended_register(inst),
+            .subs_extended_register => try emit.mir_add_subtract_extended_register(inst),
+            .cmp_extended_register => try emit.mir_add_subtract_extended_register(inst),
 
-            .csel => try emit.mirConditionalSelect(inst),
-            .cset => try emit.mirConditionalSelect(inst),
+            .csel => try emit.mir_conditional_select(inst),
+            .cset => try emit.mir_conditional_select(inst),
 
-            .dbg_line => try emit.mirDbgLine(inst),
+            .dbg_line => try emit.mir_dbg_line(inst),
 
-            .dbg_prologue_end => try emit.mirDebugPrologueEnd(),
-            .dbg_epilogue_begin => try emit.mirDebugEpilogueBegin(),
+            .dbg_prologue_end => try emit.mir_debug_prologue_end(),
+            .dbg_epilogue_begin => try emit.mir_debug_epilogue_begin(),
 
-            .and_shifted_register => try emit.mirLogicalShiftedRegister(inst),
-            .eor_shifted_register => try emit.mirLogicalShiftedRegister(inst),
-            .orr_shifted_register => try emit.mirLogicalShiftedRegister(inst),
+            .and_shifted_register => try emit.mir_logical_shifted_register(inst),
+            .eor_shifted_register => try emit.mir_logical_shifted_register(inst),
+            .orr_shifted_register => try emit.mir_logical_shifted_register(inst),
 
-            .load_memory_got => try emit.mirLoadMemoryPie(inst),
-            .load_memory_direct => try emit.mirLoadMemoryPie(inst),
-            .load_memory_import => try emit.mirLoadMemoryPie(inst),
-            .load_memory_ptr_got => try emit.mirLoadMemoryPie(inst),
-            .load_memory_ptr_direct => try emit.mirLoadMemoryPie(inst),
+            .load_memory_got => try emit.mir_load_memory_pie(inst),
+            .load_memory_direct => try emit.mir_load_memory_pie(inst),
+            .load_memory_import => try emit.mir_load_memory_pie(inst),
+            .load_memory_ptr_got => try emit.mir_load_memory_pie(inst),
+            .load_memory_ptr_direct => try emit.mir_load_memory_pie(inst),
 
-            .ldp => try emit.mirLoadStoreRegisterPair(inst),
-            .stp => try emit.mirLoadStoreRegisterPair(inst),
+            .ldp => try emit.mir_load_store_register_pair(inst),
+            .stp => try emit.mir_load_store_register_pair(inst),
 
-            .ldr_ptr_stack => try emit.mirLoadStoreStack(inst),
-            .ldr_stack => try emit.mirLoadStoreStack(inst),
-            .ldrb_stack => try emit.mirLoadStoreStack(inst),
-            .ldrh_stack => try emit.mirLoadStoreStack(inst),
-            .ldrsb_stack => try emit.mirLoadStoreStack(inst),
-            .ldrsh_stack => try emit.mirLoadStoreStack(inst),
-            .str_stack => try emit.mirLoadStoreStack(inst),
-            .strb_stack => try emit.mirLoadStoreStack(inst),
-            .strh_stack => try emit.mirLoadStoreStack(inst),
+            .ldr_ptr_stack => try emit.mir_load_store_stack(inst),
+            .ldr_stack => try emit.mir_load_store_stack(inst),
+            .ldrb_stack => try emit.mir_load_store_stack(inst),
+            .ldrh_stack => try emit.mir_load_store_stack(inst),
+            .ldrsb_stack => try emit.mir_load_store_stack(inst),
+            .ldrsh_stack => try emit.mir_load_store_stack(inst),
+            .str_stack => try emit.mir_load_store_stack(inst),
+            .strb_stack => try emit.mir_load_store_stack(inst),
+            .strh_stack => try emit.mir_load_store_stack(inst),
 
-            .ldr_ptr_stack_argument => try emit.mirLoadStackArgument(inst),
-            .ldr_stack_argument => try emit.mirLoadStackArgument(inst),
-            .ldrb_stack_argument => try emit.mirLoadStackArgument(inst),
-            .ldrh_stack_argument => try emit.mirLoadStackArgument(inst),
-            .ldrsb_stack_argument => try emit.mirLoadStackArgument(inst),
-            .ldrsh_stack_argument => try emit.mirLoadStackArgument(inst),
+            .ldr_ptr_stack_argument => try emit.mir_load_stack_argument(inst),
+            .ldr_stack_argument => try emit.mir_load_stack_argument(inst),
+            .ldrb_stack_argument => try emit.mir_load_stack_argument(inst),
+            .ldrh_stack_argument => try emit.mir_load_stack_argument(inst),
+            .ldrsb_stack_argument => try emit.mir_load_stack_argument(inst),
+            .ldrsh_stack_argument => try emit.mir_load_stack_argument(inst),
 
-            .ldr_register => try emit.mirLoadStoreRegisterRegister(inst),
-            .ldrb_register => try emit.mirLoadStoreRegisterRegister(inst),
-            .ldrh_register => try emit.mirLoadStoreRegisterRegister(inst),
-            .str_register => try emit.mirLoadStoreRegisterRegister(inst),
-            .strb_register => try emit.mirLoadStoreRegisterRegister(inst),
-            .strh_register => try emit.mirLoadStoreRegisterRegister(inst),
+            .ldr_register => try emit.mir_load_store_register_register(inst),
+            .ldrb_register => try emit.mir_load_store_register_register(inst),
+            .ldrh_register => try emit.mir_load_store_register_register(inst),
+            .str_register => try emit.mir_load_store_register_register(inst),
+            .strb_register => try emit.mir_load_store_register_register(inst),
+            .strh_register => try emit.mir_load_store_register_register(inst),
 
-            .ldr_immediate => try emit.mirLoadStoreRegisterImmediate(inst),
-            .ldrb_immediate => try emit.mirLoadStoreRegisterImmediate(inst),
-            .ldrh_immediate => try emit.mirLoadStoreRegisterImmediate(inst),
-            .ldrsb_immediate => try emit.mirLoadStoreRegisterImmediate(inst),
-            .ldrsh_immediate => try emit.mirLoadStoreRegisterImmediate(inst),
-            .ldrsw_immediate => try emit.mirLoadStoreRegisterImmediate(inst),
-            .str_immediate => try emit.mirLoadStoreRegisterImmediate(inst),
-            .strb_immediate => try emit.mirLoadStoreRegisterImmediate(inst),
-            .strh_immediate => try emit.mirLoadStoreRegisterImmediate(inst),
+            .ldr_immediate => try emit.mir_load_store_register_immediate(inst),
+            .ldrb_immediate => try emit.mir_load_store_register_immediate(inst),
+            .ldrh_immediate => try emit.mir_load_store_register_immediate(inst),
+            .ldrsb_immediate => try emit.mir_load_store_register_immediate(inst),
+            .ldrsh_immediate => try emit.mir_load_store_register_immediate(inst),
+            .ldrsw_immediate => try emit.mir_load_store_register_immediate(inst),
+            .str_immediate => try emit.mir_load_store_register_immediate(inst),
+            .strb_immediate => try emit.mir_load_store_register_immediate(inst),
+            .strh_immediate => try emit.mir_load_store_register_immediate(inst),
 
-            .mov_register => try emit.mirMoveRegister(inst),
-            .mov_to_from_sp => try emit.mirMoveRegister(inst),
-            .mvn => try emit.mirMoveRegister(inst),
+            .mov_register => try emit.mir_move_register(inst),
+            .mov_to_from_sp => try emit.mir_move_register(inst),
+            .mvn => try emit.mir_move_register(inst),
 
-            .movk => try emit.mirMoveWideImmediate(inst),
-            .movz => try emit.mirMoveWideImmediate(inst),
+            .movk => try emit.mir_move_wide_immediate(inst),
+            .movz => try emit.mir_move_wide_immediate(inst),
 
-            .msub => try emit.mirDataProcessing3Source(inst),
-            .mul => try emit.mirDataProcessing3Source(inst),
-            .smulh => try emit.mirDataProcessing3Source(inst),
-            .smull => try emit.mirDataProcessing3Source(inst),
-            .umulh => try emit.mirDataProcessing3Source(inst),
-            .umull => try emit.mirDataProcessing3Source(inst),
+            .msub => try emit.mir_data_processing3_source(inst),
+            .mul => try emit.mir_data_processing3_source(inst),
+            .smulh => try emit.mir_data_processing3_source(inst),
+            .smull => try emit.mir_data_processing3_source(inst),
+            .umulh => try emit.mir_data_processing3_source(inst),
+            .umull => try emit.mir_data_processing3_source(inst),
 
-            .nop => try emit.mirNop(),
+            .nop => try emit.mir_nop(),
 
-            .push_regs => try emit.mirPushPopRegs(inst),
-            .pop_regs => try emit.mirPushPopRegs(inst),
+            .push_regs => try emit.mir_push_pop_regs(inst),
+            .pop_regs => try emit.mir_push_pop_regs(inst),
 
             .sbfx,
             .ubfx,
-            => try emit.mirBitfieldExtract(inst),
+            => try emit.mir_bitfield_extract(inst),
 
             .sxtb,
             .sxth,
             .sxtw,
             .uxtb,
             .uxth,
-            => try emit.mirExtend(inst),
+            => try emit.mir_extend(inst),
         }
     }
 }
@@ -220,7 +220,7 @@ pub fn emit_mir(
 pub fn deinit(emit: *Emit) void {
     const comp = emit.bin_file.comp;
     const gpa = comp.gpa;
-    var iter = emit.branch_forward_origins.valueIterator();
+    var iter = emit.branch_forward_origins.value_iterator();
     while (iter.next()) |origin_list| {
         origin_list.deinit(gpa);
     }
@@ -263,7 +263,7 @@ fn optimal_branch_type(emit: *Emit, tag: Mir.Inst.Tag, offset: i64) !BranchType 
 fn instruction_size(emit: *Emit, inst: Mir.Inst.Index) usize {
     const tag = emit.mir.instructions.items(.tag)[inst];
 
-    if (isBranch(tag)) {
+    if (is_branch(tag)) {
         switch (emit.branch_types.get(inst).?) {
             .cbz,
             .unconditional_branch_immediate,
@@ -280,8 +280,8 @@ fn instruction_size(emit: *Emit, inst: Mir.Inst.Index) usize {
         => return 2 * 4,
         .pop_regs, .push_regs => {
             const reg_list = emit.mir.instructions.items(.data)[inst].reg_list;
-            const number_of_regs = @popCount(reg_list);
-            const number_of_insts = std.math.divCeil(u6, number_of_regs, 2) catch unreachable;
+            const number_of_regs = @pop_count(reg_list);
+            const number_of_insts = std.math.div_ceil(u6, number_of_regs, 2) catch unreachable;
             return number_of_insts * 4;
         },
         .call_extern => return 4,
@@ -327,9 +327,9 @@ fn lower_branches(emit: *Emit) !void {
     // TODO optimization opportunity: do this in codegen while
     // generating MIR
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
-        if (isBranch(tag)) {
-            const target_inst = emit.branchTarget(inst);
+        const inst = @as(u32, @int_cast(index));
+        if (is_branch(tag)) {
+            const target_inst = emit.branch_target(inst);
 
             // Remember this branch instruction
             try emit.branch_types.put(gpa, inst, BranchType.default(tag));
@@ -344,7 +344,7 @@ fn lower_branches(emit: *Emit) !void {
                 // Remember the branch instruction index
                 try emit.code_offset_mapping.put(gpa, inst, 0);
 
-                if (emit.branch_forward_origins.getPtr(target_inst)) |origin_list| {
+                if (emit.branch_forward_origins.get_ptr(target_inst)) |origin_list| {
                     try origin_list.append(gpa, inst);
                 } else {
                     var origin_list: std.ArrayListUnmanaged(Mir.Inst.Index) = .{};
@@ -356,7 +356,7 @@ fn lower_branches(emit: *Emit) !void {
             // Remember the target instruction index so that we
             // update the real code offset in all future passes
             //
-            // putNoClobber may not be used as the put operation
+            // put_no_clobber may not be used as the put operation
             // may clobber the entry when multiple branches branch
             // to the same target instruction
             try emit.code_offset_mapping.put(gpa, target_inst, 0);
@@ -372,30 +372,30 @@ fn lower_branches(emit: *Emit) !void {
         var current_code_offset: usize = 0;
 
         for (mir_tags, 0..) |tag, index| {
-            const inst = @as(u32, @intCast(index));
+            const inst = @as(u32, @int_cast(index));
 
             // If this instruction contained in the code offset
             // mapping (when it is a target of a branch or if it is a
             // forward branch), update the code offset
-            if (emit.code_offset_mapping.getPtr(inst)) |offset| {
+            if (emit.code_offset_mapping.get_ptr(inst)) |offset| {
                 offset.* = current_code_offset;
             }
 
             // If this instruction is a backward branch, calculate the
             // offset, which may potentially update the branch type
-            if (isBranch(tag)) {
-                const target_inst = emit.branchTarget(inst);
+            if (is_branch(tag)) {
+                const target_inst = emit.branch_target(inst);
                 if (target_inst < inst) {
                     const target_offset = emit.code_offset_mapping.get(target_inst).?;
-                    const offset = @as(i64, @intCast(target_offset)) - @as(i64, @intCast(current_code_offset));
-                    const branch_type = emit.branch_types.getPtr(inst).?;
-                    const optimal_branch_type = try emit.optimalBranchType(tag, offset);
+                    const offset = @as(i64, @int_cast(target_offset)) - @as(i64, @int_cast(current_code_offset));
+                    const branch_type = emit.branch_types.get_ptr(inst).?;
+                    const optimal_branch_type = try emit.optimal_branch_type(tag, offset);
                     if (branch_type.* != optimal_branch_type) {
                         branch_type.* = optimal_branch_type;
                         all_branches_lowered = false;
                     }
 
-                    log.debug("lowerBranches: branch {} has offset {}", .{ inst, offset });
+                    log.debug("lower_branches: branch {} has offset {}", .{ inst, offset });
                 }
             }
 
@@ -406,27 +406,27 @@ fn lower_branches(emit: *Emit) !void {
                 for (origin_list.items) |forward_branch_inst| {
                     const branch_tag = emit.mir.instructions.items(.tag)[forward_branch_inst];
                     const forward_branch_inst_offset = emit.code_offset_mapping.get(forward_branch_inst).?;
-                    const offset = @as(i64, @intCast(current_code_offset)) - @as(i64, @intCast(forward_branch_inst_offset));
-                    const branch_type = emit.branch_types.getPtr(forward_branch_inst).?;
-                    const optimal_branch_type = try emit.optimalBranchType(branch_tag, offset);
+                    const offset = @as(i64, @int_cast(current_code_offset)) - @as(i64, @int_cast(forward_branch_inst_offset));
+                    const branch_type = emit.branch_types.get_ptr(forward_branch_inst).?;
+                    const optimal_branch_type = try emit.optimal_branch_type(branch_tag, offset);
                     if (branch_type.* != optimal_branch_type) {
                         branch_type.* = optimal_branch_type;
                         all_branches_lowered = false;
                     }
 
-                    log.debug("lowerBranches: branch {} has offset {}", .{ forward_branch_inst, offset });
+                    log.debug("lower_branches: branch {} has offset {}", .{ forward_branch_inst, offset });
                 }
             }
 
             // Increment code offset
-            current_code_offset += emit.instructionSize(inst);
+            current_code_offset += emit.instruction_size(inst);
         }
     }
 }
 
 fn write_instruction(emit: *Emit, instruction: Instruction) !void {
     const endian = emit.target.cpu.arch.endian();
-    std.mem.writeInt(u32, try emit.code.addManyAsArray(4), instruction.toU32(), endian);
+    std.mem.write_int(u32, try emit.code.add_many_as_array(4), instruction.to_u32(), endian);
 }
 
 fn fail(emit: *Emit, comptime format: []const u8, args: anytype) InnerError {
@@ -444,8 +444,8 @@ fn dbg_advance_pcand_line(emit: *Emit, line: u32, column: u32) InnerError!void {
     log.debug("  (advance pc={d} and line={d})", .{ delta_pc, delta_line });
     switch (emit.debug_output) {
         .dwarf => |dw| {
-            if (column != emit.prev_di_column) try dw.setColumn(column);
-            try dw.advancePCAndLine(delta_line, delta_pc);
+            if (column != emit.prev_di_column) try dw.set_column(column);
+            try dw.advance_pcand_line(delta_line, delta_pc);
             emit.prev_di_line = line;
             emit.prev_di_column = column;
             emit.prev_di_pc = emit.code.items.len;
@@ -454,24 +454,24 @@ fn dbg_advance_pcand_line(emit: *Emit, line: u32, column: u32) InnerError!void {
             if (delta_pc <= 0) return; // only do this when the pc changes
 
             // increasing the line number
-            try link.File.Plan9.changeLine(&dbg_out.dbg_line, @intCast(delta_line));
+            try link.File.Plan9.change_line(&dbg_out.dbg_line, @int_cast(delta_line));
             // increasing the pc
-            const d_pc_p9 = @as(i64, @intCast(delta_pc)) - dbg_out.pc_quanta;
+            const d_pc_p9 = @as(i64, @int_cast(delta_pc)) - dbg_out.pc_quanta;
             if (d_pc_p9 > 0) {
                 // minus one because if its the last one, we want to leave space to change the line which is one pc quanta
-                var diff = @divExact(d_pc_p9, dbg_out.pc_quanta) - dbg_out.pc_quanta;
+                var diff = @div_exact(d_pc_p9, dbg_out.pc_quanta) - dbg_out.pc_quanta;
                 while (diff > 0) {
                     if (diff < 64) {
-                        try dbg_out.dbg_line.append(@intCast(diff + 128));
+                        try dbg_out.dbg_line.append(@int_cast(diff + 128));
                         diff = 0;
                     } else {
-                        try dbg_out.dbg_line.append(@intCast(64 + 128));
+                        try dbg_out.dbg_line.append(@int_cast(64 + 128));
                         diff -= 64;
                     }
                 }
                 if (dbg_out.pcop_change_index) |pci|
                     dbg_out.dbg_line.items[pci] += 1;
-                dbg_out.pcop_change_index = @intCast(dbg_out.dbg_line.items.len - 1);
+                dbg_out.pcop_change_index = @int_cast(dbg_out.dbg_line.items.len - 1);
             } else if (d_pc_p9 == 0) {
                 // we don't need to do anything, because adding the pc quanta does it for us
             } else unreachable;
@@ -502,10 +502,10 @@ fn mir_add_subtract_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
             const sh = rr_imm12_sh.sh == 1;
 
             switch (tag) {
-                .add_immediate => try emit.writeInstruction(Instruction.add(rd, rn, imm12, sh)),
-                .adds_immediate => try emit.writeInstruction(Instruction.adds(rd, rn, imm12, sh)),
-                .sub_immediate => try emit.writeInstruction(Instruction.sub(rd, rn, imm12, sh)),
-                .subs_immediate => try emit.writeInstruction(Instruction.subs(rd, rn, imm12, sh)),
+                .add_immediate => try emit.write_instruction(Instruction.add(rd, rn, imm12, sh)),
+                .adds_immediate => try emit.write_instruction(Instruction.adds(rd, rn, imm12, sh)),
+                .sub_immediate => try emit.write_instruction(Instruction.sub(rd, rn, imm12, sh)),
+                .subs_immediate => try emit.write_instruction(Instruction.subs(rd, rn, imm12, sh)),
                 else => unreachable,
             }
         },
@@ -520,7 +520,7 @@ fn mir_add_subtract_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
                 else => unreachable,
             };
 
-            try emit.writeInstruction(Instruction.subs(zr, rn, imm12, sh));
+            try emit.write_instruction(Instruction.subs(zr, rn, imm12, sh));
         },
         else => unreachable,
     }
@@ -534,11 +534,11 @@ fn mir_data_processing2_source(emit: *Emit, inst: Mir.Inst.Index) !void {
     const rm = rrr.rm;
 
     switch (tag) {
-        .asr_register => try emit.writeInstruction(Instruction.asrRegister(rd, rn, rm)),
-        .lsl_register => try emit.writeInstruction(Instruction.lslRegister(rd, rn, rm)),
-        .lsr_register => try emit.writeInstruction(Instruction.lsrRegister(rd, rn, rm)),
-        .sdiv => try emit.writeInstruction(Instruction.sdiv(rd, rn, rm)),
-        .udiv => try emit.writeInstruction(Instruction.udiv(rd, rn, rm)),
+        .asr_register => try emit.write_instruction(Instruction.asrRegister(rd, rn, rm)),
+        .lsl_register => try emit.write_instruction(Instruction.lslRegister(rd, rn, rm)),
+        .lsr_register => try emit.write_instruction(Instruction.lsrRegister(rd, rn, rm)),
+        .sdiv => try emit.write_instruction(Instruction.sdiv(rd, rn, rm)),
+        .udiv => try emit.write_instruction(Instruction.udiv(rd, rn, rm)),
         else => unreachable,
     }
 }
@@ -551,9 +551,9 @@ fn mir_shift_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const shift = rr_shift.shift;
 
     switch (tag) {
-        .asr_immediate => try emit.writeInstruction(Instruction.asrImmediate(rd, rn, shift)),
-        .lsl_immediate => try emit.writeInstruction(Instruction.lslImmediate(rd, rn, shift)),
-        .lsr_immediate => try emit.writeInstruction(Instruction.lsrImmediate(rd, rn, shift)),
+        .asr_immediate => try emit.write_instruction(Instruction.asr_immediate(rd, rn, shift)),
+        .lsl_immediate => try emit.write_instruction(Instruction.lsl_immediate(rd, rn, shift)),
+        .lsr_immediate => try emit.write_instruction(Instruction.lsr_immediate(rd, rn, shift)),
         else => unreachable,
     }
 }
@@ -562,13 +562,13 @@ fn mir_conditional_branch_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const inst_cond = emit.mir.instructions.items(.data)[inst].inst_cond;
 
-    const offset = @as(i64, @intCast(emit.code_offset_mapping.get(inst_cond.inst).?)) - @as(i64, @intCast(emit.code.items.len));
+    const offset = @as(i64, @int_cast(emit.code_offset_mapping.get(inst_cond.inst).?)) - @as(i64, @int_cast(emit.code.items.len));
     const branch_type = emit.branch_types.get(inst).?;
-    log.debug("mirConditionalBranchImmediate: {} offset={}", .{ inst, offset });
+    log.debug("mir_conditional_branch_immediate: {} offset={}", .{ inst, offset });
 
     switch (branch_type) {
         .b_cond => switch (tag) {
-            .b_cond => try emit.writeInstruction(Instruction.bCond(inst_cond.cond, @as(i21, @intCast(offset)))),
+            .b_cond => try emit.write_instruction(Instruction.b_cond(inst_cond.cond, @as(i21, @int_cast(offset)))),
             else => unreachable,
         },
         else => unreachable,
@@ -586,14 +586,14 @@ fn mir_branch(emit: *Emit, inst: Mir.Inst.Index) !void {
         emit.mir.instructions.items(.tag)[target_inst],
     });
 
-    const offset = @as(i64, @intCast(emit.code_offset_mapping.get(target_inst).?)) - @as(i64, @intCast(emit.code.items.len));
+    const offset = @as(i64, @int_cast(emit.code_offset_mapping.get(target_inst).?)) - @as(i64, @int_cast(emit.code.items.len));
     const branch_type = emit.branch_types.get(inst).?;
-    log.debug("mirBranch: {} offset={}", .{ inst, offset });
+    log.debug("mir_branch: {} offset={}", .{ inst, offset });
 
     switch (branch_type) {
         .unconditional_branch_immediate => switch (tag) {
-            .b => try emit.writeInstruction(Instruction.b(@as(i28, @intCast(offset)))),
-            .bl => try emit.writeInstruction(Instruction.bl(@as(i28, @intCast(offset)))),
+            .b => try emit.write_instruction(Instruction.b(@as(i28, @int_cast(offset)))),
+            .bl => try emit.write_instruction(Instruction.bl(@as(i28, @int_cast(offset)))),
             else => unreachable,
         },
         else => unreachable,
@@ -604,13 +604,13 @@ fn mir_compare_and_branch(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const r_inst = emit.mir.instructions.items(.data)[inst].r_inst;
 
-    const offset = @as(i64, @intCast(emit.code_offset_mapping.get(r_inst.inst).?)) - @as(i64, @intCast(emit.code.items.len));
+    const offset = @as(i64, @int_cast(emit.code_offset_mapping.get(r_inst.inst).?)) - @as(i64, @int_cast(emit.code.items.len));
     const branch_type = emit.branch_types.get(inst).?;
-    log.debug("mirCompareAndBranch: {} offset={}", .{ inst, offset });
+    log.debug("mir_compare_and_branch: {} offset={}", .{ inst, offset });
 
     switch (branch_type) {
         .cbz => switch (tag) {
-            .cbz => try emit.writeInstruction(Instruction.cbz(r_inst.rt, @as(i21, @intCast(offset)))),
+            .cbz => try emit.write_instruction(Instruction.cbz(r_inst.rt, @as(i21, @int_cast(offset)))),
             else => unreachable,
         },
         else => unreachable,
@@ -622,8 +622,8 @@ fn mir_unconditional_branch_register(emit: *Emit, inst: Mir.Inst.Index) !void {
     const reg = emit.mir.instructions.items(.data)[inst].reg;
 
     switch (tag) {
-        .blr => try emit.writeInstruction(Instruction.blr(reg)),
-        .ret => try emit.writeInstruction(Instruction.ret(reg)),
+        .blr => try emit.write_instruction(Instruction.blr(reg)),
+        .ret => try emit.write_instruction(Instruction.ret(reg)),
         else => unreachable,
     }
 }
@@ -633,8 +633,8 @@ fn mir_exception_generation(emit: *Emit, inst: Mir.Inst.Index) !void {
     const imm16 = emit.mir.instructions.items(.data)[inst].imm16;
 
     switch (tag) {
-        .brk => try emit.writeInstruction(Instruction.brk(imm16)),
-        .svc => try emit.writeInstruction(Instruction.svc(imm16)),
+        .brk => try emit.write_instruction(Instruction.brk(imm16)),
+        .svc => try emit.write_instruction(Instruction.svc(imm16)),
         else => unreachable,
     }
 }
@@ -644,7 +644,7 @@ fn mir_dbg_line(emit: *Emit, inst: Mir.Inst.Index) !void {
     const dbg_line_column = emit.mir.instructions.items(.data)[inst].dbg_line_column;
 
     switch (tag) {
-        .dbg_line => try emit.dbgAdvancePCAndLine(dbg_line_column.line, dbg_line_column.column),
+        .dbg_line => try emit.dbg_advance_pcand_line(dbg_line_column.line, dbg_line_column.column),
         else => unreachable,
     }
 }
@@ -652,11 +652,11 @@ fn mir_dbg_line(emit: *Emit, inst: Mir.Inst.Index) !void {
 fn mir_debug_prologue_end(emit: *Emit) !void {
     switch (emit.debug_output) {
         .dwarf => |dw| {
-            try dw.setPrologueEnd();
+            try dw.set_prologue_end();
             log.debug("mirDbgPrologueEnd (line={d}, col={d})", .{
                 emit.prev_di_line, emit.prev_di_column,
             });
-            try emit.dbgAdvancePCAndLine(emit.prev_di_line, emit.prev_di_column);
+            try emit.dbg_advance_pcand_line(emit.prev_di_line, emit.prev_di_column);
         },
         .plan9 => {},
         .none => {},
@@ -666,8 +666,8 @@ fn mir_debug_prologue_end(emit: *Emit) !void {
 fn mir_debug_epilogue_begin(emit: *Emit) !void {
     switch (emit.debug_output) {
         .dwarf => |dw| {
-            try dw.setEpilogueBegin();
-            try emit.dbgAdvancePCAndLine(emit.prev_di_line, emit.prev_di_column);
+            try dw.set_epilogue_begin();
+            try emit.dbg_advance_pcand_line(emit.prev_di_line, emit.prev_di_column);
         },
         .plan9 => {},
         .none => {},
@@ -680,20 +680,20 @@ fn mir_call_extern(emit: *Emit, inst: Mir.Inst.Index) !void {
     _ = relocation;
 
     const offset = blk: {
-        const offset = @as(u32, @intCast(emit.code.items.len));
+        const offset = @as(u32, @int_cast(emit.code.items.len));
         // bl
-        try emit.writeInstruction(Instruction.bl(0));
+        try emit.write_instruction(Instruction.bl(0));
         break :blk offset;
     };
     _ = offset;
 
     if (emit.bin_file.cast(link.File.MachO)) |macho_file| {
         _ = macho_file;
-        @panic("TODO mirCallExtern");
+        @panic("TODO mir_call_extern");
         // // Add relocation to the decl.
-        // const atom_index = macho_file.getAtomIndexForSymbol(.{ .sym_index = relocation.atom_index }).?;
-        // const target = macho_file.getGlobalByIndex(relocation.sym_index);
-        // try link.File.MachO.Atom.addRelocation(macho_file, atom_index, .{
+        // const atom_index = macho_file.get_atom_index_for_symbol(.{ .sym_index = relocation.atom_index }).?;
+        // const target = macho_file.get_global_by_index(relocation.sym_index);
+        // try link.File.MachO.Atom.add_relocation(macho_file, atom_index, .{
         //     .type = .branch,
         //     .target = target,
         //     .offset = offset,
@@ -718,14 +718,14 @@ fn mir_logical_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const n = rr_bitmask.n;
 
     switch (tag) {
-        .eor_immediate => try emit.writeInstruction(Instruction.eorImmediate(rd, rn, imms, immr, n)),
+        .eor_immediate => try emit.write_instruction(Instruction.eor_immediate(rd, rn, imms, immr, n)),
         .tst_immediate => {
             const zr: Register = switch (rd.size()) {
                 32 => .wzr,
                 64 => .xzr,
                 else => unreachable,
             };
-            try emit.writeInstruction(Instruction.andsImmediate(zr, rn, imms, immr, n));
+            try emit.write_instruction(Instruction.ands_immediate(zr, rn, imms, immr, n));
         },
         else => unreachable,
     }
@@ -747,10 +747,10 @@ fn mir_add_subtract_shifted_register(emit: *Emit, inst: Mir.Inst.Index) !void {
             const imm6 = rrr_imm6_shift.imm6;
 
             switch (tag) {
-                .add_shifted_register => try emit.writeInstruction(Instruction.addShiftedRegister(rd, rn, rm, shift, imm6)),
-                .adds_shifted_register => try emit.writeInstruction(Instruction.addsShiftedRegister(rd, rn, rm, shift, imm6)),
-                .sub_shifted_register => try emit.writeInstruction(Instruction.subShiftedRegister(rd, rn, rm, shift, imm6)),
-                .subs_shifted_register => try emit.writeInstruction(Instruction.subsShiftedRegister(rd, rn, rm, shift, imm6)),
+                .add_shifted_register => try emit.write_instruction(Instruction.add_shifted_register(rd, rn, rm, shift, imm6)),
+                .adds_shifted_register => try emit.write_instruction(Instruction.adds_shifted_register(rd, rn, rm, shift, imm6)),
+                .sub_shifted_register => try emit.write_instruction(Instruction.sub_shifted_register(rd, rn, rm, shift, imm6)),
+                .subs_shifted_register => try emit.write_instruction(Instruction.subs_shifted_register(rd, rn, rm, shift, imm6)),
                 else => unreachable,
             }
         },
@@ -766,7 +766,7 @@ fn mir_add_subtract_shifted_register(emit: *Emit, inst: Mir.Inst.Index) !void {
                 else => unreachable,
             };
 
-            try emit.writeInstruction(Instruction.subsShiftedRegister(zr, rn, rm, shift, imm6));
+            try emit.write_instruction(Instruction.subs_shifted_register(zr, rn, rm, shift, imm6));
         },
         else => unreachable,
     }
@@ -788,10 +788,10 @@ fn mir_add_subtract_extended_register(emit: *Emit, inst: Mir.Inst.Index) !void {
             const imm3 = rrr_extend_shift.imm3;
 
             switch (tag) {
-                .add_extended_register => try emit.writeInstruction(Instruction.addExtendedRegister(rd, rn, rm, ext_type, imm3)),
-                .adds_extended_register => try emit.writeInstruction(Instruction.addsExtendedRegister(rd, rn, rm, ext_type, imm3)),
-                .sub_extended_register => try emit.writeInstruction(Instruction.subExtendedRegister(rd, rn, rm, ext_type, imm3)),
-                .subs_extended_register => try emit.writeInstruction(Instruction.subsExtendedRegister(rd, rn, rm, ext_type, imm3)),
+                .add_extended_register => try emit.write_instruction(Instruction.add_extended_register(rd, rn, rm, ext_type, imm3)),
+                .adds_extended_register => try emit.write_instruction(Instruction.adds_extended_register(rd, rn, rm, ext_type, imm3)),
+                .sub_extended_register => try emit.write_instruction(Instruction.sub_extended_register(rd, rn, rm, ext_type, imm3)),
+                .subs_extended_register => try emit.write_instruction(Instruction.subs_extended_register(rd, rn, rm, ext_type, imm3)),
                 else => unreachable,
             }
         },
@@ -807,7 +807,7 @@ fn mir_add_subtract_extended_register(emit: *Emit, inst: Mir.Inst.Index) !void {
                 else => unreachable,
             };
 
-            try emit.writeInstruction(Instruction.subsExtendedRegister(zr, rn, rm, ext_type, imm3));
+            try emit.write_instruction(Instruction.subs_extended_register(zr, rn, rm, ext_type, imm3));
         },
         else => unreachable,
     }
@@ -822,7 +822,7 @@ fn mir_conditional_select(emit: *Emit, inst: Mir.Inst.Index) !void {
             const rn = rrr_cond.rn;
             const rm = rrr_cond.rm;
             const cond = rrr_cond.cond;
-            try emit.writeInstruction(Instruction.csel(rd, rn, rm, cond));
+            try emit.write_instruction(Instruction.csel(rd, rn, rm, cond));
         },
         .cset => {
             const r_cond = emit.mir.instructions.items(.data)[inst].r_cond;
@@ -831,7 +831,7 @@ fn mir_conditional_select(emit: *Emit, inst: Mir.Inst.Index) !void {
                 64 => .xzr,
                 else => unreachable,
             };
-            try emit.writeInstruction(Instruction.csinc(r_cond.rd, zr, zr, r_cond.cond.negate()));
+            try emit.write_instruction(Instruction.csinc(r_cond.rd, zr, zr, r_cond.cond.negate()));
         },
         else => unreachable,
     }
@@ -847,9 +847,9 @@ fn mir_logical_shifted_register(emit: *Emit, inst: Mir.Inst.Index) !void {
     const imm6 = rrr_imm6_logical_shift.imm6;
 
     switch (tag) {
-        .and_shifted_register => try emit.writeInstruction(Instruction.andShiftedRegister(rd, rn, rm, shift, imm6)),
-        .eor_shifted_register => try emit.writeInstruction(Instruction.eorShiftedRegister(rd, rn, rm, shift, imm6)),
-        .orr_shifted_register => try emit.writeInstruction(Instruction.orrShiftedRegister(rd, rn, rm, shift, imm6)),
+        .and_shifted_register => try emit.write_instruction(Instruction.and_shifted_register(rd, rn, rm, shift, imm6)),
+        .eor_shifted_register => try emit.write_instruction(Instruction.eor_shifted_register(rd, rn, rm, shift, imm6)),
+        .orr_shifted_register => try emit.write_instruction(Instruction.orr_shifted_register(rd, rn, rm, shift, imm6)),
         else => unreachable,
     }
 }
@@ -857,22 +857,22 @@ fn mir_logical_shifted_register(emit: *Emit, inst: Mir.Inst.Index) !void {
 fn mir_load_memory_pie(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const payload = emit.mir.instructions.items(.data)[inst].payload;
-    const data = emit.mir.extraData(Mir.LoadMemoryPie, payload).data;
+    const data = emit.mir.extra_data(Mir.LoadMemoryPie, payload).data;
     const reg = @as(Register, @enumFromInt(data.register));
 
     // PC-relative displacement to the entry in memory.
     // adrp
-    const offset = @as(u32, @intCast(emit.code.items.len));
-    try emit.writeInstruction(Instruction.adrp(reg.toX(), 0));
+    const offset = @as(u32, @int_cast(emit.code.items.len));
+    try emit.write_instruction(Instruction.adrp(reg.to_x(), 0));
 
     switch (tag) {
         .load_memory_got,
         .load_memory_import,
         => {
             // ldr reg, reg, offset
-            try emit.writeInstruction(Instruction.ldr(
+            try emit.write_instruction(Instruction.ldr(
                 reg,
-                reg.toX(),
+                reg.to_x(),
                 Instruction.LoadStoreOffset.imm(0),
             ));
         },
@@ -886,11 +886,11 @@ fn mir_load_memory_pie(emit: *Emit, inst: Mir.Inst.Index) !void {
             // Note that this can potentially be optimised out by the codegen/linker if the
             // target address is appropriately aligned.
             // add reg, reg, offset
-            try emit.writeInstruction(Instruction.add(reg.toX(), reg.toX(), 0, false));
+            try emit.write_instruction(Instruction.add(reg.to_x(), reg.to_x(), 0, false));
             // ldr reg, reg, offset
-            try emit.writeInstruction(Instruction.ldr(
+            try emit.write_instruction(Instruction.ldr(
                 reg,
-                reg.toX(),
+                reg.to_x(),
                 Instruction.LoadStoreOffset.imm(0),
             ));
         },
@@ -898,17 +898,17 @@ fn mir_load_memory_pie(emit: *Emit, inst: Mir.Inst.Index) !void {
         .load_memory_ptr_got,
         => {
             // add reg, reg, offset
-            try emit.writeInstruction(Instruction.add(reg, reg, 0, false));
+            try emit.write_instruction(Instruction.add(reg, reg, 0, false));
         },
         else => unreachable,
     }
 
     if (emit.bin_file.cast(link.File.MachO)) |macho_file| {
         _ = macho_file;
-        @panic("TODO mirLoadMemoryPie");
+        @panic("TODO mir_load_memory_pie");
         // const Atom = link.File.MachO.Atom;
         // const Relocation = Atom.Relocation;
-        // const atom_index = macho_file.getAtomIndexForSymbol(.{ .sym_index = data.atom_index }).?;
+        // const atom_index = macho_file.get_atom_index_for_symbol(.{ .sym_index = data.atom_index }).?;
         // try Atom.addRelocations(macho_file, atom_index, &[_]Relocation{ .{
         //     .target = .{ .sym_index = data.sym_index },
         //     .offset = offset,
@@ -933,17 +933,17 @@ fn mir_load_memory_pie(emit: *Emit, inst: Mir.Inst.Index) !void {
         //     },
         // } });
     } else if (emit.bin_file.cast(link.File.Coff)) |coff_file| {
-        const atom_index = coff_file.getAtomIndexForSymbol(.{ .sym_index = data.atom_index, .file = null }).?;
+        const atom_index = coff_file.get_atom_index_for_symbol(.{ .sym_index = data.atom_index, .file = null }).?;
         const target = switch (tag) {
             .load_memory_got,
             .load_memory_ptr_got,
             .load_memory_direct,
             .load_memory_ptr_direct,
             => link.File.Coff.SymbolWithLoc{ .sym_index = data.sym_index, .file = null },
-            .load_memory_import => coff_file.getGlobalByIndex(data.sym_index),
+            .load_memory_import => coff_file.get_global_by_index(data.sym_index),
             else => unreachable,
         };
-        try link.File.Coff.Atom.addRelocation(coff_file, atom_index, .{
+        try link.File.Coff.Atom.add_relocation(coff_file, atom_index, .{
             .target = target,
             .offset = offset,
             .addend = 0,
@@ -960,7 +960,7 @@ fn mir_load_memory_pie(emit: *Emit, inst: Mir.Inst.Index) !void {
                 else => unreachable,
             },
         });
-        try link.File.Coff.Atom.addRelocation(coff_file, atom_index, .{
+        try link.File.Coff.Atom.add_relocation(coff_file, atom_index, .{
             .target = target,
             .offset = offset + 4,
             .addend = 0,
@@ -991,8 +991,8 @@ fn mir_load_store_register_pair(emit: *Emit, inst: Mir.Inst.Index) !void {
     const offset = load_store_register_pair.offset;
 
     switch (tag) {
-        .stp => try emit.writeInstruction(Instruction.stp(rt, rt2, rn, offset)),
-        .ldp => try emit.writeInstruction(Instruction.ldp(rt, rt2, rn, offset)),
+        .stp => try emit.write_instruction(Instruction.stp(rt, rt2, rn, offset)),
+        .ldp => try emit.write_instruction(Instruction.ldp(rt, rt2, rn, offset)),
         else => unreachable,
     }
 }
@@ -1010,7 +1010,7 @@ fn mir_load_stack_argument(emit: *Emit, inst: Mir.Inst.Index) !void {
             };
 
             switch (tag) {
-                .ldr_ptr_stack_argument => try emit.writeInstruction(Instruction.add(rt, .sp, offset, false)),
+                .ldr_ptr_stack_argument => try emit.write_instruction(Instruction.add(rt, .sp, offset, false)),
                 else => unreachable,
             }
         },
@@ -1020,20 +1020,20 @@ fn mir_load_stack_argument(emit: *Emit, inst: Mir.Inst.Index) !void {
             };
 
             switch (tag) {
-                .ldrb_stack_argument => try emit.writeInstruction(Instruction.ldrb(rt, .sp, offset)),
-                .ldrsb_stack_argument => try emit.writeInstruction(Instruction.ldrsb(rt, .sp, offset)),
+                .ldrb_stack_argument => try emit.write_instruction(Instruction.ldrb(rt, .sp, offset)),
+                .ldrsb_stack_argument => try emit.write_instruction(Instruction.ldrsb(rt, .sp, offset)),
                 else => unreachable,
             }
         },
         .ldrh_stack_argument, .ldrsh_stack_argument => {
-            assert(std.mem.isAlignedGeneric(u32, raw_offset, 2)); // misaligned stack entry
-            const offset = if (math.cast(u12, @divExact(raw_offset, 2))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
+            assert(std.mem.is_aligned_generic(u32, raw_offset, 2)); // misaligned stack entry
+            const offset = if (math.cast(u12, @div_exact(raw_offset, 2))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
                 return emit.fail("TODO load stack argument halfword with larger offset", .{});
             };
 
             switch (tag) {
-                .ldrh_stack_argument => try emit.writeInstruction(Instruction.ldrh(rt, .sp, offset)),
-                .ldrsh_stack_argument => try emit.writeInstruction(Instruction.ldrsh(rt, .sp, offset)),
+                .ldrh_stack_argument => try emit.write_instruction(Instruction.ldrh(rt, .sp, offset)),
+                .ldrsh_stack_argument => try emit.write_instruction(Instruction.ldrsh(rt, .sp, offset)),
                 else => unreachable,
             }
         },
@@ -1044,13 +1044,13 @@ fn mir_load_stack_argument(emit: *Emit, inst: Mir.Inst.Index) !void {
                 else => unreachable,
             };
 
-            assert(std.mem.isAlignedGeneric(u32, raw_offset, alignment)); // misaligned stack entry
-            const offset = if (math.cast(u12, @divExact(raw_offset, alignment))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
+            assert(std.mem.is_aligned_generic(u32, raw_offset, alignment)); // misaligned stack entry
+            const offset = if (math.cast(u12, @div_exact(raw_offset, alignment))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
                 return emit.fail("TODO load stack argument with larger offset", .{});
             };
 
             switch (tag) {
-                .ldr_stack_argument => try emit.writeInstruction(Instruction.ldr(rt, .sp, offset)),
+                .ldr_stack_argument => try emit.write_instruction(Instruction.ldr(rt, .sp, offset)),
                 else => unreachable,
             }
         },
@@ -1071,7 +1071,7 @@ fn mir_load_store_stack(emit: *Emit, inst: Mir.Inst.Index) !void {
             };
 
             switch (tag) {
-                .ldr_ptr_stack => try emit.writeInstruction(Instruction.add(rt, .sp, offset, false)),
+                .ldr_ptr_stack => try emit.write_instruction(Instruction.add(rt, .sp, offset, false)),
                 else => unreachable,
             }
         },
@@ -1081,22 +1081,22 @@ fn mir_load_store_stack(emit: *Emit, inst: Mir.Inst.Index) !void {
             };
 
             switch (tag) {
-                .ldrb_stack => try emit.writeInstruction(Instruction.ldrb(rt, .sp, offset)),
-                .ldrsb_stack => try emit.writeInstruction(Instruction.ldrsb(rt, .sp, offset)),
-                .strb_stack => try emit.writeInstruction(Instruction.strb(rt, .sp, offset)),
+                .ldrb_stack => try emit.write_instruction(Instruction.ldrb(rt, .sp, offset)),
+                .ldrsb_stack => try emit.write_instruction(Instruction.ldrsb(rt, .sp, offset)),
+                .strb_stack => try emit.write_instruction(Instruction.strb(rt, .sp, offset)),
                 else => unreachable,
             }
         },
         .ldrh_stack, .ldrsh_stack, .strh_stack => {
-            assert(std.mem.isAlignedGeneric(u32, raw_offset, 2)); // misaligned stack entry
-            const offset = if (math.cast(u12, @divExact(raw_offset, 2))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
+            assert(std.mem.is_aligned_generic(u32, raw_offset, 2)); // misaligned stack entry
+            const offset = if (math.cast(u12, @div_exact(raw_offset, 2))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
                 return emit.fail("TODO load/store stack halfword with larger offset", .{});
             };
 
             switch (tag) {
-                .ldrh_stack => try emit.writeInstruction(Instruction.ldrh(rt, .sp, offset)),
-                .ldrsh_stack => try emit.writeInstruction(Instruction.ldrsh(rt, .sp, offset)),
-                .strh_stack => try emit.writeInstruction(Instruction.strh(rt, .sp, offset)),
+                .ldrh_stack => try emit.write_instruction(Instruction.ldrh(rt, .sp, offset)),
+                .ldrsh_stack => try emit.write_instruction(Instruction.ldrsh(rt, .sp, offset)),
+                .strh_stack => try emit.write_instruction(Instruction.strh(rt, .sp, offset)),
                 else => unreachable,
             }
         },
@@ -1107,14 +1107,14 @@ fn mir_load_store_stack(emit: *Emit, inst: Mir.Inst.Index) !void {
                 else => unreachable,
             };
 
-            assert(std.mem.isAlignedGeneric(u32, raw_offset, alignment)); // misaligned stack entry
-            const offset = if (math.cast(u12, @divExact(raw_offset, alignment))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
+            assert(std.mem.is_aligned_generic(u32, raw_offset, alignment)); // misaligned stack entry
+            const offset = if (math.cast(u12, @div_exact(raw_offset, alignment))) |imm| Instruction.LoadStoreOffset.imm(imm) else {
                 return emit.fail("TODO load/store stack with larger offset", .{});
             };
 
             switch (tag) {
-                .ldr_stack => try emit.writeInstruction(Instruction.ldr(rt, .sp, offset)),
-                .str_stack => try emit.writeInstruction(Instruction.str(rt, .sp, offset)),
+                .ldr_stack => try emit.write_instruction(Instruction.ldr(rt, .sp, offset)),
+                .str_stack => try emit.write_instruction(Instruction.str(rt, .sp, offset)),
                 else => unreachable,
             }
         },
@@ -1130,15 +1130,15 @@ fn mir_load_store_register_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const offset = Instruction.LoadStoreOffset{ .immediate = load_store_register_immediate.offset };
 
     switch (tag) {
-        .ldr_immediate => try emit.writeInstruction(Instruction.ldr(rt, rn, offset)),
-        .ldrb_immediate => try emit.writeInstruction(Instruction.ldrb(rt, rn, offset)),
-        .ldrh_immediate => try emit.writeInstruction(Instruction.ldrh(rt, rn, offset)),
-        .ldrsb_immediate => try emit.writeInstruction(Instruction.ldrsb(rt, rn, offset)),
-        .ldrsh_immediate => try emit.writeInstruction(Instruction.ldrsh(rt, rn, offset)),
-        .ldrsw_immediate => try emit.writeInstruction(Instruction.ldrsw(rt, rn, offset)),
-        .str_immediate => try emit.writeInstruction(Instruction.str(rt, rn, offset)),
-        .strb_immediate => try emit.writeInstruction(Instruction.strb(rt, rn, offset)),
-        .strh_immediate => try emit.writeInstruction(Instruction.strh(rt, rn, offset)),
+        .ldr_immediate => try emit.write_instruction(Instruction.ldr(rt, rn, offset)),
+        .ldrb_immediate => try emit.write_instruction(Instruction.ldrb(rt, rn, offset)),
+        .ldrh_immediate => try emit.write_instruction(Instruction.ldrh(rt, rn, offset)),
+        .ldrsb_immediate => try emit.write_instruction(Instruction.ldrsb(rt, rn, offset)),
+        .ldrsh_immediate => try emit.write_instruction(Instruction.ldrsh(rt, rn, offset)),
+        .ldrsw_immediate => try emit.write_instruction(Instruction.ldrsw(rt, rn, offset)),
+        .str_immediate => try emit.write_instruction(Instruction.str(rt, rn, offset)),
+        .strb_immediate => try emit.write_instruction(Instruction.strb(rt, rn, offset)),
+        .strh_immediate => try emit.write_instruction(Instruction.strh(rt, rn, offset)),
         else => unreachable,
     }
 }
@@ -1151,12 +1151,12 @@ fn mir_load_store_register_register(emit: *Emit, inst: Mir.Inst.Index) !void {
     const offset = Instruction.LoadStoreOffset{ .register = load_store_register_register.offset };
 
     switch (tag) {
-        .ldr_register => try emit.writeInstruction(Instruction.ldr(rt, rn, offset)),
-        .ldrb_register => try emit.writeInstruction(Instruction.ldrb(rt, rn, offset)),
-        .ldrh_register => try emit.writeInstruction(Instruction.ldrh(rt, rn, offset)),
-        .str_register => try emit.writeInstruction(Instruction.str(rt, rn, offset)),
-        .strb_register => try emit.writeInstruction(Instruction.strb(rt, rn, offset)),
-        .strh_register => try emit.writeInstruction(Instruction.strh(rt, rn, offset)),
+        .ldr_register => try emit.write_instruction(Instruction.ldr(rt, rn, offset)),
+        .ldrb_register => try emit.write_instruction(Instruction.ldrb(rt, rn, offset)),
+        .ldrh_register => try emit.write_instruction(Instruction.ldrh(rt, rn, offset)),
+        .str_register => try emit.write_instruction(Instruction.str(rt, rn, offset)),
+        .strb_register => try emit.write_instruction(Instruction.strb(rt, rn, offset)),
+        .strh_register => try emit.write_instruction(Instruction.strh(rt, rn, offset)),
         else => unreachable,
     }
 }
@@ -1172,11 +1172,11 @@ fn mir_move_register(emit: *Emit, inst: Mir.Inst.Index) !void {
                 else => unreachable,
             };
 
-            try emit.writeInstruction(Instruction.orrShiftedRegister(rr.rd, zr, rr.rn, .lsl, 0));
+            try emit.write_instruction(Instruction.orr_shifted_register(rr.rd, zr, rr.rn, .lsl, 0));
         },
         .mov_to_from_sp => {
             const rr = emit.mir.instructions.items(.data)[inst].rr;
-            try emit.writeInstruction(Instruction.add(rr.rd, rr.rn, 0, false));
+            try emit.write_instruction(Instruction.add(rr.rd, rr.rn, 0, false));
         },
         .mvn => {
             const rr_imm6_logical_shift = emit.mir.instructions.items(.data)[inst].rr_imm6_logical_shift;
@@ -1190,7 +1190,7 @@ fn mir_move_register(emit: *Emit, inst: Mir.Inst.Index) !void {
                 else => unreachable,
             };
 
-            try emit.writeInstruction(Instruction.ornShiftedRegister(rd, zr, rm, shift, imm6));
+            try emit.write_instruction(Instruction.orn_shifted_register(rd, zr, rm, shift, imm6));
         },
         else => unreachable,
     }
@@ -1201,8 +1201,8 @@ fn mir_move_wide_immediate(emit: *Emit, inst: Mir.Inst.Index) !void {
     const r_imm16_sh = emit.mir.instructions.items(.data)[inst].r_imm16_sh;
 
     switch (tag) {
-        .movz => try emit.writeInstruction(Instruction.movz(r_imm16_sh.rd, r_imm16_sh.imm16, @as(u6, r_imm16_sh.hw) << 4)),
-        .movk => try emit.writeInstruction(Instruction.movk(r_imm16_sh.rd, r_imm16_sh.imm16, @as(u6, r_imm16_sh.hw) << 4)),
+        .movz => try emit.write_instruction(Instruction.movz(r_imm16_sh.rd, r_imm16_sh.imm16, @as(u6, r_imm16_sh.hw) << 4)),
+        .movk => try emit.write_instruction(Instruction.movk(r_imm16_sh.rd, r_imm16_sh.imm16, @as(u6, r_imm16_sh.hw) << 4)),
         else => unreachable,
     }
 }
@@ -1219,18 +1219,18 @@ fn mir_data_processing3_source(emit: *Emit, inst: Mir.Inst.Index) !void {
         => {
             const rrr = emit.mir.instructions.items(.data)[inst].rrr;
             switch (tag) {
-                .mul => try emit.writeInstruction(Instruction.mul(rrr.rd, rrr.rn, rrr.rm)),
-                .smulh => try emit.writeInstruction(Instruction.smulh(rrr.rd, rrr.rn, rrr.rm)),
-                .smull => try emit.writeInstruction(Instruction.smull(rrr.rd, rrr.rn, rrr.rm)),
-                .umulh => try emit.writeInstruction(Instruction.umulh(rrr.rd, rrr.rn, rrr.rm)),
-                .umull => try emit.writeInstruction(Instruction.umull(rrr.rd, rrr.rn, rrr.rm)),
+                .mul => try emit.write_instruction(Instruction.mul(rrr.rd, rrr.rn, rrr.rm)),
+                .smulh => try emit.write_instruction(Instruction.smulh(rrr.rd, rrr.rn, rrr.rm)),
+                .smull => try emit.write_instruction(Instruction.smull(rrr.rd, rrr.rn, rrr.rm)),
+                .umulh => try emit.write_instruction(Instruction.umulh(rrr.rd, rrr.rn, rrr.rm)),
+                .umull => try emit.write_instruction(Instruction.umull(rrr.rd, rrr.rn, rrr.rm)),
                 else => unreachable,
             }
         },
         .msub => {
             const rrrr = emit.mir.instructions.items(.data)[inst].rrrr;
             switch (tag) {
-                .msub => try emit.writeInstruction(Instruction.msub(rrrr.rd, rrrr.rn, rrrr.rm, rrrr.ra)),
+                .msub => try emit.write_instruction(Instruction.msub(rrrr.rd, rrrr.rn, rrrr.rm, rrrr.ra)),
                 else => unreachable,
             }
         },
@@ -1239,18 +1239,18 @@ fn mir_data_processing3_source(emit: *Emit, inst: Mir.Inst.Index) !void {
 }
 
 fn mir_nop(emit: *Emit) !void {
-    try emit.writeInstruction(Instruction.nop());
+    try emit.write_instruction(Instruction.nop());
 }
 
 fn reg_list_is_set(reg_list: u32, reg: Register) bool {
-    return reg_list & @as(u32, 1) << @as(u5, @intCast(reg.id())) != 0;
+    return reg_list & @as(u32, 1) << @as(u5, @int_cast(reg.id())) != 0;
 }
 
 fn mir_push_pop_regs(emit: *Emit, inst: Mir.Inst.Index) !void {
     const tag = emit.mir.instructions.items(.tag)[inst];
     const reg_list = emit.mir.instructions.items(.data)[inst].reg_list;
 
-    if (regListIsSet(reg_list, .xzr)) return emit.fail("xzr is not a valid register for {}", .{tag});
+    if (reg_list_is_set(reg_list, .xzr)) return emit.fail("xzr is not a valid register for {}", .{tag});
 
     // sp must be aligned at all times, so we only use stp and ldp
     // instructions for minimal instruction count.
@@ -1259,7 +1259,7 @@ fn mir_push_pop_regs(emit: *Emit, inst: Mir.Inst.Index) !void {
     // use one ldr instruction followed by zero or more ldp
     // instructions; for push_regs we use zero or more stp
     // instructions followed by one str instruction.
-    const number_of_regs = @popCount(reg_list);
+    const number_of_regs = @pop_count(reg_list);
     const odd_number_of_regs = number_of_regs % 2 != 0;
 
     switch (tag) {
@@ -1269,15 +1269,15 @@ fn mir_push_pop_regs(emit: *Emit, inst: Mir.Inst.Index) !void {
             var other_reg: ?Register = null;
             while (i > 0) : (i -= 1) {
                 const reg = @as(Register, @enumFromInt(i - 1));
-                if (regListIsSet(reg_list, reg)) {
+                if (reg_list_is_set(reg_list, reg)) {
                     if (count == 0 and odd_number_of_regs) {
-                        try emit.writeInstruction(Instruction.ldr(
+                        try emit.write_instruction(Instruction.ldr(
                             reg,
                             .sp,
                             Instruction.LoadStoreOffset.imm_post_index(16),
                         ));
                     } else if (other_reg) |r| {
-                        try emit.writeInstruction(Instruction.ldp(
+                        try emit.write_instruction(Instruction.ldp(
                             reg,
                             r,
                             .sp,
@@ -1298,15 +1298,15 @@ fn mir_push_pop_regs(emit: *Emit, inst: Mir.Inst.Index) !void {
             var other_reg: ?Register = null;
             while (i < 32) : (i += 1) {
                 const reg = @as(Register, @enumFromInt(i));
-                if (regListIsSet(reg_list, reg)) {
+                if (reg_list_is_set(reg_list, reg)) {
                     if (count == number_of_regs - 1 and odd_number_of_regs) {
-                        try emit.writeInstruction(Instruction.str(
+                        try emit.write_instruction(Instruction.str(
                             reg,
                             .sp,
                             Instruction.LoadStoreOffset.imm_pre_index(-16),
                         ));
                     } else if (other_reg) |r| {
-                        try emit.writeInstruction(Instruction.stp(
+                        try emit.write_instruction(Instruction.stp(
                             r,
                             reg,
                             .sp,
@@ -1334,8 +1334,8 @@ fn mir_bitfield_extract(emit: *Emit, inst: Mir.Inst.Index) !void {
     const width = rr_lsb_width.width;
 
     switch (tag) {
-        .sbfx => try emit.writeInstruction(Instruction.sbfx(rd, rn, lsb, width)),
-        .ubfx => try emit.writeInstruction(Instruction.ubfx(rd, rn, lsb, width)),
+        .sbfx => try emit.write_instruction(Instruction.sbfx(rd, rn, lsb, width)),
+        .ubfx => try emit.write_instruction(Instruction.ubfx(rd, rn, lsb, width)),
         else => unreachable,
     }
 }
@@ -1345,11 +1345,11 @@ fn mir_extend(emit: *Emit, inst: Mir.Inst.Index) !void {
     const rr = emit.mir.instructions.items(.data)[inst].rr;
 
     switch (tag) {
-        .sxtb => try emit.writeInstruction(Instruction.sxtb(rr.rd, rr.rn)),
-        .sxth => try emit.writeInstruction(Instruction.sxth(rr.rd, rr.rn)),
-        .sxtw => try emit.writeInstruction(Instruction.sxtw(rr.rd, rr.rn)),
-        .uxtb => try emit.writeInstruction(Instruction.uxtb(rr.rd, rr.rn)),
-        .uxth => try emit.writeInstruction(Instruction.uxth(rr.rd, rr.rn)),
+        .sxtb => try emit.write_instruction(Instruction.sxtb(rr.rd, rr.rn)),
+        .sxth => try emit.write_instruction(Instruction.sxth(rr.rd, rr.rn)),
+        .sxtw => try emit.write_instruction(Instruction.sxtw(rr.rd, rr.rn)),
+        .uxtb => try emit.write_instruction(Instruction.uxtb(rr.rd, rr.rn)),
+        .uxth => try emit.write_instruction(Instruction.uxth(rr.rd, rr.rn)),
         else => unreachable,
     }
 }

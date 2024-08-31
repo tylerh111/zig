@@ -2,17 +2,17 @@ const std = @import("std");
 
 pub export fn entry() void {
     var ohnoes: *usize = undefined;
-    _ = sliceAsBytes(ohnoes);
+    _ = slice_as_bytes(ohnoes);
     _ = &ohnoes;
 }
-fn slice_as_bytes(slice: anytype) isPtrTo(.Array)(@TypeOf(slice)) {}
+fn slice_as_bytes(slice: anytype) is_ptr_to(.Array)(@TypeOf(slice)) {}
 
 pub const TraitFn = fn (type) bool;
 
 pub fn is_ptr_to(comptime id: std.builtin.TypeId) TraitFn {
     const Closure = struct {
         pub fn trait(comptime T: type) bool {
-            if (!comptime isSingleItemPtr(T)) return false;
+            if (!comptime is_single_item_ptr(T)) return false;
             return id == @typeInfo(std.meta.Child(T));
         }
     };

@@ -21,9 +21,9 @@ pub fn _allrem(a: i64, b: i64) callconv(.Stdcall) i64 {
     const an = (a ^ s_a) -% s_a;
     const bn = (b ^ s_b) -% s_b;
 
-    const r = @as(u64, @bitCast(an)) % @as(u64, @bitCast(bn));
+    const r = @as(u64, @bit_cast(an)) % @as(u64, @bit_cast(bn));
     const s = s_a ^ s_b;
-    return (@as(i64, @bitCast(r)) ^ s) -% s;
+    return (@as(i64, @bit_cast(r)) ^ s) -% s;
 }
 
 pub fn _aullrem() callconv(.Naked) void {

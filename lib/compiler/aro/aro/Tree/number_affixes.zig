@@ -29,10 +29,10 @@ pub const Prefix = enum(u8) {
             'x', 'X' => return if (buf.len == 2) .decimal else .hex,
             'b', 'B' => return if (buf.len == 2) .decimal else .binary,
             else => {
-                if (mem.indexOfAny(u8, buf, "eE.")) |_| {
+                if (mem.index_of_any(u8, buf, "eE.")) |_| {
                     // This is a decimal floating point number that happens to start with zero
                     return .decimal;
-                } else if (Suffix.fromString(buf[1..], .int)) |_| {
+                } else if (Suffix.from_string(buf[1..], .int)) |_| {
                     // This is `0` with a valid suffix
                     return .decimal;
                 } else {
@@ -151,8 +151,8 @@ pub const Suffix = enum {
             if (len != buf.len) continue;
 
             for (parts) |part| {
-                const lower = std.ascii.lowerString(&scratch, part);
-                if (mem.indexOf(u8, buf, part) == null and mem.indexOf(u8, buf, lower) == null) continue :top;
+                const lower = std.ascii.lower_string(&scratch, part);
+                if (mem.index_of(u8, buf, part) == null and mem.index_of(u8, buf, lower) == null) continue :top;
             }
             return tag;
         }
@@ -175,7 +175,7 @@ pub const Suffix = enum {
     }
 
     pub fn signedness(suffix: Suffix) std.builtin.Signedness {
-        return if (suffix.isSignedInteger()) .signed else .unsigned;
+        return if (suffix.is_signed_integer()) .signed else .unsigned;
     }
 
     pub fn is_bit_int(suffix: Suffix) bool {

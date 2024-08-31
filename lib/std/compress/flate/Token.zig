@@ -44,8 +44,8 @@ pub fn init_match(dist: u16, len: u16) Token {
     assert(dist >= consts.min_distance and dist <= consts.max_distance);
     return .{
         .kind = .match,
-        .dist = @intCast(dist - consts.min_distance),
-        .len_lit = @intCast(len - consts.base_length),
+        .dist = @int_cast(dist - consts.min_distance),
+        .len_lit = @int_cast(len - consts.base_length),
     };
 }
 
@@ -81,7 +81,7 @@ pub fn distance_code(t: Token) u8 {
 }
 
 pub fn distance_encoding(t: Token) MatchDistance {
-    var c = match_distances[t.distanceCode()];
+    var c = match_distances[t.distance_code()];
     c.extra_distance = t.dist - c.base_scaled;
     return c;
 }
@@ -198,7 +198,7 @@ const match_lengths = [_]MatchLength{
     .{ .extra_bits = 0, .base_scaled = 255, .base = 258, .code = 285 },
 };
 
-// Used in distanceCode fn to get index in match_distance table for each distance in range 0-32767.
+// Used in distance_code fn to get index in match_distance table for each distance in range 0-32767.
 const match_distances_index = [_]u8{
     0,  1,  2,  3,  4,  4,  5,  5,  6,  6,  6,  6,  7,  7,  7,  7,
     8,  8,  8,  8,  8,  8,  8,  8,  9,  9,  9,  9,  9,  9,  9,  9,
@@ -276,39 +276,39 @@ const match_distances = [_]MatchDistance{
 };
 
 test "size" {
-    try expect(@sizeOf(Token) == 4);
+    try expect(@size_of(Token) == 4);
 }
 
 // testing table https://datatracker.ietf.org/doc/html/rfc1951#page-12
 test "MatchLength" {
-    var c = Token.initMatch(1, 4).lengthEncoding();
+    var c = Token.init_match(1, 4).length_encoding();
     try expect(c.code == 258);
     try expect(c.extra_bits == 0);
     try expect(c.extra_length == 0);
 
-    c = Token.initMatch(1, 11).lengthEncoding();
+    c = Token.init_match(1, 11).length_encoding();
     try expect(c.code == 265);
     try expect(c.extra_bits == 1);
     try expect(c.extra_length == 0);
 
-    c = Token.initMatch(1, 12).lengthEncoding();
+    c = Token.init_match(1, 12).length_encoding();
     try expect(c.code == 265);
     try expect(c.extra_bits == 1);
     try expect(c.extra_length == 1);
 
-    c = Token.initMatch(1, 130).lengthEncoding();
+    c = Token.init_match(1, 130).length_encoding();
     try expect(c.code == 280);
     try expect(c.extra_bits == 4);
     try expect(c.extra_length == 130 - 115);
 }
 
 test "MatchDistance" {
-    var c = Token.initMatch(1, 4).distanceEncoding();
+    var c = Token.init_match(1, 4).distance_encoding();
     try expect(c.code == 0);
     try expect(c.extra_bits == 0);
     try expect(c.extra_distance == 0);
 
-    c = Token.initMatch(192, 4).distanceEncoding();
+    c = Token.init_match(192, 4).distance_encoding();
     try expect(c.code == 14);
     try expect(c.extra_bits == 6);
     try expect(c.extra_distance == 192 - 129);

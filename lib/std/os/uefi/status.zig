@@ -197,7 +197,7 @@ pub const Status = enum(usize) {
 
 test "status" {
     var st: Status = .DeviceError;
-    try testing.expectError(error.DeviceError, st.err());
+    try testing.expect_error(error.DeviceError, st.err());
 
     st = .Success;
     try st.err();

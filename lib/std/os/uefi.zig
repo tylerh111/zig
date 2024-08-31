@@ -61,22 +61,22 @@ pub const Guid = extern struct {
     ) !void {
         _ = options;
         if (f.len == 0) {
-            const fmt = std.fmt.fmtSliceHexLower;
+            const fmt = std.fmt.fmt_slice_hex_lower;
 
-            const time_low = @byteSwap(self.time_low);
-            const time_mid = @byteSwap(self.time_mid);
-            const time_high_and_version = @byteSwap(self.time_high_and_version);
+            const time_low = @byte_swap(self.time_low);
+            const time_mid = @byte_swap(self.time_mid);
+            const time_high_and_version = @byte_swap(self.time_high_and_version);
 
             return std.fmt.format(writer, "{:0>8}-{:0>4}-{:0>4}-{:0>2}{:0>2}-{:0>12}", .{
-                fmt(std.mem.asBytes(&time_low)),
-                fmt(std.mem.asBytes(&time_mid)),
-                fmt(std.mem.asBytes(&time_high_and_version)),
-                fmt(std.mem.asBytes(&self.clock_seq_high_and_reserved)),
-                fmt(std.mem.asBytes(&self.clock_seq_low)),
-                fmt(std.mem.asBytes(&self.node)),
+                fmt(std.mem.as_bytes(&time_low)),
+                fmt(std.mem.as_bytes(&time_mid)),
+                fmt(std.mem.as_bytes(&time_high_and_version)),
+                fmt(std.mem.as_bytes(&self.clock_seq_high_and_reserved)),
+                fmt(std.mem.as_bytes(&self.clock_seq_low)),
+                fmt(std.mem.as_bytes(&self.node)),
             });
         } else {
-            std.fmt.invalidFmtError(f, self);
+            std.fmt.invalid_fmt_error(f, self);
         }
     }
 
@@ -133,11 +133,11 @@ pub const Time = extern struct {
     pub const unspecified_timezone: i16 = 0x7ff;
 
     fn days_in_year(year: u16, maxMonth: u4) u32 {
-        const leapYear: std.time.epoch.YearLeapKind = if (std.time.epoch.isLeapYear(year)) .leap else .not_leap;
+        const leapYear: std.time.epoch.YearLeapKind = if (std.time.epoch.is_leap_year(year)) .leap else .not_leap;
         var days: u32 = 0;
         var month: u4 = 0;
         while (month < maxMonth) : (month += 1) {
-            days += std.time.epoch.getDaysInMonth(leapYear, @enumFromInt(month + 1));
+            days += std.time.epoch.get_days_in_month(leapYear, @enumFromInt(month + 1));
         }
         return days;
     }
@@ -147,10 +147,10 @@ pub const Time = extern struct {
         var days: u32 = 0;
 
         while (year < (self.year - 1971)) : (year += 1) {
-            days += daysInYear(year + 1970, 12);
+            days += days_in_year(year + 1970, 12);
         }
 
-        days += daysInYear(self.year, @as(u4, @intCast(self.month)) - 1) + self.day;
+        days += days_in_year(self.year, @as(u4, @int_cast(self.month)) - 1) + self.day;
         const hours = self.hour + (days * 24);
         const minutes = self.minute + (hours * 60);
         const seconds = self.second + (minutes * std.time.s_per_min);
@@ -175,9 +175,9 @@ pub const FileHandle = *opaque {};
 
 test "GUID formatting" {
     const bytes = [_]u8{ 137, 60, 203, 50, 128, 128, 124, 66, 186, 19, 80, 73, 135, 59, 194, 135 };
-    const guid: Guid = @bitCast(bytes);
+    const guid: Guid = @bit_cast(bytes);
 
-    const str = try std.fmt.allocPrint(std.testing.allocator, "{}", .{guid});
+    const str = try std.fmt.alloc_print(std.testing.allocator, "{}", .{guid});
     defer std.testing.allocator.free(str);
 
     try std.testing.expect(std.mem.eql(u8, str, "32cb3c89-8080-427c-ba13-5049873bc287"));
@@ -193,7 +193,7 @@ pub const FileInfo = extern struct {
     attribute: u64,
 
     pub fn get_file_name(self: *const FileInfo) [*:0]const u16 {
-        return @ptrCast(@alignCast(@as([*]const u8, @ptrCast(self)) + @sizeOf(FileInfo)));
+        return @ptr_cast(@align_cast(@as([*]const u8, @ptr_cast(self)) + @size_of(FileInfo)));
     }
 
     pub const efi_file_read_only: u64 = 0x0000000000000001;
@@ -223,7 +223,7 @@ pub const FileSystemInfo = extern struct {
     _volume_label: u16,
 
     pub fn get_volume_label(self: *const FileSystemInfo) [*:0]const u16 {
-        return @as([*:0]const u16, @ptrCast(&self._volume_label));
+        return @as([*:0]const u16, @ptr_cast(&self._volume_label));
     }
 
     pub const guid align(8) = Guid{

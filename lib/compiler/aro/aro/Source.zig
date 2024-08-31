@@ -40,15 +40,15 @@ kind: Kind,
 /// Todo: binary search instead of scanning entire `splice_locs`.
 pub fn num_splices_before(source: Source, byte_offset: u32) u32 {
     for (source.splice_locs, 0..) |splice_offset, i| {
-        if (splice_offset > byte_offset) return @intCast(i);
+        if (splice_offset > byte_offset) return @int_cast(i);
     }
-    return @intCast(source.splice_locs.len);
+    return @int_cast(source.splice_locs.len);
 }
 
 /// Returns the actual line number (before newline splicing) of a Location
 /// This corresponds to what the user would actually see in their text editor
 pub fn physical_line(source: Source, loc: Location) u32 {
-    return loc.line + source.numSplicesBefore(loc.byte_offset);
+    return loc.line + source.num_splices_before(loc.byte_offset);
 }
 
 const LineCol = struct { line: []const u8, line_no: u32, col: u32, width: u32, end_with_splice: bool };
@@ -56,37 +56,37 @@ const LineCol = struct { line: []const u8, line_no: u32, col: u32, width: u32, e
 pub fn line_col(source: Source, loc: Location) LineCol {
     var start: usize = 0;
     // find the start of the line which is either a newline or a splice
-    if (std.mem.lastIndexOfScalar(u8, source.buf[0..loc.byte_offset], '\n')) |some| start = some + 1;
+    if (std.mem.last_index_of_scalar(u8, source.buf[0..loc.byte_offset], '\n')) |some| start = some + 1;
     const splice_index: u32 = for (source.splice_locs, 0..) |splice_offset, i| {
         if (splice_offset > start) {
             if (splice_offset < loc.byte_offset) {
                 start = splice_offset;
-                break @as(u32, @intCast(i)) + 1;
+                break @as(u32, @int_cast(i)) + 1;
             }
-            break @intCast(i);
+            break @int_cast(i);
         }
-    } else @intCast(source.splice_locs.len);
+    } else @int_cast(source.splice_locs.len);
     var i: usize = start;
     var col: u32 = 1;
     var width: u32 = 0;
 
     while (i < loc.byte_offset) : (col += 1) { // TODO this is still incorrect, but better
-        const len = std.unicode.utf8ByteSequenceLength(source.buf[i]) catch {
+        const len = std.unicode.utf8_byte_sequence_length(source.buf[i]) catch {
             i += 1;
             continue;
         };
-        const cp = std.unicode.utf8Decode(source.buf[i..][0..len]) catch {
+        const cp = std.unicode.utf8_decode(source.buf[i..][0..len]) catch {
             i += 1;
             continue;
         };
-        width += codepointWidth(cp);
+        width += codepoint_width(cp);
         i += len;
     }
 
     // find the end of the line which is either a newline, EOF or a splice
     var nl = source.buf.len;
     var end_with_splice = false;
-    if (std.mem.indexOfScalar(u8, source.buf[start..], '\n')) |some| nl = some + start;
+    if (std.mem.index_of_scalar(u8, source.buf[start..], '\n')) |some| nl = some + start;
     if (source.splice_locs.len > splice_index and nl > source.splice_locs[splice_index] and source.splice_locs[splice_index] > start) {
         end_with_splice = true;
         nl = source.splice_locs[splice_index];

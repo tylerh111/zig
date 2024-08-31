@@ -5,11 +5,11 @@ fn add_forty_two(x: anytype) @TypeOf(x) {
 }
 
 test "fn type inference" {
-    try expect(addFortyTwo(1) == 43);
-    try expect(@TypeOf(addFortyTwo(1)) == comptime_int);
+    try expect(add_forty_two(1) == 43);
+    try expect(@TypeOf(add_forty_two(1)) == comptime_int);
     const y: i64 = 2;
-    try expect(addFortyTwo(y) == 44);
-    try expect(@TypeOf(addFortyTwo(y)) == i64);
+    try expect(add_forty_two(y) == 44);
+    try expect(@TypeOf(add_forty_two(y)) == i64);
 }
 
 // test

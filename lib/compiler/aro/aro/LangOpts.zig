@@ -47,7 +47,7 @@ pub const Standard = enum {
     /// Working Draft for ISO C23 with GNU extensions
     gnu23,
 
-    const NameMap = std.StaticStringMap(Standard).initComptime(.{
+    const NameMap = std.StaticStringMap(Standard).init_comptime(.{
         .{ "c89", .c89 },                .{ "c90", .c89 },          .{ "iso9899:1990", .c89 },
         .{ "iso9899:199409", .iso9899 }, .{ "gnu89", .gnu89 },      .{ "gnu90", .gnu89 },
         .{ "c99", .c99 },                .{ "iso9899:1999", .c99 }, .{ "c9x", .c99 },
@@ -60,7 +60,7 @@ pub const Standard = enum {
     });
 
     pub fn at_least(self: Standard, other: Standard) bool {
-        return @intFromEnum(self) >= @intFromEnum(other);
+        return @int_from_enum(self) >= @int_from_enum(other);
     }
 
     pub fn is_gnu(standard: Standard) bool {
@@ -71,7 +71,7 @@ pub const Standard = enum {
     }
 
     pub fn is_explicit_gnu(standard: Standard) bool {
-        return standard.isGNU() and standard != .default;
+        return standard.is_gnu() and standard != .default;
     }
 
     /// Value reported by __STDC_VERSION__ macro
@@ -88,19 +88,19 @@ pub const Standard = enum {
 
     pub fn codepoint_allowed_in_identifier(standard: Standard, codepoint: u21, is_start: bool) bool {
         if (is_start) {
-            return if (standard.atLeast(.c23))
-                char_info.isXidStart(codepoint)
-            else if (standard.atLeast(.c11))
-                char_info.isC11IdChar(codepoint) and !char_info.isC11DisallowedInitialIdChar(codepoint)
+            return if (standard.at_least(.c23))
+                char_info.is_xid_start(codepoint)
+            else if (standard.at_least(.c11))
+                char_info.is_c11_id_char(codepoint) and !char_info.is_c11_disallowed_initial_id_char(codepoint)
             else
-                char_info.isC99IdChar(codepoint) and !char_info.isC99DisallowedInitialIDChar(codepoint);
+                char_info.is_c99_id_char(codepoint) and !char_info.is_c99_disallowed_initial_idchar(codepoint);
         } else {
-            return if (standard.atLeast(.c23))
-                char_info.isXidContinue(codepoint)
-            else if (standard.atLeast(.c11))
-                char_info.isC11IdChar(codepoint)
+            return if (standard.at_least(.c23))
+                char_info.is_xid_continue(codepoint)
+            else if (standard.at_least(.c11))
+                char_info.is_c11_id_char(codepoint)
             else
-                char_info.isC99IdChar(codepoint);
+                char_info.is_c99_id_char(codepoint);
         }
     }
 };
@@ -155,16 +155,16 @@ pub fn disable_msextensions(self: *LangOpts) void {
 }
 
 pub fn has_char8_t(self: *const LangOpts) bool {
-    return self.has_char8_t_override orelse self.standard.atLeast(.c23);
+    return self.has_char8_t_override orelse self.standard.at_least(.c23);
 }
 
 pub fn has_digraphs(self: *const LangOpts) bool {
-    return self.digraphs orelse self.standard.atLeast(.gnu89);
+    return self.digraphs orelse self.standard.at_least(.gnu89);
 }
 
 pub fn set_emulated_compiler(self: *LangOpts, compiler: Compiler) void {
     self.emulate = compiler;
-    if (compiler == .msvc) self.enableMSExtensions();
+    if (compiler == .msvc) self.enable_msextensions();
 }
 
 pub fn set_fp_eval_method(self: *LangOpts, fp_eval_method: FPEvalMethod) void {

@@ -11,86 +11,86 @@ const builtin = @import("builtin");
 pub fn suggest_vector_length_for_cpu(comptime T: type, comptime cpu: std.Target.Cpu) ?comptime_int {
     // This is guesswork, if you have better suggestions can add it or edit the current here
     // This can run in comptime only, but stage 1 fails at it, stage 2 can understand it
-    const element_bit_size = @max(8, std.math.ceilPowerOfTwo(u16, @bitSizeOf(T)) catch unreachable);
+    const element_bit_size = @max(8, std.math.ceil_power_of_two(u16, @bitSizeOf(T)) catch unreachable);
     const vector_bit_size: u16 = blk: {
-        if (cpu.arch.isX86()) {
-            if (T == bool and std.Target.x86.featureSetHas(cpu.features, .prefer_mask_registers)) return 64;
-            if (builtin.zig_backend != .stage2_x86_64 and std.Target.x86.featureSetHas(cpu.features, .avx512f) and !std.Target.x86.featureSetHasAny(cpu.features, .{ .prefer_256_bit, .prefer_128_bit })) break :blk 512;
-            if (std.Target.x86.featureSetHasAny(cpu.features, .{ .prefer_256_bit, .avx2 }) and !std.Target.x86.featureSetHas(cpu.features, .prefer_128_bit)) break :blk 256;
-            if (std.Target.x86.featureSetHas(cpu.features, .sse)) break :blk 128;
-            if (std.Target.x86.featureSetHasAny(cpu.features, .{ .mmx, .@"3dnow" })) break :blk 64;
-        } else if (cpu.arch.isARM()) {
-            if (std.Target.arm.featureSetHas(cpu.features, .neon)) break :blk 128;
-        } else if (cpu.arch.isAARCH64()) {
+        if (cpu.arch.is_x86()) {
+            if (T == bool and std.Target.x86.feature_set_has(cpu.features, .prefer_mask_registers)) return 64;
+            if (builtin.zig_backend != .stage2_x86_64 and std.Target.x86.feature_set_has(cpu.features, .avx512f) and !std.Target.x86.feature_set_has_any(cpu.features, .{ .prefer_256_bit, .prefer_128_bit })) break :blk 512;
+            if (std.Target.x86.feature_set_has_any(cpu.features, .{ .prefer_256_bit, .avx2 }) and !std.Target.x86.feature_set_has(cpu.features, .prefer_128_bit)) break :blk 256;
+            if (std.Target.x86.feature_set_has(cpu.features, .sse)) break :blk 128;
+            if (std.Target.x86.feature_set_has_any(cpu.features, .{ .mmx, .@"3dnow" })) break :blk 64;
+        } else if (cpu.arch.is_arm()) {
+            if (std.Target.arm.feature_set_has(cpu.features, .neon)) break :blk 128;
+        } else if (cpu.arch.is_aarch64()) {
             // SVE allows up to 2048 bits in the specification, as of 2022 the most powerful machine has implemented 512-bit
             // I think is safer to just be on 128 until is more common
             // TODO: Check on this return when bigger values are more common
-            if (std.Target.aarch64.featureSetHas(cpu.features, .sve)) break :blk 128;
-            if (std.Target.aarch64.featureSetHas(cpu.features, .neon)) break :blk 128;
-        } else if (cpu.arch.isPPC() or cpu.arch.isPPC64()) {
-            if (std.Target.powerpc.featureSetHas(cpu.features, .altivec)) break :blk 128;
-        } else if (cpu.arch.isMIPS()) {
-            if (std.Target.mips.featureSetHas(cpu.features, .msa)) break :blk 128;
+            if (std.Target.aarch64.feature_set_has(cpu.features, .sve)) break :blk 128;
+            if (std.Target.aarch64.feature_set_has(cpu.features, .neon)) break :blk 128;
+        } else if (cpu.arch.is_ppc() or cpu.arch.is_ppc64()) {
+            if (std.Target.powerpc.feature_set_has(cpu.features, .altivec)) break :blk 128;
+        } else if (cpu.arch.is_mips()) {
+            if (std.Target.mips.feature_set_has(cpu.features, .msa)) break :blk 128;
             // TODO: Test MIPS capability to handle bigger vectors
             //       In theory MDMX and by extension mips3d have 32 registers of 64 bits which can use in parallel
             //       for multiple processing, but I don't know what's optimal here, if using
             //       the 2048 bits or using just 64 per vector or something in between
-            if (std.Target.mips.featureSetHas(cpu.features, std.Target.mips.Feature.mips3d)) break :blk 64;
-        } else if (cpu.arch.isRISCV()) {
+            if (std.Target.mips.feature_set_has(cpu.features, std.Target.mips.Feature.mips3d)) break :blk 64;
+        } else if (cpu.arch.is_riscv()) {
             // in risc-v the Vector Extension allows configurable vector sizes, but a standard size of 128 is a safe estimate
-            if (std.Target.riscv.featureSetHas(cpu.features, .v)) break :blk 128;
-        } else if (cpu.arch.isSPARC()) {
+            if (std.Target.riscv.feature_set_has(cpu.features, .v)) break :blk 128;
+        } else if (cpu.arch.is_sparc()) {
             // TODO: Test Sparc capability to handle bigger vectors
             //       In theory Sparc have 32 registers of 64 bits which can use in parallel
             //       for multiple processing, but I don't know what's optimal here, if using
             //       the 2048 bits or using just 64 per vector or something in between
-            if (std.Target.sparc.featureSetHasAny(cpu.features, .{ .vis, .vis2, .vis3 })) break :blk 64;
-        } else if (cpu.arch.isWasm()) {
-            if (std.Target.wasm.featureSetHas(cpu.features, .simd128)) break :blk 128;
+            if (std.Target.sparc.feature_set_has_any(cpu.features, .{ .vis, .vis2, .vis3 })) break :blk 64;
+        } else if (cpu.arch.is_wasm()) {
+            if (std.Target.wasm.feature_set_has(cpu.features, .simd128)) break :blk 128;
         }
         return null;
     };
     if (vector_bit_size <= element_bit_size) return null;
 
-    return @divExact(vector_bit_size, element_bit_size);
+    return @div_exact(vector_bit_size, element_bit_size);
 }
 
 /// Suggests a target-dependant vector length for a given type, or null if scalars are recommended.
 /// Not yet implemented for every CPU architecture.
 pub fn suggest_vector_length(comptime T: type) ?comptime_int {
-    return suggestVectorLengthForCpu(T, builtin.cpu);
+    return suggest_vector_length_for_cpu(T, builtin.cpu);
 }
 
-test "suggestVectorLengthForCpu works with signed and unsigned values" {
+test "suggest_vector_length_for_cpu works with signed and unsigned values" {
     comptime var cpu = std.Target.Cpu.baseline(std.Target.Cpu.Arch.x86_64);
-    comptime cpu.features.addFeature(@intFromEnum(std.Target.x86.Feature.avx512f));
-    comptime cpu.features.populateDependencies(&std.Target.x86.all_features);
+    comptime cpu.features.add_feature(@int_from_enum(std.Target.x86.Feature.avx512f));
+    comptime cpu.features.populate_dependencies(&std.Target.x86.all_features);
     const expected_len: usize = switch (builtin.zig_backend) {
         .stage2_x86_64 => 8,
         else => 16,
     };
-    const signed_integer_len = suggestVectorLengthForCpu(i32, cpu).?;
-    const unsigned_integer_len = suggestVectorLengthForCpu(u32, cpu).?;
-    try std.testing.expectEqual(expected_len, unsigned_integer_len);
-    try std.testing.expectEqual(expected_len, signed_integer_len);
+    const signed_integer_len = suggest_vector_length_for_cpu(i32, cpu).?;
+    const unsigned_integer_len = suggest_vector_length_for_cpu(u32, cpu).?;
+    try std.testing.expect_equal(expected_len, unsigned_integer_len);
+    try std.testing.expect_equal(expected_len, signed_integer_len);
 }
 
 fn vector_length(comptime VectorType: type) comptime_int {
     return switch (@typeInfo(VectorType)) {
         .Vector => |info| info.len,
         .Array => |info| info.len,
-        else => @compileError("Invalid type " ++ @typeName(VectorType)),
+        else => @compile_error("Invalid type " ++ @type_name(VectorType)),
     };
 }
 
 /// Returns the smallest type of unsigned ints capable of indexing any element within the given vector type.
 pub fn VectorIndex(comptime VectorType: type) type {
-    return std.math.IntFittingRange(0, vectorLength(VectorType) - 1);
+    return std.math.IntFittingRange(0, vector_length(VectorType) - 1);
 }
 
 /// Returns the smallest type of unsigned ints capable of holding the length of the given vector type.
 pub fn VectorCount(comptime VectorType: type) type {
-    return std.math.IntFittingRange(0, vectorLength(VectorType));
+    return std.math.IntFittingRange(0, vector_length(VectorType));
 }
 
 /// Returns a vector containing the first `len` integers in order from 0 to `len`-1.
@@ -100,9 +100,9 @@ pub inline fn iota(comptime T: type, comptime len: usize) @Vector(len, T) {
         var out: [len]T = undefined;
         for (&out, 0..) |*element, i| {
             element.* = switch (@typeInfo(T)) {
-                .Int => @as(T, @intCast(i)),
-                .Float => @as(T, @floatFromInt(i)),
-                else => @compileError("Can't use type " ++ @typeName(T) ++ " in iota."),
+                .Int => @as(T, @int_cast(i)),
+                .Float => @as(T, @float_from_int(i)),
+                else => @compile_error("Can't use type " ++ @type_name(T) ++ " in iota."),
             };
         }
         return @as(@Vector(len, T), out);
@@ -114,28 +114,28 @@ pub inline fn iota(comptime T: type, comptime len: usize) @Vector(len, T) {
 pub fn repeat(comptime len: usize, vec: anytype) @Vector(len, std.meta.Child(@TypeOf(vec))) {
     const Child = std.meta.Child(@TypeOf(vec));
 
-    return @shuffle(Child, vec, undefined, iota(i32, len) % @as(@Vector(len, i32), @splat(@intCast(vectorLength(@TypeOf(vec))))));
+    return @shuffle(Child, vec, undefined, iota(i32, len) % @as(@Vector(len, i32), @splat(@int_cast(vector_length(@TypeOf(vec))))));
 }
 
 /// Returns a vector containing all elements of the first vector at the lower indices followed by all elements of the second vector
 /// at the higher indices.
-pub fn join(a: anytype, b: anytype) @Vector(vectorLength(@TypeOf(a)) + vectorLength(@TypeOf(b)), std.meta.Child(@TypeOf(a))) {
+pub fn join(a: anytype, b: anytype) @Vector(vector_length(@TypeOf(a)) + vector_length(@TypeOf(b)), std.meta.Child(@TypeOf(a))) {
     const Child = std.meta.Child(@TypeOf(a));
-    const a_len = vectorLength(@TypeOf(a));
-    const b_len = vectorLength(@TypeOf(b));
+    const a_len = vector_length(@TypeOf(a));
+    const b_len = vector_length(@TypeOf(b));
 
     return @shuffle(Child, a, b, @as([a_len]i32, iota(i32, a_len)) ++ @as([b_len]i32, ~iota(i32, b_len)));
 }
 
 /// Returns a vector whose elements alternates between those of each input vector.
 /// For example, `interlace(.{[4]u32{11, 12, 13, 14}, [4]u32{21, 22, 23, 24}})` returns a vector containing `.{11, 21, 12, 22, 13, 23, 14, 24}`.
-pub fn interlace(vecs: anytype) @Vector(vectorLength(@TypeOf(vecs[0])) * vecs.len, std.meta.Child(@TypeOf(vecs[0]))) {
+pub fn interlace(vecs: anytype) @Vector(vector_length(@TypeOf(vecs[0])) * vecs.len, std.meta.Child(@TypeOf(vecs[0]))) {
     // interlace doesn't work on MIPS, for some reason.
     // Notes from earlier debug attempt:
     //  The indices are correct. The problem seems to be with the @shuffle builtin.
     //  On MIPS, the test that interlaces small_base gives { 0, 2, 0, 0, 64, 255, 248, 200, 0, 0 }.
     //  Calling this with two inputs seems to work fine, but I'll let the compile error trigger for all inputs, just to be safe.
-    comptime if (builtin.cpu.arch.isMIPS()) @compileError("TODO: Find out why interlace() doesn't work on MIPS");
+    comptime if (builtin.cpu.arch.is_mips()) @compile_error("TODO: Find out why interlace() doesn't work on MIPS");
 
     const VecType = @TypeOf(vecs[0]);
     const vecs_arr = @as([vecs.len]VecType, vecs);
@@ -146,20 +146,20 @@ pub fn interlace(vecs: anytype) @Vector(vectorLength(@TypeOf(vecs[0])) * vecs.le
     const a_vec_count = (1 + vecs_arr.len) >> 1;
     const b_vec_count = vecs_arr.len >> 1;
 
-    const a = interlace(@as(*const [a_vec_count]VecType, @ptrCast(vecs_arr[0..a_vec_count])).*);
-    const b = interlace(@as(*const [b_vec_count]VecType, @ptrCast(vecs_arr[a_vec_count..])).*);
+    const a = interlace(@as(*const [a_vec_count]VecType, @ptr_cast(vecs_arr[0..a_vec_count])).*);
+    const b = interlace(@as(*const [b_vec_count]VecType, @ptr_cast(vecs_arr[a_vec_count..])).*);
 
-    const a_len = vectorLength(@TypeOf(a));
-    const b_len = vectorLength(@TypeOf(b));
+    const a_len = vector_length(@TypeOf(a));
+    const b_len = vector_length(@TypeOf(b));
     const len = a_len + b_len;
 
     const indices = comptime blk: {
         const Vi32 = @Vector(len, i32);
         const count_up = iota(i32, len);
-        const cycle = @divFloor(count_up, @as(Vi32, @splat(@intCast(vecs_arr.len))));
+        const cycle = @div_floor(count_up, @as(Vi32, @splat(@int_cast(vecs_arr.len))));
         const select_mask = repeat(len, join(@as(@Vector(a_vec_count, bool), @splat(true)), @as(@Vector(b_vec_count, bool), @splat(false))));
-        const a_indices = count_up - cycle * @as(Vi32, @splat(@intCast(b_vec_count)));
-        const b_indices = shiftElementsRight(count_up - cycle * @as(Vi32, @splat(@intCast(a_vec_count))), a_vec_count, 0);
+        const a_indices = count_up - cycle * @as(Vi32, @splat(@int_cast(b_vec_count)));
+        const b_indices = shift_elements_right(count_up - cycle * @as(Vi32, @splat(@int_cast(a_vec_count))), a_vec_count, 0);
         break :blk @select(i32, select_mask, a_indices, ~b_indices);
     };
 
@@ -172,17 +172,17 @@ pub fn deinterlace(
     comptime vec_count: usize,
     interlaced: anytype,
 ) [vec_count]@Vector(
-    vectorLength(@TypeOf(interlaced)) / vec_count,
+    vector_length(@TypeOf(interlaced)) / vec_count,
     std.meta.Child(@TypeOf(interlaced)),
 ) {
-    const vec_len = vectorLength(@TypeOf(interlaced)) / vec_count;
+    const vec_len = vector_length(@TypeOf(interlaced)) / vec_count;
     const Child = std.meta.Child(@TypeOf(interlaced));
 
     var out: [vec_count]@Vector(vec_len, Child) = undefined;
 
     comptime var i: usize = 0; // for-loops don't work for this, apparently.
     inline while (i < out.len) : (i += 1) {
-        const indices = comptime iota(i32, vec_len) * @as(@Vector(vec_len, i32), @splat(@intCast(vec_count))) + @as(@Vector(vec_len, i32), @splat(@intCast(i)));
+        const indices = comptime iota(i32, vec_len) * @as(@Vector(vec_len, i32), @splat(@int_cast(vec_count))) + @as(@Vector(vec_len, i32), @splat(@int_cast(i)));
         out[i] = @shuffle(Child, interlaced, undefined, indices);
     }
 
@@ -195,11 +195,11 @@ pub fn extract(
     comptime count: VectorCount(@TypeOf(vec)),
 ) @Vector(count, std.meta.Child(@TypeOf(vec))) {
     const Child = std.meta.Child(@TypeOf(vec));
-    const len = vectorLength(@TypeOf(vec));
+    const len = vector_length(@TypeOf(vec));
 
-    std.debug.assert(@as(comptime_int, @intCast(first)) + @as(comptime_int, @intCast(count)) <= len);
+    std.debug.assert(@as(comptime_int, @int_cast(first)) + @as(comptime_int, @int_cast(count)) <= len);
 
-    return @shuffle(Child, vec, undefined, iota(i32, count) + @as(@Vector(count, i32), @splat(@intCast(first))));
+    return @shuffle(Child, vec, undefined, iota(i32, count) + @as(@Vector(count, i32), @splat(@int_cast(first))));
 }
 
 test "vector patterns" {
@@ -221,22 +221,22 @@ test "vector patterns" {
         @Vector(2, u8){ 8, 9 },
     };
 
-    try std.testing.expectEqual([6]u32{ 10, 20, 30, 40, 10, 20 }, repeat(6, base));
-    try std.testing.expectEqual([8]u32{ 10, 20, 30, 40, 55, 66, 77, 88 }, join(base, other_base));
-    try std.testing.expectEqual([2]u32{ 20, 30 }, extract(base, 1, 2));
+    try std.testing.expect_equal([6]u32{ 10, 20, 30, 40, 10, 20 }, repeat(6, base));
+    try std.testing.expect_equal([8]u32{ 10, 20, 30, 40, 55, 66, 77, 88 }, join(base, other_base));
+    try std.testing.expect_equal([2]u32{ 20, 30 }, extract(base, 1, 2));
 
-    if (comptime !builtin.cpu.arch.isMIPS()) {
-        try std.testing.expectEqual([8]u32{ 10, 55, 20, 66, 30, 77, 40, 88 }, interlace(.{ base, other_base }));
+    if (comptime !builtin.cpu.arch.is_mips()) {
+        try std.testing.expect_equal([8]u32{ 10, 55, 20, 66, 30, 77, 40, 88 }, interlace(.{ base, other_base }));
 
         const small_braid = interlace(small_bases);
-        try std.testing.expectEqual([10]u8{ 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 }, small_braid);
-        try std.testing.expectEqual(small_bases, deinterlace(small_bases.len, small_braid));
+        try std.testing.expect_equal([10]u8{ 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 }, small_braid);
+        try std.testing.expect_equal(small_bases, deinterlace(small_bases.len, small_braid));
     }
 }
 
 /// Joins two vectors, shifts them leftwards (towards lower indices) and extracts the leftmost elements into a vector the length of a and b.
 pub fn merge_shift(a: anytype, b: anytype, comptime shift: VectorCount(@TypeOf(a, b))) @TypeOf(a, b) {
-    const len = vectorLength(@TypeOf(a, b));
+    const len = vector_length(@TypeOf(a, b));
 
     return extract(join(a, b), shift, len);
 }
@@ -248,9 +248,9 @@ pub fn shift_elements_right(vec: anytype, comptime amount: VectorCount(@TypeOf(v
     // slice would be comptime-known. This would permit vector shifts and rotates by a non-comptime-known amount.
     // However, I am unsure whether compiler optimizations would handle that well enough on all platforms.
     const V = @TypeOf(vec);
-    const len = vectorLength(V);
+    const len = vector_length(V);
 
-    return mergeShift(@as(V, @splat(shift_in)), vec, len - amount);
+    return merge_shift(@as(V, @splat(shift_in)), vec, len - amount);
 }
 
 /// Elements are shifted leftwards (towards lower indices). New elements are added to the right, and the leftmost elements are cut off
@@ -258,24 +258,24 @@ pub fn shift_elements_right(vec: anytype, comptime amount: VectorCount(@TypeOf(v
 pub fn shift_elements_left(vec: anytype, comptime amount: VectorCount(@TypeOf(vec)), shift_in: std.meta.Child(@TypeOf(vec))) @TypeOf(vec) {
     const V = @TypeOf(vec);
 
-    return mergeShift(vec, @as(V, @splat(shift_in)), amount);
+    return merge_shift(vec, @as(V, @splat(shift_in)), amount);
 }
 
 /// Elements are shifted leftwards (towards lower indices). Elements that leave to the left will reappear to the right in the same order.
 pub fn rotate_elements_left(vec: anytype, comptime amount: VectorCount(@TypeOf(vec))) @TypeOf(vec) {
-    return mergeShift(vec, vec, amount);
+    return merge_shift(vec, vec, amount);
 }
 
 /// Elements are shifted rightwards (towards higher indices). Elements that leave to the right will reappear to the left in the same order.
 pub fn rotate_elements_right(vec: anytype, comptime amount: VectorCount(@TypeOf(vec))) @TypeOf(vec) {
-    return rotateElementsLeft(vec, vectorLength(@TypeOf(vec)) - amount);
+    return rotate_elements_left(vec, vector_length(@TypeOf(vec)) - amount);
 }
 
 pub fn reverse_order(vec: anytype) @TypeOf(vec) {
     const Child = std.meta.Child(@TypeOf(vec));
-    const len = vectorLength(@TypeOf(vec));
+    const len = vector_length(@TypeOf(vec));
 
-    return @shuffle(Child, vec, undefined, @as(@Vector(len, i32), @splat(@as(i32, @intCast(len)) - 1)) - iota(i32, len));
+    return @shuffle(Child, vec, undefined, @as(@Vector(len, i32), @splat(@as(i32, @int_cast(len)) - 1)) - iota(i32, len));
 }
 
 test "vector shifting" {
@@ -283,15 +283,15 @@ test "vector shifting" {
 
     const base = @Vector(4, u32){ 10, 20, 30, 40 };
 
-    try std.testing.expectEqual([4]u32{ 30, 40, 999, 999 }, shiftElementsLeft(base, 2, 999));
-    try std.testing.expectEqual([4]u32{ 999, 999, 10, 20 }, shiftElementsRight(base, 2, 999));
-    try std.testing.expectEqual([4]u32{ 20, 30, 40, 10 }, rotateElementsLeft(base, 1));
-    try std.testing.expectEqual([4]u32{ 40, 10, 20, 30 }, rotateElementsRight(base, 1));
-    try std.testing.expectEqual([4]u32{ 40, 30, 20, 10 }, reverseOrder(base));
+    try std.testing.expect_equal([4]u32{ 30, 40, 999, 999 }, shift_elements_left(base, 2, 999));
+    try std.testing.expect_equal([4]u32{ 999, 999, 10, 20 }, shift_elements_right(base, 2, 999));
+    try std.testing.expect_equal([4]u32{ 20, 30, 40, 10 }, rotate_elements_left(base, 1));
+    try std.testing.expect_equal([4]u32{ 40, 10, 20, 30 }, rotate_elements_right(base, 1));
+    try std.testing.expect_equal([4]u32{ 40, 30, 20, 10 }, reverse_order(base));
 }
 
 pub fn first_true(vec: anytype) ?VectorIndex(@TypeOf(vec)) {
-    const len = vectorLength(@TypeOf(vec));
+    const len = vector_length(@TypeOf(vec));
     const IndexInt = VectorIndex(@TypeOf(vec));
 
     if (!@reduce(.Or, vec)) {
@@ -303,7 +303,7 @@ pub fn first_true(vec: anytype) ?VectorIndex(@TypeOf(vec)) {
 }
 
 pub fn last_true(vec: anytype) ?VectorIndex(@TypeOf(vec)) {
-    const len = vectorLength(@TypeOf(vec));
+    const len = vector_length(@TypeOf(vec));
     const IndexInt = VectorIndex(@TypeOf(vec));
 
     if (!@reduce(.Or, vec)) {
@@ -316,7 +316,7 @@ pub fn last_true(vec: anytype) ?VectorIndex(@TypeOf(vec)) {
 }
 
 pub fn count_trues(vec: anytype) VectorCount(@TypeOf(vec)) {
-    const len = vectorLength(@TypeOf(vec));
+    const len = vector_length(@TypeOf(vec));
     const CountIntType = VectorCount(@TypeOf(vec));
 
     const all_ones: @Vector(len, CountIntType) = @splat(1);
@@ -329,19 +329,19 @@ pub fn count_trues(vec: anytype) VectorCount(@TypeOf(vec)) {
 pub fn first_index_of_value(vec: anytype, value: std.meta.Child(@TypeOf(vec))) ?VectorIndex(@TypeOf(vec)) {
     const V = @TypeOf(vec);
 
-    return firstTrue(vec == @as(V, @splat(value)));
+    return first_true(vec == @as(V, @splat(value)));
 }
 
 pub fn last_index_of_value(vec: anytype, value: std.meta.Child(@TypeOf(vec))) ?VectorIndex(@TypeOf(vec)) {
     const V = @TypeOf(vec);
 
-    return lastTrue(vec == @as(V, @splat(value)));
+    return last_true(vec == @as(V, @splat(value)));
 }
 
 pub fn count_elements_with_value(vec: anytype, value: std.meta.Child(@TypeOf(vec))) VectorCount(@TypeOf(vec)) {
     const V = @TypeOf(vec);
 
-    return countTrues(vec == @as(V, @splat(value)));
+    return count_trues(vec == @as(V, @splat(value)));
 }
 
 test "vector searching" {
@@ -349,13 +349,13 @@ test "vector searching" {
 
     const base = @Vector(8, u32){ 6, 4, 7, 4, 4, 2, 3, 7 };
 
-    try std.testing.expectEqual(@as(?u3, 1), firstIndexOfValue(base, 4));
-    try std.testing.expectEqual(@as(?u3, 4), lastIndexOfValue(base, 4));
-    try std.testing.expectEqual(@as(?u3, null), lastIndexOfValue(base, 99));
-    try std.testing.expectEqual(@as(u4, 3), countElementsWithValue(base, 4));
+    try std.testing.expect_equal(@as(?u3, 1), first_index_of_value(base, 4));
+    try std.testing.expect_equal(@as(?u3, 4), last_index_of_value(base, 4));
+    try std.testing.expect_equal(@as(?u3, null), last_index_of_value(base, 99));
+    try std.testing.expect_equal(@as(u4, 3), count_elements_with_value(base, 4));
 }
 
-/// Same as prefixScan, but with a user-provided, mathematically associative function.
+/// Same as prefix_scan, but with a user-provided, mathematically associative function.
 pub fn prefix_scan_with_func(
     comptime hop: isize,
     vec: anytype,
@@ -367,17 +367,17 @@ pub fn prefix_scan_with_func(
     comptime identity: std.meta.Child(@TypeOf(vec)),
 ) if (ErrorType == void) @TypeOf(vec) else ErrorType!@TypeOf(vec) {
     // I haven't debugged this, but it might be a cousin of sorts to what's going on with interlace.
-    comptime if (builtin.cpu.arch.isMIPS()) @compileError("TODO: Find out why prefixScan doesn't work on MIPS");
+    comptime if (builtin.cpu.arch.is_mips()) @compile_error("TODO: Find out why prefix_scan doesn't work on MIPS");
 
-    const len = vectorLength(@TypeOf(vec));
+    const len = vector_length(@TypeOf(vec));
 
-    if (hop == 0) @compileError("hop can not be 0; you'd be going nowhere forever!");
+    if (hop == 0) @compile_error("hop can not be 0; you'd be going nowhere forever!");
     const abs_hop = if (hop < 0) -hop else hop;
 
     var acc = vec;
     comptime var i = 0;
     inline while ((abs_hop << i) < len) : (i += 1) {
-        const shifted = if (hop < 0) shiftElementsLeft(acc, abs_hop << i, identity) else shiftElementsRight(acc, abs_hop << i, identity);
+        const shifted = if (hop < 0) shift_elements_left(acc, abs_hop << i, identity) else shift_elements_right(acc, abs_hop << i, identity);
 
         acc = if (ErrorType == void) func(acc, shifted) else try func(acc, shifted);
     }
@@ -397,22 +397,22 @@ pub fn prefix_scan(comptime op: std.builtin.ReduceOp, comptime hop: isize, vec: 
         .Bool => switch (op) {
             .Or, .Xor => false,
             .And => true,
-            else => @compileError("Invalid prefixScan operation " ++ @tagName(op) ++ " for vector of booleans."),
+            else => @compile_error("Invalid prefix_scan operation " ++ @tag_name(op) ++ " for vector of booleans."),
         },
         .Int => switch (op) {
-            .Max => std.math.minInt(Child),
+            .Max => std.math.min_int(Child),
             .Add, .Or, .Xor => 0,
             .Mul => 1,
-            .And, .Min => std.math.maxInt(Child),
+            .And, .Min => std.math.max_int(Child),
         },
         .Float => switch (op) {
             .Max => -std.math.inf(Child),
             .Add => 0,
             .Mul => 1,
             .Min => std.math.inf(Child),
-            else => @compileError("Invalid prefixScan operation " ++ @tagName(op) ++ " for vector of floats."),
+            else => @compile_error("Invalid prefix_scan operation " ++ @tag_name(op) ++ " for vector of floats."),
         },
-        else => @compileError("Invalid type " ++ @typeName(VecType) ++ " for prefixScan."),
+        else => @compile_error("Invalid type " ++ @type_name(VecType) ++ " for prefix_scan."),
     };
 
     const fn_container = struct {
@@ -434,13 +434,13 @@ pub fn prefix_scan(comptime op: std.builtin.ReduceOp, comptime hop: isize, vec: 
         }
     };
 
-    return prefixScanWithFunc(hop, vec, void, fn_container.opFn, identity);
+    return prefix_scan_with_func(hop, vec, void, fn_container.op_fn, identity);
 }
 
 test "vector prefix scan" {
     if (builtin.zig_backend == .stage2_x86_64) return error.SkipZigTest;
 
-    if (comptime builtin.cpu.arch.isMIPS()) {
+    if (comptime builtin.cpu.arch.is_mips()) {
         return error.SkipZigTest;
     }
 
@@ -450,24 +450,24 @@ test "vector prefix scan" {
 
     const ones: @Vector(32, u8) = @splat(1);
 
-    try std.testing.expectEqual(iota(u8, 32) + ones, prefixScan(.Add, 1, ones));
-    try std.testing.expectEqual(@Vector(4, i32){ 11, 3, 1, 1 }, prefixScan(.And, 1, int_base));
-    try std.testing.expectEqual(@Vector(4, i32){ 11, 31, 31, -1 }, prefixScan(.Or, 1, int_base));
-    try std.testing.expectEqual(@Vector(4, i32){ 11, 28, 21, -2 }, prefixScan(.Xor, 1, int_base));
-    try std.testing.expectEqual(@Vector(4, i32){ 11, 34, 43, 22 }, prefixScan(.Add, 1, int_base));
-    try std.testing.expectEqual(@Vector(4, i32){ 11, 253, 2277, -47817 }, prefixScan(.Mul, 1, int_base));
-    try std.testing.expectEqual(@Vector(4, i32){ 11, 11, 9, -21 }, prefixScan(.Min, 1, int_base));
-    try std.testing.expectEqual(@Vector(4, i32){ 11, 23, 23, 23 }, prefixScan(.Max, 1, int_base));
+    try std.testing.expect_equal(iota(u8, 32) + ones, prefix_scan(.Add, 1, ones));
+    try std.testing.expect_equal(@Vector(4, i32){ 11, 3, 1, 1 }, prefix_scan(.And, 1, int_base));
+    try std.testing.expect_equal(@Vector(4, i32){ 11, 31, 31, -1 }, prefix_scan(.Or, 1, int_base));
+    try std.testing.expect_equal(@Vector(4, i32){ 11, 28, 21, -2 }, prefix_scan(.Xor, 1, int_base));
+    try std.testing.expect_equal(@Vector(4, i32){ 11, 34, 43, 22 }, prefix_scan(.Add, 1, int_base));
+    try std.testing.expect_equal(@Vector(4, i32){ 11, 253, 2277, -47817 }, prefix_scan(.Mul, 1, int_base));
+    try std.testing.expect_equal(@Vector(4, i32){ 11, 11, 9, -21 }, prefix_scan(.Min, 1, int_base));
+    try std.testing.expect_equal(@Vector(4, i32){ 11, 23, 23, 23 }, prefix_scan(.Max, 1, int_base));
 
     // Trying to predict all inaccuracies when adding and multiplying floats with prefixScans would be a mess, so we don't test those.
-    try std.testing.expectEqual(@Vector(4, f32){ 2, 0.5, -10, -10 }, prefixScan(.Min, 1, float_base));
-    try std.testing.expectEqual(@Vector(4, f32){ 2, 2, 2, 6.54321 }, prefixScan(.Max, 1, float_base));
+    try std.testing.expect_equal(@Vector(4, f32){ 2, 0.5, -10, -10 }, prefix_scan(.Min, 1, float_base));
+    try std.testing.expect_equal(@Vector(4, f32){ 2, 2, 2, 6.54321 }, prefix_scan(.Max, 1, float_base));
 
-    try std.testing.expectEqual(@Vector(4, bool){ true, true, false, false }, prefixScan(.Xor, 1, bool_base));
-    try std.testing.expectEqual(@Vector(4, bool){ true, true, true, true }, prefixScan(.Or, 1, bool_base));
-    try std.testing.expectEqual(@Vector(4, bool){ true, false, false, false }, prefixScan(.And, 1, bool_base));
+    try std.testing.expect_equal(@Vector(4, bool){ true, true, false, false }, prefix_scan(.Xor, 1, bool_base));
+    try std.testing.expect_equal(@Vector(4, bool){ true, true, true, true }, prefix_scan(.Or, 1, bool_base));
+    try std.testing.expect_equal(@Vector(4, bool){ true, false, false, false }, prefix_scan(.And, 1, bool_base));
 
-    try std.testing.expectEqual(@Vector(4, i32){ 11, 23, 20, 2 }, prefixScan(.Add, 2, int_base));
-    try std.testing.expectEqual(@Vector(4, i32){ 22, 11, -12, -21 }, prefixScan(.Add, -1, int_base));
-    try std.testing.expectEqual(@Vector(4, i32){ 11, 23, 9, -10 }, prefixScan(.Add, 3, int_base));
+    try std.testing.expect_equal(@Vector(4, i32){ 11, 23, 20, 2 }, prefix_scan(.Add, 2, int_base));
+    try std.testing.expect_equal(@Vector(4, i32){ 22, 11, -12, -21 }, prefix_scan(.Add, -1, int_base));
+    try std.testing.expect_equal(@Vector(4, i32){ 11, 23, 9, -10 }, prefix_scan(.Add, 3, int_base));
 }

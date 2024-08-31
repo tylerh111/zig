@@ -34,7 +34,7 @@ comptime {
 
 pub fn __tanh(x: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(tanf(x));
+    return @float_cast(tanf(x));
 }
 
 pub fn tanf(x: f32) callconv(.C) f32 {
@@ -44,14 +44,14 @@ pub fn tanf(x: f32) callconv(.C) f32 {
     const t3pio2: f64 = 3.0 * math.pi / 2.0; // 0x4012D97C, 0x7F3321D2
     const t4pio2: f64 = 4.0 * math.pi / 2.0; // 0x401921FB, 0x54442D18
 
-    var ix: u32 = @bitCast(x);
+    var ix: u32 = @bit_cast(x);
     const sign = ix >> 31 != 0;
     ix &= 0x7fffffff;
 
     if (ix <= 0x3f490fda) { // |x| ~<= pi/4
         if (ix < 0x39800000) { // |x| < 2**-12
             // raise inexact if x!=0 and underflow if subnormal
-            mem.doNotOptimizeAway(if (ix < 0x00800000) x / 0x1p120 else x + 0x1p120);
+            mem.do_not_optimize_away(if (ix < 0x00800000) x / 0x1p120 else x + 0x1p120);
             return x;
         }
         return kernel.__tandf(x, false);
@@ -82,14 +82,14 @@ pub fn tanf(x: f32) callconv(.C) f32 {
 }
 
 pub fn tan(x: f64) callconv(.C) f64 {
-    var ix = @as(u64, @bitCast(x)) >> 32;
+    var ix = @as(u64, @bit_cast(x)) >> 32;
     ix &= 0x7fffffff;
 
     // |x| ~< pi/4
     if (ix <= 0x3fe921fb) {
         if (ix < 0x3e400000) { // |x| < 2**-27
             // raise inexact if x!=0 and underflow if subnormal
-            mem.doNotOptimizeAway(if (ix < 0x00100000) x / 0x1p120 else x + 0x1p120);
+            mem.do_not_optimize_away(if (ix < 0x00100000) x / 0x1p120 else x + 0x1p120);
             return x;
         }
         return kernel.__tan(x, 0.0, false);
@@ -107,12 +107,12 @@ pub fn tan(x: f64) callconv(.C) f64 {
 
 pub fn __tanx(x: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(tanq(x));
+    return @float_cast(tanq(x));
 }
 
 pub fn tanq(x: f128) callconv(.C) f128 {
     // TODO: more correct implementation
-    return tan(@floatCast(x));
+    return tan(@float_cast(x));
 }
 
 pub fn tanl(x: c_longdouble) callconv(.C) c_longdouble {
@@ -122,7 +122,7 @@ pub fn tanl(x: c_longdouble) callconv(.C) c_longdouble {
         64 => return tan(x),
         80 => return __tanx(x),
         128 => return tanq(x),
-        else => @compileError("unreachable"),
+        else => @compile_error("unreachable"),
     }
 }
 
@@ -134,37 +134,37 @@ test "tan" {
 test "tan32" {
     const epsilon = 0.00001;
 
-    try expect(math.approxEqAbs(f32, tanf(0.0), 0.0, epsilon));
-    try expect(math.approxEqAbs(f32, tanf(0.2), 0.202710, epsilon));
-    try expect(math.approxEqAbs(f32, tanf(0.8923), 1.240422, epsilon));
-    try expect(math.approxEqAbs(f32, tanf(1.5), 14.101420, epsilon));
-    try expect(math.approxEqAbs(f32, tanf(37.45), -0.254397, epsilon));
-    try expect(math.approxEqAbs(f32, tanf(89.123), 2.285852, epsilon));
+    try expect(math.approx_eq_abs(f32, tanf(0.0), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f32, tanf(0.2), 0.202710, epsilon));
+    try expect(math.approx_eq_abs(f32, tanf(0.8923), 1.240422, epsilon));
+    try expect(math.approx_eq_abs(f32, tanf(1.5), 14.101420, epsilon));
+    try expect(math.approx_eq_abs(f32, tanf(37.45), -0.254397, epsilon));
+    try expect(math.approx_eq_abs(f32, tanf(89.123), 2.285852, epsilon));
 }
 
 test "tan64" {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f64, tan(0.0), 0.0, epsilon));
-    try expect(math.approxEqAbs(f64, tan(0.2), 0.202710, epsilon));
-    try expect(math.approxEqAbs(f64, tan(0.8923), 1.240422, epsilon));
-    try expect(math.approxEqAbs(f64, tan(1.5), 14.101420, epsilon));
-    try expect(math.approxEqAbs(f64, tan(37.45), -0.254397, epsilon));
-    try expect(math.approxEqAbs(f64, tan(89.123), 2.2858376, epsilon));
+    try expect(math.approx_eq_abs(f64, tan(0.0), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f64, tan(0.2), 0.202710, epsilon));
+    try expect(math.approx_eq_abs(f64, tan(0.8923), 1.240422, epsilon));
+    try expect(math.approx_eq_abs(f64, tan(1.5), 14.101420, epsilon));
+    try expect(math.approx_eq_abs(f64, tan(37.45), -0.254397, epsilon));
+    try expect(math.approx_eq_abs(f64, tan(89.123), 2.2858376, epsilon));
 }
 
 test "tan32.special" {
     try expect(tanf(0.0) == 0.0);
     try expect(tanf(-0.0) == -0.0);
-    try expect(math.isNan(tanf(math.inf(f32))));
-    try expect(math.isNan(tanf(-math.inf(f32))));
-    try expect(math.isNan(tanf(math.nan(f32))));
+    try expect(math.is_nan(tanf(math.inf(f32))));
+    try expect(math.is_nan(tanf(-math.inf(f32))));
+    try expect(math.is_nan(tanf(math.nan(f32))));
 }
 
 test "tan64.special" {
     try expect(tan(0.0) == 0.0);
     try expect(tan(-0.0) == -0.0);
-    try expect(math.isNan(tan(math.inf(f64))));
-    try expect(math.isNan(tan(-math.inf(f64))));
-    try expect(math.isNan(tan(math.nan(f64))));
+    try expect(math.is_nan(tan(math.inf(f64))));
+    try expect(math.is_nan(tan(-math.inf(f64))));
+    try expect(math.is_nan(tan(math.nan(f64))));
 }

@@ -18,9 +18,9 @@ test "secp256k1 ECDH key exchange including public multiplication" {
     const dha = Secp256k1.scalar.random(.little);
     const dhb = Secp256k1.scalar.random(.little);
     const dhA = try Secp256k1.basePoint.mul(dha, .little);
-    const dhB = try Secp256k1.basePoint.mulPublic(dhb, .little);
+    const dhB = try Secp256k1.basePoint.mul_public(dhb, .little);
     const shareda = try dhA.mul(dhb, .little);
-    const sharedb = try dhB.mulPublic(dha, .little);
+    const sharedb = try dhB.mul_public(dha, .little);
     try testing.expect(shareda.equivalent(sharedb));
 }
 
@@ -28,10 +28,10 @@ test "secp256k1 point from affine coordinates" {
     const xh = "79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798";
     const yh = "483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8";
     var xs: [32]u8 = undefined;
-    _ = try fmt.hexToBytes(&xs, xh);
+    _ = try fmt.hex_to_bytes(&xs, xh);
     var ys: [32]u8 = undefined;
-    _ = try fmt.hexToBytes(&ys, yh);
-    var p = try Secp256k1.fromSerializedAffineCoordinates(xs, ys, .big);
+    _ = try fmt.hex_to_bytes(&ys, yh);
+    var p = try Secp256k1.from_serialized_affine_coordinates(xs, ys, .big);
     try testing.expect(p.equivalent(Secp256k1.basePoint));
 }
 
@@ -50,11 +50,11 @@ test "secp256k1 test vectors" {
     };
     var p = Secp256k1.identityElement;
     for (expected) |xh| {
-        const x = p.affineCoordinates().x;
+        const x = p.affine_coordinates().x;
         p = p.add(Secp256k1.basePoint);
         var xs: [32]u8 = undefined;
-        _ = try fmt.hexToBytes(&xs, xh);
-        try testing.expectEqualSlices(u8, &x.toBytes(.big), &xs);
+        _ = try fmt.hex_to_bytes(&xs, xh);
+        try testing.expect_equal_slices(u8, &x.to_bytes(.big), &xs);
     }
 }
 
@@ -68,49 +68,49 @@ test "secp256k1 test vectors - doubling" {
     };
     var p = Secp256k1.basePoint;
     for (expected) |xh| {
-        const x = p.affineCoordinates().x;
+        const x = p.affine_coordinates().x;
         p = p.dbl();
         var xs: [32]u8 = undefined;
-        _ = try fmt.hexToBytes(&xs, xh);
-        try testing.expectEqualSlices(u8, &x.toBytes(.big), &xs);
+        _ = try fmt.hex_to_bytes(&xs, xh);
+        try testing.expect_equal_slices(u8, &x.to_bytes(.big), &xs);
     }
 }
 
 test "secp256k1 compressed sec1 encoding/decoding" {
     const p = Secp256k1.random();
-    const s = p.toCompressedSec1();
-    const q = try Secp256k1.fromSec1(&s);
+    const s = p.to_compressed_sec1();
+    const q = try Secp256k1.from_sec1(&s);
     try testing.expect(p.equivalent(q));
 }
 
 test "secp256k1 uncompressed sec1 encoding/decoding" {
     const p = Secp256k1.random();
-    const s = p.toUncompressedSec1();
-    const q = try Secp256k1.fromSec1(&s);
+    const s = p.to_uncompressed_sec1();
+    const q = try Secp256k1.from_sec1(&s);
     try testing.expect(p.equivalent(q));
 }
 
 test "secp256k1 public key is the neutral element" {
-    const n = Secp256k1.scalar.Scalar.zero.toBytes(.little);
+    const n = Secp256k1.scalar.Scalar.zero.to_bytes(.little);
     const p = Secp256k1.random();
-    try testing.expectError(error.IdentityElement, p.mul(n, .little));
+    try testing.expect_error(error.IdentityElement, p.mul(n, .little));
 }
 
 test "secp256k1 public key is the neutral element (public verification)" {
-    const n = Secp256k1.scalar.Scalar.zero.toBytes(.little);
+    const n = Secp256k1.scalar.Scalar.zero.to_bytes(.little);
     const p = Secp256k1.random();
-    try testing.expectError(error.IdentityElement, p.mulPublic(n, .little));
+    try testing.expect_error(error.IdentityElement, p.mul_public(n, .little));
 }
 
 test "secp256k1 field element non-canonical encoding" {
     const s = [_]u8{0xff} ** 32;
-    try testing.expectError(error.NonCanonical, Secp256k1.Fe.fromBytes(s, .little));
+    try testing.expect_error(error.NonCanonical, Secp256k1.Fe.from_bytes(s, .little));
 }
 
 test "secp256k1 neutral element decoding" {
-    try testing.expectError(error.InvalidEncoding, Secp256k1.fromAffineCoordinates(.{ .x = Secp256k1.Fe.zero, .y = Secp256k1.Fe.zero }));
-    const p = try Secp256k1.fromAffineCoordinates(.{ .x = Secp256k1.Fe.zero, .y = Secp256k1.Fe.one });
-    try testing.expectError(error.IdentityElement, p.rejectIdentity());
+    try testing.expect_error(error.InvalidEncoding, Secp256k1.from_affine_coordinates(.{ .x = Secp256k1.Fe.zero, .y = Secp256k1.Fe.zero }));
+    const p = try Secp256k1.from_affine_coordinates(.{ .x = Secp256k1.Fe.zero, .y = Secp256k1.Fe.one });
+    try testing.expect_error(error.IdentityElement, p.reject_identity());
 }
 
 test "secp256k1 double base multiplication" {
@@ -118,7 +118,7 @@ test "secp256k1 double base multiplication" {
     const p2 = Secp256k1.basePoint.dbl();
     const s1 = [_]u8{0x01} ** 32;
     const s2 = [_]u8{0x02} ** 32;
-    const pr1 = try Secp256k1.mulDoubleBasePublic(p1, s1, p2, s2, .little);
+    const pr1 = try Secp256k1.mul_double_base_public(p1, s1, p2, s2, .little);
     const pr2 = (try p1.mul(s1, .little)).add(try p2.mul(s2, .little));
     try testing.expect(pr1.equivalent(pr2));
 }
@@ -126,18 +126,18 @@ test "secp256k1 double base multiplication" {
 test "secp256k1 scalar inverse" {
     const expected = "08d0684a0fe8ea978b68a29e4b4ffdbd19eeb59db25301cf23ecbe568e1f9822";
     var out: [32]u8 = undefined;
-    _ = try std.fmt.hexToBytes(&out, expected);
+    _ = try std.fmt.hex_to_bytes(&out, expected);
 
-    const scalar = try Secp256k1.scalar.Scalar.fromBytes(.{
+    const scalar = try Secp256k1.scalar.Scalar.from_bytes(.{
         0x94, 0xa1, 0xbb, 0xb1, 0x4b, 0x90, 0x6a, 0x61, 0xa2, 0x80, 0xf2, 0x45, 0xf9, 0xe9, 0x3c, 0x7f,
         0x3b, 0x4a, 0x62, 0x47, 0x82, 0x4f, 0x5d, 0x33, 0xb9, 0x67, 0x07, 0x87, 0x64, 0x2a, 0x68, 0xde,
     }, .big);
     const inverse = scalar.invert();
-    try std.testing.expectEqualSlices(u8, &out, &inverse.toBytes(.big));
+    try std.testing.expect_equal_slices(u8, &out, &inverse.to_bytes(.big));
 }
 
 test "secp256k1 scalar parity" {
-    try std.testing.expect(Secp256k1.scalar.Scalar.zero.isOdd() == false);
-    try std.testing.expect(Secp256k1.scalar.Scalar.one.isOdd());
-    try std.testing.expect(Secp256k1.scalar.Scalar.one.dbl().isOdd() == false);
+    try std.testing.expect(Secp256k1.scalar.Scalar.zero.is_odd() == false);
+    try std.testing.expect(Secp256k1.scalar.Scalar.one.is_odd());
+    try std.testing.expect(Secp256k1.scalar.Scalar.one.dbl().is_odd() == false);
 }

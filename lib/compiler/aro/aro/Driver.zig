@@ -75,7 +75,7 @@ unwindlib: ?[]const u8 = null,
 
 pub fn deinit(d: *Driver) void {
     for (d.link_objects.items[d.link_objects.items.len - d.temp_file_count ..]) |obj| {
-        std.fs.deleteFileAbsolute(obj) catch {};
+        std.fs.delete_file_absolute(obj) catch {};
         d.comp.gpa.free(obj);
     }
     d.inputs.deinit(d.comp.gpa);
@@ -192,18 +192,18 @@ pub fn parse_args(
     var gnuc_version: []const u8 = "4.2.1"; // default value set by clang
     while (i < args.len) : (i += 1) {
         const arg = args[i];
-        if (mem.startsWith(u8, arg, "-") and arg.len > 1) {
+        if (mem.starts_with(u8, arg, "-") and arg.len > 1) {
             if (mem.eql(u8, arg, "-h") or mem.eql(u8, arg, "--help")) {
                 std_out.print(usage, .{args[0]}) catch |er| {
-                    return d.fatal("unable to print usage: {s}", .{errorDescription(er)});
+                    return d.fatal("unable to print usage: {s}", .{error_description(er)});
                 };
                 return true;
             } else if (mem.eql(u8, arg, "-v") or mem.eql(u8, arg, "--version")) {
-                std_out.writeAll(@import("../backend.zig").version_str ++ "\n") catch |er| {
-                    return d.fatal("unable to print version: {s}", .{errorDescription(er)});
+                std_out.write_all(@import("../backend.zig").version_str ++ "\n") catch |er| {
+                    return d.fatal("unable to print version: {s}", .{error_description(er)});
                 };
                 return true;
-            } else if (mem.startsWith(u8, arg, "-D")) {
+            } else if (mem.starts_with(u8, arg, "-D")) {
                 var macro = arg["-D".len..];
                 if (macro.len == 0) {
                     i += 1;
@@ -214,12 +214,12 @@ pub fn parse_args(
                     macro = args[i];
                 }
                 var value: []const u8 = "1";
-                if (mem.indexOfScalar(u8, macro, '=')) |some| {
+                if (mem.index_of_scalar(u8, macro, '=')) |some| {
                     value = macro[some + 1 ..];
                     macro = macro[0..some];
                 }
                 try macro_buf.print("#define {s} {s}\n", .{ macro, value });
-            } else if (mem.startsWith(u8, arg, "-U")) {
+            } else if (mem.starts_with(u8, arg, "-U")) {
                 var macro = arg["-U".len..];
                 if (macro.len == 0) {
                     i += 1;
@@ -263,12 +263,12 @@ pub fn parse_args(
             } else if (mem.eql(u8, arg, "-fno-digraphs")) {
                 d.comp.langopts.digraphs = false;
             } else if (option(arg, "-fmacro-backtrace-limit=")) |limit_str| {
-                var limit = std.fmt.parseInt(u32, limit_str, 10) catch {
+                var limit = std.fmt.parse_int(u32, limit_str, 10) catch {
                     try d.err("-fmacro-backtrace-limit takes a number argument");
                     continue;
                 };
 
-                if (limit == 0) limit = std.math.maxInt(u32);
+                if (limit == 0) limit = std.math.max_int(u32);
                 d.comp.diagnostics.macro_backtrace_limit = limit;
             } else if (mem.eql(u8, arg, "-fnative-half-type")) {
                 d.comp.langopts.use_native_half_type = true;
@@ -279,13 +279,13 @@ pub fn parse_args(
             } else if (mem.eql(u8, arg, "-fno-short-enums")) {
                 d.comp.langopts.short_enums = false;
             } else if (mem.eql(u8, arg, "-fsigned-char")) {
-                d.comp.langopts.setCharSignedness(.signed);
+                d.comp.langopts.set_char_signedness(.signed);
             } else if (mem.eql(u8, arg, "-fno-signed-char")) {
-                d.comp.langopts.setCharSignedness(.unsigned);
+                d.comp.langopts.set_char_signedness(.unsigned);
             } else if (mem.eql(u8, arg, "-funsigned-char")) {
-                d.comp.langopts.setCharSignedness(.unsigned);
+                d.comp.langopts.set_char_signedness(.unsigned);
             } else if (mem.eql(u8, arg, "-fno-unsigned-char")) {
-                d.comp.langopts.setCharSignedness(.signed);
+                d.comp.langopts.set_char_signedness(.signed);
             } else if (mem.eql(u8, arg, "-fdeclspec")) {
                 d.comp.langopts.declspec_attrs = true;
             } else if (mem.eql(u8, arg, "-fno-declspec")) {
@@ -295,10 +295,10 @@ pub fn parse_args(
             } else if (mem.eql(u8, arg, "-fhosted")) {
                 hosted = true;
             } else if (mem.eql(u8, arg, "-fms-extensions")) {
-                d.comp.langopts.enableMSExtensions();
+                d.comp.langopts.enable_msextensions();
             } else if (mem.eql(u8, arg, "-fno-ms-extensions")) {
-                d.comp.langopts.disableMSExtensions();
-            } else if (mem.startsWith(u8, arg, "-I")) {
+                d.comp.langopts.disable_msextensions();
+            } else if (mem.starts_with(u8, arg, "-I")) {
                 var path = arg["-I".len..];
                 if (path.len == 0) {
                     i += 1;
@@ -309,15 +309,15 @@ pub fn parse_args(
                     path = args[i];
                 }
                 try d.comp.include_dirs.append(d.comp.gpa, path);
-            } else if (mem.startsWith(u8, arg, "-fsyntax-only")) {
+            } else if (mem.starts_with(u8, arg, "-fsyntax-only")) {
                 d.only_syntax = true;
-            } else if (mem.startsWith(u8, arg, "-fno-syntax-only")) {
+            } else if (mem.starts_with(u8, arg, "-fno-syntax-only")) {
                 d.only_syntax = false;
             } else if (mem.eql(u8, arg, "-fgnuc-version=")) {
                 gnuc_version = "0";
             } else if (option(arg, "-fgnuc-version=")) |version| {
                 gnuc_version = version;
-            } else if (mem.startsWith(u8, arg, "-isystem")) {
+            } else if (mem.starts_with(u8, arg, "-isystem")) {
                 var path = arg["-isystem".len..];
                 if (path.len == 0) {
                     i += 1;
@@ -331,19 +331,19 @@ pub fn parse_args(
                 errdefer d.comp.gpa.free(duped);
                 try d.comp.system_include_dirs.append(d.comp.gpa, duped);
             } else if (option(arg, "--emulate=")) |compiler_str| {
-                const compiler = std.meta.stringToEnum(LangOpts.Compiler, compiler_str) orelse {
+                const compiler = std.meta.string_to_enum(LangOpts.Compiler, compiler_str) orelse {
                     try d.comp.addDiagnostic(.{ .tag = .cli_invalid_emulate, .extra = .{ .str = arg } }, &.{});
                     continue;
                 };
-                d.comp.langopts.setEmulatedCompiler(compiler);
+                d.comp.langopts.set_emulated_compiler(compiler);
             } else if (option(arg, "-ffp-eval-method=")) |fp_method_str| {
-                const fp_eval_method = std.meta.stringToEnum(LangOpts.FPEvalMethod, fp_method_str) orelse .indeterminate;
+                const fp_eval_method = std.meta.string_to_enum(LangOpts.FPEvalMethod, fp_method_str) orelse .indeterminate;
                 if (fp_eval_method == .indeterminate) {
                     try d.comp.addDiagnostic(.{ .tag = .cli_invalid_fp_eval_method, .extra = .{ .str = fp_method_str } }, &.{});
                     continue;
                 }
-                d.comp.langopts.setFpEvalMethod(fp_eval_method);
-            } else if (mem.startsWith(u8, arg, "-o")) {
+                d.comp.langopts.set_fp_eval_method(fp_eval_method);
+            } else if (mem.starts_with(u8, arg, "-o")) {
                 var file = arg["-o".len..];
                 if (file.len == 0) {
                     i += 1;
@@ -375,7 +375,7 @@ pub fn parse_args(
             } else if (option(arg, "-W")) |err_name| {
                 try d.comp.diagnostics.set(err_name, .warning);
             } else if (option(arg, "-std=")) |standard| {
-                d.comp.langopts.setStandard(standard) catch
+                d.comp.langopts.set_standard(standard) catch
                     try d.comp.addDiagnostic(.{ .tag = .cli_invalid_standard, .extra = .{ .str = arg } }, &.{});
             } else if (mem.eql(u8, arg, "-S") or mem.eql(u8, arg, "--assemble")) {
                 d.only_preprocess_and_compile = true;
@@ -384,11 +384,11 @@ pub fn parse_args(
                     try d.comp.addDiagnostic(.{ .tag = .cli_invalid_target, .extra = .{ .str = arg } }, &.{});
                     continue;
                 };
-                const target = std.zig.system.resolveTargetQuery(query) catch |e| {
-                    return d.fatal("unable to resolve target: {s}", .{errorDescription(e)});
+                const target = std.zig.system.resolve_target_query(query) catch |e| {
+                    return d.fatal("unable to resolve target: {s}", .{error_description(e)});
                 };
                 d.comp.target = target;
-                d.comp.langopts.setEmulatedCompiler(target_util.systemCompiler(target));
+                d.comp.langopts.set_emulated_compiler(target_util.system_compiler(target));
                 d.raw_target_triple = triple;
             } else if (mem.eql(u8, arg, "--verbose-ast")) {
                 d.verbose_ast = true;
@@ -458,11 +458,11 @@ pub fn parse_args(
             } else {
                 try d.comp.addDiagnostic(.{ .tag = .cli_unknown_arg, .extra = .{ .str = arg } }, &.{});
             }
-        } else if (std.mem.endsWith(u8, arg, ".o") or std.mem.endsWith(u8, arg, ".obj")) {
+        } else if (std.mem.ends_with(u8, arg, ".o") or std.mem.ends_with(u8, arg, ".obj")) {
             try d.link_objects.append(d.comp.gpa, arg);
         } else {
-            const source = d.addSource(arg) catch |er| {
-                return d.fatal("unable to add source file '{s}': {s}", .{ arg, errorDescription(er) });
+            const source = d.add_source(arg) catch |er| {
+                return d.fatal("unable to add source file '{s}': {s}", .{ arg, error_description(er) });
             };
             try d.inputs.append(d.comp.gpa, source);
         }
@@ -483,12 +483,12 @@ pub fn parse_args(
     if (version.major == -1) {
         return d.fatal("invalid value '{0s}' in '-fgnuc-version={0s}'", .{gnuc_version});
     }
-    d.comp.langopts.gnuc_version = version.toUnsigned();
+    d.comp.langopts.gnuc_version = version.to_unsigned();
     return false;
 }
 
 fn option(arg: []const u8, name: []const u8) ?[]const u8 {
-    if (std.mem.startsWith(u8, arg, name) and arg.len > name.len) {
+    if (std.mem.starts_with(u8, arg, name) and arg.len > name.len) {
         return arg[name.len..];
     }
     return null;
@@ -496,12 +496,12 @@ fn option(arg: []const u8, name: []const u8) ?[]const u8 {
 
 fn add_source(d: *Driver, path: []const u8) !Source {
     if (mem.eql(u8, "-", path)) {
-        const stdin = std.io.getStdIn().reader();
-        const input = try stdin.readAllAlloc(d.comp.gpa, std.math.maxInt(u32));
+        const stdin = std.io.get_std_in().reader();
+        const input = try stdin.read_all_alloc(d.comp.gpa, std.math.max_int(u32));
         defer d.comp.gpa.free(input);
-        return d.comp.addSourceFromBuffer("<stdin>", input);
+        return d.comp.add_source_from_buffer("<stdin>", input);
     }
-    return d.comp.addSourceFromPath(path);
+    return d.comp.add_source_from_path(path);
 }
 
 pub fn err(d: *Driver, msg: []const u8) !void {
@@ -512,21 +512,21 @@ pub fn fatal(d: *Driver, comptime fmt: []const u8, args: anytype) error{ FatalEr
     try d.comp.diagnostics.list.append(d.comp.gpa, .{
         .tag = .cli_error,
         .kind = .@"fatal error",
-        .extra = .{ .str = try std.fmt.allocPrint(d.comp.diagnostics.arena.allocator(), fmt, args) },
+        .extra = .{ .str = try std.fmt.alloc_print(d.comp.diagnostics.arena.allocator(), fmt, args) },
     });
     return error.FatalError;
 }
 
 pub fn render_errors(d: *Driver) void {
-    Diagnostics.render(d.comp, d.detectConfig(std.io.getStdErr()));
+    Diagnostics.render(d.comp, d.detect_config(std.io.get_std_err()));
 }
 
 pub fn detect_config(d: *Driver, file: std.fs.File) std.io.tty.Config {
     if (d.color == true) return .escape_codes;
     if (d.color == false) return .no_color;
 
-    if (file.supportsAnsiEscapeCodes()) return .escape_codes;
-    if (@import("builtin").os.tag == .windows and file.isTty()) {
+    if (file.supports_ansi_escape_codes()) return .escape_codes;
+    if (@import("builtin").os.tag == .windows and file.is_tty()) {
         var info: std.os.windows.CONSOLE_SCREEN_BUFFER_INFO = undefined;
         if (std.os.windows.kernel32.GetConsoleScreenBufferInfo(file.handle, &info) != std.os.windows.TRUE) {
             return .no_color;
@@ -568,8 +568,8 @@ pub fn main(d: *Driver, tc: *Toolchain, args: []const []const u8, comptime fast_
     var macro_buf = std.ArrayList(u8).init(d.comp.gpa);
     defer macro_buf.deinit();
 
-    const std_out = std.io.getStdOut().writer();
-    if (try parseArgs(d, std_out, macro_buf.writer(), args)) return;
+    const std_out = std.io.get_std_out().writer();
+    if (try parse_args(d, std_out, macro_buf.writer(), args)) return;
 
     const linking = !(d.only_preprocess or d.only_syntax or d.only_compile or d.only_preprocess_and_compile);
 
@@ -584,19 +584,19 @@ pub fn main(d: *Driver, tc: *Toolchain, args: []const []const u8, comptime fast_
     };
 
     try tc.discover();
-    tc.defineSystemIncludes() catch |er| switch (er) {
+    tc.define_system_includes() catch |er| switch (er) {
         error.OutOfMemory => return error.OutOfMemory,
         error.AroIncludeNotFound => return d.fatal("unable to find Aro builtin headers", .{}),
     };
 
-    const builtin = try d.comp.generateBuiltinMacros(d.system_defines);
-    const user_macros = try d.comp.addSourceFromBuffer("<command line>", macro_buf.items);
+    const builtin = try d.comp.generate_builtin_macros(d.system_defines);
+    const user_macros = try d.comp.add_source_from_buffer("<command line>", macro_buf.items);
 
     if (fast_exit and d.inputs.items.len == 1) {
-        d.processSource(tc, d.inputs.items[0], builtin, user_macros, fast_exit) catch |e| switch (e) {
+        d.process_source(tc, d.inputs.items[0], builtin, user_macros, fast_exit) catch |e| switch (e) {
             error.FatalError => {
-                d.renderErrors();
-                d.exitWithCleanup(1);
+                d.render_errors();
+                d.exit_with_cleanup(1);
             },
             else => |er| return er,
         };
@@ -604,19 +604,19 @@ pub fn main(d: *Driver, tc: *Toolchain, args: []const []const u8, comptime fast_
     }
 
     for (d.inputs.items) |source| {
-        d.processSource(tc, source, builtin, user_macros, fast_exit) catch |e| switch (e) {
+        d.process_source(tc, source, builtin, user_macros, fast_exit) catch |e| switch (e) {
             error.FatalError => {
-                d.renderErrors();
+                d.render_errors();
             },
             else => |er| return er,
         };
     }
     if (d.comp.diagnostics.errors != 0) {
-        if (fast_exit) d.exitWithCleanup(1);
+        if (fast_exit) d.exit_with_cleanup(1);
         return;
     }
     if (linking) {
-        try d.invokeLinker(tc, fast_exit);
+        try d.invoke_linker(tc, fast_exit);
     }
     if (fast_exit) std.process.exit(0);
 }
@@ -630,7 +630,7 @@ fn process_source(
     comptime fast_exit: bool,
 ) !void {
     d.comp.generated_buf.items.len = 0;
-    var pp = try Preprocessor.initDefault(d.comp);
+    var pp = try Preprocessor.init_default(d.comp);
     defer pp.deinit();
 
     if (d.comp.langopts.ms_extensions) {
@@ -645,10 +645,10 @@ fn process_source(
         }
     }
 
-    try pp.preprocessSources(&.{ source, builtin, user_macros });
+    try pp.preprocess_sources(&.{ source, builtin, user_macros });
 
     if (d.only_preprocess) {
-        d.renderErrors();
+        d.render_errors();
 
         if (d.comp.diagnostics.errors != 0) {
             if (fast_exit) std.process.exit(1); // Not linking, no need for cleanup.
@@ -656,18 +656,18 @@ fn process_source(
         }
 
         const file = if (d.output_name) |some|
-            std.fs.cwd().createFile(some, .{}) catch |er|
-                return d.fatal("unable to create output file '{s}': {s}", .{ some, errorDescription(er) })
+            std.fs.cwd().create_file(some, .{}) catch |er|
+                return d.fatal("unable to create output file '{s}': {s}", .{ some, error_description(er) })
         else
-            std.io.getStdOut();
+            std.io.get_std_out();
         defer if (d.output_name != null) file.close();
 
-        var buf_w = std.io.bufferedWriter(file.writer());
-        pp.prettyPrintTokens(buf_w.writer()) catch |er|
-            return d.fatal("unable to write result: {s}", .{errorDescription(er)});
+        var buf_w = std.io.buffered_writer(file.writer());
+        pp.pretty_print_tokens(buf_w.writer()) catch |er|
+            return d.fatal("unable to write result: {s}", .{error_description(er)});
 
         buf_w.flush() catch |er|
-            return d.fatal("unable to write result: {s}", .{errorDescription(er)});
+            return d.fatal("unable to write result: {s}", .{error_description(er)});
         if (fast_exit) std.process.exit(0); // Not linking, no need for cleanup.
         return;
     }
@@ -676,17 +676,17 @@ fn process_source(
     defer tree.deinit();
 
     if (d.verbose_ast) {
-        const stdout = std.io.getStdOut();
-        var buf_writer = std.io.bufferedWriter(stdout.writer());
-        tree.dump(d.detectConfig(stdout), buf_writer.writer()) catch {};
+        const stdout = std.io.get_std_out();
+        var buf_writer = std.io.buffered_writer(stdout.writer());
+        tree.dump(d.detect_config(stdout), buf_writer.writer()) catch {};
         buf_writer.flush() catch {};
     }
 
     const prev_errors = d.comp.diagnostics.errors;
-    d.renderErrors();
+    d.render_errors();
 
     if (d.comp.diagnostics.errors != prev_errors) {
-        if (fast_exit) d.exitWithCleanup(1);
+        if (fast_exit) d.exit_with_cleanup(1);
         return; // do not compile if there were errors
     }
 
@@ -698,17 +698,17 @@ fn process_source(
     if (d.comp.target.ofmt != .elf or d.comp.target.cpu.arch != .x86_64) {
         return d.fatal(
             "unsupported target {s}-{s}-{s}, currently only x86-64 elf is supported",
-            .{ @tagName(d.comp.target.cpu.arch), @tagName(d.comp.target.os.tag), @tagName(d.comp.target.abi) },
+            .{ @tag_name(d.comp.target.cpu.arch), @tag_name(d.comp.target.os.tag), @tag_name(d.comp.target.abi) },
         );
     }
 
-    var ir = try tree.genIr();
+    var ir = try tree.gen_ir();
     defer ir.deinit(d.comp.gpa);
 
     if (d.verbose_ir) {
-        const stdout = std.io.getStdOut();
-        var buf_writer = std.io.bufferedWriter(stdout.writer());
-        ir.dump(d.comp.gpa, d.detectConfig(stdout), buf_writer.writer()) catch {};
+        const stdout = std.io.get_std_out();
+        var buf_writer = std.io.buffered_writer(stdout.writer());
+        ir.dump(d.comp.gpa, d.detect_config(stdout), buf_writer.writer()) catch {};
         buf_writer.flush() catch {};
     }
 
@@ -737,13 +737,13 @@ fn process_source(
         const fmt_template = "{s}{s}";
         const fmt_args = .{
             std.fs.path.stem(source.path),
-            d.comp.target.ofmt.fileExt(d.comp.target.cpu.arch),
+            d.comp.target.ofmt.file_ext(d.comp.target.cpu.arch),
         };
         break :blk d.output_name orelse
-            std.fmt.bufPrint(&name_buf, fmt_template, fmt_args) catch return d.fatal("Filename too long for filesystem: " ++ fmt_template, fmt_args);
+            std.fmt.buf_print(&name_buf, fmt_template, fmt_args) catch return d.fatal("Filename too long for filesystem: " ++ fmt_template, fmt_args);
     } else blk: {
         const random_bytes_count = 12;
-        const sub_path_len = comptime std.fs.base64_encoder.calcSize(random_bytes_count);
+        const sub_path_len = comptime std.fs.base64_encoder.calc_size(random_bytes_count);
 
         var random_bytes: [random_bytes_count]u8 = undefined;
         std.crypto.random.bytes(&random_bytes);
@@ -753,37 +753,37 @@ fn process_source(
         const fmt_template = "/tmp/{s}{s}";
         const fmt_args = .{
             random_name,
-            d.comp.target.ofmt.fileExt(d.comp.target.cpu.arch),
+            d.comp.target.ofmt.file_ext(d.comp.target.cpu.arch),
         };
-        break :blk std.fmt.bufPrint(&name_buf, fmt_template, fmt_args) catch return d.fatal("Filename too long for filesystem: " ++ fmt_template, fmt_args);
+        break :blk std.fmt.buf_print(&name_buf, fmt_template, fmt_args) catch return d.fatal("Filename too long for filesystem: " ++ fmt_template, fmt_args);
     };
 
-    const out_file = std.fs.cwd().createFile(out_file_name, .{}) catch |er|
-        return d.fatal("unable to create output file '{s}': {s}", .{ out_file_name, errorDescription(er) });
+    const out_file = std.fs.cwd().create_file(out_file_name, .{}) catch |er|
+        return d.fatal("unable to create output file '{s}': {s}", .{ out_file_name, error_description(er) });
     defer out_file.close();
 
     obj.finish(out_file) catch |er|
-        return d.fatal("could not output to object file '{s}': {s}", .{ out_file_name, errorDescription(er) });
+        return d.fatal("could not output to object file '{s}': {s}", .{ out_file_name, error_description(er) });
 
     if (d.only_compile) {
         if (fast_exit) std.process.exit(0); // Not linking, no need for cleanup.
         return;
     }
-    try d.link_objects.ensureUnusedCapacity(d.comp.gpa, 1);
-    d.link_objects.appendAssumeCapacity(try d.comp.gpa.dupe(u8, out_file_name));
+    try d.link_objects.ensure_unused_capacity(d.comp.gpa, 1);
+    d.link_objects.append_assume_capacity(try d.comp.gpa.dupe(u8, out_file_name));
     d.temp_file_count += 1;
     if (fast_exit) {
-        try d.invokeLinker(tc, fast_exit);
+        try d.invoke_linker(tc, fast_exit);
     }
 }
 
 fn dump_linker_args(items: []const []const u8) !void {
-    const stdout = std.io.getStdOut().writer();
+    const stdout = std.io.get_std_out().writer();
     for (items, 0..) |item, i| {
-        if (i > 0) try stdout.writeByte(' ');
-        try stdout.print("\"{}\"", .{std.zig.fmtEscapes(item)});
+        if (i > 0) try stdout.write_byte(' ');
+        try stdout.print("\"{}\"", .{std.zig.fmt_escapes(item)});
     }
-    try stdout.writeByte('\n');
+    try stdout.write_byte('\n');
 }
 
 /// The entry point of the Aro compiler.
@@ -793,14 +793,14 @@ pub fn invoke_linker(d: *Driver, tc: *Toolchain, comptime fast_exit: bool) !void
     defer argv.deinit();
 
     var linker_path_buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
-    const linker_path = try tc.getLinkerPath(&linker_path_buf);
+    const linker_path = try tc.get_linker_path(&linker_path_buf);
     try argv.append(linker_path);
 
-    try tc.buildLinkerArgs(&argv);
+    try tc.build_linker_args(&argv);
 
     if (d.verbose_linker_args) {
-        dumpLinkerArgs(argv.items) catch |er| {
-            return d.fatal("unable to dump linker args: {s}", .{errorDescription(er)});
+        dump_linker_args(argv.items) catch |er| {
+            return d.fatal("unable to dump linker args: {s}", .{error_description(er)});
         };
     }
     var child = std.process.Child.init(argv.items, d.comp.gpa);
@@ -809,27 +809,27 @@ pub fn invoke_linker(d: *Driver, tc: *Toolchain, comptime fast_exit: bool) !void
     child.stdout_behavior = .Inherit;
     child.stderr_behavior = .Inherit;
 
-    const term = child.spawnAndWait() catch |er| {
-        return d.fatal("unable to spawn linker: {s}", .{errorDescription(er)});
+    const term = child.spawn_and_wait() catch |er| {
+        return d.fatal("unable to spawn linker: {s}", .{error_description(er)});
     };
     switch (term) {
         .Exited => |code| if (code != 0) {
             const e = d.fatal("linker exited with an error code", .{});
-            if (fast_exit) d.exitWithCleanup(code);
+            if (fast_exit) d.exit_with_cleanup(code);
             return e;
         },
         else => {
             const e = d.fatal("linker crashed", .{});
-            if (fast_exit) d.exitWithCleanup(1);
+            if (fast_exit) d.exit_with_cleanup(1);
             return e;
         },
     }
-    if (fast_exit) d.exitWithCleanup(0);
+    if (fast_exit) d.exit_with_cleanup(0);
 }
 
 fn exit_with_cleanup(d: *Driver, code: u8) noreturn {
     for (d.link_objects.items[d.link_objects.items.len - d.temp_file_count ..]) |obj| {
-        std.fs.deleteFileAbsolute(obj) catch {};
+        std.fs.delete_file_absolute(obj) catch {};
     }
     std.process.exit(code);
 }

@@ -1,6 +1,6 @@
 export fn entry() void {
     const a = @Vector(4, u32){ 1, 1, 1, 1 };
-    _ = @as(u32, @intCast(a));
+    _ = @as(u32, @int_cast(a));
 }
 
 // TODO: change target in the manifest to "native" probably after this is fixed:

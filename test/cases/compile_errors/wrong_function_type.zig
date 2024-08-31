@@ -9,7 +9,7 @@ fn c() i32 {
     return 2;
 }
 export fn entry() usize {
-    return @sizeOf(@TypeOf(fns));
+    return @size_of(@TypeOf(fns));
 }
 
 // error

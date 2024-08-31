@@ -43,7 +43,7 @@ pub const Fn = struct {
     pub fn reset(self: *Fn) void {
         self.prologue.reset();
         self.body.reset();
-        self.decl_deps.clearRetainingCapacity();
+        self.decl_deps.clear_retaining_capacity();
     }
 
     /// Free the resources owned by this function.
@@ -225,7 +225,7 @@ pub fn alloc_ids(self: *Module, n: u32) IdRange {
 }
 
 pub fn alloc_id(self: *Module) IdResult {
-    return self.allocIds(1).at(0);
+    return self.alloc_ids(1).at(0);
 }
 
 pub fn id_bound(self: Module) Word {
@@ -238,21 +238,21 @@ fn add_entry_point_deps(
     seen: *std.DynamicBitSetUnmanaged,
     interface: *std.ArrayList(IdRef),
 ) !void {
-    const decl = self.declPtr(decl_index);
+    const decl = self.decl_ptr(decl_index);
     const deps = self.decl_deps.items[decl.begin_dep..decl.end_dep];
 
-    if (seen.isSet(@intFromEnum(decl_index))) {
+    if (seen.is_set(@int_from_enum(decl_index))) {
         return;
     }
 
-    seen.set(@intFromEnum(decl_index));
+    seen.set(@int_from_enum(decl_index));
 
     if (decl.kind == .global) {
         try interface.append(decl.result_id);
     }
 
     for (deps) |dep| {
-        try self.addEntryPointDeps(dep, seen, interface);
+        try self.add_entry_point_deps(dep, seen, interface);
     }
 }
 
@@ -263,16 +263,16 @@ fn entry_points(self: *Module) !Section {
     var interface = std.ArrayList(IdRef).init(self.gpa);
     defer interface.deinit();
 
-    var seen = try std.DynamicBitSetUnmanaged.initEmpty(self.gpa, self.decls.items.len);
+    var seen = try std.DynamicBitSetUnmanaged.init_empty(self.gpa, self.decls.items.len);
     defer seen.deinit(self.gpa);
 
     for (self.entry_points.items) |entry_point| {
         interface.items.len = 0;
-        seen.setRangeValue(.{ .start = 0, .end = self.decls.items.len }, false);
+        seen.set_range_value(.{ .start = 0, .end = self.decls.items.len }, false);
 
-        try self.addEntryPointDeps(entry_point.decl_index, &seen, &interface);
+        try self.add_entry_point_deps(entry_point.decl_index, &seen, &interface);
 
-        const entry_point_id = self.declPtr(entry_point.decl_index).result_id;
+        const entry_point_id = self.decl_ptr(entry_point.decl_index).result_id;
         try entry_points.emit(self.gpa, .OpEntryPoint, .{
             .execution_model = entry_point.execution_model,
             .entry_point = entry_point_id,
@@ -286,15 +286,15 @@ fn entry_points(self: *Module) !Section {
 
 pub fn finalize(self: *Module, a: Allocator, target: std.Target) ![]Word {
     // See SPIR-V Spec section 2.3, "Physical Layout of a SPIR-V Module and Instruction"
-    // TODO: Audit calls to allocId() in this function to make it idempotent.
+    // TODO: Audit calls to alloc_id() in this function to make it idempotent.
 
-    var entry_points = try self.entryPoints();
+    var entry_points = try self.entry_points();
     defer entry_points.deinit(self.gpa);
 
     const header = [_]Word{
         spec.magic_number,
         // TODO: From cpu features
-        spec.Version.toWord(.{
+        spec.Version.to_word(.{
             .major = 1,
             .minor = switch (target.os.tag) {
                 // Emit SPIR-V 1.3 for now. This is the highest version that Vulkan 1.1 supports.
@@ -304,7 +304,7 @@ pub fn finalize(self: *Module, a: Allocator, target: std.Target) ![]Word {
             },
         }),
         spec.zig_generator_id,
-        self.idBound(),
+        self.id_bound(),
         0, // Schema (currently reserved for future use)
     };
 
@@ -323,18 +323,18 @@ pub fn finalize(self: *Module, a: Allocator, target: std.Target) ![]Word {
     // Note: needs to be kept in order according to section 2.3!
     const buffers = &[_][]const Word{
         &header,
-        self.sections.capabilities.toWords(),
-        self.sections.extensions.toWords(),
-        self.sections.extended_instruction_set.toWords(),
-        self.sections.memory_model.toWords(),
-        entry_points.toWords(),
-        self.sections.execution_modes.toWords(),
-        source.toWords(),
-        self.sections.debug_strings.toWords(),
-        self.sections.debug_names.toWords(),
-        self.sections.annotations.toWords(),
-        self.sections.types_globals_constants.toWords(),
-        self.sections.functions.toWords(),
+        self.sections.capabilities.to_words(),
+        self.sections.extensions.to_words(),
+        self.sections.extended_instruction_set.to_words(),
+        self.sections.memory_model.to_words(),
+        entry_points.to_words(),
+        self.sections.execution_modes.to_words(),
+        source.to_words(),
+        self.sections.debug_strings.to_words(),
+        self.sections.debug_names.to_words(),
+        self.sections.annotations.to_words(),
+        self.sections.types_globals_constants.to_words(),
+        self.sections.functions.to_words(),
     };
 
     var total_result_size: usize = 0;
@@ -357,20 +357,20 @@ pub fn finalize(self: *Module, a: Allocator, target: std.Target) ![]Word {
 pub fn add_function(self: *Module, decl_index: Decl.Index, func: Fn) !void {
     try self.sections.functions.append(self.gpa, func.prologue);
     try self.sections.functions.append(self.gpa, func.body);
-    try self.declareDeclDeps(decl_index, func.decl_deps.keys());
+    try self.declare_decl_deps(decl_index, func.decl_deps.keys());
 }
 
 /// Imports or returns the existing id of an extended instruction set
 pub fn import_instruction_set(self: *Module, set: spec.InstructionSet) !IdRef {
     assert(set != .core);
 
-    const gop = try self.extended_instruction_set.getOrPut(self.gpa, set);
+    const gop = try self.extended_instruction_set.get_or_put(self.gpa, set);
     if (gop.found_existing) return gop.value_ptr.*;
 
-    const result_id = self.allocId();
+    const result_id = self.alloc_id();
     try self.sections.extended_instruction_set.emit(self.gpa, .OpExtInstImport, .{
         .id_result = result_id,
-        .name = @tagName(set),
+        .name = @tag_name(set),
     });
     gop.value_ptr.* = result_id;
 
@@ -383,7 +383,7 @@ pub fn resolve_string(self: *Module, string: []const u8) !IdRef {
         return id;
     }
 
-    const id = self.allocId();
+    const id = self.alloc_id();
     try self.strings.put(self.gpa, try self.arena.allocator().dupe(u8, string), id);
 
     try self.sections.debug_strings.emit(self.gpa, .OpString, .{
@@ -395,7 +395,7 @@ pub fn resolve_string(self: *Module, string: []const u8) !IdRef {
 }
 
 pub fn struct_type(self: *Module, types: []const IdRef, maybe_names: ?[]const []const u8) !IdRef {
-    const result_id = self.allocId();
+    const result_id = self.alloc_id();
 
     try self.sections.types_globals_constants.emit(self.gpa, .OpTypeStruct, .{
         .id_result = result_id,
@@ -405,7 +405,7 @@ pub fn struct_type(self: *Module, types: []const IdRef, maybe_names: ?[]const []
     if (maybe_names) |names| {
         assert(names.len == types.len);
         for (names, 0..) |name, i| {
-            try self.memberDebugName(result_id, @intCast(i), name);
+            try self.member_debug_name(result_id, @int_cast(i), name);
         }
     }
 
@@ -415,7 +415,7 @@ pub fn struct_type(self: *Module, types: []const IdRef, maybe_names: ?[]const []
 pub fn bool_type(self: *Module) !IdRef {
     if (self.cache.bool_type) |id| return id;
 
-    const result_id = self.allocId();
+    const result_id = self.alloc_id();
     try self.sections.types_globals_constants.emit(self.gpa, .OpTypeBool, .{
         .id_result = result_id,
     });
@@ -426,20 +426,20 @@ pub fn bool_type(self: *Module) !IdRef {
 pub fn void_type(self: *Module) !IdRef {
     if (self.cache.void_type) |id| return id;
 
-    const result_id = self.allocId();
+    const result_id = self.alloc_id();
     try self.sections.types_globals_constants.emit(self.gpa, .OpTypeVoid, .{
         .id_result = result_id,
     });
     self.cache.void_type = result_id;
-    try self.debugName(result_id, "void");
+    try self.debug_name(result_id, "void");
     return result_id;
 }
 
 pub fn int_type(self: *Module, signedness: std.builtin.Signedness, bits: u16) !IdRef {
     assert(bits > 0);
-    const entry = try self.cache.int_types.getOrPut(self.gpa, .{ .signedness = signedness, .bits = bits });
+    const entry = try self.cache.int_types.get_or_put(self.gpa, .{ .signedness = signedness, .bits = bits });
     if (!entry.found_existing) {
-        const result_id = self.allocId();
+        const result_id = self.alloc_id();
         entry.value_ptr.* = result_id;
         try self.sections.types_globals_constants.emit(self.gpa, .OpTypeInt, .{
             .id_result = result_id,
@@ -451,8 +451,8 @@ pub fn int_type(self: *Module, signedness: std.builtin.Signedness, bits: u16) !I
         });
 
         switch (signedness) {
-            .signed => try self.debugNameFmt(result_id, "i{}", .{bits}),
-            .unsigned => try self.debugNameFmt(result_id, "u{}", .{bits}),
+            .signed => try self.debug_name_fmt(result_id, "i{}", .{bits}),
+            .unsigned => try self.debug_name_fmt(result_id, "u{}", .{bits}),
         }
     }
     return entry.value_ptr.*;
@@ -460,21 +460,21 @@ pub fn int_type(self: *Module, signedness: std.builtin.Signedness, bits: u16) !I
 
 pub fn float_type(self: *Module, bits: u16) !IdRef {
     assert(bits > 0);
-    const entry = try self.cache.float_types.getOrPut(self.gpa, .{ .bits = bits });
+    const entry = try self.cache.float_types.get_or_put(self.gpa, .{ .bits = bits });
     if (!entry.found_existing) {
-        const result_id = self.allocId();
+        const result_id = self.alloc_id();
         entry.value_ptr.* = result_id;
         try self.sections.types_globals_constants.emit(self.gpa, .OpTypeFloat, .{
             .id_result = result_id,
             .width = bits,
         });
-        try self.debugNameFmt(result_id, "f{}", .{bits});
+        try self.debug_name_fmt(result_id, "f{}", .{bits});
     }
     return entry.value_ptr.*;
 }
 
 pub fn vector_type(self: *Module, len: u32, child_id: IdRef) !IdRef {
-    const result_id = self.allocId();
+    const result_id = self.alloc_id();
     try self.sections.types_globals_constants.emit(self.gpa, .OpTypeVector, .{
         .id_result = result_id,
         .component_type = child_id,
@@ -484,7 +484,7 @@ pub fn vector_type(self: *Module, len: u32, child_id: IdRef) !IdRef {
 }
 
 pub fn const_undef(self: *Module, ty_id: IdRef) !IdRef {
-    const result_id = self.allocId();
+    const result_id = self.alloc_id();
     try self.sections.types_globals_constants.emit(self.gpa, .OpUndef, .{
         .id_result_type = ty_id,
         .id_result = result_id,
@@ -493,7 +493,7 @@ pub fn const_undef(self: *Module, ty_id: IdRef) !IdRef {
 }
 
 pub fn const_null(self: *Module, ty_id: IdRef) !IdRef {
-    const result_id = self.allocId();
+    const result_id = self.alloc_id();
     try self.sections.types_globals_constants.emit(self.gpa, .OpConstantNull, .{
         .id_result_type = ty_id,
         .id_result = result_id,
@@ -530,25 +530,25 @@ pub fn decorate_member(
 pub fn alloc_decl(self: *Module, kind: Decl.Kind) !Decl.Index {
     try self.decls.append(self.gpa, .{
         .kind = kind,
-        .result_id = self.allocId(),
+        .result_id = self.alloc_id(),
         .begin_dep = undefined,
         .end_dep = undefined,
     });
 
-    return @as(Decl.Index, @enumFromInt(@as(u32, @intCast(self.decls.items.len - 1))));
+    return @as(Decl.Index, @enumFromInt(@as(u32, @int_cast(self.decls.items.len - 1))));
 }
 
 pub fn decl_ptr(self: *Module, index: Decl.Index) *Decl {
-    return &self.decls.items[@intFromEnum(index)];
+    return &self.decls.items[@int_from_enum(index)];
 }
 
 /// Declare ALL dependencies for a decl.
 pub fn declare_decl_deps(self: *Module, decl_index: Decl.Index, deps: []const Decl.Index) !void {
-    const begin_dep: u32 = @intCast(self.decl_deps.items.len);
-    try self.decl_deps.appendSlice(self.gpa, deps);
-    const end_dep: u32 = @intCast(self.decl_deps.items.len);
+    const begin_dep: u32 = @int_cast(self.decl_deps.items.len);
+    try self.decl_deps.append_slice(self.gpa, deps);
+    const end_dep: u32 = @int_cast(self.decl_deps.items.len);
 
-    const decl = self.declPtr(decl_index);
+    const decl = self.decl_ptr(decl_index);
     decl.begin_dep = begin_dep;
     decl.end_dep = end_dep;
 }
@@ -577,9 +577,9 @@ pub fn debug_name(self: *Module, target: IdResult, name: []const u8) !void {
 }
 
 pub fn debug_name_fmt(self: *Module, target: IdResult, comptime fmt: []const u8, args: anytype) !void {
-    const name = try std.fmt.allocPrint(self.gpa, fmt, args);
+    const name = try std.fmt.alloc_print(self.gpa, fmt, args);
     defer self.gpa.free(name);
-    try self.debugName(target, name);
+    try self.debug_name(target, name);
 }
 
 pub fn member_debug_name(self: *Module, target: IdResult, member: u32, name: []const u8) !void {

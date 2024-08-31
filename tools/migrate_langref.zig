@@ -14,22 +14,22 @@ pub fn main() !void {
     defer arena_instance.deinit();
     const arena = arena_instance.allocator();
 
-    const args = try std.process.argsAlloc(arena);
+    const args = try std.process.args_alloc(arena);
     const input_file = args[1];
     const output_file = args[2];
 
-    var in_file = try fs.cwd().openFile(input_file, .{ .mode = .read_only });
+    var in_file = try fs.cwd().open_file(input_file, .{ .mode = .read_only });
     defer in_file.close();
 
-    var out_file = try fs.cwd().createFile(output_file, .{});
+    var out_file = try fs.cwd().create_file(output_file, .{});
     defer out_file.close();
 
-    var out_dir = try fs.cwd().openDir(fs.path.dirname(output_file).?, .{});
+    var out_dir = try fs.cwd().open_dir(fs.path.dirname(output_file).?, .{});
     defer out_dir.close();
 
-    const input_file_bytes = try in_file.reader().readAllAlloc(arena, std.math.maxInt(u32));
+    const input_file_bytes = try in_file.reader().read_all_alloc(arena, std.math.max_int(u32));
 
-    var buffered_writer = io.bufferedWriter(out_file.writer());
+    var buffered_writer = io.buffered_writer(out_file.writer());
 
     var tokenizer = Tokenizer.init(input_file, input_file_bytes);
 
@@ -195,7 +195,7 @@ const Tokenizer = struct {
 };
 
 fn parse_error(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, args: anytype) anyerror {
-    const loc = tokenizer.getTokenLocation(token);
+    const loc = tokenizer.get_token_location(token);
     const args_prefix = .{ tokenizer.source_file_name, loc.line + 1, loc.column + 1 };
     print("{s}:{d}:{d}: error: " ++ fmt ++ "\n", args_prefix ++ args);
     if (loc.line_start <= loc.line_end) {
@@ -220,13 +220,13 @@ fn parse_error(tokenizer: *Tokenizer, token: Token, comptime fmt: []const u8, ar
 
 fn assert_token(tokenizer: *Tokenizer, token: Token, id: Token.Id) !void {
     if (token.id != id) {
-        return parseError(tokenizer, token, "expected {s}, found {s}", .{ @tagName(id), @tagName(token.id) });
+        return parse_error(tokenizer, token, "expected {s}, found {s}", .{ @tag_name(id), @tag_name(token.id) });
     }
 }
 
 fn eat_token(tokenizer: *Tokenizer, id: Token.Id) !Token {
     const token = tokenizer.next();
-    try assertToken(tokenizer, token, id);
+    try assert_token(tokenizer, token, id);
     return token;
 }
 
@@ -267,28 +267,28 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
             .eof => break,
             .content,
             => {
-                try w.writeAll(tokenizer.buffer[token.start..token.end]);
+                try w.write_all(tokenizer.buffer[token.start..token.end]);
             },
             .bracket_open => {
-                const tag_token = try eatToken(tokenizer, .tag_content);
+                const tag_token = try eat_token(tokenizer, .tag_content);
                 const tag_name = tokenizer.buffer[tag_token.start..tag_token.end];
 
                 if (mem.eql(u8, tag_name, "code_begin")) {
-                    _ = try eatToken(tokenizer, .separator);
-                    const code_kind_tok = try eatToken(tokenizer, .tag_content);
-                    _ = try eatToken(tokenizer, .separator);
-                    const name_tok = try eatToken(tokenizer, .tag_content);
+                    _ = try eat_token(tokenizer, .separator);
+                    const code_kind_tok = try eat_token(tokenizer, .tag_content);
+                    _ = try eat_token(tokenizer, .separator);
+                    const name_tok = try eat_token(tokenizer, .tag_content);
                     const name = tokenizer.buffer[name_tok.start..name_tok.end];
                     var error_str: []const u8 = "";
                     const maybe_sep = tokenizer.next();
                     switch (maybe_sep.id) {
                         .separator => {
-                            const error_tok = try eatToken(tokenizer, .tag_content);
+                            const error_tok = try eat_token(tokenizer, .tag_content);
                             error_str = tokenizer.buffer[error_tok.start..error_tok.end];
-                            _ = try eatToken(tokenizer, .bracket_close);
+                            _ = try eat_token(tokenizer, .bracket_close);
                         },
                         .bracket_close => {},
-                        else => return parseError(tokenizer, token, "invalid token", .{}),
+                        else => return parse_error(tokenizer, token, "invalid token", .{}),
                     }
                     const code_kind_str = tokenizer.buffer[code_kind_tok.start..code_kind_tok.end];
                     var code_kind_id: Code.Id = undefined;
@@ -315,7 +315,7 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                         code_kind_id = Code.Id{ .obj = null };
                         just_check_syntax = true;
                     } else {
-                        return parseError(tokenizer, code_kind_tok, "unrecognized code kind: {s}", .{code_kind_str});
+                        return parse_error(tokenizer, code_kind_tok, "unrecognized code kind: {s}", .{code_kind_str});
                     }
 
                     var mode: std.builtin.OptimizeMode = .Debug;
@@ -328,9 +328,9 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                     var additional_options = std.ArrayList([]const u8).init(arena);
 
                     const source_token = while (true) {
-                        const content_tok = try eatToken(tokenizer, .content);
-                        _ = try eatToken(tokenizer, .bracket_open);
-                        const end_code_tag = try eatToken(tokenizer, .tag_content);
+                        const content_tok = try eat_token(tokenizer, .content);
+                        _ = try eat_token(tokenizer, .bracket_open);
+                        const end_code_tag = try eat_token(tokenizer, .tag_content);
                         const end_tag_name = tokenizer.buffer[end_code_tag.start..end_code_tag.end];
                         if (mem.eql(u8, end_tag_name, "code_release_fast")) {
                             mode = .ReleaseFast;
@@ -341,8 +341,8 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                         } else if (mem.eql(u8, end_tag_name, "code_verbose_cimport")) {
                             verbose_cimport = true;
                         } else if (mem.eql(u8, end_tag_name, "code_link_object")) {
-                            _ = try eatToken(tokenizer, .separator);
-                            const obj_tok = try eatToken(tokenizer, .tag_content);
+                            _ = try eat_token(tokenizer, .separator);
+                            const obj_tok = try eat_token(tokenizer, .tag_content);
                             try link_objects.append(tokenizer.buffer[obj_tok.start..obj_tok.end]);
                         } else if (mem.eql(u8, end_tag_name, "target_windows")) {
                             target_str = "x86_64-windows";
@@ -359,33 +359,33 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                         } else if (mem.eql(u8, end_tag_name, "link_mode_dynamic")) {
                             link_mode = .dynamic;
                         } else if (mem.eql(u8, end_tag_name, "additonal_option")) {
-                            _ = try eatToken(tokenizer, .separator);
-                            const option = try eatToken(tokenizer, .tag_content);
+                            _ = try eat_token(tokenizer, .separator);
+                            const option = try eat_token(tokenizer, .tag_content);
                             try additional_options.append(tokenizer.buffer[option.start..option.end]);
                         } else if (mem.eql(u8, end_tag_name, "code_end")) {
-                            _ = try eatToken(tokenizer, .bracket_close);
+                            _ = try eat_token(tokenizer, .bracket_close);
                             break content_tok;
                         } else {
-                            return parseError(
+                            return parse_error(
                                 tokenizer,
                                 end_code_tag,
                                 "invalid token inside code_begin: {s}",
                                 .{end_tag_name},
                             );
                         }
-                        _ = try eatToken(tokenizer, .bracket_close);
+                        _ = try eat_token(tokenizer, .bracket_close);
                     } else unreachable; // TODO issue #707
 
-                    const basename = try std.fmt.allocPrint(arena, "{s}.zig", .{name});
+                    const basename = try std.fmt.alloc_print(arena, "{s}.zig", .{name});
 
-                    var file = out_dir.createFile(basename, .{ .exclusive = true }) catch |err| {
+                    var file = out_dir.create_file(basename, .{ .exclusive = true }) catch |err| {
                         fatal("unable to create file '{s}': {s}", .{ name, @errorName(err) });
                     };
                     defer file.close();
 
                     const source = tokenizer.buffer[source_token.start..source_token.end];
-                    try file.writeAll(std.mem.trim(u8, source[1..], " \t\r\n"));
-                    try file.writeAll("\n\n");
+                    try file.write_all(std.mem.trim(u8, source[1..], " \t\r\n"));
+                    try file.write_all("\n\n");
 
                     if (just_check_syntax) {
                         try file.writer().print("// syntax\n", .{});
@@ -394,7 +394,7 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                         .lib => try file.writer().print("// lib\n", .{}),
                         .test_error => |s| try file.writer().print("// test_error={s}\n", .{s}),
                         .test_safety => |s| try file.writer().print("// test_safety={s}\n", .{s}),
-                        .exe => |s| try file.writer().print("// exe={s}\n", .{@tagName(s)}),
+                        .exe => |s| try file.writer().print("// exe={s}\n", .{@tag_name(s)}),
                         .obj => |opt| if (opt) |s| {
                             try file.writer().print("// obj={s}\n", .{s});
                         } else {
@@ -403,7 +403,7 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                     }
 
                     if (mode != .Debug)
-                        try file.writer().print("// optimize={s}\n", .{@tagName(mode)});
+                        try file.writer().print("// optimize={s}\n", .{@tag_name(mode)});
 
                     for (link_objects.items) |link_object| {
                         try file.writer().print("// link_object={s}\n", .{link_object});
@@ -417,7 +417,7 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                     if (verbose_cimport) try file.writer().print("// verbose_cimport\n", .{});
 
                     if (link_mode) |m|
-                        try file.writer().print("// link_mode={s}\n", .{@tagName(m)});
+                        try file.writer().print("// link_mode={s}\n", .{@tag_name(m)});
 
                     for (additional_options.items) |o| {
                         try file.writer().print("// additional_option={s}\n", .{o});
@@ -428,10 +428,10 @@ fn walk(arena: Allocator, tokenizer: *Tokenizer, out_dir: std.fs.Dir, w: anytype
                         const next = tokenizer.next();
                         if (next.id == .bracket_close) break next;
                     };
-                    try w.writeAll(tokenizer.buffer[token.start..close_bracket.end]);
+                    try w.write_all(tokenizer.buffer[token.start..close_bracket.end]);
                 }
             },
-            else => return parseError(tokenizer, token, "invalid token", .{}),
+            else => return parse_error(tokenizer, token, "invalid token", .{}),
         }
     }
 }
@@ -444,13 +444,13 @@ fn urlize(allocator: Allocator, input: []const u8) ![]u8 {
     for (input) |c| {
         switch (c) {
             'a'...'z', 'A'...'Z', '_', '-', '0'...'9' => {
-                try out.writeByte(c);
+                try out.write_byte(c);
             },
             ' ' => {
-                try out.writeByte('-');
+                try out.write_byte('-');
             },
             else => {},
         }
     }
-    return try buf.toOwnedSlice();
+    return try buf.to_owned_slice();
 }

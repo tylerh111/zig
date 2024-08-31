@@ -12,7 +12,7 @@ const Message = @This();
 
 pragma: Pragma = .{
     .deinit = deinit,
-    .preprocessorHandler = preprocessorHandler,
+    .preprocessor_handler = preprocessor_handler,
 },
 
 pub fn init(allocator: mem.Allocator) !*Pragma {
@@ -28,9 +28,9 @@ fn deinit(pragma: *Pragma, comp: *Compilation) void {
 
 fn preprocessor_handler(_: *Pragma, pp: *Preprocessor, start_idx: TokenIndex) Pragma.Error!void {
     const message_tok = pp.tokens.get(start_idx);
-    const message_expansion_locs = pp.expansionSlice(start_idx);
+    const message_expansion_locs = pp.expansion_slice(start_idx);
 
-    const str = Pragma.pasteTokens(pp, start_idx + 1) catch |err| switch (err) {
+    const str = Pragma.paste_tokens(pp, start_idx + 1) catch |err| switch (err) {
         error.ExpectedStringLiteral => {
             return pp.comp.addDiagnostic(.{
                 .tag = .pragma_requires_string_literal,

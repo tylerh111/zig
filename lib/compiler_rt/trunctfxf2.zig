@@ -9,8 +9,8 @@ comptime {
 }
 
 pub fn __trunctfxf2(a: f128) callconv(.C) f80 {
-    const src_sig_bits = math.floatMantissaBits(f128);
-    const dst_sig_bits = math.floatMantissaBits(f80) - 1; // -1 for the integer bit
+    const src_sig_bits = math.float_mantissa_bits(f128);
+    const dst_sig_bits = math.float_mantissa_bits(f80) - 1; // -1 for the integer bit
 
     // Various constants whose values follow from the type parameters.
     // Any reasonable optimizer will fold and propagate all of these.
@@ -25,7 +25,7 @@ pub fn __trunctfxf2(a: f128) callconv(.C) f80 {
     const halfway = 1 << (src_sig_bits - dst_sig_bits - 1);
 
     // Break a into a sign and representation of the absolute value
-    const a_rep = @as(u128, @bitCast(a));
+    const a_rep = @as(u128, @bit_cast(a));
     const a_abs = a_rep & src_abs_mask;
     const sign: u16 = if (a_rep & src_sign_mask != 0) 0x8000 else 0;
     const integer_bit = 1 << 63;
@@ -49,13 +49,13 @@ pub fn __trunctfxf2(a: f128) callconv(.C) f80 {
         const round_bits = a_abs & round_mask;
         if (round_bits > halfway) {
             // Round to nearest
-            const ov = @addWithOverflow(res.fraction, 1);
+            const ov = @add_with_overflow(res.fraction, 1);
             res.fraction = ov[0];
             res.exp += ov[1];
             res.fraction |= @as(u64, ov[1]) << 63; // Restore integer bit after carry
         } else if (round_bits == halfway) {
             // Ties to even
-            const ov = @addWithOverflow(res.fraction, res.fraction & 1);
+            const ov = @add_with_overflow(res.fraction, res.fraction & 1);
             res.fraction = ov[0];
             res.exp += ov[1];
             res.fraction |= @as(u64, ov[1]) << 63; // Restore integer bit after carry

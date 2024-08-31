@@ -42,7 +42,7 @@ pub fn put(il: *InitList, gpa: Allocator, index: usize, node: NodeIndex, tok: To
 
     // Append new value to empty list
     if (left == right) {
-        const item = try il.list.addOne(gpa);
+        const item = try il.list.add_one(gpa);
         item.* = .{
             .list = .{ .node = node, .tok = tok },
             .index = index,
@@ -86,7 +86,7 @@ pub fn find(il: *InitList, gpa: Allocator, index: u64) !*InitList {
 
     // Append new value to empty list
     if (left == right) {
-        const item = try il.list.addOne(gpa);
+        const item = try il.list.add_one(gpa);
         item.* = .{
             .list = .{ .node = .none, .tok = 0 },
             .index = index,

@@ -19,16 +19,16 @@ pub const Error = Lower.Error || error{
 pub fn emit_mir(emit: *Emit) Error!void {
     log.debug("mir instruction len: {}", .{emit.lower.mir.instructions.len});
     for (0..emit.lower.mir.instructions.len) |mir_i| {
-        const mir_index: Mir.Inst.Index = @intCast(mir_i);
-        try emit.code_offset_mapping.putNoClobber(
+        const mir_index: Mir.Inst.Index = @int_cast(mir_i);
+        try emit.code_offset_mapping.put_no_clobber(
             emit.lower.allocator,
             mir_index,
-            @intCast(emit.code.items.len),
+            @int_cast(emit.code.items.len),
         );
-        const lowered = try emit.lower.lowerMir(mir_index);
+        const lowered = try emit.lower.lower_mir(mir_index);
         var lowered_relocs = lowered.relocs;
         for (lowered.insts, 0..) |lowered_inst, lowered_index| {
-            const start_offset: u32 = @intCast(emit.code.items.len);
+            const start_offset: u32 = @int_cast(emit.code.items.len);
             try lowered_inst.encode(emit.code.writer());
 
             while (lowered_relocs.len > 0 and
@@ -39,33 +39,33 @@ pub fn emit_mir(emit: *Emit) Error!void {
                     .source = start_offset,
                     .target = target,
                     .offset = 0,
-                    .enc = std.meta.activeTag(lowered_inst.encoding.data),
+                    .enc = std.meta.active_tag(lowered_inst.encoding.data),
                 }),
                 .load_symbol_reloc => |symbol| {
                     if (emit.lower.bin_file.cast(link.File.Elf)) |elf_file| {
                         const atom_ptr = elf_file.symbol(symbol.atom_index).atom(elf_file).?;
-                        const sym_index = elf_file.zigObjectPtr().?.symbol(symbol.sym_index);
+                        const sym_index = elf_file.zig_object_ptr().?.symbol(symbol.sym_index);
                         const sym = elf_file.symbol(sym_index);
 
-                        var hi_r_type: u32 = @intFromEnum(std.elf.R_RISCV.HI20);
-                        var lo_r_type: u32 = @intFromEnum(std.elf.R_RISCV.LO12_I);
+                        var hi_r_type: u32 = @int_from_enum(std.elf.R_RISCV.HI20);
+                        var lo_r_type: u32 = @int_from_enum(std.elf.R_RISCV.LO12_I);
 
                         if (sym.flags.needs_zig_got) {
-                            _ = try sym.getOrCreateZigGotEntry(sym_index, elf_file);
+                            _ = try sym.get_or_create_zig_got_entry(sym_index, elf_file);
 
                             hi_r_type = Elf.R_ZIG_GOT_HI20;
                             lo_r_type = Elf.R_ZIG_GOT_LO12;
                         }
 
-                        try atom_ptr.addReloc(elf_file, .{
+                        try atom_ptr.add_reloc(elf_file, .{
                             .r_offset = start_offset,
-                            .r_info = (@as(u64, @intCast(symbol.sym_index)) << 32) | hi_r_type,
+                            .r_info = (@as(u64, @int_cast(symbol.sym_index)) << 32) | hi_r_type,
                             .r_addend = 0,
                         });
 
-                        try atom_ptr.addReloc(elf_file, .{
+                        try atom_ptr.add_reloc(elf_file, .{
                             .r_offset = start_offset + 4,
-                            .r_info = (@as(u64, @intCast(symbol.sym_index)) << 32) | lo_r_type,
+                            .r_info = (@as(u64, @int_cast(symbol.sym_index)) << 32) | lo_r_type,
                             .r_addend = 0,
                         });
                     } else return emit.fail("TODO: load_symbol_reloc non-ELF", .{});
@@ -83,28 +83,28 @@ pub fn emit_mir(emit: *Emit) Error!void {
                     .pseudo_dbg_prologue_end => {
                         switch (emit.debug_output) {
                             .dwarf => |dw| {
-                                try dw.setPrologueEnd();
+                                try dw.set_prologue_end();
                                 log.debug("mirDbgPrologueEnd (line={d}, col={d})", .{
                                     emit.prev_di_line, emit.prev_di_column,
                                 });
-                                try emit.dbgAdvancePCAndLine(emit.prev_di_line, emit.prev_di_column);
+                                try emit.dbg_advance_pcand_line(emit.prev_di_line, emit.prev_di_column);
                             },
                             .plan9 => {},
                             .none => {},
                         }
                     },
-                    .pseudo_dbg_line_column => try emit.dbgAdvancePCAndLine(
+                    .pseudo_dbg_line_column => try emit.dbg_advance_pcand_line(
                         mir_inst.data.pseudo_dbg_line_column.line,
                         mir_inst.data.pseudo_dbg_line_column.column,
                     ),
                     .pseudo_dbg_epilogue_begin => {
                         switch (emit.debug_output) {
                             .dwarf => |dw| {
-                                try dw.setEpilogueBegin();
+                                try dw.set_epilogue_begin();
                                 log.debug("mirDbgEpilogueBegin (line={d}, col={d})", .{
                                     emit.prev_di_line, emit.prev_di_column,
                                 });
-                                try emit.dbgAdvancePCAndLine(emit.prev_di_line, emit.prev_di_column);
+                                try emit.dbg_advance_pcand_line(emit.prev_di_line, emit.prev_di_column);
                             },
                             .plan9 => {},
                             .none => {},
@@ -115,7 +115,7 @@ pub fn emit_mir(emit: *Emit) Error!void {
             }
         }
     }
-    try emit.fixupRelocs();
+    try emit.fixup_relocs();
 }
 
 pub fn deinit(emit: *Emit) void {
@@ -141,15 +141,15 @@ fn fixup_relocs(emit: *Emit) Error!void {
         const target = emit.code_offset_mapping.get(reloc.target) orelse
             return emit.fail("relocation target not found!", .{});
 
-        const disp = @as(i32, @intCast(target)) - @as(i32, @intCast(reloc.source));
+        const disp = @as(i32, @int_cast(target)) - @as(i32, @int_cast(reloc.source));
         const code: *[4]u8 = emit.code.items[reloc.source + reloc.offset ..][0..4];
 
         log.debug("disp: {x}", .{disp});
 
         switch (reloc.enc) {
-            .J => riscv_util.writeInstJ(code, @bitCast(disp)),
-            .B => riscv_util.writeInstB(code, @bitCast(disp)),
-            else => return emit.fail("tried to reloc encoding type {s}", .{@tagName(reloc.enc)}),
+            .J => riscv_util.write_inst_j(code, @bit_cast(disp)),
+            .B => riscv_util.write_inst_b(code, @bit_cast(disp)),
+            else => return emit.fail("tried to reloc encoding type {s}", .{@tag_name(reloc.enc)}),
         }
     }
 }
@@ -160,9 +160,9 @@ fn dbg_advance_pcand_line(emit: *Emit, line: u32, column: u32) Error!void {
     log.debug("  (advance pc={d} and line={d})", .{ delta_pc, delta_line });
     switch (emit.debug_output) {
         .dwarf => |dw| {
-            if (column != emit.prev_di_column) try dw.setColumn(column);
+            if (column != emit.prev_di_column) try dw.set_column(column);
             if (delta_line == 0) return; // TODO: fix these edge cases.
-            try dw.advancePCAndLine(delta_line, delta_pc);
+            try dw.advance_pcand_line(delta_line, delta_pc);
             emit.prev_di_line = line;
             emit.prev_di_column = column;
             emit.prev_di_pc = emit.code.items.len;

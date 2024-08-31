@@ -30,7 +30,7 @@ pub fn string_to_enum(comptime T: type, str: []const u8) ?T {
             }
             break :build_kvs kvs_array[0..];
         };
-        const map = std.StaticStringMap(T).initComptime(kvs);
+        const map = std.StaticStringMap(T).init_comptime(kvs);
         return map.get(str);
     } else {
         inline for (@typeInfo(T).Enum.fields) |enumField| {
@@ -42,14 +42,14 @@ pub fn string_to_enum(comptime T: type, str: []const u8) ?T {
     }
 }
 
-test stringToEnum {
+test string_to_enum {
     const E1 = enum {
         A,
         B,
     };
-    try testing.expect(E1.A == stringToEnum(E1, "A").?);
-    try testing.expect(E1.B == stringToEnum(E1, "B").?);
-    try testing.expect(null == stringToEnum(E1, "C"));
+    try testing.expect(E1.A == string_to_enum(E1, "A").?);
+    try testing.expect(E1.B == string_to_enum(E1, "B").?);
+    try testing.expect(null == string_to_enum(E1, "C"));
 }
 
 /// Returns the alignment of type T.
@@ -85,7 +85,7 @@ pub fn Child(comptime T: type) type {
         .Vector => |info| info.child,
         .Pointer => |info| info.child,
         .Optional => |info| info.child,
-        else => @compileError("Expected pointer, optional, array or vector type, found '" ++ @typeName(T) ++ "'"),
+        else => @compile_error("Expected pointer, optional, array or vector type, found '" ++ @type_name(T) ++ "'"),
     };
 }
 
@@ -113,7 +113,7 @@ pub fn Elem(comptime T: type) type {
         .Optional => |info| return Elem(info.child),
         else => {},
     }
-    @compileError("Expected pointer, slice, array or vector type, found '" ++ @typeName(T) ++ "'");
+    @compile_error("Expected pointer, slice, array or vector type, found '" ++ @type_name(T) ++ "'");
 }
 
 test Elem {
@@ -134,18 +134,18 @@ pub inline fn sentinel(comptime T: type) ?Elem(T) {
     switch (@typeInfo(T)) {
         .Array => |info| {
             const sentinel_ptr = info.sentinel orelse return null;
-            return @as(*const info.child, @ptrCast(sentinel_ptr)).*;
+            return @as(*const info.child, @ptr_cast(sentinel_ptr)).*;
         },
         .Pointer => |info| {
             switch (info.size) {
                 .Many, .Slice => {
                     const sentinel_ptr = info.sentinel orelse return null;
-                    return @as(*align(1) const info.child, @ptrCast(sentinel_ptr)).*;
+                    return @as(*align(1) const info.child, @ptr_cast(sentinel_ptr)).*;
                 },
                 .One => switch (@typeInfo(info.child)) {
                     .Array => |array_info| {
                         const sentinel_ptr = array_info.sentinel orelse return null;
-                        return @as(*align(1) const array_info.child, @ptrCast(sentinel_ptr)).*;
+                        return @as(*align(1) const array_info.child, @ptr_cast(sentinel_ptr)).*;
                     },
                     else => {},
                 },
@@ -154,19 +154,19 @@ pub inline fn sentinel(comptime T: type) ?Elem(T) {
         },
         else => {},
     }
-    @compileError("type '" ++ @typeName(T) ++ "' cannot possibly have a sentinel");
+    @compile_error("type '" ++ @type_name(T) ++ "' cannot possibly have a sentinel");
 }
 
 test sentinel {
-    try testSentinel();
-    try comptime testSentinel();
+    try test_sentinel();
+    try comptime test_sentinel();
 }
 
 fn test_sentinel() !void {
-    try testing.expectEqual(@as(u8, 0), sentinel([:0]u8).?);
-    try testing.expectEqual(@as(u8, 0), sentinel([*:0]u8).?);
-    try testing.expectEqual(@as(u8, 0), sentinel([5:0]u8).?);
-    try testing.expectEqual(@as(u8, 0), sentinel(*const [5:0]u8).?);
+    try testing.expect_equal(@as(u8, 0), sentinel([:0]u8).?);
+    try testing.expect_equal(@as(u8, 0), sentinel([*:0]u8).?);
+    try testing.expect_equal(@as(u8, 0), sentinel([5:0]u8).?);
+    try testing.expect_equal(@as(u8, 0), sentinel(*const [5:0]u8).?);
 
     try testing.expect(sentinel([]u8) == null);
     try testing.expect(sentinel([*]u8) == null);
@@ -190,7 +190,7 @@ pub fn Sentinel(comptime T: type, comptime sentinel_val: Elem(T)) type {
                             .Array = .{
                                 .len = array_info.len,
                                 .child = array_info.child,
-                                .sentinel = @as(?*const anyopaque, @ptrCast(&sentinel_val)),
+                                .sentinel = @as(?*const anyopaque, @ptr_cast(&sentinel_val)),
                             },
                         }),
                         .is_allowzero = info.is_allowzero,
@@ -208,7 +208,7 @@ pub fn Sentinel(comptime T: type, comptime sentinel_val: Elem(T)) type {
                     .address_space = info.address_space,
                     .child = info.child,
                     .is_allowzero = info.is_allowzero,
-                    .sentinel = @as(?*const anyopaque, @ptrCast(&sentinel_val)),
+                    .sentinel = @as(?*const anyopaque, @ptr_cast(&sentinel_val)),
                 },
             }),
             else => {},
@@ -226,7 +226,7 @@ pub fn Sentinel(comptime T: type, comptime sentinel_val: Elem(T)) type {
                                 .address_space = ptr_info.address_space,
                                 .child = ptr_info.child,
                                 .is_allowzero = ptr_info.is_allowzero,
-                                .sentinel = @as(?*const anyopaque, @ptrCast(&sentinel_val)),
+                                .sentinel = @as(?*const anyopaque, @ptr_cast(&sentinel_val)),
                             },
                         }),
                     },
@@ -237,20 +237,20 @@ pub fn Sentinel(comptime T: type, comptime sentinel_val: Elem(T)) type {
         },
         else => {},
     }
-    @compileError("Unable to derive a sentinel pointer type from " ++ @typeName(T));
+    @compile_error("Unable to derive a sentinel pointer type from " ++ @type_name(T));
 }
 
-pub const assumeSentinel = @compileError("This function has been removed, consider using std.mem.sliceTo() or if needed a @ptrCast()");
+pub const assumeSentinel = @compile_error("This function has been removed, consider using std.mem.slice_to() or if needed a @ptr_cast()");
 
 pub fn container_layout(comptime T: type) Type.ContainerLayout {
     return switch (@typeInfo(T)) {
         .Struct => |info| info.layout,
         .Union => |info| info.layout,
-        else => @compileError("expected struct or union type, found '" ++ @typeName(T) ++ "'"),
+        else => @compile_error("expected struct or union type, found '" ++ @type_name(T) ++ "'"),
     };
 }
 
-test containerLayout {
+test container_layout {
     const S1 = struct {};
     const S2 = packed struct {};
     const S3 = extern struct {};
@@ -264,12 +264,12 @@ test containerLayout {
         a: u8,
     };
 
-    try testing.expect(containerLayout(S1) == .auto);
-    try testing.expect(containerLayout(S2) == .@"packed");
-    try testing.expect(containerLayout(S3) == .@"extern");
-    try testing.expect(containerLayout(U1) == .auto);
-    try testing.expect(containerLayout(U2) == .@"packed");
-    try testing.expect(containerLayout(U3) == .@"extern");
+    try testing.expect(container_layout(S1) == .auto);
+    try testing.expect(container_layout(S2) == .@"packed");
+    try testing.expect(container_layout(S3) == .@"extern");
+    try testing.expect(container_layout(U1) == .auto);
+    try testing.expect(container_layout(U2) == .@"packed");
+    try testing.expect(container_layout(U3) == .@"extern");
 }
 
 /// Instead of this function, prefer to use e.g. `@typeInfo(foo).Struct.decls`
@@ -280,7 +280,7 @@ pub fn declarations(comptime T: type) []const Type.Declaration {
         .Enum => |info| info.decls,
         .Union => |info| info.decls,
         .Opaque => |info| info.decls,
-        else => @compileError("Expected struct, enum, union, or opaque type, found '" ++ @typeName(T) ++ "'"),
+        else => @compile_error("Expected struct, enum, union, or opaque type, found '" ++ @type_name(T) ++ "'"),
     };
 }
 
@@ -321,10 +321,10 @@ pub fn declaration_info(comptime T: type, comptime decl_name: []const u8) Type.D
             return decl;
     }
 
-    @compileError("'" ++ @typeName(T) ++ "' has no declaration '" ++ decl_name ++ "'");
+    @compile_error("'" ++ @type_name(T) ++ "' has no declaration '" ++ decl_name ++ "'");
 }
 
-test declarationInfo {
+test declaration_info {
     const E1 = enum {
         A,
 
@@ -340,9 +340,9 @@ test declarationInfo {
     };
 
     const infos = comptime [_]Type.Declaration{
-        declarationInfo(E1, "a"),
-        declarationInfo(S1, "a"),
-        declarationInfo(U1, "a"),
+        declaration_info(E1, "a"),
+        declaration_info(S1, "a"),
+        declaration_info(U1, "a"),
     };
 
     inline for (infos) |info| {
@@ -354,14 +354,14 @@ pub fn fields(comptime T: type) switch (@typeInfo(T)) {
     .Union => []const Type.UnionField,
     .ErrorSet => []const Type.Error,
     .Enum => []const Type.EnumField,
-    else => @compileError("Expected struct, union, error set or enum type, found '" ++ @typeName(T) ++ "'"),
+    else => @compile_error("Expected struct, union, error set or enum type, found '" ++ @type_name(T) ++ "'"),
 } {
     return switch (@typeInfo(T)) {
         .Struct => |info| info.fields,
         .Union => |info| info.fields,
         .Enum => |info| info.fields,
         .ErrorSet => |errors| errors.?, // must be non global error set
-        else => @compileError("Expected struct, union, error set or enum type, found '" ++ @typeName(T) ++ "'"),
+        else => @compile_error("Expected struct, union, error set or enum type, found '" ++ @type_name(T) ++ "'"),
     };
 }
 
@@ -399,12 +399,12 @@ pub fn field_info(comptime T: type, comptime field: FieldEnum(T)) switch (@typeI
     .Union => Type.UnionField,
     .ErrorSet => Type.Error,
     .Enum => Type.EnumField,
-    else => @compileError("Expected struct, union, error set or enum type, found '" ++ @typeName(T) ++ "'"),
+    else => @compile_error("Expected struct, union, error set or enum type, found '" ++ @type_name(T) ++ "'"),
 } {
-    return fields(T)[@intFromEnum(field)];
+    return fields(T)[@int_from_enum(field)];
 }
 
-test fieldInfo {
+test field_info {
     const E1 = enum {
         A,
     };
@@ -416,10 +416,10 @@ test fieldInfo {
         a: u8,
     };
 
-    const e1f = fieldInfo(E1, .A);
-    const e2f = fieldInfo(E2, .A);
-    const sf = fieldInfo(S1, .a);
-    const uf = fieldInfo(U1, .a);
+    const e1f = field_info(E1, .A);
+    const e2f = field_info(E2, .A);
+    const sf = field_info(S1, .a);
+    const uf = field_info(U1, .a);
 
     try testing.expect(mem.eql(u8, e1f.name, "A"));
     try testing.expect(mem.eql(u8, e2f.name, "A"));
@@ -431,10 +431,10 @@ test fieldInfo {
 
 pub fn FieldType(comptime T: type, comptime field: FieldEnum(T)) type {
     if (@typeInfo(T) != .Struct and @typeInfo(T) != .Union) {
-        @compileError("Expected struct or union, found '" ++ @typeName(T) ++ "'");
+        @compile_error("Expected struct or union, found '" ++ @type_name(T) ++ "'");
     }
 
-    return fieldInfo(T, field).type;
+    return field_info(T, field).type;
 }
 
 test FieldType {
@@ -466,7 +466,7 @@ pub fn field_names(comptime T: type) *const [fields(T).len][:0]const u8 {
     };
 }
 
-test fieldNames {
+test field_names {
     const E1 = enum { A, B };
     const E2 = error{A};
     const S1 = struct {
@@ -477,21 +477,21 @@ test fieldNames {
         b: void,
     };
 
-    const e1names = fieldNames(E1);
-    const e2names = fieldNames(E2);
-    const s1names = fieldNames(S1);
-    const u1names = fieldNames(U1);
+    const e1names = field_names(E1);
+    const e2names = field_names(E2);
+    const s1names = field_names(S1);
+    const u1names = field_names(U1);
 
     try testing.expect(e1names.len == 2);
-    try testing.expectEqualSlices(u8, e1names[0], "A");
-    try testing.expectEqualSlices(u8, e1names[1], "B");
+    try testing.expect_equal_slices(u8, e1names[0], "A");
+    try testing.expect_equal_slices(u8, e1names[1], "B");
     try testing.expect(e2names.len == 1);
-    try testing.expectEqualSlices(u8, e2names[0], "A");
+    try testing.expect_equal_slices(u8, e2names[0], "A");
     try testing.expect(s1names.len == 1);
-    try testing.expectEqualSlices(u8, s1names[0], "a");
+    try testing.expect_equal_slices(u8, s1names[0], "a");
     try testing.expect(u1names.len == 2);
-    try testing.expectEqualSlices(u8, u1names[0], "a");
-    try testing.expectEqualSlices(u8, u1names[1], "b");
+    try testing.expect_equal_slices(u8, u1names[0], "a");
+    try testing.expect_equal_slices(u8, u1names[1], "b");
 }
 
 /// Given an enum or error set type, returns a pointer to an array containing all tags for that
@@ -516,10 +516,10 @@ test tags {
     const e2_tags = tags(E2);
 
     try testing.expect(e1_tags.len == 2);
-    try testing.expectEqual(E1.A, e1_tags[0]);
-    try testing.expectEqual(E1.B, e1_tags[1]);
+    try testing.expect_equal(E1.A, e1_tags[0]);
+    try testing.expect_equal(E1.B, e1_tags[1]);
     try testing.expect(e2_tags.len == 1);
-    try testing.expectEqual(E2.A, e2_tags[0]);
+    try testing.expect_equal(E2.A, e2_tags[0]);
 }
 
 /// Returns an enum with a variant named after each field of `T`.
@@ -540,18 +540,18 @@ pub fn FieldEnum(comptime T: type) type {
     if (@typeInfo(T) == .Union) {
         if (@typeInfo(T).Union.tag_type) |tag_type| {
             for (std.enums.values(tag_type), 0..) |v, i| {
-                if (@intFromEnum(v) != i) break; // enum values not consecutive
-                if (!std.mem.eql(u8, @tagName(v), field_infos[i].name)) break; // fields out of order
+                if (@int_from_enum(v) != i) break; // enum values not consecutive
+                if (!std.mem.eql(u8, @tag_name(v), field_infos[i].name)) break; // fields out of order
             } else {
                 return tag_type;
             }
         }
     }
 
-    var enumFields: [field_infos.len]std.builtin.Type.EnumField = undefined;
+    var enum_fields: [field_infos.len]std.builtin.Type.EnumField = undefined;
     var decls = [_]std.builtin.Type.Declaration{};
     inline for (field_infos, 0..) |field, i| {
-        enumFields[i] = .{
+        enum_fields[i] = .{
             .name = field.name ++ "",
             .value = i,
         };
@@ -559,7 +559,7 @@ pub fn FieldEnum(comptime T: type) type {
     return @Type(.{
         .Enum = .{
             .tag_type = std.math.IntFittingRange(0, field_infos.len - 1),
-            .fields = &enumFields,
+            .fields = &enum_fields,
             .decls = &decls,
             .is_exhaustive = true,
         },
@@ -568,8 +568,8 @@ pub fn FieldEnum(comptime T: type) type {
 
 fn expect_equal_enum(expected: anytype, actual: @TypeOf(expected)) !void {
     // TODO: https://github.com/ziglang/zig/issues/7419
-    // testing.expectEqual(@typeInfo(expected).Enum, @typeInfo(actual).Enum);
-    try testing.expectEqual(
+    // testing.expect_equal(@typeInfo(expected).Enum, @typeInfo(actual).Enum);
+    try testing.expect_equal(
         @typeInfo(expected).Enum.tag_type,
         @typeInfo(actual).Enum.tag_type,
     );
@@ -582,8 +582,8 @@ fn expect_equal_enum(expected: anytype, actual: @TypeOf(expected)) !void {
         if (expected_fields.len != actual_fields.len) return error.FailedTest;
         for (expected_fields, 0..) |expected_field, i| {
             const actual_field = actual_fields[i];
-            try testing.expectEqual(expected_field.value, actual_field.value);
-            try testing.expectEqualStrings(expected_field.name, actual_field.name);
+            try testing.expect_equal(expected_field.value, actual_field.value);
+            try testing.expect_equal_strings(expected_field.name, actual_field.name);
         }
     }
     comptime {
@@ -592,23 +592,23 @@ fn expect_equal_enum(expected: anytype, actual: @TypeOf(expected)) !void {
         if (expected_decls.len != actual_decls.len) return error.FailedTest;
         for (expected_decls, 0..) |expected_decl, i| {
             const actual_decl = actual_decls[i];
-            try testing.expectEqualStrings(expected_decl.name, actual_decl.name);
+            try testing.expect_equal_strings(expected_decl.name, actual_decl.name);
         }
     }
-    try testing.expectEqual(
+    try testing.expect_equal(
         @typeInfo(expected).Enum.is_exhaustive,
         @typeInfo(actual).Enum.is_exhaustive,
     );
 }
 
 test FieldEnum {
-    try expectEqualEnum(enum {}, FieldEnum(struct {}));
-    try expectEqualEnum(enum { a }, FieldEnum(struct { a: u8 }));
-    try expectEqualEnum(enum { a, b, c }, FieldEnum(struct { a: u8, b: void, c: f32 }));
-    try expectEqualEnum(enum { a, b, c }, FieldEnum(union { a: u8, b: void, c: f32 }));
+    try expect_equal_enum(enum {}, FieldEnum(struct {}));
+    try expect_equal_enum(enum { a }, FieldEnum(struct { a: u8 }));
+    try expect_equal_enum(enum { a, b, c }, FieldEnum(struct { a: u8, b: void, c: f32 }));
+    try expect_equal_enum(enum { a, b, c }, FieldEnum(union { a: u8, b: void, c: f32 }));
 
     const Tagged = union(enum) { a: u8, b: void, c: f32 };
-    try testing.expectEqual(Tag(Tagged), FieldEnum(Tagged));
+    try testing.expect_equal(Tag(Tagged), FieldEnum(Tagged));
 
     const Tag2 = enum { a, b, c };
     const Tagged2 = union(Tag2) { a: u8, b: void, c: f32 };
@@ -654,16 +654,16 @@ test DeclEnum {
         pub const b: void = {};
         pub const c: f32 = 0;
     };
-    try expectEqualEnum(enum { a }, DeclEnum(A));
-    try expectEqualEnum(enum { a, b, c }, DeclEnum(B));
-    try expectEqualEnum(enum { a, b, c }, DeclEnum(C));
+    try expect_equal_enum(enum { a }, DeclEnum(A));
+    try expect_equal_enum(enum { a, b, c }, DeclEnum(B));
+    try expect_equal_enum(enum { a, b, c }, DeclEnum(C));
 }
 
 pub fn Tag(comptime T: type) type {
     return switch (@typeInfo(T)) {
         .Enum => |info| info.tag_type,
-        .Union => |info| info.tag_type orelse @compileError(@typeName(T) ++ " has no tag type"),
-        else => @compileError("expected enum or union type, found '" ++ @typeName(T) ++ "'"),
+        .Union => |info| info.tag_type orelse @compile_error(@type_name(T) ++ " has no tag type"),
+        else => @compile_error("expected enum or union type, found '" ++ @type_name(T) ++ "'"),
     };
 }
 
@@ -687,7 +687,7 @@ pub fn active_tag(u: anytype) Tag(@TypeOf(u)) {
     return @as(Tag(T), u);
 }
 
-test activeTag {
+test active_tag {
     const UE = enum {
         Int,
         Float,
@@ -699,10 +699,10 @@ test activeTag {
     };
 
     var u = U{ .Int = 32 };
-    try testing.expect(activeTag(u) == UE.Int);
+    try testing.expect(active_tag(u) == UE.Int);
 
     u = U{ .Float = 112.9876 };
-    try testing.expect(activeTag(u) == UE.Float);
+    try testing.expect(active_tag(u) == UE.Float);
 }
 
 const TagPayloadType = TagPayload;
@@ -715,13 +715,13 @@ pub fn TagPayloadByName(comptime U: type, comptime tag_name: []const u8) type {
             return field_info.type;
     }
 
-    @compileError("no field '" ++ tag_name ++ "' in union '" ++ @typeName(U) ++ "'");
+    @compile_error("no field '" ++ tag_name ++ "' in union '" ++ @type_name(U) ++ "'");
 }
 
 /// Given a tagged union type, and an enum, return the type of the union field
 /// corresponding to the enum tag.
 pub fn TagPayload(comptime U: type, comptime tag: Tag(U)) type {
-    return TagPayloadByName(U, @tagName(tag));
+    return TagPayloadByName(U, @tag_name(tag));
 }
 
 test TagPayload {
@@ -757,8 +757,8 @@ pub fn eql(a: anytype, b: @TypeOf(a)) bool {
         },
         .Union => |info| {
             if (info.tag_type) |UnionTag| {
-                const tag_a = activeTag(a);
-                const tag_b = activeTag(b);
+                const tag_a = active_tag(a);
+                const tag_b = active_tag(b);
                 if (tag_a != tag_b) return false;
 
                 inline for (info.fields) |field_info| {
@@ -769,7 +769,7 @@ pub fn eql(a: anytype, b: @TypeOf(a)) bool {
                 return false;
             }
 
-            @compileError("cannot compare untagged union type " ++ @typeName(T));
+            @compile_error("cannot compare untagged union type " ++ @type_name(T));
         },
         .Array => {
             if (a.len != b.len) return false;
@@ -860,7 +860,7 @@ test eql {
     try testing.expect(!eql(v1, v3));
 }
 
-test intToEnum {
+test int_to_enum {
     const E1 = enum {
         A,
     };
@@ -874,14 +874,14 @@ test intToEnum {
     var one: u16 = 1;
     _ = &zero;
     _ = &one;
-    try testing.expect(intToEnum(E1, zero) catch unreachable == E1.A);
-    try testing.expect(intToEnum(E2, one) catch unreachable == E2.B);
-    try testing.expect(intToEnum(E3, zero) catch unreachable == E3.A);
-    try testing.expect(intToEnum(E3, 127) catch unreachable == @as(E3, @enumFromInt(127)));
-    try testing.expect(intToEnum(E3, -128) catch unreachable == @as(E3, @enumFromInt(-128)));
-    try testing.expectError(error.InvalidEnumTag, intToEnum(E1, one));
-    try testing.expectError(error.InvalidEnumTag, intToEnum(E3, 128));
-    try testing.expectError(error.InvalidEnumTag, intToEnum(E3, -129));
+    try testing.expect(int_to_enum(E1, zero) catch unreachable == E1.A);
+    try testing.expect(int_to_enum(E2, one) catch unreachable == E2.B);
+    try testing.expect(int_to_enum(E3, zero) catch unreachable == E3.A);
+    try testing.expect(int_to_enum(E3, 127) catch unreachable == @as(E3, @enumFromInt(127)));
+    try testing.expect(int_to_enum(E3, -128) catch unreachable == @as(E3, @enumFromInt(-128)));
+    try testing.expect_error(error.InvalidEnumTag, int_to_enum(E1, one));
+    try testing.expect_error(error.InvalidEnumTag, int_to_enum(E3, 128));
+    try testing.expect_error(error.InvalidEnumTag, int_to_enum(E3, -129));
 }
 
 pub const IntToEnumError = error{InvalidEnumTag};
@@ -924,14 +924,14 @@ pub fn field_index(comptime T: type, comptime name: []const u8) ?comptime_int {
     return null;
 }
 
-pub const refAllDecls = @compileError("refAllDecls has been moved from std.meta to std.testing");
+pub const ref_all_decls = @compile_error("ref_all_decls has been moved from std.meta to std.testing");
 
 /// Returns a slice of pointers to public declarations of a namespace.
 pub fn decl_list(comptime Namespace: type, comptime Decl: type) []const *const Decl {
     const S = struct {
         fn decl_name_less_than(context: void, lhs: *const Decl, rhs: *const Decl) bool {
             _ = context;
-            return mem.lessThan(u8, lhs.name, rhs.name);
+            return mem.less_than(u8, lhs.name, rhs.name);
         }
     };
     comptime {
@@ -940,12 +940,12 @@ pub fn decl_list(comptime Namespace: type, comptime Decl: type) []const *const D
         for (decls, 0..) |decl, i| {
             array[i] = &@field(Namespace, decl.name);
         }
-        mem.sort(*const Decl, &array, {}, S.declNameLessThan);
+        mem.sort(*const Decl, &array, {}, S.decl_name_less_than);
         return &array;
     }
 }
 
-pub const IntType = @compileError("replaced by std.meta.Int");
+pub const IntType = @compile_error("replaced by std.meta.Int");
 
 pub fn Int(comptime signedness: std.builtin.Signedness, comptime bit_count: u16) type {
     return @Type(.{
@@ -963,10 +963,10 @@ pub fn Float(comptime bit_count: u8) type {
 }
 
 test Float {
-    try testing.expectEqual(f16, Float(16));
-    try testing.expectEqual(f32, Float(32));
-    try testing.expectEqual(f64, Float(64));
-    try testing.expectEqual(f128, Float(128));
+    try testing.expect_equal(f16, Float(16));
+    try testing.expect_equal(f32, Float(32));
+    try testing.expect_equal(f64, Float(64));
+    try testing.expect_equal(f128, Float(128));
 }
 
 /// For a given function type, returns a tuple type which fields will
@@ -979,15 +979,15 @@ test Float {
 pub fn ArgsTuple(comptime Function: type) type {
     const info = @typeInfo(Function);
     if (info != .Fn)
-        @compileError("ArgsTuple expects a function type");
+        @compile_error("ArgsTuple expects a function type");
 
     const function_info = info.Fn;
     if (function_info.is_var_args)
-        @compileError("Cannot create ArgsTuple for variadic function");
+        @compile_error("Cannot create ArgsTuple for variadic function");
 
     var argument_field_list: [function_info.params.len]type = undefined;
     inline for (function_info.params, 0..) |arg, i| {
-        const T = arg.type orelse @compileError("cannot create ArgsTuple for function with an 'anytype' parameter");
+        const T = arg.type orelse @compile_error("cannot create ArgsTuple for function with an 'anytype' parameter");
         argument_field_list[i] = T;
     }
 
@@ -1011,11 +1011,11 @@ fn CreateUniqueTuple(comptime N: comptime_int, comptime types: [N]type) type {
         @setEvalBranchQuota(10_000);
         var num_buf: [128]u8 = undefined;
         tuple_fields[i] = .{
-            .name = std.fmt.bufPrintZ(&num_buf, "{d}", .{i}) catch unreachable,
+            .name = std.fmt.buf_print_z(&num_buf, "{d}", .{i}) catch unreachable,
             .type = T,
             .default_value = null,
             .is_comptime = false,
-            .alignment = if (@sizeOf(T) > 0) @alignOf(T) else 0,
+            .alignment = if (@size_of(T) > 0) @alignOf(T) else 0,
         };
     }
 
@@ -1032,41 +1032,41 @@ fn CreateUniqueTuple(comptime N: comptime_int, comptime types: [N]type) type {
 const TupleTester = struct {
     fn assert_type_equal(comptime Expected: type, comptime Actual: type) void {
         if (Expected != Actual)
-            @compileError("Expected type " ++ @typeName(Expected) ++ ", but got type " ++ @typeName(Actual));
+            @compile_error("Expected type " ++ @type_name(Expected) ++ ", but got type " ++ @type_name(Actual));
     }
 
     fn assert_tuple(comptime expected: anytype, comptime Actual: type) void {
         const info = @typeInfo(Actual);
         if (info != .Struct)
-            @compileError("Expected struct type");
+            @compile_error("Expected struct type");
         if (!info.Struct.is_tuple)
-            @compileError("Struct type must be a tuple type");
+            @compile_error("Struct type must be a tuple type");
 
         const fields_list = std.meta.fields(Actual);
         if (expected.len != fields_list.len)
-            @compileError("Argument count mismatch");
+            @compile_error("Argument count mismatch");
 
         inline for (fields_list, 0..) |fld, i| {
             if (expected[i] != fld.type) {
-                @compileError("Field " ++ fld.name ++ " expected to be type " ++ @typeName(expected[i]) ++ ", but was type " ++ @typeName(fld.type));
+                @compile_error("Field " ++ fld.name ++ " expected to be type " ++ @type_name(expected[i]) ++ ", but was type " ++ @type_name(fld.type));
             }
         }
     }
 };
 
 test ArgsTuple {
-    TupleTester.assertTuple(.{}, ArgsTuple(fn () void));
-    TupleTester.assertTuple(.{u32}, ArgsTuple(fn (a: u32) []const u8));
-    TupleTester.assertTuple(.{ u32, f16 }, ArgsTuple(fn (a: u32, b: f16) noreturn));
-    TupleTester.assertTuple(.{ u32, f16, []const u8, void }, ArgsTuple(fn (a: u32, b: f16, c: []const u8, void) noreturn));
-    TupleTester.assertTuple(.{u32}, ArgsTuple(fn (comptime a: u32) []const u8));
+    TupleTester.assert_tuple(.{}, ArgsTuple(fn () void));
+    TupleTester.assert_tuple(.{u32}, ArgsTuple(fn (a: u32) []const u8));
+    TupleTester.assert_tuple(.{ u32, f16 }, ArgsTuple(fn (a: u32, b: f16) noreturn));
+    TupleTester.assert_tuple(.{ u32, f16, []const u8, void }, ArgsTuple(fn (a: u32, b: f16, c: []const u8, void) noreturn));
+    TupleTester.assert_tuple(.{u32}, ArgsTuple(fn (comptime a: u32) []const u8));
 }
 
 test Tuple {
-    TupleTester.assertTuple(.{}, Tuple(&[_]type{}));
-    TupleTester.assertTuple(.{u32}, Tuple(&[_]type{u32}));
-    TupleTester.assertTuple(.{ u32, f16 }, Tuple(&[_]type{ u32, f16 }));
-    TupleTester.assertTuple(.{ u32, f16, []const u8, void }, Tuple(&[_]type{ u32, f16, []const u8, void }));
+    TupleTester.assert_tuple(.{}, Tuple(&[_]type{}));
+    TupleTester.assert_tuple(.{u32}, Tuple(&[_]type{u32}));
+    TupleTester.assert_tuple(.{ u32, f16 }, Tuple(&[_]type{ u32, f16 }));
+    TupleTester.assert_tuple(.{ u32, f16, []const u8, void }, Tuple(&[_]type{ u32, f16, []const u8, void }));
 }
 
 test "Tuple deduplication" {
@@ -1075,10 +1075,10 @@ test "Tuple deduplication" {
     const T3 = std.meta.Tuple(&.{ u32, f32, i7 });
 
     if (T1 != T2) {
-        @compileError("std.meta.Tuple doesn't deduplicate tuple types.");
+        @compile_error("std.meta.Tuple doesn't deduplicate tuple types.");
     }
     if (T1 == T3) {
-        @compileError("std.meta.Tuple fails to generate different types.");
+        @compile_error("std.meta.Tuple fails to generate different types.");
     }
 }
 
@@ -1088,10 +1088,10 @@ test "ArgsTuple forwarding" {
     const T3 = std.meta.ArgsTuple(fn (u32, f32, i8) callconv(.C) noreturn);
 
     if (T1 != T2) {
-        @compileError("std.meta.ArgsTuple produces different types than std.meta.Tuple");
+        @compile_error("std.meta.ArgsTuple produces different types than std.meta.Tuple");
     }
     if (T1 != T3) {
-        @compileError("std.meta.ArgsTuple produces different types for the same argument lists.");
+        @compile_error("std.meta.ArgsTuple produces different types for the same argument lists.");
     }
 }
 
@@ -1100,9 +1100,9 @@ pub fn is_error(error_union: anytype) bool {
     return if (error_union) |_| false else |_| true;
 }
 
-test isError {
-    try std.testing.expect(isError(math.divTrunc(u8, 5, 0)));
-    try std.testing.expect(!isError(math.divTrunc(u8, 5, 5)));
+test is_error {
+    try std.testing.expect(is_error(math.div_trunc(u8, 5, 0)));
+    try std.testing.expect(!is_error(math.div_trunc(u8, 5, 5)));
 }
 
 /// Returns true if a type has a namespace and the namespace contains `name`;
@@ -1118,20 +1118,20 @@ pub inline fn has_fn(comptime T: type, comptime name: []const u8) bool {
     return @typeInfo(@TypeOf(@field(T, name))) == .Fn;
 }
 
-test hasFn {
+test has_fn {
     const S1 = struct {
         pub fn foo() void {}
     };
 
-    try std.testing.expect(hasFn(S1, "foo"));
-    try std.testing.expect(!hasFn(S1, "bar"));
-    try std.testing.expect(!hasFn(*S1, "foo"));
+    try std.testing.expect(has_fn(S1, "foo"));
+    try std.testing.expect(!has_fn(S1, "bar"));
+    try std.testing.expect(!has_fn(*S1, "foo"));
 
     const S2 = struct {
         foo: fn () void,
     };
 
-    try std.testing.expect(!hasFn(S2, "foo"));
+    try std.testing.expect(!has_fn(S2, "foo"));
 }
 
 /// Returns true if a type has a `name` method; `false` otherwise.
@@ -1139,43 +1139,43 @@ test hasFn {
 pub inline fn has_method(comptime T: type, comptime name: []const u8) bool {
     return switch (@typeInfo(T)) {
         .Pointer => |P| switch (P.size) {
-            .One => hasFn(P.child, name),
+            .One => has_fn(P.child, name),
             .Many, .Slice, .C => false,
         },
-        else => hasFn(T, name),
+        else => has_fn(T, name),
     };
 }
 
-test hasMethod {
-    try std.testing.expect(!hasMethod(u32, "foo"));
-    try std.testing.expect(!hasMethod([]u32, "len"));
-    try std.testing.expect(!hasMethod(struct { u32, u64 }, "len"));
+test has_method {
+    try std.testing.expect(!has_method(u32, "foo"));
+    try std.testing.expect(!has_method([]u32, "len"));
+    try std.testing.expect(!has_method(struct { u32, u64 }, "len"));
 
     const S1 = struct {
         pub fn foo() void {}
     };
 
-    try std.testing.expect(hasMethod(S1, "foo"));
-    try std.testing.expect(hasMethod(*S1, "foo"));
+    try std.testing.expect(has_method(S1, "foo"));
+    try std.testing.expect(has_method(*S1, "foo"));
 
-    try std.testing.expect(!hasMethod(S1, "bar"));
-    try std.testing.expect(!hasMethod(*[1]S1, "foo"));
-    try std.testing.expect(!hasMethod(*[10]S1, "foo"));
-    try std.testing.expect(!hasMethod([]S1, "foo"));
+    try std.testing.expect(!has_method(S1, "bar"));
+    try std.testing.expect(!has_method(*[1]S1, "foo"));
+    try std.testing.expect(!has_method(*[10]S1, "foo"));
+    try std.testing.expect(!has_method([]S1, "foo"));
 
     const S2 = struct {
         foo: fn () void,
     };
 
-    try std.testing.expect(!hasMethod(S2, "foo"));
+    try std.testing.expect(!has_method(S2, "foo"));
 
     const U = union {
         pub fn foo() void {}
     };
 
-    try std.testing.expect(hasMethod(U, "foo"));
-    try std.testing.expect(hasMethod(*U, "foo"));
-    try std.testing.expect(!hasMethod(U, "bar"));
+    try std.testing.expect(has_method(U, "foo"));
+    try std.testing.expect(has_method(*U, "foo"));
+    try std.testing.expect(!has_method(U, "bar"));
 }
 
 /// True if every value of the type `T` has a unique bit pattern representing it.
@@ -1193,59 +1193,59 @@ pub inline fn has_unique_representation(comptime T: type) bool {
 
         .Bool => false,
 
-        .Int => |info| @sizeOf(T) * 8 == info.bits,
+        .Int => |info| @size_of(T) * 8 == info.bits,
 
         .Pointer => |info| info.size != .Slice,
 
-        .Array => |info| hasUniqueRepresentation(info.child),
+        .Array => |info| has_unique_representation(info.child),
 
         .Struct => |info| {
-            if (info.layout == .@"packed") return @sizeOf(T) * 8 == @bitSizeOf(T);
+            if (info.layout == .@"packed") return @size_of(T) * 8 == @bitSizeOf(T);
 
             var sum_size = @as(usize, 0);
 
             inline for (info.fields) |field| {
-                if (!hasUniqueRepresentation(field.type)) return false;
-                sum_size += @sizeOf(field.type);
+                if (!has_unique_representation(field.type)) return false;
+                sum_size += @size_of(field.type);
             }
 
-            return @sizeOf(T) == sum_size;
+            return @size_of(T) == sum_size;
         },
 
-        .Vector => |info| hasUniqueRepresentation(info.child) and
-            @sizeOf(T) == @sizeOf(info.child) * info.len,
+        .Vector => |info| has_unique_representation(info.child) and
+            @size_of(T) == @size_of(info.child) * info.len,
     };
 }
 
-test hasUniqueRepresentation {
+test has_unique_representation {
     const TestStruct1 = struct {
         a: u32,
         b: u32,
     };
 
-    try testing.expect(hasUniqueRepresentation(TestStruct1));
+    try testing.expect(has_unique_representation(TestStruct1));
 
     const TestStruct2 = struct {
         a: u32,
         b: u16,
     };
 
-    try testing.expect(!hasUniqueRepresentation(TestStruct2));
+    try testing.expect(!has_unique_representation(TestStruct2));
 
     const TestStruct3 = struct {
         a: u32,
         b: u32,
     };
 
-    try testing.expect(hasUniqueRepresentation(TestStruct3));
+    try testing.expect(has_unique_representation(TestStruct3));
 
     const TestStruct4 = struct { a: []const u8 };
 
-    try testing.expect(!hasUniqueRepresentation(TestStruct4));
+    try testing.expect(!has_unique_representation(TestStruct4));
 
     const TestStruct5 = struct { a: TestStruct4 };
 
-    try testing.expect(!hasUniqueRepresentation(TestStruct5));
+    try testing.expect(!has_unique_representation(TestStruct5));
 
     const TestStruct6 = packed struct(u8) {
         @"0": bool,
@@ -1258,46 +1258,46 @@ test hasUniqueRepresentation {
         @"7": bool,
     };
 
-    try testing.expect(hasUniqueRepresentation(TestStruct6));
+    try testing.expect(has_unique_representation(TestStruct6));
 
     const TestUnion1 = packed union {
         a: u32,
         b: u16,
     };
 
-    try testing.expect(!hasUniqueRepresentation(TestUnion1));
+    try testing.expect(!has_unique_representation(TestUnion1));
 
     const TestUnion2 = extern union {
         a: u32,
         b: u16,
     };
 
-    try testing.expect(!hasUniqueRepresentation(TestUnion2));
+    try testing.expect(!has_unique_representation(TestUnion2));
 
     const TestUnion3 = union {
         a: u32,
         b: u16,
     };
 
-    try testing.expect(!hasUniqueRepresentation(TestUnion3));
+    try testing.expect(!has_unique_representation(TestUnion3));
 
     const TestUnion4 = union(enum) {
         a: u32,
         b: u16,
     };
 
-    try testing.expect(!hasUniqueRepresentation(TestUnion4));
+    try testing.expect(!has_unique_representation(TestUnion4));
 
     inline for ([_]type{ i0, u8, i16, u32, i64 }) |T| {
-        try testing.expect(hasUniqueRepresentation(T));
+        try testing.expect(has_unique_representation(T));
     }
     inline for ([_]type{ i1, u9, i17, u33, i24 }) |T| {
-        try testing.expect(!hasUniqueRepresentation(T));
+        try testing.expect(!has_unique_representation(T));
     }
 
-    try testing.expect(!hasUniqueRepresentation([]u8));
-    try testing.expect(!hasUniqueRepresentation([]const u8));
+    try testing.expect(!has_unique_representation([]u8));
+    try testing.expect(!has_unique_representation([]const u8));
 
-    try testing.expect(hasUniqueRepresentation(@Vector(std.simd.suggestVectorLength(u8) orelse 1, u8)));
-    try testing.expect(@sizeOf(@Vector(3, u8)) == 3 or !hasUniqueRepresentation(@Vector(3, u8)));
+    try testing.expect(has_unique_representation(@Vector(std.simd.suggest_vector_length(u8) orelse 1, u8)));
+    try testing.expect(@size_of(@Vector(3, u8)) == 3 or !has_unique_representation(@Vector(3, u8)));
 }

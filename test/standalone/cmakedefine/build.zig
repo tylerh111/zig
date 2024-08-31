@@ -2,7 +2,7 @@ const std = @import("std");
 const ConfigHeader = std.Build.Step.ConfigHeader;
 
 pub fn build(b: *std.Build) void {
-    const config_header = b.addConfigHeader(
+    const config_header = b.add_config_header(
         .{
             .style = .{ .cmake = b.path("config.h.in") },
             .include_path = "config.h",
@@ -26,7 +26,7 @@ pub fn build(b: *std.Build) void {
         },
     );
 
-    const pwd_sh = b.addConfigHeader(
+    const pwd_sh = b.add_config_header(
         .{
             .style = .{ .cmake = b.path("pwd.sh.in") },
             .include_path = "pwd.sh",
@@ -34,7 +34,7 @@ pub fn build(b: *std.Build) void {
         .{ .DIR = "${PWD}" },
     );
 
-    const sigil_header = b.addConfigHeader(
+    const sigil_header = b.add_config_header(
         .{
             .style = .{ .cmake = b.path("sigil.h.in") },
             .include_path = "sigil.h",
@@ -42,7 +42,7 @@ pub fn build(b: *std.Build) void {
         .{},
     );
 
-    const stack_header = b.addConfigHeader(
+    const stack_header = b.add_config_header(
         .{
             .style = .{ .cmake = b.path("stack.h.in") },
             .include_path = "stack.h",
@@ -55,7 +55,7 @@ pub fn build(b: *std.Build) void {
         },
     );
 
-    const wrapper_header = b.addConfigHeader(
+    const wrapper_header = b.add_config_header(
         .{
             .style = .{ .cmake = b.path("wrapper.h.in") },
             .include_path = "wrapper.h",
@@ -73,11 +73,11 @@ pub fn build(b: *std.Build) void {
 
     const test_step = b.step("test", "Test it");
     test_step.makeFn = compare_headers;
-    test_step.dependOn(&config_header.step);
-    test_step.dependOn(&pwd_sh.step);
-    test_step.dependOn(&sigil_header.step);
-    test_step.dependOn(&stack_header.step);
-    test_step.dependOn(&wrapper_header.step);
+    test_step.depend_on(&config_header.step);
+    test_step.depend_on(&pwd_sh.step);
+    test_step.depend_on(&sigil_header.step);
+    test_step.depend_on(&stack_header.step);
+    test_step.depend_on(&wrapper_header.step);
 }
 
 fn compare_headers(step: *std.Build.Step, prog_node: std.Progress.Node) !void {
@@ -92,16 +92,16 @@ fn compare_headers(step: *std.Build.Step, prog_node: std.Progress.Node) !void {
 
         const cwd = std.fs.cwd();
 
-        const cmake_header_path = try std.fmt.allocPrint(allocator, expected_fmt, .{std.fs.path.basename(zig_header_path)});
+        const cmake_header_path = try std.fmt.alloc_print(allocator, expected_fmt, .{std.fs.path.basename(zig_header_path)});
         defer allocator.free(cmake_header_path);
 
-        const cmake_header = try cwd.readFileAlloc(allocator, cmake_header_path, config_header.max_bytes);
+        const cmake_header = try cwd.read_file_alloc(allocator, cmake_header_path, config_header.max_bytes);
         defer allocator.free(cmake_header);
 
-        const zig_header = try cwd.readFileAlloc(allocator, zig_header_path, config_header.max_bytes);
+        const zig_header = try cwd.read_file_alloc(allocator, zig_header_path, config_header.max_bytes);
         defer allocator.free(zig_header);
 
-        const header_text_index = std.mem.indexOf(u8, zig_header, "\n") orelse @panic("Could not find comment in header filer");
+        const header_text_index = std.mem.index_of(u8, zig_header, "\n") orelse @panic("Could not find comment in header filer");
 
         if (!std.mem.eql(u8, zig_header[header_text_index + 1 ..], cmake_header)) {
             @panic("processed cmakedefine header does not match expected output");

@@ -30,7 +30,7 @@ const Writer = struct {
                         start_index = i;
                     },
                     '}' => {
-                        try self.printValue(args[next_arg]);
+                        try self.print_value(args[next_arg]);
                         next_arg += 1;
                         state = State.start;
                         start_index = i + 1;
@@ -38,23 +38,23 @@ const Writer = struct {
                     's' => {
                         continue;
                     },
-                    else => @compileError("Unknown format character: " ++ [1]u8{c}),
+                    else => @compile_error("Unknown format character: " ++ [1]u8{c}),
                 },
                 State.close_brace => switch (c) {
                     '}' => {
                         state = State.start;
                         start_index = i;
                     },
-                    else => @compileError("Single '}' encountered in format string"),
+                    else => @compile_error("Single '}' encountered in format string"),
                 },
             }
         }
         comptime {
             if (args.len != next_arg) {
-                @compileError("Unused arguments");
+                @compile_error("Unused arguments");
             }
             if (state != State.start) {
-                @compileError("Incomplete format string: " ++ format);
+                @compile_error("Incomplete format string: " ++ format);
             }
         }
         if (start_index < format.len) {

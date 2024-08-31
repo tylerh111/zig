@@ -11,8 +11,8 @@ pub fn main() !void {
         first: u65528,
         last: u7,
     };
-    const parts: Parts = @bitCast(literal_max_bit_pattern);
-    for (@as([65528 / 8]u8, @bitCast(parts.first))) |byte|
+    const parts: Parts = @bit_cast(literal_max_bit_pattern);
+    for (@as([65528 / 8]u8, @bit_cast(parts.first))) |byte|
         try std.testing.expect(byte == 0b1111_1111);
     try std.testing.expect(parts.last == 0b1111_111);
 }

@@ -30,10 +30,10 @@ pub fn counting_writer(child_stream: anytype) CountingWriter(@TypeOf(child_strea
 }
 
 test CountingWriter {
-    var counting_stream = countingWriter(std.io.null_writer);
+    var counting_stream = counting_writer(std.io.null_writer);
     const stream = counting_stream.writer();
 
     const bytes = "yay" ** 100;
-    stream.writeAll(bytes) catch unreachable;
+    stream.write_all(bytes) catch unreachable;
     try testing.expect(counting_stream.bytes_written == bytes.len);
 }

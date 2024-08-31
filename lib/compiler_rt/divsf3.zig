@@ -30,8 +30,8 @@ fn __aeabi_fdiv(a: f32, b: f32) callconv(.AAPCS) f32 {
 inline fn div(a: f32, b: f32) f32 {
     const Z = std.meta.Int(.unsigned, 32);
 
-    const significandBits = std.math.floatMantissaBits(f32);
-    const exponentBits = std.math.floatExponentBits(f32);
+    const significandBits = std.math.float_mantissa_bits(f32);
+    const exponentBits = std.math.float_exponent_bits(f32);
 
     const signBit = (@as(Z, 1) << (significandBits + exponentBits));
     const maxExponent = ((1 << exponentBits) - 1);
@@ -44,52 +44,52 @@ inline fn div(a: f32, b: f32) f32 {
     const absMask = signBit - 1;
     const exponentMask = absMask ^ significandMask;
     const qnanRep = exponentMask | quietBit;
-    const infRep: Z = @bitCast(std.math.inf(f32));
+    const infRep: Z = @bit_cast(std.math.inf(f32));
 
-    const aExponent: u32 = @truncate((@as(Z, @bitCast(a)) >> significandBits) & maxExponent);
-    const bExponent: u32 = @truncate((@as(Z, @bitCast(b)) >> significandBits) & maxExponent);
-    const quotientSign: Z = (@as(Z, @bitCast(a)) ^ @as(Z, @bitCast(b))) & signBit;
+    const aExponent: u32 = @truncate((@as(Z, @bit_cast(a)) >> significandBits) & maxExponent);
+    const bExponent: u32 = @truncate((@as(Z, @bit_cast(b)) >> significandBits) & maxExponent);
+    const quotientSign: Z = (@as(Z, @bit_cast(a)) ^ @as(Z, @bit_cast(b))) & signBit;
 
-    var aSignificand: Z = @as(Z, @bitCast(a)) & significandMask;
-    var bSignificand: Z = @as(Z, @bitCast(b)) & significandMask;
+    var aSignificand: Z = @as(Z, @bit_cast(a)) & significandMask;
+    var bSignificand: Z = @as(Z, @bit_cast(b)) & significandMask;
     var scale: i32 = 0;
 
     // Detect if a or b is zero, denormal, infinity, or NaN.
     if (aExponent -% 1 >= maxExponent - 1 or bExponent -% 1 >= maxExponent - 1) {
-        const aAbs: Z = @as(Z, @bitCast(a)) & absMask;
-        const bAbs: Z = @as(Z, @bitCast(b)) & absMask;
+        const aAbs: Z = @as(Z, @bit_cast(a)) & absMask;
+        const bAbs: Z = @as(Z, @bit_cast(b)) & absMask;
 
         // NaN / anything = qNaN
-        if (aAbs > infRep) return @bitCast(@as(Z, @bitCast(a)) | quietBit);
+        if (aAbs > infRep) return @bit_cast(@as(Z, @bit_cast(a)) | quietBit);
         // anything / NaN = qNaN
-        if (bAbs > infRep) return @bitCast(@as(Z, @bitCast(b)) | quietBit);
+        if (bAbs > infRep) return @bit_cast(@as(Z, @bit_cast(b)) | quietBit);
 
         if (aAbs == infRep) {
             // infinity / infinity = NaN
             if (bAbs == infRep) {
-                return @bitCast(qnanRep);
+                return @bit_cast(qnanRep);
             }
             // infinity / anything else = +/- infinity
             else {
-                return @bitCast(aAbs | quotientSign);
+                return @bit_cast(aAbs | quotientSign);
             }
         }
 
         // anything else / infinity = +/- 0
-        if (bAbs == infRep) return @bitCast(quotientSign);
+        if (bAbs == infRep) return @bit_cast(quotientSign);
 
         if (aAbs == 0) {
             // zero / zero = NaN
             if (bAbs == 0) {
-                return @bitCast(qnanRep);
+                return @bit_cast(qnanRep);
             }
             // zero / anything else = +/- zero
             else {
-                return @bitCast(quotientSign);
+                return @bit_cast(quotientSign);
             }
         }
         // anything else / zero = +/- infinity
-        if (bAbs == 0) return @bitCast(infRep | quotientSign);
+        if (bAbs == 0) return @bit_cast(infRep | quotientSign);
 
         // one or both of a or b is denormal, the other (if applicable) is a
         // normal number.  Renormalize one or both of a and b, and set scale to
@@ -103,7 +103,7 @@ inline fn div(a: f32, b: f32) f32 {
     // won't hurt anything.)
     aSignificand |= implicitBit;
     bSignificand |= implicitBit;
-    var quotientExponent: i32 = @as(i32, @bitCast(aExponent -% bExponent)) +% scale;
+    var quotientExponent: i32 = @as(i32, @bit_cast(aExponent -% bExponent)) +% scale;
 
     // Align the significand of b as a Q31 fixed-point number in the range
     // [1, 2.0) and get a Q32 approximate reciprocal using a small minimax
@@ -175,33 +175,33 @@ inline fn div(a: f32, b: f32) f32 {
 
     if (writtenExponent >= maxExponent) {
         // If we have overflowed the exponent, return infinity.
-        return @bitCast(infRep | quotientSign);
+        return @bit_cast(infRep | quotientSign);
     } else if (writtenExponent < 1) {
         if (writtenExponent == 0) {
             // Check whether the rounded result is normal.
-            const round = @intFromBool((residual << 1) > bSignificand);
+            const round = @int_from_bool((residual << 1) > bSignificand);
             // Clear the implicit bit.
             var absResult = quotient & significandMask;
             // Round.
             absResult += round;
             if ((absResult & ~significandMask) > 0) {
                 // The rounded result is normal; return it.
-                return @bitCast(absResult | quotientSign);
+                return @bit_cast(absResult | quotientSign);
             }
         }
         // Flush denormals to zero.  In the future, it would be nice to add
         // code to round them correctly.
-        return @bitCast(quotientSign);
+        return @bit_cast(quotientSign);
     } else {
-        const round = @intFromBool((residual << 1) > bSignificand);
+        const round = @int_from_bool((residual << 1) > bSignificand);
         // Clear the implicit bit
         var absResult = quotient & significandMask;
         // Insert the exponent
-        absResult |= @as(Z, @bitCast(writtenExponent)) << significandBits;
+        absResult |= @as(Z, @bit_cast(writtenExponent)) << significandBits;
         // Round
         absResult +%= round;
         // Insert the sign and return
-        return @bitCast(absResult | quotientSign);
+        return @bit_cast(absResult | quotientSign);
     }
 }
 

@@ -91,13 +91,13 @@ pub const Enumerant = struct {
             options: std.json.ParseOptions,
         ) std.json.ParseError(@TypeOf(source.*))!@This() {
             _ = options;
-            switch (try source.nextAlloc(allocator, .alloc_if_needed)) {
+            switch (try source.next_alloc(allocator, .alloc_if_needed)) {
                 inline .string, .allocated_string => |s| return @This(){ .bitflag = s },
-                inline .number, .allocated_number => |s| return @This(){ .int = try std.fmt.parseInt(u31, s, 10) },
+                inline .number, .allocated_number => |s| return @This(){ .int = try std.fmt.parse_int(u31, s, 10) },
                 else => return error.UnexpectedToken,
             }
         }
-        pub const jsonStringify = @compileError("not supported");
+        pub const json_stringify = @compile_error("not supported");
     },
     capabilities: [][]const u8 = &[_][]const u8{},
     /// Valid for .ValueEnum and .BitEnum

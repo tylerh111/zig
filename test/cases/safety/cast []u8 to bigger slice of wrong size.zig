@@ -9,12 +9,12 @@ pub fn panic(message: []const u8, stack_trace: ?*std.builtin.StackTrace, _: ?usi
 }
 
 pub fn main() !void {
-    const x = widenSlice(&[_]u8{ 1, 2, 3, 4, 5 });
+    const x = widen_slice(&[_]u8{ 1, 2, 3, 4, 5 });
     if (x.len == 0) return error.Whatever;
     return error.TestFailed;
 }
 fn widen_slice(slice: []align(1) const u8) []align(1) const i32 {
-    return std.mem.bytesAsSlice(i32, slice);
+    return std.mem.bytes_as_slice(i32, slice);
 }
 // run
 // backend=llvm

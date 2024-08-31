@@ -37,7 +37,7 @@ const MultiArch = union(enum) {
     specific: Arch,
 
     fn eql(a: MultiArch, b: MultiArch) bool {
-        if (@intFromEnum(a) != @intFromEnum(b))
+        if (@int_from_enum(a) != @int_from_enum(b))
             return false;
         if (a != .specific)
             return true;
@@ -111,7 +111,7 @@ const DestTarget = struct {
         pub fn hash(self: @This(), a: DestTarget) u32 {
             _ = self;
             var hasher = std.hash.Wyhash.init(0);
-            std.hash.autoHash(&hasher, a.arch);
+            std.hash.auto_hash(&hasher, a.arch);
             return @as(u32, @truncate(hasher.final()));
         }
 
@@ -142,17 +142,17 @@ const PathTable = std.StringHashMap(*TargetToHash);
 pub fn main() !void {
     var arena_state = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const arena = arena_state.allocator();
-    const args = try std.process.argsAlloc(arena);
+    const args = try std.process.args_alloc(arena);
     var search_paths = std.ArrayList([]const u8).init(arena);
     var opt_out_dir: ?[]const u8 = null;
 
     var arg_i: usize = 1;
     while (arg_i < args.len) : (arg_i += 1) {
         if (std.mem.eql(u8, args[arg_i], "--help"))
-            usageAndExit(args[0]);
+            usage_and_exit(args[0]);
         if (arg_i + 1 >= args.len) {
             std.debug.print("expected argument after '{s}'\n", .{args[arg_i]});
-            usageAndExit(args[0]);
+            usage_and_exit(args[0]);
         }
 
         if (std.mem.eql(u8, args[arg_i], "--search-path")) {
@@ -162,13 +162,13 @@ pub fn main() !void {
             opt_out_dir = args[arg_i + 1];
         } else {
             std.debug.print("unrecognized argument: {s}\n", .{args[arg_i]});
-            usageAndExit(args[0]);
+            usage_and_exit(args[0]);
         }
 
         arg_i += 1;
     }
 
-    const out_dir = opt_out_dir orelse usageAndExit(args[0]);
+    const out_dir = opt_out_dir orelse usage_and_exit(args[0]);
     const generic_name = "any-linux-any";
 
     var path_table = PathTable.init(arena);
@@ -189,8 +189,8 @@ pub fn main() !void {
             var dir_stack = std.ArrayList([]const u8).init(arena);
             try dir_stack.append(target_include_dir);
 
-            while (dir_stack.popOrNull()) |full_dir_name| {
-                var dir = std.fs.cwd().openDir(full_dir_name, .{ .iterate = true }) catch |err| switch (err) {
+            while (dir_stack.pop_or_null()) |full_dir_name| {
+                var dir = std.fs.cwd().open_dir(full_dir_name, .{ .iterate = true }) catch |err| switch (err) {
                     error.FileNotFound => continue :search,
                     error.AccessDenied => continue :search,
                     else => return err,
@@ -206,7 +206,7 @@ pub fn main() !void {
                         .file => {
                             const rel_path = try std.fs.path.relative(arena, target_include_dir, full_path);
                             const max_size = 2 * 1024 * 1024 * 1024;
-                            const raw_bytes = try std.fs.cwd().readFileAlloc(arena, full_path, max_size);
+                            const raw_bytes = try std.fs.cwd().read_file_alloc(arena, full_path, max_size);
                             const trimmed = std.mem.trim(u8, raw_bytes, " \r\n\t");
                             total_bytes += raw_bytes.len;
                             const hash = try arena.alloc(u8, 32);
@@ -214,14 +214,14 @@ pub fn main() !void {
                             hasher.update(rel_path);
                             hasher.update(trimmed);
                             hasher.final(hash);
-                            const gop = try hash_to_contents.getOrPut(hash);
+                            const gop = try hash_to_contents.get_or_put(hash);
                             if (gop.found_existing) {
                                 max_bytes_saved += raw_bytes.len;
                                 gop.value_ptr.hit_count += 1;
                                 std.debug.print("duplicate: {s} {s} ({:2})\n", .{
                                     linux_target.name,
                                     rel_path,
-                                    std.fmt.fmtIntSizeDec(raw_bytes.len),
+                                    std.fmt.fmt_int_size_dec(raw_bytes.len),
                                 });
                             } else {
                                 gop.value_ptr.* = Contents{
@@ -231,14 +231,14 @@ pub fn main() !void {
                                     .is_generic = false,
                                 };
                             }
-                            const path_gop = try path_table.getOrPut(rel_path);
+                            const path_gop = try path_table.get_or_put(rel_path);
                             const target_to_hash = if (path_gop.found_existing) path_gop.value_ptr.* else blk: {
                                 const ptr = try arena.create(TargetToHash);
                                 ptr.* = TargetToHash.init(arena);
                                 path_gop.value_ptr.* = ptr;
                                 break :blk ptr;
                             };
-                            try target_to_hash.putNoClobber(dest_target, hash);
+                            try target_to_hash.put_no_clobber(dest_target, hash);
                         },
                         else => std.debug.print("warning: weird file: {s}\n", .{full_path}),
                     }
@@ -250,10 +250,10 @@ pub fn main() !void {
         }
     }
     std.debug.print("summary: {:2} could be reduced to {:2}\n", .{
-        std.fmt.fmtIntSizeDec(total_bytes),
-        std.fmt.fmtIntSizeDec(total_bytes - max_bytes_saved),
+        std.fmt.fmt_int_size_dec(total_bytes),
+        std.fmt.fmt_int_size_dec(total_bytes - max_bytes_saved),
     });
-    try std.fs.cwd().makePath(out_dir);
+    try std.fs.cwd().make_path(out_dir);
 
     var missed_opportunity_bytes: usize = 0;
     // iterate path_table. for each path, put all the hashes into a list. sort by hit_count.
@@ -265,24 +265,24 @@ pub fn main() !void {
         {
             var hash_it = path_kv.value_ptr.*.iterator();
             while (hash_it.next()) |hash_kv| {
-                const contents = hash_to_contents.getPtr(hash_kv.value_ptr.*).?;
+                const contents = hash_to_contents.get_ptr(hash_kv.value_ptr.*).?;
                 try contents_list.append(contents);
             }
         }
-        std.mem.sort(*Contents, contents_list.items, {}, Contents.hitCountLessThan);
-        const best_contents = contents_list.popOrNull().?;
+        std.mem.sort(*Contents, contents_list.items, {}, Contents.hit_count_less_than);
+        const best_contents = contents_list.pop_or_null().?;
         if (best_contents.hit_count > 1) {
             // worth it to make it generic
             const full_path = try std.fs.path.join(arena, &[_][]const u8{ out_dir, generic_name, path_kv.key_ptr.* });
-            try std.fs.cwd().makePath(std.fs.path.dirname(full_path).?);
-            try std.fs.cwd().writeFile(.{ .sub_path = full_path, .data = best_contents.bytes });
+            try std.fs.cwd().make_path(std.fs.path.dirname(full_path).?);
+            try std.fs.cwd().write_file(.{ .sub_path = full_path, .data = best_contents.bytes });
             best_contents.is_generic = true;
-            while (contents_list.popOrNull()) |contender| {
+            while (contents_list.pop_or_null()) |contender| {
                 if (contender.hit_count > 1) {
                     const this_missed_bytes = contender.hit_count * contender.bytes.len;
                     missed_opportunity_bytes += this_missed_bytes;
                     std.debug.print("Missed opportunity ({:2}): {s}\n", .{
-                        std.fmt.fmtIntSizeDec(this_missed_bytes),
+                        std.fmt.fmt_int_size_dec(this_missed_bytes),
                         path_kv.key_ptr.*,
                     });
                 } else break;
@@ -295,13 +295,13 @@ pub fn main() !void {
 
             const dest_target = hash_kv.key_ptr.*;
             const arch_name = switch (dest_target.arch) {
-                .specific => |a| @tagName(a),
-                else => @tagName(dest_target.arch),
+                .specific => |a| @tag_name(a),
+                else => @tag_name(dest_target.arch),
             };
-            const out_subpath = try std.fmt.allocPrint(arena, "{s}-linux-any", .{arch_name});
+            const out_subpath = try std.fmt.alloc_print(arena, "{s}-linux-any", .{arch_name});
             const full_path = try std.fs.path.join(arena, &[_][]const u8{ out_dir, out_subpath, path_kv.key_ptr.* });
-            try std.fs.cwd().makePath(std.fs.path.dirname(full_path).?);
-            try std.fs.cwd().writeFile(.{ .sub_path = full_path, .data = contents.bytes });
+            try std.fs.cwd().make_path(std.fs.path.dirname(full_path).?);
+            try std.fs.cwd().write_file(.{ .sub_path = full_path, .data = contents.bytes });
         }
     }
 
@@ -317,7 +317,7 @@ pub fn main() !void {
     };
     for (bad_files) |bad_file| {
         const full_path = try std.fs.path.join(arena, &[_][]const u8{ out_dir, bad_file });
-        try std.fs.cwd().deleteFile(full_path);
+        try std.fs.cwd().delete_file(full_path);
     }
 }
 

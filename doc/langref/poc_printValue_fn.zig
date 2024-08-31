@@ -2,16 +2,16 @@ const Writer = struct {
     pub fn print_value(self: *Writer, value: anytype) !void {
         switch (@typeInfo(@TypeOf(value))) {
             .Int => {
-                return self.writeInt(value);
+                return self.write_int(value);
             },
             .Float => {
-                return self.writeFloat(value);
+                return self.write_float(value);
             },
             .Pointer => {
                 return self.write(value);
             },
             else => {
-                @compileError("Unable to print type '" ++ @typeName(@TypeOf(value)) ++ "'");
+                @compile_error("Unable to print type '" ++ @type_name(@TypeOf(value)) ++ "'");
             },
         }
     }

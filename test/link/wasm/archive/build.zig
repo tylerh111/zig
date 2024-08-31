@@ -15,11 +15,11 @@ pub fn build(b: *std.Build) void {
 fn add(b: *std.Build, test_step: *std.Build.Step, optimize: std.builtin.OptimizeMode) void {
     // The code in question will pull-in compiler-rt,
     // and therefore link with its archive file.
-    const lib = b.addExecutable(.{
+    const lib = b.add_executable(.{
         .name = "main",
         .root_source_file = b.path("main.zig"),
         .optimize = optimize,
-        .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
+        .target = b.resolve_target_query(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
         .strip = false,
     });
     lib.entry = .disabled;
@@ -27,10 +27,10 @@ fn add(b: *std.Build, test_step: *std.Build.Step, optimize: std.builtin.Optimize
     lib.use_lld = false;
     lib.root_module.export_symbol_names = &.{"foo"};
 
-    const check = lib.checkObject();
-    check.checkInHeaders();
-    check.checkExact("Section custom");
-    check.checkExact("name __trunch"); // Ensure it was imported and resolved
+    const check = lib.check_object();
+    check.check_in_headers();
+    check.check_exact("Section custom");
+    check.check_exact("name __trunch"); // Ensure it was imported and resolved
 
-    test_step.dependOn(&check.step);
+    test_step.depend_on(&check.step);
 }

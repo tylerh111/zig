@@ -11,7 +11,7 @@ comptime {
 }
 
 // bswap - byteswap
-// - bswapXi2 for unoptimized big and little endian
+// - bswap_xi2 for unoptimized big and little endian
 // ie for u32
 // DE AD BE EF   <- little|big endian
 // FE BE AD DE   <- big|little endian
@@ -67,15 +67,15 @@ inline fn bswap_xi2(comptime T: type, a: T) T {
 }
 
 pub fn __bswapsi2(a: u32) callconv(.C) u32 {
-    return bswapXi2(u32, a);
+    return bswap_xi2(u32, a);
 }
 
 pub fn __bswapdi2(a: u64) callconv(.C) u64 {
-    return bswapXi2(u64, a);
+    return bswap_xi2(u64, a);
 }
 
 pub fn __bswapti2(a: u128) callconv(.C) u128 {
-    return bswapXi2(u128, a);
+    return bswap_xi2(u128, a);
 }
 
 test {

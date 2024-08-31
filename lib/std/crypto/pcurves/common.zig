@@ -45,19 +45,19 @@ pub fn Field(comptime params: FieldParams) type {
         /// One.
         pub const one = one: {
             var fe: Fe = undefined;
-            fiat.setOne(&fe.limbs);
+            fiat.set_one(&fe.limbs);
             break :one fe;
         };
 
         /// Reject non-canonical encodings of an element.
         pub fn reject_non_canonical(s_: [encoded_length]u8, endian: std.builtin.Endian) NonCanonicalError!void {
-            var s = if (endian == .little) s_ else orderSwap(s_);
+            var s = if (endian == .little) s_ else order_swap(s_);
             const field_order_s = comptime fos: {
                 var fos: [encoded_length]u8 = undefined;
-                mem.writeInt(std.meta.Int(.unsigned, encoded_length * 8), &fos, field_order, .little);
+                mem.write_int(std.meta.Int(.unsigned, encoded_length * 8), &fos, field_order, .little);
                 break :fos fos;
             };
-            if (crypto.utils.timingSafeCompare(u8, &s, &field_order_s, .little) != .lt) {
+            if (crypto.utils.timing_safe_compare(u8, &s, &field_order_s, .little) != .lt) {
                 return error.NonCanonical;
             }
         }
@@ -71,22 +71,22 @@ pub fn Field(comptime params: FieldParams) type {
 
         /// Unpack a field element.
         pub fn from_bytes(s_: [encoded_length]u8, endian: std.builtin.Endian) NonCanonicalError!Fe {
-            const s = if (endian == .little) s_ else orderSwap(s_);
-            try rejectNonCanonical(s, .little);
+            const s = if (endian == .little) s_ else order_swap(s_);
+            try reject_non_canonical(s, .little);
             var limbs_z: NonMontgomeryDomainFieldElement = undefined;
-            fiat.fromBytes(&limbs_z, s);
+            fiat.from_bytes(&limbs_z, s);
             var limbs: MontgomeryDomainFieldElement = undefined;
-            fiat.toMontgomery(&limbs, limbs_z);
+            fiat.to_montgomery(&limbs, limbs_z);
             return Fe{ .limbs = limbs };
         }
 
         /// Pack a field element.
         pub fn to_bytes(fe: Fe, endian: std.builtin.Endian) [encoded_length]u8 {
             var limbs_z: NonMontgomeryDomainFieldElement = undefined;
-            fiat.fromMontgomery(&limbs_z, fe.limbs);
+            fiat.from_montgomery(&limbs_z, fe.limbs);
             var s: [encoded_length]u8 = undefined;
-            fiat.toBytes(&s, limbs_z);
-            return if (endian == .little) s else orderSwap(s);
+            fiat.to_bytes(&s, limbs_z);
+            return if (endian == .little) s else order_swap(s);
         }
 
         /// Element as an integer.
@@ -95,14 +95,14 @@ pub fn Field(comptime params: FieldParams) type {
         /// Create a field element from an integer.
         pub fn from_int(comptime x: IntRepr) NonCanonicalError!Fe {
             var s: [encoded_length]u8 = undefined;
-            mem.writeInt(IntRepr, &s, x, .little);
-            return fromBytes(s, .little);
+            mem.write_int(IntRepr, &s, x, .little);
+            return from_bytes(s, .little);
         }
 
         /// Return the field element as an integer.
         pub fn to_int(fe: Fe) IntRepr {
-            const s = fe.toBytes(.little);
-            return mem.readInt(IntRepr, &s, .little);
+            const s = fe.to_bytes(.little);
+            return mem.read_int(IntRepr, &s, .little);
         }
 
         /// Return true if the field element is zero.
@@ -114,12 +114,12 @@ pub fn Field(comptime params: FieldParams) type {
 
         /// Return true if both field elements are equivalent.
         pub fn equivalent(a: Fe, b: Fe) bool {
-            return a.sub(b).isZero();
+            return a.sub(b).is_zero();
         }
 
         /// Return true if the element is odd.
         pub fn is_odd(fe: Fe) bool {
-            const s = fe.toBytes(.little);
+            const s = fe.to_bytes(.little);
             return @as(u1, @truncate(s[0])) != 0;
         }
 
@@ -209,7 +209,7 @@ pub fn Field(comptime params: FieldParams) type {
                 break :blk f;
             };
             var g: XLimbs = undefined;
-            fiat.fromMontgomery(g[0..a.limbs.len], a.limbs);
+            fiat.from_montgomery(g[0..a.limbs.len], a.limbs);
             g[g.len - 1] = 0;
 
             var r = Fe.one.limbs;
@@ -237,7 +237,7 @@ pub fn Field(comptime params: FieldParams) type {
 
             const precomp = blk: {
                 var precomp: Limbs = undefined;
-                fiat.divstepPrecomp(&precomp);
+                fiat.divstep_precomp(&precomp);
                 break :blk precomp;
             };
             var fe: Fe = undefined;
@@ -277,7 +277,7 @@ pub fn Field(comptime params: FieldParams) type {
 
         // x=x2^((field_order+1)/4) w/ field order=3 (mod 4).
         fn unchecked_sqrt(x2: Fe) Fe {
-            if (field_order % 4 != 3) @compileError("unimplemented");
+            if (field_order % 4 != 3) @compile_error("unimplemented");
             if (field_order == 115792089210356248762697446949407573530086143415290314195533631308867097853951) {
                 const t11 = x2.mul(x2.sq());
                 const t1111 = t11.mul(t11.sqn(2));
@@ -313,7 +313,7 @@ pub fn Field(comptime params: FieldParams) type {
 
         /// Compute the square root of `x2`, returning `error.NotSquare` if `x2` was not a square.
         pub fn sqrt(x2: Fe) NotSquareError!Fe {
-            const x = x2.uncheckedSqrt();
+            const x = x2.unchecked_sqrt();
             if (x.sq().equivalent(x2)) {
                 return x;
             }

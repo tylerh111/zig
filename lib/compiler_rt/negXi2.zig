@@ -1,5 +1,5 @@
 //! neg - negate (the number)
-//! - negXi2 for unoptimized little and big endian
+//! - neg_xi2 for unoptimized little and big endian
 //! sfffffff = 2^31-1
 //! two's complement inverting bits and add 1 would result in -INT_MIN == 0
 //! => -INT_MIN = -2^31 forbidden
@@ -19,15 +19,15 @@ comptime {
 }
 
 pub fn __negsi2(a: i32) callconv(.C) i32 {
-    return negXi2(i32, a);
+    return neg_xi2(i32, a);
 }
 
 pub fn __negdi2(a: i64) callconv(.C) i64 {
-    return negXi2(i64, a);
+    return neg_xi2(i64, a);
 }
 
 pub fn __negti2(a: i128) callconv(.C) i128 {
-    return negXi2(i128, a);
+    return neg_xi2(i128, a);
 }
 
 inline fn neg_xi2(comptime T: type, a: T) T {

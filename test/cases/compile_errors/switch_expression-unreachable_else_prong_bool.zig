@@ -6,7 +6,7 @@ fn foo(x: bool) void {
     }
 }
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&foo));
+    return @size_of(@TypeOf(&foo));
 }
 
 // error

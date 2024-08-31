@@ -83,7 +83,7 @@ pub fn can_build_lib_c(target: std.Target) bool {
                 return ver.min.order(libc.os_ver.?) != .lt;
             }
             // Ensure glibc (aka *-linux-gnu) version is supported
-            if (target.isGnuLibC()) {
+            if (target.is_gnu_lib_c()) {
                 const min_glibc_ver = libc.glibc_min orelse return true;
                 const target_glibc_ver = target.os.version_range.linux.glibc;
                 return target_glibc_ver.order(min_glibc_ver) != .lt;
@@ -97,7 +97,7 @@ pub fn can_build_lib_c(target: std.Target) bool {
 pub fn musl_arch_name_headers(arch: std.Target.Cpu.Arch) [:0]const u8 {
     return switch (arch) {
         .x86 => return "x86",
-        else => muslArchName(arch),
+        else => musl_arch_name(arch),
     };
 }
 

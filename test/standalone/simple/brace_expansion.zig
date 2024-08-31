@@ -5,7 +5,7 @@ const debug = std.debug;
 const assert = debug.assert;
 const testing = std.testing;
 const ArrayList = std.ArrayList;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 
 const Token = union(enum) {
     Word: []const u8,
@@ -156,14 +156,14 @@ fn expand_string(input: []const u8, output: *ArrayList(u8)) !void {
         result_list.deinit();
     }
 
-    try expandNode(root, &result_list);
+    try expand_node(root, &result_list);
 
     try output.resize(0);
     for (result_list.items, 0..) |buf, i| {
         if (i != 0) {
             try output.append(' ');
         }
-        try output.appendSlice(buf.items);
+        try output.append_slice(buf.items);
     }
 }
 
@@ -175,7 +175,7 @@ fn expand_node(node: Node, output: *ArrayList(ArrayList(u8))) ExpandNodeError!vo
         .Scalar => |scalar| {
             var list = ArrayList(u8).init(global_allocator);
             errdefer list.deinit();
-            try list.appendSlice(scalar);
+            try list.append_slice(scalar);
             try output.append(list);
         },
         .Combine => |pair| {
@@ -187,22 +187,22 @@ fn expand_node(node: Node, output: *ArrayList(ArrayList(u8))) ExpandNodeError!vo
                 for (child_list_a.items) |*buf| buf.deinit();
                 child_list_a.deinit();
             }
-            try expandNode(a_node, &child_list_a);
+            try expand_node(a_node, &child_list_a);
 
             var child_list_b = ArrayList(ArrayList(u8)).init(global_allocator);
             defer {
                 for (child_list_b.items) |*buf| buf.deinit();
                 child_list_b.deinit();
             }
-            try expandNode(b_node, &child_list_b);
+            try expand_node(b_node, &child_list_b);
 
             for (child_list_a.items) |buf_a| {
                 for (child_list_b.items) |buf_b| {
                     var combined_buf = ArrayList(u8).init(global_allocator);
                     errdefer combined_buf.deinit();
 
-                    try combined_buf.appendSlice(buf_a.items);
-                    try combined_buf.appendSlice(buf_b.items);
+                    try combined_buf.append_slice(buf_a.items);
+                    try combined_buf.append_slice(buf_b.items);
                     try output.append(combined_buf);
                 }
             }
@@ -213,7 +213,7 @@ fn expand_node(node: Node, output: *ArrayList(ArrayList(u8))) ExpandNodeError!vo
                 errdefer for (child_list.items) |*buf| buf.deinit();
                 defer child_list.deinit();
 
-                try expandNode(child_node, &child_list);
+                try expand_node(child_node, &child_list);
 
                 for (child_list.items) |buf| {
                     try output.append(buf);
@@ -225,68 +225,68 @@ fn expand_node(node: Node, output: *ArrayList(ArrayList(u8))) ExpandNodeError!vo
 
 pub fn main() !void {
     defer _ = gpa.deinit();
-    const stdin_file = io.getStdIn();
-    const stdout_file = io.getStdOut();
+    const stdin_file = io.get_std_in();
+    const stdout_file = io.get_std_out();
 
-    const stdin = try stdin_file.reader().readAllAlloc(global_allocator, std.math.maxInt(usize));
+    const stdin = try stdin_file.reader().read_all_alloc(global_allocator, std.math.max_int(usize));
     defer global_allocator.free(stdin);
 
     var result_buf = ArrayList(u8).init(global_allocator);
     defer result_buf.deinit();
 
-    try expandString(stdin, &result_buf);
-    try stdout_file.writeAll(result_buf.items);
+    try expand_string(stdin, &result_buf);
+    try stdout_file.write_all(result_buf.items);
 }
 
 test "invalid inputs" {
     global_allocator = std.testing.allocator;
 
-    try expectError("}ABC", error.InvalidInput);
-    try expectError("{ABC", error.InvalidInput);
-    try expectError("}{", error.InvalidInput);
-    try expectError("{}", error.InvalidInput);
-    try expectError("A,B,C", error.InvalidInput);
-    try expectError("{A{B,C}", error.InvalidInput);
-    try expectError("{A,}", error.InvalidInput);
+    try expect_error("}ABC", error.InvalidInput);
+    try expect_error("{ABC", error.InvalidInput);
+    try expect_error("}{", error.InvalidInput);
+    try expect_error("{}", error.InvalidInput);
+    try expect_error("A,B,C", error.InvalidInput);
+    try expect_error("{A{B,C}", error.InvalidInput);
+    try expect_error("{A,}", error.InvalidInput);
 
-    try expectError("\n", error.InvalidInput);
+    try expect_error("\n", error.InvalidInput);
 }
 
 fn expect_error(test_input: []const u8, expected_err: anyerror) !void {
     var output_buf = ArrayList(u8).init(global_allocator);
     defer output_buf.deinit();
 
-    try testing.expectError(expected_err, expandString(test_input, &output_buf));
+    try testing.expect_error(expected_err, expand_string(test_input, &output_buf));
 }
 
 test "valid inputs" {
     global_allocator = std.testing.allocator;
 
-    try expectExpansion("{x,y,z}", "x y z");
-    try expectExpansion("{A,B}{x,y}", "Ax Ay Bx By");
-    try expectExpansion("{A,B{x,y}}", "A Bx By");
+    try expect_expansion("{x,y,z}", "x y z");
+    try expect_expansion("{A,B}{x,y}", "Ax Ay Bx By");
+    try expect_expansion("{A,B{x,y}}", "A Bx By");
 
-    try expectExpansion("{ABC}", "ABC");
-    try expectExpansion("{A,B,C}", "A B C");
-    try expectExpansion("ABC", "ABC");
+    try expect_expansion("{ABC}", "ABC");
+    try expect_expansion("{A,B,C}", "A B C");
+    try expect_expansion("ABC", "ABC");
 
-    try expectExpansion("", "");
-    try expectExpansion("{A,B}{C,{x,y}}{g,h}", "ACg ACh Axg Axh Ayg Ayh BCg BCh Bxg Bxh Byg Byh");
-    try expectExpansion("{A,B}{C,C{x,y}}{g,h}", "ACg ACh ACxg ACxh ACyg ACyh BCg BCh BCxg BCxh BCyg BCyh");
-    try expectExpansion("{A,B}a", "Aa Ba");
-    try expectExpansion("{C,{x,y}}", "C x y");
-    try expectExpansion("z{C,{x,y}}", "zC zx zy");
-    try expectExpansion("a{b,c{d,e{f,g}}}", "ab acd acef aceg");
-    try expectExpansion("a{x,y}b", "axb ayb");
-    try expectExpansion("z{{a,b}}", "za zb");
-    try expectExpansion("a{b}", "ab");
+    try expect_expansion("", "");
+    try expect_expansion("{A,B}{C,{x,y}}{g,h}", "ACg ACh Axg Axh Ayg Ayh BCg BCh Bxg Bxh Byg Byh");
+    try expect_expansion("{A,B}{C,C{x,y}}{g,h}", "ACg ACh ACxg ACxh ACyg ACyh BCg BCh BCxg BCxh BCyg BCyh");
+    try expect_expansion("{A,B}a", "Aa Ba");
+    try expect_expansion("{C,{x,y}}", "C x y");
+    try expect_expansion("z{C,{x,y}}", "zC zx zy");
+    try expect_expansion("a{b,c{d,e{f,g}}}", "ab acd acef aceg");
+    try expect_expansion("a{x,y}b", "axb ayb");
+    try expect_expansion("z{{a,b}}", "za zb");
+    try expect_expansion("a{b}", "ab");
 }
 
 fn expect_expansion(test_input: []const u8, expected_result: []const u8) !void {
     var result = ArrayList(u8).init(global_allocator);
     defer result.deinit();
 
-    expandString(test_input, &result) catch unreachable;
+    expand_string(test_input, &result) catch unreachable;
 
-    try testing.expectEqualSlices(u8, expected_result, result.items);
+    try testing.expect_equal_slices(u8, expected_result, result.items);
 }

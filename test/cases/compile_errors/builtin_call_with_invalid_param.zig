@@ -1,5 +1,5 @@
 export fn builtin_call_bool_function_inline_with_void() void {
-    @call(.always_inline, boolFunction, .{{}});
+    @call(.always_inline, bool_function, .{{}});
 }
 
 fn bool_function(_: bool) void {}

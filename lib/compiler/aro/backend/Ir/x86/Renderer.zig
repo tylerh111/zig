@@ -21,17 +21,17 @@ const RegisterManager = zig.RegisterManager(Renderer, Register, Ir.Ref, abi.allo
 const RegisterBitSet = RegisterManager.RegisterBitSet;
 const RegisterClass = struct {
     const gp: RegisterBitSet = blk: {
-        var set = RegisterBitSet.initEmpty();
+        var set = RegisterBitSet.init_empty();
         for (abi.allocatable_regs, 0..) |reg, index| if (reg.class() == .general_purpose) set.set(index);
         break :blk set;
     };
     const x87: RegisterBitSet = blk: {
-        var set = RegisterBitSet.initEmpty();
+        var set = RegisterBitSet.init_empty();
         for (abi.allocatable_regs, 0..) |reg, index| if (reg.class() == .x87) set.set(index);
         break :blk set;
     };
     const sse: RegisterBitSet = blk: {
-        var set = RegisterBitSet.initEmpty();
+        var set = RegisterBitSet.init_empty();
         for (abi.allocatable_regs, 0..) |reg, index| if (reg.class() == .sse) set.set(index);
         break :blk set;
     };
@@ -51,7 +51,7 @@ pub fn render(base: *BaseRenderer) !void {
     };
 
     for (renderer.base.ir.decls.keys(), renderer.base.ir.decls.values()) |name, decl| {
-        renderer.renderFn(name, decl) catch |e| switch (e) {
+        renderer.render_fn(name, decl) catch |e| switch (e) {
             error.OutOfMemory => return e,
             error.LowerFail => continue,
         };

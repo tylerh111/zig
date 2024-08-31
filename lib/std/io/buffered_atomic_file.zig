@@ -30,7 +30,7 @@ pub const BufferedAtomicFile = struct {
         };
         errdefer allocator.destroy(self);
 
-        self.atomic_file = try dir.atomicFile(dest_path, atomic_file_options);
+        self.atomic_file = try dir.atomic_file(dest_path, atomic_file_options);
         errdefer self.atomic_file.deinit();
 
         self.file_writer = self.atomic_file.file.writer();

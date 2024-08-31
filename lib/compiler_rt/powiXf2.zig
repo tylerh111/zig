@@ -25,10 +25,10 @@ inline fn powi_xf2(comptime FT: type, a: FT, b: i32) FT {
     const is_recip: bool = b < 0;
     var r: FT = 1.0;
     while (true) {
-        if (@as(u32, @bitCast(x_b)) & @as(u32, 1) != 0) {
+        if (@as(u32, @bit_cast(x_b)) & @as(u32, 1) != 0) {
             r *= x_a;
         }
-        x_b = @divTrunc(x_b, @as(i32, 2));
+        x_b = @div_trunc(x_b, @as(i32, 2));
         if (x_b == 0) break;
         x_a *= x_a; // Multiplication of x_a propagates the error
     }
@@ -36,23 +36,23 @@ inline fn powi_xf2(comptime FT: type, a: FT, b: i32) FT {
 }
 
 pub fn __powihf2(a: f16, b: i32) callconv(.C) f16 {
-    return powiXf2(f16, a, b);
+    return powi_xf2(f16, a, b);
 }
 
 pub fn __powisf2(a: f32, b: i32) callconv(.C) f32 {
-    return powiXf2(f32, a, b);
+    return powi_xf2(f32, a, b);
 }
 
 pub fn __powidf2(a: f64, b: i32) callconv(.C) f64 {
-    return powiXf2(f64, a, b);
+    return powi_xf2(f64, a, b);
 }
 
 pub fn __powitf2(a: f128, b: i32) callconv(.C) f128 {
-    return powiXf2(f128, a, b);
+    return powi_xf2(f128, a, b);
 }
 
 pub fn __powixf2(a: f80, b: i32) callconv(.C) f80 {
-    return powiXf2(f80, a, b);
+    return powi_xf2(f80, a, b);
 }
 
 test {

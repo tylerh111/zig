@@ -15,7 +15,7 @@ const FormValue = union(enum) {
 
 fn do_thing(form_id: u64) anyerror!FormValue {
     return switch (form_id) {
-        17 => FormValue{ .Address = try readOnce() },
+        17 => FormValue{ .Address = try read_once() },
         else => error.InvalidDebugInfo,
     };
 }
@@ -26,7 +26,7 @@ test "switch prong returns error enum" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    switch (doThing(17) catch unreachable) {
+    switch (do_thing(17) catch unreachable) {
         FormValue.Address => |payload| {
             try expect(payload == 1);
         },

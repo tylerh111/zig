@@ -1,5 +1,5 @@
 const errno = std.posix.errno;
-const unexpectedErrno = std.posix.unexpectedErrno;
+const unexpected_errno = std.posix.unexpected_errno;
 
 pub const Error = error{
     SystemResources,
@@ -27,7 +27,7 @@ pub const Attr = struct {
             .SUCCESS => return Attr{ .attr = attr },
             .NOMEM => return error.SystemResources,
             .INVAL => unreachable,
-            else => |err| return unexpectedErrno(err),
+            else => |err| return unexpected_errno(err),
         }
     }
 
@@ -43,17 +43,17 @@ pub const Attr = struct {
     pub fn get(self: Attr) Error!u16 {
         var flags: c_short = undefined;
         switch (errno(std.c.posix_spawnattr_getflags(&self.attr, &flags))) {
-            .SUCCESS => return @as(u16, @bitCast(flags)),
+            .SUCCESS => return @as(u16, @bit_cast(flags)),
             .INVAL => unreachable,
-            else => |err| return unexpectedErrno(err),
+            else => |err| return unexpected_errno(err),
         }
     }
 
     pub fn set(self: *Attr, flags: u16) Error!void {
-        switch (errno(std.c.posix_spawnattr_setflags(&self.attr, @as(c_short, @bitCast(flags))))) {
+        switch (errno(std.c.posix_spawnattr_setflags(&self.attr, @as(c_short, @bit_cast(flags))))) {
             .SUCCESS => return,
             .INVAL => unreachable,
-            else => |err| return unexpectedErrno(err),
+            else => |err| return unexpected_errno(err),
         }
     }
 };
@@ -67,7 +67,7 @@ pub const Actions = struct {
             .SUCCESS => return Actions{ .actions = actions },
             .NOMEM => return error.SystemResources,
             .INVAL => unreachable,
-            else => |err| return unexpectedErrno(err),
+            else => |err| return unexpected_errno(err),
         }
     }
 
@@ -81,18 +81,18 @@ pub const Actions = struct {
     }
 
     pub fn open(self: *Actions, fd: std.c.fd_t, path: []const u8, flags: u32, mode: std.c.mode_t) Error!void {
-        const posix_path = try std.posix.toPosixPath(path);
-        return self.openZ(fd, &posix_path, flags, mode);
+        const posix_path = try std.posix.to_posix_path(path);
+        return self.open_z(fd, &posix_path, flags, mode);
     }
 
     pub fn open_z(self: *Actions, fd: std.c.fd_t, path: [*:0]const u8, flags: u32, mode: std.c.mode_t) Error!void {
-        switch (errno(std.c.posix_spawn_file_actions_addopen(&self.actions, fd, path, @as(c_int, @bitCast(flags)), mode))) {
+        switch (errno(std.c.posix_spawn_file_actions_addopen(&self.actions, fd, path, @as(c_int, @bit_cast(flags)), mode))) {
             .SUCCESS => return,
             .BADF => return error.InvalidFileDescriptor,
             .NOMEM => return error.SystemResources,
             .NAMETOOLONG => return error.NameTooLong,
             .INVAL => unreachable, // the value of file actions is invalid
-            else => |err| return unexpectedErrno(err),
+            else => |err| return unexpected_errno(err),
         }
     }
 
@@ -103,7 +103,7 @@ pub const Actions = struct {
             .NOMEM => return error.SystemResources,
             .INVAL => unreachable, // the value of file actions is invalid
             .NAMETOOLONG => unreachable,
-            else => |err| return unexpectedErrno(err),
+            else => |err| return unexpected_errno(err),
         }
     }
 
@@ -114,7 +114,7 @@ pub const Actions = struct {
             .NOMEM => return error.SystemResources,
             .INVAL => unreachable, // the value of file actions is invalid
             .NAMETOOLONG => unreachable,
-            else => |err| return unexpectedErrno(err),
+            else => |err| return unexpected_errno(err),
         }
     }
 
@@ -125,13 +125,13 @@ pub const Actions = struct {
             .NOMEM => return error.SystemResources,
             .INVAL => unreachable, // the value of file actions is invalid
             .NAMETOOLONG => unreachable,
-            else => |err| return unexpectedErrno(err),
+            else => |err| return unexpected_errno(err),
         }
     }
 
     pub fn chdir(self: *Actions, path: []const u8) Error!void {
-        const posix_path = try std.posix.toPosixPath(path);
-        return self.chdirZ(&posix_path);
+        const posix_path = try std.posix.to_posix_path(path);
+        return self.chdir_z(&posix_path);
     }
 
     pub fn chdir_z(self: *Actions, path: [*:0]const u8) Error!void {
@@ -141,7 +141,7 @@ pub const Actions = struct {
             .NAMETOOLONG => return error.NameTooLong,
             .BADF => unreachable,
             .INVAL => unreachable, // the value of file actions is invalid
-            else => |err| return unexpectedErrno(err),
+            else => |err| return unexpected_errno(err),
         }
     }
 
@@ -152,7 +152,7 @@ pub const Actions = struct {
             .NOMEM => return error.SystemResources,
             .INVAL => unreachable, // the value of file actions is invalid
             .NAMETOOLONG => unreachable,
-            else => |err| return unexpectedErrno(err),
+            else => |err| return unexpected_errno(err),
         }
     }
 };
@@ -164,8 +164,8 @@ pub fn spawn(
     argv: [*:null]?[*:0]const u8,
     envp: [*:null]?[*:0]const u8,
 ) Error!std.c.pid_t {
-    const posix_path = try std.posix.toPosixPath(path);
-    return spawnZ(&posix_path, actions, attr, argv, envp);
+    const posix_path = try std.posix.to_posix_path(path);
+    return spawn_z(&posix_path, actions, attr, argv, envp);
 }
 
 pub fn spawn_z(
@@ -200,18 +200,18 @@ pub fn spawn_z(
         .BADEXEC => return error.InvalidExe,
         .FAULT => unreachable,
         .INVAL => unreachable,
-        else => |err| return unexpectedErrno(err),
+        else => |err| return unexpected_errno(err),
     }
 }
 
 pub fn waitpid(pid: std.c.pid_t, flags: u32) Error!std.posix.WaitPidResult {
     var status: c_int = undefined;
     while (true) {
-        const rc = waitpid(pid, &status, @as(c_int, @intCast(flags)));
+        const rc = waitpid(pid, &status, @as(c_int, @int_cast(flags)));
         switch (errno(rc)) {
             .SUCCESS => return std.posix.WaitPidResult{
-                .pid = @as(std.c.pid_t, @intCast(rc)),
-                .status = @as(u32, @bitCast(status)),
+                .pid = @as(std.c.pid_t, @int_cast(rc)),
+                .status = @as(u32, @bit_cast(status)),
             },
             .INTR => continue,
             .CHILD => return error.ChildExecFailed,

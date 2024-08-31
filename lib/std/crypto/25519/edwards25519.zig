@@ -30,20 +30,20 @@ pub const Edwards25519 = struct {
     /// Decode an Edwards25519 point from its compressed (Y+sign) coordinates.
     pub fn from_bytes(s: [encoded_length]u8) EncodingError!Edwards25519 {
         const z = Fe.one;
-        const y = Fe.fromBytes(s);
+        const y = Fe.from_bytes(s);
         var u = y.sq();
         var v = u.mul(Fe.edwards25519d);
         u = u.sub(z);
         v = v.add(z);
         var x = u.mul(v).pow2523().mul(u);
         const vxx = x.sq().mul(v);
-        const has_m_root = vxx.sub(u).isZero();
-        const has_p_root = vxx.add(u).isZero();
-        if ((@intFromBool(has_m_root) | @intFromBool(has_p_root)) == 0) { // best-effort to avoid two conditional branches
+        const has_m_root = vxx.sub(u).is_zero();
+        const has_p_root = vxx.add(u).is_zero();
+        if ((@int_from_bool(has_m_root) | @int_from_bool(has_p_root)) == 0) { // best-effort to avoid two conditional branches
             return error.InvalidEncoding;
         }
-        x.cMov(x.mul(Fe.sqrtm1), 1 - @intFromBool(has_m_root));
-        x.cMov(x.neg(), @intFromBool(x.isNegative()) ^ (s[31] >> 7));
+        x.c_mov(x.mul(Fe.sqrtm1), 1 - @int_from_bool(has_m_root));
+        x.c_mov(x.neg(), @int_from_bool(x.is_negative()) ^ (s[31] >> 7));
         const t = x.mul(y);
         return Edwards25519{ .x = x, .y = y, .z = z, .t = t };
     }
@@ -51,14 +51,14 @@ pub const Edwards25519 = struct {
     /// Encode an Edwards25519 point.
     pub fn to_bytes(p: Edwards25519) [encoded_length]u8 {
         const zi = p.z.invert();
-        var s = p.y.mul(zi).toBytes();
-        s[31] ^= @as(u8, @intFromBool(p.x.mul(zi).isNegative())) << 7;
+        var s = p.y.mul(zi).to_bytes();
+        s[31] ^= @as(u8, @int_from_bool(p.x.mul(zi).is_negative())) << 7;
         return s;
     }
 
     /// Check that the encoding of a point is canonical.
     pub fn reject_non_canonical(s: [32]u8) NonCanonicalError!void {
-        return Fe.rejectNonCanonical(s, true);
+        return Fe.reject_non_canonical(s, true);
     }
 
     /// The edwards25519 base point.
@@ -74,7 +74,7 @@ pub const Edwards25519 = struct {
 
     /// Reject the neutral element.
     pub fn reject_identity(p: Edwards25519) IdentityElementError!void {
-        if (p.x.isZero()) {
+        if (p.x.is_zero()) {
             return error.IdentityElement;
         }
     }
@@ -86,7 +86,7 @@ pub const Edwards25519 = struct {
     /// - `WeakPublicKeyError` is returned if the point belongs to a low-order subgroup.
     /// - `UnexpectedSubgroupError` is returned otherwise.
     pub fn reject_unexpected_subgroup(p: Edwards25519) (WeakPublicKeyError || UnexpectedSubgroupError)!void {
-        try p.rejectLowOrder();
+        try p.reject_low_order();
 
         // Multiply p by the order of subgroup - This is a prime order group, so the result should be the neutral element.
         const _10 = p.dbl();
@@ -115,7 +115,7 @@ pub const Edwards25519 = struct {
             .add(_1010011)).shift(9).add(_11110101))).shift(7).add(_1100111)).shift(9).add(_11110101).shift(11)
             .add(_10111101)).shift(8).add(_11100111)).shift(9))).shift(6).add(_1011)).shift(14).add(_10010011).shift(10)
             .add(_1100011)).shift(9).add(_10010111)).shift(10))).shift(8).add(_11010011)).shift(8).add(_11101101);
-        q.rejectIdentity() catch return;
+        q.reject_identity() catch return;
         return error.UnexpectedSubgroup;
     }
 
@@ -132,7 +132,7 @@ pub const Edwards25519 = struct {
         const y = p.y.mul(zi);
         const x_neg = x.neg();
         const iy = Fe.sqrtm1.mul(y);
-        if (x.isZero() or y.isZero() or iy.equivalent(x) or iy.equivalent(x_neg)) {
+        if (x.is_zero() or y.is_zero() or iy.equivalent(x) or iy.equivalent(x_neg)) {
             return error.WeakPublicKey;
         }
     }
@@ -191,17 +191,17 @@ pub const Edwards25519 = struct {
     }
 
     inline fn c_mov(p: *Edwards25519, a: Edwards25519, c: u64) void {
-        p.x.cMov(a.x, c);
-        p.y.cMov(a.y, c);
-        p.z.cMov(a.z, c);
-        p.t.cMov(a.t, c);
+        p.x.c_mov(a.x, c);
+        p.y.c_mov(a.y, c);
+        p.z.c_mov(a.z, c);
+        p.t.c_mov(a.t, c);
     }
 
     inline fn pc_select(comptime n: usize, pc: *const [n]Edwards25519, b: u8) Edwards25519 {
         var t = Edwards25519.identityElement;
         comptime var i: u8 = 1;
         inline while (i < pc.len) : (i += 1) {
-            t.cMov(pc[i], ((@as(usize, b ^ i) -% 1) >> 8) & 1);
+            t.c_mov(pc[i], ((@as(usize, b ^ i) -% 1) >> 8) & 1);
         }
         return t;
     }
@@ -238,14 +238,14 @@ pub const Edwards25519 = struct {
         while (true) : (pos -= 1) {
             const slot = e[pos];
             if (slot > 0) {
-                q = q.add(pc[@as(usize, @intCast(slot))]);
+                q = q.add(pc[@as(usize, @int_cast(slot))]);
             } else if (slot < 0) {
-                q = q.sub(pc[@as(usize, @intCast(-slot))]);
+                q = q.sub(pc[@as(usize, @int_cast(-slot))]);
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();
         }
-        try q.rejectIdentity();
+        try q.reject_identity();
         return q;
     }
 
@@ -260,12 +260,12 @@ pub const Edwards25519 = struct {
                     q = q.add(pc[slot]);
                 }
             } else {
-                q = q.add(pcSelect(16, pc, slot));
+                q = q.add(pc_select(16, pc, slot));
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();
         }
-        try q.rejectIdentity();
+        try q.reject_identity();
         return q;
     }
 
@@ -291,21 +291,21 @@ pub const Edwards25519 = struct {
     pub fn mul(p: Edwards25519, s: [32]u8) (IdentityElementError || WeakPublicKeyError)!Edwards25519 {
         const pc = if (p.is_base) basePointPc else pc: {
             const xpc = precompute(p, 15);
-            xpc[4].rejectIdentity() catch return error.WeakPublicKey;
+            xpc[4].reject_identity() catch return error.WeakPublicKey;
             break :pc xpc;
         };
-        return pcMul16(&pc, s, false);
+        return pc_mul16(&pc, s, false);
     }
 
     /// Multiply an Edwards25519 point by a *PUBLIC* scalar *IN VARIABLE TIME*
     /// This can be used for signature verification.
     pub fn mul_public(p: Edwards25519, s: [32]u8) (IdentityElementError || WeakPublicKeyError)!Edwards25519 {
         if (p.is_base) {
-            return pcMul16(&basePointPc, s, true);
+            return pc_mul16(&basePointPc, s, true);
         } else {
             const pc = precompute(p, 8);
-            pc[4].rejectIdentity() catch return error.WeakPublicKey;
-            return pcMul(&pc, s, true);
+            pc[4].reject_identity() catch return error.WeakPublicKey;
+            return pc_mul(&pc, s, true);
         }
     }
 
@@ -315,13 +315,13 @@ pub const Edwards25519 = struct {
         var pc1_array: [9]Edwards25519 = undefined;
         const pc1 = if (p1.is_base) basePointPc[0..9] else pc: {
             pc1_array = precompute(p1, 8);
-            pc1_array[4].rejectIdentity() catch return error.WeakPublicKey;
+            pc1_array[4].reject_identity() catch return error.WeakPublicKey;
             break :pc &pc1_array;
         };
         var pc2_array: [9]Edwards25519 = undefined;
         const pc2 = if (p2.is_base) basePointPc[0..9] else pc: {
             pc2_array = precompute(p2, 8);
-            pc2_array[4].rejectIdentity() catch return error.WeakPublicKey;
+            pc2_array[4].reject_identity() catch return error.WeakPublicKey;
             break :pc &pc2_array;
         };
         const e1 = slide(s1);
@@ -331,20 +331,20 @@ pub const Edwards25519 = struct {
         while (true) : (pos -= 1) {
             const slot1 = e1[pos];
             if (slot1 > 0) {
-                q = q.add(pc1[@as(usize, @intCast(slot1))]);
+                q = q.add(pc1[@as(usize, @int_cast(slot1))]);
             } else if (slot1 < 0) {
-                q = q.sub(pc1[@as(usize, @intCast(-slot1))]);
+                q = q.sub(pc1[@as(usize, @int_cast(-slot1))]);
             }
             const slot2 = e2[pos];
             if (slot2 > 0) {
-                q = q.add(pc2[@as(usize, @intCast(slot2))]);
+                q = q.add(pc2[@as(usize, @int_cast(slot2))]);
             } else if (slot2 < 0) {
-                q = q.sub(pc2[@as(usize, @intCast(-slot2))]);
+                q = q.sub(pc2[@as(usize, @int_cast(-slot2))]);
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();
         }
-        try q.rejectIdentity();
+        try q.reject_identity();
         return q;
     }
 
@@ -361,7 +361,7 @@ pub const Edwards25519 = struct {
                 pcs[i] = bpc;
             } else {
                 pcs[i] = precompute(p, 8);
-                pcs[i][4].rejectIdentity() catch return error.WeakPublicKey;
+                pcs[i][4].reject_identity() catch return error.WeakPublicKey;
             }
         }
         var es: [count][2 * 32]i8 = undefined;
@@ -374,15 +374,15 @@ pub const Edwards25519 = struct {
             for (es, 0..) |e, i| {
                 const slot = e[pos];
                 if (slot > 0) {
-                    q = q.add(pcs[i][@as(usize, @intCast(slot))]);
+                    q = q.add(pcs[i][@as(usize, @int_cast(slot))]);
                 } else if (slot < 0) {
-                    q = q.sub(pcs[i][@as(usize, @intCast(-slot))]);
+                    q = q.sub(pcs[i][@as(usize, @int_cast(-slot))]);
                 }
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();
         }
-        try q.rejectIdentity();
+        try q.reject_identity();
         return q;
     }
 
@@ -417,7 +417,7 @@ pub const Edwards25519 = struct {
 
         // yed = (x-1)/(x+1) or 1 if the denominator is 0
         var yed = x_plus_one_y_inv.mul(y).mul(x_minus_one);
-        yed.cMov(Fe.one, @intFromBool(x_plus_one_y_inv.isZero()));
+        yed.c_mov(Fe.one, @int_from_bool(x_plus_one_y_inv.is_zero()));
 
         return Edwards25519{
             .x = xed,
@@ -435,29 +435,29 @@ pub const Edwards25519 = struct {
         const x3 = x2.mul(x);
         x2 = x2.mul32(Fe.edwards25519a_32); // x2 = A*x1^2
         const gx1 = x3.add(x).add(x2); // gx1 = x1^3 + A*x1^2 + x1
-        const not_square = !gx1.isSquare();
+        const not_square = !gx1.is_square();
 
         // gx1 not a square => x = -x1-A
-        x.cMov(x.neg(), @intFromBool(not_square));
+        x.c_mov(x.neg(), @int_from_bool(not_square));
         x2 = Fe.zero;
-        x2.cMov(Fe.edwards25519a, @intFromBool(not_square));
+        x2.c_mov(Fe.edwards25519a, @int_from_bool(not_square));
         x = x.sub(x2);
 
         // We have y = sqrt(gx1) or sqrt(gx2) with gx2 = gx1*(A+x1)/(-x1)
         // but it is about as fast to just recompute y from the curve equation.
-        const y = xmontToYmont(x) catch unreachable;
+        const y = xmont_to_ymont(x) catch unreachable;
         return .{ .x = x, .y = y, .not_square = not_square };
     }
 
     /// Map a 64-bit hash into an Edwards25519 point
     pub fn from_hash(h: [64]u8) Edwards25519 {
-        const fe_f = Fe.fromBytes64(h);
+        const fe_f = Fe.from_bytes64(h);
         var elr = elligator2(fe_f);
 
         const y_sign = !elr.not_square;
         const y_neg = elr.y.neg();
-        elr.y.cMov(y_neg, @intFromBool(elr.y.isNegative()) ^ @intFromBool(y_sign));
-        return montToEd(elr.x, elr.y).clearCofactor();
+        elr.y.c_mov(y_neg, @int_from_bool(elr.y.is_negative()) ^ @int_from_bool(y_sign));
+        return mont_to_ed(elr.x, elr.y).clear_cofactor();
     }
 
     fn string_to_points(comptime n: usize, ctx: []const u8, s: []const u8) [n]Edwards25519 {
@@ -475,7 +475,7 @@ pub const Edwards25519 = struct {
         }
         const empty_block = [_]u8{0} ** H.block_length;
         var t = [3]u8{ 0, n * h_l, 0 };
-        var xctx_len_u8 = [1]u8{@as(u8, @intCast(xctx.len))};
+        var xctx_len_u8 = [1]u8{@as(u8, @int_cast(xctx.len))};
         var st = H.init(.{});
         st.update(empty_block[0..]);
         st.update(s);
@@ -505,7 +505,7 @@ pub const Edwards25519 = struct {
         while (i < n) : (i += 1) {
             @memset(u_0[0 .. H.digest_length - h_l], 0);
             u_0[H.digest_length - h_l ..][0..h_l].* = u[i * h_l ..][0..h_l].*;
-            px[i] = fromHash(u_0);
+            px[i] = from_hash(u_0);
         }
         return px;
     }
@@ -519,10 +519,10 @@ pub const Edwards25519 = struct {
     /// the context in order to be compatible with other implementations.
     pub fn from_string(comptime random_oracle: bool, ctx: []const u8, s: []const u8) Edwards25519 {
         if (random_oracle) {
-            const px = stringToPoints(2, ctx, s);
+            const px = string_to_points(2, ctx, s);
             return px[0].add(px[1]);
         } else {
-            return stringToPoints(1, ctx, s)[0];
+            return string_to_points(1, ctx, s)[0];
         }
     }
 
@@ -531,11 +531,11 @@ pub const Edwards25519 = struct {
         var s = r;
         const x_sign = s[31] >> 7;
         s[31] &= 0x7f;
-        const elr = elligator2(Fe.fromBytes(s));
-        var p = montToEd(elr.x, elr.y);
+        const elr = elligator2(Fe.from_bytes(s));
+        var p = mont_to_ed(elr.x, elr.y);
         const p_neg = p.neg();
-        p.cMov(p_neg, @intFromBool(p.x.isNegative()) ^ x_sign);
-        return p.clearCofactor();
+        p.c_mov(p_neg, @int_from_bool(p.x.is_negative()) ^ x_sign);
+        return p.clear_cofactor();
     }
 };
 
@@ -546,7 +546,7 @@ test "packing/unpacking" {
     var b = Edwards25519.basePoint;
     const pk = try b.mul(s);
     var buf: [128]u8 = undefined;
-    try std.testing.expectEqualStrings(try std.fmt.bufPrint(&buf, "{s}", .{std.fmt.fmtSliceHexUpper(&pk.toBytes())}), "074BC7E0FCBD587FDBC0969444245FADC562809C8F6E97E949AF62484B5B81A6");
+    try std.testing.expect_equal_strings(try std.fmt.buf_print(&buf, "{s}", .{std.fmt.fmt_slice_hex_upper(&pk.to_bytes())}), "074BC7E0FCBD587FDBC0969444245FADC562809C8F6E97E949AF62484B5B81A6");
 
     const small_order_ss: [7][32]u8 = .{
         .{
@@ -572,8 +572,8 @@ test "packing/unpacking" {
         },
     };
     for (small_order_ss) |small_order_s| {
-        const small_p = try Edwards25519.fromBytes(small_order_s);
-        try std.testing.expectError(error.WeakPublicKey, small_p.mul(s));
+        const small_p = try Edwards25519.from_bytes(small_order_s);
+        try std.testing.expect_error(error.WeakPublicKey, small_p.mul(s));
     }
 }
 
@@ -582,57 +582,57 @@ test "point addition/subtraction" {
     var s2: [32]u8 = undefined;
     crypto.random.bytes(&s1);
     crypto.random.bytes(&s2);
-    const p = try Edwards25519.basePoint.clampedMul(s1);
-    const q = try Edwards25519.basePoint.clampedMul(s2);
+    const p = try Edwards25519.basePoint.clamped_mul(s1);
+    const q = try Edwards25519.basePoint.clamped_mul(s2);
     const r = p.add(q).add(q).sub(q).sub(q);
-    try r.rejectIdentity();
-    try std.testing.expectError(error.IdentityElement, r.sub(p).rejectIdentity());
-    try std.testing.expectError(error.IdentityElement, p.sub(p).rejectIdentity());
-    try std.testing.expectError(error.IdentityElement, p.sub(q).add(q).sub(p).rejectIdentity());
+    try r.reject_identity();
+    try std.testing.expect_error(error.IdentityElement, r.sub(p).reject_identity());
+    try std.testing.expect_error(error.IdentityElement, p.sub(p).reject_identity());
+    try std.testing.expect_error(error.IdentityElement, p.sub(q).add(q).sub(p).reject_identity());
 }
 
 test "uniform-to-point" {
     var r = [32]u8{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 };
-    var p = Edwards25519.fromUniform(r);
-    try htest.assertEqual("0691eee3cf70a0056df6bfa03120635636581b5c4ea571dfc680f78c7e0b4137", p.toBytes()[0..]);
+    var p = Edwards25519.from_uniform(r);
+    try htest.assert_equal("0691eee3cf70a0056df6bfa03120635636581b5c4ea571dfc680f78c7e0b4137", p.to_bytes()[0..]);
 
     r[31] = 0xff;
-    p = Edwards25519.fromUniform(r);
-    try htest.assertEqual("f70718e68ef42d90ca1d936bb2d7e159be6c01d8095d39bd70487c82fe5c973a", p.toBytes()[0..]);
+    p = Edwards25519.from_uniform(r);
+    try htest.assert_equal("f70718e68ef42d90ca1d936bb2d7e159be6c01d8095d39bd70487c82fe5c973a", p.to_bytes()[0..]);
 }
 
 // Test vectors from draft-irtf-cfrg-hash-to-curve-12
 test "hash-to-curve operation" {
-    var p = Edwards25519.fromString(true, "QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_RO_", "abc");
-    try htest.assertEqual("31558a26887f23fb8218f143e69d5f0af2e7831130bd5b432ef23883b895839a", p.toBytes()[0..]);
+    var p = Edwards25519.from_string(true, "QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_RO_", "abc");
+    try htest.assert_equal("31558a26887f23fb8218f143e69d5f0af2e7831130bd5b432ef23883b895839a", p.to_bytes()[0..]);
 
-    p = Edwards25519.fromString(false, "QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_", "abc");
-    try htest.assertEqual("42fa27c8f5a1ae0aa38bb59d5938e5145622ba5dedd11d11736fa2f9502d7367", p.toBytes()[0..]);
+    p = Edwards25519.from_string(false, "QUUX-V01-CS02-with-edwards25519_XMD:SHA-512_ELL2_NU_", "abc");
+    try htest.assert_equal("42fa27c8f5a1ae0aa38bb59d5938e5145622ba5dedd11d11736fa2f9502d7367", p.to_bytes()[0..]);
 }
 
 test "implicit reduction of invalid scalars" {
     const s = [_]u8{0} ** 31 ++ [_]u8{255};
-    const p1 = try Edwards25519.basePoint.mulPublic(s);
+    const p1 = try Edwards25519.basePoint.mul_public(s);
     const p2 = try Edwards25519.basePoint.mul(s);
-    const p3 = try p1.mulPublic(s);
+    const p3 = try p1.mul_public(s);
     const p4 = try p1.mul(s);
 
-    try std.testing.expectEqualSlices(u8, p1.toBytes()[0..], p2.toBytes()[0..]);
-    try std.testing.expectEqualSlices(u8, p3.toBytes()[0..], p4.toBytes()[0..]);
+    try std.testing.expect_equal_slices(u8, p1.to_bytes()[0..], p2.to_bytes()[0..]);
+    try std.testing.expect_equal_slices(u8, p3.to_bytes()[0..], p4.to_bytes()[0..]);
 
-    try htest.assertEqual("339f189ecc5fbebe9895345c72dc07bda6e615f8a40e768441b6f529cd6c671a", p1.toBytes()[0..]);
-    try htest.assertEqual("a501e4c595a3686d8bee7058c7e6af7fd237f945c47546910e37e0e79b1bafb0", p3.toBytes()[0..]);
+    try htest.assert_equal("339f189ecc5fbebe9895345c72dc07bda6e615f8a40e768441b6f529cd6c671a", p1.to_bytes()[0..]);
+    try htest.assert_equal("a501e4c595a3686d8bee7058c7e6af7fd237f945c47546910e37e0e79b1bafb0", p3.to_bytes()[0..]);
 }
 
 test "subgroup check" {
     for (0..100) |_| {
         var p = Edwards25519.basePoint;
         const s = Edwards25519.scalar.random();
-        p = try p.mulPublic(s);
-        try p.rejectUnexpectedSubgroup();
+        p = try p.mul_public(s);
+        try p.reject_unexpected_subgroup();
     }
     var bogus: [Edwards25519.encoded_length]u8 = undefined;
-    _ = try std.fmt.hexToBytes(&bogus, "4dc95e3c28d78c48a60531525e6327e259b7ba0d2f5c81b694052c766a14b625");
-    const p = try Edwards25519.fromBytes(bogus);
-    try std.testing.expectError(error.UnexpectedSubgroup, p.rejectUnexpectedSubgroup());
+    _ = try std.fmt.hex_to_bytes(&bogus, "4dc95e3c28d78c48a60531525e6327e259b7ba0d2f5c81b694052c766a14b625");
+    const p = try Edwards25519.from_bytes(bogus);
+    try std.testing.expect_error(error.UnexpectedSubgroup, p.reject_unexpected_subgroup());
 }

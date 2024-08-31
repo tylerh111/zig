@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const assert = std.debug.assert;
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 
 test "flags in packed union" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
@@ -10,8 +10,8 @@ test "flags in packed union" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testFlagsInPackedUnion();
-    try comptime testFlagsInPackedUnion();
+    try test_flags_in_packed_union();
+    try comptime test_flags_in_packed_union();
 }
 
 fn test_flags_in_packed_union() !void {
@@ -32,18 +32,18 @@ fn test_flags_in_packed_union() !void {
     };
     var test_bits: FlagBits = .{};
 
-    try expectEqual(false, test_bits.enable_1);
-    try expectEqual(true, test_bits.other_flags.flags.enable_1);
+    try expect_equal(false, test_bits.enable_1);
+    try expect_equal(true, test_bits.other_flags.flags.enable_1);
 
     test_bits.enable_1 = true;
 
-    try expectEqual(true, test_bits.enable_1);
-    try expectEqual(true, test_bits.other_flags.flags.enable_1);
+    try expect_equal(true, test_bits.enable_1);
+    try expect_equal(true, test_bits.other_flags.flags.enable_1);
 
     test_bits.other_flags.flags.enable_1 = false;
 
-    try expectEqual(true, test_bits.enable_1);
-    try expectEqual(false, test_bits.other_flags.flags.enable_1);
+    try expect_equal(true, test_bits.enable_1);
+    try expect_equal(false, test_bits.other_flags.flags.enable_1);
 }
 
 test "flags in packed union at offset" {
@@ -53,8 +53,8 @@ test "flags in packed union at offset" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testFlagsInPackedUnionAtOffset();
-    try comptime testFlagsInPackedUnionAtOffset();
+    try test_flags_in_packed_union_at_offset();
+    try comptime test_flags_in_packed_union_at_offset();
 }
 
 fn test_flags_in_packed_union_at_offset() !void {
@@ -83,20 +83,20 @@ fn test_flags_in_packed_union_at_offset() !void {
     };
     var test_bits: FlagBits = .{ .adv_flags = .{ .adv = .{ .flags = .{} } } };
 
-    try expectEqual(@as(u8, 0), test_bits.adv_flags.pad);
-    try expectEqual(true, test_bits.adv_flags.adv.flags.enable_1);
-    try expectEqual(false, test_bits.adv_flags.adv.flags.enable_2);
+    try expect_equal(@as(u8, 0), test_bits.adv_flags.pad);
+    try expect_equal(true, test_bits.adv_flags.adv.flags.enable_1);
+    try expect_equal(false, test_bits.adv_flags.adv.flags.enable_2);
 
     test_bits.adv_flags.adv.flags.enable_1 = false;
     test_bits.adv_flags.adv.flags.enable_2 = true;
-    try expectEqual(@as(u8, 0), test_bits.adv_flags.pad);
-    try expectEqual(false, test_bits.adv_flags.adv.flags.enable_1);
-    try expectEqual(true, test_bits.adv_flags.adv.flags.enable_2);
+    try expect_equal(@as(u8, 0), test_bits.adv_flags.pad);
+    try expect_equal(false, test_bits.adv_flags.adv.flags.enable_1);
+    try expect_equal(true, test_bits.adv_flags.adv.flags.enable_2);
 
     test_bits.adv_flags.adv.bits = 12;
-    try expectEqual(@as(u8, 0), test_bits.adv_flags.pad);
-    try expectEqual(false, test_bits.adv_flags.adv.flags.enable_1);
-    try expectEqual(false, test_bits.adv_flags.adv.flags.enable_2);
+    try expect_equal(@as(u8, 0), test_bits.adv_flags.pad);
+    try expect_equal(false, test_bits.adv_flags.adv.flags.enable_1);
+    try expect_equal(false, test_bits.adv_flags.adv.flags.enable_2);
 }
 
 test "packed union in packed struct" {
@@ -105,8 +105,8 @@ test "packed union in packed struct" {
     // Originally reported at https://github.com/ziglang/zig/issues/16581
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
-    try testPackedUnionInPackedStruct();
-    try comptime testPackedUnionInPackedStruct();
+    try test_packed_union_in_packed_struct();
+    try comptime test_packed_union_in_packed_struct();
 }
 
 fn test_packed_union_in_packed_struct() !void {
@@ -132,7 +132,7 @@ fn test_packed_union_in_packed_struct() !void {
         }
     };
 
-    try std.testing.expectEqual(RequestType.read, Request.init(.{ .key = 3 }).active_type);
+    try std.testing.expect_equal(RequestType.read, Request.init(.{ .key = 3 }).active_type);
 }
 
 test "packed union initialized with a runtime value" {
@@ -158,7 +158,7 @@ test "packed union initialized with a runtime value" {
 
     const timestamp: i64 = ID.value();
     const id = ID{ .fields = Fields{
-        .timestamp = @as(u50, @intCast(timestamp)),
+        .timestamp = @as(u50, @int_cast(timestamp)),
         .random_bits = 420,
     } };
     try std.testing.expect((ID{ .value = id.value }).fields.timestamp == timestamp);

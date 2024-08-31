@@ -6,7 +6,7 @@ const std = @import("std");
 const math = std.math;
 const common = @import("common.zig");
 const Number = common.Number;
-const floatFromUnsigned = common.floatFromUnsigned;
+const float_from_unsigned = common.float_from_unsigned;
 
 // converts the form 0xMMM.NNNpEEE.
 //
@@ -15,17 +15,17 @@ const floatFromUnsigned = common.floatFromUnsigned;
 //
 // MMM.NNN is stored as an integer, the exponent is offset.
 pub fn convert_hex(comptime T: type, n_: Number(T)) T {
-    const MantissaT = common.mantissaType(T);
+    const MantissaT = common.mantissa_type(T);
     var n = n_;
 
     if (n.mantissa == 0) {
         return if (n.negative) -0.0 else 0.0;
     }
 
-    const max_exp = math.floatExponentMax(T);
-    const min_exp = math.floatExponentMin(T);
-    const mantissa_bits = math.floatMantissaBits(T);
-    const exp_bits = math.floatExponentBits(T);
+    const max_exp = math.float_exponent_max(T);
+    const min_exp = math.float_exponent_min(T);
+    const mantissa_bits = math.float_mantissa_bits(T);
+    const exp_bits = math.float_exponent_bits(T);
     const exp_bias = min_exp - 1;
 
     // mantissa now implicitly divided by 2^mantissa_bits
@@ -81,9 +81,9 @@ pub fn convert_hex(comptime T: type, n_: Number(T)) T {
     }
 
     var bits = n.mantissa & ((1 << mantissa_bits) - 1);
-    bits |= @as(MantissaT, @intCast((n.exponent - exp_bias) & ((1 << exp_bits) - 1))) << mantissa_bits;
+    bits |= @as(MantissaT, @int_cast((n.exponent - exp_bias) & ((1 << exp_bits) - 1))) << mantissa_bits;
     if (n.negative) {
         bits |= 1 << (mantissa_bits + exp_bits);
     }
-    return floatFromUnsigned(T, MantissaT, bits);
+    return float_from_unsigned(T, MantissaT, bits);
 }

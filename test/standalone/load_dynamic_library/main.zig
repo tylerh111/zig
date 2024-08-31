@@ -3,8 +3,8 @@ const std = @import("std");
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
-    const args = try std.process.argsAlloc(gpa.allocator());
-    defer std.process.argsFree(gpa.allocator(), args);
+    const args = try std.process.args_alloc(gpa.allocator());
+    defer std.process.args_free(gpa.allocator(), args);
 
     const dynlib_name = args[1];
 

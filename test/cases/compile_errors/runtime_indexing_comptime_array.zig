@@ -4,8 +4,8 @@ fn bar() void {}
 pub export fn entry1() void {
     const TestFn = fn () void;
     const test_fns = [_]TestFn{ foo, bar };
-    for (test_fns) |testFn| {
-        testFn();
+    for (test_fns) |test_fn| {
+        test_fn();
     }
 }
 pub export fn entry2() void {

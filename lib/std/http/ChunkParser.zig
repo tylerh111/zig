@@ -107,25 +107,25 @@ test feed {
 
     var p = init;
     const first = p.feed(data[0..]);
-    try testing.expectEqual(@as(u32, 4), first);
-    try testing.expectEqual(@as(u64, 0xff), p.chunk_len);
-    try testing.expectEqual(.data, p.state);
+    try testing.expect_equal(@as(u32, 4), first);
+    try testing.expect_equal(@as(u64, 0xff), p.chunk_len);
+    try testing.expect_equal(.data, p.state);
 
     p = init;
     const second = p.feed(data[first..]);
-    try testing.expectEqual(@as(u32, 13), second);
-    try testing.expectEqual(@as(u64, 0xf0f000), p.chunk_len);
-    try testing.expectEqual(.data, p.state);
+    try testing.expect_equal(@as(u32, 13), second);
+    try testing.expect_equal(@as(u64, 0xf0f000), p.chunk_len);
+    try testing.expect_equal(.data, p.state);
 
     p = init;
     const third = p.feed(data[first + second ..]);
-    try testing.expectEqual(@as(u32, 3), third);
-    try testing.expectEqual(@as(u64, 0), p.chunk_len);
-    try testing.expectEqual(.data, p.state);
+    try testing.expect_equal(@as(u32, 3), third);
+    try testing.expect_equal(@as(u64, 0), p.chunk_len);
+    try testing.expect_equal(.data, p.state);
 
     p = init;
     const fourth = p.feed(data[first + second + third ..]);
-    try testing.expectEqual(@as(u32, 16), fourth);
-    try testing.expectEqual(@as(u64, 0xffffffffffffffff), p.chunk_len);
-    try testing.expectEqual(.invalid, p.state);
+    try testing.expect_equal(@as(u32, 16), fourth);
+    try testing.expect_equal(@as(u64, 0xffffffffffffffff), p.chunk_len);
+    try testing.expect_equal(.invalid, p.state);
 }

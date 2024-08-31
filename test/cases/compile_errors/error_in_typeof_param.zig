@@ -3,7 +3,7 @@ fn get_size() usize {
 }
 pub fn expect_equal(expected: anytype, _: @TypeOf(expected)) !void {}
 pub export fn entry() void {
-    try expectEqual(2, getSize());
+    try expect_equal(2, get_size());
 }
 
 // error

@@ -24,7 +24,7 @@ pub fn __modti3(a: i128, b: i128) callconv(.C) i128 {
 const v2u64 = @Vector(2, u64);
 
 fn __modti3_windows_x86_64(a: v2u64, b: v2u64) callconv(.C) v2u64 {
-    return @bitCast(mod(@as(i128, @bitCast(a)), @as(i128, @bitCast(b))));
+    return @bit_cast(mod(@as(i128, @bit_cast(a)), @as(i128, @bit_cast(b))));
 }
 
 inline fn mod(a: i128, b: i128) i128 {
@@ -35,8 +35,8 @@ inline fn mod(a: i128, b: i128) i128 {
     const bn = (b ^ s_b) -% s_b; // negate if s == -1
 
     var r: u128 = undefined;
-    _ = udivmod(u128, @as(u128, @bitCast(an)), @as(u128, @bitCast(bn)), &r);
-    return (@as(i128, @bitCast(r)) ^ s_a) -% s_a; // negate if s == -1
+    _ = udivmod(u128, @as(u128, @bit_cast(an)), @as(u128, @bit_cast(bn)), &r);
+    return (@as(i128, @bit_cast(r)) ^ s_a) -% s_a; // negate if s == -1
 }
 
 test {

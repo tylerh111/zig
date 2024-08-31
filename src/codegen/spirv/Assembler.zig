@@ -215,24 +215,24 @@ pub fn assemble(self: *Assembler) Error!void {
     // Populate the opcode map if it isn't already
     if (self.instruction_map.count() == 0) {
         const instructions = spec.InstructionSet.core.instructions();
-        try self.instruction_map.ensureUnusedCapacity(self.gpa, @intCast(instructions.len));
+        try self.instruction_map.ensure_unused_capacity(self.gpa, @int_cast(instructions.len));
         for (spec.InstructionSet.core.instructions(), 0..) |inst, i| {
-            const entry = try self.instruction_map.getOrPut(self.gpa, inst.name);
+            const entry = try self.instruction_map.get_or_put(self.gpa, inst.name);
             assert(entry.index == i);
         }
     }
 
     try self.tokenize();
-    while (!self.testToken(.eof)) {
-        try self.parseInstruction();
-        try self.processInstruction();
+    while (!self.test_token(.eof)) {
+        try self.parse_instruction();
+        try self.process_instruction();
     }
     if (self.errors.items.len > 0)
         return error.AssembleFail;
 }
 
 fn add_error(self: *Assembler, offset: u32, comptime fmt: []const u8, args: anytype) !void {
-    const msg = try std.fmt.allocPrint(self.gpa, fmt, args);
+    const msg = try std.fmt.alloc_print(self.gpa, fmt, args);
     errdefer self.gpa.free(msg);
     try self.errors.append(self.gpa, .{
         .byte_offset = offset,
@@ -241,7 +241,7 @@ fn add_error(self: *Assembler, offset: u32, comptime fmt: []const u8, args: anyt
 }
 
 fn fail(self: *Assembler, offset: u32, comptime fmt: []const u8, args: anytype) Error {
-    try self.addError(offset, fmt, args);
+    try self.add_error(offset, fmt, args);
     return error.AssembleFail;
 }
 
@@ -261,15 +261,15 @@ fn process_instruction(self: *Assembler) !void {
         },
         .OpExtInstImport => blk: {
             const set_name_offset = self.inst.operands.items[1].string;
-            const set_name = std.mem.sliceTo(self.inst.string_bytes.items[set_name_offset..], 0);
-            const set_tag = std.meta.stringToEnum(spec.InstructionSet, set_name) orelse {
+            const set_name = std.mem.slice_to(self.inst.string_bytes.items[set_name_offset..], 0);
+            const set_tag = std.meta.string_to_enum(spec.InstructionSet, set_name) orelse {
                 return self.fail(set_name_offset, "unknown instruction set: {s}", .{set_name});
             };
-            break :blk .{ .value = try self.spv.importInstructionSet(set_tag) };
+            break :blk .{ .value = try self.spv.import_instruction_set(set_tag) };
         },
         else => switch (self.inst.opcode.class()) {
-            .TypeDeclaration => try self.processTypeInstruction(),
-            else => if (try self.processGenericInstruction()) |result|
+            .TypeDeclaration => try self.process_type_instruction(),
+            else => if (try self.process_generic_instruction()) |result|
                 result
             else
                 return,
@@ -293,8 +293,8 @@ fn process_type_instruction(self: *Assembler) !AsmValue {
     const operands = self.inst.operands.items;
     const section = &self.spv.sections.types_globals_constants;
     const id = switch (self.inst.opcode) {
-        .OpTypeVoid => try self.spv.voidType(),
-        .OpTypeBool => try self.spv.boolType(),
+        .OpTypeVoid => try self.spv.void_type(),
+        .OpTypeBool => try self.spv.bool_type(),
         .OpTypeInt => blk: {
             const signedness: std.builtin.Signedness = switch (operands[2].literal32) {
                 0 => .unsigned,
@@ -307,7 +307,7 @@ fn process_type_instruction(self: *Assembler) !AsmValue {
             const width = std.math.cast(u16, operands[1].literal32) orelse {
                 return self.fail(0, "int type of {} bits is too large", .{operands[1].literal32});
             };
-            break :blk try self.spv.intType(signedness, width);
+            break :blk try self.spv.int_type(signedness, width);
         },
         .OpTypeFloat => blk: {
             const bits = operands[1].literal32;
@@ -317,11 +317,11 @@ fn process_type_instruction(self: *Assembler) !AsmValue {
                     return self.fail(0, "{} is not a valid bit count for floats (expected 16, 32 or 64)", .{bits});
                 },
             }
-            break :blk try self.spv.floatType(@intCast(bits));
+            break :blk try self.spv.float_type(@int_cast(bits));
         },
         .OpTypeVector => blk: {
-            const child_type = try self.resolveRefId(operands[1].ref_id);
-            break :blk try self.spv.vectorType(operands[2].literal32, child_type);
+            const child_type = try self.resolve_ref_id(operands[1].ref_id);
+            break :blk try self.spv.vector_type(operands[2].literal32, child_type);
         },
         .OpTypeArray => {
             // TODO: The length of an OpTypeArray is determined by a constant (which may be a spec constant),
@@ -330,8 +330,8 @@ fn process_type_instruction(self: *Assembler) !AsmValue {
         },
         .OpTypePointer => blk: {
             const storage_class: StorageClass = @enumFromInt(operands[1].value);
-            const child_type = try self.resolveRefId(operands[2].ref_id);
-            const result_id = self.spv.allocId();
+            const child_type = try self.resolve_ref_id(operands[2].ref_id);
+            const result_id = self.spv.alloc_id();
             try section.emit(self.spv.gpa, .OpTypePointer, .{
                 .id_result = result_id,
                 .storage_class = storage_class,
@@ -341,14 +341,14 @@ fn process_type_instruction(self: *Assembler) !AsmValue {
         },
         .OpTypeFunction => blk: {
             const param_operands = operands[2..];
-            const return_type = try self.resolveRefId(operands[1].ref_id);
+            const return_type = try self.resolve_ref_id(operands[1].ref_id);
 
             const param_types = try self.spv.gpa.alloc(IdRef, param_operands.len);
             defer self.spv.gpa.free(param_types);
             for (param_types, param_operands) |*param, operand| {
-                param.* = try self.resolveRefId(operand.ref_id);
+                param.* = try self.resolve_ref_id(operand.ref_id);
             }
-            const result_id = self.spv.allocId();
+            const result_id = self.spv.alloc_id();
             try section.emit(self.spv.gpa, .OpTypeFunction, .{
                 .id_result = result_id,
                 .return_type = return_type,
@@ -356,7 +356,7 @@ fn process_type_instruction(self: *Assembler) !AsmValue {
             });
             break :blk result_id;
         },
-        else => return self.todo("process type instruction {s}", .{@tagName(self.inst.opcode)}),
+        else => return self.todo("process type instruction {s}", .{@tag_name(self.inst.opcode)}),
     };
 
     return AsmValue{ .ty = id };
@@ -395,40 +395,40 @@ fn process_generic_instruction(self: *Assembler) !?AsmValue {
     const first_word = section.instructions.items.len;
     // At this point we're not quite sure how many operands this instruction is going to have,
     // so insert 0 and patch up the actual opcode word later.
-    try section.ensureUnusedCapacity(self.spv.gpa, 1);
-    section.writeWord(0);
+    try section.ensure_unused_capacity(self.spv.gpa, 1);
+    section.write_word(0);
 
     for (operands) |operand| {
         switch (operand) {
             .value, .literal32 => |word| {
-                try section.ensureUnusedCapacity(self.spv.gpa, 1);
-                section.writeWord(word);
+                try section.ensure_unused_capacity(self.spv.gpa, 1);
+                section.write_word(word);
             },
             .literal64 => |dword| {
-                try section.ensureUnusedCapacity(self.spv.gpa, 2);
-                section.writeDoubleWord(dword);
+                try section.ensure_unused_capacity(self.spv.gpa, 2);
+                section.write_double_word(dword);
             },
             .result_id => {
-                maybe_result_id = self.spv.allocId();
-                try section.ensureUnusedCapacity(self.spv.gpa, 1);
-                section.writeOperand(IdResult, maybe_result_id.?);
+                maybe_result_id = self.spv.alloc_id();
+                try section.ensure_unused_capacity(self.spv.gpa, 1);
+                section.write_operand(IdResult, maybe_result_id.?);
             },
             .ref_id => |index| {
-                const result = try self.resolveRef(index);
-                try section.ensureUnusedCapacity(self.spv.gpa, 1);
-                section.writeOperand(spec.IdRef, result.resultId());
+                const result = try self.resolve_ref(index);
+                try section.ensure_unused_capacity(self.spv.gpa, 1);
+                section.write_operand(spec.IdRef, result.result_id());
             },
             .string => |offset| {
-                const text = std.mem.sliceTo(self.inst.string_bytes.items[offset..], 0);
-                const size = std.math.divCeil(usize, text.len + 1, @sizeOf(Word)) catch unreachable;
-                try section.ensureUnusedCapacity(self.spv.gpa, size);
-                section.writeOperand(spec.LiteralString, text);
+                const text = std.mem.slice_to(self.inst.string_bytes.items[offset..], 0);
+                const size = std.math.div_ceil(usize, text.len + 1, @size_of(Word)) catch unreachable;
+                try section.ensure_unused_capacity(self.spv.gpa, size);
+                section.write_operand(spec.LiteralString, text);
             },
         }
     }
 
     const actual_word_count = section.instructions.items.len - first_word;
-    section.instructions.items[first_word] |= @as(u32, @as(u16, @intCast(actual_word_count))) << 16 | @intFromEnum(self.inst.opcode);
+    section.instructions.items[first_word] |= @as(u32, @as(u16, @int_cast(actual_word_count))) << 16 | @int_from_enum(self.inst.opcode);
 
     if (maybe_result_id) |result| {
         return AsmValue{ .value = result };
@@ -453,7 +453,7 @@ fn resolve_maybe_forward_ref(self: *Assembler, ref: AsmValue.Ref) !AsmValue {
 /// Resolve a value reference. This function
 /// makes sure that the result is not self-referential, nor that it is forward declared.
 fn resolve_ref(self: *Assembler, ref: AsmValue.Ref) !AsmValue {
-    const value = try self.resolveMaybeForwardRef(ref);
+    const value = try self.resolve_maybe_forward_ref(ref);
     switch (value) {
         .just_declared => unreachable,
         .unresolved_forward_reference => {
@@ -466,8 +466,8 @@ fn resolve_ref(self: *Assembler, ref: AsmValue.Ref) !AsmValue {
 }
 
 fn resolve_ref_id(self: *Assembler, ref: AsmValue.Ref) !IdRef {
-    const value = try self.resolveRef(ref);
-    return value.resultId();
+    const value = try self.resolve_ref(ref);
+    return value.result_id();
 }
 
 /// Attempt to parse an instruction into `self.inst`.
@@ -475,29 +475,29 @@ fn resolve_ref_id(self: *Assembler, ref: AsmValue.Ref) !IdRef {
 /// error message has been emitted into `self.errors`.
 fn parse_instruction(self: *Assembler) !void {
     self.inst.opcode = undefined;
-    self.inst.operands.shrinkRetainingCapacity(0);
-    self.inst.string_bytes.shrinkRetainingCapacity(0);
+    self.inst.operands.shrink_retaining_capacity(0);
+    self.inst.string_bytes.shrink_retaining_capacity(0);
 
-    const lhs_result_tok = self.currentToken();
-    const maybe_lhs_result: ?AsmValue.Ref = if (self.eatToken(.result_id_assign)) blk: {
-        const name = self.tokenText(lhs_result_tok)[1..];
-        const entry = try self.value_map.getOrPut(self.gpa, name);
-        try self.expectToken(.equals);
+    const lhs_result_tok = self.current_token();
+    const maybe_lhs_result: ?AsmValue.Ref = if (self.eat_token(.result_id_assign)) blk: {
+        const name = self.token_text(lhs_result_tok)[1..];
+        const entry = try self.value_map.get_or_put(self.gpa, name);
+        try self.expect_token(.equals);
         if (!entry.found_existing) {
             entry.value_ptr.* = .just_declared;
         }
-        break :blk @intCast(entry.index);
+        break :blk @int_cast(entry.index);
     } else null;
 
-    const opcode_tok = self.currentToken();
+    const opcode_tok = self.current_token();
     if (maybe_lhs_result != null) {
-        try self.expectToken(.opcode);
-    } else if (!self.eatToken(.opcode)) {
+        try self.expect_token(.opcode);
+    } else if (!self.eat_token(.opcode)) {
         return self.fail(opcode_tok.start, "expected start of instruction, found {s}", .{opcode_tok.tag.name()});
     }
 
-    const opcode_text = self.tokenText(opcode_tok);
-    const index = self.instruction_map.getIndex(opcode_text) orelse {
+    const opcode_text = self.token_text(opcode_tok);
+    const index = self.instruction_map.get_index(opcode_text) orelse {
         return self.fail(opcode_tok.start, "invalid opcode '{s}'", .{opcode_text});
     };
 
@@ -511,12 +511,12 @@ fn parse_instruction(self: *Assembler) !void {
     } else false;
 
     if (requires_lhs_result and maybe_lhs_result == null) {
-        return self.fail(opcode_tok.start, "opcode '{s}' expects result on left-hand side", .{@tagName(self.inst.opcode)});
+        return self.fail(opcode_tok.start, "opcode '{s}' expects result on left-hand side", .{@tag_name(self.inst.opcode)});
     } else if (!requires_lhs_result and maybe_lhs_result != null) {
         return self.fail(
             lhs_result_tok.start,
             "opcode '{s}' does not expect a result-id on the left-hand side",
-            .{@tagName(self.inst.opcode)},
+            .{@tag_name(self.inst.opcode)},
         );
     }
 
@@ -527,20 +527,20 @@ fn parse_instruction(self: *Assembler) !void {
         }
 
         switch (operand.quantifier) {
-            .required => if (self.isAtInstructionBoundary()) {
+            .required => if (self.is_at_instruction_boundary()) {
                 return self.fail(
-                    self.currentToken().start,
+                    self.current_token().start,
                     "missing required operand", // TODO: Operand name?
                     .{},
                 );
             } else {
-                try self.parseOperand(operand.kind);
+                try self.parse_operand(operand.kind);
             },
-            .optional => if (!self.isAtInstructionBoundary()) {
-                try self.parseOperand(operand.kind);
+            .optional => if (!self.is_at_instruction_boundary()) {
+                try self.parse_operand(operand.kind);
             },
-            .variadic => while (!self.isAtInstructionBoundary()) {
-                try self.parseOperand(operand.kind);
+            .variadic => while (!self.is_at_instruction_boundary()) {
+                try self.parse_operand(operand.kind);
             },
         }
     }
@@ -549,26 +549,26 @@ fn parse_instruction(self: *Assembler) !void {
 /// Parse a single operand of a particular type.
 fn parse_operand(self: *Assembler, kind: spec.OperandKind) Error!void {
     switch (kind.category()) {
-        .bit_enum => try self.parseBitEnum(kind),
-        .value_enum => try self.parseValueEnum(kind),
-        .id => try self.parseRefId(),
+        .bit_enum => try self.parse_bit_enum(kind),
+        .value_enum => try self.parse_value_enum(kind),
+        .id => try self.parse_ref_id(),
         else => switch (kind) {
-            .LiteralInteger => try self.parseLiteralInteger(),
-            .LiteralString => try self.parseString(),
-            .LiteralContextDependentNumber => try self.parseContextDependentNumber(),
-            .LiteralExtInstInteger => try self.parseLiteralExtInstInteger(),
-            .PairIdRefIdRef => try self.parsePhiSource(),
-            else => return self.todo("parse operand of type {s}", .{@tagName(kind)}),
+            .LiteralInteger => try self.parse_literal_integer(),
+            .LiteralString => try self.parse_string(),
+            .LiteralContextDependentNumber => try self.parse_context_dependent_number(),
+            .LiteralExtInstInteger => try self.parse_literal_ext_inst_integer(),
+            .PairIdRefIdRef => try self.parse_phi_source(),
+            else => return self.todo("parse operand of type {s}", .{@tag_name(kind)}),
         },
     }
 }
 
 /// Also handles parsing any required extra operands.
 fn parse_bit_enum(self: *Assembler, kind: spec.OperandKind) !void {
-    var tok = self.currentToken();
-    try self.expectToken(.value);
+    var tok = self.current_token();
+    try self.expect_token(.value);
 
-    var text = self.tokenText(tok);
+    var text = self.token_text(tok);
     if (std.mem.eql(u8, text, "None")) {
         try self.inst.operands.append(self.gpa, .{ .value = 0 });
         return;
@@ -581,15 +581,15 @@ fn parse_bit_enum(self: *Assembler, kind: spec.OperandKind) !void {
             if (std.mem.eql(u8, enumerant.name, text))
                 break enumerant;
         } else {
-            return self.fail(tok.start, "'{s}' is not a valid flag for bitmask {s}", .{ text, @tagName(kind) });
+            return self.fail(tok.start, "'{s}' is not a valid flag for bitmask {s}", .{ text, @tag_name(kind) });
         };
         mask |= enumerant.value;
-        if (!self.eatToken(.pipe))
+        if (!self.eat_token(.pipe))
             break;
 
-        tok = self.currentToken();
-        try self.expectToken(.value);
-        text = self.tokenText(tok);
+        tok = self.current_token();
+        try self.expect_token(.value);
+        text = self.token_text(tok);
     }
 
     try self.inst.operands.append(self.gpa, .{ .value = mask });
@@ -601,22 +601,22 @@ fn parse_bit_enum(self: *Assembler, kind: spec.OperandKind) !void {
             continue;
 
         for (enumerant.parameters) |param_kind| {
-            if (self.isAtInstructionBoundary()) {
-                return self.fail(self.currentToken().start, "missing required parameter for bit flag '{s}'", .{enumerant.name});
+            if (self.is_at_instruction_boundary()) {
+                return self.fail(self.current_token().start, "missing required parameter for bit flag '{s}'", .{enumerant.name});
             }
 
-            try self.parseOperand(param_kind);
+            try self.parse_operand(param_kind);
         }
     }
 }
 
 /// Also handles parsing any required extra operands.
 fn parse_value_enum(self: *Assembler, kind: spec.OperandKind) !void {
-    const tok = self.currentToken();
-    try self.expectToken(.value);
+    const tok = self.current_token();
+    try self.expect_token(.value);
 
-    const text = self.tokenText(tok);
-    const int_value = std.fmt.parseInt(u32, text, 0) catch null;
+    const text = self.token_text(tok);
+    const int_value = std.fmt.parse_int(u32, text, 0) catch null;
     const enumerant = for (kind.enumerants()) |enumerant| {
         if (int_value) |v| {
             if (v == enumerant.value) break enumerant;
@@ -624,76 +624,76 @@ fn parse_value_enum(self: *Assembler, kind: spec.OperandKind) !void {
             if (std.mem.eql(u8, enumerant.name, text)) break enumerant;
         }
     } else {
-        return self.fail(tok.start, "'{s}' is not a valid value for enumeration {s}", .{ text, @tagName(kind) });
+        return self.fail(tok.start, "'{s}' is not a valid value for enumeration {s}", .{ text, @tag_name(kind) });
     };
 
     try self.inst.operands.append(self.gpa, .{ .value = enumerant.value });
 
     for (enumerant.parameters) |param_kind| {
-        if (self.isAtInstructionBoundary()) {
-            return self.fail(self.currentToken().start, "missing required parameter for enum variant '{s}'", .{enumerant.name});
+        if (self.is_at_instruction_boundary()) {
+            return self.fail(self.current_token().start, "missing required parameter for enum variant '{s}'", .{enumerant.name});
         }
 
-        try self.parseOperand(param_kind);
+        try self.parse_operand(param_kind);
     }
 }
 
 fn parse_ref_id(self: *Assembler) !void {
-    const tok = self.currentToken();
-    try self.expectToken(.result_id);
+    const tok = self.current_token();
+    try self.expect_token(.result_id);
 
-    const name = self.tokenText(tok)[1..];
-    const entry = try self.value_map.getOrPut(self.gpa, name);
+    const name = self.token_text(tok)[1..];
+    const entry = try self.value_map.get_or_put(self.gpa, name);
     if (!entry.found_existing) {
         entry.value_ptr.* = .unresolved_forward_reference;
     }
 
-    const index: AsmValue.Ref = @intCast(entry.index);
+    const index: AsmValue.Ref = @int_cast(entry.index);
     try self.inst.operands.append(self.gpa, .{ .ref_id = index });
 }
 
 fn parse_literal_integer(self: *Assembler) !void {
-    const tok = self.currentToken();
-    try self.expectToken(.value);
+    const tok = self.current_token();
+    try self.expect_token(.value);
     // According to the SPIR-V machine readable grammar, a LiteralInteger
     // may consist of one or more words. From the SPIR-V docs it seems like there
     // only one instruction where multiple words are allowed, the literals that make up the
     // switch cases of OpSwitch. This case is handled separately, and so we just assume
     // everything is a 32-bit integer in this function.
-    const text = self.tokenText(tok);
-    const value = std.fmt.parseInt(u32, text, 0) catch {
+    const text = self.token_text(tok);
+    const value = std.fmt.parse_int(u32, text, 0) catch {
         return self.fail(tok.start, "'{s}' is not a valid 32-bit integer literal", .{text});
     };
     try self.inst.operands.append(self.gpa, .{ .literal32 = value });
 }
 
 fn parse_literal_ext_inst_integer(self: *Assembler) !void {
-    const tok = self.currentToken();
-    try self.expectToken(.value);
-    const text = self.tokenText(tok);
-    const value = std.fmt.parseInt(u32, text, 0) catch {
+    const tok = self.current_token();
+    try self.expect_token(.value);
+    const text = self.token_text(tok);
+    const value = std.fmt.parse_int(u32, text, 0) catch {
         return self.fail(tok.start, "'{s}' is not a valid 32-bit integer literal", .{text});
     };
     try self.inst.operands.append(self.gpa, .{ .literal32 = value });
 }
 
 fn parse_string(self: *Assembler) !void {
-    const tok = self.currentToken();
-    try self.expectToken(.string);
+    const tok = self.current_token();
+    try self.expect_token(.string);
     // Note, the string might not have a closing quote. In this case,
     // an error is already emitted but we are trying to continue processing
     // anyway, so in this function we have to deal with that situation.
-    const text = self.tokenText(tok);
+    const text = self.token_text(tok);
     assert(text.len > 0 and text[0] == '"');
     const literal = if (text.len != 1 and text[text.len - 1] == '"')
         text[1 .. text.len - 1]
     else
         text[1..];
 
-    const string_offset: u32 = @intCast(self.inst.string_bytes.items.len);
-    try self.inst.string_bytes.ensureUnusedCapacity(self.gpa, literal.len + 1);
-    self.inst.string_bytes.appendSliceAssumeCapacity(literal);
-    self.inst.string_bytes.appendAssumeCapacity(0);
+    const string_offset: u32 = @int_cast(self.inst.string_bytes.items.len);
+    try self.inst.string_bytes.ensure_unused_capacity(self.gpa, literal.len + 1);
+    self.inst.string_bytes.append_slice_assume_capacity(literal);
+    self.inst.string_bytes.append_assume_capacity(0);
 
     try self.inst.operands.append(self.gpa, .{ .string = string_offset });
 }
@@ -705,13 +705,13 @@ fn parse_context_dependent_number(self: *Assembler) !void {
     // operand type early and look at the result to see how we need to proceed.
     assert(self.inst.opcode == .OpConstant or self.inst.opcode == .OpSpecConstant);
 
-    const tok = self.currentToken();
-    const result = try self.resolveRef(self.inst.operands.items[0].ref_id);
-    const result_id = result.resultId();
+    const tok = self.current_token();
+    const result = try self.resolve_ref(self.inst.operands.items[0].ref_id);
+    const result_id = result.result_id();
     // We are going to cheat a little bit: The types we are interested in, int and float,
-    // are added to the module and cached via self.spv.intType and self.spv.floatType. Therefore,
+    // are added to the module and cached via self.spv.int_type and self.spv.float_type. Therefore,
     // we can determine the width of these types by directly checking the cache.
-    // This only works if the Assembler and codegen both use spv.intType and spv.floatType though.
+    // This only works if the Assembler and codegen both use spv.int_type and spv.float_type though.
     // We don't expect there to be many of these types, so just look it up every time.
     // TODO: Count be improved to be a little bit more efficent.
 
@@ -721,7 +721,7 @@ fn parse_context_dependent_number(self: *Assembler) !void {
             const id = entry.value_ptr.*;
             if (id != result_id) continue;
             const info = entry.key_ptr.*;
-            return try self.parseContextDependentInt(info.signedness, info.bits);
+            return try self.parse_context_dependent_int(info.signedness, info.bits);
         }
     }
 
@@ -732,9 +732,9 @@ fn parse_context_dependent_number(self: *Assembler) !void {
             if (id != result_id) continue;
             const info = entry.key_ptr.*;
             switch (info.bits) {
-                16 => try self.parseContextDependentFloat(16),
-                32 => try self.parseContextDependentFloat(32),
-                64 => try self.parseContextDependentFloat(64),
+                16 => try self.parse_context_dependent_float(16),
+                32 => try self.parse_context_dependent_float(32),
+                64 => try self.parse_context_dependent_float(64),
                 else => return self.fail(tok.start, "cannot parse {}-bit info literal", .{info.bits}),
             }
         }
@@ -744,52 +744,52 @@ fn parse_context_dependent_number(self: *Assembler) !void {
 }
 
 fn parse_context_dependent_int(self: *Assembler, signedness: std.builtin.Signedness, width: u32) !void {
-    const tok = self.currentToken();
-    try self.expectToken(.value);
+    const tok = self.current_token();
+    try self.expect_token(.value);
 
     if (width == 0 or width > 2 * @bitSizeOf(spec.Word)) {
         return self.fail(tok.start, "cannot parse {}-bit integer literal", .{width});
     }
 
-    const text = self.tokenText(tok);
+    const text = self.token_text(tok);
     invalid: {
         // Just parse the integer as the next larger integer type, and check if it overflows afterwards.
-        const int = std.fmt.parseInt(i128, text, 0) catch break :invalid;
+        const int = std.fmt.parse_int(i128, text, 0) catch break :invalid;
         const min = switch (signedness) {
             .unsigned => 0,
-            .signed => -(@as(i128, 1) << (@as(u7, @intCast(width)) - 1)),
+            .signed => -(@as(i128, 1) << (@as(u7, @int_cast(width)) - 1)),
         };
-        const max = (@as(i128, 1) << (@as(u7, @intCast(width)) - @intFromBool(signedness == .signed))) - 1;
+        const max = (@as(i128, 1) << (@as(u7, @int_cast(width)) - @int_from_bool(signedness == .signed))) - 1;
         if (int < min or int > max) {
             break :invalid;
         }
 
         // Note, we store the sign-extended version here.
         if (width <= @bitSizeOf(spec.Word)) {
-            try self.inst.operands.append(self.gpa, .{ .literal32 = @truncate(@as(u128, @bitCast(int))) });
+            try self.inst.operands.append(self.gpa, .{ .literal32 = @truncate(@as(u128, @bit_cast(int))) });
         } else {
-            try self.inst.operands.append(self.gpa, .{ .literal64 = @truncate(@as(u128, @bitCast(int))) });
+            try self.inst.operands.append(self.gpa, .{ .literal64 = @truncate(@as(u128, @bit_cast(int))) });
         }
         return;
     }
 
-    return self.fail(tok.start, "'{s}' is not a valid {s} {}-bit int literal", .{ text, @tagName(signedness), width });
+    return self.fail(tok.start, "'{s}' is not a valid {s} {}-bit int literal", .{ text, @tag_name(signedness), width });
 }
 
 fn parse_context_dependent_float(self: *Assembler, comptime width: u16) !void {
     const Float = std.meta.Float(width);
     const Int = std.meta.Int(.unsigned, width);
 
-    const tok = self.currentToken();
-    try self.expectToken(.value);
+    const tok = self.current_token();
+    try self.expect_token(.value);
 
-    const text = self.tokenText(tok);
+    const text = self.token_text(tok);
 
-    const value = std.fmt.parseFloat(Float, text) catch {
+    const value = std.fmt.parse_float(Float, text) catch {
         return self.fail(tok.start, "'{s}' is not a valid {}-bit float literal", .{ text, width });
     };
 
-    const float_bits: Int = @bitCast(value);
+    const float_bits: Int = @bit_cast(value);
     if (width <= @bitSizeOf(spec.Word)) {
         try self.inst.operands.append(self.gpa, .{ .literal32 = float_bits });
     } else {
@@ -799,34 +799,34 @@ fn parse_context_dependent_float(self: *Assembler, comptime width: u16) !void {
 }
 
 fn parse_phi_source(self: *Assembler) !void {
-    try self.parseRefId();
-    if (self.isAtInstructionBoundary()) {
-        return self.fail(self.currentToken().start, "missing phi block parent", .{});
+    try self.parse_ref_id();
+    if (self.is_at_instruction_boundary()) {
+        return self.fail(self.current_token().start, "missing phi block parent", .{});
     }
-    try self.parseRefId();
+    try self.parse_ref_id();
 }
 
 /// Returns whether the `current_token` cursor is currently pointing
 /// at the start of a new instruction.
 fn is_at_instruction_boundary(self: Assembler) bool {
-    return switch (self.currentToken().tag) {
+    return switch (self.current_token().tag) {
         .opcode, .result_id_assign, .eof => true,
         else => false,
     };
 }
 
 fn expect_token(self: *Assembler, tag: Token.Tag) !void {
-    if (self.eatToken(tag))
+    if (self.eat_token(tag))
         return;
 
-    return self.fail(self.currentToken().start, "unexpected {s}, expected {s}", .{
-        self.currentToken().tag.name(),
+    return self.fail(self.current_token().start, "unexpected {s}, expected {s}", .{
+        self.current_token().tag.name(),
         tag.name(),
     });
 }
 
 fn eat_token(self: *Assembler, tag: Token.Tag) bool {
-    if (self.testToken(tag)) {
+    if (self.test_token(tag)) {
         self.current_token += 1;
         return true;
     }
@@ -834,7 +834,7 @@ fn eat_token(self: *Assembler, tag: Token.Tag) bool {
 }
 
 fn test_token(self: Assembler, tag: Token.Tag) bool {
-    return self.currentToken().tag == tag;
+    return self.current_token().tag == tag;
 }
 
 fn current_token(self: Assembler) Token {
@@ -850,7 +850,7 @@ fn token_text(self: Assembler, tok: Token) []const u8 {
 fn tokenize(self: *Assembler) !void {
     var offset: u32 = 0;
     while (true) {
-        const tok = try self.nextToken(offset);
+        const tok = try self.next_token(offset);
         // Resolve result-id assignment now.
         // Note: If the previous token wasn't a result-id, just ignore it,
         // we will catch it while parsing.
@@ -924,7 +924,7 @@ fn next_token(self: *Assembler, start_offset: u32) !Token {
             },
             .value => switch (c) {
                 '"' => {
-                    try self.addError(offset, "unexpected string literal", .{});
+                    try self.add_error(offset, "unexpected string literal", .{});
                     // The user most likely just forgot a delimiter here - keep
                     // the tag as value.
                     break;
@@ -936,7 +936,7 @@ fn next_token(self: *Assembler, start_offset: u32) !Token {
                 '_', 'a'...'z', 'A'...'Z', '0'...'9' => {},
                 ' ', '\t', '\r', '\n', '=', '|' => break,
                 else => {
-                    try self.addError(offset, "illegal character in result-id", .{});
+                    try self.add_error(offset, "illegal character in result-id", .{});
                     // Again, probably a forgotten delimiter here.
                     break;
                 },
@@ -949,7 +949,7 @@ fn next_token(self: *Assembler, start_offset: u32) !Token {
             .string_end => switch (c) {
                 ' ', '\t', '\r', '\n', '=', '|' => break,
                 else => {
-                    try self.addError(offset, "unexpected character after string literal", .{});
+                    try self.add_error(offset, "unexpected character after string literal", .{});
                     // The token is still unmistakibly a string.
                     break;
                 },
@@ -967,17 +967,17 @@ fn next_token(self: *Assembler, start_offset: u32) !Token {
 
     switch (state) {
         .string, .escape => {
-            try self.addError(token_start, "unterminated string", .{});
+            try self.add_error(token_start, "unterminated string", .{});
         },
         .result_id => if (offset - token_start == 1) {
-            try self.addError(token_start, "result-id must have at least one name character", .{});
+            try self.add_error(token_start, "result-id must have at least one name character", .{});
         },
         .value => {
-            const text = self.tokenText(tok);
+            const text = self.token_text(tok);
             const prefix = "Op";
             const looks_like_opcode = text.len > prefix.len and
-                std.mem.startsWith(u8, text, prefix) and
-                std.ascii.isUpper(text[prefix.len]);
+                std.mem.starts_with(u8, text, prefix) and
+                std.ascii.is_upper(text[prefix.len]);
             if (looks_like_opcode)
                 tok.tag = .opcode;
         },

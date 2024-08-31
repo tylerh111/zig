@@ -1,14 +1,14 @@
 comptime {
     const array: [4]u8 = "aoeu".*;
     const sub_array = array[1..];
-    const int_ptr: *const u24 = @ptrCast(@alignCast(sub_array));
+    const int_ptr: *const u24 = @ptr_cast(@align_cast(sub_array));
     const deref = int_ptr.*;
     _ = deref;
 }
 comptime {
     const array: [4]u8 = "aoeu".*;
     const sub_array = array[1..];
-    const int_ptr: *const u32 = @ptrCast(@alignCast(sub_array));
+    const int_ptr: *const u32 = @ptr_cast(@align_cast(sub_array));
     const deref = int_ptr.*;
     _ = deref;
 }

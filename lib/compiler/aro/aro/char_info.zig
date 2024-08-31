@@ -2,7 +2,7 @@
 //! various C standards. All classification routines *do not* consider
 //! characters from the basic character set; it is assumed those will be
 //! checked separately
-//! isXidStart and isXidContinue are adapted from https://github.com/dtolnay/unicode-ident
+//! is_xid_start and is_xid_continue are adapted from https://github.com/dtolnay/unicode-ident
 
 const assert = @import("std").debug.assert;
 const tables = @import("char_info/identifier_tables.zig");
@@ -493,7 +493,7 @@ pub fn is_xid_start(c: u21) bool {
     const idx = c / 8 / tables.chunk;
     const chunk: usize = if (idx < tables.trie_start.len) tables.trie_start[idx] else 0;
     const offset = chunk * tables.chunk / 2 + c / 8 % tables.chunk;
-    return (tables.leaf[offset] >> (@as(u3, @intCast(c % 8)))) & 1 != 0;
+    return (tables.leaf[offset] >> (@as(u3, @int_cast(c % 8)))) & 1 != 0;
 }
 
 pub fn is_xid_continue(c: u21) bool {
@@ -501,34 +501,34 @@ pub fn is_xid_continue(c: u21) bool {
     const idx = c / 8 / tables.chunk;
     const chunk: usize = if (idx < tables.trie_continue.len) tables.trie_continue[idx] else 0;
     const offset = chunk * tables.chunk / 2 + c / 8 % tables.chunk;
-    return (tables.leaf[offset] >> (@as(u3, @intCast(c % 8)))) & 1 != 0;
+    return (tables.leaf[offset] >> (@as(u3, @int_cast(c % 8)))) & 1 != 0;
 }
 
-test "isXidStart / isXidContinue panic check" {
+test "is_xid_start / is_xid_continue panic check" {
     const std = @import("std");
     for (0x80..0x110000) |i| {
-        const c: u21 = @intCast(i);
-        if (std.unicode.utf8ValidCodepoint(c)) {
-            _ = isXidStart(c);
-            _ = isXidContinue(c);
+        const c: u21 = @int_cast(i);
+        if (std.unicode.utf8_valid_codepoint(c)) {
+            _ = is_xid_start(c);
+            _ = is_xid_continue(c);
         }
     }
 }
 
-test isXidStart {
+test is_xid_start {
     const std = @import("std");
-    try std.testing.expect(!isXidStart('᠑'));
-    try std.testing.expect(!isXidStart('™'));
-    try std.testing.expect(!isXidStart('£'));
-    try std.testing.expect(!isXidStart('\u{1f914}')); // 🤔
+    try std.testing.expect(!is_xid_start('᠑'));
+    try std.testing.expect(!is_xid_start('™'));
+    try std.testing.expect(!is_xid_start('£'));
+    try std.testing.expect(!is_xid_start('\u{1f914}')); // 🤔
 }
 
-test isXidContinue {
+test is_xid_continue {
     const std = @import("std");
-    try std.testing.expect(isXidContinue('᠑'));
-    try std.testing.expect(!isXidContinue('™'));
-    try std.testing.expect(!isXidContinue('£'));
-    try std.testing.expect(!isXidContinue('\u{1f914}')); // 🤔
+    try std.testing.expect(is_xid_continue('᠑'));
+    try std.testing.expect(!is_xid_continue('™'));
+    try std.testing.expect(!is_xid_continue('£'));
+    try std.testing.expect(!is_xid_continue('\u{1f914}')); // 🤔
 }
 
 pub const NfcQuickCheck = enum { no, maybe, yes };

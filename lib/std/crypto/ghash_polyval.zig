@@ -52,7 +52,7 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
 
         /// Initialize the GHASH state with a key, and a minimum number of block count.
         pub fn init_for_block_count(key: *const [key_length]u8, block_count: usize) Self {
-            var h = mem.readInt(u128, key[0..16], endian);
+            var h = mem.read_int(u128, key[0..16], endian);
             if (shift_key) {
                 // Shift the key by 1 bit to the left & reduce for GCM.
                 const carry = ((@as(u128, 0xc2) << 120) | 1) & (@as(u128, 0) -% (h >> 127));
@@ -84,7 +84,7 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
 
         /// Initialize the GHASH state with a key.
         pub fn init(key: *const [key_length]u8) Self {
-            return Self.initForBlockCount(key, math.maxInt(usize));
+            return Self.init_for_block_count(key, math.max_int(usize));
         }
 
         const Selector = enum { lo, hi, hi_lo };
@@ -96,28 +96,28 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
                     const product = asm (
                         \\ vpclmulqdq $0x11, %[x], %[y], %[out]
                         : [out] "=x" (-> @Vector(2, u64)),
-                        : [x] "x" (@as(@Vector(2, u64), @bitCast(x))),
-                          [y] "x" (@as(@Vector(2, u64), @bitCast(y))),
+                        : [x] "x" (@as(@Vector(2, u64), @bit_cast(x))),
+                          [y] "x" (@as(@Vector(2, u64), @bit_cast(y))),
                     );
-                    return @as(u128, @bitCast(product));
+                    return @as(u128, @bit_cast(product));
                 },
                 .lo => {
                     const product = asm (
                         \\ vpclmulqdq $0x00, %[x], %[y], %[out]
                         : [out] "=x" (-> @Vector(2, u64)),
-                        : [x] "x" (@as(@Vector(2, u64), @bitCast(x))),
-                          [y] "x" (@as(@Vector(2, u64), @bitCast(y))),
+                        : [x] "x" (@as(@Vector(2, u64), @bit_cast(x))),
+                          [y] "x" (@as(@Vector(2, u64), @bit_cast(y))),
                     );
-                    return @as(u128, @bitCast(product));
+                    return @as(u128, @bit_cast(product));
                 },
                 .hi_lo => {
                     const product = asm (
                         \\ vpclmulqdq $0x10, %[x], %[y], %[out]
                         : [out] "=x" (-> @Vector(2, u64)),
-                        : [x] "x" (@as(@Vector(2, u64), @bitCast(x))),
-                          [y] "x" (@as(@Vector(2, u64), @bitCast(y))),
+                        : [x] "x" (@as(@Vector(2, u64), @bit_cast(x))),
+                          [y] "x" (@as(@Vector(2, u64), @bit_cast(y))),
                     );
-                    return @as(u128, @bitCast(product));
+                    return @as(u128, @bit_cast(product));
                 },
             }
         }
@@ -129,36 +129,36 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
                     const product = asm (
                         \\ pmull2 %[out].1q, %[x].2d, %[y].2d
                         : [out] "=w" (-> @Vector(2, u64)),
-                        : [x] "w" (@as(@Vector(2, u64), @bitCast(x))),
-                          [y] "w" (@as(@Vector(2, u64), @bitCast(y))),
+                        : [x] "w" (@as(@Vector(2, u64), @bit_cast(x))),
+                          [y] "w" (@as(@Vector(2, u64), @bit_cast(y))),
                     );
-                    return @as(u128, @bitCast(product));
+                    return @as(u128, @bit_cast(product));
                 },
                 .lo => {
                     const product = asm (
                         \\ pmull %[out].1q, %[x].1d, %[y].1d
                         : [out] "=w" (-> @Vector(2, u64)),
-                        : [x] "w" (@as(@Vector(2, u64), @bitCast(x))),
-                          [y] "w" (@as(@Vector(2, u64), @bitCast(y))),
+                        : [x] "w" (@as(@Vector(2, u64), @bit_cast(x))),
+                          [y] "w" (@as(@Vector(2, u64), @bit_cast(y))),
                     );
-                    return @as(u128, @bitCast(product));
+                    return @as(u128, @bit_cast(product));
                 },
                 .hi_lo => {
                     const product = asm (
                         \\ pmull %[out].1q, %[x].1d, %[y].1d
                         : [out] "=w" (-> @Vector(2, u64)),
-                        : [x] "w" (@as(@Vector(2, u64), @bitCast(x >> 64))),
-                          [y] "w" (@as(@Vector(2, u64), @bitCast(y))),
+                        : [x] "w" (@as(@Vector(2, u64), @bit_cast(x >> 64))),
+                          [y] "w" (@as(@Vector(2, u64), @bit_cast(y))),
                     );
-                    return @as(u128, @bitCast(product));
+                    return @as(u128, @bit_cast(product));
                 },
             }
         }
 
-        /// clmulSoft128_64 is faster on platforms with no native 128-bit registers.
+        /// clmul_soft128_64 is faster on platforms with no native 128-bit registers.
         const clmulSoft = switch (builtin.cpu.arch) {
-            .wasm32, .wasm64 => clmulSoft128_64,
-            else => if (std.simd.suggestVectorLength(u128) != null) clmulSoft128 else clmulSoft128_64,
+            .wasm32, .wasm64 => clmul_soft128_64,
+            else => if (std.simd.suggest_vector_length(u128) != null) clmul_soft128 else clmul_soft128_64,
         };
 
         // Software carryless multiplication of two 64-bit integers using native 128-bit registers.
@@ -194,7 +194,7 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
 
         // Software carryless multiplication of two 32-bit integers.
         fn clmul_soft32(x: u32, y: u32) u64 {
-            const mulWide = math.mulWide;
+            const mul_wide = math.mul_wide;
             const a0 = x & 0x11111111;
             const a1 = x & 0x22222222;
             const a2 = x & 0x44444444;
@@ -203,10 +203,10 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
             const b1 = y & 0x22222222;
             const b2 = y & 0x44444444;
             const b3 = y & 0x88888888;
-            const c0 = mulWide(u32, a0, b0) ^ mulWide(u32, a1, b3) ^ mulWide(u32, a2, b2) ^ mulWide(u32, a3, b1);
-            const c1 = mulWide(u32, a0, b1) ^ mulWide(u32, a1, b0) ^ mulWide(u32, a2, b3) ^ mulWide(u32, a3, b2);
-            const c2 = mulWide(u32, a0, b2) ^ mulWide(u32, a1, b1) ^ mulWide(u32, a2, b0) ^ mulWide(u32, a3, b3);
-            const c3 = mulWide(u32, a0, b3) ^ mulWide(u32, a1, b2) ^ mulWide(u32, a2, b1) ^ mulWide(u32, a3, b0);
+            const c0 = mul_wide(u32, a0, b0) ^ mul_wide(u32, a1, b3) ^ mul_wide(u32, a2, b2) ^ mul_wide(u32, a3, b1);
+            const c1 = mul_wide(u32, a0, b1) ^ mul_wide(u32, a1, b0) ^ mul_wide(u32, a2, b3) ^ mul_wide(u32, a3, b2);
+            const c2 = mul_wide(u32, a0, b2) ^ mul_wide(u32, a1, b1) ^ mul_wide(u32, a2, b0) ^ mul_wide(u32, a3, b3);
+            const c3 = mul_wide(u32, a0, b3) ^ mul_wide(u32, a1, b2) ^ mul_wide(u32, a2, b1) ^ mul_wide(u32, a3, b0);
             return (c0 & 0x1111111111111111) | (c1 & 0x2222222222222222) | (c2 & 0x4444444444444444) | (c3 & 0x8888888888888888);
         }
 
@@ -218,9 +218,9 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
             const a1 = @as(u32, @truncate(a >> 32));
             const b0 = @as(u32, @truncate(b));
             const b1 = @as(u32, @truncate(b >> 32));
-            const lo = clmulSoft32(a0, b0);
-            const hi = clmulSoft32(a1, b1);
-            const mid = clmulSoft32(a0 ^ a1, b0 ^ b1) ^ lo ^ hi;
+            const lo = clmul_soft32(a0, b0);
+            const hi = clmul_soft32(a1, b1);
+            const mid = clmul_soft32(a0 ^ a1, b0 ^ b1) ^ lo ^ hi;
             const res_lo = lo ^ (mid << 32);
             const res_hi = hi ^ (mid >> 32);
             return @as(u128, res_lo) | (@as(u128, res_hi) << 64);
@@ -285,14 +285,14 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
             return d ^ hi;
         }
 
-        const has_pclmul = std.Target.x86.featureSetHas(builtin.cpu.features, .pclmul);
-        const has_avx = std.Target.x86.featureSetHas(builtin.cpu.features, .avx);
-        const has_armaes = std.Target.aarch64.featureSetHas(builtin.cpu.features, .aes);
+        const has_pclmul = std.Target.x86.feature_set_has(builtin.cpu.features, .pclmul);
+        const has_avx = std.Target.x86.feature_set_has(builtin.cpu.features, .avx);
+        const has_armaes = std.Target.aarch64.feature_set_has(builtin.cpu.features, .aes);
         // C backend doesn't currently support passing vectors to inline asm.
         const clmul = if (builtin.cpu.arch == .x86_64 and builtin.zig_backend != .stage2_c and has_pclmul and has_avx) impl: {
-            break :impl clmulPclmul;
+            break :impl clmul_pclmul;
         } else if (builtin.cpu.arch == .aarch64 and builtin.zig_backend != .stage2_c and has_armaes) impl: {
-            break :impl clmulPmull;
+            break :impl clmul_pmull;
         } else impl: {
             break :impl clmulSoft;
         };
@@ -307,46 +307,46 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
             if (builtin.mode != .ReleaseSmall and msg.len >= agg_16_threshold * block_length) {
                 // 16-blocks aggregated reduction
                 while (i + 256 <= msg.len) : (i += 256) {
-                    var u = clmul128(acc ^ mem.readInt(u128, msg[i..][0..16], endian), st.hx[15 - 0]);
+                    var u = clmul128(acc ^ mem.read_int(u128, msg[i..][0..16], endian), st.hx[15 - 0]);
                     comptime var j = 1;
                     inline while (j < 16) : (j += 1) {
-                        xor256(&u, clmul128(mem.readInt(u128, msg[i..][j * 16 ..][0..16], endian), st.hx[15 - j]));
+                        xor256(&u, clmul128(mem.read_int(u128, msg[i..][j * 16 ..][0..16], endian), st.hx[15 - j]));
                     }
                     acc = reduce(u);
                 }
             } else if (builtin.mode != .ReleaseSmall and msg.len >= agg_8_threshold * block_length) {
                 // 8-blocks aggregated reduction
                 while (i + 128 <= msg.len) : (i += 128) {
-                    var u = clmul128(acc ^ mem.readInt(u128, msg[i..][0..16], endian), st.hx[7 - 0]);
+                    var u = clmul128(acc ^ mem.read_int(u128, msg[i..][0..16], endian), st.hx[7 - 0]);
                     comptime var j = 1;
                     inline while (j < 8) : (j += 1) {
-                        xor256(&u, clmul128(mem.readInt(u128, msg[i..][j * 16 ..][0..16], endian), st.hx[7 - j]));
+                        xor256(&u, clmul128(mem.read_int(u128, msg[i..][j * 16 ..][0..16], endian), st.hx[7 - j]));
                     }
                     acc = reduce(u);
                 }
             } else if (builtin.mode != .ReleaseSmall and msg.len >= agg_4_threshold * block_length) {
                 // 4-blocks aggregated reduction
                 while (i + 64 <= msg.len) : (i += 64) {
-                    var u = clmul128(acc ^ mem.readInt(u128, msg[i..][0..16], endian), st.hx[3 - 0]);
+                    var u = clmul128(acc ^ mem.read_int(u128, msg[i..][0..16], endian), st.hx[3 - 0]);
                     comptime var j = 1;
                     inline while (j < 4) : (j += 1) {
-                        xor256(&u, clmul128(mem.readInt(u128, msg[i..][j * 16 ..][0..16], endian), st.hx[3 - j]));
+                        xor256(&u, clmul128(mem.read_int(u128, msg[i..][j * 16 ..][0..16], endian), st.hx[3 - j]));
                     }
                     acc = reduce(u);
                 }
             }
             // 2-blocks aggregated reduction
             while (i + 32 <= msg.len) : (i += 32) {
-                var u = clmul128(acc ^ mem.readInt(u128, msg[i..][0..16], endian), st.hx[1 - 0]);
+                var u = clmul128(acc ^ mem.read_int(u128, msg[i..][0..16], endian), st.hx[1 - 0]);
                 comptime var j = 1;
                 inline while (j < 2) : (j += 1) {
-                    xor256(&u, clmul128(mem.readInt(u128, msg[i..][j * 16 ..][0..16], endian), st.hx[1 - j]));
+                    xor256(&u, clmul128(mem.read_int(u128, msg[i..][j * 16 ..][0..16], endian), st.hx[1 - j]));
                 }
                 acc = reduce(u);
             }
             // remaining blocks
             if (i < msg.len) {
-                const u = clmul128(acc ^ mem.readInt(u128, msg[i..][0..16], endian), st.hx[0]);
+                const u = clmul128(acc ^ mem.read_int(u128, msg[i..][0..16], endian), st.hx[0]);
                 acc = reduce(u);
                 i += 16;
             }
@@ -401,9 +401,9 @@ fn Hash(comptime endian: std.builtin.Endian, comptime shift_key: bool) type {
         /// Compute the GHASH of the entire input.
         pub fn final(st: *Self, out: *[mac_length]u8) void {
             st.pad();
-            mem.writeInt(u128, out[0..16], st.acc, endian);
+            mem.write_int(u128, out[0..16], st.acc, endian);
 
-            utils.secureZero(u8, @as([*]u8, @ptrCast(st))[0..@sizeOf(Self)]);
+            utils.secure_zero(u8, @as([*]u8, @ptr_cast(st))[0..@size_of(Self)]);
         }
 
         /// Compute the GHASH of a message.
@@ -425,20 +425,20 @@ test "ghash" {
     st.update(&m);
     var out: [16]u8 = undefined;
     st.final(&out);
-    try htest.assertEqual("889295fa746e8b174bf4ec80a65dea41", &out);
+    try htest.assert_equal("889295fa746e8b174bf4ec80a65dea41", &out);
 
     st = Ghash.init(&key);
     st.update(m[0..100]);
     st.update(m[100..]);
     st.final(&out);
-    try htest.assertEqual("889295fa746e8b174bf4ec80a65dea41", &out);
+    try htest.assert_equal("889295fa746e8b174bf4ec80a65dea41", &out);
 }
 
 test "ghash2" {
     var key: [16]u8 = undefined;
     var i: usize = 0;
     while (i < key.len) : (i += 1) {
-        key[i] = @as(u8, @intCast(i * 15 + 1));
+        key[i] = @as(u8, @int_cast(i * 15 + 1));
     }
     const tvs = [_]struct { len: usize, hash: [:0]const u8 }{
         .{ .len = 5263, .hash = "b9395f37c131cd403a327ccf82ec016a" },
@@ -463,7 +463,7 @@ test "ghash2" {
         st.update(&m);
         var out: [16]u8 = undefined;
         st.final(&out);
-        try htest.assertEqual(tv.hash, &out);
+        try htest.assert_equal(tv.hash, &out);
     }
 }
 
@@ -475,11 +475,11 @@ test "polyval" {
     st.update(&m);
     var out: [16]u8 = undefined;
     st.final(&out);
-    try htest.assertEqual("0713c82b170eef25c8955ddf72c85ccb", &out);
+    try htest.assert_equal("0713c82b170eef25c8955ddf72c85ccb", &out);
 
     st = Polyval.init(&key);
     st.update(m[0..100]);
     st.update(m[100..]);
     st.final(&out);
-    try htest.assertEqual("0713c82b170eef25c8955ddf72c85ccb", &out);
+    try htest.assert_equal("0713c82b170eef25c8955ddf72c85ccb", &out);
 }

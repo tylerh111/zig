@@ -7,7 +7,7 @@ const std = @import("std");
 const rem_pio2_large = @import("rem_pio2_large.zig").rem_pio2_large;
 const math = std.math;
 
-const toint = 1.5 / math.floatEps(f64);
+const toint = 1.5 / math.float_eps(f64);
 // pi/4
 const pio4 = 0x1.921fb54442d18p-1;
 // invpio2:  53 bits of 2/pi
@@ -37,7 +37,7 @@ fn medium(ix: u32, x: f64, y: *[2]f64) i32 {
 
     // rint(x/(pi/2))
     @"fn" = x * invpio2 + toint - toint;
-    n = @intFromFloat(@"fn");
+    n = @int_from_float(@"fn");
     r = x - @"fn" * pio2_1;
     w = @"fn" * pio2_1t; // 1st round, good to 85 bits
     // Matters with directed rounding.
@@ -53,17 +53,17 @@ fn medium(ix: u32, x: f64, y: *[2]f64) i32 {
         w = @"fn" * pio2_1t;
     }
     y[0] = r - w;
-    ui = @bitCast(y[0]);
-    ey = @intCast((ui >> 52) & 0x7ff);
-    ex = @intCast(ix >> 20);
+    ui = @bit_cast(y[0]);
+    ey = @int_cast((ui >> 52) & 0x7ff);
+    ex = @int_cast(ix >> 20);
     if (ex - ey > 16) { // 2nd round, good to 118 bits
         t = r;
         w = @"fn" * pio2_2;
         r = t - w;
         w = @"fn" * pio2_2t - ((t - r) - w);
         y[0] = r - w;
-        ui = @bitCast(y[0]);
-        ey = @intCast((ui >> 52) & 0x7ff);
+        ui = @bit_cast(y[0]);
+        ey = @int_cast((ui >> 52) & 0x7ff);
         if (ex - ey > 49) { // 3rd round, good to 151 bits, covers all cases
             t = r;
             w = @"fn" * pio2_3;
@@ -91,7 +91,7 @@ pub fn rem_pio2(x: f64, y: *[2]f64) i32 {
     var i: i32 = undefined;
     var ui: u64 = undefined;
 
-    ui = @bitCast(x);
+    ui = @bit_cast(x);
     sign = ui >> 63 != 0;
     ix = @truncate((ui >> 32) & 0x7fffffff);
     if (ix <= 0x400f6a7a) { // |x| ~<= 5pi/4
@@ -167,22 +167,22 @@ pub fn rem_pio2(x: f64, y: *[2]f64) i32 {
         return 0;
     }
     // set z = scalbn(|x|,-ilogb(x)+23)
-    ui = @bitCast(x);
-    ui &= std.math.maxInt(u64) >> 12;
+    ui = @bit_cast(x);
+    ui &= std.math.max_int(u64) >> 12;
     ui |= @as(u64, 0x3ff + 23) << 52;
-    z = @bitCast(ui);
+    z = @bit_cast(ui);
 
     i = 0;
     while (i < 2) : (i += 1) {
-        tx[@intCast(i)] = @floatFromInt(@as(i32, @intFromFloat(z)));
-        z = (z - tx[@intCast(i)]) * 0x1p24;
+        tx[@int_cast(i)] = @float_from_int(@as(i32, @int_from_float(z)));
+        z = (z - tx[@int_cast(i)]) * 0x1p24;
     }
-    tx[@intCast(i)] = z;
+    tx[@int_cast(i)] = z;
     // skip zero terms, first term is non-zero
-    while (tx[@intCast(i)] == 0.0) {
+    while (tx[@int_cast(i)] == 0.0) {
         i -= 1;
     }
-    n = rem_pio2_large(tx[0..], ty[0..], @as(i32, @intCast((ix >> 20))) - (0x3ff + 23), i + 1, 1);
+    n = rem_pio2_large(tx[0..], ty[0..], @as(i32, @int_cast((ix >> 20))) - (0x3ff + 23), i + 1, 1);
     if (sign) {
         y[0] = -ty[0];
         y[1] = -ty[1];

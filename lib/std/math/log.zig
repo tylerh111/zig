@@ -18,7 +18,7 @@ pub fn log(comptime T: type, base: T, x: T) T {
         return @log(x);
     }
 
-    const float_base = math.lossyCast(f64, base);
+    const float_base = math.lossy_cast(f64, base);
     switch (@typeInfo(T)) {
         .ComptimeFloat => {
             return @as(comptime_float, @log(@as(f64, x)) / @log(float_base));
@@ -29,20 +29,20 @@ pub fn log(comptime T: type, base: T, x: T) T {
         },
 
         .Int => |IntType| switch (IntType.signedness) {
-            .signed => @compileError("log not implemented for signed integers"),
+            .signed => @compile_error("log not implemented for signed integers"),
             .unsigned => return @as(T, math.log_int(T, base, x)),
         },
 
         .Float => {
             switch (T) {
-                f32 => return @as(f32, @floatCast(@log(@as(f64, x)) / @log(float_base))),
+                f32 => return @as(f32, @float_cast(@log(@as(f64, x)) / @log(float_base))),
                 f64 => return @log(x) / @log(float_base),
-                else => @compileError("log not implemented for " ++ @typeName(T)),
+                else => @compile_error("log not implemented for " ++ @type_name(T)),
             }
         },
 
         else => {
-            @compileError("log expects integer or float, found '" ++ @typeName(T) ++ "'");
+            @compile_error("log expects integer or float, found '" ++ @type_name(T) ++ "'");
         },
     }
 }
@@ -58,9 +58,9 @@ test "log integer" {
 test "log float" {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f32, log(f32, 6, 0.23947), -0.797723, epsilon));
-    try expect(math.approxEqAbs(f32, log(f32, 89, 0.23947), -0.318432, epsilon));
-    try expect(math.approxEqAbs(f64, log(f64, 123897, 12389216414), 1.981724596, epsilon));
+    try expect(math.approx_eq_abs(f32, log(f32, 6, 0.23947), -0.797723, epsilon));
+    try expect(math.approx_eq_abs(f32, log(f32, 89, 0.23947), -0.318432, epsilon));
+    try expect(math.approx_eq_abs(f64, log(f64, 123897, 12389216414), 1.981724596, epsilon));
 }
 
 test "log float_special" {

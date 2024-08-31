@@ -9,13 +9,13 @@ const BitField = packed struct {
 
 test "offsets of non-byte-aligned fields" {
     comptime {
-        try expect(@bitOffsetOf(BitField, "a") == 0);
-        try expect(@bitOffsetOf(BitField, "b") == 3);
-        try expect(@bitOffsetOf(BitField, "c") == 6);
+        try expect(@bit_offset_of(BitField, "a") == 0);
+        try expect(@bit_offset_of(BitField, "b") == 3);
+        try expect(@bit_offset_of(BitField, "c") == 6);
 
-        try expect(@offsetOf(BitField, "a") == 0);
-        try expect(@offsetOf(BitField, "b") == 0);
-        try expect(@offsetOf(BitField, "c") == 0);
+        try expect(@offset_of(BitField, "a") == 0);
+        try expect(@offset_of(BitField, "b") == 0);
+        try expect(@offset_of(BitField, "c") == 0);
     }
 }
 

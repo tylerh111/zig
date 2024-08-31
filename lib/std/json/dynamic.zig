@@ -14,7 +14,7 @@ const ParseError = @import("./static.zig").ParseError;
 const JsonScanner = @import("./scanner.zig").Scanner;
 const AllocWhen = @import("./scanner.zig").AllocWhen;
 const Token = @import("./scanner.zig").Token;
-const isNumberFormattedLikeAnInteger = @import("./scanner.zig").isNumberFormattedLikeAnInteger;
+const is_number_formatted_like_an_integer = @import("./scanner.zig").is_number_formatted_like_an_integer;
 
 pub const ObjectMap = StringArrayHashMap(Value);
 pub const Array = ArrayList(Value);
@@ -33,15 +33,15 @@ pub const Value = union(enum) {
     object: ObjectMap,
 
     pub fn parse_from_number_slice(s: []const u8) Value {
-        if (!isNumberFormattedLikeAnInteger(s)) {
-            const f = std.fmt.parseFloat(f64, s) catch unreachable;
-            if (std.math.isFinite(f)) {
+        if (!is_number_formatted_like_an_integer(s)) {
+            const f = std.fmt.parse_float(f64, s) catch unreachable;
+            if (std.math.is_finite(f)) {
                 return Value{ .float = f };
             } else {
                 return Value{ .number_string = s };
             }
         }
-        if (std.fmt.parseInt(i64, s, 10)) |i| {
+        if (std.fmt.parse_int(i64, s, 10)) |i| {
             return Value{ .integer = i };
         } else |e| {
             switch (e) {
@@ -52,10 +52,10 @@ pub const Value = union(enum) {
     }
 
     pub fn dump(self: Value) void {
-        std.debug.lockStdErr();
-        defer std.debug.unlockStdErr();
+        std.debug.lock_std_err();
+        defer std.debug.unlock_std_err();
 
-        const stderr = std.io.getStdErr().writer();
+        const stderr = std.io.get_std_err().writer();
         stringify(self, .{}, stderr) catch return;
     }
 
@@ -69,13 +69,13 @@ pub const Value = union(enum) {
             .string => |inner| try jws.write(inner),
             .array => |inner| try jws.write(inner.items),
             .object => |inner| {
-                try jws.beginObject();
+                try jws.begin_object();
                 var it = inner.iterator();
                 while (it.next()) |entry| {
-                    try jws.objectField(entry.key_ptr.*);
+                    try jws.object_field(entry.key_ptr.*);
                     try jws.write(entry.value_ptr.*);
                 }
-                try jws.endObject();
+                try jws.end_object();
             },
         }
     }
@@ -92,23 +92,23 @@ pub const Value = union(enum) {
                 stack.items[stack.items.len - 1] == .array or
                 (stack.items[stack.items.len - 2] == .object and stack.items[stack.items.len - 1] == .string));
 
-            switch (try source.nextAllocMax(allocator, .alloc_always, options.max_value_len.?)) {
+            switch (try source.next_alloc_max(allocator, .alloc_always, options.max_value_len.?)) {
                 .allocated_string => |s| {
-                    return try handleCompleteValue(&stack, allocator, source, Value{ .string = s }, options) orelse continue;
+                    return try handle_complete_value(&stack, allocator, source, Value{ .string = s }, options) orelse continue;
                 },
                 .allocated_number => |slice| {
-                    return try handleCompleteValue(&stack, allocator, source, Value.parseFromNumberSlice(slice), options) orelse continue;
+                    return try handle_complete_value(&stack, allocator, source, Value.parse_from_number_slice(slice), options) orelse continue;
                 },
 
-                .null => return try handleCompleteValue(&stack, allocator, source, .null, options) orelse continue,
-                .true => return try handleCompleteValue(&stack, allocator, source, Value{ .bool = true }, options) orelse continue,
-                .false => return try handleCompleteValue(&stack, allocator, source, Value{ .bool = false }, options) orelse continue,
+                .null => return try handle_complete_value(&stack, allocator, source, .null, options) orelse continue,
+                .true => return try handle_complete_value(&stack, allocator, source, Value{ .bool = true }, options) orelse continue,
+                .false => return try handle_complete_value(&stack, allocator, source, Value{ .bool = false }, options) orelse continue,
 
                 .object_begin => {
-                    switch (try source.nextAllocMax(allocator, .alloc_always, options.max_value_len.?)) {
-                        .object_end => return try handleCompleteValue(&stack, allocator, source, Value{ .object = ObjectMap.init(allocator) }, options) orelse continue,
+                    switch (try source.next_alloc_max(allocator, .alloc_always, options.max_value_len.?)) {
+                        .object_end => return try handle_complete_value(&stack, allocator, source, Value{ .object = ObjectMap.init(allocator) }, options) orelse continue,
                         .allocated_string => |key| {
-                            try stack.appendSlice(&[_]Value{
+                            try stack.append_slice(&[_]Value{
                                 Value{ .object = ObjectMap.init(allocator) },
                                 Value{ .string = key },
                             });
@@ -119,7 +119,7 @@ pub const Value = union(enum) {
                 .array_begin => {
                     try stack.append(Value{ .array = Array.init(allocator) });
                 },
-                .array_end => return try handleCompleteValue(&stack, allocator, source, stack.pop(), options) orelse continue,
+                .array_end => return try handle_complete_value(&stack, allocator, source, stack.pop(), options) orelse continue,
 
                 else => unreachable,
             }
@@ -151,7 +151,7 @@ fn handle_complete_value(stack: *Array, allocator: Allocator, source: anytype, v
 
                 // This is an invalid state to leave the stack in,
                 // so we have to process the next token before we return.
-                switch (try source.nextAllocMax(allocator, .alloc_always, options.max_value_len.?)) {
+                switch (try source.next_alloc_max(allocator, .alloc_always, options.max_value_len.?)) {
                     .object_end => {
                         // This object is complete.
                         value = stack.pop();

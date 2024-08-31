@@ -1,6 +1,6 @@
 const std = @import("std");
 const expect = std.testing.expect;
-const c = @cImport(@cInclude("b.h"));
+const c = @c_import(@cInclude("b.h"));
 
 test "import C sub" {
     const result = c.sub(2, 1);

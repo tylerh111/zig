@@ -1,6 +1,6 @@
 pub fn main() void {
     var x: i8 = undefined;
-    const maybe_x = byPtr(&x);
+    const maybe_x = by_ptr(&x);
     assert(maybe_x != null);
     maybe_x.?.* = -1;
     assert(x == -1);

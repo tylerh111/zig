@@ -9,7 +9,7 @@ pub fn main() !void {
     defer arena_instance.deinit();
     const arena = arena_instance.allocator();
 
-    const preopens = try fs.wasi.preopensAlloc(arena);
+    const preopens = try fs.wasi.preopens_alloc(arena);
 
     for (preopens.names, 0..) |preopen, i| {
         std.debug.print("{}: {s}\n", .{ i, preopen });

@@ -32,9 +32,9 @@ fn perform_fn(comptime prefix_char: u8, start_value: i32) i32 {
 }
 
 test "perform fn" {
-    try expect(performFn('t', 1) == 6);
-    try expect(performFn('o', 0) == 1);
-    try expect(performFn('w', 99) == 99);
+    try expect(perform_fn('t', 1) == 6);
+    try expect(perform_fn('o', 0) == 1);
+    try expect(perform_fn('w', 99) == 99);
 }
 
 // test

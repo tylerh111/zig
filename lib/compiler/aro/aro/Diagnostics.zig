@@ -82,10 +82,10 @@ const Properties = struct {
     suppress_msvc: bool = false,
 
     pub fn make_opt(comptime str: []const u8) u16 {
-        return @offsetOf(Options, str);
+        return @offset_of(Options, str);
     }
     pub fn get_kind(prop: Properties, options: *Options) Kind {
-        const opt = @as([*]Kind, @ptrCast(options))[prop.opt orelse return prop.kind];
+        const opt = @as([*]Kind, @ptr_cast(options))[prop.opt orelse return prop.kind];
         if (opt == .default) return prop.kind;
         return opt;
     }
@@ -235,7 +235,7 @@ pub fn set(d: *Diagnostics, name: []const u8, to: Kind) !void {
             return;
         }
     }
-    try d.addExtra(.{}, .{
+    try d.add_extra(.{}, .{
         .tag = .unknown_warning,
         .extra = .{ .str = name },
     }, &.{}, true);
@@ -253,7 +253,7 @@ pub fn deinit(d: *Diagnostics) void {
 }
 
 pub fn add(comp: *Compilation, msg: Message, expansion_locs: []const Source.Location) Compilation.Error!void {
-    return comp.diagnostics.addExtra(comp.langopts, msg, expansion_locs, true);
+    return comp.diagnostics.add_extra(comp.langopts, msg, expansion_locs, true);
 }
 
 pub fn add_extra(
@@ -263,7 +263,7 @@ pub fn add_extra(
     expansion_locs: []const Source.Location,
     note_msg_loc: bool,
 ) Compilation.Error!void {
-    const kind = d.tagKind(msg.tag, langopts);
+    const kind = d.tag_kind(msg.tag, langopts);
     if (kind == .off) return;
     var copy = msg;
     copy.kind = kind;
@@ -275,20 +275,20 @@ pub fn add_extra(
         var i = expansion_locs.len - 1;
         const half = d.macro_backtrace_limit / 2;
         const limit = if (i < d.macro_backtrace_limit) 0 else i - half;
-        try d.list.ensureUnusedCapacity(
+        try d.list.ensure_unused_capacity(
             d.arena.child_allocator,
             if (limit == 0) expansion_locs.len else d.macro_backtrace_limit + 1,
         );
         while (i > limit) {
             i -= 1;
-            d.list.appendAssumeCapacity(.{
+            d.list.append_assume_capacity(.{
                 .tag = .expanded_from_here,
                 .kind = .note,
                 .loc = expansion_locs[i],
             });
         }
         if (limit != 0) {
-            d.list.appendAssumeCapacity(.{
+            d.list.append_assume_capacity(.{
                 .tag = .skipping_macro_backtrace,
                 .kind = .note,
                 .extra = .{ .unsigned = expansion_locs.len - d.macro_backtrace_limit },
@@ -296,7 +296,7 @@ pub fn add_extra(
             i = half -| 1;
             while (i > 0) {
                 i -= 1;
-                d.list.appendAssumeCapacity(.{
+                d.list.append_assume_capacity(.{
                     .tag = .expanded_from_here,
                     .kind = .note,
                     .loc = expansion_locs[i],
@@ -304,7 +304,7 @@ pub fn add_extra(
             }
         }
 
-        if (note_msg_loc) d.list.appendAssumeCapacity(.{
+        if (note_msg_loc) d.list.append_assume_capacity(.{
             .tag = .expanded_from_here,
             .kind = .note,
             .loc = msg.loc,
@@ -316,9 +316,9 @@ pub fn add_extra(
 
 pub fn render(comp: *Compilation, config: std.io.tty.Config) void {
     if (comp.diagnostics.list.items.len == 0) return;
-    var m = defaultMsgWriter(config);
+    var m = default_msg_writer(config);
     defer m.deinit();
-    renderMessages(comp, &m);
+    render_messages(comp, &m);
 }
 pub fn default_msg_writer(config: std.io.tty.Config) MsgWriter {
     return MsgWriter.init(config);
@@ -335,7 +335,7 @@ pub fn render_messages(comp: *Compilation, m: anytype) void {
             .off => continue, // happens if an error is added before it is disabled
             .default => unreachable,
         }
-        renderMessage(comp, m, msg);
+        render_message(comp, m, msg);
     }
     const w_s: []const u8 = if (warnings == 1) "" else "s";
     const e_s: []const u8 = if (errors == 1) "" else "s";
@@ -365,8 +365,8 @@ pub fn render_message(comp: *Compilation, m: anytype, msg: Message) void {
             => loc.byte_offset += msg.extra.invalid_escape.offset,
             else => {},
         }
-        const source = comp.getSource(loc.id);
-        var line_col = source.lineCol(loc);
+        const source = comp.get_source(loc.id);
+        var line_col = source.line_col(loc);
         line = line_col.line;
         end_with_splice = line_col.end_with_splice;
         if (msg.tag == .backslash_newline_escape) {
@@ -381,59 +381,59 @@ pub fn render_message(comp: *Compilation, m: anytype, msg: Message) void {
     m.start(msg.kind);
     const prop = msg.tag.property();
     switch (prop.extra) {
-        .str => printRt(m, prop.msg, .{"{s}"}, .{msg.extra.str}),
-        .tok_id => printRt(m, prop.msg, .{ "{s}", "{s}" }, .{
+        .str => print_rt(m, prop.msg, .{"{s}"}, .{msg.extra.str}),
+        .tok_id => print_rt(m, prop.msg, .{ "{s}", "{s}" }, .{
             msg.extra.tok_id.expected.symbol(),
             msg.extra.tok_id.actual.symbol(),
         }),
-        .tok_id_expected => printRt(m, prop.msg, .{"{s}"}, .{msg.extra.tok_id_expected.symbol()}),
-        .arguments => printRt(m, prop.msg, .{ "{d}", "{d}" }, .{
+        .tok_id_expected => print_rt(m, prop.msg, .{"{s}"}, .{msg.extra.tok_id_expected.symbol()}),
+        .arguments => print_rt(m, prop.msg, .{ "{d}", "{d}" }, .{
             msg.extra.arguments.expected,
             msg.extra.arguments.actual,
         }),
-        .codepoints => printRt(m, prop.msg, .{ "{X:0>4}", "{u}" }, .{
+        .codepoints => print_rt(m, prop.msg, .{ "{X:0>4}", "{u}" }, .{
             msg.extra.codepoints.actual,
             msg.extra.codepoints.resembles,
         }),
-        .attr_arg_count => printRt(m, prop.msg, .{ "{s}", "{d}" }, .{
-            @tagName(msg.extra.attr_arg_count.attribute),
+        .attr_arg_count => print_rt(m, prop.msg, .{ "{s}", "{d}" }, .{
+            @tag_name(msg.extra.attr_arg_count.attribute),
             msg.extra.attr_arg_count.expected,
         }),
-        .attr_arg_type => printRt(m, prop.msg, .{ "{s}", "{s}" }, .{
-            msg.extra.attr_arg_type.expected.toString(),
-            msg.extra.attr_arg_type.actual.toString(),
+        .attr_arg_type => print_rt(m, prop.msg, .{ "{s}", "{s}" }, .{
+            msg.extra.attr_arg_type.expected.to_string(),
+            msg.extra.attr_arg_type.actual.to_string(),
         }),
-        .actual_codepoint => printRt(m, prop.msg, .{"{X:0>4}"}, .{msg.extra.actual_codepoint}),
-        .ascii => printRt(m, prop.msg, .{"{c}"}, .{msg.extra.ascii}),
-        .unsigned => printRt(m, prop.msg, .{"{d}"}, .{msg.extra.unsigned}),
-        .pow_2_as_string => printRt(m, prop.msg, .{"{s}"}, .{switch (msg.extra.pow_2_as_string) {
+        .actual_codepoint => print_rt(m, prop.msg, .{"{X:0>4}"}, .{msg.extra.actual_codepoint}),
+        .ascii => print_rt(m, prop.msg, .{"{c}"}, .{msg.extra.ascii}),
+        .unsigned => print_rt(m, prop.msg, .{"{d}"}, .{msg.extra.unsigned}),
+        .pow_2_as_string => print_rt(m, prop.msg, .{"{s}"}, .{switch (msg.extra.pow_2_as_string) {
             63 => "9223372036854775808",
             64 => "18446744073709551616",
             127 => "170141183460469231731687303715884105728",
             128 => "340282366920938463463374607431768211456",
             else => unreachable,
         }}),
-        .signed => printRt(m, prop.msg, .{"{d}"}, .{msg.extra.signed}),
-        .attr_enum => printRt(m, prop.msg, .{ "{s}", "{s}" }, .{
-            @tagName(msg.extra.attr_enum.tag),
+        .signed => print_rt(m, prop.msg, .{"{d}"}, .{msg.extra.signed}),
+        .attr_enum => print_rt(m, prop.msg, .{ "{s}", "{s}" }, .{
+            @tag_name(msg.extra.attr_enum.tag),
             Attribute.Formatting.choices(msg.extra.attr_enum.tag),
         }),
-        .ignored_record_attr => printRt(m, prop.msg, .{ "{s}", "{s}" }, .{
-            @tagName(msg.extra.ignored_record_attr.tag),
-            @tagName(msg.extra.ignored_record_attr.specifier),
+        .ignored_record_attr => print_rt(m, prop.msg, .{ "{s}", "{s}" }, .{
+            @tag_name(msg.extra.ignored_record_attr.tag),
+            @tag_name(msg.extra.ignored_record_attr.specifier),
         }),
-        .builtin_with_header => printRt(m, prop.msg, .{ "{s}", "{s}" }, .{
-            @tagName(msg.extra.builtin_with_header.header),
-            Builtin.nameFromTag(msg.extra.builtin_with_header.builtin).span(),
+        .builtin_with_header => print_rt(m, prop.msg, .{ "{s}", "{s}" }, .{
+            @tag_name(msg.extra.builtin_with_header.header),
+            Builtin.name_from_tag(msg.extra.builtin_with_header.builtin).span(),
         }),
         .invalid_escape => {
-            if (std.ascii.isPrint(msg.extra.invalid_escape.char)) {
+            if (std.ascii.is_print(msg.extra.invalid_escape.char)) {
                 const str: [1]u8 = .{msg.extra.invalid_escape.char};
-                printRt(m, prop.msg, .{"{s}"}, .{&str});
+                print_rt(m, prop.msg, .{"{s}"}, .{&str});
             } else {
                 var buf: [3]u8 = undefined;
-                const str = std.fmt.bufPrint(&buf, "x{x}", .{std.fmt.fmtSliceHexLower(&.{msg.extra.invalid_escape.char})}) catch unreachable;
-                printRt(m, prop.msg, .{"{s}"}, .{str});
+                const str = std.fmt.buf_print(&buf, "x{x}", .{std.fmt.fmt_slice_hex_lower(&.{msg.extra.invalid_escape.char})}) catch unreachable;
+                print_rt(m, prop.msg, .{"{s}"}, .{str});
             }
         },
         .normalized => {
@@ -448,18 +448,18 @@ pub fn render_message(comp: *Compilation, m: anytype, msg: Message) void {
                         .bytes = bytes,
                         .i = 0,
                     };
-                    while (it.nextCodepoint()) |codepoint| {
+                    while (it.next_codepoint()) |codepoint| {
                         if (codepoint < 0x7F) {
-                            try writer.writeByte(@intCast(codepoint));
+                            try writer.write_byte(@int_cast(codepoint));
                         } else if (codepoint < 0xFFFF) {
-                            try writer.writeAll("\\u");
-                            try std.fmt.formatInt(codepoint, 16, .upper, .{
+                            try writer.write_all("\\u");
+                            try std.fmt.format_int(codepoint, 16, .upper, .{
                                 .fill = '0',
                                 .width = 4,
                             }, writer);
                         } else {
-                            try writer.writeAll("\\U");
-                            try std.fmt.formatInt(codepoint, 16, .upper, .{
+                            try writer.write_all("\\U");
+                            try std.fmt.format_int(codepoint, 16, .upper, .{
                                 .fill = '0',
                                 .width = 8,
                             }, writer);
@@ -467,7 +467,7 @@ pub fn render_message(comp: *Compilation, m: anytype, msg: Message) void {
                     }
                 }
             }.f;
-            printRt(m, prop.msg, .{"{s}"}, .{
+            print_rt(m, prop.msg, .{"{s}"}, .{
                 std.fmt.Formatter(f){ .data = msg.extra.normalized },
             });
         },
@@ -476,9 +476,9 @@ pub fn render_message(comp: *Compilation, m: anytype, msg: Message) void {
 
     if (prop.opt) |some| {
         if (msg.kind == .@"error" and prop.kind != .@"error") {
-            m.print(" [-Werror,-W{s}]", .{optName(some)});
+            m.print(" [-Werror,-W{s}]", .{opt_name(some)});
         } else if (msg.kind != .note) {
-            m.print(" [-W{s}]", .{optName(some)});
+            m.print(" [-W{s}]", .{opt_name(some)});
         }
     }
 
@@ -488,7 +488,7 @@ pub fn render_message(comp: *Compilation, m: anytype, msg: Message) void {
 fn print_rt(m: anytype, str: []const u8, comptime fmts: anytype, args: anytype) void {
     var i: usize = 0;
     inline for (fmts, args) |fmt, arg| {
-        const new = std.mem.indexOfPos(u8, str, i, fmt).?;
+        const new = std.mem.index_of_pos(u8, str, i, fmt).?;
         m.write(str[i..new]);
         i = new + fmt.len;
         m.print(fmt, .{arg});
@@ -497,12 +497,12 @@ fn print_rt(m: anytype, str: []const u8, comptime fmts: anytype, args: anytype) 
 }
 
 fn opt_name(offset: u16) []const u8 {
-    return std.meta.fieldNames(Options)[offset / @sizeOf(Kind)];
+    return std.meta.field_names(Options)[offset / @size_of(Kind)];
 }
 
 fn tag_kind(d: *Diagnostics, tag: Tag, langopts: LangOpts) Kind {
     const prop = tag.property();
-    var kind = prop.getKind(&d.options);
+    var kind = prop.get_kind(&d.options);
 
     if (prop.all) {
         if (d.options.all != .default) kind = d.options.all;
@@ -513,9 +513,9 @@ fn tag_kind(d: *Diagnostics, tag: Tag, langopts: LangOpts) Kind {
     if (prop.pedantic) {
         if (d.options.pedantic != .default) kind = d.options.pedantic;
     }
-    if (prop.suppress_version) |some| if (langopts.standard.atLeast(some)) return .off;
-    if (prop.suppress_unless_version) |some| if (!langopts.standard.atLeast(some)) return .off;
-    if (prop.suppress_gnu and langopts.standard.isExplicitGNU()) return .off;
+    if (prop.suppress_version) |some| if (langopts.standard.at_least(some)) return .off;
+    if (prop.suppress_unless_version) |some| if (!langopts.standard.at_least(some)) return .off;
+    if (prop.suppress_gnu and langopts.standard.is_explicit_gnu()) return .off;
     if (prop.suppress_gcc and langopts.emulate == .gcc) return .off;
     if (prop.suppress_clang and langopts.emulate == .clang) return .off;
     if (prop.suppress_msvc and langopts.emulate == .msvc) return .off;
@@ -528,16 +528,16 @@ const MsgWriter = struct {
     config: std.io.tty.Config,
 
     fn init(config: std.io.tty.Config) MsgWriter {
-        std.debug.lockStdErr();
+        std.debug.lock_std_err();
         return .{
-            .w = std.io.bufferedWriter(std.io.getStdErr().writer()),
+            .w = std.io.buffered_writer(std.io.get_std_err().writer()),
             .config = config,
         };
     }
 
     pub fn deinit(m: *MsgWriter) void {
         m.w.flush() catch {};
-        std.debug.unlockStdErr();
+        std.debug.unlock_std_err();
     }
 
     pub fn print(m: *MsgWriter, comptime fmt: []const u8, args: anytype) void {
@@ -545,23 +545,23 @@ const MsgWriter = struct {
     }
 
     fn write(m: *MsgWriter, msg: []const u8) void {
-        m.w.writer().writeAll(msg) catch {};
+        m.w.writer().write_all(msg) catch {};
     }
 
     fn set_color(m: *MsgWriter, color: std.io.tty.Color) void {
-        m.config.setColor(m.w.writer(), color) catch {};
+        m.config.set_color(m.w.writer(), color) catch {};
     }
 
     fn location(m: *MsgWriter, path: []const u8, line: u32, col: u32) void {
-        m.setColor(.bold);
+        m.set_color(.bold);
         m.print("{s}:{d}:{d}: ", .{ path, line, col });
     }
 
     fn start(m: *MsgWriter, kind: Kind) void {
         switch (kind) {
-            .@"fatal error", .@"error" => m.setColor(.bright_red),
-            .note => m.setColor(.bright_cyan),
-            .warning => m.setColor(.bright_magenta),
+            .@"fatal error", .@"error" => m.set_color(.bright_red),
+            .note => m.set_color(.bright_cyan),
+            .warning => m.set_color(.bright_magenta),
             .off, .default => unreachable,
         }
         m.write(switch (kind) {
@@ -571,21 +571,21 @@ const MsgWriter = struct {
             .warning => "warning: ",
             .off, .default => unreachable,
         });
-        m.setColor(.white);
+        m.set_color(.white);
     }
 
     fn end(m: *MsgWriter, maybe_line: ?[]const u8, col: u32, end_with_splice: bool) void {
         const line = maybe_line orelse {
             m.write("\n");
-            m.setColor(.reset);
+            m.set_color(.reset);
             return;
         };
         const trailer = if (end_with_splice) "\\ " else "";
-        m.setColor(.reset);
+        m.set_color(.reset);
         m.print("\n{s}{s}\n{s: >[3]}", .{ line, trailer, "", col });
-        m.setColor(.bold);
-        m.setColor(.bright_green);
+        m.set_color(.bold);
+        m.set_color(.bright_green);
         m.write("^\n");
-        m.setColor(.reset);
+        m.set_color(.reset);
     }
 };

@@ -32,10 +32,10 @@ pub const StreamSource = union(enum) {
         *StreamSource,
         SeekError,
         GetSeekPosError,
-        seekTo,
-        seekBy,
-        getPos,
-        getEndPos,
+        seek_to,
+        seek_by,
+        get_pos,
+        get_end_pos,
     );
 
     pub fn read(self: *StreamSource, dest: []u8) ReadError!usize {
@@ -56,33 +56,33 @@ pub const StreamSource = union(enum) {
 
     pub fn seek_to(self: *StreamSource, pos: u64) SeekError!void {
         switch (self.*) {
-            .buffer => |*x| return x.seekTo(pos),
-            .const_buffer => |*x| return x.seekTo(pos),
-            .file => |x| if (!has_file) unreachable else return x.seekTo(pos),
+            .buffer => |*x| return x.seek_to(pos),
+            .const_buffer => |*x| return x.seek_to(pos),
+            .file => |x| if (!has_file) unreachable else return x.seek_to(pos),
         }
     }
 
     pub fn seek_by(self: *StreamSource, amt: i64) SeekError!void {
         switch (self.*) {
-            .buffer => |*x| return x.seekBy(amt),
-            .const_buffer => |*x| return x.seekBy(amt),
-            .file => |x| if (!has_file) unreachable else return x.seekBy(amt),
+            .buffer => |*x| return x.seek_by(amt),
+            .const_buffer => |*x| return x.seek_by(amt),
+            .file => |x| if (!has_file) unreachable else return x.seek_by(amt),
         }
     }
 
     pub fn get_end_pos(self: *StreamSource) GetSeekPosError!u64 {
         switch (self.*) {
-            .buffer => |*x| return x.getEndPos(),
-            .const_buffer => |*x| return x.getEndPos(),
-            .file => |x| if (!has_file) unreachable else return x.getEndPos(),
+            .buffer => |*x| return x.get_end_pos(),
+            .const_buffer => |*x| return x.get_end_pos(),
+            .file => |x| if (!has_file) unreachable else return x.get_end_pos(),
         }
     }
 
     pub fn get_pos(self: *StreamSource) GetSeekPosError!u64 {
         switch (self.*) {
-            .buffer => |*x| return x.getPos(),
-            .const_buffer => |*x| return x.getPos(),
-            .file => |x| if (!has_file) unreachable else return x.getPos(),
+            .buffer => |*x| return x.get_pos(),
+            .const_buffer => |*x| return x.get_pos(),
+            .file => |x| if (!has_file) unreachable else return x.get_pos(),
         }
     }
 
@@ -100,28 +100,28 @@ pub const StreamSource = union(enum) {
 };
 
 test "refs" {
-    std.testing.refAllDecls(StreamSource);
+    std.testing.ref_all_decls(StreamSource);
 }
 
 test "mutable buffer" {
     var buffer: [64]u8 = undefined;
-    var source = StreamSource{ .buffer = std.io.fixedBufferStream(&buffer) };
+    var source = StreamSource{ .buffer = std.io.fixed_buffer_stream(&buffer) };
 
     var writer = source.writer();
 
-    try writer.writeAll("Hello, World!");
+    try writer.write_all("Hello, World!");
 
-    try std.testing.expectEqualStrings("Hello, World!", source.buffer.getWritten());
+    try std.testing.expect_equal_strings("Hello, World!", source.buffer.get_written());
 }
 
 test "const buffer" {
     const buffer: [64]u8 = "Hello, World!".* ++ ([1]u8{0xAA} ** 51);
-    var source = StreamSource{ .const_buffer = std.io.fixedBufferStream(&buffer) };
+    var source = StreamSource{ .const_buffer = std.io.fixed_buffer_stream(&buffer) };
 
     var reader = source.reader();
 
     var dst_buffer: [13]u8 = undefined;
-    try reader.readNoEof(&dst_buffer);
+    try reader.read_no_eof(&dst_buffer);
 
-    try std.testing.expectEqualStrings("Hello, World!", &dst_buffer);
+    try std.testing.expect_equal_strings("Hello, World!", &dst_buffer);
 }

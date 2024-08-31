@@ -62,12 +62,12 @@ pub fn create(
     objcopy.* = ObjCopy{
         .step = Step.init(.{
             .id = base_id,
-            .name = owner.fmt("objcopy {s}", .{input_file.getDisplayName()}),
+            .name = owner.fmt("objcopy {s}", .{input_file.get_display_name()}),
             .owner = owner,
             .makeFn = make,
         }),
         .input_file = input_file,
-        .basename = options.basename orelse input_file.getDisplayName(),
+        .basename = options.basename orelse input_file.get_display_name(),
         .output_file = std.Build.GeneratedFile{ .step = &objcopy.step },
         .output_file_debug = if (options.strip != .none and options.extract_to_separate_file) std.Build.GeneratedFile{ .step = &objcopy.step } else null,
         .format = options.format,
@@ -76,12 +76,12 @@ pub fn create(
         .strip = options.strip,
         .compress_debug = options.compress_debug,
     };
-    input_file.addStepDependencies(&objcopy.step);
+    input_file.add_step_dependencies(&objcopy.step);
     return objcopy;
 }
 
-/// deprecated: use getOutput
-pub const getOutputSource = getOutput;
+/// deprecated: use get_output
+pub const getOutputSource = get_output;
 
 pub fn get_output(objcopy: *const ObjCopy) std.Build.LazyPath {
     return .{ .generated = .{ .file = &objcopy.output_file } };
@@ -101,16 +101,16 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     // bytes when ObjCopy implementation is modified incompatibly.
     man.hash.add(@as(u32, 0xe18b7baf));
 
-    const full_src_path = objcopy.input_file.getPath2(b, step);
-    _ = try man.addFile(full_src_path, null);
-    man.hash.addOptionalBytes(objcopy.only_section);
-    man.hash.addOptional(objcopy.pad_to);
-    man.hash.addOptional(objcopy.format);
+    const full_src_path = objcopy.input_file.get_path2(b, step);
+    _ = try man.add_file(full_src_path, null);
+    man.hash.add_optional_bytes(objcopy.only_section);
+    man.hash.add_optional(objcopy.pad_to);
+    man.hash.add_optional(objcopy.format);
     man.hash.add(objcopy.compress_debug);
     man.hash.add(objcopy.strip);
     man.hash.add(objcopy.output_file_debug != null);
 
-    if (try step.cacheHit(&man)) {
+    if (try step.cache_hit(&man)) {
         // Cache hit, skip subprocess execution.
         const digest = man.final();
         objcopy.output_file.path = try b.cache_root.join(b.allocator, &.{
@@ -128,42 +128,42 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     const cache_path = "o" ++ fs.path.sep_str ++ digest;
     const full_dest_path = try b.cache_root.join(b.allocator, &.{ cache_path, objcopy.basename });
     const full_dest_path_debug = try b.cache_root.join(b.allocator, &.{ cache_path, b.fmt("{s}.debug", .{objcopy.basename}) });
-    b.cache_root.handle.makePath(cache_path) catch |err| {
+    b.cache_root.handle.make_path(cache_path) catch |err| {
         return step.fail("unable to make path {s}: {s}", .{ cache_path, @errorName(err) });
     };
 
     var argv = std.ArrayList([]const u8).init(b.allocator);
-    try argv.appendSlice(&.{ b.graph.zig_exe, "objcopy" });
+    try argv.append_slice(&.{ b.graph.zig_exe, "objcopy" });
 
     if (objcopy.only_section) |only_section| {
-        try argv.appendSlice(&.{ "-j", only_section });
+        try argv.append_slice(&.{ "-j", only_section });
     }
     switch (objcopy.strip) {
         .none => {},
-        .debug => try argv.appendSlice(&.{"--strip-debug"}),
-        .debug_and_symbols => try argv.appendSlice(&.{"--strip-all"}),
+        .debug => try argv.append_slice(&.{"--strip-debug"}),
+        .debug_and_symbols => try argv.append_slice(&.{"--strip-all"}),
     }
     if (objcopy.pad_to) |pad_to| {
-        try argv.appendSlice(&.{ "--pad-to", b.fmt("{d}", .{pad_to}) });
+        try argv.append_slice(&.{ "--pad-to", b.fmt("{d}", .{pad_to}) });
     }
     if (objcopy.format) |format| switch (format) {
-        .bin => try argv.appendSlice(&.{ "-O", "binary" }),
-        .hex => try argv.appendSlice(&.{ "-O", "hex" }),
-        .elf => try argv.appendSlice(&.{ "-O", "elf" }),
+        .bin => try argv.append_slice(&.{ "-O", "binary" }),
+        .hex => try argv.append_slice(&.{ "-O", "hex" }),
+        .elf => try argv.append_slice(&.{ "-O", "elf" }),
     };
     if (objcopy.compress_debug) {
-        try argv.appendSlice(&.{"--compress-debug-sections"});
+        try argv.append_slice(&.{"--compress-debug-sections"});
     }
     if (objcopy.output_file_debug != null) {
-        try argv.appendSlice(&.{b.fmt("--extract-to={s}", .{full_dest_path_debug})});
+        try argv.append_slice(&.{b.fmt("--extract-to={s}", .{full_dest_path_debug})});
     }
 
-    try argv.appendSlice(&.{ full_src_path, full_dest_path });
+    try argv.append_slice(&.{ full_src_path, full_dest_path });
 
     try argv.append("--listen=-");
-    _ = try step.evalZigProcess(argv.items, prog_node);
+    _ = try step.eval_zig_process(argv.items, prog_node);
 
     objcopy.output_file.path = full_dest_path;
     if (objcopy.output_file_debug) |*file| file.path = full_dest_path_debug;
-    try man.writeManifest();
+    try man.write_manifest();
 }

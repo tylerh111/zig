@@ -18,7 +18,7 @@ const Allocator = std.mem.Allocator;
 const UncheckedSliceWriter = @import("utils.zig").UncheckedSliceWriter;
 const SourceMappings = @import("source_mapping.zig").SourceMappings;
 const LineHandler = @import("lex.zig").LineHandler;
-const formsLineEndingPair = @import("source_mapping.zig").formsLineEndingPair;
+const forms_line_ending_pair = @import("source_mapping.zig").forms_line_ending_pair;
 
 /// `buf` must be at least as long as `source`
 /// In-place transformation is supported (i.e. `source` and `buf` can be the same slice)
@@ -52,7 +52,7 @@ pub fn remove_comments(source: []const u8, buf: []u8, source_mappings: ?*SourceM
                     pending_start = index;
                 },
                 '\r', '\n' => {
-                    _ = line_handler.incrementLineNumber(index);
+                    _ = line_handler.increment_line_number(index);
                     result.write(c);
                 },
                 else => {
@@ -70,24 +70,24 @@ pub fn remove_comments(source: []const u8, buf: []u8, source_mappings: ?*SourceM
                     state = .multiline_comment;
                 },
                 else => {
-                    _ = line_handler.maybeIncrementLineNumber(index);
-                    result.writeSlice(source[pending_start.? .. index + 1]);
+                    _ = line_handler.maybe_increment_line_number(index);
+                    result.write_slice(source[pending_start.? .. index + 1]);
                     pending_start = null;
                     state = .start;
                 },
             },
             .line_comment => switch (c) {
                 '\r', '\n' => {
-                    _ = line_handler.incrementLineNumber(index);
+                    _ = line_handler.increment_line_number(index);
                     result.write(c);
                     state = .start;
                 },
                 else => {},
             },
             .multiline_comment => switch (c) {
-                '\r' => try handleMultilineCarriageReturn(source, &line_handler, index, &result, source_mappings),
+                '\r' => try handle_multiline_carriage_return(source, &line_handler, index, &result, source_mappings),
                 '\n' => {
-                    _ = line_handler.incrementLineNumber(index);
+                    _ = line_handler.increment_line_number(index);
                     result.write(c);
                 },
                 '*' => state = .multiline_comment_end,
@@ -95,16 +95,16 @@ pub fn remove_comments(source: []const u8, buf: []u8, source_mappings: ?*SourceM
             },
             .multiline_comment_end => switch (c) {
                 '\r' => {
-                    try handleMultilineCarriageReturn(source, &line_handler, index, &result, source_mappings);
+                    try handle_multiline_carriage_return(source, &line_handler, index, &result, source_mappings);
                     // We only want to treat this as a newline if it's part of a CRLF pair. If it's
                     // not, then we still want to stay in .multiline_comment_end, so that e.g. `*<\r>/` still
                     // functions as a `*/` comment ending. Kinda crazy, but that's how the Win32 implementation works.
-                    if (formsLineEndingPair(source, '\r', index + 1)) {
+                    if (forms_line_ending_pair(source, '\r', index + 1)) {
                         state = .multiline_comment;
                     }
                 },
                 '\n' => {
-                    _ = line_handler.incrementLineNumber(index);
+                    _ = line_handler.increment_line_number(index);
                     result.write(c);
                     state = .multiline_comment;
                 },
@@ -117,7 +117,7 @@ pub fn remove_comments(source: []const u8, buf: []u8, source_mappings: ?*SourceM
             },
             .single_quoted => switch (c) {
                 '\r', '\n' => {
-                    _ = line_handler.incrementLineNumber(index);
+                    _ = line_handler.increment_line_number(index);
                     state = .start;
                     result.write(c);
                 },
@@ -135,7 +135,7 @@ pub fn remove_comments(source: []const u8, buf: []u8, source_mappings: ?*SourceM
             },
             .single_quoted_escape => switch (c) {
                 '\r', '\n' => {
-                    _ = line_handler.incrementLineNumber(index);
+                    _ = line_handler.increment_line_number(index);
                     state = .start;
                     result.write(c);
                 },
@@ -146,7 +146,7 @@ pub fn remove_comments(source: []const u8, buf: []u8, source_mappings: ?*SourceM
             },
             .double_quoted => switch (c) {
                 '\r', '\n' => {
-                    _ = line_handler.incrementLineNumber(index);
+                    _ = line_handler.increment_line_number(index);
                     state = .start;
                     result.write(c);
                 },
@@ -164,7 +164,7 @@ pub fn remove_comments(source: []const u8, buf: []u8, source_mappings: ?*SourceM
             },
             .double_quoted_escape => switch (c) {
                 '\r', '\n' => {
-                    _ = line_handler.incrementLineNumber(index);
+                    _ = line_handler.increment_line_number(index);
                     state = .start;
                     result.write(c);
                 },
@@ -175,7 +175,7 @@ pub fn remove_comments(source: []const u8, buf: []u8, source_mappings: ?*SourceM
             },
         }
     }
-    return result.getWritten();
+    return result.get_written();
 }
 
 inline fn handle_multiline_carriage_return(
@@ -191,12 +191,12 @@ inline fn handle_multiline_carriage_return(
     // but will not detect CRLF pairs since it only looks at the line ending before the
     // CR. So, we do a second (forward) check if the first fails to detect CRLF that is
     // not part of another pair.
-    const is_lfcr_pair = line_handler.currentIndexFormsLineEndingPair(index);
-    const is_crlf_pair = !is_lfcr_pair and formsLineEndingPair(source, '\r', index + 1);
+    const is_lfcr_pair = line_handler.current_index_forms_line_ending_pair(index);
+    const is_crlf_pair = !is_lfcr_pair and forms_line_ending_pair(source, '\r', index + 1);
     // Note: Bare \r within a multiline comment should *not* be treated as a line ending for the
     // purposes of removing comments, but *should* be treated as a line ending for the
     // purposes of line counting/source mapping
-    _ = line_handler.incrementLineNumber(index);
+    _ = line_handler.increment_line_number(index);
     // So only write the \r if it's part of a CRLF/LFCR pair
     if (is_lfcr_pair or is_crlf_pair) {
         result.write('\r');
@@ -216,30 +216,30 @@ inline fn handle_multiline_carriage_return(
 pub fn remove_comments_alloc(allocator: Allocator, source: []const u8, source_mappings: ?*SourceMappings) ![]u8 {
     const buf = try allocator.alloc(u8, source.len);
     errdefer allocator.free(buf);
-    const result = try removeComments(source, buf, source_mappings);
+    const result = try remove_comments(source, buf, source_mappings);
     return allocator.realloc(buf, result.len);
 }
 
 fn test_remove_comments(expected: []const u8, source: []const u8) !void {
-    const result = try removeCommentsAlloc(std.testing.allocator, source, null);
+    const result = try remove_comments_alloc(std.testing.allocator, source, null);
     defer std.testing.allocator.free(result);
 
-    try std.testing.expectEqualStrings(expected, result);
+    try std.testing.expect_equal_strings(expected, result);
 }
 
 test "basic" {
-    try testRemoveComments("", "// comment");
-    try testRemoveComments("", "/* comment */");
+    try test_remove_comments("", "// comment");
+    try test_remove_comments("", "/* comment */");
 }
 
 test "mixed" {
-    try testRemoveComments("hello", "hello// comment");
-    try testRemoveComments("hello", "hel/* comment */lo");
+    try test_remove_comments("hello", "hello// comment");
+    try test_remove_comments("hello", "hel/* comment */lo");
 }
 
 test "within a string" {
     // escaped " is \"
-    try testRemoveComments(
+    try test_remove_comments(
         \\blah"//som\"/*ething*/"BLAH
     ,
         \\blah"//som\"/*ething*/"BLAH
@@ -247,7 +247,7 @@ test "within a string" {
 }
 
 test "line comments retain newlines" {
-    try testRemoveComments(
+    try test_remove_comments(
         \\
         \\
         \\
@@ -257,11 +257,11 @@ test "line comments retain newlines" {
         \\// comment
     );
 
-    try testRemoveComments("\r\n", "//comment\r\n");
+    try test_remove_comments("\r\n", "//comment\r\n");
 }
 
 test "unfinished multiline comment" {
-    try testRemoveComments(
+    try test_remove_comments(
         \\unfinished
         \\
     ,
@@ -271,13 +271,13 @@ test "unfinished multiline comment" {
 }
 
 test "crazy" {
-    try testRemoveComments(
+    try test_remove_comments(
         \\blah"/*som*/\""BLAH
     ,
         \\blah"/*som*/\""/*ething*/BLAH
     );
 
-    try testRemoveComments(
+    try test_remove_comments(
         \\blah"/*som*/"BLAH RCDATA "BEGIN END
         \\
         \\
@@ -294,22 +294,22 @@ test "crazy" {
 
 test "multiline comment with newlines" {
     // bare \r is not treated as a newline
-    try testRemoveComments("blahblah", "blah/*some\rthing*/blah");
+    try test_remove_comments("blahblah", "blah/*some\rthing*/blah");
 
-    try testRemoveComments(
+    try test_remove_comments(
         \\blah
         \\blah
     ,
         \\blah/*some
         \\thing*/blah
     );
-    try testRemoveComments(
+    try test_remove_comments(
         "blah\r\nblah",
         "blah/*some\r\nthing*/blah",
     );
 
     // handle *<not /> correctly
-    try testRemoveComments(
+    try test_remove_comments(
         \\blah
         \\
         \\
@@ -321,14 +321,14 @@ test "multiline comment with newlines" {
 }
 
 test "comments appended to a line" {
-    try testRemoveComments(
+    try test_remove_comments(
         \\blah 
         \\blah
     ,
         \\blah // line comment
         \\blah
     );
-    try testRemoveComments(
+    try test_remove_comments(
         "blah \r\nblah",
         "blah // line comment\r\nblah",
     );
@@ -344,15 +344,15 @@ test "remove comments with mappings" {
     try mappings.set(3, 3, 0);
     defer mappings.deinit(allocator);
 
-    const result = try removeComments(&mut_source, &mut_source, &mappings);
+    const result = try remove_comments(&mut_source, &mut_source, &mappings);
 
-    try std.testing.expectEqualStrings("blahblah", result);
-    try std.testing.expectEqual(@as(usize, 1), mappings.end_line);
-    try std.testing.expectEqual(@as(usize, 3), mappings.getCorrespondingSpan(1).?.end_line);
+    try std.testing.expect_equal_strings("blahblah", result);
+    try std.testing.expect_equal(@as(usize, 1), mappings.end_line);
+    try std.testing.expect_equal(@as(usize, 3), mappings.get_corresponding_span(1).?.end_line);
 }
 
 test "in place" {
     var mut_source = "blah /* comment */ blah".*;
-    const result = try removeComments(&mut_source, &mut_source, null);
-    try std.testing.expectEqualStrings("blah  blah", result);
+    const result = try remove_comments(&mut_source, &mut_source, null);
+    try std.testing.expect_equal_strings("blah  blah", result);
 }

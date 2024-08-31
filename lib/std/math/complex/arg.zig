@@ -14,5 +14,5 @@ const epsilon = 0.0001;
 test arg {
     const a = Complex(f32).init(5, 3);
     const c = arg(a);
-    try testing.expect(math.approxEqAbs(f32, c, 0.540420, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c, 0.540420, epsilon));
 }

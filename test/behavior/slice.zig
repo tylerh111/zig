@@ -2,9 +2,9 @@ const builtin = @import("builtin");
 const std = @import("std");
 const assert = std.debug.assert;
 const expect = std.testing.expect;
-const expectEqualSlices = std.testing.expectEqualSlices;
-const expectEqualStrings = std.testing.expectEqualStrings;
-const expectEqual = std.testing.expectEqual;
+const expect_equal_slices = std.testing.expect_equal_slices;
+const expect_equal_strings = std.testing.expect_equal_strings;
+const expect_equal = std.testing.expect_equal;
 const mem = std.mem;
 
 // comptime array passed as slice argument
@@ -19,13 +19,13 @@ comptime {
         }
 
         fn index_of_scalar(comptime T: type, slice: []const T, value: T) ?usize {
-            return indexOfScalarPos(T, slice, 0, value);
+            return index_of_scalar_pos(T, slice, 0, value);
         }
     };
     const unsigned = [_]type{ c_uint, c_ulong, c_ulonglong };
     const list: []const type = &unsigned;
-    const pos = S.indexOfScalar(type, list, c_ulong).?;
-    if (pos != 1) @compileError("bad pos");
+    const pos = S.index_of_scalar(type, list, c_ulong).?;
+    if (pos != 1) @compile_error("bad pos");
 }
 
 test "slicing" {
@@ -70,7 +70,7 @@ test "implicitly cast array of size 0 to slice" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     var msg = [_]u8{};
-    try assertLenIsZero(&msg);
+    try assert_len_is_zero(&msg);
 }
 
 fn assert_len_is_zero(msg: []const u8) !void {
@@ -88,8 +88,8 @@ test "access len index of sentinel-terminated slice" {
             try expect(slice[5] == 0);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "comptime slice of slice preserves comptime var" {
@@ -126,12 +126,12 @@ test "generic malloc free" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    const a = memAlloc(u8, 10) catch unreachable;
-    memFree(u8, a);
+    const a = mem_alloc(u8, 10) catch unreachable;
+    mem_free(u8, a);
 }
 var some_mem: [100]u8 = undefined;
 fn mem_alloc(comptime T: type, n: usize) anyerror![]T {
-    return @as([*]T, @ptrCast(&some_mem[0]))[0..n];
+    return @as([*]T, @ptr_cast(&some_mem[0]))[0..n];
 }
 fn mem_free(comptime T: type, memory: []T) void {
     _ = memory;
@@ -143,18 +143,18 @@ test "slice of hardcoded address to pointer" {
             const pointer = @as([*]u8, @ptrFromInt(0x04))[0..2];
             comptime assert(@TypeOf(pointer) == *[2]u8);
             const slice: []const u8 = pointer;
-            try expect(@intFromPtr(slice.ptr) == 4);
+            try expect(@int_from_ptr(slice.ptr) == 4);
             try expect(slice.len == 2);
         }
     };
 
-    try S.doTheTest();
+    try S.do_the_test();
 }
 
 test "comptime slice of pointer preserves comptime var" {
     comptime {
         var buff: [10]u8 = undefined;
-        var a = @as([*]u8, @ptrCast(&buff));
+        var a = @as([*]u8, @ptr_cast(&buff));
         a[0..1][0] = 1;
         try expect(buff[0..][0..][0] == 1);
     }
@@ -163,7 +163,7 @@ test "comptime slice of pointer preserves comptime var" {
 test "comptime pointer cast array and then slice" {
     const array = [_]u8{ 1, 2, 3, 4, 5, 6, 7, 8 };
 
-    const ptrA: [*]const u8 = @as([*]const u8, @ptrCast(&array));
+    const ptrA: [*]const u8 = @as([*]const u8, @ptr_cast(&array));
     const sliceA: []const u8 = ptrA[0..2];
 
     const ptrB: [*]const u8 = &array;
@@ -189,7 +189,7 @@ test "slicing pointer by length" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const array = [_]u8{ 1, 2, 3, 4, 5, 6, 7, 8 };
-    const ptr: [*]const u8 = @as([*]const u8, @ptrCast(&array));
+    const ptr: [*]const u8 = @as([*]const u8, @ptr_cast(&array));
     const slice = ptr[1..][0..5];
     try expect(slice.len == 5);
     var i: usize = 0;
@@ -201,10 +201,10 @@ test "slicing pointer by length" {
 const x = @as([*]i32, @ptrFromInt(0x1000))[0..0x500];
 const y = x[0x100..];
 test "compile time slice of pointer to hard coded address" {
-    try expect(@intFromPtr(x) == 0x1000);
+    try expect(@int_from_ptr(x) == 0x1000);
     try expect(x.len == 0x500);
 
-    try expect(@intFromPtr(y) == 0x1400);
+    try expect(@int_from_ptr(y) == 0x1400);
     try expect(y.len == 0x400);
 }
 
@@ -239,7 +239,7 @@ test "runtime safety lets us slice from len..len" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     var an_array = [_]u8{ 1, 2, 3 };
-    try expect(mem.eql(u8, sliceFromLenToLen(an_array[0..], 3, 3), ""));
+    try expect(mem.eql(u8, slice_from_len_to_len(an_array[0..], 3, 3), ""));
 }
 
 fn slice_from_len_to_len(a_slice: []u8, start: usize, end: usize) []u8 {
@@ -265,7 +265,7 @@ test "C pointer slice access" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     var buf: [10]u32 = [1]u32{42} ** 10;
-    const c_ptr = @as([*c]const u32, @ptrCast(&buf));
+    const c_ptr = @as([*c]const u32, @ptr_cast(&buf));
 
     var runtime_zero: usize = 0;
     _ = &runtime_zero;
@@ -278,8 +278,8 @@ test "C pointer slice access" {
 }
 
 test "comptime slices are disambiguated" {
-    try expect(sliceSum(&[_]u8{ 1, 2 }) == 3);
-    try expect(sliceSum(&[_]u8{ 3, 4 }) == 7);
+    try expect(slice_sum(&[_]u8{ 1, 2 }) == 3);
+    try expect(slice_sum(&[_]u8{ 3, 4 }) == 7);
 }
 
 fn slice_sum(comptime q: []const u8) i32 {
@@ -345,11 +345,11 @@ test "empty array to slice" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
-test "@ptrCast slice to pointer" {
+test "@ptr_cast slice to pointer" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
@@ -358,13 +358,13 @@ test "@ptrCast slice to pointer" {
         fn do_the_test() !void {
             var array align(@alignOf(u16)) = [5]u8{ 0xff, 0xff, 0xff, 0xff, 0xff };
             const slice: []align(@alignOf(u16)) u8 = &array;
-            const ptr: *u16 = @ptrCast(slice);
+            const ptr: *u16 = @ptr_cast(slice);
             try expect(ptr.* == 65535);
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "slice multi-pointer without end" {
@@ -372,8 +372,8 @@ test "slice multi-pointer without end" {
 
     const S = struct {
         fn do_the_test() !void {
-            try testPointer();
-            try testPointerZ();
+            try test_pointer();
+            try test_pointer_z();
         }
 
         fn test_pointer() !void {
@@ -399,8 +399,8 @@ test "slice multi-pointer without end" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "slice syntax resulting in pointer-to-array" {
@@ -411,26 +411,26 @@ test "slice syntax resulting in pointer-to-array" {
 
     const S = struct {
         fn do_the_test() !void {
-            try testArray();
-            try testArrayZ();
-            try testArray0();
-            try testArrayAlign();
-            try testPointer();
-            try testPointerZ();
-            try testPointer0();
-            try testPointerAlign();
-            try testSlice();
-            try testSliceZ();
-            try testSliceOpt();
-            try testSliceAlign();
-            try testConcatStrLiterals();
-            try testSliceLength();
-            try testSliceLengthZ();
-            try testArrayLength();
-            try testArrayLengthZ();
-            try testMultiPointer();
-            try testMultiPointerLengthZ();
-            try testSingleItemPointer();
+            try test_array();
+            try test_array_z();
+            try test_array0();
+            try test_array_align();
+            try test_pointer();
+            try test_pointer_z();
+            try test_pointer0();
+            try test_pointer_align();
+            try test_slice();
+            try test_slice_z();
+            try test_slice_opt();
+            try test_slice_align();
+            try test_concat_str_literals();
+            try test_slice_length();
+            try test_slice_length_z();
+            try test_array_length();
+            try test_array_length_z();
+            try test_multi_pointer();
+            try test_multi_pointer_length_z();
+            try test_single_item_pointer();
         }
 
         fn test_array() !void {
@@ -517,7 +517,7 @@ test "slice syntax resulting in pointer-to-array" {
             var slice: [:0]u8 = &array;
             comptime assert(@TypeOf(slice[1..3]) == *[2]u8);
             comptime assert(@TypeOf(slice[1..3 :4]) == *[2:4]u8);
-            if (@inComptime()) {
+            if (@in_comptime()) {
                 comptime assert(@TypeOf(slice[1..]) == *[4:0]u8);
             } else {
                 comptime assert(@TypeOf(slice[1..]) == [:0]u8);
@@ -542,8 +542,8 @@ test "slice syntax resulting in pointer-to-array" {
         }
 
         fn test_concat_str_literals() !void {
-            try expectEqualSlices(u8, "ab", "a"[0..] ++ "b"[0..]);
-            try expectEqualSlices(u8, "ab", "a"[0.. :0] ++ "b"[0.. :0]);
+            try expect_equal_slices(u8, "ab", "a"[0..] ++ "b"[0..]);
+            try expect_equal_slices(u8, "ab", "a"[0.. :0] ++ "b"[0.. :0]);
         }
 
         fn test_slice_length() !void {
@@ -619,8 +619,8 @@ test "slice syntax resulting in pointer-to-array" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "slice pointer-to-array null terminated" {
@@ -710,8 +710,8 @@ test "type coercion of pointer to anon struct literal to pointer to slice" {
             try expect(mem.eql(u8, slice2[2], "world!"));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "array concat of slices gives ptr to array" {
@@ -823,12 +823,12 @@ test "slice field ptr const" {
     const const_slice: []const u8 = "string";
 
     const const_ptr_const_slice = &const_slice;
-    try expectEqual(*const []const u8, @TypeOf(&const_ptr_const_slice.*));
-    try expectEqual(*const [*]const u8, @TypeOf(&const_ptr_const_slice.ptr));
+    try expect_equal(*const []const u8, @TypeOf(&const_ptr_const_slice.*));
+    try expect_equal(*const [*]const u8, @TypeOf(&const_ptr_const_slice.ptr));
 
     var var_ptr_const_slice = &const_slice;
-    try expectEqual(*const []const u8, @TypeOf(&var_ptr_const_slice.*));
-    try expectEqual(*const [*]const u8, @TypeOf(&var_ptr_const_slice.ptr));
+    try expect_equal(*const []const u8, @TypeOf(&var_ptr_const_slice.*));
+    try expect_equal(*const [*]const u8, @TypeOf(&var_ptr_const_slice.ptr));
 }
 
 test "slice field ptr var" {
@@ -837,12 +837,12 @@ test "slice field ptr var" {
     var var_slice: []const u8 = "string";
 
     var var_ptr_var_slice = &var_slice;
-    try expectEqual(*[]const u8, @TypeOf(&var_ptr_var_slice.*));
-    try expectEqual(*[*]const u8, @TypeOf(&var_ptr_var_slice.ptr));
+    try expect_equal(*[]const u8, @TypeOf(&var_ptr_var_slice.*));
+    try expect_equal(*[*]const u8, @TypeOf(&var_ptr_var_slice.ptr));
 
     const const_ptr_var_slice = &var_slice;
-    try expectEqual(*[]const u8, @TypeOf(&const_ptr_var_slice.*));
-    try expectEqual(*[*]const u8, @TypeOf(&const_ptr_var_slice.ptr));
+    try expect_equal(*[]const u8, @TypeOf(&const_ptr_var_slice.*));
+    try expect_equal(*[*]const u8, @TypeOf(&const_ptr_var_slice.ptr));
 }
 
 test "global slice field access" {
@@ -858,7 +858,7 @@ test "global slice field access" {
     S.slice = "string";
     S.slice.ptr += 1;
     S.slice.len -= 2;
-    try expectEqualStrings("trin", S.slice);
+    try expect_equal_strings("trin", S.slice);
 }
 
 test "slice of void" {
@@ -894,14 +894,14 @@ test "empty slice ptr is non null" {
     {
         const empty_slice: []u8 = &[_]u8{};
         const p: [*]u8 = empty_slice.ptr + 0;
-        const t = @as([*]i8, @ptrCast(p));
-        try expect(@intFromPtr(t) == @intFromPtr(empty_slice.ptr));
+        const t = @as([*]i8, @ptr_cast(p));
+        try expect(@int_from_ptr(t) == @int_from_ptr(empty_slice.ptr));
     }
     {
         const empty_slice: []u8 = &.{};
         const p: [*]u8 = empty_slice.ptr + 0;
-        const t = @as([*]i8, @ptrCast(p));
-        try expect(@intFromPtr(t) == @intFromPtr(empty_slice.ptr));
+        const t = @as([*]i8, @ptr_cast(p));
+        try expect(@int_from_ptr(t) == @int_from_ptr(empty_slice.ptr));
     }
 }
 
@@ -912,7 +912,7 @@ test "slice decays to many pointer" {
 
     var buf: [8]u8 = "abcdefg\x00".*;
     const p: [*:0]const u8 = buf[0..7 :0];
-    try expectEqualStrings(buf[0..7], std.mem.span(p));
+    try expect_equal_strings(buf[0..7], std.mem.span(p));
 }
 
 test "write through pointer to optional slice arg" {
@@ -932,7 +932,7 @@ test "write through pointer to optional slice arg" {
     };
     var foo: ?[]const u8 = null;
     try S.bar(&foo);
-    try expectEqualStrings(foo.?, "ok");
+    try expect_equal_strings(foo.?, "ok");
 }
 
 test "modify slice length at comptime" {
@@ -947,8 +947,8 @@ test "modify slice length at comptime" {
     s.len += 1;
     const b = s;
 
-    try expectEqualSlices(u8, &.{10}, a);
-    try expectEqualSlices(u8, &.{ 10, 20 }, b);
+    try expect_equal_slices(u8, &.{10}, a);
+    try expect_equal_slices(u8, &.{ 10, 20 }, b);
 }
 
 test "slicing zero length array field of struct" {
@@ -976,11 +976,11 @@ test "slicing slices gives correct result" {
 
     const foo = "1234";
     const bar = foo[0..4];
-    try expectEqualStrings("1234", bar);
-    try expectEqualStrings("2", bar[1..2]);
-    try expectEqualStrings("3", bar[2..3]);
-    try expectEqualStrings("4", bar[3..4]);
-    try expectEqualStrings("34", bar[2..4]);
+    try expect_equal_strings("1234", bar);
+    try expect_equal_strings("2", bar[1..2]);
+    try expect_equal_strings("3", bar[2..3]);
+    try expect_equal_strings("4", bar[3..4]);
+    try expect_equal_strings("34", bar[2..4]);
 }
 
 test "get address of element of zero-sized slice" {

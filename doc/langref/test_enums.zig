@@ -20,9 +20,9 @@ const Value = enum(u2) {
 // Now you can cast between u2 and Value.
 // The ordinal value starts from 0, counting up by 1 from the previous member.
 test "enum ordinal value" {
-    try expect(@intFromEnum(Value.zero) == 0);
-    try expect(@intFromEnum(Value.one) == 1);
-    try expect(@intFromEnum(Value.two) == 2);
+    try expect(@int_from_enum(Value.zero) == 0);
+    try expect(@int_from_enum(Value.one) == 1);
+    try expect(@int_from_enum(Value.two) == 2);
 }
 
 // You can override the ordinal value for an enum.
@@ -32,9 +32,9 @@ const Value2 = enum(u32) {
     million = 1000000,
 };
 test "set enum ordinal value" {
-    try expect(@intFromEnum(Value2.hundred) == 100);
-    try expect(@intFromEnum(Value2.thousand) == 1000);
-    try expect(@intFromEnum(Value2.million) == 1000000);
+    try expect(@int_from_enum(Value2.hundred) == 100);
+    try expect(@int_from_enum(Value2.thousand) == 1000);
+    try expect(@int_from_enum(Value2.million) == 1000000);
 }
 
 // You can also override only some values.
@@ -46,11 +46,11 @@ const Value3 = enum(u4) {
     e,
 };
 test "enum implicit ordinal values and overridden values" {
-    try expect(@intFromEnum(Value3.a) == 0);
-    try expect(@intFromEnum(Value3.b) == 8);
-    try expect(@intFromEnum(Value3.c) == 9);
-    try expect(@intFromEnum(Value3.d) == 4);
-    try expect(@intFromEnum(Value3.e) == 5);
+    try expect(@int_from_enum(Value3.a) == 0);
+    try expect(@int_from_enum(Value3.b) == 8);
+    try expect(@int_from_enum(Value3.c) == 9);
+    try expect(@int_from_enum(Value3.d) == 4);
+    try expect(@int_from_enum(Value3.e) == 5);
 }
 
 // Enums can have methods, the same as structs and unions.
@@ -68,7 +68,7 @@ const Suit = enum {
 };
 test "enum method" {
     const p = Suit.spades;
-    try expect(!p.isClubs());
+    try expect(!p.is_clubs());
 }
 
 // An enum can be switched upon.
@@ -104,9 +104,9 @@ test "@typeInfo" {
     try expect(mem.eql(u8, @typeInfo(Small).Enum.fields[1].name, "two"));
 }
 
-// @tagName gives a [:0]const u8 representation of an enum value:
-test "@tagName" {
-    try expect(mem.eql(u8, @tagName(Small.three), "three"));
+// @tag_name gives a [:0]const u8 representation of an enum value:
+test "@tag_name" {
+    try expect(mem.eql(u8, @tag_name(Small.three), "three"));
 }
 
 // test

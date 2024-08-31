@@ -1,7 +1,7 @@
 const std = @import("../std.zig");
 const assert = std.debug.assert;
-const utf8Decode = std.unicode.utf8Decode;
-const utf8Encode = std.unicode.utf8Encode;
+const utf8_decode = std.unicode.utf8_decode;
+const utf8_encode = std.unicode.utf8_encode;
 
 pub const ParseError = error{
     OutOfMemory,
@@ -58,7 +58,7 @@ pub const Error = union(enum) {
     invalid_exponent_sign: usize,
 };
 
-/// Parse Zig number literal accepted by fmt.parseInt, fmt.parseFloat and big_int.setString.
+/// Parse Zig number literal accepted by fmt.parse_int, fmt.parse_float and big_int.set_string.
 /// Valid for any input.
 pub fn parse_number_literal(bytes: []const u8) Result {
     var i: usize = 0;
@@ -152,7 +152,7 @@ pub fn parse_number_literal(bytes: []const u8) Result {
             if (res[1] != 0) overflow = true;
             x = res[0];
         }
-        const res = @addWithOverflow(x, digit);
+        const res = @add_with_overflow(x, digit);
         if (res[1] != 0) overflow = true;
         x = res[0];
     }

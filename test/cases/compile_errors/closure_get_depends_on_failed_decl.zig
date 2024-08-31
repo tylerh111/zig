@@ -8,13 +8,13 @@ pub inline fn request_adapter(
             callbackArg();
         }
     }).callback;
-    instanceRequestAdapter(undefined); // note wrong number of arguments here
+    instance_request_adapter(undefined); // note wrong number of arguments here
 }
 
 inline fn foo() void {}
 
 pub export fn entry() void {
-    requestAdapter(foo);
+    request_adapter(foo);
 }
 
 // error

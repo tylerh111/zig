@@ -1,12 +1,12 @@
 comptime {
     const a: @Vector(3, u8) = .{ 1, 200, undefined };
-    @compileLog(@addWithOverflow(a, a));
+    @compileLog(@add_with_overflow(a, a));
 }
 
 comptime {
     const a: @Vector(3, u8) = .{ 1, 2, undefined };
     const b: @Vector(3, u8) = .{ 0, 3, 10 };
-    @compileLog(@subWithOverflow(a, b));
+    @compileLog(@sub_with_overflow(a, b));
 }
 
 comptime {

@@ -151,9 +151,9 @@ pub const cpu_models = struct {
 
 pub const aarch64 = struct {
     fn set_feature(cpu: *Target.Cpu, feature: Target.aarch64.Feature, enabled: bool) void {
-        const idx = @as(Target.Cpu.Feature.Set.Index, @intFromEnum(feature));
+        const idx = @as(Target.Cpu.Feature.Set.Index, @int_from_enum(feature));
 
-        if (enabled) cpu.features.addFeature(idx) else cpu.features.removeFeature(idx);
+        if (enabled) cpu.features.add_feature(idx) else cpu.features.remove_feature(idx);
     }
 
     inline fn bit_field(input: u64, offset: u6) u4 {
@@ -174,8 +174,8 @@ pub const aarch64 = struct {
     /// 10 -> ID_AA64MMFR1_EL1
     /// 11 -> ID_AA64MMFR2_EL1
     pub fn detect_native_cpu_and_features(arch: Target.Cpu.Arch, registers: [12]u64) ?Target.Cpu {
-        const info = detectNativeCoreInfo(registers[0]);
-        const model = cpu_models.isKnown(info, true) orelse return null;
+        const info = detect_native_core_info(registers[0]);
+        const model = cpu_models.is_known(info, true) orelse return null;
 
         var cpu = Target.Cpu{
             .arch = arch,
@@ -183,8 +183,8 @@ pub const aarch64 = struct {
             .features = Target.Cpu.Feature.Set.empty,
         };
 
-        detectNativeCpuFeatures(&cpu, registers[1..12]);
-        addInstructionFusions(&cpu, info);
+        detect_native_cpu_features(&cpu, registers[1..12]);
+        add_instruction_fusions(&cpu, info);
 
         return cpu;
     }
@@ -206,7 +206,7 @@ pub const aarch64 = struct {
                 }
             }
 
-            info.variant |= @as(u8, @intCast(@as(u4, @truncate(midr >> 20)))) << 4;
+            info.variant |= @as(u8, @int_cast(@as(u4, @truncate(midr >> 20)))) << 4;
             info.variant |= @as(u4, @truncate(midr));
             info.architecture = @as(u4, @truncate(midr >> 16));
         }
@@ -228,81 +228,81 @@ pub const aarch64 = struct {
     /// 10 -> ID_AA64MMFR2_EL1
     fn detect_native_cpu_features(cpu: *Target.Cpu, registers: *const [11]u64) void {
         // ID_AA64PFR0_EL1
-        setFeature(cpu, .dit, bitField(registers[0], 48) >= 1);
-        setFeature(cpu, .am, bitField(registers[0], 44) >= 1);
-        setFeature(cpu, .amvs, bitField(registers[0], 44) >= 2);
-        setFeature(cpu, .mpam, bitField(registers[0], 40) >= 1); // MPAM v1.0
-        setFeature(cpu, .sel2, bitField(registers[0], 36) >= 1);
-        setFeature(cpu, .sve, bitField(registers[0], 32) >= 1);
-        setFeature(cpu, .el3, bitField(registers[0], 12) >= 1);
-        setFeature(cpu, .ras, bitField(registers[0], 28) >= 1);
+        set_feature(cpu, .dit, bit_field(registers[0], 48) >= 1);
+        set_feature(cpu, .am, bit_field(registers[0], 44) >= 1);
+        set_feature(cpu, .amvs, bit_field(registers[0], 44) >= 2);
+        set_feature(cpu, .mpam, bit_field(registers[0], 40) >= 1); // MPAM v1.0
+        set_feature(cpu, .sel2, bit_field(registers[0], 36) >= 1);
+        set_feature(cpu, .sve, bit_field(registers[0], 32) >= 1);
+        set_feature(cpu, .el3, bit_field(registers[0], 12) >= 1);
+        set_feature(cpu, .ras, bit_field(registers[0], 28) >= 1);
 
-        if (bitField(registers[0], 20) < 0xF) blk: {
-            if (bitField(registers[0], 16) != bitField(registers[0], 20)) break :blk; // This should never occur
+        if (bit_field(registers[0], 20) < 0xF) blk: {
+            if (bit_field(registers[0], 16) != bit_field(registers[0], 20)) break :blk; // This should never occur
 
-            setFeature(cpu, .neon, true);
-            setFeature(cpu, .fp_armv8, true);
-            setFeature(cpu, .fullfp16, bitField(registers[0], 20) > 0);
+            set_feature(cpu, .neon, true);
+            set_feature(cpu, .fp_armv8, true);
+            set_feature(cpu, .fullfp16, bit_field(registers[0], 20) > 0);
         }
 
         // ID_AA64PFR1_EL1
-        setFeature(cpu, .mpam, bitField(registers[1], 16) > 0 and bitField(registers[0], 40) == 0); // MPAM v0.1
-        setFeature(cpu, .mte, bitField(registers[1], 8) >= 1);
-        setFeature(cpu, .ssbs, bitField(registers[1], 4) >= 1);
-        setFeature(cpu, .bti, bitField(registers[1], 0) >= 1);
+        set_feature(cpu, .mpam, bit_field(registers[1], 16) > 0 and bit_field(registers[0], 40) == 0); // MPAM v0.1
+        set_feature(cpu, .mte, bit_field(registers[1], 8) >= 1);
+        set_feature(cpu, .ssbs, bit_field(registers[1], 4) >= 1);
+        set_feature(cpu, .bti, bit_field(registers[1], 0) >= 1);
 
         // ID_AA64DFR0_EL1
-        setFeature(cpu, .tracev8_4, bitField(registers[2], 40) >= 1);
-        setFeature(cpu, .spe, bitField(registers[2], 32) >= 1);
-        setFeature(cpu, .perfmon, bitField(registers[2], 8) >= 1 and bitField(registers[2], 8) < 0xF);
+        set_feature(cpu, .tracev8_4, bit_field(registers[2], 40) >= 1);
+        set_feature(cpu, .spe, bit_field(registers[2], 32) >= 1);
+        set_feature(cpu, .perfmon, bit_field(registers[2], 8) >= 1 and bit_field(registers[2], 8) < 0xF);
 
         // ID_AA64DFR1_EL1 reserved
         // ID_AA64AFR0_EL1 reserved / implementation defined
         // ID_AA64AFR1_EL1 reserved
 
         // ID_AA64ISAR0_EL1
-        setFeature(cpu, .rand, bitField(registers[6], 60) >= 1);
-        setFeature(cpu, .tlb_rmi, bitField(registers[6], 56) >= 1);
-        setFeature(cpu, .flagm, bitField(registers[6], 52) >= 1);
-        setFeature(cpu, .fp16fml, bitField(registers[6], 48) >= 1);
-        setFeature(cpu, .dotprod, bitField(registers[6], 44) >= 1);
-        setFeature(cpu, .sm4, bitField(registers[6], 40) >= 1 and bitField(registers[6], 36) >= 1);
-        setFeature(cpu, .sha3, bitField(registers[6], 32) >= 1 and bitField(registers[6], 12) >= 2);
-        setFeature(cpu, .rdm, bitField(registers[6], 28) >= 1);
-        setFeature(cpu, .lse, bitField(registers[6], 20) >= 1);
-        setFeature(cpu, .crc, bitField(registers[6], 16) >= 1);
-        setFeature(cpu, .sha2, bitField(registers[6], 12) >= 1 and bitField(registers[6], 8) >= 1);
-        setFeature(cpu, .aes, bitField(registers[6], 4) >= 1);
+        set_feature(cpu, .rand, bit_field(registers[6], 60) >= 1);
+        set_feature(cpu, .tlb_rmi, bit_field(registers[6], 56) >= 1);
+        set_feature(cpu, .flagm, bit_field(registers[6], 52) >= 1);
+        set_feature(cpu, .fp16fml, bit_field(registers[6], 48) >= 1);
+        set_feature(cpu, .dotprod, bit_field(registers[6], 44) >= 1);
+        set_feature(cpu, .sm4, bit_field(registers[6], 40) >= 1 and bit_field(registers[6], 36) >= 1);
+        set_feature(cpu, .sha3, bit_field(registers[6], 32) >= 1 and bit_field(registers[6], 12) >= 2);
+        set_feature(cpu, .rdm, bit_field(registers[6], 28) >= 1);
+        set_feature(cpu, .lse, bit_field(registers[6], 20) >= 1);
+        set_feature(cpu, .crc, bit_field(registers[6], 16) >= 1);
+        set_feature(cpu, .sha2, bit_field(registers[6], 12) >= 1 and bit_field(registers[6], 8) >= 1);
+        set_feature(cpu, .aes, bit_field(registers[6], 4) >= 1);
 
         // ID_AA64ISAR1_EL1
-        setFeature(cpu, .i8mm, bitField(registers[7], 52) >= 1);
-        setFeature(cpu, .bf16, bitField(registers[7], 44) >= 1);
-        setFeature(cpu, .predres, bitField(registers[7], 40) >= 1);
-        setFeature(cpu, .sb, bitField(registers[7], 36) >= 1);
-        setFeature(cpu, .fptoint, bitField(registers[7], 32) >= 1);
-        setFeature(cpu, .rcpc, bitField(registers[7], 20) >= 1);
-        setFeature(cpu, .rcpc_immo, bitField(registers[7], 20) >= 2);
-        setFeature(cpu, .complxnum, bitField(registers[7], 16) >= 1);
-        setFeature(cpu, .jsconv, bitField(registers[7], 12) >= 1);
-        setFeature(cpu, .pauth, bitField(registers[7], 8) >= 1 or bitField(registers[7], 4) >= 1);
-        setFeature(cpu, .ccpp, bitField(registers[7], 0) >= 1);
-        setFeature(cpu, .ccdp, bitField(registers[7], 0) >= 2);
+        set_feature(cpu, .i8mm, bit_field(registers[7], 52) >= 1);
+        set_feature(cpu, .bf16, bit_field(registers[7], 44) >= 1);
+        set_feature(cpu, .predres, bit_field(registers[7], 40) >= 1);
+        set_feature(cpu, .sb, bit_field(registers[7], 36) >= 1);
+        set_feature(cpu, .fptoint, bit_field(registers[7], 32) >= 1);
+        set_feature(cpu, .rcpc, bit_field(registers[7], 20) >= 1);
+        set_feature(cpu, .rcpc_immo, bit_field(registers[7], 20) >= 2);
+        set_feature(cpu, .complxnum, bit_field(registers[7], 16) >= 1);
+        set_feature(cpu, .jsconv, bit_field(registers[7], 12) >= 1);
+        set_feature(cpu, .pauth, bit_field(registers[7], 8) >= 1 or bit_field(registers[7], 4) >= 1);
+        set_feature(cpu, .ccpp, bit_field(registers[7], 0) >= 1);
+        set_feature(cpu, .ccdp, bit_field(registers[7], 0) >= 2);
 
         // ID_AA64MMFR0_EL1
-        setFeature(cpu, .ecv, bitField(registers[8], 60) >= 1);
-        setFeature(cpu, .fgt, bitField(registers[8], 56) >= 1);
+        set_feature(cpu, .ecv, bit_field(registers[8], 60) >= 1);
+        set_feature(cpu, .fgt, bit_field(registers[8], 56) >= 1);
 
         // ID_AA64MMFR1_EL1
-        setFeature(cpu, .pan, bitField(registers[9], 20) >= 1);
-        setFeature(cpu, .pan_rwv, bitField(registers[9], 20) >= 2);
-        setFeature(cpu, .lor, bitField(registers[9], 16) >= 1);
-        setFeature(cpu, .vh, bitField(registers[9], 8) >= 1);
-        setFeature(cpu, .contextidr_el2, bitField(registers[9], 8) >= 1);
+        set_feature(cpu, .pan, bit_field(registers[9], 20) >= 1);
+        set_feature(cpu, .pan_rwv, bit_field(registers[9], 20) >= 2);
+        set_feature(cpu, .lor, bit_field(registers[9], 16) >= 1);
+        set_feature(cpu, .vh, bit_field(registers[9], 8) >= 1);
+        set_feature(cpu, .contextidr_el2, bit_field(registers[9], 8) >= 1);
 
         // ID_AA64MMFR2_EL1
-        setFeature(cpu, .nv, bitField(registers[10], 24) >= 1);
-        setFeature(cpu, .ccidx, bitField(registers[10], 20) >= 1);
-        setFeature(cpu, .uaops, bitField(registers[10], 4) >= 1);
+        set_feature(cpu, .nv, bit_field(registers[10], 24) >= 1);
+        set_feature(cpu, .ccidx, bit_field(registers[10], 20) >= 1);
+        set_feature(cpu, .uaops, bit_field(registers[10], 4) >= 1);
     }
 
     fn add_instruction_fusions(cpu: *Target.Cpu, info: CoreInfo) void {
@@ -310,8 +310,8 @@ pub const aarch64 = struct {
             0x41 => switch (info.part) {
                 0xd4b, 0xd4c => {
                     // According to A78C/X1C Core Software Optimization Guide, CPU fuses certain instructions.
-                    setFeature(cpu, .cmp_bcc_fusion, true);
-                    setFeature(cpu, .fuse_aes, true);
+                    set_feature(cpu, .cmp_bcc_fusion, true);
+                    set_feature(cpu, .fuse_aes, true);
                 },
                 else => {},
             },

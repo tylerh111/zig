@@ -22,7 +22,7 @@ pub fn main() !void {
 }
 
 fn run(allocator: std.mem.Allocator) !void {
-    var args = try std.process.argsWithAllocator(allocator);
+    var args = try std.process.args_with_allocator(allocator);
     defer args.deinit();
     _ = args.next() orelse unreachable; // skip binary name
 
@@ -31,7 +31,7 @@ fn run(allocator: std.mem.Allocator) !void {
         return error.BadUsage;
     };
 
-    if (!std.fs.path.isAbsolute(path)) {
+    if (!std.fs.path.is_absolute(path)) {
         std.log.err("path must be absolute", .{});
         return error.BadUsage;
     }

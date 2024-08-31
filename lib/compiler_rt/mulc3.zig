@@ -1,6 +1,6 @@
 const std = @import("std");
-const isNan = std.math.isNan;
-const isInf = std.math.isInf;
+const is_nan = std.math.is_nan;
+const is_inf = std.math.is_inf;
 const copysign = std.math.copysign;
 
 pub fn Complex(comptime T: type) type {
@@ -29,42 +29,42 @@ pub inline fn mulc3(comptime T: type, a_in: T, b_in: T, c_in: T, d_in: T) Comple
         .real = ac - bd,
         .imag = ad + bc,
     };
-    if (isNan(z.real) and isNan(z.imag)) {
+    if (is_nan(z.real) and is_nan(z.imag)) {
         var recalc: bool = false;
 
-        if (isInf(a) or isInf(b)) { // (a + ib) is infinite
+        if (is_inf(a) or is_inf(b)) { // (a + ib) is infinite
 
             // "Box" the infinity (+/-inf goes to +/-1, all finite values go to 0)
-            a = copysign(if (isInf(a)) one else zero, a);
-            b = copysign(if (isInf(b)) one else zero, b);
+            a = copysign(if (is_inf(a)) one else zero, a);
+            b = copysign(if (is_inf(b)) one else zero, b);
 
             // Replace NaNs in the other factor with (signed) 0
-            if (isNan(c)) c = copysign(zero, c);
-            if (isNan(d)) d = copysign(zero, d);
+            if (is_nan(c)) c = copysign(zero, c);
+            if (is_nan(d)) d = copysign(zero, d);
 
             recalc = true;
         }
 
-        if (isInf(c) or isInf(d)) { // (c + id) is infinite
+        if (is_inf(c) or is_inf(d)) { // (c + id) is infinite
 
             // "Box" the infinity (+/-inf goes to +/-1, all finite values go to 0)
-            c = copysign(if (isInf(c)) one else zero, c);
-            d = copysign(if (isInf(d)) one else zero, d);
+            c = copysign(if (is_inf(c)) one else zero, c);
+            d = copysign(if (is_inf(d)) one else zero, d);
 
             // Replace NaNs in the other factor with (signed) 0
-            if (isNan(a)) a = copysign(zero, a);
-            if (isNan(b)) b = copysign(zero, b);
+            if (is_nan(a)) a = copysign(zero, a);
+            if (is_nan(b)) b = copysign(zero, b);
 
             recalc = true;
         }
 
-        if (!recalc and (isInf(ac) or isInf(bd) or isInf(ad) or isInf(bc))) {
+        if (!recalc and (is_inf(ac) or is_inf(bd) or is_inf(ad) or is_inf(bc))) {
 
             // Recover infinities from overflow by changing NaNs to 0
-            if (isNan(a)) a = copysign(zero, a);
-            if (isNan(b)) b = copysign(zero, b);
-            if (isNan(c)) c = copysign(zero, c);
-            if (isNan(d)) d = copysign(zero, d);
+            if (is_nan(a)) a = copysign(zero, a);
+            if (is_nan(b)) b = copysign(zero, b);
+            if (is_nan(c)) c = copysign(zero, c);
+            if (is_nan(d)) d = copysign(zero, d);
 
             recalc = true;
         }

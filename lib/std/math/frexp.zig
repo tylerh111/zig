@@ -1,8 +1,8 @@
 const std = @import("../std.zig");
 const math = std.math;
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
-const expectApproxEqAbs = std.testing.expectApproxEqAbs;
+const expect_equal = std.testing.expect_equal;
+const expect_approx_eq_abs = std.testing.expect_approx_eq_abs;
 
 pub fn Frexp(comptime T: type) type {
     return struct {
@@ -24,10 +24,10 @@ pub fn frexp(x: anytype) Frexp(@TypeOf(x)) {
     const bits: comptime_int = @typeInfo(T).Float.bits;
     const Int: type = std.meta.Int(.unsigned, bits);
 
-    const exp_bits: comptime_int = math.floatExponentBits(T);
-    const mant_bits: comptime_int = math.floatMantissaBits(T);
-    const frac_bits: comptime_int = math.floatFractionalBits(T);
-    const exp_min: comptime_int = math.floatExponentMin(T);
+    const exp_bits: comptime_int = math.float_exponent_bits(T);
+    const mant_bits: comptime_int = math.float_mantissa_bits(T);
+    const frac_bits: comptime_int = math.float_fractional_bits(T);
+    const exp_min: comptime_int = math.float_exponent_min(T);
 
     const ExpInt: type = std.meta.Int(.unsigned, exp_bits);
     const MantInt: type = std.meta.Int(.unsigned, mant_bits);
@@ -43,7 +43,7 @@ pub fn frexp(x: anytype) Frexp(@TypeOf(x)) {
     const extra_denorm_shift: comptime_int = 1 - ones_place;
 
     var result: Frexp(T) = undefined;
-    var v: Int = @bitCast(x);
+    var v: Int = @bit_cast(x);
 
     const m: MantInt = @truncate(v);
     const e: ExpInt = @truncate(v >> mant_bits);
@@ -81,7 +81,7 @@ pub fn frexp(x: anytype) Frexp(@TypeOf(x)) {
         },
     }
 
-    result.significand = @bitCast(v);
+    result.significand = @bit_cast(v);
     return result;
 }
 
@@ -94,62 +94,62 @@ fn FrexpTests(comptime Float: type) type {
             var r: Frexp(T) = undefined;
 
             r = frexp(@as(T, 1.3));
-            try expectApproxEqAbs(0.65, r.significand, epsilon);
-            try expectEqual(1, r.exponent);
+            try expect_approx_eq_abs(0.65, r.significand, epsilon);
+            try expect_equal(1, r.exponent);
 
             r = frexp(@as(T, 78.0234));
-            try expectApproxEqAbs(0.609558, r.significand, epsilon);
-            try expectEqual(7, r.exponent);
+            try expect_approx_eq_abs(0.609558, r.significand, epsilon);
+            try expect_equal(7, r.exponent);
 
             r = frexp(@as(T, -1234.5678));
-            try expectEqual(11, r.exponent);
-            try expectApproxEqAbs(-0.602816, r.significand, epsilon);
+            try expect_equal(11, r.exponent);
+            try expect_approx_eq_abs(-0.602816, r.significand, epsilon);
         }
         test "max" {
-            const exponent = math.floatExponentMax(T) + 1;
-            const significand = 1.0 - math.floatEps(T) / 2;
-            const r: Frexp(T) = frexp(math.floatMax(T));
-            try expectEqual(exponent, r.exponent);
-            try expectEqual(significand, r.significand);
+            const exponent = math.float_exponent_max(T) + 1;
+            const significand = 1.0 - math.float_eps(T) / 2;
+            const r: Frexp(T) = frexp(math.float_max(T));
+            try expect_equal(exponent, r.exponent);
+            try expect_equal(significand, r.significand);
         }
         test "min" {
-            const exponent = math.floatExponentMin(T) + 1;
-            const r: Frexp(T) = frexp(math.floatMin(T));
-            try expectEqual(exponent, r.exponent);
-            try expectEqual(0.5, r.significand);
+            const exponent = math.float_exponent_min(T) + 1;
+            const r: Frexp(T) = frexp(math.float_min(T));
+            try expect_equal(exponent, r.exponent);
+            try expect_equal(0.5, r.significand);
         }
         test "subnormal" {
-            const normal_min_exponent = math.floatExponentMin(T) + 1;
-            const exponent = normal_min_exponent - math.floatFractionalBits(T);
-            const r: Frexp(T) = frexp(math.floatTrueMin(T));
-            try expectEqual(exponent, r.exponent);
-            try expectEqual(0.5, r.significand);
+            const normal_min_exponent = math.float_exponent_min(T) + 1;
+            const exponent = normal_min_exponent - math.float_fractional_bits(T);
+            const r: Frexp(T) = frexp(math.float_true_min(T));
+            try expect_equal(exponent, r.exponent);
+            try expect_equal(0.5, r.significand);
         }
         test "zero" {
             var r: Frexp(T) = undefined;
 
             r = frexp(@as(T, 0.0));
-            try expectEqual(0, r.exponent);
-            try expect(math.isPositiveZero(r.significand));
+            try expect_equal(0, r.exponent);
+            try expect(math.is_positive_zero(r.significand));
 
             r = frexp(@as(T, -0.0));
-            try expectEqual(0, r.exponent);
-            try expect(math.isNegativeZero(r.significand));
+            try expect_equal(0, r.exponent);
+            try expect(math.is_negative_zero(r.significand));
         }
         test "inf" {
             var r: Frexp(T) = undefined;
 
             r = frexp(math.inf(T));
-            try expectEqual(0, r.exponent);
-            try expect(math.isPositiveInf(r.significand));
+            try expect_equal(0, r.exponent);
+            try expect(math.is_positive_inf(r.significand));
 
             r = frexp(-math.inf(T));
-            try expectEqual(0, r.exponent);
-            try expect(math.isNegativeInf(r.significand));
+            try expect_equal(0, r.exponent);
+            try expect(math.is_negative_inf(r.significand));
         }
         test "nan" {
             const r: Frexp(T) = frexp(math.nan(T));
-            try expect(math.isNan(r.significand));
+            try expect(math.is_nan(r.significand));
         }
     };
 }
@@ -163,9 +163,9 @@ comptime {
 
 test frexp {
     inline for ([_]type{ f16, f32, f64, f80, f128 }) |T| {
-        const max_exponent = math.floatExponentMax(T) + 1;
-        const min_exponent = math.floatExponentMin(T) + 1;
-        const truemin_exponent = min_exponent - math.floatFractionalBits(T);
+        const max_exponent = math.float_exponent_max(T) + 1;
+        const min_exponent = math.float_exponent_min(T) + 1;
+        const truemin_exponent = min_exponent - math.float_fractional_bits(T);
 
         var result: Frexp(T) = undefined;
         comptime var x: T = undefined;
@@ -175,54 +175,54 @@ test frexp {
         // value == significand * (2 ^ exponent)
         x = 1234.5678;
         result = frexp(x);
-        try expectEqual(11, result.exponent);
-        try expectApproxEqAbs(0.602816, result.significand, 1e-6);
-        try expectEqual(x, math.ldexp(result.significand, result.exponent));
+        try expect_equal(11, result.exponent);
+        try expect_approx_eq_abs(0.602816, result.significand, 1e-6);
+        try expect_equal(x, math.ldexp(result.significand, result.exponent));
 
         // float maximum
-        x = math.floatMax(T);
+        x = math.float_max(T);
         result = frexp(x);
-        try expectEqual(max_exponent, result.exponent);
-        try expectEqual(1.0 - math.floatEps(T) / 2, result.significand);
-        try expectEqual(x, math.ldexp(result.significand, result.exponent));
+        try expect_equal(max_exponent, result.exponent);
+        try expect_equal(1.0 - math.float_eps(T) / 2, result.significand);
+        try expect_equal(x, math.ldexp(result.significand, result.exponent));
 
         // float minimum
-        x = math.floatMin(T);
+        x = math.float_min(T);
         result = frexp(x);
-        try expectEqual(min_exponent, result.exponent);
-        try expectEqual(0.5, result.significand);
-        try expectEqual(x, math.ldexp(result.significand, result.exponent));
+        try expect_equal(min_exponent, result.exponent);
+        try expect_equal(0.5, result.significand);
+        try expect_equal(x, math.ldexp(result.significand, result.exponent));
 
         // float true minimum
         // subnormal -> {normal, exponent}
-        x = math.floatTrueMin(T);
+        x = math.float_true_min(T);
         result = frexp(x);
-        try expectEqual(truemin_exponent, result.exponent);
-        try expectEqual(0.5, result.significand);
-        try expectEqual(x, math.ldexp(result.significand, result.exponent));
+        try expect_equal(truemin_exponent, result.exponent);
+        try expect_equal(0.5, result.significand);
+        try expect_equal(x, math.ldexp(result.significand, result.exponent));
 
         // infinity -> {infinity, zero} (+)
         result = frexp(math.inf(T));
-        try expectEqual(0, result.exponent);
-        try expect(math.isPositiveInf(result.significand));
+        try expect_equal(0, result.exponent);
+        try expect(math.is_positive_inf(result.significand));
 
         // infinity -> {infinity, zero} (-)
         result = frexp(-math.inf(T));
-        try expectEqual(0, result.exponent);
-        try expect(math.isNegativeInf(result.significand));
+        try expect_equal(0, result.exponent);
+        try expect(math.is_negative_inf(result.significand));
 
         // zero -> {zero, zero} (+)
         result = frexp(@as(T, 0.0));
-        try expectEqual(0, result.exponent);
-        try expect(math.isPositiveZero(result.significand));
+        try expect_equal(0, result.exponent);
+        try expect(math.is_positive_zero(result.significand));
 
         // zero -> {zero, zero} (-)
         result = frexp(@as(T, -0.0));
-        try expectEqual(0, result.exponent);
-        try expect(math.isNegativeZero(result.significand));
+        try expect_equal(0, result.exponent);
+        try expect(math.is_negative_zero(result.significand));
 
         // nan -> {nan, undefined}
         result = frexp(math.nan(T));
-        try expect(math.isNan(result.significand));
+        try expect(math.is_nan(result.significand));
     }
 }

@@ -51,9 +51,9 @@ test "standard field calls" {
     pv.inc();
     try expect(v.state == 2);
     try expect(pv.get() == 2);
-    try expect(v.getPtr().* == 2);
+    try expect(v.get_ptr().* == 2);
     try expect(pcv.get() == 2);
-    try expect(pcv.getPtr().* == 2);
+    try expect(pcv.get_ptr().* == 2);
 
     v.func_field = HasFuncs.one;
     try expect(v.func_field(0) == 1);

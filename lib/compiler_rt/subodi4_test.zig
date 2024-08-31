@@ -8,8 +8,8 @@ fn test__subodi4(a: i64, b: i64) !void {
     var expected_ov: c_int = undefined;
     const result = subo.__subodi4(a, b, &result_ov);
     const expected: i64 = simple_subodi4(a, b, &expected_ov);
-    try testing.expectEqual(expected, result);
-    try testing.expectEqual(expected_ov, result_ov);
+    try testing.expect_equal(expected, result);
+    try testing.expect_equal(expected_ov, result_ov);
 }
 
 // 2 cases on evaluating `a-b`:
@@ -18,8 +18,8 @@ fn test__subodi4(a: i64, b: i64) !void {
 // `-b` evaluation may overflow, iff b==min, but this is handled by the hardware
 pub fn simple_subodi4(a: i64, b: i64, overflow: *c_int) i64 {
     overflow.* = 0;
-    const min: i64 = math.minInt(i64);
-    const max: i64 = math.maxInt(i64);
+    const min: i64 = math.min_int(i64);
+    const max: i64 = math.max_int(i64);
     if (((b > 0) and (a < min + b)) or
         ((b < 0) and (a > max + b)))
         overflow.* = 1;
@@ -27,8 +27,8 @@ pub fn simple_subodi4(a: i64, b: i64, overflow: *c_int) i64 {
 }
 
 test "subodi3" {
-    const min: i64 = math.minInt(i64);
-    const max: i64 = math.maxInt(i64);
+    const min: i64 = math.min_int(i64);
+    const max: i64 = math.max_int(i64);
     var i: i64 = 1;
     while (i < max) : (i *|= 2) {
         try test__subodi4(i, i);

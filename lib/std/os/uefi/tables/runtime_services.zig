@@ -15,8 +15,8 @@ const cc = uefi.cc;
 ///
 /// As the runtime_services table may grow with new UEFI versions, it is important to check hdr.header_size.
 ///
-/// Some functions may not be supported. Check the RuntimeServicesSupported variable using getVariable.
-/// getVariable is one of the functions that may not be supported.
+/// Some functions may not be supported. Check the RuntimeServicesSupported variable using get_variable.
+/// get_variable is one of the functions that may not be supported.
 ///
 /// Some functions may not be called while other functions are running.
 pub const RuntimeServices = extern struct {
@@ -41,7 +41,7 @@ pub const RuntimeServices = extern struct {
     convertPointer: *const fn (debug_disposition: usize, address: **anyopaque) callconv(cc) Status,
 
     /// Returns the value of a variable.
-    getVariable: *const fn (var_name: [*:0]const u16, vendor_guid: *align(8) const Guid, attributes: ?*u32, data_size: *usize, data: ?*anyopaque) callconv(cc) Status,
+    get_variable: *const fn (var_name: [*:0]const u16, vendor_guid: *align(8) const Guid, attributes: ?*u32, data_size: *usize, data: ?*anyopaque) callconv(cc) Status,
 
     /// Enumerates the current variable names.
     getNextVariableName: *const fn (var_name_size: *usize, var_name: [*:0]u16, vendor_guid: *align(8) Guid) callconv(cc) Status,

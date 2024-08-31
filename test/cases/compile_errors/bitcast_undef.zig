@@ -1,6 +1,6 @@
 export fn entry1() void {
     const x: i32 = undefined;
-    const y: u32 = @bitCast(x);
+    const y: u32 = @bit_cast(x);
     @compileLog(y);
 }
 

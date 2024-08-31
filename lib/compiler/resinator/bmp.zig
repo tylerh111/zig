@@ -23,7 +23,7 @@ const BitmapHeader = @import("ico.zig").BitmapHeader;
 const builtin = @import("builtin");
 const native_endian = builtin.cpu.arch.endian();
 
-pub const windows_format_id = std.mem.readInt(u16, "BM", native_endian);
+pub const windows_format_id = std.mem.read_int(u16, "BM", native_endian);
 pub const file_header_len = 14;
 
 pub const ReadError = error{
@@ -52,7 +52,7 @@ pub const BitmapInfo = struct {
     }
 
     pub fn get_actual_palette_byte_len(self: *const BitmapInfo) u64 {
-        return self.getByteLenBetweenHeadersAndPixels() - self.getBitmasksByteLen();
+        return self.get_byte_len_between_headers_and_pixels() - self.get_bitmasks_byte_len();
     }
 
     pub fn get_byte_len_between_headers_and_pixels(self: *const BitmapInfo) u64 {
@@ -68,18 +68,18 @@ pub const BitmapInfo = struct {
     }
 
     pub fn get_missing_palette_byte_len(self: *const BitmapInfo) u64 {
-        if (self.getActualPaletteByteLen() >= self.getExpectedPaletteByteLen()) return 0;
-        return self.getExpectedPaletteByteLen() - self.getActualPaletteByteLen();
+        if (self.get_actual_palette_byte_len() >= self.get_expected_palette_byte_len()) return 0;
+        return self.get_expected_palette_byte_len() - self.get_actual_palette_byte_len();
     }
 
     /// Returns the full byte len of the DIB header + optional bitmasks + color palette
     pub fn get_expected_byte_len_before_pixel_data(self: *const BitmapInfo) u64 {
-        return @as(u64, self.dib_header_size) + self.getBitmasksByteLen() + self.getExpectedPaletteByteLen();
+        return @as(u64, self.dib_header_size) + self.get_bitmasks_byte_len() + self.get_expected_palette_byte_len();
     }
 
     /// Returns the full expected byte len
     pub fn get_expected_byte_len(self: *const BitmapInfo, file_size: u64) u64 {
-        return self.getExpectedByteLenBeforePixelData() + self.getPixelDataLen(file_size);
+        return self.get_expected_byte_len_before_pixel_data() + self.get_pixel_data_len(file_size);
     }
 
     pub fn get_pixel_data_len(self: *const BitmapInfo, file_size: u64) u64 {
@@ -89,39 +89,39 @@ pub const BitmapInfo = struct {
 
 pub fn read(reader: anytype, max_size: u64) ReadError!BitmapInfo {
     var bitmap_info: BitmapInfo = undefined;
-    const file_header = reader.readBytesNoEof(file_header_len) catch return error.UnexpectedEOF;
+    const file_header = reader.read_bytes_no_eof(file_header_len) catch return error.UnexpectedEOF;
 
-    const id = std.mem.readInt(u16, file_header[0..2], native_endian);
+    const id = std.mem.read_int(u16, file_header[0..2], native_endian);
     if (id != windows_format_id) return error.InvalidFileHeader;
 
-    bitmap_info.pixel_data_offset = std.mem.readInt(u32, file_header[10..14], .little);
+    bitmap_info.pixel_data_offset = std.mem.read_int(u32, file_header[10..14], .little);
     if (bitmap_info.pixel_data_offset > max_size) return error.ImpossiblePixelDataOffset;
 
-    bitmap_info.dib_header_size = reader.readInt(u32, .little) catch return error.UnexpectedEOF;
+    bitmap_info.dib_header_size = reader.read_int(u32, .little) catch return error.UnexpectedEOF;
     if (bitmap_info.pixel_data_offset < file_header_len + bitmap_info.dib_header_size) return error.ImpossiblePixelDataOffset;
     const dib_version = BitmapHeader.Version.get(bitmap_info.dib_header_size);
     switch (dib_version) {
         .@"nt3.1", .@"nt4.0", .@"nt5.0" => {
-            var dib_header_buf: [@sizeOf(BITMAPINFOHEADER)]u8 align(@alignOf(BITMAPINFOHEADER)) = undefined;
-            std.mem.writeInt(u32, dib_header_buf[0..4], bitmap_info.dib_header_size, .little);
-            reader.readNoEof(dib_header_buf[4..]) catch return error.UnexpectedEOF;
-            var dib_header: *BITMAPINFOHEADER = @ptrCast(&dib_header_buf);
-            structFieldsLittleToNative(BITMAPINFOHEADER, dib_header);
+            var dib_header_buf: [@size_of(BITMAPINFOHEADER)]u8 align(@alignOf(BITMAPINFOHEADER)) = undefined;
+            std.mem.write_int(u32, dib_header_buf[0..4], bitmap_info.dib_header_size, .little);
+            reader.read_no_eof(dib_header_buf[4..]) catch return error.UnexpectedEOF;
+            var dib_header: *BITMAPINFOHEADER = @ptr_cast(&dib_header_buf);
+            struct_fields_little_to_native(BITMAPINFOHEADER, dib_header);
 
-            bitmap_info.colors_in_palette = try dib_header.numColorsInTable();
+            bitmap_info.colors_in_palette = try dib_header.num_colors_in_table();
             bitmap_info.bytes_per_color_palette_element = 4;
             bitmap_info.compression = @enumFromInt(dib_header.biCompression);
 
-            if (bitmap_info.getByteLenBetweenHeadersAndPixels() < bitmap_info.getBitmasksByteLen()) {
+            if (bitmap_info.get_byte_len_between_headers_and_pixels() < bitmap_info.get_bitmasks_byte_len()) {
                 return error.MissingBitfieldMasks;
             }
         },
         .@"win2.0" => {
-            var dib_header_buf: [@sizeOf(BITMAPCOREHEADER)]u8 align(@alignOf(BITMAPCOREHEADER)) = undefined;
-            std.mem.writeInt(u32, dib_header_buf[0..4], bitmap_info.dib_header_size, .little);
-            reader.readNoEof(dib_header_buf[4..]) catch return error.UnexpectedEOF;
-            const dib_header: *BITMAPCOREHEADER = @ptrCast(&dib_header_buf);
-            structFieldsLittleToNative(BITMAPCOREHEADER, dib_header);
+            var dib_header_buf: [@size_of(BITMAPCOREHEADER)]u8 align(@alignOf(BITMAPCOREHEADER)) = undefined;
+            std.mem.write_int(u32, dib_header_buf[0..4], bitmap_info.dib_header_size, .little);
+            reader.read_no_eof(dib_header_buf[4..]) catch return error.UnexpectedEOF;
+            const dib_header: *BITMAPCOREHEADER = @ptr_cast(&dib_header_buf);
+            struct_fields_little_to_native(BITMAPCOREHEADER, dib_header);
 
             // > The size of the color palette is calculated from the BitsPerPixel value.
             // > The color palette has 2, 16, 256, or 0 entries for a BitsPerPixel of
@@ -225,23 +225,23 @@ pub const Compression = enum(u32) {
 
 fn struct_fields_little_to_native(comptime T: type, x: *T) void {
     inline for (@typeInfo(T).Struct.fields) |field| {
-        @field(x, field.name) = std.mem.littleToNative(field.type, @field(x, field.name));
+        @field(x, field.name) = std.mem.little_to_native(field.type, @field(x, field.name));
     }
 }
 
 test "read" {
     var bmp_data = "BM<\x00\x00\x00\x00\x00\x00\x006\x00\x00\x00(\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01\x00\x10\x00\x00\x00\x00\x00\x06\x00\x00\x00\x12\x0b\x00\x00\x12\x0b\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\x7f\x00\x00\x00\x00".*;
-    var fbs = std.io.fixedBufferStream(&bmp_data);
+    var fbs = std.io.fixed_buffer_stream(&bmp_data);
 
     {
         const bitmap = try read(fbs.reader(), bmp_data.len);
-        try std.testing.expectEqual(@as(u32, BitmapHeader.Version.@"nt3.1".len()), bitmap.dib_header_size);
+        try std.testing.expect_equal(@as(u32, BitmapHeader.Version.@"nt3.1".len()), bitmap.dib_header_size);
     }
 
     {
         fbs.reset();
         bmp_data[file_header_len] = 11;
-        try std.testing.expectError(error.UnknownBitmapVersion, read(fbs.reader(), bmp_data.len));
+        try std.testing.expect_error(error.UnknownBitmapVersion, read(fbs.reader(), bmp_data.len));
 
         // restore
         bmp_data[file_header_len] = BitmapHeader.Version.@"nt3.1".len();
@@ -250,7 +250,7 @@ test "read" {
     {
         fbs.reset();
         bmp_data[0] = 'b';
-        try std.testing.expectError(error.InvalidFileHeader, read(fbs.reader(), bmp_data.len));
+        try std.testing.expect_error(error.InvalidFileHeader, read(fbs.reader(), bmp_data.len));
 
         // restore
         bmp_data[0] = 'B';
@@ -258,13 +258,13 @@ test "read" {
 
     {
         const cutoff_len = file_header_len + BitmapHeader.Version.@"nt3.1".len() - 1;
-        var dib_cutoff_fbs = std.io.fixedBufferStream(bmp_data[0..cutoff_len]);
-        try std.testing.expectError(error.UnexpectedEOF, read(dib_cutoff_fbs.reader(), bmp_data.len));
+        var dib_cutoff_fbs = std.io.fixed_buffer_stream(bmp_data[0..cutoff_len]);
+        try std.testing.expect_error(error.UnexpectedEOF, read(dib_cutoff_fbs.reader(), bmp_data.len));
     }
 
     {
         const cutoff_len = file_header_len - 1;
-        var bmp_cutoff_fbs = std.io.fixedBufferStream(bmp_data[0..cutoff_len]);
-        try std.testing.expectError(error.UnexpectedEOF, read(bmp_cutoff_fbs.reader(), bmp_data.len));
+        var bmp_cutoff_fbs = std.io.fixed_buffer_stream(bmp_data[0..cutoff_len]);
+        try std.testing.expect_error(error.UnexpectedEOF, read(bmp_cutoff_fbs.reader(), bmp_data.len));
     }
 }

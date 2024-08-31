@@ -1,6 +1,6 @@
 const some_data: [100]u8 align(3) = undefined;
 export fn entry() usize {
-    return @sizeOf(@TypeOf(some_data));
+    return @size_of(@TypeOf(some_data));
 }
 
 // error

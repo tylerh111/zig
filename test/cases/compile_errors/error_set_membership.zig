@@ -11,7 +11,7 @@ const Barrrr = union(enum) {
 
 fn fooey(bar: std.meta.Tag(Barrrr), args: []const []const u8) !Barrrr {
     return switch (bar) {
-        .float => .{ .float = try std.fmt.parseFloat(f64, args[0]) },
+        .float => .{ .float = try std.fmt.parse_float(f64, args[0]) },
         .direction => if (std.mem.eql(u8, args[0], "upside_down"))
             Barrrr{ .direction = .upside_down }
         else

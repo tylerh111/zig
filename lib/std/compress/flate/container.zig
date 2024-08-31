@@ -21,7 +21,7 @@ pub const Container = enum {
     zlib, // zlib header and footer
 
     pub fn size(w: Container) usize {
-        return headerSize(w) + footerSize(w);
+        return header_size(w) + footer_size(w);
     }
 
     pub fn header_size(w: Container) usize {
@@ -62,7 +62,7 @@ pub const Container = enum {
                 //  - XFL (eXtra FLags), all set to zero
                 //  - OS (Operating System), 03 = Unix
                 const gzipHeader = [_]u8{ 0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03 };
-                try writer.writeAll(&gzipHeader);
+                try writer.write_all(&gzipHeader);
             },
             .zlib => {
                 // ZLIB has a two-byte header (https://datatracker.ietf.org/doc/html/rfc1950#page-4):
@@ -76,7 +76,7 @@ pub const Container = enum {
                 //
                 // CINFO = 7, CM = 8, FLEVEL = 0b10, FDICT = 0, FCHECK = 0b11100
                 const zlibHeader = [_]u8{ 0x78, 0b10_0_11100 };
-                try writer.writeAll(&zlibHeader);
+                try writer.write_all(&zlibHeader);
             },
             .raw => {},
         }
@@ -89,11 +89,11 @@ pub const Container = enum {
                 // GZIP 8 bytes footer
                 //  - 4 bytes, CRC32 (CRC-32)
                 //  - 4 bytes, ISIZE (Input SIZE) - size of the original (uncompressed) input data modulo 2^32
-                std.mem.writeInt(u32, &bits, hasher.chksum(), .little);
-                try writer.writeAll(&bits);
+                std.mem.write_int(u32, &bits, hasher.chksum(), .little);
+                try writer.write_all(&bits);
 
-                std.mem.writeInt(u32, &bits, hasher.bytesRead(), .little);
-                try writer.writeAll(&bits);
+                std.mem.write_int(u32, &bits, hasher.bytes_read(), .little);
+                try writer.write_all(&bits);
             },
             .zlib => {
                 // ZLIB (RFC 1950) is big-endian, unlike GZIP (RFC 1952).
@@ -101,8 +101,8 @@ pub const Container = enum {
                 // Checksum value of the uncompressed data (excluding any
                 // dictionary data) computed according to Adler-32
                 // algorithm.
-                std.mem.writeInt(u32, &bits, hasher.chksum(), .big);
-                try writer.writeAll(&bits);
+                std.mem.write_int(u32, &bits, hasher.chksum(), .big);
+                try writer.write_all(&bits);
             },
             .raw => {},
         }
@@ -110,8 +110,8 @@ pub const Container = enum {
 
     pub fn parse_header(comptime wrap: Container, reader: anytype) !void {
         switch (wrap) {
-            .gzip => try parseGzipHeader(reader),
-            .zlib => try parseZlibHeader(reader),
+            .gzip => try parse_gzip_header(reader),
+            .zlib => try parse_zlib_header(reader),
             .raw => {},
         }
     }
@@ -121,23 +121,23 @@ pub const Container = enum {
         const magic2 = try reader.read(u8);
         const method = try reader.read(u8);
         const flags = try reader.read(u8);
-        try reader.skipBytes(6); // mtime(4), xflags, os
+        try reader.skip_bytes(6); // mtime(4), xflags, os
         if (magic1 != 0x1f or magic2 != 0x8b or method != 0x08)
             return error.BadGzipHeader;
         // Flags description: https://www.rfc-editor.org/rfc/rfc1952.html#page-5
         if (flags != 0) {
             if (flags & 0b0000_0100 != 0) { // FEXTRA
                 const extra_len = try reader.read(u16);
-                try reader.skipBytes(extra_len);
+                try reader.skip_bytes(extra_len);
             }
             if (flags & 0b0000_1000 != 0) { // FNAME
-                try reader.skipStringZ();
+                try reader.skip_string_z();
             }
             if (flags & 0b0001_0000 != 0) { // FCOMMENT
-                try reader.skipStringZ();
+                try reader.skip_string_z();
             }
             if (flags & 0b0000_0010 != 0) { // FHCRC
-                try reader.skipBytes(2);
+                try reader.skip_bytes(2);
             }
         }
     }
@@ -156,10 +156,10 @@ pub const Container = enum {
             .gzip => {
                 try reader.fill(0);
                 if (try reader.read(u32) != hasher.chksum()) return error.WrongGzipChecksum;
-                if (try reader.read(u32) != hasher.bytesRead()) return error.WrongGzipSize;
+                if (try reader.read(u32) != hasher.bytes_read()) return error.WrongGzipSize;
             },
             .zlib => {
-                const chksum: u32 = @byteSwap(hasher.chksum());
+                const chksum: u32 = @byte_swap(hasher.chksum());
                 if (try reader.read(u32) != chksum) return error.WrongZlibChecksum;
             },
             .raw => {},

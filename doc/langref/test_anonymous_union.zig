@@ -8,7 +8,7 @@ const Number = union {
 
 test "anonymous union literal syntax" {
     const i: Number = .{ .int = 42 };
-    const f = makeNumber();
+    const f = make_number();
     try expect(i.int == 42);
     try expect(f.float == 12.34);
 }

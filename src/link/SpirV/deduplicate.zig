@@ -70,20 +70,20 @@ const ModuleInfo = struct {
     ) !ModuleInfo {
         var entities = std.AutoArrayHashMap(ResultId, Entity).init(arena);
         var id_offsets = std.ArrayList(u16).init(arena);
-        var operand_is_id = try std.DynamicBitSetUnmanaged.initEmpty(arena, binary.instructions.len);
+        var operand_is_id = try std.DynamicBitSetUnmanaged.init_empty(arena, binary.instructions.len);
         var decorations = std.MultiArrayList(struct { target_id: ResultId, entity: Entity }){};
 
-        var it = binary.iterateInstructions();
+        var it = binary.iterate_instructions();
         while (it.next()) |inst| {
             id_offsets.items.len = 0;
-            try parser.parseInstructionResultIds(binary, inst, &id_offsets);
+            try parser.parse_instruction_result_ids(binary, inst, &id_offsets);
 
-            const first_operand_offset: u32 = @intCast(inst.offset + 1);
+            const first_operand_offset: u32 = @int_cast(inst.offset + 1);
             for (id_offsets.items) |offset| {
                 operand_is_id.set(first_operand_offset + offset);
             }
 
-            if (!canDeduplicate(inst.opcode)) continue;
+            if (!can_deduplicate(inst.opcode)) continue;
 
             const result_id_index: u16 = switch (inst.opcode.class()) {
                 .TypeDeclaration, .Annotation, .Debug => 0,
@@ -95,7 +95,7 @@ const ModuleInfo = struct {
             const entity = Entity{
                 .kind = inst.opcode,
                 .first_operand = first_operand_offset,
-                .num_operands = @intCast(inst.operands.len),
+                .num_operands = @int_cast(inst.operands.len),
                 .result_id_index = result_id_index,
                 .first_decoration = undefined, // Filled in later
             };
@@ -108,7 +108,7 @@ const ModuleInfo = struct {
                     });
                 },
                 .TypeDeclaration, .ConstantCreation => {
-                    const entry = try entities.getOrPut(result_id);
+                    const entry = try entities.get_or_put(result_id);
                     if (entry.found_existing) {
                         log.err("type or constant {} has duplicate definition", .{result_id});
                         return error.DuplicateId;
@@ -131,8 +131,8 @@ const ModuleInfo = struct {
                 // If any index is not in the entities set, its because its not a
                 // deduplicatable result-id. Those should be considered largest and
                 // float to the end.
-                const entity_index_a = ctx.entities.getIndex(ctx.ids[a_index]) orelse return false;
-                const entity_index_b = ctx.entities.getIndex(ctx.ids[b_index]) orelse return true;
+                const entity_index_a = ctx.entities.get_index(ctx.ids[a_index]) orelse return false;
+                const entity_index_b = ctx.entities.get_index(ctx.ids[b_index]) orelse return true;
 
                 return entity_index_a < entity_index_b;
             }
@@ -192,23 +192,23 @@ const EntityContext = struct {
 
     fn equalize_map_capacity(self: *EntityContext) !void {
         const cap = @max(self.ptr_map_a.capacity(), self.ptr_map_b.capacity());
-        try self.ptr_map_a.ensureTotalCapacity(self.a, cap);
-        try self.ptr_map_b.ensureTotalCapacity(self.a, cap);
+        try self.ptr_map_a.ensure_total_capacity(self.a, cap);
+        try self.ptr_map_b.ensure_total_capacity(self.a, cap);
     }
 
     fn hash(self: *EntityContext, id: ResultId) !u64 {
         var hasher = std.hash.Wyhash.init(0);
-        self.ptr_map_a.clearRetainingCapacity();
-        try self.hashInner(&hasher, id);
+        self.ptr_map_a.clear_retaining_capacity();
+        try self.hash_inner(&hasher, id);
         return hasher.final();
     }
 
     fn hash_inner(self: *EntityContext, hasher: *std.hash.Wyhash, id: ResultId) error{OutOfMemory}!void {
-        const index = self.info.entities.getIndex(id) orelse {
+        const index = self.info.entities.get_index(id) orelse {
             // Index unknown, the type or constant may depend on another result-id
             // that couldn't be deduplicated and so it wasn't added to info.entities.
             // In this case, just has the ID itself.
-            std.hash.autoHash(hasher, id);
+            std.hash.auto_hash(hasher, id);
             return;
         };
 
@@ -232,8 +232,8 @@ const EntityContext = struct {
             //   A -> C*' -> C -> C*' recursion
             // And hashing B goes like
             //   B -> C*" -> C -> C*' -> C -> C*' recursion
-            // The are several calls to ptrType in codegen that may C*' and C*" to be generated as separate
-            // types. This is not a problem for C itself though - this can only be generated through resolveType()
+            // The are several calls to ptr_type in codegen that may C*' and C*" to be generated as separate
+            // types. This is not a problem for C itself though - this can only be generated through resolve_type()
             // and so ensures equality by Zig's type system. Technically the above problem is still present, but it
             // would only be present in a structure such as
             //
@@ -248,56 +248,56 @@ const EntityContext = struct {
 
             // TODO: Do we need to mind the storage class here? Its going to be recursive regardless, right?
             const struct_id: ResultId = @enumFromInt(entity.operands(self.binary)[2]);
-            const entry = try self.ptr_map_a.getOrPut(self.a, struct_id);
+            const entry = try self.ptr_map_a.get_or_put(self.a, struct_id);
             if (entry.found_existing) {
                 // Pointer already seen. Hash the index instead of recursing into its children.
-                std.hash.autoHash(hasher, entry.index);
+                std.hash.auto_hash(hasher, entry.index);
                 return;
             }
         }
 
-        try self.hashEntity(hasher, entity);
+        try self.hash_entity(hasher, entity);
 
         // Process decorations.
-        const decorations = self.info.entityDecorationsByIndex(index);
+        const decorations = self.info.entity_decorations_by_index(index);
         for (decorations) |decoration| {
-            try self.hashEntity(hasher, decoration);
+            try self.hash_entity(hasher, decoration);
         }
 
         if (entity.kind == .OpTypePointer) {
             const struct_id: ResultId = @enumFromInt(entity.operands(self.binary)[2]);
-            assert(self.ptr_map_a.swapRemove(struct_id));
+            assert(self.ptr_map_a.swap_remove(struct_id));
         }
     }
 
     fn hash_entity(self: *EntityContext, hasher: *std.hash.Wyhash, entity: ModuleInfo.Entity) !void {
-        std.hash.autoHash(hasher, entity.kind);
+        std.hash.auto_hash(hasher, entity.kind);
         // Process operands
         const operands = entity.operands(self.binary);
         for (operands, 0..) |operand, i| {
             if (i == entity.result_id_index) {
                 // Not relevant, skip...
                 continue;
-            } else if (self.info.operand_is_id.isSet(entity.first_operand + i)) {
+            } else if (self.info.operand_is_id.is_set(entity.first_operand + i)) {
                 // Operand is ID
-                try self.hashInner(hasher, @enumFromInt(operand));
+                try self.hash_inner(hasher, @enumFromInt(operand));
             } else {
                 // Operand is merely data
-                std.hash.autoHash(hasher, operand);
+                std.hash.auto_hash(hasher, operand);
             }
         }
     }
 
     fn eql(self: *EntityContext, a: ResultId, b: ResultId) !bool {
-        self.ptr_map_a.clearRetainingCapacity();
-        self.ptr_map_b.clearRetainingCapacity();
+        self.ptr_map_a.clear_retaining_capacity();
+        self.ptr_map_b.clear_retaining_capacity();
 
-        return try self.eqlInner(a, b);
+        return try self.eql_inner(a, b);
     }
 
     fn eql_inner(self: *EntityContext, id_a: ResultId, id_b: ResultId) error{OutOfMemory}!bool {
-        const maybe_index_a = self.info.entities.getIndex(id_a);
-        const maybe_index_b = self.info.entities.getIndex(id_b);
+        const maybe_index_a = self.info.entities.get_index(id_a);
+        const maybe_index_b = self.info.entities.get_index(id_b);
 
         if (maybe_index_a == null and maybe_index_b == null) {
             // Both indices unknown. In this case the type or constant
@@ -324,8 +324,8 @@ const EntityContext = struct {
             const struct_id_a: ResultId = @enumFromInt(entity_a.operands(self.binary)[2]);
             const struct_id_b: ResultId = @enumFromInt(entity_b.operands(self.binary)[2]);
 
-            const entry_a = try self.ptr_map_a.getOrPut(self.a, struct_id_a);
-            const entry_b = try self.ptr_map_b.getOrPut(self.a, struct_id_b);
+            const entry_a = try self.ptr_map_a.get_or_put(self.a, struct_id_a);
+            const entry_b = try self.ptr_map_b.get_or_put(self.a, struct_id_b);
 
             if (entry_a.found_existing != entry_b.found_existing) return false;
             if (entry_a.index != entry_b.index) return false;
@@ -336,19 +336,19 @@ const EntityContext = struct {
             }
         }
 
-        if (!try self.eqlEntities(entity_a, entity_b)) {
+        if (!try self.eql_entities(entity_a, entity_b)) {
             return false;
         }
 
         // Compare decorations.
-        const decorations_a = self.info.entityDecorationsByIndex(index_a);
-        const decorations_b = self.info.entityDecorationsByIndex(index_b);
+        const decorations_a = self.info.entity_decorations_by_index(index_a);
+        const decorations_b = self.info.entity_decorations_by_index(index_b);
         if (decorations_a.len != decorations_b.len) {
             return false;
         }
 
         for (decorations_a, decorations_b) |decoration_a, decoration_b| {
-            if (!try self.eqlEntities(decoration_a, decoration_b)) {
+            if (!try self.eql_entities(decoration_a, decoration_b)) {
                 return false;
             }
         }
@@ -357,8 +357,8 @@ const EntityContext = struct {
             const struct_id_a: ResultId = @enumFromInt(entity_a.operands(self.binary)[2]);
             const struct_id_b: ResultId = @enumFromInt(entity_b.operands(self.binary)[2]);
 
-            assert(self.ptr_map_a.swapRemove(struct_id_a));
-            assert(self.ptr_map_b.swapRemove(struct_id_b));
+            assert(self.ptr_map_a.swap_remove(struct_id_a));
+            assert(self.ptr_map_b.swap_remove(struct_id_b));
         }
 
         return true;
@@ -380,8 +380,8 @@ const EntityContext = struct {
         }
 
         for (operands_a, operands_b, 0..) |operand_a, operand_b, i| {
-            const a_is_id = self.info.operand_is_id.isSet(entity_a.first_operand + i);
-            const b_is_id = self.info.operand_is_id.isSet(entity_b.first_operand + i);
+            const a_is_id = self.info.operand_is_id.is_set(entity_a.first_operand + i);
+            const b_is_id = self.info.operand_is_id.is_set(entity_b.first_operand + i);
             if (a_is_id != b_is_id) {
                 return false;
             } else if (i == entity_a.result_id_index) {
@@ -389,7 +389,7 @@ const EntityContext = struct {
                 continue;
             } else if (a_is_id) {
                 // Both are IDs, so recurse.
-                if (!try self.eqlInner(@enumFromInt(operand_a), @enumFromInt(operand_b))) {
+                if (!try self.eql_inner(@enumFromInt(operand_a), @enumFromInt(operand_b))) {
                     return false;
                 }
             } else if (operand_a != operand_b) {
@@ -440,37 +440,37 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
     }
 
     // hash only uses ptr_map_a, so allocate ptr_map_b too
-    try ctx.equalizeMapCapacity();
+    try ctx.equalize_map_capacity();
 
     // Figure out which entities can be deduplicated.
-    var map = std.HashMap(ResultId, void, EntityHashContext, 80).initContext(a, .{
+    var map = std.HashMap(ResultId, void, EntityHashContext, 80).init_context(a, .{
         .entity_context = &ctx,
     });
     var replace = std.AutoArrayHashMap(ResultId, ResultId).init(a);
     for (info.entities.keys()) |id| {
-        const entry = try map.getOrPut(id);
+        const entry = try map.get_or_put(id);
         if (entry.found_existing) {
-            try replace.putNoClobber(id, entry.key_ptr.*);
+            try replace.put_no_clobber(id, entry.key_ptr.*);
         }
     }
 
-    sub_node.setEstimatedTotalItems(binary.instructions.len);
+    sub_node.set_estimated_total_items(binary.instructions.len);
 
     // Now process the module, and replace instructions where needed.
     var section = Section{};
-    var it = binary.iterateInstructions();
+    var it = binary.iterate_instructions();
     var new_functions_section: ?usize = null;
     var new_operands = std.ArrayList(u32).init(a);
     var emitted_ptrs = std.AutoHashMap(ResultId, void).init(a);
     while (it.next()) |inst| {
-        defer sub_node.setCompletedItems(inst.offset);
+        defer sub_node.set_completed_items(inst.offset);
 
         // Result-id can only be the first or second operand
-        const inst_spec = parser.getInstSpec(inst.opcode).?;
+        const inst_spec = parser.get_inst_spec(inst.opcode).?;
 
         const maybe_result_id_offset: ?u16 = for (0..2) |i| {
             if (inst_spec.operands.len > i and inst_spec.operands[i].kind == .IdResult) {
-                break @intCast(i);
+                break @int_cast(i);
             }
         } else null;
 
@@ -500,19 +500,19 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
         // Re-emit the instruction, but replace all the IDs.
 
         new_operands.items.len = 0;
-        try new_operands.appendSlice(inst.operands);
+        try new_operands.append_slice(inst.operands);
 
         for (new_operands.items, 0..) |*operand, i| {
-            const is_id = info.operand_is_id.isSet(inst.offset + 1 + i);
+            const is_id = info.operand_is_id.is_set(inst.offset + 1 + i);
             if (!is_id) continue;
 
             if (replace.get(@enumFromInt(operand.*))) |new_id| {
-                operand.* = @intFromEnum(new_id);
+                operand.* = @int_from_enum(new_id);
             }
 
             if (maybe_result_id_offset == null or maybe_result_id_offset.? != i) {
                 const id: ResultId = @enumFromInt(operand.*);
-                const index = info.entities.getIndex(id) orelse continue;
+                const index = info.entities.get_index(id) orelse continue;
                 const entity = info.entities.values()[index];
                 if (entity.kind == .OpTypePointer and !emitted_ptrs.contains(id)) {
                     // Grab the pointer's storage class from its operands in the original
@@ -532,7 +532,7 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
             try emitted_ptrs.put(result_id, {});
         }
 
-        try section.emitRawInstruction(a, inst.opcode, new_operands.items);
+        try section.emit_raw_instruction(a, inst.opcode, new_operands.items);
     }
 
     for (replace.keys()) |key| {
@@ -540,6 +540,6 @@ pub fn run(parser: *BinaryModule.Parser, binary: *BinaryModule, progress: std.Pr
         _ = binary.arith_type_width.remove(key);
     }
 
-    binary.instructions = try parser.a.dupe(Word, section.toWords());
+    binary.instructions = try parser.a.dupe(Word, section.to_words());
     binary.sections.functions = new_functions_section orelse binary.instructions.len;
 }

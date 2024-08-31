@@ -29,13 +29,13 @@ pub fn counting_reader(reader: anytype) CountingReader(@TypeOf(reader)) {
 
 test CountingReader {
     const bytes = "yay" ** 100;
-    var fbs = io.fixedBufferStream(bytes);
+    var fbs = io.fixed_buffer_stream(bytes);
 
-    var counting_stream = countingReader(fbs.reader());
+    var counting_stream = counting_reader(fbs.reader());
     const stream = counting_stream.reader();
 
     //read and discard all bytes
-    while (stream.readByte()) |_| {} else |err| {
+    while (stream.read_byte()) |_| {} else |err| {
         try testing.expect(err == error.EndOfStream);
     }
 

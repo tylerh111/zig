@@ -10,27 +10,27 @@ const assert = std.debug.assert;
 pub const Class = enum { memory, byval, integer, double_integer, fields, none };
 
 pub fn classify_type(ty: Type, mod: *Module) Class {
-    const target = mod.getTarget();
-    std.debug.assert(ty.hasRuntimeBitsIgnoreComptime(mod));
+    const target = mod.get_target();
+    std.debug.assert(ty.has_runtime_bits_ignore_comptime(mod));
 
-    const max_byval_size = target.ptrBitWidth() * 2;
-    switch (ty.zigTypeTag(mod)) {
+    const max_byval_size = target.ptr_bit_width() * 2;
+    switch (ty.zig_type_tag(mod)) {
         .Struct => {
-            const bit_size = ty.bitSize(mod);
-            if (ty.containerLayout(mod) == .@"packed") {
+            const bit_size = ty.bit_size(mod);
+            if (ty.container_layout(mod) == .@"packed") {
                 if (bit_size > max_byval_size) return .memory;
                 return .byval;
             }
 
-            if (std.Target.riscv.featureSetHas(target.cpu.features, .d)) fields: {
+            if (std.Target.riscv.feature_set_has(target.cpu.features, .d)) fields: {
                 var any_fp = false;
                 var field_count: usize = 0;
-                for (0..ty.structFieldCount(mod)) |field_index| {
-                    const field_ty = ty.structFieldType(field_index, mod);
-                    if (!field_ty.hasRuntimeBitsIgnoreComptime(mod)) continue;
-                    if (field_ty.isRuntimeFloat())
+                for (0..ty.struct_field_count(mod)) |field_index| {
+                    const field_ty = ty.struct_field_type(field_index, mod);
+                    if (!field_ty.has_runtime_bits_ignore_comptime(mod)) continue;
+                    if (field_ty.is_runtime_float())
                         any_fp = true
-                    else if (!field_ty.isAbiInt(mod))
+                    else if (!field_ty.is_abi_int(mod))
                         break :fields;
                     field_count += 1;
                     if (field_count > 2) break :fields;
@@ -45,8 +45,8 @@ pub fn classify_type(ty: Type, mod: *Module) Class {
             return .integer;
         },
         .Union => {
-            const bit_size = ty.bitSize(mod);
-            if (ty.containerLayout(mod) == .@"packed") {
+            const bit_size = ty.bit_size(mod);
+            if (ty.container_layout(mod) == .@"packed") {
                 if (bit_size > max_byval_size) return .memory;
                 return .byval;
             }
@@ -58,21 +58,21 @@ pub fn classify_type(ty: Type, mod: *Module) Class {
         .Bool => return .integer,
         .Float => return .byval,
         .Int, .Enum, .ErrorSet => {
-            const bit_size = ty.bitSize(mod);
+            const bit_size = ty.bit_size(mod);
             if (bit_size > max_byval_size) return .memory;
             return .byval;
         },
         .Vector => {
-            const bit_size = ty.bitSize(mod);
+            const bit_size = ty.bit_size(mod);
             if (bit_size > max_byval_size) return .memory;
             return .integer;
         },
         .Optional => {
-            std.debug.assert(ty.isPtrLikeOptional(mod));
+            std.debug.assert(ty.is_ptr_like_optional(mod));
             return .byval;
         },
         .Pointer => {
-            std.debug.assert(!ty.isSlice(mod));
+            std.debug.assert(!ty.is_slice(mod));
             return .byval;
         },
         .ErrorUnion,
@@ -101,12 +101,12 @@ pub fn classify_system(ty: Type, zcu: *Module) [8]Class {
         .memory, .none, .none, .none,
         .none,   .none, .none, .none,
     };
-    switch (ty.zigTypeTag(zcu)) {
+    switch (ty.zig_type_tag(zcu)) {
         .Bool, .Void, .NoReturn => {
             result[0] = .integer;
             return result;
         },
-        .Pointer => switch (ty.ptrSize(zcu)) {
+        .Pointer => switch (ty.ptr_size(zcu)) {
             .Slice => {
                 result[0] = .integer;
                 result[1] = .integer;
@@ -118,7 +118,7 @@ pub fn classify_system(ty: Type, zcu: *Module) [8]Class {
             },
         },
         .Optional => {
-            if (ty.isPtrLikeOptional(zcu)) {
+            if (ty.is_ptr_like_optional(zcu)) {
                 result[0] = .integer;
                 return result;
             }
@@ -127,7 +127,7 @@ pub fn classify_system(ty: Type, zcu: *Module) [8]Class {
             return result;
         },
         .Int, .Enum, .ErrorSet => {
-            const int_bits = ty.intInfo(zcu).bits;
+            const int_bits = ty.int_info(zcu).bits;
             if (int_bits <= 64) {
                 result[0] = .integer;
                 return result;
@@ -140,8 +140,8 @@ pub fn classify_system(ty: Type, zcu: *Module) [8]Class {
             unreachable; // support > 128 bit int arguments
         },
         .ErrorUnion => {
-            const payload_ty = ty.errorUnionPayload(zcu);
-            const payload_bits = payload_ty.bitSize(zcu);
+            const payload_ty = ty.error_union_payload(zcu);
+            const payload_bits = payload_ty.bit_size(zcu);
 
             // the error union itself
             result[0] = .integer;
@@ -154,11 +154,11 @@ pub fn classify_system(ty: Type, zcu: *Module) [8]Class {
                 return result;
             }
 
-            std.debug.panic("TODO: classifySystem ErrorUnion > 64 bit payload", .{});
+            std.debug.panic("TODO: classify_system ErrorUnion > 64 bit payload", .{});
         },
         .Struct => {
-            const layout = ty.containerLayout(zcu);
-            const ty_size = ty.abiSize(zcu);
+            const layout = ty.container_layout(zcu);
+            const ty_size = ty.abi_size(zcu);
 
             if (layout == .@"packed") {
                 assert(ty_size <= 16);
@@ -169,7 +169,7 @@ pub fn classify_system(ty: Type, zcu: *Module) [8]Class {
 
             return memory_class;
         },
-        else => |bad_ty| std.debug.panic("classifySystem {s}", .{@tagName(bad_ty)}),
+        else => |bad_ty| std.debug.panic("classify_system {s}", .{@tag_name(bad_ty)}),
     }
 }
 
@@ -180,27 +180,27 @@ fn classify_struct(
     zcu: *Module,
 ) void {
     const ip = &zcu.intern_pool;
-    var field_it = loaded_struct.iterateRuntimeOrder(ip);
+    var field_it = loaded_struct.iterate_runtime_order(ip);
 
     while (field_it.next()) |field_index| {
-        const field_ty = Type.fromInterned(loaded_struct.field_types.get(ip)[field_index]);
-        const field_align = loaded_struct.fieldAlign(ip, field_index);
-        byte_offset.* = std.mem.alignForward(
+        const field_ty = Type.from_interned(loaded_struct.field_types.get(ip)[field_index]);
+        const field_align = loaded_struct.field_align(ip, field_index);
+        byte_offset.* = std.mem.align_forward(
             u64,
             byte_offset.*,
-            field_align.toByteUnits() orelse field_ty.abiAlignment(zcu).toByteUnits().?,
+            field_align.to_byte_units() orelse field_ty.abi_alignment(zcu).to_byte_units().?,
         );
-        if (zcu.typeToStruct(field_ty)) |field_loaded_struct| {
+        if (zcu.type_to_struct(field_ty)) |field_loaded_struct| {
             if (field_loaded_struct.layout != .@"packed") {
-                classifyStruct(result, byte_offset, field_loaded_struct, zcu);
+                classify_struct(result, byte_offset, field_loaded_struct, zcu);
                 continue;
             }
         }
-        const field_class = std.mem.sliceTo(&classifySystem(field_ty, zcu), .none);
-        const field_size = field_ty.abiSize(zcu);
+        const field_class = std.mem.slice_to(&classify_system(field_ty, zcu), .none);
+        const field_size = field_ty.abi_size(zcu);
 
         combine: {
-            const result_class = &result[@intCast(byte_offset.* / 8)];
+            const result_class = &result[@int_cast(byte_offset.* / 8)];
             if (result_class.* == field_class[0]) {
                 break :combine;
             }
@@ -225,7 +225,7 @@ fn classify_struct(
 
             result_class.* = .integer;
         }
-        @memcpy(result[@intCast(byte_offset.* / 8 + 1)..][0 .. field_class.len - 1], field_class[1..]);
+        @memcpy(result[@int_cast(byte_offset.* / 8 + 1)..][0 .. field_class.len - 1], field_class[1..]);
         byte_offset.* += field_size;
     }
 }
@@ -254,8 +254,8 @@ pub const RegisterManager = RegisterManagerFn(@import("CodeGen.zig"), Register, 
 const RegisterBitSet = RegisterManager.RegisterBitSet;
 pub const RegisterClass = struct {
     pub const gp: RegisterBitSet = blk: {
-        var set = RegisterBitSet.initEmpty();
-        set.setRangeValue(.{
+        var set = RegisterBitSet.init_empty();
+        set.set_range_value(.{
             .start = 0,
             .end = callee_preserved_regs.len,
         }, true);
@@ -263,8 +263,8 @@ pub const RegisterClass = struct {
     };
 
     pub const fa: RegisterBitSet = blk: {
-        var set = RegisterBitSet.initEmpty();
-        set.setRangeValue(.{
+        var set = RegisterBitSet.init_empty();
+        set.set_range_value(.{
             .start = callee_preserved_regs.len,
             .end = callee_preserved_regs.len + function_arg_regs.len,
         }, true);
@@ -272,8 +272,8 @@ pub const RegisterClass = struct {
     };
 
     pub const fr: RegisterBitSet = blk: {
-        var set = RegisterBitSet.initEmpty();
-        set.setRangeValue(.{
+        var set = RegisterBitSet.init_empty();
+        set.set_range_value(.{
             .start = callee_preserved_regs.len,
             .end = callee_preserved_regs.len + function_ret_regs.len,
         }, true);
@@ -281,8 +281,8 @@ pub const RegisterClass = struct {
     };
 
     pub const tp: RegisterBitSet = blk: {
-        var set = RegisterBitSet.initEmpty();
-        set.setRangeValue(.{
+        var set = RegisterBitSet.init_empty();
+        set.set_range_value(.{
             .start = callee_preserved_regs.len + function_arg_regs.len,
             .end = callee_preserved_regs.len + function_arg_regs.len + temporary_regs.len,
         }, true);

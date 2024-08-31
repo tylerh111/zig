@@ -11,19 +11,19 @@ const S = struct {
 };
 
 const T = struct {
-    pub usingnamespace @compileError("usingnamespace analyzed");
+    pub usingnamespace @compile_error("usingnamespace analyzed");
 };
 
 comptime {
     const a: S = .{ .ok = 123, .bad = undefined };
     _ = a;
-    @compileError("should not be reached");
+    @compile_error("should not be reached");
 }
 
 comptime {
     const b: S = .{ .ok = 123, .bad = undefined };
     _ = b;
-    @compileError("should not be reached");
+    @compile_error("should not be reached");
 }
 
 // error

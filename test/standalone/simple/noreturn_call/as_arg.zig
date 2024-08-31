@@ -4,5 +4,5 @@ fn foo() noreturn {
 }
 fn bar(_: u8, _: u8) void {}
 pub fn main() void {
-    bar(foo(), @compileError("bad"));
+    bar(foo(), @compile_error("bad"));
 }

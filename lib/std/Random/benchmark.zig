@@ -91,8 +91,8 @@ pub fn benchmark(comptime H: anytype, bytes: usize, comptime block_size: usize) 
     }
     const end = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(end - start)) / time.ns_per_s;
-    const throughput = @as(u64, @intFromFloat(@as(f64, @floatFromInt(bytes)) / elapsed_s));
+    const elapsed_s = @as(f64, @float_from_int(end - start)) / time.ns_per_s;
+    const throughput = @as(u64, @int_from_float(@as(f64, @float_from_int(bytes)) / elapsed_s));
 
     std.debug.assert(rng.random().int(u64) != 0);
 
@@ -122,11 +122,11 @@ fn mode(comptime x: comptime_int) comptime_int {
 }
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    const stdout = std.io.get_std_out().writer();
 
     var buffer: [1024]u8 = undefined;
     var fixed = std.heap.FixedBufferAllocator.init(buffer[0..]);
-    const args = try std.process.argsAlloc(fixed.allocator());
+    const args = try std.process.args_alloc(fixed.allocator());
 
     var filter: ?[]u8 = "";
     var count: usize = mode(128 * MiB);
@@ -155,7 +155,7 @@ pub fn main() !void {
                 std.process.exit(1);
             }
 
-            const c = try std.fmt.parseUnsigned(usize, args[i], 10);
+            const c = try std.fmt.parse_unsigned(usize, args[i], 10);
             count = c * MiB;
         } else if (std.mem.eql(u8, args[i], "--csprngs-only")) {
             bench_prngs = false;
@@ -177,7 +177,7 @@ pub fn main() !void {
     if (bench_prngs) {
         if (bench_long) {
             inline for (prngs) |R| {
-                if (filter == null or std.mem.indexOf(u8, R.name, filter.?) != null) {
+                if (filter == null or std.mem.index_of(u8, R.name, filter.?) != null) {
                     try stdout.print("{s} (long outputs)\n", .{R.name});
                     const result_long = try benchmark(R, count, long_block_size);
                     try stdout.print("    {:5} MiB/s\n", .{result_long.throughput / (1 * MiB)});
@@ -186,7 +186,7 @@ pub fn main() !void {
         }
         if (bench_short) {
             inline for (prngs) |R| {
-                if (filter == null or std.mem.indexOf(u8, R.name, filter.?) != null) {
+                if (filter == null or std.mem.index_of(u8, R.name, filter.?) != null) {
                     try stdout.print("{s} (short outputs)\n", .{R.name});
                     const result_short = try benchmark(R, count, short_block_size);
                     try stdout.print("    {:5} MiB/s\n", .{result_short.throughput / (1 * MiB)});
@@ -197,7 +197,7 @@ pub fn main() !void {
     if (bench_csprngs) {
         if (bench_long) {
             inline for (csprngs) |R| {
-                if (filter == null or std.mem.indexOf(u8, R.name, filter.?) != null) {
+                if (filter == null or std.mem.index_of(u8, R.name, filter.?) != null) {
                     try stdout.print("{s} (cryptographic, long outputs)\n", .{R.name});
                     const result_long = try benchmark(R, count, long_block_size);
                     try stdout.print("    {:5} MiB/s\n", .{result_long.throughput / (1 * MiB)});
@@ -206,7 +206,7 @@ pub fn main() !void {
         }
         if (bench_short) {
             inline for (csprngs) |R| {
-                if (filter == null or std.mem.indexOf(u8, R.name, filter.?) != null) {
+                if (filter == null or std.mem.index_of(u8, R.name, filter.?) != null) {
                     try stdout.print("{s} (cryptographic, short outputs)\n", .{R.name});
                     const result_short = try benchmark(R, count, short_block_size);
                     try stdout.print("    {:5} MiB/s\n", .{result_short.throughput / (1 * MiB)});

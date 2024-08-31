@@ -16,18 +16,18 @@ pub fn build(b: *std.Build) void {
 }
 
 fn add(b: *std.Build, test_step: *std.Build.Step, optimize: std.builtin.OptimizeMode) void {
-    const exe = b.addExecutable(.{
+    const exe = b.add_executable(.{
         .name = "test",
         .root_source_file = b.path("main.zig"),
         .target = b.host,
         .optimize = optimize,
     });
-    exe.addCSourceFile(.{ .file = b.path("test.c"), .flags = &[_][]const u8{"-std=c11"} });
-    exe.linkLibC();
+    exe.add_csource_file(.{ .file = b.path("test.c"), .flags = &[_][]const u8{"-std=c11"} });
+    exe.link_lib_c();
 
-    const run_cmd = b.addRunArtifact(exe);
+    const run_cmd = b.add_run_artifact(exe);
     run_cmd.skip_foreign_checks = true;
-    run_cmd.expectExitCode(0);
+    run_cmd.expect_exit_code(0);
 
-    test_step.dependOn(&run_cmd.step);
+    test_step.depend_on(&run_cmd.step);
 }

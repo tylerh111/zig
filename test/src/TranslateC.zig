@@ -43,10 +43,10 @@ pub fn create(
         .allow_warnings = allow_warnings,
     };
 
-    tc.addSourceFile(filename, source);
+    tc.add_source_file(filename, source);
     var arg_i: usize = 0;
     while (arg_i < expected_lines.len) : (arg_i += 1) {
-        tc.addExpectedLine(expected_lines[arg_i]);
+        tc.add_expected_line(expected_lines[arg_i]);
     }
     return tc;
 }
@@ -58,7 +58,7 @@ pub fn add(
     expected_lines: []const []const u8,
 ) void {
     const tc = self.create(false, "source.h", name, source, expected_lines);
-    self.addCase(tc);
+    self.add_case(tc);
 }
 
 pub fn add_with_target(
@@ -70,7 +70,7 @@ pub fn add_with_target(
 ) void {
     const tc = self.create(false, "source.h", name, source, expected_lines);
     tc.target = target;
-    self.addCase(tc);
+    self.add_case(tc);
 }
 
 pub fn add_allow_warnings(
@@ -80,34 +80,34 @@ pub fn add_allow_warnings(
     expected_lines: []const []const u8,
 ) void {
     const tc = self.create(true, "source.h", name, source, expected_lines);
-    self.addCase(tc);
+    self.add_case(tc);
 }
 
 pub fn add_case(self: *TranslateCContext, case: *const TestCase) void {
     const b = self.b;
 
     const translate_c_cmd = "translate-c";
-    const annotated_case_name = fmt.allocPrint(self.b.allocator, "{s} {s}", .{ translate_c_cmd, case.name }) catch unreachable;
+    const annotated_case_name = fmt.alloc_print(self.b.allocator, "{s} {s}", .{ translate_c_cmd, case.name }) catch unreachable;
     for (self.test_filters) |test_filter| {
-        if (mem.indexOf(u8, annotated_case_name, test_filter)) |_| break;
+        if (mem.index_of(u8, annotated_case_name, test_filter)) |_| break;
     } else if (self.test_filters.len > 0) return;
 
-    const write_src = b.addWriteFiles();
+    const write_src = b.add_write_files();
     for (case.sources.items) |src_file| {
         _ = write_src.add(src_file.filename, src_file.source);
     }
 
-    const translate_c = b.addTranslateC(.{
-        .root_source_file = write_src.files.items[0].getPath(),
-        .target = b.resolveTargetQuery(case.target),
+    const translate_c = b.add_translate_c(.{
+        .root_source_file = write_src.files.items[0].get_path(),
+        .target = b.resolve_target_query(case.target),
         .optimize = .Debug,
     });
 
     translate_c.step.name = annotated_case_name;
 
-    const check_file = translate_c.addCheckFile(case.expected_lines.items);
+    const check_file = translate_c.add_check_file(case.expected_lines.items);
 
-    self.step.dependOn(&check_file.step);
+    self.step.depend_on(&check_file.step);
 }
 
 const TranslateCContext = @This();

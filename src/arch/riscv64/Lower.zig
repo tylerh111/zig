@@ -37,7 +37,7 @@ pub const Reloc = struct {
     };
 };
 
-/// The returned slice is overwritten by the next call to lowerMir.
+/// The returned slice is overwritten by the next call to lower_mir.
 pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
     insts: []const Instruction,
     relocs: []const Reloc,
@@ -52,7 +52,7 @@ pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
     defer lower.result_relocs_len = undefined;
 
     const inst = lower.mir.instructions.get(index);
-    log.debug("lowerMir {}", .{inst});
+    log.debug("lower_mir {}", .{inst});
     switch (inst.tag) {
         else => try lower.generic(inst),
         .pseudo => switch (inst.ops) {
@@ -65,7 +65,7 @@ pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
             .pseudo_load_rm, .pseudo_store_rm => {
                 const rm = inst.data.rm;
 
-                const frame_loc = rm.m.toFrameLoc(lower.mir);
+                const frame_loc = rm.m.to_frame_loc(lower.mir);
 
                 switch (inst.ops) {
                     .pseudo_load_rm => {
@@ -125,12 +125,12 @@ pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
                 });
             },
 
-            .pseudo_spill_regs => try lower.pushPopRegList(true, inst.data.reg_list),
-            .pseudo_restore_regs => try lower.pushPopRegList(false, inst.data.reg_list),
+            .pseudo_spill_regs => try lower.push_pop_reg_list(true, inst.data.reg_list),
+            .pseudo_restore_regs => try lower.push_pop_reg_list(false, inst.data.reg_list),
 
             .pseudo_load_symbol => {
                 const payload = inst.data.payload;
-                const data = lower.mir.extraData(Mir.LoadSymbolPayload, payload).data;
+                const data = lower.mir.extra_data(Mir.LoadSymbolPayload, payload).data;
 
                 try lower.emit(.lui, &.{
                     .{ .reg = @enumFromInt(data.register) },
@@ -150,7 +150,7 @@ pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
 
             .pseudo_lea_rm => {
                 const rm = inst.data.rm;
-                const frame = rm.m.toFrameLoc(lower.mir);
+                const frame = rm.m.to_frame_loc(lower.mir);
 
                 try lower.emit(.addi, &.{
                     .{ .reg = rm.r },
@@ -247,7 +247,7 @@ pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
                 });
             },
 
-            else => return lower.fail("TODO lower: psuedo {s}", .{@tagName(inst.ops)}),
+            else => return lower.fail("TODO lower: psuedo {s}", .{@tag_name(inst.ops)}),
         },
     }
 
@@ -258,10 +258,10 @@ pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
 }
 
 fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
-    const mnemonic = std.meta.stringToEnum(Encoding.Mnemonic, @tagName(inst.tag)) orelse {
+    const mnemonic = std.meta.string_to_enum(Encoding.Mnemonic, @tag_name(inst.tag)) orelse {
         return lower.fail("generic inst name '{s}' with op {s} doesn't match with a mnemonic", .{
-            @tagName(inst.tag),
-            @tagName(inst.ops),
+            @tag_name(inst.tag),
+            @tag_name(inst.ops),
         });
     };
     try lower.emit(mnemonic, switch (inst.ops) {
@@ -289,7 +289,7 @@ fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
             .{ .reg = inst.data.r_type.rs1 },
             .{ .reg = inst.data.r_type.rs2 },
         },
-        else => return lower.fail("TODO: generic lower ops {s}", .{@tagName(inst.ops)}),
+        else => return lower.fail("TODO: generic lower ops {s}", .{@tag_name(inst.ops)}),
     });
 }
 
@@ -313,7 +313,7 @@ fn push_pop_reg_list(lower: *Lower, comptime spilling: bool, reg_list: Mir.Regis
 
     var reg_i: u31 = 0;
     while (it.next()) |i| {
-        const frame = lower.mir.frame_locs.get(@intFromEnum(bits.FrameIndex.spill_frame));
+        const frame = lower.mir.frame_locs.get(@int_from_enum(bits.FrameIndex.spill_frame));
 
         if (spilling) {
             try lower.emit(.sd, &.{

@@ -5,6 +5,6 @@ pub export fn foo() c_int {
     _ = &b;
     return a + b;
 }
-pub const MAKELOCAL = @compileError("unable to translate C expr: unexpected token .Equal"); // macro.c:1:9
+pub const MAKELOCAL = @compile_error("unable to translate C expr: unexpected token .Equal"); // macro.c:1:9
 
 // syntax

@@ -46,17 +46,17 @@ pub const CliArg = struct {
 
     pub fn match_eql(self: CliArg, arg: []const u8) u2 {
         if (self.pd1 and arg.len >= self.name.len + 1 and
-            mem.startsWith(u8, arg, "-") and mem.eql(u8, arg[1..], self.name))
+            mem.starts_with(u8, arg, "-") and mem.eql(u8, arg[1..], self.name))
         {
             return 1;
         }
         if (self.pd2 and arg.len >= self.name.len + 2 and
-            mem.startsWith(u8, arg, "--") and mem.eql(u8, arg[2..], self.name))
+            mem.starts_with(u8, arg, "--") and mem.eql(u8, arg[2..], self.name))
         {
             return 2;
         }
         if (self.psl and arg.len >= self.name.len + 1 and
-            mem.startsWith(u8, arg, "/") and mem.eql(u8, arg[1..], self.name))
+            mem.starts_with(u8, arg, "/") and mem.eql(u8, arg[1..], self.name))
         {
             return 1;
         }
@@ -65,17 +65,17 @@ pub const CliArg = struct {
 
     pub fn match_starts_with(self: CliArg, arg: []const u8) usize {
         if (self.pd1 and arg.len >= self.name.len + 1 and
-            mem.startsWith(u8, arg, "-") and mem.startsWith(u8, arg[1..], self.name))
+            mem.starts_with(u8, arg, "-") and mem.starts_with(u8, arg[1..], self.name))
         {
             return self.name.len + 1;
         }
         if (self.pd2 and arg.len >= self.name.len + 2 and
-            mem.startsWith(u8, arg, "--") and mem.startsWith(u8, arg[2..], self.name))
+            mem.starts_with(u8, arg, "--") and mem.starts_with(u8, arg[2..], self.name))
         {
             return self.name.len + 2;
         }
         if (self.psl and arg.len >= self.name.len + 1 and
-            mem.startsWith(u8, arg, "/") and mem.startsWith(u8, arg[1..], self.name))
+            mem.starts_with(u8, arg, "/") and mem.starts_with(u8, arg[1..], self.name))
         {
             return self.name.len + 1;
         }

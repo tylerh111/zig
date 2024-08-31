@@ -14,7 +14,7 @@ pub const Register = enum(u8) {
 
     /// Returns the bit-width of the register.
     pub fn size(self: Register) u7 {
-        return switch (@intFromEnum(self)) {
+        return switch (@int_from_enum(self)) {
             0...7 => 32,
             8...15 => 16,
             16...23 => 8,
@@ -26,7 +26,7 @@ pub const Register = enum(u8) {
     /// x86 has. It is embedded in some instructions, such as the `B8 +rd` move
     /// instruction, and is used in the R/M byte.
     pub fn id(self: Register) u3 {
-        return @truncate(@intFromEnum(self));
+        return @truncate(@int_from_enum(self));
     }
 
     /// Convert from any register to its 32 bit alias.
@@ -64,7 +64,7 @@ pub const Register = enum(u8) {
 /// TODO this set is actually a set of caller-saved registers.
 pub const callee_preserved_regs = [_]Register{ .eax, .ecx, .edx, .esi, .edi };
 
-// TODO add these to Register enum and corresponding dwarfLocOp
+// TODO add these to Register enum and corresponding dwarf_loc_op
 //  // Return Address register. This is stored in `0(%esp, "")` and is not a physical register.
 //  RA = (8, "RA"),
 //

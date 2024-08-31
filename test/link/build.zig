@@ -16,8 +16,8 @@ pub fn build(b: *std.Build) void {
         .has_macos_sdk = enable_macos_sdk,
         .has_symlinks = has_symlinks,
     };
-    step.dependOn(@import("elf.zig").testAll(b, build_opts));
-    step.dependOn(@import("macho.zig").testAll(b, build_opts));
+    step.depend_on(@import("elf.zig").test_all(b, build_opts));
+    step.depend_on(@import("macho.zig").test_all(b, build_opts));
 
     add_dep_steps: for (b.available_deps) |available_dep| {
         const dep_name, const dep_hash = available_dep;
@@ -49,6 +49,6 @@ pub fn build(b: *std.Build) void {
         const dep = b.dependency(dep_name, .{});
         const dep_step = dep.builder.default_step;
         dep_step.name = b.fmt("link_test_cases.{s}", .{dep_name});
-        step.dependOn(dep_step);
+        step.depend_on(dep_step);
     }
 }

@@ -16,7 +16,7 @@ pub const Register = enum(u6) {
     // zig fmt: on
 
     pub fn id(self: Register) u5 {
-        return @as(u5, @truncate(@intFromEnum(self)));
+        return @as(u5, @truncate(@int_from_enum(self)));
     }
 
     pub fn enc(self: Register) u5 {
@@ -31,32 +31,32 @@ pub const Register = enum(u6) {
 
 test "Register.id" {
     // SP
-    try testing.expectEqual(@as(u5, 14), Register.o6.id());
-    try testing.expectEqual(Register.o6.id(), Register.sp.id());
+    try testing.expect_equal(@as(u5, 14), Register.o6.id());
+    try testing.expect_equal(Register.o6.id(), Register.sp.id());
 
     // FP
-    try testing.expectEqual(@as(u5, 30), Register.i6.id());
-    try testing.expectEqual(Register.i6.id(), Register.fp.id());
+    try testing.expect_equal(@as(u5, 30), Register.i6.id());
+    try testing.expect_equal(Register.i6.id(), Register.fp.id());
 
     // x0
-    try testing.expectEqual(@as(u5, 0), Register.g0.id());
-    try testing.expectEqual(@as(u5, 8), Register.o0.id());
-    try testing.expectEqual(@as(u5, 16), Register.l0.id());
-    try testing.expectEqual(@as(u5, 24), Register.i0.id());
+    try testing.expect_equal(@as(u5, 0), Register.g0.id());
+    try testing.expect_equal(@as(u5, 8), Register.o0.id());
+    try testing.expect_equal(@as(u5, 16), Register.l0.id());
+    try testing.expect_equal(@as(u5, 24), Register.i0.id());
 }
 
 test "Register.enc" {
     // x0
-    try testing.expectEqual(@as(u5, 0), Register.g0.enc());
-    try testing.expectEqual(@as(u5, 8), Register.o0.enc());
-    try testing.expectEqual(@as(u5, 16), Register.l0.enc());
-    try testing.expectEqual(@as(u5, 24), Register.i0.enc());
+    try testing.expect_equal(@as(u5, 0), Register.g0.enc());
+    try testing.expect_equal(@as(u5, 8), Register.o0.enc());
+    try testing.expect_equal(@as(u5, 16), Register.l0.enc());
+    try testing.expect_equal(@as(u5, 24), Register.i0.enc());
 
     // For integer registers, enc() == id().
-    try testing.expectEqual(Register.g0.enc(), Register.g0.id());
-    try testing.expectEqual(Register.o0.enc(), Register.o0.id());
-    try testing.expectEqual(Register.l0.enc(), Register.l0.id());
-    try testing.expectEqual(Register.i0.enc(), Register.i0.id());
+    try testing.expect_equal(Register.g0.enc(), Register.g0.id());
+    try testing.expect_equal(Register.o0.enc(), Register.o0.id());
+    try testing.expect_equal(Register.l0.enc(), Register.l0.id());
+    try testing.expect_equal(Register.i0.enc(), Register.i0.id());
 }
 
 /// Scalar floating point registers in the SPARCv9 instruction set
@@ -96,9 +96,9 @@ pub const FloatingPointRegister = enum(u7) {
 
     pub fn id(self: FloatingPointRegister) u6 {
         return switch (self.size()) {
-            32 => @as(u6, @truncate(@intFromEnum(self))),
-            64 => @as(u6, @truncate((@intFromEnum(self) - 32) * 2)),
-            128 => @as(u6, @truncate((@intFromEnum(self) - 64) * 4)),
+            32 => @as(u6, @truncate(@int_from_enum(self))),
+            64 => @as(u6, @truncate((@int_from_enum(self) - 32) * 2)),
+            128 => @as(u6, @truncate((@int_from_enum(self) - 64) * 4)),
             else => unreachable,
         };
     }
@@ -114,7 +114,7 @@ pub const FloatingPointRegister = enum(u7) {
 
     /// Returns the bit-width of the register.
     pub fn size(self: FloatingPointRegister) u8 {
-        return switch (@intFromEnum(self)) {
+        return switch (@int_from_enum(self)) {
             0...31 => 32,
             32...63 => 64,
             64...79 => 128,
@@ -125,37 +125,37 @@ pub const FloatingPointRegister = enum(u7) {
 
 test "FloatingPointRegister.id" {
     // Low region
-    try testing.expectEqual(@as(u6, 0), FloatingPointRegister.q0.id());
-    try testing.expectEqual(FloatingPointRegister.q0.id(), FloatingPointRegister.d0.id());
-    try testing.expectEqual(FloatingPointRegister.d0.id(), FloatingPointRegister.f0.id());
+    try testing.expect_equal(@as(u6, 0), FloatingPointRegister.q0.id());
+    try testing.expect_equal(FloatingPointRegister.q0.id(), FloatingPointRegister.d0.id());
+    try testing.expect_equal(FloatingPointRegister.d0.id(), FloatingPointRegister.f0.id());
 
-    try testing.expectEqual(@as(u6, 28), FloatingPointRegister.q28.id());
-    try testing.expectEqual(FloatingPointRegister.q28.id(), FloatingPointRegister.d28.id());
-    try testing.expectEqual(FloatingPointRegister.d28.id(), FloatingPointRegister.f28.id());
+    try testing.expect_equal(@as(u6, 28), FloatingPointRegister.q28.id());
+    try testing.expect_equal(FloatingPointRegister.q28.id(), FloatingPointRegister.d28.id());
+    try testing.expect_equal(FloatingPointRegister.d28.id(), FloatingPointRegister.f28.id());
 
     // High region
-    try testing.expectEqual(@as(u6, 32), FloatingPointRegister.q32.id());
-    try testing.expectEqual(FloatingPointRegister.q32.id(), FloatingPointRegister.d32.id());
+    try testing.expect_equal(@as(u6, 32), FloatingPointRegister.q32.id());
+    try testing.expect_equal(FloatingPointRegister.q32.id(), FloatingPointRegister.d32.id());
 
-    try testing.expectEqual(@as(u6, 60), FloatingPointRegister.q60.id());
-    try testing.expectEqual(FloatingPointRegister.q60.id(), FloatingPointRegister.d60.id());
+    try testing.expect_equal(@as(u6, 60), FloatingPointRegister.q60.id());
+    try testing.expect_equal(FloatingPointRegister.q60.id(), FloatingPointRegister.d60.id());
 }
 
 test "FloatingPointRegister.enc" {
     // f registers
-    try testing.expectEqual(@as(u5, 0), FloatingPointRegister.f0.enc());
-    try testing.expectEqual(@as(u5, 1), FloatingPointRegister.f1.enc());
-    try testing.expectEqual(@as(u5, 31), FloatingPointRegister.f31.enc());
+    try testing.expect_equal(@as(u5, 0), FloatingPointRegister.f0.enc());
+    try testing.expect_equal(@as(u5, 1), FloatingPointRegister.f1.enc());
+    try testing.expect_equal(@as(u5, 31), FloatingPointRegister.f31.enc());
 
     // d registers
-    try testing.expectEqual(@as(u5, 0), FloatingPointRegister.d0.enc());
-    try testing.expectEqual(@as(u5, 1), FloatingPointRegister.d32.enc());
-    try testing.expectEqual(@as(u5, 31), FloatingPointRegister.d62.enc());
+    try testing.expect_equal(@as(u5, 0), FloatingPointRegister.d0.enc());
+    try testing.expect_equal(@as(u5, 1), FloatingPointRegister.d32.enc());
+    try testing.expect_equal(@as(u5, 31), FloatingPointRegister.d62.enc());
 
     // q registers
-    try testing.expectEqual(@as(u5, 0), FloatingPointRegister.q0.enc());
-    try testing.expectEqual(@as(u5, 1), FloatingPointRegister.q32.enc());
-    try testing.expectEqual(@as(u5, 29), FloatingPointRegister.q60.enc());
+    try testing.expect_equal(@as(u5, 0), FloatingPointRegister.q0.enc());
+    try testing.expect_equal(@as(u5, 1), FloatingPointRegister.q32.enc());
+    try testing.expect_equal(@as(u5, 29), FloatingPointRegister.q60.enc());
 }
 
 /// Represents an instruction in the SPARCv9 instruction set
@@ -696,8 +696,8 @@ pub const Instruction = union(enum) {
         /// Encodes the condition into the instruction bit pattern.
         pub fn enc(cond: Condition) u4 {
             return switch (cond) {
-                .icond => |c| @intFromEnum(c),
-                .fcond => |c| @intFromEnum(c),
+                .icond => |c| @int_from_enum(c),
+                .fcond => |c| @int_from_enum(c),
             };
         }
 
@@ -752,7 +752,7 @@ pub const Instruction = union(enum) {
     // See section 6.2 of the SPARCv9 ISA manual.
 
     fn format1(disp: i32) Instruction {
-        const udisp = @as(u32, @bitCast(disp));
+        const udisp = @as(u32, @bit_cast(disp));
 
         // In SPARC, branch target needs to be aligned to 4 bytes.
         assert(udisp % 4 == 0);
@@ -777,7 +777,7 @@ pub const Instruction = union(enum) {
     }
 
     fn format2b(op2: u3, cond: Condition, annul: bool, disp: i24) Instruction {
-        const udisp = @as(u24, @bitCast(disp));
+        const udisp = @as(u24, @bit_cast(disp));
 
         // In SPARC, branch target needs to be aligned to 4 bytes.
         assert(udisp % 4 == 0);
@@ -786,7 +786,7 @@ pub const Instruction = union(enum) {
         const udisp_truncated = @as(u22, @truncate(udisp >> 2));
         return Instruction{
             .format_2b = .{
-                .a = @intFromBool(annul),
+                .a = @int_from_bool(annul),
                 .cond = cond.enc(),
                 .op2 = op2,
                 .disp22 = udisp_truncated,
@@ -795,7 +795,7 @@ pub const Instruction = union(enum) {
     }
 
     fn format2c(op2: u3, cond: Condition, annul: bool, pt: bool, ccr: CCR, disp: i21) Instruction {
-        const udisp = @as(u21, @bitCast(disp));
+        const udisp = @as(u21, @bit_cast(disp));
 
         // In SPARC, branch target needs to be aligned to 4 bytes.
         assert(udisp % 4 == 0);
@@ -803,23 +803,23 @@ pub const Instruction = union(enum) {
         // Discard the last two bits since those are implicitly zero.
         const udisp_truncated = @as(u19, @truncate(udisp >> 2));
 
-        const ccr_cc1 = @as(u1, @truncate(@intFromEnum(ccr) >> 1));
-        const ccr_cc0 = @as(u1, @truncate(@intFromEnum(ccr)));
+        const ccr_cc1 = @as(u1, @truncate(@int_from_enum(ccr) >> 1));
+        const ccr_cc0 = @as(u1, @truncate(@int_from_enum(ccr)));
         return Instruction{
             .format_2c = .{
-                .a = @intFromBool(annul),
+                .a = @int_from_bool(annul),
                 .cond = cond.enc(),
                 .op2 = op2,
                 .cc1 = ccr_cc1,
                 .cc0 = ccr_cc0,
-                .p = @intFromBool(pt),
+                .p = @int_from_bool(pt),
                 .disp19 = udisp_truncated,
             },
         };
     }
 
     fn format2d(op2: u3, rcond: RCondition, annul: bool, pt: bool, rs1: Register, disp: i18) Instruction {
-        const udisp = @as(u18, @bitCast(disp));
+        const udisp = @as(u18, @bit_cast(disp));
 
         // In SPARC, branch target needs to be aligned to 4 bytes.
         assert(udisp % 4 == 0);
@@ -831,10 +831,10 @@ pub const Instruction = union(enum) {
         const udisp_lo = @as(u14, @truncate(udisp_truncated & 0b0011_1111_1111_1111));
         return Instruction{
             .format_2d = .{
-                .a = @intFromBool(annul),
-                .rcond = @intFromEnum(rcond),
+                .a = @int_from_bool(annul),
+                .rcond = @int_from_enum(rcond),
                 .op2 = op2,
-                .p = @intFromBool(pt),
+                .p = @int_from_bool(pt),
                 .rs1 = rs1.enc(),
                 .d16hi = udisp_hi,
                 .d16lo = udisp_lo,
@@ -860,7 +860,7 @@ pub const Instruction = union(enum) {
                 .rd = rd.enc(),
                 .op3 = op3,
                 .rs1 = rs1.enc(),
-                .simm13 = @as(u13, @bitCast(imm)),
+                .simm13 = @as(u13, @bit_cast(imm)),
             },
         };
     }
@@ -880,7 +880,7 @@ pub const Instruction = union(enum) {
                 .op = op,
                 .op3 = op3,
                 .rs1 = rs1.enc(),
-                .simm13 = @as(u13, @bitCast(imm)),
+                .simm13 = @as(u13, @bit_cast(imm)),
             },
         };
     }
@@ -891,7 +891,7 @@ pub const Instruction = union(enum) {
                 .rd = rd.enc(),
                 .op3 = op3,
                 .rs1 = rs1.enc(),
-                .rcond = @intFromEnum(rcond),
+                .rcond = @int_from_enum(rcond),
                 .rs2 = rs2.enc(),
             },
         };
@@ -903,8 +903,8 @@ pub const Instruction = union(enum) {
                 .rd = rd.enc(),
                 .op3 = op3,
                 .rs1 = rs1.enc(),
-                .rcond = @intFromEnum(rcond),
-                .simm10 = @as(u10, @bitCast(imm)),
+                .rcond = @int_from_enum(rcond),
+                .simm10 = @as(u10, @bit_cast(imm)),
             },
         };
     }
@@ -922,8 +922,8 @@ pub const Instruction = union(enum) {
     fn format3h(cmask: MemCompletionConstraint, mmask: MemOrderingConstraint) Instruction {
         return Instruction{
             .format_3h = .{
-                .cmask = @as(u3, @bitCast(cmask)),
-                .mmask = @as(u4, @bitCast(mmask)),
+                .cmask = @as(u3, @bit_cast(cmask)),
+                .mmask = @as(u4, @bit_cast(mmask)),
             },
         };
     }
@@ -934,7 +934,7 @@ pub const Instruction = union(enum) {
                 .rd = rd.enc(),
                 .op3 = op3,
                 .rs1 = rs1.enc(),
-                .imm_asi = @intFromEnum(asi),
+                .imm_asi = @int_from_enum(asi),
                 .rs2 = rs2.enc(),
             },
         };
@@ -956,7 +956,7 @@ pub const Instruction = union(enum) {
                 .rd = rd.enc(),
                 .op3 = op3,
                 .rs1 = rs1.enc(),
-                .x = @intFromEnum(sw),
+                .x = @int_from_enum(sw),
                 .rs2 = rs2.enc(),
             },
         };
@@ -995,8 +995,8 @@ pub const Instruction = union(enum) {
         };
     }
     fn format3o(op: u2, op3: u6, opf: u9, ccr: CCR, rs1: Register, rs2: Register) Instruction {
-        const ccr_cc1 = @as(u1, @truncate(@intFromEnum(ccr) >> 1));
-        const ccr_cc0 = @as(u1, @truncate(@intFromEnum(ccr)));
+        const ccr_cc1 = @as(u1, @truncate(@int_from_enum(ccr) >> 1));
+        const ccr_cc0 = @as(u1, @truncate(@int_from_enum(ccr)));
         return Instruction{
             .format_3o = .{
                 .op = op,
@@ -1051,8 +1051,8 @@ pub const Instruction = union(enum) {
     }
 
     fn format4a(op3: u6, ccr: CCR, rs1: Register, rs2: Register, rd: Register) Instruction {
-        const ccr_cc1 = @as(u1, @truncate(@intFromEnum(ccr) >> 1));
-        const ccr_cc0 = @as(u1, @truncate(@intFromEnum(ccr)));
+        const ccr_cc1 = @as(u1, @truncate(@int_from_enum(ccr) >> 1));
+        const ccr_cc0 = @as(u1, @truncate(@int_from_enum(ccr)));
         return Instruction{
             .format_4a = .{
                 .rd = rd.enc(),
@@ -1066,8 +1066,8 @@ pub const Instruction = union(enum) {
     }
 
     fn format4b(op3: u6, ccr: CCR, rs1: Register, imm: i11, rd: Register) Instruction {
-        const ccr_cc1 = @as(u1, @truncate(@intFromEnum(ccr) >> 1));
-        const ccr_cc0 = @as(u1, @truncate(@intFromEnum(ccr)));
+        const ccr_cc1 = @as(u1, @truncate(@int_from_enum(ccr) >> 1));
+        const ccr_cc0 = @as(u1, @truncate(@int_from_enum(ccr)));
         return Instruction{
             .format_4b = .{
                 .rd = rd.enc(),
@@ -1075,15 +1075,15 @@ pub const Instruction = union(enum) {
                 .rs1 = rs1.enc(),
                 .cc1 = ccr_cc1,
                 .cc0 = ccr_cc0,
-                .simm11 = @as(u11, @bitCast(imm)),
+                .simm11 = @as(u11, @bit_cast(imm)),
             },
         };
     }
 
     fn format4c(op3: u6, cond: Condition, ccr: CCR, rs2: Register, rd: Register) Instruction {
-        const ccr_cc2 = @as(u1, @truncate(@intFromEnum(ccr) >> 2));
-        const ccr_cc1 = @as(u1, @truncate(@intFromEnum(ccr) >> 1));
-        const ccr_cc0 = @as(u1, @truncate(@intFromEnum(ccr)));
+        const ccr_cc2 = @as(u1, @truncate(@int_from_enum(ccr) >> 2));
+        const ccr_cc1 = @as(u1, @truncate(@int_from_enum(ccr) >> 1));
+        const ccr_cc0 = @as(u1, @truncate(@int_from_enum(ccr)));
         return Instruction{
             .format_4c = .{
                 .rd = rd.enc(),
@@ -1098,9 +1098,9 @@ pub const Instruction = union(enum) {
     }
 
     fn format4d(op3: u6, cond: Condition, ccr: CCR, imm: i11, rd: Register) Instruction {
-        const ccr_cc2 = @as(u1, @truncate(@intFromEnum(ccr) >> 2));
-        const ccr_cc1 = @as(u1, @truncate(@intFromEnum(ccr) >> 1));
-        const ccr_cc0 = @as(u1, @truncate(@intFromEnum(ccr)));
+        const ccr_cc2 = @as(u1, @truncate(@int_from_enum(ccr) >> 2));
+        const ccr_cc1 = @as(u1, @truncate(@int_from_enum(ccr) >> 1));
+        const ccr_cc0 = @as(u1, @truncate(@int_from_enum(ccr)));
         return Instruction{
             .format_4d = .{
                 .rd = rd.enc(),
@@ -1109,14 +1109,14 @@ pub const Instruction = union(enum) {
                 .cond = cond.enc(),
                 .cc1 = ccr_cc1,
                 .cc0 = ccr_cc0,
-                .simm11 = @as(u11, @bitCast(imm)),
+                .simm11 = @as(u11, @bit_cast(imm)),
             },
         };
     }
 
     fn format4e(op3: u6, ccr: CCR, rs1: Register, rd: Register, sw_trap: u7) Instruction {
-        const ccr_cc1 = @as(u1, @truncate(@intFromEnum(ccr) >> 1));
-        const ccr_cc0 = @as(u1, @truncate(@intFromEnum(ccr)));
+        const ccr_cc1 = @as(u1, @truncate(@int_from_enum(ccr) >> 1));
+        const ccr_cc0 = @as(u1, @truncate(@int_from_enum(ccr)));
         return Instruction{
             .format_4e = .{
                 .rd = rd.enc(),
@@ -1142,7 +1142,7 @@ pub const Instruction = union(enum) {
                 .rd = rd.enc(),
                 .op3 = op3,
                 .rs1 = rs1.enc(),
-                .rcond = @intFromEnum(rcond),
+                .rcond = @int_from_enum(rcond),
                 .opf_low = opf_low,
                 .rs2 = rs2.enc(),
             },
@@ -1468,8 +1468,8 @@ pub const Instruction = union(enum) {
     pub fn trap(comptime s2: type, cond: ICondition, ccr: CCR, rs1: Register, rs2: s2) Instruction {
         // Tcc instructions abuse the rd field to store the conditionals.
         return switch (s2) {
-            Register => format4a(0b11_1010, ccr, rs1, rs2, @as(Register, @enumFromInt(@intFromEnum(cond)))),
-            u7 => format4e(0b11_1010, ccr, rs1, @as(Register, @enumFromInt(@intFromEnum(cond))), rs2),
+            Register => format4a(0b11_1010, ccr, rs1, rs2, @as(Register, @enumFromInt(@int_from_enum(cond)))),
+            u7 => format4e(0b11_1010, ccr, rs1, @as(Register, @enumFromInt(@int_from_enum(cond))), rs2),
             else => unreachable,
         };
     }
@@ -1612,8 +1612,8 @@ test "Serialize formats" {
     };
 
     for (testcases) |case| {
-        const actual = case.inst.toU32();
-        testing.expectEqual(case.expected, actual) catch |err| {
+        const actual = case.inst.to_u32();
+        testing.expect_equal(case.expected, actual) catch |err| {
             std.debug.print("error: {}\n", .{err});
             std.debug.print("case: {}\n", .{case});
             return err;

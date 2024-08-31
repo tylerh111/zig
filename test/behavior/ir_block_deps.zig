@@ -3,11 +3,11 @@ const expect = @import("std").testing.expect;
 
 fn foo(id: u64) !i32 {
     return switch (id) {
-        1 => getErrInt(),
+        1 => get_err_int(),
         2 => {
-            const size = try getErrInt();
+            const size = try get_err_int();
             _ = size;
-            return try getErrInt();
+            return try get_err_int();
         },
         else => error.ItBroke,
     };

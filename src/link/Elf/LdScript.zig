@@ -32,8 +32,8 @@ pub fn parse(scr: *LdScript, data: []const u8, elf_file: *Elf) Error!void {
         try line_col.append(.{ .line = line, .column = column });
         switch (tok.id) {
             .invalid => {
-                try elf_file.reportParseError(scr.path, "invalid token in LD script: '{s}' ({d}:{d})", .{
-                    std.fmt.fmtSliceEscapeLower(tok.get(data)),
+                try elf_file.report_parse_error(scr.path, "invalid token in LD script: '{s}' ({d}:{d})", .{
+                    std.fmt.fmt_slice_escape_lower(tok.get(data)),
                     line,
                     column,
                 });
@@ -51,7 +51,7 @@ pub fn parse(scr: *LdScript, data: []const u8, elf_file: *Elf) Error!void {
     var it = TokenIterator{ .tokens = tokens.items };
     var parser = Parser{ .source = data, .it = &it };
     var args = std.ArrayList(Elf.SystemLib).init(gpa);
-    scr.doParse(.{
+    scr.do_parse(.{
         .parser = &parser,
         .args = &args,
     }) catch |err| switch (err) {
@@ -59,8 +59,8 @@ pub fn parse(scr: *LdScript, data: []const u8, elf_file: *Elf) Error!void {
             const last_token_id = parser.it.pos - 1;
             const last_token = parser.it.get(last_token_id);
             const lcol = line_col.items[last_token_id];
-            try elf_file.reportParseError(scr.path, "unexpected token in LD script: {s}: '{s}' ({d}:{d})", .{
-                @tagName(last_token.id),
+            try elf_file.report_parse_error(scr.path, "unexpected token in LD script: {s}: '{s}' ({d}:{d})", .{
+                @tag_name(last_token.id),
                 last_token.get(data),
                 lcol.line,
                 lcol.column,
@@ -69,7 +69,7 @@ pub fn parse(scr: *LdScript, data: []const u8, elf_file: *Elf) Error!void {
         },
         else => |e| return e,
     };
-    scr.args = args.moveToUnmanaged();
+    scr.args = args.move_to_unmanaged();
 }
 
 fn do_parse(scr: *LdScript, ctx: struct {
@@ -77,12 +77,12 @@ fn do_parse(scr: *LdScript, ctx: struct {
     args: *std.ArrayList(Elf.SystemLib),
 }) !void {
     while (true) {
-        ctx.parser.skipAny(&.{ .comment, .new_line });
+        ctx.parser.skip_any(&.{ .comment, .new_line });
 
         if (ctx.parser.maybe(.command)) |cmd_id| {
-            const cmd = ctx.parser.getCommand(cmd_id);
+            const cmd = ctx.parser.get_command(cmd_id);
             switch (cmd) {
-                .output_format => scr.cpu_arch = try ctx.parser.outputFormat(),
+                .output_format => scr.cpu_arch = try ctx.parser.output_format(),
                 // TODO we should verify that group only contains libraries
                 .input, .group => try ctx.parser.group(ctx.args),
                 else => return error.UnexpectedToken,
@@ -112,7 +112,7 @@ const Command = enum {
             const upper_name = n: {
                 comptime var buf: [field.name.len]u8 = undefined;
                 inline for (field.name, 0..) |c, i| {
-                    buf[i] = comptime std.ascii.toUpper(c);
+                    buf[i] = comptime std.ascii.to_upper(c);
                 }
                 break :n buf;
             };
@@ -155,9 +155,9 @@ const Parser = struct {
                 const path = tok.get(p.source);
                 try args.append(.{ .path = path, .needed = true });
             } else if (p.maybe(.command)) |cmd_id| {
-                const cmd = p.getCommand(cmd_id);
+                const cmd = p.get_command(cmd_id);
                 switch (cmd) {
-                    .as_needed => try p.asNeeded(args),
+                    .as_needed => try p.as_needed(args),
                     else => return error.UnexpectedToken,
                 }
             } else break;
@@ -183,7 +183,7 @@ const Parser = struct {
         inline for (ids) |id| {
             const tok = p.it.next() orelse return false;
             if (tok.id != id) {
-                p.it.seekTo(pos);
+                p.it.seek_to(pos);
                 return false;
             }
         }
@@ -195,7 +195,7 @@ const Parser = struct {
             inline for (ids) |id| {
                 if (id == tok.id) continue :outer;
             }
-            break p.it.seekBy(-1);
+            break p.it.seek_by(-1);
         }
     }
 
@@ -203,7 +203,7 @@ const Parser = struct {
         const pos = p.it.pos;
         const tok = p.it.next() orelse return null;
         if (tok.id == id) return pos;
-        p.it.seekBy(-1);
+        p.it.seek_by(-1);
         return null;
     }
 
@@ -214,7 +214,7 @@ const Parser = struct {
     fn get_command(p: *Parser, index: Token.Index) Command {
         const tok = p.it.get(index);
         assert(tok.id == .command);
-        return Command.fromString(tok.get(p.source)).?;
+        return Command.from_string(tok.get(p.source)).?;
     }
 };
 
@@ -263,11 +263,11 @@ const Tokenizer = struct {
     }
 
     fn matches(tok: Tokenizer, comptime pattern: []const u8) bool {
-        return matchesPattern(pattern, tok.source[tok.index..]);
+        return matches_pattern(pattern, tok.source[tok.index..]);
     }
 
     fn is_command(tok: Tokenizer, start: usize, end: usize) bool {
-        return if (Command.fromString(tok.source[start..end]) == null) false else true;
+        return if (Command.from_string(tok.source[start..end]) == null) false else true;
     }
 
     fn next(tok: *Tokenizer) Token {
@@ -351,7 +351,7 @@ const Tokenizer = struct {
 
                 .literal => switch (c) {
                     ' ', '(', '\n' => {
-                        if (tok.isCommand(result.start, tok.index)) {
+                        if (tok.is_command(result.start, tok.index)) {
                             result.id = .command;
                         } else {
                             result.id = .literal;
@@ -366,7 +366,7 @@ const Tokenizer = struct {
 
                     '\r' => {
                         if (tok.matches("\r\n")) {
-                            if (tok.isCommand(result.start, tok.index)) {
+                            if (tok.is_command(result.start, tok.index)) {
                                 result.id = .command;
                             } else {
                                 result.id = .literal;
@@ -412,11 +412,11 @@ const TokenIterator = struct {
     }
 
     fn seek_by(it: *TokenIterator, offset: isize) void {
-        const new_pos = @as(isize, @bitCast(it.pos)) + offset;
+        const new_pos = @as(isize, @bit_cast(it.pos)) + offset;
         if (new_pos < 0) {
             it.pos = 0;
         } else {
-            it.pos = @as(usize, @intCast(new_pos));
+            it.pos = @as(usize, @int_cast(new_pos));
         }
     }
 

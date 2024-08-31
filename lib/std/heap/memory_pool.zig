@@ -27,7 +27,7 @@ pub const Options = struct {
     alignment: ?u29 = null,
 
     /// If `true`, the memory pool can allocate additional items after a initial setup.
-    /// If `false`, the memory pool will not allocate further after a call to `initPreheated`.
+    /// If `false`, the memory pool will not allocate further after a call to `init_preheated`.
     growable: bool = true,
 };
 
@@ -39,8 +39,8 @@ pub fn MemoryPoolExtra(comptime Item: type, comptime pool_options: Options) type
         const Pool = @This();
 
         /// Size of the memory pool items. This is not necessarily the same
-        /// as `@sizeOf(Item)` as the pool also uses the items for internal means.
-        pub const item_size = @max(@sizeOf(Node), @sizeOf(Item));
+        /// as `@size_of(Item)` as the pool also uses the items for internal means.
+        pub const item_size = @max(@size_of(Node), @size_of(Item));
 
         // This needs to be kept in sync with Node.
         const node_alignment = @alignOf(*anyopaque);
@@ -72,8 +72,8 @@ pub fn MemoryPoolExtra(comptime Item: type, comptime pool_options: Options) type
 
             var i: usize = 0;
             while (i < initial_size) : (i += 1) {
-                const raw_mem = try pool.allocNew();
-                const free_node = @as(NodePtr, @ptrCast(raw_mem));
+                const raw_mem = try pool.alloc_new();
+                const free_node = @as(NodePtr, @ptr_cast(raw_mem));
                 free_node.* = Node{
                     .next = pool.free_list,
                 };
@@ -117,11 +117,11 @@ pub fn MemoryPoolExtra(comptime Item: type, comptime pool_options: Options) type
                 pool.free_list = item.next;
                 break :blk item;
             } else if (pool_options.growable)
-                @as(NodePtr, @ptrCast(try pool.allocNew()))
+                @as(NodePtr, @ptr_cast(try pool.alloc_new()))
             else
                 return error.OutOfMemory;
 
-            const ptr = @as(ItemPtr, @ptrCast(node));
+            const ptr = @as(ItemPtr, @ptr_cast(node));
             ptr.* = undefined;
             return ptr;
         }
@@ -131,7 +131,7 @@ pub fn MemoryPoolExtra(comptime Item: type, comptime pool_options: Options) type
         pub fn destroy(pool: *Pool, ptr: ItemPtr) void {
             ptr.* = undefined;
 
-            const node = @as(NodePtr, @ptrCast(ptr));
+            const node = @as(NodePtr, @ptr_cast(ptr));
             node.* = Node{
                 .next = pool.free_list,
             };
@@ -139,7 +139,7 @@ pub fn MemoryPoolExtra(comptime Item: type, comptime pool_options: Options) type
         }
 
         fn alloc_new(pool: *Pool) MemoryPoolError!*align(item_alignment) [item_size]u8 {
-            const mem = try pool.arena.allocator().alignedAlloc(u8, item_alignment, item_size);
+            const mem = try pool.arena.allocator().aligned_alloc(u8, item_alignment, item_size);
             return mem[0..item_size]; // coerce slice to array pointer
         }
     };
@@ -166,7 +166,7 @@ test "basic" {
 }
 
 test "preheating (success)" {
-    var pool = try MemoryPool(u32).initPreheated(std.testing.allocator, 4);
+    var pool = try MemoryPool(u32).init_preheated(std.testing.allocator, 4);
     defer pool.deinit();
 
     _ = try pool.create();
@@ -176,11 +176,11 @@ test "preheating (success)" {
 
 test "preheating (failure)" {
     const failer = std.testing.failing_allocator;
-    try std.testing.expectError(error.OutOfMemory, MemoryPool(u32).initPreheated(failer, 5));
+    try std.testing.expect_error(error.OutOfMemory, MemoryPool(u32).init_preheated(failer, 5));
 }
 
 test "growable" {
-    var pool = try MemoryPoolExtra(u32, .{ .growable = false }).initPreheated(std.testing.allocator, 4);
+    var pool = try MemoryPoolExtra(u32, .{ .growable = false }).init_preheated(std.testing.allocator, 4);
     defer pool.deinit();
 
     _ = try pool.create();
@@ -188,7 +188,7 @@ test "growable" {
     _ = try pool.create();
     _ = try pool.create();
 
-    try std.testing.expectError(error.OutOfMemory, pool.create());
+    try std.testing.expect_error(error.OutOfMemory, pool.create());
 }
 
 test "greater than pointer default alignment" {

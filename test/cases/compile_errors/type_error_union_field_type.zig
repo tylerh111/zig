@@ -6,7 +6,7 @@ const TestType = struct {
     my_type: MyType,
 };
 comptime {
-    _ = @sizeOf(TestType) + 1;
+    _ = @size_of(TestType) + 1;
 }
 
 // error

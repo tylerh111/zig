@@ -6,11 +6,11 @@ pub fn build(b: *std.Build) void {
 
     const optimize: std.builtin.OptimizeMode = .Debug;
 
-    const main = b.addTest(.{
+    const main = b.add_test(.{
         .root_source_file = b.path("main.zig"),
         .optimize = optimize,
     });
-    main.addIncludePath(b.path("."));
+    main.add_include_path(b.path("."));
 
-    test_step.dependOn(&b.addRunArtifact(main).step);
+    test_step.depend_on(&b.add_run_artifact(main).step);
 }

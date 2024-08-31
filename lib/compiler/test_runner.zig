@@ -4,7 +4,7 @@ const io = std.io;
 const builtin = @import("builtin");
 
 pub const std_options = .{
-    .logFn = log,
+    .log_fn = log,
 };
 
 var log_err_count: usize = 0;
@@ -12,13 +12,13 @@ var cmdline_buffer: [4096]u8 = undefined;
 var fba = std.heap.FixedBufferAllocator.init(&cmdline_buffer);
 
 pub fn main() void {
-    if (builtin.zig_backend == .stage2_riscv64) return mainExtraSimple() catch @panic("test failure");
+    if (builtin.zig_backend == .stage2_riscv64) return main_extra_simple() catch @panic("test failure");
 
     if (builtin.zig_backend == .stage2_aarch64) {
-        return mainSimple() catch @panic("test failure");
+        return main_simple() catch @panic("test failure");
     }
 
-    const args = std.process.argsAlloc(fba.allocator()) catch
+    const args = std.process.args_alloc(fba.allocator()) catch
         @panic("unable to parse command line args");
 
     var listen = false;
@@ -32,23 +32,23 @@ pub fn main() void {
     }
 
     if (listen) {
-        return mainServer() catch @panic("internal test runner failure");
+        return main_server() catch @panic("internal test runner failure");
     } else {
-        return mainTerminal();
+        return main_terminal();
     }
 }
 
 fn main_server() !void {
     var server = try std.zig.Server.init(.{
         .gpa = fba.allocator(),
-        .in = std.io.getStdIn(),
-        .out = std.io.getStdOut(),
+        .in = std.io.get_std_in(),
+        .out = std.io.get_std_out(),
         .zig_version = builtin.zig_version_string,
     });
     defer server.deinit();
 
     while (true) {
-        const hdr = try server.receiveMessage();
+        const hdr = try server.receive_message();
         switch (hdr.tag) {
             .exit => {
                 return std.process.exit(0);
@@ -70,14 +70,14 @@ fn main_server() !void {
                 defer std.testing.allocator.free(expected_panic_msgs);
 
                 for (test_fns, names, expected_panic_msgs) |test_fn, *name, *expected_panic_msg| {
-                    name.* = @as(u32, @intCast(string_bytes.items.len));
-                    try string_bytes.ensureUnusedCapacity(std.testing.allocator, test_fn.name.len + 1);
-                    string_bytes.appendSliceAssumeCapacity(test_fn.name);
-                    string_bytes.appendAssumeCapacity(0);
+                    name.* = @as(u32, @int_cast(string_bytes.items.len));
+                    try string_bytes.ensure_unused_capacity(std.testing.allocator, test_fn.name.len + 1);
+                    string_bytes.append_slice_assume_capacity(test_fn.name);
+                    string_bytes.append_assume_capacity(0);
                     expected_panic_msg.* = 0;
                 }
 
-                try server.serveTestMetadata(.{
+                try server.serve_test_metadata(.{
                     .names = names,
                     .expected_panic_msgs = expected_panic_msgs,
                     .string_bytes = string_bytes.items,
@@ -87,7 +87,7 @@ fn main_server() !void {
             .run_test => {
                 std.testing.allocator_instance = .{};
                 log_err_count = 0;
-                const index = try server.receiveBody_u32();
+                const index = try server.receive_body_u32();
                 const test_fn = builtin.test_functions[index];
                 var fail = false;
                 var skip = false;
@@ -97,18 +97,18 @@ fn main_server() !void {
                     else => {
                         fail = true;
                         if (@errorReturnTrace()) |trace| {
-                            std.debug.dumpStackTrace(trace.*);
+                            std.debug.dump_stack_trace(trace.*);
                         }
                     },
                 };
                 leak = std.testing.allocator_instance.deinit() == .leak;
-                try server.serveTestResults(.{
+                try server.serve_test_results(.{
                     .index = index,
                     .flags = .{
                         .fail = fail,
                         .skip = skip,
                         .leak = leak,
-                        .log_err_count = std.math.lossyCast(
+                        .log_err_count = std.math.lossy_cast(
                             @TypeOf(@as(std.zig.Server.Message.TestResults.Flags, undefined).log_err_count),
                             log_err_count,
                         ),
@@ -117,7 +117,7 @@ fn main_server() !void {
             },
 
             else => {
-                std.debug.print("unsupported message: {x}", .{@intFromEnum(hdr.tag)});
+                std.debug.print("unsupported message: {x}", .{@int_from_enum(hdr.tag)});
                 std.process.exit(1);
             },
         }
@@ -133,9 +133,9 @@ fn main_terminal() void {
         .root_name = "Test",
         .estimated_total_items = test_fn_list.len,
     });
-    const have_tty = std.io.getStdErr().isTty();
+    const have_tty = std.io.get_std_err().is_tty();
 
-    var async_frame_buffer: []align(builtin.target.stackAlignment()) u8 = undefined;
+    var async_frame_buffer: []align(builtin.target.stack_alignment()) u8 = undefined;
     // TODO this is on the next line (using `undefined` above) because otherwise zig incorrectly
     // ignores the alignment of the slice.
     async_frame_buffer = &[_]u8{};
@@ -178,7 +178,7 @@ fn main_terminal() void {
                     std.debug.print("FAIL ({s})\n", .{@errorName(err)});
                 }
                 if (@errorReturnTrace()) |trace| {
-                    std.debug.dumpStackTrace(trace.*);
+                    std.debug.dump_stack_trace(trace.*);
                 }
                 test_node.end();
             },
@@ -207,12 +207,12 @@ pub fn log(
     comptime format: []const u8,
     args: anytype,
 ) void {
-    if (@intFromEnum(message_level) <= @intFromEnum(std.log.Level.err)) {
+    if (@int_from_enum(message_level) <= @int_from_enum(std.log.Level.err)) {
         log_err_count +|= 1;
     }
-    if (@intFromEnum(message_level) <= @intFromEnum(std.testing.log_level)) {
+    if (@int_from_enum(message_level) <= @int_from_enum(std.testing.log_level)) {
         std.debug.print(
-            "[" ++ @tagName(scope) ++ "] (" ++ @tagName(message_level) ++ "): " ++ format ++ "\n",
+            "[" ++ @tag_name(scope) ++ "] (" ++ @tag_name(message_level) ++ "): " ++ format ++ "\n",
             args,
         );
     }
@@ -227,28 +227,28 @@ pub fn main_simple() anyerror!void {
     var passed: u64 = 0;
     var skipped: u64 = 0;
     var failed: u64 = 0;
-    const stderr = if (enable_print) std.io.getStdErr() else {};
+    const stderr = if (enable_print) std.io.get_std_err() else {};
     for (builtin.test_functions) |test_fn| {
         if (enable_print and print_all) {
-            stderr.writeAll(test_fn.name) catch {};
-            stderr.writeAll("... ") catch {};
+            stderr.write_all(test_fn.name) catch {};
+            stderr.write_all("... ") catch {};
         }
         test_fn.func() catch |err| {
             if (enable_print and !print_all) {
-                stderr.writeAll(test_fn.name) catch {};
-                stderr.writeAll("... ") catch {};
+                stderr.write_all(test_fn.name) catch {};
+                stderr.write_all("... ") catch {};
             }
             if (err != error.SkipZigTest) {
-                if (enable_print) stderr.writeAll("FAIL\n") catch {};
+                if (enable_print) stderr.write_all("FAIL\n") catch {};
                 failed += 1;
                 if (!enable_print) return err;
                 continue;
             }
-            if (enable_print) stderr.writeAll("SKIP\n") catch {};
+            if (enable_print) stderr.write_all("SKIP\n") catch {};
             skipped += 1;
             continue;
         };
-        if (enable_print and print_all) stderr.writeAll("PASS\n") catch {};
+        if (enable_print and print_all) stderr.write_all("PASS\n") catch {};
         passed += 1;
     }
     if (enable_print) {

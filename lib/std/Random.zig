@@ -8,7 +8,7 @@ const std = @import("std.zig");
 const math = std.math;
 const mem = std.mem;
 const assert = std.debug.assert;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 pub const Random = @This(); // Remove pub when `std.rand` namespace is removed.
 
 /// Fast unbiased random numbers.
@@ -39,7 +39,7 @@ pub fn init(pointer: anytype, comptime fillFn: fn (ptr: @TypeOf(pointer), buf: [
     assert(@typeInfo(@typeInfo(Ptr).Pointer.child) == .Struct); // Must point to a struct
     const gen = struct {
         fn fill(ptr: *anyopaque, buf: []u8) void {
-            const self: Ptr = @ptrCast(@alignCast(ptr));
+            const self: Ptr = @ptr_cast(@align_cast(ptr));
             fillFn(self, buf);
         }
     };
@@ -63,9 +63,9 @@ pub fn boolean(r: Random) bool {
 ///
 /// Note that this will not yield consistent results across all targets
 /// due to dependence on the representation of `usize` as an index.
-/// See `enumValueWithIndex` for further commentary.
+/// See `enum_value_with_index` for further commentary.
 pub inline fn enum_value(r: Random, comptime EnumType: type) EnumType {
-    return r.enumValueWithIndex(EnumType, usize);
+    return r.enum_value_with_index(EnumType, usize);
 }
 
 /// Returns a random value from an enum, evenly distributed.
@@ -74,9 +74,9 @@ pub inline fn enum_value(r: Random, comptime EnumType: type) EnumType {
 /// specified `Index` type to determine the return value.
 /// This allows for results to be independent of `usize` representation.
 ///
-/// Prefer `enumValue` if this isn't important.
+/// Prefer `enum_value` if this isn't important.
 ///
-/// See `uintLessThan`, which this function uses in most cases,
+/// See `uint_less_than`, which this function uses in most cases,
 /// for commentary on the runtime of this function.
 pub fn enum_value_with_index(r: Random, comptime EnumType: type, comptime Index: type) EnumType {
     comptime assert(@typeInfo(EnumType) == .Enum);
@@ -85,24 +85,24 @@ pub fn enum_value_with_index(r: Random, comptime EnumType: type, comptime Index:
     //  arbitrary values.  Instead we'll randomly pick one of the type's values.
     const values = comptime std.enums.values(EnumType);
     comptime assert(values.len > 0); // can't return anything
-    comptime assert(maxInt(Index) >= values.len - 1); // can't access all values
+    comptime assert(max_int(Index) >= values.len - 1); // can't access all values
     comptime if (values.len == 1) return values[0];
 
-    const index = if (comptime values.len - 1 == maxInt(Index))
+    const index = if (comptime values.len - 1 == max_int(Index))
         r.int(Index)
     else
-        r.uintLessThan(Index, values.len);
+        r.uint_less_than(Index, values.len);
 
     const MinInt = MinArrayIndex(Index);
-    return values[@as(MinInt, @intCast(index))];
+    return values[@as(MinInt, @int_cast(index))];
 }
 
-/// Returns a random int `i` such that `minInt(T) <= i <= maxInt(T)`.
+/// Returns a random int `i` such that `min_int(T) <= i <= max_int(T)`.
 /// `i` is evenly distributed.
 pub fn int(r: Random, comptime T: type) T {
     const bits = @typeInfo(T).Int.bits;
     const UnsignedT = std.meta.Int(.unsigned, bits);
-    const ceil_bytes = comptime std.math.divCeil(u16, bits, 8) catch unreachable;
+    const ceil_bytes = comptime std.math.div_ceil(u16, bits, 8) catch unreachable;
     const ByteAlignedT = std.meta.Int(.unsigned, ceil_bytes * 8);
 
     var rand_bytes: [ceil_bytes]u8 = undefined;
@@ -111,17 +111,17 @@ pub fn int(r: Random, comptime T: type) T {
     // use LE instead of native endian for better portability maybe?
     // TODO: endian portability is pointless if the underlying prng isn't endian portable.
     // TODO: document the endian portability of this library.
-    const byte_aligned_result = mem.readInt(ByteAlignedT, &rand_bytes, .little);
+    const byte_aligned_result = mem.read_int(ByteAlignedT, &rand_bytes, .little);
     const unsigned_result: UnsignedT = @truncate(byte_aligned_result);
-    return @bitCast(unsigned_result);
+    return @bit_cast(unsigned_result);
 }
 
-/// Constant-time implementation off `uintLessThan`.
+/// Constant-time implementation off `uint_less_than`.
 /// The results of this function may be biased.
 pub fn uint_less_than_biased(r: Random, comptime T: type, less_than: T) T {
     comptime assert(@typeInfo(T).Int.signedness == .unsigned);
     assert(0 < less_than);
-    return limitRangeBiased(T, r.int(T), less_than);
+    return limit_range_biased(T, r.int(T), less_than);
 }
 
 /// Returns an evenly distributed random unsigned integer `0 <= i < less_than`.
@@ -131,7 +131,7 @@ pub fn uint_less_than_biased(r: Random, comptime T: type, less_than: T) T {
 /// the runtime of this function would technically be unbounded.
 /// However, if `fillFn` is backed by any evenly distributed pseudo random number generator,
 /// this function is guaranteed to return.
-/// If you need deterministic runtime bounds, use `uintLessThanBiased`.
+/// If you need deterministic runtime bounds, use `uint_less_than_biased`.
 pub fn uint_less_than(r: Random, comptime T: type, less_than: T) T {
     comptime assert(@typeInfo(T).Int.signedness == .unsigned);
     const bits = @typeInfo(T).Int.bits;
@@ -141,7 +141,7 @@ pub fn uint_less_than(r: Random, comptime T: type, less_than: T) T {
     //   http://www.pcg-random.org/posts/bounded-rands.html
     //   "Lemire's (with an extra tweak from me)"
     var x = r.int(T);
-    var m = math.mulWide(T, x, less_than);
+    var m = math.mul_wide(T, x, less_than);
     var l: T = @truncate(m);
     if (l < less_than) {
         var t = -%less_than;
@@ -154,37 +154,37 @@ pub fn uint_less_than(r: Random, comptime T: type, less_than: T) T {
         }
         while (l < t) {
             x = r.int(T);
-            m = math.mulWide(T, x, less_than);
+            m = math.mul_wide(T, x, less_than);
             l = @truncate(m);
         }
     }
-    return @intCast(m >> bits);
+    return @int_cast(m >> bits);
 }
 
-/// Constant-time implementation off `uintAtMost`.
+/// Constant-time implementation off `uint_at_most`.
 /// The results of this function may be biased.
 pub fn uint_at_most_biased(r: Random, comptime T: type, at_most: T) T {
     assert(@typeInfo(T).Int.signedness == .unsigned);
-    if (at_most == maxInt(T)) {
+    if (at_most == max_int(T)) {
         // have the full range
         return r.int(T);
     }
-    return r.uintLessThanBiased(T, at_most + 1);
+    return r.uint_less_than_biased(T, at_most + 1);
 }
 
 /// Returns an evenly distributed random unsigned integer `0 <= i <= at_most`.
-/// See `uintLessThan`, which this function uses in most cases,
+/// See `uint_less_than`, which this function uses in most cases,
 /// for commentary on the runtime of this function.
 pub fn uint_at_most(r: Random, comptime T: type, at_most: T) T {
     assert(@typeInfo(T).Int.signedness == .unsigned);
-    if (at_most == maxInt(T)) {
+    if (at_most == max_int(T)) {
         // have the full range
         return r.int(T);
     }
-    return r.uintLessThan(T, at_most + 1);
+    return r.uint_less_than(T, at_most + 1);
 }
 
-/// Constant-time implementation off `intRangeLessThan`.
+/// Constant-time implementation off `int_range_less_than`.
 /// The results of this function may be biased.
 pub fn int_range_less_than_biased(r: Random, comptime T: type, at_least: T, less_than: T) T {
     assert(at_least < less_than);
@@ -192,18 +192,18 @@ pub fn int_range_less_than_biased(r: Random, comptime T: type, at_least: T, less
     if (info.signedness == .signed) {
         // Two's complement makes this math pretty easy.
         const UnsignedT = std.meta.Int(.unsigned, info.bits);
-        const lo: UnsignedT = @bitCast(at_least);
-        const hi: UnsignedT = @bitCast(less_than);
-        const result = lo +% r.uintLessThanBiased(UnsignedT, hi -% lo);
-        return @bitCast(result);
+        const lo: UnsignedT = @bit_cast(at_least);
+        const hi: UnsignedT = @bit_cast(less_than);
+        const result = lo +% r.uint_less_than_biased(UnsignedT, hi -% lo);
+        return @bit_cast(result);
     } else {
         // The signed implementation would work fine, but we can use stricter arithmetic operators here.
-        return at_least + r.uintLessThanBiased(T, less_than - at_least);
+        return at_least + r.uint_less_than_biased(T, less_than - at_least);
     }
 }
 
 /// Returns an evenly distributed random integer `at_least <= i < less_than`.
-/// See `uintLessThan`, which this function uses in most cases,
+/// See `uint_less_than`, which this function uses in most cases,
 /// for commentary on the runtime of this function.
 pub fn int_range_less_than(r: Random, comptime T: type, at_least: T, less_than: T) T {
     assert(at_least < less_than);
@@ -211,17 +211,17 @@ pub fn int_range_less_than(r: Random, comptime T: type, at_least: T, less_than: 
     if (info.signedness == .signed) {
         // Two's complement makes this math pretty easy.
         const UnsignedT = std.meta.Int(.unsigned, info.bits);
-        const lo: UnsignedT = @bitCast(at_least);
-        const hi: UnsignedT = @bitCast(less_than);
-        const result = lo +% r.uintLessThan(UnsignedT, hi -% lo);
-        return @bitCast(result);
+        const lo: UnsignedT = @bit_cast(at_least);
+        const hi: UnsignedT = @bit_cast(less_than);
+        const result = lo +% r.uint_less_than(UnsignedT, hi -% lo);
+        return @bit_cast(result);
     } else {
         // The signed implementation would work fine, but we can use stricter arithmetic operators here.
-        return at_least + r.uintLessThan(T, less_than - at_least);
+        return at_least + r.uint_less_than(T, less_than - at_least);
     }
 }
 
-/// Constant-time implementation off `intRangeAtMostBiased`.
+/// Constant-time implementation off `int_range_at_most_biased`.
 /// The results of this function may be biased.
 pub fn int_range_at_most_biased(r: Random, comptime T: type, at_least: T, at_most: T) T {
     assert(at_least <= at_most);
@@ -229,18 +229,18 @@ pub fn int_range_at_most_biased(r: Random, comptime T: type, at_least: T, at_mos
     if (info.signedness == .signed) {
         // Two's complement makes this math pretty easy.
         const UnsignedT = std.meta.Int(.unsigned, info.bits);
-        const lo: UnsignedT = @bitCast(at_least);
-        const hi: UnsignedT = @bitCast(at_most);
-        const result = lo +% r.uintAtMostBiased(UnsignedT, hi -% lo);
-        return @bitCast(result);
+        const lo: UnsignedT = @bit_cast(at_least);
+        const hi: UnsignedT = @bit_cast(at_most);
+        const result = lo +% r.uint_at_most_biased(UnsignedT, hi -% lo);
+        return @bit_cast(result);
     } else {
         // The signed implementation would work fine, but we can use stricter arithmetic operators here.
-        return at_least + r.uintAtMostBiased(T, at_most - at_least);
+        return at_least + r.uint_at_most_biased(T, at_most - at_least);
     }
 }
 
 /// Returns an evenly distributed random integer `at_least <= i <= at_most`.
-/// See `uintLessThan`, which this function uses in most cases,
+/// See `uint_less_than`, which this function uses in most cases,
 /// for commentary on the runtime of this function.
 pub fn int_range_at_most(r: Random, comptime T: type, at_least: T, at_most: T) T {
     assert(at_least <= at_most);
@@ -248,13 +248,13 @@ pub fn int_range_at_most(r: Random, comptime T: type, at_least: T, at_most: T) T
     if (info.signedness == .signed) {
         // Two's complement makes this math pretty easy.
         const UnsignedT = std.meta.Int(.unsigned, info.bits);
-        const lo: UnsignedT = @bitCast(at_least);
-        const hi: UnsignedT = @bitCast(at_most);
-        const result = lo +% r.uintAtMost(UnsignedT, hi -% lo);
-        return @bitCast(result);
+        const lo: UnsignedT = @bit_cast(at_least);
+        const hi: UnsignedT = @bit_cast(at_most);
+        const result = lo +% r.uint_at_most(UnsignedT, hi -% lo);
+        return @bit_cast(result);
     } else {
         // The signed implementation would work fine, but we can use stricter arithmetic operators here.
-        return at_least + r.uintAtMost(T, at_most - at_least);
+        return at_least + r.uint_at_most(T, at_most - at_least);
     }
 }
 
@@ -282,7 +282,7 @@ pub fn float(r: Random, comptime T: type) T {
             }
             const mantissa: u23 = @truncate(rand);
             const exponent = @as(u32, 126 - rand_lz) << 23;
-            return @bitCast(exponent | mantissa);
+            return @bit_cast(exponent | mantissa);
         },
         f64 => {
             // Use 52 random bits for the mantissa, and the rest for the exponent.
@@ -307,33 +307,33 @@ pub fn float(r: Random, comptime T: type) T {
             }
             const mantissa = rand & 0xFFFFFFFFFFFFF;
             const exponent = (1022 - rand_lz) << 52;
-            return @bitCast(exponent | mantissa);
+            return @bit_cast(exponent | mantissa);
         },
-        else => @compileError("unknown floating point type"),
+        else => @compile_error("unknown floating point type"),
     }
 }
 
 /// Return a floating point value normally distributed with mean = 0, stddev = 1.
 ///
-/// To use different parameters, use: floatNorm(...) * desiredStddev + desiredMean.
+/// To use different parameters, use: float_norm(...) * desiredStddev + desiredMean.
 pub fn float_norm(r: Random, comptime T: type) T {
     const value = ziggurat.next_f64(r, ziggurat.NormDist);
     switch (T) {
-        f32 => return @floatCast(value),
+        f32 => return @float_cast(value),
         f64 => return value,
-        else => @compileError("unknown floating point type"),
+        else => @compile_error("unknown floating point type"),
     }
 }
 
 /// Return an exponentially distributed float with a rate parameter of 1.
 ///
-/// To use a different rate parameter, use: floatExp(...) / desiredRate.
+/// To use a different rate parameter, use: float_exp(...) / desiredRate.
 pub fn float_exp(r: Random, comptime T: type) T {
     const value = ziggurat.next_f64(r, ziggurat.ExpDist);
     switch (T) {
-        f32 => return @floatCast(value),
+        f32 => return @float_cast(value),
         f64 => return value,
-        else => @compileError("unknown floating point type"),
+        else => @compile_error("unknown floating point type"),
     }
 }
 
@@ -341,9 +341,9 @@ pub fn float_exp(r: Random, comptime T: type) T {
 ///
 /// Note that this will not yield consistent results across all targets
 /// due to dependence on the representation of `usize` as an index.
-/// See `shuffleWithIndex` for further commentary.
+/// See `shuffle_with_index` for further commentary.
 pub inline fn shuffle(r: Random, comptime T: type, buf: []T) void {
-    r.shuffleWithIndex(T, buf, usize);
+    r.shuffle_with_index(T, buf, usize);
 }
 
 /// Shuffle a slice into a random order, using an index of a
@@ -356,7 +356,7 @@ pub inline fn shuffle(r: Random, comptime T: type, buf: []T) void {
 ///
 /// Prefer `shuffle` if this isn't important.
 ///
-/// See `intRangeLessThan`, which this function uses,
+/// See `int_range_less_than`, which this function uses,
 /// for commentary on the runtime of this function.
 pub fn shuffle_with_index(r: Random, comptime T: type, buf: []T, comptime Index: type) void {
     const MinInt = MinArrayIndex(Index);
@@ -364,11 +364,11 @@ pub fn shuffle_with_index(r: Random, comptime T: type, buf: []T, comptime Index:
         return;
     }
 
-    // `i <= j < max <= maxInt(MinInt)`
-    const max: MinInt = @intCast(buf.len);
+    // `i <= j < max <= max_int(MinInt)`
+    const max: MinInt = @int_cast(buf.len);
     var i: MinInt = 0;
     while (i < max - 1) : (i += 1) {
-        const j: MinInt = @intCast(r.intRangeLessThan(Index, i, max));
+        const j: MinInt = @int_cast(r.int_range_less_than(Index, i, max));
         mem.swap(T, &buf[i], &buf[j]);
     }
 }
@@ -393,13 +393,13 @@ pub fn weighted_index(r: Random, comptime T: type, proportions: []const T) usize
 
     const point = switch (@typeInfo(T)) {
         .Int => |int_info| switch (int_info.signedness) {
-            .signed => r.intRangeLessThan(T, 0, sum),
-            .unsigned => r.uintLessThan(T, sum),
+            .signed => r.int_range_less_than(T, 0, sum),
+            .unsigned => r.uint_less_than(T, sum),
         },
         // take care that imprecision doesn't lead to a value slightly greater than sum
-        .Float => @min(r.float(T) * sum, sum - std.math.floatEps(T)),
-        else => @compileError("weightedIndex does not support proportions of type " ++
-            @typeName(T)),
+        .Float => @min(r.float(T) * sum, sum - std.math.float_eps(T)),
+        else => @compile_error("weighted_index does not support proportions of type " ++
+            @type_name(T)),
     };
 
     assert(point < sum);
@@ -421,8 +421,8 @@ pub fn limit_range_biased(comptime T: type, random_int: T, less_than: T) T {
     // adapted from:
     //   http://www.pcg-random.org/posts/bounded-rands.html
     //   "Integer Multiplication (Biased)"
-    const m = math.mulWide(T, random_int, less_than);
-    return @intCast(m >> bits);
+    const m = math.mul_wide(T, random_int, less_than);
+    return @int_cast(m >> bits);
 }
 
 /// Returns the smallest of `Index` and `usize`.
@@ -433,6 +433,6 @@ fn MinArrayIndex(comptime Index: type) type {
 }
 
 test {
-    std.testing.refAllDecls(@This());
+    std.testing.ref_all_decls(@This());
     _ = @import("Random/test.zig");
 }

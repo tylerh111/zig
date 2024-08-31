@@ -14,14 +14,14 @@ pub const ExecHdr = extern struct {
     spsz: u32,
     pcsz: u32,
     comptime {
-        assert(@sizeOf(@This()) == 32);
+        assert(@size_of(@This()) == 32);
     }
     /// It is up to the caller to discard the last 8 bytes if the header is not fat.
     pub fn to_u8s(self: *@This()) [40]u8 {
         var buf: [40]u8 = undefined;
         var i: u8 = 0;
         inline for (std.meta.fields(@This())) |f| {
-            std.mem.writeInt(u32, buf[i..][0..4], @field(self, f.name), .big);
+            std.mem.write_int(u32, buf[i..][0..4], @field(self, f.name), .big);
             i += 4;
         }
         return buf;

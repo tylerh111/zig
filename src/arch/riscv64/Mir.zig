@@ -292,7 +292,7 @@ pub const Inst = struct {
     // Note that in Debug builds, Zig is allowed to insert a secret field for safety checks.
     // comptime {
     //     if (builtin.mode != .Debug) {
-    //         assert(@sizeOf(Inst) == 8);
+    //         assert(@size_of(Inst) == 8);
     //     }
     // }
 
@@ -305,7 +305,7 @@ pub const Inst = struct {
         assert(fmt.len == 0);
         _ = options;
 
-        try writer.print("Tag: {s}, Ops: {s}", .{ @tagName(inst.tag), @tagName(inst.ops) });
+        try writer.print("Tag: {s}, Ops: {s}", .{ @tag_name(inst.tag), @tag_name(inst.ops) });
     }
 };
 
@@ -330,8 +330,8 @@ pub fn extra_data(mir: Mir, comptime T: type, index: usize) struct { data: T, en
     inline for (fields) |field| {
         @field(result, field.name) = switch (field.type) {
             u32 => mir.extra[i],
-            i32 => @as(i32, @bitCast(mir.extra[i])),
-            else => @compileError("bad field type"),
+            i32 => @as(i32, @bit_cast(mir.extra[i])),
+            else => @compile_error("bad field type"),
         };
         i += 1;
     }
@@ -349,26 +349,26 @@ pub const LoadSymbolPayload = struct {
 
 /// Used in conjunction with payload to transfer a list of used registers in a compact manner.
 pub const RegisterList = struct {
-    bitset: BitSet = BitSet.initEmpty(),
+    bitset: BitSet = BitSet.init_empty(),
 
     const BitSet = IntegerBitSet(32);
     const Self = @This();
 
     fn get_index_for_reg(registers: []const Register, reg: Register) BitSet.MaskInt {
         for (registers, 0..) |cpreg, i| {
-            if (reg.id() == cpreg.id()) return @intCast(i);
+            if (reg.id() == cpreg.id()) return @int_cast(i);
         }
         unreachable; // register not in input register list!
     }
 
     pub fn push(self: *Self, registers: []const Register, reg: Register) void {
-        const index = getIndexForReg(registers, reg);
+        const index = get_index_for_reg(registers, reg);
         self.bitset.set(index);
     }
 
     pub fn is_set(self: Self, registers: []const Register, reg: Register) bool {
-        const index = getIndexForReg(registers, reg);
-        return self.bitset.isSet(index);
+        const index = get_index_for_reg(registers, reg);
+        return self.bitset.is_set(index);
     }
 
     pub fn iterator(self: Self, comptime options: std.bit_set.IteratorOptions) BitSet.Iterator(options) {
@@ -376,11 +376,11 @@ pub const RegisterList = struct {
     }
 
     pub fn count(self: Self) i32 {
-        return @intCast(self.bitset.count());
+        return @int_cast(self.bitset.count());
     }
 
     pub fn size(self: Self) i32 {
-        return @intCast(self.bitset.count() * 8);
+        return @int_cast(self.bitset.count() * 8);
     }
 };
 

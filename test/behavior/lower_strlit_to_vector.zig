@@ -13,5 +13,5 @@ test "strlit to vector" {
     const arr_from_vec = @as([32]u8, vec_from_strlit);
     for (strlit, 0..) |c, i|
         try std.testing.expect(c == arr_from_vec[i]);
-    try std.testing.expectEqualSlices(u8, strlit, &arr_from_vec);
+    try std.testing.expect_equal_slices(u8, strlit, &arr_from_vec);
 }

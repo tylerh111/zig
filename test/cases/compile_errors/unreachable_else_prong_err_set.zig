@@ -5,7 +5,7 @@ pub export fn complex() void {
         error.Foo => unreachable,
         error.Bar => unreachable,
         else => {
-            @compileError("<something complex here>");
+            @compile_error("<something complex here>");
         },
     }
 }

@@ -13,9 +13,9 @@ fn runtime_safety_off() callconv(.Naked) void {
 }
 
 comptime {
-    _ = &runtimeSafetyDefault;
-    _ = &runtimeSafetyOn;
-    _ = &runtimeSafetyOff;
+    _ = &runtime_safety_default;
+    _ = &runtime_safety_on;
+    _ = &runtime_safety_off;
 }
 
 // error

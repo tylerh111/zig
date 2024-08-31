@@ -3,7 +3,7 @@ const expect = @import("std").testing.expect;
 test "while null capture" {
     var sum1: u32 = 0;
     numbers_left = 3;
-    while (eventuallyNullSequence()) |value| {
+    while (eventually_null_sequence()) |value| {
         sum1 += value;
     }
     try expect(sum1 == 3);
@@ -11,7 +11,7 @@ test "while null capture" {
     // null capture with an else block
     var sum2: u32 = 0;
     numbers_left = 3;
-    while (eventuallyNullSequence()) |value| {
+    while (eventually_null_sequence()) |value| {
         sum2 += value;
     } else {
         try expect(sum2 == 3);
@@ -21,7 +21,7 @@ test "while null capture" {
     var i: u32 = 0;
     var sum3: u32 = 0;
     numbers_left = 3;
-    while (eventuallyNullSequence()) |value| : (i += 1) {
+    while (eventually_null_sequence()) |value| : (i += 1) {
         sum3 += value;
     }
     try expect(i == 3);

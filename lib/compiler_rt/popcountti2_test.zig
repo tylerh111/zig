@@ -5,25 +5,25 @@ const testing = std.testing;
 fn popcountti2_naive(a: i128) i32 {
     var x = a;
     var r: i32 = 0;
-    while (x != 0) : (x = @as(i128, @bitCast(@as(u128, @bitCast(x)) >> 1))) {
-        r += @as(i32, @intCast(x & 1));
+    while (x != 0) : (x = @as(i128, @bit_cast(@as(u128, @bit_cast(x)) >> 1))) {
+        r += @as(i32, @int_cast(x & 1));
     }
     return r;
 }
 
 fn test__popcountti2(a: i128) !void {
     const x = popcount.__popcountti2(a);
-    const expected = popcountti2Naive(a);
-    try testing.expectEqual(expected, x);
+    const expected = popcountti2_naive(a);
+    try testing.expect_equal(expected, x);
 }
 
 test "popcountti2" {
     try test__popcountti2(0);
     try test__popcountti2(1);
     try test__popcountti2(2);
-    try test__popcountti2(@as(i128, @bitCast(@as(u128, 0xffffffff_ffffffff_ffffffff_fffffffd))));
-    try test__popcountti2(@as(i128, @bitCast(@as(u128, 0xffffffff_ffffffff_ffffffff_fffffffe))));
-    try test__popcountti2(@as(i128, @bitCast(@as(u128, 0xffffffff_ffffffff_ffffffff_ffffffff))));
+    try test__popcountti2(@as(i128, @bit_cast(@as(u128, 0xffffffff_ffffffff_ffffffff_fffffffd))));
+    try test__popcountti2(@as(i128, @bit_cast(@as(u128, 0xffffffff_ffffffff_ffffffff_fffffffe))));
+    try test__popcountti2(@as(i128, @bit_cast(@as(u128, 0xffffffff_ffffffff_ffffffff_ffffffff))));
 
     const RndGen = std.Random.DefaultPrng;
     var rnd = RndGen.init(42);

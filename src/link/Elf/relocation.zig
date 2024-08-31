@@ -17,14 +17,14 @@ fn Table(comptime len: comptime_int, comptime RelType: type, comptime mapping: [
     return struct {
         fn decode(r_type: u32) Kind {
             inline for (mapping) |entry| {
-                if (@intFromEnum(entry[1]) == r_type) return entry[0];
+                if (@int_from_enum(entry[1]) == r_type) return entry[0];
             }
             return .other;
         }
 
         fn encode(comptime kind: Kind) u32 {
             inline for (mapping) |entry| {
-                if (entry[0] == kind) return @intFromEnum(entry[1]);
+                if (entry[0] == kind) return @int_from_enum(entry[1]);
             }
             @panic("encoding .other is ambiguous");
         }
@@ -96,7 +96,7 @@ const FormatRelocTypeCtx = struct {
     cpu_arch: std.Target.Cpu.Arch,
 };
 
-pub fn fmt_reloc_type(r_type: u32, cpu_arch: std.Target.Cpu.Arch) std.fmt.Formatter(formatRelocType) {
+pub fn fmt_reloc_type(r_type: u32, cpu_arch: std.Target.Cpu.Arch) std.fmt.Formatter(format_reloc_type) {
     return .{ .data = .{
         .r_type = r_type,
         .cpu_arch = cpu_arch,
@@ -113,12 +113,12 @@ fn format_reloc_type(
     _ = options;
     const r_type = ctx.r_type;
     switch (r_type) {
-        Elf.R_ZIG_GOT32 => try writer.writeAll("R_ZIG_GOT32"),
-        Elf.R_ZIG_GOTPCREL => try writer.writeAll("R_ZIG_GOTPCREL"),
+        Elf.R_ZIG_GOT32 => try writer.write_all("R_ZIG_GOT32"),
+        Elf.R_ZIG_GOTPCREL => try writer.write_all("R_ZIG_GOTPCREL"),
         else => switch (ctx.cpu_arch) {
-            .x86_64 => try writer.print("R_X86_64_{s}", .{@tagName(@as(elf.R_X86_64, @enumFromInt(r_type)))}),
-            .aarch64 => try writer.print("R_AARCH64_{s}", .{@tagName(@as(elf.R_AARCH64, @enumFromInt(r_type)))}),
-            .riscv64 => try writer.print("R_RISCV_{s}", .{@tagName(@as(elf.R_RISCV, @enumFromInt(r_type)))}),
+            .x86_64 => try writer.print("R_X86_64_{s}", .{@tag_name(@as(elf.R_X86_64, @enumFromInt(r_type)))}),
+            .aarch64 => try writer.print("R_AARCH64_{s}", .{@tag_name(@as(elf.R_AARCH64, @enumFromInt(r_type)))}),
+            .riscv64 => try writer.print("R_RISCV_{s}", .{@tag_name(@as(elf.R_RISCV, @enumFromInt(r_type)))}),
             else => unreachable,
         },
     }

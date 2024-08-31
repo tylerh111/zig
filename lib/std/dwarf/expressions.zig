@@ -16,7 +16,7 @@ pub const ExpressionContext = struct {
     format: dwarf.Format = .@"32",
 
     /// If specified, any addresses will pass through this function before being acccessed
-    isValidMemory: ?*const fn (address: usize) bool = null,
+    is_valid_memory: ?*const fn (address: usize) bool = null,
 
     /// The compilation unit this expression relates to, if any
     compile_unit: ?*const dwarf.CompileUnit = null,
@@ -40,7 +40,7 @@ pub const ExpressionContext = struct {
 
 pub const ExpressionOptions = struct {
     /// The address size of the target architecture
-    addr_size: u8 = @sizeOf(usize),
+    addr_size: u8 = @size_of(usize),
 
     /// Endianess of the target architecture
     endian: std.builtin.Endian = builtin.target.cpu.arch.endian(),
@@ -80,14 +80,14 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
         2 => u16,
         4 => u32,
         8 => u64,
-        else => @compileError("Unsupported address size of " ++ options.addr_size),
+        else => @compile_error("Unsupported address size of " ++ options.addr_size),
     };
 
     const addr_type_signed = switch (options.addr_size) {
         2 => i16,
         4 => i32,
         8 => i64,
-        else => @compileError("Unsupported address size of " ++ options.addr_size),
+        else => @compile_error("Unsupported address size of " ++ options.addr_size),
     };
 
     return struct {
@@ -148,10 +148,10 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     .regval_type => |regval_type| regval_type.value,
                     .const_type => |const_type| {
                         const value: u64 = switch (const_type.value_bytes.len) {
-                            1 => mem.readInt(u8, const_type.value_bytes[0..1], native_endian),
-                            2 => mem.readInt(u16, const_type.value_bytes[0..2], native_endian),
-                            4 => mem.readInt(u32, const_type.value_bytes[0..4], native_endian),
-                            8 => mem.readInt(u64, const_type.value_bytes[0..8], native_endian),
+                            1 => mem.read_int(u8, const_type.value_bytes[0..1], native_endian),
+                            2 => mem.read_int(u16, const_type.value_bytes[0..2], native_endian),
+                            4 => mem.read_int(u32, const_type.value_bytes[0..4], native_endian),
+                            8 => mem.read_int(u64, const_type.value_bytes[0..8], native_endian),
                             else => return error.InvalidIntegralTypeSize,
                         };
 
@@ -164,7 +164,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
         stack: std.ArrayListUnmanaged(Value) = .{},
 
         pub fn reset(self: *Self) void {
-            self.stack.clearRetainingCapacity();
+            self.stack.clear_retaining_capacity();
         }
 
         pub fn deinit(self: *Self, allocator: std.mem.Allocator) void {
@@ -173,15 +173,15 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
 
         fn generic(value: anytype) Operand {
             const int_info = @typeInfo(@TypeOf(value)).Int;
-            if (@sizeOf(@TypeOf(value)) > options.addr_size) {
+            if (@size_of(@TypeOf(value)) > options.addr_size) {
                 return .{ .generic = switch (int_info.signedness) {
-                    .signed => @bitCast(@as(addr_type_signed, @truncate(value))),
+                    .signed => @bit_cast(@as(addr_type_signed, @truncate(value))),
                     .unsigned => @truncate(value),
                 } };
             } else {
                 return .{ .generic = switch (int_info.signedness) {
-                    .signed => @bitCast(@as(addr_type_signed, @intCast(value))),
-                    .unsigned => @intCast(value),
+                    .signed => @bit_cast(@as(addr_type_signed, @int_cast(value))),
+                    .unsigned => @int_cast(value),
                 } };
             }
         }
@@ -189,58 +189,58 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
         pub fn read_operand(stream: *std.io.FixedBufferStream([]const u8), opcode: u8, context: ExpressionContext) !?Operand {
             const reader = stream.reader();
             return switch (opcode) {
-                OP.addr => generic(try reader.readInt(addr_type, options.endian)),
+                OP.addr => generic(try reader.read_int(addr_type, options.endian)),
                 OP.call_ref => switch (context.format) {
-                    .@"32" => generic(try reader.readInt(u32, options.endian)),
-                    .@"64" => generic(try reader.readInt(u64, options.endian)),
+                    .@"32" => generic(try reader.read_int(u32, options.endian)),
+                    .@"64" => generic(try reader.read_int(u64, options.endian)),
                 },
                 OP.const1u,
                 OP.pick,
-                => generic(try reader.readByte()),
+                => generic(try reader.read_byte()),
                 OP.deref_size,
                 OP.xderef_size,
-                => .{ .type_size = try reader.readByte() },
-                OP.const1s => generic(try reader.readByteSigned()),
+                => .{ .type_size = try reader.read_byte() },
+                OP.const1s => generic(try reader.read_byte_signed()),
                 OP.const2u,
                 OP.call2,
-                => generic(try reader.readInt(u16, options.endian)),
-                OP.call4 => generic(try reader.readInt(u32, options.endian)),
-                OP.const2s => generic(try reader.readInt(i16, options.endian)),
+                => generic(try reader.read_int(u16, options.endian)),
+                OP.call4 => generic(try reader.read_int(u32, options.endian)),
+                OP.const2s => generic(try reader.read_int(i16, options.endian)),
                 OP.bra,
                 OP.skip,
-                => .{ .branch_offset = try reader.readInt(i16, options.endian) },
-                OP.const4u => generic(try reader.readInt(u32, options.endian)),
-                OP.const4s => generic(try reader.readInt(i32, options.endian)),
-                OP.const8u => generic(try reader.readInt(u64, options.endian)),
-                OP.const8s => generic(try reader.readInt(i64, options.endian)),
+                => .{ .branch_offset = try reader.read_int(i16, options.endian) },
+                OP.const4u => generic(try reader.read_int(u32, options.endian)),
+                OP.const4s => generic(try reader.read_int(i32, options.endian)),
+                OP.const8u => generic(try reader.read_int(u64, options.endian)),
+                OP.const8s => generic(try reader.read_int(i64, options.endian)),
                 OP.constu,
                 OP.plus_uconst,
                 OP.addrx,
                 OP.constx,
                 OP.convert,
                 OP.reinterpret,
-                => generic(try leb.readULEB128(u64, reader)),
+                => generic(try leb.read_uleb128(u64, reader)),
                 OP.consts,
                 OP.fbreg,
-                => generic(try leb.readILEB128(i64, reader)),
+                => generic(try leb.read_ileb128(i64, reader)),
                 OP.lit0...OP.lit31 => |n| generic(n - OP.lit0),
                 OP.reg0...OP.reg31 => |n| .{ .register = n - OP.reg0 },
                 OP.breg0...OP.breg31 => |n| .{ .base_register = .{
                     .base_register = n - OP.breg0,
-                    .offset = try leb.readILEB128(i64, reader),
+                    .offset = try leb.read_ileb128(i64, reader),
                 } },
-                OP.regx => .{ .register = try leb.readULEB128(u8, reader) },
+                OP.regx => .{ .register = try leb.read_uleb128(u8, reader) },
                 OP.bregx => blk: {
-                    const base_register = try leb.readULEB128(u8, reader);
-                    const offset = try leb.readILEB128(i64, reader);
+                    const base_register = try leb.read_uleb128(u8, reader);
+                    const offset = try leb.read_ileb128(i64, reader);
                     break :blk .{ .base_register = .{
                         .base_register = base_register,
                         .offset = offset,
                     } };
                 },
                 OP.regval_type => blk: {
-                    const register = try leb.readULEB128(u8, reader);
-                    const type_offset = try leb.readULEB128(addr_type, reader);
+                    const register = try leb.read_uleb128(u8, reader);
+                    const type_offset = try leb.read_uleb128(addr_type, reader);
                     break :blk .{ .register_type = .{
                         .register = register,
                         .type_offset = type_offset,
@@ -248,20 +248,20 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                 },
                 OP.piece => .{
                     .composite_location = .{
-                        .size = try leb.readULEB128(u8, reader),
+                        .size = try leb.read_uleb128(u8, reader),
                         .offset = 0,
                     },
                 },
                 OP.bit_piece => blk: {
-                    const size = try leb.readULEB128(u8, reader);
-                    const offset = try leb.readILEB128(i64, reader);
+                    const size = try leb.read_uleb128(u8, reader);
+                    const offset = try leb.read_ileb128(i64, reader);
                     break :blk .{ .composite_location = .{
                         .size = size,
                         .offset = offset,
                     } };
                 },
                 OP.implicit_value, OP.entry_value => blk: {
-                    const size = try leb.readULEB128(u8, reader);
+                    const size = try leb.read_uleb128(u8, reader);
                     if (stream.pos + size > stream.buffer.len) return error.InvalidExpression;
                     const block = stream.buffer[stream.pos..][0..size];
                     stream.pos += size;
@@ -270,8 +270,8 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     };
                 },
                 OP.const_type => blk: {
-                    const type_offset = try leb.readULEB128(addr_type, reader);
-                    const size = try reader.readByte();
+                    const type_offset = try leb.read_uleb128(addr_type, reader);
+                    const size = try reader.read_byte();
                     if (stream.pos + size > stream.buffer.len) return error.InvalidExpression;
                     const value_bytes = stream.buffer[stream.pos..][0..size];
                     stream.pos += size;
@@ -284,8 +284,8 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                 OP.xderef_type,
                 => .{
                     .deref_type = .{
-                        .size = try reader.readByte(),
-                        .type_offset = try leb.readULEB128(addr_type, reader),
+                        .size = try reader.read_byte(),
+                        .type_offset = try leb.read_uleb128(addr_type, reader),
                     },
                 },
                 OP.lo_user...OP.hi_user => return error.UnimplementedUserOpcode,
@@ -301,7 +301,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
             initial_value: ?usize,
         ) ExpressionError!?Value {
             if (initial_value) |i| try self.stack.append(allocator, .{ .generic = i });
-            var stream = std.io.fixedBufferStream(expression);
+            var stream = std.io.fixed_buffer_stream(expression);
             while (try self.step(&stream, allocator, context)) {}
             if (self.stack.items.len == 0) return null;
             return self.stack.items[self.stack.items.len - 1];
@@ -314,12 +314,12 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
             allocator: std.mem.Allocator,
             context: ExpressionContext,
         ) ExpressionError!bool {
-            if (@sizeOf(usize) != @sizeOf(addr_type) or options.endian != comptime builtin.target.cpu.arch.endian())
-                @compileError("Execution of non-native address sizes / endianness is not supported");
+            if (@size_of(usize) != @size_of(addr_type) or options.endian != comptime builtin.target.cpu.arch.endian())
+                @compile_error("Execution of non-native address sizes / endianness is not supported");
 
-            const opcode = try stream.reader().readByte();
-            if (options.call_frame_context and !isOpcodeValidInCFA(opcode)) return error.InvalidCFAOpcode;
-            const operand = try readOperand(stream, opcode, context);
+            const opcode = try stream.reader().read_byte();
+            if (options.call_frame_context and !is_opcode_valid_in_cfa(opcode)) return error.InvalidCFAOpcode;
+            const operand = try read_operand(stream, opcode, context);
             switch (opcode) {
 
                 // 2.5.1.1: Literal Encodings
@@ -353,7 +353,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     const debug_addr_index = operand.?.generic;
                     const offset = context.compile_unit.?.addr_base + debug_addr_index;
                     if (offset >= context.debug_addr.?.len) return error.InvalidExpression;
-                    const value = mem.readInt(usize, context.debug_addr.?[offset..][0..@sizeOf(usize)], native_endian);
+                    const value = mem.read_int(usize, context.debug_addr.?[offset..][0..@size_of(usize)], native_endian);
                     try self.stack.append(allocator, .{ .generic = value });
                 },
 
@@ -362,7 +362,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     if (context.compile_unit == null) return error.IncompleteExpressionContext;
                     if (context.compile_unit.?.frame_base == null) return error.IncompleteExpressionContext;
 
-                    const offset: i64 = @intCast(operand.?.generic);
+                    const offset: i64 = @int_cast(operand.?.generic);
                     _ = offset;
 
                     switch (context.compile_unit.?.frame_base.?.*) {
@@ -387,25 +387,25 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     if (context.thread_context == null) return error.IncompleteExpressionContext;
 
                     const base_register = operand.?.base_register;
-                    var value: i64 = @intCast(mem.readInt(usize, (try abi.regBytes(
+                    var value: i64 = @int_cast(mem.read_int(usize, (try abi.reg_bytes(
                         context.thread_context.?,
                         base_register.base_register,
                         context.reg_context,
-                    ))[0..@sizeOf(usize)], native_endian));
+                    ))[0..@size_of(usize)], native_endian));
                     value += base_register.offset;
-                    try self.stack.append(allocator, .{ .generic = @intCast(value) });
+                    try self.stack.append(allocator, .{ .generic = @int_cast(value) });
                 },
                 OP.regval_type => {
                     const register_type = operand.?.register_type;
-                    const value = mem.readInt(usize, (try abi.regBytes(
+                    const value = mem.read_int(usize, (try abi.reg_bytes(
                         context.thread_context.?,
                         register_type.register,
                         context.reg_context,
-                    ))[0..@sizeOf(usize)], native_endian);
+                    ))[0..@size_of(usize)], native_endian);
                     try self.stack.append(allocator, .{
                         .regval_type = .{
                             .type_offset = register_type.type_offset,
-                            .type_size = @sizeOf(addr_type),
+                            .type_size = @size_of(addr_type),
                             .value = value,
                         },
                     });
@@ -443,7 +443,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                 OP.xderef_type,
                 => {
                     if (self.stack.items.len == 0) return error.InvalidExpression;
-                    const addr = try self.stack.items[self.stack.items.len - 1].asIntegral();
+                    const addr = try self.stack.items[self.stack.items.len - 1].as_integral();
                     const addr_space_identifier: ?usize = switch (opcode) {
                         OP.xderef,
                         OP.xderef_size,
@@ -451,7 +451,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                         => blk: {
                             _ = self.stack.pop();
                             if (self.stack.items.len == 0) return error.InvalidExpression;
-                            break :blk try self.stack.items[self.stack.items.len - 1].asIntegral();
+                            break :blk try self.stack.items[self.stack.items.len - 1].as_integral();
                         },
                         else => null,
                     };
@@ -460,11 +460,11 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     // This code will need to be updated to handle any architectures that utilize this.
                     _ = addr_space_identifier;
 
-                    if (context.isValidMemory) |isValidMemory| if (!isValidMemory(addr)) return error.InvalidExpression;
+                    if (context.is_valid_memory) |is_valid_memory| if (!is_valid_memory(addr)) return error.InvalidExpression;
                     const size = switch (opcode) {
                         OP.deref,
                         OP.xderef,
-                        => @sizeOf(addr_type),
+                        => @size_of(addr_type),
                         OP.deref_size,
                         OP.xderef_size,
                         => operand.?.type_size,
@@ -504,7 +504,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     // spec), so treat it like a nop
                     if (!context.entry_value_context) {
                         if (context.object_address == null) return error.IncompleteExpressionContext;
-                        try self.stack.append(allocator, .{ .generic = @intFromPtr(context.object_address.?) });
+                        try self.stack.append(allocator, .{ .generic = @int_from_ptr(context.object_address.?) });
                     }
                 },
                 OP.form_tls_address => {
@@ -519,55 +519,55 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                 // 2.5.1.4: Arithmetic and Logical Operations
                 OP.abs => {
                     if (self.stack.items.len == 0) return error.InvalidExpression;
-                    const value: isize = @bitCast(try self.stack.items[self.stack.items.len - 1].asIntegral());
+                    const value: isize = @bit_cast(try self.stack.items[self.stack.items.len - 1].as_integral());
                     self.stack.items[self.stack.items.len - 1] = .{
                         .generic = @abs(value),
                     };
                 },
                 OP.@"and" => {
                     if (self.stack.items.len < 2) return error.InvalidExpression;
-                    const a = try self.stack.pop().asIntegral();
+                    const a = try self.stack.pop().as_integral();
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = a & try self.stack.items[self.stack.items.len - 1].asIntegral(),
+                        .generic = a & try self.stack.items[self.stack.items.len - 1].as_integral(),
                     };
                 },
                 OP.div => {
                     if (self.stack.items.len < 2) return error.InvalidExpression;
-                    const a: isize = @bitCast(try self.stack.pop().asIntegral());
-                    const b: isize = @bitCast(try self.stack.items[self.stack.items.len - 1].asIntegral());
+                    const a: isize = @bit_cast(try self.stack.pop().as_integral());
+                    const b: isize = @bit_cast(try self.stack.items[self.stack.items.len - 1].as_integral());
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = @bitCast(try std.math.divTrunc(isize, b, a)),
+                        .generic = @bit_cast(try std.math.div_trunc(isize, b, a)),
                     };
                 },
                 OP.minus => {
                     if (self.stack.items.len < 2) return error.InvalidExpression;
-                    const b = try self.stack.pop().asIntegral();
+                    const b = try self.stack.pop().as_integral();
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = try std.math.sub(addr_type, try self.stack.items[self.stack.items.len - 1].asIntegral(), b),
+                        .generic = try std.math.sub(addr_type, try self.stack.items[self.stack.items.len - 1].as_integral(), b),
                     };
                 },
                 OP.mod => {
                     if (self.stack.items.len < 2) return error.InvalidExpression;
-                    const a: isize = @bitCast(try self.stack.pop().asIntegral());
-                    const b: isize = @bitCast(try self.stack.items[self.stack.items.len - 1].asIntegral());
+                    const a: isize = @bit_cast(try self.stack.pop().as_integral());
+                    const b: isize = @bit_cast(try self.stack.items[self.stack.items.len - 1].as_integral());
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = @bitCast(@mod(b, a)),
+                        .generic = @bit_cast(@mod(b, a)),
                     };
                 },
                 OP.mul => {
                     if (self.stack.items.len < 2) return error.InvalidExpression;
-                    const a: isize = @bitCast(try self.stack.pop().asIntegral());
-                    const b: isize = @bitCast(try self.stack.items[self.stack.items.len - 1].asIntegral());
+                    const a: isize = @bit_cast(try self.stack.pop().as_integral());
+                    const b: isize = @bit_cast(try self.stack.items[self.stack.items.len - 1].as_integral());
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = @bitCast(@mulWithOverflow(a, b)[0]),
+                        .generic = @bit_cast(@mulWithOverflow(a, b)[0]),
                     };
                 },
                 OP.neg => {
                     if (self.stack.items.len == 0) return error.InvalidExpression;
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = @bitCast(
+                        .generic = @bit_cast(
                             try std.math.negate(
-                                @as(isize, @bitCast(try self.stack.items[self.stack.items.len - 1].asIntegral())),
+                                @as(isize, @bit_cast(try self.stack.items[self.stack.items.len - 1].as_integral())),
                             ),
                         ),
                     };
@@ -575,59 +575,59 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                 OP.not => {
                     if (self.stack.items.len == 0) return error.InvalidExpression;
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = ~try self.stack.items[self.stack.items.len - 1].asIntegral(),
+                        .generic = ~try self.stack.items[self.stack.items.len - 1].as_integral(),
                     };
                 },
                 OP.@"or" => {
                     if (self.stack.items.len < 2) return error.InvalidExpression;
-                    const a = try self.stack.pop().asIntegral();
+                    const a = try self.stack.pop().as_integral();
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = a | try self.stack.items[self.stack.items.len - 1].asIntegral(),
+                        .generic = a | try self.stack.items[self.stack.items.len - 1].as_integral(),
                     };
                 },
                 OP.plus => {
                     if (self.stack.items.len < 2) return error.InvalidExpression;
-                    const b = try self.stack.pop().asIntegral();
+                    const b = try self.stack.pop().as_integral();
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = try std.math.add(addr_type, try self.stack.items[self.stack.items.len - 1].asIntegral(), b),
+                        .generic = try std.math.add(addr_type, try self.stack.items[self.stack.items.len - 1].as_integral(), b),
                     };
                 },
                 OP.plus_uconst => {
                     if (self.stack.items.len == 0) return error.InvalidExpression;
                     const constant = operand.?.generic;
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = try std.math.add(addr_type, try self.stack.items[self.stack.items.len - 1].asIntegral(), constant),
+                        .generic = try std.math.add(addr_type, try self.stack.items[self.stack.items.len - 1].as_integral(), constant),
                     };
                 },
                 OP.shl => {
                     if (self.stack.items.len < 2) return error.InvalidExpression;
-                    const a = try self.stack.pop().asIntegral();
-                    const b = try self.stack.items[self.stack.items.len - 1].asIntegral();
+                    const a = try self.stack.pop().as_integral();
+                    const b = try self.stack.items[self.stack.items.len - 1].as_integral();
                     self.stack.items[self.stack.items.len - 1] = .{
                         .generic = std.math.shl(usize, b, a),
                     };
                 },
                 OP.shr => {
                     if (self.stack.items.len < 2) return error.InvalidExpression;
-                    const a = try self.stack.pop().asIntegral();
-                    const b = try self.stack.items[self.stack.items.len - 1].asIntegral();
+                    const a = try self.stack.pop().as_integral();
+                    const b = try self.stack.items[self.stack.items.len - 1].as_integral();
                     self.stack.items[self.stack.items.len - 1] = .{
                         .generic = std.math.shr(usize, b, a),
                     };
                 },
                 OP.shra => {
                     if (self.stack.items.len < 2) return error.InvalidExpression;
-                    const a = try self.stack.pop().asIntegral();
-                    const b: isize = @bitCast(try self.stack.items[self.stack.items.len - 1].asIntegral());
+                    const a = try self.stack.pop().as_integral();
+                    const b: isize = @bit_cast(try self.stack.items[self.stack.items.len - 1].as_integral());
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = @bitCast(std.math.shr(isize, b, a)),
+                        .generic = @bit_cast(std.math.shr(isize, b, a)),
                     };
                 },
                 OP.xor => {
                     if (self.stack.items.len < 2) return error.InvalidExpression;
-                    const a = try self.stack.pop().asIntegral();
+                    const a = try self.stack.pop().as_integral();
                     self.stack.items[self.stack.items.len - 1] = .{
-                        .generic = a ^ try self.stack.items[self.stack.items.len - 1].asIntegral(),
+                        .generic = a ^ try self.stack.items[self.stack.items.len - 1].as_integral(),
                     };
                 },
 
@@ -644,9 +644,9 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     const b = self.stack.items[self.stack.items.len - 1];
 
                     if (a == .generic and b == .generic) {
-                        const a_int: isize = @bitCast(a.asIntegral() catch unreachable);
-                        const b_int: isize = @bitCast(b.asIntegral() catch unreachable);
-                        const result = @intFromBool(switch (opcode) {
+                        const a_int: isize = @bit_cast(a.as_integral() catch unreachable);
+                        const b_int: isize = @bit_cast(b.as_integral() catch unreachable);
+                        const result = @int_from_bool(switch (opcode) {
                             OP.le => b_int <= a_int,
                             OP.ge => b_int >= a_int,
                             OP.eq => b_int == a_int,
@@ -666,13 +666,13 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     const branch_offset = operand.?.branch_offset;
                     const condition = if (opcode == OP.bra) blk: {
                         if (self.stack.items.len == 0) return error.InvalidExpression;
-                        break :blk try self.stack.pop().asIntegral() != 0;
+                        break :blk try self.stack.pop().as_integral() != 0;
                     } else true;
 
                     if (condition) {
                         const new_pos = std.math.cast(
                             usize,
-                            try std.math.add(isize, @as(isize, @intCast(stream.pos)), branch_offset),
+                            try std.math.add(isize, @as(isize, @int_cast(stream.pos)), branch_offset),
                         ) orelse return error.InvalidExpression;
 
                         if (new_pos < 0 or new_pos > stream.buffer.len) return error.InvalidExpression;
@@ -701,7 +701,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     // TODO: Load the DW_TAG_base_type entries in context.compile_unit and verify both types are the same size
                     const value = self.stack.items[self.stack.items.len - 1];
                     if (type_offset == 0) {
-                        self.stack.items[self.stack.items.len - 1] = .{ .generic = try value.asIntegral() };
+                        self.stack.items[self.stack.items.len - 1] = .{ .generic = try value.as_integral() };
                     } else {
                         // TODO: Load the DW_TAG_base_type entry in context.compile_unit, find a conversion operator
                         //       from the old type to the new type, run it.
@@ -715,13 +715,13 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     // TODO: Load the DW_TAG_base_type entries in context.compile_unit and verify both types are the same size
                     const value = self.stack.items[self.stack.items.len - 1];
                     if (type_offset == 0) {
-                        self.stack.items[self.stack.items.len - 1] = .{ .generic = try value.asIntegral() };
+                        self.stack.items[self.stack.items.len - 1] = .{ .generic = try value.as_integral() };
                     } else {
                         self.stack.items[self.stack.items.len - 1] = switch (value) {
                             .generic => |v| .{
                                 .regval_type = .{
                                     .type_offset = type_offset,
-                                    .type_size = @sizeOf(addr_type),
+                                    .type_size = @size_of(addr_type),
                                     .value = v,
                                 },
                             },
@@ -752,12 +752,12 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     //       as it was upon entering the current subprogram. If this isn't being called at the
                     //       end of a frame unwind operation, an additional ThreadContext with this state will be needed.
 
-                    if (isOpcodeRegisterLocation(block[0])) {
+                    if (is_opcode_register_location(block[0])) {
                         if (context.thread_context == null) return error.IncompleteExpressionContext;
 
-                        var block_stream = std.io.fixedBufferStream(block);
-                        const register = (try readOperand(&block_stream, block[0], context)).?.register;
-                        const value = mem.readInt(usize, (try abi.regBytes(context.thread_context.?, register, context.reg_context))[0..@sizeOf(usize)], native_endian);
+                        var block_stream = std.io.fixed_buffer_stream(block);
+                        const register = (try read_operand(&block_stream, block[0], context)).?.register;
+                        const value = mem.read_int(usize, (try abi.reg_bytes(context.thread_context.?, register, context.reg_context))[0..@size_of(usize)], native_endian);
                         try self.stack.append(allocator, .{ .generic = value });
                     } else {
                         var stack_machine: Self = .{};
@@ -770,7 +770,7 @@ pub fn StackMachine(comptime options: ExpressionOptions) type {
                     }
                 },
 
-                // These have already been handled by readOperand
+                // These have already been handled by read_operand
                 OP.lo_user...OP.hi_user => unreachable,
                 else => {
                     //std.debug.print("Unknown DWARF expression opcode: {x}\n", .{opcode});
@@ -788,13 +788,13 @@ pub fn Builder(comptime options: ExpressionOptions) type {
         2 => u16,
         4 => u32,
         8 => u64,
-        else => @compileError("Unsupported address size of " ++ options.addr_size),
+        else => @compile_error("Unsupported address size of " ++ options.addr_size),
     };
 
     return struct {
         /// Zero-operand instructions
         pub fn write_opcode(writer: anytype, comptime opcode: u8) !void {
-            if (options.call_frame_context and !comptime isOpcodeValidInCFA(opcode)) return error.InvalidCFAOpcode;
+            if (options.call_frame_context and !comptime is_opcode_valid_in_cfa(opcode)) return error.InvalidCFAOpcode;
             switch (opcode) {
                 OP.dup,
                 OP.drop,
@@ -828,25 +828,25 @@ pub fn Builder(comptime options: ExpressionOptions) type {
                 OP.ne,
                 OP.nop,
                 OP.stack_value,
-                => try writer.writeByte(opcode),
-                else => @compileError("This opcode requires operands, use `write<Opcode>()` instead"),
+                => try writer.write_byte(opcode),
+                else => @compile_error("This opcode requires operands, use `write<Opcode>()` instead"),
             }
         }
 
         // 2.5.1.1: Literal Encodings
         pub fn write_literal(writer: anytype, literal: u8) !void {
             switch (literal) {
-                0...31 => |n| try writer.writeByte(n + OP.lit0),
+                0...31 => |n| try writer.write_byte(n + OP.lit0),
                 else => return error.InvalidLiteral,
             }
         }
 
         pub fn write_const(writer: anytype, comptime T: type, value: T) !void {
-            if (@typeInfo(T) != .Int) @compileError("Constants must be integers");
+            if (@typeInfo(T) != .Int) @compile_error("Constants must be integers");
 
             switch (T) {
                 u8, i8, u16, i16, u32, i32, u64, i64 => {
-                    try writer.writeByte(switch (T) {
+                    try writer.write_byte(switch (T) {
                         u8 => OP.const1u,
                         i8 => OP.const1s,
                         u16 => OP.const2u,
@@ -858,170 +858,170 @@ pub fn Builder(comptime options: ExpressionOptions) type {
                         else => unreachable,
                     });
 
-                    try writer.writeInt(T, value, options.endian);
+                    try writer.write_int(T, value, options.endian);
                 },
                 else => switch (@typeInfo(T).Int.signedness) {
                     .unsigned => {
-                        try writer.writeByte(OP.constu);
-                        try leb.writeULEB128(writer, value);
+                        try writer.write_byte(OP.constu);
+                        try leb.write_uleb128(writer, value);
                     },
                     .signed => {
-                        try writer.writeByte(OP.consts);
-                        try leb.writeILEB128(writer, value);
+                        try writer.write_byte(OP.consts);
+                        try leb.write_ileb128(writer, value);
                     },
                 },
             }
         }
 
         pub fn write_constx(writer: anytype, debug_addr_offset: anytype) !void {
-            try writer.writeByte(OP.constx);
-            try leb.writeULEB128(writer, debug_addr_offset);
+            try writer.write_byte(OP.constx);
+            try leb.write_uleb128(writer, debug_addr_offset);
         }
 
         pub fn write_const_type(writer: anytype, die_offset: anytype, value_bytes: []const u8) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
             if (value_bytes.len > 0xff) return error.InvalidTypeLength;
-            try writer.writeByte(OP.const_type);
-            try leb.writeULEB128(writer, die_offset);
-            try writer.writeByte(@intCast(value_bytes.len));
-            try writer.writeAll(value_bytes);
+            try writer.write_byte(OP.const_type);
+            try leb.write_uleb128(writer, die_offset);
+            try writer.write_byte(@int_cast(value_bytes.len));
+            try writer.write_all(value_bytes);
         }
 
         pub fn write_addr(writer: anytype, value: addr_type) !void {
-            try writer.writeByte(OP.addr);
-            try writer.writeInt(addr_type, value, options.endian);
+            try writer.write_byte(OP.addr);
+            try writer.write_int(addr_type, value, options.endian);
         }
 
         pub fn write_addrx(writer: anytype, debug_addr_offset: anytype) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
-            try writer.writeByte(OP.addrx);
-            try leb.writeULEB128(writer, debug_addr_offset);
+            try writer.write_byte(OP.addrx);
+            try leb.write_uleb128(writer, debug_addr_offset);
         }
 
         // 2.5.1.2: Register Values
         pub fn write_fbreg(writer: anytype, offset: anytype) !void {
-            try writer.writeByte(OP.fbreg);
-            try leb.writeILEB128(writer, offset);
+            try writer.write_byte(OP.fbreg);
+            try leb.write_ileb128(writer, offset);
         }
 
         pub fn write_breg(writer: anytype, register: u8, offset: anytype) !void {
             if (register > 31) return error.InvalidRegister;
-            try writer.writeByte(OP.breg0 + register);
-            try leb.writeILEB128(writer, offset);
+            try writer.write_byte(OP.breg0 + register);
+            try leb.write_ileb128(writer, offset);
         }
 
         pub fn write_bregx(writer: anytype, register: anytype, offset: anytype) !void {
-            try writer.writeByte(OP.bregx);
-            try leb.writeULEB128(writer, register);
-            try leb.writeILEB128(writer, offset);
+            try writer.write_byte(OP.bregx);
+            try leb.write_uleb128(writer, register);
+            try leb.write_ileb128(writer, offset);
         }
 
         pub fn write_regval_type(writer: anytype, register: anytype, offset: anytype) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
-            try writer.writeByte(OP.regval_type);
-            try leb.writeULEB128(writer, register);
-            try leb.writeULEB128(writer, offset);
+            try writer.write_byte(OP.regval_type);
+            try leb.write_uleb128(writer, register);
+            try leb.write_uleb128(writer, offset);
         }
 
         // 2.5.1.3: Stack Operations
         pub fn write_pick(writer: anytype, index: u8) !void {
-            try writer.writeByte(OP.pick);
-            try writer.writeByte(index);
+            try writer.write_byte(OP.pick);
+            try writer.write_byte(index);
         }
 
         pub fn write_deref_size(writer: anytype, size: u8) !void {
-            try writer.writeByte(OP.deref_size);
-            try writer.writeByte(size);
+            try writer.write_byte(OP.deref_size);
+            try writer.write_byte(size);
         }
 
         pub fn write_xderef_size(writer: anytype, size: u8) !void {
-            try writer.writeByte(OP.xderef_size);
-            try writer.writeByte(size);
+            try writer.write_byte(OP.xderef_size);
+            try writer.write_byte(size);
         }
 
         pub fn write_deref_type(writer: anytype, size: u8, die_offset: anytype) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
-            try writer.writeByte(OP.deref_type);
-            try writer.writeByte(size);
-            try leb.writeULEB128(writer, die_offset);
+            try writer.write_byte(OP.deref_type);
+            try writer.write_byte(size);
+            try leb.write_uleb128(writer, die_offset);
         }
 
         pub fn write_xderef_type(writer: anytype, size: u8, die_offset: anytype) !void {
-            try writer.writeByte(OP.xderef_type);
-            try writer.writeByte(size);
-            try leb.writeULEB128(writer, die_offset);
+            try writer.write_byte(OP.xderef_type);
+            try writer.write_byte(size);
+            try leb.write_uleb128(writer, die_offset);
         }
 
         // 2.5.1.4: Arithmetic and Logical Operations
 
         pub fn write_plus_uconst(writer: anytype, uint_value: anytype) !void {
-            try writer.writeByte(OP.plus_uconst);
-            try leb.writeULEB128(writer, uint_value);
+            try writer.write_byte(OP.plus_uconst);
+            try leb.write_uleb128(writer, uint_value);
         }
 
         // 2.5.1.5: Control Flow Operations
 
         pub fn write_skip(writer: anytype, offset: i16) !void {
-            try writer.writeByte(OP.skip);
-            try writer.writeInt(i16, offset, options.endian);
+            try writer.write_byte(OP.skip);
+            try writer.write_int(i16, offset, options.endian);
         }
 
         pub fn write_bra(writer: anytype, offset: i16) !void {
-            try writer.writeByte(OP.bra);
-            try writer.writeInt(i16, offset, options.endian);
+            try writer.write_byte(OP.bra);
+            try writer.write_int(i16, offset, options.endian);
         }
 
         pub fn write_call(writer: anytype, comptime T: type, offset: T) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
             switch (T) {
-                u16 => try writer.writeByte(OP.call2),
-                u32 => try writer.writeByte(OP.call4),
-                else => @compileError("Call operand must be a 2 or 4 byte offset"),
+                u16 => try writer.write_byte(OP.call2),
+                u32 => try writer.write_byte(OP.call4),
+                else => @compile_error("Call operand must be a 2 or 4 byte offset"),
             }
 
-            try writer.writeInt(T, offset, options.endian);
+            try writer.write_int(T, offset, options.endian);
         }
 
         pub fn write_call_ref(writer: anytype, comptime is_64: bool, value: if (is_64) u64 else u32) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
-            try writer.writeByte(OP.call_ref);
-            try writer.writeInt(if (is_64) u64 else u32, value, options.endian);
+            try writer.write_byte(OP.call_ref);
+            try writer.write_int(if (is_64) u64 else u32, value, options.endian);
         }
 
         pub fn write_convert(writer: anytype, die_offset: anytype) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
-            try writer.writeByte(OP.convert);
-            try leb.writeULEB128(writer, die_offset);
+            try writer.write_byte(OP.convert);
+            try leb.write_uleb128(writer, die_offset);
         }
 
         pub fn write_reinterpret(writer: anytype, die_offset: anytype) !void {
             if (options.call_frame_context) return error.InvalidCFAOpcode;
-            try writer.writeByte(OP.reinterpret);
-            try leb.writeULEB128(writer, die_offset);
+            try writer.write_byte(OP.reinterpret);
+            try leb.write_uleb128(writer, die_offset);
         }
 
         // 2.5.1.7: Special Operations
 
         pub fn write_entry_value(writer: anytype, expression: []const u8) !void {
-            try writer.writeByte(OP.entry_value);
-            try leb.writeULEB128(writer, expression.len);
-            try writer.writeAll(expression);
+            try writer.write_byte(OP.entry_value);
+            try leb.write_uleb128(writer, expression.len);
+            try writer.write_all(expression);
         }
 
         // 2.6: Location Descriptions
         pub fn write_reg(writer: anytype, register: u8) !void {
-            try writer.writeByte(OP.reg0 + register);
+            try writer.write_byte(OP.reg0 + register);
         }
 
         pub fn write_regx(writer: anytype, register: anytype) !void {
-            try writer.writeByte(OP.regx);
-            try leb.writeULEB128(writer, register);
+            try writer.write_byte(OP.regx);
+            try leb.write_uleb128(writer, register);
         }
 
         pub fn write_implicit_value(writer: anytype, value_bytes: []const u8) !void {
-            try writer.writeByte(OP.implicit_value);
-            try leb.writeULEB128(writer, value_bytes.len);
-            try writer.writeAll(value_bytes);
+            try writer.write_byte(OP.implicit_value);
+            try leb.write_uleb128(writer, value_bytes.len);
+            try writer.write_all(value_bytes);
         }
     };
 }
@@ -1072,21 +1072,21 @@ test "DWARF expressions" {
     {
         const context = ExpressionContext{};
         for (0..32) |i| {
-            try b.writeLiteral(writer, @intCast(i));
+            try b.write_literal(writer, @int_cast(i));
         }
 
         _ = try stack_machine.run(program.items, allocator, context, 0);
 
         for (0..32) |i| {
             const expected = 31 - i;
-            try testing.expectEqual(expected, stack_machine.stack.popOrNull().?.generic);
+            try testing.expect_equal(expected, stack_machine.stack.pop_or_null().?.generic);
         }
     }
 
     // Constants
     {
         stack_machine.reset();
-        program.clearRetainingCapacity();
+        program.clear_retaining_capacity();
 
         const input = [_]comptime_int{
             1,
@@ -1104,17 +1104,17 @@ test "DWARF expressions" {
             @as(usize, @truncate(0xeeeeeeee_eeeeeeee)),
         };
 
-        try b.writeConst(writer, u8, input[0]);
-        try b.writeConst(writer, i8, input[1]);
-        try b.writeConst(writer, u16, input[2]);
-        try b.writeConst(writer, i16, input[3]);
-        try b.writeConst(writer, u32, input[4]);
-        try b.writeConst(writer, i32, input[5]);
-        try b.writeConst(writer, u64, input[6]);
-        try b.writeConst(writer, i64, input[7]);
-        try b.writeConst(writer, u28, input[8]);
-        try b.writeConst(writer, i28, input[9]);
-        try b.writeAddr(writer, input[10]);
+        try b.write_const(writer, u8, input[0]);
+        try b.write_const(writer, i8, input[1]);
+        try b.write_const(writer, u16, input[2]);
+        try b.write_const(writer, i16, input[3]);
+        try b.write_const(writer, u32, input[4]);
+        try b.write_const(writer, i32, input[5]);
+        try b.write_const(writer, u64, input[6]);
+        try b.write_const(writer, i64, input[7]);
+        try b.write_const(writer, u28, input[8]);
+        try b.write_const(writer, i28, input[9]);
+        try b.write_addr(writer, input[10]);
 
         var mock_compile_unit: dwarf.CompileUnit = undefined;
         mock_compile_unit.addr_base = 1;
@@ -1122,27 +1122,27 @@ test "DWARF expressions" {
         var mock_debug_addr = std.ArrayList(u8).init(allocator);
         defer mock_debug_addr.deinit();
 
-        try mock_debug_addr.writer().writeInt(u16, 0, native_endian);
-        try mock_debug_addr.writer().writeInt(usize, input[11], native_endian);
-        try mock_debug_addr.writer().writeInt(usize, input[12], native_endian);
+        try mock_debug_addr.writer().write_int(u16, 0, native_endian);
+        try mock_debug_addr.writer().write_int(usize, input[11], native_endian);
+        try mock_debug_addr.writer().write_int(usize, input[12], native_endian);
 
         const context = ExpressionContext{
             .compile_unit = &mock_compile_unit,
             .debug_addr = mock_debug_addr.items,
         };
 
-        try b.writeConstx(writer, @as(usize, 1));
-        try b.writeAddrx(writer, @as(usize, 1 + @sizeOf(usize)));
+        try b.write_constx(writer, @as(usize, 1));
+        try b.write_addrx(writer, @as(usize, 1 + @size_of(usize)));
 
         const die_offset: usize = @truncate(0xaabbccdd);
         const type_bytes: []const u8 = &.{ 1, 2, 3, 4 };
-        try b.writeConstType(writer, die_offset, type_bytes);
+        try b.write_const_type(writer, die_offset, type_bytes);
 
         _ = try stack_machine.run(program.items, allocator, context, 0);
 
-        const const_type = stack_machine.stack.popOrNull().?.const_type;
-        try testing.expectEqual(die_offset, const_type.type_offset);
-        try testing.expectEqualSlices(u8, type_bytes, const_type.value_bytes);
+        const const_type = stack_machine.stack.pop_or_null().?.const_type;
+        try testing.expect_equal(die_offset, const_type.type_offset);
+        try testing.expect_equal_slices(u8, type_bytes, const_type.value_bytes);
 
         const expected = .{
             .{ usize, input[12], usize },
@@ -1161,51 +1161,51 @@ test "DWARF expressions" {
         };
 
         inline for (expected) |e| {
-            try testing.expectEqual(@as(e[0], e[1]), @as(e[2], @bitCast(stack_machine.stack.popOrNull().?.generic)));
+            try testing.expect_equal(@as(e[0], e[1]), @as(e[2], @bit_cast(stack_machine.stack.pop_or_null().?.generic)));
         }
     }
 
     // Register values
-    if (@sizeOf(std.debug.ThreadContext) != 0) {
+    if (@size_of(std.debug.ThreadContext) != 0) {
         stack_machine.reset();
-        program.clearRetainingCapacity();
+        program.clear_retaining_capacity();
 
         const reg_context = abi.RegisterContext{
             .eh_frame = true,
             .is_macho = builtin.os.tag == .macos,
         };
         var thread_context: std.debug.ThreadContext = undefined;
-        std.debug.relocateContext(&thread_context);
+        std.debug.relocate_context(&thread_context);
         const context = ExpressionContext{
             .thread_context = &thread_context,
             .reg_context = reg_context,
         };
 
         // Only test register operations on arch / os that have them implemented
-        if (abi.regBytes(&thread_context, 0, reg_context)) |reg_bytes| {
+        if (abi.reg_bytes(&thread_context, 0, reg_context)) |reg_bytes| {
 
             // TODO: Test fbreg (once implemented): mock a DIE and point compile_unit.frame_base at it
 
-            mem.writeInt(usize, reg_bytes[0..@sizeOf(usize)], 0xee, native_endian);
-            (try abi.regValueNative(usize, &thread_context, abi.fpRegNum(reg_context), reg_context)).* = 1;
-            (try abi.regValueNative(usize, &thread_context, abi.spRegNum(reg_context), reg_context)).* = 2;
-            (try abi.regValueNative(usize, &thread_context, abi.ipRegNum(), reg_context)).* = 3;
+            mem.write_int(usize, reg_bytes[0..@size_of(usize)], 0xee, native_endian);
+            (try abi.reg_value_native(usize, &thread_context, abi.fp_reg_num(reg_context), reg_context)).* = 1;
+            (try abi.reg_value_native(usize, &thread_context, abi.sp_reg_num(reg_context), reg_context)).* = 2;
+            (try abi.reg_value_native(usize, &thread_context, abi.ip_reg_num(), reg_context)).* = 3;
 
-            try b.writeBreg(writer, abi.fpRegNum(reg_context), @as(usize, 100));
-            try b.writeBreg(writer, abi.spRegNum(reg_context), @as(usize, 200));
-            try b.writeBregx(writer, abi.ipRegNum(), @as(usize, 300));
-            try b.writeRegvalType(writer, @as(u8, 0), @as(usize, 400));
+            try b.write_breg(writer, abi.fp_reg_num(reg_context), @as(usize, 100));
+            try b.write_breg(writer, abi.sp_reg_num(reg_context), @as(usize, 200));
+            try b.write_bregx(writer, abi.ip_reg_num(), @as(usize, 300));
+            try b.write_regval_type(writer, @as(u8, 0), @as(usize, 400));
 
             _ = try stack_machine.run(program.items, allocator, context, 0);
 
-            const regval_type = stack_machine.stack.popOrNull().?.regval_type;
-            try testing.expectEqual(@as(usize, 400), regval_type.type_offset);
-            try testing.expectEqual(@as(u8, @sizeOf(usize)), regval_type.type_size);
-            try testing.expectEqual(@as(usize, 0xee), regval_type.value);
+            const regval_type = stack_machine.stack.pop_or_null().?.regval_type;
+            try testing.expect_equal(@as(usize, 400), regval_type.type_offset);
+            try testing.expect_equal(@as(u8, @size_of(usize)), regval_type.type_size);
+            try testing.expect_equal(@as(usize, 0xee), regval_type.value);
 
-            try testing.expectEqual(@as(usize, 303), stack_machine.stack.popOrNull().?.generic);
-            try testing.expectEqual(@as(usize, 202), stack_machine.stack.popOrNull().?.generic);
-            try testing.expectEqual(@as(usize, 101), stack_machine.stack.popOrNull().?.generic);
+            try testing.expect_equal(@as(usize, 303), stack_machine.stack.pop_or_null().?.generic);
+            try testing.expect_equal(@as(usize, 202), stack_machine.stack.pop_or_null().?.generic);
+            try testing.expect_equal(@as(usize, 101), stack_machine.stack.pop_or_null().?.generic);
         } else |err| {
             switch (err) {
                 error.UnimplementedArch,
@@ -1222,130 +1222,130 @@ test "DWARF expressions" {
         var context = ExpressionContext{};
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u8, 1);
-        try b.writeOpcode(writer, OP.dup);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u8, 1);
+        try b.write_opcode(writer, OP.dup);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 1), stack_machine.stack.popOrNull().?.generic);
-        try testing.expectEqual(@as(usize, 1), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 1), stack_machine.stack.pop_or_null().?.generic);
+        try testing.expect_equal(@as(usize, 1), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u8, 1);
-        try b.writeOpcode(writer, OP.drop);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u8, 1);
+        try b.write_opcode(writer, OP.drop);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expect(stack_machine.stack.popOrNull() == null);
+        try testing.expect(stack_machine.stack.pop_or_null() == null);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u8, 4);
-        try b.writeConst(writer, u8, 5);
-        try b.writeConst(writer, u8, 6);
-        try b.writePick(writer, 2);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u8, 4);
+        try b.write_const(writer, u8, 5);
+        try b.write_const(writer, u8, 6);
+        try b.write_pick(writer, 2);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 4), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 4), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u8, 4);
-        try b.writeConst(writer, u8, 5);
-        try b.writeConst(writer, u8, 6);
-        try b.writeOpcode(writer, OP.over);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u8, 4);
+        try b.write_const(writer, u8, 5);
+        try b.write_const(writer, u8, 6);
+        try b.write_opcode(writer, OP.over);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 5), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 5), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u8, 5);
-        try b.writeConst(writer, u8, 6);
-        try b.writeOpcode(writer, OP.swap);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u8, 5);
+        try b.write_const(writer, u8, 6);
+        try b.write_opcode(writer, OP.swap);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 5), stack_machine.stack.popOrNull().?.generic);
-        try testing.expectEqual(@as(usize, 6), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 5), stack_machine.stack.pop_or_null().?.generic);
+        try testing.expect_equal(@as(usize, 6), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u8, 4);
-        try b.writeConst(writer, u8, 5);
-        try b.writeConst(writer, u8, 6);
-        try b.writeOpcode(writer, OP.rot);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u8, 4);
+        try b.write_const(writer, u8, 5);
+        try b.write_const(writer, u8, 6);
+        try b.write_opcode(writer, OP.rot);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 5), stack_machine.stack.popOrNull().?.generic);
-        try testing.expectEqual(@as(usize, 4), stack_machine.stack.popOrNull().?.generic);
-        try testing.expectEqual(@as(usize, 6), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 5), stack_machine.stack.pop_or_null().?.generic);
+        try testing.expect_equal(@as(usize, 4), stack_machine.stack.pop_or_null().?.generic);
+        try testing.expect_equal(@as(usize, 6), stack_machine.stack.pop_or_null().?.generic);
 
         const deref_target: usize = @truncate(0xffeeffee_ffeeffee);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeAddr(writer, @intFromPtr(&deref_target));
-        try b.writeOpcode(writer, OP.deref);
+        program.clear_retaining_capacity();
+        try b.write_addr(writer, @int_from_ptr(&deref_target));
+        try b.write_opcode(writer, OP.deref);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(deref_target, stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(deref_target, stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeLiteral(writer, 0);
-        try b.writeAddr(writer, @intFromPtr(&deref_target));
-        try b.writeOpcode(writer, OP.xderef);
+        program.clear_retaining_capacity();
+        try b.write_literal(writer, 0);
+        try b.write_addr(writer, @int_from_ptr(&deref_target));
+        try b.write_opcode(writer, OP.xderef);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(deref_target, stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(deref_target, stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeAddr(writer, @intFromPtr(&deref_target));
-        try b.writeDerefSize(writer, 1);
+        program.clear_retaining_capacity();
+        try b.write_addr(writer, @int_from_ptr(&deref_target));
+        try b.write_deref_size(writer, 1);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, @as(*const u8, @ptrCast(&deref_target)).*), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, @as(*const u8, @ptr_cast(&deref_target)).*), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeLiteral(writer, 0);
-        try b.writeAddr(writer, @intFromPtr(&deref_target));
-        try b.writeXDerefSize(writer, 1);
+        program.clear_retaining_capacity();
+        try b.write_literal(writer, 0);
+        try b.write_addr(writer, @int_from_ptr(&deref_target));
+        try b.write_xderef_size(writer, 1);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, @as(*const u8, @ptrCast(&deref_target)).*), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, @as(*const u8, @ptr_cast(&deref_target)).*), stack_machine.stack.pop_or_null().?.generic);
 
         const type_offset: usize = @truncate(0xaabbaabb_aabbaabb);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeAddr(writer, @intFromPtr(&deref_target));
-        try b.writeDerefType(writer, 1, type_offset);
+        program.clear_retaining_capacity();
+        try b.write_addr(writer, @int_from_ptr(&deref_target));
+        try b.write_deref_type(writer, 1, type_offset);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        const deref_type = stack_machine.stack.popOrNull().?.regval_type;
-        try testing.expectEqual(type_offset, deref_type.type_offset);
-        try testing.expectEqual(@as(u8, 1), deref_type.type_size);
-        try testing.expectEqual(@as(usize, @as(*const u8, @ptrCast(&deref_target)).*), deref_type.value);
+        const deref_type = stack_machine.stack.pop_or_null().?.regval_type;
+        try testing.expect_equal(type_offset, deref_type.type_offset);
+        try testing.expect_equal(@as(u8, 1), deref_type.type_size);
+        try testing.expect_equal(@as(usize, @as(*const u8, @ptr_cast(&deref_target)).*), deref_type.value);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeLiteral(writer, 0);
-        try b.writeAddr(writer, @intFromPtr(&deref_target));
-        try b.writeXDerefType(writer, 1, type_offset);
+        program.clear_retaining_capacity();
+        try b.write_literal(writer, 0);
+        try b.write_addr(writer, @int_from_ptr(&deref_target));
+        try b.write_xderef_type(writer, 1, type_offset);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        const xderef_type = stack_machine.stack.popOrNull().?.regval_type;
-        try testing.expectEqual(type_offset, xderef_type.type_offset);
-        try testing.expectEqual(@as(u8, 1), xderef_type.type_size);
-        try testing.expectEqual(@as(usize, @as(*const u8, @ptrCast(&deref_target)).*), xderef_type.value);
+        const xderef_type = stack_machine.stack.pop_or_null().?.regval_type;
+        try testing.expect_equal(type_offset, xderef_type.type_offset);
+        try testing.expect_equal(@as(u8, 1), xderef_type.type_size);
+        try testing.expect_equal(@as(usize, @as(*const u8, @ptr_cast(&deref_target)).*), xderef_type.value);
 
         context.object_address = &deref_target;
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeOpcode(writer, OP.push_object_address);
+        program.clear_retaining_capacity();
+        try b.write_opcode(writer, OP.push_object_address);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, @intFromPtr(context.object_address.?)), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, @int_from_ptr(context.object_address.?)), stack_machine.stack.pop_or_null().?.generic);
 
         // TODO: Test OP.form_tls_address
 
         context.cfa = @truncate(0xccddccdd_ccddccdd);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeOpcode(writer, OP.call_frame_cfa);
+        program.clear_retaining_capacity();
+        try b.write_opcode(writer, OP.call_frame_cfa);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(context.cfa.?, stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(context.cfa.?, stack_machine.stack.pop_or_null().?.generic);
     }
 
     // Arithmetic and Logical Operations
@@ -1353,123 +1353,123 @@ test "DWARF expressions" {
         const context = ExpressionContext{};
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, i16, -4096);
-        try b.writeOpcode(writer, OP.abs);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, i16, -4096);
+        try b.write_opcode(writer, OP.abs);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 4096), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 4096), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 0xff0f);
-        try b.writeConst(writer, u16, 0xf0ff);
-        try b.writeOpcode(writer, OP.@"and");
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 0xff0f);
+        try b.write_const(writer, u16, 0xf0ff);
+        try b.write_opcode(writer, OP.@"and");
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 0xf00f), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 0xf00f), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, i16, -404);
-        try b.writeConst(writer, i16, 100);
-        try b.writeOpcode(writer, OP.div);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, i16, -404);
+        try b.write_const(writer, i16, 100);
+        try b.write_opcode(writer, OP.div);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(isize, -404 / 100), @as(isize, @bitCast(stack_machine.stack.popOrNull().?.generic)));
+        try testing.expect_equal(@as(isize, -404 / 100), @as(isize, @bit_cast(stack_machine.stack.pop_or_null().?.generic)));
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 200);
-        try b.writeConst(writer, u16, 50);
-        try b.writeOpcode(writer, OP.minus);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 200);
+        try b.write_const(writer, u16, 50);
+        try b.write_opcode(writer, OP.minus);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 150), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 150), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 123);
-        try b.writeConst(writer, u16, 100);
-        try b.writeOpcode(writer, OP.mod);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 123);
+        try b.write_const(writer, u16, 100);
+        try b.write_opcode(writer, OP.mod);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 23), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 23), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 0xff);
-        try b.writeConst(writer, u16, 0xee);
-        try b.writeOpcode(writer, OP.mul);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 0xff);
+        try b.write_const(writer, u16, 0xee);
+        try b.write_opcode(writer, OP.mul);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 0xed12), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 0xed12), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 5);
-        try b.writeOpcode(writer, OP.neg);
-        try b.writeConst(writer, i16, -6);
-        try b.writeOpcode(writer, OP.neg);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 5);
+        try b.write_opcode(writer, OP.neg);
+        try b.write_const(writer, i16, -6);
+        try b.write_opcode(writer, OP.neg);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 6), stack_machine.stack.popOrNull().?.generic);
-        try testing.expectEqual(@as(isize, -5), @as(isize, @bitCast(stack_machine.stack.popOrNull().?.generic)));
+        try testing.expect_equal(@as(usize, 6), stack_machine.stack.pop_or_null().?.generic);
+        try testing.expect_equal(@as(isize, -5), @as(isize, @bit_cast(stack_machine.stack.pop_or_null().?.generic)));
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 0xff0f);
-        try b.writeOpcode(writer, OP.not);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 0xff0f);
+        try b.write_opcode(writer, OP.not);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(~@as(usize, 0xff0f), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(~@as(usize, 0xff0f), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 0xff0f);
-        try b.writeConst(writer, u16, 0xf0ff);
-        try b.writeOpcode(writer, OP.@"or");
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 0xff0f);
+        try b.write_const(writer, u16, 0xf0ff);
+        try b.write_opcode(writer, OP.@"or");
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 0xffff), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 0xffff), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, i16, 402);
-        try b.writeConst(writer, i16, 100);
-        try b.writeOpcode(writer, OP.plus);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, i16, 402);
+        try b.write_const(writer, i16, 100);
+        try b.write_opcode(writer, OP.plus);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 502), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 502), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 4096);
-        try b.writePlusUconst(writer, @as(usize, 8192));
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 4096);
+        try b.write_plus_uconst(writer, @as(usize, 8192));
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 4096 + 8192), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 4096 + 8192), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 0xfff);
-        try b.writeConst(writer, u16, 1);
-        try b.writeOpcode(writer, OP.shl);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 0xfff);
+        try b.write_const(writer, u16, 1);
+        try b.write_opcode(writer, OP.shl);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 0xfff << 1), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 0xfff << 1), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 0xfff);
-        try b.writeConst(writer, u16, 1);
-        try b.writeOpcode(writer, OP.shr);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 0xfff);
+        try b.write_const(writer, u16, 1);
+        try b.write_opcode(writer, OP.shr);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 0xfff >> 1), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 0xfff >> 1), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 0xfff);
-        try b.writeConst(writer, u16, 1);
-        try b.writeOpcode(writer, OP.shr);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 0xfff);
+        try b.write_const(writer, u16, 1);
+        try b.write_opcode(writer, OP.shr);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, @bitCast(@as(isize, 0xfff) >> 1)), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, @bit_cast(@as(isize, 0xfff) >> 1)), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConst(writer, u16, 0xf0ff);
-        try b.writeConst(writer, u16, 0xff0f);
-        try b.writeOpcode(writer, OP.xor);
+        program.clear_retaining_capacity();
+        try b.write_const(writer, u16, 0xf0ff);
+        try b.write_const(writer, u16, 0xff0f);
+        try b.write_opcode(writer, OP.xor);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 0x0ff0), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 0x0ff0), stack_machine.stack.pop_or_null().?.generic);
     }
 
     // Control Flow Operations
@@ -1486,44 +1486,44 @@ test "DWARF expressions" {
 
         inline for (expected) |e| {
             stack_machine.reset();
-            program.clearRetainingCapacity();
+            program.clear_retaining_capacity();
 
-            try b.writeConst(writer, u16, 0);
-            try b.writeConst(writer, u16, 0);
-            try b.writeOpcode(writer, e[0]);
-            try b.writeConst(writer, u16, 0);
-            try b.writeConst(writer, u16, 1);
-            try b.writeOpcode(writer, e[0]);
-            try b.writeConst(writer, u16, 1);
-            try b.writeConst(writer, u16, 0);
-            try b.writeOpcode(writer, e[0]);
+            try b.write_const(writer, u16, 0);
+            try b.write_const(writer, u16, 0);
+            try b.write_opcode(writer, e[0]);
+            try b.write_const(writer, u16, 0);
+            try b.write_const(writer, u16, 1);
+            try b.write_opcode(writer, e[0]);
+            try b.write_const(writer, u16, 1);
+            try b.write_const(writer, u16, 0);
+            try b.write_opcode(writer, e[0]);
             _ = try stack_machine.run(program.items, allocator, context, null);
-            try testing.expectEqual(@as(usize, e[3]), stack_machine.stack.popOrNull().?.generic);
-            try testing.expectEqual(@as(usize, e[2]), stack_machine.stack.popOrNull().?.generic);
-            try testing.expectEqual(@as(usize, e[1]), stack_machine.stack.popOrNull().?.generic);
+            try testing.expect_equal(@as(usize, e[3]), stack_machine.stack.pop_or_null().?.generic);
+            try testing.expect_equal(@as(usize, e[2]), stack_machine.stack.pop_or_null().?.generic);
+            try testing.expect_equal(@as(usize, e[1]), stack_machine.stack.pop_or_null().?.generic);
         }
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeLiteral(writer, 2);
-        try b.writeSkip(writer, 1);
-        try b.writeLiteral(writer, 3);
+        program.clear_retaining_capacity();
+        try b.write_literal(writer, 2);
+        try b.write_skip(writer, 1);
+        try b.write_literal(writer, 3);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 2), stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(@as(usize, 2), stack_machine.stack.pop_or_null().?.generic);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeLiteral(writer, 2);
-        try b.writeBra(writer, 1);
-        try b.writeLiteral(writer, 3);
-        try b.writeLiteral(writer, 0);
-        try b.writeBra(writer, 1);
-        try b.writeLiteral(writer, 4);
-        try b.writeLiteral(writer, 5);
+        program.clear_retaining_capacity();
+        try b.write_literal(writer, 2);
+        try b.write_bra(writer, 1);
+        try b.write_literal(writer, 3);
+        try b.write_literal(writer, 0);
+        try b.write_bra(writer, 1);
+        try b.write_literal(writer, 4);
+        try b.write_literal(writer, 5);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(@as(usize, 5), stack_machine.stack.popOrNull().?.generic);
-        try testing.expectEqual(@as(usize, 4), stack_machine.stack.popOrNull().?.generic);
-        try testing.expect(stack_machine.stack.popOrNull() == null);
+        try testing.expect_equal(@as(usize, 5), stack_machine.stack.pop_or_null().?.generic);
+        try testing.expect_equal(@as(usize, 4), stack_machine.stack.pop_or_null().?.generic);
+        try testing.expect(stack_machine.stack.pop_or_null() == null);
 
         // TODO: Test call2, call4, call_ref once implemented
 
@@ -1533,48 +1533,48 @@ test "DWARF expressions" {
     {
         const context = ExpressionContext{};
         stack_machine.reset();
-        program.clearRetainingCapacity();
+        program.clear_retaining_capacity();
 
         // TODO: Test typed OP.convert once implemented
 
         const value: usize = @truncate(0xffeeffee_ffeeffee);
         var value_bytes: [options.addr_size]u8 = undefined;
-        mem.writeInt(usize, &value_bytes, value, native_endian);
+        mem.write_int(usize, &value_bytes, value, native_endian);
 
         // Convert to generic type
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConstType(writer, @as(usize, 0), &value_bytes);
-        try b.writeConvert(writer, @as(usize, 0));
+        program.clear_retaining_capacity();
+        try b.write_const_type(writer, @as(usize, 0), &value_bytes);
+        try b.write_convert(writer, @as(usize, 0));
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(value, stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(value, stack_machine.stack.pop_or_null().?.generic);
 
         // Reinterpret to generic type
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConstType(writer, @as(usize, 0), &value_bytes);
-        try b.writeReinterpret(writer, @as(usize, 0));
+        program.clear_retaining_capacity();
+        try b.write_const_type(writer, @as(usize, 0), &value_bytes);
+        try b.write_reinterpret(writer, @as(usize, 0));
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expectEqual(value, stack_machine.stack.popOrNull().?.generic);
+        try testing.expect_equal(value, stack_machine.stack.pop_or_null().?.generic);
 
         // Reinterpret to new type
         const die_offset: usize = 0xffee;
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeConstType(writer, @as(usize, 0), &value_bytes);
-        try b.writeReinterpret(writer, die_offset);
+        program.clear_retaining_capacity();
+        try b.write_const_type(writer, @as(usize, 0), &value_bytes);
+        try b.write_reinterpret(writer, die_offset);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        const const_type = stack_machine.stack.popOrNull().?.const_type;
-        try testing.expectEqual(die_offset, const_type.type_offset);
+        const const_type = stack_machine.stack.pop_or_null().?.const_type;
+        try testing.expect_equal(die_offset, const_type.type_offset);
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeLiteral(writer, 0);
-        try b.writeReinterpret(writer, die_offset);
+        program.clear_retaining_capacity();
+        try b.write_literal(writer, 0);
+        try b.write_reinterpret(writer, die_offset);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        const regval_type = stack_machine.stack.popOrNull().?.regval_type;
-        try testing.expectEqual(die_offset, regval_type.type_offset);
+        const regval_type = stack_machine.stack.pop_or_null().?.regval_type;
+        try testing.expect_equal(die_offset, regval_type.type_offset);
     }
 
     // Special operations
@@ -1582,23 +1582,23 @@ test "DWARF expressions" {
         var context = ExpressionContext{};
 
         stack_machine.reset();
-        program.clearRetainingCapacity();
-        try b.writeOpcode(writer, OP.nop);
+        program.clear_retaining_capacity();
+        try b.write_opcode(writer, OP.nop);
         _ = try stack_machine.run(program.items, allocator, context, null);
-        try testing.expect(stack_machine.stack.popOrNull() == null);
+        try testing.expect(stack_machine.stack.pop_or_null() == null);
 
         // Sub-expression
         {
             var sub_program = std.ArrayList(u8).init(allocator);
             defer sub_program.deinit();
             const sub_writer = sub_program.writer();
-            try b.writeLiteral(sub_writer, 3);
+            try b.write_literal(sub_writer, 3);
 
             stack_machine.reset();
-            program.clearRetainingCapacity();
-            try b.writeEntryValue(writer, sub_program.items);
+            program.clear_retaining_capacity();
+            try b.write_entry_value(writer, sub_program.items);
             _ = try stack_machine.run(program.items, allocator, context, null);
-            try testing.expectEqual(@as(usize, 3), stack_machine.stack.popOrNull().?.generic);
+            try testing.expect_equal(@as(usize, 3), stack_machine.stack.pop_or_null().?.generic);
         }
 
         // Register location description
@@ -1607,25 +1607,25 @@ test "DWARF expressions" {
             .is_macho = builtin.os.tag == .macos,
         };
         var thread_context: std.debug.ThreadContext = undefined;
-        std.debug.relocateContext(&thread_context);
+        std.debug.relocate_context(&thread_context);
         context = ExpressionContext{
             .thread_context = &thread_context,
             .reg_context = reg_context,
         };
 
-        if (abi.regBytes(&thread_context, 0, reg_context)) |reg_bytes| {
-            mem.writeInt(usize, reg_bytes[0..@sizeOf(usize)], 0xee, native_endian);
+        if (abi.reg_bytes(&thread_context, 0, reg_context)) |reg_bytes| {
+            mem.write_int(usize, reg_bytes[0..@size_of(usize)], 0xee, native_endian);
 
             var sub_program = std.ArrayList(u8).init(allocator);
             defer sub_program.deinit();
             const sub_writer = sub_program.writer();
-            try b.writeReg(sub_writer, 0);
+            try b.write_reg(sub_writer, 0);
 
             stack_machine.reset();
-            program.clearRetainingCapacity();
-            try b.writeEntryValue(writer, sub_program.items);
+            program.clear_retaining_capacity();
+            try b.write_entry_value(writer, sub_program.items);
             _ = try stack_machine.run(program.items, allocator, context, null);
-            try testing.expectEqual(@as(usize, 0xee), stack_machine.stack.popOrNull().?.generic);
+            try testing.expect_equal(@as(usize, 0xee), stack_machine.stack.pop_or_null().?.generic);
         } else |err| {
             switch (err) {
                 error.UnimplementedArch,

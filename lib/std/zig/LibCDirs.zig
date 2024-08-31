@@ -31,14 +31,14 @@ pub fn detect(
     }
 
     if (libc_installation) |lci| {
-        return detectFromInstallation(arena, target, lci);
+        return detect_from_installation(arena, target, lci);
     }
 
     // If linking system libraries and targeting the native abi, default to
     // using the system libc installation.
-    if (is_native_abi and !target.isMinGW()) {
+    if (is_native_abi and !target.is_min_gw()) {
         const libc = try arena.create(LibCInstallation);
-        libc.* = LibCInstallation.findNative(.{ .allocator = arena, .target = target }) catch |err| switch (err) {
+        libc.* = LibCInstallation.find_native(.{ .allocator = arena, .target = target }) catch |err| switch (err) {
             error.CCompilerExitCode,
             error.CCompilerCrashed,
             error.CCompilerCannotFindHeaders,
@@ -48,20 +48,20 @@ pub fn detect(
                 // We tried to integrate with the native system C compiler,
                 // however, it is not installed. So we must rely on our bundled
                 // libc files.
-                if (std.zig.target.canBuildLibC(target)) {
-                    return detectFromBuilding(arena, zig_lib_dir, target);
+                if (std.zig.target.can_build_lib_c(target)) {
+                    return detect_from_building(arena, zig_lib_dir, target);
                 }
                 return e;
             },
             else => |e| return e,
         };
-        return detectFromInstallation(arena, target, libc);
+        return detect_from_installation(arena, target, libc);
     }
 
     // If not linking system libraries, build and provide our own libc by
     // default if possible.
-    if (std.zig.target.canBuildLibC(target)) {
-        return detectFromBuilding(arena, zig_lib_dir, target);
+    if (std.zig.target.can_build_lib_c(target)) {
+        return detect_from_building(arena, zig_lib_dir, target);
     }
 
     // If zig can't build the libc for the target and we are targeting the
@@ -75,8 +75,8 @@ pub fn detect(
 
     if (use_system_abi) {
         const libc = try arena.create(LibCInstallation);
-        libc.* = try LibCInstallation.findNative(.{ .allocator = arena, .verbose = true, .target = target });
-        return detectFromInstallation(arena, target, libc);
+        libc.* = try LibCInstallation.find_native(.{ .allocator = arena, .verbose = true, .target = target });
+        return detect_from_installation(arena, target, libc);
     }
 
     return .{
@@ -89,13 +89,13 @@ pub fn detect(
 }
 
 fn detect_from_installation(arena: Allocator, target: std.Target, lci: *const LibCInstallation) !LibCDirs {
-    var list = try std.ArrayList([]const u8).initCapacity(arena, 5);
+    var list = try std.ArrayList([]const u8).init_capacity(arena, 5);
     var framework_list = std.ArrayList([]const u8).init(arena);
 
-    list.appendAssumeCapacity(lci.include_dir.?);
+    list.append_assume_capacity(lci.include_dir.?);
 
     const is_redundant = std.mem.eql(u8, lci.sys_include_dir.?, lci.include_dir.?);
-    if (!is_redundant) list.appendAssumeCapacity(lci.sys_include_dir.?);
+    if (!is_redundant) list.append_assume_capacity(lci.sys_include_dir.?);
 
     if (target.os.tag == .windows) {
         if (std.fs.path.dirname(lci.sys_include_dir.?)) |sys_include_dir_parent| {
@@ -103,31 +103,31 @@ fn detect_from_installation(arena: Allocator, target: std.Target, lci: *const Li
             // is installed. It contains headers, .rc files, and resources. It is especially
             // necessary when working with Windows resources.
             const atlmfc_dir = try std.fs.path.join(arena, &[_][]const u8{ sys_include_dir_parent, "atlmfc", "include" });
-            list.appendAssumeCapacity(atlmfc_dir);
+            list.append_assume_capacity(atlmfc_dir);
         }
         if (std.fs.path.dirname(lci.include_dir.?)) |include_dir_parent| {
             const um_dir = try std.fs.path.join(arena, &[_][]const u8{ include_dir_parent, "um" });
-            list.appendAssumeCapacity(um_dir);
+            list.append_assume_capacity(um_dir);
 
             const shared_dir = try std.fs.path.join(arena, &[_][]const u8{ include_dir_parent, "shared" });
-            list.appendAssumeCapacity(shared_dir);
+            list.append_assume_capacity(shared_dir);
         }
     }
     if (target.os.tag == .haiku) {
         const include_dir_path = lci.include_dir orelse return error.LibCInstallationNotAvailable;
         const os_dir = try std.fs.path.join(arena, &[_][]const u8{ include_dir_path, "os" });
-        list.appendAssumeCapacity(os_dir);
+        list.append_assume_capacity(os_dir);
         // Errors.h
         const os_support_dir = try std.fs.path.join(arena, &[_][]const u8{ include_dir_path, "os/support" });
-        list.appendAssumeCapacity(os_support_dir);
+        list.append_assume_capacity(os_support_dir);
 
         const config_dir = try std.fs.path.join(arena, &[_][]const u8{ include_dir_path, "config" });
-        list.appendAssumeCapacity(config_dir);
+        list.append_assume_capacity(config_dir);
     }
 
     var sysroot: ?[]const u8 = null;
 
-    if (target.isDarwin()) d: {
+    if (target.is_darwin()) d: {
         const down1 = std.fs.path.dirname(lci.sys_include_dir.?) orelse break :d;
         const down2 = std.fs.path.dirname(down1) orelse break :d;
         try framework_list.append(try std.fs.path.join(arena, &.{ down2, "System", "Library", "Frameworks" }));
@@ -150,9 +150,9 @@ pub fn detect_from_building(
 ) !LibCDirs {
     const s = std.fs.path.sep_str;
 
-    if (target.isDarwin()) {
+    if (target.is_darwin()) {
         const list = try arena.alloc([]const u8, 1);
-        list[0] = try std.fmt.allocPrint(
+        list[0] = try std.fmt.alloc_print(
             arena,
             "{s}" ++ s ++ "libc" ++ s ++ "include" ++ s ++ "any-macos-any",
             .{zig_lib_dir},
@@ -166,11 +166,11 @@ pub fn detect_from_building(
         };
     }
 
-    const generic_name = libCGenericName(target);
+    const generic_name = lib_cgeneric_name(target);
     // Some architectures are handled by the same set of headers.
-    const arch_name = if (target.abi.isMusl())
-        std.zig.target.muslArchNameHeaders(target.cpu.arch)
-    else if (target.cpu.arch.isThumb())
+    const arch_name = if (target.abi.is_musl())
+        std.zig.target.musl_arch_name_headers(target.cpu.arch)
+    else if (target.cpu.arch.is_thumb())
         // ARM headers are valid for Thumb too.
         switch (target.cpu.arch) {
             .thumb => "arm",
@@ -178,27 +178,27 @@ pub fn detect_from_building(
             else => unreachable,
         }
     else
-        @tagName(target.cpu.arch);
-    const os_name = @tagName(target.os.tag);
+        @tag_name(target.cpu.arch);
+    const os_name = @tag_name(target.os.tag);
     // Musl's headers are ABI-agnostic and so they all have the "musl" ABI name.
-    const abi_name = if (target.abi.isMusl()) "musl" else @tagName(target.abi);
-    const arch_include_dir = try std.fmt.allocPrint(
+    const abi_name = if (target.abi.is_musl()) "musl" else @tag_name(target.abi);
+    const arch_include_dir = try std.fmt.alloc_print(
         arena,
         "{s}" ++ s ++ "libc" ++ s ++ "include" ++ s ++ "{s}-{s}-{s}",
         .{ zig_lib_dir, arch_name, os_name, abi_name },
     );
-    const generic_include_dir = try std.fmt.allocPrint(
+    const generic_include_dir = try std.fmt.alloc_print(
         arena,
         "{s}" ++ s ++ "libc" ++ s ++ "include" ++ s ++ "generic-{s}",
         .{ zig_lib_dir, generic_name },
     );
-    const generic_arch_name = target.osArchName();
-    const arch_os_include_dir = try std.fmt.allocPrint(
+    const generic_arch_name = target.os_arch_name();
+    const arch_os_include_dir = try std.fmt.alloc_print(
         arena,
         "{s}" ++ s ++ "libc" ++ s ++ "include" ++ s ++ "{s}-{s}-any",
         .{ zig_lib_dir, generic_arch_name, os_name },
     );
-    const generic_os_include_dir = try std.fmt.allocPrint(
+    const generic_os_include_dir = try std.fmt.alloc_print(
         arena,
         "{s}" ++ s ++ "libc" ++ s ++ "include" ++ s ++ "any-{s}-any",
         .{ zig_lib_dir, os_name },

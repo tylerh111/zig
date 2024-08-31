@@ -266,7 +266,7 @@ pub const Inst = struct {
 
         pub fn from_condition(cc: bits.Condition) Fixes {
             return switch (cc) {
-                inline else => |cc_tag| @field(Fixes, "_" ++ @tagName(cc_tag)),
+                inline else => |cc_tag| @field(Fixes, "_" ++ @tag_name(cc_tag)),
                 .z_and_np, .nz_or_p => unreachable,
             };
         }
@@ -1015,33 +1015,33 @@ pub const Inst = struct {
     // Note that in safety builds, Zig is allowed to insert a secret field for safety checks.
     comptime {
         if (!std.debug.runtime_safety) {
-            assert(@sizeOf(Data) == 8);
+            assert(@size_of(Data) == 8);
         }
     }
 };
 
 /// Used in conjunction with payload to transfer a list of used registers in a compact manner.
 pub const RegisterList = struct {
-    bitset: BitSet = BitSet.initEmpty(),
+    bitset: BitSet = BitSet.init_empty(),
 
     const BitSet = IntegerBitSet(32);
     const Self = @This();
 
     fn get_index_for_reg(registers: []const Register, reg: Register) BitSet.MaskInt {
         for (registers, 0..) |cpreg, i| {
-            if (reg.id() == cpreg.id()) return @intCast(i);
+            if (reg.id() == cpreg.id()) return @int_cast(i);
         }
         unreachable; // register not in input register list!
     }
 
     pub fn push(self: *Self, registers: []const Register, reg: Register) void {
-        const index = getIndexForReg(registers, reg);
+        const index = get_index_for_reg(registers, reg);
         self.bitset.set(index);
     }
 
     pub fn is_set(self: Self, registers: []const Register, reg: Register) bool {
-        const index = getIndexForReg(registers, reg);
-        return self.bitset.isSet(index);
+        const index = get_index_for_reg(registers, reg);
+        return self.bitset.is_set(index);
     }
 
     pub fn iterator(self: Self, comptime options: std.bit_set.IteratorOptions) BitSet.Iterator(options) {
@@ -1049,11 +1049,11 @@ pub const RegisterList = struct {
     }
 
     pub fn count(self: Self) i32 {
-        return @intCast(self.bitset.count());
+        return @int_cast(self.bitset.count());
     }
 
     pub fn size(self: Self) i32 {
-        return @intCast(self.bitset.count() * 8);
+        return @int_cast(self.bitset.count() * 8);
     }
 };
 
@@ -1074,8 +1074,8 @@ pub const Imm64 = struct {
 
     pub fn decode(imm: Imm64) u64 {
         var res: u64 = 0;
-        res |= @as(u64, @intCast(imm.msb)) << 32;
-        res |= @as(u64, @intCast(imm.lsb));
+        res |= @as(u64, @int_cast(imm.msb)) << 32;
+        res |= @as(u64, @int_cast(imm.lsb));
         return res;
     }
 };
@@ -1116,18 +1116,18 @@ pub const Memory = struct {
             },
             .base = switch (mem.base) {
                 .none => undefined,
-                .reg => |reg| @intFromEnum(reg),
-                .frame => |frame_index| @intFromEnum(frame_index),
+                .reg => |reg| @int_from_enum(reg),
+                .frame => |frame_index| @int_from_enum(frame_index),
                 .reloc => |symbol| symbol.sym_index,
             },
             .off = switch (mem.mod) {
-                .rm => |rm| @bitCast(rm.disp),
+                .rm => |rm| @bit_cast(rm.disp),
                 .off => |off| @truncate(off),
             },
             .extra = if (mem.base == .reloc)
                 mem.base.reloc.atom_index
             else if (mem.mod == .off)
-                @intCast(mem.mod.off >> 32)
+                @int_cast(mem.mod.off >> 32)
             else
                 undefined,
         };
@@ -1138,10 +1138,10 @@ pub const Memory = struct {
             .rm => {
                 if (mem.info.base == .reg and @as(Register, @enumFromInt(mem.base)) == .rip) {
                     assert(mem.info.index == .none and mem.info.scale == .@"1");
-                    return encoder.Instruction.Memory.rip(mem.info.size, @bitCast(mem.off));
+                    return encoder.Instruction.Memory.rip(mem.info.size, @bit_cast(mem.off));
                 }
                 return encoder.Instruction.Memory.sib(mem.info.size, .{
-                    .disp = @bitCast(mem.off),
+                    .disp = @bit_cast(mem.off),
                     .base = switch (mem.info.base) {
                         .none => .none,
                         .reg => .{ .reg = @enumFromInt(mem.base) },
@@ -1151,9 +1151,9 @@ pub const Memory = struct {
                     .scale_index = switch (mem.info.index) {
                         .none => null,
                         else => |index| .{ .scale = switch (mem.info.scale) {
-                            inline else => |scale| comptime std.fmt.parseInt(
+                            inline else => |scale| comptime std.fmt.parse_int(
                                 u4,
-                                @tagName(scale),
+                                @tag_name(scale),
                                 10,
                             ) catch unreachable,
                         }, .index = index },
@@ -1185,8 +1185,8 @@ pub fn extra_data(mir: Mir, comptime T: type, index: u32) struct { data: T, end:
     inline for (fields) |field| {
         @field(result, field.name) = switch (field.type) {
             u32 => mir.extra[i],
-            i32, Memory.Info => @bitCast(mir.extra[i]),
-            else => @compileError("bad field type: " ++ field.name ++ ": " ++ @typeName(field.type)),
+            i32, Memory.Info => @bit_cast(mir.extra[i]),
+            else => @compile_error("bad field type: " ++ field.name ++ ": " ++ @type_name(field.type)),
         };
         i += 1;
     }
@@ -1212,8 +1212,8 @@ pub fn resolve_frame_loc(mir: Mir, mem: Memory) Memory {
                 .index = mem.info.index,
                 .scale = mem.info.scale,
             },
-            .base = @intFromEnum(mir.frame_locs.items(.base)[mem.base]),
-            .off = @bitCast(mir.frame_locs.items(.disp)[mem.base] + @as(i32, @bitCast(mem.off))),
+            .base = @int_from_enum(mir.frame_locs.items(.base)[mem.base]),
+            .off = @bit_cast(mir.frame_locs.items(.disp)[mem.base] + @as(i32, @bit_cast(mem.off))),
             .extra = mem.extra,
         } else mem,
     };

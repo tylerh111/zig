@@ -15,7 +15,7 @@ pub fn timing_safe_eql(comptime T: type, a: T, b: T) bool {
         .Array => |info| {
             const C = info.child;
             if (@typeInfo(C) != .Int) {
-                @compileError("Elements to be compared must be integers");
+                @compile_error("Elements to be compared must be integers");
             }
             var acc = @as(C, 0);
             for (a, 0..) |x, i| {
@@ -24,21 +24,21 @@ pub fn timing_safe_eql(comptime T: type, a: T, b: T) bool {
             const s = @typeInfo(C).Int.bits;
             const Cu = std.meta.Int(.unsigned, s);
             const Cext = std.meta.Int(.unsigned, s + 1);
-            return @as(bool, @bitCast(@as(u1, @truncate((@as(Cext, @as(Cu, @bitCast(acc))) -% 1) >> s))));
+            return @as(bool, @bit_cast(@as(u1, @truncate((@as(Cext, @as(Cu, @bit_cast(acc))) -% 1) >> s))));
         },
         .Vector => |info| {
             const C = info.child;
             if (@typeInfo(C) != .Int) {
-                @compileError("Elements to be compared must be integers");
+                @compile_error("Elements to be compared must be integers");
             }
             const acc = @reduce(.Or, a ^ b);
             const s = @typeInfo(C).Int.bits;
             const Cu = std.meta.Int(.unsigned, s);
             const Cext = std.meta.Int(.unsigned, s + 1);
-            return @as(bool, @bitCast(@as(u1, @truncate((@as(Cext, @as(Cu, @bitCast(acc))) -% 1) >> s))));
+            return @as(bool, @bit_cast(@as(u1, @truncate((@as(Cext, @as(Cu, @bit_cast(acc))) -% 1) >> s))));
         },
         else => {
-            @compileError("Only arrays and vectors can be compared");
+            @compile_error("Only arrays and vectors can be compared");
         },
     }
 }
@@ -48,8 +48,8 @@ pub fn timing_safe_eql(comptime T: type, a: T, b: T) bool {
 pub fn timing_safe_compare(comptime T: type, a: []const T, b: []const T, endian: Endian) Order {
     debug.assert(a.len == b.len);
     const bits = switch (@typeInfo(T)) {
-        .Int => |cinfo| if (cinfo.signedness != .unsigned) @compileError("Elements to be compared must be unsigned") else cinfo.bits,
-        else => @compileError("Elements to be compared must be integers"),
+        .Int => |cinfo| if (cinfo.signedness != .unsigned) @compile_error("Elements to be compared must be unsigned") else cinfo.bits,
+        else => @compile_error("Elements to be compared must be integers"),
     };
     const Cext = std.meta.Int(.unsigned, bits + 1);
     var gt: T = 0;
@@ -87,8 +87,8 @@ pub fn timing_safe_add(comptime T: type, a: []const T, b: []const T, result: []T
     if (endian == .little) {
         var i: usize = 0;
         while (i < len) : (i += 1) {
-            const ov1 = @addWithOverflow(a[i], b[i]);
-            const ov2 = @addWithOverflow(ov1[0], carry);
+            const ov1 = @add_with_overflow(a[i], b[i]);
+            const ov2 = @add_with_overflow(ov1[0], carry);
             result[i] = ov2[0];
             carry = ov1[1] | ov2[1];
         }
@@ -96,13 +96,13 @@ pub fn timing_safe_add(comptime T: type, a: []const T, b: []const T, result: []T
         var i: usize = len;
         while (i != 0) {
             i -= 1;
-            const ov1 = @addWithOverflow(a[i], b[i]);
-            const ov2 = @addWithOverflow(ov1[0], carry);
+            const ov1 = @add_with_overflow(a[i], b[i]);
+            const ov2 = @add_with_overflow(ov1[0], carry);
             result[i] = ov2[0];
             carry = ov1[1] | ov2[1];
         }
     }
-    return @as(bool, @bitCast(carry));
+    return @as(bool, @bit_cast(carry));
 }
 
 /// Subtract two integers serialized as arrays of the same size, in constant time.
@@ -114,8 +114,8 @@ pub fn timing_safe_sub(comptime T: type, a: []const T, b: []const T, result: []T
     if (endian == .little) {
         var i: usize = 0;
         while (i < len) : (i += 1) {
-            const ov1 = @subWithOverflow(a[i], b[i]);
-            const ov2 = @subWithOverflow(ov1[0], borrow);
+            const ov1 = @sub_with_overflow(a[i], b[i]);
+            const ov2 = @sub_with_overflow(ov1[0], borrow);
             result[i] = ov2[0];
             borrow = ov1[1] | ov2[1];
         }
@@ -123,13 +123,13 @@ pub fn timing_safe_sub(comptime T: type, a: []const T, b: []const T, result: []T
         var i: usize = len;
         while (i != 0) {
             i -= 1;
-            const ov1 = @subWithOverflow(a[i], b[i]);
-            const ov2 = @subWithOverflow(ov1[0], borrow);
+            const ov1 = @sub_with_overflow(a[i], b[i]);
+            const ov2 = @sub_with_overflow(ov1[0], borrow);
             result[i] = ov2[0];
             borrow = ov1[1] | ov2[1];
         }
     }
-    return @as(bool, @bitCast(borrow));
+    return @as(bool, @bit_cast(borrow));
 }
 
 /// Sets a slice to zeroes.
@@ -138,17 +138,17 @@ pub inline fn secure_zero(comptime T: type, s: []T) void {
     @memset(@as([]volatile T, s), 0);
 }
 
-test timingSafeEql {
+test timing_safe_eql {
     var a: [100]u8 = undefined;
     var b: [100]u8 = undefined;
     random.bytes(a[0..]);
     random.bytes(b[0..]);
-    try testing.expect(!timingSafeEql([100]u8, a, b));
+    try testing.expect(!timing_safe_eql([100]u8, a, b));
     a = b;
-    try testing.expect(timingSafeEql([100]u8, a, b));
+    try testing.expect(timing_safe_eql([100]u8, a, b));
 }
 
-test "timingSafeEql (vectors)" {
+test "timing_safe_eql (vectors)" {
     if (@import("builtin").zig_backend == .stage2_x86_64) return error.SkipZigTest;
 
     var a: [100]u8 = undefined;
@@ -157,22 +157,22 @@ test "timingSafeEql (vectors)" {
     random.bytes(b[0..]);
     const v1: @Vector(100, u8) = a;
     const v2: @Vector(100, u8) = b;
-    try testing.expect(!timingSafeEql(@Vector(100, u8), v1, v2));
+    try testing.expect(!timing_safe_eql(@Vector(100, u8), v1, v2));
     const v3: @Vector(100, u8) = a;
-    try testing.expect(timingSafeEql(@Vector(100, u8), v1, v3));
+    try testing.expect(timing_safe_eql(@Vector(100, u8), v1, v3));
 }
 
-test timingSafeCompare {
+test timing_safe_compare {
     var a = [_]u8{10} ** 32;
     var b = [_]u8{10} ** 32;
-    try testing.expectEqual(timingSafeCompare(u8, &a, &b, .big), .eq);
-    try testing.expectEqual(timingSafeCompare(u8, &a, &b, .little), .eq);
+    try testing.expect_equal(timing_safe_compare(u8, &a, &b, .big), .eq);
+    try testing.expect_equal(timing_safe_compare(u8, &a, &b, .little), .eq);
     a[31] = 1;
-    try testing.expectEqual(timingSafeCompare(u8, &a, &b, .big), .lt);
-    try testing.expectEqual(timingSafeCompare(u8, &a, &b, .little), .lt);
+    try testing.expect_equal(timing_safe_compare(u8, &a, &b, .big), .lt);
+    try testing.expect_equal(timing_safe_compare(u8, &a, &b, .little), .lt);
     a[0] = 20;
-    try testing.expectEqual(timingSafeCompare(u8, &a, &b, .big), .gt);
-    try testing.expectEqual(timingSafeCompare(u8, &a, &b, .little), .lt);
+    try testing.expect_equal(timing_safe_compare(u8, &a, &b, .big), .gt);
+    try testing.expect_equal(timing_safe_compare(u8, &a, &b, .little), .lt);
 }
 
 test "timingSafe{Add,Sub}" {
@@ -186,21 +186,21 @@ test "timingSafe{Add,Sub}" {
         random.bytes(&a);
         random.bytes(&b);
         const endian = if (iterations % 2 == 0) Endian.big else Endian.little;
-        _ = timingSafeSub(u8, &a, &b, &c, endian); // a-b
-        _ = timingSafeAdd(u8, &c, &b, &c, endian); // (a-b)+b
-        try testing.expectEqualSlices(u8, &c, &a);
-        const borrow = timingSafeSub(u8, &c, &a, &c, endian); // ((a-b)+b)-a
-        try testing.expectEqualSlices(u8, &c, &zero);
-        try testing.expectEqual(borrow, false);
+        _ = timing_safe_sub(u8, &a, &b, &c, endian); // a-b
+        _ = timing_safe_add(u8, &c, &b, &c, endian); // (a-b)+b
+        try testing.expect_equal_slices(u8, &c, &a);
+        const borrow = timing_safe_sub(u8, &c, &a, &c, endian); // ((a-b)+b)-a
+        try testing.expect_equal_slices(u8, &c, &zero);
+        try testing.expect_equal(borrow, false);
     }
 }
 
-test secureZero {
+test secure_zero {
     var a = [_]u8{0xfe} ** 8;
     var b = [_]u8{0xfe} ** 8;
 
     @memset(a[0..], 0);
-    secureZero(u8, b[0..]);
+    secure_zero(u8, b[0..]);
 
-    try testing.expectEqualSlices(u8, a[0..], b[0..]);
+    try testing.expect_equal_slices(u8, a[0..], b[0..]);
 }

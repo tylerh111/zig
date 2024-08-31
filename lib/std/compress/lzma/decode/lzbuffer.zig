@@ -32,8 +32,8 @@ pub const LzAccumBuffer = struct {
 
     /// Reset the internal dictionary
     pub fn reset(self: *Self, writer: anytype) !void {
-        try writer.writeAll(self.buf.items);
-        self.buf.clearRetainingCapacity();
+        try writer.write_all(self.buf.items);
+        self.buf.clear_retaining_capacity();
         self.len = 0;
     }
 
@@ -97,8 +97,8 @@ pub const LzAccumBuffer = struct {
     }
 
     pub fn finish(self: *Self, writer: anytype) !void {
-        try writer.writeAll(self.buf.items);
-        self.buf.clearRetainingCapacity();
+        try writer.write_all(self.buf.items);
+        self.buf.clear_retaining_capacity();
     }
 
     pub fn deinit(self: *Self, allocator: Allocator) void {
@@ -147,11 +147,11 @@ pub const LzCircularBuffer = struct {
         if (index >= self.memlimit) {
             return error.CorruptInput;
         }
-        try self.buf.ensureTotalCapacity(allocator, index + 1);
+        try self.buf.ensure_total_capacity(allocator, index + 1);
         while (self.buf.items.len < index) {
-            self.buf.appendAssumeCapacity(0);
+            self.buf.append_assume_capacity(0);
         }
-        self.buf.appendAssumeCapacity(value);
+        self.buf.append_assume_capacity(value);
     }
 
     /// Retrieve the last byte or return a default
@@ -185,7 +185,7 @@ pub const LzCircularBuffer = struct {
 
         // Flush the circular buffer to the output
         if (self.cursor == self.dict_size) {
-            try writer.writeAll(self.buf.items);
+            try writer.write_all(self.buf.items);
             self.cursor = 0;
         }
     }
@@ -206,7 +206,7 @@ pub const LzCircularBuffer = struct {
         var i: usize = 0;
         while (i < len) : (i += 1) {
             const x = self.get(offset);
-            try self.appendLiteral(allocator, x, writer);
+            try self.append_literal(allocator, x, writer);
             offset += 1;
             if (offset == self.dict_size) {
                 offset = 0;
@@ -216,7 +216,7 @@ pub const LzCircularBuffer = struct {
 
     pub fn finish(self: *Self, writer: anytype) !void {
         if (self.cursor > 0) {
-            try writer.writeAll(self.buf.items[0..self.cursor]);
+            try writer.write_all(self.buf.items[0..self.cursor]);
             self.cursor = 0;
         }
     }

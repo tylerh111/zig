@@ -489,7 +489,7 @@ pub const Token = struct {
         }
 
         pub fn simplify_macro_keyword(id: *Id) void {
-            simplifyMacroKeywordExtra(id, false);
+            simplify_macro_keyword_extra(id, false);
         }
 
         pub fn lexeme(id: Id) ?[]const u8 {
@@ -809,7 +809,7 @@ pub const Token = struct {
                 .r_brace,
                 .hash,
                 .hash_hash,
-                => langopts.hasDigraphs(),
+                => langopts.has_digraphs(),
                 else => false,
             };
         }
@@ -836,10 +836,10 @@ pub const Token = struct {
         const kw = all_kws.get(str) orelse return .identifier;
         const standard = langopts.standard;
         return switch (kw) {
-            .keyword_inline => if (standard.isGNU() or standard.atLeast(.c99)) kw else .identifier,
-            .keyword_restrict => if (standard.atLeast(.c99)) kw else .identifier,
-            .keyword_typeof => if (standard.isGNU() or standard.atLeast(.c23)) kw else .identifier,
-            .keyword_asm => if (standard.isGNU()) kw else .identifier,
+            .keyword_inline => if (standard.is_gnu() or standard.at_least(.c99)) kw else .identifier,
+            .keyword_restrict => if (standard.at_least(.c99)) kw else .identifier,
+            .keyword_typeof => if (standard.is_gnu() or standard.at_least(.c23)) kw else .identifier,
+            .keyword_asm => if (standard.is_gnu()) kw else .identifier,
             .keyword_declspec => if (langopts.declspec_attrs) kw else .identifier,
 
             .keyword_c23_alignas,
@@ -854,7 +854,7 @@ pub const Token = struct {
             .keyword_typeof_unqual,
             .keyword_elifdef,
             .keyword_elifndef,
-            => if (standard.atLeast(.c23)) kw else .identifier,
+            => if (standard.at_least(.c23)) kw else .identifier,
 
             .keyword_int64,
             .keyword_int64_2,
@@ -872,7 +872,7 @@ pub const Token = struct {
         };
     }
 
-    const all_kws = std.StaticStringMap(Id).initComptime(.{
+    const all_kws = std.StaticStringMap(Id).init_comptime(.{
         .{ "auto", auto: {
             @setEvalBranchQuota(3000);
             break :auto .keyword_auto;
@@ -1312,12 +1312,12 @@ pub fn next(self: *Tokenizer) Token {
                 '$' => if (self.langopts.dollars_in_identifiers) {
                     state = .extended_identifier;
                 } else {
-                    id = if (state == .identifier) Token.getTokenId(self.langopts, self.buf[start..self.index]) else .extended_identifier;
+                    id = if (state == .identifier) Token.get_token_id(self.langopts, self.buf[start..self.index]) else .extended_identifier;
                     break;
                 },
                 0x80...0xFF => state = .extended_identifier,
                 else => {
-                    id = if (state == .identifier) Token.getTokenId(self.langopts, self.buf[start..self.index]) else .extended_identifier;
+                    id = if (state == .identifier) Token.get_token_id(self.langopts, self.buf[start..self.index]) else .extended_identifier;
                     break;
                 },
             },
@@ -1361,7 +1361,7 @@ pub fn next(self: *Tokenizer) Token {
             },
             .colon => switch (c) {
                 '>' => {
-                    if (self.langopts.hasDigraphs()) {
+                    if (self.langopts.has_digraphs()) {
                         id = .r_bracket;
                         self.index += 1;
                     } else {
@@ -1370,7 +1370,7 @@ pub fn next(self: *Tokenizer) Token {
                     break;
                 },
                 ':' => {
-                    if (self.langopts.standard.atLeast(.c23)) {
+                    if (self.langopts.standard.at_least(.c23)) {
                         id = .colon_colon;
                         self.index += 1;
                         break;
@@ -1391,7 +1391,7 @@ pub fn next(self: *Tokenizer) Token {
                     break;
                 },
                 '>' => {
-                    if (self.langopts.hasDigraphs()) {
+                    if (self.langopts.has_digraphs()) {
                         id = .r_brace;
                         self.index += 1;
                     } else {
@@ -1400,7 +1400,7 @@ pub fn next(self: *Tokenizer) Token {
                     break;
                 },
                 ':' => {
-                    if (self.langopts.hasDigraphs()) {
+                    if (self.langopts.has_digraphs()) {
                         state = .hash_digraph;
                     } else {
                         id = .percent;
@@ -1447,7 +1447,7 @@ pub fn next(self: *Tokenizer) Token {
                     break;
                 },
                 ':' => {
-                    if (self.langopts.hasDigraphs()) {
+                    if (self.langopts.has_digraphs()) {
                         id = .l_bracket;
                         self.index += 1;
                     } else {
@@ -1456,7 +1456,7 @@ pub fn next(self: *Tokenizer) Token {
                     break;
                 },
                 '%' => {
-                    if (self.langopts.hasDigraphs()) {
+                    if (self.langopts.has_digraphs()) {
                         id = .l_brace;
                         self.index += 1;
                     } else {
@@ -1676,7 +1676,7 @@ pub fn next(self: *Tokenizer) Token {
                 '.',
                 => {},
                 'e', 'E', 'p', 'P' => state = .pp_num_exponent,
-                '\'' => if (self.langopts.standard.atLeast(.c23)) {
+                '\'' => if (self.langopts.standard.at_least(.c23)) {
                     state = .pp_num_digit_separator;
                 } else {
                     id = .pp_num;
@@ -1724,7 +1724,7 @@ pub fn next(self: *Tokenizer) Token {
     } else if (self.index == self.buf.len) {
         switch (state) {
             .start, .line_comment => {},
-            .u, .u8, .U, .L, .identifier => id = Token.getTokenId(self.langopts, self.buf[start..self.index]),
+            .u, .u8, .U, .L, .identifier => id = Token.get_token_id(self.langopts, self.buf[start..self.index]),
             .extended_identifier => id = .extended_identifier,
 
             .period2 => {
@@ -1791,7 +1791,7 @@ pub fn next_no_wscomments(self: *Tokenizer) Token {
 
 /// Try to tokenize a '::' even if not supported by the current language standard.
 pub fn colon_colon(self: *Tokenizer) Token {
-    var tok = self.nextNoWS();
+    var tok = self.next_no_ws();
     if (tok.id == .colon and self.buf[self.index] == ':') {
         self.index += 1;
         tok.id = .colon_colon;
@@ -1800,7 +1800,7 @@ pub fn colon_colon(self: *Tokenizer) Token {
 }
 
 test "operators" {
-    try expectTokens(
+    try expect_tokens(
         \\ ! != | || |= = ==
         \\ ( ) { } [ ] . .. ...
         \\ ^ ^= + ++ += - -- -=
@@ -1869,7 +1869,7 @@ test "operators" {
 }
 
 test "keywords" {
-    try expectTokens(
+    try expect_tokens(
         \\auto __auto_type break case char const continue default do
         \\double else enum extern float for goto if int 
         \\long register return short signed sizeof static 
@@ -1937,7 +1937,7 @@ test "keywords" {
 }
 
 test "preprocessor keywords" {
-    try expectTokens(
+    try expect_tokens(
         \\#include
         \\#include_next
         \\#embed
@@ -1976,7 +1976,7 @@ test "preprocessor keywords" {
 }
 
 test "line continuation" {
-    try expectTokens(
+    try expect_tokens(
         \\#define foo \
         \\  bar
         \\"foo\
@@ -2007,7 +2007,7 @@ test "line continuation" {
 }
 
 test "string prefix" {
-    try expectTokens(
+    try expect_tokens(
         \\"foo"
         \\u"foo"
         \\u8"foo"
@@ -2044,7 +2044,7 @@ test "string prefix" {
 }
 
 test "num suffixes" {
-    try expectTokens(
+    try expect_tokens(
         \\ 1.0f 1.0L 1.0 .0 1. 0x1p0f 0X1p0
         \\ 0l 0lu 0ll 0llu 0
         \\ 1u 1ul 1ull 1
@@ -2089,7 +2089,7 @@ test "num suffixes" {
 }
 
 test "comments" {
-    try expectTokens(
+    try expect_tokens(
         \\//foo
         \\#foo
     , &.{
@@ -2100,36 +2100,36 @@ test "comments" {
 }
 
 test "extended identifiers" {
-    try expectTokens("𝓪𝓻𝓸𝓬𝓬", &.{.extended_identifier});
-    try expectTokens("u𝓪𝓻𝓸𝓬𝓬", &.{.extended_identifier});
-    try expectTokens("u8𝓪𝓻𝓸𝓬𝓬", &.{.extended_identifier});
-    try expectTokens("U𝓪𝓻𝓸𝓬𝓬", &.{.extended_identifier});
-    try expectTokens("L𝓪𝓻𝓸𝓬𝓬", &.{.extended_identifier});
-    try expectTokens("1™", &.{ .pp_num, .extended_identifier });
-    try expectTokens("1.™", &.{ .pp_num, .extended_identifier });
-    try expectTokens("..™", &.{ .period, .period, .extended_identifier });
-    try expectTokens("0™", &.{ .pp_num, .extended_identifier });
-    try expectTokens("0b\u{E0000}", &.{ .pp_num, .extended_identifier });
-    try expectTokens("0b0\u{E0000}", &.{ .pp_num, .extended_identifier });
-    try expectTokens("01\u{E0000}", &.{ .pp_num, .extended_identifier });
-    try expectTokens("010\u{E0000}", &.{ .pp_num, .extended_identifier });
-    try expectTokens("0x\u{E0000}", &.{ .pp_num, .extended_identifier });
-    try expectTokens("0x0\u{E0000}", &.{ .pp_num, .extended_identifier });
-    try expectTokens("\"\\0\u{E0000}\"", &.{.string_literal});
-    try expectTokens("\"\\x\u{E0000}\"", &.{.string_literal});
-    try expectTokens("\"\\u\u{E0000}\"", &.{.string_literal});
-    try expectTokens("1e\u{E0000}", &.{ .pp_num, .extended_identifier });
-    try expectTokens("1e1\u{E0000}", &.{ .pp_num, .extended_identifier });
+    try expect_tokens("𝓪𝓻𝓸𝓬𝓬", &.{.extended_identifier});
+    try expect_tokens("u𝓪𝓻𝓸𝓬𝓬", &.{.extended_identifier});
+    try expect_tokens("u8𝓪𝓻𝓸𝓬𝓬", &.{.extended_identifier});
+    try expect_tokens("U𝓪𝓻𝓸𝓬𝓬", &.{.extended_identifier});
+    try expect_tokens("L𝓪𝓻𝓸𝓬𝓬", &.{.extended_identifier});
+    try expect_tokens("1™", &.{ .pp_num, .extended_identifier });
+    try expect_tokens("1.™", &.{ .pp_num, .extended_identifier });
+    try expect_tokens("..™", &.{ .period, .period, .extended_identifier });
+    try expect_tokens("0™", &.{ .pp_num, .extended_identifier });
+    try expect_tokens("0b\u{E0000}", &.{ .pp_num, .extended_identifier });
+    try expect_tokens("0b0\u{E0000}", &.{ .pp_num, .extended_identifier });
+    try expect_tokens("01\u{E0000}", &.{ .pp_num, .extended_identifier });
+    try expect_tokens("010\u{E0000}", &.{ .pp_num, .extended_identifier });
+    try expect_tokens("0x\u{E0000}", &.{ .pp_num, .extended_identifier });
+    try expect_tokens("0x0\u{E0000}", &.{ .pp_num, .extended_identifier });
+    try expect_tokens("\"\\0\u{E0000}\"", &.{.string_literal});
+    try expect_tokens("\"\\x\u{E0000}\"", &.{.string_literal});
+    try expect_tokens("\"\\u\u{E0000}\"", &.{.string_literal});
+    try expect_tokens("1e\u{E0000}", &.{ .pp_num, .extended_identifier });
+    try expect_tokens("1e1\u{E0000}", &.{ .pp_num, .extended_identifier });
 }
 
 test "digraphs" {
-    try expectTokens("%:<::><%%>%:%:", &.{ .hash, .l_bracket, .r_bracket, .l_brace, .r_brace, .hash_hash });
-    try expectTokens("\"%:<::><%%>%:%:\"", &.{.string_literal});
-    try expectTokens("%:%42 %:%", &.{ .hash, .percent, .pp_num, .hash, .percent });
+    try expect_tokens("%:<::><%%>%:%:", &.{ .hash, .l_bracket, .r_bracket, .l_brace, .r_brace, .hash_hash });
+    try expect_tokens("\"%:<::><%%>%:%:\"", &.{.string_literal});
+    try expect_tokens("%:%42 %:%", &.{ .hash, .percent, .pp_num, .hash, .percent });
 }
 
 test "C23 keywords" {
-    try expectTokensExtra("true false alignas alignof bool static_assert thread_local nullptr typeof_unqual", &.{
+    try expect_tokens_extra("true false alignas alignof bool static_assert thread_local nullptr typeof_unqual", &.{
         .keyword_true,
         .keyword_false,
         .keyword_c23_alignas,
@@ -2148,7 +2148,7 @@ fn expect_tokens_extra(contents: []const u8, expected_tokens: []const Token.Id, 
     if (standard) |provided| {
         comp.langopts.standard = provided;
     }
-    const source = try comp.addSourceFromBuffer("path", contents);
+    const source = try comp.add_source_from_buffer("path", contents);
     var tokenizer = Tokenizer{
         .buf = source.buf,
         .source = source.id,
@@ -2161,7 +2161,7 @@ fn expect_tokens_extra(contents: []const u8, expected_tokens: []const Token.Id, 
         const expected_token_id = expected_tokens[i];
         i += 1;
         if (!std.meta.eql(token.id, expected_token_id)) {
-            std.debug.print("expected {s}, found {s}\n", .{ @tagName(expected_token_id), @tagName(token.id) });
+            std.debug.print("expected {s}, found {s}\n", .{ @tag_name(expected_token_id), @tag_name(token.id) });
             return error.TokensDoNotEqual;
         }
     }
@@ -2170,5 +2170,5 @@ fn expect_tokens_extra(contents: []const u8, expected_tokens: []const Token.Id, 
 }
 
 fn expect_tokens(contents: []const u8, expected_tokens: []const Token.Id) !void {
-    return expectTokensExtra(contents, expected_tokens, null);
+    return expect_tokens_extra(contents, expected_tokens, null);
 }

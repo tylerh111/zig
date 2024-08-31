@@ -2,7 +2,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const testing = std.testing;
 const expect = testing.expect;
-const expectEqualStrings = testing.expectEqualStrings;
+const expect_equal_strings = testing.expect_equal_strings;
 
 test "tuple declaration type info" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
@@ -19,13 +19,13 @@ test "tuple declaration type info" {
         try expect(info.decls.len == 0);
         try expect(info.is_tuple);
 
-        try expectEqualStrings(info.fields[0].name, "0");
+        try expect_equal_strings(info.fields[0].name, "0");
         try expect(info.fields[0].type == u32);
-        try expect(@as(*const u32, @ptrCast(@alignCast(info.fields[0].default_value))).* == 1);
+        try expect(@as(*const u32, @ptr_cast(@align_cast(info.fields[0].default_value))).* == 1);
         try expect(info.fields[0].is_comptime);
         try expect(info.fields[0].alignment == 2);
 
-        try expectEqualStrings(info.fields[1].name, "1");
+        try expect_equal_strings(info.fields[1].name, "1");
         try expect(info.fields[1].type == []const u8);
         try expect(info.fields[1].default_value == null);
         try expect(!info.fields[1].is_comptime);
@@ -42,13 +42,13 @@ test "Tuple declaration usage" {
     var t: T = .{ 1, "foo" };
     _ = &t;
     try expect(t[0] == 1);
-    try expectEqualStrings(t[1], "foo");
+    try expect_equal_strings(t[1], "foo");
 
     const mul = t ** 3;
     try expect(@TypeOf(mul) != T);
     try expect(mul.len == 6);
     try expect(mul[2] == 1);
-    try expectEqualStrings(mul[3], "foo");
+    try expect_equal_strings(mul[3], "foo");
 
     var t2: T = .{ 2, "bar" };
     _ = &t2;
@@ -56,5 +56,5 @@ test "Tuple declaration usage" {
     try expect(@TypeOf(cat) != T);
     try expect(cat.len == 4);
     try expect(cat[2] == 2);
-    try expectEqualStrings(cat[3], "bar");
+    try expect_equal_strings(cat[3], "bar");
 }

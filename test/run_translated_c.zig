@@ -1694,7 +1694,7 @@ pub fn add_cases(cases: *tests.RunTranslatedCContext) void {
 
     // TODO: add isnan check for long double once bitfield support is added
     //       (needed for x86_64-windows-gnu)
-    // TODO: add isinf check for long double once std.math.isInf supports c_longdouble
+    // TODO: add isinf check for long double once std.math.is_inf supports c_longdouble
     cases.add("NAN and INFINITY",
         \\#include <math.h>
         \\#include <stdint.h>

@@ -5,7 +5,7 @@ fn amain() callconv(.Async) void {
     other();
 }
 fn other() void {
-    var x: [@sizeOf(@Frame(amain))]u8 = undefined;
+    var x: [@size_of(@Frame(amain))]u8 = undefined;
     _ = &x;
 }
 

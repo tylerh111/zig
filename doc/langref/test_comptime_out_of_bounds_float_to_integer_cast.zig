@@ -1,6 +1,6 @@
 comptime {
     const float: f32 = 4294967296;
-    const int: i32 = @intFromFloat(float);
+    const int: i32 = @int_from_float(float);
     _ = int;
 }
 

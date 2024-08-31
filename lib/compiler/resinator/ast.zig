@@ -19,7 +19,7 @@ pub const Tree = struct {
     }
 
     pub fn root(self: *Tree) *Node.Root {
-        return @alignCast(@fieldParentPtr("base", self.node));
+        return @align_cast(@fieldParentPtr("base", self.node));
     }
 
     pub fn dump(self: *Tree, writer: anytype) @TypeOf(writer).Error!void {
@@ -67,7 +67,7 @@ pub const CodePageLookup = struct {
     }
 
     pub fn set_for_token(self: *CodePageLookup, token: Token, code_page: CodePage) !void {
-        return self.setForLineNum(token.line_number, code_page);
+        return self.set_for_line_num(token.line_number, code_page);
     }
 
     /// line_num is 1-indexed
@@ -76,7 +76,7 @@ pub const CodePageLookup = struct {
     }
 
     pub fn get_for_token(self: CodePageLookup, token: Token) CodePage {
-        return self.getForLineNum(token.line_number);
+        return self.get_for_line_num(token.line_number);
     }
 };
 
@@ -84,23 +84,23 @@ test "CodePageLookup" {
     var lookup = CodePageLookup.init(std.testing.allocator, .windows1252);
     defer lookup.deinit();
 
-    try lookup.setForLineNum(5, .utf8);
-    try std.testing.expectEqual(CodePage.windows1252, lookup.getForLineNum(1));
-    try std.testing.expectEqual(CodePage.windows1252, lookup.getForLineNum(2));
-    try std.testing.expectEqual(CodePage.windows1252, lookup.getForLineNum(3));
-    try std.testing.expectEqual(CodePage.windows1252, lookup.getForLineNum(4));
-    try std.testing.expectEqual(CodePage.utf8, lookup.getForLineNum(5));
-    try std.testing.expectEqual(@as(usize, 5), lookup.lookup.items.len);
+    try lookup.set_for_line_num(5, .utf8);
+    try std.testing.expect_equal(CodePage.windows1252, lookup.get_for_line_num(1));
+    try std.testing.expect_equal(CodePage.windows1252, lookup.get_for_line_num(2));
+    try std.testing.expect_equal(CodePage.windows1252, lookup.get_for_line_num(3));
+    try std.testing.expect_equal(CodePage.windows1252, lookup.get_for_line_num(4));
+    try std.testing.expect_equal(CodePage.utf8, lookup.get_for_line_num(5));
+    try std.testing.expect_equal(@as(usize, 5), lookup.lookup.items.len);
 
-    try lookup.setForLineNum(7, .windows1252);
-    try std.testing.expectEqual(CodePage.windows1252, lookup.getForLineNum(1));
-    try std.testing.expectEqual(CodePage.windows1252, lookup.getForLineNum(2));
-    try std.testing.expectEqual(CodePage.windows1252, lookup.getForLineNum(3));
-    try std.testing.expectEqual(CodePage.windows1252, lookup.getForLineNum(4));
-    try std.testing.expectEqual(CodePage.utf8, lookup.getForLineNum(5));
-    try std.testing.expectEqual(CodePage.utf8, lookup.getForLineNum(6));
-    try std.testing.expectEqual(CodePage.windows1252, lookup.getForLineNum(7));
-    try std.testing.expectEqual(@as(usize, 7), lookup.lookup.items.len);
+    try lookup.set_for_line_num(7, .windows1252);
+    try std.testing.expect_equal(CodePage.windows1252, lookup.get_for_line_num(1));
+    try std.testing.expect_equal(CodePage.windows1252, lookup.get_for_line_num(2));
+    try std.testing.expect_equal(CodePage.windows1252, lookup.get_for_line_num(3));
+    try std.testing.expect_equal(CodePage.windows1252, lookup.get_for_line_num(4));
+    try std.testing.expect_equal(CodePage.utf8, lookup.get_for_line_num(5));
+    try std.testing.expect_equal(CodePage.utf8, lookup.get_for_line_num(6));
+    try std.testing.expect_equal(CodePage.windows1252, lookup.get_for_line_num(7));
+    try std.testing.expect_equal(@as(usize, 7), lookup.lookup.items.len);
 }
 
 pub const Node = struct {
@@ -174,7 +174,7 @@ pub const Node = struct {
 
     pub fn cast(base: *Node, comptime id: Id) ?*id.Type() {
         if (base.id == id) {
-            return @alignCast(@fieldParentPtr("base", base));
+            return @align_cast(@fieldParentPtr("base", base));
         }
         return null;
     }
@@ -461,7 +461,7 @@ pub const Node = struct {
     pub fn is_number_expression(node: *const Node) bool {
         switch (node.id) {
             .literal => {
-                const literal: *const Node.Literal = @alignCast(@fieldParentPtr("base", node));
+                const literal: *const Node.Literal = @align_cast(@fieldParentPtr("base", node));
                 return switch (literal.token.id) {
                     .number => true,
                     else => false,
@@ -475,7 +475,7 @@ pub const Node = struct {
     pub fn is_string_literal(node: *const Node) bool {
         switch (node.id) {
             .literal => {
-                const literal: *const Node.Literal = @alignCast(@fieldParentPtr("base", node));
+                const literal: *const Node.Literal = @align_cast(@fieldParentPtr("base", node));
                 return switch (literal.token.id) {
                     .quoted_ascii_string, .quoted_wide_string => true,
                     else => false,
@@ -489,103 +489,103 @@ pub const Node = struct {
         switch (node.id) {
             .root => unreachable,
             .resource_external => {
-                const casted: *const Node.ResourceExternal = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.ResourceExternal = @align_cast(@fieldParentPtr("base", node));
                 return casted.id;
             },
             .resource_raw_data => {
-                const casted: *const Node.ResourceRawData = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.ResourceRawData = @align_cast(@fieldParentPtr("base", node));
                 return casted.id;
             },
             .literal => {
-                const casted: *const Node.Literal = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Literal = @align_cast(@fieldParentPtr("base", node));
                 return casted.token;
             },
             .binary_expression => {
-                const casted: *const Node.BinaryExpression = @alignCast(@fieldParentPtr("base", node));
-                return casted.left.getFirstToken();
+                const casted: *const Node.BinaryExpression = @align_cast(@fieldParentPtr("base", node));
+                return casted.left.get_first_token();
             },
             .grouped_expression => {
-                const casted: *const Node.GroupedExpression = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.GroupedExpression = @align_cast(@fieldParentPtr("base", node));
                 return casted.open_token;
             },
             .not_expression => {
-                const casted: *const Node.NotExpression = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.NotExpression = @align_cast(@fieldParentPtr("base", node));
                 return casted.not_token;
             },
             .accelerators => {
-                const casted: *const Node.Accelerators = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Accelerators = @align_cast(@fieldParentPtr("base", node));
                 return casted.id;
             },
             .accelerator => {
-                const casted: *const Node.Accelerator = @alignCast(@fieldParentPtr("base", node));
-                return casted.event.getFirstToken();
+                const casted: *const Node.Accelerator = @align_cast(@fieldParentPtr("base", node));
+                return casted.event.get_first_token();
             },
             .dialog => {
-                const casted: *const Node.Dialog = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Dialog = @align_cast(@fieldParentPtr("base", node));
                 return casted.id;
             },
             .control_statement => {
-                const casted: *const Node.ControlStatement = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.ControlStatement = @align_cast(@fieldParentPtr("base", node));
                 return casted.type;
             },
             .toolbar => {
-                const casted: *const Node.Toolbar = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Toolbar = @align_cast(@fieldParentPtr("base", node));
                 return casted.id;
             },
             .menu => {
-                const casted: *const Node.Menu = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Menu = @align_cast(@fieldParentPtr("base", node));
                 return casted.id;
             },
             inline .menu_item, .menu_item_separator, .menu_item_ex => |menu_item_type| {
-                const casted: *const menu_item_type.Type() = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const menu_item_type.Type() = @align_cast(@fieldParentPtr("base", node));
                 return casted.menuitem;
             },
             inline .popup, .popup_ex => |popup_type| {
-                const casted: *const popup_type.Type() = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const popup_type.Type() = @align_cast(@fieldParentPtr("base", node));
                 return casted.popup;
             },
             .version_info => {
-                const casted: *const Node.VersionInfo = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.VersionInfo = @align_cast(@fieldParentPtr("base", node));
                 return casted.id;
             },
             .version_statement => {
-                const casted: *const Node.VersionStatement = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.VersionStatement = @align_cast(@fieldParentPtr("base", node));
                 return casted.type;
             },
             .block => {
-                const casted: *const Node.Block = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Block = @align_cast(@fieldParentPtr("base", node));
                 return casted.identifier;
             },
             .block_value => {
-                const casted: *const Node.BlockValue = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.BlockValue = @align_cast(@fieldParentPtr("base", node));
                 return casted.identifier;
             },
             .block_value_value => {
-                const casted: *const Node.BlockValueValue = @alignCast(@fieldParentPtr("base", node));
-                return casted.expression.getFirstToken();
+                const casted: *const Node.BlockValueValue = @align_cast(@fieldParentPtr("base", node));
+                return casted.expression.get_first_token();
             },
             .string_table => {
-                const casted: *const Node.StringTable = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.StringTable = @align_cast(@fieldParentPtr("base", node));
                 return casted.type;
             },
             .string_table_string => {
-                const casted: *const Node.StringTableString = @alignCast(@fieldParentPtr("base", node));
-                return casted.id.getFirstToken();
+                const casted: *const Node.StringTableString = @align_cast(@fieldParentPtr("base", node));
+                return casted.id.get_first_token();
             },
             .language_statement => {
-                const casted: *const Node.LanguageStatement = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.LanguageStatement = @align_cast(@fieldParentPtr("base", node));
                 return casted.language_token;
             },
             .font_statement => {
-                const casted: *const Node.FontStatement = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.FontStatement = @align_cast(@fieldParentPtr("base", node));
                 return casted.identifier;
             },
             .simple_statement => {
-                const casted: *const Node.SimpleStatement = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.SimpleStatement = @align_cast(@fieldParentPtr("base", node));
                 return casted.identifier;
             },
             .invalid => {
-                const casted: *const Node.Invalid = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Invalid = @align_cast(@fieldParentPtr("base", node));
                 return casted.context[0];
             },
         }
@@ -595,129 +595,129 @@ pub const Node = struct {
         switch (node.id) {
             .root => unreachable,
             .resource_external => {
-                const casted: *const Node.ResourceExternal = @alignCast(@fieldParentPtr("base", node));
-                return casted.filename.getLastToken();
+                const casted: *const Node.ResourceExternal = @align_cast(@fieldParentPtr("base", node));
+                return casted.filename.get_last_token();
             },
             .resource_raw_data => {
-                const casted: *const Node.ResourceRawData = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.ResourceRawData = @align_cast(@fieldParentPtr("base", node));
                 return casted.end_token;
             },
             .literal => {
-                const casted: *const Node.Literal = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Literal = @align_cast(@fieldParentPtr("base", node));
                 return casted.token;
             },
             .binary_expression => {
-                const casted: *const Node.BinaryExpression = @alignCast(@fieldParentPtr("base", node));
-                return casted.right.getLastToken();
+                const casted: *const Node.BinaryExpression = @align_cast(@fieldParentPtr("base", node));
+                return casted.right.get_last_token();
             },
             .grouped_expression => {
-                const casted: *const Node.GroupedExpression = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.GroupedExpression = @align_cast(@fieldParentPtr("base", node));
                 return casted.close_token;
             },
             .not_expression => {
-                const casted: *const Node.NotExpression = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.NotExpression = @align_cast(@fieldParentPtr("base", node));
                 return casted.number_token;
             },
             .accelerators => {
-                const casted: *const Node.Accelerators = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Accelerators = @align_cast(@fieldParentPtr("base", node));
                 return casted.end_token;
             },
             .accelerator => {
-                const casted: *const Node.Accelerator = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Accelerator = @align_cast(@fieldParentPtr("base", node));
                 if (casted.type_and_options.len > 0) return casted.type_and_options[casted.type_and_options.len - 1];
-                return casted.idvalue.getLastToken();
+                return casted.idvalue.get_last_token();
             },
             .dialog => {
-                const casted: *const Node.Dialog = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Dialog = @align_cast(@fieldParentPtr("base", node));
                 return casted.end_token;
             },
             .control_statement => {
-                const casted: *const Node.ControlStatement = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.ControlStatement = @align_cast(@fieldParentPtr("base", node));
                 if (casted.extra_data_end) |token| return token;
-                if (casted.help_id) |help_id_node| return help_id_node.getLastToken();
-                if (casted.exstyle) |exstyle_node| return exstyle_node.getLastToken();
+                if (casted.help_id) |help_id_node| return help_id_node.get_last_token();
+                if (casted.exstyle) |exstyle_node| return exstyle_node.get_last_token();
                 // For user-defined CONTROL controls, the style comes before 'x', but
                 // otherwise it comes after 'height' so it could be the last token if
                 // it's present.
-                if (!casted.isUserDefined()) {
-                    if (casted.style) |style_node| return style_node.getLastToken();
+                if (!casted.is_user_defined()) {
+                    if (casted.style) |style_node| return style_node.get_last_token();
                 }
-                return casted.height.getLastToken();
+                return casted.height.get_last_token();
             },
             .toolbar => {
-                const casted: *const Node.Toolbar = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Toolbar = @align_cast(@fieldParentPtr("base", node));
                 return casted.end_token;
             },
             .menu => {
-                const casted: *const Node.Menu = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Menu = @align_cast(@fieldParentPtr("base", node));
                 return casted.end_token;
             },
             .menu_item => {
-                const casted: *const Node.MenuItem = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.MenuItem = @align_cast(@fieldParentPtr("base", node));
                 if (casted.option_list.len > 0) return casted.option_list[casted.option_list.len - 1];
-                return casted.result.getLastToken();
+                return casted.result.get_last_token();
             },
             .menu_item_separator => {
-                const casted: *const Node.MenuItemSeparator = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.MenuItemSeparator = @align_cast(@fieldParentPtr("base", node));
                 return casted.separator;
             },
             .menu_item_ex => {
-                const casted: *const Node.MenuItemEx = @alignCast(@fieldParentPtr("base", node));
-                if (casted.state) |state_node| return state_node.getLastToken();
-                if (casted.type) |type_node| return type_node.getLastToken();
-                if (casted.id) |id_node| return id_node.getLastToken();
+                const casted: *const Node.MenuItemEx = @align_cast(@fieldParentPtr("base", node));
+                if (casted.state) |state_node| return state_node.get_last_token();
+                if (casted.type) |type_node| return type_node.get_last_token();
+                if (casted.id) |id_node| return id_node.get_last_token();
                 return casted.text;
             },
             inline .popup, .popup_ex => |popup_type| {
-                const casted: *const popup_type.Type() = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const popup_type.Type() = @align_cast(@fieldParentPtr("base", node));
                 return casted.end_token;
             },
             .version_info => {
-                const casted: *const Node.VersionInfo = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.VersionInfo = @align_cast(@fieldParentPtr("base", node));
                 return casted.end_token;
             },
             .version_statement => {
-                const casted: *const Node.VersionStatement = @alignCast(@fieldParentPtr("base", node));
-                return casted.parts[casted.parts.len - 1].getLastToken();
+                const casted: *const Node.VersionStatement = @align_cast(@fieldParentPtr("base", node));
+                return casted.parts[casted.parts.len - 1].get_last_token();
             },
             .block => {
-                const casted: *const Node.Block = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Block = @align_cast(@fieldParentPtr("base", node));
                 return casted.end_token;
             },
             .block_value => {
-                const casted: *const Node.BlockValue = @alignCast(@fieldParentPtr("base", node));
-                if (casted.values.len > 0) return casted.values[casted.values.len - 1].getLastToken();
+                const casted: *const Node.BlockValue = @align_cast(@fieldParentPtr("base", node));
+                if (casted.values.len > 0) return casted.values[casted.values.len - 1].get_last_token();
                 return casted.key;
             },
             .block_value_value => {
-                const casted: *const Node.BlockValueValue = @alignCast(@fieldParentPtr("base", node));
-                return casted.expression.getLastToken();
+                const casted: *const Node.BlockValueValue = @align_cast(@fieldParentPtr("base", node));
+                return casted.expression.get_last_token();
             },
             .string_table => {
-                const casted: *const Node.StringTable = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.StringTable = @align_cast(@fieldParentPtr("base", node));
                 return casted.end_token;
             },
             .string_table_string => {
-                const casted: *const Node.StringTableString = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.StringTableString = @align_cast(@fieldParentPtr("base", node));
                 return casted.string;
             },
             .language_statement => {
-                const casted: *const Node.LanguageStatement = @alignCast(@fieldParentPtr("base", node));
-                return casted.sublanguage_id.getLastToken();
+                const casted: *const Node.LanguageStatement = @align_cast(@fieldParentPtr("base", node));
+                return casted.sublanguage_id.get_last_token();
             },
             .font_statement => {
-                const casted: *const Node.FontStatement = @alignCast(@fieldParentPtr("base", node));
-                if (casted.char_set) |char_set_node| return char_set_node.getLastToken();
-                if (casted.italic) |italic_node| return italic_node.getLastToken();
-                if (casted.weight) |weight_node| return weight_node.getLastToken();
+                const casted: *const Node.FontStatement = @align_cast(@fieldParentPtr("base", node));
+                if (casted.char_set) |char_set_node| return char_set_node.get_last_token();
+                if (casted.italic) |italic_node| return italic_node.get_last_token();
+                if (casted.weight) |weight_node| return weight_node.get_last_token();
                 return casted.typeface;
             },
             .simple_statement => {
-                const casted: *const Node.SimpleStatement = @alignCast(@fieldParentPtr("base", node));
-                return casted.value.getLastToken();
+                const casted: *const Node.SimpleStatement = @align_cast(@fieldParentPtr("base", node));
+                return casted.value.get_last_token();
             },
             .invalid => {
-                const casted: *const Node.Invalid = @alignCast(@fieldParentPtr("base", node));
+                const casted: *const Node.Invalid = @align_cast(@fieldParentPtr("base", node));
                 return casted.context[casted.context.len - 1];
             },
         }
@@ -729,351 +729,351 @@ pub const Node = struct {
         writer: anytype,
         indent: usize,
     ) @TypeOf(writer).Error!void {
-        try writer.writeByteNTimes(' ', indent);
-        try writer.writeAll(@tagName(node.id));
+        try writer.write_byte_ntimes(' ', indent);
+        try writer.write_all(@tag_name(node.id));
         switch (node.id) {
             .root => {
-                try writer.writeAll("\n");
-                const root: *Node.Root = @alignCast(@fieldParentPtr("base", node));
+                try writer.write_all("\n");
+                const root: *Node.Root = @align_cast(@fieldParentPtr("base", node));
                 for (root.body) |body_node| {
                     try body_node.dump(tree, writer, indent + 1);
                 }
             },
             .resource_external => {
-                const resource: *Node.ResourceExternal = @alignCast(@fieldParentPtr("base", node));
+                const resource: *Node.ResourceExternal = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s} [{d} common_resource_attributes]\n", .{ resource.id.slice(tree.source), resource.type.slice(tree.source), resource.common_resource_attributes.len });
                 try resource.filename.dump(tree, writer, indent + 1);
             },
             .resource_raw_data => {
-                const resource: *Node.ResourceRawData = @alignCast(@fieldParentPtr("base", node));
+                const resource: *Node.ResourceRawData = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s} [{d} common_resource_attributes] raw data: {}\n", .{ resource.id.slice(tree.source), resource.type.slice(tree.source), resource.common_resource_attributes.len, resource.raw_data.len });
                 for (resource.raw_data) |data_expression| {
                     try data_expression.dump(tree, writer, indent + 1);
                 }
             },
             .literal => {
-                const literal: *Node.Literal = @alignCast(@fieldParentPtr("base", node));
-                try writer.writeAll(" ");
-                try writer.writeAll(literal.token.slice(tree.source));
-                try writer.writeAll("\n");
+                const literal: *Node.Literal = @align_cast(@fieldParentPtr("base", node));
+                try writer.write_all(" ");
+                try writer.write_all(literal.token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .binary_expression => {
-                const binary: *Node.BinaryExpression = @alignCast(@fieldParentPtr("base", node));
-                try writer.writeAll(" ");
-                try writer.writeAll(binary.operator.slice(tree.source));
-                try writer.writeAll("\n");
+                const binary: *Node.BinaryExpression = @align_cast(@fieldParentPtr("base", node));
+                try writer.write_all(" ");
+                try writer.write_all(binary.operator.slice(tree.source));
+                try writer.write_all("\n");
                 try binary.left.dump(tree, writer, indent + 1);
                 try binary.right.dump(tree, writer, indent + 1);
             },
             .grouped_expression => {
-                const grouped: *Node.GroupedExpression = @alignCast(@fieldParentPtr("base", node));
-                try writer.writeAll("\n");
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(grouped.open_token.slice(tree.source));
-                try writer.writeAll("\n");
+                const grouped: *Node.GroupedExpression = @align_cast(@fieldParentPtr("base", node));
+                try writer.write_all("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(grouped.open_token.slice(tree.source));
+                try writer.write_all("\n");
                 try grouped.expression.dump(tree, writer, indent + 1);
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(grouped.close_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(grouped.close_token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .not_expression => {
-                const not: *Node.NotExpression = @alignCast(@fieldParentPtr("base", node));
-                try writer.writeAll(" ");
-                try writer.writeAll(not.not_token.slice(tree.source));
-                try writer.writeAll(" ");
-                try writer.writeAll(not.number_token.slice(tree.source));
-                try writer.writeAll("\n");
+                const not: *Node.NotExpression = @align_cast(@fieldParentPtr("base", node));
+                try writer.write_all(" ");
+                try writer.write_all(not.not_token.slice(tree.source));
+                try writer.write_all(" ");
+                try writer.write_all(not.number_token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .accelerators => {
-                const accelerators: *Node.Accelerators = @alignCast(@fieldParentPtr("base", node));
+                const accelerators: *Node.Accelerators = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s} [{d} common_resource_attributes]\n", .{ accelerators.id.slice(tree.source), accelerators.type.slice(tree.source), accelerators.common_resource_attributes.len });
                 for (accelerators.optional_statements) |statement| {
                     try statement.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(accelerators.begin_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(accelerators.begin_token.slice(tree.source));
+                try writer.write_all("\n");
                 for (accelerators.accelerators) |accelerator| {
                     try accelerator.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(accelerators.end_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(accelerators.end_token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .accelerator => {
-                const accelerator: *Node.Accelerator = @alignCast(@fieldParentPtr("base", node));
+                const accelerator: *Node.Accelerator = @align_cast(@fieldParentPtr("base", node));
                 for (accelerator.type_and_options, 0..) |option, i| {
-                    if (i != 0) try writer.writeAll(",");
-                    try writer.writeByte(' ');
-                    try writer.writeAll(option.slice(tree.source));
+                    if (i != 0) try writer.write_all(",");
+                    try writer.write_byte(' ');
+                    try writer.write_all(option.slice(tree.source));
                 }
-                try writer.writeAll("\n");
+                try writer.write_all("\n");
                 try accelerator.event.dump(tree, writer, indent + 1);
                 try accelerator.idvalue.dump(tree, writer, indent + 1);
             },
             .dialog => {
-                const dialog: *Node.Dialog = @alignCast(@fieldParentPtr("base", node));
+                const dialog: *Node.Dialog = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s} [{d} common_resource_attributes]\n", .{ dialog.id.slice(tree.source), dialog.type.slice(tree.source), dialog.common_resource_attributes.len });
                 inline for (.{ "x", "y", "width", "height" }) |arg| {
-                    try writer.writeByteNTimes(' ', indent + 1);
-                    try writer.writeAll(arg ++ ":\n");
+                    try writer.write_byte_ntimes(' ', indent + 1);
+                    try writer.write_all(arg ++ ":\n");
                     try @field(dialog, arg).dump(tree, writer, indent + 2);
                 }
                 if (dialog.help_id) |help_id| {
-                    try writer.writeByteNTimes(' ', indent + 1);
-                    try writer.writeAll("help_id:\n");
+                    try writer.write_byte_ntimes(' ', indent + 1);
+                    try writer.write_all("help_id:\n");
                     try help_id.dump(tree, writer, indent + 2);
                 }
                 for (dialog.optional_statements) |statement| {
                     try statement.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(dialog.begin_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(dialog.begin_token.slice(tree.source));
+                try writer.write_all("\n");
                 for (dialog.controls) |control| {
                     try control.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(dialog.end_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(dialog.end_token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .control_statement => {
-                const control: *Node.ControlStatement = @alignCast(@fieldParentPtr("base", node));
+                const control: *Node.ControlStatement = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s}", .{control.type.slice(tree.source)});
                 if (control.text) |text| {
                     try writer.print(" text: {s}", .{text.slice(tree.source)});
                 }
-                try writer.writeByte('\n');
+                try writer.write_byte('\n');
                 if (control.class) |class| {
-                    try writer.writeByteNTimes(' ', indent + 1);
-                    try writer.writeAll("class:\n");
+                    try writer.write_byte_ntimes(' ', indent + 1);
+                    try writer.write_all("class:\n");
                     try class.dump(tree, writer, indent + 2);
                 }
                 inline for (.{ "id", "x", "y", "width", "height" }) |arg| {
-                    try writer.writeByteNTimes(' ', indent + 1);
-                    try writer.writeAll(arg ++ ":\n");
+                    try writer.write_byte_ntimes(' ', indent + 1);
+                    try writer.write_all(arg ++ ":\n");
                     try @field(control, arg).dump(tree, writer, indent + 2);
                 }
                 inline for (.{ "style", "exstyle", "help_id" }) |arg| {
                     if (@field(control, arg)) |val_node| {
-                        try writer.writeByteNTimes(' ', indent + 1);
-                        try writer.writeAll(arg ++ ":\n");
+                        try writer.write_byte_ntimes(' ', indent + 1);
+                        try writer.write_all(arg ++ ":\n");
                         try val_node.dump(tree, writer, indent + 2);
                     }
                 }
                 if (control.extra_data_begin != null) {
-                    try writer.writeByteNTimes(' ', indent);
-                    try writer.writeAll(control.extra_data_begin.?.slice(tree.source));
-                    try writer.writeAll("\n");
+                    try writer.write_byte_ntimes(' ', indent);
+                    try writer.write_all(control.extra_data_begin.?.slice(tree.source));
+                    try writer.write_all("\n");
                     for (control.extra_data) |data_node| {
                         try data_node.dump(tree, writer, indent + 1);
                     }
-                    try writer.writeByteNTimes(' ', indent);
-                    try writer.writeAll(control.extra_data_end.?.slice(tree.source));
-                    try writer.writeAll("\n");
+                    try writer.write_byte_ntimes(' ', indent);
+                    try writer.write_all(control.extra_data_end.?.slice(tree.source));
+                    try writer.write_all("\n");
                 }
             },
             .toolbar => {
-                const toolbar: *Node.Toolbar = @alignCast(@fieldParentPtr("base", node));
+                const toolbar: *Node.Toolbar = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s} [{d} common_resource_attributes]\n", .{ toolbar.id.slice(tree.source), toolbar.type.slice(tree.source), toolbar.common_resource_attributes.len });
                 inline for (.{ "button_width", "button_height" }) |arg| {
-                    try writer.writeByteNTimes(' ', indent + 1);
-                    try writer.writeAll(arg ++ ":\n");
+                    try writer.write_byte_ntimes(' ', indent + 1);
+                    try writer.write_all(arg ++ ":\n");
                     try @field(toolbar, arg).dump(tree, writer, indent + 2);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(toolbar.begin_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(toolbar.begin_token.slice(tree.source));
+                try writer.write_all("\n");
                 for (toolbar.buttons) |button_or_sep| {
                     try button_or_sep.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(toolbar.end_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(toolbar.end_token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .menu => {
-                const menu: *Node.Menu = @alignCast(@fieldParentPtr("base", node));
+                const menu: *Node.Menu = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s} [{d} common_resource_attributes]\n", .{ menu.id.slice(tree.source), menu.type.slice(tree.source), menu.common_resource_attributes.len });
                 for (menu.optional_statements) |statement| {
                     try statement.dump(tree, writer, indent + 1);
                 }
                 if (menu.help_id) |help_id| {
-                    try writer.writeByteNTimes(' ', indent + 1);
-                    try writer.writeAll("help_id:\n");
+                    try writer.write_byte_ntimes(' ', indent + 1);
+                    try writer.write_all("help_id:\n");
                     try help_id.dump(tree, writer, indent + 2);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(menu.begin_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(menu.begin_token.slice(tree.source));
+                try writer.write_all("\n");
                 for (menu.items) |item| {
                     try item.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(menu.end_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(menu.end_token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .menu_item => {
-                const menu_item: *Node.MenuItem = @alignCast(@fieldParentPtr("base", node));
+                const menu_item: *Node.MenuItem = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s} [{d} options]\n", .{ menu_item.menuitem.slice(tree.source), menu_item.text.slice(tree.source), menu_item.option_list.len });
                 try menu_item.result.dump(tree, writer, indent + 1);
             },
             .menu_item_separator => {
-                const menu_item: *Node.MenuItemSeparator = @alignCast(@fieldParentPtr("base", node));
+                const menu_item: *Node.MenuItemSeparator = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s}\n", .{ menu_item.menuitem.slice(tree.source), menu_item.separator.slice(tree.source) });
             },
             .menu_item_ex => {
-                const menu_item: *Node.MenuItemEx = @alignCast(@fieldParentPtr("base", node));
+                const menu_item: *Node.MenuItemEx = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s}\n", .{ menu_item.menuitem.slice(tree.source), menu_item.text.slice(tree.source) });
                 inline for (.{ "id", "type", "state" }) |arg| {
                     if (@field(menu_item, arg)) |val_node| {
-                        try writer.writeByteNTimes(' ', indent + 1);
-                        try writer.writeAll(arg ++ ":\n");
+                        try writer.write_byte_ntimes(' ', indent + 1);
+                        try writer.write_all(arg ++ ":\n");
                         try val_node.dump(tree, writer, indent + 2);
                     }
                 }
             },
             .popup => {
-                const popup: *Node.Popup = @alignCast(@fieldParentPtr("base", node));
+                const popup: *Node.Popup = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s} [{d} options]\n", .{ popup.popup.slice(tree.source), popup.text.slice(tree.source), popup.option_list.len });
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(popup.begin_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(popup.begin_token.slice(tree.source));
+                try writer.write_all("\n");
                 for (popup.items) |item| {
                     try item.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(popup.end_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(popup.end_token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .popup_ex => {
-                const popup: *Node.PopupEx = @alignCast(@fieldParentPtr("base", node));
+                const popup: *Node.PopupEx = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s}\n", .{ popup.popup.slice(tree.source), popup.text.slice(tree.source) });
                 inline for (.{ "id", "type", "state", "help_id" }) |arg| {
                     if (@field(popup, arg)) |val_node| {
-                        try writer.writeByteNTimes(' ', indent + 1);
-                        try writer.writeAll(arg ++ ":\n");
+                        try writer.write_byte_ntimes(' ', indent + 1);
+                        try writer.write_all(arg ++ ":\n");
                         try val_node.dump(tree, writer, indent + 2);
                     }
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(popup.begin_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(popup.begin_token.slice(tree.source));
+                try writer.write_all("\n");
                 for (popup.items) |item| {
                     try item.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(popup.end_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(popup.end_token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .version_info => {
-                const version_info: *Node.VersionInfo = @alignCast(@fieldParentPtr("base", node));
+                const version_info: *Node.VersionInfo = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s} [{d} common_resource_attributes]\n", .{ version_info.id.slice(tree.source), version_info.versioninfo.slice(tree.source), version_info.common_resource_attributes.len });
                 for (version_info.fixed_info) |fixed_info| {
                     try fixed_info.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(version_info.begin_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(version_info.begin_token.slice(tree.source));
+                try writer.write_all("\n");
                 for (version_info.block_statements) |block| {
                     try block.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(version_info.end_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(version_info.end_token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .version_statement => {
-                const version_statement: *Node.VersionStatement = @alignCast(@fieldParentPtr("base", node));
+                const version_statement: *Node.VersionStatement = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s}\n", .{version_statement.type.slice(tree.source)});
                 for (version_statement.parts) |part| {
                     try part.dump(tree, writer, indent + 1);
                 }
             },
             .block => {
-                const block: *Node.Block = @alignCast(@fieldParentPtr("base", node));
+                const block: *Node.Block = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s}\n", .{ block.identifier.slice(tree.source), block.key.slice(tree.source) });
                 for (block.values) |value| {
                     try value.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(block.begin_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(block.begin_token.slice(tree.source));
+                try writer.write_all("\n");
                 for (block.children) |child| {
                     try child.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(block.end_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(block.end_token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .block_value => {
-                const block_value: *Node.BlockValue = @alignCast(@fieldParentPtr("base", node));
+                const block_value: *Node.BlockValue = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} {s}\n", .{ block_value.identifier.slice(tree.source), block_value.key.slice(tree.source) });
                 for (block_value.values) |value| {
                     try value.dump(tree, writer, indent + 1);
                 }
             },
             .block_value_value => {
-                const block_value: *Node.BlockValueValue = @alignCast(@fieldParentPtr("base", node));
+                const block_value: *Node.BlockValueValue = @align_cast(@fieldParentPtr("base", node));
                 if (block_value.trailing_comma) {
-                    try writer.writeAll(" ,");
+                    try writer.write_all(" ,");
                 }
-                try writer.writeAll("\n");
+                try writer.write_all("\n");
                 try block_value.expression.dump(tree, writer, indent + 1);
             },
             .string_table => {
-                const string_table: *Node.StringTable = @alignCast(@fieldParentPtr("base", node));
+                const string_table: *Node.StringTable = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} [{d} common_resource_attributes]\n", .{ string_table.type.slice(tree.source), string_table.common_resource_attributes.len });
                 for (string_table.optional_statements) |statement| {
                     try statement.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(string_table.begin_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(string_table.begin_token.slice(tree.source));
+                try writer.write_all("\n");
                 for (string_table.strings) |string| {
                     try string.dump(tree, writer, indent + 1);
                 }
-                try writer.writeByteNTimes(' ', indent);
-                try writer.writeAll(string_table.end_token.slice(tree.source));
-                try writer.writeAll("\n");
+                try writer.write_byte_ntimes(' ', indent);
+                try writer.write_all(string_table.end_token.slice(tree.source));
+                try writer.write_all("\n");
             },
             .string_table_string => {
-                try writer.writeAll("\n");
-                const string: *Node.StringTableString = @alignCast(@fieldParentPtr("base", node));
+                try writer.write_all("\n");
+                const string: *Node.StringTableString = @align_cast(@fieldParentPtr("base", node));
                 try string.id.dump(tree, writer, indent + 1);
-                try writer.writeByteNTimes(' ', indent + 1);
+                try writer.write_byte_ntimes(' ', indent + 1);
                 try writer.print("{s}\n", .{string.string.slice(tree.source)});
             },
             .language_statement => {
-                const language: *Node.LanguageStatement = @alignCast(@fieldParentPtr("base", node));
+                const language: *Node.LanguageStatement = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s}\n", .{language.language_token.slice(tree.source)});
                 try language.primary_language_id.dump(tree, writer, indent + 1);
                 try language.sublanguage_id.dump(tree, writer, indent + 1);
             },
             .font_statement => {
-                const font: *Node.FontStatement = @alignCast(@fieldParentPtr("base", node));
+                const font: *Node.FontStatement = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s} typeface: {s}\n", .{ font.identifier.slice(tree.source), font.typeface.slice(tree.source) });
-                try writer.writeByteNTimes(' ', indent + 1);
-                try writer.writeAll("point_size:\n");
+                try writer.write_byte_ntimes(' ', indent + 1);
+                try writer.write_all("point_size:\n");
                 try font.point_size.dump(tree, writer, indent + 2);
                 inline for (.{ "weight", "italic", "char_set" }) |arg| {
                     if (@field(font, arg)) |arg_node| {
-                        try writer.writeByteNTimes(' ', indent + 1);
-                        try writer.writeAll(arg ++ ":\n");
+                        try writer.write_byte_ntimes(' ', indent + 1);
+                        try writer.write_all(arg ++ ":\n");
                         try arg_node.dump(tree, writer, indent + 2);
                     }
                 }
             },
             .simple_statement => {
-                const statement: *Node.SimpleStatement = @alignCast(@fieldParentPtr("base", node));
+                const statement: *Node.SimpleStatement = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" {s}\n", .{statement.identifier.slice(tree.source)});
                 try statement.value.dump(tree, writer, indent + 1);
             },
             .invalid => {
-                const invalid: *Node.Invalid = @alignCast(@fieldParentPtr("base", node));
+                const invalid: *Node.Invalid = @align_cast(@fieldParentPtr("base", node));
                 try writer.print(" context.len: {}\n", .{invalid.context.len});
                 for (invalid.context) |context_token| {
-                    try writer.writeByteNTimes(' ', indent + 1);
-                    try writer.print("{s}:{s}", .{ @tagName(context_token.id), context_token.slice(tree.source) });
-                    try writer.writeByte('\n');
+                    try writer.write_byte_ntimes(' ', indent + 1);
+                    try writer.print("{s}:{s}", .{ @tag_name(context_token.id), context_token.slice(tree.source) });
+                    try writer.write_byte('\n');
                 }
             },
         }

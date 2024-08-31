@@ -7,7 +7,7 @@ pub fn get_geo3_dtex2_d() Geo3DTex2D {
     };
 }
 export fn entry() void {
-    const geo_data = getGeo3DTex2D();
+    const geo_data = get_geo3_dtex2_d();
     _ = geo_data;
 }
 

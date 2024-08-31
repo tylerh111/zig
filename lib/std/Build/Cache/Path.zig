@@ -28,7 +28,7 @@ pub fn resolve_posix(p: Path, arena: Allocator, sub_path: []const u8) Allocator.
     if (sub_path.len == 0) return p;
     return .{
         .root_dir = p.root_dir,
-        .sub_path = try fs.path.resolvePosix(arena, &.{ p.sub_path, sub_path }),
+        .sub_path = try fs.path.resolve_posix(arena, &.{ p.sub_path, sub_path }),
     };
 }
 
@@ -41,7 +41,7 @@ pub fn join_string(p: Path, allocator: Allocator, sub_path: []const u8) Allocato
 pub fn join_string_z(p: Path, allocator: Allocator, sub_path: []const u8) Allocator.Error![:0]u8 {
     const parts: []const []const u8 =
         if (p.sub_path.len == 0) &.{sub_path} else &.{ p.sub_path, sub_path };
-    return p.root_dir.joinZ(allocator, parts);
+    return p.root_dir.join_z(allocator, parts);
 }
 
 pub fn open_file(
@@ -51,31 +51,31 @@ pub fn open_file(
 ) !fs.File {
     var buf: [fs.MAX_PATH_BYTES]u8 = undefined;
     const joined_path = if (p.sub_path.len == 0) sub_path else p: {
-        break :p std.fmt.bufPrint(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
+        break :p std.fmt.buf_print(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
             p.sub_path, sub_path,
         }) catch return error.NameTooLong;
     };
-    return p.root_dir.handle.openFile(joined_path, flags);
+    return p.root_dir.handle.open_file(joined_path, flags);
 }
 
 pub fn make_open_path(p: Path, sub_path: []const u8, opts: fs.OpenDirOptions) !fs.Dir {
     var buf: [fs.MAX_PATH_BYTES]u8 = undefined;
     const joined_path = if (p.sub_path.len == 0) sub_path else p: {
-        break :p std.fmt.bufPrint(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
+        break :p std.fmt.buf_print(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
             p.sub_path, sub_path,
         }) catch return error.NameTooLong;
     };
-    return p.root_dir.handle.makeOpenPath(joined_path, opts);
+    return p.root_dir.handle.make_open_path(joined_path, opts);
 }
 
 pub fn stat_file(p: Path, sub_path: []const u8) !fs.Dir.Stat {
     var buf: [fs.MAX_PATH_BYTES]u8 = undefined;
     const joined_path = if (p.sub_path.len == 0) sub_path else p: {
-        break :p std.fmt.bufPrint(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
+        break :p std.fmt.buf_print(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
             p.sub_path, sub_path,
         }) catch return error.NameTooLong;
     };
-    return p.root_dir.handle.statFile(joined_path);
+    return p.root_dir.handle.stat_file(joined_path);
 }
 
 pub fn atomic_file(
@@ -85,17 +85,17 @@ pub fn atomic_file(
     buf: *[fs.MAX_PATH_BYTES]u8,
 ) !fs.AtomicFile {
     const joined_path = if (p.sub_path.len == 0) sub_path else p: {
-        break :p std.fmt.bufPrint(buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
+        break :p std.fmt.buf_print(buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
             p.sub_path, sub_path,
         }) catch return error.NameTooLong;
     };
-    return p.root_dir.handle.atomicFile(joined_path, options);
+    return p.root_dir.handle.atomic_file(joined_path, options);
 }
 
 pub fn access(p: Path, sub_path: []const u8, flags: fs.File.OpenFlags) !void {
     var buf: [fs.MAX_PATH_BYTES]u8 = undefined;
     const joined_path = if (p.sub_path.len == 0) sub_path else p: {
-        break :p std.fmt.bufPrint(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
+        break :p std.fmt.buf_print(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
             p.sub_path, sub_path,
         }) catch return error.NameTooLong;
     };
@@ -105,11 +105,11 @@ pub fn access(p: Path, sub_path: []const u8, flags: fs.File.OpenFlags) !void {
 pub fn make_path(p: Path, sub_path: []const u8) !void {
     var buf: [fs.MAX_PATH_BYTES]u8 = undefined;
     const joined_path = if (p.sub_path.len == 0) sub_path else p: {
-        break :p std.fmt.bufPrint(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
+        break :p std.fmt.buf_print(&buf, "{s}" ++ fs.path.sep_str ++ "{s}", .{
             p.sub_path, sub_path,
         }) catch return error.NameTooLong;
     };
-    return p.root_dir.handle.makePath(joined_path);
+    return p.root_dir.handle.make_path(joined_path);
 }
 
 pub fn format(
@@ -120,30 +120,30 @@ pub fn format(
 ) !void {
     if (fmt_string.len == 1) {
         // Quote-escape the string.
-        const stringEscape = std.zig.stringEscape;
+        const string_escape = std.zig.string_escape;
         const f = switch (fmt_string[0]) {
             'q' => "",
             '\'' => '\'',
-            else => @compileError("unsupported format string: " ++ fmt_string),
+            else => @compile_error("unsupported format string: " ++ fmt_string),
         };
         if (self.root_dir.path) |p| {
-            try stringEscape(p, f, options, writer);
-            if (self.sub_path.len > 0) try stringEscape(fs.path.sep_str, f, options, writer);
+            try string_escape(p, f, options, writer);
+            if (self.sub_path.len > 0) try string_escape(fs.path.sep_str, f, options, writer);
         }
         if (self.sub_path.len > 0) {
-            try stringEscape(self.sub_path, f, options, writer);
+            try string_escape(self.sub_path, f, options, writer);
         }
         return;
     }
     if (fmt_string.len > 0)
-        std.fmt.invalidFmtError(fmt_string, self);
+        std.fmt.invalid_fmt_error(fmt_string, self);
     if (self.root_dir.path) |p| {
-        try writer.writeAll(p);
-        try writer.writeAll(fs.path.sep_str);
+        try writer.write_all(p);
+        try writer.write_all(fs.path.sep_str);
     }
     if (self.sub_path.len > 0) {
-        try writer.writeAll(self.sub_path);
-        try writer.writeAll(fs.path.sep_str);
+        try writer.write_all(self.sub_path);
+        try writer.write_all(fs.path.sep_str);
     }
 }
 

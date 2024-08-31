@@ -5,7 +5,7 @@ fn private_function() bool {
 }
 
 pub fn print_text() bool {
-    return privateFunction();
+    return private_function();
 }
 
 pub var saw_foo_function = false;

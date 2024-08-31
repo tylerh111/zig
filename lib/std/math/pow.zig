@@ -36,7 +36,7 @@ pub fn pow(comptime T: type, x: T, y: T) T {
     }
 
     if (T != f32 and T != f64) {
-        @compileError("pow not implemented for " ++ @typeName(T));
+        @compile_error("pow not implemented for " ++ @type_name(T));
     }
 
     // pow(x, +-0) = 1      for all x
@@ -47,7 +47,7 @@ pub fn pow(comptime T: type, x: T, y: T) T {
 
     // pow(nan, y) = nan    for all y
     // pow(x, nan) = nan    for all x
-    if (math.isNan(x) or math.isNan(y)) {
+    if (math.is_nan(x) or math.is_nan(y)) {
         return math.nan(T);
     }
 
@@ -59,7 +59,7 @@ pub fn pow(comptime T: type, x: T, y: T) T {
     if (x == 0) {
         if (y < 0) {
             // pow(+-0, y) = +- 0   for y an odd integer
-            if (isOddInteger(y)) {
+            if (is_odd_integer(y)) {
                 return math.copysign(math.inf(T), x);
             }
             // pow(+-0, y) = +inf   for y an even integer
@@ -67,7 +67,7 @@ pub fn pow(comptime T: type, x: T, y: T) T {
                 return math.inf(T);
             }
         } else {
-            if (isOddInteger(y)) {
+            if (is_odd_integer(y)) {
                 return x;
             } else {
                 return 0;
@@ -75,14 +75,14 @@ pub fn pow(comptime T: type, x: T, y: T) T {
         }
     }
 
-    if (math.isInf(y)) {
+    if (math.is_inf(y)) {
         // pow(-1, inf) = 1     for all x
         if (x == -1) {
             return 1.0;
         }
         // pow(x, +inf) = +0    for |x| < 1
         // pow(x, -inf) = +0    for |x| > 1
-        else if ((@abs(x) < 1) == math.isPositiveInf(y)) {
+        else if ((@abs(x) < 1) == math.is_positive_inf(y)) {
             return 0;
         }
         // pow(x, -inf) = +inf  for |x| < 1
@@ -92,8 +92,8 @@ pub fn pow(comptime T: type, x: T, y: T) T {
         }
     }
 
-    if (math.isInf(x)) {
-        if (math.isNegativeInf(x)) {
+    if (math.is_inf(x)) {
+        if (math.is_negative_inf(x)) {
             return pow(T, 1 / x, -y);
         }
         // pow(+inf, y) = +0    for y < 0
@@ -144,9 +144,9 @@ pub fn pow(comptime T: type, x: T, y: T) T {
     var xe = r2.exponent;
     var x1 = r2.significand;
 
-    var i = @as(std.meta.Int(.signed, @typeInfo(T).Float.bits), @intFromFloat(yi));
+    var i = @as(std.meta.Int(.signed, @typeInfo(T).Float.bits), @int_from_float(yi));
     while (i != 0) : (i >>= 1) {
-        const overflow_shift = math.floatExponentBits(T) + 1;
+        const overflow_shift = math.float_exponent_bits(T) + 1;
         if (xe < -(1 << overflow_shift) or (1 << overflow_shift) < xe) {
             // catch xe before it overflows the left shift below
             // Since i != 0 it has at least one bit still set, so ae will accumulate xe
@@ -183,37 +183,37 @@ fn is_odd_integer(x: f64) bool {
         // 1 << 53 is the largest exact integer in the float64 format.
         // Any number outside this range will be truncated before the decimal point and therefore will always be
         // an even integer.
-        // Without this check and if x overflows i64 the @intFromFloat(r.ipart) conversion below will panic
+        // Without this check and if x overflows i64 the @int_from_float(r.ipart) conversion below will panic
         return false;
     }
     const r = math.modf(x);
-    return r.fpart == 0.0 and @as(i64, @intFromFloat(r.ipart)) & 1 == 1;
+    return r.fpart == 0.0 and @as(i64, @int_from_float(r.ipart)) & 1 == 1;
 }
 
-test isOddInteger {
-    try expect(isOddInteger(math.maxInt(i64) * 2) == false);
-    try expect(isOddInteger(math.maxInt(i64) * 2 + 1) == false);
-    try expect(isOddInteger(1 << 53) == false);
-    try expect(isOddInteger(12.0) == false);
-    try expect(isOddInteger(15.0) == true);
+test is_odd_integer {
+    try expect(is_odd_integer(math.max_int(i64) * 2) == false);
+    try expect(is_odd_integer(math.max_int(i64) * 2 + 1) == false);
+    try expect(is_odd_integer(1 << 53) == false);
+    try expect(is_odd_integer(12.0) == false);
+    try expect(is_odd_integer(15.0) == true);
 }
 
 test pow {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f32, pow(f32, 0.0, 3.3), 0.0, epsilon));
-    try expect(math.approxEqAbs(f32, pow(f32, 0.8923, 3.3), 0.686572, epsilon));
-    try expect(math.approxEqAbs(f32, pow(f32, 0.2, 3.3), 0.004936, epsilon));
-    try expect(math.approxEqAbs(f32, pow(f32, 1.5, 3.3), 3.811546, epsilon));
-    try expect(math.approxEqAbs(f32, pow(f32, 37.45, 3.3), 155736.703125, epsilon));
-    try expect(math.approxEqAbs(f32, pow(f32, 89.123, 3.3), 2722489.5, epsilon));
+    try expect(math.approx_eq_abs(f32, pow(f32, 0.0, 3.3), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f32, pow(f32, 0.8923, 3.3), 0.686572, epsilon));
+    try expect(math.approx_eq_abs(f32, pow(f32, 0.2, 3.3), 0.004936, epsilon));
+    try expect(math.approx_eq_abs(f32, pow(f32, 1.5, 3.3), 3.811546, epsilon));
+    try expect(math.approx_eq_abs(f32, pow(f32, 37.45, 3.3), 155736.703125, epsilon));
+    try expect(math.approx_eq_abs(f32, pow(f32, 89.123, 3.3), 2722489.5, epsilon));
 
-    try expect(math.approxEqAbs(f64, pow(f64, 0.0, 3.3), 0.0, epsilon));
-    try expect(math.approxEqAbs(f64, pow(f64, 0.8923, 3.3), 0.686572, epsilon));
-    try expect(math.approxEqAbs(f64, pow(f64, 0.2, 3.3), 0.004936, epsilon));
-    try expect(math.approxEqAbs(f64, pow(f64, 1.5, 3.3), 3.811546, epsilon));
-    try expect(math.approxEqAbs(f64, pow(f64, 37.45, 3.3), 155736.7160616, epsilon));
-    try expect(math.approxEqAbs(f64, pow(f64, 89.123, 3.3), 2722490.231436, epsilon));
+    try expect(math.approx_eq_abs(f64, pow(f64, 0.0, 3.3), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f64, pow(f64, 0.8923, 3.3), 0.686572, epsilon));
+    try expect(math.approx_eq_abs(f64, pow(f64, 0.2, 3.3), 0.004936, epsilon));
+    try expect(math.approx_eq_abs(f64, pow(f64, 1.5, 3.3), 3.811546, epsilon));
+    try expect(math.approx_eq_abs(f64, pow(f64, 37.45, 3.3), 155736.7160616, epsilon));
+    try expect(math.approx_eq_abs(f64, pow(f64, 89.123, 3.3), 2722490.231436, epsilon));
 }
 
 test "special" {
@@ -223,45 +223,45 @@ test "special" {
     try expect(pow(f32, 7, -0.0) == 1.0);
     try expect(pow(f32, 45, 1.0) == 45);
     try expect(pow(f32, -45, 1.0) == -45);
-    try expect(math.isNan(pow(f32, math.nan(f32), 5.0)));
-    try expect(math.isPositiveInf(pow(f32, -math.inf(f32), 0.5)));
-    try expect(math.isPositiveInf(pow(f32, -0.0, -0.5)));
+    try expect(math.is_nan(pow(f32, math.nan(f32), 5.0)));
+    try expect(math.is_positive_inf(pow(f32, -math.inf(f32), 0.5)));
+    try expect(math.is_positive_inf(pow(f32, -0.0, -0.5)));
     try expect(pow(f32, -0.0, 0.5) == 0);
-    try expect(math.isNan(pow(f32, 5.0, math.nan(f32))));
-    try expect(math.isPositiveInf(pow(f32, 0.0, -1.0)));
-    //expect(math.isNegativeInf(pow(f32, -0.0, -3.0))); TODO is this required?
-    try expect(math.isPositiveInf(pow(f32, 0.0, -math.inf(f32))));
-    try expect(math.isPositiveInf(pow(f32, -0.0, -math.inf(f32))));
+    try expect(math.is_nan(pow(f32, 5.0, math.nan(f32))));
+    try expect(math.is_positive_inf(pow(f32, 0.0, -1.0)));
+    //expect(math.is_negative_inf(pow(f32, -0.0, -3.0))); TODO is this required?
+    try expect(math.is_positive_inf(pow(f32, 0.0, -math.inf(f32))));
+    try expect(math.is_positive_inf(pow(f32, -0.0, -math.inf(f32))));
     try expect(pow(f32, 0.0, math.inf(f32)) == 0.0);
     try expect(pow(f32, -0.0, math.inf(f32)) == 0.0);
-    try expect(math.isPositiveInf(pow(f32, 0.0, -2.0)));
-    try expect(math.isPositiveInf(pow(f32, -0.0, -2.0)));
+    try expect(math.is_positive_inf(pow(f32, 0.0, -2.0)));
+    try expect(math.is_positive_inf(pow(f32, -0.0, -2.0)));
     try expect(pow(f32, 0.0, 1.0) == 0.0);
     try expect(pow(f32, -0.0, 1.0) == -0.0);
     try expect(pow(f32, 0.0, 2.0) == 0.0);
     try expect(pow(f32, -0.0, 2.0) == 0.0);
-    try expect(math.approxEqAbs(f32, pow(f32, -1.0, math.inf(f32)), 1.0, epsilon));
-    try expect(math.approxEqAbs(f32, pow(f32, -1.0, -math.inf(f32)), 1.0, epsilon));
-    try expect(math.isPositiveInf(pow(f32, 1.2, math.inf(f32))));
-    try expect(math.isPositiveInf(pow(f32, -1.2, math.inf(f32))));
+    try expect(math.approx_eq_abs(f32, pow(f32, -1.0, math.inf(f32)), 1.0, epsilon));
+    try expect(math.approx_eq_abs(f32, pow(f32, -1.0, -math.inf(f32)), 1.0, epsilon));
+    try expect(math.is_positive_inf(pow(f32, 1.2, math.inf(f32))));
+    try expect(math.is_positive_inf(pow(f32, -1.2, math.inf(f32))));
     try expect(pow(f32, 1.2, -math.inf(f32)) == 0.0);
     try expect(pow(f32, -1.2, -math.inf(f32)) == 0.0);
     try expect(pow(f32, 0.2, math.inf(f32)) == 0.0);
     try expect(pow(f32, -0.2, math.inf(f32)) == 0.0);
-    try expect(math.isPositiveInf(pow(f32, 0.2, -math.inf(f32))));
-    try expect(math.isPositiveInf(pow(f32, -0.2, -math.inf(f32))));
-    try expect(math.isPositiveInf(pow(f32, math.inf(f32), 1.0)));
+    try expect(math.is_positive_inf(pow(f32, 0.2, -math.inf(f32))));
+    try expect(math.is_positive_inf(pow(f32, -0.2, -math.inf(f32))));
+    try expect(math.is_positive_inf(pow(f32, math.inf(f32), 1.0)));
     try expect(pow(f32, math.inf(f32), -1.0) == 0.0);
     //expect(pow(f32, -math.inf(f32), 5.0) == pow(f32, -0.0, -5.0)); TODO support negative 0?
     try expect(pow(f32, -math.inf(f32), -5.2) == pow(f32, -0.0, 5.2));
-    try expect(math.isNan(pow(f32, -1.0, 1.2)));
-    try expect(math.isNan(pow(f32, -12.4, 78.5)));
+    try expect(math.is_nan(pow(f32, -1.0, 1.2)));
+    try expect(math.is_nan(pow(f32, -12.4, 78.5)));
 }
 
 test "overflow" {
-    try expect(math.isPositiveInf(pow(f64, 2, 1 << 32)));
+    try expect(math.is_positive_inf(pow(f64, 2, 1 << 32)));
     try expect(pow(f64, 2, -(1 << 32)) == 0);
-    try expect(math.isNegativeInf(pow(f64, -2, (1 << 32) + 1)));
+    try expect(math.is_negative_inf(pow(f64, -2, (1 << 32) + 1)));
     try expect(pow(f64, 0.5, 1 << 45) == 0);
-    try expect(math.isPositiveInf(pow(f64, 0.5, -(1 << 45))));
+    try expect(math.is_positive_inf(pow(f64, 0.5, -(1 << 45))));
 }

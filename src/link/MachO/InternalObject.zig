@@ -5,7 +5,7 @@ atoms: std.ArrayListUnmanaged(Atom.Index) = .{},
 symbols: std.ArrayListUnmanaged(Symbol.Index) = .{},
 
 objc_methnames: std.ArrayListUnmanaged(u8) = .{},
-objc_selrefs: [@sizeOf(u64)]u8 = [_]u8{0} ** @sizeOf(u64),
+objc_selrefs: [@size_of(u64)]u8 = [_]u8{0} ** @size_of(u64),
 
 num_rebase_relocs: u32 = 0,
 output_symtab_ctx: MachO.SymtabCtx = .{},
@@ -22,11 +22,11 @@ pub fn deinit(self: *InternalObject, allocator: Allocator) void {
 
 pub fn add_symbol(self: *InternalObject, name: [:0]const u8, macho_file: *MachO) !Symbol.Index {
     const gpa = macho_file.base.comp.gpa;
-    try self.symbols.ensureUnusedCapacity(gpa, 1);
+    try self.symbols.ensure_unused_capacity(gpa, 1);
     const off = try macho_file.strings.insert(gpa, name);
-    const gop = try macho_file.getOrCreateGlobal(off);
-    self.symbols.addOneAssumeCapacity().* = gop.index;
-    const sym = macho_file.getSymbol(gop.index);
+    const gop = try macho_file.get_or_create_global(off);
+    self.symbols.add_one_assume_capacity().* = gop.index;
+    const sym = macho_file.get_symbol(gop.index);
     sym.file = self.index;
     sym.value = 0;
     sym.atom = 0;
@@ -37,22 +37,22 @@ pub fn add_symbol(self: *InternalObject, name: [:0]const u8, macho_file: *MachO)
 
 /// Creates a fake input sections __TEXT,__objc_methname and __DATA,__objc_selrefs.
 pub fn add_objc_msgsend_sections(self: *InternalObject, sym_name: []const u8, macho_file: *MachO) !Atom.Index {
-    const methname_atom_index = try self.addObjcMethnameSection(sym_name, macho_file);
-    return try self.addObjcSelrefsSection(methname_atom_index, macho_file);
+    const methname_atom_index = try self.add_objc_methname_section(sym_name, macho_file);
+    return try self.add_objc_selrefs_section(methname_atom_index, macho_file);
 }
 
 fn add_objc_methname_section(self: *InternalObject, methname: []const u8, macho_file: *MachO) !Atom.Index {
     const gpa = macho_file.base.comp.gpa;
-    const atom_index = try macho_file.addAtom();
+    const atom_index = try macho_file.add_atom();
     try self.atoms.append(gpa, atom_index);
 
-    const atom = macho_file.getAtom(atom_index).?;
+    const atom = macho_file.get_atom(atom_index).?;
     atom.atom_index = atom_index;
     atom.file = self.index;
     atom.size = methname.len + 1;
     atom.alignment = .@"1";
 
-    const n_sect = try self.addSection(gpa, "__TEXT", "__objc_methname");
+    const n_sect = try self.add_section(gpa, "__TEXT", "__objc_methname");
     const sect = &self.sections.items(.header)[n_sect];
     sect.flags = macho.S_CSTRING_LITERALS;
     sect.size = atom.size;
@@ -60,8 +60,8 @@ fn add_objc_methname_section(self: *InternalObject, methname: []const u8, macho_
     atom.n_sect = n_sect;
     self.sections.items(.extra)[n_sect].is_objc_methname = true;
 
-    sect.offset = @intCast(self.objc_methnames.items.len);
-    try self.objc_methnames.ensureUnusedCapacity(gpa, methname.len + 1);
+    sect.offset = @int_cast(self.objc_methnames.items.len);
+    try self.objc_methnames.ensure_unused_capacity(gpa, methname.len + 1);
     self.objc_methnames.writer(gpa).print("{s}\x00", .{methname}) catch unreachable;
 
     return atom_index;
@@ -69,16 +69,16 @@ fn add_objc_methname_section(self: *InternalObject, methname: []const u8, macho_
 
 fn add_objc_selrefs_section(self: *InternalObject, methname_atom_index: Atom.Index, macho_file: *MachO) !Atom.Index {
     const gpa = macho_file.base.comp.gpa;
-    const atom_index = try macho_file.addAtom();
+    const atom_index = try macho_file.add_atom();
     try self.atoms.append(gpa, atom_index);
 
-    const atom = macho_file.getAtom(atom_index).?;
+    const atom = macho_file.get_atom(atom_index).?;
     atom.atom_index = atom_index;
     atom.file = self.index;
-    atom.size = @sizeOf(u64);
+    atom.size = @size_of(u64);
     atom.alignment = .@"8";
 
-    const n_sect = try self.addSection(gpa, "__DATA", "__objc_selrefs");
+    const n_sect = try self.add_section(gpa, "__DATA", "__objc_selrefs");
     const sect = &self.sections.items(.header)[n_sect];
     sect.flags = macho.S_LITERAL_POINTERS | macho.S_ATTR_NO_DEAD_STRIP;
     sect.offset = 0;
@@ -88,8 +88,8 @@ fn add_objc_selrefs_section(self: *InternalObject, methname_atom_index: Atom.Ind
     self.sections.items(.extra)[n_sect].is_objc_selref = true;
 
     const relocs = &self.sections.items(.relocs)[n_sect];
-    try relocs.ensureUnusedCapacity(gpa, 1);
-    relocs.appendAssumeCapacity(.{
+    try relocs.ensure_unused_capacity(gpa, 1);
+    relocs.append_assume_capacity(.{
         .tag = .local,
         .offset = 0,
         .target = methname_atom_index,
@@ -102,7 +102,7 @@ fn add_objc_selrefs_section(self: *InternalObject, methname_atom_index: Atom.Ind
             .has_subtractor = false,
         },
     });
-    try atom.addExtra(.{ .rel_index = 0, .rel_count = 1 }, macho_file);
+    try atom.add_extra(.{ .rel_index = 0, .rel_count = 1 }, macho_file);
     atom.flags.relocs = true;
     self.num_rebase_relocs += 1;
 
@@ -117,54 +117,54 @@ pub fn resolve_literals(self: InternalObject, lp: *MachO.LiteralPool, macho_file
 
     const slice = self.sections.slice();
     for (slice.items(.header), self.atoms.items, 0..) |header, atom_index, n_sect| {
-        if (Object.isCstringLiteral(header) or Object.isFixedSizeLiteral(header)) {
-            const data = try self.getSectionData(@intCast(n_sect));
-            const atom = macho_file.getAtom(atom_index).?;
+        if (Object.is_cstring_literal(header) or Object.is_fixed_size_literal(header)) {
+            const data = try self.get_section_data(@int_cast(n_sect));
+            const atom = macho_file.get_atom(atom_index).?;
             const res = try lp.insert(gpa, header.type(), data);
             if (!res.found_existing) {
                 res.atom.* = atom_index;
             }
             atom.flags.literal_pool = true;
-            try atom.addExtra(.{ .literal_index = res.index }, macho_file);
-        } else if (Object.isPtrLiteral(header)) {
-            const atom = macho_file.getAtom(atom_index).?;
-            const relocs = atom.getRelocs(macho_file);
+            try atom.add_extra(.{ .literal_index = res.index }, macho_file);
+        } else if (Object.is_ptr_literal(header)) {
+            const atom = macho_file.get_atom(atom_index).?;
+            const relocs = atom.get_relocs(macho_file);
             assert(relocs.len == 1);
             const rel = relocs[0];
             assert(rel.tag == .local);
-            const target = macho_file.getAtom(rel.target).?;
+            const target = macho_file.get_atom(rel.target).?;
             const addend = std.math.cast(u32, rel.addend) orelse return error.Overflow;
             const target_size = std.math.cast(usize, target.size) orelse return error.Overflow;
-            try buffer.ensureUnusedCapacity(target_size);
+            try buffer.ensure_unused_capacity(target_size);
             buffer.resize(target_size) catch unreachable;
-            try target.getData(macho_file, buffer.items);
+            try target.get_data(macho_file, buffer.items);
             const res = try lp.insert(gpa, header.type(), buffer.items[addend..]);
-            buffer.clearRetainingCapacity();
+            buffer.clear_retaining_capacity();
             if (!res.found_existing) {
                 res.atom.* = atom_index;
             }
             atom.flags.literal_pool = true;
-            try atom.addExtra(.{ .literal_index = res.index }, macho_file);
+            try atom.add_extra(.{ .literal_index = res.index }, macho_file);
         }
     }
 }
 
 pub fn dedup_literals(self: InternalObject, lp: MachO.LiteralPool, macho_file: *MachO) void {
     for (self.atoms.items) |atom_index| {
-        const atom = macho_file.getAtom(atom_index) orelse continue;
+        const atom = macho_file.get_atom(atom_index) orelse continue;
         if (!atom.flags.alive) continue;
         if (!atom.flags.relocs) continue;
 
         const relocs = blk: {
-            const extra = atom.getExtra(macho_file).?;
+            const extra = atom.get_extra(macho_file).?;
             const relocs = self.sections.items(.relocs)[atom.n_sect].items;
             break :blk relocs[extra.rel_index..][0..extra.rel_count];
         };
         for (relocs) |*rel| switch (rel.tag) {
             .local => {
-                const target = macho_file.getAtom(rel.target).?;
-                if (target.getLiteralPoolIndex(macho_file)) |lp_index| {
-                    const lp_atom = lp.getAtom(lp_index, macho_file);
+                const target = macho_file.get_atom(rel.target).?;
+                if (target.get_literal_pool_index(macho_file)) |lp_index| {
+                    const lp_atom = lp.get_atom(lp_index, macho_file);
                     if (target.atom_index != lp_atom.atom_index) {
                         lp_atom.alignment = lp_atom.alignment.max(target.alignment);
                         target.flags.alive = false;
@@ -173,10 +173,10 @@ pub fn dedup_literals(self: InternalObject, lp: MachO.LiteralPool, macho_file: *
                 }
             },
             .@"extern" => {
-                const target_sym = rel.getTargetSymbol(macho_file);
-                if (target_sym.getAtom(macho_file)) |target_atom| {
-                    if (target_atom.getLiteralPoolIndex(macho_file)) |lp_index| {
-                        const lp_atom = lp.getAtom(lp_index, macho_file);
+                const target_sym = rel.get_target_symbol(macho_file);
+                if (target_sym.get_atom(macho_file)) |target_atom| {
+                    if (target_atom.get_literal_pool_index(macho_file)) |lp_index| {
+                        const lp_atom = lp.get_atom(lp_index, macho_file);
                         if (target_atom.atom_index != lp_atom.atom_index) {
                             lp_atom.alignment = lp_atom.alignment.max(target_atom.alignment);
                             target_atom.flags.alive = false;
@@ -189,17 +189,17 @@ pub fn dedup_literals(self: InternalObject, lp: MachO.LiteralPool, macho_file: *
     }
 
     for (self.symbols.items) |sym_index| {
-        const sym = macho_file.getSymbol(sym_index);
+        const sym = macho_file.get_symbol(sym_index);
         if (!sym.flags.objc_stubs) continue;
-        var extra = sym.getExtra(macho_file).?;
-        const atom = macho_file.getAtom(extra.objc_selrefs).?;
-        if (atom.getLiteralPoolIndex(macho_file)) |lp_index| {
-            const lp_atom = lp.getAtom(lp_index, macho_file);
+        var extra = sym.get_extra(macho_file).?;
+        const atom = macho_file.get_atom(extra.objc_selrefs).?;
+        if (atom.get_literal_pool_index(macho_file)) |lp_index| {
+            const lp_atom = lp.get_atom(lp_index, macho_file);
             if (atom.atom_index != lp_atom.atom_index) {
                 lp_atom.alignment = lp_atom.alignment.max(atom.alignment);
                 atom.flags.alive = false;
                 extra.objc_selrefs = lp_atom.atom_index;
-                sym.setExtra(extra, macho_file);
+                sym.set_extra(extra, macho_file);
             }
         }
     }
@@ -207,44 +207,44 @@ pub fn dedup_literals(self: InternalObject, lp: MachO.LiteralPool, macho_file: *
 
 pub fn calc_symtab_size(self: *InternalObject, macho_file: *MachO) !void {
     for (self.symbols.items) |sym_index| {
-        const sym = macho_file.getSymbol(sym_index);
-        if (sym.getFile(macho_file)) |file| if (file.getIndex() != self.index) continue;
+        const sym = macho_file.get_symbol(sym_index);
+        if (sym.get_file(macho_file)) |file| if (file.get_index() != self.index) continue;
         sym.flags.output_symtab = true;
-        if (sym.isLocal()) {
-            try sym.addExtra(.{ .symtab = self.output_symtab_ctx.nlocals }, macho_file);
+        if (sym.is_local()) {
+            try sym.add_extra(.{ .symtab = self.output_symtab_ctx.nlocals }, macho_file);
             self.output_symtab_ctx.nlocals += 1;
         } else if (sym.flags.@"export") {
-            try sym.addExtra(.{ .symtab = self.output_symtab_ctx.nexports }, macho_file);
+            try sym.add_extra(.{ .symtab = self.output_symtab_ctx.nexports }, macho_file);
             self.output_symtab_ctx.nexports += 1;
         } else {
             assert(sym.flags.import);
-            try sym.addExtra(.{ .symtab = self.output_symtab_ctx.nimports }, macho_file);
+            try sym.add_extra(.{ .symtab = self.output_symtab_ctx.nimports }, macho_file);
             self.output_symtab_ctx.nimports += 1;
         }
-        self.output_symtab_ctx.strsize += @as(u32, @intCast(sym.getName(macho_file).len + 1));
+        self.output_symtab_ctx.strsize += @as(u32, @int_cast(sym.get_name(macho_file).len + 1));
     }
 }
 
 pub fn write_symtab(self: InternalObject, macho_file: *MachO, ctx: anytype) void {
     for (self.symbols.items) |sym_index| {
-        const sym = macho_file.getSymbol(sym_index);
-        if (sym.getFile(macho_file)) |file| if (file.getIndex() != self.index) continue;
-        const idx = sym.getOutputSymtabIndex(macho_file) orelse continue;
-        const n_strx = @as(u32, @intCast(ctx.strtab.items.len));
-        ctx.strtab.appendSliceAssumeCapacity(sym.getName(macho_file));
-        ctx.strtab.appendAssumeCapacity(0);
+        const sym = macho_file.get_symbol(sym_index);
+        if (sym.get_file(macho_file)) |file| if (file.get_index() != self.index) continue;
+        const idx = sym.get_output_symtab_index(macho_file) orelse continue;
+        const n_strx = @as(u32, @int_cast(ctx.strtab.items.len));
+        ctx.strtab.append_slice_assume_capacity(sym.get_name(macho_file));
+        ctx.strtab.append_assume_capacity(0);
         const out_sym = &ctx.symtab.items[idx];
         out_sym.n_strx = n_strx;
-        sym.setOutputSym(macho_file, out_sym);
+        sym.set_output_sym(macho_file, out_sym);
     }
 }
 
 fn add_section(self: *InternalObject, allocator: Allocator, segname: []const u8, sectname: []const u8) !u32 {
-    const n_sect = @as(u32, @intCast(try self.sections.addOne(allocator)));
+    const n_sect = @as(u32, @int_cast(try self.sections.add_one(allocator)));
     self.sections.set(n_sect, .{
         .header = .{
-            .sectname = MachO.makeStaticString(sectname),
-            .segname = MachO.makeStaticString(segname),
+            .sectname = MachO.make_static_string(sectname),
+            .segname = MachO.make_static_string(segname),
         },
     });
     return n_sect;
@@ -266,7 +266,7 @@ fn get_section_data(self: *const InternalObject, index: u32) error{Overflow}![]c
 
 pub fn get_atom_data(self: *const InternalObject, atom: Atom, buffer: []u8) error{Overflow}!void {
     assert(buffer.len == atom.size);
-    const data = try self.getSectionData(atom.n_sect);
+    const data = try self.get_section_data(atom.n_sect);
     const off = std.math.cast(usize, atom.off) orelse return error.Overflow;
     const size = std.math.cast(usize, atom.size) orelse return error.Overflow;
     @memcpy(buffer, data[off..][0..size]);
@@ -274,7 +274,7 @@ pub fn get_atom_data(self: *const InternalObject, atom: Atom, buffer: []u8) erro
 
 pub fn get_atom_relocs(self: *const InternalObject, atom: Atom, macho_file: *MachO) []const Relocation {
     if (!atom.flags.relocs) return &[0]Relocation{};
-    const extra = atom.getExtra(macho_file).?;
+    const extra = atom.get_extra(macho_file).?;
     const relocs = self.sections.items(.relocs)[atom.n_sect];
     return relocs.items[extra.rel_index..][0..extra.rel_count];
 }
@@ -295,7 +295,7 @@ const FormatContext = struct {
     macho_file: *MachO,
 };
 
-pub fn fmt_atoms(self: *InternalObject, macho_file: *MachO) std.fmt.Formatter(formatAtoms) {
+pub fn fmt_atoms(self: *InternalObject, macho_file: *MachO) std.fmt.Formatter(format_atoms) {
     return .{ .data = .{
         .self = self,
         .macho_file = macho_file,
@@ -310,14 +310,14 @@ fn format_atoms(
 ) !void {
     _ = unused_fmt_string;
     _ = options;
-    try writer.writeAll("  atoms\n");
+    try writer.write_all("  atoms\n");
     for (ctx.self.atoms.items) |atom_index| {
-        const atom = ctx.macho_file.getAtom(atom_index).?;
+        const atom = ctx.macho_file.get_atom(atom_index).?;
         try writer.print("    {}\n", .{atom.fmt(ctx.macho_file)});
     }
 }
 
-pub fn fmt_symtab(self: *InternalObject, macho_file: *MachO) std.fmt.Formatter(formatSymtab) {
+pub fn fmt_symtab(self: *InternalObject, macho_file: *MachO) std.fmt.Formatter(format_symtab) {
     return .{ .data = .{
         .self = self,
         .macho_file = macho_file,
@@ -332,9 +332,9 @@ fn format_symtab(
 ) !void {
     _ = unused_fmt_string;
     _ = options;
-    try writer.writeAll("  symbols\n");
+    try writer.write_all("  symbols\n");
     for (ctx.self.symbols.items) |index| {
-        const global = ctx.macho_file.getSymbol(index);
+        const global = ctx.macho_file.get_symbol(index);
         try writer.print("    {}\n", .{global.fmt(ctx.macho_file)});
     }
 }

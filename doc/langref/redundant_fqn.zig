@@ -9,7 +9,7 @@ pub const json = struct {
 };
 
 pub fn main() void {
-    std.debug.print("{s}\n", .{@typeName(json.JsonValue)});
+    std.debug.print("{s}\n", .{@type_name(json.JsonValue)});
 }
 
 // exe=succeed

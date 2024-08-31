@@ -1,7 +1,7 @@
 const std = @import("../std.zig");
 const assert = std.debug.assert;
-const utf8Decode = std.unicode.utf8Decode;
-const utf8Encode = std.unicode.utf8Encode;
+const utf8_decode = std.unicode.utf8_decode;
+const utf8_encode = std.unicode.utf8_encode;
 
 pub const ParseError = error{
     OutOfMemory,
@@ -47,7 +47,7 @@ pub fn parse_char_literal(slice: []const u8) ParsedCharLiteral {
     switch (slice[1]) {
         '\\' => {
             var offset: usize = 1;
-            const result = parseEscapeSequence(slice, &offset);
+            const result = parse_escape_sequence(slice, &offset);
             if (result == .success and (offset + 1 != slice.len or slice[offset] != '\''))
                 return .{ .failure = .{ .expected_single_quote = offset } };
 
@@ -55,7 +55,7 @@ pub fn parse_char_literal(slice: []const u8) ParsedCharLiteral {
         },
         0 => return .{ .failure = .{ .invalid_character = 1 } },
         else => {
-            const codepoint = utf8Decode(slice[1 .. slice.len - 1]) catch unreachable;
+            const codepoint = utf8_decode(slice[1 .. slice.len - 1]) catch unreachable;
             return .{ .success = codepoint };
         },
     }
@@ -142,92 +142,92 @@ pub fn parse_escape_sequence(slice: []const u8, offset: *usize) ParsedCharLitera
                 return .{ .failure = .{ .expected_rbrace = i } };
             }
             offset.* = i;
-            return .{ .success = @as(u21, @intCast(value)) };
+            return .{ .success = @as(u21, @int_cast(value)) };
         },
         else => return .{ .failure = .{ .invalid_escape_character = offset.* - 1 } },
     }
 }
 
-test parseCharLiteral {
-    try std.testing.expectEqual(
+test parse_char_literal {
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .success = 'a' },
-        parseCharLiteral("'a'"),
+        parse_char_literal("'a'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .success = 'ä' },
-        parseCharLiteral("'ä'"),
+        parse_char_literal("'ä'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .success = 0 },
-        parseCharLiteral("'\\x00'"),
+        parse_char_literal("'\\x00'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .success = 0x4f },
-        parseCharLiteral("'\\x4f'"),
+        parse_char_literal("'\\x4f'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .success = 0x4f },
-        parseCharLiteral("'\\x4F'"),
+        parse_char_literal("'\\x4F'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .success = 0x3041 },
-        parseCharLiteral("'ぁ'"),
+        parse_char_literal("'ぁ'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .success = 0 },
-        parseCharLiteral("'\\u{0}'"),
+        parse_char_literal("'\\u{0}'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .success = 0x3041 },
-        parseCharLiteral("'\\u{3041}'"),
+        parse_char_literal("'\\u{3041}'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .success = 0x7f },
-        parseCharLiteral("'\\u{7f}'"),
+        parse_char_literal("'\\u{7f}'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .success = 0x7fff },
-        parseCharLiteral("'\\u{7FFF}'"),
+        parse_char_literal("'\\u{7FFF}'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .failure = .{ .expected_hex_digit = 4 } },
-        parseCharLiteral("'\\x0'"),
+        parse_char_literal("'\\x0'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .failure = .{ .expected_single_quote = 5 } },
-        parseCharLiteral("'\\x000'"),
+        parse_char_literal("'\\x000'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .failure = .{ .invalid_escape_character = 2 } },
-        parseCharLiteral("'\\y'"),
+        parse_char_literal("'\\y'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .failure = .{ .expected_lbrace = 3 } },
-        parseCharLiteral("'\\u'"),
+        parse_char_literal("'\\u'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .failure = .{ .expected_lbrace = 3 } },
-        parseCharLiteral("'\\uFFFF'"),
+        parse_char_literal("'\\uFFFF'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .failure = .{ .empty_unicode_escape_sequence = 4 } },
-        parseCharLiteral("'\\u{}'"),
+        parse_char_literal("'\\u{}'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .failure = .{ .invalid_unicode_codepoint = 9 } },
-        parseCharLiteral("'\\u{FFFFFF}'"),
+        parse_char_literal("'\\u{FFFFFF}'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .failure = .{ .expected_hex_digit_or_rbrace = 8 } },
-        parseCharLiteral("'\\u{FFFF'"),
+        parse_char_literal("'\\u{FFFF'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .failure = .{ .expected_single_quote = 9 } },
-        parseCharLiteral("'\\u{FFFF}x'"),
+        parse_char_literal("'\\u{FFFF}x'"),
     );
-    try std.testing.expectEqual(
+    try std.testing.expect_equal(
         ParsedCharLiteral{ .failure = .{ .invalid_character = 1 } },
-        parseCharLiteral("'\x00'"),
+        parse_char_literal("'\x00'"),
     );
 }
 
@@ -243,17 +243,17 @@ pub fn parse_write(writer: anytype, bytes: []const u8) error{OutOfMemory}!Result
         switch (b) {
             '\\' => {
                 const escape_char_index = index + 1;
-                const result = parseEscapeSequence(bytes, &index);
+                const result = parse_escape_sequence(bytes, &index);
                 switch (result) {
                     .success => |codepoint| {
                         if (bytes[escape_char_index] == 'u') {
                             var buf: [4]u8 = undefined;
-                            const len = utf8Encode(codepoint, &buf) catch {
+                            const len = utf8_encode(codepoint, &buf) catch {
                                 return Result{ .failure = .{ .invalid_unicode_codepoint = escape_char_index + 1 } };
                             };
-                            try writer.writeAll(buf[0..len]);
+                            try writer.write_all(buf[0..len]);
                         } else {
-                            try writer.writeByte(@as(u8, @intCast(codepoint)));
+                            try writer.write_byte(@as(u8, @int_cast(codepoint)));
                         }
                     },
                     .failure => |err| return Result{ .failure = err },
@@ -262,7 +262,7 @@ pub fn parse_write(writer: anytype, bytes: []const u8) error{OutOfMemory}!Result
             '\n' => return Result{ .failure = .{ .invalid_character = index } },
             '"' => return Result.success,
             else => {
-                try writer.writeByte(b);
+                try writer.write_byte(b);
                 index += 1;
             },
         }
@@ -275,26 +275,26 @@ pub fn parse_alloc(allocator: std.mem.Allocator, bytes: []const u8) ParseError![
     var buf = std.ArrayList(u8).init(allocator);
     defer buf.deinit();
 
-    switch (try parseWrite(buf.writer(), bytes)) {
-        .success => return buf.toOwnedSlice(),
+    switch (try parse_write(buf.writer(), bytes)) {
+        .success => return buf.to_owned_slice(),
         .failure => return error.InvalidLiteral,
     }
 }
 
-test parseAlloc {
+test parse_alloc {
     const expect = std.testing.expect;
-    const expectError = std.testing.expectError;
+    const expect_error = std.testing.expect_error;
     const eql = std.mem.eql;
 
     var fixed_buf_mem: [64]u8 = undefined;
     var fixed_buf_alloc = std.heap.FixedBufferAllocator.init(&fixed_buf_mem);
     const alloc = fixed_buf_alloc.allocator();
 
-    try expectError(error.InvalidLiteral, parseAlloc(alloc, "\"\\x6\""));
-    try expect(eql(u8, "foo\nbar", try parseAlloc(alloc, "\"foo\\nbar\"")));
-    try expect(eql(u8, "\x12foo", try parseAlloc(alloc, "\"\\x12foo\"")));
-    try expect(eql(u8, "bytes\u{1234}foo", try parseAlloc(alloc, "\"bytes\\u{1234}foo\"")));
-    try expect(eql(u8, "foo", try parseAlloc(alloc, "\"foo\"")));
-    try expect(eql(u8, "foo", try parseAlloc(alloc, "\"f\x6f\x6f\"")));
-    try expect(eql(u8, "f💯", try parseAlloc(alloc, "\"f\u{1f4af}\"")));
+    try expect_error(error.InvalidLiteral, parse_alloc(alloc, "\"\\x6\""));
+    try expect(eql(u8, "foo\nbar", try parse_alloc(alloc, "\"foo\\nbar\"")));
+    try expect(eql(u8, "\x12foo", try parse_alloc(alloc, "\"\\x12foo\"")));
+    try expect(eql(u8, "bytes\u{1234}foo", try parse_alloc(alloc, "\"bytes\\u{1234}foo\"")));
+    try expect(eql(u8, "foo", try parse_alloc(alloc, "\"foo\"")));
+    try expect(eql(u8, "foo", try parse_alloc(alloc, "\"f\x6f\x6f\"")));
+    try expect(eql(u8, "f💯", try parse_alloc(alloc, "\"f\u{1f4af}\"")));
 }

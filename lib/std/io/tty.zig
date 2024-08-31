@@ -12,18 +12,18 @@ const native_os = builtin.os.tag;
 pub fn detect_config(file: File) Config {
     const force_color: ?bool = if (builtin.os.tag == .wasi)
         null // wasi does not support environment variables
-    else if (process.hasEnvVarConstant("NO_COLOR"))
+    else if (process.has_env_var_constant("NO_COLOR"))
         false
-    else if (process.hasEnvVarConstant("CLICOLOR_FORCE"))
+    else if (process.has_env_var_constant("CLICOLOR_FORCE"))
         true
     else
         null;
 
     if (force_color == false) return .no_color;
 
-    if (file.getOrEnableAnsiEscapeSupport()) return .escape_codes;
+    if (file.get_or_enable_ansi_escape_support()) return .escape_codes;
 
-    if (native_os == .windows and file.isTty()) {
+    if (native_os == .windows and file.is_tty()) {
         var info: windows.CONSOLE_SCREEN_BUFFER_INFO = undefined;
         if (windows.kernel32.GetConsoleScreenBufferInfo(file.handle, &info) == windows.FALSE) {
             return if (force_color == true) .escape_codes else .no_color;
@@ -75,7 +75,7 @@ pub const Config = union(enum) {
         conf: Config,
         writer: anytype,
         color: Color,
-    ) (@typeInfo(@TypeOf(writer.writeAll(""))).ErrorUnion.error_set ||
+    ) (@typeInfo(@TypeOf(writer.write_all(""))).ErrorUnion.error_set ||
         windows.SetConsoleTextAttributeError)!void {
         nosuspend switch (conf) {
             .no_color => return,
@@ -101,7 +101,7 @@ pub const Config = union(enum) {
                     .dim => "\x1b[2m",
                     .reset => "\x1b[0m",
                 };
-                try writer.writeAll(color_string);
+                try writer.write_all(color_string);
             },
             .windows_api => |ctx| if (native_os == .windows) {
                 const attributes = switch (color) {

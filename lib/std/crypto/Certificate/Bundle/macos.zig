@@ -8,39 +8,39 @@ const Bundle = @import("../Bundle.zig");
 pub const RescanMacError = Allocator.Error || fs.File.OpenError || fs.File.ReadError || fs.File.SeekError || Bundle.ParseCertError || error{EndOfStream};
 
 pub fn rescan_mac(cb: *Bundle, gpa: Allocator) RescanMacError!void {
-    cb.bytes.clearRetainingCapacity();
-    cb.map.clearRetainingCapacity();
+    cb.bytes.clear_retaining_capacity();
+    cb.map.clear_retaining_capacity();
 
-    const file = try fs.openFileAbsolute("/System/Library/Keychains/SystemRootCertificates.keychain", .{});
+    const file = try fs.open_file_absolute("/System/Library/Keychains/SystemRootCertificates.keychain", .{});
     defer file.close();
 
-    const bytes = try file.readToEndAlloc(gpa, std.math.maxInt(u32));
+    const bytes = try file.read_to_end_alloc(gpa, std.math.max_int(u32));
     defer gpa.free(bytes);
 
-    var stream = std.io.fixedBufferStream(bytes);
+    var stream = std.io.fixed_buffer_stream(bytes);
     const reader = stream.reader();
 
-    const db_header = try reader.readStructEndian(ApplDbHeader, .big);
+    const db_header = try reader.read_struct_endian(ApplDbHeader, .big);
     assert(mem.eql(u8, &db_header.signature, "kych"));
 
-    try stream.seekTo(db_header.schema_offset);
+    try stream.seek_to(db_header.schema_offset);
 
-    const db_schema = try reader.readStructEndian(ApplDbSchema, .big);
+    const db_schema = try reader.read_struct_endian(ApplDbSchema, .big);
 
     var table_list = try gpa.alloc(u32, db_schema.table_count);
     defer gpa.free(table_list);
 
     var table_idx: u32 = 0;
     while (table_idx < table_list.len) : (table_idx += 1) {
-        table_list[table_idx] = try reader.readInt(u32, .big);
+        table_list[table_idx] = try reader.read_int(u32, .big);
     }
 
     const now_sec = std.time.timestamp();
 
     for (table_list) |table_offset| {
-        try stream.seekTo(db_header.schema_offset + table_offset);
+        try stream.seek_to(db_header.schema_offset + table_offset);
 
-        const table_header = try reader.readStructEndian(TableHeader, .big);
+        const table_header = try reader.read_struct_endian(TableHeader, .big);
 
         if (@as(std.c.cssm.DB_RECORDTYPE, @enumFromInt(table_header.table_id)) != .X509_CERTIFICATE) {
             continue;
@@ -51,25 +51,25 @@ pub fn rescan_mac(cb: *Bundle, gpa: Allocator) RescanMacError!void {
 
         var record_idx: u32 = 0;
         while (record_idx < record_list.len) : (record_idx += 1) {
-            record_list[record_idx] = try reader.readInt(u32, .big);
+            record_list[record_idx] = try reader.read_int(u32, .big);
         }
 
         for (record_list) |record_offset| {
-            try stream.seekTo(db_header.schema_offset + table_offset + record_offset);
+            try stream.seek_to(db_header.schema_offset + table_offset + record_offset);
 
-            const cert_header = try reader.readStructEndian(X509CertHeader, .big);
+            const cert_header = try reader.read_struct_endian(X509CertHeader, .big);
 
-            try cb.bytes.ensureUnusedCapacity(gpa, cert_header.cert_size);
+            try cb.bytes.ensure_unused_capacity(gpa, cert_header.cert_size);
 
-            const cert_start = @as(u32, @intCast(cb.bytes.items.len));
-            const dest_buf = cb.bytes.allocatedSlice()[cert_start..];
-            cb.bytes.items.len += try reader.readAtLeast(dest_buf, cert_header.cert_size);
+            const cert_start = @as(u32, @int_cast(cb.bytes.items.len));
+            const dest_buf = cb.bytes.allocated_slice()[cert_start..];
+            cb.bytes.items.len += try reader.read_at_least(dest_buf, cert_header.cert_size);
 
-            try cb.parseCert(gpa, cert_start, now_sec);
+            try cb.parse_cert(gpa, cert_start, now_sec);
         }
     }
 
-    cb.bytes.shrinkAndFree(gpa, cb.bytes.items.len);
+    cb.bytes.shrink_and_free(gpa, cb.bytes.items.len);
 }
 
 const ApplDbHeader = extern struct {

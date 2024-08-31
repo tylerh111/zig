@@ -19,7 +19,7 @@ pub fn cbrt(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => cbrt32(x),
         f64 => cbrt64(x),
-        else => @compileError("cbrt not implemented for " ++ @typeName(T)),
+        else => @compile_error("cbrt not implemented for " ++ @type_name(T)),
     };
 }
 
@@ -27,7 +27,7 @@ fn cbrt32(x: f32) f32 {
     const B1: u32 = 709958130; // (127 - 127.0 / 3 - 0.03306235651) * 2^23
     const B2: u32 = 642849266; // (127 - 127.0 / 3 - 24 / 3 - 0.03306235651) * 2^23
 
-    var u = @as(u32, @bitCast(x));
+    var u = @as(u32, @bit_cast(x));
     var hx = u & 0x7FFFFFFF;
 
     // cbrt(nan, inf) = itself
@@ -41,7 +41,7 @@ fn cbrt32(x: f32) f32 {
         if (hx == 0) {
             return x;
         }
-        u = @as(u32, @bitCast(x * 0x1.0p24));
+        u = @as(u32, @bit_cast(x * 0x1.0p24));
         hx = u & 0x7FFFFFFF;
         hx = hx / 3 + B2;
     } else {
@@ -52,7 +52,7 @@ fn cbrt32(x: f32) f32 {
     u |= hx;
 
     // first step newton to 16 bits
-    var t: f64 = @as(f32, @bitCast(u));
+    var t: f64 = @as(f32, @bit_cast(u));
     var r: f64 = t * t * t;
     t = t * (@as(f64, x) + x + r) / (x + r + r);
 
@@ -60,7 +60,7 @@ fn cbrt32(x: f32) f32 {
     r = t * t * t;
     t = t * (@as(f64, x) + x + r) / (x + r + r);
 
-    return @as(f32, @floatCast(t));
+    return @as(f32, @float_cast(t));
 }
 
 fn cbrt64(x: f64) f64 {
@@ -74,8 +74,8 @@ fn cbrt64(x: f64) f64 {
     const P3: f64 = -0.758397934778766047437;
     const P4: f64 = 0.145996192886612446982;
 
-    var u = @as(u64, @bitCast(x));
-    var hx = @as(u32, @intCast(u >> 32)) & 0x7FFFFFFF;
+    var u = @as(u64, @bit_cast(x));
+    var hx = @as(u32, @int_cast(u >> 32)) & 0x7FFFFFFF;
 
     // cbrt(nan, inf) = itself
     if (hx >= 0x7FF00000) {
@@ -84,8 +84,8 @@ fn cbrt64(x: f64) f64 {
 
     // cbrt to ~5bits
     if (hx < 0x00100000) {
-        u = @as(u64, @bitCast(x * 0x1.0p54));
-        hx = @as(u32, @intCast(u >> 32)) & 0x7FFFFFFF;
+        u = @as(u64, @bit_cast(x * 0x1.0p54));
+        hx = @as(u32, @int_cast(u >> 32)) & 0x7FFFFFFF;
 
         // cbrt(+-0) = itself
         if (hx == 0) {
@@ -98,7 +98,7 @@ fn cbrt64(x: f64) f64 {
 
     u &= 1 << 63;
     u |= @as(u64, hx) << 32;
-    var t = @as(f64, @bitCast(u));
+    var t = @as(f64, @bit_cast(u));
 
     // cbrt to 23 bits
     // cbrt(x) = t * cbrt(x / t^3) ~= t * P(t^3 / x)
@@ -106,9 +106,9 @@ fn cbrt64(x: f64) f64 {
     t = t * ((P0 + r * (P1 + r * P2)) + ((r * r) * r) * (P3 + r * P4));
 
     // Round t away from 0 to 23 bits
-    u = @as(u64, @bitCast(t));
+    u = @as(u64, @bit_cast(t));
     u = (u + 0x80000000) & 0xFFFFFFFFC0000000;
-    t = @as(f64, @bitCast(u));
+    t = @as(f64, @bit_cast(u));
 
     // one step newton to 53 bits
     const s = t * t;
@@ -127,37 +127,37 @@ test cbrt {
 test cbrt32 {
     const epsilon = 0.000001;
 
-    try expect(math.isPositiveZero(cbrt32(0.0)));
-    try expect(math.approxEqAbs(f32, cbrt32(0.2), 0.584804, epsilon));
-    try expect(math.approxEqAbs(f32, cbrt32(0.8923), 0.962728, epsilon));
-    try expect(math.approxEqAbs(f32, cbrt32(1.5), 1.144714, epsilon));
-    try expect(math.approxEqAbs(f32, cbrt32(37.45), 3.345676, epsilon));
-    try expect(math.approxEqAbs(f32, cbrt32(123123.234375), 49.748501, epsilon));
+    try expect(math.is_positive_zero(cbrt32(0.0)));
+    try expect(math.approx_eq_abs(f32, cbrt32(0.2), 0.584804, epsilon));
+    try expect(math.approx_eq_abs(f32, cbrt32(0.8923), 0.962728, epsilon));
+    try expect(math.approx_eq_abs(f32, cbrt32(1.5), 1.144714, epsilon));
+    try expect(math.approx_eq_abs(f32, cbrt32(37.45), 3.345676, epsilon));
+    try expect(math.approx_eq_abs(f32, cbrt32(123123.234375), 49.748501, epsilon));
 }
 
 test cbrt64 {
     const epsilon = 0.000001;
 
-    try expect(math.isPositiveZero(cbrt64(0.0)));
-    try expect(math.approxEqAbs(f64, cbrt64(0.2), 0.584804, epsilon));
-    try expect(math.approxEqAbs(f64, cbrt64(0.8923), 0.962728, epsilon));
-    try expect(math.approxEqAbs(f64, cbrt64(1.5), 1.144714, epsilon));
-    try expect(math.approxEqAbs(f64, cbrt64(37.45), 3.345676, epsilon));
-    try expect(math.approxEqAbs(f64, cbrt64(123123.234375), 49.748501, epsilon));
+    try expect(math.is_positive_zero(cbrt64(0.0)));
+    try expect(math.approx_eq_abs(f64, cbrt64(0.2), 0.584804, epsilon));
+    try expect(math.approx_eq_abs(f64, cbrt64(0.8923), 0.962728, epsilon));
+    try expect(math.approx_eq_abs(f64, cbrt64(1.5), 1.144714, epsilon));
+    try expect(math.approx_eq_abs(f64, cbrt64(37.45), 3.345676, epsilon));
+    try expect(math.approx_eq_abs(f64, cbrt64(123123.234375), 49.748501, epsilon));
 }
 
 test "cbrt.special" {
-    try expect(math.isPositiveZero(cbrt32(0.0)));
-    try expect(@as(u32, @bitCast(cbrt32(-0.0))) == @as(u32, 0x80000000));
-    try expect(math.isPositiveInf(cbrt32(math.inf(f32))));
-    try expect(math.isNegativeInf(cbrt32(-math.inf(f32))));
-    try expect(math.isNan(cbrt32(math.nan(f32))));
+    try expect(math.is_positive_zero(cbrt32(0.0)));
+    try expect(@as(u32, @bit_cast(cbrt32(-0.0))) == @as(u32, 0x80000000));
+    try expect(math.is_positive_inf(cbrt32(math.inf(f32))));
+    try expect(math.is_negative_inf(cbrt32(-math.inf(f32))));
+    try expect(math.is_nan(cbrt32(math.nan(f32))));
 }
 
 test "cbrt64.special" {
-    try expect(math.isPositiveZero(cbrt64(0.0)));
-    try expect(math.isNegativeZero(cbrt64(-0.0)));
-    try expect(math.isPositiveInf(cbrt64(math.inf(f64))));
-    try expect(math.isNegativeInf(cbrt64(-math.inf(f64))));
-    try expect(math.isNan(cbrt64(math.nan(f64))));
+    try expect(math.is_positive_zero(cbrt64(0.0)));
+    try expect(math.is_negative_zero(cbrt64(-0.0)));
+    try expect(math.is_positive_inf(cbrt64(math.inf(f64))));
+    try expect(math.is_negative_inf(cbrt64(-math.inf(f64))));
+    try expect(math.is_nan(cbrt64(math.nan(f64))));
 }

@@ -10,7 +10,7 @@ pub const Tokenizer = tokenizer.Tokenizer;
 pub const string_literal = @import("zig/string_literal.zig");
 pub const number_literal = @import("zig/number_literal.zig");
 pub const primitives = @import("zig/primitives.zig");
-pub const isPrimitive = primitives.isPrimitive;
+pub const is_primitive = primitives.is_primitive;
 pub const Ast = @import("zig/Ast.zig");
 pub const AstGen = @import("zig/AstGen.zig");
 pub const Zir = @import("zig/Zir.zig");
@@ -26,8 +26,8 @@ pub const target = @import("zig/target.zig");
 
 // Character literal parsing
 pub const ParsedCharLiteral = string_literal.ParsedCharLiteral;
-pub const parseCharLiteral = string_literal.parseCharLiteral;
-pub const parseNumberLiteral = number_literal.parseNumberLiteral;
+pub const parse_char_literal = string_literal.parse_char_literal;
+pub const parse_number_literal = number_literal.parse_number_literal;
 
 // Files needed by translate-c.
 pub const c_builtins = @import("zig/c_builtins.zig");
@@ -46,7 +46,7 @@ pub const Color = enum {
 
     pub fn get_tty_conf(color: Color) std.io.tty.Config {
         return switch (color) {
-            .auto => std.io.tty.detectConfig(std.io.getStdErr()),
+            .auto => std.io.tty.detect_config(std.io.get_std_err()),
             .on => .escape_codes,
             .off => .no_color,
         };
@@ -64,7 +64,7 @@ pub const Color = enum {
 
 /// There are many assumptions in the entire codebase that Zig source files can
 /// be byte-indexed with a u32 integer.
-pub const max_src_size = std.math.maxInt(u32);
+pub const max_src_size = std.math.max_int(u32);
 
 pub fn hash_src(src: []const u8) SrcHash {
     var out: SrcHash = undefined;
@@ -73,7 +73,7 @@ pub fn hash_src(src: []const u8) SrcHash {
 }
 
 pub fn src_hash_eql(a: SrcHash, b: SrcHash) bool {
-    return @as(u128, @bitCast(a)) == @as(u128, @bitCast(b));
+    return @as(u128, @bit_cast(a)) == @as(u128, @bit_cast(b));
 }
 
 pub fn hash_name(parent_hash: SrcHash, sep: []const u8, name: []const u8) SrcHash {
@@ -154,87 +154,87 @@ pub fn bin_name_alloc(allocator: Allocator, options: BinNameOptions) error{OutOf
     const t = options.target;
     switch (t.ofmt) {
         .coff => switch (options.output_mode) {
-            .Exe => return std.fmt.allocPrint(allocator, "{s}{s}", .{ root_name, t.exeFileExt() }),
+            .Exe => return std.fmt.alloc_print(allocator, "{s}{s}", .{ root_name, t.exe_file_ext() }),
             .Lib => {
                 const suffix = switch (options.link_mode orelse .static) {
                     .static => ".lib",
                     .dynamic => ".dll",
                 };
-                return std.fmt.allocPrint(allocator, "{s}{s}", .{ root_name, suffix });
+                return std.fmt.alloc_print(allocator, "{s}{s}", .{ root_name, suffix });
             },
-            .Obj => return std.fmt.allocPrint(allocator, "{s}.obj", .{root_name}),
+            .Obj => return std.fmt.alloc_print(allocator, "{s}.obj", .{root_name}),
         },
         .elf => switch (options.output_mode) {
             .Exe => return allocator.dupe(u8, root_name),
             .Lib => {
                 switch (options.link_mode orelse .static) {
-                    .static => return std.fmt.allocPrint(allocator, "{s}{s}.a", .{
-                        t.libPrefix(), root_name,
+                    .static => return std.fmt.alloc_print(allocator, "{s}{s}.a", .{
+                        t.lib_prefix(), root_name,
                     }),
                     .dynamic => {
                         if (options.version) |ver| {
-                            return std.fmt.allocPrint(allocator, "{s}{s}.so.{d}.{d}.{d}", .{
-                                t.libPrefix(), root_name, ver.major, ver.minor, ver.patch,
+                            return std.fmt.alloc_print(allocator, "{s}{s}.so.{d}.{d}.{d}", .{
+                                t.lib_prefix(), root_name, ver.major, ver.minor, ver.patch,
                             });
                         } else {
-                            return std.fmt.allocPrint(allocator, "{s}{s}.so", .{
-                                t.libPrefix(), root_name,
+                            return std.fmt.alloc_print(allocator, "{s}{s}.so", .{
+                                t.lib_prefix(), root_name,
                             });
                         }
                     },
                 }
             },
-            .Obj => return std.fmt.allocPrint(allocator, "{s}.o", .{root_name}),
+            .Obj => return std.fmt.alloc_print(allocator, "{s}.o", .{root_name}),
         },
         .macho => switch (options.output_mode) {
             .Exe => return allocator.dupe(u8, root_name),
             .Lib => {
                 switch (options.link_mode orelse .static) {
-                    .static => return std.fmt.allocPrint(allocator, "{s}{s}.a", .{
-                        t.libPrefix(), root_name,
+                    .static => return std.fmt.alloc_print(allocator, "{s}{s}.a", .{
+                        t.lib_prefix(), root_name,
                     }),
                     .dynamic => {
                         if (options.version) |ver| {
-                            return std.fmt.allocPrint(allocator, "{s}{s}.{d}.{d}.{d}.dylib", .{
-                                t.libPrefix(), root_name, ver.major, ver.minor, ver.patch,
+                            return std.fmt.alloc_print(allocator, "{s}{s}.{d}.{d}.{d}.dylib", .{
+                                t.lib_prefix(), root_name, ver.major, ver.minor, ver.patch,
                             });
                         } else {
-                            return std.fmt.allocPrint(allocator, "{s}{s}.dylib", .{
-                                t.libPrefix(), root_name,
+                            return std.fmt.alloc_print(allocator, "{s}{s}.dylib", .{
+                                t.lib_prefix(), root_name,
                             });
                         }
                     },
                 }
             },
-            .Obj => return std.fmt.allocPrint(allocator, "{s}.o", .{root_name}),
+            .Obj => return std.fmt.alloc_print(allocator, "{s}.o", .{root_name}),
         },
         .wasm => switch (options.output_mode) {
-            .Exe => return std.fmt.allocPrint(allocator, "{s}{s}", .{ root_name, t.exeFileExt() }),
+            .Exe => return std.fmt.alloc_print(allocator, "{s}{s}", .{ root_name, t.exe_file_ext() }),
             .Lib => {
                 switch (options.link_mode orelse .static) {
-                    .static => return std.fmt.allocPrint(allocator, "{s}{s}.a", .{
-                        t.libPrefix(), root_name,
+                    .static => return std.fmt.alloc_print(allocator, "{s}{s}.a", .{
+                        t.lib_prefix(), root_name,
                     }),
-                    .dynamic => return std.fmt.allocPrint(allocator, "{s}.wasm", .{root_name}),
+                    .dynamic => return std.fmt.alloc_print(allocator, "{s}.wasm", .{root_name}),
                 }
             },
-            .Obj => return std.fmt.allocPrint(allocator, "{s}.o", .{root_name}),
+            .Obj => return std.fmt.alloc_print(allocator, "{s}.o", .{root_name}),
         },
-        .c => return std.fmt.allocPrint(allocator, "{s}.c", .{root_name}),
-        .spirv => return std.fmt.allocPrint(allocator, "{s}.spv", .{root_name}),
-        .hex => return std.fmt.allocPrint(allocator, "{s}.ihex", .{root_name}),
-        .raw => return std.fmt.allocPrint(allocator, "{s}.bin", .{root_name}),
+        .c => return std.fmt.alloc_print(allocator, "{s}.c", .{root_name}),
+        .spirv => return std.fmt.alloc_print(allocator, "{s}.spv", .{root_name}),
+        .hex => return std.fmt.alloc_print(allocator, "{s}.ihex", .{root_name}),
+        .raw => return std.fmt.alloc_print(allocator, "{s}.bin", .{root_name}),
         .plan9 => switch (options.output_mode) {
             .Exe => return allocator.dupe(u8, root_name),
-            .Obj => return std.fmt.allocPrint(allocator, "{s}{s}", .{
-                root_name, t.ofmt.fileExt(t.cpu.arch),
+            .Obj => return std.fmt.alloc_print(allocator, "{s}{s}", .{
+                root_name, t.ofmt.file_ext(t.cpu.arch),
             }),
-            .Lib => return std.fmt.allocPrint(allocator, "{s}{s}.a", .{
-                t.libPrefix(), root_name,
+            .Lib => return std.fmt.alloc_print(allocator, "{s}{s}.a", .{
+                t.lib_prefix(), root_name,
             }),
         },
-        .nvptx => return std.fmt.allocPrint(allocator, "{s}.ptx", .{root_name}),
-        .dxcontainer => return std.fmt.allocPrint(allocator, "{s}.dxil", .{root_name}),
+        .nvptx => return std.fmt.alloc_print(allocator, "{s}.ptx", .{root_name}),
+        .dxcontainer => return std.fmt.alloc_print(allocator, "{s}.dxil", .{root_name}),
     }
 }
 
@@ -253,7 +253,7 @@ pub const BuildId = union(enum) {
         if (a_tag != b_tag) return false;
         return switch (a) {
             .none, .fast, .uuid, .sha1, .md5 => true,
-            .hexstring => |a_hexstring| std.mem.eql(u8, a_hexstring.toSlice(), b.hexstring.toSlice()),
+            .hexstring => |a_hexstring| std.mem.eql(u8, a_hexstring.to_slice(), b.hexstring.to_slice()),
         };
     }
 
@@ -272,7 +272,7 @@ pub const BuildId = union(enum) {
     pub fn init_hex_string(bytes: []const u8) BuildId {
         var result: BuildId = .{ .hexstring = .{
             .bytes = undefined,
-            .len = @intCast(bytes.len),
+            .len = @int_cast(bytes.len),
         } };
         @memcpy(result.hexstring.bytes[0..bytes.len], bytes);
         return result;
@@ -290,28 +290,28 @@ pub const BuildId = union(enum) {
             return .sha1;
         } else if (std.mem.eql(u8, text, "md5")) {
             return .md5;
-        } else if (std.mem.startsWith(u8, text, "0x")) {
+        } else if (std.mem.starts_with(u8, text, "0x")) {
             var result: BuildId = .{ .hexstring = undefined };
-            const slice = try std.fmt.hexToBytes(&result.hexstring.bytes, text[2..]);
-            result.hexstring.len = @as(u8, @intCast(slice.len));
+            const slice = try std.fmt.hex_to_bytes(&result.hexstring.bytes, text[2..]);
+            result.hexstring.len = @as(u8, @int_cast(slice.len));
             return result;
         }
         return error.InvalidBuildIdStyle;
     }
 
     test parse {
-        try std.testing.expectEqual(BuildId.md5, try parse("md5"));
-        try std.testing.expectEqual(BuildId.none, try parse("none"));
-        try std.testing.expectEqual(BuildId.fast, try parse("fast"));
-        try std.testing.expectEqual(BuildId.uuid, try parse("uuid"));
-        try std.testing.expectEqual(BuildId.sha1, try parse("sha1"));
-        try std.testing.expectEqual(BuildId.sha1, try parse("tree"));
+        try std.testing.expect_equal(BuildId.md5, try parse("md5"));
+        try std.testing.expect_equal(BuildId.none, try parse("none"));
+        try std.testing.expect_equal(BuildId.fast, try parse("fast"));
+        try std.testing.expect_equal(BuildId.uuid, try parse("uuid"));
+        try std.testing.expect_equal(BuildId.sha1, try parse("sha1"));
+        try std.testing.expect_equal(BuildId.sha1, try parse("tree"));
 
-        try std.testing.expect(BuildId.initHexString("").eql(try parse("0x")));
-        try std.testing.expect(BuildId.initHexString("\x12\x34\x56").eql(try parse("0x123456")));
-        try std.testing.expectError(error.InvalidLength, parse("0x12-34"));
-        try std.testing.expectError(error.InvalidCharacter, parse("0xfoobbb"));
-        try std.testing.expectError(error.InvalidBuildIdStyle, parse("yaddaxxx"));
+        try std.testing.expect(BuildId.init_hex_string("").eql(try parse("0x")));
+        try std.testing.expect(BuildId.init_hex_string("\x12\x34\x56").eql(try parse("0x123456")));
+        try std.testing.expect_error(error.InvalidLength, parse("0x12-34"));
+        try std.testing.expect_error(error.InvalidCharacter, parse("0xfoobbb"));
+        try std.testing.expect_error(error.InvalidBuildIdStyle, parse("yaddaxxx"));
     }
 };
 
@@ -319,11 +319,11 @@ pub const BuildId = union(enum) {
 /// via the `-mcpu` flag passed to the Zig compiler.
 /// Appends the result to `buffer`.
 pub fn serialize_cpu(buffer: *std.ArrayList(u8), cpu: std.Target.Cpu) Allocator.Error!void {
-    const all_features = cpu.arch.allFeaturesList();
+    const all_features = cpu.arch.all_features_list();
     var populated_cpu_features = cpu.model.features;
-    populated_cpu_features.populateDependencies(all_features);
+    populated_cpu_features.populate_dependencies(all_features);
 
-    try buffer.appendSlice(cpu.model.name);
+    try buffer.append_slice(cpu.model.name);
 
     if (populated_cpu_features.eql(cpu.features)) {
         // The CPU name alone is sufficient.
@@ -331,45 +331,45 @@ pub fn serialize_cpu(buffer: *std.ArrayList(u8), cpu: std.Target.Cpu) Allocator.
     }
 
     for (all_features, 0..) |feature, i_usize| {
-        const i: std.Target.Cpu.Feature.Set.Index = @intCast(i_usize);
-        const in_cpu_set = populated_cpu_features.isEnabled(i);
-        const in_actual_set = cpu.features.isEnabled(i);
-        try buffer.ensureUnusedCapacity(feature.name.len + 1);
+        const i: std.Target.Cpu.Feature.Set.Index = @int_cast(i_usize);
+        const in_cpu_set = populated_cpu_features.is_enabled(i);
+        const in_actual_set = cpu.features.is_enabled(i);
+        try buffer.ensure_unused_capacity(feature.name.len + 1);
         if (in_cpu_set and !in_actual_set) {
-            buffer.appendAssumeCapacity('-');
-            buffer.appendSliceAssumeCapacity(feature.name);
+            buffer.append_assume_capacity('-');
+            buffer.append_slice_assume_capacity(feature.name);
         } else if (!in_cpu_set and in_actual_set) {
-            buffer.appendAssumeCapacity('+');
-            buffer.appendSliceAssumeCapacity(feature.name);
+            buffer.append_assume_capacity('+');
+            buffer.append_slice_assume_capacity(feature.name);
         }
     }
 }
 
 pub fn serialize_cpu_alloc(ally: Allocator, cpu: std.Target.Cpu) Allocator.Error![]u8 {
     var buffer = std.ArrayList(u8).init(ally);
-    try serializeCpu(&buffer, cpu);
-    return buffer.toOwnedSlice();
+    try serialize_cpu(&buffer, cpu);
+    return buffer.to_owned_slice();
 }
 
 pub const DeclIndex = enum(u32) {
     _,
 
     pub fn to_optional(i: DeclIndex) OptionalDeclIndex {
-        return @enumFromInt(@intFromEnum(i));
+        return @enumFromInt(@int_from_enum(i));
     }
 };
 
 pub const OptionalDeclIndex = enum(u32) {
-    none = std.math.maxInt(u32),
+    none = std.math.max_int(u32),
     _,
 
     pub fn init(oi: ?DeclIndex) OptionalDeclIndex {
-        return @enumFromInt(@intFromEnum(oi orelse return .none));
+        return @enumFromInt(@int_from_enum(oi orelse return .none));
     }
 
     pub fn unwrap(oi: OptionalDeclIndex) ?DeclIndex {
         if (oi == .none) return null;
-        return @enumFromInt(@intFromEnum(oi));
+        return @enumFromInt(@int_from_enum(oi));
     }
 };
 
@@ -702,11 +702,11 @@ pub const LazySrcLoc = union(enum) {
         elem_index: u32,
     };
 
-    pub const nodeOffset = if (TracedOffset.want_tracing) nodeOffsetDebug else nodeOffsetRelease;
+    pub const nodeOffset = if (TracedOffset.want_tracing) node_offset_debug else node_offset_release;
 
     noinline fn node_offset_debug(node_offset: i32) LazySrcLoc {
         var result: LazySrcLoc = .{ .node_offset = .{ .x = node_offset } };
-        result.node_offset.trace.addAddr(@returnAddress(), "init");
+        result.node_offset.trace.add_addr(@returnAddress(), "init");
         return result;
     }
 
@@ -737,46 +737,46 @@ const Allocator = std.mem.Allocator;
 /// - Add `_` to the specifier to render the reserved `_` identifier unescaped.
 /// - `p` and `_` can be combined, e.g. `{p_}`.
 ///
-pub fn fmt_id(bytes: []const u8) std.fmt.Formatter(formatId) {
+pub fn fmt_id(bytes: []const u8) std.fmt.Formatter(format_id) {
     return .{ .data = bytes };
 }
 
-test fmtId {
-    const expectFmt = std.testing.expectFmt;
-    try expectFmt("@\"while\"", "{}", .{fmtId("while")});
-    try expectFmt("@\"while\"", "{p}", .{fmtId("while")});
-    try expectFmt("@\"while\"", "{_}", .{fmtId("while")});
-    try expectFmt("@\"while\"", "{p_}", .{fmtId("while")});
-    try expectFmt("@\"while\"", "{_p}", .{fmtId("while")});
+test fmt_id {
+    const expect_fmt = std.testing.expect_fmt;
+    try expect_fmt("@\"while\"", "{}", .{fmt_id("while")});
+    try expect_fmt("@\"while\"", "{p}", .{fmt_id("while")});
+    try expect_fmt("@\"while\"", "{_}", .{fmt_id("while")});
+    try expect_fmt("@\"while\"", "{p_}", .{fmt_id("while")});
+    try expect_fmt("@\"while\"", "{_p}", .{fmt_id("while")});
 
-    try expectFmt("hello", "{}", .{fmtId("hello")});
-    try expectFmt("hello", "{p}", .{fmtId("hello")});
-    try expectFmt("hello", "{_}", .{fmtId("hello")});
-    try expectFmt("hello", "{p_}", .{fmtId("hello")});
-    try expectFmt("hello", "{_p}", .{fmtId("hello")});
+    try expect_fmt("hello", "{}", .{fmt_id("hello")});
+    try expect_fmt("hello", "{p}", .{fmt_id("hello")});
+    try expect_fmt("hello", "{_}", .{fmt_id("hello")});
+    try expect_fmt("hello", "{p_}", .{fmt_id("hello")});
+    try expect_fmt("hello", "{_p}", .{fmt_id("hello")});
 
-    try expectFmt("@\"type\"", "{}", .{fmtId("type")});
-    try expectFmt("type", "{p}", .{fmtId("type")});
-    try expectFmt("@\"type\"", "{_}", .{fmtId("type")});
-    try expectFmt("type", "{p_}", .{fmtId("type")});
-    try expectFmt("type", "{_p}", .{fmtId("type")});
+    try expect_fmt("@\"type\"", "{}", .{fmt_id("type")});
+    try expect_fmt("type", "{p}", .{fmt_id("type")});
+    try expect_fmt("@\"type\"", "{_}", .{fmt_id("type")});
+    try expect_fmt("type", "{p_}", .{fmt_id("type")});
+    try expect_fmt("type", "{_p}", .{fmt_id("type")});
 
-    try expectFmt("@\"_\"", "{}", .{fmtId("_")});
-    try expectFmt("@\"_\"", "{p}", .{fmtId("_")});
-    try expectFmt("_", "{_}", .{fmtId("_")});
-    try expectFmt("_", "{p_}", .{fmtId("_")});
-    try expectFmt("_", "{_p}", .{fmtId("_")});
+    try expect_fmt("@\"_\"", "{}", .{fmt_id("_")});
+    try expect_fmt("@\"_\"", "{p}", .{fmt_id("_")});
+    try expect_fmt("_", "{_}", .{fmt_id("_")});
+    try expect_fmt("_", "{p_}", .{fmt_id("_")});
+    try expect_fmt("_", "{_p}", .{fmt_id("_")});
 
-    try expectFmt("@\"i123\"", "{}", .{fmtId("i123")});
-    try expectFmt("i123", "{p}", .{fmtId("i123")});
-    try expectFmt("@\"4four\"", "{}", .{fmtId("4four")});
-    try expectFmt("_underscore", "{}", .{fmtId("_underscore")});
-    try expectFmt("@\"11\\\"23\"", "{}", .{fmtId("11\"23")});
-    try expectFmt("@\"11\\x0f23\"", "{}", .{fmtId("11\x0F23")});
+    try expect_fmt("@\"i123\"", "{}", .{fmt_id("i123")});
+    try expect_fmt("i123", "{p}", .{fmt_id("i123")});
+    try expect_fmt("@\"4four\"", "{}", .{fmt_id("4four")});
+    try expect_fmt("_underscore", "{}", .{fmt_id("_underscore")});
+    try expect_fmt("@\"11\\\"23\"", "{}", .{fmt_id("11\"23")});
+    try expect_fmt("@\"11\\x0f23\"", "{}", .{fmt_id("11\x0F23")});
 
     // These are technically not currently legal in Zig.
-    try expectFmt("@\"\"", "{}", .{fmtId("")});
-    try expectFmt("@\"\\x00\"", "{}", .{fmtId("\x00")});
+    try expect_fmt("@\"\"", "{}", .{fmt_id("")});
+    try expect_fmt("@\"\\x00\"", "{}", .{fmt_id("\x00")});
 }
 
 /// Print the string as a Zig identifier, escaping it with `@""` syntax if needed.
@@ -801,39 +801,39 @@ fn format_id(
                 },
                 else => {},
             }
-            @compileError("expected {}, {p}, {_}, {p_} or {_p}, found {" ++ fmt ++ "}");
+            @compile_error("expected {}, {p}, {_}, {p_} or {_p}, found {" ++ fmt ++ "}");
         }
         break :parse_fmt .{ allow_primitive, allow_underscore };
     };
 
-    if (isValidId(bytes) and
-        (allow_primitive or !std.zig.isPrimitive(bytes)) and
-        (allow_underscore or !isUnderscore(bytes)))
+    if (is_valid_id(bytes) and
+        (allow_primitive or !std.zig.is_primitive(bytes)) and
+        (allow_underscore or !is_underscore(bytes)))
     {
-        return writer.writeAll(bytes);
+        return writer.write_all(bytes);
     }
-    try writer.writeAll("@\"");
-    try stringEscape(bytes, "", options, writer);
-    try writer.writeByte('"');
+    try writer.write_all("@\"");
+    try string_escape(bytes, "", options, writer);
+    try writer.write_byte('"');
 }
 
 /// Return a Formatter for Zig Escapes of a double quoted string.
 /// The format specifier must be one of:
 ///  * `{}` treats contents as a double-quoted string.
 ///  * `{'}` treats contents as a single-quoted string.
-pub fn fmt_escapes(bytes: []const u8) std.fmt.Formatter(stringEscape) {
+pub fn fmt_escapes(bytes: []const u8) std.fmt.Formatter(string_escape) {
     return .{ .data = bytes };
 }
 
-test fmtEscapes {
-    const expectFmt = std.testing.expectFmt;
-    try expectFmt("\\x0f", "{}", .{fmtEscapes("\x0f")});
-    try expectFmt(
+test fmt_escapes {
+    const expect_fmt = std.testing.expect_fmt;
+    try expect_fmt("\\x0f", "{}", .{fmt_escapes("\x0f")});
+    try expect_fmt(
         \\" \\ hi \x07 \x11 " derp \'"
-    , "\"{'}\"", .{fmtEscapes(" \\ hi \x07 \x11 \" derp '")});
-    try expectFmt(
+    , "\"{'}\"", .{fmt_escapes(" \\ hi \x07 \x11 \" derp '")});
+    try expect_fmt(
         \\" \\ hi \x07 \x11 \" derp '"
-    , "\"{}\"", .{fmtEscapes(" \\ hi \x07 \x11 \" derp '")});
+    , "\"{}\"", .{fmt_escapes(" \\ hi \x07 \x11 \" derp '")});
 }
 
 /// Print the string as escaped contents of a double quoted or single-quoted string.
@@ -847,33 +847,33 @@ pub fn string_escape(
 ) !void {
     _ = options;
     for (bytes) |byte| switch (byte) {
-        '\n' => try writer.writeAll("\\n"),
-        '\r' => try writer.writeAll("\\r"),
-        '\t' => try writer.writeAll("\\t"),
-        '\\' => try writer.writeAll("\\\\"),
+        '\n' => try writer.write_all("\\n"),
+        '\r' => try writer.write_all("\\r"),
+        '\t' => try writer.write_all("\\t"),
+        '\\' => try writer.write_all("\\\\"),
         '"' => {
             if (f.len == 1 and f[0] == '\'') {
-                try writer.writeByte('"');
+                try writer.write_byte('"');
             } else if (f.len == 0) {
-                try writer.writeAll("\\\"");
+                try writer.write_all("\\\"");
             } else {
-                @compileError("expected {} or {'}, found {" ++ f ++ "}");
+                @compile_error("expected {} or {'}, found {" ++ f ++ "}");
             }
         },
         '\'' => {
             if (f.len == 1 and f[0] == '\'') {
-                try writer.writeAll("\\'");
+                try writer.write_all("\\'");
             } else if (f.len == 0) {
-                try writer.writeByte('\'');
+                try writer.write_byte('\'');
             } else {
-                @compileError("expected {} or {'}, found {" ++ f ++ "}");
+                @compile_error("expected {} or {'}, found {" ++ f ++ "}");
             }
         },
-        ' ', '!', '#'...'&', '('...'[', ']'...'~' => try writer.writeByte(byte),
+        ' ', '!', '#'...'&', '('...'[', ']'...'~' => try writer.write_byte(byte),
         // Use hex escapes for rest any unprintable characters.
         else => {
-            try writer.writeAll("\\x");
-            try std.fmt.formatInt(byte, 16, .lower, .{ .width = 2, .fill = '0' }, writer);
+            try writer.write_all("\\x");
+            try std.fmt.format_int(byte, 16, .lower, .{ .width = 2, .fill = '0' }, writer);
         },
     };
 }
@@ -887,28 +887,28 @@ pub fn is_valid_id(bytes: []const u8) bool {
             else => return false,
         }
     }
-    return std.zig.Token.getKeyword(bytes) == null;
+    return std.zig.Token.get_keyword(bytes) == null;
 }
 
-test isValidId {
-    try std.testing.expect(!isValidId(""));
-    try std.testing.expect(isValidId("foobar"));
-    try std.testing.expect(!isValidId("a b c"));
-    try std.testing.expect(!isValidId("3d"));
-    try std.testing.expect(!isValidId("enum"));
-    try std.testing.expect(isValidId("i386"));
+test is_valid_id {
+    try std.testing.expect(!is_valid_id(""));
+    try std.testing.expect(is_valid_id("foobar"));
+    try std.testing.expect(!is_valid_id("a b c"));
+    try std.testing.expect(!is_valid_id("3d"));
+    try std.testing.expect(!is_valid_id("enum"));
+    try std.testing.expect(is_valid_id("i386"));
 }
 
 pub fn is_underscore(bytes: []const u8) bool {
     return bytes.len == 1 and bytes[0] == '_';
 }
 
-test isUnderscore {
-    try std.testing.expect(isUnderscore("_"));
-    try std.testing.expect(!isUnderscore("__"));
-    try std.testing.expect(!isUnderscore("_foo"));
-    try std.testing.expect(isUnderscore("\x5f"));
-    try std.testing.expect(!isUnderscore("\\x5f"));
+test is_underscore {
+    try std.testing.expect(is_underscore("_"));
+    try std.testing.expect(!is_underscore("__"));
+    try std.testing.expect(!is_underscore("_foo"));
+    try std.testing.expect(is_underscore("\x5f"));
+    try std.testing.expect(!is_underscore("\\x5f"));
 }
 
 pub fn read_source_file_to_end_alloc(
@@ -916,7 +916,7 @@ pub fn read_source_file_to_end_alloc(
     input: std.fs.File,
     size_hint: ?usize,
 ) ![:0]u8 {
-    const source_code = input.readToEndAllocOptions(
+    const source_code = input.read_to_end_alloc_options(
         allocator,
         max_src_size,
         size_hint,
@@ -937,15 +937,15 @@ pub fn read_source_file_to_end_alloc(
         "\xfe\xff", // UTF-16 big endian
     };
     for (unsupported_boms) |bom| {
-        if (std.mem.startsWith(u8, source_code, bom)) {
+        if (std.mem.starts_with(u8, source_code, bom)) {
             return error.UnsupportedEncoding;
         }
     }
 
     // If the file starts with a UTF-16 little endian BOM, translate it to UTF-8
-    if (std.mem.startsWith(u8, source_code, "\xff\xfe")) {
-        const source_code_utf16_le = std.mem.bytesAsSlice(u16, source_code);
-        const source_code_utf8 = std.unicode.utf16LeToUtf8AllocZ(allocator, source_code_utf16_le) catch |err| switch (err) {
+    if (std.mem.starts_with(u8, source_code, "\xff\xfe")) {
+        const source_code_utf16_le = std.mem.bytes_as_slice(u16, source_code);
+        const source_code_utf8 = std.unicode.utf16_le_to_utf8_alloc_z(allocator, source_code_utf16_le) catch |err| switch (err) {
             error.DanglingSurrogateHalf => error.UnsupportedEncoding,
             error.ExpectedSecondSurrogateHalf => error.UnsupportedEncoding,
             error.UnexpectedSecondSurrogateHalf => error.UnsupportedEncoding,
@@ -964,11 +964,11 @@ pub fn print_ast_errors_to_stderr(gpa: Allocator, tree: Ast, path: []const u8, c
     try wip_errors.init(gpa);
     defer wip_errors.deinit();
 
-    try putAstErrorsIntoBundle(gpa, tree, path, &wip_errors);
+    try put_ast_errors_into_bundle(gpa, tree, path, &wip_errors);
 
-    var error_bundle = try wip_errors.toOwnedBundle("");
+    var error_bundle = try wip_errors.to_owned_bundle("");
     defer error_bundle.deinit(gpa);
-    error_bundle.renderToStdErr(color.renderOptions());
+    error_bundle.render_to_std_err(color.render_options());
 }
 
 pub fn put_ast_errors_into_bundle(
@@ -980,11 +980,11 @@ pub fn put_ast_errors_into_bundle(
     var zir = try AstGen.generate(gpa, tree);
     defer zir.deinit(gpa);
 
-    try wip_errors.addZirErrorMessages(zir, tree, tree.source, path);
+    try wip_errors.add_zir_error_messages(zir, tree, tree.source, path);
 }
 
 pub fn resolve_target_query_or_fatal(target_query: std.Target.Query) std.Target {
-    return std.zig.system.resolveTargetQuery(target_query) catch |err|
+    return std.zig.system.resolve_target_query(target_query) catch |err|
         fatal("unable to resolve target: {s}", .{@errorName(err)});
 }
 
@@ -1002,11 +1002,11 @@ pub fn parse_target_query_or_report_fatal_error(
             help: {
                 var help_text = std.ArrayList(u8).init(allocator);
                 defer help_text.deinit();
-                for (diags.arch.?.allCpuModels()) |cpu| {
+                for (diags.arch.?.all_cpu_models()) |cpu| {
                     help_text.writer().print(" {s}\n", .{cpu.name}) catch break :help;
                 }
                 std.log.info("available CPUs for architecture '{s}':\n{s}", .{
-                    @tagName(diags.arch.?), help_text.items,
+                    @tag_name(diags.arch.?), help_text.items,
                 });
             }
             fatal("unknown CPU: '{s}'", .{diags.cpu_name.?});
@@ -1015,11 +1015,11 @@ pub fn parse_target_query_or_report_fatal_error(
             help: {
                 var help_text = std.ArrayList(u8).init(allocator);
                 defer help_text.deinit();
-                for (diags.arch.?.allFeaturesList()) |feature| {
+                for (diags.arch.?.all_features_list()) |feature| {
                     help_text.writer().print(" {s}: {s}\n", .{ feature.name, feature.description }) catch break :help;
                 }
                 std.log.info("available CPU features for architecture '{s}':\n{s}", .{
-                    @tagName(diags.arch.?), help_text.items,
+                    @tag_name(diags.arch.?), help_text.items,
                 });
             }
             fatal("unknown CPU feature: '{s}'", .{diags.unknown_feature_name.?});
@@ -1065,11 +1065,11 @@ pub const EnvVar = enum {
     HOME,
 
     pub fn is_set(comptime ev: EnvVar) bool {
-        return std.process.hasEnvVarConstant(@tagName(ev));
+        return std.process.has_env_var_constant(@tag_name(ev));
     }
 
     pub fn get(ev: EnvVar, arena: std.mem.Allocator) !?[]u8 {
-        if (std.process.getEnvVarOwned(arena, @tagName(ev))) |value| {
+        if (std.process.get_env_var_owned(arena, @tag_name(ev))) |value| {
             return value;
         } else |err| switch (err) {
             error.EnvironmentVariableNotFound => return null,
@@ -1078,7 +1078,7 @@ pub const EnvVar = enum {
     }
 
     pub fn get_posix(comptime ev: EnvVar) ?[:0]const u8 {
-        return std.posix.getenvZ(@tagName(ev));
+        return std.posix.getenv_z(@tag_name(ev));
     }
 };
 

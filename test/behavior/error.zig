@@ -2,10 +2,10 @@ const builtin = @import("builtin");
 const std = @import("std");
 const assert = std.debug.assert;
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 const mem = std.mem;
 
-/// A more basic implementation of std.testing.expectError which
+/// A more basic implementation of std.testing.expect_error which
 /// does not require formatter/printing support
 fn expect_error(expected_err: anyerror, observed_err_union: anytype) !void {
     if (observed_err_union) |_| {
@@ -23,7 +23,7 @@ test "error values" {
 }
 
 test "redefinition of error values allowed" {
-    shouldBeNotEqual(error.AnError, error.SecondError);
+    should_be_not_equal(error.AnError, error.SecondError);
 }
 fn should_be_not_equal(a: anyerror, b: anyerror) void {
     if (a == b) unreachable;
@@ -33,8 +33,8 @@ test "error binary operator" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    const a = errBinaryOperatorG(true) catch 3;
-    const b = errBinaryOperatorG(false) catch 3;
+    const a = err_binary_operator_g(true) catch 3;
+    const b = err_binary_operator_g(false) catch 3;
     try expect(a == 3);
     try expect(b == 10);
 }
@@ -72,7 +72,7 @@ test "unwrap simple value from error" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    const i = unwrapSimpleValueFromErrorDo() catch unreachable;
+    const i = unwrap_simple_value_from_error_do() catch unreachable;
     try expect(i == 13);
 }
 fn unwrap_simple_value_from_error_do() anyerror!isize {
@@ -83,12 +83,12 @@ test "error return in assignment" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    doErrReturnInAssignment() catch unreachable;
+    do_err_return_in_assignment() catch unreachable;
 }
 
 fn do_err_return_in_assignment() anyerror!void {
     var x: i32 = undefined;
-    x = try makeANonErr();
+    x = try make_anon_err();
 }
 
 fn make_anon_err() anyerror!i32 {
@@ -156,8 +156,8 @@ test "fn returning empty error set can be passed as fn returning any error" {
 
 test "fn returning empty error set can be passed as fn returning any error - pointer" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
-    entryPtr();
-    comptime entryPtr();
+    entry_ptr();
+    comptime entry_ptr();
 }
 
 fn entry() void {
@@ -167,7 +167,7 @@ fn entry() void {
 fn entry_ptr() void {
     var ptr = &bar2;
     _ = &ptr;
-    fooPtr(ptr);
+    foo_ptr(ptr);
 }
 
 fn foo2(comptime f: fn () anyerror!void) void {
@@ -187,8 +187,8 @@ fn foo_ptr(f: *const fn () anyerror!void) void {
 fn bar2() (error{}!void) {}
 
 test "error union type " {
-    try testErrorUnionType();
-    try comptime testErrorUnionType();
+    try test_error_union_type();
+    try comptime test_error_union_type();
 }
 
 fn test_error_union_type() !void {
@@ -200,8 +200,8 @@ fn test_error_union_type() !void {
 }
 
 test "error set type" {
-    try testErrorSetType();
-    try comptime testErrorSetType();
+    try test_error_set_type();
+    try comptime test_error_set_type();
 }
 
 const MyErrSet = error{
@@ -225,8 +225,8 @@ fn test_error_set_type() !void {
 test "explicit error set cast" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
-    try testExplicitErrorSetCast(Set1.A);
-    try comptime testExplicitErrorSetCast(Set1.A);
+    try test_explicit_error_set_cast(Set1.A);
+    try comptime test_explicit_error_set_cast(Set1.A);
 }
 
 const Set1 = error{ A, B };
@@ -246,11 +246,11 @@ test "@errorCast on error unions" {
     const S = struct {
         fn do_the_test() !void {
             {
-                const casted: error{Bad}!i32 = @errorCast(retErrUnion());
+                const casted: error{Bad}!i32 = @errorCast(ret_err_union());
                 try expect((try casted) == 1234);
             }
             {
-                const casted: error{Bad}!i32 = @errorCast(retInferredErrUnion());
+                const casted: error{Bad}!i32 = @errorCast(ret_inferred_err_union());
                 try expect((try casted) == 5678);
             }
         }
@@ -264,16 +264,16 @@ test "@errorCast on error unions" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "comptime test error for empty error set" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testComptimeTestErrorEmptySet(1234);
-    try comptime testComptimeTestErrorEmptySet(1234);
+    try test_comptime_test_error_empty_set(1234);
+    try comptime test_comptime_test_error_empty_set(1234);
 }
 
 const EmptyErrorSet = error{};
@@ -281,20 +281,20 @@ const EmptyErrorSet = error{};
 fn test_comptime_test_error_empty_set(x: EmptyErrorSet!i32) !void {
     if (x) |v| try expect(v == 1234) else |err| {
         _ = err;
-        @compileError("bad");
+        @compile_error("bad");
     }
 }
 
 test "comptime err to int of error set with only 1 possible value" {
-    testErrToIntWithOnePossibleValue(error.A, @intFromError(error.A));
-    comptime testErrToIntWithOnePossibleValue(error.A, @intFromError(error.A));
+    test_err_to_int_with_one_possible_value(error.A, @intFromError(error.A));
+    comptime test_err_to_int_with_one_possible_value(error.A, @intFromError(error.A));
 }
 fn test_err_to_int_with_one_possible_value(
     x: error{A},
     comptime value: u32,
 ) void {
     if (@intFromError(x) != value) {
-        @compileError("bad");
+        @compile_error("bad");
     }
 }
 
@@ -302,7 +302,7 @@ test "inferred empty error set comptime catch" {
     const S = struct {
         fn foo() !void {}
     };
-    S.foo() catch @compileError("fail");
+    S.foo() catch @compile_error("fail");
 }
 
 test "error inference with an empty set" {
@@ -325,14 +325,14 @@ test "error inference with an empty set" {
     };
 
     const GeneratedStruct = S.AnotherStruct(S.Struct);
-    try GeneratedStruct.anotherFunc();
+    try GeneratedStruct.another_func();
 }
 
 test "error union peer type resolution" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testErrorUnionPeerTypeResolution(1);
+    try test_error_union_peer_type_resolution(1);
 }
 
 fn test_error_union_peer_type_resolution(x: i32) !void {
@@ -378,12 +378,12 @@ test "error: Infer error set from literals" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    _ = nullLiteral("n") catch |err| handleErrors(err);
-    _ = floatLiteral("n") catch |err| handleErrors(err);
-    _ = intLiteral("n") catch |err| handleErrors(err);
-    _ = comptime nullLiteral("n") catch |err| handleErrors(err);
-    _ = comptime floatLiteral("n") catch |err| handleErrors(err);
-    _ = comptime intLiteral("n") catch |err| handleErrors(err);
+    _ = null_literal("n") catch |err| handle_errors(err);
+    _ = float_literal("n") catch |err| handle_errors(err);
+    _ = int_literal("n") catch |err| handle_errors(err);
+    _ = comptime null_literal("n") catch |err| handle_errors(err);
+    _ = comptime float_literal("n") catch |err| handle_errors(err);
+    _ = comptime int_literal("n") catch |err| handle_errors(err);
 }
 
 fn handle_errors(err: anytype) noreturn {
@@ -424,17 +424,17 @@ test "nested error union function call in optional unwrap" {
         };
 
         fn errorable() !i32 {
-            const x: Foo = (try getFoo()) orelse return error.Other;
+            const x: Foo = (try get_foo()) orelse return error.Other;
             return x.a;
         }
 
         fn errorable2() !i32 {
-            const x: Foo = (try getFoo2()) orelse return error.Other;
+            const x: Foo = (try get_foo2()) orelse return error.Other;
             return x.a;
         }
 
         fn errorable3() !i32 {
-            const x: Foo = (try getFoo3()) orelse return error.Other;
+            const x: Foo = (try get_foo3()) orelse return error.Other;
             return x.a;
         }
 
@@ -451,12 +451,12 @@ test "nested error union function call in optional unwrap" {
         }
     };
     try expect((try S.errorable()) == 1234);
-    try expectError(error.Failure, S.errorable2());
-    try expectError(error.Other, S.errorable3());
+    try expect_error(error.Failure, S.errorable2());
+    try expect_error(error.Other, S.errorable3());
     comptime {
         try expect((try S.errorable()) == 1234);
-        try expectError(error.Failure, S.errorable2());
-        try expectError(error.Other, S.errorable3());
+        try expect_error(error.Failure, S.errorable2());
+        try expect_error(error.Other, S.errorable3());
     }
 }
 
@@ -474,7 +474,7 @@ test "return function call to error set from error union function" {
             return error.Failure;
         }
     };
-    try expectError(error.Failure, S.errorable());
+    try expect_error(error.Failure, S.errorable());
     comptime assert(error.Failure == S.errorable());
 }
 
@@ -484,15 +484,15 @@ test "optional error set is the same size as error set" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    comptime assert(@sizeOf(?anyerror) == @sizeOf(anyerror));
+    comptime assert(@size_of(?anyerror) == @size_of(anyerror));
     comptime assert(@alignOf(?anyerror) == @alignOf(anyerror));
     const S = struct {
         fn returns_opt_err_set() ?anyerror {
             return null;
         }
     };
-    try expect(S.returnsOptErrSet() == null);
-    comptime assert(S.returnsOptErrSet() == null);
+    try expect(S.returns_opt_err_set() == null);
+    comptime assert(S.returns_opt_err_set() == null);
 }
 
 test "nested catch" {
@@ -502,7 +502,7 @@ test "nested catch" {
 
     const S = struct {
         fn entry() !void {
-            try expectError(error.Bad, func());
+            try expect_error(error.Bad, func());
         }
         fn fail() anyerror!Foo {
             return error.Wrong;
@@ -540,10 +540,10 @@ test "function pointer with return type that is error union with payload which i
 
         fn do_the_test() !void {
             var x = Foo{ .fun = @This().bar };
-            try expectError(error.UnspecifiedErr, x.fun(1));
+            try expect_error(error.UnspecifiedErr, x.fun(1));
         }
     };
-    try S.doTheTest();
+    try S.do_the_test();
 }
 
 test "return result loc as peer result loc in inferred error set function" {
@@ -559,7 +559,7 @@ test "return result loc as peer result loc in inferred error set function" {
             } else |e| switch (e) {
                 error.Whatever => @panic("fail"),
             }
-            try expectError(error.Whatever, quux(99));
+            try expect_error(error.Whatever, quux(99));
         }
         const FormValue = union(enum) {
             One: void,
@@ -574,8 +574,8 @@ test "return result loc as peer result loc in inferred error set function" {
             };
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "error payload type is correctly resolved" {
@@ -617,7 +617,7 @@ test "@errorName" {
 
     try expect(mem.eql(u8, @errorName(error.AnError), "AnError"));
     try expect(mem.eql(u8, @errorName(error.ALongerErrorName), "ALongerErrorName"));
-    try expect(mem.eql(u8, @errorName(gimmeItBroke()), "ItBroke"));
+    try expect(mem.eql(u8, @errorName(gimme_it_broke()), "ItBroke"));
 }
 fn gimme_it_broke() anyerror {
     return error.ItBroke;
@@ -630,9 +630,9 @@ test "@errorName sentinel length matches slice length" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    const name = testBuiltinErrorName(error.FooBar);
+    const name = test_builtin_error_name(error.FooBar);
     const length: usize = 6;
-    try expect(length == std.mem.indexOfSentinel(u8, 0, name.ptr));
+    try expect(length == std.mem.index_of_sentinel(u8, 0, name.ptr));
     try expect(length == name.len);
 }
 
@@ -745,12 +745,12 @@ test "ret_ptr doesn't cause own inferred error set to be resolved" {
         fn foo() !void {}
 
         fn do_the_test() !void {
-            errdefer @compileError("bad");
+            errdefer @compile_error("bad");
 
             return try @This().foo();
         }
     };
-    try S.doTheTest();
+    try S.do_the_test();
 }
 
 test "simple else prong allowed even when all errors handled" {
@@ -800,7 +800,7 @@ const NoReturn = struct {
     }
     fn loop() !noreturn {
         while (true) {
-            if (someData())
+            if (some_data())
                 return error.GenericFailure;
         }
     }
@@ -809,7 +809,7 @@ const NoReturn = struct {
     }
     fn test_catch() anyerror {
         loop() catch return error.OtherFailure;
-        @compileError("bad");
+        @compile_error("bad");
     }
 };
 
@@ -822,7 +822,7 @@ test "error union of noreturn used with if" {
 
     NoReturn.a = 64;
     if (NoReturn.loop()) {
-        @compileError("bad");
+        @compile_error("bad");
     } else |err| {
         try expect(err == error.GenericFailure);
     }
@@ -836,7 +836,7 @@ test "error union of noreturn used with try" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     NoReturn.a = 64;
-    const err = NoReturn.testTry();
+    const err = NoReturn.test_try();
     try expect(err == error.GenericFailure);
 }
 
@@ -848,7 +848,7 @@ test "error union of noreturn used with catch" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     NoReturn.a = 64;
-    const err = NoReturn.testCatch();
+    const err = NoReturn.test_catch();
     try expect(err == error.OtherFailure);
 }
 
@@ -972,8 +972,8 @@ test "optional error set function parameter" {
             try std.testing.expect(a.? == error.OutOfMemory);
         }
     };
-    try S.doTheTest(error.OutOfMemory);
-    try comptime S.doTheTest(error.OutOfMemory);
+    try S.do_the_test(error.OutOfMemory);
+    try comptime S.do_the_test(error.OutOfMemory);
 }
 
 test "returning an error union containing a type with no runtime bits" {
@@ -1016,7 +1016,7 @@ test "try used in recursive function with inferred error set" {
             },
         },
     };
-    try expectError(error.a, Value.x(a));
+    try expect_error(error.a, Value.x(a));
 }
 
 test "generic inline function returns inferred error set" {
@@ -1026,7 +1026,7 @@ test "generic inline function returns inferred error set" {
         }
 
         fn main0() !void {
-            _ = try retErr(u8);
+            _ = try ret_err(u8);
         }
     };
     S.main0() catch |e| {
@@ -1074,7 +1074,7 @@ test "generic type constructed from inferred error set of unresolved function" {
             return .{ .context = {} };
         }
     };
-    _ = std.io.multiWriter(.{S.writer()});
+    _ = std.io.multi_writer(.{S.writer()});
 }
 
 test "errorCast to adhoc inferred error set" {
@@ -1095,7 +1095,7 @@ test "errorCast from error sets to error unions" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const err_union: Set1!void = @errorCast(error.A);
-    try expectError(error.A, err_union);
+    try expect_error(error.A, err_union);
 }
 
 test "result location initialization of error union with OPV payload" {
@@ -1119,7 +1119,7 @@ test "result location initialization of error union with OPV payload" {
 
     var c: anyerror!S = .{ .x = 0 };
     _ = &c;
-    try expectEqual(0, (c catch return error.TestFailed).x);
+    try expect_equal(0, (c catch return error.TestFailed).x);
 }
 
 test "return error union with i65" {

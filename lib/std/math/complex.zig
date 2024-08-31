@@ -149,8 +149,8 @@ test "div" {
     const b = Complex(f32).init(2, 7);
     const c = a.div(b);
 
-    try testing.expect(math.approxEqAbs(f32, c.re, @as(f32, 31) / 53, epsilon) and
-        math.approxEqAbs(f32, c.im, @as(f32, -29) / 53, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.re, @as(f32, 31) / 53, epsilon) and
+        math.approx_eq_abs(f32, c.im, @as(f32, -29) / 53, epsilon));
 }
 
 test "conjugate" {
@@ -178,15 +178,15 @@ test "reciprocal" {
     const a = Complex(f32).init(5, 3);
     const c = a.reciprocal();
 
-    try testing.expect(math.approxEqAbs(f32, c.re, @as(f32, 5) / 34, epsilon) and
-        math.approxEqAbs(f32, c.im, @as(f32, -3) / 34, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.re, @as(f32, 5) / 34, epsilon) and
+        math.approx_eq_abs(f32, c.im, @as(f32, -3) / 34, epsilon));
 }
 
 test "magnitude" {
     const a = Complex(f32).init(5, 3);
     const c = a.magnitude();
 
-    try testing.expect(math.approxEqAbs(f32, c, 5.83095, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c, 5.83095, epsilon));
 }
 
 test {

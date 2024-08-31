@@ -9,7 +9,7 @@ pub const STDERR_FILENO = 2;
 pub const PATH_MAX = 1023;
 pub const syscall_bits = switch (builtin.cpu.arch) {
     .x86_64 => @import("plan9/x86_64.zig"),
-    else => @compileError("more plan9 syscall implementations (needs more inline asm in stage2"),
+    else => @compile_error("more plan9 syscall implementations (needs more inline asm in stage2"),
 };
 /// Ported from /sys/include/ape/errno.h
 pub const E = enum(u16) {
@@ -96,7 +96,7 @@ pub const E = enum(u16) {
     TXTBSY,
 
     pub fn init(r: usize) E {
-        const signed_r: isize = @bitCast(r);
+        const signed_r: isize = @bit_cast(r);
         const int = if (signed_r > -4096 and signed_r < 0) -signed_r else 0;
         return @enumFromInt(int);
     }
@@ -106,8 +106,8 @@ pub const ERRMAX = 128;
 var errstr_buf: [ERRMAX]u8 = undefined;
 /// Gets whatever the last errstr was
 pub fn errstr() []const u8 {
-    _ = syscall_bits.syscall2(.ERRSTR, @intFromPtr(&errstr_buf), ERRMAX);
-    return std.mem.span(@as([*:0]u8, @ptrCast(&errstr_buf)));
+    _ = syscall_bits.syscall2(.ERRSTR, @int_from_ptr(&errstr_buf), ERRMAX);
+    return std.mem.span(@as([*:0]u8, @ptr_cast(&errstr_buf)));
 }
 pub const Plink = anyopaque;
 pub const Tos = extern struct {
@@ -263,21 +263,21 @@ pub const SYS = enum(usize) {
 };
 
 pub fn write(fd: i32, buf: [*]const u8, count: usize) usize {
-    return syscall_bits.syscall4(.PWRITE, @bitCast(@as(isize, fd)), @intFromPtr(buf), count, @bitCast(@as(isize, -1)));
+    return syscall_bits.syscall4(.PWRITE, @bit_cast(@as(isize, fd)), @int_from_ptr(buf), count, @bit_cast(@as(isize, -1)));
 }
 pub fn pwrite(fd: i32, buf: [*]const u8, count: usize, offset: isize) usize {
-    return syscall_bits.syscall4(.PWRITE, @bitCast(@as(isize, fd)), @intFromPtr(buf), count, @bitCast(offset));
+    return syscall_bits.syscall4(.PWRITE, @bit_cast(@as(isize, fd)), @int_from_ptr(buf), count, @bit_cast(offset));
 }
 
 pub fn read(fd: i32, buf: [*]const u8, count: usize) usize {
-    return syscall_bits.syscall4(.PREAD, @bitCast(@as(isize, fd)), @intFromPtr(buf), count, @bitCast(@as(isize, -1)));
+    return syscall_bits.syscall4(.PREAD, @bit_cast(@as(isize, fd)), @int_from_ptr(buf), count, @bit_cast(@as(isize, -1)));
 }
 pub fn pread(fd: i32, buf: [*]const u8, count: usize, offset: isize) usize {
-    return syscall_bits.syscall4(.PREAD, @bitCast(@as(isize, fd)), @intFromPtr(buf), count, @bitCast(offset));
+    return syscall_bits.syscall4(.PREAD, @bit_cast(@as(isize, fd)), @int_from_ptr(buf), count, @bit_cast(offset));
 }
 
 pub fn open(path: [*:0]const u8, flags: u32) usize {
-    return syscall_bits.syscall2(.OPEN, @intFromPtr(path), @bitCast(@as(isize, flags)));
+    return syscall_bits.syscall2(.OPEN, @int_from_ptr(path), @bit_cast(@as(isize, flags)));
 }
 
 pub fn openat(dirfd: i32, path: [*:0]const u8, flags: u32, _: mode_t) usize {
@@ -291,19 +291,19 @@ pub fn openat(dirfd: i32, path: [*:0]const u8, flags: u32, _: mode_t) usize {
     if (rc != 0) return rc;
     var fba = std.heap.FixedBufferAllocator.init(&total_path_buf);
     var alloc = fba.allocator();
-    const dir_path = std.mem.span(@as([*:0]u8, @ptrCast(&dir_path_buf)));
+    const dir_path = std.mem.span(@as([*:0]u8, @ptr_cast(&dir_path_buf)));
     const total_path = std.fs.path.join(alloc, &.{ dir_path, std.mem.span(path) }) catch unreachable; // the allocation shouldn't fail because it should not exceed MAX_PATH_BYTES
     fba.reset();
-    const total_path_z = alloc.dupeZ(u8, total_path) catch unreachable; // should not exceed MAX_PATH_BYTES + 1
+    const total_path_z = alloc.dupe_z(u8, total_path) catch unreachable; // should not exceed MAX_PATH_BYTES + 1
     return open(total_path_z.ptr, flags);
 }
 
 pub fn fd2path(fd: i32, buf: [*]u8, nbuf: usize) usize {
-    return syscall_bits.syscall3(.FD2PATH, @bitCast(@as(isize, fd)), @intFromPtr(buf), nbuf);
+    return syscall_bits.syscall3(.FD2PATH, @bit_cast(@as(isize, fd)), @int_from_ptr(buf), nbuf);
 }
 
 pub fn create(path: [*:0]const u8, omode: mode_t, perms: usize) usize {
-    return syscall_bits.syscall3(.CREATE, @intFromPtr(path), @bitCast(@as(isize, omode)), perms);
+    return syscall_bits.syscall3(.CREATE, @int_from_ptr(path), @bit_cast(@as(isize, omode)), perms);
 }
 
 pub fn exit(status: u8) noreturn {
@@ -317,12 +317,12 @@ pub fn exit(status: u8) noreturn {
 }
 
 pub fn exits(status: ?[*:0]const u8) noreturn {
-    _ = syscall_bits.syscall1(.EXITS, if (status) |s| @intFromPtr(s) else 0);
+    _ = syscall_bits.syscall1(.EXITS, if (status) |s| @int_from_ptr(s) else 0);
     unreachable;
 }
 
 pub fn close(fd: i32) usize {
-    return syscall_bits.syscall1(.CLOSE, @bitCast(@as(isize, fd)));
+    return syscall_bits.syscall1(.CLOSE, @bit_cast(@as(isize, fd)));
 }
 pub const mode_t = i32;
 
@@ -356,7 +356,7 @@ pub const ExecData = struct {
 /// and below the stack pointer may cause a memory violation if
 /// accessed. -9front brk(2)
 pub fn brk_(addr: usize) i32 {
-    return @intCast(syscall_bits.syscall1(.BRK_, addr));
+    return @int_cast(syscall_bits.syscall1(.BRK_, addr));
 }
 var bloc: usize = 0;
 var bloc_max: usize = 0;
@@ -364,11 +364,11 @@ var bloc_max: usize = 0;
 pub fn sbrk(n: usize) usize {
     if (bloc == 0) {
         // we are at the start
-        bloc = @intFromPtr(&ExecData.end);
-        bloc_max = @intFromPtr(&ExecData.end);
+        bloc = @int_from_ptr(&ExecData.end);
+        bloc_max = @int_from_ptr(&ExecData.end);
     }
-    const bl = std.mem.alignForward(usize, bloc, std.mem.page_size);
-    const n_aligned = std.mem.alignForward(usize, n, std.mem.page_size);
+    const bl = std.mem.align_forward(usize, bloc, std.mem.page_size);
+    const n_aligned = std.mem.align_forward(usize, n, std.mem.page_size);
     if (bl + n_aligned > bloc_max) {
         // we need to allocate
         if (brk_(bl + n_aligned) < 0) return 0;

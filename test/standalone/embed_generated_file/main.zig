@@ -1,5 +1,5 @@
 const std = @import("std");
-const blah = @embedFile("bootloader.elf");
+const blah = @embed_file("bootloader.elf");
 
 test {
     comptime {

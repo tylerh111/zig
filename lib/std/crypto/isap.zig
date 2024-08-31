@@ -34,10 +34,10 @@ pub const IsapA128A = struct {
         while (true) : (i += 8) {
             const left = m.len - i;
             if (left >= 8) {
-                isap.st.addBytes(m[i..][0..8]);
+                isap.st.add_bytes(m[i..][0..8]);
                 isap.st.permute();
                 if (left == 8) {
-                    isap.st.addByte(0x80, 0);
+                    isap.st.add_byte(0x80, 0);
                     isap.st.permute();
                     break;
                 }
@@ -45,7 +45,7 @@ pub const IsapA128A = struct {
                 var padded = [_]u8{0} ** 8;
                 @memcpy(padded[0..left], m[i..]);
                 padded[left] = 0x80;
-                isap.st.addBytes(&padded);
+                isap.st.add_bytes(&padded);
                 isap.st.permute();
                 break;
             }
@@ -54,10 +54,10 @@ pub const IsapA128A = struct {
 
     fn trickle(k: [16]u8, iv: [8]u8, y: []const u8, comptime out_len: usize) [out_len]u8 {
         var isap = IsapA128A{
-            .st = Ascon.initFromWords(.{
-                mem.readInt(u64, k[0..8], .big),
-                mem.readInt(u64, k[8..16], .big),
-                mem.readInt(u64, iv[0..8], .big),
+            .st = Ascon.init_from_words(.{
+                mem.read_int(u64, k[0..8], .big),
+                mem.read_int(u64, k[8..16], .big),
+                mem.read_int(u64, iv[0..8], .big),
                 0,
                 0,
             }),
@@ -69,25 +69,25 @@ pub const IsapA128A = struct {
             const cur_byte_pos = i / 8;
             const cur_bit_pos: u3 = @truncate(7 - (i % 8));
             const cur_bit = ((y[cur_byte_pos] >> cur_bit_pos) & 1) << 7;
-            isap.st.addByte(cur_bit, 0);
-            isap.st.permuteR(1);
+            isap.st.add_byte(cur_bit, 0);
+            isap.st.permute_r(1);
         }
         const cur_bit = (y[y.len - 1] & 1) << 7;
-        isap.st.addByte(cur_bit, 0);
+        isap.st.add_byte(cur_bit, 0);
         isap.st.permute();
 
         var out: [out_len]u8 = undefined;
-        isap.st.extractBytes(&out);
-        isap.st.secureZero();
+        isap.st.extract_bytes(&out);
+        isap.st.secure_zero();
         return out;
     }
 
     fn mac(c: []const u8, ad: []const u8, npub: [16]u8, key: [16]u8) [16]u8 {
         var isap = IsapA128A{
-            .st = Ascon.initFromWords(.{
-                mem.readInt(u64, npub[0..8], .big),
-                mem.readInt(u64, npub[8..16], .big),
-                mem.readInt(u64, iv1[0..], .big),
+            .st = Ascon.init_from_words(.{
+                mem.read_int(u64, npub[0..8], .big),
+                mem.read_int(u64, npub[8..16], .big),
+                mem.read_int(u64, iv1[0..], .big),
                 0,
                 0,
             }),
@@ -95,18 +95,18 @@ pub const IsapA128A = struct {
         isap.st.permute();
 
         isap.absorb(ad);
-        isap.st.addByte(1, Ascon.block_bytes - 1);
+        isap.st.add_byte(1, Ascon.block_bytes - 1);
         isap.absorb(c);
 
         var y: [16]u8 = undefined;
-        isap.st.extractBytes(&y);
+        isap.st.extract_bytes(&y);
         const nb = trickle(key, iv2, y[0..], 16);
-        isap.st.setBytes(&nb);
+        isap.st.set_bytes(&nb);
         isap.st.permute();
 
         var tag: [16]u8 = undefined;
-        isap.st.extractBytes(&tag);
-        isap.st.secureZero();
+        isap.st.extract_bytes(&tag);
+        isap.st.secure_zero();
         return tag;
     }
 
@@ -115,31 +115,31 @@ pub const IsapA128A = struct {
 
         const nb = trickle(key, iv3, npub[0..], 24);
         var isap = IsapA128A{
-            .st = Ascon.initFromWords(.{
-                mem.readInt(u64, nb[0..8], .big),
-                mem.readInt(u64, nb[8..16], .big),
-                mem.readInt(u64, nb[16..24], .big),
-                mem.readInt(u64, npub[0..8], .big),
-                mem.readInt(u64, npub[8..16], .big),
+            .st = Ascon.init_from_words(.{
+                mem.read_int(u64, nb[0..8], .big),
+                mem.read_int(u64, nb[8..16], .big),
+                mem.read_int(u64, nb[16..24], .big),
+                mem.read_int(u64, npub[0..8], .big),
+                mem.read_int(u64, npub[8..16], .big),
             }),
         };
-        isap.st.permuteR(6);
+        isap.st.permute_r(6);
 
         var i: usize = 0;
         while (true) : (i += 8) {
             const left = in.len - i;
             if (left >= 8) {
-                isap.st.xorBytes(out[i..][0..8], in[i..][0..8]);
+                isap.st.xor_bytes(out[i..][0..8], in[i..][0..8]);
                 if (left == 8) {
                     break;
                 }
-                isap.st.permuteR(6);
+                isap.st.permute_r(6);
             } else {
-                isap.st.xorBytes(out[i..], in[i..]);
+                isap.st.xor_bytes(out[i..], in[i..]);
                 break;
             }
         }
-        isap.st.secureZero();
+        isap.st.secure_zero();
     }
 
     pub fn encrypt(c: []u8, tag: *[tag_length]u8, m: []const u8, ad: []const u8, npub: [nonce_length]u8, key: [key_length]u8) void {
@@ -158,9 +158,9 @@ pub const IsapA128A = struct {
     /// Contents of `m` are undefined if an error is returned.
     pub fn decrypt(m: []u8, c: []const u8, tag: [tag_length]u8, ad: []const u8, npub: [nonce_length]u8, key: [key_length]u8) AuthenticationError!void {
         var computed_tag = mac(c, ad, npub, key);
-        const verify = crypto.utils.timingSafeEql([tag_length]u8, computed_tag, tag);
+        const verify = crypto.utils.timing_safe_eql([tag_length]u8, computed_tag, tag);
         if (!verify) {
-            crypto.utils.secureZero(u8, &computed_tag);
+            crypto.utils.secure_zero(u8, &computed_tag);
             @memset(m, undefined);
             return error.AuthenticationFailed;
         }

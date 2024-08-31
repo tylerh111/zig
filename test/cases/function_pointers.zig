@@ -3,11 +3,11 @@ const std = @import("std");
 const PrintFn = *const fn () void;
 
 pub fn main() void {
-    var printFn: PrintFn = stopSayingThat;
+    var printFn: PrintFn = stop_saying_that;
     var i: u32 = 0;
     while (i < 4) : (i += 1) printFn();
 
-    printFn = moveEveryZig;
+    printFn = move_every_zig;
     printFn();
 }
 

@@ -49,251 +49,251 @@ pub const Feature = enum {
     zreg,
 };
 
-pub const featureSet = CpuFeature.feature_set_fns(Feature).featureSet;
-pub const featureSetHas = CpuFeature.feature_set_fns(Feature).featureSetHas;
-pub const featureSetHasAny = CpuFeature.feature_set_fns(Feature).featureSetHasAny;
-pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
+pub const feature_set = CpuFeature.feature_set_fns(Feature).feature_set;
+pub const feature_set_has = CpuFeature.feature_set_fns(Feature).feature_set_has;
+pub const feature_set_has_any = CpuFeature.feature_set_fns(Feature).feature_set_has_any;
+pub const feature_set_has_all = CpuFeature.feature_set_fns(Feature).feature_set_has_all;
 
 pub const all_features = blk: {
     const len = @typeInfo(Feature).Enum.fields.len;
     std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
     var result: [len]CpuFeature = undefined;
-    result[@intFromEnum(Feature.audio)] = .{
+    result[@int_from_enum(Feature.audio)] = .{
         .llvm_name = "audio",
         .description = "Hexagon Audio extension instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.cabac)] = .{
+    result[@int_from_enum(Feature.cabac)] = .{
         .llvm_name = "cabac",
         .description = "Emit the CABAC instruction",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.compound)] = .{
+    result[@int_from_enum(Feature.compound)] = .{
         .llvm_name = "compound",
         .description = "Use compound instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.duplex)] = .{
+    result[@int_from_enum(Feature.duplex)] = .{
         .llvm_name = "duplex",
         .description = "Enable generation of duplex instruction",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hvx)] = .{
+    result[@int_from_enum(Feature.hvx)] = .{
         .llvm_name = "hvx",
         .description = "Hexagon HVX instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hvx_ieee_fp)] = .{
+    result[@int_from_enum(Feature.hvx_ieee_fp)] = .{
         .llvm_name = "hvx-ieee-fp",
         .description = "Hexagon HVX IEEE floating point instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hvx_length128b)] = .{
+    result[@int_from_enum(Feature.hvx_length128b)] = .{
         .llvm_name = "hvx-length128b",
         .description = "Hexagon HVX 128B instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hvx,
         }),
     };
-    result[@intFromEnum(Feature.hvx_length64b)] = .{
+    result[@int_from_enum(Feature.hvx_length64b)] = .{
         .llvm_name = "hvx-length64b",
         .description = "Hexagon HVX 64B instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hvx,
         }),
     };
-    result[@intFromEnum(Feature.hvx_qfloat)] = .{
+    result[@int_from_enum(Feature.hvx_qfloat)] = .{
         .llvm_name = "hvx-qfloat",
         .description = "Hexagon HVX QFloating point instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hvxv60)] = .{
+    result[@int_from_enum(Feature.hvxv60)] = .{
         .llvm_name = "hvxv60",
         .description = "Hexagon HVX instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hvx,
         }),
     };
-    result[@intFromEnum(Feature.hvxv62)] = .{
+    result[@int_from_enum(Feature.hvxv62)] = .{
         .llvm_name = "hvxv62",
         .description = "Hexagon HVX instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hvxv60,
         }),
     };
-    result[@intFromEnum(Feature.hvxv65)] = .{
+    result[@int_from_enum(Feature.hvxv65)] = .{
         .llvm_name = "hvxv65",
         .description = "Hexagon HVX instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hvxv62,
         }),
     };
-    result[@intFromEnum(Feature.hvxv66)] = .{
+    result[@int_from_enum(Feature.hvxv66)] = .{
         .llvm_name = "hvxv66",
         .description = "Hexagon HVX instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hvxv65,
             .zreg,
         }),
     };
-    result[@intFromEnum(Feature.hvxv67)] = .{
+    result[@int_from_enum(Feature.hvxv67)] = .{
         .llvm_name = "hvxv67",
         .description = "Hexagon HVX instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hvxv66,
         }),
     };
-    result[@intFromEnum(Feature.hvxv68)] = .{
+    result[@int_from_enum(Feature.hvxv68)] = .{
         .llvm_name = "hvxv68",
         .description = "Hexagon HVX instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hvxv67,
         }),
     };
-    result[@intFromEnum(Feature.hvxv69)] = .{
+    result[@int_from_enum(Feature.hvxv69)] = .{
         .llvm_name = "hvxv69",
         .description = "Hexagon HVX instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hvxv68,
         }),
     };
-    result[@intFromEnum(Feature.hvxv71)] = .{
+    result[@int_from_enum(Feature.hvxv71)] = .{
         .llvm_name = "hvxv71",
         .description = "Hexagon HVX instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hvxv69,
         }),
     };
-    result[@intFromEnum(Feature.hvxv73)] = .{
+    result[@int_from_enum(Feature.hvxv73)] = .{
         .llvm_name = "hvxv73",
         .description = "Hexagon HVX instructions",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .hvxv71,
         }),
     };
-    result[@intFromEnum(Feature.long_calls)] = .{
+    result[@int_from_enum(Feature.long_calls)] = .{
         .llvm_name = "long-calls",
         .description = "Use constant-extended calls",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.mem_noshuf)] = .{
+    result[@int_from_enum(Feature.mem_noshuf)] = .{
         .llvm_name = "mem_noshuf",
         .description = "Supports mem_noshuf feature",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.memops)] = .{
+    result[@int_from_enum(Feature.memops)] = .{
         .llvm_name = "memops",
         .description = "Use memop instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.noreturn_stack_elim)] = .{
+    result[@int_from_enum(Feature.noreturn_stack_elim)] = .{
         .llvm_name = "noreturn-stack-elim",
         .description = "Eliminate stack allocation in a noreturn function when possible",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.nvj)] = .{
+    result[@int_from_enum(Feature.nvj)] = .{
         .llvm_name = "nvj",
         .description = "Support for new-value jumps",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .packets,
         }),
     };
-    result[@intFromEnum(Feature.nvs)] = .{
+    result[@int_from_enum(Feature.nvs)] = .{
         .llvm_name = "nvs",
         .description = "Support for new-value stores",
-        .dependencies = featureSet(&[_]Feature{
+        .dependencies = feature_set(&[_]Feature{
             .packets,
         }),
     };
-    result[@intFromEnum(Feature.packets)] = .{
+    result[@int_from_enum(Feature.packets)] = .{
         .llvm_name = "packets",
         .description = "Support for instruction packets",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.prev65)] = .{
+    result[@int_from_enum(Feature.prev65)] = .{
         .llvm_name = "prev65",
         .description = "Support features deprecated in v65",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.reserved_r19)] = .{
+    result[@int_from_enum(Feature.reserved_r19)] = .{
         .llvm_name = "reserved-r19",
         .description = "Reserve register R19",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.small_data)] = .{
+    result[@int_from_enum(Feature.small_data)] = .{
         .llvm_name = "small-data",
         .description = "Allow GP-relative addressing of global variables",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.tinycore)] = .{
+    result[@int_from_enum(Feature.tinycore)] = .{
         .llvm_name = "tinycore",
         .description = "Hexagon Tiny Core",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.unsafe_fp)] = .{
+    result[@int_from_enum(Feature.unsafe_fp)] = .{
         .llvm_name = "unsafe-fp",
         .description = "Use unsafe FP math",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v5)] = .{
+    result[@int_from_enum(Feature.v5)] = .{
         .llvm_name = "v5",
         .description = "Enable Hexagon V5 architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v55)] = .{
+    result[@int_from_enum(Feature.v55)] = .{
         .llvm_name = "v55",
         .description = "Enable Hexagon V55 architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v60)] = .{
+    result[@int_from_enum(Feature.v60)] = .{
         .llvm_name = "v60",
         .description = "Enable Hexagon V60 architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v62)] = .{
+    result[@int_from_enum(Feature.v62)] = .{
         .llvm_name = "v62",
         .description = "Enable Hexagon V62 architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v65)] = .{
+    result[@int_from_enum(Feature.v65)] = .{
         .llvm_name = "v65",
         .description = "Enable Hexagon V65 architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v66)] = .{
+    result[@int_from_enum(Feature.v66)] = .{
         .llvm_name = "v66",
         .description = "Enable Hexagon V66 architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v67)] = .{
+    result[@int_from_enum(Feature.v67)] = .{
         .llvm_name = "v67",
         .description = "Enable Hexagon V67 architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v68)] = .{
+    result[@int_from_enum(Feature.v68)] = .{
         .llvm_name = "v68",
         .description = "Enable Hexagon V68 architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v69)] = .{
+    result[@int_from_enum(Feature.v69)] = .{
         .llvm_name = "v69",
         .description = "Enable Hexagon V69 architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v71)] = .{
+    result[@int_from_enum(Feature.v71)] = .{
         .llvm_name = "v71",
         .description = "Enable Hexagon V71 architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.v73)] = .{
+    result[@int_from_enum(Feature.v73)] = .{
         .llvm_name = "v73",
         .description = "Enable Hexagon V73 architecture",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.zreg)] = .{
+    result[@int_from_enum(Feature.zreg)] = .{
         .llvm_name = "zreg",
         .description = "Hexagon ZReg extension instructions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
     const ti = @typeInfo(Feature);
     for (&result, 0..) |*elem, i| {
@@ -307,7 +307,7 @@ pub const cpu = struct {
     pub const generic = CpuModel{
         .name = "generic",
         .llvm_name = "generic",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cabac,
             .compound,
             .duplex,
@@ -324,7 +324,7 @@ pub const cpu = struct {
     pub const hexagonv5 = CpuModel{
         .name = "hexagonv5",
         .llvm_name = "hexagonv5",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cabac,
             .compound,
             .duplex,
@@ -339,7 +339,7 @@ pub const cpu = struct {
     pub const hexagonv55 = CpuModel{
         .name = "hexagonv55",
         .llvm_name = "hexagonv55",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cabac,
             .compound,
             .duplex,
@@ -355,7 +355,7 @@ pub const cpu = struct {
     pub const hexagonv60 = CpuModel{
         .name = "hexagonv60",
         .llvm_name = "hexagonv60",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cabac,
             .compound,
             .duplex,
@@ -372,7 +372,7 @@ pub const cpu = struct {
     pub const hexagonv62 = CpuModel{
         .name = "hexagonv62",
         .llvm_name = "hexagonv62",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cabac,
             .compound,
             .duplex,
@@ -390,7 +390,7 @@ pub const cpu = struct {
     pub const hexagonv65 = CpuModel{
         .name = "hexagonv65",
         .llvm_name = "hexagonv65",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cabac,
             .compound,
             .duplex,
@@ -409,7 +409,7 @@ pub const cpu = struct {
     pub const hexagonv66 = CpuModel{
         .name = "hexagonv66",
         .llvm_name = "hexagonv66",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cabac,
             .compound,
             .duplex,
@@ -429,7 +429,7 @@ pub const cpu = struct {
     pub const hexagonv67 = CpuModel{
         .name = "hexagonv67",
         .llvm_name = "hexagonv67",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cabac,
             .compound,
             .duplex,
@@ -450,7 +450,7 @@ pub const cpu = struct {
     pub const hexagonv67t = CpuModel{
         .name = "hexagonv67t",
         .llvm_name = "hexagonv67t",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .audio,
             .compound,
             .mem_noshuf,
@@ -470,7 +470,7 @@ pub const cpu = struct {
     pub const hexagonv68 = CpuModel{
         .name = "hexagonv68",
         .llvm_name = "hexagonv68",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cabac,
             .compound,
             .duplex,
@@ -492,7 +492,7 @@ pub const cpu = struct {
     pub const hexagonv69 = CpuModel{
         .name = "hexagonv69",
         .llvm_name = "hexagonv69",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cabac,
             .compound,
             .duplex,
@@ -515,7 +515,7 @@ pub const cpu = struct {
     pub const hexagonv71 = CpuModel{
         .name = "hexagonv71",
         .llvm_name = "hexagonv71",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .cabac,
             .compound,
             .duplex,
@@ -539,7 +539,7 @@ pub const cpu = struct {
     pub const hexagonv71t = CpuModel{
         .name = "hexagonv71t",
         .llvm_name = "hexagonv71t",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .audio,
             .compound,
             .mem_noshuf,
@@ -562,7 +562,7 @@ pub const cpu = struct {
     pub const hexagonv73 = CpuModel{
         .name = "hexagonv73",
         .llvm_name = "hexagonv73",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .compound,
             .duplex,
             .mem_noshuf,

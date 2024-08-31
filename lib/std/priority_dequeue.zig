@@ -4,18 +4,18 @@ const assert = std.debug.assert;
 const Order = std.math.Order;
 const testing = std.testing;
 const expect = testing.expect;
-const expectEqual = testing.expectEqual;
-const expectError = testing.expectError;
+const expect_equal = testing.expect_equal;
+const expect_error = testing.expect_error;
 
 /// Priority Dequeue for storing generic data. Initialize with `init`.
-/// Provide `compareFn` that returns `Order.lt` when its second
+/// Provide `compare_fn` that returns `Order.lt` when its second
 /// argument should get min-popped before its third argument,
 /// `Order.eq` if the arguments are of equal priority, or `Order.gt`
 /// if the third argument should be min-popped second.
 /// Popping the max element works in reverse. For example,
 /// to make `popMin` return the smallest number, provide
 /// `fn less_than(context: void, a: T, b: T) Order { _ = context; return std.math.order(a, b); }`
-pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compareFn: fn (context: Context, a: T, b: T) Order) type {
+pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compare_fn: fn (context: Context, a: T, b: T) Order) type {
     return struct {
         const Self = @This();
 
@@ -41,15 +41,15 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
 
         /// Insert a new element, maintaining priority.
         pub fn add(self: *Self, elem: T) !void {
-            try self.ensureUnusedCapacity(1);
-            addUnchecked(self, elem);
+            try self.ensure_unused_capacity(1);
+            add_unchecked(self, elem);
         }
 
         /// Add each element in `items` to the dequeue.
         pub fn add_slice(self: *Self, items: []const T) !void {
-            try self.ensureUnusedCapacity(items.len);
+            try self.ensure_unused_capacity(items.len);
             for (items) |e| {
-                self.addUnchecked(e);
+                self.add_unchecked(e);
             }
         }
 
@@ -57,8 +57,8 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             self.items[self.len] = elem;
 
             if (self.len > 0) {
-                const start = self.getStartForSiftUp(elem, self.len);
-                self.siftUp(start);
+                const start = self.get_start_for_sift_up(elem, self.len);
+                self.sift_up(start);
             }
 
             self.len += 1;
@@ -73,7 +73,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
         }
 
         fn next_is_min_layer(self: Self) bool {
-            return isMinLayer(self.len);
+            return is_min_layer(self.len);
         }
 
         const StartIndexAndLayer = struct {
@@ -83,11 +83,11 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
 
         fn get_start_for_sift_up(self: Self, child: T, index: usize) StartIndexAndLayer {
             const child_index = index;
-            const parent_index = parentIndex(child_index);
+            const parent_index = parent_index(child_index);
             const parent = self.items[parent_index];
 
-            const min_layer = self.nextIsMinLayer();
-            const order = compareFn(self.context, child, parent);
+            const min_layer = self.next_is_min_layer();
+            const order = compare_fn(self.context, child, parent);
             if ((min_layer and order == .gt) or (!min_layer and order == .lt)) {
                 // We must swap the item with it's parent if it is on the "wrong" layer
                 self.items[parent_index] = child;
@@ -106,21 +106,21 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
 
         fn sift_up(self: *Self, start: StartIndexAndLayer) void {
             if (start.min_layer) {
-                doSiftUp(self, start.index, .lt);
+                do_sift_up(self, start.index, .lt);
             } else {
-                doSiftUp(self, start.index, .gt);
+                do_sift_up(self, start.index, .gt);
             }
         }
 
         fn do_sift_up(self: *Self, start_index: usize, target_order: Order) void {
             var child_index = start_index;
             while (child_index > 2) {
-                const grandparent_index = grandparentIndex(child_index);
+                const grandparent_index = grandparent_index(child_index);
                 const child = self.items[child_index];
                 const grandparent = self.items[grandparent_index];
 
                 // If the grandparent is already better or equal, we have gone as far as we need to
-                if (compareFn(self.context, child, grandparent) != target_order) break;
+                if (compare_fn(self.context, child, grandparent) != target_order) break;
 
                 // Otherwise swap the item with it's grandparent
                 self.items[grandparent_index] = child;
@@ -141,38 +141,38 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             if (self.len == 0) return null;
             if (self.len == 1) return self.items[0];
             if (self.len == 2) return self.items[1];
-            return self.bestItemAtIndices(1, 2, .gt).item;
+            return self.best_item_at_indices(1, 2, .gt).item;
         }
 
         fn max_index(self: Self) ?usize {
             if (self.len == 0) return null;
             if (self.len == 1) return 0;
             if (self.len == 2) return 1;
-            return self.bestItemAtIndices(1, 2, .gt).index;
+            return self.best_item_at_indices(1, 2, .gt).index;
         }
 
         /// Pop the smallest element from the dequeue. Returns
         /// `null` if empty.
         pub fn remove_min_or_null(self: *Self) ?T {
-            return if (self.len > 0) self.removeMin() else null;
+            return if (self.len > 0) self.remove_min() else null;
         }
 
         /// Remove and return the smallest element from the
         /// dequeue.
         pub fn remove_min(self: *Self) T {
-            return self.removeIndex(0);
+            return self.remove_index(0);
         }
 
         /// Pop the largest element from the dequeue. Returns
         /// `null` if empty.
         pub fn remove_max_or_null(self: *Self) ?T {
-            return if (self.len > 0) self.removeMax() else null;
+            return if (self.len > 0) self.remove_max() else null;
         }
 
         /// Remove and return the largest element from the
         /// dequeue.
         pub fn remove_max(self: *Self) T {
-            return self.removeIndex(self.maxIndex().?);
+            return self.remove_index(self.max_index().?);
         }
 
         /// Remove and return element at index. Indices are in the
@@ -185,16 +185,16 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
 
             self.items[index] = last;
             self.len -= 1;
-            siftDown(self, index);
+            sift_down(self, index);
 
             return item;
         }
 
         fn sift_down(self: *Self, index: usize) void {
-            if (isMinLayer(index)) {
-                self.doSiftDown(index, .lt);
+            if (is_min_layer(index)) {
+                self.do_sift_down(index, .lt);
             } else {
-                self.doSiftDown(index, .gt);
+                self.do_sift_down(index, .gt);
             }
         }
 
@@ -202,7 +202,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             var index = start_index;
             const half = self.len >> 1;
             while (true) {
-                const first_grandchild_index = firstGrandchildIndex(index);
+                const first_grandchild_index = first_grandchild_index(index);
                 const last_grandchild_index = first_grandchild_index + 3;
 
                 const elem = self.items[index];
@@ -213,12 +213,12 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
                     const index3 = index2 + 1;
 
                     // Find the best grandchild
-                    const best_left = self.bestItemAtIndices(first_grandchild_index, index2, target_order);
-                    const best_right = self.bestItemAtIndices(index3, last_grandchild_index, target_order);
-                    const best_grandchild = self.bestItem(best_left, best_right, target_order);
+                    const best_left = self.best_item_at_indices(first_grandchild_index, index2, target_order);
+                    const best_right = self.best_item_at_indices(index3, last_grandchild_index, target_order);
+                    const best_grandchild = self.best_item(best_left, best_right, target_order);
 
                     // If the item is better than or equal to its best grandchild, we are done
-                    if (compareFn(self.context, best_grandchild.item, elem) != target_order) return;
+                    if (compare_fn(self.context, best_grandchild.item, elem) != target_order) return;
 
                     // Otherwise, swap them
                     self.items[best_grandchild.index] = elem;
@@ -226,16 +226,16 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
                     index = best_grandchild.index;
 
                     // We might need to swap the element with it's parent
-                    self.swapIfParentIsBetter(elem, index, target_order);
+                    self.swap_if_parent_is_better(elem, index, target_order);
                 } else {
                     // The children or grandchildren are the last layer
-                    const first_child_index = firstChildIndex(index);
+                    const first_child_index = first_child_index(index);
                     if (first_child_index >= self.len) return;
 
-                    const best_descendent = self.bestDescendent(first_child_index, first_grandchild_index, target_order);
+                    const best_descendent = self.best_descendent(first_child_index, first_grandchild_index, target_order);
 
                     // If the item is better than or equal to its best descendant, we are done
-                    if (compareFn(self.context, best_descendent.item, elem) != target_order) return;
+                    if (compare_fn(self.context, best_descendent.item, elem) != target_order) return;
 
                     // Otherwise swap them
                     self.items[best_descendent.index] = elem;
@@ -246,7 +246,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
                     if (index < first_grandchild_index) return;
 
                     // We might need to swap the element with it's parent
-                    self.swapIfParentIsBetter(elem, index, target_order);
+                    self.swap_if_parent_is_better(elem, index, target_order);
                     return;
                 }
 
@@ -256,10 +256,10 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
         }
 
         fn swap_if_parent_is_better(self: *Self, child: T, child_index: usize, target_order: Order) void {
-            const parent_index = parentIndex(child_index);
+            const parent_index = parent_index(child_index);
             const parent = self.items[parent_index];
 
-            if (compareFn(self.context, parent, child) == target_order) {
+            if (compare_fn(self.context, parent, child) == target_order) {
                 self.items[parent_index] = child;
                 self.items[child_index] = parent;
             }
@@ -278,7 +278,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
         }
 
         fn best_item(self: Self, item1: ItemAndIndex, item2: ItemAndIndex, target_order: Order) ItemAndIndex {
-            if (compareFn(self.context, item1.item, item2.item) == target_order) {
+            if (compare_fn(self.context, item1.item, item2.item) == target_order) {
                 return item1;
             } else {
                 return item2;
@@ -286,9 +286,9 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
         }
 
         fn best_item_at_indices(self: Self, index1: usize, index2: usize, target_order: Order) ItemAndIndex {
-            const item1 = self.getItem(index1);
-            const item2 = self.getItem(index2);
-            return self.bestItem(item1, item2, target_order);
+            const item1 = self.get_item(index1);
+            const item2 = self.get_item(index2);
+            return self.best_item(item1, item2, target_order);
         }
 
         fn best_descendent(self: Self, first_child_index: usize, first_grandchild_index: usize, target_order: Order) ItemAndIndex {
@@ -301,24 +301,24 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
                         .index = first_child_index,
                     };
                 } else {
-                    return self.bestItemAtIndices(first_child_index, second_child_index, target_order);
+                    return self.best_item_at_indices(first_child_index, second_child_index, target_order);
                 }
             }
 
             const second_grandchild_index = first_grandchild_index + 1;
             if (second_grandchild_index >= self.len) {
                 // One grandchild, so we know there is a second child. Compare first grandchild and second child
-                return self.bestItemAtIndices(first_grandchild_index, second_child_index, target_order);
+                return self.best_item_at_indices(first_grandchild_index, second_child_index, target_order);
             }
 
-            const best_left_grandchild_index = self.bestItemAtIndices(first_grandchild_index, second_grandchild_index, target_order).index;
+            const best_left_grandchild_index = self.best_item_at_indices(first_grandchild_index, second_grandchild_index, target_order).index;
             const third_grandchild_index = second_grandchild_index + 1;
             if (third_grandchild_index >= self.len) {
                 // Two grandchildren, and we know the best. Compare this to second child.
-                return self.bestItemAtIndices(best_left_grandchild_index, second_child_index, target_order);
+                return self.best_item_at_indices(best_left_grandchild_index, second_child_index, target_order);
             } else {
                 // Three grandchildren, compare the min of the first two with the third
-                return self.bestItemAtIndices(best_left_grandchild_index, third_grandchild_index, target_order);
+                return self.best_item_at_indices(best_left_grandchild_index, third_grandchild_index, target_order);
             }
         }
 
@@ -350,7 +350,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
             var i: usize = 0;
             while (i <= half) : (i += 1) {
                 const index = half - i;
-                queue.siftDown(index);
+                queue.sift_down(index);
             }
             return queue;
         }
@@ -368,7 +368,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
 
         /// Ensure that the dequeue can fit at least `additional_count` **more** items.
         pub fn ensure_unused_capacity(self: *Self, additional_count: usize) !void {
-            return self.ensureTotalCapacity(self.len + additional_count);
+            return self.ensure_total_capacity(self.len + additional_count);
         }
 
         /// Reduce allocated capacity to `new_len`.
@@ -391,16 +391,16 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
                 var idx: usize = 0;
                 while (idx < self.len) : (idx += 1) {
                     const item = self.items[idx];
-                    if (compareFn(self.context, item, elem) == .eq) break :blk idx;
+                    if (compare_fn(self.context, item, elem) == .eq) break :blk idx;
                 }
                 return error.ElementNotFound;
             };
-            _ = self.removeIndex(old_index);
-            self.addUnchecked(new_elem);
+            _ = self.remove_index(old_index);
+            self.add_unchecked(new_elem);
         }
 
         pub const Iterator = struct {
-            queue: *PriorityDequeue(T, Context, compareFn),
+            queue: *PriorityDequeue(T, Context, compare_fn),
             count: usize,
 
             pub fn next(it: *Iterator) ?T {
@@ -447,7 +447,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
         }
 
         fn grandparent_index(index: usize) usize {
-            return parentIndex(parentIndex(index));
+            return parent_index(parent_index(index));
         }
 
         fn first_child_index(index: usize) usize {
@@ -455,7 +455,7 @@ pub fn PriorityDequeue(comptime T: type, comptime Context: type, comptime compar
         }
 
         fn first_grandchild_index(index: usize) usize {
-            return firstChildIndex(firstChildIndex(index));
+            return first_child_index(first_child_index(index));
         }
     };
 }
@@ -465,7 +465,7 @@ fn less_than_comparison(context: void, a: u32, b: u32) Order {
     return std.math.order(a, b);
 }
 
-const PDQ = PriorityDequeue(u32, void, lessThanComparison);
+const PDQ = PriorityDequeue(u32, void, less_than_comparison);
 
 test "add and remove min" {
     var queue = PDQ.init(testing.allocator, {});
@@ -478,12 +478,12 @@ test "add and remove min" {
     try queue.add(25);
     try queue.add(13);
 
-    try expectEqual(@as(u32, 7), queue.removeMin());
-    try expectEqual(@as(u32, 12), queue.removeMin());
-    try expectEqual(@as(u32, 13), queue.removeMin());
-    try expectEqual(@as(u32, 23), queue.removeMin());
-    try expectEqual(@as(u32, 25), queue.removeMin());
-    try expectEqual(@as(u32, 54), queue.removeMin());
+    try expect_equal(@as(u32, 7), queue.remove_min());
+    try expect_equal(@as(u32, 12), queue.remove_min());
+    try expect_equal(@as(u32, 13), queue.remove_min());
+    try expect_equal(@as(u32, 23), queue.remove_min());
+    try expect_equal(@as(u32, 25), queue.remove_min());
+    try expect_equal(@as(u32, 54), queue.remove_min());
 }
 
 test "add and remove min structs" {
@@ -505,12 +505,12 @@ test "add and remove min structs" {
     try queue.add(.{ .size = 25 });
     try queue.add(.{ .size = 13 });
 
-    try expectEqual(@as(u32, 7), queue.removeMin().size);
-    try expectEqual(@as(u32, 12), queue.removeMin().size);
-    try expectEqual(@as(u32, 13), queue.removeMin().size);
-    try expectEqual(@as(u32, 23), queue.removeMin().size);
-    try expectEqual(@as(u32, 25), queue.removeMin().size);
-    try expectEqual(@as(u32, 54), queue.removeMin().size);
+    try expect_equal(@as(u32, 7), queue.remove_min().size);
+    try expect_equal(@as(u32, 12), queue.remove_min().size);
+    try expect_equal(@as(u32, 13), queue.remove_min().size);
+    try expect_equal(@as(u32, 23), queue.remove_min().size);
+    try expect_equal(@as(u32, 25), queue.remove_min().size);
+    try expect_equal(@as(u32, 54), queue.remove_min().size);
 }
 
 test "add and remove max" {
@@ -524,12 +524,12 @@ test "add and remove max" {
     try queue.add(25);
     try queue.add(13);
 
-    try expectEqual(@as(u32, 54), queue.removeMax());
-    try expectEqual(@as(u32, 25), queue.removeMax());
-    try expectEqual(@as(u32, 23), queue.removeMax());
-    try expectEqual(@as(u32, 13), queue.removeMax());
-    try expectEqual(@as(u32, 12), queue.removeMax());
-    try expectEqual(@as(u32, 7), queue.removeMax());
+    try expect_equal(@as(u32, 54), queue.remove_max());
+    try expect_equal(@as(u32, 25), queue.remove_max());
+    try expect_equal(@as(u32, 23), queue.remove_max());
+    try expect_equal(@as(u32, 13), queue.remove_max());
+    try expect_equal(@as(u32, 12), queue.remove_max());
+    try expect_equal(@as(u32, 7), queue.remove_max());
 }
 
 test "add and remove same min" {
@@ -543,12 +543,12 @@ test "add and remove same min" {
     try queue.add(1);
     try queue.add(1);
 
-    try expectEqual(@as(u32, 1), queue.removeMin());
-    try expectEqual(@as(u32, 1), queue.removeMin());
-    try expectEqual(@as(u32, 1), queue.removeMin());
-    try expectEqual(@as(u32, 1), queue.removeMin());
-    try expectEqual(@as(u32, 2), queue.removeMin());
-    try expectEqual(@as(u32, 2), queue.removeMin());
+    try expect_equal(@as(u32, 1), queue.remove_min());
+    try expect_equal(@as(u32, 1), queue.remove_min());
+    try expect_equal(@as(u32, 1), queue.remove_min());
+    try expect_equal(@as(u32, 1), queue.remove_min());
+    try expect_equal(@as(u32, 2), queue.remove_min());
+    try expect_equal(@as(u32, 2), queue.remove_min());
 }
 
 test "add and remove same max" {
@@ -562,20 +562,20 @@ test "add and remove same max" {
     try queue.add(1);
     try queue.add(1);
 
-    try expectEqual(@as(u32, 2), queue.removeMax());
-    try expectEqual(@as(u32, 2), queue.removeMax());
-    try expectEqual(@as(u32, 1), queue.removeMax());
-    try expectEqual(@as(u32, 1), queue.removeMax());
-    try expectEqual(@as(u32, 1), queue.removeMax());
-    try expectEqual(@as(u32, 1), queue.removeMax());
+    try expect_equal(@as(u32, 2), queue.remove_max());
+    try expect_equal(@as(u32, 2), queue.remove_max());
+    try expect_equal(@as(u32, 1), queue.remove_max());
+    try expect_equal(@as(u32, 1), queue.remove_max());
+    try expect_equal(@as(u32, 1), queue.remove_max());
+    try expect_equal(@as(u32, 1), queue.remove_max());
 }
 
-test "removeOrNull empty" {
+test "remove_or_null empty" {
     var queue = PDQ.init(testing.allocator, {});
     defer queue.deinit();
 
-    try expect(queue.removeMinOrNull() == null);
-    try expect(queue.removeMaxOrNull() == null);
+    try expect(queue.remove_min_or_null() == null);
+    try expect(queue.remove_max_or_null() == null);
 }
 
 test "edge case 3 elements" {
@@ -586,9 +586,9 @@ test "edge case 3 elements" {
     try queue.add(3);
     try queue.add(2);
 
-    try expectEqual(@as(u32, 2), queue.removeMin());
-    try expectEqual(@as(u32, 3), queue.removeMin());
-    try expectEqual(@as(u32, 9), queue.removeMin());
+    try expect_equal(@as(u32, 2), queue.remove_min());
+    try expect_equal(@as(u32, 3), queue.remove_min());
+    try expect_equal(@as(u32, 9), queue.remove_min());
 }
 
 test "edge case 3 elements max" {
@@ -599,40 +599,40 @@ test "edge case 3 elements max" {
     try queue.add(3);
     try queue.add(2);
 
-    try expectEqual(@as(u32, 9), queue.removeMax());
-    try expectEqual(@as(u32, 3), queue.removeMax());
-    try expectEqual(@as(u32, 2), queue.removeMax());
+    try expect_equal(@as(u32, 9), queue.remove_max());
+    try expect_equal(@as(u32, 3), queue.remove_max());
+    try expect_equal(@as(u32, 2), queue.remove_max());
 }
 
-test "peekMin" {
+test "peek_min" {
     var queue = PDQ.init(testing.allocator, {});
     defer queue.deinit();
 
-    try expect(queue.peekMin() == null);
+    try expect(queue.peek_min() == null);
 
     try queue.add(9);
     try queue.add(3);
     try queue.add(2);
 
-    try expect(queue.peekMin().? == 2);
-    try expect(queue.peekMin().? == 2);
+    try expect(queue.peek_min().? == 2);
+    try expect(queue.peek_min().? == 2);
 }
 
-test "peekMax" {
+test "peek_max" {
     var queue = PDQ.init(testing.allocator, {});
     defer queue.deinit();
 
-    try expect(queue.peekMin() == null);
+    try expect(queue.peek_min() == null);
 
     try queue.add(9);
     try queue.add(3);
     try queue.add(2);
 
-    try expect(queue.peekMax().? == 9);
-    try expect(queue.peekMax().? == 9);
+    try expect(queue.peek_max().? == 9);
+    try expect(queue.peek_max().? == 9);
 }
 
-test "sift up with odd indices, removeMin" {
+test "sift up with odd indices, remove_min" {
     var queue = PDQ.init(testing.allocator, {});
     defer queue.deinit();
     const items = [_]u32{ 15, 7, 21, 14, 13, 22, 12, 6, 7, 25, 5, 24, 11, 16, 15, 24, 2, 1 };
@@ -642,11 +642,11 @@ test "sift up with odd indices, removeMin" {
 
     const sorted_items = [_]u32{ 1, 2, 5, 6, 7, 7, 11, 12, 13, 14, 15, 15, 16, 21, 22, 24, 24, 25 };
     for (sorted_items) |e| {
-        try expectEqual(e, queue.removeMin());
+        try expect_equal(e, queue.remove_min());
     }
 }
 
-test "sift up with odd indices, removeMax" {
+test "sift up with odd indices, remove_max" {
     var queue = PDQ.init(testing.allocator, {});
     defer queue.deinit();
     const items = [_]u32{ 15, 7, 21, 14, 13, 22, 12, 6, 7, 25, 5, 24, 11, 16, 15, 24, 2, 1 };
@@ -656,63 +656,63 @@ test "sift up with odd indices, removeMax" {
 
     const sorted_items = [_]u32{ 25, 24, 24, 22, 21, 16, 15, 15, 14, 13, 12, 11, 7, 7, 6, 5, 2, 1 };
     for (sorted_items) |e| {
-        try expectEqual(e, queue.removeMax());
+        try expect_equal(e, queue.remove_max());
     }
 }
 
-test "addSlice min" {
+test "add_slice min" {
     var queue = PDQ.init(testing.allocator, {});
     defer queue.deinit();
     const items = [_]u32{ 15, 7, 21, 14, 13, 22, 12, 6, 7, 25, 5, 24, 11, 16, 15, 24, 2, 1 };
-    try queue.addSlice(items[0..]);
+    try queue.add_slice(items[0..]);
 
     const sorted_items = [_]u32{ 1, 2, 5, 6, 7, 7, 11, 12, 13, 14, 15, 15, 16, 21, 22, 24, 24, 25 };
     for (sorted_items) |e| {
-        try expectEqual(e, queue.removeMin());
+        try expect_equal(e, queue.remove_min());
     }
 }
 
-test "addSlice max" {
+test "add_slice max" {
     var queue = PDQ.init(testing.allocator, {});
     defer queue.deinit();
     const items = [_]u32{ 15, 7, 21, 14, 13, 22, 12, 6, 7, 25, 5, 24, 11, 16, 15, 24, 2, 1 };
-    try queue.addSlice(items[0..]);
+    try queue.add_slice(items[0..]);
 
     const sorted_items = [_]u32{ 25, 24, 24, 22, 21, 16, 15, 15, 14, 13, 12, 11, 7, 7, 6, 5, 2, 1 };
     for (sorted_items) |e| {
-        try expectEqual(e, queue.removeMax());
+        try expect_equal(e, queue.remove_max());
     }
 }
 
-test "fromOwnedSlice trivial case 0" {
+test "from_owned_slice trivial case 0" {
     const items = [0]u32{};
     const queue_items = try testing.allocator.dupe(u32, &items);
-    var queue = PDQ.fromOwnedSlice(testing.allocator, queue_items[0..], {});
+    var queue = PDQ.from_owned_slice(testing.allocator, queue_items[0..], {});
     defer queue.deinit();
-    try expectEqual(@as(usize, 0), queue.len);
-    try expect(queue.removeMinOrNull() == null);
+    try expect_equal(@as(usize, 0), queue.len);
+    try expect(queue.remove_min_or_null() == null);
 }
 
-test "fromOwnedSlice trivial case 1" {
+test "from_owned_slice trivial case 1" {
     const items = [1]u32{1};
     const queue_items = try testing.allocator.dupe(u32, &items);
-    var queue = PDQ.fromOwnedSlice(testing.allocator, queue_items[0..], {});
+    var queue = PDQ.from_owned_slice(testing.allocator, queue_items[0..], {});
     defer queue.deinit();
 
-    try expectEqual(@as(usize, 1), queue.len);
-    try expectEqual(items[0], queue.removeMin());
-    try expect(queue.removeMinOrNull() == null);
+    try expect_equal(@as(usize, 1), queue.len);
+    try expect_equal(items[0], queue.remove_min());
+    try expect(queue.remove_min_or_null() == null);
 }
 
-test "fromOwnedSlice" {
+test "from_owned_slice" {
     const items = [_]u32{ 15, 7, 21, 14, 13, 22, 12, 6, 7, 25, 5, 24, 11, 16, 15, 24, 2, 1 };
     const queue_items = try testing.allocator.dupe(u32, items[0..]);
-    var queue = PDQ.fromOwnedSlice(testing.allocator, queue_items[0..], {});
+    var queue = PDQ.from_owned_slice(testing.allocator, queue_items[0..], {});
     defer queue.deinit();
 
     const sorted_items = [_]u32{ 1, 2, 5, 6, 7, 7, 11, 12, 13, 14, 15, 15, 16, 21, 22, 24, 24, 25 };
     for (sorted_items) |e| {
-        try expectEqual(e, queue.removeMin());
+        try expect_equal(e, queue.remove_min());
     }
 }
 
@@ -726,9 +726,9 @@ test "update min queue" {
     try queue.update(55, 5);
     try queue.update(44, 4);
     try queue.update(11, 1);
-    try expectEqual(@as(u32, 1), queue.removeMin());
-    try expectEqual(@as(u32, 4), queue.removeMin());
-    try expectEqual(@as(u32, 5), queue.removeMin());
+    try expect_equal(@as(u32, 1), queue.remove_min());
+    try expect_equal(@as(u32, 4), queue.remove_min());
+    try expect_equal(@as(u32, 5), queue.remove_min());
 }
 
 test "update same min queue" {
@@ -741,10 +741,10 @@ test "update same min queue" {
     try queue.add(2);
     try queue.update(1, 5);
     try queue.update(2, 4);
-    try expectEqual(@as(u32, 1), queue.removeMin());
-    try expectEqual(@as(u32, 2), queue.removeMin());
-    try expectEqual(@as(u32, 4), queue.removeMin());
-    try expectEqual(@as(u32, 5), queue.removeMin());
+    try expect_equal(@as(u32, 1), queue.remove_min());
+    try expect_equal(@as(u32, 2), queue.remove_min());
+    try expect_equal(@as(u32, 4), queue.remove_min());
+    try expect_equal(@as(u32, 5), queue.remove_min());
 }
 
 test "update max queue" {
@@ -758,9 +758,9 @@ test "update max queue" {
     try queue.update(44, 1);
     try queue.update(11, 4);
 
-    try expectEqual(@as(u32, 5), queue.removeMax());
-    try expectEqual(@as(u32, 4), queue.removeMax());
-    try expectEqual(@as(u32, 1), queue.removeMax());
+    try expect_equal(@as(u32, 5), queue.remove_max());
+    try expect_equal(@as(u32, 4), queue.remove_max());
+    try expect_equal(@as(u32, 1), queue.remove_max());
 }
 
 test "update same max queue" {
@@ -773,10 +773,10 @@ test "update same max queue" {
     try queue.add(2);
     try queue.update(1, 5);
     try queue.update(2, 4);
-    try expectEqual(@as(u32, 5), queue.removeMax());
-    try expectEqual(@as(u32, 4), queue.removeMax());
-    try expectEqual(@as(u32, 2), queue.removeMax());
-    try expectEqual(@as(u32, 1), queue.removeMax());
+    try expect_equal(@as(u32, 5), queue.remove_max());
+    try expect_equal(@as(u32, 4), queue.remove_max());
+    try expect_equal(@as(u32, 2), queue.remove_max());
+    try expect_equal(@as(u32, 1), queue.remove_max());
 }
 
 test "update after remove" {
@@ -784,8 +784,8 @@ test "update after remove" {
     defer queue.deinit();
 
     try queue.add(1);
-    try expectEqual(@as(u32, 1), queue.removeMin());
-    try expectError(error.ElementNotFound, queue.update(1, 1));
+    try expect_equal(@as(u32, 1), queue.remove_min());
+    try expect_error(error.ElementNotFound, queue.update(1, 1));
 }
 
 test "iterator" {
@@ -807,7 +807,7 @@ test "iterator" {
         _ = map.remove(e);
     }
 
-    try expectEqual(@as(usize, 0), map.count());
+    try expect_equal(@as(usize, 0), map.count());
 }
 
 test "remove at index" {
@@ -827,10 +827,10 @@ test "remove at index" {
         idx += 1;
     } else unreachable;
 
-    try expectEqual(queue.removeIndex(two_idx), 2);
-    try expectEqual(queue.removeMin(), 1);
-    try expectEqual(queue.removeMin(), 3);
-    try expectEqual(queue.removeMinOrNull(), null);
+    try expect_equal(queue.remove_index(two_idx), 2);
+    try expect_equal(queue.remove_min(), 1);
+    try expect_equal(queue.remove_min(), 3);
+    try expect_equal(queue.remove_min_or_null(), null);
 }
 
 test "iterator while empty" {
@@ -839,30 +839,30 @@ test "iterator while empty" {
 
     var it = queue.iterator();
 
-    try expectEqual(it.next(), null);
+    try expect_equal(it.next(), null);
 }
 
-test "shrinkAndFree" {
+test "shrink_and_free" {
     var queue = PDQ.init(testing.allocator, {});
     defer queue.deinit();
 
-    try queue.ensureTotalCapacity(4);
+    try queue.ensure_total_capacity(4);
     try expect(queue.capacity() >= 4);
 
     try queue.add(1);
     try queue.add(2);
     try queue.add(3);
     try expect(queue.capacity() >= 4);
-    try expectEqual(@as(usize, 3), queue.len);
+    try expect_equal(@as(usize, 3), queue.len);
 
-    queue.shrinkAndFree(3);
-    try expectEqual(@as(usize, 3), queue.capacity());
-    try expectEqual(@as(usize, 3), queue.len);
+    queue.shrink_and_free(3);
+    try expect_equal(@as(usize, 3), queue.capacity());
+    try expect_equal(@as(usize, 3), queue.len);
 
-    try expectEqual(@as(u32, 3), queue.removeMax());
-    try expectEqual(@as(u32, 2), queue.removeMax());
-    try expectEqual(@as(u32, 1), queue.removeMax());
-    try expect(queue.removeMaxOrNull() == null);
+    try expect_equal(@as(u32, 3), queue.remove_max());
+    try expect_equal(@as(u32, 2), queue.remove_max());
+    try expect_equal(@as(u32, 1), queue.remove_max());
+    try expect(queue.remove_max_or_null() == null);
 }
 
 test "fuzz testing min" {
@@ -874,19 +874,19 @@ test "fuzz testing min" {
 
     var i: usize = 0;
     while (i < test_case_count) : (i += 1) {
-        try fuzzTestMin(random, queue_size);
+        try fuzz_test_min(random, queue_size);
     }
 }
 
 fn fuzz_test_min(rng: std.Random, comptime queue_size: usize) !void {
     const allocator = testing.allocator;
-    const items = try generateRandomSlice(allocator, rng, queue_size);
+    const items = try generate_random_slice(allocator, rng, queue_size);
 
-    var queue = PDQ.fromOwnedSlice(allocator, items, {});
+    var queue = PDQ.from_owned_slice(allocator, items, {});
     defer queue.deinit();
 
     var last_removed: ?u32 = null;
-    while (queue.removeMinOrNull()) |next| {
+    while (queue.remove_min_or_null()) |next| {
         if (last_removed) |last| {
             try expect(last <= next);
         }
@@ -903,19 +903,19 @@ test "fuzz testing max" {
 
     var i: usize = 0;
     while (i < test_case_count) : (i += 1) {
-        try fuzzTestMax(random, queue_size);
+        try fuzz_test_max(random, queue_size);
     }
 }
 
 fn fuzz_test_max(rng: std.Random, queue_size: usize) !void {
     const allocator = testing.allocator;
-    const items = try generateRandomSlice(allocator, rng, queue_size);
+    const items = try generate_random_slice(allocator, rng, queue_size);
 
-    var queue = PDQ.fromOwnedSlice(testing.allocator, items, {});
+    var queue = PDQ.from_owned_slice(testing.allocator, items, {});
     defer queue.deinit();
 
     var last_removed: ?u32 = null;
-    while (queue.removeMaxOrNull()) |next| {
+    while (queue.remove_max_or_null()) |next| {
         if (last_removed) |last| {
             try expect(last >= next);
         }
@@ -932,15 +932,15 @@ test "fuzz testing min and max" {
 
     var i: usize = 0;
     while (i < test_case_count) : (i += 1) {
-        try fuzzTestMinMax(random, queue_size);
+        try fuzz_test_min_max(random, queue_size);
     }
 }
 
 fn fuzz_test_min_max(rng: std.Random, queue_size: usize) !void {
     const allocator = testing.allocator;
-    const items = try generateRandomSlice(allocator, rng, queue_size);
+    const items = try generate_random_slice(allocator, rng, queue_size);
 
-    var queue = PDQ.fromOwnedSlice(allocator, items, {});
+    var queue = PDQ.from_owned_slice(allocator, items, {});
     defer queue.deinit();
 
     var last_min: ?u32 = null;
@@ -948,13 +948,13 @@ fn fuzz_test_min_max(rng: std.Random, queue_size: usize) !void {
     var i: usize = 0;
     while (i < queue_size) : (i += 1) {
         if (i % 2 == 0) {
-            const next = queue.removeMin();
+            const next = queue.remove_min();
             if (last_min) |last| {
                 try expect(last <= next);
             }
             last_min = next;
         } else {
-            const next = queue.removeMax();
+            const next = queue.remove_max();
             if (last_max) |last| {
                 try expect(last >= next);
             }
@@ -965,7 +965,7 @@ fn fuzz_test_min_max(rng: std.Random, queue_size: usize) !void {
 
 fn generate_random_slice(allocator: std.mem.Allocator, rng: std.Random, size: usize) ![]u32 {
     var array = std.ArrayList(u32).init(allocator);
-    try array.ensureTotalCapacity(size);
+    try array.ensure_total_capacity(size);
 
     var i: usize = 0;
     while (i < size) : (i += 1) {
@@ -973,14 +973,14 @@ fn generate_random_slice(allocator: std.mem.Allocator, rng: std.Random, size: us
         try array.append(elem);
     }
 
-    return array.toOwnedSlice();
+    return array.to_owned_slice();
 }
 
 fn context_less_than_comparison(context: []const u32, a: usize, b: usize) Order {
     return std.math.order(context[a], context[b]);
 }
 
-const CPDQ = PriorityDequeue(usize, []const u32, contextLessThanComparison);
+const CPDQ = PriorityDequeue(usize, []const u32, context_less_than_comparison);
 
 test "add and remove" {
     const context = [_]u32{ 5, 3, 4, 2, 2, 8, 0 };
@@ -995,13 +995,13 @@ test "add and remove" {
     try queue.add(4);
     try queue.add(5);
     try queue.add(6);
-    try expectEqual(@as(usize, 6), queue.removeMin());
-    try expectEqual(@as(usize, 5), queue.removeMax());
-    try expectEqual(@as(usize, 3), queue.removeMin());
-    try expectEqual(@as(usize, 0), queue.removeMax());
-    try expectEqual(@as(usize, 4), queue.removeMin());
-    try expectEqual(@as(usize, 2), queue.removeMax());
-    try expectEqual(@as(usize, 1), queue.removeMin());
+    try expect_equal(@as(usize, 6), queue.remove_min());
+    try expect_equal(@as(usize, 5), queue.remove_max());
+    try expect_equal(@as(usize, 3), queue.remove_min());
+    try expect_equal(@as(usize, 0), queue.remove_max());
+    try expect_equal(@as(usize, 4), queue.remove_min());
+    try expect_equal(@as(usize, 2), queue.remove_max());
+    try expect_equal(@as(usize, 1), queue.remove_min());
 }
 
 var all_cmps_unique = true;
@@ -1012,7 +1012,7 @@ test "don't compare a value to a copy of itself" {
             all_cmps_unique = all_cmps_unique and (a != b);
             return std.math.order(a, b);
         }
-    }.uniqueLessThan).init(testing.allocator, {});
+    }.unique_less_than).init(testing.allocator, {});
     defer depq.deinit();
 
     try depq.add(1);
@@ -1022,6 +1022,6 @@ test "don't compare a value to a copy of itself" {
     try depq.add(5);
     try depq.add(6);
 
-    _ = depq.removeIndex(2);
-    try expectEqual(all_cmps_unique, true);
+    _ = depq.remove_index(2);
+    try expect_equal(all_cmps_unique, true);
 }

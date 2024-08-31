@@ -10,22 +10,22 @@ pub fn build(b: *std.Build) void {
 
     if (builtin.os.tag == .wasi) return;
 
-    const child = b.addExecutable(.{
+    const child = b.add_executable(.{
         .name = "child",
         .root_source_file = b.path("child.zig"),
         .optimize = optimize,
         .target = target,
     });
 
-    const main = b.addExecutable(.{
+    const main = b.add_executable(.{
         .name = "main",
         .root_source_file = b.path("main.zig"),
         .optimize = optimize,
         .target = target,
     });
-    const run = b.addRunArtifact(main);
-    run.addArtifactArg(child);
-    run.expectExitCode(0);
+    const run = b.add_run_artifact(main);
+    run.add_artifact_arg(child);
+    run.expect_exit_code(0);
 
-    test_step.dependOn(&run.step);
+    test_step.depend_on(&run.step);
 }

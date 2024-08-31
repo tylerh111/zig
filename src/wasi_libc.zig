@@ -50,7 +50,7 @@ pub fn exec_model_crt_file(wasi_exec_model: std.builtin.WasiExecModel) CRTFile {
 }
 
 pub fn exec_model_crt_file_full_name(wasi_exec_model: std.builtin.WasiExecModel) []const u8 {
-    return switch (execModelCrtFile(wasi_exec_model)) {
+    return switch (exec_model_crt_file(wasi_exec_model)) {
         .crt1_reactor_o => "crt1-reactor.o",
         .crt1_command_o => "crt1-command.o",
         else => unreachable,
@@ -70,8 +70,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
     switch (crt_file) {
         .crt1_reactor_o => {
             var args = std.ArrayList([]const u8).init(arena);
-            try addCCArgs(comp, arena, &args, .{});
-            try addLibcBottomHalfIncludes(comp, arena, &args);
+            try add_ccargs(comp, arena, &args, .{});
+            try add_libc_bottom_half_includes(comp, arena, &args);
             var files = [_]Compilation.CSourceFile{
                 .{
                     .src_path = try comp.zig_lib_directory.join(arena, &[_][]const u8{
@@ -85,8 +85,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
         },
         .crt1_command_o => {
             var args = std.ArrayList([]const u8).init(arena);
-            try addCCArgs(comp, arena, &args, .{});
-            try addLibcBottomHalfIncludes(comp, arena, &args);
+            try add_ccargs(comp, arena, &args, .{});
+            try add_libc_bottom_half_includes(comp, arena, &args);
             var files = [_]Compilation.CSourceFile{
                 .{
                     .src_path = try comp.zig_lib_directory.join(arena, &[_][]const u8{
@@ -104,7 +104,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
             {
                 // Compile emmalloc.
                 var args = std.ArrayList([]const u8).init(arena);
-                try addCCArgs(comp, arena, &args, .{ .want_O3 = true, .no_strict_aliasing = true });
+                try add_ccargs(comp, arena, &args, .{ .want_O3 = true, .no_strict_aliasing = true });
                 for (emmalloc_src_files) |file_path| {
                     try libc_sources.append(.{
                         .src_path = try comp.zig_lib_directory.join(arena, &[_][]const u8{
@@ -119,8 +119,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
             {
                 // Compile libc-bottom-half.
                 var args = std.ArrayList([]const u8).init(arena);
-                try addCCArgs(comp, arena, &args, .{ .want_O3 = true });
-                try addLibcBottomHalfIncludes(comp, arena, &args);
+                try add_ccargs(comp, arena, &args, .{ .want_O3 = true });
+                try add_libc_bottom_half_includes(comp, arena, &args);
 
                 for (libc_bottom_half_src_files) |file_path| {
                     try libc_sources.append(.{
@@ -136,8 +136,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
             {
                 // Compile libc-top-half.
                 var args = std.ArrayList([]const u8).init(arena);
-                try addCCArgs(comp, arena, &args, .{ .want_O3 = true });
-                try addLibcTopHalfIncludes(comp, arena, &args);
+                try add_ccargs(comp, arena, &args, .{ .want_O3 = true });
+                try add_libc_top_half_includes(comp, arena, &args);
 
                 for (libc_top_half_src_files) |file_path| {
                     try libc_sources.append(.{
@@ -154,8 +154,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
         },
         .libwasi_emulated_process_clocks_a => {
             var args = std.ArrayList([]const u8).init(arena);
-            try addCCArgs(comp, arena, &args, .{ .want_O3 = true });
-            try addLibcBottomHalfIncludes(comp, arena, &args);
+            try add_ccargs(comp, arena, &args, .{ .want_O3 = true });
+            try add_libc_bottom_half_includes(comp, arena, &args);
 
             var emu_clocks_sources = std.ArrayList(Compilation.CSourceFile).init(arena);
             for (emulated_process_clocks_src_files) |file_path| {
@@ -171,8 +171,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
         },
         .libwasi_emulated_getpid_a => {
             var args = std.ArrayList([]const u8).init(arena);
-            try addCCArgs(comp, arena, &args, .{ .want_O3 = true });
-            try addLibcBottomHalfIncludes(comp, arena, &args);
+            try add_ccargs(comp, arena, &args, .{ .want_O3 = true });
+            try add_libc_bottom_half_includes(comp, arena, &args);
 
             var emu_getpid_sources = std.ArrayList(Compilation.CSourceFile).init(arena);
             for (emulated_getpid_src_files) |file_path| {
@@ -188,8 +188,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
         },
         .libwasi_emulated_mman_a => {
             var args = std.ArrayList([]const u8).init(arena);
-            try addCCArgs(comp, arena, &args, .{ .want_O3 = true });
-            try addLibcBottomHalfIncludes(comp, arena, &args);
+            try add_ccargs(comp, arena, &args, .{ .want_O3 = true });
+            try add_libc_bottom_half_includes(comp, arena, &args);
 
             var emu_mman_sources = std.ArrayList(Compilation.CSourceFile).init(arena);
             for (emulated_mman_src_files) |file_path| {
@@ -208,7 +208,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
 
             {
                 var args = std.ArrayList([]const u8).init(arena);
-                try addCCArgs(comp, arena, &args, .{ .want_O3 = true });
+                try add_ccargs(comp, arena, &args, .{ .want_O3 = true });
 
                 for (emulated_signal_bottom_half_src_files) |file_path| {
                     try emu_signal_sources.append(.{
@@ -223,8 +223,8 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
 
             {
                 var args = std.ArrayList([]const u8).init(arena);
-                try addCCArgs(comp, arena, &args, .{ .want_O3 = true });
-                try addLibcTopHalfIncludes(comp, arena, &args);
+                try add_ccargs(comp, arena, &args, .{ .want_O3 = true });
+                try add_libc_top_half_includes(comp, arena, &args);
                 try args.append("-D_WASI_EMULATED_SIGNAL");
 
                 for (emulated_signal_top_half_src_files) |file_path| {
@@ -270,13 +270,13 @@ fn add_ccargs(
     args: *std.ArrayList([]const u8),
     options: CCOptions,
 ) error{OutOfMemory}!void {
-    const target = comp.getTarget();
-    const arch_name = std.zig.target.muslArchNameHeaders(target.cpu.arch);
-    const os_name = @tagName(target.os.tag);
-    const triple = try std.fmt.allocPrint(arena, "{s}-{s}-musl", .{ arch_name, os_name });
+    const target = comp.get_target();
+    const arch_name = std.zig.target.musl_arch_name_headers(target.cpu.arch);
+    const os_name = @tag_name(target.os.tag);
+    const triple = try std.fmt.alloc_print(arena, "{s}-{s}-musl", .{ arch_name, os_name });
     const o_arg = if (options.want_O3) "-O3" else "-Os";
 
-    try args.appendSlice(&[_][]const u8{
+    try args.append_slice(&[_][]const u8{
         "-std=gnu17",
         "-fno-trapping-math",
         "-fno-stack-protector",
@@ -297,7 +297,7 @@ fn add_ccargs(
     });
 
     if (options.no_strict_aliasing) {
-        try args.appendSlice(&[_][]const u8{"-fno-strict-aliasing"});
+        try args.append_slice(&[_][]const u8{"-fno-strict-aliasing"});
     }
 }
 
@@ -306,7 +306,7 @@ fn add_libc_bottom_half_includes(
     arena: Allocator,
     args: *std.ArrayList([]const u8),
 ) error{OutOfMemory}!void {
-    try args.appendSlice(&[_][]const u8{
+    try args.append_slice(&[_][]const u8{
         "-I",
         try comp.zig_lib_directory.join(arena, &[_][]const u8{
             "libc",
@@ -362,7 +362,7 @@ fn add_libc_top_half_includes(
     arena: Allocator,
     args: *std.ArrayList([]const u8),
 ) error{OutOfMemory}!void {
-    try args.appendSlice(&[_][]const u8{
+    try args.append_slice(&[_][]const u8{
         "-I",
         try comp.zig_lib_directory.join(arena, &[_][]const u8{
             "libc",

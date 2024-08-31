@@ -1,6 +1,6 @@
 export fn entry() void {
     const damn = Container{
-        .not_optional = getOptional(),
+        .not_optional = get_optional(),
     };
     _ = damn;
 }

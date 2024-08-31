@@ -1,6 +1,6 @@
 const Foo = i32;
 export fn foo() usize {
-    return @offsetOf(Foo, "a");
+    return @offset_of(Foo, "a");
 }
 
 // error

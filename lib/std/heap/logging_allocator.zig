@@ -59,16 +59,16 @@ pub fn ScopedLoggingAllocator(
             log2_ptr_align: u8,
             ra: usize,
         ) ?[*]u8 {
-            const self: *Self = @ptrCast(@alignCast(ctx));
-            const result = self.parent_allocator.rawAlloc(len, log2_ptr_align, ra);
+            const self: *Self = @ptr_cast(@align_cast(ctx));
+            const result = self.parent_allocator.raw_alloc(len, log2_ptr_align, ra);
             if (result != null) {
-                logHelper(
+                log_helper(
                     success_log_level,
                     "alloc - success - len: {}, ptr_align: {}",
                     .{ len, log2_ptr_align },
                 );
             } else {
-                logHelper(
+                log_helper(
                     failure_log_level,
                     "alloc - failure: OutOfMemory - len: {}, ptr_align: {}",
                     .{ len, log2_ptr_align },
@@ -84,16 +84,16 @@ pub fn ScopedLoggingAllocator(
             new_len: usize,
             ra: usize,
         ) bool {
-            const self: *Self = @ptrCast(@alignCast(ctx));
-            if (self.parent_allocator.rawResize(buf, log2_buf_align, new_len, ra)) {
+            const self: *Self = @ptr_cast(@align_cast(ctx));
+            if (self.parent_allocator.raw_resize(buf, log2_buf_align, new_len, ra)) {
                 if (new_len <= buf.len) {
-                    logHelper(
+                    log_helper(
                         success_log_level,
                         "shrink - success - {} to {}, buf_align: {}",
                         .{ buf.len, new_len, log2_buf_align },
                     );
                 } else {
-                    logHelper(
+                    log_helper(
                         success_log_level,
                         "expand - success - {} to {}, buf_align: {}",
                         .{ buf.len, new_len, log2_buf_align },
@@ -104,7 +104,7 @@ pub fn ScopedLoggingAllocator(
             }
 
             std.debug.assert(new_len > buf.len);
-            logHelper(
+            log_helper(
                 failure_log_level,
                 "expand - failure - {} to {}, buf_align: {}",
                 .{ buf.len, new_len, log2_buf_align },
@@ -118,9 +118,9 @@ pub fn ScopedLoggingAllocator(
             log2_buf_align: u8,
             ra: usize,
         ) void {
-            const self: *Self = @ptrCast(@alignCast(ctx));
-            self.parent_allocator.rawFree(buf, log2_buf_align, ra);
-            logHelper(success_log_level, "free - len: {}", .{buf.len});
+            const self: *Self = @ptr_cast(@align_cast(ctx));
+            self.parent_allocator.raw_free(buf, log2_buf_align, ra);
+            log_helper(success_log_level, "free - len: {}", .{buf.len});
         }
     };
 }

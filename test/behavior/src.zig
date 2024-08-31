@@ -3,8 +3,8 @@ fn do_the_test() !void {
 
     try expect(src.line == 2);
     try expect(src.column == 17);
-    try expect(std.mem.endsWith(u8, src.fn_name, "doTheTest"));
-    try expect(std.mem.endsWith(u8, src.file, "src.zig"));
+    try expect(std.mem.ends_with(u8, src.fn_name, "do_the_test"));
+    try expect(std.mem.ends_with(u8, src.file, "src.zig"));
     try expect(src.fn_name[src.fn_name.len] == 0);
     try expect(src.file[src.file.len] == 0);
 }
@@ -19,7 +19,7 @@ test "@src" {
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try doTheTest();
+    try do_the_test();
 }
 
 test "@src used as a comptime parameter" {

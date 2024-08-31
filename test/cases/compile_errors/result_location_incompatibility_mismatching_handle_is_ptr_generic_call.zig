@@ -1,6 +1,6 @@
 export fn entry() void {
     var damn = Container{
-        .not_optional = getOptional(i32),
+        .not_optional = get_optional(i32),
     };
     _ = &damn;
 }

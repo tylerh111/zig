@@ -13,39 +13,39 @@ pub fn build(b: *std.Build) void {
         return;
     }
 
-    const exe = b.addExecutable(.{
+    const exe = b.add_executable(.{
         .name = "zigtest",
         .root_source_file = b.path("main.zig"),
         .target = target,
         .optimize = optimize,
     });
-    b.installArtifact(exe);
+    b.install_artifact(exe);
 
     const c_sources = [_][]const u8{
         "test.c",
     };
 
-    exe.addCSourceFiles(.{ .files = &c_sources });
-    exe.linkLibC();
+    exe.add_csource_files(.{ .files = &c_sources });
+    exe.link_lib_c();
 
     var i: i32 = 0;
     while (i < 1000) : (i += 1) {
-        exe.defineCMacro("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        exe.define_cmacro("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
     }
 
-    exe.defineCMacro("FOO", "42");
-    exe.defineCMacro("BAR", "\"BAR\"");
-    exe.defineCMacro("BAZ",
+    exe.define_cmacro("FOO", "42");
+    exe.define_cmacro("BAR", "\"BAR\"");
+    exe.define_cmacro("BAZ",
         \\"\"BAZ\""
     );
-    exe.defineCMacro("QUX", "\"Q\" \"UX\"");
-    exe.defineCMacro("QUUX", "\"QU\\\"UX\"");
+    exe.define_cmacro("QUX", "\"Q\" \"UX\"");
+    exe.define_cmacro("QUUX", "\"QU\\\"UX\"");
 
-    b.default_step.dependOn(&exe.step);
+    b.default_step.depend_on(&exe.step);
 
-    const run_cmd = b.addRunArtifact(exe);
+    const run_cmd = b.add_run_artifact(exe);
     run_cmd.skip_foreign_checks = true;
-    run_cmd.expectExitCode(0);
+    run_cmd.expect_exit_code(0);
 
-    test_step.dependOn(&run_cmd.step);
+    test_step.depend_on(&run_cmd.step);
 }

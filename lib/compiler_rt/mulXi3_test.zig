@@ -1,11 +1,11 @@
 const std = @import("std");
 const testing = std.testing;
 const mulXi3 = @import("mulXi3.zig");
-const maxInt = std.math.maxInt;
-const minInt = std.math.minInt;
+const max_int = std.math.max_int;
+const min_int = std.math.min_int;
 
 fn test_one_mulsi3(a: i32, b: i32, result: i32) !void {
-    try testing.expectEqual(result, mulXi3.__mulsi3(a, b));
+    try testing.expect_equal(result, mulXi3.__mulsi3(a, b));
 }
 
 fn test__muldi3(a: i64, b: i64, expected: i64) !void {
@@ -24,24 +24,24 @@ test "mulsi3" {
     try test_one_mulsi3(1, 0, 0);
     try test_one_mulsi3(0, 10, 0);
     try test_one_mulsi3(10, 0, 0);
-    try test_one_mulsi3(0, maxInt(i32), 0);
-    try test_one_mulsi3(maxInt(i32), 0, 0);
+    try test_one_mulsi3(0, max_int(i32), 0);
+    try test_one_mulsi3(max_int(i32), 0, 0);
     try test_one_mulsi3(0, -1, 0);
     try test_one_mulsi3(-1, 0, 0);
     try test_one_mulsi3(0, -10, 0);
     try test_one_mulsi3(-10, 0, 0);
-    try test_one_mulsi3(0, minInt(i32), 0);
-    try test_one_mulsi3(minInt(i32), 0, 0);
+    try test_one_mulsi3(0, min_int(i32), 0);
+    try test_one_mulsi3(min_int(i32), 0, 0);
     try test_one_mulsi3(1, 1, 1);
     try test_one_mulsi3(1, 10, 10);
     try test_one_mulsi3(10, 1, 10);
-    try test_one_mulsi3(1, maxInt(i32), maxInt(i32));
-    try test_one_mulsi3(maxInt(i32), 1, maxInt(i32));
+    try test_one_mulsi3(1, max_int(i32), max_int(i32));
+    try test_one_mulsi3(max_int(i32), 1, max_int(i32));
     try test_one_mulsi3(1, -1, -1);
     try test_one_mulsi3(1, -10, -10);
     try test_one_mulsi3(-10, 1, -10);
-    try test_one_mulsi3(1, minInt(i32), minInt(i32));
-    try test_one_mulsi3(minInt(i32), 1, minInt(i32));
+    try test_one_mulsi3(1, min_int(i32), min_int(i32));
+    try test_one_mulsi3(min_int(i32), 1, min_int(i32));
     try test_one_mulsi3(46340, 46340, 2147395600);
     try test_one_mulsi3(-46340, 46340, -2147395600);
     try test_one_mulsi3(46340, -46340, -2147395600);

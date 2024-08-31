@@ -1,6 +1,6 @@
 pub export fn entry() void {
     var res: []i32 = undefined;
-    res = myAlloc(i32);
+    res = my_alloc(i32);
 }
 fn my_alloc(comptime arg: type) anyerror!arg {
     unreachable;

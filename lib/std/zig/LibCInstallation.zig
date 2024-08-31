@@ -43,13 +43,13 @@ pub fn parse(
         }
     }
 
-    const contents = try std.fs.cwd().readFileAlloc(allocator, libc_file, std.math.maxInt(usize));
+    const contents = try std.fs.cwd().read_file_alloc(allocator, libc_file, std.math.max_int(usize));
     defer allocator.free(contents);
 
-    var it = std.mem.tokenizeScalar(u8, contents, '\n');
+    var it = std.mem.tokenize_scalar(u8, contents, '\n');
     while (it.next()) |line| {
         if (line.len == 0 or line[0] == '#') continue;
-        var line_it = std.mem.splitScalar(u8, line, '=');
+        var line_it = std.mem.split_scalar(u8, line, '=');
         const name = line_it.first();
         const value = line_it.rest();
         inline for (fields, 0..) |field, i| {
@@ -58,7 +58,7 @@ pub fn parse(
                 if (value.len == 0) {
                     @field(self, field.name) = null;
                 } else {
-                    found_keys[i].allocated = try allocator.dupeZ(u8, value);
+                    found_keys[i].allocated = try allocator.dupe_z(u8, value);
                     @field(self, field.name) = found_keys[i].allocated;
                 }
                 break;
@@ -81,28 +81,28 @@ pub fn parse(
     }
 
     const os_tag = target.os.tag;
-    if (self.crt_dir == null and !target.isDarwin()) {
-        log.err("crt_dir may not be empty for {s}", .{@tagName(os_tag)});
+    if (self.crt_dir == null and !target.is_darwin()) {
+        log.err("crt_dir may not be empty for {s}", .{@tag_name(os_tag)});
         return error.ParseError;
     }
 
     if (self.msvc_lib_dir == null and os_tag == .windows and target.abi == .msvc) {
         log.err("msvc_lib_dir may not be empty for {s}-{s}", .{
-            @tagName(os_tag),
-            @tagName(target.abi),
+            @tag_name(os_tag),
+            @tag_name(target.abi),
         });
         return error.ParseError;
     }
     if (self.kernel32_lib_dir == null and os_tag == .windows and target.abi == .msvc) {
         log.err("kernel32_lib_dir may not be empty for {s}-{s}", .{
-            @tagName(os_tag),
-            @tagName(target.abi),
+            @tag_name(os_tag),
+            @tag_name(target.abi),
         });
         return error.ParseError;
     }
 
     if (self.gcc_dir == null and os_tag == .haiku) {
-        log.err("gcc_dir may not be empty for {s}", .{@tagName(os_tag)});
+        log.err("gcc_dir may not be empty for {s}", .{@tag_name(os_tag)});
         return error.ParseError;
     }
 
@@ -167,10 +167,10 @@ pub const FindNativeOptions = struct {
 pub fn find_native(args: FindNativeOptions) FindError!LibCInstallation {
     var self: LibCInstallation = .{};
 
-    if (is_darwin and args.target.isDarwin()) {
-        if (!std.zig.system.darwin.isSdkInstalled(args.allocator))
+    if (is_darwin and args.target.is_darwin()) {
+        if (!std.zig.system.darwin.is_sdk_installed(args.allocator))
             return error.DarwinSdkNotFound;
-        const sdk = std.zig.system.darwin.getSdk(args.allocator, args.target) orelse
+        const sdk = std.zig.system.darwin.get_sdk(args.allocator, args.target) orelse
             return error.DarwinSdkNotFound;
         defer args.allocator.free(sdk);
 
@@ -189,25 +189,25 @@ pub fn find_native(args: FindNativeOptions) FindError!LibCInstallation {
         };
         defer sdk.free(args.allocator);
 
-        try self.findNativeMsvcIncludeDir(args, sdk);
-        try self.findNativeMsvcLibDir(args, sdk);
-        try self.findNativeKernel32LibDir(args, sdk);
-        try self.findNativeIncludeDirWindows(args, sdk);
-        try self.findNativeCrtDirWindows(args, sdk);
+        try self.find_native_msvc_include_dir(args, sdk);
+        try self.find_native_msvc_lib_dir(args, sdk);
+        try self.find_native_kernel32_lib_dir(args, sdk);
+        try self.find_native_include_dir_windows(args, sdk);
+        try self.find_native_crt_dir_windows(args, sdk);
     } else if (is_haiku) {
-        try self.findNativeIncludeDirPosix(args);
-        try self.findNativeGccDirHaiku(args);
-        self.crt_dir = try args.allocator.dupeZ(u8, "/system/develop/lib");
-    } else if (builtin.target.os.tag.isSolarish()) {
+        try self.find_native_include_dir_posix(args);
+        try self.find_native_gcc_dir_haiku(args);
+        self.crt_dir = try args.allocator.dupe_z(u8, "/system/develop/lib");
+    } else if (builtin.target.os.tag.is_solarish()) {
         // There is only one libc, and its headers/libraries are always in the same spot.
-        self.include_dir = try args.allocator.dupeZ(u8, "/usr/include");
-        self.sys_include_dir = try args.allocator.dupeZ(u8, "/usr/include");
-        self.crt_dir = try args.allocator.dupeZ(u8, "/usr/lib/64");
+        self.include_dir = try args.allocator.dupe_z(u8, "/usr/include");
+        self.sys_include_dir = try args.allocator.dupe_z(u8, "/usr/include");
+        self.crt_dir = try args.allocator.dupe_z(u8, "/usr/lib/64");
     } else if (std.process.can_spawn) {
-        try self.findNativeIncludeDirPosix(args);
+        try self.find_native_include_dir_posix(args);
         switch (builtin.target.os.tag) {
-            .freebsd, .netbsd, .openbsd, .dragonfly => self.crt_dir = try args.allocator.dupeZ(u8, "/usr/lib"),
-            .linux => try self.findNativeCrtDirPosix(args),
+            .freebsd, .netbsd, .openbsd, .dragonfly => self.crt_dir = try args.allocator.dupe_z(u8, "/usr/lib"),
+            .linux => try self.find_native_crt_dir_posix(args),
             else => {},
         }
     } else {
@@ -216,7 +216,7 @@ pub fn find_native(args: FindNativeOptions) FindError!LibCInstallation {
     return self;
 }
 
-/// Must be the same allocator passed to `parse` or `findNative`.
+/// Must be the same allocator passed to `parse` or `find_native`.
 pub fn deinit(self: *LibCInstallation, allocator: Allocator) void {
     const fields = std.meta.fields(LibCInstallation);
     inline for (fields) |field| {
@@ -231,7 +231,7 @@ fn find_native_include_dir_posix(self: *LibCInstallation, args: FindNativeOption
     const allocator = args.allocator;
 
     // Detect infinite loops.
-    var env_map = std.process.getEnvMap(allocator) catch |err| switch (err) {
+    var env_map = std.process.get_env_map(allocator) catch |err| switch (err) {
         error.Unexpected => unreachable, // WASI-only
         else => |e| return e,
     };
@@ -253,8 +253,8 @@ fn find_native_include_dir_posix(self: *LibCInstallation, args: FindNativeOption
     var argv = std.ArrayList([]const u8).init(allocator);
     defer argv.deinit();
 
-    try appendCcExe(&argv, skip_cc_env_var);
-    try argv.appendSlice(&.{
+    try append_cc_exe(&argv, skip_cc_env_var);
+    try argv.append_slice(&.{
         "-E",
         "-Wp,-v",
         "-xc",
@@ -274,7 +274,7 @@ fn find_native_include_dir_posix(self: *LibCInstallation, args: FindNativeOption
     }) catch |err| switch (err) {
         error.OutOfMemory => return error.OutOfMemory,
         else => {
-            printVerboseInvocation(argv.items, null, args.verbose, null);
+            print_verbose_invocation(argv.items, null, args.verbose, null);
             return error.UnableToSpawnCCompiler;
         },
     };
@@ -284,16 +284,16 @@ fn find_native_include_dir_posix(self: *LibCInstallation, args: FindNativeOption
     }
     switch (run_res.term) {
         .Exited => |code| if (code != 0) {
-            printVerboseInvocation(argv.items, null, args.verbose, run_res.stderr);
+            print_verbose_invocation(argv.items, null, args.verbose, run_res.stderr);
             return error.CCompilerExitCode;
         },
         else => {
-            printVerboseInvocation(argv.items, null, args.verbose, run_res.stderr);
+            print_verbose_invocation(argv.items, null, args.verbose, run_res.stderr);
             return error.CCompilerCrashed;
         },
     }
 
-    var it = std.mem.tokenizeAny(u8, run_res.stderr, "\n\r");
+    var it = std.mem.tokenize_any(u8, run_res.stderr, "\n\r");
     var search_paths = std.ArrayList([]const u8).init(allocator);
     defer search_paths.deinit();
     while (it.next()) |line| {
@@ -317,8 +317,8 @@ fn find_native_include_dir_posix(self: *LibCInstallation, args: FindNativeOption
     while (path_i < search_paths.items.len) : (path_i += 1) {
         // search in reverse order
         const search_path_untrimmed = search_paths.items[search_paths.items.len - path_i - 1];
-        const search_path = std.mem.trimLeft(u8, search_path_untrimmed, " ");
-        var search_dir = fs.cwd().openDir(search_path, .{}) catch |err| switch (err) {
+        const search_path = std.mem.trim_left(u8, search_path_untrimmed, " ");
+        var search_dir = fs.cwd().open_dir(search_path, .{}) catch |err| switch (err) {
             error.FileNotFound,
             error.NotDir,
             error.NoDevice,
@@ -329,8 +329,8 @@ fn find_native_include_dir_posix(self: *LibCInstallation, args: FindNativeOption
         defer search_dir.close();
 
         if (self.include_dir == null) {
-            if (search_dir.accessZ(include_dir_example_file, .{})) |_| {
-                self.include_dir = try allocator.dupeZ(u8, search_path);
+            if (search_dir.access_z(include_dir_example_file, .{})) |_| {
+                self.include_dir = try allocator.dupe_z(u8, search_path);
             } else |err| switch (err) {
                 error.FileNotFound => {},
                 else => return error.FileSystem,
@@ -338,8 +338,8 @@ fn find_native_include_dir_posix(self: *LibCInstallation, args: FindNativeOption
         }
 
         if (self.sys_include_dir == null) {
-            if (search_dir.accessZ(sys_include_dir_example_file, .{})) |_| {
-                self.sys_include_dir = try allocator.dupeZ(u8, search_path);
+            if (search_dir.access_z(sys_include_dir_example_file, .{})) |_| {
+                self.sys_include_dir = try allocator.dupe_z(u8, search_path);
             } else |err| switch (err) {
                 error.FileNotFound => {},
                 else => return error.FileSystem,
@@ -363,16 +363,16 @@ fn find_native_include_dir_windows(
     const allocator = args.allocator;
 
     var install_buf: [2]std.zig.WindowsSdk.Installation = undefined;
-    const installs = fillInstallations(&install_buf, sdk);
+    const installs = fill_installations(&install_buf, sdk);
 
     var result_buf = std.ArrayList(u8).init(allocator);
     defer result_buf.deinit();
 
     for (installs) |install| {
-        result_buf.shrinkAndFree(0);
+        result_buf.shrink_and_free(0);
         try result_buf.writer().print("{s}\\Include\\{s}\\ucrt", .{ install.path, install.version });
 
-        var dir = fs.cwd().openDir(result_buf.items, .{}) catch |err| switch (err) {
+        var dir = fs.cwd().open_dir(result_buf.items, .{}) catch |err| switch (err) {
             error.FileNotFound,
             error.NotDir,
             error.NoDevice,
@@ -382,12 +382,12 @@ fn find_native_include_dir_windows(
         };
         defer dir.close();
 
-        dir.accessZ("stdlib.h", .{}) catch |err| switch (err) {
+        dir.access_z("stdlib.h", .{}) catch |err| switch (err) {
             error.FileNotFound => continue,
             else => return error.FileSystem,
         };
 
-        self.include_dir = try result_buf.toOwnedSlice();
+        self.include_dir = try result_buf.to_owned_slice();
         return;
     }
 
@@ -402,7 +402,7 @@ fn find_native_crt_dir_windows(
     const allocator = args.allocator;
 
     var install_buf: [2]std.zig.WindowsSdk.Installation = undefined;
-    const installs = fillInstallations(&install_buf, sdk);
+    const installs = fill_installations(&install_buf, sdk);
 
     var result_buf = std.ArrayList(u8).init(allocator);
     defer result_buf.deinit();
@@ -416,10 +416,10 @@ fn find_native_crt_dir_windows(
     };
 
     for (installs) |install| {
-        result_buf.shrinkAndFree(0);
+        result_buf.shrink_and_free(0);
         try result_buf.writer().print("{s}\\Lib\\{s}\\ucrt\\{s}", .{ install.path, install.version, arch_sub_dir });
 
-        var dir = fs.cwd().openDir(result_buf.items, .{}) catch |err| switch (err) {
+        var dir = fs.cwd().open_dir(result_buf.items, .{}) catch |err| switch (err) {
             error.FileNotFound,
             error.NotDir,
             error.NoDevice,
@@ -429,22 +429,22 @@ fn find_native_crt_dir_windows(
         };
         defer dir.close();
 
-        dir.accessZ("ucrt.lib", .{}) catch |err| switch (err) {
+        dir.access_z("ucrt.lib", .{}) catch |err| switch (err) {
             error.FileNotFound => continue,
             else => return error.FileSystem,
         };
 
-        self.crt_dir = try result_buf.toOwnedSlice();
+        self.crt_dir = try result_buf.to_owned_slice();
         return;
     }
     return error.LibCRuntimeNotFound;
 }
 
 fn find_native_crt_dir_posix(self: *LibCInstallation, args: FindNativeOptions) FindError!void {
-    self.crt_dir = try ccPrintFileName(.{
+    self.crt_dir = try cc_print_file_name(.{
         .allocator = args.allocator,
         .search_basename = switch (args.target.os.tag) {
-            .linux => if (args.target.isAndroid()) "crtbegin_dynamic.o" else "crt1.o",
+            .linux => if (args.target.is_android()) "crtbegin_dynamic.o" else "crt1.o",
             else => "crt1.o",
         },
         .want_dirname = .only_dir,
@@ -453,7 +453,7 @@ fn find_native_crt_dir_posix(self: *LibCInstallation, args: FindNativeOptions) F
 }
 
 fn find_native_gcc_dir_haiku(self: *LibCInstallation, args: FindNativeOptions) FindError!void {
-    self.gcc_dir = try ccPrintFileName(.{
+    self.gcc_dir = try cc_print_file_name(.{
         .allocator = args.allocator,
         .search_basename = "crtbeginS.o",
         .want_dirname = .only_dir,
@@ -469,7 +469,7 @@ fn find_native_kernel32_lib_dir(
     const allocator = args.allocator;
 
     var install_buf: [2]std.zig.WindowsSdk.Installation = undefined;
-    const installs = fillInstallations(&install_buf, sdk);
+    const installs = fill_installations(&install_buf, sdk);
 
     var result_buf = std.ArrayList(u8).init(allocator);
     defer result_buf.deinit();
@@ -483,11 +483,11 @@ fn find_native_kernel32_lib_dir(
     };
 
     for (installs) |install| {
-        result_buf.shrinkAndFree(0);
+        result_buf.shrink_and_free(0);
         const stream = result_buf.writer();
         try stream.print("{s}\\Lib\\{s}\\um\\{s}", .{ install.path, install.version, arch_sub_dir });
 
-        var dir = fs.cwd().openDir(result_buf.items, .{}) catch |err| switch (err) {
+        var dir = fs.cwd().open_dir(result_buf.items, .{}) catch |err| switch (err) {
             error.FileNotFound,
             error.NotDir,
             error.NoDevice,
@@ -497,12 +497,12 @@ fn find_native_kernel32_lib_dir(
         };
         defer dir.close();
 
-        dir.accessZ("kernel32.lib", .{}) catch |err| switch (err) {
+        dir.access_z("kernel32.lib", .{}) catch |err| switch (err) {
             error.FileNotFound => continue,
             else => return error.FileSystem,
         };
 
-        self.kernel32_lib_dir = try result_buf.toOwnedSlice();
+        self.kernel32_lib_dir = try result_buf.to_owned_slice();
         return;
     }
     return error.LibCKernel32LibNotFound;
@@ -522,7 +522,7 @@ fn find_native_msvc_include_dir(
     const dir_path = try fs.path.join(allocator, &[_][]const u8{ up2, "include" });
     errdefer allocator.free(dir_path);
 
-    var dir = fs.cwd().openDir(dir_path, .{}) catch |err| switch (err) {
+    var dir = fs.cwd().open_dir(dir_path, .{}) catch |err| switch (err) {
         error.FileNotFound,
         error.NotDir,
         error.NoDevice,
@@ -532,7 +532,7 @@ fn find_native_msvc_include_dir(
     };
     defer dir.close();
 
-    dir.accessZ("vcruntime.h", .{}) catch |err| switch (err) {
+    dir.access_z("vcruntime.h", .{}) catch |err| switch (err) {
         error.FileNotFound => return error.LibCStdLibHeaderNotFound,
         else => return error.FileSystem,
     };
@@ -562,7 +562,7 @@ fn cc_print_file_name(args: CCPrintFileNameOptions) ![:0]u8 {
     const allocator = args.allocator;
 
     // Detect infinite loops.
-    var env_map = std.process.getEnvMap(allocator) catch |err| switch (err) {
+    var env_map = std.process.get_env_map(allocator) catch |err| switch (err) {
         error.Unexpected => unreachable, // WASI-only
         else => |e| return e,
     };
@@ -582,10 +582,10 @@ fn cc_print_file_name(args: CCPrintFileNameOptions) ![:0]u8 {
     var argv = std.ArrayList([]const u8).init(allocator);
     defer argv.deinit();
 
-    const arg1 = try std.fmt.allocPrint(allocator, "-print-file-name={s}", .{args.search_basename});
+    const arg1 = try std.fmt.alloc_print(allocator, "-print-file-name={s}", .{args.search_basename});
     defer allocator.free(arg1);
 
-    try appendCcExe(&argv, skip_cc_env_var);
+    try append_cc_exe(&argv, skip_cc_env_var);
     try argv.append(arg1);
 
     const run_res = std.process.Child.run(.{
@@ -608,25 +608,25 @@ fn cc_print_file_name(args: CCPrintFileNameOptions) ![:0]u8 {
     }
     switch (run_res.term) {
         .Exited => |code| if (code != 0) {
-            printVerboseInvocation(argv.items, args.search_basename, args.verbose, run_res.stderr);
+            print_verbose_invocation(argv.items, args.search_basename, args.verbose, run_res.stderr);
             return error.CCompilerExitCode;
         },
         else => {
-            printVerboseInvocation(argv.items, args.search_basename, args.verbose, run_res.stderr);
+            print_verbose_invocation(argv.items, args.search_basename, args.verbose, run_res.stderr);
             return error.CCompilerCrashed;
         },
     }
 
-    var it = std.mem.tokenizeAny(u8, run_res.stdout, "\n\r");
+    var it = std.mem.tokenize_any(u8, run_res.stdout, "\n\r");
     const line = it.next() orelse return error.LibCRuntimeNotFound;
     // When this command fails, it returns exit code 0 and duplicates the input file name.
     // So we detect failure by checking if the output matches exactly the input.
     if (std.mem.eql(u8, line, args.search_basename)) return error.LibCRuntimeNotFound;
     switch (args.want_dirname) {
-        .full_path => return allocator.dupeZ(u8, line),
+        .full_path => return allocator.dupe_z(u8, line),
         .only_dir => {
             const dirname = fs.path.dirname(line) orelse return error.LibCRuntimeNotFound;
-            return allocator.dupeZ(u8, dirname);
+            return allocator.dupe_z(u8, dirname);
         },
     }
 }
@@ -674,17 +674,17 @@ const inf_loop_env_key = "ZIG_IS_DETECTING_LIBC_PATHS";
 
 fn append_cc_exe(args: *std.ArrayList([]const u8), skip_cc_env_var: bool) !void {
     const default_cc_exe = if (is_windows) "cc.exe" else "cc";
-    try args.ensureUnusedCapacity(1);
+    try args.ensure_unused_capacity(1);
     if (skip_cc_env_var) {
-        args.appendAssumeCapacity(default_cc_exe);
+        args.append_assume_capacity(default_cc_exe);
         return;
     }
-    const cc_env_var = std.zig.EnvVar.CC.getPosix() orelse {
-        args.appendAssumeCapacity(default_cc_exe);
+    const cc_env_var = std.zig.EnvVar.CC.get_posix() orelse {
+        args.append_assume_capacity(default_cc_exe);
         return;
     };
     // Respect space-separated flags to the C compiler.
-    var it = std.mem.tokenizeScalar(u8, cc_env_var, ' ');
+    var it = std.mem.tokenize_scalar(u8, cc_env_var, ' ');
     while (it.next()) |arg| {
         try args.append(arg);
     }
@@ -697,7 +697,7 @@ const Target = std.Target;
 const fs = std.fs;
 const Allocator = std.mem.Allocator;
 
-const is_darwin = builtin.target.isDarwin();
+const is_darwin = builtin.target.is_darwin();
 const is_windows = builtin.target.os.tag == .windows;
 const is_haiku = builtin.target.os.tag == .haiku;
 

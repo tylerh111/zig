@@ -17,7 +17,7 @@ pub fn create(owner: *std.Build, dir_path: []const u8) *RemoveDir {
             .owner = owner,
             .makeFn = make,
         }),
-        .dir_path = owner.dupePath(dir_path),
+        .dir_path = owner.dupe_path(dir_path),
     };
     return remove_dir;
 }
@@ -30,7 +30,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     const b = step.owner;
     const remove_dir: *RemoveDir = @fieldParentPtr("step", step);
 
-    b.build_root.handle.deleteTree(remove_dir.dir_path) catch |err| {
+    b.build_root.handle.delete_tree(remove_dir.dir_path) catch |err| {
         if (b.build_root.path) |base| {
             return step.fail("unable to recursively delete path '{s}/{s}': {s}", .{
                 base, remove_dir.dir_path, @errorName(err),

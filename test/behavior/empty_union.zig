@@ -37,13 +37,13 @@ test "switch on empty tagged union" {
 
 test "empty union" {
     const U = union {};
-    try expect(@sizeOf(U) == 0);
+    try expect(@size_of(U) == 0);
     try expect(@alignOf(U) == 1);
 }
 
 test "empty extern union" {
     const U = extern union {};
-    try expect(@sizeOf(U) == 0);
+    try expect(@size_of(U) == 0);
     try expect(@alignOf(U) == 1);
 }
 

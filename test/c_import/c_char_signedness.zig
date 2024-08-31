@@ -1,13 +1,13 @@
 const std = @import("std");
 const builtin = @import("builtin");
-const expectEqual = std.testing.expectEqual;
-const c = @cImport({
+const expect_equal = std.testing.expect_equal;
+const c = @c_import({
     @cInclude("limits.h");
 });
 
 test "c_char signedness" {
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
-    try expectEqual(@as(c_char, c.CHAR_MIN), std.math.minInt(c_char));
-    try expectEqual(@as(c_char, c.CHAR_MAX), std.math.maxInt(c_char));
+    try expect_equal(@as(c_char, c.CHAR_MIN), std.math.min_int(c_char));
+    try expect_equal(@as(c_char, c.CHAR_MAX), std.math.max_int(c_char));
 }

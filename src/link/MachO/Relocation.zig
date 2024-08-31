@@ -12,32 +12,32 @@ meta: packed struct {
 
 pub fn get_target_symbol(rel: Relocation, macho_file: *MachO) *Symbol {
     assert(rel.tag == .@"extern");
-    return macho_file.getSymbol(rel.target);
+    return macho_file.get_symbol(rel.target);
 }
 
 pub fn get_target_atom(rel: Relocation, macho_file: *MachO) *Atom {
     assert(rel.tag == .local);
-    return macho_file.getAtom(rel.target).?;
+    return macho_file.get_atom(rel.target).?;
 }
 
 pub fn get_target_address(rel: Relocation, macho_file: *MachO) u64 {
     return switch (rel.tag) {
-        .local => rel.getTargetAtom(macho_file).getAddress(macho_file),
-        .@"extern" => rel.getTargetSymbol(macho_file).getAddress(.{}, macho_file),
+        .local => rel.get_target_atom(macho_file).get_address(macho_file),
+        .@"extern" => rel.get_target_symbol(macho_file).get_address(.{}, macho_file),
     };
 }
 
 pub fn get_got_target_address(rel: Relocation, macho_file: *MachO) u64 {
     return switch (rel.tag) {
         .local => 0,
-        .@"extern" => rel.getTargetSymbol(macho_file).getGotAddress(macho_file),
+        .@"extern" => rel.get_target_symbol(macho_file).get_got_address(macho_file),
     };
 }
 
 pub fn get_zig_got_target_address(rel: Relocation, macho_file: *MachO) u64 {
     return switch (rel.tag) {
         .local => 0,
-        .@"extern" => rel.getTargetSymbol(macho_file).getZigGotAddress(macho_file),
+        .@"extern" => rel.get_target_symbol(macho_file).get_zig_got_address(macho_file),
     };
 }
 
@@ -62,7 +62,7 @@ pub fn less_than(ctx: void, lhs: Relocation, rhs: Relocation) bool {
 
 const FormatCtx = struct { Relocation, std.Target.Cpu.Arch };
 
-pub fn fmt_pretty(rel: Relocation, cpu_arch: std.Target.Cpu.Arch) std.fmt.Formatter(formatPretty) {
+pub fn fmt_pretty(rel: Relocation, cpu_arch: std.Target.Cpu.Arch) std.fmt.Formatter(format_pretty) {
     return .{ .data = .{ rel, cpu_arch } };
 }
 
@@ -110,7 +110,7 @@ fn format_pretty(
             else => unreachable,
         },
     };
-    try writer.writeAll(str);
+    try writer.write_all(str);
 }
 
 pub const Type = enum {

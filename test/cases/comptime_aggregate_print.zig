@@ -17,8 +17,8 @@ fn get_struct_slice() []i32 {
 }
 
 comptime {
-    @compileLog(getUnionSlice());
-    @compileLog(getStructSlice());
+    @compileLog(get_union_slice());
+    @compileLog(get_struct_slice());
 }
 
 pub fn main() !void {}
@@ -31,5 +31,5 @@ pub fn main() !void {}
 // :20:5: error: found compile log statement
 //
 // Compile Log Output:
-// @as([]i32, @as([*]i32, @ptrCast(@as(tmp.UnionContainer, .{ .buf = .{ 1, 2 } }).buf[0]))[0..2])
-// @as([]i32, @as([*]i32, @ptrCast(@as(tmp.StructContainer, .{ .buf = .{ 3, 4 } }).buf[0]))[0..2])
+// @as([]i32, @as([*]i32, @ptr_cast(@as(tmp.UnionContainer, .{ .buf = .{ 1, 2 } }).buf[0]))[0..2])
+// @as([]i32, @as([*]i32, @ptr_cast(@as(tmp.StructContainer, .{ .buf = .{ 3, 4 } }).buf[0]))[0..2])

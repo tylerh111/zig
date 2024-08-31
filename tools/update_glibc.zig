@@ -41,20 +41,20 @@ pub fn main() !void {
     defer arena_instance.deinit();
     const arena = arena_instance.allocator();
 
-    const args = try std.process.argsAlloc(arena);
+    const args = try std.process.args_alloc(arena);
     const glibc_src_path = args[1];
     const zig_src_path = args[2];
 
-    const dest_dir_path = try std.fmt.allocPrint(arena, "{s}/lib/libc/glibc", .{zig_src_path});
+    const dest_dir_path = try std.fmt.alloc_print(arena, "{s}/lib/libc/glibc", .{zig_src_path});
 
-    var dest_dir = fs.cwd().openDir(dest_dir_path, .{ .iterate = true }) catch |err| {
+    var dest_dir = fs.cwd().open_dir(dest_dir_path, .{ .iterate = true }) catch |err| {
         fatal("unable to open destination directory '{s}': {s}", .{
             dest_dir_path, @errorName(err),
         });
     };
     defer dest_dir.close();
 
-    var glibc_src_dir = try fs.cwd().openDir(glibc_src_path, .{});
+    var glibc_src_dir = try fs.cwd().open_dir(glibc_src_path, .{});
     defer glibc_src_dir.close();
 
     // Copy updated files from upstream.
@@ -64,22 +64,22 @@ pub fn main() !void {
 
         walk: while (try walker.next()) |entry| {
             if (entry.kind != .file) continue;
-            if (mem.startsWith(u8, entry.basename, ".")) continue;
+            if (mem.starts_with(u8, entry.basename, ".")) continue;
             for (exempt_files) |p| {
                 if (mem.eql(u8, entry.path, p)) continue :walk;
             }
             for (exempt_extensions) |ext| {
-                if (mem.endsWith(u8, entry.path, ext)) continue :walk;
+                if (mem.ends_with(u8, entry.path, ext)) continue :walk;
             }
 
-            glibc_src_dir.copyFile(entry.path, dest_dir, entry.path, .{}) catch |err| {
+            glibc_src_dir.copy_file(entry.path, dest_dir, entry.path, .{}) catch |err| {
                 log.warn("unable to copy '{s}/{s}' to '{s}/{s}': {s}", .{
                     glibc_src_path,  entry.path,
                     dest_dir_path,   entry.path,
                     @errorName(err),
                 });
                 if (err == error.FileNotFound) {
-                    try dest_dir.deleteFile(entry.path);
+                    try dest_dir.delete_file(entry.path);
                 }
             };
         }
@@ -88,19 +88,19 @@ pub fn main() !void {
     // Warn about duplicated files inside glibc/include/* that can be omitted
     // because they are already in generic-glibc/*.
 
-    var include_dir = dest_dir.openDir("include", .{ .iterate = true }) catch |err| {
+    var include_dir = dest_dir.open_dir("include", .{ .iterate = true }) catch |err| {
         fatal("unable to open directory '{s}/include': {s}", .{
             dest_dir_path, @errorName(err),
         });
     };
     defer include_dir.close();
 
-    const generic_glibc_path = try std.fmt.allocPrint(
+    const generic_glibc_path = try std.fmt.alloc_print(
         arena,
         "{s}/lib/libc/include/generic-glibc",
         .{zig_src_path},
     );
-    var generic_glibc_dir = try fs.cwd().openDir(generic_glibc_path, .{});
+    var generic_glibc_dir = try fs.cwd().open_dir(generic_glibc_path, .{});
     defer generic_glibc_dir.close();
 
     var walker = try include_dir.walk(arena);
@@ -108,14 +108,14 @@ pub fn main() !void {
 
     walk: while (try walker.next()) |entry| {
         if (entry.kind != .file) continue;
-        if (mem.startsWith(u8, entry.basename, ".")) continue;
+        if (mem.starts_with(u8, entry.basename, ".")) continue;
         for (exempt_files) |p| {
             if (mem.eql(u8, entry.path, p)) continue :walk;
         }
 
         const max_file_size = 10 * 1024 * 1024;
 
-        const generic_glibc_contents = generic_glibc_dir.readFileAlloc(
+        const generic_glibc_contents = generic_glibc_dir.read_file_alloc(
             arena,
             entry.path,
             max_file_size,
@@ -125,7 +125,7 @@ pub fn main() !void {
                 generic_glibc_path, entry.path, @errorName(e),
             }),
         };
-        const glibc_include_contents = include_dir.readFileAlloc(
+        const glibc_include_contents = include_dir.read_file_alloc(
             arena,
             entry.path,
             max_file_size,

@@ -15,8 +15,8 @@ fn test_zig_install_prefix(base_dir: fs.Dir) ?Compilation.Directory {
     zig_dir: {
         // Try lib/zig/std/std.zig
         const lib_zig = "lib" ++ fs.path.sep_str ++ "zig";
-        var test_zig_dir = base_dir.openDir(lib_zig, .{}) catch break :zig_dir;
-        const file = test_zig_dir.openFile(test_index_file, .{}) catch {
+        var test_zig_dir = base_dir.open_dir(lib_zig, .{}) catch break :zig_dir;
+        const file = test_zig_dir.open_file(test_index_file, .{}) catch {
             test_zig_dir.close();
             break :zig_dir;
         };
@@ -25,8 +25,8 @@ fn test_zig_install_prefix(base_dir: fs.Dir) ?Compilation.Directory {
     }
 
     // Try lib/std/std.zig
-    var test_zig_dir = base_dir.openDir("lib", .{}) catch return null;
-    const file = test_zig_dir.openFile(test_index_file, .{}) catch {
+    var test_zig_dir = base_dir.open_dir("lib", .{}) catch return null;
+    const file = test_zig_dir.open_file(test_index_file, .{}) catch {
         test_zig_dir.close();
         return null;
     };
@@ -34,22 +34,22 @@ fn test_zig_install_prefix(base_dir: fs.Dir) ?Compilation.Directory {
     return Compilation.Directory{ .handle = test_zig_dir, .path = "lib" };
 }
 
-/// This is a small wrapper around selfExePathAlloc that adds support for WASI
+/// This is a small wrapper around self_exe_path_alloc that adds support for WASI
 /// based on a hard-coded Preopen directory ("/zig")
 pub fn find_zig_exe_path(allocator: mem.Allocator) ![]u8 {
     if (builtin.os.tag == .wasi) {
-        @compileError("this function is unsupported on WASI");
+        @compile_error("this function is unsupported on WASI");
     }
 
-    return fs.selfExePathAlloc(allocator);
+    return fs.self_exe_path_alloc(allocator);
 }
 
 /// Both the directory handle and the path are newly allocated resources which the caller now owns.
 pub fn find_zig_lib_dir(gpa: mem.Allocator) !Compilation.Directory {
-    const self_exe_path = try findZigExePath(gpa);
+    const self_exe_path = try find_zig_exe_path(gpa);
     defer gpa.free(self_exe_path);
 
-    return findZigLibDirFromSelfExe(gpa, self_exe_path);
+    return find_zig_lib_dir_from_self_exe(gpa, self_exe_path);
 }
 
 /// Both the directory handle and the path are newly allocated resources which the caller now owns.
@@ -65,15 +65,15 @@ pub fn find_zig_lib_dir_from_self_exe(
     const cwd = fs.cwd();
     var cur_path: []const u8 = self_exe_path;
     while (fs.path.dirname(cur_path)) |dirname| : (cur_path = dirname) {
-        var base_dir = cwd.openDir(dirname, .{}) catch continue;
+        var base_dir = cwd.open_dir(dirname, .{}) catch continue;
         defer base_dir.close();
 
-        const sub_directory = testZigInstallPrefix(base_dir) orelse continue;
+        const sub_directory = test_zig_install_prefix(base_dir) orelse continue;
         const p = try fs.path.join(allocator, &[_][]const u8{ dirname, sub_directory.path.? });
         defer allocator.free(p);
         return Compilation.Directory{
             .handle = sub_directory.handle,
-            .path = try resolvePath(allocator, p),
+            .path = try resolve_path(allocator, p),
         };
     }
     return error.FileNotFound;
@@ -82,21 +82,21 @@ pub fn find_zig_lib_dir_from_self_exe(
 /// Caller owns returned memory.
 pub fn resolve_global_cache_dir(allocator: mem.Allocator) ![]u8 {
     if (builtin.os.tag == .wasi)
-        @compileError("on WASI the global cache dir must be resolved with preopens");
+        @compile_error("on WASI the global cache dir must be resolved with preopens");
 
     if (try std.zig.EnvVar.ZIG_GLOBAL_CACHE_DIR.get(allocator)) |value| return value;
 
     const appname = "zig";
 
     if (builtin.os.tag != .windows) {
-        if (std.zig.EnvVar.XDG_CACHE_HOME.getPosix()) |cache_root| {
+        if (std.zig.EnvVar.XDG_CACHE_HOME.get_posix()) |cache_root| {
             return fs.path.join(allocator, &[_][]const u8{ cache_root, appname });
-        } else if (std.zig.EnvVar.HOME.getPosix()) |home| {
+        } else if (std.zig.EnvVar.HOME.get_posix()) |home| {
             return fs.path.join(allocator, &[_][]const u8{ home, ".cache", appname });
         }
     }
 
-    return fs.getAppDataDir(allocator, appname);
+    return fs.get_app_data_dir(allocator, appname);
 }
 
 /// Similar to std.fs.path.resolve, with a few important differences:
@@ -114,11 +114,11 @@ pub fn resolve_path(
     CurrentWorkingDirectoryUnlinked,
     Unexpected,
 }![]u8 {
-    if (fs.path.isAbsolute(p)) {
-        const cwd_path = try std.process.getCwdAlloc(ally);
+    if (fs.path.is_absolute(p)) {
+        const cwd_path = try std.process.get_cwd_alloc(ally);
         defer ally.free(cwd_path);
         const relative = try fs.path.relative(ally, cwd_path, p);
-        if (isUpDir(relative)) {
+        if (is_up_dir(relative)) {
             ally.free(relative);
             return ally.dupe(u8, p);
         } else {
@@ -126,9 +126,9 @@ pub fn resolve_path(
         }
     } else {
         const resolved = try fs.path.resolve(ally, &.{p});
-        if (isUpDir(resolved)) {
+        if (is_up_dir(resolved)) {
             ally.free(resolved);
-            const cwd_path = try std.process.getCwdAlloc(ally);
+            const cwd_path = try std.process.get_cwd_alloc(ally);
             defer ally.free(cwd_path);
             return fs.path.resolve(ally, &.{ cwd_path, p });
         } else {
@@ -139,5 +139,5 @@ pub fn resolve_path(
 
 /// TODO move this to std.fs.path
 pub fn is_up_dir(p: []const u8) bool {
-    return mem.startsWith(u8, p, "..") and (p.len == 2 or p[2] == fs.path.sep);
+    return mem.starts_with(u8, p, "..") and (p.len == 2 or p[2] == fs.path.sep);
 }

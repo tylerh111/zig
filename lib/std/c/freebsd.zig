@@ -1,7 +1,7 @@
 const std = @import("../std.zig");
 const assert = std.debug.assert;
 const builtin = @import("builtin");
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const iovec = std.posix.iovec;
 const iovec_const = std.posix.iovec_const;
 
@@ -233,7 +233,7 @@ pub const RTLD = struct {
 
 pub const dl_phdr_info = extern struct {
     /// Module relocation base.
-    dlpi_addr: if (builtin.target.ptrBitWidth() == 32) std.elf.Elf32_Addr else std.elf.Elf64_Addr,
+    dlpi_addr: if (builtin.target.ptr_bit_width() == 32) std.elf.Elf32_Addr else std.elf.Elf64_Addr,
     /// Module name.
     dlpi_name: ?[*:0]const u8,
     /// Pointer to module's phdr.
@@ -399,13 +399,13 @@ pub const sockaddr = extern struct {
         padding: [126]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
+            assert(@size_of(storage) == SS_MAXSIZE);
             assert(@alignOf(storage) == 8);
         }
     };
 
     pub const in = extern struct {
-        len: u8 = @sizeOf(in),
+        len: u8 = @size_of(in),
         family: sa_family_t = AF.INET,
         port: in_port_t,
         addr: u32,
@@ -413,7 +413,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const in6 = extern struct {
-        len: u8 = @sizeOf(in6),
+        len: u8 = @size_of(in6),
         family: sa_family_t = AF.INET6,
         port: in_port_t,
         flowinfo: u32,
@@ -422,7 +422,7 @@ pub const sockaddr = extern struct {
     };
 
     pub const un = extern struct {
-        len: u8 = @sizeOf(un),
+        len: u8 = @size_of(un),
         family: sa_family_t = AF.UNIX,
         path: [104]u8,
     };
@@ -545,8 +545,8 @@ pub const kinfo_file = extern struct {
 pub const KINFO_FILE_SIZE = 1392;
 
 comptime {
-    std.debug.assert(@sizeOf(kinfo_file) == KINFO_FILE_SIZE);
-    std.debug.assert(@alignOf(kinfo_file) == @sizeOf(u64));
+    std.debug.assert(@size_of(kinfo_file) == KINFO_FILE_SIZE);
+    std.debug.assert(@alignOf(kinfo_file) == @size_of(u64));
 }
 
 pub const CTL = struct {
@@ -622,7 +622,7 @@ pub const W = struct {
     pub const TRAPPED = 32;
 
     pub fn EXITSTATUS(s: u32) u8 {
-        return @as(u8, @intCast((s & 0xff00) >> 8));
+        return @as(u8, @int_cast((s & 0xff00) >> 8));
     }
     pub fn TERMSIG(s: u32) u32 {
         return s & 0x7f;
@@ -697,7 +697,7 @@ pub const SIG = struct {
 
     pub const DFL: ?Sigaction.handler_fn = @ptrFromInt(0);
     pub const IGN: ?Sigaction.handler_fn = @ptrFromInt(1);
-    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(maxInt(usize));
+    pub const ERR: ?Sigaction.handler_fn = @ptrFromInt(max_int(usize));
 
     pub const WORDS = 4;
     pub const MAXSIG = 128;
@@ -1457,7 +1457,7 @@ pub const E = enum(u16) {
 pub const MINSIGSTKSZ = switch (builtin.cpu.arch) {
     .x86, .x86_64 => 2048,
     .arm, .aarch64 => 4096,
-    else => @compileError("MINSIGSTKSZ not defined for this architecture"),
+    else => @compile_error("MINSIGSTKSZ not defined for this architecture"),
 };
 pub const SIGSTKSZ = MINSIGSTKSZ + 32768;
 

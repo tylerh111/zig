@@ -26,7 +26,7 @@ pub fn next(self: *Tokenizer) ?Token {
             },
             .target => switch (char) {
                 '\t', '\n', '\r', ' ' => {
-                    return errorIllegalChar(.invalid_target, self.index, char);
+                    return error_illegal_char(.invalid_target, self.index, char);
                 },
                 '$' => {
                     self.state = .target_dollar_sign;
@@ -46,7 +46,7 @@ pub fn next(self: *Tokenizer) ?Token {
             },
             .target_reverse_solidus => switch (char) {
                 '\t', '\n', '\r' => {
-                    return errorIllegalChar(.bad_target_escape, self.index, char);
+                    return error_illegal_char(.bad_target_escape, self.index, char);
                 },
                 ' ', '#', '\\' => {
                     must_resolve = true;
@@ -69,7 +69,7 @@ pub fn next(self: *Tokenizer) ?Token {
                     self.index += 1;
                 },
                 else => {
-                    return errorIllegalChar(.expected_dollar_sign, self.index, char);
+                    return error_illegal_char(.expected_dollar_sign, self.index, char);
                 },
             },
             .target_colon => switch (char) {
@@ -77,7 +77,7 @@ pub fn next(self: *Tokenizer) ?Token {
                     const bytes = self.bytes[start .. self.index - 1];
                     if (bytes.len != 0) {
                         self.state = .lhs;
-                        return finishTarget(must_resolve, bytes);
+                        return finish_target(must_resolve, bytes);
                     }
                     // silently ignore null target
                     self.state = .lhs;
@@ -90,7 +90,7 @@ pub fn next(self: *Tokenizer) ?Token {
                     const bytes = self.bytes[start .. self.index - 1];
                     if (bytes.len != 0) {
                         self.state = .rhs;
-                        return finishTarget(must_resolve, bytes);
+                        return finish_target(must_resolve, bytes);
                     }
                     // silently ignore null target
                     self.state = .lhs;
@@ -101,7 +101,7 @@ pub fn next(self: *Tokenizer) ?Token {
                     const bytes = self.bytes[start .. self.index - 2];
                     if (bytes.len != 0) {
                         self.state = .lhs;
-                        return finishTarget(must_resolve, bytes);
+                        return finish_target(must_resolve, bytes);
                     }
                     // silently ignore null target
                     self.state = .lhs;
@@ -142,7 +142,7 @@ pub fn next(self: *Tokenizer) ?Token {
                     self.index += 1;
                 },
                 else => {
-                    return errorIllegalChar(.continuation_eol, self.index, char);
+                    return error_illegal_char(.continuation_eol, self.index, char);
                 },
             },
             .rhs_continuation_linefeed => switch (char) {
@@ -151,14 +151,14 @@ pub fn next(self: *Tokenizer) ?Token {
                     self.index += 1;
                 },
                 else => {
-                    return errorIllegalChar(.continuation_eol, self.index, char);
+                    return error_illegal_char(.continuation_eol, self.index, char);
                 },
             },
             .prereq_quote => switch (char) {
                 '"' => {
                     self.index += 1;
                     self.state = .rhs;
-                    return finishPrereq(must_resolve, self.bytes[start .. self.index - 1]);
+                    return finish_prereq(must_resolve, self.bytes[start .. self.index - 1]);
                 },
                 else => {
                     self.index += 1;
@@ -167,11 +167,11 @@ pub fn next(self: *Tokenizer) ?Token {
             .prereq => switch (char) {
                 '\t', ' ' => {
                     self.state = .rhs;
-                    return finishPrereq(must_resolve, self.bytes[start..self.index]);
+                    return finish_prereq(must_resolve, self.bytes[start..self.index]);
                 },
                 '\n', '\r' => {
                     self.state = .lhs;
-                    return finishPrereq(must_resolve, self.bytes[start..self.index]);
+                    return finish_prereq(must_resolve, self.bytes[start..self.index]);
                 },
                 '\\' => {
                     self.state = .prereq_continuation;
@@ -185,7 +185,7 @@ pub fn next(self: *Tokenizer) ?Token {
                 '\n' => {
                     self.index += 1;
                     self.state = .rhs;
-                    return finishPrereq(must_resolve, self.bytes[start .. self.index - 2]);
+                    return finish_prereq(must_resolve, self.bytes[start .. self.index - 2]);
                 },
                 '\r' => {
                     self.state = .prereq_continuation_linefeed;
@@ -211,10 +211,10 @@ pub fn next(self: *Tokenizer) ?Token {
                 '\n' => {
                     self.index += 1;
                     self.state = .rhs;
-                    return finishPrereq(must_resolve, self.bytes[start .. self.index - 3]);
+                    return finish_prereq(must_resolve, self.bytes[start .. self.index - 3]);
                 },
                 else => {
-                    return errorIllegalChar(.continuation_eol, self.index, char);
+                    return error_illegal_char(.continuation_eol, self.index, char);
                 },
             },
         }
@@ -226,20 +226,20 @@ pub fn next(self: *Tokenizer) ?Token {
             .rhs_continuation_linefeed,
             => return null,
             .target => {
-                return errorPosition(.incomplete_target, start, self.bytes[start..]);
+                return error_position(.incomplete_target, start, self.bytes[start..]);
             },
             .target_reverse_solidus,
             .target_dollar_sign,
             => {
                 const idx = self.index - 1;
-                return errorIllegalChar(.incomplete_escape, idx, self.bytes[idx]);
+                return error_illegal_char(.incomplete_escape, idx, self.bytes[idx]);
             },
             .target_colon => {
                 const bytes = self.bytes[start .. self.index - 1];
                 if (bytes.len != 0) {
                     self.index += 1;
                     self.state = .rhs;
-                    return finishTarget(must_resolve, bytes);
+                    return finish_target(must_resolve, bytes);
                 }
                 // silently ignore null target
                 self.state = .lhs;
@@ -250,26 +250,26 @@ pub fn next(self: *Tokenizer) ?Token {
                 if (bytes.len != 0) {
                     self.index += 1;
                     self.state = .rhs;
-                    return finishTarget(must_resolve, bytes);
+                    return finish_target(must_resolve, bytes);
                 }
                 // silently ignore null target
                 self.state = .lhs;
                 return null;
             },
             .prereq_quote => {
-                return errorPosition(.incomplete_quoted_prerequisite, start, self.bytes[start..]);
+                return error_position(.incomplete_quoted_prerequisite, start, self.bytes[start..]);
             },
             .prereq => {
                 self.state = .lhs;
-                return finishPrereq(must_resolve, self.bytes[start..]);
+                return finish_prereq(must_resolve, self.bytes[start..]);
             },
             .prereq_continuation => {
                 self.state = .lhs;
-                return finishPrereq(must_resolve, self.bytes[start .. self.index - 1]);
+                return finish_prereq(must_resolve, self.bytes[start .. self.index - 1]);
             },
             .prereq_continuation_linefeed => {
                 self.state = .lhs;
-                return finishPrereq(must_resolve, self.bytes[start .. self.index - 2]);
+                return finish_prereq(must_resolve, self.bytes[start .. self.index - 2]);
             },
         }
     }
@@ -277,11 +277,11 @@ pub fn next(self: *Tokenizer) ?Token {
 }
 
 fn error_position(comptime id: std.meta.Tag(Token), index: usize, bytes: []const u8) Token {
-    return @unionInit(Token, @tagName(id), .{ .index = index, .bytes = bytes });
+    return @union_init(Token, @tag_name(id), .{ .index = index, .bytes = bytes });
 }
 
 fn error_illegal_char(comptime id: std.meta.Tag(Token), index: usize, char: u8) Token {
-    return @unionInit(Token, @tagName(id), .{ .index = index, .char = char });
+    return @union_init(Token, @tag_name(id), .{ .index = index, .char = char });
 }
 
 fn finish_target(must_resolve: bool, bytes: []const u8) Token {
@@ -344,27 +344,27 @@ pub const Token = union(enum) {
                             switch (c) {
                                 '\\' => state = .escape,
                                 '$' => state = .dollar,
-                                else => try writer.writeByte(c),
+                                else => try writer.write_byte(c),
                             }
                         },
                         .escape => {
                             switch (c) {
                                 ' ', '#', '\\' => {},
                                 '$' => {
-                                    try writer.writeByte('\\');
+                                    try writer.write_byte('\\');
                                     state = .dollar;
                                     continue;
                                 },
-                                else => try writer.writeByte('\\'),
+                                else => try writer.write_byte('\\'),
                             }
-                            try writer.writeByte(c);
+                            try writer.write_byte(c);
                             state = .start;
                         },
                         .dollar => {
-                            try writer.writeByte('$');
+                            try writer.write_byte('$');
                             switch (c) {
                                 '$' => {},
-                                else => try writer.writeByte(c),
+                                else => try writer.write_byte(c),
                             }
                             state = .start;
                         },
@@ -378,19 +378,19 @@ pub const Token = union(enum) {
                         .start => {
                             switch (c) {
                                 '\\' => state = .escape,
-                                else => try writer.writeByte(c),
+                                else => try writer.write_byte(c),
                             }
                         },
                         .escape => {
                             switch (c) {
                                 ' ' => {},
                                 '\\' => {
-                                    try writer.writeByte(c);
+                                    try writer.write_byte(c);
                                     continue;
                                 },
-                                else => try writer.writeByte('\\'),
+                                else => try writer.write_byte('\\'),
                             }
-                            try writer.writeByte(c);
+                            try writer.write_byte(c);
                             state = .start;
                         },
                     }
@@ -406,12 +406,12 @@ pub const Token = union(enum) {
             .incomplete_quoted_prerequisite,
             .incomplete_target,
             => |index_and_bytes| {
-                try writer.print("{s} '", .{self.errStr()});
+                try writer.print("{s} '", .{self.err_str()});
                 if (self == .incomplete_target) {
                     const tmp = Token{ .target_must_resolve = index_and_bytes.bytes };
                     try tmp.resolve(writer);
                 } else {
-                    try printCharValues(writer, index_and_bytes.bytes);
+                    try print_char_values(writer, index_and_bytes.bytes);
                 }
                 try writer.print("' at position {d}", .{index_and_bytes.index});
             },
@@ -421,9 +421,9 @@ pub const Token = union(enum) {
             .continuation_eol,
             .incomplete_escape,
             => |index_and_char| {
-                try writer.writeAll("illegal char ");
-                try printUnderstandableChar(writer, index_and_char.char);
-                try writer.print(" at position {d}: {s}", .{ index_and_char.index, self.errStr() });
+                try writer.write_all("illegal char ");
+                try print_understandable_char(writer, index_and_char.char);
+                try writer.print(" at position {d}: {s}", .{ index_and_char.index, self.err_str() });
             },
         }
     }
@@ -443,27 +443,27 @@ pub const Token = union(enum) {
 };
 
 test "empty file" {
-    try depTokenizer("", "");
+    try dep_tokenizer("", "");
 }
 
 test "empty whitespace" {
-    try depTokenizer("\n", "");
-    try depTokenizer("\r", "");
-    try depTokenizer("\r\n", "");
-    try depTokenizer(" ", "");
+    try dep_tokenizer("\n", "");
+    try dep_tokenizer("\r", "");
+    try dep_tokenizer("\r\n", "");
+    try dep_tokenizer(" ", "");
 }
 
 test "empty colon" {
-    try depTokenizer(":", "");
-    try depTokenizer("\n:", "");
-    try depTokenizer("\r:", "");
-    try depTokenizer("\r\n:", "");
-    try depTokenizer(" :", "");
+    try dep_tokenizer(":", "");
+    try dep_tokenizer("\n:", "");
+    try dep_tokenizer("\r:", "");
+    try dep_tokenizer("\r\n:", "");
+    try dep_tokenizer(" :", "");
 }
 
 test "empty target" {
-    try depTokenizer("foo.o:", "target = {foo.o}");
-    try depTokenizer(
+    try dep_tokenizer("foo.o:", "target = {foo.o}");
+    try dep_tokenizer(
         \\foo.o:
         \\bar.o:
         \\abcd.o:
@@ -475,35 +475,35 @@ test "empty target" {
 }
 
 test "whitespace empty target" {
-    try depTokenizer("\nfoo.o:", "target = {foo.o}");
-    try depTokenizer("\rfoo.o:", "target = {foo.o}");
-    try depTokenizer("\r\nfoo.o:", "target = {foo.o}");
-    try depTokenizer(" foo.o:", "target = {foo.o}");
+    try dep_tokenizer("\nfoo.o:", "target = {foo.o}");
+    try dep_tokenizer("\rfoo.o:", "target = {foo.o}");
+    try dep_tokenizer("\r\nfoo.o:", "target = {foo.o}");
+    try dep_tokenizer(" foo.o:", "target = {foo.o}");
 }
 
 test "escape empty target" {
-    try depTokenizer("\\ foo.o:", "target = { foo.o}");
-    try depTokenizer("\\#foo.o:", "target = {#foo.o}");
-    try depTokenizer("\\\\foo.o:", "target = {\\foo.o}");
-    try depTokenizer("$$foo.o:", "target = {$foo.o}");
+    try dep_tokenizer("\\ foo.o:", "target = { foo.o}");
+    try dep_tokenizer("\\#foo.o:", "target = {#foo.o}");
+    try dep_tokenizer("\\\\foo.o:", "target = {\\foo.o}");
+    try dep_tokenizer("$$foo.o:", "target = {$foo.o}");
 }
 
 test "empty target linefeeds" {
-    try depTokenizer("\n", "");
-    try depTokenizer("\r\n", "");
+    try dep_tokenizer("\n", "");
+    try dep_tokenizer("\r\n", "");
 
     const expect = "target = {foo.o}";
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o:
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o:
         \\
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o:
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o:
         \\
     , expect);
@@ -511,17 +511,17 @@ test "empty target linefeeds" {
 
 test "empty target linefeeds + continuations" {
     const expect = "target = {foo.o}";
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o:\
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o:\
         \\
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o:\
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o:\
         \\
     , expect);
@@ -529,17 +529,17 @@ test "empty target linefeeds + continuations" {
 
 test "empty target linefeeds + hspace + continuations" {
     const expect = "target = {foo.o}";
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: \
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: \
         \\
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: \
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: \
         \\
     , expect);
@@ -550,16 +550,16 @@ test "prereq" {
         \\target = {foo.o}
         \\prereq = {foo.c}
     ;
-    try depTokenizer("foo.o: foo.c", expect);
-    try depTokenizer(
+    try dep_tokenizer("foo.o: foo.c", expect);
+    try dep_tokenizer(
         \\foo.o: \
         \\foo.c
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: \
         \\ foo.c
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o:    \
         \\    foo.c
     , expect);
@@ -571,11 +571,11 @@ test "prereq continuation" {
         \\prereq = {foo.h}
         \\prereq = {bar.h}
     ;
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: foo.h\
         \\bar.h
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: foo.h\
         \\bar.h
     , expect);
@@ -587,7 +587,7 @@ test "prereq continuation (CRLF)" {
         \\prereq = {foo.h}
         \\prereq = {bar.h}
     ;
-    try depTokenizer("foo.o: foo.h\\\r\nbar.h", expect);
+    try dep_tokenizer("foo.o: foo.h\\\r\nbar.h", expect);
 }
 
 test "multiple prereqs" {
@@ -597,33 +597,33 @@ test "multiple prereqs" {
         \\prereq = {foo.h}
         \\prereq = {bar.h}
     ;
-    try depTokenizer("foo.o: foo.c foo.h bar.h", expect);
-    try depTokenizer(
+    try dep_tokenizer("foo.o: foo.c foo.h bar.h", expect);
+    try dep_tokenizer(
         \\foo.o: \
         \\foo.c foo.h bar.h
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: foo.c foo.h bar.h\
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: foo.c foo.h bar.h\
         \\
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: \
         \\foo.c       \
         \\     foo.h\
         \\bar.h
         \\
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: \
         \\foo.c       \
         \\     foo.h\
         \\bar.h\
         \\
     , expect);
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: \
         \\foo.c       \
         \\     foo.h\
@@ -632,7 +632,7 @@ test "multiple prereqs" {
 }
 
 test "multiple targets and prereqs" {
-    try depTokenizer(
+    try dep_tokenizer(
         \\foo.o: foo.c
         \\bar.o: bar.c a.h b.h c.h
         \\abc.o: abc.c \
@@ -653,7 +653,7 @@ test "multiple targets and prereqs" {
         \\prereq = {three.h}
         \\prereq = {four.h}
     );
-    try depTokenizer(
+    try dep_tokenizer(
         \\ascii.o: ascii.c
         \\base64.o: base64.c stdio.h
         \\elf.o: elf.c a.h b.h c.h
@@ -677,7 +677,7 @@ test "multiple targets and prereqs" {
         \\prereq = {b.h}
         \\prereq = {c.h}
     );
-    try depTokenizer(
+    try dep_tokenizer(
         \\a$$scii.o: ascii.c
         \\\\base64.o: "\base64.c" "s t#dio.h"
         \\e\\lf.o: "e\lf.c" "a.h$$" "$$b.h c.h$$"
@@ -703,7 +703,7 @@ test "multiple targets and prereqs" {
 }
 
 test "windows quoted prereqs" {
-    try depTokenizer(
+    try dep_tokenizer(
         \\c:\foo.o: "C:\Program Files (x86)\Microsoft Visual Studio\foo.c"
         \\c:\foo2.o: "C:\Program Files (x86)\Microsoft Visual Studio\foo2.c" \
         \\  "C:\Program Files (x86)\Microsoft Visual Studio\foo1.h" \
@@ -719,7 +719,7 @@ test "windows quoted prereqs" {
 }
 
 test "windows mixed prereqs" {
-    try depTokenizer(
+    try dep_tokenizer(
         \\cimport.o: \
         \\  C:\msys64\home\anon\project\zig\master\zig-cache\o\qhvhbUo7GU5iKyQ5mpA8TcQpncCYaQu0wwvr3ybiSTj_Dtqi1Nmcb70kfODJ2Qlg\cimport.h \
         \\  "C:\Program Files (x86)\Windows Kits\10\\Include\10.0.17763.0\ucrt\stdio.h" \
@@ -759,7 +759,7 @@ test "windows mixed prereqs" {
 }
 
 test "windows funky targets" {
-    try depTokenizer(
+    try dep_tokenizer(
         \\C:\Users\anon\foo.o:
         \\C:\Users\anon\foo\ .o:
         \\C:\Users\anon\foo\#.o:
@@ -786,7 +786,7 @@ test "windows funky prereqs" {
     // This typically wouldn't be seen in the wild, since depfiles usually use absolute paths
     // and supporting it would degrade error messages for cases where it was meant to be a
     // continuation, but the line ending is missing.
-    try depTokenizer(
+    try dep_tokenizer(
         \\cimport.o: \
         \\  trailingbackslash\\
         \\  C:\Users\John\ Smith\AppData\Local\zig\p\1220d14057af1a9d6dde4643293527bd5ee5099517d655251a066666a4320737ea7c\cimport.c \
@@ -807,7 +807,7 @@ test "windows funky prereqs" {
 }
 
 test "windows drive and forward slashes" {
-    try depTokenizer(
+    try dep_tokenizer(
         \\C:/msys64/what/zig-cache\tmp\48ac4d78dd531abd-cxa_thread_atexit.obj: \
         \\  C:/msys64/opt/zig3/lib/zig/libc/mingw/crt/cxa_thread_atexit.c
     ,
@@ -817,147 +817,147 @@ test "windows drive and forward slashes" {
 }
 
 test "error incomplete escape - reverse_solidus" {
-    try depTokenizer("\\",
+    try dep_tokenizer("\\",
         \\ERROR: illegal char '\' at position 0: incomplete escape
     );
-    try depTokenizer("\t\\",
+    try dep_tokenizer("\t\\",
         \\ERROR: illegal char '\' at position 1: incomplete escape
     );
-    try depTokenizer("\n\\",
+    try dep_tokenizer("\n\\",
         \\ERROR: illegal char '\' at position 1: incomplete escape
     );
-    try depTokenizer("\r\\",
+    try dep_tokenizer("\r\\",
         \\ERROR: illegal char '\' at position 1: incomplete escape
     );
-    try depTokenizer("\r\n\\",
+    try dep_tokenizer("\r\n\\",
         \\ERROR: illegal char '\' at position 2: incomplete escape
     );
-    try depTokenizer(" \\",
+    try dep_tokenizer(" \\",
         \\ERROR: illegal char '\' at position 1: incomplete escape
     );
 }
 
 test "error incomplete escape - dollar_sign" {
-    try depTokenizer("$",
+    try dep_tokenizer("$",
         \\ERROR: illegal char '$' at position 0: incomplete escape
     );
-    try depTokenizer("\t$",
+    try dep_tokenizer("\t$",
         \\ERROR: illegal char '$' at position 1: incomplete escape
     );
-    try depTokenizer("\n$",
+    try dep_tokenizer("\n$",
         \\ERROR: illegal char '$' at position 1: incomplete escape
     );
-    try depTokenizer("\r$",
+    try dep_tokenizer("\r$",
         \\ERROR: illegal char '$' at position 1: incomplete escape
     );
-    try depTokenizer("\r\n$",
+    try dep_tokenizer("\r\n$",
         \\ERROR: illegal char '$' at position 2: incomplete escape
     );
-    try depTokenizer(" $",
+    try dep_tokenizer(" $",
         \\ERROR: illegal char '$' at position 1: incomplete escape
     );
 }
 
 test "error incomplete target" {
-    try depTokenizer("foo.o",
+    try dep_tokenizer("foo.o",
         \\ERROR: incomplete target 'foo.o' at position 0
     );
-    try depTokenizer("\tfoo.o",
+    try dep_tokenizer("\tfoo.o",
         \\ERROR: incomplete target 'foo.o' at position 1
     );
-    try depTokenizer("\nfoo.o",
+    try dep_tokenizer("\nfoo.o",
         \\ERROR: incomplete target 'foo.o' at position 1
     );
-    try depTokenizer("\rfoo.o",
+    try dep_tokenizer("\rfoo.o",
         \\ERROR: incomplete target 'foo.o' at position 1
     );
-    try depTokenizer("\r\nfoo.o",
+    try dep_tokenizer("\r\nfoo.o",
         \\ERROR: incomplete target 'foo.o' at position 2
     );
-    try depTokenizer(" foo.o",
+    try dep_tokenizer(" foo.o",
         \\ERROR: incomplete target 'foo.o' at position 1
     );
 
-    try depTokenizer("\\ foo.o",
+    try dep_tokenizer("\\ foo.o",
         \\ERROR: incomplete target ' foo.o' at position 0
     );
-    try depTokenizer("\\#foo.o",
+    try dep_tokenizer("\\#foo.o",
         \\ERROR: incomplete target '#foo.o' at position 0
     );
-    try depTokenizer("\\\\foo.o",
+    try dep_tokenizer("\\\\foo.o",
         \\ERROR: incomplete target '\foo.o' at position 0
     );
-    try depTokenizer("$$foo.o",
+    try dep_tokenizer("$$foo.o",
         \\ERROR: incomplete target '$foo.o' at position 0
     );
 }
 
 test "error illegal char at position - bad target escape" {
-    try depTokenizer("\\\t",
+    try dep_tokenizer("\\\t",
         \\ERROR: illegal char \x09 at position 1: bad target escape
     );
-    try depTokenizer("\\\n",
+    try dep_tokenizer("\\\n",
         \\ERROR: illegal char \x0A at position 1: bad target escape
     );
-    try depTokenizer("\\\r",
+    try dep_tokenizer("\\\r",
         \\ERROR: illegal char \x0D at position 1: bad target escape
     );
-    try depTokenizer("\\\r\n",
+    try dep_tokenizer("\\\r\n",
         \\ERROR: illegal char \x0D at position 1: bad target escape
     );
 }
 
 test "error illegal char at position - expecting dollar_sign" {
-    try depTokenizer("$\t",
+    try dep_tokenizer("$\t",
         \\ERROR: illegal char \x09 at position 1: expecting '$'
     );
-    try depTokenizer("$\n",
+    try dep_tokenizer("$\n",
         \\ERROR: illegal char \x0A at position 1: expecting '$'
     );
-    try depTokenizer("$\r",
+    try dep_tokenizer("$\r",
         \\ERROR: illegal char \x0D at position 1: expecting '$'
     );
-    try depTokenizer("$\r\n",
+    try dep_tokenizer("$\r\n",
         \\ERROR: illegal char \x0D at position 1: expecting '$'
     );
 }
 
 test "error illegal char at position - invalid target" {
-    try depTokenizer("foo\t.o",
+    try dep_tokenizer("foo\t.o",
         \\ERROR: illegal char \x09 at position 3: invalid target
     );
-    try depTokenizer("foo\n.o",
+    try dep_tokenizer("foo\n.o",
         \\ERROR: illegal char \x0A at position 3: invalid target
     );
-    try depTokenizer("foo\r.o",
+    try dep_tokenizer("foo\r.o",
         \\ERROR: illegal char \x0D at position 3: invalid target
     );
-    try depTokenizer("foo\r\n.o",
+    try dep_tokenizer("foo\r\n.o",
         \\ERROR: illegal char \x0D at position 3: invalid target
     );
 }
 
 test "error target - continuation expecting end-of-line" {
-    try depTokenizer("foo.o: \\\t",
+    try dep_tokenizer("foo.o: \\\t",
         \\target = {foo.o}
         \\ERROR: illegal char \x09 at position 8: continuation expecting end-of-line
     );
-    try depTokenizer("foo.o: \\ ",
+    try dep_tokenizer("foo.o: \\ ",
         \\target = {foo.o}
         \\ERROR: illegal char ' ' at position 8: continuation expecting end-of-line
     );
-    try depTokenizer("foo.o: \\x",
+    try dep_tokenizer("foo.o: \\x",
         \\target = {foo.o}
         \\ERROR: illegal char 'x' at position 8: continuation expecting end-of-line
     );
-    try depTokenizer("foo.o: \\\x0dx",
+    try dep_tokenizer("foo.o: \\\x0dx",
         \\target = {foo.o}
         \\ERROR: illegal char 'x' at position 9: continuation expecting end-of-line
     );
 }
 
 test "error prereq - continuation expecting end-of-line" {
-    try depTokenizer("foo.o: foo.h\\\x0dx",
+    try dep_tokenizer("foo.o: foo.h\\\x0dx",
         \\target = {foo.o}
         \\ERROR: illegal char 'x' at position 14: continuation expecting end-of-line
     );
@@ -974,37 +974,37 @@ fn dep_tokenizer(input: []const u8, expect: []const u8) !void {
     var resolve_buf = std.ArrayList(u8).init(arena);
     var i: usize = 0;
     while (it.next()) |token| {
-        if (i != 0) try buffer.appendSlice("\n");
+        if (i != 0) try buffer.append_slice("\n");
         switch (token) {
             .target, .prereq => |bytes| {
-                try buffer.appendSlice(@tagName(token));
-                try buffer.appendSlice(" = {");
+                try buffer.append_slice(@tag_name(token));
+                try buffer.append_slice(" = {");
                 for (bytes) |b| {
                     try buffer.append(printable_char_tab[b]);
                 }
-                try buffer.appendSlice("}");
+                try buffer.append_slice("}");
             },
             .target_must_resolve => {
-                try buffer.appendSlice("target = {");
+                try buffer.append_slice("target = {");
                 try token.resolve(resolve_buf.writer());
                 for (resolve_buf.items) |b| {
                     try buffer.append(printable_char_tab[b]);
                 }
                 resolve_buf.items.len = 0;
-                try buffer.appendSlice("}");
+                try buffer.append_slice("}");
             },
             .prereq_must_resolve => {
-                try buffer.appendSlice("prereq = {");
+                try buffer.append_slice("prereq = {");
                 try token.resolve(resolve_buf.writer());
                 for (resolve_buf.items) |b| {
                     try buffer.append(printable_char_tab[b]);
                 }
                 resolve_buf.items.len = 0;
-                try buffer.appendSlice("}");
+                try buffer.append_slice("}");
             },
             else => {
-                try buffer.appendSlice("ERROR: ");
-                try token.printError(buffer.writer());
+                try buffer.append_slice("ERROR: ");
+                try token.print_error(buffer.writer());
                 break;
             },
         }
@@ -1016,44 +1016,44 @@ fn dep_tokenizer(input: []const u8, expect: []const u8) !void {
         return;
     }
 
-    const out = std.io.getStdErr().writer();
+    const out = std.io.get_std_err().writer();
 
-    try out.writeAll("\n");
-    try printSection(out, "<<<< input", input);
-    try printSection(out, "==== expect", expect);
-    try printSection(out, ">>>> got", buffer.items);
-    try printRuler(out);
+    try out.write_all("\n");
+    try print_section(out, "<<<< input", input);
+    try print_section(out, "==== expect", expect);
+    try print_section(out, ">>>> got", buffer.items);
+    try print_ruler(out);
 
     try testing.expect(false);
 }
 
 fn print_section(out: anytype, label: []const u8, bytes: []const u8) !void {
-    try printLabel(out, label, bytes);
-    try hexDump(out, bytes);
-    try printRuler(out);
-    try out.writeAll(bytes);
-    try out.writeAll("\n");
+    try print_label(out, label, bytes);
+    try hex_dump(out, bytes);
+    try print_ruler(out);
+    try out.write_all(bytes);
+    try out.write_all("\n");
 }
 
 fn print_label(out: anytype, label: []const u8, bytes: []const u8) !void {
     var buf: [80]u8 = undefined;
-    const text = try std.fmt.bufPrint(buf[0..], "{s} {d} bytes ", .{ label, bytes.len });
-    try out.writeAll(text);
+    const text = try std.fmt.buf_print(buf[0..], "{s} {d} bytes ", .{ label, bytes.len });
+    try out.write_all(text);
     var i: usize = text.len;
     const end = 79;
     while (i < end) : (i += 1) {
-        try out.writeAll(&[_]u8{label[0]});
+        try out.write_all(&[_]u8{label[0]});
     }
-    try out.writeAll("\n");
+    try out.write_all("\n");
 }
 
 fn print_ruler(out: anytype) !void {
     var i: usize = 0;
     const end = 79;
     while (i < end) : (i += 1) {
-        try out.writeAll("-");
+        try out.write_all("-");
     }
-    try out.writeAll("\n");
+    try out.write_all("\n");
 }
 
 fn hex_dump(out: anytype, bytes: []const u8) !void {
@@ -1061,86 +1061,86 @@ fn hex_dump(out: anytype, bytes: []const u8) !void {
     var line: usize = 0;
     var offset: usize = 0;
     while (line < n16) : (line += 1) {
-        try hexDump16(out, offset, bytes[offset..][0..16]);
+        try hex_dump16(out, offset, bytes[offset..][0..16]);
         offset += 16;
     }
 
     const n = bytes.len & 0x0f;
     if (n > 0) {
-        try printDecValue(out, offset, 8);
-        try out.writeAll(":");
-        try out.writeAll(" ");
+        try print_dec_value(out, offset, 8);
+        try out.write_all(":");
+        try out.write_all(" ");
         const end1 = @min(offset + n, offset + 8);
         for (bytes[offset..end1]) |b| {
-            try out.writeAll(" ");
-            try printHexValue(out, b, 2);
+            try out.write_all(" ");
+            try print_hex_value(out, b, 2);
         }
         const end2 = offset + n;
         if (end2 > end1) {
-            try out.writeAll(" ");
+            try out.write_all(" ");
             for (bytes[end1..end2]) |b| {
-                try out.writeAll(" ");
-                try printHexValue(out, b, 2);
+                try out.write_all(" ");
+                try print_hex_value(out, b, 2);
             }
         }
         const short = 16 - n;
         var i: usize = 0;
         while (i < short) : (i += 1) {
-            try out.writeAll("   ");
+            try out.write_all("   ");
         }
         if (end2 > end1) {
-            try out.writeAll("  |");
+            try out.write_all("  |");
         } else {
-            try out.writeAll("   |");
+            try out.write_all("   |");
         }
-        try printCharValues(out, bytes[offset..end2]);
-        try out.writeAll("|\n");
+        try print_char_values(out, bytes[offset..end2]);
+        try out.write_all("|\n");
         offset += n;
     }
 
-    try printDecValue(out, offset, 8);
-    try out.writeAll(":");
-    try out.writeAll("\n");
+    try print_dec_value(out, offset, 8);
+    try out.write_all(":");
+    try out.write_all("\n");
 }
 
 fn hex_dump16(out: anytype, offset: usize, bytes: []const u8) !void {
-    try printDecValue(out, offset, 8);
-    try out.writeAll(":");
-    try out.writeAll(" ");
+    try print_dec_value(out, offset, 8);
+    try out.write_all(":");
+    try out.write_all(" ");
     for (bytes[0..8]) |b| {
-        try out.writeAll(" ");
-        try printHexValue(out, b, 2);
+        try out.write_all(" ");
+        try print_hex_value(out, b, 2);
     }
-    try out.writeAll(" ");
+    try out.write_all(" ");
     for (bytes[8..16]) |b| {
-        try out.writeAll(" ");
-        try printHexValue(out, b, 2);
+        try out.write_all(" ");
+        try print_hex_value(out, b, 2);
     }
-    try out.writeAll("  |");
-    try printCharValues(out, bytes);
-    try out.writeAll("|\n");
+    try out.write_all("  |");
+    try print_char_values(out, bytes);
+    try out.write_all("|\n");
 }
 
 fn print_dec_value(out: anytype, value: u64, width: u8) !void {
     var buffer: [20]u8 = undefined;
-    const len = std.fmt.formatIntBuf(buffer[0..], value, 10, .lower, .{ .width = width, .fill = '0' });
-    try out.writeAll(buffer[0..len]);
+    const len = std.fmt.format_int_buf(buffer[0..], value, 10, .lower, .{ .width = width, .fill = '0' });
+    try out.write_all(buffer[0..len]);
 }
 
 fn print_hex_value(out: anytype, value: u64, width: u8) !void {
     var buffer: [16]u8 = undefined;
-    const len = std.fmt.formatIntBuf(buffer[0..], value, 16, .lower, .{ .width = width, .fill = '0' });
-    try out.writeAll(buffer[0..len]);
+    const len = std.fmt.format_int_buf(buffer[0..], value, 16, .lower, .{ .width = width, .fill = '0' });
+    try out.write_all(buffer[0..len]);
 }
 
 fn print_char_values(out: anytype, bytes: []const u8) !void {
     for (bytes) |b| {
-        try out.writeAll(&[_]u8{printable_char_tab[b]});
+        try out.write_all(&[_]u8{printable_char_tab[b]});
     }
 }
 
 fn print_understandable_char(out: anytype, char: u8) !void {
-    if (std.ascii.isPrint(char)) {
+    if (std.ascii.is_print(char)) {
         try out.print("'{c}'", .{char});
     } else {
         try out.print("\\x{X:0>2}", .{char});

@@ -40,7 +40,7 @@ pub fn slide(self: *Self) u16 {
     self.rp -= hist_len;
     self.wp -= hist_len;
     self.fp -= hist_len;
-    return @intCast(n);
+    return @int_cast(n);
 }
 
 /// Data from the current position (read position). Those part of the buffer is
@@ -100,18 +100,18 @@ pub fn match(self: *Self, prev_pos: u16, curr_pos: u16, min_len: u16) u16 {
     }
     while (i < max_len) : (i += 1)
         if (prev_lh[i] != curr_lh[i]) break;
-    return if (i >= consts.match.min_length) @intCast(i) else 0;
+    return if (i >= consts.match.min_length) @int_cast(i) else 0;
 }
 
 /// Current position of non-compressed data. Data before rp are already converted
 /// to tokens.
 pub fn pos(self: *Self) u16 {
-    return @intCast(self.rp);
+    return @int_cast(self.rp);
 }
 
 /// Notification that token list is cleared.
 pub fn flush(self: *Self) void {
-    self.fp = @intCast(self.rp);
+    self.fp = @int_cast(self.rp);
 }
 
 /// Part of the buffer since last flush or null if there was slide in between (so
@@ -119,7 +119,7 @@ pub fn flush(self: *Self) void {
 pub fn tokens_buffer(self: *Self) ?[]const u8 {
     assert(self.fp <= self.rp);
     if (self.fp < 0) return null;
-    return self.buffer[@intCast(self.fp)..self.rp];
+    return self.buffer[@int_cast(self.fp)..self.rp];
 }
 
 test match {
@@ -148,7 +148,7 @@ test slide {
     win.rp = Self.buffer_len - 111;
     win.buffer[win.rp] = 0xab;
     try expect(win.lookahead().len == 100);
-    try expect(win.tokensBuffer().?.len == win.rp);
+    try expect(win.tokens_buffer().?.len == win.rp);
 
     const n = win.slide();
     try expect(n == 32757);
@@ -156,5 +156,5 @@ test slide {
     try expect(win.rp == Self.hist_len - 111);
     try expect(win.wp == Self.hist_len - 11);
     try expect(win.lookahead().len == 100);
-    try expect(win.tokensBuffer() == null);
+    try expect(win.tokens_buffer() == null);
 }

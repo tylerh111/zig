@@ -24,8 +24,8 @@ pub const Secp256k1 = struct {
 
     /// The secp256k1 base point.
     pub const basePoint = Secp256k1{
-        .x = Fe.fromInt(55066263022277343669578718895168534326250603453777594175500187360389116729240) catch unreachable,
-        .y = Fe.fromInt(32670510020758816978083085130507043184471273380659243275938904335757337482424) catch unreachable,
+        .x = Fe.from_int(55066263022277343669578718895168534326250603453777594175500187360389116729240) catch unreachable,
+        .y = Fe.from_int(32670510020758816978083085130507043184471273380659243275938904335757337482424) catch unreachable,
         .z = Fe.one,
         .is_base = true,
     };
@@ -33,7 +33,7 @@ pub const Secp256k1 = struct {
     /// The secp256k1 neutral element.
     pub const identityElement = Secp256k1{ .x = Fe.zero, .y = Fe.one, .z = Fe.zero };
 
-    pub const B = Fe.fromInt(7) catch unreachable;
+    pub const B = Fe.from_int(7) catch unreachable;
 
     pub const Endormorphism = struct {
         const lambda: u256 = 37718080363155996902926221483475020450927657555482586988616620542887997980018;
@@ -41,7 +41,7 @@ pub const Secp256k1 = struct {
 
         const lambda_s = s: {
             var buf: [32]u8 = undefined;
-            mem.writeInt(u256, &buf, Endormorphism.lambda, .little);
+            mem.write_int(u256, &buf, Endormorphism.lambda, .little);
             break :s buf;
         };
 
@@ -54,28 +54,28 @@ pub const Secp256k1 = struct {
         pub fn split_scalar(s: [32]u8, endian: std.builtin.Endian) NonCanonicalError!SplitScalar {
             const b1_neg_s = comptime s: {
                 var buf: [32]u8 = undefined;
-                mem.writeInt(u256, &buf, 303414439467246543595250775667605759171, .little);
+                mem.write_int(u256, &buf, 303414439467246543595250775667605759171, .little);
                 break :s buf;
             };
             const b2_neg_s = comptime s: {
                 var buf: [32]u8 = undefined;
-                mem.writeInt(u256, &buf, scalar.field_order - 64502973549206556628585045361533709077, .little);
+                mem.write_int(u256, &buf, scalar.field_order - 64502973549206556628585045361533709077, .little);
                 break :s buf;
             };
-            const k = mem.readInt(u256, &s, endian);
+            const k = mem.read_int(u256, &s, endian);
 
-            const t1 = math.mulWide(u256, k, 21949224512762693861512883645436906316123769664773102907882521278123970637873);
-            const t2 = math.mulWide(u256, k, 103246583619904461035481197785446227098457807945486720222659797044629401272177);
+            const t1 = math.mul_wide(u256, k, 21949224512762693861512883645436906316123769664773102907882521278123970637873);
+            const t2 = math.mul_wide(u256, k, 103246583619904461035481197785446227098457807945486720222659797044629401272177);
 
             const c1 = @as(u128, @truncate(t1 >> 384)) + @as(u1, @truncate(t1 >> 383));
             const c2 = @as(u128, @truncate(t2 >> 384)) + @as(u1, @truncate(t2 >> 383));
 
             var buf: [32]u8 = undefined;
 
-            mem.writeInt(u256, &buf, c1, .little);
+            mem.write_int(u256, &buf, c1, .little);
             const c1x = try scalar.mul(buf, b1_neg_s, .little);
 
-            mem.writeInt(u256, &buf, c2, .little);
+            mem.write_int(u256, &buf, c2, .little);
             const c2x = try scalar.mul(buf, b2_neg_s, .little);
 
             const r2 = try scalar.add(c1x, c2x, .little);
@@ -89,8 +89,8 @@ pub const Secp256k1 = struct {
 
     /// Reject the neutral element.
     pub fn reject_identity(p: Secp256k1) IdentityElementError!void {
-        const affine_0 = @intFromBool(p.x.equivalent(AffineCoordinates.identityElement.x)) & (@intFromBool(p.y.isZero()) | @intFromBool(p.y.equivalent(AffineCoordinates.identityElement.y)));
-        const is_identity = @intFromBool(p.z.isZero()) | affine_0;
+        const affine_0 = @int_from_bool(p.x.equivalent(AffineCoordinates.identityElement.x)) & (@int_from_bool(p.y.is_zero()) | @int_from_bool(p.y.equivalent(AffineCoordinates.identityElement.y)));
+        const is_identity = @int_from_bool(p.z.is_zero()) | affine_0;
         if (is_identity != 0) {
             return error.IdentityElement;
         }
@@ -102,21 +102,21 @@ pub const Secp256k1 = struct {
         const y = p.y;
         const x3B = x.sq().mul(x).add(B);
         const yy = y.sq();
-        const on_curve = @intFromBool(x3B.equivalent(yy));
-        const is_identity = @intFromBool(x.equivalent(AffineCoordinates.identityElement.x)) & @intFromBool(y.equivalent(AffineCoordinates.identityElement.y));
+        const on_curve = @int_from_bool(x3B.equivalent(yy));
+        const is_identity = @int_from_bool(x.equivalent(AffineCoordinates.identityElement.x)) & @int_from_bool(y.equivalent(AffineCoordinates.identityElement.y));
         if ((on_curve | is_identity) == 0) {
             return error.InvalidEncoding;
         }
         var ret = Secp256k1{ .x = x, .y = y, .z = Fe.one };
-        ret.z.cMov(Secp256k1.identityElement.z, is_identity);
+        ret.z.c_mov(Secp256k1.identityElement.z, is_identity);
         return ret;
     }
 
     /// Create a point from serialized affine coordinates.
     pub fn from_serialized_affine_coordinates(xs: [32]u8, ys: [32]u8, endian: std.builtin.Endian) (NonCanonicalError || EncodingError)!Secp256k1 {
-        const x = try Fe.fromBytes(xs, endian);
-        const y = try Fe.fromBytes(ys, endian);
-        return fromAffineCoordinates(.{ .x = x, .y = y });
+        const x = try Fe.from_bytes(xs, endian);
+        const y = try Fe.from_bytes(ys, endian);
+        return from_affine_coordinates(.{ .x = x, .y = y });
     }
 
     /// Recover the Y coordinate from the X coordinate.
@@ -124,7 +124,7 @@ pub const Secp256k1 = struct {
         const x3B = x.sq().mul(x).add(B);
         var y = try x3B.sqrt();
         const yn = y.neg();
-        y.cMov(yn, @intFromBool(is_odd) ^ @intFromBool(y.isOdd()));
+        y.c_mov(yn, @int_from_bool(is_odd) ^ @int_from_bool(y.is_odd()));
         return y;
     }
 
@@ -140,16 +140,16 @@ pub const Secp256k1 = struct {
             },
             2, 3 => {
                 if (encoded.len != 32) return error.InvalidEncoding;
-                const x = try Fe.fromBytes(encoded[0..32].*, .big);
+                const x = try Fe.from_bytes(encoded[0..32].*, .big);
                 const y_is_odd = (encoding_type == 3);
-                const y = try recoverY(x, y_is_odd);
+                const y = try recover_y(x, y_is_odd);
                 return Secp256k1{ .x = x, .y = y };
             },
             4 => {
                 if (encoded.len != 64) return error.InvalidEncoding;
-                const x = try Fe.fromBytes(encoded[0..32].*, .big);
-                const y = try Fe.fromBytes(encoded[32..64].*, .big);
-                return Secp256k1.fromAffineCoordinates(.{ .x = x, .y = y });
+                const x = try Fe.from_bytes(encoded[0..32].*, .big);
+                const y = try Fe.from_bytes(encoded[32..64].*, .big);
+                return Secp256k1.from_affine_coordinates(.{ .x = x, .y = y });
             },
             else => return error.InvalidEncoding,
         }
@@ -158,9 +158,9 @@ pub const Secp256k1 = struct {
     /// Serialize a point using the compressed SEC-1 format.
     pub fn to_compressed_sec1(p: Secp256k1) [33]u8 {
         var out: [33]u8 = undefined;
-        const xy = p.affineCoordinates();
-        out[0] = if (xy.y.isOdd()) 3 else 2;
-        out[1..].* = xy.x.toBytes(.big);
+        const xy = p.affine_coordinates();
+        out[0] = if (xy.y.is_odd()) 3 else 2;
+        out[1..].* = xy.x.to_bytes(.big);
         return out;
     }
 
@@ -168,9 +168,9 @@ pub const Secp256k1 = struct {
     pub fn to_uncompressed_sec1(p: Secp256k1) [65]u8 {
         var out: [65]u8 = undefined;
         out[0] = 4;
-        const xy = p.affineCoordinates();
-        out[1..33].* = xy.x.toBytes(.big);
-        out[33..65].* = xy.y.toBytes(.big);
+        const xy = p.affine_coordinates();
+        out[1..33].* = xy.x.to_bytes(.big);
+        out[33..65].* = xy.y.to_bytes(.big);
         return out;
     }
 
@@ -253,7 +253,7 @@ pub const Secp256k1 = struct {
             .y = Y3,
             .z = Z3,
         };
-        ret.cMov(p, @intFromBool(q.x.isZero()));
+        ret.c_mov(p, @int_from_bool(q.x.is_zero()));
         return ret;
     }
 
@@ -311,25 +311,25 @@ pub const Secp256k1 = struct {
 
     /// Subtract secp256k1 points, the second being specified using affine coordinates.
     pub fn sub_mixed(p: Secp256k1, q: AffineCoordinates) Secp256k1 {
-        return p.addMixed(q.neg());
+        return p.add_mixed(q.neg());
     }
 
     /// Return affine coordinates.
     pub fn affine_coordinates(p: Secp256k1) AffineCoordinates {
-        const affine_0 = @intFromBool(p.x.equivalent(AffineCoordinates.identityElement.x)) & (@intFromBool(p.y.isZero()) | @intFromBool(p.y.equivalent(AffineCoordinates.identityElement.y)));
-        const is_identity = @intFromBool(p.z.isZero()) | affine_0;
+        const affine_0 = @int_from_bool(p.x.equivalent(AffineCoordinates.identityElement.x)) & (@int_from_bool(p.y.is_zero()) | @int_from_bool(p.y.equivalent(AffineCoordinates.identityElement.y)));
+        const is_identity = @int_from_bool(p.z.is_zero()) | affine_0;
         const zinv = p.z.invert();
         var ret = AffineCoordinates{
             .x = p.x.mul(zinv),
             .y = p.y.mul(zinv),
         };
-        ret.cMov(AffineCoordinates.identityElement, is_identity);
+        ret.c_mov(AffineCoordinates.identityElement, is_identity);
         return ret;
     }
 
     /// Return true if both coordinate sets represent the same point.
     pub fn equivalent(a: Secp256k1, b: Secp256k1) bool {
-        if (a.sub(b).rejectIdentity()) {
+        if (a.sub(b).reject_identity()) {
             return false;
         } else |_| {
             return true;
@@ -337,16 +337,16 @@ pub const Secp256k1 = struct {
     }
 
     fn c_mov(p: *Secp256k1, a: Secp256k1, c: u1) void {
-        p.x.cMov(a.x, c);
-        p.y.cMov(a.y, c);
-        p.z.cMov(a.z, c);
+        p.x.c_mov(a.x, c);
+        p.y.c_mov(a.y, c);
+        p.z.c_mov(a.z, c);
     }
 
     fn pc_select(comptime n: usize, pc: *const [n]Secp256k1, b: u8) Secp256k1 {
         var t = Secp256k1.identityElement;
         comptime var i: u8 = 1;
         inline while (i < pc.len) : (i += 1) {
-            t.cMov(pc[i], @as(u1, @truncate((@as(usize, b ^ i) -% 1) >> 8)));
+            t.c_mov(pc[i], @as(u1, @truncate((@as(usize, b ^ i) -% 1) >> 8)));
         }
         return t;
     }
@@ -379,14 +379,14 @@ pub const Secp256k1 = struct {
         while (true) : (pos -= 1) {
             const slot = e[pos];
             if (slot > 0) {
-                q = q.add(pc[@as(usize, @intCast(slot))]);
+                q = q.add(pc[@as(usize, @int_cast(slot))]);
             } else if (slot < 0) {
-                q = q.sub(pc[@as(usize, @intCast(-slot))]);
+                q = q.sub(pc[@as(usize, @int_cast(-slot))]);
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();
         }
-        try q.rejectIdentity();
+        try q.reject_identity();
         return q;
     }
 
@@ -400,12 +400,12 @@ pub const Secp256k1 = struct {
                     q = q.add(pc[slot]);
                 }
             } else {
-                q = q.add(pcSelect(16, pc, slot));
+                q = q.add(pc_select(16, pc, slot));
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();
         }
-        try q.rejectIdentity();
+        try q.reject_identity();
         return q;
     }
 
@@ -428,26 +428,26 @@ pub const Secp256k1 = struct {
     /// Multiply an elliptic curve point by a scalar.
     /// Return error.IdentityElement if the result is the identity element.
     pub fn mul(p: Secp256k1, s_: [32]u8, endian: std.builtin.Endian) IdentityElementError!Secp256k1 {
-        const s = if (endian == .little) s_ else Fe.orderSwap(s_);
+        const s = if (endian == .little) s_ else Fe.order_swap(s_);
         if (p.is_base) {
-            return pcMul16(&basePointPc, s, false);
+            return pc_mul16(&basePointPc, s, false);
         }
-        try p.rejectIdentity();
+        try p.reject_identity();
         const pc = precompute(p, 15);
-        return pcMul16(&pc, s, false);
+        return pc_mul16(&pc, s, false);
     }
 
     /// Multiply an elliptic curve point by a *PUBLIC* scalar *IN VARIABLE TIME*
     /// This can be used for signature verification.
     pub fn mul_public(p: Secp256k1, s_: [32]u8, endian: std.builtin.Endian) (IdentityElementError || NonCanonicalError)!Secp256k1 {
-        const s = if (endian == .little) s_ else Fe.orderSwap(s_);
-        const zero = comptime scalar.Scalar.zero.toBytes(.little);
+        const s = if (endian == .little) s_ else Fe.order_swap(s_);
+        const zero = comptime scalar.Scalar.zero.to_bytes(.little);
         if (mem.eql(u8, &zero, &s)) {
             return error.IdentityElement;
         }
         const pc = precompute(p, 8);
-        var lambda_p = try pcMul(&pc, Endormorphism.lambda_s, true);
-        var split_scalar = try Endormorphism.splitScalar(s, .little);
+        var lambda_p = try pc_mul(&pc, Endormorphism.lambda_s, true);
+        var split_scalar = try Endormorphism.split_scalar(s, .little);
         var px = p;
 
         // If a key is negative, flip the sign to keep it half-sized,
@@ -460,7 +460,7 @@ pub const Secp256k1 = struct {
             split_scalar.r2 = scalar.neg(split_scalar.r2, .little) catch zero;
             lambda_p = lambda_p.neg();
         }
-        return mulDoubleBasePublicEndo(px, split_scalar.r1, lambda_p, split_scalar.r2);
+        return mul_double_base_public_endo(px, split_scalar.r1, lambda_p, split_scalar.r2);
     }
 
     // Half-size double-base public multiplication when using the curve endomorphism.
@@ -482,35 +482,35 @@ pub const Secp256k1 = struct {
         while (true) : (pos -= 1) {
             const slot1 = e1[pos];
             if (slot1 > 0) {
-                q = q.add(pc1[@as(usize, @intCast(slot1))]);
+                q = q.add(pc1[@as(usize, @int_cast(slot1))]);
             } else if (slot1 < 0) {
-                q = q.sub(pc1[@as(usize, @intCast(-slot1))]);
+                q = q.sub(pc1[@as(usize, @int_cast(-slot1))]);
             }
             const slot2 = e2[pos];
             if (slot2 > 0) {
-                q = q.add(pc2[@as(usize, @intCast(slot2))]);
+                q = q.add(pc2[@as(usize, @int_cast(slot2))]);
             } else if (slot2 < 0) {
-                q = q.sub(pc2[@as(usize, @intCast(-slot2))]);
+                q = q.sub(pc2[@as(usize, @int_cast(-slot2))]);
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();
         }
-        try q.rejectIdentity();
+        try q.reject_identity();
         return q;
     }
 
     /// Double-base multiplication of public parameters - Compute (p1*s1)+(p2*s2) *IN VARIABLE TIME*
     /// This can be used for signature verification.
     pub fn mul_double_base_public(p1: Secp256k1, s1_: [32]u8, p2: Secp256k1, s2_: [32]u8, endian: std.builtin.Endian) IdentityElementError!Secp256k1 {
-        const s1 = if (endian == .little) s1_ else Fe.orderSwap(s1_);
-        const s2 = if (endian == .little) s2_ else Fe.orderSwap(s2_);
-        try p1.rejectIdentity();
+        const s1 = if (endian == .little) s1_ else Fe.order_swap(s1_);
+        const s2 = if (endian == .little) s2_ else Fe.order_swap(s2_);
+        try p1.reject_identity();
         var pc1_array: [9]Secp256k1 = undefined;
         const pc1 = if (p1.is_base) basePointPc[0..9] else pc: {
             pc1_array = precompute(p1, 8);
             break :pc &pc1_array;
         };
-        try p2.rejectIdentity();
+        try p2.reject_identity();
         var pc2_array: [9]Secp256k1 = undefined;
         const pc2 = if (p2.is_base) basePointPc[0..9] else pc: {
             pc2_array = precompute(p2, 8);
@@ -523,20 +523,20 @@ pub const Secp256k1 = struct {
         while (true) : (pos -= 1) {
             const slot1 = e1[pos];
             if (slot1 > 0) {
-                q = q.add(pc1[@as(usize, @intCast(slot1))]);
+                q = q.add(pc1[@as(usize, @int_cast(slot1))]);
             } else if (slot1 < 0) {
-                q = q.sub(pc1[@as(usize, @intCast(-slot1))]);
+                q = q.sub(pc1[@as(usize, @int_cast(-slot1))]);
             }
             const slot2 = e2[pos];
             if (slot2 > 0) {
-                q = q.add(pc2[@as(usize, @intCast(slot2))]);
+                q = q.add(pc2[@as(usize, @int_cast(slot2))]);
             } else if (slot2 < 0) {
-                q = q.sub(pc2[@as(usize, @intCast(-slot2))]);
+                q = q.sub(pc2[@as(usize, @int_cast(-slot2))]);
             }
             if (pos == 0) break;
             q = q.dbl().dbl().dbl().dbl();
         }
-        try q.rejectIdentity();
+        try q.reject_identity();
         return q;
     }
 };
@@ -550,8 +550,8 @@ pub const AffineCoordinates = struct {
     pub const identityElement = AffineCoordinates{ .x = Secp256k1.identityElement.x, .y = Secp256k1.identityElement.y };
 
     fn c_mov(p: *AffineCoordinates, a: AffineCoordinates, c: u1) void {
-        p.x.cMov(a.x, c);
-        p.y.cMov(a.y, c);
+        p.x.c_mov(a.x, c);
+        p.y.c_mov(a.y, c);
     }
 };
 

@@ -16,7 +16,7 @@ pub fn tanh(z: anytype) Complex(@TypeOf(z.re, z.im)) {
     return switch (T) {
         f32 => tanh32(z),
         f64 => tanh64(z),
-        else => @compileError("tan not implemented for " ++ @typeName(z)),
+        else => @compile_error("tan not implemented for " ++ @type_name(z)),
     };
 }
 
@@ -24,7 +24,7 @@ fn tanh32(z: Complex(f32)) Complex(f32) {
     const x = z.re;
     const y = z.im;
 
-    const hx = @as(u32, @bitCast(x));
+    const hx = @as(u32, @bit_cast(x));
     const ix = hx & 0x7fffffff;
 
     if (ix >= 0x7f800000) {
@@ -32,12 +32,12 @@ fn tanh32(z: Complex(f32)) Complex(f32) {
             const r = if (y == 0) y else x * y;
             return Complex(f32).init(x, r);
         }
-        const xx = @as(f32, @bitCast(hx - 0x40000000));
-        const r = if (math.isInf(y)) y else @sin(y) * @cos(y);
+        const xx = @as(f32, @bit_cast(hx - 0x40000000));
+        const r = if (math.is_inf(y)) y else @sin(y) * @cos(y);
         return Complex(f32).init(xx, math.copysign(@as(f32, 0.0), r));
     }
 
-    if (!math.isFinite(y)) {
+    if (!math.is_finite(y)) {
         const r = if (ix != 0) y - y else x;
         return Complex(f32).init(r, y - y);
     }
@@ -62,10 +62,10 @@ fn tanh64(z: Complex(f64)) Complex(f64) {
     const x = z.re;
     const y = z.im;
 
-    const fx: u64 = @bitCast(x);
+    const fx: u64 = @bit_cast(x);
     // TODO: zig should allow this conversion implicitly because it can notice that the value necessarily
     // fits in range.
-    const hx: u32 = @intCast(fx >> 32);
+    const hx: u32 = @int_cast(fx >> 32);
     const lx: u32 = @truncate(fx);
     const ix = hx & 0x7fffffff;
 
@@ -75,12 +75,12 @@ fn tanh64(z: Complex(f64)) Complex(f64) {
             return Complex(f64).init(x, r);
         }
 
-        const xx: f64 = @bitCast((@as(u64, hx - 0x40000000) << 32) | lx);
-        const r = if (math.isInf(y)) y else @sin(y) * @cos(y);
+        const xx: f64 = @bit_cast((@as(u64, hx - 0x40000000) << 32) | lx);
+        const r = if (math.is_inf(y)) y else @sin(y) * @cos(y);
         return Complex(f64).init(xx, math.copysign(@as(f64, 0.0), r));
     }
 
-    if (!math.isFinite(y)) {
+    if (!math.is_finite(y)) {
         const r = if (ix != 0) y - y else x;
         return Complex(f64).init(r, y - y);
     }
@@ -107,14 +107,14 @@ test tanh32 {
     const a = Complex(f32).init(5, 3);
     const c = tanh(a);
 
-    try testing.expect(math.approxEqAbs(f32, c.re, 0.999913, epsilon));
-    try testing.expect(math.approxEqAbs(f32, c.im, -0.000025, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.re, 0.999913, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.im, -0.000025, epsilon));
 }
 
 test tanh64 {
     const a = Complex(f64).init(5, 3);
     const c = tanh(a);
 
-    try testing.expect(math.approxEqAbs(f64, c.re, 0.999913, epsilon));
-    try testing.expect(math.approxEqAbs(f64, c.im, -0.000025, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, c.re, 0.999913, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, c.im, -0.000025, epsilon));
 }

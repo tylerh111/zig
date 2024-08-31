@@ -3,8 +3,8 @@ const os = std.os;
 const tests = @import("tests.zig");
 
 pub fn add_cases(cases: *tests.CompareOutputContext) void {
-    cases.addC("hello world with libc",
-        \\const c = @cImport({
+    cases.add_c("hello world with libc",
+        \\const c = @c_import({
         \\    // See https://github.com/ziglang/zig/issues/515
         \\    @cDefine("_NO_CRT_STDIO_INLINE", "1");
         \\    @cInclude("stdio.h");
@@ -21,16 +21,16 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\const io = @import("std").io;
         \\
         \\pub fn main() void {
-        \\    const stdout = io.getStdOut().writer();
+        \\    const stdout = io.get_std_out().writer();
         \\    stdout.print("Hello, world!\n{d:4} {x:3} {c}\n", .{@as(u32, 12), @as(u16, 0x12), @as(u8, 'a')}) catch unreachable;
         \\}
     , "Hello, world!\n  12  12 a\n");
 
-    cases.addC("number literals",
+    cases.add_c("number literals",
         \\const std = @import("std");
         \\const builtin = @import("builtin");
         \\const is_windows = builtin.os.tag == .windows;
-        \\const c = @cImport({
+        \\const c = @c_import({
         \\    if (is_windows) {
         \\        // See https://github.com/ziglang/zig/issues/515
         \\        @cDefine("_NO_CRT_STDIO_INLINE", "1");
@@ -169,19 +169,19 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\}
         \\fn print_ok(val: @TypeOf(x)) @TypeOf(foo) {
         \\    _ = val;
-        \\    const stdout = io.getStdOut().writer();
+        \\    const stdout = io.get_std_out().writer();
         \\    stdout.print("OK\n", .{}) catch unreachable;
         \\    return 0;
         \\}
         \\const foo : i32 = 0;
     , "OK\n");
 
-    cases.addC("expose function pointer to C land",
-        \\const c = @cImport(@cInclude("stdlib.h"));
+    cases.add_c("expose function pointer to C land",
+        \\const c = @c_import(@cInclude("stdlib.h"));
         \\
         \\export fn compare_fn(a: ?*const anyopaque, b: ?*const anyopaque) c_int {
-        \\    const a_int: *const i32 = @ptrCast(@alignCast(a));
-        \\    const b_int: *const i32 = @ptrCast(@alignCast(b));
+        \\    const a_int: *const i32 = @ptr_cast(@align_cast(a));
+        \\    const b_int: *const i32 = @ptr_cast(@align_cast(b));
         \\    if (a_int.* < b_int.*) {
         \\        return -1;
         \\    } else if (a_int.* > b_int.*) {
@@ -194,7 +194,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\pub export fn main() c_int {
         \\    var array = [_]u32{ 1, 7, 3, 2, 0, 9, 4, 8, 6, 5 };
         \\
-        \\    c.qsort(@ptrCast(&array), @intCast(array.len), @sizeOf(i32), compare_fn);
+        \\    c.qsort(@ptr_cast(&array), @int_cast(array.len), @size_of(i32), compare_fn);
         \\
         \\    for (array, 0..) |item, i| {
         \\        if (item != i) {
@@ -206,11 +206,11 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\}
     , "");
 
-    cases.addC("casting between float and integer types",
+    cases.add_c("casting between float and integer types",
         \\const std = @import("std");
         \\const builtin = @import("builtin");
         \\const is_windows = builtin.os.tag == .windows;
-        \\const c = @cImport({
+        \\const c = @c_import({
         \\    if (is_windows) {
         \\        // See https://github.com/ziglang/zig/issues/515
         \\        @cDefine("_NO_CRT_STDIO_INLINE", "1");
@@ -229,8 +229,8 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\    }
         \\    const small: f32 = 3.25;
         \\    const x: f64 = small;
-        \\    const y: i32 = @intFromFloat(x);
-        \\    const z: f64 = @floatFromInt(y);
+        \\    const y: i32 = @int_from_float(x);
+        \\    const z: f64 = @float_from_int(y);
         \\    _ = c.printf("%.2f\n%d\n%.2f\n%.2f\n", x, y, z, @as(f64, -0.4));
         \\    return 0;
         \\}
@@ -260,7 +260,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\pub fn main() void {
         \\    const bar = Bar {.field2 = 13,};
         \\    const foo = Foo {.field1 = bar,};
-        \\    const stdout = io.getStdOut().writer();
+        \\    const stdout = io.get_std_out().writer();
         \\    if (!foo.method()) {
         \\        stdout.print("BAD\n", .{}) catch unreachable;
         \\    }
@@ -274,7 +274,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
     cases.add("defer with only fallthrough",
         \\const io = @import("std").io;
         \\pub fn main() void {
-        \\    const stdout = io.getStdOut().writer();
+        \\    const stdout = io.get_std_out().writer();
         \\    stdout.print("before\n", .{}) catch unreachable;
         \\    defer stdout.print("defer1\n", .{}) catch unreachable;
         \\    defer stdout.print("defer2\n", .{}) catch unreachable;
@@ -287,7 +287,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\const io = @import("std").io;
         \\const os = @import("std").os;
         \\pub fn main() void {
-        \\    const stdout = io.getStdOut().writer();
+        \\    const stdout = io.get_std_out().writer();
         \\    stdout.print("before\n", .{}) catch unreachable;
         \\    defer stdout.print("defer1\n", .{}) catch unreachable;
         \\    defer stdout.print("defer2\n", .{}) catch unreachable;
@@ -295,7 +295,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\    defer _ = gpa.deinit();
         \\    var arena = @import("std").heap.ArenaAllocator.init(gpa.allocator());
         \\    defer arena.deinit();
-        \\    var args_it = @import("std").process.argsWithAllocator(arena.allocator()) catch unreachable;
+        \\    var args_it = @import("std").process.args_with_allocator(arena.allocator()) catch unreachable;
         \\    if (args_it.skip() and !args_it.skip()) return;
         \\    defer stdout.print("defer3\n", .{}) catch unreachable;
         \\    stdout.print("after\n", .{}) catch unreachable;
@@ -308,7 +308,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\    do_test() catch return;
         \\}
         \\fn do_test() !void {
-        \\    const stdout = io.getStdOut().writer();
+        \\    const stdout = io.get_std_out().writer();
         \\    stdout.print("before\n", .{}) catch unreachable;
         \\    defer stdout.print("defer1\n", .{}) catch unreachable;
         \\    errdefer stdout.print("deferErr\n", .{}) catch unreachable;
@@ -327,7 +327,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\    do_test() catch return;
         \\}
         \\fn do_test() !void {
-        \\    const stdout = io.getStdOut().writer();
+        \\    const stdout = io.get_std_out().writer();
         \\    stdout.print("before\n", .{}) catch unreachable;
         \\    defer stdout.print("defer1\n", .{}) catch unreachable;
         \\    errdefer stdout.print("deferErr\n", .{}) catch unreachable;
@@ -338,23 +338,23 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\fn its_gonna_pass() anyerror!void { }
     , "before\nafter\ndefer3\ndefer1\n");
 
-    cases.addCase(x: {
-        var tc = cases.create("@embedFile",
-            \\const foo_txt = @embedFile("foo.txt");
+    cases.add_case(x: {
+        var tc = cases.create("@embed_file",
+            \\const foo_txt = @embed_file("foo.txt");
             \\const io = @import("std").io;
             \\
             \\pub fn main() void {
-            \\    const stdout = io.getStdOut().writer();
+            \\    const stdout = io.get_std_out().writer();
             \\    stdout.print(foo_txt, .{}) catch unreachable;
             \\}
         , "1234\nabcd\n");
 
-        tc.addSourceFile("foo.txt", "1234\nabcd\n");
+        tc.add_source_file("foo.txt", "1234\nabcd\n");
 
         break :x tc;
     });
 
-    cases.addCase(x: {
+    cases.add_case(x: {
         var tc = cases.create("parsing args",
             \\const std = @import("std");
             \\const io = std.io;
@@ -365,8 +365,8 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
             \\    defer _ = gpa.deinit();
             \\    var arena = std.heap.ArenaAllocator.init(gpa.allocator());
             \\    defer arena.deinit();
-            \\    var args_it = try std.process.argsWithAllocator(arena.allocator());
-            \\    const stdout = io.getStdOut().writer();
+            \\    var args_it = try std.process.args_with_allocator(arena.allocator());
+            \\    const stdout = io.get_std_out().writer();
             \\    var index: usize = 0;
             \\    _ = args_it.skip();
             \\    while (args_it.next()) |arg| : (index += 1) {
@@ -383,7 +383,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
             \\
         );
 
-        tc.setCommandLineArgs(&[_][]const u8{
+        tc.set_command_line_args(&[_][]const u8{
             "first arg",
             "'a' 'b' \\",
             "bare",
@@ -395,7 +395,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         break :x tc;
     });
 
-    cases.addCase(x: {
+    cases.add_case(x: {
         var tc = cases.create("parsing args new API",
             \\const std = @import("std");
             \\const io = std.io;
@@ -406,8 +406,8 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
             \\    defer _ = gpa.deinit();
             \\    var arena = std.heap.ArenaAllocator.init(gpa.allocator());
             \\    defer arena.deinit();
-            \\    var args_it = try std.process.argsWithAllocator(arena.allocator());
-            \\    const stdout = io.getStdOut().writer();
+            \\    var args_it = try std.process.args_with_allocator(arena.allocator());
+            \\    const stdout = io.get_std_out().writer();
             \\    var index: usize = 0;
             \\    _ = args_it.skip();
             \\    while (args_it.next()) |arg| : (index += 1) {
@@ -424,7 +424,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
             \\
         );
 
-        tc.setCommandLineArgs(&[_][]const u8{
+        tc.set_command_line_args(&[_][]const u8{
             "first arg",
             "'a' 'b' \\",
             "bare",
@@ -447,7 +447,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\        .{ .scope = .a, .level = .warn },
         \\        .{ .scope = .c, .level = .err },
         \\    },
-        \\    .logFn = log,
+        \\    .log_fn = log,
         \\};
         \\
         \\const loga = std.log.scoped(.a);
@@ -477,9 +477,9 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\    comptime format: []const u8,
         \\    args: anytype,
         \\) void {
-        \\    const level_txt = comptime level.asText();
-        \\    const prefix2 = if (scope == .default) ": " else "(" ++ @tagName(scope) ++ "):";
-        \\    const stdout = std.io.getStdOut().writer();
+        \\    const level_txt = comptime level.as_text();
+        \\    const prefix2 = if (scope == .default) ": " else "(" ++ @tag_name(scope) ++ "):";
+        \\    const stdout = std.io.get_std_out().writer();
         \\    nosuspend stdout.print(level_txt ++ prefix2 ++ format ++ "\n", args) catch return;
         \\}
     ,
@@ -499,14 +499,14 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\
         \\pub const std_options = .{
         \\    .log_level = .debug,
-        \\    .logFn = log,
+        \\    .log_fn = log,
         \\};
         \\
         \\pub fn main() !void {
         \\    var allocator_buf: [10]u8 = undefined;
         \\    const fba = std.heap.FixedBufferAllocator.init(&allocator_buf);
-        \\    var fba_wrapped = std.mem.validationWrap(fba);
-        \\    var logging_allocator = std.heap.loggingAllocator(fba_wrapped.allocator());
+        \\    var fba_wrapped = std.mem.validation_wrap(fba);
+        \\    var logging_allocator = std.heap.logging_allocator(fba_wrapped.allocator());
         \\    const allocator = logging_allocator.allocator();
         \\
         \\    var a = try allocator.alloc(u8, 10);
@@ -523,9 +523,9 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
         \\    comptime format: []const u8,
         \\    args: anytype,
         \\) void {
-        \\    const level_txt = comptime level.asText();
-        \\    const prefix2 = if (scope == .default) ": " else "(" ++ @tagName(scope) ++ "): ";
-        \\    const stdout = std.io.getStdOut().writer();
+        \\    const level_txt = comptime level.as_text();
+        \\    const prefix2 = if (scope == .default) ": " else "(" ++ @tag_name(scope) ++ "): ";
+        \\    const stdout = std.io.get_std_out().writer();
         \\    nosuspend stdout.print(level_txt ++ prefix2 ++ format ++ "\n", args) catch return;
         \\}
     ,
@@ -539,7 +539,7 @@ pub fn add_cases(cases: *tests.CompareOutputContext) void {
     cases.add("valid carriage return example", "const io = @import(\"std\").io;\r\n" ++ // Testing CRLF line endings are valid
         "\r\n" ++
         "pub \r fn main() void {\r\n" ++ // Testing isolated carriage return as whitespace is valid
-        "    const stdout = io.getStdOut().writer();\r\n" ++
+        "    const stdout = io.get_std_out().writer();\r\n" ++
         "    stdout.print(\\\\A Multiline\r\n" ++ // testing CRLF at end of multiline string line is valid and normalises to \n in the output
         "                 \\\\String\r\n" ++
         "                 , .{}) catch unreachable;\r\n" ++

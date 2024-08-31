@@ -1,7 +1,7 @@
 const std = @import("std");
 const expect = std.testing.expect;
-const expectEqualSlices = std.testing.expectEqualSlices;
-const expectEqualStrings = std.testing.expectEqualStrings;
+const expect_equal_slices = std.testing.expect_equal_slices;
+const expect_equal_strings = std.testing.expect_equal_strings;
 const mem = std.mem;
 const builtin = @import("builtin");
 
@@ -27,7 +27,7 @@ test "packed struct, enum, union parameters in extern function" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
-    testPackedStuff(&(PackedStruct{
+    test_packed_stuff(&(PackedStruct{
         .a = 1,
         .b = 2,
     }), &(PackedUnion{ .a = 1 }));

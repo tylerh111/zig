@@ -990,7 +990,7 @@ pub const SOCKET_ADDRESS_LIST = extern struct {
     Address: [1]SOCKET_ADDRESS,
 };
 
-pub const WSADATA = if (@sizeOf(usize) == @sizeOf(u64))
+pub const WSADATA = if (@size_of(usize) == @size_of(u64))
     extern struct {
         wVersion: WORD,
         wHighVersion: WORD,
@@ -1111,10 +1111,10 @@ pub const sockaddr = extern struct {
     pub const SS_MAXSIZE = 128;
     pub const storage = extern struct {
         family: ADDRESS_FAMILY align(8),
-        padding: [SS_MAXSIZE - @sizeOf(ADDRESS_FAMILY)]u8 = undefined,
+        padding: [SS_MAXSIZE - @size_of(ADDRESS_FAMILY)]u8 = undefined,
 
         comptime {
-            assert(@sizeOf(storage) == SS_MAXSIZE);
+            assert(@size_of(storage) == SS_MAXSIZE);
             assert(@alignOf(storage) == 8);
         }
     };

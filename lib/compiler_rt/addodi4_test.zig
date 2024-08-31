@@ -8,14 +8,14 @@ fn test__addodi4(a: i64, b: i64) !void {
     var expected_ov: c_int = undefined;
     const result = addv.__addodi4(a, b, &result_ov);
     const expected: i64 = simple_addodi4(a, b, &expected_ov);
-    try testing.expectEqual(expected, result);
-    try testing.expectEqual(expected_ov, result_ov);
+    try testing.expect_equal(expected, result);
+    try testing.expect_equal(expected_ov, result_ov);
 }
 
 fn simple_addodi4(a: i64, b: i64, overflow: *c_int) i64 {
     overflow.* = 0;
-    const min: i64 = math.minInt(i64);
-    const max: i64 = math.maxInt(i64);
+    const min: i64 = math.min_int(i64);
+    const max: i64 = math.max_int(i64);
     if (((a > 0) and (b > max - a)) or
         ((a < 0) and (b < min - a)))
         overflow.* = 1;
@@ -23,8 +23,8 @@ fn simple_addodi4(a: i64, b: i64, overflow: *c_int) i64 {
 }
 
 test "addodi4" {
-    const min: i64 = math.minInt(i64);
-    const max: i64 = math.maxInt(i64);
+    const min: i64 = math.min_int(i64);
+    const max: i64 = math.max_int(i64);
     var i: i64 = 1;
     while (i < max) : (i *|= 2) {
         try test__addodi4(i, i);

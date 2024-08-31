@@ -5,7 +5,7 @@ fn foo(x: *u8) void {
 }
 var y: u8 = 100;
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&foo));
+    return @size_of(@TypeOf(&foo));
 }
 
 // error

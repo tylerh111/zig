@@ -11,12 +11,12 @@ fn do_something_with_usize(ptr: *usize) usize {
 }
 
 pub fn main() !void {
-    try std.testing.expect(doSomethingWithUsize(&global_usize) == 1);
+    try std.testing.expect(do_something_with_usize(&global_usize) == 1);
 
     switch (global_a) {
         .merp => return,
         .hello => |*value| {
-            try std.testing.expect(doSomethingWithUsize(value) == 13);
+            try std.testing.expect(do_something_with_usize(value) == 13);
         },
     }
 }

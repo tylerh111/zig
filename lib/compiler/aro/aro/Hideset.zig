@@ -22,7 +22,7 @@ const Identifier = struct {
 
     fn slice(self: Identifier, comp: *const Compilation) []const u8 {
         var tmp_tokenizer = Tokenizer{
-            .buf = comp.getSource(self.id).buf,
+            .buf = comp.get_source(self.id).buf,
             .langopts = comp.langopts,
             .index = self.byte_offset,
             .source = .generated,
@@ -47,7 +47,7 @@ const Item = struct {
 };
 
 const Index = enum(u32) {
-    none = std.math.maxInt(u32),
+    none = std.math.max_int(u32),
     _,
 };
 
@@ -65,8 +65,8 @@ const Iterator = struct {
 
     fn next(self: *Iterator) ?Identifier {
         if (self.i == .none) return null;
-        defer self.i = self.slice.items(.next)[@intFromEnum(self.i)];
-        return self.slice.items(.identifier)[@intFromEnum(self.i)];
+        defer self.i = self.slice.items(.next)[@int_from_enum(self.i)];
+        return self.slice.items(.identifier)[@int_from_enum(self.i)];
     }
 };
 
@@ -77,14 +77,14 @@ pub fn deinit(self: *Hideset) void {
 }
 
 pub fn clear_retaining_capacity(self: *Hideset) void {
-    self.linked_list.shrinkRetainingCapacity(0);
-    self.map.clearRetainingCapacity();
+    self.linked_list.shrink_retaining_capacity(0);
+    self.map.clear_retaining_capacity();
 }
 
 pub fn clear_and_free(self: *Hideset) void {
-    self.map.clearAndFree(self.comp.gpa);
-    self.intersection_map.clearAndFree(self.comp.gpa);
-    self.linked_list.shrinkAndFree(self.comp.gpa, 0);
+    self.map.clear_and_free(self.comp.gpa);
+    self.intersection_map.clear_and_free(self.comp.gpa);
+    self.linked_list.shrink_and_free(self.comp.gpa, 0);
 }
 
 /// Iterator is invalidated if the underlying MultiArrayList slice is reallocated due to resize
@@ -96,28 +96,28 @@ fn iterator(self: *const Hideset, idx: Index) Iterator {
 }
 
 pub fn get(self: *const Hideset, loc: Source.Location) Index {
-    return self.map.get(Identifier.fromLocation(loc)) orelse .none;
+    return self.map.get(Identifier.from_location(loc)) orelse .none;
 }
 
 pub fn put(self: *Hideset, loc: Source.Location, value: Index) !void {
-    try self.map.put(self.comp.gpa, Identifier.fromLocation(loc), value);
+    try self.map.put(self.comp.gpa, Identifier.from_location(loc), value);
 }
 
 fn ensure_unused_capacity(self: *Hideset, new_size: usize) !void {
-    try self.linked_list.ensureUnusedCapacity(self.comp.gpa, new_size);
+    try self.linked_list.ensure_unused_capacity(self.comp.gpa, new_size);
 }
 
 /// Creates a one-item list with contents `identifier`
 fn create_node_assume_capacity(self: *Hideset, identifier: Identifier) Index {
     const next_idx = self.linked_list.len;
-    self.linked_list.appendAssumeCapacity(.{ .identifier = identifier });
+    self.linked_list.append_assume_capacity(.{ .identifier = identifier });
     return @enumFromInt(next_idx);
 }
 
 /// Create a new list with `identifier` at the front followed by `tail`
 pub fn prepend(self: *Hideset, loc: Source.Location, tail: Index) !Index {
     const new_idx = self.linked_list.len;
-    try self.linked_list.append(self.comp.gpa, .{ .identifier = Identifier.fromLocation(loc), .next = tail });
+    try self.linked_list.append(self.comp.gpa, .{ .identifier = Identifier.from_location(loc), .next = tail });
     return @enumFromInt(new_idx);
 }
 
@@ -125,20 +125,20 @@ pub fn prepend(self: *Hideset, loc: Source.Location, tail: Index) !Index {
 pub fn @"union"(self: *Hideset, a: Index, b: Index) !Index {
     var cur: Index = .none;
     var head: Index = b;
-    try self.ensureUnusedCapacity(self.len(a));
+    try self.ensure_unused_capacity(self.len(a));
     var it = self.iterator(a);
     while (it.next()) |identifier| {
-        const new_idx = self.createNodeAssumeCapacity(identifier);
+        const new_idx = self.create_node_assume_capacity(identifier);
         if (head == b) {
             head = new_idx;
         }
         if (cur != .none) {
-            self.linked_list.items(.next)[@intFromEnum(cur)] = new_idx;
+            self.linked_list.items(.next)[@int_from_enum(cur)] = new_idx;
         }
         cur = new_idx;
     }
     if (cur != .none) {
-        self.linked_list.items(.next)[@intFromEnum(cur)] = b;
+        self.linked_list.items(.next)[@int_from_enum(cur)] = b;
     }
     return head;
 }
@@ -156,14 +156,14 @@ fn len(self: *const Hideset, list: Index) usize {
     var cur = list;
     var count: usize = 0;
     while (cur != .none) : (count += 1) {
-        cur = nexts[@intFromEnum(cur)];
+        cur = nexts[@int_from_enum(cur)];
     }
     return count;
 }
 
 pub fn intersection(self: *Hideset, a: Index, b: Index) !Index {
     if (a == .none or b == .none) return .none;
-    self.intersection_map.clearRetainingCapacity();
+    self.intersection_map.clear_retaining_capacity();
 
     var cur: Index = .none;
     var head: Index = .none;
@@ -172,17 +172,17 @@ pub fn intersection(self: *Hideset, a: Index, b: Index) !Index {
     while (it.next()) |identifier| : (a_len += 1) {
         try self.intersection_map.put(self.comp.gpa, identifier, {});
     }
-    try self.ensureUnusedCapacity(@min(a_len, self.len(b)));
+    try self.ensure_unused_capacity(@min(a_len, self.len(b)));
 
     it = self.iterator(b);
     while (it.next()) |identifier| {
         if (self.intersection_map.contains(identifier)) {
-            const new_idx = self.createNodeAssumeCapacity(identifier);
+            const new_idx = self.create_node_assume_capacity(identifier);
             if (head == .none) {
                 head = new_idx;
             }
             if (cur != .none) {
-                self.linked_list.items(.next)[@intFromEnum(cur)] = new_idx;
+                self.linked_list.items(.next)[@int_from_enum(cur)] = new_idx;
             }
             cur = new_idx;
         }

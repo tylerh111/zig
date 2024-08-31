@@ -18,6 +18,6 @@ test asinh {
     const a = Complex(f32).init(5, 3);
     const c = asinh(a);
 
-    try testing.expect(math.approxEqAbs(f32, c.re, 2.459831, epsilon));
-    try testing.expect(math.approxEqAbs(f32, c.im, 0.533999, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.re, 2.459831, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.im, 0.533999, epsilon));
 }

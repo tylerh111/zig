@@ -17,7 +17,7 @@ next_request_start: usize,
 pub const State = enum {
     /// The connection is available to be used for the first time, or reused.
     ready,
-    /// An error occurred in `receiveHead`.
+    /// An error occurred in `receive_head`.
     receiving_head,
     /// A Request object has been obtained and from there a Response can be
     /// opened.
@@ -31,7 +31,7 @@ pub const State = enum {
 
 /// Initialize an HTTP server that can respond to multiple requests on the same
 /// connection.
-/// The returned `Server` is ready for `receiveHead` to be called.
+/// The returned `Server` is ready for `receive_head` to be called.
 pub fn init(connection: net.Server.Connection, read_buffer: []u8) Server {
     return .{
         .connection = connection,
@@ -60,7 +60,7 @@ pub const ReceiveHeadError = error{
 };
 
 /// The header bytes reference the read buffer that Server was initialized with
-/// and remain alive until the next call to receiveHead.
+/// and remain alive until the next call to receive_head.
 pub fn receive_head(s: *Server) ReceiveHeadError!Request {
     assert(s.state == .ready);
     s.state = .received_head;
@@ -82,7 +82,7 @@ pub fn receive_head(s: *Server) ReceiveHeadError!Request {
         const bytes = s.read_buffer[0..s.read_buffer_len];
         const end = hp.feed(bytes);
         if (hp.state == .finished)
-            return finishReceivingHead(s, end);
+            return finish_receiving_head(s, end);
     }
 
     while (true) {
@@ -102,7 +102,7 @@ pub fn receive_head(s: *Server) ReceiveHeadError!Request {
         const bytes = buf[0..read_n];
         const end = hp.feed(bytes);
         if (hp.state == .finished)
-            return finishReceivingHead(s, s.read_buffer_len - bytes.len + end);
+            return finish_receiving_head(s, s.read_buffer_len - bytes.len + end);
     }
 }
 
@@ -161,20 +161,20 @@ pub const Request = struct {
         };
 
         pub fn parse(bytes: []const u8) ParseError!Head {
-            var it = mem.splitSequence(u8, bytes, "\r\n");
+            var it = mem.split_sequence(u8, bytes, "\r\n");
 
             const first_line = it.next().?;
             if (first_line.len < 10)
                 return error.HttpHeadersInvalid;
 
-            const method_end = mem.indexOfScalar(u8, first_line, ' ') orelse
+            const method_end = mem.index_of_scalar(u8, first_line, ' ') orelse
                 return error.HttpHeadersInvalid;
             if (method_end > 24) return error.HttpHeadersInvalid;
 
             const method_str = first_line[0..method_end];
             const method: http.Method = @enumFromInt(http.Method.parse(method_str));
 
-            const version_start = mem.lastIndexOfScalar(u8, first_line, ' ') orelse
+            const version_start = mem.last_index_of_scalar(u8, first_line, ' ') orelse
                 return error.HttpHeadersInvalid;
             if (version_start == method_end) return error.HttpHeadersInvalid;
 
@@ -211,41 +211,41 @@ pub const Request = struct {
                     else => {},
                 }
 
-                var line_it = mem.splitScalar(u8, line, ':');
+                var line_it = mem.split_scalar(u8, line, ':');
                 const header_name = line_it.next().?;
                 const header_value = mem.trim(u8, line_it.rest(), " \t");
                 if (header_name.len == 0) return error.HttpHeadersInvalid;
 
-                if (std.ascii.eqlIgnoreCase(header_name, "connection")) {
-                    head.keep_alive = !std.ascii.eqlIgnoreCase(header_value, "close");
-                } else if (std.ascii.eqlIgnoreCase(header_name, "expect")) {
+                if (std.ascii.eql_ignore_case(header_name, "connection")) {
+                    head.keep_alive = !std.ascii.eql_ignore_case(header_value, "close");
+                } else if (std.ascii.eql_ignore_case(header_name, "expect")) {
                     head.expect = header_value;
-                } else if (std.ascii.eqlIgnoreCase(header_name, "content-type")) {
+                } else if (std.ascii.eql_ignore_case(header_name, "content-type")) {
                     head.content_type = header_value;
-                } else if (std.ascii.eqlIgnoreCase(header_name, "content-length")) {
+                } else if (std.ascii.eql_ignore_case(header_name, "content-length")) {
                     if (head.content_length != null) return error.HttpHeadersInvalid;
-                    head.content_length = std.fmt.parseInt(u64, header_value, 10) catch
+                    head.content_length = std.fmt.parse_int(u64, header_value, 10) catch
                         return error.InvalidContentLength;
-                } else if (std.ascii.eqlIgnoreCase(header_name, "content-encoding")) {
+                } else if (std.ascii.eql_ignore_case(header_name, "content-encoding")) {
                     if (head.transfer_compression != .identity) return error.HttpHeadersInvalid;
 
                     const trimmed = mem.trim(u8, header_value, " ");
 
-                    if (std.meta.stringToEnum(http.ContentEncoding, trimmed)) |ce| {
+                    if (std.meta.string_to_enum(http.ContentEncoding, trimmed)) |ce| {
                         head.transfer_compression = ce;
                     } else {
                         return error.HttpTransferEncodingUnsupported;
                     }
-                } else if (std.ascii.eqlIgnoreCase(header_name, "transfer-encoding")) {
+                } else if (std.ascii.eql_ignore_case(header_name, "transfer-encoding")) {
                     // Transfer-Encoding: second, first
                     // Transfer-Encoding: deflate, chunked
-                    var iter = mem.splitBackwardsScalar(u8, header_value, ',');
+                    var iter = mem.split_backwards_scalar(u8, header_value, ',');
 
                     const first = iter.first();
                     const trimmed_first = mem.trim(u8, first, " ");
 
                     var next: ?[]const u8 = first;
-                    if (std.meta.stringToEnum(http.TransferEncoding, trimmed_first)) |transfer| {
+                    if (std.meta.string_to_enum(http.TransferEncoding, trimmed_first)) |transfer| {
                         if (head.transfer_encoding != .none)
                             return error.HttpHeadersInvalid; // we already have a transfer encoding
                         head.transfer_encoding = transfer;
@@ -256,7 +256,7 @@ pub const Request = struct {
                     if (next) |second| {
                         const trimmed_second = mem.trim(u8, second, " ");
 
-                        if (std.meta.stringToEnum(http.ContentEncoding, trimmed_second)) |transfer| {
+                        if (std.meta.string_to_enum(http.ContentEncoding, trimmed_second)) |transfer| {
                             if (head.transfer_compression != .identity)
                                 return error.HttpHeadersInvalid; // double compression is not supported
                             head.transfer_compression = transfer;
@@ -281,21 +281,21 @@ pub const Request = struct {
 
             const req = try parse(request_bytes);
 
-            try testing.expectEqual(.GET, req.method);
-            try testing.expectEqual(.@"HTTP/1.0", req.version);
-            try testing.expectEqualStrings("/hi", req.target);
+            try testing.expect_equal(.GET, req.method);
+            try testing.expect_equal(.@"HTTP/1.0", req.version);
+            try testing.expect_equal_strings("/hi", req.target);
 
-            try testing.expectEqualStrings("text/plain", req.content_type.?);
-            try testing.expectEqualStrings("100-continue", req.expect.?);
+            try testing.expect_equal_strings("text/plain", req.content_type.?);
+            try testing.expect_equal_strings("100-continue", req.expect.?);
 
-            try testing.expectEqual(true, req.keep_alive);
-            try testing.expectEqual(10, req.content_length.?);
-            try testing.expectEqual(.chunked, req.transfer_encoding);
-            try testing.expectEqual(.deflate, req.transfer_compression);
+            try testing.expect_equal(true, req.keep_alive);
+            try testing.expect_equal(10, req.content_length.?);
+            try testing.expect_equal(.chunked, req.transfer_encoding);
+            try testing.expect_equal(.deflate, req.transfer_compression);
         }
 
         inline fn int64(array: *const [8]u8) u64 {
-            return @bitCast(array.*);
+            return @bit_cast(array.*);
         }
     };
 
@@ -303,7 +303,7 @@ pub const Request = struct {
         return http.HeaderIterator.init(r.server.read_buffer[0..r.head_end]);
     }
 
-    test iterateHeaders {
+    test iterate_headers {
         const request_bytes = "GET /hi HTTP/1.0\r\n" ++
             "content-tYpe: text/plain\r\n" ++
             "content-Length:10\r\n" ++
@@ -329,38 +329,38 @@ pub const Request = struct {
             .reader_state = undefined,
         };
 
-        var it = request.iterateHeaders();
+        var it = request.iterate_headers();
         {
             const header = it.next().?;
-            try testing.expectEqualStrings("content-tYpe", header.name);
-            try testing.expectEqualStrings("text/plain", header.value);
+            try testing.expect_equal_strings("content-tYpe", header.name);
+            try testing.expect_equal_strings("text/plain", header.value);
             try testing.expect(!it.is_trailer);
         }
         {
             const header = it.next().?;
-            try testing.expectEqualStrings("content-Length", header.name);
-            try testing.expectEqualStrings("10", header.value);
+            try testing.expect_equal_strings("content-Length", header.name);
+            try testing.expect_equal_strings("10", header.value);
             try testing.expect(!it.is_trailer);
         }
         {
             const header = it.next().?;
-            try testing.expectEqualStrings("expeCt", header.name);
-            try testing.expectEqualStrings("100-continue", header.value);
+            try testing.expect_equal_strings("expeCt", header.name);
+            try testing.expect_equal_strings("100-continue", header.value);
             try testing.expect(!it.is_trailer);
         }
         {
             const header = it.next().?;
-            try testing.expectEqualStrings("TRansfer-encoding", header.name);
-            try testing.expectEqualStrings("deflate, chunked", header.value);
+            try testing.expect_equal_strings("TRansfer-encoding", header.name);
+            try testing.expect_equal_strings("deflate, chunked", header.value);
             try testing.expect(!it.is_trailer);
         }
         {
             const header = it.next().?;
-            try testing.expectEqualStrings("connectioN", header.name);
-            try testing.expectEqualStrings("keep-alive", header.value);
+            try testing.expect_equal_strings("connectioN", header.name);
+            try testing.expect_equal_strings("keep-alive", header.value);
             try testing.expect(!it.is_trailer);
         }
-        try testing.expectEqual(null, it.next());
+        try testing.expect_equal(null, it.next());
     }
 
     pub const RespondOptions = struct {
@@ -398,43 +398,43 @@ pub const Request = struct {
         if (std.debug.runtime_safety) {
             for (options.extra_headers) |header| {
                 assert(header.name.len != 0);
-                assert(std.mem.indexOfScalar(u8, header.name, ':') == null);
-                assert(std.mem.indexOfPosLinear(u8, header.name, 0, "\r\n") == null);
-                assert(std.mem.indexOfPosLinear(u8, header.value, 0, "\r\n") == null);
+                assert(std.mem.index_of_scalar(u8, header.name, ':') == null);
+                assert(std.mem.index_of_pos_linear(u8, header.name, 0, "\r\n") == null);
+                assert(std.mem.index_of_pos_linear(u8, header.value, 0, "\r\n") == null);
             }
         }
 
         const transfer_encoding_none = (options.transfer_encoding orelse .chunked) == .none;
         const server_keep_alive = !transfer_encoding_none and options.keep_alive;
-        const keep_alive = request.discardBody(server_keep_alive);
+        const keep_alive = request.discard_body(server_keep_alive);
 
         const phrase = options.reason orelse options.status.phrase() orelse "";
 
         var first_buffer: [500]u8 = undefined;
-        var h = std.ArrayListUnmanaged(u8).initBuffer(&first_buffer);
+        var h = std.ArrayListUnmanaged(u8).init_buffer(&first_buffer);
         if (request.head.expect != null) {
-            // reader() and hence discardBody() above sets expect to null if it
+            // reader() and hence discard_body() above sets expect to null if it
             // is handled. So the fact that it is not null here means unhandled.
-            h.appendSliceAssumeCapacity("HTTP/1.1 417 Expectation Failed\r\n");
-            if (!keep_alive) h.appendSliceAssumeCapacity("connection: close\r\n");
-            h.appendSliceAssumeCapacity("content-length: 0\r\n\r\n");
-            try request.server.connection.stream.writeAll(h.items);
+            h.append_slice_assume_capacity("HTTP/1.1 417 Expectation Failed\r\n");
+            if (!keep_alive) h.append_slice_assume_capacity("connection: close\r\n");
+            h.append_slice_assume_capacity("content-length: 0\r\n\r\n");
+            try request.server.connection.stream.write_all(h.items);
             return;
         }
-        h.fixedWriter().print("{s} {d} {s}\r\n", .{
-            @tagName(options.version), @intFromEnum(options.status), phrase,
+        h.fixed_writer().print("{s} {d} {s}\r\n", .{
+            @tag_name(options.version), @int_from_enum(options.status), phrase,
         }) catch unreachable;
 
         switch (options.version) {
-            .@"HTTP/1.0" => if (keep_alive) h.appendSliceAssumeCapacity("connection: keep-alive\r\n"),
-            .@"HTTP/1.1" => if (!keep_alive) h.appendSliceAssumeCapacity("connection: close\r\n"),
+            .@"HTTP/1.0" => if (keep_alive) h.append_slice_assume_capacity("connection: keep-alive\r\n"),
+            .@"HTTP/1.1" => if (!keep_alive) h.append_slice_assume_capacity("connection: close\r\n"),
         }
 
         if (options.transfer_encoding) |transfer_encoding| switch (transfer_encoding) {
             .none => {},
-            .chunked => h.appendSliceAssumeCapacity("transfer-encoding: chunked\r\n"),
+            .chunked => h.append_slice_assume_capacity("transfer-encoding: chunked\r\n"),
         } else {
-            h.fixedWriter().print("content-length: {d}\r\n", .{content.len}) catch unreachable;
+            h.fixed_writer().print("content-length: {d}\r\n", .{content.len}) catch unreachable;
         }
 
         var chunk_header_buffer: [18]u8 = undefined;
@@ -485,7 +485,7 @@ pub const Request = struct {
             const is_chunked = (options.transfer_encoding orelse .none) == .chunked;
             if (is_chunked) {
                 if (content.len > 0) {
-                    const chunk_header = std.fmt.bufPrint(
+                    const chunk_header = std.fmt.buf_print(
                         &chunk_header_buffer,
                         "{x}\r\n",
                         .{content.len},
@@ -524,12 +524,12 @@ pub const Request = struct {
             }
         }
 
-        try request.server.connection.stream.writevAll(iovecs[0..iovecs_len]);
+        try request.server.connection.stream.writev_all(iovecs[0..iovecs_len]);
     }
 
     pub const RespondStreamingOptions = struct {
         /// An externally managed slice of memory used to batch bytes before
-        /// sending. `respondStreaming` asserts this is large enough to store
+        /// sending. `respond_streaming` asserts this is large enough to store
         /// the full HTTP response head.
         ///
         /// Must outlive the returned Response.
@@ -560,46 +560,46 @@ pub const Request = struct {
         assert(o.status != .@"continue");
         const transfer_encoding_none = (o.transfer_encoding orelse .chunked) == .none;
         const server_keep_alive = !transfer_encoding_none and o.keep_alive;
-        const keep_alive = request.discardBody(server_keep_alive);
+        const keep_alive = request.discard_body(server_keep_alive);
         const phrase = o.reason orelse o.status.phrase() orelse "";
 
-        var h = std.ArrayListUnmanaged(u8).initBuffer(options.send_buffer);
+        var h = std.ArrayListUnmanaged(u8).init_buffer(options.send_buffer);
 
         const elide_body = if (request.head.expect != null) eb: {
-            // reader() and hence discardBody() above sets expect to null if it
+            // reader() and hence discard_body() above sets expect to null if it
             // is handled. So the fact that it is not null here means unhandled.
-            h.appendSliceAssumeCapacity("HTTP/1.1 417 Expectation Failed\r\n");
-            if (!keep_alive) h.appendSliceAssumeCapacity("connection: close\r\n");
-            h.appendSliceAssumeCapacity("content-length: 0\r\n\r\n");
+            h.append_slice_assume_capacity("HTTP/1.1 417 Expectation Failed\r\n");
+            if (!keep_alive) h.append_slice_assume_capacity("connection: close\r\n");
+            h.append_slice_assume_capacity("content-length: 0\r\n\r\n");
             break :eb true;
         } else eb: {
-            h.fixedWriter().print("{s} {d} {s}\r\n", .{
-                @tagName(o.version), @intFromEnum(o.status), phrase,
+            h.fixed_writer().print("{s} {d} {s}\r\n", .{
+                @tag_name(o.version), @int_from_enum(o.status), phrase,
             }) catch unreachable;
 
             switch (o.version) {
-                .@"HTTP/1.0" => if (keep_alive) h.appendSliceAssumeCapacity("connection: keep-alive\r\n"),
-                .@"HTTP/1.1" => if (!keep_alive) h.appendSliceAssumeCapacity("connection: close\r\n"),
+                .@"HTTP/1.0" => if (keep_alive) h.append_slice_assume_capacity("connection: keep-alive\r\n"),
+                .@"HTTP/1.1" => if (!keep_alive) h.append_slice_assume_capacity("connection: close\r\n"),
             }
 
             if (o.transfer_encoding) |transfer_encoding| switch (transfer_encoding) {
-                .chunked => h.appendSliceAssumeCapacity("transfer-encoding: chunked\r\n"),
+                .chunked => h.append_slice_assume_capacity("transfer-encoding: chunked\r\n"),
                 .none => {},
             } else if (options.content_length) |len| {
-                h.fixedWriter().print("content-length: {d}\r\n", .{len}) catch unreachable;
+                h.fixed_writer().print("content-length: {d}\r\n", .{len}) catch unreachable;
             } else {
-                h.appendSliceAssumeCapacity("transfer-encoding: chunked\r\n");
+                h.append_slice_assume_capacity("transfer-encoding: chunked\r\n");
             }
 
             for (o.extra_headers) |header| {
                 assert(header.name.len != 0);
-                h.appendSliceAssumeCapacity(header.name);
-                h.appendSliceAssumeCapacity(": ");
-                h.appendSliceAssumeCapacity(header.value);
-                h.appendSliceAssumeCapacity("\r\n");
+                h.append_slice_assume_capacity(header.name);
+                h.append_slice_assume_capacity(": ");
+                h.append_slice_assume_capacity(header.value);
+                h.append_slice_assume_capacity("\r\n");
             }
 
-            h.appendSliceAssumeCapacity("\r\n");
+            h.append_slice_assume_capacity("\r\n");
             break :eb request.head.method == .HEAD;
         };
 
@@ -625,7 +625,7 @@ pub const Request = struct {
     };
 
     fn read_cl(context: *const anyopaque, buffer: []u8) ReadError!usize {
-        const request: *Request = @constCast(@alignCast(@ptrCast(context)));
+        const request: *Request = @constCast(@align_cast(@ptr_cast(context)));
         const s = request.server;
 
         const remaining_content_length = &request.reader_state.remaining_content_length;
@@ -653,7 +653,7 @@ pub const Request = struct {
     }
 
     fn read_chunked(context: *const anyopaque, buffer: []u8) ReadError!usize {
-        const request: *Request = @constCast(@alignCast(@ptrCast(context)));
+        const request: *Request = @constCast(@align_cast(@ptr_cast(context)));
         const s = request.server;
 
         const cp = &request.reader_state.chunk_parser;
@@ -760,7 +760,7 @@ pub const Request = struct {
 
         if (request.head.expect) |expect| {
             if (mem.eql(u8, expect, "100-continue")) {
-                try request.server.connection.stream.writeAll("HTTP/1.1 100 Continue\r\n\r\n");
+                try request.server.connection.stream.write_all("HTTP/1.1 100 Continue\r\n\r\n");
                 request.head.expect = null;
             } else {
                 return error.HttpExpectationFailed;
@@ -771,7 +771,7 @@ pub const Request = struct {
             .chunked => {
                 request.reader_state = .{ .chunk_parser = http.ChunkParser.init };
                 return .{
-                    .readFn = read_chunked,
+                    .read_fn = read_chunked,
                     .context = request,
                 };
             },
@@ -780,7 +780,7 @@ pub const Request = struct {
                     .remaining_content_length = request.head.content_length orelse 0,
                 };
                 return .{
-                    .readFn = read_cl,
+                    .read_fn = read_cl,
                     .context = request,
                 };
             },
@@ -895,9 +895,9 @@ pub const Response = struct {
     }
 
     fn write_cl(context: *const anyopaque, bytes: []const u8) WriteError!usize {
-        const r: *Response = @constCast(@alignCast(@ptrCast(context)));
+        const r: *Response = @constCast(@align_cast(@ptr_cast(context)));
 
-        var trash: u64 = std.math.maxInt(u64);
+        var trash: u64 = std.math.max_int(u64);
         const len = switch (r.transfer_encoding) {
             .content_length => |*len| len,
             else => &trash,
@@ -945,7 +945,7 @@ pub const Response = struct {
     }
 
     fn write_chunked(context: *const anyopaque, bytes: []const u8) WriteError!usize {
-        const r: *Response = @constCast(@alignCast(@ptrCast(context)));
+        const r: *Response = @constCast(@align_cast(@ptr_cast(context)));
         assert(r.transfer_encoding == .chunked);
 
         if (r.elide_body)
@@ -955,7 +955,7 @@ pub const Response = struct {
             const send_buffer_len = r.send_buffer_end - r.send_buffer_start;
             const chunk_len = r.chunk_len + bytes.len;
             var header_buf: [18]u8 = undefined;
-            const chunk_header = std.fmt.bufPrint(&header_buf, "{x}\r\n", .{chunk_len}) catch unreachable;
+            const chunk_header = std.fmt.buf_print(&header_buf, "{x}\r\n", .{chunk_len}) catch unreachable;
 
             var iovecs: [5]std.posix.iovec_const = .{
                 .{
@@ -979,9 +979,9 @@ pub const Response = struct {
                     .len = 2,
                 },
             };
-            // TODO make this writev instead of writevAll, which involves
+            // TODO make this writev instead of writev_all, which involves
             // complicating the logic of this function.
-            try r.stream.writevAll(&iovecs);
+            try r.stream.writev_all(&iovecs);
             r.send_buffer_start = 0;
             r.send_buffer_end = 0;
             r.chunk_len = 0;
@@ -1015,7 +1015,7 @@ pub const Response = struct {
     }
 
     fn flush_cl(r: *Response) WriteError!void {
-        try r.stream.writeAll(r.send_buffer[r.send_buffer_start..r.send_buffer_end]);
+        try r.stream.write_all(r.send_buffer[r.send_buffer_start..r.send_buffer_end]);
         r.send_buffer_start = 0;
         r.send_buffer_end = 0;
     }
@@ -1028,7 +1028,7 @@ pub const Response = struct {
         const http_headers = r.send_buffer[r.send_buffer_start .. r.send_buffer_end - r.chunk_len];
 
         if (r.elide_body) {
-            try r.stream.writeAll(http_headers);
+            try r.stream.write_all(http_headers);
             r.send_buffer_start = 0;
             r.send_buffer_end = 0;
             r.chunk_len = 0;
@@ -1036,7 +1036,7 @@ pub const Response = struct {
         }
 
         var header_buf: [18]u8 = undefined;
-        const chunk_header = std.fmt.bufPrint(&header_buf, "{x}\r\n", .{r.chunk_len}) catch unreachable;
+        const chunk_header = std.fmt.buf_print(&header_buf, "{x}\r\n", .{r.chunk_len}) catch unreachable;
 
         var iovecs: [max_trailers * 4 + 5]std.posix.iovec_const = undefined;
         var iovecs_len: usize = 0;
@@ -1109,7 +1109,7 @@ pub const Response = struct {
             iovecs_len += 1;
         }
 
-        try r.stream.writevAll(iovecs[0..iovecs_len]);
+        try r.stream.writev_all(iovecs[0..iovecs_len]);
         r.send_buffer_start = 0;
         r.send_buffer_end = 0;
         r.chunk_len = 0;
@@ -1117,7 +1117,7 @@ pub const Response = struct {
 
     pub fn writer(r: *Response) std.io.AnyWriter {
         return .{
-            .writeFn = switch (r.transfer_encoding) {
+            .write_fn = switch (r.transfer_encoding) {
                 .none, .content_length => write_cl,
                 .chunked => write_chunked,
             },
@@ -1132,7 +1132,7 @@ fn rebase(s: *Server, index: usize) void {
     if (leftover.len <= s.next_request_start - index) {
         @memcpy(dest, leftover);
     } else {
-        mem.copyBackwards(u8, dest, leftover);
+        mem.copy_backwards(u8, dest, leftover);
     }
     s.read_buffer_len = index + leftover.len;
 }

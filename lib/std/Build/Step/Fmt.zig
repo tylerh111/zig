@@ -29,8 +29,8 @@ pub fn create(owner: *std.Build, options: Options) *Fmt {
             .owner = owner,
             .makeFn = make,
         }),
-        .paths = owner.dupeStrings(options.paths),
-        .exclude_paths = owner.dupeStrings(options.exclude_paths),
+        .paths = owner.dupe_strings(options.paths),
+        .exclude_paths = owner.dupe_strings(options.exclude_paths),
         .check = options.check,
     };
     return fmt;
@@ -50,23 +50,23 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     const fmt: *Fmt = @fieldParentPtr("step", step);
 
     var argv: std.ArrayListUnmanaged([]const u8) = .{};
-    try argv.ensureUnusedCapacity(arena, 2 + 1 + fmt.paths.len + 2 * fmt.exclude_paths.len);
+    try argv.ensure_unused_capacity(arena, 2 + 1 + fmt.paths.len + 2 * fmt.exclude_paths.len);
 
-    argv.appendAssumeCapacity(b.graph.zig_exe);
-    argv.appendAssumeCapacity("fmt");
+    argv.append_assume_capacity(b.graph.zig_exe);
+    argv.append_assume_capacity("fmt");
 
     if (fmt.check) {
-        argv.appendAssumeCapacity("--check");
+        argv.append_assume_capacity("--check");
     }
 
     for (fmt.paths) |p| {
-        argv.appendAssumeCapacity(b.pathFromRoot(p));
+        argv.append_assume_capacity(b.path_from_root(p));
     }
 
     for (fmt.exclude_paths) |p| {
-        argv.appendAssumeCapacity("--exclude");
-        argv.appendAssumeCapacity(b.pathFromRoot(p));
+        argv.append_assume_capacity("--exclude");
+        argv.append_assume_capacity(b.path_from_root(p));
     }
 
-    return step.evalChildProcess(argv.items);
+    return step.eval_child_process(argv.items);
 }

@@ -2,7 +2,7 @@ const builtin = @import("builtin");
 const std = @import("std");
 const assert = std.debug.assert;
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 
 test "super basic invocations" {
     const foo = struct {
@@ -251,7 +251,7 @@ test "function call with 40 arguments" {
                 a40;
         }
     };
-    try S.doTheTest(39);
+    try S.do_the_test(39);
 }
 
 test "arguments to comptime parameters generated in comptime blocks" {
@@ -261,10 +261,10 @@ test "arguments to comptime parameters generated in comptime blocks" {
         }
 
         fn foo(comptime x: i32) void {
-            if (x != 42) @compileError("bad");
+            if (x != 42) @compile_error("bad");
         }
     };
-    S.foo(S.fortyTwo());
+    S.foo(S.forty_two());
 }
 
 test "forced tail call" {
@@ -291,16 +291,16 @@ test "forced tail call" {
             if (n == 1) return b;
             return @call(
                 .always_tail,
-                fibonacciTailInternal,
+                fibonacci_tail_internal,
                 .{ n - 1, b, a + b },
             );
         }
 
         fn fibonacci_tail(n: u16) u16 {
-            return fibonacciTailInternal(n, 0, 1);
+            return fibonacci_tail_internal(n, 0, 1);
         }
     };
-    try expect(S.fibonacciTail(10) == 55);
+    try expect(S.fibonacci_tail(10) == 55);
 }
 
 test "inline call preserves tail call" {
@@ -321,7 +321,7 @@ test "inline call preserves tail call" {
 
     if (builtin.zig_backend == .stage2_c and builtin.os.tag == .windows) return error.SkipZigTest; // MSVC doesn't support always tail calls
 
-    const max = std.math.maxInt(u16);
+    const max = std.math.max_int(u16);
     const S = struct {
         var a: u16 = 0;
         fn foo() void {
@@ -338,7 +338,7 @@ test "inline call preserves tail call" {
         }
     };
     S.foo();
-    try expect(S.a == std.math.maxInt(u16));
+    try expect(S.a == std.math.max_int(u16));
 }
 
 test "inline call doesn't re-evaluate non generic struct" {
@@ -374,7 +374,7 @@ test "Enum constructed by @Type passed as generic argument" {
             alive: bool,
         });
         fn foo(comptime a: E, b: u32) !void {
-            try expect(@intFromEnum(a) == b);
+            try expect(@int_from_enum(a) == b);
         }
     };
     inline for (@typeInfo(S.E).Enum.fields, 0..) |_, i| {
@@ -437,8 +437,8 @@ test "method call as parameter type" {
             return u64;
         }
     };
-    try expectEqual(@as(u64, 123), S.foo(S{}, 123));
-    try expectEqual(@as(u64, 500), S.foo(S{}, 500));
+    try expect_equal(@as(u64, 123), S.foo(S{}, 123));
+    try expect_equal(@as(u64, 500), S.foo(S{}, 500));
 }
 
 test "non-anytype generic parameters provide result type" {
@@ -450,11 +450,11 @@ test "non-anytype generic parameters provide result type" {
 
     const S = struct {
         fn f(comptime T: type, y: T) !void {
-            try expectEqual(@as(T, 123), y);
+            try expect_equal(@as(T, 123), y);
         }
 
         fn g(x: anytype, y: @TypeOf(x)) !void {
-            try expectEqual(@as(@TypeOf(x), 0x222), y);
+            try expect_equal(@as(@TypeOf(x), 0x222), y);
         }
     };
 
@@ -462,13 +462,13 @@ test "non-anytype generic parameters provide result type" {
     var rt_u32: u32 = 0x10000222;
     _ = .{ &rt_u16, &rt_u32 };
 
-    try S.f(u8, @intCast(rt_u16));
-    try S.f(u8, @intCast(123));
+    try S.f(u8, @int_cast(rt_u16));
+    try S.f(u8, @int_cast(123));
 
     try S.g(rt_u16, @truncate(rt_u32));
     try S.g(rt_u16, @truncate(0x10000222));
 
-    try comptime S.f(u8, @intCast(123));
+    try comptime S.f(u8, @int_cast(123));
     try comptime S.g(@as(u16, undefined), @truncate(0x99990222));
 }
 
@@ -498,8 +498,8 @@ test "argument to generic function has correct result type" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "call inline fn through pointer" {
@@ -597,7 +597,7 @@ test "value returned from comptime function is comptime known" {
     };
     const fields_list = S.fields(@TypeOf(.{}));
     if (fields_list.len != 0)
-        @compileError("Argument count mismatch");
+        @compile_error("Argument count mismatch");
 }
 
 test "registers get overwritten when ignoring return" {
@@ -610,7 +610,7 @@ test "registers get overwritten when ignoring return" {
             return 42;
         }
         fn write(fd: usize, a: [*]const u8, len: usize) usize {
-            return syscall4(.WRITE, fd, @intFromPtr(a), len);
+            return syscall4(.WRITE, fd, @int_from_ptr(a), len);
         }
         fn syscall4(_: enum { WRITE }, _: usize, _: usize, _: usize) usize {
             return 23;
@@ -640,10 +640,10 @@ test "call with union with zero sized field is not memorized incorrectly" {
         }
     };
     const s1 = U.S(U{ .T = u32 }).tag();
-    try std.testing.expectEqual(u32, s1);
+    try std.testing.expect_equal(u32, s1);
 
     const s2 = U.S(U{ .T = u64 }).tag();
-    try std.testing.expectEqual(u64, s2);
+    try std.testing.expect_equal(u64, s2);
 }
 
 test "function call with cast to anyopaque pointer" {

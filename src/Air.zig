@@ -302,7 +302,7 @@ pub const Inst = struct {
         /// Function call.
         /// Result type is the return type of the function being called.
         /// Uses the `pl_op` field with the `Call` payload. operand is the callee.
-        /// Triggers `resolveTypeLayout` on the return type of the callee.
+        /// Triggers `resolve_type_layout` on the return type of the callee.
         call,
         /// Same as `call` except with the `always_tail` attribute.
         call_always_tail,
@@ -507,7 +507,7 @@ pub const Inst = struct {
         /// Return a value from a function.
         /// Result type is always noreturn; no instructions in a block follow this one.
         /// Uses the `un_op` field.
-        /// Triggers `resolveTypeLayout` on the return type.
+        /// Triggers `resolve_type_layout` on the return type.
         ret,
         /// Same as `ret`, except if the operand is undefined, the
         /// returned value is 0xaa bytes, and any other safety metadata
@@ -520,7 +520,7 @@ pub const Inst = struct {
         /// on the operand, followed by a `ret` on the loaded value.
         /// Result type is always noreturn; no instructions in a block follow this one.
         /// Uses the `un_op` field.
-        /// Triggers `resolveTypeLayout` on the return type.
+        /// Triggers `resolve_type_layout` on the return type.
         ret_load,
         /// Write a value to a pointer. LHS is pointer, RHS is value.
         /// Result type is always void.
@@ -877,13 +877,13 @@ pub const Inst = struct {
         _,
 
         pub fn to_ref(i: Index) Inst.Ref {
-            assert(@intFromEnum(i) >> 31 == 0);
-            return @enumFromInt((1 << 31) | @intFromEnum(i));
+            assert(@int_from_enum(i) >> 31 == 0);
+            return @enumFromInt((1 << 31) | @int_from_enum(i));
         }
 
         pub fn to_target_index(i: Index) u31 {
-            assert(@intFromEnum(i) >> 31 == 1);
-            return @truncate(@intFromEnum(i));
+            assert(@int_from_enum(i) >> 31 == 1);
+            return @truncate(@int_from_enum(i));
         }
     };
 
@@ -893,106 +893,106 @@ pub const Inst = struct {
     ///
     /// The ref `none` is an exception: it has the tag bit set but refers to the InternPool.
     pub const Ref = enum(u32) {
-        u0_type = @intFromEnum(InternPool.Index.u0_type),
-        i0_type = @intFromEnum(InternPool.Index.i0_type),
-        u1_type = @intFromEnum(InternPool.Index.u1_type),
-        u8_type = @intFromEnum(InternPool.Index.u8_type),
-        i8_type = @intFromEnum(InternPool.Index.i8_type),
-        u16_type = @intFromEnum(InternPool.Index.u16_type),
-        i16_type = @intFromEnum(InternPool.Index.i16_type),
-        u29_type = @intFromEnum(InternPool.Index.u29_type),
-        u32_type = @intFromEnum(InternPool.Index.u32_type),
-        i32_type = @intFromEnum(InternPool.Index.i32_type),
-        u64_type = @intFromEnum(InternPool.Index.u64_type),
-        i64_type = @intFromEnum(InternPool.Index.i64_type),
-        u80_type = @intFromEnum(InternPool.Index.u80_type),
-        u128_type = @intFromEnum(InternPool.Index.u128_type),
-        i128_type = @intFromEnum(InternPool.Index.i128_type),
-        usize_type = @intFromEnum(InternPool.Index.usize_type),
-        isize_type = @intFromEnum(InternPool.Index.isize_type),
-        c_char_type = @intFromEnum(InternPool.Index.c_char_type),
-        c_short_type = @intFromEnum(InternPool.Index.c_short_type),
-        c_ushort_type = @intFromEnum(InternPool.Index.c_ushort_type),
-        c_int_type = @intFromEnum(InternPool.Index.c_int_type),
-        c_uint_type = @intFromEnum(InternPool.Index.c_uint_type),
-        c_long_type = @intFromEnum(InternPool.Index.c_long_type),
-        c_ulong_type = @intFromEnum(InternPool.Index.c_ulong_type),
-        c_longlong_type = @intFromEnum(InternPool.Index.c_longlong_type),
-        c_ulonglong_type = @intFromEnum(InternPool.Index.c_ulonglong_type),
-        c_longdouble_type = @intFromEnum(InternPool.Index.c_longdouble_type),
-        f16_type = @intFromEnum(InternPool.Index.f16_type),
-        f32_type = @intFromEnum(InternPool.Index.f32_type),
-        f64_type = @intFromEnum(InternPool.Index.f64_type),
-        f80_type = @intFromEnum(InternPool.Index.f80_type),
-        f128_type = @intFromEnum(InternPool.Index.f128_type),
-        anyopaque_type = @intFromEnum(InternPool.Index.anyopaque_type),
-        bool_type = @intFromEnum(InternPool.Index.bool_type),
-        void_type = @intFromEnum(InternPool.Index.void_type),
-        type_type = @intFromEnum(InternPool.Index.type_type),
-        anyerror_type = @intFromEnum(InternPool.Index.anyerror_type),
-        comptime_int_type = @intFromEnum(InternPool.Index.comptime_int_type),
-        comptime_float_type = @intFromEnum(InternPool.Index.comptime_float_type),
-        noreturn_type = @intFromEnum(InternPool.Index.noreturn_type),
-        anyframe_type = @intFromEnum(InternPool.Index.anyframe_type),
-        null_type = @intFromEnum(InternPool.Index.null_type),
-        undefined_type = @intFromEnum(InternPool.Index.undefined_type),
-        enum_literal_type = @intFromEnum(InternPool.Index.enum_literal_type),
-        atomic_order_type = @intFromEnum(InternPool.Index.atomic_order_type),
-        atomic_rmw_op_type = @intFromEnum(InternPool.Index.atomic_rmw_op_type),
-        calling_convention_type = @intFromEnum(InternPool.Index.calling_convention_type),
-        address_space_type = @intFromEnum(InternPool.Index.address_space_type),
-        float_mode_type = @intFromEnum(InternPool.Index.float_mode_type),
-        reduce_op_type = @intFromEnum(InternPool.Index.reduce_op_type),
-        call_modifier_type = @intFromEnum(InternPool.Index.call_modifier_type),
-        prefetch_options_type = @intFromEnum(InternPool.Index.prefetch_options_type),
-        export_options_type = @intFromEnum(InternPool.Index.export_options_type),
-        extern_options_type = @intFromEnum(InternPool.Index.extern_options_type),
-        type_info_type = @intFromEnum(InternPool.Index.type_info_type),
-        manyptr_u8_type = @intFromEnum(InternPool.Index.manyptr_u8_type),
-        manyptr_const_u8_type = @intFromEnum(InternPool.Index.manyptr_const_u8_type),
-        manyptr_const_u8_sentinel_0_type = @intFromEnum(InternPool.Index.manyptr_const_u8_sentinel_0_type),
-        single_const_pointer_to_comptime_int_type = @intFromEnum(InternPool.Index.single_const_pointer_to_comptime_int_type),
-        slice_const_u8_type = @intFromEnum(InternPool.Index.slice_const_u8_type),
-        slice_const_u8_sentinel_0_type = @intFromEnum(InternPool.Index.slice_const_u8_sentinel_0_type),
-        optional_noreturn_type = @intFromEnum(InternPool.Index.optional_noreturn_type),
-        anyerror_void_error_union_type = @intFromEnum(InternPool.Index.anyerror_void_error_union_type),
-        adhoc_inferred_error_set_type = @intFromEnum(InternPool.Index.adhoc_inferred_error_set_type),
-        generic_poison_type = @intFromEnum(InternPool.Index.generic_poison_type),
-        empty_struct_type = @intFromEnum(InternPool.Index.empty_struct_type),
-        undef = @intFromEnum(InternPool.Index.undef),
-        zero = @intFromEnum(InternPool.Index.zero),
-        zero_usize = @intFromEnum(InternPool.Index.zero_usize),
-        zero_u8 = @intFromEnum(InternPool.Index.zero_u8),
-        one = @intFromEnum(InternPool.Index.one),
-        one_usize = @intFromEnum(InternPool.Index.one_usize),
-        one_u8 = @intFromEnum(InternPool.Index.one_u8),
-        four_u8 = @intFromEnum(InternPool.Index.four_u8),
-        negative_one = @intFromEnum(InternPool.Index.negative_one),
-        calling_convention_c = @intFromEnum(InternPool.Index.calling_convention_c),
-        calling_convention_inline = @intFromEnum(InternPool.Index.calling_convention_inline),
-        void_value = @intFromEnum(InternPool.Index.void_value),
-        unreachable_value = @intFromEnum(InternPool.Index.unreachable_value),
-        null_value = @intFromEnum(InternPool.Index.null_value),
-        bool_true = @intFromEnum(InternPool.Index.bool_true),
-        bool_false = @intFromEnum(InternPool.Index.bool_false),
-        empty_struct = @intFromEnum(InternPool.Index.empty_struct),
-        generic_poison = @intFromEnum(InternPool.Index.generic_poison),
+        u0_type = @int_from_enum(InternPool.Index.u0_type),
+        i0_type = @int_from_enum(InternPool.Index.i0_type),
+        u1_type = @int_from_enum(InternPool.Index.u1_type),
+        u8_type = @int_from_enum(InternPool.Index.u8_type),
+        i8_type = @int_from_enum(InternPool.Index.i8_type),
+        u16_type = @int_from_enum(InternPool.Index.u16_type),
+        i16_type = @int_from_enum(InternPool.Index.i16_type),
+        u29_type = @int_from_enum(InternPool.Index.u29_type),
+        u32_type = @int_from_enum(InternPool.Index.u32_type),
+        i32_type = @int_from_enum(InternPool.Index.i32_type),
+        u64_type = @int_from_enum(InternPool.Index.u64_type),
+        i64_type = @int_from_enum(InternPool.Index.i64_type),
+        u80_type = @int_from_enum(InternPool.Index.u80_type),
+        u128_type = @int_from_enum(InternPool.Index.u128_type),
+        i128_type = @int_from_enum(InternPool.Index.i128_type),
+        usize_type = @int_from_enum(InternPool.Index.usize_type),
+        isize_type = @int_from_enum(InternPool.Index.isize_type),
+        c_char_type = @int_from_enum(InternPool.Index.c_char_type),
+        c_short_type = @int_from_enum(InternPool.Index.c_short_type),
+        c_ushort_type = @int_from_enum(InternPool.Index.c_ushort_type),
+        c_int_type = @int_from_enum(InternPool.Index.c_int_type),
+        c_uint_type = @int_from_enum(InternPool.Index.c_uint_type),
+        c_long_type = @int_from_enum(InternPool.Index.c_long_type),
+        c_ulong_type = @int_from_enum(InternPool.Index.c_ulong_type),
+        c_longlong_type = @int_from_enum(InternPool.Index.c_longlong_type),
+        c_ulonglong_type = @int_from_enum(InternPool.Index.c_ulonglong_type),
+        c_longdouble_type = @int_from_enum(InternPool.Index.c_longdouble_type),
+        f16_type = @int_from_enum(InternPool.Index.f16_type),
+        f32_type = @int_from_enum(InternPool.Index.f32_type),
+        f64_type = @int_from_enum(InternPool.Index.f64_type),
+        f80_type = @int_from_enum(InternPool.Index.f80_type),
+        f128_type = @int_from_enum(InternPool.Index.f128_type),
+        anyopaque_type = @int_from_enum(InternPool.Index.anyopaque_type),
+        bool_type = @int_from_enum(InternPool.Index.bool_type),
+        void_type = @int_from_enum(InternPool.Index.void_type),
+        type_type = @int_from_enum(InternPool.Index.type_type),
+        anyerror_type = @int_from_enum(InternPool.Index.anyerror_type),
+        comptime_int_type = @int_from_enum(InternPool.Index.comptime_int_type),
+        comptime_float_type = @int_from_enum(InternPool.Index.comptime_float_type),
+        noreturn_type = @int_from_enum(InternPool.Index.noreturn_type),
+        anyframe_type = @int_from_enum(InternPool.Index.anyframe_type),
+        null_type = @int_from_enum(InternPool.Index.null_type),
+        undefined_type = @int_from_enum(InternPool.Index.undefined_type),
+        enum_literal_type = @int_from_enum(InternPool.Index.enum_literal_type),
+        atomic_order_type = @int_from_enum(InternPool.Index.atomic_order_type),
+        atomic_rmw_op_type = @int_from_enum(InternPool.Index.atomic_rmw_op_type),
+        calling_convention_type = @int_from_enum(InternPool.Index.calling_convention_type),
+        address_space_type = @int_from_enum(InternPool.Index.address_space_type),
+        float_mode_type = @int_from_enum(InternPool.Index.float_mode_type),
+        reduce_op_type = @int_from_enum(InternPool.Index.reduce_op_type),
+        call_modifier_type = @int_from_enum(InternPool.Index.call_modifier_type),
+        prefetch_options_type = @int_from_enum(InternPool.Index.prefetch_options_type),
+        export_options_type = @int_from_enum(InternPool.Index.export_options_type),
+        extern_options_type = @int_from_enum(InternPool.Index.extern_options_type),
+        type_info_type = @int_from_enum(InternPool.Index.type_info_type),
+        manyptr_u8_type = @int_from_enum(InternPool.Index.manyptr_u8_type),
+        manyptr_const_u8_type = @int_from_enum(InternPool.Index.manyptr_const_u8_type),
+        manyptr_const_u8_sentinel_0_type = @int_from_enum(InternPool.Index.manyptr_const_u8_sentinel_0_type),
+        single_const_pointer_to_comptime_int_type = @int_from_enum(InternPool.Index.single_const_pointer_to_comptime_int_type),
+        slice_const_u8_type = @int_from_enum(InternPool.Index.slice_const_u8_type),
+        slice_const_u8_sentinel_0_type = @int_from_enum(InternPool.Index.slice_const_u8_sentinel_0_type),
+        optional_noreturn_type = @int_from_enum(InternPool.Index.optional_noreturn_type),
+        anyerror_void_error_union_type = @int_from_enum(InternPool.Index.anyerror_void_error_union_type),
+        adhoc_inferred_error_set_type = @int_from_enum(InternPool.Index.adhoc_inferred_error_set_type),
+        generic_poison_type = @int_from_enum(InternPool.Index.generic_poison_type),
+        empty_struct_type = @int_from_enum(InternPool.Index.empty_struct_type),
+        undef = @int_from_enum(InternPool.Index.undef),
+        zero = @int_from_enum(InternPool.Index.zero),
+        zero_usize = @int_from_enum(InternPool.Index.zero_usize),
+        zero_u8 = @int_from_enum(InternPool.Index.zero_u8),
+        one = @int_from_enum(InternPool.Index.one),
+        one_usize = @int_from_enum(InternPool.Index.one_usize),
+        one_u8 = @int_from_enum(InternPool.Index.one_u8),
+        four_u8 = @int_from_enum(InternPool.Index.four_u8),
+        negative_one = @int_from_enum(InternPool.Index.negative_one),
+        calling_convention_c = @int_from_enum(InternPool.Index.calling_convention_c),
+        calling_convention_inline = @int_from_enum(InternPool.Index.calling_convention_inline),
+        void_value = @int_from_enum(InternPool.Index.void_value),
+        unreachable_value = @int_from_enum(InternPool.Index.unreachable_value),
+        null_value = @int_from_enum(InternPool.Index.null_value),
+        bool_true = @int_from_enum(InternPool.Index.bool_true),
+        bool_false = @int_from_enum(InternPool.Index.bool_false),
+        empty_struct = @int_from_enum(InternPool.Index.empty_struct),
+        generic_poison = @int_from_enum(InternPool.Index.generic_poison),
 
         /// This Ref does not correspond to any AIR instruction or constant
         /// value and may instead be used as a sentinel to indicate null.
-        none = @intFromEnum(InternPool.Index.none),
+        none = @int_from_enum(InternPool.Index.none),
         _,
 
         pub fn to_interned(ref: Ref) ?InternPool.Index {
             assert(ref != .none);
-            return ref.toInternedAllowNone();
+            return ref.to_interned_allow_none();
         }
 
         pub fn to_interned_allow_none(ref: Ref) ?InternPool.Index {
             return switch (ref) {
                 .none => .none,
-                else => if (@intFromEnum(ref) >> 31 == 0)
-                    @enumFromInt(@as(u31, @truncate(@intFromEnum(ref))))
+                else => if (@int_from_enum(ref) >> 31 == 0)
+                    @enumFromInt(@as(u31, @truncate(@int_from_enum(ref))))
                 else
                     null,
             };
@@ -1000,21 +1000,21 @@ pub const Inst = struct {
 
         pub fn to_index(ref: Ref) ?Index {
             assert(ref != .none);
-            return ref.toIndexAllowNone();
+            return ref.to_index_allow_none();
         }
 
         pub fn to_index_allow_none(ref: Ref) ?Index {
             return switch (ref) {
                 .none => null,
-                else => if (@intFromEnum(ref) >> 31 != 0)
-                    @enumFromInt(@as(u31, @truncate(@intFromEnum(ref))))
+                else => if (@int_from_enum(ref) >> 31 != 0)
+                    @enumFromInt(@as(u31, @truncate(@int_from_enum(ref))))
                 else
                     null,
             };
         }
 
         pub fn to_type(ref: Ref) Type {
-            return Type.fromInterned(ref.toInterned().?);
+            return Type.from_interned(ref.to_interned().?);
         }
     };
 
@@ -1096,7 +1096,7 @@ pub const Inst = struct {
         // to insert a secret field for safety checks.
         comptime {
             if (!std.debug.runtime_safety) {
-                assert(@sizeOf(Data) == 8);
+                assert(@size_of(Data) == 8);
             }
         }
     };
@@ -1188,7 +1188,7 @@ pub const VectorCmp = struct {
     }
 
     pub fn encode_op(compare_operator: std.math.CompareOperator) u32 {
-        return @intFromEnum(compare_operator);
+        return @int_from_enum(compare_operator);
     }
 };
 
@@ -1258,22 +1258,22 @@ pub const UnionInit = struct {
 };
 
 pub fn get_main_body(air: Air) []const Air.Inst.Index {
-    const body_index = air.extra[@intFromEnum(ExtraIndex.main_block)];
-    const extra = air.extraData(Block, body_index);
-    return @ptrCast(air.extra[extra.end..][0..extra.data.body_len]);
+    const body_index = air.extra[@int_from_enum(ExtraIndex.main_block)];
+    const extra = air.extra_data(Block, body_index);
+    return @ptr_cast(air.extra[extra.end..][0..extra.data.body_len]);
 }
 
 pub fn type_of(air: *const Air, inst: Air.Inst.Ref, ip: *const InternPool) Type {
-    if (inst.toInterned()) |ip_index| {
-        return Type.fromInterned(ip.typeOf(ip_index));
+    if (inst.to_interned()) |ip_index| {
+        return Type.from_interned(ip.type_of(ip_index));
     } else {
-        return air.typeOfIndex(inst.toIndex().?, ip);
+        return air.type_of_index(inst.to_index().?, ip);
     }
 }
 
 pub fn type_of_index(air: *const Air, inst: Air.Inst.Index, ip: *const InternPool) Type {
     const datas = air.instructions.items(.data);
-    switch (air.instructions.items(.tag)[@intFromEnum(inst)]) {
+    switch (air.instructions.items(.tag)[@int_from_enum(inst)]) {
         .add,
         .add_safe,
         .add_wrap,
@@ -1313,7 +1313,7 @@ pub fn type_of_index(air: *const Air, inst: Air.Inst.Index, ip: *const InternPoo
         .div_exact_optimized,
         .rem_optimized,
         .mod_optimized,
-        => return air.typeOf(datas[@intFromEnum(inst)].bin_op.lhs, ip),
+        => return air.type_of(datas[@int_from_enum(inst)].bin_op.lhs, ip),
 
         .sqrt,
         .sin,
@@ -1330,7 +1330,7 @@ pub fn type_of_index(air: *const Air, inst: Air.Inst.Index, ip: *const InternPoo
         .trunc_float,
         .neg,
         .neg_optimized,
-        => return air.typeOf(datas[@intFromEnum(inst)].un_op, ip),
+        => return air.type_of(datas[@int_from_enum(inst)].un_op, ip),
 
         .cmp_lt,
         .cmp_lte,
@@ -1361,9 +1361,9 @@ pub fn type_of_index(air: *const Air, inst: Air.Inst.Index, ip: *const InternPoo
         .ret_ptr,
         .err_return_trace,
         .c_va_start,
-        => return datas[@intFromEnum(inst)].ty,
+        => return datas[@int_from_enum(inst)].ty,
 
-        .arg => return datas[@intFromEnum(inst)].arg.ty.toType(),
+        .arg => return datas[@int_from_enum(inst)].arg.ty.to_type(),
 
         .assembly,
         .block,
@@ -1388,7 +1388,7 @@ pub fn type_of_index(air: *const Air, inst: Air.Inst.Index, ip: *const InternPoo
         .ptr_add,
         .ptr_sub,
         .try_ptr,
-        => return datas[@intFromEnum(inst)].ty_pl.ty.toType(),
+        => return datas[@int_from_enum(inst)].ty_pl.ty.to_type(),
 
         .not,
         .bitcast,
@@ -1430,7 +1430,7 @@ pub fn type_of_index(air: *const Air, inst: Air.Inst.Index, ip: *const InternPoo
         .c_va_arg,
         .c_va_copy,
         .abs,
-        => return datas[@intFromEnum(inst)].ty_op.ty.toType(),
+        => return datas[@int_from_enum(inst)].ty_op.ty.to_type(),
 
         .loop,
         .br,
@@ -1479,37 +1479,37 @@ pub fn type_of_index(air: *const Air, inst: Air.Inst.Index, ip: *const InternPoo
         .tag_name, .error_name => return Type.slice_const_u8_sentinel_0,
 
         .call, .call_always_tail, .call_never_tail, .call_never_inline => {
-            const callee_ty = air.typeOf(datas[@intFromEnum(inst)].pl_op.operand, ip);
-            return Type.fromInterned(ip.funcTypeReturnType(callee_ty.toIntern()));
+            const callee_ty = air.type_of(datas[@int_from_enum(inst)].pl_op.operand, ip);
+            return Type.from_interned(ip.func_type_return_type(callee_ty.to_intern()));
         },
 
         .slice_elem_val, .ptr_elem_val, .array_elem_val => {
-            const ptr_ty = air.typeOf(datas[@intFromEnum(inst)].bin_op.lhs, ip);
-            return ptr_ty.childTypeIp(ip);
+            const ptr_ty = air.type_of(datas[@int_from_enum(inst)].bin_op.lhs, ip);
+            return ptr_ty.child_type_ip(ip);
         },
         .atomic_load => {
-            const ptr_ty = air.typeOf(datas[@intFromEnum(inst)].atomic_load.ptr, ip);
-            return ptr_ty.childTypeIp(ip);
+            const ptr_ty = air.type_of(datas[@int_from_enum(inst)].atomic_load.ptr, ip);
+            return ptr_ty.child_type_ip(ip);
         },
         .atomic_rmw => {
-            const ptr_ty = air.typeOf(datas[@intFromEnum(inst)].pl_op.operand, ip);
-            return ptr_ty.childTypeIp(ip);
+            const ptr_ty = air.type_of(datas[@int_from_enum(inst)].pl_op.operand, ip);
+            return ptr_ty.child_type_ip(ip);
         },
 
         .reduce, .reduce_optimized => {
-            const operand_ty = air.typeOf(datas[@intFromEnum(inst)].reduce.operand, ip);
-            return Type.fromInterned(ip.indexToKey(operand_ty.ip_index).vector_type.child);
+            const operand_ty = air.type_of(datas[@int_from_enum(inst)].reduce.operand, ip);
+            return Type.from_interned(ip.index_to_key(operand_ty.ip_index).vector_type.child);
         },
 
-        .mul_add => return air.typeOf(datas[@intFromEnum(inst)].pl_op.operand, ip),
+        .mul_add => return air.type_of(datas[@int_from_enum(inst)].pl_op.operand, ip),
         .select => {
-            const extra = air.extraData(Air.Bin, datas[@intFromEnum(inst)].pl_op.payload).data;
-            return air.typeOf(extra.lhs, ip);
+            const extra = air.extra_data(Air.Bin, datas[@int_from_enum(inst)].pl_op.payload).data;
+            return air.type_of(extra.lhs, ip);
         },
 
         .@"try" => {
-            const err_union_ty = air.typeOf(datas[@intFromEnum(inst)].pl_op.operand, ip);
-            return Type.fromInterned(ip.indexToKey(err_union_ty.ip_index).error_union_type.payload_type);
+            const err_union_ty = air.type_of(datas[@int_from_enum(inst)].pl_op.operand, ip);
+            return Type.from_interned(ip.index_to_key(err_union_ty.ip_index).error_union_type.payload_type);
         },
 
         .work_item_id,
@@ -1532,9 +1532,9 @@ pub fn extra_data(air: Air, comptime T: type, index: usize) struct { data: T, en
         @field(result, field.name) = switch (field.type) {
             u32 => air.extra[i],
             Inst.Ref => @as(Inst.Ref, @enumFromInt(air.extra[i])),
-            i32 => @as(i32, @bitCast(air.extra[i])),
+            i32 => @as(i32, @bit_cast(air.extra[i])),
             InternPool.Index => @as(InternPool.Index, @enumFromInt(air.extra[i])),
-            else => @compileError("bad field type: " ++ @typeName(field.type)),
+            else => @compile_error("bad field type: " ++ @type_name(field.type)),
         };
         i += 1;
     }
@@ -1554,23 +1554,23 @@ pub fn interned_to_ref(ip_index: InternPool.Index) Inst.Ref {
     return switch (ip_index) {
         .none => .none,
         else => {
-            assert(@intFromEnum(ip_index) >> 31 == 0);
-            return @enumFromInt(@as(u31, @intCast(@intFromEnum(ip_index))));
+            assert(@int_from_enum(ip_index) >> 31 == 0);
+            return @enumFromInt(@as(u31, @int_cast(@int_from_enum(ip_index))));
         },
     };
 }
 
 /// Returns `null` if runtime-known.
 pub fn value(air: Air, inst: Inst.Ref, mod: *Module) !?Value {
-    if (inst.toInterned()) |ip_index| {
-        return Value.fromInterned(ip_index);
+    if (inst.to_interned()) |ip_index| {
+        return Value.from_interned(ip_index);
     }
-    const index = inst.toIndex().?;
-    return air.typeOfIndex(index, &mod.intern_pool).onePossibleValue(mod);
+    const index = inst.to_index().?;
+    return air.type_of_index(index, &mod.intern_pool).one_possible_value(mod);
 }
 
 pub fn null_terminated_string(air: Air, index: usize) [:0]const u8 {
-    const bytes = std.mem.sliceAsBytes(air.extra[index..]);
+    const bytes = std.mem.slice_as_bytes(air.extra[index..]);
     var end: usize = 0;
     while (bytes[end] != 0) {
         end += 1;
@@ -1583,8 +1583,8 @@ pub fn null_terminated_string(air: Air, index: usize) [:0]const u8 {
 /// lowered, and Liveness determines its result is unused, backends should
 /// avoid lowering it.
 pub fn must_lower(air: Air, inst: Air.Inst.Index, ip: *const InternPool) bool {
-    const data = air.instructions.items(.data)[@intFromEnum(inst)];
-    return switch (air.instructions.items(.tag)[@intFromEnum(inst)]) {
+    const data = air.instructions.items(.data)[@int_from_enum(inst)];
+    return switch (air.instructions.items(.tag)[@int_from_enum(inst)]) {
         .arg,
         .block,
         .loop,
@@ -1787,15 +1787,15 @@ pub fn must_lower(air: Air, inst: Air.Inst.Index, ip: *const InternPool) bool {
         => false,
 
         .assembly => {
-            const extra = air.extraData(Air.Asm, data.ty_pl.payload);
+            const extra = air.extra_data(Air.Asm, data.ty_pl.payload);
             const is_volatile = @as(u1, @truncate(extra.data.flags >> 31)) != 0;
             return is_volatile or if (extra.data.outputs_len == 1)
                 @as(Air.Inst.Ref, @enumFromInt(air.extra[extra.end])) != .none
             else
                 extra.data.outputs_len > 1;
         },
-        .load => air.typeOf(data.ty_op.operand, ip).isVolatilePtrIp(ip),
-        .slice_elem_val, .ptr_elem_val => air.typeOf(data.bin_op.lhs, ip).isVolatilePtrIp(ip),
-        .atomic_load => air.typeOf(data.atomic_load.ptr, ip).isVolatilePtrIp(ip),
+        .load => air.type_of(data.ty_op.operand, ip).is_volatile_ptr_ip(ip),
+        .slice_elem_val, .ptr_elem_val => air.type_of(data.bin_op.lhs, ip).is_volatile_ptr_ip(ip),
+        .atomic_load => air.type_of(data.atomic_load.ptr, ip).is_volatile_ptr_ip(ip),
     };
 }

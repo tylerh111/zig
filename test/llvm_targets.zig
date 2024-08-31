@@ -120,8 +120,8 @@ const targets = [_]std.Target.Query{
         .cpu_arch = .x86_64,
         .os_tag = .freestanding,
         .abi = .none,
-        .cpu_features_add = std.Target.x86.featureSet(&.{.soft_float}),
-        .cpu_features_sub = std.Target.x86.featureSet(&.{ .mmx, .sse, .sse2, .avx, .avx2 }),
+        .cpu_features_add = std.Target.x86.feature_set(&.{.soft_float}),
+        .cpu_features_sub = std.Target.x86.feature_set(&.{ .mmx, .sse, .sse2, .avx, .avx2 }),
     },
     .{ .cpu_arch = .x86_64, .os_tag = .ios, .abi = .simulator },
     .{ .cpu_arch = .x86_64, .os_tag = .watchos, .abi = .simulator },
@@ -150,7 +150,7 @@ pub fn add_cases(
             .xtensa => if (!build_options.llvm_has_xtensa) continue,
             else => {},
         };
-        var case = ctx.noEmitUsingLlvmBackend("llvm_targets", b.resolveTargetQuery(target_query));
-        case.addCompile("");
+        var case = ctx.no_emit_using_llvm_backend("llvm_targets", b.resolve_target_query(target_query));
+        case.add_compile("");
     }
 }

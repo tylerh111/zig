@@ -17,6 +17,6 @@ test cos {
     const a = Complex(f32).init(5, 3);
     const c = cos(a);
 
-    try testing.expect(math.approxEqAbs(f32, c.re, 2.855815, epsilon));
-    try testing.expect(math.approxEqAbs(f32, c.im, 9.606383, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.re, 2.855815, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.im, 9.606383, epsilon));
 }

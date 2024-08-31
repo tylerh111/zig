@@ -7,8 +7,8 @@ export fn entry2() void {
     @panic("");
 }
 export fn entry3() void {
-    @compileError("");
-    @compileError("");
+    @compile_error("");
+    @compile_error("");
 }
 
 // error

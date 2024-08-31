@@ -120,36 +120,36 @@ pub fn TracyAllocator(comptime name: ?[:0]const u8) type {
             return .{
                 .ptr = self,
                 .vtable = &.{
-                    .alloc = allocFn,
-                    .resize = resizeFn,
-                    .free = freeFn,
+                    .alloc = alloc_fn,
+                    .resize = resize_fn,
+                    .free = free_fn,
                 },
             };
         }
 
         fn alloc_fn(ptr: *anyopaque, len: usize, ptr_align: u8, ret_addr: usize) ?[*]u8 {
-            const self: *Self = @ptrCast(@alignCast(ptr));
-            const result = self.parent_allocator.rawAlloc(len, ptr_align, ret_addr);
+            const self: *Self = @ptr_cast(@align_cast(ptr));
+            const result = self.parent_allocator.raw_alloc(len, ptr_align, ret_addr);
             if (result) |data| {
                 if (len != 0) {
                     if (name) |n| {
-                        allocNamed(data, len, n);
+                        alloc_named(data, len, n);
                     } else {
                         alloc(data, len);
                     }
                 }
             } else {
-                messageColor("allocation failed", 0xFF0000);
+                message_color("allocation failed", 0xFF0000);
             }
             return result;
         }
 
         fn resize_fn(ptr: *anyopaque, buf: []u8, buf_align: u8, new_len: usize, ret_addr: usize) bool {
-            const self: *Self = @ptrCast(@alignCast(ptr));
-            if (self.parent_allocator.rawResize(buf, buf_align, new_len, ret_addr)) {
+            const self: *Self = @ptr_cast(@align_cast(ptr));
+            if (self.parent_allocator.raw_resize(buf, buf_align, new_len, ret_addr)) {
                 if (name) |n| {
-                    freeNamed(buf.ptr, n);
-                    allocNamed(buf.ptr, new_len, n);
+                    free_named(buf.ptr, n);
+                    alloc_named(buf.ptr, new_len, n);
                 } else {
                     free(buf.ptr);
                     alloc(buf.ptr, new_len);
@@ -164,13 +164,13 @@ pub fn TracyAllocator(comptime name: ?[:0]const u8) type {
         }
 
         fn free_fn(ptr: *anyopaque, buf: []u8, buf_align: u8, ret_addr: usize) void {
-            const self: *Self = @ptrCast(@alignCast(ptr));
-            self.parent_allocator.rawFree(buf, buf_align, ret_addr);
+            const self: *Self = @ptr_cast(@align_cast(ptr));
+            self.parent_allocator.raw_free(buf, buf_align, ret_addr);
             // this condition is to handle free being called on an empty slice that was never even allocated
             // example case: `std.process.getSelfExeSharedLibPaths` can return `&[_][:0]u8{}`
             if (buf.len != 0) {
                 if (name) |n| {
-                    freeNamed(buf.ptr, n);
+                    free_named(buf.ptr, n);
                 } else {
                     free(buf.ptr);
                 }
@@ -179,13 +179,13 @@ pub fn TracyAllocator(comptime name: ?[:0]const u8) type {
     };
 }
 
-// This function only accepts comptime-known strings, see `messageCopy` for runtime strings
+// This function only accepts comptime-known strings, see `message_copy` for runtime strings
 pub inline fn message(comptime msg: [:0]const u8) void {
     if (!enable) return;
     ___tracy_emit_messageL(msg.ptr, if (enable_callstack) callstack_depth else 0);
 }
 
-// This function only accepts comptime-known strings, see `messageColorCopy` for runtime strings
+// This function only accepts comptime-known strings, see `message_color_copy` for runtime strings
 pub inline fn message_color(comptime msg: [:0]const u8, color: u32) void {
     if (!enable) return;
     ___tracy_emit_messageLC(msg.ptr, color, if (enable_callstack) callstack_depth else 0);
@@ -212,14 +212,14 @@ pub inline fn frame_mark_named(comptime name: [:0]const u8) void {
 }
 
 pub inline fn named_frame(comptime name: [:0]const u8) Frame(name) {
-    frameMarkStart(name);
+    frame_mark_start(name);
     return .{};
 }
 
 pub fn Frame(comptime name: [:0]const u8) type {
     return struct {
         pub fn end(_: @This()) void {
-            frameMarkEnd(name);
+            frame_mark_end(name);
         }
     };
 }

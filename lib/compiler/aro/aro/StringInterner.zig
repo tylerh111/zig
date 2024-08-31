@@ -23,7 +23,7 @@ pub const TypeMapper = struct {
     pub fn lookup(self: TypeMapper, string_id: StringInterner.StringId) []const u8 {
         if (string_id == .empty) return "";
         switch (self.data) {
-            .fast => |arr| return arr[@intFromEnum(string_id)],
+            .fast => |arr| return arr[@int_from_enum(string_id)],
             .slow => |map| {
                 var it = map.iterator();
                 while (it.next()) |entry| {
@@ -45,23 +45,23 @@ pub const TypeMapper = struct {
 const StringInterner = @This();
 
 string_table: StringToIdMap = .{},
-next_id: StringId = @enumFromInt(@intFromEnum(StringId.empty) + 1),
+next_id: StringId = @enumFromInt(@int_from_enum(StringId.empty) + 1),
 
 pub fn deinit(self: *StringInterner, allocator: mem.Allocator) void {
     self.string_table.deinit(allocator);
 }
 
 pub fn intern(comp: *Compilation, str: []const u8) !StringId {
-    return comp.string_interner.internExtra(comp.gpa, str);
+    return comp.string_interner.intern_extra(comp.gpa, str);
 }
 
 pub fn intern_extra(self: *StringInterner, allocator: mem.Allocator, str: []const u8) !StringId {
     if (str.len == 0) return .empty;
 
-    const gop = try self.string_table.getOrPut(allocator, str);
+    const gop = try self.string_table.get_or_put(allocator, str);
     if (gop.found_existing) return gop.value_ptr.*;
 
-    defer self.next_id = @enumFromInt(@intFromEnum(self.next_id) + 1);
+    defer self.next_id = @enumFromInt(@int_from_enum(self.next_id) + 1);
     gop.value_ptr.* = self.next_id;
     return self.next_id;
 }
@@ -73,11 +73,11 @@ pub fn get_slow_type_mapper(self: *const StringInterner) TypeMapper {
 
 /// Caller must call `deinit` on the returned TypeMapper
 pub fn get_fast_type_mapper(self: *const StringInterner, allocator: mem.Allocator) !TypeMapper {
-    var strings = try allocator.alloc([]const u8, @intFromEnum(self.next_id));
+    var strings = try allocator.alloc([]const u8, @int_from_enum(self.next_id));
     var it = self.string_table.iterator();
     strings[0] = "";
     while (it.next()) |entry| {
-        strings[@intFromEnum(entry.value_ptr.*)] = entry.key_ptr.*;
+        strings[@int_from_enum(entry.value_ptr.*)] = entry.key_ptr.*;
     }
     return TypeMapper{ .data = .{ .fast = strings } };
 }

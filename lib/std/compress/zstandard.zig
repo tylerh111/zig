@@ -54,7 +54,7 @@ pub fn Decompressor(comptime ReaderType: type) type {
 
         pub fn init(source: ReaderType, options: DecompressorOptions) Self {
             return .{
-                .source = std.io.countingReader(source),
+                .source = std.io.counting_reader(source),
                 .state = .NewFrame,
                 .decode_state = undefined,
                 .frame_context = undefined,
@@ -72,9 +72,9 @@ pub fn Decompressor(comptime ReaderType: type) type {
 
         fn frame_init(self: *Self) !void {
             const source_reader = self.source.reader();
-            switch (try decompress.decodeFrameHeader(source_reader)) {
+            switch (try decompress.decode_frame_header(source_reader)) {
                 .skippable => |header| {
-                    try source_reader.skipBytes(header.frame_size, .{});
+                    try source_reader.skip_bytes(header.frame_size, .{});
                     self.state = .NewFrame;
                 },
                 .zstandard => |header| {
@@ -112,7 +112,7 @@ pub fn Decompressor(comptime ReaderType: type) type {
             while (size == 0) {
                 while (self.state == .NewFrame) {
                     const initial_count = self.source.bytes_read;
-                    self.frameInit() catch |err| switch (err) {
+                    self.frame_init() catch |err| switch (err) {
                         error.DictionaryIdFlagUnsupported => return error.DictionaryIdFlagUnsupported,
                         error.EndOfStream => return if (self.source.bytes_read == initial_count)
                             0
@@ -121,7 +121,7 @@ pub fn Decompressor(comptime ReaderType: type) type {
                         else => return error.MalformedFrame,
                     };
                 }
-                size = try self.readInner(buffer);
+                size = try self.read_inner(buffer);
             }
             return size;
         }
@@ -140,12 +140,12 @@ pub fn Decompressor(comptime ReaderType: type) type {
             }
 
             const source_reader = self.source.reader();
-            while (ring_buffer.isEmpty() and self.state != .LastBlock) {
-                const header_bytes = source_reader.readBytesNoEof(3) catch
+            while (ring_buffer.is_empty() and self.state != .LastBlock) {
+                const header_bytes = source_reader.read_bytes_no_eof(3) catch
                     return error.MalformedFrame;
-                const block_header = decompress.block.decodeBlockHeader(&header_bytes);
+                const block_header = decompress.block.decode_block_header(&header_bytes);
 
-                decompress.block.decodeBlockReader(
+                decompress.block.decode_block_reader(
                     &ring_buffer,
                     source_reader,
                     block_header,
@@ -165,7 +165,7 @@ pub fn Decompressor(comptime ReaderType: type) type {
 
                 if (self.frame_context.hasher_opt) |*hasher| {
                     if (size > 0) {
-                        const written_slice = ring_buffer.sliceLast(size);
+                        const written_slice = ring_buffer.slice_last(size);
                         hasher.update(written_slice.first);
                         hasher.update(written_slice.second);
                     }
@@ -173,11 +173,11 @@ pub fn Decompressor(comptime ReaderType: type) type {
                 if (block_header.last_block) {
                     self.state = .LastBlock;
                     if (self.frame_context.has_checksum) {
-                        const checksum = source_reader.readInt(u32, .little) catch
+                        const checksum = source_reader.read_int(u32, .little) catch
                             return error.MalformedFrame;
                         if (self.verify_checksum) {
                             if (self.frame_context.hasher_opt) |*hasher| {
-                                if (checksum != decompress.computeChecksum(hasher))
+                                if (checksum != decompress.compute_checksum(hasher))
                                     return error.ChecksumFailure;
                             }
                         }
@@ -192,7 +192,7 @@ pub fn Decompressor(comptime ReaderType: type) type {
 
             const size = @min(ring_buffer.len(), buffer.len);
             if (size > 0) {
-                ring_buffer.readFirstAssumeLength(buffer, size);
+                ring_buffer.read_first_assume_length(buffer, size);
             }
             if (self.state == .LastBlock and ring_buffer.len() == 0) {
                 self.state = .NewFrame;
@@ -210,44 +210,44 @@ fn test_decompress(data: []const u8) ![]u8 {
     const window_buffer = try std.testing.allocator.alloc(u8, 1 << 23);
     defer std.testing.allocator.free(window_buffer);
 
-    var in_stream = std.io.fixedBufferStream(data);
+    var in_stream = std.io.fixed_buffer_stream(data);
     var zstd_stream = decompressor(in_stream.reader(), .{ .window_buffer = window_buffer });
-    const result = zstd_stream.reader().readAllAlloc(std.testing.allocator, std.math.maxInt(usize));
+    const result = zstd_stream.reader().read_all_alloc(std.testing.allocator, std.math.max_int(usize));
     return result;
 }
 
 fn test_reader(data: []const u8, comptime expected: []const u8) !void {
-    const buf = try testDecompress(data);
+    const buf = try test_decompress(data);
     defer std.testing.allocator.free(buf);
-    try std.testing.expectEqualSlices(u8, expected, buf);
+    try std.testing.expect_equal_slices(u8, expected, buf);
 }
 
 test "decompression" {
-    const uncompressed = @embedFile("testdata/rfc8478.txt");
-    const compressed3 = @embedFile("testdata/rfc8478.txt.zst.3");
-    const compressed19 = @embedFile("testdata/rfc8478.txt.zst.19");
+    const uncompressed = @embed_file("testdata/rfc8478.txt");
+    const compressed3 = @embed_file("testdata/rfc8478.txt.zst.3");
+    const compressed19 = @embed_file("testdata/rfc8478.txt.zst.19");
 
     const buffer = try std.testing.allocator.alloc(u8, uncompressed.len);
     defer std.testing.allocator.free(buffer);
 
     const res3 = try decompress.decode(buffer, compressed3, true);
-    try std.testing.expectEqual(uncompressed.len, res3);
-    try std.testing.expectEqualSlices(u8, uncompressed, buffer);
+    try std.testing.expect_equal(uncompressed.len, res3);
+    try std.testing.expect_equal_slices(u8, uncompressed, buffer);
 
     @memset(buffer, undefined);
     const res19 = try decompress.decode(buffer, compressed19, true);
-    try std.testing.expectEqual(uncompressed.len, res19);
-    try std.testing.expectEqualSlices(u8, uncompressed, buffer);
+    try std.testing.expect_equal(uncompressed.len, res19);
+    try std.testing.expect_equal_slices(u8, uncompressed, buffer);
 
-    try testReader(compressed3, uncompressed);
-    try testReader(compressed19, uncompressed);
+    try test_reader(compressed3, uncompressed);
+    try test_reader(compressed19, uncompressed);
 }
 
 fn expect_equal_decoded(expected: []const u8, input: []const u8) !void {
     {
-        const result = try decompress.decodeAlloc(std.testing.allocator, input, false, 1 << 23);
+        const result = try decompress.decode_alloc(std.testing.allocator, input, false, 1 << 23);
         defer std.testing.allocator.free(result);
-        try std.testing.expectEqualStrings(expected, result);
+        try std.testing.expect_equal_strings(expected, result);
     }
 
     {
@@ -255,7 +255,7 @@ fn expect_equal_decoded(expected: []const u8, input: []const u8) !void {
         defer std.testing.allocator.free(buffer);
 
         const size = try decompress.decode(buffer, input, false);
-        try std.testing.expectEqualStrings(expected, buffer[0..size]);
+        try std.testing.expect_equal_strings(expected, buffer[0..size]);
     }
 }
 
@@ -263,13 +263,13 @@ fn expect_equal_decoded_streaming(expected: []const u8, input: []const u8) !void
     const window_buffer = try std.testing.allocator.alloc(u8, 1 << 23);
     defer std.testing.allocator.free(window_buffer);
 
-    var in_stream = std.io.fixedBufferStream(input);
+    var in_stream = std.io.fixed_buffer_stream(input);
     var stream = decompressor(in_stream.reader(), .{ .window_buffer = window_buffer });
 
-    const result = try stream.reader().readAllAlloc(std.testing.allocator, std.math.maxInt(usize));
+    const result = try stream.reader().read_all_alloc(std.testing.allocator, std.math.max_int(usize));
     defer std.testing.allocator.free(result);
 
-    try std.testing.expectEqualStrings(expected, result);
+    try std.testing.expect_equal_strings(expected, result);
 }
 
 test "zero sized block" {
@@ -284,8 +284,8 @@ test "zero sized block" {
         "\x03\x00\x00" ++ // block header with: last_block set, block_type rle, block_size zero
         "\xaa"; // block_content
 
-    try expectEqualDecoded("", input_raw);
-    try expectEqualDecoded("", input_rle);
-    try expectEqualDecodedStreaming("", input_raw);
-    try expectEqualDecodedStreaming("", input_rle);
+    try expect_equal_decoded("", input_raw);
+    try expect_equal_decoded("", input_rle);
+    try expect_equal_decoded_streaming("", input_raw);
+    try expect_equal_decoded_streaming("", input_rle);
 }

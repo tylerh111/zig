@@ -32,7 +32,7 @@ pub const Section = union(enum) {
 
 pub fn get_section(obj: *Object, section: Section) !*std.ArrayList(u8) {
     switch (obj.format) {
-        .elf => return @as(*Elf, @fieldParentPtr("obj", obj)).getSection(section),
+        .elf => return @as(*Elf, @fieldParentPtr("obj", obj)).get_section(section),
         else => unreachable,
     }
 }
@@ -53,14 +53,14 @@ pub fn declare_symbol(
     size: u64,
 ) ![]const u8 {
     switch (obj.format) {
-        .elf => return @as(*Elf, @fieldParentPtr("obj", obj)).declareSymbol(section, name, linkage, @"type", offset, size),
+        .elf => return @as(*Elf, @fieldParentPtr("obj", obj)).declare_symbol(section, name, linkage, @"type", offset, size),
         else => unreachable,
     }
 }
 
 pub fn add_relocation(obj: *Object, name: []const u8, section: Section, address: u64, addend: i64) !void {
     switch (obj.format) {
-        .elf => return @as(*Elf, @fieldParentPtr("obj", obj)).addRelocation(name, section, address, addend),
+        .elf => return @as(*Elf, @fieldParentPtr("obj", obj)).add_relocation(name, section, address, addend),
         else => unreachable,
     }
 }

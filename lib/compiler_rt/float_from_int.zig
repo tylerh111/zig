@@ -11,9 +11,9 @@ pub fn float_from_int(comptime T: type, x: anytype) T {
     const inf = math.inf(T);
     const float_bits = @bitSizeOf(T);
     const int_bits = @bitSizeOf(@TypeOf(x));
-    const exp_bits = math.floatExponentBits(T);
-    const fractional_bits = math.floatFractionalBits(T);
-    const exp_bias = math.maxInt(Int(.unsigned, exp_bits - 1));
+    const exp_bits = math.float_exponent_bits(T);
+    const fractional_bits = math.float_fractional_bits(T);
+    const exp_bias = math.max_int(Int(.unsigned, exp_bits - 1));
     const implicit_bit = if (T != f80) @as(uT, 1) << fractional_bits else 0;
     const max_exp = exp_bias;
 
@@ -25,32 +25,32 @@ pub fn float_from_int(comptime T: type, x: anytype) T {
     // Compute significand
     const exp = int_bits - @clz(abs_val) - 1;
     if (int_bits <= fractional_bits or exp <= fractional_bits) {
-        const shift_amt = fractional_bits - @as(math.Log2Int(uT), @intCast(exp));
+        const shift_amt = fractional_bits - @as(math.Log2Int(uT), @int_cast(exp));
 
         // Shift up result to line up with the significand - no rounding required
-        result = @as(uT, @intCast(abs_val)) << shift_amt;
+        result = @as(uT, @int_cast(abs_val)) << shift_amt;
         result ^= implicit_bit; // Remove implicit integer bit
     } else {
-        const shift_amt: math.Log2Int(Z) = @intCast(exp - fractional_bits);
+        const shift_amt: math.Log2Int(Z) = @int_cast(exp - fractional_bits);
         const exact_tie: bool = @ctz(abs_val) == shift_amt - 1;
 
         // Shift down result and remove implicit integer bit
-        result = @as(uT, @intCast((abs_val >> (shift_amt - 1)))) ^ (implicit_bit << 1);
+        result = @as(uT, @int_cast((abs_val >> (shift_amt - 1)))) ^ (implicit_bit << 1);
 
         // Round result, including round-to-even for exact ties
-        result = ((result + 1) >> 1) & ~@as(uT, @intFromBool(exact_tie));
+        result = ((result + 1) >> 1) & ~@as(uT, @int_from_bool(exact_tie));
     }
 
     // Compute exponent
     if ((int_bits > max_exp) and (exp > max_exp)) // If exponent too large, overflow to infinity
-        return @bitCast(sign_bit | @as(uT, @bitCast(inf)));
+        return @bit_cast(sign_bit | @as(uT, @bit_cast(inf)));
 
-    result += (@as(uT, exp) + exp_bias) << math.floatMantissaBits(T);
+    result += (@as(uT, exp) + exp_bias) << math.float_mantissa_bits(T);
 
     // If the result included a carry, we need to restore the explicit integer bit
     if (T == f80) result |= 1 << fractional_bits;
 
-    return @bitCast(sign_bit | result);
+    return @bit_cast(sign_bit | result);
 }
 
 test {

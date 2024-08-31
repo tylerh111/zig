@@ -1,4 +1,4 @@
-const c = @cImport({
+const c = @c_import({
     @cDefine("_NO_CRT_STDIO_INLINE", "1");
     @cInclude("stdio.h");
 });

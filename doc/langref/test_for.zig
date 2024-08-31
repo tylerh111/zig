@@ -25,7 +25,7 @@ test "for basics" {
     var sum2: i32 = 0;
     for (items, 0..) |_, i| {
         try expect(@TypeOf(i) == usize);
-        sum2 += @as(i32, @intCast(i));
+        sum2 += @as(i32, @int_cast(i));
     }
     try expect(sum2 == 10);
 

@@ -8,7 +8,7 @@ fn some_function() !anyerror {
     return error.C;
 }
 comptime {
-    _ = someFunction;
+    _ = some_function;
 }
 
 // error

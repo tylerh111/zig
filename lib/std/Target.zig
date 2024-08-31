@@ -73,7 +73,7 @@ pub const Os = struct {
         }
 
         pub inline fn is_bsd(tag: Tag) bool {
-            return tag.isDarwin() or switch (tag) {
+            return tag.is_darwin() or switch (tag) {
                 .kfreebsd, .freebsd, .openbsd, .netbsd, .dragonfly => true,
                 else => false,
             };
@@ -87,7 +87,7 @@ pub const Os = struct {
             return switch (tag) {
                 .windows => ".exe",
                 .uefi => ".efi",
-                .plan9 => arch.plan9Ext(),
+                .plan9 => arch.plan9_ext(),
                 else => switch (arch) {
                     .wasm32, .wasm64 => ".wasm",
                     else => "",
@@ -124,7 +124,7 @@ pub const Os = struct {
         }
 
         pub inline fn is_gnu_lib_c(tag: Os.Tag, abi: Abi) bool {
-            return tag == .linux and abi.isGnu();
+            return tag == .linux and abi.is_gnu();
         }
 
         pub fn default_version_range(tag: Tag, arch: Cpu.Arch) Os {
@@ -202,9 +202,9 @@ pub const Os = struct {
                     .riscv32, .riscv64 => "riscv",
                     .sparc, .sparcel, .sparc64 => "sparc",
                     .x86, .x86_64 => "x86",
-                    else => @tagName(arch),
+                    else => @tag_name(arch),
                 },
-                else => @tagName(arch),
+                else => @tag_name(arch),
             };
         }
     };
@@ -254,7 +254,7 @@ pub const Os = struct {
 
         /// Returns whether the first version `ver` is newer (greater) than or equal to the second version `ver`.
         pub inline fn is_at_least(ver: WindowsVersion, min_ver: WindowsVersion) bool {
-            return @intFromEnum(ver) >= @intFromEnum(min_ver);
+            return @int_from_enum(ver) >= @int_from_enum(min_ver);
         }
 
         pub const Range = struct {
@@ -262,22 +262,22 @@ pub const Os = struct {
             max: WindowsVersion,
 
             pub inline fn includes_version(range: Range, ver: WindowsVersion) bool {
-                return @intFromEnum(ver) >= @intFromEnum(range.min) and
-                    @intFromEnum(ver) <= @intFromEnum(range.max);
+                return @int_from_enum(ver) >= @int_from_enum(range.min) and
+                    @int_from_enum(ver) <= @int_from_enum(range.max);
             }
 
             /// Checks if system is guaranteed to be at least `version` or older than `version`.
             /// Returns `null` if a runtime check is required.
             pub inline fn is_at_least(range: Range, min_ver: WindowsVersion) ?bool {
-                if (@intFromEnum(range.min) >= @intFromEnum(min_ver)) return true;
-                if (@intFromEnum(range.max) < @intFromEnum(min_ver)) return false;
+                if (@int_from_enum(range.min) >= @int_from_enum(min_ver)) return true;
+                if (@int_from_enum(range.max) < @int_from_enum(min_ver)) return false;
                 return null;
             }
         };
 
         pub fn parse(str: []const u8) !WindowsVersion {
-            return std.meta.stringToEnum(WindowsVersion, str) orelse
-                @enumFromInt(std.fmt.parseInt(u32, str, 0) catch
+            return std.meta.string_to_enum(WindowsVersion, str) orelse
+                @enumFromInt(std.fmt.parse_int(u32, str, 0) catch
                 return error.InvalidOperatingSystemVersion);
         }
 
@@ -289,23 +289,23 @@ pub const Os = struct {
             _: std.fmt.FormatOptions,
             writer: anytype,
         ) @TypeOf(writer).Error!void {
-            const maybe_name = std.enums.tagName(WindowsVersion, ver);
+            const maybe_name = std.enums.tag_name(WindowsVersion, ver);
             if (comptime std.mem.eql(u8, fmt_str, "s")) {
                 if (maybe_name) |name|
                     try writer.print(".{s}", .{name})
                 else
-                    try writer.print(".{d}", .{@intFromEnum(ver)});
+                    try writer.print(".{d}", .{@int_from_enum(ver)});
             } else if (comptime std.mem.eql(u8, fmt_str, "c")) {
                 if (maybe_name) |name|
                     try writer.print(".{s}", .{name})
                 else
-                    try writer.print("@enumFromInt(0x{X:0>8})", .{@intFromEnum(ver)});
+                    try writer.print("@enumFromInt(0x{X:0>8})", .{@int_from_enum(ver)});
             } else if (fmt_str.len == 0) {
                 if (maybe_name) |name|
                     try writer.print("WindowsVersion.{s}", .{name})
                 else
-                    try writer.print("WindowsVersion(0x{X:0>8})", .{@intFromEnum(ver)});
-            } else std.fmt.invalidFmtError(fmt_str, ver);
+                    try writer.print("WindowsVersion(0x{X:0>8})", .{@int_from_enum(ver)});
+            } else std.fmt.invalid_fmt_error(fmt_str, ver);
         }
     };
 
@@ -314,13 +314,13 @@ pub const Os = struct {
         glibc: std.SemanticVersion,
 
         pub inline fn includes_version(range: LinuxVersionRange, ver: std.SemanticVersion) bool {
-            return range.range.includesVersion(ver);
+            return range.range.includes_version(ver);
         }
 
         /// Checks if system is guaranteed to be at least `version` or older than `version`.
         /// Returns `null` if a runtime check is required.
         pub inline fn is_at_least(range: LinuxVersionRange, ver: std.SemanticVersion) ?bool {
-            return range.range.isAtLeast(ver);
+            return range.range.is_at_least(ver);
         }
     };
 
@@ -347,7 +347,7 @@ pub const Os = struct {
     /// operating system versions. However, such a binary may not take full advantage of the
     /// newer operating system APIs.
     ///
-    /// See `Os.isAtLeast`.
+    /// See `Os.is_at_least`.
     pub const VersionRange = union {
         none: void,
         semver: std.SemanticVersion.Range,
@@ -501,7 +501,7 @@ pub const Os = struct {
     /// Provides a tagged union. `Target` does not store the tag because it is
     /// redundant with the OS tag; this function abstracts that part away.
     pub inline fn get_version_range(os: Os) TaggedVersionRange {
-        return switch (os.tag.getVersionRangeTag()) {
+        return switch (os.tag.get_version_range_tag()) {
             .none => .{ .none = {} },
             .semver => .{ .semver = os.version_range.semver },
             .linux => .{ .linux = os.version_range.linux },
@@ -511,17 +511,17 @@ pub const Os = struct {
 
     /// Checks if system is guaranteed to be at least `version` or older than `version`.
     /// Returns `null` if a runtime check is required.
-    pub inline fn is_at_least(os: Os, comptime tag: Tag, ver: switch (tag.getVersionRangeTag()) {
+    pub inline fn is_at_least(os: Os, comptime tag: Tag, ver: switch (tag.get_version_range_tag()) {
         .none => void,
         .semver, .linux => std.SemanticVersion,
         .windows => WindowsVersion,
     }) ?bool {
-        return if (os.tag != tag) false else switch (tag.getVersionRangeTag()) {
+        return if (os.tag != tag) false else switch (tag.get_version_range_tag()) {
             .none => true,
             inline .semver,
             .linux,
             .windows,
-            => |field| @field(os.version_range, @tagName(field)).isAtLeast(ver),
+            => |field| @field(os.version_range, @tag_name(field)).is_at_least(ver),
         };
     }
 
@@ -652,7 +652,7 @@ pub const Abi = enum {
     ohos,
 
     pub fn default(arch: Cpu.Arch, os: Os) Abi {
-        return if (arch.isWasm()) .musl else switch (os.tag) {
+        return if (arch.is_wasm()) .musl else switch (os.tag) {
             .freestanding,
             .ananas,
             .cloudabi,
@@ -767,7 +767,7 @@ pub const ObjectFormat = enum {
             .spirv => ".spv",
             .hex => ".ihex",
             .raw => ".bin",
-            .plan9 => arch.plan9Ext(),
+            .plan9 => arch.plan9_ext(),
             .nvptx => ".ptx",
             .dxcontainer => ".dxil",
         };
@@ -835,7 +835,7 @@ pub const Cpu = struct {
 
             pub const needed_bit_count = 288;
             pub const byte_count = (needed_bit_count + 7) / 8;
-            pub const usize_count = (byte_count + (@sizeOf(usize) - 1)) / @sizeOf(usize);
+            pub const usize_count = (byte_count + (@size_of(usize) - 1)) / @size_of(usize);
             pub const Index = std.math.Log2Int(std.meta.Int(.unsigned, usize_count * @bitSizeOf(usize)));
             pub const ShiftInt = std.math.Log2Int(usize);
 
@@ -849,14 +849,14 @@ pub const Cpu = struct {
 
             pub fn is_enabled(set: Set, arch_feature_index: Index) bool {
                 const usize_index = arch_feature_index / @bitSizeOf(usize);
-                const bit_index: ShiftInt = @intCast(arch_feature_index % @bitSizeOf(usize));
+                const bit_index: ShiftInt = @int_cast(arch_feature_index % @bitSizeOf(usize));
                 return (set.ints[usize_index] & (@as(usize, 1) << bit_index)) != 0;
             }
 
             /// Adds the specified feature but not its dependencies.
             pub fn add_feature(set: *Set, arch_feature_index: Index) void {
                 const usize_index = arch_feature_index / @bitSizeOf(usize);
-                const bit_index: ShiftInt = @intCast(arch_feature_index % @bitSizeOf(usize));
+                const bit_index: ShiftInt = @int_cast(arch_feature_index % @bitSizeOf(usize));
                 set.ints[usize_index] |= @as(usize, 1) << bit_index;
             }
 
@@ -875,7 +875,7 @@ pub const Cpu = struct {
             /// Removes the specified feature but not its dependents.
             pub fn remove_feature(set: *Set, arch_feature_index: Index) void {
                 const usize_index = arch_feature_index / @bitSizeOf(usize);
-                const bit_index: ShiftInt = @intCast(arch_feature_index % @bitSizeOf(usize));
+                const bit_index: ShiftInt = @int_cast(arch_feature_index % @bitSizeOf(usize));
                 set.ints[usize_index] &= ~(@as(usize, 1) << bit_index);
             }
 
@@ -897,9 +897,9 @@ pub const Cpu = struct {
                 var old = set.ints;
                 while (true) {
                     for (all_features_list, 0..) |feature, index_usize| {
-                        const index: Index = @intCast(index_usize);
-                        if (set.isEnabled(index)) {
-                            set.addFeatureSet(feature.dependencies);
+                        const index: Index = @int_cast(index_usize);
+                        if (set.is_enabled(index)) {
+                            set.add_feature_set(feature.dependencies);
                         }
                     }
                     const nothing_changed = std.mem.eql(usize, &old, &set.ints);
@@ -909,7 +909,7 @@ pub const Cpu = struct {
             }
 
             pub fn as_bytes(set: *const Set) *const [byte_count]u8 {
-                return std.mem.sliceAsBytes(&set.ints)[0..byte_count];
+                return std.mem.slice_as_bytes(&set.ints)[0..byte_count];
             }
 
             pub fn eql(set: Set, other_set: Set) bool {
@@ -940,20 +940,20 @@ pub const Cpu = struct {
                 pub fn feature_set(features: []const F) Set {
                     var x = Set.empty;
                     for (features) |feature| {
-                        x.addFeature(@intFromEnum(feature));
+                        x.add_feature(@int_from_enum(feature));
                     }
                     return x;
                 }
 
                 /// Returns true if the specified feature is enabled.
                 pub fn feature_set_has(set: Set, feature: F) bool {
-                    return set.isEnabled(@intFromEnum(feature));
+                    return set.is_enabled(@int_from_enum(feature));
                 }
 
                 /// Returns true if any specified feature is enabled.
                 pub fn feature_set_has_any(set: Set, features: anytype) bool {
                     inline for (features) |feature| {
-                        if (set.isEnabled(@intFromEnum(@as(F, feature)))) return true;
+                        if (set.is_enabled(@int_from_enum(@as(F, feature)))) return true;
                     }
                     return false;
                 }
@@ -961,7 +961,7 @@ pub const Cpu = struct {
                 /// Returns true if every specified feature is enabled.
                 pub fn feature_set_has_all(set: Set, features: anytype) bool {
                     inline for (features) |feature| {
-                        if (!set.isEnabled(@intFromEnum(@as(F, feature)))) return false;
+                        if (!set.is_enabled(@int_from_enum(@as(F, feature)))) return false;
                     }
                     return true;
                 }
@@ -1062,7 +1062,7 @@ pub const Cpu = struct {
         }
 
         pub inline fn is_arm_or_thumb(arch: Arch) bool {
-            return arch.isARM() or arch.isThumb();
+            return arch.is_arm() or arch.is_thumb();
         }
 
         pub inline fn is_wasm(arch: Arch) bool {
@@ -1129,7 +1129,7 @@ pub const Cpu = struct {
         }
 
         pub fn parse_cpu_model(arch: Arch, cpu_name: []const u8) !*const Cpu.Model {
-            for (arch.allCpuModels()) |cpu| {
+            for (arch.all_cpu_models()) |cpu| {
                 if (std.mem.eql(u8, cpu_name, cpu.name)) {
                     return cpu;
                 }
@@ -1373,7 +1373,7 @@ pub const Cpu = struct {
                 .nvptx, .nvptx64 => "nvptx",
                 .wasm32, .wasm64 => "wasm",
                 .spirv32, .spirv64 => "spirv",
-                else => @tagName(arch),
+                else => @tag_name(arch),
             };
         }
 
@@ -1410,28 +1410,28 @@ pub const Cpu = struct {
         /// All processors Zig is aware of, sorted lexicographically by name.
         pub fn all_cpu_models(arch: Arch) []const *const Cpu.Model {
             return switch (arch) {
-                .arc => comptime allCpusFromDecls(arc.cpu),
-                .arm, .armeb, .thumb, .thumbeb => comptime allCpusFromDecls(arm.cpu),
-                .aarch64, .aarch64_be, .aarch64_32 => comptime allCpusFromDecls(aarch64.cpu),
-                .avr => comptime allCpusFromDecls(avr.cpu),
-                .bpfel, .bpfeb => comptime allCpusFromDecls(bpf.cpu),
-                .csky => comptime allCpusFromDecls(csky.cpu),
-                .hexagon => comptime allCpusFromDecls(hexagon.cpu),
-                .loongarch32, .loongarch64 => comptime allCpusFromDecls(loongarch.cpu),
-                .m68k => comptime allCpusFromDecls(m68k.cpu),
-                .mips, .mipsel, .mips64, .mips64el => comptime allCpusFromDecls(mips.cpu),
-                .msp430 => comptime allCpusFromDecls(msp430.cpu),
-                .powerpc, .powerpcle, .powerpc64, .powerpc64le => comptime allCpusFromDecls(powerpc.cpu),
-                .amdgcn => comptime allCpusFromDecls(amdgpu.cpu),
-                .riscv32, .riscv64 => comptime allCpusFromDecls(riscv.cpu),
-                .sparc, .sparc64, .sparcel => comptime allCpusFromDecls(sparc.cpu),
-                .spirv32, .spirv64 => comptime allCpusFromDecls(spirv.cpu),
-                .s390x => comptime allCpusFromDecls(s390x.cpu),
-                .x86, .x86_64 => comptime allCpusFromDecls(x86.cpu),
-                .xtensa => comptime allCpusFromDecls(xtensa.cpu),
-                .nvptx, .nvptx64 => comptime allCpusFromDecls(nvptx.cpu),
-                .ve => comptime allCpusFromDecls(ve.cpu),
-                .wasm32, .wasm64 => comptime allCpusFromDecls(wasm.cpu),
+                .arc => comptime all_cpus_from_decls(arc.cpu),
+                .arm, .armeb, .thumb, .thumbeb => comptime all_cpus_from_decls(arm.cpu),
+                .aarch64, .aarch64_be, .aarch64_32 => comptime all_cpus_from_decls(aarch64.cpu),
+                .avr => comptime all_cpus_from_decls(avr.cpu),
+                .bpfel, .bpfeb => comptime all_cpus_from_decls(bpf.cpu),
+                .csky => comptime all_cpus_from_decls(csky.cpu),
+                .hexagon => comptime all_cpus_from_decls(hexagon.cpu),
+                .loongarch32, .loongarch64 => comptime all_cpus_from_decls(loongarch.cpu),
+                .m68k => comptime all_cpus_from_decls(m68k.cpu),
+                .mips, .mipsel, .mips64, .mips64el => comptime all_cpus_from_decls(mips.cpu),
+                .msp430 => comptime all_cpus_from_decls(msp430.cpu),
+                .powerpc, .powerpcle, .powerpc64, .powerpc64le => comptime all_cpus_from_decls(powerpc.cpu),
+                .amdgcn => comptime all_cpus_from_decls(amdgpu.cpu),
+                .riscv32, .riscv64 => comptime all_cpus_from_decls(riscv.cpu),
+                .sparc, .sparc64, .sparcel => comptime all_cpus_from_decls(sparc.cpu),
+                .spirv32, .spirv64 => comptime all_cpus_from_decls(spirv.cpu),
+                .s390x => comptime all_cpus_from_decls(s390x.cpu),
+                .x86, .x86_64 => comptime all_cpus_from_decls(x86.cpu),
+                .xtensa => comptime all_cpus_from_decls(xtensa.cpu),
+                .nvptx, .nvptx64 => comptime all_cpus_from_decls(nvptx.cpu),
+                .ve => comptime all_cpus_from_decls(ve.cpu),
+                .wasm32, .wasm64 => comptime all_cpus_from_decls(wasm.cpu),
 
                 else => &[0]*const Model{},
             };
@@ -1480,7 +1480,7 @@ pub const Cpu = struct {
 
         pub fn to_cpu(model: *const Model, arch: Arch) Cpu {
             var features = model.features;
-            features.populateDependencies(arch.allFeaturesList());
+            features.populate_dependencies(arch.all_features_list());
             return .{
                 .arch = arch,
                 .model = model,
@@ -1547,48 +1547,48 @@ pub const Cpu = struct {
     /// The "default" set of CPU features for cross-compiling. A conservative set
     /// of features that is expected to be supported on most available hardware.
     pub fn baseline(arch: Arch) Cpu {
-        return Model.baseline(arch).toCpu(arch);
+        return Model.baseline(arch).to_cpu(arch);
     }
 };
 
 pub fn zig_triple(target: Target, allocator: Allocator) Allocator.Error![]u8 {
-    return Query.fromTarget(target).zigTriple(allocator);
+    return Query.from_target(target).zig_triple(allocator);
 }
 
 pub fn linux_triple_simple(allocator: Allocator, arch: Cpu.Arch, os_tag: Os.Tag, abi: Abi) ![]u8 {
-    return std.fmt.allocPrint(allocator, "{s}-{s}-{s}", .{ @tagName(arch), @tagName(os_tag), @tagName(abi) });
+    return std.fmt.alloc_print(allocator, "{s}-{s}-{s}", .{ @tag_name(arch), @tag_name(os_tag), @tag_name(abi) });
 }
 
 pub fn linux_triple(target: Target, allocator: Allocator) ![]u8 {
-    return linuxTripleSimple(allocator, target.cpu.arch, target.os.tag, target.abi);
+    return linux_triple_simple(allocator, target.cpu.arch, target.os.tag, target.abi);
 }
 
 pub fn exe_file_ext(target: Target) [:0]const u8 {
-    return target.os.tag.exeFileExt(target.cpu.arch);
+    return target.os.tag.exe_file_ext(target.cpu.arch);
 }
 
 pub fn static_lib_suffix(target: Target) [:0]const u8 {
-    return target.os.tag.staticLibSuffix(target.abi);
+    return target.os.tag.static_lib_suffix(target.abi);
 }
 
 pub fn dynamic_lib_suffix(target: Target) [:0]const u8 {
-    return target.os.tag.dynamicLibSuffix();
+    return target.os.tag.dynamic_lib_suffix();
 }
 
 pub fn lib_prefix(target: Target) [:0]const u8 {
-    return target.os.tag.libPrefix(target.abi);
+    return target.os.tag.lib_prefix(target.abi);
 }
 
 pub inline fn is_min_gw(target: Target) bool {
-    return target.os.tag == .windows and target.isGnu();
+    return target.os.tag == .windows and target.is_gnu();
 }
 
 pub inline fn is_gnu(target: Target) bool {
-    return target.abi.isGnu();
+    return target.abi.is_gnu();
 }
 
 pub inline fn is_musl(target: Target) bool {
-    return target.abi.isMusl();
+    return target.abi.is_musl();
 }
 
 pub inline fn is_android(target: Target) bool {
@@ -1596,31 +1596,31 @@ pub inline fn is_android(target: Target) bool {
 }
 
 pub inline fn is_wasm(target: Target) bool {
-    return target.cpu.arch.isWasm();
+    return target.cpu.arch.is_wasm();
 }
 
 pub inline fn is_darwin(target: Target) bool {
-    return target.os.tag.isDarwin();
+    return target.os.tag.is_darwin();
 }
 
 pub inline fn is_bsd(target: Target) bool {
-    return target.os.tag.isBSD();
+    return target.os.tag.is_bsd();
 }
 
 pub inline fn is_bpf_freestanding(target: Target) bool {
-    return target.cpu.arch.isBpf() and target.os.tag == .freestanding;
+    return target.cpu.arch.is_bpf() and target.os.tag == .freestanding;
 }
 
 pub inline fn is_gnu_lib_c(target: Target) bool {
-    return target.os.tag.isGnuLibC(target.abi);
+    return target.os.tag.is_gnu_lib_c(target.abi);
 }
 
 pub inline fn supports_new_stack_call(target: Target) bool {
-    return !target.cpu.arch.isWasm();
+    return !target.cpu.arch.is_wasm();
 }
 
 pub inline fn is_spir_v(target: Target) bool {
-    return target.cpu.arch.isSpirV();
+    return target.cpu.arch.is_spir_v();
 }
 
 pub const FloatAbi = enum {
@@ -1629,11 +1629,11 @@ pub const FloatAbi = enum {
 };
 
 pub inline fn get_float_abi(target: Target) FloatAbi {
-    return target.abi.floatAbi();
+    return target.abi.float_abi();
 }
 
 pub inline fn has_dynamic_linker(target: Target) bool {
-    if (target.cpu.arch.isWasm()) {
+    if (target.cpu.arch.is_wasm()) {
         return false;
     }
     switch (target.os.tag) {
@@ -1677,7 +1677,7 @@ pub const DynamicLinker = struct {
 
     pub fn init_fmt(comptime fmt_str: []const u8, args: anytype) !DynamicLinker {
         var dl: DynamicLinker = undefined;
-        try dl.setFmt(fmt_str, args);
+        try dl.set_fmt(fmt_str, args);
         return dl;
     }
 
@@ -1690,12 +1690,12 @@ pub const DynamicLinker = struct {
     pub fn set(dl: *DynamicLinker, maybe_path: ?[]const u8) void {
         const path = maybe_path orelse "";
         @memcpy(dl.buffer[0..path.len], path);
-        dl.len = @intCast(path.len);
+        dl.len = @int_cast(path.len);
     }
 
     /// Asserts that the length is less than or equal to 255 bytes.
     pub fn set_fmt(dl: *DynamicLinker, comptime fmt_str: []const u8, args: anytype) !void {
-        dl.len = @intCast((try std.fmt.bufPrint(&dl.buffer, fmt_str, args)).len);
+        dl.len = @int_cast((try std.fmt.buf_print(&dl.buffer, fmt_str, args)).len);
     }
 
     pub fn eql(lhs: DynamicLinker, rhs: DynamicLinker) bool {
@@ -1703,15 +1703,15 @@ pub const DynamicLinker = struct {
     }
 
     pub fn standard(cpu: Cpu, os_tag: Os.Tag, abi: Abi) DynamicLinker {
-        return if (abi == .android) initFmt("/system/bin/linker{s}", .{
-            if (ptrBitWidth_cpu_abi(cpu, abi) == 64) "64" else "",
-        }) catch unreachable else if (abi.isMusl()) return initFmt("/lib/ld-musl-{s}{s}.so.1", .{
-            @tagName(switch (cpu.arch) {
+        return if (abi == .android) init_fmt("/system/bin/linker{s}", .{
+            if (ptr_bit_width_cpu_abi(cpu, abi) == 64) "64" else "",
+        }) catch unreachable else if (abi.is_musl()) return init_fmt("/lib/ld-musl-{s}{s}.so.1", .{
+            @tag_name(switch (cpu.arch) {
                 .thumb => .arm,
                 .thumbeb => .armeb,
                 else => cpu.arch,
             }),
-            if (cpu.arch.isArmOrThumb() and abi.floatAbi() == .hard) "hf" else "",
+            if (cpu.arch.is_arm_or_thumb() and abi.float_abi() == .hard) "hf" else "",
         }) catch unreachable else switch (os_tag) {
             .freebsd => init("/libexec/ld-elf.so.1"),
             .netbsd => init("/libexec/ld.elf_so"),
@@ -1732,7 +1732,7 @@ pub const DynamicLinker = struct {
                 .armeb,
                 .thumb,
                 .thumbeb,
-                => initFmt("/lib/ld-linux{s}.so.3", .{switch (abi.floatAbi()) {
+                => init_fmt("/lib/ld-linux{s}.so.3", .{switch (abi.float_abi()) {
                     .hard => "-armhf",
                     else => "",
                 }}) catch unreachable,
@@ -1741,13 +1741,13 @@ pub const DynamicLinker = struct {
                 .mipsel,
                 .mips64,
                 .mips64el,
-                => initFmt("/lib{s}/{s}", .{
+                => init_fmt("/lib{s}/{s}", .{
                     switch (abi) {
                         .gnuabin32, .gnux32 => "32",
                         .gnuabi64 => "64",
                         else => "",
                     },
-                    if (mips.featureSetHas(cpu.features, .nan2008))
+                    if (mips.feature_set_has(cpu.features, .nan2008))
                         "ld-linux-mipsn8.so.1"
                     else
                         "ld.so.1",
@@ -1946,14 +1946,14 @@ pub fn ptr_bit_width_cpu_abi(cpu: Cpu, abi: Abi) u16 {
         .loongarch64,
         => 64,
 
-        .sparc => if (std.Target.sparc.featureSetHas(cpu.features, .v9)) 64 else 32,
+        .sparc => if (std.Target.sparc.feature_set_has(cpu.features, .v9)) 64 else 32,
 
         .spirv => @panic("TODO what should this value be?"),
     };
 }
 
 pub fn ptr_bit_width(target: Target) u16 {
-    return ptrBitWidth_cpu_abi(target.cpu, target.abi);
+    return ptr_bit_width_cpu_abi(target.cpu, target.abi);
 }
 
 pub fn stack_alignment(target: Target) u16 {
@@ -1995,7 +1995,7 @@ pub fn stack_alignment(target: Target) u16 {
             else => 8,
             .linux => 16,
         },
-        else => @divExact(target.ptrBitWidth(), 8),
+        else => @div_exact(target.ptr_bit_width(), 8),
     };
 }
 
@@ -2011,8 +2011,8 @@ pub fn char_signedness(target: Target) std.builtin.Signedness {
         .armeb,
         .thumb,
         .thumbeb,
-        => return if (target.os.tag.isDarwin() or target.os.tag == .windows) .signed else .unsigned,
-        .powerpc, .powerpc64 => return if (target.os.tag.isDarwin()) .signed else .unsigned,
+        => return if (target.os.tag.is_darwin() or target.os.tag == .windows) .signed else .unsigned,
+        .powerpc, .powerpc64 => return if (target.os.tag.is_darwin()) .signed else .unsigned,
         .powerpcle,
         .powerpc64le,
         .s390x,
@@ -2054,13 +2054,13 @@ pub fn c_type_byte_size(t: Target, c_type: CType) u16 {
         .ulonglong,
         .float,
         .double,
-        => @divExact(c_type_bit_size(t, c_type), 8),
+        => @div_exact(c_type_bit_size(t, c_type), 8),
 
         .longdouble => switch (c_type_bit_size(t, c_type)) {
             16 => 2,
             32 => 4,
             64 => 8,
-            80 => @intCast(std.mem.alignForward(usize, 10, c_type_alignment(t, .longdouble))),
+            80 => @int_cast(std.mem.align_forward(usize, 10, c_type_alignment(t, .longdouble))),
             128 => 16,
             else => unreachable,
         },
@@ -2111,7 +2111,7 @@ pub fn c_type_bit_size(target: Target, c_type: CType) u16 {
                 .char => return 8,
                 .short, .ushort => return 16,
                 .int, .uint, .float => return 32,
-                .long, .ulong => return target.ptrBitWidth(),
+                .long, .ulong => return target.ptr_bit_width(),
                 .longlong, .ulonglong, .double => return 64,
                 .longdouble => switch (target.cpu.arch) {
                     .x86 => switch (target.abi) {
@@ -2206,7 +2206,7 @@ pub fn c_type_bit_size(target: Target, c_type: CType) u16 {
                 .char => return 8,
                 .short, .ushort => return 16,
                 .int, .uint, .float => return 32,
-                .long, .ulong => return target.ptrBitWidth(),
+                .long, .ulong => return target.ptr_bit_width(),
                 .longlong, .ulonglong, .double => return 64,
                 .longdouble => switch (target.cpu.arch) {
                     .x86 => switch (target.abi) {
@@ -2403,7 +2403,7 @@ pub fn c_type_alignment(target: Target, c_type: CType) u16 {
 
     // Next-power-of-two-aligned, up to a maximum.
     return @min(
-        std.math.ceilPowerOfTwoAssert(u16, (c_type_bit_size(target, c_type) + 7) / 8),
+        std.math.ceil_power_of_two_assert(u16, (c_type_bit_size(target, c_type) + 7) / 8),
         @as(u16, switch (target.cpu.arch) {
             .arm, .armeb, .thumb, .thumbeb => switch (target.os.tag) {
                 .netbsd => switch (target.abi) {
@@ -2545,7 +2545,7 @@ pub fn c_type_preferred_alignment(target: Target, c_type: CType) u16 {
 
     // Next-power-of-two-aligned, up to a maximum.
     return @min(
-        std.math.ceilPowerOfTwoAssert(u16, (c_type_bit_size(target, c_type) + 7) / 8),
+        std.math.ceil_power_of_two_assert(u16, (c_type_bit_size(target, c_type) + 7) / 8),
         @as(u16, switch (target.cpu.arch) {
             .msp430 => 2,
 
@@ -2623,116 +2623,116 @@ pub fn c_type_preferred_alignment(target: Target, c_type: CType) u16 {
 pub fn is_libc_lib_name(target: std.Target, name: []const u8) bool {
     const ignore_case = target.os.tag == .macos or target.os.tag == .windows;
 
-    if (eqlIgnoreCase(ignore_case, name, "c"))
+    if (eql_ignore_case(ignore_case, name, "c"))
         return true;
 
-    if (target.isMinGW()) {
-        if (eqlIgnoreCase(ignore_case, name, "m"))
+    if (target.is_min_gw()) {
+        if (eql_ignore_case(ignore_case, name, "m"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "mingw32"))
+        if (eql_ignore_case(ignore_case, name, "mingw32"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "msvcrt-os"))
+        if (eql_ignore_case(ignore_case, name, "msvcrt-os"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "mingwex"))
+        if (eql_ignore_case(ignore_case, name, "mingwex"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "uuid"))
+        if (eql_ignore_case(ignore_case, name, "uuid"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "bits"))
+        if (eql_ignore_case(ignore_case, name, "bits"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "dmoguids"))
+        if (eql_ignore_case(ignore_case, name, "dmoguids"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "dxerr8"))
+        if (eql_ignore_case(ignore_case, name, "dxerr8"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "dxerr9"))
+        if (eql_ignore_case(ignore_case, name, "dxerr9"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "mfuuid"))
+        if (eql_ignore_case(ignore_case, name, "mfuuid"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "msxml2"))
+        if (eql_ignore_case(ignore_case, name, "msxml2"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "msxml6"))
+        if (eql_ignore_case(ignore_case, name, "msxml6"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "amstrmid"))
+        if (eql_ignore_case(ignore_case, name, "amstrmid"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "wbemuuid"))
+        if (eql_ignore_case(ignore_case, name, "wbemuuid"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "wmcodecdspuuid"))
+        if (eql_ignore_case(ignore_case, name, "wmcodecdspuuid"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "dxguid"))
+        if (eql_ignore_case(ignore_case, name, "dxguid"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "ksguid"))
+        if (eql_ignore_case(ignore_case, name, "ksguid"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "locationapi"))
+        if (eql_ignore_case(ignore_case, name, "locationapi"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "portabledeviceguids"))
+        if (eql_ignore_case(ignore_case, name, "portabledeviceguids"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "mfuuid"))
+        if (eql_ignore_case(ignore_case, name, "mfuuid"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "dloadhelper"))
+        if (eql_ignore_case(ignore_case, name, "dloadhelper"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "strmiids"))
+        if (eql_ignore_case(ignore_case, name, "strmiids"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "mfuuid"))
+        if (eql_ignore_case(ignore_case, name, "mfuuid"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "adsiid"))
+        if (eql_ignore_case(ignore_case, name, "adsiid"))
             return true;
 
         return false;
     }
 
-    if (target.abi.isGnu() or target.abi.isMusl()) {
-        if (eqlIgnoreCase(ignore_case, name, "m"))
+    if (target.abi.is_gnu() or target.abi.is_musl()) {
+        if (eql_ignore_case(ignore_case, name, "m"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "rt"))
+        if (eql_ignore_case(ignore_case, name, "rt"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "pthread"))
+        if (eql_ignore_case(ignore_case, name, "pthread"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "util"))
+        if (eql_ignore_case(ignore_case, name, "util"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "xnet"))
+        if (eql_ignore_case(ignore_case, name, "xnet"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "resolv"))
+        if (eql_ignore_case(ignore_case, name, "resolv"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "dl"))
-            return true;
-    }
-
-    if (target.abi.isMusl()) {
-        if (eqlIgnoreCase(ignore_case, name, "crypt"))
+        if (eql_ignore_case(ignore_case, name, "dl"))
             return true;
     }
 
-    if (target.os.tag.isDarwin()) {
-        if (eqlIgnoreCase(ignore_case, name, "System"))
-            return true;
-        if (eqlIgnoreCase(ignore_case, name, "c"))
-            return true;
-        if (eqlIgnoreCase(ignore_case, name, "dbm"))
-            return true;
-        if (eqlIgnoreCase(ignore_case, name, "dl"))
-            return true;
-        if (eqlIgnoreCase(ignore_case, name, "info"))
-            return true;
-        if (eqlIgnoreCase(ignore_case, name, "m"))
-            return true;
-        if (eqlIgnoreCase(ignore_case, name, "poll"))
-            return true;
-        if (eqlIgnoreCase(ignore_case, name, "proc"))
-            return true;
-        if (eqlIgnoreCase(ignore_case, name, "pthread"))
-            return true;
-        if (eqlIgnoreCase(ignore_case, name, "rpcsvc"))
+    if (target.abi.is_musl()) {
+        if (eql_ignore_case(ignore_case, name, "crypt"))
             return true;
     }
 
-    if (target.os.isAtLeast(.macos, .{ .major = 10, .minor = 8, .patch = 0 }) orelse false) {
-        if (eqlIgnoreCase(ignore_case, name, "mx"))
+    if (target.os.tag.is_darwin()) {
+        if (eql_ignore_case(ignore_case, name, "System"))
+            return true;
+        if (eql_ignore_case(ignore_case, name, "c"))
+            return true;
+        if (eql_ignore_case(ignore_case, name, "dbm"))
+            return true;
+        if (eql_ignore_case(ignore_case, name, "dl"))
+            return true;
+        if (eql_ignore_case(ignore_case, name, "info"))
+            return true;
+        if (eql_ignore_case(ignore_case, name, "m"))
+            return true;
+        if (eql_ignore_case(ignore_case, name, "poll"))
+            return true;
+        if (eql_ignore_case(ignore_case, name, "proc"))
+            return true;
+        if (eql_ignore_case(ignore_case, name, "pthread"))
+            return true;
+        if (eql_ignore_case(ignore_case, name, "rpcsvc"))
+            return true;
+    }
+
+    if (target.os.is_at_least(.macos, .{ .major = 10, .minor = 8, .patch = 0 }) orelse false) {
+        if (eql_ignore_case(ignore_case, name, "mx"))
             return true;
     }
 
     if (target.os.tag == .haiku) {
-        if (eqlIgnoreCase(ignore_case, name, "root"))
+        if (eql_ignore_case(ignore_case, name, "root"))
             return true;
-        if (eqlIgnoreCase(ignore_case, name, "network"))
+        if (eql_ignore_case(ignore_case, name, "network"))
             return true;
     }
 
@@ -2740,23 +2740,23 @@ pub fn is_libc_lib_name(target: std.Target, name: []const u8) bool {
 }
 
 pub fn is_libcpp_lib_name(target: std.Target, name: []const u8) bool {
-    const ignore_case = target.os.tag.isDarwin() or target.os.tag == .windows;
+    const ignore_case = target.os.tag.is_darwin() or target.os.tag == .windows;
 
-    return eqlIgnoreCase(ignore_case, name, "c++") or
-        eqlIgnoreCase(ignore_case, name, "stdc++") or
-        eqlIgnoreCase(ignore_case, name, "c++abi");
+    return eql_ignore_case(ignore_case, name, "c++") or
+        eql_ignore_case(ignore_case, name, "stdc++") or
+        eql_ignore_case(ignore_case, name, "c++abi");
 }
 
 fn eql_ignore_case(ignore_case: bool, a: []const u8, b: []const u8) bool {
     if (ignore_case) {
-        return std.ascii.eqlIgnoreCase(a, b);
+        return std.ascii.eql_ignore_case(a, b);
     } else {
         return std.mem.eql(u8, a, b);
     }
 }
 
 pub fn os_arch_name(target: std.Target) [:0]const u8 {
-    return target.os.tag.archName(target.cpu.arch);
+    return target.os.tag.arch_name(target.cpu.arch);
 }
 
 const Target = @This();
@@ -2765,5 +2765,5 @@ const builtin = @import("builtin");
 const Allocator = std.mem.Allocator;
 
 test {
-    std.testing.refAllDecls(Cpu.Arch);
+    std.testing.ref_all_decls(Cpu.Arch);
 }

@@ -152,12 +152,12 @@ pub fn upcase_w(c: u16) u16 {
     return c;
 }
 
-test "upcaseW matches RtlUpcaseUnicodeChar" {
+test "upcase_w matches RtlUpcaseUnicodeChar" {
     if (builtin.os.tag != .windows) return error.SkipZigTest;
 
     var c: u16 = 0;
     while (true) : (c += 1) {
-        std.testing.expectEqual(std.os.windows.ntdll.RtlUpcaseUnicodeChar(c), upcaseW(c)) catch |err| {
+        std.testing.expect_equal(std.os.windows.ntdll.RtlUpcaseUnicodeChar(c), upcase_w(c)) catch |err| {
             std.debug.print("mismatch for codepoint U+{X}\n", .{c});
             return err;
         };

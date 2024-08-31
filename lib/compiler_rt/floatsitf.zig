@@ -1,5 +1,5 @@
 const common = @import("./common.zig");
-const floatFromInt = @import("./float_from_int.zig").floatFromInt;
+const float_from_int = @import("./float_from_int.zig").float_from_int;
 
 pub const panic = common.panic;
 
@@ -13,9 +13,9 @@ comptime {
 }
 
 pub fn __floatsitf(a: i32) callconv(.C) f128 {
-    return floatFromInt(f128, a);
+    return float_from_int(f128, a);
 }
 
 fn _Qp_itoq(c: *f128, a: i32) callconv(.C) void {
-    c.* = floatFromInt(f128, a);
+    c.* = float_from_int(f128, a);
 }

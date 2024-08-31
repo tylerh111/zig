@@ -52,7 +52,7 @@ pub const Diagnostics = struct {
         if (path.len == 0) return;
 
         d.entries += 1;
-        const root_dir = rootDir(path);
+        const root_dir = root_dir(path);
         if (d.entries == 1) {
             d.root_dir = try d.allocator.dupe(u8, root_dir);
             return;
@@ -68,20 +68,20 @@ pub const Diagnostics = struct {
         const start_index: usize = if (path[0] == '/') 1 else 0;
         const end_index: usize = if (path[path.len - 1] == '/') path.len - 1 else path.len;
         const buf = path[start_index..end_index];
-        if (std.mem.indexOfScalarPos(u8, buf, 0, '/')) |idx| {
+        if (std.mem.index_of_scalar_pos(u8, buf, 0, '/')) |idx| {
             return buf[0..idx];
         }
         return buf;
     }
 
-    test rootDir {
-        const expectEqualStrings = testing.expectEqualStrings;
-        try expectEqualStrings("a", rootDir("a"));
-        try expectEqualStrings("b", rootDir("b"));
-        try expectEqualStrings("c", rootDir("/c"));
-        try expectEqualStrings("d", rootDir("/d/"));
-        try expectEqualStrings("a", rootDir("a/b"));
-        try expectEqualStrings("a", rootDir("a/b/c"));
+    test root_dir {
+        const expect_equal_strings = testing.expect_equal_strings;
+        try expect_equal_strings("a", root_dir("a"));
+        try expect_equal_strings("b", root_dir("b"));
+        try expect_equal_strings("c", root_dir("/c"));
+        try expect_equal_strings("d", root_dir("/d/"));
+        try expect_equal_strings("a", root_dir("a/b"));
+        try expect_equal_strings("a", root_dir("a/b/c"));
     }
 
     pub fn deinit(d: *Diagnostics) void {
@@ -105,7 +105,7 @@ pub const Diagnostics = struct {
     }
 };
 
-/// pipeToFileSystem options
+/// pipe_to_file_system options
 pub const PipeOptions = struct {
     /// Number of directory levels to skip when extracting files.
     strip_components: u32 = 0,
@@ -189,7 +189,7 @@ const Header = struct {
     }
 
     pub fn mode(header: Header) !u32 {
-        return @intCast(try header.octal(100, 8));
+        return @int_cast(try header.octal(100, 8));
     }
 
     pub fn size(header: Header) !u64 {
@@ -205,7 +205,7 @@ const Header = struct {
         // field are concatenated in big-endian order.
         if (raw[0] == 0x80) {
             if (raw[1] != 0 or raw[2] != 0 or raw[3] != 0) return error.TarNumericValueTooBig;
-            return std.mem.readInt(u64, raw[4..12], .big);
+            return std.mem.read_int(u64, raw[4..12], .big);
         }
         return try header.octal(start, len);
     }
@@ -230,17 +230,17 @@ const Header = struct {
     }
 
     fn str(header: Header, start: usize, len: usize) []const u8 {
-        return nullStr(header.bytes[start .. start + len]);
+        return null_str(header.bytes[start .. start + len]);
     }
 
     fn octal(header: Header, start: usize, len: usize) !u64 {
         const raw = header.bytes[start..][0..len];
         // Zero-filled octal number in ASCII. Each numeric field of width w
         // contains w minus 1 digits, and a null
-        const ltrimmed = std.mem.trimLeft(u8, raw, "0 ");
-        const rtrimmed = std.mem.trimRight(u8, ltrimmed, " \x00");
+        const ltrimmed = std.mem.trim_left(u8, raw, "0 ");
+        const rtrimmed = std.mem.trim_right(u8, ltrimmed, " \x00");
         if (rtrimmed.len == 0) return 0;
-        return std.fmt.parseInt(u64, rtrimmed, 8) catch return error.TarHeader;
+        return std.fmt.parse_int(u64, rtrimmed, 8) catch return error.TarHeader;
     }
 
     const Chksums = struct {
@@ -255,7 +255,7 @@ const Header = struct {
         for (header.bytes, 0..) |v, i| {
             const b = if (148 <= i and i < 156) 32 else v; // Treating chksum bytes as spaces.
             cs.unsigned += b;
-            cs.signed += @as(i8, @bitCast(b));
+            cs.signed += @as(i8, @bit_cast(b));
         }
         return cs;
     }
@@ -265,7 +265,7 @@ const Header = struct {
     // Zero value indicates empty block.
     pub fn check_chksum(header: Header) !u64 {
         const field = try header.chksum();
-        const cs = header.computeChksum();
+        const cs = header.compute_chksum();
         if (field == 0 and cs.unsigned == 256) return 0;
         if (field != cs.unsigned and field != cs.signed) return error.TarHeaderChksum;
         return field;
@@ -354,8 +354,8 @@ pub fn Iterator(comptime ReaderType: type) type {
 
                 while (self.unread_bytes.* > 0) {
                     const buf = buffer[0..@min(buffer.len, self.unread_bytes.*)];
-                    try self.parent_reader.readNoEof(buf);
-                    try writer.writeAll(buf);
+                    try self.parent_reader.read_no_eof(buf);
+                    try writer.write_all(buf);
                     self.unread_bytes.* -= buf.len;
                 }
             }
@@ -365,21 +365,21 @@ pub fn Iterator(comptime ReaderType: type) type {
 
         fn read_header(self: *Self) !?Header {
             if (self.padding > 0) {
-                try self.reader.skipBytes(self.padding, .{});
+                try self.reader.skip_bytes(self.padding, .{});
             }
-            const n = try self.reader.readAll(&self.header_buffer);
+            const n = try self.reader.read_all(&self.header_buffer);
             if (n == 0) return null;
             if (n < Header.SIZE) return error.UnexpectedEndOfStream;
             const header = Header{ .bytes = self.header_buffer[0..Header.SIZE] };
-            if (try header.checkChksum() == 0) return null;
+            if (try header.check_chksum() == 0) return null;
             return header;
         }
 
         fn read_string(self: *Self, size: usize, buffer: []u8) ![]const u8 {
             if (size > buffer.len) return error.TarInsufficientBuffer;
             const buf = buffer[0..size];
-            try self.reader.readNoEof(buf);
-            return nullStr(buf);
+            try self.reader.read_no_eof(buf);
+            return null_str(buf);
         }
 
         fn new_file(self: *Self) File {
@@ -393,8 +393,8 @@ pub fn Iterator(comptime ReaderType: type) type {
 
         // Number of padding bytes in the last file block.
         fn block_padding(size: u64) usize {
-            const block_rounded = std.mem.alignForward(u64, size, Header.SIZE); // size rounded to te block boundary
-            return @intCast(block_rounded - size);
+            const block_rounded = std.mem.align_forward(u64, size, Header.SIZE); // size rounded to te block boundary
+            return @int_cast(block_rounded - size);
         }
 
         /// Iterates through the tar archive as if it is a series of files.
@@ -406,15 +406,15 @@ pub fn Iterator(comptime ReaderType: type) type {
         pub fn next(self: *Self) !?File {
             if (self.unread_file_bytes > 0) {
                 // If file content was not consumed by caller
-                try self.reader.skipBytes(self.unread_file_bytes, .{});
+                try self.reader.skip_bytes(self.unread_file_bytes, .{});
                 self.unread_file_bytes = 0;
             }
-            var file: File = self.newFile();
+            var file: File = self.new_file();
 
-            while (try self.readHeader()) |header| {
+            while (try self.read_header()) |header| {
                 const kind = header.kind();
                 const size: u64 = try header.size();
-                self.padding = blockPadding(size);
+                self.padding = block_padding(size);
 
                 switch (kind) {
                     // File types to retrun upstream
@@ -432,28 +432,28 @@ pub fn Iterator(comptime ReaderType: type) type {
                             file.size = size;
                         }
                         if (file.link_name.len == 0) {
-                            file.link_name = try header.linkName(self.link_name_buffer);
+                            file.link_name = try header.link_name(self.link_name_buffer);
                         }
                         if (file.name.len == 0) {
-                            file.name = try header.fullName(self.file_name_buffer);
+                            file.name = try header.full_name(self.file_name_buffer);
                         }
 
-                        self.padding = blockPadding(file.size);
+                        self.padding = block_padding(file.size);
                         self.unread_file_bytes = file.size;
                         return file;
                     },
                     // Prefix header types
                     .gnu_long_name => {
-                        file.name = try self.readString(@intCast(size), self.file_name_buffer);
+                        file.name = try self.read_string(@int_cast(size), self.file_name_buffer);
                     },
                     .gnu_long_link => {
-                        file.link_name = try self.readString(@intCast(size), self.link_name_buffer);
+                        file.link_name = try self.read_string(@int_cast(size), self.link_name_buffer);
                     },
                     .extended_header => {
                         // Use just attributes from last extended header.
-                        file = self.newFile();
+                        file = self.new_file();
 
-                        var rdr = paxIterator(self.reader, @intCast(size));
+                        var rdr = pax_iterator(self.reader, @int_cast(size));
                         while (try rdr.next()) |attr| {
                             switch (attr.kind) {
                                 .path => {
@@ -464,14 +464,14 @@ pub fn Iterator(comptime ReaderType: type) type {
                                 },
                                 .size => {
                                     var buf: [pax_max_size_attr_len]u8 = undefined;
-                                    file.size = try std.fmt.parseInt(u64, try attr.value(&buf), 10);
+                                    file.size = try std.fmt.parse_int(u64, try attr.value(&buf), 10);
                                 },
                             }
                         }
                     },
                     // Ignored header type
                     .global_extended_header => {
-                        self.reader.skipBytes(size, .{}) catch return error.TarHeadersTooBig;
+                        self.reader.skip_bytes(size, .{}) catch return error.TarHeadersTooBig;
                     },
                     // All other are unsupported header types
                     else => {
@@ -481,9 +481,9 @@ pub fn Iterator(comptime ReaderType: type) type {
                             .file_type = kind,
                         } });
                         if (kind == .gnu_sparse) {
-                            try self.skipGnuSparseExtendedHeaders(header);
+                            try self.skip_gnu_sparse_extended_headers(header);
                         }
-                        self.reader.skipBytes(size, .{}) catch return error.TarHeadersTooBig;
+                        self.reader.skip_bytes(size, .{}) catch return error.TarHeadersTooBig;
                     },
                 }
             }
@@ -494,7 +494,7 @@ pub fn Iterator(comptime ReaderType: type) type {
             var is_extended = header.bytes[482] > 0;
             while (is_extended) {
                 var buf: [Header.SIZE]u8 = undefined;
-                const n = try self.reader.readAll(&buf);
+                const n = try self.reader.read_all(&buf);
                 if (n < Header.SIZE) return error.UnexpectedEndOfStream;
                 is_extended = buf[504] > 0;
             }
@@ -517,7 +517,7 @@ const PaxAttributeKind = enum {
     size,
 };
 
-// maxInt(u64) has 20 chars, base 10 in practice we got 24 chars
+// max_int(u64) has 20 chars, base 10 in practice we got 24 chars
 const pax_max_size_attr_len = 64;
 
 fn PaxIterator(comptime ReaderType: type) type {
@@ -540,10 +540,10 @@ fn PaxIterator(comptime ReaderType: type) type {
                 if (self.len > dst.len) return error.TarInsufficientBuffer;
                 // assert(self.len <= dst.len);
                 const buf = dst[0..self.len];
-                const n = try self.reader.readAll(buf);
+                const n = try self.reader.read_all(buf);
                 if (n < self.len) return error.UnexpectedEndOfStream;
-                try validateAttributeEnding(self.reader);
-                if (hasNull(buf)) return error.PaxNullInValue;
+                try validate_attribute_ending(self.reader);
+                if (has_null(buf)) return error.PaxNullInValue;
                 return buf;
             }
         };
@@ -554,11 +554,11 @@ fn PaxIterator(comptime ReaderType: type) type {
             // Pax extended header consists of one or more attributes, each constructed as follows:
             // "%d %s=%s\n", <length>, <keyword>, <value>
             while (self.size > 0) {
-                const length_buf = try self.readUntil(' ');
-                const length = try std.fmt.parseInt(usize, length_buf, 10); // record length in bytes
+                const length_buf = try self.read_until(' ');
+                const length = try std.fmt.parse_int(usize, length_buf, 10); // record length in bytes
 
-                const keyword = try self.readUntil('=');
-                if (hasNull(keyword)) return error.PaxNullInKeyword;
+                const keyword = try self.read_until('=');
+                if (has_null(keyword)) return error.PaxNullInKeyword;
 
                 // calculate value_len
                 const value_start = length_buf.len + keyword.len + 2; // 2 separators
@@ -573,8 +573,8 @@ fn PaxIterator(comptime ReaderType: type) type {
                 else if (eql(keyword, "size"))
                     .size
                 else {
-                    try self.reader.skipBytes(value_len, .{});
-                    try validateAttributeEnding(self.reader);
+                    try self.reader.skip_bytes(value_len, .{});
+                    try validate_attribute_ending(self.reader);
                     continue;
                 };
                 if (kind == .size and value_len > pax_max_size_attr_len) {
@@ -591,9 +591,9 @@ fn PaxIterator(comptime ReaderType: type) type {
         }
 
         fn read_until(self: *Self, delimiter: u8) ![]const u8 {
-            var fbs = std.io.fixedBufferStream(&self.scratch);
-            try self.reader.streamUntilDelimiter(fbs.writer(), delimiter, null);
-            return fbs.getWritten();
+            var fbs = std.io.fixed_buffer_stream(&self.scratch);
+            try self.reader.stream_until_delimiter(fbs.writer(), delimiter, null);
+            return fbs.get_written();
         }
 
         fn eql(a: []const u8, b: []const u8) bool {
@@ -601,12 +601,12 @@ fn PaxIterator(comptime ReaderType: type) type {
         }
 
         fn has_null(str: []const u8) bool {
-            return (std.mem.indexOfScalar(u8, str, 0)) != null;
+            return (std.mem.index_of_scalar(u8, str, 0)) != null;
         }
 
         // Checks that each record ends with new line.
         fn validate_attribute_ending(reader: ReaderType) !void {
-            if (try reader.readByte() != '\n') return error.PaxInvalidAttributeEnd;
+            if (try reader.read_byte() != '\n') return error.PaxInvalidAttributeEnd;
         }
     };
 }
@@ -622,22 +622,22 @@ pub fn pipe_to_file_system(dir: std.fs.Dir, reader: anytype, options: PipeOption
     });
 
     while (try iter.next()) |file| {
-        const file_name = stripComponents(file.name, options.strip_components);
+        const file_name = strip_components(file.name, options.strip_components);
         if (options.diagnostics) |d| {
-            try d.findRoot(file_name);
+            try d.find_root(file_name);
         }
 
         switch (file.kind) {
             .directory => {
                 if (file_name.len != 0 and !options.exclude_empty_directories) {
-                    try dir.makePath(file_name);
+                    try dir.make_path(file_name);
                 }
             },
             .file => {
                 if (file_name.len == 0) return error.BadFileName;
-                if (createDirAndFile(dir, file_name, fileMode(file.mode, options))) |fs_file| {
+                if (create_dir_and_file(dir, file_name, file_mode(file.mode, options))) |fs_file| {
                     defer fs_file.close();
-                    try file.writeAll(fs_file);
+                    try file.write_all(fs_file);
                 } else |err| {
                     const d = options.diagnostics orelse return err;
                     try d.errors.append(d.allocator, .{ .unable_to_create_file = .{
@@ -649,7 +649,7 @@ pub fn pipe_to_file_system(dir: std.fs.Dir, reader: anytype, options: PipeOption
             .sym_link => {
                 if (file_name.len == 0) return error.BadFileName;
                 const link_name = file.link_name;
-                createDirAndSymlink(dir, link_name, file_name) catch |err| {
+                create_dir_and_symlink(dir, link_name, file_name) catch |err| {
                     const d = options.diagnostics orelse return error.UnableToCreateSymLink;
                     try d.errors.append(d.allocator, .{ .unable_to_create_sym_link = .{
                         .code = err,
@@ -663,11 +663,11 @@ pub fn pipe_to_file_system(dir: std.fs.Dir, reader: anytype, options: PipeOption
 }
 
 fn create_dir_and_file(dir: std.fs.Dir, file_name: []const u8, mode: std.fs.File.Mode) !std.fs.File {
-    const fs_file = dir.createFile(file_name, .{ .exclusive = true, .mode = mode }) catch |err| {
+    const fs_file = dir.create_file(file_name, .{ .exclusive = true, .mode = mode }) catch |err| {
         if (err == error.FileNotFound) {
             if (std.fs.path.dirname(file_name)) |dir_name| {
-                try dir.makePath(dir_name);
-                return try dir.createFile(file_name, .{ .exclusive = true, .mode = mode });
+                try dir.make_path(dir_name);
+                return try dir.create_file(file_name, .{ .exclusive = true, .mode = mode });
             }
         }
         return err;
@@ -677,11 +677,11 @@ fn create_dir_and_file(dir: std.fs.Dir, file_name: []const u8, mode: std.fs.File
 
 // Creates a symbolic link at path `file_name` which points to `link_name`.
 fn create_dir_and_symlink(dir: std.fs.Dir, link_name: []const u8, file_name: []const u8) !void {
-    dir.symLink(link_name, file_name, .{}) catch |err| {
+    dir.sym_link(link_name, file_name, .{}) catch |err| {
         if (err == error.FileNotFound) {
             if (std.fs.path.dirname(file_name)) |dir_name| {
-                try dir.makePath(dir_name);
-                return try dir.symLink(link_name, file_name, .{});
+                try dir.make_path(dir_name);
+                return try dir.sym_link(link_name, file_name, .{});
             }
         }
         return err;
@@ -692,7 +692,7 @@ fn strip_components(path: []const u8, count: u32) []const u8 {
     var i: usize = 0;
     var c = count;
     while (c > 0) : (c -= 1) {
-        if (std.mem.indexOfScalarPos(u8, path, i, '/')) |pos| {
+        if (std.mem.index_of_scalar_pos(u8, path, i, '/')) |pos| {
             i = pos + 1;
         } else {
             i = path.len;
@@ -702,13 +702,13 @@ fn strip_components(path: []const u8, count: u32) []const u8 {
     return path[i..];
 }
 
-test stripComponents {
-    const expectEqualStrings = testing.expectEqualStrings;
-    try expectEqualStrings("a/b/c", stripComponents("a/b/c", 0));
-    try expectEqualStrings("b/c", stripComponents("a/b/c", 1));
-    try expectEqualStrings("c", stripComponents("a/b/c", 2));
-    try expectEqualStrings("", stripComponents("a/b/c", 3));
-    try expectEqualStrings("", stripComponents("a/b/c", 4));
+test strip_components {
+    const expect_equal_strings = testing.expect_equal_strings;
+    try expect_equal_strings("a/b/c", strip_components("a/b/c", 0));
+    try expect_equal_strings("b/c", strip_components("a/b/c", 1));
+    try expect_equal_strings("c", strip_components("a/b/c", 2));
+    try expect_equal_strings("", strip_components("a/b/c", 3));
+    try expect_equal_strings("", strip_components("a/b/c", 4));
 }
 
 test PaxIterator {
@@ -808,29 +808,29 @@ test PaxIterator {
     var buffer: [1024]u8 = undefined;
 
     outer: for (cases) |case| {
-        var stream = std.io.fixedBufferStream(case.data);
-        var iter = paxIterator(stream.reader(), case.data.len);
+        var stream = std.io.fixed_buffer_stream(case.data);
+        var iter = pax_iterator(stream.reader(), case.data.len);
 
         var i: usize = 0;
         while (iter.next() catch |err| {
             if (case.err) |e| {
-                try testing.expectEqual(e, err);
+                try testing.expect_equal(e, err);
                 continue;
             }
             return err;
         }) |attr| : (i += 1) {
             const exp = case.attrs[i];
-            try testing.expectEqual(exp.kind, attr.kind);
+            try testing.expect_equal(exp.kind, attr.kind);
             const value = attr.value(&buffer) catch |err| {
                 if (exp.err) |e| {
-                    try testing.expectEqual(e, err);
+                    try testing.expect_equal(e, err);
                     break :outer;
                 }
                 return err;
             };
-            try testing.expectEqualStrings(exp.value, value);
+            try testing.expect_equal_strings(exp.value, value);
         }
-        try testing.expectEqual(case.attrs.len, i);
+        try testing.expect_equal(case.attrs.len, i);
         try testing.expect(case.err == null);
     }
 }
@@ -868,9 +868,9 @@ test "header parse size" {
         @memcpy(bytes[124 .. 124 + case.in.len], case.in);
         var header = Header{ .bytes = &bytes };
         if (case.err) |err| {
-            try testing.expectError(err, header.size());
+            try testing.expect_error(err, header.size());
         } else {
-            try testing.expectEqual(case.want, try header.size());
+            try testing.expect_equal(case.want, try header.size());
         }
     }
 }
@@ -893,32 +893,32 @@ test "header parse mode" {
         @memcpy(bytes[100 .. 100 + case.in.len], case.in);
         var header = Header{ .bytes = &bytes };
         if (case.err) |err| {
-            try testing.expectError(err, header.mode());
+            try testing.expect_error(err, header.mode());
         } else {
-            try testing.expectEqual(case.want, try header.mode());
+            try testing.expect_equal(case.want, try header.mode());
         }
     }
 }
 
 test "create file and symlink" {
-    var root = testing.tmpDir(.{});
+    var root = testing.tmp_dir(.{});
     defer root.cleanup();
 
-    var file = try createDirAndFile(root.dir, "file1", default_mode);
+    var file = try create_dir_and_file(root.dir, "file1", default_mode);
     file.close();
-    file = try createDirAndFile(root.dir, "a/b/c/file2", default_mode);
+    file = try create_dir_and_file(root.dir, "a/b/c/file2", default_mode);
     file.close();
 
-    createDirAndSymlink(root.dir, "a/b/c/file2", "symlink1") catch |err| {
+    create_dir_and_symlink(root.dir, "a/b/c/file2", "symlink1") catch |err| {
         // On Windows when developer mode is not enabled
         if (err == error.AccessDenied) return error.SkipZigTest;
         return err;
     };
-    try createDirAndSymlink(root.dir, "../../../file1", "d/e/f/symlink2");
+    try create_dir_and_symlink(root.dir, "../../../file1", "d/e/f/symlink2");
 
     // Danglink symlnik, file created later
-    try createDirAndSymlink(root.dir, "../../../g/h/i/file4", "j/k/l/symlink3");
-    file = try createDirAndFile(root.dir, "g/h/i/file4", default_mode);
+    try create_dir_and_symlink(root.dir, "../../../g/h/i/file4", "j/k/l/symlink3");
+    file = try create_dir_and_file(root.dir, "g/h/i/file4", default_mode);
     file.close();
 }
 
@@ -942,8 +942,8 @@ test iterator {
     //    example/a/file
     //    example/empty/
 
-    const data = @embedFile("tar/testdata/example.tar");
-    var fbs = std.io.fixedBufferStream(data);
+    const data = @embed_file("tar/testdata/example.tar");
+    var fbs = std.io.fixed_buffer_stream(data);
 
     // User provided buffers to the iterator
     var file_name_buffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
@@ -959,29 +959,29 @@ test iterator {
         switch (file.kind) {
             .directory => {
                 switch (file_no) {
-                    0 => try testing.expectEqualStrings("example/", file.name),
-                    1 => try testing.expectEqualStrings("example/b/", file.name),
-                    3 => try testing.expectEqualStrings("example/a/", file.name),
-                    5 => try testing.expectEqualStrings("example/empty/", file.name),
+                    0 => try testing.expect_equal_strings("example/", file.name),
+                    1 => try testing.expect_equal_strings("example/b/", file.name),
+                    3 => try testing.expect_equal_strings("example/a/", file.name),
+                    5 => try testing.expect_equal_strings("example/empty/", file.name),
                     else => unreachable,
                 }
             },
             .file => {
-                try testing.expectEqualStrings("example/a/file", file.name);
+                try testing.expect_equal_strings("example/a/file", file.name);
                 // Read file content
                 var buf: [16]u8 = undefined;
-                const n = try file.reader().readAll(&buf);
-                try testing.expectEqualStrings("content\n", buf[0..n]);
+                const n = try file.reader().read_all(&buf);
+                try testing.expect_equal_strings("content\n", buf[0..n]);
             },
             .sym_link => {
-                try testing.expectEqualStrings("example/b/symlink", file.name);
-                try testing.expectEqualStrings("../a/file", file.link_name);
+                try testing.expect_equal_strings("example/b/symlink", file.name);
+                try testing.expect_equal_strings("../a/file", file.link_name);
             },
         }
     }
 }
 
-test pipeToFileSystem {
+test pipe_to_file_system {
     // Example tar file is created from this tree structure:
     // $ tree example
     //    example
@@ -1001,16 +1001,16 @@ test pipeToFileSystem {
     //    example/a/file
     //    example/empty/
 
-    const data = @embedFile("tar/testdata/example.tar");
-    var fbs = std.io.fixedBufferStream(data);
+    const data = @embed_file("tar/testdata/example.tar");
+    var fbs = std.io.fixed_buffer_stream(data);
     const reader = fbs.reader();
 
-    var tmp = testing.tmpDir(.{ .no_follow = true });
+    var tmp = testing.tmp_dir(.{ .no_follow = true });
     defer tmp.cleanup();
     const dir = tmp.dir;
 
     // Save tar from `reader` to the file system `dir`
-    pipeToFileSystem(dir, reader, .{
+    pipe_to_file_system(dir, reader, .{
         .mode_mode = .ignore,
         .strip_components = 1,
         .exclude_empty_directories = true,
@@ -1020,31 +1020,31 @@ test pipeToFileSystem {
         return err;
     };
 
-    try testing.expectError(error.FileNotFound, dir.statFile("empty"));
-    try testing.expect((try dir.statFile("a/file")).kind == .file);
-    try testing.expect((try dir.statFile("b/symlink")).kind == .file); // statFile follows symlink
+    try testing.expect_error(error.FileNotFound, dir.stat_file("empty"));
+    try testing.expect((try dir.stat_file("a/file")).kind == .file);
+    try testing.expect((try dir.stat_file("b/symlink")).kind == .file); // stat_file follows symlink
 
     var buf: [32]u8 = undefined;
-    try testing.expectEqualSlices(
+    try testing.expect_equal_slices(
         u8,
         "../a/file",
-        normalizePath(try dir.readLink("b/symlink", &buf)),
+        normalize_path(try dir.read_link("b/symlink", &buf)),
     );
 }
 
-test "pipeToFileSystem root_dir" {
-    const data = @embedFile("tar/testdata/example.tar");
-    var fbs = std.io.fixedBufferStream(data);
+test "pipe_to_file_system root_dir" {
+    const data = @embed_file("tar/testdata/example.tar");
+    var fbs = std.io.fixed_buffer_stream(data);
     const reader = fbs.reader();
 
     // with strip_components = 1
     {
-        var tmp = testing.tmpDir(.{ .no_follow = true });
+        var tmp = testing.tmp_dir(.{ .no_follow = true });
         defer tmp.cleanup();
         var diagnostics: Diagnostics = .{ .allocator = testing.allocator };
         defer diagnostics.deinit();
 
-        pipeToFileSystem(tmp.dir, reader, .{
+        pipe_to_file_system(tmp.dir, reader, .{
             .strip_components = 1,
             .diagnostics = &diagnostics,
         }) catch |err| {
@@ -1054,19 +1054,19 @@ test "pipeToFileSystem root_dir" {
         };
 
         // there is no root_dir
-        try testing.expectEqual(0, diagnostics.root_dir.len);
-        try testing.expectEqual(5, diagnostics.entries);
+        try testing.expect_equal(0, diagnostics.root_dir.len);
+        try testing.expect_equal(5, diagnostics.entries);
     }
 
     // with strip_components = 0
     {
         fbs.reset();
-        var tmp = testing.tmpDir(.{ .no_follow = true });
+        var tmp = testing.tmp_dir(.{ .no_follow = true });
         defer tmp.cleanup();
         var diagnostics: Diagnostics = .{ .allocator = testing.allocator };
         defer diagnostics.deinit();
 
-        pipeToFileSystem(tmp.dir, reader, .{
+        pipe_to_file_system(tmp.dir, reader, .{
             .strip_components = 0,
             .diagnostics = &diagnostics,
         }) catch |err| {
@@ -1076,30 +1076,30 @@ test "pipeToFileSystem root_dir" {
         };
 
         // root_dir found
-        try testing.expectEqualStrings("example", diagnostics.root_dir);
-        try testing.expectEqual(6, diagnostics.entries);
+        try testing.expect_equal_strings("example", diagnostics.root_dir);
+        try testing.expect_equal(6, diagnostics.entries);
     }
 }
 
-test "findRoot without explicit root dir" {
-    const data = @embedFile("tar/testdata/19820.tar");
-    var fbs = std.io.fixedBufferStream(data);
+test "find_root without explicit root dir" {
+    const data = @embed_file("tar/testdata/19820.tar");
+    var fbs = std.io.fixed_buffer_stream(data);
     const reader = fbs.reader();
 
-    var tmp = testing.tmpDir(.{});
+    var tmp = testing.tmp_dir(.{});
     defer tmp.cleanup();
 
     var diagnostics: Diagnostics = .{ .allocator = testing.allocator };
     defer diagnostics.deinit();
-    try pipeToFileSystem(tmp.dir, reader, .{ .diagnostics = &diagnostics });
+    try pipe_to_file_system(tmp.dir, reader, .{ .diagnostics = &diagnostics });
 
-    try testing.expectEqualStrings("root", diagnostics.root_dir);
+    try testing.expect_equal_strings("root", diagnostics.root_dir);
 }
 
 fn normalize_path(bytes: []u8) []u8 {
     const canonical_sep = std.fs.path.sep_posix;
     if (std.fs.path.sep == canonical_sep) return bytes;
-    std.mem.replaceScalar(u8, bytes, std.fs.path.sep, canonical_sep);
+    std.mem.replace_scalar(u8, bytes, std.fs.path.sep, canonical_sep);
     return bytes;
 }
 
@@ -1121,28 +1121,28 @@ fn file_mode(mode: u32, options: PipeOptions) std.fs.File.Mode {
     return default_mode | S.IXUSR | S.IXGRP | S.IXOTH;
 }
 
-test fileMode {
+test file_mode {
     if (!std.fs.has_executable_bit) return error.SkipZigTest;
-    try testing.expectEqual(default_mode, fileMode(0o744, PipeOptions{ .mode_mode = .ignore }));
-    try testing.expectEqual(0o777, fileMode(0o744, PipeOptions{}));
-    try testing.expectEqual(0o666, fileMode(0o644, PipeOptions{}));
-    try testing.expectEqual(0o666, fileMode(0o655, PipeOptions{}));
+    try testing.expect_equal(default_mode, file_mode(0o744, PipeOptions{ .mode_mode = .ignore }));
+    try testing.expect_equal(0o777, file_mode(0o744, PipeOptions{}));
+    try testing.expect_equal(0o666, file_mode(0o644, PipeOptions{}));
+    try testing.expect_equal(0o666, file_mode(0o655, PipeOptions{}));
 }
 
 test "executable bit" {
     if (!std.fs.has_executable_bit) return error.SkipZigTest;
 
     const S = std.posix.S;
-    const data = @embedFile("tar/testdata/example.tar");
+    const data = @embed_file("tar/testdata/example.tar");
 
     for ([_]PipeOptions.ModeMode{ .ignore, .executable_bit_only }) |opt| {
-        var fbs = std.io.fixedBufferStream(data);
+        var fbs = std.io.fixed_buffer_stream(data);
         const reader = fbs.reader();
 
-        var tmp = testing.tmpDir(.{ .no_follow = true });
+        var tmp = testing.tmp_dir(.{ .no_follow = true });
         //defer tmp.cleanup();
 
-        pipeToFileSystem(tmp.dir, reader, .{
+        pipe_to_file_system(tmp.dir, reader, .{
             .strip_components = 1,
             .exclude_empty_directories = true,
             .mode_mode = opt,
@@ -1152,7 +1152,7 @@ test "executable bit" {
             return err;
         };
 
-        const fs = try tmp.dir.statFile("a/file");
+        const fs = try tmp.dir.stat_file("a/file");
         try testing.expect(fs.kind == .file);
 
         if (opt == .executable_bit_only) {

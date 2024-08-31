@@ -16,7 +16,7 @@ pub const GetAppDataDirError = error{
 pub fn get_app_data_dir(allocator: mem.Allocator, appname: []const u8) GetAppDataDirError![]u8 {
     switch (native_os) {
         .windows => {
-            const local_app_data_dir = std.process.getEnvVarOwned(allocator, "LOCALAPPDATA") catch |err| switch (err) {
+            const local_app_data_dir = std.process.get_env_var_owned(allocator, "LOCALAPPDATA") catch |err| switch (err) {
                 error.OutOfMemory => |e| return e,
                 else => return error.AppDataDirUnavailable,
             };
@@ -44,21 +44,21 @@ pub fn get_app_data_dir(allocator: mem.Allocator, appname: []const u8) GetAppDat
         .haiku => {
             var dir_path_buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
             const rc = std.c.find_directory(.B_USER_SETTINGS_DIRECTORY, -1, true, &dir_path_buf, dir_path_buf.len);
-            const settings_dir = try allocator.dupeZ(u8, mem.sliceTo(&dir_path_buf, 0));
+            const settings_dir = try allocator.dupe_z(u8, mem.slice_to(&dir_path_buf, 0));
             defer allocator.free(settings_dir);
             switch (rc) {
                 0 => return fs.path.join(allocator, &[_][]const u8{ settings_dir, appname }),
                 else => return error.AppDataDirUnavailable,
             }
         },
-        else => @compileError("Unsupported OS"),
+        else => @compile_error("Unsupported OS"),
     }
 }
 
-test getAppDataDir {
+test get_app_data_dir {
     if (native_os == .wasi) return error.SkipZigTest;
 
     // We can't actually validate the result
-    const dir = getAppDataDir(std.testing.allocator, "zig") catch return;
+    const dir = get_app_data_dir(std.testing.allocator, "zig") catch return;
     defer std.testing.allocator.free(dir);
 }

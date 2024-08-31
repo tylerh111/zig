@@ -1,7 +1,7 @@
 //! Mutex is a synchronization primitive which enforces atomic access to a shared region of code known as the "critical section".
 //! It does this by blocking ensuring only one thread is in the critical section at any given point in time by blocking the others.
-//! Mutex can be statically initialized and is at most `@sizeOf(u64)` large.
-//! Use `lock()` or `tryLock()` to enter the critical section and `unlock()` to leave it.
+//! Mutex can be statically initialized and is at most `@size_of(u64)` large.
+//! Use `lock()` or `try_lock()` to enter the critical section and `unlock()` to leave it.
 //!
 //! Example:
 //! ```
@@ -13,7 +13,7 @@
 //!     // ... critical section code
 //! }
 //!
-//! if (m.tryLock()) {
+//! if (m.try_lock()) {
 //!     defer m.unlock();
 //!     // ... critical section code
 //! }
@@ -34,7 +34,7 @@ impl: Impl = .{},
 /// Returns `false` if the calling thread would have to block to acquire it.
 /// Otherwise, returns `true` and the caller should `unlock()` the Mutex to release it.
 pub fn try_lock(self: *Mutex) bool {
-    return self.impl.tryLock();
+    return self.impl.try_lock();
 }
 
 /// Acquires the mutex, blocking the caller's thread until it can.
@@ -44,7 +44,7 @@ pub fn lock(self: *Mutex) void {
     self.impl.lock();
 }
 
-/// Releases the mutex which was previously acquired with `lock()` or `tryLock()`.
+/// Releases the mutex which was previously acquired with `lock()` or `try_lock()`.
 /// It is undefined behavior if the mutex is unlocked from a different thread that it was locked from.
 pub fn unlock(self: *Mutex) void {
     self.impl.unlock();
@@ -59,7 +59,7 @@ const ReleaseImpl = if (builtin.single_threaded)
     SingleThreadedImpl
 else if (builtin.os.tag == .windows)
     WindowsImpl
-else if (builtin.os.tag.isDarwin())
+else if (builtin.os.tag.is_darwin())
     DarwinImpl
 else
     FutexImpl;
@@ -69,15 +69,15 @@ const DebugImpl = struct {
     impl: ReleaseImpl = .{},
 
     inline fn try_lock(self: *@This()) bool {
-        const locking = self.impl.tryLock();
+        const locking = self.impl.try_lock();
         if (locking) {
-            self.locking_thread.store(Thread.getCurrentId(), .unordered);
+            self.locking_thread.store(Thread.get_current_id(), .unordered);
         }
         return locking;
     }
 
     inline fn lock(self: *@This()) void {
-        const current_id = Thread.getCurrentId();
+        const current_id = Thread.get_current_id();
         if (self.locking_thread.load(.unordered) == current_id and current_id != 0) {
             @panic("Deadlock detected");
         }
@@ -86,7 +86,7 @@ const DebugImpl = struct {
     }
 
     inline fn unlock(self: *@This()) void {
-        assert(self.locking_thread.load(.unordered) == Thread.getCurrentId());
+        assert(self.locking_thread.load(.unordered) == Thread.get_current_id());
         self.locking_thread.store(0, .unordered);
         self.impl.unlock();
     }
@@ -102,7 +102,7 @@ const SingleThreadedImpl = struct {
     }
 
     fn lock(self: *@This()) void {
-        if (!self.tryLock()) {
+        if (!self.try_lock()) {
             unreachable; // deadlock detected
         }
     }
@@ -160,22 +160,22 @@ const FutexImpl = struct {
     const contended: u32 = 0b11; // must contain the `locked` bit for x86 optimization below
 
     fn lock(self: *@This()) void {
-        if (!self.tryLock())
-            self.lockSlow();
+        if (!self.try_lock())
+            self.lock_slow();
     }
 
     fn try_lock(self: *@This()) bool {
         // On x86, use `lock bts` instead of `lock cmpxchg` as:
         // - they both seem to mark the cache-line as modified regardless: https://stackoverflow.com/a/63350048
         // - `lock bts` is smaller instruction-wise which makes it better for inlining
-        if (comptime builtin.target.cpu.arch.isX86()) {
+        if (comptime builtin.target.cpu.arch.is_x86()) {
             const locked_bit = @ctz(locked);
-            return self.state.bitSet(locked_bit, .acquire) == 0;
+            return self.state.bit_set(locked_bit, .acquire) == 0;
         }
 
         // Acquire barrier ensures grabbing the lock happens before the critical section
         // and that the previous lock holder's critical section happens before we grab the lock.
-        return self.state.cmpxchgWeak(unlocked, locked, .acquire, .monotonic) == null;
+        return self.state.cmpxchg_weak(unlocked, locked, .acquire, .monotonic) == null;
     }
 
     fn lock_slow(self: *@This()) void {
@@ -221,12 +221,12 @@ const FutexImpl = struct {
 test "smoke test" {
     var mutex = Mutex{};
 
-    try testing.expect(mutex.tryLock());
-    try testing.expect(!mutex.tryLock());
+    try testing.expect(mutex.try_lock());
+    try testing.expect(!mutex.try_lock());
     mutex.unlock();
 
     mutex.lock();
-    try testing.expect(!mutex.tryLock());
+    try testing.expect(!mutex.try_lock());
     mutex.unlock();
 }
 
@@ -236,12 +236,12 @@ const NonAtomicCounter = struct {
     value: [2]u64 = [_]u64{ 0, 0 },
 
     fn get(self: NonAtomicCounter) u128 {
-        return @as(u128, @bitCast(self.value));
+        return @as(u128, @bit_cast(self.value));
     }
 
     fn inc(self: *NonAtomicCounter) void {
-        for (@as([2]u64, @bitCast(self.get() + 1)), 0..) |v, i| {
-            @as(*volatile u64, @ptrCast(&self.value[i])).* = v;
+        for (@as([2]u64, @bit_cast(self.get() + 1)), 0..) |v, i| {
+            @as(*volatile u64, @ptr_cast(&self.value[i])).* = v;
         }
     }
 };
@@ -274,7 +274,7 @@ test "many uncontended" {
     var runners = [_]Runner{.{}} ** num_threads;
     for (&runners) |*r| r.thread = try Thread.spawn(.{}, Runner.run, .{r});
     for (runners) |r| r.thread.join();
-    for (runners) |r| try testing.expectEqual(r.counter.get(), num_increments);
+    for (runners) |r| try testing.expect_equal(r.counter.get(), num_increments);
 }
 
 test "many contended" {
@@ -310,5 +310,5 @@ test "many contended" {
     for (&threads) |*t| t.* = try Thread.spawn(.{}, Runner.run, .{&runner});
     for (threads) |t| t.join();
 
-    try testing.expectEqual(runner.counter.get(), num_increments * num_threads);
+    try testing.expect_equal(runner.counter.get(), num_increments * num_threads);
 }

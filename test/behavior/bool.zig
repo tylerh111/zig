@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 
 test "bool literals" {
     try expect(true);
@@ -13,26 +13,26 @@ test "cast bool to int" {
 
     const t = true;
     const f = false;
-    try expectEqual(@as(u32, 1), @intFromBool(t));
-    try expectEqual(@as(u32, 0), @intFromBool(f));
-    try expectEqual(-1, @as(i1, @bitCast(@intFromBool(t))));
-    try expectEqual(0, @as(i1, @bitCast(@intFromBool(f))));
-    try expectEqual(u1, @TypeOf(@intFromBool(t)));
-    try expectEqual(u1, @TypeOf(@intFromBool(f)));
-    try nonConstCastIntFromBool(t, f);
+    try expect_equal(@as(u32, 1), @int_from_bool(t));
+    try expect_equal(@as(u32, 0), @int_from_bool(f));
+    try expect_equal(-1, @as(i1, @bit_cast(@int_from_bool(t))));
+    try expect_equal(0, @as(i1, @bit_cast(@int_from_bool(f))));
+    try expect_equal(u1, @TypeOf(@int_from_bool(t)));
+    try expect_equal(u1, @TypeOf(@int_from_bool(f)));
+    try non_const_cast_int_from_bool(t, f);
 }
 
 fn non_const_cast_int_from_bool(t: bool, f: bool) !void {
-    try expectEqual(@as(u32, 1), @intFromBool(t));
-    try expectEqual(@as(u32, 0), @intFromBool(f));
-    try expectEqual(@as(i1, -1), @as(i1, @bitCast(@intFromBool(t))));
-    try expectEqual(@as(i1, 0), @as(i1, @bitCast(@intFromBool(f))));
-    try expectEqual(u1, @TypeOf(@intFromBool(t)));
-    try expectEqual(u1, @TypeOf(@intFromBool(f)));
+    try expect_equal(@as(u32, 1), @int_from_bool(t));
+    try expect_equal(@as(u32, 0), @int_from_bool(f));
+    try expect_equal(@as(i1, -1), @as(i1, @bit_cast(@int_from_bool(t))));
+    try expect_equal(@as(i1, 0), @as(i1, @bit_cast(@int_from_bool(f))));
+    try expect_equal(u1, @TypeOf(@int_from_bool(t)));
+    try expect_equal(u1, @TypeOf(@int_from_bool(f)));
 }
 
 test "bool cmp" {
-    try expect(testBoolCmp(true, false) == false);
+    try expect(test_bool_cmp(true, false) == false);
 }
 fn test_bool_cmp(a: bool, b: bool) bool {
     return a == b;
@@ -48,8 +48,8 @@ test "compile time bool not" {
 }
 
 test "short circuit" {
-    try testShortCircuit(false, true);
-    try comptime testShortCircuit(false, true);
+    try test_short_circuit(false, true);
+    try comptime test_short_circuit(false, true);
 }
 
 fn test_short_circuit(f: bool, t: bool) !void {

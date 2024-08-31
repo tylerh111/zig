@@ -113,23 +113,23 @@ pub const Options = struct {
     enable_segfault_handler: bool = debug.default_enable_segfault_handler,
 
     /// Function used to implement `std.fs.cwd` for WASI.
-    wasiCwd: fn () os.wasi.fd_t = fs.defaultWasiCwd,
+    wasiCwd: fn () os.wasi.fd_t = fs.default_wasi_cwd,
 
     /// The current log level.
     log_level: log.Level = log.default_level,
 
     log_scope_levels: []const log.ScopeLevel = &.{},
 
-    logFn: fn (
+    log_fn: fn (
         comptime message_level: log.Level,
         comptime scope: @TypeOf(.enum_literal),
         comptime format: []const u8,
         args: anytype,
-    ) void = log.defaultLog,
+    ) void = log.default_log,
 
     fmt_max_depth: usize = fmt.default_max_depth,
 
-    cryptoRandomSeed: fn (buffer: []u8) void = @import("crypto/tlcsprng.zig").defaultRandomSeed,
+    cryptoRandomSeed: fn (buffer: []u8) void = @import("crypto/tlcsprng.zig").default_random_seed,
 
     crypto_always_getrandom: bool = false,
 
@@ -165,7 +165,7 @@ comptime {
 }
 
 test {
-    testing.refAllDecls(@This());
+    testing.ref_all_decls(@This());
 }
 
 comptime {

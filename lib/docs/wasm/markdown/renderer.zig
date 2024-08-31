@@ -4,23 +4,23 @@ const Node = Document.Node;
 
 /// A Markdown document renderer.
 ///
-/// Each concrete `Renderer` type has a `renderDefault` function, with the
-/// intention that custom `renderFn` implementations can call `renderDefault`
+/// Each concrete `Renderer` type has a `render_default` function, with the
+/// intention that custom `render_fn` implementations can call `render_default`
 /// for node types for which they require no special rendering.
 pub fn Renderer(comptime Writer: type, comptime Context: type) type {
     return struct {
-        renderFn: *const fn (
+        render_fn: *const fn (
             r: Self,
             doc: Document,
             node: Node.Index,
             writer: Writer,
-        ) Writer.Error!void = renderDefault,
+        ) Writer.Error!void = render_default,
         context: Context,
 
         const Self = @This();
 
         pub fn render(r: Self, doc: Document, writer: Writer) Writer.Error!void {
-            try r.renderFn(r, doc, .root, writer);
+            try r.render_fn(r, doc, .root, writer);
         }
 
         pub fn render_default(
@@ -29,153 +29,153 @@ pub fn Renderer(comptime Writer: type, comptime Context: type) type {
             node: Node.Index,
             writer: Writer,
         ) Writer.Error!void {
-            const data = doc.nodes.items(.data)[@intFromEnum(node)];
-            switch (doc.nodes.items(.tag)[@intFromEnum(node)]) {
+            const data = doc.nodes.items(.data)[@int_from_enum(node)];
+            switch (doc.nodes.items(.tag)[@int_from_enum(node)]) {
                 .root => {
-                    for (doc.extraChildren(data.container.children)) |child| {
-                        try r.renderFn(r, doc, child, writer);
+                    for (doc.extra_children(data.container.children)) |child| {
+                        try r.render_fn(r, doc, child, writer);
                     }
                 },
                 .list => {
-                    if (data.list.start.asNumber()) |start| {
+                    if (data.list.start.as_number()) |start| {
                         if (start == 1) {
-                            try writer.writeAll("<ol>\n");
+                            try writer.write_all("<ol>\n");
                         } else {
                             try writer.print("<ol start=\"{}\">\n", .{start});
                         }
                     } else {
-                        try writer.writeAll("<ul>\n");
+                        try writer.write_all("<ul>\n");
                     }
-                    for (doc.extraChildren(data.list.children)) |child| {
-                        try r.renderFn(r, doc, child, writer);
+                    for (doc.extra_children(data.list.children)) |child| {
+                        try r.render_fn(r, doc, child, writer);
                     }
-                    if (data.list.start.asNumber() != null) {
-                        try writer.writeAll("</ol>\n");
+                    if (data.list.start.as_number() != null) {
+                        try writer.write_all("</ol>\n");
                     } else {
-                        try writer.writeAll("</ul>\n");
+                        try writer.write_all("</ul>\n");
                     }
                 },
                 .list_item => {
-                    try writer.writeAll("<li>");
-                    for (doc.extraChildren(data.list_item.children)) |child| {
-                        if (data.list_item.tight and doc.nodes.items(.tag)[@intFromEnum(child)] == .paragraph) {
-                            const para_data = doc.nodes.items(.data)[@intFromEnum(child)];
-                            for (doc.extraChildren(para_data.container.children)) |para_child| {
-                                try r.renderFn(r, doc, para_child, writer);
+                    try writer.write_all("<li>");
+                    for (doc.extra_children(data.list_item.children)) |child| {
+                        if (data.list_item.tight and doc.nodes.items(.tag)[@int_from_enum(child)] == .paragraph) {
+                            const para_data = doc.nodes.items(.data)[@int_from_enum(child)];
+                            for (doc.extra_children(para_data.container.children)) |para_child| {
+                                try r.render_fn(r, doc, para_child, writer);
                             }
                         } else {
-                            try r.renderFn(r, doc, child, writer);
+                            try r.render_fn(r, doc, child, writer);
                         }
                     }
-                    try writer.writeAll("</li>\n");
+                    try writer.write_all("</li>\n");
                 },
                 .table => {
-                    try writer.writeAll("<table>\n");
-                    for (doc.extraChildren(data.container.children)) |child| {
-                        try r.renderFn(r, doc, child, writer);
+                    try writer.write_all("<table>\n");
+                    for (doc.extra_children(data.container.children)) |child| {
+                        try r.render_fn(r, doc, child, writer);
                     }
-                    try writer.writeAll("</table>\n");
+                    try writer.write_all("</table>\n");
                 },
                 .table_row => {
-                    try writer.writeAll("<tr>\n");
-                    for (doc.extraChildren(data.container.children)) |child| {
-                        try r.renderFn(r, doc, child, writer);
+                    try writer.write_all("<tr>\n");
+                    for (doc.extra_children(data.container.children)) |child| {
+                        try r.render_fn(r, doc, child, writer);
                     }
-                    try writer.writeAll("</tr>\n");
+                    try writer.write_all("</tr>\n");
                 },
                 .table_cell => {
                     if (data.table_cell.info.header) {
-                        try writer.writeAll("<th");
+                        try writer.write_all("<th");
                     } else {
-                        try writer.writeAll("<td");
+                        try writer.write_all("<td");
                     }
                     switch (data.table_cell.info.alignment) {
-                        .unset => try writer.writeAll(">"),
-                        else => |a| try writer.print(" style=\"text-align: {s}\">", .{@tagName(a)}),
+                        .unset => try writer.write_all(">"),
+                        else => |a| try writer.print(" style=\"text-align: {s}\">", .{@tag_name(a)}),
                     }
 
-                    for (doc.extraChildren(data.table_cell.children)) |child| {
-                        try r.renderFn(r, doc, child, writer);
+                    for (doc.extra_children(data.table_cell.children)) |child| {
+                        try r.render_fn(r, doc, child, writer);
                     }
 
                     if (data.table_cell.info.header) {
-                        try writer.writeAll("</th>\n");
+                        try writer.write_all("</th>\n");
                     } else {
-                        try writer.writeAll("</td>\n");
+                        try writer.write_all("</td>\n");
                     }
                 },
                 .heading => {
                     try writer.print("<h{}>", .{data.heading.level});
-                    for (doc.extraChildren(data.heading.children)) |child| {
-                        try r.renderFn(r, doc, child, writer);
+                    for (doc.extra_children(data.heading.children)) |child| {
+                        try r.render_fn(r, doc, child, writer);
                     }
                     try writer.print("</h{}>\n", .{data.heading.level});
                 },
                 .code_block => {
                     const content = doc.string(data.code_block.content);
-                    try writer.print("<pre><code>{}</code></pre>\n", .{fmtHtml(content)});
+                    try writer.print("<pre><code>{}</code></pre>\n", .{fmt_html(content)});
                 },
                 .blockquote => {
-                    try writer.writeAll("<blockquote>\n");
-                    for (doc.extraChildren(data.container.children)) |child| {
-                        try r.renderFn(r, doc, child, writer);
+                    try writer.write_all("<blockquote>\n");
+                    for (doc.extra_children(data.container.children)) |child| {
+                        try r.render_fn(r, doc, child, writer);
                     }
-                    try writer.writeAll("</blockquote>\n");
+                    try writer.write_all("</blockquote>\n");
                 },
                 .paragraph => {
-                    try writer.writeAll("<p>");
-                    for (doc.extraChildren(data.container.children)) |child| {
-                        try r.renderFn(r, doc, child, writer);
+                    try writer.write_all("<p>");
+                    for (doc.extra_children(data.container.children)) |child| {
+                        try r.render_fn(r, doc, child, writer);
                     }
-                    try writer.writeAll("</p>\n");
+                    try writer.write_all("</p>\n");
                 },
                 .thematic_break => {
-                    try writer.writeAll("<hr />\n");
+                    try writer.write_all("<hr />\n");
                 },
                 .link => {
                     const target = doc.string(data.link.target);
-                    try writer.print("<a href=\"{}\">", .{fmtHtml(target)});
-                    for (doc.extraChildren(data.link.children)) |child| {
-                        try r.renderFn(r, doc, child, writer);
+                    try writer.print("<a href=\"{}\">", .{fmt_html(target)});
+                    for (doc.extra_children(data.link.children)) |child| {
+                        try r.render_fn(r, doc, child, writer);
                     }
-                    try writer.writeAll("</a>");
+                    try writer.write_all("</a>");
                 },
                 .autolink => {
                     const target = doc.string(data.text.content);
-                    try writer.print("<a href=\"{0}\">{0}</a>", .{fmtHtml(target)});
+                    try writer.print("<a href=\"{0}\">{0}</a>", .{fmt_html(target)});
                 },
                 .image => {
                     const target = doc.string(data.link.target);
-                    try writer.print("<img src=\"{}\" alt=\"", .{fmtHtml(target)});
-                    for (doc.extraChildren(data.link.children)) |child| {
-                        try renderInlineNodeText(doc, child, writer);
+                    try writer.print("<img src=\"{}\" alt=\"", .{fmt_html(target)});
+                    for (doc.extra_children(data.link.children)) |child| {
+                        try render_inline_node_text(doc, child, writer);
                     }
-                    try writer.writeAll("\" />");
+                    try writer.write_all("\" />");
                 },
                 .strong => {
-                    try writer.writeAll("<strong>");
-                    for (doc.extraChildren(data.container.children)) |child| {
-                        try r.renderFn(r, doc, child, writer);
+                    try writer.write_all("<strong>");
+                    for (doc.extra_children(data.container.children)) |child| {
+                        try r.render_fn(r, doc, child, writer);
                     }
-                    try writer.writeAll("</strong>");
+                    try writer.write_all("</strong>");
                 },
                 .emphasis => {
-                    try writer.writeAll("<em>");
-                    for (doc.extraChildren(data.container.children)) |child| {
-                        try r.renderFn(r, doc, child, writer);
+                    try writer.write_all("<em>");
+                    for (doc.extra_children(data.container.children)) |child| {
+                        try r.render_fn(r, doc, child, writer);
                     }
-                    try writer.writeAll("</em>");
+                    try writer.write_all("</em>");
                 },
                 .code_span => {
                     const content = doc.string(data.text.content);
-                    try writer.print("<code>{}</code>", .{fmtHtml(content)});
+                    try writer.print("<code>{}</code>", .{fmt_html(content)});
                 },
                 .text => {
                     const content = doc.string(data.text.content);
-                    try writer.print("{}", .{fmtHtml(content)});
+                    try writer.print("{}", .{fmt_html(content)});
                 },
                 .line_break => {
-                    try writer.writeAll("<br />\n");
+                    try writer.write_all("<br />\n");
                 },
             }
         }
@@ -189,8 +189,8 @@ pub fn render_inline_node_text(
     node: Node.Index,
     writer: anytype,
 ) @TypeOf(writer).Error!void {
-    const data = doc.nodes.items(.data)[@intFromEnum(node)];
-    switch (doc.nodes.items(.tag)[@intFromEnum(node)]) {
+    const data = doc.nodes.items(.data)[@int_from_enum(node)];
+    switch (doc.nodes.items(.tag)[@int_from_enum(node)]) {
         .root,
         .list,
         .list_item,
@@ -205,31 +205,31 @@ pub fn render_inline_node_text(
         => unreachable, // Blocks
 
         .link, .image => {
-            for (doc.extraChildren(data.link.children)) |child| {
-                try renderInlineNodeText(doc, child, writer);
+            for (doc.extra_children(data.link.children)) |child| {
+                try render_inline_node_text(doc, child, writer);
             }
         },
         .strong => {
-            for (doc.extraChildren(data.container.children)) |child| {
-                try renderInlineNodeText(doc, child, writer);
+            for (doc.extra_children(data.container.children)) |child| {
+                try render_inline_node_text(doc, child, writer);
             }
         },
         .emphasis => {
-            for (doc.extraChildren(data.container.children)) |child| {
-                try renderInlineNodeText(doc, child, writer);
+            for (doc.extra_children(data.container.children)) |child| {
+                try render_inline_node_text(doc, child, writer);
             }
         },
         .autolink, .code_span, .text => {
             const content = doc.string(data.text.content);
-            try writer.print("{}", .{fmtHtml(content)});
+            try writer.print("{}", .{fmt_html(content)});
         },
         .line_break => {
-            try writer.writeAll("\n");
+            try writer.write_all("\n");
         },
     }
 }
 
-pub fn fmt_html(bytes: []const u8) std.fmt.Formatter(formatHtml) {
+pub fn fmt_html(bytes: []const u8) std.fmt.Formatter(format_html) {
     return .{ .data = bytes };
 }
 
@@ -243,11 +243,11 @@ fn format_html(
     _ = options;
     for (bytes) |b| {
         switch (b) {
-            '<' => try writer.writeAll("&lt;"),
-            '>' => try writer.writeAll("&gt;"),
-            '&' => try writer.writeAll("&amp;"),
-            '"' => try writer.writeAll("&quot;"),
-            else => try writer.writeByte(b),
+            '<' => try writer.write_all("&lt;"),
+            '>' => try writer.write_all("&gt;"),
+            '&' => try writer.write_all("&amp;"),
+            '"' => try writer.write_all("&quot;"),
+            else => try writer.write_byte(b),
         }
     }
 }

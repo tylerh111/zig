@@ -6,8 +6,8 @@ fn test__subosi4(a: i32, b: i32) !void {
     var expected_ov: c_int = undefined;
     const result = subo.__subosi4(a, b, &result_ov);
     const expected: i32 = simple_subosi4(a, b, &expected_ov);
-    try testing.expectEqual(expected, result);
-    try testing.expectEqual(expected_ov, result_ov);
+    try testing.expect_equal(expected, result);
+    try testing.expect_equal(expected_ov, result_ov);
 }
 
 // 2 cases on evaluating `a-b`:

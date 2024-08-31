@@ -29,7 +29,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
             var args = std.ArrayList([]const u8).init(arena);
             try add_cc_args(comp, arena, &args);
             if (comp.mingw_unicode_entry_point) {
-                try args.appendSlice(&.{ "-DUNICODE", "-D_UNICODE" });
+                try args.append_slice(&.{ "-DUNICODE", "-D_UNICODE" });
             }
             var files = [_]Compilation.CSourceFile{
                 .{
@@ -72,7 +72,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
                     .owner = undefined,
                 });
             }
-            const target = comp.getTarget();
+            const target = comp.get_target();
             if (target.cpu.arch == .x86 or target.cpu.arch == .x86_64) {
                 for (mingw32_x86_src) |dep| {
                     try c_source_files.append(.{
@@ -94,7 +94,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
                         });
                     }
                 }
-            } else if (target.cpu.arch.isARM()) {
+            } else if (target.cpu.arch.is_arm()) {
                 for (mingw32_arm32_src) |dep| {
                     try c_source_files.append(.{
                         .src_path = try comp.zig_lib_directory.join(arena, &[_][]const u8{
@@ -104,7 +104,7 @@ pub fn build_crtfile(comp: *Compilation, crt_file: CRTFile, prog_node: std.Progr
                         .owner = undefined,
                     });
                 }
-            } else if (target.cpu.arch.isAARCH64()) {
+            } else if (target.cpu.arch.is_aarch64()) {
                 for (mingw32_arm64_src) |dep| {
                     try c_source_files.append(.{
                         .src_path = try comp.zig_lib_directory.join(arena, &[_][]const u8{
@@ -127,7 +127,7 @@ fn add_cc_args(
     arena: Allocator,
     args: *std.ArrayList([]const u8),
 ) error{OutOfMemory}!void {
-    try args.appendSlice(&[_][]const u8{
+    try args.append_slice(&[_][]const u8{
         "-DHAVE_CONFIG_H",
 
         "-I",
@@ -137,12 +137,12 @@ fn add_cc_args(
         try comp.zig_lib_directory.join(arena, &[_][]const u8{ "libc", "include", "any-windows-any" }),
     });
 
-    const target = comp.getTarget();
-    if (target.cpu.arch.isARM() and target.ptrBitWidth() == 32) {
+    const target = comp.get_target();
+    if (target.cpu.arch.is_arm() and target.ptr_bit_width() == 32) {
         try args.append("-mfpu=vfp");
     }
 
-    try args.appendSlice(&[_][]const u8{
+    try args.append_slice(&[_][]const u8{
         "-std=gnu11",
         "-D_CRTBLD",
         "-D_SYSCRT=1",
@@ -157,12 +157,12 @@ fn add_cc_args(
 }
 
 pub fn build_import_lib(comp: *Compilation, lib_name: []const u8) !void {
-    if (build_options.only_c) @compileError("building import libs not included in core functionality");
+    if (build_options.only_c) @compile_error("building import libs not included in core functionality");
     var arena_allocator = std.heap.ArenaAllocator.init(comp.gpa);
     defer arena_allocator.deinit();
     const arena = arena_allocator.allocator();
 
-    const def_file_path = findDef(arena, comp.getTarget(), comp.zig_lib_directory, lib_name) catch |err| switch (err) {
+    const def_file_path = find_def(arena, comp.get_target(), comp.zig_lib_directory, lib_name) catch |err| switch (err) {
         error.FileNotFound => {
             log.debug("no {s}.def file available to make a DLL import {s}.lib", .{ lib_name, lib_name });
             // In this case we will end up putting foo.lib onto the linker line and letting the linker
@@ -172,49 +172,49 @@ pub fn build_import_lib(comp: *Compilation, lib_name: []const u8) !void {
         else => |e| return e,
     };
 
-    const target = comp.getTarget();
+    const target = comp.get_target();
 
     // Use the global cache directory.
     var cache: Cache = .{
         .gpa = comp.gpa,
-        .manifest_dir = try comp.global_cache_directory.handle.makeOpenPath("h", .{}),
+        .manifest_dir = try comp.global_cache_directory.handle.make_open_path("h", .{}),
     };
-    cache.addPrefix(.{ .path = null, .handle = std.fs.cwd() });
-    cache.addPrefix(comp.zig_lib_directory);
-    cache.addPrefix(comp.global_cache_directory);
+    cache.add_prefix(.{ .path = null, .handle = std.fs.cwd() });
+    cache.add_prefix(comp.zig_lib_directory);
+    cache.add_prefix(comp.global_cache_directory);
     defer cache.manifest_dir.close();
 
-    cache.hash.addBytes(build_options.version);
-    cache.hash.addOptionalBytes(comp.zig_lib_directory.path);
+    cache.hash.add_bytes(build_options.version);
+    cache.hash.add_optional_bytes(comp.zig_lib_directory.path);
     cache.hash.add(target.cpu.arch);
 
     var man = cache.obtain();
     defer man.deinit();
 
-    _ = try man.addFile(def_file_path, null);
+    _ = try man.add_file(def_file_path, null);
 
-    const final_lib_basename = try std.fmt.allocPrint(comp.gpa, "{s}.lib", .{lib_name});
+    const final_lib_basename = try std.fmt.alloc_print(comp.gpa, "{s}.lib", .{lib_name});
     errdefer comp.gpa.free(final_lib_basename);
 
     if (try man.hit()) {
         const digest = man.final();
 
-        try comp.crt_files.ensureUnusedCapacity(comp.gpa, 1);
-        comp.crt_files.putAssumeCapacityNoClobber(final_lib_basename, .{
+        try comp.crt_files.ensure_unused_capacity(comp.gpa, 1);
+        comp.crt_files.put_assume_capacity_no_clobber(final_lib_basename, .{
             .full_object_path = try comp.global_cache_directory.join(comp.gpa, &[_][]const u8{
                 "o", &digest, final_lib_basename,
             }),
-            .lock = man.toOwnedLock(),
+            .lock = man.to_owned_lock(),
         });
         return;
     }
 
     const digest = man.final();
     const o_sub_path = try std.fs.path.join(arena, &[_][]const u8{ "o", &digest });
-    var o_dir = try comp.global_cache_directory.handle.makeOpenPath(o_sub_path, .{});
+    var o_dir = try comp.global_cache_directory.handle.make_open_path(o_sub_path, .{});
     defer o_dir.close();
 
-    const final_def_basename = try std.fmt.allocPrint(arena, "{s}.def", .{lib_name});
+    const final_def_basename = try std.fmt.alloc_print(arena, "{s}.def", .{lib_name});
     const def_final_path = try comp.global_cache_directory.join(arena, &[_][]const u8{
         "o", &digest, final_def_basename,
     });
@@ -234,9 +234,9 @@ pub fn build_import_lib(comp: *Compilation, lib_name: []const u8) !void {
     const include_dir = try comp.zig_lib_directory.join(arena, &[_][]const u8{ "libc", "mingw", "def-include" });
 
     if (comp.verbose_cc) print: {
-        std.debug.lockStdErr();
-        defer std.debug.unlockStdErr();
-        const stderr = std.io.getStdErr().writer();
+        std.debug.lock_std_err();
+        defer std.debug.unlock_std_err();
+        const stderr = std.io.get_std_err().writer();
         nosuspend stderr.print("def file: {s}\n", .{def_file_path}) catch break :print;
         nosuspend stderr.print("include dir: {s}\n", .{include_dir}) catch break :print;
         nosuspend stderr.print("output path: {s}\n", .{def_final_path}) catch break :print;
@@ -244,29 +244,29 @@ pub fn build_import_lib(comp: *Compilation, lib_name: []const u8) !void {
 
     try aro_comp.include_dirs.append(comp.gpa, include_dir);
 
-    const builtin_macros = try aro_comp.generateBuiltinMacros(.include_system_defines);
-    const user_macros = try aro_comp.addSourceFromBuffer("<command line>", target_defines);
-    const def_file_source = try aro_comp.addSourceFromPath(def_file_path);
+    const builtin_macros = try aro_comp.generate_builtin_macros(.include_system_defines);
+    const user_macros = try aro_comp.add_source_from_buffer("<command line>", target_defines);
+    const def_file_source = try aro_comp.add_source_from_path(def_file_path);
 
     var pp = aro.Preprocessor.init(&aro_comp);
     defer pp.deinit();
     pp.linemarkers = .none;
     pp.preserve_whitespace = true;
 
-    try pp.preprocessSources(&.{ def_file_source, builtin_macros, user_macros });
+    try pp.preprocess_sources(&.{ def_file_source, builtin_macros, user_macros });
 
     for (aro_comp.diagnostics.list.items) |diagnostic| {
         if (diagnostic.kind == .@"fatal error" or diagnostic.kind == .@"error") {
-            aro.Diagnostics.render(&aro_comp, std.io.tty.detectConfig(std.io.getStdErr()));
+            aro.Diagnostics.render(&aro_comp, std.io.tty.detect_config(std.io.get_std_err()));
             return error.AroPreprocessorFailed;
         }
     }
 
     {
         // new scope to ensure definition file is written before passing the path to WriteImportLibrary
-        const def_final_file = try o_dir.createFile(final_def_basename, .{ .truncate = true });
+        const def_final_file = try o_dir.create_file(final_def_basename, .{ .truncate = true });
         defer def_final_file.close();
-        try pp.prettyPrintTokens(def_final_file.writer());
+        try pp.pretty_print_tokens(def_final_file.writer());
     }
 
     const lib_final_path = try comp.global_cache_directory.join(comp.gpa, &[_][]const u8{
@@ -277,22 +277,22 @@ pub fn build_import_lib(comp: *Compilation, lib_name: []const u8) !void {
     if (!build_options.have_llvm) return error.ZigCompilerNotBuiltWithLLVMExtensions;
     const llvm_bindings = @import("codegen/llvm/bindings.zig");
     const llvm = @import("codegen/llvm.zig");
-    const arch_tag = llvm.targetArch(target.cpu.arch);
-    const def_final_path_z = try arena.dupeZ(u8, def_final_path);
-    const lib_final_path_z = try arena.dupeZ(u8, lib_final_path);
+    const arch_tag = llvm.target_arch(target.cpu.arch);
+    const def_final_path_z = try arena.dupe_z(u8, def_final_path);
+    const lib_final_path_z = try arena.dupe_z(u8, lib_final_path);
     if (llvm_bindings.WriteImportLibrary(def_final_path_z.ptr, arch_tag, lib_final_path_z.ptr, true)) {
         // TODO surface a proper error here
         log.err("unable to turn {s}.def into {s}.lib", .{ lib_name, lib_name });
         return error.WritingImportLibFailed;
     }
 
-    man.writeManifest() catch |err| {
+    man.write_manifest() catch |err| {
         log.warn("failed to write cache manifest for DLL import {s}.lib: {s}", .{ lib_name, @errorName(err) });
     };
 
-    try comp.crt_files.putNoClobber(comp.gpa, final_lib_basename, .{
+    try comp.crt_files.put_no_clobber(comp.gpa, final_lib_basename, .{
         .full_object_path = lib_final_path,
-        .lock = man.toOwnedLock(),
+        .lock = man.to_owned_lock(),
     });
 }
 
@@ -302,7 +302,7 @@ pub fn lib_exists(
     zig_lib_directory: Cache.Directory,
     lib_name: []const u8,
 ) !bool {
-    const s = findDef(allocator, target, zig_lib_directory, lib_name) catch |err| switch (err) {
+    const s = find_def(allocator, target, zig_lib_directory, lib_name) catch |err| switch (err) {
         error.FileNotFound => return false,
         else => |e| return e,
     };
@@ -340,7 +340,7 @@ fn find_def(
             try override_path.writer().print(fmt_path, .{ lib_path, lib_name });
         }
         if (std.fs.cwd().access(override_path.items, .{})) |_| {
-            return override_path.toOwnedSlice();
+            return override_path.to_owned_slice();
         } else |err| switch (err) {
             error.FileNotFound => {},
             else => |e| return e,
@@ -349,7 +349,7 @@ fn find_def(
 
     {
         // Try the generic version.
-        override_path.shrinkRetainingCapacity(0);
+        override_path.shrink_retaining_capacity(0);
         const fmt_path = "libc" ++ s ++ "mingw" ++ s ++ "lib-common" ++ s ++ "{s}.def";
         if (zig_lib_directory.path) |p| {
             try override_path.writer().print("{s}" ++ s ++ fmt_path, .{ p, lib_name });
@@ -357,7 +357,7 @@ fn find_def(
             try override_path.writer().print(fmt_path, .{lib_name});
         }
         if (std.fs.cwd().access(override_path.items, .{})) |_| {
-            return override_path.toOwnedSlice();
+            return override_path.to_owned_slice();
         } else |err| switch (err) {
             error.FileNotFound => {},
             else => |e| return e,
@@ -366,7 +366,7 @@ fn find_def(
 
     {
         // Try the generic version and preprocess it.
-        override_path.shrinkRetainingCapacity(0);
+        override_path.shrink_retaining_capacity(0);
         const fmt_path = "libc" ++ s ++ "mingw" ++ s ++ "lib-common" ++ s ++ "{s}.def.in";
         if (zig_lib_directory.path) |p| {
             try override_path.writer().print("{s}" ++ s ++ fmt_path, .{ p, lib_name });
@@ -374,7 +374,7 @@ fn find_def(
             try override_path.writer().print(fmt_path, .{lib_name});
         }
         if (std.fs.cwd().access(override_path.items, .{})) |_| {
-            return override_path.toOwnedSlice();
+            return override_path.to_owned_slice();
         } else |err| switch (err) {
             error.FileNotFound => {},
             else => |e| return e,

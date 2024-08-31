@@ -8,14 +8,14 @@ fn test__addoti4(a: i128, b: i128) !void {
     var expected_ov: c_int = undefined;
     const result = addv.__addoti4(a, b, &result_ov);
     const expected: i128 = simple_addoti4(a, b, &expected_ov);
-    try testing.expectEqual(expected, result);
-    try testing.expectEqual(expected_ov, result_ov);
+    try testing.expect_equal(expected, result);
+    try testing.expect_equal(expected_ov, result_ov);
 }
 
 fn simple_addoti4(a: i128, b: i128, overflow: *c_int) i128 {
     overflow.* = 0;
-    const min: i128 = math.minInt(i128);
-    const max: i128 = math.maxInt(i128);
+    const min: i128 = math.min_int(i128);
+    const max: i128 = math.max_int(i128);
     if (((a > 0) and (b > max - a)) or
         ((a < 0) and (b < min - a)))
         overflow.* = 1;
@@ -23,8 +23,8 @@ fn simple_addoti4(a: i128, b: i128, overflow: *c_int) i128 {
 }
 
 test "addoti4" {
-    const min: i128 = math.minInt(i128);
-    const max: i128 = math.maxInt(i128);
+    const min: i128 = math.min_int(i128);
+    const max: i128 = math.max_int(i128);
     var i: i128 = 1;
     while (i < max) : (i *|= 2) {
         try test__addoti4(i, i);

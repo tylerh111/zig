@@ -1,14 +1,14 @@
 export fn returns() void {
-    while (optionalReturnError()) |_| {
-        while (optionalReturnError()) |_| {
+    while (optional_return_error()) |_| {
+        while (optional_return_error()) |_| {
             return;
         } else |_| {
-            if (_ == error.optionalReturnError) return;
+            if (_ == error.optional_return_error) return;
         }
     }
 }
 fn optional_return_error() !?u32 {
-    return error.optionalReturnError;
+    return error.optional_return_error;
 }
 
 // error

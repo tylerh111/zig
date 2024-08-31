@@ -9,7 +9,7 @@ test "@shuffle int" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_x86_64 and
-        !comptime std.Target.x86.featureSetHas(builtin.cpu.features, .ssse3)) return error.SkipZigTest;
+        !comptime std.Target.x86.feature_set_has(builtin.cpu.features, .ssse3)) return error.SkipZigTest;
 
     const S = struct {
         fn do_the_test() !void {
@@ -45,8 +45,8 @@ test "@shuffle int" {
             try expect(mem.eql(i32, &@as([4]i32, res), &[4]i32{ 2147483647, 3, -2, 4 }));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "@shuffle bool 1" {
@@ -75,8 +75,8 @@ test "@shuffle bool 1" {
             try expect(mem.eql(bool, &@as([4]bool, res), &[4]bool{ false, false, true, false }));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "@shuffle bool 2" {
@@ -103,6 +103,6 @@ test "@shuffle bool 2" {
             try expect(mem.eql(bool, &@as([4]bool, res), &[4]bool{ false, false, true, false }));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }

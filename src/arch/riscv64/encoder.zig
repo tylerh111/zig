@@ -10,13 +10,13 @@ pub const Instruction = struct {
     };
 
     pub fn new(mnemonic: Encoding.Mnemonic, ops: []const Operand) !Instruction {
-        const encoding = (try Encoding.findByMnemonic(mnemonic, ops)) orelse {
+        const encoding = (try Encoding.find_by_mnemonic(mnemonic, ops)) orelse {
             std.log.err("no encoding found for:  {s} {s} {s} {s} {s}", .{
-                @tagName(mnemonic),
-                @tagName(if (ops.len > 0) ops[0] else .none),
-                @tagName(if (ops.len > 1) ops[1] else .none),
-                @tagName(if (ops.len > 2) ops[2] else .none),
-                @tagName(if (ops.len > 3) ops[3] else .none),
+                @tag_name(mnemonic),
+                @tag_name(if (ops.len > 0) ops[0] else .none),
+                @tag_name(if (ops.len > 1) ops[1] else .none),
+                @tag_name(if (ops.len > 2) ops[2] else .none),
+                @tag_name(if (ops.len > 3) ops[3] else .none),
             });
             return error.InvalidInstruction;
         };
@@ -31,7 +31,7 @@ pub const Instruction = struct {
     }
 
     pub fn encode(inst: Instruction, writer: anytype) !void {
-        try writer.writeInt(u32, inst.encoding.data.toU32(), .little);
+        try writer.write_int(u32, inst.encoding.data.to_u32(), .little);
     }
 };
 

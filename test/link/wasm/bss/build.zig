@@ -14,10 +14,10 @@ pub fn build(b: *std.Build) void {
 
 fn add(b: *std.Build, test_step: *std.Build.Step, optimize_mode: std.builtin.OptimizeMode, is_safe: bool) void {
     {
-        const lib = b.addExecutable(.{
+        const lib = b.add_executable(.{
             .name = "lib",
             .root_source_file = b.path("lib.zig"),
-            .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
+            .target = b.resolve_target_query(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
             .optimize = optimize_mode,
             .strip = false,
         });
@@ -28,44 +28,44 @@ fn add(b: *std.Build, test_step: *std.Build.Step, optimize_mode: std.builtin.Opt
         lib.import_memory = true;
         lib.link_gc_sections = false;
 
-        const check_lib = lib.checkObject();
+        const check_lib = lib.check_object();
 
         // since we import memory, make sure it exists with the correct naming
-        check_lib.checkInHeaders();
-        check_lib.checkExact("Section import");
-        check_lib.checkExact("entries 1");
-        check_lib.checkExact("module env"); // default module name is "env"
-        check_lib.checkExact("name memory"); // as per linker specification
+        check_lib.check_in_headers();
+        check_lib.check_exact("Section import");
+        check_lib.check_exact("entries 1");
+        check_lib.check_exact("module env"); // default module name is "env"
+        check_lib.check_exact("name memory"); // as per linker specification
 
         // since we are importing memory, ensure it's not exported
-        check_lib.checkInHeaders();
-        check_lib.checkNotPresent("Section export");
+        check_lib.check_in_headers();
+        check_lib.check_not_present("Section export");
 
         // validate the name of the stack pointer
-        check_lib.checkInHeaders();
-        check_lib.checkExact("Section custom");
-        check_lib.checkExact("type data_segment");
-        check_lib.checkExact("names 2");
-        check_lib.checkExact("index 0");
-        check_lib.checkExact("name .rodata");
+        check_lib.check_in_headers();
+        check_lib.check_exact("Section custom");
+        check_lib.check_exact("type data_segment");
+        check_lib.check_exact("names 2");
+        check_lib.check_exact("index 0");
+        check_lib.check_exact("name .rodata");
         // for safe optimization modes `undefined` is stored in data instead of bss.
         if (is_safe) {
-            check_lib.checkExact("index 1");
-            check_lib.checkExact("name .data");
-            check_lib.checkNotPresent("name .bss");
+            check_lib.check_exact("index 1");
+            check_lib.check_exact("name .data");
+            check_lib.check_not_present("name .bss");
         } else {
-            check_lib.checkExact("index 1"); // bss section always last
-            check_lib.checkExact("name .bss");
+            check_lib.check_exact("index 1"); // bss section always last
+            check_lib.check_exact("name .bss");
         }
-        test_step.dependOn(&check_lib.step);
+        test_step.depend_on(&check_lib.step);
     }
 
     // verify zero'd declaration is stored in bss for all optimization modes.
     {
-        const lib = b.addExecutable(.{
+        const lib = b.add_executable(.{
             .name = "lib",
             .root_source_file = b.path("lib2.zig"),
-            .target = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
+            .target = b.resolve_target_query(.{ .cpu_arch = .wasm32, .os_tag = .freestanding }),
             .optimize = optimize_mode,
             .strip = false,
         });
@@ -76,16 +76,16 @@ fn add(b: *std.Build, test_step: *std.Build.Step, optimize_mode: std.builtin.Opt
         lib.import_memory = true;
         lib.link_gc_sections = false;
 
-        const check_lib = lib.checkObject();
-        check_lib.checkInHeaders();
-        check_lib.checkExact("Section custom");
-        check_lib.checkExact("type data_segment");
-        check_lib.checkExact("names 2");
-        check_lib.checkExact("index 0");
-        check_lib.checkExact("name .rodata");
-        check_lib.checkExact("index 1");
-        check_lib.checkExact("name .bss");
+        const check_lib = lib.check_object();
+        check_lib.check_in_headers();
+        check_lib.check_exact("Section custom");
+        check_lib.check_exact("type data_segment");
+        check_lib.check_exact("names 2");
+        check_lib.check_exact("index 0");
+        check_lib.check_exact("name .rodata");
+        check_lib.check_exact("index 1");
+        check_lib.check_exact("name .bss");
 
-        test_step.dependOn(&check_lib.step);
+        test_step.depend_on(&check_lib.step);
     }
 }

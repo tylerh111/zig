@@ -1,8 +1,8 @@
 const expect = @import("std").testing.expect;
 
 test "while else" {
-    try expect(rangeHasNumber(0, 10, 5));
-    try expect(!rangeHasNumber(0, 10, 15));
+    try expect(range_has_number(0, 10, 5));
+    try expect(!range_has_number(0, 10, 15));
 }
 
 fn range_has_number(begin: usize, end: usize, number: usize) bool {

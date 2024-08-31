@@ -41,7 +41,7 @@ pub const BootServices = extern struct {
     allocatePages: *const fn (alloc_type: AllocateType, mem_type: MemoryType, pages: usize, memory: *[*]align(4096) u8) callconv(cc) Status,
 
     /// Frees memory pages.
-    freePages: *const fn (memory: [*]align(4096) u8, pages: usize) callconv(cc) Status,
+    free_pages: *const fn (memory: [*]align(4096) u8, pages: usize) callconv(cc) Status,
 
     /// Returns the current memory map.
     getMemoryMap: *const fn (mmap_size: *usize, mmap: ?[*]MemoryDescriptor, mapKey: *usize, descriptor_size: *usize, descriptor_version: *u32) callconv(cc) Status,
@@ -91,7 +91,7 @@ pub const BootServices = extern struct {
     registerProtocolNotify: *const fn (protocol: *align(8) const Guid, event: Event, registration: **anyopaque) callconv(cc) Status,
 
     /// Returns an array of handles that support a specified protocol.
-    locateHandle: *const fn (search_type: LocateSearchType, protocol: ?*align(8) const Guid, search_key: ?*const anyopaque, bufferSize: *usize, buffer: [*]Handle) callconv(cc) Status,
+    locateHandle: *const fn (search_type: LocateSearchType, protocol: ?*align(8) const Guid, search_key: ?*const anyopaque, buffer_size: *usize, buffer: [*]Handle) callconv(cc) Status,
 
     /// Locates the handle to a device on the device path that supports the specified protocol
     locateDevicePath: *const fn (protocols: *align(8) const Guid, device_path: **const DevicePathProtocol, device: *?Handle) callconv(cc) Status,
@@ -170,14 +170,14 @@ pub const BootServices = extern struct {
     /// Opens a protocol with a structure as the loaded image for a UEFI application
     pub fn open_protocol_st(self: *BootServices, comptime protocol: type, handle: Handle) !*protocol {
         if (!@hasDecl(protocol, "guid"))
-            @compileError("Protocol is missing guid!");
+            @compile_error("Protocol is missing guid!");
 
         var ptr: ?*protocol = undefined;
 
         try self.openProtocol(
             handle,
             &protocol.guid,
-            @as(*?*anyopaque, @ptrCast(&ptr)),
+            @as(*?*anyopaque, @ptr_cast(&ptr)),
             // Invoking handle (loaded image)
             uefi.handle,
             // Control handle (null as not a driver)

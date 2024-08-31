@@ -1,4 +1,4 @@
-//! Expects to be run after the C preprocessor and after `removeComments`.
+//! Expects to be run after the C preprocessor and after `remove_comments`.
 //! This means that the lexer assumes that:
 //! - Splices ('\' at the end of a line) have been handled/collapsed.
 //! - Preprocessor directives and macros have been expanded (any remaining should be skipped with the exception of `#pragma code_page`).
@@ -6,11 +6,11 @@
 
 const std = @import("std");
 const ErrorDetails = @import("errors.zig").ErrorDetails;
-const columnWidth = @import("literals.zig").columnWidth;
+const column_width = @import("literals.zig").column_width;
 const code_pages = @import("code_pages.zig");
 const CodePage = code_pages.CodePage;
 const SourceMappings = @import("source_mapping.zig").SourceMappings;
-const isNonAsciiDigit = @import("utils.zig").isNonAsciiDigit;
+const is_non_ascii_digit = @import("utils.zig").is_non_ascii_digit;
 
 const dumpTokensDuringTests = false;
 
@@ -64,25 +64,25 @@ pub const Token = struct {
 
     pub fn name_for_error_display(self: Token, buffer: []const u8) []const u8 {
         return switch (self.id) {
-            .eof => self.id.nameForErrorDisplay(),
+            .eof => self.id.name_for_error_display(),
             else => self.slice(buffer),
         };
     }
 
     /// Returns 0-based column
     pub fn calculate_column(token: Token, source: []const u8, tab_columns: usize, maybe_line_start: ?usize) usize {
-        const line_start = maybe_line_start orelse token.getLineStartForColumnCalc(source);
+        const line_start = maybe_line_start orelse token.get_line_start_for_column_calc(source);
 
         var i: usize = line_start;
         var column: usize = 0;
         while (i < token.start) : (i += 1) {
-            column += columnWidth(column, source[i], tab_columns);
+            column += column_width(column, source[i], tab_columns);
         }
         return column;
     }
 
-    // TODO: More testing is needed to determine if this can be merged with getLineStartForErrorDisplay
-    //       (the TODO in currentIndexFormsLineEndingPair should be taken into account as well)
+    // TODO: More testing is needed to determine if this can be merged with get_line_start_for_error_display
+    //       (the TODO in current_index_forms_line_ending_pair should be taken into account as well)
     pub fn get_line_start_for_column_calc(token: Token, source: []const u8) usize {
         const line_start = line_start: {
             if (token.start != 0) {
@@ -114,7 +114,7 @@ pub const Token = struct {
     }
 
     pub fn get_line_for_error_display(token: Token, source: []const u8, maybe_line_start: ?usize) []const u8 {
-        const line_start = maybe_line_start orelse token.getLineStartForErrorDisplay(source);
+        const line_start = maybe_line_start orelse token.get_line_start_for_error_display(source);
 
         var line_end = line_start;
         while (line_end < source.len and source[line_end] != '\r' and source[line_end] != '\n') : (line_end += 1) {}
@@ -131,12 +131,12 @@ pub const LineHandler = struct {
     buffer: []const u8,
     last_line_ending_index: ?usize = null,
 
-    /// Like incrementLineNumber but checks that the current char is a line ending first.
+    /// Like increment_line_number but checks that the current char is a line ending first.
     /// Returns the new line number if it was incremented, null otherwise.
     pub fn maybe_increment_line_number(self: *LineHandler, cur_index: usize) ?usize {
         const c = self.buffer[cur_index];
         if (c == '\r' or c == '\n') {
-            return self.incrementLineNumber(cur_index);
+            return self.increment_line_number(cur_index);
         }
         return null;
     }
@@ -144,7 +144,7 @@ pub const LineHandler = struct {
     /// Increments line_number appropriately (handling line ending pairs)
     /// and returns the new line number if it was incremented, or null otherwise.
     pub fn increment_line_number(self: *LineHandler, cur_index: usize) ?usize {
-        if (self.currentIndexFormsLineEndingPair(cur_index)) {
+        if (self.current_index_forms_line_ending_pair(cur_index)) {
             self.last_line_ending_index = null;
             return null;
         } else {
@@ -243,7 +243,7 @@ pub const Lexer = struct {
     }
 
     pub fn dump(self: *Self, token: *const Token) void {
-        std.debug.print("{s}:{d}: {s}\n", .{ @tagName(token.id), token.line_number, std.fmt.fmtSliceEscapeLower(token.slice(self.buffer)) });
+        std.debug.print("{s}:{d}: {s}\n", .{ @tag_name(token.id), token.line_number, std.fmt.fmt_slice_escape_lower(token.slice(self.buffer)) });
     }
 
     pub const LexMethod = enum {
@@ -254,9 +254,9 @@ pub const Lexer = struct {
 
     pub fn next(self: *Self, comptime method: LexMethod) LexError!Token {
         switch (method) {
-            .whitespace_delimiter_only => return self.nextWhitespaceDelimeterOnly(),
-            .normal => return self.nextNormal(),
-            .normal_expect_operator => return self.nextNormalWithContext(.expect_operator),
+            .whitespace_delimiter_only => return self.next_whitespace_delimeter_only(),
+            .normal => return self.next_normal(),
+            .normal_expect_operator => return self.next_normal_with_context(.expect_operator),
         }
     }
 
@@ -277,14 +277,14 @@ pub const Lexer = struct {
         };
         var state = StateWhitespaceDelimiterOnly.start;
 
-        while (self.current_code_page.codepointAt(self.index, self.buffer)) |codepoint| : (self.index += codepoint.byte_len) {
+        while (self.current_code_page.codepoint_at(self.index, self.buffer)) |codepoint| : (self.index += codepoint.byte_len) {
             const c = codepoint.value;
-            try self.checkForIllegalCodepoint(codepoint, false);
+            try self.check_for_illegal_codepoint(codepoint, false);
             switch (state) {
                 .start => switch (c) {
                     '\r', '\n' => {
                         result.start = self.index + 1;
-                        result.line_number = self.incrementLineNumber();
+                        result.line_number = self.increment_line_number();
                     },
                     ' ', '\t', '\x05'...'\x08', '\x0B'...'\x0C', '\x0E'...'\x1F' => {
                         result.start = self.index + 1;
@@ -327,10 +327,10 @@ pub const Lexer = struct {
                 },
                 .preprocessor => switch (c) {
                     '\r', '\n' => {
-                        try self.evaluatePreprocessorCommand(result.start, self.index);
+                        try self.evaluate_preprocessor_command(result.start, self.index);
                         result.start = self.index + 1;
                         state = .start;
-                        result.line_number = self.incrementLineNumber();
+                        result.line_number = self.increment_line_number();
                     },
                     else => {},
                 },
@@ -338,7 +338,7 @@ pub const Lexer = struct {
                     '\r', '\n' => {
                         result.start = self.index + 1;
                         state = .start;
-                        result.line_number = self.incrementLineNumber();
+                        result.line_number = self.increment_line_number();
                     },
                     else => {},
                 },
@@ -350,7 +350,7 @@ pub const Lexer = struct {
                     result.id = .literal;
                 },
                 .preprocessor => {
-                    try self.evaluatePreprocessorCommand(result.start, self.index);
+                    try self.evaluate_preprocessor_command(result.start, self.index);
                     result.start = self.index;
                 },
             }
@@ -385,7 +385,7 @@ pub const Lexer = struct {
 
     /// TODO: A not-terrible name
     pub fn next_normal(self: *Self) LexError!Token {
-        return self.nextNormalWithContext(.any);
+        return self.next_normal_with_context(.any);
     }
 
     pub fn next_normal_with_context(self: *Self, context: enum { expect_operator, any }) LexError!Token {
@@ -416,7 +416,7 @@ pub const Lexer = struct {
         var string_literal_collapsing_whitespace: bool = false;
         var still_could_have_exponent: bool = true;
         var exponent_index: ?usize = null;
-        while (self.current_code_page.codepointAt(self.index, self.buffer)) |codepoint| : (self.index += codepoint.byte_len) {
+        while (self.current_code_page.codepoint_at(self.index, self.buffer)) |codepoint| : (self.index += codepoint.byte_len) {
             const c = codepoint.value;
             const in_string_literal = switch (state) {
                 .quoted_ascii_string,
@@ -445,12 +445,12 @@ pub const Lexer = struct {
                 result.line_number == self.line_handler.line_number,
                 else => false,
             };
-            try self.checkForIllegalCodepoint(codepoint, in_string_literal);
+            try self.check_for_illegal_codepoint(codepoint, in_string_literal);
             switch (state) {
                 .start => switch (c) {
                     '\r', '\n' => {
                         result.start = self.index + 1;
-                        result.line_number = self.incrementLineNumber();
+                        result.line_number = self.increment_line_number();
                     },
                     ' ', '\t', '\x05'...'\x08', '\x0B'...'\x0C', '\x0E'...'\x1F' => {
                         result.start = self.index + 1;
@@ -487,7 +487,7 @@ pub const Lexer = struct {
                             .line_number = self.line_handler.line_number,
                             .id = .invalid,
                         };
-                        string_literal_column = dummy_token.calculateColumn(self.buffer, 8, null);
+                        string_literal_column = dummy_token.calculate_column(self.buffer, 8, null);
                     },
                     '+', '&', '|' => {
                         self.index += 1;
@@ -545,7 +545,7 @@ pub const Lexer = struct {
                         break;
                     },
                     else => {
-                        if (isNonAsciiDigit(c)) {
+                        if (is_non_ascii_digit(c)) {
                             self.error_context_token = .{
                                 .id = .number,
                                 .start = result.start,
@@ -560,10 +560,10 @@ pub const Lexer = struct {
                 },
                 .preprocessor => switch (c) {
                     '\r', '\n' => {
-                        try self.evaluatePreprocessorCommand(result.start, self.index);
+                        try self.evaluate_preprocessor_command(result.start, self.index);
                         result.start = self.index + 1;
                         state = .start;
-                        result.line_number = self.incrementLineNumber();
+                        result.line_number = self.increment_line_number();
                     },
                     else => {},
                 },
@@ -573,7 +573,7 @@ pub const Lexer = struct {
                     '\r', '\n' => {
                         result.start = self.index + 1;
                         state = .start;
-                        result.line_number = self.incrementLineNumber();
+                        result.line_number = self.increment_line_number();
                     },
                     else => {},
                 },
@@ -609,7 +609,7 @@ pub const Lexer = struct {
                         }
                     },
                     else => {
-                        if (isNonAsciiDigit(c)) {
+                        if (is_non_ascii_digit(c)) {
                             self.error_context_token = .{
                                 .id = .number,
                                 .start = result.start,
@@ -642,7 +642,7 @@ pub const Lexer = struct {
                             .line_number = self.line_handler.line_number,
                             .id = .invalid,
                         };
-                        string_literal_column = dummy_token.calculateColumn(self.buffer, 8, null);
+                        string_literal_column = dummy_token.calculate_column(self.buffer, 8, null);
                     },
                     else => {
                         state = .literal;
@@ -733,7 +733,7 @@ pub const Lexer = struct {
                         // \r doesn't count towards string literal length
 
                         // Increment line number but don't affect the result token's line number
-                        _ = self.incrementLineNumber();
+                        _ = self.increment_line_number();
                     },
                     '\n' => {
                         string_literal_column = 0;
@@ -745,14 +745,14 @@ pub const Lexer = struct {
                         // the rest are collapsed into the <space><\n>
 
                         // Increment line number but don't affect the result token's line number
-                        _ = self.incrementLineNumber();
+                        _ = self.increment_line_number();
                     },
                     // only \t, space, Vertical Tab, and Form Feed count as whitespace when collapsing
                     '\t', ' ', '\x0b', '\x0c' => {
                         if (!string_literal_collapsing_whitespace) {
                             // Literal tab characters are counted as the number of space characters
                             // needed to reach the next 8-column tab stop.
-                            const width = columnWidth(string_literal_column, @intCast(c), 8);
+                            const width = column_width(string_literal_column, @int_cast(c), 8);
                             string_literal_length += width;
                             string_literal_column += width;
                         }
@@ -801,7 +801,7 @@ pub const Lexer = struct {
                     result.id = .literal;
                 },
                 .preprocessor => {
-                    try self.evaluatePreprocessorCommand(result.start, self.index);
+                    try self.evaluate_preprocessor_command(result.start, self.index);
                     result.start = self.index;
                 },
                 .number_literal => {
@@ -841,7 +841,7 @@ pub const Lexer = struct {
     /// Increments line_number appropriately (handling line ending pairs)
     /// and returns the new line number.
     fn increment_line_number(self: *Self) usize {
-        _ = self.line_handler.incrementLineNumber(self.index);
+        _ = self.line_handler.increment_line_number(self.index);
         self.at_start_of_line = true;
         return self.line_handler.line_number;
     }
@@ -903,21 +903,21 @@ pub const Lexer = struct {
 
         // Anything besides exactly this is ignored by the Windows RC implementation
         const expected_directive = "#pragma";
-        if (!std.mem.startsWith(u8, command, expected_directive)) return;
+        if (!std.mem.starts_with(u8, command, expected_directive)) return;
         command = command[expected_directive.len..];
 
-        if (command.len == 0 or !std.ascii.isWhitespace(command[0])) return;
-        while (command.len > 0 and std.ascii.isWhitespace(command[0])) {
+        if (command.len == 0 or !std.ascii.is_whitespace(command[0])) return;
+        while (command.len > 0 and std.ascii.is_whitespace(command[0])) {
             command = command[1..];
         }
 
         // Note: CoDe_PaGeZ is also treated as "code_page" by the Windows RC implementation,
         //       and it will error with 'Missing left parenthesis in code_page #pragma'
         const expected_extension = "code_page";
-        if (!std.ascii.startsWithIgnoreCase(command, expected_extension)) return;
+        if (!std.ascii.starts_with_ignore_case(command, expected_extension)) return;
         command = command[expected_extension.len..];
 
-        while (command.len > 0 and std.ascii.isWhitespace(command[0])) {
+        while (command.len > 0 and std.ascii.is_whitespace(command[0])) {
             command = command[1..];
         }
 
@@ -926,12 +926,12 @@ pub const Lexer = struct {
         }
         command = command[1..];
 
-        while (command.len > 0 and std.ascii.isWhitespace(command[0])) {
+        while (command.len > 0 and std.ascii.is_whitespace(command[0])) {
             command = command[1..];
         }
 
         var num_str: []u8 = command[0..0];
-        while (command.len > 0 and (command[0] != ')' and !std.ascii.isWhitespace(command[0]))) {
+        while (command.len > 0 and (command[0] != ')' and !std.ascii.is_whitespace(command[0]))) {
             command = command[1..];
             num_str.len += 1;
         }
@@ -940,7 +940,7 @@ pub const Lexer = struct {
             return error.CodePagePragmaNotInteger;
         }
 
-        while (command.len > 0 and std.ascii.isWhitespace(command[0])) {
+        while (command.len > 0 and std.ascii.is_whitespace(command[0])) {
             command = command[1..];
         }
 
@@ -949,18 +949,18 @@ pub const Lexer = struct {
         }
 
         const code_page = code_page: {
-            if (std.ascii.eqlIgnoreCase("DEFAULT", num_str)) {
+            if (std.ascii.eql_ignore_case("DEFAULT", num_str)) {
                 break :code_page self.default_code_page;
             }
 
-            // The Win32 compiler behaves fairly strangely around maxInt(u32):
+            // The Win32 compiler behaves fairly strangely around max_int(u32):
             // - If the overflowed u32 wraps and becomes a known code page ID, then
             //   it will error/warn with "Codepage not valid:  ignored" (depending on /w)
             // - If the overflowed u32 wraps and does not become a known code page ID,
             //   then it will error with 'constant too big' and 'Codepage not integer'
             //
             // Instead of that, we just have a separate error specifically for overflow.
-            const num = parseCodePageNum(num_str) catch |err| switch (err) {
+            const num = parse_code_page_num(num_str) catch |err| switch (err) {
                 error.InvalidCharacter => return error.CodePagePragmaNotInteger,
                 error.Overflow => return error.CodePagePragmaOverflow,
             };
@@ -974,11 +974,11 @@ pub const Lexer = struct {
                 return error.CodePagePragmaNotInteger;
             }
             // Anything above u16 max is not going to be found since our CodePage enum is backed by a u16.
-            if (num > std.math.maxInt(u16)) {
+            if (num > std.math.max_int(u16)) {
                 return error.CodePagePragmaInvalidCodePage;
             }
 
-            break :code_page code_pages.CodePage.getByIdentifierEnsureSupported(@intCast(num)) catch |err| switch (err) {
+            break :code_page code_pages.CodePage.get_by_identifier_ensure_supported(@int_cast(num)) catch |err| switch (err) {
                 error.InvalidCodePage => return error.CodePagePragmaInvalidCodePage,
                 error.UnsupportedCodePage => return error.CodePagePragmaUnsupportedCodePage,
             };
@@ -992,7 +992,7 @@ pub const Lexer = struct {
         // such directives are found if that's wanted. The intention is for the lexer
         // to still be able to work correctly after this error is returned.
         if (self.source_mappings) |source_mappings| {
-            if (!source_mappings.isRootFile(token.line_number)) {
+            if (!source_mappings.is_root_file(token.line_number)) {
                 return error.CodePagePragmaInIncludedFile;
             }
         }
@@ -1004,7 +1004,7 @@ pub const Lexer = struct {
     fn parse_code_page_num(str: []const u8) !u32 {
         var x: u32 = 0;
         for (str) |c| {
-            const digit = try std.fmt.charToDigit(c, 10);
+            const digit = try std.fmt.char_to_digit(c, 10);
             if (x != 0) x = try std.math.mul(u32, x, 10);
             x = try std.math.add(u32, x, digit);
         }
@@ -1046,58 +1046,58 @@ fn test_lex_normal(source: []const u8, expected_tokens: []const Token.Id) !void 
     var lexer = Lexer.init(source, .{});
     if (dumpTokensDuringTests) std.debug.print("\n----------------------\n{s}\n----------------------\n", .{lexer.buffer});
     for (expected_tokens) |expected_token_id| {
-        const token = try lexer.nextNormal();
+        const token = try lexer.next_normal();
         if (dumpTokensDuringTests) lexer.dump(&token);
-        try std.testing.expectEqual(expected_token_id, token.id);
+        try std.testing.expect_equal(expected_token_id, token.id);
     }
-    const last_token = try lexer.nextNormal();
-    try std.testing.expectEqual(Token.Id.eof, last_token.id);
+    const last_token = try lexer.next_normal();
+    try std.testing.expect_equal(Token.Id.eof, last_token.id);
 }
 
 fn expect_lex_error(expected: LexError, actual: anytype) !void {
-    try std.testing.expectError(expected, actual);
+    try std.testing.expect_error(expected, actual);
     if (dumpTokensDuringTests) std.debug.print("{!}\n", .{actual});
 }
 
 test "normal: numbers" {
-    try testLexNormal("1", &.{.number});
-    try testLexNormal("-1", &.{.number});
-    try testLexNormal("- 1", &.{ .number, .number });
-    try testLexNormal("-a", &.{.number});
+    try test_lex_normal("1", &.{.number});
+    try test_lex_normal("-1", &.{.number});
+    try test_lex_normal("- 1", &.{ .number, .number });
+    try test_lex_normal("-a", &.{.number});
 }
 
 test "normal: string literals" {
-    try testLexNormal("\"\"", &.{.quoted_ascii_string});
+    try test_lex_normal("\"\"", &.{.quoted_ascii_string});
     // "" is an escaped "
-    try testLexNormal("\" \"\" \"", &.{.quoted_ascii_string});
+    try test_lex_normal("\" \"\" \"", &.{.quoted_ascii_string});
 }
 
 test "superscript chars and code pages" {
-    const firstToken = struct {
+    const first_token = struct {
         pub fn first_token(source: []const u8, default_code_page: CodePage, comptime lex_method: Lexer.LexMethod) LexError!Token {
             var lexer = Lexer.init(source, .{ .default_code_page = default_code_page });
             return lexer.next(lex_method);
         }
-    }.firstToken;
+    }.first_token;
     const utf8_source = "²";
     const windows1252_source = "\xB2";
 
-    const windows1252_encoded_as_windows1252 = firstToken(windows1252_source, .windows1252, .normal);
-    try std.testing.expectError(error.InvalidDigitCharacterInNumberLiteral, windows1252_encoded_as_windows1252);
+    const windows1252_encoded_as_windows1252 = first_token(windows1252_source, .windows1252, .normal);
+    try std.testing.expect_error(error.InvalidDigitCharacterInNumberLiteral, windows1252_encoded_as_windows1252);
 
-    const utf8_encoded_as_windows1252 = try firstToken(utf8_source, .windows1252, .normal);
-    try std.testing.expectEqual(Token{
+    const utf8_encoded_as_windows1252 = try first_token(utf8_source, .windows1252, .normal);
+    try std.testing.expect_equal(Token{
         .id = .literal,
         .start = 0,
         .end = 2,
         .line_number = 1,
     }, utf8_encoded_as_windows1252);
 
-    const utf8_encoded_as_utf8 = firstToken(utf8_source, .utf8, .normal);
-    try std.testing.expectError(error.InvalidDigitCharacterInNumberLiteral, utf8_encoded_as_utf8);
+    const utf8_encoded_as_utf8 = first_token(utf8_source, .utf8, .normal);
+    try std.testing.expect_error(error.InvalidDigitCharacterInNumberLiteral, utf8_encoded_as_utf8);
 
-    const windows1252_encoded_as_utf8 = try firstToken(windows1252_source, .utf8, .normal);
-    try std.testing.expectEqual(Token{
+    const windows1252_encoded_as_utf8 = try first_token(windows1252_source, .utf8, .normal);
+    try std.testing.expect_equal(Token{
         .id = .literal,
         .start = 0,
         .end = 1,

@@ -28,11 +28,11 @@ pub const Request = packed struct {
 fn io_impl(dir: Direction, io_type: u8, nr: u8, comptime T: type) u32 {
     const request = Request{
         .dir = dir,
-        .size = @sizeOf(T),
+        .size = @size_of(T),
         .io_type = io_type,
         .nr = nr,
     };
-    return @as(u32, @bitCast(request));
+    return @as(u32, @bit_cast(request));
 }
 
 pub fn IO(io_type: u8, nr: u8) u32 {

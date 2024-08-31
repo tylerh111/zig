@@ -14,17 +14,17 @@ test {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     var val: u8 = undefined;
-    try testing.expectEqual({}, @atomicStore(u8, &val, 0, .unordered));
-    try testing.expectEqual(void, @TypeOf(@breakpoint()));
-    try testing.expectEqual({}, @export(x, .{ .name = "x" }));
-    try testing.expectEqual({}, @fence(.acquire));
-    try testing.expectEqual({}, @memcpy(@as([*]u8, @ptrFromInt(1))[0..0], @as([*]u8, @ptrFromInt(1))[0..0]));
-    try testing.expectEqual({}, @memset(@as([*]u8, @ptrFromInt(1))[0..0], undefined));
-    try testing.expectEqual(noreturn, @TypeOf(if (true) @panic("") else {}));
-    try testing.expectEqual({}, @prefetch(&val, .{}));
-    try testing.expectEqual({}, @setAlignStack(16));
-    try testing.expectEqual({}, @setCold(true));
-    try testing.expectEqual({}, @setEvalBranchQuota(0));
-    try testing.expectEqual({}, @setFloatMode(.optimized));
-    try testing.expectEqual({}, @setRuntimeSafety(true));
+    try testing.expect_equal({}, @atomicStore(u8, &val, 0, .unordered));
+    try testing.expect_equal(void, @TypeOf(@breakpoint()));
+    try testing.expect_equal({}, @export(x, .{ .name = "x" }));
+    try testing.expect_equal({}, @fence(.acquire));
+    try testing.expect_equal({}, @memcpy(@as([*]u8, @ptrFromInt(1))[0..0], @as([*]u8, @ptrFromInt(1))[0..0]));
+    try testing.expect_equal({}, @memset(@as([*]u8, @ptrFromInt(1))[0..0], undefined));
+    try testing.expect_equal(noreturn, @TypeOf(if (true) @panic("") else {}));
+    try testing.expect_equal({}, @prefetch(&val, .{}));
+    try testing.expect_equal({}, @setAlignStack(16));
+    try testing.expect_equal({}, @setCold(true));
+    try testing.expect_equal({}, @setEvalBranchQuota(0));
+    try testing.expect_equal({}, @setFloatMode(.optimized));
+    try testing.expect_equal({}, @setRuntimeSafety(true));
 }

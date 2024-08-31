@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
     const optimize: std.builtin.OptimizeMode = .Debug;
     const target = b.host;
 
-    const obj = b.addObject(.{
+    const obj = b.add_object(.{
         .name = "test",
         .root_source_file = b.path("test.zig"),
         .target = target,
@@ -15,7 +15,7 @@ pub fn build(b: *std.Build) void {
     });
 
     // TODO: actually check the output
-    _ = obj.getEmittedBin();
+    _ = obj.get_emitted_bin();
 
-    test_step.dependOn(&obj.step);
+    test_step.depend_on(&obj.step);
 }

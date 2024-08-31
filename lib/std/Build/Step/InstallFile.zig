@@ -19,20 +19,20 @@ pub fn create(
     dest_rel_path: []const u8,
 ) *InstallFile {
     assert(dest_rel_path.len != 0);
-    owner.pushInstalledFile(dir, dest_rel_path);
+    owner.push_installed_file(dir, dest_rel_path);
     const install_file = owner.allocator.create(InstallFile) catch @panic("OOM");
     install_file.* = .{
         .step = Step.init(.{
             .id = base_id,
-            .name = owner.fmt("install {s} to {s}", .{ source.getDisplayName(), dest_rel_path }),
+            .name = owner.fmt("install {s} to {s}", .{ source.get_display_name(), dest_rel_path }),
             .owner = owner,
             .makeFn = make,
         }),
         .source = source.dupe(owner),
         .dir = dir.dupe(owner),
-        .dest_rel_path = owner.dupePath(dest_rel_path),
+        .dest_rel_path = owner.dupe_path(dest_rel_path),
     };
-    source.addStepDependencies(&install_file.step);
+    source.add_step_dependencies(&install_file.step);
     return install_file;
 }
 
@@ -40,10 +40,10 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     _ = prog_node;
     const b = step.owner;
     const install_file: *InstallFile = @fieldParentPtr("step", step);
-    const full_src_path = install_file.source.getPath2(b, step);
-    const full_dest_path = b.getInstallPath(install_file.dir, install_file.dest_rel_path);
+    const full_src_path = install_file.source.get_path2(b, step);
+    const full_dest_path = b.get_install_path(install_file.dir, install_file.dest_rel_path);
     const cwd = std.fs.cwd();
-    const prev = std.fs.Dir.updateFile(cwd, full_src_path, cwd, full_dest_path, .{}) catch |err| {
+    const prev = std.fs.Dir.update_file(cwd, full_src_path, cwd, full_dest_path, .{}) catch |err| {
         return step.fail("unable to update file from '{s}' to '{s}': {s}", .{
             full_src_path, full_dest_path, @errorName(err),
         });

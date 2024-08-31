@@ -5,7 +5,7 @@ const a = Foo{ .x = get_it() };
 extern fn get_it() i32;
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(a));
+    return @size_of(@TypeOf(a));
 }
 
 // error

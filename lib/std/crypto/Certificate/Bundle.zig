@@ -33,7 +33,7 @@ pub fn find(cb: Bundle, subject_name: []const u8) ?u32 {
 
         pub fn hash(ctx: @This(), k: []const u8) u64 {
             _ = ctx;
-            return std.hash_map.hashString(k);
+            return std.hash_map.hash_string(k);
         }
 
         pub fn eql(ctx: @This(), a: []const u8, b_key: der.Element.Slice) bool {
@@ -41,7 +41,7 @@ pub fn find(cb: Bundle, subject_name: []const u8) ?u32 {
             return mem.eql(u8, a, b);
         }
     };
-    return cb.map.getAdapted(subject_name, Adapter{ .cb = cb });
+    return cb.map.get_adapted(subject_name, Adapter{ .cb = cb });
 }
 
 pub fn deinit(cb: *Bundle, gpa: Allocator) void {
@@ -58,18 +58,18 @@ pub const RescanError = RescanLinuxError || RescanMacError || RescanBSDError || 
 /// found, this function clears the set of certificates.
 pub fn rescan(cb: *Bundle, gpa: Allocator) RescanError!void {
     switch (builtin.os.tag) {
-        .linux => return rescanLinux(cb, gpa),
-        .macos => return rescanMac(cb, gpa),
-        .freebsd, .openbsd => return rescanBSD(cb, gpa, "/etc/ssl/cert.pem"),
-        .netbsd => return rescanBSD(cb, gpa, "/etc/openssl/certs/ca-certificates.crt"),
-        .dragonfly => return rescanBSD(cb, gpa, "/usr/local/etc/ssl/cert.pem"),
-        .solaris, .illumos => return rescanBSD(cb, gpa, "/etc/ssl/cacert.pem"),
-        .windows => return rescanWindows(cb, gpa),
+        .linux => return rescan_linux(cb, gpa),
+        .macos => return rescan_mac(cb, gpa),
+        .freebsd, .openbsd => return rescan_bsd(cb, gpa, "/etc/ssl/cert.pem"),
+        .netbsd => return rescan_bsd(cb, gpa, "/etc/openssl/certs/ca-certificates.crt"),
+        .dragonfly => return rescan_bsd(cb, gpa, "/usr/local/etc/ssl/cert.pem"),
+        .solaris, .illumos => return rescan_bsd(cb, gpa, "/etc/ssl/cacert.pem"),
+        .windows => return rescan_windows(cb, gpa),
         else => {},
     }
 }
 
-const rescanMac = @import("Bundle/macos.zig").rescanMac;
+const rescan_mac = @import("Bundle/macos.zig").rescan_mac;
 const RescanMacError = @import("Bundle/macos.zig").RescanMacError;
 
 const RescanLinuxError = AddCertsFromFilePathError || AddCertsFromDirPathError;
@@ -92,12 +92,12 @@ fn rescan_linux(cb: *Bundle, gpa: Allocator) RescanLinuxError!void {
         "/system/etc/security/cacerts", // Android
     };
 
-    cb.bytes.clearRetainingCapacity();
-    cb.map.clearRetainingCapacity();
+    cb.bytes.clear_retaining_capacity();
+    cb.map.clear_retaining_capacity();
 
     scan: {
         for (cert_file_paths) |cert_file_path| {
-            if (addCertsFromFilePathAbsolute(cb, gpa, cert_file_path)) |_| {
+            if (add_certs_from_file_path_absolute(cb, gpa, cert_file_path)) |_| {
                 break :scan;
             } else |err| switch (err) {
                 error.FileNotFound => continue,
@@ -106,37 +106,37 @@ fn rescan_linux(cb: *Bundle, gpa: Allocator) RescanLinuxError!void {
         }
 
         for (cert_dir_paths) |cert_dir_path| {
-            addCertsFromDirPathAbsolute(cb, gpa, cert_dir_path) catch |err| switch (err) {
+            add_certs_from_dir_path_absolute(cb, gpa, cert_dir_path) catch |err| switch (err) {
                 error.FileNotFound => continue,
                 else => |e| return e,
             };
         }
     }
 
-    cb.bytes.shrinkAndFree(gpa, cb.bytes.items.len);
+    cb.bytes.shrink_and_free(gpa, cb.bytes.items.len);
 }
 
 const RescanBSDError = AddCertsFromFilePathError;
 
 fn rescan_bsd(cb: *Bundle, gpa: Allocator, cert_file_path: []const u8) RescanBSDError!void {
-    cb.bytes.clearRetainingCapacity();
-    cb.map.clearRetainingCapacity();
-    try addCertsFromFilePathAbsolute(cb, gpa, cert_file_path);
-    cb.bytes.shrinkAndFree(gpa, cb.bytes.items.len);
+    cb.bytes.clear_retaining_capacity();
+    cb.map.clear_retaining_capacity();
+    try add_certs_from_file_path_absolute(cb, gpa, cert_file_path);
+    cb.bytes.shrink_and_free(gpa, cb.bytes.items.len);
 }
 
 const RescanWindowsError = Allocator.Error || ParseCertError || std.posix.UnexpectedError || error{FileNotFound};
 
 fn rescan_windows(cb: *Bundle, gpa: Allocator) RescanWindowsError!void {
-    cb.bytes.clearRetainingCapacity();
-    cb.map.clearRetainingCapacity();
+    cb.bytes.clear_retaining_capacity();
+    cb.map.clear_retaining_capacity();
 
     const w = std.os.windows;
     const GetLastError = w.kernel32.GetLastError;
     const root = [4:0]u16{ 'R', 'O', 'O', 'T' };
     const store = w.crypt32.CertOpenSystemStoreW(null, &root) orelse switch (GetLastError()) {
         .FILE_NOT_FOUND => return error.FileNotFound,
-        else => |err| return w.unexpectedError(err),
+        else => |err| return w.unexpected_error(err),
     };
     defer _ = w.crypt32.CertCloseStore(store, 0);
 
@@ -144,12 +144,12 @@ fn rescan_windows(cb: *Bundle, gpa: Allocator) RescanWindowsError!void {
 
     var ctx = w.crypt32.CertEnumCertificatesInStore(store, null);
     while (ctx) |context| : (ctx = w.crypt32.CertEnumCertificatesInStore(store, ctx)) {
-        const decoded_start = @as(u32, @intCast(cb.bytes.items.len));
+        const decoded_start = @as(u32, @int_cast(cb.bytes.items.len));
         const encoded_cert = context.pbCertEncoded[0..context.cbCertEncoded];
-        try cb.bytes.appendSlice(gpa, encoded_cert);
-        try cb.parseCert(gpa, decoded_start, now_sec);
+        try cb.bytes.append_slice(gpa, encoded_cert);
+        try cb.parse_cert(gpa, decoded_start, now_sec);
     }
-    cb.bytes.shrinkAndFree(gpa, cb.bytes.items.len);
+    cb.bytes.shrink_and_free(gpa, cb.bytes.items.len);
 }
 
 pub const AddCertsFromDirPathError = fs.File.OpenError || AddCertsFromDirError;
@@ -160,9 +160,9 @@ pub fn add_certs_from_dir_path(
     dir: fs.Dir,
     sub_dir_path: []const u8,
 ) AddCertsFromDirPathError!void {
-    var iterable_dir = try dir.openDir(sub_dir_path, .{ .iterate = true });
+    var iterable_dir = try dir.open_dir(sub_dir_path, .{ .iterate = true });
     defer iterable_dir.close();
-    return addCertsFromDir(cb, gpa, iterable_dir);
+    return add_certs_from_dir(cb, gpa, iterable_dir);
 }
 
 pub fn add_certs_from_dir_path_absolute(
@@ -170,10 +170,10 @@ pub fn add_certs_from_dir_path_absolute(
     gpa: Allocator,
     abs_dir_path: []const u8,
 ) AddCertsFromDirPathError!void {
-    assert(fs.path.isAbsolute(abs_dir_path));
-    var iterable_dir = try fs.openDirAbsolute(abs_dir_path, .{ .iterate = true });
+    assert(fs.path.is_absolute(abs_dir_path));
+    var iterable_dir = try fs.open_dir_absolute(abs_dir_path, .{ .iterate = true });
     defer iterable_dir.close();
-    return addCertsFromDir(cb, gpa, iterable_dir);
+    return add_certs_from_dir(cb, gpa, iterable_dir);
 }
 
 pub const AddCertsFromDirError = AddCertsFromFilePathError;
@@ -186,7 +186,7 @@ pub fn add_certs_from_dir(cb: *Bundle, gpa: Allocator, iterable_dir: fs.Dir) Add
             else => continue,
         }
 
-        try addCertsFromFilePath(cb, gpa, iterable_dir, entry.name);
+        try add_certs_from_file_path(cb, gpa, iterable_dir, entry.name);
     }
 }
 
@@ -197,10 +197,10 @@ pub fn add_certs_from_file_path_absolute(
     gpa: Allocator,
     abs_file_path: []const u8,
 ) AddCertsFromFilePathError!void {
-    assert(fs.path.isAbsolute(abs_file_path));
-    var file = try fs.openFileAbsolute(abs_file_path, .{});
+    assert(fs.path.is_absolute(abs_file_path));
+    var file = try fs.open_file_absolute(abs_file_path, .{});
     defer file.close();
-    return addCertsFromFile(cb, gpa, file);
+    return add_certs_from_file(cb, gpa, file);
 }
 
 pub fn add_certs_from_file_path(
@@ -209,9 +209,9 @@ pub fn add_certs_from_file_path(
     dir: fs.Dir,
     sub_file_path: []const u8,
 ) AddCertsFromFilePathError!void {
-    var file = try dir.openFile(sub_file_path, .{});
+    var file = try dir.open_file(sub_file_path, .{});
     defer file.close();
-    return addCertsFromFile(cb, gpa, file);
+    return add_certs_from_file(cb, gpa, file);
 }
 
 pub const AddCertsFromFileError = Allocator.Error ||
@@ -222,7 +222,7 @@ pub const AddCertsFromFileError = Allocator.Error ||
     error{ CertificateAuthorityBundleTooBig, MissingEndCertificateMarker };
 
 pub fn add_certs_from_file(cb: *Bundle, gpa: Allocator, file: fs.File) AddCertsFromFileError!void {
-    const size = try file.getEndPos();
+    const size = try file.get_end_pos();
 
     // We borrow `bytes` as a temporary buffer for the base64-encoded data.
     // This is possible by computing the decoded length and reserving the space
@@ -230,10 +230,10 @@ pub fn add_certs_from_file(cb: *Bundle, gpa: Allocator, file: fs.File) AddCertsF
     const decoded_size_upper_bound = size / 4 * 3;
     const needed_capacity = std.math.cast(u32, decoded_size_upper_bound + size) orelse
         return error.CertificateAuthorityBundleTooBig;
-    try cb.bytes.ensureUnusedCapacity(gpa, needed_capacity);
-    const end_reserved: u32 = @intCast(cb.bytes.items.len + decoded_size_upper_bound);
-    const buffer = cb.bytes.allocatedSlice()[end_reserved..];
-    const end_index = try file.readAll(buffer);
+    try cb.bytes.ensure_unused_capacity(gpa, needed_capacity);
+    const end_reserved: u32 = @int_cast(cb.bytes.items.len + decoded_size_upper_bound);
+    const buffer = cb.bytes.allocated_slice()[end_reserved..];
+    const end_index = try file.read_all(buffer);
     const encoded_bytes = buffer[0..end_index];
 
     const begin_marker = "-----BEGIN CERTIFICATE-----";
@@ -242,16 +242,16 @@ pub fn add_certs_from_file(cb: *Bundle, gpa: Allocator, file: fs.File) AddCertsF
     const now_sec = std.time.timestamp();
 
     var start_index: usize = 0;
-    while (mem.indexOfPos(u8, encoded_bytes, start_index, begin_marker)) |begin_marker_start| {
+    while (mem.index_of_pos(u8, encoded_bytes, start_index, begin_marker)) |begin_marker_start| {
         const cert_start = begin_marker_start + begin_marker.len;
-        const cert_end = mem.indexOfPos(u8, encoded_bytes, cert_start, end_marker) orelse
+        const cert_end = mem.index_of_pos(u8, encoded_bytes, cert_start, end_marker) orelse
             return error.MissingEndCertificateMarker;
         start_index = cert_end + end_marker.len;
         const encoded_cert = mem.trim(u8, encoded_bytes[cert_start..cert_end], " \t\r\n");
-        const decoded_start: u32 = @intCast(cb.bytes.items.len);
-        const dest_buf = cb.bytes.allocatedSlice()[decoded_start..];
+        const decoded_start: u32 = @int_cast(cb.bytes.items.len);
+        const dest_buf = cb.bytes.allocated_slice()[decoded_start..];
         cb.bytes.items.len += try base64.decode(dest_buf, encoded_cert);
-        try cb.parseCert(gpa, decoded_start, now_sec);
+        try cb.parse_cert(gpa, decoded_start, now_sec);
     }
 }
 
@@ -277,7 +277,7 @@ pub fn parse_cert(cb: *Bundle, gpa: Allocator, decoded_start: u32, now_sec: i64)
         cb.bytes.items.len = decoded_start;
         return;
     }
-    const gop = try cb.map.getOrPutContext(gpa, parsed_cert.subject_slice, .{ .cb = cb });
+    const gop = try cb.map.get_or_put_context(gpa, parsed_cert.subject_slice, .{ .cb = cb });
     if (gop.found_existing) {
         cb.bytes.items.len = decoded_start;
     } else {
@@ -302,7 +302,7 @@ const MapContext = struct {
     cb: *const Bundle,
 
     pub fn hash(ctx: MapContext, k: der.Element.Slice) u64 {
-        return std.hash_map.hashString(ctx.cb.bytes.items[k.start..k.end]);
+        return std.hash_map.hash_string(ctx.cb.bytes.items[k.start..k.end]);
     }
 
     pub fn eql(ctx: MapContext, a: der.Element.Slice, b: der.Element.Slice) bool {

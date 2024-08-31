@@ -238,7 +238,7 @@ pub const CodePage = enum(u16) {
             .windows1252 => {
                 // All byte values have a representation, so just convert the byte
                 return Codepoint{
-                    .value = windows1252.toCodepoint(bytes[index]),
+                    .value = windows1252.to_codepoint(bytes[index]),
                     .byte_len = 1,
                 };
             },
@@ -268,8 +268,8 @@ pub const CodePage = enum(u16) {
     }
 
     pub fn get_by_identifier_ensure_supported(identifier: u16) !CodePage {
-        const code_page = try getByIdentifier(identifier);
-        switch (isSupported(code_page)) {
+        const code_page = try get_by_identifier(identifier);
+        switch (is_supported(code_page)) {
             true => return code_page,
             false => return error.UnsupportedCodePage,
         }
@@ -283,7 +283,7 @@ pub const Utf8 = struct {
     /// Note: This does not match "U+FFFD Substitution of Maximal Subparts", but instead
     ///       matches the behavior of the Windows RC compiler.
     pub const WellFormedDecoder = struct {
-        /// Like std.unicode.utf8ByteSequenceLength, but:
+        /// Like std.unicode.utf8_byte_sequence_length, but:
         /// - Rejects non-well-formed first bytes, i.e. C0-C1, F5-FF
         /// - Returns an optional value instead of an error union
         pub fn sequence_length(first_byte: u8) ?u3 {
@@ -306,7 +306,7 @@ pub const Utf8 = struct {
         pub fn decode(bytes: []const u8) Codepoint {
             std.debug.assert(bytes.len > 0);
             const first_byte = bytes[0];
-            const expected_len = sequenceLength(first_byte) orelse {
+            const expected_len = sequence_length(first_byte) orelse {
                 return .{ .value = Codepoint.invalid, .byte_len = 1 };
             };
             if (expected_len == 1) return .{ .value = first_byte, .byte_len = 1 };
@@ -350,7 +350,7 @@ pub const Utf8 = struct {
                     // Only include the byte in the invalid sequence if it's in the range
                     // of a continuation byte. All other values should not be included in the
                     // invalid sequence.
-                    if (isContinuationByte(byte)) len += 1;
+                    if (is_continuation_byte(byte)) len += 1;
                     return .{ .value = Codepoint.invalid, .byte_len = len };
                 }
 
@@ -368,133 +368,133 @@ pub const Utf8 = struct {
 test "Utf8.WellFormedDecoder" {
     const invalid_utf8 = "\xF0\x80";
     const decoded = Utf8.WellFormedDecoder.decode(invalid_utf8);
-    try std.testing.expectEqual(Codepoint.invalid, decoded.value);
-    try std.testing.expectEqual(@as(usize, 2), decoded.byte_len);
+    try std.testing.expect_equal(Codepoint.invalid, decoded.value);
+    try std.testing.expect_equal(@as(usize, 2), decoded.byte_len);
 }
 
-test "codepointAt invalid utf8" {
+test "codepoint_at invalid utf8" {
     {
         const invalid_utf8 = "\xf0\xf0\x80\x80\x80";
-        try std.testing.expectEqual(Codepoint{
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 1,
-        }, CodePage.utf8.codepointAt(0, invalid_utf8).?);
-        try std.testing.expectEqual(Codepoint{
+        }, CodePage.utf8.codepoint_at(0, invalid_utf8).?);
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 2,
-        }, CodePage.utf8.codepointAt(1, invalid_utf8).?);
-        try std.testing.expectEqual(Codepoint{
+        }, CodePage.utf8.codepoint_at(1, invalid_utf8).?);
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 1,
-        }, CodePage.utf8.codepointAt(3, invalid_utf8).?);
-        try std.testing.expectEqual(Codepoint{
+        }, CodePage.utf8.codepoint_at(3, invalid_utf8).?);
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 1,
-        }, CodePage.utf8.codepointAt(4, invalid_utf8).?);
-        try std.testing.expectEqual(@as(?Codepoint, null), CodePage.windows1252.codepointAt(5, invalid_utf8));
+        }, CodePage.utf8.codepoint_at(4, invalid_utf8).?);
+        try std.testing.expect_equal(@as(?Codepoint, null), CodePage.windows1252.codepoint_at(5, invalid_utf8));
     }
 
     {
         const invalid_utf8 = "\xE1\xA0\xC0";
-        try std.testing.expectEqual(Codepoint{
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 2,
-        }, CodePage.utf8.codepointAt(0, invalid_utf8).?);
-        try std.testing.expectEqual(Codepoint{
+        }, CodePage.utf8.codepoint_at(0, invalid_utf8).?);
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 1,
-        }, CodePage.utf8.codepointAt(2, invalid_utf8).?);
-        try std.testing.expectEqual(@as(?Codepoint, null), CodePage.windows1252.codepointAt(3, invalid_utf8));
+        }, CodePage.utf8.codepoint_at(2, invalid_utf8).?);
+        try std.testing.expect_equal(@as(?Codepoint, null), CodePage.windows1252.codepoint_at(3, invalid_utf8));
     }
 
     {
         const invalid_utf8 = "\xD2";
-        try std.testing.expectEqual(Codepoint{
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 1,
-        }, CodePage.utf8.codepointAt(0, invalid_utf8).?);
-        try std.testing.expectEqual(@as(?Codepoint, null), CodePage.windows1252.codepointAt(1, invalid_utf8));
+        }, CodePage.utf8.codepoint_at(0, invalid_utf8).?);
+        try std.testing.expect_equal(@as(?Codepoint, null), CodePage.windows1252.codepoint_at(1, invalid_utf8));
     }
 
     {
         const invalid_utf8 = "\xE1\xA0";
-        try std.testing.expectEqual(Codepoint{
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 2,
-        }, CodePage.utf8.codepointAt(0, invalid_utf8).?);
-        try std.testing.expectEqual(@as(?Codepoint, null), CodePage.windows1252.codepointAt(2, invalid_utf8));
+        }, CodePage.utf8.codepoint_at(0, invalid_utf8).?);
+        try std.testing.expect_equal(@as(?Codepoint, null), CodePage.windows1252.codepoint_at(2, invalid_utf8));
     }
 
     {
         const invalid_utf8 = "\xC5\xFF";
-        try std.testing.expectEqual(Codepoint{
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 1,
-        }, CodePage.utf8.codepointAt(0, invalid_utf8).?);
-        try std.testing.expectEqual(Codepoint{
+        }, CodePage.utf8.codepoint_at(0, invalid_utf8).?);
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 1,
-        }, CodePage.utf8.codepointAt(1, invalid_utf8).?);
-        try std.testing.expectEqual(@as(?Codepoint, null), CodePage.windows1252.codepointAt(2, invalid_utf8));
+        }, CodePage.utf8.codepoint_at(1, invalid_utf8).?);
+        try std.testing.expect_equal(@as(?Codepoint, null), CodePage.windows1252.codepoint_at(2, invalid_utf8));
     }
 
     {
         // encoded high surrogate
         const invalid_utf8 = "\xED\xA0\xBD";
-        try std.testing.expectEqual(Codepoint{
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 2,
-        }, CodePage.utf8.codepointAt(0, invalid_utf8).?);
-        try std.testing.expectEqual(Codepoint{
+        }, CodePage.utf8.codepoint_at(0, invalid_utf8).?);
+        try std.testing.expect_equal(Codepoint{
             .value = Codepoint.invalid,
             .byte_len = 1,
-        }, CodePage.utf8.codepointAt(2, invalid_utf8).?);
+        }, CodePage.utf8.codepoint_at(2, invalid_utf8).?);
     }
 }
 
-test "codepointAt utf8 encoded" {
+test "codepoint_at utf8 encoded" {
     const utf8_encoded = "²";
 
     // with code page utf8
-    try std.testing.expectEqual(Codepoint{
+    try std.testing.expect_equal(Codepoint{
         .value = '²',
         .byte_len = 2,
-    }, CodePage.utf8.codepointAt(0, utf8_encoded).?);
-    try std.testing.expectEqual(@as(?Codepoint, null), CodePage.utf8.codepointAt(2, utf8_encoded));
+    }, CodePage.utf8.codepoint_at(0, utf8_encoded).?);
+    try std.testing.expect_equal(@as(?Codepoint, null), CodePage.utf8.codepoint_at(2, utf8_encoded));
 
     // with code page windows1252
-    try std.testing.expectEqual(Codepoint{
+    try std.testing.expect_equal(Codepoint{
         .value = '\xC2',
         .byte_len = 1,
-    }, CodePage.windows1252.codepointAt(0, utf8_encoded).?);
-    try std.testing.expectEqual(Codepoint{
+    }, CodePage.windows1252.codepoint_at(0, utf8_encoded).?);
+    try std.testing.expect_equal(Codepoint{
         .value = '\xB2',
         .byte_len = 1,
-    }, CodePage.windows1252.codepointAt(1, utf8_encoded).?);
-    try std.testing.expectEqual(@as(?Codepoint, null), CodePage.windows1252.codepointAt(2, utf8_encoded));
+    }, CodePage.windows1252.codepoint_at(1, utf8_encoded).?);
+    try std.testing.expect_equal(@as(?Codepoint, null), CodePage.windows1252.codepoint_at(2, utf8_encoded));
 }
 
-test "codepointAt windows1252 encoded" {
+test "codepoint_at windows1252 encoded" {
     const windows1252_encoded = "\xB2";
 
     // with code page utf8
-    try std.testing.expectEqual(Codepoint{
+    try std.testing.expect_equal(Codepoint{
         .value = Codepoint.invalid,
         .byte_len = 1,
-    }, CodePage.utf8.codepointAt(0, windows1252_encoded).?);
-    try std.testing.expectEqual(@as(?Codepoint, null), CodePage.utf8.codepointAt(2, windows1252_encoded));
+    }, CodePage.utf8.codepoint_at(0, windows1252_encoded).?);
+    try std.testing.expect_equal(@as(?Codepoint, null), CodePage.utf8.codepoint_at(2, windows1252_encoded));
 
     // with code page windows1252
-    try std.testing.expectEqual(Codepoint{
+    try std.testing.expect_equal(Codepoint{
         .value = '\xB2',
         .byte_len = 1,
-    }, CodePage.windows1252.codepointAt(0, windows1252_encoded).?);
-    try std.testing.expectEqual(@as(?Codepoint, null), CodePage.windows1252.codepointAt(1, windows1252_encoded));
+    }, CodePage.windows1252.codepoint_at(0, windows1252_encoded).?);
+    try std.testing.expect_equal(@as(?Codepoint, null), CodePage.windows1252.codepoint_at(1, windows1252_encoded));
 }
 
 pub const Codepoint = struct {
     value: u21,
     byte_len: usize,
 
-    pub const invalid: u21 = std.math.maxInt(u21);
+    pub const invalid: u21 = std.math.max_int(u21);
 };

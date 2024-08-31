@@ -76,5 +76,5 @@ test "Hash composition" {
     var out2: [Sha256.digest_length]u8 = undefined;
     Sha256.hash(&t, &out2, .{});
 
-    try std.testing.expectEqualSlices(u8, &out, &out2);
+    try std.testing.expect_equal_slices(u8, &out, &out2);
 }

@@ -26,48 +26,48 @@ fn benchmark_codepoint_count(buf: []const u8) !ResultCount {
     while (i < N) : (i += 1) {
         r = try @call(
             .never_inline,
-            std.unicode.utf8CountCodepoints,
+            std.unicode.utf8_count_codepoints,
             .{buf},
         );
     }
     const end = timer.read();
 
-    const elapsed_s = @as(f64, @floatFromInt(end - start)) / time.ns_per_s;
-    const throughput = @as(u64, @intFromFloat(@as(f64, @floatFromInt(bytes)) / elapsed_s));
+    const elapsed_s = @as(f64, @float_from_int(end - start)) / time.ns_per_s;
+    const throughput = @as(u64, @int_from_float(@as(f64, @float_from_int(bytes)) / elapsed_s));
 
     return ResultCount{ .count = r, .throughput = throughput };
 }
 
 pub fn main() !void {
-    const stdout = std.io.getStdOut().writer();
+    const stdout = std.io.get_std_out().writer();
 
     try stdout.print("short ASCII strings\n", .{});
     {
-        const result = try benchmarkCodepointCount("abc");
+        const result = try benchmark_codepoint_count("abc");
         try stdout.print("  count: {:5} MiB/s [{d}]\n", .{ result.throughput / (1 * MiB), result.count });
     }
 
     try stdout.print("short Unicode strings\n", .{});
     {
-        const result = try benchmarkCodepointCount("ŌŌŌ");
+        const result = try benchmark_codepoint_count("ŌŌŌ");
         try stdout.print("  count: {:5} MiB/s [{d}]\n", .{ result.throughput / (1 * MiB), result.count });
     }
 
     try stdout.print("pure ASCII strings\n", .{});
     {
-        const result = try benchmarkCodepointCount("hello" ** 16);
+        const result = try benchmark_codepoint_count("hello" ** 16);
         try stdout.print("  count: {:5} MiB/s [{d}]\n", .{ result.throughput / (1 * MiB), result.count });
     }
 
     try stdout.print("pure Unicode strings\n", .{});
     {
-        const result = try benchmarkCodepointCount("こんにちは" ** 16);
+        const result = try benchmark_codepoint_count("こんにちは" ** 16);
         try stdout.print("  count: {:5} MiB/s [{d}]\n", .{ result.throughput / (1 * MiB), result.count });
     }
 
     try stdout.print("mixed ASCII/Unicode strings\n", .{});
     {
-        const result = try benchmarkCodepointCount("Hyvää huomenta" ** 16);
+        const result = try benchmark_codepoint_count("Hyvää huomenta" ** 16);
         try stdout.print("  count: {:5} MiB/s [{d}]\n", .{ result.throughput / (1 * MiB), result.count });
     }
 }

@@ -62,84 +62,84 @@ pub const Register = enum(u8) {
     // zig fmt: on
 
     pub fn class(self: Register) RegisterClass {
-        return switch (@intFromEnum(self)) {
-            @intFromEnum(Register.x0)...@intFromEnum(Register.xzr) => .general_purpose,
-            @intFromEnum(Register.w0)...@intFromEnum(Register.wzr) => .general_purpose,
+        return switch (@int_from_enum(self)) {
+            @int_from_enum(Register.x0)...@int_from_enum(Register.xzr) => .general_purpose,
+            @int_from_enum(Register.w0)...@int_from_enum(Register.wzr) => .general_purpose,
 
-            @intFromEnum(Register.sp) => .stack_pointer,
-            @intFromEnum(Register.wsp) => .stack_pointer,
+            @int_from_enum(Register.sp) => .stack_pointer,
+            @int_from_enum(Register.wsp) => .stack_pointer,
 
-            @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => .floating_point,
-            @intFromEnum(Register.d0)...@intFromEnum(Register.d31) => .floating_point,
-            @intFromEnum(Register.s0)...@intFromEnum(Register.s31) => .floating_point,
-            @intFromEnum(Register.h0)...@intFromEnum(Register.h31) => .floating_point,
-            @intFromEnum(Register.b0)...@intFromEnum(Register.b31) => .floating_point,
+            @int_from_enum(Register.q0)...@int_from_enum(Register.q31) => .floating_point,
+            @int_from_enum(Register.d0)...@int_from_enum(Register.d31) => .floating_point,
+            @int_from_enum(Register.s0)...@int_from_enum(Register.s31) => .floating_point,
+            @int_from_enum(Register.h0)...@int_from_enum(Register.h31) => .floating_point,
+            @int_from_enum(Register.b0)...@int_from_enum(Register.b31) => .floating_point,
             else => unreachable,
         };
     }
 
     pub fn id(self: Register) u6 {
-        return switch (@intFromEnum(self)) {
-            @intFromEnum(Register.x0)...@intFromEnum(Register.xzr) => @as(u6, @intCast(@intFromEnum(self) - @intFromEnum(Register.x0))),
-            @intFromEnum(Register.w0)...@intFromEnum(Register.wzr) => @as(u6, @intCast(@intFromEnum(self) - @intFromEnum(Register.w0))),
+        return switch (@int_from_enum(self)) {
+            @int_from_enum(Register.x0)...@int_from_enum(Register.xzr) => @as(u6, @int_cast(@int_from_enum(self) - @int_from_enum(Register.x0))),
+            @int_from_enum(Register.w0)...@int_from_enum(Register.wzr) => @as(u6, @int_cast(@int_from_enum(self) - @int_from_enum(Register.w0))),
 
-            @intFromEnum(Register.sp) => 32,
-            @intFromEnum(Register.wsp) => 32,
+            @int_from_enum(Register.sp) => 32,
+            @int_from_enum(Register.wsp) => 32,
 
-            @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(u6, @intCast(@intFromEnum(self) - @intFromEnum(Register.q0) + 33)),
-            @intFromEnum(Register.d0)...@intFromEnum(Register.d31) => @as(u6, @intCast(@intFromEnum(self) - @intFromEnum(Register.d0) + 33)),
-            @intFromEnum(Register.s0)...@intFromEnum(Register.s31) => @as(u6, @intCast(@intFromEnum(self) - @intFromEnum(Register.s0) + 33)),
-            @intFromEnum(Register.h0)...@intFromEnum(Register.h31) => @as(u6, @intCast(@intFromEnum(self) - @intFromEnum(Register.h0) + 33)),
-            @intFromEnum(Register.b0)...@intFromEnum(Register.b31) => @as(u6, @intCast(@intFromEnum(self) - @intFromEnum(Register.b0) + 33)),
+            @int_from_enum(Register.q0)...@int_from_enum(Register.q31) => @as(u6, @int_cast(@int_from_enum(self) - @int_from_enum(Register.q0) + 33)),
+            @int_from_enum(Register.d0)...@int_from_enum(Register.d31) => @as(u6, @int_cast(@int_from_enum(self) - @int_from_enum(Register.d0) + 33)),
+            @int_from_enum(Register.s0)...@int_from_enum(Register.s31) => @as(u6, @int_cast(@int_from_enum(self) - @int_from_enum(Register.s0) + 33)),
+            @int_from_enum(Register.h0)...@int_from_enum(Register.h31) => @as(u6, @int_cast(@int_from_enum(self) - @int_from_enum(Register.h0) + 33)),
+            @int_from_enum(Register.b0)...@int_from_enum(Register.b31) => @as(u6, @int_cast(@int_from_enum(self) - @int_from_enum(Register.b0) + 33)),
             else => unreachable,
         };
     }
 
     pub fn enc(self: Register) u5 {
-        return switch (@intFromEnum(self)) {
-            @intFromEnum(Register.x0)...@intFromEnum(Register.xzr) => @as(u5, @intCast(@intFromEnum(self) - @intFromEnum(Register.x0))),
-            @intFromEnum(Register.w0)...@intFromEnum(Register.wzr) => @as(u5, @intCast(@intFromEnum(self) - @intFromEnum(Register.w0))),
+        return switch (@int_from_enum(self)) {
+            @int_from_enum(Register.x0)...@int_from_enum(Register.xzr) => @as(u5, @int_cast(@int_from_enum(self) - @int_from_enum(Register.x0))),
+            @int_from_enum(Register.w0)...@int_from_enum(Register.wzr) => @as(u5, @int_cast(@int_from_enum(self) - @int_from_enum(Register.w0))),
 
-            @intFromEnum(Register.sp) => 31,
-            @intFromEnum(Register.wsp) => 31,
+            @int_from_enum(Register.sp) => 31,
+            @int_from_enum(Register.wsp) => 31,
 
-            @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(u5, @intCast(@intFromEnum(self) - @intFromEnum(Register.q0))),
-            @intFromEnum(Register.d0)...@intFromEnum(Register.d31) => @as(u5, @intCast(@intFromEnum(self) - @intFromEnum(Register.d0))),
-            @intFromEnum(Register.s0)...@intFromEnum(Register.s31) => @as(u5, @intCast(@intFromEnum(self) - @intFromEnum(Register.s0))),
-            @intFromEnum(Register.h0)...@intFromEnum(Register.h31) => @as(u5, @intCast(@intFromEnum(self) - @intFromEnum(Register.h0))),
-            @intFromEnum(Register.b0)...@intFromEnum(Register.b31) => @as(u5, @intCast(@intFromEnum(self) - @intFromEnum(Register.b0))),
+            @int_from_enum(Register.q0)...@int_from_enum(Register.q31) => @as(u5, @int_cast(@int_from_enum(self) - @int_from_enum(Register.q0))),
+            @int_from_enum(Register.d0)...@int_from_enum(Register.d31) => @as(u5, @int_cast(@int_from_enum(self) - @int_from_enum(Register.d0))),
+            @int_from_enum(Register.s0)...@int_from_enum(Register.s31) => @as(u5, @int_cast(@int_from_enum(self) - @int_from_enum(Register.s0))),
+            @int_from_enum(Register.h0)...@int_from_enum(Register.h31) => @as(u5, @int_cast(@int_from_enum(self) - @int_from_enum(Register.h0))),
+            @int_from_enum(Register.b0)...@int_from_enum(Register.b31) => @as(u5, @int_cast(@int_from_enum(self) - @int_from_enum(Register.b0))),
             else => unreachable,
         };
     }
 
     /// Returns the bit-width of the register.
     pub fn size(self: Register) u8 {
-        return switch (@intFromEnum(self)) {
-            @intFromEnum(Register.x0)...@intFromEnum(Register.xzr) => 64,
-            @intFromEnum(Register.w0)...@intFromEnum(Register.wzr) => 32,
+        return switch (@int_from_enum(self)) {
+            @int_from_enum(Register.x0)...@int_from_enum(Register.xzr) => 64,
+            @int_from_enum(Register.w0)...@int_from_enum(Register.wzr) => 32,
 
-            @intFromEnum(Register.sp) => 64,
-            @intFromEnum(Register.wsp) => 32,
+            @int_from_enum(Register.sp) => 64,
+            @int_from_enum(Register.wsp) => 32,
 
-            @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => 128,
-            @intFromEnum(Register.d0)...@intFromEnum(Register.d31) => 64,
-            @intFromEnum(Register.s0)...@intFromEnum(Register.s31) => 32,
-            @intFromEnum(Register.h0)...@intFromEnum(Register.h31) => 16,
-            @intFromEnum(Register.b0)...@intFromEnum(Register.b31) => 8,
+            @int_from_enum(Register.q0)...@int_from_enum(Register.q31) => 128,
+            @int_from_enum(Register.d0)...@int_from_enum(Register.d31) => 64,
+            @int_from_enum(Register.s0)...@int_from_enum(Register.s31) => 32,
+            @int_from_enum(Register.h0)...@int_from_enum(Register.h31) => 16,
+            @int_from_enum(Register.b0)...@int_from_enum(Register.b31) => 8,
             else => unreachable,
         };
     }
 
     /// Convert from a general-purpose register to its 64 bit alias.
     pub fn to_x(self: Register) Register {
-        return switch (@intFromEnum(self)) {
-            @intFromEnum(Register.x0)...@intFromEnum(Register.xzr) => @as(
+        return switch (@int_from_enum(self)) {
+            @int_from_enum(Register.x0)...@int_from_enum(Register.xzr) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.x0) + @intFromEnum(Register.x0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.x0) + @int_from_enum(Register.x0)),
             ),
-            @intFromEnum(Register.w0)...@intFromEnum(Register.wzr) => @as(
+            @int_from_enum(Register.w0)...@int_from_enum(Register.wzr) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.w0) + @intFromEnum(Register.x0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.w0) + @int_from_enum(Register.x0)),
             ),
             else => unreachable,
         };
@@ -147,14 +147,14 @@ pub const Register = enum(u8) {
 
     /// Convert from a general-purpose register to its 32 bit alias.
     pub fn to_w(self: Register) Register {
-        return switch (@intFromEnum(self)) {
-            @intFromEnum(Register.x0)...@intFromEnum(Register.xzr) => @as(
+        return switch (@int_from_enum(self)) {
+            @int_from_enum(Register.x0)...@int_from_enum(Register.xzr) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.x0) + @intFromEnum(Register.w0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.x0) + @int_from_enum(Register.w0)),
             ),
-            @intFromEnum(Register.w0)...@intFromEnum(Register.wzr) => @as(
+            @int_from_enum(Register.w0)...@int_from_enum(Register.wzr) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.w0) + @intFromEnum(Register.w0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.w0) + @int_from_enum(Register.w0)),
             ),
             else => unreachable,
         };
@@ -162,26 +162,26 @@ pub const Register = enum(u8) {
 
     /// Convert from a floating-point register to its 128 bit alias.
     pub fn to_q(self: Register) Register {
-        return switch (@intFromEnum(self)) {
-            @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(
+        return switch (@int_from_enum(self)) {
+            @int_from_enum(Register.q0)...@int_from_enum(Register.q31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.q0) + @intFromEnum(Register.q0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.q0) + @int_from_enum(Register.q0)),
             ),
-            @intFromEnum(Register.d0)...@intFromEnum(Register.d31) => @as(
+            @int_from_enum(Register.d0)...@int_from_enum(Register.d31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.d0) + @intFromEnum(Register.q0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.d0) + @int_from_enum(Register.q0)),
             ),
-            @intFromEnum(Register.s0)...@intFromEnum(Register.s31) => @as(
+            @int_from_enum(Register.s0)...@int_from_enum(Register.s31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.s0) + @intFromEnum(Register.q0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.s0) + @int_from_enum(Register.q0)),
             ),
-            @intFromEnum(Register.h0)...@intFromEnum(Register.h31) => @as(
+            @int_from_enum(Register.h0)...@int_from_enum(Register.h31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.h0) + @intFromEnum(Register.q0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.h0) + @int_from_enum(Register.q0)),
             ),
-            @intFromEnum(Register.b0)...@intFromEnum(Register.b31) => @as(
+            @int_from_enum(Register.b0)...@int_from_enum(Register.b31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.b0) + @intFromEnum(Register.q0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.b0) + @int_from_enum(Register.q0)),
             ),
             else => unreachable,
         };
@@ -189,26 +189,26 @@ pub const Register = enum(u8) {
 
     /// Convert from a floating-point register to its 64 bit alias.
     pub fn to_d(self: Register) Register {
-        return switch (@intFromEnum(self)) {
-            @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(
+        return switch (@int_from_enum(self)) {
+            @int_from_enum(Register.q0)...@int_from_enum(Register.q31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.q0) + @intFromEnum(Register.d0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.q0) + @int_from_enum(Register.d0)),
             ),
-            @intFromEnum(Register.d0)...@intFromEnum(Register.d31) => @as(
+            @int_from_enum(Register.d0)...@int_from_enum(Register.d31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.d0) + @intFromEnum(Register.d0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.d0) + @int_from_enum(Register.d0)),
             ),
-            @intFromEnum(Register.s0)...@intFromEnum(Register.s31) => @as(
+            @int_from_enum(Register.s0)...@int_from_enum(Register.s31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.s0) + @intFromEnum(Register.d0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.s0) + @int_from_enum(Register.d0)),
             ),
-            @intFromEnum(Register.h0)...@intFromEnum(Register.h31) => @as(
+            @int_from_enum(Register.h0)...@int_from_enum(Register.h31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.h0) + @intFromEnum(Register.d0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.h0) + @int_from_enum(Register.d0)),
             ),
-            @intFromEnum(Register.b0)...@intFromEnum(Register.b31) => @as(
+            @int_from_enum(Register.b0)...@int_from_enum(Register.b31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.b0) + @intFromEnum(Register.d0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.b0) + @int_from_enum(Register.d0)),
             ),
             else => unreachable,
         };
@@ -216,26 +216,26 @@ pub const Register = enum(u8) {
 
     /// Convert from a floating-point register to its 32 bit alias.
     pub fn to_s(self: Register) Register {
-        return switch (@intFromEnum(self)) {
-            @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(
+        return switch (@int_from_enum(self)) {
+            @int_from_enum(Register.q0)...@int_from_enum(Register.q31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.q0) + @intFromEnum(Register.s0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.q0) + @int_from_enum(Register.s0)),
             ),
-            @intFromEnum(Register.d0)...@intFromEnum(Register.d31) => @as(
+            @int_from_enum(Register.d0)...@int_from_enum(Register.d31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.d0) + @intFromEnum(Register.s0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.d0) + @int_from_enum(Register.s0)),
             ),
-            @intFromEnum(Register.s0)...@intFromEnum(Register.s31) => @as(
+            @int_from_enum(Register.s0)...@int_from_enum(Register.s31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.s0) + @intFromEnum(Register.s0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.s0) + @int_from_enum(Register.s0)),
             ),
-            @intFromEnum(Register.h0)...@intFromEnum(Register.h31) => @as(
+            @int_from_enum(Register.h0)...@int_from_enum(Register.h31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.h0) + @intFromEnum(Register.s0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.h0) + @int_from_enum(Register.s0)),
             ),
-            @intFromEnum(Register.b0)...@intFromEnum(Register.b31) => @as(
+            @int_from_enum(Register.b0)...@int_from_enum(Register.b31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.b0) + @intFromEnum(Register.s0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.b0) + @int_from_enum(Register.s0)),
             ),
             else => unreachable,
         };
@@ -243,26 +243,26 @@ pub const Register = enum(u8) {
 
     /// Convert from a floating-point register to its 16 bit alias.
     pub fn to_h(self: Register) Register {
-        return switch (@intFromEnum(self)) {
-            @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(
+        return switch (@int_from_enum(self)) {
+            @int_from_enum(Register.q0)...@int_from_enum(Register.q31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.q0) + @intFromEnum(Register.h0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.q0) + @int_from_enum(Register.h0)),
             ),
-            @intFromEnum(Register.d0)...@intFromEnum(Register.d31) => @as(
+            @int_from_enum(Register.d0)...@int_from_enum(Register.d31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.d0) + @intFromEnum(Register.h0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.d0) + @int_from_enum(Register.h0)),
             ),
-            @intFromEnum(Register.s0)...@intFromEnum(Register.s31) => @as(
+            @int_from_enum(Register.s0)...@int_from_enum(Register.s31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.s0) + @intFromEnum(Register.h0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.s0) + @int_from_enum(Register.h0)),
             ),
-            @intFromEnum(Register.h0)...@intFromEnum(Register.h31) => @as(
+            @int_from_enum(Register.h0)...@int_from_enum(Register.h31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.h0) + @intFromEnum(Register.h0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.h0) + @int_from_enum(Register.h0)),
             ),
-            @intFromEnum(Register.b0)...@intFromEnum(Register.b31) => @as(
+            @int_from_enum(Register.b0)...@int_from_enum(Register.b31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.b0) + @intFromEnum(Register.h0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.b0) + @int_from_enum(Register.h0)),
             ),
             else => unreachable,
         };
@@ -270,26 +270,26 @@ pub const Register = enum(u8) {
 
     /// Convert from a floating-point register to its 8 bit alias.
     pub fn to_b(self: Register) Register {
-        return switch (@intFromEnum(self)) {
-            @intFromEnum(Register.q0)...@intFromEnum(Register.q31) => @as(
+        return switch (@int_from_enum(self)) {
+            @int_from_enum(Register.q0)...@int_from_enum(Register.q31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.q0) + @intFromEnum(Register.b0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.q0) + @int_from_enum(Register.b0)),
             ),
-            @intFromEnum(Register.d0)...@intFromEnum(Register.d31) => @as(
+            @int_from_enum(Register.d0)...@int_from_enum(Register.d31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.d0) + @intFromEnum(Register.b0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.d0) + @int_from_enum(Register.b0)),
             ),
-            @intFromEnum(Register.s0)...@intFromEnum(Register.s31) => @as(
+            @int_from_enum(Register.s0)...@int_from_enum(Register.s31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.s0) + @intFromEnum(Register.b0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.s0) + @int_from_enum(Register.b0)),
             ),
-            @intFromEnum(Register.h0)...@intFromEnum(Register.h31) => @as(
+            @int_from_enum(Register.h0)...@int_from_enum(Register.h31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.h0) + @intFromEnum(Register.b0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.h0) + @int_from_enum(Register.b0)),
             ),
-            @intFromEnum(Register.b0)...@intFromEnum(Register.b31) => @as(
+            @int_from_enum(Register.b0)...@int_from_enum(Register.b31) => @as(
                 Register,
-                @enumFromInt(@intFromEnum(self) - @intFromEnum(Register.b0) + @intFromEnum(Register.b0)),
+                @enumFromInt(@int_from_enum(self) - @int_from_enum(Register.b0) + @int_from_enum(Register.b0)),
             ),
             else => unreachable,
         };
@@ -308,27 +308,27 @@ pub const Register = enum(u8) {
 };
 
 test "Register.enc" {
-    try testing.expectEqual(@as(u5, 0), Register.x0.enc());
-    try testing.expectEqual(@as(u5, 0), Register.w0.enc());
+    try testing.expect_equal(@as(u5, 0), Register.x0.enc());
+    try testing.expect_equal(@as(u5, 0), Register.w0.enc());
 
-    try testing.expectEqual(@as(u5, 31), Register.xzr.enc());
-    try testing.expectEqual(@as(u5, 31), Register.wzr.enc());
+    try testing.expect_equal(@as(u5, 31), Register.xzr.enc());
+    try testing.expect_equal(@as(u5, 31), Register.wzr.enc());
 
-    try testing.expectEqual(@as(u5, 31), Register.sp.enc());
-    try testing.expectEqual(@as(u5, 31), Register.sp.enc());
+    try testing.expect_equal(@as(u5, 31), Register.sp.enc());
+    try testing.expect_equal(@as(u5, 31), Register.sp.enc());
 }
 
 test "Register.size" {
-    try testing.expectEqual(@as(u8, 64), Register.x19.size());
-    try testing.expectEqual(@as(u8, 32), Register.w3.size());
+    try testing.expect_equal(@as(u8, 64), Register.x19.size());
+    try testing.expect_equal(@as(u8, 32), Register.w3.size());
 }
 
-test "Register.toX/toW" {
-    try testing.expectEqual(Register.x0, Register.w0.toX());
-    try testing.expectEqual(Register.x0, Register.x0.toX());
+test "Register.to_x/to_w" {
+    try testing.expect_equal(Register.x0, Register.w0.to_x());
+    try testing.expect_equal(Register.x0, Register.x0.to_x());
 
-    try testing.expectEqual(Register.w3, Register.w3.toW());
-    try testing.expectEqual(Register.w3, Register.x3.toW());
+    try testing.expect_equal(Register.w3, Register.w3.to_w());
+    try testing.expect_equal(Register.w3, Register.x3.to_w());
 }
 
 /// Represents an instruction in the AArch64 instruction set
@@ -612,27 +612,27 @@ pub const Instruction = union(enum) {
 
     pub fn to_u32(self: Instruction) u32 {
         return switch (self) {
-            .move_wide_immediate => |v| @as(u32, @bitCast(v)),
-            .pc_relative_address => |v| @as(u32, @bitCast(v)),
-            .load_store_register => |v| @as(u32, @bitCast(v)),
-            .load_store_register_pair => |v| @as(u32, @bitCast(v)),
-            .load_literal => |v| @as(u32, @bitCast(v)),
-            .exception_generation => |v| @as(u32, @bitCast(v)),
-            .unconditional_branch_register => |v| @as(u32, @bitCast(v)),
-            .unconditional_branch_immediate => |v| @as(u32, @bitCast(v)),
-            .no_operation => |v| @as(u32, @bitCast(v)),
-            .logical_shifted_register => |v| @as(u32, @bitCast(v)),
-            .add_subtract_immediate => |v| @as(u32, @bitCast(v)),
-            .logical_immediate => |v| @as(u32, @bitCast(v)),
-            .bitfield => |v| @as(u32, @bitCast(v)),
-            .add_subtract_shifted_register => |v| @as(u32, @bitCast(v)),
-            .add_subtract_extended_register => |v| @as(u32, @bitCast(v)),
+            .move_wide_immediate => |v| @as(u32, @bit_cast(v)),
+            .pc_relative_address => |v| @as(u32, @bit_cast(v)),
+            .load_store_register => |v| @as(u32, @bit_cast(v)),
+            .load_store_register_pair => |v| @as(u32, @bit_cast(v)),
+            .load_literal => |v| @as(u32, @bit_cast(v)),
+            .exception_generation => |v| @as(u32, @bit_cast(v)),
+            .unconditional_branch_register => |v| @as(u32, @bit_cast(v)),
+            .unconditional_branch_immediate => |v| @as(u32, @bit_cast(v)),
+            .no_operation => |v| @as(u32, @bit_cast(v)),
+            .logical_shifted_register => |v| @as(u32, @bit_cast(v)),
+            .add_subtract_immediate => |v| @as(u32, @bit_cast(v)),
+            .logical_immediate => |v| @as(u32, @bit_cast(v)),
+            .bitfield => |v| @as(u32, @bit_cast(v)),
+            .add_subtract_shifted_register => |v| @as(u32, @bit_cast(v)),
+            .add_subtract_extended_register => |v| @as(u32, @bit_cast(v)),
             // TODO once packed structs work, this can be refactored
             .conditional_branch => |v| @as(u32, v.cond) | (@as(u32, v.o0) << 4) | (@as(u32, v.imm19) << 5) | (@as(u32, v.o1) << 24) | (@as(u32, v.fixed) << 25),
             .compare_and_branch => |v| @as(u32, v.rt) | (@as(u32, v.imm19) << 5) | (@as(u32, v.op) << 24) | (@as(u32, v.fixed) << 25) | (@as(u32, v.sf) << 31),
             .conditional_select => |v| @as(u32, v.rd) | @as(u32, v.rn) << 5 | @as(u32, v.op2) << 10 | @as(u32, v.cond) << 12 | @as(u32, v.rm) << 16 | @as(u32, v.fixed) << 21 | @as(u32, v.s) << 29 | @as(u32, v.op) << 30 | @as(u32, v.sf) << 31,
-            .data_processing_3_source => |v| @as(u32, @bitCast(v)),
-            .data_processing_2_source => |v| @as(u32, @bitCast(v)),
+            .data_processing_3_source => |v| @as(u32, @bit_cast(v)),
+            .data_processing_2_source => |v| @as(u32, @bit_cast(v)),
         };
     }
 
@@ -650,7 +650,7 @@ pub const Instruction = union(enum) {
             .move_wide_immediate = .{
                 .rd = rd.enc(),
                 .imm16 = imm16,
-                .hw = @as(u2, @intCast(shift / 16)),
+                .hw = @as(u2, @int_cast(shift / 16)),
                 .opc = opc,
                 .sf = switch (rd.size()) {
                     32 => 0,
@@ -663,7 +663,7 @@ pub const Instruction = union(enum) {
 
     fn pc_relative_address(rd: Register, imm21: i21, op: u1) Instruction {
         assert(rd.size() == 64);
-        const imm21_u = @as(u21, @bitCast(imm21));
+        const imm21_u = @as(u21, @bit_cast(imm21));
         return Instruction{
             .pc_relative_address = .{
                 .rd = rd.enc(),
@@ -704,15 +704,15 @@ pub const Instruction = union(enum) {
         pub fn to_u12(self: LoadStoreOffset) u12 {
             return switch (self) {
                 .immediate => |imm_type| switch (imm_type) {
-                    .post_index => |v| (@as(u12, @intCast(@as(u9, @bitCast(v)))) << 2) + 1,
-                    .pre_index => |v| (@as(u12, @intCast(@as(u9, @bitCast(v)))) << 2) + 3,
+                    .post_index => |v| (@as(u12, @int_cast(@as(u9, @bit_cast(v)))) << 2) + 1,
+                    .pre_index => |v| (@as(u12, @int_cast(@as(u9, @bit_cast(v)))) << 2) + 3,
                     .unsigned => |v| v,
                 },
                 .register => |r| switch (r.shift) {
-                    .uxtw => |v| (@as(u12, @intCast(r.rm)) << 6) + (@as(u12, @intCast(v)) << 2) + 16 + 2050,
-                    .lsl => |v| (@as(u12, @intCast(r.rm)) << 6) + (@as(u12, @intCast(v)) << 2) + 24 + 2050,
-                    .sxtw => |v| (@as(u12, @intCast(r.rm)) << 6) + (@as(u12, @intCast(v)) << 2) + 48 + 2050,
-                    .sxtx => |v| (@as(u12, @intCast(r.rm)) << 6) + (@as(u12, @intCast(v)) << 2) + 56 + 2050,
+                    .uxtw => |v| (@as(u12, @int_cast(r.rm)) << 6) + (@as(u12, @int_cast(v)) << 2) + 16 + 2050,
+                    .lsl => |v| (@as(u12, @int_cast(r.rm)) << 6) + (@as(u12, @int_cast(v)) << 2) + 24 + 2050,
+                    .sxtw => |v| (@as(u12, @int_cast(r.rm)) << 6) + (@as(u12, @int_cast(v)) << 2) + 48 + 2050,
+                    .sxtx => |v| (@as(u12, @int_cast(r.rm)) << 6) + (@as(u12, @int_cast(v)) << 2) + 56 + 2050,
                 },
             };
         }
@@ -826,7 +826,7 @@ pub const Instruction = union(enum) {
         assert(rn.size() == 64);
         assert(rn.id() != Register.xzr.id());
 
-        const off = offset.toU12();
+        const off = offset.to_u12();
 
         const op1: u2 = blk: {
             switch (offset) {
@@ -894,14 +894,14 @@ pub const Instruction = union(enum) {
         switch (rt1.size()) {
             32 => {
                 assert(-256 <= offset and offset <= 252);
-                const imm7 = @as(u7, @truncate(@as(u9, @bitCast(offset >> 2))));
+                const imm7 = @as(u7, @truncate(@as(u9, @bit_cast(offset >> 2))));
                 return Instruction{
                     .load_store_register_pair = .{
                         .rt1 = rt1.enc(),
                         .rn = rn.enc(),
                         .rt2 = rt2.enc(),
                         .imm7 = imm7,
-                        .load = @intFromBool(load),
+                        .load = @int_from_bool(load),
                         .encoding = encoding,
                         .opc = 0b00,
                     },
@@ -909,14 +909,14 @@ pub const Instruction = union(enum) {
             },
             64 => {
                 assert(-512 <= offset and offset <= 504);
-                const imm7 = @as(u7, @truncate(@as(u9, @bitCast(offset >> 3))));
+                const imm7 = @as(u7, @truncate(@as(u9, @bit_cast(offset >> 3))));
                 return Instruction{
                     .load_store_register_pair = .{
                         .rt1 = rt1.enc(),
                         .rn = rn.enc(),
                         .rt2 = rt2.enc(),
                         .imm7 = imm7,
-                        .load = @intFromBool(load),
+                        .load = @int_from_bool(load),
                         .encoding = encoding,
                         .opc = 0b10,
                     },
@@ -982,7 +982,7 @@ pub const Instruction = union(enum) {
     ) Instruction {
         return Instruction{
             .unconditional_branch_immediate = .{
-                .imm26 = @as(u26, @bitCast(@as(i26, @intCast(offset >> 2)))),
+                .imm26 = @as(u26, @bit_cast(@as(i26, @int_cast(offset >> 2)))),
                 .op = op,
             },
         };
@@ -1010,7 +1010,7 @@ pub const Instruction = union(enum) {
                 .imm6 = amount,
                 .rm = rm.enc(),
                 .n = n,
-                .shift = @intFromEnum(shift),
+                .shift = @int_from_enum(shift),
                 .opc = opc,
                 .sf = switch (rd.size()) {
                     32 => 0b0,
@@ -1037,7 +1037,7 @@ pub const Instruction = union(enum) {
                 .rd = rd.enc(),
                 .rn = rn.enc(),
                 .imm12 = imm12,
-                .sh = @intFromBool(shift),
+                .sh = @int_from_bool(shift),
                 .s = s,
                 .op = op,
                 .sf = switch (rd.size()) {
@@ -1126,7 +1126,7 @@ pub const Instruction = union(enum) {
                 .rn = rn.enc(),
                 .imm6 = imm6,
                 .rm = rm.enc(),
-                .shift = @intFromEnum(shift),
+                .shift = @int_from_enum(shift),
                 .s = s,
                 .op = op,
                 .sf = switch (rd.size()) {
@@ -1163,7 +1163,7 @@ pub const Instruction = union(enum) {
                 .rd = rd.enc(),
                 .rn = rn.enc(),
                 .imm3 = imm3,
-                .option = @intFromEnum(extend),
+                .option = @int_from_enum(extend),
                 .rm = rm.enc(),
                 .s = s,
                 .op = op,
@@ -1186,9 +1186,9 @@ pub const Instruction = union(enum) {
 
         return Instruction{
             .conditional_branch = .{
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
                 .o0 = o0,
-                .imm19 = @as(u19, @bitCast(@as(i19, @intCast(offset >> 2)))),
+                .imm19 = @as(u19, @bit_cast(@as(i19, @int_cast(offset >> 2)))),
                 .o1 = o1,
             },
         };
@@ -1204,7 +1204,7 @@ pub const Instruction = union(enum) {
         return Instruction{
             .compare_and_branch = .{
                 .rt = rt.enc(),
-                .imm19 = @as(u19, @bitCast(@as(i19, @intCast(offset >> 2)))),
+                .imm19 = @as(u19, @bit_cast(@as(i19, @int_cast(offset >> 2)))),
                 .op = op,
                 .sf = switch (rt.size()) {
                     32 => 0b0,
@@ -1232,7 +1232,7 @@ pub const Instruction = union(enum) {
                 .rd = rd.enc(),
                 .rn = rn.enc(),
                 .op2 = op2,
-                .cond = @intFromEnum(cond),
+                .cond = @int_from_enum(cond),
                 .rm = rm.enc(),
                 .s = s,
                 .op = op,
@@ -1303,67 +1303,67 @@ pub const Instruction = union(enum) {
     // Move wide (immediate)
 
     pub fn movn(rd: Register, imm16: u16, shift: u6) Instruction {
-        return moveWideImmediate(0b00, rd, imm16, shift);
+        return move_wide_immediate(0b00, rd, imm16, shift);
     }
 
     pub fn movz(rd: Register, imm16: u16, shift: u6) Instruction {
-        return moveWideImmediate(0b10, rd, imm16, shift);
+        return move_wide_immediate(0b10, rd, imm16, shift);
     }
 
     pub fn movk(rd: Register, imm16: u16, shift: u6) Instruction {
-        return moveWideImmediate(0b11, rd, imm16, shift);
+        return move_wide_immediate(0b11, rd, imm16, shift);
     }
 
     // PC relative address
 
     pub fn adr(rd: Register, imm21: i21) Instruction {
-        return pcRelativeAddress(rd, imm21, 0b0);
+        return pc_relative_address(rd, imm21, 0b0);
     }
 
     pub fn adrp(rd: Register, imm21: i21) Instruction {
-        return pcRelativeAddress(rd, imm21, 0b1);
+        return pc_relative_address(rd, imm21, 0b1);
     }
 
     // Load or store register
 
     pub fn ldr_literal(rt: Register, literal: u19) Instruction {
-        return loadLiteral(rt, literal);
+        return load_literal(rt, literal);
     }
 
     pub fn ldr(rt: Register, rn: Register, offset: LoadStoreOffset) Instruction {
-        return loadStoreRegister(rt, rn, offset, .ldr);
+        return load_store_register(rt, rn, offset, .ldr);
     }
 
     pub fn ldrh(rt: Register, rn: Register, offset: LoadStoreOffset) Instruction {
-        return loadStoreRegister(rt, rn, offset, .ldrh);
+        return load_store_register(rt, rn, offset, .ldrh);
     }
 
     pub fn ldrb(rt: Register, rn: Register, offset: LoadStoreOffset) Instruction {
-        return loadStoreRegister(rt, rn, offset, .ldrb);
+        return load_store_register(rt, rn, offset, .ldrb);
     }
 
     pub fn ldrsb(rt: Register, rn: Register, offset: LoadStoreOffset) Instruction {
-        return loadStoreRegister(rt, rn, offset, .ldrsb);
+        return load_store_register(rt, rn, offset, .ldrsb);
     }
 
     pub fn ldrsh(rt: Register, rn: Register, offset: LoadStoreOffset) Instruction {
-        return loadStoreRegister(rt, rn, offset, .ldrsh);
+        return load_store_register(rt, rn, offset, .ldrsh);
     }
 
     pub fn ldrsw(rt: Register, rn: Register, offset: LoadStoreOffset) Instruction {
-        return loadStoreRegister(rt, rn, offset, .ldrsw);
+        return load_store_register(rt, rn, offset, .ldrsw);
     }
 
     pub fn str(rt: Register, rn: Register, offset: LoadStoreOffset) Instruction {
-        return loadStoreRegister(rt, rn, offset, .str);
+        return load_store_register(rt, rn, offset, .str);
     }
 
     pub fn strh(rt: Register, rn: Register, offset: LoadStoreOffset) Instruction {
-        return loadStoreRegister(rt, rn, offset, .strh);
+        return load_store_register(rt, rn, offset, .strh);
     }
 
     pub fn strb(rt: Register, rn: Register, offset: LoadStoreOffset) Instruction {
-        return loadStoreRegister(rt, rn, offset, .strb);
+        return load_store_register(rt, rn, offset, .strb);
     }
 
     // Load or store pair of registers
@@ -1394,65 +1394,65 @@ pub const Instruction = union(enum) {
     };
 
     pub fn ldp(rt1: Register, rt2: Register, rn: Register, offset: LoadStorePairOffset) Instruction {
-        return loadStoreRegisterPair(rt1, rt2, rn, offset.offset, @intFromEnum(offset.encoding), true);
+        return load_store_register_pair(rt1, rt2, rn, offset.offset, @int_from_enum(offset.encoding), true);
     }
 
     pub fn ldnp(rt1: Register, rt2: Register, rn: Register, offset: i9) Instruction {
-        return loadStoreRegisterPair(rt1, rt2, rn, offset, 0, true);
+        return load_store_register_pair(rt1, rt2, rn, offset, 0, true);
     }
 
     pub fn stp(rt1: Register, rt2: Register, rn: Register, offset: LoadStorePairOffset) Instruction {
-        return loadStoreRegisterPair(rt1, rt2, rn, offset.offset, @intFromEnum(offset.encoding), false);
+        return load_store_register_pair(rt1, rt2, rn, offset.offset, @int_from_enum(offset.encoding), false);
     }
 
     pub fn stnp(rt1: Register, rt2: Register, rn: Register, offset: i9) Instruction {
-        return loadStoreRegisterPair(rt1, rt2, rn, offset, 0, false);
+        return load_store_register_pair(rt1, rt2, rn, offset, 0, false);
     }
 
     // Exception generation
 
     pub fn svc(imm16: u16) Instruction {
-        return exceptionGeneration(0b000, 0b000, 0b01, imm16);
+        return exception_generation(0b000, 0b000, 0b01, imm16);
     }
 
     pub fn hvc(imm16: u16) Instruction {
-        return exceptionGeneration(0b000, 0b000, 0b10, imm16);
+        return exception_generation(0b000, 0b000, 0b10, imm16);
     }
 
     pub fn smc(imm16: u16) Instruction {
-        return exceptionGeneration(0b000, 0b000, 0b11, imm16);
+        return exception_generation(0b000, 0b000, 0b11, imm16);
     }
 
     pub fn brk(imm16: u16) Instruction {
-        return exceptionGeneration(0b001, 0b000, 0b00, imm16);
+        return exception_generation(0b001, 0b000, 0b00, imm16);
     }
 
     pub fn hlt(imm16: u16) Instruction {
-        return exceptionGeneration(0b010, 0b000, 0b00, imm16);
+        return exception_generation(0b010, 0b000, 0b00, imm16);
     }
 
     // Unconditional branch (register)
 
     pub fn br(rn: Register) Instruction {
-        return unconditionalBranchRegister(0b0000, 0b11111, 0b000000, rn, 0b00000);
+        return unconditional_branch_register(0b0000, 0b11111, 0b000000, rn, 0b00000);
     }
 
     pub fn blr(rn: Register) Instruction {
-        return unconditionalBranchRegister(0b0001, 0b11111, 0b000000, rn, 0b00000);
+        return unconditional_branch_register(0b0001, 0b11111, 0b000000, rn, 0b00000);
     }
 
     pub fn ret(rn: ?Register) Instruction {
-        return unconditionalBranchRegister(0b0010, 0b11111, 0b000000, rn orelse .x30, 0b00000);
+        return unconditional_branch_register(0b0010, 0b11111, 0b000000, rn orelse .x30, 0b00000);
     }
 
     // Unconditional branch (immediate)
 
     pub fn b(offset: i28) Instruction {
-        return unconditionalBranchImmediate(0, offset);
+        return unconditional_branch_immediate(0, offset);
     }
 
     pub fn bl(offset: i28) Instruction {
-        return unconditionalBranchImmediate(1, offset);
+        return unconditional_branch_immediate(1, offset);
     }
 
     // Nop
@@ -1470,7 +1470,7 @@ pub const Instruction = union(enum) {
         shift: LogicalShiftedRegisterShift,
         amount: u6,
     ) Instruction {
-        return logicalShiftedRegister(0b00, 0b0, rd, rn, rm, shift, amount);
+        return logical_shifted_register(0b00, 0b0, rd, rn, rm, shift, amount);
     }
 
     pub fn bic_shifted_register(
@@ -1480,7 +1480,7 @@ pub const Instruction = union(enum) {
         shift: LogicalShiftedRegisterShift,
         amount: u6,
     ) Instruction {
-        return logicalShiftedRegister(0b00, 0b1, rd, rn, rm, shift, amount);
+        return logical_shifted_register(0b00, 0b1, rd, rn, rm, shift, amount);
     }
 
     pub fn orr_shifted_register(
@@ -1490,7 +1490,7 @@ pub const Instruction = union(enum) {
         shift: LogicalShiftedRegisterShift,
         amount: u6,
     ) Instruction {
-        return logicalShiftedRegister(0b01, 0b0, rd, rn, rm, shift, amount);
+        return logical_shifted_register(0b01, 0b0, rd, rn, rm, shift, amount);
     }
 
     pub fn orn_shifted_register(
@@ -1500,7 +1500,7 @@ pub const Instruction = union(enum) {
         shift: LogicalShiftedRegisterShift,
         amount: u6,
     ) Instruction {
-        return logicalShiftedRegister(0b01, 0b1, rd, rn, rm, shift, amount);
+        return logical_shifted_register(0b01, 0b1, rd, rn, rm, shift, amount);
     }
 
     pub fn eor_shifted_register(
@@ -1510,7 +1510,7 @@ pub const Instruction = union(enum) {
         shift: LogicalShiftedRegisterShift,
         amount: u6,
     ) Instruction {
-        return logicalShiftedRegister(0b10, 0b0, rd, rn, rm, shift, amount);
+        return logical_shifted_register(0b10, 0b0, rd, rn, rm, shift, amount);
     }
 
     pub fn eon_shifted_register(
@@ -1520,7 +1520,7 @@ pub const Instruction = union(enum) {
         shift: LogicalShiftedRegisterShift,
         amount: u6,
     ) Instruction {
-        return logicalShiftedRegister(0b10, 0b1, rd, rn, rm, shift, amount);
+        return logical_shifted_register(0b10, 0b1, rd, rn, rm, shift, amount);
     }
 
     pub fn ands_shifted_register(
@@ -1530,7 +1530,7 @@ pub const Instruction = union(enum) {
         shift: LogicalShiftedRegisterShift,
         amount: u6,
     ) Instruction {
-        return logicalShiftedRegister(0b11, 0b0, rd, rn, rm, shift, amount);
+        return logical_shifted_register(0b11, 0b0, rd, rn, rm, shift, amount);
     }
 
     pub fn bics_shifted_register(
@@ -1540,43 +1540,43 @@ pub const Instruction = union(enum) {
         shift: LogicalShiftedRegisterShift,
         amount: u6,
     ) Instruction {
-        return logicalShiftedRegister(0b11, 0b1, rd, rn, rm, shift, amount);
+        return logical_shifted_register(0b11, 0b1, rd, rn, rm, shift, amount);
     }
 
     // Add/subtract (immediate)
 
     pub fn add(rd: Register, rn: Register, imm: u12, shift: bool) Instruction {
-        return addSubtractImmediate(0b0, 0b0, rd, rn, imm, shift);
+        return add_subtract_immediate(0b0, 0b0, rd, rn, imm, shift);
     }
 
     pub fn adds(rd: Register, rn: Register, imm: u12, shift: bool) Instruction {
-        return addSubtractImmediate(0b0, 0b1, rd, rn, imm, shift);
+        return add_subtract_immediate(0b0, 0b1, rd, rn, imm, shift);
     }
 
     pub fn sub(rd: Register, rn: Register, imm: u12, shift: bool) Instruction {
-        return addSubtractImmediate(0b1, 0b0, rd, rn, imm, shift);
+        return add_subtract_immediate(0b1, 0b0, rd, rn, imm, shift);
     }
 
     pub fn subs(rd: Register, rn: Register, imm: u12, shift: bool) Instruction {
-        return addSubtractImmediate(0b1, 0b1, rd, rn, imm, shift);
+        return add_subtract_immediate(0b1, 0b1, rd, rn, imm, shift);
     }
 
     // Logical (immediate)
 
     pub fn and_immediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
-        return logicalImmediate(0b00, rd, rn, imms, immr, n);
+        return logical_immediate(0b00, rd, rn, imms, immr, n);
     }
 
     pub fn orr_immediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
-        return logicalImmediate(0b01, rd, rn, imms, immr, n);
+        return logical_immediate(0b01, rd, rn, imms, immr, n);
     }
 
     pub fn eor_immediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
-        return logicalImmediate(0b10, rd, rn, imms, immr, n);
+        return logical_immediate(0b10, rd, rn, imms, immr, n);
     }
 
     pub fn ands_immediate(rd: Register, rn: Register, imms: u6, immr: u6, n: u1) Instruction {
-        return logicalImmediate(0b11, rd, rn, imms, immr, n);
+        return logical_immediate(0b11, rd, rn, imms, immr, n);
     }
 
     // Bitfield
@@ -1609,12 +1609,12 @@ pub const Instruction = union(enum) {
     }
 
     pub fn asr_immediate(rd: Register, rn: Register, shift: u6) Instruction {
-        const imms = @as(u6, @intCast(rd.size() - 1));
+        const imms = @as(u6, @int_cast(rd.size() - 1));
         return sbfm(rd, rn, shift, imms);
     }
 
     pub fn sbfx(rd: Register, rn: Register, lsb: u6, width: u7) Instruction {
-        return sbfm(rd, rn, lsb, @as(u6, @intCast(lsb + width - 1)));
+        return sbfm(rd, rn, lsb, @as(u6, @int_cast(lsb + width - 1)));
     }
 
     pub fn sxtb(rd: Register, rn: Register) Instruction {
@@ -1631,17 +1631,17 @@ pub const Instruction = union(enum) {
     }
 
     pub fn lsl_immediate(rd: Register, rn: Register, shift: u6) Instruction {
-        const size = @as(u6, @intCast(rd.size() - 1));
+        const size = @as(u6, @int_cast(rd.size() - 1));
         return ubfm(rd, rn, size - shift + 1, size - shift);
     }
 
     pub fn lsr_immediate(rd: Register, rn: Register, shift: u6) Instruction {
-        const imms = @as(u6, @intCast(rd.size() - 1));
+        const imms = @as(u6, @int_cast(rd.size() - 1));
         return ubfm(rd, rn, shift, imms);
     }
 
     pub fn ubfx(rd: Register, rn: Register, lsb: u6, width: u7) Instruction {
-        return ubfm(rd, rn, lsb, @as(u6, @intCast(lsb + width - 1)));
+        return ubfm(rd, rn, lsb, @as(u6, @int_cast(lsb + width - 1)));
     }
 
     pub fn uxtb(rd: Register, rn: Register) Instruction {
@@ -1661,7 +1661,7 @@ pub const Instruction = union(enum) {
         shift: AddSubtractShiftedRegisterShift,
         imm6: u6,
     ) Instruction {
-        return addSubtractShiftedRegister(0b0, 0b0, shift, rd, rn, rm, imm6);
+        return add_subtract_shifted_register(0b0, 0b0, shift, rd, rn, rm, imm6);
     }
 
     pub fn adds_shifted_register(
@@ -1671,7 +1671,7 @@ pub const Instruction = union(enum) {
         shift: AddSubtractShiftedRegisterShift,
         imm6: u6,
     ) Instruction {
-        return addSubtractShiftedRegister(0b0, 0b1, shift, rd, rn, rm, imm6);
+        return add_subtract_shifted_register(0b0, 0b1, shift, rd, rn, rm, imm6);
     }
 
     pub fn sub_shifted_register(
@@ -1681,7 +1681,7 @@ pub const Instruction = union(enum) {
         shift: AddSubtractShiftedRegisterShift,
         imm6: u6,
     ) Instruction {
-        return addSubtractShiftedRegister(0b1, 0b0, shift, rd, rn, rm, imm6);
+        return add_subtract_shifted_register(0b1, 0b0, shift, rd, rn, rm, imm6);
     }
 
     pub fn subs_shifted_register(
@@ -1691,7 +1691,7 @@ pub const Instruction = union(enum) {
         shift: AddSubtractShiftedRegisterShift,
         imm6: u6,
     ) Instruction {
-        return addSubtractShiftedRegister(0b1, 0b1, shift, rd, rn, rm, imm6);
+        return add_subtract_shifted_register(0b1, 0b1, shift, rd, rn, rm, imm6);
     }
 
     // Add/subtract (extended register)
@@ -1703,7 +1703,7 @@ pub const Instruction = union(enum) {
         extend: AddSubtractExtendedRegisterOption,
         imm3: u3,
     ) Instruction {
-        return addSubtractExtendedRegister(0b0, 0b0, rd, rn, rm, extend, imm3);
+        return add_subtract_extended_register(0b0, 0b0, rd, rn, rm, extend, imm3);
     }
 
     pub fn adds_extended_register(
@@ -1713,7 +1713,7 @@ pub const Instruction = union(enum) {
         extend: AddSubtractExtendedRegisterOption,
         imm3: u3,
     ) Instruction {
-        return addSubtractExtendedRegister(0b0, 0b1, rd, rn, rm, extend, imm3);
+        return add_subtract_extended_register(0b0, 0b1, rd, rn, rm, extend, imm3);
     }
 
     pub fn sub_extended_register(
@@ -1723,7 +1723,7 @@ pub const Instruction = union(enum) {
         extend: AddSubtractExtendedRegisterOption,
         imm3: u3,
     ) Instruction {
-        return addSubtractExtendedRegister(0b1, 0b0, rd, rn, rm, extend, imm3);
+        return add_subtract_extended_register(0b1, 0b0, rd, rn, rm, extend, imm3);
     }
 
     pub fn subs_extended_register(
@@ -1733,61 +1733,61 @@ pub const Instruction = union(enum) {
         extend: AddSubtractExtendedRegisterOption,
         imm3: u3,
     ) Instruction {
-        return addSubtractExtendedRegister(0b1, 0b1, rd, rn, rm, extend, imm3);
+        return add_subtract_extended_register(0b1, 0b1, rd, rn, rm, extend, imm3);
     }
 
     // Conditional branch
 
     pub fn b_cond(cond: Condition, offset: i21) Instruction {
-        return conditionalBranch(0b0, 0b0, cond, offset);
+        return conditional_branch(0b0, 0b0, cond, offset);
     }
 
     // Compare and branch
 
     pub fn cbz(rt: Register, offset: i21) Instruction {
-        return compareAndBranch(0b0, rt, offset);
+        return compare_and_branch(0b0, rt, offset);
     }
 
     pub fn cbnz(rt: Register, offset: i21) Instruction {
-        return compareAndBranch(0b1, rt, offset);
+        return compare_and_branch(0b1, rt, offset);
     }
 
     // Conditional select
 
     pub fn csel(rd: Register, rn: Register, rm: Register, cond: Condition) Instruction {
-        return conditionalSelect(0b00, 0b0, 0b0, rd, rn, rm, cond);
+        return conditional_select(0b00, 0b0, 0b0, rd, rn, rm, cond);
     }
 
     pub fn csinc(rd: Register, rn: Register, rm: Register, cond: Condition) Instruction {
-        return conditionalSelect(0b01, 0b0, 0b0, rd, rn, rm, cond);
+        return conditional_select(0b01, 0b0, 0b0, rd, rn, rm, cond);
     }
 
     pub fn csinv(rd: Register, rn: Register, rm: Register, cond: Condition) Instruction {
-        return conditionalSelect(0b00, 0b1, 0b0, rd, rn, rm, cond);
+        return conditional_select(0b00, 0b1, 0b0, rd, rn, rm, cond);
     }
 
     pub fn csneg(rd: Register, rn: Register, rm: Register, cond: Condition) Instruction {
-        return conditionalSelect(0b01, 0b1, 0b0, rd, rn, rm, cond);
+        return conditional_select(0b01, 0b1, 0b0, rd, rn, rm, cond);
     }
 
     // Data processing (3 source)
 
     pub fn madd(rd: Register, rn: Register, rm: Register, ra: Register) Instruction {
-        return dataProcessing3Source(0b00, 0b000, 0b0, rd, rn, rm, ra);
+        return data_processing3_source(0b00, 0b000, 0b0, rd, rn, rm, ra);
     }
 
     pub fn smaddl(rd: Register, rn: Register, rm: Register, ra: Register) Instruction {
         assert(rd.size() == 64 and rn.size() == 32 and rm.size() == 32 and ra.size() == 64);
-        return dataProcessing3Source(0b00, 0b001, 0b0, rd, rn, rm, ra);
+        return data_processing3_source(0b00, 0b001, 0b0, rd, rn, rm, ra);
     }
 
     pub fn umaddl(rd: Register, rn: Register, rm: Register, ra: Register) Instruction {
         assert(rd.size() == 64 and rn.size() == 32 and rm.size() == 32 and ra.size() == 64);
-        return dataProcessing3Source(0b00, 0b101, 0b0, rd, rn, rm, ra);
+        return data_processing3_source(0b00, 0b101, 0b0, rd, rn, rm, ra);
     }
 
     pub fn msub(rd: Register, rn: Register, rm: Register, ra: Register) Instruction {
-        return dataProcessing3Source(0b00, 0b000, 0b1, rd, rn, rm, ra);
+        return data_processing3_source(0b00, 0b000, 0b1, rd, rn, rm, ra);
     }
 
     pub fn mul(rd: Register, rn: Register, rm: Register) Instruction {
@@ -1800,7 +1800,7 @@ pub const Instruction = union(enum) {
 
     pub fn smulh(rd: Register, rn: Register, rm: Register) Instruction {
         assert(rd.size() == 64);
-        return dataProcessing3Source(0b00, 0b010, 0b0, rd, rn, rm, .xzr);
+        return data_processing3_source(0b00, 0b010, 0b0, rd, rn, rm, .xzr);
     }
 
     pub fn umull(rd: Register, rn: Register, rm: Register) Instruction {
@@ -1809,7 +1809,7 @@ pub const Instruction = union(enum) {
 
     pub fn umulh(rd: Register, rn: Register, rm: Register) Instruction {
         assert(rd.size() == 64);
-        return dataProcessing3Source(0b00, 0b110, 0b0, rd, rn, rm, .xzr);
+        return data_processing3_source(0b00, 0b110, 0b0, rd, rn, rm, .xzr);
     }
 
     pub fn mneg(rd: Register, rn: Register, rm: Register) Instruction {
@@ -1819,23 +1819,23 @@ pub const Instruction = union(enum) {
     // Data processing (2 source)
 
     pub fn udiv(rd: Register, rn: Register, rm: Register) Instruction {
-        return dataProcessing2Source(0b0, 0b000010, rd, rn, rm);
+        return data_processing2_source(0b0, 0b000010, rd, rn, rm);
     }
 
     pub fn sdiv(rd: Register, rn: Register, rm: Register) Instruction {
-        return dataProcessing2Source(0b0, 0b000011, rd, rn, rm);
+        return data_processing2_source(0b0, 0b000011, rd, rn, rm);
     }
 
     pub fn lslv(rd: Register, rn: Register, rm: Register) Instruction {
-        return dataProcessing2Source(0b0, 0b001000, rd, rn, rm);
+        return data_processing2_source(0b0, 0b001000, rd, rn, rm);
     }
 
     pub fn lsrv(rd: Register, rn: Register, rm: Register) Instruction {
-        return dataProcessing2Source(0b0, 0b001001, rd, rn, rm);
+        return data_processing2_source(0b0, 0b001001, rd, rn, rm);
     }
 
     pub fn asrv(rd: Register, rn: Register, rm: Register) Instruction {
-        return dataProcessing2Source(0b0, 0b001010, rd, rn, rm);
+        return data_processing2_source(0b0, 0b001010, rd, rn, rm);
     }
 
     pub const asrRegister = asrv;
@@ -1844,7 +1844,7 @@ pub const Instruction = union(enum) {
 };
 
 test {
-    testing.refAllDecls(@This());
+    testing.ref_all_decls(@This());
 }
 
 test "serialize instructions" {
@@ -1855,11 +1855,11 @@ test "serialize instructions" {
 
     const testcases = [_]Testcase{
         .{ // orr x0, xzr, x1
-            .inst = Instruction.orrShiftedRegister(.x0, .xzr, .x1, .lsl, 0),
+            .inst = Instruction.orr_shifted_register(.x0, .xzr, .x1, .lsl, 0),
             .expected = 0b1_01_01010_00_0_00001_000000_11111_00000,
         },
         .{ // orn x0, xzr, x1
-            .inst = Instruction.ornShiftedRegister(.x0, .xzr, .x1, .lsl, 0),
+            .inst = Instruction.orn_shifted_register(.x0, .xzr, .x1, .lsl, 0),
             .expected = 0b1_01_01010_00_1_00001_000000_11111_00000,
         },
         .{ // movz x1, #4
@@ -1919,7 +1919,7 @@ test "serialize instructions" {
             .expected = 0b11_111_0_00_01_1_00011_011_0_10_00001_00010,
         },
         .{ // ldr x2, label
-            .inst = Instruction.ldrLiteral(.x2, 0x1),
+            .inst = Instruction.ldr_literal(.x2, 0x1),
             .expected = 0b01_011_0_00_0000000000000000001_00010,
         },
         .{ // ldrh x7, [x4], #0xaa
@@ -1979,11 +1979,11 @@ test "serialize instructions" {
             .expected = 0b10_101_0_001_1_0000010_00010_11111_00001,
         },
         .{ // and x0, x4, x2
-            .inst = Instruction.andShiftedRegister(.x0, .x4, .x2, .lsl, 0),
+            .inst = Instruction.and_shifted_register(.x0, .x4, .x2, .lsl, 0),
             .expected = 0b1_00_01010_00_0_00010_000000_00100_00000,
         },
         .{ // and x0, x4, x2, lsl #0x8
-            .inst = Instruction.andShiftedRegister(.x0, .x4, .x2, .lsl, 0x8),
+            .inst = Instruction.and_shifted_register(.x0, .x4, .x2, .lsl, 0x8),
             .expected = 0b1_00_01010_00_0_00010_001000_00100_00000,
         },
         .{ // add x0, x10, #10
@@ -1995,7 +1995,7 @@ test "serialize instructions" {
             .expected = 0b1_1_1_100010_1_0000_0000_1011_00101_00000,
         },
         .{ // b.hi #-4
-            .inst = Instruction.bCond(.hi, -4),
+            .inst = Instruction.b_cond(.hi, -4),
             .expected = 0b0101010_0_1111111111111111111_0_1000,
         },
         .{ // cbz x10, #40
@@ -2003,7 +2003,7 @@ test "serialize instructions" {
             .expected = 0b1_011010_0_0000000000000001010_01010,
         },
         .{ // add x0, x1, x2, lsl #5
-            .inst = Instruction.addShiftedRegister(.x0, .x1, .x2, .lsl, 5),
+            .inst = Instruction.add_shifted_register(.x0, .x1, .x2, .lsl, 5),
             .expected = 0b1_0_0_01011_00_0_00010_000101_00001_00000,
         },
         .{ // csinc x1, x2, x4, eq
@@ -2015,7 +2015,7 @@ test "serialize instructions" {
             .expected = 0b1_00_11011_000_01001_0_11111_00100_00001,
         },
         .{ // eor x3, x5, #1
-            .inst = Instruction.eorImmediate(.x3, .x5, 0b000000, 0b000000, 0b1),
+            .inst = Instruction.eor_immediate(.x3, .x5, 0b000000, 0b000000, 0b1),
             .expected = 0b1_10_100100_1_000000_000000_00101_00011,
         },
         .{ // lslv x6, x9, x10
@@ -2023,19 +2023,19 @@ test "serialize instructions" {
             .expected = 0b1_0_0_11010110_01010_0010_00_01001_00110,
         },
         .{ // lsl x4, x2, #42
-            .inst = Instruction.lslImmediate(.x4, .x2, 42),
+            .inst = Instruction.lsl_immediate(.x4, .x2, 42),
             .expected = 0b1_10_100110_1_010110_010101_00010_00100,
         },
         .{ // lsl x4, x2, #63
-            .inst = Instruction.lslImmediate(.x4, .x2, 63),
+            .inst = Instruction.lsl_immediate(.x4, .x2, 63),
             .expected = 0b1_10_100110_1_000001_000000_00010_00100,
         },
         .{ // lsr x4, x2, #42
-            .inst = Instruction.lsrImmediate(.x4, .x2, 42),
+            .inst = Instruction.lsr_immediate(.x4, .x2, 42),
             .expected = 0b1_10_100110_1_101010_111111_00010_00100,
         },
         .{ // lsr x4, x2, #63
-            .inst = Instruction.lsrImmediate(.x4, .x2, 63),
+            .inst = Instruction.lsr_immediate(.x4, .x2, 63),
             .expected = 0b1_10_100110_1_111111_111111_00010_00100,
         },
         .{ // umull x0, w0, w1
@@ -2047,7 +2047,7 @@ test "serialize instructions" {
             .expected = 0b1_00_11011_0_01_00001_0_11111_00000_00000,
         },
         .{ // tst x0, #0xffffffff00000000
-            .inst = Instruction.andsImmediate(.xzr, .x0, 0b011111, 0b100000, 0b1),
+            .inst = Instruction.ands_immediate(.xzr, .x0, 0b011111, 0b100000, 0b1),
             .expected = 0b1_11_100100_1_100000_011111_00000_11111,
         },
         .{ // umulh x0, x1, x2
@@ -2059,13 +2059,13 @@ test "serialize instructions" {
             .expected = 0b1_00_11011_0_10_00010_0_11111_00001_00000,
         },
         .{ // adds x0, x1, x2, sxtx
-            .inst = Instruction.addsExtendedRegister(.x0, .x1, .x2, .sxtx, 0),
+            .inst = Instruction.adds_extended_register(.x0, .x1, .x2, .sxtx, 0),
             .expected = 0b1_0_1_01011_00_1_00010_111_000_00001_00000,
         },
     };
 
     for (testcases) |case| {
-        const actual = case.inst.toU32();
-        try testing.expectEqual(case.expected, actual);
+        const actual = case.inst.to_u32();
+        try testing.expect_equal(case.expected, actual);
     }
 }

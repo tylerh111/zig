@@ -66,87 +66,87 @@ pub fn emit_mir(
 
     // Convert absolute addresses into offsets and
     // find smallest lowerings for branch instructions
-    try emit.lowerBranches();
+    try emit.lower_branches();
 
     // Emit machine code
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
+        const inst = @as(u32, @int_cast(index));
         switch (tag) {
-            .dbg_line => try emit.mirDbgLine(inst),
-            .dbg_prologue_end => try emit.mirDebugPrologueEnd(),
-            .dbg_epilogue_begin => try emit.mirDebugEpilogueBegin(),
+            .dbg_line => try emit.mir_dbg_line(inst),
+            .dbg_prologue_end => try emit.mir_debug_prologue_end(),
+            .dbg_epilogue_begin => try emit.mir_debug_epilogue_begin(),
 
-            .add => try emit.mirArithmetic3Op(inst),
-            .addcc => try emit.mirArithmetic3Op(inst),
+            .add => try emit.mir_arithmetic3_op(inst),
+            .addcc => try emit.mir_arithmetic3_op(inst),
 
-            .bpr => try emit.mirConditionalBranch(inst),
-            .bpcc => try emit.mirConditionalBranch(inst),
+            .bpr => try emit.mir_conditional_branch(inst),
+            .bpcc => try emit.mir_conditional_branch(inst),
 
             .call => @panic("TODO implement sparc64 call"),
 
-            .jmpl => try emit.mirArithmetic3Op(inst),
+            .jmpl => try emit.mir_arithmetic3_op(inst),
 
-            .ldub => try emit.mirArithmetic3Op(inst),
-            .lduh => try emit.mirArithmetic3Op(inst),
-            .lduw => try emit.mirArithmetic3Op(inst),
-            .ldx => try emit.mirArithmetic3Op(inst),
+            .ldub => try emit.mir_arithmetic3_op(inst),
+            .lduh => try emit.mir_arithmetic3_op(inst),
+            .lduw => try emit.mir_arithmetic3_op(inst),
+            .ldx => try emit.mir_arithmetic3_op(inst),
 
-            .lduba => try emit.mirMemASI(inst),
-            .lduha => try emit.mirMemASI(inst),
-            .lduwa => try emit.mirMemASI(inst),
-            .ldxa => try emit.mirMemASI(inst),
+            .lduba => try emit.mir_mem_asi(inst),
+            .lduha => try emit.mir_mem_asi(inst),
+            .lduwa => try emit.mir_mem_asi(inst),
+            .ldxa => try emit.mir_mem_asi(inst),
 
-            .@"and" => try emit.mirArithmetic3Op(inst),
-            .@"or" => try emit.mirArithmetic3Op(inst),
-            .xor => try emit.mirArithmetic3Op(inst),
-            .xnor => try emit.mirArithmetic3Op(inst),
+            .@"and" => try emit.mir_arithmetic3_op(inst),
+            .@"or" => try emit.mir_arithmetic3_op(inst),
+            .xor => try emit.mir_arithmetic3_op(inst),
+            .xnor => try emit.mir_arithmetic3_op(inst),
 
-            .membar => try emit.mirMembar(inst),
+            .membar => try emit.mir_membar(inst),
 
-            .movcc => try emit.mirConditionalMove(inst),
+            .movcc => try emit.mir_conditional_move(inst),
 
-            .movr => try emit.mirConditionalMove(inst),
+            .movr => try emit.mir_conditional_move(inst),
 
-            .mulx => try emit.mirArithmetic3Op(inst),
-            .sdivx => try emit.mirArithmetic3Op(inst),
-            .udivx => try emit.mirArithmetic3Op(inst),
+            .mulx => try emit.mir_arithmetic3_op(inst),
+            .sdivx => try emit.mir_arithmetic3_op(inst),
+            .udivx => try emit.mir_arithmetic3_op(inst),
 
-            .nop => try emit.mirNop(),
+            .nop => try emit.mir_nop(),
 
-            .@"return" => try emit.mirArithmetic2Op(inst),
+            .@"return" => try emit.mir_arithmetic2_op(inst),
 
-            .save => try emit.mirArithmetic3Op(inst),
-            .restore => try emit.mirArithmetic3Op(inst),
+            .save => try emit.mir_arithmetic3_op(inst),
+            .restore => try emit.mir_arithmetic3_op(inst),
 
-            .sethi => try emit.mirSethi(inst),
+            .sethi => try emit.mir_sethi(inst),
 
-            .sll => try emit.mirShift(inst),
-            .srl => try emit.mirShift(inst),
-            .sra => try emit.mirShift(inst),
-            .sllx => try emit.mirShift(inst),
-            .srlx => try emit.mirShift(inst),
-            .srax => try emit.mirShift(inst),
+            .sll => try emit.mir_shift(inst),
+            .srl => try emit.mir_shift(inst),
+            .sra => try emit.mir_shift(inst),
+            .sllx => try emit.mir_shift(inst),
+            .srlx => try emit.mir_shift(inst),
+            .srax => try emit.mir_shift(inst),
 
-            .stb => try emit.mirArithmetic3Op(inst),
-            .sth => try emit.mirArithmetic3Op(inst),
-            .stw => try emit.mirArithmetic3Op(inst),
-            .stx => try emit.mirArithmetic3Op(inst),
+            .stb => try emit.mir_arithmetic3_op(inst),
+            .sth => try emit.mir_arithmetic3_op(inst),
+            .stw => try emit.mir_arithmetic3_op(inst),
+            .stx => try emit.mir_arithmetic3_op(inst),
 
-            .stba => try emit.mirMemASI(inst),
-            .stha => try emit.mirMemASI(inst),
-            .stwa => try emit.mirMemASI(inst),
-            .stxa => try emit.mirMemASI(inst),
+            .stba => try emit.mir_mem_asi(inst),
+            .stha => try emit.mir_mem_asi(inst),
+            .stwa => try emit.mir_mem_asi(inst),
+            .stxa => try emit.mir_mem_asi(inst),
 
-            .sub => try emit.mirArithmetic3Op(inst),
-            .subcc => try emit.mirArithmetic3Op(inst),
+            .sub => try emit.mir_arithmetic3_op(inst),
+            .subcc => try emit.mir_arithmetic3_op(inst),
 
-            .tcc => try emit.mirTrap(inst),
+            .tcc => try emit.mir_trap(inst),
 
-            .cmp => try emit.mirArithmetic2Op(inst),
+            .cmp => try emit.mir_arithmetic2_op(inst),
 
-            .mov => try emit.mirArithmetic2Op(inst),
+            .mov => try emit.mir_arithmetic2_op(inst),
 
-            .not => try emit.mirArithmetic2Op(inst),
+            .not => try emit.mir_arithmetic2_op(inst),
         }
     }
 }
@@ -154,7 +154,7 @@ pub fn emit_mir(
 pub fn deinit(emit: *Emit) void {
     const comp = emit.bin_file.comp;
     const gpa = comp.gpa;
-    var iter = emit.branch_forward_origins.valueIterator();
+    var iter = emit.branch_forward_origins.value_iterator();
     while (iter.next()) |origin_list| {
         origin_list.deinit(gpa);
     }
@@ -170,7 +170,7 @@ fn mir_dbg_line(emit: *Emit, inst: Mir.Inst.Index) !void {
     const dbg_line_column = emit.mir.instructions.items(.data)[inst].dbg_line_column;
 
     switch (tag) {
-        .dbg_line => try emit.dbgAdvancePCAndLine(dbg_line_column.line, dbg_line_column.column),
+        .dbg_line => try emit.dbg_advance_pcand_line(dbg_line_column.line, dbg_line_column.column),
         else => unreachable,
     }
 }
@@ -178,8 +178,8 @@ fn mir_dbg_line(emit: *Emit, inst: Mir.Inst.Index) !void {
 fn mir_debug_prologue_end(emit: *Emit) !void {
     switch (emit.debug_output) {
         .dwarf => |dbg_out| {
-            try dbg_out.setPrologueEnd();
-            try emit.dbgAdvancePCAndLine(emit.prev_di_line, emit.prev_di_column);
+            try dbg_out.set_prologue_end();
+            try emit.dbg_advance_pcand_line(emit.prev_di_line, emit.prev_di_column);
         },
         .plan9 => {},
         .none => {},
@@ -189,8 +189,8 @@ fn mir_debug_prologue_end(emit: *Emit) !void {
 fn mir_debug_epilogue_begin(emit: *Emit) !void {
     switch (emit.debug_output) {
         .dwarf => |dbg_out| {
-            try dbg_out.setEpilogueBegin();
-            try emit.dbgAdvancePCAndLine(emit.prev_di_line, emit.prev_di_column);
+            try dbg_out.set_epilogue_begin();
+            try emit.dbg_advance_pcand_line(emit.prev_di_line, emit.prev_di_column);
         },
         .plan9 => {},
         .none => {},
@@ -206,19 +206,19 @@ fn mir_arithmetic2_op(emit: *Emit, inst: Mir.Inst.Index) !void {
     if (data.is_imm) {
         const imm = data.rs2_or_imm.imm;
         switch (tag) {
-            .@"return" => try emit.writeInstruction(Instruction.@"return"(i13, rs1, imm)),
-            .cmp => try emit.writeInstruction(Instruction.subcc(i13, rs1, imm, .g0)),
-            .mov => try emit.writeInstruction(Instruction.@"or"(i13, .g0, imm, rs1)),
-            .not => try emit.writeInstruction(Instruction.xnor(i13, .g0, imm, rs1)),
+            .@"return" => try emit.write_instruction(Instruction.@"return"(i13, rs1, imm)),
+            .cmp => try emit.write_instruction(Instruction.subcc(i13, rs1, imm, .g0)),
+            .mov => try emit.write_instruction(Instruction.@"or"(i13, .g0, imm, rs1)),
+            .not => try emit.write_instruction(Instruction.xnor(i13, .g0, imm, rs1)),
             else => unreachable,
         }
     } else {
         const rs2 = data.rs2_or_imm.rs2;
         switch (tag) {
-            .@"return" => try emit.writeInstruction(Instruction.@"return"(Register, rs1, rs2)),
-            .cmp => try emit.writeInstruction(Instruction.subcc(Register, rs1, rs2, .g0)),
-            .mov => try emit.writeInstruction(Instruction.@"or"(Register, .g0, rs2, rs1)),
-            .not => try emit.writeInstruction(Instruction.xnor(Register, rs2, .g0, rs1)),
+            .@"return" => try emit.write_instruction(Instruction.@"return"(Register, rs1, rs2)),
+            .cmp => try emit.write_instruction(Instruction.subcc(Register, rs1, rs2, .g0)),
+            .mov => try emit.write_instruction(Instruction.@"or"(Register, .g0, rs2, rs1)),
+            .not => try emit.write_instruction(Instruction.xnor(Register, rs2, .g0, rs1)),
             else => unreachable,
         }
     }
@@ -234,55 +234,55 @@ fn mir_arithmetic3_op(emit: *Emit, inst: Mir.Inst.Index) !void {
     if (data.is_imm) {
         const imm = data.rs2_or_imm.imm;
         switch (tag) {
-            .add => try emit.writeInstruction(Instruction.add(i13, rs1, imm, rd)),
-            .addcc => try emit.writeInstruction(Instruction.addcc(i13, rs1, imm, rd)),
-            .jmpl => try emit.writeInstruction(Instruction.jmpl(i13, rs1, imm, rd)),
-            .ldub => try emit.writeInstruction(Instruction.ldub(i13, rs1, imm, rd)),
-            .lduh => try emit.writeInstruction(Instruction.lduh(i13, rs1, imm, rd)),
-            .lduw => try emit.writeInstruction(Instruction.lduw(i13, rs1, imm, rd)),
-            .ldx => try emit.writeInstruction(Instruction.ldx(i13, rs1, imm, rd)),
-            .@"and" => try emit.writeInstruction(Instruction.@"and"(i13, rs1, imm, rd)),
-            .@"or" => try emit.writeInstruction(Instruction.@"or"(i13, rs1, imm, rd)),
-            .xor => try emit.writeInstruction(Instruction.xor(i13, rs1, imm, rd)),
-            .xnor => try emit.writeInstruction(Instruction.xnor(i13, rs1, imm, rd)),
-            .mulx => try emit.writeInstruction(Instruction.mulx(i13, rs1, imm, rd)),
-            .sdivx => try emit.writeInstruction(Instruction.sdivx(i13, rs1, imm, rd)),
-            .udivx => try emit.writeInstruction(Instruction.udivx(i13, rs1, imm, rd)),
-            .save => try emit.writeInstruction(Instruction.save(i13, rs1, imm, rd)),
-            .restore => try emit.writeInstruction(Instruction.restore(i13, rs1, imm, rd)),
-            .stb => try emit.writeInstruction(Instruction.stb(i13, rs1, imm, rd)),
-            .sth => try emit.writeInstruction(Instruction.sth(i13, rs1, imm, rd)),
-            .stw => try emit.writeInstruction(Instruction.stw(i13, rs1, imm, rd)),
-            .stx => try emit.writeInstruction(Instruction.stx(i13, rs1, imm, rd)),
-            .sub => try emit.writeInstruction(Instruction.sub(i13, rs1, imm, rd)),
-            .subcc => try emit.writeInstruction(Instruction.subcc(i13, rs1, imm, rd)),
+            .add => try emit.write_instruction(Instruction.add(i13, rs1, imm, rd)),
+            .addcc => try emit.write_instruction(Instruction.addcc(i13, rs1, imm, rd)),
+            .jmpl => try emit.write_instruction(Instruction.jmpl(i13, rs1, imm, rd)),
+            .ldub => try emit.write_instruction(Instruction.ldub(i13, rs1, imm, rd)),
+            .lduh => try emit.write_instruction(Instruction.lduh(i13, rs1, imm, rd)),
+            .lduw => try emit.write_instruction(Instruction.lduw(i13, rs1, imm, rd)),
+            .ldx => try emit.write_instruction(Instruction.ldx(i13, rs1, imm, rd)),
+            .@"and" => try emit.write_instruction(Instruction.@"and"(i13, rs1, imm, rd)),
+            .@"or" => try emit.write_instruction(Instruction.@"or"(i13, rs1, imm, rd)),
+            .xor => try emit.write_instruction(Instruction.xor(i13, rs1, imm, rd)),
+            .xnor => try emit.write_instruction(Instruction.xnor(i13, rs1, imm, rd)),
+            .mulx => try emit.write_instruction(Instruction.mulx(i13, rs1, imm, rd)),
+            .sdivx => try emit.write_instruction(Instruction.sdivx(i13, rs1, imm, rd)),
+            .udivx => try emit.write_instruction(Instruction.udivx(i13, rs1, imm, rd)),
+            .save => try emit.write_instruction(Instruction.save(i13, rs1, imm, rd)),
+            .restore => try emit.write_instruction(Instruction.restore(i13, rs1, imm, rd)),
+            .stb => try emit.write_instruction(Instruction.stb(i13, rs1, imm, rd)),
+            .sth => try emit.write_instruction(Instruction.sth(i13, rs1, imm, rd)),
+            .stw => try emit.write_instruction(Instruction.stw(i13, rs1, imm, rd)),
+            .stx => try emit.write_instruction(Instruction.stx(i13, rs1, imm, rd)),
+            .sub => try emit.write_instruction(Instruction.sub(i13, rs1, imm, rd)),
+            .subcc => try emit.write_instruction(Instruction.subcc(i13, rs1, imm, rd)),
             else => unreachable,
         }
     } else {
         const rs2 = data.rs2_or_imm.rs2;
         switch (tag) {
-            .add => try emit.writeInstruction(Instruction.add(Register, rs1, rs2, rd)),
-            .addcc => try emit.writeInstruction(Instruction.addcc(Register, rs1, rs2, rd)),
-            .jmpl => try emit.writeInstruction(Instruction.jmpl(Register, rs1, rs2, rd)),
-            .ldub => try emit.writeInstruction(Instruction.ldub(Register, rs1, rs2, rd)),
-            .lduh => try emit.writeInstruction(Instruction.lduh(Register, rs1, rs2, rd)),
-            .lduw => try emit.writeInstruction(Instruction.lduw(Register, rs1, rs2, rd)),
-            .ldx => try emit.writeInstruction(Instruction.ldx(Register, rs1, rs2, rd)),
-            .@"and" => try emit.writeInstruction(Instruction.@"and"(Register, rs1, rs2, rd)),
-            .@"or" => try emit.writeInstruction(Instruction.@"or"(Register, rs1, rs2, rd)),
-            .xor => try emit.writeInstruction(Instruction.xor(Register, rs1, rs2, rd)),
-            .xnor => try emit.writeInstruction(Instruction.xnor(Register, rs1, rs2, rd)),
-            .mulx => try emit.writeInstruction(Instruction.mulx(Register, rs1, rs2, rd)),
-            .sdivx => try emit.writeInstruction(Instruction.sdivx(Register, rs1, rs2, rd)),
-            .udivx => try emit.writeInstruction(Instruction.udivx(Register, rs1, rs2, rd)),
-            .save => try emit.writeInstruction(Instruction.save(Register, rs1, rs2, rd)),
-            .restore => try emit.writeInstruction(Instruction.restore(Register, rs1, rs2, rd)),
-            .stb => try emit.writeInstruction(Instruction.stb(Register, rs1, rs2, rd)),
-            .sth => try emit.writeInstruction(Instruction.sth(Register, rs1, rs2, rd)),
-            .stw => try emit.writeInstruction(Instruction.stw(Register, rs1, rs2, rd)),
-            .stx => try emit.writeInstruction(Instruction.stx(Register, rs1, rs2, rd)),
-            .sub => try emit.writeInstruction(Instruction.sub(Register, rs1, rs2, rd)),
-            .subcc => try emit.writeInstruction(Instruction.subcc(Register, rs1, rs2, rd)),
+            .add => try emit.write_instruction(Instruction.add(Register, rs1, rs2, rd)),
+            .addcc => try emit.write_instruction(Instruction.addcc(Register, rs1, rs2, rd)),
+            .jmpl => try emit.write_instruction(Instruction.jmpl(Register, rs1, rs2, rd)),
+            .ldub => try emit.write_instruction(Instruction.ldub(Register, rs1, rs2, rd)),
+            .lduh => try emit.write_instruction(Instruction.lduh(Register, rs1, rs2, rd)),
+            .lduw => try emit.write_instruction(Instruction.lduw(Register, rs1, rs2, rd)),
+            .ldx => try emit.write_instruction(Instruction.ldx(Register, rs1, rs2, rd)),
+            .@"and" => try emit.write_instruction(Instruction.@"and"(Register, rs1, rs2, rd)),
+            .@"or" => try emit.write_instruction(Instruction.@"or"(Register, rs1, rs2, rd)),
+            .xor => try emit.write_instruction(Instruction.xor(Register, rs1, rs2, rd)),
+            .xnor => try emit.write_instruction(Instruction.xnor(Register, rs1, rs2, rd)),
+            .mulx => try emit.write_instruction(Instruction.mulx(Register, rs1, rs2, rd)),
+            .sdivx => try emit.write_instruction(Instruction.sdivx(Register, rs1, rs2, rd)),
+            .udivx => try emit.write_instruction(Instruction.udivx(Register, rs1, rs2, rd)),
+            .save => try emit.write_instruction(Instruction.save(Register, rs1, rs2, rd)),
+            .restore => try emit.write_instruction(Instruction.restore(Register, rs1, rs2, rd)),
+            .stb => try emit.write_instruction(Instruction.stb(Register, rs1, rs2, rd)),
+            .sth => try emit.write_instruction(Instruction.sth(Register, rs1, rs2, rd)),
+            .stw => try emit.write_instruction(Instruction.stw(Register, rs1, rs2, rd)),
+            .stx => try emit.write_instruction(Instruction.stx(Register, rs1, rs2, rd)),
+            .sub => try emit.write_instruction(Instruction.sub(Register, rs1, rs2, rd)),
+            .subcc => try emit.write_instruction(Instruction.subcc(Register, rs1, rs2, rd)),
             else => unreachable,
         }
     }
@@ -296,16 +296,16 @@ fn mir_conditional_branch(emit: *Emit, inst: Mir.Inst.Index) !void {
         .bpcc => switch (tag) {
             .bpcc => {
                 const branch_predict_int = emit.mir.instructions.items(.data)[inst].branch_predict_int;
-                const offset = @as(i64, @intCast(emit.code_offset_mapping.get(branch_predict_int.inst).?)) - @as(i64, @intCast(emit.code.items.len));
-                log.debug("mirConditionalBranch: {} offset={}", .{ inst, offset });
+                const offset = @as(i64, @int_cast(emit.code_offset_mapping.get(branch_predict_int.inst).?)) - @as(i64, @int_cast(emit.code.items.len));
+                log.debug("mir_conditional_branch: {} offset={}", .{ inst, offset });
 
-                try emit.writeInstruction(
+                try emit.write_instruction(
                     Instruction.bpcc(
                         branch_predict_int.cond,
                         branch_predict_int.annul,
                         branch_predict_int.pt,
                         branch_predict_int.ccr,
-                        @as(i21, @intCast(offset)),
+                        @as(i21, @int_cast(offset)),
                     ),
                 );
             },
@@ -314,16 +314,16 @@ fn mir_conditional_branch(emit: *Emit, inst: Mir.Inst.Index) !void {
         .bpr => switch (tag) {
             .bpr => {
                 const branch_predict_reg = emit.mir.instructions.items(.data)[inst].branch_predict_reg;
-                const offset = @as(i64, @intCast(emit.code_offset_mapping.get(branch_predict_reg.inst).?)) - @as(i64, @intCast(emit.code.items.len));
-                log.debug("mirConditionalBranch: {} offset={}", .{ inst, offset });
+                const offset = @as(i64, @int_cast(emit.code_offset_mapping.get(branch_predict_reg.inst).?)) - @as(i64, @int_cast(emit.code.items.len));
+                log.debug("mir_conditional_branch: {} offset={}", .{ inst, offset });
 
-                try emit.writeInstruction(
+                try emit.write_instruction(
                     Instruction.bpr(
                         branch_predict_reg.cond,
                         branch_predict_reg.annul,
                         branch_predict_reg.pt,
                         branch_predict_reg.rs1,
-                        @as(i18, @intCast(offset)),
+                        @as(i18, @int_cast(offset)),
                     ),
                 );
             },
@@ -339,7 +339,7 @@ fn mir_conditional_move(emit: *Emit, inst: Mir.Inst.Index) !void {
         .movcc => {
             const data = emit.mir.instructions.items(.data)[inst].conditional_move_int;
             if (data.is_imm) {
-                try emit.writeInstruction(Instruction.movcc(
+                try emit.write_instruction(Instruction.movcc(
                     i11,
                     data.cond,
                     data.ccr,
@@ -347,7 +347,7 @@ fn mir_conditional_move(emit: *Emit, inst: Mir.Inst.Index) !void {
                     data.rd,
                 ));
             } else {
-                try emit.writeInstruction(Instruction.movcc(
+                try emit.write_instruction(Instruction.movcc(
                     Register,
                     data.cond,
                     data.ccr,
@@ -359,7 +359,7 @@ fn mir_conditional_move(emit: *Emit, inst: Mir.Inst.Index) !void {
         .movr => {
             const data = emit.mir.instructions.items(.data)[inst].conditional_move_reg;
             if (data.is_imm) {
-                try emit.writeInstruction(Instruction.movr(
+                try emit.write_instruction(Instruction.movr(
                     i10,
                     data.cond,
                     data.rs1,
@@ -367,7 +367,7 @@ fn mir_conditional_move(emit: *Emit, inst: Mir.Inst.Index) !void {
                     data.rd,
                 ));
             } else {
-                try emit.writeInstruction(Instruction.movr(
+                try emit.write_instruction(Instruction.movr(
                     Register,
                     data.cond,
                     data.rs1,
@@ -390,15 +390,15 @@ fn mir_mem_asi(emit: *Emit, inst: Mir.Inst.Index) !void {
     const asi = data.asi;
 
     switch (tag) {
-        .lduba => try emit.writeInstruction(Instruction.lduba(rs1, rs2, asi, rd)),
-        .lduha => try emit.writeInstruction(Instruction.lduha(rs1, rs2, asi, rd)),
-        .lduwa => try emit.writeInstruction(Instruction.lduwa(rs1, rs2, asi, rd)),
-        .ldxa => try emit.writeInstruction(Instruction.ldxa(rs1, rs2, asi, rd)),
+        .lduba => try emit.write_instruction(Instruction.lduba(rs1, rs2, asi, rd)),
+        .lduha => try emit.write_instruction(Instruction.lduha(rs1, rs2, asi, rd)),
+        .lduwa => try emit.write_instruction(Instruction.lduwa(rs1, rs2, asi, rd)),
+        .ldxa => try emit.write_instruction(Instruction.ldxa(rs1, rs2, asi, rd)),
 
-        .stba => try emit.writeInstruction(Instruction.stba(rs1, rs2, asi, rd)),
-        .stha => try emit.writeInstruction(Instruction.stha(rs1, rs2, asi, rd)),
-        .stwa => try emit.writeInstruction(Instruction.stwa(rs1, rs2, asi, rd)),
-        .stxa => try emit.writeInstruction(Instruction.stxa(rs1, rs2, asi, rd)),
+        .stba => try emit.write_instruction(Instruction.stba(rs1, rs2, asi, rd)),
+        .stha => try emit.write_instruction(Instruction.stha(rs1, rs2, asi, rd)),
+        .stwa => try emit.write_instruction(Instruction.stwa(rs1, rs2, asi, rd)),
+        .stxa => try emit.write_instruction(Instruction.stxa(rs1, rs2, asi, rd)),
         else => unreachable,
     }
 }
@@ -408,14 +408,14 @@ fn mir_membar(emit: *Emit, inst: Mir.Inst.Index) !void {
     const mask = emit.mir.instructions.items(.data)[inst].membar_mask;
     assert(tag == .membar);
 
-    try emit.writeInstruction(Instruction.membar(
+    try emit.write_instruction(Instruction.membar(
         mask.cmask,
         mask.mmask,
     ));
 }
 
 fn mir_nop(emit: *Emit) !void {
-    try emit.writeInstruction(Instruction.nop());
+    try emit.write_instruction(Instruction.nop());
 }
 
 fn mir_sethi(emit: *Emit, inst: Mir.Inst.Index) !void {
@@ -426,7 +426,7 @@ fn mir_sethi(emit: *Emit, inst: Mir.Inst.Index) !void {
     const rd = data.rd;
 
     assert(tag == .sethi);
-    try emit.writeInstruction(Instruction.sethi(imm, rd));
+    try emit.write_instruction(Instruction.sethi(imm, rd));
 }
 
 fn mir_shift(emit: *Emit, inst: Mir.Inst.Index) !void {
@@ -439,23 +439,23 @@ fn mir_shift(emit: *Emit, inst: Mir.Inst.Index) !void {
     if (data.is_imm) {
         const imm = data.rs2_or_imm.imm;
         switch (tag) {
-            .sll => try emit.writeInstruction(Instruction.sll(u5, rs1, @as(u5, @truncate(imm)), rd)),
-            .srl => try emit.writeInstruction(Instruction.srl(u5, rs1, @as(u5, @truncate(imm)), rd)),
-            .sra => try emit.writeInstruction(Instruction.sra(u5, rs1, @as(u5, @truncate(imm)), rd)),
-            .sllx => try emit.writeInstruction(Instruction.sllx(u6, rs1, imm, rd)),
-            .srlx => try emit.writeInstruction(Instruction.srlx(u6, rs1, imm, rd)),
-            .srax => try emit.writeInstruction(Instruction.srax(u6, rs1, imm, rd)),
+            .sll => try emit.write_instruction(Instruction.sll(u5, rs1, @as(u5, @truncate(imm)), rd)),
+            .srl => try emit.write_instruction(Instruction.srl(u5, rs1, @as(u5, @truncate(imm)), rd)),
+            .sra => try emit.write_instruction(Instruction.sra(u5, rs1, @as(u5, @truncate(imm)), rd)),
+            .sllx => try emit.write_instruction(Instruction.sllx(u6, rs1, imm, rd)),
+            .srlx => try emit.write_instruction(Instruction.srlx(u6, rs1, imm, rd)),
+            .srax => try emit.write_instruction(Instruction.srax(u6, rs1, imm, rd)),
             else => unreachable,
         }
     } else {
         const rs2 = data.rs2_or_imm.rs2;
         switch (tag) {
-            .sll => try emit.writeInstruction(Instruction.sll(Register, rs1, rs2, rd)),
-            .srl => try emit.writeInstruction(Instruction.srl(Register, rs1, rs2, rd)),
-            .sra => try emit.writeInstruction(Instruction.sra(Register, rs1, rs2, rd)),
-            .sllx => try emit.writeInstruction(Instruction.sllx(Register, rs1, rs2, rd)),
-            .srlx => try emit.writeInstruction(Instruction.srlx(Register, rs1, rs2, rd)),
-            .srax => try emit.writeInstruction(Instruction.srax(Register, rs1, rs2, rd)),
+            .sll => try emit.write_instruction(Instruction.sll(Register, rs1, rs2, rd)),
+            .srl => try emit.write_instruction(Instruction.srl(Register, rs1, rs2, rd)),
+            .sra => try emit.write_instruction(Instruction.sra(Register, rs1, rs2, rd)),
+            .sllx => try emit.write_instruction(Instruction.sllx(Register, rs1, rs2, rd)),
+            .srlx => try emit.write_instruction(Instruction.srlx(Register, rs1, rs2, rd)),
+            .srax => try emit.write_instruction(Instruction.srax(Register, rs1, rs2, rd)),
             else => unreachable,
         }
     }
@@ -472,13 +472,13 @@ fn mir_trap(emit: *Emit, inst: Mir.Inst.Index) !void {
     if (data.is_imm) {
         const imm = data.rs2_or_imm.imm;
         switch (tag) {
-            .tcc => try emit.writeInstruction(Instruction.trap(u7, cond, ccr, rs1, imm)),
+            .tcc => try emit.write_instruction(Instruction.trap(u7, cond, ccr, rs1, imm)),
             else => unreachable,
         }
     } else {
         const rs2 = data.rs2_or_imm.rs2;
         switch (tag) {
-            .tcc => try emit.writeInstruction(Instruction.trap(Register, cond, ccr, rs1, rs2)),
+            .tcc => try emit.write_instruction(Instruction.trap(Register, cond, ccr, rs1, rs2)),
             else => unreachable,
         }
     }
@@ -497,11 +497,11 @@ fn branch_target(emit: *Emit, inst: Mir.Inst.Index) Mir.Inst.Index {
 }
 
 fn dbg_advance_pcand_line(emit: *Emit, line: u32, column: u32) !void {
-    const delta_line = @as(i32, @intCast(line)) - @as(i32, @intCast(emit.prev_di_line));
+    const delta_line = @as(i32, @int_cast(line)) - @as(i32, @int_cast(emit.prev_di_line));
     const delta_pc: usize = emit.code.items.len - emit.prev_di_pc;
     switch (emit.debug_output) {
         .dwarf => |dbg_out| {
-            try dbg_out.advancePCAndLine(delta_line, delta_pc);
+            try dbg_out.advance_pcand_line(delta_line, delta_pc);
             emit.prev_di_line = line;
             emit.prev_di_column = column;
             emit.prev_di_pc = emit.code.items.len;
@@ -552,9 +552,9 @@ fn lower_branches(emit: *Emit) !void {
     // TODO optimization opportunity: do this in codegen while
     // generating MIR
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
-        if (isBranch(tag)) {
-            const target_inst = emit.branchTarget(inst);
+        const inst = @as(u32, @int_cast(index));
+        if (is_branch(tag)) {
+            const target_inst = emit.branch_target(inst);
 
             // Remember this branch instruction
             try emit.branch_types.put(gpa, inst, BranchType.default(tag));
@@ -569,7 +569,7 @@ fn lower_branches(emit: *Emit) !void {
                 // Remember the branch instruction index
                 try emit.code_offset_mapping.put(gpa, inst, 0);
 
-                if (emit.branch_forward_origins.getPtr(target_inst)) |origin_list| {
+                if (emit.branch_forward_origins.get_ptr(target_inst)) |origin_list| {
                     try origin_list.append(gpa, inst);
                 } else {
                     var origin_list: std.ArrayListUnmanaged(Mir.Inst.Index) = .{};
@@ -581,7 +581,7 @@ fn lower_branches(emit: *Emit) !void {
             // Remember the target instruction index so that we
             // update the real code offset in all future passes
             //
-            // putNoClobber may not be used as the put operation
+            // put_no_clobber may not be used as the put operation
             // may clobber the entry when multiple branches branch
             // to the same target instruction
             try emit.code_offset_mapping.put(gpa, target_inst, 0);
@@ -597,30 +597,30 @@ fn lower_branches(emit: *Emit) !void {
         var current_code_offset: usize = 0;
 
         for (mir_tags, 0..) |tag, index| {
-            const inst = @as(u32, @intCast(index));
+            const inst = @as(u32, @int_cast(index));
 
             // If this instruction contained in the code offset
             // mapping (when it is a target of a branch or if it is a
             // forward branch), update the code offset
-            if (emit.code_offset_mapping.getPtr(inst)) |offset| {
+            if (emit.code_offset_mapping.get_ptr(inst)) |offset| {
                 offset.* = current_code_offset;
             }
 
             // If this instruction is a backward branch, calculate the
             // offset, which may potentially update the branch type
-            if (isBranch(tag)) {
-                const target_inst = emit.branchTarget(inst);
+            if (is_branch(tag)) {
+                const target_inst = emit.branch_target(inst);
                 if (target_inst < inst) {
                     const target_offset = emit.code_offset_mapping.get(target_inst).?;
-                    const offset = @as(i64, @intCast(target_offset)) - @as(i64, @intCast(current_code_offset));
-                    const branch_type = emit.branch_types.getPtr(inst).?;
-                    const optimal_branch_type = try emit.optimalBranchType(tag, offset);
+                    const offset = @as(i64, @int_cast(target_offset)) - @as(i64, @int_cast(current_code_offset));
+                    const branch_type = emit.branch_types.get_ptr(inst).?;
+                    const optimal_branch_type = try emit.optimal_branch_type(tag, offset);
                     if (branch_type.* != optimal_branch_type) {
                         branch_type.* = optimal_branch_type;
                         all_branches_lowered = false;
                     }
 
-                    log.debug("lowerBranches: branch {} has offset {}", .{ inst, offset });
+                    log.debug("lower_branches: branch {} has offset {}", .{ inst, offset });
                 }
             }
 
@@ -631,20 +631,20 @@ fn lower_branches(emit: *Emit) !void {
                 for (origin_list.items) |forward_branch_inst| {
                     const branch_tag = emit.mir.instructions.items(.tag)[forward_branch_inst];
                     const forward_branch_inst_offset = emit.code_offset_mapping.get(forward_branch_inst).?;
-                    const offset = @as(i64, @intCast(current_code_offset)) - @as(i64, @intCast(forward_branch_inst_offset));
-                    const branch_type = emit.branch_types.getPtr(forward_branch_inst).?;
-                    const optimal_branch_type = try emit.optimalBranchType(branch_tag, offset);
+                    const offset = @as(i64, @int_cast(current_code_offset)) - @as(i64, @int_cast(forward_branch_inst_offset));
+                    const branch_type = emit.branch_types.get_ptr(forward_branch_inst).?;
+                    const optimal_branch_type = try emit.optimal_branch_type(branch_tag, offset);
                     if (branch_type.* != optimal_branch_type) {
                         branch_type.* = optimal_branch_type;
                         all_branches_lowered = false;
                     }
 
-                    log.debug("lowerBranches: branch {} has offset {}", .{ forward_branch_inst, offset });
+                    log.debug("lower_branches: branch {} has offset {}", .{ forward_branch_inst, offset });
                 }
             }
 
             // Increment code offset
-            current_code_offset += emit.instructionSize(inst);
+            current_code_offset += emit.instruction_size(inst);
         }
     }
 }
@@ -684,5 +684,5 @@ fn write_instruction(emit: *Emit, instruction: Instruction) !void {
     // This is to ease porting in case someone wants to do a LE SPARCv9 backend.
     const endian = Endian.big;
 
-    std.mem.writeInt(u32, try emit.code.addManyAsArray(4), instruction.toU32(), endian);
+    std.mem.write_int(u32, try emit.code.add_many_as_array(4), instruction.to_u32(), endian);
 }

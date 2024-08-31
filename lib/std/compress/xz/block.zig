@@ -73,17 +73,17 @@ pub fn Decoder(comptime ReaderType: type) type {
                     return e;
                 }
                 if (self.read_pos > 0) {
-                    self.to_read.shrinkRetainingCapacity(0);
+                    self.to_read.shrink_retaining_capacity(0);
                     self.read_pos = 0;
                 }
-                self.readBlock() catch |e| {
+                self.read_block() catch |e| {
                     self.err = e;
                 };
             }
         }
 
         fn read_block(self: *Self) Error!void {
-            var block_counter = std.io.countingReader(self.inner_reader);
+            var block_counter = std.io.counting_reader(self.inner_reader);
             const block_reader = block_counter.reader();
 
             var packed_size: ?u64 = null;
@@ -91,10 +91,10 @@ pub fn Decoder(comptime ReaderType: type) type {
 
             // Block Header
             {
-                var header_hasher = std.compress.hashedReader(block_reader, Crc32.init());
+                var header_hasher = std.compress.hashed_reader(block_reader, Crc32.init());
                 const header_reader = header_hasher.reader();
 
-                const header_size = @as(u64, try header_reader.readByte()) * 4;
+                const header_size = @as(u64, try header_reader.read_byte()) * 4;
                 if (header_size == 0)
                     return error.EndOfStreamWithNoError;
 
@@ -105,16 +105,16 @@ pub fn Decoder(comptime ReaderType: type) type {
                     has_unpacked_size: bool,
                 };
 
-                const flags = @as(Flags, @bitCast(try header_reader.readByte()));
+                const flags = @as(Flags, @bit_cast(try header_reader.read_byte()));
                 const filter_count = @as(u3, flags.last_filter_index) + 1;
                 if (filter_count > 1)
                     return error.Unsupported;
 
                 if (flags.has_packed_size)
-                    packed_size = try std.leb.readULEB128(u64, header_reader);
+                    packed_size = try std.leb.read_uleb128(u64, header_reader);
 
                 if (flags.has_unpacked_size)
-                    unpacked_size = try std.leb.readULEB128(u64, header_reader);
+                    unpacked_size = try std.leb.read_uleb128(u64, header_reader);
 
                 const FilterId = enum(u64) {
                     lzma2 = 0x21,
@@ -123,35 +123,35 @@ pub fn Decoder(comptime ReaderType: type) type {
 
                 const filter_id = @as(
                     FilterId,
-                    @enumFromInt(try std.leb.readULEB128(u64, header_reader)),
+                    @enumFromInt(try std.leb.read_uleb128(u64, header_reader)),
                 );
 
-                if (@intFromEnum(filter_id) >= 0x4000_0000_0000_0000)
+                if (@int_from_enum(filter_id) >= 0x4000_0000_0000_0000)
                     return error.CorruptInput;
 
                 if (filter_id != .lzma2)
                     return error.Unsupported;
 
-                const properties_size = try std.leb.readULEB128(u64, header_reader);
+                const properties_size = try std.leb.read_uleb128(u64, header_reader);
                 if (properties_size != 1)
                     return error.CorruptInput;
 
                 // TODO: use filter properties
-                _ = try header_reader.readByte();
+                _ = try header_reader.read_byte();
 
                 while (block_counter.bytes_read != header_size) {
-                    if (try header_reader.readByte() != 0)
+                    if (try header_reader.read_byte() != 0)
                         return error.CorruptInput;
                 }
 
                 const hash_a = header_hasher.hasher.final();
-                const hash_b = try header_reader.readInt(u32, .little);
+                const hash_b = try header_reader.read_int(u32, .little);
                 if (hash_a != hash_b)
                     return error.WrongChecksum;
             }
 
             // Compressed Data
-            var packed_counter = std.io.countingReader(block_reader);
+            var packed_counter = std.io.counting_reader(block_reader);
             try lzma2.decompress(
                 self.allocator,
                 packed_counter.reader(),
@@ -171,7 +171,7 @@ pub fn Decoder(comptime ReaderType: type) type {
 
             // Block Padding
             while (block_counter.bytes_read % 4 != 0) {
-                if (try block_reader.readByte() != 0)
+                if (try block_reader.read_byte() != 0)
                     return error.CorruptInput;
             }
 
@@ -179,13 +179,13 @@ pub fn Decoder(comptime ReaderType: type) type {
                 .none => {},
                 .crc32 => {
                     const hash_a = Crc32.hash(unpacked_bytes);
-                    const hash_b = try self.inner_reader.readInt(u32, .little);
+                    const hash_b = try self.inner_reader.read_int(u32, .little);
                     if (hash_a != hash_b)
                         return error.WrongChecksum;
                 },
                 .crc64 => {
                     const hash_a = Crc64.hash(unpacked_bytes);
-                    const hash_b = try self.inner_reader.readInt(u64, .little);
+                    const hash_b = try self.inner_reader.read_int(u64, .little);
                     if (hash_a != hash_b)
                         return error.WrongChecksum;
                 },
@@ -194,7 +194,7 @@ pub fn Decoder(comptime ReaderType: type) type {
                     Sha256.hash(unpacked_bytes, &hash_a, .{});
 
                     var hash_b: [Sha256.digest_length]u8 = undefined;
-                    try self.inner_reader.readNoEof(&hash_b);
+                    try self.inner_reader.read_no_eof(&hash_b);
 
                     if (!std.mem.eql(u8, &hash_a, &hash_b))
                         return error.WrongChecksum;

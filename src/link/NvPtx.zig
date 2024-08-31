@@ -37,7 +37,7 @@ pub fn create_empty(
 
     assert(use_llvm); // Caught by Compilation.Config.resolve.
     assert(!use_lld); // Caught by Compilation.Config.resolve.
-    assert(target.cpu.arch.isNvptx()); // Caught by Compilation.Config.resolve.
+    assert(target.cpu.arch.is_nvptx()); // Caught by Compilation.Config.resolve.
 
     switch (target.os.tag) {
         // TODO: does it also work with nvcl ?
@@ -75,7 +75,7 @@ pub fn open(
 ) !*NvPtx {
     const target = comp.root_mod.resolved_target.result;
     assert(target.ofmt == .nvptx);
-    return createEmpty(arena, comp, emit, options);
+    return create_empty(arena, comp, emit, options);
 }
 
 pub fn deinit(self: *NvPtx) void {
@@ -83,11 +83,11 @@ pub fn deinit(self: *NvPtx) void {
 }
 
 pub fn update_func(self: *NvPtx, module: *Module, func_index: InternPool.Index, air: Air, liveness: Liveness) !void {
-    try self.llvm_object.updateFunc(module, func_index, air, liveness);
+    try self.llvm_object.update_func(module, func_index, air, liveness);
 }
 
 pub fn update_decl(self: *NvPtx, module: *Module, decl_index: InternPool.DeclIndex) !void {
-    return self.llvm_object.updateDecl(module, decl_index);
+    return self.llvm_object.update_decl(module, decl_index);
 }
 
 pub fn update_exports(
@@ -99,15 +99,15 @@ pub fn update_exports(
     if (build_options.skip_non_native and builtin.object_format != .nvptx)
         @panic("Attempted to compile for object format that was disabled by build configuration");
 
-    return self.llvm_object.updateExports(module, exported, exports);
+    return self.llvm_object.update_exports(module, exported, exports);
 }
 
 pub fn free_decl(self: *NvPtx, decl_index: InternPool.DeclIndex) void {
-    return self.llvm_object.freeDecl(decl_index);
+    return self.llvm_object.free_decl(decl_index);
 }
 
 pub fn flush(self: *NvPtx, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
-    return self.flushModule(arena, prog_node);
+    return self.flush_module(arena, prog_node);
 }
 
 pub fn flush_module(self: *NvPtx, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
@@ -115,9 +115,9 @@ pub fn flush_module(self: *NvPtx, arena: Allocator, prog_node: std.Progress.Node
         @panic("Attempted to compile for architecture that was disabled by build configuration");
 
     // The code that was here before mutated the Compilation's file emission mechanism.
-    // That's not supposed to happen in flushModule, so I deleted the code.
+    // That's not supposed to happen in flush_module, so I deleted the code.
     _ = arena;
     _ = self;
     _ = prog_node;
-    @panic("TODO: rewrite the NvPtx.flushModule function");
+    @panic("TODO: rewrite the NvPtx.flush_module function");
 }

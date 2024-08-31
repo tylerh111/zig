@@ -7,7 +7,7 @@ fn foo(x: u8) u8 {
     };
 }
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&foo));
+    return @size_of(@TypeOf(&foo));
 }
 
 // error

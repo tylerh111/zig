@@ -21,7 +21,7 @@ pub fn deinit(self: *GCCDetector) void {
 
 pub fn append_tool_path(self: *const GCCDetector, tc: *Toolchain) !void {
     if (!self.is_valid) return;
-    return tc.addPathFromComponents(&.{
+    return tc.add_path_from_components(&.{
         self.parent_lib_path,
         "..",
         self.gcc_triple,
@@ -30,30 +30,30 @@ pub fn append_tool_path(self: *const GCCDetector, tc: *Toolchain) !void {
 }
 
 fn add_default_gccprefixes(prefixes: *std.ArrayListUnmanaged([]const u8), tc: *const Toolchain) !void {
-    const sysroot = tc.getSysroot();
-    const target = tc.getTarget();
+    const sysroot = tc.get_sysroot();
+    const target = tc.get_target();
     if (sysroot.len == 0 and target.os.tag == .linux and tc.filesystem.exists("/opt/rh")) {
-        prefixes.appendAssumeCapacity("/opt/rh/gcc-toolset-12/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/gcc-toolset-11/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/gcc-toolset-10/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/devtoolset-12/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/devtoolset-11/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/devtoolset-10/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/devtoolset-9/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/devtoolset-8/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/devtoolset-7/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/devtoolset-6/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/devtoolset-4/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/devtoolset-3/root/usr");
-        prefixes.appendAssumeCapacity("/opt/rh/devtoolset-2/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/gcc-toolset-12/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/gcc-toolset-11/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/gcc-toolset-10/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/devtoolset-12/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/devtoolset-11/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/devtoolset-10/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/devtoolset-9/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/devtoolset-8/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/devtoolset-7/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/devtoolset-6/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/devtoolset-4/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/devtoolset-3/root/usr");
+        prefixes.append_assume_capacity("/opt/rh/devtoolset-2/root/usr");
     }
     if (sysroot.len == 0) {
-        prefixes.appendAssumeCapacity("/usr");
+        prefixes.append_assume_capacity("/usr");
     } else {
         var usr_path = try tc.arena.alloc(u8, 4 + sysroot.len);
         @memcpy(usr_path[0..4], "/usr");
         @memcpy(usr_path[4..], sysroot);
-        prefixes.appendAssumeCapacity(usr_path);
+        prefixes.append_assume_capacity(usr_path);
     }
 }
 
@@ -178,12 +178,12 @@ fn collect_lib_dirs_and_triples(
         "s390x-linux-gnu",  "s390x-unknown-linux-gnu", "s390x-ibm-linux-gnu",
         "s390x-suse-linux", "s390x-redhat-linux",
     };
-    const target = tc.getTarget();
+    const target = tc.get_target();
     if (target.os.tag == .solaris) {
         // TODO
         return;
     }
-    if (target.isAndroid()) {
+    if (target.is_android()) {
         const AArch64AndroidTriples: [1][]const u8 = .{"aarch64-linux-android"};
         const ARMAndroidTriples: [1][]const u8 = .{"arm-linux-androideabi"};
         const MIPSELAndroidTriples: [1][]const u8 = .{"mipsel-linux-android"};
@@ -193,38 +193,38 @@ fn collect_lib_dirs_and_triples(
 
         switch (target.cpu.arch) {
             .aarch64 => {
-                lib_dirs.appendSliceAssumeCapacity(&AArch64LibDirs);
-                triple_aliases.appendSliceAssumeCapacity(&AArch64AndroidTriples);
+                lib_dirs.append_slice_assume_capacity(&AArch64LibDirs);
+                triple_aliases.append_slice_assume_capacity(&AArch64AndroidTriples);
             },
             .arm,
             .thumb,
             => {
-                lib_dirs.appendSliceAssumeCapacity(&ARMLibDirs);
-                triple_aliases.appendSliceAssumeCapacity(&ARMAndroidTriples);
+                lib_dirs.append_slice_assume_capacity(&ARMLibDirs);
+                triple_aliases.append_slice_assume_capacity(&ARMAndroidTriples);
             },
             .mipsel => {
-                lib_dirs.appendSliceAssumeCapacity(&MIPSELLibDirs);
-                triple_aliases.appendSliceAssumeCapacity(&MIPSELAndroidTriples);
-                biarch_libdirs.appendSliceAssumeCapacity(&MIPS64ELLibDirs);
-                biarch_triple_aliases.appendSliceAssumeCapacity(&MIPS64ELAndroidTriples);
+                lib_dirs.append_slice_assume_capacity(&MIPSELLibDirs);
+                triple_aliases.append_slice_assume_capacity(&MIPSELAndroidTriples);
+                biarch_libdirs.append_slice_assume_capacity(&MIPS64ELLibDirs);
+                biarch_triple_aliases.append_slice_assume_capacity(&MIPS64ELAndroidTriples);
             },
             .mips64el => {
-                lib_dirs.appendSliceAssumeCapacity(&MIPS64ELLibDirs);
-                triple_aliases.appendSliceAssumeCapacity(&MIPS64ELAndroidTriples);
-                biarch_libdirs.appendSliceAssumeCapacity(&MIPSELLibDirs);
-                biarch_triple_aliases.appendSliceAssumeCapacity(&MIPSELAndroidTriples);
+                lib_dirs.append_slice_assume_capacity(&MIPS64ELLibDirs);
+                triple_aliases.append_slice_assume_capacity(&MIPS64ELAndroidTriples);
+                biarch_libdirs.append_slice_assume_capacity(&MIPSELLibDirs);
+                biarch_triple_aliases.append_slice_assume_capacity(&MIPSELAndroidTriples);
             },
             .x86_64 => {
-                lib_dirs.appendSliceAssumeCapacity(&X86_64LibDirs);
-                triple_aliases.appendSliceAssumeCapacity(&X86_64AndroidTriples);
-                biarch_libdirs.appendSliceAssumeCapacity(&X86LibDirs);
-                biarch_triple_aliases.appendSliceAssumeCapacity(&X86AndroidTriples);
+                lib_dirs.append_slice_assume_capacity(&X86_64LibDirs);
+                triple_aliases.append_slice_assume_capacity(&X86_64AndroidTriples);
+                biarch_libdirs.append_slice_assume_capacity(&X86LibDirs);
+                biarch_triple_aliases.append_slice_assume_capacity(&X86AndroidTriples);
             },
             .x86 => {
-                lib_dirs.appendSliceAssumeCapacity(&X86LibDirs);
-                triple_aliases.appendSliceAssumeCapacity(&X86AndroidTriples);
-                biarch_libdirs.appendSliceAssumeCapacity(&X86_64LibDirs);
-                biarch_triple_aliases.appendSliceAssumeCapacity(&X86_64AndroidTriples);
+                lib_dirs.append_slice_assume_capacity(&X86LibDirs);
+                triple_aliases.append_slice_assume_capacity(&X86AndroidTriples);
+                biarch_libdirs.append_slice_assume_capacity(&X86_64LibDirs);
+                biarch_triple_aliases.append_slice_assume_capacity(&X86_64AndroidTriples);
             },
             else => {},
         }
@@ -232,165 +232,165 @@ fn collect_lib_dirs_and_triples(
     }
     switch (target.cpu.arch) {
         .aarch64 => {
-            lib_dirs.appendSliceAssumeCapacity(&AArch64LibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&AArch64Triples);
-            biarch_libdirs.appendSliceAssumeCapacity(&AArch64LibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&AArch64Triples);
+            lib_dirs.append_slice_assume_capacity(&AArch64LibDirs);
+            triple_aliases.append_slice_assume_capacity(&AArch64Triples);
+            biarch_libdirs.append_slice_assume_capacity(&AArch64LibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&AArch64Triples);
         },
         .aarch64_be => {
-            lib_dirs.appendSliceAssumeCapacity(&AArch64beLibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&AArch64beTriples);
-            biarch_libdirs.appendSliceAssumeCapacity(&AArch64beLibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&AArch64beTriples);
+            lib_dirs.append_slice_assume_capacity(&AArch64beLibDirs);
+            triple_aliases.append_slice_assume_capacity(&AArch64beTriples);
+            biarch_libdirs.append_slice_assume_capacity(&AArch64beLibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&AArch64beTriples);
         },
         .arm, .thumb => {
-            lib_dirs.appendSliceAssumeCapacity(&ARMLibDirs);
+            lib_dirs.append_slice_assume_capacity(&ARMLibDirs);
             if (target.abi == .gnueabihf) {
-                triple_aliases.appendSliceAssumeCapacity(&ARMHFTriples);
+                triple_aliases.append_slice_assume_capacity(&ARMHFTriples);
             } else {
-                triple_aliases.appendSliceAssumeCapacity(&ARMTriples);
+                triple_aliases.append_slice_assume_capacity(&ARMTriples);
             }
         },
         .armeb, .thumbeb => {
-            lib_dirs.appendSliceAssumeCapacity(&ARMebLibDirs);
+            lib_dirs.append_slice_assume_capacity(&ARMebLibDirs);
             if (target.abi == .gnueabihf) {
-                triple_aliases.appendSliceAssumeCapacity(&ARMebHFTriples);
+                triple_aliases.append_slice_assume_capacity(&ARMebHFTriples);
             } else {
-                triple_aliases.appendSliceAssumeCapacity(&ARMebTriples);
+                triple_aliases.append_slice_assume_capacity(&ARMebTriples);
             }
         },
         .avr => {
-            lib_dirs.appendSliceAssumeCapacity(&AVRLibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&AVRTriples);
+            lib_dirs.append_slice_assume_capacity(&AVRLibDirs);
+            triple_aliases.append_slice_assume_capacity(&AVRTriples);
         },
         .csky => {
-            lib_dirs.appendSliceAssumeCapacity(&CSKYLibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&CSKYTriples);
+            lib_dirs.append_slice_assume_capacity(&CSKYLibDirs);
+            triple_aliases.append_slice_assume_capacity(&CSKYTriples);
         },
         .x86_64 => {
             if (target.abi == .gnux32 or target.abi == .muslx32) {
-                lib_dirs.appendSliceAssumeCapacity(&X32LibDirs);
-                triple_aliases.appendSliceAssumeCapacity(&X32Triples);
-                biarch_libdirs.appendSliceAssumeCapacity(&X86_64LibDirs);
-                biarch_triple_aliases.appendSliceAssumeCapacity(&X86_64Triples);
+                lib_dirs.append_slice_assume_capacity(&X32LibDirs);
+                triple_aliases.append_slice_assume_capacity(&X32Triples);
+                biarch_libdirs.append_slice_assume_capacity(&X86_64LibDirs);
+                biarch_triple_aliases.append_slice_assume_capacity(&X86_64Triples);
             } else {
-                lib_dirs.appendSliceAssumeCapacity(&X86_64LibDirs);
-                triple_aliases.appendSliceAssumeCapacity(&X86_64Triples);
-                biarch_libdirs.appendSliceAssumeCapacity(&X32LibDirs);
-                biarch_triple_aliases.appendSliceAssumeCapacity(&X32Triples);
+                lib_dirs.append_slice_assume_capacity(&X86_64LibDirs);
+                triple_aliases.append_slice_assume_capacity(&X86_64Triples);
+                biarch_libdirs.append_slice_assume_capacity(&X32LibDirs);
+                biarch_triple_aliases.append_slice_assume_capacity(&X32Triples);
             }
-            biarch_libdirs.appendSliceAssumeCapacity(&X86LibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&X86Triples);
+            biarch_libdirs.append_slice_assume_capacity(&X86LibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&X86Triples);
         },
         .x86 => {
-            lib_dirs.appendSliceAssumeCapacity(&X86LibDirs);
+            lib_dirs.append_slice_assume_capacity(&X86LibDirs);
             // MCU toolchain is 32 bit only and its triple alias is TargetTriple
             // itself, which will be appended below.
             if (target.os.tag != .elfiamcu) {
-                triple_aliases.appendSliceAssumeCapacity(&X86Triples);
-                biarch_libdirs.appendSliceAssumeCapacity(&X86_64LibDirs);
-                biarch_triple_aliases.appendSliceAssumeCapacity(&X86_64Triples);
-                biarch_libdirs.appendSliceAssumeCapacity(&X32LibDirs);
-                biarch_triple_aliases.appendSliceAssumeCapacity(&X32Triples);
+                triple_aliases.append_slice_assume_capacity(&X86Triples);
+                biarch_libdirs.append_slice_assume_capacity(&X86_64LibDirs);
+                biarch_triple_aliases.append_slice_assume_capacity(&X86_64Triples);
+                biarch_libdirs.append_slice_assume_capacity(&X32LibDirs);
+                biarch_triple_aliases.append_slice_assume_capacity(&X32Triples);
             }
         },
         .loongarch64 => {
-            lib_dirs.appendSliceAssumeCapacity(&LoongArch64LibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&LoongArch64Triples);
+            lib_dirs.append_slice_assume_capacity(&LoongArch64LibDirs);
+            triple_aliases.append_slice_assume_capacity(&LoongArch64Triples);
         },
         .m68k => {
-            lib_dirs.appendSliceAssumeCapacity(&M68kLibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&M68kTriples);
+            lib_dirs.append_slice_assume_capacity(&M68kLibDirs);
+            triple_aliases.append_slice_assume_capacity(&M68kTriples);
         },
         .mips => {
-            lib_dirs.appendSliceAssumeCapacity(&MIPSLibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&MIPSTriples);
-            biarch_libdirs.appendSliceAssumeCapacity(&MIPS64LibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&MIPS64Triples);
-            biarch_libdirs.appendSliceAssumeCapacity(&MIPSN32LibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&MIPSN32Triples);
+            lib_dirs.append_slice_assume_capacity(&MIPSLibDirs);
+            triple_aliases.append_slice_assume_capacity(&MIPSTriples);
+            biarch_libdirs.append_slice_assume_capacity(&MIPS64LibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&MIPS64Triples);
+            biarch_libdirs.append_slice_assume_capacity(&MIPSN32LibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&MIPSN32Triples);
         },
         .mipsel => {
-            lib_dirs.appendSliceAssumeCapacity(&MIPSELLibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&MIPSELTriples);
-            triple_aliases.appendSliceAssumeCapacity(&MIPSTriples);
-            biarch_libdirs.appendSliceAssumeCapacity(&MIPS64ELLibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&MIPS64ELTriples);
-            biarch_libdirs.appendSliceAssumeCapacity(&MIPSN32ELLibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&MIPSN32ELTriples);
+            lib_dirs.append_slice_assume_capacity(&MIPSELLibDirs);
+            triple_aliases.append_slice_assume_capacity(&MIPSELTriples);
+            triple_aliases.append_slice_assume_capacity(&MIPSTriples);
+            biarch_libdirs.append_slice_assume_capacity(&MIPS64ELLibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&MIPS64ELTriples);
+            biarch_libdirs.append_slice_assume_capacity(&MIPSN32ELLibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&MIPSN32ELTriples);
         },
         .mips64 => {
-            lib_dirs.appendSliceAssumeCapacity(&MIPS64LibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&MIPS64Triples);
-            biarch_libdirs.appendSliceAssumeCapacity(&MIPSLibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&MIPSTriples);
-            biarch_libdirs.appendSliceAssumeCapacity(&MIPSN32LibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&MIPSN32Triples);
+            lib_dirs.append_slice_assume_capacity(&MIPS64LibDirs);
+            triple_aliases.append_slice_assume_capacity(&MIPS64Triples);
+            biarch_libdirs.append_slice_assume_capacity(&MIPSLibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&MIPSTriples);
+            biarch_libdirs.append_slice_assume_capacity(&MIPSN32LibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&MIPSN32Triples);
         },
         .mips64el => {
-            lib_dirs.appendSliceAssumeCapacity(&MIPS64ELLibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&MIPS64ELTriples);
-            biarch_libdirs.appendSliceAssumeCapacity(&MIPSELLibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&MIPSELTriples);
-            biarch_libdirs.appendSliceAssumeCapacity(&MIPSN32ELLibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&MIPSN32ELTriples);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&MIPSTriples);
+            lib_dirs.append_slice_assume_capacity(&MIPS64ELLibDirs);
+            triple_aliases.append_slice_assume_capacity(&MIPS64ELTriples);
+            biarch_libdirs.append_slice_assume_capacity(&MIPSELLibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&MIPSELTriples);
+            biarch_libdirs.append_slice_assume_capacity(&MIPSN32ELLibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&MIPSN32ELTriples);
+            biarch_triple_aliases.append_slice_assume_capacity(&MIPSTriples);
         },
         .msp430 => {
-            lib_dirs.appendSliceAssumeCapacity(&MSP430LibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&MSP430Triples);
+            lib_dirs.append_slice_assume_capacity(&MSP430LibDirs);
+            triple_aliases.append_slice_assume_capacity(&MSP430Triples);
         },
         .powerpc => {
-            lib_dirs.appendSliceAssumeCapacity(&PPCLibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&PPCTriples);
-            biarch_libdirs.appendSliceAssumeCapacity(&PPC64LibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&PPC64Triples);
+            lib_dirs.append_slice_assume_capacity(&PPCLibDirs);
+            triple_aliases.append_slice_assume_capacity(&PPCTriples);
+            biarch_libdirs.append_slice_assume_capacity(&PPC64LibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&PPC64Triples);
         },
         .powerpcle => {
-            lib_dirs.appendSliceAssumeCapacity(&PPCLELibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&PPCLETriples);
-            biarch_libdirs.appendSliceAssumeCapacity(&PPC64LELibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&PPC64LETriples);
+            lib_dirs.append_slice_assume_capacity(&PPCLELibDirs);
+            triple_aliases.append_slice_assume_capacity(&PPCLETriples);
+            biarch_libdirs.append_slice_assume_capacity(&PPC64LELibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&PPC64LETriples);
         },
         .powerpc64 => {
-            lib_dirs.appendSliceAssumeCapacity(&PPC64LibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&PPC64Triples);
-            biarch_libdirs.appendSliceAssumeCapacity(&PPCLibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&PPCTriples);
+            lib_dirs.append_slice_assume_capacity(&PPC64LibDirs);
+            triple_aliases.append_slice_assume_capacity(&PPC64Triples);
+            biarch_libdirs.append_slice_assume_capacity(&PPCLibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&PPCTriples);
         },
         .powerpc64le => {
-            lib_dirs.appendSliceAssumeCapacity(&PPC64LELibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&PPC64LETriples);
-            biarch_libdirs.appendSliceAssumeCapacity(&PPCLELibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&PPCLETriples);
+            lib_dirs.append_slice_assume_capacity(&PPC64LELibDirs);
+            triple_aliases.append_slice_assume_capacity(&PPC64LETriples);
+            biarch_libdirs.append_slice_assume_capacity(&PPCLELibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&PPCLETriples);
         },
         .riscv32 => {
-            lib_dirs.appendSliceAssumeCapacity(&RISCV32LibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&RISCV32Triples);
-            biarch_libdirs.appendSliceAssumeCapacity(&RISCV64LibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&RISCV64Triples);
+            lib_dirs.append_slice_assume_capacity(&RISCV32LibDirs);
+            triple_aliases.append_slice_assume_capacity(&RISCV32Triples);
+            biarch_libdirs.append_slice_assume_capacity(&RISCV64LibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&RISCV64Triples);
         },
         .riscv64 => {
-            lib_dirs.appendSliceAssumeCapacity(&RISCV64LibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&RISCV64Triples);
-            biarch_libdirs.appendSliceAssumeCapacity(&RISCV32LibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&RISCV32Triples);
+            lib_dirs.append_slice_assume_capacity(&RISCV64LibDirs);
+            triple_aliases.append_slice_assume_capacity(&RISCV64Triples);
+            biarch_libdirs.append_slice_assume_capacity(&RISCV32LibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&RISCV32Triples);
         },
         .sparc, .sparcel => {
-            lib_dirs.appendSliceAssumeCapacity(&SPARCv8LibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&SPARCv8Triples);
-            biarch_libdirs.appendSliceAssumeCapacity(&SPARCv9LibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&SPARCv9Triples);
+            lib_dirs.append_slice_assume_capacity(&SPARCv8LibDirs);
+            triple_aliases.append_slice_assume_capacity(&SPARCv8Triples);
+            biarch_libdirs.append_slice_assume_capacity(&SPARCv9LibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&SPARCv9Triples);
         },
         .sparc64 => {
-            lib_dirs.appendSliceAssumeCapacity(&SPARCv9LibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&SPARCv9Triples);
-            biarch_libdirs.appendSliceAssumeCapacity(&SPARCv8LibDirs);
-            biarch_triple_aliases.appendSliceAssumeCapacity(&SPARCv8Triples);
+            lib_dirs.append_slice_assume_capacity(&SPARCv9LibDirs);
+            triple_aliases.append_slice_assume_capacity(&SPARCv9Triples);
+            biarch_libdirs.append_slice_assume_capacity(&SPARCv8LibDirs);
+            biarch_triple_aliases.append_slice_assume_capacity(&SPARCv8Triples);
         },
         .s390x => {
-            lib_dirs.appendSliceAssumeCapacity(&SystemZLibDirs);
-            triple_aliases.appendSliceAssumeCapacity(&SystemZTriples);
+            lib_dirs.append_slice_assume_capacity(&SystemZLibDirs);
+            triple_aliases.append_slice_assume_capacity(&SystemZTriples);
         },
         else => {},
     }
@@ -400,25 +400,25 @@ pub fn discover(self: *GCCDetector, tc: *Toolchain) !void {
     var path_buf: [std.fs.MAX_PATH_BYTES]u8 = undefined;
     var fib = std.heap.FixedBufferAllocator.init(&path_buf);
 
-    const target = tc.getTarget();
-    const biarch_variant_target = if (target.ptrBitWidth() == 32)
-        target_util.get64BitArchVariant(target)
+    const target = tc.get_target();
+    const biarch_variant_target = if (target.ptr_bit_width() == 32)
+        target_util.get64_bit_arch_variant(target)
     else
-        target_util.get32BitArchVariant(target);
+        target_util.get32_bit_arch_variant(target);
 
     var candidate_lib_dirs_buffer: [16][]const u8 = undefined;
-    var candidate_lib_dirs = std.ArrayListUnmanaged([]const u8).initBuffer(&candidate_lib_dirs_buffer);
+    var candidate_lib_dirs = std.ArrayListUnmanaged([]const u8).init_buffer(&candidate_lib_dirs_buffer);
 
     var candidate_triple_aliases_buffer: [16][]const u8 = undefined;
-    var candidate_triple_aliases = std.ArrayListUnmanaged([]const u8).initBuffer(&candidate_triple_aliases_buffer);
+    var candidate_triple_aliases = std.ArrayListUnmanaged([]const u8).init_buffer(&candidate_triple_aliases_buffer);
 
     var candidate_biarch_lib_dirs_buffer: [16][]const u8 = undefined;
-    var candidate_biarch_lib_dirs = std.ArrayListUnmanaged([]const u8).initBuffer(&candidate_biarch_lib_dirs_buffer);
+    var candidate_biarch_lib_dirs = std.ArrayListUnmanaged([]const u8).init_buffer(&candidate_biarch_lib_dirs_buffer);
 
     var candidate_biarch_triple_aliases_buffer: [16][]const u8 = undefined;
-    var candidate_biarch_triple_aliases = std.ArrayListUnmanaged([]const u8).initBuffer(&candidate_biarch_triple_aliases_buffer);
+    var candidate_biarch_triple_aliases = std.ArrayListUnmanaged([]const u8).init_buffer(&candidate_biarch_triple_aliases_buffer);
 
-    try collectLibDirsAndTriples(
+    try collect_lib_dirs_and_triples(
         tc,
         &candidate_lib_dirs,
         &candidate_triple_aliases,
@@ -427,36 +427,36 @@ pub fn discover(self: *GCCDetector, tc: *Toolchain) !void {
     );
 
     var target_buf: [64]u8 = undefined;
-    const triple_str = target_util.toLLVMTriple(target, &target_buf);
-    candidate_triple_aliases.appendAssumeCapacity(triple_str);
+    const triple_str = target_util.to_llvmtriple(target, &target_buf);
+    candidate_triple_aliases.append_assume_capacity(triple_str);
 
     // Also include the multiarch variant if it's different.
     var biarch_buf: [64]u8 = undefined;
     if (biarch_variant_target) |biarch_target| {
-        const biarch_triple_str = target_util.toLLVMTriple(biarch_target, &biarch_buf);
+        const biarch_triple_str = target_util.to_llvmtriple(biarch_target, &biarch_buf);
         if (!std.mem.eql(u8, biarch_triple_str, triple_str)) {
-            candidate_triple_aliases.appendAssumeCapacity(biarch_triple_str);
+            candidate_triple_aliases.append_assume_capacity(biarch_triple_str);
         }
     }
 
     var prefixes_buf: [16][]const u8 = undefined;
-    var prefixes = std.ArrayListUnmanaged([]const u8).initBuffer(&prefixes_buf);
-    const gcc_toolchain_dir = gccToolchainDir(tc);
+    var prefixes = std.ArrayListUnmanaged([]const u8).init_buffer(&prefixes_buf);
+    const gcc_toolchain_dir = gcc_toolchain_dir(tc);
     if (gcc_toolchain_dir.len != 0) {
         const adjusted = if (gcc_toolchain_dir[gcc_toolchain_dir.len - 1] == '/')
             gcc_toolchain_dir[0 .. gcc_toolchain_dir.len - 1]
         else
             gcc_toolchain_dir;
-        prefixes.appendAssumeCapacity(adjusted);
+        prefixes.append_assume_capacity(adjusted);
     } else {
-        const sysroot = tc.getSysroot();
+        const sysroot = tc.get_sysroot();
         if (sysroot.len > 0) {
-            prefixes.appendAssumeCapacity(sysroot);
-            try addDefaultGCCPrefixes(&prefixes, tc);
+            prefixes.append_assume_capacity(sysroot);
+            try add_default_gccprefixes(&prefixes, tc);
         }
 
         if (sysroot.len == 0) {
-            try addDefaultGCCPrefixes(&prefixes, tc);
+            try add_default_gccprefixes(&prefixes, tc);
         }
         // TODO: Special-case handling for Gentoo
     }
@@ -470,22 +470,22 @@ pub fn discover(self: *GCCDetector, tc: *Toolchain) !void {
             const lib_dir = std.fs.path.join(fib.allocator(), &.{ prefix, suffix }) catch continue;
             if (!tc.filesystem.exists(lib_dir)) continue;
 
-            const gcc_dir_exists = tc.filesystem.joinedExists(&.{ lib_dir, "/gcc" });
-            const gcc_cross_dir_exists = tc.filesystem.joinedExists(&.{ lib_dir, "/gcc-cross" });
+            const gcc_dir_exists = tc.filesystem.joined_exists(&.{ lib_dir, "/gcc" });
+            const gcc_cross_dir_exists = tc.filesystem.joined_exists(&.{ lib_dir, "/gcc-cross" });
 
-            try self.scanLibDirForGCCTriple(tc, target, lib_dir, triple_str, false, gcc_dir_exists, gcc_cross_dir_exists);
+            try self.scan_lib_dir_for_gcctriple(tc, target, lib_dir, triple_str, false, gcc_dir_exists, gcc_cross_dir_exists);
             for (candidate_triple_aliases.items) |candidate| {
-                try self.scanLibDirForGCCTriple(tc, target, lib_dir, candidate, false, gcc_dir_exists, gcc_cross_dir_exists);
+                try self.scan_lib_dir_for_gcctriple(tc, target, lib_dir, candidate, false, gcc_dir_exists, gcc_cross_dir_exists);
             }
         }
         for (candidate_biarch_lib_dirs.items) |suffix| {
             const lib_dir = std.fs.path.join(fib.allocator(), &.{ prefix, suffix }) catch continue;
             if (!tc.filesystem.exists(lib_dir)) continue;
 
-            const gcc_dir_exists = tc.filesystem.joinedExists(&.{ lib_dir, "/gcc" });
-            const gcc_cross_dir_exists = tc.filesystem.joinedExists(&.{ lib_dir, "/gcc-cross" });
+            const gcc_dir_exists = tc.filesystem.joined_exists(&.{ lib_dir, "/gcc" });
+            const gcc_cross_dir_exists = tc.filesystem.joined_exists(&.{ lib_dir, "/gcc-cross" });
             for (candidate_biarch_triple_aliases.items) |candidate| {
-                try self.scanLibDirForGCCTriple(tc, target, lib_dir, candidate, true, gcc_dir_exists, gcc_cross_dir_exists);
+                try self.scan_lib_dir_for_gcctriple(tc, target, lib_dir, candidate, true, gcc_dir_exists, gcc_cross_dir_exists);
             }
         }
         if (self.version.order(v0) == .gt) break;
@@ -520,7 +520,7 @@ fn find_biarch_multilibs(
         wantx32,
     };
     const is_x32 = target.abi == .gnux32 or target.abi == .muslx32;
-    const target_ptr_width = target.ptrBitWidth();
+    const target_ptr_width = target.ptr_bit_width();
     const want: Want = if (target_ptr_width == 32 and multilib_filter.exists(alt_32, tc.filesystem))
         .want64
     else if (target_ptr_width == 64 and is_x32 and multilib_filter.exists(alt_x32, tc.filesystem))
@@ -538,7 +538,7 @@ fn find_biarch_multilibs(
         .want64 => Multilib.init("", "", &.{ "-m32", "+m64", "-mx32" }),
         .wantx32 => Multilib.init("", "", &.{ "-m32", "-m64", "+mx32" }),
     };
-    result.multilibs.appendSliceAssumeCapacity(&.{
+    result.multilibs.append_slice_assume_capacity(&.{
         default,
         alt_64,
         alt_32,
@@ -546,9 +546,9 @@ fn find_biarch_multilibs(
     });
     result.filter(multilib_filter, tc.filesystem);
     var flags: Multilib.Flags = .{};
-    flags.appendAssumeCapacity(if (target_ptr_width == 64 and !is_x32) "+m64" else "-m64");
-    flags.appendAssumeCapacity(if (target_ptr_width == 32) "+m32" else "-m32");
-    flags.appendAssumeCapacity(if (target_ptr_width == 64 and is_x32) "+mx32" else "-mx32");
+    flags.append_assume_capacity(if (target_ptr_width == 64 and !is_x32) "+m64" else "-m64");
+    flags.append_assume_capacity(if (target_ptr_width == 32) "+m32" else "-m32");
+    flags.append_assume_capacity(if (target_ptr_width == 64 and is_x32) "+mx32" else "-mx32");
 
     return result.select(flags);
 }
@@ -563,15 +563,15 @@ fn scan_gccfor_multilibs(
     var detected: Multilib.Detected = .{};
     if (target.cpu.arch == .csky) {
         // TODO
-    } else if (target.cpu.arch.isMIPS()) {
+    } else if (target.cpu.arch.is_mips()) {
         // TODO
-    } else if (target.cpu.arch.isRISCV()) {
+    } else if (target.cpu.arch.is_riscv()) {
         // TODO
     } else if (target.cpu.arch == .msp430) {
         // TODO
     } else if (target.cpu.arch == .avr) {
         // No multilibs
-    } else if (!try findBiarchMultilibs(tc, &detected, target, path, needs_biarch_suffix)) {
+    } else if (!try find_biarch_multilibs(tc, &detected, target, path, needs_biarch_suffix)) {
         return false;
     }
     self.selected = detected.selected;
@@ -602,7 +602,7 @@ fn scan_lib_dir_for_gcctriple(
         const lib_suffix = std.fs.path.join(suffix_buf_fib.allocator(), &.{ base, candidate_triple }) catch continue;
 
         const dir_name = std.fs.path.join(fib.allocator(), &.{ lib_dir, lib_suffix }) catch continue;
-        var parent_dir = tc.filesystem.openDir(dir_name) catch continue;
+        var parent_dir = tc.filesystem.open_dir(dir_name) catch continue;
         defer parent_dir.close();
 
         var it = parent_dir.iterate();
@@ -614,13 +614,13 @@ fn scan_lib_dir_for_gcctriple(
             if (candidate_version.major != -1) {
                 // TODO: cache path so we're not repeatedly scanning
             }
-            if (candidate_version.isLessThan(4, 1, 1, "")) continue;
+            if (candidate_version.is_less_than(4, 1, 1, "")) continue;
             switch (candidate_version.order(self.version)) {
                 .lt, .eq => continue,
                 .gt => {},
             }
 
-            if (!try self.scanGCCForMultilibs(tc, target, .{ dir_name, version_text }, needs_biarch_suffix)) continue;
+            if (!try self.scan_gccfor_multilibs(tc, target, .{ dir_name, version_text }, needs_biarch_suffix)) continue;
 
             self.version = candidate_version;
             self.gcc_triple = try tc.arena.dupe(u8, candidate_triple);
@@ -632,7 +632,7 @@ fn scan_lib_dir_for_gcctriple(
 }
 
 fn gcc_toolchain_dir(tc: *const Toolchain) []const u8 {
-    const sysroot = tc.getSysroot();
+    const sysroot = tc.get_sysroot();
     if (sysroot.len != 0) return "";
     return system_defaults.gcc_install_prefix;
 }

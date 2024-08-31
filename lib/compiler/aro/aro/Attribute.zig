@@ -65,7 +65,7 @@ pub fn required_arg_count(attr: Tag) u32 {
         inline else => |tag| {
             comptime var needed = 0;
             comptime {
-                const fields = std.meta.fields(@field(attributes, @tagName(tag)));
+                const fields = std.meta.fields(@field(attributes, @tag_name(tag)));
                 for (fields) |arg_field| {
                     if (!mem.eql(u8, arg_field.name, "__name_tok") and @typeInfo(arg_field.type) != .Optional) needed += 1;
                 }
@@ -81,7 +81,7 @@ pub fn max_arg_count(attr: Tag) u32 {
         inline else => |tag| {
             comptime var max = 0;
             comptime {
-                const fields = std.meta.fields(@field(attributes, @tagName(tag)));
+                const fields = std.meta.fields(@field(attributes, @tag_name(tag)));
                 for (fields) |arg_field| {
                     if (!mem.eql(u8, arg_field.name, "__name_tok")) max += 1;
                 }
@@ -106,7 +106,7 @@ pub const Formatting = struct {
         switch (attr) {
             .calling_convention => unreachable,
             inline else => |tag| {
-                const fields = std.meta.fields(@field(attributes, @tagName(tag)));
+                const fields = std.meta.fields(@field(attributes, @tag_name(tag)));
 
                 if (fields.len == 0) unreachable;
                 const Unwrapped = UnwrapOptional(fields[0].type);
@@ -123,7 +123,7 @@ pub const Formatting = struct {
         switch (attr) {
             .calling_convention => unreachable,
             inline else => |tag| {
-                const fields = std.meta.fields(@field(attributes, @tagName(tag)));
+                const fields = std.meta.fields(@field(attributes, @tag_name(tag)));
 
                 if (fields.len == 0) unreachable;
                 const Unwrapped = UnwrapOptional(fields[0].type);
@@ -131,7 +131,7 @@ pub const Formatting = struct {
 
                 const enum_fields = @typeInfo(Unwrapped).Enum.fields;
                 @setEvalBranchQuota(3000);
-                const quote = comptime quoteChar(@enumFromInt(@intFromEnum(tag)));
+                const quote = comptime quote_char(@enumFromInt(@int_from_enum(tag)));
                 comptime var values: []const u8 = quote ++ enum_fields[0].name ++ quote;
                 inline for (enum_fields[1..]) |enum_field| {
                     values = values ++ ", ";
@@ -148,7 +148,7 @@ pub fn wants_ident_enum(attr: Tag) bool {
     switch (attr) {
         .calling_convention => return false,
         inline else => |tag| {
-            const fields = std.meta.fields(@field(attributes, @tagName(tag)));
+            const fields = std.meta.fields(@field(attributes, @tag_name(tag)));
 
             if (fields.len == 0) return false;
             const Unwrapped = UnwrapOptional(fields[0].type);
@@ -162,12 +162,12 @@ pub fn wants_ident_enum(attr: Tag) bool {
 pub fn diagnose_ident(attr: Tag, arguments: *Arguments, ident: []const u8) ?Diagnostics.Message {
     switch (attr) {
         inline else => |tag| {
-            const fields = std.meta.fields(@field(attributes, @tagName(tag)));
+            const fields = std.meta.fields(@field(attributes, @tag_name(tag)));
             if (fields.len == 0) unreachable;
             const Unwrapped = UnwrapOptional(fields[0].type);
             if (@typeInfo(Unwrapped) != .Enum) unreachable;
-            if (std.meta.stringToEnum(Unwrapped, normalize(ident))) |enum_val| {
-                @field(@field(arguments, @tagName(tag)), fields[0].name) = enum_val;
+            if (std.meta.string_to_enum(Unwrapped, normalize(ident))) |enum_val| {
+                @field(@field(arguments, @tag_name(tag)), fields[0].name) = enum_val;
                 return null;
             }
             return Diagnostics.Message{
@@ -181,7 +181,7 @@ pub fn diagnose_ident(attr: Tag, arguments: *Arguments, ident: []const u8) ?Diag
 pub fn wants_alignment(attr: Tag, idx: usize) bool {
     switch (attr) {
         inline else => |tag| {
-            const fields = std.meta.fields(@field(attributes, @tagName(tag)));
+            const fields = std.meta.fields(@field(attributes, @tag_name(tag)));
             if (fields.len == 0) return false;
 
             return switch (idx) {
@@ -195,7 +195,7 @@ pub fn wants_alignment(attr: Tag, idx: usize) bool {
 pub fn diagnose_alignment(attr: Tag, arguments: *Arguments, arg_idx: u32, res: Parser.Result, p: *Parser) !?Diagnostics.Message {
     switch (attr) {
         inline else => |tag| {
-            const arg_fields = std.meta.fields(@field(attributes, @tagName(tag)));
+            const arg_fields = std.meta.fields(@field(attributes, @tag_name(tag)));
             if (arg_fields.len == 0) unreachable;
 
             switch (arg_idx) {
@@ -206,12 +206,12 @@ pub fn diagnose_alignment(attr: Tag, arguments: *Arguments, arg_idx: u32, res: P
                     if (res.val.compare(.lt, Value.zero, p.comp)) {
                         return Diagnostics.Message{ .tag = .negative_alignment, .extra = .{ .str = try res.str(p) } };
                     }
-                    const requested = res.val.toInt(u29, p.comp) orelse {
+                    const requested = res.val.to_int(u29, p.comp) orelse {
                         return Diagnostics.Message{ .tag = .maximum_alignment, .extra = .{ .str = try res.str(p) } };
                     };
-                    if (!std.mem.isValidAlign(requested)) return Diagnostics.Message{ .tag = .non_pow2_align };
+                    if (!std.mem.is_valid_align(requested)) return Diagnostics.Message{ .tag = .non_pow2_align };
 
-                    @field(@field(arguments, @tagName(tag)), arg_fields[arg_i].name) = Alignment{ .requested = requested };
+                    @field(@field(arguments, @tag_name(tag)), arg_fields[arg_i].name) = Alignment{ .requested = requested };
                     return null;
                 },
                 else => unreachable,
@@ -234,13 +234,13 @@ fn diagnose_field(
             @field(@field(arguments, decl.name), field.name) = Identifier{ .tok = node.data.decl_ref };
             return null;
         }
-        return invalidArgMsg(Wanted, .expression);
+        return invalid_arg_msg(Wanted, .expression);
     }
     const key = p.comp.interner.get(res.val.ref());
     switch (key) {
         .int => {
             if (@typeInfo(Wanted) == .Int) {
-                @field(@field(arguments, decl.name), field.name) = res.val.toInt(Wanted, p.comp) orelse return .{
+                @field(@field(arguments, decl.name), field.name) = res.val.to_int(Wanted, p.comp) orelse return .{
                     .tag = .attribute_int_out_of_range,
                     .extra = .{ .str = try res.str(p) },
                 };
@@ -250,31 +250,31 @@ fn diagnose_field(
         .bytes => |bytes| {
             if (Wanted == Value) {
                 std.debug.assert(node.tag == .string_literal_expr);
-                if (!node.ty.elemType().is(.char) and !node.ty.elemType().is(.uchar)) {
+                if (!node.ty.elem_type().is(.char) and !node.ty.elem_type().is(.uchar)) {
                     return .{
                         .tag = .attribute_requires_string,
                         .extra = .{ .str = decl.name },
                     };
                 }
-                @field(@field(arguments, decl.name), field.name) = try p.removeNull(res.val);
+                @field(@field(arguments, decl.name), field.name) = try p.remove_null(res.val);
                 return null;
             } else if (@typeInfo(Wanted) == .Enum and @hasDecl(Wanted, "opts") and Wanted.opts.enum_kind == .string) {
                 const str = bytes[0 .. bytes.len - 1];
-                if (std.meta.stringToEnum(Wanted, str)) |enum_val| {
+                if (std.meta.string_to_enum(Wanted, str)) |enum_val| {
                     @field(@field(arguments, decl.name), field.name) = enum_val;
                     return null;
                 } else {
                     @setEvalBranchQuota(3000);
                     return .{
                         .tag = .unknown_attr_enum,
-                        .extra = .{ .attr_enum = .{ .tag = std.meta.stringToEnum(Tag, decl.name).? } },
+                        .extra = .{ .attr_enum = .{ .tag = std.meta.string_to_enum(Tag, decl.name).? } },
                     };
                 }
             }
         },
         else => {},
     }
-    return invalidArgMsg(Wanted, switch (key) {
+    return invalid_arg_msg(Wanted, switch (key) {
         .int => .int,
         .bytes => .string,
         .float => .float,
@@ -303,8 +303,8 @@ fn invalid_arg_msg(comptime Expected: type, actual: ArgumentType) Diagnostics.Me
 pub fn diagnose(attr: Tag, arguments: *Arguments, arg_idx: u32, res: Parser.Result, node: Tree.Node, p: *Parser) !?Diagnostics.Message {
     switch (attr) {
         inline else => |tag| {
-            const decl = @typeInfo(attributes).Struct.decls[@intFromEnum(tag)];
-            const max_arg_count = comptime maxArgCount(tag);
+            const decl = @typeInfo(attributes).Struct.decls[@int_from_enum(tag)];
+            const max_arg_count = comptime max_arg_count(tag);
             if (arg_idx >= max_arg_count) return Diagnostics.Message{
                 .tag = .attribute_too_many_args,
                 .extra = .{ .attr_arg_count = .{ .attribute = attr, .expected = max_arg_count } },
@@ -312,7 +312,7 @@ pub fn diagnose(attr: Tag, arguments: *Arguments, arg_idx: u32, res: Parser.Resu
             const arg_fields = std.meta.fields(@field(attributes, decl.name));
             switch (arg_idx) {
                 inline 0...arg_fields.len - 1 => |arg_i| {
-                    return diagnoseField(decl, arg_fields[arg_i], UnwrapOptional(arg_fields[arg_i].type), arguments, res, node, p);
+                    return diagnose_field(decl, arg_fields[arg_i], UnwrapOptional(arg_fields[arg_i].type), arguments, res, node, p);
                 },
                 else => unreachable,
             }
@@ -662,18 +662,18 @@ pub const Arguments = blk: {
 };
 
 pub fn ArgumentsForTag(comptime tag: Tag) type {
-    const decl = @typeInfo(attributes).Struct.decls[@intFromEnum(tag)];
+    const decl = @typeInfo(attributes).Struct.decls[@int_from_enum(tag)];
     return @field(attributes, decl.name);
 }
 
 pub fn init_arguments(tag: Tag, name_tok: TokenIndex) Arguments {
     switch (tag) {
         inline else => |arg_tag| {
-            const union_element = @field(attributes, @tagName(arg_tag));
-            const init = std.mem.zeroInit(union_element, .{});
-            var args = @unionInit(Arguments, @tagName(arg_tag), init);
-            if (@hasField(@field(attributes, @tagName(arg_tag)), "__name_tok")) {
-                @field(args, @tagName(arg_tag)).__name_tok = name_tok;
+            const union_element = @field(attributes, @tag_name(arg_tag));
+            const init = std.mem.zero_init(union_element, .{});
+            var args = @union_init(Arguments, @tag_name(arg_tag), init);
+            if (@has_field(@field(attributes, @tag_name(arg_tag)), "__name_tok")) {
+                @field(args, @tag_name(arg_tag)).__name_tok = name_tok;
             }
             return args;
         },
@@ -698,10 +698,10 @@ pub fn from_string(kind: Kind, namespace: ?[]const u8, name: []const u8) ?Tag {
         return null;
     } else kind;
 
-    const tag_and_opts = attribute_names.fromName(normalized) orelse return null;
+    const tag_and_opts = attribute_names.from_name(normalized) orelse return null;
     switch (actual_kind) {
         inline else => |tag| {
-            if (@field(tag_and_opts.properties, @tagName(tag)))
+            if (@field(tag_and_opts.properties, @tag_name(tag)))
                 return tag_and_opts.properties.tag;
         },
     }
@@ -709,7 +709,7 @@ pub fn from_string(kind: Kind, namespace: ?[]const u8, name: []const u8) ?Tag {
 }
 
 pub fn normalize(name: []const u8) []const u8 {
-    if (name.len >= 4 and mem.startsWith(u8, name, "__") and mem.endsWith(u8, name, "__")) {
+    if (name.len >= 4 and mem.starts_with(u8, name, "__") and mem.ends_with(u8, name, "__")) {
         return name[2 .. name.len - 2];
     }
     return name;
@@ -719,12 +719,12 @@ fn ignored_attr_err(p: *Parser, tok: TokenIndex, attr: Attribute.Tag, context: [
     const strings_top = p.strings.items.len;
     defer p.strings.items.len = strings_top;
 
-    try p.strings.writer().print("attribute '{s}' ignored on {s}", .{ @tagName(attr), context });
+    try p.strings.writer().print("attribute '{s}' ignored on {s}", .{ @tag_name(attr), context });
     const str = try p.comp.diagnostics.arena.allocator().dupe(u8, p.strings.items[strings_top..]);
-    try p.errStr(.ignored_attribute, tok, str);
+    try p.err_str(.ignored_attribute, tok, str);
 }
 
-pub const applyParameterAttributes = applyVariableAttributes;
+pub const applyParameterAttributes = apply_variable_attributes;
 pub fn apply_variable_attributes(p: *Parser, ty: Type, attr_buf_start: usize, tag: ?Diagnostics.Tag) !Type {
     const attrs = p.attr_buf.items(.attr)[attr_buf_start..];
     const toks = p.attr_buf.items(.tok)[attr_buf_start..];
@@ -740,31 +740,31 @@ pub fn apply_variable_attributes(p: *Parser, ty: Type, attr_buf_start: usize, ta
          => try p.attr_application_buf.append(p.gpa, attr),
         // zig fmt: on
         .common => if (nocommon) {
-            try p.errTok(.ignore_common, tok);
+            try p.err_tok(.ignore_common, tok);
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
             common = true;
         },
         .nocommon => if (common) {
-            try p.errTok(.ignore_nocommon, tok);
+            try p.err_tok(.ignore_nocommon, tok);
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
             nocommon = true;
         },
-        .vector_size => try attr.applyVectorSize(p, tok, &base_ty),
-        .aligned => try attr.applyAligned(p, base_ty, tag),
-        .nonstring => if (!base_ty.isArray() or !(base_ty.is(.char) or base_ty.is(.uchar) or base_ty.is(.schar))) {
-            try p.errStr(.non_string_ignored, tok, try p.typeStr(ty));
+        .vector_size => try attr.apply_vector_size(p, tok, &base_ty),
+        .aligned => try attr.apply_aligned(p, base_ty, tag),
+        .nonstring => if (!base_ty.is_array() or !(base_ty.is(.char) or base_ty.is(.uchar) or base_ty.is(.schar))) {
+            try p.err_str(.non_string_ignored, tok, try p.type_str(ty));
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
         },
         .uninitialized => if (p.func.ty == null) {
-            try p.errStr(.local_variable_attribute, tok, "uninitialized");
+            try p.err_str(.local_variable_attribute, tok, "uninitialized");
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
         },
         .cleanup => if (p.func.ty == null) {
-            try p.errStr(.local_variable_attribute, tok, "cleanup");
+            try p.err_str(.local_variable_attribute, tok, "cleanup");
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
         },
@@ -772,12 +772,12 @@ pub fn apply_variable_attributes(p: *Parser, ty: Type, attr_buf_start: usize, ta
         .copy,
         .tls_model,
         .visibility,
-        => std.debug.panic("apply variable attribute {s}", .{@tagName(attr.tag)}),
-        else => try ignoredAttrErr(p, tok, attr.tag, "variables"),
+        => std.debug.panic("apply variable attribute {s}", .{@tag_name(attr.tag)}),
+        else => try ignored_attr_err(p, tok, attr.tag, "variables"),
     };
-    const existing = ty.getAttributes();
+    const existing = ty.get_attributes();
     if (existing.len == 0 and p.attr_application_buf.items.len == 0) return base_ty;
-    if (existing.len == 0) return base_ty.withAttributes(p.arena, p.attr_application_buf.items);
+    if (existing.len == 0) return base_ty.with_attributes(p.arena, p.attr_application_buf.items);
 
     const attributed_type = try Type.Attributed.create(p.arena, base_ty, existing, p.attr_application_buf.items);
     return Type{ .specifier = .attributed, .data = .{ .attributed = attributed_type } };
@@ -792,9 +792,9 @@ pub fn apply_field_attributes(p: *Parser, field_ty: *Type, attr_buf_start: usize
         .@"packed", .may_alias, .deprecated, .unavailable, .unused, .warn_if_not_aligned, .mode,
         => try p.attr_application_buf.append(p.gpa, attr),
         // zig fmt: on
-        .vector_size => try attr.applyVectorSize(p, tok, field_ty),
-        .aligned => try attr.applyAligned(p, field_ty.*, null),
-        else => try ignoredAttrErr(p, tok, attr.tag, "fields"),
+        .vector_size => try attr.apply_vector_size(p, tok, field_ty),
+        .aligned => try attr.apply_aligned(p, field_ty.*, null),
+        else => try ignored_attr_err(p, tok, attr.tag, "fields"),
     };
     if (p.attr_application_buf.items.len == 0) return &[0]Attribute{};
     return p.arena.dupe(Attribute, p.attr_application_buf.items);
@@ -811,32 +811,32 @@ pub fn apply_type_attributes(p: *Parser, ty: Type, attr_buf_start: usize, tag: ?
         .@"packed", .may_alias, .deprecated, .unavailable, .unused, .warn_if_not_aligned, .mode,
          => try p.attr_application_buf.append(p.gpa, attr),
         // zig fmt: on
-        .transparent_union => try attr.applyTransparentUnion(p, tok, base_ty),
-        .vector_size => try attr.applyVectorSize(p, tok, &base_ty),
-        .aligned => try attr.applyAligned(p, base_ty, tag),
+        .transparent_union => try attr.apply_transparent_union(p, tok, base_ty),
+        .vector_size => try attr.apply_vector_size(p, tok, &base_ty),
+        .aligned => try attr.apply_aligned(p, base_ty, tag),
         .designated_init => if (base_ty.is(.@"struct")) {
             try p.attr_application_buf.append(p.gpa, attr);
         } else {
-            try p.errTok(.designated_init_invalid, tok);
+            try p.err_tok(.designated_init_invalid, tok);
         },
         .alloc_size,
         .copy,
         .scalar_storage_order,
         .nonstring,
-        => std.debug.panic("apply type attribute {s}", .{@tagName(attr.tag)}),
-        else => try ignoredAttrErr(p, tok, attr.tag, "types"),
+        => std.debug.panic("apply type attribute {s}", .{@tag_name(attr.tag)}),
+        else => try ignored_attr_err(p, tok, attr.tag, "types"),
     };
 
-    const existing = ty.getAttributes();
+    const existing = ty.get_attributes();
     // TODO: the alignment annotation on a type should override
     // the decl it refers to. This might not be true for others.  Maybe bug.
 
     // if there are annotations on this type def use those.
     if (p.attr_application_buf.items.len > 0) {
-        return try base_ty.withAttributes(p.arena, p.attr_application_buf.items);
+        return try base_ty.with_attributes(p.arena, p.attr_application_buf.items);
     } else if (existing.len > 0) {
         // else use the ones on the typedef decl we were refering to.
-        return try base_ty.withAttributes(p.arena, existing);
+        return try base_ty.with_attributes(p.arena, existing);
     }
     return base_ty;
 }
@@ -860,40 +860,40 @@ pub fn apply_function_attributes(p: *Parser, ty: Type, attr_buf_start: usize) !T
          => try p.attr_application_buf.append(p.gpa, attr),
         // zig fmt: on
         .hot => if (cold) {
-            try p.errTok(.ignore_hot, tok);
+            try p.err_tok(.ignore_hot, tok);
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
             hot = true;
         },
         .cold => if (hot) {
-            try p.errTok(.ignore_cold, tok);
+            try p.err_tok(.ignore_cold, tok);
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
             cold = true;
         },
         .always_inline => if (@"noinline") {
-            try p.errTok(.ignore_always_inline, tok);
+            try p.err_tok(.ignore_always_inline, tok);
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
             always_inline = true;
         },
         .@"noinline" => if (always_inline) {
-            try p.errTok(.ignore_noinline, tok);
+            try p.err_tok(.ignore_noinline, tok);
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
             @"noinline" = true;
         },
-        .aligned => try attr.applyAligned(p, base_ty, null),
-        .format => try attr.applyFormat(p, base_ty),
+        .aligned => try attr.apply_aligned(p, base_ty, null),
+        .format => try attr.apply_format(p, base_ty),
         .calling_convention => switch (attr.args.calling_convention.cc) {
             .C => continue,
             .stdcall, .thiscall => switch (p.comp.target.cpu.arch) {
                 .x86 => try p.attr_application_buf.append(p.gpa, attr),
-                else => try p.errStr(.callconv_not_supported, tok, p.tok_ids[tok].lexeme().?),
+                else => try p.err_str(.callconv_not_supported, tok, p.tok_ids[tok].lexeme().?),
             },
             .vectorcall => switch (p.comp.target.cpu.arch) {
                 .x86, .aarch64, .aarch64_be, .aarch64_32 => try p.attr_application_buf.append(p.gpa, attr),
-                else => try p.errStr(.callconv_not_supported, tok, p.tok_ids[tok].lexeme().?),
+                else => try p.err_str(.callconv_not_supported, tok, p.tok_ids[tok].lexeme().?),
             },
         },
         .access,
@@ -937,10 +937,10 @@ pub fn apply_function_attributes(p: *Parser, ty: Type, attr_buf_start: usize) !T
         .visibility,
         .weakref,
         .zero_call_used_regs,
-        => std.debug.panic("apply type attribute {s}", .{@tagName(attr.tag)}),
-        else => try ignoredAttrErr(p, tok, attr.tag, "functions"),
+        => std.debug.panic("apply type attribute {s}", .{@tag_name(attr.tag)}),
+        else => try ignored_attr_err(p, tok, attr.tag, "functions"),
     };
-    return ty.withAttributes(p.arena, p.attr_application_buf.items);
+    return ty.with_attributes(p.arena, p.attr_application_buf.items);
 }
 
 pub fn apply_label_attributes(p: *Parser, ty: Type, attr_buf_start: usize) !Type {
@@ -952,20 +952,20 @@ pub fn apply_label_attributes(p: *Parser, ty: Type, attr_buf_start: usize) !Type
     for (attrs, toks) |attr, tok| switch (attr.tag) {
         .unused => try p.attr_application_buf.append(p.gpa, attr),
         .hot => if (cold) {
-            try p.errTok(.ignore_hot, tok);
+            try p.err_tok(.ignore_hot, tok);
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
             hot = true;
         },
         .cold => if (hot) {
-            try p.errTok(.ignore_cold, tok);
+            try p.err_tok(.ignore_cold, tok);
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
             cold = true;
         },
-        else => try ignoredAttrErr(p, tok, attr.tag, "labels"),
+        else => try ignored_attr_err(p, tok, attr.tag, "labels"),
     };
-    return ty.withAttributes(p.arena, p.attr_application_buf.items);
+    return ty.with_attributes(p.arena, p.attr_application_buf.items);
 }
 
 pub fn apply_statement_attributes(p: *Parser, ty: Type, expr_start: TokenIndex, attr_buf_start: usize) !Type {
@@ -977,13 +977,13 @@ pub fn apply_statement_attributes(p: *Parser, ty: Type, expr_start: TokenIndex, 
             // TODO: this condition is not completely correct; the last statement of a compound
             // statement is also valid if it precedes a switch label (so intervening '}' are ok,
             // but only if they close a compound statement)
-            try p.errTok(.invalid_fallthrough, expr_start);
+            try p.err_tok(.invalid_fallthrough, expr_start);
         } else {
             try p.attr_application_buf.append(p.gpa, attr);
         },
-        else => try p.errStr(.cannot_apply_attribute_to_statement, tok, @tagName(attr.tag)),
+        else => try p.err_str(.cannot_apply_attribute_to_statement, tok, @tag_name(attr.tag)),
     };
-    return ty.withAttributes(p.arena, p.attr_application_buf.items);
+    return ty.with_attributes(p.arena, p.attr_application_buf.items);
 }
 
 pub fn apply_enumerator_attributes(p: *Parser, ty: Type, attr_buf_start: usize) !Type {
@@ -992,9 +992,9 @@ pub fn apply_enumerator_attributes(p: *Parser, ty: Type, attr_buf_start: usize) 
     p.attr_application_buf.items.len = 0;
     for (attrs, toks) |attr, tok| switch (attr.tag) {
         .deprecated, .unavailable => try p.attr_application_buf.append(p.gpa, attr),
-        else => try ignoredAttrErr(p, tok, attr.tag, "enums"),
+        else => try ignored_attr_err(p, tok, attr.tag, "enums"),
     };
-    return ty.withAttributes(p.arena, p.attr_application_buf.items);
+    return ty.with_attributes(p.arena, p.attr_application_buf.items);
 }
 
 fn apply_aligned(attr: Attribute, p: *Parser, ty: Type, tag: ?Diagnostics.Tag) !void {
@@ -1003,13 +1003,13 @@ fn apply_aligned(attr: Attribute, p: *Parser, ty: Type, tag: ?Diagnostics.Tag) !
         if (attr.syntax != .keyword) break :alignas;
 
         const align_tok = attr.args.aligned.__name_tok;
-        if (tag) |t| try p.errTok(t, align_tok);
+        if (tag) |t| try p.err_tok(t, align_tok);
 
         const default_align = base.alignof(p.comp);
-        if (ty.isFunc()) {
-            try p.errTok(.alignas_on_func, align_tok);
+        if (ty.is_func()) {
+            try p.err_tok(.alignas_on_func, align_tok);
         } else if (alignment.requested < default_align) {
-            try p.errExtra(.minimum_alignment, align_tok, .{ .unsigned = default_align });
+            try p.err_extra(.minimum_alignment, align_tok, .{ .unsigned = default_align });
         }
     }
     try p.attr_application_buf.append(p.gpa, attr);
@@ -1017,41 +1017,41 @@ fn apply_aligned(attr: Attribute, p: *Parser, ty: Type, tag: ?Diagnostics.Tag) !
 
 fn apply_transparent_union(attr: Attribute, p: *Parser, tok: TokenIndex, ty: Type) !void {
     const union_ty = ty.get(.@"union") orelse {
-        return p.errTok(.transparent_union_wrong_type, tok);
+        return p.err_tok(.transparent_union_wrong_type, tok);
     };
     // TODO validate union defined at end
-    if (union_ty.data.record.isIncomplete()) return;
+    if (union_ty.data.record.is_incomplete()) return;
     const fields = union_ty.data.record.fields;
     if (fields.len == 0) {
-        return p.errTok(.transparent_union_one_field, tok);
+        return p.err_tok(.transparent_union_one_field, tok);
     }
-    const first_field_size = fields[0].ty.bitSizeof(p.comp).?;
+    const first_field_size = fields[0].ty.bit_sizeof(p.comp).?;
     for (fields[1..]) |field| {
-        const field_size = field.ty.bitSizeof(p.comp).?;
+        const field_size = field.ty.bit_sizeof(p.comp).?;
         if (field_size == first_field_size) continue;
-        const mapper = p.comp.string_interner.getSlowTypeMapper();
-        const str = try std.fmt.allocPrint(
+        const mapper = p.comp.string_interner.get_slow_type_mapper();
+        const str = try std.fmt.alloc_print(
             p.comp.diagnostics.arena.allocator(),
             "'{s}' ({d}",
             .{ mapper.lookup(field.name), field_size },
         );
-        try p.errStr(.transparent_union_size, field.name_tok, str);
-        return p.errExtra(.transparent_union_size_note, fields[0].name_tok, .{ .unsigned = first_field_size });
+        try p.err_str(.transparent_union_size, field.name_tok, str);
+        return p.err_extra(.transparent_union_size_note, fields[0].name_tok, .{ .unsigned = first_field_size });
     }
 
     try p.attr_application_buf.append(p.gpa, attr);
 }
 
 fn apply_vector_size(attr: Attribute, p: *Parser, tok: TokenIndex, ty: *Type) !void {
-    if (!(ty.isInt() or ty.isFloat()) or !ty.isReal()) {
-        const orig_ty = try p.typeStr(ty.*);
+    if (!(ty.is_int() or ty.is_float()) or !ty.is_real()) {
+        const orig_ty = try p.type_str(ty.*);
         ty.* = Type.invalid;
-        return p.errStr(.invalid_vec_elem_ty, tok, orig_ty);
+        return p.err_str(.invalid_vec_elem_ty, tok, orig_ty);
     }
     const vec_bytes = attr.args.vector_size.bytes;
     const ty_size = ty.sizeof(p.comp).?;
     if (vec_bytes % ty_size != 0) {
-        return p.errTok(.vec_size_not_multiple, tok);
+        return p.err_tok(.vec_size_not_multiple, tok);
     }
     const vec_size = vec_bytes / ty_size;
 

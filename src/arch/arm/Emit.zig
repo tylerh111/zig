@@ -74,79 +74,79 @@ pub fn emit_mir(
     const mir_tags = emit.mir.instructions.items(.tag);
 
     // Find smallest lowerings for branch instructions
-    try emit.lowerBranches();
+    try emit.lower_branches();
 
     // Emit machine code
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
+        const inst = @as(u32, @int_cast(index));
         switch (tag) {
-            .add => try emit.mirDataProcessing(inst),
-            .adds => try emit.mirDataProcessing(inst),
-            .@"and" => try emit.mirDataProcessing(inst),
-            .cmp => try emit.mirDataProcessing(inst),
-            .eor => try emit.mirDataProcessing(inst),
-            .mov => try emit.mirDataProcessing(inst),
-            .mvn => try emit.mirDataProcessing(inst),
-            .orr => try emit.mirDataProcessing(inst),
-            .rsb => try emit.mirDataProcessing(inst),
-            .sub => try emit.mirDataProcessing(inst),
-            .subs => try emit.mirDataProcessing(inst),
+            .add => try emit.mir_data_processing(inst),
+            .adds => try emit.mir_data_processing(inst),
+            .@"and" => try emit.mir_data_processing(inst),
+            .cmp => try emit.mir_data_processing(inst),
+            .eor => try emit.mir_data_processing(inst),
+            .mov => try emit.mir_data_processing(inst),
+            .mvn => try emit.mir_data_processing(inst),
+            .orr => try emit.mir_data_processing(inst),
+            .rsb => try emit.mir_data_processing(inst),
+            .sub => try emit.mir_data_processing(inst),
+            .subs => try emit.mir_data_processing(inst),
 
-            .sub_sp_scratch_r4 => try emit.mirSubStackPointer(inst),
+            .sub_sp_scratch_r4 => try emit.mir_sub_stack_pointer(inst),
 
-            .asr => try emit.mirShift(inst),
-            .lsl => try emit.mirShift(inst),
-            .lsr => try emit.mirShift(inst),
+            .asr => try emit.mir_shift(inst),
+            .lsl => try emit.mir_shift(inst),
+            .lsr => try emit.mir_shift(inst),
 
-            .b => try emit.mirBranch(inst),
+            .b => try emit.mir_branch(inst),
 
-            .undefined_instruction => try emit.mirUndefinedInstruction(),
-            .bkpt => try emit.mirExceptionGeneration(inst),
+            .undefined_instruction => try emit.mir_undefined_instruction(),
+            .bkpt => try emit.mir_exception_generation(inst),
 
-            .blx => try emit.mirBranchExchange(inst),
-            .bx => try emit.mirBranchExchange(inst),
+            .blx => try emit.mir_branch_exchange(inst),
+            .bx => try emit.mir_branch_exchange(inst),
 
-            .dbg_line => try emit.mirDbgLine(inst),
+            .dbg_line => try emit.mir_dbg_line(inst),
 
-            .dbg_prologue_end => try emit.mirDebugPrologueEnd(),
+            .dbg_prologue_end => try emit.mir_debug_prologue_end(),
 
-            .dbg_epilogue_begin => try emit.mirDebugEpilogueBegin(),
+            .dbg_epilogue_begin => try emit.mir_debug_epilogue_begin(),
 
-            .ldr => try emit.mirLoadStore(inst),
-            .ldrb => try emit.mirLoadStore(inst),
-            .str => try emit.mirLoadStore(inst),
-            .strb => try emit.mirLoadStore(inst),
+            .ldr => try emit.mir_load_store(inst),
+            .ldrb => try emit.mir_load_store(inst),
+            .str => try emit.mir_load_store(inst),
+            .strb => try emit.mir_load_store(inst),
 
-            .ldr_ptr_stack_argument => try emit.mirLoadStackArgument(inst),
-            .ldr_stack_argument => try emit.mirLoadStackArgument(inst),
-            .ldrb_stack_argument => try emit.mirLoadStackArgument(inst),
-            .ldrh_stack_argument => try emit.mirLoadStackArgument(inst),
-            .ldrsb_stack_argument => try emit.mirLoadStackArgument(inst),
-            .ldrsh_stack_argument => try emit.mirLoadStackArgument(inst),
+            .ldr_ptr_stack_argument => try emit.mir_load_stack_argument(inst),
+            .ldr_stack_argument => try emit.mir_load_stack_argument(inst),
+            .ldrb_stack_argument => try emit.mir_load_stack_argument(inst),
+            .ldrh_stack_argument => try emit.mir_load_stack_argument(inst),
+            .ldrsb_stack_argument => try emit.mir_load_stack_argument(inst),
+            .ldrsh_stack_argument => try emit.mir_load_stack_argument(inst),
 
-            .ldrh => try emit.mirLoadStoreExtra(inst),
-            .ldrsb => try emit.mirLoadStoreExtra(inst),
-            .ldrsh => try emit.mirLoadStoreExtra(inst),
-            .strh => try emit.mirLoadStoreExtra(inst),
+            .ldrh => try emit.mir_load_store_extra(inst),
+            .ldrsb => try emit.mir_load_store_extra(inst),
+            .ldrsh => try emit.mir_load_store_extra(inst),
+            .strh => try emit.mir_load_store_extra(inst),
 
-            .movw => try emit.mirSpecialMove(inst),
-            .movt => try emit.mirSpecialMove(inst),
+            .movw => try emit.mir_special_move(inst),
+            .movt => try emit.mir_special_move(inst),
 
-            .mul => try emit.mirMultiply(inst),
-            .smulbb => try emit.mirMultiply(inst),
+            .mul => try emit.mir_multiply(inst),
+            .smulbb => try emit.mir_multiply(inst),
 
-            .smull => try emit.mirMultiplyLong(inst),
-            .umull => try emit.mirMultiplyLong(inst),
+            .smull => try emit.mir_multiply_long(inst),
+            .umull => try emit.mir_multiply_long(inst),
 
-            .nop => try emit.mirNop(),
+            .nop => try emit.mir_nop(),
 
-            .pop => try emit.mirBlockDataTransfer(inst),
-            .push => try emit.mirBlockDataTransfer(inst),
+            .pop => try emit.mir_block_data_transfer(inst),
+            .push => try emit.mir_block_data_transfer(inst),
 
-            .svc => try emit.mirSupervisorCall(inst),
+            .svc => try emit.mir_supervisor_call(inst),
 
-            .sbfx => try emit.mirBitFieldExtract(inst),
-            .ubfx => try emit.mirBitFieldExtract(inst),
+            .sbfx => try emit.mir_bit_field_extract(inst),
+            .ubfx => try emit.mir_bit_field_extract(inst),
         }
     }
 }
@@ -155,7 +155,7 @@ pub fn deinit(emit: *Emit) void {
     const comp = emit.bin_file.comp;
     const gpa = comp.gpa;
 
-    var iter = emit.branch_forward_origins.valueIterator();
+    var iter = emit.branch_forward_origins.value_iterator();
     while (iter.next()) |origin_list| {
         origin_list.deinit(gpa);
     }
@@ -167,11 +167,11 @@ pub fn deinit(emit: *Emit) void {
 }
 
 fn optimal_branch_type(emit: *Emit, tag: Mir.Inst.Tag, offset: i64) !BranchType {
-    assert(std.mem.isAlignedGeneric(i64, offset, 4)); // misaligned offset
+    assert(std.mem.is_aligned_generic(i64, offset, 4)); // misaligned offset
 
     switch (tag) {
         .b => {
-            if (std.math.cast(i24, @divExact(offset, 4))) |_| {
+            if (std.math.cast(i24, @div_exact(offset, 4))) |_| {
                 return BranchType.b;
             } else {
                 return emit.fail("TODO support larger branches", .{});
@@ -184,7 +184,7 @@ fn optimal_branch_type(emit: *Emit, tag: Mir.Inst.Tag, offset: i64) !BranchType 
 fn instruction_size(emit: *Emit, inst: Mir.Inst.Index) usize {
     const tag = emit.mir.instructions.items(.tag)[inst];
 
-    if (isBranch(tag)) {
+    if (is_branch(tag)) {
         switch (emit.branch_types.get(inst).?) {
             .b => return 4,
         }
@@ -201,10 +201,10 @@ fn instruction_size(emit: *Emit, inst: Mir.Inst.Index) usize {
 
             if (imm32 == 0) {
                 return 0 * 4;
-            } else if (Instruction.Operand.fromU32(imm32) != null) {
+            } else if (Instruction.Operand.from_u32(imm32) != null) {
                 // sub
                 return 1 * 4;
-            } else if (Target.arm.featureSetHas(emit.target.cpu.features, .has_v7)) {
+            } else if (Target.arm.feature_set_has(emit.target.cpu.features, .has_v7)) {
                 // movw; movt; sub
                 return 3 * 4;
             } else {
@@ -245,9 +245,9 @@ fn lower_branches(emit: *Emit) !void {
     // TODO optimization opportunity: do this in codegen while
     // generating MIR
     for (mir_tags, 0..) |tag, index| {
-        const inst = @as(u32, @intCast(index));
-        if (isBranch(tag)) {
-            const target_inst = emit.branchTarget(inst);
+        const inst = @as(u32, @int_cast(index));
+        if (is_branch(tag)) {
+            const target_inst = emit.branch_target(inst);
 
             // Remember this branch instruction
             try emit.branch_types.put(gpa, inst, BranchType.default(tag));
@@ -262,7 +262,7 @@ fn lower_branches(emit: *Emit) !void {
                 // Remember the branch instruction index
                 try emit.code_offset_mapping.put(gpa, inst, 0);
 
-                if (emit.branch_forward_origins.getPtr(target_inst)) |origin_list| {
+                if (emit.branch_forward_origins.get_ptr(target_inst)) |origin_list| {
                     try origin_list.append(gpa, inst);
                 } else {
                     var origin_list: std.ArrayListUnmanaged(Mir.Inst.Index) = .{};
@@ -274,7 +274,7 @@ fn lower_branches(emit: *Emit) !void {
             // Remember the target instruction index so that we
             // update the real code offset in all future passes
             //
-            // putNoClobber may not be used as the put operation
+            // put_no_clobber may not be used as the put operation
             // may clobber the entry when multiple branches branch
             // to the same target instruction
             try emit.code_offset_mapping.put(gpa, target_inst, 0);
@@ -290,30 +290,30 @@ fn lower_branches(emit: *Emit) !void {
         var current_code_offset: usize = 0;
 
         for (mir_tags, 0..) |tag, index| {
-            const inst = @as(u32, @intCast(index));
+            const inst = @as(u32, @int_cast(index));
 
             // If this instruction contained in the code offset
             // mapping (when it is a target of a branch or if it is a
             // forward branch), update the code offset
-            if (emit.code_offset_mapping.getPtr(inst)) |offset| {
+            if (emit.code_offset_mapping.get_ptr(inst)) |offset| {
                 offset.* = current_code_offset;
             }
 
             // If this instruction is a backward branch, calculate the
             // offset, which may potentially update the branch type
-            if (isBranch(tag)) {
-                const target_inst = emit.branchTarget(inst);
+            if (is_branch(tag)) {
+                const target_inst = emit.branch_target(inst);
                 if (target_inst < inst) {
                     const target_offset = emit.code_offset_mapping.get(target_inst).?;
-                    const offset = @as(i64, @intCast(target_offset)) - @as(i64, @intCast(current_code_offset + 8));
-                    const branch_type = emit.branch_types.getPtr(inst).?;
-                    const optimal_branch_type = try emit.optimalBranchType(tag, offset);
+                    const offset = @as(i64, @int_cast(target_offset)) - @as(i64, @int_cast(current_code_offset + 8));
+                    const branch_type = emit.branch_types.get_ptr(inst).?;
+                    const optimal_branch_type = try emit.optimal_branch_type(tag, offset);
                     if (branch_type.* != optimal_branch_type) {
                         branch_type.* = optimal_branch_type;
                         all_branches_lowered = false;
                     }
 
-                    log.debug("lowerBranches: branch {} has offset {}", .{ inst, offset });
+                    log.debug("lower_branches: branch {} has offset {}", .{ inst, offset });
                 }
             }
 
@@ -324,27 +324,27 @@ fn lower_branches(emit: *Emit) !void {
                 for (origin_list.items) |forward_branch_inst| {
                     const branch_tag = emit.mir.instructions.items(.tag)[forward_branch_inst];
                     const forward_branch_inst_offset = emit.code_offset_mapping.get(forward_branch_inst).?;
-                    const offset = @as(i64, @intCast(current_code_offset)) - @as(i64, @intCast(forward_branch_inst_offset + 8));
-                    const branch_type = emit.branch_types.getPtr(forward_branch_inst).?;
-                    const optimal_branch_type = try emit.optimalBranchType(branch_tag, offset);
+                    const offset = @as(i64, @int_cast(current_code_offset)) - @as(i64, @int_cast(forward_branch_inst_offset + 8));
+                    const branch_type = emit.branch_types.get_ptr(forward_branch_inst).?;
+                    const optimal_branch_type = try emit.optimal_branch_type(branch_tag, offset);
                     if (branch_type.* != optimal_branch_type) {
                         branch_type.* = optimal_branch_type;
                         all_branches_lowered = false;
                     }
 
-                    log.debug("lowerBranches: branch {} has offset {}", .{ forward_branch_inst, offset });
+                    log.debug("lower_branches: branch {} has offset {}", .{ forward_branch_inst, offset });
                 }
             }
 
             // Increment code offset
-            current_code_offset += emit.instructionSize(inst);
+            current_code_offset += emit.instruction_size(inst);
         }
     }
 }
 
 fn write_instruction(emit: *Emit, instruction: Instruction) !void {
     const endian = emit.target.cpu.arch.endian();
-    std.mem.writeInt(u32, try emit.code.addManyAsArray(4), instruction.toU32(), endian);
+    std.mem.write_int(u32, try emit.code.add_many_as_array(4), instruction.to_u32(), endian);
 }
 
 fn fail(emit: *Emit, comptime format: []const u8, args: anytype) InnerError {
@@ -357,11 +357,11 @@ fn fail(emit: *Emit, comptime format: []const u8, args: anytype) InnerError {
 }
 
 fn dbg_advance_pcand_line(self: *Emit, line: u32, column: u32) !void {
-    const delta_line = @as(i32, @intCast(line)) - @as(i32, @intCast(self.prev_di_line));
+    const delta_line = @as(i32, @int_cast(line)) - @as(i32, @int_cast(self.prev_di_line));
     const delta_pc: usize = self.code.items.len - self.prev_di_pc;
     switch (self.debug_output) {
         .dwarf => |dw| {
-            try dw.advancePCAndLine(delta_line, delta_pc);
+            try dw.advance_pcand_line(delta_line, delta_pc);
             self.prev_di_line = line;
             self.prev_di_column = column;
             self.prev_di_pc = self.code.items.len;
@@ -370,15 +370,15 @@ fn dbg_advance_pcand_line(self: *Emit, line: u32, column: u32) !void {
             if (delta_pc <= 0) return; // only do this when the pc changes
 
             // increasing the line number
-            try link.File.Plan9.changeLine(&dbg_out.dbg_line, delta_line);
+            try link.File.Plan9.change_line(&dbg_out.dbg_line, delta_line);
             // increasing the pc
-            const d_pc_p9 = @as(i64, @intCast(delta_pc)) - dbg_out.pc_quanta;
+            const d_pc_p9 = @as(i64, @int_cast(delta_pc)) - dbg_out.pc_quanta;
             if (d_pc_p9 > 0) {
                 // minus one because if its the last one, we want to leave space to change the line which is one pc quanta
-                try dbg_out.dbg_line.append(@as(u8, @intCast(@divExact(d_pc_p9, dbg_out.pc_quanta) + 128)) - dbg_out.pc_quanta);
+                try dbg_out.dbg_line.append(@as(u8, @int_cast(@div_exact(d_pc_p9, dbg_out.pc_quanta) + 128)) - dbg_out.pc_quanta);
                 if (dbg_out.pcop_change_index) |pci|
                     dbg_out.dbg_line.items[pci] += 1;
-                dbg_out.pcop_change_index = @as(u32, @intCast(dbg_out.dbg_line.items.len - 1));
+                dbg_out.pcop_change_index = @as(u32, @int_cast(dbg_out.dbg_line.items.len - 1));
             } else if (d_pc_p9 == 0) {
                 // we don't need to do anything, because adding the pc quanta does it for us
             } else unreachable;
@@ -410,28 +410,28 @@ fn mir_data_processing(emit: *Emit, inst: Mir.Inst.Index) !void {
         => {
             const rr_op = emit.mir.instructions.items(.data)[inst].rr_op;
             switch (tag) {
-                .add => try emit.writeInstruction(Instruction.add(cond, rr_op.rd, rr_op.rn, rr_op.op)),
-                .adds => try emit.writeInstruction(Instruction.adds(cond, rr_op.rd, rr_op.rn, rr_op.op)),
-                .@"and" => try emit.writeInstruction(Instruction.@"and"(cond, rr_op.rd, rr_op.rn, rr_op.op)),
-                .eor => try emit.writeInstruction(Instruction.eor(cond, rr_op.rd, rr_op.rn, rr_op.op)),
-                .orr => try emit.writeInstruction(Instruction.orr(cond, rr_op.rd, rr_op.rn, rr_op.op)),
-                .rsb => try emit.writeInstruction(Instruction.rsb(cond, rr_op.rd, rr_op.rn, rr_op.op)),
-                .sub => try emit.writeInstruction(Instruction.sub(cond, rr_op.rd, rr_op.rn, rr_op.op)),
-                .subs => try emit.writeInstruction(Instruction.subs(cond, rr_op.rd, rr_op.rn, rr_op.op)),
+                .add => try emit.write_instruction(Instruction.add(cond, rr_op.rd, rr_op.rn, rr_op.op)),
+                .adds => try emit.write_instruction(Instruction.adds(cond, rr_op.rd, rr_op.rn, rr_op.op)),
+                .@"and" => try emit.write_instruction(Instruction.@"and"(cond, rr_op.rd, rr_op.rn, rr_op.op)),
+                .eor => try emit.write_instruction(Instruction.eor(cond, rr_op.rd, rr_op.rn, rr_op.op)),
+                .orr => try emit.write_instruction(Instruction.orr(cond, rr_op.rd, rr_op.rn, rr_op.op)),
+                .rsb => try emit.write_instruction(Instruction.rsb(cond, rr_op.rd, rr_op.rn, rr_op.op)),
+                .sub => try emit.write_instruction(Instruction.sub(cond, rr_op.rd, rr_op.rn, rr_op.op)),
+                .subs => try emit.write_instruction(Instruction.subs(cond, rr_op.rd, rr_op.rn, rr_op.op)),
                 else => unreachable,
             }
         },
         .cmp => {
             const r_op_cmp = emit.mir.instructions.items(.data)[inst].r_op_cmp;
-            try emit.writeInstruction(Instruction.cmp(cond, r_op_cmp.rn, r_op_cmp.op));
+            try emit.write_instruction(Instruction.cmp(cond, r_op_cmp.rn, r_op_cmp.op));
         },
         .mov,
         .mvn,
         => {
             const r_op_mov = emit.mir.instructions.items(.data)[inst].r_op_mov;
             switch (tag) {
-                .mov => try emit.writeInstruction(Instruction.mov(cond, r_op_mov.rd, r_op_mov.op)),
-                .mvn => try emit.writeInstruction(Instruction.mvn(cond, r_op_mov.rd, r_op_mov.op)),
+                .mov => try emit.write_instruction(Instruction.mov(cond, r_op_mov.rd, r_op_mov.op)),
+                .mvn => try emit.write_instruction(Instruction.mvn(cond, r_op_mov.rd, r_op_mov.op)),
                 else => unreachable,
             }
         },
@@ -448,23 +448,23 @@ fn mir_sub_stack_pointer(emit: *Emit, inst: Mir.Inst.Index) !void {
         .sub_sp_scratch_r4 => {
             if (imm32 == 0) return;
 
-            const operand = Instruction.Operand.fromU32(imm32) orelse blk: {
+            const operand = Instruction.Operand.from_u32(imm32) orelse blk: {
                 const scratch: Register = .r4;
 
-                if (Target.arm.featureSetHas(emit.target.cpu.features, .has_v7)) {
-                    try emit.writeInstruction(Instruction.movw(cond, scratch, @as(u16, @truncate(imm32))));
-                    try emit.writeInstruction(Instruction.movt(cond, scratch, @as(u16, @truncate(imm32 >> 16))));
+                if (Target.arm.feature_set_has(emit.target.cpu.features, .has_v7)) {
+                    try emit.write_instruction(Instruction.movw(cond, scratch, @as(u16, @truncate(imm32))));
+                    try emit.write_instruction(Instruction.movt(cond, scratch, @as(u16, @truncate(imm32 >> 16))));
                 } else {
-                    try emit.writeInstruction(Instruction.mov(cond, scratch, Instruction.Operand.imm(@as(u8, @truncate(imm32)), 0)));
-                    try emit.writeInstruction(Instruction.orr(cond, scratch, scratch, Instruction.Operand.imm(@as(u8, @truncate(imm32 >> 8)), 12)));
-                    try emit.writeInstruction(Instruction.orr(cond, scratch, scratch, Instruction.Operand.imm(@as(u8, @truncate(imm32 >> 16)), 8)));
-                    try emit.writeInstruction(Instruction.orr(cond, scratch, scratch, Instruction.Operand.imm(@as(u8, @truncate(imm32 >> 24)), 4)));
+                    try emit.write_instruction(Instruction.mov(cond, scratch, Instruction.Operand.imm(@as(u8, @truncate(imm32)), 0)));
+                    try emit.write_instruction(Instruction.orr(cond, scratch, scratch, Instruction.Operand.imm(@as(u8, @truncate(imm32 >> 8)), 12)));
+                    try emit.write_instruction(Instruction.orr(cond, scratch, scratch, Instruction.Operand.imm(@as(u8, @truncate(imm32 >> 16)), 8)));
+                    try emit.write_instruction(Instruction.orr(cond, scratch, scratch, Instruction.Operand.imm(@as(u8, @truncate(imm32 >> 24)), 4)));
                 }
 
                 break :blk Instruction.Operand.reg(scratch, Instruction.Operand.Shift.none);
             };
 
-            try emit.writeInstruction(Instruction.sub(cond, .sp, .sp, operand));
+            try emit.write_instruction(Instruction.sub(cond, .sp, .sp, operand));
         },
         else => unreachable,
     }
@@ -476,9 +476,9 @@ fn mir_shift(emit: *Emit, inst: Mir.Inst.Index) !void {
     const rr_shift = emit.mir.instructions.items(.data)[inst].rr_shift;
 
     switch (tag) {
-        .asr => try emit.writeInstruction(Instruction.asr(cond, rr_shift.rd, rr_shift.rm, rr_shift.shift_amount)),
-        .lsl => try emit.writeInstruction(Instruction.lsl(cond, rr_shift.rd, rr_shift.rm, rr_shift.shift_amount)),
-        .lsr => try emit.writeInstruction(Instruction.lsr(cond, rr_shift.rd, rr_shift.rm, rr_shift.shift_amount)),
+        .asr => try emit.write_instruction(Instruction.asr(cond, rr_shift.rd, rr_shift.rm, rr_shift.shift_amount)),
+        .lsl => try emit.write_instruction(Instruction.lsl(cond, rr_shift.rd, rr_shift.rm, rr_shift.shift_amount)),
+        .lsr => try emit.write_instruction(Instruction.lsr(cond, rr_shift.rd, rr_shift.rm, rr_shift.shift_amount)),
         else => unreachable,
     }
 }
@@ -488,19 +488,19 @@ fn mir_branch(emit: *Emit, inst: Mir.Inst.Index) !void {
     const cond = emit.mir.instructions.items(.cond)[inst];
     const target_inst = emit.mir.instructions.items(.data)[inst].inst;
 
-    const offset = @as(i64, @intCast(emit.code_offset_mapping.get(target_inst).?)) - @as(i64, @intCast(emit.code.items.len + 8));
+    const offset = @as(i64, @int_cast(emit.code_offset_mapping.get(target_inst).?)) - @as(i64, @int_cast(emit.code.items.len + 8));
     const branch_type = emit.branch_types.get(inst).?;
 
     switch (branch_type) {
         .b => switch (tag) {
-            .b => try emit.writeInstruction(Instruction.b(cond, @as(i26, @intCast(offset)))),
+            .b => try emit.write_instruction(Instruction.b(cond, @as(i26, @int_cast(offset)))),
             else => unreachable,
         },
     }
 }
 
 fn mir_undefined_instruction(emit: *Emit) !void {
-    try emit.writeInstruction(Instruction.undefinedInstruction());
+    try emit.write_instruction(Instruction.undefined_instruction());
 }
 
 fn mir_exception_generation(emit: *Emit, inst: Mir.Inst.Index) !void {
@@ -508,7 +508,7 @@ fn mir_exception_generation(emit: *Emit, inst: Mir.Inst.Index) !void {
     const imm16 = emit.mir.instructions.items(.data)[inst].imm16;
 
     switch (tag) {
-        .bkpt => try emit.writeInstruction(Instruction.bkpt(imm16)),
+        .bkpt => try emit.write_instruction(Instruction.bkpt(imm16)),
         else => unreachable,
     }
 }
@@ -519,8 +519,8 @@ fn mir_branch_exchange(emit: *Emit, inst: Mir.Inst.Index) !void {
     const reg = emit.mir.instructions.items(.data)[inst].reg;
 
     switch (tag) {
-        .blx => try emit.writeInstruction(Instruction.blx(cond, reg)),
-        .bx => try emit.writeInstruction(Instruction.bx(cond, reg)),
+        .blx => try emit.write_instruction(Instruction.blx(cond, reg)),
+        .bx => try emit.write_instruction(Instruction.bx(cond, reg)),
         else => unreachable,
     }
 }
@@ -530,7 +530,7 @@ fn mir_dbg_line(emit: *Emit, inst: Mir.Inst.Index) !void {
     const dbg_line_column = emit.mir.instructions.items(.data)[inst].dbg_line_column;
 
     switch (tag) {
-        .dbg_line => try emit.dbgAdvancePCAndLine(dbg_line_column.line, dbg_line_column.column),
+        .dbg_line => try emit.dbg_advance_pcand_line(dbg_line_column.line, dbg_line_column.column),
         else => unreachable,
     }
 }
@@ -538,8 +538,8 @@ fn mir_dbg_line(emit: *Emit, inst: Mir.Inst.Index) !void {
 fn mir_debug_prologue_end(emit: *Emit) !void {
     switch (emit.debug_output) {
         .dwarf => |dw| {
-            try dw.setPrologueEnd();
-            try emit.dbgAdvancePCAndLine(emit.prev_di_line, emit.prev_di_column);
+            try dw.set_prologue_end();
+            try emit.dbg_advance_pcand_line(emit.prev_di_line, emit.prev_di_column);
         },
         .plan9 => {},
         .none => {},
@@ -549,8 +549,8 @@ fn mir_debug_prologue_end(emit: *Emit) !void {
 fn mir_debug_epilogue_begin(emit: *Emit) !void {
     switch (emit.debug_output) {
         .dwarf => |dw| {
-            try dw.setEpilogueBegin();
-            try emit.dbgAdvancePCAndLine(emit.prev_di_line, emit.prev_di_column);
+            try dw.set_epilogue_begin();
+            try emit.dbg_advance_pcand_line(emit.prev_di_line, emit.prev_di_column);
         },
         .plan9 => {},
         .none => {},
@@ -563,10 +563,10 @@ fn mir_load_store(emit: *Emit, inst: Mir.Inst.Index) !void {
     const rr_offset = emit.mir.instructions.items(.data)[inst].rr_offset;
 
     switch (tag) {
-        .ldr => try emit.writeInstruction(Instruction.ldr(cond, rr_offset.rt, rr_offset.rn, rr_offset.offset)),
-        .ldrb => try emit.writeInstruction(Instruction.ldrb(cond, rr_offset.rt, rr_offset.rn, rr_offset.offset)),
-        .str => try emit.writeInstruction(Instruction.str(cond, rr_offset.rt, rr_offset.rn, rr_offset.offset)),
-        .strb => try emit.writeInstruction(Instruction.strb(cond, rr_offset.rt, rr_offset.rn, rr_offset.offset)),
+        .ldr => try emit.write_instruction(Instruction.ldr(cond, rr_offset.rt, rr_offset.rn, rr_offset.offset)),
+        .ldrb => try emit.write_instruction(Instruction.ldrb(cond, rr_offset.rt, rr_offset.rn, rr_offset.offset)),
+        .str => try emit.write_instruction(Instruction.str(cond, rr_offset.rt, rr_offset.rn, rr_offset.offset)),
+        .strb => try emit.write_instruction(Instruction.strb(cond, rr_offset.rt, rr_offset.rn, rr_offset.offset)),
         else => unreachable,
     }
 }
@@ -580,21 +580,21 @@ fn mir_load_stack_argument(emit: *Emit, inst: Mir.Inst.Index) !void {
     const raw_offset = emit.stack_size + emit.saved_regs_stack_space + r_stack_offset.stack_offset;
     switch (tag) {
         .ldr_ptr_stack_argument => {
-            const operand = Instruction.Operand.fromU32(raw_offset) orelse
+            const operand = Instruction.Operand.from_u32(raw_offset) orelse
                 return emit.fail("TODO mirLoadStack larger offsets", .{});
 
-            try emit.writeInstruction(Instruction.add(cond, rt, .sp, operand));
+            try emit.write_instruction(Instruction.add(cond, rt, .sp, operand));
         },
         .ldr_stack_argument,
         .ldrb_stack_argument,
         => {
-            const offset = if (raw_offset <= math.maxInt(u12)) blk: {
-                break :blk Instruction.Offset.imm(@as(u12, @intCast(raw_offset)));
+            const offset = if (raw_offset <= math.max_int(u12)) blk: {
+                break :blk Instruction.Offset.imm(@as(u12, @int_cast(raw_offset)));
             } else return emit.fail("TODO mirLoadStack larger offsets", .{});
 
             switch (tag) {
-                .ldr_stack_argument => try emit.writeInstruction(Instruction.ldr(cond, rt, .sp, .{ .offset = offset })),
-                .ldrb_stack_argument => try emit.writeInstruction(Instruction.ldrb(cond, rt, .sp, .{ .offset = offset })),
+                .ldr_stack_argument => try emit.write_instruction(Instruction.ldr(cond, rt, .sp, .{ .offset = offset })),
+                .ldrb_stack_argument => try emit.write_instruction(Instruction.ldrb(cond, rt, .sp, .{ .offset = offset })),
                 else => unreachable,
             }
         },
@@ -602,14 +602,14 @@ fn mir_load_stack_argument(emit: *Emit, inst: Mir.Inst.Index) !void {
         .ldrsb_stack_argument,
         .ldrsh_stack_argument,
         => {
-            const offset = if (raw_offset <= math.maxInt(u8)) blk: {
-                break :blk Instruction.ExtraLoadStoreOffset.imm(@as(u8, @intCast(raw_offset)));
+            const offset = if (raw_offset <= math.max_int(u8)) blk: {
+                break :blk Instruction.ExtraLoadStoreOffset.imm(@as(u8, @int_cast(raw_offset)));
             } else return emit.fail("TODO mirLoadStack larger offsets", .{});
 
             switch (tag) {
-                .ldrh_stack_argument => try emit.writeInstruction(Instruction.ldrh(cond, rt, .sp, .{ .offset = offset })),
-                .ldrsb_stack_argument => try emit.writeInstruction(Instruction.ldrsb(cond, rt, .sp, .{ .offset = offset })),
-                .ldrsh_stack_argument => try emit.writeInstruction(Instruction.ldrsh(cond, rt, .sp, .{ .offset = offset })),
+                .ldrh_stack_argument => try emit.write_instruction(Instruction.ldrh(cond, rt, .sp, .{ .offset = offset })),
+                .ldrsb_stack_argument => try emit.write_instruction(Instruction.ldrsb(cond, rt, .sp, .{ .offset = offset })),
+                .ldrsh_stack_argument => try emit.write_instruction(Instruction.ldrsh(cond, rt, .sp, .{ .offset = offset })),
                 else => unreachable,
             }
         },
@@ -623,10 +623,10 @@ fn mir_load_store_extra(emit: *Emit, inst: Mir.Inst.Index) !void {
     const rr_extra_offset = emit.mir.instructions.items(.data)[inst].rr_extra_offset;
 
     switch (tag) {
-        .ldrh => try emit.writeInstruction(Instruction.ldrh(cond, rr_extra_offset.rt, rr_extra_offset.rn, rr_extra_offset.offset)),
-        .ldrsb => try emit.writeInstruction(Instruction.ldrsb(cond, rr_extra_offset.rt, rr_extra_offset.rn, rr_extra_offset.offset)),
-        .ldrsh => try emit.writeInstruction(Instruction.ldrsh(cond, rr_extra_offset.rt, rr_extra_offset.rn, rr_extra_offset.offset)),
-        .strh => try emit.writeInstruction(Instruction.strh(cond, rr_extra_offset.rt, rr_extra_offset.rn, rr_extra_offset.offset)),
+        .ldrh => try emit.write_instruction(Instruction.ldrh(cond, rr_extra_offset.rt, rr_extra_offset.rn, rr_extra_offset.offset)),
+        .ldrsb => try emit.write_instruction(Instruction.ldrsb(cond, rr_extra_offset.rt, rr_extra_offset.rn, rr_extra_offset.offset)),
+        .ldrsh => try emit.write_instruction(Instruction.ldrsh(cond, rr_extra_offset.rt, rr_extra_offset.rn, rr_extra_offset.offset)),
+        .strh => try emit.write_instruction(Instruction.strh(cond, rr_extra_offset.rt, rr_extra_offset.rn, rr_extra_offset.offset)),
         else => unreachable,
     }
 }
@@ -637,8 +637,8 @@ fn mir_special_move(emit: *Emit, inst: Mir.Inst.Index) !void {
     const r_imm16 = emit.mir.instructions.items(.data)[inst].r_imm16;
 
     switch (tag) {
-        .movw => try emit.writeInstruction(Instruction.movw(cond, r_imm16.rd, r_imm16.imm16)),
-        .movt => try emit.writeInstruction(Instruction.movt(cond, r_imm16.rd, r_imm16.imm16)),
+        .movw => try emit.write_instruction(Instruction.movw(cond, r_imm16.rd, r_imm16.imm16)),
+        .movt => try emit.write_instruction(Instruction.movt(cond, r_imm16.rd, r_imm16.imm16)),
         else => unreachable,
     }
 }
@@ -649,8 +649,8 @@ fn mir_multiply(emit: *Emit, inst: Mir.Inst.Index) !void {
     const rrr = emit.mir.instructions.items(.data)[inst].rrr;
 
     switch (tag) {
-        .mul => try emit.writeInstruction(Instruction.mul(cond, rrr.rd, rrr.rn, rrr.rm)),
-        .smulbb => try emit.writeInstruction(Instruction.smulbb(cond, rrr.rd, rrr.rn, rrr.rm)),
+        .mul => try emit.write_instruction(Instruction.mul(cond, rrr.rd, rrr.rn, rrr.rm)),
+        .smulbb => try emit.write_instruction(Instruction.smulbb(cond, rrr.rd, rrr.rn, rrr.rm)),
         else => unreachable,
     }
 }
@@ -661,14 +661,14 @@ fn mir_multiply_long(emit: *Emit, inst: Mir.Inst.Index) !void {
     const rrrr = emit.mir.instructions.items(.data)[inst].rrrr;
 
     switch (tag) {
-        .smull => try emit.writeInstruction(Instruction.smull(cond, rrrr.rdlo, rrrr.rdhi, rrrr.rn, rrrr.rm)),
-        .umull => try emit.writeInstruction(Instruction.umull(cond, rrrr.rdlo, rrrr.rdhi, rrrr.rn, rrrr.rm)),
+        .smull => try emit.write_instruction(Instruction.smull(cond, rrrr.rdlo, rrrr.rdhi, rrrr.rn, rrrr.rm)),
+        .umull => try emit.write_instruction(Instruction.umull(cond, rrrr.rdlo, rrrr.rdhi, rrrr.rn, rrrr.rm)),
         else => unreachable,
     }
 }
 
 fn mir_nop(emit: *Emit) !void {
-    try emit.writeInstruction(Instruction.nop());
+    try emit.write_instruction(Instruction.nop());
 }
 
 fn mir_block_data_transfer(emit: *Emit, inst: Mir.Inst.Index) !void {
@@ -677,8 +677,8 @@ fn mir_block_data_transfer(emit: *Emit, inst: Mir.Inst.Index) !void {
     const register_list = emit.mir.instructions.items(.data)[inst].register_list;
 
     switch (tag) {
-        .pop => try emit.writeInstruction(Instruction.ldm(cond, .sp, true, register_list)),
-        .push => try emit.writeInstruction(Instruction.stmdb(cond, .sp, true, register_list)),
+        .pop => try emit.write_instruction(Instruction.ldm(cond, .sp, true, register_list)),
+        .push => try emit.write_instruction(Instruction.stmdb(cond, .sp, true, register_list)),
         else => unreachable,
     }
 }
@@ -689,7 +689,7 @@ fn mir_supervisor_call(emit: *Emit, inst: Mir.Inst.Index) !void {
     const imm24 = emit.mir.instructions.items(.data)[inst].imm24;
 
     switch (tag) {
-        .svc => try emit.writeInstruction(Instruction.svc(cond, imm24)),
+        .svc => try emit.write_instruction(Instruction.svc(cond, imm24)),
         else => unreachable,
     }
 }
@@ -704,8 +704,8 @@ fn mir_bit_field_extract(emit: *Emit, inst: Mir.Inst.Index) !void {
     const width = rr_lsb_width.width;
 
     switch (tag) {
-        .sbfx => try emit.writeInstruction(Instruction.sbfx(cond, rd, rn, lsb, width)),
-        .ubfx => try emit.writeInstruction(Instruction.ubfx(cond, rd, rn, lsb, width)),
+        .sbfx => try emit.write_instruction(Instruction.sbfx(cond, rd, rn, lsb, width)),
+        .ubfx => try emit.write_instruction(Instruction.ubfx(cond, rd, rn, lsb, width)),
         else => unreachable,
     }
 }

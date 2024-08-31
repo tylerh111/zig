@@ -19,6 +19,6 @@ test log {
     const a = Complex(f32).init(5, 3);
     const c = log(a);
 
-    try testing.expect(math.approxEqAbs(f32, c.re, 1.763180, epsilon));
-    try testing.expect(math.approxEqAbs(f32, c.im, 0.540419, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.re, 1.763180, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.im, 0.540419, epsilon));
 }

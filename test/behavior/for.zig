@@ -1,7 +1,7 @@
 const builtin = @import("builtin");
 const std = @import("std");
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 const mem = std.mem;
 
 test "continue in for loop" {
@@ -21,8 +21,8 @@ test "continue in for loop" {
 }
 
 test "break from outer for loop" {
-    try testBreakOuter();
-    try comptime testBreakOuter();
+    try test_break_outer();
+    try comptime test_break_outer();
 }
 
 fn test_break_outer() !void {
@@ -38,8 +38,8 @@ fn test_break_outer() !void {
 }
 
 test "continue outer for loop" {
-    try testContinueOuter();
-    try comptime testContinueOuter();
+    try test_continue_outer();
+    try comptime test_continue_outer();
 }
 
 fn test_continue_outer() !void {
@@ -83,7 +83,7 @@ test "basic for loop" {
     }
     for (array, 0..) |item, index| {
         _ = item;
-        buffer[buf_index] = @as(u8, @intCast(index));
+        buffer[buf_index] = @as(u8, @int_cast(index));
         buf_index += 1;
     }
     const array_ptr = &array;
@@ -93,7 +93,7 @@ test "basic for loop" {
     }
     for (array_ptr, 0..) |item, index| {
         _ = item;
-        buffer[buf_index] = @as(u8, @intCast(index));
+        buffer[buf_index] = @as(u8, @int_cast(index));
         buf_index += 1;
     }
     const unknown_size: []const u8 = &array;
@@ -102,7 +102,7 @@ test "basic for loop" {
         buf_index += 1;
     }
     for (unknown_size, 0..) |_, index| {
-        buffer[buf_index] = @as(u8, @intCast(index));
+        buffer[buf_index] = @as(u8, @int_cast(index));
         buf_index += 1;
     }
 
@@ -127,8 +127,8 @@ test "for with null and T peer types and inferred result location type" {
             }
         }
     };
-    try S.doTheTest(&[_]u8{ 1, 2 });
-    try comptime S.doTheTest(&[_]u8{ 1, 2 });
+    try S.do_the_test(&[_]u8{ 1, 2 });
+    try comptime S.do_the_test(&[_]u8{ 1, 2 });
 }
 
 test "2 break statements and an else" {
@@ -161,7 +161,7 @@ test "for loop with pointer elem var" {
     const source = "abcdefg";
     var target: [source.len]u8 = undefined;
     @memcpy(target[0..], source);
-    mangleString(target[0..]);
+    mangle_string(target[0..]);
     try expect(mem.eql(u8, &target, "bcdefgh"));
 
     for (source, 0..) |*c, i| {
@@ -195,8 +195,8 @@ test "for copies its payload" {
             }
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "for on slice with allowzero ptr" {
@@ -207,13 +207,13 @@ test "for on slice with allowzero ptr" {
 
     const S = struct {
         fn do_the_test(slice: []const u8) !void {
-            const ptr = @as([*]allowzero const u8, @ptrCast(slice.ptr))[0..slice.len];
+            const ptr = @as([*]allowzero const u8, @ptr_cast(slice.ptr))[0..slice.len];
             for (ptr, 0..) |x, i| try expect(x == i + 1);
             for (ptr, 0..) |*x, i| try expect(x.* == i + 1);
         }
     };
-    try S.doTheTest(&[_]u8{ 1, 2, 3, 4 });
-    try comptime S.doTheTest(&[_]u8{ 1, 2, 3, 4 });
+    try S.do_the_test(&[_]u8{ 1, 2, 3, 4 });
+    try comptime S.do_the_test(&[_]u8{ 1, 2, 3, 4 });
 }
 
 test "else continue outer for" {
@@ -393,7 +393,7 @@ test "raw pointer and counter" {
     const ptr: [*]u8 = &buf;
 
     for (ptr, 0..4) |*a, b| {
-        a.* = @as(u8, @intCast('A' + b));
+        a.* = @as(u8, @int_cast('A' + b));
     }
 
     try expect(buf[0] == 'A');
@@ -422,7 +422,7 @@ test "inline for with slice as the comptime-known" {
                 try expect(b == 4);
                 ok += 1;
             } else {
-                @compileError("fail");
+                @compile_error("fail");
             }
         }
     };
@@ -454,7 +454,7 @@ test "inline for with counter as the comptime-known" {
                 try expect(a == 'o');
                 ok += 1;
             } else {
-                @compileError("fail");
+                @compile_error("fail");
             }
         }
     };
@@ -480,7 +480,7 @@ test "inline for on tuple pointer" {
         x.* = i;
     }
 
-    try expectEqual(S{ 0, 1, 2 }, s);
+    try expect_equal(S{ 0, 1, 2 }, s);
 }
 
 test "ref counter that starts at zero" {
@@ -490,12 +490,12 @@ test "ref counter that starts at zero" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     for ([_]usize{ 0, 1, 2 }, 0..) |i, j| {
-        try expectEqual(i, j);
-        try expectEqual((&i).*, (&j).*);
+        try expect_equal(i, j);
+        try expect_equal((&i).*, (&j).*);
     }
     inline for (.{ 0, 1, 2 }, 0..) |i, j| {
-        try expectEqual(i, j);
-        try expectEqual((&i).*, (&j).*);
+        try expect_equal(i, j);
+        try expect_equal((&i).*, (&j).*);
     }
 }
 
@@ -511,7 +511,7 @@ test "inferred alloc ptr of for loop" {
         const opt = for (0..1) |_| {
             if (cond) break cond;
         } else null;
-        try expectEqual(@as(?bool, null), opt);
+        try expect_equal(@as(?bool, null), opt);
     }
     {
         var cond = true;
@@ -519,7 +519,7 @@ test "inferred alloc ptr of for loop" {
         const opt = for (0..1) |_| {
             if (cond) break cond;
         } else null;
-        try expectEqual(@as(?bool, true), opt);
+        try expect_equal(@as(?bool, true), opt);
     }
 }
 

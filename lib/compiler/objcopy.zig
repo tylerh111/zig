@@ -18,8 +18,8 @@ pub fn main() !void {
     var general_purpose_allocator: std.heap.GeneralPurposeAllocator(.{}) = .{};
     const gpa = general_purpose_allocator.allocator();
 
-    const args = try std.process.argsAlloc(arena);
-    return cmdObjCopy(gpa, arena, args[1..]);
+    const args = try std.process.args_alloc(arena);
+    return cmd_obj_copy(gpa, arena, args[1..]);
 }
 
 fn cmd_obj_copy(
@@ -42,7 +42,7 @@ fn cmd_obj_copy(
     var listen = false;
     while (i < args.len) : (i += 1) {
         const arg = args[i];
-        if (!mem.startsWith(u8, arg, "-")) {
+        if (!mem.starts_with(u8, arg, "-")) {
             if (opt_input == null) {
                 opt_input = arg;
             } else if (opt_output == null) {
@@ -51,7 +51,7 @@ fn cmd_obj_copy(
                 fatal("unexpected positional argument: '{s}'", .{arg});
             }
         } else if (mem.eql(u8, arg, "-h") or mem.eql(u8, arg, "--help")) {
-            return std.io.getStdOut().writeAll(usage);
+            return std.io.get_std_out().write_all(usage);
         } else if (mem.eql(u8, arg, "-O") or mem.eql(u8, arg, "--output-target")) {
             i += 1;
             if (i >= args.len) fatal("expected another argument after '{s}'", .{arg});
@@ -59,15 +59,15 @@ fn cmd_obj_copy(
             if (mem.eql(u8, next_arg, "binary")) {
                 opt_out_fmt = .raw;
             } else {
-                opt_out_fmt = std.meta.stringToEnum(std.Target.ObjectFormat, next_arg) orelse
+                opt_out_fmt = std.meta.string_to_enum(std.Target.ObjectFormat, next_arg) orelse
                     fatal("invalid output format: '{s}'", .{next_arg});
             }
-        } else if (mem.startsWith(u8, arg, "--output-target=")) {
+        } else if (mem.starts_with(u8, arg, "--output-target=")) {
             const next_arg = arg["--output-target=".len..];
             if (mem.eql(u8, next_arg, "binary")) {
                 opt_out_fmt = .raw;
             } else {
-                opt_out_fmt = std.meta.stringToEnum(std.Target.ObjectFormat, next_arg) orelse
+                opt_out_fmt = std.meta.string_to_enum(std.Target.ObjectFormat, next_arg) orelse
                     fatal("invalid output format: '{s}'", .{next_arg});
             }
         } else if (mem.eql(u8, arg, "-j") or mem.eql(u8, arg, "--only-section")) {
@@ -76,12 +76,12 @@ fn cmd_obj_copy(
             only_section = args[i];
         } else if (mem.eql(u8, arg, "--listen=-")) {
             listen = true;
-        } else if (mem.startsWith(u8, arg, "--only-section=")) {
+        } else if (mem.starts_with(u8, arg, "--only-section=")) {
             only_section = arg["--only-section=".len..];
         } else if (mem.eql(u8, arg, "--pad-to")) {
             i += 1;
             if (i >= args.len) fatal("expected another argument after '{s}'", .{arg});
-            pad_to = std.fmt.parseInt(u64, args[i], 0) catch |err| {
+            pad_to = std.fmt.parse_int(u64, args[i], 0) catch |err| {
                 fatal("unable to parse: '{s}': {s}", .{ args[i], @errorName(err) });
             };
         } else if (mem.eql(u8, arg, "-g") or mem.eql(u8, arg, "--strip-debug")) {
@@ -92,13 +92,13 @@ fn cmd_obj_copy(
             only_keep_debug = true;
         } else if (mem.eql(u8, arg, "--compress-debug-sections")) {
             compress_debug_sections = true;
-        } else if (mem.startsWith(u8, arg, "--add-gnu-debuglink=")) {
+        } else if (mem.starts_with(u8, arg, "--add-gnu-debuglink=")) {
             opt_add_debuglink = arg["--add-gnu-debuglink=".len..];
         } else if (mem.eql(u8, arg, "--add-gnu-debuglink")) {
             i += 1;
             if (i >= args.len) fatal("expected another argument after '{s}'", .{arg});
             opt_add_debuglink = args[i];
-        } else if (mem.startsWith(u8, arg, "--extract-to=")) {
+        } else if (mem.starts_with(u8, arg, "--extract-to=")) {
             opt_extract = arg["--extract-to=".len..];
         } else if (mem.eql(u8, arg, "--extract-to")) {
             i += 1;
@@ -111,7 +111,7 @@ fn cmd_obj_copy(
     const input = opt_input orelse fatal("expected input parameter", .{});
     const output = opt_output orelse fatal("expected output parameter", .{});
 
-    var in_file = fs.cwd().openFile(input, .{}) catch |err|
+    var in_file = fs.cwd().open_file(input, .{}) catch |err|
         fatal("unable to open '{s}': {s}", .{ input, @errorName(err) });
     defer in_file.close();
 
@@ -123,11 +123,11 @@ fn cmd_obj_copy(
     const in_ofmt = .elf;
 
     const out_fmt: std.Target.ObjectFormat = opt_out_fmt orelse ofmt: {
-        if (mem.endsWith(u8, output, ".hex") or std.mem.endsWith(u8, output, ".ihex")) {
+        if (mem.ends_with(u8, output, ".hex") or std.mem.ends_with(u8, output, ".ihex")) {
             break :ofmt .hex;
-        } else if (mem.endsWith(u8, output, ".bin")) {
+        } else if (mem.ends_with(u8, output, ".bin")) {
             break :ofmt .raw;
-        } else if (mem.endsWith(u8, output, ".elf")) {
+        } else if (mem.ends_with(u8, output, ".elf")) {
             break :ofmt .elf;
         } else {
             break :ofmt in_ofmt;
@@ -142,7 +142,7 @@ fn cmd_obj_copy(
         else |_|
             break :mode fs.File.default_mode;
     };
-    var out_file = try fs.cwd().createFile(output, .{ .mode = mode });
+    var out_file = try fs.cwd().create_file(output, .{ .mode = mode });
     defer out_file.close();
 
     switch (out_fmt) {
@@ -152,7 +152,7 @@ fn cmd_obj_copy(
             if (opt_extract != null)
                 fatal("zig objcopy: ELF to RAW or HEX copying does not support --extract-to", .{});
 
-            try emitElf(arena, in_file, out_file, elf_hdr, .{
+            try emit_elf(arena, in_file, out_file, elf_hdr, .{
                 .ofmt = out_fmt,
                 .only_section = only_section,
                 .pad_to = pad_to,
@@ -168,7 +168,7 @@ fn cmd_obj_copy(
             if (pad_to) |_|
                 fatal("zig objcopy: ELF to ELF copying does not support --pad-to", .{});
 
-            try stripElf(arena, in_file, out_file, elf_hdr, .{
+            try strip_elf(arena, in_file, out_file, elf_hdr, .{
                 .strip_debug = strip_debug,
                 .strip_all = strip_all,
                 .only_keep_debug = only_keep_debug,
@@ -176,26 +176,26 @@ fn cmd_obj_copy(
                 .extract_to = opt_extract,
                 .compress_debug = compress_debug_sections,
             });
-            return std.process.cleanExit();
+            return std.process.clean_exit();
         },
-        else => fatal("unsupported output object format: {s}", .{@tagName(out_fmt)}),
+        else => fatal("unsupported output object format: {s}", .{@tag_name(out_fmt)}),
     }
 
     if (listen) {
         var server = try Server.init(.{
             .gpa = gpa,
-            .in = std.io.getStdIn(),
-            .out = std.io.getStdOut(),
+            .in = std.io.get_std_in(),
+            .out = std.io.get_std_out(),
             .zig_version = builtin.zig_version_string,
         });
         defer server.deinit();
 
         var seen_update = false;
         while (true) {
-            const hdr = try server.receiveMessage();
+            const hdr = try server.receive_message();
             switch (hdr.tag) {
                 .exit => {
-                    return std.process.cleanExit();
+                    return std.process.clean_exit();
                 },
                 .update => {
                     if (seen_update) {
@@ -204,18 +204,18 @@ fn cmd_obj_copy(
                     }
                     seen_update = true;
 
-                    try server.serveEmitBinPath(output, .{
+                    try server.serve_emit_bin_path(output, .{
                         .flags = .{ .cache_hit = false },
                     });
                 },
                 else => {
-                    std.debug.print("unsupported message: {s}", .{@tagName(hdr.tag)});
+                    std.debug.print("unsupported message: {s}", .{@tag_name(hdr.tag)});
                     std.process.exit(1);
                 },
             }
         }
     }
-    return std.process.cleanExit();
+    return std.process.clean_exit();
 }
 
 const usage =
@@ -269,8 +269,8 @@ fn emit_elf(
                         continue;
                     }
 
-                    try writeBinaryElfSection(in_file, out_file, section);
-                    try padFile(out_file, options.pad_to);
+                    try write_binary_elf_section(in_file, out_file, section);
+                    try pad_file(out_file, options.pad_to);
                     return;
                 }
             },
@@ -283,26 +283,26 @@ fn emit_elf(
     switch (options.ofmt) {
         .raw => {
             for (binary_elf_output.sections.items) |section| {
-                try out_file.seekTo(section.binaryOffset);
-                try writeBinaryElfSection(in_file, out_file, section);
+                try out_file.seek_to(section.binaryOffset);
+                try write_binary_elf_section(in_file, out_file, section);
             }
-            try padFile(out_file, options.pad_to);
+            try pad_file(out_file, options.pad_to);
         },
         .hex => {
             if (binary_elf_output.segments.items.len == 0) return;
-            if (!containsValidAddressRange(binary_elf_output.segments.items)) {
+            if (!contains_valid_address_range(binary_elf_output.segments.items)) {
                 return error.InvalidHexfileAddressRange;
             }
 
             var hex_writer = HexWriter{ .out_file = out_file };
             for (binary_elf_output.segments.items) |segment| {
-                try hex_writer.writeSegment(segment, in_file);
+                try hex_writer.write_segment(segment, in_file);
             }
             if (options.pad_to) |_| {
                 // Padding to a size in hex files isn't applicable
                 return error.InvalidArgument;
             }
-            try hex_writer.writeEOF();
+            try hex_writer.write_eof();
         },
         else => unreachable,
     }
@@ -362,10 +362,10 @@ const BinaryElfOutput = struct {
 
             const shstrtab_shdr = (try section_headers.next()).?;
 
-            const buffer = try allocator.alloc(u8, @intCast(shstrtab_shdr.sh_size));
+            const buffer = try allocator.alloc(u8, @int_cast(shstrtab_shdr.sh_size));
             errdefer allocator.free(buffer);
 
-            const num_read = try elf_file.preadAll(buffer, shstrtab_shdr.sh_offset);
+            const num_read = try elf_file.pread_all(buffer, shstrtab_shdr.sh_offset);
             if (num_read != buffer.len) return error.EndOfStream;
 
             break :blk buffer;
@@ -375,16 +375,16 @@ const BinaryElfOutput = struct {
 
         var section_headers = elf_hdr.section_header_iterator(&elf_file);
         while (try section_headers.next()) |section| {
-            if (sectionValidForOutput(section)) {
+            if (section_valid_for_output(section)) {
                 const newSection = try allocator.create(BinaryElfSection);
 
                 newSection.binaryOffset = 0;
                 newSection.elfOffset = section.sh_offset;
-                newSection.fileSize = @intCast(section.sh_size);
+                newSection.fileSize = @int_cast(section.sh_size);
                 newSection.segment = null;
 
                 newSection.name = if (self.shstrtab) |shstrtab|
-                    std.mem.span(@as([*:0]const u8, @ptrCast(&shstrtab[section.sh_name])))
+                    std.mem.span(@as([*:0]const u8, @ptr_cast(&shstrtab[section.sh_name])))
                 else
                     null;
 
@@ -399,13 +399,13 @@ const BinaryElfOutput = struct {
 
                 newSegment.physicalAddress = if (phdr.p_paddr != 0) phdr.p_paddr else phdr.p_vaddr;
                 newSegment.virtualAddress = phdr.p_vaddr;
-                newSegment.fileSize = @intCast(phdr.p_filesz);
+                newSegment.fileSize = @int_cast(phdr.p_filesz);
                 newSegment.elfOffset = phdr.p_offset;
                 newSegment.binaryOffset = 0;
                 newSegment.firstSection = null;
 
                 for (self.sections.items) |section| {
-                    if (sectionWithinSegment(section, phdr)) {
+                    if (section_within_segment(section, phdr)) {
                         if (section.segment) |sectionSegment| {
                             if (sectionSegment.elfOffset > newSegment.elfOffset) {
                                 section.segment = newSegment;
@@ -424,7 +424,7 @@ const BinaryElfOutput = struct {
             }
         }
 
-        mem.sort(*BinaryElfSegment, self.segments.items, {}, segmentSortCompare);
+        mem.sort(*BinaryElfSegment, self.segments.items, {}, segment_sort_compare);
 
         for (self.segments.items, 0..) |firstSegment, i| {
             if (firstSegment.firstSection) |firstSection| {
@@ -449,7 +449,7 @@ const BinaryElfOutput = struct {
             }
         }
 
-        mem.sort(*BinaryElfSection, self.sections.items, {}, sectionSortCompare);
+        mem.sort(*BinaryElfSection, self.sections.items, {}, section_sort_compare);
 
         return self;
     }
@@ -481,7 +481,7 @@ const BinaryElfOutput = struct {
 };
 
 fn write_binary_elf_section(elf_file: File, out_file: File, section: *BinaryElfSection) !void {
-    try out_file.writeFileAll(elf_file, .{
+    try out_file.write_file_all(elf_file, .{
         .in_offset = section.elfOffset,
         .in_len = section.fileSize,
     });
@@ -525,23 +525,23 @@ const HexWriter = struct {
 
         fn Data(address: u32, data: []const u8) Record {
             return Record{
-                .address = @intCast(address % 0x10000),
+                .address = @int_cast(address % 0x10000),
                 .payload = .{ .Data = data },
             };
         }
 
         fn Address(address: u32) Record {
             assert(address > 0xFFFF);
-            const segment: u16 = @intCast(address / 0x10000);
+            const segment: u16 = @int_cast(address / 0x10000);
             if (address > 0xFFFFF) {
                 return Record{
                     .address = 0,
-                    .payload = .{ .ExtendedLinearAddress = addressParts(segment) },
+                    .payload = .{ .ExtendedLinearAddress = address_parts(segment) },
                 };
             } else {
                 return Record{
                     .address = 0,
-                    .payload = .{ .ExtendedSegmentAddress = addressParts(segment << 12) },
+                    .payload = .{ .ExtendedSegmentAddress = address_parts(segment << 12) },
                 };
             }
         }
@@ -555,13 +555,13 @@ const HexWriter = struct {
         }
 
         fn checksum(self: Record) u8 {
-            const payload_bytes = self.getPayloadBytes();
+            const payload_bytes = self.get_payload_bytes();
 
-            var sum: u8 = @intCast(payload_bytes.len);
-            const parts = addressParts(self.address);
+            var sum: u8 = @int_cast(payload_bytes.len);
+            const parts = address_parts(self.address);
             sum +%= parts[0];
             sum +%= parts[1];
-            sum +%= @intFromEnum(self.payload);
+            sum +%= @int_from_enum(self.payload);
             for (payload_bytes) |byte| {
                 sum +%= byte;
             }
@@ -573,17 +573,17 @@ const HexWriter = struct {
             // colon, (length, address, type, payload, checksum) as hex, CRLF
             const BUFSIZE = 1 + (1 + 2 + 1 + MAX_PAYLOAD_LEN + 1) * 2 + linesep.len;
             var outbuf: [BUFSIZE]u8 = undefined;
-            const payload_bytes = self.getPayloadBytes();
+            const payload_bytes = self.get_payload_bytes();
             assert(payload_bytes.len <= MAX_PAYLOAD_LEN);
 
-            const line = try std.fmt.bufPrint(&outbuf, ":{0X:0>2}{1X:0>4}{2X:0>2}{3s}{4X:0>2}" ++ linesep, .{
-                @as(u8, @intCast(payload_bytes.len)),
+            const line = try std.fmt.buf_print(&outbuf, ":{0X:0>2}{1X:0>4}{2X:0>2}{3s}{4X:0>2}" ++ linesep, .{
+                @as(u8, @int_cast(payload_bytes.len)),
                 self.address,
-                @intFromEnum(self.payload),
-                std.fmt.fmtSliceHexUpper(payload_bytes),
+                @int_from_enum(self.payload),
+                std.fmt.fmt_slice_hex_upper(payload_bytes),
                 self.checksum(),
             });
-            try file.writeAll(line);
+            try file.write_all(line);
         }
     };
 
@@ -591,14 +591,14 @@ const HexWriter = struct {
         var buf: [MAX_PAYLOAD_LEN]u8 = undefined;
         var bytes_read: usize = 0;
         while (bytes_read < segment.fileSize) {
-            const row_address: u32 = @intCast(segment.physicalAddress + bytes_read);
+            const row_address: u32 = @int_cast(segment.physicalAddress + bytes_read);
 
             const remaining = segment.fileSize - bytes_read;
-            const to_read: usize = @intCast(@min(remaining, MAX_PAYLOAD_LEN));
-            const did_read = try elf_file.preadAll(buf[0..to_read], segment.elfOffset + bytes_read);
+            const to_read: usize = @int_cast(@min(remaining, MAX_PAYLOAD_LEN));
+            const did_read = try elf_file.pread_all(buf[0..to_read], segment.elfOffset + bytes_read);
             if (did_read < to_read) return error.UnexpectedEOF;
 
-            try self.writeDataRow(row_address, buf[0..did_read]);
+            try self.write_data_row(row_address, buf[0..did_read]);
 
             bytes_read += did_read;
         }
@@ -610,7 +610,7 @@ const HexWriter = struct {
             try Record.Address(address).write(self.out_file);
         }
         try record.write(self.out_file);
-        self.prev_addr = @intCast(record.address + data.len);
+        self.prev_addr = @int_cast(record.address + data.len);
     }
 
     fn write_eof(self: HexWriter) File.WriteError!void {
@@ -619,7 +619,7 @@ const HexWriter = struct {
 };
 
 fn contains_valid_address_range(segments: []*BinaryElfSegment) bool {
-    const max_address = std.math.maxInt(u32);
+    const max_address = std.math.max_int(u32);
     for (segments) |segment| {
         if (segment.fileSize > max_address or
             segment.physicalAddress > max_address - segment.fileSize) return false;
@@ -629,12 +629,12 @@ fn contains_valid_address_range(segments: []*BinaryElfSegment) bool {
 
 fn pad_file(f: File, opt_size: ?u64) !void {
     const size = opt_size orelse return;
-    try f.setEndPos(size);
+    try f.set_end_pos(size);
 }
 
 test "HexWriter.Record.Address has correct payload and checksum" {
     const record = HexWriter.Record.Address(0x0800_0000);
-    const payload = record.getPayloadBytes();
+    const payload = record.get_payload_bytes();
     const sum = record.checksum();
     try std.testing.expect(sum == 0xF2);
     try std.testing.expect(payload.len == 2);
@@ -642,7 +642,7 @@ test "HexWriter.Record.Address has correct payload and checksum" {
     try std.testing.expect(payload[1] == 0);
 }
 
-test "containsValidAddressRange" {
+test "contains_valid_address_range" {
     var segment = BinaryElfSegment{
         .physicalAddress = 0,
         .virtualAddress = 0,
@@ -654,23 +654,23 @@ test "containsValidAddressRange" {
     var buf: [1]*BinaryElfSegment = .{&segment};
 
     // segment too big
-    segment.fileSize = std.math.maxInt(u32) + 1;
-    try std.testing.expect(!containsValidAddressRange(&buf));
+    segment.fileSize = std.math.max_int(u32) + 1;
+    try std.testing.expect(!contains_valid_address_range(&buf));
 
     // start address too big
-    segment.physicalAddress = std.math.maxInt(u32) + 1;
+    segment.physicalAddress = std.math.max_int(u32) + 1;
     segment.fileSize = 2;
-    try std.testing.expect(!containsValidAddressRange(&buf));
+    try std.testing.expect(!contains_valid_address_range(&buf));
 
     // max address too big
-    segment.physicalAddress = std.math.maxInt(u32) - 1;
+    segment.physicalAddress = std.math.max_int(u32) - 1;
     segment.fileSize = 2;
-    try std.testing.expect(!containsValidAddressRange(&buf));
+    try std.testing.expect(!contains_valid_address_range(&buf));
 
     // is ok
-    segment.physicalAddress = std.math.maxInt(u32) - 1;
+    segment.physicalAddress = std.math.max_int(u32) - 1;
     segment.fileSize = 1;
-    try std.testing.expect(containsValidAddressRange(&buf));
+    try std.testing.expect(contains_valid_address_range(&buf));
 }
 
 // -------------
@@ -729,7 +729,7 @@ fn strip_elf(
             if (filter_complement) |flt| {
                 // write the .dbg file and close it, so it can be read back to compute the debuglink checksum.
                 const path = options.extract_to.?;
-                const dbg_file = std.fs.cwd().createFile(path, .{}) catch |err| {
+                const dbg_file = std.fs.cwd().create_file(path, .{}) catch |err| {
                     fatal("zig objcopy: unable to create '{s}': {s}", .{ path, @errorName(err) });
                 };
                 defer dbg_file.close();
@@ -737,7 +737,7 @@ fn strip_elf(
                 try elf_file.emit(allocator, dbg_file, in_file, .{ .section_filter = flt, .compress_debug = options.compress_debug });
             }
 
-            const debuglink: ?DebugLink = if (debuglink_path) |path| ElfFileHelper.createDebugLink(path) else null;
+            const debuglink: ?DebugLink = if (debuglink_path) |path| ElfFileHelper.create_debug_link(path) else null;
             try elf_file.emit(allocator, out_file, in_file, .{ .section_filter = filter, .debuglink = debuglink, .compress_debug = options.compress_debug });
         },
     }
@@ -783,34 +783,34 @@ fn ElfFile(comptime is_64: bool) type {
 
             var raw_header: Elf_Ehdr = undefined;
             {
-                const bytes_read = try in_file.preadAll(std.mem.asBytes(&raw_header), 0);
-                if (bytes_read < @sizeOf(Elf_Ehdr))
+                const bytes_read = try in_file.pread_all(std.mem.as_bytes(&raw_header), 0);
+                if (bytes_read < @size_of(Elf_Ehdr))
                     return error.TRUNCATED_ELF;
             }
 
             // program header: list of segments
             const program_segments = blk: {
-                if (@sizeOf(Elf_Phdr) != header.phentsize)
+                if (@size_of(Elf_Phdr) != header.phentsize)
                     fatal("zig objcopy: unsuported ELF file, unexpected phentsize ({d})", .{header.phentsize});
 
                 const program_header = try allocator.alloc(Elf_Phdr, header.phnum);
-                const bytes_read = try in_file.preadAll(std.mem.sliceAsBytes(program_header), header.phoff);
-                if (bytes_read < @sizeOf(Elf_Phdr) * header.phnum)
+                const bytes_read = try in_file.pread_all(std.mem.slice_as_bytes(program_header), header.phoff);
+                if (bytes_read < @size_of(Elf_Phdr) * header.phnum)
                     return error.TRUNCATED_ELF;
                 break :blk program_header;
             };
 
             // section header
             const sections = blk: {
-                if (@sizeOf(Elf_Shdr) != header.shentsize)
+                if (@size_of(Elf_Shdr) != header.shentsize)
                     fatal("zig objcopy: unsuported ELF file, unexpected shentsize ({d})", .{header.shentsize});
 
                 const section_header = try allocator.alloc(Section, header.shnum);
 
                 const raw_section_header = try allocator.alloc(Elf_Shdr, header.shnum);
                 defer allocator.free(raw_section_header);
-                const bytes_read = try in_file.preadAll(std.mem.sliceAsBytes(raw_section_header), header.shoff);
-                if (bytes_read < @sizeOf(Elf_Phdr) * header.shnum)
+                const bytes_read = try in_file.pread_all(std.mem.slice_as_bytes(raw_section_header), header.shoff);
+                if (bytes_read < @size_of(Elf_Phdr) * header.shnum)
                     return error.TRUNCATED_ELF;
 
                 for (section_header, raw_section_header) |*section, hdr| {
@@ -831,8 +831,8 @@ fn ElfFile(comptime is_64: bool) type {
                 const need_strings = (idx == header.shstrndx);
 
                 if (need_data or need_strings) {
-                    const buffer = try allocator.alignedAlloc(u8, section_memory_align, @intCast(section.section.sh_size));
-                    const bytes_read = try in_file.preadAll(buffer, section.section.sh_offset);
+                    const buffer = try allocator.aligned_alloc(u8, section_memory_align, @int_cast(section.section.sh_size));
+                    const bytes_read = try in_file.pread_all(buffer, section.section.sh_offset);
                     if (bytes_read != section.section.sh_size) return error.TRUNCATED_ELF;
                     section.payload = buffer;
                 }
@@ -844,11 +844,11 @@ fn ElfFile(comptime is_64: bool) type {
             //    categorize sections usage (used by program segments, debug datadase, common metadata, symbol table)
             for (sections) |*section| {
                 section.segment = for (program_segments) |*seg| {
-                    if (sectionWithinSegment(section.section, seg.*)) break seg;
+                    if (section_within_segment(section.section, seg.*)) break seg;
                 } else null;
 
                 if (section.section.sh_name != 0 and header.shstrndx != elf.SHN_UNDEF)
-                    section.name = std.mem.span(@as([*:0]const u8, @ptrCast(&sections[header.shstrndx].payload.?[section.section.sh_name])));
+                    section.name = std.mem.span(@as([*:0]const u8, @ptr_cast(&sections[header.shstrndx].payload.?[section.section.sh_name])));
 
                 const category_from_program: SectionCategory = if (section.segment != null) .exe else .debug;
                 section.category = switch (section.section.sh_type) {
@@ -877,9 +877,9 @@ fn ElfFile(comptime is_64: bool) type {
 
                 for (sections) |*section| {
                     if (section.section.sh_link != elf.SHN_UNDEF)
-                        dirty |= ElfFileHelper.propagateCategory(&sections[section.section.sh_link].category, section.category);
+                        dirty |= ElfFileHelper.propagate_category(&sections[section.section.sh_link].category, section.category);
                     if ((section.section.sh_flags & elf.SHF_INFO_LINK) != 0 and section.section.sh_info != elf.SHN_UNDEF)
-                        dirty |= ElfFileHelper.propagateCategory(&sections[section.section.sh_info].category, section.category);
+                        dirty |= ElfFileHelper.propagate_category(&sections[section.section.sh_info].category, section.category);
                 }
             }
 
@@ -927,7 +927,7 @@ fn ElfFile(comptime is_64: bool) type {
             const new_shnum = blk: {
                 var next_idx: u16 = 0;
                 for (self.sections, sections_update) |section, *update| {
-                    const action = ElfFileHelper.selectAction(section.category, options.section_filter);
+                    const action = ElfFileHelper.select_action(section.category, options.section_filter);
                     const remap_idx = idx: {
                         if (action == .strip) break :idx elf.SHN_UNDEF;
                         next_idx += 1;
@@ -952,8 +952,8 @@ fn ElfFile(comptime is_64: bool) type {
                 const update = &sections_update[self.raw_elf_header.e_shstrndx];
 
                 const name: []const u8 = ".gnu_debuglink";
-                const new_offset: u32 = @intCast(strtab.payload.?.len);
-                const buf = try allocator.alignedAlloc(u8, section_memory_align, new_offset + name.len + 1);
+                const new_offset: u32 = @int_cast(strtab.payload.?.len);
+                const buf = try allocator.aligned_alloc(u8, section_memory_align, new_offset + name.len + 1);
                 @memcpy(buf[0..new_offset], strtab.payload.?);
                 @memcpy(buf[new_offset..][0..name.len], name);
                 buf[new_offset + name.len] = 0;
@@ -968,7 +968,7 @@ fn ElfFile(comptime is_64: bool) type {
             if (options.compress_debug) {
                 for (self.sections[1..], sections_update[1..]) |section, *update| {
                     if (update.action != .keep) continue;
-                    if (!std.mem.startsWith(u8, section.name, ".debug_")) continue;
+                    if (!std.mem.starts_with(u8, section.name, ".debug_")) continue;
                     if ((section.section.sh_flags & elf.SHF_COMPRESSED) != 0) continue; // already compressed
 
                     const chdr = Elf_Chdr{
@@ -977,12 +977,12 @@ fn ElfFile(comptime is_64: bool) type {
                         .ch_addralign = section.section.sh_addralign,
                     };
 
-                    const compressed_payload = try ElfFileHelper.tryCompressSection(allocator, in_file, section.section.sh_offset, section.section.sh_size, std.mem.asBytes(&chdr));
+                    const compressed_payload = try ElfFileHelper.try_compress_section(allocator, in_file, section.section.sh_offset, section.section.sh_size, std.mem.as_bytes(&chdr));
                     if (compressed_payload) |payload| {
                         update.payload = payload;
                         update.section = section.section;
                         update.section.?.sh_addralign = @alignOf(Elf_Chdr);
-                        update.section.?.sh_size = @intCast(payload.len);
+                        update.section.?.sh_size = @int_cast(payload.len);
                         update.section.?.sh_flags |= elf.SHF_COMPRESSED;
                     }
                 }
@@ -990,7 +990,7 @@ fn ElfFile(comptime is_64: bool) type {
 
             var cmdbuf = std.ArrayList(ElfFileHelper.WriteCmd).init(allocator);
             defer cmdbuf.deinit();
-            try cmdbuf.ensureUnusedCapacity(3 + new_shnum);
+            try cmdbuf.ensure_unused_capacity(3 + new_shnum);
             var eof_offset: Elf_OffSize = 0; // track the end of the data written so far.
 
             // build the updated headers
@@ -998,17 +998,17 @@ fn ElfFile(comptime is_64: bool) type {
             var updated_elf_header = self.raw_elf_header;
             if (updated_elf_header.e_shstrndx != elf.SHN_UNDEF)
                 updated_elf_header.e_shstrndx = sections_update[updated_elf_header.e_shstrndx].remap_idx;
-            cmdbuf.appendAssumeCapacity(.{ .write_data = .{ .data = std.mem.asBytes(&updated_elf_header), .out_offset = 0 } });
-            eof_offset = @sizeOf(Elf_Ehdr);
+            cmdbuf.append_assume_capacity(.{ .write_data = .{ .data = std.mem.as_bytes(&updated_elf_header), .out_offset = 0 } });
+            eof_offset = @size_of(Elf_Ehdr);
 
             // program header as-is.
             // nb: for only-debug files, removing it appears to work, but is invalid by ELF specifcation.
             {
-                assert(updated_elf_header.e_phoff == @sizeOf(Elf_Ehdr));
-                const data = std.mem.sliceAsBytes(self.program_segments);
+                assert(updated_elf_header.e_phoff == @size_of(Elf_Ehdr));
+                const data = std.mem.slice_as_bytes(self.program_segments);
                 assert(data.len == @as(usize, updated_elf_header.e_phentsize) * updated_elf_header.e_phnum);
-                cmdbuf.appendAssumeCapacity(.{ .write_data = .{ .data = data, .out_offset = updated_elf_header.e_phoff } });
-                eof_offset = updated_elf_header.e_phoff + @as(Elf_OffSize, @intCast(data.len));
+                cmdbuf.append_assume_capacity(.{ .write_data = .{ .data = data, .out_offset = updated_elf_header.e_phoff } });
+                eof_offset = updated_elf_header.e_phoff + @as(Elf_OffSize, @int_cast(data.len));
             }
 
             // update sections and queue payload writes
@@ -1049,10 +1049,10 @@ fn ElfFile(comptime is_64: bool) type {
                         dest.sh_info = sections_update[src.sh_info].remap_idx;
 
                     if (payload) |data|
-                        dest.sh_size = @intCast(data.len);
+                        dest.sh_size = @int_cast(data.len);
 
                     const addralign = if (src.sh_addralign == 0 or dest.sh_type == elf.SHT_NOBITS) 1 else src.sh_addralign;
-                    dest.sh_offset = std.mem.alignForward(Elf_OffSize, eof_offset, addralign);
+                    dest.sh_offset = std.mem.align_forward(Elf_OffSize, eof_offset, addralign);
                     if (src.sh_offset != dest.sh_offset and section.segment != null and update.action != .empty and dest.sh_type != elf.SHT_NOTE and dest.sh_type != elf.SHT_NOBITS) {
                         if (src.sh_offset > dest.sh_offset) {
                             dest.sh_offset = src.sh_offset; // add padding to avoid modifing the program segments
@@ -1070,10 +1070,10 @@ fn ElfFile(comptime is_64: bool) type {
                             // update sections payload and write
                             const dest_data = switch (src.sh_type) {
                                 elf.DT_VERSYM => dst_data: {
-                                    const data = try allocator.alignedAlloc(u8, section_memory_align, src_data.len);
+                                    const data = try allocator.aligned_alloc(u8, section_memory_align, src_data.len);
                                     @memcpy(data, src_data);
 
-                                    const defs = @as([*]Elf_Verdef, @ptrCast(data))[0 .. @as(usize, @intCast(src.sh_size)) / @sizeOf(Elf_Verdef)];
+                                    const defs = @as([*]Elf_Verdef, @ptr_cast(data))[0 .. @as(usize, @int_cast(src.sh_size)) / @size_of(Elf_Verdef)];
                                     for (defs) |*def| {
                                         if (def.vd_ndx != elf.SHN_UNDEF)
                                             def.vd_ndx = sections_update[src.sh_info].remap_idx;
@@ -1082,10 +1082,10 @@ fn ElfFile(comptime is_64: bool) type {
                                     break :dst_data data;
                                 },
                                 elf.SHT_SYMTAB, elf.SHT_DYNSYM => dst_data: {
-                                    const data = try allocator.alignedAlloc(u8, section_memory_align, src_data.len);
+                                    const data = try allocator.aligned_alloc(u8, section_memory_align, src_data.len);
                                     @memcpy(data, src_data);
 
-                                    const syms = @as([*]Elf_Sym, @ptrCast(data))[0 .. @as(usize, @intCast(src.sh_size)) / @sizeOf(Elf_Sym)];
+                                    const syms = @as([*]Elf_Sym, @ptr_cast(data))[0 .. @as(usize, @int_cast(src.sh_size)) / @size_of(Elf_Sym)];
                                     for (syms) |*sym| {
                                         if (sym.st_shndx != elf.SHN_UNDEF and sym.st_shndx < elf.SHN_LORESERVE)
                                             sym.st_shndx = sections_update[sym.st_shndx].remap_idx;
@@ -1097,11 +1097,11 @@ fn ElfFile(comptime is_64: bool) type {
                             };
 
                             assert(dest_data.len == dest.sh_size);
-                            cmdbuf.appendAssumeCapacity(.{ .write_data = .{ .data = dest_data, .out_offset = dest.sh_offset } });
+                            cmdbuf.append_assume_capacity(.{ .write_data = .{ .data = dest_data, .out_offset = dest.sh_offset } });
                             eof_offset = dest.sh_offset + dest.sh_size;
                         } else {
                             // direct contents copy
-                            cmdbuf.appendAssumeCapacity(.{ .copy_range = .{ .in_offset = src.sh_offset, .len = dest.sh_size, .out_offset = dest.sh_offset } });
+                            cmdbuf.append_assume_capacity(.{ .copy_range = .{ .in_offset = src.sh_offset, .len = dest.sh_size, .out_offset = dest.sh_offset } });
                             eof_offset = dest.sh_offset + dest.sh_size;
                         }
                     } else {
@@ -1113,11 +1113,11 @@ fn ElfFile(comptime is_64: bool) type {
                 // add a ".gnu_debuglink" section
                 if (options.debuglink) |link| {
                     const payload = payload: {
-                        const crc_offset = std.mem.alignForward(usize, link.name.len + 1, 4);
-                        const buf = try allocator.alignedAlloc(u8, 4, crc_offset + 4);
+                        const crc_offset = std.mem.align_forward(usize, link.name.len + 1, 4);
+                        const buf = try allocator.aligned_alloc(u8, 4, crc_offset + 4);
                         @memcpy(buf[0..link.name.len], link.name);
                         @memset(buf[link.name.len..crc_offset], 0);
-                        @memcpy(buf[crc_offset..], std.mem.asBytes(&link.crc32));
+                        @memcpy(buf[crc_offset..], std.mem.as_bytes(&link.crc32));
                         break :payload buf;
                     };
 
@@ -1127,7 +1127,7 @@ fn ElfFile(comptime is_64: bool) type {
                         .sh_flags = 0,
                         .sh_addr = 0,
                         .sh_offset = eof_offset,
-                        .sh_size = @intCast(payload.len),
+                        .sh_size = @int_cast(payload.len),
                         .sh_link = elf.SHN_UNDEF,
                         .sh_info = elf.SHN_UNDEF,
                         .sh_addralign = 4,
@@ -1135,8 +1135,8 @@ fn ElfFile(comptime is_64: bool) type {
                     };
                     dest_section_idx += 1;
 
-                    cmdbuf.appendAssumeCapacity(.{ .write_data = .{ .data = payload, .out_offset = eof_offset } });
-                    eof_offset += @as(Elf_OffSize, @intCast(payload.len));
+                    cmdbuf.append_assume_capacity(.{ .write_data = .{ .data = payload, .out_offset = eof_offset } });
+                    eof_offset += @as(Elf_OffSize, @int_cast(payload.len));
                 }
 
                 assert(dest_section_idx == new_shnum);
@@ -1145,14 +1145,14 @@ fn ElfFile(comptime is_64: bool) type {
 
             // write the section header at the tail
             {
-                const offset = std.mem.alignForward(Elf_OffSize, eof_offset, @alignOf(Elf_Shdr));
+                const offset = std.mem.align_forward(Elf_OffSize, eof_offset, @alignOf(Elf_Shdr));
 
-                const data = std.mem.sliceAsBytes(updated_section_header);
+                const data = std.mem.slice_as_bytes(updated_section_header);
                 assert(data.len == @as(usize, updated_elf_header.e_shentsize) * new_shnum);
                 updated_elf_header.e_shoff = offset;
                 updated_elf_header.e_shnum = new_shnum;
 
-                cmdbuf.appendAssumeCapacity(.{ .write_data = .{ .data = data, .out_offset = updated_elf_header.e_shoff } });
+                cmdbuf.append_assume_capacity(.{ .write_data = .{ .data = data, .out_offset = updated_elf_header.e_shoff } });
             }
 
             try ElfFileHelper.write(allocator, out_file, in_file, cmdbuf.items);
@@ -1237,7 +1237,7 @@ const ElfFileHelper = struct {
         const zeroes = [1]u8{0} ** 4096;
         var consolidated = std.ArrayList(WriteCmd).init(allocator);
         defer consolidated.deinit();
-        try consolidated.ensureUnusedCapacity(cmds.len * 2);
+        try consolidated.ensure_unused_capacity(cmds.len * 2);
         var offset: u64 = 0;
         var fused_cmd: ?WriteCmd = null;
         for (cmds) |cmd| {
@@ -1245,13 +1245,13 @@ const ElfFileHelper = struct {
                 .write_data => |data| {
                     assert(data.out_offset >= offset);
                     if (fused_cmd) |prev| {
-                        consolidated.appendAssumeCapacity(prev);
+                        consolidated.append_assume_capacity(prev);
                         fused_cmd = null;
                     }
                     if (data.out_offset > offset) {
-                        consolidated.appendAssumeCapacity(.{ .write_data = .{ .data = zeroes[0..@intCast(data.out_offset - offset)], .out_offset = offset } });
+                        consolidated.append_assume_capacity(.{ .write_data = .{ .data = zeroes[0..@int_cast(data.out_offset - offset)], .out_offset = offset } });
                     }
-                    consolidated.appendAssumeCapacity(cmd);
+                    consolidated.append_assume_capacity(cmd);
                     offset = data.out_offset + data.data.len;
                 },
                 .copy_range => |range| {
@@ -1264,9 +1264,9 @@ const ElfFileHelper = struct {
                                 .len = (range.out_offset + range.len) - prev.copy_range.out_offset,
                             } };
                         } else {
-                            consolidated.appendAssumeCapacity(prev);
+                            consolidated.append_assume_capacity(prev);
                             if (range.out_offset > offset) {
-                                consolidated.appendAssumeCapacity(.{ .write_data = .{ .data = zeroes[0..@intCast(range.out_offset - offset)], .out_offset = offset } });
+                                consolidated.append_assume_capacity(.{ .write_data = .{ .data = zeroes[0..@int_cast(range.out_offset - offset)], .out_offset = offset } });
                             }
                             fused_cmd = cmd;
                         }
@@ -1278,7 +1278,7 @@ const ElfFileHelper = struct {
             }
         }
         if (fused_cmd) |cmd| {
-            consolidated.appendAssumeCapacity(cmd);
+            consolidated.append_assume_capacity(cmd);
         }
 
         // write the output file
@@ -1286,10 +1286,10 @@ const ElfFileHelper = struct {
             switch (cmd) {
                 .write_data => |data| {
                     var iovec = [_]std.posix.iovec_const{.{ .base = data.data.ptr, .len = data.data.len }};
-                    try out_file.pwritevAll(&iovec, data.out_offset);
+                    try out_file.pwritev_all(&iovec, data.out_offset);
                 },
                 .copy_range => |range| {
-                    const copied_bytes = try in_file.copyRangeAll(range.in_offset, out_file, range.out_offset, range.len);
+                    const copied_bytes = try in_file.copy_range_all(range.in_offset, out_file, range.out_offset, range.len);
                     if (copied_bytes < range.len) return error.TRUNCATED_ELF;
                 },
             }
@@ -1299,14 +1299,14 @@ const ElfFileHelper = struct {
     fn try_compress_section(allocator: Allocator, in_file: File, offset: u64, size: u64, prefix: []const u8) !?[]align(8) const u8 {
         if (size < prefix.len) return null;
 
-        try in_file.seekTo(offset);
-        var section_reader = std.io.limitedReader(in_file.reader(), size);
+        try in_file.seek_to(offset);
+        var section_reader = std.io.limited_reader(in_file.reader(), size);
 
         // allocate as large as decompressed data. if the compression doesn't fit, keep the data uncompressed.
-        const compressed_data = try allocator.alignedAlloc(u8, 8, @intCast(size));
-        var compressed_stream = std.io.fixedBufferStream(compressed_data);
+        const compressed_data = try allocator.aligned_alloc(u8, 8, @int_cast(size));
+        var compressed_stream = std.io.fixed_buffer_stream(compressed_data);
 
-        try compressed_stream.writer().writeAll(prefix);
+        try compressed_stream.writer().write_all(prefix);
 
         {
             var compressor = try std.compress.zlib.compressor(compressed_stream.writer(), .{});
@@ -1333,18 +1333,18 @@ const ElfFileHelper = struct {
             };
         }
 
-        const compressed_len: usize = @intCast(compressed_stream.getPos() catch unreachable);
+        const compressed_len: usize = @int_cast(compressed_stream.get_pos() catch unreachable);
         const data = allocator.realloc(compressed_data, compressed_len) catch compressed_data;
         return data[0..compressed_len];
     }
 
     fn create_debug_link(path: []const u8) DebugLink {
-        const file = std.fs.cwd().openFile(path, .{}) catch |err| {
+        const file = std.fs.cwd().open_file(path, .{}) catch |err| {
             fatal("zig objcopy: could not open `{s}`: {s}\n", .{ path, @errorName(err) });
         };
         defer file.close();
 
-        const crc = ElfFileHelper.computeFileCrc(file) catch |err| {
+        const crc = ElfFileHelper.compute_file_crc(file) catch |err| {
             fatal("zig objcopy: could not read `{s}`: {s}\n", .{ path, @errorName(err) });
         };
         return .{
@@ -1356,7 +1356,7 @@ const ElfFileHelper = struct {
     fn compute_file_crc(file: File) !u32 {
         var buf: [8000]u8 = undefined;
 
-        try file.seekTo(0);
+        try file.seek_to(0);
         var hasher = std.hash.Crc32.init();
         while (true) {
             const bytes_read = try file.read(&buf);

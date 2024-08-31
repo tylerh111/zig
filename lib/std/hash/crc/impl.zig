@@ -25,7 +25,7 @@ pub fn Crc(comptime W: type, comptime algorithm: Algorithm(W)) type {
             @setEvalBranchQuota(2500);
 
             const poly = if (algorithm.reflect_input)
-                @bitReverse(@as(I, algorithm.polynomial)) >> (@bitSizeOf(I) - @bitSizeOf(W))
+                @bit_reverse(@as(I, algorithm.polynomial)) >> (@bitSizeOf(I) - @bitSizeOf(W))
             else
                 @as(I, algorithm.polynomial) << (@bitSizeOf(I) - @bitSizeOf(W));
 
@@ -53,31 +53,31 @@ pub fn Crc(comptime W: type, comptime algorithm: Algorithm(W)) type {
 
         pub fn init() Self {
             const initial = if (algorithm.reflect_input)
-                @bitReverse(@as(I, algorithm.initial)) >> (@bitSizeOf(I) - @bitSizeOf(W))
+                @bit_reverse(@as(I, algorithm.initial)) >> (@bitSizeOf(I) - @bitSizeOf(W))
             else
                 @as(I, algorithm.initial) << (@bitSizeOf(I) - @bitSizeOf(W));
             return Self{ .crc = initial };
         }
 
         inline fn table_entry(index: I) I {
-            return lookup_table[@as(u8, @intCast(index & 0xFF))];
+            return lookup_table[@as(u8, @int_cast(index & 0xFF))];
         }
 
         pub fn update(self: *Self, bytes: []const u8) void {
             var i: usize = 0;
             if (@bitSizeOf(I) <= 8) {
                 while (i < bytes.len) : (i += 1) {
-                    self.crc = tableEntry(self.crc ^ bytes[i]);
+                    self.crc = table_entry(self.crc ^ bytes[i]);
                 }
             } else if (algorithm.reflect_input) {
                 while (i < bytes.len) : (i += 1) {
                     const table_index = self.crc ^ bytes[i];
-                    self.crc = tableEntry(table_index) ^ (self.crc >> 8);
+                    self.crc = table_entry(table_index) ^ (self.crc >> 8);
                 }
             } else {
                 while (i < bytes.len) : (i += 1) {
                     const table_index = (self.crc >> (@bitSizeOf(I) - 8)) ^ bytes[i];
-                    self.crc = tableEntry(table_index) ^ (self.crc << 8);
+                    self.crc = table_entry(table_index) ^ (self.crc << 8);
                 }
             }
         }
@@ -85,12 +85,12 @@ pub fn Crc(comptime W: type, comptime algorithm: Algorithm(W)) type {
         pub fn final(self: Self) W {
             var c = self.crc;
             if (algorithm.reflect_input != algorithm.reflect_output) {
-                c = @bitReverse(c);
+                c = @bit_reverse(c);
             }
             if (!algorithm.reflect_output) {
                 c >>= @bitSizeOf(I) - @bitSizeOf(W);
             }
-            return @as(W, @intCast(c ^ algorithm.xor_output));
+            return @as(W, @int_cast(c ^ algorithm.xor_output));
         }
 
         pub fn hash(bytes: []const u8) W {
@@ -102,11 +102,11 @@ pub fn Crc(comptime W: type, comptime algorithm: Algorithm(W)) type {
 }
 
 pub const Polynomial = enum(u32) {
-    IEEE = @compileError("use Crc with algorithm .Crc32IsoHdlc"),
-    Castagnoli = @compileError("use Crc with algorithm .Crc32Iscsi"),
-    Koopman = @compileError("use Crc with algorithm .Crc32Koopman"),
+    IEEE = @compile_error("use Crc with algorithm .Crc32IsoHdlc"),
+    Castagnoli = @compile_error("use Crc with algorithm .Crc32Iscsi"),
+    Koopman = @compile_error("use Crc with algorithm .Crc32Koopman"),
     _,
 };
 
-pub const Crc32WithPoly = @compileError("use Crc instead");
-pub const Crc32SmallWithPoly = @compileError("use Crc instead");
+pub const Crc32WithPoly = @compile_error("use Crc instead");
+pub const Crc32SmallWithPoly = @compile_error("use Crc instead");

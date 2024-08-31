@@ -1,24 +1,24 @@
 const builtin = @import("builtin");
 const std = @import("std");
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
-const maxInt = std.math.maxInt;
+const expect_equal = std.testing.expect_equal;
+const max_int = std.math.max_int;
 
-test "@intCast i32 to u7" {
+test "@int_cast i32 to u7" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    var x: u128 = maxInt(u128);
+    var x: u128 = max_int(u128);
     var y: i32 = 120;
     _ = .{ &x, &y };
-    const z = x >> @as(u7, @intCast(y));
+    const z = x >> @as(u7, @int_cast(y));
     try expect(z == 0xff);
 }
 
-test "coerce i8 to i32 and @intCast back" {
+test "coerce i8 to i32 and @int_cast back" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -31,7 +31,7 @@ test "coerce i8 to i32 and @intCast back" {
     var x2: i32 = -5;
     var y2: i8 = -5;
     _ = .{ &x2, &y2 };
-    try expect(y2 == @as(i8, @intCast(x2)));
+    try expect(y2 == @as(i8, @int_cast(x2)));
 }
 
 test "coerce non byte-sized integers accross 32bits boundary" {
@@ -47,11 +47,11 @@ test "coerce non byte-sized integers accross 32bits boundary" {
         _ = &w;
         const d: u21 = @truncate(w);
         const e: u60 = d;
-        try expectEqual(@as(u32, 6417), a);
-        try expectEqual(@as(u64, 6417), b);
-        try expectEqual(@as(u64, 6417), c);
-        try expectEqual(@as(u21, 0x145678), d);
-        try expectEqual(@as(u60, 0x145678), e);
+        try expect_equal(@as(u32, 6417), a);
+        try expect_equal(@as(u64, 6417), b);
+        try expect_equal(@as(u64, 6417), c);
+        try expect_equal(@as(u21, 0x145678), d);
+        try expect_equal(@as(u60, 0x145678), e);
     }
 
     {
@@ -64,11 +64,11 @@ test "coerce non byte-sized integers accross 32bits boundary" {
         _ = &w;
         const d: u10 = @truncate(w);
         const e: u60 = d;
-        try expectEqual(@as(u32, 234), a);
-        try expectEqual(@as(u64, 234), b);
-        try expectEqual(@as(u64, 234), c);
-        try expectEqual(@as(u21, 0x278), d);
-        try expectEqual(@as(u60, 0x278), e);
+        try expect_equal(@as(u32, 234), a);
+        try expect_equal(@as(u64, 234), b);
+        try expect_equal(@as(u64, 234), c);
+        try expect_equal(@as(u21, 0x278), d);
+        try expect_equal(@as(u60, 0x278), e);
     }
     {
         var v: u7 = 11;
@@ -80,11 +80,11 @@ test "coerce non byte-sized integers accross 32bits boundary" {
         _ = &w;
         const d: u7 = @truncate(w);
         const e: u60 = d;
-        try expectEqual(@as(u32, 11), a);
-        try expectEqual(@as(u64, 11), b);
-        try expectEqual(@as(u64, 11), c);
-        try expectEqual(@as(u21, 0x78), d);
-        try expectEqual(@as(u60, 0x78), e);
+        try expect_equal(@as(u32, 11), a);
+        try expect_equal(@as(u64, 11), b);
+        try expect_equal(@as(u64, 11), c);
+        try expect_equal(@as(u21, 0x78), d);
+        try expect_equal(@as(u60, 0x78), e);
     }
 
     {
@@ -95,13 +95,13 @@ test "coerce non byte-sized integers accross 32bits boundary" {
         const c: i64 = a;
         var w: i64 = -12345;
         _ = &w;
-        const d: i21 = @intCast(w);
+        const d: i21 = @int_cast(w);
         const e: i60 = d;
-        try expectEqual(@as(i32, -6417), a);
-        try expectEqual(@as(i64, -6417), b);
-        try expectEqual(@as(i64, -6417), c);
-        try expectEqual(@as(i21, -12345), d);
-        try expectEqual(@as(i60, -12345), e);
+        try expect_equal(@as(i32, -6417), a);
+        try expect_equal(@as(i64, -6417), b);
+        try expect_equal(@as(i64, -6417), c);
+        try expect_equal(@as(i21, -12345), d);
+        try expect_equal(@as(i60, -12345), e);
     }
 
     {
@@ -112,13 +112,13 @@ test "coerce non byte-sized integers accross 32bits boundary" {
         const c: i64 = a;
         var w: i64 = -456;
         _ = &w;
-        const d: i10 = @intCast(w);
+        const d: i10 = @int_cast(w);
         const e: i60 = d;
-        try expectEqual(@as(i32, -234), a);
-        try expectEqual(@as(i64, -234), b);
-        try expectEqual(@as(i64, -234), c);
-        try expectEqual(@as(i10, -456), d);
-        try expectEqual(@as(i60, -456), e);
+        try expect_equal(@as(i32, -234), a);
+        try expect_equal(@as(i64, -234), b);
+        try expect_equal(@as(i64, -234), c);
+        try expect_equal(@as(i10, -456), d);
+        try expect_equal(@as(i60, -456), e);
     }
     {
         var v: i7 = -11;
@@ -128,13 +128,13 @@ test "coerce non byte-sized integers accross 32bits boundary" {
         const c: i64 = a;
         var w: i64 = -42;
         _ = &w;
-        const d: i7 = @intCast(w);
+        const d: i7 = @int_cast(w);
         const e: i60 = d;
-        try expectEqual(@as(i32, -11), a);
-        try expectEqual(@as(i64, -11), b);
-        try expectEqual(@as(i64, -11), c);
-        try expectEqual(@as(i7, -42), d);
-        try expectEqual(@as(i60, -42), e);
+        try expect_equal(@as(i32, -11), a);
+        try expect_equal(@as(i64, -11), b);
+        try expect_equal(@as(i64, -11), c);
+        try expect_equal(@as(i7, -42), d);
+        try expect_equal(@as(i60, -42), e);
     }
 }
 
@@ -147,13 +147,13 @@ const Piece = packed struct {
 
     fn char_to_piece(c: u8) !@This() {
         return .{
-            .type = try charToPieceType(c),
-            .color = if (std.ascii.isUpper(c)) Color.WHITE else Color.BLACK,
+            .type = try char_to_piece_type(c),
+            .color = if (std.ascii.is_upper(c)) Color.WHITE else Color.BLACK,
         };
     }
 
     fn char_to_piece_type(c: u8) !Type {
-        return switch (std.ascii.toLower(c)) {
+        return switch (std.ascii.to_lower(c)) {
             'p' => .PAWN,
             'k' => .KING,
             'q' => .QUEEN,
@@ -171,13 +171,13 @@ test "load non byte-sized optional value" {
     // Originally reported at https://github.com/ziglang/zig/issues/14200
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
-    // note: this bug is triggered by the == operator, expectEqual will hide it
-    const opt: ?Piece = try Piece.charToPiece('p');
+    // note: this bug is triggered by the == operator, expect_equal will hide it
+    const opt: ?Piece = try Piece.char_to_piece('p');
     try expect(opt.?.type == .PAWN);
     try expect(opt.?.color == .BLACK);
 
     var p: Piece = undefined;
-    @as(*u8, @ptrCast(&p)).* = 0b11111011;
+    @as(*u8, @ptr_cast(&p)).* = 0b11111011;
     try expect(p.type == .PAWN);
     try expect(p.color == .BLACK);
 }
@@ -188,14 +188,14 @@ test "load non byte-sized value in struct" {
     if (builtin.cpu.arch.endian() != .little) return error.SkipZigTest; // packed struct TODO
     if (builtin.zig_backend == .stage2_spirv64) return error.SkipZigTest;
 
-    // note: this bug is triggered by the == operator, expectEqual will hide it
-    // using ptrCast not to depend on unitialised memory state
+    // note: this bug is triggered by the == operator, expect_equal will hide it
+    // using ptr_cast not to depend on unitialised memory state
 
     var struct0: struct {
         p: Piece,
         int: u8,
     } = undefined;
-    @as(*u8, @ptrCast(&struct0.p)).* = 0b11111011;
+    @as(*u8, @ptr_cast(&struct0.p)).* = 0b11111011;
     try expect(struct0.p.type == .PAWN);
     try expect(struct0.p.color == .BLACK);
 
@@ -205,9 +205,9 @@ test "load non byte-sized value in struct" {
         pad: u1,
         p2: Piece,
     } = undefined;
-    @as(*u8, @ptrCast(&struct1.p0)).* = 0b11111011;
-    struct1.p1 = try Piece.charToPiece('p');
-    struct1.p2 = try Piece.charToPiece('p');
+    @as(*u8, @ptr_cast(&struct1.p0)).* = 0b11111011;
+    struct1.p1 = try Piece.char_to_piece('p');
+    struct1.p2 = try Piece.char_to_piece('p');
     try expect(struct1.p0.type == .PAWN);
     try expect(struct1.p0.color == .BLACK);
     try expect(struct1.p1.type == .PAWN);
@@ -224,8 +224,8 @@ test "load non byte-sized value in union" {
     if (builtin.zig_backend == .stage2_wasm) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    // note: this bug is triggered by the == operator, expectEqual will hide it
-    // using ptrCast not to depend on unitialised memory state
+    // note: this bug is triggered by the == operator, expect_equal will hide it
+    // using ptr_cast not to depend on unitialised memory state
 
     var union0: packed union {
         p: Piece,
@@ -239,12 +239,12 @@ test "load non byte-sized value in union" {
         p: Piece,
         int: u8,
     } = .{ .p = .{ .color = .WHITE, .type = .KING } };
-    @as(*u8, @ptrCast(&union1.p)).* = 0b11111011;
+    @as(*u8, @ptr_cast(&union1.p)).* = 0b11111011;
     try expect(union1.p.type == .PAWN);
     try expect(union1.p.color == .BLACK);
 
     var pieces: [3]Piece = undefined;
-    @as(*u8, @ptrCast(&pieces[1])).* = 0b11111011;
+    @as(*u8, @ptr_cast(&pieces[1])).* = 0b11111011;
     try expect(pieces[1].type == .PAWN);
     try expect(pieces[1].color == .BLACK);
 }

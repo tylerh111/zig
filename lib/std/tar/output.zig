@@ -52,32 +52,32 @@ pub const Header = extern struct {
                 while (path[i] != '/') : (i += 1) {}
             }
 
-            _ = try std.fmt.bufPrint(&self.prefix, "{s}/{s}", .{ prefix, path[0..i] });
-            _ = try std.fmt.bufPrint(&self.name, "{s}", .{path[i + 1 ..]});
+            _ = try std.fmt.buf_print(&self.prefix, "{s}/{s}", .{ prefix, path[0..i] });
+            _ = try std.fmt.buf_print(&self.name, "{s}", .{path[i + 1 ..]});
         } else {
-            _ = try std.fmt.bufPrint(&self.name, "{s}/{s}", .{ prefix, path });
+            _ = try std.fmt.buf_print(&self.name, "{s}/{s}", .{ prefix, path });
         }
     }
 
     pub fn set_size(self: *Header, size: u64) !void {
-        _ = try std.fmt.bufPrint(&self.size, "{o:0>11}", .{size});
+        _ = try std.fmt.buf_print(&self.size, "{o:0>11}", .{size});
     }
 
     pub fn update_checksum(self: *Header) !void {
-        const offset = @offsetOf(Header, "checksum");
+        const offset = @offset_of(Header, "checksum");
         var checksum: usize = 0;
-        for (std.mem.asBytes(self), 0..) |val, i| {
-            checksum += if (i >= offset and i < offset + @sizeOf(@TypeOf(self.checksum)))
+        for (std.mem.as_bytes(self), 0..) |val, i| {
+            checksum += if (i >= offset and i < offset + @size_of(@TypeOf(self.checksum)))
                 ' '
             else
                 val;
         }
 
-        _ = try std.fmt.bufPrint(&self.checksum, "{o:0>7}", .{checksum});
+        _ = try std.fmt.buf_print(&self.checksum, "{o:0>7}", .{checksum});
     }
 
     comptime {
-        assert(@sizeOf(Header) == 512);
+        assert(@size_of(Header) == 512);
     }
 };
 

@@ -8,7 +8,7 @@ test "pass string literal byvalue to a generic var param" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     start();
-    blowUpStack(10);
+    blow_up_stack(10);
 
     try std.testing.expect(std.mem.eql(u8, result, "string literal"));
 }
@@ -27,5 +27,5 @@ fn bar(x: anytype) void {
 
 fn blow_up_stack(x: u32) void {
     if (x == 0) return;
-    blowUpStack(x - 1);
+    blow_up_stack(x - 1);
 }

@@ -6,7 +6,7 @@ const fs = std.fs;
 const process = std.process;
 const Allocator = std.mem.Allocator;
 const testing = std.testing;
-const getExternalExecutor = std.zig.system.getExternalExecutor;
+const get_external_executor = std.zig.system.get_external_executor;
 
 const max_doc_file_size = 10 * 1024 * 1024;
 
@@ -32,7 +32,7 @@ pub fn main() !void {
 
     const arena = arena_instance.allocator();
 
-    var args_it = try process.argsWithAllocator(arena);
+    var args_it = try process.args_with_allocator(arena);
     if (!args_it.skip()) fatal("missing argv[0]", .{});
 
     var opt_input: ?[]const u8 = null;
@@ -42,9 +42,9 @@ pub fn main() !void {
     var opt_cache_root: ?[]const u8 = null;
 
     while (args_it.next()) |arg| {
-        if (mem.startsWith(u8, arg, "-")) {
+        if (mem.starts_with(u8, arg, "-")) {
             if (mem.eql(u8, arg, "-h") or mem.eql(u8, arg, "--help")) {
-                try std.io.getStdOut().writeAll(usage);
+                try std.io.get_std_out().write_all(usage);
                 process.exit(0);
             } else if (mem.eql(u8, arg, "-i")) {
                 opt_input = args_it.next() orelse fatal("expected parameter after -i", .{});
@@ -69,27 +69,27 @@ pub fn main() !void {
     const zig_path = opt_zig orelse fatal("missing zig compiler path (--zig)", .{});
     const cache_root = opt_cache_root orelse fatal("missing cache root path (--cache-root)", .{});
 
-    const source_bytes = try fs.cwd().readFileAlloc(arena, input_path, std.math.maxInt(u32));
-    const code = try parseManifest(arena, source_bytes);
-    const source = stripManifest(source_bytes);
+    const source_bytes = try fs.cwd().read_file_alloc(arena, input_path, std.math.max_int(u32));
+    const code = try parse_manifest(arena, source_bytes);
+    const source = strip_manifest(source_bytes);
 
-    const tmp_dir_path = try std.fmt.allocPrint(arena, "{s}/tmp/{x}", .{
+    const tmp_dir_path = try std.fmt.alloc_print(arena, "{s}/tmp/{x}", .{
         cache_root, std.crypto.random.int(u64),
     });
-    fs.cwd().makePath(tmp_dir_path) catch |err|
+    fs.cwd().make_path(tmp_dir_path) catch |err|
         fatal("unable to create tmp dir '{s}': {s}", .{ tmp_dir_path, @errorName(err) });
-    defer fs.cwd().deleteTree(tmp_dir_path) catch |err| std.log.err("unable to delete '{s}': {s}", .{
+    defer fs.cwd().delete_tree(tmp_dir_path) catch |err| std.log.err("unable to delete '{s}': {s}", .{
         tmp_dir_path, @errorName(err),
     });
 
-    var out_file = try fs.cwd().createFile(output_path, .{});
+    var out_file = try fs.cwd().create_file(output_path, .{});
     defer out_file.close();
 
-    var bw = std.io.bufferedWriter(out_file.writer());
+    var bw = std.io.buffered_writer(out_file.writer());
     const out = bw.writer();
 
-    try printSourceBlock(arena, out, source, fs.path.basename(input_path));
-    try printOutput(arena, out, code, input_path, zig_path, opt_zig_lib_dir, tmp_dir_path);
+    try print_source_block(arena, out, source, fs.path.basename(input_path));
+    try print_output(arena, out, code, input_path, zig_path, opt_zig_lib_dir, tmp_dir_path);
 
     try bw.flush();
 }
@@ -103,11 +103,11 @@ fn print_output(
     opt_zig_lib_dir: ?[]const u8,
     tmp_dir_path: []const u8,
 ) !void {
-    var env_map = try process.getEnvMap(arena);
+    var env_map = try process.get_env_map(arena);
     try env_map.put("CLICOLOR_FORCE", "1");
 
-    const host = try std.zig.system.resolveTargetQuery(.{});
-    const obj_ext = builtin.object_format.fileExt(builtin.cpu.arch);
+    const host = try std.zig.system.resolve_target_query(.{});
+    const obj_ext = builtin.object_format.file_ext(builtin.cpu.arch);
     const print = std.debug.print;
 
     var shell_buffer = std.ArrayList(u8).init(arena);
@@ -120,14 +120,14 @@ fn print_output(
         .exe => |expected_outcome| code_block: {
             var build_args = std.ArrayList([]const u8).init(arena);
             defer build_args.deinit();
-            try build_args.appendSlice(&[_][]const u8{
+            try build_args.append_slice(&[_][]const u8{
                 zig_exe,    "build-exe",
                 "--name",   code_name,
                 "--color",  "on",
                 input_path,
             });
             if (opt_zig_lib_dir) |zig_lib_dir| {
-                try build_args.appendSlice(&.{ "--zig-lib-dir", zig_lib_dir });
+                try build_args.append_slice(&.{ "--zig-lib-dir", zig_lib_dir });
             }
 
             try shell_out.print("$ zig build-exe {s}.zig ", .{code_name});
@@ -135,12 +135,12 @@ fn print_output(
             switch (code.mode) {
                 .Debug => {},
                 else => {
-                    try build_args.appendSlice(&[_][]const u8{ "-O", @tagName(code.mode) });
-                    try shell_out.print("-O {s} ", .{@tagName(code.mode)});
+                    try build_args.append_slice(&[_][]const u8{ "-O", @tag_name(code.mode) });
+                    try shell_out.print("-O {s} ", .{@tag_name(code.mode)});
                 },
             }
             for (code.link_objects) |link_object| {
-                const name_with_ext = try std.fmt.allocPrint(arena, "{s}{s}", .{ link_object, obj_ext });
+                const name_with_ext = try std.fmt.alloc_print(arena, "{s}{s}", .{ link_object, obj_ext });
                 try build_args.append(name_with_ext);
                 try shell_out.print("{s} ", .{name_with_ext});
             }
@@ -150,7 +150,7 @@ fn print_output(
             }
 
             if (code.target_str) |triple| {
-                try build_args.appendSlice(&[_][]const u8{ "-target", triple });
+                try build_args.append_slice(&[_][]const u8{ "-target", triple });
                 try shell_out.print("-target {s} ", .{triple});
             }
             if (code.verbose_cimport) {
@@ -176,33 +176,33 @@ fn print_output(
                     .Exited => |exit_code| {
                         if (exit_code == 0) {
                             print("{s}\nThe following command incorrectly succeeded:\n", .{result.stderr});
-                            dumpArgs(build_args.items);
+                            dump_args(build_args.items);
                             fatal("example incorrectly compiled", .{});
                         }
                     },
                     else => {
                         print("{s}\nThe following command crashed:\n", .{result.stderr});
-                        dumpArgs(build_args.items);
+                        dump_args(build_args.items);
                         fatal("example compile crashed", .{});
                     },
                 }
-                const escaped_stderr = try escapeHtml(arena, result.stderr);
-                const colored_stderr = try termColor(arena, escaped_stderr);
-                try shell_out.writeAll(colored_stderr);
+                const escaped_stderr = try escape_html(arena, result.stderr);
+                const colored_stderr = try term_color(arena, escaped_stderr);
+                try shell_out.write_all(colored_stderr);
                 break :code_block;
             }
             const exec_result = run(arena, &env_map, tmp_dir_path, build_args.items) catch
                 fatal("example failed to compile", .{});
 
             if (code.verbose_cimport) {
-                const escaped_build_stderr = try escapeHtml(arena, exec_result.stderr);
-                try shell_out.writeAll(escaped_build_stderr);
+                const escaped_build_stderr = try escape_html(arena, exec_result.stderr);
+                try shell_out.write_all(escaped_build_stderr);
             }
 
             if (code.target_str) |triple| {
-                if (mem.startsWith(u8, triple, "wasm32") or
-                    mem.startsWith(u8, triple, "riscv64-linux") or
-                    (mem.startsWith(u8, triple, "x86_64-linux") and
+                if (mem.starts_with(u8, triple, "wasm32") or
+                    mem.starts_with(u8, triple, "riscv64-linux") or
+                    (mem.starts_with(u8, triple, "x86_64-linux") and
                     builtin.os.tag != .linux or builtin.cpu.arch != .x86_64))
                 {
                     // skip execution
@@ -213,10 +213,10 @@ fn print_output(
             const target_query = try std.Target.Query.parse(.{
                 .arch_os_abi = code.target_str orelse "native",
             });
-            const target = try std.zig.system.resolveTargetQuery(target_query);
+            const target = try std.zig.system.resolve_target_query(target_query);
 
-            const path_to_exe = try std.fmt.allocPrint(arena, "./{s}{s}", .{
-                code_name, target.exeFileExt(),
+            const path_to_exe = try std.fmt.alloc_print(arena, "./{s}{s}", .{
+                code_name, target.exe_file_ext(),
             });
             const run_args = &[_][]const u8{path_to_exe};
 
@@ -234,7 +234,7 @@ fn print_output(
                     .Exited => |exit_code| {
                         if (exit_code == 0) {
                             print("{s}\nThe following command incorrectly succeeded:\n", .{result.stderr});
-                            dumpArgs(run_args);
+                            dump_args(run_args);
                             fatal("example incorrectly compiled", .{});
                         }
                     },
@@ -247,37 +247,37 @@ fn print_output(
                     fatal("example crashed", .{});
             };
 
-            const escaped_stderr = try escapeHtml(arena, result.stderr);
-            const escaped_stdout = try escapeHtml(arena, result.stdout);
+            const escaped_stderr = try escape_html(arena, result.stderr);
+            const escaped_stdout = try escape_html(arena, result.stdout);
 
-            const colored_stderr = try termColor(arena, escaped_stderr);
-            const colored_stdout = try termColor(arena, escaped_stdout);
+            const colored_stderr = try term_color(arena, escaped_stderr);
+            const colored_stdout = try term_color(arena, escaped_stdout);
 
             try shell_out.print("$ ./{s}\n{s}{s}", .{ code_name, colored_stdout, colored_stderr });
             if (exited_with_signal) {
                 try shell_out.print("(process terminated by signal)", .{});
             }
-            try shell_out.writeAll("\n");
+            try shell_out.write_all("\n");
         },
         .@"test" => {
             var test_args = std.ArrayList([]const u8).init(arena);
             defer test_args.deinit();
 
-            try test_args.appendSlice(&[_][]const u8{
+            try test_args.append_slice(&[_][]const u8{
                 zig_exe, "test", input_path,
             });
             if (opt_zig_lib_dir) |zig_lib_dir| {
-                try test_args.appendSlice(&.{ "--zig-lib-dir", zig_lib_dir });
+                try test_args.append_slice(&.{ "--zig-lib-dir", zig_lib_dir });
             }
             try shell_out.print("$ zig test {s}.zig ", .{code_name});
 
             switch (code.mode) {
                 .Debug => {},
                 else => {
-                    try test_args.appendSlice(&[_][]const u8{
-                        "-O", @tagName(code.mode),
+                    try test_args.append_slice(&[_][]const u8{
+                        "-O", @tag_name(code.mode),
                     });
-                    try shell_out.print("-O {s} ", .{@tagName(code.mode)});
+                    try shell_out.print("-O {s} ", .{@tag_name(code.mode)});
                 },
             }
             if (code.link_libc) {
@@ -285,50 +285,50 @@ fn print_output(
                 try shell_out.print("-lc ", .{});
             }
             if (code.target_str) |triple| {
-                try test_args.appendSlice(&[_][]const u8{ "-target", triple });
+                try test_args.append_slice(&[_][]const u8{ "-target", triple });
                 try shell_out.print("-target {s} ", .{triple});
 
                 const target_query = try std.Target.Query.parse(.{
                     .arch_os_abi = triple,
                 });
-                const target = try std.zig.system.resolveTargetQuery(
+                const target = try std.zig.system.resolve_target_query(
                     target_query,
                 );
-                switch (getExternalExecutor(host, &target, .{
+                switch (get_external_executor(host, &target, .{
                     .link_libc = code.link_libc,
                 })) {
                     .native => {},
                     else => {
-                        try test_args.appendSlice(&[_][]const u8{"--test-no-exec"});
-                        try shell_out.writeAll("--test-no-exec");
+                        try test_args.append_slice(&[_][]const u8{"--test-no-exec"});
+                        try shell_out.write_all("--test-no-exec");
                     },
                 }
             }
             const result = run(arena, &env_map, null, test_args.items) catch
                 fatal("test failed", .{});
-            const escaped_stderr = try escapeHtml(arena, result.stderr);
-            const escaped_stdout = try escapeHtml(arena, result.stdout);
+            const escaped_stderr = try escape_html(arena, result.stderr);
+            const escaped_stdout = try escape_html(arena, result.stdout);
             try shell_out.print("\n{s}{s}\n", .{ escaped_stderr, escaped_stdout });
         },
         .test_error => |error_match| {
             var test_args = std.ArrayList([]const u8).init(arena);
             defer test_args.deinit();
 
-            try test_args.appendSlice(&[_][]const u8{
+            try test_args.append_slice(&[_][]const u8{
                 zig_exe,    "test",
                 "--color",  "on",
                 input_path,
             });
             if (opt_zig_lib_dir) |zig_lib_dir| {
-                try test_args.appendSlice(&.{ "--zig-lib-dir", zig_lib_dir });
+                try test_args.append_slice(&.{ "--zig-lib-dir", zig_lib_dir });
             }
             try shell_out.print("$ zig test {s}.zig ", .{code_name});
 
             switch (code.mode) {
                 .Debug => {},
                 else => {
-                    try test_args.appendSlice(&[_][]const u8{ "-O", @tagName(code.mode) });
-                    try shell_out.print("-O {s} ", .{@tagName(code.mode)});
+                    try test_args.append_slice(&[_][]const u8{ "-O", @tag_name(code.mode) });
+                    try shell_out.print("-O {s} ", .{@tag_name(code.mode)});
                 },
             }
             if (code.link_libc) {
@@ -345,34 +345,34 @@ fn print_output(
                 .Exited => |exit_code| {
                     if (exit_code == 0) {
                         print("{s}\nThe following command incorrectly succeeded:\n", .{result.stderr});
-                        dumpArgs(test_args.items);
+                        dump_args(test_args.items);
                         fatal("example incorrectly compiled", .{});
                     }
                 },
                 else => {
                     print("{s}\nThe following command crashed:\n", .{result.stderr});
-                    dumpArgs(test_args.items);
+                    dump_args(test_args.items);
                     fatal("example compile crashed", .{});
                 },
             }
-            if (mem.indexOf(u8, result.stderr, error_match) == null) {
+            if (mem.index_of(u8, result.stderr, error_match) == null) {
                 print("{s}\nExpected to find '{s}' in stderr\n", .{ result.stderr, error_match });
                 fatal("example did not have expected compile error", .{});
             }
-            const escaped_stderr = try escapeHtml(arena, result.stderr);
-            const colored_stderr = try termColor(arena, escaped_stderr);
+            const escaped_stderr = try escape_html(arena, result.stderr);
+            const colored_stderr = try term_color(arena, escaped_stderr);
             try shell_out.print("\n{s}\n", .{colored_stderr});
         },
         .test_safety => |error_match| {
             var test_args = std.ArrayList([]const u8).init(arena);
             defer test_args.deinit();
 
-            try test_args.appendSlice(&[_][]const u8{
+            try test_args.append_slice(&[_][]const u8{
                 zig_exe,    "test",
                 input_path,
             });
             if (opt_zig_lib_dir) |zig_lib_dir| {
-                try test_args.appendSlice(&.{ "--zig-lib-dir", zig_lib_dir });
+                try test_args.append_slice(&.{ "--zig-lib-dir", zig_lib_dir });
             }
             var mode_arg: []const u8 = "";
             switch (code.mode) {
@@ -401,22 +401,22 @@ fn print_output(
                 .Exited => |exit_code| {
                     if (exit_code == 0) {
                         print("{s}\nThe following command incorrectly succeeded:\n", .{result.stderr});
-                        dumpArgs(test_args.items);
+                        dump_args(test_args.items);
                         fatal("example test incorrectly succeeded", .{});
                     }
                 },
                 else => {
                     print("{s}\nThe following command crashed:\n", .{result.stderr});
-                    dumpArgs(test_args.items);
+                    dump_args(test_args.items);
                     fatal("example compile crashed", .{});
                 },
             }
-            if (mem.indexOf(u8, result.stderr, error_match) == null) {
+            if (mem.index_of(u8, result.stderr, error_match) == null) {
                 print("{s}\nExpected to find '{s}' in stderr\n", .{ result.stderr, error_match });
                 fatal("example did not have expected runtime safety error message", .{});
             }
-            const escaped_stderr = try escapeHtml(arena, result.stderr);
-            const colored_stderr = try termColor(arena, escaped_stderr);
+            const escaped_stderr = try escape_html(arena, result.stderr);
+            const colored_stderr = try term_color(arena, escaped_stderr);
             try shell_out.print("$ zig test {s}.zig {s}\n{s}\n", .{
                 code_name,
                 mode_arg,
@@ -424,21 +424,21 @@ fn print_output(
             });
         },
         .obj => |maybe_error_match| {
-            const name_plus_obj_ext = try std.fmt.allocPrint(arena, "{s}{s}", .{ code_name, obj_ext });
+            const name_plus_obj_ext = try std.fmt.alloc_print(arena, "{s}{s}", .{ code_name, obj_ext });
             var build_args = std.ArrayList([]const u8).init(arena);
             defer build_args.deinit();
 
-            try build_args.appendSlice(&[_][]const u8{
+            try build_args.append_slice(&[_][]const u8{
                 zig_exe,    "build-obj",
                 "--color",  "on",
                 "--name",   code_name,
                 input_path,
-                try std.fmt.allocPrint(arena, "-femit-bin={s}{c}{s}", .{
+                try std.fmt.alloc_print(arena, "-femit-bin={s}{c}{s}", .{
                     tmp_dir_path, fs.path.sep, name_plus_obj_ext,
                 }),
             });
             if (opt_zig_lib_dir) |zig_lib_dir| {
-                try build_args.appendSlice(&.{ "--zig-lib-dir", zig_lib_dir });
+                try build_args.append_slice(&.{ "--zig-lib-dir", zig_lib_dir });
             }
 
             try shell_out.print("$ zig build-obj {s}.zig ", .{code_name});
@@ -446,13 +446,13 @@ fn print_output(
             switch (code.mode) {
                 .Debug => {},
                 else => {
-                    try build_args.appendSlice(&[_][]const u8{ "-O", @tagName(code.mode) });
-                    try shell_out.print("-O {s} ", .{@tagName(code.mode)});
+                    try build_args.append_slice(&[_][]const u8{ "-O", @tag_name(code.mode) });
+                    try shell_out.print("-O {s} ", .{@tag_name(code.mode)});
                 },
             }
 
             if (code.target_str) |triple| {
-                try build_args.appendSlice(&[_][]const u8{ "-target", triple });
+                try build_args.append_slice(&[_][]const u8{ "-target", triple });
                 try shell_out.print("-target {s} ", .{triple});
             }
             for (code.additional_options) |option| {
@@ -471,30 +471,30 @@ fn print_output(
                     .Exited => |exit_code| {
                         if (exit_code == 0) {
                             print("{s}\nThe following command incorrectly succeeded:\n", .{result.stderr});
-                            dumpArgs(build_args.items);
+                            dump_args(build_args.items);
                             fatal("example build incorrectly succeeded", .{});
                         }
                     },
                     else => {
                         print("{s}\nThe following command crashed:\n", .{result.stderr});
-                        dumpArgs(build_args.items);
+                        dump_args(build_args.items);
                         fatal("example compile crashed", .{});
                     },
                 }
-                if (mem.indexOf(u8, result.stderr, error_match) == null) {
+                if (mem.index_of(u8, result.stderr, error_match) == null) {
                     print("{s}\nExpected to find '{s}' in stderr\n", .{ result.stderr, error_match });
                     fatal("example did not have expected compile error message", .{});
                 }
-                const escaped_stderr = try escapeHtml(arena, result.stderr);
-                const colored_stderr = try termColor(arena, escaped_stderr);
+                const escaped_stderr = try escape_html(arena, result.stderr);
+                const colored_stderr = try term_color(arena, escaped_stderr);
                 try shell_out.print("\n{s} ", .{colored_stderr});
             } else {
                 _ = run(arena, &env_map, null, build_args.items) catch fatal("example failed to compile", .{});
             }
-            try shell_out.writeAll("\n");
+            try shell_out.write_all("\n");
         },
         .lib => {
-            const bin_basename = try std.zig.binNameAlloc(arena, .{
+            const bin_basename = try std.zig.bin_name_alloc(arena, .{
                 .root_name = code_name,
                 .target = builtin.target,
                 .output_mode = .Lib,
@@ -503,27 +503,27 @@ fn print_output(
             var test_args = std.ArrayList([]const u8).init(arena);
             defer test_args.deinit();
 
-            try test_args.appendSlice(&[_][]const u8{
+            try test_args.append_slice(&[_][]const u8{
                 zig_exe,    "build-lib",
                 input_path,
-                try std.fmt.allocPrint(arena, "-femit-bin={s}{s}{s}", .{
+                try std.fmt.alloc_print(arena, "-femit-bin={s}{s}{s}", .{
                     tmp_dir_path, fs.path.sep_str, bin_basename,
                 }),
             });
             if (opt_zig_lib_dir) |zig_lib_dir| {
-                try test_args.appendSlice(&.{ "--zig-lib-dir", zig_lib_dir });
+                try test_args.append_slice(&.{ "--zig-lib-dir", zig_lib_dir });
             }
             try shell_out.print("$ zig build-lib {s}.zig ", .{code_name});
 
             switch (code.mode) {
                 .Debug => {},
                 else => {
-                    try test_args.appendSlice(&[_][]const u8{ "-O", @tagName(code.mode) });
-                    try shell_out.print("-O {s} ", .{@tagName(code.mode)});
+                    try test_args.append_slice(&[_][]const u8{ "-O", @tag_name(code.mode) });
+                    try shell_out.print("-O {s} ", .{@tag_name(code.mode)});
                 },
             }
             if (code.target_str) |triple| {
-                try test_args.appendSlice(&[_][]const u8{ "-target", triple });
+                try test_args.append_slice(&[_][]const u8{ "-target", triple });
                 try shell_out.print("-target {s} ", .{triple});
             }
             if (code.link_mode) |link_mode| {
@@ -543,14 +543,14 @@ fn print_output(
                 try shell_out.print("{s} ", .{option});
             }
             const result = run(arena, &env_map, null, test_args.items) catch fatal("test failed", .{});
-            const escaped_stderr = try escapeHtml(arena, result.stderr);
-            const escaped_stdout = try escapeHtml(arena, result.stdout);
+            const escaped_stderr = try escape_html(arena, result.stderr);
+            const escaped_stdout = try escape_html(arena, result.stdout);
             try shell_out.print("\n{s}{s}\n", .{ escaped_stderr, escaped_stdout });
         },
     }
 
     if (!code.just_check_syntax) {
-        try printShell(out, shell_buffer.items, false);
+        try print_shell(out, shell_buffer.items, false);
     }
 }
 
@@ -565,15 +565,15 @@ fn print_source_block(arena: Allocator, out: anytype, source_bytes: []const u8, 
     try out.print("<figure><figcaption class=\"{s}-cap\"><cite class=\"file\">{s}</cite></figcaption><pre>", .{
         "zig", name,
     });
-    try tokenizeAndPrint(arena, out, source_bytes);
-    try out.writeAll("</pre></figure>");
+    try tokenize_and_print(arena, out, source_bytes);
+    try out.write_all("</pre></figure>");
 }
 
 fn tokenize_and_print(arena: Allocator, out: anytype, raw_src: []const u8) !void {
     const src_non_terminated = mem.trim(u8, raw_src, " \r\n");
-    const src = try arena.dupeZ(u8, src_non_terminated);
+    const src = try arena.dupe_z(u8, src_non_terminated);
 
-    try out.writeAll("<code>");
+    try out.write_all("<code>");
     var tokenizer = std.zig.Tokenizer.init(src);
     var index: usize = 0;
     var next_tok_is_fn = false;
@@ -582,22 +582,22 @@ fn tokenize_and_print(arena: Allocator, out: anytype, raw_src: []const u8) !void
         next_tok_is_fn = false;
 
         const token = tokenizer.next();
-        if (mem.indexOf(u8, src[index..token.loc.start], "//")) |comment_start_off| {
+        if (mem.index_of(u8, src[index..token.loc.start], "//")) |comment_start_off| {
             // render one comment
             const comment_start = index + comment_start_off;
-            const comment_end_off = mem.indexOf(u8, src[comment_start..token.loc.start], "\n");
+            const comment_end_off = mem.index_of(u8, src[comment_start..token.loc.start], "\n");
             const comment_end = if (comment_end_off) |o| comment_start + o else token.loc.start;
 
-            try writeEscapedLines(out, src[index..comment_start]);
-            try out.writeAll("<span class=\"tok-comment\">");
-            try writeEscaped(out, src[comment_start..comment_end]);
-            try out.writeAll("</span>");
+            try write_escaped_lines(out, src[index..comment_start]);
+            try out.write_all("<span class=\"tok-comment\">");
+            try write_escaped(out, src[comment_start..comment_end]);
+            try out.write_all("</span>");
             index = comment_end;
             tokenizer.index = index;
             continue;
         }
 
-        try writeEscapedLines(out, src[index..token.loc.start]);
+        try write_escaped_lines(out, src[index..token.loc.start]);
         switch (token.tag) {
             .eof => break,
 
@@ -650,15 +650,15 @@ fn tokenize_and_print(arena: Allocator, out: anytype, raw_src: []const u8) !void
             .keyword_while,
             .keyword_anytype,
             => {
-                try out.writeAll("<span class=\"tok-kw\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-kw\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
             },
 
             .keyword_fn => {
-                try out.writeAll("<span class=\"tok-kw\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-kw\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
                 next_tok_is_fn = true;
             },
 
@@ -666,23 +666,23 @@ fn tokenize_and_print(arena: Allocator, out: anytype, raw_src: []const u8) !void
             .multiline_string_literal_line,
             .char_literal,
             => {
-                try out.writeAll("<span class=\"tok-str\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-str\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
             },
 
             .builtin => {
-                try out.writeAll("<span class=\"tok-builtin\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-builtin\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
             },
 
             .doc_comment,
             .container_doc_comment,
             => {
-                try out.writeAll("<span class=\"tok-comment\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-comment\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
             },
 
             .identifier => {
@@ -692,13 +692,13 @@ fn tokenize_and_print(arena: Allocator, out: anytype, raw_src: []const u8) !void
                     mem.eql(u8, tok_bytes, "true") or
                     mem.eql(u8, tok_bytes, "false"))
                 {
-                    try out.writeAll("<span class=\"tok-null\">");
-                    try writeEscaped(out, tok_bytes);
-                    try out.writeAll("</span>");
+                    try out.write_all("<span class=\"tok-null\">");
+                    try write_escaped(out, tok_bytes);
+                    try out.write_all("</span>");
                 } else if (prev_tok_was_fn) {
-                    try out.writeAll("<span class=\"tok-fn\">");
-                    try writeEscaped(out, tok_bytes);
-                    try out.writeAll("</span>");
+                    try out.write_all("<span class=\"tok-fn\">");
+                    try write_escaped(out, tok_bytes);
+                    try out.write_all("</span>");
                 } else {
                     const is_int = blk: {
                         if (src[token.loc.start] != 'i' and src[token.loc.start] != 'u')
@@ -712,21 +712,21 @@ fn tokenize_and_print(arena: Allocator, out: anytype, raw_src: []const u8) !void
                         }
                         break :blk true;
                     };
-                    const isType = std.zig.isPrimitive;
-                    if (is_int or isType(tok_bytes)) {
-                        try out.writeAll("<span class=\"tok-type\">");
-                        try writeEscaped(out, tok_bytes);
-                        try out.writeAll("</span>");
+                    const is_type = std.zig.is_primitive;
+                    if (is_int or is_type(tok_bytes)) {
+                        try out.write_all("<span class=\"tok-type\">");
+                        try write_escaped(out, tok_bytes);
+                        try out.write_all("</span>");
                     } else {
-                        try writeEscaped(out, tok_bytes);
+                        try write_escaped(out, tok_bytes);
                     }
                 }
             },
 
             .number_literal => {
-                try out.writeAll("<span class=\"tok-number\">");
-                try writeEscaped(out, src[token.loc.start..token.loc.end]);
-                try out.writeAll("</span>");
+                try out.write_all("<span class=\"tok-number\">");
+                try write_escaped(out, src[token.loc.start..token.loc.end]);
+                try out.write_all("</span>");
             },
 
             .bang,
@@ -791,17 +791,17 @@ fn tokenize_and_print(arena: Allocator, out: anytype, raw_src: []const u8) !void
             .angle_bracket_angle_bracket_right,
             .angle_bracket_angle_bracket_right_equal,
             .tilde,
-            => try writeEscaped(out, src[token.loc.start..token.loc.end]),
+            => try write_escaped(out, src[token.loc.start..token.loc.end]),
 
             .invalid, .invalid_periodasterisks => fatal("syntax error", .{}),
         }
         index = token.loc.end;
     }
-    try out.writeAll("</code>");
+    try out.write_all("</code>");
 }
 
 fn write_escaped_lines(out: anytype, text: []const u8) !void {
-    return writeEscaped(out, text);
+    return write_escaped(out, text);
 }
 
 const Code = struct {
@@ -833,16 +833,16 @@ const Code = struct {
 };
 
 fn strip_manifest(source_bytes: []const u8) []const u8 {
-    const manifest_start = mem.lastIndexOf(u8, source_bytes, "\n\n// ") orelse
+    const manifest_start = mem.last_index_of(u8, source_bytes, "\n\n// ") orelse
         fatal("missing manifest comment", .{});
     return source_bytes[0 .. manifest_start + 1];
 }
 
 fn parse_manifest(arena: Allocator, source_bytes: []const u8) !Code {
-    const manifest_start = mem.lastIndexOf(u8, source_bytes, "\n\n// ") orelse
+    const manifest_start = mem.last_index_of(u8, source_bytes, "\n\n// ") orelse
         fatal("missing manifest comment", .{});
-    var it = mem.tokenizeScalar(u8, source_bytes[manifest_start..], '\n');
-    const first_line = skipPrefix(it.next().?);
+    var it = mem.tokenize_scalar(u8, source_bytes[manifest_start..], '\n');
+    const first_line = skip_prefix(it.next().?);
 
     var just_check_syntax = false;
     const id: Code.Id = if (mem.eql(u8, first_line, "syntax")) blk: {
@@ -854,14 +854,14 @@ fn parse_manifest(arena: Allocator, source_bytes: []const u8) !Code {
         .lib
     else if (mem.eql(u8, first_line, "obj"))
         .{ .obj = null }
-    else if (mem.startsWith(u8, first_line, "test_error="))
+    else if (mem.starts_with(u8, first_line, "test_error="))
         .{ .test_error = first_line["test_error=".len..] }
-    else if (mem.startsWith(u8, first_line, "test_safety="))
+    else if (mem.starts_with(u8, first_line, "test_safety="))
         .{ .test_safety = first_line["test_safety=".len..] }
-    else if (mem.startsWith(u8, first_line, "exe="))
-        .{ .exe = std.meta.stringToEnum(Code.ExpectedOutcome, first_line["exe=".len..]) orelse
+    else if (mem.starts_with(u8, first_line, "exe="))
+        .{ .exe = std.meta.string_to_enum(Code.ExpectedOutcome, first_line["exe=".len..]) orelse
             fatal("bad exe expected outcome in line '{s}'", .{first_line}) }
-    else if (mem.startsWith(u8, first_line, "obj="))
+    else if (mem.starts_with(u8, first_line, "obj="))
         .{ .obj = first_line["obj=".len..] }
     else
         fatal("unrecognized manifest id: '{s}'", .{first_line});
@@ -876,18 +876,18 @@ fn parse_manifest(arena: Allocator, source_bytes: []const u8) !Code {
     var verbose_cimport = false;
 
     while (it.next()) |prefixed_line| {
-        const line = skipPrefix(prefixed_line);
-        if (mem.startsWith(u8, line, "optimize=")) {
-            mode = std.meta.stringToEnum(std.builtin.OptimizeMode, line["optimize=".len..]) orelse
+        const line = skip_prefix(prefixed_line);
+        if (mem.starts_with(u8, line, "optimize=")) {
+            mode = std.meta.string_to_enum(std.builtin.OptimizeMode, line["optimize=".len..]) orelse
                 fatal("bad optimization mode line: '{s}'", .{line});
-        } else if (mem.startsWith(u8, line, "link_mode=")) {
-            link_mode = std.meta.stringToEnum(std.builtin.LinkMode, line["link_mode=".len..]) orelse
+        } else if (mem.starts_with(u8, line, "link_mode=")) {
+            link_mode = std.meta.string_to_enum(std.builtin.LinkMode, line["link_mode=".len..]) orelse
                 fatal("bad link mode line: '{s}'", .{line});
-        } else if (mem.startsWith(u8, line, "link_object=")) {
+        } else if (mem.starts_with(u8, line, "link_object=")) {
             try link_objects.append(arena, line["link_object=".len..]);
-        } else if (mem.startsWith(u8, line, "additional_option=")) {
+        } else if (mem.starts_with(u8, line, "additional_option=")) {
             try additional_options.append(arena, line["additional_option=".len..]);
-        } else if (mem.startsWith(u8, line, "target=")) {
+        } else if (mem.starts_with(u8, line, "target=")) {
             target_str = line["target=".len..];
         } else if (mem.eql(u8, line, "link_libc")) {
             link_libc = true;
@@ -903,8 +903,8 @@ fn parse_manifest(arena: Allocator, source_bytes: []const u8) !Code {
     return .{
         .id = id,
         .mode = mode,
-        .additional_options = try additional_options.toOwnedSlice(arena),
-        .link_objects = try link_objects.toOwnedSlice(arena),
+        .additional_options = try additional_options.to_owned_slice(arena),
+        .link_objects = try link_objects.to_owned_slice(arena),
         .target_str = target_str,
         .link_libc = link_libc,
         .link_mode = link_mode,
@@ -915,7 +915,7 @@ fn parse_manifest(arena: Allocator, source_bytes: []const u8) !Code {
 }
 
 fn skip_prefix(line: []const u8) []const u8 {
-    if (!mem.startsWith(u8, line, "// ")) {
+    if (!mem.starts_with(u8, line, "// ")) {
         fatal("line does not start with '// ': '{s}", .{line});
     }
     return line[3..];
@@ -926,18 +926,18 @@ fn escape_html(allocator: Allocator, input: []const u8) ![]u8 {
     defer buf.deinit();
 
     const out = buf.writer();
-    try writeEscaped(out, input);
-    return try buf.toOwnedSlice();
+    try write_escaped(out, input);
+    return try buf.to_owned_slice();
 }
 
 fn write_escaped(out: anytype, input: []const u8) !void {
     for (input) |c| {
         try switch (c) {
-            '&' => out.writeAll("&amp;"),
-            '<' => out.writeAll("&lt;"),
-            '>' => out.writeAll("&gt;"),
-            '"' => out.writeAll("&quot;"),
-            else => out.writeByte(c),
+            '&' => out.write_all("&amp;"),
+            '<' => out.write_all("&lt;"),
+            '>' => out.write_all("&gt;"),
+            '"' => out.write_all("&quot;"),
+            else => out.write_byte(c),
         };
     }
 }
@@ -984,10 +984,10 @@ fn term_color(allocator: Allocator, input: []const u8) ![]u8 {
             .start => switch (c) {
                 '\x1b' => state = .escape,
                 '\n' => {
-                    try out.writeByte(c);
+                    try out.write_byte(c);
                     last_new_line = buf.items.len;
                 },
-                else => try out.writeByte(c),
+                else => try out.write_byte(c),
             },
             .escape => switch (c) {
                 '[' => state = .lbracket,
@@ -1003,7 +1003,7 @@ fn term_color(allocator: Allocator, input: []const u8) ![]u8 {
             .number => switch (c) {
                 '0'...'9' => {},
                 else => {
-                    sgr_num = try std.fmt.parseInt(u8, input[sgr_param_start_index..i], 10);
+                    sgr_num = try std.fmt.parse_int(u8, input[sgr_param_start_index..i], 10);
                     sgr_color = 0;
                     state = .after_number;
                     i -= 1;
@@ -1037,7 +1037,7 @@ fn term_color(allocator: Allocator, input: []const u8) ![]u8 {
                     sgr_color = sgr_num;
                     if (!in(&supported_sgr_colors, sgr_color)) return error.UnsupportedForegroundColor;
 
-                    sgr_num = try std.fmt.parseInt(u8, input[sgr_param_start_index..i], 10);
+                    sgr_num = try std.fmt.parse_int(u8, input[sgr_param_start_index..i], 10);
                     if (!in(&supported_sgr_numbers, sgr_num)) return error.UnsupportedNumber;
 
                     state = .expect_end;
@@ -1048,7 +1048,7 @@ fn term_color(allocator: Allocator, input: []const u8) ![]u8 {
                 'm' => {
                     state = .start;
                     while (open_span_count != 0) : (open_span_count -= 1) {
-                        try out.writeAll("</span>");
+                        try out.write_all("</span>");
                     }
                     if (sgr_num == 0) {
                         if (sgr_color != 0) return error.UnsupportedColor;
@@ -1065,12 +1065,12 @@ fn term_color(allocator: Allocator, input: []const u8) ![]u8 {
             },
         }
     }
-    return try buf.toOwnedSlice();
+    return try buf.to_owned_slice();
 }
 
 // Returns true if number is in slice.
 fn in(slice: []const u8, number: u8) bool {
-    return mem.indexOfScalar(u8, slice, number) != null;
+    return mem.index_of_scalar(u8, slice, number) != null;
 }
 
 fn run(
@@ -1090,13 +1090,13 @@ fn run(
         .Exited => |exit_code| {
             if (exit_code != 0) {
                 std.debug.print("{s}\nThe following command exited with code {}:\n", .{ result.stderr, exit_code });
-                dumpArgs(args);
+                dump_args(args);
                 return error.ChildExitError;
             }
         },
         else => {
             std.debug.print("{s}\nThe following command crashed:\n", .{result.stderr});
-            dumpArgs(args);
+            dump_args(args);
             return error.ChildCrashed;
         },
     }
@@ -1105,49 +1105,49 @@ fn run(
 
 fn print_shell(out: anytype, shell_content: []const u8, escape: bool) !void {
     const trimmed_shell_content = mem.trim(u8, shell_content, " \r\n");
-    try out.writeAll("<figure><figcaption class=\"shell-cap\">Shell</figcaption><pre><samp>");
+    try out.write_all("<figure><figcaption class=\"shell-cap\">Shell</figcaption><pre><samp>");
     var cmd_cont: bool = false;
-    var iter = std.mem.splitScalar(u8, trimmed_shell_content, '\n');
+    var iter = std.mem.split_scalar(u8, trimmed_shell_content, '\n');
     while (iter.next()) |orig_line| {
-        const line = mem.trimRight(u8, orig_line, " \r");
+        const line = mem.trim_right(u8, orig_line, " \r");
         if (!cmd_cont and line.len > 1 and mem.eql(u8, line[0..2], "$ ") and line[line.len - 1] != '\\') {
-            try out.writeAll("$ <kbd>");
-            const s = std.mem.trimLeft(u8, line[1..], " ");
+            try out.write_all("$ <kbd>");
+            const s = std.mem.trim_left(u8, line[1..], " ");
             if (escape) {
-                try writeEscaped(out, s);
+                try write_escaped(out, s);
             } else {
-                try out.writeAll(s);
+                try out.write_all(s);
             }
-            try out.writeAll("</kbd>" ++ "\n");
+            try out.write_all("</kbd>" ++ "\n");
         } else if (!cmd_cont and line.len > 1 and mem.eql(u8, line[0..2], "$ ") and line[line.len - 1] == '\\') {
-            try out.writeAll("$ <kbd>");
-            const s = std.mem.trimLeft(u8, line[1..], " ");
+            try out.write_all("$ <kbd>");
+            const s = std.mem.trim_left(u8, line[1..], " ");
             if (escape) {
-                try writeEscaped(out, s);
+                try write_escaped(out, s);
             } else {
-                try out.writeAll(s);
+                try out.write_all(s);
             }
-            try out.writeAll("\n");
+            try out.write_all("\n");
             cmd_cont = true;
         } else if (line.len > 0 and line[line.len - 1] != '\\' and cmd_cont) {
             if (escape) {
-                try writeEscaped(out, line);
+                try write_escaped(out, line);
             } else {
-                try out.writeAll(line);
+                try out.write_all(line);
             }
-            try out.writeAll("</kbd>" ++ "\n");
+            try out.write_all("</kbd>" ++ "\n");
             cmd_cont = false;
         } else {
             if (escape) {
-                try writeEscaped(out, line);
+                try write_escaped(out, line);
             } else {
-                try out.writeAll(line);
+                try out.write_all(line);
             }
-            try out.writeAll("\n");
+            try out.write_all("\n");
         }
     }
 
-    try out.writeAll("</samp></pre></figure>");
+    try out.write_all("</samp></pre></figure>");
 }
 
 test "term supported colors" {
@@ -1157,45 +1157,45 @@ test "term supported colors" {
         const input = "A\x1b[31;1mred\x1b[0mB";
         const expect = "A<span class=\"sgr-31_1m\">red</span>B";
 
-        const result = try termColor(test_allocator, input);
+        const result = try term_color(test_allocator, input);
         defer test_allocator.free(result);
-        try testing.expectEqualSlices(u8, expect, result);
+        try testing.expect_equal_slices(u8, expect, result);
     }
 
     {
         const input = "A\x1b[32;1mgreen\x1b[0mB";
         const expect = "A<span class=\"sgr-32_1m\">green</span>B";
 
-        const result = try termColor(test_allocator, input);
+        const result = try term_color(test_allocator, input);
         defer test_allocator.free(result);
-        try testing.expectEqualSlices(u8, expect, result);
+        try testing.expect_equal_slices(u8, expect, result);
     }
 
     {
         const input = "A\x1b[36;1mcyan\x1b[0mB";
         const expect = "A<span class=\"sgr-36_1m\">cyan</span>B";
 
-        const result = try termColor(test_allocator, input);
+        const result = try term_color(test_allocator, input);
         defer test_allocator.free(result);
-        try testing.expectEqualSlices(u8, expect, result);
+        try testing.expect_equal_slices(u8, expect, result);
     }
 
     {
         const input = "A\x1b[1mbold\x1b[0mB";
         const expect = "A<span class=\"sgr-1m\">bold</span>B";
 
-        const result = try termColor(test_allocator, input);
+        const result = try term_color(test_allocator, input);
         defer test_allocator.free(result);
-        try testing.expectEqualSlices(u8, expect, result);
+        try testing.expect_equal_slices(u8, expect, result);
     }
 
     {
         const input = "A\x1b[2mdim\x1b[0mB";
         const expect = "A<span class=\"sgr-2m\">dim</span>B";
 
-        const result = try termColor(test_allocator, input);
+        const result = try term_color(test_allocator, input);
         defer test_allocator.free(result);
-        try testing.expectEqualSlices(u8, expect, result);
+        try testing.expect_equal_slices(u8, expect, result);
     }
 }
 
@@ -1209,37 +1209,37 @@ test "term output from zig" {
         const input = "Semantic Analysis [1324] \x1b[25D\x1b[0KLLVM Emit Object... \x1b[20D\x1b[0KLLVM Emit Object... \x1b[20D\x1b[0KLLD Link... \x1b[12D\x1b[0K";
         const expect = "";
 
-        const result = try termColor(test_allocator, input);
+        const result = try term_color(test_allocator, input);
         defer test_allocator.free(result);
-        try testing.expectEqualSlices(u8, expect, result);
+        try testing.expect_equal_slices(u8, expect, result);
     }
 
     {
         // 2.1-with-reference-traces.out
-        const input = "\x1b[1msrc/2.1-with-reference-traces.zig:3:7: \x1b[31;1merror: \x1b[0m\x1b[1mcannot assign to constant\n\x1b[0m    x += 1;\n    \x1b[32;1m~~^~~~\n\x1b[0m\x1b[0m\x1b[2mreferenced by:\n    main: src/2.1-with-reference-traces.zig:7:5\n    callMain: /usr/local/lib/zig/lib/std/start.zig:607:17\n    remaining reference traces hidden; use '-freference-trace' to see all reference traces\n\n\x1b[0m";
+        const input = "\x1b[1msrc/2.1-with-reference-traces.zig:3:7: \x1b[31;1merror: \x1b[0m\x1b[1mcannot assign to constant\n\x1b[0m    x += 1;\n    \x1b[32;1m~~^~~~\n\x1b[0m\x1b[0m\x1b[2mreferenced by:\n    main: src/2.1-with-reference-traces.zig:7:5\n    call_main: /usr/local/lib/zig/lib/std/start.zig:607:17\n    remaining reference traces hidden; use '-freference-trace' to see all reference traces\n\n\x1b[0m";
         const expect =
             \\<span class="sgr-1m">src/2.1-with-reference-traces.zig:3:7: </span><span class="sgr-31_1m">error: </span><span class="sgr-1m">cannot assign to constant
             \\</span>    x += 1;
             \\    <span class="sgr-32_1m">~~^~~~
             \\</span><span class="sgr-2m">referenced by:
             \\    main: src/2.1-with-reference-traces.zig:7:5
-            \\    callMain: /usr/local/lib/zig/lib/std/start.zig:607:17
+            \\    call_main: /usr/local/lib/zig/lib/std/start.zig:607:17
             \\    remaining reference traces hidden; use '-freference-trace' to see all reference traces
             \\
             \\</span>
         ;
 
-        const result = try termColor(test_allocator, input);
+        const result = try term_color(test_allocator, input);
         defer test_allocator.free(result);
-        try testing.expectEqualSlices(u8, expect, result);
+        try testing.expect_equal_slices(u8, expect, result);
     }
 
     {
         // 2.2-without-reference-traces.out
-        const input = "\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:128:29: \x1b[31;1merror: \x1b[0m\x1b[1minvalid type given to fixedBufferStream\n\x1b[0m                    else => @compileError(\"invalid type given to fixedBufferStream\"),\n                            \x1b[32;1m^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\x1b[0m\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:116:66: \x1b[36;1mnote: \x1b[0m\x1b[1mcalled from here\n\x1b[0mpub fn fixed_buffer_stream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {\n;                                                            \x1b[32;1m~~~~~^~~~~~~~~~~~~~~~~\n\x1b[0m";
+        const input = "\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:128:29: \x1b[31;1merror: \x1b[0m\x1b[1minvalid type given to fixed_buffer_stream\n\x1b[0m                    else => @compile_error(\"invalid type given to fixed_buffer_stream\"),\n                            \x1b[32;1m^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\x1b[0m\x1b[1m/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:116:66: \x1b[36;1mnote: \x1b[0m\x1b[1mcalled from here\n\x1b[0mpub fn fixed_buffer_stream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {\n;                                                            \x1b[32;1m~~~~~^~~~~~~~~~~~~~~~~\n\x1b[0m";
         const expect =
-            \\<span class="sgr-1m">/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:128:29: </span><span class="sgr-31_1m">error: </span><span class="sgr-1m">invalid type given to fixedBufferStream
-            \\</span>                    else => @compileError("invalid type given to fixedBufferStream"),
+            \\<span class="sgr-1m">/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:128:29: </span><span class="sgr-31_1m">error: </span><span class="sgr-1m">invalid type given to fixed_buffer_stream
+            \\</span>                    else => @compile_error("invalid type given to fixed_buffer_stream"),
             \\                            <span class="sgr-32_1m">^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
             \\</span><span class="sgr-1m">/usr/local/lib/zig/lib/std/io/fixed_buffer_stream.zig:116:66: </span><span class="sgr-36_1m">note: </span><span class="sgr-1m">called from here
             \\</span>pub fn fixed_buffer_stream(buffer: anytype) FixedBufferStream(Slice(@TypeOf(buffer))) {
@@ -1247,14 +1247,14 @@ test "term output from zig" {
             \\</span>
         ;
 
-        const result = try termColor(test_allocator, input);
+        const result = try term_color(test_allocator, input);
         defer test_allocator.free(result);
-        try testing.expectEqualSlices(u8, expect, result);
+        try testing.expect_equal_slices(u8, expect, result);
     }
 
     {
         // 2.3-with-notes.out
-        const input = "\x1b[1msrc/2.3-with-notes.zig:6:9: \x1b[31;1merror: \x1b[0m\x1b[1mexpected type '*2.3-with-notes.Derp', found '*2.3-with-notes.Wat'\n\x1b[0m    bar(w);\n        \x1b[32;1m^\n\x1b[0m\x1b[1msrc/2.3-with-notes.zig:6:9: \x1b[36;1mnote: \x1b[0m\x1b[1mpointer type child '2.3-with-notes.Wat' cannot cast into pointer type child '2.3-with-notes.Derp'\n\x1b[0m\x1b[1msrc/2.3-with-notes.zig:2:13: \x1b[36;1mnote: \x1b[0m\x1b[1mopaque declared here\n\x1b[0mconst Wat = opaque {};\n            \x1b[32;1m^~~~~~~~~\n\x1b[0m\x1b[1msrc/2.3-with-notes.zig:1:14: \x1b[36;1mnote: \x1b[0m\x1b[1mopaque declared here\n\x1b[0mconst Derp = opaque {};\n             \x1b[32;1m^~~~~~~~~\n\x1b[0m\x1b[1msrc/2.3-with-notes.zig:4:18: \x1b[36;1mnote: \x1b[0m\x1b[1mparameter type declared here\n\x1b[0mextern fn bar(d: *Derp) void;\n                 \x1b[32;1m^~~~~\n\x1b[0m\x1b[0m\x1b[2mreferenced by:\n    main: src/2.3-with-notes.zig:10:5\n    callMain: /usr/local/lib/zig/lib/std/start.zig:607:17\n    remaining reference traces hidden; use '-freference-trace' to see all reference traces\n\n\x1b[0m";
+        const input = "\x1b[1msrc/2.3-with-notes.zig:6:9: \x1b[31;1merror: \x1b[0m\x1b[1mexpected type '*2.3-with-notes.Derp', found '*2.3-with-notes.Wat'\n\x1b[0m    bar(w);\n        \x1b[32;1m^\n\x1b[0m\x1b[1msrc/2.3-with-notes.zig:6:9: \x1b[36;1mnote: \x1b[0m\x1b[1mpointer type child '2.3-with-notes.Wat' cannot cast into pointer type child '2.3-with-notes.Derp'\n\x1b[0m\x1b[1msrc/2.3-with-notes.zig:2:13: \x1b[36;1mnote: \x1b[0m\x1b[1mopaque declared here\n\x1b[0mconst Wat = opaque {};\n            \x1b[32;1m^~~~~~~~~\n\x1b[0m\x1b[1msrc/2.3-with-notes.zig:1:14: \x1b[36;1mnote: \x1b[0m\x1b[1mopaque declared here\n\x1b[0mconst Derp = opaque {};\n             \x1b[32;1m^~~~~~~~~\n\x1b[0m\x1b[1msrc/2.3-with-notes.zig:4:18: \x1b[36;1mnote: \x1b[0m\x1b[1mparameter type declared here\n\x1b[0mextern fn bar(d: *Derp) void;\n                 \x1b[32;1m^~~~~\n\x1b[0m\x1b[0m\x1b[2mreferenced by:\n    main: src/2.3-with-notes.zig:10:5\n    call_main: /usr/local/lib/zig/lib/std/start.zig:607:17\n    remaining reference traces hidden; use '-freference-trace' to see all reference traces\n\n\x1b[0m";
         const expect =
             \\<span class="sgr-1m">src/2.3-with-notes.zig:6:9: </span><span class="sgr-31_1m">error: </span><span class="sgr-1m">expected type '*2.3-with-notes.Derp', found '*2.3-with-notes.Wat'
             \\</span>    bar(w);
@@ -1271,15 +1271,15 @@ test "term output from zig" {
             \\                 <span class="sgr-32_1m">^~~~~
             \\</span><span class="sgr-2m">referenced by:
             \\    main: src/2.3-with-notes.zig:10:5
-            \\    callMain: /usr/local/lib/zig/lib/std/start.zig:607:17
+            \\    call_main: /usr/local/lib/zig/lib/std/start.zig:607:17
             \\    remaining reference traces hidden; use '-freference-trace' to see all reference traces
             \\
             \\</span>
         ;
 
-        const result = try termColor(test_allocator, input);
+        const result = try term_color(test_allocator, input);
         defer test_allocator.free(result);
-        try testing.expectEqualSlices(u8, expect, result);
+        try testing.expect_equal_slices(u8, expect, result);
     }
 
     {
@@ -1300,43 +1300,43 @@ test "term output from zig" {
             \\
         ;
 
-        const result = try termColor(test_allocator, input);
+        const result = try term_color(test_allocator, input);
         defer test_allocator.free(result);
-        try testing.expectEqualSlices(u8, expect, result);
+        try testing.expect_equal_slices(u8, expect, result);
     }
 
     {
         // 3.2-with-stack-trace.out
-        const input = "\x1b[1m/usr/local/lib/zig/lib/std/debug.zig:561:19\x1b[0m: \x1b[2m0x22a107 in writeCurrentStackTrace__anon_5898 (3.2-with-stack-trace)\x1b[0m\n    while (it.next()) |return_address| {\n                  \x1b[32;1m^\x1b[0m\n\x1b[1m/usr/local/lib/zig/lib/std/debug.zig:157:80\x1b[0m: \x1b[2m0x20bb23 in dumpCurrentStackTrace (3.2-with-stack-trace)\x1b[0m\n        writeCurrentStackTrace(stderr, debug_info, detectTTYConfig(io.getStdErr()), start_addr) catch |err| {\n                                                                               \x1b[32;1m^\x1b[0m\n\x1b[1m/home/zig/src/3.2-with-stack-trace.zig:5:36\x1b[0m: \x1b[2m0x20d3b2 in foo (3.2-with-stack-trace)\x1b[0m\n    std.debug.dumpCurrentStackTrace(null);\n                                   \x1b[32;1m^\x1b[0m\n\x1b[1m/home/zig/src/3.2-with-stack-trace.zig:9:8\x1b[0m: \x1b[2m0x20b458 in main (3.2-with-stack-trace)\x1b[0m\n    foo();\n       \x1b[32;1m^\x1b[0m\n\x1b[1m/usr/local/lib/zig/lib/std/start.zig:607:22\x1b[0m: \x1b[2m0x20a965 in posixCallMainAndExit (3.2-with-stack-trace)\x1b[0m\n            root.main();\n                     \x1b[32;1m^\x1b[0m\n\x1b[1m/usr/local/lib/zig/lib/std/start.zig:376:5\x1b[0m: \x1b[2m0x20a411 in _start (3.2-with-stack-trace)\x1b[0m\n    @call(.never_inline, posixCallMainAndExit, .{});\n    \x1b[32;1m^\x1b[0m\n";
+        const input = "\x1b[1m/usr/local/lib/zig/lib/std/debug.zig:561:19\x1b[0m: \x1b[2m0x22a107 in writeCurrentStackTrace__anon_5898 (3.2-with-stack-trace)\x1b[0m\n    while (it.next()) |return_address| {\n                  \x1b[32;1m^\x1b[0m\n\x1b[1m/usr/local/lib/zig/lib/std/debug.zig:157:80\x1b[0m: \x1b[2m0x20bb23 in dump_current_stack_trace (3.2-with-stack-trace)\x1b[0m\n        write_current_stack_trace(stderr, debug_info, detectTTYConfig(io.get_std_err()), start_addr) catch |err| {\n                                                                               \x1b[32;1m^\x1b[0m\n\x1b[1m/home/zig/src/3.2-with-stack-trace.zig:5:36\x1b[0m: \x1b[2m0x20d3b2 in foo (3.2-with-stack-trace)\x1b[0m\n    std.debug.dump_current_stack_trace(null);\n                                   \x1b[32;1m^\x1b[0m\n\x1b[1m/home/zig/src/3.2-with-stack-trace.zig:9:8\x1b[0m: \x1b[2m0x20b458 in main (3.2-with-stack-trace)\x1b[0m\n    foo();\n       \x1b[32;1m^\x1b[0m\n\x1b[1m/usr/local/lib/zig/lib/std/start.zig:607:22\x1b[0m: \x1b[2m0x20a965 in posix_call_main_and_exit (3.2-with-stack-trace)\x1b[0m\n            root.main();\n                     \x1b[32;1m^\x1b[0m\n\x1b[1m/usr/local/lib/zig/lib/std/start.zig:376:5\x1b[0m: \x1b[2m0x20a411 in _start (3.2-with-stack-trace)\x1b[0m\n    @call(.never_inline, posix_call_main_and_exit, .{});\n    \x1b[32;1m^\x1b[0m\n";
         const expect =
             \\<span class="sgr-1m">/usr/local/lib/zig/lib/std/debug.zig:561:19</span>: <span class="sgr-2m">0x22a107 in writeCurrentStackTrace__anon_5898 (3.2-with-stack-trace)</span>
             \\    while (it.next()) |return_address| {
             \\                  <span class="sgr-32_1m">^</span>
-            \\<span class="sgr-1m">/usr/local/lib/zig/lib/std/debug.zig:157:80</span>: <span class="sgr-2m">0x20bb23 in dumpCurrentStackTrace (3.2-with-stack-trace)</span>
-            \\        writeCurrentStackTrace(stderr, debug_info, detectTTYConfig(io.getStdErr()), start_addr) catch |err| {
+            \\<span class="sgr-1m">/usr/local/lib/zig/lib/std/debug.zig:157:80</span>: <span class="sgr-2m">0x20bb23 in dump_current_stack_trace (3.2-with-stack-trace)</span>
+            \\        write_current_stack_trace(stderr, debug_info, detectTTYConfig(io.get_std_err()), start_addr) catch |err| {
             \\                                                                               <span class="sgr-32_1m">^</span>
             \\<span class="sgr-1m">/home/zig/src/3.2-with-stack-trace.zig:5:36</span>: <span class="sgr-2m">0x20d3b2 in foo (3.2-with-stack-trace)</span>
-            \\    std.debug.dumpCurrentStackTrace(null);
+            \\    std.debug.dump_current_stack_trace(null);
             \\                                   <span class="sgr-32_1m">^</span>
             \\<span class="sgr-1m">/home/zig/src/3.2-with-stack-trace.zig:9:8</span>: <span class="sgr-2m">0x20b458 in main (3.2-with-stack-trace)</span>
             \\    foo();
             \\       <span class="sgr-32_1m">^</span>
-            \\<span class="sgr-1m">/usr/local/lib/zig/lib/std/start.zig:607:22</span>: <span class="sgr-2m">0x20a965 in posixCallMainAndExit (3.2-with-stack-trace)</span>
+            \\<span class="sgr-1m">/usr/local/lib/zig/lib/std/start.zig:607:22</span>: <span class="sgr-2m">0x20a965 in posix_call_main_and_exit (3.2-with-stack-trace)</span>
             \\            root.main();
             \\                     <span class="sgr-32_1m">^</span>
             \\<span class="sgr-1m">/usr/local/lib/zig/lib/std/start.zig:376:5</span>: <span class="sgr-2m">0x20a411 in _start (3.2-with-stack-trace)</span>
-            \\    @call(.never_inline, posixCallMainAndExit, .{});
+            \\    @call(.never_inline, posix_call_main_and_exit, .{});
             \\    <span class="sgr-32_1m">^</span>
             \\
         ;
 
-        const result = try termColor(test_allocator, input);
+        const result = try term_color(test_allocator, input);
         defer test_allocator.free(result);
-        try testing.expectEqualSlices(u8, expect, result);
+        try testing.expect_equal_slices(u8, expect, result);
     }
 }
 
-test "printShell" {
+test "print_shell" {
     const test_allocator = std.testing.allocator;
 
     {
@@ -1351,8 +1351,8 @@ test "printShell" {
         var buffer = std.ArrayList(u8).init(test_allocator);
         defer buffer.deinit();
 
-        try printShell(buffer.writer(), shell_out, false);
-        try testing.expectEqualSlices(u8, expected, buffer.items);
+        try print_shell(buffer.writer(), shell_out, false);
+        try testing.expect_equal_slices(u8, expected, buffer.items);
     }
     {
         const shell_out =
@@ -1368,8 +1368,8 @@ test "printShell" {
         var buffer = std.ArrayList(u8).init(test_allocator);
         defer buffer.deinit();
 
-        try printShell(buffer.writer(), shell_out, false);
-        try testing.expectEqualSlices(u8, expected, buffer.items);
+        try print_shell(buffer.writer(), shell_out, false);
+        try testing.expect_equal_slices(u8, expected, buffer.items);
     }
     {
         const shell_out = "$ zig build test.zig\r\nbuild output\r\n";
@@ -1382,8 +1382,8 @@ test "printShell" {
         var buffer = std.ArrayList(u8).init(test_allocator);
         defer buffer.deinit();
 
-        try printShell(buffer.writer(), shell_out, false);
-        try testing.expectEqualSlices(u8, expected, buffer.items);
+        try print_shell(buffer.writer(), shell_out, false);
+        try testing.expect_equal_slices(u8, expected, buffer.items);
     }
     {
         const shell_out =
@@ -1401,8 +1401,8 @@ test "printShell" {
         var buffer = std.ArrayList(u8).init(test_allocator);
         defer buffer.deinit();
 
-        try printShell(buffer.writer(), shell_out, false);
-        try testing.expectEqualSlices(u8, expected, buffer.items);
+        try print_shell(buffer.writer(), shell_out, false);
+        try testing.expect_equal_slices(u8, expected, buffer.items);
     }
     {
         const shell_out =
@@ -1422,8 +1422,8 @@ test "printShell" {
         var buffer = std.ArrayList(u8).init(test_allocator);
         defer buffer.deinit();
 
-        try printShell(buffer.writer(), shell_out, false);
-        try testing.expectEqualSlices(u8, expected, buffer.items);
+        try print_shell(buffer.writer(), shell_out, false);
+        try testing.expect_equal_slices(u8, expected, buffer.items);
     }
     {
         const shell_out =
@@ -1441,8 +1441,8 @@ test "printShell" {
         var buffer = std.ArrayList(u8).init(test_allocator);
         defer buffer.deinit();
 
-        try printShell(buffer.writer(), shell_out, false);
-        try testing.expectEqualSlices(u8, expected, buffer.items);
+        try print_shell(buffer.writer(), shell_out, false);
+        try testing.expect_equal_slices(u8, expected, buffer.items);
     }
     {
         const shell_out =
@@ -1464,8 +1464,8 @@ test "printShell" {
         var buffer = std.ArrayList(u8).init(test_allocator);
         defer buffer.deinit();
 
-        try printShell(buffer.writer(), shell_out, false);
-        try testing.expectEqualSlices(u8, expected, buffer.items);
+        try print_shell(buffer.writer(), shell_out, false);
+        try testing.expect_equal_slices(u8, expected, buffer.items);
     }
     {
         // intentional space after "--build-option1 \"
@@ -1486,8 +1486,8 @@ test "printShell" {
         var buffer = std.ArrayList(u8).init(test_allocator);
         defer buffer.deinit();
 
-        try printShell(buffer.writer(), shell_out, false);
-        try testing.expectEqualSlices(u8, expected, buffer.items);
+        try print_shell(buffer.writer(), shell_out, false);
+        try testing.expect_equal_slices(u8, expected, buffer.items);
     }
     {
         const shell_out =
@@ -1503,8 +1503,8 @@ test "printShell" {
         var buffer = std.ArrayList(u8).init(test_allocator);
         defer buffer.deinit();
 
-        try printShell(buffer.writer(), shell_out, false);
-        try testing.expectEqualSlices(u8, expected, buffer.items);
+        try print_shell(buffer.writer(), shell_out, false);
+        try testing.expect_equal_slices(u8, expected, buffer.items);
     }
     {
         const shell_out =
@@ -1522,8 +1522,8 @@ test "printShell" {
         var buffer = std.ArrayList(u8).init(test_allocator);
         defer buffer.deinit();
 
-        try printShell(buffer.writer(), shell_out, false);
-        try testing.expectEqualSlices(u8, expected, buffer.items);
+        try print_shell(buffer.writer(), shell_out, false);
+        try testing.expect_equal_slices(u8, expected, buffer.items);
     }
     {
         const shell_out =
@@ -1537,7 +1537,7 @@ test "printShell" {
         var buffer = std.ArrayList(u8).init(test_allocator);
         defer buffer.deinit();
 
-        try printShell(buffer.writer(), shell_out, false);
-        try testing.expectEqualSlices(u8, expected, buffer.items);
+        try print_shell(buffer.writer(), shell_out, false);
+        try testing.expect_equal_slices(u8, expected, buffer.items);
     }
 }

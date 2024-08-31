@@ -1,12 +1,12 @@
 export fn entry1() void {
-    _ = @sizeOf(packed struct(u32) {
+    _ = @size_of(packed struct(u32) {
         x: u1,
         y: u24,
         z: u4,
     });
 }
 export fn entry2() void {
-    _ = @sizeOf(packed struct(i31) {
+    _ = @size_of(packed struct(i31) {
         x: u4,
         y: u24,
         z: u4,
@@ -14,28 +14,28 @@ export fn entry2() void {
 }
 
 export fn entry3() void {
-    _ = @sizeOf(packed struct(void) {
+    _ = @size_of(packed struct(void) {
         x: void,
     });
 }
 
 export fn entry4() void {
-    _ = @sizeOf(packed struct(void) {});
+    _ = @size_of(packed struct(void) {});
 }
 
 export fn entry5() void {
-    _ = @sizeOf(packed struct(noreturn) {});
+    _ = @size_of(packed struct(noreturn) {});
 }
 
 export fn entry6() void {
-    _ = @sizeOf(packed struct(f64) {
+    _ = @size_of(packed struct(f64) {
         x: u32,
         y: f32,
     });
 }
 
 export fn entry7() void {
-    _ = @sizeOf(packed struct(*u32) {
+    _ = @size_of(packed struct(*u32) {
         x: u4,
         y: u24,
         z: u4,

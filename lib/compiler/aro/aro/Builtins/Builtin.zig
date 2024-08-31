@@ -18,30 +18,30 @@ pub const Tag = enum(u16) { _ };
 const Self = @This();
 
 pub fn from_name(name: []const u8) ?@This() {
-    const data_index = tagFromName(name) orelse return null;
-    return data[@intFromEnum(data_index)];
+    const data_index = tag_from_name(name) orelse return null;
+    return data[@int_from_enum(data_index)];
 }
 
 pub fn tag_from_name(name: []const u8) ?Tag {
-    const unique_index = uniqueIndex(name) orelse return null;
+    const unique_index = unique_index(name) orelse return null;
     return @enumFromInt(unique_index - 1);
 }
 
 pub fn from_tag(tag: Tag) @This() {
-    return data[@intFromEnum(tag)];
+    return data[@int_from_enum(tag)];
 }
 
 pub fn name_from_tag_into_buf(tag: Tag, name_buf: []u8) []u8 {
     std.debug.assert(name_buf.len >= longest_name);
-    const unique_index = @intFromEnum(tag) + 1;
-    return nameFromUniqueIndex(unique_index, name_buf);
+    const unique_index = @int_from_enum(tag) + 1;
+    return name_from_unique_index(unique_index, name_buf);
 }
 
 pub fn name_from_tag(tag: Tag) NameBuf {
     var name_buf: NameBuf = undefined;
-    const unique_index = @intFromEnum(tag) + 1;
-    const name = nameFromUniqueIndex(unique_index, &name_buf.buf);
-    name_buf.len = @intCast(name.len);
+    const unique_index = @int_from_enum(tag) + 1;
+    const name = name_from_unique_index(unique_index, &name_buf.buf);
+    name_buf.len = @int_cast(name.len);
     return name_buf;
 }
 
@@ -59,7 +59,7 @@ pub fn exists(name: []const u8) bool {
 
     var index: u16 = 0;
     for (name) |c| {
-        index = findInList(dafsa[index].child_index, c) orelse return false;
+        index = find_in_list(dafsa[index].child_index, c) orelse return false;
     }
     return dafsa[index].end_of_word;
 }
@@ -89,7 +89,7 @@ pub fn unique_index(name: []const u8) ?u16 {
     var node_index: u16 = 0;
 
     for (name) |c| {
-        const child_index = findInList(dafsa[node_index].child_index, c) orelse return null;
+        const child_index = find_in_list(dafsa[node_index].child_index, c) orelse return null;
         var sibling_index = dafsa[node_index].child_index;
         while (true) {
             const sibling_c = dafsa[sibling_index].char;
@@ -112,13 +112,13 @@ pub fn unique_index(name: []const u8) ?u16 {
 /// Returns a slice of `buf` with the name associated with the given `index`.
 /// This function should only be called with an `index` that
 /// is already known to exist within the `dafsa`, e.g. an index
-/// returned from `uniqueIndex`.
+/// returned from `unique_index`.
 pub fn name_from_unique_index(index: u16, buf: []u8) []u8 {
     std.debug.assert(index >= 1 and index <= data.len);
 
     var node_index: u16 = 0;
     var count: u16 = index;
-    var fbs = std.io.fixedBufferStream(buf);
+    var fbs = std.io.fixed_buffer_stream(buf);
     const w = fbs.writer();
 
     while (true) {
@@ -127,7 +127,7 @@ pub fn name_from_unique_index(index: u16, buf: []u8) []u8 {
             if (dafsa[sibling_index].number > 0 and dafsa[sibling_index].number < count) {
                 count -= dafsa[sibling_index].number;
             } else {
-                w.writeByte(dafsa[sibling_index].char) catch unreachable;
+                w.write_byte(dafsa[sibling_index].char) catch unreachable;
                 node_index = sibling_index;
                 if (dafsa[node_index].end_of_word) {
                     count -= 1;
@@ -141,7 +141,7 @@ pub fn name_from_unique_index(index: u16, buf: []u8) []u8 {
         if (count == 0) break;
     }
 
-    return fbs.getWritten();
+    return fbs.get_written();
 }
 
 /// We're 1 bit shy of being able to fit this in a u32:
@@ -5232,13 +5232,13 @@ pub const data = blk: {
         // _InterlockedXor8
         .{ .tag = @enumFromInt(31), .properties = .{ .param_str = "ccD*c", .language = .all_ms_languages } },
         // _MoveFromCoprocessor
-        .{ .tag = @enumFromInt(32), .properties = .{ .param_str = "UiIUiIUiIUiIUiIUi", .language = .all_ms_languages, .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(32), .properties = .{ .param_str = "UiIUiIUiIUiIUiIUi", .language = .all_ms_languages, .target_set = TargetSet.init_one(.arm) } },
         // _MoveFromCoprocessor2
-        .{ .tag = @enumFromInt(33), .properties = .{ .param_str = "UiIUiIUiIUiIUiIUi", .language = .all_ms_languages, .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(33), .properties = .{ .param_str = "UiIUiIUiIUiIUiIUi", .language = .all_ms_languages, .target_set = TargetSet.init_one(.arm) } },
         // _MoveToCoprocessor
-        .{ .tag = @enumFromInt(34), .properties = .{ .param_str = "vUiIUiIUiIUiIUiIUi", .language = .all_ms_languages, .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(34), .properties = .{ .param_str = "vUiIUiIUiIUiIUiIUi", .language = .all_ms_languages, .target_set = TargetSet.init_one(.arm) } },
         // _MoveToCoprocessor2
-        .{ .tag = @enumFromInt(35), .properties = .{ .param_str = "vUiIUiIUiIUiIUiIUi", .language = .all_ms_languages, .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(35), .properties = .{ .param_str = "vUiIUiIUiIUiIUiIUi", .language = .all_ms_languages, .target_set = TargetSet.init_one(.arm) } },
         // _ReturnAddress
         .{ .tag = @enumFromInt(36), .properties = .{ .param_str = "v*", .language = .all_ms_languages } },
         // __GetExceptionInfo
@@ -5412,519 +5412,519 @@ pub const data = blk: {
         // __builtin_alloca_with_align_uninitialized
         .{ .tag = @enumFromInt(121), .properties = .{ .param_str = "v*zIz", .attributes = .{ .lib_function_with_builtin_prefix = true } } },
         // __builtin_amdgcn_alignbit
-        .{ .tag = @enumFromInt(122), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(122), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_alignbyte
-        .{ .tag = @enumFromInt(123), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(123), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_atomic_dec32
-        .{ .tag = @enumFromInt(124), .properties = .{ .param_str = "UZiUZiD*UZiUicC*", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(124), .properties = .{ .param_str = "UZiUZiD*UZiUicC*", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_atomic_dec64
-        .{ .tag = @enumFromInt(125), .properties = .{ .param_str = "UWiUWiD*UWiUicC*", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(125), .properties = .{ .param_str = "UWiUWiD*UWiUicC*", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_atomic_inc32
-        .{ .tag = @enumFromInt(126), .properties = .{ .param_str = "UZiUZiD*UZiUicC*", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(126), .properties = .{ .param_str = "UZiUZiD*UZiUicC*", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_atomic_inc64
-        .{ .tag = @enumFromInt(127), .properties = .{ .param_str = "UWiUWiD*UWiUicC*", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(127), .properties = .{ .param_str = "UWiUWiD*UWiUicC*", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_buffer_wbinvl1
-        .{ .tag = @enumFromInt(128), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(128), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_class
-        .{ .tag = @enumFromInt(129), .properties = .{ .param_str = "bdi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(129), .properties = .{ .param_str = "bdi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_classf
-        .{ .tag = @enumFromInt(130), .properties = .{ .param_str = "bfi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(130), .properties = .{ .param_str = "bfi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_cosf
-        .{ .tag = @enumFromInt(131), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(131), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_cubeid
-        .{ .tag = @enumFromInt(132), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(132), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_cubema
-        .{ .tag = @enumFromInt(133), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(133), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_cubesc
-        .{ .tag = @enumFromInt(134), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(134), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_cubetc
-        .{ .tag = @enumFromInt(135), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(135), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_cvt_pk_i16
-        .{ .tag = @enumFromInt(136), .properties = .{ .param_str = "E2sii", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(136), .properties = .{ .param_str = "E2sii", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_cvt_pk_u16
-        .{ .tag = @enumFromInt(137), .properties = .{ .param_str = "E2UsUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(137), .properties = .{ .param_str = "E2UsUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_cvt_pk_u8_f32
-        .{ .tag = @enumFromInt(138), .properties = .{ .param_str = "UifUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(138), .properties = .{ .param_str = "UifUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_cvt_pknorm_i16
-        .{ .tag = @enumFromInt(139), .properties = .{ .param_str = "E2sff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(139), .properties = .{ .param_str = "E2sff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_cvt_pknorm_u16
-        .{ .tag = @enumFromInt(140), .properties = .{ .param_str = "E2Usff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(140), .properties = .{ .param_str = "E2Usff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_cvt_pkrtz
-        .{ .tag = @enumFromInt(141), .properties = .{ .param_str = "E2hff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(141), .properties = .{ .param_str = "E2hff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_dispatch_ptr
-        .{ .tag = @enumFromInt(142), .properties = .{ .param_str = "v*4", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(142), .properties = .{ .param_str = "v*4", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_div_fixup
-        .{ .tag = @enumFromInt(143), .properties = .{ .param_str = "dddd", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(143), .properties = .{ .param_str = "dddd", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_div_fixupf
-        .{ .tag = @enumFromInt(144), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(144), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_div_fmas
-        .{ .tag = @enumFromInt(145), .properties = .{ .param_str = "ddddb", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(145), .properties = .{ .param_str = "ddddb", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_div_fmasf
-        .{ .tag = @enumFromInt(146), .properties = .{ .param_str = "ffffb", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(146), .properties = .{ .param_str = "ffffb", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_div_scale
-        .{ .tag = @enumFromInt(147), .properties = .{ .param_str = "dddbb*", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(147), .properties = .{ .param_str = "dddbb*", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_div_scalef
-        .{ .tag = @enumFromInt(148), .properties = .{ .param_str = "fffbb*", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(148), .properties = .{ .param_str = "fffbb*", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_ds_append
-        .{ .tag = @enumFromInt(149), .properties = .{ .param_str = "ii*3", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(149), .properties = .{ .param_str = "ii*3", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_ds_bpermute
-        .{ .tag = @enumFromInt(150), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(150), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_ds_consume
-        .{ .tag = @enumFromInt(151), .properties = .{ .param_str = "ii*3", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(151), .properties = .{ .param_str = "ii*3", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_ds_faddf
-        .{ .tag = @enumFromInt(152), .properties = .{ .param_str = "ff*3fIiIiIb", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(152), .properties = .{ .param_str = "ff*3fIiIiIb", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_ds_fmaxf
-        .{ .tag = @enumFromInt(153), .properties = .{ .param_str = "ff*3fIiIiIb", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(153), .properties = .{ .param_str = "ff*3fIiIiIb", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_ds_fminf
-        .{ .tag = @enumFromInt(154), .properties = .{ .param_str = "ff*3fIiIiIb", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(154), .properties = .{ .param_str = "ff*3fIiIiIb", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_ds_permute
-        .{ .tag = @enumFromInt(155), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(155), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_ds_swizzle
-        .{ .tag = @enumFromInt(156), .properties = .{ .param_str = "iiIi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(156), .properties = .{ .param_str = "iiIi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_endpgm
-        .{ .tag = @enumFromInt(157), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .noreturn = true } } },
+        .{ .tag = @enumFromInt(157), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .noreturn = true } } },
         // __builtin_amdgcn_exp2f
-        .{ .tag = @enumFromInt(158), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(158), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_fcmp
-        .{ .tag = @enumFromInt(159), .properties = .{ .param_str = "WUiddIi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(159), .properties = .{ .param_str = "WUiddIi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_fcmpf
-        .{ .tag = @enumFromInt(160), .properties = .{ .param_str = "WUiffIi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(160), .properties = .{ .param_str = "WUiffIi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_fence
-        .{ .tag = @enumFromInt(161), .properties = .{ .param_str = "vUicC*", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(161), .properties = .{ .param_str = "vUicC*", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_fmed3f
-        .{ .tag = @enumFromInt(162), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(162), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_fract
-        .{ .tag = @enumFromInt(163), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(163), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_fractf
-        .{ .tag = @enumFromInt(164), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(164), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_frexp_exp
-        .{ .tag = @enumFromInt(165), .properties = .{ .param_str = "id", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(165), .properties = .{ .param_str = "id", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_frexp_expf
-        .{ .tag = @enumFromInt(166), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(166), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_frexp_mant
-        .{ .tag = @enumFromInt(167), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(167), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_frexp_mantf
-        .{ .tag = @enumFromInt(168), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(168), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_grid_size_x
-        .{ .tag = @enumFromInt(169), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(169), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_grid_size_y
-        .{ .tag = @enumFromInt(170), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(170), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_grid_size_z
-        .{ .tag = @enumFromInt(171), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(171), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_groupstaticsize
-        .{ .tag = @enumFromInt(172), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(172), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_iglp_opt
-        .{ .tag = @enumFromInt(173), .properties = .{ .param_str = "vIi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(173), .properties = .{ .param_str = "vIi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_implicitarg_ptr
-        .{ .tag = @enumFromInt(174), .properties = .{ .param_str = "v*4", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(174), .properties = .{ .param_str = "v*4", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_interp_mov
-        .{ .tag = @enumFromInt(175), .properties = .{ .param_str = "fUiUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(175), .properties = .{ .param_str = "fUiUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_interp_p1
-        .{ .tag = @enumFromInt(176), .properties = .{ .param_str = "ffUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(176), .properties = .{ .param_str = "ffUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_interp_p1_f16
-        .{ .tag = @enumFromInt(177), .properties = .{ .param_str = "ffUiUibUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(177), .properties = .{ .param_str = "ffUiUibUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_interp_p2
-        .{ .tag = @enumFromInt(178), .properties = .{ .param_str = "fffUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(178), .properties = .{ .param_str = "fffUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_interp_p2_f16
-        .{ .tag = @enumFromInt(179), .properties = .{ .param_str = "hffUiUibUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(179), .properties = .{ .param_str = "hffUiUibUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_is_private
-        .{ .tag = @enumFromInt(180), .properties = .{ .param_str = "bvC*0", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(180), .properties = .{ .param_str = "bvC*0", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_is_shared
-        .{ .tag = @enumFromInt(181), .properties = .{ .param_str = "bvC*0", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(181), .properties = .{ .param_str = "bvC*0", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_kernarg_segment_ptr
-        .{ .tag = @enumFromInt(182), .properties = .{ .param_str = "v*4", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(182), .properties = .{ .param_str = "v*4", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_ldexp
-        .{ .tag = @enumFromInt(183), .properties = .{ .param_str = "ddi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(183), .properties = .{ .param_str = "ddi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_ldexpf
-        .{ .tag = @enumFromInt(184), .properties = .{ .param_str = "ffi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(184), .properties = .{ .param_str = "ffi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_lerp
-        .{ .tag = @enumFromInt(185), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(185), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_log_clampf
-        .{ .tag = @enumFromInt(186), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(186), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_logf
-        .{ .tag = @enumFromInt(187), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(187), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_mbcnt_hi
-        .{ .tag = @enumFromInt(188), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(188), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_mbcnt_lo
-        .{ .tag = @enumFromInt(189), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(189), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_mqsad_pk_u16_u8
-        .{ .tag = @enumFromInt(190), .properties = .{ .param_str = "WUiWUiUiWUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(190), .properties = .{ .param_str = "WUiWUiUiWUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_mqsad_u32_u8
-        .{ .tag = @enumFromInt(191), .properties = .{ .param_str = "V4UiWUiUiV4Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(191), .properties = .{ .param_str = "V4UiWUiUiV4Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_msad_u8
-        .{ .tag = @enumFromInt(192), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(192), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_qsad_pk_u16_u8
-        .{ .tag = @enumFromInt(193), .properties = .{ .param_str = "WUiWUiUiWUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(193), .properties = .{ .param_str = "WUiWUiUiWUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_queue_ptr
-        .{ .tag = @enumFromInt(194), .properties = .{ .param_str = "v*4", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(194), .properties = .{ .param_str = "v*4", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_rcp
-        .{ .tag = @enumFromInt(195), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(195), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_rcpf
-        .{ .tag = @enumFromInt(196), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(196), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_read_exec
-        .{ .tag = @enumFromInt(197), .properties = .{ .param_str = "WUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(197), .properties = .{ .param_str = "WUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_read_exec_hi
-        .{ .tag = @enumFromInt(198), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(198), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_read_exec_lo
-        .{ .tag = @enumFromInt(199), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(199), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_readfirstlane
-        .{ .tag = @enumFromInt(200), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(200), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_readlane
-        .{ .tag = @enumFromInt(201), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(201), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_rsq
-        .{ .tag = @enumFromInt(202), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(202), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_rsq_clamp
-        .{ .tag = @enumFromInt(203), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(203), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_rsq_clampf
-        .{ .tag = @enumFromInt(204), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(204), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_rsqf
-        .{ .tag = @enumFromInt(205), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(205), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_s_barrier
-        .{ .tag = @enumFromInt(206), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(206), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_s_dcache_inv
-        .{ .tag = @enumFromInt(207), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(207), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_s_decperflevel
-        .{ .tag = @enumFromInt(208), .properties = .{ .param_str = "vIi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(208), .properties = .{ .param_str = "vIi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_s_getpc
-        .{ .tag = @enumFromInt(209), .properties = .{ .param_str = "WUi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(209), .properties = .{ .param_str = "WUi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_s_getreg
-        .{ .tag = @enumFromInt(210), .properties = .{ .param_str = "UiIi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(210), .properties = .{ .param_str = "UiIi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_s_incperflevel
-        .{ .tag = @enumFromInt(211), .properties = .{ .param_str = "vIi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(211), .properties = .{ .param_str = "vIi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_s_sendmsg
-        .{ .tag = @enumFromInt(212), .properties = .{ .param_str = "vIiUi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(212), .properties = .{ .param_str = "vIiUi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_s_sendmsghalt
-        .{ .tag = @enumFromInt(213), .properties = .{ .param_str = "vIiUi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(213), .properties = .{ .param_str = "vIiUi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_s_setprio
-        .{ .tag = @enumFromInt(214), .properties = .{ .param_str = "vIs", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(214), .properties = .{ .param_str = "vIs", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_s_setreg
-        .{ .tag = @enumFromInt(215), .properties = .{ .param_str = "vIiUi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(215), .properties = .{ .param_str = "vIiUi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_s_sleep
-        .{ .tag = @enumFromInt(216), .properties = .{ .param_str = "vIi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(216), .properties = .{ .param_str = "vIi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_s_waitcnt
-        .{ .tag = @enumFromInt(217), .properties = .{ .param_str = "vIi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(217), .properties = .{ .param_str = "vIi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_sad_hi_u8
-        .{ .tag = @enumFromInt(218), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(218), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_sad_u16
-        .{ .tag = @enumFromInt(219), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(219), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_sad_u8
-        .{ .tag = @enumFromInt(220), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(220), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_sbfe
-        .{ .tag = @enumFromInt(221), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(221), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_sched_barrier
-        .{ .tag = @enumFromInt(222), .properties = .{ .param_str = "vIi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(222), .properties = .{ .param_str = "vIi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_sched_group_barrier
-        .{ .tag = @enumFromInt(223), .properties = .{ .param_str = "vIiIiIi", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(223), .properties = .{ .param_str = "vIiIiIi", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_sicmp
-        .{ .tag = @enumFromInt(224), .properties = .{ .param_str = "WUiiiIi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(224), .properties = .{ .param_str = "WUiiiIi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_sicmpl
-        .{ .tag = @enumFromInt(225), .properties = .{ .param_str = "WUiWiWiIi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(225), .properties = .{ .param_str = "WUiWiWiIi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_sinf
-        .{ .tag = @enumFromInt(226), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(226), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_sqrt
-        .{ .tag = @enumFromInt(227), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(227), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_sqrtf
-        .{ .tag = @enumFromInt(228), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(228), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_trig_preop
-        .{ .tag = @enumFromInt(229), .properties = .{ .param_str = "ddi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(229), .properties = .{ .param_str = "ddi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_trig_preopf
-        .{ .tag = @enumFromInt(230), .properties = .{ .param_str = "ffi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(230), .properties = .{ .param_str = "ffi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_ubfe
-        .{ .tag = @enumFromInt(231), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(231), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_uicmp
-        .{ .tag = @enumFromInt(232), .properties = .{ .param_str = "WUiUiUiIi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(232), .properties = .{ .param_str = "WUiUiUiIi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_uicmpl
-        .{ .tag = @enumFromInt(233), .properties = .{ .param_str = "WUiWUiWUiIi", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(233), .properties = .{ .param_str = "WUiWUiWUiIi", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_wave_barrier
-        .{ .tag = @enumFromInt(234), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.amdgpu) } },
+        .{ .tag = @enumFromInt(234), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.amdgpu) } },
         // __builtin_amdgcn_workgroup_id_x
-        .{ .tag = @enumFromInt(235), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(235), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_workgroup_id_y
-        .{ .tag = @enumFromInt(236), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(236), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_workgroup_id_z
-        .{ .tag = @enumFromInt(237), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(237), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_workgroup_size_x
-        .{ .tag = @enumFromInt(238), .properties = .{ .param_str = "Us", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(238), .properties = .{ .param_str = "Us", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_workgroup_size_y
-        .{ .tag = @enumFromInt(239), .properties = .{ .param_str = "Us", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(239), .properties = .{ .param_str = "Us", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_workgroup_size_z
-        .{ .tag = @enumFromInt(240), .properties = .{ .param_str = "Us", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(240), .properties = .{ .param_str = "Us", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_workitem_id_x
-        .{ .tag = @enumFromInt(241), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(241), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_workitem_id_y
-        .{ .tag = @enumFromInt(242), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(242), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_amdgcn_workitem_id_z
-        .{ .tag = @enumFromInt(243), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(243), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_annotation
         .{ .tag = @enumFromInt(244), .properties = .{ .param_str = "v.", .attributes = .{ .custom_typecheck = true } } },
         // __builtin_arm_cdp
-        .{ .tag = @enumFromInt(245), .properties = .{ .param_str = "vUIiUIiUIiUIiUIiUIi", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(245), .properties = .{ .param_str = "vUIiUIiUIiUIiUIiUIi", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_cdp2
-        .{ .tag = @enumFromInt(246), .properties = .{ .param_str = "vUIiUIiUIiUIiUIiUIi", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(246), .properties = .{ .param_str = "vUIiUIiUIiUIiUIiUIi", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_clrex
-        .{ .tag = @enumFromInt(247), .properties = .{ .param_str = "v", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(247), .properties = .{ .param_str = "v", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __builtin_arm_cls
-        .{ .tag = @enumFromInt(248), .properties = .{ .param_str = "UiZUi", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(248), .properties = .{ .param_str = "UiZUi", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_cls64
-        .{ .tag = @enumFromInt(249), .properties = .{ .param_str = "UiWUi", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(249), .properties = .{ .param_str = "UiWUi", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_clz
-        .{ .tag = @enumFromInt(250), .properties = .{ .param_str = "UiZUi", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(250), .properties = .{ .param_str = "UiZUi", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_clz64
-        .{ .tag = @enumFromInt(251), .properties = .{ .param_str = "UiWUi", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(251), .properties = .{ .param_str = "UiWUi", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_cmse_TT
-        .{ .tag = @enumFromInt(252), .properties = .{ .param_str = "Uiv*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(252), .properties = .{ .param_str = "Uiv*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_cmse_TTA
-        .{ .tag = @enumFromInt(253), .properties = .{ .param_str = "Uiv*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(253), .properties = .{ .param_str = "Uiv*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_cmse_TTAT
-        .{ .tag = @enumFromInt(254), .properties = .{ .param_str = "Uiv*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(254), .properties = .{ .param_str = "Uiv*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_cmse_TTT
-        .{ .tag = @enumFromInt(255), .properties = .{ .param_str = "Uiv*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(255), .properties = .{ .param_str = "Uiv*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_dbg
-        .{ .tag = @enumFromInt(256), .properties = .{ .param_str = "vUi", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(256), .properties = .{ .param_str = "vUi", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_dmb
-        .{ .tag = @enumFromInt(257), .properties = .{ .param_str = "vUi", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(257), .properties = .{ .param_str = "vUi", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_dsb
-        .{ .tag = @enumFromInt(258), .properties = .{ .param_str = "vUi", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(258), .properties = .{ .param_str = "vUi", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_get_fpscr
-        .{ .tag = @enumFromInt(259), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(259), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_isb
-        .{ .tag = @enumFromInt(260), .properties = .{ .param_str = "vUi", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(260), .properties = .{ .param_str = "vUi", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_ldaex
-        .{ .tag = @enumFromInt(261), .properties = .{ .param_str = "v.", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .custom_typecheck = true } } },
+        .{ .tag = @enumFromInt(261), .properties = .{ .param_str = "v.", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .custom_typecheck = true } } },
         // __builtin_arm_ldc
-        .{ .tag = @enumFromInt(262), .properties = .{ .param_str = "vUIiUIivC*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(262), .properties = .{ .param_str = "vUIiUIivC*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_ldc2
-        .{ .tag = @enumFromInt(263), .properties = .{ .param_str = "vUIiUIivC*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(263), .properties = .{ .param_str = "vUIiUIivC*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_ldc2l
-        .{ .tag = @enumFromInt(264), .properties = .{ .param_str = "vUIiUIivC*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(264), .properties = .{ .param_str = "vUIiUIivC*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_ldcl
-        .{ .tag = @enumFromInt(265), .properties = .{ .param_str = "vUIiUIivC*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(265), .properties = .{ .param_str = "vUIiUIivC*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_ldrex
-        .{ .tag = @enumFromInt(266), .properties = .{ .param_str = "v.", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .custom_typecheck = true } } },
+        .{ .tag = @enumFromInt(266), .properties = .{ .param_str = "v.", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .custom_typecheck = true } } },
         // __builtin_arm_ldrexd
-        .{ .tag = @enumFromInt(267), .properties = .{ .param_str = "LLUiv*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(267), .properties = .{ .param_str = "LLUiv*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_mcr
-        .{ .tag = @enumFromInt(268), .properties = .{ .param_str = "vUIiUIiUiUIiUIiUIi", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(268), .properties = .{ .param_str = "vUIiUIiUiUIiUIiUIi", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_mcr2
-        .{ .tag = @enumFromInt(269), .properties = .{ .param_str = "vUIiUIiUiUIiUIiUIi", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(269), .properties = .{ .param_str = "vUIiUIiUiUIiUIiUIi", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_mcrr
-        .{ .tag = @enumFromInt(270), .properties = .{ .param_str = "vUIiUIiLLUiUIi", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(270), .properties = .{ .param_str = "vUIiUIiLLUiUIi", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_mcrr2
-        .{ .tag = @enumFromInt(271), .properties = .{ .param_str = "vUIiUIiLLUiUIi", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(271), .properties = .{ .param_str = "vUIiUIiLLUiUIi", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_mrc
-        .{ .tag = @enumFromInt(272), .properties = .{ .param_str = "UiUIiUIiUIiUIiUIi", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(272), .properties = .{ .param_str = "UiUIiUIiUIiUIiUIi", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_mrc2
-        .{ .tag = @enumFromInt(273), .properties = .{ .param_str = "UiUIiUIiUIiUIiUIi", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(273), .properties = .{ .param_str = "UiUIiUIiUIiUIiUIi", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_mrrc
-        .{ .tag = @enumFromInt(274), .properties = .{ .param_str = "LLUiUIiUIiUIi", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(274), .properties = .{ .param_str = "LLUiUIiUIiUIi", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_mrrc2
-        .{ .tag = @enumFromInt(275), .properties = .{ .param_str = "LLUiUIiUIiUIi", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(275), .properties = .{ .param_str = "LLUiUIiUIiUIi", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_nop
-        .{ .tag = @enumFromInt(276), .properties = .{ .param_str = "v", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(276), .properties = .{ .param_str = "v", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __builtin_arm_prefetch
-        .{ .tag = @enumFromInt(277), .properties = .{ .param_str = "!", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(277), .properties = .{ .param_str = "!", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_qadd
-        .{ .tag = @enumFromInt(278), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(278), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_qadd16
-        .{ .tag = @enumFromInt(279), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(279), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_qadd8
-        .{ .tag = @enumFromInt(280), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(280), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_qasx
-        .{ .tag = @enumFromInt(281), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(281), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_qdbl
-        .{ .tag = @enumFromInt(282), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(282), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_qsax
-        .{ .tag = @enumFromInt(283), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(283), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_qsub
-        .{ .tag = @enumFromInt(284), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(284), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_qsub16
-        .{ .tag = @enumFromInt(285), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(285), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_qsub8
-        .{ .tag = @enumFromInt(286), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(286), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_rbit
-        .{ .tag = @enumFromInt(287), .properties = .{ .param_str = "UiUi", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(287), .properties = .{ .param_str = "UiUi", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_rbit64
-        .{ .tag = @enumFromInt(288), .properties = .{ .param_str = "WUiWUi", .target_set = TargetSet.initOne(.aarch64), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(288), .properties = .{ .param_str = "WUiWUi", .target_set = TargetSet.init_one(.aarch64), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_rsr
-        .{ .tag = @enumFromInt(289), .properties = .{ .param_str = "UicC*", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(289), .properties = .{ .param_str = "UicC*", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_rsr64
-        .{ .tag = @enumFromInt(290), .properties = .{ .param_str = "!", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(290), .properties = .{ .param_str = "!", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_rsrp
-        .{ .tag = @enumFromInt(291), .properties = .{ .param_str = "v*cC*", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(291), .properties = .{ .param_str = "v*cC*", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_sadd16
-        .{ .tag = @enumFromInt(292), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(292), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_sadd8
-        .{ .tag = @enumFromInt(293), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(293), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_sasx
-        .{ .tag = @enumFromInt(294), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(294), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_sel
-        .{ .tag = @enumFromInt(295), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(295), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_set_fpscr
-        .{ .tag = @enumFromInt(296), .properties = .{ .param_str = "vUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(296), .properties = .{ .param_str = "vUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_sev
-        .{ .tag = @enumFromInt(297), .properties = .{ .param_str = "v", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(297), .properties = .{ .param_str = "v", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __builtin_arm_sevl
-        .{ .tag = @enumFromInt(298), .properties = .{ .param_str = "v", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(298), .properties = .{ .param_str = "v", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __builtin_arm_shadd16
-        .{ .tag = @enumFromInt(299), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(299), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_shadd8
-        .{ .tag = @enumFromInt(300), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(300), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_shasx
-        .{ .tag = @enumFromInt(301), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(301), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_shsax
-        .{ .tag = @enumFromInt(302), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(302), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_shsub16
-        .{ .tag = @enumFromInt(303), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(303), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_shsub8
-        .{ .tag = @enumFromInt(304), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(304), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlabb
-        .{ .tag = @enumFromInt(305), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(305), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlabt
-        .{ .tag = @enumFromInt(306), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(306), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlad
-        .{ .tag = @enumFromInt(307), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(307), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smladx
-        .{ .tag = @enumFromInt(308), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(308), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlald
-        .{ .tag = @enumFromInt(309), .properties = .{ .param_str = "LLiiiLLi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(309), .properties = .{ .param_str = "LLiiiLLi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlaldx
-        .{ .tag = @enumFromInt(310), .properties = .{ .param_str = "LLiiiLLi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(310), .properties = .{ .param_str = "LLiiiLLi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlatb
-        .{ .tag = @enumFromInt(311), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(311), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlatt
-        .{ .tag = @enumFromInt(312), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(312), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlawb
-        .{ .tag = @enumFromInt(313), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(313), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlawt
-        .{ .tag = @enumFromInt(314), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(314), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlsd
-        .{ .tag = @enumFromInt(315), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(315), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlsdx
-        .{ .tag = @enumFromInt(316), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(316), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlsld
-        .{ .tag = @enumFromInt(317), .properties = .{ .param_str = "LLiiiLLi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(317), .properties = .{ .param_str = "LLiiiLLi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smlsldx
-        .{ .tag = @enumFromInt(318), .properties = .{ .param_str = "LLiiiLLi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(318), .properties = .{ .param_str = "LLiiiLLi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smuad
-        .{ .tag = @enumFromInt(319), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(319), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smuadx
-        .{ .tag = @enumFromInt(320), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(320), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smulbb
-        .{ .tag = @enumFromInt(321), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(321), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smulbt
-        .{ .tag = @enumFromInt(322), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(322), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smultb
-        .{ .tag = @enumFromInt(323), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(323), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smultt
-        .{ .tag = @enumFromInt(324), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(324), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smulwb
-        .{ .tag = @enumFromInt(325), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(325), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smulwt
-        .{ .tag = @enumFromInt(326), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(326), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smusd
-        .{ .tag = @enumFromInt(327), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(327), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_smusdx
-        .{ .tag = @enumFromInt(328), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(328), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_ssat
-        .{ .tag = @enumFromInt(329), .properties = .{ .param_str = "iiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(329), .properties = .{ .param_str = "iiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_ssat16
-        .{ .tag = @enumFromInt(330), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(330), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_ssax
-        .{ .tag = @enumFromInt(331), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(331), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_ssub16
-        .{ .tag = @enumFromInt(332), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(332), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_ssub8
-        .{ .tag = @enumFromInt(333), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(333), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_stc
-        .{ .tag = @enumFromInt(334), .properties = .{ .param_str = "vUIiUIiv*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(334), .properties = .{ .param_str = "vUIiUIiv*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_stc2
-        .{ .tag = @enumFromInt(335), .properties = .{ .param_str = "vUIiUIiv*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(335), .properties = .{ .param_str = "vUIiUIiv*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_stc2l
-        .{ .tag = @enumFromInt(336), .properties = .{ .param_str = "vUIiUIiv*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(336), .properties = .{ .param_str = "vUIiUIiv*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_stcl
-        .{ .tag = @enumFromInt(337), .properties = .{ .param_str = "vUIiUIiv*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(337), .properties = .{ .param_str = "vUIiUIiv*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_stlex
-        .{ .tag = @enumFromInt(338), .properties = .{ .param_str = "i.", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .custom_typecheck = true } } },
+        .{ .tag = @enumFromInt(338), .properties = .{ .param_str = "i.", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .custom_typecheck = true } } },
         // __builtin_arm_strex
-        .{ .tag = @enumFromInt(339), .properties = .{ .param_str = "i.", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .custom_typecheck = true } } },
+        .{ .tag = @enumFromInt(339), .properties = .{ .param_str = "i.", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .custom_typecheck = true } } },
         // __builtin_arm_strexd
-        .{ .tag = @enumFromInt(340), .properties = .{ .param_str = "iLLUiv*", .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(340), .properties = .{ .param_str = "iLLUiv*", .target_set = TargetSet.init_one(.arm) } },
         // __builtin_arm_sxtab16
-        .{ .tag = @enumFromInt(341), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(341), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_sxtb16
-        .{ .tag = @enumFromInt(342), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(342), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_tcancel
-        .{ .tag = @enumFromInt(343), .properties = .{ .param_str = "vWUIi", .target_set = TargetSet.initOne(.aarch64) } },
+        .{ .tag = @enumFromInt(343), .properties = .{ .param_str = "vWUIi", .target_set = TargetSet.init_one(.aarch64) } },
         // __builtin_arm_tcommit
-        .{ .tag = @enumFromInt(344), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.aarch64) } },
+        .{ .tag = @enumFromInt(344), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.aarch64) } },
         // __builtin_arm_tstart
-        .{ .tag = @enumFromInt(345), .properties = .{ .param_str = "WUi", .target_set = TargetSet.initOne(.aarch64), .attributes = .{ .returns_twice = true } } },
+        .{ .tag = @enumFromInt(345), .properties = .{ .param_str = "WUi", .target_set = TargetSet.init_one(.aarch64), .attributes = .{ .returns_twice = true } } },
         // __builtin_arm_ttest
-        .{ .tag = @enumFromInt(346), .properties = .{ .param_str = "WUi", .target_set = TargetSet.initOne(.aarch64), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(346), .properties = .{ .param_str = "WUi", .target_set = TargetSet.init_one(.aarch64), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uadd16
-        .{ .tag = @enumFromInt(347), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(347), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uadd8
-        .{ .tag = @enumFromInt(348), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(348), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uasx
-        .{ .tag = @enumFromInt(349), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(349), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uhadd16
-        .{ .tag = @enumFromInt(350), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(350), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uhadd8
-        .{ .tag = @enumFromInt(351), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(351), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uhasx
-        .{ .tag = @enumFromInt(352), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(352), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uhsax
-        .{ .tag = @enumFromInt(353), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(353), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uhsub16
-        .{ .tag = @enumFromInt(354), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(354), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uhsub8
-        .{ .tag = @enumFromInt(355), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(355), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uqadd16
-        .{ .tag = @enumFromInt(356), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(356), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uqadd8
-        .{ .tag = @enumFromInt(357), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(357), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uqasx
-        .{ .tag = @enumFromInt(358), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(358), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uqsax
-        .{ .tag = @enumFromInt(359), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(359), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uqsub16
-        .{ .tag = @enumFromInt(360), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(360), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uqsub8
-        .{ .tag = @enumFromInt(361), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(361), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_usad8
-        .{ .tag = @enumFromInt(362), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(362), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_usada8
-        .{ .tag = @enumFromInt(363), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(363), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_usat
-        .{ .tag = @enumFromInt(364), .properties = .{ .param_str = "UiiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(364), .properties = .{ .param_str = "UiiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_usat16
-        .{ .tag = @enumFromInt(365), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(365), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_usax
-        .{ .tag = @enumFromInt(366), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(366), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_usub16
-        .{ .tag = @enumFromInt(367), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(367), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_usub8
-        .{ .tag = @enumFromInt(368), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(368), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uxtab16
-        .{ .tag = @enumFromInt(369), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(369), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_uxtb16
-        .{ .tag = @enumFromInt(370), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(370), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_vcvtr_d
-        .{ .tag = @enumFromInt(371), .properties = .{ .param_str = "fdi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(371), .properties = .{ .param_str = "fdi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_vcvtr_f
-        .{ .tag = @enumFromInt(372), .properties = .{ .param_str = "ffi", .target_set = TargetSet.initOne(.arm), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(372), .properties = .{ .param_str = "ffi", .target_set = TargetSet.init_one(.arm), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_wfe
-        .{ .tag = @enumFromInt(373), .properties = .{ .param_str = "v", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(373), .properties = .{ .param_str = "v", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __builtin_arm_wfi
-        .{ .tag = @enumFromInt(374), .properties = .{ .param_str = "v", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(374), .properties = .{ .param_str = "v", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __builtin_arm_wsr
-        .{ .tag = @enumFromInt(375), .properties = .{ .param_str = "vcC*Ui", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(375), .properties = .{ .param_str = "vcC*Ui", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_wsr64
-        .{ .tag = @enumFromInt(376), .properties = .{ .param_str = "!", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(376), .properties = .{ .param_str = "!", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_wsrp
-        .{ .tag = @enumFromInt(377), .properties = .{ .param_str = "vcC*vC*", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(377), .properties = .{ .param_str = "vcC*vC*", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_arm_yield
-        .{ .tag = @enumFromInt(378), .properties = .{ .param_str = "v", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(378), .properties = .{ .param_str = "v", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __builtin_asin
         .{ .tag = @enumFromInt(379), .properties = .{ .param_str = "dd", .attributes = .{ .lib_function_with_builtin_prefix = true, .const_without_errno_and_fp_exceptions = true } } },
         // __builtin_asinf
@@ -5976,7 +5976,7 @@ pub const data = blk: {
         // __builtin_bcopy
         .{ .tag = @enumFromInt(403), .properties = .{ .param_str = "vvC*v*z", .attributes = .{ .lib_function_with_builtin_prefix = true } } },
         // __builtin_bitrev
-        .{ .tag = @enumFromInt(404), .properties = .{ .param_str = "UiUi", .target_set = TargetSet.initOne(.xcore), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(404), .properties = .{ .param_str = "UiUi", .target_set = TargetSet.init_one(.xcore), .attributes = .{ .@"const" = true } } },
         // __builtin_bitreverse16
         .{ .tag = @enumFromInt(405), .properties = .{ .param_str = "UsUs", .attributes = .{ .@"const" = true, .const_evaluable = true } } },
         // __builtin_bitreverse32
@@ -6172,11 +6172,11 @@ pub const data = blk: {
         // __builtin_cprojl
         .{ .tag = @enumFromInt(501), .properties = .{ .param_str = "XLdXLd", .attributes = .{ .@"const" = true, .lib_function_with_builtin_prefix = true } } },
         // __builtin_cpu_init
-        .{ .tag = @enumFromInt(502), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.x86) } },
+        .{ .tag = @enumFromInt(502), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.x86) } },
         // __builtin_cpu_is
-        .{ .tag = @enumFromInt(503), .properties = .{ .param_str = "bcC*", .target_set = TargetSet.initOne(.x86), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(503), .properties = .{ .param_str = "bcC*", .target_set = TargetSet.init_one(.x86), .attributes = .{ .@"const" = true } } },
         // __builtin_cpu_supports
-        .{ .tag = @enumFromInt(504), .properties = .{ .param_str = "bcC*", .target_set = TargetSet.initOne(.x86), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(504), .properties = .{ .param_str = "bcC*", .target_set = TargetSet.init_one(.x86), .attributes = .{ .@"const" = true } } },
         // __builtin_creal
         .{ .tag = @enumFromInt(505), .properties = .{ .param_str = "dXd", .attributes = .{ .@"const" = true, .lib_function_with_builtin_prefix = true } } },
         // __builtin_crealf
@@ -6222,7 +6222,7 @@ pub const data = blk: {
         // __builtin_ctzs
         .{ .tag = @enumFromInt(526), .properties = .{ .param_str = "iUs", .attributes = .{ .@"const" = true, .const_evaluable = true } } },
         // __builtin_dcbf
-        .{ .tag = @enumFromInt(527), .properties = .{ .param_str = "vvC*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(527), .properties = .{ .param_str = "vvC*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_debugtrap
         .{ .tag = @enumFromInt(528), .properties = .{ .param_str = "v" } },
         // __builtin_dump_struct
@@ -6448,9 +6448,9 @@ pub const data = blk: {
         // __builtin_fscanf
         .{ .tag = @enumFromInt(639), .properties = .{ .param_str = "iP*RcC*R.", .attributes = .{ .lib_function_with_builtin_prefix = true, .format_kind = .scanf, .format_string_position = 1 } } },
         // __builtin_getid
-        .{ .tag = @enumFromInt(640), .properties = .{ .param_str = "Si", .target_set = TargetSet.initOne(.xcore), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(640), .properties = .{ .param_str = "Si", .target_set = TargetSet.init_one(.xcore), .attributes = .{ .@"const" = true } } },
         // __builtin_getps
-        .{ .tag = @enumFromInt(641), .properties = .{ .param_str = "UiUi", .target_set = TargetSet.initOne(.xcore) } },
+        .{ .tag = @enumFromInt(641), .properties = .{ .param_str = "UiUi", .target_set = TargetSet.init_one(.xcore) } },
         // __builtin_huge_val
         .{ .tag = @enumFromInt(642), .properties = .{ .param_str = "d", .attributes = .{ .@"const" = true, .const_evaluable = true } } },
         // __builtin_huge_valf
@@ -6470,11 +6470,11 @@ pub const data = blk: {
         // __builtin_hypotl
         .{ .tag = @enumFromInt(650), .properties = .{ .param_str = "LdLdLd", .attributes = .{ .lib_function_with_builtin_prefix = true, .const_without_errno_and_fp_exceptions = true } } },
         // __builtin_ia32_rdpmc
-        .{ .tag = @enumFromInt(651), .properties = .{ .param_str = "UOii", .target_set = TargetSet.initOne(.x86) } },
+        .{ .tag = @enumFromInt(651), .properties = .{ .param_str = "UOii", .target_set = TargetSet.init_one(.x86) } },
         // __builtin_ia32_rdtsc
-        .{ .tag = @enumFromInt(652), .properties = .{ .param_str = "UOi", .target_set = TargetSet.initOne(.x86) } },
+        .{ .tag = @enumFromInt(652), .properties = .{ .param_str = "UOi", .target_set = TargetSet.init_one(.x86) } },
         // __builtin_ia32_rdtscp
-        .{ .tag = @enumFromInt(653), .properties = .{ .param_str = "UOiUi*", .target_set = TargetSet.initOne(.x86) } },
+        .{ .tag = @enumFromInt(653), .properties = .{ .param_str = "UOiUi*", .target_set = TargetSet.init_one(.x86) } },
         // __builtin_ilogb
         .{ .tag = @enumFromInt(654), .properties = .{ .param_str = "id", .attributes = .{ .lib_function_with_builtin_prefix = true, .const_without_errno_and_fp_exceptions = true } } },
         // __builtin_ilogbf
@@ -6652,275 +6652,275 @@ pub const data = blk: {
         // __builtin_memset_inline
         .{ .tag = @enumFromInt(741), .properties = .{ .param_str = "vv*iIz" } },
         // __builtin_mips_absq_s_ph
-        .{ .tag = @enumFromInt(742), .properties = .{ .param_str = "V2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(742), .properties = .{ .param_str = "V2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_absq_s_qb
-        .{ .tag = @enumFromInt(743), .properties = .{ .param_str = "V4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(743), .properties = .{ .param_str = "V4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_absq_s_w
-        .{ .tag = @enumFromInt(744), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(744), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_addq_ph
-        .{ .tag = @enumFromInt(745), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(745), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_addq_s_ph
-        .{ .tag = @enumFromInt(746), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(746), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_addq_s_w
-        .{ .tag = @enumFromInt(747), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(747), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_addqh_ph
-        .{ .tag = @enumFromInt(748), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(748), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_addqh_r_ph
-        .{ .tag = @enumFromInt(749), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(749), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_addqh_r_w
-        .{ .tag = @enumFromInt(750), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(750), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_addqh_w
-        .{ .tag = @enumFromInt(751), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(751), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_addsc
-        .{ .tag = @enumFromInt(752), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(752), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_addu_ph
-        .{ .tag = @enumFromInt(753), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(753), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_addu_qb
-        .{ .tag = @enumFromInt(754), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(754), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_addu_s_ph
-        .{ .tag = @enumFromInt(755), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(755), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_addu_s_qb
-        .{ .tag = @enumFromInt(756), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(756), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_adduh_qb
-        .{ .tag = @enumFromInt(757), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(757), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_adduh_r_qb
-        .{ .tag = @enumFromInt(758), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(758), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_addwc
-        .{ .tag = @enumFromInt(759), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(759), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_append
-        .{ .tag = @enumFromInt(760), .properties = .{ .param_str = "iiiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(760), .properties = .{ .param_str = "iiiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_balign
-        .{ .tag = @enumFromInt(761), .properties = .{ .param_str = "iiiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(761), .properties = .{ .param_str = "iiiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_bitrev
-        .{ .tag = @enumFromInt(762), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(762), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_bposge32
-        .{ .tag = @enumFromInt(763), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(763), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmp_eq_ph
-        .{ .tag = @enumFromInt(764), .properties = .{ .param_str = "vV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(764), .properties = .{ .param_str = "vV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmp_le_ph
-        .{ .tag = @enumFromInt(765), .properties = .{ .param_str = "vV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(765), .properties = .{ .param_str = "vV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmp_lt_ph
-        .{ .tag = @enumFromInt(766), .properties = .{ .param_str = "vV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(766), .properties = .{ .param_str = "vV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmpgdu_eq_qb
-        .{ .tag = @enumFromInt(767), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(767), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmpgdu_le_qb
-        .{ .tag = @enumFromInt(768), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(768), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmpgdu_lt_qb
-        .{ .tag = @enumFromInt(769), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(769), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmpgu_eq_qb
-        .{ .tag = @enumFromInt(770), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(770), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmpgu_le_qb
-        .{ .tag = @enumFromInt(771), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(771), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmpgu_lt_qb
-        .{ .tag = @enumFromInt(772), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(772), .properties = .{ .param_str = "iV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmpu_eq_qb
-        .{ .tag = @enumFromInt(773), .properties = .{ .param_str = "vV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(773), .properties = .{ .param_str = "vV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmpu_le_qb
-        .{ .tag = @enumFromInt(774), .properties = .{ .param_str = "vV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(774), .properties = .{ .param_str = "vV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_cmpu_lt_qb
-        .{ .tag = @enumFromInt(775), .properties = .{ .param_str = "vV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(775), .properties = .{ .param_str = "vV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_dpa_w_ph
-        .{ .tag = @enumFromInt(776), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(776), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_dpaq_s_w_ph
-        .{ .tag = @enumFromInt(777), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(777), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_dpaq_sa_l_w
-        .{ .tag = @enumFromInt(778), .properties = .{ .param_str = "LLiLLiii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(778), .properties = .{ .param_str = "LLiLLiii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_dpaqx_s_w_ph
-        .{ .tag = @enumFromInt(779), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(779), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_dpaqx_sa_w_ph
-        .{ .tag = @enumFromInt(780), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(780), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_dpau_h_qbl
-        .{ .tag = @enumFromInt(781), .properties = .{ .param_str = "LLiLLiV4ScV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(781), .properties = .{ .param_str = "LLiLLiV4ScV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_dpau_h_qbr
-        .{ .tag = @enumFromInt(782), .properties = .{ .param_str = "LLiLLiV4ScV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(782), .properties = .{ .param_str = "LLiLLiV4ScV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_dpax_w_ph
-        .{ .tag = @enumFromInt(783), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(783), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_dps_w_ph
-        .{ .tag = @enumFromInt(784), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(784), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_dpsq_s_w_ph
-        .{ .tag = @enumFromInt(785), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(785), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_dpsq_sa_l_w
-        .{ .tag = @enumFromInt(786), .properties = .{ .param_str = "LLiLLiii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(786), .properties = .{ .param_str = "LLiLLiii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_dpsqx_s_w_ph
-        .{ .tag = @enumFromInt(787), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(787), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_dpsqx_sa_w_ph
-        .{ .tag = @enumFromInt(788), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(788), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_dpsu_h_qbl
-        .{ .tag = @enumFromInt(789), .properties = .{ .param_str = "LLiLLiV4ScV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(789), .properties = .{ .param_str = "LLiLLiV4ScV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_dpsu_h_qbr
-        .{ .tag = @enumFromInt(790), .properties = .{ .param_str = "LLiLLiV4ScV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(790), .properties = .{ .param_str = "LLiLLiV4ScV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_dpsx_w_ph
-        .{ .tag = @enumFromInt(791), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(791), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_extp
-        .{ .tag = @enumFromInt(792), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(792), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_extpdp
-        .{ .tag = @enumFromInt(793), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(793), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_extr_r_w
-        .{ .tag = @enumFromInt(794), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(794), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_extr_rs_w
-        .{ .tag = @enumFromInt(795), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(795), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_extr_s_h
-        .{ .tag = @enumFromInt(796), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(796), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_extr_w
-        .{ .tag = @enumFromInt(797), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(797), .properties = .{ .param_str = "iLLii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_insv
-        .{ .tag = @enumFromInt(798), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(798), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_lbux
-        .{ .tag = @enumFromInt(799), .properties = .{ .param_str = "iv*i", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(799), .properties = .{ .param_str = "iv*i", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_lhx
-        .{ .tag = @enumFromInt(800), .properties = .{ .param_str = "iv*i", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(800), .properties = .{ .param_str = "iv*i", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_lwx
-        .{ .tag = @enumFromInt(801), .properties = .{ .param_str = "iv*i", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(801), .properties = .{ .param_str = "iv*i", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_madd
-        .{ .tag = @enumFromInt(802), .properties = .{ .param_str = "LLiLLiii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(802), .properties = .{ .param_str = "LLiLLiii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_maddu
-        .{ .tag = @enumFromInt(803), .properties = .{ .param_str = "LLiLLiUiUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(803), .properties = .{ .param_str = "LLiLLiUiUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_maq_s_w_phl
-        .{ .tag = @enumFromInt(804), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(804), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_maq_s_w_phr
-        .{ .tag = @enumFromInt(805), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(805), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_maq_sa_w_phl
-        .{ .tag = @enumFromInt(806), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(806), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_maq_sa_w_phr
-        .{ .tag = @enumFromInt(807), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(807), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_modsub
-        .{ .tag = @enumFromInt(808), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(808), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_msub
-        .{ .tag = @enumFromInt(809), .properties = .{ .param_str = "LLiLLiii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(809), .properties = .{ .param_str = "LLiLLiii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_msubu
-        .{ .tag = @enumFromInt(810), .properties = .{ .param_str = "LLiLLiUiUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(810), .properties = .{ .param_str = "LLiLLiUiUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_mthlip
-        .{ .tag = @enumFromInt(811), .properties = .{ .param_str = "LLiLLii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(811), .properties = .{ .param_str = "LLiLLii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_mul_ph
-        .{ .tag = @enumFromInt(812), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(812), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_mul_s_ph
-        .{ .tag = @enumFromInt(813), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(813), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_muleq_s_w_phl
-        .{ .tag = @enumFromInt(814), .properties = .{ .param_str = "iV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(814), .properties = .{ .param_str = "iV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_muleq_s_w_phr
-        .{ .tag = @enumFromInt(815), .properties = .{ .param_str = "iV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(815), .properties = .{ .param_str = "iV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_muleu_s_ph_qbl
-        .{ .tag = @enumFromInt(816), .properties = .{ .param_str = "V2sV4ScV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(816), .properties = .{ .param_str = "V2sV4ScV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_muleu_s_ph_qbr
-        .{ .tag = @enumFromInt(817), .properties = .{ .param_str = "V2sV4ScV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(817), .properties = .{ .param_str = "V2sV4ScV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_mulq_rs_ph
-        .{ .tag = @enumFromInt(818), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(818), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_mulq_rs_w
-        .{ .tag = @enumFromInt(819), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(819), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_mulq_s_ph
-        .{ .tag = @enumFromInt(820), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(820), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_mulq_s_w
-        .{ .tag = @enumFromInt(821), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(821), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_mulsa_w_ph
-        .{ .tag = @enumFromInt(822), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(822), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_mulsaq_s_w_ph
-        .{ .tag = @enumFromInt(823), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(823), .properties = .{ .param_str = "LLiLLiV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_mult
-        .{ .tag = @enumFromInt(824), .properties = .{ .param_str = "LLiii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(824), .properties = .{ .param_str = "LLiii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_multu
-        .{ .tag = @enumFromInt(825), .properties = .{ .param_str = "LLiUiUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(825), .properties = .{ .param_str = "LLiUiUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_packrl_ph
-        .{ .tag = @enumFromInt(826), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(826), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_pick_ph
-        .{ .tag = @enumFromInt(827), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(827), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_pick_qb
-        .{ .tag = @enumFromInt(828), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(828), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_preceq_w_phl
-        .{ .tag = @enumFromInt(829), .properties = .{ .param_str = "iV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(829), .properties = .{ .param_str = "iV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_preceq_w_phr
-        .{ .tag = @enumFromInt(830), .properties = .{ .param_str = "iV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(830), .properties = .{ .param_str = "iV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_precequ_ph_qbl
-        .{ .tag = @enumFromInt(831), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(831), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_precequ_ph_qbla
-        .{ .tag = @enumFromInt(832), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(832), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_precequ_ph_qbr
-        .{ .tag = @enumFromInt(833), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(833), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_precequ_ph_qbra
-        .{ .tag = @enumFromInt(834), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(834), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_preceu_ph_qbl
-        .{ .tag = @enumFromInt(835), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(835), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_preceu_ph_qbla
-        .{ .tag = @enumFromInt(836), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(836), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_preceu_ph_qbr
-        .{ .tag = @enumFromInt(837), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(837), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_preceu_ph_qbra
-        .{ .tag = @enumFromInt(838), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(838), .properties = .{ .param_str = "V2sV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_precr_qb_ph
-        .{ .tag = @enumFromInt(839), .properties = .{ .param_str = "V4ScV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(839), .properties = .{ .param_str = "V4ScV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_precr_sra_ph_w
-        .{ .tag = @enumFromInt(840), .properties = .{ .param_str = "V2siiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(840), .properties = .{ .param_str = "V2siiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_precr_sra_r_ph_w
-        .{ .tag = @enumFromInt(841), .properties = .{ .param_str = "V2siiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(841), .properties = .{ .param_str = "V2siiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_precrq_ph_w
-        .{ .tag = @enumFromInt(842), .properties = .{ .param_str = "V2sii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(842), .properties = .{ .param_str = "V2sii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_precrq_qb_ph
-        .{ .tag = @enumFromInt(843), .properties = .{ .param_str = "V4ScV2sV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(843), .properties = .{ .param_str = "V4ScV2sV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_precrq_rs_ph_w
-        .{ .tag = @enumFromInt(844), .properties = .{ .param_str = "V2sii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(844), .properties = .{ .param_str = "V2sii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_precrqu_s_qb_ph
-        .{ .tag = @enumFromInt(845), .properties = .{ .param_str = "V4ScV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(845), .properties = .{ .param_str = "V4ScV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_prepend
-        .{ .tag = @enumFromInt(846), .properties = .{ .param_str = "iiiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(846), .properties = .{ .param_str = "iiiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_raddu_w_qb
-        .{ .tag = @enumFromInt(847), .properties = .{ .param_str = "iV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(847), .properties = .{ .param_str = "iV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_rddsp
-        .{ .tag = @enumFromInt(848), .properties = .{ .param_str = "iIi", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(848), .properties = .{ .param_str = "iIi", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_repl_ph
-        .{ .tag = @enumFromInt(849), .properties = .{ .param_str = "V2si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(849), .properties = .{ .param_str = "V2si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_repl_qb
-        .{ .tag = @enumFromInt(850), .properties = .{ .param_str = "V4Sci", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(850), .properties = .{ .param_str = "V4Sci", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_shilo
-        .{ .tag = @enumFromInt(851), .properties = .{ .param_str = "LLiLLii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(851), .properties = .{ .param_str = "LLiLLii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_shll_ph
-        .{ .tag = @enumFromInt(852), .properties = .{ .param_str = "V2sV2si", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(852), .properties = .{ .param_str = "V2sV2si", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_shll_qb
-        .{ .tag = @enumFromInt(853), .properties = .{ .param_str = "V4ScV4Sci", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(853), .properties = .{ .param_str = "V4ScV4Sci", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_shll_s_ph
-        .{ .tag = @enumFromInt(854), .properties = .{ .param_str = "V2sV2si", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(854), .properties = .{ .param_str = "V2sV2si", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_shll_s_w
-        .{ .tag = @enumFromInt(855), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(855), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_shra_ph
-        .{ .tag = @enumFromInt(856), .properties = .{ .param_str = "V2sV2si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(856), .properties = .{ .param_str = "V2sV2si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_shra_qb
-        .{ .tag = @enumFromInt(857), .properties = .{ .param_str = "V4ScV4Sci", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(857), .properties = .{ .param_str = "V4ScV4Sci", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_shra_r_ph
-        .{ .tag = @enumFromInt(858), .properties = .{ .param_str = "V2sV2si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(858), .properties = .{ .param_str = "V2sV2si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_shra_r_qb
-        .{ .tag = @enumFromInt(859), .properties = .{ .param_str = "V4ScV4Sci", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(859), .properties = .{ .param_str = "V4ScV4Sci", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_shra_r_w
-        .{ .tag = @enumFromInt(860), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(860), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_shrl_ph
-        .{ .tag = @enumFromInt(861), .properties = .{ .param_str = "V2sV2si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(861), .properties = .{ .param_str = "V2sV2si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_shrl_qb
-        .{ .tag = @enumFromInt(862), .properties = .{ .param_str = "V4ScV4Sci", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(862), .properties = .{ .param_str = "V4ScV4Sci", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_subq_ph
-        .{ .tag = @enumFromInt(863), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(863), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_subq_s_ph
-        .{ .tag = @enumFromInt(864), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(864), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_subq_s_w
-        .{ .tag = @enumFromInt(865), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(865), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_subqh_ph
-        .{ .tag = @enumFromInt(866), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(866), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_subqh_r_ph
-        .{ .tag = @enumFromInt(867), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(867), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_subqh_r_w
-        .{ .tag = @enumFromInt(868), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(868), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_subqh_w
-        .{ .tag = @enumFromInt(869), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(869), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_subu_ph
-        .{ .tag = @enumFromInt(870), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(870), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_subu_qb
-        .{ .tag = @enumFromInt(871), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(871), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_subu_s_ph
-        .{ .tag = @enumFromInt(872), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(872), .properties = .{ .param_str = "V2sV2sV2s", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_subu_s_qb
-        .{ .tag = @enumFromInt(873), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(873), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_mips_subuh_qb
-        .{ .tag = @enumFromInt(874), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(874), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_subuh_r_qb
-        .{ .tag = @enumFromInt(875), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(875), .properties = .{ .param_str = "V4ScV4ScV4Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mips_wrdsp
-        .{ .tag = @enumFromInt(876), .properties = .{ .param_str = "viIi", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(876), .properties = .{ .param_str = "viIi", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_modf
         .{ .tag = @enumFromInt(877), .properties = .{ .param_str = "ddd*", .attributes = .{ .lib_function_with_builtin_prefix = true } } },
         // __builtin_modff
@@ -6930,1073 +6930,1073 @@ pub const data = blk: {
         // __builtin_modfl
         .{ .tag = @enumFromInt(880), .properties = .{ .param_str = "LdLdLd*", .attributes = .{ .lib_function_with_builtin_prefix = true } } },
         // __builtin_msa_add_a_b
-        .{ .tag = @enumFromInt(881), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(881), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_add_a_d
-        .{ .tag = @enumFromInt(882), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(882), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_add_a_h
-        .{ .tag = @enumFromInt(883), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(883), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_add_a_w
-        .{ .tag = @enumFromInt(884), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(884), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_a_b
-        .{ .tag = @enumFromInt(885), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(885), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_a_d
-        .{ .tag = @enumFromInt(886), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(886), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_a_h
-        .{ .tag = @enumFromInt(887), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(887), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_a_w
-        .{ .tag = @enumFromInt(888), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(888), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_s_b
-        .{ .tag = @enumFromInt(889), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(889), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_s_d
-        .{ .tag = @enumFromInt(890), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(890), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_s_h
-        .{ .tag = @enumFromInt(891), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(891), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_s_w
-        .{ .tag = @enumFromInt(892), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(892), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_u_b
-        .{ .tag = @enumFromInt(893), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(893), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_u_d
-        .{ .tag = @enumFromInt(894), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(894), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_u_h
-        .{ .tag = @enumFromInt(895), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(895), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_adds_u_w
-        .{ .tag = @enumFromInt(896), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(896), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_addv_b
-        .{ .tag = @enumFromInt(897), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(897), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_addv_d
-        .{ .tag = @enumFromInt(898), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(898), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_addv_h
-        .{ .tag = @enumFromInt(899), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(899), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_addv_w
-        .{ .tag = @enumFromInt(900), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(900), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_addvi_b
-        .{ .tag = @enumFromInt(901), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(901), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_addvi_d
-        .{ .tag = @enumFromInt(902), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(902), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_addvi_h
-        .{ .tag = @enumFromInt(903), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(903), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_addvi_w
-        .{ .tag = @enumFromInt(904), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(904), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_and_v
-        .{ .tag = @enumFromInt(905), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(905), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_andi_b
-        .{ .tag = @enumFromInt(906), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(906), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_asub_s_b
-        .{ .tag = @enumFromInt(907), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(907), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_asub_s_d
-        .{ .tag = @enumFromInt(908), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(908), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_asub_s_h
-        .{ .tag = @enumFromInt(909), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(909), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_asub_s_w
-        .{ .tag = @enumFromInt(910), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(910), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_asub_u_b
-        .{ .tag = @enumFromInt(911), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(911), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_asub_u_d
-        .{ .tag = @enumFromInt(912), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(912), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_asub_u_h
-        .{ .tag = @enumFromInt(913), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(913), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_asub_u_w
-        .{ .tag = @enumFromInt(914), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(914), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ave_s_b
-        .{ .tag = @enumFromInt(915), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(915), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ave_s_d
-        .{ .tag = @enumFromInt(916), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(916), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ave_s_h
-        .{ .tag = @enumFromInt(917), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(917), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ave_s_w
-        .{ .tag = @enumFromInt(918), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(918), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ave_u_b
-        .{ .tag = @enumFromInt(919), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(919), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ave_u_d
-        .{ .tag = @enumFromInt(920), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(920), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ave_u_h
-        .{ .tag = @enumFromInt(921), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(921), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ave_u_w
-        .{ .tag = @enumFromInt(922), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(922), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_aver_s_b
-        .{ .tag = @enumFromInt(923), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(923), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_aver_s_d
-        .{ .tag = @enumFromInt(924), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(924), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_aver_s_h
-        .{ .tag = @enumFromInt(925), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(925), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_aver_s_w
-        .{ .tag = @enumFromInt(926), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(926), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_aver_u_b
-        .{ .tag = @enumFromInt(927), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(927), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_aver_u_d
-        .{ .tag = @enumFromInt(928), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(928), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_aver_u_h
-        .{ .tag = @enumFromInt(929), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(929), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_aver_u_w
-        .{ .tag = @enumFromInt(930), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(930), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bclr_b
-        .{ .tag = @enumFromInt(931), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(931), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bclr_d
-        .{ .tag = @enumFromInt(932), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(932), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bclr_h
-        .{ .tag = @enumFromInt(933), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(933), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bclr_w
-        .{ .tag = @enumFromInt(934), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(934), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bclri_b
-        .{ .tag = @enumFromInt(935), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(935), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bclri_d
-        .{ .tag = @enumFromInt(936), .properties = .{ .param_str = "V2ULLiV2ULLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(936), .properties = .{ .param_str = "V2ULLiV2ULLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bclri_h
-        .{ .tag = @enumFromInt(937), .properties = .{ .param_str = "V8UsV8UsIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(937), .properties = .{ .param_str = "V8UsV8UsIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bclri_w
-        .{ .tag = @enumFromInt(938), .properties = .{ .param_str = "V4UiV4UiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(938), .properties = .{ .param_str = "V4UiV4UiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsl_b
-        .{ .tag = @enumFromInt(939), .properties = .{ .param_str = "V16UcV16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(939), .properties = .{ .param_str = "V16UcV16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsl_d
-        .{ .tag = @enumFromInt(940), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(940), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsl_h
-        .{ .tag = @enumFromInt(941), .properties = .{ .param_str = "V8UsV8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(941), .properties = .{ .param_str = "V8UsV8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsl_w
-        .{ .tag = @enumFromInt(942), .properties = .{ .param_str = "V4UiV4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(942), .properties = .{ .param_str = "V4UiV4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsli_b
-        .{ .tag = @enumFromInt(943), .properties = .{ .param_str = "V16UcV16UcV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(943), .properties = .{ .param_str = "V16UcV16UcV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsli_d
-        .{ .tag = @enumFromInt(944), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(944), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsli_h
-        .{ .tag = @enumFromInt(945), .properties = .{ .param_str = "V8UsV8UsV8UsIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(945), .properties = .{ .param_str = "V8UsV8UsV8UsIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsli_w
-        .{ .tag = @enumFromInt(946), .properties = .{ .param_str = "V4UiV4UiV4UiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(946), .properties = .{ .param_str = "V4UiV4UiV4UiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsr_b
-        .{ .tag = @enumFromInt(947), .properties = .{ .param_str = "V16UcV16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(947), .properties = .{ .param_str = "V16UcV16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsr_d
-        .{ .tag = @enumFromInt(948), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(948), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsr_h
-        .{ .tag = @enumFromInt(949), .properties = .{ .param_str = "V8UsV8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(949), .properties = .{ .param_str = "V8UsV8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsr_w
-        .{ .tag = @enumFromInt(950), .properties = .{ .param_str = "V4UiV4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(950), .properties = .{ .param_str = "V4UiV4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsri_b
-        .{ .tag = @enumFromInt(951), .properties = .{ .param_str = "V16UcV16UcV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(951), .properties = .{ .param_str = "V16UcV16UcV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsri_d
-        .{ .tag = @enumFromInt(952), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(952), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsri_h
-        .{ .tag = @enumFromInt(953), .properties = .{ .param_str = "V8UsV8UsV8UsIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(953), .properties = .{ .param_str = "V8UsV8UsV8UsIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_binsri_w
-        .{ .tag = @enumFromInt(954), .properties = .{ .param_str = "V4UiV4UiV4UiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(954), .properties = .{ .param_str = "V4UiV4UiV4UiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bmnz_v
-        .{ .tag = @enumFromInt(955), .properties = .{ .param_str = "V16UcV16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(955), .properties = .{ .param_str = "V16UcV16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bmnzi_b
-        .{ .tag = @enumFromInt(956), .properties = .{ .param_str = "V16UcV16UcV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(956), .properties = .{ .param_str = "V16UcV16UcV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bmz_v
-        .{ .tag = @enumFromInt(957), .properties = .{ .param_str = "V16UcV16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(957), .properties = .{ .param_str = "V16UcV16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bmzi_b
-        .{ .tag = @enumFromInt(958), .properties = .{ .param_str = "V16UcV16UcV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(958), .properties = .{ .param_str = "V16UcV16UcV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bneg_b
-        .{ .tag = @enumFromInt(959), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(959), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bneg_d
-        .{ .tag = @enumFromInt(960), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(960), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bneg_h
-        .{ .tag = @enumFromInt(961), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(961), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bneg_w
-        .{ .tag = @enumFromInt(962), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(962), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bnegi_b
-        .{ .tag = @enumFromInt(963), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(963), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bnegi_d
-        .{ .tag = @enumFromInt(964), .properties = .{ .param_str = "V2ULLiV2ULLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(964), .properties = .{ .param_str = "V2ULLiV2ULLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bnegi_h
-        .{ .tag = @enumFromInt(965), .properties = .{ .param_str = "V8UsV8UsIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(965), .properties = .{ .param_str = "V8UsV8UsIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bnegi_w
-        .{ .tag = @enumFromInt(966), .properties = .{ .param_str = "V4UiV4UiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(966), .properties = .{ .param_str = "V4UiV4UiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bnz_b
-        .{ .tag = @enumFromInt(967), .properties = .{ .param_str = "iV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(967), .properties = .{ .param_str = "iV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bnz_d
-        .{ .tag = @enumFromInt(968), .properties = .{ .param_str = "iV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(968), .properties = .{ .param_str = "iV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bnz_h
-        .{ .tag = @enumFromInt(969), .properties = .{ .param_str = "iV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(969), .properties = .{ .param_str = "iV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bnz_v
-        .{ .tag = @enumFromInt(970), .properties = .{ .param_str = "iV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(970), .properties = .{ .param_str = "iV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bnz_w
-        .{ .tag = @enumFromInt(971), .properties = .{ .param_str = "iV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(971), .properties = .{ .param_str = "iV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bsel_v
-        .{ .tag = @enumFromInt(972), .properties = .{ .param_str = "V16UcV16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(972), .properties = .{ .param_str = "V16UcV16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bseli_b
-        .{ .tag = @enumFromInt(973), .properties = .{ .param_str = "V16UcV16UcV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(973), .properties = .{ .param_str = "V16UcV16UcV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bset_b
-        .{ .tag = @enumFromInt(974), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(974), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bset_d
-        .{ .tag = @enumFromInt(975), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(975), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bset_h
-        .{ .tag = @enumFromInt(976), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(976), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bset_w
-        .{ .tag = @enumFromInt(977), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(977), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bseti_b
-        .{ .tag = @enumFromInt(978), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(978), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bseti_d
-        .{ .tag = @enumFromInt(979), .properties = .{ .param_str = "V2ULLiV2ULLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(979), .properties = .{ .param_str = "V2ULLiV2ULLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bseti_h
-        .{ .tag = @enumFromInt(980), .properties = .{ .param_str = "V8UsV8UsIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(980), .properties = .{ .param_str = "V8UsV8UsIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bseti_w
-        .{ .tag = @enumFromInt(981), .properties = .{ .param_str = "V4UiV4UiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(981), .properties = .{ .param_str = "V4UiV4UiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bz_b
-        .{ .tag = @enumFromInt(982), .properties = .{ .param_str = "iV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(982), .properties = .{ .param_str = "iV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bz_d
-        .{ .tag = @enumFromInt(983), .properties = .{ .param_str = "iV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(983), .properties = .{ .param_str = "iV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bz_h
-        .{ .tag = @enumFromInt(984), .properties = .{ .param_str = "iV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(984), .properties = .{ .param_str = "iV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bz_v
-        .{ .tag = @enumFromInt(985), .properties = .{ .param_str = "iV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(985), .properties = .{ .param_str = "iV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_bz_w
-        .{ .tag = @enumFromInt(986), .properties = .{ .param_str = "iV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(986), .properties = .{ .param_str = "iV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ceq_b
-        .{ .tag = @enumFromInt(987), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(987), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ceq_d
-        .{ .tag = @enumFromInt(988), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(988), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ceq_h
-        .{ .tag = @enumFromInt(989), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(989), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ceq_w
-        .{ .tag = @enumFromInt(990), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(990), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ceqi_b
-        .{ .tag = @enumFromInt(991), .properties = .{ .param_str = "V16ScV16ScISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(991), .properties = .{ .param_str = "V16ScV16ScISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ceqi_d
-        .{ .tag = @enumFromInt(992), .properties = .{ .param_str = "V2SLLiV2SLLiISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(992), .properties = .{ .param_str = "V2SLLiV2SLLiISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ceqi_h
-        .{ .tag = @enumFromInt(993), .properties = .{ .param_str = "V8SsV8SsISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(993), .properties = .{ .param_str = "V8SsV8SsISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ceqi_w
-        .{ .tag = @enumFromInt(994), .properties = .{ .param_str = "V4SiV4SiISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(994), .properties = .{ .param_str = "V4SiV4SiISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_cfcmsa
-        .{ .tag = @enumFromInt(995), .properties = .{ .param_str = "iIi", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(995), .properties = .{ .param_str = "iIi", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_msa_cle_s_b
-        .{ .tag = @enumFromInt(996), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(996), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_cle_s_d
-        .{ .tag = @enumFromInt(997), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(997), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_cle_s_h
-        .{ .tag = @enumFromInt(998), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(998), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_cle_s_w
-        .{ .tag = @enumFromInt(999), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(999), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_cle_u_b
-        .{ .tag = @enumFromInt(1000), .properties = .{ .param_str = "V16ScV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1000), .properties = .{ .param_str = "V16ScV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_cle_u_d
-        .{ .tag = @enumFromInt(1001), .properties = .{ .param_str = "V2SLLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1001), .properties = .{ .param_str = "V2SLLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_cle_u_h
-        .{ .tag = @enumFromInt(1002), .properties = .{ .param_str = "V8SsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1002), .properties = .{ .param_str = "V8SsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_cle_u_w
-        .{ .tag = @enumFromInt(1003), .properties = .{ .param_str = "V4SiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1003), .properties = .{ .param_str = "V4SiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clei_s_b
-        .{ .tag = @enumFromInt(1004), .properties = .{ .param_str = "V16ScV16ScISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1004), .properties = .{ .param_str = "V16ScV16ScISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clei_s_d
-        .{ .tag = @enumFromInt(1005), .properties = .{ .param_str = "V2SLLiV2SLLiISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1005), .properties = .{ .param_str = "V2SLLiV2SLLiISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clei_s_h
-        .{ .tag = @enumFromInt(1006), .properties = .{ .param_str = "V8SsV8SsISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1006), .properties = .{ .param_str = "V8SsV8SsISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clei_s_w
-        .{ .tag = @enumFromInt(1007), .properties = .{ .param_str = "V4SiV4SiISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1007), .properties = .{ .param_str = "V4SiV4SiISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clei_u_b
-        .{ .tag = @enumFromInt(1008), .properties = .{ .param_str = "V16ScV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1008), .properties = .{ .param_str = "V16ScV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clei_u_d
-        .{ .tag = @enumFromInt(1009), .properties = .{ .param_str = "V2SLLiV2ULLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1009), .properties = .{ .param_str = "V2SLLiV2ULLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clei_u_h
-        .{ .tag = @enumFromInt(1010), .properties = .{ .param_str = "V8SsV8UsIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1010), .properties = .{ .param_str = "V8SsV8UsIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clei_u_w
-        .{ .tag = @enumFromInt(1011), .properties = .{ .param_str = "V4SiV4UiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1011), .properties = .{ .param_str = "V4SiV4UiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clt_s_b
-        .{ .tag = @enumFromInt(1012), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1012), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clt_s_d
-        .{ .tag = @enumFromInt(1013), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1013), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clt_s_h
-        .{ .tag = @enumFromInt(1014), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1014), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clt_s_w
-        .{ .tag = @enumFromInt(1015), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1015), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clt_u_b
-        .{ .tag = @enumFromInt(1016), .properties = .{ .param_str = "V16ScV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1016), .properties = .{ .param_str = "V16ScV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clt_u_d
-        .{ .tag = @enumFromInt(1017), .properties = .{ .param_str = "V2SLLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1017), .properties = .{ .param_str = "V2SLLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clt_u_h
-        .{ .tag = @enumFromInt(1018), .properties = .{ .param_str = "V8SsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1018), .properties = .{ .param_str = "V8SsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clt_u_w
-        .{ .tag = @enumFromInt(1019), .properties = .{ .param_str = "V4SiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1019), .properties = .{ .param_str = "V4SiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clti_s_b
-        .{ .tag = @enumFromInt(1020), .properties = .{ .param_str = "V16ScV16ScISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1020), .properties = .{ .param_str = "V16ScV16ScISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clti_s_d
-        .{ .tag = @enumFromInt(1021), .properties = .{ .param_str = "V2SLLiV2SLLiISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1021), .properties = .{ .param_str = "V2SLLiV2SLLiISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clti_s_h
-        .{ .tag = @enumFromInt(1022), .properties = .{ .param_str = "V8SsV8SsISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1022), .properties = .{ .param_str = "V8SsV8SsISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clti_s_w
-        .{ .tag = @enumFromInt(1023), .properties = .{ .param_str = "V4SiV4SiISi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1023), .properties = .{ .param_str = "V4SiV4SiISi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clti_u_b
-        .{ .tag = @enumFromInt(1024), .properties = .{ .param_str = "V16ScV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1024), .properties = .{ .param_str = "V16ScV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clti_u_d
-        .{ .tag = @enumFromInt(1025), .properties = .{ .param_str = "V2SLLiV2ULLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1025), .properties = .{ .param_str = "V2SLLiV2ULLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clti_u_h
-        .{ .tag = @enumFromInt(1026), .properties = .{ .param_str = "V8SsV8UsIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1026), .properties = .{ .param_str = "V8SsV8UsIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_clti_u_w
-        .{ .tag = @enumFromInt(1027), .properties = .{ .param_str = "V4SiV4UiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1027), .properties = .{ .param_str = "V4SiV4UiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_copy_s_b
-        .{ .tag = @enumFromInt(1028), .properties = .{ .param_str = "iV16ScIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1028), .properties = .{ .param_str = "iV16ScIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_copy_s_d
-        .{ .tag = @enumFromInt(1029), .properties = .{ .param_str = "LLiV2SLLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1029), .properties = .{ .param_str = "LLiV2SLLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_copy_s_h
-        .{ .tag = @enumFromInt(1030), .properties = .{ .param_str = "iV8SsIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1030), .properties = .{ .param_str = "iV8SsIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_copy_s_w
-        .{ .tag = @enumFromInt(1031), .properties = .{ .param_str = "iV4SiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1031), .properties = .{ .param_str = "iV4SiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_copy_u_b
-        .{ .tag = @enumFromInt(1032), .properties = .{ .param_str = "iV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1032), .properties = .{ .param_str = "iV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_copy_u_d
-        .{ .tag = @enumFromInt(1033), .properties = .{ .param_str = "LLiV2ULLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1033), .properties = .{ .param_str = "LLiV2ULLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_copy_u_h
-        .{ .tag = @enumFromInt(1034), .properties = .{ .param_str = "iV8UsIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1034), .properties = .{ .param_str = "iV8UsIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_copy_u_w
-        .{ .tag = @enumFromInt(1035), .properties = .{ .param_str = "iV4UiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1035), .properties = .{ .param_str = "iV4UiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ctcmsa
-        .{ .tag = @enumFromInt(1036), .properties = .{ .param_str = "vIii", .target_set = TargetSet.initOne(.mips) } },
+        .{ .tag = @enumFromInt(1036), .properties = .{ .param_str = "vIii", .target_set = TargetSet.init_one(.mips) } },
         // __builtin_msa_div_s_b
-        .{ .tag = @enumFromInt(1037), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1037), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_div_s_d
-        .{ .tag = @enumFromInt(1038), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1038), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_div_s_h
-        .{ .tag = @enumFromInt(1039), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1039), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_div_s_w
-        .{ .tag = @enumFromInt(1040), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1040), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_div_u_b
-        .{ .tag = @enumFromInt(1041), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1041), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_div_u_d
-        .{ .tag = @enumFromInt(1042), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1042), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_div_u_h
-        .{ .tag = @enumFromInt(1043), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1043), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_div_u_w
-        .{ .tag = @enumFromInt(1044), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1044), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dotp_s_d
-        .{ .tag = @enumFromInt(1045), .properties = .{ .param_str = "V2SLLiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1045), .properties = .{ .param_str = "V2SLLiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dotp_s_h
-        .{ .tag = @enumFromInt(1046), .properties = .{ .param_str = "V8SsV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1046), .properties = .{ .param_str = "V8SsV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dotp_s_w
-        .{ .tag = @enumFromInt(1047), .properties = .{ .param_str = "V4SiV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1047), .properties = .{ .param_str = "V4SiV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dotp_u_d
-        .{ .tag = @enumFromInt(1048), .properties = .{ .param_str = "V2ULLiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1048), .properties = .{ .param_str = "V2ULLiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dotp_u_h
-        .{ .tag = @enumFromInt(1049), .properties = .{ .param_str = "V8UsV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1049), .properties = .{ .param_str = "V8UsV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dotp_u_w
-        .{ .tag = @enumFromInt(1050), .properties = .{ .param_str = "V4UiV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1050), .properties = .{ .param_str = "V4UiV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpadd_s_d
-        .{ .tag = @enumFromInt(1051), .properties = .{ .param_str = "V2SLLiV2SLLiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1051), .properties = .{ .param_str = "V2SLLiV2SLLiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpadd_s_h
-        .{ .tag = @enumFromInt(1052), .properties = .{ .param_str = "V8SsV8SsV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1052), .properties = .{ .param_str = "V8SsV8SsV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpadd_s_w
-        .{ .tag = @enumFromInt(1053), .properties = .{ .param_str = "V4SiV4SiV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1053), .properties = .{ .param_str = "V4SiV4SiV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpadd_u_d
-        .{ .tag = @enumFromInt(1054), .properties = .{ .param_str = "V2ULLiV2ULLiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1054), .properties = .{ .param_str = "V2ULLiV2ULLiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpadd_u_h
-        .{ .tag = @enumFromInt(1055), .properties = .{ .param_str = "V8UsV8UsV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1055), .properties = .{ .param_str = "V8UsV8UsV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpadd_u_w
-        .{ .tag = @enumFromInt(1056), .properties = .{ .param_str = "V4UiV4UiV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1056), .properties = .{ .param_str = "V4UiV4UiV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpsub_s_d
-        .{ .tag = @enumFromInt(1057), .properties = .{ .param_str = "V2SLLiV2SLLiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1057), .properties = .{ .param_str = "V2SLLiV2SLLiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpsub_s_h
-        .{ .tag = @enumFromInt(1058), .properties = .{ .param_str = "V8SsV8SsV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1058), .properties = .{ .param_str = "V8SsV8SsV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpsub_s_w
-        .{ .tag = @enumFromInt(1059), .properties = .{ .param_str = "V4SiV4SiV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1059), .properties = .{ .param_str = "V4SiV4SiV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpsub_u_d
-        .{ .tag = @enumFromInt(1060), .properties = .{ .param_str = "V2ULLiV2ULLiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1060), .properties = .{ .param_str = "V2ULLiV2ULLiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpsub_u_h
-        .{ .tag = @enumFromInt(1061), .properties = .{ .param_str = "V8UsV8UsV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1061), .properties = .{ .param_str = "V8UsV8UsV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_dpsub_u_w
-        .{ .tag = @enumFromInt(1062), .properties = .{ .param_str = "V4UiV4UiV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1062), .properties = .{ .param_str = "V4UiV4UiV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fadd_d
-        .{ .tag = @enumFromInt(1063), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1063), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fadd_w
-        .{ .tag = @enumFromInt(1064), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1064), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcaf_d
-        .{ .tag = @enumFromInt(1065), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1065), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcaf_w
-        .{ .tag = @enumFromInt(1066), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1066), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fceq_d
-        .{ .tag = @enumFromInt(1067), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1067), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fceq_w
-        .{ .tag = @enumFromInt(1068), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1068), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fclass_d
-        .{ .tag = @enumFromInt(1069), .properties = .{ .param_str = "V2LLiV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1069), .properties = .{ .param_str = "V2LLiV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fclass_w
-        .{ .tag = @enumFromInt(1070), .properties = .{ .param_str = "V4iV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1070), .properties = .{ .param_str = "V4iV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcle_d
-        .{ .tag = @enumFromInt(1071), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1071), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcle_w
-        .{ .tag = @enumFromInt(1072), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1072), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fclt_d
-        .{ .tag = @enumFromInt(1073), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1073), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fclt_w
-        .{ .tag = @enumFromInt(1074), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1074), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcne_d
-        .{ .tag = @enumFromInt(1075), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1075), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcne_w
-        .{ .tag = @enumFromInt(1076), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1076), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcor_d
-        .{ .tag = @enumFromInt(1077), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1077), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcor_w
-        .{ .tag = @enumFromInt(1078), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1078), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcueq_d
-        .{ .tag = @enumFromInt(1079), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1079), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcueq_w
-        .{ .tag = @enumFromInt(1080), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1080), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcule_d
-        .{ .tag = @enumFromInt(1081), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1081), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcule_w
-        .{ .tag = @enumFromInt(1082), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1082), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcult_d
-        .{ .tag = @enumFromInt(1083), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1083), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcult_w
-        .{ .tag = @enumFromInt(1084), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1084), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcun_d
-        .{ .tag = @enumFromInt(1085), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1085), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcun_w
-        .{ .tag = @enumFromInt(1086), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1086), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcune_d
-        .{ .tag = @enumFromInt(1087), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1087), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fcune_w
-        .{ .tag = @enumFromInt(1088), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1088), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fdiv_d
-        .{ .tag = @enumFromInt(1089), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1089), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fdiv_w
-        .{ .tag = @enumFromInt(1090), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1090), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fexdo_h
-        .{ .tag = @enumFromInt(1091), .properties = .{ .param_str = "V8hV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1091), .properties = .{ .param_str = "V8hV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fexdo_w
-        .{ .tag = @enumFromInt(1092), .properties = .{ .param_str = "V4fV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1092), .properties = .{ .param_str = "V4fV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fexp2_d
-        .{ .tag = @enumFromInt(1093), .properties = .{ .param_str = "V2dV2dV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1093), .properties = .{ .param_str = "V2dV2dV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fexp2_w
-        .{ .tag = @enumFromInt(1094), .properties = .{ .param_str = "V4fV4fV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1094), .properties = .{ .param_str = "V4fV4fV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fexupl_d
-        .{ .tag = @enumFromInt(1095), .properties = .{ .param_str = "V2dV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1095), .properties = .{ .param_str = "V2dV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fexupl_w
-        .{ .tag = @enumFromInt(1096), .properties = .{ .param_str = "V4fV8h", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1096), .properties = .{ .param_str = "V4fV8h", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fexupr_d
-        .{ .tag = @enumFromInt(1097), .properties = .{ .param_str = "V2dV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1097), .properties = .{ .param_str = "V2dV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fexupr_w
-        .{ .tag = @enumFromInt(1098), .properties = .{ .param_str = "V4fV8h", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1098), .properties = .{ .param_str = "V4fV8h", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ffint_s_d
-        .{ .tag = @enumFromInt(1099), .properties = .{ .param_str = "V2dV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1099), .properties = .{ .param_str = "V2dV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ffint_s_w
-        .{ .tag = @enumFromInt(1100), .properties = .{ .param_str = "V4fV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1100), .properties = .{ .param_str = "V4fV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ffint_u_d
-        .{ .tag = @enumFromInt(1101), .properties = .{ .param_str = "V2dV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1101), .properties = .{ .param_str = "V2dV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ffint_u_w
-        .{ .tag = @enumFromInt(1102), .properties = .{ .param_str = "V4fV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1102), .properties = .{ .param_str = "V4fV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ffql_d
-        .{ .tag = @enumFromInt(1103), .properties = .{ .param_str = "V2dV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1103), .properties = .{ .param_str = "V2dV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ffql_w
-        .{ .tag = @enumFromInt(1104), .properties = .{ .param_str = "V4fV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1104), .properties = .{ .param_str = "V4fV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ffqr_d
-        .{ .tag = @enumFromInt(1105), .properties = .{ .param_str = "V2dV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1105), .properties = .{ .param_str = "V2dV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ffqr_w
-        .{ .tag = @enumFromInt(1106), .properties = .{ .param_str = "V4fV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1106), .properties = .{ .param_str = "V4fV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fill_b
-        .{ .tag = @enumFromInt(1107), .properties = .{ .param_str = "V16Sci", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1107), .properties = .{ .param_str = "V16Sci", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fill_d
-        .{ .tag = @enumFromInt(1108), .properties = .{ .param_str = "V2SLLiLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1108), .properties = .{ .param_str = "V2SLLiLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fill_h
-        .{ .tag = @enumFromInt(1109), .properties = .{ .param_str = "V8Ssi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1109), .properties = .{ .param_str = "V8Ssi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fill_w
-        .{ .tag = @enumFromInt(1110), .properties = .{ .param_str = "V4Sii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1110), .properties = .{ .param_str = "V4Sii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_flog2_d
-        .{ .tag = @enumFromInt(1111), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1111), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_flog2_w
-        .{ .tag = @enumFromInt(1112), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1112), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmadd_d
-        .{ .tag = @enumFromInt(1113), .properties = .{ .param_str = "V2dV2dV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1113), .properties = .{ .param_str = "V2dV2dV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmadd_w
-        .{ .tag = @enumFromInt(1114), .properties = .{ .param_str = "V4fV4fV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1114), .properties = .{ .param_str = "V4fV4fV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmax_a_d
-        .{ .tag = @enumFromInt(1115), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1115), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmax_a_w
-        .{ .tag = @enumFromInt(1116), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1116), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmax_d
-        .{ .tag = @enumFromInt(1117), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1117), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmax_w
-        .{ .tag = @enumFromInt(1118), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1118), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmin_a_d
-        .{ .tag = @enumFromInt(1119), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1119), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmin_a_w
-        .{ .tag = @enumFromInt(1120), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1120), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmin_d
-        .{ .tag = @enumFromInt(1121), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1121), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmin_w
-        .{ .tag = @enumFromInt(1122), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1122), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmsub_d
-        .{ .tag = @enumFromInt(1123), .properties = .{ .param_str = "V2dV2dV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1123), .properties = .{ .param_str = "V2dV2dV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmsub_w
-        .{ .tag = @enumFromInt(1124), .properties = .{ .param_str = "V4fV4fV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1124), .properties = .{ .param_str = "V4fV4fV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmul_d
-        .{ .tag = @enumFromInt(1125), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1125), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fmul_w
-        .{ .tag = @enumFromInt(1126), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1126), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_frcp_d
-        .{ .tag = @enumFromInt(1127), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1127), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_frcp_w
-        .{ .tag = @enumFromInt(1128), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1128), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_frint_d
-        .{ .tag = @enumFromInt(1129), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1129), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_frint_w
-        .{ .tag = @enumFromInt(1130), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1130), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_frsqrt_d
-        .{ .tag = @enumFromInt(1131), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1131), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_frsqrt_w
-        .{ .tag = @enumFromInt(1132), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1132), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsaf_d
-        .{ .tag = @enumFromInt(1133), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1133), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsaf_w
-        .{ .tag = @enumFromInt(1134), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1134), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fseq_d
-        .{ .tag = @enumFromInt(1135), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1135), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fseq_w
-        .{ .tag = @enumFromInt(1136), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1136), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsle_d
-        .{ .tag = @enumFromInt(1137), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1137), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsle_w
-        .{ .tag = @enumFromInt(1138), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1138), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fslt_d
-        .{ .tag = @enumFromInt(1139), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1139), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fslt_w
-        .{ .tag = @enumFromInt(1140), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1140), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsne_d
-        .{ .tag = @enumFromInt(1141), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1141), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsne_w
-        .{ .tag = @enumFromInt(1142), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1142), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsor_d
-        .{ .tag = @enumFromInt(1143), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1143), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsor_w
-        .{ .tag = @enumFromInt(1144), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1144), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsqrt_d
-        .{ .tag = @enumFromInt(1145), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1145), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsqrt_w
-        .{ .tag = @enumFromInt(1146), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1146), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsub_d
-        .{ .tag = @enumFromInt(1147), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1147), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsub_w
-        .{ .tag = @enumFromInt(1148), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1148), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsueq_d
-        .{ .tag = @enumFromInt(1149), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1149), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsueq_w
-        .{ .tag = @enumFromInt(1150), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1150), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsule_d
-        .{ .tag = @enumFromInt(1151), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1151), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsule_w
-        .{ .tag = @enumFromInt(1152), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1152), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsult_d
-        .{ .tag = @enumFromInt(1153), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1153), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsult_w
-        .{ .tag = @enumFromInt(1154), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1154), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsun_d
-        .{ .tag = @enumFromInt(1155), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1155), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsun_w
-        .{ .tag = @enumFromInt(1156), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1156), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsune_d
-        .{ .tag = @enumFromInt(1157), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1157), .properties = .{ .param_str = "V2LLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_fsune_w
-        .{ .tag = @enumFromInt(1158), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1158), .properties = .{ .param_str = "V4iV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ftint_s_d
-        .{ .tag = @enumFromInt(1159), .properties = .{ .param_str = "V2SLLiV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1159), .properties = .{ .param_str = "V2SLLiV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ftint_s_w
-        .{ .tag = @enumFromInt(1160), .properties = .{ .param_str = "V4SiV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1160), .properties = .{ .param_str = "V4SiV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ftint_u_d
-        .{ .tag = @enumFromInt(1161), .properties = .{ .param_str = "V2ULLiV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1161), .properties = .{ .param_str = "V2ULLiV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ftint_u_w
-        .{ .tag = @enumFromInt(1162), .properties = .{ .param_str = "V4UiV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1162), .properties = .{ .param_str = "V4UiV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ftq_h
-        .{ .tag = @enumFromInt(1163), .properties = .{ .param_str = "V4UiV4fV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1163), .properties = .{ .param_str = "V4UiV4fV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ftq_w
-        .{ .tag = @enumFromInt(1164), .properties = .{ .param_str = "V2ULLiV2dV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1164), .properties = .{ .param_str = "V2ULLiV2dV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ftrunc_s_d
-        .{ .tag = @enumFromInt(1165), .properties = .{ .param_str = "V2SLLiV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1165), .properties = .{ .param_str = "V2SLLiV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ftrunc_s_w
-        .{ .tag = @enumFromInt(1166), .properties = .{ .param_str = "V4SiV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1166), .properties = .{ .param_str = "V4SiV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ftrunc_u_d
-        .{ .tag = @enumFromInt(1167), .properties = .{ .param_str = "V2ULLiV2d", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1167), .properties = .{ .param_str = "V2ULLiV2d", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ftrunc_u_w
-        .{ .tag = @enumFromInt(1168), .properties = .{ .param_str = "V4UiV4f", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1168), .properties = .{ .param_str = "V4UiV4f", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hadd_s_d
-        .{ .tag = @enumFromInt(1169), .properties = .{ .param_str = "V2SLLiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1169), .properties = .{ .param_str = "V2SLLiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hadd_s_h
-        .{ .tag = @enumFromInt(1170), .properties = .{ .param_str = "V8SsV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1170), .properties = .{ .param_str = "V8SsV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hadd_s_w
-        .{ .tag = @enumFromInt(1171), .properties = .{ .param_str = "V4SiV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1171), .properties = .{ .param_str = "V4SiV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hadd_u_d
-        .{ .tag = @enumFromInt(1172), .properties = .{ .param_str = "V2ULLiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1172), .properties = .{ .param_str = "V2ULLiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hadd_u_h
-        .{ .tag = @enumFromInt(1173), .properties = .{ .param_str = "V8UsV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1173), .properties = .{ .param_str = "V8UsV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hadd_u_w
-        .{ .tag = @enumFromInt(1174), .properties = .{ .param_str = "V4UiV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1174), .properties = .{ .param_str = "V4UiV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hsub_s_d
-        .{ .tag = @enumFromInt(1175), .properties = .{ .param_str = "V2SLLiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1175), .properties = .{ .param_str = "V2SLLiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hsub_s_h
-        .{ .tag = @enumFromInt(1176), .properties = .{ .param_str = "V8SsV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1176), .properties = .{ .param_str = "V8SsV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hsub_s_w
-        .{ .tag = @enumFromInt(1177), .properties = .{ .param_str = "V4SiV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1177), .properties = .{ .param_str = "V4SiV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hsub_u_d
-        .{ .tag = @enumFromInt(1178), .properties = .{ .param_str = "V2ULLiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1178), .properties = .{ .param_str = "V2ULLiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hsub_u_h
-        .{ .tag = @enumFromInt(1179), .properties = .{ .param_str = "V8UsV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1179), .properties = .{ .param_str = "V8UsV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_hsub_u_w
-        .{ .tag = @enumFromInt(1180), .properties = .{ .param_str = "V4UiV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1180), .properties = .{ .param_str = "V4UiV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvev_b
-        .{ .tag = @enumFromInt(1181), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1181), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvev_d
-        .{ .tag = @enumFromInt(1182), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1182), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvev_h
-        .{ .tag = @enumFromInt(1183), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1183), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvev_w
-        .{ .tag = @enumFromInt(1184), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1184), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvl_b
-        .{ .tag = @enumFromInt(1185), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1185), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvl_d
-        .{ .tag = @enumFromInt(1186), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1186), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvl_h
-        .{ .tag = @enumFromInt(1187), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1187), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvl_w
-        .{ .tag = @enumFromInt(1188), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1188), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvod_b
-        .{ .tag = @enumFromInt(1189), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1189), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvod_d
-        .{ .tag = @enumFromInt(1190), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1190), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvod_h
-        .{ .tag = @enumFromInt(1191), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1191), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvod_w
-        .{ .tag = @enumFromInt(1192), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1192), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvr_b
-        .{ .tag = @enumFromInt(1193), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1193), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvr_d
-        .{ .tag = @enumFromInt(1194), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1194), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvr_h
-        .{ .tag = @enumFromInt(1195), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1195), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ilvr_w
-        .{ .tag = @enumFromInt(1196), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1196), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_insert_b
-        .{ .tag = @enumFromInt(1197), .properties = .{ .param_str = "V16ScV16ScIUii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1197), .properties = .{ .param_str = "V16ScV16ScIUii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_insert_d
-        .{ .tag = @enumFromInt(1198), .properties = .{ .param_str = "V2SLLiV2SLLiIUiLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1198), .properties = .{ .param_str = "V2SLLiV2SLLiIUiLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_insert_h
-        .{ .tag = @enumFromInt(1199), .properties = .{ .param_str = "V8SsV8SsIUii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1199), .properties = .{ .param_str = "V8SsV8SsIUii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_insert_w
-        .{ .tag = @enumFromInt(1200), .properties = .{ .param_str = "V4SiV4SiIUii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1200), .properties = .{ .param_str = "V4SiV4SiIUii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_insve_b
-        .{ .tag = @enumFromInt(1201), .properties = .{ .param_str = "V16ScV16ScIUiV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1201), .properties = .{ .param_str = "V16ScV16ScIUiV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_insve_d
-        .{ .tag = @enumFromInt(1202), .properties = .{ .param_str = "V2SLLiV2SLLiIUiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1202), .properties = .{ .param_str = "V2SLLiV2SLLiIUiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_insve_h
-        .{ .tag = @enumFromInt(1203), .properties = .{ .param_str = "V8SsV8SsIUiV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1203), .properties = .{ .param_str = "V8SsV8SsIUiV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_insve_w
-        .{ .tag = @enumFromInt(1204), .properties = .{ .param_str = "V4SiV4SiIUiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1204), .properties = .{ .param_str = "V4SiV4SiIUiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ld_b
-        .{ .tag = @enumFromInt(1205), .properties = .{ .param_str = "V16Scv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1205), .properties = .{ .param_str = "V16Scv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ld_d
-        .{ .tag = @enumFromInt(1206), .properties = .{ .param_str = "V2SLLiv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1206), .properties = .{ .param_str = "V2SLLiv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ld_h
-        .{ .tag = @enumFromInt(1207), .properties = .{ .param_str = "V8Ssv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1207), .properties = .{ .param_str = "V8Ssv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ld_w
-        .{ .tag = @enumFromInt(1208), .properties = .{ .param_str = "V4Siv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1208), .properties = .{ .param_str = "V4Siv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ldi_b
-        .{ .tag = @enumFromInt(1209), .properties = .{ .param_str = "V16cIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1209), .properties = .{ .param_str = "V16cIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ldi_d
-        .{ .tag = @enumFromInt(1210), .properties = .{ .param_str = "V2LLiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1210), .properties = .{ .param_str = "V2LLiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ldi_h
-        .{ .tag = @enumFromInt(1211), .properties = .{ .param_str = "V8sIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1211), .properties = .{ .param_str = "V8sIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ldi_w
-        .{ .tag = @enumFromInt(1212), .properties = .{ .param_str = "V4iIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1212), .properties = .{ .param_str = "V4iIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ldr_d
-        .{ .tag = @enumFromInt(1213), .properties = .{ .param_str = "V2SLLiv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1213), .properties = .{ .param_str = "V2SLLiv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ldr_w
-        .{ .tag = @enumFromInt(1214), .properties = .{ .param_str = "V4Siv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1214), .properties = .{ .param_str = "V4Siv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_madd_q_h
-        .{ .tag = @enumFromInt(1215), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1215), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_madd_q_w
-        .{ .tag = @enumFromInt(1216), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1216), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maddr_q_h
-        .{ .tag = @enumFromInt(1217), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1217), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maddr_q_w
-        .{ .tag = @enumFromInt(1218), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1218), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maddv_b
-        .{ .tag = @enumFromInt(1219), .properties = .{ .param_str = "V16ScV16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1219), .properties = .{ .param_str = "V16ScV16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maddv_d
-        .{ .tag = @enumFromInt(1220), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1220), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maddv_h
-        .{ .tag = @enumFromInt(1221), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1221), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maddv_w
-        .{ .tag = @enumFromInt(1222), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1222), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_a_b
-        .{ .tag = @enumFromInt(1223), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1223), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_a_d
-        .{ .tag = @enumFromInt(1224), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1224), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_a_h
-        .{ .tag = @enumFromInt(1225), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1225), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_a_w
-        .{ .tag = @enumFromInt(1226), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1226), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_s_b
-        .{ .tag = @enumFromInt(1227), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1227), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_s_d
-        .{ .tag = @enumFromInt(1228), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1228), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_s_h
-        .{ .tag = @enumFromInt(1229), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1229), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_s_w
-        .{ .tag = @enumFromInt(1230), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1230), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_u_b
-        .{ .tag = @enumFromInt(1231), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1231), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_u_d
-        .{ .tag = @enumFromInt(1232), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1232), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_u_h
-        .{ .tag = @enumFromInt(1233), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1233), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_max_u_w
-        .{ .tag = @enumFromInt(1234), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1234), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maxi_s_b
-        .{ .tag = @enumFromInt(1235), .properties = .{ .param_str = "V16ScV16ScIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1235), .properties = .{ .param_str = "V16ScV16ScIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maxi_s_d
-        .{ .tag = @enumFromInt(1236), .properties = .{ .param_str = "V2SLLiV2SLLiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1236), .properties = .{ .param_str = "V2SLLiV2SLLiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maxi_s_h
-        .{ .tag = @enumFromInt(1237), .properties = .{ .param_str = "V8SsV8SsIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1237), .properties = .{ .param_str = "V8SsV8SsIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maxi_s_w
-        .{ .tag = @enumFromInt(1238), .properties = .{ .param_str = "V4SiV4SiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1238), .properties = .{ .param_str = "V4SiV4SiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maxi_u_b
-        .{ .tag = @enumFromInt(1239), .properties = .{ .param_str = "V16UcV16UcIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1239), .properties = .{ .param_str = "V16UcV16UcIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maxi_u_d
-        .{ .tag = @enumFromInt(1240), .properties = .{ .param_str = "V2ULLiV2ULLiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1240), .properties = .{ .param_str = "V2ULLiV2ULLiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maxi_u_h
-        .{ .tag = @enumFromInt(1241), .properties = .{ .param_str = "V8UsV8UsIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1241), .properties = .{ .param_str = "V8UsV8UsIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_maxi_u_w
-        .{ .tag = @enumFromInt(1242), .properties = .{ .param_str = "V4UiV4UiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1242), .properties = .{ .param_str = "V4UiV4UiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_a_b
-        .{ .tag = @enumFromInt(1243), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1243), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_a_d
-        .{ .tag = @enumFromInt(1244), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1244), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_a_h
-        .{ .tag = @enumFromInt(1245), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1245), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_a_w
-        .{ .tag = @enumFromInt(1246), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1246), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_s_b
-        .{ .tag = @enumFromInt(1247), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1247), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_s_d
-        .{ .tag = @enumFromInt(1248), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1248), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_s_h
-        .{ .tag = @enumFromInt(1249), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1249), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_s_w
-        .{ .tag = @enumFromInt(1250), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1250), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_u_b
-        .{ .tag = @enumFromInt(1251), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1251), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_u_d
-        .{ .tag = @enumFromInt(1252), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1252), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_u_h
-        .{ .tag = @enumFromInt(1253), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1253), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_min_u_w
-        .{ .tag = @enumFromInt(1254), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1254), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mini_s_b
-        .{ .tag = @enumFromInt(1255), .properties = .{ .param_str = "V16ScV16ScIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1255), .properties = .{ .param_str = "V16ScV16ScIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mini_s_d
-        .{ .tag = @enumFromInt(1256), .properties = .{ .param_str = "V2SLLiV2SLLiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1256), .properties = .{ .param_str = "V2SLLiV2SLLiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mini_s_h
-        .{ .tag = @enumFromInt(1257), .properties = .{ .param_str = "V8SsV8SsIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1257), .properties = .{ .param_str = "V8SsV8SsIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mini_s_w
-        .{ .tag = @enumFromInt(1258), .properties = .{ .param_str = "V4SiV4SiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1258), .properties = .{ .param_str = "V4SiV4SiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mini_u_b
-        .{ .tag = @enumFromInt(1259), .properties = .{ .param_str = "V16UcV16UcIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1259), .properties = .{ .param_str = "V16UcV16UcIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mini_u_d
-        .{ .tag = @enumFromInt(1260), .properties = .{ .param_str = "V2ULLiV2ULLiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1260), .properties = .{ .param_str = "V2ULLiV2ULLiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mini_u_h
-        .{ .tag = @enumFromInt(1261), .properties = .{ .param_str = "V8UsV8UsIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1261), .properties = .{ .param_str = "V8UsV8UsIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mini_u_w
-        .{ .tag = @enumFromInt(1262), .properties = .{ .param_str = "V4UiV4UiIi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1262), .properties = .{ .param_str = "V4UiV4UiIi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mod_s_b
-        .{ .tag = @enumFromInt(1263), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1263), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mod_s_d
-        .{ .tag = @enumFromInt(1264), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1264), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mod_s_h
-        .{ .tag = @enumFromInt(1265), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1265), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mod_s_w
-        .{ .tag = @enumFromInt(1266), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1266), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mod_u_b
-        .{ .tag = @enumFromInt(1267), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1267), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mod_u_d
-        .{ .tag = @enumFromInt(1268), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1268), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mod_u_h
-        .{ .tag = @enumFromInt(1269), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1269), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mod_u_w
-        .{ .tag = @enumFromInt(1270), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1270), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_move_v
-        .{ .tag = @enumFromInt(1271), .properties = .{ .param_str = "V16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1271), .properties = .{ .param_str = "V16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_msub_q_h
-        .{ .tag = @enumFromInt(1272), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1272), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_msub_q_w
-        .{ .tag = @enumFromInt(1273), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1273), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_msubr_q_h
-        .{ .tag = @enumFromInt(1274), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1274), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_msubr_q_w
-        .{ .tag = @enumFromInt(1275), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1275), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_msubv_b
-        .{ .tag = @enumFromInt(1276), .properties = .{ .param_str = "V16ScV16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1276), .properties = .{ .param_str = "V16ScV16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_msubv_d
-        .{ .tag = @enumFromInt(1277), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1277), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_msubv_h
-        .{ .tag = @enumFromInt(1278), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1278), .properties = .{ .param_str = "V8SsV8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_msubv_w
-        .{ .tag = @enumFromInt(1279), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1279), .properties = .{ .param_str = "V4SiV4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mul_q_h
-        .{ .tag = @enumFromInt(1280), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1280), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mul_q_w
-        .{ .tag = @enumFromInt(1281), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1281), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mulr_q_h
-        .{ .tag = @enumFromInt(1282), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1282), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mulr_q_w
-        .{ .tag = @enumFromInt(1283), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1283), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mulv_b
-        .{ .tag = @enumFromInt(1284), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1284), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mulv_d
-        .{ .tag = @enumFromInt(1285), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1285), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mulv_h
-        .{ .tag = @enumFromInt(1286), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1286), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_mulv_w
-        .{ .tag = @enumFromInt(1287), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1287), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_nloc_b
-        .{ .tag = @enumFromInt(1288), .properties = .{ .param_str = "V16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1288), .properties = .{ .param_str = "V16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_nloc_d
-        .{ .tag = @enumFromInt(1289), .properties = .{ .param_str = "V2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1289), .properties = .{ .param_str = "V2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_nloc_h
-        .{ .tag = @enumFromInt(1290), .properties = .{ .param_str = "V8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1290), .properties = .{ .param_str = "V8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_nloc_w
-        .{ .tag = @enumFromInt(1291), .properties = .{ .param_str = "V4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1291), .properties = .{ .param_str = "V4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_nlzc_b
-        .{ .tag = @enumFromInt(1292), .properties = .{ .param_str = "V16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1292), .properties = .{ .param_str = "V16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_nlzc_d
-        .{ .tag = @enumFromInt(1293), .properties = .{ .param_str = "V2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1293), .properties = .{ .param_str = "V2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_nlzc_h
-        .{ .tag = @enumFromInt(1294), .properties = .{ .param_str = "V8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1294), .properties = .{ .param_str = "V8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_nlzc_w
-        .{ .tag = @enumFromInt(1295), .properties = .{ .param_str = "V4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1295), .properties = .{ .param_str = "V4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_nor_v
-        .{ .tag = @enumFromInt(1296), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1296), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_nori_b
-        .{ .tag = @enumFromInt(1297), .properties = .{ .param_str = "V16UcV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1297), .properties = .{ .param_str = "V16UcV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_or_v
-        .{ .tag = @enumFromInt(1298), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1298), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_ori_b
-        .{ .tag = @enumFromInt(1299), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1299), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pckev_b
-        .{ .tag = @enumFromInt(1300), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1300), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pckev_d
-        .{ .tag = @enumFromInt(1301), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1301), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pckev_h
-        .{ .tag = @enumFromInt(1302), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1302), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pckev_w
-        .{ .tag = @enumFromInt(1303), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1303), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pckod_b
-        .{ .tag = @enumFromInt(1304), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1304), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pckod_d
-        .{ .tag = @enumFromInt(1305), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1305), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pckod_h
-        .{ .tag = @enumFromInt(1306), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1306), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pckod_w
-        .{ .tag = @enumFromInt(1307), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1307), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pcnt_b
-        .{ .tag = @enumFromInt(1308), .properties = .{ .param_str = "V16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1308), .properties = .{ .param_str = "V16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pcnt_d
-        .{ .tag = @enumFromInt(1309), .properties = .{ .param_str = "V2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1309), .properties = .{ .param_str = "V2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pcnt_h
-        .{ .tag = @enumFromInt(1310), .properties = .{ .param_str = "V8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1310), .properties = .{ .param_str = "V8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_pcnt_w
-        .{ .tag = @enumFromInt(1311), .properties = .{ .param_str = "V4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1311), .properties = .{ .param_str = "V4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sat_s_b
-        .{ .tag = @enumFromInt(1312), .properties = .{ .param_str = "V16ScV16ScIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1312), .properties = .{ .param_str = "V16ScV16ScIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sat_s_d
-        .{ .tag = @enumFromInt(1313), .properties = .{ .param_str = "V2SLLiV2SLLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1313), .properties = .{ .param_str = "V2SLLiV2SLLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sat_s_h
-        .{ .tag = @enumFromInt(1314), .properties = .{ .param_str = "V8SsV8SsIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1314), .properties = .{ .param_str = "V8SsV8SsIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sat_s_w
-        .{ .tag = @enumFromInt(1315), .properties = .{ .param_str = "V4SiV4SiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1315), .properties = .{ .param_str = "V4SiV4SiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sat_u_b
-        .{ .tag = @enumFromInt(1316), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1316), .properties = .{ .param_str = "V16UcV16UcIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sat_u_d
-        .{ .tag = @enumFromInt(1317), .properties = .{ .param_str = "V2ULLiV2ULLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1317), .properties = .{ .param_str = "V2ULLiV2ULLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sat_u_h
-        .{ .tag = @enumFromInt(1318), .properties = .{ .param_str = "V8UsV8UsIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1318), .properties = .{ .param_str = "V8UsV8UsIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sat_u_w
-        .{ .tag = @enumFromInt(1319), .properties = .{ .param_str = "V4UiV4UiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1319), .properties = .{ .param_str = "V4UiV4UiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_shf_b
-        .{ .tag = @enumFromInt(1320), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1320), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_shf_h
-        .{ .tag = @enumFromInt(1321), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1321), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_shf_w
-        .{ .tag = @enumFromInt(1322), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1322), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sld_b
-        .{ .tag = @enumFromInt(1323), .properties = .{ .param_str = "V16cV16cV16cUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1323), .properties = .{ .param_str = "V16cV16cV16cUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sld_d
-        .{ .tag = @enumFromInt(1324), .properties = .{ .param_str = "V2LLiV2LLiV2LLiUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1324), .properties = .{ .param_str = "V2LLiV2LLiV2LLiUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sld_h
-        .{ .tag = @enumFromInt(1325), .properties = .{ .param_str = "V8sV8sV8sUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1325), .properties = .{ .param_str = "V8sV8sV8sUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sld_w
-        .{ .tag = @enumFromInt(1326), .properties = .{ .param_str = "V4iV4iV4iUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1326), .properties = .{ .param_str = "V4iV4iV4iUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sldi_b
-        .{ .tag = @enumFromInt(1327), .properties = .{ .param_str = "V16cV16cV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1327), .properties = .{ .param_str = "V16cV16cV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sldi_d
-        .{ .tag = @enumFromInt(1328), .properties = .{ .param_str = "V2LLiV2LLiV2LLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1328), .properties = .{ .param_str = "V2LLiV2LLiV2LLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sldi_h
-        .{ .tag = @enumFromInt(1329), .properties = .{ .param_str = "V8sV8sV8sIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1329), .properties = .{ .param_str = "V8sV8sV8sIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sldi_w
-        .{ .tag = @enumFromInt(1330), .properties = .{ .param_str = "V4iV4iV4iIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1330), .properties = .{ .param_str = "V4iV4iV4iIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sll_b
-        .{ .tag = @enumFromInt(1331), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1331), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sll_d
-        .{ .tag = @enumFromInt(1332), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1332), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sll_h
-        .{ .tag = @enumFromInt(1333), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1333), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sll_w
-        .{ .tag = @enumFromInt(1334), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1334), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_slli_b
-        .{ .tag = @enumFromInt(1335), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1335), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_slli_d
-        .{ .tag = @enumFromInt(1336), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1336), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_slli_h
-        .{ .tag = @enumFromInt(1337), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1337), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_slli_w
-        .{ .tag = @enumFromInt(1338), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1338), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_splat_b
-        .{ .tag = @enumFromInt(1339), .properties = .{ .param_str = "V16cV16cUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1339), .properties = .{ .param_str = "V16cV16cUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_splat_d
-        .{ .tag = @enumFromInt(1340), .properties = .{ .param_str = "V2LLiV2LLiUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1340), .properties = .{ .param_str = "V2LLiV2LLiUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_splat_h
-        .{ .tag = @enumFromInt(1341), .properties = .{ .param_str = "V8sV8sUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1341), .properties = .{ .param_str = "V8sV8sUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_splat_w
-        .{ .tag = @enumFromInt(1342), .properties = .{ .param_str = "V4iV4iUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1342), .properties = .{ .param_str = "V4iV4iUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_splati_b
-        .{ .tag = @enumFromInt(1343), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1343), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_splati_d
-        .{ .tag = @enumFromInt(1344), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1344), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_splati_h
-        .{ .tag = @enumFromInt(1345), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1345), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_splati_w
-        .{ .tag = @enumFromInt(1346), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1346), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sra_b
-        .{ .tag = @enumFromInt(1347), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1347), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sra_d
-        .{ .tag = @enumFromInt(1348), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1348), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sra_h
-        .{ .tag = @enumFromInt(1349), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1349), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_sra_w
-        .{ .tag = @enumFromInt(1350), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1350), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srai_b
-        .{ .tag = @enumFromInt(1351), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1351), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srai_d
-        .{ .tag = @enumFromInt(1352), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1352), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srai_h
-        .{ .tag = @enumFromInt(1353), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1353), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srai_w
-        .{ .tag = @enumFromInt(1354), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1354), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srar_b
-        .{ .tag = @enumFromInt(1355), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1355), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srar_d
-        .{ .tag = @enumFromInt(1356), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1356), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srar_h
-        .{ .tag = @enumFromInt(1357), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1357), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srar_w
-        .{ .tag = @enumFromInt(1358), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1358), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srari_b
-        .{ .tag = @enumFromInt(1359), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1359), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srari_d
-        .{ .tag = @enumFromInt(1360), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1360), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srari_h
-        .{ .tag = @enumFromInt(1361), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1361), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srari_w
-        .{ .tag = @enumFromInt(1362), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1362), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srl_b
-        .{ .tag = @enumFromInt(1363), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1363), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srl_d
-        .{ .tag = @enumFromInt(1364), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1364), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srl_h
-        .{ .tag = @enumFromInt(1365), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1365), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srl_w
-        .{ .tag = @enumFromInt(1366), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1366), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srli_b
-        .{ .tag = @enumFromInt(1367), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1367), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srli_d
-        .{ .tag = @enumFromInt(1368), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1368), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srli_h
-        .{ .tag = @enumFromInt(1369), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1369), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srli_w
-        .{ .tag = @enumFromInt(1370), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1370), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srlr_b
-        .{ .tag = @enumFromInt(1371), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1371), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srlr_d
-        .{ .tag = @enumFromInt(1372), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1372), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srlr_h
-        .{ .tag = @enumFromInt(1373), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1373), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srlr_w
-        .{ .tag = @enumFromInt(1374), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1374), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srlri_b
-        .{ .tag = @enumFromInt(1375), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1375), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srlri_d
-        .{ .tag = @enumFromInt(1376), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1376), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srlri_h
-        .{ .tag = @enumFromInt(1377), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1377), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_srlri_w
-        .{ .tag = @enumFromInt(1378), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1378), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_st_b
-        .{ .tag = @enumFromInt(1379), .properties = .{ .param_str = "vV16Scv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1379), .properties = .{ .param_str = "vV16Scv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_st_d
-        .{ .tag = @enumFromInt(1380), .properties = .{ .param_str = "vV2SLLiv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1380), .properties = .{ .param_str = "vV2SLLiv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_st_h
-        .{ .tag = @enumFromInt(1381), .properties = .{ .param_str = "vV8Ssv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1381), .properties = .{ .param_str = "vV8Ssv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_st_w
-        .{ .tag = @enumFromInt(1382), .properties = .{ .param_str = "vV4Siv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1382), .properties = .{ .param_str = "vV4Siv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_str_d
-        .{ .tag = @enumFromInt(1383), .properties = .{ .param_str = "vV2SLLiv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1383), .properties = .{ .param_str = "vV2SLLiv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_str_w
-        .{ .tag = @enumFromInt(1384), .properties = .{ .param_str = "vV4Siv*Ii", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1384), .properties = .{ .param_str = "vV4Siv*Ii", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subs_s_b
-        .{ .tag = @enumFromInt(1385), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1385), .properties = .{ .param_str = "V16ScV16ScV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subs_s_d
-        .{ .tag = @enumFromInt(1386), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1386), .properties = .{ .param_str = "V2SLLiV2SLLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subs_s_h
-        .{ .tag = @enumFromInt(1387), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1387), .properties = .{ .param_str = "V8SsV8SsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subs_s_w
-        .{ .tag = @enumFromInt(1388), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1388), .properties = .{ .param_str = "V4SiV4SiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subs_u_b
-        .{ .tag = @enumFromInt(1389), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1389), .properties = .{ .param_str = "V16UcV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subs_u_d
-        .{ .tag = @enumFromInt(1390), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1390), .properties = .{ .param_str = "V2ULLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subs_u_h
-        .{ .tag = @enumFromInt(1391), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1391), .properties = .{ .param_str = "V8UsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subs_u_w
-        .{ .tag = @enumFromInt(1392), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1392), .properties = .{ .param_str = "V4UiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subsus_u_b
-        .{ .tag = @enumFromInt(1393), .properties = .{ .param_str = "V16UcV16UcV16Sc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1393), .properties = .{ .param_str = "V16UcV16UcV16Sc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subsus_u_d
-        .{ .tag = @enumFromInt(1394), .properties = .{ .param_str = "V2ULLiV2ULLiV2SLLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1394), .properties = .{ .param_str = "V2ULLiV2ULLiV2SLLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subsus_u_h
-        .{ .tag = @enumFromInt(1395), .properties = .{ .param_str = "V8UsV8UsV8Ss", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1395), .properties = .{ .param_str = "V8UsV8UsV8Ss", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subsus_u_w
-        .{ .tag = @enumFromInt(1396), .properties = .{ .param_str = "V4UiV4UiV4Si", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1396), .properties = .{ .param_str = "V4UiV4UiV4Si", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subsuu_s_b
-        .{ .tag = @enumFromInt(1397), .properties = .{ .param_str = "V16ScV16UcV16Uc", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1397), .properties = .{ .param_str = "V16ScV16UcV16Uc", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subsuu_s_d
-        .{ .tag = @enumFromInt(1398), .properties = .{ .param_str = "V2SLLiV2ULLiV2ULLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1398), .properties = .{ .param_str = "V2SLLiV2ULLiV2ULLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subsuu_s_h
-        .{ .tag = @enumFromInt(1399), .properties = .{ .param_str = "V8SsV8UsV8Us", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1399), .properties = .{ .param_str = "V8SsV8UsV8Us", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subsuu_s_w
-        .{ .tag = @enumFromInt(1400), .properties = .{ .param_str = "V4SiV4UiV4Ui", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1400), .properties = .{ .param_str = "V4SiV4UiV4Ui", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subv_b
-        .{ .tag = @enumFromInt(1401), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1401), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subv_d
-        .{ .tag = @enumFromInt(1402), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1402), .properties = .{ .param_str = "V2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subv_h
-        .{ .tag = @enumFromInt(1403), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1403), .properties = .{ .param_str = "V8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subv_w
-        .{ .tag = @enumFromInt(1404), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1404), .properties = .{ .param_str = "V4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subvi_b
-        .{ .tag = @enumFromInt(1405), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1405), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subvi_d
-        .{ .tag = @enumFromInt(1406), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1406), .properties = .{ .param_str = "V2LLiV2LLiIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subvi_h
-        .{ .tag = @enumFromInt(1407), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1407), .properties = .{ .param_str = "V8sV8sIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_subvi_w
-        .{ .tag = @enumFromInt(1408), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1408), .properties = .{ .param_str = "V4iV4iIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_vshf_b
-        .{ .tag = @enumFromInt(1409), .properties = .{ .param_str = "V16cV16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1409), .properties = .{ .param_str = "V16cV16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_vshf_d
-        .{ .tag = @enumFromInt(1410), .properties = .{ .param_str = "V2LLiV2LLiV2LLiV2LLi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1410), .properties = .{ .param_str = "V2LLiV2LLiV2LLiV2LLi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_vshf_h
-        .{ .tag = @enumFromInt(1411), .properties = .{ .param_str = "V8sV8sV8sV8s", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1411), .properties = .{ .param_str = "V8sV8sV8sV8s", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_vshf_w
-        .{ .tag = @enumFromInt(1412), .properties = .{ .param_str = "V4iV4iV4iV4i", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1412), .properties = .{ .param_str = "V4iV4iV4iV4i", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_xor_v
-        .{ .tag = @enumFromInt(1413), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1413), .properties = .{ .param_str = "V16cV16cV16c", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_msa_xori_b
-        .{ .tag = @enumFromInt(1414), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.initOne(.mips), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1414), .properties = .{ .param_str = "V16cV16cIUi", .target_set = TargetSet.init_one(.mips), .attributes = .{ .@"const" = true } } },
         // __builtin_mul_overflow
         .{ .tag = @enumFromInt(1415), .properties = .{ .param_str = "b.", .attributes = .{ .custom_typecheck = true, .const_evaluable = true } } },
         // __builtin_nan
@@ -8062,7 +8062,7 @@ pub const data = blk: {
         // __builtin_os_log_format_buffer_size
         .{ .tag = @enumFromInt(1446), .properties = .{ .param_str = "zcC*.", .attributes = .{ .custom_typecheck = true, .format_kind = .printf, .eval_args = false, .const_evaluable = true } } },
         // __builtin_pack_longdouble
-        .{ .tag = @enumFromInt(1447), .properties = .{ .param_str = "Lddd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1447), .properties = .{ .param_str = "Lddd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_parity
         .{ .tag = @enumFromInt(1448), .properties = .{ .param_str = "iUi", .attributes = .{ .@"const" = true, .const_evaluable = true } } },
         // __builtin_parityl
@@ -8092,221 +8092,221 @@ pub const data = blk: {
         // __builtin_powl
         .{ .tag = @enumFromInt(1461), .properties = .{ .param_str = "LdLdLd", .attributes = .{ .lib_function_with_builtin_prefix = true, .const_without_errno_and_fp_exceptions = true } } },
         // __builtin_ppc_alignx
-        .{ .tag = @enumFromInt(1462), .properties = .{ .param_str = "vIivC*", .target_set = TargetSet.initOne(.ppc), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1462), .properties = .{ .param_str = "vIivC*", .target_set = TargetSet.init_one(.ppc), .attributes = .{ .@"const" = true } } },
         // __builtin_ppc_cmpb
-        .{ .tag = @enumFromInt(1463), .properties = .{ .param_str = "LLiLLiLLi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1463), .properties = .{ .param_str = "LLiLLiLLi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_compare_and_swap
-        .{ .tag = @enumFromInt(1464), .properties = .{ .param_str = "iiD*i*i", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1464), .properties = .{ .param_str = "iiD*i*i", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_compare_and_swaplp
-        .{ .tag = @enumFromInt(1465), .properties = .{ .param_str = "iLiD*Li*Li", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1465), .properties = .{ .param_str = "iLiD*Li*Li", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_dcbfl
-        .{ .tag = @enumFromInt(1466), .properties = .{ .param_str = "vvC*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1466), .properties = .{ .param_str = "vvC*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_dcbflp
-        .{ .tag = @enumFromInt(1467), .properties = .{ .param_str = "vvC*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1467), .properties = .{ .param_str = "vvC*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_dcbst
-        .{ .tag = @enumFromInt(1468), .properties = .{ .param_str = "vvC*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1468), .properties = .{ .param_str = "vvC*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_dcbt
-        .{ .tag = @enumFromInt(1469), .properties = .{ .param_str = "vv*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1469), .properties = .{ .param_str = "vv*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_dcbtst
-        .{ .tag = @enumFromInt(1470), .properties = .{ .param_str = "vv*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1470), .properties = .{ .param_str = "vv*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_dcbtstt
-        .{ .tag = @enumFromInt(1471), .properties = .{ .param_str = "vv*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1471), .properties = .{ .param_str = "vv*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_dcbtt
-        .{ .tag = @enumFromInt(1472), .properties = .{ .param_str = "vv*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1472), .properties = .{ .param_str = "vv*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_dcbz
-        .{ .tag = @enumFromInt(1473), .properties = .{ .param_str = "vv*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1473), .properties = .{ .param_str = "vv*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_eieio
-        .{ .tag = @enumFromInt(1474), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1474), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fcfid
-        .{ .tag = @enumFromInt(1475), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1475), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fcfud
-        .{ .tag = @enumFromInt(1476), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1476), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fctid
-        .{ .tag = @enumFromInt(1477), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1477), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fctidz
-        .{ .tag = @enumFromInt(1478), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1478), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fctiw
-        .{ .tag = @enumFromInt(1479), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1479), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fctiwz
-        .{ .tag = @enumFromInt(1480), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1480), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fctudz
-        .{ .tag = @enumFromInt(1481), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1481), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fctuwz
-        .{ .tag = @enumFromInt(1482), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1482), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fetch_and_add
-        .{ .tag = @enumFromInt(1483), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1483), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fetch_and_addlp
-        .{ .tag = @enumFromInt(1484), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1484), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fetch_and_and
-        .{ .tag = @enumFromInt(1485), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1485), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fetch_and_andlp
-        .{ .tag = @enumFromInt(1486), .properties = .{ .param_str = "ULiULiD*ULi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1486), .properties = .{ .param_str = "ULiULiD*ULi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fetch_and_or
-        .{ .tag = @enumFromInt(1487), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1487), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fetch_and_orlp
-        .{ .tag = @enumFromInt(1488), .properties = .{ .param_str = "ULiULiD*ULi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1488), .properties = .{ .param_str = "ULiULiD*ULi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fetch_and_swap
-        .{ .tag = @enumFromInt(1489), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1489), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fetch_and_swaplp
-        .{ .tag = @enumFromInt(1490), .properties = .{ .param_str = "ULiULiD*ULi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1490), .properties = .{ .param_str = "ULiULiD*ULi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fmsub
-        .{ .tag = @enumFromInt(1491), .properties = .{ .param_str = "dddd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1491), .properties = .{ .param_str = "dddd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fmsubs
-        .{ .tag = @enumFromInt(1492), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1492), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fnabs
-        .{ .tag = @enumFromInt(1493), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1493), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fnabss
-        .{ .tag = @enumFromInt(1494), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1494), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fnmadd
-        .{ .tag = @enumFromInt(1495), .properties = .{ .param_str = "dddd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1495), .properties = .{ .param_str = "dddd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fnmadds
-        .{ .tag = @enumFromInt(1496), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1496), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fnmsub
-        .{ .tag = @enumFromInt(1497), .properties = .{ .param_str = "dddd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1497), .properties = .{ .param_str = "dddd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fnmsubs
-        .{ .tag = @enumFromInt(1498), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1498), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fre
-        .{ .tag = @enumFromInt(1499), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1499), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fres
-        .{ .tag = @enumFromInt(1500), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1500), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fric
-        .{ .tag = @enumFromInt(1501), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1501), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_frim
-        .{ .tag = @enumFromInt(1502), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1502), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_frims
-        .{ .tag = @enumFromInt(1503), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1503), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_frin
-        .{ .tag = @enumFromInt(1504), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1504), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_frins
-        .{ .tag = @enumFromInt(1505), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1505), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_frip
-        .{ .tag = @enumFromInt(1506), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1506), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_frips
-        .{ .tag = @enumFromInt(1507), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1507), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_friz
-        .{ .tag = @enumFromInt(1508), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1508), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_frizs
-        .{ .tag = @enumFromInt(1509), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1509), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_frsqrte
-        .{ .tag = @enumFromInt(1510), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1510), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_frsqrtes
-        .{ .tag = @enumFromInt(1511), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1511), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fsel
-        .{ .tag = @enumFromInt(1512), .properties = .{ .param_str = "dddd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1512), .properties = .{ .param_str = "dddd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fsels
-        .{ .tag = @enumFromInt(1513), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1513), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fsqrt
-        .{ .tag = @enumFromInt(1514), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1514), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_fsqrts
-        .{ .tag = @enumFromInt(1515), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1515), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_get_timebase
-        .{ .tag = @enumFromInt(1516), .properties = .{ .param_str = "ULLi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1516), .properties = .{ .param_str = "ULLi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_iospace_eieio
-        .{ .tag = @enumFromInt(1517), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1517), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_iospace_lwsync
-        .{ .tag = @enumFromInt(1518), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1518), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_iospace_sync
-        .{ .tag = @enumFromInt(1519), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1519), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_isync
-        .{ .tag = @enumFromInt(1520), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1520), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_ldarx
-        .{ .tag = @enumFromInt(1521), .properties = .{ .param_str = "LiLiD*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1521), .properties = .{ .param_str = "LiLiD*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_load2r
-        .{ .tag = @enumFromInt(1522), .properties = .{ .param_str = "UsUs*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1522), .properties = .{ .param_str = "UsUs*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_load4r
-        .{ .tag = @enumFromInt(1523), .properties = .{ .param_str = "UiUi*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1523), .properties = .{ .param_str = "UiUi*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_lwarx
-        .{ .tag = @enumFromInt(1524), .properties = .{ .param_str = "iiD*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1524), .properties = .{ .param_str = "iiD*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_lwsync
-        .{ .tag = @enumFromInt(1525), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1525), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_maxfe
-        .{ .tag = @enumFromInt(1526), .properties = .{ .param_str = "LdLdLdLd.", .target_set = TargetSet.initOne(.ppc), .attributes = .{ .custom_typecheck = true } } },
+        .{ .tag = @enumFromInt(1526), .properties = .{ .param_str = "LdLdLdLd.", .target_set = TargetSet.init_one(.ppc), .attributes = .{ .custom_typecheck = true } } },
         // __builtin_ppc_maxfl
-        .{ .tag = @enumFromInt(1527), .properties = .{ .param_str = "dddd.", .target_set = TargetSet.initOne(.ppc), .attributes = .{ .custom_typecheck = true } } },
+        .{ .tag = @enumFromInt(1527), .properties = .{ .param_str = "dddd.", .target_set = TargetSet.init_one(.ppc), .attributes = .{ .custom_typecheck = true } } },
         // __builtin_ppc_maxfs
-        .{ .tag = @enumFromInt(1528), .properties = .{ .param_str = "ffff.", .target_set = TargetSet.initOne(.ppc), .attributes = .{ .custom_typecheck = true } } },
+        .{ .tag = @enumFromInt(1528), .properties = .{ .param_str = "ffff.", .target_set = TargetSet.init_one(.ppc), .attributes = .{ .custom_typecheck = true } } },
         // __builtin_ppc_mfmsr
-        .{ .tag = @enumFromInt(1529), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1529), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_mfspr
-        .{ .tag = @enumFromInt(1530), .properties = .{ .param_str = "ULiIi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1530), .properties = .{ .param_str = "ULiIi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_mftbu
-        .{ .tag = @enumFromInt(1531), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1531), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_minfe
-        .{ .tag = @enumFromInt(1532), .properties = .{ .param_str = "LdLdLdLd.", .target_set = TargetSet.initOne(.ppc), .attributes = .{ .custom_typecheck = true } } },
+        .{ .tag = @enumFromInt(1532), .properties = .{ .param_str = "LdLdLdLd.", .target_set = TargetSet.init_one(.ppc), .attributes = .{ .custom_typecheck = true } } },
         // __builtin_ppc_minfl
-        .{ .tag = @enumFromInt(1533), .properties = .{ .param_str = "dddd.", .target_set = TargetSet.initOne(.ppc), .attributes = .{ .custom_typecheck = true } } },
+        .{ .tag = @enumFromInt(1533), .properties = .{ .param_str = "dddd.", .target_set = TargetSet.init_one(.ppc), .attributes = .{ .custom_typecheck = true } } },
         // __builtin_ppc_minfs
-        .{ .tag = @enumFromInt(1534), .properties = .{ .param_str = "ffff.", .target_set = TargetSet.initOne(.ppc), .attributes = .{ .custom_typecheck = true } } },
+        .{ .tag = @enumFromInt(1534), .properties = .{ .param_str = "ffff.", .target_set = TargetSet.init_one(.ppc), .attributes = .{ .custom_typecheck = true } } },
         // __builtin_ppc_mtfsb0
-        .{ .tag = @enumFromInt(1535), .properties = .{ .param_str = "vUIi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1535), .properties = .{ .param_str = "vUIi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_mtfsb1
-        .{ .tag = @enumFromInt(1536), .properties = .{ .param_str = "vUIi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1536), .properties = .{ .param_str = "vUIi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_mtfsf
-        .{ .tag = @enumFromInt(1537), .properties = .{ .param_str = "vUIiUi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1537), .properties = .{ .param_str = "vUIiUi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_mtfsfi
-        .{ .tag = @enumFromInt(1538), .properties = .{ .param_str = "vUIiUIi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1538), .properties = .{ .param_str = "vUIiUIi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_mtmsr
-        .{ .tag = @enumFromInt(1539), .properties = .{ .param_str = "vUi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1539), .properties = .{ .param_str = "vUi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_mtspr
-        .{ .tag = @enumFromInt(1540), .properties = .{ .param_str = "vIiULi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1540), .properties = .{ .param_str = "vIiULi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_mulhd
-        .{ .tag = @enumFromInt(1541), .properties = .{ .param_str = "LLiLiLi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1541), .properties = .{ .param_str = "LLiLiLi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_mulhdu
-        .{ .tag = @enumFromInt(1542), .properties = .{ .param_str = "ULLiULiULi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1542), .properties = .{ .param_str = "ULLiULiULi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_mulhw
-        .{ .tag = @enumFromInt(1543), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1543), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_mulhwu
-        .{ .tag = @enumFromInt(1544), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1544), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_popcntb
-        .{ .tag = @enumFromInt(1545), .properties = .{ .param_str = "ULiULi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1545), .properties = .{ .param_str = "ULiULi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_poppar4
-        .{ .tag = @enumFromInt(1546), .properties = .{ .param_str = "iUi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1546), .properties = .{ .param_str = "iUi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_poppar8
-        .{ .tag = @enumFromInt(1547), .properties = .{ .param_str = "iULLi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1547), .properties = .{ .param_str = "iULLi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_rdlam
-        .{ .tag = @enumFromInt(1548), .properties = .{ .param_str = "UWiUWiUWiUWIi", .target_set = TargetSet.initOne(.ppc), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1548), .properties = .{ .param_str = "UWiUWiUWiUWIi", .target_set = TargetSet.init_one(.ppc), .attributes = .{ .@"const" = true } } },
         // __builtin_ppc_recipdivd
-        .{ .tag = @enumFromInt(1549), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1549), .properties = .{ .param_str = "V2dV2dV2d", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_recipdivf
-        .{ .tag = @enumFromInt(1550), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1550), .properties = .{ .param_str = "V4fV4fV4f", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_rldimi
-        .{ .tag = @enumFromInt(1551), .properties = .{ .param_str = "ULLiULLiULLiIUiIULLi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1551), .properties = .{ .param_str = "ULLiULLiULLiIUiIULLi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_rlwimi
-        .{ .tag = @enumFromInt(1552), .properties = .{ .param_str = "UiUiUiIUiIUi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1552), .properties = .{ .param_str = "UiUiUiIUiIUi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_rlwnm
-        .{ .tag = @enumFromInt(1553), .properties = .{ .param_str = "UiUiUiIUi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1553), .properties = .{ .param_str = "UiUiUiIUi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_rsqrtd
-        .{ .tag = @enumFromInt(1554), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1554), .properties = .{ .param_str = "V2dV2d", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_rsqrtf
-        .{ .tag = @enumFromInt(1555), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1555), .properties = .{ .param_str = "V4fV4f", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_stdcx
-        .{ .tag = @enumFromInt(1556), .properties = .{ .param_str = "iLiD*Li", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1556), .properties = .{ .param_str = "iLiD*Li", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_stfiw
-        .{ .tag = @enumFromInt(1557), .properties = .{ .param_str = "viC*d", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1557), .properties = .{ .param_str = "viC*d", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_store2r
-        .{ .tag = @enumFromInt(1558), .properties = .{ .param_str = "vUiUs*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1558), .properties = .{ .param_str = "vUiUs*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_store4r
-        .{ .tag = @enumFromInt(1559), .properties = .{ .param_str = "vUiUi*", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1559), .properties = .{ .param_str = "vUiUi*", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_stwcx
-        .{ .tag = @enumFromInt(1560), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1560), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_swdiv
-        .{ .tag = @enumFromInt(1561), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1561), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_swdiv_nochk
-        .{ .tag = @enumFromInt(1562), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1562), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_swdivs
-        .{ .tag = @enumFromInt(1563), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1563), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_swdivs_nochk
-        .{ .tag = @enumFromInt(1564), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1564), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_sync
-        .{ .tag = @enumFromInt(1565), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1565), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_tdw
-        .{ .tag = @enumFromInt(1566), .properties = .{ .param_str = "vLLiLLiIUi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1566), .properties = .{ .param_str = "vLLiLLiIUi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_trap
-        .{ .tag = @enumFromInt(1567), .properties = .{ .param_str = "vi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1567), .properties = .{ .param_str = "vi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_trapd
-        .{ .tag = @enumFromInt(1568), .properties = .{ .param_str = "vLi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1568), .properties = .{ .param_str = "vLi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_ppc_tw
-        .{ .tag = @enumFromInt(1569), .properties = .{ .param_str = "viiIUi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1569), .properties = .{ .param_str = "viiIUi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_prefetch
         .{ .tag = @enumFromInt(1570), .properties = .{ .param_str = "vvC*.", .attributes = .{ .@"const" = true } } },
         // __builtin_preserve_access_index
@@ -8314,59 +8314,59 @@ pub const data = blk: {
         // __builtin_printf
         .{ .tag = @enumFromInt(1572), .properties = .{ .param_str = "icC*R.", .attributes = .{ .lib_function_with_builtin_prefix = true, .format_kind = .printf } } },
         // __builtin_ptx_get_image_channel_data_typei_
-        .{ .tag = @enumFromInt(1573), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1573), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_get_image_channel_orderi_
-        .{ .tag = @enumFromInt(1574), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1574), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_get_image_depthi_
-        .{ .tag = @enumFromInt(1575), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1575), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_get_image_heighti_
-        .{ .tag = @enumFromInt(1576), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1576), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_get_image_widthi_
-        .{ .tag = @enumFromInt(1577), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1577), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_read_image2Dff_
-        .{ .tag = @enumFromInt(1578), .properties = .{ .param_str = "V4fiiff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1578), .properties = .{ .param_str = "V4fiiff", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_read_image2Dfi_
-        .{ .tag = @enumFromInt(1579), .properties = .{ .param_str = "V4fiiii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1579), .properties = .{ .param_str = "V4fiiii", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_read_image2Dif_
-        .{ .tag = @enumFromInt(1580), .properties = .{ .param_str = "V4iiiff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1580), .properties = .{ .param_str = "V4iiiff", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_read_image2Dii_
-        .{ .tag = @enumFromInt(1581), .properties = .{ .param_str = "V4iiiii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1581), .properties = .{ .param_str = "V4iiiii", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_read_image3Dff_
-        .{ .tag = @enumFromInt(1582), .properties = .{ .param_str = "V4fiiffff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1582), .properties = .{ .param_str = "V4fiiffff", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_read_image3Dfi_
-        .{ .tag = @enumFromInt(1583), .properties = .{ .param_str = "V4fiiiiii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1583), .properties = .{ .param_str = "V4fiiiiii", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_read_image3Dif_
-        .{ .tag = @enumFromInt(1584), .properties = .{ .param_str = "V4iiiffff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1584), .properties = .{ .param_str = "V4iiiffff", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_read_image3Dii_
-        .{ .tag = @enumFromInt(1585), .properties = .{ .param_str = "V4iiiiiii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1585), .properties = .{ .param_str = "V4iiiiiii", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_write_image2Df_
-        .{ .tag = @enumFromInt(1586), .properties = .{ .param_str = "viiiffff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1586), .properties = .{ .param_str = "viiiffff", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_write_image2Di_
-        .{ .tag = @enumFromInt(1587), .properties = .{ .param_str = "viiiiiii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1587), .properties = .{ .param_str = "viiiiiii", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_ptx_write_image2Dui_
-        .{ .tag = @enumFromInt(1588), .properties = .{ .param_str = "viiiUiUiUiUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(1588), .properties = .{ .param_str = "viiiUiUiUiUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __builtin_r600_implicitarg_ptr
-        .{ .tag = @enumFromInt(1589), .properties = .{ .param_str = "Uc*7", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1589), .properties = .{ .param_str = "Uc*7", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_r600_read_tgid_x
-        .{ .tag = @enumFromInt(1590), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1590), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_r600_read_tgid_y
-        .{ .tag = @enumFromInt(1591), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1591), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_r600_read_tgid_z
-        .{ .tag = @enumFromInt(1592), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1592), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_r600_read_tidig_x
-        .{ .tag = @enumFromInt(1593), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1593), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_r600_read_tidig_y
-        .{ .tag = @enumFromInt(1594), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1594), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_r600_read_tidig_z
-        .{ .tag = @enumFromInt(1595), .properties = .{ .param_str = "Ui", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1595), .properties = .{ .param_str = "Ui", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_r600_recipsqrt_ieee
-        .{ .tag = @enumFromInt(1596), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1596), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_r600_recipsqrt_ieeef
-        .{ .tag = @enumFromInt(1597), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.amdgpu), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1597), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.amdgpu), .attributes = .{ .@"const" = true } } },
         // __builtin_readcyclecounter
         .{ .tag = @enumFromInt(1598), .properties = .{ .param_str = "ULLi" } },
         // __builtin_readflm
-        .{ .tag = @enumFromInt(1599), .properties = .{ .param_str = "d", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1599), .properties = .{ .param_str = "d", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_realloc
         .{ .tag = @enumFromInt(1600), .properties = .{ .param_str = "v*v*z", .attributes = .{ .lib_function_with_builtin_prefix = true } } },
         // __builtin_reduce_add
@@ -8476,13 +8476,13 @@ pub const data = blk: {
         // __builtin_set_flt_rounds
         .{ .tag = @enumFromInt(1653), .properties = .{ .param_str = "vi" } },
         // __builtin_setflm
-        .{ .tag = @enumFromInt(1654), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1654), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_setjmp
         .{ .tag = @enumFromInt(1655), .properties = .{ .param_str = "iv**", .attributes = .{ .returns_twice = true } } },
         // __builtin_setps
-        .{ .tag = @enumFromInt(1656), .properties = .{ .param_str = "vUiUi", .target_set = TargetSet.initOne(.xcore) } },
+        .{ .tag = @enumFromInt(1656), .properties = .{ .param_str = "vUiUi", .target_set = TargetSet.init_one(.xcore) } },
         // __builtin_setrnd
-        .{ .tag = @enumFromInt(1657), .properties = .{ .param_str = "di", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1657), .properties = .{ .param_str = "di", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_shufflevector
         .{ .tag = @enumFromInt(1658), .properties = .{ .param_str = "v.", .attributes = .{ .@"const" = true, .custom_typecheck = true } } },
         // __builtin_signbit
@@ -8518,7 +8518,7 @@ pub const data = blk: {
         // __builtin_snprintf
         .{ .tag = @enumFromInt(1674), .properties = .{ .param_str = "ic*RzcC*R.", .attributes = .{ .lib_function_with_builtin_prefix = true, .format_kind = .printf, .format_string_position = 2 } } },
         // __builtin_sponentry
-        .{ .tag = @enumFromInt(1675), .properties = .{ .param_str = "v*", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(1675), .properties = .{ .param_str = "v*", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __builtin_sprintf
         .{ .tag = @enumFromInt(1676), .properties = .{ .param_str = "ic*RcC*R.", .attributes = .{ .lib_function_with_builtin_prefix = true, .format_kind = .printf, .format_string_position = 1 } } },
         // __builtin_sqrt
@@ -8642,7 +8642,7 @@ pub const data = blk: {
         // __builtin_umulll_overflow
         .{ .tag = @enumFromInt(1736), .properties = .{ .param_str = "bULLiCULLiCULLi*", .attributes = .{ .const_evaluable = true } } },
         // __builtin_unpack_longdouble
-        .{ .tag = @enumFromInt(1737), .properties = .{ .param_str = "dLdIi", .target_set = TargetSet.initOne(.ppc) } },
+        .{ .tag = @enumFromInt(1737), .properties = .{ .param_str = "dLdIi", .target_set = TargetSet.init_one(.ppc) } },
         // __builtin_unpredictable
         .{ .tag = @enumFromInt(1738), .properties = .{ .param_str = "LiLi", .attributes = .{ .@"const" = true } } },
         // __builtin_unreachable
@@ -8662,2531 +8662,2531 @@ pub const data = blk: {
         // __builtin_va_start
         .{ .tag = @enumFromInt(1746), .properties = .{ .param_str = "vA.", .attributes = .{ .custom_typecheck = true } } },
         // __builtin_ve_vl_andm_MMM
-        .{ .tag = @enumFromInt(1747), .properties = .{ .param_str = "V512bV512bV512b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1747), .properties = .{ .param_str = "V512bV512bV512b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_andm_mmm
-        .{ .tag = @enumFromInt(1748), .properties = .{ .param_str = "V256bV256bV256b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1748), .properties = .{ .param_str = "V256bV256bV256b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_eqvm_MMM
-        .{ .tag = @enumFromInt(1749), .properties = .{ .param_str = "V512bV512bV512b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1749), .properties = .{ .param_str = "V512bV512bV512b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_eqvm_mmm
-        .{ .tag = @enumFromInt(1750), .properties = .{ .param_str = "V256bV256bV256b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1750), .properties = .{ .param_str = "V256bV256bV256b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_extract_vm512l
-        .{ .tag = @enumFromInt(1751), .properties = .{ .param_str = "V256bV512b", .target_set = TargetSet.initOne(.ve) } },
+        .{ .tag = @enumFromInt(1751), .properties = .{ .param_str = "V256bV512b", .target_set = TargetSet.init_one(.ve) } },
         // __builtin_ve_vl_extract_vm512u
-        .{ .tag = @enumFromInt(1752), .properties = .{ .param_str = "V256bV512b", .target_set = TargetSet.initOne(.ve) } },
+        .{ .tag = @enumFromInt(1752), .properties = .{ .param_str = "V256bV512b", .target_set = TargetSet.init_one(.ve) } },
         // __builtin_ve_vl_fencec_s
-        .{ .tag = @enumFromInt(1753), .properties = .{ .param_str = "vUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1753), .properties = .{ .param_str = "vUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_fencei
-        .{ .tag = @enumFromInt(1754), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1754), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_fencem_s
-        .{ .tag = @enumFromInt(1755), .properties = .{ .param_str = "vUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1755), .properties = .{ .param_str = "vUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_fidcr_sss
-        .{ .tag = @enumFromInt(1756), .properties = .{ .param_str = "LUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1756), .properties = .{ .param_str = "LUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_insert_vm512l
-        .{ .tag = @enumFromInt(1757), .properties = .{ .param_str = "V512bV512bV256b", .target_set = TargetSet.initOne(.ve) } },
+        .{ .tag = @enumFromInt(1757), .properties = .{ .param_str = "V512bV512bV256b", .target_set = TargetSet.init_one(.ve) } },
         // __builtin_ve_vl_insert_vm512u
-        .{ .tag = @enumFromInt(1758), .properties = .{ .param_str = "V512bV512bV256b", .target_set = TargetSet.initOne(.ve) } },
+        .{ .tag = @enumFromInt(1758), .properties = .{ .param_str = "V512bV512bV256b", .target_set = TargetSet.init_one(.ve) } },
         // __builtin_ve_vl_lcr_sss
-        .{ .tag = @enumFromInt(1759), .properties = .{ .param_str = "LUiLUiLUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1759), .properties = .{ .param_str = "LUiLUiLUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_lsv_vvss
-        .{ .tag = @enumFromInt(1760), .properties = .{ .param_str = "V256dV256dUiLUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1760), .properties = .{ .param_str = "V256dV256dUiLUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_lvm_MMss
-        .{ .tag = @enumFromInt(1761), .properties = .{ .param_str = "V512bV512bLUiLUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1761), .properties = .{ .param_str = "V512bV512bLUiLUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_lvm_mmss
-        .{ .tag = @enumFromInt(1762), .properties = .{ .param_str = "V256bV256bLUiLUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1762), .properties = .{ .param_str = "V256bV256bLUiLUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_lvsd_svs
-        .{ .tag = @enumFromInt(1763), .properties = .{ .param_str = "dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1763), .properties = .{ .param_str = "dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_lvsl_svs
-        .{ .tag = @enumFromInt(1764), .properties = .{ .param_str = "LUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1764), .properties = .{ .param_str = "LUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_lvss_svs
-        .{ .tag = @enumFromInt(1765), .properties = .{ .param_str = "fV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1765), .properties = .{ .param_str = "fV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_lzvm_sml
-        .{ .tag = @enumFromInt(1766), .properties = .{ .param_str = "LUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1766), .properties = .{ .param_str = "LUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_negm_MM
-        .{ .tag = @enumFromInt(1767), .properties = .{ .param_str = "V512bV512b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1767), .properties = .{ .param_str = "V512bV512b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_negm_mm
-        .{ .tag = @enumFromInt(1768), .properties = .{ .param_str = "V256bV256b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1768), .properties = .{ .param_str = "V256bV256b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_nndm_MMM
-        .{ .tag = @enumFromInt(1769), .properties = .{ .param_str = "V512bV512bV512b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1769), .properties = .{ .param_str = "V512bV512bV512b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_nndm_mmm
-        .{ .tag = @enumFromInt(1770), .properties = .{ .param_str = "V256bV256bV256b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1770), .properties = .{ .param_str = "V256bV256bV256b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_orm_MMM
-        .{ .tag = @enumFromInt(1771), .properties = .{ .param_str = "V512bV512bV512b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1771), .properties = .{ .param_str = "V512bV512bV512b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_orm_mmm
-        .{ .tag = @enumFromInt(1772), .properties = .{ .param_str = "V256bV256bV256b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1772), .properties = .{ .param_str = "V256bV256bV256b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pack_f32a
-        .{ .tag = @enumFromInt(1773), .properties = .{ .param_str = "ULifC*", .target_set = TargetSet.initOne(.ve) } },
+        .{ .tag = @enumFromInt(1773), .properties = .{ .param_str = "ULifC*", .target_set = TargetSet.init_one(.ve) } },
         // __builtin_ve_vl_pack_f32p
-        .{ .tag = @enumFromInt(1774), .properties = .{ .param_str = "ULifC*fC*", .target_set = TargetSet.initOne(.ve) } },
+        .{ .tag = @enumFromInt(1774), .properties = .{ .param_str = "ULifC*fC*", .target_set = TargetSet.init_one(.ve) } },
         // __builtin_ve_vl_pcvm_sml
-        .{ .tag = @enumFromInt(1775), .properties = .{ .param_str = "LUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1775), .properties = .{ .param_str = "LUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pfchv_ssl
-        .{ .tag = @enumFromInt(1776), .properties = .{ .param_str = "vLivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1776), .properties = .{ .param_str = "vLivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pfchvnc_ssl
-        .{ .tag = @enumFromInt(1777), .properties = .{ .param_str = "vLivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1777), .properties = .{ .param_str = "vLivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvadds_vsvMvl
-        .{ .tag = @enumFromInt(1778), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1778), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvadds_vsvl
-        .{ .tag = @enumFromInt(1779), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1779), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvadds_vsvvl
-        .{ .tag = @enumFromInt(1780), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1780), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvadds_vvvMvl
-        .{ .tag = @enumFromInt(1781), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1781), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvadds_vvvl
-        .{ .tag = @enumFromInt(1782), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1782), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvadds_vvvvl
-        .{ .tag = @enumFromInt(1783), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1783), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvaddu_vsvMvl
-        .{ .tag = @enumFromInt(1784), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1784), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvaddu_vsvl
-        .{ .tag = @enumFromInt(1785), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1785), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvaddu_vsvvl
-        .{ .tag = @enumFromInt(1786), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1786), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvaddu_vvvMvl
-        .{ .tag = @enumFromInt(1787), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1787), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvaddu_vvvl
-        .{ .tag = @enumFromInt(1788), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1788), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvaddu_vvvvl
-        .{ .tag = @enumFromInt(1789), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1789), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvand_vsvMvl
-        .{ .tag = @enumFromInt(1790), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1790), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvand_vsvl
-        .{ .tag = @enumFromInt(1791), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1791), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvand_vsvvl
-        .{ .tag = @enumFromInt(1792), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1792), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvand_vvvMvl
-        .{ .tag = @enumFromInt(1793), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1793), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvand_vvvl
-        .{ .tag = @enumFromInt(1794), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1794), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvand_vvvvl
-        .{ .tag = @enumFromInt(1795), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1795), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrd_vsMvl
-        .{ .tag = @enumFromInt(1796), .properties = .{ .param_str = "V256dLUiV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1796), .properties = .{ .param_str = "V256dLUiV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrd_vsl
-        .{ .tag = @enumFromInt(1797), .properties = .{ .param_str = "V256dLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1797), .properties = .{ .param_str = "V256dLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrd_vsvl
-        .{ .tag = @enumFromInt(1798), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1798), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrv_vvMvl
-        .{ .tag = @enumFromInt(1799), .properties = .{ .param_str = "V256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1799), .properties = .{ .param_str = "V256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrv_vvl
-        .{ .tag = @enumFromInt(1800), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1800), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrv_vvvl
-        .{ .tag = @enumFromInt(1801), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1801), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrvlo_vvl
-        .{ .tag = @enumFromInt(1802), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1802), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrvlo_vvmvl
-        .{ .tag = @enumFromInt(1803), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1803), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrvlo_vvvl
-        .{ .tag = @enumFromInt(1804), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1804), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrvup_vvl
-        .{ .tag = @enumFromInt(1805), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1805), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrvup_vvmvl
-        .{ .tag = @enumFromInt(1806), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1806), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvbrvup_vvvl
-        .{ .tag = @enumFromInt(1807), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1807), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmps_vsvMvl
-        .{ .tag = @enumFromInt(1808), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1808), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmps_vsvl
-        .{ .tag = @enumFromInt(1809), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1809), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmps_vsvvl
-        .{ .tag = @enumFromInt(1810), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1810), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmps_vvvMvl
-        .{ .tag = @enumFromInt(1811), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1811), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmps_vvvl
-        .{ .tag = @enumFromInt(1812), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1812), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmps_vvvvl
-        .{ .tag = @enumFromInt(1813), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1813), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmpu_vsvMvl
-        .{ .tag = @enumFromInt(1814), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1814), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmpu_vsvl
-        .{ .tag = @enumFromInt(1815), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1815), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmpu_vsvvl
-        .{ .tag = @enumFromInt(1816), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1816), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmpu_vvvMvl
-        .{ .tag = @enumFromInt(1817), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1817), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmpu_vvvl
-        .{ .tag = @enumFromInt(1818), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1818), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcmpu_vvvvl
-        .{ .tag = @enumFromInt(1819), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1819), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcvtsw_vvl
-        .{ .tag = @enumFromInt(1820), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1820), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcvtsw_vvvl
-        .{ .tag = @enumFromInt(1821), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1821), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcvtws_vvMvl
-        .{ .tag = @enumFromInt(1822), .properties = .{ .param_str = "V256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1822), .properties = .{ .param_str = "V256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcvtws_vvl
-        .{ .tag = @enumFromInt(1823), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1823), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcvtws_vvvl
-        .{ .tag = @enumFromInt(1824), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1824), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcvtwsrz_vvMvl
-        .{ .tag = @enumFromInt(1825), .properties = .{ .param_str = "V256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1825), .properties = .{ .param_str = "V256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcvtwsrz_vvl
-        .{ .tag = @enumFromInt(1826), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1826), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvcvtwsrz_vvvl
-        .{ .tag = @enumFromInt(1827), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1827), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pveqv_vsvMvl
-        .{ .tag = @enumFromInt(1828), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1828), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pveqv_vsvl
-        .{ .tag = @enumFromInt(1829), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1829), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pveqv_vsvvl
-        .{ .tag = @enumFromInt(1830), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1830), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pveqv_vvvMvl
-        .{ .tag = @enumFromInt(1831), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1831), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pveqv_vvvl
-        .{ .tag = @enumFromInt(1832), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1832), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pveqv_vvvvl
-        .{ .tag = @enumFromInt(1833), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1833), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfadd_vsvMvl
-        .{ .tag = @enumFromInt(1834), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1834), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfadd_vsvl
-        .{ .tag = @enumFromInt(1835), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1835), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfadd_vsvvl
-        .{ .tag = @enumFromInt(1836), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1836), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfadd_vvvMvl
-        .{ .tag = @enumFromInt(1837), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1837), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfadd_vvvl
-        .{ .tag = @enumFromInt(1838), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1838), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfadd_vvvvl
-        .{ .tag = @enumFromInt(1839), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1839), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfcmp_vsvMvl
-        .{ .tag = @enumFromInt(1840), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1840), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfcmp_vsvl
-        .{ .tag = @enumFromInt(1841), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1841), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfcmp_vsvvl
-        .{ .tag = @enumFromInt(1842), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1842), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfcmp_vvvMvl
-        .{ .tag = @enumFromInt(1843), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1843), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfcmp_vvvl
-        .{ .tag = @enumFromInt(1844), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1844), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfcmp_vvvvl
-        .{ .tag = @enumFromInt(1845), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1845), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmad_vsvvMvl
-        .{ .tag = @enumFromInt(1846), .properties = .{ .param_str = "V256dLUiV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1846), .properties = .{ .param_str = "V256dLUiV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmad_vsvvl
-        .{ .tag = @enumFromInt(1847), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1847), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmad_vsvvvl
-        .{ .tag = @enumFromInt(1848), .properties = .{ .param_str = "V256dLUiV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1848), .properties = .{ .param_str = "V256dLUiV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmad_vvsvMvl
-        .{ .tag = @enumFromInt(1849), .properties = .{ .param_str = "V256dV256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1849), .properties = .{ .param_str = "V256dV256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmad_vvsvl
-        .{ .tag = @enumFromInt(1850), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1850), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmad_vvsvvl
-        .{ .tag = @enumFromInt(1851), .properties = .{ .param_str = "V256dV256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1851), .properties = .{ .param_str = "V256dV256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmad_vvvvMvl
-        .{ .tag = @enumFromInt(1852), .properties = .{ .param_str = "V256dV256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1852), .properties = .{ .param_str = "V256dV256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmad_vvvvl
-        .{ .tag = @enumFromInt(1853), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1853), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmad_vvvvvl
-        .{ .tag = @enumFromInt(1854), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1854), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmax_vsvMvl
-        .{ .tag = @enumFromInt(1855), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1855), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmax_vsvl
-        .{ .tag = @enumFromInt(1856), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1856), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmax_vsvvl
-        .{ .tag = @enumFromInt(1857), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1857), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmax_vvvMvl
-        .{ .tag = @enumFromInt(1858), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1858), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmax_vvvl
-        .{ .tag = @enumFromInt(1859), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1859), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmax_vvvvl
-        .{ .tag = @enumFromInt(1860), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1860), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmin_vsvMvl
-        .{ .tag = @enumFromInt(1861), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1861), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmin_vsvl
-        .{ .tag = @enumFromInt(1862), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1862), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmin_vsvvl
-        .{ .tag = @enumFromInt(1863), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1863), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmin_vvvMvl
-        .{ .tag = @enumFromInt(1864), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1864), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmin_vvvl
-        .{ .tag = @enumFromInt(1865), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1865), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmin_vvvvl
-        .{ .tag = @enumFromInt(1866), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1866), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkaf_Ml
-        .{ .tag = @enumFromInt(1867), .properties = .{ .param_str = "V512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1867), .properties = .{ .param_str = "V512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkat_Ml
-        .{ .tag = @enumFromInt(1868), .properties = .{ .param_str = "V512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1868), .properties = .{ .param_str = "V512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkseq_MvMl
-        .{ .tag = @enumFromInt(1869), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1869), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkseq_Mvl
-        .{ .tag = @enumFromInt(1870), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1870), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkseqnan_MvMl
-        .{ .tag = @enumFromInt(1871), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1871), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkseqnan_Mvl
-        .{ .tag = @enumFromInt(1872), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1872), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksge_MvMl
-        .{ .tag = @enumFromInt(1873), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1873), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksge_Mvl
-        .{ .tag = @enumFromInt(1874), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1874), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksgenan_MvMl
-        .{ .tag = @enumFromInt(1875), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1875), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksgenan_Mvl
-        .{ .tag = @enumFromInt(1876), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1876), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksgt_MvMl
-        .{ .tag = @enumFromInt(1877), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1877), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksgt_Mvl
-        .{ .tag = @enumFromInt(1878), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1878), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksgtnan_MvMl
-        .{ .tag = @enumFromInt(1879), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1879), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksgtnan_Mvl
-        .{ .tag = @enumFromInt(1880), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1880), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksle_MvMl
-        .{ .tag = @enumFromInt(1881), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1881), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksle_Mvl
-        .{ .tag = @enumFromInt(1882), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1882), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslenan_MvMl
-        .{ .tag = @enumFromInt(1883), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1883), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslenan_Mvl
-        .{ .tag = @enumFromInt(1884), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1884), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksloeq_mvl
-        .{ .tag = @enumFromInt(1885), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1885), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksloeq_mvml
-        .{ .tag = @enumFromInt(1886), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1886), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksloeqnan_mvl
-        .{ .tag = @enumFromInt(1887), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1887), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksloeqnan_mvml
-        .{ .tag = @enumFromInt(1888), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1888), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksloge_mvl
-        .{ .tag = @enumFromInt(1889), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1889), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksloge_mvml
-        .{ .tag = @enumFromInt(1890), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1890), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslogenan_mvl
-        .{ .tag = @enumFromInt(1891), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1891), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslogenan_mvml
-        .{ .tag = @enumFromInt(1892), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1892), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslogt_mvl
-        .{ .tag = @enumFromInt(1893), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1893), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslogt_mvml
-        .{ .tag = @enumFromInt(1894), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1894), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslogtnan_mvl
-        .{ .tag = @enumFromInt(1895), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1895), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslogtnan_mvml
-        .{ .tag = @enumFromInt(1896), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1896), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslole_mvl
-        .{ .tag = @enumFromInt(1897), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1897), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslole_mvml
-        .{ .tag = @enumFromInt(1898), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1898), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslolenan_mvl
-        .{ .tag = @enumFromInt(1899), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1899), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslolenan_mvml
-        .{ .tag = @enumFromInt(1900), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1900), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslolt_mvl
-        .{ .tag = @enumFromInt(1901), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1901), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslolt_mvml
-        .{ .tag = @enumFromInt(1902), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1902), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksloltnan_mvl
-        .{ .tag = @enumFromInt(1903), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1903), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksloltnan_mvml
-        .{ .tag = @enumFromInt(1904), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1904), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslonan_mvl
-        .{ .tag = @enumFromInt(1905), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1905), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslonan_mvml
-        .{ .tag = @enumFromInt(1906), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1906), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslone_mvl
-        .{ .tag = @enumFromInt(1907), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1907), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslone_mvml
-        .{ .tag = @enumFromInt(1908), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1908), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslonenan_mvl
-        .{ .tag = @enumFromInt(1909), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1909), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslonenan_mvml
-        .{ .tag = @enumFromInt(1910), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1910), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslonum_mvl
-        .{ .tag = @enumFromInt(1911), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1911), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslonum_mvml
-        .{ .tag = @enumFromInt(1912), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1912), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslt_MvMl
-        .{ .tag = @enumFromInt(1913), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1913), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkslt_Mvl
-        .{ .tag = @enumFromInt(1914), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1914), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksltnan_MvMl
-        .{ .tag = @enumFromInt(1915), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1915), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksltnan_Mvl
-        .{ .tag = @enumFromInt(1916), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1916), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksnan_MvMl
-        .{ .tag = @enumFromInt(1917), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1917), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksnan_Mvl
-        .{ .tag = @enumFromInt(1918), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1918), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksne_MvMl
-        .{ .tag = @enumFromInt(1919), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1919), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksne_Mvl
-        .{ .tag = @enumFromInt(1920), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1920), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksnenan_MvMl
-        .{ .tag = @enumFromInt(1921), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1921), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksnenan_Mvl
-        .{ .tag = @enumFromInt(1922), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1922), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksnum_MvMl
-        .{ .tag = @enumFromInt(1923), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1923), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksnum_Mvl
-        .{ .tag = @enumFromInt(1924), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1924), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupeq_mvl
-        .{ .tag = @enumFromInt(1925), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1925), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupeq_mvml
-        .{ .tag = @enumFromInt(1926), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1926), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupeqnan_mvl
-        .{ .tag = @enumFromInt(1927), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1927), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupeqnan_mvml
-        .{ .tag = @enumFromInt(1928), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1928), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupge_mvl
-        .{ .tag = @enumFromInt(1929), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1929), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupge_mvml
-        .{ .tag = @enumFromInt(1930), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1930), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupgenan_mvl
-        .{ .tag = @enumFromInt(1931), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1931), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupgenan_mvml
-        .{ .tag = @enumFromInt(1932), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1932), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupgt_mvl
-        .{ .tag = @enumFromInt(1933), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1933), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupgt_mvml
-        .{ .tag = @enumFromInt(1934), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1934), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupgtnan_mvl
-        .{ .tag = @enumFromInt(1935), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1935), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupgtnan_mvml
-        .{ .tag = @enumFromInt(1936), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1936), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksuple_mvl
-        .{ .tag = @enumFromInt(1937), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1937), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksuple_mvml
-        .{ .tag = @enumFromInt(1938), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1938), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksuplenan_mvl
-        .{ .tag = @enumFromInt(1939), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1939), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksuplenan_mvml
-        .{ .tag = @enumFromInt(1940), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1940), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksuplt_mvl
-        .{ .tag = @enumFromInt(1941), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1941), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksuplt_mvml
-        .{ .tag = @enumFromInt(1942), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1942), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupltnan_mvl
-        .{ .tag = @enumFromInt(1943), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1943), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupltnan_mvml
-        .{ .tag = @enumFromInt(1944), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1944), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupnan_mvl
-        .{ .tag = @enumFromInt(1945), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1945), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupnan_mvml
-        .{ .tag = @enumFromInt(1946), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1946), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupne_mvl
-        .{ .tag = @enumFromInt(1947), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1947), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupne_mvml
-        .{ .tag = @enumFromInt(1948), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1948), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupnenan_mvl
-        .{ .tag = @enumFromInt(1949), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1949), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupnenan_mvml
-        .{ .tag = @enumFromInt(1950), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1950), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupnum_mvl
-        .{ .tag = @enumFromInt(1951), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1951), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmksupnum_mvml
-        .{ .tag = @enumFromInt(1952), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1952), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkweq_MvMl
-        .{ .tag = @enumFromInt(1953), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1953), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkweq_Mvl
-        .{ .tag = @enumFromInt(1954), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1954), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkweqnan_MvMl
-        .{ .tag = @enumFromInt(1955), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1955), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkweqnan_Mvl
-        .{ .tag = @enumFromInt(1956), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1956), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwge_MvMl
-        .{ .tag = @enumFromInt(1957), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1957), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwge_Mvl
-        .{ .tag = @enumFromInt(1958), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1958), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwgenan_MvMl
-        .{ .tag = @enumFromInt(1959), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1959), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwgenan_Mvl
-        .{ .tag = @enumFromInt(1960), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1960), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwgt_MvMl
-        .{ .tag = @enumFromInt(1961), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1961), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwgt_Mvl
-        .{ .tag = @enumFromInt(1962), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1962), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwgtnan_MvMl
-        .{ .tag = @enumFromInt(1963), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1963), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwgtnan_Mvl
-        .{ .tag = @enumFromInt(1964), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1964), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwle_MvMl
-        .{ .tag = @enumFromInt(1965), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1965), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwle_Mvl
-        .{ .tag = @enumFromInt(1966), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1966), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlenan_MvMl
-        .{ .tag = @enumFromInt(1967), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1967), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlenan_Mvl
-        .{ .tag = @enumFromInt(1968), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1968), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwloeq_mvl
-        .{ .tag = @enumFromInt(1969), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1969), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwloeq_mvml
-        .{ .tag = @enumFromInt(1970), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1970), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwloeqnan_mvl
-        .{ .tag = @enumFromInt(1971), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1971), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwloeqnan_mvml
-        .{ .tag = @enumFromInt(1972), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1972), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwloge_mvl
-        .{ .tag = @enumFromInt(1973), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1973), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwloge_mvml
-        .{ .tag = @enumFromInt(1974), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1974), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlogenan_mvl
-        .{ .tag = @enumFromInt(1975), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1975), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlogenan_mvml
-        .{ .tag = @enumFromInt(1976), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1976), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlogt_mvl
-        .{ .tag = @enumFromInt(1977), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1977), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlogt_mvml
-        .{ .tag = @enumFromInt(1978), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1978), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlogtnan_mvl
-        .{ .tag = @enumFromInt(1979), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1979), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlogtnan_mvml
-        .{ .tag = @enumFromInt(1980), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1980), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlole_mvl
-        .{ .tag = @enumFromInt(1981), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1981), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlole_mvml
-        .{ .tag = @enumFromInt(1982), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1982), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlolenan_mvl
-        .{ .tag = @enumFromInt(1983), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1983), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlolenan_mvml
-        .{ .tag = @enumFromInt(1984), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1984), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlolt_mvl
-        .{ .tag = @enumFromInt(1985), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1985), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlolt_mvml
-        .{ .tag = @enumFromInt(1986), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1986), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwloltnan_mvl
-        .{ .tag = @enumFromInt(1987), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1987), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwloltnan_mvml
-        .{ .tag = @enumFromInt(1988), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1988), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlonan_mvl
-        .{ .tag = @enumFromInt(1989), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1989), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlonan_mvml
-        .{ .tag = @enumFromInt(1990), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1990), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlone_mvl
-        .{ .tag = @enumFromInt(1991), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1991), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlone_mvml
-        .{ .tag = @enumFromInt(1992), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1992), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlonenan_mvl
-        .{ .tag = @enumFromInt(1993), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1993), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlonenan_mvml
-        .{ .tag = @enumFromInt(1994), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1994), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlonum_mvl
-        .{ .tag = @enumFromInt(1995), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1995), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlonum_mvml
-        .{ .tag = @enumFromInt(1996), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1996), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlt_MvMl
-        .{ .tag = @enumFromInt(1997), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1997), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwlt_Mvl
-        .{ .tag = @enumFromInt(1998), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1998), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwltnan_MvMl
-        .{ .tag = @enumFromInt(1999), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(1999), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwltnan_Mvl
-        .{ .tag = @enumFromInt(2000), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2000), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwnan_MvMl
-        .{ .tag = @enumFromInt(2001), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2001), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwnan_Mvl
-        .{ .tag = @enumFromInt(2002), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2002), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwne_MvMl
-        .{ .tag = @enumFromInt(2003), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2003), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwne_Mvl
-        .{ .tag = @enumFromInt(2004), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2004), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwnenan_MvMl
-        .{ .tag = @enumFromInt(2005), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2005), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwnenan_Mvl
-        .{ .tag = @enumFromInt(2006), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2006), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwnum_MvMl
-        .{ .tag = @enumFromInt(2007), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2007), .properties = .{ .param_str = "V512bV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwnum_Mvl
-        .{ .tag = @enumFromInt(2008), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2008), .properties = .{ .param_str = "V512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupeq_mvl
-        .{ .tag = @enumFromInt(2009), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2009), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupeq_mvml
-        .{ .tag = @enumFromInt(2010), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2010), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupeqnan_mvl
-        .{ .tag = @enumFromInt(2011), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2011), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupeqnan_mvml
-        .{ .tag = @enumFromInt(2012), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2012), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupge_mvl
-        .{ .tag = @enumFromInt(2013), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2013), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupge_mvml
-        .{ .tag = @enumFromInt(2014), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2014), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupgenan_mvl
-        .{ .tag = @enumFromInt(2015), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2015), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupgenan_mvml
-        .{ .tag = @enumFromInt(2016), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2016), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupgt_mvl
-        .{ .tag = @enumFromInt(2017), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2017), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupgt_mvml
-        .{ .tag = @enumFromInt(2018), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2018), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupgtnan_mvl
-        .{ .tag = @enumFromInt(2019), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2019), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupgtnan_mvml
-        .{ .tag = @enumFromInt(2020), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2020), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwuple_mvl
-        .{ .tag = @enumFromInt(2021), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2021), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwuple_mvml
-        .{ .tag = @enumFromInt(2022), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2022), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwuplenan_mvl
-        .{ .tag = @enumFromInt(2023), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2023), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwuplenan_mvml
-        .{ .tag = @enumFromInt(2024), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2024), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwuplt_mvl
-        .{ .tag = @enumFromInt(2025), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2025), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwuplt_mvml
-        .{ .tag = @enumFromInt(2026), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2026), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupltnan_mvl
-        .{ .tag = @enumFromInt(2027), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2027), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupltnan_mvml
-        .{ .tag = @enumFromInt(2028), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2028), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupnan_mvl
-        .{ .tag = @enumFromInt(2029), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2029), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupnan_mvml
-        .{ .tag = @enumFromInt(2030), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2030), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupne_mvl
-        .{ .tag = @enumFromInt(2031), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2031), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupne_mvml
-        .{ .tag = @enumFromInt(2032), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2032), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupnenan_mvl
-        .{ .tag = @enumFromInt(2033), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2033), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupnenan_mvml
-        .{ .tag = @enumFromInt(2034), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2034), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupnum_mvl
-        .{ .tag = @enumFromInt(2035), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2035), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmkwupnum_mvml
-        .{ .tag = @enumFromInt(2036), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2036), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmsb_vsvvMvl
-        .{ .tag = @enumFromInt(2037), .properties = .{ .param_str = "V256dLUiV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2037), .properties = .{ .param_str = "V256dLUiV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmsb_vsvvl
-        .{ .tag = @enumFromInt(2038), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2038), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmsb_vsvvvl
-        .{ .tag = @enumFromInt(2039), .properties = .{ .param_str = "V256dLUiV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2039), .properties = .{ .param_str = "V256dLUiV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmsb_vvsvMvl
-        .{ .tag = @enumFromInt(2040), .properties = .{ .param_str = "V256dV256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2040), .properties = .{ .param_str = "V256dV256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmsb_vvsvl
-        .{ .tag = @enumFromInt(2041), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2041), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmsb_vvsvvl
-        .{ .tag = @enumFromInt(2042), .properties = .{ .param_str = "V256dV256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2042), .properties = .{ .param_str = "V256dV256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmsb_vvvvMvl
-        .{ .tag = @enumFromInt(2043), .properties = .{ .param_str = "V256dV256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2043), .properties = .{ .param_str = "V256dV256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmsb_vvvvl
-        .{ .tag = @enumFromInt(2044), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2044), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmsb_vvvvvl
-        .{ .tag = @enumFromInt(2045), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2045), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmul_vsvMvl
-        .{ .tag = @enumFromInt(2046), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2046), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmul_vsvl
-        .{ .tag = @enumFromInt(2047), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2047), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmul_vsvvl
-        .{ .tag = @enumFromInt(2048), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2048), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmul_vvvMvl
-        .{ .tag = @enumFromInt(2049), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2049), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmul_vvvl
-        .{ .tag = @enumFromInt(2050), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2050), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfmul_vvvvl
-        .{ .tag = @enumFromInt(2051), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2051), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmad_vsvvMvl
-        .{ .tag = @enumFromInt(2052), .properties = .{ .param_str = "V256dLUiV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2052), .properties = .{ .param_str = "V256dLUiV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmad_vsvvl
-        .{ .tag = @enumFromInt(2053), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2053), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmad_vsvvvl
-        .{ .tag = @enumFromInt(2054), .properties = .{ .param_str = "V256dLUiV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2054), .properties = .{ .param_str = "V256dLUiV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmad_vvsvMvl
-        .{ .tag = @enumFromInt(2055), .properties = .{ .param_str = "V256dV256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2055), .properties = .{ .param_str = "V256dV256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmad_vvsvl
-        .{ .tag = @enumFromInt(2056), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2056), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmad_vvsvvl
-        .{ .tag = @enumFromInt(2057), .properties = .{ .param_str = "V256dV256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2057), .properties = .{ .param_str = "V256dV256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmad_vvvvMvl
-        .{ .tag = @enumFromInt(2058), .properties = .{ .param_str = "V256dV256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2058), .properties = .{ .param_str = "V256dV256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmad_vvvvl
-        .{ .tag = @enumFromInt(2059), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2059), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmad_vvvvvl
-        .{ .tag = @enumFromInt(2060), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2060), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmsb_vsvvMvl
-        .{ .tag = @enumFromInt(2061), .properties = .{ .param_str = "V256dLUiV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2061), .properties = .{ .param_str = "V256dLUiV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmsb_vsvvl
-        .{ .tag = @enumFromInt(2062), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2062), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmsb_vsvvvl
-        .{ .tag = @enumFromInt(2063), .properties = .{ .param_str = "V256dLUiV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2063), .properties = .{ .param_str = "V256dLUiV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmsb_vvsvMvl
-        .{ .tag = @enumFromInt(2064), .properties = .{ .param_str = "V256dV256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2064), .properties = .{ .param_str = "V256dV256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmsb_vvsvl
-        .{ .tag = @enumFromInt(2065), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2065), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmsb_vvsvvl
-        .{ .tag = @enumFromInt(2066), .properties = .{ .param_str = "V256dV256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2066), .properties = .{ .param_str = "V256dV256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmsb_vvvvMvl
-        .{ .tag = @enumFromInt(2067), .properties = .{ .param_str = "V256dV256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2067), .properties = .{ .param_str = "V256dV256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmsb_vvvvl
-        .{ .tag = @enumFromInt(2068), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2068), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfnmsb_vvvvvl
-        .{ .tag = @enumFromInt(2069), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2069), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfsub_vsvMvl
-        .{ .tag = @enumFromInt(2070), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2070), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfsub_vsvl
-        .{ .tag = @enumFromInt(2071), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2071), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfsub_vsvvl
-        .{ .tag = @enumFromInt(2072), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2072), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfsub_vvvMvl
-        .{ .tag = @enumFromInt(2073), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2073), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfsub_vvvl
-        .{ .tag = @enumFromInt(2074), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2074), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvfsub_vvvvl
-        .{ .tag = @enumFromInt(2075), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2075), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvldz_vvMvl
-        .{ .tag = @enumFromInt(2076), .properties = .{ .param_str = "V256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2076), .properties = .{ .param_str = "V256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvldz_vvl
-        .{ .tag = @enumFromInt(2077), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2077), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvldz_vvvl
-        .{ .tag = @enumFromInt(2078), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2078), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvldzlo_vvl
-        .{ .tag = @enumFromInt(2079), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2079), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvldzlo_vvmvl
-        .{ .tag = @enumFromInt(2080), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2080), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvldzlo_vvvl
-        .{ .tag = @enumFromInt(2081), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2081), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvldzup_vvl
-        .{ .tag = @enumFromInt(2082), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2082), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvldzup_vvmvl
-        .{ .tag = @enumFromInt(2083), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2083), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvldzup_vvvl
-        .{ .tag = @enumFromInt(2084), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2084), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmaxs_vsvMvl
-        .{ .tag = @enumFromInt(2085), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2085), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmaxs_vsvl
-        .{ .tag = @enumFromInt(2086), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2086), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmaxs_vsvvl
-        .{ .tag = @enumFromInt(2087), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2087), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmaxs_vvvMvl
-        .{ .tag = @enumFromInt(2088), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2088), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmaxs_vvvl
-        .{ .tag = @enumFromInt(2089), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2089), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmaxs_vvvvl
-        .{ .tag = @enumFromInt(2090), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2090), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmins_vsvMvl
-        .{ .tag = @enumFromInt(2091), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2091), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmins_vsvl
-        .{ .tag = @enumFromInt(2092), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2092), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmins_vsvvl
-        .{ .tag = @enumFromInt(2093), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2093), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmins_vvvMvl
-        .{ .tag = @enumFromInt(2094), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2094), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmins_vvvl
-        .{ .tag = @enumFromInt(2095), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2095), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvmins_vvvvl
-        .{ .tag = @enumFromInt(2096), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2096), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvor_vsvMvl
-        .{ .tag = @enumFromInt(2097), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2097), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvor_vsvl
-        .{ .tag = @enumFromInt(2098), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2098), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvor_vsvvl
-        .{ .tag = @enumFromInt(2099), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2099), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvor_vvvMvl
-        .{ .tag = @enumFromInt(2100), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2100), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvor_vvvl
-        .{ .tag = @enumFromInt(2101), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2101), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvor_vvvvl
-        .{ .tag = @enumFromInt(2102), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2102), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvpcnt_vvMvl
-        .{ .tag = @enumFromInt(2103), .properties = .{ .param_str = "V256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2103), .properties = .{ .param_str = "V256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvpcnt_vvl
-        .{ .tag = @enumFromInt(2104), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2104), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvpcnt_vvvl
-        .{ .tag = @enumFromInt(2105), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2105), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvpcntlo_vvl
-        .{ .tag = @enumFromInt(2106), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2106), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvpcntlo_vvmvl
-        .{ .tag = @enumFromInt(2107), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2107), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvpcntlo_vvvl
-        .{ .tag = @enumFromInt(2108), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2108), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvpcntup_vvl
-        .{ .tag = @enumFromInt(2109), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2109), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvpcntup_vvmvl
-        .{ .tag = @enumFromInt(2110), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2110), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvpcntup_vvvl
-        .{ .tag = @enumFromInt(2111), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2111), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvrcp_vvl
-        .{ .tag = @enumFromInt(2112), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2112), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvrcp_vvvl
-        .{ .tag = @enumFromInt(2113), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2113), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvrsqrt_vvl
-        .{ .tag = @enumFromInt(2114), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2114), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvrsqrt_vvvl
-        .{ .tag = @enumFromInt(2115), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2115), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvrsqrtnex_vvl
-        .{ .tag = @enumFromInt(2116), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2116), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvrsqrtnex_vvvl
-        .{ .tag = @enumFromInt(2117), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2117), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvseq_vl
-        .{ .tag = @enumFromInt(2118), .properties = .{ .param_str = "V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2118), .properties = .{ .param_str = "V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvseq_vvl
-        .{ .tag = @enumFromInt(2119), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2119), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvseqlo_vl
-        .{ .tag = @enumFromInt(2120), .properties = .{ .param_str = "V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2120), .properties = .{ .param_str = "V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvseqlo_vvl
-        .{ .tag = @enumFromInt(2121), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2121), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsequp_vl
-        .{ .tag = @enumFromInt(2122), .properties = .{ .param_str = "V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2122), .properties = .{ .param_str = "V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsequp_vvl
-        .{ .tag = @enumFromInt(2123), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2123), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsla_vvsMvl
-        .{ .tag = @enumFromInt(2124), .properties = .{ .param_str = "V256dV256dLUiV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2124), .properties = .{ .param_str = "V256dV256dLUiV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsla_vvsl
-        .{ .tag = @enumFromInt(2125), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2125), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsla_vvsvl
-        .{ .tag = @enumFromInt(2126), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2126), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsla_vvvMvl
-        .{ .tag = @enumFromInt(2127), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2127), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsla_vvvl
-        .{ .tag = @enumFromInt(2128), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2128), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsla_vvvvl
-        .{ .tag = @enumFromInt(2129), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2129), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsll_vvsMvl
-        .{ .tag = @enumFromInt(2130), .properties = .{ .param_str = "V256dV256dLUiV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2130), .properties = .{ .param_str = "V256dV256dLUiV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsll_vvsl
-        .{ .tag = @enumFromInt(2131), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2131), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsll_vvsvl
-        .{ .tag = @enumFromInt(2132), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2132), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsll_vvvMvl
-        .{ .tag = @enumFromInt(2133), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2133), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsll_vvvl
-        .{ .tag = @enumFromInt(2134), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2134), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsll_vvvvl
-        .{ .tag = @enumFromInt(2135), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2135), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsra_vvsMvl
-        .{ .tag = @enumFromInt(2136), .properties = .{ .param_str = "V256dV256dLUiV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2136), .properties = .{ .param_str = "V256dV256dLUiV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsra_vvsl
-        .{ .tag = @enumFromInt(2137), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2137), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsra_vvsvl
-        .{ .tag = @enumFromInt(2138), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2138), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsra_vvvMvl
-        .{ .tag = @enumFromInt(2139), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2139), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsra_vvvl
-        .{ .tag = @enumFromInt(2140), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2140), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsra_vvvvl
-        .{ .tag = @enumFromInt(2141), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2141), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsrl_vvsMvl
-        .{ .tag = @enumFromInt(2142), .properties = .{ .param_str = "V256dV256dLUiV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2142), .properties = .{ .param_str = "V256dV256dLUiV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsrl_vvsl
-        .{ .tag = @enumFromInt(2143), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2143), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsrl_vvsvl
-        .{ .tag = @enumFromInt(2144), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2144), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsrl_vvvMvl
-        .{ .tag = @enumFromInt(2145), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2145), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsrl_vvvl
-        .{ .tag = @enumFromInt(2146), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2146), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsrl_vvvvl
-        .{ .tag = @enumFromInt(2147), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2147), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubs_vsvMvl
-        .{ .tag = @enumFromInt(2148), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2148), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubs_vsvl
-        .{ .tag = @enumFromInt(2149), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2149), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubs_vsvvl
-        .{ .tag = @enumFromInt(2150), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2150), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubs_vvvMvl
-        .{ .tag = @enumFromInt(2151), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2151), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubs_vvvl
-        .{ .tag = @enumFromInt(2152), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2152), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubs_vvvvl
-        .{ .tag = @enumFromInt(2153), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2153), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubu_vsvMvl
-        .{ .tag = @enumFromInt(2154), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2154), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubu_vsvl
-        .{ .tag = @enumFromInt(2155), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2155), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubu_vsvvl
-        .{ .tag = @enumFromInt(2156), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2156), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubu_vvvMvl
-        .{ .tag = @enumFromInt(2157), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2157), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubu_vvvl
-        .{ .tag = @enumFromInt(2158), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2158), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvsubu_vvvvl
-        .{ .tag = @enumFromInt(2159), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2159), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvxor_vsvMvl
-        .{ .tag = @enumFromInt(2160), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2160), .properties = .{ .param_str = "V256dLUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvxor_vsvl
-        .{ .tag = @enumFromInt(2161), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2161), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvxor_vsvvl
-        .{ .tag = @enumFromInt(2162), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2162), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvxor_vvvMvl
-        .{ .tag = @enumFromInt(2163), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2163), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvxor_vvvl
-        .{ .tag = @enumFromInt(2164), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2164), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_pvxor_vvvvl
-        .{ .tag = @enumFromInt(2165), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2165), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_scr_sss
-        .{ .tag = @enumFromInt(2166), .properties = .{ .param_str = "vLUiLUiLUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2166), .properties = .{ .param_str = "vLUiLUiLUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_svm_sMs
-        .{ .tag = @enumFromInt(2167), .properties = .{ .param_str = "LUiV512bLUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2167), .properties = .{ .param_str = "LUiV512bLUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_svm_sms
-        .{ .tag = @enumFromInt(2168), .properties = .{ .param_str = "LUiV256bLUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2168), .properties = .{ .param_str = "LUiV256bLUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_svob
-        .{ .tag = @enumFromInt(2169), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2169), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_tovm_sml
-        .{ .tag = @enumFromInt(2170), .properties = .{ .param_str = "LUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2170), .properties = .{ .param_str = "LUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_tscr_ssss
-        .{ .tag = @enumFromInt(2171), .properties = .{ .param_str = "LUiLUiLUiLUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2171), .properties = .{ .param_str = "LUiLUiLUiLUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddsl_vsvl
-        .{ .tag = @enumFromInt(2172), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2172), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddsl_vsvmvl
-        .{ .tag = @enumFromInt(2173), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2173), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddsl_vsvvl
-        .{ .tag = @enumFromInt(2174), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2174), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddsl_vvvl
-        .{ .tag = @enumFromInt(2175), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2175), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddsl_vvvmvl
-        .{ .tag = @enumFromInt(2176), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2176), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddsl_vvvvl
-        .{ .tag = @enumFromInt(2177), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2177), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswsx_vsvl
-        .{ .tag = @enumFromInt(2178), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2178), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswsx_vsvmvl
-        .{ .tag = @enumFromInt(2179), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2179), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswsx_vsvvl
-        .{ .tag = @enumFromInt(2180), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2180), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswsx_vvvl
-        .{ .tag = @enumFromInt(2181), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2181), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswsx_vvvmvl
-        .{ .tag = @enumFromInt(2182), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2182), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswsx_vvvvl
-        .{ .tag = @enumFromInt(2183), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2183), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswzx_vsvl
-        .{ .tag = @enumFromInt(2184), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2184), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswzx_vsvmvl
-        .{ .tag = @enumFromInt(2185), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2185), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswzx_vsvvl
-        .{ .tag = @enumFromInt(2186), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2186), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswzx_vvvl
-        .{ .tag = @enumFromInt(2187), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2187), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswzx_vvvmvl
-        .{ .tag = @enumFromInt(2188), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2188), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddswzx_vvvvl
-        .{ .tag = @enumFromInt(2189), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2189), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddul_vsvl
-        .{ .tag = @enumFromInt(2190), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2190), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddul_vsvmvl
-        .{ .tag = @enumFromInt(2191), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2191), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddul_vsvvl
-        .{ .tag = @enumFromInt(2192), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2192), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddul_vvvl
-        .{ .tag = @enumFromInt(2193), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2193), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddul_vvvmvl
-        .{ .tag = @enumFromInt(2194), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2194), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vaddul_vvvvl
-        .{ .tag = @enumFromInt(2195), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2195), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vadduw_vsvl
-        .{ .tag = @enumFromInt(2196), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2196), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vadduw_vsvmvl
-        .{ .tag = @enumFromInt(2197), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2197), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vadduw_vsvvl
-        .{ .tag = @enumFromInt(2198), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2198), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vadduw_vvvl
-        .{ .tag = @enumFromInt(2199), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2199), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vadduw_vvvmvl
-        .{ .tag = @enumFromInt(2200), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2200), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vadduw_vvvvl
-        .{ .tag = @enumFromInt(2201), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2201), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vand_vsvl
-        .{ .tag = @enumFromInt(2202), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2202), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vand_vsvmvl
-        .{ .tag = @enumFromInt(2203), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2203), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vand_vsvvl
-        .{ .tag = @enumFromInt(2204), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2204), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vand_vvvl
-        .{ .tag = @enumFromInt(2205), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2205), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vand_vvvmvl
-        .{ .tag = @enumFromInt(2206), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2206), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vand_vvvvl
-        .{ .tag = @enumFromInt(2207), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2207), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrdd_vsl
-        .{ .tag = @enumFromInt(2208), .properties = .{ .param_str = "V256ddUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2208), .properties = .{ .param_str = "V256ddUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrdd_vsmvl
-        .{ .tag = @enumFromInt(2209), .properties = .{ .param_str = "V256ddV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2209), .properties = .{ .param_str = "V256ddV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrdd_vsvl
-        .{ .tag = @enumFromInt(2210), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2210), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrdl_vsl
-        .{ .tag = @enumFromInt(2211), .properties = .{ .param_str = "V256dLiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2211), .properties = .{ .param_str = "V256dLiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrdl_vsmvl
-        .{ .tag = @enumFromInt(2212), .properties = .{ .param_str = "V256dLiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2212), .properties = .{ .param_str = "V256dLiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrdl_vsvl
-        .{ .tag = @enumFromInt(2213), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2213), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrds_vsl
-        .{ .tag = @enumFromInt(2214), .properties = .{ .param_str = "V256dfUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2214), .properties = .{ .param_str = "V256dfUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrds_vsmvl
-        .{ .tag = @enumFromInt(2215), .properties = .{ .param_str = "V256dfV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2215), .properties = .{ .param_str = "V256dfV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrds_vsvl
-        .{ .tag = @enumFromInt(2216), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2216), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrdw_vsl
-        .{ .tag = @enumFromInt(2217), .properties = .{ .param_str = "V256diUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2217), .properties = .{ .param_str = "V256diUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrdw_vsmvl
-        .{ .tag = @enumFromInt(2218), .properties = .{ .param_str = "V256diV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2218), .properties = .{ .param_str = "V256diV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrdw_vsvl
-        .{ .tag = @enumFromInt(2219), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2219), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrv_vvl
-        .{ .tag = @enumFromInt(2220), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2220), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrv_vvmvl
-        .{ .tag = @enumFromInt(2221), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2221), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vbrv_vvvl
-        .{ .tag = @enumFromInt(2222), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2222), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpsl_vsvl
-        .{ .tag = @enumFromInt(2223), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2223), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpsl_vsvmvl
-        .{ .tag = @enumFromInt(2224), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2224), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpsl_vsvvl
-        .{ .tag = @enumFromInt(2225), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2225), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpsl_vvvl
-        .{ .tag = @enumFromInt(2226), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2226), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpsl_vvvmvl
-        .{ .tag = @enumFromInt(2227), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2227), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpsl_vvvvl
-        .{ .tag = @enumFromInt(2228), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2228), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswsx_vsvl
-        .{ .tag = @enumFromInt(2229), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2229), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswsx_vsvmvl
-        .{ .tag = @enumFromInt(2230), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2230), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswsx_vsvvl
-        .{ .tag = @enumFromInt(2231), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2231), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswsx_vvvl
-        .{ .tag = @enumFromInt(2232), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2232), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswsx_vvvmvl
-        .{ .tag = @enumFromInt(2233), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2233), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswsx_vvvvl
-        .{ .tag = @enumFromInt(2234), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2234), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswzx_vsvl
-        .{ .tag = @enumFromInt(2235), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2235), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswzx_vsvmvl
-        .{ .tag = @enumFromInt(2236), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2236), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswzx_vsvvl
-        .{ .tag = @enumFromInt(2237), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2237), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswzx_vvvl
-        .{ .tag = @enumFromInt(2238), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2238), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswzx_vvvmvl
-        .{ .tag = @enumFromInt(2239), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2239), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpswzx_vvvvl
-        .{ .tag = @enumFromInt(2240), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2240), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpul_vsvl
-        .{ .tag = @enumFromInt(2241), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2241), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpul_vsvmvl
-        .{ .tag = @enumFromInt(2242), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2242), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpul_vsvvl
-        .{ .tag = @enumFromInt(2243), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2243), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpul_vvvl
-        .{ .tag = @enumFromInt(2244), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2244), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpul_vvvmvl
-        .{ .tag = @enumFromInt(2245), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2245), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpul_vvvvl
-        .{ .tag = @enumFromInt(2246), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2246), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpuw_vsvl
-        .{ .tag = @enumFromInt(2247), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2247), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpuw_vsvmvl
-        .{ .tag = @enumFromInt(2248), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2248), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpuw_vsvvl
-        .{ .tag = @enumFromInt(2249), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2249), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpuw_vvvl
-        .{ .tag = @enumFromInt(2250), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2250), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpuw_vvvmvl
-        .{ .tag = @enumFromInt(2251), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2251), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcmpuw_vvvvl
-        .{ .tag = @enumFromInt(2252), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2252), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcp_vvmvl
-        .{ .tag = @enumFromInt(2253), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2253), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtdl_vvl
-        .{ .tag = @enumFromInt(2254), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2254), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtdl_vvvl
-        .{ .tag = @enumFromInt(2255), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2255), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtds_vvl
-        .{ .tag = @enumFromInt(2256), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2256), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtds_vvvl
-        .{ .tag = @enumFromInt(2257), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2257), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtdw_vvl
-        .{ .tag = @enumFromInt(2258), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2258), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtdw_vvvl
-        .{ .tag = @enumFromInt(2259), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2259), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtld_vvl
-        .{ .tag = @enumFromInt(2260), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2260), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtld_vvmvl
-        .{ .tag = @enumFromInt(2261), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2261), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtld_vvvl
-        .{ .tag = @enumFromInt(2262), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2262), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtldrz_vvl
-        .{ .tag = @enumFromInt(2263), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2263), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtldrz_vvmvl
-        .{ .tag = @enumFromInt(2264), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2264), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtldrz_vvvl
-        .{ .tag = @enumFromInt(2265), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2265), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtsd_vvl
-        .{ .tag = @enumFromInt(2266), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2266), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtsd_vvvl
-        .{ .tag = @enumFromInt(2267), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2267), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtsw_vvl
-        .{ .tag = @enumFromInt(2268), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2268), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtsw_vvvl
-        .{ .tag = @enumFromInt(2269), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2269), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdsx_vvl
-        .{ .tag = @enumFromInt(2270), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2270), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdsx_vvmvl
-        .{ .tag = @enumFromInt(2271), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2271), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdsx_vvvl
-        .{ .tag = @enumFromInt(2272), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2272), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdsxrz_vvl
-        .{ .tag = @enumFromInt(2273), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2273), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdsxrz_vvmvl
-        .{ .tag = @enumFromInt(2274), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2274), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdsxrz_vvvl
-        .{ .tag = @enumFromInt(2275), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2275), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdzx_vvl
-        .{ .tag = @enumFromInt(2276), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2276), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdzx_vvmvl
-        .{ .tag = @enumFromInt(2277), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2277), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdzx_vvvl
-        .{ .tag = @enumFromInt(2278), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2278), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdzxrz_vvl
-        .{ .tag = @enumFromInt(2279), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2279), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdzxrz_vvmvl
-        .{ .tag = @enumFromInt(2280), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2280), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwdzxrz_vvvl
-        .{ .tag = @enumFromInt(2281), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2281), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwssx_vvl
-        .{ .tag = @enumFromInt(2282), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2282), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwssx_vvmvl
-        .{ .tag = @enumFromInt(2283), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2283), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwssx_vvvl
-        .{ .tag = @enumFromInt(2284), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2284), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwssxrz_vvl
-        .{ .tag = @enumFromInt(2285), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2285), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwssxrz_vvmvl
-        .{ .tag = @enumFromInt(2286), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2286), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwssxrz_vvvl
-        .{ .tag = @enumFromInt(2287), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2287), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwszx_vvl
-        .{ .tag = @enumFromInt(2288), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2288), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwszx_vvmvl
-        .{ .tag = @enumFromInt(2289), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2289), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwszx_vvvl
-        .{ .tag = @enumFromInt(2290), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2290), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwszxrz_vvl
-        .{ .tag = @enumFromInt(2291), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2291), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwszxrz_vvmvl
-        .{ .tag = @enumFromInt(2292), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2292), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vcvtwszxrz_vvvl
-        .{ .tag = @enumFromInt(2293), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2293), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivsl_vsvl
-        .{ .tag = @enumFromInt(2294), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2294), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivsl_vsvmvl
-        .{ .tag = @enumFromInt(2295), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2295), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivsl_vsvvl
-        .{ .tag = @enumFromInt(2296), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2296), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivsl_vvsl
-        .{ .tag = @enumFromInt(2297), .properties = .{ .param_str = "V256dV256dLiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2297), .properties = .{ .param_str = "V256dV256dLiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivsl_vvsmvl
-        .{ .tag = @enumFromInt(2298), .properties = .{ .param_str = "V256dV256dLiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2298), .properties = .{ .param_str = "V256dV256dLiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivsl_vvsvl
-        .{ .tag = @enumFromInt(2299), .properties = .{ .param_str = "V256dV256dLiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2299), .properties = .{ .param_str = "V256dV256dLiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivsl_vvvl
-        .{ .tag = @enumFromInt(2300), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2300), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivsl_vvvmvl
-        .{ .tag = @enumFromInt(2301), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2301), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivsl_vvvvl
-        .{ .tag = @enumFromInt(2302), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2302), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswsx_vsvl
-        .{ .tag = @enumFromInt(2303), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2303), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswsx_vsvmvl
-        .{ .tag = @enumFromInt(2304), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2304), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswsx_vsvvl
-        .{ .tag = @enumFromInt(2305), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2305), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswsx_vvsl
-        .{ .tag = @enumFromInt(2306), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2306), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswsx_vvsmvl
-        .{ .tag = @enumFromInt(2307), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2307), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswsx_vvsvl
-        .{ .tag = @enumFromInt(2308), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2308), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswsx_vvvl
-        .{ .tag = @enumFromInt(2309), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2309), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswsx_vvvmvl
-        .{ .tag = @enumFromInt(2310), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2310), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswsx_vvvvl
-        .{ .tag = @enumFromInt(2311), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2311), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswzx_vsvl
-        .{ .tag = @enumFromInt(2312), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2312), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswzx_vsvmvl
-        .{ .tag = @enumFromInt(2313), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2313), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswzx_vsvvl
-        .{ .tag = @enumFromInt(2314), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2314), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswzx_vvsl
-        .{ .tag = @enumFromInt(2315), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2315), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswzx_vvsmvl
-        .{ .tag = @enumFromInt(2316), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2316), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswzx_vvsvl
-        .{ .tag = @enumFromInt(2317), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2317), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswzx_vvvl
-        .{ .tag = @enumFromInt(2318), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2318), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswzx_vvvmvl
-        .{ .tag = @enumFromInt(2319), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2319), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivswzx_vvvvl
-        .{ .tag = @enumFromInt(2320), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2320), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivul_vsvl
-        .{ .tag = @enumFromInt(2321), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2321), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivul_vsvmvl
-        .{ .tag = @enumFromInt(2322), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2322), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivul_vsvvl
-        .{ .tag = @enumFromInt(2323), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2323), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivul_vvsl
-        .{ .tag = @enumFromInt(2324), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2324), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivul_vvsmvl
-        .{ .tag = @enumFromInt(2325), .properties = .{ .param_str = "V256dV256dLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2325), .properties = .{ .param_str = "V256dV256dLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivul_vvsvl
-        .{ .tag = @enumFromInt(2326), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2326), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivul_vvvl
-        .{ .tag = @enumFromInt(2327), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2327), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivul_vvvmvl
-        .{ .tag = @enumFromInt(2328), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2328), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivul_vvvvl
-        .{ .tag = @enumFromInt(2329), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2329), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivuw_vsvl
-        .{ .tag = @enumFromInt(2330), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2330), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivuw_vsvmvl
-        .{ .tag = @enumFromInt(2331), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2331), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivuw_vsvvl
-        .{ .tag = @enumFromInt(2332), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2332), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivuw_vvsl
-        .{ .tag = @enumFromInt(2333), .properties = .{ .param_str = "V256dV256dUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2333), .properties = .{ .param_str = "V256dV256dUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivuw_vvsmvl
-        .{ .tag = @enumFromInt(2334), .properties = .{ .param_str = "V256dV256dUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2334), .properties = .{ .param_str = "V256dV256dUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivuw_vvsvl
-        .{ .tag = @enumFromInt(2335), .properties = .{ .param_str = "V256dV256dUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2335), .properties = .{ .param_str = "V256dV256dUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivuw_vvvl
-        .{ .tag = @enumFromInt(2336), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2336), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivuw_vvvmvl
-        .{ .tag = @enumFromInt(2337), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2337), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vdivuw_vvvvl
-        .{ .tag = @enumFromInt(2338), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2338), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_veqv_vsvl
-        .{ .tag = @enumFromInt(2339), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2339), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_veqv_vsvmvl
-        .{ .tag = @enumFromInt(2340), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2340), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_veqv_vsvvl
-        .{ .tag = @enumFromInt(2341), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2341), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_veqv_vvvl
-        .{ .tag = @enumFromInt(2342), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2342), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_veqv_vvvmvl
-        .{ .tag = @enumFromInt(2343), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2343), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_veqv_vvvvl
-        .{ .tag = @enumFromInt(2344), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2344), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vex_vvmvl
-        .{ .tag = @enumFromInt(2345), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2345), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfaddd_vsvl
-        .{ .tag = @enumFromInt(2346), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2346), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfaddd_vsvmvl
-        .{ .tag = @enumFromInt(2347), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2347), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfaddd_vsvvl
-        .{ .tag = @enumFromInt(2348), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2348), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfaddd_vvvl
-        .{ .tag = @enumFromInt(2349), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2349), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfaddd_vvvmvl
-        .{ .tag = @enumFromInt(2350), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2350), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfaddd_vvvvl
-        .{ .tag = @enumFromInt(2351), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2351), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfadds_vsvl
-        .{ .tag = @enumFromInt(2352), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2352), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfadds_vsvmvl
-        .{ .tag = @enumFromInt(2353), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2353), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfadds_vsvvl
-        .{ .tag = @enumFromInt(2354), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2354), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfadds_vvvl
-        .{ .tag = @enumFromInt(2355), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2355), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfadds_vvvmvl
-        .{ .tag = @enumFromInt(2356), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2356), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfadds_vvvvl
-        .{ .tag = @enumFromInt(2357), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2357), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmpd_vsvl
-        .{ .tag = @enumFromInt(2358), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2358), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmpd_vsvmvl
-        .{ .tag = @enumFromInt(2359), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2359), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmpd_vsvvl
-        .{ .tag = @enumFromInt(2360), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2360), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmpd_vvvl
-        .{ .tag = @enumFromInt(2361), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2361), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmpd_vvvmvl
-        .{ .tag = @enumFromInt(2362), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2362), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmpd_vvvvl
-        .{ .tag = @enumFromInt(2363), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2363), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmps_vsvl
-        .{ .tag = @enumFromInt(2364), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2364), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmps_vsvmvl
-        .{ .tag = @enumFromInt(2365), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2365), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmps_vsvvl
-        .{ .tag = @enumFromInt(2366), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2366), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmps_vvvl
-        .{ .tag = @enumFromInt(2367), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2367), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmps_vvvmvl
-        .{ .tag = @enumFromInt(2368), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2368), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfcmps_vvvvl
-        .{ .tag = @enumFromInt(2369), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2369), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivd_vsvl
-        .{ .tag = @enumFromInt(2370), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2370), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivd_vsvmvl
-        .{ .tag = @enumFromInt(2371), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2371), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivd_vsvvl
-        .{ .tag = @enumFromInt(2372), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2372), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivd_vvvl
-        .{ .tag = @enumFromInt(2373), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2373), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivd_vvvmvl
-        .{ .tag = @enumFromInt(2374), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2374), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivd_vvvvl
-        .{ .tag = @enumFromInt(2375), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2375), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivs_vsvl
-        .{ .tag = @enumFromInt(2376), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2376), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivs_vsvmvl
-        .{ .tag = @enumFromInt(2377), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2377), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivs_vsvvl
-        .{ .tag = @enumFromInt(2378), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2378), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivs_vvvl
-        .{ .tag = @enumFromInt(2379), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2379), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivs_vvvmvl
-        .{ .tag = @enumFromInt(2380), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2380), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfdivs_vvvvl
-        .{ .tag = @enumFromInt(2381), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2381), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmadd_vsvvl
-        .{ .tag = @enumFromInt(2382), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2382), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmadd_vsvvmvl
-        .{ .tag = @enumFromInt(2383), .properties = .{ .param_str = "V256ddV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2383), .properties = .{ .param_str = "V256ddV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmadd_vsvvvl
-        .{ .tag = @enumFromInt(2384), .properties = .{ .param_str = "V256ddV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2384), .properties = .{ .param_str = "V256ddV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmadd_vvsvl
-        .{ .tag = @enumFromInt(2385), .properties = .{ .param_str = "V256dV256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2385), .properties = .{ .param_str = "V256dV256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmadd_vvsvmvl
-        .{ .tag = @enumFromInt(2386), .properties = .{ .param_str = "V256dV256ddV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2386), .properties = .{ .param_str = "V256dV256ddV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmadd_vvsvvl
-        .{ .tag = @enumFromInt(2387), .properties = .{ .param_str = "V256dV256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2387), .properties = .{ .param_str = "V256dV256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmadd_vvvvl
-        .{ .tag = @enumFromInt(2388), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2388), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmadd_vvvvmvl
-        .{ .tag = @enumFromInt(2389), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2389), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmadd_vvvvvl
-        .{ .tag = @enumFromInt(2390), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2390), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmads_vsvvl
-        .{ .tag = @enumFromInt(2391), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2391), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmads_vsvvmvl
-        .{ .tag = @enumFromInt(2392), .properties = .{ .param_str = "V256dfV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2392), .properties = .{ .param_str = "V256dfV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmads_vsvvvl
-        .{ .tag = @enumFromInt(2393), .properties = .{ .param_str = "V256dfV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2393), .properties = .{ .param_str = "V256dfV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmads_vvsvl
-        .{ .tag = @enumFromInt(2394), .properties = .{ .param_str = "V256dV256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2394), .properties = .{ .param_str = "V256dV256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmads_vvsvmvl
-        .{ .tag = @enumFromInt(2395), .properties = .{ .param_str = "V256dV256dfV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2395), .properties = .{ .param_str = "V256dV256dfV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmads_vvsvvl
-        .{ .tag = @enumFromInt(2396), .properties = .{ .param_str = "V256dV256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2396), .properties = .{ .param_str = "V256dV256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmads_vvvvl
-        .{ .tag = @enumFromInt(2397), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2397), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmads_vvvvmvl
-        .{ .tag = @enumFromInt(2398), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2398), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmads_vvvvvl
-        .{ .tag = @enumFromInt(2399), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2399), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxd_vsvl
-        .{ .tag = @enumFromInt(2400), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2400), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxd_vsvmvl
-        .{ .tag = @enumFromInt(2401), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2401), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxd_vsvvl
-        .{ .tag = @enumFromInt(2402), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2402), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxd_vvvl
-        .{ .tag = @enumFromInt(2403), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2403), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxd_vvvmvl
-        .{ .tag = @enumFromInt(2404), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2404), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxd_vvvvl
-        .{ .tag = @enumFromInt(2405), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2405), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxs_vsvl
-        .{ .tag = @enumFromInt(2406), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2406), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxs_vsvmvl
-        .{ .tag = @enumFromInt(2407), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2407), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxs_vsvvl
-        .{ .tag = @enumFromInt(2408), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2408), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxs_vvvl
-        .{ .tag = @enumFromInt(2409), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2409), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxs_vvvmvl
-        .{ .tag = @enumFromInt(2410), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2410), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmaxs_vvvvl
-        .{ .tag = @enumFromInt(2411), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2411), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmind_vsvl
-        .{ .tag = @enumFromInt(2412), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2412), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmind_vsvmvl
-        .{ .tag = @enumFromInt(2413), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2413), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmind_vsvvl
-        .{ .tag = @enumFromInt(2414), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2414), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmind_vvvl
-        .{ .tag = @enumFromInt(2415), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2415), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmind_vvvmvl
-        .{ .tag = @enumFromInt(2416), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2416), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmind_vvvvl
-        .{ .tag = @enumFromInt(2417), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2417), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmins_vsvl
-        .{ .tag = @enumFromInt(2418), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2418), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmins_vsvmvl
-        .{ .tag = @enumFromInt(2419), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2419), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmins_vsvvl
-        .{ .tag = @enumFromInt(2420), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2420), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmins_vvvl
-        .{ .tag = @enumFromInt(2421), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2421), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmins_vvvmvl
-        .{ .tag = @enumFromInt(2422), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2422), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmins_vvvvl
-        .{ .tag = @enumFromInt(2423), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2423), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdeq_mvl
-        .{ .tag = @enumFromInt(2424), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2424), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdeq_mvml
-        .{ .tag = @enumFromInt(2425), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2425), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdeqnan_mvl
-        .{ .tag = @enumFromInt(2426), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2426), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdeqnan_mvml
-        .{ .tag = @enumFromInt(2427), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2427), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdge_mvl
-        .{ .tag = @enumFromInt(2428), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2428), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdge_mvml
-        .{ .tag = @enumFromInt(2429), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2429), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdgenan_mvl
-        .{ .tag = @enumFromInt(2430), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2430), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdgenan_mvml
-        .{ .tag = @enumFromInt(2431), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2431), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdgt_mvl
-        .{ .tag = @enumFromInt(2432), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2432), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdgt_mvml
-        .{ .tag = @enumFromInt(2433), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2433), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdgtnan_mvl
-        .{ .tag = @enumFromInt(2434), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2434), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdgtnan_mvml
-        .{ .tag = @enumFromInt(2435), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2435), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdle_mvl
-        .{ .tag = @enumFromInt(2436), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2436), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdle_mvml
-        .{ .tag = @enumFromInt(2437), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2437), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdlenan_mvl
-        .{ .tag = @enumFromInt(2438), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2438), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdlenan_mvml
-        .{ .tag = @enumFromInt(2439), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2439), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdlt_mvl
-        .{ .tag = @enumFromInt(2440), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2440), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdlt_mvml
-        .{ .tag = @enumFromInt(2441), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2441), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdltnan_mvl
-        .{ .tag = @enumFromInt(2442), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2442), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdltnan_mvml
-        .{ .tag = @enumFromInt(2443), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2443), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdnan_mvl
-        .{ .tag = @enumFromInt(2444), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2444), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdnan_mvml
-        .{ .tag = @enumFromInt(2445), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2445), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdne_mvl
-        .{ .tag = @enumFromInt(2446), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2446), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdne_mvml
-        .{ .tag = @enumFromInt(2447), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2447), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdnenan_mvl
-        .{ .tag = @enumFromInt(2448), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2448), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdnenan_mvml
-        .{ .tag = @enumFromInt(2449), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2449), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdnum_mvl
-        .{ .tag = @enumFromInt(2450), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2450), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkdnum_mvml
-        .{ .tag = @enumFromInt(2451), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2451), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklaf_ml
-        .{ .tag = @enumFromInt(2452), .properties = .{ .param_str = "V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2452), .properties = .{ .param_str = "V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklat_ml
-        .{ .tag = @enumFromInt(2453), .properties = .{ .param_str = "V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2453), .properties = .{ .param_str = "V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkleq_mvl
-        .{ .tag = @enumFromInt(2454), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2454), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkleq_mvml
-        .{ .tag = @enumFromInt(2455), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2455), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkleqnan_mvl
-        .{ .tag = @enumFromInt(2456), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2456), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkleqnan_mvml
-        .{ .tag = @enumFromInt(2457), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2457), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklge_mvl
-        .{ .tag = @enumFromInt(2458), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2458), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklge_mvml
-        .{ .tag = @enumFromInt(2459), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2459), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklgenan_mvl
-        .{ .tag = @enumFromInt(2460), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2460), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklgenan_mvml
-        .{ .tag = @enumFromInt(2461), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2461), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklgt_mvl
-        .{ .tag = @enumFromInt(2462), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2462), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklgt_mvml
-        .{ .tag = @enumFromInt(2463), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2463), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklgtnan_mvl
-        .{ .tag = @enumFromInt(2464), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2464), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklgtnan_mvml
-        .{ .tag = @enumFromInt(2465), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2465), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklle_mvl
-        .{ .tag = @enumFromInt(2466), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2466), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklle_mvml
-        .{ .tag = @enumFromInt(2467), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2467), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkllenan_mvl
-        .{ .tag = @enumFromInt(2468), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2468), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkllenan_mvml
-        .{ .tag = @enumFromInt(2469), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2469), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkllt_mvl
-        .{ .tag = @enumFromInt(2470), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2470), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkllt_mvml
-        .{ .tag = @enumFromInt(2471), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2471), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklltnan_mvl
-        .{ .tag = @enumFromInt(2472), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2472), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklltnan_mvml
-        .{ .tag = @enumFromInt(2473), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2473), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklnan_mvl
-        .{ .tag = @enumFromInt(2474), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2474), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklnan_mvml
-        .{ .tag = @enumFromInt(2475), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2475), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklne_mvl
-        .{ .tag = @enumFromInt(2476), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2476), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklne_mvml
-        .{ .tag = @enumFromInt(2477), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2477), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklnenan_mvl
-        .{ .tag = @enumFromInt(2478), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2478), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklnenan_mvml
-        .{ .tag = @enumFromInt(2479), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2479), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklnum_mvl
-        .{ .tag = @enumFromInt(2480), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2480), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmklnum_mvml
-        .{ .tag = @enumFromInt(2481), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2481), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkseq_mvl
-        .{ .tag = @enumFromInt(2482), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2482), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkseq_mvml
-        .{ .tag = @enumFromInt(2483), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2483), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkseqnan_mvl
-        .{ .tag = @enumFromInt(2484), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2484), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkseqnan_mvml
-        .{ .tag = @enumFromInt(2485), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2485), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksge_mvl
-        .{ .tag = @enumFromInt(2486), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2486), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksge_mvml
-        .{ .tag = @enumFromInt(2487), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2487), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksgenan_mvl
-        .{ .tag = @enumFromInt(2488), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2488), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksgenan_mvml
-        .{ .tag = @enumFromInt(2489), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2489), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksgt_mvl
-        .{ .tag = @enumFromInt(2490), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2490), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksgt_mvml
-        .{ .tag = @enumFromInt(2491), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2491), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksgtnan_mvl
-        .{ .tag = @enumFromInt(2492), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2492), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksgtnan_mvml
-        .{ .tag = @enumFromInt(2493), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2493), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksle_mvl
-        .{ .tag = @enumFromInt(2494), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2494), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksle_mvml
-        .{ .tag = @enumFromInt(2495), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2495), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkslenan_mvl
-        .{ .tag = @enumFromInt(2496), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2496), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkslenan_mvml
-        .{ .tag = @enumFromInt(2497), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2497), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkslt_mvl
-        .{ .tag = @enumFromInt(2498), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2498), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkslt_mvml
-        .{ .tag = @enumFromInt(2499), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2499), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksltnan_mvl
-        .{ .tag = @enumFromInt(2500), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2500), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksltnan_mvml
-        .{ .tag = @enumFromInt(2501), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2501), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksnan_mvl
-        .{ .tag = @enumFromInt(2502), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2502), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksnan_mvml
-        .{ .tag = @enumFromInt(2503), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2503), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksne_mvl
-        .{ .tag = @enumFromInt(2504), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2504), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksne_mvml
-        .{ .tag = @enumFromInt(2505), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2505), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksnenan_mvl
-        .{ .tag = @enumFromInt(2506), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2506), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksnenan_mvml
-        .{ .tag = @enumFromInt(2507), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2507), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksnum_mvl
-        .{ .tag = @enumFromInt(2508), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2508), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmksnum_mvml
-        .{ .tag = @enumFromInt(2509), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2509), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkweq_mvl
-        .{ .tag = @enumFromInt(2510), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2510), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkweq_mvml
-        .{ .tag = @enumFromInt(2511), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2511), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkweqnan_mvl
-        .{ .tag = @enumFromInt(2512), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2512), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkweqnan_mvml
-        .{ .tag = @enumFromInt(2513), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2513), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwge_mvl
-        .{ .tag = @enumFromInt(2514), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2514), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwge_mvml
-        .{ .tag = @enumFromInt(2515), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2515), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwgenan_mvl
-        .{ .tag = @enumFromInt(2516), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2516), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwgenan_mvml
-        .{ .tag = @enumFromInt(2517), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2517), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwgt_mvl
-        .{ .tag = @enumFromInt(2518), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2518), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwgt_mvml
-        .{ .tag = @enumFromInt(2519), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2519), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwgtnan_mvl
-        .{ .tag = @enumFromInt(2520), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2520), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwgtnan_mvml
-        .{ .tag = @enumFromInt(2521), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2521), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwle_mvl
-        .{ .tag = @enumFromInt(2522), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2522), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwle_mvml
-        .{ .tag = @enumFromInt(2523), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2523), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwlenan_mvl
-        .{ .tag = @enumFromInt(2524), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2524), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwlenan_mvml
-        .{ .tag = @enumFromInt(2525), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2525), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwlt_mvl
-        .{ .tag = @enumFromInt(2526), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2526), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwlt_mvml
-        .{ .tag = @enumFromInt(2527), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2527), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwltnan_mvl
-        .{ .tag = @enumFromInt(2528), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2528), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwltnan_mvml
-        .{ .tag = @enumFromInt(2529), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2529), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwnan_mvl
-        .{ .tag = @enumFromInt(2530), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2530), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwnan_mvml
-        .{ .tag = @enumFromInt(2531), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2531), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwne_mvl
-        .{ .tag = @enumFromInt(2532), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2532), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwne_mvml
-        .{ .tag = @enumFromInt(2533), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2533), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwnenan_mvl
-        .{ .tag = @enumFromInt(2534), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2534), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwnenan_mvml
-        .{ .tag = @enumFromInt(2535), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2535), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwnum_mvl
-        .{ .tag = @enumFromInt(2536), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2536), .properties = .{ .param_str = "V256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmkwnum_mvml
-        .{ .tag = @enumFromInt(2537), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2537), .properties = .{ .param_str = "V256bV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbd_vsvvl
-        .{ .tag = @enumFromInt(2538), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2538), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbd_vsvvmvl
-        .{ .tag = @enumFromInt(2539), .properties = .{ .param_str = "V256ddV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2539), .properties = .{ .param_str = "V256ddV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbd_vsvvvl
-        .{ .tag = @enumFromInt(2540), .properties = .{ .param_str = "V256ddV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2540), .properties = .{ .param_str = "V256ddV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbd_vvsvl
-        .{ .tag = @enumFromInt(2541), .properties = .{ .param_str = "V256dV256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2541), .properties = .{ .param_str = "V256dV256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbd_vvsvmvl
-        .{ .tag = @enumFromInt(2542), .properties = .{ .param_str = "V256dV256ddV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2542), .properties = .{ .param_str = "V256dV256ddV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbd_vvsvvl
-        .{ .tag = @enumFromInt(2543), .properties = .{ .param_str = "V256dV256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2543), .properties = .{ .param_str = "V256dV256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbd_vvvvl
-        .{ .tag = @enumFromInt(2544), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2544), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbd_vvvvmvl
-        .{ .tag = @enumFromInt(2545), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2545), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbd_vvvvvl
-        .{ .tag = @enumFromInt(2546), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2546), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbs_vsvvl
-        .{ .tag = @enumFromInt(2547), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2547), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbs_vsvvmvl
-        .{ .tag = @enumFromInt(2548), .properties = .{ .param_str = "V256dfV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2548), .properties = .{ .param_str = "V256dfV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbs_vsvvvl
-        .{ .tag = @enumFromInt(2549), .properties = .{ .param_str = "V256dfV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2549), .properties = .{ .param_str = "V256dfV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbs_vvsvl
-        .{ .tag = @enumFromInt(2550), .properties = .{ .param_str = "V256dV256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2550), .properties = .{ .param_str = "V256dV256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbs_vvsvmvl
-        .{ .tag = @enumFromInt(2551), .properties = .{ .param_str = "V256dV256dfV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2551), .properties = .{ .param_str = "V256dV256dfV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbs_vvsvvl
-        .{ .tag = @enumFromInt(2552), .properties = .{ .param_str = "V256dV256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2552), .properties = .{ .param_str = "V256dV256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbs_vvvvl
-        .{ .tag = @enumFromInt(2553), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2553), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbs_vvvvmvl
-        .{ .tag = @enumFromInt(2554), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2554), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmsbs_vvvvvl
-        .{ .tag = @enumFromInt(2555), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2555), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuld_vsvl
-        .{ .tag = @enumFromInt(2556), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2556), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuld_vsvmvl
-        .{ .tag = @enumFromInt(2557), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2557), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuld_vsvvl
-        .{ .tag = @enumFromInt(2558), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2558), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuld_vvvl
-        .{ .tag = @enumFromInt(2559), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2559), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuld_vvvmvl
-        .{ .tag = @enumFromInt(2560), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2560), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuld_vvvvl
-        .{ .tag = @enumFromInt(2561), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2561), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuls_vsvl
-        .{ .tag = @enumFromInt(2562), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2562), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuls_vsvmvl
-        .{ .tag = @enumFromInt(2563), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2563), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuls_vsvvl
-        .{ .tag = @enumFromInt(2564), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2564), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuls_vvvl
-        .{ .tag = @enumFromInt(2565), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2565), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuls_vvvmvl
-        .{ .tag = @enumFromInt(2566), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2566), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfmuls_vvvvl
-        .{ .tag = @enumFromInt(2567), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2567), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmadd_vsvvl
-        .{ .tag = @enumFromInt(2568), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2568), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmadd_vsvvmvl
-        .{ .tag = @enumFromInt(2569), .properties = .{ .param_str = "V256ddV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2569), .properties = .{ .param_str = "V256ddV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmadd_vsvvvl
-        .{ .tag = @enumFromInt(2570), .properties = .{ .param_str = "V256ddV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2570), .properties = .{ .param_str = "V256ddV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmadd_vvsvl
-        .{ .tag = @enumFromInt(2571), .properties = .{ .param_str = "V256dV256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2571), .properties = .{ .param_str = "V256dV256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmadd_vvsvmvl
-        .{ .tag = @enumFromInt(2572), .properties = .{ .param_str = "V256dV256ddV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2572), .properties = .{ .param_str = "V256dV256ddV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmadd_vvsvvl
-        .{ .tag = @enumFromInt(2573), .properties = .{ .param_str = "V256dV256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2573), .properties = .{ .param_str = "V256dV256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmadd_vvvvl
-        .{ .tag = @enumFromInt(2574), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2574), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmadd_vvvvmvl
-        .{ .tag = @enumFromInt(2575), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2575), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmadd_vvvvvl
-        .{ .tag = @enumFromInt(2576), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2576), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmads_vsvvl
-        .{ .tag = @enumFromInt(2577), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2577), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmads_vsvvmvl
-        .{ .tag = @enumFromInt(2578), .properties = .{ .param_str = "V256dfV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2578), .properties = .{ .param_str = "V256dfV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmads_vsvvvl
-        .{ .tag = @enumFromInt(2579), .properties = .{ .param_str = "V256dfV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2579), .properties = .{ .param_str = "V256dfV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmads_vvsvl
-        .{ .tag = @enumFromInt(2580), .properties = .{ .param_str = "V256dV256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2580), .properties = .{ .param_str = "V256dV256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmads_vvsvmvl
-        .{ .tag = @enumFromInt(2581), .properties = .{ .param_str = "V256dV256dfV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2581), .properties = .{ .param_str = "V256dV256dfV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmads_vvsvvl
-        .{ .tag = @enumFromInt(2582), .properties = .{ .param_str = "V256dV256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2582), .properties = .{ .param_str = "V256dV256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmads_vvvvl
-        .{ .tag = @enumFromInt(2583), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2583), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmads_vvvvmvl
-        .{ .tag = @enumFromInt(2584), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2584), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmads_vvvvvl
-        .{ .tag = @enumFromInt(2585), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2585), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbd_vsvvl
-        .{ .tag = @enumFromInt(2586), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2586), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbd_vsvvmvl
-        .{ .tag = @enumFromInt(2587), .properties = .{ .param_str = "V256ddV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2587), .properties = .{ .param_str = "V256ddV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbd_vsvvvl
-        .{ .tag = @enumFromInt(2588), .properties = .{ .param_str = "V256ddV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2588), .properties = .{ .param_str = "V256ddV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbd_vvsvl
-        .{ .tag = @enumFromInt(2589), .properties = .{ .param_str = "V256dV256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2589), .properties = .{ .param_str = "V256dV256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbd_vvsvmvl
-        .{ .tag = @enumFromInt(2590), .properties = .{ .param_str = "V256dV256ddV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2590), .properties = .{ .param_str = "V256dV256ddV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbd_vvsvvl
-        .{ .tag = @enumFromInt(2591), .properties = .{ .param_str = "V256dV256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2591), .properties = .{ .param_str = "V256dV256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbd_vvvvl
-        .{ .tag = @enumFromInt(2592), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2592), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbd_vvvvmvl
-        .{ .tag = @enumFromInt(2593), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2593), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbd_vvvvvl
-        .{ .tag = @enumFromInt(2594), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2594), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbs_vsvvl
-        .{ .tag = @enumFromInt(2595), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2595), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbs_vsvvmvl
-        .{ .tag = @enumFromInt(2596), .properties = .{ .param_str = "V256dfV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2596), .properties = .{ .param_str = "V256dfV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbs_vsvvvl
-        .{ .tag = @enumFromInt(2597), .properties = .{ .param_str = "V256dfV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2597), .properties = .{ .param_str = "V256dfV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbs_vvsvl
-        .{ .tag = @enumFromInt(2598), .properties = .{ .param_str = "V256dV256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2598), .properties = .{ .param_str = "V256dV256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbs_vvsvmvl
-        .{ .tag = @enumFromInt(2599), .properties = .{ .param_str = "V256dV256dfV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2599), .properties = .{ .param_str = "V256dV256dfV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbs_vvsvvl
-        .{ .tag = @enumFromInt(2600), .properties = .{ .param_str = "V256dV256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2600), .properties = .{ .param_str = "V256dV256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbs_vvvvl
-        .{ .tag = @enumFromInt(2601), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2601), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbs_vvvvmvl
-        .{ .tag = @enumFromInt(2602), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2602), .properties = .{ .param_str = "V256dV256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfnmsbs_vvvvvl
-        .{ .tag = @enumFromInt(2603), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2603), .properties = .{ .param_str = "V256dV256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmaxdfst_vvl
-        .{ .tag = @enumFromInt(2604), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2604), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmaxdfst_vvvl
-        .{ .tag = @enumFromInt(2605), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2605), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmaxdlst_vvl
-        .{ .tag = @enumFromInt(2606), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2606), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmaxdlst_vvvl
-        .{ .tag = @enumFromInt(2607), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2607), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmaxsfst_vvl
-        .{ .tag = @enumFromInt(2608), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2608), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmaxsfst_vvvl
-        .{ .tag = @enumFromInt(2609), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2609), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmaxslst_vvl
-        .{ .tag = @enumFromInt(2610), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2610), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmaxslst_vvvl
-        .{ .tag = @enumFromInt(2611), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2611), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmindfst_vvl
-        .{ .tag = @enumFromInt(2612), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2612), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmindfst_vvvl
-        .{ .tag = @enumFromInt(2613), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2613), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmindlst_vvl
-        .{ .tag = @enumFromInt(2614), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2614), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrmindlst_vvvl
-        .{ .tag = @enumFromInt(2615), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2615), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrminsfst_vvl
-        .{ .tag = @enumFromInt(2616), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2616), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrminsfst_vvvl
-        .{ .tag = @enumFromInt(2617), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2617), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrminslst_vvl
-        .{ .tag = @enumFromInt(2618), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2618), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfrminslst_vvvl
-        .{ .tag = @enumFromInt(2619), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2619), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsqrtd_vvl
-        .{ .tag = @enumFromInt(2620), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2620), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsqrtd_vvvl
-        .{ .tag = @enumFromInt(2621), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2621), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsqrts_vvl
-        .{ .tag = @enumFromInt(2622), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2622), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsqrts_vvvl
-        .{ .tag = @enumFromInt(2623), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2623), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubd_vsvl
-        .{ .tag = @enumFromInt(2624), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2624), .properties = .{ .param_str = "V256ddV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubd_vsvmvl
-        .{ .tag = @enumFromInt(2625), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2625), .properties = .{ .param_str = "V256ddV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubd_vsvvl
-        .{ .tag = @enumFromInt(2626), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2626), .properties = .{ .param_str = "V256ddV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubd_vvvl
-        .{ .tag = @enumFromInt(2627), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2627), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubd_vvvmvl
-        .{ .tag = @enumFromInt(2628), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2628), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubd_vvvvl
-        .{ .tag = @enumFromInt(2629), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2629), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubs_vsvl
-        .{ .tag = @enumFromInt(2630), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2630), .properties = .{ .param_str = "V256dfV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubs_vsvmvl
-        .{ .tag = @enumFromInt(2631), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2631), .properties = .{ .param_str = "V256dfV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubs_vsvvl
-        .{ .tag = @enumFromInt(2632), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2632), .properties = .{ .param_str = "V256dfV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubs_vvvl
-        .{ .tag = @enumFromInt(2633), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2633), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubs_vvvmvl
-        .{ .tag = @enumFromInt(2634), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2634), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsubs_vvvvl
-        .{ .tag = @enumFromInt(2635), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2635), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsumd_vvl
-        .{ .tag = @enumFromInt(2636), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2636), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsumd_vvml
-        .{ .tag = @enumFromInt(2637), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2637), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsums_vvl
-        .{ .tag = @enumFromInt(2638), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2638), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vfsums_vvml
-        .{ .tag = @enumFromInt(2639), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2639), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgt_vvssl
-        .{ .tag = @enumFromInt(2640), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2640), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgt_vvssml
-        .{ .tag = @enumFromInt(2641), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2641), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgt_vvssmvl
-        .{ .tag = @enumFromInt(2642), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2642), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgt_vvssvl
-        .{ .tag = @enumFromInt(2643), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2643), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlsx_vvssl
-        .{ .tag = @enumFromInt(2644), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2644), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlsx_vvssml
-        .{ .tag = @enumFromInt(2645), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2645), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlsx_vvssmvl
-        .{ .tag = @enumFromInt(2646), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2646), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlsx_vvssvl
-        .{ .tag = @enumFromInt(2647), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2647), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlsxnc_vvssl
-        .{ .tag = @enumFromInt(2648), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2648), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlsxnc_vvssml
-        .{ .tag = @enumFromInt(2649), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2649), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlsxnc_vvssmvl
-        .{ .tag = @enumFromInt(2650), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2650), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlsxnc_vvssvl
-        .{ .tag = @enumFromInt(2651), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2651), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlzx_vvssl
-        .{ .tag = @enumFromInt(2652), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2652), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlzx_vvssml
-        .{ .tag = @enumFromInt(2653), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2653), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlzx_vvssmvl
-        .{ .tag = @enumFromInt(2654), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2654), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlzx_vvssvl
-        .{ .tag = @enumFromInt(2655), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2655), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlzxnc_vvssl
-        .{ .tag = @enumFromInt(2656), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2656), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlzxnc_vvssml
-        .{ .tag = @enumFromInt(2657), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2657), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlzxnc_vvssmvl
-        .{ .tag = @enumFromInt(2658), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2658), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtlzxnc_vvssvl
-        .{ .tag = @enumFromInt(2659), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2659), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtnc_vvssl
-        .{ .tag = @enumFromInt(2660), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2660), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtnc_vvssml
-        .{ .tag = @enumFromInt(2661), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2661), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtnc_vvssmvl
-        .{ .tag = @enumFromInt(2662), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2662), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtnc_vvssvl
-        .{ .tag = @enumFromInt(2663), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2663), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtu_vvssl
-        .{ .tag = @enumFromInt(2664), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2664), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtu_vvssml
-        .{ .tag = @enumFromInt(2665), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2665), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtu_vvssmvl
-        .{ .tag = @enumFromInt(2666), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2666), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtu_vvssvl
-        .{ .tag = @enumFromInt(2667), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2667), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtunc_vvssl
-        .{ .tag = @enumFromInt(2668), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2668), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtunc_vvssml
-        .{ .tag = @enumFromInt(2669), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2669), .properties = .{ .param_str = "V256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtunc_vvssmvl
-        .{ .tag = @enumFromInt(2670), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2670), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vgtunc_vvssvl
-        .{ .tag = @enumFromInt(2671), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2671), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vld2d_vssl
-        .{ .tag = @enumFromInt(2672), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2672), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vld2d_vssvl
-        .{ .tag = @enumFromInt(2673), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2673), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vld2dnc_vssl
-        .{ .tag = @enumFromInt(2674), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2674), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vld2dnc_vssvl
-        .{ .tag = @enumFromInt(2675), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2675), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vld_vssl
-        .{ .tag = @enumFromInt(2676), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2676), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vld_vssvl
-        .{ .tag = @enumFromInt(2677), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2677), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldl2dsx_vssl
-        .{ .tag = @enumFromInt(2678), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2678), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldl2dsx_vssvl
-        .{ .tag = @enumFromInt(2679), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2679), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldl2dsxnc_vssl
-        .{ .tag = @enumFromInt(2680), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2680), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldl2dsxnc_vssvl
-        .{ .tag = @enumFromInt(2681), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2681), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldl2dzx_vssl
-        .{ .tag = @enumFromInt(2682), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2682), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldl2dzx_vssvl
-        .{ .tag = @enumFromInt(2683), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2683), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldl2dzxnc_vssl
-        .{ .tag = @enumFromInt(2684), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2684), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldl2dzxnc_vssvl
-        .{ .tag = @enumFromInt(2685), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2685), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldlsx_vssl
-        .{ .tag = @enumFromInt(2686), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2686), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldlsx_vssvl
-        .{ .tag = @enumFromInt(2687), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2687), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldlsxnc_vssl
-        .{ .tag = @enumFromInt(2688), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2688), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldlsxnc_vssvl
-        .{ .tag = @enumFromInt(2689), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2689), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldlzx_vssl
-        .{ .tag = @enumFromInt(2690), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2690), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldlzx_vssvl
-        .{ .tag = @enumFromInt(2691), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2691), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldlzxnc_vssl
-        .{ .tag = @enumFromInt(2692), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2692), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldlzxnc_vssvl
-        .{ .tag = @enumFromInt(2693), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2693), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldnc_vssl
-        .{ .tag = @enumFromInt(2694), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2694), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldnc_vssvl
-        .{ .tag = @enumFromInt(2695), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2695), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldu2d_vssl
-        .{ .tag = @enumFromInt(2696), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2696), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldu2d_vssvl
-        .{ .tag = @enumFromInt(2697), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2697), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldu2dnc_vssl
-        .{ .tag = @enumFromInt(2698), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2698), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldu2dnc_vssvl
-        .{ .tag = @enumFromInt(2699), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2699), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldu_vssl
-        .{ .tag = @enumFromInt(2700), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2700), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldu_vssvl
-        .{ .tag = @enumFromInt(2701), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2701), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldunc_vssl
-        .{ .tag = @enumFromInt(2702), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2702), .properties = .{ .param_str = "V256dLUivC*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldunc_vssvl
-        .{ .tag = @enumFromInt(2703), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2703), .properties = .{ .param_str = "V256dLUivC*V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldz_vvl
-        .{ .tag = @enumFromInt(2704), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2704), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldz_vvmvl
-        .{ .tag = @enumFromInt(2705), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2705), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vldz_vvvl
-        .{ .tag = @enumFromInt(2706), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2706), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxsl_vsvl
-        .{ .tag = @enumFromInt(2707), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2707), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxsl_vsvmvl
-        .{ .tag = @enumFromInt(2708), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2708), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxsl_vsvvl
-        .{ .tag = @enumFromInt(2709), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2709), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxsl_vvvl
-        .{ .tag = @enumFromInt(2710), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2710), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxsl_vvvmvl
-        .{ .tag = @enumFromInt(2711), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2711), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxsl_vvvvl
-        .{ .tag = @enumFromInt(2712), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2712), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswsx_vsvl
-        .{ .tag = @enumFromInt(2713), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2713), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswsx_vsvmvl
-        .{ .tag = @enumFromInt(2714), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2714), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswsx_vsvvl
-        .{ .tag = @enumFromInt(2715), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2715), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswsx_vvvl
-        .{ .tag = @enumFromInt(2716), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2716), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswsx_vvvmvl
-        .{ .tag = @enumFromInt(2717), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2717), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswsx_vvvvl
-        .{ .tag = @enumFromInt(2718), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2718), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswzx_vsvl
-        .{ .tag = @enumFromInt(2719), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2719), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswzx_vsvmvl
-        .{ .tag = @enumFromInt(2720), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2720), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswzx_vsvvl
-        .{ .tag = @enumFromInt(2721), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2721), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswzx_vvvl
-        .{ .tag = @enumFromInt(2722), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2722), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswzx_vvvmvl
-        .{ .tag = @enumFromInt(2723), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2723), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmaxswzx_vvvvl
-        .{ .tag = @enumFromInt(2724), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2724), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminsl_vsvl
-        .{ .tag = @enumFromInt(2725), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2725), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminsl_vsvmvl
-        .{ .tag = @enumFromInt(2726), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2726), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminsl_vsvvl
-        .{ .tag = @enumFromInt(2727), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2727), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminsl_vvvl
-        .{ .tag = @enumFromInt(2728), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2728), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminsl_vvvmvl
-        .{ .tag = @enumFromInt(2729), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2729), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminsl_vvvvl
-        .{ .tag = @enumFromInt(2730), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2730), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswsx_vsvl
-        .{ .tag = @enumFromInt(2731), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2731), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswsx_vsvmvl
-        .{ .tag = @enumFromInt(2732), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2732), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswsx_vsvvl
-        .{ .tag = @enumFromInt(2733), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2733), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswsx_vvvl
-        .{ .tag = @enumFromInt(2734), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2734), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswsx_vvvmvl
-        .{ .tag = @enumFromInt(2735), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2735), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswsx_vvvvl
-        .{ .tag = @enumFromInt(2736), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2736), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswzx_vsvl
-        .{ .tag = @enumFromInt(2737), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2737), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswzx_vsvmvl
-        .{ .tag = @enumFromInt(2738), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2738), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswzx_vsvvl
-        .{ .tag = @enumFromInt(2739), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2739), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswzx_vvvl
-        .{ .tag = @enumFromInt(2740), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2740), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswzx_vvvmvl
-        .{ .tag = @enumFromInt(2741), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2741), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vminswzx_vvvvl
-        .{ .tag = @enumFromInt(2742), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2742), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmrg_vsvml
-        .{ .tag = @enumFromInt(2743), .properties = .{ .param_str = "V256dLUiV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2743), .properties = .{ .param_str = "V256dLUiV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmrg_vsvmvl
-        .{ .tag = @enumFromInt(2744), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2744), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmrg_vvvml
-        .{ .tag = @enumFromInt(2745), .properties = .{ .param_str = "V256dV256dV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2745), .properties = .{ .param_str = "V256dV256dV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmrg_vvvmvl
-        .{ .tag = @enumFromInt(2746), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2746), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmrgw_vsvMl
-        .{ .tag = @enumFromInt(2747), .properties = .{ .param_str = "V256dUiV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2747), .properties = .{ .param_str = "V256dUiV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmrgw_vsvMvl
-        .{ .tag = @enumFromInt(2748), .properties = .{ .param_str = "V256dUiV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2748), .properties = .{ .param_str = "V256dUiV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmrgw_vvvMl
-        .{ .tag = @enumFromInt(2749), .properties = .{ .param_str = "V256dV256dV256dV512bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2749), .properties = .{ .param_str = "V256dV256dV256dV512bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmrgw_vvvMvl
-        .{ .tag = @enumFromInt(2750), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2750), .properties = .{ .param_str = "V256dV256dV256dV512bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulsl_vsvl
-        .{ .tag = @enumFromInt(2751), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2751), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulsl_vsvmvl
-        .{ .tag = @enumFromInt(2752), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2752), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulsl_vsvvl
-        .{ .tag = @enumFromInt(2753), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2753), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulsl_vvvl
-        .{ .tag = @enumFromInt(2754), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2754), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulsl_vvvmvl
-        .{ .tag = @enumFromInt(2755), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2755), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulsl_vvvvl
-        .{ .tag = @enumFromInt(2756), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2756), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulslw_vsvl
-        .{ .tag = @enumFromInt(2757), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2757), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulslw_vsvvl
-        .{ .tag = @enumFromInt(2758), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2758), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulslw_vvvl
-        .{ .tag = @enumFromInt(2759), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2759), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulslw_vvvvl
-        .{ .tag = @enumFromInt(2760), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2760), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswsx_vsvl
-        .{ .tag = @enumFromInt(2761), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2761), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswsx_vsvmvl
-        .{ .tag = @enumFromInt(2762), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2762), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswsx_vsvvl
-        .{ .tag = @enumFromInt(2763), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2763), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswsx_vvvl
-        .{ .tag = @enumFromInt(2764), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2764), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswsx_vvvmvl
-        .{ .tag = @enumFromInt(2765), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2765), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswsx_vvvvl
-        .{ .tag = @enumFromInt(2766), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2766), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswzx_vsvl
-        .{ .tag = @enumFromInt(2767), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2767), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswzx_vsvmvl
-        .{ .tag = @enumFromInt(2768), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2768), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswzx_vsvvl
-        .{ .tag = @enumFromInt(2769), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2769), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswzx_vvvl
-        .{ .tag = @enumFromInt(2770), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2770), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswzx_vvvmvl
-        .{ .tag = @enumFromInt(2771), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2771), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulswzx_vvvvl
-        .{ .tag = @enumFromInt(2772), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2772), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulul_vsvl
-        .{ .tag = @enumFromInt(2773), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2773), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulul_vsvmvl
-        .{ .tag = @enumFromInt(2774), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2774), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulul_vsvvl
-        .{ .tag = @enumFromInt(2775), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2775), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulul_vvvl
-        .{ .tag = @enumFromInt(2776), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2776), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulul_vvvmvl
-        .{ .tag = @enumFromInt(2777), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2777), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmulul_vvvvl
-        .{ .tag = @enumFromInt(2778), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2778), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmuluw_vsvl
-        .{ .tag = @enumFromInt(2779), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2779), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmuluw_vsvmvl
-        .{ .tag = @enumFromInt(2780), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2780), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmuluw_vsvvl
-        .{ .tag = @enumFromInt(2781), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2781), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmuluw_vvvl
-        .{ .tag = @enumFromInt(2782), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2782), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmuluw_vvvmvl
-        .{ .tag = @enumFromInt(2783), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2783), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmuluw_vvvvl
-        .{ .tag = @enumFromInt(2784), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2784), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmv_vsvl
-        .{ .tag = @enumFromInt(2785), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2785), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmv_vsvmvl
-        .{ .tag = @enumFromInt(2786), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2786), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vmv_vsvvl
-        .{ .tag = @enumFromInt(2787), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2787), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vor_vsvl
-        .{ .tag = @enumFromInt(2788), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2788), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vor_vsvmvl
-        .{ .tag = @enumFromInt(2789), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2789), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vor_vsvvl
-        .{ .tag = @enumFromInt(2790), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2790), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vor_vvvl
-        .{ .tag = @enumFromInt(2791), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2791), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vor_vvvmvl
-        .{ .tag = @enumFromInt(2792), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2792), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vor_vvvvl
-        .{ .tag = @enumFromInt(2793), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2793), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vpcnt_vvl
-        .{ .tag = @enumFromInt(2794), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2794), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vpcnt_vvmvl
-        .{ .tag = @enumFromInt(2795), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2795), .properties = .{ .param_str = "V256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vpcnt_vvvl
-        .{ .tag = @enumFromInt(2796), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2796), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrand_vvl
-        .{ .tag = @enumFromInt(2797), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2797), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrand_vvml
-        .{ .tag = @enumFromInt(2798), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2798), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrcpd_vvl
-        .{ .tag = @enumFromInt(2799), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2799), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrcpd_vvvl
-        .{ .tag = @enumFromInt(2800), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2800), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrcps_vvl
-        .{ .tag = @enumFromInt(2801), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2801), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrcps_vvvl
-        .{ .tag = @enumFromInt(2802), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2802), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxslfst_vvl
-        .{ .tag = @enumFromInt(2803), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2803), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxslfst_vvvl
-        .{ .tag = @enumFromInt(2804), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2804), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxsllst_vvl
-        .{ .tag = @enumFromInt(2805), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2805), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxsllst_vvvl
-        .{ .tag = @enumFromInt(2806), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2806), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxswfstsx_vvl
-        .{ .tag = @enumFromInt(2807), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2807), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxswfstsx_vvvl
-        .{ .tag = @enumFromInt(2808), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2808), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxswfstzx_vvl
-        .{ .tag = @enumFromInt(2809), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2809), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxswfstzx_vvvl
-        .{ .tag = @enumFromInt(2810), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2810), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxswlstsx_vvl
-        .{ .tag = @enumFromInt(2811), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2811), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxswlstsx_vvvl
-        .{ .tag = @enumFromInt(2812), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2812), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxswlstzx_vvl
-        .{ .tag = @enumFromInt(2813), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2813), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrmaxswlstzx_vvvl
-        .{ .tag = @enumFromInt(2814), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2814), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminslfst_vvl
-        .{ .tag = @enumFromInt(2815), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2815), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminslfst_vvvl
-        .{ .tag = @enumFromInt(2816), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2816), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminsllst_vvl
-        .{ .tag = @enumFromInt(2817), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2817), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminsllst_vvvl
-        .{ .tag = @enumFromInt(2818), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2818), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminswfstsx_vvl
-        .{ .tag = @enumFromInt(2819), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2819), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminswfstsx_vvvl
-        .{ .tag = @enumFromInt(2820), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2820), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminswfstzx_vvl
-        .{ .tag = @enumFromInt(2821), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2821), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminswfstzx_vvvl
-        .{ .tag = @enumFromInt(2822), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2822), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminswlstsx_vvl
-        .{ .tag = @enumFromInt(2823), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2823), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminswlstsx_vvvl
-        .{ .tag = @enumFromInt(2824), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2824), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminswlstzx_vvl
-        .{ .tag = @enumFromInt(2825), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2825), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrminswlstzx_vvvl
-        .{ .tag = @enumFromInt(2826), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2826), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vror_vvl
-        .{ .tag = @enumFromInt(2827), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2827), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vror_vvml
-        .{ .tag = @enumFromInt(2828), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2828), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrsqrtd_vvl
-        .{ .tag = @enumFromInt(2829), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2829), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrsqrtd_vvvl
-        .{ .tag = @enumFromInt(2830), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2830), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrsqrtdnex_vvl
-        .{ .tag = @enumFromInt(2831), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2831), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrsqrtdnex_vvvl
-        .{ .tag = @enumFromInt(2832), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2832), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrsqrts_vvl
-        .{ .tag = @enumFromInt(2833), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2833), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrsqrts_vvvl
-        .{ .tag = @enumFromInt(2834), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2834), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrsqrtsnex_vvl
-        .{ .tag = @enumFromInt(2835), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2835), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrsqrtsnex_vvvl
-        .{ .tag = @enumFromInt(2836), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2836), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrxor_vvl
-        .{ .tag = @enumFromInt(2837), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2837), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vrxor_vvml
-        .{ .tag = @enumFromInt(2838), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2838), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsc_vvssl
-        .{ .tag = @enumFromInt(2839), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2839), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsc_vvssml
-        .{ .tag = @enumFromInt(2840), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2840), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscl_vvssl
-        .{ .tag = @enumFromInt(2841), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2841), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscl_vvssml
-        .{ .tag = @enumFromInt(2842), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2842), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsclnc_vvssl
-        .{ .tag = @enumFromInt(2843), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2843), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsclnc_vvssml
-        .{ .tag = @enumFromInt(2844), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2844), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsclncot_vvssl
-        .{ .tag = @enumFromInt(2845), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2845), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsclncot_vvssml
-        .{ .tag = @enumFromInt(2846), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2846), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsclot_vvssl
-        .{ .tag = @enumFromInt(2847), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2847), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsclot_vvssml
-        .{ .tag = @enumFromInt(2848), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2848), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscnc_vvssl
-        .{ .tag = @enumFromInt(2849), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2849), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscnc_vvssml
-        .{ .tag = @enumFromInt(2850), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2850), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscncot_vvssl
-        .{ .tag = @enumFromInt(2851), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2851), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscncot_vvssml
-        .{ .tag = @enumFromInt(2852), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2852), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscot_vvssl
-        .{ .tag = @enumFromInt(2853), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2853), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscot_vvssml
-        .{ .tag = @enumFromInt(2854), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2854), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscu_vvssl
-        .{ .tag = @enumFromInt(2855), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2855), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscu_vvssml
-        .{ .tag = @enumFromInt(2856), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2856), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscunc_vvssl
-        .{ .tag = @enumFromInt(2857), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2857), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscunc_vvssml
-        .{ .tag = @enumFromInt(2858), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2858), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscuncot_vvssl
-        .{ .tag = @enumFromInt(2859), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2859), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscuncot_vvssml
-        .{ .tag = @enumFromInt(2860), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2860), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscuot_vvssl
-        .{ .tag = @enumFromInt(2861), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2861), .properties = .{ .param_str = "vV256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vscuot_vvssml
-        .{ .tag = @enumFromInt(2862), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2862), .properties = .{ .param_str = "vV256dV256dLUiLUiV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vseq_vl
-        .{ .tag = @enumFromInt(2863), .properties = .{ .param_str = "V256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2863), .properties = .{ .param_str = "V256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vseq_vvl
-        .{ .tag = @enumFromInt(2864), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2864), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsfa_vvssl
-        .{ .tag = @enumFromInt(2865), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2865), .properties = .{ .param_str = "V256dV256dLUiLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsfa_vvssmvl
-        .{ .tag = @enumFromInt(2866), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2866), .properties = .{ .param_str = "V256dV256dLUiLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsfa_vvssvl
-        .{ .tag = @enumFromInt(2867), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2867), .properties = .{ .param_str = "V256dV256dLUiLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vshf_vvvsl
-        .{ .tag = @enumFromInt(2868), .properties = .{ .param_str = "V256dV256dV256dLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2868), .properties = .{ .param_str = "V256dV256dV256dLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vshf_vvvsvl
-        .{ .tag = @enumFromInt(2869), .properties = .{ .param_str = "V256dV256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2869), .properties = .{ .param_str = "V256dV256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslal_vvsl
-        .{ .tag = @enumFromInt(2870), .properties = .{ .param_str = "V256dV256dLiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2870), .properties = .{ .param_str = "V256dV256dLiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslal_vvsmvl
-        .{ .tag = @enumFromInt(2871), .properties = .{ .param_str = "V256dV256dLiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2871), .properties = .{ .param_str = "V256dV256dLiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslal_vvsvl
-        .{ .tag = @enumFromInt(2872), .properties = .{ .param_str = "V256dV256dLiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2872), .properties = .{ .param_str = "V256dV256dLiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslal_vvvl
-        .{ .tag = @enumFromInt(2873), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2873), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslal_vvvmvl
-        .{ .tag = @enumFromInt(2874), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2874), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslal_vvvvl
-        .{ .tag = @enumFromInt(2875), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2875), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawsx_vvsl
-        .{ .tag = @enumFromInt(2876), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2876), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawsx_vvsmvl
-        .{ .tag = @enumFromInt(2877), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2877), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawsx_vvsvl
-        .{ .tag = @enumFromInt(2878), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2878), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawsx_vvvl
-        .{ .tag = @enumFromInt(2879), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2879), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawsx_vvvmvl
-        .{ .tag = @enumFromInt(2880), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2880), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawsx_vvvvl
-        .{ .tag = @enumFromInt(2881), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2881), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawzx_vvsl
-        .{ .tag = @enumFromInt(2882), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2882), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawzx_vvsmvl
-        .{ .tag = @enumFromInt(2883), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2883), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawzx_vvsvl
-        .{ .tag = @enumFromInt(2884), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2884), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawzx_vvvl
-        .{ .tag = @enumFromInt(2885), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2885), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawzx_vvvmvl
-        .{ .tag = @enumFromInt(2886), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2886), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vslawzx_vvvvl
-        .{ .tag = @enumFromInt(2887), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2887), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsll_vvsl
-        .{ .tag = @enumFromInt(2888), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2888), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsll_vvsmvl
-        .{ .tag = @enumFromInt(2889), .properties = .{ .param_str = "V256dV256dLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2889), .properties = .{ .param_str = "V256dV256dLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsll_vvsvl
-        .{ .tag = @enumFromInt(2890), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2890), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsll_vvvl
-        .{ .tag = @enumFromInt(2891), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2891), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsll_vvvmvl
-        .{ .tag = @enumFromInt(2892), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2892), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsll_vvvvl
-        .{ .tag = @enumFromInt(2893), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2893), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsral_vvsl
-        .{ .tag = @enumFromInt(2894), .properties = .{ .param_str = "V256dV256dLiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2894), .properties = .{ .param_str = "V256dV256dLiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsral_vvsmvl
-        .{ .tag = @enumFromInt(2895), .properties = .{ .param_str = "V256dV256dLiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2895), .properties = .{ .param_str = "V256dV256dLiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsral_vvsvl
-        .{ .tag = @enumFromInt(2896), .properties = .{ .param_str = "V256dV256dLiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2896), .properties = .{ .param_str = "V256dV256dLiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsral_vvvl
-        .{ .tag = @enumFromInt(2897), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2897), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsral_vvvmvl
-        .{ .tag = @enumFromInt(2898), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2898), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsral_vvvvl
-        .{ .tag = @enumFromInt(2899), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2899), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawsx_vvsl
-        .{ .tag = @enumFromInt(2900), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2900), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawsx_vvsmvl
-        .{ .tag = @enumFromInt(2901), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2901), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawsx_vvsvl
-        .{ .tag = @enumFromInt(2902), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2902), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawsx_vvvl
-        .{ .tag = @enumFromInt(2903), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2903), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawsx_vvvmvl
-        .{ .tag = @enumFromInt(2904), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2904), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawsx_vvvvl
-        .{ .tag = @enumFromInt(2905), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2905), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawzx_vvsl
-        .{ .tag = @enumFromInt(2906), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2906), .properties = .{ .param_str = "V256dV256diUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawzx_vvsmvl
-        .{ .tag = @enumFromInt(2907), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2907), .properties = .{ .param_str = "V256dV256diV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawzx_vvsvl
-        .{ .tag = @enumFromInt(2908), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2908), .properties = .{ .param_str = "V256dV256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawzx_vvvl
-        .{ .tag = @enumFromInt(2909), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2909), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawzx_vvvmvl
-        .{ .tag = @enumFromInt(2910), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2910), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrawzx_vvvvl
-        .{ .tag = @enumFromInt(2911), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2911), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrl_vvsl
-        .{ .tag = @enumFromInt(2912), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2912), .properties = .{ .param_str = "V256dV256dLUiUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrl_vvsmvl
-        .{ .tag = @enumFromInt(2913), .properties = .{ .param_str = "V256dV256dLUiV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2913), .properties = .{ .param_str = "V256dV256dLUiV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrl_vvsvl
-        .{ .tag = @enumFromInt(2914), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2914), .properties = .{ .param_str = "V256dV256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrl_vvvl
-        .{ .tag = @enumFromInt(2915), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2915), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrl_vvvmvl
-        .{ .tag = @enumFromInt(2916), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2916), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsrl_vvvvl
-        .{ .tag = @enumFromInt(2917), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2917), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vst2d_vssl
-        .{ .tag = @enumFromInt(2918), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2918), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vst2d_vssml
-        .{ .tag = @enumFromInt(2919), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2919), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vst2dnc_vssl
-        .{ .tag = @enumFromInt(2920), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2920), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vst2dnc_vssml
-        .{ .tag = @enumFromInt(2921), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2921), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vst2dncot_vssl
-        .{ .tag = @enumFromInt(2922), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2922), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vst2dncot_vssml
-        .{ .tag = @enumFromInt(2923), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2923), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vst2dot_vssl
-        .{ .tag = @enumFromInt(2924), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2924), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vst2dot_vssml
-        .{ .tag = @enumFromInt(2925), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2925), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vst_vssl
-        .{ .tag = @enumFromInt(2926), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2926), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vst_vssml
-        .{ .tag = @enumFromInt(2927), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2927), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstl2d_vssl
-        .{ .tag = @enumFromInt(2928), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2928), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstl2d_vssml
-        .{ .tag = @enumFromInt(2929), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2929), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstl2dnc_vssl
-        .{ .tag = @enumFromInt(2930), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2930), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstl2dnc_vssml
-        .{ .tag = @enumFromInt(2931), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2931), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstl2dncot_vssl
-        .{ .tag = @enumFromInt(2932), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2932), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstl2dncot_vssml
-        .{ .tag = @enumFromInt(2933), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2933), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstl2dot_vssl
-        .{ .tag = @enumFromInt(2934), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2934), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstl2dot_vssml
-        .{ .tag = @enumFromInt(2935), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2935), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstl_vssl
-        .{ .tag = @enumFromInt(2936), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2936), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstl_vssml
-        .{ .tag = @enumFromInt(2937), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2937), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstlnc_vssl
-        .{ .tag = @enumFromInt(2938), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2938), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstlnc_vssml
-        .{ .tag = @enumFromInt(2939), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2939), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstlncot_vssl
-        .{ .tag = @enumFromInt(2940), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2940), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstlncot_vssml
-        .{ .tag = @enumFromInt(2941), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2941), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstlot_vssl
-        .{ .tag = @enumFromInt(2942), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2942), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstlot_vssml
-        .{ .tag = @enumFromInt(2943), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2943), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstnc_vssl
-        .{ .tag = @enumFromInt(2944), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2944), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstnc_vssml
-        .{ .tag = @enumFromInt(2945), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2945), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstncot_vssl
-        .{ .tag = @enumFromInt(2946), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2946), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstncot_vssml
-        .{ .tag = @enumFromInt(2947), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2947), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstot_vssl
-        .{ .tag = @enumFromInt(2948), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2948), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstot_vssml
-        .{ .tag = @enumFromInt(2949), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2949), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstu2d_vssl
-        .{ .tag = @enumFromInt(2950), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2950), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstu2d_vssml
-        .{ .tag = @enumFromInt(2951), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2951), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstu2dnc_vssl
-        .{ .tag = @enumFromInt(2952), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2952), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstu2dnc_vssml
-        .{ .tag = @enumFromInt(2953), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2953), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstu2dncot_vssl
-        .{ .tag = @enumFromInt(2954), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2954), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstu2dncot_vssml
-        .{ .tag = @enumFromInt(2955), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2955), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstu2dot_vssl
-        .{ .tag = @enumFromInt(2956), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2956), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstu2dot_vssml
-        .{ .tag = @enumFromInt(2957), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2957), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstu_vssl
-        .{ .tag = @enumFromInt(2958), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2958), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstu_vssml
-        .{ .tag = @enumFromInt(2959), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2959), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstunc_vssl
-        .{ .tag = @enumFromInt(2960), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2960), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstunc_vssml
-        .{ .tag = @enumFromInt(2961), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2961), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstuncot_vssl
-        .{ .tag = @enumFromInt(2962), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2962), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstuncot_vssml
-        .{ .tag = @enumFromInt(2963), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2963), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstuot_vssl
-        .{ .tag = @enumFromInt(2964), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2964), .properties = .{ .param_str = "vV256dLUiv*Ui", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vstuot_vssml
-        .{ .tag = @enumFromInt(2965), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2965), .properties = .{ .param_str = "vV256dLUiv*V256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubsl_vsvl
-        .{ .tag = @enumFromInt(2966), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2966), .properties = .{ .param_str = "V256dLiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubsl_vsvmvl
-        .{ .tag = @enumFromInt(2967), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2967), .properties = .{ .param_str = "V256dLiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubsl_vsvvl
-        .{ .tag = @enumFromInt(2968), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2968), .properties = .{ .param_str = "V256dLiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubsl_vvvl
-        .{ .tag = @enumFromInt(2969), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2969), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubsl_vvvmvl
-        .{ .tag = @enumFromInt(2970), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2970), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubsl_vvvvl
-        .{ .tag = @enumFromInt(2971), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2971), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswsx_vsvl
-        .{ .tag = @enumFromInt(2972), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2972), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswsx_vsvmvl
-        .{ .tag = @enumFromInt(2973), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2973), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswsx_vsvvl
-        .{ .tag = @enumFromInt(2974), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2974), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswsx_vvvl
-        .{ .tag = @enumFromInt(2975), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2975), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswsx_vvvmvl
-        .{ .tag = @enumFromInt(2976), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2976), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswsx_vvvvl
-        .{ .tag = @enumFromInt(2977), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2977), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswzx_vsvl
-        .{ .tag = @enumFromInt(2978), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2978), .properties = .{ .param_str = "V256diV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswzx_vsvmvl
-        .{ .tag = @enumFromInt(2979), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2979), .properties = .{ .param_str = "V256diV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswzx_vsvvl
-        .{ .tag = @enumFromInt(2980), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2980), .properties = .{ .param_str = "V256diV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswzx_vvvl
-        .{ .tag = @enumFromInt(2981), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2981), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswzx_vvvmvl
-        .{ .tag = @enumFromInt(2982), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2982), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubswzx_vvvvl
-        .{ .tag = @enumFromInt(2983), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2983), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubul_vsvl
-        .{ .tag = @enumFromInt(2984), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2984), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubul_vsvmvl
-        .{ .tag = @enumFromInt(2985), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2985), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubul_vsvvl
-        .{ .tag = @enumFromInt(2986), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2986), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubul_vvvl
-        .{ .tag = @enumFromInt(2987), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2987), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubul_vvvmvl
-        .{ .tag = @enumFromInt(2988), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2988), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubul_vvvvl
-        .{ .tag = @enumFromInt(2989), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2989), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubuw_vsvl
-        .{ .tag = @enumFromInt(2990), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2990), .properties = .{ .param_str = "V256dUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubuw_vsvmvl
-        .{ .tag = @enumFromInt(2991), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2991), .properties = .{ .param_str = "V256dUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubuw_vsvvl
-        .{ .tag = @enumFromInt(2992), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2992), .properties = .{ .param_str = "V256dUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubuw_vvvl
-        .{ .tag = @enumFromInt(2993), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2993), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubuw_vvvmvl
-        .{ .tag = @enumFromInt(2994), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2994), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsubuw_vvvvl
-        .{ .tag = @enumFromInt(2995), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2995), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsuml_vvl
-        .{ .tag = @enumFromInt(2996), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2996), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsuml_vvml
-        .{ .tag = @enumFromInt(2997), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2997), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsumwsx_vvl
-        .{ .tag = @enumFromInt(2998), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2998), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsumwsx_vvml
-        .{ .tag = @enumFromInt(2999), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(2999), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsumwzx_vvl
-        .{ .tag = @enumFromInt(3000), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(3000), .properties = .{ .param_str = "V256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vsumwzx_vvml
-        .{ .tag = @enumFromInt(3001), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(3001), .properties = .{ .param_str = "V256dV256dV256bUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vxor_vsvl
-        .{ .tag = @enumFromInt(3002), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(3002), .properties = .{ .param_str = "V256dLUiV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vxor_vsvmvl
-        .{ .tag = @enumFromInt(3003), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(3003), .properties = .{ .param_str = "V256dLUiV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vxor_vsvvl
-        .{ .tag = @enumFromInt(3004), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(3004), .properties = .{ .param_str = "V256dLUiV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vxor_vvvl
-        .{ .tag = @enumFromInt(3005), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(3005), .properties = .{ .param_str = "V256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vxor_vvvmvl
-        .{ .tag = @enumFromInt(3006), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(3006), .properties = .{ .param_str = "V256dV256dV256dV256bV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_vxor_vvvvl
-        .{ .tag = @enumFromInt(3007), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(3007), .properties = .{ .param_str = "V256dV256dV256dV256dUi", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_xorm_MMM
-        .{ .tag = @enumFromInt(3008), .properties = .{ .param_str = "V512bV512bV512b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(3008), .properties = .{ .param_str = "V512bV512bV512b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_ve_vl_xorm_mmm
-        .{ .tag = @enumFromInt(3009), .properties = .{ .param_str = "V256bV256bV256b", .target_set = TargetSet.initOne(.vevl_gen) } },
+        .{ .tag = @enumFromInt(3009), .properties = .{ .param_str = "V256bV256bV256b", .target_set = TargetSet.init_one(.vevl_gen) } },
         // __builtin_vfprintf
         .{ .tag = @enumFromInt(3010), .properties = .{ .param_str = "iP*RcC*Ra", .attributes = .{ .lib_function_with_builtin_prefix = true, .format_kind = .vprintf, .format_string_position = 1 } } },
         // __builtin_vfscanf
@@ -11202,33 +11202,33 @@ pub const data = blk: {
         // __builtin_vsscanf
         .{ .tag = @enumFromInt(3016), .properties = .{ .param_str = "icC*RcC*Ra", .attributes = .{ .lib_function_with_builtin_prefix = true, .format_kind = .vscanf, .format_string_position = 1 } } },
         // __builtin_wasm_max_f32
-        .{ .tag = @enumFromInt(3017), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3017), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wasm_max_f64
-        .{ .tag = @enumFromInt(3018), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3018), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wasm_memory_grow
-        .{ .tag = @enumFromInt(3019), .properties = .{ .param_str = "zIiz", .target_set = TargetSet.initOne(.webassembly) } },
+        .{ .tag = @enumFromInt(3019), .properties = .{ .param_str = "zIiz", .target_set = TargetSet.init_one(.webassembly) } },
         // __builtin_wasm_memory_size
-        .{ .tag = @enumFromInt(3020), .properties = .{ .param_str = "zIi", .target_set = TargetSet.initOne(.webassembly) } },
+        .{ .tag = @enumFromInt(3020), .properties = .{ .param_str = "zIi", .target_set = TargetSet.init_one(.webassembly) } },
         // __builtin_wasm_min_f32
-        .{ .tag = @enumFromInt(3021), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3021), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wasm_min_f64
-        .{ .tag = @enumFromInt(3022), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3022), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wasm_trunc_s_i32_f32
-        .{ .tag = @enumFromInt(3023), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3023), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wasm_trunc_s_i32_f64
-        .{ .tag = @enumFromInt(3024), .properties = .{ .param_str = "id", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3024), .properties = .{ .param_str = "id", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wasm_trunc_s_i64_f32
-        .{ .tag = @enumFromInt(3025), .properties = .{ .param_str = "LLif", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3025), .properties = .{ .param_str = "LLif", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wasm_trunc_s_i64_f64
-        .{ .tag = @enumFromInt(3026), .properties = .{ .param_str = "LLid", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3026), .properties = .{ .param_str = "LLid", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wasm_trunc_u_i32_f32
-        .{ .tag = @enumFromInt(3027), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3027), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wasm_trunc_u_i32_f64
-        .{ .tag = @enumFromInt(3028), .properties = .{ .param_str = "id", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3028), .properties = .{ .param_str = "id", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wasm_trunc_u_i64_f32
-        .{ .tag = @enumFromInt(3029), .properties = .{ .param_str = "LLif", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3029), .properties = .{ .param_str = "LLif", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wasm_trunc_u_i64_f64
-        .{ .tag = @enumFromInt(3030), .properties = .{ .param_str = "LLid", .target_set = TargetSet.initOne(.webassembly), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3030), .properties = .{ .param_str = "LLid", .target_set = TargetSet.init_one(.webassembly), .attributes = .{ .@"const" = true } } },
         // __builtin_wcschr
         .{ .tag = @enumFromInt(3031), .properties = .{ .param_str = "w*wC*w", .attributes = .{ .lib_function_with_builtin_prefix = true, .const_evaluable = true } } },
         // __builtin_wcscmp
@@ -11280,7 +11280,7 @@ pub const data = blk: {
         // __c11_atomic_thread_fence
         .{ .tag = @enumFromInt(3055), .properties = .{ .param_str = "vi" } },
         // __clear_cache
-        .{ .tag = @enumFromInt(3056), .properties = .{ .param_str = "vv*v*", .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(3056), .properties = .{ .param_str = "vv*v*", .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __cospi
         .{ .tag = @enumFromInt(3057), .properties = .{ .param_str = "dd", .header = .math, .attributes = .{ .lib_function_without_prefix = true, .const_without_errno_and_fp_exceptions = true } } },
         // __cospif
@@ -11288,11 +11288,11 @@ pub const data = blk: {
         // __debugbreak
         .{ .tag = @enumFromInt(3059), .properties = .{ .param_str = "v", .language = .all_ms_languages } },
         // __dmb
-        .{ .tag = @enumFromInt(3060), .properties = .{ .param_str = "vUi", .language = .all_ms_languages, .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3060), .properties = .{ .param_str = "vUi", .language = .all_ms_languages, .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __dsb
-        .{ .tag = @enumFromInt(3061), .properties = .{ .param_str = "vUi", .language = .all_ms_languages, .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3061), .properties = .{ .param_str = "vUi", .language = .all_ms_languages, .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __emit
-        .{ .tag = @enumFromInt(3062), .properties = .{ .param_str = "vIUiC", .language = .all_ms_languages, .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(3062), .properties = .{ .param_str = "vIUiC", .language = .all_ms_languages, .target_set = TargetSet.init_one(.arm) } },
         // __exception_code
         .{ .tag = @enumFromInt(3063), .properties = .{ .param_str = "UNi", .language = .all_ms_languages } },
         // __exception_info
@@ -11310,7 +11310,7 @@ pub const data = blk: {
         // __finitel
         .{ .tag = @enumFromInt(3070), .properties = .{ .param_str = "iLd", .header = .math, .attributes = .{ .@"const" = true, .lib_function_without_prefix = true } } },
         // __isb
-        .{ .tag = @enumFromInt(3071), .properties = .{ .param_str = "vUi", .language = .all_ms_languages, .target_set = TargetSet.initMany(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3071), .properties = .{ .param_str = "vUi", .language = .all_ms_languages, .target_set = TargetSet.init_many(&.{ .aarch64, .arm }), .attributes = .{ .@"const" = true } } },
         // __iso_volatile_load16
         .{ .tag = @enumFromInt(3072), .properties = .{ .param_str = "ssCD*", .language = .all_ms_languages } },
         // __iso_volatile_load32
@@ -11328,7 +11328,7 @@ pub const data = blk: {
         // __iso_volatile_store8
         .{ .tag = @enumFromInt(3079), .properties = .{ .param_str = "vcD*c", .language = .all_ms_languages } },
         // __ldrexd
-        .{ .tag = @enumFromInt(3080), .properties = .{ .param_str = "WiWiCD*", .language = .all_ms_languages, .target_set = TargetSet.initOne(.arm) } },
+        .{ .tag = @enumFromInt(3080), .properties = .{ .param_str = "WiWiCD*", .language = .all_ms_languages, .target_set = TargetSet.init_one(.arm) } },
         // __lzcnt
         .{ .tag = @enumFromInt(3081), .properties = .{ .param_str = "UiUi", .language = .all_ms_languages, .attributes = .{ .@"const" = true, .const_evaluable = true } } },
         // __lzcnt16
@@ -11338,783 +11338,783 @@ pub const data = blk: {
         // __noop
         .{ .tag = @enumFromInt(3084), .properties = .{ .param_str = "i.", .language = .all_ms_languages } },
         // __nvvm_add_rm_d
-        .{ .tag = @enumFromInt(3085), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3085), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_add_rm_f
-        .{ .tag = @enumFromInt(3086), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3086), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_add_rm_ftz_f
-        .{ .tag = @enumFromInt(3087), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3087), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_add_rn_d
-        .{ .tag = @enumFromInt(3088), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3088), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_add_rn_f
-        .{ .tag = @enumFromInt(3089), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3089), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_add_rn_ftz_f
-        .{ .tag = @enumFromInt(3090), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3090), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_add_rp_d
-        .{ .tag = @enumFromInt(3091), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3091), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_add_rp_f
-        .{ .tag = @enumFromInt(3092), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3092), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_add_rp_ftz_f
-        .{ .tag = @enumFromInt(3093), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3093), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_add_rz_d
-        .{ .tag = @enumFromInt(3094), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3094), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_add_rz_f
-        .{ .tag = @enumFromInt(3095), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3095), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_add_rz_ftz_f
-        .{ .tag = @enumFromInt(3096), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3096), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_add_gen_f
-        .{ .tag = @enumFromInt(3097), .properties = .{ .param_str = "ffD*f", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3097), .properties = .{ .param_str = "ffD*f", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_add_gen_i
-        .{ .tag = @enumFromInt(3098), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3098), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_add_gen_l
-        .{ .tag = @enumFromInt(3099), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3099), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_add_gen_ll
-        .{ .tag = @enumFromInt(3100), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3100), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_and_gen_i
-        .{ .tag = @enumFromInt(3101), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3101), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_and_gen_l
-        .{ .tag = @enumFromInt(3102), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3102), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_and_gen_ll
-        .{ .tag = @enumFromInt(3103), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3103), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_cas_gen_i
-        .{ .tag = @enumFromInt(3104), .properties = .{ .param_str = "iiD*ii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3104), .properties = .{ .param_str = "iiD*ii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_cas_gen_l
-        .{ .tag = @enumFromInt(3105), .properties = .{ .param_str = "LiLiD*LiLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3105), .properties = .{ .param_str = "LiLiD*LiLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_cas_gen_ll
-        .{ .tag = @enumFromInt(3106), .properties = .{ .param_str = "LLiLLiD*LLiLLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3106), .properties = .{ .param_str = "LLiLLiD*LLiLLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_dec_gen_ui
-        .{ .tag = @enumFromInt(3107), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3107), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_inc_gen_ui
-        .{ .tag = @enumFromInt(3108), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3108), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_max_gen_i
-        .{ .tag = @enumFromInt(3109), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3109), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_max_gen_l
-        .{ .tag = @enumFromInt(3110), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3110), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_max_gen_ll
-        .{ .tag = @enumFromInt(3111), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3111), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_max_gen_ui
-        .{ .tag = @enumFromInt(3112), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3112), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_max_gen_ul
-        .{ .tag = @enumFromInt(3113), .properties = .{ .param_str = "ULiULiD*ULi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3113), .properties = .{ .param_str = "ULiULiD*ULi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_max_gen_ull
-        .{ .tag = @enumFromInt(3114), .properties = .{ .param_str = "ULLiULLiD*ULLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3114), .properties = .{ .param_str = "ULLiULLiD*ULLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_min_gen_i
-        .{ .tag = @enumFromInt(3115), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3115), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_min_gen_l
-        .{ .tag = @enumFromInt(3116), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3116), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_min_gen_ll
-        .{ .tag = @enumFromInt(3117), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3117), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_min_gen_ui
-        .{ .tag = @enumFromInt(3118), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3118), .properties = .{ .param_str = "UiUiD*Ui", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_min_gen_ul
-        .{ .tag = @enumFromInt(3119), .properties = .{ .param_str = "ULiULiD*ULi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3119), .properties = .{ .param_str = "ULiULiD*ULi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_min_gen_ull
-        .{ .tag = @enumFromInt(3120), .properties = .{ .param_str = "ULLiULLiD*ULLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3120), .properties = .{ .param_str = "ULLiULLiD*ULLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_or_gen_i
-        .{ .tag = @enumFromInt(3121), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3121), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_or_gen_l
-        .{ .tag = @enumFromInt(3122), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3122), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_or_gen_ll
-        .{ .tag = @enumFromInt(3123), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3123), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_sub_gen_i
-        .{ .tag = @enumFromInt(3124), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3124), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_sub_gen_l
-        .{ .tag = @enumFromInt(3125), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3125), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_sub_gen_ll
-        .{ .tag = @enumFromInt(3126), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3126), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_xchg_gen_i
-        .{ .tag = @enumFromInt(3127), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3127), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_xchg_gen_l
-        .{ .tag = @enumFromInt(3128), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3128), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_xchg_gen_ll
-        .{ .tag = @enumFromInt(3129), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3129), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_xor_gen_i
-        .{ .tag = @enumFromInt(3130), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3130), .properties = .{ .param_str = "iiD*i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_xor_gen_l
-        .{ .tag = @enumFromInt(3131), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3131), .properties = .{ .param_str = "LiLiD*Li", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_atom_xor_gen_ll
-        .{ .tag = @enumFromInt(3132), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3132), .properties = .{ .param_str = "LLiLLiD*LLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_bar0_and
-        .{ .tag = @enumFromInt(3133), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3133), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_bar0_or
-        .{ .tag = @enumFromInt(3134), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3134), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_bar0_popc
-        .{ .tag = @enumFromInt(3135), .properties = .{ .param_str = "ii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3135), .properties = .{ .param_str = "ii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_bar_sync
-        .{ .tag = @enumFromInt(3136), .properties = .{ .param_str = "vi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3136), .properties = .{ .param_str = "vi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_bitcast_d2ll
-        .{ .tag = @enumFromInt(3137), .properties = .{ .param_str = "LLid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3137), .properties = .{ .param_str = "LLid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_bitcast_f2i
-        .{ .tag = @enumFromInt(3138), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3138), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_bitcast_i2f
-        .{ .tag = @enumFromInt(3139), .properties = .{ .param_str = "fi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3139), .properties = .{ .param_str = "fi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_bitcast_ll2d
-        .{ .tag = @enumFromInt(3140), .properties = .{ .param_str = "dLLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3140), .properties = .{ .param_str = "dLLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ceil_d
-        .{ .tag = @enumFromInt(3141), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3141), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ceil_f
-        .{ .tag = @enumFromInt(3142), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3142), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ceil_ftz_f
-        .{ .tag = @enumFromInt(3143), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3143), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_compiler_error
-        .{ .tag = @enumFromInt(3144), .properties = .{ .param_str = "vcC*4", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3144), .properties = .{ .param_str = "vcC*4", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_compiler_warn
-        .{ .tag = @enumFromInt(3145), .properties = .{ .param_str = "vcC*4", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3145), .properties = .{ .param_str = "vcC*4", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_cos_approx_f
-        .{ .tag = @enumFromInt(3146), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3146), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_cos_approx_ftz_f
-        .{ .tag = @enumFromInt(3147), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3147), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2f_rm
-        .{ .tag = @enumFromInt(3148), .properties = .{ .param_str = "fd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3148), .properties = .{ .param_str = "fd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2f_rm_ftz
-        .{ .tag = @enumFromInt(3149), .properties = .{ .param_str = "fd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3149), .properties = .{ .param_str = "fd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2f_rn
-        .{ .tag = @enumFromInt(3150), .properties = .{ .param_str = "fd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3150), .properties = .{ .param_str = "fd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2f_rn_ftz
-        .{ .tag = @enumFromInt(3151), .properties = .{ .param_str = "fd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3151), .properties = .{ .param_str = "fd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2f_rp
-        .{ .tag = @enumFromInt(3152), .properties = .{ .param_str = "fd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3152), .properties = .{ .param_str = "fd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2f_rp_ftz
-        .{ .tag = @enumFromInt(3153), .properties = .{ .param_str = "fd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3153), .properties = .{ .param_str = "fd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2f_rz
-        .{ .tag = @enumFromInt(3154), .properties = .{ .param_str = "fd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3154), .properties = .{ .param_str = "fd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2f_rz_ftz
-        .{ .tag = @enumFromInt(3155), .properties = .{ .param_str = "fd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3155), .properties = .{ .param_str = "fd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2i_hi
-        .{ .tag = @enumFromInt(3156), .properties = .{ .param_str = "id", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3156), .properties = .{ .param_str = "id", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2i_lo
-        .{ .tag = @enumFromInt(3157), .properties = .{ .param_str = "id", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3157), .properties = .{ .param_str = "id", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2i_rm
-        .{ .tag = @enumFromInt(3158), .properties = .{ .param_str = "id", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3158), .properties = .{ .param_str = "id", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2i_rn
-        .{ .tag = @enumFromInt(3159), .properties = .{ .param_str = "id", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3159), .properties = .{ .param_str = "id", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2i_rp
-        .{ .tag = @enumFromInt(3160), .properties = .{ .param_str = "id", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3160), .properties = .{ .param_str = "id", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2i_rz
-        .{ .tag = @enumFromInt(3161), .properties = .{ .param_str = "id", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3161), .properties = .{ .param_str = "id", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ll_rm
-        .{ .tag = @enumFromInt(3162), .properties = .{ .param_str = "LLid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3162), .properties = .{ .param_str = "LLid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ll_rn
-        .{ .tag = @enumFromInt(3163), .properties = .{ .param_str = "LLid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3163), .properties = .{ .param_str = "LLid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ll_rp
-        .{ .tag = @enumFromInt(3164), .properties = .{ .param_str = "LLid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3164), .properties = .{ .param_str = "LLid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ll_rz
-        .{ .tag = @enumFromInt(3165), .properties = .{ .param_str = "LLid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3165), .properties = .{ .param_str = "LLid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ui_rm
-        .{ .tag = @enumFromInt(3166), .properties = .{ .param_str = "Uid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3166), .properties = .{ .param_str = "Uid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ui_rn
-        .{ .tag = @enumFromInt(3167), .properties = .{ .param_str = "Uid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3167), .properties = .{ .param_str = "Uid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ui_rp
-        .{ .tag = @enumFromInt(3168), .properties = .{ .param_str = "Uid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3168), .properties = .{ .param_str = "Uid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ui_rz
-        .{ .tag = @enumFromInt(3169), .properties = .{ .param_str = "Uid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3169), .properties = .{ .param_str = "Uid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ull_rm
-        .{ .tag = @enumFromInt(3170), .properties = .{ .param_str = "ULLid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3170), .properties = .{ .param_str = "ULLid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ull_rn
-        .{ .tag = @enumFromInt(3171), .properties = .{ .param_str = "ULLid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3171), .properties = .{ .param_str = "ULLid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ull_rp
-        .{ .tag = @enumFromInt(3172), .properties = .{ .param_str = "ULLid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3172), .properties = .{ .param_str = "ULLid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_d2ull_rz
-        .{ .tag = @enumFromInt(3173), .properties = .{ .param_str = "ULLid", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3173), .properties = .{ .param_str = "ULLid", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_approx_f
-        .{ .tag = @enumFromInt(3174), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3174), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_approx_ftz_f
-        .{ .tag = @enumFromInt(3175), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3175), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rm_d
-        .{ .tag = @enumFromInt(3176), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3176), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rm_f
-        .{ .tag = @enumFromInt(3177), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3177), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rm_ftz_f
-        .{ .tag = @enumFromInt(3178), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3178), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rn_d
-        .{ .tag = @enumFromInt(3179), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3179), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rn_f
-        .{ .tag = @enumFromInt(3180), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3180), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rn_ftz_f
-        .{ .tag = @enumFromInt(3181), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3181), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rp_d
-        .{ .tag = @enumFromInt(3182), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3182), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rp_f
-        .{ .tag = @enumFromInt(3183), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3183), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rp_ftz_f
-        .{ .tag = @enumFromInt(3184), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3184), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rz_d
-        .{ .tag = @enumFromInt(3185), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3185), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rz_f
-        .{ .tag = @enumFromInt(3186), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3186), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_div_rz_ftz_f
-        .{ .tag = @enumFromInt(3187), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3187), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ex2_approx_d
-        .{ .tag = @enumFromInt(3188), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3188), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ex2_approx_f
-        .{ .tag = @enumFromInt(3189), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3189), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ex2_approx_ftz_f
-        .{ .tag = @enumFromInt(3190), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3190), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2h_rn
-        .{ .tag = @enumFromInt(3191), .properties = .{ .param_str = "Usf", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3191), .properties = .{ .param_str = "Usf", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2h_rn_ftz
-        .{ .tag = @enumFromInt(3192), .properties = .{ .param_str = "Usf", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3192), .properties = .{ .param_str = "Usf", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2i_rm
-        .{ .tag = @enumFromInt(3193), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3193), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2i_rm_ftz
-        .{ .tag = @enumFromInt(3194), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3194), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2i_rn
-        .{ .tag = @enumFromInt(3195), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3195), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2i_rn_ftz
-        .{ .tag = @enumFromInt(3196), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3196), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2i_rp
-        .{ .tag = @enumFromInt(3197), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3197), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2i_rp_ftz
-        .{ .tag = @enumFromInt(3198), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3198), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2i_rz
-        .{ .tag = @enumFromInt(3199), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3199), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2i_rz_ftz
-        .{ .tag = @enumFromInt(3200), .properties = .{ .param_str = "if", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3200), .properties = .{ .param_str = "if", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ll_rm
-        .{ .tag = @enumFromInt(3201), .properties = .{ .param_str = "LLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3201), .properties = .{ .param_str = "LLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ll_rm_ftz
-        .{ .tag = @enumFromInt(3202), .properties = .{ .param_str = "LLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3202), .properties = .{ .param_str = "LLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ll_rn
-        .{ .tag = @enumFromInt(3203), .properties = .{ .param_str = "LLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3203), .properties = .{ .param_str = "LLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ll_rn_ftz
-        .{ .tag = @enumFromInt(3204), .properties = .{ .param_str = "LLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3204), .properties = .{ .param_str = "LLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ll_rp
-        .{ .tag = @enumFromInt(3205), .properties = .{ .param_str = "LLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3205), .properties = .{ .param_str = "LLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ll_rp_ftz
-        .{ .tag = @enumFromInt(3206), .properties = .{ .param_str = "LLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3206), .properties = .{ .param_str = "LLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ll_rz
-        .{ .tag = @enumFromInt(3207), .properties = .{ .param_str = "LLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3207), .properties = .{ .param_str = "LLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ll_rz_ftz
-        .{ .tag = @enumFromInt(3208), .properties = .{ .param_str = "LLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3208), .properties = .{ .param_str = "LLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ui_rm
-        .{ .tag = @enumFromInt(3209), .properties = .{ .param_str = "Uif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3209), .properties = .{ .param_str = "Uif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ui_rm_ftz
-        .{ .tag = @enumFromInt(3210), .properties = .{ .param_str = "Uif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3210), .properties = .{ .param_str = "Uif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ui_rn
-        .{ .tag = @enumFromInt(3211), .properties = .{ .param_str = "Uif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3211), .properties = .{ .param_str = "Uif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ui_rn_ftz
-        .{ .tag = @enumFromInt(3212), .properties = .{ .param_str = "Uif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3212), .properties = .{ .param_str = "Uif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ui_rp
-        .{ .tag = @enumFromInt(3213), .properties = .{ .param_str = "Uif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3213), .properties = .{ .param_str = "Uif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ui_rp_ftz
-        .{ .tag = @enumFromInt(3214), .properties = .{ .param_str = "Uif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3214), .properties = .{ .param_str = "Uif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ui_rz
-        .{ .tag = @enumFromInt(3215), .properties = .{ .param_str = "Uif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3215), .properties = .{ .param_str = "Uif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ui_rz_ftz
-        .{ .tag = @enumFromInt(3216), .properties = .{ .param_str = "Uif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3216), .properties = .{ .param_str = "Uif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ull_rm
-        .{ .tag = @enumFromInt(3217), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3217), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ull_rm_ftz
-        .{ .tag = @enumFromInt(3218), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3218), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ull_rn
-        .{ .tag = @enumFromInt(3219), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3219), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ull_rn_ftz
-        .{ .tag = @enumFromInt(3220), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3220), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ull_rp
-        .{ .tag = @enumFromInt(3221), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3221), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ull_rp_ftz
-        .{ .tag = @enumFromInt(3222), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3222), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ull_rz
-        .{ .tag = @enumFromInt(3223), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3223), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_f2ull_rz_ftz
-        .{ .tag = @enumFromInt(3224), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3224), .properties = .{ .param_str = "ULLif", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fabs_d
-        .{ .tag = @enumFromInt(3225), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3225), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fabs_f
-        .{ .tag = @enumFromInt(3226), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3226), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fabs_ftz_f
-        .{ .tag = @enumFromInt(3227), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3227), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_floor_d
-        .{ .tag = @enumFromInt(3228), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3228), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_floor_f
-        .{ .tag = @enumFromInt(3229), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3229), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_floor_ftz_f
-        .{ .tag = @enumFromInt(3230), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3230), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rm_d
-        .{ .tag = @enumFromInt(3231), .properties = .{ .param_str = "dddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3231), .properties = .{ .param_str = "dddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rm_f
-        .{ .tag = @enumFromInt(3232), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3232), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rm_ftz_f
-        .{ .tag = @enumFromInt(3233), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3233), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rn_d
-        .{ .tag = @enumFromInt(3234), .properties = .{ .param_str = "dddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3234), .properties = .{ .param_str = "dddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rn_f
-        .{ .tag = @enumFromInt(3235), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3235), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rn_ftz_f
-        .{ .tag = @enumFromInt(3236), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3236), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rp_d
-        .{ .tag = @enumFromInt(3237), .properties = .{ .param_str = "dddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3237), .properties = .{ .param_str = "dddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rp_f
-        .{ .tag = @enumFromInt(3238), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3238), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rp_ftz_f
-        .{ .tag = @enumFromInt(3239), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3239), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rz_d
-        .{ .tag = @enumFromInt(3240), .properties = .{ .param_str = "dddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3240), .properties = .{ .param_str = "dddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rz_f
-        .{ .tag = @enumFromInt(3241), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3241), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fma_rz_ftz_f
-        .{ .tag = @enumFromInt(3242), .properties = .{ .param_str = "ffff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3242), .properties = .{ .param_str = "ffff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fmax_d
-        .{ .tag = @enumFromInt(3243), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3243), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fmax_f
-        .{ .tag = @enumFromInt(3244), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3244), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fmax_ftz_f
-        .{ .tag = @enumFromInt(3245), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3245), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fmin_d
-        .{ .tag = @enumFromInt(3246), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3246), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fmin_f
-        .{ .tag = @enumFromInt(3247), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3247), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_fmin_ftz_f
-        .{ .tag = @enumFromInt(3248), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3248), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_i2d_rm
-        .{ .tag = @enumFromInt(3249), .properties = .{ .param_str = "di", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3249), .properties = .{ .param_str = "di", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_i2d_rn
-        .{ .tag = @enumFromInt(3250), .properties = .{ .param_str = "di", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3250), .properties = .{ .param_str = "di", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_i2d_rp
-        .{ .tag = @enumFromInt(3251), .properties = .{ .param_str = "di", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3251), .properties = .{ .param_str = "di", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_i2d_rz
-        .{ .tag = @enumFromInt(3252), .properties = .{ .param_str = "di", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3252), .properties = .{ .param_str = "di", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_i2f_rm
-        .{ .tag = @enumFromInt(3253), .properties = .{ .param_str = "fi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3253), .properties = .{ .param_str = "fi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_i2f_rn
-        .{ .tag = @enumFromInt(3254), .properties = .{ .param_str = "fi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3254), .properties = .{ .param_str = "fi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_i2f_rp
-        .{ .tag = @enumFromInt(3255), .properties = .{ .param_str = "fi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3255), .properties = .{ .param_str = "fi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_i2f_rz
-        .{ .tag = @enumFromInt(3256), .properties = .{ .param_str = "fi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3256), .properties = .{ .param_str = "fi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_isspacep_const
-        .{ .tag = @enumFromInt(3257), .properties = .{ .param_str = "bvC*", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3257), .properties = .{ .param_str = "bvC*", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_isspacep_global
-        .{ .tag = @enumFromInt(3258), .properties = .{ .param_str = "bvC*", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3258), .properties = .{ .param_str = "bvC*", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_isspacep_local
-        .{ .tag = @enumFromInt(3259), .properties = .{ .param_str = "bvC*", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3259), .properties = .{ .param_str = "bvC*", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_isspacep_shared
-        .{ .tag = @enumFromInt(3260), .properties = .{ .param_str = "bvC*", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3260), .properties = .{ .param_str = "bvC*", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_ldg_c
-        .{ .tag = @enumFromInt(3261), .properties = .{ .param_str = "ccC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3261), .properties = .{ .param_str = "ccC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_c2
-        .{ .tag = @enumFromInt(3262), .properties = .{ .param_str = "E2cE2cC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3262), .properties = .{ .param_str = "E2cE2cC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_c4
-        .{ .tag = @enumFromInt(3263), .properties = .{ .param_str = "E4cE4cC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3263), .properties = .{ .param_str = "E4cE4cC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_d
-        .{ .tag = @enumFromInt(3264), .properties = .{ .param_str = "ddC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3264), .properties = .{ .param_str = "ddC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_d2
-        .{ .tag = @enumFromInt(3265), .properties = .{ .param_str = "E2dE2dC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3265), .properties = .{ .param_str = "E2dE2dC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_f
-        .{ .tag = @enumFromInt(3266), .properties = .{ .param_str = "ffC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3266), .properties = .{ .param_str = "ffC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_f2
-        .{ .tag = @enumFromInt(3267), .properties = .{ .param_str = "E2fE2fC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3267), .properties = .{ .param_str = "E2fE2fC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_f4
-        .{ .tag = @enumFromInt(3268), .properties = .{ .param_str = "E4fE4fC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3268), .properties = .{ .param_str = "E4fE4fC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_h
-        .{ .tag = @enumFromInt(3269), .properties = .{ .param_str = "hhC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3269), .properties = .{ .param_str = "hhC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_h2
-        .{ .tag = @enumFromInt(3270), .properties = .{ .param_str = "E2hE2hC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3270), .properties = .{ .param_str = "E2hE2hC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_i
-        .{ .tag = @enumFromInt(3271), .properties = .{ .param_str = "iiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3271), .properties = .{ .param_str = "iiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_i2
-        .{ .tag = @enumFromInt(3272), .properties = .{ .param_str = "E2iE2iC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3272), .properties = .{ .param_str = "E2iE2iC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_i4
-        .{ .tag = @enumFromInt(3273), .properties = .{ .param_str = "E4iE4iC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3273), .properties = .{ .param_str = "E4iE4iC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_l
-        .{ .tag = @enumFromInt(3274), .properties = .{ .param_str = "LiLiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3274), .properties = .{ .param_str = "LiLiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_l2
-        .{ .tag = @enumFromInt(3275), .properties = .{ .param_str = "E2LiE2LiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3275), .properties = .{ .param_str = "E2LiE2LiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_ll
-        .{ .tag = @enumFromInt(3276), .properties = .{ .param_str = "LLiLLiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3276), .properties = .{ .param_str = "LLiLLiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_ll2
-        .{ .tag = @enumFromInt(3277), .properties = .{ .param_str = "E2LLiE2LLiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3277), .properties = .{ .param_str = "E2LLiE2LLiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_s
-        .{ .tag = @enumFromInt(3278), .properties = .{ .param_str = "ssC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3278), .properties = .{ .param_str = "ssC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_s2
-        .{ .tag = @enumFromInt(3279), .properties = .{ .param_str = "E2sE2sC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3279), .properties = .{ .param_str = "E2sE2sC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_s4
-        .{ .tag = @enumFromInt(3280), .properties = .{ .param_str = "E4sE4sC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3280), .properties = .{ .param_str = "E4sE4sC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_sc
-        .{ .tag = @enumFromInt(3281), .properties = .{ .param_str = "ScScC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3281), .properties = .{ .param_str = "ScScC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_sc2
-        .{ .tag = @enumFromInt(3282), .properties = .{ .param_str = "E2ScE2ScC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3282), .properties = .{ .param_str = "E2ScE2ScC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_sc4
-        .{ .tag = @enumFromInt(3283), .properties = .{ .param_str = "E4ScE4ScC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3283), .properties = .{ .param_str = "E4ScE4ScC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_uc
-        .{ .tag = @enumFromInt(3284), .properties = .{ .param_str = "UcUcC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3284), .properties = .{ .param_str = "UcUcC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_uc2
-        .{ .tag = @enumFromInt(3285), .properties = .{ .param_str = "E2UcE2UcC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3285), .properties = .{ .param_str = "E2UcE2UcC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_uc4
-        .{ .tag = @enumFromInt(3286), .properties = .{ .param_str = "E4UcE4UcC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3286), .properties = .{ .param_str = "E4UcE4UcC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_ui
-        .{ .tag = @enumFromInt(3287), .properties = .{ .param_str = "UiUiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3287), .properties = .{ .param_str = "UiUiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_ui2
-        .{ .tag = @enumFromInt(3288), .properties = .{ .param_str = "E2UiE2UiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3288), .properties = .{ .param_str = "E2UiE2UiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_ui4
-        .{ .tag = @enumFromInt(3289), .properties = .{ .param_str = "E4UiE4UiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3289), .properties = .{ .param_str = "E4UiE4UiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_ul
-        .{ .tag = @enumFromInt(3290), .properties = .{ .param_str = "ULiULiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3290), .properties = .{ .param_str = "ULiULiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_ul2
-        .{ .tag = @enumFromInt(3291), .properties = .{ .param_str = "E2ULiE2ULiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3291), .properties = .{ .param_str = "E2ULiE2ULiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_ull
-        .{ .tag = @enumFromInt(3292), .properties = .{ .param_str = "ULLiULLiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3292), .properties = .{ .param_str = "ULLiULLiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_ull2
-        .{ .tag = @enumFromInt(3293), .properties = .{ .param_str = "E2ULLiE2ULLiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3293), .properties = .{ .param_str = "E2ULLiE2ULLiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_us
-        .{ .tag = @enumFromInt(3294), .properties = .{ .param_str = "UsUsC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3294), .properties = .{ .param_str = "UsUsC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_us2
-        .{ .tag = @enumFromInt(3295), .properties = .{ .param_str = "E2UsE2UsC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3295), .properties = .{ .param_str = "E2UsE2UsC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldg_us4
-        .{ .tag = @enumFromInt(3296), .properties = .{ .param_str = "E4UsE4UsC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3296), .properties = .{ .param_str = "E4UsE4UsC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_c
-        .{ .tag = @enumFromInt(3297), .properties = .{ .param_str = "ccC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3297), .properties = .{ .param_str = "ccC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_c2
-        .{ .tag = @enumFromInt(3298), .properties = .{ .param_str = "E2cE2cC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3298), .properties = .{ .param_str = "E2cE2cC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_c4
-        .{ .tag = @enumFromInt(3299), .properties = .{ .param_str = "E4cE4cC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3299), .properties = .{ .param_str = "E4cE4cC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_d
-        .{ .tag = @enumFromInt(3300), .properties = .{ .param_str = "ddC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3300), .properties = .{ .param_str = "ddC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_d2
-        .{ .tag = @enumFromInt(3301), .properties = .{ .param_str = "E2dE2dC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3301), .properties = .{ .param_str = "E2dE2dC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_f
-        .{ .tag = @enumFromInt(3302), .properties = .{ .param_str = "ffC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3302), .properties = .{ .param_str = "ffC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_f2
-        .{ .tag = @enumFromInt(3303), .properties = .{ .param_str = "E2fE2fC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3303), .properties = .{ .param_str = "E2fE2fC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_f4
-        .{ .tag = @enumFromInt(3304), .properties = .{ .param_str = "E4fE4fC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3304), .properties = .{ .param_str = "E4fE4fC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_h
-        .{ .tag = @enumFromInt(3305), .properties = .{ .param_str = "hhC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3305), .properties = .{ .param_str = "hhC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_h2
-        .{ .tag = @enumFromInt(3306), .properties = .{ .param_str = "E2hE2hC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3306), .properties = .{ .param_str = "E2hE2hC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_i
-        .{ .tag = @enumFromInt(3307), .properties = .{ .param_str = "iiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3307), .properties = .{ .param_str = "iiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_i2
-        .{ .tag = @enumFromInt(3308), .properties = .{ .param_str = "E2iE2iC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3308), .properties = .{ .param_str = "E2iE2iC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_i4
-        .{ .tag = @enumFromInt(3309), .properties = .{ .param_str = "E4iE4iC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3309), .properties = .{ .param_str = "E4iE4iC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_l
-        .{ .tag = @enumFromInt(3310), .properties = .{ .param_str = "LiLiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3310), .properties = .{ .param_str = "LiLiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_l2
-        .{ .tag = @enumFromInt(3311), .properties = .{ .param_str = "E2LiE2LiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3311), .properties = .{ .param_str = "E2LiE2LiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_ll
-        .{ .tag = @enumFromInt(3312), .properties = .{ .param_str = "LLiLLiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3312), .properties = .{ .param_str = "LLiLLiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_ll2
-        .{ .tag = @enumFromInt(3313), .properties = .{ .param_str = "E2LLiE2LLiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3313), .properties = .{ .param_str = "E2LLiE2LLiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_s
-        .{ .tag = @enumFromInt(3314), .properties = .{ .param_str = "ssC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3314), .properties = .{ .param_str = "ssC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_s2
-        .{ .tag = @enumFromInt(3315), .properties = .{ .param_str = "E2sE2sC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3315), .properties = .{ .param_str = "E2sE2sC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_s4
-        .{ .tag = @enumFromInt(3316), .properties = .{ .param_str = "E4sE4sC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3316), .properties = .{ .param_str = "E4sE4sC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_sc
-        .{ .tag = @enumFromInt(3317), .properties = .{ .param_str = "ScScC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3317), .properties = .{ .param_str = "ScScC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_sc2
-        .{ .tag = @enumFromInt(3318), .properties = .{ .param_str = "E2ScE2ScC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3318), .properties = .{ .param_str = "E2ScE2ScC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_sc4
-        .{ .tag = @enumFromInt(3319), .properties = .{ .param_str = "E4ScE4ScC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3319), .properties = .{ .param_str = "E4ScE4ScC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_uc
-        .{ .tag = @enumFromInt(3320), .properties = .{ .param_str = "UcUcC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3320), .properties = .{ .param_str = "UcUcC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_uc2
-        .{ .tag = @enumFromInt(3321), .properties = .{ .param_str = "E2UcE2UcC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3321), .properties = .{ .param_str = "E2UcE2UcC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_uc4
-        .{ .tag = @enumFromInt(3322), .properties = .{ .param_str = "E4UcE4UcC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3322), .properties = .{ .param_str = "E4UcE4UcC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_ui
-        .{ .tag = @enumFromInt(3323), .properties = .{ .param_str = "UiUiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3323), .properties = .{ .param_str = "UiUiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_ui2
-        .{ .tag = @enumFromInt(3324), .properties = .{ .param_str = "E2UiE2UiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3324), .properties = .{ .param_str = "E2UiE2UiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_ui4
-        .{ .tag = @enumFromInt(3325), .properties = .{ .param_str = "E4UiE4UiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3325), .properties = .{ .param_str = "E4UiE4UiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_ul
-        .{ .tag = @enumFromInt(3326), .properties = .{ .param_str = "ULiULiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3326), .properties = .{ .param_str = "ULiULiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_ul2
-        .{ .tag = @enumFromInt(3327), .properties = .{ .param_str = "E2ULiE2ULiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3327), .properties = .{ .param_str = "E2ULiE2ULiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_ull
-        .{ .tag = @enumFromInt(3328), .properties = .{ .param_str = "ULLiULLiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3328), .properties = .{ .param_str = "ULLiULLiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_ull2
-        .{ .tag = @enumFromInt(3329), .properties = .{ .param_str = "E2ULLiE2ULLiC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3329), .properties = .{ .param_str = "E2ULLiE2ULLiC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_us
-        .{ .tag = @enumFromInt(3330), .properties = .{ .param_str = "UsUsC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3330), .properties = .{ .param_str = "UsUsC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_us2
-        .{ .tag = @enumFromInt(3331), .properties = .{ .param_str = "E2UsE2UsC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3331), .properties = .{ .param_str = "E2UsE2UsC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ldu_us4
-        .{ .tag = @enumFromInt(3332), .properties = .{ .param_str = "E4UsE4UsC*", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3332), .properties = .{ .param_str = "E4UsE4UsC*", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_lg2_approx_d
-        .{ .tag = @enumFromInt(3333), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3333), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_lg2_approx_f
-        .{ .tag = @enumFromInt(3334), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3334), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_lg2_approx_ftz_f
-        .{ .tag = @enumFromInt(3335), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3335), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ll2d_rm
-        .{ .tag = @enumFromInt(3336), .properties = .{ .param_str = "dLLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3336), .properties = .{ .param_str = "dLLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ll2d_rn
-        .{ .tag = @enumFromInt(3337), .properties = .{ .param_str = "dLLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3337), .properties = .{ .param_str = "dLLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ll2d_rp
-        .{ .tag = @enumFromInt(3338), .properties = .{ .param_str = "dLLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3338), .properties = .{ .param_str = "dLLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ll2d_rz
-        .{ .tag = @enumFromInt(3339), .properties = .{ .param_str = "dLLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3339), .properties = .{ .param_str = "dLLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ll2f_rm
-        .{ .tag = @enumFromInt(3340), .properties = .{ .param_str = "fLLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3340), .properties = .{ .param_str = "fLLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ll2f_rn
-        .{ .tag = @enumFromInt(3341), .properties = .{ .param_str = "fLLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3341), .properties = .{ .param_str = "fLLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ll2f_rp
-        .{ .tag = @enumFromInt(3342), .properties = .{ .param_str = "fLLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3342), .properties = .{ .param_str = "fLLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ll2f_rz
-        .{ .tag = @enumFromInt(3343), .properties = .{ .param_str = "fLLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3343), .properties = .{ .param_str = "fLLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_lohi_i2d
-        .{ .tag = @enumFromInt(3344), .properties = .{ .param_str = "dii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3344), .properties = .{ .param_str = "dii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_membar_cta
-        .{ .tag = @enumFromInt(3345), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3345), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_membar_gl
-        .{ .tag = @enumFromInt(3346), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3346), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_membar_sys
-        .{ .tag = @enumFromInt(3347), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3347), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_memcpy
-        .{ .tag = @enumFromInt(3348), .properties = .{ .param_str = "vUc*Uc*zi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3348), .properties = .{ .param_str = "vUc*Uc*zi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_memset
-        .{ .tag = @enumFromInt(3349), .properties = .{ .param_str = "vUc*Uczi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3349), .properties = .{ .param_str = "vUc*Uczi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul24_i
-        .{ .tag = @enumFromInt(3350), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3350), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul24_ui
-        .{ .tag = @enumFromInt(3351), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3351), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rm_d
-        .{ .tag = @enumFromInt(3352), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3352), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rm_f
-        .{ .tag = @enumFromInt(3353), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3353), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rm_ftz_f
-        .{ .tag = @enumFromInt(3354), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3354), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rn_d
-        .{ .tag = @enumFromInt(3355), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3355), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rn_f
-        .{ .tag = @enumFromInt(3356), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3356), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rn_ftz_f
-        .{ .tag = @enumFromInt(3357), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3357), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rp_d
-        .{ .tag = @enumFromInt(3358), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3358), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rp_f
-        .{ .tag = @enumFromInt(3359), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3359), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rp_ftz_f
-        .{ .tag = @enumFromInt(3360), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3360), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rz_d
-        .{ .tag = @enumFromInt(3361), .properties = .{ .param_str = "ddd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3361), .properties = .{ .param_str = "ddd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rz_f
-        .{ .tag = @enumFromInt(3362), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3362), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mul_rz_ftz_f
-        .{ .tag = @enumFromInt(3363), .properties = .{ .param_str = "fff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3363), .properties = .{ .param_str = "fff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mulhi_i
-        .{ .tag = @enumFromInt(3364), .properties = .{ .param_str = "iii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3364), .properties = .{ .param_str = "iii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mulhi_ll
-        .{ .tag = @enumFromInt(3365), .properties = .{ .param_str = "LLiLLiLLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3365), .properties = .{ .param_str = "LLiLLiLLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mulhi_ui
-        .{ .tag = @enumFromInt(3366), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3366), .properties = .{ .param_str = "UiUiUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_mulhi_ull
-        .{ .tag = @enumFromInt(3367), .properties = .{ .param_str = "ULLiULLiULLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3367), .properties = .{ .param_str = "ULLiULLiULLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_prmt
-        .{ .tag = @enumFromInt(3368), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3368), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_approx_ftz_d
-        .{ .tag = @enumFromInt(3369), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3369), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_approx_ftz_f
-        .{ .tag = @enumFromInt(3370), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3370), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rm_d
-        .{ .tag = @enumFromInt(3371), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3371), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rm_f
-        .{ .tag = @enumFromInt(3372), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3372), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rm_ftz_f
-        .{ .tag = @enumFromInt(3373), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3373), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rn_d
-        .{ .tag = @enumFromInt(3374), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3374), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rn_f
-        .{ .tag = @enumFromInt(3375), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3375), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rn_ftz_f
-        .{ .tag = @enumFromInt(3376), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3376), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rp_d
-        .{ .tag = @enumFromInt(3377), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3377), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rp_f
-        .{ .tag = @enumFromInt(3378), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3378), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rp_ftz_f
-        .{ .tag = @enumFromInt(3379), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3379), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rz_d
-        .{ .tag = @enumFromInt(3380), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3380), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rz_f
-        .{ .tag = @enumFromInt(3381), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3381), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rcp_rz_ftz_f
-        .{ .tag = @enumFromInt(3382), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3382), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_read_ptx_sreg_clock
-        .{ .tag = @enumFromInt(3383), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3383), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_read_ptx_sreg_clock64
-        .{ .tag = @enumFromInt(3384), .properties = .{ .param_str = "LLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3384), .properties = .{ .param_str = "LLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_read_ptx_sreg_ctaid_w
-        .{ .tag = @enumFromInt(3385), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3385), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_ctaid_x
-        .{ .tag = @enumFromInt(3386), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3386), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_ctaid_y
-        .{ .tag = @enumFromInt(3387), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3387), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_ctaid_z
-        .{ .tag = @enumFromInt(3388), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3388), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_gridid
-        .{ .tag = @enumFromInt(3389), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3389), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_laneid
-        .{ .tag = @enumFromInt(3390), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3390), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_lanemask_eq
-        .{ .tag = @enumFromInt(3391), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3391), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_lanemask_ge
-        .{ .tag = @enumFromInt(3392), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3392), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_lanemask_gt
-        .{ .tag = @enumFromInt(3393), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3393), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_lanemask_le
-        .{ .tag = @enumFromInt(3394), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3394), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_lanemask_lt
-        .{ .tag = @enumFromInt(3395), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3395), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_nctaid_w
-        .{ .tag = @enumFromInt(3396), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3396), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_nctaid_x
-        .{ .tag = @enumFromInt(3397), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3397), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_nctaid_y
-        .{ .tag = @enumFromInt(3398), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3398), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_nctaid_z
-        .{ .tag = @enumFromInt(3399), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3399), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_nsmid
-        .{ .tag = @enumFromInt(3400), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3400), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_ntid_w
-        .{ .tag = @enumFromInt(3401), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3401), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_ntid_x
-        .{ .tag = @enumFromInt(3402), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3402), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_ntid_y
-        .{ .tag = @enumFromInt(3403), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3403), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_ntid_z
-        .{ .tag = @enumFromInt(3404), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3404), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_nwarpid
-        .{ .tag = @enumFromInt(3405), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3405), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_pm0
-        .{ .tag = @enumFromInt(3406), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3406), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_read_ptx_sreg_pm1
-        .{ .tag = @enumFromInt(3407), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3407), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_read_ptx_sreg_pm2
-        .{ .tag = @enumFromInt(3408), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3408), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_read_ptx_sreg_pm3
-        .{ .tag = @enumFromInt(3409), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3409), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_read_ptx_sreg_smid
-        .{ .tag = @enumFromInt(3410), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3410), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_tid_w
-        .{ .tag = @enumFromInt(3411), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3411), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_tid_x
-        .{ .tag = @enumFromInt(3412), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3412), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_tid_y
-        .{ .tag = @enumFromInt(3413), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3413), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_tid_z
-        .{ .tag = @enumFromInt(3414), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3414), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_read_ptx_sreg_warpid
-        .{ .tag = @enumFromInt(3415), .properties = .{ .param_str = "i", .target_set = TargetSet.initOne(.nvptx), .attributes = .{ .@"const" = true } } },
+        .{ .tag = @enumFromInt(3415), .properties = .{ .param_str = "i", .target_set = TargetSet.init_one(.nvptx), .attributes = .{ .@"const" = true } } },
         // __nvvm_round_d
-        .{ .tag = @enumFromInt(3416), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3416), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_round_f
-        .{ .tag = @enumFromInt(3417), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3417), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_round_ftz_f
-        .{ .tag = @enumFromInt(3418), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3418), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rsqrt_approx_d
-        .{ .tag = @enumFromInt(3419), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3419), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rsqrt_approx_f
-        .{ .tag = @enumFromInt(3420), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3420), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_rsqrt_approx_ftz_f
-        .{ .tag = @enumFromInt(3421), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3421), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sad_i
-        .{ .tag = @enumFromInt(3422), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3422), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sad_ui
-        .{ .tag = @enumFromInt(3423), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3423), .properties = .{ .param_str = "UiUiUiUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_saturate_d
-        .{ .tag = @enumFromInt(3424), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3424), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_saturate_f
-        .{ .tag = @enumFromInt(3425), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3425), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_saturate_ftz_f
-        .{ .tag = @enumFromInt(3426), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3426), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_shfl_bfly_f32
-        .{ .tag = @enumFromInt(3427), .properties = .{ .param_str = "ffii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3427), .properties = .{ .param_str = "ffii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_shfl_bfly_i32
-        .{ .tag = @enumFromInt(3428), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3428), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_shfl_down_f32
-        .{ .tag = @enumFromInt(3429), .properties = .{ .param_str = "ffii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3429), .properties = .{ .param_str = "ffii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_shfl_down_i32
-        .{ .tag = @enumFromInt(3430), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3430), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_shfl_idx_f32
-        .{ .tag = @enumFromInt(3431), .properties = .{ .param_str = "ffii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3431), .properties = .{ .param_str = "ffii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_shfl_idx_i32
-        .{ .tag = @enumFromInt(3432), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3432), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_shfl_up_f32
-        .{ .tag = @enumFromInt(3433), .properties = .{ .param_str = "ffii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3433), .properties = .{ .param_str = "ffii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_shfl_up_i32
-        .{ .tag = @enumFromInt(3434), .properties = .{ .param_str = "iiii", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3434), .properties = .{ .param_str = "iiii", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sin_approx_f
-        .{ .tag = @enumFromInt(3435), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3435), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sin_approx_ftz_f
-        .{ .tag = @enumFromInt(3436), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3436), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_approx_f
-        .{ .tag = @enumFromInt(3437), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3437), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_approx_ftz_f
-        .{ .tag = @enumFromInt(3438), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3438), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rm_d
-        .{ .tag = @enumFromInt(3439), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3439), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rm_f
-        .{ .tag = @enumFromInt(3440), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3440), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rm_ftz_f
-        .{ .tag = @enumFromInt(3441), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3441), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rn_d
-        .{ .tag = @enumFromInt(3442), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3442), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rn_f
-        .{ .tag = @enumFromInt(3443), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3443), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rn_ftz_f
-        .{ .tag = @enumFromInt(3444), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3444), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rp_d
-        .{ .tag = @enumFromInt(3445), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3445), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rp_f
-        .{ .tag = @enumFromInt(3446), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3446), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rp_ftz_f
-        .{ .tag = @enumFromInt(3447), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3447), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rz_d
-        .{ .tag = @enumFromInt(3448), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3448), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rz_f
-        .{ .tag = @enumFromInt(3449), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3449), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_sqrt_rz_ftz_f
-        .{ .tag = @enumFromInt(3450), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3450), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_trunc_d
-        .{ .tag = @enumFromInt(3451), .properties = .{ .param_str = "dd", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3451), .properties = .{ .param_str = "dd", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_trunc_f
-        .{ .tag = @enumFromInt(3452), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3452), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_trunc_ftz_f
-        .{ .tag = @enumFromInt(3453), .properties = .{ .param_str = "ff", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3453), .properties = .{ .param_str = "ff", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ui2d_rm
-        .{ .tag = @enumFromInt(3454), .properties = .{ .param_str = "dUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3454), .properties = .{ .param_str = "dUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ui2d_rn
-        .{ .tag = @enumFromInt(3455), .properties = .{ .param_str = "dUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3455), .properties = .{ .param_str = "dUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ui2d_rp
-        .{ .tag = @enumFromInt(3456), .properties = .{ .param_str = "dUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3456), .properties = .{ .param_str = "dUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ui2d_rz
-        .{ .tag = @enumFromInt(3457), .properties = .{ .param_str = "dUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3457), .properties = .{ .param_str = "dUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ui2f_rm
-        .{ .tag = @enumFromInt(3458), .properties = .{ .param_str = "fUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3458), .properties = .{ .param_str = "fUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ui2f_rn
-        .{ .tag = @enumFromInt(3459), .properties = .{ .param_str = "fUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3459), .properties = .{ .param_str = "fUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ui2f_rp
-        .{ .tag = @enumFromInt(3460), .properties = .{ .param_str = "fUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3460), .properties = .{ .param_str = "fUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ui2f_rz
-        .{ .tag = @enumFromInt(3461), .properties = .{ .param_str = "fUi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3461), .properties = .{ .param_str = "fUi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ull2d_rm
-        .{ .tag = @enumFromInt(3462), .properties = .{ .param_str = "dULLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3462), .properties = .{ .param_str = "dULLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ull2d_rn
-        .{ .tag = @enumFromInt(3463), .properties = .{ .param_str = "dULLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3463), .properties = .{ .param_str = "dULLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ull2d_rp
-        .{ .tag = @enumFromInt(3464), .properties = .{ .param_str = "dULLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3464), .properties = .{ .param_str = "dULLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ull2d_rz
-        .{ .tag = @enumFromInt(3465), .properties = .{ .param_str = "dULLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3465), .properties = .{ .param_str = "dULLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ull2f_rm
-        .{ .tag = @enumFromInt(3466), .properties = .{ .param_str = "fULLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3466), .properties = .{ .param_str = "fULLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ull2f_rn
-        .{ .tag = @enumFromInt(3467), .properties = .{ .param_str = "fULLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3467), .properties = .{ .param_str = "fULLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ull2f_rp
-        .{ .tag = @enumFromInt(3468), .properties = .{ .param_str = "fULLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3468), .properties = .{ .param_str = "fULLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_ull2f_rz
-        .{ .tag = @enumFromInt(3469), .properties = .{ .param_str = "fULLi", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3469), .properties = .{ .param_str = "fULLi", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_vote_all
-        .{ .tag = @enumFromInt(3470), .properties = .{ .param_str = "bb", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3470), .properties = .{ .param_str = "bb", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_vote_any
-        .{ .tag = @enumFromInt(3471), .properties = .{ .param_str = "bb", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3471), .properties = .{ .param_str = "bb", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_vote_ballot
-        .{ .tag = @enumFromInt(3472), .properties = .{ .param_str = "Uib", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3472), .properties = .{ .param_str = "Uib", .target_set = TargetSet.init_one(.nvptx) } },
         // __nvvm_vote_uni
-        .{ .tag = @enumFromInt(3473), .properties = .{ .param_str = "bb", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3473), .properties = .{ .param_str = "bb", .target_set = TargetSet.init_one(.nvptx) } },
         // __popcnt
         .{ .tag = @enumFromInt(3474), .properties = .{ .param_str = "UiUi", .language = .all_ms_languages, .attributes = .{ .@"const" = true, .const_evaluable = true } } },
         // __popcnt16
@@ -12122,11 +12122,11 @@ pub const data = blk: {
         // __popcnt64
         .{ .tag = @enumFromInt(3476), .properties = .{ .param_str = "UWiUWi", .language = .all_ms_languages, .attributes = .{ .@"const" = true, .const_evaluable = true } } },
         // __rdtsc
-        .{ .tag = @enumFromInt(3477), .properties = .{ .param_str = "UOi", .target_set = TargetSet.initOne(.x86) } },
+        .{ .tag = @enumFromInt(3477), .properties = .{ .param_str = "UOi", .target_set = TargetSet.init_one(.x86) } },
         // __sev
-        .{ .tag = @enumFromInt(3478), .properties = .{ .param_str = "v", .language = .all_ms_languages, .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(3478), .properties = .{ .param_str = "v", .language = .all_ms_languages, .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __sevl
-        .{ .tag = @enumFromInt(3479), .properties = .{ .param_str = "v", .language = .all_ms_languages, .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(3479), .properties = .{ .param_str = "v", .language = .all_ms_languages, .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __sigsetjmp
         .{ .tag = @enumFromInt(3480), .properties = .{ .param_str = "iSJi", .header = .setjmp, .attributes = .{ .allow_type_mismatch = true, .lib_function_without_prefix = true, .returns_twice = true } } },
         // __sinpi
@@ -12348,7 +12348,7 @@ pub const data = blk: {
         // __sync_xor_and_fetch_8
         .{ .tag = @enumFromInt(3589), .properties = .{ .param_str = "LLiLLiD*LLi.", .attributes = .{ .custom_typecheck = true } } },
         // __syncthreads
-        .{ .tag = @enumFromInt(3590), .properties = .{ .param_str = "v", .target_set = TargetSet.initOne(.nvptx) } },
+        .{ .tag = @enumFromInt(3590), .properties = .{ .param_str = "v", .target_set = TargetSet.init_one(.nvptx) } },
         // __tanpi
         .{ .tag = @enumFromInt(3591), .properties = .{ .param_str = "dd", .header = .math, .attributes = .{ .lib_function_without_prefix = true, .const_without_errno_and_fp_exceptions = true } } },
         // __tanpif
@@ -12358,15 +12358,15 @@ pub const data = blk: {
         // __warn_memset_zero_len
         .{ .tag = @enumFromInt(3594), .properties = .{ .param_str = "v", .attributes = .{ .pure = true } } },
         // __wfe
-        .{ .tag = @enumFromInt(3595), .properties = .{ .param_str = "v", .language = .all_ms_languages, .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(3595), .properties = .{ .param_str = "v", .language = .all_ms_languages, .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __wfi
-        .{ .tag = @enumFromInt(3596), .properties = .{ .param_str = "v", .language = .all_ms_languages, .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(3596), .properties = .{ .param_str = "v", .language = .all_ms_languages, .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // __xray_customevent
         .{ .tag = @enumFromInt(3597), .properties = .{ .param_str = "vcC*z" } },
         // __xray_typedevent
         .{ .tag = @enumFromInt(3598), .properties = .{ .param_str = "vzcC*z" } },
         // __yield
-        .{ .tag = @enumFromInt(3599), .properties = .{ .param_str = "v", .language = .all_ms_languages, .target_set = TargetSet.initMany(&.{ .aarch64, .arm }) } },
+        .{ .tag = @enumFromInt(3599), .properties = .{ .param_str = "v", .language = .all_ms_languages, .target_set = TargetSet.init_many(&.{ .aarch64, .arm }) } },
         // _abnormal_termination
         .{ .tag = @enumFromInt(3600), .properties = .{ .param_str = "i", .language = .all_ms_languages } },
         // _alloca

@@ -65,7 +65,7 @@ pub const Reloc = struct {
     };
 };
 
-/// The returned slice is overwritten by the next call to lowerMir.
+/// The returned slice is overwritten by the next call to lower_mir.
 pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
     insts: []const Instruction,
     relocs: []const Reloc,
@@ -190,7 +190,7 @@ pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
             .pseudo_probe_align_ri_s => {
                 try lower.emit(.none, .@"test", &.{
                     .{ .reg = inst.data.ri.r1 },
-                    .{ .imm = Immediate.s(@bitCast(inst.data.ri.i)) },
+                    .{ .imm = Immediate.s(@bit_cast(inst.data.ri.i)) },
                 });
                 try lower.emit(.none, .jz, &.{
                     .{ .imm = lower.reloc(.{ .inst = index + 1 }) },
@@ -215,7 +215,7 @@ pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
             },
             .pseudo_probe_adjust_unrolled_ri_s => {
                 var offset = page_size;
-                while (offset < @as(i32, @bitCast(inst.data.ri.i))) : (offset += page_size) {
+                while (offset < @as(i32, @bit_cast(inst.data.ri.i))) : (offset += page_size) {
                     try lower.emit(.none, .@"test", &.{
                         .{ .mem = Memory.sib(.dword, .{
                             .base = .{ .reg = inst.data.ri.r1 },
@@ -226,14 +226,14 @@ pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
                 }
                 try lower.emit(.none, .sub, &.{
                     .{ .reg = inst.data.ri.r1 },
-                    .{ .imm = Immediate.s(@bitCast(inst.data.ri.i)) },
+                    .{ .imm = Immediate.s(@bit_cast(inst.data.ri.i)) },
                 });
                 assert(lower.result_insts_len <= pseudo_probe_adjust_unrolled_max_insts);
             },
             .pseudo_probe_adjust_setup_rri_s => {
                 try lower.emit(.none, .mov, &.{
                     .{ .reg = inst.data.rri.r2.to32() },
-                    .{ .imm = Immediate.s(@bitCast(inst.data.rri.i)) },
+                    .{ .imm = Immediate.s(@bit_cast(inst.data.rri.i)) },
                 });
                 try lower.emit(.none, .sub, &.{
                     .{ .reg = inst.data.rri.r1 },
@@ -259,8 +259,8 @@ pub fn lower_mir(lower: *Lower, index: Mir.Inst.Index) Error!struct {
                 });
                 assert(lower.result_insts_len == pseudo_probe_adjust_loop_insts);
             },
-            .pseudo_push_reg_list => try lower.pushPopRegList(.push, inst),
-            .pseudo_pop_reg_list => try lower.pushPopRegList(.pop, inst),
+            .pseudo_push_reg_list => try lower.push_pop_reg_list(.push, inst),
+            .pseudo_pop_reg_list => try lower.push_pop_reg_list(.pop, inst),
 
             .pseudo_dbg_prologue_end_none,
             .pseudo_dbg_line_line_column,
@@ -292,7 +292,7 @@ fn imm(lower: Lower, ops: Mir.Inst.Ops, i: u32) Immediate {
         .i_s,
         .mi_s,
         .rmi_s,
-        => Immediate.s(@bitCast(i)),
+        => Immediate.s(@bit_cast(i)),
 
         .rrri,
         .rri_u,
@@ -306,14 +306,14 @@ fn imm(lower: Lower, ops: Mir.Inst.Ops, i: u32) Immediate {
         .rrmi,
         => Immediate.u(i),
 
-        .ri64 => Immediate.u(lower.mir.extraData(Mir.Imm64, i).data.decode()),
+        .ri64 => Immediate.u(lower.mir.extra_data(Mir.Imm64, i).data.decode()),
 
         else => unreachable,
     };
 }
 
 fn mem(lower: Lower, payload: u32) Memory {
-    return lower.mir.resolveFrameLoc(lower.mir.extraData(Mir.Memory, payload).data).decode();
+    return lower.mir.resolve_frame_loc(lower.mir.extra_data(Mir.Memory, payload).data).decode();
 }
 
 fn reloc(lower: *Lower, target: Reloc.Target) Immediate {
@@ -347,7 +347,7 @@ fn emit(lower: *Lower, prefix: Prefix, mnemonic: Mnemonic, ops: []const Operand)
                     assert(mem_op.sib.scale_index.scale == 0);
 
                     if (lower.bin_file.cast(link.File.Elf)) |elf_file| {
-                        const sym_index = elf_file.zigObjectPtr().?.symbol(sym.sym_index);
+                        const sym_index = elf_file.zig_object_ptr().?.symbol(sym.sym_index);
                         const elf_sym = elf_file.symbol(sym_index);
 
                         if (elf_sym.flags.is_tls) {
@@ -364,7 +364,7 @@ fn emit(lower: *Lower, prefix: Prefix, mnemonic: Mnemonic, ops: []const Operand)
                                 lower.result_insts_len += 1;
                                 _ = lower.reloc(.{ .linker_extern_fn = .{
                                     .atom_index = sym.atom_index,
-                                    .sym_index = try elf_file.getGlobalSymbol("__tls_get_addr", null),
+                                    .sym_index = try elf_file.get_global_symbol("__tls_get_addr", null),
                                 } });
                                 lower.result_insts[lower.result_insts_len] =
                                     try Instruction.new(.none, .call, &[_]Operand{
@@ -375,7 +375,7 @@ fn emit(lower: *Lower, prefix: Prefix, mnemonic: Mnemonic, ops: []const Operand)
                                 emit_mnemonic = .lea;
                                 break :op .{ .mem = Memory.sib(mem_op.sib.ptr_size, .{
                                     .base = .{ .reg = .rax },
-                                    .disp = std.math.minInt(i32),
+                                    .disp = std.math.min_int(i32),
                                 }) };
                             } else {
                                 // Since we are linking statically, we emit LE model directly.
@@ -389,7 +389,7 @@ fn emit(lower: *Lower, prefix: Prefix, mnemonic: Mnemonic, ops: []const Operand)
                                 emit_mnemonic = .lea;
                                 break :op .{ .mem = Memory.sib(mem_op.sib.ptr_size, .{
                                     .base = .{ .reg = .rax },
-                                    .disp = std.math.minInt(i32),
+                                    .disp = std.math.min_int(i32),
                                 }) };
                             }
                         }
@@ -423,8 +423,8 @@ fn emit(lower: *Lower, prefix: Prefix, mnemonic: Mnemonic, ops: []const Operand)
                             else => unreachable,
                         };
                     } else if (lower.bin_file.cast(link.File.MachO)) |macho_file| {
-                        const sym_index = macho_file.getZigObject().?.symbols.items[sym.sym_index];
-                        const macho_sym = macho_file.getSymbol(sym_index);
+                        const sym_index = macho_file.get_zig_object().?.symbols.items[sym.sym_index];
+                        const macho_sym = macho_file.get_symbol(sym_index);
 
                         if (macho_sym.flags.tlv) {
                             _ = lower.reloc(.{ .linker_reloc = sym });
@@ -484,11 +484,11 @@ fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
         .mi_u, .mi_s => inst.data.x.fixes,
         .m => inst.data.x.fixes,
         .extern_fn_reloc, .got_reloc, .direct_reloc, .import_reloc, .tlv_reloc => ._,
-        else => return lower.fail("TODO lower .{s}", .{@tagName(inst.ops)}),
+        else => return lower.fail("TODO lower .{s}", .{@tag_name(inst.ops)}),
     };
     try lower.emit(switch (fixes) {
-        inline else => |tag| comptime if (std.mem.indexOfScalar(u8, @tagName(tag), ' ')) |space|
-            @field(Prefix, @tagName(tag)[0..space])
+        inline else => |tag| comptime if (std.mem.index_of_scalar(u8, @tag_name(tag), ' ')) |space|
+            @field(Prefix, @tag_name(tag)[0..space])
         else
             .none,
     }, mnemonic: {
@@ -498,14 +498,14 @@ fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
         inline for (@typeInfo(Mnemonic).Enum.fields) |field| max_len = @max(field.name.len, max_len);
         var buf: [max_len]u8 = undefined;
 
-        const fixes_name = @tagName(fixes);
-        const pattern = fixes_name[if (std.mem.indexOfScalar(u8, fixes_name, ' ')) |i| i + 1 else 0..];
-        const wildcard_i = std.mem.indexOfScalar(u8, pattern, '_').?;
-        const parts = .{ pattern[0..wildcard_i], @tagName(inst.tag), pattern[wildcard_i + 1 ..] };
+        const fixes_name = @tag_name(fixes);
+        const pattern = fixes_name[if (std.mem.index_of_scalar(u8, fixes_name, ' ')) |i| i + 1 else 0..];
+        const wildcard_i = std.mem.index_of_scalar(u8, pattern, '_').?;
+        const parts = .{ pattern[0..wildcard_i], @tag_name(inst.tag), pattern[wildcard_i + 1 ..] };
         const err_msg = "unsupported mnemonic: ";
-        const mnemonic = std.fmt.bufPrint(&buf, "{s}{s}{s}", parts) catch
+        const mnemonic = std.fmt.buf_print(&buf, "{s}{s}{s}", parts) catch
             return lower.fail(err_msg ++ "'{s}{s}{s}'", parts);
-        break :mnemonic std.meta.stringToEnum(Mnemonic, mnemonic) orelse
+        break :mnemonic std.meta.string_to_enum(Mnemonic, mnemonic) orelse
             return lower.fail(err_msg ++ "'{s}'", .{mnemonic});
     }, switch (inst.ops) {
         .none => &.{},
@@ -559,7 +559,7 @@ fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
             .{ .mem = lower.mem(inst.data.x.payload + 1) },
             .{ .imm = lower.imm(
                 inst.ops,
-                lower.mir.extraData(Mir.Imm32, inst.data.x.payload).data.imm,
+                lower.mir.extra_data(Mir.Imm32, inst.data.x.payload).data.imm,
             ) },
         },
         .rm => &.{
@@ -581,7 +581,7 @@ fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
             .{ .mem = lower.mem(inst.data.rx.payload + 1) },
             .{ .imm = lower.imm(
                 inst.ops,
-                lower.mir.extraData(Mir.Imm32, inst.data.rx.payload).data.imm,
+                lower.mir.extra_data(Mir.Imm32, inst.data.rx.payload).data.imm,
             ) },
         },
         .mr => &.{
@@ -620,7 +620,7 @@ fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
         },
         .got_reloc, .direct_reloc, .import_reloc => ops: {
             const reg = inst.data.rx.r1;
-            const extra = lower.mir.extraData(bits.Symbol, inst.data.rx.payload).data;
+            const extra = lower.mir.extra_data(bits.Symbol, inst.data.rx.payload).data;
             _ = lower.reloc(switch (inst.ops) {
                 .got_reloc => .{ .linker_got = extra },
                 .direct_reloc => .{ .linker_direct = extra },
@@ -629,15 +629,15 @@ fn generic(lower: *Lower, inst: Mir.Inst) Error!void {
             });
             break :ops &.{
                 .{ .reg = reg },
-                .{ .mem = Memory.rip(Memory.PtrSize.fromBitSize(reg.bitSize()), 0) },
+                .{ .mem = Memory.rip(Memory.PtrSize.from_bit_size(reg.bit_size()), 0) },
             };
         },
-        else => return lower.fail("TODO lower {s} {s}", .{ @tagName(inst.tag), @tagName(inst.ops) }),
+        else => return lower.fail("TODO lower {s} {s}", .{ @tag_name(inst.tag), @tag_name(inst.ops) }),
     });
 }
 
 fn push_pop_reg_list(lower: *Lower, comptime mnemonic: Mnemonic, inst: Mir.Inst) Error!void {
-    const callee_preserved_regs = abi.getCalleePreservedRegs(lower.cc);
+    const callee_preserved_regs = abi.get_callee_preserved_regs(lower.cc);
     var it = inst.data.reg_list.iterator(.{ .direction = switch (mnemonic) {
         .push => .reverse,
         .pop => .forward,

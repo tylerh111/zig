@@ -13,13 +13,13 @@ comptime {
 }
 
 pub fn __extendhfsf2(a: common.F16T(f32)) callconv(.C) f32 {
-    return extendf(f32, f16, @as(u16, @bitCast(a)));
+    return extendf(f32, f16, @as(u16, @bit_cast(a)));
 }
 
 fn __gnu_h2f_ieee(a: common.F16T(f32)) callconv(.C) f32 {
-    return extendf(f32, f16, @as(u16, @bitCast(a)));
+    return extendf(f32, f16, @as(u16, @bit_cast(a)));
 }
 
 fn __aeabi_h2f(a: u16) callconv(.AAPCS) f32 {
-    return extendf(f32, f16, @as(u16, @bitCast(a)));
+    return extendf(f32, f16, @as(u16, @bit_cast(a)));
 }

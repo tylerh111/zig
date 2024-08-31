@@ -98,27 +98,27 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
         }
 
         fn stored_block(self: *Self) !bool {
-            self.bits.alignToByte(); // skip padding until byte boundary
+            self.bits.align_to_byte(); // skip padding until byte boundary
             // everyting after this is byte aligned in stored block
             var len = try self.bits.read(u16);
             const nlen = try self.bits.read(u16);
             if (len != ~nlen) return error.WrongStoredBlockNlen;
 
             while (len > 0) {
-                const buf = self.hist.getWritable(len);
-                try self.bits.readAll(buf);
-                len -= @intCast(buf.len);
+                const buf = self.hist.get_writable(len);
+                try self.bits.read_all(buf);
+                len -= @int_cast(buf.len);
             }
             return true;
         }
 
         fn fixed_block(self: *Self) !bool {
             while (!self.hist.full()) {
-                const code = try self.bits.readFixedCode();
+                const code = try self.bits.read_fixed_code();
                 switch (code) {
-                    0...255 => self.hist.write(@intCast(code)),
+                    0...255 => self.hist.write(@int_cast(code)),
                     256 => return true, // end of block
-                    257...285 => try self.fixedDistanceCode(@intCast(code - 257)),
+                    257...285 => try self.fixed_distance_code(@int_cast(code - 257)),
                     else => return error.InvalidCode,
                 }
             }
@@ -129,27 +129,27 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
         // Length code is followed by 5 bits of distance code.
         fn fixed_distance_code(self: *Self, code: u8) !void {
             try self.bits.fill(5 + 5 + 13);
-            const length = try self.decodeLength(code);
-            const distance = try self.decodeDistance(try self.bits.readF(u5, F.buffered | F.reverse));
-            try self.hist.writeMatch(length, distance);
+            const length = try self.decode_length(code);
+            const distance = try self.decode_distance(try self.bits.read_f(u5, F.buffered | F.reverse));
+            try self.hist.write_match(length, distance);
         }
 
         inline fn decode_length(self: *Self, code: u8) !u16 {
             if (code > 28) return error.InvalidCode;
-            const ml = Token.matchLength(code);
+            const ml = Token.match_length(code);
             return if (ml.extra_bits == 0) // 0 - 5 extra bits
                 ml.base
             else
-                ml.base + try self.bits.readN(ml.extra_bits, F.buffered);
+                ml.base + try self.bits.read_n(ml.extra_bits, F.buffered);
         }
 
         fn decode_distance(self: *Self, code: u8) !u16 {
             if (code > 29) return error.InvalidCode;
-            const md = Token.matchDistance(code);
+            const md = Token.match_distance(code);
             return if (md.extra_bits == 0) // 0 - 13 extra bits
                 md.base
             else
-                md.base + try self.bits.readN(md.extra_bits, F.buffered);
+                md.base + try self.bits.read_n(md.extra_bits, F.buffered);
         }
 
         fn dynamic_block_header(self: *Self) !void {
@@ -172,9 +172,9 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
             var dec_lens = [_]u4{0} ** (286 + 30);
             var pos: usize = 0;
             while (pos < hlit + hdist) {
-                const sym = try cl_dec.find(try self.bits.peekF(u7, F.reverse));
+                const sym = try cl_dec.find(try self.bits.peek_f(u7, F.reverse));
                 try self.bits.shift(sym.code_bits);
-                pos += try self.dynamicCodeLength(sym.symbol, &dec_lens, pos);
+                pos += try self.dynamic_code_length(sym.symbol, &dec_lens, pos);
             }
             if (pos > hlit + hdist) {
                 return error.InvalidDynamicBlockHeader;
@@ -197,7 +197,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
             switch (code) {
                 0...15 => {
                     // Represent code lengths of 0 - 15
-                    lens[pos] = @intCast(code);
+                    lens[pos] = @int_cast(code);
                     return 1;
                 },
                 16 => {
@@ -225,7 +225,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
             // Hot path loop!
             while (!self.hist.full()) {
                 try self.bits.fill(15); // optimization so other bit reads can be buffered (avoiding one `if` in hot path)
-                const sym = try self.decodeSymbol(&self.lit_dec);
+                const sym = try self.decode_symbol(&self.lit_dec);
 
                 switch (sym.kind) {
                     .literal => self.hist.write(sym.symbol),
@@ -235,11 +235,11 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
                             try self.bits.fill(5 + 15)
                         else
                             try self.bits.fill(5 + 15 + 13);
-                        const length = try self.decodeLength(sym.symbol);
-                        const dsm = try self.decodeSymbol(&self.dst_dec);
+                        const length = try self.decode_length(sym.symbol);
+                        const dsm = try self.decode_symbol(&self.dst_dec);
                         if (LookaheadType == u32) try self.bits.fill(13);
-                        const distance = try self.decodeDistance(dsm.symbol);
-                        try self.hist.writeMatch(length, distance);
+                        const distance = try self.decode_distance(dsm.symbol);
+                        try self.hist.write_match(length, distance);
                     },
                     .end_of_block => return true,
                 }
@@ -252,7 +252,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
         // used. Shift bit reader for that much bits, those bits are used. And
         // return symbol.
         fn decode_symbol(self: *Self, decoder: anytype) !hfd.Symbol {
-            const sym = try decoder.find(try self.bits.peekF(u15, F.buffered | F.reverse));
+            const sym = try decoder.find(try self.bits.peek_f(u15, F.buffered | F.reverse));
             try self.bits.shift(sym.code_bits);
             return sym;
         }
@@ -260,19 +260,19 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
         fn step(self: *Self) !void {
             switch (self.state) {
                 .protocol_header => {
-                    try container.parseHeader(&self.bits);
+                    try container.parse_header(&self.bits);
                     self.state = .block_header;
                 },
                 .block_header => {
-                    try self.blockHeader();
+                    try self.block_header();
                     self.state = .block;
-                    if (self.block_type == 2) try self.dynamicBlockHeader();
+                    if (self.block_type == 2) try self.dynamic_block_header();
                 },
                 .block => {
                     const done = switch (self.block_type) {
-                        0 => try self.storedBlock(),
-                        1 => try self.fixedBlock(),
-                        2 => try self.dynamicBlock(),
+                        0 => try self.stored_block(),
+                        1 => try self.fixed_block(),
+                        2 => try self.dynamic_block(),
                         else => return error.InvalidBlockType,
                     };
                     if (done) {
@@ -280,8 +280,8 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
                     }
                 },
                 .protocol_footer => {
-                    self.bits.alignToByte();
-                    try container.parseFooter(&self.hasher, &self.bits);
+                    self.bits.align_to_byte();
+                    try container.parse_footer(&self.hasher, &self.bits);
                     self.state = .end;
                 },
                 .end => {},
@@ -300,7 +300,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
         // (uncompressed) data to the provided writer.
         pub fn decompress(self: *Self, writer: anytype) !void {
             while (try self.next()) |buf| {
-                try writer.writeAll(buf);
+                try writer.write_all(buf);
             }
         }
 
@@ -309,7 +309,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
         pub fn unread_bytes(self: Self) usize {
             // There can be no error here: the denominator is not zero, and
             // overflow is not possible since the type is unsigned.
-            return std.math.divCeil(usize, self.bits.nbits, 8) catch unreachable;
+            return std.math.div_ceil(usize, self.bits.nbits, 8) catch unreachable;
         }
 
         // Iterator interface
@@ -329,7 +329,7 @@ pub fn Inflate(comptime container: Container, comptime LookaheadType: type, comp
         /// size of internal buffer.
         pub fn get(self: *Self, limit: usize) Error![]const u8 {
             while (true) {
-                const out = self.hist.readAtMost(limit);
+                const out = self.hist.read_at_most(limit);
                 if (out.len > 0) {
                     self.hasher.update(out);
                     return out;
@@ -391,12 +391,12 @@ test "decompress" {
         },
     };
     for (cases) |c| {
-        var fb = std.io.fixedBufferStream(c.in);
+        var fb = std.io.fixed_buffer_stream(c.in);
         var al = std.ArrayList(u8).init(testing.allocator);
         defer al.deinit();
 
         try decompress(.raw, fb.reader(), al.writer());
-        try testing.expectEqualStrings(c.out, al.items);
+        try testing.expect_equal_strings(c.out, al.items);
     }
 }
 
@@ -448,12 +448,12 @@ test "gzip decompress" {
         },
     };
     for (cases) |c| {
-        var fb = std.io.fixedBufferStream(c.in);
+        var fb = std.io.fixed_buffer_stream(c.in);
         var al = std.ArrayList(u8).init(testing.allocator);
         defer al.deinit();
 
         try decompress(.gzip, fb.reader(), al.writer());
-        try testing.expectEqualStrings(c.out, al.items);
+        try testing.expect_equal_strings(c.out, al.items);
     }
 }
 
@@ -474,12 +474,12 @@ test "zlib decompress" {
         },
     };
     for (cases) |c| {
-        var fb = std.io.fixedBufferStream(c.in);
+        var fb = std.io.fixed_buffer_stream(c.in);
         var al = std.ArrayList(u8).init(testing.allocator);
         defer al.deinit();
 
         try decompress(.zlib, fb.reader(), al.writer());
-        try testing.expectEqualStrings(c.out, al.items);
+        try testing.expect_equal_strings(c.out, al.items);
     }
 }
 
@@ -489,7 +489,7 @@ test "fuzzing tests" {
         out: []const u8 = "",
         err: ?anyerror = null,
     }{
-        .{ .input = "deflate-stream", .out = @embedFile("testdata/fuzz/deflate-stream.expect") }, // 0
+        .{ .input = "deflate-stream", .out = @embed_file("testdata/fuzz/deflate-stream.expect") }, // 0
         .{ .input = "empty-distance-alphabet01" },
         .{ .input = "empty-distance-alphabet02" },
         .{ .input = "end-of-stream", .err = error.EndOfStream },
@@ -532,30 +532,30 @@ test "fuzzing tests" {
     };
 
     inline for (cases, 0..) |c, case_no| {
-        var in = std.io.fixedBufferStream(@embedFile("testdata/fuzz/" ++ c.input ++ ".input"));
+        var in = std.io.fixed_buffer_stream(@embed_file("testdata/fuzz/" ++ c.input ++ ".input"));
         var out = std.ArrayList(u8).init(testing.allocator);
         defer out.deinit();
         errdefer std.debug.print("test case failed {}\n", .{case_no});
 
         if (c.err) |expected_err| {
-            try testing.expectError(expected_err, decompress(.raw, in.reader(), out.writer()));
+            try testing.expect_error(expected_err, decompress(.raw, in.reader(), out.writer()));
         } else {
             try decompress(.raw, in.reader(), out.writer());
-            try testing.expectEqualStrings(c.out, out.items);
+            try testing.expect_equal_strings(c.out, out.items);
         }
     }
 }
 
 test "bug 18966" {
-    const input = @embedFile("testdata/fuzz/bug_18966.input");
-    const expect = @embedFile("testdata/fuzz/bug_18966.expect");
+    const input = @embed_file("testdata/fuzz/bug_18966.input");
+    const expect = @embed_file("testdata/fuzz/bug_18966.expect");
 
-    var in = std.io.fixedBufferStream(input);
+    var in = std.io.fixed_buffer_stream(input);
     var out = std.ArrayList(u8).init(testing.allocator);
     defer out.deinit();
 
     try decompress(.gzip, in.reader(), out.writer());
-    try testing.expectEqualStrings(expect, out.items);
+    try testing.expect_equal_strings(expect, out.items);
 }
 
 test "bug 19895" {
@@ -563,8 +563,8 @@ test "bug 19895" {
         0b0000_0001, 0b0000_1100, 0x00, 0b1111_0011, 0xff, // deflate fixed buffer header len, nlen
         'H', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', 0x0a, // non compressed data
     };
-    var in = std.io.fixedBufferStream(input);
+    var in = std.io.fixed_buffer_stream(input);
     var decomp = decompressor(.raw, in.reader());
     var buf: [0]u8 = undefined;
-    try testing.expectEqual(0, try decomp.read(&buf));
+    try testing.expect_equal(0, try decomp.read(&buf));
 }

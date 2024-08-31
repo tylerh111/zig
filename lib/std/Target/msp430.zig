@@ -11,34 +11,34 @@ pub const Feature = enum {
     hwmultf5,
 };
 
-pub const featureSet = CpuFeature.feature_set_fns(Feature).featureSet;
-pub const featureSetHas = CpuFeature.feature_set_fns(Feature).featureSetHas;
-pub const featureSetHasAny = CpuFeature.feature_set_fns(Feature).featureSetHasAny;
-pub const featureSetHasAll = CpuFeature.feature_set_fns(Feature).featureSetHasAll;
+pub const feature_set = CpuFeature.feature_set_fns(Feature).feature_set;
+pub const feature_set_has = CpuFeature.feature_set_fns(Feature).feature_set_has;
+pub const feature_set_has_any = CpuFeature.feature_set_fns(Feature).feature_set_has_any;
+pub const feature_set_has_all = CpuFeature.feature_set_fns(Feature).feature_set_has_all;
 
 pub const all_features = blk: {
     const len = @typeInfo(Feature).Enum.fields.len;
     std.debug.assert(len <= CpuFeature.Set.needed_bit_count);
     var result: [len]CpuFeature = undefined;
-    result[@intFromEnum(Feature.ext)] = .{
+    result[@int_from_enum(Feature.ext)] = .{
         .llvm_name = "ext",
         .description = "Enable MSP430-X extensions",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hwmult16)] = .{
+    result[@int_from_enum(Feature.hwmult16)] = .{
         .llvm_name = "hwmult16",
         .description = "Enable 16-bit hardware multiplier",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hwmult32)] = .{
+    result[@int_from_enum(Feature.hwmult32)] = .{
         .llvm_name = "hwmult32",
         .description = "Enable 32-bit hardware multiplier",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
-    result[@intFromEnum(Feature.hwmultf5)] = .{
+    result[@int_from_enum(Feature.hwmultf5)] = .{
         .llvm_name = "hwmultf5",
         .description = "Enable F5 series hardware multiplier",
-        .dependencies = featureSet(&[_]Feature{}),
+        .dependencies = feature_set(&[_]Feature{}),
     };
     const ti = @typeInfo(Feature);
     for (&result, 0..) |*elem, i| {
@@ -52,17 +52,17 @@ pub const cpu = struct {
     pub const generic = CpuModel{
         .name = "generic",
         .llvm_name = "generic",
-        .features = featureSet(&[_]Feature{}),
+        .features = feature_set(&[_]Feature{}),
     };
     pub const msp430 = CpuModel{
         .name = "msp430",
         .llvm_name = "msp430",
-        .features = featureSet(&[_]Feature{}),
+        .features = feature_set(&[_]Feature{}),
     };
     pub const msp430x = CpuModel{
         .name = "msp430x",
         .llvm_name = "msp430x",
-        .features = featureSet(&[_]Feature{
+        .features = feature_set(&[_]Feature{
             .ext,
         }),
     };

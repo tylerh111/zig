@@ -1,5 +1,5 @@
 comptime {
-    doSomeAsm();
+    do_some_asm();
 }
 
 fn do_some_asm() void {

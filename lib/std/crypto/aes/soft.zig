@@ -15,26 +15,26 @@ pub const Block = struct {
 
     /// Convert a byte sequence into an internal representation.
     pub inline fn from_bytes(bytes: *const [16]u8) Block {
-        const s0 = mem.readInt(u32, bytes[0..4], .little);
-        const s1 = mem.readInt(u32, bytes[4..8], .little);
-        const s2 = mem.readInt(u32, bytes[8..12], .little);
-        const s3 = mem.readInt(u32, bytes[12..16], .little);
+        const s0 = mem.read_int(u32, bytes[0..4], .little);
+        const s1 = mem.read_int(u32, bytes[4..8], .little);
+        const s2 = mem.read_int(u32, bytes[8..12], .little);
+        const s3 = mem.read_int(u32, bytes[12..16], .little);
         return Block{ .repr = BlockVec{ s0, s1, s2, s3 } };
     }
 
     /// Convert the internal representation of a block into a byte sequence.
     pub inline fn to_bytes(block: Block) [16]u8 {
         var bytes: [16]u8 = undefined;
-        mem.writeInt(u32, bytes[0..4], block.repr[0], .little);
-        mem.writeInt(u32, bytes[4..8], block.repr[1], .little);
-        mem.writeInt(u32, bytes[8..12], block.repr[2], .little);
-        mem.writeInt(u32, bytes[12..16], block.repr[3], .little);
+        mem.write_int(u32, bytes[0..4], block.repr[0], .little);
+        mem.write_int(u32, bytes[4..8], block.repr[1], .little);
+        mem.write_int(u32, bytes[8..12], block.repr[2], .little);
+        mem.write_int(u32, bytes[12..16], block.repr[3], .little);
         return bytes;
     }
 
     /// XOR the block with a byte sequence.
     pub inline fn xor_bytes(block: Block, bytes: *const [16]u8) [16]u8 {
-        const block_bytes = block.toBytes();
+        const block_bytes = block.to_bytes();
         var x: [16]u8 = undefined;
         comptime var i: usize = 0;
         inline while (i < 16) : (i += 1) {
@@ -123,13 +123,13 @@ pub const Block = struct {
         // Last round uses s-box directly and XORs to produce output.
         var x: [4]u8 = undefined;
         x = sbox_lookup(&sbox_encrypt, @as(u8, @truncate(s0)), @as(u8, @truncate(s1 >> 8)), @as(u8, @truncate(s2 >> 16)), @as(u8, @truncate(s3 >> 24)));
-        var t0 = mem.readInt(u32, &x, .little);
+        var t0 = mem.read_int(u32, &x, .little);
         x = sbox_lookup(&sbox_encrypt, @as(u8, @truncate(s1)), @as(u8, @truncate(s2 >> 8)), @as(u8, @truncate(s3 >> 16)), @as(u8, @truncate(s0 >> 24)));
-        var t1 = mem.readInt(u32, &x, .little);
+        var t1 = mem.read_int(u32, &x, .little);
         x = sbox_lookup(&sbox_encrypt, @as(u8, @truncate(s2)), @as(u8, @truncate(s3 >> 8)), @as(u8, @truncate(s0 >> 16)), @as(u8, @truncate(s1 >> 24)));
-        var t2 = mem.readInt(u32, &x, .little);
+        var t2 = mem.read_int(u32, &x, .little);
         x = sbox_lookup(&sbox_encrypt, @as(u8, @truncate(s3)), @as(u8, @truncate(s0 >> 8)), @as(u8, @truncate(s1 >> 16)), @as(u8, @truncate(s2 >> 24)));
-        var t3 = mem.readInt(u32, &x, .little);
+        var t3 = mem.read_int(u32, &x, .little);
 
         t0 ^= round_key.repr[0];
         t1 ^= round_key.repr[1];
@@ -219,13 +219,13 @@ pub const Block = struct {
         // Last round uses s-box directly and XORs to produce output.
         var x: [4]u8 = undefined;
         x = sbox_lookup(&sbox_decrypt, @as(u8, @truncate(s0)), @as(u8, @truncate(s3 >> 8)), @as(u8, @truncate(s2 >> 16)), @as(u8, @truncate(s1 >> 24)));
-        var t0 = mem.readInt(u32, &x, .little);
+        var t0 = mem.read_int(u32, &x, .little);
         x = sbox_lookup(&sbox_decrypt, @as(u8, @truncate(s1)), @as(u8, @truncate(s0 >> 8)), @as(u8, @truncate(s3 >> 16)), @as(u8, @truncate(s2 >> 24)));
-        var t1 = mem.readInt(u32, &x, .little);
+        var t1 = mem.read_int(u32, &x, .little);
         x = sbox_lookup(&sbox_decrypt, @as(u8, @truncate(s2)), @as(u8, @truncate(s1 >> 8)), @as(u8, @truncate(s0 >> 16)), @as(u8, @truncate(s3 >> 24)));
-        var t2 = mem.readInt(u32, &x, .little);
+        var t2 = mem.read_int(u32, &x, .little);
         x = sbox_lookup(&sbox_decrypt, @as(u8, @truncate(s3)), @as(u8, @truncate(s2 >> 8)), @as(u8, @truncate(s1 >> 16)), @as(u8, @truncate(s0 >> 24)));
-        var t3 = mem.readInt(u32, &x, .little);
+        var t3 = mem.read_int(u32, &x, .little);
 
         t0 ^= round_key.repr[0];
         t1 ^= round_key.repr[1];
@@ -315,7 +315,7 @@ pub const Block = struct {
             var i = 0;
             var out: [count]Block = undefined;
             while (i < count) : (i += 1) {
-                out[i] = blocks[i].encryptLast(round_key);
+                out[i] = blocks[i].encrypt_last(round_key);
             }
             return out;
         }
@@ -325,7 +325,7 @@ pub const Block = struct {
             var i = 0;
             var out: [count]Block = undefined;
             while (i < count) : (i += 1) {
-                out[i] = blocks[i].decryptLast(round_key);
+                out[i] = blocks[i].decrypt_last(round_key);
             }
             return out;
         }
@@ -349,14 +349,14 @@ fn KeySchedule(comptime Aes: type) type {
                 // Apply sbox_encrypt to each byte in w.
                 fn func(w: u32) u32 {
                     const x = sbox_lookup(&sbox_key_schedule, @as(u8, @truncate(w)), @as(u8, @truncate(w >> 8)), @as(u8, @truncate(w >> 16)), @as(u8, @truncate(w >> 24)));
-                    return mem.readInt(u32, &x, .little);
+                    return mem.read_int(u32, &x, .little);
                 }
             }.func;
 
             var round_keys: [rounds + 1]Block = undefined;
             comptime var i: usize = 0;
             inline while (i < words_in_key) : (i += 1) {
-                round_keys[i / 4].repr[i % 4] = mem.readInt(u32, key[4 * i ..][0..4], .big);
+                round_keys[i / 4].repr[i % 4] = mem.read_int(u32, key[4 * i ..][0..4], .big);
             }
             inline while (i < round_keys.len * 4) : (i += 1) {
                 var t = round_keys[(i - 1) / 4].repr[(i - 1) % 4];
@@ -369,7 +369,7 @@ fn KeySchedule(comptime Aes: type) type {
             }
             i = 0;
             inline while (i < round_keys.len * 4) : (i += 1) {
-                round_keys[i / 4].repr[i % 4] = @byteSwap(round_keys[i / 4].repr[i % 4]);
+                round_keys[i / 4].repr[i % 4] = @byte_swap(round_keys[i / 4].repr[i % 4]);
             }
             return Self{ .round_keys = round_keys };
         }
@@ -411,7 +411,7 @@ pub fn AesEncryptCtx(comptime Aes: type) type {
 
         /// Create a new encryption context with the given key.
         pub fn init(key: [Aes.key_bits / 8]u8) Self {
-            const key_schedule = KeySchedule(Aes).expandKey(key);
+            const key_schedule = KeySchedule(Aes).expand_key(key);
             return Self{
                 .key_schedule = key_schedule,
             };
@@ -420,7 +420,7 @@ pub fn AesEncryptCtx(comptime Aes: type) type {
         /// Encrypt a single block.
         pub fn encrypt(ctx: Self, dst: *[16]u8, src: *const [16]u8) void {
             const round_keys = ctx.key_schedule.round_keys;
-            var t = Block.fromBytes(src).xorBlocks(round_keys[0]);
+            var t = Block.from_bytes(src).xor_blocks(round_keys[0]);
             comptime var i = 1;
             if (side_channels_mitigations == .full) {
                 inline while (i < rounds) : (i += 1) {
@@ -431,18 +431,18 @@ pub fn AesEncryptCtx(comptime Aes: type) type {
                     t = t.encrypt(round_keys[i]);
                 }
                 inline while (i < rounds - 1) : (i += 1) {
-                    t = t.encryptUnprotected(round_keys[i]);
+                    t = t.encrypt_unprotected(round_keys[i]);
                 }
                 t = t.encrypt(round_keys[i]);
             }
-            t = t.encryptLast(round_keys[rounds]);
-            dst.* = t.toBytes();
+            t = t.encrypt_last(round_keys[rounds]);
+            dst.* = t.to_bytes();
         }
 
         /// Encrypt+XOR a single block.
         pub fn xor(ctx: Self, dst: *[16]u8, src: *const [16]u8, counter: [16]u8) void {
             const round_keys = ctx.key_schedule.round_keys;
-            var t = Block.fromBytes(&counter).xorBlocks(round_keys[0]);
+            var t = Block.from_bytes(&counter).xor_blocks(round_keys[0]);
             comptime var i = 1;
             if (side_channels_mitigations == .full) {
                 inline while (i < rounds) : (i += 1) {
@@ -453,12 +453,12 @@ pub fn AesEncryptCtx(comptime Aes: type) type {
                     t = t.encrypt(round_keys[i]);
                 }
                 inline while (i < rounds - 1) : (i += 1) {
-                    t = t.encryptUnprotected(round_keys[i]);
+                    t = t.encrypt_unprotected(round_keys[i]);
                 }
                 t = t.encrypt(round_keys[i]);
             }
-            t = t.encryptLast(round_keys[rounds]);
-            dst.* = t.xorBytes(src);
+            t = t.encrypt_last(round_keys[rounds]);
+            dst.* = t.xor_bytes(src);
         }
 
         /// Encrypt multiple blocks, possibly leveraging parallelization.
@@ -500,13 +500,13 @@ pub fn AesDecryptCtx(comptime Aes: type) type {
         /// Create a new decryption context with the given key.
         pub fn init(key: [Aes.key_bits / 8]u8) Self {
             const enc_ctx = AesEncryptCtx(Aes).init(key);
-            return initFromEnc(enc_ctx);
+            return init_from_enc(enc_ctx);
         }
 
         /// Decrypt a single block.
         pub fn decrypt(ctx: Self, dst: *[16]u8, src: *const [16]u8) void {
             const inv_round_keys = ctx.key_schedule.round_keys;
-            var t = Block.fromBytes(src).xorBlocks(inv_round_keys[0]);
+            var t = Block.from_bytes(src).xor_blocks(inv_round_keys[0]);
             comptime var i = 1;
             if (side_channels_mitigations == .full) {
                 inline while (i < rounds) : (i += 1) {
@@ -517,12 +517,12 @@ pub fn AesDecryptCtx(comptime Aes: type) type {
                     t = t.decrypt(inv_round_keys[i]);
                 }
                 inline while (i < rounds - 1) : (i += 1) {
-                    t = t.decryptUnprotected(inv_round_keys[i]);
+                    t = t.decrypt_unprotected(inv_round_keys[i]);
                 }
                 t = t.decrypt(inv_round_keys[i]);
             }
-            t = t.decryptLast(inv_round_keys[rounds]);
-            dst.* = t.toBytes();
+            t = t.decrypt_last(inv_round_keys[rounds]);
+            dst.* = t.to_bytes();
         }
 
         /// Decrypt multiple blocks, possibly leveraging parallelization.
@@ -587,11 +587,11 @@ const powx = init: {
     break :init array;
 };
 
-const sbox_encrypt align(64) = generateSbox(false); // S-box for encryption
-const sbox_key_schedule align(64) = generateSbox(false); // S-box only for key schedule, so that it uses distinct L1 cache entries than the S-box used for encryption
-const sbox_decrypt align(64) = generateSbox(true); // S-box for decryption
-const table_encrypt align(64) = generateTable(false); // 4-byte LUTs for encryption
-const table_decrypt align(64) = generateTable(true); // 4-byte LUTs for decryption
+const sbox_encrypt align(64) = generate_sbox(false); // S-box for encryption
+const sbox_key_schedule align(64) = generate_sbox(false); // S-box only for key schedule, so that it uses distinct L1 cache entries than the S-box used for encryption
+const sbox_decrypt align(64) = generate_sbox(true); // S-box for decryption
+const table_encrypt align(64) = generate_table(false); // 4-byte LUTs for encryption
+const table_decrypt align(64) = generate_table(true); // 4-byte LUTs for decryption
 
 // Generate S-box substitution values.
 fn generate_sbox(invert: bool) [256]u8 {
@@ -631,7 +631,7 @@ fn generate_sbox(invert: bool) [256]u8 {
 fn generate_table(invert: bool) [4][256]u32 {
     var table: [4][256]u32 = undefined;
 
-    for (generateSbox(invert), 0..) |value, index| {
+    for (generate_sbox(invert), 0..) |value, index| {
         table[0][index] = math.shl(u32, mul(value, if (invert) 0xb else 0x3), 24);
         table[0][index] |= math.shl(u32, mul(value, if (invert) 0xd else 0x1), 16);
         table[0][index] |= math.shl(u32, mul(value, if (invert) 0x9 else 0x1), 8);
@@ -697,7 +697,7 @@ inline fn sbox_lookup(sbox: *align(64) const [256]u8, idx0: u8, idx1: u8, idx2: 
             t[2][i] = tx[of2];
             t[3][i] = tx[of3];
         }
-        std.mem.doNotOptimizeAway(t);
+        std.mem.do_not_optimize_away(t);
         return [4]u8{
             t[0][idx0 / stride],
             t[1][idx1 / stride],
@@ -716,7 +716,7 @@ inline fn table_lookup(table: *align(64) const [4][256]u32, idx0: u8, idx1: u8, 
             table[3][idx3],
         };
     } else {
-        const table_bytes = @sizeOf(@TypeOf(table[0]));
+        const table_bytes = @size_of(@TypeOf(table[0]));
         const stride = switch (side_channels_mitigations) {
             .none => unreachable,
             .basic => table[0].len / 4,
@@ -736,7 +736,7 @@ inline fn table_lookup(table: *align(64) const [4][256]u32, idx0: u8, idx1: u8, 
             t[2][i] = tx[of2];
             t[3][i] = tx[of3];
         }
-        std.mem.doNotOptimizeAway(t);
+        std.mem.do_not_optimize_away(t);
         return [4]u32{
             t[0][idx0 / stride],
             math.rotl(u32, (&t[1])[idx1 / stride], 8),

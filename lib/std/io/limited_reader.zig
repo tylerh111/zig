@@ -34,12 +34,12 @@ pub fn limited_reader(inner_reader: anytype, bytes_left: u64) LimitedReader(@Typ
 
 test "basic usage" {
     const data = "hello world";
-    var fbs = std.io.fixedBufferStream(data);
-    var early_stream = limitedReader(fbs.reader(), 3);
+    var fbs = std.io.fixed_buffer_stream(data);
+    var early_stream = limited_reader(fbs.reader(), 3);
 
     var buf: [5]u8 = undefined;
-    try testing.expectEqual(@as(usize, 3), try early_stream.reader().read(&buf));
-    try testing.expectEqualSlices(u8, data[0..3], buf[0..3]);
-    try testing.expectEqual(@as(usize, 0), try early_stream.reader().read(&buf));
-    try testing.expectError(error.EndOfStream, early_stream.reader().skipBytes(10, .{}));
+    try testing.expect_equal(@as(usize, 3), try early_stream.reader().read(&buf));
+    try testing.expect_equal_slices(u8, data[0..3], buf[0..3]);
+    try testing.expect_equal(@as(usize, 0), try early_stream.reader().read(&buf));
+    try testing.expect_error(error.EndOfStream, early_stream.reader().skip_bytes(10, .{}));
 }

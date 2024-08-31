@@ -99,7 +99,7 @@ pub fn deinit(self: *ZigObject, allocator: Allocator) void {
     self.lazy_syms.deinit(allocator);
 
     {
-        var it = self.unnamed_consts.valueIterator();
+        var it = self.unnamed_consts.value_iterator();
         while (it.next()) |syms| {
             syms.deinit(allocator);
         }
@@ -130,8 +130,8 @@ pub fn deinit(self: *ZigObject, allocator: Allocator) void {
 }
 
 fn add_nlist(self: *ZigObject, allocator: Allocator) !Symbol.Index {
-    try self.symtab.ensureUnusedCapacity(allocator, 1);
-    const index = @as(Symbol.Index, @intCast(self.symtab.addOneAssumeCapacity()));
+    try self.symtab.ensure_unused_capacity(allocator, 1);
+    const index = @as(Symbol.Index, @int_cast(self.symtab.add_one_assume_capacity()));
     self.symtab.set(index, .{
         .nlist = MachO.null_sym,
         .size = 0,
@@ -142,28 +142,28 @@ fn add_nlist(self: *ZigObject, allocator: Allocator) !Symbol.Index {
 
 pub fn add_atom(self: *ZigObject, macho_file: *MachO) !Symbol.Index {
     const gpa = macho_file.base.comp.gpa;
-    const atom_index = try macho_file.addAtom();
-    const symbol_index = try macho_file.addSymbol();
-    const nlist_index = try self.addNlist(gpa);
+    const atom_index = try macho_file.add_atom();
+    const symbol_index = try macho_file.add_symbol();
+    const nlist_index = try self.add_nlist(gpa);
 
     try self.atoms.append(gpa, atom_index);
     try self.symbols.append(gpa, symbol_index);
 
-    const atom = macho_file.getAtom(atom_index).?;
+    const atom = macho_file.get_atom(atom_index).?;
     atom.file = self.index;
     atom.atom_index = atom_index;
 
-    const symbol = macho_file.getSymbol(symbol_index);
+    const symbol = macho_file.get_symbol(symbol_index);
     symbol.file = self.index;
     symbol.atom = atom_index;
 
     self.symtab.items(.atom)[nlist_index] = atom_index;
     symbol.nlist_idx = nlist_index;
 
-    const relocs_index = @as(u32, @intCast(self.relocs.items.len));
-    const relocs = try self.relocs.addOne(gpa);
+    const relocs_index = @as(u32, @int_cast(self.relocs.items.len));
+    const relocs = try self.relocs.add_one(gpa);
     relocs.* = .{};
-    try atom.addExtra(.{ .rel_index = relocs_index, .rel_count = 0 }, macho_file);
+    try atom.add_extra(.{ .rel_index = relocs_index, .rel_count = 0 }, macho_file);
     atom.flags.relocs = true;
 
     return symbol_index;
@@ -173,7 +173,7 @@ pub fn get_atom_data(self: ZigObject, macho_file: *MachO, atom: Atom, buffer: []
     assert(atom.file == self.index);
     assert(atom.size == buffer.len);
     const sect = macho_file.sections.items(.header)[atom.out_n_sect];
-    assert(!sect.isZerofill());
+    assert(!sect.is_zerofill());
 
     switch (sect.type()) {
         macho.S_THREAD_LOCAL_REGULAR => {
@@ -185,7 +185,7 @@ pub fn get_atom_data(self: ZigObject, macho_file: *MachO, atom: Atom, buffer: []
         },
         else => {
             const file_offset = sect.offset + atom.value;
-            const amt = try macho_file.base.file.?.preadAll(buffer, file_offset);
+            const amt = try macho_file.base.file.?.pread_all(buffer, file_offset);
             if (amt != buffer.len) return error.InputOutput;
         },
     }
@@ -193,15 +193,15 @@ pub fn get_atom_data(self: ZigObject, macho_file: *MachO, atom: Atom, buffer: []
 
 pub fn get_atom_relocs(self: *ZigObject, atom: Atom, macho_file: *MachO) []const Relocation {
     if (!atom.flags.relocs) return &[0]Relocation{};
-    const extra = atom.getExtra(macho_file).?;
+    const extra = atom.get_extra(macho_file).?;
     const relocs = self.relocs.items[extra.rel_index];
     return relocs.items[0..extra.rel_count];
 }
 
 pub fn free_atom_relocs(self: *ZigObject, atom: Atom, macho_file: *MachO) void {
     if (atom.flags.relocs) {
-        const extra = atom.getExtra(macho_file).?;
-        self.relocs.items[extra.rel_index].clearRetainingCapacity();
+        const extra = atom.get_extra(macho_file).?;
+        self.relocs.items[extra.rel_index].clear_retaining_capacity();
     }
 }
 
@@ -210,40 +210,40 @@ pub fn resolve_symbols(self: *ZigObject, macho_file: *MachO) void {
     defer tracy.end();
 
     for (self.symbols.items, 0..) |index, i| {
-        const nlist_idx = @as(Symbol.Index, @intCast(i));
+        const nlist_idx = @as(Symbol.Index, @int_cast(i));
         const nlist = self.symtab.items(.nlist)[nlist_idx];
         const atom_index = self.symtab.items(.atom)[nlist_idx];
 
         if (!nlist.ext()) continue;
         if (nlist.undf() and !nlist.tentative()) continue;
         if (nlist.sect()) {
-            const atom = macho_file.getAtom(atom_index).?;
+            const atom = macho_file.get_atom(atom_index).?;
             if (!atom.flags.alive) continue;
         }
 
-        const symbol = macho_file.getSymbol(index);
-        if (self.asFile().getSymbolRank(.{
+        const symbol = macho_file.get_symbol(index);
+        if (self.as_file().get_symbol_rank(.{
             .archive = false,
-            .weak = nlist.weakDef(),
+            .weak = nlist.weak_def(),
             .tentative = nlist.tentative(),
-        }) < symbol.getSymbolRank(macho_file)) {
+        }) < symbol.get_symbol_rank(macho_file)) {
             const value = if (nlist.sect()) blk: {
-                const atom = macho_file.getAtom(atom_index).?;
-                break :blk nlist.n_value - atom.getInputAddress(macho_file);
+                const atom = macho_file.get_atom(atom_index).?;
+                break :blk nlist.n_value - atom.get_input_address(macho_file);
             } else nlist.n_value;
-            const out_n_sect = if (nlist.sect()) macho_file.getAtom(atom_index).?.out_n_sect else 0;
+            const out_n_sect = if (nlist.sect()) macho_file.get_atom(atom_index).?.out_n_sect else 0;
             symbol.value = value;
             symbol.atom = atom_index;
             symbol.out_n_sect = out_n_sect;
             symbol.nlist_idx = nlist_idx;
             symbol.file = self.index;
-            symbol.flags.weak = nlist.weakDef();
+            symbol.flags.weak = nlist.weak_def();
             symbol.flags.abs = nlist.abs();
             symbol.flags.tentative = nlist.tentative();
             symbol.flags.weak_ref = false;
             symbol.flags.dyn_ref = nlist.n_desc & macho.REFERENCED_DYNAMICALLY != 0;
-            symbol.flags.no_dead_strip = symbol.flags.no_dead_strip or nlist.noDeadStrip();
-            // TODO: symbol.flags.interposable = macho_file.base.isDynLib() and macho_file.options.namespace == .flat and !nlist.pext();
+            symbol.flags.no_dead_strip = symbol.flags.no_dead_strip or nlist.no_dead_strip();
+            // TODO: symbol.flags.interposable = macho_file.base.is_dyn_lib() and macho_file.options.namespace == .flat and !nlist.pext();
             symbol.flags.interposable = false;
 
             if (nlist.sect() and
@@ -254,7 +254,7 @@ pub fn resolve_symbols(self: *ZigObject, macho_file: *MachO) void {
         }
 
         // Regardless of who the winner is, we still merge symbol visibility here.
-        if (nlist.pext() or (nlist.weakDef() and nlist.weakRef())) {
+        if (nlist.pext() or (nlist.weak_def() and nlist.weak_ref())) {
             if (symbol.visibility != .global) {
                 symbol.visibility = .hidden;
             }
@@ -267,7 +267,7 @@ pub fn resolve_symbols(self: *ZigObject, macho_file: *MachO) void {
 pub fn reset_globals(self: *ZigObject, macho_file: *MachO) void {
     for (self.symbols.items, 0..) |sym_index, nlist_idx| {
         if (!self.symtab.items(.nlist)[nlist_idx].ext()) continue;
-        const sym = macho_file.getSymbol(sym_index);
+        const sym = macho_file.get_symbol(sym_index);
         const name = sym.name;
         const global = sym.flags.global;
         const weak_ref = sym.flags.weak_ref;
@@ -286,26 +286,26 @@ pub fn mark_live(self: *ZigObject, macho_file: *MachO) void {
         const nlist = self.symtab.items(.nlist)[nlist_idx];
         if (!nlist.ext()) continue;
 
-        const sym = macho_file.getSymbol(index);
-        const file = sym.getFile(macho_file) orelse continue;
+        const sym = macho_file.get_symbol(index);
+        const file = sym.get_file(macho_file) orelse continue;
         const should_keep = nlist.undf() or (nlist.tentative() and !sym.flags.tentative);
         if (should_keep and file == .object and !file.object.alive) {
             file.object.alive = true;
-            file.object.markLive(macho_file);
+            file.object.mark_live(macho_file);
         }
     }
 }
 
 pub fn check_duplicates(self: *ZigObject, dupes: anytype, macho_file: *MachO) !void {
     for (self.symbols.items, 0..) |index, nlist_idx| {
-        const sym = macho_file.getSymbol(index);
+        const sym = macho_file.get_symbol(index);
         if (sym.visibility != .global) continue;
-        const file = sym.getFile(macho_file) orelse continue;
-        if (file.getIndex() == self.index) continue;
+        const file = sym.get_file(macho_file) orelse continue;
+        if (file.get_index() == self.index) continue;
 
         const nlist = self.symtab.items(.nlist)[nlist_idx];
-        if (!nlist.undf() and !nlist.tentative() and !(nlist.weakDef() or nlist.pext())) {
-            const gop = try dupes.getOrPut(index);
+        if (!nlist.undf() and !nlist.tentative() and !(nlist.weak_def() or nlist.pext())) {
+            const gop = try dupes.get_or_put(index);
             if (!gop.found_existing) {
                 gop.value_ptr.* = .{};
             }
@@ -334,18 +334,18 @@ pub fn dedup_literals(self: *ZigObject, lp: MachO.LiteralPool, macho_file: *Mach
 pub fn read_file_contents(self: *ZigObject, size: usize, macho_file: *MachO) !void {
     const gpa = macho_file.base.comp.gpa;
     try self.data.resize(gpa, size);
-    const amt = try macho_file.base.file.?.preadAll(self.data.items, 0);
+    const amt = try macho_file.base.file.?.pread_all(self.data.items, 0);
     if (amt != size) return error.InputOutput;
 }
 
 pub fn update_ar_symtab(self: ZigObject, ar_symtab: *Archive.ArSymtab, macho_file: *MachO) error{OutOfMemory}!void {
     const gpa = macho_file.base.comp.gpa;
     for (self.symbols.items) |sym_index| {
-        const sym = macho_file.getSymbol(sym_index);
-        const file = sym.getFile(macho_file).?;
-        assert(file.getIndex() == self.index);
+        const sym = macho_file.get_symbol(sym_index);
+        const file = sym.get_file(macho_file).?;
+        assert(file.get_index() == self.index);
         if (!sym.flags.@"export") continue;
-        const off = try ar_symtab.strtab.insert(gpa, sym.getName(macho_file));
+        const off = try ar_symtab.strtab.insert(gpa, sym.get_name(macho_file));
         try ar_symtab.entries.append(gpa, .{ .off = off, .file = self.index });
     }
 }
@@ -357,18 +357,18 @@ pub fn update_ar_size(self: *ZigObject) void {
 pub fn write_ar(self: ZigObject, ar_format: Archive.Format, writer: anytype) !void {
     // Header
     const size = std.math.cast(usize, self.output_ar_state.size) orelse return error.Overflow;
-    try Archive.writeHeader(self.path, size, ar_format, writer);
+    try Archive.write_header(self.path, size, ar_format, writer);
     // Data
-    try writer.writeAll(self.data.items);
+    try writer.write_all(self.data.items);
 }
 
 pub fn scan_relocs(self: *ZigObject, macho_file: *MachO) !void {
     for (self.atoms.items) |atom_index| {
-        const atom = macho_file.getAtom(atom_index) orelse continue;
+        const atom = macho_file.get_atom(atom_index) orelse continue;
         if (!atom.flags.alive) continue;
-        const sect = atom.getInputSection(macho_file);
-        if (sect.isZerofill()) continue;
-        try atom.scanRelocs(macho_file);
+        const sect = atom.get_input_section(macho_file);
+        if (sect.is_zerofill()) continue;
+        try atom.scan_relocs(macho_file);
     }
 }
 
@@ -377,23 +377,23 @@ pub fn calc_symtab_size(self: *ZigObject, macho_file: *MachO) !void {
     defer tracy.end();
 
     for (self.symbols.items) |sym_index| {
-        const sym = macho_file.getSymbol(sym_index);
-        const file = sym.getFile(macho_file) orelse continue;
-        if (file.getIndex() != self.index) continue;
-        if (sym.getAtom(macho_file)) |atom| if (!atom.flags.alive) continue;
+        const sym = macho_file.get_symbol(sym_index);
+        const file = sym.get_file(macho_file) orelse continue;
+        if (file.get_index() != self.index) continue;
+        if (sym.get_atom(macho_file)) |atom| if (!atom.flags.alive) continue;
         sym.flags.output_symtab = true;
-        if (sym.isLocal()) {
-            try sym.addExtra(.{ .symtab = self.output_symtab_ctx.nlocals }, macho_file);
+        if (sym.is_local()) {
+            try sym.add_extra(.{ .symtab = self.output_symtab_ctx.nlocals }, macho_file);
             self.output_symtab_ctx.nlocals += 1;
         } else if (sym.flags.@"export") {
-            try sym.addExtra(.{ .symtab = self.output_symtab_ctx.nexports }, macho_file);
+            try sym.add_extra(.{ .symtab = self.output_symtab_ctx.nexports }, macho_file);
             self.output_symtab_ctx.nexports += 1;
         } else {
             assert(sym.flags.import);
-            try sym.addExtra(.{ .symtab = self.output_symtab_ctx.nimports }, macho_file);
+            try sym.add_extra(.{ .symtab = self.output_symtab_ctx.nimports }, macho_file);
             self.output_symtab_ctx.nimports += 1;
         }
-        self.output_symtab_ctx.strsize += @as(u32, @intCast(sym.getName(macho_file).len + 1));
+        self.output_symtab_ctx.strsize += @as(u32, @int_cast(sym.get_name(macho_file).len + 1));
     }
 }
 
@@ -402,16 +402,16 @@ pub fn write_symtab(self: ZigObject, macho_file: *MachO, ctx: anytype) void {
     defer tracy.end();
 
     for (self.symbols.items) |sym_index| {
-        const sym = macho_file.getSymbol(sym_index);
-        const file = sym.getFile(macho_file) orelse continue;
-        if (file.getIndex() != self.index) continue;
-        const idx = sym.getOutputSymtabIndex(macho_file) orelse continue;
-        const n_strx = @as(u32, @intCast(ctx.strtab.items.len));
-        ctx.strtab.appendSliceAssumeCapacity(sym.getName(macho_file));
-        ctx.strtab.appendAssumeCapacity(0);
+        const sym = macho_file.get_symbol(sym_index);
+        const file = sym.get_file(macho_file) orelse continue;
+        if (file.get_index() != self.index) continue;
+        const idx = sym.get_output_symtab_index(macho_file) orelse continue;
+        const n_strx = @as(u32, @int_cast(ctx.strtab.items.len));
+        ctx.strtab.append_slice_assume_capacity(sym.get_name(macho_file));
+        ctx.strtab.append_assume_capacity(0);
         const out_sym = &ctx.symtab.items[idx];
         out_sym.n_strx = n_strx;
-        sym.setOutputSym(macho_file, out_sym);
+        sym.set_output_sym(macho_file, out_sym);
     }
 }
 
@@ -421,28 +421,28 @@ pub fn get_input_section(self: ZigObject, atom: Atom, macho_file: *MachO) macho.
     sect.addr = 0;
     sect.offset = 0;
     sect.size = atom.size;
-    sect.@"align" = atom.alignment.toLog2Units();
+    sect.@"align" = atom.alignment.to_log2_units();
     return sect;
 }
 
 pub fn flush_module(self: *ZigObject, macho_file: *MachO) !void {
     // Handle any lazy symbols that were emitted by incremental compilation.
-    if (self.lazy_syms.getPtr(.none)) |metadata| {
+    if (self.lazy_syms.get_ptr(.none)) |metadata| {
         const zcu = macho_file.base.comp.module.?;
 
         // Most lazy symbols can be updated on first use, but
         // anyerror needs to wait for everything to be flushed.
-        if (metadata.text_state != .unused) self.updateLazySymbol(
+        if (metadata.text_state != .unused) self.update_lazy_symbol(
             macho_file,
-            link.File.LazySymbol.initDecl(.code, null, zcu),
+            link.File.LazySymbol.init_decl(.code, null, zcu),
             metadata.text_symbol_index,
         ) catch |err| return switch (err) {
             error.CodegenFail => error.FlushFailure,
             else => |e| e,
         };
-        if (metadata.const_state != .unused) self.updateLazySymbol(
+        if (metadata.const_state != .unused) self.update_lazy_symbol(
             macho_file,
-            link.File.LazySymbol.initDecl(.const_data, null, zcu),
+            link.File.LazySymbol.init_decl(.const_data, null, zcu),
             metadata.const_symbol_index,
         ) catch |err| return switch (err) {
             error.CodegenFail => error.FlushFailure,
@@ -456,10 +456,10 @@ pub fn flush_module(self: *ZigObject, macho_file: *MachO) !void {
 
     if (self.dwarf) |*dw| {
         const zcu = macho_file.base.comp.module.?;
-        try dw.flushModule(zcu);
+        try dw.flush_module(zcu);
 
         if (self.debug_abbrev_dirty) {
-            try dw.writeDbgAbbrev();
+            try dw.write_dbg_abbrev();
             self.debug_abbrev_dirty = false;
         }
 
@@ -469,7 +469,7 @@ pub fn flush_module(self: *ZigObject, macho_file: *MachO) !void {
             const text_section = macho_file.sections.items(.header)[macho_file.zig_text_sect_index.?];
             const low_pc = text_section.addr;
             const high_pc = text_section.addr + text_section.size;
-            try dw.writeDbgInfoHeader(zcu, low_pc, high_pc);
+            try dw.write_dbg_info_header(zcu, low_pc, high_pc);
             self.debug_info_header_dirty = false;
         }
 
@@ -477,36 +477,36 @@ pub fn flush_module(self: *ZigObject, macho_file: *MachO) !void {
             // Currently only one compilation unit is supported, so the address range is simply
             // identical to the main program header virtual address and memory size.
             const text_section = macho_file.sections.items(.header)[macho_file.zig_text_sect_index.?];
-            try dw.writeDbgAranges(text_section.addr, text_section.size);
+            try dw.write_dbg_aranges(text_section.addr, text_section.size);
             self.debug_aranges_dirty = false;
         }
 
         if (self.debug_line_header_dirty) {
-            try dw.writeDbgLineHeader();
+            try dw.write_dbg_line_header();
             self.debug_line_header_dirty = false;
         }
 
-        if (!macho_file.base.isRelocatable()) {
-            const d_sym = macho_file.getDebugSymbols().?;
+        if (!macho_file.base.is_relocatable()) {
+            const d_sym = macho_file.get_debug_symbols().?;
             const sect_index = d_sym.debug_str_section_index.?;
-            if (self.debug_strtab_dirty or dw.strtab.buffer.items.len != d_sym.getSection(sect_index).size) {
-                const needed_size = @as(u32, @intCast(dw.strtab.buffer.items.len));
-                try d_sym.growSection(sect_index, needed_size, false, macho_file);
-                try d_sym.file.pwriteAll(dw.strtab.buffer.items, d_sym.getSection(sect_index).offset);
+            if (self.debug_strtab_dirty or dw.strtab.buffer.items.len != d_sym.get_section(sect_index).size) {
+                const needed_size = @as(u32, @int_cast(dw.strtab.buffer.items.len));
+                try d_sym.grow_section(sect_index, needed_size, false, macho_file);
+                try d_sym.file.pwrite_all(dw.strtab.buffer.items, d_sym.get_section(sect_index).offset);
                 self.debug_strtab_dirty = false;
             }
         } else {
             const sect_index = macho_file.debug_str_sect_index.?;
             if (self.debug_strtab_dirty or dw.strtab.buffer.items.len != macho_file.sections.items(.header)[sect_index].size) {
-                const needed_size = @as(u32, @intCast(dw.strtab.buffer.items.len));
-                try macho_file.growSection(sect_index, needed_size);
-                try macho_file.base.file.?.pwriteAll(dw.strtab.buffer.items, macho_file.sections.items(.header)[sect_index].offset);
+                const needed_size = @as(u32, @int_cast(dw.strtab.buffer.items.len));
+                try macho_file.grow_section(sect_index, needed_size);
+                try macho_file.base.file.?.pwrite_all(dw.strtab.buffer.items, macho_file.sections.items(.header)[sect_index].offset);
                 self.debug_strtab_dirty = false;
             }
         }
     }
 
-    // The point of flushModule() is to commit changes, so in theory, nothing should
+    // The point of flush_module() is to commit changes, so in theory, nothing should
     // be dirty after this. However, it is possible for some things to remain
     // dirty because they fail to be written in the event of compile errors,
     // such as debug_line_header_dirty and debug_info_header_dirty.
@@ -521,13 +521,13 @@ pub fn get_decl_vaddr(
     decl_index: InternPool.DeclIndex,
     reloc_info: link.File.RelocInfo,
 ) !u64 {
-    const sym_index = try self.getOrCreateMetadataForDecl(macho_file, decl_index);
-    const sym = macho_file.getSymbol(sym_index);
-    const vaddr = sym.getAddress(.{}, macho_file);
-    const parent_atom = macho_file.getSymbol(reloc_info.parent_atom_index).getAtom(macho_file).?;
-    try parent_atom.addReloc(macho_file, .{
+    const sym_index = try self.get_or_create_metadata_for_decl(macho_file, decl_index);
+    const sym = macho_file.get_symbol(sym_index);
+    const vaddr = sym.get_address(.{}, macho_file);
+    const parent_atom = macho_file.get_symbol(reloc_info.parent_atom_index).get_atom(macho_file).?;
+    try parent_atom.add_reloc(macho_file, .{
         .tag = .@"extern",
-        .offset = @intCast(reloc_info.offset),
+        .offset = @int_cast(reloc_info.offset),
         .target = sym_index,
         .addend = reloc_info.addend,
         .type = .unsigned,
@@ -535,7 +535,7 @@ pub fn get_decl_vaddr(
             .pcrel = false,
             .has_subtractor = false,
             .length = 3,
-            .symbolnum = @intCast(sym.nlist_idx),
+            .symbolnum = @int_cast(sym.nlist_idx),
         },
     });
     return vaddr;
@@ -548,12 +548,12 @@ pub fn get_anon_decl_vaddr(
     reloc_info: link.File.RelocInfo,
 ) !u64 {
     const sym_index = self.anon_decls.get(decl_val).?.symbol_index;
-    const sym = macho_file.getSymbol(sym_index);
-    const vaddr = sym.getAddress(.{}, macho_file);
-    const parent_atom = macho_file.getSymbol(reloc_info.parent_atom_index).getAtom(macho_file).?;
-    try parent_atom.addReloc(macho_file, .{
+    const sym = macho_file.get_symbol(sym_index);
+    const vaddr = sym.get_address(.{}, macho_file);
+    const parent_atom = macho_file.get_symbol(reloc_info.parent_atom_index).get_atom(macho_file).?;
+    try parent_atom.add_reloc(macho_file, .{
         .tag = .@"extern",
-        .offset = @intCast(reloc_info.offset),
+        .offset = @int_cast(reloc_info.offset),
         .target = sym_index,
         .addend = reloc_info.addend,
         .type = .unsigned,
@@ -561,7 +561,7 @@ pub fn get_anon_decl_vaddr(
             .pcrel = false,
             .has_subtractor = false,
             .length = 3,
-            .symbolnum = @intCast(sym.nlist_idx),
+            .symbolnum = @int_cast(sym.nlist_idx),
         },
     });
     return vaddr;
@@ -576,25 +576,25 @@ pub fn lower_anon_decl(
 ) !codegen.Result {
     const gpa = macho_file.base.comp.gpa;
     const mod = macho_file.base.comp.module.?;
-    const ty = Type.fromInterned(mod.intern_pool.typeOf(decl_val));
+    const ty = Type.from_interned(mod.intern_pool.type_of(decl_val));
     const decl_alignment = switch (explicit_alignment) {
-        .none => ty.abiAlignment(mod),
+        .none => ty.abi_alignment(mod),
         else => explicit_alignment,
     };
     if (self.anon_decls.get(decl_val)) |metadata| {
-        const existing_alignment = macho_file.getSymbol(metadata.symbol_index).getAtom(macho_file).?.alignment;
+        const existing_alignment = macho_file.get_symbol(metadata.symbol_index).get_atom(macho_file).?.alignment;
         if (decl_alignment.order(existing_alignment).compare(.lte))
             return .ok;
     }
 
     var name_buf: [32]u8 = undefined;
-    const name = std.fmt.bufPrint(&name_buf, "__anon_{d}", .{
-        @intFromEnum(decl_val),
+    const name = std.fmt.buf_print(&name_buf, "__anon_{d}", .{
+        @int_from_enum(decl_val),
     }) catch unreachable;
-    const res = self.lowerConst(
+    const res = self.lower_const(
         macho_file,
         name,
-        Value.fromInterned(decl_val),
+        Value.from_interned(decl_val),
         decl_alignment,
         macho_file.zig_const_sect_index.?,
         src_loc,
@@ -617,18 +617,18 @@ pub fn lower_anon_decl(
 
 fn free_unnamed_consts(self: *ZigObject, macho_file: *MachO, decl_index: InternPool.DeclIndex) void {
     const gpa = macho_file.base.comp.gpa;
-    const unnamed_consts = self.unnamed_consts.getPtr(decl_index) orelse return;
+    const unnamed_consts = self.unnamed_consts.get_ptr(decl_index) orelse return;
     for (unnamed_consts.items) |sym_index| {
-        self.freeDeclMetadata(macho_file, sym_index);
+        self.free_decl_metadata(macho_file, sym_index);
     }
-    unnamed_consts.clearAndFree(gpa);
+    unnamed_consts.clear_and_free(gpa);
 }
 
 fn free_decl_metadata(self: *ZigObject, macho_file: *MachO, sym_index: Symbol.Index) void {
     _ = self;
     const gpa = macho_file.base.comp.gpa;
-    const sym = macho_file.getSymbol(sym_index);
-    sym.getAtom(macho_file).?.free(macho_file);
+    const sym = macho_file.get_symbol(sym_index);
+    sym.get_atom(macho_file).?.free(macho_file);
     log.debug("adding %{d} to local symbols free list", .{sym_index});
     macho_file.symbols_free_list.append(gpa, sym_index) catch {};
     macho_file.symbols.items[sym_index] = .{};
@@ -638,15 +638,15 @@ fn free_decl_metadata(self: *ZigObject, macho_file: *MachO, sym_index: Symbol.In
 pub fn free_decl(self: *ZigObject, macho_file: *MachO, decl_index: InternPool.DeclIndex) void {
     const gpa = macho_file.base.comp.gpa;
     const mod = macho_file.base.comp.module.?;
-    const decl = mod.declPtr(decl_index);
+    const decl = mod.decl_ptr(decl_index);
 
-    log.debug("freeDecl {*}", .{decl});
+    log.debug("free_decl {*}", .{decl});
 
-    if (self.decls.fetchRemove(decl_index)) |const_kv| {
+    if (self.decls.fetch_remove(decl_index)) |const_kv| {
         var kv = const_kv;
         const sym_index = kv.value.symbol_index;
-        self.freeDeclMetadata(macho_file, sym_index);
-        self.freeUnnamedConsts(macho_file, decl_index);
+        self.free_decl_metadata(macho_file, sym_index);
+        self.free_unnamed_consts(macho_file, decl_index);
         kv.value.exports.deinit(gpa);
     }
 
@@ -665,24 +665,24 @@ pub fn update_func(
     defer tracy.end();
 
     const gpa = macho_file.base.comp.gpa;
-    const func = mod.funcInfo(func_index);
+    const func = mod.func_info(func_index);
     const decl_index = func.owner_decl;
-    const decl = mod.declPtr(decl_index);
+    const decl = mod.decl_ptr(decl_index);
 
-    const sym_index = try self.getOrCreateMetadataForDecl(macho_file, decl_index);
-    self.freeUnnamedConsts(macho_file, decl_index);
-    macho_file.getSymbol(sym_index).getAtom(macho_file).?.freeRelocs(macho_file);
+    const sym_index = try self.get_or_create_metadata_for_decl(macho_file, decl_index);
+    self.free_unnamed_consts(macho_file, decl_index);
+    macho_file.get_symbol(sym_index).get_atom(macho_file).?.free_relocs(macho_file);
 
     var code_buffer = std.ArrayList(u8).init(gpa);
     defer code_buffer.deinit();
 
-    var decl_state: ?Dwarf.DeclState = if (self.dwarf) |*dw| try dw.initDeclState(mod, decl_index) else null;
+    var decl_state: ?Dwarf.DeclState = if (self.dwarf) |*dw| try dw.init_decl_state(mod, decl_index) else null;
     defer if (decl_state) |*ds| ds.deinit();
 
     const dio: codegen.DebugInfoOutput = if (decl_state) |*ds| .{ .dwarf = ds } else .none;
-    const res = try codegen.generateFunction(
+    const res = try codegen.generate_function(
         &macho_file.base,
-        decl.srcLoc(mod),
+        decl.src_loc(mod),
         func_index,
         air,
         liveness,
@@ -699,23 +699,23 @@ pub fn update_func(
         },
     };
 
-    const sect_index = try self.getDeclOutputSection(macho_file, decl, code);
-    try self.updateDeclCode(macho_file, decl_index, sym_index, sect_index, code);
+    const sect_index = try self.get_decl_output_section(macho_file, decl, code);
+    try self.update_decl_code(macho_file, decl_index, sym_index, sect_index, code);
 
     if (decl_state) |*ds| {
-        const sym = macho_file.getSymbol(sym_index);
-        try self.dwarf.?.commitDeclState(
+        const sym = macho_file.get_symbol(sym_index);
+        try self.dwarf.?.commit_decl_state(
             mod,
             decl_index,
-            sym.getAddress(.{}, macho_file),
-            sym.getAtom(macho_file).?.size,
+            sym.get_address(.{}, macho_file),
+            sym.get_atom(macho_file).?.size,
             ds,
         );
     }
 
     // Since we updated the vaddr and the size, each corresponding export
     // symbol also needs to be updated.
-    return self.updateExports(macho_file, mod, .{ .decl_index = decl_index }, mod.getDeclExports(decl_index));
+    return self.update_exports(macho_file, mod, .{ .decl_index = decl_index }, mod.get_decl_exports(decl_index));
 }
 
 pub fn update_decl(
@@ -727,36 +727,36 @@ pub fn update_decl(
     const tracy = trace(@src());
     defer tracy.end();
 
-    const decl = mod.declPtr(decl_index);
+    const decl = mod.decl_ptr(decl_index);
 
-    if (decl.val.getExternFunc(mod)) |_| {
+    if (decl.val.get_extern_func(mod)) |_| {
         return;
     }
 
-    if (decl.isExtern(mod)) {
+    if (decl.is_extern(mod)) {
         // Extern variable gets a __got entry only
-        const variable = decl.getOwnedVariable(mod).?;
-        const name = decl.name.toSlice(&mod.intern_pool);
-        const lib_name = variable.lib_name.toSlice(&mod.intern_pool);
-        const index = try self.getGlobalSymbol(macho_file, name, lib_name);
+        const variable = decl.get_owned_variable(mod).?;
+        const name = decl.name.to_slice(&mod.intern_pool);
+        const lib_name = variable.lib_name.to_slice(&mod.intern_pool);
+        const index = try self.get_global_symbol(macho_file, name, lib_name);
         const actual_index = self.symbols.items[index];
-        macho_file.getSymbol(actual_index).flags.needs_got = true;
+        macho_file.get_symbol(actual_index).flags.needs_got = true;
         return;
     }
 
-    const sym_index = try self.getOrCreateMetadataForDecl(macho_file, decl_index);
-    macho_file.getSymbol(sym_index).getAtom(macho_file).?.freeRelocs(macho_file);
+    const sym_index = try self.get_or_create_metadata_for_decl(macho_file, decl_index);
+    macho_file.get_symbol(sym_index).get_atom(macho_file).?.free_relocs(macho_file);
 
     const gpa = macho_file.base.comp.gpa;
     var code_buffer = std.ArrayList(u8).init(gpa);
     defer code_buffer.deinit();
 
-    var decl_state: ?Dwarf.DeclState = if (self.dwarf) |*dw| try dw.initDeclState(mod, decl_index) else null;
+    var decl_state: ?Dwarf.DeclState = if (self.dwarf) |*dw| try dw.init_decl_state(mod, decl_index) else null;
     defer if (decl_state) |*ds| ds.deinit();
 
-    const decl_val = if (decl.val.getVariable(mod)) |variable| Value.fromInterned(variable.init) else decl.val;
+    const decl_val = if (decl.val.get_variable(mod)) |variable| Value.from_interned(variable.init) else decl.val;
     const dio: codegen.DebugInfoOutput = if (decl_state) |*ds| .{ .dwarf = ds } else .none;
-    const res = try codegen.generateSymbol(&macho_file.base, decl.srcLoc(mod), decl_val, &code_buffer, dio, .{
+    const res = try codegen.generate_symbol(&macho_file.base, decl.src_loc(mod), decl_val, &code_buffer, dio, .{
         .parent_atom_index = sym_index,
     });
 
@@ -768,31 +768,31 @@ pub fn update_decl(
             return;
         },
     };
-    const sect_index = try self.getDeclOutputSection(macho_file, decl, code);
+    const sect_index = try self.get_decl_output_section(macho_file, decl, code);
     const is_threadlocal = switch (macho_file.sections.items(.header)[sect_index].type()) {
         macho.S_THREAD_LOCAL_ZEROFILL, macho.S_THREAD_LOCAL_REGULAR => true,
         else => false,
     };
     if (is_threadlocal) {
-        try self.updateTlv(macho_file, decl_index, sym_index, sect_index, code);
+        try self.update_tlv(macho_file, decl_index, sym_index, sect_index, code);
     } else {
-        try self.updateDeclCode(macho_file, decl_index, sym_index, sect_index, code);
+        try self.update_decl_code(macho_file, decl_index, sym_index, sect_index, code);
     }
 
     if (decl_state) |*ds| {
-        const sym = macho_file.getSymbol(sym_index);
-        try self.dwarf.?.commitDeclState(
+        const sym = macho_file.get_symbol(sym_index);
+        try self.dwarf.?.commit_decl_state(
             mod,
             decl_index,
-            sym.getAddress(.{}, macho_file),
-            sym.getAtom(macho_file).?.size,
+            sym.get_address(.{}, macho_file),
+            sym.get_atom(macho_file).?.size,
             ds,
         );
     }
 
     // Since we updated the vaddr and the size, each corresponding export symbol also
     // needs to be updated.
-    try self.updateExports(macho_file, mod, .{ .decl_index = decl_index }, mod.getDeclExports(decl_index));
+    try self.update_exports(macho_file, mod, .{ .decl_index = decl_index }, mod.get_decl_exports(decl_index));
 }
 
 fn update_decl_code(
@@ -805,22 +805,22 @@ fn update_decl_code(
 ) !void {
     const gpa = macho_file.base.comp.gpa;
     const mod = macho_file.base.comp.module.?;
-    const decl = mod.declPtr(decl_index);
-    const decl_name = try decl.fullyQualifiedName(mod);
+    const decl = mod.decl_ptr(decl_index);
+    const decl_name = try decl.fully_qualified_name(mod);
 
-    log.debug("updateDeclCode {}{*}", .{ decl_name.fmt(&mod.intern_pool), decl });
+    log.debug("update_decl_code {}{*}", .{ decl_name.fmt(&mod.intern_pool), decl });
 
-    const required_alignment = decl.getAlignment(mod);
+    const required_alignment = decl.get_alignment(mod);
 
     const sect = &macho_file.sections.items(.header)[sect_index];
-    const sym = macho_file.getSymbol(sym_index);
+    const sym = macho_file.get_symbol(sym_index);
     const nlist = &self.symtab.items(.nlist)[sym.nlist_idx];
-    const atom = sym.getAtom(macho_file).?;
+    const atom = sym.get_atom(macho_file).?;
 
     sym.out_n_sect = sect_index;
     atom.out_n_sect = sect_index;
 
-    sym.name = try self.strtab.insert(gpa, decl_name.toSlice(&mod.intern_pool));
+    sym.name = try self.strtab.insert(gpa, decl_name.to_slice(&mod.intern_pool));
     atom.flags.alive = true;
     atom.name = sym.name;
     nlist.n_strx = sym.name;
@@ -844,36 +844,36 @@ fn update_decl_code(
                 sym.value = 0;
                 nlist.n_value = 0;
 
-                if (!macho_file.base.isRelocatable()) {
+                if (!macho_file.base.is_relocatable()) {
                     log.debug("  (updating offset table entry)", .{});
                     assert(sym.flags.has_zig_got);
-                    const extra = sym.getExtra(macho_file).?;
-                    try macho_file.zig_got.writeOne(macho_file, extra.zig_got);
+                    const extra = sym.get_extra(macho_file).?;
+                    try macho_file.zig_got.write_one(macho_file, extra.zig_got);
                 }
             }
         } else if (code.len < old_size) {
             atom.shrink(macho_file);
-        } else if (macho_file.getAtom(atom.next_index) == null) {
+        } else if (macho_file.get_atom(atom.next_index) == null) {
             const needed_size = atom.value + code.len;
             sect.size = needed_size;
         }
     } else {
         try atom.allocate(macho_file);
-        errdefer self.freeDeclMetadata(macho_file, sym_index);
+        errdefer self.free_decl_metadata(macho_file, sym_index);
 
         sym.value = 0;
         sym.flags.needs_zig_got = true;
         nlist.n_value = 0;
 
-        if (!macho_file.base.isRelocatable()) {
-            const gop = try sym.getOrCreateZigGotEntry(sym_index, macho_file);
-            try macho_file.zig_got.writeOne(macho_file, gop.index);
+        if (!macho_file.base.is_relocatable()) {
+            const gop = try sym.get_or_create_zig_got_entry(sym_index, macho_file);
+            try macho_file.zig_got.write_one(macho_file, gop.index);
         }
     }
 
-    if (!sect.isZerofill()) {
+    if (!sect.is_zerofill()) {
         const file_offset = sect.offset + atom.value;
-        try macho_file.base.file.?.pwriteAll(code, file_offset);
+        try macho_file.base.file.?.pwrite_all(code, file_offset);
     }
 }
 
@@ -889,16 +889,16 @@ fn update_tlv(
     code: []const u8,
 ) !void {
     const mod = macho_file.base.comp.module.?;
-    const decl = mod.declPtr(decl_index);
-    const decl_name = try decl.fullyQualifiedName(mod);
+    const decl = mod.decl_ptr(decl_index);
+    const decl_name = try decl.fully_qualified_name(mod);
 
-    log.debug("updateTlv {} ({*})", .{ decl_name.fmt(&mod.intern_pool), decl });
+    log.debug("update_tlv {} ({*})", .{ decl_name.fmt(&mod.intern_pool), decl });
 
-    const decl_name_slice = decl_name.toSlice(&mod.intern_pool);
-    const required_alignment = decl.getAlignment(mod);
+    const decl_name_slice = decl_name.to_slice(&mod.intern_pool);
+    const required_alignment = decl.get_alignment(mod);
 
     // 1. Lower TLV initializer
-    const init_sym_index = try self.createTlvInitializer(
+    const init_sym_index = try self.create_tlv_initializer(
         macho_file,
         decl_name_slice,
         required_alignment,
@@ -907,7 +907,7 @@ fn update_tlv(
     );
 
     // 2. Create TLV descriptor
-    try self.createTlvDescriptor(macho_file, sym_index, init_sym_index, decl_name_slice);
+    try self.create_tlv_descriptor(macho_file, sym_index, init_sym_index, decl_name_slice);
 }
 
 fn create_tlv_initializer(
@@ -919,13 +919,13 @@ fn create_tlv_initializer(
     code: []const u8,
 ) !Symbol.Index {
     const gpa = macho_file.base.comp.gpa;
-    const sym_name = try std.fmt.allocPrint(gpa, "{s}$tlv$init", .{name});
+    const sym_name = try std.fmt.alloc_print(gpa, "{s}$tlv$init", .{name});
     defer gpa.free(sym_name);
 
-    const sym_index = try self.addAtom(macho_file);
-    const sym = macho_file.getSymbol(sym_index);
+    const sym_index = try self.add_atom(macho_file);
+    const sym = macho_file.get_symbol(sym_index);
     const nlist = &self.symtab.items(.nlist)[sym.nlist_idx];
-    const atom = sym.getAtom(macho_file).?;
+    const atom = sym.get_atom(macho_file).?;
 
     sym.out_n_sect = sect_index;
     atom.out_n_sect = sect_index;
@@ -947,12 +947,12 @@ fn create_tlv_initializer(
     const header = slice.items(.header)[sect_index];
     const atoms = &slice.items(.atoms)[sect_index];
 
-    const gop = try self.tlv_initializers.getOrPut(gpa, atom.atom_index);
+    const gop = try self.tlv_initializers.get_or_put(gpa, atom.atom_index);
     assert(!gop.found_existing); // TODO incremental updates
     gop.value_ptr.* = .{ .symbol_index = sym_index };
 
     // We only store the data for the TLV if it's non-zerofill.
-    if (!header.isZerofill()) {
+    if (!header.is_zerofill()) {
         gop.value_ptr.data = try gpa.dupe(u8, code);
     }
 
@@ -970,14 +970,14 @@ fn create_tlv_descriptor(
 ) !void {
     const gpa = macho_file.base.comp.gpa;
 
-    const sym = macho_file.getSymbol(sym_index);
+    const sym = macho_file.get_symbol(sym_index);
     const nlist = &self.symtab.items(.nlist)[sym.nlist_idx];
-    const atom = sym.getAtom(macho_file).?;
-    const alignment = Atom.Alignment.fromNonzeroByteUnits(@alignOf(u64));
-    const size: u64 = @sizeOf(u64) * 3;
+    const atom = sym.get_atom(macho_file).?;
+    const alignment = Atom.Alignment.from_nonzero_byte_units(@alignOf(u64));
+    const size: u64 = @size_of(u64) * 3;
 
-    const sect_index = macho_file.getSectionByName("__DATA", "__thread_vars") orelse
-        try macho_file.addSection("__DATA", "__thread_vars", .{
+    const sect_index = macho_file.get_section_by_name("__DATA", "__thread_vars") orelse
+        try macho_file.add_section("__DATA", "__thread_vars", .{
         .flags = macho.S_THREAD_LOCAL_VARIABLES,
     });
     sym.out_n_sect = sect_index;
@@ -996,8 +996,8 @@ fn create_tlv_descriptor(
     atom.alignment = alignment;
     atom.size = size;
 
-    const tlv_bootstrap_index = try self.getGlobalSymbol(macho_file, "_tlv_bootstrap", null);
-    try atom.addReloc(macho_file, .{
+    const tlv_bootstrap_index = try self.get_global_symbol(macho_file, "_tlv_bootstrap", null);
+    try atom.add_reloc(macho_file, .{
         .tag = .@"extern",
         .offset = 0,
         .target = self.symbols.items[tlv_bootstrap_index],
@@ -1007,10 +1007,10 @@ fn create_tlv_descriptor(
             .pcrel = false,
             .has_subtractor = false,
             .length = 3,
-            .symbolnum = @intCast(tlv_bootstrap_index),
+            .symbolnum = @int_cast(tlv_bootstrap_index),
         },
     });
-    try atom.addReloc(macho_file, .{
+    try atom.add_reloc(macho_file, .{
         .tag = .@"extern",
         .offset = 16,
         .target = init_sym_index,
@@ -1020,7 +1020,7 @@ fn create_tlv_descriptor(
             .pcrel = false,
             .has_subtractor = false,
             .length = 3,
-            .symbolnum = @intCast(macho_file.getSymbol(init_sym_index).nlist_idx),
+            .symbolnum = @int_cast(macho_file.get_symbol(init_sym_index).nlist_idx),
         },
     });
 
@@ -1036,20 +1036,20 @@ fn get_decl_output_section(
     _ = self;
     const mod = macho_file.base.comp.module.?;
     const any_non_single_threaded = macho_file.base.comp.config.any_non_single_threaded;
-    const sect_id: u8 = switch (decl.typeOf(mod).zigTypeTag(mod)) {
+    const sect_id: u8 = switch (decl.type_of(mod).zig_type_tag(mod)) {
         .Fn => macho_file.zig_text_sect_index.?,
         else => blk: {
-            if (decl.getOwnedVariable(mod)) |variable| {
+            if (decl.get_owned_variable(mod)) |variable| {
                 if (variable.is_threadlocal and any_non_single_threaded) {
                     const is_all_zeroes = for (code) |byte| {
                         if (byte != 0) break false;
                     } else true;
-                    if (is_all_zeroes) break :blk macho_file.getSectionByName("__DATA", "__thread_bss") orelse try macho_file.addSection(
+                    if (is_all_zeroes) break :blk macho_file.get_section_by_name("__DATA", "__thread_bss") orelse try macho_file.add_section(
                         "__DATA",
                         "__thread_bss",
                         .{ .flags = macho.S_THREAD_LOCAL_ZEROFILL },
                     );
-                    break :blk macho_file.getSectionByName("__DATA", "__thread_data") orelse try macho_file.addSection(
+                    break :blk macho_file.get_section_by_name("__DATA", "__thread_data") orelse try macho_file.add_section(
                         "__DATA",
                         "__thread_data",
                         .{ .flags = macho.S_THREAD_LOCAL_REGULAR },
@@ -1057,7 +1057,7 @@ fn get_decl_output_section(
                 }
 
                 if (variable.is_const) break :blk macho_file.zig_const_sect_index.?;
-                if (Value.fromInterned(variable.init).isUndefDeep(mod)) {
+                if (Value.from_interned(variable.init).is_undef_deep(mod)) {
                     // TODO: get the optimize_mode from the Module that owns the decl instead
                     // of using the root module here.
                     break :blk switch (macho_file.base.comp.root_mod.optimize_mode) {
@@ -1088,23 +1088,23 @@ pub fn lower_unnamed_const(
 ) !u32 {
     const gpa = macho_file.base.comp.gpa;
     const mod = macho_file.base.comp.module.?;
-    const gop = try self.unnamed_consts.getOrPut(gpa, decl_index);
+    const gop = try self.unnamed_consts.get_or_put(gpa, decl_index);
     if (!gop.found_existing) {
         gop.value_ptr.* = .{};
     }
     const unnamed_consts = gop.value_ptr;
-    const decl = mod.declPtr(decl_index);
-    const decl_name = try decl.fullyQualifiedName(mod);
+    const decl = mod.decl_ptr(decl_index);
+    const decl_name = try decl.fully_qualified_name(mod);
     const index = unnamed_consts.items.len;
-    const name = try std.fmt.allocPrint(gpa, "__unnamed_{}_{d}", .{ decl_name.fmt(&mod.intern_pool), index });
+    const name = try std.fmt.alloc_print(gpa, "__unnamed_{}_{d}", .{ decl_name.fmt(&mod.intern_pool), index });
     defer gpa.free(name);
-    const sym_index = switch (try self.lowerConst(
+    const sym_index = switch (try self.lower_const(
         macho_file,
         name,
         val,
-        val.typeOf(mod).abiAlignment(mod),
+        val.type_of(mod).abi_alignment(mod),
         macho_file.zig_const_sect_index.?,
-        decl.srcLoc(mod),
+        decl.src_loc(mod),
     )) {
         .ok => |sym_index| sym_index,
         .fail => |em| {
@@ -1114,7 +1114,7 @@ pub fn lower_unnamed_const(
             return error.CodegenFail;
         },
     };
-    const sym = macho_file.getSymbol(sym_index);
+    const sym = macho_file.get_symbol(sym_index);
     try unnamed_consts.append(gpa, sym.atom);
     return sym_index;
 }
@@ -1138,9 +1138,9 @@ fn lower_const(
     var code_buffer = std.ArrayList(u8).init(gpa);
     defer code_buffer.deinit();
 
-    const sym_index = try self.addAtom(macho_file);
+    const sym_index = try self.add_atom(macho_file);
 
-    const res = try codegen.generateSymbol(&macho_file.base, src_loc, val, &code_buffer, .{
+    const res = try codegen.generate_symbol(&macho_file.base, src_loc, val, &code_buffer, .{
         .none = {},
     }, .{
         .parent_atom_index = sym_index,
@@ -1150,7 +1150,7 @@ fn lower_const(
         .fail => |em| return .{ .fail = em },
     };
 
-    const sym = macho_file.getSymbol(sym_index);
+    const sym = macho_file.get_symbol(sym_index);
     const name_str_index = try self.strtab.insert(gpa, name);
     sym.name = name_str_index;
     sym.out_n_sect = output_section_index;
@@ -1161,7 +1161,7 @@ fn lower_const(
     nlist.n_sect = output_section_index + 1;
     self.symtab.items(.size)[sym.nlist_idx] = code.len;
 
-    const atom = sym.getAtom(macho_file).?;
+    const atom = sym.get_atom(macho_file).?;
     atom.flags.alive = true;
     atom.name = name_str_index;
     atom.alignment = required_alignment;
@@ -1170,14 +1170,14 @@ fn lower_const(
 
     try atom.allocate(macho_file);
     // TODO rename and re-audit this method
-    errdefer self.freeDeclMetadata(macho_file, sym_index);
+    errdefer self.free_decl_metadata(macho_file, sym_index);
 
     sym.value = 0;
     nlist.n_value = 0;
 
     const sect = macho_file.sections.items(.header)[output_section_index];
     const file_offset = sect.offset + atom.value;
-    try macho_file.base.file.?.pwriteAll(code, file_offset);
+    try macho_file.base.file.?.pwrite_all(code, file_offset);
 
     return .{ .ok = sym_index };
 }
@@ -1195,36 +1195,36 @@ pub fn update_exports(
     const gpa = macho_file.base.comp.gpa;
     const metadata = switch (exported) {
         .decl_index => |decl_index| blk: {
-            _ = try self.getOrCreateMetadataForDecl(macho_file, decl_index);
-            break :blk self.decls.getPtr(decl_index).?;
+            _ = try self.get_or_create_metadata_for_decl(macho_file, decl_index);
+            break :blk self.decls.get_ptr(decl_index).?;
         },
-        .value => |value| self.anon_decls.getPtr(value) orelse blk: {
+        .value => |value| self.anon_decls.get_ptr(value) orelse blk: {
             const first_exp = exports[0];
-            const res = try self.lowerAnonDecl(macho_file, value, .none, first_exp.getSrcLoc(mod));
+            const res = try self.lower_anon_decl(macho_file, value, .none, first_exp.get_src_loc(mod));
             switch (res) {
                 .ok => {},
                 .fail => |em| {
-                    // TODO maybe it's enough to return an error here and let Module.processExportsInner
+                    // TODO maybe it's enough to return an error here and let Module.process_exports_inner
                     // handle the error?
-                    try mod.failed_exports.ensureUnusedCapacity(mod.gpa, 1);
-                    mod.failed_exports.putAssumeCapacityNoClobber(first_exp, em);
+                    try mod.failed_exports.ensure_unused_capacity(mod.gpa, 1);
+                    mod.failed_exports.put_assume_capacity_no_clobber(first_exp, em);
                     return;
                 },
             }
-            break :blk self.anon_decls.getPtr(value).?;
+            break :blk self.anon_decls.get_ptr(value).?;
         },
     };
     const sym_index = metadata.symbol_index;
-    const nlist_idx = macho_file.getSymbol(sym_index).nlist_idx;
+    const nlist_idx = macho_file.get_symbol(sym_index).nlist_idx;
     const nlist = self.symtab.items(.nlist)[nlist_idx];
 
     for (exports) |exp| {
         if (exp.opts.section.unwrap()) |section_name| {
-            if (!section_name.eqlSlice("__text", &mod.intern_pool)) {
-                try mod.failed_exports.ensureUnusedCapacity(mod.gpa, 1);
-                mod.failed_exports.putAssumeCapacityNoClobber(exp, try Module.ErrorMsg.create(
+            if (!section_name.eql_slice("__text", &mod.intern_pool)) {
+                try mod.failed_exports.ensure_unused_capacity(mod.gpa, 1);
+                mod.failed_exports.put_assume_capacity_no_clobber(exp, try Module.ErrorMsg.create(
                     gpa,
-                    exp.getSrcLoc(mod),
+                    exp.get_src_loc(mod),
                     "Unimplemented: ExportOptions.section",
                     .{},
                 ));
@@ -1232,20 +1232,20 @@ pub fn update_exports(
             }
         }
         if (exp.opts.linkage == .link_once) {
-            try mod.failed_exports.putNoClobber(mod.gpa, exp, try Module.ErrorMsg.create(
+            try mod.failed_exports.put_no_clobber(mod.gpa, exp, try Module.ErrorMsg.create(
                 gpa,
-                exp.getSrcLoc(mod),
+                exp.get_src_loc(mod),
                 "Unimplemented: GlobalLinkage.link_once",
                 .{},
             ));
             continue;
         }
 
-        const exp_name = exp.opts.name.toSlice(&mod.intern_pool);
+        const exp_name = exp.opts.name.to_slice(&mod.intern_pool);
         const global_nlist_index = if (metadata.@"export"(self, exp_name)) |exp_index|
             exp_index.*
         else blk: {
-            const global_nlist_index = try self.getGlobalSymbol(macho_file, exp_name, null);
+            const global_nlist_index = try self.get_global_symbol(macho_file, exp_name, null);
             try metadata.exports.append(gpa, global_nlist_index);
             break :blk global_nlist_index;
         };
@@ -1286,23 +1286,23 @@ fn update_lazy_symbol(
     defer code_buffer.deinit();
 
     const name_str_index = blk: {
-        const name = try std.fmt.allocPrint(gpa, "__lazy_{s}_{}", .{
-            @tagName(lazy_sym.kind),
+        const name = try std.fmt.alloc_print(gpa, "__lazy_{s}_{}", .{
+            @tag_name(lazy_sym.kind),
             lazy_sym.ty.fmt(mod),
         });
         defer gpa.free(name);
         break :blk try self.strtab.insert(gpa, name);
     };
 
-    const src = if (lazy_sym.ty.getOwnerDeclOrNull(mod)) |owner_decl|
-        mod.declPtr(owner_decl).srcLoc(mod)
+    const src = if (lazy_sym.ty.get_owner_decl_or_null(mod)) |owner_decl|
+        mod.decl_ptr(owner_decl).src_loc(mod)
     else
         Module.SrcLoc{
             .file_scope = undefined,
             .parent_decl_node = undefined,
             .lazy = .unneeded,
         };
-    const res = try codegen.generateLazySymbol(
+    const res = try codegen.generate_lazy_symbol(
         &macho_file.base,
         src,
         lazy_sym,
@@ -1323,7 +1323,7 @@ fn update_lazy_symbol(
         .code => macho_file.zig_text_sect_index.?,
         .const_data => macho_file.zig_const_sect_index.?,
     };
-    const sym = macho_file.getSymbol(symbol_index);
+    const sym = macho_file.get_symbol(symbol_index);
     sym.name = name_str_index;
     sym.out_n_sect = output_section_index;
 
@@ -1333,7 +1333,7 @@ fn update_lazy_symbol(
     nlist.n_sect = output_section_index + 1;
     self.symtab.items(.size)[sym.nlist_idx] = code.len;
 
-    const atom = sym.getAtom(macho_file).?;
+    const atom = sym.get_atom(macho_file).?;
     atom.flags.alive = true;
     atom.name = name_str_index;
     atom.alignment = required_alignment;
@@ -1341,26 +1341,26 @@ fn update_lazy_symbol(
     atom.out_n_sect = output_section_index;
 
     try atom.allocate(macho_file);
-    errdefer self.freeDeclMetadata(macho_file, symbol_index);
+    errdefer self.free_decl_metadata(macho_file, symbol_index);
 
     sym.value = 0;
     sym.flags.needs_zig_got = true;
     nlist.n_value = 0;
 
-    if (!macho_file.base.isRelocatable()) {
-        const gop = try sym.getOrCreateZigGotEntry(symbol_index, macho_file);
-        try macho_file.zig_got.writeOne(macho_file, gop.index);
+    if (!macho_file.base.is_relocatable()) {
+        const gop = try sym.get_or_create_zig_got_entry(symbol_index, macho_file);
+        try macho_file.zig_got.write_one(macho_file, gop.index);
     }
 
     const sect = macho_file.sections.items(.header)[output_section_index];
     const file_offset = sect.offset + atom.value;
-    try macho_file.base.file.?.pwriteAll(code, file_offset);
+    try macho_file.base.file.?.pwrite_all(code, file_offset);
 }
 
-/// Must be called only after a successful call to `updateDecl`.
+/// Must be called only after a successful call to `update_decl`.
 pub fn update_decl_line_number(self: *ZigObject, mod: *Module, decl_index: InternPool.DeclIndex) !void {
     if (self.dwarf) |*dw| {
-        try dw.updateDeclLineNumber(mod, decl_index);
+        try dw.update_decl_line_number(mod, decl_index);
     }
 }
 
@@ -1372,8 +1372,8 @@ pub fn delete_decl_export(
 ) void {
     const mod = macho_file.base.comp.module.?;
 
-    const metadata = self.decls.getPtr(decl_index) orelse return;
-    const nlist_index = metadata.@"export"(self, name.toSlice(&mod.intern_pool)) orelse return;
+    const metadata = self.decls.get_ptr(decl_index) orelse return;
+    const nlist_index = metadata.@"export"(self, name.to_slice(&mod.intern_pool)) orelse return;
 
     log.debug("deleting export '{}'", .{name.fmt(&mod.intern_pool)});
 
@@ -1381,9 +1381,9 @@ pub fn delete_decl_export(
     self.symtab.items(.size)[nlist_index.*] = 0;
     _ = self.globals_lookup.remove(nlist.n_strx);
     const sym_index = macho_file.globals.get(nlist.n_strx).?;
-    const sym = macho_file.getSymbol(sym_index);
+    const sym = macho_file.get_symbol(sym_index);
     if (sym.file == self.index) {
-        _ = macho_file.globals.swapRemove(nlist.n_strx);
+        _ = macho_file.globals.swap_remove(nlist.n_strx);
         sym.* = .{};
     }
     nlist.* = MachO.null_sym;
@@ -1392,18 +1392,18 @@ pub fn delete_decl_export(
 pub fn get_global_symbol(self: *ZigObject, macho_file: *MachO, name: []const u8, lib_name: ?[]const u8) !u32 {
     _ = lib_name;
     const gpa = macho_file.base.comp.gpa;
-    const sym_name = try std.fmt.allocPrint(gpa, "_{s}", .{name});
+    const sym_name = try std.fmt.alloc_print(gpa, "_{s}", .{name});
     defer gpa.free(sym_name);
     const off = try self.strtab.insert(gpa, sym_name);
-    const lookup_gop = try self.globals_lookup.getOrPut(gpa, off);
+    const lookup_gop = try self.globals_lookup.get_or_put(gpa, off);
     if (!lookup_gop.found_existing) {
-        const nlist_index = try self.addNlist(gpa);
+        const nlist_index = try self.add_nlist(gpa);
         const nlist = &self.symtab.items(.nlist)[nlist_index];
         nlist.n_strx = off;
         nlist.n_type = macho.N_EXT;
         lookup_gop.value_ptr.* = nlist_index;
         const global_name_off = try macho_file.strings.insert(gpa, sym_name);
-        const gop = try macho_file.getOrCreateGlobal(global_name_off);
+        const gop = try macho_file.get_or_create_global(global_name_off);
         try self.symbols.append(gpa, gop.index);
     }
     return lookup_gop.value_ptr.*;
@@ -1415,14 +1415,14 @@ pub fn get_or_create_metadata_for_decl(
     decl_index: InternPool.DeclIndex,
 ) !Symbol.Index {
     const gpa = macho_file.base.comp.gpa;
-    const gop = try self.decls.getOrPut(gpa, decl_index);
+    const gop = try self.decls.get_or_put(gpa, decl_index);
     if (!gop.found_existing) {
         const any_non_single_threaded = macho_file.base.comp.config.any_non_single_threaded;
-        const sym_index = try self.addAtom(macho_file);
+        const sym_index = try self.add_atom(macho_file);
         const mod = macho_file.base.comp.module.?;
-        const decl = mod.declPtr(decl_index);
-        const sym = macho_file.getSymbol(sym_index);
-        if (decl.getOwnedVariable(mod)) |variable| {
+        const decl = mod.decl_ptr(decl_index);
+        const sym = macho_file.get_symbol(sym_index);
+        if (decl.get_owned_variable(mod)) |variable| {
             if (variable.is_threadlocal and any_non_single_threaded) {
                 sym.flags.tlv = true;
             }
@@ -1442,7 +1442,7 @@ pub fn get_or_create_metadata_for_lazy_symbol(
 ) !Symbol.Index {
     const gpa = macho_file.base.comp.gpa;
     const mod = macho_file.base.comp.module.?;
-    const gop = try self.lazy_syms.getOrPut(gpa, lazy_sym.getDecl(mod));
+    const gop = try self.lazy_syms.get_or_put(gpa, lazy_sym.get_decl(mod));
     errdefer _ = if (!gop.found_existing) self.lazy_syms.pop();
     if (!gop.found_existing) gop.value_ptr.* = .{};
     const metadata: struct {
@@ -1460,8 +1460,8 @@ pub fn get_or_create_metadata_for_lazy_symbol(
     };
     switch (metadata.state.*) {
         .unused => {
-            const symbol_index = try self.addAtom(macho_file);
-            const sym = macho_file.getSymbol(symbol_index);
+            const symbol_index = try self.add_atom(macho_file);
+            const sym = macho_file.get_symbol(symbol_index);
             sym.flags.needs_zig_got = true;
             metadata.symbol_index.* = symbol_index;
         },
@@ -1470,8 +1470,8 @@ pub fn get_or_create_metadata_for_lazy_symbol(
     }
     metadata.state.* = .pending_flush;
     const symbol_index = metadata.symbol_index.*;
-    // anyerror needs to be deferred until flushModule
-    if (lazy_sym.getDecl(mod) != .none) try self.updateLazySymbol(macho_file, lazy_sym, symbol_index);
+    // anyerror needs to be deferred until flush_module
+    if (lazy_sym.get_decl(mod) != .none) try self.update_lazy_symbol(macho_file, lazy_sym, symbol_index);
     return symbol_index;
 }
 
@@ -1479,7 +1479,7 @@ pub fn as_file(self: *ZigObject) File {
     return .{ .zig_object = self };
 }
 
-pub fn fmt_symtab(self: *ZigObject, macho_file: *MachO) std.fmt.Formatter(formatSymtab) {
+pub fn fmt_symtab(self: *ZigObject, macho_file: *MachO) std.fmt.Formatter(format_symtab) {
     return .{ .data = .{
         .self = self,
         .macho_file = macho_file,
@@ -1499,14 +1499,14 @@ fn format_symtab(
 ) !void {
     _ = unused_fmt_string;
     _ = options;
-    try writer.writeAll("  symbols\n");
+    try writer.write_all("  symbols\n");
     for (ctx.self.symbols.items) |index| {
-        const sym = ctx.macho_file.getSymbol(index);
+        const sym = ctx.macho_file.get_symbol(index);
         try writer.print("    {}\n", .{sym.fmt(ctx.macho_file)});
     }
 }
 
-pub fn fmt_atoms(self: *ZigObject, macho_file: *MachO) std.fmt.Formatter(formatAtoms) {
+pub fn fmt_atoms(self: *ZigObject, macho_file: *MachO) std.fmt.Formatter(format_atoms) {
     return .{ .data = .{
         .self = self,
         .macho_file = macho_file,
@@ -1521,9 +1521,9 @@ fn format_atoms(
 ) !void {
     _ = unused_fmt_string;
     _ = options;
-    try writer.writeAll("  atoms\n");
+    try writer.write_all("  atoms\n");
     for (ctx.self.atoms.items) |atom_index| {
-        const atom = ctx.macho_file.getAtom(atom_index) orelse continue;
+        const atom = ctx.macho_file.get_atom(atom_index) orelse continue;
         try writer.print("    {}\n", .{atom.fmt(ctx.macho_file)});
     }
 }
@@ -1536,7 +1536,7 @@ const DeclMetadata = struct {
     fn @"export"(m: DeclMetadata, zig_object: *ZigObject, name: []const u8) ?*u32 {
         for (m.exports.items) |*exp| {
             const nlist = zig_object.symtab.items(.nlist)[exp.*];
-            const exp_name = zig_object.strtab.getAssumeExists(nlist.n_strx);
+            const exp_name = zig_object.strtab.get_assume_exists(nlist.n_strx);
             if (mem.eql(u8, name, exp_name)) return exp;
         }
         return null;

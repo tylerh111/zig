@@ -2,7 +2,7 @@ const S = extern struct {
     a: fn () callconv(.C) void,
 };
 comptime {
-    _ = @sizeOf(S) == 1;
+    _ = @size_of(S) == 1;
 }
 comptime {
     _ = [*c][4]fn () callconv(.C) void;

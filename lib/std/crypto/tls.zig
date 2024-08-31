@@ -49,8 +49,8 @@ pub const hello_retry_request_sequence = [32]u8{
 };
 
 pub const close_notify_alert = [_]u8{
-    @intFromEnum(AlertLevel.warning),
-    @intFromEnum(AlertDescription.close_notify),
+    @int_from_enum(AlertLevel.warning),
+    @int_from_enum(AlertDescription.close_notify),
 };
 
 pub const ProtocolVersion = enum(u16) {
@@ -371,13 +371,13 @@ pub fn hkdf_expand_label(
     const max_context_len = 255;
     const tls13 = "tls13 ";
     var buf: [2 + 1 + tls13.len + max_label_len + 1 + max_context_len]u8 = undefined;
-    mem.writeInt(u16, buf[0..2], len, .big);
-    buf[2] = @as(u8, @intCast(tls13.len + label.len));
+    mem.write_int(u16, buf[0..2], len, .big);
+    buf[2] = @as(u8, @int_cast(tls13.len + label.len));
     buf[3..][0..tls13.len].* = tls13.*;
     var i: usize = 3 + tls13.len;
     @memcpy(buf[i..][0..label.len], label);
     i += label.len;
-    buf[i] = @as(u8, @intCast(context.len));
+    buf[i] = @as(u8, @int_cast(context.len));
     i += 1;
     @memcpy(buf[i..][0..context.len], context);
     i += context.len;
@@ -400,7 +400,7 @@ pub fn hmac(comptime Hmac: type, message: []const u8, key: [Hmac.key_length]u8) 
 }
 
 pub inline fn extension(comptime et: ExtensionType, bytes: anytype) [2 + 2 + bytes.len]u8 {
-    return int2(@intFromEnum(et)) ++ array(1, bytes);
+    return int2(@int_from_enum(et)) ++ array(1, bytes);
 }
 
 pub inline fn array(comptime elem_size: comptime_int, bytes: anytype) [2 + bytes.len]u8 {
@@ -408,12 +408,12 @@ pub inline fn array(comptime elem_size: comptime_int, bytes: anytype) [2 + bytes
     return int2(bytes.len) ++ bytes;
 }
 
-pub inline fn enum_array(comptime E: type, comptime tags: []const E) [2 + @sizeOf(E) * tags.len]u8 {
-    assert(@sizeOf(E) == 2);
+pub inline fn enum_array(comptime E: type, comptime tags: []const E) [2 + @size_of(E) * tags.len]u8 {
+    assert(@size_of(E) == 2);
     var result: [tags.len * 2]u8 = undefined;
     for (tags, 0..) |elem, i| {
-        result[i * 2] = @as(u8, @truncate(@intFromEnum(elem) >> 8));
-        result[i * 2 + 1] = @as(u8, @truncate(@intFromEnum(elem)));
+        result[i * 2] = @as(u8, @truncate(@int_from_enum(elem) >> 8));
+        result[i * 2 + 1] = @as(u8, @truncate(@int_from_enum(elem)));
     }
     return array(2, result);
 }
@@ -442,7 +442,7 @@ pub const Decoder = struct {
     /// Up to this point in `buf` we have already checked that `cap` is greater than it.
     our_end: usize = 0,
     /// Beyond this point in `buf` is extra tag-along bytes beyond the amount we
-    /// requested with `readAtLeast`.
+    /// requested with `read_at_least`.
     their_end: usize = 0,
     /// Points to the end within buffer that has been filled. Beyond this point
     /// in buf is undefined bytes.
@@ -468,16 +468,16 @@ pub const Decoder = struct {
         const request_amt = their_amt - existing_amt;
         const dest = d.buf[d.cap..];
         if (request_amt > dest.len) return error.TlsRecordOverflow;
-        const actual_amt = try stream.readAtLeast(dest, request_amt);
+        const actual_amt = try stream.read_at_least(dest, request_amt);
         if (actual_amt < request_amt) return error.TlsConnectionTruncated;
         d.cap += actual_amt;
     }
 
-    /// Same as `readAtLeast` but also increases `our_end` by exactly `our_amt`.
+    /// Same as `read_at_least` but also increases `our_end` by exactly `our_amt`.
     /// Use when `our_amt` is calculated by us, not by them.
     pub fn read_at_least_our_amt(d: *Decoder, stream: anytype, our_amt: usize) !void {
         assert(!d.disable_reads);
-        try readAtLeast(d, stream, our_amt);
+        try read_at_least(d, stream, our_amt);
         d.our_end = d.idx + our_amt;
     }
 
@@ -509,14 +509,14 @@ pub const Decoder = struct {
                     const b2: u24 = d.buf[d.idx - 1];
                     return (b0 << 16) | (b1 << 8) | b2;
                 },
-                else => @compileError("unsupported int type: " ++ @typeName(T)),
+                else => @compile_error("unsupported int type: " ++ @type_name(T)),
             },
             .Enum => |info| {
                 const int = d.decode(info.tag_type);
-                if (info.is_exhaustive) @compileError("exhaustive enum cannot be used");
+                if (info.is_exhaustive) @compile_error("exhaustive enum cannot be used");
                 return @as(T, @enumFromInt(int));
             },
-            else => @compileError("unsupported type: " ++ @typeName(T)),
+            else => @compile_error("unsupported type: " ++ @type_name(T)),
         }
     }
 
@@ -552,7 +552,7 @@ pub const Decoder = struct {
         const sub_buf = d.buf[d.idx..end];
         d.idx = end;
         d.our_end = end;
-        return fromTheirSlice(sub_buf);
+        return from_their_slice(sub_buf);
     }
 
     pub fn rest(d: Decoder) []u8 {

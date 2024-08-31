@@ -1,5 +1,5 @@
 const std = @import("../../std.zig");
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const linux = std.os.linux;
 const SYS = linux.SYS;
 const socklen_t = linux.socklen_t;
@@ -16,7 +16,7 @@ const timespec = linux.timespec;
 pub fn syscall0(number: SYS) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@int_from_enum(number)),
         : "memory"
     );
 }
@@ -24,7 +24,7 @@ pub fn syscall0(number: SYS) usize {
 pub fn syscall1(number: SYS, arg1: usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@int_from_enum(number)),
           [arg1] "{ebx}" (arg1),
         : "memory"
     );
@@ -33,7 +33,7 @@ pub fn syscall1(number: SYS, arg1: usize) usize {
 pub fn syscall2(number: SYS, arg1: usize, arg2: usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@int_from_enum(number)),
           [arg1] "{ebx}" (arg1),
           [arg2] "{ecx}" (arg2),
         : "memory"
@@ -43,7 +43,7 @@ pub fn syscall2(number: SYS, arg1: usize, arg2: usize) usize {
 pub fn syscall3(number: SYS, arg1: usize, arg2: usize, arg3: usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@int_from_enum(number)),
           [arg1] "{ebx}" (arg1),
           [arg2] "{ecx}" (arg2),
           [arg3] "{edx}" (arg3),
@@ -54,7 +54,7 @@ pub fn syscall3(number: SYS, arg1: usize, arg2: usize, arg3: usize) usize {
 pub fn syscall4(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@int_from_enum(number)),
           [arg1] "{ebx}" (arg1),
           [arg2] "{ecx}" (arg2),
           [arg3] "{edx}" (arg3),
@@ -66,7 +66,7 @@ pub fn syscall4(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize)
 pub fn syscall5(number: SYS, arg1: usize, arg2: usize, arg3: usize, arg4: usize, arg5: usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@int_from_enum(number)),
           [arg1] "{ebx}" (arg1),
           [arg2] "{ecx}" (arg2),
           [arg3] "{edx}" (arg3),
@@ -97,7 +97,7 @@ pub fn syscall6(
         \\ pop  %%ebp
         \\ add  $4, %%esp
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(number)),
+        : [number] "{eax}" (@int_from_enum(number)),
           [arg1] "{ebx}" (arg1),
           [arg2] "{ecx}" (arg2),
           [arg3] "{edx}" (arg3),
@@ -111,9 +111,9 @@ pub fn syscall6(
 pub fn socketcall(call: usize, args: [*]const usize) usize {
     return asm volatile ("int $0x80"
         : [ret] "={eax}" (-> usize),
-        : [number] "{eax}" (@intFromEnum(SYS.socketcall)),
+        : [number] "{eax}" (@int_from_enum(SYS.socketcall)),
           [arg1] "{ebx}" (call),
-          [arg2] "{ecx}" (@intFromPtr(args)),
+          [arg2] "{ecx}" (@int_from_ptr(args)),
         : "memory"
     );
 }
@@ -129,13 +129,13 @@ pub fn restore() callconv(.Naked) noreturn {
             \\ movl %[number], %%eax
             \\ int $0x80
             :
-            : [number] "i" (@intFromEnum(SYS.sigreturn)),
+            : [number] "i" (@int_from_enum(SYS.sigreturn)),
             : "memory"
         ),
         else => asm volatile (
             \\ int $0x80
             :
-            : [number] "{eax}" (@intFromEnum(SYS.sigreturn)),
+            : [number] "{eax}" (@int_from_enum(SYS.sigreturn)),
             : "memory"
         ),
     }
@@ -147,13 +147,13 @@ pub fn restore_rt() callconv(.Naked) noreturn {
             \\ movl %[number], %%eax
             \\ int $0x80
             :
-            : [number] "i" (@intFromEnum(SYS.rt_sigreturn)),
+            : [number] "i" (@int_from_enum(SYS.rt_sigreturn)),
             : "memory"
         ),
         else => asm volatile (
             \\ int $0x80
             :
-            : [number] "{eax}" (@intFromEnum(SYS.rt_sigreturn)),
+            : [number] "{eax}" (@int_from_enum(SYS.rt_sigreturn)),
             : "memory"
         ),
     }
@@ -356,7 +356,7 @@ pub const SC = struct {
 };
 
 fn gp_register_offset(comptime reg_index: comptime_int) usize {
-    return @offsetOf(ucontext_t, "mcontext") + @offsetOf(mcontext_t, "gregs") + @sizeOf(usize) * reg_index;
+    return @offset_of(ucontext_t, "mcontext") + @offset_of(mcontext_t, "gregs") + @size_of(usize) * reg_index;
 }
 
 noinline fn get_context_return_address() usize {
@@ -403,40 +403,40 @@ pub fn get_context_internal() callconv(.Naked) usize {
         \\ popl %%ebx
         \\ retl
         :
-        : [flags_offset] "i" (@offsetOf(ucontext_t, "flags")),
-          [link_offset] "i" (@offsetOf(ucontext_t, "link")),
-          [edi_offset] "i" (comptime gpRegisterOffset(REG.EDI)),
-          [esi_offset] "i" (comptime gpRegisterOffset(REG.ESI)),
-          [ebp_offset] "i" (comptime gpRegisterOffset(REG.EBP)),
-          [esp_offset] "i" (comptime gpRegisterOffset(REG.ESP)),
-          [ebx_offset] "i" (comptime gpRegisterOffset(REG.EBX)),
-          [edx_offset] "i" (comptime gpRegisterOffset(REG.EDX)),
-          [ecx_offset] "i" (comptime gpRegisterOffset(REG.ECX)),
-          [eax_offset] "i" (comptime gpRegisterOffset(REG.EAX)),
-          [eip_offset] "i" (comptime gpRegisterOffset(REG.EIP)),
-          [fs_offset] "i" (comptime gpRegisterOffset(REG.FS)),
-          [fpregs_offset] "i" (@offsetOf(ucontext_t, "mcontext") + @offsetOf(mcontext_t, "fpregs")),
-          [regspace_offset] "i" (@offsetOf(ucontext_t, "regspace")),
-          [sigaltstack] "i" (@intFromEnum(linux.SYS.sigaltstack)),
-          [stack_offset] "i" (@offsetOf(ucontext_t, "stack")),
-          [sigprocmask] "i" (@intFromEnum(linux.SYS.rt_sigprocmask)),
-          [sigmask_offset] "i" (@offsetOf(ucontext_t, "sigmask")),
+        : [flags_offset] "i" (@offset_of(ucontext_t, "flags")),
+          [link_offset] "i" (@offset_of(ucontext_t, "link")),
+          [edi_offset] "i" (comptime gp_register_offset(REG.EDI)),
+          [esi_offset] "i" (comptime gp_register_offset(REG.ESI)),
+          [ebp_offset] "i" (comptime gp_register_offset(REG.EBP)),
+          [esp_offset] "i" (comptime gp_register_offset(REG.ESP)),
+          [ebx_offset] "i" (comptime gp_register_offset(REG.EBX)),
+          [edx_offset] "i" (comptime gp_register_offset(REG.EDX)),
+          [ecx_offset] "i" (comptime gp_register_offset(REG.ECX)),
+          [eax_offset] "i" (comptime gp_register_offset(REG.EAX)),
+          [eip_offset] "i" (comptime gp_register_offset(REG.EIP)),
+          [fs_offset] "i" (comptime gp_register_offset(REG.FS)),
+          [fpregs_offset] "i" (@offset_of(ucontext_t, "mcontext") + @offset_of(mcontext_t, "fpregs")),
+          [regspace_offset] "i" (@offset_of(ucontext_t, "regspace")),
+          [sigaltstack] "i" (@int_from_enum(linux.SYS.sigaltstack)),
+          [stack_offset] "i" (@offset_of(ucontext_t, "stack")),
+          [sigprocmask] "i" (@int_from_enum(linux.SYS.rt_sigprocmask)),
+          [sigmask_offset] "i" (@offset_of(ucontext_t, "sigmask")),
           [sigset_size] "i" (linux.NSIG / 8),
         : "cc", "memory", "eax", "ecx", "edx"
     );
 }
 
 pub inline fn getcontext(context: *ucontext_t) usize {
-    // This method is used so that getContextInternal can control
+    // This method is used so that get_context_internal can control
     // its prologue in order to read ESP from a constant offset.
-    // An aligned stack is not needed for getContextInternal.
+    // An aligned stack is not needed for get_context_internal.
     var clobber_edx: usize = undefined;
     return asm volatile (
-        \\ calll %[getContextInternal:P]
+        \\ calll %[get_context_internal:P]
         : [_] "={eax}" (-> usize),
           [_] "={edx}" (clobber_edx),
         : [_] "{edx}" (context),
-          [getContextInternal] "X" (&getContextInternal),
+          [get_context_internal] "X" (&get_context_internal),
         : "cc", "memory", "ecx"
     );
 }

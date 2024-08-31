@@ -46,12 +46,12 @@ pub fn jump(self: *Xoshiro256) void {
 
     while (table != 0) : (table >>= 1) {
         if (@as(u1, @truncate(table)) != 0) {
-            s ^= @as(u256, @bitCast(self.s));
+            s ^= @as(u256, @bit_cast(self.s));
         }
         _ = self.next();
     }
 
-    self.s = @as([4]u64, @bitCast(s));
+    self.s = @as([4]u64, @bit_cast(s));
 }
 
 pub fn seed(self: *Xoshiro256, init_s: u64) void {
@@ -137,7 +137,7 @@ test fill {
     for (seq) |s| {
         var buf0: [8]u8 = undefined;
         var buf1: [7]u8 = undefined;
-        std.mem.writeInt(u64, &buf0, s, .little);
+        std.mem.write_int(u64, &buf0, s, .little);
         r.fill(&buf1);
         try std.testing.expect(std.mem.eql(u8, buf0[0..7], buf1[0..]));
     }

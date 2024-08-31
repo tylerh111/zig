@@ -2,9 +2,9 @@ const ctz = @import("count0bits.zig");
 const testing = @import("std").testing;
 
 fn test__ctzti2(a: u128, expected: i32) !void {
-    const x: i128 = @bitCast(a);
+    const x: i128 = @bit_cast(a);
     const result = ctz.__ctzti2(x);
-    try testing.expectEqual(expected, result);
+    try testing.expect_equal(expected, result);
 }
 
 test "ctzti2" {

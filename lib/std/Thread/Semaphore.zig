@@ -55,7 +55,7 @@ pub fn timed_wait(sem: *Semaphore, timeout_ns: u64) error{Timeout}!void {
             return error.Timeout;
 
         const local_timeout_ns = timeout_ns - elapsed;
-        try sem.cond.timedWait(&sem.mutex, local_timeout_ns);
+        try sem.cond.timed_wait(&sem.mutex, local_timeout_ns);
     }
 
     sem.permits -= 1;
@@ -97,15 +97,15 @@ test Semaphore {
     try testing.expect(n == num_threads);
 }
 
-test timedWait {
+test timed_wait {
     var sem = Semaphore{};
-    try testing.expectEqual(0, sem.permits);
+    try testing.expect_equal(0, sem.permits);
 
-    try testing.expectError(error.Timeout, sem.timedWait(1));
+    try testing.expect_error(error.Timeout, sem.timed_wait(1));
 
     sem.post();
-    try testing.expectEqual(1, sem.permits);
+    try testing.expect_equal(1, sem.permits);
 
-    try sem.timedWait(1);
-    try testing.expectEqual(0, sem.permits);
+    try sem.timed_wait(1);
+    try testing.expect_equal(0, sem.permits);
 }

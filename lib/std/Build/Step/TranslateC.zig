@@ -46,7 +46,7 @@ pub fn create(owner: *std.Build, options: Options) *TranslateC {
         .link_libc = options.link_libc,
         .use_clang = options.use_clang,
     };
-    source.addStepDependencies(&translate_c.step);
+    source.add_step_dependencies(&translate_c.step);
     return translate_c;
 }
 
@@ -64,8 +64,8 @@ pub fn get_output(translate_c: *TranslateC) std.Build.LazyPath {
 
 /// Creates a step to build an executable from the translated source.
 pub fn add_executable(translate_c: *TranslateC, options: AddExecutableOptions) *Step.Compile {
-    return translate_c.step.owner.addExecutable(.{
-        .root_source_file = translate_c.getOutput(),
+    return translate_c.step.owner.add_executable(.{
+        .root_source_file = translate_c.get_output(),
         .name = options.name orelse "translated_c",
         .version = options.version,
         .target = options.target orelse translate_c.target,
@@ -76,30 +76,30 @@ pub fn add_executable(translate_c: *TranslateC, options: AddExecutableOptions) *
 
 /// Creates a module from the translated source and adds it to the package's
 /// module set making it available to other packages which depend on this one.
-/// `createModule` can be used instead to create a private module.
+/// `create_module` can be used instead to create a private module.
 pub fn add_module(translate_c: *TranslateC, name: []const u8) *std.Build.Module {
-    return translate_c.step.owner.addModule(name, .{
-        .root_source_file = translate_c.getOutput(),
+    return translate_c.step.owner.add_module(name, .{
+        .root_source_file = translate_c.get_output(),
     });
 }
 
 /// Creates a private module from the translated source to be used by the
 /// current package, but not exposed to other packages depending on this one.
-/// `addModule` can be used instead to create a public module.
+/// `add_module` can be used instead to create a public module.
 pub fn create_module(translate_c: *TranslateC) *std.Build.Module {
-    return translate_c.step.owner.createModule(.{
-        .root_source_file = translate_c.getOutput(),
+    return translate_c.step.owner.create_module(.{
+        .root_source_file = translate_c.get_output(),
     });
 }
 
 pub fn add_include_dir(translate_c: *TranslateC, include_dir: []const u8) void {
-    translate_c.include_dirs.append(translate_c.step.owner.dupePath(include_dir)) catch @panic("OOM");
+    translate_c.include_dirs.append(translate_c.step.owner.dupe_path(include_dir)) catch @panic("OOM");
 }
 
 pub fn add_check_file(translate_c: *TranslateC, expected_matches: []const []const u8) *Step.CheckFile {
     return Step.CheckFile.create(
         translate_c.step.owner,
-        translate_c.getOutput(),
+        translate_c.get_output(),
         .{ .expected_matches = expected_matches },
     );
 }
@@ -132,14 +132,14 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
 
     try argv_list.append("--listen=-");
 
-    if (!translate_c.target.query.isNative()) {
+    if (!translate_c.target.query.is_native()) {
         try argv_list.append("-target");
-        try argv_list.append(try translate_c.target.query.zigTriple(b.allocator));
+        try argv_list.append(try translate_c.target.query.zig_triple(b.allocator));
     }
 
     switch (translate_c.optimize) {
         .Debug => {}, // Skip since it's the default.
-        else => try argv_list.append(b.fmt("-O{s}", .{@tagName(translate_c.optimize)})),
+        else => try argv_list.append(b.fmt("-O{s}", .{@tag_name(translate_c.optimize)})),
     }
 
     for (translate_c.include_dirs.items) |include_dir| {
@@ -152,12 +152,12 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         try argv_list.append(c_macro);
     }
 
-    try argv_list.append(translate_c.source.getPath2(b, step));
+    try argv_list.append(translate_c.source.get_path2(b, step));
 
-    const output_path = try step.evalZigProcess(argv_list.items, prog_node);
+    const output_path = try step.eval_zig_process(argv_list.items, prog_node);
 
     translate_c.out_basename = fs.path.basename(output_path.?);
     const output_dir = fs.path.dirname(output_path.?).?;
 
-    translate_c.output_file.path = b.pathJoin(&.{ output_dir, translate_c.out_basename });
+    translate_c.output_file.path = b.path_join(&.{ output_dir, translate_c.out_basename });
 }

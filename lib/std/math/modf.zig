@@ -1,8 +1,8 @@
 const std = @import("../std.zig");
 const math = std.math;
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
-const expectApproxEqAbs = std.testing.expectApproxEqAbs;
+const expect_equal = std.testing.expect_equal;
+const expect_approx_eq_abs = std.testing.expect_approx_eq_abs;
 
 pub fn Modf(comptime T: type) type {
     return struct {
@@ -28,25 +28,25 @@ pub fn modf(x: anytype) Modf(@TypeOf(x)) {
 
 test modf {
     inline for ([_]type{ f16, f32, f64, f80, f128 }) |T| {
-        const epsilon: comptime_float = @max(1e-6, math.floatEps(T));
+        const epsilon: comptime_float = @max(1e-6, math.float_eps(T));
 
         var r: Modf(T) = undefined;
 
         r = modf(@as(T, 1.0));
-        try expectEqual(1.0, r.ipart);
-        try expectEqual(0.0, r.fpart);
+        try expect_equal(1.0, r.ipart);
+        try expect_equal(0.0, r.fpart);
 
         r = modf(@as(T, 0.34682));
-        try expectEqual(0.0, r.ipart);
-        try expectApproxEqAbs(@as(T, 0.34682), r.fpart, epsilon);
+        try expect_equal(0.0, r.ipart);
+        try expect_approx_eq_abs(@as(T, 0.34682), r.fpart, epsilon);
 
         r = modf(@as(T, 2.54576));
-        try expectEqual(2.0, r.ipart);
-        try expectApproxEqAbs(0.54576, r.fpart, epsilon);
+        try expect_equal(2.0, r.ipart);
+        try expect_approx_eq_abs(0.54576, r.fpart, epsilon);
 
         r = modf(@as(T, 3.9782));
-        try expectEqual(3.0, r.ipart);
-        try expectApproxEqAbs(0.9782, r.fpart, epsilon);
+        try expect_equal(3.0, r.ipart);
+        try expect_approx_eq_abs(0.9782, r.fpart, epsilon);
     }
 }
 
@@ -54,34 +54,34 @@ test modf {
 fn ModfTests(comptime T: type) type {
     return struct {
         test "normal" {
-            const epsilon: comptime_float = @max(1e-6, math.floatEps(T));
+            const epsilon: comptime_float = @max(1e-6, math.float_eps(T));
             var r: Modf(T) = undefined;
 
             r = modf(@as(T, 1.0));
-            try expectEqual(1.0, r.ipart);
-            try expectEqual(0.0, r.fpart);
+            try expect_equal(1.0, r.ipart);
+            try expect_equal(0.0, r.fpart);
 
             r = modf(@as(T, 0.34682));
-            try expectEqual(0.0, r.ipart);
-            try expectApproxEqAbs(0.34682, r.fpart, epsilon);
+            try expect_equal(0.0, r.ipart);
+            try expect_approx_eq_abs(0.34682, r.fpart, epsilon);
 
             r = modf(@as(T, 3.97812));
-            try expectEqual(3.0, r.ipart);
+            try expect_equal(3.0, r.ipart);
             // account for precision error
             const expected_a: T = 3.97812 - @as(T, 3);
-            try expectApproxEqAbs(expected_a, r.fpart, epsilon);
+            try expect_approx_eq_abs(expected_a, r.fpart, epsilon);
 
             r = modf(@as(T, 43874.3));
-            try expectEqual(43874.0, r.ipart);
+            try expect_equal(43874.0, r.ipart);
             // account for precision error
             const expected_b: T = 43874.3 - @as(T, 43874);
-            try expectApproxEqAbs(expected_b, r.fpart, epsilon);
+            try expect_approx_eq_abs(expected_b, r.fpart, epsilon);
 
             r = modf(@as(T, 1234.340780));
-            try expectEqual(1234.0, r.ipart);
+            try expect_equal(1234.0, r.ipart);
             // account for precision error
             const expected_c: T = 1234.340780 - @as(T, 1234);
-            try expectApproxEqAbs(expected_c, r.fpart, epsilon);
+            try expect_approx_eq_abs(expected_c, r.fpart, epsilon);
         }
         test "vector" {
             // Currently, a compiler bug is breaking the usage
@@ -102,34 +102,34 @@ fn ModfTests(comptime T: type) type {
                 var r: Modf(V) = undefined;
 
                 r = modf(@as(V, @splat(1.0)));
-                try expectEqual(@as(V, @splat(1.0)), r.ipart);
-                try expectEqual(@as(V, @splat(0.0)), r.fpart);
+                try expect_equal(@as(V, @splat(1.0)), r.ipart);
+                try expect_equal(@as(V, @splat(0.0)), r.fpart);
 
                 r = modf(@as(V, @splat(2.75)));
-                try expectEqual(@as(V, @splat(2.0)), r.ipart);
-                try expectEqual(@as(V, @splat(0.75)), r.fpart);
+                try expect_equal(@as(V, @splat(2.0)), r.ipart);
+                try expect_equal(@as(V, @splat(0.75)), r.fpart);
 
                 r = modf(@as(V, @splat(0.2)));
-                try expectEqual(@as(V, @splat(0.0)), r.ipart);
-                try expectEqual(@as(V, @splat(0.2)), r.fpart);
+                try expect_equal(@as(V, @splat(0.0)), r.ipart);
+                try expect_equal(@as(V, @splat(0.2)), r.fpart);
 
                 r = modf(std.simd.iota(T, len) + @as(V, @splat(0.5)));
-                try expectEqual(std.simd.iota(T, len), r.ipart);
-                try expectEqual(@as(V, @splat(0.5)), r.fpart);
+                try expect_equal(std.simd.iota(T, len), r.ipart);
+                try expect_equal(@as(V, @splat(0.5)), r.fpart);
             }
         }
         test "inf" {
             var r: Modf(T) = undefined;
 
             r = modf(math.inf(T));
-            try expect(math.isPositiveInf(r.ipart) and math.isNan(r.fpart));
+            try expect(math.is_positive_inf(r.ipart) and math.is_nan(r.fpart));
 
             r = modf(-math.inf(T));
-            try expect(math.isNegativeInf(r.ipart) and math.isNan(r.fpart));
+            try expect(math.is_negative_inf(r.ipart) and math.is_nan(r.fpart));
         }
         test "nan" {
             const r: Modf(T) = modf(math.nan(T));
-            try expect(math.isNan(r.ipart) and math.isNan(r.fpart));
+            try expect(math.is_nan(r.ipart) and math.is_nan(r.fpart));
         }
     };
 }

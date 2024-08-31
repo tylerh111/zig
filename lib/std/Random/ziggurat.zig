@@ -23,11 +23,11 @@ pub fn next_f64(random: Random, comptime tables: ZigTable) f64 {
             if (tables.is_symmetric) {
                 // Generate a value in the range [2, 4) and scale into [-1, 1)
                 const repr = ((0x3ff + 1) << 52) | (bits >> 12);
-                break :blk @as(f64, @bitCast(repr)) - 3.0;
+                break :blk @as(f64, @bit_cast(repr)) - 3.0;
             } else {
                 // Generate a value in the range [1, 2) and scale into (0, 1)
                 const repr = (0x3ff << 52) | (bits >> 12);
-                break :blk @as(f64, @bitCast(repr)) - (1.0 - math.floatEps(f64) / 2.0);
+                break :blk @as(f64, @bit_cast(repr)) - (1.0 - math.float_eps(f64) / 2.0);
             }
         };
 
@@ -132,7 +132,7 @@ test "normal dist sanity" {
 
     var i: usize = 0;
     while (i < 1000) : (i += 1) {
-        _ = random.floatNorm(f64);
+        _ = random.float_norm(f64);
     }
 }
 
@@ -161,7 +161,7 @@ test "exp dist smoke test" {
 
     var i: usize = 0;
     while (i < 1000) : (i += 1) {
-        _ = random.floatExp(f64);
+        _ = random.float_exp(f64);
     }
 }
 

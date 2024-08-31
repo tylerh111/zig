@@ -14,7 +14,7 @@ pub fn main() !void {
     return error.TestFailed;
 }
 fn shl(a: u16, b: u4) u16 {
-    return @shlExact(a, b);
+    return @shl_exact(a, b);
 }
 // run
 // backend=llvm

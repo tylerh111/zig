@@ -3,7 +3,7 @@ pub export fn entry() void {
         e: u8,
         e: u8,
     };
-    var a = .{@sizeOf(bitfield)};
+    var a = .{@size_of(bitfield)};
     _ = &a;
 }
 

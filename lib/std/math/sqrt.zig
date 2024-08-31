@@ -2,7 +2,7 @@ const std = @import("../std.zig");
 const math = std.math;
 const expect = std.testing.expect;
 const TypeId = std.builtin.TypeId;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 
 /// Returns the square root of x.
 ///
@@ -17,19 +17,19 @@ pub fn sqrt(x: anytype) Sqrt(@TypeOf(x)) {
     switch (@typeInfo(T)) {
         .Float, .ComptimeFloat => return @sqrt(x),
         .ComptimeInt => comptime {
-            if (x > maxInt(u128)) {
-                @compileError("sqrt not implemented for comptime_int greater than 128 bits");
+            if (x > max_int(u128)) {
+                @compile_error("sqrt not implemented for comptime_int greater than 128 bits");
             }
             if (x < 0) {
-                @compileError("sqrt on negative number");
+                @compile_error("sqrt on negative number");
             }
             return @as(T, sqrt_int(u128, x));
         },
         .Int => |IntType| switch (IntType.signedness) {
-            .signed => @compileError("sqrt not implemented for signed integers"),
+            .signed => @compile_error("sqrt not implemented for signed integers"),
             .unsigned => return sqrt_int(T, x),
         },
-        else => @compileError("sqrt not implemented for " ++ @typeName(T)),
+        else => @compile_error("sqrt not implemented for " ++ @type_name(T)),
     }
 }
 
@@ -38,7 +38,7 @@ fn sqrt_int(comptime T: type, value: T) Sqrt(T) {
         return if (value == 0) 0 else 1; // shortcut for small number of bits to simplify general case
     } else {
         const bits = @typeInfo(T).Int.bits;
-        const max = math.maxInt(T);
+        const max = math.max_int(T);
         const minustwo = (@as(T, 2) ^ max) + 1; // unsigned int cannot represent -2
         var op = value;
         var res: T = 0;
@@ -57,7 +57,7 @@ fn sqrt_int(comptime T: type, value: T) Sqrt(T) {
             one >>= 2;
         }
 
-        return @as(Sqrt(T), @intCast(res));
+        return @as(Sqrt(T), @int_cast(res));
     }
 }
 

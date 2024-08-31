@@ -123,30 +123,30 @@ pub fn TracyAllocator(comptime name: ?[:0]const u8) type {
         }
 
         pub fn allocator(self: *Self) std.mem.Allocator {
-            return std.mem.Allocator.init(self, allocFn, resizeFn, freeFn);
+            return std.mem.Allocator.init(self, alloc_fn, resize_fn, free_fn);
         }
 
         fn alloc_fn(self: *Self, len: usize, ptr_align: u29, len_align: u29, ret_addr: usize) std.mem.Allocator.Error![]u8 {
-            const result = self.parent_allocator.rawAlloc(len, ptr_align, len_align, ret_addr);
+            const result = self.parent_allocator.raw_alloc(len, ptr_align, len_align, ret_addr);
             if (result) |data| {
                 if (data.len != 0) {
                     if (name) |n| {
-                        allocNamed(data.ptr, data.len, n);
+                        alloc_named(data.ptr, data.len, n);
                     } else {
                         alloc(data.ptr, data.len);
                     }
                 }
             } else |_| {
-                messageColor("allocation failed", 0xFF0000);
+                message_color("allocation failed", 0xFF0000);
             }
             return result;
         }
 
         fn resize_fn(self: *Self, buf: []u8, buf_align: u29, new_len: usize, len_align: u29, ret_addr: usize) ?usize {
-            if (self.parent_allocator.rawResize(buf, buf_align, new_len, len_align, ret_addr)) |resized_len| {
+            if (self.parent_allocator.raw_resize(buf, buf_align, new_len, len_align, ret_addr)) |resized_len| {
                 if (name) |n| {
-                    freeNamed(buf.ptr, n);
-                    allocNamed(buf.ptr, resized_len, n);
+                    free_named(buf.ptr, n);
+                    alloc_named(buf.ptr, resized_len, n);
                 } else {
                     free(buf.ptr);
                     alloc(buf.ptr, resized_len);
@@ -161,12 +161,12 @@ pub fn TracyAllocator(comptime name: ?[:0]const u8) type {
         }
 
         fn free_fn(self: *Self, buf: []u8, buf_align: u29, ret_addr: usize) void {
-            self.parent_allocator.rawFree(buf, buf_align, ret_addr);
+            self.parent_allocator.raw_free(buf, buf_align, ret_addr);
             // this condition is to handle free being called on an empty slice that was never even allocated
             // example case: `std.process.getSelfExeSharedLibPaths` can return `&[_][:0]u8{}`
             if (buf.len != 0) {
                 if (name) |n| {
-                    freeNamed(buf.ptr, n);
+                    free_named(buf.ptr, n);
                 } else {
                     free(buf.ptr);
                 }
@@ -175,13 +175,13 @@ pub fn TracyAllocator(comptime name: ?[:0]const u8) type {
     };
 }
 
-// This function only accepts comptime known strings, see `messageCopy` for runtime strings
+// This function only accepts comptime known strings, see `message_copy` for runtime strings
 pub inline fn message(comptime msg: [:0]const u8) void {
     if (!enable) return;
     ___tracy_emit_messageL(msg.ptr, if (enable_callstack) callstack_depth else 0);
 }
 
-// This function only accepts comptime known strings, see `messageColorCopy` for runtime strings
+// This function only accepts comptime known strings, see `message_color_copy` for runtime strings
 pub inline fn message_color(comptime msg: [:0]const u8, color: u32) void {
     if (!enable) return;
     ___tracy_emit_messageLC(msg.ptr, color, if (enable_callstack) callstack_depth else 0);
@@ -208,14 +208,14 @@ pub inline fn frame_mark_named(comptime name: [:0]const u8) void {
 }
 
 pub inline fn named_frame(comptime name: [:0]const u8) Frame(name) {
-    frameMarkStart(name);
+    frame_mark_start(name);
     return .{};
 }
 
 pub fn Frame(comptime name: [:0]const u8) type {
     return struct {
         pub fn end(_: @This()) void {
-            frameMarkEnd(name);
+            frame_mark_end(name);
         }
     };
 }

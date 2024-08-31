@@ -42,8 +42,8 @@ test "slices pointing at the same address as global array." {
         }
     };
 
-    try S.checkAddress(&S.a);
-    try comptime S.checkAddress(&S.a);
+    try S.check_address(&S.a);
+    try comptime S.check_address(&S.a);
 }
 
 test "global loads can affect liveness" {

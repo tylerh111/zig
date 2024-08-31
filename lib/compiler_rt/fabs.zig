@@ -44,14 +44,14 @@ pub fn fabsl(x: c_longdouble) callconv(.C) c_longdouble {
         64 => return fabs(x),
         80 => return __fabsx(x),
         128 => return fabsq(x),
-        else => @compileError("unreachable"),
+        else => @compile_error("unreachable"),
     }
 }
 
 inline fn generic_fabs(x: anytype) @TypeOf(x) {
     const T = @TypeOf(x);
     const TBits = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
-    const float_bits: TBits = @bitCast(x);
+    const float_bits: TBits = @bit_cast(x);
     const remove_sign = ~@as(TBits, 0) >> 1;
-    return @bitCast(float_bits & remove_sign);
+    return @bit_cast(float_bits & remove_sign);
 }

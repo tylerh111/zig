@@ -1,5 +1,5 @@
 export fn foo() void {
-    @compileError("this is an error");
+    @compile_error("this is an error");
 }
 
 // error

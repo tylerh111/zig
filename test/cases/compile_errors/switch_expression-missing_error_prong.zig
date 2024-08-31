@@ -20,7 +20,7 @@ fn h(n: Error!i32) i32 {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&f)) + @sizeOf(@TypeOf(&h));
+    return @size_of(@TypeOf(&f)) + @size_of(@TypeOf(&h));
 }
 
 // error

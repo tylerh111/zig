@@ -10,7 +10,7 @@ pub fn main() !void {
     std.posix.close(pipe[0]);
     _ = std.posix.write(pipe[1], "a") catch |err| switch (err) {
         error.BrokenPipe => {
-            try std.io.getStdOut().writer().writeAll("BrokenPipe\n");
+            try std.io.get_std_out().writer().write_all("BrokenPipe\n");
             std.posix.exit(123);
         },
         else => |e| return e,

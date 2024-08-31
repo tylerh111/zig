@@ -11,9 +11,9 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
     const Z = std.meta.Int(.unsigned, bits);
 
     const typeWidth = bits;
-    const significandBits = math.floatMantissaBits(T);
-    const fractionalBits = math.floatFractionalBits(T);
-    const exponentBits = math.floatExponentBits(T);
+    const significandBits = math.float_mantissa_bits(T);
+    const fractionalBits = math.float_fractional_bits(T);
+    const exponentBits = math.float_exponent_bits(T);
 
     const signBit = (@as(Z, 1) << (significandBits + exponentBits));
     const maxExponent = ((1 << exponentBits) - 1);
@@ -23,28 +23,28 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
     const significandMask = (@as(Z, 1) << significandBits) - 1;
 
     const absMask = signBit - 1;
-    const qnanRep = @as(Z, @bitCast(math.nan(T))) | quietBit;
+    const qnanRep = @as(Z, @bit_cast(math.nan(T))) | quietBit;
 
-    var aRep: Z = @bitCast(a);
-    var bRep: Z = @bitCast(b);
+    var aRep: Z = @bit_cast(a);
+    var bRep: Z = @bit_cast(b);
     const aAbs = aRep & absMask;
     const bAbs = bRep & absMask;
 
-    const infRep: Z = @bitCast(math.inf(T));
+    const infRep: Z = @bit_cast(math.inf(T));
 
     // Detect if a or b is zero, infinity, or NaN.
     if (aAbs -% @as(Z, 1) >= infRep - @as(Z, 1) or
         bAbs -% @as(Z, 1) >= infRep - @as(Z, 1))
     {
         // NaN + anything = qNaN
-        if (aAbs > infRep) return @bitCast(@as(Z, @bitCast(a)) | quietBit);
+        if (aAbs > infRep) return @bit_cast(@as(Z, @bit_cast(a)) | quietBit);
         // anything + NaN = qNaN
-        if (bAbs > infRep) return @bitCast(@as(Z, @bitCast(b)) | quietBit);
+        if (bAbs > infRep) return @bit_cast(@as(Z, @bit_cast(b)) | quietBit);
 
         if (aAbs == infRep) {
             // +/-infinity + -/+infinity = qNaN
-            if ((@as(Z, @bitCast(a)) ^ @as(Z, @bitCast(b))) == signBit) {
-                return @bitCast(qnanRep);
+            if ((@as(Z, @bit_cast(a)) ^ @as(Z, @bit_cast(b))) == signBit) {
+                return @bit_cast(qnanRep);
             }
             // +/-infinity + anything remaining = +/- infinity
             else {
@@ -59,7 +59,7 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
         if (aAbs == 0) {
             // but we need to get the sign right for zero + zero
             if (bAbs == 0) {
-                return @bitCast(@as(Z, @bitCast(a)) & @as(Z, @bitCast(b)));
+                return @bit_cast(@as(Z, @bit_cast(a)) & @as(Z, @bit_cast(b)));
             } else {
                 return b;
             }
@@ -77,8 +77,8 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
     }
 
     // Extract the exponent and significand from the (possibly swapped) a and b.
-    var aExponent: i32 = @intCast((aRep >> significandBits) & maxExponent);
-    var bExponent: i32 = @intCast((bRep >> significandBits) & maxExponent);
+    var aExponent: i32 = @int_cast((aRep >> significandBits) & maxExponent);
+    var bExponent: i32 = @int_cast((bRep >> significandBits) & maxExponent);
     var aSignificand = aRep & significandMask;
     var bSignificand = bRep & significandMask;
 
@@ -100,10 +100,10 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
 
     // Shift the significand of b by the difference in exponents, with a sticky
     // bottom bit to get rounding correct.
-    const @"align": u32 = @intCast(aExponent - bExponent);
+    const @"align": u32 = @int_cast(aExponent - bExponent);
     if (@"align" != 0) {
         if (@"align" < typeWidth) {
-            const sticky = if (bSignificand << @intCast(typeWidth - @"align") != 0) @as(Z, 1) else 0;
+            const sticky = if (bSignificand << @int_cast(typeWidth - @"align") != 0) @as(Z, 1) else 0;
             bSignificand = (bSignificand >> @truncate(@"align")) | sticky;
         } else {
             bSignificand = 1; // sticky; b is known to be non-zero.
@@ -112,13 +112,13 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
     if (subtraction) {
         aSignificand -= bSignificand;
         // If a == -b, return +zero.
-        if (aSignificand == 0) return @bitCast(@as(Z, 0));
+        if (aSignificand == 0) return @bit_cast(@as(Z, 0));
 
         // If partial cancellation occurred, we need to left-shift the result
         // and adjust the exponent:
         if (aSignificand < integerBit << 3) {
-            const shift = @as(i32, @intCast(@clz(aSignificand))) - @as(i32, @intCast(@clz(integerBit << 3)));
-            aSignificand <<= @intCast(shift);
+            const shift = @as(i32, @int_cast(@clz(aSignificand))) - @as(i32, @int_cast(@clz(integerBit << 3)));
+            aSignificand <<= @int_cast(shift);
             aExponent -= shift;
         }
     } else { // addition
@@ -134,13 +134,13 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
     }
 
     // If we have overflowed the type, return +/- infinity:
-    if (aExponent >= maxExponent) return @bitCast(infRep | resultSign);
+    if (aExponent >= maxExponent) return @bit_cast(infRep | resultSign);
 
     if (aExponent <= 0) {
         // Result is denormal; the exponent and round/sticky bits are zero.
         // All we need to do is shift the significand and apply the correct sign.
-        aSignificand >>= @intCast(4 - aExponent);
-        return @bitCast(resultSign | aSignificand);
+        aSignificand >>= @int_cast(4 - aExponent);
+        return @bit_cast(resultSign | aSignificand);
     }
 
     // Low three bits are round, guard, and sticky.
@@ -150,7 +150,7 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
     var result = (aSignificand >> 3) & significandMask;
 
     // Insert the exponent and sign.
-    result |= @as(Z, @intCast(aExponent)) << significandBits;
+    result |= @as(Z, @int_cast(aExponent)) << significandBits;
     result |= resultSign;
 
     // Final rounding.  The result may overflow to infinity, but that is the
@@ -163,7 +163,7 @@ pub inline fn addf3(comptime T: type, a: T, b: T) T {
         if ((result >> significandBits) != 0) result |= integerBit;
     }
 
-    return @bitCast(result);
+    return @bit_cast(result);
 }
 
 test {

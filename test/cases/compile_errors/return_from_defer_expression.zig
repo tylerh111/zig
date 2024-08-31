@@ -1,9 +1,9 @@
 pub fn test_tricky_defer() !void {
-    defer canFail() catch {};
+    defer can_fail() catch {};
 
-    defer try canFail();
+    defer try can_fail();
 
-    const a = maybeInt() orelse return;
+    const a = maybe_int() orelse return;
 }
 
 fn can_fail() anyerror!void {}
@@ -13,7 +13,7 @@ pub fn maybe_int() ?i32 {
 }
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(testTrickyDefer));
+    return @size_of(@TypeOf(test_tricky_defer));
 }
 
 // error

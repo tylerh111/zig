@@ -11,12 +11,12 @@ pub fn panic(message: []const u8, stack_trace: ?*std.builtin.StackTrace, _: ?usi
 pub fn main() !void {
     const a: @Vector(4, i32) = [4]i32{ 111, 222, 333, 444 };
     const b: @Vector(4, i32) = [4]i32{ 111, 222, 333, 441 };
-    const x = divExact(a, b);
+    const x = div_exact(a, b);
     _ = x;
     return error.TestFailed;
 }
 fn div_exact(a: @Vector(4, i32), b: @Vector(4, i32)) @Vector(4, i32) {
-    return @divExact(a, b);
+    return @div_exact(a, b);
 }
 // run
 // backend=llvm

@@ -10,7 +10,7 @@ test "anyopaque extern symbol" {
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
     const a = @extern(*anyopaque, .{ .name = "a_mystery_symbol" });
-    const b: *i32 = @alignCast(@ptrCast(a));
+    const b: *i32 = @align_cast(@ptr_cast(a));
     try expect(b.* == 1234);
 }
 

@@ -10,7 +10,7 @@ root_src_path: []const u8,
 fully_qualified_name: []const u8,
 /// The dependency table of this module. Shared dependencies such as 'std',
 /// 'builtin', and 'root' are not specified in every dependency table, but
-/// instead only in the table of `main_mod`. `Module.importFile` is
+/// instead only in the table of `main_mod`. `Module.import_file` is
 /// responsible for detecting these names and using the correct package.
 deps: Deps = .{},
 
@@ -128,7 +128,7 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
     };
 
     const valgrind = b: {
-        if (!target_util.hasValgrindSupport(target)) {
+        if (!target_util.has_valgrind_support(target)) {
             if (options.inherited.valgrind == true)
                 return error.ValgrindUnsupportedOnTarget;
             break :b false;
@@ -139,17 +139,17 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
         break :b optimize_mode == .Debug;
     };
 
-    const zig_backend = target_util.zigBackend(target, options.global.use_llvm);
+    const zig_backend = target_util.zig_backend(target, options.global.use_llvm);
 
     const single_threaded = b: {
-        if (target_util.alwaysSingleThreaded(target)) {
+        if (target_util.always_single_threaded(target)) {
             if (options.inherited.single_threaded == false)
                 return error.TargetRequiresSingleThreaded;
             break :b true;
         }
 
         if (options.global.have_zcu) {
-            if (!target_util.supportsThreads(target, zig_backend)) {
+            if (!target_util.supports_threads(target, zig_backend)) {
                 if (options.inherited.single_threaded == false)
                     return error.BackendRequiresSingleThreaded;
                 break :b true;
@@ -158,7 +158,7 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
 
         if (options.inherited.single_threaded) |x| break :b x;
         if (options.parent) |p| break :b p.single_threaded;
-        break :b target_util.defaultSingleThreaded(target);
+        break :b target_util.default_single_threaded(target);
     };
 
     const error_tracing = b: {
@@ -168,7 +168,7 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
     };
 
     const pic = b: {
-        if (target_util.requiresPIC(target, options.global.link_libc)) {
+        if (target_util.requires_pic(target, options.global.link_libc)) {
             if (options.inherited.pic == false)
                 return error.TargetRequiresPic;
             break :b true;
@@ -189,7 +189,7 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
     };
 
     const red_zone = b: {
-        if (!target_util.hasRedZone(target)) {
+        if (!target_util.has_red_zone(target)) {
             if (options.inherited.red_zone == true)
                 return error.TargetHasNoRedZone;
             break :b false;
@@ -230,7 +230,7 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
     };
 
     const stack_check = b: {
-        if (!target_util.supportsStackProbing(target)) {
+        if (!target_util.supports_stack_probing(target)) {
             if (options.inherited.stack_check == true)
                 return error.StackCheckUnsupportedByTarget;
             break :b false;
@@ -243,7 +243,7 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
     const stack_protector: u32 = sp: {
         const use_zig_backend = options.global.have_zcu or
             (options.global.any_c_source_files and options.global.c_frontend == .aro);
-        if (use_zig_backend and !target_util.supportsStackProtector(target, zig_backend)) {
+        if (use_zig_backend and !target_util.supports_stack_protector(target, zig_backend)) {
             if (options.inherited.stack_protector) |x| {
                 if (x > 0) return error.StackProtectorUnsupportedByTarget;
             }
@@ -251,7 +251,7 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
         }
 
         if (options.global.any_c_source_files and options.global.c_frontend == .clang and
-            !target_util.clangSupportsStackProtector(target))
+            !target_util.clang_supports_stack_protector(target))
         {
             if (options.inherited.stack_protector) |x| {
                 if (x > 0) return error.StackProtectorUnsupportedByTarget;
@@ -296,22 +296,22 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
         if (!options.global.use_llvm) break :b null;
 
         var buf = std.ArrayList(u8).init(arena);
-        for (target.cpu.arch.allFeaturesList(), 0..) |feature, index_usize| {
-            const index = @as(std.Target.Cpu.Feature.Set.Index, @intCast(index_usize));
-            const is_enabled = target.cpu.features.isEnabled(index);
+        for (target.cpu.arch.all_features_list(), 0..) |feature, index_usize| {
+            const index = @as(std.Target.Cpu.Feature.Set.Index, @int_cast(index_usize));
+            const is_enabled = target.cpu.features.is_enabled(index);
 
             if (feature.llvm_name) |llvm_name| {
-                const plus_or_minus = "-+"[@intFromBool(is_enabled)];
-                try buf.ensureUnusedCapacity(2 + llvm_name.len);
-                buf.appendAssumeCapacity(plus_or_minus);
-                buf.appendSliceAssumeCapacity(llvm_name);
-                buf.appendSliceAssumeCapacity(",");
+                const plus_or_minus = "-+"[@int_from_bool(is_enabled)];
+                try buf.ensure_unused_capacity(2 + llvm_name.len);
+                buf.append_assume_capacity(plus_or_minus);
+                buf.append_slice_assume_capacity(llvm_name);
+                buf.append_slice_assume_capacity(",");
             }
         }
         if (buf.items.len == 0) break :b "";
-        assert(std.mem.endsWith(u8, buf.items, ","));
+        assert(std.mem.ends_with(u8, buf.items, ","));
         buf.items[buf.items.len - 1] = 0;
-        buf.shrinkAndFree(buf.items.len);
+        buf.shrink_and_free(buf.items.len);
         break :b buf.items[0 .. buf.items.len - 1 :0].ptr;
     };
 
@@ -370,9 +370,9 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
         }, arena);
 
         const new = if (options.builtin_modules) |builtins| new: {
-            const gop = try builtins.getOrPut(arena, generated_builtin_source);
+            const gop = try builtins.get_or_put(arena, generated_builtin_source);
             if (gop.found_existing) break :b gop.value_ptr.*;
-            errdefer builtins.removeByPtr(gop.key_ptr);
+            errdefer builtins.remove_by_ptr(gop.key_ptr);
             const new = try arena.create(Module);
             gop.value_ptr.* = new;
             break :new new;
@@ -389,10 +389,10 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
             hasher.final(&bin_digest);
 
             var hex_digest: Cache.HexDigest = undefined;
-            _ = std.fmt.bufPrint(
+            _ = std.fmt.buf_print(
                 &hex_digest,
                 "{s}",
-                .{std.fmt.fmtSliceHexLower(&bin_digest)},
+                .{std.fmt.fmt_slice_hex_lower(&bin_digest)},
             ) catch unreachable;
 
             break :digest .{ bin_digest, hex_digest };
@@ -409,7 +409,7 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
             .fully_qualified_name = if (options.parent == null)
                 "builtin"
             else
-                try std.fmt.allocPrint(arena, "{s}.builtin", .{options.fully_qualified_name}),
+                try std.fmt.alloc_print(arena, "{s}.builtin", .{options.fully_qualified_name}),
             .resolved_target = .{
                 .result = target,
                 .is_native_os = resolved_target.is_native_os,
@@ -454,8 +454,8 @@ pub fn create(arena: Allocator, options: CreateOptions) !*Package.Module {
     };
 
     if (opt_builtin_mod) |builtin_mod| {
-        try mod.deps.ensureUnusedCapacity(arena, 1);
-        mod.deps.putAssumeCapacityNoClobber("builtin", builtin_mod);
+        try mod.deps.ensure_unused_capacity(arena, 1);
+        mod.deps.put_assume_capacity_no_clobber("builtin", builtin_mod);
     }
 
     return mod;
@@ -500,11 +500,11 @@ pub fn create_limited(gpa: Allocator, options: LimitedOptions) Allocator.Error!*
 }
 
 /// Asserts that the module has a builtin module, which is not true for non-zig
-/// modules such as ones only used for `@embedFile`, or the root module when
+/// modules such as ones only used for `@embed_file`, or the root module when
 /// there is no Zig Compilation Unit.
 pub fn get_builtin_dependency(m: Module) *Module {
     const result = m.deps.values()[0];
-    assert(result.isBuiltin());
+    assert(result.is_builtin());
     return result;
 }
 

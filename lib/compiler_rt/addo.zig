@@ -13,7 +13,7 @@ comptime {
 // addo - add overflow
 // * return a+%b.
 // * return if a+b overflows => 1 else => 0
-// - addoXi4_generic as default
+// - addo_xi4_generic as default
 
 inline fn addo_xi4_generic(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST {
     @setRuntimeSafety(builtin.is_test);
@@ -32,13 +32,13 @@ inline fn addo_xi4_generic(comptime ST: type, a: ST, b: ST, overflow: *c_int) ST
 }
 
 pub fn __addosi4(a: i32, b: i32, overflow: *c_int) callconv(.C) i32 {
-    return addoXi4_generic(i32, a, b, overflow);
+    return addo_xi4_generic(i32, a, b, overflow);
 }
 pub fn __addodi4(a: i64, b: i64, overflow: *c_int) callconv(.C) i64 {
-    return addoXi4_generic(i64, a, b, overflow);
+    return addo_xi4_generic(i64, a, b, overflow);
 }
 pub fn __addoti4(a: i128, b: i128, overflow: *c_int) callconv(.C) i128 {
-    return addoXi4_generic(i128, a, b, overflow);
+    return addo_xi4_generic(i128, a, b, overflow);
 }
 
 test {

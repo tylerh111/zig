@@ -24,7 +24,7 @@ pub fn bit_cast(
     host_bits: u64,
     bit_offset: u64,
 ) CompileError!?Value {
-    return bitCastInner(sema, val, dest_ty, byte_offset, host_bits, bit_offset) catch |err| switch (err) {
+    return bit_cast_inner(sema, val, dest_ty, byte_offset, host_bits, bit_offset) catch |err| switch (err) {
         error.ReinterpretDeclRef => return null,
         error.IllDefinedMemoryLayout => unreachable,
         error.Unimplemented => @panic("unimplemented bitcast"),
@@ -51,7 +51,7 @@ pub fn bit_cast_splice(
     host_bits: u64,
     bit_offset: u64,
 ) CompileError!?Value {
-    return bitCastSpliceInner(sema, val, splice_val, byte_offset, host_bits, bit_offset) catch |err| switch (err) {
+    return bit_cast_splice_inner(sema, val, splice_val, byte_offset, host_bits, bit_offset) catch |err| switch (err) {
         error.ReinterpretDeclRef => return null,
         error.IllDefinedMemoryLayout => unreachable,
         error.Unimplemented => @panic("unimplemented bitcast"),
@@ -70,37 +70,37 @@ fn bit_cast_inner(
     bit_offset: u64,
 ) BitCastError!Value {
     const zcu = sema.mod;
-    const endian = zcu.getTarget().cpu.arch.endian();
+    const endian = zcu.get_target().cpu.arch.endian();
 
-    if (dest_ty.toIntern() == val.typeOf(zcu).toIntern() and bit_offset == 0) {
+    if (dest_ty.to_intern() == val.type_of(zcu).to_intern() and bit_offset == 0) {
         return val;
     }
 
-    const val_ty = val.typeOf(zcu);
+    const val_ty = val.type_of(zcu);
 
-    try sema.resolveTypeLayout(val_ty);
-    try sema.resolveTypeLayout(dest_ty);
+    try sema.resolve_type_layout(val_ty);
+    try sema.resolve_type_layout(dest_ty);
 
-    assert(val_ty.hasWellDefinedLayout(zcu));
+    assert(val_ty.has_well_defined_layout(zcu));
 
     const abi_pad_bits, const host_pad_bits = if (host_bits > 0)
-        .{ val_ty.abiSize(zcu) * 8 - host_bits, host_bits - val_ty.bitSize(zcu) }
+        .{ val_ty.abi_size(zcu) * 8 - host_bits, host_bits - val_ty.bit_size(zcu) }
     else
-        .{ val_ty.abiSize(zcu) * 8 - val_ty.bitSize(zcu), 0 };
+        .{ val_ty.abi_size(zcu) * 8 - val_ty.bit_size(zcu), 0 };
 
     const skip_bits = switch (endian) {
         .little => bit_offset + byte_offset * 8,
         .big => if (host_bits > 0)
-            val_ty.abiSize(zcu) * 8 - byte_offset * 8 - host_bits + bit_offset
+            val_ty.abi_size(zcu) * 8 - byte_offset * 8 - host_bits + bit_offset
         else
-            val_ty.abiSize(zcu) * 8 - byte_offset * 8 - dest_ty.bitSize(zcu),
+            val_ty.abi_size(zcu) * 8 - byte_offset * 8 - dest_ty.bit_size(zcu),
     };
 
     var unpack: UnpackValueBits = .{
         .zcu = zcu,
         .arena = sema.arena,
         .skip_bits = skip_bits,
-        .remaining_bits = dest_ty.bitSize(zcu),
+        .remaining_bits = dest_ty.bit_size(zcu),
         .unpacked = std.ArrayList(InternPool.Index).init(sema.arena),
     };
     switch (endian) {
@@ -132,29 +132,29 @@ fn bit_cast_splice_inner(
     bit_offset: u64,
 ) BitCastError!Value {
     const zcu = sema.mod;
-    const endian = zcu.getTarget().cpu.arch.endian();
-    const val_ty = val.typeOf(zcu);
-    const splice_val_ty = splice_val.typeOf(zcu);
+    const endian = zcu.get_target().cpu.arch.endian();
+    const val_ty = val.type_of(zcu);
+    const splice_val_ty = splice_val.type_of(zcu);
 
-    try sema.resolveTypeLayout(val_ty);
-    try sema.resolveTypeLayout(splice_val_ty);
+    try sema.resolve_type_layout(val_ty);
+    try sema.resolve_type_layout(splice_val_ty);
 
-    const splice_bits = splice_val_ty.bitSize(zcu);
+    const splice_bits = splice_val_ty.bit_size(zcu);
 
     const splice_offset = switch (endian) {
         .little => bit_offset + byte_offset * 8,
         .big => if (host_bits > 0)
-            val_ty.abiSize(zcu) * 8 - byte_offset * 8 - host_bits + bit_offset
+            val_ty.abi_size(zcu) * 8 - byte_offset * 8 - host_bits + bit_offset
         else
-            val_ty.abiSize(zcu) * 8 - byte_offset * 8 - splice_bits,
+            val_ty.abi_size(zcu) * 8 - byte_offset * 8 - splice_bits,
     };
 
-    assert(splice_offset + splice_bits <= val_ty.abiSize(zcu) * 8);
+    assert(splice_offset + splice_bits <= val_ty.abi_size(zcu) * 8);
 
     const abi_pad_bits, const host_pad_bits = if (host_bits > 0)
-        .{ val_ty.abiSize(zcu) * 8 - host_bits, host_bits - val_ty.bitSize(zcu) }
+        .{ val_ty.abi_size(zcu) * 8 - host_bits, host_bits - val_ty.bit_size(zcu) }
     else
-        .{ val_ty.abiSize(zcu) * 8 - val_ty.bitSize(zcu), 0 };
+        .{ val_ty.abi_size(zcu) * 8 - val_ty.bit_size(zcu), 0 };
 
     var unpack: UnpackValueBits = .{
         .zcu = zcu,
@@ -179,7 +179,7 @@ fn bit_cast_splice_inner(
     try unpack.add(splice_val);
 
     unpack.skip_bits = splice_offset + splice_bits;
-    unpack.remaining_bits = val_ty.abiSize(zcu) * 8 - splice_offset - splice_bits;
+    unpack.remaining_bits = val_ty.abi_size(zcu) * 8 - splice_offset - splice_bits;
     switch (endian) {
         .little => {
             try unpack.add(val);
@@ -218,22 +218,22 @@ const UnpackValueBits = struct {
 
     fn add(unpack: *UnpackValueBits, val: Value) BitCastError!void {
         const zcu = unpack.zcu;
-        const endian = zcu.getTarget().cpu.arch.endian();
+        const endian = zcu.get_target().cpu.arch.endian();
         const ip = &zcu.intern_pool;
 
         if (unpack.remaining_bits == 0) {
             return;
         }
 
-        const ty = val.typeOf(zcu);
-        const bit_size = ty.bitSize(zcu);
+        const ty = val.type_of(zcu);
+        const bit_size = ty.bit_size(zcu);
 
         if (unpack.skip_bits >= bit_size) {
             unpack.skip_bits -= bit_size;
             return;
         }
 
-        switch (ip.indexToKey(val.toIntern())) {
+        switch (ip.index_to_key(val.to_intern())) {
             .int_type,
             .ptr_type,
             .array_type,
@@ -270,16 +270,16 @@ const UnpackValueBits = struct {
             .opt,
             => try unpack.primitive(val),
 
-            .aggregate => switch (ty.zigTypeTag(zcu)) {
+            .aggregate => switch (ty.zig_type_tag(zcu)) {
                 .Vector => {
-                    const len: usize = @intCast(ty.arrayLen(zcu));
+                    const len: usize = @int_cast(ty.array_len(zcu));
                     for (0..len) |i| {
                         // We reverse vector elements in packed memory on BE targets.
                         const real_idx = switch (endian) {
                             .little => i,
                             .big => len - i - 1,
                         };
-                        const elem_val = try val.elemValue(zcu, real_idx);
+                        const elem_val = try val.elem_value(zcu, real_idx);
                         try unpack.add(elem_val);
                     }
                 },
@@ -287,9 +287,9 @@ const UnpackValueBits = struct {
                     // Each element is padded up to its ABI size. Padding bits are undefined.
                     // The final element does not have trailing padding.
                     // Elements are reversed in packed memory on BE targets.
-                    const elem_ty = ty.childType(zcu);
-                    const pad_bits = elem_ty.abiSize(zcu) * 8 - elem_ty.bitSize(zcu);
-                    const len = ty.arrayLen(zcu);
+                    const elem_ty = ty.child_type(zcu);
+                    const pad_bits = elem_ty.abi_size(zcu) * 8 - elem_ty.bit_size(zcu);
+                    const len = ty.array_len(zcu);
                     const maybe_sent = ty.sentinel(zcu);
 
                     if (endian == .big) if (maybe_sent) |s| {
@@ -297,13 +297,13 @@ const UnpackValueBits = struct {
                         if (len != 0) try unpack.padding(pad_bits);
                     };
 
-                    for (0..@intCast(len)) |i| {
+                    for (0..@int_cast(len)) |i| {
                         // We reverse array elements in packed memory on BE targets.
                         const real_idx = switch (endian) {
                             .little => i,
                             .big => len - i - 1,
                         };
-                        const elem_val = try val.elemValue(zcu, @intCast(real_idx));
+                        const elem_val = try val.elem_value(zcu, @int_cast(real_idx));
                         try unpack.add(elem_val);
                         if (i != len - 1) try unpack.padding(pad_bits);
                     }
@@ -313,34 +313,34 @@ const UnpackValueBits = struct {
                         try unpack.add(s);
                     };
                 },
-                .Struct => switch (ty.containerLayout(zcu)) {
+                .Struct => switch (ty.container_layout(zcu)) {
                     .auto => unreachable, // ill-defined layout
                     .@"extern" => switch (endian) {
                         .little => {
                             var cur_bit_off: u64 = 0;
-                            var it = zcu.typeToStruct(ty).?.iterateRuntimeOrder(ip);
+                            var it = zcu.type_to_struct(ty).?.iterate_runtime_order(ip);
                             while (it.next()) |field_idx| {
-                                const want_bit_off = ty.structFieldOffset(field_idx, zcu) * 8;
+                                const want_bit_off = ty.struct_field_offset(field_idx, zcu) * 8;
                                 const pad_bits = want_bit_off - cur_bit_off;
-                                const field_val = try val.fieldValue(zcu, field_idx);
+                                const field_val = try val.field_value(zcu, field_idx);
                                 try unpack.padding(pad_bits);
                                 try unpack.add(field_val);
-                                cur_bit_off = want_bit_off + field_val.typeOf(zcu).bitSize(zcu);
+                                cur_bit_off = want_bit_off + field_val.type_of(zcu).bit_size(zcu);
                             }
                             // Add trailing padding bits.
                             try unpack.padding(bit_size - cur_bit_off);
                         },
                         .big => {
                             var cur_bit_off: u64 = bit_size;
-                            var it = zcu.typeToStruct(ty).?.iterateRuntimeOrderReverse(ip);
+                            var it = zcu.type_to_struct(ty).?.iterate_runtime_order_reverse(ip);
                             while (it.next()) |field_idx| {
-                                const field_val = try val.fieldValue(zcu, field_idx);
-                                const field_ty = field_val.typeOf(zcu);
-                                const want_bit_off = ty.structFieldOffset(field_idx, zcu) * 8 + field_ty.bitSize(zcu);
+                                const field_val = try val.field_value(zcu, field_idx);
+                                const field_ty = field_val.type_of(zcu);
+                                const want_bit_off = ty.struct_field_offset(field_idx, zcu) * 8 + field_ty.bit_size(zcu);
                                 const pad_bits = cur_bit_off - want_bit_off;
                                 try unpack.padding(pad_bits);
                                 try unpack.add(field_val);
-                                cur_bit_off = want_bit_off - field_ty.bitSize(zcu);
+                                cur_bit_off = want_bit_off - field_ty.bit_size(zcu);
                             }
                             assert(cur_bit_off == 0);
                         },
@@ -348,8 +348,8 @@ const UnpackValueBits = struct {
                     .@"packed" => {
                         // Just add all fields in order. There are no padding bits.
                         // This is identical between LE and BE targets.
-                        for (0..ty.structFieldCount(zcu)) |i| {
-                            const field_val = try val.fieldValue(zcu, i);
+                        for (0..ty.struct_field_count(zcu)) |i| {
+                            const field_val = try val.field_value(zcu, i);
                             try unpack.add(field_val);
                         }
                     },
@@ -362,9 +362,9 @@ const UnpackValueBits = struct {
                 // Instead, we just need to write the payload value, plus any necessary padding.
                 // This correctly handles the case where `tag == .none`, since the payload is then
                 // either an integer or a byte array, both of which we can unpack.
-                const payload_val = Value.fromInterned(un.val);
-                const pad_bits = bit_size - payload_val.typeOf(zcu).bitSize(zcu);
-                if (endian == .little or ty.containerLayout(zcu) == .@"packed") {
+                const payload_val = Value.from_interned(un.val);
+                const pad_bits = bit_size - payload_val.type_of(zcu).bit_size(zcu);
+                if (endian == .little or ty.container_layout(zcu) == .@"packed") {
                     try unpack.add(payload_val);
                     try unpack.padding(pad_bits);
                 } else {
@@ -382,14 +382,14 @@ const UnpackValueBits = struct {
         const bytes = pad_bits / 8;
         const bits = pad_bits % 8;
         // Add undef u8 values for the bytes...
-        const undef_u8 = try zcu.undefValue(Type.u8);
-        for (0..@intCast(bytes)) |_| {
+        const undef_u8 = try zcu.undef_value(Type.u8);
+        for (0..@int_cast(bytes)) |_| {
             try unpack.primitive(undef_u8);
         }
         // ...and an undef int for the leftover bits.
         if (bits == 0) return;
-        const bits_ty = try zcu.intType(.unsigned, @intCast(bits));
-        const bits_val = try zcu.undefValue(bits_ty);
+        const bits_ty = try zcu.int_type(.unsigned, @int_cast(bits));
+        const bits_val = try zcu.undef_value(bits_ty);
         try unpack.primitive(bits_val);
     }
 
@@ -400,8 +400,8 @@ const UnpackValueBits = struct {
             return;
         }
 
-        const ty = val.typeOf(zcu);
-        const bit_size = ty.bitSize(zcu);
+        const ty = val.type_of(zcu);
+        const bit_size = ty.bit_size(zcu);
 
         // Note that this skips all zero-bit types.
         if (unpack.skip_bits >= bit_size) {
@@ -412,34 +412,34 @@ const UnpackValueBits = struct {
         if (unpack.skip_bits > 0) {
             const skip = unpack.skip_bits;
             unpack.skip_bits = 0;
-            return unpack.splitPrimitive(val, skip, bit_size - skip);
+            return unpack.split_primitive(val, skip, bit_size - skip);
         }
 
         if (unpack.remaining_bits < bit_size) {
-            return unpack.splitPrimitive(val, 0, unpack.remaining_bits);
+            return unpack.split_primitive(val, 0, unpack.remaining_bits);
         }
 
         unpack.remaining_bits -|= bit_size;
 
-        try unpack.unpacked.append(val.toIntern());
+        try unpack.unpacked.append(val.to_intern());
     }
 
     fn split_primitive(unpack: *UnpackValueBits, val: Value, bit_offset: u64, bit_count: u64) BitCastError!void {
         const zcu = unpack.zcu;
-        const ty = val.typeOf(zcu);
+        const ty = val.type_of(zcu);
 
-        const val_bits = ty.bitSize(zcu);
+        const val_bits = ty.bit_size(zcu);
         assert(bit_offset + bit_count <= val_bits);
 
-        switch (zcu.intern_pool.indexToKey(val.toIntern())) {
+        switch (zcu.intern_pool.index_to_key(val.to_intern())) {
             // In the `ptr` case, this will return `error.ReinterpretDeclRef`
             // if we're trying to split a non-integer pointer value.
             .int, .float, .enum_tag, .ptr, .opt => {
-                // This @intCast is okay because no primitive can exceed the size of a u16.
-                const int_ty = try zcu.intType(.unsigned, @intCast(bit_count));
-                const buf = try unpack.arena.alloc(u8, @intCast((val_bits + 7) / 8));
-                try val.writeToPackedMemory(ty, zcu, buf, 0);
-                const sub_val = try Value.readFromPackedMemory(int_ty, zcu, buf, @intCast(bit_offset), unpack.arena);
+                // This @int_cast is okay because no primitive can exceed the size of a u16.
+                const int_ty = try zcu.int_type(.unsigned, @int_cast(bit_count));
+                const buf = try unpack.arena.alloc(u8, @int_cast((val_bits + 7) / 8));
+                try val.write_to_packed_memory(ty, zcu, buf, 0);
+                const sub_val = try Value.read_from_packed_memory(int_ty, zcu, buf, @int_cast(bit_offset), unpack.arena);
                 try unpack.primitive(sub_val);
             },
             .undef => try unpack.padding(bit_count),
@@ -463,44 +463,44 @@ const PackValueBits = struct {
 
     fn get(pack: *PackValueBits, ty: Type) BitCastError!Value {
         const zcu = pack.zcu;
-        const endian = zcu.getTarget().cpu.arch.endian();
+        const endian = zcu.get_target().cpu.arch.endian();
         const ip = &zcu.intern_pool;
         const arena = pack.arena;
-        switch (ty.zigTypeTag(zcu)) {
+        switch (ty.zig_type_tag(zcu)) {
             .Vector => {
                 // Elements are bit-packed.
-                const len = ty.arrayLen(zcu);
-                const elem_ty = ty.childType(zcu);
-                const elems = try arena.alloc(InternPool.Index, @intCast(len));
+                const len = ty.array_len(zcu);
+                const elem_ty = ty.child_type(zcu);
+                const elems = try arena.alloc(InternPool.Index, @int_cast(len));
                 // We reverse vector elements in packed memory on BE targets.
                 switch (endian) {
                     .little => for (elems) |*elem| {
-                        elem.* = (try pack.get(elem_ty)).toIntern();
+                        elem.* = (try pack.get(elem_ty)).to_intern();
                     },
                     .big => {
                         var i = elems.len;
                         while (i > 0) {
                             i -= 1;
-                            elems[i] = (try pack.get(elem_ty)).toIntern();
+                            elems[i] = (try pack.get(elem_ty)).to_intern();
                         }
                     },
                 }
-                return Value.fromInterned(try zcu.intern(.{ .aggregate = .{
-                    .ty = ty.toIntern(),
+                return Value.from_interned(try zcu.intern(.{ .aggregate = .{
+                    .ty = ty.to_intern(),
                     .storage = .{ .elems = elems },
                 } }));
             },
             .Array => {
                 // Each element is padded up to its ABI size. The final element does not have trailing padding.
-                const len = ty.arrayLen(zcu);
-                const elem_ty = ty.childType(zcu);
+                const len = ty.array_len(zcu);
+                const elem_ty = ty.child_type(zcu);
                 const maybe_sent = ty.sentinel(zcu);
-                const pad_bits = elem_ty.abiSize(zcu) * 8 - elem_ty.bitSize(zcu);
-                const elems = try arena.alloc(InternPool.Index, @intCast(len));
+                const pad_bits = elem_ty.abi_size(zcu) * 8 - elem_ty.bit_size(zcu);
+                const elems = try arena.alloc(InternPool.Index, @int_cast(len));
 
                 if (endian == .big and maybe_sent != null) {
                     // TODO: validate sentinel was preserved!
-                    try pack.padding(elem_ty.bitSize(zcu));
+                    try pack.padding(elem_ty.bit_size(zcu));
                     if (len != 0) try pack.padding(pad_bits);
                 }
 
@@ -509,48 +509,48 @@ const PackValueBits = struct {
                         .little => i,
                         .big => len - i - 1,
                     };
-                    elems[@intCast(real_idx)] = (try pack.get(elem_ty)).toIntern();
+                    elems[@int_cast(real_idx)] = (try pack.get(elem_ty)).to_intern();
                     if (i != len - 1) try pack.padding(pad_bits);
                 }
 
                 if (endian == .little and maybe_sent != null) {
                     // TODO: validate sentinel was preserved!
                     if (len != 0) try pack.padding(pad_bits);
-                    try pack.padding(elem_ty.bitSize(zcu));
+                    try pack.padding(elem_ty.bit_size(zcu));
                 }
 
-                return Value.fromInterned(try zcu.intern(.{ .aggregate = .{
-                    .ty = ty.toIntern(),
+                return Value.from_interned(try zcu.intern(.{ .aggregate = .{
+                    .ty = ty.to_intern(),
                     .storage = .{ .elems = elems },
                 } }));
             },
-            .Struct => switch (ty.containerLayout(zcu)) {
+            .Struct => switch (ty.container_layout(zcu)) {
                 .auto => unreachable, // ill-defined layout
                 .@"extern" => {
-                    const elems = try arena.alloc(InternPool.Index, ty.structFieldCount(zcu));
+                    const elems = try arena.alloc(InternPool.Index, ty.struct_field_count(zcu));
                     @memset(elems, .none);
                     switch (endian) {
                         .little => {
                             var cur_bit_off: u64 = 0;
-                            var it = zcu.typeToStruct(ty).?.iterateRuntimeOrder(ip);
+                            var it = zcu.type_to_struct(ty).?.iterate_runtime_order(ip);
                             while (it.next()) |field_idx| {
-                                const want_bit_off = ty.structFieldOffset(field_idx, zcu) * 8;
+                                const want_bit_off = ty.struct_field_offset(field_idx, zcu) * 8;
                                 try pack.padding(want_bit_off - cur_bit_off);
-                                const field_ty = ty.structFieldType(field_idx, zcu);
-                                elems[field_idx] = (try pack.get(field_ty)).toIntern();
-                                cur_bit_off = want_bit_off + field_ty.bitSize(zcu);
+                                const field_ty = ty.struct_field_type(field_idx, zcu);
+                                elems[field_idx] = (try pack.get(field_ty)).to_intern();
+                                cur_bit_off = want_bit_off + field_ty.bit_size(zcu);
                             }
-                            try pack.padding(ty.bitSize(zcu) - cur_bit_off);
+                            try pack.padding(ty.bit_size(zcu) - cur_bit_off);
                         },
                         .big => {
-                            var cur_bit_off: u64 = ty.bitSize(zcu);
-                            var it = zcu.typeToStruct(ty).?.iterateRuntimeOrderReverse(ip);
+                            var cur_bit_off: u64 = ty.bit_size(zcu);
+                            var it = zcu.type_to_struct(ty).?.iterate_runtime_order_reverse(ip);
                             while (it.next()) |field_idx| {
-                                const field_ty = ty.structFieldType(field_idx, zcu);
-                                const want_bit_off = ty.structFieldOffset(field_idx, zcu) * 8 + field_ty.bitSize(zcu);
+                                const field_ty = ty.struct_field_type(field_idx, zcu);
+                                const want_bit_off = ty.struct_field_offset(field_idx, zcu) * 8 + field_ty.bit_size(zcu);
                                 try pack.padding(cur_bit_off - want_bit_off);
-                                elems[field_idx] = (try pack.get(field_ty)).toIntern();
-                                cur_bit_off = want_bit_off - field_ty.bitSize(zcu);
+                                elems[field_idx] = (try pack.get(field_ty)).to_intern();
+                                cur_bit_off = want_bit_off - field_ty.bit_size(zcu);
                             }
                             assert(cur_bit_off == 0);
                         },
@@ -559,24 +559,24 @@ const PackValueBits = struct {
                     // Fill those values now.
                     for (elems, 0..) |*elem, field_idx| {
                         if (elem.* != .none) continue;
-                        const val = (try ty.structFieldValueComptime(zcu, field_idx)).?;
-                        elem.* = val.toIntern();
+                        const val = (try ty.struct_field_value_comptime(zcu, field_idx)).?;
+                        elem.* = val.to_intern();
                     }
-                    return Value.fromInterned(try zcu.intern(.{ .aggregate = .{
-                        .ty = ty.toIntern(),
+                    return Value.from_interned(try zcu.intern(.{ .aggregate = .{
+                        .ty = ty.to_intern(),
                         .storage = .{ .elems = elems },
                     } }));
                 },
                 .@"packed" => {
                     // All fields are in order with no padding.
                     // This is identical between LE and BE targets.
-                    const elems = try arena.alloc(InternPool.Index, ty.structFieldCount(zcu));
+                    const elems = try arena.alloc(InternPool.Index, ty.struct_field_count(zcu));
                     for (elems, 0..) |*elem, i| {
-                        const field_ty = ty.structFieldType(i, zcu);
-                        elem.* = (try pack.get(field_ty)).toIntern();
+                        const field_ty = ty.struct_field_type(i, zcu);
+                        elem.* = (try pack.get(field_ty)).to_intern();
                     }
-                    return Value.fromInterned(try zcu.intern(.{ .aggregate = .{
-                        .ty = ty.toIntern(),
+                    return Value.from_interned(try zcu.intern(.{ .aggregate = .{
+                        .ty = ty.to_intern(),
                         .storage = .{ .elems = elems },
                     } }));
                 },
@@ -591,7 +591,7 @@ const PackValueBits = struct {
                 const prev_unpacked = pack.unpacked;
                 const prev_bit_offset = pack.bit_offset;
 
-                const backing_ty = try ty.unionBackingType(zcu);
+                const backing_ty = try ty.union_backing_type(zcu);
 
                 backing: {
                     const backing_val = pack.get(backing_ty) catch |err| switch (err) {
@@ -602,40 +602,40 @@ const PackValueBits = struct {
                         },
                         else => |e| return e,
                     };
-                    if (backing_val.isUndef(zcu)) {
+                    if (backing_val.is_undef(zcu)) {
                         pack.unpacked = prev_unpacked;
                         pack.bit_offset = prev_bit_offset;
                         break :backing;
                     }
-                    return Value.fromInterned(try zcu.intern(.{ .un = .{
-                        .ty = ty.toIntern(),
+                    return Value.from_interned(try zcu.intern(.{ .un = .{
+                        .ty = ty.to_intern(),
                         .tag = .none,
-                        .val = backing_val.toIntern(),
+                        .val = backing_val.to_intern(),
                     } }));
                 }
 
-                const field_order = try pack.arena.alloc(u32, ty.unionTagTypeHypothetical(zcu).enumFieldCount(zcu));
-                for (field_order, 0..) |*f, i| f.* = @intCast(i);
+                const field_order = try pack.arena.alloc(u32, ty.union_tag_type_hypothetical(zcu).enum_field_count(zcu));
+                for (field_order, 0..) |*f, i| f.* = @int_cast(i);
                 // Sort `field_order` to put the fields with the largest bit sizes first.
                 const SizeSortCtx = struct {
                     zcu: *Zcu,
                     field_types: []const InternPool.Index,
                     fn less_than(ctx: @This(), a_idx: u32, b_idx: u32) bool {
-                        const a_ty = Type.fromInterned(ctx.field_types[a_idx]);
-                        const b_ty = Type.fromInterned(ctx.field_types[b_idx]);
-                        return a_ty.bitSize(ctx.zcu) > b_ty.bitSize(ctx.zcu);
+                        const a_ty = Type.from_interned(ctx.field_types[a_idx]);
+                        const b_ty = Type.from_interned(ctx.field_types[b_idx]);
+                        return a_ty.bit_size(ctx.zcu) > b_ty.bit_size(ctx.zcu);
                     }
                 };
-                std.mem.sortUnstable(u32, field_order, SizeSortCtx{
+                std.mem.sort_unstable(u32, field_order, SizeSortCtx{
                     .zcu = zcu,
-                    .field_types = zcu.typeToUnion(ty).?.field_types.get(ip),
-                }, SizeSortCtx.lessThan);
+                    .field_types = zcu.type_to_union(ty).?.field_types.get(ip),
+                }, SizeSortCtx.less_than);
 
-                const padding_after = endian == .little or ty.containerLayout(zcu) == .@"packed";
+                const padding_after = endian == .little or ty.container_layout(zcu) == .@"packed";
 
                 for (field_order) |field_idx| {
-                    const field_ty = Type.fromInterned(zcu.typeToUnion(ty).?.field_types.get(ip)[field_idx]);
-                    const pad_bits = ty.bitSize(zcu) - field_ty.bitSize(zcu);
+                    const field_ty = Type.from_interned(zcu.type_to_union(ty).?.field_types.get(ip)[field_idx]);
+                    const pad_bits = ty.bit_size(zcu) - field_ty.bit_size(zcu);
                     if (!padding_after) try pack.padding(pad_bits);
                     const field_val = pack.get(field_ty) catch |err| switch (err) {
                         error.ReinterpretDeclRef => {
@@ -646,26 +646,26 @@ const PackValueBits = struct {
                         else => |e| return e,
                     };
                     if (padding_after) try pack.padding(pad_bits);
-                    if (field_val.isUndef(zcu)) {
+                    if (field_val.is_undef(zcu)) {
                         pack.unpacked = prev_unpacked;
                         pack.bit_offset = prev_bit_offset;
                         continue;
                     }
-                    const tag_val = try zcu.enumValueFieldIndex(ty.unionTagTypeHypothetical(zcu), field_idx);
-                    return Value.fromInterned(try zcu.intern(.{ .un = .{
-                        .ty = ty.toIntern(),
-                        .tag = tag_val.toIntern(),
-                        .val = field_val.toIntern(),
+                    const tag_val = try zcu.enum_value_field_index(ty.union_tag_type_hypothetical(zcu), field_idx);
+                    return Value.from_interned(try zcu.intern(.{ .un = .{
+                        .ty = ty.to_intern(),
+                        .tag = tag_val.to_intern(),
+                        .val = field_val.to_intern(),
                     } }));
                 }
 
                 // No field could represent the value. Just do whatever happens when we try to read
                 // the backing type - either `undefined` or `error.ReinterpretDeclRef`.
                 const backing_val = try pack.get(backing_ty);
-                return Value.fromInterned(try zcu.intern(.{ .un = .{
-                    .ty = ty.toIntern(),
+                return Value.from_interned(try zcu.intern(.{ .un = .{
+                    .ty = ty.to_intern(),
                     .tag = .none,
-                    .val = backing_val.toIntern(),
+                    .val = backing_val.to_intern(),
                 } }));
             },
             else => return pack.primitive(ty),
@@ -673,18 +673,18 @@ const PackValueBits = struct {
     }
 
     fn padding(pack: *PackValueBits, pad_bits: u64) BitCastError!void {
-        _ = pack.prepareBits(pad_bits);
+        _ = pack.prepare_bits(pad_bits);
     }
 
     fn primitive(pack: *PackValueBits, want_ty: Type) BitCastError!Value {
         const zcu = pack.zcu;
-        const vals, const bit_offset = pack.prepareBits(want_ty.bitSize(zcu));
+        const vals, const bit_offset = pack.prepare_bits(want_ty.bit_size(zcu));
 
         for (vals) |val| {
-            if (!Value.fromInterned(val).isUndef(zcu)) break;
+            if (!Value.from_interned(val).is_undef(zcu)) break;
         } else {
             // All bits of the value are `undefined`.
-            return zcu.undefValue(want_ty);
+            return zcu.undef_value(want_ty);
         }
 
         // TODO: we need to decide how to handle partially-undef values here.
@@ -701,35 +701,35 @@ const PackValueBits = struct {
 
         ptr_cast: {
             if (vals.len != 1) break :ptr_cast;
-            const val = Value.fromInterned(vals[0]);
-            if (!val.typeOf(zcu).isPtrAtRuntime(zcu)) break :ptr_cast;
-            if (!want_ty.isPtrAtRuntime(zcu)) break :ptr_cast;
-            return zcu.getCoerced(val, want_ty);
+            const val = Value.from_interned(vals[0]);
+            if (!val.type_of(zcu).is_ptr_at_runtime(zcu)) break :ptr_cast;
+            if (!want_ty.is_ptr_at_runtime(zcu)) break :ptr_cast;
+            return zcu.get_coerced(val, want_ty);
         }
 
         // Reinterpret via an in-memory buffer.
 
         var buf_bits: u64 = 0;
         for (vals) |ip_val| {
-            const val = Value.fromInterned(ip_val);
-            const ty = val.typeOf(zcu);
-            buf_bits += ty.bitSize(zcu);
+            const val = Value.from_interned(ip_val);
+            const ty = val.type_of(zcu);
+            buf_bits += ty.bit_size(zcu);
         }
 
-        const buf = try pack.arena.alloc(u8, @intCast((buf_bits + 7) / 8));
+        const buf = try pack.arena.alloc(u8, @int_cast((buf_bits + 7) / 8));
         // We will skip writing undefined values, so mark the buffer as `0xAA` so we get "undefined" bits.
         @memset(buf, 0xAA);
         var cur_bit_off: usize = 0;
         for (vals) |ip_val| {
-            const val = Value.fromInterned(ip_val);
-            const ty = val.typeOf(zcu);
-            if (!val.isUndef(zcu)) {
-                try val.writeToPackedMemory(ty, zcu, buf, cur_bit_off);
+            const val = Value.from_interned(ip_val);
+            const ty = val.type_of(zcu);
+            if (!val.is_undef(zcu)) {
+                try val.write_to_packed_memory(ty, zcu, buf, cur_bit_off);
             }
-            cur_bit_off += @intCast(ty.bitSize(zcu));
+            cur_bit_off += @int_cast(ty.bit_size(zcu));
         }
 
-        return Value.readFromPackedMemory(want_ty, zcu, buf, @intCast(bit_offset), pack.arena);
+        return Value.read_from_packed_memory(want_ty, zcu, buf, @int_cast(bit_offset), pack.arena);
     }
 
     fn prepare_bits(pack: *PackValueBits, need_bits: u64) struct { []const InternPool.Index, u64 } {
@@ -740,7 +740,7 @@ const PackValueBits = struct {
         var bits: u64 = 0;
         var len: usize = 0;
         while (bits < pack.bit_offset + need_bits) {
-            bits += Value.fromInterned(pack.unpacked[len]).typeOf(zcu).bitSize(zcu);
+            bits += Value.from_interned(pack.unpacked[len]).type_of(zcu).bit_size(zcu);
             len += 1;
         }
 
@@ -753,7 +753,7 @@ const PackValueBits = struct {
             pack.bit_offset = 0;
         } else {
             pack.unpacked = pack.unpacked[len - 1 ..];
-            pack.bit_offset = Value.fromInterned(pack.unpacked[0]).typeOf(zcu).bitSize(zcu) - extra_bits;
+            pack.bit_offset = Value.from_interned(pack.unpacked[0]).type_of(zcu).bit_size(zcu) - extra_bits;
         }
 
         return .{ result_vals, result_offset };

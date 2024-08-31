@@ -227,18 +227,18 @@ pub const Data = union(InstEnc) {
 
     pub fn to_u32(self: Data) u32 {
         return switch (self) {
-            .R => |v| @as(u32, @bitCast(v)),
-            .I => |v| @as(u32, @bitCast(v)),
-            .S => |v| @as(u32, @bitCast(v)),
-            .B => |v| @as(u32, @intCast(v.opcode)) + (@as(u32, @intCast(v.imm11)) << 7) + (@as(u32, @intCast(v.imm1_4)) << 8) + (@as(u32, @intCast(v.funct3)) << 12) + (@as(u32, @intCast(v.rs1)) << 15) + (@as(u32, @intCast(v.rs2)) << 20) + (@as(u32, @intCast(v.imm5_10)) << 25) + (@as(u32, @intCast(v.imm12)) << 31),
-            .U => |v| @as(u32, @bitCast(v)),
-            .J => |v| @as(u32, @bitCast(v)),
+            .R => |v| @as(u32, @bit_cast(v)),
+            .I => |v| @as(u32, @bit_cast(v)),
+            .S => |v| @as(u32, @bit_cast(v)),
+            .B => |v| @as(u32, @int_cast(v.opcode)) + (@as(u32, @int_cast(v.imm11)) << 7) + (@as(u32, @int_cast(v.imm1_4)) << 8) + (@as(u32, @int_cast(v.funct3)) << 12) + (@as(u32, @int_cast(v.rs1)) << 15) + (@as(u32, @int_cast(v.rs2)) << 20) + (@as(u32, @int_cast(v.imm5_10)) << 25) + (@as(u32, @int_cast(v.imm12)) << 31),
+            .U => |v| @as(u32, @bit_cast(v)),
+            .J => |v| @as(u32, @bit_cast(v)),
             .system => unreachable,
         };
     }
 
     pub fn construct(mnem: Mnemonic, ops: []const Operand) !Data {
-        const inst_enc = InstEnc.fromMnemonic(mnem);
+        const inst_enc = InstEnc.from_mnemonic(mnem);
 
         const enc = mnem.encoding();
 
@@ -285,7 +285,7 @@ pub const Data = union(InstEnc) {
             },
             .S => {
                 assert(ops.len == 3);
-                const umm = ops[2].imm.asBits(u12);
+                const umm = ops[2].imm.as_bits(u12);
 
                 return .{
                     .S = .{
@@ -305,7 +305,7 @@ pub const Data = union(InstEnc) {
                     .I = .{
                         .rd = ops[0].reg.id(),
                         .rs1 = ops[1].reg.id(),
-                        .imm0_11 = ops[2].imm.asBits(u12) + enc.offset,
+                        .imm0_11 = ops[2].imm.as_bits(u12) + enc.offset,
 
                         .opcode = enc.opcode,
                         .funct3 = enc.funct3.?,
@@ -317,7 +317,7 @@ pub const Data = union(InstEnc) {
                 return .{
                     .U = .{
                         .rd = ops[0].reg.id(),
-                        .imm12_31 = ops[1].imm.asBits(u20),
+                        .imm12_31 = ops[1].imm.as_bits(u20),
 
                         .opcode = enc.opcode,
                     },
@@ -326,7 +326,7 @@ pub const Data = union(InstEnc) {
             .J => {
                 assert(ops.len == 2);
 
-                const umm = ops[1].imm.asBits(u21);
+                const umm = ops[1].imm.as_bits(u21);
                 assert(umm % 4 == 0); // misaligned jump target
 
                 return .{
@@ -344,7 +344,7 @@ pub const Data = union(InstEnc) {
             .B => {
                 assert(ops.len == 3);
 
-                const umm = ops[2].imm.asBits(u13);
+                const umm = ops[2].imm.as_bits(u13);
                 assert(umm % 4 == 0); // misaligned branch target
 
                 return .{
@@ -362,13 +362,13 @@ pub const Data = union(InstEnc) {
                 };
             },
 
-            else => std.debug.panic("TODO: construct {s}", .{@tagName(inst_enc)}),
+            else => std.debug.panic("TODO: construct {s}", .{@tag_name(inst_enc)}),
         }
     }
 };
 
 pub fn find_by_mnemonic(mnem: Mnemonic, ops: []const Operand) !?Encoding {
-    if (!verifyOps(mnem, ops)) return null;
+    if (!verify_ops(mnem, ops)) return null;
 
     return .{
         .mnemonic = mnem,
@@ -384,9 +384,9 @@ const Enc = struct {
 };
 
 fn verify_ops(mnem: Mnemonic, ops: []const Operand) bool {
-    const inst_enc = InstEnc.fromMnemonic(mnem);
-    const list = std.mem.sliceTo(&inst_enc.opsList(), .none);
-    for (list, ops) |l, o| if (l != std.meta.activeTag(o)) return false;
+    const inst_enc = InstEnc.from_mnemonic(mnem);
+    const list = std.mem.slice_to(&inst_enc.ops_list(), .none);
+    for (list, ops) |l, o| if (l != std.meta.active_tag(o)) return false;
     return true;
 }
 

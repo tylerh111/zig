@@ -8,7 +8,7 @@ const Complex = cmath.Complex;
 pub fn proj(z: anytype) Complex(@TypeOf(z.re, z.im)) {
     const T = @TypeOf(z.re, z.im);
 
-    if (math.isInf(z.re) or math.isInf(z.im)) {
+    if (math.is_inf(z.re) or math.is_inf(z.im)) {
         return Complex(T).init(math.inf(T), math.copysign(@as(T, 0.0), z.re));
     }
 

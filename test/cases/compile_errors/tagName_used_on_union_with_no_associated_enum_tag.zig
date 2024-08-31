@@ -4,7 +4,7 @@ const FloatInt = extern union {
 };
 export fn entry() void {
     const fi: FloatInt = .{ .Float = 123.45 };
-    _ = @tagName(fi);
+    _ = @tag_name(fi);
 }
 
 // error

@@ -1,4 +1,4 @@
-const c = @cImport({
+const c = @c_import({
     // See https://github.com/ziglang/zig/issues/515
     @cDefine("_NO_CRT_STDIO_INLINE", "1");
     @cInclude("stdio.h");

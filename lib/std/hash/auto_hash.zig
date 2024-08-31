@@ -24,7 +24,7 @@ pub fn hash_pointer(hasher: anytype, key: anytype, comptime strat: HashStrategy)
 
     switch (info.Pointer.size) {
         .One => switch (strat) {
-            .Shallow => hash(hasher, @intFromPtr(key), .Shallow),
+            .Shallow => hash(hasher, @int_from_ptr(key), .Shallow),
             .Deep => hash(hasher, key.*, .Shallow),
             .DeepRecursive => hash(hasher, key.*, .DeepRecursive),
         },
@@ -32,10 +32,10 @@ pub fn hash_pointer(hasher: anytype, key: anytype, comptime strat: HashStrategy)
         .Slice => {
             switch (strat) {
                 .Shallow => {
-                    hashPointer(hasher, key.ptr, .Shallow);
+                    hash_pointer(hasher, key.ptr, .Shallow);
                 },
-                .Deep => hashArray(hasher, key, .Shallow),
-                .DeepRecursive => hashArray(hasher, key, .DeepRecursive),
+                .Deep => hash_array(hasher, key, .Shallow),
+                .DeepRecursive => hash_array(hasher, key, .DeepRecursive),
             }
             hash(hasher, key.len, .Shallow);
         },
@@ -43,8 +43,8 @@ pub fn hash_pointer(hasher: anytype, key: anytype, comptime strat: HashStrategy)
         .Many,
         .C,
         => switch (strat) {
-            .Shallow => hash(hasher, @intFromPtr(key), .Shallow),
-            else => @compileError(
+            .Shallow => hash(hasher, @int_from_ptr(key), .Shallow),
+            else => @compile_error(
                 \\ unknown-length pointers and C pointers cannot be hashed deeply.
                 \\ Consider providing your own hash function.
             ),
@@ -68,8 +68,8 @@ pub fn hash(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
         else => @TypeOf(hasher),
     };
 
-    if (strat == .Shallow and std.meta.hasUniqueRepresentation(Key)) {
-        @call(.always_inline, Hasher.update, .{ hasher, mem.asBytes(&key) });
+    if (strat == .Shallow and std.meta.has_unique_representation(Key)) {
+        @call(.always_inline, Hasher.update, .{ hasher, mem.as_bytes(&key) });
         return;
     }
 
@@ -84,7 +84,7 @@ pub fn hash(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
         .EnumLiteral,
         .Frame,
         .Float,
-        => @compileError("unable to hash type " ++ @typeName(Key)),
+        => @compile_error("unable to hash type " ++ @type_name(Key)),
 
         .Void => return,
 
@@ -94,33 +94,33 @@ pub fn hash(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
             .signed => hash(hasher, @as(@Type(.{ .Int = .{
                 .bits = int.bits,
                 .signedness = .unsigned,
-            } }), @bitCast(key)), strat),
+            } }), @bit_cast(key)), strat),
             .unsigned => {
-                if (std.meta.hasUniqueRepresentation(Key)) {
-                    @call(.always_inline, Hasher.update, .{ hasher, std.mem.asBytes(&key) });
+                if (std.meta.has_unique_representation(Key)) {
+                    @call(.always_inline, Hasher.update, .{ hasher, std.mem.as_bytes(&key) });
                 } else {
                     // Take only the part containing the key value, the remaining
                     // bytes are undefined and must not be hashed!
-                    const byte_size = comptime std.math.divCeil(comptime_int, @bitSizeOf(Key), 8) catch unreachable;
-                    @call(.always_inline, Hasher.update, .{ hasher, std.mem.asBytes(&key)[0..byte_size] });
+                    const byte_size = comptime std.math.div_ceil(comptime_int, @bitSizeOf(Key), 8) catch unreachable;
+                    @call(.always_inline, Hasher.update, .{ hasher, std.mem.as_bytes(&key)[0..byte_size] });
                 }
             },
         },
 
-        .Bool => hash(hasher, @intFromBool(key), strat),
-        .Enum => hash(hasher, @intFromEnum(key), strat),
+        .Bool => hash(hasher, @int_from_bool(key), strat),
+        .Enum => hash(hasher, @int_from_enum(key), strat),
         .ErrorSet => hash(hasher, @intFromError(key), strat),
-        .AnyFrame, .Fn => hash(hasher, @intFromPtr(key), strat),
+        .AnyFrame, .Fn => hash(hasher, @int_from_ptr(key), strat),
 
-        .Pointer => @call(.always_inline, hashPointer, .{ hasher, key, strat }),
+        .Pointer => @call(.always_inline, hash_pointer, .{ hasher, key, strat }),
 
         .Optional => if (key) |k| hash(hasher, k, strat),
 
-        .Array => hashArray(hasher, key, strat),
+        .Array => hash_array(hasher, key, strat),
 
         .Vector => |info| {
-            if (std.meta.hasUniqueRepresentation(Key)) {
-                hasher.update(mem.asBytes(&key));
+            if (std.meta.has_unique_representation(Key)) {
+                hasher.update(mem.as_bytes(&key));
             } else {
                 comptime var i = 0;
                 inline while (i < info.len) : (i += 1) {
@@ -139,7 +139,7 @@ pub fn hash(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
 
         .Union => |info| {
             if (info.tag_type) |tag_type| {
-                const tag = std.meta.activeTag(key);
+                const tag = std.meta.active_tag(key);
                 hash(hasher, tag, strat);
                 inline for (info.fields) |field| {
                     if (@field(tag_type, field.name) == tag) {
@@ -152,7 +152,7 @@ pub fn hash(hasher: anytype, key: anytype, comptime strat: HashStrategy) void {
                     }
                 }
                 unreachable;
-            } else @compileError("cannot hash untagged union type: " ++ @typeName(Key) ++ ", provide your own hash function");
+            } else @compile_error("cannot hash untagged union type: " ++ @type_name(Key) ++ ", provide your own hash function");
         },
 
         .ErrorUnion => blk: {
@@ -171,7 +171,7 @@ inline fn type_contains_slice(comptime K: type) bool {
 
         inline .Struct, .Union => |info| {
             inline for (info.fields) |field| {
-                if (typeContainsSlice(field.type)) {
+                if (type_contains_slice(field.type)) {
                     return true;
                 }
             }
@@ -188,8 +188,8 @@ inline fn type_contains_slice(comptime K: type) bool {
 /// ambiguity on the user's intention.
 pub fn auto_hash(hasher: anytype, key: anytype) void {
     const Key = @TypeOf(key);
-    if (comptime typeContainsSlice(Key)) {
-        @compileError("std.hash.autoHash does not allow slices as well as unions and structs containing slices here (" ++ @typeName(Key) ++
+    if (comptime type_contains_slice(Key)) {
+        @compile_error("std.hash.auto_hash does not allow slices as well as unions and structs containing slices here (" ++ @type_name(Key) ++
             ") because the intent is unclear. Consider using std.hash.autoHashStrat or providing your own hash function instead.");
     }
 
@@ -200,47 +200,47 @@ const testing = std.testing;
 const Wyhash = std.hash.Wyhash;
 
 fn test_hash(key: anytype) u64 {
-    // Any hash could be used here, for testing autoHash.
+    // Any hash could be used here, for testing auto_hash.
     var hasher = Wyhash.init(0);
     hash(&hasher, key, .Shallow);
     return hasher.final();
 }
 
 fn test_hash_shallow(key: anytype) u64 {
-    // Any hash could be used here, for testing autoHash.
+    // Any hash could be used here, for testing auto_hash.
     var hasher = Wyhash.init(0);
     hash(&hasher, key, .Shallow);
     return hasher.final();
 }
 
 fn test_hash_deep(key: anytype) u64 {
-    // Any hash could be used here, for testing autoHash.
+    // Any hash could be used here, for testing auto_hash.
     var hasher = Wyhash.init(0);
     hash(&hasher, key, .Deep);
     return hasher.final();
 }
 
 fn test_hash_deep_recursive(key: anytype) u64 {
-    // Any hash could be used here, for testing autoHash.
+    // Any hash could be used here, for testing auto_hash.
     var hasher = Wyhash.init(0);
     hash(&hasher, key, .DeepRecursive);
     return hasher.final();
 }
 
-test "typeContainsSlice" {
+test "type_contains_slice" {
     comptime {
-        try testing.expect(!typeContainsSlice(std.meta.Tag(std.builtin.Type)));
+        try testing.expect(!type_contains_slice(std.meta.Tag(std.builtin.Type)));
 
-        try testing.expect(typeContainsSlice([]const u8));
-        try testing.expect(!typeContainsSlice(u8));
+        try testing.expect(type_contains_slice([]const u8));
+        try testing.expect(!type_contains_slice(u8));
         const A = struct { x: []const u8 };
         const B = struct { a: A };
         const C = struct { b: B };
         const D = struct { x: u8 };
-        try testing.expect(typeContainsSlice(A));
-        try testing.expect(typeContainsSlice(B));
-        try testing.expect(typeContainsSlice(C));
-        try testing.expect(!typeContainsSlice(D));
+        try testing.expect(type_contains_slice(A));
+        try testing.expect(type_contains_slice(B));
+        try testing.expect(type_contains_slice(C));
+        try testing.expect(!type_contains_slice(D));
     }
 }
 
@@ -251,17 +251,17 @@ test "hash pointer" {
     const c = &array[2];
     const d = a;
 
-    try testing.expect(testHashShallow(a) == testHashShallow(d));
-    try testing.expect(testHashShallow(a) != testHashShallow(c));
-    try testing.expect(testHashShallow(a) != testHashShallow(b));
+    try testing.expect(test_hash_shallow(a) == test_hash_shallow(d));
+    try testing.expect(test_hash_shallow(a) != test_hash_shallow(c));
+    try testing.expect(test_hash_shallow(a) != test_hash_shallow(b));
 
-    try testing.expect(testHashDeep(a) == testHashDeep(a));
-    try testing.expect(testHashDeep(a) == testHashDeep(c));
-    try testing.expect(testHashDeep(a) == testHashDeep(b));
+    try testing.expect(test_hash_deep(a) == test_hash_deep(a));
+    try testing.expect(test_hash_deep(a) == test_hash_deep(c));
+    try testing.expect(test_hash_deep(a) == test_hash_deep(b));
 
-    try testing.expect(testHashDeepRecursive(a) == testHashDeepRecursive(a));
-    try testing.expect(testHashDeepRecursive(a) == testHashDeepRecursive(c));
-    try testing.expect(testHashDeepRecursive(a) == testHashDeepRecursive(b));
+    try testing.expect(test_hash_deep_recursive(a) == test_hash_deep_recursive(a));
+    try testing.expect(test_hash_deep_recursive(a) == test_hash_deep_recursive(c));
+    try testing.expect(test_hash_deep_recursive(a) == test_hash_deep_recursive(b));
 }
 
 test "hash slice shallow" {
@@ -277,10 +277,10 @@ test "hash slice shallow" {
     const a = array1[runtime_zero..];
     const b = array2[runtime_zero..];
     const c = array1[runtime_zero..3];
-    try testing.expect(testHashShallow(a) == testHashShallow(a));
-    try testing.expect(testHashShallow(a) != testHashShallow(array1));
-    try testing.expect(testHashShallow(a) != testHashShallow(b));
-    try testing.expect(testHashShallow(a) != testHashShallow(c));
+    try testing.expect(test_hash_shallow(a) == test_hash_shallow(a));
+    try testing.expect(test_hash_shallow(a) != test_hash_shallow(array1));
+    try testing.expect(test_hash_shallow(a) != test_hash_shallow(b));
+    try testing.expect(test_hash_shallow(a) != test_hash_shallow(c));
 }
 
 test "hash slice deep" {
@@ -293,10 +293,10 @@ test "hash slice deep" {
     const a = array1[0..];
     const b = array2[0..];
     const c = array1[0..3];
-    try testing.expect(testHashDeep(a) == testHashDeep(a));
-    try testing.expect(testHashDeep(a) == testHashDeep(array1));
-    try testing.expect(testHashDeep(a) == testHashDeep(b));
-    try testing.expect(testHashDeep(a) != testHashDeep(c));
+    try testing.expect(test_hash_deep(a) == test_hash_deep(a));
+    try testing.expect(test_hash_deep(a) == test_hash_deep(array1));
+    try testing.expect(test_hash_deep(a) == test_hash_deep(b));
+    try testing.expect(test_hash_deep(a) != test_hash_deep(c));
 }
 
 test "hash struct deep" {
@@ -322,62 +322,62 @@ test "hash struct deep" {
     defer allocator.destroy(bar.c);
     defer allocator.destroy(baz.c);
 
-    try testing.expect(testHashDeep(foo) == testHashDeep(bar));
-    try testing.expect(testHashDeep(foo) != testHashDeep(baz));
-    try testing.expect(testHashDeep(bar) != testHashDeep(baz));
+    try testing.expect(test_hash_deep(foo) == test_hash_deep(bar));
+    try testing.expect(test_hash_deep(foo) != test_hash_deep(baz));
+    try testing.expect(test_hash_deep(bar) != test_hash_deep(baz));
 
     var hasher = Wyhash.init(0);
-    const h = testHashDeep(foo);
-    autoHash(&hasher, foo.a);
-    autoHash(&hasher, foo.b);
-    autoHash(&hasher, foo.c.*);
-    try testing.expectEqual(h, hasher.final());
+    const h = test_hash_deep(foo);
+    auto_hash(&hasher, foo.a);
+    auto_hash(&hasher, foo.b);
+    auto_hash(&hasher, foo.c.*);
+    try testing.expect_equal(h, hasher.final());
 
-    const h2 = testHashDeepRecursive(&foo);
-    try testing.expect(h2 != testHashDeep(&foo));
-    try testing.expect(h2 == testHashDeep(foo));
+    const h2 = test_hash_deep_recursive(&foo);
+    try testing.expect(h2 != test_hash_deep(&foo));
+    try testing.expect(h2 == test_hash_deep(foo));
 }
 
-test "testHash optional" {
+test "test_hash optional" {
     const a: ?u32 = 123;
     const b: ?u32 = null;
-    try testing.expectEqual(testHash(a), testHash(@as(u32, 123)));
-    try testing.expect(testHash(a) != testHash(b));
-    try testing.expectEqual(testHash(b), 0x409638ee2bde459); // wyhash empty input hash
+    try testing.expect_equal(test_hash(a), test_hash(@as(u32, 123)));
+    try testing.expect(test_hash(a) != test_hash(b));
+    try testing.expect_equal(test_hash(b), 0x409638ee2bde459); // wyhash empty input hash
 }
 
-test "testHash array" {
+test "test_hash array" {
     const a = [_]u32{ 1, 2, 3 };
-    const h = testHash(a);
+    const h = test_hash(a);
     var hasher = Wyhash.init(0);
-    autoHash(&hasher, @as(u32, 1));
-    autoHash(&hasher, @as(u32, 2));
-    autoHash(&hasher, @as(u32, 3));
-    try testing.expectEqual(h, hasher.final());
+    auto_hash(&hasher, @as(u32, 1));
+    auto_hash(&hasher, @as(u32, 2));
+    auto_hash(&hasher, @as(u32, 3));
+    try testing.expect_equal(h, hasher.final());
 }
 
-test "testHash multi-dimensional array" {
+test "test_hash multi-dimensional array" {
     const a = [_][]const u32{ &.{ 1, 2, 3 }, &.{ 4, 5 } };
     const b = [_][]const u32{ &.{ 1, 2 }, &.{ 3, 4, 5 } };
-    try testing.expect(testHash(a) != testHash(b));
+    try testing.expect(test_hash(a) != test_hash(b));
 }
 
-test "testHash struct" {
+test "test_hash struct" {
     const Foo = struct {
         a: u32 = 1,
         b: u32 = 2,
         c: u32 = 3,
     };
     const f = Foo{};
-    const h = testHash(f);
+    const h = test_hash(f);
     var hasher = Wyhash.init(0);
-    autoHash(&hasher, @as(u32, 1));
-    autoHash(&hasher, @as(u32, 2));
-    autoHash(&hasher, @as(u32, 3));
-    try testing.expectEqual(h, hasher.final());
+    auto_hash(&hasher, @as(u32, 1));
+    auto_hash(&hasher, @as(u32, 2));
+    auto_hash(&hasher, @as(u32, 3));
+    try testing.expect_equal(h, hasher.final());
 }
 
-test "testHash union" {
+test "test_hash union" {
     const Foo = union(enum) {
         A: u32,
         B: bool,
@@ -389,31 +389,31 @@ test "testHash union" {
     var b = Foo{ .B = true };
     const c = Foo{ .C = 18 };
     const d: Foo = .D;
-    try testing.expect(testHash(a) == testHash(a));
-    try testing.expect(testHash(a) != testHash(b));
-    try testing.expect(testHash(a) != testHash(c));
-    try testing.expect(testHash(a) != testHash(d));
+    try testing.expect(test_hash(a) == test_hash(a));
+    try testing.expect(test_hash(a) != test_hash(b));
+    try testing.expect(test_hash(a) != test_hash(c));
+    try testing.expect(test_hash(a) != test_hash(d));
 
     b = Foo{ .A = 18 };
-    try testing.expect(testHash(a) == testHash(b));
+    try testing.expect(test_hash(a) == test_hash(b));
 
     b = .D;
-    try testing.expect(testHash(d) == testHash(b));
+    try testing.expect(test_hash(d) == test_hash(b));
 }
 
-test "testHash vector" {
+test "test_hash vector" {
     const a: @Vector(4, u32) = [_]u32{ 1, 2, 3, 4 };
     const b: @Vector(4, u32) = [_]u32{ 1, 2, 3, 5 };
-    try testing.expect(testHash(a) == testHash(a));
-    try testing.expect(testHash(a) != testHash(b));
+    try testing.expect(test_hash(a) == test_hash(a));
+    try testing.expect(test_hash(a) != test_hash(b));
 
     const c: @Vector(4, u31) = [_]u31{ 1, 2, 3, 4 };
     const d: @Vector(4, u31) = [_]u31{ 1, 2, 3, 5 };
-    try testing.expect(testHash(c) == testHash(c));
-    try testing.expect(testHash(c) != testHash(d));
+    try testing.expect(test_hash(c) == test_hash(c));
+    try testing.expect(test_hash(c) != test_hash(d));
 }
 
-test "testHash error union" {
+test "test_hash error union" {
     const Errors = error{Test};
     const Foo = struct {
         a: u32 = 1,
@@ -422,7 +422,7 @@ test "testHash error union" {
     };
     const f = Foo{};
     const g: Errors!Foo = Errors.Test;
-    try testing.expect(testHash(f) != testHash(g));
-    try testing.expect(testHash(f) == testHash(Foo{}));
-    try testing.expect(testHash(g) == testHash(Errors.Test));
+    try testing.expect(test_hash(f) != test_hash(g));
+    try testing.expect(test_hash(f) == test_hash(Foo{}));
+    try testing.expect(test_hash(g) == test_hash(Errors.Test));
 }

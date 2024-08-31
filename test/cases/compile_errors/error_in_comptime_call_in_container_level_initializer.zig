@@ -4,12 +4,12 @@ const print = @import("std").debug.print;
 
 fn read_version() Version {
     const version_file = "foo";
-    const len = std.mem.indexOfAny(u8, version_file, " \n") orelse version_file.len;
+    const len = std.mem.index_of_any(u8, version_file, " \n") orelse version_file.len;
     const version_string = version_file[0..len];
     return Version.parse(version_string) catch unreachable;
 }
 
-const version: Version = readVersion();
+const version: Version = read_version();
 pub export fn entry() void {
     print("Version {}.{}.{}+{?s}\n", .{ version.major, version.minor, version.patch, version.build });
 }

@@ -11,10 +11,10 @@ test "while loop" {
         i += 1;
     }
     try expect(i == 4);
-    try expect(whileLoop1() == 1);
+    try expect(while_loop1() == 1);
 }
 fn while_loop1() i32 {
-    return whileLoop2();
+    return while_loop2();
 }
 fn while_loop2() i32 {
     while (true) {
@@ -27,9 +27,9 @@ test "static eval while" {
 
     try expect(static_eval_while_number == 1);
 }
-const static_eval_while_number = staticWhileLoop1();
+const static_eval_while_number = static_while_loop1();
 fn static_while_loop1() i32 {
-    return staticWhileLoop2();
+    return static_while_loop2();
 }
 fn static_while_loop2() i32 {
     while (true) {
@@ -77,8 +77,8 @@ fn get_number_or_null() ?i32 {
 }
 
 test "continue outer while loop" {
-    testContinueOuter();
-    comptime testContinueOuter();
+    test_continue_outer();
+    comptime test_continue_outer();
 }
 
 fn test_continue_outer() void {
@@ -91,8 +91,8 @@ fn test_continue_outer() void {
 }
 
 test "break from outer while loop" {
-    testBreakOuter();
-    comptime testBreakOuter();
+    test_break_outer();
+    comptime test_break_outer();
 }
 
 fn test_break_outer() void {
@@ -118,14 +118,14 @@ test "while copies its payload" {
             }
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "continue and break" {
     if (builtin.zig_backend == .stage2_aarch64 and builtin.os.tag == .macos) return error.SkipZigTest;
 
-    try runContinueAndBreakTest();
+    try run_continue_and_break_test();
     try expect(continue_and_break_counter == 8);
 }
 var continue_and_break_counter: i32 = 0;
@@ -149,7 +149,7 @@ test "while with optional as condition" {
 
     numbers_left = 10;
     var sum: i32 = 0;
-    while (getNumberOrNull()) |value| {
+    while (get_number_or_null()) |value| {
         sum += value;
     }
     try expect(sum == 45);
@@ -163,7 +163,7 @@ test "while with optional as condition with else" {
     numbers_left = 10;
     var sum: i32 = 0;
     var got_else: i32 = 0;
-    while (getNumberOrNull()) |value| {
+    while (get_number_or_null()) |value| {
         sum += value;
         try expect(got_else == 0);
     } else {
@@ -180,7 +180,7 @@ test "while with error union condition" {
     numbers_left = 10;
     var sum: i32 = 0;
     var got_else: i32 = 0;
-    while (getNumberOrErr()) |value| {
+    while (get_number_or_err()) |value| {
         sum += value;
     } else |err| {
         try expect(err == error.OutOfNumbers);
@@ -191,14 +191,14 @@ test "while with error union condition" {
 }
 
 test "while on bool with else result follow else prong" {
-    const result = while (returnFalse()) {
+    const result = while (return_false()) {
         break @as(i32, 10);
     } else @as(i32, 2);
     try expect(result == 2);
 }
 
 test "while on bool with else result follow break prong" {
-    const result = while (returnTrue()) {
+    const result = while (return_true()) {
         break @as(i32, 10);
     } else @as(i32, 2);
     try expect(result == 10);
@@ -210,7 +210,7 @@ test "while on optional with else result follow else prong" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    const result = while (returnNull()) |value| {
+    const result = while (return_null()) |value| {
         break value;
     } else @as(i32, 2);
     try expect(result == 2);
@@ -222,7 +222,7 @@ test "while on optional with else result follow break prong" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    const result = while (returnOptional(10)) |value| {
+    const result = while (return_optional(10)) |value| {
         break value;
     } else @as(i32, 2);
     try expect(result == 10);
@@ -248,7 +248,7 @@ fn return_true() bool {
 }
 
 test "return with implicit cast from while loop" {
-    returnWithImplicitCastFromWhileLoopTest() catch unreachable;
+    return_with_implicit_cast_from_while_loop_test() catch unreachable;
 }
 fn return_with_implicit_cast_from_while_loop_test() anyerror!void {
     while (true) {
@@ -260,7 +260,7 @@ test "while on error union with else result follow else prong" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    const result = while (returnError()) |value| {
+    const result = while (return_error()) |value| {
         break value;
     } else |_| @as(i32, 2);
     try expect(result == 2);
@@ -270,7 +270,7 @@ test "while on error union with else result follow break prong" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    const result = while (returnSuccess(10)) |value| {
+    const result = while (return_success(10)) |value| {
         break value;
     } else |_| @as(i32, 2);
     try expect(result == 10);
@@ -407,7 +407,7 @@ test "breaking from a loop in an if statement" {
     var cond = true;
     _ = &cond;
     const opt = while (cond) {
-        if (S.retOpt()) |opt| {
+        if (S.ret_opt()) |opt| {
             break opt;
         }
         break 1;

@@ -75,7 +75,7 @@ pub const Relocation = struct {
         _ = fmt;
         _ = options;
         try writer.print("{s} offset=0x{x:0>6} symbol={d}", .{
-            @tagName(self.relocation_type),
+            @tag_name(self.relocation_type),
             self.offset,
             self.index,
         });
@@ -120,24 +120,24 @@ pub const Segment = struct {
     flags: u32,
 
     pub fn is_tls(segment: Segment) bool {
-        return segment.flags & @intFromEnum(Flags.WASM_SEG_FLAG_TLS) != 0;
+        return segment.flags & @int_from_enum(Flags.WASM_SEG_FLAG_TLS) != 0;
     }
 
     /// Returns the name as how it will be output into the final object
     /// file or binary. When `merge_segments` is true, this will return the
     /// short name. i.e. ".rodata". When false, it returns the entire name instead.
     pub fn output_name(segment: Segment, merge_segments: bool) []const u8 {
-        if (segment.isTLS()) {
+        if (segment.is_tls()) {
             return ".tdata";
         } else if (!merge_segments) {
             return segment.name;
-        } else if (std.mem.startsWith(u8, segment.name, ".rodata.")) {
+        } else if (std.mem.starts_with(u8, segment.name, ".rodata.")) {
             return ".rodata";
-        } else if (std.mem.startsWith(u8, segment.name, ".text.")) {
+        } else if (std.mem.starts_with(u8, segment.name, ".text.")) {
             return ".text";
-        } else if (std.mem.startsWith(u8, segment.name, ".data.")) {
+        } else if (std.mem.starts_with(u8, segment.name, ".data.")) {
             return ".data";
-        } else if (std.mem.startsWith(u8, segment.name, ".bss.")) {
+        } else if (std.mem.starts_with(u8, segment.name, ".bss.")) {
             return ".bss";
         }
         return segment.name;
@@ -208,13 +208,13 @@ pub const Feature = struct {
 
         /// From a given cpu feature, returns its linker feature
         pub fn from_cpu_feature(feature: std.Target.wasm.Feature) Tag {
-            return @as(Tag, @enumFromInt(@intFromEnum(feature)));
+            return @as(Tag, @enumFromInt(@int_from_enum(feature)));
         }
 
         pub fn format(tag: Tag, comptime fmt: []const u8, opt: std.fmt.FormatOptions, writer: anytype) !void {
             _ = fmt;
             _ = opt;
-            try writer.writeAll(switch (tag) {
+            try writer.write_all(switch (tag) {
                 .atomics => "atomics",
                 .bulk_memory => "bulk-memory",
                 .exception_handling => "exception-handling",
@@ -246,7 +246,7 @@ pub const Feature = struct {
     }
 };
 
-pub const known_features = std.StaticStringMap(Feature.Tag).initComptime(.{
+pub const known_features = std.StaticStringMap(Feature.Tag).init_comptime(.{
     .{ "atomics", .atomics },
     .{ "bulk-memory", .bulk_memory },
     .{ "exception-handling", .exception_handling },

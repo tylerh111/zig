@@ -7,7 +7,7 @@ export fn entry1(x: u8) u8 {
 export fn entry2() void {
     var x: u5 = 1;
     _ = &x;
-    _ = @shlExact(12345, x);
+    _ = @shl_exact(12345, x);
 }
 export fn entry3() void {
     var x: u5 = 1;

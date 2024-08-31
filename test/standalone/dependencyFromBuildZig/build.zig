@@ -6,7 +6,7 @@ pub fn build(b: *std.Build) void {
 
     const dep1 = b.dependency("other", .{});
 
-    const dep2 = b.dependencyFromBuildZig(@import("other"), .{});
+    const dep2 = b.dependency_from_build_zig(@import("other"), .{});
 
     std.debug.assert(dep1.module("add") == dep2.module("add"));
 }

@@ -17,7 +17,7 @@ pub fn acos(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => acos32(x),
         f64 => acos64(x),
-        else => @compileError("acos not implemented for " ++ @typeName(T)),
+        else => @compile_error("acos not implemented for " ++ @type_name(T)),
     };
 }
 
@@ -36,7 +36,7 @@ fn acos32(x: f32) f32 {
     const pio2_hi = 1.5707962513e+00;
     const pio2_lo = 7.5497894159e-08;
 
-    const hx: u32 = @as(u32, @bitCast(x));
+    const hx: u32 = @as(u32, @bit_cast(x));
     const ix: u32 = hx & 0x7FFFFFFF;
 
     // |x| >= 1 or nan
@@ -72,8 +72,8 @@ fn acos32(x: f32) f32 {
     // x > 0.5
     const z = (1.0 - x) * 0.5;
     const s = @sqrt(z);
-    const jx = @as(u32, @bitCast(s));
-    const df = @as(f32, @bitCast(jx & 0xFFFFF000));
+    const jx = @as(u32, @bit_cast(s));
+    const df = @as(f32, @bit_cast(jx & 0xFFFFF000));
     const c = (z - df * df) / (s + df);
     const w = r32(z) * s + c;
     return 2 * (df + w);
@@ -100,13 +100,13 @@ fn acos64(x: f64) f64 {
     const pio2_hi: f64 = 1.57079632679489655800e+00;
     const pio2_lo: f64 = 6.12323399573676603587e-17;
 
-    const ux = @as(u64, @bitCast(x));
-    const hx = @as(u32, @intCast(ux >> 32));
+    const ux = @as(u64, @bit_cast(x));
+    const hx = @as(u32, @int_cast(ux >> 32));
     const ix = hx & 0x7FFFFFFF;
 
     // |x| >= 1 or nan
     if (ix >= 0x3FF00000) {
-        const lx = @as(u32, @intCast(ux & 0xFFFFFFFF));
+        const lx = @as(u32, @int_cast(ux & 0xFFFFFFFF));
 
         // acos(1) = 0, acos(-1) = pi
         if ((ix - 0x3FF00000) | lx == 0) {
@@ -141,8 +141,8 @@ fn acos64(x: f64) f64 {
     // x > 0.5
     const z = (1.0 - x) * 0.5;
     const s = @sqrt(z);
-    const jx = @as(u64, @bitCast(s));
-    const df = @as(f64, @bitCast(jx & 0xFFFFFFFF00000000));
+    const jx = @as(u64, @bit_cast(s));
+    const df = @as(f64, @bit_cast(jx & 0xFFFFFFFF00000000));
     const c = (z - df * df) / (s + df);
     const w = r64(z) * s + c;
     return 2 * (df + w);
@@ -156,31 +156,31 @@ test acos {
 test acos32 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f32, acos32(0.0), 1.570796, epsilon));
-    try expect(math.approxEqAbs(f32, acos32(0.2), 1.369438, epsilon));
-    try expect(math.approxEqAbs(f32, acos32(0.3434), 1.220262, epsilon));
-    try expect(math.approxEqAbs(f32, acos32(0.5), 1.047198, epsilon));
-    try expect(math.approxEqAbs(f32, acos32(0.8923), 0.468382, epsilon));
-    try expect(math.approxEqAbs(f32, acos32(-0.2), 1.772154, epsilon));
+    try expect(math.approx_eq_abs(f32, acos32(0.0), 1.570796, epsilon));
+    try expect(math.approx_eq_abs(f32, acos32(0.2), 1.369438, epsilon));
+    try expect(math.approx_eq_abs(f32, acos32(0.3434), 1.220262, epsilon));
+    try expect(math.approx_eq_abs(f32, acos32(0.5), 1.047198, epsilon));
+    try expect(math.approx_eq_abs(f32, acos32(0.8923), 0.468382, epsilon));
+    try expect(math.approx_eq_abs(f32, acos32(-0.2), 1.772154, epsilon));
 }
 
 test acos64 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f64, acos64(0.0), 1.570796, epsilon));
-    try expect(math.approxEqAbs(f64, acos64(0.2), 1.369438, epsilon));
-    try expect(math.approxEqAbs(f64, acos64(0.3434), 1.220262, epsilon));
-    try expect(math.approxEqAbs(f64, acos64(0.5), 1.047198, epsilon));
-    try expect(math.approxEqAbs(f64, acos64(0.8923), 0.468382, epsilon));
-    try expect(math.approxEqAbs(f64, acos64(-0.2), 1.772154, epsilon));
+    try expect(math.approx_eq_abs(f64, acos64(0.0), 1.570796, epsilon));
+    try expect(math.approx_eq_abs(f64, acos64(0.2), 1.369438, epsilon));
+    try expect(math.approx_eq_abs(f64, acos64(0.3434), 1.220262, epsilon));
+    try expect(math.approx_eq_abs(f64, acos64(0.5), 1.047198, epsilon));
+    try expect(math.approx_eq_abs(f64, acos64(0.8923), 0.468382, epsilon));
+    try expect(math.approx_eq_abs(f64, acos64(-0.2), 1.772154, epsilon));
 }
 
 test "acos32.special" {
-    try expect(math.isNan(acos32(-2)));
-    try expect(math.isNan(acos32(1.5)));
+    try expect(math.is_nan(acos32(-2)));
+    try expect(math.is_nan(acos32(1.5)));
 }
 
 test "acos64.special" {
-    try expect(math.isNan(acos64(-2)));
-    try expect(math.isNan(acos64(1.5)));
+    try expect(math.is_nan(acos64(-2)));
+    try expect(math.is_nan(acos64(1.5)));
 }

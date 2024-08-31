@@ -3,7 +3,7 @@ pub export fn entry() void {
         a: u65535,
         b: u65535,
     };
-    @compileLog(@sizeOf(T));
+    @compileLog(@size_of(T));
 }
 
 // error

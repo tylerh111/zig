@@ -24,10 +24,10 @@ pub fn FixedBufferStream(comptime Buffer: type) type {
             *Self,
             SeekError,
             GetSeekPosError,
-            seekTo,
-            seekBy,
-            getPos,
-            getEndPos,
+            seek_to,
+            seek_by,
+            get_pos,
+            get_end_pos,
         );
 
         const Self = @This();
@@ -72,21 +72,21 @@ pub fn FixedBufferStream(comptime Buffer: type) type {
         }
 
         pub fn seek_to(self: *Self, pos: u64) SeekError!void {
-            self.pos = @min(std.math.lossyCast(usize, pos), self.buffer.len);
+            self.pos = @min(std.math.lossy_cast(usize, pos), self.buffer.len);
         }
 
         pub fn seek_by(self: *Self, amt: i64) SeekError!void {
             if (amt < 0) {
                 const abs_amt = @abs(amt);
-                const abs_amt_usize = std.math.cast(usize, abs_amt) orelse std.math.maxInt(usize);
+                const abs_amt_usize = std.math.cast(usize, abs_amt) orelse std.math.max_int(usize);
                 if (abs_amt_usize > self.pos) {
                     self.pos = 0;
                 } else {
                     self.pos -= abs_amt_usize;
                 }
             } else {
-                const amt_usize = std.math.cast(usize, amt) orelse std.math.maxInt(usize);
-                const new_pos = std.math.add(usize, self.pos, amt_usize) catch std.math.maxInt(usize);
+                const amt_usize = std.math.cast(usize, amt) orelse std.math.max_int(usize);
+                const new_pos = std.math.add(usize, self.pos, amt_usize) catch std.math.max_int(usize);
                 self.pos = @min(self.buffer.len, new_pos);
             }
         }
@@ -121,63 +121,63 @@ fn Slice(comptime T: type) type {
                 .Slice => {},
                 .One => switch (@typeInfo(ptr_info.child)) {
                     .Array => |info| new_ptr_info.child = info.child,
-                    else => @compileError("invalid type given to fixedBufferStream"),
+                    else => @compile_error("invalid type given to fixed_buffer_stream"),
                 },
-                else => @compileError("invalid type given to fixedBufferStream"),
+                else => @compile_error("invalid type given to fixed_buffer_stream"),
             }
             new_ptr_info.size = .Slice;
             return @Type(.{ .Pointer = new_ptr_info });
         },
-        else => @compileError("invalid type given to fixedBufferStream"),
+        else => @compile_error("invalid type given to fixed_buffer_stream"),
     }
 }
 
 test "output" {
     var buf: [255]u8 = undefined;
-    var fbs = fixedBufferStream(&buf);
+    var fbs = fixed_buffer_stream(&buf);
     const stream = fbs.writer();
 
     try stream.print("{s}{s}!", .{ "Hello", "World" });
-    try testing.expectEqualSlices(u8, "HelloWorld!", fbs.getWritten());
+    try testing.expect_equal_slices(u8, "HelloWorld!", fbs.get_written());
 }
 
 test "output at comptime" {
     comptime {
         var buf: [255]u8 = undefined;
-        var fbs = fixedBufferStream(&buf);
+        var fbs = fixed_buffer_stream(&buf);
         const stream = fbs.writer();
 
         try stream.print("{s}{s}!", .{ "Hello", "World" });
-        try testing.expectEqualSlices(u8, "HelloWorld!", fbs.getWritten());
+        try testing.expect_equal_slices(u8, "HelloWorld!", fbs.get_written());
     }
 }
 
 test "output 2" {
     var buffer: [10]u8 = undefined;
-    var fbs = fixedBufferStream(&buffer);
+    var fbs = fixed_buffer_stream(&buffer);
 
-    try fbs.writer().writeAll("Hello");
-    try testing.expect(mem.eql(u8, fbs.getWritten(), "Hello"));
+    try fbs.writer().write_all("Hello");
+    try testing.expect(mem.eql(u8, fbs.get_written(), "Hello"));
 
-    try fbs.writer().writeAll("world");
-    try testing.expect(mem.eql(u8, fbs.getWritten(), "Helloworld"));
+    try fbs.writer().write_all("world");
+    try testing.expect(mem.eql(u8, fbs.get_written(), "Helloworld"));
 
-    try testing.expectError(error.NoSpaceLeft, fbs.writer().writeAll("!"));
-    try testing.expect(mem.eql(u8, fbs.getWritten(), "Helloworld"));
+    try testing.expect_error(error.NoSpaceLeft, fbs.writer().write_all("!"));
+    try testing.expect(mem.eql(u8, fbs.get_written(), "Helloworld"));
 
     fbs.reset();
-    try testing.expect(fbs.getWritten().len == 0);
+    try testing.expect(fbs.get_written().len == 0);
 
-    try testing.expectError(error.NoSpaceLeft, fbs.writer().writeAll("Hello world!"));
-    try testing.expect(mem.eql(u8, fbs.getWritten(), "Hello worl"));
+    try testing.expect_error(error.NoSpaceLeft, fbs.writer().write_all("Hello world!"));
+    try testing.expect(mem.eql(u8, fbs.get_written(), "Hello worl"));
 
-    try fbs.seekTo((try fbs.getEndPos()) + 1);
-    try testing.expectError(error.NoSpaceLeft, fbs.writer().writeAll("H"));
+    try fbs.seek_to((try fbs.get_end_pos()) + 1);
+    try testing.expect_error(error.NoSpaceLeft, fbs.writer().write_all("H"));
 }
 
 test "input" {
     const bytes = [_]u8{ 1, 2, 3, 4, 5, 6, 7 };
-    var fbs = fixedBufferStream(&bytes);
+    var fbs = fixed_buffer_stream(&bytes);
 
     var dest: [4]u8 = undefined;
 
@@ -192,7 +192,7 @@ test "input" {
     read = try fbs.reader().read(&dest);
     try testing.expect(read == 0);
 
-    try fbs.seekTo((try fbs.getEndPos()) + 1);
+    try fbs.seek_to((try fbs.get_end_pos()) + 1);
     read = try fbs.reader().read(&dest);
     try testing.expect(read == 0);
 }

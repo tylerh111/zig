@@ -1,14 +1,14 @@
 const std = @import("../std.zig");
 const math = std.math;
 const expect = std.testing.expect;
-const isNan = math.isNan;
-const isInf = math.isInf;
+const is_nan = math.is_nan;
+const is_inf = math.is_inf;
 const inf = math.inf;
 const nan = math.nan;
-const floatEpsAt = math.floatEpsAt;
-const floatEps = math.floatEps;
-const floatMin = math.floatMin;
-const floatMax = math.floatMax;
+const float_eps_at = math.float_eps_at;
+const float_eps = math.float_eps;
+const float_min = math.float_min;
+const float_max = math.float_max;
 
 /// Returns sqrt(x * x + y * y), avoiding unnecessary overflow and underflow.
 ///
@@ -25,19 +25,19 @@ pub fn hypot(x: anytype, y: anytype) @TypeOf(x, y) {
     switch (@typeInfo(T)) {
         .Float => {},
         .ComptimeFloat => return @sqrt(x * x + y * y),
-        else => @compileError("hypot not implemented for " ++ @typeName(T)),
+        else => @compile_error("hypot not implemented for " ++ @type_name(T)),
     }
-    const lower = @sqrt(floatMin(T));
-    const upper = @sqrt(floatMax(T) / 2);
-    const incre = @sqrt(floatEps(T) / 2);
-    const scale = floatEpsAt(T, incre);
-    const hypfn = if (emulateFma(T)) hypotUnfused else hypotFused;
+    const lower = @sqrt(float_min(T));
+    const upper = @sqrt(float_max(T) / 2);
+    const incre = @sqrt(float_eps(T) / 2);
+    const scale = float_eps_at(T, incre);
+    const hypfn = if (emulate_fma(T)) hypot_unfused else hypot_fused;
     var major: T = x;
     var minor: T = y;
-    if (isInf(major) or isInf(minor)) return inf(T);
-    if (isNan(major) or isNan(minor)) return nan(T);
-    if (T == f16) return @floatCast(@sqrt(@mulAdd(f32, x, x, @as(f32, y) * y)));
-    if (T == f32) return @floatCast(@sqrt(@mulAdd(f64, x, x, @as(f64, y) * y)));
+    if (is_inf(major) or is_inf(minor)) return inf(T);
+    if (is_nan(major) or is_nan(minor)) return nan(T);
+    if (T == f16) return @float_cast(@sqrt(@mul_add(f32, x, x, @as(f32, y) * y)));
+    if (T == f32) return @float_cast(@sqrt(@mul_add(f64, x, x, @as(f64, y) * y)));
     major = @abs(major);
     minor = @abs(minor);
     if (minor > major) {
@@ -52,8 +52,8 @@ pub fn hypot(x: anytype, y: anytype) @TypeOf(x, y) {
 }
 
 inline fn emulate_fma(comptime T: type) bool {
-    // If @mulAdd lowers to the software implementation,
-    // hypotUnfused should be used in place of hypotFused.
+    // If @mul_add lowers to the software implementation,
+    // hypot_unfused should be used in place of hypot_fused.
     // This takes an educated guess, but ideally we should
     // properly detect at comptime when that fallback will
     // occur.
@@ -61,10 +61,10 @@ inline fn emulate_fma(comptime T: type) bool {
 }
 
 inline fn hypot_fused(comptime F: type, x: F, y: F) F {
-    const r = @sqrt(@mulAdd(F, x, x, y * y));
+    const r = @sqrt(@mul_add(F, x, x, y * y));
     const rr = r * r;
     const xx = x * x;
-    const z = @mulAdd(F, -y, y, rr - xx) + @mulAdd(F, r, r, -rr) - @mulAdd(F, x, x, -xx);
+    const z = @mul_add(F, -y, y, rr - xx) + @mul_add(F, r, r, -rr) - @mul_add(F, x, x, -xx);
     return r - z / (2 * r);
 }
 
@@ -99,7 +99,7 @@ test "hypot.correct" {
     inline for (.{ f16, f32, f64, f128 }) |T| {
         inline for (hypot_test_cases) |v| {
             const a: T, const b: T, const c: T = v;
-            try expect(math.approxEqRel(T, hypot(a, b), c, @sqrt(floatEps(T))));
+            try expect(math.approx_eq_rel(T, hypot(a, b), c, @sqrt(float_eps(T))));
         }
     }
 }
@@ -108,24 +108,24 @@ test "hypot.precise" {
     inline for (.{ f16, f32, f64 }) |T| { // f128 seems to be 5 ulp
         inline for (hypot_test_cases) |v| {
             const a: T, const b: T, const c: T = v;
-            try expect(math.approxEqRel(T, hypot(a, b), c, floatEps(T)));
+            try expect(math.approx_eq_rel(T, hypot(a, b), c, float_eps(T)));
         }
     }
 }
 
 test "hypot.special" {
     inline for (.{ f16, f32, f64, f128 }) |T| {
-        try expect(math.isNan(hypot(nan(T), 0.0)));
-        try expect(math.isNan(hypot(0.0, nan(T))));
+        try expect(math.is_nan(hypot(nan(T), 0.0)));
+        try expect(math.is_nan(hypot(0.0, nan(T))));
 
-        try expect(math.isPositiveInf(hypot(inf(T), 0.0)));
-        try expect(math.isPositiveInf(hypot(0.0, inf(T))));
-        try expect(math.isPositiveInf(hypot(inf(T), nan(T))));
-        try expect(math.isPositiveInf(hypot(nan(T), inf(T))));
+        try expect(math.is_positive_inf(hypot(inf(T), 0.0)));
+        try expect(math.is_positive_inf(hypot(0.0, inf(T))));
+        try expect(math.is_positive_inf(hypot(inf(T), nan(T))));
+        try expect(math.is_positive_inf(hypot(nan(T), inf(T))));
 
-        try expect(math.isPositiveInf(hypot(-inf(T), 0.0)));
-        try expect(math.isPositiveInf(hypot(0.0, -inf(T))));
-        try expect(math.isPositiveInf(hypot(-inf(T), nan(T))));
-        try expect(math.isPositiveInf(hypot(nan(T), -inf(T))));
+        try expect(math.is_positive_inf(hypot(-inf(T), 0.0)));
+        try expect(math.is_positive_inf(hypot(0.0, -inf(T))));
+        try expect(math.is_positive_inf(hypot(-inf(T), nan(T))));
+        try expect(math.is_positive_inf(hypot(nan(T), -inf(T))));
     }
 }

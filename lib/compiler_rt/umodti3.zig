@@ -23,6 +23,6 @@ const v2u64 = @Vector(2, u64);
 
 fn __umodti3_windows_x86_64(a: v2u64, b: v2u64) callconv(.C) v2u64 {
     var r: u128 = undefined;
-    _ = udivmod(u128, @bitCast(a), @bitCast(b), &r);
-    return @bitCast(r);
+    _ = udivmod(u128, @bit_cast(a), @bit_cast(b), &r);
+    return @bit_cast(r);
 }

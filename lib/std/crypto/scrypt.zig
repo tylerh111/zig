@@ -19,7 +19,7 @@ const HasherError = pwhash.HasherError;
 const EncodingError = phc_format.Error;
 const Error = pwhash.Error;
 
-const max_size = math.maxInt(usize);
+const max_size = math.max_int(usize);
 const max_int = max_size >> 1;
 const default_salt_len = 32;
 const default_hash_len = 32;
@@ -67,17 +67,17 @@ fn salsa8core(b: *align(16) [16]u32) void {
 }
 
 fn salsa_xor(tmp: *align(16) [16]u32, in: []align(16) const u32, out: []align(16) u32) void {
-    blockXor(tmp, in, 1);
+    block_xor(tmp, in, 1);
     salsa8core(tmp);
-    blockCopy(out, tmp, 1);
+    block_copy(out, tmp, 1);
 }
 
 fn block_mix(tmp: *align(16) [16]u32, in: []align(16) const u32, out: []align(16) u32, r: u30) void {
-    blockCopy(tmp, @alignCast(in[(2 * r - 1) * 16 ..]), 1);
+    block_copy(tmp, @align_cast(in[(2 * r - 1) * 16 ..]), 1);
     var i: usize = 0;
     while (i < 2 * r) : (i += 2) {
-        salsaXor(tmp, @alignCast(in[i * 16 ..]), @alignCast(out[i * 8 ..]));
-        salsaXor(tmp, @alignCast(in[i * 16 + 16 ..]), @alignCast(out[i * 8 + r * 16 ..]));
+        salsa_xor(tmp, @align_cast(in[i * 16 ..]), @align_cast(out[i * 8 ..]));
+        salsa_xor(tmp, @align_cast(in[i * 16 + 16 ..]), @align_cast(out[i * 8 + r * 16 ..]));
     }
 }
 
@@ -87,36 +87,36 @@ fn integerify(b: []align(16) const u32, r: u30) u64 {
 }
 
 fn smix(b: []align(16) u8, r: u30, n: usize, v: []align(16) u32, xy: []align(16) u32) void {
-    const x: []align(16) u32 = @alignCast(xy[0 .. 32 * r]);
-    const y: []align(16) u32 = @alignCast(xy[32 * r ..]);
+    const x: []align(16) u32 = @align_cast(xy[0 .. 32 * r]);
+    const y: []align(16) u32 = @align_cast(xy[32 * r ..]);
 
     for (x, 0..) |*v1, j| {
-        v1.* = mem.readInt(u32, b[4 * j ..][0..4], .little);
+        v1.* = mem.read_int(u32, b[4 * j ..][0..4], .little);
     }
 
     var tmp: [16]u32 align(16) = undefined;
     var i: usize = 0;
     while (i < n) : (i += 2) {
-        blockCopy(@alignCast(v[i * (32 * r) ..]), x, 2 * r);
-        blockMix(&tmp, x, y, r);
+        block_copy(@align_cast(v[i * (32 * r) ..]), x, 2 * r);
+        block_mix(&tmp, x, y, r);
 
-        blockCopy(@alignCast(v[(i + 1) * (32 * r) ..]), y, 2 * r);
-        blockMix(&tmp, y, x, r);
+        block_copy(@align_cast(v[(i + 1) * (32 * r) ..]), y, 2 * r);
+        block_mix(&tmp, y, x, r);
     }
 
     i = 0;
     while (i < n) : (i += 2) {
-        var j = @as(usize, @intCast(integerify(x, r) & (n - 1)));
-        blockXor(x, @alignCast(v[j * (32 * r) ..]), 2 * r);
-        blockMix(&tmp, x, y, r);
+        var j = @as(usize, @int_cast(integerify(x, r) & (n - 1)));
+        block_xor(x, @align_cast(v[j * (32 * r) ..]), 2 * r);
+        block_mix(&tmp, x, y, r);
 
-        j = @as(usize, @intCast(integerify(y, r) & (n - 1)));
-        blockXor(y, @alignCast(v[j * (32 * r) ..]), 2 * r);
-        blockMix(&tmp, y, x, r);
+        j = @as(usize, @int_cast(integerify(y, r) & (n - 1)));
+        block_xor(y, @align_cast(v[j * (32 * r) ..]), 2 * r);
+        block_mix(&tmp, y, x, r);
     }
 
     for (x, 0..) |v1, j| {
-        mem.writeInt(u32, b[4 * j ..][0..4], v1, .little);
+        mem.write_int(u32, b[4 * j ..][0..4], v1, .little);
     }
 }
 
@@ -136,10 +136,10 @@ pub const Params = struct {
     p: u30,
 
     /// Baseline parameters for interactive logins
-    pub const interactive = Self.fromLimits(524288, 16777216);
+    pub const interactive = Self.from_limits(524288, 16777216);
 
     /// Baseline parameters for offline usage
-    pub const sensitive = Self.fromLimits(33554432, 1073741824);
+    pub const sensitive = Self.from_limits(33554432, 1073741824);
 
     /// Create parameters from ops and mem limits, where mem_limit given in bytes
     pub fn from_limits(ops_limit: u64, mem_limit: usize) Self {
@@ -147,12 +147,12 @@ pub const Params = struct {
         const r: u30 = 8;
         if (ops < mem_limit / 32) {
             const max_n = ops / (r * 4);
-            return Self{ .r = r, .p = 1, .ln = @as(u6, @intCast(math.log2(max_n))) };
+            return Self{ .r = r, .p = 1, .ln = @as(u6, @int_cast(math.log2(max_n))) };
         } else {
-            const max_n = mem_limit / (@as(usize, @intCast(r)) * 128);
-            const ln = @as(u6, @intCast(math.log2(max_n)));
+            const max_n = mem_limit / (@as(usize, @int_cast(r)) * 128);
+            const ln = @as(u6, @int_cast(math.log2(max_n)));
             const max_rp = @min(0x3fffffff, (ops / 4) / (@as(u64, 1) << ln));
-            return Self{ .r = r, .p = @as(u30, @intCast(max_rp / @as(u64, r))), .ln = ln };
+            return Self{ .r = r, .p = @as(u30, @int_cast(max_rp / @as(u64, r))), .ln = ln };
         }
     }
 };
@@ -185,23 +185,23 @@ pub fn kdf(
 
     const n64 = @as(u64, 1) << params.ln;
     if (n64 > max_size) return KdfError.WeakParameters;
-    const n = @as(usize, @intCast(n64));
+    const n = @as(usize, @int_cast(n64));
     if (@as(u64, params.r) * @as(u64, params.p) >= 1 << 30 or
         params.r > max_int / 128 / @as(u64, params.p) or
         params.r > max_int / 256 or
         n > max_int / 128 / @as(u64, params.r)) return KdfError.WeakParameters;
 
-    const xy = try allocator.alignedAlloc(u32, 16, 64 * params.r);
+    const xy = try allocator.aligned_alloc(u32, 16, 64 * params.r);
     defer allocator.free(xy);
-    const v = try allocator.alignedAlloc(u32, 16, 32 * n * params.r);
+    const v = try allocator.aligned_alloc(u32, 16, 32 * n * params.r);
     defer allocator.free(v);
-    var dk = try allocator.alignedAlloc(u8, 16, params.p * 128 * params.r);
+    var dk = try allocator.aligned_alloc(u8, 16, params.p * 128 * params.r);
     defer allocator.free(dk);
 
     try pwhash.pbkdf2(dk, password, salt, 1, HmacSha256);
     var i: u32 = 0;
     while (i < params.p) : (i += 1) {
-        smix(@alignCast(dk[i * 128 * params.r ..]), params.r, n, v, xy);
+        smix(@align_cast(dk[i * 128 * params.r ..]), params.r, n, v, xy);
     }
     try pwhash.pbkdf2(derived_key, password, dk, 1, HmacSha256);
 }
@@ -228,12 +228,12 @@ const crypt_format = struct {
     /// This type must be used whenever a binary value is encoded in a PHC-formatted string.
     /// This includes `salt`, `hash`, and any other binary parameters such as keys.
     ///
-    /// Once initialized, the actual value can be read with the `constSlice()` function.
+    /// Once initialized, the actual value can be read with the `const_slice()` function.
     pub fn BinValue(comptime max_len: usize) type {
         return struct {
             const Self = @This();
             const capacity = max_len;
-            const max_encoded_length = Codec.encodedLen(max_len);
+            const max_encoded_length = Codec.encoded_len(max_len);
 
             buf: [max_len]u8 = undefined,
             len: usize = 0,
@@ -253,15 +253,15 @@ const crypt_format = struct {
             }
 
             fn from_b64(self: *Self, str: []const u8) !void {
-                const len = Codec.decodedLen(str.len);
+                const len = Codec.decoded_len(str.len);
                 if (len > self.buf.len) return EncodingError.NoSpaceLeft;
                 try Codec.decode(self.buf[0..len], str);
                 self.len = len;
             }
 
             fn to_b64(self: *const Self, buf: []u8) ![]const u8 {
-                const value = self.constSlice();
-                const len = Codec.encodedLen(value.len);
+                const value = self.const_slice();
+                const len = Codec.encoded_len(value.len);
                 if (len > buf.len) return EncodingError.NoSpaceLeft;
                 const encoded = buf[0..len];
                 Codec.encode(encoded, value);
@@ -271,8 +271,8 @@ const crypt_format = struct {
     }
 
     /// Expand binary data into a salt for the modular crypt format.
-    pub fn salt_from_bin(comptime len: usize, salt: [len]u8) [Codec.encodedLen(len)]u8 {
-        var buf: [Codec.encodedLen(len)]u8 = undefined;
+    pub fn salt_from_bin(comptime len: usize, salt: [len]u8) [Codec.encoded_len(len)]u8 {
+        var buf: [Codec.encoded_len(len)]u8 = undefined;
         Codec.encode(&buf, &salt);
         return buf;
     }
@@ -283,47 +283,47 @@ const crypt_format = struct {
 
         if (str.len < 16) return EncodingError.InvalidEncoding;
         if (!mem.eql(u8, prefix, str[0..3])) return EncodingError.InvalidEncoding;
-        out.ln = try Codec.intDecode(u6, str[3..4]);
-        out.r = try Codec.intDecode(u30, str[4..9]);
-        out.p = try Codec.intDecode(u30, str[9..14]);
+        out.ln = try Codec.int_decode(u6, str[3..4]);
+        out.r = try Codec.int_decode(u30, str[4..9]);
+        out.p = try Codec.int_decode(u30, str[9..14]);
 
-        var it = mem.splitScalar(u8, str[14..], '$');
+        var it = mem.split_scalar(u8, str[14..], '$');
 
         const salt = it.first();
-        if (@hasField(T, "salt")) out.salt = salt;
+        if (@has_field(T, "salt")) out.salt = salt;
 
         const hash_str = it.next() orelse return EncodingError.InvalidEncoding;
-        if (@hasField(T, "hash")) try out.hash.fromB64(hash_str);
+        if (@has_field(T, "hash")) try out.hash.from_b64(hash_str);
 
         return out;
     }
 
     /// Serialize parameters into a string in modular crypt format.
     pub fn serialize(params: anytype, str: []u8) EncodingError![]const u8 {
-        var buf = io.fixedBufferStream(str);
-        try serializeTo(params, buf.writer());
-        return buf.getWritten();
+        var buf = io.fixed_buffer_stream(str);
+        try serialize_to(params, buf.writer());
+        return buf.get_written();
     }
 
     /// Compute the number of bytes required to serialize `params`
     pub fn calc_size(params: anytype) usize {
-        var buf = io.countingWriter(io.null_writer);
-        serializeTo(params, buf.writer()) catch unreachable;
-        return @as(usize, @intCast(buf.bytes_written));
+        var buf = io.counting_writer(io.null_writer);
+        serialize_to(params, buf.writer()) catch unreachable;
+        return @as(usize, @int_cast(buf.bytes_written));
     }
 
     fn serialize_to(params: anytype, out: anytype) !void {
         var header: [14]u8 = undefined;
         header[0..3].* = prefix.*;
-        Codec.intEncode(header[3..4], params.ln);
-        Codec.intEncode(header[4..9], params.r);
-        Codec.intEncode(header[9..14], params.p);
-        try out.writeAll(&header);
-        try out.writeAll(params.salt);
-        try out.writeAll("$");
+        Codec.int_encode(header[3..4], params.ln);
+        Codec.int_encode(header[4..9], params.r);
+        Codec.int_encode(header[9..14], params.p);
+        try out.write_all(&header);
+        try out.write_all(params.salt);
+        try out.write_all("$");
         var buf: [@TypeOf(params.hash).max_encoded_length]u8 = undefined;
-        const hash_str = try params.hash.toB64(&buf);
-        try out.writeAll(hash_str);
+        const hash_str = try params.hash.to_b64(&buf);
+        try out.write_all(hash_str);
     }
 
     /// Custom codec that maps 6 bits into 8 like regular Base64, but uses its own alphabet,
@@ -351,40 +351,40 @@ const crypt_format = struct {
             fn int_decode(comptime T: type, src: *const [(@bitSizeOf(T) + 5) / 6]u8) !T {
                 var v: T = 0;
                 for (src, 0..) |x, i| {
-                    const vi = mem.indexOfScalar(u8, &map64, x) orelse return EncodingError.InvalidEncoding;
-                    v |= @as(T, @intCast(vi)) << @as(math.Log2Int(T), @intCast(i * 6));
+                    const vi = mem.index_of_scalar(u8, &map64, x) orelse return EncodingError.InvalidEncoding;
+                    v |= @as(T, @int_cast(vi)) << @as(math.Log2Int(T), @int_cast(i * 6));
                 }
                 return v;
             }
 
             fn decode(dst: []u8, src: []const u8) !void {
-                std.debug.assert(dst.len == decodedLen(src.len));
+                std.debug.assert(dst.len == decoded_len(src.len));
                 var i: usize = 0;
                 while (i < src.len / 4) : (i += 1) {
-                    mem.writeInt(u24, dst[i * 3 ..][0..3], try intDecode(u24, src[i * 4 ..][0..4]), .little);
+                    mem.write_int(u24, dst[i * 3 ..][0..3], try int_decode(u24, src[i * 4 ..][0..4]), .little);
                 }
                 const leftover = src[i * 4 ..];
                 var v: u24 = 0;
                 for (leftover, 0..) |_, j| {
-                    v |= @as(u24, try intDecode(u6, leftover[j..][0..1])) << @as(u5, @intCast(j * 6));
+                    v |= @as(u24, try int_decode(u6, leftover[j..][0..1])) << @as(u5, @int_cast(j * 6));
                 }
                 for (dst[i * 3 ..], 0..) |*x, j| {
-                    x.* = @as(u8, @truncate(v >> @as(u5, @intCast(j * 8))));
+                    x.* = @as(u8, @truncate(v >> @as(u5, @int_cast(j * 8))));
                 }
             }
 
             fn encode(dst: []u8, src: []const u8) void {
-                std.debug.assert(dst.len == encodedLen(src.len));
+                std.debug.assert(dst.len == encoded_len(src.len));
                 var i: usize = 0;
                 while (i < src.len / 3) : (i += 1) {
-                    intEncode(dst[i * 4 ..][0..4], mem.readInt(u24, src[i * 3 ..][0..3], .little));
+                    int_encode(dst[i * 4 ..][0..4], mem.read_int(u24, src[i * 3 ..][0..3], .little));
                 }
                 const leftover = src[i * 3 ..];
                 var v: u24 = 0;
                 for (leftover, 0..) |x, j| {
-                    v |= @as(u24, x) << @as(u5, @intCast(j * 8));
+                    v |= @as(u24, x) << @as(u5, @int_cast(j * 8));
                 }
-                intEncode(dst[i * 4 ..], v);
+                int_encode(dst[i * 4 ..], v);
             }
         };
     }
@@ -422,8 +422,8 @@ const PhcFormatHasher = struct {
             .ln = params.ln,
             .r = params.r,
             .p = params.p,
-            .salt = try BinValue(max_salt_len).fromSlice(&salt),
-            .hash = try BinValue(max_hash_len).fromSlice(&hash),
+            .salt = try BinValue(max_salt_len).from_slice(&salt),
+            .hash = try BinValue(max_hash_len).from_slice(&hash),
         }, buf);
     }
 
@@ -436,11 +436,11 @@ const PhcFormatHasher = struct {
         const hash_result = try phc_format.deserialize(HashResult, str);
         if (!mem.eql(u8, hash_result.alg_id, alg_id)) return HasherError.PasswordVerificationFailed;
         const params = Params{ .ln = hash_result.ln, .r = hash_result.r, .p = hash_result.p };
-        const expected_hash = hash_result.hash.constSlice();
+        const expected_hash = hash_result.hash.const_slice();
         var hash_buf: [max_hash_len]u8 = undefined;
         if (expected_hash.len > hash_buf.len) return HasherError.InvalidEncoding;
         const hash = hash_buf[0..expected_hash.len];
-        try kdf(allocator, hash, password, hash_result.salt.constSlice(), params);
+        try kdf(allocator, hash, password, hash_result.salt.const_slice(), params);
         if (!mem.eql(u8, hash, expected_hash)) return HasherError.PasswordVerificationFailed;
     }
 };
@@ -462,7 +462,7 @@ const CryptFormatHasher = struct {
     ) HasherError![]const u8 {
         var salt_bin: [default_salt_len]u8 = undefined;
         crypto.random.bytes(&salt_bin);
-        const salt = crypt_format.saltFromBin(salt_bin.len, salt_bin);
+        const salt = crypt_format.salt_from_bin(salt_bin.len, salt_bin);
 
         var hash: [default_hash_len]u8 = undefined;
         try kdf(allocator, &hash, password, &salt, params);
@@ -472,7 +472,7 @@ const CryptFormatHasher = struct {
             .r = params.r,
             .p = params.p,
             .salt = &salt,
-            .hash = try BinValue(max_hash_len).fromSlice(&hash),
+            .hash = try BinValue(max_hash_len).from_slice(&hash),
         }, buf);
     }
 
@@ -484,7 +484,7 @@ const CryptFormatHasher = struct {
     ) HasherError!void {
         const hash_result = try crypt_format.deserialize(HashResult, str);
         const params = Params{ .ln = hash_result.ln, .r = hash_result.r, .p = hash_result.p };
-        const expected_hash = hash_result.hash.constSlice();
+        const expected_hash = hash_result.hash.const_slice();
         var hash_buf: [max_hash_len]u8 = undefined;
         if (expected_hash.len > hash_buf.len) return HasherError.InvalidEncoding;
         const hash = hash_buf[0..expected_hash.len];
@@ -530,7 +530,7 @@ pub fn str_verify(
     options: VerifyOptions,
 ) Error!void {
     const allocator = options.allocator orelse return Error.AllocatorRequired;
-    if (mem.startsWith(u8, str, crypt_format.prefix)) {
+    if (mem.starts_with(u8, str, crypt_format.prefix)) {
         return CryptFormatHasher.verify(allocator, str, password);
     } else {
         return PhcFormatHasher.verify(allocator, str, password);
@@ -551,9 +551,9 @@ test "kdf" {
 
     const hex = "1e0f97c3f6609024022fbe698da29c2fe53ef1087a8e396dc6d5d2a041e886de";
     var bytes: [hex.len / 2]u8 = undefined;
-    _ = try fmt.hexToBytes(&bytes, hex);
+    _ = try fmt.hex_to_bytes(&bytes, hex);
 
-    try std.testing.expectEqualSlices(u8, &bytes, &dk);
+    try std.testing.expect_equal_slices(u8, &bytes, &dk);
 }
 
 test "kdf rfc 1" {
@@ -567,9 +567,9 @@ test "kdf rfc 1" {
 
     const hex = "77d6576238657b203b19ca42c18a0497f16b4844e3074ae8dfdffa3fede21442fcd0069ded0948f8326a753a0fc81f17e8d3e0fb2e0d3628cf35e20c38d18906";
     var bytes: [hex.len / 2]u8 = undefined;
-    _ = try fmt.hexToBytes(&bytes, hex);
+    _ = try fmt.hex_to_bytes(&bytes, hex);
 
-    try std.testing.expectEqualSlices(u8, &bytes, &dk);
+    try std.testing.expect_equal_slices(u8, &bytes, &dk);
 }
 
 test "kdf rfc 2" {
@@ -583,9 +583,9 @@ test "kdf rfc 2" {
 
     const hex = "fdbabe1c9d3472007856e7190d01e9fe7c6ad7cbc8237830e77376634b3731622eaf30d92e22a3886ff109279d9830dac727afb94a83ee6d8360cbdfa2cc0640";
     var bytes: [hex.len / 2]u8 = undefined;
-    _ = try fmt.hexToBytes(&bytes, hex);
+    _ = try fmt.hex_to_bytes(&bytes, hex);
 
-    try std.testing.expectEqualSlices(u8, &bytes, &dk);
+    try std.testing.expect_equal_slices(u8, &bytes, &dk);
 }
 
 test "kdf rfc 3" {
@@ -599,9 +599,9 @@ test "kdf rfc 3" {
 
     const hex = "7023bdcb3afd7348461c06cd81fd38ebfda8fbba904f8e3ea9b543f6545da1f2d5432955613f0fcf62d49705242a9af9e61e85dc0d651e40dfcf017b45575887";
     var bytes: [hex.len / 2]u8 = undefined;
-    _ = try fmt.hexToBytes(&bytes, hex);
+    _ = try fmt.hex_to_bytes(&bytes, hex);
 
-    try std.testing.expectEqualSlices(u8, &bytes, &dk);
+    try std.testing.expect_equal_slices(u8, &bytes, &dk);
 }
 
 test "kdf rfc 4" {
@@ -615,9 +615,9 @@ test "kdf rfc 4" {
 
     const hex = "2101cb9b6a511aaeaddbbe09cf70f881ec568d574a2ffd4dabe5ee9820adaa478e56fd8f4ba5d09ffa1c6d927c40f4c337304049e8a952fbcbf45c6fa77a41a4";
     var bytes: [hex.len / 2]u8 = undefined;
-    _ = try fmt.hexToBytes(&bytes, hex);
+    _ = try fmt.hex_to_bytes(&bytes, hex);
 
-    try std.testing.expectEqualSlices(u8, &bytes, &dk);
+    try std.testing.expect_equal_slices(u8, &bytes, &dk);
 }
 
 test "password hashing (crypt format)" {
@@ -635,7 +635,7 @@ test "password hashing (crypt format)" {
     try CryptFormatHasher.verify(alloc, str2, password);
 }
 
-test "strHash and strVerify" {
+test "str_hash and str_verify" {
     if (!run_long_tests) return error.SkipZigTest;
 
     const alloc = std.testing.allocator;
@@ -646,20 +646,20 @@ test "strHash and strVerify" {
     var buf: [128]u8 = undefined;
 
     {
-        const str = try strHash(
+        const str = try str_hash(
             password,
             .{ .allocator = alloc, .params = params, .encoding = .crypt },
             &buf,
         );
-        try strVerify(str, password, verify_options);
+        try str_verify(str, password, verify_options);
     }
     {
-        const str = try strHash(
+        const str = try str_hash(
             password,
             .{ .allocator = alloc, .params = params, .encoding = .phc },
             &buf,
         );
-        try strVerify(str, password, verify_options);
+        try str_verify(str, password, verify_options);
     }
 }
 
@@ -672,13 +672,13 @@ test "unix-scrypt" {
     {
         const str = "$7$C6..../....SodiumChloride$kBGj9fHznVYFQMEn/qDCfrDevf9YDtcDdKvEqHJLV8D";
         const password = "pleaseletmein";
-        try strVerify(str, password, .{ .allocator = alloc });
+        try str_verify(str, password, .{ .allocator = alloc });
     }
     // one of the libsodium test vectors
     {
         const str = "$7$B6....1....75gBMAGwfFWZqBdyF3WdTQnWdUsuTiWjG1fF9c1jiSD$tc8RoB3.Em3/zNgMLWo2u00oGIoTyJv4fl3Fl8Tix72";
         const password = "^T5H$JYt39n%K*j:W]!1s?vg!:jGi]Ax?..l7[p0v:1jHTpla9;]bUN;?bWyCbtqg nrDFal+Jxl3,2`#^tFSu%v_+7iYse8-cCkNf!tD=KrW)";
-        try strVerify(str, password, .{ .allocator = alloc });
+        try str_verify(str, password, .{ .allocator = alloc });
     }
 }
 
@@ -687,7 +687,7 @@ test "crypt format" {
     const params = try crypt_format.deserialize(crypt_format.HashResult(32), str);
     var buf: [str.len]u8 = undefined;
     const s1 = try crypt_format.serialize(params, &buf);
-    try std.testing.expectEqualStrings(s1, str);
+    try std.testing.expect_equal_strings(s1, str);
 }
 
 test "kdf fast" {
@@ -711,6 +711,6 @@ test "kdf fast" {
     inline for (test_vectors) |v| {
         var dk: [v.want.len]u8 = undefined;
         try kdf(std.testing.allocator, &dk, v.password, v.salt, v.params);
-        try std.testing.expectEqualSlices(u8, &dk, v.want);
+        try std.testing.expect_equal_slices(u8, &dk, v.want);
     }
 }

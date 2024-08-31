@@ -4,7 +4,7 @@ const tests = @import("tests.zig");
 
 pub fn add_cases(cases: *tests.CompareOutputContext) void {
     if (builtin.os.tag == .linux and builtin.cpu.arch == .x86_64) {
-        cases.addAsm("hello world linux x86_64",
+        cases.add_asm("hello world linux x86_64",
             \\.text
             \\.globl _start
             \\

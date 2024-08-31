@@ -17,7 +17,7 @@
 //! All regular functions.
 
 // Because SPIR-V requires re-compilation anyway, and so hot swapping will not work
-// anyway, we simply generate all the code in flushModule. This keeps
+// anyway, we simply generate all the code in flush_module. This keeps
 // things considerably simpler.
 
 const SpirV = @This();
@@ -107,11 +107,11 @@ pub fn open(
     assert(!use_lld); // Caught by Compilation.Config.resolve.
     assert(target.ofmt == .spirv); // Caught by Compilation.Config.resolve.
 
-    const spirv = try createEmpty(arena, comp, emit, options);
+    const spirv = try create_empty(arena, comp, emit, options);
     errdefer spirv.base.destroy();
 
     // TODO: read the file and keep valid parts instead of truncating
-    const file = try emit.directory.handle.createFile(emit.sub_path, .{
+    const file = try emit.directory.handle.create_file(emit.sub_path, .{
         .truncate = true,
         .read = true,
     });
@@ -128,11 +128,11 @@ pub fn update_func(self: *SpirV, module: *Module, func_index: InternPool.Index, 
         @panic("Attempted to compile for architecture that was disabled by build configuration");
     }
 
-    const func = module.funcInfo(func_index);
-    const decl = module.declPtr(func.owner_decl);
+    const func = module.func_info(func_index);
+    const decl = module.decl_ptr(func.owner_decl);
     log.debug("lowering function {}", .{decl.name.fmt(&module.intern_pool)});
 
-    try self.object.updateFunc(module, func_index, air, liveness);
+    try self.object.update_func(module, func_index, air, liveness);
 }
 
 pub fn update_decl(self: *SpirV, module: *Module, decl_index: InternPool.DeclIndex) !void {
@@ -140,10 +140,10 @@ pub fn update_decl(self: *SpirV, module: *Module, decl_index: InternPool.DeclInd
         @panic("Attempted to compile for architecture that was disabled by build configuration");
     }
 
-    const decl = module.declPtr(decl_index);
+    const decl = module.decl_ptr(decl_index);
     log.debug("lowering declaration {}", .{decl.name.fmt(&module.intern_pool)});
 
-    try self.object.updateDecl(module, decl_index);
+    try self.object.update_decl(module, decl_index);
 }
 
 pub fn update_exports(
@@ -159,11 +159,11 @@ pub fn update_exports(
             @panic("TODO: implement SpirV linker code for exporting a constant value");
         },
     };
-    const decl = mod.declPtr(decl_index);
-    if (decl.val.isFuncBody(mod)) {
-        const target = mod.getTarget();
-        const spv_decl_index = try self.object.resolveDecl(mod, decl_index);
-        const execution_model = switch (decl.typeOf(mod).fnCallingConvention(mod)) {
+    const decl = mod.decl_ptr(decl_index);
+    if (decl.val.is_func_body(mod)) {
+        const target = mod.get_target();
+        const spv_decl_index = try self.object.resolve_decl(mod, decl_index);
+        const execution_model = switch (decl.type_of(mod).fn_calling_convention(mod)) {
             .Vertex => spec.ExecutionModel.Vertex,
             .Fragment => spec.ExecutionModel.Fragment,
             .Kernel => spec.ExecutionModel.Kernel,
@@ -176,9 +176,9 @@ pub fn update_exports(
             (is_vulkan and (execution_model == .Fragment or execution_model == .Vertex)))
         {
             for (exports) |exp| {
-                try self.object.spv.declareEntryPoint(
+                try self.object.spv.declare_entry_point(
                     spv_decl_index,
-                    exp.opts.name.toSlice(&mod.intern_pool),
+                    exp.opts.name.to_slice(&mod.intern_pool),
                     execution_model,
                 );
             }
@@ -194,7 +194,7 @@ pub fn free_decl(self: *SpirV, decl_index: InternPool.DeclIndex) void {
 }
 
 pub fn flush(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
-    return self.flushModule(arena, prog_node);
+    return self.flush_module(arena, prog_node);
 }
 
 pub fn flush_module(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node) link.File.FlushError!void {
@@ -212,10 +212,10 @@ pub fn flush_module(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node
 
     const comp = self.base.comp;
     const gpa = comp.gpa;
-    const target = comp.getTarget();
+    const target = comp.get_target();
 
-    try writeCapabilities(spv, target);
-    try writeMemoryModel(spv, target);
+    try write_capabilities(spv, target);
+    try write_memory_model(spv, target);
 
     // We need to export the list of error names somewhere so that we can pretty-print them in the
     // executor. This is not really an important thing though, so we can just dump it in any old
@@ -224,7 +224,7 @@ pub fn flush_module(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node
     var error_info = std.ArrayList(u8).init(self.object.gpa);
     defer error_info.deinit();
 
-    try error_info.appendSlice("zig_errors");
+    try error_info.append_slice("zig_errors");
     const mod = self.base.comp.module.?;
     for (mod.global_error_set.keys()) |name| {
         // Errors can contain pretty much any character - to encode them in a string we must escape
@@ -232,9 +232,9 @@ pub fn flush_module(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node
         // name if it contains no strange characters is nice for debugging. URI encoding fits the bill.
         // We're using : as separator, which is a reserved character.
 
-        try std.Uri.Component.percentEncode(
+        try std.Uri.Component.percent_encode(
             error_info.writer(),
-            name.toSlice(&mod.intern_pool),
+            name.to_slice(&mod.intern_pool),
             struct {
                 fn is_valid_char(c: u8) bool {
                     return switch (c) {
@@ -242,7 +242,7 @@ pub fn flush_module(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node
                         else => true,
                     };
                 }
-            }.isValidChar,
+            }.is_valid_char,
         );
     }
     try spv.sections.debug_strings.emit(gpa, .OpSourceExtension, .{
@@ -252,7 +252,7 @@ pub fn flush_module(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node
     const module = try spv.finalize(arena, target);
     errdefer arena.free(module);
 
-    const linked_module = self.linkModule(arena, module, sub_prog_node) catch |err| switch (err) {
+    const linked_module = self.link_module(arena, module, sub_prog_node) catch |err| switch (err) {
         error.OutOfMemory => return error.OutOfMemory,
         else => |other| {
             log.err("error while linking: {s}\n", .{@errorName(other)});
@@ -260,7 +260,7 @@ pub fn flush_module(self: *SpirV, arena: Allocator, prog_node: std.Progress.Node
         },
     };
 
-    try self.base.file.?.writeAll(std.mem.sliceAsBytes(linked_module));
+    try self.base.file.?.write_all(std.mem.slice_as_bytes(linked_module));
 }
 
 fn link_module(self: *SpirV, a: Allocator, module: []Word, progress: std.Progress.Node) ![]Word {

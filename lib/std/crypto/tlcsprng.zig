@@ -13,7 +13,7 @@ const posix = std.posix;
 /// point to thread-local variables.
 pub const interface = std.Random{
     .ptr = undefined,
-    .fillFn = tlsCsprngFill,
+    .fillFn = tls_csprng_fill,
 };
 
 const os_has_fork = switch (native_os) {
@@ -38,7 +38,7 @@ const os_has_fork = switch (native_os) {
 const os_has_arc4random = builtin.link_libc and @hasDecl(std.c, "arc4random_buf");
 const want_fork_safety = os_has_fork and !os_has_arc4random and
     std.options.crypto_fork_safety;
-const maybe_have_wipe_on_fork = builtin.os.isAtLeast(.linux, .{
+const maybe_have_wipe_on_fork = builtin.os.is_at_least(.linux, .{
     .major = 4,
     .minor = 14,
     .patch = 0,
@@ -57,7 +57,7 @@ var install_atfork_handler = std.once(struct {
     // The same handler is shared among threads and is inherinted by fork()-ed
     // processes.
     fn do() void {
-        const r = std.c.pthread_atfork(null, null, childAtForkHandler);
+        const r = std.c.pthread_atfork(null, null, child_at_fork_handler);
         std.debug.assert(r == 0);
     }
 }.do);
@@ -73,7 +73,7 @@ fn tls_csprng_fill(_: *anyopaque, buffer: []u8) void {
     // std.crypto.random always make an OS syscall, rather than rely on an
     // application implementation of a CSPRNG.
     if (std.options.crypto_always_getrandom) {
-        return defaultRandomSeed(buffer);
+        return default_random_seed(buffer);
     }
 
     if (wipe_mem.len == 0) {
@@ -83,7 +83,7 @@ fn tls_csprng_fill(_: *anyopaque, buffer: []u8) void {
             // granularity.
             wipe_mem = posix.mmap(
                 null,
-                @sizeOf(Context),
+                @size_of(Context),
                 posix.PROT.READ | posix.PROT.WRITE,
                 .{ .TYPE = .PRIVATE, .ANONYMOUS = true },
                 -1,
@@ -102,15 +102,15 @@ fn tls_csprng_fill(_: *anyopaque, buffer: []u8) void {
                     .rng = undefined,
                 };
             };
-            wipe_mem = mem.asBytes(&S.buf);
+            wipe_mem = mem.as_bytes(&S.buf);
         }
     }
-    const ctx = @as(*Context, @ptrCast(wipe_mem.ptr));
+    const ctx = @as(*Context, @ptr_cast(wipe_mem.ptr));
 
     switch (ctx.init_state) {
         .uninitialized => {
             if (!want_fork_safety) {
-                return initAndFill(buffer);
+                return init_and_fill(buffer);
             }
 
             if (maybe_have_wipe_on_fork) wof: {
@@ -122,12 +122,12 @@ fn tls_csprng_fill(_: *anyopaque, buffer: []u8) void {
                 } else |_| {}
 
                 if (posix.madvise(wipe_mem.ptr, wipe_mem.len, posix.MADV.WIPEONFORK)) |_| {
-                    return initAndFill(buffer);
+                    return init_and_fill(buffer);
                 } else |_| {}
             }
 
             if (std.Thread.use_pthreads) {
-                return setupPthreadAtforkAndFill(buffer);
+                return setup_pthread_atfork_and_fill(buffer);
             }
 
             // Since we failed to set up fork safety, we fall back to always
@@ -136,7 +136,7 @@ fn tls_csprng_fill(_: *anyopaque, buffer: []u8) void {
             return std.options.cryptoRandomSeed(buffer);
         },
         .initialized => {
-            return fillWithCsprng(buffer);
+            return fill_with_csprng(buffer);
         },
         .failed => {
             if (want_fork_safety) {
@@ -150,18 +150,18 @@ fn tls_csprng_fill(_: *anyopaque, buffer: []u8) void {
 
 fn setup_pthread_atfork_and_fill(buffer: []u8) void {
     install_atfork_handler.call();
-    return initAndFill(buffer);
+    return init_and_fill(buffer);
 }
 
 fn child_at_fork_handler() callconv(.C) void {
     // The atfork handler is global, this function may be called after
     // fork()-ing threads that never initialized the CSPRNG context.
     if (wipe_mem.len == 0) return;
-    std.crypto.utils.secureZero(u8, wipe_mem);
+    std.crypto.utils.secure_zero(u8, wipe_mem);
 }
 
 fn fill_with_csprng(buffer: []u8) void {
-    const ctx = @as(*Context, @ptrCast(wipe_mem.ptr));
+    const ctx = @as(*Context, @ptr_cast(wipe_mem.ptr));
     return ctx.rng.fill(buffer);
 }
 
@@ -177,13 +177,13 @@ fn init_and_fill(buffer: []u8) void {
     // the `std.options.cryptoRandomSeed` function is provided.
     std.options.cryptoRandomSeed(&seed);
 
-    const ctx = @as(*Context, @ptrCast(wipe_mem.ptr));
+    const ctx = @as(*Context, @ptr_cast(wipe_mem.ptr));
     ctx.rng = Rng.init(seed);
-    std.crypto.utils.secureZero(u8, &seed);
+    std.crypto.utils.secure_zero(u8, &seed);
 
     // This is at the end so that accidental recursive dependencies result
     // in stack overflows instead of invalid random data.
     ctx.init_state = .initialized;
 
-    return fillWithCsprng(buffer);
+    return fill_with_csprng(buffer);
 }

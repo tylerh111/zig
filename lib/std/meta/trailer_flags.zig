@@ -43,18 +43,18 @@ pub fn TrailerFlags(comptime Fields: type) type {
         pub const Self = @This();
 
         pub fn has(self: Self, comptime field: FieldEnum) bool {
-            const field_index = @intFromEnum(field);
+            const field_index = @int_from_enum(field);
             return (self.bits & (1 << field_index)) != 0;
         }
 
         pub fn get(self: Self, p: [*]align(@alignOf(Fields)) const u8, comptime field: FieldEnum) ?Field(field) {
             if (!self.has(field))
                 return null;
-            return self.ptrConst(p, field).*;
+            return self.ptr_const(p, field).*;
         }
 
         pub fn set_flag(self: *Self, comptime field: FieldEnum) void {
-            const field_index = @intFromEnum(field);
+            const field_index = @int_from_enum(field);
             self.bits |= 1 << field_index;
         }
 
@@ -86,45 +86,45 @@ pub fn TrailerFlags(comptime Fields: type) type {
         }
 
         pub fn ptr(self: Self, p: [*]align(@alignOf(Fields)) u8, comptime field: FieldEnum) *Field(field) {
-            if (@sizeOf(Field(field)) == 0)
+            if (@size_of(Field(field)) == 0)
                 return undefined;
             const off = self.offset(field);
-            return @ptrCast(@alignCast(p + off));
+            return @ptr_cast(@align_cast(p + off));
         }
 
         pub fn ptr_const(self: Self, p: [*]align(@alignOf(Fields)) const u8, comptime field: FieldEnum) *const Field(field) {
-            if (@sizeOf(Field(field)) == 0)
+            if (@size_of(Field(field)) == 0)
                 return undefined;
             const off = self.offset(field);
-            return @ptrCast(@alignCast(p + off));
+            return @ptr_cast(@align_cast(p + off));
         }
 
         pub fn offset(self: Self, comptime field: FieldEnum) usize {
             var off: usize = 0;
             inline for (@typeInfo(Fields).Struct.fields, 0..) |field_info, i| {
                 const active = (self.bits & (1 << i)) != 0;
-                if (i == @intFromEnum(field)) {
+                if (i == @int_from_enum(field)) {
                     assert(active);
-                    return mem.alignForward(usize, off, @alignOf(field_info.type));
+                    return mem.align_forward(usize, off, @alignOf(field_info.type));
                 } else if (active) {
-                    off = mem.alignForward(usize, off, @alignOf(field_info.type));
-                    off += @sizeOf(field_info.type);
+                    off = mem.align_forward(usize, off, @alignOf(field_info.type));
+                    off += @size_of(field_info.type);
                 }
             }
         }
 
         pub fn Field(comptime field: FieldEnum) type {
-            return @typeInfo(Fields).Struct.fields[@intFromEnum(field)].type;
+            return @typeInfo(Fields).Struct.fields[@int_from_enum(field)].type;
         }
 
         pub fn size_in_bytes(self: Self) usize {
             var off: usize = 0;
             inline for (@typeInfo(Fields).Struct.fields, 0..) |field, i| {
-                if (@sizeOf(field.type) == 0)
+                if (@size_of(field.type) == 0)
                     continue;
                 if ((self.bits & (1 << i)) != 0) {
-                    off = mem.alignForward(usize, off, @alignOf(field.type));
-                    off += @sizeOf(field.type);
+                    off = mem.align_forward(usize, off, @alignOf(field.type));
+                    off += @size_of(field.type);
                 }
             }
             return off;
@@ -138,13 +138,13 @@ test TrailerFlags {
         b: bool,
         c: u64,
     });
-    try testing.expectEqual(u2, meta.Tag(Flags.FieldEnum));
+    try testing.expect_equal(u2, meta.Tag(Flags.FieldEnum));
 
     var flags = Flags.init(.{
         .b = true,
         .c = true,
     });
-    const slice = try testing.allocator.alignedAlloc(u8, 8, flags.sizeInBytes());
+    const slice = try testing.allocator.aligned_alloc(u8, 8, flags.size_in_bytes());
     defer testing.allocator.free(slice);
 
     flags.set(slice.ptr, .b, false);
@@ -154,7 +154,7 @@ test TrailerFlags {
     try testing.expect(!flags.get(slice.ptr, .b).?);
     try testing.expect(flags.get(slice.ptr, .c).? == 12345678);
 
-    flags.setMany(slice.ptr, .{
+    flags.set_many(slice.ptr, .{
         .b = true,
         .c = 5678,
     });

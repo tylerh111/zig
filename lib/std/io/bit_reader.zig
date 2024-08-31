@@ -33,7 +33,7 @@ pub fn BitReader(comptime endian: std.builtin.Endian, comptime ReaderType: type)
         ///  specified number of bits could not be read.
         pub fn read_bits_no_eof(self: *Self, comptime U: type, bits: usize) !U {
             var n: usize = undefined;
-            const result = try self.readBits(U, bits, &n);
+            const result = try self.read_bits(U, bits, &n);
             if (n < bits) return error.EndOfStream;
             return result;
         }
@@ -57,7 +57,7 @@ pub fn BitReader(comptime endian: std.builtin.Endian, comptime ReaderType: type)
             var out_buffer = @as(Buf, 0);
 
             if (self.bit_count > 0) {
-                const n = if (self.bit_count >= bits) @as(u3, @intCast(bits)) else self.bit_count;
+                const n = if (self.bit_count >= bits) @as(u3, @int_cast(bits)) else self.bit_count;
                 const shift = u7_bit_count - n;
                 switch (endian) {
                     .big => {
@@ -84,46 +84,46 @@ pub fn BitReader(comptime endian: std.builtin.Endian, comptime ReaderType: type)
             //copy bytes until we have enough bits, then leave the rest in bit_buffer
             while (out_bits.* < bits) {
                 const n = bits - out_bits.*;
-                const next_byte = self.forward_reader.readByte() catch |err| switch (err) {
-                    error.EndOfStream => return @as(U, @intCast(out_buffer)),
+                const next_byte = self.forward_reader.read_byte() catch |err| switch (err) {
+                    error.EndOfStream => return @as(U, @int_cast(out_buffer)),
                     else => |e| return e,
                 };
 
                 switch (endian) {
                     .big => {
                         if (n >= u8_bit_count) {
-                            out_buffer <<= @as(u3, @intCast(u8_bit_count - 1));
+                            out_buffer <<= @as(u3, @int_cast(u8_bit_count - 1));
                             out_buffer <<= 1;
                             out_buffer |= @as(Buf, next_byte);
                             out_bits.* += u8_bit_count;
                             continue;
                         }
 
-                        const shift = @as(u3, @intCast(u8_bit_count - n));
-                        out_buffer <<= @as(BufShift, @intCast(n));
+                        const shift = @as(u3, @int_cast(u8_bit_count - n));
+                        out_buffer <<= @as(BufShift, @int_cast(n));
                         out_buffer |= @as(Buf, next_byte >> shift);
                         out_bits.* += n;
-                        self.bit_buffer = @as(u7, @truncate(next_byte << @as(u3, @intCast(n - 1))));
+                        self.bit_buffer = @as(u7, @truncate(next_byte << @as(u3, @int_cast(n - 1))));
                         self.bit_count = shift;
                     },
                     .little => {
                         if (n >= u8_bit_count) {
-                            out_buffer |= @as(Buf, next_byte) << @as(BufShift, @intCast(out_bits.*));
+                            out_buffer |= @as(Buf, next_byte) << @as(BufShift, @int_cast(out_bits.*));
                             out_bits.* += u8_bit_count;
                             continue;
                         }
 
-                        const shift = @as(u3, @intCast(u8_bit_count - n));
+                        const shift = @as(u3, @int_cast(u8_bit_count - n));
                         const value = (next_byte << shift) >> shift;
-                        out_buffer |= @as(Buf, value) << @as(BufShift, @intCast(out_bits.*));
+                        out_buffer |= @as(Buf, value) << @as(BufShift, @int_cast(out_bits.*));
                         out_bits.* += n;
-                        self.bit_buffer = @as(u7, @truncate(next_byte >> @as(u3, @intCast(n))));
+                        self.bit_buffer = @as(u7, @truncate(next_byte >> @as(u3, @int_cast(n))));
                         self.bit_count = shift;
                     },
                 }
             }
 
-            return @as(U, @intCast(out_buffer));
+            return @as(U, @int_cast(out_buffer));
         }
 
         pub fn align_to_byte(self: *Self) void {
@@ -134,13 +134,13 @@ pub fn BitReader(comptime endian: std.builtin.Endian, comptime ReaderType: type)
         pub fn read(self: *Self, buffer: []u8) Error!usize {
             var out_bits: usize = undefined;
             var out_bits_total = @as(usize, 0);
-            //@NOTE: I'm not sure this is a good idea, maybe alignToByte should be forced
+            //@NOTE: I'm not sure this is a good idea, maybe align_to_byte should be forced
             if (self.bit_count > 0) {
                 for (buffer) |*b| {
-                    b.* = try self.readBits(u8, u8_bit_count, &out_bits);
+                    b.* = try self.read_bits(u8, u8_bit_count, &out_bits);
                     out_bits_total += out_bits;
                 }
-                const incomplete_byte = @intFromBool(out_bits_total % u8_bit_count > 0);
+                const incomplete_byte = @int_from_bool(out_bits_total % u8_bit_count > 0);
                 return (out_bits_total / u8_bit_count) + incomplete_byte;
             }
 
@@ -164,72 +164,72 @@ test "api coverage" {
     const mem_be = [_]u8{ 0b11001101, 0b00001011 };
     const mem_le = [_]u8{ 0b00011101, 0b10010101 };
 
-    var mem_in_be = io.fixedBufferStream(&mem_be);
-    var bit_stream_be = bitReader(.big, mem_in_be.reader());
+    var mem_in_be = io.fixed_buffer_stream(&mem_be);
+    var bit_stream_be = bit_reader(.big, mem_in_be.reader());
 
     var out_bits: usize = undefined;
 
     const expect = testing.expect;
-    const expectError = testing.expectError;
+    const expect_error = testing.expect_error;
 
-    try expect(1 == try bit_stream_be.readBits(u2, 1, &out_bits));
+    try expect(1 == try bit_stream_be.read_bits(u2, 1, &out_bits));
     try expect(out_bits == 1);
-    try expect(2 == try bit_stream_be.readBits(u5, 2, &out_bits));
+    try expect(2 == try bit_stream_be.read_bits(u5, 2, &out_bits));
     try expect(out_bits == 2);
-    try expect(3 == try bit_stream_be.readBits(u128, 3, &out_bits));
+    try expect(3 == try bit_stream_be.read_bits(u128, 3, &out_bits));
     try expect(out_bits == 3);
-    try expect(4 == try bit_stream_be.readBits(u8, 4, &out_bits));
+    try expect(4 == try bit_stream_be.read_bits(u8, 4, &out_bits));
     try expect(out_bits == 4);
-    try expect(5 == try bit_stream_be.readBits(u9, 5, &out_bits));
+    try expect(5 == try bit_stream_be.read_bits(u9, 5, &out_bits));
     try expect(out_bits == 5);
-    try expect(1 == try bit_stream_be.readBits(u1, 1, &out_bits));
+    try expect(1 == try bit_stream_be.read_bits(u1, 1, &out_bits));
     try expect(out_bits == 1);
 
     mem_in_be.pos = 0;
     bit_stream_be.bit_count = 0;
-    try expect(0b110011010000101 == try bit_stream_be.readBits(u15, 15, &out_bits));
+    try expect(0b110011010000101 == try bit_stream_be.read_bits(u15, 15, &out_bits));
     try expect(out_bits == 15);
 
     mem_in_be.pos = 0;
     bit_stream_be.bit_count = 0;
-    try expect(0b1100110100001011 == try bit_stream_be.readBits(u16, 16, &out_bits));
+    try expect(0b1100110100001011 == try bit_stream_be.read_bits(u16, 16, &out_bits));
     try expect(out_bits == 16);
 
-    _ = try bit_stream_be.readBits(u0, 0, &out_bits);
+    _ = try bit_stream_be.read_bits(u0, 0, &out_bits);
 
-    try expect(0 == try bit_stream_be.readBits(u1, 1, &out_bits));
+    try expect(0 == try bit_stream_be.read_bits(u1, 1, &out_bits));
     try expect(out_bits == 0);
-    try expectError(error.EndOfStream, bit_stream_be.readBitsNoEof(u1, 1));
+    try expect_error(error.EndOfStream, bit_stream_be.read_bits_no_eof(u1, 1));
 
-    var mem_in_le = io.fixedBufferStream(&mem_le);
-    var bit_stream_le = bitReader(.little, mem_in_le.reader());
+    var mem_in_le = io.fixed_buffer_stream(&mem_le);
+    var bit_stream_le = bit_reader(.little, mem_in_le.reader());
 
-    try expect(1 == try bit_stream_le.readBits(u2, 1, &out_bits));
+    try expect(1 == try bit_stream_le.read_bits(u2, 1, &out_bits));
     try expect(out_bits == 1);
-    try expect(2 == try bit_stream_le.readBits(u5, 2, &out_bits));
+    try expect(2 == try bit_stream_le.read_bits(u5, 2, &out_bits));
     try expect(out_bits == 2);
-    try expect(3 == try bit_stream_le.readBits(u128, 3, &out_bits));
+    try expect(3 == try bit_stream_le.read_bits(u128, 3, &out_bits));
     try expect(out_bits == 3);
-    try expect(4 == try bit_stream_le.readBits(u8, 4, &out_bits));
+    try expect(4 == try bit_stream_le.read_bits(u8, 4, &out_bits));
     try expect(out_bits == 4);
-    try expect(5 == try bit_stream_le.readBits(u9, 5, &out_bits));
+    try expect(5 == try bit_stream_le.read_bits(u9, 5, &out_bits));
     try expect(out_bits == 5);
-    try expect(1 == try bit_stream_le.readBits(u1, 1, &out_bits));
+    try expect(1 == try bit_stream_le.read_bits(u1, 1, &out_bits));
     try expect(out_bits == 1);
 
     mem_in_le.pos = 0;
     bit_stream_le.bit_count = 0;
-    try expect(0b001010100011101 == try bit_stream_le.readBits(u15, 15, &out_bits));
+    try expect(0b001010100011101 == try bit_stream_le.read_bits(u15, 15, &out_bits));
     try expect(out_bits == 15);
 
     mem_in_le.pos = 0;
     bit_stream_le.bit_count = 0;
-    try expect(0b1001010100011101 == try bit_stream_le.readBits(u16, 16, &out_bits));
+    try expect(0b1001010100011101 == try bit_stream_le.read_bits(u16, 16, &out_bits));
     try expect(out_bits == 16);
 
-    _ = try bit_stream_le.readBits(u0, 0, &out_bits);
+    _ = try bit_stream_le.read_bits(u0, 0, &out_bits);
 
-    try expect(0 == try bit_stream_le.readBits(u1, 1, &out_bits));
+    try expect(0 == try bit_stream_le.read_bits(u1, 1, &out_bits));
     try expect(out_bits == 0);
-    try expectError(error.EndOfStream, bit_stream_le.readBitsNoEof(u1, 1));
+    try expect_error(error.EndOfStream, bit_stream_le.read_bits_no_eof(u1, 1));
 }

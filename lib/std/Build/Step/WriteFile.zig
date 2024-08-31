@@ -51,8 +51,8 @@ pub const Directory = struct {
 
         pub fn dupe(opts: Options, b: *std.Build) Options {
             return .{
-                .exclude_extensions = b.dupeStrings(opts.exclude_extensions),
-                .include_extensions = if (opts.include_extensions) |incs| b.dupeStrings(incs) else null,
+                .exclude_extensions = b.dupe_strings(opts.exclude_extensions),
+                .include_extensions = if (opts.include_extensions) |incs| b.dupe_strings(incs) else null,
             };
         }
     };
@@ -95,12 +95,12 @@ pub fn add(write_file: *WriteFile, sub_path: []const u8, bytes: []const u8) std.
     const file = gpa.create(File) catch @panic("OOM");
     file.* = .{
         .generated_file = .{ .step = &write_file.step },
-        .sub_path = b.dupePath(sub_path),
+        .sub_path = b.dupe_path(sub_path),
         .contents = .{ .bytes = b.dupe(bytes) },
     };
     write_file.files.append(gpa, file) catch @panic("OOM");
-    write_file.maybeUpdateName();
-    return file.getPath();
+    write_file.maybe_update_name();
+    return file.get_path();
 }
 
 /// Place the file into the generated directory within the local cache,
@@ -109,21 +109,21 @@ pub fn add(write_file: *WriteFile, sub_path: []const u8, bytes: []const u8) std.
 /// associated with this WriteFile. It may be a basename, or it may
 /// include sub-directories, in which case this step will ensure the
 /// required sub-path exists.
-/// This is the option expected to be used most commonly with `addCopyFile`.
+/// This is the option expected to be used most commonly with `add_copy_file`.
 pub fn add_copy_file(write_file: *WriteFile, source: std.Build.LazyPath, sub_path: []const u8) std.Build.LazyPath {
     const b = write_file.step.owner;
     const gpa = b.allocator;
     const file = gpa.create(File) catch @panic("OOM");
     file.* = .{
         .generated_file = .{ .step = &write_file.step },
-        .sub_path = b.dupePath(sub_path),
+        .sub_path = b.dupe_path(sub_path),
         .contents = .{ .copy = source },
     };
     write_file.files.append(gpa, file) catch @panic("OOM");
 
-    write_file.maybeUpdateName();
-    source.addStepDependencies(&write_file.step);
-    return file.getPath();
+    write_file.maybe_update_name();
+    source.add_step_dependencies(&write_file.step);
+    return file.get_path();
 }
 
 /// Copy files matching the specified exclude/include patterns to the specified subdirectory
@@ -140,15 +140,15 @@ pub fn add_copy_directory(
     const dir = gpa.create(Directory) catch @panic("OOM");
     dir.* = .{
         .source = source.dupe(b),
-        .sub_path = b.dupePath(sub_path),
+        .sub_path = b.dupe_path(sub_path),
         .options = options.dupe(b),
         .generated_dir = .{ .step = &write_file.step },
     };
     write_file.directories.append(gpa, dir) catch @panic("OOM");
 
-    write_file.maybeUpdateName();
-    source.addStepDependencies(&write_file.step);
-    return dir.getPath();
+    write_file.maybe_update_name();
+    source.add_step_dependencies(&write_file.step);
+    return dir.get_path();
 }
 
 /// A path relative to the package root.
@@ -162,7 +162,7 @@ pub fn add_copy_file_to_source(write_file: *WriteFile, source: std.Build.LazyPat
         .contents = .{ .copy = source },
         .sub_path = sub_path,
     }) catch @panic("OOM");
-    source.addStepDependencies(&write_file.step);
+    source.add_step_dependencies(&write_file.step);
 }
 
 /// A path relative to the package root.
@@ -210,7 +210,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     var any_miss = false;
     for (write_file.output_source_files.items) |output_source_file| {
         if (fs.path.dirname(output_source_file.sub_path)) |dirname| {
-            b.build_root.handle.makePath(dirname) catch |err| {
+            b.build_root.handle.make_path(dirname) catch |err| {
                 return step.fail("unable to make path '{}{s}': {s}", .{
                     b.build_root, dirname, @errorName(err),
                 });
@@ -218,7 +218,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         }
         switch (output_source_file.contents) {
             .bytes => |bytes| {
-                b.build_root.handle.writeFile(.{ .sub_path = output_source_file.sub_path, .data = bytes }) catch |err| {
+                b.build_root.handle.write_file(.{ .sub_path = output_source_file.sub_path, .data = bytes }) catch |err| {
                     return step.fail("unable to write file '{}{s}': {s}", .{
                         b.build_root, output_source_file.sub_path, @errorName(err),
                     });
@@ -226,8 +226,8 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
                 any_miss = true;
             },
             .copy => |file_source| {
-                const source_path = file_source.getPath2(b, step);
-                const prev_status = fs.Dir.updateFile(
+                const source_path = file_source.get_path2(b, step);
+                const prev_status = fs.Dir.update_file(
                     fs.cwd(),
                     source_path,
                     b.build_root.handle,
@@ -259,24 +259,24 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
     man.hash.add(@as(u32, 0xd767ee59));
 
     for (write_file.files.items) |file| {
-        man.hash.addBytes(file.sub_path);
+        man.hash.add_bytes(file.sub_path);
         switch (file.contents) {
             .bytes => |bytes| {
-                man.hash.addBytes(bytes);
+                man.hash.add_bytes(bytes);
             },
             .copy => |file_source| {
-                _ = try man.addFile(file_source.getPath2(b, step), null);
+                _ = try man.add_file(file_source.get_path2(b, step), null);
             },
         }
     }
     for (write_file.directories.items) |dir| {
-        man.hash.addBytes(dir.source.getPath2(b, step));
-        man.hash.addBytes(dir.sub_path);
-        for (dir.options.exclude_extensions) |ext| man.hash.addBytes(ext);
-        if (dir.options.include_extensions) |incs| for (incs) |inc| man.hash.addBytes(inc);
+        man.hash.add_bytes(dir.source.get_path2(b, step));
+        man.hash.add_bytes(dir.sub_path);
+        for (dir.options.exclude_extensions) |ext| man.hash.add_bytes(ext);
+        if (dir.options.include_extensions) |incs| for (incs) |inc| man.hash.add_bytes(inc);
     }
 
-    if (try step.cacheHit(&man)) {
+    if (try step.cache_hit(&man)) {
         const digest = man.final();
         for (write_file.files.items) |file| {
             file.generated_file.path = try b.cache_root.join(b.allocator, &.{
@@ -292,7 +292,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
 
     write_file.generated_directory.path = try b.cache_root.join(b.allocator, &.{ "o", &digest });
 
-    var cache_dir = b.cache_root.handle.makeOpenPath(cache_path, .{}) catch |err| {
+    var cache_dir = b.cache_root.handle.make_open_path(cache_path, .{}) catch |err| {
         return step.fail("unable to make path '{}{s}': {s}", .{
             b.cache_root, cache_path, @errorName(err),
         });
@@ -303,7 +303,7 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
 
     for (write_file.files.items) |file| {
         if (fs.path.dirname(file.sub_path)) |dirname| {
-            cache_dir.makePath(dirname) catch |err| {
+            cache_dir.make_path(dirname) catch |err| {
                 return step.fail("unable to make path '{}{s}{c}{s}': {s}", .{
                     b.cache_root, cache_path, fs.path.sep, dirname, @errorName(err),
                 });
@@ -311,15 +311,15 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         }
         switch (file.contents) {
             .bytes => |bytes| {
-                cache_dir.writeFile(.{ .sub_path = file.sub_path, .data = bytes }) catch |err| {
+                cache_dir.write_file(.{ .sub_path = file.sub_path, .data = bytes }) catch |err| {
                     return step.fail("unable to write file '{}{s}{c}{s}': {s}", .{
                         b.cache_root, cache_path, fs.path.sep, file.sub_path, @errorName(err),
                     });
                 };
             },
             .copy => |file_source| {
-                const source_path = file_source.getPath2(b, step);
-                const prev_status = fs.Dir.updateFile(
+                const source_path = file_source.get_path2(b, step);
+                const prev_status = fs.Dir.update_file(
                     cwd,
                     source_path,
                     cache_dir,
@@ -348,18 +348,18 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         });
     }
     for (write_file.directories.items) |dir| {
-        const full_src_dir_path = dir.source.getPath2(b, step);
+        const full_src_dir_path = dir.source.get_path2(b, step);
         const dest_dirname = dir.sub_path;
 
         if (dest_dirname.len != 0) {
-            cache_dir.makePath(dest_dirname) catch |err| {
+            cache_dir.make_path(dest_dirname) catch |err| {
                 return step.fail("unable to make path '{}{s}{c}{s}': {s}", .{
                     b.cache_root, cache_path, fs.path.sep, dest_dirname, @errorName(err),
                 });
             };
         }
 
-        var src_dir = b.build_root.handle.openDir(full_src_dir_path, .{ .iterate = true }) catch |err| {
+        var src_dir = b.build_root.handle.open_dir(full_src_dir_path, .{ .iterate = true }) catch |err| {
             return step.fail("unable to open source directory '{s}': {s}", .{
                 full_src_dir_path, @errorName(err),
             });
@@ -369,21 +369,21 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         var it = try src_dir.walk(b.allocator);
         next_entry: while (try it.next()) |entry| {
             for (dir.options.exclude_extensions) |ext| {
-                if (std.mem.endsWith(u8, entry.path, ext)) continue :next_entry;
+                if (std.mem.ends_with(u8, entry.path, ext)) continue :next_entry;
             }
             if (dir.options.include_extensions) |incs| {
                 for (incs) |inc| {
-                    if (std.mem.endsWith(u8, entry.path, inc)) break;
+                    if (std.mem.ends_with(u8, entry.path, inc)) break;
                 } else {
                     continue :next_entry;
                 }
             }
-            const full_src_entry_path = b.pathJoin(&.{ full_src_dir_path, entry.path });
-            const dest_path = b.pathJoin(&.{ dest_dirname, entry.path });
+            const full_src_entry_path = b.path_join(&.{ full_src_dir_path, entry.path });
+            const dest_path = b.path_join(&.{ dest_dirname, entry.path });
             switch (entry.kind) {
-                .directory => try cache_dir.makePath(dest_path),
+                .directory => try cache_dir.make_path(dest_path),
                 .file => {
-                    const prev_status = fs.Dir.updateFile(
+                    const prev_status = fs.Dir.update_file(
                         cwd,
                         full_src_entry_path,
                         cache_dir,
@@ -406,5 +406,5 @@ fn make(step: *Step, prog_node: std.Progress.Node) !void {
         }
     }
 
-    try step.writeManifest(&man);
+    try step.write_manifest(&man);
 }

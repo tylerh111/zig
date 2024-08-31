@@ -32,9 +32,9 @@ pub const BufMap = struct {
 
     /// Same as `put` but the key and value become owned by the BufMap rather
     /// than being copied.
-    /// If `putMove` fails, the ownership of key and value does not transfer.
+    /// If `put_move` fails, the ownership of key and value does not transfer.
     pub fn put_move(self: *BufMap, key: []u8, value: []u8) !void {
-        const get_or_put = try self.hash_map.getOrPut(key);
+        const get_or_put = try self.hash_map.get_or_put(key);
         if (get_or_put.found_existing) {
             self.free(get_or_put.key_ptr.*);
             self.free(get_or_put.value_ptr.*);
@@ -47,7 +47,7 @@ pub const BufMap = struct {
     pub fn put(self: *BufMap, key: []const u8, value: []const u8) !void {
         const value_copy = try self.copy(value);
         errdefer self.free(value_copy);
-        const get_or_put = try self.hash_map.getOrPut(key);
+        const get_or_put = try self.hash_map.get_or_put(key);
         if (get_or_put.found_existing) {
             self.free(get_or_put.value_ptr.*);
         } else {
@@ -62,7 +62,7 @@ pub const BufMap = struct {
     /// Find the address of the value associated with a key.
     /// The returned pointer is invalidated if the map resizes.
     pub fn get_ptr(self: BufMap, key: []const u8) ?*[]const u8 {
-        return self.hash_map.getPtr(key);
+        return self.hash_map.get_ptr(key);
     }
 
     /// Return the map's copy of the value associated with
@@ -75,7 +75,7 @@ pub const BufMap = struct {
     /// Removes the item from the map and frees its value.
     /// This invalidates the value returned by get() for this key.
     pub fn remove(self: *BufMap, key: []const u8) void {
-        const kv = self.hash_map.fetchRemove(key) orelse return;
+        const kv = self.hash_map.fetch_remove(key) orelse return;
         self.free(kv.key);
         self.free(kv.value);
     }
@@ -119,6 +119,6 @@ test "BufMap" {
     bufmap.remove("x");
     try testing.expect(0 == bufmap.count());
 
-    try bufmap.putMove(try allocator.dupe(u8, "k"), try allocator.dupe(u8, "v1"));
-    try bufmap.putMove(try allocator.dupe(u8, "k"), try allocator.dupe(u8, "v2"));
+    try bufmap.put_move(try allocator.dupe(u8, "k"), try allocator.dupe(u8, "v1"));
+    try bufmap.put_move(try allocator.dupe(u8, "k"), try allocator.dupe(u8, "v2"));
 }

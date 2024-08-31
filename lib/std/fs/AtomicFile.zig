@@ -10,9 +10,9 @@ dir: Dir,
 pub const InitError = File.OpenError;
 
 pub const random_bytes_len = 12;
-const tmp_path_len = fs.base64_encoder.calcSize(random_bytes_len);
+const tmp_path_len = fs.base64_encoder.calc_size(random_bytes_len);
 
-/// Note that the `Dir.atomicFile` API may be more handy than this lower-level function.
+/// Note that the `Dir.atomic_file` API may be more handy than this lower-level function.
 pub fn init(
     dest_basename: []const u8,
     mode: File.Mode,
@@ -27,7 +27,7 @@ pub fn init(
         const tmp_path = fs.base64_encoder.encode(&tmp_path_buf, &rand_buf);
         tmp_path_buf[tmp_path.len] = 0;
 
-        const file = dir.createFile(
+        const file = dir.create_file(
             tmp_path,
             .{ .mode = mode, .exclusive = true },
         ) catch |err| switch (err) {
@@ -54,7 +54,7 @@ pub fn deinit(self: *AtomicFile) void {
         self.file_open = false;
     }
     if (self.file_exists) {
-        self.dir.deleteFile(&self.tmp_path_buf) catch {};
+        self.dir.delete_file(&self.tmp_path_buf) catch {};
         self.file_exists = false;
     }
     if (self.close_dir_on_deinit) {

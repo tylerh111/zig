@@ -62,13 +62,13 @@ pub const TokenWithExpansionLocs = struct {
         }
 
         const min_len = @max(list.items.len + new.len + 1, 4);
-        const wanted_len = std.math.ceilPowerOfTwo(usize, min_len) catch
+        const wanted_len = std.math.ceil_power_of_two(usize, min_len) catch
             return error.OutOfMemory;
-        try list.ensureTotalCapacity(wanted_len);
+        try list.ensure_total_capacity(wanted_len);
 
         for (new) |new_loc| {
             if (new_loc.id == .generated) continue;
-            list.appendAssumeCapacity(new_loc);
+            list.append_assume_capacity(new_loc);
         }
     }
 
@@ -83,7 +83,7 @@ pub const TokenWithExpansionLocs = struct {
     pub fn dupe(tok: TokenWithExpansionLocs, gpa: std.mem.Allocator) !TokenWithExpansionLocs {
         var copy = tok;
         copy.expansion_locs = null;
-        try copy.addExpansionLocation(gpa, tok.expansionSlice());
+        try copy.add_expansion_location(gpa, tok.expansion_slice());
         return copy;
     }
 
@@ -117,7 +117,7 @@ data: []const NodeIndex,
 root_decls: []const NodeIndex,
 value_map: ValueMap,
 
-pub const genIr = CodeGen.genIr;
+pub const gen_ir = CodeGen.gen_ir;
 
 pub fn deinit(tree: *Tree) void {
     tree.comp.gpa.free(tree.root_decls);
@@ -579,18 +579,18 @@ pub const Tag = enum(u8) {
 };
 
 pub fn is_bitfield(tree: *const Tree, node: NodeIndex) bool {
-    return tree.bitfieldWidth(node, false) != null;
+    return tree.bitfield_width(node, false) != null;
 }
 
 /// Returns null if node is not a bitfield. If inspect_lval is true, this function will
 /// recurse into implicit lval_to_rval casts (useful for arithmetic conversions)
 pub fn bitfield_width(tree: *const Tree, node: NodeIndex, inspect_lval: bool) ?u32 {
     if (node == .none) return null;
-    switch (tree.nodes.items(.tag)[@intFromEnum(node)]) {
+    switch (tree.nodes.items(.tag)[@int_from_enum(node)]) {
         .member_access_expr, .member_access_ptr_expr => {
-            const member = tree.nodes.items(.data)[@intFromEnum(node)].member;
-            var ty = tree.nodes.items(.ty)[@intFromEnum(member.lhs)];
-            if (ty.isPtr()) ty = ty.elemType();
+            const member = tree.nodes.items(.data)[@int_from_enum(node)].member;
+            var ty = tree.nodes.items(.ty)[@int_from_enum(member.lhs)];
+            if (ty.is_ptr()) ty = ty.elem_type();
             const record_ty = ty.get(.@"struct") orelse ty.get(.@"union") orelse return null;
             const field = record_ty.data.record.fields[member.index];
             return field.bit_width;
@@ -598,9 +598,9 @@ pub fn bitfield_width(tree: *const Tree, node: NodeIndex, inspect_lval: bool) ?u
         .implicit_cast => {
             if (!inspect_lval) return null;
 
-            const data = tree.nodes.items(.data)[@intFromEnum(node)];
+            const data = tree.nodes.items(.data)[@int_from_enum(node)];
             return switch (data.cast.kind) {
-                .lval_to_rval => tree.bitfieldWidth(data.cast.operand, false),
+                .lval_to_rval => tree.bitfield_width(data.cast.operand, false),
                 else => null,
             };
         },
@@ -610,61 +610,61 @@ pub fn bitfield_width(tree: *const Tree, node: NodeIndex, inspect_lval: bool) ?u
 
 pub fn is_lval(tree: *const Tree, node: NodeIndex) bool {
     var is_const: bool = undefined;
-    return tree.isLvalExtra(node, &is_const);
+    return tree.is_lval_extra(node, &is_const);
 }
 
 pub fn is_lval_extra(tree: *const Tree, node: NodeIndex, is_const: *bool) bool {
     is_const.* = false;
-    switch (tree.nodes.items(.tag)[@intFromEnum(node)]) {
+    switch (tree.nodes.items(.tag)[@int_from_enum(node)]) {
         .compound_literal_expr,
         .static_compound_literal_expr,
         .thread_local_compound_literal_expr,
         .static_thread_local_compound_literal_expr,
         => {
-            is_const.* = tree.nodes.items(.ty)[@intFromEnum(node)].isConst();
+            is_const.* = tree.nodes.items(.ty)[@int_from_enum(node)].is_const();
             return true;
         },
         .string_literal_expr => return true,
         .member_access_ptr_expr => {
-            const lhs_expr = tree.nodes.items(.data)[@intFromEnum(node)].member.lhs;
-            const ptr_ty = tree.nodes.items(.ty)[@intFromEnum(lhs_expr)];
-            if (ptr_ty.isPtr()) is_const.* = ptr_ty.elemType().isConst();
+            const lhs_expr = tree.nodes.items(.data)[@int_from_enum(node)].member.lhs;
+            const ptr_ty = tree.nodes.items(.ty)[@int_from_enum(lhs_expr)];
+            if (ptr_ty.is_ptr()) is_const.* = ptr_ty.elem_type().is_const();
             return true;
         },
         .array_access_expr => {
-            const lhs_expr = tree.nodes.items(.data)[@intFromEnum(node)].bin.lhs;
+            const lhs_expr = tree.nodes.items(.data)[@int_from_enum(node)].bin.lhs;
             if (lhs_expr != .none) {
-                const array_ty = tree.nodes.items(.ty)[@intFromEnum(lhs_expr)];
-                if (array_ty.isPtr() or array_ty.isArray()) is_const.* = array_ty.elemType().isConst();
+                const array_ty = tree.nodes.items(.ty)[@int_from_enum(lhs_expr)];
+                if (array_ty.is_ptr() or array_ty.is_array()) is_const.* = array_ty.elem_type().is_const();
             }
             return true;
         },
         .decl_ref_expr => {
-            const decl_ty = tree.nodes.items(.ty)[@intFromEnum(node)];
-            is_const.* = decl_ty.isConst();
+            const decl_ty = tree.nodes.items(.ty)[@int_from_enum(node)];
+            is_const.* = decl_ty.is_const();
             return true;
         },
         .deref_expr => {
-            const data = tree.nodes.items(.data)[@intFromEnum(node)];
-            const operand_ty = tree.nodes.items(.ty)[@intFromEnum(data.un)];
-            if (operand_ty.isFunc()) return false;
-            if (operand_ty.isPtr() or operand_ty.isArray()) is_const.* = operand_ty.elemType().isConst();
+            const data = tree.nodes.items(.data)[@int_from_enum(node)];
+            const operand_ty = tree.nodes.items(.ty)[@int_from_enum(data.un)];
+            if (operand_ty.is_func()) return false;
+            if (operand_ty.is_ptr() or operand_ty.is_array()) is_const.* = operand_ty.elem_type().is_const();
             return true;
         },
         .member_access_expr => {
-            const data = tree.nodes.items(.data)[@intFromEnum(node)];
-            return tree.isLvalExtra(data.member.lhs, is_const);
+            const data = tree.nodes.items(.data)[@int_from_enum(node)];
+            return tree.is_lval_extra(data.member.lhs, is_const);
         },
         .paren_expr => {
-            const data = tree.nodes.items(.data)[@intFromEnum(node)];
-            return tree.isLvalExtra(data.un, is_const);
+            const data = tree.nodes.items(.data)[@int_from_enum(node)];
+            return tree.is_lval_extra(data.un, is_const);
         },
         .builtin_choose_expr => {
-            const data = tree.nodes.items(.data)[@intFromEnum(node)];
+            const data = tree.nodes.items(.data)[@int_from_enum(node)];
 
             if (tree.value_map.get(data.if3.cond)) |val| {
-                const offset = @intFromBool(val.isZero(tree.comp));
-                return tree.isLvalExtra(tree.data[data.if3.body + offset], is_const);
+                const offset = @int_from_bool(val.is_zero(tree.comp));
+                return tree.is_lval_extra(tree.data[data.if3.body + offset], is_const);
             }
             return false;
         },
@@ -676,7 +676,7 @@ pub fn tok_slice(tree: *const Tree, tok_i: TokenIndex) []const u8 {
     if (tree.tokens.items(.id)[tok_i].lexeme()) |some| return some;
     const loc = tree.tokens.items(.loc)[tok_i];
     var tmp_tokenizer = Tokenizer{
-        .buf = tree.comp.getSource(loc.id).buf,
+        .buf = tree.comp.get_source(loc.id).buf,
         .langopts = tree.comp.langopts,
         .index = loc.byte_offset,
         .source = .generated,
@@ -686,50 +686,50 @@ pub fn tok_slice(tree: *const Tree, tok_i: TokenIndex) []const u8 {
 }
 
 pub fn dump(tree: *const Tree, config: std.io.tty.Config, writer: anytype) !void {
-    const mapper = tree.comp.string_interner.getFastTypeMapper(tree.comp.gpa) catch tree.comp.string_interner.getSlowTypeMapper();
+    const mapper = tree.comp.string_interner.get_fast_type_mapper(tree.comp.gpa) catch tree.comp.string_interner.get_slow_type_mapper();
     defer mapper.deinit(tree.comp.gpa);
 
     for (tree.root_decls) |i| {
-        try tree.dumpNode(i, 0, mapper, config, writer);
-        try writer.writeByte('\n');
+        try tree.dump_node(i, 0, mapper, config, writer);
+        try writer.write_byte('\n');
     }
 }
 
 fn dump_field_attributes(tree: *const Tree, attributes: []const Attribute, level: u32, writer: anytype) !void {
     for (attributes) |attr| {
-        try writer.writeByteNTimes(' ', level);
-        try writer.print("field attr: {s}", .{@tagName(attr.tag)});
-        try tree.dumpAttribute(attr, writer);
+        try writer.write_byte_ntimes(' ', level);
+        try writer.print("field attr: {s}", .{@tag_name(attr.tag)});
+        try tree.dump_attribute(attr, writer);
     }
 }
 
 fn dump_attribute(tree: *const Tree, attr: Attribute, writer: anytype) !void {
     switch (attr.tag) {
         inline else => |tag| {
-            const args = @field(attr.args, @tagName(tag));
+            const args = @field(attr.args, @tag_name(tag));
             const fields = @typeInfo(@TypeOf(args)).Struct.fields;
             if (fields.len == 0) {
-                try writer.writeByte('\n');
+                try writer.write_byte('\n');
                 return;
             }
-            try writer.writeByte(' ');
+            try writer.write_byte(' ');
             inline for (fields, 0..) |f, i| {
                 if (comptime std.mem.eql(u8, f.name, "__name_tok")) continue;
                 if (i != 0) {
-                    try writer.writeAll(", ");
+                    try writer.write_all(", ");
                 }
-                try writer.writeAll(f.name);
-                try writer.writeAll(": ");
+                try writer.write_all(f.name);
+                try writer.write_all(": ");
                 switch (f.type) {
                     Interner.Ref => try writer.print("\"{s}\"", .{tree.interner.get(@field(args, f.name)).bytes}),
                     ?Interner.Ref => try writer.print("\"{?s}\"", .{if (@field(args, f.name)) |str| tree.interner.get(str).bytes else null}),
                     else => switch (@typeInfo(f.type)) {
-                        .Enum => try writer.writeAll(@tagName(@field(args, f.name))),
+                        .Enum => try writer.write_all(@tag_name(@field(args, f.name))),
                         else => try writer.print("{any}", .{@field(args, f.name)}),
                     },
                 }
             }
-            try writer.writeByte('\n');
+            try writer.write_byte('\n');
             return;
         },
     }
@@ -753,73 +753,73 @@ fn dump_node(
     const ATTRIBUTE = std.io.tty.Color.bright_yellow;
     std.debug.assert(node != .none);
 
-    const tag = tree.nodes.items(.tag)[@intFromEnum(node)];
-    const data = tree.nodes.items(.data)[@intFromEnum(node)];
-    const ty = tree.nodes.items(.ty)[@intFromEnum(node)];
-    try w.writeByteNTimes(' ', level);
+    const tag = tree.nodes.items(.tag)[@int_from_enum(node)];
+    const data = tree.nodes.items(.data)[@int_from_enum(node)];
+    const ty = tree.nodes.items(.ty)[@int_from_enum(node)];
+    try w.write_byte_ntimes(' ', level);
 
-    try config.setColor(w, if (tag.isImplicit()) IMPLICIT else TAG);
-    try w.print("{s}: ", .{@tagName(tag)});
+    try config.set_color(w, if (tag.is_implicit()) IMPLICIT else TAG);
+    try w.print("{s}: ", .{@tag_name(tag)});
     if (tag == .implicit_cast or tag == .explicit_cast) {
-        try config.setColor(w, .white);
-        try w.print("({s}) ", .{@tagName(data.cast.kind)});
+        try config.set_color(w, .white);
+        try w.print("({s}) ", .{@tag_name(data.cast.kind)});
     }
-    try config.setColor(w, TYPE);
-    try w.writeByte('\'');
+    try config.set_color(w, TYPE);
+    try w.write_byte('\'');
     try ty.dump(mapper, tree.comp.langopts, w);
-    try w.writeByte('\'');
+    try w.write_byte('\'');
 
-    if (tree.isLval(node)) {
-        try config.setColor(w, ATTRIBUTE);
-        try w.writeAll(" lvalue");
+    if (tree.is_lval(node)) {
+        try config.set_color(w, ATTRIBUTE);
+        try w.write_all(" lvalue");
     }
-    if (tree.isBitfield(node)) {
-        try config.setColor(w, ATTRIBUTE);
-        try w.writeAll(" bitfield");
+    if (tree.is_bitfield(node)) {
+        try config.set_color(w, ATTRIBUTE);
+        try w.write_all(" bitfield");
     }
     if (tree.value_map.get(node)) |val| {
-        try config.setColor(w, LITERAL);
-        try w.writeAll(" (value: ");
+        try config.set_color(w, LITERAL);
+        try w.write_all(" (value: ");
         try val.print(ty, tree.comp, w);
-        try w.writeByte(')');
+        try w.write_byte(')');
     }
     if (tag == .implicit_return and data.return_zero) {
-        try config.setColor(w, IMPLICIT);
-        try w.writeAll(" (value: 0)");
-        try config.setColor(w, .reset);
+        try config.set_color(w, IMPLICIT);
+        try w.write_all(" (value: 0)");
+        try config.set_color(w, .reset);
     }
 
-    try w.writeAll("\n");
-    try config.setColor(w, .reset);
+    try w.write_all("\n");
+    try config.set_color(w, .reset);
 
     if (ty.specifier == .attributed) {
-        try config.setColor(w, ATTRIBUTE);
+        try config.set_color(w, ATTRIBUTE);
         for (ty.data.attributed.attributes) |attr| {
-            try w.writeByteNTimes(' ', level + half);
-            try w.print("attr: {s}", .{@tagName(attr.tag)});
-            try tree.dumpAttribute(attr, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.print("attr: {s}", .{@tag_name(attr.tag)});
+            try tree.dump_attribute(attr, w);
         }
-        try config.setColor(w, .reset);
+        try config.set_color(w, .reset);
     }
 
     switch (tag) {
         .invalid => unreachable,
         .file_scope_asm => {
-            try w.writeByteNTimes(' ', level + 1);
-            try tree.dumpNode(data.decl.node, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + 1);
+            try tree.dump_node(data.decl.node, level + delta, mapper, config, w);
         },
         .gnu_asm_simple => {
-            try w.writeByteNTimes(' ', level);
-            try tree.dumpNode(data.un, level, mapper, config, w);
+            try w.write_byte_ntimes(' ', level);
+            try tree.dump_node(data.un, level, mapper, config, w);
         },
         .static_assert => {
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("condition:\n");
-            try tree.dumpNode(data.bin.lhs, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("condition:\n");
+            try tree.dump_node(data.bin.lhs, level + delta, mapper, config, w);
             if (data.bin.rhs != .none) {
-                try w.writeByteNTimes(' ', level + 1);
-                try w.writeAll("diagnostic:\n");
-                try tree.dumpNode(data.bin.rhs, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + 1);
+                try w.write_all("diagnostic:\n");
+                try tree.dump_node(data.bin.rhs, level + delta, mapper, config, w);
             }
         },
         .fn_proto,
@@ -827,25 +827,25 @@ fn dump_node(
         .inline_fn_proto,
         .inline_static_fn_proto,
         => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("name: ");
-            try config.setColor(w, NAME);
-            try w.print("{s}\n", .{tree.tokSlice(data.decl.name)});
-            try config.setColor(w, .reset);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("name: ");
+            try config.set_color(w, NAME);
+            try w.print("{s}\n", .{tree.tok_slice(data.decl.name)});
+            try config.set_color(w, .reset);
         },
         .fn_def,
         .static_fn_def,
         .inline_fn_def,
         .inline_static_fn_def,
         => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("name: ");
-            try config.setColor(w, NAME);
-            try w.print("{s}\n", .{tree.tokSlice(data.decl.name)});
-            try config.setColor(w, .reset);
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("body:\n");
-            try tree.dumpNode(data.decl.node, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("name: ");
+            try config.set_color(w, NAME);
+            try w.print("{s}\n", .{tree.tok_slice(data.decl.name)});
+            try config.set_color(w, .reset);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("body:\n");
+            try tree.dump_node(data.decl.node, level + delta, mapper, config, w);
         },
         .typedef,
         .@"var",
@@ -856,41 +856,41 @@ fn dump_node(
         .threadlocal_extern_var,
         .threadlocal_static_var,
         => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("name: ");
-            try config.setColor(w, NAME);
-            try w.print("{s}\n", .{tree.tokSlice(data.decl.name)});
-            try config.setColor(w, .reset);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("name: ");
+            try config.set_color(w, NAME);
+            try w.print("{s}\n", .{tree.tok_slice(data.decl.name)});
+            try config.set_color(w, .reset);
             if (data.decl.node != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("init:\n");
-                try tree.dumpNode(data.decl.node, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("init:\n");
+                try tree.dump_node(data.decl.node, level + delta, mapper, config, w);
             }
         },
         .enum_field_decl => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("name: ");
-            try config.setColor(w, NAME);
-            try w.print("{s}\n", .{tree.tokSlice(data.decl.name)});
-            try config.setColor(w, .reset);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("name: ");
+            try config.set_color(w, NAME);
+            try w.print("{s}\n", .{tree.tok_slice(data.decl.name)});
+            try config.set_color(w, .reset);
             if (data.decl.node != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("value:\n");
-                try tree.dumpNode(data.decl.node, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("value:\n");
+                try tree.dump_node(data.decl.node, level + delta, mapper, config, w);
             }
         },
         .record_field_decl => {
             if (data.decl.name != 0) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("name: ");
-                try config.setColor(w, NAME);
-                try w.print("{s}\n", .{tree.tokSlice(data.decl.name)});
-                try config.setColor(w, .reset);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("name: ");
+                try config.set_color(w, NAME);
+                try w.print("{s}\n", .{tree.tok_slice(data.decl.name)});
+                try config.set_color(w, .reset);
             }
             if (data.decl.node != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("bits:\n");
-                try tree.dumpNode(data.decl.node, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("bits:\n");
+                try tree.dump_node(data.decl.node, level + delta, mapper, config, w);
             }
         },
         .indirect_record_field_decl => {},
@@ -901,16 +901,16 @@ fn dump_node(
         .struct_decl,
         .union_decl,
         => {
-            const maybe_field_attributes = if (ty.getRecord()) |record| record.field_attributes else null;
+            const maybe_field_attributes = if (ty.get_record()) |record| record.field_attributes else null;
             for (tree.data[data.range.start..data.range.end], 0..) |stmt, i| {
-                if (i != 0) try w.writeByte('\n');
-                try tree.dumpNode(stmt, level + delta, mapper, config, w);
+                if (i != 0) try w.write_byte('\n');
+                try tree.dump_node(stmt, level + delta, mapper, config, w);
                 if (maybe_field_attributes) |field_attributes| {
                     if (field_attributes[i].len == 0) continue;
 
-                    try config.setColor(w, ATTRIBUTE);
-                    try tree.dumpFieldAttributes(field_attributes[i], level + delta + half, w);
-                    try config.setColor(w, .reset);
+                    try config.set_color(w, ATTRIBUTE);
+                    try tree.dump_field_attributes(field_attributes[i], level + delta + half, w);
+                    try config.set_color(w, .reset);
                 }
             }
         },
@@ -923,32 +923,32 @@ fn dump_node(
         => {
             var attr_array = [2][]const Attribute{ &.{}, &.{} };
             const empty: [][]const Attribute = &attr_array;
-            const field_attributes = if (ty.getRecord()) |record| (record.field_attributes orelse empty.ptr) else empty.ptr;
+            const field_attributes = if (ty.get_record()) |record| (record.field_attributes orelse empty.ptr) else empty.ptr;
             if (data.bin.lhs != .none) {
-                try tree.dumpNode(data.bin.lhs, level + delta, mapper, config, w);
+                try tree.dump_node(data.bin.lhs, level + delta, mapper, config, w);
                 if (field_attributes[0].len > 0) {
-                    try config.setColor(w, ATTRIBUTE);
-                    try tree.dumpFieldAttributes(field_attributes[0], level + delta + half, w);
-                    try config.setColor(w, .reset);
+                    try config.set_color(w, ATTRIBUTE);
+                    try tree.dump_field_attributes(field_attributes[0], level + delta + half, w);
+                    try config.set_color(w, .reset);
                 }
             }
             if (data.bin.rhs != .none) {
-                try tree.dumpNode(data.bin.rhs, level + delta, mapper, config, w);
+                try tree.dump_node(data.bin.rhs, level + delta, mapper, config, w);
                 if (field_attributes[1].len > 0) {
-                    try config.setColor(w, ATTRIBUTE);
-                    try tree.dumpFieldAttributes(field_attributes[1], level + delta + half, w);
-                    try config.setColor(w, .reset);
+                    try config.set_color(w, ATTRIBUTE);
+                    try tree.dump_field_attributes(field_attributes[1], level + delta + half, w);
+                    try config.set_color(w, .reset);
                 }
             }
         },
         .union_init_expr => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("field index: ");
-            try config.setColor(w, LITERAL);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("field index: ");
+            try config.set_color(w, LITERAL);
             try w.print("{d}\n", .{data.union_init.field_index});
-            try config.setColor(w, .reset);
+            try config.set_color(w, .reset);
             if (data.union_init.node != .none) {
-                try tree.dumpNode(data.union_init.node, level + delta, mapper, config, w);
+                try tree.dump_node(data.union_init.node, level + delta, mapper, config, w);
             }
         },
         .compound_literal_expr,
@@ -956,232 +956,232 @@ fn dump_node(
         .thread_local_compound_literal_expr,
         .static_thread_local_compound_literal_expr,
         => {
-            try tree.dumpNode(data.un, level + half, mapper, config, w);
+            try tree.dump_node(data.un, level + half, mapper, config, w);
         },
         .labeled_stmt => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("label: ");
-            try config.setColor(w, LITERAL);
-            try w.print("{s}\n", .{tree.tokSlice(data.decl.name)});
-            try config.setColor(w, .reset);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("label: ");
+            try config.set_color(w, LITERAL);
+            try w.print("{s}\n", .{tree.tok_slice(data.decl.name)});
+            try config.set_color(w, .reset);
             if (data.decl.node != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("stmt:\n");
-                try tree.dumpNode(data.decl.node, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("stmt:\n");
+                try tree.dump_node(data.decl.node, level + delta, mapper, config, w);
             }
         },
         .case_stmt => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("value:\n");
-            try tree.dumpNode(data.bin.lhs, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("value:\n");
+            try tree.dump_node(data.bin.lhs, level + delta, mapper, config, w);
             if (data.bin.rhs != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("stmt:\n");
-                try tree.dumpNode(data.bin.rhs, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("stmt:\n");
+                try tree.dump_node(data.bin.rhs, level + delta, mapper, config, w);
             }
         },
         .case_range_stmt => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("range start:\n");
-            try tree.dumpNode(tree.data[data.if3.body], level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("range start:\n");
+            try tree.dump_node(tree.data[data.if3.body], level + delta, mapper, config, w);
 
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("range end:\n");
-            try tree.dumpNode(tree.data[data.if3.body + 1], level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("range end:\n");
+            try tree.dump_node(tree.data[data.if3.body + 1], level + delta, mapper, config, w);
 
             if (data.if3.cond != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("stmt:\n");
-                try tree.dumpNode(data.if3.cond, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("stmt:\n");
+                try tree.dump_node(data.if3.cond, level + delta, mapper, config, w);
             }
         },
         .default_stmt => {
             if (data.un != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("stmt:\n");
-                try tree.dumpNode(data.un, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("stmt:\n");
+                try tree.dump_node(data.un, level + delta, mapper, config, w);
             }
         },
         .binary_cond_expr, .cond_expr, .if_then_else_stmt, .builtin_choose_expr => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("cond:\n");
-            try tree.dumpNode(data.if3.cond, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("cond:\n");
+            try tree.dump_node(data.if3.cond, level + delta, mapper, config, w);
 
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("then:\n");
-            try tree.dumpNode(tree.data[data.if3.body], level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("then:\n");
+            try tree.dump_node(tree.data[data.if3.body], level + delta, mapper, config, w);
 
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("else:\n");
-            try tree.dumpNode(tree.data[data.if3.body + 1], level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("else:\n");
+            try tree.dump_node(tree.data[data.if3.body + 1], level + delta, mapper, config, w);
         },
         .builtin_types_compatible_p => {
-            std.debug.assert(tree.nodes.items(.tag)[@intFromEnum(data.bin.lhs)] == .invalid);
-            std.debug.assert(tree.nodes.items(.tag)[@intFromEnum(data.bin.rhs)] == .invalid);
+            std.debug.assert(tree.nodes.items(.tag)[@int_from_enum(data.bin.lhs)] == .invalid);
+            std.debug.assert(tree.nodes.items(.tag)[@int_from_enum(data.bin.rhs)] == .invalid);
 
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("lhs: ");
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("lhs: ");
 
-            const lhs_ty = tree.nodes.items(.ty)[@intFromEnum(data.bin.lhs)];
-            try config.setColor(w, TYPE);
+            const lhs_ty = tree.nodes.items(.ty)[@int_from_enum(data.bin.lhs)];
+            try config.set_color(w, TYPE);
             try lhs_ty.dump(mapper, tree.comp.langopts, w);
-            try config.setColor(w, .reset);
-            try w.writeByte('\n');
+            try config.set_color(w, .reset);
+            try w.write_byte('\n');
 
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("rhs: ");
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("rhs: ");
 
-            const rhs_ty = tree.nodes.items(.ty)[@intFromEnum(data.bin.rhs)];
-            try config.setColor(w, TYPE);
+            const rhs_ty = tree.nodes.items(.ty)[@int_from_enum(data.bin.rhs)];
+            try config.set_color(w, TYPE);
             try rhs_ty.dump(mapper, tree.comp.langopts, w);
-            try config.setColor(w, .reset);
-            try w.writeByte('\n');
+            try config.set_color(w, .reset);
+            try w.write_byte('\n');
         },
         .if_then_stmt => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("cond:\n");
-            try tree.dumpNode(data.bin.lhs, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("cond:\n");
+            try tree.dump_node(data.bin.lhs, level + delta, mapper, config, w);
 
             if (data.bin.rhs != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("then:\n");
-                try tree.dumpNode(data.bin.rhs, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("then:\n");
+                try tree.dump_node(data.bin.rhs, level + delta, mapper, config, w);
             }
         },
         .switch_stmt, .while_stmt, .do_while_stmt => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("cond:\n");
-            try tree.dumpNode(data.bin.lhs, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("cond:\n");
+            try tree.dump_node(data.bin.lhs, level + delta, mapper, config, w);
 
             if (data.bin.rhs != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("body:\n");
-                try tree.dumpNode(data.bin.rhs, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("body:\n");
+                try tree.dump_node(data.bin.rhs, level + delta, mapper, config, w);
             }
         },
         .for_decl_stmt => {
-            const for_decl = data.forDecl(tree);
+            const for_decl = data.for_decl(tree);
 
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("decl:\n");
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("decl:\n");
             for (for_decl.decls) |decl| {
-                try tree.dumpNode(decl, level + delta, mapper, config, w);
-                try w.writeByte('\n');
+                try tree.dump_node(decl, level + delta, mapper, config, w);
+                try w.write_byte('\n');
             }
             if (for_decl.cond != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("cond:\n");
-                try tree.dumpNode(for_decl.cond, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("cond:\n");
+                try tree.dump_node(for_decl.cond, level + delta, mapper, config, w);
             }
             if (for_decl.incr != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("incr:\n");
-                try tree.dumpNode(for_decl.incr, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("incr:\n");
+                try tree.dump_node(for_decl.incr, level + delta, mapper, config, w);
             }
             if (for_decl.body != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("body:\n");
-                try tree.dumpNode(for_decl.body, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("body:\n");
+                try tree.dump_node(for_decl.body, level + delta, mapper, config, w);
             }
         },
         .forever_stmt => {
             if (data.un != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("body:\n");
-                try tree.dumpNode(data.un, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("body:\n");
+                try tree.dump_node(data.un, level + delta, mapper, config, w);
             }
         },
         .for_stmt => {
-            const for_stmt = data.forStmt(tree);
+            const for_stmt = data.for_stmt(tree);
 
             if (for_stmt.init != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("init:\n");
-                try tree.dumpNode(for_stmt.init, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("init:\n");
+                try tree.dump_node(for_stmt.init, level + delta, mapper, config, w);
             }
             if (for_stmt.cond != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("cond:\n");
-                try tree.dumpNode(for_stmt.cond, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("cond:\n");
+                try tree.dump_node(for_stmt.cond, level + delta, mapper, config, w);
             }
             if (for_stmt.incr != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("incr:\n");
-                try tree.dumpNode(for_stmt.incr, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("incr:\n");
+                try tree.dump_node(for_stmt.incr, level + delta, mapper, config, w);
             }
             if (for_stmt.body != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("body:\n");
-                try tree.dumpNode(for_stmt.body, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("body:\n");
+                try tree.dump_node(for_stmt.body, level + delta, mapper, config, w);
             }
         },
         .goto_stmt, .addr_of_label => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("label: ");
-            try config.setColor(w, LITERAL);
-            try w.print("{s}\n", .{tree.tokSlice(data.decl_ref)});
-            try config.setColor(w, .reset);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("label: ");
+            try config.set_color(w, LITERAL);
+            try w.print("{s}\n", .{tree.tok_slice(data.decl_ref)});
+            try config.set_color(w, .reset);
         },
         .continue_stmt, .break_stmt, .implicit_return, .null_stmt => {},
         .return_stmt => {
             if (data.un != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("expr:\n");
-                try tree.dumpNode(data.un, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("expr:\n");
+                try tree.dump_node(data.un, level + delta, mapper, config, w);
             }
         },
         .call_expr => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("lhs:\n");
-            try tree.dumpNode(tree.data[data.range.start], level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("lhs:\n");
+            try tree.dump_node(tree.data[data.range.start], level + delta, mapper, config, w);
 
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("args:\n");
-            for (tree.data[data.range.start + 1 .. data.range.end]) |arg| try tree.dumpNode(arg, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("args:\n");
+            for (tree.data[data.range.start + 1 .. data.range.end]) |arg| try tree.dump_node(arg, level + delta, mapper, config, w);
         },
         .call_expr_one => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("lhs:\n");
-            try tree.dumpNode(data.bin.lhs, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("lhs:\n");
+            try tree.dump_node(data.bin.lhs, level + delta, mapper, config, w);
             if (data.bin.rhs != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("arg:\n");
-                try tree.dumpNode(data.bin.rhs, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("arg:\n");
+                try tree.dump_node(data.bin.rhs, level + delta, mapper, config, w);
             }
         },
         .builtin_call_expr => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("name: ");
-            try config.setColor(w, NAME);
-            try w.print("{s}\n", .{tree.tokSlice(@intFromEnum(tree.data[data.range.start]))});
-            try config.setColor(w, .reset);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("name: ");
+            try config.set_color(w, NAME);
+            try w.print("{s}\n", .{tree.tok_slice(@int_from_enum(tree.data[data.range.start]))});
+            try config.set_color(w, .reset);
 
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("args:\n");
-            for (tree.data[data.range.start + 1 .. data.range.end]) |arg| try tree.dumpNode(arg, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("args:\n");
+            for (tree.data[data.range.start + 1 .. data.range.end]) |arg| try tree.dump_node(arg, level + delta, mapper, config, w);
         },
         .builtin_call_expr_one => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("name: ");
-            try config.setColor(w, NAME);
-            try w.print("{s}\n", .{tree.tokSlice(data.decl.name)});
-            try config.setColor(w, .reset);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("name: ");
+            try config.set_color(w, NAME);
+            try w.print("{s}\n", .{tree.tok_slice(data.decl.name)});
+            try config.set_color(w, .reset);
             if (data.decl.node != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("arg:\n");
-                try tree.dumpNode(data.decl.node, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("arg:\n");
+                try tree.dump_node(data.decl.node, level + delta, mapper, config, w);
             }
         },
         .special_builtin_call_one => {
-            try w.writeByteNTimes(' ', level + half);
-            try w.writeAll("name: ");
-            try config.setColor(w, NAME);
-            try w.print("{s}\n", .{tree.tokSlice(data.decl.name)});
-            try config.setColor(w, .reset);
+            try w.write_byte_ntimes(' ', level + half);
+            try w.write_all("name: ");
+            try config.set_color(w, NAME);
+            try w.print("{s}\n", .{tree.tok_slice(data.decl.name)});
+            try config.set_color(w, .reset);
             if (data.decl.node != .none) {
-                try w.writeByteNTimes(' ', level + half);
-                try w.writeAll("arg:\n");
-                try tree.dumpNode(data.decl.node, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + half);
+                try w.write_all("arg:\n");
+                try tree.dump_node(data.decl.node, level + delta, mapper, config, w);
             }
         },
         .comma_expr,
@@ -1215,14 +1215,14 @@ fn dump_node(
         .div_expr,
         .mod_expr,
         => {
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("lhs:\n");
-            try tree.dumpNode(data.bin.lhs, level + delta, mapper, config, w);
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("rhs:\n");
-            try tree.dumpNode(data.bin.rhs, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("lhs:\n");
+            try tree.dump_node(data.bin.lhs, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("rhs:\n");
+            try tree.dump_node(data.bin.rhs, level + delta, mapper, config, w);
         },
-        .explicit_cast, .implicit_cast => try tree.dumpNode(data.cast.operand, level + delta, mapper, config, w),
+        .explicit_cast, .implicit_cast => try tree.dump_node(data.cast.operand, level + delta, mapper, config, w),
         .addr_of_expr,
         .computed_goto_stmt,
         .deref_expr,
@@ -1238,23 +1238,23 @@ fn dump_node(
         .post_dec_expr,
         .paren_expr,
         => {
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("operand:\n");
-            try tree.dumpNode(data.un, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("operand:\n");
+            try tree.dump_node(data.un, level + delta, mapper, config, w);
         },
         .decl_ref_expr => {
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("name: ");
-            try config.setColor(w, NAME);
-            try w.print("{s}\n", .{tree.tokSlice(data.decl_ref)});
-            try config.setColor(w, .reset);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("name: ");
+            try config.set_color(w, NAME);
+            try w.print("{s}\n", .{tree.tok_slice(data.decl_ref)});
+            try config.set_color(w, .reset);
         },
         .enumeration_ref => {
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("name: ");
-            try config.setColor(w, NAME);
-            try w.print("{s}\n", .{tree.tokSlice(data.decl_ref)});
-            try config.setColor(w, .reset);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("name: ");
+            try config.set_color(w, NAME);
+            try w.print("{s}\n", .{tree.tok_slice(data.decl_ref)});
+            try config.set_color(w, .reset);
         },
         .bool_literal,
         .nullptr_literal,
@@ -1264,70 +1264,70 @@ fn dump_node(
         .string_literal_expr,
         => {},
         .member_access_expr, .member_access_ptr_expr => {
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("lhs:\n");
-            try tree.dumpNode(data.member.lhs, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("lhs:\n");
+            try tree.dump_node(data.member.lhs, level + delta, mapper, config, w);
 
-            var lhs_ty = tree.nodes.items(.ty)[@intFromEnum(data.member.lhs)];
-            if (lhs_ty.isPtr()) lhs_ty = lhs_ty.elemType();
+            var lhs_ty = tree.nodes.items(.ty)[@int_from_enum(data.member.lhs)];
+            if (lhs_ty.is_ptr()) lhs_ty = lhs_ty.elem_type();
             lhs_ty = lhs_ty.canonicalize(.standard);
 
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("name: ");
-            try config.setColor(w, NAME);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("name: ");
+            try config.set_color(w, NAME);
             try w.print("{s}\n", .{mapper.lookup(lhs_ty.data.record.fields[data.member.index].name)});
-            try config.setColor(w, .reset);
+            try config.set_color(w, .reset);
         },
         .array_access_expr => {
             if (data.bin.lhs != .none) {
-                try w.writeByteNTimes(' ', level + 1);
-                try w.writeAll("lhs:\n");
-                try tree.dumpNode(data.bin.lhs, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + 1);
+                try w.write_all("lhs:\n");
+                try tree.dump_node(data.bin.lhs, level + delta, mapper, config, w);
             }
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("index:\n");
-            try tree.dumpNode(data.bin.rhs, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("index:\n");
+            try tree.dump_node(data.bin.rhs, level + delta, mapper, config, w);
         },
         .sizeof_expr, .alignof_expr => {
             if (data.un != .none) {
-                try w.writeByteNTimes(' ', level + 1);
-                try w.writeAll("expr:\n");
-                try tree.dumpNode(data.un, level + delta, mapper, config, w);
+                try w.write_byte_ntimes(' ', level + 1);
+                try w.write_all("expr:\n");
+                try tree.dump_node(data.un, level + delta, mapper, config, w);
             }
         },
         .generic_expr_one => {
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("controlling:\n");
-            try tree.dumpNode(data.bin.lhs, level + delta, mapper, config, w);
-            try w.writeByteNTimes(' ', level + 1);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("controlling:\n");
+            try tree.dump_node(data.bin.lhs, level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + 1);
             if (data.bin.rhs != .none) {
-                try w.writeAll("chosen:\n");
-                try tree.dumpNode(data.bin.rhs, level + delta, mapper, config, w);
+                try w.write_all("chosen:\n");
+                try tree.dump_node(data.bin.rhs, level + delta, mapper, config, w);
             }
         },
         .generic_expr => {
             const nodes = tree.data[data.range.start..data.range.end];
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("controlling:\n");
-            try tree.dumpNode(nodes[0], level + delta, mapper, config, w);
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("chosen:\n");
-            try tree.dumpNode(nodes[1], level + delta, mapper, config, w);
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("rest:\n");
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("controlling:\n");
+            try tree.dump_node(nodes[0], level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("chosen:\n");
+            try tree.dump_node(nodes[1], level + delta, mapper, config, w);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("rest:\n");
             for (nodes[2..]) |expr| {
-                try tree.dumpNode(expr, level + delta, mapper, config, w);
+                try tree.dump_node(expr, level + delta, mapper, config, w);
             }
         },
         .generic_association_expr, .generic_default_expr, .stmt_expr, .imaginary_literal => {
-            try tree.dumpNode(data.un, level + delta, mapper, config, w);
+            try tree.dump_node(data.un, level + delta, mapper, config, w);
         },
         .array_filler_expr => {
-            try w.writeByteNTimes(' ', level + 1);
-            try w.writeAll("count: ");
-            try config.setColor(w, LITERAL);
+            try w.write_byte_ntimes(' ', level + 1);
+            try w.write_all("count: ");
+            try config.set_color(w, LITERAL);
             try w.print("{d}\n", .{data.int});
-            try config.setColor(w, .reset);
+            try config.set_color(w, .reset);
         },
         .struct_forward_decl,
         .union_forward_decl,

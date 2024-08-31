@@ -113,7 +113,7 @@ pub fn get_external_executor(
                 if (candidate.cpu.arch != builtin.cpu.arch) {
                     return bad_result;
                 }
-                switch (candidate.ptrBitWidth()) {
+                switch (candidate.ptr_bit_width()) {
                     32 => return Executor{ .wine = "wine" },
                     64 => return Executor{ .wine = "wine64" },
                     else => return bad_result,
@@ -123,7 +123,7 @@ pub fn get_external_executor(
         },
         .wasi => {
             if (options.allow_wasmtime) {
-                switch (candidate.ptrBitWidth()) {
+                switch (candidate.ptr_bit_width()) {
                     32 => return Executor{ .wasmtime = "wasmtime" },
                     else => return bad_result,
                 }
@@ -164,12 +164,12 @@ pub const DetectError = error{
 /// standard/default parts relative to that.
 pub fn resolve_target_query(query: Target.Query) DetectError!Target {
     const query_os_tag = query.os_tag orelse builtin.os.tag;
-    var os = query_os_tag.defaultVersionRange(query.cpu_arch orelse builtin.cpu.arch);
+    var os = query_os_tag.default_version_range(query.cpu_arch orelse builtin.cpu.arch);
     if (query.os_tag == null) {
         switch (builtin.target.os.tag) {
             .linux => {
                 const uts = posix.uname();
-                const release = mem.sliceTo(&uts.release, 0);
+                const release = mem.slice_to(&uts.release, 0);
                 // The release field sometimes has a weird format,
                 // `Version.parse` will attempt to find some meaningful interpretation.
                 if (std.SemanticVersion.parse(release)) |ver| {
@@ -182,7 +182,7 @@ pub fn resolve_target_query(query: Target.Query) DetectError!Target {
             },
             .solaris, .illumos => {
                 const uts = posix.uname();
-                const release = mem.sliceTo(&uts.release, 0);
+                const release = mem.slice_to(&uts.release, 0);
                 if (std.SemanticVersion.parse(release)) |ver| {
                     os.version_range.semver.min = ver;
                     os.version_range.semver.max = ver;
@@ -192,7 +192,7 @@ pub fn resolve_target_query(query: Target.Query) DetectError!Target {
                 }
             },
             .windows => {
-                const detected_version = windows.detectRuntimeVersion();
+                const detected_version = windows.detect_runtime_version();
                 os.version_range.windows.min = detected_version;
                 os.version_range.windows.max = detected_version;
             },
@@ -204,9 +204,9 @@ pub fn resolve_target_query(query: Target.Query) DetectError!Target {
                     else => unreachable,
                 };
                 var value: u32 = undefined;
-                var len: usize = @sizeOf(@TypeOf(value));
+                var len: usize = @size_of(@TypeOf(value));
 
-                posix.sysctlbynameZ(key, &value, &len, null, 0) catch |err| switch (err) {
+                posix.sysctlbyname_z(key, &value, &len, null, 0) catch |err| switch (err) {
                     error.NameTooLong => unreachable, // constant, known good value
                     error.PermissionDenied => unreachable, // only when setting values,
                     error.SystemResources => unreachable, // memory already on the stack
@@ -318,17 +318,17 @@ pub fn resolve_target_query(query: Target.Query) DetectError!Target {
     const cpu_arch = query.cpu_arch orelse builtin.cpu.arch;
 
     const cpu = switch (query.cpu_model) {
-        .native => detectNativeCpuAndFeatures(cpu_arch, os, query),
+        .native => detect_native_cpu_and_features(cpu_arch, os, query),
         .baseline => Target.Cpu.baseline(cpu_arch),
         .determined_by_cpu_arch => if (query.cpu_arch == null)
-            detectNativeCpuAndFeatures(cpu_arch, os, query)
+            detect_native_cpu_and_features(cpu_arch, os, query)
         else
             Target.Cpu.baseline(cpu_arch),
-        .explicit => |model| model.toCpu(cpu_arch),
+        .explicit => |model| model.to_cpu(cpu_arch),
     } orelse backup_cpu_detection: {
         break :backup_cpu_detection Target.Cpu.baseline(cpu_arch);
     };
-    var result = try detectAbiAndDynamicLinker(cpu, os, query);
+    var result = try detect_abi_and_dynamic_linker(cpu, os, query);
     // For x86, we need to populate some CPU feature flags depending on architecture
     // and mode:
     //  * 16bit_mode => if the abi is code16
@@ -337,15 +337,15 @@ pub fn resolve_target_query(query: Target.Query) DetectError!Target {
     // sets one of them, that takes precedence.
     switch (cpu_arch) {
         .x86 => {
-            if (!Target.x86.featureSetHasAny(query.cpu_features_add, .{
+            if (!Target.x86.feature_set_has_any(query.cpu_features_add, .{
                 .@"16bit_mode", .@"32bit_mode",
             })) {
                 switch (result.abi) {
-                    .code16 => result.cpu.features.addFeature(
-                        @intFromEnum(Target.x86.Feature.@"16bit_mode"),
+                    .code16 => result.cpu.features.add_feature(
+                        @int_from_enum(Target.x86.Feature.@"16bit_mode"),
                     ),
-                    else => result.cpu.features.addFeature(
-                        @intFromEnum(Target.x86.Feature.@"32bit_mode"),
+                    else => result.cpu.features.add_feature(
+                        @int_from_enum(Target.x86.Feature.@"32bit_mode"),
                     ),
                 }
             }
@@ -355,15 +355,15 @@ pub fn resolve_target_query(query: Target.Query) DetectError!Target {
             //     What do we do if the user specifies +thumb_mode?
         },
         .thumb, .thumbeb => {
-            result.cpu.features.addFeature(
-                @intFromEnum(Target.arm.Feature.thumb_mode),
+            result.cpu.features.add_feature(
+                @int_from_enum(Target.arm.Feature.thumb_mode),
             );
         },
         else => {},
     }
-    updateCpuFeatures(
+    update_cpu_features(
         &result.cpu.features,
-        cpu_arch.allFeaturesList(),
+        cpu_arch.all_features_list(),
         query.cpu_features_add,
         query.cpu_features_sub,
     );
@@ -376,10 +376,10 @@ fn update_cpu_features(
     add_set: Target.Cpu.Feature.Set,
     sub_set: Target.Cpu.Feature.Set,
 ) void {
-    set.removeFeatureSet(sub_set);
-    set.addFeatureSet(add_set);
-    set.populateDependencies(all_features_list);
-    set.removeFeatureSet(sub_set);
+    set.remove_feature_set(sub_set);
+    set.add_feature_set(add_set);
+    set.populate_dependencies(all_features_list);
+    set.remove_feature_set(sub_set);
 }
 
 fn detect_native_cpu_and_features(cpu_arch: Target.Cpu.Arch, os: Target.Os, query: Target.Query) ?Target.Cpu {
@@ -388,15 +388,15 @@ fn detect_native_cpu_and_features(cpu_arch: Target.Cpu.Arch, os: Target.Os, quer
     // of the respective switch prong.
     switch (builtin.cpu.arch) {
         .x86_64, .x86 => {
-            return @import("system/x86.zig").detectNativeCpuAndFeatures(cpu_arch, os, query);
+            return @import("system/x86.zig").detect_native_cpu_and_features(cpu_arch, os, query);
         },
         else => {},
     }
 
     switch (builtin.os.tag) {
-        .linux => return linux.detectNativeCpuAndFeatures(),
-        .macos => return darwin.macos.detectNativeCpuAndFeatures(),
-        .windows => return windows.detectNativeCpuAndFeatures(),
+        .linux => return linux.detect_native_cpu_and_features(),
+        .macos => return darwin.macos.detect_native_cpu_and_features(),
+        .windows => return windows.detect_native_cpu_and_features(),
         else => {},
     }
 
@@ -429,10 +429,10 @@ pub fn abi_and_dynamic_linker_from_file(
     ld_info_list: []const LdInfo,
     query: Target.Query,
 ) AbiAndDynamicLinkerFromFileError!Target {
-    var hdr_buf: [@sizeOf(elf.Elf64_Ehdr)]u8 align(@alignOf(elf.Elf64_Ehdr)) = undefined;
-    _ = try preadAtLeast(file, &hdr_buf, 0, hdr_buf.len);
-    const hdr32: *elf.Elf32_Ehdr = @ptrCast(&hdr_buf);
-    const hdr64: *elf.Elf64_Ehdr = @ptrCast(&hdr_buf);
+    var hdr_buf: [@size_of(elf.Elf64_Ehdr)]u8 align(@alignOf(elf.Elf64_Ehdr)) = undefined;
+    _ = try pread_at_least(file, &hdr_buf, 0, hdr_buf.len);
+    const hdr32: *elf.Elf32_Ehdr = @ptr_cast(&hdr_buf);
+    const hdr64: *elf.Elf64_Ehdr = @ptr_cast(&hdr_buf);
     if (!mem.eql(u8, hdr32.e_ident[0..4], elf.MAGIC)) return error.InvalidElfMagic;
     const elf_endian: std.builtin.Endian = switch (hdr32.e_ident[elf.EI_DATA]) {
         elf.ELFDATA2LSB => .little,
@@ -447,9 +447,9 @@ pub fn abi_and_dynamic_linker_from_file(
         elf.ELFCLASS64 => true,
         else => return error.InvalidElfClass,
     };
-    var phoff = elfInt(is_64, need_bswap, hdr32.e_phoff, hdr64.e_phoff);
-    const phentsize = elfInt(is_64, need_bswap, hdr32.e_phentsize, hdr64.e_phentsize);
-    const phnum = elfInt(is_64, need_bswap, hdr32.e_phnum, hdr64.e_phnum);
+    var phoff = elf_int(is_64, need_bswap, hdr32.e_phoff, hdr64.e_phoff);
+    const phentsize = elf_int(is_64, need_bswap, hdr32.e_phentsize, hdr64.e_phentsize);
+    const phnum = elf_int(is_64, need_bswap, hdr32.e_phnum, hdr64.e_phnum);
 
     var result: Target = .{
         .cpu = cpu,
@@ -461,62 +461,62 @@ pub fn abi_and_dynamic_linker_from_file(
     var rpath_offset: ?u64 = null; // Found inside PT_DYNAMIC
     const look_for_ld = query.dynamic_linker.get() == null;
 
-    var ph_buf: [16 * @sizeOf(elf.Elf64_Phdr)]u8 align(@alignOf(elf.Elf64_Phdr)) = undefined;
-    if (phentsize > @sizeOf(elf.Elf64_Phdr)) return error.InvalidElfFile;
+    var ph_buf: [16 * @size_of(elf.Elf64_Phdr)]u8 align(@alignOf(elf.Elf64_Phdr)) = undefined;
+    if (phentsize > @size_of(elf.Elf64_Phdr)) return error.InvalidElfFile;
 
     var ph_i: u16 = 0;
     while (ph_i < phnum) {
         // Reserve some bytes so that we can deref the 64-bit struct fields
         // even when the ELF file is 32-bits.
-        const ph_reserve: usize = @sizeOf(elf.Elf64_Phdr) - @sizeOf(elf.Elf32_Phdr);
-        const ph_read_byte_len = try preadAtLeast(file, ph_buf[0 .. ph_buf.len - ph_reserve], phoff, phentsize);
+        const ph_reserve: usize = @size_of(elf.Elf64_Phdr) - @size_of(elf.Elf32_Phdr);
+        const ph_read_byte_len = try pread_at_least(file, ph_buf[0 .. ph_buf.len - ph_reserve], phoff, phentsize);
         var ph_buf_i: usize = 0;
         while (ph_buf_i < ph_read_byte_len and ph_i < phnum) : ({
             ph_i += 1;
             phoff += phentsize;
             ph_buf_i += phentsize;
         }) {
-            const ph32: *elf.Elf32_Phdr = @ptrCast(@alignCast(&ph_buf[ph_buf_i]));
-            const ph64: *elf.Elf64_Phdr = @ptrCast(@alignCast(&ph_buf[ph_buf_i]));
-            const p_type = elfInt(is_64, need_bswap, ph32.p_type, ph64.p_type);
+            const ph32: *elf.Elf32_Phdr = @ptr_cast(@align_cast(&ph_buf[ph_buf_i]));
+            const ph64: *elf.Elf64_Phdr = @ptr_cast(@align_cast(&ph_buf[ph_buf_i]));
+            const p_type = elf_int(is_64, need_bswap, ph32.p_type, ph64.p_type);
             switch (p_type) {
                 elf.PT_INTERP => if (look_for_ld) {
-                    const p_offset = elfInt(is_64, need_bswap, ph32.p_offset, ph64.p_offset);
-                    const p_filesz = elfInt(is_64, need_bswap, ph32.p_filesz, ph64.p_filesz);
+                    const p_offset = elf_int(is_64, need_bswap, ph32.p_offset, ph64.p_offset);
+                    const p_filesz = elf_int(is_64, need_bswap, ph32.p_filesz, ph64.p_filesz);
                     if (p_filesz > result.dynamic_linker.buffer.len) return error.NameTooLong;
-                    const filesz: usize = @intCast(p_filesz);
-                    _ = try preadAtLeast(file, result.dynamic_linker.buffer[0..filesz], p_offset, filesz);
+                    const filesz: usize = @int_cast(p_filesz);
+                    _ = try pread_at_least(file, result.dynamic_linker.buffer[0..filesz], p_offset, filesz);
                     // PT_INTERP includes a null byte in filesz.
                     const len = filesz - 1;
                     // dynamic_linker.max_byte is "max", not "len".
                     // We know it will fit in u8 because we check against dynamic_linker.buffer.len above.
-                    result.dynamic_linker.len = @intCast(len);
+                    result.dynamic_linker.len = @int_cast(len);
 
                     // Use it to determine ABI.
                     const full_ld_path = result.dynamic_linker.buffer[0..len];
                     for (ld_info_list) |ld_info| {
                         const standard_ld_basename = fs.path.basename(ld_info.ld.get().?);
-                        if (std.mem.endsWith(u8, full_ld_path, standard_ld_basename)) {
+                        if (std.mem.ends_with(u8, full_ld_path, standard_ld_basename)) {
                             result.abi = ld_info.abi;
                             break;
                         }
                     }
                 },
                 // We only need this for detecting glibc version.
-                elf.PT_DYNAMIC => if (builtin.target.os.tag == .linux and result.isGnuLibC() and
+                elf.PT_DYNAMIC => if (builtin.target.os.tag == .linux and result.is_gnu_lib_c() and
                     query.glibc_version == null)
                 {
-                    var dyn_off = elfInt(is_64, need_bswap, ph32.p_offset, ph64.p_offset);
-                    const p_filesz = elfInt(is_64, need_bswap, ph32.p_filesz, ph64.p_filesz);
-                    const dyn_size: usize = if (is_64) @sizeOf(elf.Elf64_Dyn) else @sizeOf(elf.Elf32_Dyn);
+                    var dyn_off = elf_int(is_64, need_bswap, ph32.p_offset, ph64.p_offset);
+                    const p_filesz = elf_int(is_64, need_bswap, ph32.p_filesz, ph64.p_filesz);
+                    const dyn_size: usize = if (is_64) @size_of(elf.Elf64_Dyn) else @size_of(elf.Elf32_Dyn);
                     const dyn_num = p_filesz / dyn_size;
-                    var dyn_buf: [16 * @sizeOf(elf.Elf64_Dyn)]u8 align(@alignOf(elf.Elf64_Dyn)) = undefined;
+                    var dyn_buf: [16 * @size_of(elf.Elf64_Dyn)]u8 align(@alignOf(elf.Elf64_Dyn)) = undefined;
                     var dyn_i: usize = 0;
                     dyn: while (dyn_i < dyn_num) {
                         // Reserve some bytes so that we can deref the 64-bit struct fields
                         // even when the ELF file is 32-bits.
-                        const dyn_reserve: usize = @sizeOf(elf.Elf64_Dyn) - @sizeOf(elf.Elf32_Dyn);
-                        const dyn_read_byte_len = try preadAtLeast(
+                        const dyn_reserve: usize = @size_of(elf.Elf64_Dyn) - @size_of(elf.Elf32_Dyn);
+                        const dyn_read_byte_len = try pread_at_least(
                             file,
                             dyn_buf[0 .. dyn_buf.len - dyn_reserve],
                             dyn_off,
@@ -528,10 +528,10 @@ pub fn abi_and_dynamic_linker_from_file(
                             dyn_off += dyn_size;
                             dyn_buf_i += dyn_size;
                         }) {
-                            const dyn32: *elf.Elf32_Dyn = @ptrCast(@alignCast(&dyn_buf[dyn_buf_i]));
-                            const dyn64: *elf.Elf64_Dyn = @ptrCast(@alignCast(&dyn_buf[dyn_buf_i]));
-                            const tag = elfInt(is_64, need_bswap, dyn32.d_tag, dyn64.d_tag);
-                            const val = elfInt(is_64, need_bswap, dyn32.d_val, dyn64.d_val);
+                            const dyn32: *elf.Elf32_Dyn = @ptr_cast(@align_cast(&dyn_buf[dyn_buf_i]));
+                            const dyn64: *elf.Elf64_Dyn = @ptr_cast(@align_cast(&dyn_buf[dyn_buf_i]));
+                            const tag = elf_int(is_64, need_bswap, dyn32.d_tag, dyn64.d_tag);
+                            const val = elf_int(is_64, need_bswap, dyn32.d_val, dyn64.d_val);
                             if (tag == elf.DT_RUNPATH) {
                                 rpath_offset = val;
                                 break :dyn;
@@ -544,35 +544,35 @@ pub fn abi_and_dynamic_linker_from_file(
         }
     }
 
-    if (builtin.target.os.tag == .linux and result.isGnuLibC() and
+    if (builtin.target.os.tag == .linux and result.is_gnu_lib_c() and
         query.glibc_version == null)
     {
-        const shstrndx = elfInt(is_64, need_bswap, hdr32.e_shstrndx, hdr64.e_shstrndx);
+        const shstrndx = elf_int(is_64, need_bswap, hdr32.e_shstrndx, hdr64.e_shstrndx);
 
-        var shoff = elfInt(is_64, need_bswap, hdr32.e_shoff, hdr64.e_shoff);
-        const shentsize = elfInt(is_64, need_bswap, hdr32.e_shentsize, hdr64.e_shentsize);
+        var shoff = elf_int(is_64, need_bswap, hdr32.e_shoff, hdr64.e_shoff);
+        const shentsize = elf_int(is_64, need_bswap, hdr32.e_shentsize, hdr64.e_shentsize);
         const str_section_off = shoff + @as(u64, shentsize) * @as(u64, shstrndx);
 
-        var sh_buf: [16 * @sizeOf(elf.Elf64_Shdr)]u8 align(@alignOf(elf.Elf64_Shdr)) = undefined;
+        var sh_buf: [16 * @size_of(elf.Elf64_Shdr)]u8 align(@alignOf(elf.Elf64_Shdr)) = undefined;
         if (sh_buf.len < shentsize) return error.InvalidElfFile;
 
-        _ = try preadAtLeast(file, &sh_buf, str_section_off, shentsize);
-        const shstr32: *elf.Elf32_Shdr = @ptrCast(@alignCast(&sh_buf));
-        const shstr64: *elf.Elf64_Shdr = @ptrCast(@alignCast(&sh_buf));
-        const shstrtab_off = elfInt(is_64, need_bswap, shstr32.sh_offset, shstr64.sh_offset);
-        const shstrtab_size = elfInt(is_64, need_bswap, shstr32.sh_size, shstr64.sh_size);
+        _ = try pread_at_least(file, &sh_buf, str_section_off, shentsize);
+        const shstr32: *elf.Elf32_Shdr = @ptr_cast(@align_cast(&sh_buf));
+        const shstr64: *elf.Elf64_Shdr = @ptr_cast(@align_cast(&sh_buf));
+        const shstrtab_off = elf_int(is_64, need_bswap, shstr32.sh_offset, shstr64.sh_offset);
+        const shstrtab_size = elf_int(is_64, need_bswap, shstr32.sh_size, shstr64.sh_size);
         var strtab_buf: [4096:0]u8 = undefined;
         const shstrtab_len = @min(shstrtab_size, strtab_buf.len);
-        const shstrtab_read_len = try preadAtLeast(file, &strtab_buf, shstrtab_off, shstrtab_len);
+        const shstrtab_read_len = try pread_at_least(file, &strtab_buf, shstrtab_off, shstrtab_len);
         const shstrtab = strtab_buf[0..shstrtab_read_len];
 
-        const shnum = elfInt(is_64, need_bswap, hdr32.e_shnum, hdr64.e_shnum);
+        const shnum = elf_int(is_64, need_bswap, hdr32.e_shnum, hdr64.e_shnum);
         var sh_i: u16 = 0;
         const dynstr: ?struct { offset: u64, size: u64 } = find_dyn_str: while (sh_i < shnum) {
             // Reserve some bytes so that we can deref the 64-bit struct fields
             // even when the ELF file is 32-bits.
-            const sh_reserve: usize = @sizeOf(elf.Elf64_Shdr) - @sizeOf(elf.Elf32_Shdr);
-            const sh_read_byte_len = try preadAtLeast(
+            const sh_reserve: usize = @size_of(elf.Elf64_Shdr) - @size_of(elf.Elf32_Shdr);
+            const sh_read_byte_len = try pread_at_least(
                 file,
                 sh_buf[0 .. sh_buf.len - sh_reserve],
                 shoff,
@@ -584,14 +584,14 @@ pub fn abi_and_dynamic_linker_from_file(
                 shoff += shentsize;
                 sh_buf_i += shentsize;
             }) {
-                const sh32: *elf.Elf32_Shdr = @ptrCast(@alignCast(&sh_buf[sh_buf_i]));
-                const sh64: *elf.Elf64_Shdr = @ptrCast(@alignCast(&sh_buf[sh_buf_i]));
-                const sh_name_off = elfInt(is_64, need_bswap, sh32.sh_name, sh64.sh_name);
-                const sh_name = mem.sliceTo(shstrtab[sh_name_off..], 0);
+                const sh32: *elf.Elf32_Shdr = @ptr_cast(@align_cast(&sh_buf[sh_buf_i]));
+                const sh64: *elf.Elf64_Shdr = @ptr_cast(@align_cast(&sh_buf[sh_buf_i]));
+                const sh_name_off = elf_int(is_64, need_bswap, sh32.sh_name, sh64.sh_name);
+                const sh_name = mem.slice_to(shstrtab[sh_name_off..], 0);
                 if (mem.eql(u8, sh_name, ".dynstr")) {
                     break :find_dyn_str .{
-                        .offset = elfInt(is_64, need_bswap, sh32.sh_offset, sh64.sh_offset),
-                        .size = elfInt(is_64, need_bswap, sh32.sh_size, sh64.sh_size),
+                        .offset = elf_int(is_64, need_bswap, sh32.sh_offset, sh64.sh_offset),
+                        .size = elf_int(is_64, need_bswap, sh32.sh_size, sh64.sh_size),
                     };
                 }
             }
@@ -604,13 +604,13 @@ pub fn abi_and_dynamic_linker_from_file(
                 const rp_max_size = ds.size - rpoff;
 
                 const strtab_len = @min(rp_max_size, strtab_buf.len);
-                const strtab_read_len = try preadAtLeast(file, &strtab_buf, rpoff_file, strtab_len);
+                const strtab_read_len = try pread_at_least(file, &strtab_buf, rpoff_file, strtab_len);
                 const strtab = strtab_buf[0..strtab_read_len];
 
-                const rpath_list = mem.sliceTo(strtab, 0);
-                var it = mem.tokenizeScalar(u8, rpath_list, ':');
+                const rpath_list = mem.slice_to(strtab, 0);
+                var it = mem.tokenize_scalar(u8, rpath_list, ':');
                 while (it.next()) |rpath| {
-                    if (glibcVerFromRPath(rpath)) |ver| {
+                    if (glibc_ver_from_rpath(rpath)) |ver| {
                         result.os.version_range.linux.glibc = ver;
                         return result;
                     } else |err| switch (err) {
@@ -625,7 +625,7 @@ pub fn abi_and_dynamic_linker_from_file(
             // There is no DT_RUNPATH so we try to find libc.so.6 inside the same
             // directory as the dynamic linker.
             if (fs.path.dirname(dl_path)) |rpath| {
-                if (glibcVerFromRPath(rpath)) |ver| {
+                if (glibc_ver_from_rpath(rpath)) |ver| {
                     result.os.version_range.linux.glibc = ver;
                     return result;
                 } else |err| switch (err) {
@@ -657,7 +657,7 @@ pub fn abi_and_dynamic_linker_from_file(
                 error.Unexpected,
                 => |e| return e,
             };
-            result.os.version_range.linux.glibc = glibcVerFromLinkName(
+            result.os.version_range.linux.glibc = glibc_ver_from_link_name(
                 fs.path.basename(link_name),
                 "ld-",
             ) catch |err| switch (err) {
@@ -673,9 +673,9 @@ pub fn abi_and_dynamic_linker_from_file(
         var path_buf: [posix.PATH_MAX]u8 = undefined;
         var index: usize = 0;
         const prefix = "/lib/";
-        const cpu_arch = @tagName(result.cpu.arch);
-        const os_tag = @tagName(result.os.tag);
-        const abi = @tagName(result.abi);
+        const cpu_arch = @tag_name(result.cpu.arch);
+        const os_tag = @tag_name(result.os.tag);
+        const abi = @tag_name(result.abi);
         @memcpy(path_buf[index..][0..prefix.len], prefix);
         index += prefix.len;
         @memcpy(path_buf[index..][0..cpu_arch.len], cpu_arch);
@@ -689,7 +689,7 @@ pub fn abi_and_dynamic_linker_from_file(
         @memcpy(path_buf[index..][0..abi.len], abi);
         index += abi.len;
         const rpath = path_buf[0..index];
-        if (glibcVerFromRPath(rpath)) |ver| {
+        if (glibc_ver_from_rpath(rpath)) |ver| {
             result.os.version_range.linux.glibc = ver;
             return result;
         } else |err| switch (err) {
@@ -706,30 +706,30 @@ fn glibc_ver_from_link_name(link_name: []const u8, prefix: []const u8) error{ Un
     // example: "libc-2.27.so"
     // example: "ld-2.33.so"
     const suffix = ".so";
-    if (!mem.startsWith(u8, link_name, prefix) or !mem.endsWith(u8, link_name, suffix)) {
+    if (!mem.starts_with(u8, link_name, prefix) or !mem.ends_with(u8, link_name, suffix)) {
         return error.UnrecognizedGnuLibCFileName;
     }
     // chop off "libc-" and ".so"
     const link_name_chopped = link_name[prefix.len .. link_name.len - suffix.len];
-    return Target.Query.parseVersion(link_name_chopped) catch |err| switch (err) {
+    return Target.Query.parse_version(link_name_chopped) catch |err| switch (err) {
         error.Overflow => return error.InvalidGnuLibCVersion,
         error.InvalidVersion => return error.InvalidGnuLibCVersion,
     };
 }
 
-test glibcVerFromLinkName {
-    try std.testing.expectError(error.UnrecognizedGnuLibCFileName, glibcVerFromLinkName("ld-2.37.so", "this-prefix-does-not-exist"));
-    try std.testing.expectError(error.UnrecognizedGnuLibCFileName, glibcVerFromLinkName("libc-2.37.so-is-not-end", "libc-"));
+test glibc_ver_from_link_name {
+    try std.testing.expect_error(error.UnrecognizedGnuLibCFileName, glibc_ver_from_link_name("ld-2.37.so", "this-prefix-does-not-exist"));
+    try std.testing.expect_error(error.UnrecognizedGnuLibCFileName, glibc_ver_from_link_name("libc-2.37.so-is-not-end", "libc-"));
 
-    try std.testing.expectError(error.InvalidGnuLibCVersion, glibcVerFromLinkName("ld-2.so", "ld-"));
-    try std.testing.expectEqual(std.SemanticVersion{ .major = 2, .minor = 37, .patch = 0 }, try glibcVerFromLinkName("ld-2.37.so", "ld-"));
-    try std.testing.expectEqual(std.SemanticVersion{ .major = 2, .minor = 37, .patch = 0 }, try glibcVerFromLinkName("ld-2.37.0.so", "ld-"));
-    try std.testing.expectEqual(std.SemanticVersion{ .major = 2, .minor = 37, .patch = 1 }, try glibcVerFromLinkName("ld-2.37.1.so", "ld-"));
-    try std.testing.expectError(error.InvalidGnuLibCVersion, glibcVerFromLinkName("ld-2.37.4.5.so", "ld-"));
+    try std.testing.expect_error(error.InvalidGnuLibCVersion, glibc_ver_from_link_name("ld-2.so", "ld-"));
+    try std.testing.expect_equal(std.SemanticVersion{ .major = 2, .minor = 37, .patch = 0 }, try glibc_ver_from_link_name("ld-2.37.so", "ld-"));
+    try std.testing.expect_equal(std.SemanticVersion{ .major = 2, .minor = 37, .patch = 0 }, try glibc_ver_from_link_name("ld-2.37.0.so", "ld-"));
+    try std.testing.expect_equal(std.SemanticVersion{ .major = 2, .minor = 37, .patch = 1 }, try glibc_ver_from_link_name("ld-2.37.1.so", "ld-"));
+    try std.testing.expect_error(error.InvalidGnuLibCVersion, glibc_ver_from_link_name("ld-2.37.4.5.so", "ld-"));
 }
 
 fn glibc_ver_from_rpath(rpath: []const u8) !std.SemanticVersion {
-    var dir = fs.cwd().openDir(rpath, .{}) catch |err| switch (err) {
+    var dir = fs.cwd().open_dir(rpath, .{}) catch |err| switch (err) {
         error.NameTooLong => unreachable,
         error.InvalidUtf8 => unreachable, // WASI only
         error.InvalidWtf8 => unreachable, // Windows-only
@@ -760,7 +760,7 @@ fn glibc_ver_from_rpath(rpath: []const u8) !std.SemanticVersion {
     // .dynstr section, and finding the max version number of symbols
     // that start with "GLIBC_2.".
     const glibc_so_basename = "libc.so.6";
-    var f = dir.openFile(glibc_so_basename, .{}) catch |err| switch (err) {
+    var f = dir.open_file(glibc_so_basename, .{}) catch |err| switch (err) {
         error.NameTooLong => unreachable,
         error.InvalidUtf8 => unreachable, // WASI only
         error.InvalidWtf8 => unreachable, // Windows only
@@ -794,7 +794,7 @@ fn glibc_ver_from_rpath(rpath: []const u8) !std.SemanticVersion {
     };
     defer f.close();
 
-    return glibcVerFromSoFile(f) catch |err| switch (err) {
+    return glibc_ver_from_so_file(f) catch |err| switch (err) {
         error.InvalidElfMagic,
         error.InvalidElfEndian,
         error.InvalidElfClass,
@@ -813,10 +813,10 @@ fn glibc_ver_from_rpath(rpath: []const u8) !std.SemanticVersion {
 }
 
 fn glibc_ver_from_so_file(file: fs.File) !std.SemanticVersion {
-    var hdr_buf: [@sizeOf(elf.Elf64_Ehdr)]u8 align(@alignOf(elf.Elf64_Ehdr)) = undefined;
-    _ = try preadAtLeast(file, &hdr_buf, 0, hdr_buf.len);
-    const hdr32: *elf.Elf32_Ehdr = @ptrCast(&hdr_buf);
-    const hdr64: *elf.Elf64_Ehdr = @ptrCast(&hdr_buf);
+    var hdr_buf: [@size_of(elf.Elf64_Ehdr)]u8 align(@alignOf(elf.Elf64_Ehdr)) = undefined;
+    _ = try pread_at_least(file, &hdr_buf, 0, hdr_buf.len);
+    const hdr32: *elf.Elf32_Ehdr = @ptr_cast(&hdr_buf);
+    const hdr64: *elf.Elf64_Ehdr = @ptr_cast(&hdr_buf);
     if (!mem.eql(u8, hdr32.e_ident[0..4], elf.MAGIC)) return error.InvalidElfMagic;
     const elf_endian: std.builtin.Endian = switch (hdr32.e_ident[elf.EI_DATA]) {
         elf.ELFDATA2LSB => .little,
@@ -831,29 +831,29 @@ fn glibc_ver_from_so_file(file: fs.File) !std.SemanticVersion {
         elf.ELFCLASS64 => true,
         else => return error.InvalidElfClass,
     };
-    const shstrndx = elfInt(is_64, need_bswap, hdr32.e_shstrndx, hdr64.e_shstrndx);
-    var shoff = elfInt(is_64, need_bswap, hdr32.e_shoff, hdr64.e_shoff);
-    const shentsize = elfInt(is_64, need_bswap, hdr32.e_shentsize, hdr64.e_shentsize);
+    const shstrndx = elf_int(is_64, need_bswap, hdr32.e_shstrndx, hdr64.e_shstrndx);
+    var shoff = elf_int(is_64, need_bswap, hdr32.e_shoff, hdr64.e_shoff);
+    const shentsize = elf_int(is_64, need_bswap, hdr32.e_shentsize, hdr64.e_shentsize);
     const str_section_off = shoff + @as(u64, shentsize) * @as(u64, shstrndx);
-    var sh_buf: [16 * @sizeOf(elf.Elf64_Shdr)]u8 align(@alignOf(elf.Elf64_Shdr)) = undefined;
+    var sh_buf: [16 * @size_of(elf.Elf64_Shdr)]u8 align(@alignOf(elf.Elf64_Shdr)) = undefined;
     if (sh_buf.len < shentsize) return error.InvalidElfFile;
 
-    _ = try preadAtLeast(file, &sh_buf, str_section_off, shentsize);
-    const shstr32: *elf.Elf32_Shdr = @ptrCast(@alignCast(&sh_buf));
-    const shstr64: *elf.Elf64_Shdr = @ptrCast(@alignCast(&sh_buf));
-    const shstrtab_off = elfInt(is_64, need_bswap, shstr32.sh_offset, shstr64.sh_offset);
-    const shstrtab_size = elfInt(is_64, need_bswap, shstr32.sh_size, shstr64.sh_size);
+    _ = try pread_at_least(file, &sh_buf, str_section_off, shentsize);
+    const shstr32: *elf.Elf32_Shdr = @ptr_cast(@align_cast(&sh_buf));
+    const shstr64: *elf.Elf64_Shdr = @ptr_cast(@align_cast(&sh_buf));
+    const shstrtab_off = elf_int(is_64, need_bswap, shstr32.sh_offset, shstr64.sh_offset);
+    const shstrtab_size = elf_int(is_64, need_bswap, shstr32.sh_size, shstr64.sh_size);
     var strtab_buf: [4096:0]u8 = undefined;
     const shstrtab_len = @min(shstrtab_size, strtab_buf.len);
-    const shstrtab_read_len = try preadAtLeast(file, &strtab_buf, shstrtab_off, shstrtab_len);
+    const shstrtab_read_len = try pread_at_least(file, &strtab_buf, shstrtab_off, shstrtab_len);
     const shstrtab = strtab_buf[0..shstrtab_read_len];
-    const shnum = elfInt(is_64, need_bswap, hdr32.e_shnum, hdr64.e_shnum);
+    const shnum = elf_int(is_64, need_bswap, hdr32.e_shnum, hdr64.e_shnum);
     var sh_i: u16 = 0;
     const dynstr: struct { offset: u64, size: u64 } = find_dyn_str: while (sh_i < shnum) {
         // Reserve some bytes so that we can deref the 64-bit struct fields
         // even when the ELF file is 32-bits.
-        const sh_reserve: usize = @sizeOf(elf.Elf64_Shdr) - @sizeOf(elf.Elf32_Shdr);
-        const sh_read_byte_len = try preadAtLeast(
+        const sh_reserve: usize = @size_of(elf.Elf64_Shdr) - @size_of(elf.Elf32_Shdr);
+        const sh_read_byte_len = try pread_at_least(
             file,
             sh_buf[0 .. sh_buf.len - sh_reserve],
             shoff,
@@ -865,14 +865,14 @@ fn glibc_ver_from_so_file(file: fs.File) !std.SemanticVersion {
             shoff += shentsize;
             sh_buf_i += shentsize;
         }) {
-            const sh32: *elf.Elf32_Shdr = @ptrCast(@alignCast(&sh_buf[sh_buf_i]));
-            const sh64: *elf.Elf64_Shdr = @ptrCast(@alignCast(&sh_buf[sh_buf_i]));
-            const sh_name_off = elfInt(is_64, need_bswap, sh32.sh_name, sh64.sh_name);
-            const sh_name = mem.sliceTo(shstrtab[sh_name_off..], 0);
+            const sh32: *elf.Elf32_Shdr = @ptr_cast(@align_cast(&sh_buf[sh_buf_i]));
+            const sh64: *elf.Elf64_Shdr = @ptr_cast(@align_cast(&sh_buf[sh_buf_i]));
+            const sh_name_off = elf_int(is_64, need_bswap, sh32.sh_name, sh64.sh_name);
+            const sh_name = mem.slice_to(shstrtab[sh_name_off..], 0);
             if (mem.eql(u8, sh_name, ".dynstr")) {
                 break :find_dyn_str .{
-                    .offset = elfInt(is_64, need_bswap, sh32.sh_offset, sh64.sh_offset),
-                    .size = elfInt(is_64, need_bswap, sh32.sh_size, sh64.sh_size),
+                    .offset = elf_int(is_64, need_bswap, sh32.sh_offset, sh64.sh_offset),
+                    .size = elf_int(is_64, need_bswap, sh32.sh_size, sh64.sh_size),
                 };
             }
         }
@@ -888,15 +888,15 @@ fn glibc_ver_from_so_file(file: fs.File) !std.SemanticVersion {
     var buf: [80000]u8 = undefined;
     if (buf.len < dynstr.size) return error.InvalidGnuLibCVersion;
 
-    const dynstr_size: usize = @intCast(dynstr.size);
+    const dynstr_size: usize = @int_cast(dynstr.size);
     const dynstr_bytes = buf[0..dynstr_size];
-    _ = try preadAtLeast(file, dynstr_bytes, dynstr.offset, dynstr_bytes.len);
-    var it = mem.splitScalar(u8, dynstr_bytes, 0);
+    _ = try pread_at_least(file, dynstr_bytes, dynstr.offset, dynstr_bytes.len);
+    var it = mem.split_scalar(u8, dynstr_bytes, 0);
     var max_ver: std.SemanticVersion = .{ .major = 2, .minor = 2, .patch = 5 };
     while (it.next()) |s| {
-        if (mem.startsWith(u8, s, "GLIBC_2.")) {
+        if (mem.starts_with(u8, s, "GLIBC_2.")) {
             const chopped = s["GLIBC_".len..];
-            const ver = Target.Query.parseVersion(chopped) catch |err| switch (err) {
+            const ver = Target.Query.parse_version(chopped) catch |err| switch (err) {
                 error.Overflow => return error.InvalidGnuLibCVersion,
                 error.InvalidVersion => return error.InvalidGnuLibCVersion,
             };
@@ -927,20 +927,20 @@ fn detect_abi_and_dynamic_linker(
     os: Target.Os,
     query: Target.Query,
 ) DetectError!Target {
-    const native_target_has_ld = comptime builtin.target.hasDynamicLinker();
+    const native_target_has_ld = comptime builtin.target.has_dynamic_linker();
     const is_linux = builtin.target.os.tag == .linux;
-    const is_solarish = builtin.target.os.tag.isSolarish();
+    const is_solarish = builtin.target.os.tag.is_solarish();
     const have_all_info = query.dynamic_linker.get() != null and
-        query.abi != null and (!is_linux or query.abi.?.isGnu());
+        query.abi != null and (!is_linux or query.abi.?.is_gnu());
     const os_is_non_native = query.os_tag != null;
     // The Solaris/illumos environment is always the same.
     if (!native_target_has_ld or have_all_info or os_is_non_native or is_solarish) {
-        return defaultAbiAndDynamicLinker(cpu, os, query);
+        return default_abi_and_dynamic_linker(cpu, os, query);
     }
     if (query.abi) |abi| {
-        if (abi.isMusl()) {
+        if (abi.is_musl()) {
             // musl implies static linking.
-            return defaultAbiAndDynamicLinker(cpu, os, query);
+            return default_abi_and_dynamic_linker(cpu, os, query);
         }
     }
     // The current target's ABI cannot be relied on for this. For example, we may build the zig
@@ -949,7 +949,7 @@ fn detect_abi_and_dynamic_linker(
     // and supported by Zig. But that means that we must detect the system ABI here rather than
     // relying on `builtin.target`.
     const all_abis = comptime blk: {
-        assert(@intFromEnum(Target.Abi.none) == 0);
+        assert(@int_from_enum(Target.Abi.none) == 0);
         const fields = std.meta.fields(Target.Abi)[1..];
         var array: [fields.len]Target.Abi = undefined;
         for (fields, 0..) |field, i| {
@@ -970,7 +970,7 @@ fn detect_abi_and_dynamic_linker(
             .abi = abi,
             .ofmt = ofmt,
         };
-        const ld = target.standardDynamicLinkerPath();
+        const ld = target.standard_dynamic_linker_path();
         if (ld.get() == null) continue;
 
         ld_info_list_buffer[ld_info_list_len] = .{
@@ -1011,7 +1011,7 @@ fn detect_abi_and_dynamic_linker(
         while (true) {
             // Interpreter path can be relative on Linux, but
             // for simplicity we are asserting it is an absolute path.
-            const file = fs.openFileAbsolute(file_name, .{}) catch |err| switch (err) {
+            const file = fs.open_file_absolute(file_name, .{}) catch |err| switch (err) {
                 error.NoSpaceLeft => unreachable,
                 error.NameTooLong => unreachable,
                 error.PathAlreadyExists => unreachable,
@@ -1035,7 +1035,7 @@ fn detect_abi_and_dynamic_linker(
                 error.Unexpected,
                 => |e| {
                     std.log.warn("Encountered error: {s}, falling back to default ABI and dynamic linker.", .{@errorName(e)});
-                    return defaultAbiAndDynamicLinker(cpu, os, query);
+                    return default_abi_and_dynamic_linker(cpu, os, query);
                 },
 
                 else => |e| return e,
@@ -1051,10 +1051,10 @@ fn detect_abi_and_dynamic_linker(
             // nor file with "shebang" line.
             const min_len: usize = 4;
 
-            const len = preadAtLeast(file, &buffer, 0, min_len) catch |err| switch (err) {
+            const len = pread_at_least(file, &buffer, 0, min_len) catch |err| switch (err) {
                 error.UnexpectedEndOfFile,
                 error.UnableToReadElfFile,
-                => return defaultAbiAndDynamicLinker(cpu, os, query),
+                => return default_abi_and_dynamic_linker(cpu, os, query),
 
                 else => |e| return e,
             };
@@ -1068,22 +1068,22 @@ fn detect_abi_and_dynamic_linker(
                 // We detected shebang, now parse entire line.
 
                 // Trim leading "#!", spaces and tabs.
-                const trimmed_line = mem.trimLeft(u8, content[2..], &.{ ' ', '\t' });
+                const trimmed_line = mem.trim_left(u8, content[2..], &.{ ' ', '\t' });
 
                 // This line can have:
                 // * Interpreter path only,
                 // * Interpreter path and arguments, all separated by space, tab or NUL character.
                 // And optionally newline at the end.
-                const path_maybe_args = mem.trimRight(u8, trimmed_line, "\n");
+                const path_maybe_args = mem.trim_right(u8, trimmed_line, "\n");
 
                 // Separate path and args.
-                const path_end = mem.indexOfAny(u8, path_maybe_args, &.{ ' ', '\t', 0 }) orelse path_maybe_args.len;
+                const path_end = mem.index_of_any(u8, path_maybe_args, &.{ ' ', '\t', 0 }) orelse path_maybe_args.len;
 
                 file_name = path_maybe_args[0..path_end];
                 continue;
             } else {
                 // Not a ELF file, not a shell script with "shebang line", invalid duck.
-                return defaultAbiAndDynamicLinker(cpu, os, query);
+                return default_abi_and_dynamic_linker(cpu, os, query);
             }
         }
     };
@@ -1091,7 +1091,7 @@ fn detect_abi_and_dynamic_linker(
 
     // TODO: inline this function and combine the buffer we already read above to find
     // the possible shebang line with the buffer we use for the ELF header.
-    return abiAndDynamicLinkerFromFile(elf_file, cpu, os, ld_info_list, query) catch |err| switch (err) {
+    return abi_and_dynamic_linker_from_file(elf_file, cpu, os, ld_info_list, query) catch |err| switch (err) {
         error.FileSystem,
         error.SystemResources,
         error.SymLinkLoop,
@@ -1111,7 +1111,7 @@ fn detect_abi_and_dynamic_linker(
         // Finally, we fall back on the standard path.
         => |e| {
             std.log.warn("Encountered error: {s}, falling back to default ABI and dynamic linker.", .{@errorName(e)});
-            return defaultAbiAndDynamicLinker(cpu, os, query);
+            return default_abi_and_dynamic_linker(cpu, os, query);
         },
     };
 }
@@ -1162,13 +1162,13 @@ fn pread_at_least(file: fs.File, buf: []u8, offset: u64, min_read_len: usize) !u
 fn elf_int(is_64: bool, need_bswap: bool, int_32: anytype, int_64: anytype) @TypeOf(int_64) {
     if (is_64) {
         if (need_bswap) {
-            return @byteSwap(int_64);
+            return @byte_swap(int_64);
         } else {
             return int_64;
         }
     } else {
         if (need_bswap) {
-            return @byteSwap(int_32);
+            return @byte_swap(int_32);
         } else {
             return int_32;
         }

@@ -49,7 +49,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
             return if (alignment) |a| ([:s]align(a) T) else [:s]T;
         }
 
-        /// Deinitialize with `deinit` or use `toOwnedSlice`.
+        /// Deinitialize with `deinit` or use `to_owned_slice`.
         pub fn init(allocator: Allocator) Self {
             return Self{
                 .items = &[_]T{},
@@ -60,23 +60,23 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
 
         /// Initialize with capacity to hold `num` elements.
         /// The resulting capacity will equal `num` exactly.
-        /// Deinitialize with `deinit` or use `toOwnedSlice`.
+        /// Deinitialize with `deinit` or use `to_owned_slice`.
         pub fn init_capacity(allocator: Allocator, num: usize) Allocator.Error!Self {
             var self = Self.init(allocator);
-            try self.ensureTotalCapacityPrecise(num);
+            try self.ensure_total_capacity_precise(num);
             return self;
         }
 
         /// Release all allocated memory.
         pub fn deinit(self: Self) void {
-            if (@sizeOf(T) > 0) {
-                self.allocator.free(self.allocatedSlice());
+            if (@size_of(T) > 0) {
+                self.allocator.free(self.allocated_slice());
             }
         }
 
         /// ArrayList takes ownership of the passed in slice. The slice must have been
         /// allocated with `allocator`.
-        /// Deinitialize with `deinit` or use `toOwnedSlice`.
+        /// Deinitialize with `deinit` or use `to_owned_slice`.
         pub fn from_owned_slice(allocator: Allocator, slice: Slice) Self {
             return Self{
                 .items = slice,
@@ -87,7 +87,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
 
         /// ArrayList takes ownership of the passed in slice. The slice must have been
         /// allocated with `allocator`.
-        /// Deinitialize with `deinit` or use `toOwnedSlice`.
+        /// Deinitialize with `deinit` or use `to_owned_slice`.
         pub fn from_owned_slice_sentinel(allocator: Allocator, comptime sentinel: T, slice: [:sentinel]T) Self {
             return Self{
                 .items = slice,
@@ -110,33 +110,33 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         pub fn to_owned_slice(self: *Self) Allocator.Error!Slice {
             const allocator = self.allocator;
 
-            const old_memory = self.allocatedSlice();
+            const old_memory = self.allocated_slice();
             if (allocator.resize(old_memory, self.items.len)) {
                 const result = self.items;
                 self.* = init(allocator);
                 return result;
             }
 
-            const new_memory = try allocator.alignedAlloc(T, alignment, self.items.len);
+            const new_memory = try allocator.aligned_alloc(T, alignment, self.items.len);
             @memcpy(new_memory, self.items);
             @memset(self.items, undefined);
-            self.clearAndFree();
+            self.clear_and_free();
             return new_memory;
         }
 
         /// The caller owns the returned memory. Empties this ArrayList.
         pub fn to_owned_slice_sentinel(self: *Self, comptime sentinel: T) Allocator.Error!SentinelSlice(sentinel) {
             // This addition can never overflow because `self.items` can never occupy the whole address space
-            try self.ensureTotalCapacityPrecise(self.items.len + 1);
-            self.appendAssumeCapacity(sentinel);
-            const result = try self.toOwnedSlice();
+            try self.ensure_total_capacity_precise(self.items.len + 1);
+            self.append_assume_capacity(sentinel);
+            const result = try self.to_owned_slice();
             return result[0 .. result.len - 1 :sentinel];
         }
 
         /// Creates a copy of this ArrayList, using the same allocator.
         pub fn clone(self: Self) Allocator.Error!Self {
-            var cloned = try Self.initCapacity(self.allocator, self.capacity);
-            cloned.appendSliceAssumeCapacity(self.items);
+            var cloned = try Self.init_capacity(self.allocator, self.capacity);
+            cloned.append_slice_assume_capacity(self.items);
             return cloned;
         }
 
@@ -146,13 +146,13 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// Invalidates element pointers if additional memory is needed.
         /// Asserts that the index is in bounds or equal to the length.
         pub fn insert(self: *Self, i: usize, item: T) Allocator.Error!void {
-            const dst = try self.addManyAt(i, 1);
+            const dst = try self.add_many_at(i, 1);
             dst[0] = item;
         }
 
         /// Insert `item` at index `i`. Moves `list[i .. list.len]` to higher indices to make room.
         /// If `i` is equal to the length of the list this operation is
-        /// equivalent to appendAssumeCapacity.
+        /// equivalent to append_assume_capacity.
         /// This operation is O(N).
         /// Asserts that there is enough capacity for the new item.
         /// Asserts that the index is in bounds or equal to the length.
@@ -160,7 +160,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
             assert(self.items.len < self.capacity);
             self.items.len += 1;
 
-            mem.copyBackwards(T, self.items[i + 1 .. self.items.len], self.items[i .. self.items.len - 1]);
+            mem.copy_backwards(T, self.items[i + 1 .. self.items.len], self.items[i .. self.items.len - 1]);
             self.items[i] = item;
         }
 
@@ -173,26 +173,26 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// increased to accomodate the new elements.
         /// Asserts that the index is in bounds or equal to the length.
         pub fn add_many_at(self: *Self, index: usize, count: usize) Allocator.Error![]T {
-            const new_len = try addOrOom(self.items.len, count);
+            const new_len = try add_or_oom(self.items.len, count);
 
             if (self.capacity >= new_len)
-                return addManyAtAssumeCapacity(self, index, count);
+                return add_many_at_assume_capacity(self, index, count);
 
             // Here we avoid copying allocated but unused bytes by
             // attempting a resize in place, and falling back to allocating
             // a new buffer and doing our own copy. With a realloc() call,
             // the allocator implementation would pointlessly copy our
             // extra capacity.
-            const new_capacity = growCapacity(self.capacity, new_len);
-            const old_memory = self.allocatedSlice();
+            const new_capacity = grow_capacity(self.capacity, new_len);
+            const old_memory = self.allocated_slice();
             if (self.allocator.resize(old_memory, new_capacity)) {
                 self.capacity = new_capacity;
-                return addManyAtAssumeCapacity(self, index, count);
+                return add_many_at_assume_capacity(self, index, count);
             }
 
-            // Make a new allocation, avoiding `ensureTotalCapacity` in order
+            // Make a new allocation, avoiding `ensure_total_capacity` in order
             // to avoid extra memory copies.
-            const new_memory = try self.allocator.alignedAlloc(T, alignment, new_capacity);
+            const new_memory = try self.allocator.aligned_alloc(T, alignment, new_capacity);
             const to_move = self.items[index..];
             @memcpy(new_memory[0..index], self.items[0..index]);
             @memcpy(new_memory[index + count ..][0..to_move.len], to_move);
@@ -217,7 +217,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
             assert(self.capacity >= new_len);
             const to_move = self.items[index..];
             self.items.len = new_len;
-            mem.copyBackwards(T, self.items[index + count ..], to_move);
+            mem.copy_backwards(T, self.items[index + count ..], to_move);
             const result = self.items[index..][0..count];
             @memset(result, undefined);
             return result;
@@ -234,7 +234,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
             index: usize,
             items: []const T,
         ) Allocator.Error!void {
-            const dst = try self.addManyAt(index, items.len);
+            const dst = try self.add_many_at(index, items.len);
             @memcpy(dst, items);
         }
 
@@ -242,24 +242,24 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// Invalidates element pointers if additional capacity is allocated.
         /// Asserts that the range is in bounds.
         pub fn replace_range(self: *Self, start: usize, len: usize, new_items: []const T) Allocator.Error!void {
-            var unmanaged = self.moveToUnmanaged();
-            defer self.* = unmanaged.toManaged(self.allocator);
-            return unmanaged.replaceRange(self.allocator, start, len, new_items);
+            var unmanaged = self.move_to_unmanaged();
+            defer self.* = unmanaged.to_managed(self.allocator);
+            return unmanaged.replace_range(self.allocator, start, len, new_items);
         }
 
         /// Grows or shrinks the list as necessary.
         /// Never invalidates element pointers.
         /// Asserts the capacity is enough for additional items.
         pub fn replace_range_assume_capacity(self: *Self, start: usize, len: usize, new_items: []const T) void {
-            var unmanaged = self.moveToUnmanaged();
-            defer self.* = unmanaged.toManaged(self.allocator);
-            return unmanaged.replaceRangeAssumeCapacity(start, len, new_items);
+            var unmanaged = self.move_to_unmanaged();
+            defer self.* = unmanaged.to_managed(self.allocator);
+            return unmanaged.replace_range_assume_capacity(start, len, new_items);
         }
 
         /// Extends the list by 1 element. Allocates more memory as necessary.
         /// Invalidates element pointers if additional memory is needed.
         pub fn append(self: *Self, item: T) Allocator.Error!void {
-            const new_item_ptr = try self.addOne();
+            const new_item_ptr = try self.add_one();
             new_item_ptr.* = item;
         }
 
@@ -267,7 +267,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// Never invalidates element pointers.
         /// Asserts that the list can hold one additional item.
         pub fn append_assume_capacity(self: *Self, item: T) void {
-            const new_item_ptr = self.addOneAssumeCapacity();
+            const new_item_ptr = self.add_one_assume_capacity();
             new_item_ptr.* = item;
         }
 
@@ -275,19 +275,19 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// `i` forward, and return the removed element.
         /// Invalidates element pointers to end of list.
         /// This operation is O(N).
-        /// This preserves item order. Use `swapRemove` if order preservation is not important.
+        /// This preserves item order. Use `swap_remove` if order preservation is not important.
         /// Asserts that the index is in bounds.
         /// Asserts that the list is not empty.
         pub fn ordered_remove(self: *Self, i: usize) T {
             const old_item = self.items[i];
-            self.replaceRangeAssumeCapacity(i, 1, &.{});
+            self.replace_range_assume_capacity(i, 1, &.{});
             return old_item;
         }
 
         /// Removes the element at the specified index and returns it.
         /// The empty slot is filled from the end of the list.
         /// This operation is O(1).
-        /// This may not preserve item order. Use `orderedRemove` if you need to preserve order.
+        /// This may not preserve item order. Use `ordered_remove` if you need to preserve order.
         /// Asserts that the list is not empty.
         /// Asserts that the index is in bounds.
         pub fn swap_remove(self: *Self, i: usize) T {
@@ -302,8 +302,8 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// memory as necessary.
         /// Invalidates element pointers if additional memory is needed.
         pub fn append_slice(self: *Self, items: []const T) Allocator.Error!void {
-            try self.ensureUnusedCapacity(items.len);
-            self.appendSliceAssumeCapacity(items);
+            try self.ensure_unused_capacity(items.len);
+            self.append_slice_assume_capacity(items);
         }
 
         /// Append the slice of items to the list.
@@ -319,17 +319,17 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
 
         /// Append an unaligned slice of items to the list. Allocates more
         /// memory as necessary. Only call this function if calling
-        /// `appendSlice` instead would be a compile error.
+        /// `append_slice` instead would be a compile error.
         /// Invalidates element pointers if additional memory is needed.
         pub fn append_unaligned_slice(self: *Self, items: []align(1) const T) Allocator.Error!void {
-            try self.ensureUnusedCapacity(items.len);
-            self.appendUnalignedSliceAssumeCapacity(items);
+            try self.ensure_unused_capacity(items.len);
+            self.append_unaligned_slice_assume_capacity(items);
         }
 
         /// Append the slice of items to the list.
         /// Never invalidates element pointers.
         /// This function is only needed when calling
-        /// `appendSliceAssumeCapacity` instead would be a compile error due to the
+        /// `append_slice_assume_capacity` instead would be a compile error due to the
         /// alignment of the `items` parameter.
         /// Asserts that the list can hold the additional items.
         pub fn append_unaligned_slice_assume_capacity(self: *Self, items: []align(1) const T) void {
@@ -341,10 +341,10 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         }
 
         pub const Writer = if (T != u8)
-            @compileError("The Writer interface is only defined for ArrayList(u8) " ++
-                "but the given type is ArrayList(" ++ @typeName(T) ++ ")")
+            @compile_error("The Writer interface is only defined for ArrayList(u8) " ++
+                "but the given type is ArrayList(" ++ @type_name(T) ++ ")")
         else
-            std.io.Writer(*Self, Allocator.Error, appendWrite);
+            std.io.Writer(*Self, Allocator.Error, append_write);
 
         /// Initializes a Writer which will append to the list.
         pub fn writer(self: *Self) Writer {
@@ -355,7 +355,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// as `m.len`. The purpose of this function existing is to match `std.io.Writer` API.
         /// Invalidates element pointers if additional memory is needed.
         fn append_write(self: *Self, m: []const u8) Allocator.Error!usize {
-            try self.appendSlice(m);
+            try self.append_slice(m);
             return m.len;
         }
 
@@ -366,7 +366,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// have a more optimal memset codegen in case it has a repeated byte pattern.
         pub inline fn append_ntimes(self: *Self, value: T, n: usize) Allocator.Error!void {
             const old_len = self.items.len;
-            try self.resize(try addOrOom(old_len, n));
+            try self.resize(try add_or_oom(old_len, n));
             @memset(self.items[old_len..self.items.len], value);
         }
 
@@ -386,7 +386,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// Additional elements contain the value `undefined`.
         /// Invalidates element pointers if additional memory is needed.
         pub fn resize(self: *Self, new_len: usize) Allocator.Error!void {
-            try self.ensureTotalCapacity(new_len);
+            try self.ensure_total_capacity(new_len);
             self.items.len = new_len;
         }
 
@@ -394,9 +394,9 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// May invalidate element pointers.
         /// Asserts that the new length is less than or equal to the previous length.
         pub fn shrink_and_free(self: *Self, new_len: usize) void {
-            var unmanaged = self.moveToUnmanaged();
-            unmanaged.shrinkAndFree(self.allocator, new_len);
-            self.* = unmanaged.toManaged(self.allocator);
+            var unmanaged = self.move_to_unmanaged();
+            unmanaged.shrink_and_free(self.allocator, new_len);
+            self.* = unmanaged.to_managed(self.allocator);
         }
 
         /// Reduce length to `new_len`.
@@ -414,7 +414,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
 
         /// Invalidates all element pointers.
         pub fn clear_and_free(self: *Self) void {
-            self.allocator.free(self.allocatedSlice());
+            self.allocator.free(self.allocated_slice());
             self.items.len = 0;
             self.capacity = 0;
         }
@@ -423,23 +423,23 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// modify the array so that it can hold at least `new_capacity` items.
         /// Invalidates element pointers if additional memory is needed.
         pub fn ensure_total_capacity(self: *Self, new_capacity: usize) Allocator.Error!void {
-            if (@sizeOf(T) == 0) {
-                self.capacity = math.maxInt(usize);
+            if (@size_of(T) == 0) {
+                self.capacity = math.max_int(usize);
                 return;
             }
 
             if (self.capacity >= new_capacity) return;
 
-            const better_capacity = growCapacity(self.capacity, new_capacity);
-            return self.ensureTotalCapacityPrecise(better_capacity);
+            const better_capacity = grow_capacity(self.capacity, new_capacity);
+            return self.ensure_total_capacity_precise(better_capacity);
         }
 
         /// If the current capacity is less than `new_capacity`, this function will
         /// modify the array so that it can hold exactly `new_capacity` items.
         /// Invalidates element pointers if additional memory is needed.
         pub fn ensure_total_capacity_precise(self: *Self, new_capacity: usize) Allocator.Error!void {
-            if (@sizeOf(T) == 0) {
-                self.capacity = math.maxInt(usize);
+            if (@size_of(T) == 0) {
+                self.capacity = math.max_int(usize);
                 return;
             }
 
@@ -450,11 +450,11 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
             // a new buffer and doing our own copy. With a realloc() call,
             // the allocator implementation would pointlessly copy our
             // extra capacity.
-            const old_memory = self.allocatedSlice();
+            const old_memory = self.allocated_slice();
             if (self.allocator.resize(old_memory, new_capacity)) {
                 self.capacity = new_capacity;
             } else {
-                const new_memory = try self.allocator.alignedAlloc(T, alignment, new_capacity);
+                const new_memory = try self.allocator.aligned_alloc(T, alignment, new_capacity);
                 @memcpy(new_memory[0..self.items.len], self.items);
                 self.allocator.free(old_memory);
                 self.items.ptr = new_memory.ptr;
@@ -465,7 +465,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// Modify the array so that it can hold at least `additional_count` **more** items.
         /// Invalidates element pointers if additional memory is needed.
         pub fn ensure_unused_capacity(self: *Self, additional_count: usize) Allocator.Error!void {
-            return self.ensureTotalCapacity(try addOrOom(self.items.len, additional_count));
+            return self.ensure_total_capacity(try add_or_oom(self.items.len, additional_count));
         }
 
         /// Increases the array's length to match the full capacity that is already allocated.
@@ -480,8 +480,8 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         pub fn add_one(self: *Self) Allocator.Error!*T {
             // This can never overflow because `self.items` can never occupy the whole address space
             const newlen = self.items.len + 1;
-            try self.ensureTotalCapacity(newlen);
-            return self.addOneAssumeCapacity();
+            try self.ensure_total_capacity(newlen);
+            return self.add_one_assume_capacity();
         }
 
         /// Increase length by 1, returning pointer to the new item.
@@ -500,7 +500,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// Resizes list if `self.capacity` is not large enough.
         pub fn add_many_as_array(self: *Self, comptime n: usize) Allocator.Error!*[n]T {
             const prev_len = self.items.len;
-            try self.resize(try addOrOom(self.items.len, n));
+            try self.resize(try add_or_oom(self.items.len, n));
             return self.items[prev_len..][0..n];
         }
 
@@ -522,7 +522,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// Resizes list if `self.capacity` is not large enough.
         pub fn add_many_as_slice(self: *Self, n: usize) Allocator.Error![]T {
             const prev_len = self.items.len;
-            try self.resize(try addOrOom(self.items.len, n));
+            try self.resize(try add_or_oom(self.items.len, n));
             return self.items[prev_len..][0..n];
         }
 
@@ -567,7 +567,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// Note that such an operation must be followed up with a direct
         /// modification of `self.items.len`.
         pub fn unused_capacity_slice(self: Self) Slice {
-            return self.allocatedSlice()[self.items.len..];
+            return self.allocated_slice()[self.items.len..];
         }
 
         /// Returns the last element from the list.
@@ -580,7 +580,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
         /// Returns the last element from the list, or `null` if list is empty.
         pub fn get_last_or_null(self: Self) ?T {
             if (self.items.len == 0) return null;
-            return self.getLast();
+            return self.get_last();
         }
     };
 }
@@ -588,7 +588,7 @@ pub fn ArrayListAligned(comptime T: type, comptime alignment: ?u29) type {
 /// An ArrayList, but the allocator is passed as a parameter to the relevant functions
 /// rather than stored in the struct itself. The same allocator must be used throughout
 /// the entire lifetime of an ArrayListUnmanaged. Initialize directly or with
-/// `initCapacity`, and deinitialize with `deinit` or use `toOwnedSlice`.
+/// `init_capacity`, and deinitialize with `deinit` or use `to_owned_slice`.
 pub fn ArrayListUnmanaged(comptime T: type) type {
     return ArrayListAlignedUnmanaged(T, null);
 }
@@ -598,8 +598,8 @@ pub fn ArrayListUnmanaged(comptime T: type) type {
 /// addresses. If the specified alignment is `null`, then `@alignOf(T)` is used.
 ///
 /// Functions that potentially allocate memory accept an `Allocator` parameter.
-/// Initialize directly or with `initCapacity`, and deinitialize with `deinit`
-/// or use `toOwnedSlice`.
+/// Initialize directly or with `init_capacity`, and deinitialize with `deinit`
+/// or use `to_owned_slice`.
 pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) type {
     if (alignment) |a| {
         if (a == @alignOf(T)) {
@@ -628,10 +628,10 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
 
         /// Initialize with capacity to hold `num` elements.
         /// The resulting capacity will equal `num` exactly.
-        /// Deinitialize with `deinit` or use `toOwnedSlice`.
+        /// Deinitialize with `deinit` or use `to_owned_slice`.
         pub fn init_capacity(allocator: Allocator, num: usize) Allocator.Error!Self {
             var self = Self{};
-            try self.ensureTotalCapacityPrecise(allocator, num);
+            try self.ensure_total_capacity_precise(allocator, num);
             return self;
         }
 
@@ -648,7 +648,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
 
         /// Release all allocated memory.
         pub fn deinit(self: *Self, allocator: Allocator) void {
-            allocator.free(self.allocatedSlice());
+            allocator.free(self.allocated_slice());
             self.* = undefined;
         }
 
@@ -660,7 +660,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
 
         /// ArrayListUnmanaged takes ownership of the passed in slice. The slice must have been
         /// allocated with `allocator`.
-        /// Deinitialize with `deinit` or use `toOwnedSlice`.
+        /// Deinitialize with `deinit` or use `to_owned_slice`.
         pub fn from_owned_slice(slice: Slice) Self {
             return Self{
                 .items = slice,
@@ -670,7 +670,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
 
         /// ArrayListUnmanaged takes ownership of the passed in slice. The slice must have been
         /// allocated with `allocator`.
-        /// Deinitialize with `deinit` or use `toOwnedSlice`.
+        /// Deinitialize with `deinit` or use `to_owned_slice`.
         pub fn from_owned_slice_sentinel(comptime sentinel: T, slice: [:sentinel]T) Self {
             return Self{
                 .items = slice,
@@ -681,33 +681,33 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// The caller owns the returned memory. Empties this ArrayList.
         /// Its capacity is cleared, making deinit() safe but unnecessary to call.
         pub fn to_owned_slice(self: *Self, allocator: Allocator) Allocator.Error!Slice {
-            const old_memory = self.allocatedSlice();
+            const old_memory = self.allocated_slice();
             if (allocator.resize(old_memory, self.items.len)) {
                 const result = self.items;
                 self.* = .{};
                 return result;
             }
 
-            const new_memory = try allocator.alignedAlloc(T, alignment, self.items.len);
+            const new_memory = try allocator.aligned_alloc(T, alignment, self.items.len);
             @memcpy(new_memory, self.items);
             @memset(self.items, undefined);
-            self.clearAndFree(allocator);
+            self.clear_and_free(allocator);
             return new_memory;
         }
 
         /// The caller owns the returned memory. ArrayList becomes empty.
         pub fn to_owned_slice_sentinel(self: *Self, allocator: Allocator, comptime sentinel: T) Allocator.Error!SentinelSlice(sentinel) {
             // This addition can never overflow because `self.items` can never occupy the whole address space
-            try self.ensureTotalCapacityPrecise(allocator, self.items.len + 1);
-            self.appendAssumeCapacity(sentinel);
-            const result = try self.toOwnedSlice(allocator);
+            try self.ensure_total_capacity_precise(allocator, self.items.len + 1);
+            self.append_assume_capacity(sentinel);
+            const result = try self.to_owned_slice(allocator);
             return result[0 .. result.len - 1 :sentinel];
         }
 
         /// Creates a copy of this ArrayList.
         pub fn clone(self: Self, allocator: Allocator) Allocator.Error!Self {
-            var cloned = try Self.initCapacity(allocator, self.capacity);
-            cloned.appendSliceAssumeCapacity(self.items);
+            var cloned = try Self.init_capacity(allocator, self.capacity);
+            cloned.append_slice_assume_capacity(self.items);
             return cloned;
         }
 
@@ -717,7 +717,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// Invalidates element pointers if additional memory is needed.
         /// Asserts that the index is in bounds or equal to the length.
         pub fn insert(self: *Self, allocator: Allocator, i: usize, item: T) Allocator.Error!void {
-            const dst = try self.addManyAt(allocator, i, 1);
+            const dst = try self.add_many_at(allocator, i, 1);
             dst[0] = item;
         }
 
@@ -730,7 +730,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
             assert(self.items.len < self.capacity);
             self.items.len += 1;
 
-            mem.copyBackwards(T, self.items[i + 1 .. self.items.len], self.items[i .. self.items.len - 1]);
+            mem.copy_backwards(T, self.items[i + 1 .. self.items.len], self.items[i .. self.items.len - 1]);
             self.items[i] = item;
         }
 
@@ -748,9 +748,9 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
             index: usize,
             count: usize,
         ) Allocator.Error![]T {
-            var managed = self.toManaged(allocator);
-            defer self.* = managed.moveToUnmanaged();
-            return managed.addManyAt(index, count);
+            var managed = self.to_managed(allocator);
+            defer self.* = managed.move_to_unmanaged();
+            return managed.add_many_at(index, count);
         }
 
         /// Add `count` new elements at position `index`, which have
@@ -766,7 +766,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
             assert(self.capacity >= new_len);
             const to_move = self.items[index..];
             self.items.len = new_len;
-            mem.copyBackwards(T, self.items[index + count ..], to_move);
+            mem.copy_backwards(T, self.items[index + count ..], to_move);
             const result = self.items[index..][0..count];
             @memset(result, undefined);
             return result;
@@ -784,7 +784,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
             index: usize,
             items: []const T,
         ) Allocator.Error!void {
-            const dst = try self.addManyAt(
+            const dst = try self.add_many_at(
                 allocator,
                 index,
                 items.len,
@@ -808,9 +808,9 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
                 const first = new_items[0..range.len];
                 const rest = new_items[range.len..];
                 @memcpy(range[0..first.len], first);
-                try self.insertSlice(allocator, after_range, rest);
+                try self.insert_slice(allocator, after_range, rest);
             } else {
-                self.replaceRangeAssumeCapacity(start, len, new_items);
+                self.replace_range_assume_capacity(start, len, new_items);
             }
         }
 
@@ -827,12 +827,12 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
                 const first = new_items[0..range.len];
                 const rest = new_items[range.len..];
                 @memcpy(range[0..first.len], first);
-                const dst = self.addManyAtAssumeCapacity(after_range, rest.len);
+                const dst = self.add_many_at_assume_capacity(after_range, rest.len);
                 @memcpy(dst, rest);
             } else {
                 const extra = range.len - new_items.len;
                 @memcpy(range[0..new_items.len], new_items);
-                std.mem.copyForwards(
+                std.mem.copy_forwards(
                     T,
                     self.items[after_range - extra ..],
                     self.items[after_range..],
@@ -845,7 +845,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// Extend the list by 1 element. Allocates more memory as necessary.
         /// Invalidates element pointers if additional memory is needed.
         pub fn append(self: *Self, allocator: Allocator, item: T) Allocator.Error!void {
-            const new_item_ptr = try self.addOne(allocator);
+            const new_item_ptr = try self.add_one(allocator);
             new_item_ptr.* = item;
         }
 
@@ -853,7 +853,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// Never invalidates element pointers.
         /// Asserts that the list can hold one additional item.
         pub fn append_assume_capacity(self: *Self, item: T) void {
-            const new_item_ptr = self.addOneAssumeCapacity();
+            const new_item_ptr = self.add_one_assume_capacity();
             new_item_ptr.* = item;
         }
 
@@ -864,7 +864,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// Asserts that the index is in bounds.
         pub fn ordered_remove(self: *Self, i: usize) T {
             const old_item = self.items[i];
-            self.replaceRangeAssumeCapacity(i, 1, &.{});
+            self.replace_range_assume_capacity(i, 1, &.{});
             return old_item;
         }
 
@@ -886,8 +886,8 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// memory as necessary.
         /// Invalidates element pointers if additional memory is needed.
         pub fn append_slice(self: *Self, allocator: Allocator, items: []const T) Allocator.Error!void {
-            try self.ensureUnusedCapacity(allocator, items.len);
-            self.appendSliceAssumeCapacity(items);
+            try self.ensure_unused_capacity(allocator, items.len);
+            self.append_slice_assume_capacity(items);
         }
 
         /// Append the slice of items to the list.
@@ -901,16 +901,16 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         }
 
         /// Append the slice of items to the list. Allocates more
-        /// memory as necessary. Only call this function if a call to `appendSlice` instead would
+        /// memory as necessary. Only call this function if a call to `append_slice` instead would
         /// be a compile error.
         /// Invalidates element pointers if additional memory is needed.
         pub fn append_unaligned_slice(self: *Self, allocator: Allocator, items: []align(1) const T) Allocator.Error!void {
-            try self.ensureUnusedCapacity(allocator, items.len);
-            self.appendUnalignedSliceAssumeCapacity(items);
+            try self.ensure_unused_capacity(allocator, items.len);
+            self.append_unaligned_slice_assume_capacity(items);
         }
 
         /// Append an unaligned slice of items to the list.
-        /// Only call this function if a call to `appendSliceAssumeCapacity`
+        /// Only call this function if a call to `append_slice_assume_capacity`
         /// instead would be a compile error.
         /// Asserts that the list can hold the additional items.
         pub fn append_unaligned_slice_assume_capacity(self: *Self, items: []align(1) const T) void {
@@ -927,10 +927,10 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         };
 
         pub const Writer = if (T != u8)
-            @compileError("The Writer interface is only defined for ArrayList(u8) " ++
-                "but the given type is ArrayList(" ++ @typeName(T) ++ ")")
+            @compile_error("The Writer interface is only defined for ArrayList(u8) " ++
+                "but the given type is ArrayList(" ++ @type_name(T) ++ ")")
         else
-            std.io.Writer(WriterContext, Allocator.Error, appendWrite);
+            std.io.Writer(WriterContext, Allocator.Error, append_write);
 
         /// Initializes a Writer which will append to the list.
         pub fn writer(self: *Self, allocator: Allocator) Writer {
@@ -942,11 +942,11 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// existing is to match `std.io.Writer` API.
         /// Invalidates element pointers if additional memory is needed.
         fn append_write(context: WriterContext, m: []const u8) Allocator.Error!usize {
-            try context.self.appendSlice(context.allocator, m);
+            try context.self.append_slice(context.allocator, m);
             return m.len;
         }
 
-        pub const FixedWriter = std.io.Writer(*Self, Allocator.Error, appendWriteFixed);
+        pub const FixedWriter = std.io.Writer(*Self, Allocator.Error, append_write_fixed);
 
         /// Initializes a Writer which will append to the list but will return
         /// `error.OutOfMemory` rather than increasing capacity.
@@ -960,7 +960,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
             if (m.len > available_capacity)
                 return error.OutOfMemory;
 
-            self.appendSliceAssumeCapacity(m);
+            self.append_slice_assume_capacity(m);
             return m.len;
         }
 
@@ -971,7 +971,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// have a more optimal memset codegen in case it has a repeated byte pattern.
         pub inline fn append_ntimes(self: *Self, allocator: Allocator, value: T, n: usize) Allocator.Error!void {
             const old_len = self.items.len;
-            try self.resize(allocator, try addOrOom(old_len, n));
+            try self.resize(allocator, try add_or_oom(old_len, n));
             @memset(self.items[old_len..self.items.len], value);
         }
 
@@ -991,7 +991,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// Additional elements contain the value `undefined`.
         /// Invalidates element pointers if additional memory is needed.
         pub fn resize(self: *Self, allocator: Allocator, new_len: usize) Allocator.Error!void {
-            try self.ensureTotalCapacity(allocator, new_len);
+            try self.ensure_total_capacity(allocator, new_len);
             self.items.len = new_len;
         }
 
@@ -1001,19 +1001,19 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         pub fn shrink_and_free(self: *Self, allocator: Allocator, new_len: usize) void {
             assert(new_len <= self.items.len);
 
-            if (@sizeOf(T) == 0) {
+            if (@size_of(T) == 0) {
                 self.items.len = new_len;
                 return;
             }
 
-            const old_memory = self.allocatedSlice();
+            const old_memory = self.allocated_slice();
             if (allocator.resize(old_memory, new_len)) {
                 self.capacity = new_len;
                 self.items.len = new_len;
                 return;
             }
 
-            const new_memory = allocator.alignedAlloc(T, alignment, new_len) catch |e| switch (e) {
+            const new_memory = allocator.aligned_alloc(T, alignment, new_len) catch |e| switch (e) {
                 error.OutOfMemory => {
                     // No problem, capacity is still correct then.
                     self.items.len = new_len;
@@ -1043,7 +1043,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
 
         /// Invalidates all element pointers.
         pub fn clear_and_free(self: *Self, allocator: Allocator) void {
-            allocator.free(self.allocatedSlice());
+            allocator.free(self.allocated_slice());
             self.items.len = 0;
             self.capacity = 0;
         }
@@ -1054,16 +1054,16 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         pub fn ensure_total_capacity(self: *Self, allocator: Allocator, new_capacity: usize) Allocator.Error!void {
             if (self.capacity >= new_capacity) return;
 
-            const better_capacity = growCapacity(self.capacity, new_capacity);
-            return self.ensureTotalCapacityPrecise(allocator, better_capacity);
+            const better_capacity = grow_capacity(self.capacity, new_capacity);
+            return self.ensure_total_capacity_precise(allocator, better_capacity);
         }
 
         /// If the current capacity is less than `new_capacity`, this function will
         /// modify the array so that it can hold exactly `new_capacity` items.
         /// Invalidates element pointers if additional memory is needed.
         pub fn ensure_total_capacity_precise(self: *Self, allocator: Allocator, new_capacity: usize) Allocator.Error!void {
-            if (@sizeOf(T) == 0) {
-                self.capacity = math.maxInt(usize);
+            if (@size_of(T) == 0) {
+                self.capacity = math.max_int(usize);
                 return;
             }
 
@@ -1074,11 +1074,11 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
             // a new buffer and doing our own copy. With a realloc() call,
             // the allocator implementation would pointlessly copy our
             // extra capacity.
-            const old_memory = self.allocatedSlice();
+            const old_memory = self.allocated_slice();
             if (allocator.resize(old_memory, new_capacity)) {
                 self.capacity = new_capacity;
             } else {
-                const new_memory = try allocator.alignedAlloc(T, alignment, new_capacity);
+                const new_memory = try allocator.aligned_alloc(T, alignment, new_capacity);
                 @memcpy(new_memory[0..self.items.len], self.items);
                 allocator.free(old_memory);
                 self.items.ptr = new_memory.ptr;
@@ -1093,7 +1093,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
             allocator: Allocator,
             additional_count: usize,
         ) Allocator.Error!void {
-            return self.ensureTotalCapacity(allocator, try addOrOom(self.items.len, additional_count));
+            return self.ensure_total_capacity(allocator, try add_or_oom(self.items.len, additional_count));
         }
 
         /// Increases the array's length to match the full capacity that is already allocated.
@@ -1108,8 +1108,8 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         pub fn add_one(self: *Self, allocator: Allocator) Allocator.Error!*T {
             // This can never overflow because `self.items` can never occupy the whole address space
             const newlen = self.items.len + 1;
-            try self.ensureTotalCapacity(allocator, newlen);
-            return self.addOneAssumeCapacity();
+            try self.ensure_total_capacity(allocator, newlen);
+            return self.add_one_assume_capacity();
         }
 
         /// Increase length by 1, returning pointer to the new item.
@@ -1128,7 +1128,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// The returned pointer becomes invalid when the list is resized.
         pub fn add_many_as_array(self: *Self, allocator: Allocator, comptime n: usize) Allocator.Error!*[n]T {
             const prev_len = self.items.len;
-            try self.resize(allocator, try addOrOom(self.items.len, n));
+            try self.resize(allocator, try add_or_oom(self.items.len, n));
             return self.items[prev_len..][0..n];
         }
 
@@ -1150,7 +1150,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// Resizes list if `self.capacity` is not large enough.
         pub fn add_many_as_slice(self: *Self, allocator: Allocator, n: usize) Allocator.Error![]T {
             const prev_len = self.items.len;
-            try self.resize(allocator, try addOrOom(self.items.len, n));
+            try self.resize(allocator, try add_or_oom(self.items.len, n));
             return self.items[prev_len..][0..n];
         }
 
@@ -1194,7 +1194,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// Note that such an operation must be followed up with a direct
         /// modification of `self.items.len`.
         pub fn unused_capacity_slice(self: Self) Slice {
-            return self.allocatedSlice()[self.items.len..];
+            return self.allocated_slice()[self.items.len..];
         }
 
         /// Return the last element from the list.
@@ -1208,7 +1208,7 @@ pub fn ArrayListAlignedUnmanaged(comptime T: type, comptime alignment: ?u29) typ
         /// return `null` if list is empty.
         pub fn get_last_or_null(self: Self) ?T {
             if (self.items.len == 0) return null;
-            return self.getLast();
+            return self.get_last();
         }
     };
 }
@@ -1226,7 +1226,7 @@ fn grow_capacity(current: usize, minimum: usize) usize {
 
 /// Integer addition returning `error.OutOfMemory` on overflow.
 fn add_or_oom(a: usize, b: usize) error{OutOfMemory}!usize {
-    const result, const overflow = @addWithOverflow(a, b);
+    const result, const overflow = @add_with_overflow(a, b);
     if (overflow != 0) return error.OutOfMemory;
     return result;
 }
@@ -1248,16 +1248,16 @@ test "init" {
     }
 }
 
-test "initCapacity" {
+test "init_capacity" {
     const a = testing.allocator;
     {
-        var list = try ArrayList(i8).initCapacity(a, 200);
+        var list = try ArrayList(i8).init_capacity(a, 200);
         defer list.deinit();
         try testing.expect(list.items.len == 0);
         try testing.expect(list.capacity >= 200);
     }
     {
-        var list = try ArrayListUnmanaged(i8).initCapacity(a, 200);
+        var list = try ArrayListUnmanaged(i8).init_capacity(a, 200);
         defer list.deinit(a);
         try testing.expect(list.items.len == 0);
         try testing.expect(list.capacity >= 200);
@@ -1275,15 +1275,15 @@ test "clone" {
         const cloned = try array.clone();
         defer cloned.deinit();
 
-        try testing.expectEqualSlices(i32, array.items, cloned.items);
-        try testing.expectEqual(array.allocator, cloned.allocator);
+        try testing.expect_equal_slices(i32, array.items, cloned.items);
+        try testing.expect_equal(array.allocator, cloned.allocator);
         try testing.expect(cloned.capacity >= array.capacity);
 
         array.deinit();
 
-        try testing.expectEqual(@as(i32, -1), cloned.items[0]);
-        try testing.expectEqual(@as(i32, 3), cloned.items[1]);
-        try testing.expectEqual(@as(i32, 5), cloned.items[2]);
+        try testing.expect_equal(@as(i32, -1), cloned.items[0]);
+        try testing.expect_equal(@as(i32, 3), cloned.items[1]);
+        try testing.expect_equal(@as(i32, 5), cloned.items[2]);
     }
     {
         var array = ArrayListUnmanaged(i32){};
@@ -1294,14 +1294,14 @@ test "clone" {
         var cloned = try array.clone(a);
         defer cloned.deinit(a);
 
-        try testing.expectEqualSlices(i32, array.items, cloned.items);
+        try testing.expect_equal_slices(i32, array.items, cloned.items);
         try testing.expect(cloned.capacity >= array.capacity);
 
         array.deinit(a);
 
-        try testing.expectEqual(@as(i32, -1), cloned.items[0]);
-        try testing.expectEqual(@as(i32, 3), cloned.items[1]);
-        try testing.expectEqual(@as(i32, 5), cloned.items[2]);
+        try testing.expect_equal(@as(i32, -1), cloned.items[0]);
+        try testing.expect_equal(@as(i32, 3), cloned.items[1]);
+        try testing.expect_equal(@as(i32, 5), cloned.items[2]);
     }
 }
 
@@ -1314,25 +1314,25 @@ test "basic" {
         {
             var i: usize = 0;
             while (i < 10) : (i += 1) {
-                list.append(@as(i32, @intCast(i + 1))) catch unreachable;
+                list.append(@as(i32, @int_cast(i + 1))) catch unreachable;
             }
         }
 
         {
             var i: usize = 0;
             while (i < 10) : (i += 1) {
-                try testing.expect(list.items[i] == @as(i32, @intCast(i + 1)));
+                try testing.expect(list.items[i] == @as(i32, @int_cast(i + 1)));
             }
         }
 
         for (list.items, 0..) |v, i| {
-            try testing.expect(v == @as(i32, @intCast(i + 1)));
+            try testing.expect(v == @as(i32, @int_cast(i + 1)));
         }
 
         try testing.expect(list.pop() == 10);
         try testing.expect(list.items.len == 9);
 
-        list.appendSlice(&[_]i32{ 1, 2, 3 }) catch unreachable;
+        list.append_slice(&[_]i32{ 1, 2, 3 }) catch unreachable;
         try testing.expect(list.items.len == 12);
         try testing.expect(list.pop() == 3);
         try testing.expect(list.pop() == 2);
@@ -1340,14 +1340,14 @@ test "basic" {
         try testing.expect(list.items.len == 9);
 
         var unaligned: [3]i32 align(1) = [_]i32{ 4, 5, 6 };
-        list.appendUnalignedSlice(&unaligned) catch unreachable;
+        list.append_unaligned_slice(&unaligned) catch unreachable;
         try testing.expect(list.items.len == 12);
         try testing.expect(list.pop() == 6);
         try testing.expect(list.pop() == 5);
         try testing.expect(list.pop() == 4);
         try testing.expect(list.items.len == 9);
 
-        list.appendSlice(&[_]i32{}) catch unreachable;
+        list.append_slice(&[_]i32{}) catch unreachable;
         try testing.expect(list.items.len == 9);
 
         // can only set on indices < self.items.len
@@ -1364,25 +1364,25 @@ test "basic" {
         {
             var i: usize = 0;
             while (i < 10) : (i += 1) {
-                list.append(a, @as(i32, @intCast(i + 1))) catch unreachable;
+                list.append(a, @as(i32, @int_cast(i + 1))) catch unreachable;
             }
         }
 
         {
             var i: usize = 0;
             while (i < 10) : (i += 1) {
-                try testing.expect(list.items[i] == @as(i32, @intCast(i + 1)));
+                try testing.expect(list.items[i] == @as(i32, @int_cast(i + 1)));
             }
         }
 
         for (list.items, 0..) |v, i| {
-            try testing.expect(v == @as(i32, @intCast(i + 1)));
+            try testing.expect(v == @as(i32, @int_cast(i + 1)));
         }
 
         try testing.expect(list.pop() == 10);
         try testing.expect(list.items.len == 9);
 
-        list.appendSlice(a, &[_]i32{ 1, 2, 3 }) catch unreachable;
+        list.append_slice(a, &[_]i32{ 1, 2, 3 }) catch unreachable;
         try testing.expect(list.items.len == 12);
         try testing.expect(list.pop() == 3);
         try testing.expect(list.pop() == 2);
@@ -1390,14 +1390,14 @@ test "basic" {
         try testing.expect(list.items.len == 9);
 
         var unaligned: [3]i32 align(1) = [_]i32{ 4, 5, 6 };
-        list.appendUnalignedSlice(a, &unaligned) catch unreachable;
+        list.append_unaligned_slice(a, &unaligned) catch unreachable;
         try testing.expect(list.items.len == 12);
         try testing.expect(list.pop() == 6);
         try testing.expect(list.pop() == 5);
         try testing.expect(list.pop() == 4);
         try testing.expect(list.items.len == 9);
 
-        list.appendSlice(a, &[_]i32{}) catch unreachable;
+        list.append_slice(a, &[_]i32{}) catch unreachable;
         try testing.expect(list.items.len == 9);
 
         // can only set on indices < self.items.len
@@ -1409,45 +1409,45 @@ test "basic" {
     }
 }
 
-test "appendNTimes" {
+test "append_ntimes" {
     const a = testing.allocator;
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
 
-        try list.appendNTimes(2, 10);
-        try testing.expectEqual(@as(usize, 10), list.items.len);
+        try list.append_ntimes(2, 10);
+        try testing.expect_equal(@as(usize, 10), list.items.len);
         for (list.items) |element| {
-            try testing.expectEqual(@as(i32, 2), element);
+            try testing.expect_equal(@as(i32, 2), element);
         }
     }
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
 
-        try list.appendNTimes(a, 2, 10);
-        try testing.expectEqual(@as(usize, 10), list.items.len);
+        try list.append_ntimes(a, 2, 10);
+        try testing.expect_equal(@as(usize, 10), list.items.len);
         for (list.items) |element| {
-            try testing.expectEqual(@as(i32, 2), element);
+            try testing.expect_equal(@as(i32, 2), element);
         }
     }
 }
 
-test "appendNTimes with failing allocator" {
+test "append_ntimes with failing allocator" {
     const a = testing.failing_allocator;
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
-        try testing.expectError(error.OutOfMemory, list.appendNTimes(2, 10));
+        try testing.expect_error(error.OutOfMemory, list.append_ntimes(2, 10));
     }
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
-        try testing.expectError(error.OutOfMemory, list.appendNTimes(a, 2, 10));
+        try testing.expect_error(error.OutOfMemory, list.append_ntimes(a, 2, 10));
     }
 }
 
-test "orderedRemove" {
+test "ordered_remove" {
     const a = testing.allocator;
     {
         var list = ArrayList(i32).init(a);
@@ -1462,18 +1462,18 @@ test "orderedRemove" {
         try list.append(7);
 
         //remove from middle
-        try testing.expectEqual(@as(i32, 4), list.orderedRemove(3));
-        try testing.expectEqual(@as(i32, 5), list.items[3]);
-        try testing.expectEqual(@as(usize, 6), list.items.len);
+        try testing.expect_equal(@as(i32, 4), list.ordered_remove(3));
+        try testing.expect_equal(@as(i32, 5), list.items[3]);
+        try testing.expect_equal(@as(usize, 6), list.items.len);
 
         //remove from end
-        try testing.expectEqual(@as(i32, 7), list.orderedRemove(5));
-        try testing.expectEqual(@as(usize, 5), list.items.len);
+        try testing.expect_equal(@as(i32, 7), list.ordered_remove(5));
+        try testing.expect_equal(@as(usize, 5), list.items.len);
 
         //remove from front
-        try testing.expectEqual(@as(i32, 1), list.orderedRemove(0));
-        try testing.expectEqual(@as(i32, 2), list.items[0]);
-        try testing.expectEqual(@as(usize, 4), list.items.len);
+        try testing.expect_equal(@as(i32, 1), list.ordered_remove(0));
+        try testing.expect_equal(@as(i32, 2), list.items[0]);
+        try testing.expect_equal(@as(usize, 4), list.items.len);
     }
     {
         var list = ArrayListUnmanaged(i32){};
@@ -1488,38 +1488,38 @@ test "orderedRemove" {
         try list.append(a, 7);
 
         //remove from middle
-        try testing.expectEqual(@as(i32, 4), list.orderedRemove(3));
-        try testing.expectEqual(@as(i32, 5), list.items[3]);
-        try testing.expectEqual(@as(usize, 6), list.items.len);
+        try testing.expect_equal(@as(i32, 4), list.ordered_remove(3));
+        try testing.expect_equal(@as(i32, 5), list.items[3]);
+        try testing.expect_equal(@as(usize, 6), list.items.len);
 
         //remove from end
-        try testing.expectEqual(@as(i32, 7), list.orderedRemove(5));
-        try testing.expectEqual(@as(usize, 5), list.items.len);
+        try testing.expect_equal(@as(i32, 7), list.ordered_remove(5));
+        try testing.expect_equal(@as(usize, 5), list.items.len);
 
         //remove from front
-        try testing.expectEqual(@as(i32, 1), list.orderedRemove(0));
-        try testing.expectEqual(@as(i32, 2), list.items[0]);
-        try testing.expectEqual(@as(usize, 4), list.items.len);
+        try testing.expect_equal(@as(i32, 1), list.ordered_remove(0));
+        try testing.expect_equal(@as(i32, 2), list.items[0]);
+        try testing.expect_equal(@as(usize, 4), list.items.len);
     }
     {
         // remove last item
         var list = ArrayList(i32).init(a);
         defer list.deinit();
         try list.append(1);
-        try testing.expectEqual(@as(i32, 1), list.orderedRemove(0));
-        try testing.expectEqual(@as(usize, 0), list.items.len);
+        try testing.expect_equal(@as(i32, 1), list.ordered_remove(0));
+        try testing.expect_equal(@as(usize, 0), list.items.len);
     }
     {
         // remove last item
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
         try list.append(a, 1);
-        try testing.expectEqual(@as(i32, 1), list.orderedRemove(0));
-        try testing.expectEqual(@as(usize, 0), list.items.len);
+        try testing.expect_equal(@as(i32, 1), list.ordered_remove(0));
+        try testing.expect_equal(@as(usize, 0), list.items.len);
     }
 }
 
-test "swapRemove" {
+test "swap_remove" {
     const a = testing.allocator;
     {
         var list = ArrayList(i32).init(a);
@@ -1534,16 +1534,16 @@ test "swapRemove" {
         try list.append(7);
 
         //remove from middle
-        try testing.expect(list.swapRemove(3) == 4);
+        try testing.expect(list.swap_remove(3) == 4);
         try testing.expect(list.items[3] == 7);
         try testing.expect(list.items.len == 6);
 
         //remove from end
-        try testing.expect(list.swapRemove(5) == 6);
+        try testing.expect(list.swap_remove(5) == 6);
         try testing.expect(list.items.len == 5);
 
         //remove from front
-        try testing.expect(list.swapRemove(0) == 1);
+        try testing.expect(list.swap_remove(0) == 1);
         try testing.expect(list.items[0] == 5);
         try testing.expect(list.items.len == 4);
     }
@@ -1560,16 +1560,16 @@ test "swapRemove" {
         try list.append(a, 7);
 
         //remove from middle
-        try testing.expect(list.swapRemove(3) == 4);
+        try testing.expect(list.swap_remove(3) == 4);
         try testing.expect(list.items[3] == 7);
         try testing.expect(list.items.len == 6);
 
         //remove from end
-        try testing.expect(list.swapRemove(5) == 6);
+        try testing.expect(list.swap_remove(5) == 6);
         try testing.expect(list.items.len == 5);
 
         //remove from front
-        try testing.expect(list.swapRemove(0) == 1);
+        try testing.expect(list.swap_remove(0) == 1);
         try testing.expect(list.items[0] == 5);
         try testing.expect(list.items.len == 4);
     }
@@ -1605,7 +1605,7 @@ test "insert" {
     }
 }
 
-test "insertSlice" {
+test "insert_slice" {
     const a = testing.allocator;
     {
         var list = ArrayList(i32).init(a);
@@ -1615,7 +1615,7 @@ test "insertSlice" {
         try list.append(2);
         try list.append(3);
         try list.append(4);
-        try list.insertSlice(1, &[_]i32{ 9, 8 });
+        try list.insert_slice(1, &[_]i32{ 9, 8 });
         try testing.expect(list.items[0] == 1);
         try testing.expect(list.items[1] == 9);
         try testing.expect(list.items[2] == 8);
@@ -1624,7 +1624,7 @@ test "insertSlice" {
         try testing.expect(list.items[5] == 4);
 
         const items = [_]i32{1};
-        try list.insertSlice(0, items[0..0]);
+        try list.insert_slice(0, items[0..0]);
         try testing.expect(list.items.len == 6);
         try testing.expect(list.items[0] == 1);
     }
@@ -1636,7 +1636,7 @@ test "insertSlice" {
         try list.append(a, 2);
         try list.append(a, 3);
         try list.append(a, 4);
-        try list.insertSlice(a, 1, &[_]i32{ 9, 8 });
+        try list.insert_slice(a, 1, &[_]i32{ 9, 8 });
         try testing.expect(list.items[0] == 1);
         try testing.expect(list.items[1] == 9);
         try testing.expect(list.items[2] == 8);
@@ -1645,32 +1645,32 @@ test "insertSlice" {
         try testing.expect(list.items[5] == 4);
 
         const items = [_]i32{1};
-        try list.insertSlice(a, 0, items[0..0]);
+        try list.insert_slice(a, 0, items[0..0]);
         try testing.expect(list.items.len == 6);
         try testing.expect(list.items[0] == 1);
     }
 }
 
-test "ArrayList.replaceRange" {
+test "ArrayList.replace_range" {
     const a = testing.allocator;
 
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
-        try list.appendSlice(&[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(&[_]i32{ 1, 2, 3, 4, 5 });
 
-        try list.replaceRange(1, 0, &[_]i32{ 0, 0, 0 });
+        try list.replace_range(1, 0, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 2, 3, 4, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 2, 3, 4, 5 }, list.items);
     }
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
-        try list.appendSlice(&[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(&[_]i32{ 1, 2, 3, 4, 5 });
 
-        try list.replaceRange(1, 1, &[_]i32{ 0, 0, 0 });
+        try list.replace_range(1, 1, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(
+        try testing.expect_equal_slices(
             i32,
             &[_]i32{ 1, 0, 0, 0, 3, 4, 5 },
             list.items,
@@ -1679,52 +1679,52 @@ test "ArrayList.replaceRange" {
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
-        try list.appendSlice(&[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(&[_]i32{ 1, 2, 3, 4, 5 });
 
-        try list.replaceRange(1, 2, &[_]i32{ 0, 0, 0 });
+        try list.replace_range(1, 2, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 4, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 4, 5 }, list.items);
     }
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
-        try list.appendSlice(&[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(&[_]i32{ 1, 2, 3, 4, 5 });
 
-        try list.replaceRange(1, 3, &[_]i32{ 0, 0, 0 });
+        try list.replace_range(1, 3, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 5 }, list.items);
     }
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
-        try list.appendSlice(&[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(&[_]i32{ 1, 2, 3, 4, 5 });
 
-        try list.replaceRange(1, 4, &[_]i32{ 0, 0, 0 });
+        try list.replace_range(1, 4, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0 }, list.items);
     }
 }
 
-test "ArrayList.replaceRangeAssumeCapacity" {
+test "ArrayList.replace_range_assume_capacity" {
     const a = testing.allocator;
 
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
-        try list.appendSlice(&[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(&[_]i32{ 1, 2, 3, 4, 5 });
 
-        list.replaceRangeAssumeCapacity(1, 0, &[_]i32{ 0, 0, 0 });
+        list.replace_range_assume_capacity(1, 0, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 2, 3, 4, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 2, 3, 4, 5 }, list.items);
     }
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
-        try list.appendSlice(&[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(&[_]i32{ 1, 2, 3, 4, 5 });
 
-        list.replaceRangeAssumeCapacity(1, 1, &[_]i32{ 0, 0, 0 });
+        list.replace_range_assume_capacity(1, 1, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(
+        try testing.expect_equal_slices(
             i32,
             &[_]i32{ 1, 0, 0, 0, 3, 4, 5 },
             list.items,
@@ -1733,52 +1733,52 @@ test "ArrayList.replaceRangeAssumeCapacity" {
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
-        try list.appendSlice(&[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(&[_]i32{ 1, 2, 3, 4, 5 });
 
-        list.replaceRangeAssumeCapacity(1, 2, &[_]i32{ 0, 0, 0 });
+        list.replace_range_assume_capacity(1, 2, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 4, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 4, 5 }, list.items);
     }
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
-        try list.appendSlice(&[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(&[_]i32{ 1, 2, 3, 4, 5 });
 
-        list.replaceRangeAssumeCapacity(1, 3, &[_]i32{ 0, 0, 0 });
+        list.replace_range_assume_capacity(1, 3, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 5 }, list.items);
     }
     {
         var list = ArrayList(i32).init(a);
         defer list.deinit();
-        try list.appendSlice(&[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(&[_]i32{ 1, 2, 3, 4, 5 });
 
-        list.replaceRangeAssumeCapacity(1, 4, &[_]i32{ 0, 0, 0 });
+        list.replace_range_assume_capacity(1, 4, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0 }, list.items);
     }
 }
 
-test "ArrayListUnmanaged.replaceRange" {
+test "ArrayListUnmanaged.replace_range" {
     const a = testing.allocator;
 
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
-        try list.appendSlice(a, &[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(a, &[_]i32{ 1, 2, 3, 4, 5 });
 
-        try list.replaceRange(a, 1, 0, &[_]i32{ 0, 0, 0 });
+        try list.replace_range(a, 1, 0, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 2, 3, 4, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 2, 3, 4, 5 }, list.items);
     }
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
-        try list.appendSlice(a, &[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(a, &[_]i32{ 1, 2, 3, 4, 5 });
 
-        try list.replaceRange(a, 1, 1, &[_]i32{ 0, 0, 0 });
+        try list.replace_range(a, 1, 1, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(
+        try testing.expect_equal_slices(
             i32,
             &[_]i32{ 1, 0, 0, 0, 3, 4, 5 },
             list.items,
@@ -1787,52 +1787,52 @@ test "ArrayListUnmanaged.replaceRange" {
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
-        try list.appendSlice(a, &[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(a, &[_]i32{ 1, 2, 3, 4, 5 });
 
-        try list.replaceRange(a, 1, 2, &[_]i32{ 0, 0, 0 });
+        try list.replace_range(a, 1, 2, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 4, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 4, 5 }, list.items);
     }
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
-        try list.appendSlice(a, &[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(a, &[_]i32{ 1, 2, 3, 4, 5 });
 
-        try list.replaceRange(a, 1, 3, &[_]i32{ 0, 0, 0 });
+        try list.replace_range(a, 1, 3, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 5 }, list.items);
     }
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
-        try list.appendSlice(a, &[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(a, &[_]i32{ 1, 2, 3, 4, 5 });
 
-        try list.replaceRange(a, 1, 4, &[_]i32{ 0, 0, 0 });
+        try list.replace_range(a, 1, 4, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0 }, list.items);
     }
 }
 
-test "ArrayListUnmanaged.replaceRangeAssumeCapacity" {
+test "ArrayListUnmanaged.replace_range_assume_capacity" {
     const a = testing.allocator;
 
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
-        try list.appendSlice(a, &[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(a, &[_]i32{ 1, 2, 3, 4, 5 });
 
-        list.replaceRangeAssumeCapacity(1, 0, &[_]i32{ 0, 0, 0 });
+        list.replace_range_assume_capacity(1, 0, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 2, 3, 4, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 2, 3, 4, 5 }, list.items);
     }
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
-        try list.appendSlice(a, &[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(a, &[_]i32{ 1, 2, 3, 4, 5 });
 
-        list.replaceRangeAssumeCapacity(1, 1, &[_]i32{ 0, 0, 0 });
+        list.replace_range_assume_capacity(1, 1, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(
+        try testing.expect_equal_slices(
             i32,
             &[_]i32{ 1, 0, 0, 0, 3, 4, 5 },
             list.items,
@@ -1841,29 +1841,29 @@ test "ArrayListUnmanaged.replaceRangeAssumeCapacity" {
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
-        try list.appendSlice(a, &[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(a, &[_]i32{ 1, 2, 3, 4, 5 });
 
-        list.replaceRangeAssumeCapacity(1, 2, &[_]i32{ 0, 0, 0 });
+        list.replace_range_assume_capacity(1, 2, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 4, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 4, 5 }, list.items);
     }
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
-        try list.appendSlice(a, &[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(a, &[_]i32{ 1, 2, 3, 4, 5 });
 
-        list.replaceRangeAssumeCapacity(1, 3, &[_]i32{ 0, 0, 0 });
+        list.replace_range_assume_capacity(1, 3, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0, 5 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0, 5 }, list.items);
     }
     {
         var list = ArrayListUnmanaged(i32){};
         defer list.deinit(a);
-        try list.appendSlice(a, &[_]i32{ 1, 2, 3, 4, 5 });
+        try list.append_slice(a, &[_]i32{ 1, 2, 3, 4, 5 });
 
-        list.replaceRangeAssumeCapacity(1, 4, &[_]i32{ 0, 0, 0 });
+        list.replace_range_assume_capacity(1, 4, &[_]i32{ 0, 0, 0 });
 
-        try testing.expectEqualSlices(i32, &[_]i32{ 1, 0, 0, 0 }, list.items);
+        try testing.expect_equal_slices(i32, &[_]i32{ 1, 0, 0, 0 }, list.items);
     }
 }
 
@@ -1904,19 +1904,19 @@ test "ArrayList(u8) implements writer" {
         const y: i32 = 1234;
         try buffer.writer().print("x: {}\ny: {}\n", .{ x, y });
 
-        try testing.expectEqualSlices(u8, "x: 42\ny: 1234\n", buffer.items);
+        try testing.expect_equal_slices(u8, "x: 42\ny: 1234\n", buffer.items);
     }
     {
         var list = ArrayListAligned(u8, 2).init(a);
         defer list.deinit();
 
         const writer = list.writer();
-        try writer.writeAll("a");
-        try writer.writeAll("bc");
-        try writer.writeAll("d");
-        try writer.writeAll("efg");
+        try writer.write_all("a");
+        try writer.write_all("bc");
+        try writer.write_all("d");
+        try writer.write_all("efg");
 
-        try testing.expectEqualSlices(u8, list.items, "abcdefg");
+        try testing.expect_equal_slices(u8, list.items, "abcdefg");
     }
 }
 
@@ -1931,19 +1931,19 @@ test "ArrayListUnmanaged(u8) implements writer" {
         const y: i32 = 1234;
         try buffer.writer(a).print("x: {}\ny: {}\n", .{ x, y });
 
-        try testing.expectEqualSlices(u8, "x: 42\ny: 1234\n", buffer.items);
+        try testing.expect_equal_slices(u8, "x: 42\ny: 1234\n", buffer.items);
     }
     {
         var list: ArrayListAlignedUnmanaged(u8, 2) = .{};
         defer list.deinit(a);
 
         const writer = list.writer(a);
-        try writer.writeAll("a");
-        try writer.writeAll("bc");
-        try writer.writeAll("d");
-        try writer.writeAll("efg");
+        try writer.write_all("a");
+        try writer.write_all("bc");
+        try writer.write_all("d");
+        try writer.write_all("efg");
 
-        try testing.expectEqualSlices(u8, list.items, "abcdefg");
+        try testing.expect_equal_slices(u8, list.items, "abcdefg");
     }
 }
 
@@ -1959,7 +1959,7 @@ test "shrink still sets length when resizing is disabled" {
         try list.append(2);
         try list.append(3);
 
-        list.shrinkAndFree(1);
+        list.shrink_and_free(1);
         try testing.expect(list.items.len == 1);
     }
     {
@@ -1970,44 +1970,44 @@ test "shrink still sets length when resizing is disabled" {
         try list.append(a, 2);
         try list.append(a, 3);
 
-        list.shrinkAndFree(a, 1);
+        list.shrink_and_free(a, 1);
         try testing.expect(list.items.len == 1);
     }
 }
 
-test "shrinkAndFree with a copy" {
+test "shrink_and_free with a copy" {
     var failing_allocator = testing.FailingAllocator.init(testing.allocator, .{ .resize_fail_index = 0 });
     const a = failing_allocator.allocator();
 
     var list = ArrayList(i32).init(a);
     defer list.deinit();
 
-    try list.appendNTimes(3, 16);
-    list.shrinkAndFree(4);
+    try list.append_ntimes(3, 16);
+    list.shrink_and_free(4);
     try testing.expect(mem.eql(i32, list.items, &.{ 3, 3, 3, 3 }));
 }
 
-test "addManyAsArray" {
+test "add_many_as_array" {
     const a = std.testing.allocator;
     {
         var list = ArrayList(u8).init(a);
         defer list.deinit();
 
-        (try list.addManyAsArray(4)).* = "aoeu".*;
-        try list.ensureTotalCapacity(8);
-        list.addManyAsArrayAssumeCapacity(4).* = "asdf".*;
+        (try list.add_many_as_array(4)).* = "aoeu".*;
+        try list.ensure_total_capacity(8);
+        list.add_many_as_array_assume_capacity(4).* = "asdf".*;
 
-        try testing.expectEqualSlices(u8, list.items, "aoeuasdf");
+        try testing.expect_equal_slices(u8, list.items, "aoeuasdf");
     }
     {
         var list = ArrayListUnmanaged(u8){};
         defer list.deinit(a);
 
-        (try list.addManyAsArray(a, 4)).* = "aoeu".*;
-        try list.ensureTotalCapacity(a, 8);
-        list.addManyAsArrayAssumeCapacity(4).* = "asdf".*;
+        (try list.add_many_as_array(a, 4)).* = "aoeu".*;
+        try list.ensure_total_capacity(a, 8);
+        list.add_many_as_array_assume_capacity(4).* = "asdf".*;
 
-        try testing.expectEqualSlices(u8, list.items, "aoeuasdf");
+        try testing.expect_equal_slices(u8, list.items, "aoeuasdf");
     }
 }
 
@@ -2019,101 +2019,101 @@ test "growing memory preserves contents" {
         var list = ArrayList(u8).init(a);
         defer list.deinit();
 
-        (try list.addManyAsArray(4)).* = "abcd".*;
-        list.shrinkAndFree(4);
+        (try list.add_many_as_array(4)).* = "abcd".*;
+        list.shrink_and_free(4);
 
-        try list.appendSlice("efgh");
-        try testing.expectEqualSlices(u8, list.items, "abcdefgh");
-        list.shrinkAndFree(8);
+        try list.append_slice("efgh");
+        try testing.expect_equal_slices(u8, list.items, "abcdefgh");
+        list.shrink_and_free(8);
 
-        try list.insertSlice(4, "ijkl");
-        try testing.expectEqualSlices(u8, list.items, "abcdijklefgh");
+        try list.insert_slice(4, "ijkl");
+        try testing.expect_equal_slices(u8, list.items, "abcdijklefgh");
     }
     {
         var list = ArrayListUnmanaged(u8){};
         defer list.deinit(a);
 
-        (try list.addManyAsArray(a, 4)).* = "abcd".*;
-        list.shrinkAndFree(a, 4);
+        (try list.add_many_as_array(a, 4)).* = "abcd".*;
+        list.shrink_and_free(a, 4);
 
-        try list.appendSlice(a, "efgh");
-        try testing.expectEqualSlices(u8, list.items, "abcdefgh");
-        list.shrinkAndFree(a, 8);
+        try list.append_slice(a, "efgh");
+        try testing.expect_equal_slices(u8, list.items, "abcdefgh");
+        list.shrink_and_free(a, 8);
 
-        try list.insertSlice(a, 4, "ijkl");
-        try testing.expectEqualSlices(u8, list.items, "abcdijklefgh");
+        try list.insert_slice(a, 4, "ijkl");
+        try testing.expect_equal_slices(u8, list.items, "abcdijklefgh");
     }
 }
 
-test "fromOwnedSlice" {
+test "from_owned_slice" {
     const a = testing.allocator;
     {
         var orig_list = ArrayList(u8).init(a);
         defer orig_list.deinit();
-        try orig_list.appendSlice("foobar");
+        try orig_list.append_slice("foobar");
 
-        const slice = try orig_list.toOwnedSlice();
-        var list = ArrayList(u8).fromOwnedSlice(a, slice);
+        const slice = try orig_list.to_owned_slice();
+        var list = ArrayList(u8).from_owned_slice(a, slice);
         defer list.deinit();
-        try testing.expectEqualStrings(list.items, "foobar");
+        try testing.expect_equal_strings(list.items, "foobar");
     }
     {
         var list = ArrayList(u8).init(a);
         defer list.deinit();
-        try list.appendSlice("foobar");
+        try list.append_slice("foobar");
 
-        const slice = try list.toOwnedSlice();
-        var unmanaged = ArrayListUnmanaged(u8).fromOwnedSlice(slice);
+        const slice = try list.to_owned_slice();
+        var unmanaged = ArrayListUnmanaged(u8).from_owned_slice(slice);
         defer unmanaged.deinit(a);
-        try testing.expectEqualStrings(unmanaged.items, "foobar");
+        try testing.expect_equal_strings(unmanaged.items, "foobar");
     }
 }
 
-test "fromOwnedSliceSentinel" {
+test "from_owned_slice_sentinel" {
     const a = testing.allocator;
     {
         var orig_list = ArrayList(u8).init(a);
         defer orig_list.deinit();
-        try orig_list.appendSlice("foobar");
+        try orig_list.append_slice("foobar");
 
-        const sentinel_slice = try orig_list.toOwnedSliceSentinel(0);
-        var list = ArrayList(u8).fromOwnedSliceSentinel(a, 0, sentinel_slice);
+        const sentinel_slice = try orig_list.to_owned_slice_sentinel(0);
+        var list = ArrayList(u8).from_owned_slice_sentinel(a, 0, sentinel_slice);
         defer list.deinit();
-        try testing.expectEqualStrings(list.items, "foobar");
+        try testing.expect_equal_strings(list.items, "foobar");
     }
     {
         var list = ArrayList(u8).init(a);
         defer list.deinit();
-        try list.appendSlice("foobar");
+        try list.append_slice("foobar");
 
-        const sentinel_slice = try list.toOwnedSliceSentinel(0);
-        var unmanaged = ArrayListUnmanaged(u8).fromOwnedSliceSentinel(0, sentinel_slice);
+        const sentinel_slice = try list.to_owned_slice_sentinel(0);
+        var unmanaged = ArrayListUnmanaged(u8).from_owned_slice_sentinel(0, sentinel_slice);
         defer unmanaged.deinit(a);
-        try testing.expectEqualStrings(unmanaged.items, "foobar");
+        try testing.expect_equal_strings(unmanaged.items, "foobar");
     }
 }
 
-test "toOwnedSliceSentinel" {
+test "to_owned_slice_sentinel" {
     const a = testing.allocator;
     {
         var list = ArrayList(u8).init(a);
         defer list.deinit();
 
-        try list.appendSlice("foobar");
+        try list.append_slice("foobar");
 
-        const result = try list.toOwnedSliceSentinel(0);
+        const result = try list.to_owned_slice_sentinel(0);
         defer a.free(result);
-        try testing.expectEqualStrings(result, mem.sliceTo(result.ptr, 0));
+        try testing.expect_equal_strings(result, mem.slice_to(result.ptr, 0));
     }
     {
         var list = ArrayListUnmanaged(u8){};
         defer list.deinit(a);
 
-        try list.appendSlice(a, "foobar");
+        try list.append_slice(a, "foobar");
 
-        const result = try list.toOwnedSliceSentinel(a, 0);
+        const result = try list.to_owned_slice_sentinel(a, 0);
         defer a.free(result);
-        try testing.expectEqualStrings(result, mem.sliceTo(result.ptr, 0));
+        try testing.expect_equal_strings(result, mem.slice_to(result.ptr, 0));
     }
 }
 
@@ -2123,21 +2123,21 @@ test "accepts unaligned slices" {
         var list = std.ArrayListAligned(u8, 8).init(a);
         defer list.deinit();
 
-        try list.appendSlice(&.{ 0, 1, 2, 3 });
-        try list.insertSlice(2, &.{ 4, 5, 6, 7 });
-        try list.replaceRange(1, 3, &.{ 8, 9 });
+        try list.append_slice(&.{ 0, 1, 2, 3 });
+        try list.insert_slice(2, &.{ 4, 5, 6, 7 });
+        try list.replace_range(1, 3, &.{ 8, 9 });
 
-        try testing.expectEqualSlices(u8, list.items, &.{ 0, 8, 9, 6, 7, 2, 3 });
+        try testing.expect_equal_slices(u8, list.items, &.{ 0, 8, 9, 6, 7, 2, 3 });
     }
     {
         var list = std.ArrayListAlignedUnmanaged(u8, 8){};
         defer list.deinit(a);
 
-        try list.appendSlice(a, &.{ 0, 1, 2, 3 });
-        try list.insertSlice(a, 2, &.{ 4, 5, 6, 7 });
-        try list.replaceRange(a, 1, 3, &.{ 8, 9 });
+        try list.append_slice(a, &.{ 0, 1, 2, 3 });
+        try list.insert_slice(a, 2, &.{ 4, 5, 6, 7 });
+        try list.replace_range(a, 1, 3, &.{ 8, 9 });
 
-        try testing.expectEqualSlices(u8, list.items, &.{ 0, 8, 9, 6, 7, 2, 3 });
+        try testing.expect_equal_slices(u8, list.items, &.{ 0, 8, 9, 6, 7, 2, 3 });
     }
 }
 
@@ -2151,17 +2151,17 @@ test "ArrayList(u0)" {
     try list.append(0);
     try list.append(0);
     try list.append(0);
-    try testing.expectEqual(list.items.len, 3);
+    try testing.expect_equal(list.items.len, 3);
 
     var count: usize = 0;
     for (list.items) |x| {
-        try testing.expectEqual(x, 0);
+        try testing.expect_equal(x, 0);
         count += 1;
     }
-    try testing.expectEqual(count, 3);
+    try testing.expect_equal(count, 3);
 }
 
-test "ArrayList(?u32).popOrNull()" {
+test "ArrayList(?u32).pop_or_null()" {
     const a = testing.allocator;
 
     var list = ArrayList(?u32).init(a);
@@ -2170,15 +2170,15 @@ test "ArrayList(?u32).popOrNull()" {
     try list.append(null);
     try list.append(1);
     try list.append(2);
-    try testing.expectEqual(list.items.len, 3);
+    try testing.expect_equal(list.items.len, 3);
 
-    try testing.expect(list.popOrNull().? == @as(u32, 2));
-    try testing.expect(list.popOrNull().? == @as(u32, 1));
-    try testing.expect(list.popOrNull().? == null);
-    try testing.expect(list.popOrNull() == null);
+    try testing.expect(list.pop_or_null().? == @as(u32, 2));
+    try testing.expect(list.pop_or_null().? == @as(u32, 1));
+    try testing.expect(list.pop_or_null().? == null);
+    try testing.expect(list.pop_or_null() == null);
 }
 
-test "ArrayList(u32).getLast()" {
+test "ArrayList(u32).get_last()" {
     const a = testing.allocator;
 
     var list = ArrayList(u32).init(a);
@@ -2186,20 +2186,20 @@ test "ArrayList(u32).getLast()" {
 
     try list.append(2);
     const const_list = list;
-    try testing.expectEqual(const_list.getLast(), 2);
+    try testing.expect_equal(const_list.get_last(), 2);
 }
 
-test "ArrayList(u32).getLastOrNull()" {
+test "ArrayList(u32).get_last_or_null()" {
     const a = testing.allocator;
 
     var list = ArrayList(u32).init(a);
     defer list.deinit();
 
-    try testing.expectEqual(list.getLastOrNull(), null);
+    try testing.expect_equal(list.get_last_or_null(), null);
 
     try list.append(2);
     const const_list = list;
-    try testing.expectEqual(const_list.getLastOrNull().?, 2);
+    try testing.expect_equal(const_list.get_last_or_null().?, 2);
 }
 
 test "return OutOfMemory when capacity would exceed maximum usize integer value" {
@@ -2210,35 +2210,35 @@ test "return OutOfMemory when capacity would exceed maximum usize integer value"
     {
         var list: ArrayListUnmanaged(u32) = .{
             .items = undefined,
-            .capacity = math.maxInt(usize) - 1,
+            .capacity = math.max_int(usize) - 1,
         };
-        list.items.len = math.maxInt(usize) - 1;
+        list.items.len = math.max_int(usize) - 1;
 
-        try testing.expectError(error.OutOfMemory, list.appendSlice(a, items));
-        try testing.expectError(error.OutOfMemory, list.appendNTimes(a, new_item, 2));
-        try testing.expectError(error.OutOfMemory, list.appendUnalignedSlice(a, &.{ new_item, new_item }));
-        try testing.expectError(error.OutOfMemory, list.addManyAt(a, 0, 2));
-        try testing.expectError(error.OutOfMemory, list.addManyAsArray(a, 2));
-        try testing.expectError(error.OutOfMemory, list.addManyAsSlice(a, 2));
-        try testing.expectError(error.OutOfMemory, list.insertSlice(a, 0, items));
-        try testing.expectError(error.OutOfMemory, list.ensureUnusedCapacity(a, 2));
+        try testing.expect_error(error.OutOfMemory, list.append_slice(a, items));
+        try testing.expect_error(error.OutOfMemory, list.append_ntimes(a, new_item, 2));
+        try testing.expect_error(error.OutOfMemory, list.append_unaligned_slice(a, &.{ new_item, new_item }));
+        try testing.expect_error(error.OutOfMemory, list.add_many_at(a, 0, 2));
+        try testing.expect_error(error.OutOfMemory, list.add_many_as_array(a, 2));
+        try testing.expect_error(error.OutOfMemory, list.add_many_as_slice(a, 2));
+        try testing.expect_error(error.OutOfMemory, list.insert_slice(a, 0, items));
+        try testing.expect_error(error.OutOfMemory, list.ensure_unused_capacity(a, 2));
     }
 
     {
         var list: ArrayList(u32) = .{
             .items = undefined,
-            .capacity = math.maxInt(usize) - 1,
+            .capacity = math.max_int(usize) - 1,
             .allocator = a,
         };
-        list.items.len = math.maxInt(usize) - 1;
+        list.items.len = math.max_int(usize) - 1;
 
-        try testing.expectError(error.OutOfMemory, list.appendSlice(items));
-        try testing.expectError(error.OutOfMemory, list.appendNTimes(new_item, 2));
-        try testing.expectError(error.OutOfMemory, list.appendUnalignedSlice(&.{ new_item, new_item }));
-        try testing.expectError(error.OutOfMemory, list.addManyAt(0, 2));
-        try testing.expectError(error.OutOfMemory, list.addManyAsArray(2));
-        try testing.expectError(error.OutOfMemory, list.addManyAsSlice(2));
-        try testing.expectError(error.OutOfMemory, list.insertSlice(0, items));
-        try testing.expectError(error.OutOfMemory, list.ensureUnusedCapacity(2));
+        try testing.expect_error(error.OutOfMemory, list.append_slice(items));
+        try testing.expect_error(error.OutOfMemory, list.append_ntimes(new_item, 2));
+        try testing.expect_error(error.OutOfMemory, list.append_unaligned_slice(&.{ new_item, new_item }));
+        try testing.expect_error(error.OutOfMemory, list.add_many_at(0, 2));
+        try testing.expect_error(error.OutOfMemory, list.add_many_as_array(2));
+        try testing.expect_error(error.OutOfMemory, list.add_many_as_slice(2));
+        try testing.expect_error(error.OutOfMemory, list.insert_slice(0, items));
+        try testing.expect_error(error.OutOfMemory, list.ensure_unused_capacity(2));
     }
 }

@@ -9,7 +9,7 @@ const Untagged = @Type(.{
     },
 });
 export fn entry() usize {
-    return @sizeOf(Untagged);
+    return @size_of(Untagged);
 }
 
 // error

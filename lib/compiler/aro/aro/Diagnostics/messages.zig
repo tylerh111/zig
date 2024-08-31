@@ -5,7 +5,7 @@ const std = @import("std");
 
 pub fn with(comptime Properties: type) type {
 return struct {
-const W = Properties.makeOpt;
+const W = Properties.make_opt;
 const pointer_sign_message = " converts between pointers to integer types with different sign";
 const expected_arguments = "expected {d} argument(s) got {d}";
 pub const Tag = enum {
@@ -511,7 +511,7 @@ pub const Tag = enum {
     overflow_result_requires_ptr,
 
     pub fn property(tag: Tag) Properties {
-        return named_data[@intFromEnum(tag)];
+        return named_data[@int_from_enum(tag)];
     }
 
     const named_data = [_]Properties{
@@ -931,7 +931,7 @@ pub const Tag = enum {
         .{ .msg = "'_BitInt' in C17 and earlier is a Clang extension'", .kind = .off, .pedantic = true, .opt = W("bit-int-extension"), .suppress_version = .c23 },
         .{ .msg = "{s} must have a bit size of at least 1", .extra = .str, .kind = .@"error" },
         .{ .msg = "{s} must have a bit size of at least 2", .extra = .str, .kind = .@"error" },
-        .{ .msg = "{s} of bit sizes greater than " ++ std.fmt.comptimePrint("{d}", .{Properties.max_bits}) ++ " not supported", .extra = .str, .kind = .@"error" },
+        .{ .msg = "{s} of bit sizes greater than " ++ std.fmt.comptime_print("{d}", .{Properties.max_bits}) ++ " not supported", .extra = .str, .kind = .@"error" },
         .{ .msg = "keyword is hidden by macro definition", .kind = .off, .pedantic = true, .opt = W("keyword-macro") },
         .{ .msg = "arithmetic on a pointer to an incomplete type '{s}'", .extra = .str, .kind = .@"error" },
         .{ .msg = "'{s}' calling convention is not supported for this target", .extra = .str, .opt = W("ignored-attributes"), .kind = .warning },

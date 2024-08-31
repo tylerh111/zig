@@ -3,7 +3,7 @@ fn f(m: []const u8) void {
     m.copy(u8, self[0..], m);
 }
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&f));
+    return @size_of(@TypeOf(&f));
 }
 pub export fn entry1() void {
     .{}.bar();

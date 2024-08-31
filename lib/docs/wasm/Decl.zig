@@ -11,11 +11,11 @@ pub const ExtraInfo = struct {
 };
 
 pub const Index = enum(u32) {
-    none = std.math.maxInt(u32),
+    none = std.math.max_int(u32),
     _,
 
     pub fn get(i: Index) *Decl {
-        return &Walk.decls.items[@intFromEnum(i)];
+        return &Walk.decls.items[@int_from_enum(i)];
     }
 };
 
@@ -42,14 +42,14 @@ pub fn extra_info(d: *const Decl) ExtraInfo {
         .simple_var_decl,
         .aligned_var_decl,
         => {
-            const var_decl = ast.fullVarDecl(d.ast_node).?;
+            const var_decl = ast.full_var_decl(d.ast_node).?;
             const name_token = var_decl.ast.mut_token + 1;
             assert(token_tags[name_token] == .identifier);
-            const ident_name = ast.tokenSlice(name_token);
+            const ident_name = ast.token_slice(name_token);
             return .{
                 .name = ident_name,
                 .is_pub = var_decl.visib_token != null,
-                .first_doc_comment = findFirstDocComment(ast, var_decl.firstToken()),
+                .first_doc_comment = find_first_doc_comment(ast, var_decl.first_token()),
             };
         },
 
@@ -60,19 +60,19 @@ pub fn extra_info(d: *const Decl) ExtraInfo {
         .fn_decl,
         => {
             var buf: [1]Ast.Node.Index = undefined;
-            const fn_proto = ast.fullFnProto(&buf, d.ast_node).?;
+            const fn_proto = ast.full_fn_proto(&buf, d.ast_node).?;
             const name_token = fn_proto.name_token.?;
             assert(token_tags[name_token] == .identifier);
-            const ident_name = ast.tokenSlice(name_token);
+            const ident_name = ast.token_slice(name_token);
             return .{
                 .name = ident_name,
                 .is_pub = fn_proto.visib_token != null,
-                .first_doc_comment = findFirstDocComment(ast, fn_proto.firstToken()),
+                .first_doc_comment = find_first_doc_comment(ast, fn_proto.first_token()),
             };
         },
 
         else => |t| {
-            log.debug("hit '{s}'", .{@tagName(t)});
+            log.debug("hit '{s}'", .{@tag_name(t)});
             unreachable;
         },
     }
@@ -96,7 +96,7 @@ pub fn value_node(d: *const Decl) ?Ast.Node.Index {
         .simple_var_decl,
         .aligned_var_decl,
         => {
-            const var_decl = ast.fullVarDecl(d.ast_node).?;
+            const var_decl = ast.full_var_decl(d.ast_node).?;
             if (token_tags[var_decl.ast.mut_token] == .keyword_const)
                 return var_decl.ast.init_node;
 
@@ -142,14 +142,14 @@ pub fn fqn(decl: *const Decl, out: *std.ArrayListUnmanaged(u8)) Oom!void {
     try decl.append_path(out);
     if (decl.parent != .none) {
         try append_parent_ns(out, decl.parent);
-        try out.appendSlice(gpa, decl.extra_info().name);
+        try out.append_slice(gpa, decl.extra_info().name);
     } else {
         out.items.len -= 1; // remove the trailing '.'
     }
 }
 
 pub fn reset_with_path(decl: *const Decl, list: *std.ArrayListUnmanaged(u8)) Oom!void {
-    list.clearRetainingCapacity();
+    list.clear_retaining_capacity();
     try append_path(decl, list);
 }
 
@@ -158,24 +158,24 @@ pub fn append_path(decl: *const Decl, list: *std.ArrayListUnmanaged(u8)) Oom!voi
     // Prefer the module name alias.
     for (Walk.modules.keys(), Walk.modules.values()) |pkg_name, pkg_file| {
         if (pkg_file == decl.file) {
-            try list.ensureUnusedCapacity(gpa, pkg_name.len + 1);
-            list.appendSliceAssumeCapacity(pkg_name);
-            list.appendAssumeCapacity('.');
+            try list.ensure_unused_capacity(gpa, pkg_name.len + 1);
+            list.append_slice_assume_capacity(pkg_name);
+            list.append_assume_capacity('.');
             return;
         }
     }
 
     const file_path = decl.file.path();
-    try list.ensureUnusedCapacity(gpa, file_path.len + 1);
-    list.appendSliceAssumeCapacity(file_path);
+    try list.ensure_unused_capacity(gpa, file_path.len + 1);
+    list.append_slice_assume_capacity(file_path);
     for (list.items[start..]) |*byte| switch (byte.*) {
         '/' => byte.* = '.',
         else => continue,
     };
-    if (std.mem.endsWith(u8, list.items, ".zig")) {
+    if (std.mem.ends_with(u8, list.items, ".zig")) {
         list.items.len -= 3;
     } else {
-        list.appendAssumeCapacity('.');
+        list.append_assume_capacity('.');
     }
 }
 
@@ -184,7 +184,7 @@ pub fn append_parent_ns(list: *std.ArrayListUnmanaged(u8), parent: Decl.Index) O
     const decl = parent.get();
     if (decl.parent != .none) {
         try append_parent_ns(list, decl.parent);
-        try list.appendSlice(gpa, decl.extra_info().name);
+        try list.append_slice(gpa, decl.extra_info().name);
         try list.append(gpa, '.');
     }
 }
@@ -203,9 +203,9 @@ pub fn find_first_doc_comment(ast: *const Ast, token: Ast.TokenIndex) Ast.TokenI
 
 /// Successively looks up each component.
 pub fn find(search_string: []const u8) Decl.Index {
-    var path_components = std.mem.splitScalar(u8, search_string, '.');
+    var path_components = std.mem.split_scalar(u8, search_string, '.');
     const file = Walk.modules.get(path_components.first()) orelse return .none;
-    var current_decl_index = file.findRootDecl();
+    var current_decl_index = file.find_root_decl();
     while (path_components.next()) |component| {
         while (true) switch (current_decl_index.get().categorize()) {
             .alias => |aliasee| current_decl_index = aliasee,

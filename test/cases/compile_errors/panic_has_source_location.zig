@@ -7,7 +7,7 @@ export fn foo() void {
 }
 
 pub fn panic(_: []const u8, _: ?*std.builtin.StackTrace, _: ?usize) noreturn {
-    @compileError("panic");
+    @compile_error("panic");
 }
 
 // error

@@ -15,7 +15,7 @@ pub const Detected = struct {
 
     pub fn filter(self: *Detected, multilib_filter: Filter, fs: Filesystem) void {
         var found_count: usize = 0;
-        for (self.multilibs.constSlice()) |multilib| {
+        for (self.multilibs.const_slice()) |multilib| {
             if (multilib_filter.exists(multilib, fs)) {
                 self.multilibs.set(found_count, multilib);
                 found_count += 1;
@@ -26,14 +26,14 @@ pub const Detected = struct {
 
     pub fn select(self: *Detected, flags: Flags) !bool {
         var filtered: MultilibArray = .{};
-        for (self.multilibs.constSlice()) |multilib| {
-            for (multilib.flags.constSlice()) |multilib_flag| {
-                const matched = for (flags.constSlice()) |arg_flag| {
+        for (self.multilibs.const_slice()) |multilib| {
+            for (multilib.flags.const_slice()) |multilib_flag| {
+                const matched = for (flags.const_slice()) |arg_flag| {
                     if (std.mem.eql(u8, arg_flag[1..], multilib_flag[1..])) break arg_flag;
                 } else multilib_flag;
                 if (matched[0] != multilib_flag[0]) break;
             } else {
-                filtered.appendAssumeCapacity(multilib);
+                filtered.append_assume_capacity(multilib);
             }
         }
         if (filtered.len == 0) return false;
@@ -49,7 +49,7 @@ pub const Filter = struct {
     base: [2][]const u8,
     file: []const u8,
     pub fn exists(self: Filter, m: Multilib, fs: Filesystem) bool {
-        return fs.joinedExists(&.{ self.base[0], self.base[1], m.gcc_suffix, self.file });
+        return fs.joined_exists(&.{ self.base[0], self.base[1], m.gcc_suffix, self.file });
     }
 };
 
@@ -66,6 +66,6 @@ pub fn init(gcc_suffix: []const u8, os_suffix: []const u8, flags: []const []cons
         .gcc_suffix = gcc_suffix,
         .os_suffix = os_suffix,
     };
-    self.flags.appendSliceAssumeCapacity(flags);
+    self.flags.append_slice_assume_capacity(flags);
     return self;
 }

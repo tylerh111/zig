@@ -30,7 +30,7 @@ pub fn powi(comptime T: type, x: T, y: T) (error{
     const bit_size = @typeInfo(T).Int.bits;
 
     // `y & 1 == 0` won't compile when `does_one_overflow`.
-    const does_one_overflow = math.maxInt(T) < 1;
+    const does_one_overflow = math.max_int(T) < 1;
     const is_y_even = !does_one_overflow and y & 1 == 0;
 
     if (x == 1 or y == 0 or (x == -1 and is_y_even)) {
@@ -92,12 +92,12 @@ pub fn powi(comptime T: type, x: T, y: T) (error{
 }
 
 test powi {
-    try testing.expectError(error.Overflow, powi(i8, -66, 6));
-    try testing.expectError(error.Overflow, powi(i16, -13, 13));
-    try testing.expectError(error.Overflow, powi(i32, -32, 21));
-    try testing.expectError(error.Overflow, powi(i64, -24, 61));
-    try testing.expectError(error.Overflow, powi(i17, -15, 15));
-    try testing.expectError(error.Overflow, powi(i42, -6, 40));
+    try testing.expect_error(error.Overflow, powi(i8, -66, 6));
+    try testing.expect_error(error.Overflow, powi(i16, -13, 13));
+    try testing.expect_error(error.Overflow, powi(i32, -32, 21));
+    try testing.expect_error(error.Overflow, powi(i64, -24, 61));
+    try testing.expect_error(error.Overflow, powi(i17, -15, 15));
+    try testing.expect_error(error.Overflow, powi(i42, -6, 40));
 
     try testing.expect((try powi(i8, -5, 3)) == -125);
     try testing.expect((try powi(i16, -16, 3)) == -4096);
@@ -113,42 +113,42 @@ test powi {
     try testing.expect((try powi(u17, 16, 3)) == 4096);
     try testing.expect((try powi(u42, 34, 6)) == 1544804416);
 
-    try testing.expectError(error.Overflow, powi(i8, 120, 7));
-    try testing.expectError(error.Overflow, powi(i16, 73, 15));
-    try testing.expectError(error.Overflow, powi(i32, 23, 31));
-    try testing.expectError(error.Overflow, powi(i64, 68, 61));
-    try testing.expectError(error.Overflow, powi(i17, 15, 15));
-    try testing.expectError(error.Overflow, powi(i42, 121312, 41));
+    try testing.expect_error(error.Overflow, powi(i8, 120, 7));
+    try testing.expect_error(error.Overflow, powi(i16, 73, 15));
+    try testing.expect_error(error.Overflow, powi(i32, 23, 31));
+    try testing.expect_error(error.Overflow, powi(i64, 68, 61));
+    try testing.expect_error(error.Overflow, powi(i17, 15, 15));
+    try testing.expect_error(error.Overflow, powi(i42, 121312, 41));
 
-    try testing.expectError(error.Overflow, powi(u8, 123, 7));
-    try testing.expectError(error.Overflow, powi(u16, 2313, 15));
-    try testing.expectError(error.Overflow, powi(u32, 8968, 31));
-    try testing.expectError(error.Overflow, powi(u64, 2342, 63));
-    try testing.expectError(error.Overflow, powi(u17, 2723, 16));
-    try testing.expectError(error.Overflow, powi(u42, 8234, 41));
+    try testing.expect_error(error.Overflow, powi(u8, 123, 7));
+    try testing.expect_error(error.Overflow, powi(u16, 2313, 15));
+    try testing.expect_error(error.Overflow, powi(u32, 8968, 31));
+    try testing.expect_error(error.Overflow, powi(u64, 2342, 63));
+    try testing.expect_error(error.Overflow, powi(u17, 2723, 16));
+    try testing.expect_error(error.Overflow, powi(u42, 8234, 41));
 
-    const minInt = std.math.minInt;
-    try testing.expect((try powi(i8, -2, 7)) == minInt(i8));
-    try testing.expect((try powi(i16, -2, 15)) == minInt(i16));
-    try testing.expect((try powi(i32, -2, 31)) == minInt(i32));
-    try testing.expect((try powi(i64, -2, 63)) == minInt(i64));
+    const min_int = std.math.min_int;
+    try testing.expect((try powi(i8, -2, 7)) == min_int(i8));
+    try testing.expect((try powi(i16, -2, 15)) == min_int(i16));
+    try testing.expect((try powi(i32, -2, 31)) == min_int(i32));
+    try testing.expect((try powi(i64, -2, 63)) == min_int(i64));
 
-    try testing.expectError(error.Underflow, powi(i8, 6, -2));
-    try testing.expectError(error.Underflow, powi(i16, 5, -4));
-    try testing.expectError(error.Underflow, powi(i32, 12, -6));
-    try testing.expectError(error.Underflow, powi(i64, 34, -2));
-    try testing.expectError(error.Underflow, powi(i17, 16, -3));
-    try testing.expectError(error.Underflow, powi(i42, 34, -6));
+    try testing.expect_error(error.Underflow, powi(i8, 6, -2));
+    try testing.expect_error(error.Underflow, powi(i16, 5, -4));
+    try testing.expect_error(error.Underflow, powi(i32, 12, -6));
+    try testing.expect_error(error.Underflow, powi(i64, 34, -2));
+    try testing.expect_error(error.Underflow, powi(i17, 16, -3));
+    try testing.expect_error(error.Underflow, powi(i42, 34, -6));
 }
 
 test "powi.special" {
-    try testing.expectError(error.Overflow, powi(i8, -2, 8));
-    try testing.expectError(error.Overflow, powi(i16, -2, 16));
-    try testing.expectError(error.Overflow, powi(i32, -2, 32));
-    try testing.expectError(error.Overflow, powi(i64, -2, 64));
-    try testing.expectError(error.Overflow, powi(i17, -2, 17));
-    try testing.expectError(error.Overflow, powi(i17, -2, 16));
-    try testing.expectError(error.Overflow, powi(i42, -2, 42));
+    try testing.expect_error(error.Overflow, powi(i8, -2, 8));
+    try testing.expect_error(error.Overflow, powi(i16, -2, 16));
+    try testing.expect_error(error.Overflow, powi(i32, -2, 32));
+    try testing.expect_error(error.Overflow, powi(i64, -2, 64));
+    try testing.expect_error(error.Overflow, powi(i17, -2, 17));
+    try testing.expect_error(error.Overflow, powi(i17, -2, 16));
+    try testing.expect_error(error.Overflow, powi(i42, -2, 42));
 
     try testing.expect((try powi(i8, -1, 3)) == -1);
     try testing.expect((try powi(i16, -1, 2)) == 1);
@@ -164,19 +164,19 @@ test "powi.special" {
     try testing.expect((try powi(u17, 1, 3)) == 1);
     try testing.expect((try powi(u42, 1, 6)) == 1);
 
-    try testing.expectError(error.Overflow, powi(i8, 2, 7));
-    try testing.expectError(error.Overflow, powi(i16, 2, 15));
-    try testing.expectError(error.Overflow, powi(i32, 2, 31));
-    try testing.expectError(error.Overflow, powi(i64, 2, 63));
-    try testing.expectError(error.Overflow, powi(i17, 2, 16));
-    try testing.expectError(error.Overflow, powi(i42, 2, 41));
+    try testing.expect_error(error.Overflow, powi(i8, 2, 7));
+    try testing.expect_error(error.Overflow, powi(i16, 2, 15));
+    try testing.expect_error(error.Overflow, powi(i32, 2, 31));
+    try testing.expect_error(error.Overflow, powi(i64, 2, 63));
+    try testing.expect_error(error.Overflow, powi(i17, 2, 16));
+    try testing.expect_error(error.Overflow, powi(i42, 2, 41));
 
-    try testing.expectError(error.Overflow, powi(u8, 2, 8));
-    try testing.expectError(error.Overflow, powi(u16, 2, 16));
-    try testing.expectError(error.Overflow, powi(u32, 2, 32));
-    try testing.expectError(error.Overflow, powi(u64, 2, 64));
-    try testing.expectError(error.Overflow, powi(u17, 2, 17));
-    try testing.expectError(error.Overflow, powi(u42, 2, 42));
+    try testing.expect_error(error.Overflow, powi(u8, 2, 8));
+    try testing.expect_error(error.Overflow, powi(u16, 2, 16));
+    try testing.expect_error(error.Overflow, powi(u32, 2, 32));
+    try testing.expect_error(error.Overflow, powi(u64, 2, 64));
+    try testing.expect_error(error.Overflow, powi(u17, 2, 17));
+    try testing.expect_error(error.Overflow, powi(u42, 2, 42));
 
     try testing.expect((try powi(u8, 6, 0)) == 1);
     try testing.expect((try powi(u16, 5, 0)) == 1);
@@ -187,10 +187,10 @@ test "powi.special" {
 }
 
 test "powi.narrow" {
-    try testing.expectError(error.Overflow, powi(u0, 0, 0));
-    try testing.expectError(error.Overflow, powi(i0, 0, 0));
-    try testing.expectError(error.Overflow, powi(i1, 0, 0));
-    try testing.expectError(error.Overflow, powi(i1, -1, 0));
-    try testing.expectError(error.Overflow, powi(i1, 0, -1));
+    try testing.expect_error(error.Overflow, powi(u0, 0, 0));
+    try testing.expect_error(error.Overflow, powi(i0, 0, 0));
+    try testing.expect_error(error.Overflow, powi(i1, 0, 0));
+    try testing.expect_error(error.Overflow, powi(i1, -1, 0));
+    try testing.expect_error(error.Overflow, powi(i1, 0, -1));
     try testing.expect((try powi(i1, -1, -1)) == -1);
 }

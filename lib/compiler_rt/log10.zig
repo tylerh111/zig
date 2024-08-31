@@ -8,7 +8,7 @@ const std = @import("std");
 const builtin = @import("builtin");
 const math = std.math;
 const testing = std.testing;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 const arch = builtin.cpu.arch;
 const common = @import("common.zig");
 
@@ -28,7 +28,7 @@ comptime {
 
 pub fn __log10h(a: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(log10f(a));
+    return @float_cast(log10f(a));
 }
 
 pub fn log10f(x_: f32) callconv(.C) f32 {
@@ -42,7 +42,7 @@ pub fn log10f(x_: f32) callconv(.C) f32 {
     const Lg4: f32 = 0xf89e26.0p-26;
 
     var x = x_;
-    var u: u32 = @bitCast(x);
+    var u: u32 = @bit_cast(x);
     var ix = u;
     var k: i32 = 0;
 
@@ -59,7 +59,7 @@ pub fn log10f(x_: f32) callconv(.C) f32 {
 
         k -= 25;
         x *= 0x1.0p25;
-        ix = @bitCast(x);
+        ix = @bit_cast(x);
     } else if (ix >= 0x7F800000) {
         return x;
     } else if (ix == 0x3F800000) {
@@ -68,9 +68,9 @@ pub fn log10f(x_: f32) callconv(.C) f32 {
 
     // x into [sqrt(2) / 2, sqrt(2)]
     ix += 0x3F800000 - 0x3F3504F3;
-    k += @as(i32, @intCast(ix >> 23)) - 0x7F;
+    k += @as(i32, @int_cast(ix >> 23)) - 0x7F;
     ix = (ix & 0x007FFFFF) + 0x3F3504F3;
-    x = @bitCast(ix);
+    x = @bit_cast(ix);
 
     const f = x - 1.0;
     const s = f / (2.0 + f);
@@ -82,11 +82,11 @@ pub fn log10f(x_: f32) callconv(.C) f32 {
     const hfsq = 0.5 * f * f;
 
     var hi = f - hfsq;
-    u = @bitCast(hi);
+    u = @bit_cast(hi);
     u &= 0xFFFFF000;
-    hi = @bitCast(u);
+    hi = @bit_cast(u);
     const lo = f - hi - hfsq + s * (hfsq + R);
-    const dk: f32 = @floatFromInt(k);
+    const dk: f32 = @float_from_int(k);
 
     return dk * log10_2lo + (lo + hi) * ivln10lo + lo * ivln10hi + hi * ivln10hi + dk * log10_2hi;
 }
@@ -105,8 +105,8 @@ pub fn log10(x_: f64) callconv(.C) f64 {
     const Lg7: f64 = 1.479819860511658591e-01;
 
     var x = x_;
-    var ix: u64 = @bitCast(x);
-    var hx: u32 = @intCast(ix >> 32);
+    var ix: u64 = @bit_cast(x);
+    var hx: u32 = @int_cast(ix >> 32);
     var k: i32 = 0;
 
     if (hx < 0x00100000 or hx >> 31 != 0) {
@@ -122,7 +122,7 @@ pub fn log10(x_: f64) callconv(.C) f64 {
         // subnormal, scale x
         k -= 54;
         x *= 0x1.0p54;
-        hx = @intCast(@as(u64, @bitCast(x)) >> 32);
+        hx = @int_cast(@as(u64, @bit_cast(x)) >> 32);
     } else if (hx >= 0x7FF00000) {
         return x;
     } else if (hx == 0x3FF00000 and ix << 32 == 0) {
@@ -131,10 +131,10 @@ pub fn log10(x_: f64) callconv(.C) f64 {
 
     // x into [sqrt(2) / 2, sqrt(2)]
     hx += 0x3FF00000 - 0x3FE6A09E;
-    k += @as(i32, @intCast(hx >> 20)) - 0x3FF;
+    k += @as(i32, @int_cast(hx >> 20)) - 0x3FF;
     hx = (hx & 0x000FFFFF) + 0x3FE6A09E;
     ix = (@as(u64, hx) << 32) | (ix & 0xFFFFFFFF);
-    x = @bitCast(ix);
+    x = @bit_cast(ix);
 
     const f = x - 1.0;
     const hfsq = 0.5 * f * f;
@@ -147,14 +147,14 @@ pub fn log10(x_: f64) callconv(.C) f64 {
 
     // hi + lo = f - hfsq + s * (hfsq + R) ~ log(1 + f)
     var hi = f - hfsq;
-    var hii: u64 = @bitCast(hi);
-    hii &= @as(u64, maxInt(u64)) << 32;
-    hi = @bitCast(hii);
+    var hii: u64 = @bit_cast(hi);
+    hii &= @as(u64, max_int(u64)) << 32;
+    hi = @bit_cast(hii);
     const lo = f - hi - hfsq + s * (hfsq + R);
 
     // val_hi + val_lo ~ log10(1 + f) + k * log10(2)
     var val_hi = hi * ivln10hi;
-    const dk: f64 = @floatFromInt(k);
+    const dk: f64 = @float_from_int(k);
     const y = dk * log10_2hi;
     var val_lo = dk * log10_2lo + (lo + hi) * ivln10lo + lo * ivln10hi;
 
@@ -168,12 +168,12 @@ pub fn log10(x_: f64) callconv(.C) f64 {
 
 pub fn __log10x(a: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(log10q(a));
+    return @float_cast(log10q(a));
 }
 
 pub fn log10q(a: f128) callconv(.C) f128 {
     // TODO: more correct implementation
-    return log10(@floatCast(a));
+    return log10(@float_cast(a));
 }
 
 pub fn log10l(x: c_longdouble) callconv(.C) c_longdouble {
@@ -183,42 +183,42 @@ pub fn log10l(x: c_longdouble) callconv(.C) c_longdouble {
         64 => return log10(x),
         80 => return __log10x(x),
         128 => return log10q(x),
-        else => @compileError("unreachable"),
+        else => @compile_error("unreachable"),
     }
 }
 
 test "log10_32" {
     const epsilon = 0.000001;
 
-    try testing.expect(math.approxEqAbs(f32, log10f(0.2), -0.698970, epsilon));
-    try testing.expect(math.approxEqAbs(f32, log10f(0.8923), -0.049489, epsilon));
-    try testing.expect(math.approxEqAbs(f32, log10f(1.5), 0.176091, epsilon));
-    try testing.expect(math.approxEqAbs(f32, log10f(37.45), 1.573452, epsilon));
-    try testing.expect(math.approxEqAbs(f32, log10f(89.123), 1.94999, epsilon));
-    try testing.expect(math.approxEqAbs(f32, log10f(123123.234375), 5.09034, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, log10f(0.2), -0.698970, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, log10f(0.8923), -0.049489, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, log10f(1.5), 0.176091, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, log10f(37.45), 1.573452, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, log10f(89.123), 1.94999, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, log10f(123123.234375), 5.09034, epsilon));
 }
 
 test "log10_64" {
     const epsilon = 0.000001;
 
-    try testing.expect(math.approxEqAbs(f64, log10(0.2), -0.698970, epsilon));
-    try testing.expect(math.approxEqAbs(f64, log10(0.8923), -0.049489, epsilon));
-    try testing.expect(math.approxEqAbs(f64, log10(1.5), 0.176091, epsilon));
-    try testing.expect(math.approxEqAbs(f64, log10(37.45), 1.573452, epsilon));
-    try testing.expect(math.approxEqAbs(f64, log10(89.123), 1.94999, epsilon));
-    try testing.expect(math.approxEqAbs(f64, log10(123123.234375), 5.09034, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, log10(0.2), -0.698970, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, log10(0.8923), -0.049489, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, log10(1.5), 0.176091, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, log10(37.45), 1.573452, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, log10(89.123), 1.94999, epsilon));
+    try testing.expect(math.approx_eq_abs(f64, log10(123123.234375), 5.09034, epsilon));
 }
 
 test "log10_32.special" {
-    try testing.expect(math.isPositiveInf(log10f(math.inf(f32))));
-    try testing.expect(math.isNegativeInf(log10f(0.0)));
-    try testing.expect(math.isNan(log10f(-1.0)));
-    try testing.expect(math.isNan(log10f(math.nan(f32))));
+    try testing.expect(math.is_positive_inf(log10f(math.inf(f32))));
+    try testing.expect(math.is_negative_inf(log10f(0.0)));
+    try testing.expect(math.is_nan(log10f(-1.0)));
+    try testing.expect(math.is_nan(log10f(math.nan(f32))));
 }
 
 test "log10_64.special" {
-    try testing.expect(math.isPositiveInf(log10(math.inf(f64))));
-    try testing.expect(math.isNegativeInf(log10(0.0)));
-    try testing.expect(math.isNan(log10(-1.0)));
-    try testing.expect(math.isNan(log10(math.nan(f64))));
+    try testing.expect(math.is_positive_inf(log10(math.inf(f64))));
+    try testing.expect(math.is_negative_inf(log10(0.0)));
+    try testing.expect(math.is_nan(log10(-1.0)));
+    try testing.expect(math.is_nan(log10(math.nan(f64))));
 }

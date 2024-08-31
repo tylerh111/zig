@@ -14,7 +14,7 @@ pub fn main() !void {
     return error.TestFailed;
 }
 fn div(a: i16, b: i16) i16 {
-    return @divTrunc(a, b);
+    return @div_trunc(a, b);
 }
 // run
 // backend=llvm

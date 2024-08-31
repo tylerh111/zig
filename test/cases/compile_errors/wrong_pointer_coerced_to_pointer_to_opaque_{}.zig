@@ -2,7 +2,7 @@ const Derp = opaque {};
 extern fn bar(d: *Derp) void;
 export fn foo() void {
     var x = @as(u8, 1);
-    bar(@as(*anyopaque, @ptrCast(&x)));
+    bar(@as(*anyopaque, @ptr_cast(&x)));
 }
 
 // error

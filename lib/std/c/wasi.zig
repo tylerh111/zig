@@ -21,14 +21,14 @@ pub const timespec = extern struct {
         const tv_sec: wasi.timestamp_t = tm / 1_000_000_000;
         const tv_nsec = tm - tv_sec * 1_000_000_000;
         return .{
-            .tv_sec = @as(time_t, @intCast(tv_sec)),
-            .tv_nsec = @as(isize, @intCast(tv_nsec)),
+            .tv_sec = @as(time_t, @int_cast(tv_sec)),
+            .tv_nsec = @as(isize, @int_cast(tv_nsec)),
         };
     }
 
     pub fn to_timestamp(ts: timespec) wasi.timestamp_t {
-        return @as(wasi.timestamp_t, @intCast(ts.tv_sec * 1_000_000_000)) +
-            @as(wasi.timestamp_t, @intCast(ts.tv_nsec));
+        return @as(wasi.timestamp_t, @int_cast(ts.tv_sec * 1_000_000_000)) +
+            @as(wasi.timestamp_t, @int_cast(ts.tv_nsec));
     }
 };
 
@@ -41,7 +41,7 @@ pub const E = wasi.errno_t;
 pub const CLOCK = wasi.clockid_t;
 pub const IOV_MAX = 1024;
 pub const S = struct {
-    pub const IEXEC = @compileError("TODO audit this");
+    pub const IEXEC = @compile_error("TODO audit this");
     pub const IFBLK = 0x6000;
     pub const IFCHR = 0x2000;
     pub const IFDIR = 0x4000;
@@ -109,10 +109,10 @@ pub const Stat = extern struct {
                 _ => 0,
             },
             .nlink = stat.nlink,
-            .size = @intCast(stat.size),
-            .atim = timespec.fromTimestamp(stat.atim),
-            .mtim = timespec.fromTimestamp(stat.mtim),
-            .ctim = timespec.fromTimestamp(stat.ctim),
+            .size = @int_cast(stat.size),
+            .atim = timespec.from_timestamp(stat.atim),
+            .mtim = timespec.from_timestamp(stat.mtim),
+            .ctim = timespec.from_timestamp(stat.ctim),
 
             .uid = 0,
             .gid = 0,

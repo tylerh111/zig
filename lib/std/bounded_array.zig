@@ -29,8 +29,8 @@ pub fn BoundedArray(comptime T: type, comptime buffer_capacity: usize) type {
 //  var a = try BoundedArrayAligned(u8, 16, 2).init(0);
 //  try a.append(255);
 //  try a.append(255);
-//  const b = @ptrCast(*const [1]u16, a.constSlice().ptr);
-//  try testing.expectEqual(@as(u16, 65535), b[0]);
+//  const b = @ptr_cast(*const [1]u16, a.const_slice().ptr);
+//  try testing.expect_equal(@as(u16, 65535), b[0]);
 /// ```
 pub fn BoundedArrayAligned(
     comptime T: type,
@@ -48,7 +48,7 @@ pub fn BoundedArrayAligned(
         /// Returns error.Overflow if it exceeds the length of the backing array.
         pub fn init(len: usize) error{Overflow}!Self {
             if (len > buffer_capacity) return error.Overflow;
-            return Self{ .len = @intCast(len) };
+            return Self{ .len = @int_cast(len) };
         }
 
         /// View the internal array as a slice whose size was previously set.
@@ -69,7 +69,7 @@ pub fn BoundedArrayAligned(
         /// Does not initialize added items if any.
         pub fn resize(self: *Self, len: usize) error{Overflow}!void {
             if (len > buffer_capacity) return error.Overflow;
-            self.len = @intCast(len);
+            self.len = @int_cast(len);
         }
 
         /// Copy the content of an existing slice.
@@ -81,7 +81,7 @@ pub fn BoundedArrayAligned(
 
         /// Return the element at index `i` of the slice.
         pub fn get(self: Self, i: usize) T {
-            return self.constSlice()[i];
+            return self.const_slice()[i];
         }
 
         /// Set the value of the element at index `i` of the slice.
@@ -103,8 +103,8 @@ pub fn BoundedArrayAligned(
 
         /// Increase length by 1, returning a pointer to the new item.
         pub fn add_one(self: *Self) error{Overflow}!*T {
-            try self.ensureUnusedCapacity(1);
-            return self.addOneAssumeCapacity();
+            try self.ensure_unused_capacity(1);
+            return self.add_one_assume_capacity();
         }
 
         /// Increase length by 1, returning pointer to the new item.
@@ -163,18 +163,18 @@ pub fn BoundedArrayAligned(
             if (i > self.len) {
                 return error.Overflow;
             }
-            _ = try self.addOne();
+            _ = try self.add_one();
             var s = self.slice();
-            mem.copyBackwards(T, s[i + 1 .. s.len], s[i .. s.len - 1]);
+            mem.copy_backwards(T, s[i + 1 .. s.len], s[i .. s.len - 1]);
             self.buffer[i] = item;
         }
 
         /// Insert slice `items` at index `i` by moving `slice[i .. slice.len]` to make room.
         /// This operation is O(N).
         pub fn insert_slice(self: *Self, i: usize, items: []const T) error{Overflow}!void {
-            try self.ensureUnusedCapacity(items.len);
-            self.len = @intCast(self.len + items.len);
-            mem.copyBackwards(T, self.slice()[i + items.len .. self.len], self.constSlice()[i .. self.len - items.len]);
+            try self.ensure_unused_capacity(items.len);
+            self.len = @int_cast(self.len + items.len);
+            mem.copy_backwards(T, self.slice()[i + items.len .. self.len], self.const_slice()[i .. self.len - items.len]);
             @memcpy(self.slice()[i..][0..items.len], items);
         }
 
@@ -196,27 +196,27 @@ pub fn BoundedArrayAligned(
                 const first = new_items[0..range.len];
                 const rest = new_items[range.len..];
                 @memcpy(range[0..first.len], first);
-                try self.insertSlice(after_range, rest);
+                try self.insert_slice(after_range, rest);
             } else {
                 @memcpy(range[0..new_items.len], new_items);
                 const after_subrange = start + new_items.len;
-                for (self.constSlice()[after_range..], 0..) |item, i| {
+                for (self.const_slice()[after_range..], 0..) |item, i| {
                     self.slice()[after_subrange..][i] = item;
                 }
-                self.len = @intCast(self.len - len + new_items.len);
+                self.len = @int_cast(self.len - len + new_items.len);
             }
         }
 
         /// Extend the slice by 1 element.
         pub fn append(self: *Self, item: T) error{Overflow}!void {
-            const new_item_ptr = try self.addOne();
+            const new_item_ptr = try self.add_one();
             new_item_ptr.* = item;
         }
 
         /// Extend the slice by 1 element, asserting the capacity is already
         /// enough to store the new item.
         pub fn append_assume_capacity(self: *Self, item: T) void {
-            const new_item_ptr = self.addOneAssumeCapacity();
+            const new_item_ptr = self.add_one_assume_capacity();
             new_item_ptr.* = item;
         }
 
@@ -246,15 +246,15 @@ pub fn BoundedArrayAligned(
 
         /// Append the slice of items to the slice.
         pub fn append_slice(self: *Self, items: []const T) error{Overflow}!void {
-            try self.ensureUnusedCapacity(items.len);
-            self.appendSliceAssumeCapacity(items);
+            try self.ensure_unused_capacity(items.len);
+            self.append_slice_assume_capacity(items);
         }
 
         /// Append the slice of items to the slice, asserting the capacity is already
         /// enough to store the new items.
         pub fn append_slice_assume_capacity(self: *Self, items: []const T) void {
             const old_len = self.len;
-            self.len = @intCast(self.len + items.len);
+            self.len = @int_cast(self.len + items.len);
             @memcpy(self.slice()[old_len..][0..items.len], items);
         }
 
@@ -271,25 +271,25 @@ pub fn BoundedArrayAligned(
         pub fn append_ntimes_assume_capacity(self: *Self, value: T, n: usize) void {
             const old_len = self.len;
             assert(self.len + n <= buffer_capacity);
-            self.len = @intCast(self.len + n);
+            self.len = @int_cast(self.len + n);
             @memset(self.slice()[old_len..self.len], value);
         }
 
         pub const Writer = if (T != u8)
-            @compileError("The Writer interface is only defined for BoundedArray(u8, ...) " ++
-                "but the given type is BoundedArray(" ++ @typeName(T) ++ ", ...)")
+            @compile_error("The Writer interface is only defined for BoundedArray(u8, ...) " ++
+                "but the given type is BoundedArray(" ++ @type_name(T) ++ ", ...)")
         else
-            std.io.Writer(*Self, error{Overflow}, appendWrite);
+            std.io.Writer(*Self, error{Overflow}, append_write);
 
         /// Initializes a writer which will write into the array.
         pub fn writer(self: *Self) Writer {
             return .{ .context = self };
         }
 
-        /// Same as `appendSlice` except it returns the number of bytes written, which is always the same
+        /// Same as `append_slice` except it returns the number of bytes written, which is always the same
         /// as `m.len`. The purpose of this function existing is to match `std.io.Writer` API.
         fn append_write(self: *Self, m: []const u8) error{Overflow}!usize {
-            try self.appendSlice(m);
+            try self.append_slice(m);
             return m.len;
         }
     };
@@ -298,119 +298,119 @@ pub fn BoundedArrayAligned(
 test BoundedArray {
     var a = try BoundedArray(u8, 64).init(32);
 
-    try testing.expectEqual(a.capacity(), 64);
-    try testing.expectEqual(a.slice().len, 32);
-    try testing.expectEqual(a.constSlice().len, 32);
+    try testing.expect_equal(a.capacity(), 64);
+    try testing.expect_equal(a.slice().len, 32);
+    try testing.expect_equal(a.const_slice().len, 32);
 
     try a.resize(48);
-    try testing.expectEqual(a.len, 48);
+    try testing.expect_equal(a.len, 48);
 
     const x = [_]u8{1} ** 10;
-    a = try BoundedArray(u8, 64).fromSlice(&x);
-    try testing.expectEqualSlices(u8, &x, a.constSlice());
+    a = try BoundedArray(u8, 64).from_slice(&x);
+    try testing.expect_equal_slices(u8, &x, a.const_slice());
 
     var a2 = a;
-    try testing.expectEqualSlices(u8, a.constSlice(), a2.constSlice());
+    try testing.expect_equal_slices(u8, a.const_slice(), a2.const_slice());
     a2.set(0, 0);
     try testing.expect(a.get(0) != a2.get(0));
 
-    try testing.expectError(error.Overflow, a.resize(100));
-    try testing.expectError(error.Overflow, BoundedArray(u8, x.len - 1).fromSlice(&x));
+    try testing.expect_error(error.Overflow, a.resize(100));
+    try testing.expect_error(error.Overflow, BoundedArray(u8, x.len - 1).from_slice(&x));
 
     try a.resize(0);
-    try a.ensureUnusedCapacity(a.capacity());
-    (try a.addOne()).* = 0;
-    try a.ensureUnusedCapacity(a.capacity() - 1);
-    try testing.expectEqual(a.len, 1);
+    try a.ensure_unused_capacity(a.capacity());
+    (try a.add_one()).* = 0;
+    try a.ensure_unused_capacity(a.capacity() - 1);
+    try testing.expect_equal(a.len, 1);
 
-    const uninitialized = try a.addManyAsArray(4);
-    try testing.expectEqual(uninitialized.len, 4);
-    try testing.expectEqual(a.len, 5);
+    const uninitialized = try a.add_many_as_array(4);
+    try testing.expect_equal(uninitialized.len, 4);
+    try testing.expect_equal(a.len, 5);
 
     try a.append(0xff);
-    try testing.expectEqual(a.len, 6);
-    try testing.expectEqual(a.pop(), 0xff);
+    try testing.expect_equal(a.len, 6);
+    try testing.expect_equal(a.pop(), 0xff);
 
-    a.appendAssumeCapacity(0xff);
-    try testing.expectEqual(a.len, 6);
-    try testing.expectEqual(a.pop(), 0xff);
+    a.append_assume_capacity(0xff);
+    try testing.expect_equal(a.len, 6);
+    try testing.expect_equal(a.pop(), 0xff);
 
     try a.resize(1);
-    try testing.expectEqual(a.popOrNull(), 0);
-    try testing.expectEqual(a.popOrNull(), null);
-    var unused = a.unusedCapacitySlice();
+    try testing.expect_equal(a.pop_or_null(), 0);
+    try testing.expect_equal(a.pop_or_null(), null);
+    var unused = a.unused_capacity_slice();
     @memset(unused[0..8], 2);
     unused[8] = 3;
     unused[9] = 4;
-    try testing.expectEqual(unused.len, a.capacity());
+    try testing.expect_equal(unused.len, a.capacity());
     try a.resize(10);
 
     try a.insert(5, 0xaa);
-    try testing.expectEqual(a.len, 11);
-    try testing.expectEqual(a.get(5), 0xaa);
-    try testing.expectEqual(a.get(9), 3);
-    try testing.expectEqual(a.get(10), 4);
+    try testing.expect_equal(a.len, 11);
+    try testing.expect_equal(a.get(5), 0xaa);
+    try testing.expect_equal(a.get(9), 3);
+    try testing.expect_equal(a.get(10), 4);
 
     try a.insert(11, 0xbb);
-    try testing.expectEqual(a.len, 12);
-    try testing.expectEqual(a.pop(), 0xbb);
+    try testing.expect_equal(a.len, 12);
+    try testing.expect_equal(a.pop(), 0xbb);
 
-    try a.appendSlice(&x);
-    try testing.expectEqual(a.len, 11 + x.len);
+    try a.append_slice(&x);
+    try testing.expect_equal(a.len, 11 + x.len);
 
-    try a.appendNTimes(0xbb, 5);
-    try testing.expectEqual(a.len, 11 + x.len + 5);
-    try testing.expectEqual(a.pop(), 0xbb);
+    try a.append_ntimes(0xbb, 5);
+    try testing.expect_equal(a.len, 11 + x.len + 5);
+    try testing.expect_equal(a.pop(), 0xbb);
 
-    a.appendNTimesAssumeCapacity(0xcc, 5);
-    try testing.expectEqual(a.len, 11 + x.len + 5 - 1 + 5);
-    try testing.expectEqual(a.pop(), 0xcc);
+    a.append_ntimes_assume_capacity(0xcc, 5);
+    try testing.expect_equal(a.len, 11 + x.len + 5 - 1 + 5);
+    try testing.expect_equal(a.pop(), 0xcc);
 
-    try testing.expectEqual(a.len, 29);
-    try a.replaceRange(1, 20, &x);
-    try testing.expectEqual(a.len, 29 + x.len - 20);
+    try testing.expect_equal(a.len, 29);
+    try a.replace_range(1, 20, &x);
+    try testing.expect_equal(a.len, 29 + x.len - 20);
 
-    try a.insertSlice(0, &x);
-    try testing.expectEqual(a.len, 29 + x.len - 20 + x.len);
+    try a.insert_slice(0, &x);
+    try testing.expect_equal(a.len, 29 + x.len - 20 + x.len);
 
-    try a.replaceRange(1, 5, &x);
-    try testing.expectEqual(a.len, 29 + x.len - 20 + x.len + x.len - 5);
+    try a.replace_range(1, 5, &x);
+    try testing.expect_equal(a.len, 29 + x.len - 20 + x.len + x.len - 5);
 
     try a.append(10);
-    try testing.expectEqual(a.pop(), 10);
+    try testing.expect_equal(a.pop(), 10);
 
     try a.append(20);
-    const removed = a.orderedRemove(5);
-    try testing.expectEqual(removed, 1);
-    try testing.expectEqual(a.len, 34);
+    const removed = a.ordered_remove(5);
+    try testing.expect_equal(removed, 1);
+    try testing.expect_equal(a.len, 34);
 
     a.set(0, 0xdd);
     a.set(a.len - 1, 0xee);
-    const swapped = a.swapRemove(0);
-    try testing.expectEqual(swapped, 0xdd);
-    try testing.expectEqual(a.get(0), 0xee);
+    const swapped = a.swap_remove(0);
+    try testing.expect_equal(swapped, 0xdd);
+    try testing.expect_equal(a.get(0), 0xee);
 
-    const added_slice = try a.addManyAsSlice(3);
-    try testing.expectEqual(added_slice.len, 3);
-    try testing.expectEqual(a.len, 36);
+    const added_slice = try a.add_many_as_slice(3);
+    try testing.expect_equal(added_slice.len, 3);
+    try testing.expect_equal(a.len, 36);
 
-    while (a.popOrNull()) |_| {}
+    while (a.pop_or_null()) |_| {}
     const w = a.writer();
     const s = "hello, this is a test string";
-    try w.writeAll(s);
-    try testing.expectEqualStrings(s, a.constSlice());
+    try w.write_all(s);
+    try testing.expect_equal_strings(s, a.const_slice());
 }
 
-test "BoundedArray sizeOf" {
+test "BoundedArray size_of" {
     // Just sanity check size on one CPU
     if (@import("builtin").cpu.arch != .x86_64)
         return;
 
-    try testing.expectEqual(@sizeOf(BoundedArray(u8, 3)), 4);
+    try testing.expect_equal(@size_of(BoundedArray(u8, 3)), 4);
 
     // `len` is the minimum required size to hold the maximum capacity
-    try testing.expectEqual(@TypeOf(@as(BoundedArray(u8, 15), undefined).len), u4);
-    try testing.expectEqual(@TypeOf(@as(BoundedArray(u8, 16), undefined).len), u5);
+    try testing.expect_equal(@TypeOf(@as(BoundedArray(u8, 15), undefined).len), u4);
+    try testing.expect_equal(@TypeOf(@as(BoundedArray(u8, 16), undefined).len), u5);
 }
 
 test "BoundedArrayAligned" {
@@ -420,7 +420,7 @@ test "BoundedArrayAligned" {
     try a.append(255);
     try a.append(255);
 
-    const b = @as(*const [2]u16, @ptrCast(a.constSlice().ptr));
-    try testing.expectEqual(@as(u16, 0), b[0]);
-    try testing.expectEqual(@as(u16, 65535), b[1]);
+    const b = @as(*const [2]u16, @ptr_cast(a.const_slice().ptr));
+    try testing.expect_equal(@as(u16, 0), b[0]);
+    try testing.expect_equal(@as(u16, 65535), b[1]);
 }

@@ -1,16 +1,16 @@
 const std = @import("std");
-const neg = @import("negXi2.zig");
+const neg = @import("neg_xi2.zig");
 const testing = std.testing;
 
 const print = std.debug.print;
 
 fn test__negsi2(a: i32, expected: i32) !void {
     const result = neg.__negsi2(a);
-    try testing.expectEqual(expected, result);
+    try testing.expect_equal(expected, result);
 }
 
 test "negsi2" {
-    // TODO ensuring that math.minInt(i32); returns error
+    // TODO ensuring that math.min_int(i32); returns error
 
     try test__negsi2(-3, 3);
     try test__negsi2(-2, 2);
@@ -21,7 +21,7 @@ test "negsi2" {
     try test__negsi2(3, -3);
 
     // max_usable == MAX(i32) == -MIN(i32) == 2147483647 == 7fffffff
-    // divTrunc: max_usable / i, i=1,2,3,5,100
+    // div_trunc: max_usable / i, i=1,2,3,5,100
     // 7fffffff / i
     try test__negsi2(-715827882, 715827882);
     try test__negsi2(715827882, -715827882);

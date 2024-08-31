@@ -20,6 +20,6 @@ fn __aeabi_dsub(a: f64, b: f64) callconv(.AAPCS) f64 {
 }
 
 inline fn sub(a: f64, b: f64) f64 {
-    const neg_b = @as(f64, @bitCast(@as(u64, @bitCast(b)) ^ (@as(u64, 1) << 63)));
+    const neg_b = @as(f64, @bit_cast(@as(u64, @bit_cast(b)) ^ (@as(u64, 1) << 63)));
     return addf3(f64, a, neg_b);
 }

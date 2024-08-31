@@ -1,5 +1,5 @@
 test "void is ignored" {
-    returnsVoid();
+    returns_void();
 }
 
 test "explicitly ignoring expression value" {

@@ -1,7 +1,7 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
+const expect_equal = std.testing.expect_equal;
 const mem = std.mem;
 
 fn init_static_array() [10]i32 {
@@ -12,9 +12,9 @@ fn init_static_array() [10]i32 {
     array[9] = 4;
     return array;
 }
-const static_array = initStaticArray();
+const static_array = init_static_array();
 test "init static array to undefined" {
-    // This test causes `initStaticArray()` to be codegen'd, and the
+    // This test causes `init_static_array()` to be codegen'd, and the
     // C backend does not yet support returning arrays, so it fails
     if (builtin.zig_backend == .stage2_arm) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
@@ -51,12 +51,12 @@ test "assign undefined to struct" {
 
     comptime {
         var foo: Foo = undefined;
-        setFooX(&foo);
+        set_foo_x(&foo);
         try expect(foo.x == 2);
     }
     {
         var foo: Foo = undefined;
-        setFooX(&foo);
+        set_foo_x(&foo);
         try expect(foo.x == 2);
     }
 }
@@ -68,12 +68,12 @@ test "assign undefined to struct with method" {
 
     comptime {
         var foo: Foo = undefined;
-        foo.setFooXMethod();
+        foo.set_foo_xmethod();
         try expect(foo.x == 3);
     }
     {
         var foo: Foo = undefined;
-        foo.setFooXMethod();
+        foo.set_foo_xmethod();
         try expect(foo.x == 3);
     }
 }
@@ -82,7 +82,7 @@ test "type name of undefined" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const x = undefined;
-    try expect(mem.eql(u8, @typeName(@TypeOf(x)), "@TypeOf(undefined)"));
+    try expect(mem.eql(u8, @type_name(@TypeOf(x)), "@TypeOf(undefined)"));
 }
 
 var buf: []u8 = undefined;
@@ -117,6 +117,6 @@ test "returned undef is 0xaa bytes when runtime safety is enabled" {
             return undefined;
         }
     };
-    try std.testing.expect(@as(u32, @bitCast(Rect.getUndefStruct().x)) == 0xAAAAAAAA);
-    try std.testing.expect(Rect.getUndefInt() == 0xAAAAAAAA);
+    try std.testing.expect(@as(u32, @bit_cast(Rect.get_undef_struct().x)) == 0xAAAAAAAA);
+    try std.testing.expect(Rect.get_undef_int() == 0xAAAAAAAA);
 }

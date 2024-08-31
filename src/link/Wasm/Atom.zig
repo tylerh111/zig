@@ -27,7 +27,7 @@ locals: std.ArrayListUnmanaged(Atom.Index) = .{},
 /// Represents the index of an Atom where `null` is considered
 /// an invalid atom.
 pub const Index = enum(u32) {
-    null = std.math.maxInt(u32),
+    null = std.math.max_int(u32),
     _,
 };
 
@@ -42,15 +42,15 @@ pub fn deinit(atom: *Atom, gpa: std.mem.Allocator) void {
 /// Sets the length of relocations and code to '0',
 /// effectively resetting them and allowing them to be re-populated.
 pub fn clear(atom: *Atom) void {
-    atom.relocs.clearRetainingCapacity();
-    atom.code.clearRetainingCapacity();
+    atom.relocs.clear_retaining_capacity();
+    atom.code.clear_retaining_capacity();
 }
 
 pub fn format(atom: Atom, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
     _ = fmt;
     _ = options;
     try writer.print("Atom{{ .sym_index = {d}, .alignment = {d}, .size = {d}, .offset = 0x{x:0>8} }}", .{
-        @intFromEnum(atom.sym_index),
+        @int_from_enum(atom.sym_index),
         atom.alignment,
         atom.size,
         atom.offset,
@@ -66,16 +66,16 @@ pub fn symbol_loc(atom: Atom) Wasm.SymbolLoc {
 /// at the calculated offset.
 pub fn resolve_relocs(atom: *Atom, wasm_bin: *const Wasm) void {
     if (atom.relocs.items.len == 0) return;
-    const symbol_name = atom.symbolLoc().getName(wasm_bin);
+    const symbol_name = atom.symbol_loc().get_name(wasm_bin);
     log.debug("Resolving relocs in atom '{s}' count({d})", .{
         symbol_name,
         atom.relocs.items.len,
     });
 
     for (atom.relocs.items) |reloc| {
-        const value = atom.relocationValue(reloc, wasm_bin);
+        const value = atom.relocation_value(reloc, wasm_bin);
         log.debug("Relocating '{s}' referenced in '{s}' offset=0x{x:0>8} value={d}", .{
-            (Wasm.SymbolLoc{ .file = atom.file, .index = @enumFromInt(reloc.index) }).getName(wasm_bin),
+            (Wasm.SymbolLoc{ .file = atom.file, .index = @enumFromInt(reloc.index) }).get_name(wasm_bin),
             symbol_name,
             reloc.offset,
             value,
@@ -87,10 +87,10 @@ pub fn resolve_relocs(atom: *Atom, wasm_bin: *const Wasm) void {
             .R_WASM_GLOBAL_INDEX_I32,
             .R_WASM_MEMORY_ADDR_I32,
             .R_WASM_SECTION_OFFSET_I32,
-            => std.mem.writeInt(u32, atom.code.items[reloc.offset - atom.original_offset ..][0..4], @as(u32, @truncate(value)), .little),
+            => std.mem.write_int(u32, atom.code.items[reloc.offset - atom.original_offset ..][0..4], @as(u32, @truncate(value)), .little),
             .R_WASM_TABLE_INDEX_I64,
             .R_WASM_MEMORY_ADDR_I64,
-            => std.mem.writeInt(u64, atom.code.items[reloc.offset - atom.original_offset ..][0..8], value, .little),
+            => std.mem.write_int(u64, atom.code.items[reloc.offset - atom.original_offset ..][0..8], value, .little),
             .R_WASM_GLOBAL_INDEX_LEB,
             .R_WASM_EVENT_INDEX_LEB,
             .R_WASM_FUNCTION_INDEX_LEB,
@@ -100,12 +100,12 @@ pub fn resolve_relocs(atom: *Atom, wasm_bin: *const Wasm) void {
             .R_WASM_TABLE_NUMBER_LEB,
             .R_WASM_TYPE_INDEX_LEB,
             .R_WASM_MEMORY_ADDR_TLS_SLEB,
-            => leb.writeUnsignedFixed(5, atom.code.items[reloc.offset - atom.original_offset ..][0..5], @as(u32, @truncate(value))),
+            => leb.write_unsigned_fixed(5, atom.code.items[reloc.offset - atom.original_offset ..][0..5], @as(u32, @truncate(value))),
             .R_WASM_MEMORY_ADDR_LEB64,
             .R_WASM_MEMORY_ADDR_SLEB64,
             .R_WASM_TABLE_INDEX_SLEB64,
             .R_WASM_MEMORY_ADDR_TLS_SLEB64,
-            => leb.writeUnsignedFixed(10, atom.code.items[reloc.offset - atom.original_offset ..][0..10], value),
+            => leb.write_unsigned_fixed(10, atom.code.items[reloc.offset - atom.original_offset ..][0..10], value),
         }
     }
 }
@@ -114,14 +114,14 @@ pub fn resolve_relocs(atom: *Atom, wasm_bin: *const Wasm) void {
 /// All values will be represented as a `u64` as all values can fit within it.
 /// The final value must be casted to the correct size.
 fn relocation_value(atom: Atom, relocation: types.Relocation, wasm_bin: *const Wasm) u64 {
-    const target_loc = (Wasm.SymbolLoc{ .file = atom.file, .index = @enumFromInt(relocation.index) }).finalLoc(wasm_bin);
-    const symbol = target_loc.getSymbol(wasm_bin);
+    const target_loc = (Wasm.SymbolLoc{ .file = atom.file, .index = @enumFromInt(relocation.index) }).final_loc(wasm_bin);
+    const symbol = target_loc.get_symbol(wasm_bin);
     if (relocation.relocation_type != .R_WASM_TYPE_INDEX_LEB and
         symbol.tag != .section and
-        symbol.isDead())
+        symbol.is_dead())
     {
         const val = atom.thombstone(wasm_bin) orelse relocation.addend;
-        return @bitCast(val);
+        return @bit_cast(val);
     }
     switch (relocation.relocation_type) {
         .R_WASM_FUNCTION_INDEX_LEB => return symbol.index,
@@ -133,8 +133,8 @@ fn relocation_value(atom: Atom, relocation: types.Relocation, wasm_bin: *const W
         => return wasm_bin.function_table.get(.{ .file = atom.file, .index = @enumFromInt(relocation.index) }) orelse 0,
         .R_WASM_TYPE_INDEX_LEB => {
             const obj_file = wasm_bin.file(atom.file) orelse return relocation.index;
-            const original_type = obj_file.funcTypes()[relocation.index];
-            return wasm_bin.getTypeIndex(original_type).?;
+            const original_type = obj_file.func_types()[relocation.index];
+            return wasm_bin.get_type_index(original_type).?;
         },
         .R_WASM_GLOBAL_INDEX_I32,
         .R_WASM_GLOBAL_INDEX_LEB,
@@ -147,34 +147,34 @@ fn relocation_value(atom: Atom, relocation: types.Relocation, wasm_bin: *const W
         .R_WASM_MEMORY_ADDR_SLEB64,
         => {
             std.debug.assert(symbol.tag == .data);
-            if (symbol.isUndefined()) {
+            if (symbol.is_undefined()) {
                 return 0;
             }
-            const va: i33 = @intCast(symbol.virtual_address);
-            return @intCast(va + relocation.addend);
+            const va: i33 = @int_cast(symbol.virtual_address);
+            return @int_cast(va + relocation.addend);
         },
         .R_WASM_EVENT_INDEX_LEB => return symbol.index,
         .R_WASM_SECTION_OFFSET_I32 => {
             const target_atom_index = wasm_bin.symbol_atom.get(target_loc).?;
-            const target_atom = wasm_bin.getAtom(target_atom_index);
-            const rel_value: i33 = @intCast(target_atom.offset);
-            return @intCast(rel_value + relocation.addend);
+            const target_atom = wasm_bin.get_atom(target_atom_index);
+            const rel_value: i33 = @int_cast(target_atom.offset);
+            return @int_cast(rel_value + relocation.addend);
         },
         .R_WASM_FUNCTION_OFFSET_I32 => {
-            if (symbol.isUndefined()) {
+            if (symbol.is_undefined()) {
                 const val = atom.thombstone(wasm_bin) orelse relocation.addend;
-                return @bitCast(val);
+                return @bit_cast(val);
             }
             const target_atom_index = wasm_bin.symbol_atom.get(target_loc).?;
-            const target_atom = wasm_bin.getAtom(target_atom_index);
-            const rel_value: i33 = @intCast(target_atom.offset);
-            return @intCast(rel_value + relocation.addend);
+            const target_atom = wasm_bin.get_atom(target_atom_index);
+            const rel_value: i33 = @int_cast(target_atom.offset);
+            return @int_cast(rel_value + relocation.addend);
         },
         .R_WASM_MEMORY_ADDR_TLS_SLEB,
         .R_WASM_MEMORY_ADDR_TLS_SLEB64,
         => {
-            const va: i33 = @intCast(symbol.virtual_address);
-            return @intCast(va + relocation.addend);
+            const va: i33 = @int_cast(symbol.virtual_address);
+            return @int_cast(va + relocation.addend);
         },
     }
 }
@@ -182,10 +182,10 @@ fn relocation_value(atom: Atom, relocation: types.Relocation, wasm_bin: *const W
 // For a given `Atom` returns whether it has a thombstone value or not.
 /// This defines whether we want a specific value when a section is dead.
 fn thombstone(atom: Atom, wasm: *const Wasm) ?i64 {
-    const atom_name = atom.symbolLoc().getName(wasm);
+    const atom_name = atom.symbol_loc().get_name(wasm);
     if (std.mem.eql(u8, atom_name, ".debug_ranges") or std.mem.eql(u8, atom_name, ".debug_loc")) {
         return -2;
-    } else if (std.mem.startsWith(u8, atom_name, ".debug_")) {
+    } else if (std.mem.starts_with(u8, atom_name, ".debug_")) {
         return -1;
     }
     return null;

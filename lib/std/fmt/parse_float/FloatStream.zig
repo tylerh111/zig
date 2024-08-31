@@ -38,14 +38,14 @@ pub fn first_unchecked(self: FloatStream) u8 {
 }
 
 pub fn first(self: FloatStream) ?u8 {
-    return if (self.hasLen(1))
-        return self.firstUnchecked()
+    return if (self.has_len(1))
+        return self.first_unchecked()
     else
         null;
 }
 
 pub fn is_empty(self: FloatStream) bool {
-    return !self.hasLen(1);
+    return !self.has_len(1);
 }
 
 pub fn first_is(self: FloatStream, c: u8) bool {
@@ -80,7 +80,7 @@ pub fn first_is_digit(self: FloatStream, comptime base: u8) bool {
     comptime std.debug.assert(base == 10 or base == 16);
 
     if (self.first()) |ok| {
-        return common.isDigit(ok, base);
+        return common.is_digit(ok, base);
     }
     return false;
 }
@@ -90,20 +90,20 @@ pub fn advance(self: *FloatStream, n: usize) void {
 }
 
 pub fn skip_chars(self: *FloatStream, c: u8) void {
-    while (self.firstIs(c)) : (self.advance(1)) {}
+    while (self.first_is(c)) : (self.advance(1)) {}
 }
 
 pub fn skip_chars2(self: *FloatStream, c1: u8, c2: u8) void {
-    while (self.firstIs2(c1, c2)) : (self.advance(1)) {}
+    while (self.first_is2(c1, c2)) : (self.advance(1)) {}
 }
 
 pub fn read_u64_unchecked(self: FloatStream) u64 {
-    return std.mem.readInt(u64, self.slice[self.offset..][0..8], .little);
+    return std.mem.read_int(u64, self.slice[self.offset..][0..8], .little);
 }
 
 pub fn read_u64(self: FloatStream) ?u64 {
-    if (self.hasLen(8)) {
-        return self.readU64Unchecked();
+    if (self.has_len(8)) {
+        return self.read_u64_unchecked();
     }
     return null;
 }

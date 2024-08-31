@@ -4,7 +4,7 @@ const testing = std.testing;
 const mem = std.mem;
 const assert = std.debug.assert;
 const expect = testing.expect;
-const expectEqual = testing.expectEqual;
+const expect_equal = testing.expect_equal;
 
 test "array to slice" {
     const a: u32 align(4) = 3;
@@ -41,7 +41,7 @@ test "arrays" {
     }
 
     try expect(accumulator == 15);
-    try expect(getArrayLen(&array) == 5);
+    try expect(get_array_len(&array) == 5);
 }
 fn get_array_len(a: []const u32) usize {
     return a.len;
@@ -67,8 +67,8 @@ test "array concat with undefined" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "array concat with tuple" {
@@ -79,11 +79,11 @@ test "array concat with tuple" {
     const array: [2]u8 = .{ 1, 2 };
     {
         const seq = array ++ .{ 3, 4 };
-        try std.testing.expectEqualSlices(u8, &.{ 1, 2, 3, 4 }, &seq);
+        try std.testing.expect_equal_slices(u8, &.{ 1, 2, 3, 4 }, &seq);
     }
     {
         const seq = .{ 3, 4 } ++ array;
-        try std.testing.expectEqualSlices(u8, &.{ 3, 4, 1, 2 }, &seq);
+        try std.testing.expect_equal_slices(u8, &.{ 3, 4, 1, 2 }, &seq);
     }
 }
 
@@ -170,15 +170,15 @@ test "array with sentinels" {
             {
                 var zero_sized: [0:0xde]u8 = [_:0xde]u8{};
                 try expect(zero_sized[0] == 0xde);
-                var reinterpreted: *[1]u8 = @ptrCast(&zero_sized);
+                var reinterpreted: *[1]u8 = @ptr_cast(&zero_sized);
                 _ = &reinterpreted;
                 try expect(reinterpreted[0] == 0xde);
             }
             var arr: [3:0x55]u8 = undefined;
             // Make sure the sentinel pointer is pointing after the last element.
             if (!is_ct) {
-                const sentinel_ptr = @intFromPtr(&arr[3]);
-                const last_elem_ptr = @intFromPtr(&arr[2]);
+                const sentinel_ptr = @int_from_ptr(&arr[3]);
+                const last_elem_ptr = @int_from_ptr(&arr[2]);
                 try expect((sentinel_ptr - last_elem_ptr) == 1);
             }
             // Make sure the sentinel is writeable.
@@ -186,15 +186,15 @@ test "array with sentinels" {
         }
     };
 
-    try S.doTheTest(false);
-    try comptime S.doTheTest(true);
+    try S.do_the_test(false);
+    try comptime S.do_the_test(true);
 }
 
 test "void arrays" {
     var array: [4]void = undefined;
     array[0] = void{};
     array[1] = array[2];
-    try expect(@sizeOf(@TypeOf(array)) == 0);
+    try expect(@size_of(@TypeOf(array)) == 0);
     try expect(array.len == 4);
 }
 
@@ -233,7 +233,7 @@ test "implicit comptime in array type size" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    var arr: [plusOne(10)]bool = undefined;
+    var arr: [plus_one(10)]bool = undefined;
     _ = &arr;
     try expect(arr.len == 11);
 }
@@ -247,19 +247,19 @@ test "single-item pointer to array indexing and slicing" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testSingleItemPtrArrayIndexSlice();
-    try comptime testSingleItemPtrArrayIndexSlice();
+    try test_single_item_ptr_array_index_slice();
+    try comptime test_single_item_ptr_array_index_slice();
 }
 
 fn test_single_item_ptr_array_index_slice() !void {
     {
         var array: [4]u8 = "aaaa".*;
-        doSomeMangling(&array);
+        do_some_mangling(&array);
         try expect(mem.eql(u8, "azya", &array));
     }
     {
         var array = "aaaa".*;
-        doSomeMangling(&array);
+        do_some_mangling(&array);
         try expect(mem.eql(u8, "azya", &array));
     }
 }
@@ -300,8 +300,8 @@ test "anonymous list literal syntax" {
             try expect(array[3] == 4);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 var s_array: [8]Sub = undefined;
@@ -341,7 +341,7 @@ test "read/write through global variable array of struct fields initialized via 
 
         var storage: [1]MyStruct = [_]MyStruct{MyStruct{ .term = 1 }} ** 1;
     };
-    try S.doTheTest();
+    try S.do_the_test();
 }
 
 test "implicit cast single-item pointer" {
@@ -349,8 +349,8 @@ test "implicit cast single-item pointer" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try testImplicitCastSingleItemPtr();
-    try comptime testImplicitCastSingleItemPtr();
+    try test_implicit_cast_single_item_ptr();
+    try comptime test_implicit_cast_single_item_ptr();
 }
 
 fn test_implicit_cast_single_item_ptr() !void {
@@ -369,8 +369,8 @@ test "comptime evaluating function that takes array by value" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
     const arr = [_]u8{ 1, 2 };
-    const x = comptime testArrayByValAtComptime(arr);
-    const y = comptime testArrayByValAtComptime(arr);
+    const x = comptime test_array_by_val_at_comptime(arr);
+    const y = comptime test_array_by_val_at_comptime(arr);
     try expect(x == 1);
     try expect(y == 1);
 }
@@ -498,8 +498,8 @@ test "anonymous literal in array" {
             try expect(array[1].b == 3);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "access the null element of a null terminated array" {
@@ -517,8 +517,8 @@ test "access the null element of a null terminated array" {
             try expect(array[len] == 0);
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "type deduction for array subscript expression" {
@@ -537,8 +537,8 @@ test "type deduction for array subscript expression" {
             _ = .{ &array, &v0, &v1 };
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "sentinel element count towards the ABI size calculation" {
@@ -555,15 +555,15 @@ test "sentinel element count towards the ABI size calculation" {
                 fill_post: u8 = 0xAA,
             };
             var x = T{};
-            const as_slice = mem.asBytes(&x);
+            const as_slice = mem.as_bytes(&x);
             try expect(@as(usize, 3) == as_slice.len);
             try expect(@as(u8, 0x55) == as_slice[0]);
             try expect(@as(u8, 0xAA) == as_slice[2]);
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "zero-sized array with recursive type definition" {
@@ -620,8 +620,8 @@ test "type coercion of anon struct literal to array" {
             try expect(mem.eql(u8, arr2[2].c, "hello"));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "type coercion of pointer to anon struct literal to pointer to array" {
@@ -655,8 +655,8 @@ test "type coercion of pointer to anon struct literal to pointer to array" {
             try expect(mem.eql(u8, arr2[2].c, "hello"));
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "array with comptime-only element type" {
@@ -694,11 +694,11 @@ test "array init of container level array variable" {
             pair = tmp;
         }
     };
-    try expectEqual([2]usize{ 1, 2 }, S.pair);
+    try expect_equal([2]usize{ 1, 2 }, S.pair);
     S.foo(3, 4);
-    try expectEqual([2]usize{ 3, 4 }, S.pair);
+    try expect_equal([2]usize{ 3, 4 }, S.pair);
     S.bar(5, 6);
-    try expectEqual([2]usize{ 5, 6 }, S.pair);
+    try expect_equal([2]usize{ 5, 6 }, S.pair);
 }
 
 test "runtime initialized sentinel-terminated array literal" {
@@ -707,7 +707,7 @@ test "runtime initialized sentinel-terminated array literal" {
     var c: u16 = 300;
     _ = &c;
     const f = &[_:0x9999]u16{c};
-    const g = @as(*const [4]u8, @ptrCast(f));
+    const g = @as(*const [4]u8, @ptr_cast(f));
     try std.testing.expect(g[2] == 0x99);
     try std.testing.expect(g[3] == 0x99);
 }
@@ -744,8 +744,8 @@ test "discarded array init preserves result location" {
 
     var x: u32 = 0;
     _ = [2]u8{
-        @intCast(S.f(&x)),
-        @intCast(S.f(&x)),
+        @int_cast(S.f(&x)),
+        @int_cast(S.f(&x)),
     };
 
     // Ensure function was run
@@ -754,8 +754,8 @@ test "discarded array init preserves result location" {
 
 test "array init with no result location has result type" {
     const x = .{ .foo = [2]u16{
-        @intCast(10),
-        @intCast(20),
+        @int_cast(10),
+        @int_cast(20),
     } };
 
     try expect(x.foo.len == 2);
@@ -787,7 +787,7 @@ test "array init with no result pointer sets field result types" {
     };
 
     const x: u64 = 123;
-    const y = S.f(.{@intCast(x)});
+    const y = S.f(.{@int_cast(x)});
 
     try expect(y == x);
 }
@@ -814,8 +814,8 @@ test "runtime side-effects in comptime-known array init" {
             break :blk 8;
         },
     };
-    try expectEqual([4]u4{ 1, 2, 4, 8 }, init);
-    try expectEqual(@as(u4, std.math.maxInt(u4)), side_effects);
+    try expect_equal([4]u4{ 1, 2, 4, 8 }, init);
+    try expect_equal(@as(u4, std.math.max_int(u4)), side_effects);
 }
 
 test "slice initialized through reference to anonymous array init provides result types" {
@@ -825,12 +825,12 @@ test "slice initialized through reference to anonymous array init provides resul
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: []const u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @int_cast(my_u32),
+        @int_cast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
-    try std.testing.expectEqualSlices(u16, &.{ 123, 456, 123, 456 }, foo);
+    try std.testing.expect_equal_slices(u16, &.{ 123, 456, 123, 456 }, foo);
 }
 
 test "sentinel-terminated slice initialized through reference to anonymous array init provides result types" {
@@ -840,12 +840,12 @@ test "sentinel-terminated slice initialized through reference to anonymous array
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: [:999]const u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @int_cast(my_u32),
+        @int_cast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
-    try std.testing.expectEqualSentinel(u16, 999, &.{ 123, 456, 123, 456 }, foo);
+    try std.testing.expect_equal_sentinel(u16, 999, &.{ 123, 456, 123, 456 }, foo);
 }
 
 test "many-item pointer initialized through reference to anonymous array init provides result types" {
@@ -855,15 +855,15 @@ test "many-item pointer initialized through reference to anonymous array init pr
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: [*]const u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @int_cast(my_u32),
+        @int_cast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
-    try expectEqual(123, foo[0]);
-    try expectEqual(456, foo[1]);
-    try expectEqual(123, foo[2]);
-    try expectEqual(456, foo[3]);
+    try expect_equal(123, foo[0]);
+    try expect_equal(456, foo[1]);
+    try expect_equal(123, foo[2]);
+    try expect_equal(456, foo[3]);
 }
 
 test "many-item sentinel-terminated pointer initialized through reference to anonymous array init provides result types" {
@@ -873,16 +873,16 @@ test "many-item sentinel-terminated pointer initialized through reference to ano
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: [*:999]const u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @int_cast(my_u32),
+        @int_cast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
-    try expectEqual(123, foo[0]);
-    try expectEqual(456, foo[1]);
-    try expectEqual(123, foo[2]);
-    try expectEqual(456, foo[3]);
-    try expectEqual(999, foo[4]);
+    try expect_equal(123, foo[0]);
+    try expect_equal(456, foo[1]);
+    try expect_equal(123, foo[2]);
+    try expect_equal(456, foo[3]);
+    try expect_equal(999, foo[4]);
 }
 
 test "pointer to array initialized through reference to anonymous array init provides result types" {
@@ -892,12 +892,12 @@ test "pointer to array initialized through reference to anonymous array init pro
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: *const [4]u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @int_cast(my_u32),
+        @int_cast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
-    try std.testing.expectEqualSlices(u16, &.{ 123, 456, 123, 456 }, foo);
+    try std.testing.expect_equal_slices(u16, &.{ 123, 456, 123, 456 }, foo);
 }
 
 test "pointer to sentinel-terminated array initialized through reference to anonymous array init provides result types" {
@@ -907,22 +907,22 @@ test "pointer to sentinel-terminated array initialized through reference to anon
     var my_u64: u64 = 456;
     _ = .{ &my_u32, &my_u64 };
     const foo: *const [4:999]u16 = &.{
-        @intCast(my_u32),
-        @intCast(my_u64),
+        @int_cast(my_u32),
+        @int_cast(my_u64),
         @truncate(my_u32),
         @truncate(my_u64),
     };
-    try std.testing.expectEqualSentinel(u16, 999, &.{ 123, 456, 123, 456 }, foo);
+    try std.testing.expect_equal_sentinel(u16, 999, &.{ 123, 456, 123, 456 }, foo);
 }
 
 test "tuple initialized through reference to anonymous array init provides result types" {
     const Tuple = struct { u64, *const u32 };
     const foo: *const Tuple = &.{
-        @intCast(12345),
+        @int_cast(12345),
         @ptrFromInt(0x1000),
     };
     try expect(foo[0] == 12345);
-    try expect(@intFromPtr(foo[1]) == 0x1000);
+    try expect(@int_from_ptr(foo[1]) == 0x1000);
 }
 
 test "copied array element doesn't alias source" {
@@ -958,7 +958,7 @@ test "array initialized with string literal" {
 
     var u_2 = U{ .s = s_1 };
     _ = &u_2;
-    try std.testing.expectEqualStrings("12345", &u_2.s.c);
+    try std.testing.expect_equal_strings("12345", &u_2.s.c);
 }
 
 test "array initialized with array with sentinel" {
@@ -979,7 +979,7 @@ test "array initialized with array with sentinel" {
     };
     var u_2 = U{ .s = s_1 };
     _ = &u_2;
-    try std.testing.expectEqualSlices(u8, &.{ 1, 2, 3, 4, 5 }, &u_2.s.c);
+    try std.testing.expect_equal_slices(u8, &.{ 1, 2, 3, 4, 5 }, &u_2.s.c);
 }
 
 test "store array of array of structs at comptime" {
@@ -1003,8 +1003,8 @@ test "store array of array of structs at comptime" {
         }
     };
 
-    try expect(S.storeArrayOfArrayOfStructs() == 15);
-    comptime assert(S.storeArrayOfArrayOfStructs() == 15);
+    try expect(S.store_array_of_array_of_structs() == 15);
+    comptime assert(S.store_array_of_array_of_structs() == 15);
 }
 
 test "accessing multidimensional global array at comptime" {
@@ -1021,7 +1021,7 @@ test "accessing multidimensional global array at comptime" {
     };
 
     try std.testing.expect(S.array[0].len == 1);
-    try std.testing.expectEqualStrings("hello", S.array[0][0]);
+    try std.testing.expect_equal_strings("hello", S.array[0][0]);
 }
 
 test "union that needs padding bytes inside an array" {

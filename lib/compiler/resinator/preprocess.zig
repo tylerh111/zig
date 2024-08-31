@@ -13,7 +13,7 @@ pub fn preprocess(
     argv: []const []const u8,
     maybe_dependencies_list: ?*std.ArrayList([]const u8),
 ) PreprocessError!void {
-    try comp.addDefaultPragmaHandlers();
+    try comp.add_default_pragma_handlers();
 
     var driver: aro.Driver = .{ .comp = comp, .aro_name = "arocc" };
     defer driver.deinit();
@@ -21,28 +21,28 @@ pub fn preprocess(
     var macro_buf = std.ArrayList(u8).init(comp.gpa);
     defer macro_buf.deinit();
 
-    _ = driver.parseArgs(std.io.null_writer, macro_buf.writer(), argv) catch |err| switch (err) {
+    _ = driver.parse_args(std.io.null_writer, macro_buf.writer(), argv) catch |err| switch (err) {
         error.FatalError => return error.ArgError,
         error.OutOfMemory => |e| return e,
     };
 
-    if (hasAnyErrors(comp)) return error.ArgError;
+    if (has_any_errors(comp)) return error.ArgError;
 
     // .include_system_defines gives us things like _WIN32
-    const builtin_macros = comp.generateBuiltinMacros(.include_system_defines) catch |err| switch (err) {
+    const builtin_macros = comp.generate_builtin_macros(.include_system_defines) catch |err| switch (err) {
         error.FatalError => return error.GeneratedSourceError,
         else => |e| return e,
     };
-    const user_macros = comp.addSourceFromBuffer("<command line>", macro_buf.items) catch |err| switch (err) {
+    const user_macros = comp.add_source_from_buffer("<command line>", macro_buf.items) catch |err| switch (err) {
         error.FatalError => return error.GeneratedSourceError,
         else => |e| return e,
     };
     const source = driver.inputs.items[0];
 
-    if (hasAnyErrors(comp)) return error.GeneratedSourceError;
+    if (has_any_errors(comp)) return error.GeneratedSourceError;
 
     comp.generated_buf.items.len = 0;
-    var pp = try aro.Preprocessor.initDefault(comp);
+    var pp = try aro.Preprocessor.init_default(comp);
     defer pp.deinit();
 
     if (comp.langopts.ms_extensions) {
@@ -52,14 +52,14 @@ pub fn preprocess(
     pp.preserve_whitespace = true;
     pp.linemarkers = .line_directives;
 
-    pp.preprocessSources(&.{ source, builtin_macros, user_macros }) catch |err| switch (err) {
+    pp.preprocess_sources(&.{ source, builtin_macros, user_macros }) catch |err| switch (err) {
         error.FatalError => return error.PreprocessError,
         else => |e| return e,
     };
 
-    if (hasAnyErrors(comp)) return error.PreprocessError;
+    if (has_any_errors(comp)) return error.PreprocessError;
 
-    try pp.prettyPrintTokens(writer);
+    try pp.pretty_print_tokens(writer);
 
     if (maybe_dependencies_list) |dependencies_list| {
         for (comp.sources.values()) |comp_source| {
@@ -88,7 +88,7 @@ fn has_any_errors(comp: *aro.Compilation) bool {
 /// `arena` is used for temporary -D argument strings and the INCLUDE environment variable.
 /// The arena should be kept alive at least as long as `argv`.
 pub fn append_aro_args(arena: Allocator, argv: *std.ArrayList([]const u8), options: cli.Options, system_include_paths: []const []const u8) !void {
-    try argv.appendSlice(&.{
+    try argv.append_slice(&.{
         "-E",
         "--comments",
         "-fuse-line-directives",
@@ -108,7 +108,7 @@ pub fn append_aro_args(arena: Allocator, argv: *std.ArrayList([]const u8), optio
     }
 
     if (!options.ignore_include_env_var) {
-        const INCLUDE = std.process.getEnvVarOwned(arena, "INCLUDE") catch "";
+        const INCLUDE = std.process.get_env_var_owned(arena, "INCLUDE") catch "";
 
         // The only precedence here is llvm-rc which also uses the platform-specific
         // delimiter. There's no precedence set by `rc.exe` since it's Windows-only.
@@ -116,7 +116,7 @@ pub fn append_aro_args(arena: Allocator, argv: *std.ArrayList([]const u8), optio
             .windows => ';',
             else => ':',
         };
-        var it = std.mem.tokenizeScalar(u8, INCLUDE, delimiter);
+        var it = std.mem.tokenize_scalar(u8, INCLUDE, delimiter);
         while (it.next()) |include_path| {
             try argv.append("-isystem");
             try argv.append(include_path);
@@ -128,7 +128,7 @@ pub fn append_aro_args(arena: Allocator, argv: *std.ArrayList([]const u8), optio
         switch (entry.value_ptr.*) {
             .define => |value| {
                 try argv.append("-D");
-                const define_arg = try std.fmt.allocPrint(arena, "{s}={s}", .{ entry.key_ptr.*, value });
+                const define_arg = try std.fmt.alloc_print(arena, "{s}={s}", .{ entry.key_ptr.*, value });
                 try argv.append(define_arg);
             },
             .undefine => {

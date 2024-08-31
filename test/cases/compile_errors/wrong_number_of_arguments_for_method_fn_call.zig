@@ -8,7 +8,7 @@ fn f(foo: *const Foo) void {
     foo.method(1, 2);
 }
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&f));
+    return @size_of(@TypeOf(&f));
 }
 
 // error

@@ -10,12 +10,12 @@ state: std.atomic.Value(usize) = std.atomic.Value(usize).init(0),
 event: std.Thread.ResetEvent = .{},
 
 pub fn start(self: *WaitGroup) void {
-    const state = self.state.fetchAdd(one_pending, .monotonic);
-    assert((state / one_pending) < (std.math.maxInt(usize) / one_pending));
+    const state = self.state.fetch_add(one_pending, .monotonic);
+    assert((state / one_pending) < (std.math.max_int(usize) / one_pending));
 }
 
 pub fn finish(self: *WaitGroup) void {
-    const state = self.state.fetchSub(one_pending, .release);
+    const state = self.state.fetch_sub(one_pending, .release);
     assert((state / one_pending) > 0);
 
     if (state == (one_pending | is_waiting)) {
@@ -25,7 +25,7 @@ pub fn finish(self: *WaitGroup) void {
 }
 
 pub fn wait(self: *WaitGroup) void {
-    const state = self.state.fetchAdd(is_waiting, .acquire);
+    const state = self.state.fetch_add(is_waiting, .acquire);
     assert(state & is_waiting == 0);
 
     if ((state / one_pending) > 0) {

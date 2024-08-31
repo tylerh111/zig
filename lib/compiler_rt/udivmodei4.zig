@@ -4,7 +4,7 @@ const common = @import("common.zig");
 const shr = std.math.shr;
 const shl = std.math.shl;
 
-const max_limbs = std.math.divCeil(usize, 65535, 32) catch unreachable; // max supported type is u65535
+const max_limbs = std.math.div_ceil(usize, 65535, 32) catch unreachable; // max supported type is u65535
 
 comptime {
     @export(__udivei4, .{ .name = "__udivei4", .linkage = common.linkage, .visibility = common.visibility });
@@ -84,11 +84,11 @@ fn divmod(q: ?[]u32, r: ?[]u32, u: []const u32, v: []const u32) !void {
         while (i <= n) : (i += 1) {
             const p = qhat * limb(&vn, i);
             const t = limb(&un, i + j) - carry - @as(u32, @truncate(p));
-            limb_set(&un, i + j, @as(u32, @truncate(@as(u64, @bitCast(t)))));
-            carry = @as(i64, @intCast(p >> 32)) - @as(i64, @intCast(t >> 32));
+            limb_set(&un, i + j, @as(u32, @truncate(@as(u64, @bit_cast(t)))));
+            carry = @as(i64, @int_cast(p >> 32)) - @as(i64, @int_cast(t >> 32));
         }
         const t = limb(&un, j + n + 1) -% carry;
-        limb_set(&un, j + n + 1, @as(u32, @truncate(@as(u64, @bitCast(t)))));
+        limb_set(&un, j + n + 1, @as(u32, @truncate(@as(u64, @bit_cast(t)))));
         if (q) |q_| limb_set(q_, j, @as(u32, @truncate(qhat)));
         if (t < 0) {
             if (q) |q_| limb_set(q_, j, limb(q_, j) - 1);
@@ -114,17 +114,17 @@ fn divmod(q: ?[]u32, r: ?[]u32, u: []const u32, v: []const u32) !void {
 
 pub fn __udivei4(r_q: [*]u32, u_p: [*]const u32, v_p: [*]const u32, bits: usize) callconv(.C) void {
     @setRuntimeSafety(builtin.is_test);
-    const u = u_p[0 .. std.math.divCeil(usize, bits, 32) catch unreachable];
-    const v = v_p[0 .. std.math.divCeil(usize, bits, 32) catch unreachable];
-    const q = r_q[0 .. std.math.divCeil(usize, bits, 32) catch unreachable];
+    const u = u_p[0 .. std.math.div_ceil(usize, bits, 32) catch unreachable];
+    const v = v_p[0 .. std.math.div_ceil(usize, bits, 32) catch unreachable];
+    const q = r_q[0 .. std.math.div_ceil(usize, bits, 32) catch unreachable];
     @call(.always_inline, divmod, .{ q, null, u, v }) catch unreachable;
 }
 
 pub fn __umodei4(r_p: [*]u32, u_p: [*]const u32, v_p: [*]const u32, bits: usize) callconv(.C) void {
     @setRuntimeSafety(builtin.is_test);
-    const u = u_p[0 .. std.math.divCeil(usize, bits, 32) catch unreachable];
-    const v = v_p[0 .. std.math.divCeil(usize, bits, 32) catch unreachable];
-    const r = r_p[0 .. std.math.divCeil(usize, bits, 32) catch unreachable];
+    const u = u_p[0 .. std.math.div_ceil(usize, bits, 32) catch unreachable];
+    const v = v_p[0 .. std.math.div_ceil(usize, bits, 32) catch unreachable];
+    const r = r_p[0 .. std.math.div_ceil(usize, bits, 32) catch unreachable];
     @call(.always_inline, divmod, .{ null, r, u, v }) catch unreachable;
 }
 

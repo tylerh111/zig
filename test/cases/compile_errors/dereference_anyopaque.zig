@@ -7,7 +7,7 @@ fn next() Error!void {
 }
 
 fn parse(comptime T: type, allocator: std.mem.Allocator) !void {
-    parseFree(T, undefined, allocator);
+    parse_free(T, undefined, allocator);
     _ = (try next()) != null;
 }
 
@@ -16,17 +16,17 @@ fn parse_free(comptime T: type, value: T, allocator: std.mem.Allocator) void {
         .Struct => |structInfo| {
             inline for (structInfo.fields) |field| {
                 if (!field.is_comptime)
-                    parseFree(field.type, undefined, allocator);
+                    parse_free(field.type, undefined, allocator);
             }
         },
-        .Pointer => |ptrInfo| {
-            switch (ptrInfo.size) {
+        .Pointer => |ptr_info| {
+            switch (ptr_info.size) {
                 .One => {
-                    parseFree(ptrInfo.child, value.*, allocator);
+                    parse_free(ptr_info.child, value.*, allocator);
                 },
                 .Slice => {
                     for (value) |v|
-                        parseFree(ptrInfo.child, v, allocator);
+                        parse_free(ptr_info.child, v, allocator);
                 },
                 else => unreachable,
             }

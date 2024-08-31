@@ -42,7 +42,7 @@ pub const SimpleTextOutput = extern struct {
         return self._set_mode(self, mode_number);
     }
 
-    /// Sets the background and foreground colors for the outputString() and clearScreen() functions.
+    /// Sets the background and foreground colors for the output_string() and clear_screen() functions.
     pub fn set_attribute(self: *const SimpleTextOutput, attribute: usize) Status {
         return self._set_attribute(self, attribute);
     }

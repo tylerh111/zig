@@ -96,7 +96,7 @@ const test_vectors = init: {
     var vectors: [arguments.len * arguments.len]TestVector = undefined;
     for (arguments[0..], 0..) |arg_i, i| {
         for (arguments[0..], 0..) |arg_j, j| {
-            vectors[(i * arguments.len) + j] = generateVector(arg_i, arg_j);
+            vectors[(i * arguments.len) + j] = generate_vector(arg_i, arg_j);
         }
     }
     break :init vectors;

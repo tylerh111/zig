@@ -31,7 +31,7 @@ pub fn deinit(rebase: *Rebase, gpa: Allocator) void {
 }
 
 pub fn size(rebase: Rebase) u64 {
-    return @as(u64, @intCast(rebase.buffer.items.len));
+    return @as(u64, @int_cast(rebase.buffer.items.len));
 }
 
 pub fn finalize(rebase: *Rebase, gpa: Allocator) !void {
@@ -41,20 +41,20 @@ pub fn finalize(rebase: *Rebase, gpa: Allocator) !void {
 
     log.debug("rebase opcodes", .{});
 
-    std.mem.sort(Entry, rebase.entries.items, {}, Entry.lessThan);
+    std.mem.sort(Entry, rebase.entries.items, {}, Entry.less_than);
 
-    try setTypePointer(writer);
+    try set_type_pointer(writer);
 
     var start: usize = 0;
     var seg_id: ?u8 = null;
     for (rebase.entries.items, 0..) |entry, i| {
         if (seg_id != null and seg_id.? == entry.segment_id) continue;
-        try finalizeSegment(rebase.entries.items[start..i], writer);
+        try finalize_segment(rebase.entries.items[start..i], writer);
         seg_id = entry.segment_id;
         start = i;
     }
 
-    try finalizeSegment(rebase.entries.items[start..], writer);
+    try finalize_segment(rebase.entries.items[start..], writer);
     try done(writer);
 }
 
@@ -63,7 +63,7 @@ fn finalize_segment(entries: []const Entry, writer: anytype) !void {
 
     const segment_id = entries[0].segment_id;
     var offset = entries[0].offset;
-    try setSegmentOffset(segment_id, offset, writer);
+    try set_segment_offset(segment_id, offset, writer);
 
     var count: usize = 0;
     var skip: u64 = 0;
@@ -75,25 +75,25 @@ fn finalize_segment(entries: []const Entry, writer: anytype) !void {
 
     var i: usize = 0;
     while (i < entries.len) : (i += 1) {
-        log.debug("{x}, {d}, {x}, {s}", .{ offset, count, skip, @tagName(state) });
+        log.debug("{x}, {d}, {x}, {s}", .{ offset, count, skip, @tag_name(state) });
         const current_offset = entries[i].offset;
         log.debug("  => {x}", .{current_offset});
         switch (state) {
             .start => {
                 if (offset < current_offset) {
                     const delta = current_offset - offset;
-                    try addAddr(delta, writer);
+                    try add_addr(delta, writer);
                     offset += delta;
                 }
                 state = .times;
-                offset += @sizeOf(u64);
+                offset += @size_of(u64);
                 count = 1;
             },
             .times => {
                 const delta = current_offset - offset;
                 if (delta == 0) {
                     count += 1;
-                    offset += @sizeOf(u64);
+                    offset += @size_of(u64);
                     continue;
                 }
                 if (count == 1) {
@@ -102,7 +102,7 @@ fn finalize_segment(entries: []const Entry, writer: anytype) !void {
                     offset += skip;
                     i -= 1;
                 } else {
-                    try rebaseTimes(count, writer);
+                    try rebase_times(count, writer);
                     state = .start;
                     i -= 1;
                 }
@@ -111,12 +111,12 @@ fn finalize_segment(entries: []const Entry, writer: anytype) !void {
                 if (current_offset < offset) {
                     count -= 1;
                     if (count == 1) {
-                        try rebaseAddAddr(skip, writer);
+                        try rebase_add_addr(skip, writer);
                     } else {
-                        try rebaseTimesSkip(count, skip, writer);
+                        try rebase_times_skip(count, skip, writer);
                     }
                     state = .start;
-                    offset = offset - (@sizeOf(u64) + skip);
+                    offset = offset - (@size_of(u64) + skip);
                     i -= 2;
                     continue;
                 }
@@ -124,9 +124,9 @@ fn finalize_segment(entries: []const Entry, writer: anytype) !void {
                 const delta = current_offset - offset;
                 if (delta == 0) {
                     count += 1;
-                    offset += @sizeOf(u64) + skip;
+                    offset += @size_of(u64) + skip;
                 } else {
-                    try rebaseTimesSkip(count, skip, writer);
+                    try rebase_times_skip(count, skip, writer);
                     state = .start;
                     i -= 1;
                 }
@@ -137,69 +137,69 @@ fn finalize_segment(entries: []const Entry, writer: anytype) !void {
     switch (state) {
         .start => unreachable,
         .times => {
-            try rebaseTimes(count, writer);
+            try rebase_times(count, writer);
         },
         .times_skip => {
-            try rebaseTimesSkip(count, skip, writer);
+            try rebase_times_skip(count, skip, writer);
         },
     }
 }
 
 fn set_type_pointer(writer: anytype) !void {
     log.debug(">>> set type: {d}", .{macho.REBASE_TYPE_POINTER});
-    try writer.writeByte(macho.REBASE_OPCODE_SET_TYPE_IMM | @as(u4, @truncate(macho.REBASE_TYPE_POINTER)));
+    try writer.write_byte(macho.REBASE_OPCODE_SET_TYPE_IMM | @as(u4, @truncate(macho.REBASE_TYPE_POINTER)));
 }
 
 fn set_segment_offset(segment_id: u8, offset: u64, writer: anytype) !void {
     log.debug(">>> set segment: {d} and offset: {x}", .{ segment_id, offset });
-    try writer.writeByte(macho.REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | @as(u4, @truncate(segment_id)));
-    try std.leb.writeULEB128(writer, offset);
+    try writer.write_byte(macho.REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | @as(u4, @truncate(segment_id)));
+    try std.leb.write_uleb128(writer, offset);
 }
 
 fn rebase_add_addr(addr: u64, writer: anytype) !void {
     log.debug(">>> rebase with add: {x}", .{addr});
-    try writer.writeByte(macho.REBASE_OPCODE_DO_REBASE_ADD_ADDR_ULEB);
-    try std.leb.writeULEB128(writer, addr);
+    try writer.write_byte(macho.REBASE_OPCODE_DO_REBASE_ADD_ADDR_ULEB);
+    try std.leb.write_uleb128(writer, addr);
 }
 
 fn rebase_times(count: usize, writer: anytype) !void {
     log.debug(">>> rebase with count: {d}", .{count});
     if (count <= 0xf) {
-        try writer.writeByte(macho.REBASE_OPCODE_DO_REBASE_IMM_TIMES | @as(u4, @truncate(count)));
+        try writer.write_byte(macho.REBASE_OPCODE_DO_REBASE_IMM_TIMES | @as(u4, @truncate(count)));
     } else {
-        try writer.writeByte(macho.REBASE_OPCODE_DO_REBASE_ULEB_TIMES);
-        try std.leb.writeULEB128(writer, count);
+        try writer.write_byte(macho.REBASE_OPCODE_DO_REBASE_ULEB_TIMES);
+        try std.leb.write_uleb128(writer, count);
     }
 }
 
 fn rebase_times_skip(count: usize, skip: u64, writer: anytype) !void {
     log.debug(">>> rebase with count: {d} and skip: {x}", .{ count, skip });
-    try writer.writeByte(macho.REBASE_OPCODE_DO_REBASE_ULEB_TIMES_SKIPPING_ULEB);
-    try std.leb.writeULEB128(writer, count);
-    try std.leb.writeULEB128(writer, skip);
+    try writer.write_byte(macho.REBASE_OPCODE_DO_REBASE_ULEB_TIMES_SKIPPING_ULEB);
+    try std.leb.write_uleb128(writer, count);
+    try std.leb.write_uleb128(writer, skip);
 }
 
 fn add_addr(addr: u64, writer: anytype) !void {
     log.debug(">>> add: {x}", .{addr});
-    if (std.mem.isAlignedGeneric(u64, addr, @sizeOf(u64))) {
-        const imm = @divExact(addr, @sizeOf(u64));
+    if (std.mem.is_aligned_generic(u64, addr, @size_of(u64))) {
+        const imm = @div_exact(addr, @size_of(u64));
         if (imm <= 0xf) {
-            try writer.writeByte(macho.REBASE_OPCODE_ADD_ADDR_IMM_SCALED | @as(u4, @truncate(imm)));
+            try writer.write_byte(macho.REBASE_OPCODE_ADD_ADDR_IMM_SCALED | @as(u4, @truncate(imm)));
             return;
         }
     }
-    try writer.writeByte(macho.REBASE_OPCODE_ADD_ADDR_ULEB);
-    try std.leb.writeULEB128(writer, addr);
+    try writer.write_byte(macho.REBASE_OPCODE_ADD_ADDR_ULEB);
+    try std.leb.write_uleb128(writer, addr);
 }
 
 fn done(writer: anytype) !void {
     log.debug(">>> done", .{});
-    try writer.writeByte(macho.REBASE_OPCODE_DONE);
+    try writer.write_byte(macho.REBASE_OPCODE_DONE);
 }
 
 pub fn write(rebase: Rebase, writer: anytype) !void {
     if (rebase.size() == 0) return;
-    try writer.writeAll(rebase.buffer.items);
+    try writer.write_all(rebase.buffer.items);
 }
 
 test "rebase - no entries" {
@@ -209,7 +209,7 @@ test "rebase - no entries" {
     defer rebase.deinit(gpa);
 
     try rebase.finalize(gpa);
-    try testing.expectEqual(@as(u64, 0), rebase.size());
+    try testing.expect_equal(@as(u64, 0), rebase.size());
 }
 
 test "rebase - single entry" {
@@ -222,7 +222,7 @@ test "rebase - single entry" {
         .offset = 0x10,
     });
     try rebase.finalize(gpa);
-    try testing.expectEqualSlices(u8, &[_]u8{
+    try testing.expect_equal_slices(u8, &[_]u8{
         macho.REBASE_OPCODE_SET_TYPE_IMM | macho.REBASE_TYPE_POINTER,
         macho.REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | 1,
         0x10,
@@ -241,13 +241,13 @@ test "rebase - emitTimes - IMM" {
     while (i < 10) : (i += 1) {
         try rebase.entries.append(gpa, .{
             .segment_id = 1,
-            .offset = i * @sizeOf(u64),
+            .offset = i * @size_of(u64),
         });
     }
 
     try rebase.finalize(gpa);
 
-    try testing.expectEqualSlices(u8, &[_]u8{
+    try testing.expect_equal_slices(u8, &[_]u8{
         macho.REBASE_OPCODE_SET_TYPE_IMM | macho.REBASE_TYPE_POINTER,
         macho.REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | 1,
         0x0,
@@ -266,13 +266,13 @@ test "rebase - emitTimes - ULEB" {
     while (i < 100) : (i += 1) {
         try rebase.entries.append(gpa, .{
             .segment_id = 1,
-            .offset = i * @sizeOf(u64),
+            .offset = i * @size_of(u64),
         });
     }
 
     try rebase.finalize(gpa);
 
-    try testing.expectEqualSlices(u8, &[_]u8{
+    try testing.expect_equal_slices(u8, &[_]u8{
         macho.REBASE_OPCODE_SET_TYPE_IMM | macho.REBASE_TYPE_POINTER,
         macho.REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | 1,
         0x0,
@@ -282,7 +282,7 @@ test "rebase - emitTimes - ULEB" {
     }, rebase.buffer.items);
 }
 
-test "rebase - emitTimes followed by addAddr followed by emitTimes" {
+test "rebase - emitTimes followed by add_addr followed by emitTimes" {
     const gpa = testing.allocator;
 
     var rebase = Rebase{};
@@ -295,10 +295,10 @@ test "rebase - emitTimes followed by addAddr followed by emitTimes" {
             .segment_id = 1,
             .offset = offset,
         });
-        offset += @sizeOf(u64);
+        offset += @size_of(u64);
     }
 
-    offset += @sizeOf(u64);
+    offset += @size_of(u64);
 
     try rebase.entries.append(gpa, .{
         .segment_id = 1,
@@ -307,7 +307,7 @@ test "rebase - emitTimes followed by addAddr followed by emitTimes" {
 
     try rebase.finalize(gpa);
 
-    try testing.expectEqualSlices(u8, &[_]u8{
+    try testing.expect_equal_slices(u8, &[_]u8{
         macho.REBASE_OPCODE_SET_TYPE_IMM | macho.REBASE_TYPE_POINTER,
         macho.REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | 1,
         0x0,
@@ -331,12 +331,12 @@ test "rebase - emitTimesSkip" {
             .segment_id = 1,
             .offset = offset,
         });
-        offset += 2 * @sizeOf(u64);
+        offset += 2 * @size_of(u64);
     }
 
     try rebase.finalize(gpa);
 
-    try testing.expectEqualSlices(u8, &[_]u8{
+    try testing.expect_equal_slices(u8, &[_]u8{
         macho.REBASE_OPCODE_SET_TYPE_IMM | macho.REBASE_TYPE_POINTER,
         macho.REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | 1,
         0x0,
@@ -383,7 +383,7 @@ test "rebase - complex" {
     });
     try rebase.finalize(gpa);
 
-    try testing.expectEqualSlices(u8, &[_]u8{
+    try testing.expect_equal_slices(u8, &[_]u8{
         macho.REBASE_OPCODE_SET_TYPE_IMM | macho.REBASE_TYPE_POINTER,
         macho.REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | 1,
         0x0,
@@ -466,7 +466,7 @@ test "rebase - complex 2" {
     });
     try rebase.finalize(gpa);
 
-    try testing.expectEqualSlices(u8, &[_]u8{
+    try testing.expect_equal_slices(u8, &[_]u8{
         macho.REBASE_OPCODE_SET_TYPE_IMM | macho.REBASE_TYPE_POINTER,
         macho.REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | 1,
         0x0,
@@ -558,7 +558,7 @@ test "rebase - composite" {
     });
     try rebase.finalize(gpa);
 
-    try testing.expectEqualSlices(u8, &[_]u8{
+    try testing.expect_equal_slices(u8, &[_]u8{
         macho.REBASE_OPCODE_SET_TYPE_IMM | macho.REBASE_TYPE_POINTER,
         macho.REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | 1,
         0x8,

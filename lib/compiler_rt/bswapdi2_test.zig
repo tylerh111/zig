@@ -3,7 +3,7 @@ const testing = @import("std").testing;
 
 fn test__bswapdi2(a: u64, expected: u64) !void {
     const result = bswap.__bswapdi2(a);
-    try testing.expectEqual(expected, result);
+    try testing.expect_equal(expected, result);
 }
 
 test "bswapdi2" {

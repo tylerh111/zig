@@ -1,5 +1,5 @@
 export fn u() void {
-    _ = @unionInit(0, "a", 0);
+    _ = @union_init(0, "a", 0);
 }
 
 // error

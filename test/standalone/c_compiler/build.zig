@@ -25,22 +25,22 @@ fn add(
 ) void {
     const target = b.host;
 
-    const exe_c = b.addExecutable(.{
+    const exe_c = b.add_executable(.{
         .name = c_name,
         .optimize = optimize,
         .target = target,
     });
-    exe_c.addCSourceFile(.{ .file = b.path("test.c"), .flags = &[0][]const u8{} });
-    exe_c.linkLibC();
+    exe_c.add_csource_file(.{ .file = b.path("test.c"), .flags = &[0][]const u8{} });
+    exe_c.link_lib_c();
 
-    const exe_cpp = b.addExecutable(.{
+    const exe_cpp = b.add_executable(.{
         .name = cpp_name,
         .optimize = optimize,
         .target = target,
     });
-    b.default_step.dependOn(&exe_cpp.step);
-    exe_cpp.addCSourceFile(.{ .file = b.path("test.cpp"), .flags = &[0][]const u8{} });
-    exe_cpp.linkLibCpp();
+    b.default_step.depend_on(&exe_cpp.step);
+    exe_cpp.add_csource_file(.{ .file = b.path("test.cpp"), .flags = &[0][]const u8{} });
+    exe_cpp.link_lib_cpp();
 
     switch (target.result.os.tag) {
         .windows => {
@@ -55,13 +55,13 @@ fn add(
         else => {},
     }
 
-    const run_c_cmd = b.addRunArtifact(exe_c);
-    run_c_cmd.expectExitCode(0);
+    const run_c_cmd = b.add_run_artifact(exe_c);
+    run_c_cmd.expect_exit_code(0);
     run_c_cmd.skip_foreign_checks = true;
-    test_step.dependOn(&run_c_cmd.step);
+    test_step.depend_on(&run_c_cmd.step);
 
-    const run_cpp_cmd = b.addRunArtifact(exe_cpp);
-    run_cpp_cmd.expectExitCode(0);
+    const run_cpp_cmd = b.add_run_artifact(exe_cpp);
+    run_cpp_cmd.expect_exit_code(0);
     run_cpp_cmd.skip_foreign_checks = true;
-    test_step.dependOn(&run_cpp_cmd.step);
+    test_step.depend_on(&run_cpp_cmd.step);
 }

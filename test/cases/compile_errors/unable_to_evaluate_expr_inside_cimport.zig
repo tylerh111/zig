@@ -1,4 +1,4 @@
-const c = @cImport({
+const c = @c_import({
     _ = 1 + foo;
 });
 extern var foo: i32;
@@ -12,4 +12,4 @@ export fn entry() void {
 //
 // :2:11: error: unable to evaluate comptime expression
 // :2:13: note: operation is runtime due to this operand
-// :1:11: note: expression is evaluated at comptime because it is inside a @cImport
+// :1:11: note: expression is evaluated at comptime because it is inside a @c_import

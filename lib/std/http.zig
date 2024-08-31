@@ -32,15 +32,15 @@ pub const Method = enum(u64) {
     /// Asserts that `s` is 24 or fewer bytes.
     pub fn parse(s: []const u8) u64 {
         var x: u64 = 0;
-        const len = @min(s.len, @sizeOf(@TypeOf(x)));
-        @memcpy(std.mem.asBytes(&x)[0..len], s[0..len]);
+        const len = @min(s.len, @size_of(@TypeOf(x)));
+        @memcpy(std.mem.as_bytes(&x)[0..len], s[0..len]);
         return x;
     }
 
     pub fn write(self: Method, w: anytype) !void {
-        const bytes = std.mem.asBytes(&@intFromEnum(self));
-        const str = std.mem.sliceTo(bytes, 0);
-        try w.writeAll(str);
+        const bytes = std.mem.as_bytes(&@int_from_enum(self));
+        const str = std.mem.slice_to(bytes, 0);
+        try w.write_all(str);
     }
 
     /// Returns true if a request of this method is allowed to have a body
@@ -261,7 +261,7 @@ pub const Status = enum(u10) {
     };
 
     pub fn class(self: Status) Class {
-        return switch (@intFromEnum(self)) {
+        return switch (@int_from_enum(self)) {
             100...199 => .informational,
             200...299 => .success,
             300...399 => .redirect,
@@ -271,13 +271,13 @@ pub const Status = enum(u10) {
     }
 
     test {
-        try std.testing.expectEqualStrings("OK", Status.ok.phrase().?);
-        try std.testing.expectEqualStrings("Not Found", Status.not_found.phrase().?);
+        try std.testing.expect_equal_strings("OK", Status.ok.phrase().?);
+        try std.testing.expect_equal_strings("Not Found", Status.not_found.phrase().?);
     }
 
     test {
-        try std.testing.expectEqual(Status.Class.success, Status.ok.class());
-        try std.testing.expectEqual(Status.Class.client_error, Status.not_found.class());
+        try std.testing.expect_equal(Status.Class.success, Status.ok.class());
+        try std.testing.expect_equal(Status.Class.client_error, Status.not_found.class());
     }
 };
 

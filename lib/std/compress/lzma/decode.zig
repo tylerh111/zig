@@ -47,23 +47,23 @@ pub const Params = struct {
     unpacked_size: ?u64,
 
     pub fn read_header(reader: anytype, options: Options) !Params {
-        var props = try reader.readByte();
+        var props = try reader.read_byte();
         if (props >= 225) {
             return error.CorruptInput;
         }
 
-        const lc = @as(u4, @intCast(props % 9));
+        const lc = @as(u4, @int_cast(props % 9));
         props /= 9;
-        const lp = @as(u3, @intCast(props % 5));
+        const lp = @as(u3, @int_cast(props % 5));
         props /= 5;
-        const pb = @as(u3, @intCast(props));
+        const pb = @as(u3, @int_cast(props));
 
-        const dict_size_provided = try reader.readInt(u32, .little);
+        const dict_size_provided = try reader.read_int(u32, .little);
         const dict_size = @max(0x1000, dict_size_provided);
 
         const unpacked_size = switch (options.unpacked_size) {
             .read_from_header => blk: {
-                const unpacked_size_provided = try reader.readInt(u64, .little);
+                const unpacked_size_provided = try reader.read_int(u64, .little);
                 const marker_mandatory = unpacked_size_provided == 0xFFFF_FFFF_FFFF_FFFF;
                 break :blk if (marker_mandatory)
                     null
@@ -71,7 +71,7 @@ pub const Params = struct {
                     unpacked_size_provided;
             },
             .read_header_but_use_provided => |x| blk: {
-                _ = try reader.readInt(u64, .little);
+                _ = try reader.read_int(u64, .little);
                 break :blk x;
             },
             .use_provided => |x| x,
@@ -169,15 +169,15 @@ pub const DecoderState = struct {
     ) !ProcessingStatus {
         const pos_state = buffer.len & ((@as(usize, 1) << self.lzma_props.pb) - 1);
 
-        if (!try decoder.decodeBit(
+        if (!try decoder.decode_bit(
             reader,
             &self.is_match[(self.state << 4) + pos_state],
             update,
         )) {
-            const byte: u8 = try self.decodeLiteral(reader, buffer, decoder, update);
+            const byte: u8 = try self.decode_literal(reader, buffer, decoder, update);
 
             if (update) {
-                try buffer.appendLiteral(allocator, byte, writer);
+                try buffer.append_literal(allocator, byte, writer);
 
                 self.state = if (self.state < 4)
                     0
@@ -190,9 +190,9 @@ pub const DecoderState = struct {
         }
 
         var len: usize = undefined;
-        if (try decoder.decodeBit(reader, &self.is_rep[self.state], update)) {
-            if (!try decoder.decodeBit(reader, &self.is_rep_g0[self.state], update)) {
-                if (!try decoder.decodeBit(
+        if (try decoder.decode_bit(reader, &self.is_rep[self.state], update)) {
+            if (!try decoder.decode_bit(reader, &self.is_rep_g0[self.state], update)) {
+                if (!try decoder.decode_bit(
                     reader,
                     &self.is_rep_0long[(self.state << 4) + pos_state],
                     update,
@@ -200,14 +200,14 @@ pub const DecoderState = struct {
                     if (update) {
                         self.state = if (self.state < 7) 9 else 11;
                         const dist = self.rep[0] + 1;
-                        try buffer.appendLz(allocator, 1, dist, writer);
+                        try buffer.append_lz(allocator, 1, dist, writer);
                     }
                     return .continue_;
                 }
             } else {
-                const idx: usize = if (!try decoder.decodeBit(reader, &self.is_rep_g1[self.state], update))
+                const idx: usize = if (!try decoder.decode_bit(reader, &self.is_rep_g1[self.state], update))
                     1
-                else if (!try decoder.decodeBit(reader, &self.is_rep_g2[self.state], update))
+                else if (!try decoder.decode_bit(reader, &self.is_rep_g2[self.state], update))
                     2
                 else
                     3;
@@ -239,12 +239,12 @@ pub const DecoderState = struct {
                 self.state = if (self.state < 7) 7 else 10;
             }
 
-            const rep_0 = try self.decodeDistance(reader, decoder, len, update);
+            const rep_0 = try self.decode_distance(reader, decoder, len, update);
 
             if (update) {
                 self.rep[0] = rep_0;
                 if (self.rep[0] == 0xFFFF_FFFF) {
-                    if (decoder.isFinished()) {
+                    if (decoder.is_finished()) {
                         return .finished;
                     }
                     return error.CorruptInput;
@@ -256,7 +256,7 @@ pub const DecoderState = struct {
             len += 2;
 
             const dist = self.rep[0] + 1;
-            try buffer.appendLz(allocator, len, dist, writer);
+            try buffer.append_lz(allocator, len, dist, writer);
         }
 
         return .continue_;
@@ -270,7 +270,7 @@ pub const DecoderState = struct {
         buffer: anytype,
         decoder: *RangeDecoder,
     ) !ProcessingStatus {
-        return self.processNextInner(allocator, reader, writer, buffer, decoder, true);
+        return self.process_next_inner(allocator, reader, writer, buffer, decoder, true);
     }
 
     pub fn process(
@@ -286,11 +286,11 @@ pub const DecoderState = struct {
                 if (buffer.len >= unpacked_size) {
                     break :process_next;
                 }
-            } else if (decoder.isFinished()) {
+            } else if (decoder.is_finished()) {
                 break :process_next;
             }
 
-            switch (try self.processNext(allocator, reader, writer, buffer, decoder)) {
+            switch (try self.process_next(allocator, reader, writer, buffer, decoder)) {
                 .continue_ => return .continue_,
                 .finished => break :process_next,
             }
@@ -313,20 +313,20 @@ pub const DecoderState = struct {
         update: bool,
     ) !u8 {
         const def_prev_byte = 0;
-        const prev_byte = @as(usize, buffer.lastOr(def_prev_byte));
+        const prev_byte = @as(usize, buffer.last_or(def_prev_byte));
 
         var result: usize = 1;
         const lit_state = ((buffer.len & ((@as(usize, 1) << self.lzma_props.lp) - 1)) << self.lzma_props.lc) +
             (prev_byte >> (8 - self.lzma_props.lc));
-        const probs = try self.literal_probs.getMut(lit_state);
+        const probs = try self.literal_probs.get_mut(lit_state);
 
         if (self.state >= 7) {
-            var match_byte = @as(usize, try buffer.lastN(self.rep[0] + 1));
+            var match_byte = @as(usize, try buffer.last_n(self.rep[0] + 1));
 
             while (result < 0x100) {
                 const match_bit = (match_byte >> 7) & 1;
                 match_byte <<= 1;
-                const bit = @intFromBool(try decoder.decodeBit(
+                const bit = @int_from_bool(try decoder.decode_bit(
                     reader,
                     &probs[((@as(usize, 1) + match_bit) << 8) + result],
                     update,
@@ -339,7 +339,7 @@ pub const DecoderState = struct {
         }
 
         while (result < 0x100) {
-            result = (result << 1) ^ @intFromBool(try decoder.decodeBit(reader, &probs[result], update));
+            result = (result << 1) ^ @int_from_bool(try decoder.decode_bit(reader, &probs[result], update));
         }
 
         return @as(u8, @truncate(result - 0x100));
@@ -358,11 +358,11 @@ pub const DecoderState = struct {
         if (pos_slot < 4)
             return pos_slot;
 
-        const num_direct_bits = @as(u5, @intCast((pos_slot >> 1) - 1));
+        const num_direct_bits = @as(u5, @int_cast((pos_slot >> 1) - 1));
         var result = (2 ^ (pos_slot & 1)) << num_direct_bits;
 
         if (pos_slot < 14) {
-            result += try decoder.parseReverseBitTree(
+            result += try decoder.parse_reverse_bit_tree(
                 reader,
                 num_direct_bits,
                 &self.pos_decoders,
@@ -371,7 +371,7 @@ pub const DecoderState = struct {
             );
         } else {
             result += @as(usize, try decoder.get(reader, num_direct_bits - 4)) << 4;
-            result += try self.align_decoder.parseReverse(reader, decoder, update);
+            result += try self.align_decoder.parse_reverse(reader, decoder, update);
         }
 
         return result;

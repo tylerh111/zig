@@ -27,8 +27,8 @@ comptime {
 }
 
 pub fn __floorh(x: f16) callconv(.C) f16 {
-    var u: u16 = @bitCast(x);
-    const e = @as(i16, @intCast((u >> 10) & 31)) - 15;
+    var u: u16 = @bit_cast(x);
+    const e = @as(i16, @int_cast((u >> 10) & 31)) - 15;
     var m: u16 = undefined;
 
     // TODO: Shouldn't need this explicit check.
@@ -41,17 +41,17 @@ pub fn __floorh(x: f16) callconv(.C) f16 {
     }
 
     if (e >= 0) {
-        m = @as(u16, 1023) >> @intCast(e);
+        m = @as(u16, 1023) >> @int_cast(e);
         if (u & m == 0) {
             return x;
         }
-        mem.doNotOptimizeAway(x + 0x1.0p120);
+        mem.do_not_optimize_away(x + 0x1.0p120);
         if (u >> 15 != 0) {
             u += m;
         }
-        return @bitCast(u & ~m);
+        return @bit_cast(u & ~m);
     } else {
-        mem.doNotOptimizeAway(x + 0x1.0p120);
+        mem.do_not_optimize_away(x + 0x1.0p120);
         if (u >> 15 == 0) {
             return 0.0;
         } else {
@@ -61,8 +61,8 @@ pub fn __floorh(x: f16) callconv(.C) f16 {
 }
 
 pub fn floorf(x: f32) callconv(.C) f32 {
-    var u: u32 = @bitCast(x);
-    const e = @as(i32, @intCast((u >> 23) & 0xFF)) - 0x7F;
+    var u: u32 = @bit_cast(x);
+    const e = @as(i32, @int_cast((u >> 23) & 0xFF)) - 0x7F;
     var m: u32 = undefined;
 
     // TODO: Shouldn't need this explicit check.
@@ -75,17 +75,17 @@ pub fn floorf(x: f32) callconv(.C) f32 {
     }
 
     if (e >= 0) {
-        m = @as(u32, 0x007FFFFF) >> @intCast(e);
+        m = @as(u32, 0x007FFFFF) >> @int_cast(e);
         if (u & m == 0) {
             return x;
         }
-        mem.doNotOptimizeAway(x + 0x1.0p120);
+        mem.do_not_optimize_away(x + 0x1.0p120);
         if (u >> 31 != 0) {
             u += m;
         }
-        return @bitCast(u & ~m);
+        return @bit_cast(u & ~m);
     } else {
-        mem.doNotOptimizeAway(x + 0x1.0p120);
+        mem.do_not_optimize_away(x + 0x1.0p120);
         if (u >> 31 == 0) {
             return 0.0;
         } else {
@@ -95,9 +95,9 @@ pub fn floorf(x: f32) callconv(.C) f32 {
 }
 
 pub fn floor(x: f64) callconv(.C) f64 {
-    const f64_toint = 1.0 / math.floatEps(f64);
+    const f64_toint = 1.0 / math.float_eps(f64);
 
-    const u: u64 = @bitCast(x);
+    const u: u64 = @bit_cast(x);
     const e = (u >> 52) & 0x7FF;
     var y: f64 = undefined;
 
@@ -112,7 +112,7 @@ pub fn floor(x: f64) callconv(.C) f64 {
     }
 
     if (e <= 0x3FF - 1) {
-        mem.doNotOptimizeAway(y);
+        mem.do_not_optimize_away(y);
         if (u >> 63 != 0) {
             return -1.0;
         } else {
@@ -127,13 +127,13 @@ pub fn floor(x: f64) callconv(.C) f64 {
 
 pub fn __floorx(x: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(floorq(x));
+    return @float_cast(floorq(x));
 }
 
 pub fn floorq(x: f128) callconv(.C) f128 {
-    const f128_toint = 1.0 / math.floatEps(f128);
+    const f128_toint = 1.0 / math.float_eps(f128);
 
-    const u: u128 = @bitCast(x);
+    const u: u128 = @bit_cast(x);
     const e = (u >> 112) & 0x7FFF;
     var y: f128 = undefined;
 
@@ -146,7 +146,7 @@ pub fn floorq(x: f128) callconv(.C) f128 {
     }
 
     if (e <= 0x3FFF - 1) {
-        mem.doNotOptimizeAway(y);
+        mem.do_not_optimize_away(y);
         if (u >> 127 != 0) {
             return -1.0;
         } else {
@@ -166,7 +166,7 @@ pub fn floorl(x: c_longdouble) callconv(.C) c_longdouble {
         64 => return floor(x),
         80 => return __floorx(x),
         128 => return floorq(x),
-        else => @compileError("unreachable"),
+        else => @compile_error("unreachable"),
     }
 }
 
@@ -197,31 +197,31 @@ test "floor128" {
 test "floor16.special" {
     try expect(__floorh(0.0) == 0.0);
     try expect(__floorh(-0.0) == -0.0);
-    try expect(math.isPositiveInf(__floorh(math.inf(f16))));
-    try expect(math.isNegativeInf(__floorh(-math.inf(f16))));
-    try expect(math.isNan(__floorh(math.nan(f16))));
+    try expect(math.is_positive_inf(__floorh(math.inf(f16))));
+    try expect(math.is_negative_inf(__floorh(-math.inf(f16))));
+    try expect(math.is_nan(__floorh(math.nan(f16))));
 }
 
 test "floor32.special" {
     try expect(floorf(0.0) == 0.0);
     try expect(floorf(-0.0) == -0.0);
-    try expect(math.isPositiveInf(floorf(math.inf(f32))));
-    try expect(math.isNegativeInf(floorf(-math.inf(f32))));
-    try expect(math.isNan(floorf(math.nan(f32))));
+    try expect(math.is_positive_inf(floorf(math.inf(f32))));
+    try expect(math.is_negative_inf(floorf(-math.inf(f32))));
+    try expect(math.is_nan(floorf(math.nan(f32))));
 }
 
 test "floor64.special" {
     try expect(floor(0.0) == 0.0);
     try expect(floor(-0.0) == -0.0);
-    try expect(math.isPositiveInf(floor(math.inf(f64))));
-    try expect(math.isNegativeInf(floor(-math.inf(f64))));
-    try expect(math.isNan(floor(math.nan(f64))));
+    try expect(math.is_positive_inf(floor(math.inf(f64))));
+    try expect(math.is_negative_inf(floor(-math.inf(f64))));
+    try expect(math.is_nan(floor(math.nan(f64))));
 }
 
 test "floor128.special" {
     try expect(floorq(0.0) == 0.0);
     try expect(floorq(-0.0) == -0.0);
-    try expect(math.isPositiveInf(floorq(math.inf(f128))));
-    try expect(math.isNegativeInf(floorq(-math.inf(f128))));
-    try expect(math.isNan(floorq(math.nan(f128))));
+    try expect(math.is_positive_inf(floorq(math.inf(f128))));
+    try expect(math.is_negative_inf(floorq(-math.inf(f128))));
+    try expect(math.is_nan(floorq(math.nan(f128))));
 }

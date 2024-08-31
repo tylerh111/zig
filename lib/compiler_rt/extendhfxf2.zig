@@ -8,5 +8,5 @@ comptime {
 }
 
 fn __extendhfxf2(a: common.F16T(f80)) callconv(.C) f80 {
-    return extend_f80(f16, @as(u16, @bitCast(a)));
+    return extend_f80(f16, @as(u16, @bit_cast(a)));
 }

@@ -90,94 +90,94 @@ pub const Flag = enum(u32) {
 /// host environment or not
 pub fn requires_import(symbol: Symbol) bool {
     if (symbol.tag == .data) return false;
-    if (!symbol.isUndefined()) return false;
-    if (symbol.isWeak()) return false;
-    // if (symbol.isDefined() and symbol.isWeak()) return true; //TODO: Only when building shared lib
+    if (!symbol.is_undefined()) return false;
+    if (symbol.is_weak()) return false;
+    // if (symbol.is_defined() and symbol.is_weak()) return true; //TODO: Only when building shared lib
 
     return true;
 }
 
 /// Marks a symbol as 'alive', ensuring the garbage collector will not collect the trash.
 pub fn mark(symbol: *Symbol) void {
-    symbol.flags |= @intFromEnum(Flag.alive);
+    symbol.flags |= @int_from_enum(Flag.alive);
 }
 
 pub fn unmark(symbol: *Symbol) void {
-    symbol.flags &= ~@intFromEnum(Flag.alive);
+    symbol.flags &= ~@int_from_enum(Flag.alive);
 }
 
 pub fn is_alive(symbol: Symbol) bool {
-    return symbol.flags & @intFromEnum(Flag.alive) != 0;
+    return symbol.flags & @int_from_enum(Flag.alive) != 0;
 }
 
 pub fn is_dead(symbol: Symbol) bool {
-    return symbol.flags & @intFromEnum(Flag.alive) == 0;
+    return symbol.flags & @int_from_enum(Flag.alive) == 0;
 }
 
 pub fn is_tls(symbol: Symbol) bool {
-    return symbol.flags & @intFromEnum(Flag.WASM_SYM_TLS) != 0;
+    return symbol.flags & @int_from_enum(Flag.WASM_SYM_TLS) != 0;
 }
 
 pub fn has_flag(symbol: Symbol, flag: Flag) bool {
-    return symbol.flags & @intFromEnum(flag) != 0;
+    return symbol.flags & @int_from_enum(flag) != 0;
 }
 
 pub fn set_flag(symbol: *Symbol, flag: Flag) void {
-    symbol.flags |= @intFromEnum(flag);
+    symbol.flags |= @int_from_enum(flag);
 }
 
 pub fn is_undefined(symbol: Symbol) bool {
-    return symbol.flags & @intFromEnum(Flag.WASM_SYM_UNDEFINED) != 0;
+    return symbol.flags & @int_from_enum(Flag.WASM_SYM_UNDEFINED) != 0;
 }
 
 pub fn set_undefined(symbol: *Symbol, is_undefined: bool) void {
     if (is_undefined) {
-        symbol.setFlag(.WASM_SYM_UNDEFINED);
+        symbol.set_flag(.WASM_SYM_UNDEFINED);
     } else {
-        symbol.flags &= ~@intFromEnum(Flag.WASM_SYM_UNDEFINED);
+        symbol.flags &= ~@int_from_enum(Flag.WASM_SYM_UNDEFINED);
     }
 }
 
 pub fn set_global(symbol: *Symbol, is_global: bool) void {
     if (is_global) {
-        symbol.flags &= ~@intFromEnum(Flag.WASM_SYM_BINDING_LOCAL);
+        symbol.flags &= ~@int_from_enum(Flag.WASM_SYM_BINDING_LOCAL);
     } else {
-        symbol.setFlag(.WASM_SYM_BINDING_LOCAL);
+        symbol.set_flag(.WASM_SYM_BINDING_LOCAL);
     }
 }
 
 pub fn is_defined(symbol: Symbol) bool {
-    return !symbol.isUndefined();
+    return !symbol.is_undefined();
 }
 
 pub fn is_visible(symbol: Symbol) bool {
-    return symbol.flags & @intFromEnum(Flag.WASM_SYM_VISIBILITY_HIDDEN) == 0;
+    return symbol.flags & @int_from_enum(Flag.WASM_SYM_VISIBILITY_HIDDEN) == 0;
 }
 
 pub fn is_local(symbol: Symbol) bool {
-    return symbol.flags & @intFromEnum(Flag.WASM_SYM_BINDING_LOCAL) != 0;
+    return symbol.flags & @int_from_enum(Flag.WASM_SYM_BINDING_LOCAL) != 0;
 }
 
 pub fn is_global(symbol: Symbol) bool {
-    return symbol.flags & @intFromEnum(Flag.WASM_SYM_BINDING_LOCAL) == 0;
+    return symbol.flags & @int_from_enum(Flag.WASM_SYM_BINDING_LOCAL) == 0;
 }
 
 pub fn is_hidden(symbol: Symbol) bool {
-    return symbol.flags & @intFromEnum(Flag.WASM_SYM_VISIBILITY_HIDDEN) != 0;
+    return symbol.flags & @int_from_enum(Flag.WASM_SYM_VISIBILITY_HIDDEN) != 0;
 }
 
 pub fn is_no_strip(symbol: Symbol) bool {
-    return symbol.flags & @intFromEnum(Flag.WASM_SYM_NO_STRIP) != 0;
+    return symbol.flags & @int_from_enum(Flag.WASM_SYM_NO_STRIP) != 0;
 }
 
 pub fn is_exported(symbol: Symbol, is_dynamic: bool) bool {
-    if (symbol.isUndefined() or symbol.isLocal()) return false;
-    if (is_dynamic and symbol.isVisible()) return true;
-    return symbol.hasFlag(.WASM_SYM_EXPORTED);
+    if (symbol.is_undefined() or symbol.is_local()) return false;
+    if (is_dynamic and symbol.is_visible()) return true;
+    return symbol.has_flag(.WASM_SYM_EXPORTED);
 }
 
 pub fn is_weak(symbol: Symbol) bool {
-    return symbol.flags & @intFromEnum(Flag.WASM_SYM_BINDING_WEAK) != 0;
+    return symbol.flags & @int_from_enum(Flag.WASM_SYM_BINDING_WEAK) != 0;
 }
 
 /// Formats the symbol into human-readable text
@@ -195,9 +195,9 @@ pub fn format(symbol: Symbol, comptime fmt: []const u8, options: std.fmt.FormatO
         .dead => '-',
         .undefined => unreachable,
     };
-    const visible: []const u8 = if (symbol.isVisible()) "yes" else "no";
-    const binding: []const u8 = if (symbol.isLocal()) "local" else "global";
-    const undef: []const u8 = if (symbol.isUndefined()) "undefined" else "";
+    const visible: []const u8 = if (symbol.is_visible()) "yes" else "no";
+    const binding: []const u8 = if (symbol.is_local()) "local" else "global";
+    const undef: []const u8 = if (symbol.is_undefined()) "undefined" else "";
 
     try writer.print(
         "{c} binding={s} visible={s} id={d} name_offset={d} {s}",

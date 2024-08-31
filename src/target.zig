@@ -9,7 +9,7 @@ pub const default_stack_protector_buffer_size = 4;
 pub fn cannot_dynamic_link(target: std.Target) bool {
     return switch (target.os.tag) {
         .freestanding, .other => true,
-        else => target.isSpirV(),
+        else => target.is_spir_v(),
     };
 }
 
@@ -17,7 +17,7 @@ pub fn cannot_dynamic_link(target: std.Target) bool {
 /// Similarly on FreeBSD and NetBSD we always link system libc
 /// since this is the stable syscall interface.
 pub fn os_requires_lib_c(target: std.Target) bool {
-    return target.os.requiresLibC();
+    return target.os.requires_lib_c();
 }
 
 pub fn libc_needs_lib_unwind(target: std.Target) bool {
@@ -37,15 +37,15 @@ pub fn libc_needs_lib_unwind(target: std.Target) bool {
 }
 
 pub fn requires_pie(target: std.Target) bool {
-    return target.isAndroid() or target.isDarwin() or target.os.tag == .openbsd;
+    return target.is_android() or target.is_darwin() or target.os.tag == .openbsd;
 }
 
 /// This function returns whether non-pic code is completely invalid on the given target.
 pub fn requires_pic(target: std.Target, linking_libc: bool) bool {
-    return target.isAndroid() or
+    return target.is_android() or
         target.os.tag == .windows or target.os.tag == .uefi or
-        osRequiresLibC(target) or
-        (linking_libc and target.isGnuLibC()) or
+        os_requires_lib_c(target) or
+        (linking_libc and target.is_gnu_lib_c()) or
         (target.abi == .ohos and target.cpu.arch == .aarch64);
 }
 
@@ -223,7 +223,7 @@ pub fn clang_supports_stack_protector(target: std.Target) bool {
 }
 
 pub fn libc_provides_stack_protector(target: std.Target) bool {
-    return !target.isMinGW() and target.os.tag != .wasi and !target.isSpirV();
+    return !target.is_min_gw() and target.os.tag != .wasi and !target.is_spir_v();
 }
 
 pub fn supports_return_address(target: std.Target) bool {
@@ -238,7 +238,7 @@ pub fn supports_return_address(target: std.Target) bool {
 pub const CompilerRtClassification = enum { none, only_compiler_rt, only_libunwind, both };
 
 pub fn classify_compiler_rt_lib_name(target: std.Target, name: []const u8) CompilerRtClassification {
-    if (target.abi.isGnu() and std.mem.eql(u8, name, "gcc_s")) {
+    if (target.abi.is_gnu() and std.mem.eql(u8, name, "gcc_s")) {
         // libgcc_s includes exception handling functions, so if linking this library
         // is requested, zig needs to instead link libunwind. Otherwise we end up with
         // the linker unable to find `_Unwind_RaiseException` and other related symbols.
@@ -255,19 +255,19 @@ pub fn classify_compiler_rt_lib_name(target: std.Target, name: []const u8) Compi
 
 pub fn has_debug_info(target: std.Target) bool {
     return switch (target.cpu.arch) {
-        .nvptx, .nvptx64 => std.Target.nvptx.featureSetHas(target.cpu.features, .ptx75) or
-            std.Target.nvptx.featureSetHas(target.cpu.features, .ptx76) or
-            std.Target.nvptx.featureSetHas(target.cpu.features, .ptx77) or
-            std.Target.nvptx.featureSetHas(target.cpu.features, .ptx78) or
-            std.Target.nvptx.featureSetHas(target.cpu.features, .ptx80) or
-            std.Target.nvptx.featureSetHas(target.cpu.features, .ptx81),
+        .nvptx, .nvptx64 => std.Target.nvptx.feature_set_has(target.cpu.features, .ptx75) or
+            std.Target.nvptx.feature_set_has(target.cpu.features, .ptx76) or
+            std.Target.nvptx.feature_set_has(target.cpu.features, .ptx77) or
+            std.Target.nvptx.feature_set_has(target.cpu.features, .ptx78) or
+            std.Target.nvptx.feature_set_has(target.cpu.features, .ptx80) or
+            std.Target.nvptx.feature_set_has(target.cpu.features, .ptx81),
         .bpfel, .bpfeb => false,
         else => true,
     };
 }
 
 pub fn default_compiler_rt_optimize_mode(target: std.Target) std.builtin.OptimizeMode {
-    if (target.cpu.arch.isWasm() and target.os.tag == .freestanding) {
+    if (target.cpu.arch.is_wasm() and target.os.tag == .freestanding) {
         return .ReleaseSmall;
     } else {
         return .ReleaseFast;
@@ -332,7 +332,7 @@ pub fn libc_full_link_flags(target: std.Target) []const []const u8 {
 pub fn clang_might_shell_out_for_assembly(target: std.Target) bool {
     // Clang defaults to using the system assembler over the internal one
     // when targeting a non-BSD OS.
-    return target.cpu.arch.isSPARC();
+    return target.cpu.arch.is_sparc();
 }
 
 /// Each backend architecture in Clang has a different codepath which may or may not
@@ -345,7 +345,7 @@ pub fn clang_assembler_supports_mcpu_arg(target: std.Target) bool {
 }
 
 pub fn need_unwind_tables(target: std.Target) bool {
-    return target.os.tag == .windows or target.isDarwin() or std.dwarf.abi.supportsUnwinding(target);
+    return target.os.tag == .windows or target.is_darwin() or std.dwarf.abi.supports_unwinding(target);
 }
 
 pub fn default_address_space(
@@ -375,10 +375,10 @@ pub fn addr_space_cast_is_valid(
 ) bool {
     const arch = target.cpu.arch;
     switch (arch) {
-        .x86_64, .x86 => return arch.supportsAddressSpace(from) and arch.supportsAddressSpace(to),
+        .x86_64, .x86 => return arch.supports_address_space(from) and arch.supports_address_space(to),
         .nvptx64, .nvptx, .amdgcn => {
-            const to_generic = arch.supportsAddressSpace(from) and to == .generic;
-            const from_generic = arch.supportsAddressSpace(to) and from == .generic;
+            const to_generic = arch.supports_address_space(from) and to == .generic;
+            const from_generic = arch.supports_address_space(to) and from == .generic;
             return to_generic or from_generic;
         },
         else => return from == .generic and to == .generic,
@@ -394,8 +394,8 @@ pub fn llvm_machine_abi(target: std.Target) ?[:0]const u8 {
 
     switch (target.cpu.arch) {
         .riscv64 => {
-            const featureSetHas = std.Target.riscv.featureSetHas;
-            if (featureSetHas(target.cpu.features, .d)) {
+            const feature_set_has = std.Target.riscv.feature_set_has;
+            if (feature_set_has(target.cpu.features, .d)) {
                 return "lp64d";
             } else if (have_float) {
                 return "lp64f";
@@ -404,12 +404,12 @@ pub fn llvm_machine_abi(target: std.Target) ?[:0]const u8 {
             }
         },
         .riscv32 => {
-            const featureSetHas = std.Target.riscv.featureSetHas;
-            if (featureSetHas(target.cpu.features, .d)) {
+            const feature_set_has = std.Target.riscv.feature_set_has;
+            if (feature_set_has(target.cpu.features, .d)) {
                 return "ilp32d";
             } else if (have_float) {
                 return "ilp32f";
-            } else if (featureSetHas(target.cpu.features, .e)) {
+            } else if (feature_set_has(target.cpu.features, .e)) {
                 return "ilp32e";
             } else {
                 return "ilp32";
@@ -440,7 +440,7 @@ pub fn supports_function_alignment(target: std.Target) bool {
 
 pub fn supports_tail_call(target: std.Target, backend: std.builtin.CompilerBackend) bool {
     switch (backend) {
-        .stage1, .stage2_llvm => return @import("codegen/llvm.zig").supportsTailCall(target),
+        .stage1, .stage2_llvm => return @import("codegen/llvm.zig").supports_tail_call(target),
         .stage2_c => return true,
         else => return false,
     }
@@ -532,7 +532,7 @@ pub fn backend_supports_feature(
         .safety_check_formatted => ofmt == .c or use_llvm,
         .error_return_trace => use_llvm,
         .is_named_enum_value => use_llvm,
-        .error_set_has_value => use_llvm or cpu_arch.isWasm(),
+        .error_set_has_value => use_llvm or cpu_arch.is_wasm(),
         .field_reordering => ofmt == .c or use_llvm,
         .safety_checked_instructions => use_llvm,
     };

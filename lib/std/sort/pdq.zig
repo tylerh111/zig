@@ -7,7 +7,7 @@ const testing = std.testing;
 /// Unstable in-place sort. n best case, n*log(n) worst case and average case.
 /// log(n) memory (no allocator required).
 ///
-/// Sorts in ascending order with respect to the given `lessThan` function.
+/// Sorts in ascending order with respect to the given `less_than` function.
 pub fn pdq(
     comptime T: type,
     items: []T,
@@ -26,7 +26,7 @@ pub fn pdq(
             return mem.swap(T, &ctx.items[a], &ctx.items[b]);
         }
     };
-    pdqContext(0, items.len, Context{ .items = items, .sub_ctx = context });
+    pdq_context(0, items.len, Context{ .items = items, .sub_ctx = context });
 }
 
 const Hint = enum {
@@ -37,18 +37,18 @@ const Hint = enum {
 
 /// Unstable in-place sort. O(n) best case, O(n*log(n)) worst case and average case.
 /// O(log(n)) memory (no allocator required).
-/// `context` must have methods `swap` and `lessThan`,
+/// `context` must have methods `swap` and `less_than`,
 /// which each take 2 `usize` parameters indicating the index of an item.
-/// Sorts in ascending order with respect to `lessThan`.
+/// Sorts in ascending order with respect to `less_than`.
 pub fn pdq_context(a: usize, b: usize, context: anytype) void {
     // slices of up to this length get sorted using insertion sort.
     const max_insertion = 24;
     // number of allowed imbalanced partitions before switching to heap sort.
-    const max_limit = std.math.floorPowerOfTwo(usize, b - a) + 1;
+    const max_limit = std.math.floor_power_of_two(usize, b - a) + 1;
 
     // set upper bound on stack memory usage.
     const Range = struct { a: usize, b: usize, limit: usize };
-    const stack_size = math.log2(math.maxInt(usize) + 1);
+    const stack_size = math.log2(math.max_int(usize) + 1);
     var stack: [stack_size]Range = undefined;
     var range = Range{ .a = a, .b = b, .limit = max_limit };
     var top: usize = 0;
@@ -62,30 +62,30 @@ pub fn pdq_context(a: usize, b: usize, context: anytype) void {
 
             // very short slices get sorted using insertion sort.
             if (len <= max_insertion) {
-                break sort.insertionContext(range.a, range.b, context);
+                break sort.insertion_context(range.a, range.b, context);
             }
 
             // if too many bad pivot choices were made, simply fall back to heapsort in order to
             // guarantee O(n*log(n)) worst-case.
             if (range.limit == 0) {
-                break sort.heapContext(range.a, range.b, context);
+                break sort.heap_context(range.a, range.b, context);
             }
 
             // if the last partitioning was imbalanced, try breaking patterns in the slice by shuffling
             // some elements around. Hopefully we'll choose a better pivot this time.
             if (!was_balanced) {
-                breakPatterns(range.a, range.b, context);
+                break_patterns(range.a, range.b, context);
                 range.limit -= 1;
             }
 
             // choose a pivot and try guessing whether the slice is already sorted.
             var pivot: usize = 0;
-            var hint = chosePivot(range.a, range.b, &pivot, context);
+            var hint = chose_pivot(range.a, range.b, &pivot, context);
 
             if (hint == .decreasing) {
                 // The maximum number of swaps was performed, so items are likely
                 // in reverse order. Reverse it to make sorting faster.
-                reverseRange(range.a, range.b, context);
+                reverse_range(range.a, range.b, context);
                 pivot = (range.b - 1) - (pivot - range.a);
                 hint = .increasing;
             }
@@ -95,14 +95,14 @@ pub fn pdq_context(a: usize, b: usize, context: anytype) void {
             if (was_balanced and was_partitioned and hint == .increasing) {
                 // try identifying several out-of-order elements and shifting them to correct
                 // positions. If the slice ends up being completely sorted, we're done.
-                if (partialInsertionSort(range.a, range.b, context)) break;
+                if (partial_insertion_sort(range.a, range.b, context)) break;
             }
 
             // if the chosen pivot is equal to the predecessor, then it's the smallest element in the
             // slice. Partition the slice into elements equal to and elements greater than the pivot.
             // This case is usually hit when the slice contains many duplicate elements.
-            if (range.a > a and !context.lessThan(range.a - 1, pivot)) {
-                range.a = partitionEqual(range.a, range.b, pivot, context);
+            if (range.a > a and !context.less_than(range.a - 1, pivot)) {
+                range.a = partition_equal(range.a, range.b, pivot, context);
                 continue;
             }
 
@@ -143,8 +143,8 @@ fn partition(a: usize, b: usize, pivot: *usize, context: anytype) bool {
     var i = a + 1;
     var j = b - 1;
 
-    while (i <= j and context.lessThan(i, a)) i += 1;
-    while (i <= j and !context.lessThan(j, a)) j -= 1;
+    while (i <= j and context.less_than(i, a)) i += 1;
+    while (i <= j and !context.less_than(j, a)) j -= 1;
 
     // check if items are already partitioned (no item to swap)
     if (i > j) {
@@ -159,8 +159,8 @@ fn partition(a: usize, b: usize, pivot: *usize, context: anytype) bool {
     j -= 1;
 
     while (true) {
-        while (i <= j and context.lessThan(i, a)) i += 1;
-        while (i <= j and !context.lessThan(j, a)) j -= 1;
+        while (i <= j and context.less_than(i, a)) i += 1;
+        while (i <= j and !context.less_than(j, a)) j -= 1;
         if (i > j) break;
 
         context.swap(i, j);
@@ -187,8 +187,8 @@ fn partition_equal(a: usize, b: usize, pivot: usize, context: anytype) usize {
     var j = b - 1;
 
     while (true) {
-        while (i <= j and !context.lessThan(a, i)) i += 1;
-        while (i <= j and context.lessThan(a, j)) j -= 1;
+        while (i <= j and !context.less_than(a, i)) i += 1;
+        while (i <= j and context.less_than(a, j)) j -= 1;
         if (i > j) break;
 
         context.swap(i, j);
@@ -213,7 +213,7 @@ fn partial_insertion_sort(a: usize, b: usize, context: anytype) bool {
     var i = a + 1;
     for (0..max_steps) |_| {
         // find the next pair of adjacent out-of-order elements.
-        while (i < b and !context.lessThan(i, i - 1)) i += 1;
+        while (i < b and !context.less_than(i, i - 1)) i += 1;
 
         // are we done?
         if (i == b) return true;
@@ -228,7 +228,7 @@ fn partial_insertion_sort(a: usize, b: usize, context: anytype) bool {
         if (i - a >= 2) {
             var j = i - 1;
             while (j >= 1) : (j -= 1) {
-                if (!context.lessThan(j, j - 1)) break;
+                if (!context.less_than(j, j - 1)) break;
                 context.swap(j, j - 1);
             }
         }
@@ -237,7 +237,7 @@ fn partial_insertion_sort(a: usize, b: usize, context: anytype) bool {
         if (b - i >= 2) {
             var j = i + 1;
             while (j < b) : (j += 1) {
-                if (!context.lessThan(j, j - 1)) break;
+                if (!context.less_than(j, j - 1)) break;
                 context.swap(j, j - 1);
             }
         }
@@ -252,8 +252,8 @@ fn break_patterns(a: usize, b: usize, context: anytype) void {
     const len = b - a;
     if (len < 8) return;
 
-    var rand = @as(u64, @intCast(len));
-    const modulus = math.ceilPowerOfTwoAssert(u64, len);
+    var rand = @as(u64, @int_cast(len));
+    const modulus = math.ceil_power_of_two_assert(u64, len);
 
     var i = a + (len / 4) * 2 - 1;
     while (i <= a + (len / 4) * 2 + 1) : (i += 1) {
@@ -262,7 +262,7 @@ fn break_patterns(a: usize, b: usize, context: anytype) void {
         rand ^= rand >> 7;
         rand ^= rand << 17;
 
-        var other = @as(usize, @intCast(rand & (modulus - 1)));
+        var other = @as(usize, @int_cast(rand & (modulus - 1)));
         if (other >= len) other -= len;
         context.swap(i, a + other);
     }
@@ -303,17 +303,17 @@ fn chose_pivot(a: usize, b: usize, pivot: *usize, context: anytype) Hint {
 }
 
 fn sort3(a: usize, b: usize, c: usize, swaps: *usize, context: anytype) void {
-    if (context.lessThan(b, a)) {
+    if (context.less_than(b, a)) {
         swaps.* += 1;
         context.swap(b, a);
     }
 
-    if (context.lessThan(c, b)) {
+    if (context.less_than(c, b)) {
         swaps.* += 1;
         context.swap(c, b);
     }
 
-    if (context.lessThan(b, a)) {
+    if (context.less_than(b, a)) {
         swaps.* += 1;
         context.swap(b, a);
     }

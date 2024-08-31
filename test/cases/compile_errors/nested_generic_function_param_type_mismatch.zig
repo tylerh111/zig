@@ -2,10 +2,10 @@ pub fn sort(
     comptime T: type,
     items: []T,
     context: anytype,
-    lessThan: *const fn (context: @TypeOf(context), lhs: T, rhs: T) u32,
+    less_than: *const fn (context: @TypeOf(context), lhs: T, rhs: T) u32,
 ) void {
     _ = items;
-    _ = lessThan;
+    _ = less_than;
 }
 fn foo(_: void, _: u8, _: u8) u32 {
     return 0;

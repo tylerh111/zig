@@ -58,8 +58,8 @@ fn do_op(fnCall: Call2Op, op1: i8, op2: i8) i8 {
 }
 
 test "function" {
-    try expect(doOp(add, 5, 6) == 11);
-    try expect(doOp(sub2, 5, 6) == -1);
+    try expect(do_op(add, 5, 6) == 11);
+    try expect(do_op(sub2, 5, 6) == -1);
 }
 
 // test

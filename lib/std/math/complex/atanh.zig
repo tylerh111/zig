@@ -18,6 +18,6 @@ test atanh {
     const a = Complex(f32).init(5, 3);
     const c = atanh(a);
 
-    try testing.expect(math.approxEqAbs(f32, c.re, 0.146947, epsilon));
-    try testing.expect(math.approxEqAbs(f32, c.im, 1.480870, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.re, 0.146947, epsilon));
+    try testing.expect(math.approx_eq_abs(f32, c.im, 1.480870, epsilon));
 }

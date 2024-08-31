@@ -28,7 +28,7 @@ comptime {
 
 pub fn __exph(a: f16) callconv(.C) f16 {
     // TODO: more efficient implementation
-    return @floatCast(expf(a));
+    return @float_cast(expf(a));
 }
 
 pub fn expf(x_: f32) callconv(.C) f32 {
@@ -40,11 +40,11 @@ pub fn expf(x_: f32) callconv(.C) f32 {
     const P2 = -2.7667332906e-3;
 
     var x = x_;
-    var hx: u32 = @bitCast(x);
-    const sign: i32 = @intCast(hx >> 31);
+    var hx: u32 = @bit_cast(x);
+    const sign: i32 = @int_cast(hx >> 31);
     hx &= 0x7FFFFFFF;
 
-    if (math.isNan(x)) {
+    if (math.is_nan(x)) {
         return x;
     }
 
@@ -59,7 +59,7 @@ pub fn expf(x_: f32) callconv(.C) f32 {
             return x * 0x1.0p127;
         }
         if (sign != 0) {
-            mem.doNotOptimizeAway(-0x1.0p-149 / x); // overflow
+            mem.do_not_optimize_away(-0x1.0p-149 / x); // overflow
             // x <= -103.972084
             if (hx >= 0x42CFF1B5) {
                 return 0;
@@ -75,12 +75,12 @@ pub fn expf(x_: f32) callconv(.C) f32 {
     if (hx > 0x3EB17218) {
         // |x| > 1.5 * ln2
         if (hx > 0x3F851592) {
-            k = @intFromFloat(invln2 * x + half[@intCast(sign)]);
+            k = @int_from_float(invln2 * x + half[@int_cast(sign)]);
         } else {
             k = 1 - sign - sign;
         }
 
-        const fk: f32 = @floatFromInt(k);
+        const fk: f32 = @float_from_int(k);
         hi = x - fk * ln2hi;
         lo = fk * ln2lo;
         x = hi - lo;
@@ -91,7 +91,7 @@ pub fn expf(x_: f32) callconv(.C) f32 {
         hi = x;
         lo = 0;
     } else {
-        mem.doNotOptimizeAway(0x1.0p127 + x); // inexact
+        mem.do_not_optimize_away(0x1.0p127 + x); // inexact
         return 1 + x;
     }
 
@@ -118,12 +118,12 @@ pub fn exp(x_: f64) callconv(.C) f64 {
     const P5: f64 = 4.13813679705723846039e-08;
 
     var x = x_;
-    const ux: u64 = @bitCast(x);
+    const ux: u64 = @bit_cast(x);
     var hx = ux >> 32;
-    const sign: i32 = @intCast(hx >> 31);
+    const sign: i32 = @int_cast(hx >> 31);
     hx &= 0x7FFFFFFF;
 
-    if (math.isNan(x)) {
+    if (math.is_nan(x)) {
         return x;
     }
 
@@ -135,14 +135,14 @@ pub fn exp(x_: f64) callconv(.C) f64 {
         }
         if (x > 709.782712893383973096) {
             // overflow if x != inf
-            if (!math.isInf(x)) {
-                math.raiseOverflow();
+            if (!math.is_inf(x)) {
+                math.raise_overflow();
             }
             return math.inf(f64);
         }
         if (x < -708.39641853226410622) {
             // underflow if x != -inf
-            // mem.doNotOptimizeAway(@as(f32, -0x1.0p-149 / x));
+            // mem.do_not_optimize_away(@as(f32, -0x1.0p-149 / x));
             if (x < -745.13321910194110842) {
                 return 0;
             }
@@ -158,12 +158,12 @@ pub fn exp(x_: f64) callconv(.C) f64 {
     if (hx > 0x3FD62E42) {
         // |x| >= 1.5 * ln2
         if (hx > 0x3FF0A2B2) {
-            k = @intFromFloat(invln2 * x + half[@intCast(sign)]);
+            k = @int_from_float(invln2 * x + half[@int_cast(sign)]);
         } else {
             k = 1 - sign - sign;
         }
 
-        const dk: f64 = @floatFromInt(k);
+        const dk: f64 = @float_from_int(k);
         hi = x - dk * ln2hi;
         lo = dk * ln2lo;
         x = hi - lo;
@@ -175,7 +175,7 @@ pub fn exp(x_: f64) callconv(.C) f64 {
         lo = 0;
     } else {
         // inexact if x != 0
-        // mem.doNotOptimizeAway(0x1.0p1023 + x);
+        // mem.do_not_optimize_away(0x1.0p1023 + x);
         return 1 + x;
     }
 
@@ -192,12 +192,12 @@ pub fn exp(x_: f64) callconv(.C) f64 {
 
 pub fn __expx(a: f80) callconv(.C) f80 {
     // TODO: more efficient implementation
-    return @floatCast(expq(a));
+    return @float_cast(expq(a));
 }
 
 pub fn expq(a: f128) callconv(.C) f128 {
     // TODO: more correct implementation
-    return exp(@floatCast(a));
+    return exp(@float_cast(a));
 }
 
 pub fn expl(x: c_longdouble) callconv(.C) c_longdouble {
@@ -207,7 +207,7 @@ pub fn expl(x: c_longdouble) callconv(.C) c_longdouble {
         64 => return exp(x),
         80 => return __expx(x),
         128 => return expq(x),
-        else => @compileError("unreachable"),
+        else => @compile_error("unreachable"),
     }
 }
 
@@ -215,28 +215,28 @@ test "exp32" {
     const epsilon = 0.000001;
 
     try expect(expf(0.0) == 1.0);
-    try expect(math.approxEqAbs(f32, expf(0.0), 1.0, epsilon));
-    try expect(math.approxEqAbs(f32, expf(0.2), 1.221403, epsilon));
-    try expect(math.approxEqAbs(f32, expf(0.8923), 2.440737, epsilon));
-    try expect(math.approxEqAbs(f32, expf(1.5), 4.481689, epsilon));
+    try expect(math.approx_eq_abs(f32, expf(0.0), 1.0, epsilon));
+    try expect(math.approx_eq_abs(f32, expf(0.2), 1.221403, epsilon));
+    try expect(math.approx_eq_abs(f32, expf(0.8923), 2.440737, epsilon));
+    try expect(math.approx_eq_abs(f32, expf(1.5), 4.481689, epsilon));
 }
 
 test "exp64" {
     const epsilon = 0.000001;
 
     try expect(exp(0.0) == 1.0);
-    try expect(math.approxEqAbs(f64, exp(0.0), 1.0, epsilon));
-    try expect(math.approxEqAbs(f64, exp(0.2), 1.221403, epsilon));
-    try expect(math.approxEqAbs(f64, exp(0.8923), 2.440737, epsilon));
-    try expect(math.approxEqAbs(f64, exp(1.5), 4.481689, epsilon));
+    try expect(math.approx_eq_abs(f64, exp(0.0), 1.0, epsilon));
+    try expect(math.approx_eq_abs(f64, exp(0.2), 1.221403, epsilon));
+    try expect(math.approx_eq_abs(f64, exp(0.8923), 2.440737, epsilon));
+    try expect(math.approx_eq_abs(f64, exp(1.5), 4.481689, epsilon));
 }
 
 test "exp32.special" {
-    try expect(math.isPositiveInf(expf(math.inf(f32))));
-    try expect(math.isNan(expf(math.nan(f32))));
+    try expect(math.is_positive_inf(expf(math.inf(f32))));
+    try expect(math.is_nan(expf(math.nan(f32))));
 }
 
 test "exp64.special" {
-    try expect(math.isPositiveInf(exp(math.inf(f64))));
-    try expect(math.isNan(exp(math.nan(f64))));
+    try expect(math.is_positive_inf(exp(math.inf(f64))));
+    try expect(math.is_nan(exp(math.nan(f64))));
 }

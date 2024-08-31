@@ -148,7 +148,7 @@ pub fn resolve(options: Options) ResolveError!Config {
     const wasi_exec_model = options.wasi_exec_model orelse .command;
 
     const shared_memory = b: {
-        if (!target.cpu.arch.isWasm()) {
+        if (!target.cpu.arch.is_wasm()) {
             if (options.shared_memory == true) return error.SharedMemoryIsWasmOnly;
             break :b false;
         }
@@ -156,7 +156,7 @@ pub fn resolve(options: Options) ResolveError!Config {
             if (options.shared_memory == true) return error.ObjectFilesCannotShareMemory;
             break :b false;
         }
-        if (!std.Target.wasm.featureSetHasAll(target.cpu.features, .{ .atomics, .bulk_memory })) {
+        if (!std.Target.wasm.feature_set_has_all(target.cpu.features, .{ .atomics, .bulk_memory })) {
             if (options.shared_memory == true)
                 return error.SharedMemoryRequiresAtomicsAndBulkMemory;
             break :b false;
@@ -193,20 +193,20 @@ pub fn resolve(options: Options) ResolveError!Config {
         if (options.emit_llvm_ir or options.emit_llvm_bc) {
             if (options.use_llvm == false)
                 return error.EmittingLlvmModuleRequiresLlvmBackend;
-            if (!target_util.hasLlvmSupport(target, target.ofmt))
+            if (!target_util.has_llvm_support(target, target.ofmt))
                 return error.LlvmLacksTargetSupport;
 
             break :b true;
         }
 
         // If LLVM does not support the target, then we can't use it.
-        if (!target_util.hasLlvmSupport(target, target.ofmt)) {
+        if (!target_util.has_llvm_support(target, target.ofmt)) {
             if (options.use_llvm == true) return error.LlvmLacksTargetSupport;
             break :b false;
         }
 
         // If Zig does not support the target, then we can't use it.
-        if (target_util.zigBackend(target, false) == .other) {
+        if (target_util.zig_backend(target, false) == .other) {
             if (options.use_llvm == false) return error.ZigLacksTargetSupport;
             break :b true;
         }
@@ -224,7 +224,7 @@ pub fn resolve(options: Options) ResolveError!Config {
         // At this point we would prefer to use our own self-hosted backend,
         // because the compilation speed is better than LLVM. But only do it if
         // we are confident in the robustness of the backend.
-        break :b !target_util.selfHostedBackendIsAsRobustAsLlvm(target);
+        break :b !target_util.self_hosted_backend_is_as_robust_as_llvm(target);
     };
 
     if (options.emit_bin and options.have_zcu) {
@@ -234,7 +234,7 @@ pub fn resolve(options: Options) ResolveError!Config {
             return error.EmittingBinaryRequiresLlvmLibrary;
         }
 
-        if (target_util.zigBackend(target, use_llvm) == .other) {
+        if (target_util.zig_backend(target, use_llvm) == .other) {
             // There is no compiler backend available for this target.
             return error.ZigLacksTargetSupport;
         }
@@ -242,7 +242,7 @@ pub fn resolve(options: Options) ResolveError!Config {
 
     // Make a decision on whether to use LLD or our own linker.
     const use_lld = b: {
-        if (!target_util.hasLldSupport(target.ofmt)) {
+        if (!target_util.has_lld_support(target.ofmt)) {
             if (options.use_lld == true) return error.LldIncompatibleObjectFormat;
             break :b false;
         }
@@ -284,7 +284,7 @@ pub fn resolve(options: Options) ResolveError!Config {
         if (options.lto) |x| break :b x;
         if (!options.any_c_source_files) break :b false;
 
-        if (target.cpu.arch.isRISCV()) {
+        if (target.cpu.arch.is_riscv()) {
             // Clang and LLVM currently don't support RISC-V target-abi for LTO.
             // Compiling with LTO may fail or produce undesired results.
             // See https://reviews.llvm.org/D71387
@@ -315,7 +315,7 @@ pub fn resolve(options: Options) ResolveError!Config {
     };
 
     const link_libunwind = b: {
-        if (link_libcpp and target_util.libcNeedsLibUnwind(target)) {
+        if (link_libcpp and target_util.libc_needs_lib_unwind(target)) {
             if (options.link_libunwind == false) return error.LibCppRequiresLibUnwind;
             break :b true;
         }
@@ -323,7 +323,7 @@ pub fn resolve(options: Options) ResolveError!Config {
     };
 
     const link_libc = b: {
-        if (target_util.osRequiresLibC(target)) {
+        if (target_util.os_requires_lib_c(target)) {
             if (options.link_libc == false) return error.OsRequiresLibC;
             break :b true;
         }
@@ -343,7 +343,7 @@ pub fn resolve(options: Options) ResolveError!Config {
     };
 
     const any_unwind_tables = options.any_unwind_tables or
-        link_libunwind or target_util.needUnwindTables(target);
+        link_libunwind or target_util.need_unwind_tables(target);
 
     const link_mode = b: {
         const explicitly_exe_or_dyn_lib = switch (options.output_mode) {
@@ -352,12 +352,12 @@ pub fn resolve(options: Options) ResolveError!Config {
             .Exe => true,
         };
 
-        if (target_util.cannotDynamicLink(target)) {
+        if (target_util.cannot_dynamic_link(target)) {
             if (options.link_mode == .dynamic) return error.TargetCannotDynamicLink;
             break :b .static;
         }
         if (explicitly_exe_or_dyn_lib and link_libc and
-            (target.isGnuLibC() or target_util.osRequiresLibC(target)))
+            (target.is_gnu_lib_c() or target_util.os_requires_lib_c(target)))
         {
             if (options.link_mode == .static) return error.LibCRequiresDynamicLinking;
             break :b .dynamic;
@@ -373,7 +373,7 @@ pub fn resolve(options: Options) ResolveError!Config {
         if (options.link_mode) |link_mode| break :b link_mode;
 
         if (explicitly_exe_or_dyn_lib and link_libc and
-            options.resolved_target.is_native_abi and target.abi.isMusl())
+            options.resolved_target.is_native_abi and target.abi.is_musl())
         {
             // If targeting the system's native ABI and the system's libc is
             // musl, link dynamically by default.
@@ -402,7 +402,7 @@ pub fn resolve(options: Options) ResolveError!Config {
                 break :b false;
             },
         }
-        if (target_util.requiresPIE(target)) {
+        if (target_util.requires_pie(target)) {
             if (options.pie == false) return error.TargetRequiresPie;
             break :b true;
         }
@@ -417,7 +417,7 @@ pub fn resolve(options: Options) ResolveError!Config {
     const root_strip = b: {
         if (options.root_strip) |x| break :b x;
         if (root_optimize_mode == .ReleaseSmall) break :b true;
-        if (!target_util.hasDebugInfo(target)) break :b true;
+        if (!target_util.has_debug_info(target)) break :b true;
         break :b false;
     };
 
@@ -434,7 +434,7 @@ pub fn resolve(options: Options) ResolveError!Config {
         };
     };
 
-    const backend_supports_error_tracing = target_util.backendSupportsFeature(
+    const backend_supports_error_tracing = target_util.backend_supports_feature(
         target.cpu.arch,
         target.ofmt,
         use_llvm,

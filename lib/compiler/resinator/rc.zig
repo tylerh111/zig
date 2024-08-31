@@ -49,8 +49,8 @@ pub const Resource = enum {
 
     const map = std.StaticStringMapWithEql(
         Resource,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "ACCELERATORS", .accelerators },
         .{ "BITMAP", .bitmap },
         .{ "CURSOR", .cursor },
@@ -73,10 +73,10 @@ pub const Resource = enum {
     });
 
     pub fn from_string(bytes: SourceBytes) Resource {
-        const maybe_ordinal = res.NameOrOrdinal.maybeOrdinalFromString(bytes);
+        const maybe_ordinal = res.NameOrOrdinal.maybe_ordinal_from_string(bytes);
         if (maybe_ordinal) |ordinal| {
             if (ordinal.ordinal >= 256) return .user_defined;
-            return fromRT(@enumFromInt(ordinal.ordinal));
+            return from_rt(@enumFromInt(ordinal.ordinal));
         }
         return map.get(bytes.slice) orelse .user_defined;
     }
@@ -130,16 +130,16 @@ pub const Resource = enum {
             // zig fmt: off
             .accelerators, .bitmap, .cursor, .dialog, .dialogex, .dlginclude, .dlginit, .font,
             .html, .icon, .menu, .menuex, .messagetable, .plugplay, .rcdata, .stringtable,
-            .toolbar, .versioninfo, .vxd => @tagName(resource),
+            .toolbar, .versioninfo, .vxd => @tag_name(resource),
             // zig fmt: on
             .user_defined => "user-defined",
-            .cursor_num => std.fmt.comptimePrint("{d} (cursor)", .{@intFromEnum(res.RT.CURSOR)}),
-            .icon_num => std.fmt.comptimePrint("{d} (icon)", .{@intFromEnum(res.RT.ICON)}),
-            .string_num => std.fmt.comptimePrint("{d} (string)", .{@intFromEnum(res.RT.STRING)}),
-            .anicursor_num => std.fmt.comptimePrint("{d} (anicursor)", .{@intFromEnum(res.RT.ANICURSOR)}),
-            .aniicon_num => std.fmt.comptimePrint("{d} (aniicon)", .{@intFromEnum(res.RT.ANIICON)}),
-            .fontdir_num => std.fmt.comptimePrint("{d} (fontdir)", .{@intFromEnum(res.RT.FONTDIR)}),
-            .manifest_num => std.fmt.comptimePrint("{d} (manifest)", .{@intFromEnum(res.RT.MANIFEST)}),
+            .cursor_num => std.fmt.comptime_print("{d} (cursor)", .{@int_from_enum(res.RT.CURSOR)}),
+            .icon_num => std.fmt.comptime_print("{d} (icon)", .{@int_from_enum(res.RT.ICON)}),
+            .string_num => std.fmt.comptime_print("{d} (string)", .{@int_from_enum(res.RT.STRING)}),
+            .anicursor_num => std.fmt.comptime_print("{d} (anicursor)", .{@int_from_enum(res.RT.ANICURSOR)}),
+            .aniicon_num => std.fmt.comptime_print("{d} (aniicon)", .{@int_from_enum(res.RT.ANIICON)}),
+            .fontdir_num => std.fmt.comptime_print("{d} (fontdir)", .{@int_from_enum(res.RT.FONTDIR)}),
+            .manifest_num => std.fmt.comptime_print("{d} (manifest)", .{@int_from_enum(res.RT.MANIFEST)}),
         };
     }
 };
@@ -162,8 +162,8 @@ pub const OptionalStatements = enum {
 
     pub const map = std.StaticStringMapWithEql(
         OptionalStatements,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "CHARACTERISTICS", .characteristics },
         .{ "LANGUAGE", .language },
         .{ "VERSION", .version },
@@ -171,8 +171,8 @@ pub const OptionalStatements = enum {
 
     pub const dialog_map = std.StaticStringMapWithEql(
         OptionalStatements,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "CAPTION", .caption },
         .{ "CLASS", .class },
         .{ "EXSTYLE", .exstyle },
@@ -208,8 +208,8 @@ pub const Control = enum {
 
     pub const map = std.StaticStringMapWithEql(
         Control,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "AUTO3STATE", .auto3state },
         .{ "AUTOCHECKBOX", .autocheckbox },
         .{ "AUTORADIOBUTTON", .autoradiobutton },
@@ -245,8 +245,8 @@ pub const Control = enum {
 pub const ControlClass = struct {
     pub const map = std.StaticStringMapWithEql(
         res.ControlClass,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "BUTTON", .button },
         .{ "EDIT", .edit },
         .{ "STATIC", .static },
@@ -258,18 +258,18 @@ pub const ControlClass = struct {
     /// Like `map.get` but works on WTF16 strings, for use with parsed
     /// string literals ("BUTTON", or even "\x42UTTON")
     pub fn from_wide_string(str: []const u16) ?res.ControlClass {
-        const utf16Literal = std.unicode.utf8ToUtf16LeStringLiteral;
-        return if (ascii.eqlIgnoreCaseW(str, utf16Literal("BUTTON")))
+        const utf16Literal = std.unicode.utf8_to_utf16_le_string_literal;
+        return if (ascii.eql_ignore_case_w(str, utf16Literal("BUTTON")))
             .button
-        else if (ascii.eqlIgnoreCaseW(str, utf16Literal("EDIT")))
+        else if (ascii.eql_ignore_case_w(str, utf16Literal("EDIT")))
             .edit
-        else if (ascii.eqlIgnoreCaseW(str, utf16Literal("STATIC")))
+        else if (ascii.eql_ignore_case_w(str, utf16Literal("STATIC")))
             .static
-        else if (ascii.eqlIgnoreCaseW(str, utf16Literal("LISTBOX")))
+        else if (ascii.eql_ignore_case_w(str, utf16Literal("LISTBOX")))
             .listbox
-        else if (ascii.eqlIgnoreCaseW(str, utf16Literal("SCROLLBAR")))
+        else if (ascii.eql_ignore_case_w(str, utf16Literal("SCROLLBAR")))
             .scrollbar
-        else if (ascii.eqlIgnoreCaseW(str, utf16Literal("COMBOBOX")))
+        else if (ascii.eql_ignore_case_w(str, utf16Literal("COMBOBOX")))
             .combobox
         else
             null;
@@ -282,7 +282,7 @@ const ascii = struct {
         if (a.len != b.len) return false;
         for (a, b) |a_c, b_c| {
             if (a_c < 128) {
-                if (std.ascii.toLower(@intCast(a_c)) != std.ascii.toLower(@intCast(b_c))) return false;
+                if (std.ascii.to_lower(@int_cast(a_c)) != std.ascii.to_lower(@int_cast(b_c))) return false;
             } else {
                 if (a_c != b_c) return false;
             }
@@ -297,14 +297,14 @@ pub const MenuItem = enum {
 
     pub const map = std.StaticStringMapWithEql(
         MenuItem,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "MENUITEM", .menuitem },
         .{ "POPUP", .popup },
     });
 
     pub fn is_separator(bytes: []const u8) bool {
-        return std.ascii.eqlIgnoreCase(bytes, "SEPARATOR");
+        return std.ascii.eql_ignore_case(bytes, "SEPARATOR");
     }
 
     pub const Option = enum {
@@ -317,8 +317,8 @@ pub const MenuItem = enum {
 
         pub const map = std.StaticStringMapWithEql(
             Option,
-            std.static_string_map.eqlAsciiIgnoreCase,
-        ).initComptime(.{
+            std.static_string_map.eql_ascii_ignore_case,
+        ).init_comptime(.{
             .{ "CHECKED", .checked },
             .{ "GRAYED", .grayed },
             .{ "HELP", .help },
@@ -335,8 +335,8 @@ pub const ToolbarButton = enum {
 
     pub const map = std.StaticStringMapWithEql(
         ToolbarButton,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "BUTTON", .button },
         .{ "SEPARATOR", .separator },
     });
@@ -353,8 +353,8 @@ pub const VersionInfo = enum {
 
     pub const map = std.StaticStringMapWithEql(
         VersionInfo,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "FILEVERSION", .file_version },
         .{ "PRODUCTVERSION", .product_version },
         .{ "FILEFLAGSMASK", .file_flags_mask },
@@ -371,8 +371,8 @@ pub const VersionBlock = enum {
 
     pub const map = std.StaticStringMapWithEql(
         VersionBlock,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "BLOCK", .block },
         .{ "VALUE", .value },
     });
@@ -388,8 +388,8 @@ pub const TopLevelKeywords = enum {
 
     pub const map = std.StaticStringMapWithEql(
         TopLevelKeywords,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "LANGUAGE", .language },
         .{ "VERSION", .version },
         .{ "CHARACTERISTICS", .characteristics },
@@ -410,8 +410,8 @@ pub const CommonResourceAttributes = enum {
 
     pub const map = std.StaticStringMapWithEql(
         CommonResourceAttributes,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "PRELOAD", .preload },
         .{ "LOADONCALL", .loadoncall },
         .{ "FIXED", .fixed },
@@ -434,8 +434,8 @@ pub const AcceleratorTypeAndOptions = enum {
 
     pub const map = std.StaticStringMapWithEql(
         AcceleratorTypeAndOptions,
-        std.static_string_map.eqlAsciiIgnoreCase,
-    ).initComptime(.{
+        std.static_string_map.eql_ascii_ignore_case,
+    ).init_comptime(.{
         .{ "VIRTKEY", .virtkey },
         .{ "ASCII", .ascii },
         .{ "NOINVERT", .noinvert },

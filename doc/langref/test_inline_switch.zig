@@ -1,6 +1,6 @@
 const std = @import("std");
 const expect = std.testing.expect;
-const expectError = std.testing.expectError;
+const expect_error = std.testing.expect_error;
 
 fn is_field_optional(comptime T: type, field_index: usize) !bool {
     const fields = @typeInfo(T).Struct.fields;
@@ -16,14 +16,14 @@ const Struct1 = struct { a: u32, b: ?u32 };
 
 test "using @typeInfo with runtime values" {
     var index: usize = 0;
-    try expect(!try isFieldOptional(Struct1, index));
+    try expect(!try is_field_optional(Struct1, index));
     index += 1;
-    try expect(try isFieldOptional(Struct1, index));
+    try expect(try is_field_optional(Struct1, index));
     index += 1;
-    try expectError(error.IndexOutOfBounds, isFieldOptional(Struct1, index));
+    try expect_error(error.IndexOutOfBounds, is_field_optional(Struct1, index));
 }
 
-// Calls to `isFieldOptional` on `Struct1` get unrolled to an equivalent
+// Calls to `is_field_optional` on `Struct1` get unrolled to an equivalent
 // of this function:
 fn is_field_optional_unrolled(field_index: usize) !bool {
     return switch (field_index) {

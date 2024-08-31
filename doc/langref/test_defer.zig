@@ -16,7 +16,7 @@ fn defer_example() !usize {
 }
 
 test "defer basics" {
-    try expect((try deferExample()) == 5);
+    try expect((try defer_example()) == 5);
 }
 
 // test

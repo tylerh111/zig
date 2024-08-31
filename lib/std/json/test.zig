@@ -1,26 +1,26 @@
 const std = @import("std");
 const testing = std.testing;
-const parseFromSlice = @import("./static.zig").parseFromSlice;
+const parse_from_slice = @import("./static.zig").parse_from_slice;
 const validate = @import("./scanner.zig").validate;
 const JsonScanner = @import("./scanner.zig").Scanner;
 const Value = @import("./dynamic.zig").Value;
-const stringifyAlloc = @import("./stringify.zig").stringifyAlloc;
+const stringify_alloc = @import("./stringify.zig").stringify_alloc;
 
 // Support for JSONTestSuite.zig
 pub fn ok(s: []const u8) !void {
-    try testLowLevelScanner(s);
-    try testHighLevelDynamicParser(s);
+    try test_low_level_scanner(s);
+    try test_high_level_dynamic_parser(s);
 }
 pub fn err(s: []const u8) !void {
-    try testing.expect(std.meta.isError(testLowLevelScanner(s)));
-    try testing.expect(std.meta.isError(testHighLevelDynamicParser(s)));
+    try testing.expect(std.meta.is_error(test_low_level_scanner(s)));
+    try testing.expect(std.meta.is_error(test_high_level_dynamic_parser(s)));
 }
 pub fn any(s: []const u8) !void {
-    testLowLevelScanner(s) catch {};
-    testHighLevelDynamicParser(s) catch {};
+    test_low_level_scanner(s) catch {};
+    test_high_level_dynamic_parser(s) catch {};
 }
 fn test_low_level_scanner(s: []const u8) !void {
-    var scanner = JsonScanner.initCompleteInput(testing.allocator, s);
+    var scanner = JsonScanner.init_complete_input(testing.allocator, s);
     defer scanner.deinit();
     while (true) {
         const token = try scanner.next();
@@ -28,13 +28,13 @@ fn test_low_level_scanner(s: []const u8) !void {
     }
 }
 fn test_high_level_dynamic_parser(s: []const u8) !void {
-    var parsed = try parseFromSlice(Value, testing.allocator, s, .{});
+    var parsed = try parse_from_slice(Value, testing.allocator, s, .{});
     defer parsed.deinit();
 }
 
 // Additional tests not part of test JSONTestSuite.
 test "y_trailing_comma_after_empty" {
-    try roundTrip(
+    try round_trip(
         \\{"1":[],"2":{},"3":"4"}
     );
 }
@@ -47,13 +47,13 @@ test "n_object_closed_missing_value" {
 fn round_trip(s: []const u8) !void {
     try testing.expect(try validate(testing.allocator, s));
 
-    var parsed = try parseFromSlice(Value, testing.allocator, s, .{});
+    var parsed = try parse_from_slice(Value, testing.allocator, s, .{});
     defer parsed.deinit();
 
-    const rendered = try stringifyAlloc(testing.allocator, parsed.value, .{});
+    const rendered = try stringify_alloc(testing.allocator, parsed.value, .{});
     defer testing.allocator.free(rendered);
 
-    try testing.expectEqualStrings(s, rendered);
+    try testing.expect_equal_strings(s, rendered);
 }
 
 test "truncated UTF-8 sequence" {

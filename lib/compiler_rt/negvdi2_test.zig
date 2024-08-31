@@ -3,7 +3,7 @@ const testing = @import("std").testing;
 
 fn test__negvdi2(a: i64, expected: i64) !void {
     const result = negv.__negvdi2(a);
-    try testing.expectEqual(expected, result);
+    try testing.expect_equal(expected, result);
 }
 
 test "negvdi2" {

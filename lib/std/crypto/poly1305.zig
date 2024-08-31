@@ -1,7 +1,7 @@
 const std = @import("../std.zig");
 const utils = std.crypto.utils;
 const mem = std.mem;
-const mulWide = std.math.mulWide;
+const mul_wide = std.math.mul_wide;
 
 pub const Poly1305 = struct {
     pub const block_length: usize = 16;
@@ -22,25 +22,25 @@ pub const Poly1305 = struct {
     pub fn init(key: *const [key_length]u8) Poly1305 {
         return Poly1305{
             .r = [_]u64{
-                mem.readInt(u64, key[0..8], .little) & 0x0ffffffc0fffffff,
-                mem.readInt(u64, key[8..16], .little) & 0x0ffffffc0ffffffc,
+                mem.read_int(u64, key[0..8], .little) & 0x0ffffffc0fffffff,
+                mem.read_int(u64, key[8..16], .little) & 0x0ffffffc0ffffffc,
             },
             .pad = [_]u64{
-                mem.readInt(u64, key[16..24], .little),
-                mem.readInt(u64, key[24..32], .little),
+                mem.read_int(u64, key[16..24], .little),
+                mem.read_int(u64, key[24..32], .little),
             },
         };
     }
 
     inline fn add(a: u64, b: u64, c: u1) struct { u64, u1 } {
-        const v1 = @addWithOverflow(a, b);
-        const v2 = @addWithOverflow(v1[0], c);
+        const v1 = @add_with_overflow(a, b);
+        const v2 = @add_with_overflow(v1[0], c);
         return .{ v2[0], v1[1] | v2[1] };
     }
 
     inline fn sub(a: u64, b: u64, c: u1) struct { u64, u1 } {
-        const v1 = @subWithOverflow(a, b);
-        const v2 = @subWithOverflow(v1[0], c);
+        const v1 = @sub_with_overflow(a, b);
+        const v2 = @sub_with_overflow(v1[0], c);
         return .{ v2[0], v1[1] | v2[1] };
     }
 
@@ -56,28 +56,28 @@ pub const Poly1305 = struct {
         var i: usize = 0;
 
         while (i + block_length <= m.len) : (i += block_length) {
-            const in0 = mem.readInt(u64, m[i..][0..8], .little);
-            const in1 = mem.readInt(u64, m[i + 8 ..][0..8], .little);
+            const in0 = mem.read_int(u64, m[i..][0..8], .little);
+            const in1 = mem.read_int(u64, m[i + 8 ..][0..8], .little);
 
             // Add the input message to H
-            var v = @addWithOverflow(h0, in0);
+            var v = @add_with_overflow(h0, in0);
             h0 = v[0];
             v = add(h1, in1, v[1]);
             h1 = v[0];
             h2 +%= v[1] +% hibit;
 
             // Compute H * R
-            const m0 = mulWide(u64, h0, r0);
-            const h1r0 = mulWide(u64, h1, r0);
-            const h0r1 = mulWide(u64, h0, r1);
-            const h2r0 = mulWide(u64, h2, r0);
-            const h1r1 = mulWide(u64, h1, r1);
-            const m3 = mulWide(u64, h2, r1);
+            const m0 = mul_wide(u64, h0, r0);
+            const h1r0 = mul_wide(u64, h1, r0);
+            const h0r1 = mul_wide(u64, h0, r1);
+            const h2r0 = mul_wide(u64, h2, r0);
+            const h1r1 = mul_wide(u64, h1, r1);
+            const m3 = mul_wide(u64, h2, r1);
             const m1 = h1r0 +% h0r1;
             const m2 = h2r0 +% h1r1;
 
             const t0 = @as(u64, @truncate(m0));
-            v = @addWithOverflow(@as(u64, @truncate(m1)), @as(u64, @truncate(m0 >> 64)));
+            v = @add_with_overflow(@as(u64, @truncate(m1)), @as(u64, @truncate(m0 >> 64)));
             const t1 = v[0];
             v = add(@as(u64, @truncate(m2)), @as(u64, @truncate(m1 >> 64)), v[1]);
             const t2 = v[0];
@@ -92,13 +92,13 @@ pub const Poly1305 = struct {
             // Add c*(4+1)
             const cclo = t2 & ~@as(u64, 3);
             const cchi = t3;
-            v = @addWithOverflow(h0, cclo);
+            v = @add_with_overflow(h0, cclo);
             h0 = v[0];
             v = add(h1, cchi, v[1]);
             h1 = v[0];
             h2 +%= v[1];
             const cc = (cclo | (@as(u128, cchi) << 64)) >> 2;
-            v = @addWithOverflow(h0, @as(u64, @truncate(cc)));
+            v = @add_with_overflow(h0, @as(u64, @truncate(cc)));
             h0 = v[0];
             v = add(h1, @as(u64, @truncate(cc >> 64)), v[1]);
             h1 = v[0];
@@ -166,7 +166,7 @@ pub const Poly1305 = struct {
         const h2 = st.h[2];
 
         // H - (2^130 - 5)
-        var v = @subWithOverflow(h0, 0xfffffffffffffffb);
+        var v = @sub_with_overflow(h0, 0xfffffffffffffffb);
         const h_p0 = v[0];
         v = sub(h1, 0xffffffffffffffff, v[1]);
         const h_p1 = v[0];
@@ -177,15 +177,15 @@ pub const Poly1305 = struct {
         h0 ^= mask & (h0 ^ h_p0);
         h1 ^= mask & (h1 ^ h_p1);
 
-        // Add the first half of the key, we intentionally don't use @addWithOverflow() here.
+        // Add the first half of the key, we intentionally don't use @add_with_overflow() here.
         st.h[0] = h0 +% st.pad[0];
         const c = ((h0 & st.pad[0]) | ((h0 | st.pad[0]) & ~st.h[0])) >> 63;
         st.h[1] = h1 +% st.pad[1] +% c;
 
-        mem.writeInt(u64, out[0..8], st.h[0], .little);
-        mem.writeInt(u64, out[8..16], st.h[1], .little);
+        mem.write_int(u64, out[0..8], st.h[0], .little);
+        mem.write_int(u64, out[8..16], st.h[1], .little);
 
-        utils.secureZero(u8, @as([*]u8, @ptrCast(st))[0..@sizeOf(Poly1305)]);
+        utils.secure_zero(u8, @as([*]u8, @ptr_cast(st))[0..@size_of(Poly1305)]);
     }
 
     pub fn create(out: *[mac_length]u8, msg: []const u8, key: *const [key_length]u8) void {
@@ -205,7 +205,7 @@ test "rfc7439 vector1" {
     var mac: [16]u8 = undefined;
     Poly1305.create(mac[0..], msg, key);
 
-    try std.testing.expectEqualSlices(u8, expected_mac, &mac);
+    try std.testing.expect_equal_slices(u8, expected_mac, &mac);
 }
 
 test "requiring a final reduction" {
@@ -214,5 +214,5 @@ test "requiring a final reduction" {
     const key = [_]u8{ 190, 63, 95, 57, 155, 103, 77, 170, 7, 98, 106, 44, 117, 186, 90, 185, 109, 118, 184, 24, 69, 41, 166, 243, 119, 132, 151, 61, 52, 43, 64, 250 };
     var mac: [16]u8 = undefined;
     Poly1305.create(mac[0..], &msg, &key);
-    try std.testing.expectEqualSlices(u8, &expected_mac, &mac);
+    try std.testing.expect_equal_slices(u8, &expected_mac, &mac);
 }

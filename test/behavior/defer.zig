@@ -1,12 +1,12 @@
 const builtin = @import("builtin");
 const std = @import("std");
 const expect = std.testing.expect;
-const expectEqual = std.testing.expectEqual;
-const expectError = std.testing.expectError;
+const expect_equal = std.testing.expect_equal;
+const expect_error = std.testing.expect_error;
 
 test "break and continue inside loop inside defer expression" {
-    testBreakContInDefer(10);
-    comptime testBreakContInDefer(10);
+    test_break_cont_in_defer(10);
+    comptime test_break_cont_in_defer(10);
 }
 
 fn test_break_cont_in_defer(x: usize) void {
@@ -35,7 +35,7 @@ test "errdefer does not apply to fn inside fn" {
     if (builtin.zig_backend == .stage2_aarch64) return error.SkipZigTest;
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
 
-    if (testNestedFnErrDefer()) |_| @panic("expected error") else |e| try expect(e == error.Bad);
+    if (test_nested_fn_err_defer()) |_| @panic("expected error") else |e| try expect(e == error.Bad);
 }
 
 fn test_nested_fn_err_defer() anyerror!void {
@@ -57,7 +57,7 @@ test "return variable while defer expression in scope to modify it" {
 
     const S = struct {
         fn do_the_test() !void {
-            try expect(notNull().? == 1);
+            try expect(not_null().? == 1);
         }
 
         fn not_null() ?u8 {
@@ -67,8 +67,8 @@ test "return variable while defer expression in scope to modify it" {
         }
     };
 
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 var result: [3]u8 = undefined;
@@ -97,11 +97,11 @@ test "mixing normal and error defers" {
     if (builtin.zig_backend == .stage2_sparc64) return error.SkipZigTest; // TODO
     if (builtin.zig_backend == .stage2_riscv64) return error.SkipZigTest;
 
-    try expect(runSomeErrorDefers(true) catch unreachable);
+    try expect(run_some_error_defers(true) catch unreachable);
     try expect(result[0] == 'c');
     try expect(result[1] == 'a');
 
-    const ok = runSomeErrorDefers(false) catch |err| x: {
+    const ok = run_some_error_defers(false) catch |err| x: {
         try expect(err == error.FalseNotAllowed);
         break :x true;
     };
@@ -121,16 +121,16 @@ test "errdefer with payload" {
     const S = struct {
         fn foo() !i32 {
             errdefer |a| {
-                expectEqual(error.One, a) catch @panic("test failure");
+                expect_equal(error.One, a) catch @panic("test failure");
             }
             return error.One;
         }
         fn do_the_test() !void {
-            try expectError(error.One, foo());
+            try expect_error(error.One, foo());
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "reference to errdefer payload" {
@@ -146,17 +146,17 @@ test "reference to errdefer payload" {
             errdefer |a| {
                 const ptr = &a;
                 const ptr2 = &ptr;
-                expectEqual(error.One, ptr2.*.*) catch @panic("test failure");
-                expectEqual(error.One, ptr.*) catch @panic("test failure");
+                expect_equal(error.One, ptr2.*.*) catch @panic("test failure");
+                expect_equal(error.One, ptr.*) catch @panic("test failure");
             }
             return error.One;
         }
         fn do_the_test() !void {
-            try expectError(error.One, foo());
+            try expect_error(error.One, foo());
         }
     };
-    try S.doTheTest();
-    try comptime S.doTheTest();
+    try S.do_the_test();
+    try comptime S.do_the_test();
 }
 
 test "simple else prong doesn't emit an error for unreachable else prong" {
@@ -198,5 +198,5 @@ const defer_assign = switch (block: {
     else => |i| i,
 };
 comptime {
-    if (defer_assign != 0) @compileError("defer_assign failed!");
+    if (defer_assign != 0) @compile_error("defer_assign failed!");
 }

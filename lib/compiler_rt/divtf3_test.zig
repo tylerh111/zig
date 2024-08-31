@@ -5,7 +5,7 @@ const testing = std.testing;
 const __divtf3 = @import("divtf3.zig").__divtf3;
 
 fn compare_result_ld(result: f128, expectedHi: u64, expectedLo: u64) bool {
-    const rep: u128 = @bitCast(result);
+    const rep: u128 = @bit_cast(result);
     const hi: u64 = @truncate(rep >> 64);
     const lo: u64 = @truncate(rep);
 
@@ -25,7 +25,7 @@ fn compare_result_ld(result: f128, expectedHi: u64, expectedLo: u64) bool {
 
 fn test__divtf3(a: f128, b: f128, expectedHi: u64, expectedLo: u64) !void {
     const x = __divtf3(a, b);
-    const ret = compareResultLD(x, expectedHi, expectedLo);
+    const ret = compare_result_ld(x, expectedHi, expectedLo);
     try testing.expect(ret == true);
 }
 

@@ -28,8 +28,8 @@ pub fn is_skippable_magic(magic: u32) bool {
 ///     skippable frames.
 ///   - `error.EndOfStream` if `source` contains fewer than 4 bytes
 pub fn decode_frame_type(source: anytype) error{ BadMagic, EndOfStream }!frame.Kind {
-    const magic = try source.readInt(u32, .little);
-    return frameType(magic);
+    const magic = try source.read_int(u32, .little);
+    return frame_type(magic);
 }
 
 /// Returns the kind of frame associated to `magic`.
@@ -39,7 +39,7 @@ pub fn decode_frame_type(source: anytype) error{ BadMagic, EndOfStream }!frame.K
 pub fn frame_type(magic: u32) error{BadMagic}!frame.Kind {
     return if (magic == frame.Zstandard.magic_number)
         .zstandard
-    else if (isSkippableMagic(magic))
+    else if (is_skippable_magic(magic))
         .skippable
     else
         error.BadMagic;
@@ -62,14 +62,14 @@ pub const HeaderError = error{ BadMagic, EndOfStream, ReservedBitSet };
 ///   - `error.ReservedBitSet` if the frame is a Zstandard frame and any of the
 ///     reserved bits are set
 pub fn decode_frame_header(source: anytype) (@TypeOf(source).Error || HeaderError)!FrameHeader {
-    const magic = try source.readInt(u32, .little);
-    const frame_type = try frameType(magic);
+    const magic = try source.read_int(u32, .little);
+    const frame_type = try frame_type(magic);
     switch (frame_type) {
-        .zstandard => return FrameHeader{ .zstandard = try decodeZstandardHeader(source) },
+        .zstandard => return FrameHeader{ .zstandard = try decode_zstandard_header(source) },
         .skippable => return FrameHeader{
             .skippable = .{
                 .magic_number = magic,
-                .frame_size = try source.readInt(u32, .little),
+                .frame_size = try source.read_int(u32, .little),
             },
         },
     }
@@ -99,7 +99,7 @@ pub fn decode(dest: []u8, src: []const u8, verify_checksum: bool) error{
     var write_count: usize = 0;
     var read_count: usize = 0;
     while (read_count < src.len) {
-        const counts = decodeFrame(dest, src[read_count..], verify_checksum) catch |err| {
+        const counts = decode_frame(dest, src[read_count..], verify_checksum) catch |err| {
             switch (err) {
                 error.UnknownContentSizeUnsupported => return error.UnknownContentSizeUnsupported,
                 error.DictionaryIdFlagUnsupported => return error.DictionaryIdFlagUnsupported,
@@ -132,7 +132,7 @@ pub fn decode_alloc(
 
     var read_count: usize = 0;
     while (read_count < src.len) {
-        read_count += decodeFrameArrayList(
+        read_count += decode_frame_array_list(
             allocator,
             &result,
             src[read_count..],
@@ -144,7 +144,7 @@ pub fn decode_alloc(
             else => return error.MalformedFrame,
         };
     }
-    return result.toOwnedSlice();
+    return result.to_owned_slice();
 }
 
 /// Decodes the frame at the start of `src` into `dest`. Returns the number of
@@ -160,7 +160,7 @@ pub fn decode_alloc(
 ///   - `error.ContentTooLarge` if `dest` is smaller than the uncompressed data
 ///     size declared by the frame header
 ///   - `error.ContentSizeTooLarge` if the frame header indicates a content size
-///     that is larger than `std.math.maxInt(usize)`
+///     that is larger than `std.math.max_int(usize)`
 ///   - `error.DictionaryIdFlagUnsupported` if the frame uses a dictionary
 ///   - `error.ChecksumFailure` if `verify_checksum` is true and the frame
 ///     contains a checksum that does not match the checksum of the decompressed
@@ -186,12 +186,12 @@ pub fn decode_frame(
     DictionaryIdFlagUnsupported,
     SkippableSizeTooLarge,
 } || FrameError)!ReadWriteCount {
-    var fbs = std.io.fixedBufferStream(src);
-    switch (try decodeFrameType(fbs.reader())) {
-        .zstandard => return decodeZstandardFrame(dest, src, verify_checksum),
+    var fbs = std.io.fixed_buffer_stream(src);
+    switch (try decode_frame_type(fbs.reader())) {
+        .zstandard => return decode_zstandard_frame(dest, src, verify_checksum),
         .skippable => {
-            const content_size = try fbs.reader().readInt(u32, .little);
-            if (content_size > std.math.maxInt(usize) - 8) return error.SkippableSizeTooLarge;
+            const content_size = try fbs.reader().read_int(u32, .little);
+            if (content_size > std.math.max_int(usize) - 8) return error.SkippableSizeTooLarge;
             const read_count = @as(usize, content_size) + 8;
             if (read_count > src.len) return error.SkippableSizeTooLarge;
             return ReadWriteCount{
@@ -212,7 +212,7 @@ pub fn decode_frame(
 ///   - `error.WindowTooLarge` if the window size is larger than
 ///     `window_size_max`
 ///   - `error.ContentSizeTooLarge` if the frame header indicates a content size
-///     that is larger than `std.math.maxInt(usize)`
+///     that is larger than `std.math.max_int(usize)`
 ///   - `error.DictionaryIdFlagUnsupported` if the frame uses a dictionary
 ///   - `error.ChecksumFailure` if `verify_checksum` is true and the frame
 ///     contains a checksum that does not match the checksum of the decompressed
@@ -233,11 +233,11 @@ pub fn decode_frame_array_list(
     verify_checksum: bool,
     window_size_max: usize,
 ) (error{ BadMagic, OutOfMemory, SkippableSizeTooLarge } || FrameContext.Error || FrameError)!usize {
-    var fbs = std.io.fixedBufferStream(src);
+    var fbs = std.io.fixed_buffer_stream(src);
     const reader = fbs.reader();
-    const magic = try reader.readInt(u32, .little);
-    switch (try frameType(magic)) {
-        .zstandard => return decodeZstandardFrameArrayList(
+    const magic = try reader.read_int(u32, .little);
+    switch (try frame_type(magic)) {
+        .zstandard => return decode_zstandard_frame_array_list(
             allocator,
             dest,
             src,
@@ -245,8 +245,8 @@ pub fn decode_frame_array_list(
             window_size_max,
         ),
         .skippable => {
-            const content_size = try fbs.reader().readInt(u32, .little);
-            if (content_size > std.math.maxInt(usize) - 8) return error.SkippableSizeTooLarge;
+            const content_size = try fbs.reader().read_int(u32, .little);
+            if (content_size > std.math.max_int(usize) - 8) return error.SkippableSizeTooLarge;
             const read_count = @as(usize, content_size) + 8;
             if (read_count > src.len) return error.SkippableSizeTooLarge;
             return read_count;
@@ -257,7 +257,7 @@ pub fn decode_frame_array_list(
 /// Returns the frame checksum corresponding to the data fed into `hasher`
 pub fn compute_checksum(hasher: *std.hash.XxHash64) u32 {
     const hash = hasher.final();
-    return @as(u32, @intCast(hash & 0xFFFFFFFF));
+    return @as(u32, @int_cast(hash & 0xFFFFFFFF));
 }
 
 const FrameError = error{
@@ -279,7 +279,7 @@ const FrameError = error{
 ///   - `error.WindowSizeUnknown` if the frame does not have a valid window size
 ///   - `error.DictionaryIdFlagUnsupported` if the frame uses a dictionary
 ///   - `error.ContentSizeTooLarge` if the frame header indicates a content size
-///     that is larger than `std.math.maxInt(usize)`
+///     that is larger than `std.math.max_int(usize)`
 ///   - `error.ChecksumFailure` if `verify_checksum` is true and the frame
 ///     contains a checksum that does not match the checksum of the decompressed
 ///     data
@@ -299,24 +299,24 @@ pub fn decode_zstandard_frame(
     WindowSizeUnknown,
     DictionaryIdFlagUnsupported,
 } || FrameError)!ReadWriteCount {
-    assert(std.mem.readInt(u32, src[0..4], .little) == frame.Zstandard.magic_number);
+    assert(std.mem.read_int(u32, src[0..4], .little) == frame.Zstandard.magic_number);
     var consumed_count: usize = 4;
 
     var frame_context = context: {
-        var fbs = std.io.fixedBufferStream(src[consumed_count..]);
+        var fbs = std.io.fixed_buffer_stream(src[consumed_count..]);
         const source = fbs.reader();
-        const frame_header = try decodeZstandardHeader(source);
+        const frame_header = try decode_zstandard_header(source);
         consumed_count += fbs.pos;
         break :context FrameContext.init(
             frame_header,
-            std.math.maxInt(usize),
+            std.math.max_int(usize),
             verify_checksum,
         ) catch |err| switch (err) {
             error.WindowTooLarge => unreachable,
             inline else => |e| return e,
         };
     };
-    const counts = try decodeZStandardFrameBlocks(
+    const counts = try decode_zstandard_frame_blocks(
         dest,
         src[consumed_count..],
         &frame_context,
@@ -337,7 +337,7 @@ pub fn decode_zstandard_frame_blocks(
     if (dest.len < content_size) return error.ContentTooLarge;
 
     var consumed_count: usize = 0;
-    const written_count = decodeFrameBlocksInner(
+    const written_count = decode_frame_blocks_inner(
         dest[0..content_size],
         src[consumed_count..],
         &consumed_count,
@@ -351,10 +351,10 @@ pub fn decode_zstandard_frame_blocks(
     if (written_count != content_size) return error.BadContentSize;
     if (frame_context.has_checksum) {
         if (src.len < consumed_count + 4) return error.EndOfStream;
-        const checksum = std.mem.readInt(u32, src[consumed_count..][0..4], .little);
+        const checksum = std.mem.read_int(u32, src[consumed_count..][0..4], .little);
         consumed_count += 4;
         if (frame_context.hasher_opt) |*hasher| {
-            if (checksum != computeChecksum(hasher)) return error.ChecksumFailure;
+            if (checksum != compute_checksum(hasher)) return error.ChecksumFailure;
         }
     }
     return ReadWriteCount{ .read_count = consumed_count, .write_count = written_count };
@@ -382,7 +382,7 @@ pub const FrameContext = struct {
     ///   - `error.WindowTooLarge` if the window size is larger than
     ///     `window_size_max`
     ///   - `error.ContentSizeTooLarge` if the frame header indicates a content
-    ///     size larger than `std.math.maxInt(usize)`
+    ///     size larger than `std.math.max_int(usize)`
     pub fn init(
         frame_header: ZstandardHeader,
         window_size_max: usize,
@@ -391,11 +391,11 @@ pub const FrameContext = struct {
         if (frame_header.descriptor.dictionary_id_flag != 0)
             return error.DictionaryIdFlagUnsupported;
 
-        const window_size_raw = frameWindowSize(frame_header) orelse return error.WindowSizeUnknown;
+        const window_size_raw = frame_window_size(frame_header) orelse return error.WindowSizeUnknown;
         const window_size = if (window_size_raw > window_size_max)
             return error.WindowTooLarge
         else
-            @as(usize, @intCast(window_size_raw));
+            @as(usize, @int_cast(window_size_raw));
 
         const should_compute_checksum =
             frame_header.descriptor.content_checksum_flag and verify_checksum;
@@ -416,7 +416,7 @@ pub const FrameContext = struct {
 };
 
 /// Decode a Zstandard from from `src` and return number of bytes read; see
-/// `decodeZstandardFrame()`. The first four bytes of `src` must be the magic
+/// `decode_zstandard_frame()`. The first four bytes of `src` must be the magic
 /// number for a Zstandard frame.
 ///
 /// Errors returned:
@@ -425,7 +425,7 @@ pub const FrameContext = struct {
 ///     `window_size_max`
 ///   - `error.DictionaryIdFlagUnsupported` if the frame uses a dictionary
 ///   - `error.ContentSizeTooLarge` if the frame header indicates a content size
-///     that is larger than `std.math.maxInt(usize)`
+///     that is larger than `std.math.max_int(usize)`
 ///   - `error.ChecksumFailure` if `verify_checksum` is true and the frame
 ///     contains a checksum that does not match the checksum of the decompressed
 ///     data
@@ -442,18 +442,18 @@ pub fn decode_zstandard_frame_array_list(
     verify_checksum: bool,
     window_size_max: usize,
 ) (error{OutOfMemory} || FrameContext.Error || FrameError)!usize {
-    assert(std.mem.readInt(u32, src[0..4], .little) == frame.Zstandard.magic_number);
+    assert(std.mem.read_int(u32, src[0..4], .little) == frame.Zstandard.magic_number);
     var consumed_count: usize = 4;
 
     var frame_context = context: {
-        var fbs = std.io.fixedBufferStream(src[consumed_count..]);
+        var fbs = std.io.fixed_buffer_stream(src[consumed_count..]);
         const source = fbs.reader();
-        const frame_header = try decodeZstandardHeader(source);
+        const frame_header = try decode_zstandard_header(source);
         consumed_count += fbs.pos;
         break :context try FrameContext.init(frame_header, window_size_max, verify_checksum);
     };
 
-    consumed_count += try decodeZstandardFrameBlocksArrayList(
+    consumed_count += try decode_zstandard_frame_blocks_array_list(
         allocator,
         dest,
         src[consumed_count..],
@@ -478,14 +478,14 @@ pub fn decode_zstandard_frame_blocks_array_list(
     var match_fse_data: [types.compressed_block.table_size_max.match]Table.Fse = undefined;
     var offset_fse_data: [types.compressed_block.table_size_max.offset]Table.Fse = undefined;
 
-    var block_header = try block.decodeBlockHeaderSlice(src);
+    var block_header = try block.decode_block_header_slice(src);
     var consumed_count: usize = 3;
     var decode_state = block.DecodeState.init(&literal_fse_data, &match_fse_data, &offset_fse_data);
     while (true) : ({
-        block_header = try block.decodeBlockHeaderSlice(src[consumed_count..]);
+        block_header = try block.decode_block_header_slice(src[consumed_count..]);
         consumed_count += 3;
     }) {
-        const written_size = try block.decodeBlockRingBuffer(
+        const written_size = try block.decode_block_ring_buffer(
             &ring_buffer,
             src[consumed_count..],
             block_header,
@@ -499,9 +499,9 @@ pub fn decode_zstandard_frame_blocks_array_list(
             }
         }
         if (written_size > 0) {
-            const written_slice = ring_buffer.sliceLast(written_size);
-            try dest.appendSlice(written_slice.first);
-            try dest.appendSlice(written_slice.second);
+            const written_slice = ring_buffer.slice_last(written_size);
+            try dest.append_slice(written_slice.first);
+            try dest.append_slice(written_slice.second);
             if (frame_context.hasher_opt) |*hasher| {
                 hasher.update(written_slice.first);
                 hasher.update(written_slice.second);
@@ -517,10 +517,10 @@ pub fn decode_zstandard_frame_blocks_array_list(
 
     if (frame_context.has_checksum) {
         if (src.len < consumed_count + 4) return error.EndOfStream;
-        const checksum = std.mem.readInt(u32, src[consumed_count..][0..4], .little);
+        const checksum = std.mem.read_int(u32, src[consumed_count..][0..4], .little);
         consumed_count += 4;
         if (frame_context.hasher_opt) |*hasher| {
-            if (checksum != computeChecksum(hasher)) return error.ChecksumFailure;
+            if (checksum != compute_checksum(hasher)) return error.ChecksumFailure;
         }
     }
     return consumed_count;
@@ -538,16 +538,16 @@ fn decode_frame_blocks_inner(
     var match_fse_data: [types.compressed_block.table_size_max.match]Table.Fse = undefined;
     var offset_fse_data: [types.compressed_block.table_size_max.offset]Table.Fse = undefined;
 
-    var block_header = try block.decodeBlockHeaderSlice(src);
+    var block_header = try block.decode_block_header_slice(src);
     var bytes_read: usize = 3;
     defer consumed_count.* += bytes_read;
     var decode_state = block.DecodeState.init(&literal_fse_data, &match_fse_data, &offset_fse_data);
     var count: usize = 0;
     while (true) : ({
-        block_header = try block.decodeBlockHeaderSlice(src[bytes_read..]);
+        block_header = try block.decode_block_header_slice(src[bytes_read..]);
         bytes_read += 3;
     }) {
-        const written_size = try block.decodeBlock(
+        const written_size = try block.decode_block(
             dest,
             src[bytes_read..],
             block_header,
@@ -566,9 +566,9 @@ fn decode_frame_blocks_inner(
 /// Decode the header of a skippable frame. The first four bytes of `src` must
 /// be a valid magic number for a skippable frame.
 pub fn decode_skippable_header(src: *const [8]u8) SkippableHeader {
-    const magic = std.mem.readInt(u32, src[0..4], .little);
-    assert(isSkippableMagic(magic));
-    const frame_size = std.mem.readInt(u32, src[4..8], .little);
+    const magic = std.mem.read_int(u32, src[0..4], .little);
+    assert(is_skippable_magic(magic));
+    const frame_size = std.mem.read_int(u32, src[4..8], .little);
     return .{
         .magic_number = magic,
         .frame_size = frame_size,
@@ -582,7 +582,7 @@ pub fn frame_window_size(header: ZstandardHeader) ?u64 {
         const exponent = (descriptor & 0b11111000) >> 3;
         const mantissa = descriptor & 0b00000111;
         const window_log = 10 + exponent;
-        const window_base = @as(u64, 1) << @as(u6, @intCast(window_log));
+        const window_base = @as(u64, 1) << @as(u6, @int_cast(window_log));
         const window_add = (window_base / 8) * mantissa;
         return window_base + window_add;
     } else return header.content_size;
@@ -596,26 +596,26 @@ pub fn frame_window_size(header: ZstandardHeader) ?u64 {
 pub fn decode_zstandard_header(
     source: anytype,
 ) (@TypeOf(source).Error || error{ EndOfStream, ReservedBitSet })!ZstandardHeader {
-    const descriptor = @as(ZstandardHeader.Descriptor, @bitCast(try source.readByte()));
+    const descriptor = @as(ZstandardHeader.Descriptor, @bit_cast(try source.read_byte()));
 
     if (descriptor.reserved) return error.ReservedBitSet;
 
     var window_descriptor: ?u8 = null;
     if (!descriptor.single_segment_flag) {
-        window_descriptor = try source.readByte();
+        window_descriptor = try source.read_byte();
     }
 
     var dictionary_id: ?u32 = null;
     if (descriptor.dictionary_id_flag > 0) {
         // if flag is 3 then field_size = 4, else field_size = flag
         const field_size = (@as(u4, 1) << descriptor.dictionary_id_flag) >> 1;
-        dictionary_id = try source.readVarInt(u32, .little, field_size);
+        dictionary_id = try source.read_var_int(u32, .little, field_size);
     }
 
     var content_size: ?u64 = null;
     if (descriptor.single_segment_flag or descriptor.content_size_flag > 0) {
         const field_size = @as(u4, 1) << descriptor.content_size_flag;
-        content_size = try source.readVarInt(u64, .little, field_size);
+        content_size = try source.read_var_int(u64, .little, field_size);
         if (field_size == 2) content_size.? += 256;
     }
 
@@ -629,5 +629,5 @@ pub fn decode_zstandard_header(
 }
 
 test {
-    std.testing.refAllDecls(@This());
+    std.testing.ref_all_decls(@This());
 }

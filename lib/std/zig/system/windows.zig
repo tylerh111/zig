@@ -13,7 +13,7 @@ pub const IsProcessorFeaturePresent = std.os.windows.IsProcessorFeaturePresent;
 /// Discards information about in-between versions we don't differentiate.
 pub fn detect_runtime_version() WindowsVersion {
     var version_info: std.os.windows.RTL_OSVERSIONINFOW = undefined;
-    version_info.dwOSVersionInfoSize = @sizeOf(@TypeOf(version_info));
+    version_info.dwOSVersionInfoSize = @size_of(@TypeOf(version_info));
 
     switch (std.os.windows.ntdll.RtlGetVersion(&version_info)) {
         .SUCCESS => {},
@@ -26,8 +26,8 @@ pub fn detect_runtime_version() WindowsVersion {
     //   `---` `` ``--> Sub-version (Starting from Windows 10 onwards)
     //     \    `--> Service pack (Always zero in the constants defined)
     //      `--> OS version (Major & minor)
-    const os_ver: u16 = @as(u16, @intCast(version_info.dwMajorVersion & 0xff)) << 8 |
-        @as(u16, @intCast(version_info.dwMinorVersion & 0xff));
+    const os_ver: u16 = @as(u16, @int_cast(version_info.dwMajorVersion & 0xff)) << 8 |
+        @as(u16, @int_cast(version_info.dwMinorVersion & 0xff));
     const sp_ver: u8 = 0;
     const sub_ver: u8 = if (os_ver >= 0x0A00) subver: {
         // There's no other way to obtain this info beside
@@ -57,7 +57,7 @@ fn get_cpu_info_from_registry(core: usize, args: anytype) !void {
     const args_type_info = @typeInfo(ArgsType);
 
     if (args_type_info != .Struct) {
-        @compileError("expected tuple or struct argument, found " ++ @typeName(ArgsType));
+        @compile_error("expected tuple or struct argument, found " ++ @type_name(ArgsType));
     }
 
     const fields_info = args_type_info.Struct.fields;
@@ -70,14 +70,14 @@ fn get_cpu_info_from_registry(core: usize, args: anytype) !void {
     const table_size = 1 + fields_info.len;
     var table: [table_size + 1]std.os.windows.RTL_QUERY_REGISTRY_TABLE = undefined;
 
-    const topkey = std.unicode.utf8ToUtf16LeStringLiteral("\\Registry\\Machine\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor");
+    const topkey = std.unicode.utf8_to_utf16_le_string_literal("\\Registry\\Machine\\HARDWARE\\DESCRIPTION\\System\\CentralProcessor");
 
     const max_cpu_buf = 4;
     var next_cpu_buf: [max_cpu_buf]u8 = undefined;
-    const next_cpu = try std.fmt.bufPrint(&next_cpu_buf, "{d}", .{core});
+    const next_cpu = try std.fmt.buf_print(&next_cpu_buf, "{d}", .{core});
 
     var subkey: [max_cpu_buf + 1]u16 = undefined;
-    const subkey_len = try std.unicode.utf8ToUtf16Le(&subkey, next_cpu);
+    const subkey_len = try std.unicode.utf8_to_utf16_le(&subkey, next_cpu);
     subkey[subkey_len] = 0;
 
     table[0] = .{
@@ -99,12 +99,12 @@ fn get_cpu_info_from_registry(core: usize, args: anytype) !void {
                 REG.EXPAND_SZ,
                 REG.MULTI_SZ,
                 => {
-                    comptime assert(@sizeOf(std.os.windows.UNICODE_STRING) % 2 == 0);
-                    const unicode = @as(*std.os.windows.UNICODE_STRING, @ptrCast(&tmp_bufs[i]));
+                    comptime assert(@size_of(std.os.windows.UNICODE_STRING) % 2 == 0);
+                    const unicode = @as(*std.os.windows.UNICODE_STRING, @ptr_cast(&tmp_bufs[i]));
                     unicode.* = .{
                         .Length = 0,
-                        .MaximumLength = max_value_len - @sizeOf(std.os.windows.UNICODE_STRING),
-                        .Buffer = @as([*]u16, @ptrCast(tmp_bufs[i][@sizeOf(std.os.windows.UNICODE_STRING)..])),
+                        .MaximumLength = max_value_len - @size_of(std.os.windows.UNICODE_STRING),
+                        .Buffer = @as([*]u16, @ptr_cast(tmp_bufs[i][@size_of(std.os.windows.UNICODE_STRING)..])),
                     };
                     break :blk unicode;
                 },
@@ -119,7 +119,7 @@ fn get_cpu_info_from_registry(core: usize, args: anytype) !void {
         };
 
         var key_buf: [max_value_len / 2 + 1]u16 = undefined;
-        const key_len = try std.unicode.utf8ToUtf16Le(&key_buf, @field(args, field.name).key);
+        const key_len = try std.unicode.utf8_to_utf16_le(&key_buf, @field(args, field.name).key);
         key_buf[key_len] = 0;
 
         table[i + 1] = .{
@@ -159,8 +159,8 @@ fn get_cpu_info_from_registry(core: usize, args: anytype) !void {
                 REG.MULTI_SZ,
                 => {
                     var buf = @field(args, field.name).value_buf;
-                    const entry = @as(*align(1) const std.os.windows.UNICODE_STRING, @ptrCast(table[i + 1].EntryContext));
-                    const len = try std.unicode.utf16LeToUtf8(buf, entry.Buffer.?[0 .. entry.Length / 2]);
+                    const entry = @as(*align(1) const std.os.windows.UNICODE_STRING, @ptr_cast(table[i + 1].EntryContext));
+                    const len = try std.unicode.utf16_le_to_utf8(buf, entry.Buffer.?[0 .. entry.Length / 2]);
                     buf[len] = 0;
                 },
 
@@ -168,7 +168,7 @@ fn get_cpu_info_from_registry(core: usize, args: anytype) !void {
                 REG.DWORD_BIG_ENDIAN,
                 REG.QWORD,
                 => {
-                    const entry = @as([*]align(1) const u8, @ptrCast(table[i + 1].EntryContext));
+                    const entry = @as([*]align(1) const u8, @ptr_cast(table[i + 1].EntryContext));
                     switch (@field(args, field.name).value_type) {
                         REG.DWORD, REG.DWORD_BIG_ENDIAN => {
                             @memcpy(@field(args, field.name).value_buf[0..4], entry[0..4]);
@@ -188,9 +188,9 @@ fn get_cpu_info_from_registry(core: usize, args: anytype) !void {
 }
 
 fn set_feature(comptime Feature: type, cpu: *Target.Cpu, feature: Feature, enabled: bool) void {
-    const idx = @as(Target.Cpu.Feature.Set.Index, @intFromEnum(feature));
+    const idx = @as(Target.Cpu.Feature.Set.Index, @int_from_enum(feature));
 
-    if (enabled) cpu.features.addFeature(idx) else cpu.features.removeFeature(idx);
+    if (enabled) cpu.features.add_feature(idx) else cpu.features.remove_feature(idx);
 }
 
 fn get_cpu_count() usize {
@@ -213,12 +213,12 @@ fn generic_cpu_and_native_features(arch: Target.Cpu.Arch) Target.Cpu {
             const Feature = Target.aarch64.Feature;
 
             // Override any features that are either present or absent
-            setFeature(Feature, &cpu, .neon, IsProcessorFeaturePresent(PF.ARM_NEON_INSTRUCTIONS_AVAILABLE));
-            setFeature(Feature, &cpu, .crc, IsProcessorFeaturePresent(PF.ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE));
-            setFeature(Feature, &cpu, .crypto, IsProcessorFeaturePresent(PF.ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE));
-            setFeature(Feature, &cpu, .lse, IsProcessorFeaturePresent(PF.ARM_V81_ATOMIC_INSTRUCTIONS_AVAILABLE));
-            setFeature(Feature, &cpu, .dotprod, IsProcessorFeaturePresent(PF.ARM_V82_DP_INSTRUCTIONS_AVAILABLE));
-            setFeature(Feature, &cpu, .jsconv, IsProcessorFeaturePresent(PF.ARM_V83_JSCVT_INSTRUCTIONS_AVAILABLE));
+            set_feature(Feature, &cpu, .neon, IsProcessorFeaturePresent(PF.ARM_NEON_INSTRUCTIONS_AVAILABLE));
+            set_feature(Feature, &cpu, .crc, IsProcessorFeaturePresent(PF.ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE));
+            set_feature(Feature, &cpu, .crypto, IsProcessorFeaturePresent(PF.ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE));
+            set_feature(Feature, &cpu, .lse, IsProcessorFeaturePresent(PF.ARM_V81_ATOMIC_INSTRUCTIONS_AVAILABLE));
+            set_feature(Feature, &cpu, .dotprod, IsProcessorFeaturePresent(PF.ARM_V82_DP_INSTRUCTIONS_AVAILABLE));
+            set_feature(Feature, &cpu, .jsconv, IsProcessorFeaturePresent(PF.ARM_V83_JSCVT_INSTRUCTIONS_AVAILABLE));
         },
         else => {},
     }
@@ -231,7 +231,7 @@ pub fn detect_native_cpu_and_features() ?Target.Cpu {
     const cpu: ?Target.Cpu = switch (current_arch) {
         .aarch64, .aarch64_be, .aarch64_32 => blk: {
             var cores: [128]Target.Cpu = undefined;
-            const core_count = getCpuCount();
+            const core_count = get_cpu_count();
 
             if (core_count > cores.len) break :blk null;
 
@@ -253,22 +253,22 @@ pub fn detect_native_cpu_and_features() ?Target.Cpu {
                 // CP 4038 -> ID_AA64MMFR0_EL1
                 // CP 4039 -> ID_AA64MMFR1_EL1
                 // CP 403A -> ID_AA64MMFR2_EL1
-                getCpuInfoFromRegistry(i, .{
-                    .{ .key = "CP 4000", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[0])) },
-                    .{ .key = "CP 4020", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[1])) },
-                    .{ .key = "CP 4021", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[2])) },
-                    .{ .key = "CP 4028", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[3])) },
-                    .{ .key = "CP 4029", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[4])) },
-                    .{ .key = "CP 402C", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[5])) },
-                    .{ .key = "CP 402D", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[6])) },
-                    .{ .key = "CP 4030", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[7])) },
-                    .{ .key = "CP 4031", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[8])) },
-                    .{ .key = "CP 4038", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[9])) },
-                    .{ .key = "CP 4039", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[10])) },
-                    .{ .key = "CP 403A", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptrCast(&registers[11])) },
+                get_cpu_info_from_registry(i, .{
+                    .{ .key = "CP 4000", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[0])) },
+                    .{ .key = "CP 4020", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[1])) },
+                    .{ .key = "CP 4021", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[2])) },
+                    .{ .key = "CP 4028", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[3])) },
+                    .{ .key = "CP 4029", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[4])) },
+                    .{ .key = "CP 402C", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[5])) },
+                    .{ .key = "CP 402D", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[6])) },
+                    .{ .key = "CP 4030", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[7])) },
+                    .{ .key = "CP 4031", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[8])) },
+                    .{ .key = "CP 4038", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[9])) },
+                    .{ .key = "CP 4039", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[10])) },
+                    .{ .key = "CP 403A", .value_type = REG.QWORD, .value_buf = @as(*[8]u8, @ptr_cast(&registers[11])) },
                 }) catch break :blk null;
 
-                cores[i] = @import("arm.zig").aarch64.detectNativeCpuAndFeatures(current_arch, registers) orelse
+                cores[i] = @import("arm.zig").aarch64.detect_native_cpu_and_features(current_arch, registers) orelse
                     break :blk null;
             }
 
@@ -277,5 +277,5 @@ pub fn detect_native_cpu_and_features() ?Target.Cpu {
         },
         else => null,
     };
-    return cpu orelse genericCpuAndNativeFeatures(current_arch);
+    return cpu orelse generic_cpu_and_native_features(current_arch);
 }

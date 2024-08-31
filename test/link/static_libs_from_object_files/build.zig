@@ -55,7 +55,7 @@ fn add(b: *Build, test_step: *Step, files: []const LazyPath, optimize: std.built
 
     // all files at once
     {
-        const exe = b.addExecutable(.{
+        const exe = b.add_executable(.{
             .name = "test1",
             .root_source_file = b.path("main.zig"),
             .optimize = optimize,
@@ -63,24 +63,24 @@ fn add(b: *Build, test_step: *Step, files: []const LazyPath, optimize: std.built
         });
 
         for (files) |file| {
-            exe.addCSourceFile(.{ .file = file, .flags = &flags });
+            exe.add_csource_file(.{ .file = file, .flags = &flags });
         }
 
-        const run_cmd = b.addRunArtifact(exe);
+        const run_cmd = b.add_run_artifact(exe);
         run_cmd.skip_foreign_checks = true;
-        run_cmd.expectExitCode(0);
+        run_cmd.expect_exit_code(0);
 
-        test_step.dependOn(&run_cmd.step);
+        test_step.depend_on(&run_cmd.step);
     }
 
     // using static librairies
     {
-        const lib_a = b.addStaticLibrary(.{
+        const lib_a = b.add_static_library(.{
             .name = "test2_a",
             .target = b.host,
             .optimize = optimize,
         });
-        const lib_b = b.addStaticLibrary(.{
+        const lib_b = b.add_static_library(.{
             .name = "test2_b",
             .target = b.host,
             .optimize = optimize,
@@ -88,63 +88,63 @@ fn add(b: *Build, test_step: *Step, files: []const LazyPath, optimize: std.built
 
         for (files, 1..) |file, i| {
             const lib = if (i & 1 == 0) lib_a else lib_b;
-            lib.addCSourceFile(.{ .file = file, .flags = &flags });
+            lib.add_csource_file(.{ .file = file, .flags = &flags });
         }
 
-        const exe = b.addExecutable(.{
+        const exe = b.add_executable(.{
             .name = "test2",
             .root_source_file = b.path("main.zig"),
             .target = b.host,
             .optimize = optimize,
         });
-        exe.linkLibrary(lib_a);
-        exe.linkLibrary(lib_b);
+        exe.link_library(lib_a);
+        exe.link_library(lib_b);
 
-        const run_cmd = b.addRunArtifact(exe);
+        const run_cmd = b.add_run_artifact(exe);
         run_cmd.skip_foreign_checks = true;
-        run_cmd.expectExitCode(0);
+        run_cmd.expect_exit_code(0);
 
-        test_step.dependOn(&run_cmd.step);
+        test_step.depend_on(&run_cmd.step);
     }
 
     // using static librairies and object files
     {
-        const lib_a = b.addStaticLibrary(.{
+        const lib_a = b.add_static_library(.{
             .name = "test3_a",
             .target = b.host,
             .optimize = optimize,
         });
-        const lib_b = b.addStaticLibrary(.{
+        const lib_b = b.add_static_library(.{
             .name = "test3_b",
             .target = b.host,
             .optimize = optimize,
         });
 
         for (files, 1..) |file, i| {
-            const obj = b.addObject(.{
+            const obj = b.add_object(.{
                 .name = b.fmt("obj_{}", .{i}),
                 .target = b.host,
                 .optimize = optimize,
             });
-            obj.addCSourceFile(.{ .file = file, .flags = &flags });
+            obj.add_csource_file(.{ .file = file, .flags = &flags });
 
             const lib = if (i & 1 == 0) lib_a else lib_b;
-            lib.addObject(obj);
+            lib.add_object(obj);
         }
 
-        const exe = b.addExecutable(.{
+        const exe = b.add_executable(.{
             .name = "test3",
             .root_source_file = b.path("main.zig"),
             .target = b.host,
             .optimize = optimize,
         });
-        exe.linkLibrary(lib_a);
-        exe.linkLibrary(lib_b);
+        exe.link_library(lib_a);
+        exe.link_library(lib_b);
 
-        const run_cmd = b.addRunArtifact(exe);
+        const run_cmd = b.add_run_artifact(exe);
         run_cmd.skip_foreign_checks = true;
-        run_cmd.expectExitCode(0);
+        run_cmd.expect_exit_code(0);
 
-        test_step.dependOn(&run_cmd.step);
+        test_step.depend_on(&run_cmd.step);
     }
 }

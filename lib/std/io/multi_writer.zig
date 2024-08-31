@@ -23,7 +23,7 @@ pub fn MultiWriter(comptime Writers: type) type {
 
         pub fn write(self: *Self, bytes: []const u8) Error!usize {
             inline for (self.streams) |stream|
-                try stream.writeAll(bytes);
+                try stream.write_all(bytes);
             return bytes.len;
         }
     };
@@ -36,18 +36,18 @@ pub fn multi_writer(streams: anytype) MultiWriter(@TypeOf(streams)) {
 const testing = std.testing;
 
 test "MultiWriter" {
-    var tmp = testing.tmpDir(.{});
+    var tmp = testing.tmp_dir(.{});
     defer tmp.cleanup();
-    var f = try tmp.dir.createFile("t.txt", .{});
+    var f = try tmp.dir.create_file("t.txt", .{});
 
     var buf1: [255]u8 = undefined;
-    var fbs1 = io.fixedBufferStream(&buf1);
+    var fbs1 = io.fixed_buffer_stream(&buf1);
     var buf2: [255]u8 = undefined;
-    var stream = multiWriter(.{ fbs1.writer(), f.writer() });
+    var stream = multi_writer(.{ fbs1.writer(), f.writer() });
 
     try stream.writer().print("HI", .{});
     f.close();
 
-    try testing.expectEqualSlices(u8, "HI", fbs1.getWritten());
-    try testing.expectEqualSlices(u8, "HI", try tmp.dir.readFile("t.txt", &buf2));
+    try testing.expect_equal_slices(u8, "HI", fbs1.get_written());
+    try testing.expect_equal_slices(u8, "HI", try tmp.dir.read_file("t.txt", &buf2));
 }

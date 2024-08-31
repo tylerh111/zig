@@ -18,13 +18,13 @@ pub fn acosh(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => acosh32(x),
         f64 => acosh64(x),
-        else => @compileError("acosh not implemented for " ++ @typeName(T)),
+        else => @compile_error("acosh not implemented for " ++ @type_name(T)),
     };
 }
 
 // acosh(x) = log(x + sqrt(x * x - 1))
 fn acosh32(x: f32) f32 {
-    const u = @as(u32, @bitCast(x));
+    const u = @as(u32, @bit_cast(x));
     const i = u & 0x7FFFFFFF;
 
     // |x| < 2, invalid if x < 1 or nan
@@ -42,7 +42,7 @@ fn acosh32(x: f32) f32 {
 }
 
 fn acosh64(x: f64) f64 {
-    const u = @as(u64, @bitCast(x));
+    const u = @as(u64, @bit_cast(x));
     const e = (u >> 52) & 0x7FF;
 
     // |x| < 2, invalid if x < 1 or nan
@@ -67,27 +67,27 @@ test acosh {
 test acosh32 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f32, acosh32(1.5), 0.962424, epsilon));
-    try expect(math.approxEqAbs(f32, acosh32(37.45), 4.315976, epsilon));
-    try expect(math.approxEqAbs(f32, acosh32(89.123), 5.183133, epsilon));
-    try expect(math.approxEqAbs(f32, acosh32(123123.234375), 12.414088, epsilon));
+    try expect(math.approx_eq_abs(f32, acosh32(1.5), 0.962424, epsilon));
+    try expect(math.approx_eq_abs(f32, acosh32(37.45), 4.315976, epsilon));
+    try expect(math.approx_eq_abs(f32, acosh32(89.123), 5.183133, epsilon));
+    try expect(math.approx_eq_abs(f32, acosh32(123123.234375), 12.414088, epsilon));
 }
 
 test acosh64 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f64, acosh64(1.5), 0.962424, epsilon));
-    try expect(math.approxEqAbs(f64, acosh64(37.45), 4.315976, epsilon));
-    try expect(math.approxEqAbs(f64, acosh64(89.123), 5.183133, epsilon));
-    try expect(math.approxEqAbs(f64, acosh64(123123.234375), 12.414088, epsilon));
+    try expect(math.approx_eq_abs(f64, acosh64(1.5), 0.962424, epsilon));
+    try expect(math.approx_eq_abs(f64, acosh64(37.45), 4.315976, epsilon));
+    try expect(math.approx_eq_abs(f64, acosh64(89.123), 5.183133, epsilon));
+    try expect(math.approx_eq_abs(f64, acosh64(123123.234375), 12.414088, epsilon));
 }
 
 test "acosh32.special" {
-    try expect(math.isNan(acosh32(math.nan(f32))));
-    try expect(math.isNan(acosh32(0.5)));
+    try expect(math.is_nan(acosh32(math.nan(f32))));
+    try expect(math.is_nan(acosh32(0.5)));
 }
 
 test "acosh64.special" {
-    try expect(math.isNan(acosh64(math.nan(f64))));
-    try expect(math.isNan(acosh64(0.5)));
+    try expect(math.is_nan(acosh64(math.nan(f64))));
+    try expect(math.is_nan(acosh64(0.5)));
 }

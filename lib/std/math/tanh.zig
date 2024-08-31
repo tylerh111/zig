@@ -9,7 +9,7 @@ const math = std.math;
 const mem = std.mem;
 const expect = std.testing.expect;
 const expo2 = @import("expo2.zig").expo2;
-const maxInt = std.math.maxInt;
+const max_int = std.math.max_int;
 
 /// Returns the hyperbolic tangent of x.
 ///
@@ -22,7 +22,7 @@ pub fn tanh(x: anytype) @TypeOf(x) {
     return switch (T) {
         f32 => tanh32(x),
         f64 => tanh64(x),
-        else => @compileError("tanh not implemented for " ++ @typeName(T)),
+        else => @compile_error("tanh not implemented for " ++ @type_name(T)),
     };
 }
 
@@ -30,9 +30,9 @@ pub fn tanh(x: anytype) @TypeOf(x) {
 //         = (exp(2x) - 1) / (exp(2x) - 1 + 2)
 //         = (1 - exp(-2x)) / (exp(-2x) - 1 + 2)
 fn tanh32(x: f32) f32 {
-    const u = @as(u32, @bitCast(x));
+    const u = @as(u32, @bit_cast(x));
     const ux = u & 0x7FFFFFFF;
-    const ax = @as(f32, @bitCast(ux));
+    const ax = @as(f32, @bit_cast(ux));
     const sign = (u >> 31) != 0;
 
     var t: f32 = undefined;
@@ -59,7 +59,7 @@ fn tanh32(x: f32) f32 {
     }
     // |x| is subnormal
     else {
-        mem.doNotOptimizeAway(ax * ax);
+        mem.do_not_optimize_away(ax * ax);
         t = ax;
     }
 
@@ -67,10 +67,10 @@ fn tanh32(x: f32) f32 {
 }
 
 fn tanh64(x: f64) f64 {
-    const u = @as(u64, @bitCast(x));
+    const u = @as(u64, @bit_cast(x));
     const ux = u & 0x7FFFFFFFFFFFFFFF;
-    const w = @as(u32, @intCast(ux >> 32));
-    const ax = @as(f64, @bitCast(ux));
+    const w = @as(u32, @int_cast(ux >> 32));
+    const ax = @as(f64, @bit_cast(ux));
     const sign = (u >> 63) != 0;
 
     var t: f64 = undefined;
@@ -97,7 +97,7 @@ fn tanh64(x: f64) f64 {
     }
     // |x| is subnormal
     else {
-        mem.doNotOptimizeAway(@as(f32, @floatCast(ax)));
+        mem.do_not_optimize_away(@as(f32, @float_cast(ax)));
         t = ax;
     }
 
@@ -112,41 +112,41 @@ test tanh {
 test tanh32 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f32, tanh32(0.0), 0.0, epsilon));
-    try expect(math.approxEqAbs(f32, tanh32(0.2), 0.197375, epsilon));
-    try expect(math.approxEqAbs(f32, tanh32(0.8923), 0.712528, epsilon));
-    try expect(math.approxEqAbs(f32, tanh32(1.5), 0.905148, epsilon));
-    try expect(math.approxEqAbs(f32, tanh32(37.45), 1.0, epsilon));
-    try expect(math.approxEqAbs(f32, tanh32(-0.8923), -0.712528, epsilon));
-    try expect(math.approxEqAbs(f32, tanh32(-1.5), -0.905148, epsilon));
-    try expect(math.approxEqAbs(f32, tanh32(-37.45), -1.0, epsilon));
+    try expect(math.approx_eq_abs(f32, tanh32(0.0), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f32, tanh32(0.2), 0.197375, epsilon));
+    try expect(math.approx_eq_abs(f32, tanh32(0.8923), 0.712528, epsilon));
+    try expect(math.approx_eq_abs(f32, tanh32(1.5), 0.905148, epsilon));
+    try expect(math.approx_eq_abs(f32, tanh32(37.45), 1.0, epsilon));
+    try expect(math.approx_eq_abs(f32, tanh32(-0.8923), -0.712528, epsilon));
+    try expect(math.approx_eq_abs(f32, tanh32(-1.5), -0.905148, epsilon));
+    try expect(math.approx_eq_abs(f32, tanh32(-37.45), -1.0, epsilon));
 }
 
 test tanh64 {
     const epsilon = 0.000001;
 
-    try expect(math.approxEqAbs(f64, tanh64(0.0), 0.0, epsilon));
-    try expect(math.approxEqAbs(f64, tanh64(0.2), 0.197375, epsilon));
-    try expect(math.approxEqAbs(f64, tanh64(0.8923), 0.712528, epsilon));
-    try expect(math.approxEqAbs(f64, tanh64(1.5), 0.905148, epsilon));
-    try expect(math.approxEqAbs(f64, tanh64(37.45), 1.0, epsilon));
-    try expect(math.approxEqAbs(f64, tanh64(-0.8923), -0.712528, epsilon));
-    try expect(math.approxEqAbs(f64, tanh64(-1.5), -0.905148, epsilon));
-    try expect(math.approxEqAbs(f64, tanh64(-37.45), -1.0, epsilon));
+    try expect(math.approx_eq_abs(f64, tanh64(0.0), 0.0, epsilon));
+    try expect(math.approx_eq_abs(f64, tanh64(0.2), 0.197375, epsilon));
+    try expect(math.approx_eq_abs(f64, tanh64(0.8923), 0.712528, epsilon));
+    try expect(math.approx_eq_abs(f64, tanh64(1.5), 0.905148, epsilon));
+    try expect(math.approx_eq_abs(f64, tanh64(37.45), 1.0, epsilon));
+    try expect(math.approx_eq_abs(f64, tanh64(-0.8923), -0.712528, epsilon));
+    try expect(math.approx_eq_abs(f64, tanh64(-1.5), -0.905148, epsilon));
+    try expect(math.approx_eq_abs(f64, tanh64(-37.45), -1.0, epsilon));
 }
 
 test "tanh32.special" {
-    try expect(math.isPositiveZero(tanh32(0.0)));
-    try expect(math.isNegativeZero(tanh32(-0.0)));
+    try expect(math.is_positive_zero(tanh32(0.0)));
+    try expect(math.is_negative_zero(tanh32(-0.0)));
     try expect(tanh32(math.inf(f32)) == 1.0);
     try expect(tanh32(-math.inf(f32)) == -1.0);
-    try expect(math.isNan(tanh32(math.nan(f32))));
+    try expect(math.is_nan(tanh32(math.nan(f32))));
 }
 
 test "tanh64.special" {
-    try expect(math.isPositiveZero(tanh64(0.0)));
-    try expect(math.isNegativeZero(tanh64(-0.0)));
+    try expect(math.is_positive_zero(tanh64(0.0)));
+    try expect(math.is_negative_zero(tanh64(-0.0)));
     try expect(tanh64(math.inf(f64)) == 1.0);
     try expect(tanh64(-math.inf(f64)) == -1.0);
-    try expect(math.isNan(tanh64(math.nan(f64))));
+    try expect(math.is_nan(tanh64(math.nan(f64))));
 }

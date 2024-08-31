@@ -14,7 +14,7 @@ pub fn ctr(comptime BlockCipher: anytype, block_cipher: BlockCipher, dst: []u8, 
     debug.assert(dst.len >= src.len);
     const block_length = BlockCipher.block_length;
     var counter: [BlockCipher.block_length]u8 = undefined;
-    var counterInt = mem.readInt(u128, &iv, endian);
+    var counterInt = mem.read_int(u128, &iv, endian);
     var i: usize = 0;
 
     const parallel_count = BlockCipher.block.parallel.optimal_parallel_blocks;
@@ -24,19 +24,19 @@ pub fn ctr(comptime BlockCipher: anytype, block_cipher: BlockCipher, dst: []u8, 
         while (i + wide_block_length <= src.len) : (i += wide_block_length) {
             comptime var j = 0;
             inline while (j < parallel_count) : (j += 1) {
-                mem.writeInt(u128, counters[j * 16 .. j * 16 + 16], counterInt, endian);
+                mem.write_int(u128, counters[j * 16 .. j * 16 + 16], counterInt, endian);
                 counterInt +%= 1;
             }
-            block_cipher.xorWide(parallel_count, dst[i .. i + wide_block_length][0..wide_block_length], src[i .. i + wide_block_length][0..wide_block_length], counters);
+            block_cipher.xor_wide(parallel_count, dst[i .. i + wide_block_length][0..wide_block_length], src[i .. i + wide_block_length][0..wide_block_length], counters);
         }
     }
     while (i + block_length <= src.len) : (i += block_length) {
-        mem.writeInt(u128, &counter, counterInt, endian);
+        mem.write_int(u128, &counter, counterInt, endian);
         counterInt +%= 1;
         block_cipher.xor(dst[i .. i + block_length][0..block_length], src[i .. i + block_length][0..block_length], counter);
     }
     if (i < src.len) {
-        mem.writeInt(u128, &counter, counterInt, endian);
+        mem.write_int(u128, &counter, counterInt, endian);
         var pad = [_]u8{0} ** block_length;
         const src_slice = src[i..];
         @memcpy(pad[0..src_slice.len], src_slice);

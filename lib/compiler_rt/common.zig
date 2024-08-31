@@ -7,7 +7,7 @@ pub const linkage: std.builtin.GlobalLinkage = if (builtin.is_test) .internal el
 /// For WebAssembly this allows the symbol to be resolved to other modules, but will not
 /// export it to the host runtime.
 pub const visibility: std.builtin.SymbolVisibility =
-    if (builtin.target.isWasm() and linkage != .internal) .hidden else .default;
+    if (builtin.target.is_wasm() and linkage != .internal) .hidden else .default;
 pub const want_aeabi = switch (builtin.abi) {
     .eabi,
     .eabihf,
@@ -22,7 +22,7 @@ pub const want_aeabi = switch (builtin.abi) {
     },
     else => false,
 };
-pub const want_ppc_abi = builtin.cpu.arch.isPPC() or builtin.cpu.arch.isPPC64();
+pub const want_ppc_abi = builtin.cpu.arch.is_ppc() or builtin.cpu.arch.is_ppc64();
 
 // Libcalls that involve u128 on Windows x86-64 are expected by LLVM to use the
 // calling convention of @Vector(2, u64), rather than what's standard.
@@ -60,10 +60,10 @@ pub const gnu_f16_abi = switch (builtin.cpu.arch) {
         else => true,
     },
 
-    else => !builtin.os.tag.isDarwin(),
+    else => !builtin.os.tag.is_darwin(),
 };
 
-pub const want_sparc_abi = builtin.cpu.arch.isSPARC();
+pub const want_sparc_abi = builtin.cpu.arch.is_sparc();
 
 // Avoid dragging in the runtime safety mechanisms into this .o file,
 // unless we're trying to test compiler-rt.
@@ -83,8 +83,8 @@ pub fn panic(msg: []const u8, error_return_trace: ?*std.builtin.StackTrace, _: ?
 /// here in compiler-rt.
 pub fn F16T(comptime OtherType: type) type {
     return switch (builtin.cpu.arch) {
-        .arm, .armeb, .thumb, .thumbeb => if (std.Target.arm.featureSetHas(builtin.cpu.features, .has_v8))
-            switch (builtin.abi.floatAbi()) {
+        .arm, .armeb, .thumb, .thumbeb => if (std.Target.arm.feature_set_has(builtin.cpu.features, .has_v8))
+            switch (builtin.abi.float_abi()) {
                 .soft => u16,
                 .hard => f16,
             }
@@ -92,7 +92,7 @@ pub fn F16T(comptime OtherType: type) type {
             u16,
         .aarch64, .aarch64_be, .aarch64_32 => f16,
         .riscv64 => if (builtin.zig_backend == .stage1) u16 else f16,
-        .x86, .x86_64 => if (builtin.target.isDarwin()) switch (OtherType) {
+        .x86, .x86_64 => if (builtin.target.is_darwin()) switch (OtherType) {
             // Starting with LLVM 16, Darwin uses different abi for f16
             // depending on the type of the other return/argument..???
             f32, f64 => u16,
@@ -108,7 +108,7 @@ pub fn wide_multiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
         u16 => {
             // 16x16 --> 32 bit multiply
             const product = @as(u32, a) * @as(u32, b);
-            hi.* = @intCast(product >> 16);
+            hi.* = @int_cast(product >> 16);
             lo.* = @truncate(product);
         },
         u32 => {
@@ -130,16 +130,16 @@ pub fn wide_multiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
             // many 64-bit platforms have this operation, but they tend to have hardware
             // floating-point, so we don't bother with a special case for them here.
             // Each of the component 32x32 -> 64 products
-            const plolo: u64 = S.loWord(a) * S.loWord(b);
-            const plohi: u64 = S.loWord(a) * S.hiWord(b);
-            const philo: u64 = S.hiWord(a) * S.loWord(b);
-            const phihi: u64 = S.hiWord(a) * S.hiWord(b);
+            const plolo: u64 = S.lo_word(a) * S.lo_word(b);
+            const plohi: u64 = S.lo_word(a) * S.hi_word(b);
+            const philo: u64 = S.hi_word(a) * S.lo_word(b);
+            const phihi: u64 = S.hi_word(a) * S.hi_word(b);
             // Sum terms that contribute to lo in a way that allows us to get the carry
-            const r0: u64 = S.loWord(plolo);
-            const r1: u64 = S.hiWord(plolo) +% S.loWord(plohi) +% S.loWord(philo);
+            const r0: u64 = S.lo_word(plolo);
+            const r1: u64 = S.hi_word(plolo) +% S.lo_word(plohi) +% S.lo_word(philo);
             lo.* = r0 +% (r1 << 32);
             // Sum terms contributing to hi with the carry from lo
-            hi.* = S.hiWord(plohi) +% S.hiWord(philo) +% S.hiWord(r1) +% phihi;
+            hi.* = S.hi_word(plohi) +% S.hi_word(philo) +% S.hi_word(r1) +% phihi;
         },
         u128 => {
             const Word_LoMask: u64 = 0x00000000ffffffff;
@@ -213,16 +213,16 @@ pub fn wide_multiply(comptime Z: type, a: Z, b: Z, hi: *Z, lo: *Z) void {
                 (sum5 << 32) +%
                 (sum6 << 64);
         },
-        else => @compileError("unsupported"),
+        else => @compile_error("unsupported"),
     }
 }
 
 pub fn normalize(comptime T: type, significand: *std.meta.Int(.unsigned, @typeInfo(T).Float.bits)) i32 {
     const Z = std.meta.Int(.unsigned, @typeInfo(T).Float.bits);
-    const integerBit = @as(Z, 1) << std.math.floatFractionalBits(T);
+    const integerBit = @as(Z, 1) << std.math.float_fractional_bits(T);
 
     const shift = @clz(significand.*) - @clz(integerBit);
-    significand.* <<= @as(std.math.Log2Int(Z), @intCast(shift));
+    significand.* <<= @as(std.math.Log2Int(Z), @int_cast(shift));
     return @as(i32, 1) - shift;
 }
 
@@ -234,15 +234,15 @@ pub inline fn fneg(a: anytype) @TypeOf(a) {
         .bits = bits,
     } });
     const sign_bit_mask = @as(U, 1) << (bits - 1);
-    const negated = @as(U, @bitCast(a)) ^ sign_bit_mask;
-    return @bitCast(negated);
+    const negated = @as(U, @bit_cast(a)) ^ sign_bit_mask;
+    return @bit_cast(negated);
 }
 
 /// Allows to access underlying bits as two equally sized lower and higher
 /// signed or unsigned integers.
 pub fn HalveInt(comptime T: type, comptime signed_half: bool) type {
     return extern union {
-        pub const bits = @divExact(@typeInfo(T).Int.bits, 2);
+        pub const bits = @div_exact(@typeInfo(T).Int.bits, 2);
         pub const HalfTU = std.meta.Int(.unsigned, bits);
         pub const HalfTS = std.meta.Int(.signed, bits);
         pub const HalfT = if (signed_half) HalfTS else HalfTU;

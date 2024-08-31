@@ -20,7 +20,7 @@ fn g(n: Error!i32) i32 {
 const Error = error{ Foo, Bar, Baz };
 
 export fn entry() usize {
-    return @sizeOf(@TypeOf(&f)) + @sizeOf(@TypeOf(&g));
+    return @size_of(@TypeOf(&f)) + @size_of(@TypeOf(&g));
 }
 
 // error

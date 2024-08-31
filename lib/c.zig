@@ -5,8 +5,8 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const math = std.math;
-const isNan = std.math.isNan;
-const maxInt = std.math.maxInt;
+const is_nan = std.math.is_nan;
+const max_int = std.math.max_int;
 const native_os = builtin.os.tag;
 const native_arch = builtin.cpu.arch;
 const native_abi = builtin.abi;
@@ -83,7 +83,7 @@ test "strcpy" {
 
     s1[0] = 0;
     _ = strcpy(&s1, "foobarbaz");
-    try std.testing.expectEqualSlices(u8, "foobarbaz", std.mem.sliceTo(&s1, 0));
+    try std.testing.expect_equal_slices(u8, "foobarbaz", std.mem.slice_to(&s1, 0));
 }
 
 fn strncpy(dest: [*:0]u8, src: [*:0]const u8, n: usize) callconv(.C) [*:0]u8 {
@@ -102,8 +102,8 @@ test "strncpy" {
     var s1: [9:0]u8 = undefined;
 
     s1[0] = 0;
-    _ = strncpy(&s1, "foobarbaz", @sizeOf(@TypeOf(s1)));
-    try std.testing.expectEqualSlices(u8, "foobarbaz", std.mem.sliceTo(&s1, 0));
+    _ = strncpy(&s1, "foobarbaz", @size_of(@TypeOf(s1)));
+    try std.testing.expect_equal_slices(u8, "foobarbaz", std.mem.slice_to(&s1, 0));
 }
 
 fn strcat(dest: [*:0]u8, src: [*:0]const u8) callconv(.C) [*:0]u8 {
@@ -126,7 +126,7 @@ test "strcat" {
     _ = strcat(&s1, "foo");
     _ = strcat(&s1, "bar");
     _ = strcat(&s1, "baz");
-    try std.testing.expectEqualSlices(u8, "foobarbaz", std.mem.sliceTo(&s1, 0));
+    try std.testing.expect_equal_slices(u8, "foobarbaz", std.mem.slice_to(&s1, 0));
 }
 
 fn strncat(dest: [*:0]u8, src: [*:0]const u8, avail: usize) callconv(.C) [*:0]u8 {
@@ -149,11 +149,11 @@ test "strncat" {
     _ = strncat(&s1, "foo1111", 3);
     _ = strncat(&s1, "bar1111", 3);
     _ = strncat(&s1, "baz1111", 3);
-    try std.testing.expectEqualSlices(u8, "foobarbaz", std.mem.sliceTo(&s1, 0));
+    try std.testing.expect_equal_slices(u8, "foobarbaz", std.mem.slice_to(&s1, 0));
 }
 
 fn strcmp(s1: [*:0]const u8, s2: [*:0]const u8) callconv(.C) c_int {
-    return switch (std.mem.orderZ(u8, s1, s2)) {
+    return switch (std.mem.order_z(u8, s1, s2)) {
         .lt => -1,
         .eq => 0,
         .gt => 1,
@@ -191,7 +191,7 @@ test "strncmp" {
 
 // TODO we should be able to put this directly in std/linux/x86_64.zig but
 // it causes a segfault in release mode. this is a workaround of calling it
-// across .o file boundaries. fix comptime @ptrCast of nakedcc functions.
+// across .o file boundaries. fix comptime @ptr_cast of nakedcc functions.
 fn clone() callconv(.Naked) void {
     switch (native_arch) {
         .x86 => {
@@ -549,6 +549,6 @@ fn clone() callconv(.Naked) void {
                 \\ restore
             );
         },
-        else => @compileError("Implement clone() for this arch."),
+        else => @compile_error("Implement clone() for this arch."),
     }
 }

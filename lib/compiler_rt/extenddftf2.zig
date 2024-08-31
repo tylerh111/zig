@@ -13,9 +13,9 @@ comptime {
 }
 
 pub fn __extenddftf2(a: f64) callconv(.C) f128 {
-    return extendf(f128, f64, @as(u64, @bitCast(a)));
+    return extendf(f128, f64, @as(u64, @bit_cast(a)));
 }
 
 fn _Qp_dtoq(c: *f128, a: f64) callconv(.C) void {
-    c.* = extendf(f128, f64, @as(u64, @bitCast(a)));
+    c.* = extendf(f128, f64, @as(u64, @bit_cast(a)));
 }

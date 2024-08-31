@@ -5,7 +5,7 @@ export fn entry1() void {
 
 export fn entry2() void {
     const S = struct { x: u32 };
-    _ = *align(1:2:@sizeOf(S) * 2) S;
+    _ = *align(1:2:@size_of(S) * 2) S;
 }
 
 export fn entry3() void {

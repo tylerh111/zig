@@ -138,7 +138,7 @@ pub fn create(wasm_file: *const Wasm, file: std.fs.File, name: []const u8, maybe
     const size = maybe_max_size orelse size: {
         errdefer gpa.free(object.path);
         const stat = try file.stat();
-        break :size @as(usize, @intCast(stat.size));
+        break :size @as(usize, @int_cast(stat.size));
     };
 
     const file_contents = try gpa.alloc(u8, size);
@@ -150,7 +150,7 @@ pub fn create(wasm_file: *const Wasm, file: std.fs.File, name: []const u8, maybe
         std.debug.assert(n != 0);
         read += n;
     }
-    var fbs = std.io.fixedBufferStream(file_contents);
+    var fbs = std.io.fixed_buffer_stream(file_contents);
 
     try object.parse(gpa, wasm_file, fbs.reader(), &is_object_file);
     errdefer object.deinit(gpa);
@@ -193,7 +193,7 @@ pub fn deinit(object: *Object, gpa: Allocator) void {
     }
     gpa.free(object.segment_info);
     {
-        var it = object.relocatable_data.valueIterator();
+        var it = object.relocatable_data.value_iterator();
         while (it.next()) |relocatable_data| {
             for (relocatable_data.*) |rel_data| {
                 gpa.free(rel_data.data[0..rel_data.size]);
@@ -212,7 +212,7 @@ pub fn deinit(object: *Object, gpa: Allocator) void {
 pub fn find_import(object: *const Object, sym: Symbol) types.Import {
     var i: u32 = 0;
     return for (object.imports) |import| {
-        if (std.meta.activeTag(import.kind) == sym.tag.externalType()) {
+        if (std.meta.active_tag(import.kind) == sym.tag.external_type()) {
             if (i == sym.index) return import;
             i += 1;
         }
@@ -235,27 +235,27 @@ fn check_legacy_indirect_function_table(object: *Object, wasm_file: *const Wasm)
     if (object.imported_tables_count == table_count) return null;
 
     if (table_count != 0) {
-        var err = try wasm_file.addErrorWithNotes(1);
-        try err.addMsg(wasm_file, "Expected a table entry symbol for each of the {d} table(s), but instead got {d} symbols.", .{
+        var err = try wasm_file.add_error_with_notes(1);
+        try err.add_msg(wasm_file, "Expected a table entry symbol for each of the {d} table(s), but instead got {d} symbols.", .{
             object.imported_tables_count,
             table_count,
         });
-        try err.addNote(wasm_file, "defined in '{s}'", .{object.path});
+        try err.add_note(wasm_file, "defined in '{s}'", .{object.path});
         return error.MissingTableSymbols;
     }
 
     // MVP object files cannot have any table definitions, only imports (for the indirect function table).
     if (object.tables.len > 0) {
-        var err = try wasm_file.addErrorWithNotes(1);
-        try err.addMsg(wasm_file, "Unexpected table definition without representing table symbols.", .{});
-        try err.addNote(wasm_file, "defined in '{s}'", .{object.path});
+        var err = try wasm_file.add_error_with_notes(1);
+        try err.add_msg(wasm_file, "Unexpected table definition without representing table symbols.", .{});
+        try err.add_note(wasm_file, "defined in '{s}'", .{object.path});
         return error.UnexpectedTable;
     }
 
     if (object.imported_tables_count != 1) {
-        var err = try wasm_file.addErrorWithNotes(1);
-        try err.addMsg(wasm_file, "Found more than one table import, but no representing table symbols", .{});
-        try err.addNote(wasm_file, "defined in '{s}'", .{object.path});
+        var err = try wasm_file.add_error_with_notes(1);
+        try err.add_msg(wasm_file, "Found more than one table import, but no representing table symbols", .{});
+        try err.add_note(wasm_file, "defined in '{s}'", .{object.path});
         return error.MissingTableSymbols;
     }
 
@@ -266,9 +266,9 @@ fn check_legacy_indirect_function_table(object: *Object, wasm_file: *const Wasm)
     } else unreachable;
 
     if (!std.mem.eql(u8, object.string_table.get(table_import.name), "__indirect_function_table")) {
-        var err = try wasm_file.addErrorWithNotes(1);
-        try err.addMsg(wasm_file, "Non-indirect function table import '{s}' is missing a corresponding symbol", .{object.string_table.get(table_import.name)});
-        try err.addNote(wasm_file, "defined in '{s}'", .{object.path});
+        var err = try wasm_file.add_error_with_notes(1);
+        try err.add_msg(wasm_file, "Non-indirect function table import '{s}' is missing a corresponding symbol", .{object.string_table.get(table_import.name)});
+        try err.add_note(wasm_file, "defined in '{s}'", .{object.path});
         return error.MissingTableSymbols;
     }
 
@@ -279,8 +279,8 @@ fn check_legacy_indirect_function_table(object: *Object, wasm_file: *const Wasm)
         .index = 0,
         .virtual_address = undefined,
     };
-    table_symbol.setFlag(.WASM_SYM_UNDEFINED);
-    table_symbol.setFlag(.WASM_SYM_NO_STRIP);
+    table_symbol.set_flag(.WASM_SYM_UNDEFINED);
+    table_symbol.set_flag(.WASM_SYM_NO_STRIP);
     return table_symbol;
 }
 
@@ -323,7 +323,7 @@ pub const ParseError = error{
 
 fn parse(object: *Object, gpa: Allocator, wasm_file: *const Wasm, reader: anytype, is_object_file: *bool) Parser(@TypeOf(reader)).Error!void {
     var parser = Parser(@TypeOf(reader)).init(object, wasm_file, reader);
-    return parser.parseObject(gpa, is_object_file);
+    return parser.parse_object(gpa, is_object_file);
 }
 
 fn Parser(comptime ReaderType: type) type {
@@ -338,14 +338,14 @@ fn Parser(comptime ReaderType: type) type {
         wasm_file: *const Wasm,
 
         fn init(object: *Object, wasm_file: *const Wasm, reader: ReaderType) ObjectParser {
-            return .{ .object = object, .wasm_file = wasm_file, .reader = std.io.countingReader(reader) };
+            return .{ .object = object, .wasm_file = wasm_file, .reader = std.io.counting_reader(reader) };
         }
 
         /// Verifies that the first 4 bytes contains \0Asm
         fn verify_magic_bytes(parser: *ObjectParser) Error!void {
             var magic_bytes: [4]u8 = undefined;
 
-            try parser.reader.reader().readNoEof(&magic_bytes);
+            try parser.reader.reader().read_no_eof(&magic_bytes);
             if (!std.mem.eql(u8, &magic_bytes, &std.wasm.magic)) {
                 log.debug("Invalid magic bytes '{s}'", .{&magic_bytes});
                 return error.InvalidMagicByte;
@@ -354,42 +354,42 @@ fn Parser(comptime ReaderType: type) type {
 
         fn parse_object(parser: *ObjectParser, gpa: Allocator, is_object_file: *bool) Error!void {
             errdefer parser.object.deinit(gpa);
-            try parser.verifyMagicBytes();
-            const version = try parser.reader.reader().readInt(u32, .little);
+            try parser.verify_magic_bytes();
+            const version = try parser.reader.reader().read_int(u32, .little);
             parser.object.version = version;
 
             var section_index: u32 = 0;
-            while (parser.reader.reader().readByte()) |byte| : (section_index += 1) {
-                const len = try readLeb(u32, parser.reader.reader());
-                var limited_reader = std.io.limitedReader(parser.reader.reader(), len);
+            while (parser.reader.reader().read_byte()) |byte| : (section_index += 1) {
+                const len = try read_leb(u32, parser.reader.reader());
+                var limited_reader = std.io.limited_reader(parser.reader.reader(), len);
                 const reader = limited_reader.reader();
                 switch (@as(std.wasm.Section, @enumFromInt(byte))) {
                     .custom => {
-                        const name_len = try readLeb(u32, reader);
+                        const name_len = try read_leb(u32, reader);
                         const name = try gpa.alloc(u8, name_len);
                         defer gpa.free(name);
-                        try reader.readNoEof(name);
+                        try reader.read_no_eof(name);
 
                         if (std.mem.eql(u8, name, "linking")) {
                             is_object_file.* = true;
-                            try parser.parseMetadata(gpa, @as(usize, @intCast(reader.context.bytes_left)));
-                        } else if (std.mem.startsWith(u8, name, "reloc")) {
-                            try parser.parseRelocations(gpa);
+                            try parser.parse_metadata(gpa, @as(usize, @int_cast(reader.context.bytes_left)));
+                        } else if (std.mem.starts_with(u8, name, "reloc")) {
+                            try parser.parse_relocations(gpa);
                         } else if (std.mem.eql(u8, name, "target_features")) {
-                            try parser.parseFeatures(gpa);
-                        } else if (std.mem.startsWith(u8, name, ".debug")) {
-                            const gop = try parser.object.relocatable_data.getOrPut(gpa, .custom);
+                            try parser.parse_features(gpa);
+                        } else if (std.mem.starts_with(u8, name, ".debug")) {
+                            const gop = try parser.object.relocatable_data.get_or_put(gpa, .custom);
                             var relocatable_data: std.ArrayListUnmanaged(RelocatableData) = .{};
                             defer relocatable_data.deinit(gpa);
                             if (!gop.found_existing) {
                                 gop.value_ptr.* = &.{};
                             } else {
-                                relocatable_data = std.ArrayListUnmanaged(RelocatableData).fromOwnedSlice(gop.value_ptr.*);
+                                relocatable_data = std.ArrayListUnmanaged(RelocatableData).from_owned_slice(gop.value_ptr.*);
                             }
-                            const debug_size = @as(u32, @intCast(reader.context.bytes_left));
+                            const debug_size = @as(u32, @int_cast(reader.context.bytes_left));
                             const debug_content = try gpa.alloc(u8, debug_size);
                             errdefer gpa.free(debug_content);
-                            try reader.readNoEof(debug_content);
+                            try reader.read_no_eof(debug_content);
 
                             try relocatable_data.append(gpa, .{
                                 .type = .custom,
@@ -399,56 +399,56 @@ fn Parser(comptime ReaderType: type) type {
                                 .offset = 0, // debug sections only contain 1 entry, so no need to calculate offset
                                 .section_index = section_index,
                             });
-                            gop.value_ptr.* = try relocatable_data.toOwnedSlice(gpa);
+                            gop.value_ptr.* = try relocatable_data.to_owned_slice(gpa);
                         } else {
-                            try reader.skipBytes(reader.context.bytes_left, .{});
+                            try reader.skip_bytes(reader.context.bytes_left, .{});
                         }
                     },
                     .type => {
-                        for (try readVec(&parser.object.func_types, reader, gpa)) |*type_val| {
-                            if ((try reader.readByte()) != std.wasm.function_type) return error.ExpectedFuncType;
+                        for (try read_vec(&parser.object.func_types, reader, gpa)) |*type_val| {
+                            if ((try reader.read_byte()) != std.wasm.function_type) return error.ExpectedFuncType;
 
-                            for (try readVec(&type_val.params, reader, gpa)) |*param| {
-                                param.* = try readEnum(std.wasm.Valtype, reader);
+                            for (try read_vec(&type_val.params, reader, gpa)) |*param| {
+                                param.* = try read_enum(std.wasm.Valtype, reader);
                             }
 
-                            for (try readVec(&type_val.returns, reader, gpa)) |*result| {
-                                result.* = try readEnum(std.wasm.Valtype, reader);
+                            for (try read_vec(&type_val.returns, reader, gpa)) |*result| {
+                                result.* = try read_enum(std.wasm.Valtype, reader);
                             }
                         }
-                        try assertEnd(reader);
+                        try assert_end(reader);
                     },
                     .import => {
-                        for (try readVec(&parser.object.imports, reader, gpa)) |*import| {
-                            const module_len = try readLeb(u32, reader);
+                        for (try read_vec(&parser.object.imports, reader, gpa)) |*import| {
+                            const module_len = try read_leb(u32, reader);
                             const module_name = try gpa.alloc(u8, module_len);
                             defer gpa.free(module_name);
-                            try reader.readNoEof(module_name);
+                            try reader.read_no_eof(module_name);
 
-                            const name_len = try readLeb(u32, reader);
+                            const name_len = try read_leb(u32, reader);
                             const name = try gpa.alloc(u8, name_len);
                             defer gpa.free(name);
-                            try reader.readNoEof(name);
+                            try reader.read_no_eof(name);
 
-                            const kind = try readEnum(std.wasm.ExternalKind, reader);
+                            const kind = try read_enum(std.wasm.ExternalKind, reader);
                             const kind_value: std.wasm.Import.Kind = switch (kind) {
                                 .function => val: {
                                     parser.object.imported_functions_count += 1;
-                                    break :val .{ .function = try readLeb(u32, reader) };
+                                    break :val .{ .function = try read_leb(u32, reader) };
                                 },
-                                .memory => .{ .memory = try readLimits(reader) },
+                                .memory => .{ .memory = try read_limits(reader) },
                                 .global => val: {
                                     parser.object.imported_globals_count += 1;
                                     break :val .{ .global = .{
-                                        .valtype = try readEnum(std.wasm.Valtype, reader),
-                                        .mutable = (try reader.readByte()) == 0x01,
+                                        .valtype = try read_enum(std.wasm.Valtype, reader),
+                                        .mutable = (try reader.read_byte()) == 0x01,
                                     } };
                                 },
                                 .table => val: {
                                     parser.object.imported_tables_count += 1;
                                     break :val .{ .table = .{
-                                        .reftype = try readEnum(std.wasm.RefType, reader),
-                                        .limits = try readLimits(reader),
+                                        .reftype = try read_enum(std.wasm.RefType, reader),
+                                        .limits = try read_limits(reader),
                                     } };
                                 },
                             };
@@ -459,84 +459,84 @@ fn Parser(comptime ReaderType: type) type {
                                 .kind = kind_value,
                             };
                         }
-                        try assertEnd(reader);
+                        try assert_end(reader);
                     },
                     .function => {
-                        for (try readVec(&parser.object.functions, reader, gpa)) |*func| {
-                            func.* = .{ .type_index = try readLeb(u32, reader) };
+                        for (try read_vec(&parser.object.functions, reader, gpa)) |*func| {
+                            func.* = .{ .type_index = try read_leb(u32, reader) };
                         }
-                        try assertEnd(reader);
+                        try assert_end(reader);
                     },
                     .table => {
-                        for (try readVec(&parser.object.tables, reader, gpa)) |*table| {
+                        for (try read_vec(&parser.object.tables, reader, gpa)) |*table| {
                             table.* = .{
-                                .reftype = try readEnum(std.wasm.RefType, reader),
-                                .limits = try readLimits(reader),
+                                .reftype = try read_enum(std.wasm.RefType, reader),
+                                .limits = try read_limits(reader),
                             };
                         }
-                        try assertEnd(reader);
+                        try assert_end(reader);
                     },
                     .memory => {
-                        for (try readVec(&parser.object.memories, reader, gpa)) |*memory| {
-                            memory.* = .{ .limits = try readLimits(reader) };
+                        for (try read_vec(&parser.object.memories, reader, gpa)) |*memory| {
+                            memory.* = .{ .limits = try read_limits(reader) };
                         }
-                        try assertEnd(reader);
+                        try assert_end(reader);
                     },
                     .global => {
-                        for (try readVec(&parser.object.globals, reader, gpa)) |*global| {
+                        for (try read_vec(&parser.object.globals, reader, gpa)) |*global| {
                             global.* = .{
                                 .global_type = .{
-                                    .valtype = try readEnum(std.wasm.Valtype, reader),
-                                    .mutable = (try reader.readByte()) == 0x01,
+                                    .valtype = try read_enum(std.wasm.Valtype, reader),
+                                    .mutable = (try reader.read_byte()) == 0x01,
                                 },
-                                .init = try readInit(reader),
+                                .init = try read_init(reader),
                             };
                         }
-                        try assertEnd(reader);
+                        try assert_end(reader);
                     },
                     .@"export" => {
-                        for (try readVec(&parser.object.exports, reader, gpa)) |*exp| {
-                            const name_len = try readLeb(u32, reader);
+                        for (try read_vec(&parser.object.exports, reader, gpa)) |*exp| {
+                            const name_len = try read_leb(u32, reader);
                             const name = try gpa.alloc(u8, name_len);
                             defer gpa.free(name);
-                            try reader.readNoEof(name);
+                            try reader.read_no_eof(name);
                             exp.* = .{
                                 .name = try parser.object.string_table.put(gpa, name),
-                                .kind = try readEnum(std.wasm.ExternalKind, reader),
-                                .index = try readLeb(u32, reader),
+                                .kind = try read_enum(std.wasm.ExternalKind, reader),
+                                .index = try read_leb(u32, reader),
                             };
                         }
-                        try assertEnd(reader);
+                        try assert_end(reader);
                     },
                     .start => {
-                        parser.object.start = try readLeb(u32, reader);
-                        try assertEnd(reader);
+                        parser.object.start = try read_leb(u32, reader);
+                        try assert_end(reader);
                     },
                     .element => {
-                        for (try readVec(&parser.object.elements, reader, gpa)) |*elem| {
-                            elem.table_index = try readLeb(u32, reader);
-                            elem.offset = try readInit(reader);
+                        for (try read_vec(&parser.object.elements, reader, gpa)) |*elem| {
+                            elem.table_index = try read_leb(u32, reader);
+                            elem.offset = try read_init(reader);
 
-                            for (try readVec(&elem.func_indexes, reader, gpa)) |*idx| {
-                                idx.* = try readLeb(u32, reader);
+                            for (try read_vec(&elem.func_indexes, reader, gpa)) |*idx| {
+                                idx.* = try read_leb(u32, reader);
                             }
                         }
-                        try assertEnd(reader);
+                        try assert_end(reader);
                     },
                     .code => {
                         const start = reader.context.bytes_left;
                         var index: u32 = 0;
-                        const count = try readLeb(u32, reader);
+                        const count = try read_leb(u32, reader);
                         const imported_function_count = parser.object.imported_functions_count;
-                        var relocatable_data = try std.ArrayList(RelocatableData).initCapacity(gpa, count);
+                        var relocatable_data = try std.ArrayList(RelocatableData).init_capacity(gpa, count);
                         defer relocatable_data.deinit();
                         while (index < count) : (index += 1) {
-                            const code_len = try readLeb(u32, reader);
-                            const offset = @as(u32, @intCast(start - reader.context.bytes_left));
+                            const code_len = try read_leb(u32, reader);
+                            const offset = @as(u32, @int_cast(start - reader.context.bytes_left));
                             const data = try gpa.alloc(u8, code_len);
                             errdefer gpa.free(data);
-                            try reader.readNoEof(data);
-                            relocatable_data.appendAssumeCapacity(.{
+                            try reader.read_no_eof(data);
+                            relocatable_data.append_assume_capacity(.{
                                 .type = .code,
                                 .data = data.ptr,
                                 .size = code_len,
@@ -545,25 +545,25 @@ fn Parser(comptime ReaderType: type) type {
                                 .section_index = section_index,
                             });
                         }
-                        try parser.object.relocatable_data.put(gpa, .code, try relocatable_data.toOwnedSlice());
+                        try parser.object.relocatable_data.put(gpa, .code, try relocatable_data.to_owned_slice());
                     },
                     .data => {
                         const start = reader.context.bytes_left;
                         var index: u32 = 0;
-                        const count = try readLeb(u32, reader);
-                        var relocatable_data = try std.ArrayList(RelocatableData).initCapacity(gpa, count);
+                        const count = try read_leb(u32, reader);
+                        var relocatable_data = try std.ArrayList(RelocatableData).init_capacity(gpa, count);
                         defer relocatable_data.deinit();
                         while (index < count) : (index += 1) {
-                            const flags = try readLeb(u32, reader);
-                            const data_offset = try readInit(reader);
+                            const flags = try read_leb(u32, reader);
+                            const data_offset = try read_init(reader);
                             _ = flags; // TODO: Do we need to check flags to detect passive/active memory?
                             _ = data_offset;
-                            const data_len = try readLeb(u32, reader);
-                            const offset = @as(u32, @intCast(start - reader.context.bytes_left));
+                            const data_len = try read_leb(u32, reader);
+                            const offset = @as(u32, @int_cast(start - reader.context.bytes_left));
                             const data = try gpa.alloc(u8, data_len);
                             errdefer gpa.free(data);
-                            try reader.readNoEof(data);
-                            relocatable_data.appendAssumeCapacity(.{
+                            try reader.read_no_eof(data);
+                            relocatable_data.append_assume_capacity(.{
                                 .type = .data,
                                 .data = data.ptr,
                                 .size = data_len,
@@ -572,9 +572,9 @@ fn Parser(comptime ReaderType: type) type {
                                 .section_index = section_index,
                             });
                         }
-                        try parser.object.relocatable_data.put(gpa, .data, try relocatable_data.toOwnedSlice());
+                        try parser.object.relocatable_data.put(gpa, .data, try relocatable_data.to_owned_slice());
                     },
-                    else => try parser.reader.reader().skipBytes(len, .{}),
+                    else => try parser.reader.reader().skip_bytes(len, .{}),
                 }
             } else |err| switch (err) {
                 error.EndOfStream => {}, // finished parsing the file
@@ -588,17 +588,17 @@ fn Parser(comptime ReaderType: type) type {
         /// Logs an info message when an undefined feature is detected.
         fn parse_features(parser: *ObjectParser, gpa: Allocator) !void {
             const reader = parser.reader.reader();
-            for (try readVec(&parser.object.features, reader, gpa)) |*feature| {
-                const prefix = try readEnum(types.Feature.Prefix, reader);
-                const name_len = try leb.readULEB128(u32, reader);
+            for (try read_vec(&parser.object.features, reader, gpa)) |*feature| {
+                const prefix = try read_enum(types.Feature.Prefix, reader);
+                const name_len = try leb.read_uleb128(u32, reader);
                 const name = try gpa.alloc(u8, name_len);
                 defer gpa.free(name);
-                try reader.readNoEof(name);
+                try reader.read_no_eof(name);
 
                 const tag = types.known_features.get(name) orelse {
-                    var err = try parser.wasm_file.addErrorWithNotes(1);
-                    try err.addMsg(parser.wasm_file, "Object file contains unknown feature: {s}", .{name});
-                    try err.addNote(parser.wasm_file, "defined in '{s}'", .{parser.object.path});
+                    var err = try parser.wasm_file.add_error_with_notes(1);
+                    try err.add_msg(parser.wasm_file, "Object file contains unknown feature: {s}", .{name});
+                    try err.add_note(parser.wasm_file, "defined in '{s}'", .{parser.object.path});
                     return error.UnknownFeature;
                 };
                 feature.* = .{
@@ -613,8 +613,8 @@ fn Parser(comptime ReaderType: type) type {
         /// they apply to.
         fn parse_relocations(parser: *ObjectParser, gpa: Allocator) !void {
             const reader = parser.reader.reader();
-            const section = try leb.readULEB128(u32, reader);
-            const count = try leb.readULEB128(u32, reader);
+            const section = try leb.read_uleb128(u32, reader);
+            const count = try leb.read_uleb128(u32, reader);
             const relocations = try gpa.alloc(types.Relocation, count);
             errdefer gpa.free(relocations);
 
@@ -624,23 +624,23 @@ fn Parser(comptime ReaderType: type) type {
             });
 
             for (relocations) |*relocation| {
-                const rel_type = try reader.readByte();
-                const rel_type_enum = std.meta.intToEnum(types.Relocation.RelocationType, rel_type) catch return error.MalformedSection;
+                const rel_type = try reader.read_byte();
+                const rel_type_enum = std.meta.int_to_enum(types.Relocation.RelocationType, rel_type) catch return error.MalformedSection;
                 relocation.* = .{
                     .relocation_type = rel_type_enum,
-                    .offset = try leb.readULEB128(u32, reader),
-                    .index = try leb.readULEB128(u32, reader),
-                    .addend = if (rel_type_enum.addendIsPresent()) try leb.readILEB128(i32, reader) else 0,
+                    .offset = try leb.read_uleb128(u32, reader),
+                    .index = try leb.read_uleb128(u32, reader),
+                    .addend = if (rel_type_enum.addend_is_present()) try leb.read_ileb128(i32, reader) else 0,
                 };
                 log.debug("Found relocation: type({s}) offset({d}) index({d}) addend({?d})", .{
-                    @tagName(relocation.relocation_type),
+                    @tag_name(relocation.relocation_type),
                     relocation.offset,
                     relocation.index,
                     relocation.addend,
                 });
             }
 
-            try parser.object.relocations.putNoClobber(gpa, section, relocations);
+            try parser.object.relocations.put_no_clobber(gpa, section, relocations);
         }
 
         /// Parses the "linking" custom section. Versions that are not
@@ -648,15 +648,15 @@ fn Parser(comptime ReaderType: type) type {
         /// to calculate the subsections we need to parse, as that data is not
         /// available within the section itparser.
         fn parse_metadata(parser: *ObjectParser, gpa: Allocator, payload_size: usize) !void {
-            var limited = std.io.limitedReader(parser.reader.reader(), payload_size);
+            var limited = std.io.limited_reader(parser.reader.reader(), payload_size);
             const limited_reader = limited.reader();
 
-            const version = try leb.readULEB128(u32, limited_reader);
+            const version = try leb.read_uleb128(u32, limited_reader);
             log.debug("Link meta data version: {d}", .{version});
             if (version != 2) return error.UnsupportedVersion;
 
             while (limited.bytes_left > 0) {
-                try parser.parseSubsection(gpa, limited_reader);
+                try parser.parse_subsection(gpa, limited_reader);
             }
         }
 
@@ -667,30 +667,30 @@ fn Parser(comptime ReaderType: type) type {
         /// `parser` is used to provide access to other sections that may be needed,
         /// such as access to the `import` section to find the name of a symbol.
         fn parse_subsection(parser: *ObjectParser, gpa: Allocator, reader: anytype) !void {
-            const sub_type = try leb.readULEB128(u8, reader);
-            log.debug("Found subsection: {s}", .{@tagName(@as(types.SubsectionType, @enumFromInt(sub_type)))});
-            const payload_len = try leb.readULEB128(u32, reader);
+            const sub_type = try leb.read_uleb128(u8, reader);
+            log.debug("Found subsection: {s}", .{@tag_name(@as(types.SubsectionType, @enumFromInt(sub_type)))});
+            const payload_len = try leb.read_uleb128(u32, reader);
             if (payload_len == 0) return;
 
-            var limited = std.io.limitedReader(reader, payload_len);
+            var limited = std.io.limited_reader(reader, payload_len);
             const limited_reader = limited.reader();
 
             // every subsection contains a 'count' field
-            const count = try leb.readULEB128(u32, limited_reader);
+            const count = try leb.read_uleb128(u32, limited_reader);
 
             switch (@as(types.SubsectionType, @enumFromInt(sub_type))) {
                 .WASM_SEGMENT_INFO => {
                     const segments = try gpa.alloc(types.Segment, count);
                     errdefer gpa.free(segments);
                     for (segments) |*segment| {
-                        const name_len = try leb.readULEB128(u32, reader);
+                        const name_len = try leb.read_uleb128(u32, reader);
                         const name = try gpa.alloc(u8, name_len);
                         errdefer gpa.free(name);
-                        try reader.readNoEof(name);
+                        try reader.read_no_eof(name);
                         segment.* = .{
                             .name = name,
-                            .alignment = @enumFromInt(try leb.readULEB128(u32, reader)),
-                            .flags = try leb.readULEB128(u32, reader),
+                            .alignment = @enumFromInt(try leb.read_uleb128(u32, reader)),
+                            .flags = try leb.read_uleb128(u32, reader),
                         };
                         log.debug("Found segment: {s} align({d}) flags({b})", .{
                             segment.name,
@@ -699,9 +699,9 @@ fn Parser(comptime ReaderType: type) type {
                         });
 
                         // support legacy object files that specified being TLS by the name instead of the TLS flag.
-                        if (!segment.isTLS() and (std.mem.startsWith(u8, segment.name, ".tdata") or std.mem.startsWith(u8, segment.name, ".tbss"))) {
+                        if (!segment.is_tls() and (std.mem.starts_with(u8, segment.name, ".tdata") or std.mem.starts_with(u8, segment.name, ".tbss"))) {
                             // set the flag so we can simply check for the flag in the rest of the linker.
-                            segment.flags |= @intFromEnum(types.Segment.Flags.WASM_SEG_FLAG_TLS);
+                            segment.flags |= @int_from_enum(types.Segment.Flags.WASM_SEG_FLAG_TLS);
                         }
                     }
                     parser.object.segment_info = segments;
@@ -711,8 +711,8 @@ fn Parser(comptime ReaderType: type) type {
                     errdefer gpa.free(funcs);
                     for (funcs) |*func| {
                         func.* = .{
-                            .priority = try leb.readULEB128(u32, reader),
-                            .symbol_index = try leb.readULEB128(u32, reader),
+                            .priority = try leb.read_uleb128(u32, reader),
+                            .symbol_index = try leb.read_uleb128(u32, reader),
                         };
                         log.debug("Found function - prio: {d}, index: {d}", .{ func.priority, func.symbol_index });
                     }
@@ -722,23 +722,23 @@ fn Parser(comptime ReaderType: type) type {
                     const comdats = try gpa.alloc(types.Comdat, count);
                     errdefer gpa.free(comdats);
                     for (comdats) |*comdat| {
-                        const name_len = try leb.readULEB128(u32, reader);
+                        const name_len = try leb.read_uleb128(u32, reader);
                         const name = try gpa.alloc(u8, name_len);
                         errdefer gpa.free(name);
-                        try reader.readNoEof(name);
+                        try reader.read_no_eof(name);
 
-                        const flags = try leb.readULEB128(u32, reader);
+                        const flags = try leb.read_uleb128(u32, reader);
                         if (flags != 0) {
                             return error.UnexpectedValue;
                         }
 
-                        const symbol_count = try leb.readULEB128(u32, reader);
+                        const symbol_count = try leb.read_uleb128(u32, reader);
                         const symbols = try gpa.alloc(types.ComdatSym, symbol_count);
                         errdefer gpa.free(symbols);
                         for (symbols) |*symbol| {
                             symbol.* = .{
-                                .kind = @as(types.ComdatSym.Type, @enumFromInt(try leb.readULEB128(u8, reader))),
-                                .index = try leb.readULEB128(u32, reader),
+                                .kind = @as(types.ComdatSym.Type, @enumFromInt(try leb.read_uleb128(u8, reader))),
+                                .index = try leb.read_uleb128(u32, reader),
                             };
                         }
 
@@ -752,14 +752,14 @@ fn Parser(comptime ReaderType: type) type {
                     parser.object.comdat_info = comdats;
                 },
                 .WASM_SYMBOL_TABLE => {
-                    var symbols = try std.ArrayList(Symbol).initCapacity(gpa, count);
+                    var symbols = try std.ArrayList(Symbol).init_capacity(gpa, count);
 
                     var i: usize = 0;
                     while (i < count) : (i += 1) {
-                        const symbol = symbols.addOneAssumeCapacity();
-                        symbol.* = try parser.parseSymbol(gpa, reader);
+                        const symbol = symbols.add_one_assume_capacity();
+                        symbol.* = try parser.parse_symbol(gpa, reader);
                         log.debug("Found symbol: type({s}) name({s}) flags(0b{b:0>8})", .{
-                            @tagName(symbol.tag),
+                            @tag_name(symbol.tag),
                             parser.object.string_table.get(symbol.name),
                             symbol.flags,
                         });
@@ -767,7 +767,7 @@ fn Parser(comptime ReaderType: type) type {
 
                     // we found all symbols, check for indirect function table
                     // in case of an MVP object file
-                    if (try parser.object.checkLegacyIndirectFunctionTable(parser.wasm_file)) |symbol| {
+                    if (try parser.object.check_legacy_indirect_function_table(parser.wasm_file)) |symbol| {
                         try symbols.append(symbol);
                         log.debug("Found legacy indirect function table. Created symbol", .{});
                     }
@@ -779,7 +779,7 @@ fn Parser(comptime ReaderType: type) type {
                             if (!data.represented) {
                                 try symbols.append(.{
                                     .name = data.index,
-                                    .flags = @intFromEnum(Symbol.Flag.WASM_SYM_BINDING_LOCAL),
+                                    .flags = @int_from_enum(Symbol.Flag.WASM_SYM_BINDING_LOCAL),
                                     .tag = .section,
                                     .virtual_address = 0,
                                     .index = data.section_index,
@@ -790,7 +790,7 @@ fn Parser(comptime ReaderType: type) type {
                         }
                     }
 
-                    parser.object.symtable = try symbols.toOwnedSlice();
+                    parser.object.symtable = try symbols.to_owned_slice();
                 },
             }
         }
@@ -799,8 +799,8 @@ fn Parser(comptime ReaderType: type) type {
         /// requires access to `Object` to find the name of a symbol when it's
         /// an import and flag `WASM_SYM_EXPLICIT_NAME` is not set.
         fn parse_symbol(parser: *ObjectParser, gpa: Allocator, reader: anytype) !Symbol {
-            const tag = @as(Symbol.Tag, @enumFromInt(try leb.readULEB128(u8, reader)));
-            const flags = try leb.readULEB128(u32, reader);
+            const tag = @as(Symbol.Tag, @enumFromInt(try leb.read_uleb128(u8, reader)));
+            const flags = try leb.read_uleb128(u32, reader);
             var symbol: Symbol = .{
                 .flags = flags,
                 .tag = tag,
@@ -811,22 +811,22 @@ fn Parser(comptime ReaderType: type) type {
 
             switch (tag) {
                 .data => {
-                    const name_len = try leb.readULEB128(u32, reader);
+                    const name_len = try leb.read_uleb128(u32, reader);
                     const name = try gpa.alloc(u8, name_len);
                     defer gpa.free(name);
-                    try reader.readNoEof(name);
+                    try reader.read_no_eof(name);
                     symbol.name = try parser.object.string_table.put(gpa, name);
 
                     // Data symbols only have the following fields if the symbol is defined
-                    if (symbol.isDefined()) {
-                        symbol.index = try leb.readULEB128(u32, reader);
+                    if (symbol.is_defined()) {
+                        symbol.index = try leb.read_uleb128(u32, reader);
                         // @TODO: We should verify those values
-                        _ = try leb.readULEB128(u32, reader);
-                        _ = try leb.readULEB128(u32, reader);
+                        _ = try leb.read_uleb128(u32, reader);
+                        _ = try leb.read_uleb128(u32, reader);
                     }
                 },
                 .section => {
-                    symbol.index = try leb.readULEB128(u32, reader);
+                    symbol.index = try leb.read_uleb128(u32, reader);
                     const section_data = parser.object.relocatable_data.get(.custom).?;
                     for (section_data) |*data| {
                         if (data.section_index == symbol.index) {
@@ -837,16 +837,16 @@ fn Parser(comptime ReaderType: type) type {
                     }
                 },
                 else => {
-                    symbol.index = try leb.readULEB128(u32, reader);
-                    const is_undefined = symbol.isUndefined();
-                    const explicit_name = symbol.hasFlag(.WASM_SYM_EXPLICIT_NAME);
+                    symbol.index = try leb.read_uleb128(u32, reader);
+                    const is_undefined = symbol.is_undefined();
+                    const explicit_name = symbol.has_flag(.WASM_SYM_EXPLICIT_NAME);
                     symbol.name = if (!is_undefined or (is_undefined and explicit_name)) name: {
-                        const name_len = try leb.readULEB128(u32, reader);
+                        const name_len = try leb.read_uleb128(u32, reader);
                         const name = try gpa.alloc(u8, name_len);
                         defer gpa.free(name);
-                        try reader.readNoEof(name);
+                        try reader.read_no_eof(name);
                         break :name try parser.object.string_table.put(gpa, name);
-                    } else parser.object.findImport(symbol).name;
+                    } else parser.object.find_import(symbol).name;
                 },
             }
             return symbol;
@@ -857,7 +857,7 @@ fn Parser(comptime ReaderType: type) type {
 /// First reads the count from the reader and then allocate
 /// a slice of ptr child's element type.
 fn read_vec(ptr: anytype, reader: anytype, gpa: Allocator) ![]ElementType(@TypeOf(ptr)) {
-    const len = try readLeb(u32, reader);
+    const len = try read_leb(u32, reader);
     const slice = try gpa.alloc(ElementType(@TypeOf(ptr)), len);
     ptr.* = slice;
     return slice;
@@ -867,13 +867,13 @@ fn ElementType(comptime ptr: type) type {
     return meta.Elem(meta.Child(ptr));
 }
 
-/// Uses either `readILEB128` or `readULEB128` depending on the
+/// Uses either `read_ileb128` or `read_uleb128` depending on the
 /// signedness of the given type `T`.
 /// Asserts `T` is an integer.
 fn read_leb(comptime T: type, reader: anytype) !T {
     return switch (@typeInfo(T).Int.signedness) {
-        .signed => try leb.readILEB128(T, reader),
-        .unsigned => try leb.readULEB128(T, reader),
+        .signed => try leb.read_ileb128(T, reader),
+        .unsigned => try leb.read_uleb128(T, reader),
     };
 }
 
@@ -881,34 +881,34 @@ fn read_leb(comptime T: type, reader: anytype) !T {
 /// Asserts `T` is an enum
 fn read_enum(comptime T: type, reader: anytype) !T {
     switch (@typeInfo(T)) {
-        .Enum => |enum_type| return @as(T, @enumFromInt(try readLeb(enum_type.tag_type, reader))),
-        else => @compileError("T must be an enum. Instead was given type " ++ @typeName(T)),
+        .Enum => |enum_type| return @as(T, @enumFromInt(try read_leb(enum_type.tag_type, reader))),
+        else => @compile_error("T must be an enum. Instead was given type " ++ @type_name(T)),
     }
 }
 
 fn read_limits(reader: anytype) !std.wasm.Limits {
-    const flags = try reader.readByte();
-    const min = try readLeb(u32, reader);
+    const flags = try reader.read_byte();
+    const min = try read_leb(u32, reader);
     var limits: std.wasm.Limits = .{
         .flags = flags,
         .min = min,
         .max = undefined,
     };
-    if (limits.hasFlag(.WASM_LIMITS_FLAG_HAS_MAX)) {
-        limits.max = try readLeb(u32, reader);
+    if (limits.has_flag(.WASM_LIMITS_FLAG_HAS_MAX)) {
+        limits.max = try read_leb(u32, reader);
     }
     return limits;
 }
 
 fn read_init(reader: anytype) !std.wasm.InitExpression {
-    const opcode = try reader.readByte();
+    const opcode = try reader.read_byte();
     const init_expr: std.wasm.InitExpression = switch (@as(std.wasm.Opcode, @enumFromInt(opcode))) {
-        .i32_const => .{ .i32_const = try readLeb(i32, reader) },
-        .global_get => .{ .global_get = try readLeb(u32, reader) },
+        .i32_const => .{ .i32_const = try read_leb(i32, reader) },
+        .global_get => .{ .global_get = try read_leb(u32, reader) },
         else => @panic("TODO: initexpression for other opcodes"),
     };
 
-    if ((try readEnum(std.wasm.Opcode, reader)) != .end) return error.MissingEndForExpression;
+    if ((try read_enum(std.wasm.Opcode, reader)) != .end) return error.MissingEndForExpression;
     return init_expr;
 }
 
@@ -923,7 +923,7 @@ fn assert_end(reader: anytype) !void {
 pub fn parse_symbol_into_atom(object: *Object, wasm: *Wasm, symbol_index: Symbol.Index) !Atom.Index {
     const comp = wasm.base.comp;
     const gpa = comp.gpa;
-    const symbol = &object.symtable[@intFromEnum(symbol_index)];
+    const symbol = &object.symtable[@int_from_enum(symbol_index)];
     const relocatable_data: RelocatableData = switch (symbol.tag) {
         .function => object.relocatable_data.get(.code).?[symbol.index - object.imported_functions_count],
         .data => object.relocatable_data.get(.data).?[symbol.index],
@@ -938,14 +938,14 @@ pub fn parse_symbol_into_atom(object: *Object, wasm: *Wasm, symbol_index: Symbol
         },
         else => unreachable,
     };
-    const final_index = try wasm.getMatchingSegment(object.index, symbol_index);
-    const atom_index = try wasm.createAtom(symbol_index, object.index);
-    try wasm.appendAtomAtIndex(final_index, atom_index);
+    const final_index = try wasm.get_matching_segment(object.index, symbol_index);
+    const atom_index = try wasm.create_atom(symbol_index, object.index);
+    try wasm.append_atom_at_index(final_index, atom_index);
 
-    const atom = wasm.getAtomPtr(atom_index);
+    const atom = wasm.get_atom_ptr(atom_index);
     atom.size = relocatable_data.size;
-    atom.alignment = relocatable_data.getAlignment(object);
-    atom.code = std.ArrayListUnmanaged(u8).fromOwnedSlice(relocatable_data.data[0..relocatable_data.size]);
+    atom.alignment = relocatable_data.get_alignment(object);
+    atom.code = std.ArrayListUnmanaged(u8).from_owned_slice(relocatable_data.data[0..relocatable_data.size]);
     atom.original_offset = relocatable_data.offset;
 
     const segment: *Wasm.Segment = &wasm.segments.items[final_index];
@@ -954,9 +954,9 @@ pub fn parse_symbol_into_atom(object: *Object, wasm: *Wasm, symbol_index: Symbol
     }
 
     if (object.relocations.get(relocatable_data.section_index)) |relocations| {
-        const start = searchRelocStart(relocations, relocatable_data.offset);
-        const len = searchRelocEnd(relocations[start..], relocatable_data.offset + atom.size);
-        atom.relocs = std.ArrayListUnmanaged(types.Relocation).fromOwnedSlice(relocations[start..][0..len]);
+        const start = search_reloc_start(relocations, relocatable_data.offset);
+        const len = search_reloc_end(relocations[start..], relocatable_data.offset + atom.size);
+        atom.relocs = std.ArrayListUnmanaged(types.Relocation).from_owned_slice(relocations[start..][0..len]);
         for (atom.relocs.items) |reloc| {
             switch (reloc.relocation_type) {
                 .R_WASM_TABLE_INDEX_I32,

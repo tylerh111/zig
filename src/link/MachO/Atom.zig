@@ -36,45 +36,45 @@ next_index: Index = 0,
 extra: u32 = 0,
 
 pub fn get_name(self: Atom, macho_file: *MachO) [:0]const u8 {
-    return switch (self.getFile(macho_file)) {
+    return switch (self.get_file(macho_file)) {
         .dylib => unreachable,
-        .zig_object => |x| x.strtab.getAssumeExists(self.name),
-        inline else => |x| x.getString(self.name),
+        .zig_object => |x| x.strtab.get_assume_exists(self.name),
+        inline else => |x| x.get_string(self.name),
     };
 }
 
 pub fn get_file(self: Atom, macho_file: *MachO) File {
-    return macho_file.getFile(self.file).?;
+    return macho_file.get_file(self.file).?;
 }
 
 pub fn get_data(self: Atom, macho_file: *MachO, buffer: []u8) !void {
     assert(buffer.len == self.size);
-    switch (self.getFile(macho_file)) {
-        .internal => |x| try x.getAtomData(self, buffer),
-        .object => |x| try x.getAtomData(macho_file, self, buffer),
-        .zig_object => |x| try x.getAtomData(macho_file, self, buffer),
+    switch (self.get_file(macho_file)) {
+        .internal => |x| try x.get_atom_data(self, buffer),
+        .object => |x| try x.get_atom_data(macho_file, self, buffer),
+        .zig_object => |x| try x.get_atom_data(macho_file, self, buffer),
         else => unreachable,
     }
 }
 
 pub fn get_relocs(self: Atom, macho_file: *MachO) []const Relocation {
-    return switch (self.getFile(macho_file)) {
+    return switch (self.get_file(macho_file)) {
         .dylib => unreachable,
-        inline else => |x| x.getAtomRelocs(self, macho_file),
+        inline else => |x| x.get_atom_relocs(self, macho_file),
     };
 }
 
 pub fn get_input_section(self: Atom, macho_file: *MachO) macho.section_64 {
-    return switch (self.getFile(macho_file)) {
+    return switch (self.get_file(macho_file)) {
         .dylib => unreachable,
-        .zig_object => |x| x.getInputSection(self, macho_file),
+        .zig_object => |x| x.get_input_section(self, macho_file),
         .object => |x| x.sections.items(.header)[self.n_sect],
         .internal => |x| x.sections.items(.header)[self.n_sect],
     };
 }
 
 pub fn get_input_address(self: Atom, macho_file: *MachO) u64 {
-    return self.getInputSection(macho_file).addr + self.off;
+    return self.get_input_section(macho_file).addr + self.off;
 }
 
 pub fn get_address(self: Atom, macho_file: *MachO) u64 {
@@ -83,25 +83,25 @@ pub fn get_address(self: Atom, macho_file: *MachO) u64 {
 }
 
 pub fn get_priority(self: Atom, macho_file: *MachO) u64 {
-    const file = self.getFile(macho_file);
-    return (@as(u64, @intCast(file.getIndex())) << 32) | @as(u64, @intCast(self.n_sect));
+    const file = self.get_file(macho_file);
+    return (@as(u64, @int_cast(file.get_index())) << 32) | @as(u64, @int_cast(self.n_sect));
 }
 
 pub fn get_unwind_records(self: Atom, macho_file: *MachO) []const UnwindInfo.Record.Index {
     if (!self.flags.unwind) return &[0]UnwindInfo.Record.Index{};
-    const extra = self.getExtra(macho_file).?;
-    return switch (self.getFile(macho_file)) {
+    const extra = self.get_extra(macho_file).?;
+    return switch (self.get_file(macho_file)) {
         .dylib, .zig_object, .internal => unreachable,
         .object => |x| x.unwind_records.items[extra.unwind_index..][0..extra.unwind_count],
     };
 }
 
 pub fn mark_unwind_records_dead(self: Atom, macho_file: *MachO) void {
-    for (self.getUnwindRecords(macho_file)) |cu_index| {
-        const cu = macho_file.getUnwindRecord(cu_index);
+    for (self.get_unwind_records(macho_file)) |cu_index| {
+        const cu = macho_file.get_unwind_record(cu_index);
         cu.alive = false;
 
-        if (cu.getFdePtr(macho_file)) |fde| {
+        if (cu.get_fde_ptr(macho_file)) |fde| {
             fde.alive = false;
         }
     }
@@ -109,13 +109,13 @@ pub fn mark_unwind_records_dead(self: Atom, macho_file: *MachO) void {
 
 pub fn get_thunk(self: Atom, macho_file: *MachO) *Thunk {
     assert(self.flags.thunk);
-    const extra = self.getExtra(macho_file).?;
-    return macho_file.getThunk(extra.thunk);
+    const extra = self.get_extra(macho_file).?;
+    return macho_file.get_thunk(extra.thunk);
 }
 
 pub fn get_literal_pool_index(self: Atom, macho_file: *MachO) ?MachO.LiteralPool.Index {
     if (!self.flags.literal_pool) return null;
-    return self.getExtra(macho_file).?.literal_index;
+    return self.get_extra(macho_file).?.literal_index;
 }
 
 const AddExtraOpts = struct {
@@ -128,39 +128,39 @@ const AddExtraOpts = struct {
 };
 
 pub fn add_extra(atom: *Atom, opts: AddExtraOpts, macho_file: *MachO) !void {
-    if (atom.getExtra(macho_file) == null) {
-        atom.extra = try macho_file.addAtomExtra(.{});
+    if (atom.get_extra(macho_file) == null) {
+        atom.extra = try macho_file.add_atom_extra(.{});
     }
-    var extra = atom.getExtra(macho_file).?;
+    var extra = atom.get_extra(macho_file).?;
     inline for (@typeInfo(@TypeOf(opts)).Struct.fields) |field| {
         if (@field(opts, field.name)) |x| {
             @field(extra, field.name) = x;
         }
     }
-    atom.setExtra(extra, macho_file);
+    atom.set_extra(extra, macho_file);
 }
 
 pub inline fn get_extra(atom: Atom, macho_file: *MachO) ?Extra {
-    return macho_file.getAtomExtra(atom.extra);
+    return macho_file.get_atom_extra(atom.extra);
 }
 
 pub inline fn set_extra(atom: Atom, extra: Extra, macho_file: *MachO) void {
-    macho_file.setAtomExtra(atom.extra, extra);
+    macho_file.set_atom_extra(atom.extra, extra);
 }
 
 pub fn init_output_section(sect: macho.section_64, macho_file: *MachO) !u8 {
-    if (macho_file.base.isRelocatable()) {
-        const osec = macho_file.getSectionByName(sect.segName(), sect.sectName()) orelse
-            try macho_file.addSection(
-            sect.segName(),
-            sect.sectName(),
+    if (macho_file.base.is_relocatable()) {
+        const osec = macho_file.get_section_by_name(sect.seg_name(), sect.sect_name()) orelse
+            try macho_file.add_section(
+            sect.seg_name(),
+            sect.sect_name(),
             .{ .flags = sect.flags },
         );
         return osec;
     }
 
     const segname, const sectname, const flags = blk: {
-        if (sect.isCode()) break :blk .{
+        if (sect.is_code()) break :blk .{
             "__TEXT",
             "__text",
             macho.S_REGULAR | macho.S_ATTR_PURE_INSTRUCTIONS | macho.S_ATTR_SOME_INSTRUCTIONS,
@@ -173,15 +173,15 @@ pub fn init_output_section(sect: macho.section_64, macho_file: *MachO) !u8 {
             => break :blk .{ "__TEXT", "__const", macho.S_REGULAR },
 
             macho.S_CSTRING_LITERALS => {
-                if (mem.startsWith(u8, sect.sectName(), "__objc")) break :blk .{
-                    sect.segName(), sect.sectName(), macho.S_REGULAR,
+                if (mem.starts_with(u8, sect.sect_name(), "__objc")) break :blk .{
+                    sect.seg_name(), sect.sect_name(), macho.S_REGULAR,
                 };
                 break :blk .{ "__TEXT", "__cstring", macho.S_CSTRING_LITERALS };
             },
 
             macho.S_MOD_INIT_FUNC_POINTERS,
             macho.S_MOD_TERM_FUNC_POINTERS,
-            => break :blk .{ "__DATA_CONST", sect.sectName(), sect.flags },
+            => break :blk .{ "__DATA_CONST", sect.sect_name(), sect.flags },
 
             macho.S_LITERAL_POINTERS,
             macho.S_ZEROFILL,
@@ -190,17 +190,17 @@ pub fn init_output_section(sect: macho.section_64, macho_file: *MachO) !u8 {
             macho.S_THREAD_LOCAL_VARIABLE_POINTERS,
             macho.S_THREAD_LOCAL_REGULAR,
             macho.S_THREAD_LOCAL_ZEROFILL,
-            => break :blk .{ sect.segName(), sect.sectName(), sect.flags },
+            => break :blk .{ sect.seg_name(), sect.sect_name(), sect.flags },
 
             macho.S_COALESCED => break :blk .{
-                sect.segName(),
-                sect.sectName(),
+                sect.seg_name(),
+                sect.sect_name(),
                 macho.S_REGULAR,
             },
 
             macho.S_REGULAR => {
-                const segname = sect.segName();
-                const sectname = sect.sectName();
+                const segname = sect.seg_name();
+                const sectname = sect.sect_name();
                 if (mem.eql(u8, segname, "__DATA")) {
                     if (mem.eql(u8, sectname, "__cfstring") or
                         mem.eql(u8, sectname, "__objc_classlist") or
@@ -213,10 +213,10 @@ pub fn init_output_section(sect: macho.section_64, macho_file: *MachO) !u8 {
                 break :blk .{ segname, sectname, sect.flags };
             },
 
-            else => break :blk .{ sect.segName(), sect.sectName(), sect.flags },
+            else => break :blk .{ sect.seg_name(), sect.sect_name(), sect.flags },
         }
     };
-    return macho_file.getSectionByName(segname, sectname) orelse try macho_file.addSection(
+    return macho_file.get_section_by_name(segname, sectname) orelse try macho_file.add_section(
         segname,
         sectname,
         .{ .flags = flags },
@@ -227,18 +227,18 @@ pub fn init_output_section(sect: macho.section_64, macho_file: *MachO) !u8 {
 /// File offset relocation happens transparently, so it is not included in
 /// this calculation.
 pub fn capacity(self: Atom, macho_file: *MachO) u64 {
-    const next_addr = if (macho_file.getAtom(self.next_index)) |next|
-        next.getAddress(macho_file)
+    const next_addr = if (macho_file.get_atom(self.next_index)) |next|
+        next.get_address(macho_file)
     else
-        std.math.maxInt(u32);
-    return next_addr - self.getAddress(macho_file);
+        std.math.max_int(u32);
+    return next_addr - self.get_address(macho_file);
 }
 
 pub fn free_list_eligible(self: Atom, macho_file: *MachO) bool {
     // No need to keep a free list node for the last block.
-    const next = macho_file.getAtom(self.next_index) orelse return false;
-    const cap = next.getAddress(macho_file) - self.getAddress(macho_file);
-    const ideal_cap = MachO.padToIdeal(self.size);
+    const next = macho_file.get_atom(self.next_index) orelse return false;
+    const cap = next.get_address(macho_file) - self.get_address(macho_file);
+    const ideal_cap = MachO.pad_to_ideal(self.size);
     if (cap <= ideal_cap) return false;
     const surplus = cap - ideal_cap;
     return surplus >= MachO.min_text_capacity;
@@ -248,7 +248,7 @@ pub fn allocate(self: *Atom, macho_file: *MachO) !void {
     const sect = &macho_file.sections.items(.header)[self.out_n_sect];
     const free_list = &macho_file.sections.items(.free_list)[self.out_n_sect];
     const last_atom_index = &macho_file.sections.items(.last_atom_index)[self.out_n_sect];
-    const new_atom_ideal_capacity = MachO.padToIdeal(self.size);
+    const new_atom_ideal_capacity = MachO.pad_to_ideal(self.size);
 
     // We use these to indicate our intention to update metadata, placing the new atom,
     // and possibly removing a free list node.
@@ -264,11 +264,11 @@ pub fn allocate(self: *Atom, macho_file: *MachO) !void {
         var i: usize = free_list.items.len;
         while (i < free_list.items.len) {
             const big_atom_index = free_list.items[i];
-            const big_atom = macho_file.getAtom(big_atom_index).?;
+            const big_atom = macho_file.get_atom(big_atom_index).?;
             // We now have a pointer to a live atom that has too much capacity.
             // Is it enough that we could fit this new atom?
             const cap = big_atom.capacity(macho_file);
-            const ideal_capacity = MachO.padToIdeal(cap);
+            const ideal_capacity = MachO.pad_to_ideal(cap);
             const ideal_capacity_end_vaddr = std.math.add(u64, big_atom.value, ideal_capacity) catch ideal_capacity;
             const capacity_end_vaddr = big_atom.value + cap;
             const new_start_vaddr_unaligned = capacity_end_vaddr - new_atom_ideal_capacity;
@@ -277,8 +277,8 @@ pub fn allocate(self: *Atom, macho_file: *MachO) !void {
                 // Additional bookkeeping here to notice if this free list node
                 // should be deleted because the block that it points to has grown to take up
                 // more of the extra capacity.
-                if (!big_atom.freeListEligible(macho_file)) {
-                    _ = free_list.swapRemove(i);
+                if (!big_atom.free_list_eligible(macho_file)) {
+                    _ = free_list.swap_remove(i);
                 } else {
                     i += 1;
                 }
@@ -296,8 +296,8 @@ pub fn allocate(self: *Atom, macho_file: *MachO) !void {
                 free_list_removal = i;
             }
             break :blk new_start_vaddr;
-        } else if (macho_file.getAtom(last_atom_index.*)) |last| {
-            const ideal_capacity = MachO.padToIdeal(last.size);
+        } else if (macho_file.get_atom(last_atom_index.*)) |last| {
+            const ideal_capacity = MachO.pad_to_ideal(last.size);
             const ideal_capacity_end_vaddr = last.value + ideal_capacity;
             const new_start_vaddr = self.alignment.forward(ideal_capacity_end_vaddr);
             // Set up the metadata to be updated, after errors are no longer possible.
@@ -310,21 +310,21 @@ pub fn allocate(self: *Atom, macho_file: *MachO) !void {
 
     log.debug("allocated atom({d}) : '{s}' at 0x{x} to 0x{x}", .{
         self.atom_index,
-        self.getName(macho_file),
-        self.getAddress(macho_file),
-        self.getAddress(macho_file) + self.size,
+        self.get_name(macho_file),
+        self.get_address(macho_file),
+        self.get_address(macho_file) + self.size,
     });
 
     const expand_section = if (atom_placement) |placement_index|
-        macho_file.getAtom(placement_index).?.next_index == 0
+        macho_file.get_atom(placement_index).?.next_index == 0
     else
         true;
     if (expand_section) {
         const needed_size = self.value + self.size;
-        try macho_file.growSection(self.out_n_sect, needed_size);
+        try macho_file.grow_section(self.out_n_sect, needed_size);
         last_atom_index.* = self.atom_index;
 
-        // const zig_object = macho_file_file.getZigObject().?;
+        // const zig_object = macho_file_file.get_zig_object().?;
         // if (zig_object.dwarf) |_| {
         //     // The .debug_info section has `low_pc` and `high_pc` values which is the virtual address
         //     // range of the compilation unit. When we expand the text section, this range changes,
@@ -336,20 +336,20 @@ pub fn allocate(self: *Atom, macho_file: *MachO) !void {
         //     zig_object.debug_aranges_section_dirty = true;
         // }
     }
-    sect.@"align" = @max(sect.@"align", self.alignment.toLog2Units());
+    sect.@"align" = @max(sect.@"align", self.alignment.to_log2_units());
 
     // This function can also reallocate an atom.
     // In this case we need to "unplug" it from its previous location before
     // plugging it in to its new location.
-    if (macho_file.getAtom(self.prev_index)) |prev| {
+    if (macho_file.get_atom(self.prev_index)) |prev| {
         prev.next_index = self.next_index;
     }
-    if (macho_file.getAtom(self.next_index)) |next| {
+    if (macho_file.get_atom(self.next_index)) |next| {
         next.prev_index = self.prev_index;
     }
 
     if (atom_placement) |big_atom_index| {
-        const big_atom = macho_file.getAtom(big_atom_index).?;
+        const big_atom = macho_file.get_atom(big_atom_index).?;
         self.prev_index = big_atom_index;
         self.next_index = big_atom.next_index;
         big_atom.next_index = self.atom_index;
@@ -358,7 +358,7 @@ pub fn allocate(self: *Atom, macho_file: *MachO) !void {
         self.next_index = 0;
     }
     if (free_list_removal) |i| {
-        _ = free_list.swapRemove(i);
+        _ = free_list.swap_remove(i);
     }
 
     self.flags.alive = true;
@@ -375,7 +375,7 @@ pub fn grow(self: *Atom, macho_file: *MachO) !void {
 }
 
 pub fn free(self: *Atom, macho_file: *MachO) void {
-    log.debug("freeAtom {d} ({s})", .{ self.atom_index, self.getName(macho_file) });
+    log.debug("free_atom {d} ({s})", .{ self.atom_index, self.get_name(macho_file) });
 
     const comp = macho_file.base.comp;
     const gpa = comp.gpa;
@@ -387,7 +387,7 @@ pub fn free(self: *Atom, macho_file: *MachO) void {
         // TODO turn free_list into a hash map
         while (i < free_list.items.len) {
             if (free_list.items[i] == self.atom_index) {
-                _ = free_list.swapRemove(i);
+                _ = free_list.swap_remove(i);
                 continue;
             }
             if (free_list.items[i] == self.prev_index) {
@@ -397,9 +397,9 @@ pub fn free(self: *Atom, macho_file: *MachO) void {
         }
     }
 
-    if (macho_file.getAtom(last_atom_index.*)) |last_atom| {
+    if (macho_file.get_atom(last_atom_index.*)) |last_atom| {
         if (last_atom.atom_index == self.atom_index) {
-            if (macho_file.getAtom(self.prev_index)) |_| {
+            if (macho_file.get_atom(self.prev_index)) |_| {
                 // TODO shrink the section size here
                 last_atom_index.* = self.prev_index;
             } else {
@@ -408,9 +408,9 @@ pub fn free(self: *Atom, macho_file: *MachO) void {
         }
     }
 
-    if (macho_file.getAtom(self.prev_index)) |prev| {
+    if (macho_file.get_atom(self.prev_index)) |prev| {
         prev.next_index = self.next_index;
-        if (!already_have_free_list_node and prev.*.freeListEligible(macho_file)) {
+        if (!already_have_free_list_node and prev.*.free_list_eligible(macho_file)) {
             // The free list is heuristics, it doesn't have to be perfect, so we can
             // ignore the OOM here.
             free_list.append(gpa, prev.atom_index) catch {};
@@ -419,38 +419,38 @@ pub fn free(self: *Atom, macho_file: *MachO) void {
         self.prev_index = 0;
     }
 
-    if (macho_file.getAtom(self.next_index)) |next| {
+    if (macho_file.get_atom(self.next_index)) |next| {
         next.prev_index = self.prev_index;
     } else {
         self.next_index = 0;
     }
 
     // TODO create relocs free list
-    self.freeRelocs(macho_file);
+    self.free_relocs(macho_file);
     // TODO figure out how to free input section mappind in ZigModule
-    // const zig_object = macho_file.zigObjectPtr().?
-    // assert(zig_object.atoms.swapRemove(self.atom_index));
+    // const zig_object = macho_file.zig_object_ptr().?
+    // assert(zig_object.atoms.swap_remove(self.atom_index));
     self.* = .{};
 }
 
 pub fn add_reloc(self: *Atom, macho_file: *MachO, reloc: Relocation) !void {
     const gpa = macho_file.base.comp.gpa;
-    const file = self.getFile(macho_file);
+    const file = self.get_file(macho_file);
     assert(file == .zig_object);
     assert(self.flags.relocs);
-    var extra = self.getExtra(macho_file).?;
+    var extra = self.get_extra(macho_file).?;
     const rels = &file.zig_object.relocs.items[extra.rel_index];
     try rels.append(gpa, reloc);
     extra.rel_count += 1;
-    self.setExtra(extra, macho_file);
+    self.set_extra(extra, macho_file);
 }
 
 pub fn free_relocs(self: *Atom, macho_file: *MachO) void {
     if (!self.flags.relocs) return;
-    self.getFile(macho_file).zig_object.freeAtomRelocs(self.*, macho_file);
-    var extra = self.getExtra(macho_file).?;
+    self.get_file(macho_file).zig_object.free_atom_relocs(self.*, macho_file);
+    var extra = self.get_extra(macho_file).?;
     extra.rel_count = 0;
-    self.setExtra(extra, macho_file);
+    self.set_extra(extra, macho_file);
 }
 
 pub fn scan_relocs(self: Atom, macho_file: *MachO) !void {
@@ -458,25 +458,25 @@ pub fn scan_relocs(self: Atom, macho_file: *MachO) !void {
     defer tracy.end();
     assert(self.flags.alive);
 
-    const dynrel_ctx = switch (self.getFile(macho_file)) {
+    const dynrel_ctx = switch (self.get_file(macho_file)) {
         .zig_object => |x| &x.dynamic_relocs,
         .object => |x| &x.dynamic_relocs,
         else => unreachable,
     };
-    const relocs = self.getRelocs(macho_file);
+    const relocs = self.get_relocs(macho_file);
 
     for (relocs) |rel| {
-        if (try self.reportUndefSymbol(rel, macho_file)) continue;
+        if (try self.report_undef_symbol(rel, macho_file)) continue;
 
         switch (rel.type) {
             .branch => {
-                const symbol = rel.getTargetSymbol(macho_file);
+                const symbol = rel.get_target_symbol(macho_file);
                 if (symbol.flags.import or (symbol.flags.@"export" and symbol.flags.weak) or symbol.flags.interposable) {
                     symbol.flags.stubs = true;
                     if (symbol.flags.weak) {
                         macho_file.binds_to_weak = true;
                     }
-                } else if (mem.startsWith(u8, symbol.getName(macho_file), "_objc_msgSend$")) {
+                } else if (mem.starts_with(u8, symbol.get_name(macho_file), "_objc_msgSend$")) {
                     symbol.flags.objc_stubs = true;
                 }
             },
@@ -485,11 +485,11 @@ pub fn scan_relocs(self: Atom, macho_file: *MachO) !void {
             .got_load_page,
             .got_load_pageoff,
             => {
-                const symbol = rel.getTargetSymbol(macho_file);
+                const symbol = rel.get_target_symbol(macho_file);
                 if (symbol.flags.import or
                     (symbol.flags.@"export" and symbol.flags.weak) or
                     symbol.flags.interposable or
-                    macho_file.getTarget().cpu.arch == .aarch64) // TODO relax on arm64
+                    macho_file.get_target().cpu.arch == .aarch64) // TODO relax on arm64
                 {
                     symbol.flags.needs_got = true;
                     if (symbol.flags.weak) {
@@ -499,23 +499,23 @@ pub fn scan_relocs(self: Atom, macho_file: *MachO) !void {
             },
 
             .zig_got_load => {
-                assert(rel.getTargetSymbol(macho_file).flags.has_zig_got);
+                assert(rel.get_target_symbol(macho_file).flags.has_zig_got);
             },
 
             .got => {
-                rel.getTargetSymbol(macho_file).flags.needs_got = true;
+                rel.get_target_symbol(macho_file).flags.needs_got = true;
             },
 
             .tlv,
             .tlvp_page,
             .tlvp_pageoff,
             => {
-                const symbol = rel.getTargetSymbol(macho_file);
+                const symbol = rel.get_target_symbol(macho_file);
                 if (!symbol.flags.tlv) {
-                    try macho_file.reportParseError2(
-                        self.getFile(macho_file).getIndex(),
+                    try macho_file.report_parse_error2(
+                        self.get_file(macho_file).get_index(),
                         "{s}: illegal thread-local variable reference to regular symbol {s}",
-                        .{ self.getName(macho_file), symbol.getName(macho_file) },
+                        .{ self.get_name(macho_file), symbol.get_name(macho_file) },
                     );
                 }
                 if (symbol.flags.import or (symbol.flags.@"export" and symbol.flags.weak) or symbol.flags.interposable) {
@@ -529,8 +529,8 @@ pub fn scan_relocs(self: Atom, macho_file: *MachO) !void {
             .unsigned => {
                 if (rel.meta.length == 3) { // TODO this really should check if this is pointer width
                     if (rel.tag == .@"extern") {
-                        const symbol = rel.getTargetSymbol(macho_file);
-                        if (symbol.isTlvInit(macho_file)) {
+                        const symbol = rel.get_target_symbol(macho_file);
+                        if (symbol.is_tlv_init(macho_file)) {
                             macho_file.has_tlv = true;
                             continue;
                         }
@@ -568,10 +568,10 @@ pub fn scan_relocs(self: Atom, macho_file: *MachO) !void {
 fn report_undef_symbol(self: Atom, rel: Relocation, macho_file: *MachO) !bool {
     if (rel.tag == .local) return false;
 
-    const sym = rel.getTargetSymbol(macho_file);
-    if (sym.getFile(macho_file) == null) {
+    const sym = rel.get_target_symbol(macho_file);
+    if (sym.get_file(macho_file) == null) {
         const gpa = macho_file.base.comp.gpa;
-        const gop = try macho_file.undefs.getOrPut(gpa, rel.target);
+        const gop = try macho_file.undefs.get_or_put(gpa, rel.target);
         if (!gop.found_existing) {
             gop.value_ptr.* = .{};
         }
@@ -586,15 +586,15 @@ pub fn resolve_relocs(self: Atom, macho_file: *MachO, buffer: []u8) !void {
     const tracy = trace(@src());
     defer tracy.end();
 
-    assert(!self.getInputSection(macho_file).isZerofill());
-    const file = self.getFile(macho_file);
-    const name = self.getName(macho_file);
-    const relocs = self.getRelocs(macho_file);
+    assert(!self.get_input_section(macho_file).is_zerofill());
+    const file = self.get_file(macho_file);
+    const name = self.get_name(macho_file);
+    const relocs = self.get_relocs(macho_file);
 
-    relocs_log.debug("{x}: {s}", .{ self.getAddress(macho_file), name });
+    relocs_log.debug("{x}: {s}", .{ self.get_address(macho_file), name });
 
     var has_error = false;
-    var stream = std.io.fixedBufferStream(buffer);
+    var stream = std.io.fixed_buffer_stream(buffer);
     var i: usize = 0;
     while (i < relocs.len) : (i += 1) {
         const rel = relocs[i];
@@ -602,21 +602,21 @@ pub fn resolve_relocs(self: Atom, macho_file: *MachO, buffer: []u8) !void {
         const subtractor = if (rel.meta.has_subtractor) relocs[i - 1] else null;
 
         if (rel.tag == .@"extern") {
-            if (rel.getTargetSymbol(macho_file).getFile(macho_file) == null) continue;
+            if (rel.get_target_symbol(macho_file).get_file(macho_file) == null) continue;
         }
 
-        try stream.seekTo(rel_offset);
-        self.resolveRelocInner(rel, subtractor, buffer, macho_file, stream.writer()) catch |err| {
+        try stream.seek_to(rel_offset);
+        self.resolve_reloc_inner(rel, subtractor, buffer, macho_file, stream.writer()) catch |err| {
             switch (err) {
                 error.RelaxFail => {
                     const target = switch (rel.tag) {
-                        .@"extern" => rel.getTargetSymbol(macho_file).getName(macho_file),
-                        .local => rel.getTargetAtom(macho_file).getName(macho_file),
+                        .@"extern" => rel.get_target_symbol(macho_file).get_name(macho_file),
+                        .local => rel.get_target_atom(macho_file).get_name(macho_file),
                     };
-                    try macho_file.reportParseError2(
-                        file.getIndex(),
+                    try macho_file.report_parse_error2(
+                        file.get_index(),
                         "{s}: 0x{x}: 0x{x}: failed to relax relocation: type {s}, target {s}",
-                        .{ name, self.getAddress(macho_file), rel.offset, @tagName(rel.type), target },
+                        .{ name, self.get_address(macho_file), rel.offset, @tag_name(rel.type), target },
                     );
                     has_error = true;
                 },
@@ -647,48 +647,48 @@ fn resolve_reloc_inner(
     macho_file: *MachO,
     writer: anytype,
 ) ResolveError!void {
-    const cpu_arch = macho_file.getTarget().cpu.arch;
+    const cpu_arch = macho_file.get_target().cpu.arch;
     const rel_offset = math.cast(usize, rel.offset - self.off) orelse return error.Overflow;
     const seg_id = macho_file.sections.items(.segment_id)[self.out_n_sect];
     const seg = macho_file.segments.items[seg_id];
-    const P = @as(i64, @intCast(self.getAddress(macho_file))) + @as(i64, @intCast(rel_offset));
-    const A = rel.addend + rel.getRelocAddend(cpu_arch);
-    const S: i64 = @intCast(rel.getTargetAddress(macho_file));
-    const G: i64 = @intCast(rel.getGotTargetAddress(macho_file));
-    const TLS = @as(i64, @intCast(macho_file.getTlsAddress()));
-    const SUB = if (subtractor) |sub| @as(i64, @intCast(sub.getTargetAddress(macho_file))) else 0;
+    const P = @as(i64, @int_cast(self.get_address(macho_file))) + @as(i64, @int_cast(rel_offset));
+    const A = rel.addend + rel.get_reloc_addend(cpu_arch);
+    const S: i64 = @int_cast(rel.get_target_address(macho_file));
+    const G: i64 = @int_cast(rel.get_got_target_address(macho_file));
+    const TLS = @as(i64, @int_cast(macho_file.get_tls_address()));
+    const SUB = if (subtractor) |sub| @as(i64, @int_cast(sub.get_target_address(macho_file))) else 0;
     // Address of the __got_zig table entry if any.
-    const ZIG_GOT = @as(i64, @intCast(rel.getZigGotTargetAddress(macho_file)));
+    const ZIG_GOT = @as(i64, @int_cast(rel.get_zig_got_target_address(macho_file)));
 
-    const divExact = struct {
+    const div_exact = struct {
         fn div_exact(atom: Atom, r: Relocation, num: u12, den: u12, ctx: *MachO) !u12 {
-            return math.divExact(u12, num, den) catch {
-                try ctx.reportParseError2(atom.getFile(ctx).getIndex(), "{s}: unexpected remainder when resolving {s} at offset 0x{x}", .{
-                    atom.getName(ctx),
-                    r.fmtPretty(ctx.getTarget().cpu.arch),
+            return math.div_exact(u12, num, den) catch {
+                try ctx.report_parse_error2(atom.get_file(ctx).get_index(), "{s}: unexpected remainder when resolving {s} at offset 0x{x}", .{
+                    atom.get_name(ctx),
+                    r.fmt_pretty(ctx.get_target().cpu.arch),
                     r.offset,
                 });
                 return error.UnexpectedRemainder;
             };
         }
-    }.divExact;
+    }.div_exact;
 
     switch (rel.tag) {
         .local => relocs_log.debug("  {x}<+{d}>: {s}: [=> {x}] atom({d})", .{
             P,
             rel_offset,
-            @tagName(rel.type),
+            @tag_name(rel.type),
             S + A - SUB,
-            rel.getTargetAtom(macho_file).atom_index,
+            rel.get_target_atom(macho_file).atom_index,
         }),
         .@"extern" => relocs_log.debug("  {x}<+{d}>: {s}: [=> {x}] G({x}) ZG({x}) ({s})", .{
             P,
             rel_offset,
-            @tagName(rel.type),
+            @tag_name(rel.type),
             S + A - SUB,
             G + A,
             ZIG_GOT + A,
-            rel.getTargetSymbol(macho_file).getName(macho_file),
+            rel.get_target_symbol(macho_file).get_name(macho_file),
         }),
     }
 
@@ -699,37 +699,37 @@ fn resolve_reloc_inner(
             assert(!rel.meta.pcrel);
             if (rel.meta.length == 3) {
                 if (rel.tag == .@"extern") {
-                    const sym = rel.getTargetSymbol(macho_file);
-                    if (sym.isTlvInit(macho_file)) {
-                        try writer.writeInt(u64, @intCast(S - TLS), .little);
+                    const sym = rel.get_target_symbol(macho_file);
+                    if (sym.is_tlv_init(macho_file)) {
+                        try writer.write_int(u64, @int_cast(S - TLS), .little);
                         return;
                     }
                     const entry = bind.Entry{
                         .target = rel.target,
-                        .offset = @as(u64, @intCast(P)) - seg.vmaddr,
+                        .offset = @as(u64, @int_cast(P)) - seg.vmaddr,
                         .segment_id = seg_id,
                         .addend = A,
                     };
                     if (sym.flags.import) {
-                        macho_file.bind.entries.appendAssumeCapacity(entry);
+                        macho_file.bind.entries.append_assume_capacity(entry);
                         if (sym.flags.weak) {
-                            macho_file.weak_bind.entries.appendAssumeCapacity(entry);
+                            macho_file.weak_bind.entries.append_assume_capacity(entry);
                         }
                         return;
                     }
                     if (sym.flags.@"export" and sym.flags.weak) {
-                        macho_file.weak_bind.entries.appendAssumeCapacity(entry);
+                        macho_file.weak_bind.entries.append_assume_capacity(entry);
                     } else if (sym.flags.interposable) {
-                        macho_file.bind.entries.appendAssumeCapacity(entry);
+                        macho_file.bind.entries.append_assume_capacity(entry);
                     }
                 }
-                macho_file.rebase.entries.appendAssumeCapacity(.{
-                    .offset = @as(u64, @intCast(P)) - seg.vmaddr,
+                macho_file.rebase.entries.append_assume_capacity(.{
+                    .offset = @as(u64, @int_cast(P)) - seg.vmaddr,
                     .segment_id = seg_id,
                 });
-                try writer.writeInt(u64, @bitCast(S + A - SUB), .little);
+                try writer.write_int(u64, @bit_cast(S + A - SUB), .little);
             } else if (rel.meta.length == 2) {
-                try writer.writeInt(u32, @bitCast(@as(i32, @truncate(S + A - SUB))), .little);
+                try writer.write_int(u32, @bit_cast(@as(i32, @truncate(S + A - SUB))), .little);
             } else unreachable;
         },
 
@@ -737,7 +737,7 @@ fn resolve_reloc_inner(
             assert(rel.tag == .@"extern");
             assert(rel.meta.length == 2);
             assert(rel.meta.pcrel);
-            try writer.writeInt(i32, @intCast(G + A - P), .little);
+            try writer.write_int(i32, @int_cast(G + A - P), .little);
         },
 
         .branch => {
@@ -746,14 +746,14 @@ fn resolve_reloc_inner(
             assert(rel.tag == .@"extern");
 
             switch (cpu_arch) {
-                .x86_64 => try writer.writeInt(i32, @intCast(S + A - P), .little),
+                .x86_64 => try writer.write_int(i32, @int_cast(S + A - P), .little),
                 .aarch64 => {
                     const disp: i28 = math.cast(i28, S + A - P) orelse blk: {
-                        const thunk = self.getThunk(macho_file);
-                        const S_: i64 = @intCast(thunk.getTargetAddress(rel.target, macho_file));
+                        const thunk = self.get_thunk(macho_file);
+                        const S_: i64 = @int_cast(thunk.get_target_address(rel.target, macho_file));
                         break :blk math.cast(i28, S_ + A - P) orelse return error.Overflow;
                     };
-                    aarch64.writeBranchImm(disp, code[rel_offset..][0..4]);
+                    aarch64.write_branch_imm(disp, code[rel_offset..][0..4]);
                 },
                 else => unreachable,
             }
@@ -763,11 +763,11 @@ fn resolve_reloc_inner(
             assert(rel.tag == .@"extern");
             assert(rel.meta.length == 2);
             assert(rel.meta.pcrel);
-            if (rel.getTargetSymbol(macho_file).flags.has_got) {
-                try writer.writeInt(i32, @intCast(G + A - P), .little);
+            if (rel.get_target_symbol(macho_file).flags.has_got) {
+                try writer.write_int(i32, @int_cast(G + A - P), .little);
             } else {
-                try x86_64.relaxGotLoad(self, code[rel_offset - 3 ..], rel, macho_file);
-                try writer.writeInt(i32, @intCast(S + A - P), .little);
+                try x86_64.relax_got_load(self, code[rel_offset - 3 ..], rel, macho_file);
+                try writer.write_int(i32, @int_cast(S + A - P), .little);
             }
         },
 
@@ -776,7 +776,7 @@ fn resolve_reloc_inner(
             assert(rel.meta.length == 2);
             assert(rel.meta.pcrel);
             switch (cpu_arch) {
-                .x86_64 => try writer.writeInt(i32, @intCast(ZIG_GOT + A - P), .little),
+                .x86_64 => try writer.write_int(i32, @int_cast(ZIG_GOT + A - P), .little),
                 .aarch64 => @panic("TODO resolve __got_zig indirection reloc"),
                 else => unreachable,
             }
@@ -786,20 +786,20 @@ fn resolve_reloc_inner(
             assert(rel.tag == .@"extern");
             assert(rel.meta.length == 2);
             assert(rel.meta.pcrel);
-            const sym = rel.getTargetSymbol(macho_file);
+            const sym = rel.get_target_symbol(macho_file);
             if (sym.flags.tlv_ptr) {
-                const S_: i64 = @intCast(sym.getTlvPtrAddress(macho_file));
-                try writer.writeInt(i32, @intCast(S_ + A - P), .little);
+                const S_: i64 = @int_cast(sym.get_tlv_ptr_address(macho_file));
+                try writer.write_int(i32, @int_cast(S_ + A - P), .little);
             } else {
-                try x86_64.relaxTlv(code[rel_offset - 3 ..]);
-                try writer.writeInt(i32, @intCast(S + A - P), .little);
+                try x86_64.relax_tlv(code[rel_offset - 3 ..]);
+                try writer.write_int(i32, @int_cast(S + A - P), .little);
             }
         },
 
         .signed, .signed1, .signed2, .signed4 => {
             assert(rel.meta.length == 2);
             assert(rel.meta.pcrel);
-            try writer.writeInt(i32, @intCast(S + A - P), .little);
+            try writer.write_int(i32, @int_cast(S + A - P), .little);
         },
 
         .page,
@@ -809,22 +809,22 @@ fn resolve_reloc_inner(
             assert(rel.tag == .@"extern");
             assert(rel.meta.length == 2);
             assert(rel.meta.pcrel);
-            const sym = rel.getTargetSymbol(macho_file);
+            const sym = rel.get_target_symbol(macho_file);
             const source = math.cast(u64, P) orelse return error.Overflow;
             const target = target: {
                 const target = switch (rel.type) {
                     .page => S + A,
                     .got_load_page => G + A,
                     .tlvp_page => if (sym.flags.tlv_ptr) blk: {
-                        const S_: i64 = @intCast(sym.getTlvPtrAddress(macho_file));
+                        const S_: i64 = @int_cast(sym.get_tlv_ptr_address(macho_file));
                         break :blk S_ + A;
                     } else S + A,
                     else => unreachable,
                 };
                 break :target math.cast(u64, target) orelse return error.Overflow;
             };
-            const pages = @as(u21, @bitCast(try aarch64.calcNumberOfPages(@intCast(source), @intCast(target))));
-            aarch64.writeAdrpInst(pages, code[rel_offset..][0..4]);
+            const pages = @as(u21, @bit_cast(try aarch64.calc_number_of_pages(@int_cast(source), @int_cast(target))));
+            aarch64.write_adrp_inst(pages, code[rel_offset..][0..4]);
         },
 
         .pageoff => {
@@ -833,25 +833,25 @@ fn resolve_reloc_inner(
             assert(!rel.meta.pcrel);
             const target = math.cast(u64, S + A) orelse return error.Overflow;
             const inst_code = code[rel_offset..][0..4];
-            if (aarch64.isArithmeticOp(inst_code)) {
-                aarch64.writeAddImmInst(@truncate(target), inst_code);
+            if (aarch64.is_arithmetic_op(inst_code)) {
+                aarch64.write_add_imm_inst(@truncate(target), inst_code);
             } else {
                 var inst = aarch64.Instruction{
-                    .load_store_register = mem.bytesToValue(std.meta.TagPayload(
+                    .load_store_register = mem.bytes_to_value(std.meta.TagPayload(
                         aarch64.Instruction,
                         aarch64.Instruction.load_store_register,
                     ), inst_code),
                 };
                 inst.load_store_register.offset = switch (inst.load_store_register.size) {
                     0 => if (inst.load_store_register.v == 1)
-                        try divExact(self, rel, @truncate(target), 16, macho_file)
+                        try div_exact(self, rel, @truncate(target), 16, macho_file)
                     else
                         @truncate(target),
-                    1 => try divExact(self, rel, @truncate(target), 2, macho_file),
-                    2 => try divExact(self, rel, @truncate(target), 4, macho_file),
-                    3 => try divExact(self, rel, @truncate(target), 8, macho_file),
+                    1 => try div_exact(self, rel, @truncate(target), 2, macho_file),
+                    2 => try div_exact(self, rel, @truncate(target), 4, macho_file),
+                    3 => try div_exact(self, rel, @truncate(target), 8, macho_file),
                 };
-                try writer.writeInt(u32, inst.toU32(), .little);
+                try writer.write_int(u32, inst.to_u32(), .little);
             }
         },
 
@@ -860,7 +860,7 @@ fn resolve_reloc_inner(
             assert(rel.meta.length == 2);
             assert(!rel.meta.pcrel);
             const target = math.cast(u64, G + A) orelse return error.Overflow;
-            aarch64.writeLoadStoreRegInst(try divExact(self, rel, @truncate(target), 8, macho_file), code[rel_offset..][0..4]);
+            aarch64.write_load_store_reg_inst(try div_exact(self, rel, @truncate(target), 8, macho_file), code[rel_offset..][0..4]);
         },
 
         .tlvp_pageoff => {
@@ -868,10 +868,10 @@ fn resolve_reloc_inner(
             assert(rel.meta.length == 2);
             assert(!rel.meta.pcrel);
 
-            const sym = rel.getTargetSymbol(macho_file);
+            const sym = rel.get_target_symbol(macho_file);
             const target = target: {
                 const target = if (sym.flags.tlv_ptr) blk: {
-                    const S_: i64 = @intCast(sym.getTlvPtrAddress(macho_file));
+                    const S_: i64 = @int_cast(sym.get_tlv_ptr_address(macho_file));
                     break :blk S_ + A;
                 } else S + A;
                 break :target math.cast(u64, target) orelse return error.Overflow;
@@ -885,8 +885,8 @@ fn resolve_reloc_inner(
 
             const inst_code = code[rel_offset..][0..4];
             const reg_info: RegInfo = blk: {
-                if (aarch64.isArithmeticOp(inst_code)) {
-                    const inst = mem.bytesToValue(std.meta.TagPayload(
+                if (aarch64.is_arithmetic_op(inst_code)) {
+                    const inst = mem.bytes_to_value(std.meta.TagPayload(
                         aarch64.Instruction,
                         aarch64.Instruction.add_subtract_immediate,
                     ), inst_code);
@@ -896,7 +896,7 @@ fn resolve_reloc_inner(
                         .size = inst.sf,
                     };
                 } else {
-                    const inst = mem.bytesToValue(std.meta.TagPayload(
+                    const inst = mem.bytes_to_value(std.meta.TagPayload(
                         aarch64.Instruction,
                         aarch64.Instruction.load_store_register,
                     ), inst_code);
@@ -912,7 +912,7 @@ fn resolve_reloc_inner(
                 .load_store_register = .{
                     .rt = reg_info.rd,
                     .rn = reg_info.rn,
-                    .offset = try divExact(self, rel, @truncate(target), 8, macho_file),
+                    .offset = try div_exact(self, rel, @truncate(target), 8, macho_file),
                     .opc = 0b01,
                     .op1 = 0b01,
                     .v = 0,
@@ -929,7 +929,7 @@ fn resolve_reloc_inner(
                     .sf = @as(u1, @truncate(reg_info.size)),
                 },
             };
-            try writer.writeInt(u32, inst.toU32(), .little);
+            try writer.write_int(u32, inst.to_u32(), .little);
         },
     }
 }
@@ -944,15 +944,15 @@ const x86_64 = struct {
                 encode(&.{inst}, code) catch return error.RelaxFail;
             },
             else => |x| {
-                var err = try macho_file.addErrorWithNotes(2);
-                try err.addMsg(macho_file, "{s}: 0x{x}: 0x{x}: failed to relax relocation of type {s}", .{
-                    self.getName(macho_file),
-                    self.getAddress(macho_file),
+                var err = try macho_file.add_error_with_notes(2);
+                try err.add_msg(macho_file, "{s}: 0x{x}: 0x{x}: failed to relax relocation of type {s}", .{
+                    self.get_name(macho_file),
+                    self.get_address(macho_file),
                     rel.offset,
-                    @tagName(rel.type),
+                    @tag_name(rel.type),
                 });
-                try err.addNote(macho_file, "expected .mov instruction but found .{s}", .{@tagName(x)});
-                try err.addNote(macho_file, "while parsing {}", .{self.getFile(macho_file).fmtPath()});
+                try err.add_note(macho_file, "expected .mov instruction but found .{s}", .{@tag_name(x)});
+                try err.add_note(macho_file, "while parsing {}", .{self.get_file(macho_file).fmt_path()});
                 return error.RelaxFailUnexpectedInstruction;
             },
         }
@@ -977,7 +977,7 @@ const x86_64 = struct {
     }
 
     fn encode(insts: []const Instruction, code: []u8) !void {
-        var stream = std.io.fixedBufferStream(code);
+        var stream = std.io.fixed_buffer_stream(code);
         const writer = stream.writer();
         for (insts) |inst| {
             try inst.encode(writer, .{});
@@ -992,8 +992,8 @@ const x86_64 = struct {
 };
 
 pub fn calc_num_relocs(self: Atom, macho_file: *MachO) u32 {
-    const relocs = self.getRelocs(macho_file);
-    switch (macho_file.getTarget().cpu.arch) {
+    const relocs = self.get_relocs(macho_file);
+    switch (macho_file.get_target().cpu.arch) {
         .aarch64 => {
             var nreloc: u32 = 0;
             for (relocs) |rel| {
@@ -1007,7 +1007,7 @@ pub fn calc_num_relocs(self: Atom, macho_file: *MachO) u32 {
             }
             return nreloc;
         },
-        .x86_64 => return @intCast(relocs.len),
+        .x86_64 => return @int_cast(relocs.len),
         else => unreachable,
     }
 }
@@ -1016,43 +1016,43 @@ pub fn write_relocs(self: Atom, macho_file: *MachO, code: []u8, buffer: *std.Arr
     const tracy = trace(@src());
     defer tracy.end();
 
-    const cpu_arch = macho_file.getTarget().cpu.arch;
-    const relocs = self.getRelocs(macho_file);
-    var stream = std.io.fixedBufferStream(code);
+    const cpu_arch = macho_file.get_target().cpu.arch;
+    const relocs = self.get_relocs(macho_file);
+    var stream = std.io.fixed_buffer_stream(code);
 
     for (relocs) |rel| {
         const rel_offset = rel.offset - self.off;
         const r_address: i32 = math.cast(i32, self.value + rel_offset) orelse return error.Overflow;
         const r_symbolnum = r_symbolnum: {
             const r_symbolnum: u32 = switch (rel.tag) {
-                .local => rel.getTargetAtom(macho_file).out_n_sect + 1,
-                .@"extern" => rel.getTargetSymbol(macho_file).getOutputSymtabIndex(macho_file).?,
+                .local => rel.get_target_atom(macho_file).out_n_sect + 1,
+                .@"extern" => rel.get_target_symbol(macho_file).get_output_symtab_index(macho_file).?,
             };
             break :r_symbolnum math.cast(u24, r_symbolnum) orelse return error.Overflow;
         };
         const r_extern = rel.tag == .@"extern";
-        var addend = rel.addend + rel.getRelocAddend(cpu_arch);
+        var addend = rel.addend + rel.get_reloc_addend(cpu_arch);
         if (rel.tag == .local) {
-            const target: i64 = @intCast(rel.getTargetAddress(macho_file));
+            const target: i64 = @int_cast(rel.get_target_address(macho_file));
             addend += target;
         }
 
-        try stream.seekTo(rel_offset);
+        try stream.seek_to(rel_offset);
 
         switch (cpu_arch) {
             .aarch64 => {
                 if (rel.type == .unsigned) switch (rel.meta.length) {
                     0, 1 => unreachable,
-                    2 => try stream.writer().writeInt(i32, @truncate(addend), .little),
-                    3 => try stream.writer().writeInt(i64, addend, .little),
+                    2 => try stream.writer().write_int(i32, @truncate(addend), .little),
+                    3 => try stream.writer().write_int(i64, addend, .little),
                 } else if (addend > 0) {
-                    buffer.appendAssumeCapacity(.{
+                    buffer.append_assume_capacity(.{
                         .r_address = r_address,
-                        .r_symbolnum = @bitCast(math.cast(i24, addend) orelse return error.Overflow),
+                        .r_symbolnum = @bit_cast(math.cast(i24, addend) orelse return error.Overflow),
                         .r_pcrel = 0,
                         .r_length = 2,
                         .r_extern = 0,
-                        .r_type = @intFromEnum(macho.reloc_type_arm64.ARM64_RELOC_ADDEND),
+                        .r_type = @int_from_enum(macho.reloc_type_arm64.ARM64_RELOC_ADDEND),
                     });
                 }
 
@@ -1077,27 +1077,27 @@ pub fn write_relocs(self: Atom, macho_file: *MachO, code: []u8, buffer: *std.Arr
                     .tlv,
                     => unreachable,
                 };
-                buffer.appendAssumeCapacity(.{
+                buffer.append_assume_capacity(.{
                     .r_address = r_address,
                     .r_symbolnum = r_symbolnum,
-                    .r_pcrel = @intFromBool(rel.meta.pcrel),
-                    .r_extern = @intFromBool(r_extern),
+                    .r_pcrel = @int_from_bool(rel.meta.pcrel),
+                    .r_extern = @int_from_bool(r_extern),
                     .r_length = rel.meta.length,
-                    .r_type = @intFromEnum(r_type),
+                    .r_type = @int_from_enum(r_type),
                 });
             },
             .x86_64 => {
                 if (rel.meta.pcrel) {
                     if (rel.tag == .local) {
-                        addend -= @as(i64, @intCast(self.getAddress(macho_file) + rel_offset));
+                        addend -= @as(i64, @int_cast(self.get_address(macho_file) + rel_offset));
                     } else {
                         addend += 4;
                     }
                 }
                 switch (rel.meta.length) {
                     0, 1 => unreachable,
-                    2 => try stream.writer().writeInt(i32, @truncate(addend), .little),
-                    3 => try stream.writer().writeInt(i64, addend, .little),
+                    2 => try stream.writer().write_int(i32, @truncate(addend), .little),
+                    3 => try stream.writer().write_int(i64, addend, .little),
                 }
 
                 const r_type: macho.reloc_type_x86_64 = switch (rel.type) {
@@ -1121,13 +1121,13 @@ pub fn write_relocs(self: Atom, macho_file: *MachO, code: []u8, buffer: *std.Arr
                     .tlvp_pageoff,
                     => unreachable,
                 };
-                buffer.appendAssumeCapacity(.{
+                buffer.append_assume_capacity(.{
                     .r_address = r_address,
                     .r_symbolnum = r_symbolnum,
-                    .r_pcrel = @intFromBool(rel.meta.pcrel),
-                    .r_extern = @intFromBool(r_extern),
+                    .r_pcrel = @int_from_bool(rel.meta.pcrel),
+                    .r_extern = @int_from_bool(r_extern),
                     .r_length = rel.meta.length,
-                    .r_type = @intFromEnum(r_type),
+                    .r_type = @int_from_enum(r_type),
                 });
             },
             else => unreachable,
@@ -1145,7 +1145,7 @@ pub fn format(
     _ = unused_fmt_string;
     _ = options;
     _ = writer;
-    @compileError("do not format Atom directly");
+    @compile_error("do not format Atom directly");
 }
 
 pub fn fmt(atom: Atom, macho_file: *MachO) std.fmt.Formatter(format2) {
@@ -1171,22 +1171,22 @@ fn format2(
     const atom = ctx.atom;
     const macho_file = ctx.macho_file;
     try writer.print("atom({d}) : {s} : @{x} : sect({d}) : align({x}) : size({x}) : nreloc({d})", .{
-        atom.atom_index,                atom.getName(macho_file), atom.getAddress(macho_file),
+        atom.atom_index,                atom.get_name(macho_file), atom.get_address(macho_file),
         atom.out_n_sect,                atom.alignment,           atom.size,
-        atom.getRelocs(macho_file).len,
+        atom.get_relocs(macho_file).len,
     });
-    if (atom.flags.thunk) try writer.print(" : thunk({d})", .{atom.getExtra(macho_file).?.thunk});
-    if (!atom.flags.alive) try writer.writeAll(" : [*]");
+    if (atom.flags.thunk) try writer.print(" : thunk({d})", .{atom.get_extra(macho_file).?.thunk});
+    if (!atom.flags.alive) try writer.write_all(" : [*]");
     if (atom.flags.unwind) {
-        try writer.writeAll(" : unwind{ ");
-        const extra = atom.getExtra(macho_file).?;
-        for (atom.getUnwindRecords(macho_file), extra.unwind_index..) |index, i| {
-            const rec = macho_file.getUnwindRecord(index);
+        try writer.write_all(" : unwind{ ");
+        const extra = atom.get_extra(macho_file).?;
+        for (atom.get_unwind_records(macho_file), extra.unwind_index..) |index, i| {
+            const rec = macho_file.get_unwind_record(index);
             try writer.print("{d}", .{index});
-            if (!rec.alive) try writer.writeAll("([*])");
-            if (i < extra.unwind_index + extra.unwind_count - 1) try writer.writeAll(", ");
+            if (!rec.alive) try writer.write_all("([*])");
+            if (i < extra.unwind_index + extra.unwind_count - 1) try writer.write_all(", ");
         }
-        try writer.writeAll(" }");
+        try writer.write_all(" }");
     }
 }
 

@@ -1,6 +1,6 @@
 export fn entry() void {
     var x: i32 = 1234;
-    while (!@cmpxchgWeak(i32, &x, 1234, 5678, @as(u32, 1234), @as(u32, 1234))) {}
+    while (!@cmpxchg_weak(i32, &x, 1234, 5678, @as(u32, 1234), @as(u32, 1234))) {}
 }
 
 // error

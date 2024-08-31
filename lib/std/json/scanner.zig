@@ -40,7 +40,7 @@ const BitStack = std.BitStack;
 /// Returns any errors from the allocator as-is, which is unlikely,
 /// but can be caused by extreme nesting depth in the input.
 pub fn validate(allocator: Allocator, s: []const u8) Allocator.Error!bool {
-    var scanner = Scanner.initCompleteInput(allocator, s);
+    var scanner = Scanner.init_complete_input(allocator, s);
     defer scanner.deinit();
 
     while (true) {
@@ -100,11 +100,11 @@ pub const default_buffer_size = 0x1000;
 ///    | .partial_string_escaped_3
 ///    | .partial_string_escaped_4
 ///
-/// nextAlloc*(..., .alloc_always):
+/// next_alloc*(..., .alloc_always):
 ///  <number> = .allocated_number
 ///  <string> = .allocated_string
 ///
-/// nextAlloc*(..., .alloc_if_needed):
+/// next_alloc*(..., .alloc_if_needed):
 ///  <number> =
 ///    | .number
 ///    | .allocated_number
@@ -122,10 +122,10 @@ pub const default_buffer_size = 0x1000;
 ///
 /// The `.partial_*` tokens indicate that a value spans multiple input buffers or that a string contains escape sequences.
 /// To get a complete value in memory, you need to concatenate the values yourself.
-/// Calling `nextAlloc*()` does this for you, and returns an `.allocated_*` token with the result.
+/// Calling `next_alloc*()` does this for you, and returns an `.allocated_*` token with the result.
 ///
 /// For tokens with a `[]const u8` payload, the payload is a slice into the current input buffer.
-/// The memory may become undefined during the next call to `json.Scanner.feedInput()`
+/// The memory may become undefined during the next call to `json.Scanner.feed_input()`
 /// or any `json.Reader` method whose return error set includes `json.Error`.
 /// To keep the value persistently, it recommended to make a copy or to use `.alloc_always`,
 /// which makes a copy for you.
@@ -148,7 +148,7 @@ pub const default_buffer_size = 0x1000;
 /// You're probably going to be parsing the string representation of the number into a numeric representation,
 /// so you need the complete string representation only temporarily.
 ///
-/// When you're skipping an unrecognized value, use `skipValue()`.
+/// When you're skipping an unrecognized value, use `skip_value()`.
 pub const Token = union(enum) {
     object_begin,
     object_end,
@@ -174,7 +174,7 @@ pub const Token = union(enum) {
     end_of_document,
 };
 
-/// This is only used in `peekNextTokenType()` and gives a categorization based on the first byte of the next token that will be emitted from a `next*()` call.
+/// This is only used in `peek_next_token_type()` and gives a categorization based on the first byte of the next token that will be emitted from a `next*()` call.
 pub const TokenType = enum {
     object_begin,
     object_end,
@@ -188,13 +188,13 @@ pub const TokenType = enum {
     end_of_document,
 };
 
-/// To enable diagnostics, declare `var diagnostics = Diagnostics{};` then call `source.enableDiagnostics(&diagnostics);`
+/// To enable diagnostics, declare `var diagnostics = Diagnostics{};` then call `source.enable_diagnostics(&diagnostics);`
 /// where `source` is either a `std.json.Reader` or a `std.json.Scanner` that has just been initialized.
-/// At any time, notably just after an error, call `getLine()`, `getColumn()`, and/or `getByteOffset()`
+/// At any time, notably just after an error, call `get_line()`, `get_column()`, and/or `get_byte_offset()`
 /// to get meaningful information from this.
 pub const Diagnostics = struct {
     line_number: u64 = 1,
-    line_start_cursor: usize = @as(usize, @bitCast(@as(isize, -1))), // Start just "before" the input buffer to get a 1-based column for line 1.
+    line_start_cursor: usize = @as(usize, @bit_cast(@as(isize, -1))), // Start just "before" the input buffer to get a 1-based column for line 1.
     total_bytes_before_current_input: u64 = 0,
     cursor_pointer: *const usize = undefined,
 
@@ -216,7 +216,7 @@ pub const Diagnostics = struct {
 pub const AllocWhen = enum { alloc_if_needed, alloc_always };
 
 /// For security, the maximum size allocated to store a single string or number value is limited to 4MiB by default.
-/// This limit can be specified by calling `nextAllocMax()` instead of `nextAlloc()`.
+/// This limit can be specified by calling `next_alloc_max()` instead of `next_alloc()`.
 pub const default_max_value_len = 4 * 1024 * 1024;
 
 /// Connects a `std.io.Reader` to a `std.json.Scanner`.
@@ -231,7 +231,7 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
         /// The allocator is only used to track `[]` and `{}` nesting levels.
         pub fn init(allocator: Allocator, io_reader: ReaderType) @This() {
             return .{
-                .scanner = Scanner.initStreaming(allocator),
+                .scanner = Scanner.init_streaming(allocator),
                 .reader = io_reader,
             };
         }
@@ -240,9 +240,9 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
             self.* = undefined;
         }
 
-        /// Calls `std.json.Scanner.enableDiagnostics`.
+        /// Calls `std.json.Scanner.enable_diagnostics`.
         pub fn enable_diagnostics(self: *@This(), diagnostics: *Diagnostics) void {
-            self.scanner.enableDiagnostics(diagnostics);
+            self.scanner.enable_diagnostics(diagnostics);
         }
 
         pub const NextError = ReaderType.Error || Error || Allocator.Error;
@@ -250,30 +250,30 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
         pub const AllocError = NextError || error{ValueTooLong};
         pub const PeekError = ReaderType.Error || Error;
 
-        /// Equivalent to `nextAllocMax(allocator, when, default_max_value_len);`
-        /// See also `std.json.Token` for documentation of `nextAlloc*()` function behavior.
+        /// Equivalent to `next_alloc_max(allocator, when, default_max_value_len);`
+        /// See also `std.json.Token` for documentation of `next_alloc*()` function behavior.
         pub fn next_alloc(self: *@This(), allocator: Allocator, when: AllocWhen) AllocError!Token {
-            return self.nextAllocMax(allocator, when, default_max_value_len);
+            return self.next_alloc_max(allocator, when, default_max_value_len);
         }
-        /// See also `std.json.Token` for documentation of `nextAlloc*()` function behavior.
+        /// See also `std.json.Token` for documentation of `next_alloc*()` function behavior.
         pub fn next_alloc_max(self: *@This(), allocator: Allocator, when: AllocWhen, max_value_len: usize) AllocError!Token {
-            const token_type = try self.peekNextTokenType();
+            const token_type = try self.peek_next_token_type();
             switch (token_type) {
                 .number, .string => {
                     var value_list = ArrayList(u8).init(allocator);
                     errdefer {
                         value_list.deinit();
                     }
-                    if (try self.allocNextIntoArrayListMax(&value_list, when, max_value_len)) |slice| {
+                    if (try self.alloc_next_into_array_list_max(&value_list, when, max_value_len)) |slice| {
                         return if (token_type == .number)
                             Token{ .number = slice }
                         else
                             Token{ .string = slice };
                     } else {
                         return if (token_type == .number)
-                            Token{ .allocated_number = try value_list.toOwnedSlice() }
+                            Token{ .allocated_number = try value_list.to_owned_slice() }
                         else
-                            Token{ .allocated_string = try value_list.toOwnedSlice() };
+                            Token{ .allocated_string = try value_list.to_owned_slice() };
                     }
                 },
 
@@ -290,16 +290,16 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
             }
         }
 
-        /// Equivalent to `allocNextIntoArrayListMax(value_list, when, default_max_value_len);`
+        /// Equivalent to `alloc_next_into_array_list_max(value_list, when, default_max_value_len);`
         pub fn alloc_next_into_array_list(self: *@This(), value_list: *ArrayList(u8), when: AllocWhen) AllocError!?[]const u8 {
-            return self.allocNextIntoArrayListMax(value_list, when, default_max_value_len);
+            return self.alloc_next_into_array_list_max(value_list, when, default_max_value_len);
         }
-        /// Calls `std.json.Scanner.allocNextIntoArrayListMax` and handles `error.BufferUnderrun`.
+        /// Calls `std.json.Scanner.alloc_next_into_array_list_max` and handles `error.BufferUnderrun`.
         pub fn alloc_next_into_array_list_max(self: *@This(), value_list: *ArrayList(u8), when: AllocWhen, max_value_len: usize) AllocError!?[]const u8 {
             while (true) {
-                return self.scanner.allocNextIntoArrayListMax(value_list, when, max_value_len) catch |err| switch (err) {
+                return self.scanner.alloc_next_into_array_list_max(value_list, when, max_value_len) catch |err| switch (err) {
                     error.BufferUnderrun => {
-                        try self.refillBuffer();
+                        try self.refill_buffer();
                         continue;
                     },
                     else => |other_err| return other_err,
@@ -307,11 +307,11 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
             }
         }
 
-        /// Like `std.json.Scanner.skipValue`, but handles `error.BufferUnderrun`.
+        /// Like `std.json.Scanner.skip_value`, but handles `error.BufferUnderrun`.
         pub fn skip_value(self: *@This()) SkipError!void {
-            switch (try self.peekNextTokenType()) {
+            switch (try self.peek_next_token_type()) {
                 .object_begin, .array_begin => {
-                    try self.skipUntilStackHeight(self.stackHeight());
+                    try self.skip_until_stack_height(self.stack_height());
                 },
                 .number, .string => {
                     while (true) {
@@ -337,12 +337,12 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
                 .object_end, .array_end, .end_of_document => unreachable, // Attempt to skip a non-value token.
             }
         }
-        /// Like `std.json.Scanner.skipUntilStackHeight()` but handles `error.BufferUnderrun`.
+        /// Like `std.json.Scanner.skip_until_stack_height()` but handles `error.BufferUnderrun`.
         pub fn skip_until_stack_height(self: *@This(), terminal_stack_height: usize) NextError!void {
             while (true) {
-                return self.scanner.skipUntilStackHeight(terminal_stack_height) catch |err| switch (err) {
+                return self.scanner.skip_until_stack_height(terminal_stack_height) catch |err| switch (err) {
                     error.BufferUnderrun => {
-                        try self.refillBuffer();
+                        try self.refill_buffer();
                         continue;
                     },
                     else => |other_err| return other_err,
@@ -350,13 +350,13 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
             }
         }
 
-        /// Calls `std.json.Scanner.stackHeight`.
+        /// Calls `std.json.Scanner.stack_height`.
         pub fn stack_height(self: *const @This()) usize {
-            return self.scanner.stackHeight();
+            return self.scanner.stack_height();
         }
-        /// Calls `std.json.Scanner.ensureTotalStackCapacity`.
+        /// Calls `std.json.Scanner.ensure_total_stack_capacity`.
         pub fn ensure_total_stack_capacity(self: *@This(), height: usize) Allocator.Error!void {
-            try self.scanner.ensureTotalStackCapacity(height);
+            try self.scanner.ensure_total_stack_capacity(height);
         }
 
         /// See `std.json.Token` for documentation of this function.
@@ -364,7 +364,7 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
             while (true) {
                 return self.scanner.next() catch |err| switch (err) {
                     error.BufferUnderrun => {
-                        try self.refillBuffer();
+                        try self.refill_buffer();
                         continue;
                     },
                     else => |other_err| return other_err,
@@ -372,12 +372,12 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
             }
         }
 
-        /// See `std.json.Scanner.peekNextTokenType()`.
+        /// See `std.json.Scanner.peek_next_token_type()`.
         pub fn peek_next_token_type(self: *@This()) PeekError!TokenType {
             while (true) {
-                return self.scanner.peekNextTokenType() catch |err| switch (err) {
+                return self.scanner.peek_next_token_type() catch |err| switch (err) {
                     error.BufferUnderrun => {
-                        try self.refillBuffer();
+                        try self.refill_buffer();
                         continue;
                     },
                     else => |other_err| return other_err,
@@ -388,9 +388,9 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
         fn refill_buffer(self: *@This()) ReaderType.Error!void {
             const input = self.buffer[0..try self.reader.read(self.buffer[0..])];
             if (input.len > 0) {
-                self.scanner.feedInput(input);
+                self.scanner.feed_input(input);
             } else {
-                self.scanner.endInput();
+                self.scanner.end_input();
             }
         }
     };
@@ -404,11 +404,11 @@ pub fn Reader(comptime buffer_size: usize, comptime ReaderType: type) type {
 ///
 /// This scanner can emit partial tokens; see `std.json.Token`.
 /// The input to this class is a sequence of input buffers that you must supply one at a time.
-/// Call `feedInput()` with the first buffer, then call `next()` repeatedly until `error.BufferUnderrun` is returned.
-/// Then call `feedInput()` again and so forth.
-/// Call `endInput()` when the last input buffer has been given to `feedInput()`, either immediately after calling `feedInput()`,
+/// Call `feed_input()` with the first buffer, then call `next()` repeatedly until `error.BufferUnderrun` is returned.
+/// Then call `feed_input()` again and so forth.
+/// Call `end_input()` when the last input buffer has been given to `feed_input()`, either immediately after calling `feed_input()`,
 /// or when `error.BufferUnderrun` requests more data and there is no more.
-/// Be sure to call `next()` after calling `endInput()` until `Token.end_of_document` has been returned.
+/// Be sure to call `next()` after calling `end_input()` until `Token.end_of_document` has been returned.
 pub const Scanner = struct {
     state: State = .value,
     string_is_object_key: bool = false,
@@ -430,9 +430,9 @@ pub const Scanner = struct {
     /// Use this if your input is a single slice.
     /// This is effectively equivalent to:
     /// ```
-    /// initStreaming(allocator);
-    /// feedInput(complete_input);
-    /// endInput();
+    /// init_streaming(allocator);
+    /// feed_input(complete_input);
+    /// end_input();
     /// ```
     pub fn init_complete_input(allocator: Allocator, complete_input: []const u8) @This() {
         return .{
@@ -452,7 +452,7 @@ pub const Scanner = struct {
     }
 
     /// Call this whenever you get `error.BufferUnderrun` from `next()`.
-    /// When there is no more input to provide, call `endInput()`.
+    /// When there is no more input to provide, call `end_input()`.
     pub fn feed_input(self: *@This(), input: []const u8) void {
         assert(self.cursor == self.input.len); // Not done with the last input slice.
         if (self.diagnostics) |diag| {
@@ -465,10 +465,10 @@ pub const Scanner = struct {
         self.cursor = 0;
         self.value_start = 0;
     }
-    /// Call this when you will no longer call `feedInput()` anymore.
-    /// This can be called either immediately after the last `feedInput()`,
+    /// Call this when you will no longer call `feed_input()` anymore.
+    /// This can be called either immediately after the last `feed_input()`,
     /// or at any time afterward, such as when getting `error.BufferUnderrun` from `next()`.
-    /// Don't forget to call `next*()` after `endInput()` until you get `.end_of_document`.
+    /// Don't forget to call `next*()` after `end_input()` until you get `.end_of_document`.
     pub fn end_input(self: *@This()) void {
         self.is_end_of_input = true;
     }
@@ -479,18 +479,18 @@ pub const Scanner = struct {
     pub const SkipError = Error || Allocator.Error;
     pub const AllocIntoArrayListError = AllocError || error{BufferUnderrun};
 
-    /// Equivalent to `nextAllocMax(allocator, when, default_max_value_len);`
-    /// This function is only available after `endInput()` (or `initCompleteInput()`) has been called.
-    /// See also `std.json.Token` for documentation of `nextAlloc*()` function behavior.
+    /// Equivalent to `next_alloc_max(allocator, when, default_max_value_len);`
+    /// This function is only available after `end_input()` (or `init_complete_input()`) has been called.
+    /// See also `std.json.Token` for documentation of `next_alloc*()` function behavior.
     pub fn next_alloc(self: *@This(), allocator: Allocator, when: AllocWhen) AllocError!Token {
-        return self.nextAllocMax(allocator, when, default_max_value_len);
+        return self.next_alloc_max(allocator, when, default_max_value_len);
     }
 
-    /// This function is only available after `endInput()` (or `initCompleteInput()`) has been called.
-    /// See also `std.json.Token` for documentation of `nextAlloc*()` function behavior.
+    /// This function is only available after `end_input()` (or `init_complete_input()`) has been called.
+    /// See also `std.json.Token` for documentation of `next_alloc*()` function behavior.
     pub fn next_alloc_max(self: *@This(), allocator: Allocator, when: AllocWhen, max_value_len: usize) AllocError!Token {
         assert(self.is_end_of_input); // This function is not available in streaming mode.
-        const token_type = self.peekNextTokenType() catch |e| switch (e) {
+        const token_type = self.peek_next_token_type() catch |e| switch (e) {
             error.BufferUnderrun => unreachable,
             else => |err| return err,
         };
@@ -500,7 +500,7 @@ pub const Scanner = struct {
                 errdefer {
                     value_list.deinit();
                 }
-                if (self.allocNextIntoArrayListMax(&value_list, when, max_value_len) catch |e| switch (e) {
+                if (self.alloc_next_into_array_list_max(&value_list, when, max_value_len) catch |e| switch (e) {
                     error.BufferUnderrun => unreachable,
                     else => |err| return err,
                 }) |slice| {
@@ -510,9 +510,9 @@ pub const Scanner = struct {
                         Token{ .string = slice };
                 } else {
                     return if (token_type == .number)
-                        Token{ .allocated_number = try value_list.toOwnedSlice() }
+                        Token{ .allocated_number = try value_list.to_owned_slice() }
                     else
-                        Token{ .allocated_string = try value_list.toOwnedSlice() };
+                        Token{ .allocated_string = try value_list.to_owned_slice() };
                 }
             },
 
@@ -532,11 +532,11 @@ pub const Scanner = struct {
         }
     }
 
-    /// Equivalent to `allocNextIntoArrayListMax(value_list, when, default_max_value_len);`
+    /// Equivalent to `alloc_next_into_array_list_max(value_list, when, default_max_value_len);`
     pub fn alloc_next_into_array_list(self: *@This(), value_list: *ArrayList(u8), when: AllocWhen) AllocIntoArrayListError!?[]const u8 {
-        return self.allocNextIntoArrayListMax(value_list, when, default_max_value_len);
+        return self.alloc_next_into_array_list_max(value_list, when, default_max_value_len);
     }
-    /// The next token type must be either `.number` or `.string`. See `peekNextTokenType()`.
+    /// The next token type must be either `.number` or `.string`. See `peek_next_token_type()`.
     /// When allocation is not necessary with `.alloc_if_needed`,
     /// this method returns the content slice from the input buffer, and `value_list` is not touched.
     /// When allocation is necessary or with `.alloc_always`, this method concatenates partial tokens into the given `value_list`,
@@ -552,19 +552,19 @@ pub const Scanner = struct {
             switch (token) {
                 // Accumulate partial values.
                 .partial_number, .partial_string => |slice| {
-                    try appendSlice(value_list, slice, max_value_len);
+                    try append_slice(value_list, slice, max_value_len);
                 },
                 .partial_string_escaped_1 => |buf| {
-                    try appendSlice(value_list, buf[0..], max_value_len);
+                    try append_slice(value_list, buf[0..], max_value_len);
                 },
                 .partial_string_escaped_2 => |buf| {
-                    try appendSlice(value_list, buf[0..], max_value_len);
+                    try append_slice(value_list, buf[0..], max_value_len);
                 },
                 .partial_string_escaped_3 => |buf| {
-                    try appendSlice(value_list, buf[0..], max_value_len);
+                    try append_slice(value_list, buf[0..], max_value_len);
                 },
                 .partial_string_escaped_4 => |buf| {
-                    try appendSlice(value_list, buf[0..], max_value_len);
+                    try append_slice(value_list, buf[0..], max_value_len);
                 },
 
                 // Return complete values.
@@ -573,7 +573,7 @@ pub const Scanner = struct {
                         // No alloc necessary.
                         return slice;
                     }
-                    try appendSlice(value_list, slice, max_value_len);
+                    try append_slice(value_list, slice, max_value_len);
                     // The token is complete.
                     return null;
                 },
@@ -582,7 +582,7 @@ pub const Scanner = struct {
                         // No alloc necessary.
                         return slice;
                     }
-                    try appendSlice(value_list, slice, max_value_len);
+                    try append_slice(value_list, slice, max_value_len);
                     // The token is complete.
                     return null;
                 },
@@ -595,29 +595,29 @@ pub const Scanner = struct {
                 .false,
                 .null,
                 .end_of_document,
-                => unreachable, // Only .number and .string token types are allowed here. Check peekNextTokenType() before calling this.
+                => unreachable, // Only .number and .string token types are allowed here. Check peek_next_token_type() before calling this.
 
                 .allocated_number, .allocated_string => unreachable,
             }
         }
     }
 
-    /// This function is only available after `endInput()` (or `initCompleteInput()`) has been called.
+    /// This function is only available after `end_input()` (or `init_complete_input()`) has been called.
     /// If the next token type is `.object_begin` or `.array_begin`,
     /// this function calls `next()` repeatedly until the corresponding `.object_end` or `.array_end` is found.
     /// If the next token type is `.number` or `.string`,
     /// this function calls `next()` repeatedly until the (non `.partial_*`) `.number` or `.string` token is found.
     /// If the next token type is `.true`, `.false`, or `.null`, this function calls `next()` once.
     /// The next token type must not be `.object_end`, `.array_end`, or `.end_of_document`;
-    /// see `peekNextTokenType()`.
+    /// see `peek_next_token_type()`.
     pub fn skip_value(self: *@This()) SkipError!void {
         assert(self.is_end_of_input); // This function is not available in streaming mode.
-        switch (self.peekNextTokenType() catch |e| switch (e) {
+        switch (self.peek_next_token_type() catch |e| switch (e) {
             error.BufferUnderrun => unreachable,
             else => |err| return err,
         }) {
             .object_begin, .array_begin => {
-                self.skipUntilStackHeight(self.stackHeight()) catch |e| switch (e) {
+                self.skip_until_stack_height(self.stack_height()) catch |e| switch (e) {
                     error.BufferUnderrun => unreachable,
                     else => |err| return err,
                 };
@@ -653,13 +653,13 @@ pub const Scanner = struct {
         }
     }
 
-    /// Skip tokens until an `.object_end` or `.array_end` token results in a `stackHeight()` equal the given stack height.
-    /// Unlike `skipValue()`, this function is available in streaming mode.
+    /// Skip tokens until an `.object_end` or `.array_end` token results in a `stack_height()` equal the given stack height.
+    /// Unlike `skip_value()`, this function is available in streaming mode.
     pub fn skip_until_stack_height(self: *@This(), terminal_stack_height: usize) NextError!void {
         while (true) {
             switch (try self.next()) {
                 .object_end, .array_end => {
-                    if (self.stackHeight() == terminal_stack_height) break;
+                    if (self.stack_height() == terminal_stack_height) break;
                 },
                 .end_of_document => unreachable,
                 else => continue,
@@ -673,9 +673,9 @@ pub const Scanner = struct {
     }
 
     /// Pre allocate memory to hold the given number of nesting levels.
-    /// `stackHeight()` up to the given number will not cause allocations.
+    /// `stack_height()` up to the given number will not cause allocations.
     pub fn ensure_total_stack_capacity(self: *@This(), height: usize) Allocator.Error!void {
-        try self.stack.ensureTotalCapacity(height);
+        try self.stack.ensure_total_capacity(height);
     }
 
     /// See `std.json.Token` for documentation of this function.
@@ -683,7 +683,7 @@ pub const Scanner = struct {
         state_loop: while (true) {
             switch (self.state) {
                 .value => {
-                    switch (try self.skipWhitespaceExpectByte()) {
+                    switch (try self.skip_whitespace_expect_byte()) {
                         // Object, Array
                         '{' => {
                             try self.stack.push(OBJECT_MODE);
@@ -748,7 +748,7 @@ pub const Scanner = struct {
                 },
 
                 .post_value => {
-                    if (try self.skipWhitespaceCheckEnd()) return .end_of_document;
+                    if (try self.skip_whitespace_check_end()) return .end_of_document;
 
                     const c = self.input[self.cursor];
                     if (self.string_is_object_key) {
@@ -793,7 +793,7 @@ pub const Scanner = struct {
                 },
 
                 .object_start => {
-                    switch (try self.skipWhitespaceExpectByte()) {
+                    switch (try self.skip_whitespace_expect_byte()) {
                         '"' => {
                             self.cursor += 1;
                             self.value_start = self.cursor;
@@ -811,7 +811,7 @@ pub const Scanner = struct {
                     }
                 },
                 .object_post_comma => {
-                    switch (try self.skipWhitespaceExpectByte()) {
+                    switch (try self.skip_whitespace_expect_byte()) {
                         '"' => {
                             self.cursor += 1;
                             self.value_start = self.cursor;
@@ -824,7 +824,7 @@ pub const Scanner = struct {
                 },
 
                 .array_start => {
-                    switch (try self.skipWhitespaceExpectByte()) {
+                    switch (try self.skip_whitespace_expect_byte()) {
                         ']' => {
                             self.cursor += 1;
                             _ = self.stack.pop();
@@ -839,7 +839,7 @@ pub const Scanner = struct {
                 },
 
                 .number_minus => {
-                    if (self.cursor >= self.input.len) return self.endOfBufferInNumber(false);
+                    if (self.cursor >= self.input.len) return self.end_of_buffer_in_number(false);
                     switch (self.input[self.cursor]) {
                         '0' => {
                             self.cursor += 1;
@@ -855,7 +855,7 @@ pub const Scanner = struct {
                     }
                 },
                 .number_leading_zero => {
-                    if (self.cursor >= self.input.len) return self.endOfBufferInNumber(true);
+                    if (self.cursor >= self.input.len) return self.end_of_buffer_in_number(true);
                     switch (self.input[self.cursor]) {
                         '.' => {
                             self.cursor += 1;
@@ -869,7 +869,7 @@ pub const Scanner = struct {
                         },
                         else => {
                             self.state = .post_value;
-                            return Token{ .number = self.takeValueSlice() };
+                            return Token{ .number = self.take_value_slice() };
                         },
                     }
                 },
@@ -889,15 +889,15 @@ pub const Scanner = struct {
                             },
                             else => {
                                 self.state = .post_value;
-                                return Token{ .number = self.takeValueSlice() };
+                                return Token{ .number = self.take_value_slice() };
                             },
                         }
                     }
-                    return self.endOfBufferInNumber(true);
+                    return self.end_of_buffer_in_number(true);
                 },
                 .number_post_dot => {
-                    if (self.cursor >= self.input.len) return self.endOfBufferInNumber(false);
-                    switch (try self.expectByte()) {
+                    if (self.cursor >= self.input.len) return self.end_of_buffer_in_number(false);
+                    switch (try self.expect_byte()) {
                         '0'...'9' => {
                             self.cursor += 1;
                             self.state = .number_frac;
@@ -917,14 +917,14 @@ pub const Scanner = struct {
                             },
                             else => {
                                 self.state = .post_value;
-                                return Token{ .number = self.takeValueSlice() };
+                                return Token{ .number = self.take_value_slice() };
                             },
                         }
                     }
-                    return self.endOfBufferInNumber(true);
+                    return self.end_of_buffer_in_number(true);
                 },
                 .number_post_e => {
-                    if (self.cursor >= self.input.len) return self.endOfBufferInNumber(false);
+                    if (self.cursor >= self.input.len) return self.end_of_buffer_in_number(false);
                     switch (self.input[self.cursor]) {
                         '0'...'9' => {
                             self.cursor += 1;
@@ -940,7 +940,7 @@ pub const Scanner = struct {
                     }
                 },
                 .number_post_e_sign => {
-                    if (self.cursor >= self.input.len) return self.endOfBufferInNumber(false);
+                    if (self.cursor >= self.input.len) return self.end_of_buffer_in_number(false);
                     switch (self.input[self.cursor]) {
                         '0'...'9' => {
                             self.cursor += 1;
@@ -956,11 +956,11 @@ pub const Scanner = struct {
                             '0'...'9' => continue,
                             else => {
                                 self.state = .post_value;
-                                return Token{ .number = self.takeValueSlice() };
+                                return Token{ .number = self.take_value_slice() };
                             },
                         }
                     }
-                    return self.endOfBufferInNumber(true);
+                    return self.end_of_buffer_in_number(true);
                 },
 
                 .string => {
@@ -973,13 +973,13 @@ pub const Scanner = struct {
 
                             // Special characters.
                             '"' => {
-                                const result = Token{ .string = self.takeValueSlice() };
+                                const result = Token{ .string = self.take_value_slice() };
                                 self.cursor += 1;
                                 self.state = .post_value;
                                 return result;
                             },
                             '\\' => {
-                                const slice = self.takeValueSlice();
+                                const slice = self.take_value_slice();
                                 self.cursor += 1;
                                 self.state = .string_backslash;
                                 if (slice.len > 0) return Token{ .partial_string = slice };
@@ -1027,12 +1027,12 @@ pub const Scanner = struct {
                         }
                     }
                     if (self.is_end_of_input) return error.UnexpectedEndOfInput;
-                    const slice = self.takeValueSlice();
+                    const slice = self.take_value_slice();
                     if (slice.len > 0) return Token{ .partial_string = slice };
                     return error.BufferUnderrun;
                 },
                 .string_backslash => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         '"', '\\', '/' => {
                             // Since these characters now represent themselves literally,
                             // we can simply begin the next plaintext slice here.
@@ -1080,7 +1080,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_backslash_u => {
-                    const c = try self.expectByte();
+                    const c = try self.expect_byte();
                     switch (c) {
                         '0'...'9' => {
                             self.utf16_code_units[0] = @as(u16, c - '0') << 12;
@@ -1098,7 +1098,7 @@ pub const Scanner = struct {
                     continue :state_loop;
                 },
                 .string_backslash_u_1 => {
-                    const c = try self.expectByte();
+                    const c = try self.expect_byte();
                     switch (c) {
                         '0'...'9' => {
                             self.utf16_code_units[0] |= @as(u16, c - '0') << 8;
@@ -1116,7 +1116,7 @@ pub const Scanner = struct {
                     continue :state_loop;
                 },
                 .string_backslash_u_2 => {
-                    const c = try self.expectByte();
+                    const c = try self.expect_byte();
                     switch (c) {
                         '0'...'9' => {
                             self.utf16_code_units[0] |= @as(u16, c - '0') << 4;
@@ -1134,7 +1134,7 @@ pub const Scanner = struct {
                     continue :state_loop;
                 },
                 .string_backslash_u_3 => {
-                    const c = try self.expectByte();
+                    const c = try self.expect_byte();
                     switch (c) {
                         '0'...'9' => {
                             self.utf16_code_units[0] |= c - '0';
@@ -1148,19 +1148,19 @@ pub const Scanner = struct {
                         else => return error.SyntaxError,
                     }
                     self.cursor += 1;
-                    if (std.unicode.utf16IsHighSurrogate(self.utf16_code_units[0])) {
+                    if (std.unicode.utf16_is_high_surrogate(self.utf16_code_units[0])) {
                         self.state = .string_surrogate_half;
                         continue :state_loop;
-                    } else if (std.unicode.utf16IsLowSurrogate(self.utf16_code_units[0])) {
+                    } else if (std.unicode.utf16_is_low_surrogate(self.utf16_code_units[0])) {
                         return error.SyntaxError; // Unexpected low surrogate half.
                     } else {
                         self.value_start = self.cursor;
                         self.state = .string;
-                        return partialStringCodepoint(self.utf16_code_units[0]);
+                        return partial_string_codepoint(self.utf16_code_units[0]);
                     }
                 },
                 .string_surrogate_half => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         '\\' => {
                             self.cursor += 1;
                             self.state = .string_surrogate_half_backslash;
@@ -1170,7 +1170,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_surrogate_half_backslash => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         'u' => {
                             self.cursor += 1;
                             self.state = .string_surrogate_half_backslash_u;
@@ -1180,7 +1180,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_surrogate_half_backslash_u => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         'D', 'd' => {
                             self.cursor += 1;
                             self.utf16_code_units[1] = 0xD << 12;
@@ -1191,7 +1191,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_surrogate_half_backslash_u_1 => {
-                    const c = try self.expectByte();
+                    const c = try self.expect_byte();
                     switch (c) {
                         'C'...'F' => {
                             self.cursor += 1;
@@ -1209,7 +1209,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_surrogate_half_backslash_u_2 => {
-                    const c = try self.expectByte();
+                    const c = try self.expect_byte();
                     switch (c) {
                         '0'...'9' => {
                             self.cursor += 1;
@@ -1233,7 +1233,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_surrogate_half_backslash_u_3 => {
-                    const c = try self.expectByte();
+                    const c = try self.expect_byte();
                     switch (c) {
                         '0'...'9' => {
                             self.utf16_code_units[1] |= c - '0';
@@ -1249,12 +1249,12 @@ pub const Scanner = struct {
                     self.cursor += 1;
                     self.value_start = self.cursor;
                     self.state = .string;
-                    const code_point = std.unicode.utf16DecodeSurrogatePair(&self.utf16_code_units) catch unreachable;
-                    return partialStringCodepoint(code_point);
+                    const code_point = std.unicode.utf16_decode_surrogate_pair(&self.utf16_code_units) catch unreachable;
+                    return partial_string_codepoint(code_point);
                 },
 
                 .string_utf8_last_byte => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         0x80...0xBF => {
                             self.cursor += 1;
                             self.state = .string;
@@ -1264,7 +1264,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_utf8_second_to_last_byte => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         0x80...0xBF => {
                             self.cursor += 1;
                             self.state = .string_utf8_last_byte;
@@ -1274,7 +1274,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_utf8_second_to_last_byte_guard_against_overlong => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         0xA0...0xBF => {
                             self.cursor += 1;
                             self.state = .string_utf8_last_byte;
@@ -1284,7 +1284,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_utf8_second_to_last_byte_guard_against_surrogate_half => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         0x80...0x9F => {
                             self.cursor += 1;
                             self.state = .string_utf8_last_byte;
@@ -1294,7 +1294,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_utf8_third_to_last_byte => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         0x80...0xBF => {
                             self.cursor += 1;
                             self.state = .string_utf8_second_to_last_byte;
@@ -1304,7 +1304,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_utf8_third_to_last_byte_guard_against_overlong => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         0x90...0xBF => {
                             self.cursor += 1;
                             self.state = .string_utf8_second_to_last_byte;
@@ -1314,7 +1314,7 @@ pub const Scanner = struct {
                     }
                 },
                 .string_utf8_third_to_last_byte_guard_against_too_large => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         0x80...0x8F => {
                             self.cursor += 1;
                             self.state = .string_utf8_second_to_last_byte;
@@ -1325,7 +1325,7 @@ pub const Scanner = struct {
                 },
 
                 .literal_t => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         'r' => {
                             self.cursor += 1;
                             self.state = .literal_tr;
@@ -1335,7 +1335,7 @@ pub const Scanner = struct {
                     }
                 },
                 .literal_tr => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         'u' => {
                             self.cursor += 1;
                             self.state = .literal_tru;
@@ -1345,7 +1345,7 @@ pub const Scanner = struct {
                     }
                 },
                 .literal_tru => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         'e' => {
                             self.cursor += 1;
                             self.state = .post_value;
@@ -1355,7 +1355,7 @@ pub const Scanner = struct {
                     }
                 },
                 .literal_f => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         'a' => {
                             self.cursor += 1;
                             self.state = .literal_fa;
@@ -1365,7 +1365,7 @@ pub const Scanner = struct {
                     }
                 },
                 .literal_fa => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         'l' => {
                             self.cursor += 1;
                             self.state = .literal_fal;
@@ -1375,7 +1375,7 @@ pub const Scanner = struct {
                     }
                 },
                 .literal_fal => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         's' => {
                             self.cursor += 1;
                             self.state = .literal_fals;
@@ -1385,7 +1385,7 @@ pub const Scanner = struct {
                     }
                 },
                 .literal_fals => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         'e' => {
                             self.cursor += 1;
                             self.state = .post_value;
@@ -1395,7 +1395,7 @@ pub const Scanner = struct {
                     }
                 },
                 .literal_n => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         'u' => {
                             self.cursor += 1;
                             self.state = .literal_nu;
@@ -1405,7 +1405,7 @@ pub const Scanner = struct {
                     }
                 },
                 .literal_nu => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         'l' => {
                             self.cursor += 1;
                             self.state = .literal_nul;
@@ -1415,7 +1415,7 @@ pub const Scanner = struct {
                     }
                 },
                 .literal_nul => {
-                    switch (try self.expectByte()) {
+                    switch (try self.expect_byte()) {
                         'l' => {
                             self.cursor += 1;
                             self.state = .post_value;
@@ -1436,7 +1436,7 @@ pub const Scanner = struct {
         state_loop: while (true) {
             switch (self.state) {
                 .value => {
-                    switch (try self.skipWhitespaceExpectByte()) {
+                    switch (try self.skip_whitespace_expect_byte()) {
                         '{' => return .object_begin,
                         '[' => return .array_begin,
                         '"' => return .string,
@@ -1449,7 +1449,7 @@ pub const Scanner = struct {
                 },
 
                 .post_value => {
-                    if (try self.skipWhitespaceCheckEnd()) return .end_of_document;
+                    if (try self.skip_whitespace_check_end()) return .end_of_document;
 
                     const c = self.input[self.cursor];
                     if (self.string_is_object_key) {
@@ -1484,21 +1484,21 @@ pub const Scanner = struct {
                 },
 
                 .object_start => {
-                    switch (try self.skipWhitespaceExpectByte()) {
+                    switch (try self.skip_whitespace_expect_byte()) {
                         '"' => return .string,
                         '}' => return .object_end,
                         else => return error.SyntaxError,
                     }
                 },
                 .object_post_comma => {
-                    switch (try self.skipWhitespaceExpectByte()) {
+                    switch (try self.skip_whitespace_expect_byte()) {
                         '"' => return .string,
                         else => return error.SyntaxError,
                     }
                 },
 
                 .array_start => {
-                    switch (try self.skipWhitespaceExpectByte()) {
+                    switch (try self.skip_whitespace_expect_byte()) {
                         ']' => return .array_end,
                         else => {
                             self.state = .value;
@@ -1639,17 +1639,17 @@ pub const Scanner = struct {
     }
 
     fn skip_whitespace_expect_byte(self: *@This()) !u8 {
-        self.skipWhitespace();
-        return self.expectByte();
+        self.skip_whitespace();
+        return self.expect_byte();
     }
 
     fn skip_whitespace_check_end(self: *@This()) !bool {
-        self.skipWhitespace();
+        self.skip_whitespace();
         if (self.cursor >= self.input.len) {
             // End of buffer.
             if (self.is_end_of_input) {
                 // End of everything.
-                if (self.stackHeight() == 0) {
+                if (self.stack_height() == 0) {
                     // We did it!
                     return true;
                 }
@@ -1657,7 +1657,7 @@ pub const Scanner = struct {
             }
             return error.BufferUnderrun;
         }
-        if (self.stackHeight() == 0) return error.SyntaxError;
+        if (self.stack_height() == 0) return error.SyntaxError;
         return false;
     }
 
@@ -1668,7 +1668,7 @@ pub const Scanner = struct {
     }
 
     fn end_of_buffer_in_number(self: *@This(), allow_end: bool) !Token {
-        const slice = self.takeValueSlice();
+        const slice = self.take_value_slice();
         if (self.is_end_of_input) {
             if (!allow_end) return error.UnexpectedEndOfInput;
             self.state = .post_value;
@@ -1680,7 +1680,7 @@ pub const Scanner = struct {
 
     fn partial_string_codepoint(code_point: u21) Token {
         var buf: [4]u8 = undefined;
-        switch (std.unicode.utf8Encode(code_point, &buf) catch unreachable) {
+        switch (std.unicode.utf8_encode(code_point, &buf) catch unreachable) {
             1 => return Token{ .partial_string_escaped_1 = buf[0..1].* },
             2 => return Token{ .partial_string_escaped_2 = buf[0..2].* },
             3 => return Token{ .partial_string_escaped_3 = buf[0..3].* },
@@ -1696,7 +1696,7 @@ const ARRAY_MODE = 1;
 fn append_slice(list: *std.ArrayList(u8), buf: []const u8, max_value_len: usize) !void {
     const new_len = std.math.add(usize, list.items.len, buf.len) catch return error.ValueTooLong;
     if (new_len > max_value_len) return error.ValueTooLong;
-    try list.appendSlice(buf);
+    try list.append_slice(buf);
 }
 
 /// For the slice you get from a `Token.number` or `Token.allocated_number`,
@@ -1706,7 +1706,7 @@ fn append_slice(list: *std.ArrayList(u8), buf: []const u8, max_value_len: usize)
 /// This function will not give meaningful results on non-numeric input.
 pub fn is_number_formatted_like_an_integer(value: []const u8) bool {
     if (std.mem.eql(u8, value, "-0")) return false;
-    return std.mem.indexOfAny(u8, value, ".eE") == null;
+    return std.mem.index_of_any(u8, value, ".eE") == null;
 }
 
 test {

@@ -12,7 +12,7 @@ pub const SignedDoubleLimb = std.meta.Int(.signed, 2 * limb_info.bits);
 pub const Log2Limb = std.math.Log2Int(Limb);
 
 comptime {
-    assert(std.math.floorPowerOfTwo(usize, limb_info.bits) == limb_info.bits);
+    assert(std.math.floor_power_of_two(usize, limb_info.bits) == limb_info.bits);
     assert(limb_info.signedness == .unsigned);
 }
 

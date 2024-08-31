@@ -34,9 +34,9 @@ pub fn LogToWriterAllocator(comptime Writer: type) type {
             log2_ptr_align: u8,
             ra: usize,
         ) ?[*]u8 {
-            const self: *Self = @ptrCast(@alignCast(ctx));
+            const self: *Self = @ptr_cast(@align_cast(ctx));
             self.writer.print("alloc : {}", .{len}) catch {};
-            const result = self.parent_allocator.rawAlloc(len, log2_ptr_align, ra);
+            const result = self.parent_allocator.raw_alloc(len, log2_ptr_align, ra);
             if (result != null) {
                 self.writer.print(" success!\n", .{}) catch {};
             } else {
@@ -52,14 +52,14 @@ pub fn LogToWriterAllocator(comptime Writer: type) type {
             new_len: usize,
             ra: usize,
         ) bool {
-            const self: *Self = @ptrCast(@alignCast(ctx));
+            const self: *Self = @ptr_cast(@align_cast(ctx));
             if (new_len <= buf.len) {
                 self.writer.print("shrink: {} to {}\n", .{ buf.len, new_len }) catch {};
             } else {
                 self.writer.print("expand: {} to {}", .{ buf.len, new_len }) catch {};
             }
 
-            if (self.parent_allocator.rawResize(buf, log2_buf_align, new_len, ra)) {
+            if (self.parent_allocator.raw_resize(buf, log2_buf_align, new_len, ra)) {
                 if (new_len > buf.len) {
                     self.writer.print(" success!\n", .{}) catch {};
                 }
@@ -77,9 +77,9 @@ pub fn LogToWriterAllocator(comptime Writer: type) type {
             log2_buf_align: u8,
             ra: usize,
         ) void {
-            const self: *Self = @ptrCast(@alignCast(ctx));
+            const self: *Self = @ptr_cast(@align_cast(ctx));
             self.writer.print("free  : {}\n", .{buf.len}) catch {};
-            self.parent_allocator.rawFree(buf, log2_buf_align, ra);
+            self.parent_allocator.raw_free(buf, log2_buf_align, ra);
         }
     };
 }
@@ -95,11 +95,11 @@ pub fn log_to_writer_allocator(
 
 test "LogToWriterAllocator" {
     var log_buf: [255]u8 = undefined;
-    var fbs = std.io.fixedBufferStream(&log_buf);
+    var fbs = std.io.fixed_buffer_stream(&log_buf);
 
     var allocator_buf: [10]u8 = undefined;
-    var fixedBufferAllocator = std.mem.validationWrap(std.heap.FixedBufferAllocator.init(&allocator_buf));
-    var allocator_state = logToWriterAllocator(fixedBufferAllocator.allocator(), fbs.writer());
+    var fixedBufferAllocator = std.mem.validation_wrap(std.heap.FixedBufferAllocator.init(&allocator_buf));
+    var allocator_state = log_to_writer_allocator(fixedBufferAllocator.allocator(), fbs.writer());
     const allocator = allocator_state.allocator();
 
     var a = try allocator.alloc(u8, 10);
@@ -108,11 +108,11 @@ test "LogToWriterAllocator" {
     try std.testing.expect(!allocator.resize(a, 20));
     allocator.free(a);
 
-    try std.testing.expectEqualSlices(u8,
+    try std.testing.expect_equal_slices(u8,
         \\alloc : 10 success!
         \\shrink: 10 to 5
         \\expand: 5 to 20 failure!
         \\free  : 5
         \\
-    , fbs.getWritten());
+    , fbs.get_written());
 }
