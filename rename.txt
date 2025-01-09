@@ -1,124 +1,125 @@
 Builtin Functions
 
-    @addrSpaceCast      | @addr_space_cast
-    @addWithOverflow    | @add_with_overflow
-    @alignCast          | @align_cast
-    @alignOf            | @align_of
-    @as                 | @as
-    @atomicLoad         | @atomic_load
-    @atomicRmw          | @atomic_rmw
-    @atomicStore        | @atomic_store
-    @bitCast            | @bit_cast
-    @bitOffsetOf        | @bit_offset_of
-    @bitSizeOf          | @bit_size_of
-    @branchHint         | @branch_hint
-    @breakpoint         | @breakpoint
-    @mulAdd             | @mul_add
-    @byteSwap           | @byte_swap
-    @bitReverse         | @bit_reverse
-    @offsetOf           | @offset_of
-    @call               | @call
-    @cDefine            | @c_define
-    @cImport            | @c_import
-    @cInclude           | @c_include
-    @clz                | @clz
-    @cmpxchgStrong      | @cmpxchg_strong
-    @cmpxchgWeak        | @cmpxchg_weak
-    @compileError       | @compile_error
-    @compileLog         | @compile_log
-    @constCast          | @const_cast
-    @ctz                | @ctz
-    @cUndef             | @c_undef
-    @cVaArg             | @c_va_arg
-    @cVaCopy            | @c_va_copy
-    @cVaEnd             | @c_va_end
-    @cVaStart           | @c_va_start
-    @divExact           | @div_exact
-    @divFloor           | @div_floor
-    @divTrunc           | @div_trunc
-    @embedFile          | @embed_file
-    @enumFromInt        | @enum_from_int
-    @errorFromInt       | @error_from_int
-    @errorName          | @error_name
-    @errorReturnTrace   | @error_return_trace
-    @errorCast          | @error_cast
-    @export             | @export
-    @extern             | @extern
-    @field              | @field
-    @fieldParentPtr     | @field_parent_ptr
+    @addrSpaceCast      | @addrspacecast      | @addr_space_cast
+    @addWithOverflow    | @addwithoverflow    | @add_with_overflow
+    @alignCast          | @aligncast          | @align_cast
+    @alignOf            | @alignof            | @align_of
+    @as                 | @as                 | @as
+    @atomicLoad         | @atomicload         | @atomic_load
+    @atomicRmw          | @atomicrmw          | @atomic_rmw
+    @atomicStore        | @atomicstore        | @atomic_store
+    @bitCast            | @bitcast            | @bit_cast
+    @bitOffsetOf        | @bitoffsetof        | @bit_offset_of
+    @bitSizeOf          | @bitsizeof          | @bit_size_of
+    @branchHint         | @branchhint         | @branch_hint
+    @breakpoint         | @breakpoint         | @breakpoint
+    @mulAdd             | @muladd             | @mul_add
+    @byteSwap           | @byteswap           | @byte_swap
+    @bitReverse         | @bitreverse         | @bit_reverse
+    @offsetOf           | @offsetof           | @offset_of
+    @call               | @call               | @call
+    @cDefine            | @cdefine            | @c_define
+    @cImport            | @cimport            | @c_import
+    @cInclude           | @cinclude           | @c_include
+    @clz                | @clz                | @clz
+    @cmpxchgStrong      | @cmpxchgstrong      | @cmpxchg_strong
+    @cmpxchgWeak        | @cmpxchgweak        | @cmpxchg_weak
+    @compileError       | @compileerror       | @compile_error
+    @compileLog         | @compilelog         | @compile_log
+    @constCast          | @constcast          | @const_cast
+    @ctz                | @ctz                | @ctz
+    @cUndef             | @cundef             | @c_undef
+    @cVaArg             | @cvaarg             | @c_va_arg
+    @cVaCopy            | @cvacopy            | @c_va_copy
+    @cVaEnd             | @cvaend             | @c_va_end
+    @cVaStart           | @cvastart           | @c_va_start
+    @divExact           | @divexact           | @div_exact
+    @divFloor           | @divfloor           | @div_floor
+    @divTrunc           | @divtrunc           | @div_trunc
+    @embedFile          | @embedfile          | @embed_file
+    @enumFromInt        | @enumfromint        | @enum_from_int
+    @errorFromInt       | @errorfromint       | @error_from_int
+    @errorName          | @errorname          | @error_name
+    @errorReturnTrace   | @errorreturntrace   | @error_return_trace
+    @errorCast          | @errorcast          | @error_cast
+    @export             | @export             | @export
+    @extern             | @extern             | @extern
+    @field              | @field              | @field
+    @fieldParentPtr     | @fieldparentptr     | @field_parent_ptr
+    @floatCast          | @floatcast          | @float_cast
+    @floatFromInt       | @floatfromint       | @float_from_int
+    @frameAddress       | @frameaddress       | @frame_address
+    @hasDecl            | @hasdecl            | @has_decl
+    @hasField           | @hasfield           | @has_field
+    @import             | @import             | @import
+    @inComptime         | @incomptime         | @in_comptime
+    @intCast            | @intcast            | @int_cast
+    @intFromBool        | @intfrombool        | @int_from_bool
+    @intFromEnum        | @intfromenum        | @int_from_enum
+    @intFromError       | @intfromerror       | @int_from_error
+    @intFromFloat       | @intfromfloat       | @int_from_float
+    @intFromPtr         | @intfromptr         | @int_from_ptr
+    @max                | @max                | @max
+    @memcpy             | @memcpy             | @memcpy
+    @memset             | @memset             | @memset
+    @min                | @min                | @min
+    @wasmMemorySize     | @wasmmemorysize     | @wasm_memory_size
+    @wasmMemoryGrow     | @wasmmemorygrow     | @wasm_memory_grow
+    @mod                | @mod                | @mod
+    @mulWithOverflow    | @mulwithoverflow    | @mul_with_overflow
+    @panic              | @panic              | @panic
+    @popCount           | @popcount           | @pop_count
+    @prefetch           | @prefetch           | @prefetch
+    @ptrCast            | @ptrcast            | @ptr_cast
+    @ptrFromInt         | @ptrfromint         | @ptr_from_int
+    @rem                | @rem                | @rem
+    @returnAddress      | @returnaddress      | @return_address
+    @select             | @select             | @select
+    @setEvalBranchQuota | @setevalbranchquota | @set_eval_branch_quota
+    @setFloatMode       | @setfloatmode       | @set_float_mode
+    @setRuntimeSafety   | @setruntimesafety   | @set_runtime_safety
+    @shlExact           | @shlexact           | @shl_exact
+    @shlWithOverflow    | @shlwithoverflow    | @shl_with_overflow
+    @shrExact           | @shrexact           | @shr_exact
+    @shuffle            | @shuffle            | @shuffle
+    @sizeOf             | @sizeof             | @size_of
+    @splat              | @splat              | @splat
+    @reduce             | @reduce             | @reduce
+    @src                | @src                | @src
+    @sqrt               | @sqrt               | @sqrt
+    @sin                | @sin                | @sin
+    @cos                | @cos                | @cos
+    @tan                | @tan                | @tan
+    @exp                | @exp                | @exp
+    @exp2               | @exp2               | @exp2
+    @log                | @log                | @log
+    @log2               | @log2               | @log2
+    @log10              | @log10              | @log10
+    @abs                | @abs                | @abs
+    @floor              | @floor              | @floor
+    @ceil               | @ceil               | @ceil
+    @trunc              | @trunc              | @trunc
+    @round              | @round              | @round
+    @subWithOverflow    | @subwithoverflow    | @sub_with_overflow
+    @tagName            | @tagname            | @tag_name
+    @trap               | @trap               | @trap
+    @truncate           | @truncate           | @truncate
+    @typeInfo           | @typeinfo           | @type_info
+    @typeName           | @typename           | @type_name
+    @unionInit          | @unioninit          | @union_init
+    @volatileCast       | @volatilecast       | @volatile_cast
+    @workGroupId        | @workgroupid        | @work_group_id
+    @workGroupSize      | @workgroupsize      | @work_group_size
+    @workItemId         | @workitemid         | @work_item_id
+
     @FieldType          | @FieldType
-    # @FieldType          | @_field_type
-    @floatCast          | @float_cast
-    @floatFromInt       | @float_from_int
-    @frameAddress       | @frame_address
-    @hasDecl            | @has_decl
-    @hasField           | @has_field
-    @import             | @import
-    @inComptime         | @in_comptime
-    @intCast            | @int_cast
-    @intFromBool        | @int_from_bool
-    @intFromEnum        | @int_from_enum
-    @intFromError       | @int_from_error
-    @intFromFloat       | @int_from_float
-    @intFromPtr         | @int_from_ptr
-    @max                | @max
-    @memcpy             | @memcpy
-    @memset             | @memset
-    @min                | @min
-    @wasmMemorySize     | @wasm_memory_size
-    @wasmMemoryGrow     | @wasm_memory_grow
-    @mod                | @mod
-    @mulWithOverflow    | @mul_with_overflow
-    @panic              | @panic
-    @popCount           | @pop_count
-    @prefetch           | @prefetch
-    @ptrCast            | @ptr_cast
-    @ptrFromInt         | @ptr_from_int
-    @rem                | @rem
-    @returnAddress      | @return_address
-    @select             | @select
-    @setEvalBranchQuota | @set_eval_branch_quota
-    @setFloatMode       | @set_float_mode
-    @setRuntimeSafety   | @set_runtime_safety
-    @shlExact           | @shl_exact
-    @shlWithOverflow    | @shl_with_overflow
-    @shrExact           | @shr_exact
-    @shuffle            | @shuffle
-    @sizeOf             | @size_of
-    @splat              | @splat
-    @reduce             | @reduce
-    @src                | @src
-    @sqrt               | @sqrt
-    @sin                | @sin
-    @cos                | @cos
-    @tan                | @tan
-    @exp                | @exp
-    @exp2               | @exp2
-    @log                | @log
-    @log2               | @log2
-    @log10              | @log10
-    @abs                | @abs
-    @floor              | @floor
-    @ceil               | @ceil
-    @trunc              | @trunc
-    @round              | @round
-    @subWithOverflow    | @sub_with_overflow
-    @tagName            | @tag_name
     @This               | @This
-    # @This               | @_this
-    @trap               | @trap
-    @truncate           | @truncate
     @Type               | @Type
-    # @Type               | @_type
-    @typeInfo           | @type_info
-    @typeName           | @type_name
     @TypeOf             | @TypeOf
-    # @TypeOf             | @_type_of
-    @unionInit          | @union_init
     @Vector             | @Vector
+    # @FieldType          | @_field_type
+    # @This               | @_this
+    # @Type               | @_type
+    # @TypeOf             | @_type_of
     # @Vector             | @_vector
-    @volatileCast       | @volatile_cast
-    @workGroupId        | @work_group_id
-    @workGroupSize      | @work_group_size
-    @workItemId         | @work_item_id
 
